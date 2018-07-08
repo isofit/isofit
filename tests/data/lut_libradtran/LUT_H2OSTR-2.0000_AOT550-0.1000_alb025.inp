@@ -1,0 +1,22 @@
+atmosphere_file midlatitude_winter
+source solar ../data/solar_flux/kurudz_1.0nm.dat
+albedo 0.25
+rte_solver disort
+pseudospherical
+umu 1.0
+phi 0.0
+phi0 180.0
+zout 2.3
+altitude 0.24
+time 2017 11 08 18 42 27
+mol_modify O3 300 DU
+latitude N 34.139247
+longitude W 118.127521
+output_user lambda uu eglo 
+mol_abs_param reptran fine
+mol_modify H2O 20.0 MM
+crs_model rayleigh bodhaine
+wavelength 350.0 2520.0
+aerosol_default
+aerosol_visibility 35.05711090087056
+quiet

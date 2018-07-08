@@ -1,0 +1,28 @@
+# Ignore filetypes with these suffixes
+*.pyc
+*.swp
+
+# Ignore files with these names
+.DS_Store 
+.idea
+.buildinfo
+.nojekyll
+
+# Ignore dynamic contents of example directories
+examples/*/*lut/*
+examples/*/output/*.txt
+examples/*/output/*.mat
+examples/*/remote/*.mat
+examples/*/images/*.png
+
+# Ignore test, build and distribution files
+build/
+dist/
+isofit.egg-info/
+.pytest_cache/
+tests/output/*.txt
+
+# Ignore docs files
+docs/_build/
+docs/html/_sources/
+

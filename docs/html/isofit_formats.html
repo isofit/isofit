@@ -1,0 +1,223 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>ISOFIT Code and File Formats &#8212; ISOFIT 0.1.0 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="The Multicomponent Surface Model" href="multicomponent_surface.html" />
+    <link rel="prev" title="Imaging Spectrometer Optimal FITting (ISOFIT) Overview" href="README_include.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="isofit-code-and-file-formats">
+<h1>ISOFIT Code and File Formats<a class="headerlink" href="#isofit-code-and-file-formats" title="Permalink to this headline">¶</a></h1>
+<p>This section presents a high-level introduction to the main ISOFIT modules and utilities as well as a description of the file format used to run the examples.  The top level ISOFIT script is found in isofit/isofit.py - it takes only a single argument, the path to a configuration file.  You can run it with the syntax:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3 surfmodel.py &lt;configuration_file.json&gt;
+</pre></div>
+</div>
+<div class="section" id="explanation-of-python-files">
+<h2>Explanation of Python Files<a class="headerlink" href="#explanation-of-python-files" title="Permalink to this headline">¶</a></h2>
+<p>The main ISOFIT codebase is located in the top-level “isofit/” directory.  In this directory you will find the following:</p>
+<ul class="simple">
+<li>isofit.py - Top level executable used to perform surface and atmosphere fitting on individual spectra or imaging spectroscopy data cubes.</li>
+<li>inverse.py - Inversion via Rodgers et al. optimal estimation.</li>
+<li>forward.py - Forward model that calculates radiance at sensor from a state vector.</li>
+<li>geometry.py - Geometry metadata for a single spectrum.</li>
+<li>instrument.py - Instrument model including noise models.</li>
+<li>rt_*.py - Different radiative transfer options.</li>
+<li>surf_*.py - Different surface model options suitable for water and land spectra</li>
+<li>common.py - Shared functions</li>
+<li>sunposition.py - A third-party addition authored separately and included here for convenience (MIT License)</li>
+</ul>
+</div>
+<div class="section" id="isofit-configuration-files">
+<h2>ISOFIT Configuration Files<a class="headerlink" href="#isofit-configuration-files" title="Permalink to this headline">¶</a></h2>
+<p>Each example spectrum requires a well-formatted JSON configuration file in order to run properly.  Several example configuration files have been provided in the “examples/20171108_Pasadena/configs”.  Below is an explanation of the fields in each (field names are in bold). If the “input” block is omitted, the system will run in simulation mode, forward-propagating the initial state vector to calculate a radiance prediction but not attempting to refine that state vector.  Input and output files are either binary data cubes in floating-point representation, or as individual spectra as ASCII-format text files (recognized by the suffix ‘.txt’).  All filepaths are relative to the configuration directory unless they begin with the root directory ‘/.’  They generally follow UNIX-like file path conventions.</p>
+<ul>
+<li><p class="first"><strong>ISOFIT_BASE</strong>: Path to the root directory of the isofit installation</p>
+</li>
+<li><p class="first"><strong>input</strong>: (optional) Information about the measurement.</p>
+<blockquote>
+<div><ul class="simple">
+<li><strong>measured_radiance_file</strong>: The measured radiance at sensor.   If a text file with the suffix ‘.txt’, this is assumed to be a text file with two space-separated columns representing wavelength (in nm) and radiance (in uW nm-1 sr-1 cm-2) respectively.  If the file does not end in ‘.txt’, it is treated as an binary data cube of 4 byte floating point values in Band Interleaved by Line format.  In the case of binary files, ISOFIT will determine dimensions based on an ENVI-format human readable ASCII header.  The header file name is the same as the dataset, but with the suffix “.hdr” appended.</li>
+<li><strong>reference_reflectance_file</strong>: (optional) An independent measurement of reflectance at the surface used for visualization, error reporting, debugging and diagnosis.  A text file with two space-separated columns representing wavelength (in nm) and surface reflectance respectively.</li>
+<li><strong>obs_file</strong>: (optional) Observation geometric metadata.  If a text file, a list of 12 values, one per line, indicating Path length (m), To-sensor azimuth (0 to 360 degrees cw from N), To-sensor zenith (0 to 90 degrees from zenith), To-sun azimuth (0 to 360 degrees cw from N), To-sun zenith (0 to 90 degrees from zenith), Solar phase, Slope, Aspect, Cosine(i), UTC Time, and Earth-sun distance (AU).  If a binary file, an 11-channel Band Interleaved by Line format image containing the same quantities, with a detached human readable ENVI-format ASCII header.  The header file name is the same as the dataset, but with the suffix “.hdr” appended.</li>
+<li><strong>glt_file</strong>: (optional) Observation line, column metadata.   This option is useful for associating spectra in a data cube with specific elements of a Focal Plane Array for instrument noise and radiometric models.  If a text file, a list of 2 values, one per line, indicating the column and row of the rectangular source image for a pushbroom instrument.  If a binary file, a 2 channel Band Interleaved by Pixel format image containing the same quantities, with a detached human readable ENVI-format ASCII header.   The header file name is the same as the dataset, but with the suffix “.hdr” appended.</li>
+<li><strong>loc_file</strong>: (optional) Observation geographic metadata.  If a text file, a list of 3 values, one per line, indicating the latitude, longitude, and elevation (in meters) of the corresponding location on the Earth’s surface. If a binary file, a 3 channel binary data cube in Band Interleaved by Pixel format containing the same quantities, with a detached human readable ENVI-format ASCII header.  The header file name is the same as the dataset, but with the suffix “.hdr” appended.</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p class="first"><strong>output</strong>:</p>
+<blockquote>
+<div><ul class="simple">
+<li><strong>estimated_reflectance_file</strong>: (optional) Retrieved surface reflectance.  In text mode, this is assumed to be an ASCII format file with two space-separated columns representing wavelength (in nm) and Lambertian-equivalent surface reflectance.  If the input radiance is a binary file, this will also be a binary file of similar dimensions and formatting.  Note that the reflectance does not include any specular or emissive component of the estimated reflectance, such as sun glint or (for example) burnging emissive energy from an active fire.</li>
+<li><strong>algebraic_inverse_file</strong>: (optional) The initial solution to surface reflectance, following similar formatting conventions to the estimated reflectance file.  This initial guess solution is derived from an algebraic inverse of the radiance spectrum, based on atmosphere parameters derived from heuristics and properties of the radiance spectrum such as continuum-interpolated band ratios.</li>
+<li><strong>modeled_radiance_file</strong>: (optional) The model prediction of radiance at sensor, following the same formatting as the input radiance measurement.  The difference between the two is the residual fitting error.</li>
+<li><strong>data_dump_file</strong>: (optional) A MATLAB-format file, which contiains a great deal of diagnostic data on the inversion solution near the final state, including the posterior uncerainties, partial derivatives of the error function, Clive Rodgers-esque “Averaging Kernels,” et cetera.</li>
+<li><strong>posterior_errors_file</strong>:  (optional) Posterior predicted uncertaintyat the retrieval location.  In text mode, a single column ASCII-formatted file containing the marginal standard deviations, with one state vector element per line. For binary mode, a binary file with similar spatial dimensions as the input cube, but a number of channels equal to the state vector size and one marginal standard deviation per channel.  If you desire the full covariance, use the matrix “S_hat” embedded in the “data_dump_file” above.</li>
+<li><strong>estimated_state_file</strong>:  (optional) Posterior predicted state vector.  In text mode, a single column ASCII-formatted file containing one state vector element per line. For binary mode, a binary file with similar spatial dimensions as the input cube, but a number of channels equal to the state vector size and one state vector element per channel.  Similar to the vector “x” embedded in the “data_dump_file” above.</li>
+<li><strong>plot_directory</strong>:  (optional) A path to a directory that, if specified, will fill with diagnostic images showing radiance fits and reflectance retrievals - one per iteration.</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p class="first"><strong>forward_model</strong>: Parameters of the forward model.</p>
+<blockquote>
+<div><ul>
+<li><p class="first"><strong>instrument</strong>: Parameters of the instrument including the noise model.</p>
+<blockquote>
+<div><ul class="simple">
+<li><strong>wavelength_file</strong>: Instrument spectral sampling.  A three column space-delimited ASCII file, with columns containing channel number, channel center wavelength in microns, and Full Width at Half Maximum (FWHM) of the Gaussian spectral response function in microns, respectively.  Currently only Gaussian response functions are supported.</li>
+<li><strong>unknowns</strong>: (optional) Unknown instrument parameters treated as random variables in the retrieval.  Each sub-item in this dictionary is either a floating point value, in which case it represents the standard deviation of the unknown parameter that manifests as additional uniform radiance noise in every channel, or a filename, in which case it represents the path to a two column space separated ASCII text file.  The text file is assumed to have two columns with the first representing wavelength and the second representing the standard deviation of the unknown parameter in that channel.  The channels must match those in the wavelength file (above).  Unknown parameters are handled as if they were additive noise in radiance.</li>
+<li><strong>integrations</strong>: Integer representing the number of integrations that contribute to this observation.  The most typical imaging spectroscopy case is 1 for a spectrum drawn from a single image pixel, in which case the instrument noise model is applied directly.  Multiple integrations are appropriate for spectra that are spatial or downtrack averages, and reduce the total noise by the square root of N.</li>
+<li><strong>SNR</strong>:  (optional) The instrument signal to noise level, as a single integer.  The configuration must specify either this value or a noise file (below) containing a complete noise model.</li>
+<li><strong>noise_file</strong>:  (optional) The instrument noise model in radiance units (uW nm-1 sr-1 cm-2).  This can be either a MATLAB-format file (recognized by the “.mat” suffix) or a text file (recognized by the “.txt” suffix).  Text files represent the signal-dependent uncertainty in radiance measurements due to photon noise, dark current, and read noise effects.  The effects are taken to be independent in each channel.  The file is formatted as a five column space-separated ASCII text file, with one row per instrument channel.  The first column represents instrument wavelength in nanometers.  The second, third, and fourth columns represent instrument noise model coefficients a, b, and c for that channel. These coefficients relate the observed radiance L to the noise-equivalent change in radiance NEdL via the expression:  NEdL = (a * sqrt(b+L) + c). NEdL is a standard deviation.  The fourth column represents the Root Mean Squared Error of the model itself, based on the fit to calibration data.  The fourth column is a helpful diagnostic, but ISOFIT ignores it.  If the noise file is a MATLAB file, it represents the noise as covariances across channels, calculated independently for in each column of a pushbroom instrument.  It contains three fields: “bands”, the number of instrument bands, “columns”, the number of pushbroom columns, and “covariances”, a three-dimensional array of covariances sized [columns x bands x bands].</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p class="first"><strong>surface</strong>: (optional) Constant surface, one of several surface model options.</p>
+<blockquote>
+<div><ul class="simple">
+<li><strong>surface_file</strong>: The basic surface model represents the Lambertian-equivalent Hemispherical Directed Reflectance Function (HRDF) as a single spectrum, with no free parameters (i.e. no surface parameters in the state vector).  This is useful for simulations with the “simulation mode” described above, or for retrieving atmospheric parameters over a known surface.  A two-column space delimited ASCII text file with columns representing wavelength (in nanometers) and reflectance.</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p class="first"><strong>multicomponent_surface</strong>: (optional) A surface model composed of one or more multivariate Gaussian components.  The reflectance measurement for each channel is a separate element in the surface state vector, so there is one free parameter in the retrieval associated with each instrument channel. For more information on the multicomponent surface option, see the chapter on surfmodel.py below - this is the utility we use to generate the model.  In brief, it represents the surface prior as a collection of multivariate Gaussian means and covariance matrices.  During each retrieval iteration, it selects the component closest to the current state to serve as the prior.</p>
+<blockquote>
+<div><ul class="simple">
+<li><strong>surface_file</strong>:  The file containing surface model information.  We construct these models using the utility “surfmodel.py”, described below.</li>
+<li><strong>selection_metric</strong>: (optional) The distance metric used to specify the closest component during the retrieval.  It can either be “Mahalanobis” (the default) or “Euclidean.”</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p class="first"><strong>glint_surface</strong>: (optional) A multicomponent surface model with one extra free parameter for specular sun glint.  Sun glint is taken to be a spectrally-uniform additive reflectance contribution of unknown magnitude.  The glint_surface model includes all of the same options as the multicomponent_surface model.  It reports the glint-free Lambertian spectrum in output products.  The surface glint is initialized to zero, unless the first guess reflectance estimate has a near infrared magnitude smaller than 5%, in which case ISOFIT presumes we are looking at a water pixel where the entire contribution is due only to glint (water absorbs strongly in the infrared).  In that case, ISOFIT initializes the glint level to the magnitude of the scattering-corrected near infrared reflectance.</p>
+</li>
+<li><p class="first"><strong>iop_surface</strong>: (optional) A surface model for open water spectra, which parameterizes water-leaving reflectance using the a bio-optical model of Z. P. Lee, et al (Applied Optics 41, 2002).   It includes six parameters related to CDOM absorption, backscatter, the wavelength dependence of particulate backscatter, chlorophyll absorption, sun glint, and the degree of Solar Induced Fluorescence (SIF). Sunglint is removed during the retrieval; It reports the glint-free Lambertian spectrum in output products.  This model is still experimental - users beware!</p>
+</li>
+<li><p class="first"><strong>emissive_surface</strong>: (optional) A multicomponent surface model that permits an emissive contribution from fractional coverage by a hot black body, as in the case of an active fire.  The state vector is the same as the multicomponent model, but with two additional free parameters corresponding to the black body fracitontemperature and   for open water spectra, which parameterizes water-leaving reflectance using the a bio-optical model of Z. P. Lee, et al (Applied Optics 41, 2002).   It includes six parameters related to CDOM absorption, backscatter, the wavelength dependence of particulate backscatter, chlorophyll absorption, sun glint, and the degree of Solar Induced Fluorescence (SIF). Sunglint is removed during the retrieval; It reports the glint-free Lambertian spectrum in output products.  This model is still highly experimental - users beware!</p>
+</li>
+<li><p class="first"><strong>modtran_radiative_transfer</strong>: One of several radiative transfer model options to describe atmospehric effects.  It requires an installation of MODTRAN 6.0.  It functions via a lookup table caching strategy, starting from a user-supplied template but swapping in alternative values for the free atmospheric parameters and variable geometric parameters to fill in a grid of lookup table instances.  For each run, it calculates optical constants such as the two-path atmospheric tranmsission (combining direct and diffuse), the path radiance, and the spherical albedo at the surface.  These are cached in the lookup table and interpolated at runtime to estimate radiance at sensor.  It uses the approximation of a uniform Lambertian surface.</p>
+<blockquote>
+<div><ul class="simple">
+<li><strong>modtran_directory</strong>: (optional) The path to the base-level directory of the MODTRAN installation.  if not specified, isofit will look for the installation location in the MODTRAN_DIR environment variable.</li>
+<li><strong>lut_path</strong>: The path to a directory for caching radiative transfer results from MODTRAN runs.</li>
+<li><strong>aerosol_template_file</strong>:  The path to a MODTRAN configuration file template used for custom aerosol models.  This option is still experimental.</li>
+<li><strong>aerosol_model_file</strong>: The path to a custom aerosol model specifying single scattering absorption and total extinction coefficients for one or more aerosol types at specific reference wavelengths.    This option is still experimental.</li>
+<li><strong>wl2flt_exe</strong>:  A vestigial option, no longer used.</li>
+<li><strong>modtran_template_file</strong>: The path to a template MODTRAN 6.0 JSON configuration file.  This should ideally be a complete configuration with an atmosphere and viewing geometry appropriate for the measured spectrum.  The surface should be the zero-percent (totally absorbing) option.  For examples, see the MODTRAN configuration templates in the examples/ subdirectory.  Any free parameters specified in the “statevector” field will be retrieved during ISOFIT’s inversion.</li>
+<li><strong>domain</strong>: A dictionary containing three key-element pairs: “start”, the starting wavelength over which MODTRAN radiative transfer should be calculated; “end”, the ending wavelength; and “step”, the spectral sampling of the radiative transfer calculations.  This interval should be broader than the wavelength range of the instrument to account for the spectral response functions, which extend beyond the extreme channels.</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p class="first"><strong>statevector</strong>: A dictionary of name-value pairs, one per free atmospheric parameter.  With just a few exceptions, perameter names should be string values equivalent to their names in the MODTRAN 6.0 JSON configuration file format, and the configuration template file. For example, use the string “H2OSTR” to specify the column water vapor abundance.  One exception to this rule is aerosol optical depth, which is treated by MODTRAN as a visibility but by ISOFIT as an aerosol optical thickness (AOT) at 550 nm.  If you wish to retrieve aerosol thickness, use the state vector element “AOT550,” and ISOFIT will do this translation internally.   The state vector elements are each associated with a dictionary of three values: “bounds”, a list containing the smallest and largest legal value for that parameter; “scale”, a scaling factor representing a typical prior standard deviation; and “init”, the intitial value that should be used that also becomes the prior mean.  The bounds should be the same as, or more restricted than, the interval covered by the lookup table grid “lut_grid.”</p>
+</li>
+<li><p class="first"><strong>lut_grid</strong>: A dictionary of key-value pairs, one per dimension in the lookup table.  There should be one entry for each free parameter in the state vector, and one entry for any variable geometric parameter.   Each parameter string maps to a list of numerical grid point values that form that dimension of the lookup table.  Geometric parameters that can vary include: OBSZEN for the observer zenith angle, and TRUEAZ for the true azimuth parameter.  Variable atmospheric parameters are generally not retrieved as free parameters; instead, they are set on a per-spectrum basis based on geometric information in the input file block.</p>
+</li>
+<li><p class="first"><strong>unknowns</strong>: A list of any unknown atmospheric parameters, which are treated as random variables in the uncertainty accounting.  An example includes “H2O_ABSCO”, the absorption coefficient of water vapor, which is specified as a numerical standard deviation.</p>
+</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p class="first"><strong>inversion</strong>: (optional) The inverse model.  Not needed for simulation mode.</p>
+<blockquote>
+<div><ul class="simple">
+<li><strong>windows</strong>:  A list of lists; each sublist is a two-element pair of wavelength values (in nanometers) representing the beginning and end of a retrieval interval.  These intervals are used for calculating the model fit to the measurement.  For Visible/Shortwave Infrared (VSWIR) spectra we recommend specifying disjoint windows that span most of the measruement but avoid the deepest, opaque atmospheric absorption features that do not contain significant signal.</li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">ISOFIT</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="release_notes.html">Release Notes (version 0.1.0)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="README_include.html">Imaging Spectrometer Optimal FITting (ISOFIT) Overview</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">ISOFIT Code and File Formats</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#explanation-of-python-files">Explanation of Python Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#isofit-configuration-files">ISOFIT Configuration Files</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="multicomponent_surface.html">The Multicomponent Surface Model</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="README_include.html" title="previous chapter">Imaging Spectrometer Optimal FITting (ISOFIT) Overview</a></li>
+      <li>Next: <a href="multicomponent_surface.html" title="next chapter">The Multicomponent Surface Model</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, David R. Thompson.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/isofit_formats.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

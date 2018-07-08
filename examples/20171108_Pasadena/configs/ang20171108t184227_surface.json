@@ -1,0 +1,53 @@
+{
+  "output_model_file": "../remote/ang20170228_surface_model.mat",
+  "wavelength_file":   "../remote/20170320_ang20170228_wavelength_fit.txt",
+  "normalize":"Euclidean",
+  "reference_windows":[[400,1300],[1450,1700],[2100,2450]],
+  "sources":
+    [
+      {
+        "input_spectrum_files":
+          [
+            "../../../data/reflectance/surface_model_ucsb"
+          ],
+        "n_components": 8,
+        "windows": [
+          {
+            "interval":[300,400],
+            "regularizer":1e-4,
+            "correlation":"EM"
+          },
+          {
+            "interval":[400,1300],
+            "regularizer":1e-6,
+            "correlation":"EM"
+          },
+          {
+            "interval":[1300,1450],
+            "regularizer":1e-4,
+            "correlation":"EM"
+          },
+          {
+            "interval":[1450,1700],
+            "regularizer":1e-6,
+            "correlation":"EM"
+          },
+          {
+            "interval":[1700,2100],
+            "regularizer":1e-4,
+            "correlation":"EM"
+          },
+          {
+            "interval":[2100,2450],
+            "regularizer":1e-6,
+            "correlation":"EM"
+          },
+          {
+            "interval":[2450,2550],
+            "regularizer":1e-4,
+            "correlation":"EM"
+          }
+        ]
+      }
+  ]
+}

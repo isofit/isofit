@@ -1,0 +1,18 @@
+# Include patterns
+include LICENSE
+include *.rst
+include docs/*.rst
+include utils/*
+include examples/20171108_Pasadena/*
+include examples/20171108_Pasadena/configs/*
+include examples/20171108_Pasadena/insitu/*
+include examples/20171108_Pasadena/remote/*
+include examples/20171108_Pasadena/lut/README.rst
+include examples/20171108_Pasadena/output/README.rst
+
+# Include directories recursively using graft
+graft data
+graft docs/html
+
+# Exclude patterns
+exclude examples/20171108_Pasadena/remote/*.mat

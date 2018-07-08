@@ -1,0 +1,48 @@
+{
+  "ISOFIT_BASE": "../",
+
+  "output": {
+    "simulated_radiance_file":  "../output/libradtran_meas_rdn.txt"
+  },
+
+  "forward_model":{
+
+    "instrument": {
+      "wavelength_file": "wavelengths.txt",
+      "SNR":100000,
+      "integrations":1
+    },
+
+    "surface": {
+      "reflectance_file": "constant_surface_model.txt"
+    },
+
+    "libradtran_radiative_transfer": {
+      "libradtran_template_file":"libradtran.inp",
+      "lut_path":"lut_libradtran/",
+      "statevector": {
+        "H2OSTR": {
+          "bounds": [1.5, 2.0],
+          "scale": 0.01,
+          "init": 1.75
+        },
+        "AOT550": {
+          "bounds": [0.01, 0.1],
+          "scale": 0.01,
+          "init": 0.05
+        }
+      },
+      "lut_grid": { 
+        "H2OSTR": [1.5, 2.0], 
+        "AOT550": [0.01, 0.1]
+      },
+      "unknowns": {
+        "H2O_ABSCO": 0.01
+      }
+    }
+  },
+
+  "inversion": {
+    "windows": [[380.0,1300.0],[1450,1780.0],[1950.0,2450.0]]
+  }
+}

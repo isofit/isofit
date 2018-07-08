@@ -1,0 +1,68 @@
+{
+  "ISOFIT_BASE": "../../..",
+
+  "input": {
+    "measured_radiance_file": "../remote/ang20171108t184227_rdn_v2p11_AstroGreenBaseball.txt",
+    "reference_reflectance_file": "../insitu/AstroGreenBaseball.txt"
+  },
+
+  "output": {
+    "estimated_reflectance_file": "../output/ang20171108t184227_rfl_v2p11_AstroGreenBaseball.txt",
+    "algebraic_inverse_file": "../output/ang20171108t184227_alg_v2p11_AstroGreenBaseball.txt",
+    "modeled_radiance_file":  "../output/ang20171108t184227_mdl_v2p11_AstroGreenBaseball.txt",
+    "data_dump_file":         "../output/ang20171108t184227_data_v2p11_AstroGreenBaseball.mat",
+    "posterior_errors_file":  "../output/ang20171108t184227_post_v2p11_AstroGreenBaseball.mat",
+    "plot_directory": "../images/"
+  },
+
+  "forward_model":{
+
+    "instrument": {
+      "wavelength_file": "../remote/20170320_ang20170228_wavelength_fit.txt",
+      "unknowns": {
+        "cal_uncertainty_systematic_file": 
+          "../../../data/avirisng_systematic_error.txt",
+        "cal_uncertainty_flatfield": 0.01
+      },
+      "integrations":240,
+      "noise_file": "../../../data/avirisng_noise.txt"
+    },
+
+    "multicomponent_surface": {
+      "surface_file": "../remote/ang20170228_surface_model.mat"
+    },
+
+    "modtran_radiative_transfer": {
+      "lut_path":"../lut/",
+      "aerosol_template_file":"../../../data/aerosol_template.json",
+      "aerosol_model_file":"../../../data/aerosol_model.txt",
+      "wl2flt_exe":"../../../utils/wl2flt.py",
+      "modtran_template_file":"ang20171108t184227_modtran.json",
+      "domain": {"start": 350, "end": 2520, "step": 0.1},
+
+      "statevector": {
+        "H2OSTR": {
+          "bounds": [1.5, 2.0],
+          "scale": 0.01,
+          "init": 1.75
+        },
+        "AOT550": {
+          "bounds": [0.01, 0.1],
+          "scale": 0.01,
+          "init": 0.05
+        }
+      },
+      "lut_grid": { 
+        "H2OSTR": [1.5, 2.0], 
+        "AOT550": [0.01, 0.1]
+      },
+      "unknowns": {
+        "H2O_ABSCO": 0.01
+      }
+    }
+  },
+
+  "inversion": {
+    "windows": [[380.0,1300.0],[1450,1780.0],[1950.0,2450.0]]
+  }
+}
