@@ -12,19 +12,19 @@ best support and contribute to this project.  Typical contributions may include:
 * Bug reports
 
 If you have ideas for new additions, that's great - please contact the maintainers 
-at the addresses given below, and we can coordinate efforts. 
+at the addresses given below, and we can coordinate efforts.  Our general policy 
+is to for the maintainers to delegate technical authority to individuals to make
+changes and additions to specific topics. 
 
-**If you would like to include any new algorithms or examples, we highly
-recommend that they are vetted by peer reviewed scientific research.**
 
 Getting Started
 ---------------
 
 First of all, to get a sense of the project's current status and roadmap, please
-be sure to spend some time reviewing issues in the `issue tracker <https://github.com/davidraythompson/isofit/issues>`_.
+be sure to spend some time reviewing issues in the `issue tracker <https://github.com/isofi/isofit/issues>`_.
 
 If you have have discovered a new issue or task, then go ahead and create a `new
-issue <https://github.com/davidraythompson/isofit/issues/new>`_.
+issue <https://github.com/isofit/isofit/issues/new>`_.
 
 
 Fork and Create a Branch
@@ -82,7 +82,7 @@ sure it's up to date with ISOFIT's master branch:
 
 .. code::
 
-  git remote add upstream https://github.com/davidraythompson/isofit.git
+  git remote add upstream https://github.com/isofit/isofit.git
   git checkout master
   git pull upstream master
 
@@ -112,6 +112,28 @@ Here's the suggested workflow:
   git checkout 314-update-docs-libradtran
   git pull --rebase upstream master
   git push --force-with-lease 314-update-docs-libradtran
+
+Project Decision Making
+-----------------------
+
+Minor changes follow an expedited acceptance process.  These are things like:
+ * Bug fixes
+ * Unit tests 
+ * Documentation 
+ * Consolidation that does not change algorithm results or provide significant new functionality  
+ * New functionality initiated by maintainers, or over which authority has been delegated in advance by maintainers (e.g. through issue assignment)
+
+Minor change pull requests are accepted once they: 
+ * "Bake" for 48 hours, or 72 hours over weekends
+ * Pass unit tests and adhere to project coding conventions
+ * Get signoff from at least one maintainer, with no objections from any other maintainer.
+
+Major changes include: 
+ * New functionality, including examples, data, and algorithm changes, over which authority was not delegated in advance.  
+ * Official releases 
+ * Project policy updates 
+ 
+These are accepted through consensus of a quorum of maintainers.  **If you would like to include any new algorithms or examples, we highly recommend that they are supported by peer reviewed scientific research.**
 
 Contributors
 ------------
