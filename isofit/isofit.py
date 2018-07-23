@@ -70,7 +70,7 @@ def main():
         radiance_correction_file = config['input']['radiometry_correction_file']
         radiance_correction, wl = spectrumLoad(radiance_correction_file)
     else:
-        radiance_correction = 1.0
+        radiance_correction = None
 
     if text_mode:
 
@@ -104,7 +104,8 @@ def main():
             # Invert instrument measurement
             rdn_meas, wl = spectrumLoad(
                 config['input']['measured_radiance_file'])
-            rdn_meas = rdn_meas * radiance_correction
+            if radiance_correction is not None:
+              rdn_meas = rdn_meas * radiance_correction
             rdn_sim = None
 
             if len(args.profile) > 0:
@@ -137,7 +138,7 @@ def main():
             fcor_mm = fcor.open_memmap(interleave='source',  writable=False)
             flatfield = s.array(fcor_mm[0, :, :])
         else:
-            flatfield = s.ones((nb, ns), dtype=s.float32)
+            flatfield = None 
 
         if 'obs_file' in config['input']:
             obs_file = config['input']['obs_file']
@@ -374,8 +375,10 @@ def main():
                     else:
                         loc_spectrum = None
 
-                    rdn_meas = rdn_meas * \
-                        radiance_correction * flatfield[:, pc]
+                    if flatfield is not None:
+                      rdn_meas = rdn_meas * flatfield[:, pc]
+                    if radiance_correction is not None:
+                      rdn_meas = rdn_meas * radiance_correction
                     geom = Geometry(obs_spectrum, glt_spectrum, loc_spectrum,
                                     pushbroom_column=pc)
 

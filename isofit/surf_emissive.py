@@ -36,7 +36,7 @@ class MixBBSurface(MultiComponentSurface):
         self.statevec.extend(['SURF_TEMP_K'])
         self.init_val.extend([270.0])
         self.scale.extend([1000.0])
-        self.bounds.extend([[0.0, 2000.0]])
+        self.bounds.extend([[250.0, 2000.0]])
         self.surf_temp_ind = len(self.statevec)-1
         # Treat emissive surfaces as a fractional blackbody
         self.statevec.extend(['BB_MIX_FRAC'])
@@ -50,7 +50,7 @@ class MixBBSurface(MultiComponentSurface):
         the covariance in a normalized space (normalizing by z) and then un-
         normalize the result for the calling function.'''
 
-        mu = MultiComponentSurface.xa(self, config, RT)
+        mu = MultiComponentSurface.xa(self, x_surface, geom)
         mu[self.surf_temp_ind] = self.init_val[self.surf_temp_ind]
         mu[self.bb_frac_ind] = self.init_val[self.bb_frac_ind]
         return mu
@@ -76,9 +76,11 @@ class MixBBSurface(MultiComponentSurface):
             resid = Ls_est * bb_frac - Ls
             return sum(resid**2)
 
-        x_surface = MultiComponentSurface.heuristic_reflectance(self, rfl_meas,
+        x_surface = MultiComponentSurface.heuristic_surface(self, rfl_meas,
                                                                 Ls, geom)
         T, bb_frac = minimize(err, s.array([300, 0.1])).x
+        bb_frac = max(eps, min(bb_frac, 1.0-eps))
+        T = max(self.bounds[-2][0]+eps, min(T, self.bounds[-2][1]-eps))
         x_surface[self.bb_frac_ind] = bb_frac
         x_surface[self.surf_temp_ind] = T
         return x_surface
@@ -143,3 +145,9 @@ class MixBBSurface(MultiComponentSurface):
         dLs_dx[:, self.surf_temp_ind] = dLs_dT * frac
         dLs_dx[:, self.bb_frac_ind] = Ls
         return dLs_dx
+
+    def summarize(self, x_surface, geom):
+        '''Summary of state vector'''
+        mcm = MultiComponentSurface.summarize(self, x_surface, geom)
+        msg = ' Kelvins: %5.1f  BlackBody Fraction %4.2f ' % tuple(x_surface[-2:])
+        return msg+mcm

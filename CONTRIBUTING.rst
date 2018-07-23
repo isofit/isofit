@@ -21,7 +21,7 @@ Getting Started
 ---------------
 
 First of all, to get a sense of the project's current status and roadmap, please
-be sure to spend some time reviewing issues in the `issue tracker <https://github.com/isofi/isofit/issues>`_.
+be sure to spend some time reviewing issues in the `issue tracker <https://github.com/isofit/isofit/issues>`_.
 
 If you have have discovered a new issue or task, then go ahead and create a `new
 issue <https://github.com/isofit/isofit/issues/new>`_.
@@ -117,21 +117,25 @@ Project Decision Making
 -----------------------
 
 Minor changes follow an expedited acceptance process.  These are things like:
- * Bug fixes
- * Unit tests 
- * Documentation 
- * Consolidation that does not change algorithm results or provide significant new functionality  
- * New functionality initiated by maintainers, or over which authority has been delegated in advance by maintainers (e.g. through issue assignment)
+
+* Bug fixes
+* Unit tests 
+* Documentation 
+* Consolidation that does not change algorithm results or provide significant new functionality  
+* New functionality initiated by maintainers, or over which authority has been delegated in advance by maintainers (e.g. through issue assignment)
 
 Minor change pull requests are accepted once they: 
- * "Bake" for 48 hours, or 72 hours over weekends
- * Pass unit tests and adhere to project coding conventions
- * Get signoff from at least one maintainer, with no objections from any other maintainer.
+
+* Pass unit tests and adhere to project coding conventions
+* Get signoff from at least one maintainer, with no objections from any other maintainer.
+
+Accepted minor changes will be released in the next major or minor release version. Hotfixes will be expedited as needed.
 
 Major changes include: 
- * New functionality, including examples, data, and algorithm changes, over which authority was not delegated in advance.  
- * Official releases 
- * Project policy updates 
+
+* New functionality, including examples, data, and algorithm changes, over which authority was not delegated in advance.  
+* Official releases 
+* Project policy updates 
  
 These are accepted through consensus of a quorum of maintainers.  **If you would like to include any new algorithms or examples, we highly recommend that they are supported by peer reviewed scientific research.**
 
