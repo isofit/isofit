@@ -68,9 +68,16 @@ class ModtranRT(TabularRT):
         '''Load a .tp6 file.  This contains the solar geometry.  We 
            Return cosine of mean solar zenith'''
 
-        with open(infile) as f:
+        with open(infile,'r') as f:
             ts, te = -1, -1  # start and end indices
-            lines = f.readlines()
+            lines = []
+            print(infile)
+            while len(lines)==0 or len(lines[-1])>0:
+              try: 
+                lines.append(f.readline())
+              except UnicodeDecodeError:
+                pass
+            #lines = f.readlines()
             for i, line in enumerate(lines):
                 if "SINGLE SCATTER SOLAR" in line:
                     ts = i+5
