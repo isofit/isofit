@@ -104,7 +104,8 @@ def main():
             # Invert instrument measurement
             rdn_meas, wl = spectrumLoad(
                 config['input']['measured_radiance_file'])
-            rdn_meas = rdn_meas * radiance_correction
+            if radiance_correction is not None:
+              rdn_meas = rdn_meas * radiance_correction
             rdn_sim = None
 
             if len(args.profile) > 0:
