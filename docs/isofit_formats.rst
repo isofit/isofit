@@ -88,3 +88,9 @@ Each example spectrum requires a well-formatted JSON configuration file in order
 
     * **windows**:  A list of lists; each sublist is a two-element pair of wavelength values (in nanometers) representing the beginning and end of a retrieval interval.  These intervals are used for calculating the model fit to the measurement.  For Visible/Shortwave Infrared (VSWIR) spectra we recommend specifying disjoint windows that span most of the measruement but avoid the deepest, opaque atmospheric absorption features that do not contain significant signal.
 
+* **mcmc_inversion**: (optional) A Markov Chain Monte Carlo (MCMC) sampler alternative to the standard conjugate gradient inverse model.  It includes all those fields, and uses the conjugate gradient solution as its initial sample.  It then draws samples using a Metropolis/Hastings MCMC strategy. Its proposal distribution is the posterior uncertainty of the conjugate gradient solution.  It does not currently enforce parameter bounds!  If using this inversion approach, the invert() function returns an array of state vector samples.  Investigators should exclude samples from an initial "burn-in" period at the beginning of the simulation. 
+
+    * **iterations**: (optional) The total number of iterations.  Default is 10000.
+    * **regularizer**: (optional) A small quantity added to the prior diagonal for numerical stability.  Default is 1e-3 which could be too large.
+    * **proposal_scaling**: (optional) Narrower or wider proposal distributions can increase or reduce Metropolis/Hastings acceptance rates.  The proposal distribution is scaled by this value.  The default is 0.01
+    * **verbose** (optional): Print information from each iteration.  Default is true.
