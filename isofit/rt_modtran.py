@@ -42,9 +42,10 @@ class ModtranRT(TabularRT):
 
         self.modtran_dir = self.find_basedir(config)
         self.modtran_template_file = config['modtran_template_file']
-        self.template = deepcopy(json_load_ascii(self.modtran_template_file)['MODTRAN'])
+        self.template = deepcopy(json_load_ascii(
+            self.modtran_template_file)['MODTRAN'])
         self.filtpath = os.path.join(self.lut_dir, 'wavelengths.flt')
-        
+
         if 'aerosol_model_file' in config:
             self.aerosol_model_file = config['aerosol_model_file']
             self.aerosol_template = config['aerosol_template_file']
@@ -69,14 +70,14 @@ class ModtranRT(TabularRT):
         '''Load a .tp6 file.  This contains the solar geometry.  We 
            Return cosine of mean solar zenith'''
 
-        with open(infile,'r') as f:
+        with open(infile, 'r') as f:
             ts, te = -1, -1  # start and end indices
             lines = []
-            while len(lines)==0 or len(lines[-1])>0:
-              try: 
-                lines.append(f.readline())
-              except UnicodeDecodeError:
-                pass
+            while len(lines) == 0 or len(lines[-1]) > 0:
+                try:
+                    lines.append(f.readline())
+                except UnicodeDecodeError:
+                    pass
             #lines = f.readlines()
             for i, line in enumerate(lines):
                 if "SINGLE SCATTER SOLAR" in line:
@@ -136,9 +137,10 @@ class ModtranRT(TabularRT):
         param = deepcopy(self.template)
 
         # Insert basic aerosol template, if needed
-        for aer_key in ['VIS','AERTYPE','AOT550','AOD550','EXT550']:
+        for aer_key in ['VIS', 'AERTYPE', 'AOT550', 'AOD550', 'EXT550']:
             if aer_key in overrides.keys():
-                aerosol_template = deepcopy(json_load_ascii(self.aerosol_template))
+                aerosol_template = deepcopy(
+                    json_load_ascii(self.aerosol_template))
                 param[0]['MODTRANINPUT']['AEROSOLS'] = aerosol_template
 
         # Other overrides
@@ -148,13 +150,13 @@ class ModtranRT(TabularRT):
             if key == 'AERTYPE':
 
                 custom_aerosol = self.get_aerosol(val)
-                wl, absc, extc, asym = [list(q) for q in custom_aerosol] 
+                wl, absc, extc, asym = [list(q) for q in custom_aerosol]
                 try:
                     del param[0]['MODTRANINPUT']['AEROSOLS']['IHAZE']
                 except KeyError:
                     pass
                 nwl = len(wl)
-                param[0]['MODTRANINPUT']['AEROSOLS']['IREGSPC'][0]['NARSPC'] = nwl 
+                param[0]['MODTRANINPUT']['AEROSOLS']['IREGSPC'][0]['NARSPC'] = nwl
                 param[0]['MODTRANINPUT']['AEROSOLS']['IREGSPC'][0]['VARSPC'] = wl
                 param[0]['MODTRANINPUT']['AEROSOLS']['IREGSPC'][0]['EXTC'] = extc
                 param[0]['MODTRANINPUT']['AEROSOLS']['IREGSPC'][0]['ABSC'] = absc
@@ -163,16 +165,16 @@ class ModtranRT(TabularRT):
             elif key == 'EXT550' or key == 'AOT550' or key == 'AOD550':
                 # MODTRAN 6.0 convention treats negative visibility as AOT550
                 recursive_replace(param, 'VIS', -val)
-              
+
             elif key == 'FILTNM':
                 param[0]['MODTRANINPUT']['SPECTRAL']['FILTNM'] = val
 
-            elif key in ['ITYPE', 'H1ALT', 'IDAY', 'IPARM', 'PARM1', 
+            elif key in ['ITYPE', 'H1ALT', 'IDAY', 'IPARM', 'PARM1',
                          'PARM2', 'GMTIME', 'TRUEAZ', 'OBSZEN']:
                 param[0]['MODTRANINPUT']['GEOMETRY'][key] = val
 
         return json.dumps({"MODTRAN": param})
- 
+
     def build_aerosol_model(self):
         aer_data = s.loadtxt(self.aerosol_model_file)
         self.aer_wl = aer_data[:, 0]

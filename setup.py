@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #
-# ISOFIT: Imaging Spectrometer Optimal FITting 
+# ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
@@ -23,12 +23,13 @@ from setuptools import setup, find_packages
 
 with open('README.rst', 'r') as f:
     long_description = f.read()
+     
+lic = 'Apache Software License (http://www.apache.org/licenses/LICENSE-2.0)'
 
-setup(
-    name='isofit',
+setup(name='isofit',
     version='0.1.0',
     url='http://github.com/davidraythompson/isofit/',
-    license='Apache Software License (http://www.apache.org/licenses/LICENSE-2.0)',
+    license=lic,
     author='David R. Thompson, Winston Olson-Duvall, and Team',
     author_email='david.r.thompson@jpl.nasa.gov',
     description='Imaging Spectrometer Optimal FITting',
@@ -40,12 +41,10 @@ setup(
                       'matplotlib>=2.2.2',
                       'scikit-learn>=0.19.1',
                       'spectral>=0.19',
-                      'pytest>=3.5.1'],
+                      'pytest>=3.5.1',
+                      'pep8>=1.7.1'],
     python_requires='>=3',
     platforms='any',
-    classifiers = [
-        'Programming Language :: Python :: 3',
+    classifiers=['Programming Language :: Python :: 3',
         'License :: OSI Approved :: Apache Software License',
-        'Operating System :: OS Independent'
-    ]
-)
+        'Operating System :: OS Independent'])

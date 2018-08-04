@@ -40,6 +40,7 @@ binary_table = [s.array([[]]),
 
 eps = 1e-5  # used in finite difference
 
+
 def emissive_radiance_old(emissivity, T, wl):
     """Radiance of a surface due to emission"""
 

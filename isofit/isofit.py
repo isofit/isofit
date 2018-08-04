@@ -60,13 +60,13 @@ def main():
     # Forward Model
     fm = ForwardModel(config['forward_model'])
 
-    # Inversion method 
+    # Inversion method
     if 'mcmc_inversion' in config:
         iv = MCMCInversion(config['mcmc_inversion'], fm)
     else:
         iv = Inversion(config['inversion'], fm)
 
-    # Output object 
+    # Output object
     out = Output(config, iv)
 
     # Simulation mode? Binary or text mode?
@@ -116,7 +116,7 @@ def main():
             rdn_meas, wl = spectrumLoad(
                 config['input']['measured_radiance_file'])
             if radiance_correction is not None:
-              rdn_meas = rdn_meas * radiance_correction
+                rdn_meas = rdn_meas * radiance_correction
             rdn_sim = None
 
             if len(args.profile) > 0:
@@ -129,7 +129,7 @@ def main():
                 # MCMC Sampler
                 samples = iv.invert(rdn_meas, geom, out=out)
                 if 'mcmc_samples_file' in config['output']:
-                    D = {'samples':samples}
+                    D = {'samples': samples}
                     savemat(config['output']['mcmc_samples_file'], D)
                 state_est = samples.mean(axis=0)
                 rfl_est, rdn_est, path_est, S_hat, K, G =\
@@ -162,7 +162,7 @@ def main():
             fcor_mm = fcor.open_memmap(interleave='source',  writable=False)
             flatfield = s.array(fcor_mm[0, :, :])
         else:
-            flatfield = None 
+            flatfield = None
 
         if 'obs_file' in config['input']:
             obs_file = config['input']['obs_file']
@@ -400,9 +400,9 @@ def main():
                         loc_spectrum = None
 
                     if flatfield is not None:
-                      rdn_meas = rdn_meas * flatfield[:, pc]
+                        rdn_meas = rdn_meas * flatfield[:, pc]
                     if radiance_correction is not None:
-                      rdn_meas = rdn_meas * radiance_correction
+                        rdn_meas = rdn_meas * radiance_correction
                     geom = Geometry(obs_spectrum, glt_spectrum, loc_spectrum,
                                     pushbroom_column=pc)
 
