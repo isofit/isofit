@@ -10,6 +10,7 @@ The routines and utilities in this codebase fit surface, atmosphere and instrume
 The project is undergoing rapid development, and we are providing an early release with the understanding that there will be many changes and improvements in the near future. 
 
 Release 0.3.0 includes a Markov Chain Monte Carlo (MCMC) inversion method to sample directly from the posterior.  This functionality should be considered highly experimental! It also contains minor improvements:
+
 * Better aerosol parameterization 
 * PEP8 style compliance unit tests
 * Better PEP8 compliance overall

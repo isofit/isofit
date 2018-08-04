@@ -14,6 +14,7 @@ The main ISOFIT codebase is located in the top-level "isofit/" directory.  In th
 
 * isofit.py - Top level executable used to perform surface and atmosphere fitting on individual spectra or imaging spectroscopy data cubes.
 * inverse.py - Inversion via Rodgers et al. optimal estimation.
+* inverse_mcmc.py - Markov Chain Monte Carlo samples from the posterior distribution.
 * forward.py - Forward model that calculates radiance at sensor from a state vector.
 * geometry.py - Geometry metadata for a single spectrum.
 * instrument.py - Instrument model including noise models.
