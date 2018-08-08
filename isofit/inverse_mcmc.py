@@ -23,7 +23,7 @@ import scipy as s
 from common import spectrumLoad, chol_inv, eps
 from inverse import Inversion
 import scipy.optimize
-from scipy.linalg import inv, norm, sqrtm, det, cholesky, qr
+from scipy.linalg import inv, norm, sqrtm, det, cholesky, qr, svd
 from scipy.stats import multivariate_normal
 from hashlib import md5
 
@@ -50,16 +50,30 @@ class MCMCInversion(Inversion):
         # Prior distribution
         Sa = self.fm.Sa(x, geom)
         xa = self.fm.xa(x, geom)
-        Sa = Sa + s.eye(Sa.shape[0]) * self.regularizer
-        pa = multivariate_normal(mean=xa, cov=Sa)
 
-        # Measurement error distribution
+        # Stable inverse via Singular Value Decomposition, using only the
+        # significant eigenvectors
+        U, V, D = svd(Sa)
+        maxeig = max(V)
+        mineig = maxeig * 1e-6
+        use = s.where(V > mineig)[0]
+        SaInv = (D[use, :].T).dot(s.diag(V[use])).dot(U[:, use].T)
+        SaDet = s.prod(V[use])
+
+        # Probability density of prior
+        z = s.sqrt(SaDet * 2.0 * s.pi)
+        pa = z * ((x-xa)[s.newaxis, :]).dot(SaInv).dot((x-xa)[:, s.newaxis])
+
+        # Probability density of measurement noise distribution
+        # i.e. the likelihood
         Seps = self.fm.Seps(rdn_meas, geom)
         Seps_win = s.array([Seps[i, self.winidx] for i in self.winidx])
         est_rdn = self.fm.calc_rdn(x, geom, rfl=None, Ls=None)
         pm = multivariate_normal(mean=rdn_meas[self.winidx], cov=Seps_win)
 
-        return pa.pdf(x) * pm.pdf(est_rdn[self.winidx])
+        # Complete posterior density is proportional to prior term times
+        # the likelihood term
+        return pa * pm.pdf(est_rdn[self.winidx])
 
     def invert(self, rdn_meas, geom, out=None, init=None):
         """Inverts a meaurement. Returns an array of state vector samples.
@@ -71,29 +85,49 @@ class MCMCInversion(Inversion):
         dens = self.density(x, rdn_meas,  geom)
 
         # Proposal is based on the posterior uncertainty
+        # We truncate non-surface parameters to their bounds
+        bounds = s.array([self.fm.bounds[0].copy(), self.fm.bounds[1].copy()])
+        bounds[:, self.fm.surface_inds] = s.array([[-s.inf], [s.inf]])
         S_hat, K, G = self.calc_posterior(x, geom, rdn_meas)
         proposal_Cov = S_hat * self.proposal_scaling
         proposal = multivariate_normal(cov=proposal_Cov)
 
         # Sample from the posterior using Metropolis/Hastings MCMC
-        samples = []
+        samples, acpts, rejs = [], 0, 0
         for i in range(self.iterations):
-            xp = x + proposal.rvs()
+            xp = s.ones(x.shape) * s.inf
+            max_tries, count = 10000, 0
+            while any(xp < bounds[0, :]) or any(xp > bounds[1, :]):
+                xp = x + proposal.rvs()
+                count = count + 1
+                if count > max_tries:
+                    raise RuntimeError(
+                        'Could not generate proposal distribution')
             dens_new = self.density(xp, rdn_meas,  geom)
-            # should we do a state vector "out of bounds" check?
-            if s.rand() <= min((dens_new / dens, 1.0)):
+
+            # Test vs. the Metropolis / Hastings criterion
+            if s.isfinite(dens_new) and \
+                    dens_new > 0 and \
+                    s.rand() <= min((dens_new / dens, 1.0)):
                 x = xp
                 dens = dens_new
+                acpts = acpts + 1
                 if self.verbose:
-                    print('%8.5f %8.5f ACCEPT' %
-                          (s.log(dens), s.log(dens_new)))
+                    print('%8.5e %8.5e ACCEPT! rate %4.2f' %
+                          (dens, dens_new, s.mean(acpts/(acpts+rejs))))
             else:
+                rejs = rejs + 1
                 if self.verbose:
-                    print('%8.5f %8.5f REJECT' %
-                          (s.log(dens), s.log(dens_new)))
+                    print('%8.5e %8.5e REJECT  rate %4.2f' %
+                          (dens, dens_new, s.mean(acpts/(acpts+rejs))))
+
+            # Make sure we have not wandered off the map
+            if not s.isfinite(dens_new) or dens_new < 0:
+                x = init.copy()
+                dens = self.density(x, rdn_meas,  geom)
             samples.append(x)
 
-        return s.array(samples)
+        return init.copy(), s.array(samples)
 
 
 if __name__ == '__main__':
