@@ -47,6 +47,7 @@ The code repository, development branches, and user community are found on
   python3 -m pip install scikit-learn
   python3 -m pip install spectral
   python3 -m pip install pytest 
+  python3 -m pip install pep8 
 
 3. Make sure the isofit/ and utils/ subdirectories are in your Python path like this:
 

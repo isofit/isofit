@@ -25,10 +25,12 @@ import argparse
 import scipy as s
 from spectral.io import envi
 from os.path import expandvars, split, abspath
+from scipy.io import savemat
 
 from common import expand_all_paths, spectrumLoad
 from forward import ForwardModel
 from inverse import Inversion
+from inverse_mcmc import MCMCInversion
 from geometry import Geometry
 from output import Output
 import cProfile
@@ -55,10 +57,19 @@ def main():
     configdir, f = split(abspath(args.config_file))
     config = expand_all_paths(config, configdir)
 
+    # Forward Model
     fm = ForwardModel(config['forward_model'])
-    iv = Inversion(config['inversion'], fm)
+
+    # Inversion method
+    if 'mcmc_inversion' in config:
+        iv = MCMCInversion(config['mcmc_inversion'], fm)
+    else:
+        iv = Inversion(config['inversion'], fm)
+
+    # Output object
     out = Output(config, iv)
 
+    # Simulation mode? Binary or text mode?
     simulation_mode = (not ('input' in config)) or \
         (not ('measured_radiance_file' in config['input']))
     text_mode = simulation_mode or \
@@ -101,11 +112,11 @@ def main():
 
         else:
 
-            # Invert instrument measurement
+            # Get radiance
             rdn_meas, wl = spectrumLoad(
                 config['input']['measured_radiance_file'])
             if radiance_correction is not None:
-              rdn_meas = rdn_meas * radiance_correction
+                rdn_meas = rdn_meas * radiance_correction
             rdn_sim = None
 
             if len(args.profile) > 0:
@@ -113,7 +124,20 @@ def main():
                                 globals(), locals())
                 sys.exit(0)
 
+            elif 'mcmc_inversion' in config:
+
+                # MCMC Sampler
+                samples = iv.invert(rdn_meas, geom, out=out)
+                if 'mcmc_samples_file' in config['output']:
+                    D = {'samples': samples}
+                    savemat(config['output']['mcmc_samples_file'], D)
+                state_est = samples.mean(axis=0)
+                rfl_est, rdn_est, path_est, S_hat, K, G =\
+                    iv.forward_uncertainty(state_est, rdn_meas, geom)
+
             else:
+
+                # Conjugate Gradient
                 state_est = iv.invert(rdn_meas, geom, out=out)
                 rfl_est, rdn_est, path_est, S_hat, K, G =\
                     iv.forward_uncertainty(state_est, rdn_meas, geom)
@@ -138,7 +162,7 @@ def main():
             fcor_mm = fcor.open_memmap(interleave='source',  writable=False)
             flatfield = s.array(fcor_mm[0, :, :])
         else:
-            flatfield = None 
+            flatfield = None
 
         if 'obs_file' in config['input']:
             obs_file = config['input']['obs_file']
@@ -376,9 +400,9 @@ def main():
                         loc_spectrum = None
 
                     if flatfield is not None:
-                      rdn_meas = rdn_meas * flatfield[:, pc]
+                        rdn_meas = rdn_meas * flatfield[:, pc]
                     if radiance_correction is not None:
-                      rdn_meas = rdn_meas * radiance_correction
+                        rdn_meas = rdn_meas * radiance_correction
                     geom = Geometry(obs_spectrum, glt_spectrum, loc_spectrum,
                                     pushbroom_column=pc)
 
@@ -391,7 +415,6 @@ def main():
                         state_est = iv.invert(rdn_meas, geom, None, init=init)
                         rfl_est, rdn_est, path_est, S_hat, K, G =\
                             iv.forward_uncertainty(state_est, rdn_meas, geom)
-                        #init = state_est.copy()
 
                     # write spectrum
                     state_surf = state_est[iv.fm.surface_inds]

@@ -100,8 +100,8 @@ def main():
             swl = s.array([float(f) for f in rfl.metadata['wavelength']])
 
             # import spectra and resample
-            spectra.extend(([interp1d(swl, x1, kind='linear',
-                                      bounds_error=False, fill_value='extrapolate')(wl) for x1 in x]))
+            spectra.extend(([interp1d(
+                swl, x1, kind='linear', bounds_error=False, fill_value='extrapolate')(wl) for x1 in x]))
 
         spectra = s.array(spectra)
         use = s.all(s.isfinite(spectra), axis=1)
