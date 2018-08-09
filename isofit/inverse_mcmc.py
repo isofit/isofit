@@ -57,7 +57,7 @@ class MCMCInversion(Inversion):
         maxeig = max(V)
         mineig = maxeig * 1e-6
         use = s.where(V > mineig)[0]
-        SaInv = (D[use, :].T).dot(s.diag(V[use])).dot(U[:, use].T)
+        SaInv = (D[use, :].T).dot(s.diag(1.0/V[use])).dot(U[:, use].T)
         SaDet = s.prod(V[use])
 
         # Probability density of prior

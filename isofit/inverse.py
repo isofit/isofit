@@ -20,9 +20,9 @@
 
 import sys
 import scipy as s
-from common import spectrumLoad, chol_inv, eps
+from common import spectrumLoad, svd_inv, eps
 import scipy.optimize
-from scipy.linalg import inv, norm, sqrtm, det, cholesky, qr
+from scipy.linalg import inv, norm, sqrtm, det, cholesky, qr, svd
 from hashlib import md5
 
 
@@ -54,7 +54,7 @@ class Inversion:
 
         xa = self.fm.xa(x, geom)
         Sa = self.fm.Sa(x, geom)
-        Sa_inv = s.real(chol_inv(Sa))
+        Sa_inv = s.real(svd_inv(Sa))
         Sa_inv_sqrt = s.real(sqrtm(Sa_inv))
         return xa, Sa, Sa_inv, Sa_inv_sqrt
 
@@ -64,11 +64,11 @@ class Inversion:
 
         xa = self.fm.xa(x, geom)
         Sa = self.fm.Sa(x, geom)
-        Sa_inv = chol_inv(Sa)
+        Sa_inv = svd_inv(Sa)
         K = self.fm.K(x, geom)
         Seps = self.fm.Seps(rdn_meas, geom, init=x)
-        Seps_inv = chol_inv(Seps)
-        S_hat = chol_inv(K.T.dot(Seps_inv).dot(K) + Sa_inv)
+        Seps_inv = svd_inv(Seps)
+        S_hat = svd_inv(K.T.dot(Seps_inv).dot(K) + Sa_inv)
         G = S_hat.dot(K.T).dot(Seps_inv)
         return S_hat, K, G
 
@@ -80,7 +80,7 @@ class Inversion:
 
         Seps = self.fm.Seps(rdn_meas, geom, init=init)
         Seps = s.array([Seps[i, self.winidx] for i in self.winidx])
-        Seps_inv = s.real(chol_inv(Seps))
+        Seps_inv = s.real(svd_inv(Seps))
         Seps_inv_sqrt = s.real(sqrtm(Seps_inv))
         return Seps_inv, Seps_inv_sqrt
 
