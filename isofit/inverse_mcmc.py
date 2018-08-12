@@ -44,37 +44,40 @@ class MCMCInversion(Inversion):
             else:
                 setattr(self, key, val)
 
-    def density(self, x, rdn_meas,  geom):
-        """Probability density combines prior and likelihood terms"""
 
-        # Prior distribution
-        Sa = self.fm.Sa(x, geom)
-        xa = self.fm.xa(x, geom)
+    def stable_mvnpdf(self, mean, cov, x):
 
         # Stable inverse via Singular Value Decomposition, using only the
         # significant eigenvectors
-        U, V, D = svd(Sa)
-        maxeig = max(V)
-        mineig = maxeig * 1e-6
-        use = s.where(V > mineig)[0]
-        SaInv = (D[use, :].T).dot(s.diag(1.0/V[use])).dot(U[:, use].T)
-        SaDet = s.prod(V[use])
+        U, V, D = svd(cov)
+        use = s.where(V > 0)[0]
+        Cinv = (D[use, :].T).dot(s.diag(1.0/V[use])).dot(U[:, use].T)
+        logCdet = s.sum(s.log(2.0 * s.pi * V[use]))
 
-        # Probability density of prior
-        z = s.sqrt(SaDet * 2.0 * s.pi)
-        pa = z * ((x-xa)[s.newaxis, :]).dot(SaInv).dot((x-xa)[:, s.newaxis])
+        # Multivariate Gaussian PDF
+        lead = -0.5 * logCdet
+        dist = (x-mean)[:,s.newaxis]
+        diverg = -0.5 * (dist.T).dot(Cinv).dot(dist)
+        return lead + diverg 
 
-        # Probability density of measurement noise distribution
-        # i.e. the likelihood
-        Seps = self.fm.Seps(rdn_meas, geom)
+
+    def log_density(self, x, rdn_meas,  geom):
+        """Log probability density combines prior and likelihood terms"""
+
+        # Prior term
+        Sa = self.fm.Sa(x, geom)
+        xa = self.fm.xa(x, geom)
+        pa = self.stable_mvnpdf(xa, Sa, x)
+
+        # Data likelihood term
+        Seps     = self.fm.Seps(rdn_meas, geom)
         Seps_win = s.array([Seps[i, self.winidx] for i in self.winidx])
-        est_rdn = self.fm.calc_rdn(x, geom, rfl=None, Ls=None)
-        pm = multivariate_normal(mean=rdn_meas[self.winidx], cov=Seps_win)
+        rdn_est  = self.fm.calc_rdn(x, geom, rfl=None, Ls=None)
+        pm       = self.stable_mvnpdf(rdn_est[self.winidx], Seps_win, 
+                    rdn_meas[self.winidx])
+        return pa+pm
 
-        # Complete posterior density is proportional to prior term times
-        # the likelihood term
-        return pa * pm.pdf(est_rdn[self.winidx])
-
+        
     def invert(self, rdn_meas, geom, out=None, init=None):
         """Inverts a meaurement. Returns an array of state vector samples.
            Similar to Inversion.invert() but returns a list of samples."""
@@ -82,7 +85,7 @@ class MCMCInversion(Inversion):
         # Initialize to conjugate gradient solution
         init = Inversion.invert(self, rdn_meas, geom, out, init)
         x = init.copy()
-        dens = self.density(x, rdn_meas,  geom)
+        dens = self.log_density(x, rdn_meas,  geom)
 
         # Proposal is based on the posterior uncertainty
         # We truncate non-surface parameters to their bounds
@@ -103,12 +106,11 @@ class MCMCInversion(Inversion):
                 if count > max_tries:
                     raise RuntimeError(
                         'Could not generate proposal distribution')
-            dens_new = self.density(xp, rdn_meas,  geom)
+            dens_new = self.log_density(xp, rdn_meas,  geom)
 
             # Test vs. the Metropolis / Hastings criterion
-            if s.isfinite(dens_new) and \
-                    dens_new > 0 and \
-                    s.rand() <= min((dens_new / dens, 1.0)):
+            if s.isfinite(dens_new) and\
+                s.log(s.rand()) <= min((dens_new - dens, 0.0)):
                 x = xp
                 dens = dens_new
                 acpts = acpts + 1
@@ -122,9 +124,9 @@ class MCMCInversion(Inversion):
                           (dens, dens_new, s.mean(acpts/(acpts+rejs))))
 
             # Make sure we have not wandered off the map
-            if not s.isfinite(dens_new) or dens_new < 0:
+            if not s.isfinite(dens_new): 
                 x = init.copy()
-                dens = self.density(x, rdn_meas,  geom)
+                dens = self.log_density(x, rdn_meas,  geom)
             samples.append(x)
 
         return init.copy(), s.array(samples)
