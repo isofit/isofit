@@ -44,7 +44,6 @@ class MCMCInversion(Inversion):
             else:
                 setattr(self, key, val)
 
-
     def stable_mvnpdf(self, mean, cov, x):
 
         # Stable inverse via Singular Value Decomposition, using only the
@@ -56,10 +55,9 @@ class MCMCInversion(Inversion):
 
         # Multivariate Gaussian PDF
         lead = -0.5 * logCdet
-        dist = (x-mean)[:,s.newaxis]
+        dist = (x-mean)[:, s.newaxis]
         diverg = -0.5 * (dist.T).dot(Cinv).dot(dist)
-        return lead + diverg 
-
+        return lead + diverg
 
     def log_density(self, x, rdn_meas,  geom):
         """Log probability density combines prior and likelihood terms"""
@@ -70,14 +68,13 @@ class MCMCInversion(Inversion):
         pa = self.stable_mvnpdf(xa, Sa, x)
 
         # Data likelihood term
-        Seps     = self.fm.Seps(rdn_meas, geom)
+        Seps = self.fm.Seps(rdn_meas, geom)
         Seps_win = s.array([Seps[i, self.winidx] for i in self.winidx])
-        rdn_est  = self.fm.calc_rdn(x, geom, rfl=None, Ls=None)
-        pm       = self.stable_mvnpdf(rdn_est[self.winidx], Seps_win, 
-                    rdn_meas[self.winidx])
+        rdn_est = self.fm.calc_rdn(x, geom, rfl=None, Ls=None)
+        pm = self.stable_mvnpdf(rdn_est[self.winidx], Seps_win,
+                                rdn_meas[self.winidx])
         return pa+pm
 
-        
     def invert(self, rdn_meas, geom, out=None, init=None):
         """Inverts a meaurement. Returns an array of state vector samples.
            Similar to Inversion.invert() but returns a list of samples."""
@@ -110,7 +107,7 @@ class MCMCInversion(Inversion):
 
             # Test vs. the Metropolis / Hastings criterion
             if s.isfinite(dens_new) and\
-                s.log(s.rand()) <= min((dens_new - dens, 0.0)):
+                    s.log(s.rand()) <= min((dens_new - dens, 0.0)):
                 x = xp
                 dens = dens_new
                 acpts = acpts + 1
@@ -124,7 +121,7 @@ class MCMCInversion(Inversion):
                           (dens, dens_new, s.mean(acpts/(acpts+rejs))))
 
             # Make sure we have not wandered off the map
-            if not s.isfinite(dens_new): 
+            if not s.isfinite(dens_new):
                 x = init.copy()
                 dens = self.log_density(x, rdn_meas,  geom)
             samples.append(x)

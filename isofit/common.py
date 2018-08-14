@@ -38,7 +38,7 @@ binary_table = [s.array([[]]),
                              1, 0, 1, 0], [1, 0, 1, 1],
                          [1, 1, 0, 0], [1, 1, 0, 1], [1, 1, 1, 0], [1, 1, 1, 1]])]
 
-eps    = 1e-5  # small value used in finite difference derivatives
+eps = 1e-5  # small value used in finite difference derivatives
 
 
 def emissive_radiance_old(emissivity, T, wl):
