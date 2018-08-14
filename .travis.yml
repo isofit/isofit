@@ -8,5 +8,6 @@ install:
   - pip install scikit-learn
   - pip install spectral
   - pip install pytest 
+  - pip install pep8
 script:
   - pytest

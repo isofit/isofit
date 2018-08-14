@@ -23,7 +23,7 @@ import scipy as s
 from common import spectrumLoad, chol_inv, eps
 from inverse import Inversion
 import scipy.optimize
-from scipy.linalg import inv, norm, sqrtm, det, cholesky, qr
+from scipy.linalg import inv, norm, sqrtm, det, cholesky, qr, svd
 from scipy.stats import multivariate_normal
 from hashlib import md5
 
@@ -44,22 +44,36 @@ class MCMCInversion(Inversion):
             else:
                 setattr(self, key, val)
 
-    def density(self, x, rdn_meas,  geom):
-        """Probability density combines prior and likelihood terms"""
+    def stable_mvnpdf(self, mean, cov, x):
 
-        # Prior distribution
+        # Stable inverse via Singular Value Decomposition, using only the
+        # significant eigenvectors
+        U, V, D = svd(cov)
+        use = s.where(V > 0)[0]
+        Cinv = (D[use, :].T).dot(s.diag(1.0/V[use])).dot(U[:, use].T)
+        logCdet = s.sum(s.log(2.0 * s.pi * V[use]))
+
+        # Multivariate Gaussian PDF
+        lead = -0.5 * logCdet
+        dist = (x-mean)[:, s.newaxis]
+        diverg = -0.5 * (dist.T).dot(Cinv).dot(dist)
+        return lead + diverg
+
+    def log_density(self, x, rdn_meas,  geom):
+        """Log probability density combines prior and likelihood terms"""
+
+        # Prior term
         Sa = self.fm.Sa(x, geom)
         xa = self.fm.xa(x, geom)
-        Sa = Sa + s.eye(Sa.shape[0]) * self.regularizer
-        pa = multivariate_normal(mean=xa, cov=Sa)
+        pa = self.stable_mvnpdf(xa, Sa, x)
 
-        # Measurement error distribution
+        # Data likelihood term
         Seps = self.fm.Seps(rdn_meas, geom)
         Seps_win = s.array([Seps[i, self.winidx] for i in self.winidx])
-        est_rdn = self.fm.calc_rdn(x, geom, rfl=None, Ls=None)
-        pm = multivariate_normal(mean=rdn_meas[self.winidx], cov=Seps_win)
-
-        return pa.pdf(x) * pm.pdf(est_rdn[self.winidx])
+        rdn_est = self.fm.calc_rdn(x, geom, rfl=None, Ls=None)
+        pm = self.stable_mvnpdf(rdn_est[self.winidx], Seps_win,
+                                rdn_meas[self.winidx])
+        return pa+pm
 
     def invert(self, rdn_meas, geom, out=None, init=None):
         """Inverts a meaurement. Returns an array of state vector samples.
@@ -68,32 +82,51 @@ class MCMCInversion(Inversion):
         # Initialize to conjugate gradient solution
         init = Inversion.invert(self, rdn_meas, geom, out, init)
         x = init.copy()
-        dens = self.density(x, rdn_meas,  geom)
+        dens = self.log_density(x, rdn_meas,  geom)
 
         # Proposal is based on the posterior uncertainty
+        # We truncate non-surface parameters to their bounds
+        bounds = s.array([self.fm.bounds[0].copy(), self.fm.bounds[1].copy()])
+        bounds[:, self.fm.surface_inds] = s.array([[-s.inf], [s.inf]])
         S_hat, K, G = self.calc_posterior(x, geom, rdn_meas)
         proposal_Cov = S_hat * self.proposal_scaling
         proposal = multivariate_normal(cov=proposal_Cov)
 
         # Sample from the posterior using Metropolis/Hastings MCMC
-        samples = []
+        samples, acpts, rejs = [], 0, 0
         for i in range(self.iterations):
-            xp = x + proposal.rvs()
-            dens_new = self.density(xp, rdn_meas,  geom)
-            # should we do a state vector "out of bounds" check?
-            if s.rand() <= min((dens_new / dens, 1.0)):
+            xp = s.ones(x.shape) * s.inf
+            max_tries, count = 10000, 0
+            while any(xp < bounds[0, :]) or any(xp > bounds[1, :]):
+                xp = x + proposal.rvs()
+                count = count + 1
+                if count > max_tries:
+                    raise RuntimeError(
+                        'Could not generate proposal distribution')
+            dens_new = self.log_density(xp, rdn_meas,  geom)
+
+            # Test vs. the Metropolis / Hastings criterion
+            if s.isfinite(dens_new) and\
+                    s.log(s.rand()) <= min((dens_new - dens, 0.0)):
                 x = xp
                 dens = dens_new
+                acpts = acpts + 1
                 if self.verbose:
-                    print('%8.5f %8.5f ACCEPT' %
-                          (s.log(dens), s.log(dens_new)))
+                    print('%8.5e %8.5e ACCEPT! rate %4.2f' %
+                          (dens, dens_new, s.mean(acpts/(acpts+rejs))))
             else:
+                rejs = rejs + 1
                 if self.verbose:
-                    print('%8.5f %8.5f REJECT' %
-                          (s.log(dens), s.log(dens_new)))
+                    print('%8.5e %8.5e REJECT  rate %4.2f' %
+                          (dens, dens_new, s.mean(acpts/(acpts+rejs))))
+
+            # Make sure we have not wandered off the map
+            if not s.isfinite(dens_new):
+                x = init.copy()
+                dens = self.log_density(x, rdn_meas,  geom)
             samples.append(x)
 
-        return s.array(samples)
+        return init.copy(), s.array(samples)
 
 
 if __name__ == '__main__':

@@ -20,8 +20,8 @@
 
 import scipy as s
 from scipy.io import loadmat, savemat
-from common import recursive_replace, emissive_radiance, chol_inv, eps
-from scipy.linalg import block_diag, det, norm, pinv, sqrtm, inv, cholesky
+from common import recursive_replace, emissive_radiance, svd_inv, eps
+from scipy.linalg import block_diag, det, norm, pinv, sqrtm, inv
 from surf import Surface
 
 
@@ -72,7 +72,7 @@ class MultiComponentSurface(Surface):
             Cov = self.components[i][1]
             self.Covs.append(s.array([Cov[j, self.refidx]
                                       for j in self.refidx]))
-            self.Cinvs.append(chol_inv(self.Covs[-1]))
+            self.Cinvs.append(svd_inv(self.Covs[-1]))
             self.mus.append(self.components[i][0][self.refidx])
 
         # Variables retrieved: each channel maps to a reflectance model parameter

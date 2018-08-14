@@ -127,11 +127,10 @@ def main():
             elif 'mcmc_inversion' in config:
 
                 # MCMC Sampler
-                samples = iv.invert(rdn_meas, geom, out=out)
+                state_est, samples = iv.invert(rdn_meas, geom, out=out)
                 if 'mcmc_samples_file' in config['output']:
                     D = {'samples': samples}
                     savemat(config['output']['mcmc_samples_file'], D)
-                state_est = samples.mean(axis=0)
                 rfl_est, rdn_est, path_est, S_hat, K, G =\
                     iv.forward_uncertainty(state_est, rdn_meas, geom)
 

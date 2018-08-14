@@ -1,7 +1,7 @@
-Release Notes (version 0.3.0)
+Release Notes (version 0.3.1)
 =============================
 
-*August 4, 2018*
+*August 14, 2018*
 
 We are very excited to share this release of ISOFIT with the community!
 
@@ -9,7 +9,7 @@ The routines and utilities in this codebase fit surface, atmosphere and instrume
 
 The project is undergoing rapid development, and we are providing an early release with the understanding that there will be many changes and improvements in the near future. 
 
-Release 0.3.0 includes a Markov Chain Monte Carlo (MCMC) inversion method to sample directly from the posterior.  This functionality should be considered highly experimental! It also contains minor improvements:
+Release 0.3 includes a Markov Chain Monte Carlo (MCMC) inversion method to sample directly from the posterior.  This functionality should be considered highly experimental! It also contains minor improvements:
 
 * Better aerosol parameterization 
 * PEP8 style compliance unit tests

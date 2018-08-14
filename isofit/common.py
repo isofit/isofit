@@ -23,7 +23,7 @@ import json
 import scipy as s
 from scipy.interpolate import RegularGridInterpolator
 from os.path import expandvars
-from scipy.linalg import cholesky, inv, det
+from scipy.linalg import cholesky, inv, det, svd
 from numba import jit
 
 binary_table = [s.array([[]]),
@@ -38,7 +38,7 @@ binary_table = [s.array([[]]),
                              1, 0, 1, 0], [1, 0, 1, 1],
                          [1, 1, 0, 0], [1, 1, 0, 1], [1, 1, 1, 0], [1, 1, 1, 1]])]
 
-eps = 1e-5  # used in finite difference
+eps = 1e-5  # small value used in finite difference derivatives
 
 
 def emissive_radiance_old(emissivity, T, wl):
@@ -92,6 +92,17 @@ def chol_inv(C):
     R = cholesky(C, lower=False)
     S = inv(R)
     return S.dot(S.T)
+
+
+@jit
+def svd_inv(C, mineig=0):
+    """Fast stable inverse using SVD.  This can handle near-singular matrices"""
+
+    U, V, D = svd(C)
+    ignore = s.where(V < mineig)[0]
+    Vi = 1.0 / V
+    Vi[ignore] = 0
+    return (D.T).dot(s.diag(Vi)).dot(U.T)
 
 
 def expand_path(directory, subpath):
