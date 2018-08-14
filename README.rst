@@ -23,7 +23,7 @@ The subdirectories contain:
 If you use ISOFIT in your research or production, we ask that you cite the 
 precursor publication:
 
-  David R. Thompson, Vijay Natraj, Robert O. Green, Mark C. Helmlinger, Bo-Cai Gao, and Michael L. Eastwood, (2018). “Optimal Estimation for Imaging Spectrometer Atmospheric Correction.” *Remote Sensing of Environment*, in press.
+  Thompson, David R., Vijay Natraj, Robert O. Green, Mark C. Helmlinger, Bo-Cai Gao, and Michael L. Eastwood. "Optimal estimation for imaging spectrometer atmospheric correction." Remote Sensing of Environment 216 (2018): 355-373. 
 
 
 Installation Instructions
