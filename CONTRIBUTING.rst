@@ -139,6 +139,60 @@ Major changes include:
  
 These are accepted through consensus of a quorum of maintainers.  **If you would like to include any new algorithms or examples, we highly recommend that they are supported by peer reviewed scientific research.**
 
+Release Steps (for Maintainers)
+-------------------------------
+
+Get latest public repo:
+
+.. code::
+
+  git clone https://github.com/isofit/isofit.git
+  cd isofit
+
+Create release branch and pull in changes from pull request:
+
+.. code::
+
+  git checkout -b release-0.3.0 master
+  git pull https://github.com/davidraythompson/isofit.git feature-branch  (NOTE: this is the pull request branch)
+
+Merge release branch into master:
+
+.. code::
+
+  git checkout master
+  git merge --no-ff release-0.3.0
+
+Update version number and release notes:
+
+.. code::
+
+  vi setup.py
+  vi docs/release_notes.rst
+
+Rebuild html docs:
+
+.. code::
+
+  rm -rf docs/html
+  make -C docs html
+  cp -pr docs/_build/html docs/html
+
+Commit and push changes to master:
+
+.. code::
+
+  git add -A
+  git commit -m “Version 0.3.0 prepped and released."
+  git push origin master
+
+Create and upload Pypi distribution:
+
+.. code::
+
+  python3 setup.py sdist bdist_wheel
+  twine upload --repository-url https://upload.pypi.org/legacy/ dist/*
+
 Contributors
 ------------
 
