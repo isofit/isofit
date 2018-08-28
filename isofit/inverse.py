@@ -20,15 +20,15 @@
 
 import sys
 import scipy as s
-from common import spectrumLoad, svd_inv, eps
+from common import spectrumLoad, svd_inv, svd_inv_sqrt, eps
+from collections import OrderedDict
 import scipy.optimize
-from scipy.linalg import inv, norm, sqrtm, det, cholesky, qr, svd
+import xxhash
+from scipy.linalg import inv, norm, det, cholesky, qr, svd
 from hashlib import md5
+from numba import jit
 
-
-debug = False
 error_code = -1
-check = md5()  # md5.new()
 
 
 class Inversion:
@@ -38,6 +38,8 @@ class Inversion:
         measurement cost distributions"""
         self.fm = forward
         self.wl = self.fm.wl
+        self.ht = OrderedDict()  # Hash table
+        self.max_table_size = 500
         self.windows = config['windows']
         self.winidx = s.array((), dtype=int)  # indices of retrieval windows
         inds = range(len(self.wl))
@@ -47,6 +49,7 @@ class Inversion:
         self.counts = 0
         self.inversions = 0
 
+    @jit
     def calc_prior(self, x, geom):
         """Calculate prior distribution of radiance.  This depends on the 
         location in the state space.  Return the inverse covariance and 
@@ -54,24 +57,35 @@ class Inversion:
 
         xa = self.fm.xa(x, geom)
         Sa = self.fm.Sa(x, geom)
-        Sa_inv = s.real(svd_inv(Sa))
-        Sa_inv_sqrt = s.real(sqrtm(Sa_inv))
+        Sa_inv, Sa_inv_sqrt = svd_inv_sqrt(Sa, hashtable=self.ht)
+
+        # Reduce the hash table, if needed
+        while len(self.ht) > self.max_table_size:
+            self.ht.popitem(last=False)
+
         return xa, Sa, Sa_inv, Sa_inv_sqrt
 
+    @jit
     def calc_posterior(self, x, geom, rdn_meas):
         """Calculate posterior distribution of state vector. This depends 
         both on the location in the state space and the radiance (via noise)."""
 
         xa = self.fm.xa(x, geom)
         Sa = self.fm.Sa(x, geom)
-        Sa_inv = svd_inv(Sa)
+        Sa_inv = svd_inv(Sa, hashtable=self.ht)
         K = self.fm.K(x, geom)
         Seps = self.fm.Seps(rdn_meas, geom, init=x)
-        Seps_inv = svd_inv(Seps)
-        S_hat = svd_inv(K.T.dot(Seps_inv).dot(K) + Sa_inv)
+        Seps_inv = svd_inv(Seps, hashtable=self.ht)
+        S_hat = svd_inv(K.T.dot(Seps_inv).dot(K) + Sa_inv, hashtable=self.ht)
         G = S_hat.dot(K.T).dot(Seps_inv)
+
+        # Reduce the hash table, if needed
+        while len(self.ht) > self.max_table_size:
+            self.ht.popitem(last=False)
+
         return S_hat, K, G
 
+    @jit
     def calc_Seps(self, rdn_meas, geom, init=None):
         """Calculate (zero-mean) measurement distribution in radiance terms.  
         This depends on the location in the state space. This distribution is 
@@ -79,9 +93,16 @@ class Inversion:
         inverse covariance and its square root"""
 
         Seps = self.fm.Seps(rdn_meas, geom, init=init)
-        Seps = s.array([Seps[i, self.winidx] for i in self.winidx])
-        Seps_inv = s.real(svd_inv(Seps))
-        Seps_inv_sqrt = s.real(sqrtm(Seps_inv))
+        wn = len(self.winidx)
+        Seps_win = s.zeros((wn, wn))
+        for i in range(wn):
+            Seps_win[i, :] = Seps[self.winidx[i], self.winidx]
+        Seps_inv, Seps_inv_sqrt = svd_inv_sqrt(Seps_win, hashtable=self.ht)
+
+        # Reduce the hash table, if needed
+        while len(self.ht) > self.max_table_size:
+            self.ht.popitem(last=False)
+
         return Seps_inv, Seps_inv_sqrt
 
     def invert(self, rdn_meas, geom, out=None, init=None):
@@ -117,6 +138,7 @@ class Inversion:
     on the initial solution (a potential minor source of inaccuracy)"""
         Seps_inv, Seps_inv_sqrt = self.calc_Seps(rdn_meas, geom, init=init)
 
+        @jit
         def jac(x):
             """Calculate measurement jacobian and prior jacobians with 
             respect to COST function.  This is the derivative of cost with
@@ -126,10 +148,6 @@ class Inversion:
             It is the square root of the Rodgers et. al Chi square version.
             All measurement distributions are calculated over subwindows 
             of the full spectrum."""
-
-            if debug:
-                check.update(x)
-                print("JAC #1: ", check.hexdigest())
 
             # jacobian of measurment cost term WRT state vector.
             K = self.fm.K(x, geom)[self.winidx, :]
@@ -145,10 +163,6 @@ class Inversion:
             # the solver.
             total_jac = s.concatenate((meas_jac, prior_jac), axis=0)
 
-            if debug:
-                check.update(s.real(total_jac))
-                print("JAC #2: ", check.hexdigest())
-
             return s.real(total_jac)
 
         def err(x):
@@ -158,10 +172,6 @@ class Inversion:
             due to measurment and prior terms, suitably scaled.
             All measurement distributions are calculated over subwindows 
             of the full spectrum."""
-
-            if debug:
-                check.update(x)
-                print("ERR #1: ", check.hexdigest())
 
             # Measurement cost term.  Will calculate reflectance and Ls from
             # the state vector.
@@ -186,10 +196,6 @@ class Inversion:
             # Plot interim solution?
             if out is not None:
                 out.plot_spectrum(x, rdn_meas, geom)
-
-            if debug:
-                check.update(s.real(total_resid))
-                print("ERR #2: ", check.hexdigest())
 
             return s.real(total_resid)
 

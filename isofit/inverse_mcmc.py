@@ -95,6 +95,7 @@ class MCMCInversion(Inversion):
         # Sample from the posterior using Metropolis/Hastings MCMC
         samples, acpts, rejs = [], 0, 0
         for i in range(self.iterations):
+
             xp = s.ones(x.shape) * s.inf
             max_tries, count = 10000, 0
             while any(xp < bounds[0, :]) or any(xp > bounds[1, :]):

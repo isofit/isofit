@@ -20,7 +20,9 @@
 
 import os
 import json
+import xxhash
 import scipy as s
+from collections import OrderedDict
 from scipy.interpolate import RegularGridInterpolator
 from os.path import expandvars
 from scipy.linalg import cholesky, inv, det, svd
@@ -95,14 +97,32 @@ def chol_inv(C):
 
 
 @jit
-def svd_inv(C, mineig=0):
+def svd_inv(C, mineig=0, hashtable=None):
     """Fast stable inverse using SVD.  This can handle near-singular matrices"""
 
+    return svd_inv_sqrt(C, mineig, hashtable)[0]
+
+
+@jit
+def svd_inv_sqrt(C, mineig=0, hashtable=None):
+    """Fast stable inverse using SVD. This can handle near-singular matrices.
+       Also return the square root."""
+
+    h = None
+    if hashtable is not None:
+        h = xxhash.xxh64_digest(C)
+        if h in hashtable:
+            return hashtable[h]
     U, V, D = svd(C)
     ignore = s.where(V < mineig)[0]
     Vi = 1.0 / V
     Vi[ignore] = 0
-    return (D.T).dot(s.diag(Vi)).dot(U.T)
+    Visqrt = s.sqrt(Vi)
+    Cinv = (D.T).dot(s.diag(Vi)).dot(U.T)
+    Cinv_sqrt = (D.T).dot(s.diag(Visqrt)).dot(U.T)
+    if hashtable is not None:
+        hashtable[h] = (Cinv, Cinv_sqrt)
+    return Cinv, Cinv_sqrt
 
 
 def expand_path(directory, subpath):
@@ -286,6 +306,7 @@ class VectorInterpolatorJIT:
         self.grid = [i.copy() for i in grid]
         self.data = data.copy()
 
+    @jit
     def __call__(self, point):
         return jitinterp(self.in_d, self.out_d, self.grid, self.data, point)
 
