@@ -9,6 +9,6 @@ install:
   - pip install spectral
   - pip install pytest 
   - pip install pep8
-  - pip install hashxx
+  - pip install xxhash
 script:
   - pytest
