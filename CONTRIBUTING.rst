@@ -156,13 +156,6 @@ Create release branch and pull in changes from pull request:
   git checkout -b release-0.3.0 master
   git pull https://github.com/davidraythompson/isofit.git feature-branch  (NOTE: this is the pull request branch)
 
-Merge release branch into master:
-
-.. code::
-
-  git checkout master
-  git merge --no-ff release-0.3.0
-
 Update version number and release notes:
 
 .. code::
@@ -178,12 +171,19 @@ Rebuild html docs:
   make -C docs html
   cp -pr docs/_build/html docs/html
 
-Commit and push changes to master:
+Commit changes to release branch:
 
 .. code::
 
   git add -A
-  git commit -m “Version 0.3.0 prepped and released."
+  git commit -m “Version 0.3.0 prepped for release."
+  
+Merge release branch into master:
+
+.. code::
+
+  git checkout master
+  git merge --no-ff release-0.3.0
   git push origin master
 
 Create and upload Pypi distribution:

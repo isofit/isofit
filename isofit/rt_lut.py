@@ -302,37 +302,41 @@ class TabularRT:
         """Jacobian of radiance with respect to NOT RETRIEVED RT and surface 
            state.  Right now, this is just the sky view factor."""
 
-        # first the radiance at the current state vector
-        rhoatm, sphalb, transm, transup = self.get(x_RT, geom)
-        rho = rhoatm + transm * rfl / (1.0 - sphalb * rfl)
-        rdn = rho/s.pi*(self.solar_irr*self.coszen) + (Ls * transup)
-
-        # perturb the sky view
-        Kb_RT = []
-        perturb = (1.0+eps)
-        for unknown in self.bvec:
-
-            if unknown == 'Skyview':
-                rhoe = rhoatm + transm * rfl / (1.0 - sphalb * rfl * perturb)
-                rdne = rhoe/s.pi*(self.solar_irr*self.coszen)
-                Kb_RT.append((rdne-rdn) / eps)
-
-            elif unknown == 'H2O_ABSCO' and 'H2OSTR' in self.statevec:
-                # first the radiance at the current state vector
-                rhoatm, sphalb, transm, transup = self.get(x_RT, geom)
-                rho = rhoatm + transm * rfl / (1.0 - sphalb * rfl)
-                rdn = rho/s.pi*(self.solar_irr*self.coszen) + (Ls * transup)
-                i = self.statevec.index('H2OSTR')
-                x_RT_perturb = x_RT.copy()
-                x_RT_perturb[i] = x_RT[i] * perturb
-                rhoatme, sphalbe, transme, transupe = self.get(
-                    x_RT_perturb, geom)
-                rhoe = rhoatme + transme * rfl / (1.0 - sphalbe * rfl)
-                rdne = rhoe/s.pi*(self.solar_irr*self.coszen) + (Ls * transup)
-                Kb_RT.append((rdne-rdn) / eps)
-
-        if len(Kb_RT) == 0:
+        if len(self.bvec) == 0:
             Kb_RT = s.zeros((1, len(self.wl.shape)))
+
+        else:
+            # first the radiance at the current state vector
+            rhoatm, sphalb, transm, transup = self.get(x_RT, geom)
+            rho = rhoatm + transm * rfl / (1.0 - sphalb * rfl)
+            rdn = rho/s.pi*(self.solar_irr*self.coszen) + (Ls * transup)
+
+            # perturb the sky view
+            Kb_RT = []
+            perturb = (1.0+eps)
+            for unknown in self.bvec:
+
+                if unknown == 'Skyview':
+                    rhoe = rhoatm + transm * rfl / (1.0 - sphalb * rfl *
+                                                    perturb)
+                    rdne = rhoe/s.pi*(self.solar_irr*self.coszen)
+                    Kb_RT.append((rdne-rdn) / eps)
+
+                elif unknown == 'H2O_ABSCO' and 'H2OSTR' in self.statevec:
+                    # first the radiance at the current state vector
+                    rhoatm, sphalb, transm, transup = self.get(x_RT, geom)
+                    rho = rhoatm + transm * rfl / (1.0 - sphalb * rfl)
+                    rdn = rho/s.pi*(self.solar_irr*self.coszen) + (Ls *
+                                                                   transup)
+                    i = self.statevec.index('H2OSTR')
+                    x_RT_perturb = x_RT.copy()
+                    x_RT_perturb[i] = x_RT[i] * perturb
+                    rhoatme, sphalbe, transme, transupe = self.get(
+                        x_RT_perturb, geom)
+                    rhoe = rhoatme + transme * rfl / (1.0 - sphalbe * rfl)
+                    rdne = rhoe/s.pi*(self.solar_irr*self.coszen) + (Ls *
+                                                                     transup)
+                    Kb_RT.append((rdne-rdn) / eps)
 
         Kb_RT = s.array(Kb_RT).T
         return Kb_RT

@@ -27,7 +27,7 @@ with open('README.rst', 'r') as f:
 lic = 'Apache Software License (http://www.apache.org/licenses/LICENSE-2.0)'
 
 setup(name='isofit',
-    version='0.3.1',
+    version='0.4.0',
     url='http://github.com/davidraythompson/isofit/',
     license=lic,
     author='David R. Thompson, Winston Olson-Duvall, and Team',
@@ -42,7 +42,8 @@ setup(name='isofit',
                       'scikit-learn>=0.19.1',
                       'spectral>=0.19',
                       'pytest>=3.5.1',
-                      'pep8>=1.7.1'],
+                      'pep8>=1.7.1',
+                      'xxhash>=1.2.0'],
     python_requires='>=3',
     platforms='any',
     classifiers=['Programming Language :: Python :: 3',
