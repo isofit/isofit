@@ -34,9 +34,9 @@ class MCMCInversion(Inversion):
         """Initialize and apply defaults"""
         Inversion.__init__(self, config, forward)
 
-        defaults = {'iterations': 10000, 'burnin': 2000,
+        defaults = {'iterations': 10000, 'burnin': 200,
                     'regularizer': 1e-3, 'proposal_scaling': 0.01,
-                    'verbose': True}
+                    'verbose': True, 'restart_every':2000}
 
         for key, val in defaults.items():
             if key in config:
@@ -59,8 +59,12 @@ class MCMCInversion(Inversion):
         diverg = -0.5 * (dist.T).dot(Cinv).dot(dist)
         return lead + diverg
 
-    def log_density(self, x, rdn_meas,  geom):
+    def log_density(self, x, rdn_meas, geom, bounds):
         """Log probability density combines prior and likelihood terms"""
+
+        # First check bounds
+        if bounds is not None and any(s.logical_or(x<bounds[0], x>bounds[1])):
+             return -s.Inf
 
         # Prior term
         Sa = self.fm.Sa(x, geom)
@@ -79,32 +83,48 @@ class MCMCInversion(Inversion):
         """Inverts a meaurement. Returns an array of state vector samples.
            Similar to Inversion.invert() but returns a list of samples."""
 
-        # Initialize to conjugate gradient solution
-        init = Inversion.invert(self, rdn_meas, geom, out, init)
-        x = init.copy()
-        dens = self.log_density(x, rdn_meas,  geom)
-
-        # Proposal is based on the posterior uncertainty
-        # We truncate non-surface parameters to their bounds
+        # We will truncate non-surface parameters to their bounds, but leave
+        # Surface reflectance unconstrained so it can dip slightly below zero
+        # in a channel without invalidating the whole vector
         bounds = s.array([self.fm.bounds[0].copy(), self.fm.bounds[1].copy()])
         bounds[:, self.fm.surface_inds] = s.array([[-s.inf], [s.inf]])
-        S_hat, K, G = self.calc_posterior(x, geom, rdn_meas)
+
+        # Initialize to conjugate gradient solution
+        x_MAP = Inversion.invert(self, rdn_meas, geom, out, init)
+
+        # Proposal is based on the posterior uncertainty
+        S_hat, K, G = self.calc_posterior(x_MAP, geom, rdn_meas)
         proposal_Cov = S_hat * self.proposal_scaling
         proposal = multivariate_normal(cov=proposal_Cov)
 
+        # We will use this routine for initializing
+        def initialize():
+            x = multivariate_normal(mean=x_MAP, cov=S_hat).rvs()
+            too_low = x<bounds[0]
+            x[too_low] = bounds[0][too_low]+eps
+            too_high = x>bounds[1]
+            x[too_high] = bounds[1][too_high]-eps
+            dens = self.log_density(x, rdn_meas, geom, bounds)
+            return x, dens
+
         # Sample from the posterior using Metropolis/Hastings MCMC
-        samples, acpts, rejs = [], 0, 0
+        samples, acpts, rejs, x = [], 0, 0, None
         for i in range(self.iterations):
 
-            xp = s.ones(x.shape) * s.inf
-            max_tries, count = 10000, 0
-            while any(xp < bounds[0, :]) or any(xp > bounds[1, :]):
-                xp = x + proposal.rvs()
-                count = count + 1
-                if count > max_tries:
-                    raise RuntimeError(
-                        'Could not generate proposal distribution')
-            dens_new = self.log_density(xp, rdn_meas,  geom)
+            if i % self.restart_every == 0:
+                x, dens = initialize()
+
+            xp = x + proposal.rvs()
+           #xp = s.ones(x.shape) * s.inf
+           #max_tries, count = 10000, 0
+           #while any(xp < bounds[0, :]) or any(xp > bounds[1, :]):
+           #    xp = x + proposal.rvs()
+           #    count = count + 1
+           #    if count > max_tries:
+           #        raise RuntimeError(
+           #            'Could not generate proposal distribution')
+
+            dens_new = self.log_density(xp, rdn_meas,  geom, bounds=bounds)
 
             # Test vs. the Metropolis / Hastings criterion
             if s.isfinite(dens_new) and\
@@ -123,11 +143,12 @@ class MCMCInversion(Inversion):
 
             # Make sure we have not wandered off the map
             if not s.isfinite(dens_new):
-                x = init.copy()
-                dens = self.log_density(x, rdn_meas,  geom)
-            samples.append(x)
+                x, dens = initialize()
 
-        return init.copy(), s.array(samples)
+            if i % self.restart_every < self.burnin:
+                samples.append(x)
+
+        return x_MAP.copy(), s.array(samples)
 
 
 if __name__ == '__main__':
