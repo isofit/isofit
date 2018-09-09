@@ -41,15 +41,28 @@ class ModtranRT(TabularRT):
         TabularRT.__init__(self, config, instrument)
 
         self.modtran_dir = self.find_basedir(config)
-        self.modtran_template_file = config['modtran_template_file']
-        self.template = deepcopy(json_load_ascii(
-            self.modtran_template_file)['MODTRAN'])
         self.filtpath = os.path.join(self.lut_dir, 'wavelengths.flt')
+        self.template = deepcopy(json_load_ascii(
+            config['modtran_template_file'])['MODTRAN'])
 
+        # Insert aerosol templates, if specified
+        if 'aerosol_template_file' in config:
+            self.template[0]['MODTRANINPUT']['AEROSOLS'] = \
+                deepcopy(json_load_ascii(config['aerosol_template_file']))
+
+        # Insert aerosol data, if specified
         if 'aerosol_model_file' in config:
-            self.aerosol_model_file = config['aerosol_model_file']
-            self.aerosol_template = config['aerosol_template_file']
-            self.build_aerosol_model()
+            aer_data = s.loadtxt(config['aerosol_model_file'])
+            self.aer_wl = aer_data[:, 0]
+            aer_data = aer_data[:, 1:].T
+            self.naer = int(len(aer_data)/2)
+            aer_absc, aer_extc = [], []
+            for i in range(self. naer):
+                aer_extc.append(aer_data[i*2])
+                aer_absc.append(aer_data[i*2+1])
+            self.aer_absc = s.array(aer_absc)
+            self.aer_extc = s.array(aer_extc)
+            self.aer_asym = s.ones(len(self.aer_wl)) * 0.65  # heuristic
 
         # Build the lookup table
         self.build_lut(instrument)
@@ -136,32 +149,17 @@ class ModtranRT(TabularRT):
 
         param = deepcopy(self.template)
 
-        # Insert basic aerosol template, if needed
-        for aer_key in ['VIS', 'AERTYPE', 'AOT550', 'AOD550', 'EXT550']:
-            if aer_key in overrides.keys():
-                aerosol_template = deepcopy(
-                    json_load_ascii(self.aerosol_template))
-                param[0]['MODTRANINPUT']['AEROSOLS'] = aerosol_template
+        if hasattr(self, 'aer_absc'):
+            fracs = s.zeros((self.naer))
 
-        # Other overrides
+        # Perform overrides
         for key, val in overrides.items():
             recursive_replace(param, key, val)
 
-            if key == 'AERTYPE':
-
-                custom_aerosol = self.get_aerosol(val)
-                wl, absc, extc, asym = [list(q) for q in custom_aerosol]
-                try:
-                    del param[0]['MODTRANINPUT']['AEROSOLS']['IHAZE']
-                except KeyError:
-                    pass
-                nwl = len(wl)
-                param[0]['MODTRANINPUT']['AEROSOLS']['IREGSPC'][0]['NARSPC'] = nwl
-                param[0]['MODTRANINPUT']['AEROSOLS']['IREGSPC'][0]['VARSPC'] = wl
-                param[0]['MODTRANINPUT']['AEROSOLS']['IREGSPC'][0]['EXTC'] = extc
-                param[0]['MODTRANINPUT']['AEROSOLS']['IREGSPC'][0]['ABSC'] = absc
-                param[0]['MODTRANINPUT']['AEROSOLS']['IREGSPC'][0]['ASYM'] = asym
-
+            if key.startswith('AER'):
+                i = int(key.split('_')[-1])
+                fracs[i] = val
+         
             elif key == 'EXT550' or key == 'AOT550' or key == 'AOD550':
                 # MODTRAN 6.0 convention treats negative visibility as AOT550
                 recursive_replace(param, 'VIS', -val)
@@ -173,34 +171,25 @@ class ModtranRT(TabularRT):
                          'PARM2', 'GMTIME', 'TRUEAZ', 'OBSZEN']:
                 param[0]['MODTRANINPUT']['GEOMETRY'][key] = val
 
+
+        # For custom aerosols, specify final extinction and absorption
+        # MODTRAN 6.0 convention treats negative visibility as AOT550
+        if hasattr(self, 'aer_absc'):
+            total_aot = fracs.sum()
+            recursive_replace(param, 'VIS', -total_aot)
+            total_extc = self.aer_extc.T.dot(fracs) 
+            total_absc = self.aer_absc.T.dot(fracs)
+
+            # Normalize to 550 nm
+            total_extc550 = interp1d(self.aer_wl, total_extc)(0.55)
+            lvl0 = param[0]['MODTRANINPUT']['AEROSOLS']['IREGSPC'][0]
+            lvl0['NARSPC'] = len(self.aer_wl)
+            lvl0['VARSPC'] = [float(v) for v in self.aer_wl]
+            lvl0['EXTC']   = [float(v) / total_extc550 for v in total_extc]           
+            lvl0['ABSC']   = [float(v) / total_extc550 for v in total_absc]           
+            lvl0['ASYM']   = [q for q in self.aer_asym] # Heuristic
+
         return json.dumps({"MODTRAN": param})
-
-    def build_aerosol_model(self):
-        aer_data = s.loadtxt(self.aerosol_model_file)
-        self.aer_wl = aer_data[:, 0]
-        aer_data = aer_data[:, 1:].T
-        self.naer = int(len(aer_data)/2)
-        self.aer_grid = s.linspace(0, 1, self.naer)
-        self.aer_asym = s.ones(len(self.aer_wl)) * 0.65  # heuristic
-        aer_absc, aer_extc = [], []
-        for i in range(self.naer):
-            aer_extc.append(aer_data[i*2])
-            aer_ssa = aer_data[i*2+1]
-            aer_absc.append(aer_extc[-1] * (1.0 - aer_ssa))
-        self.aer_absc = s.array(aer_absc)
-        self.aer_extc = s.array(aer_extc)
-        self.aer_absc_interp, self.aer_extc_interp = [], []
-        for i in range(len(self.aer_wl)):
-            self.aer_absc_interp.append(
-                interp1d(self.aer_grid, self.aer_absc[:, i]))
-            self.aer_extc_interp.append(
-                interp1d(self.aer_grid, self.aer_extc[:, i]))
-
-    def get_aerosol(self, val):
-        """ Interpolation in lookup table """
-        extc = s.array([p(val) for p in self.aer_extc_interp])
-        absc = s.array([p(val) for p in self.aer_absc_interp])
-        return deepcopy(self.aer_wl), absc, extc, self.aer_asym
 
     def build_lut(self, instrument, rebuild=False):
         """ Each LUT is associated with a source directory.  We build a 
