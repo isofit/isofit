@@ -36,7 +36,7 @@ class MCMCInversion(Inversion):
 
         defaults = {'iterations': 10000, 'burnin': 200,
                     'regularizer': 1e-3, 'proposal_scaling': 0.01,
-                    'verbose': True, 'restart_every':2000}
+                    'verbose': True, 'restart_every': 2000}
 
         for key, val in defaults.items():
             if key in config:
@@ -63,8 +63,8 @@ class MCMCInversion(Inversion):
         """Log probability density combines prior and likelihood terms"""
 
         # First check bounds
-        if bounds is not None and any(s.logical_or(x<bounds[0], x>bounds[1])):
-             return -s.Inf
+        if bounds is not None and any(s.logical_or(x < bounds[0], x > bounds[1])):
+            return -s.Inf
 
         # Prior term
         Sa = self.fm.Sa(x, geom)
@@ -100,9 +100,9 @@ class MCMCInversion(Inversion):
         # We will use this routine for initializing
         def initialize():
             x = multivariate_normal(mean=x_MAP, cov=S_hat).rvs()
-            too_low = x<bounds[0]
+            too_low = x < bounds[0]
             x[too_low] = bounds[0][too_low]+eps
-            too_high = x>bounds[1]
+            too_high = x > bounds[1]
             x[too_high] = bounds[1][too_high]-eps
             dens = self.log_density(x, rdn_meas, geom, bounds)
             return x, dens
@@ -115,15 +115,6 @@ class MCMCInversion(Inversion):
                 x, dens = initialize()
 
             xp = x + proposal.rvs()
-           #xp = s.ones(x.shape) * s.inf
-           #max_tries, count = 10000, 0
-           #while any(xp < bounds[0, :]) or any(xp > bounds[1, :]):
-           #    xp = x + proposal.rvs()
-           #    count = count + 1
-           #    if count > max_tries:
-           #        raise RuntimeError(
-           #            'Could not generate proposal distribution')
-
             dens_new = self.log_density(xp, rdn_meas,  geom, bounds=bounds)
 
             # Test vs. the Metropolis / Hastings criterion

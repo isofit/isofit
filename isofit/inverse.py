@@ -85,17 +85,17 @@ class Inversion:
 
         # Gain matrix G reflects current state, so we use the state-dependent
         # Jacobian matrix K
-        S_hat = svd_inv(K.T.dot(Seps_inv).dot(K) + Sa_inv, 
-                    hashtable=self.ht)
+        S_hat = svd_inv(K.T.dot(Seps_inv).dot(K) + Sa_inv,
+                        hashtable=self.ht)
         G = S_hat.dot(K.T).dot(Seps_inv)
 
         # N. Cressie [ASA 2018] suggests an alternate definition of S_hat for
         # more statistically-consistent posterior confidence estimation
         if self.state_indep_S_hat:
             Ka = self.fm.K(xa, geom)
-            S_hat = svd_inv(Ka.T.dot(Seps_inv).dot(Ka) + Sa_inv, 
-                    hashtable=self.ht)
-        
+            S_hat = svd_inv(Ka.T.dot(Seps_inv).dot(Ka) + Sa_inv,
+                            hashtable=self.ht)
+
         # Reduce the hash table, if needed
         while len(self.ht) > self.max_table_size:
             self.ht.popitem(last=False)

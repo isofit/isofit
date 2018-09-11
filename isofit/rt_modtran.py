@@ -159,7 +159,7 @@ class ModtranRT(TabularRT):
             if key.startswith('AER'):
                 i = int(key.split('_')[-1])
                 fracs[i] = val
-         
+
             elif key == 'EXT550' or key == 'AOT550' or key == 'AOD550':
                 # MODTRAN 6.0 convention treats negative visibility as AOT550
                 recursive_replace(param, 'VIS', -val)
@@ -171,13 +171,12 @@ class ModtranRT(TabularRT):
                          'PARM2', 'GMTIME', 'TRUEAZ', 'OBSZEN']:
                 param[0]['MODTRANINPUT']['GEOMETRY'][key] = val
 
-
         # For custom aerosols, specify final extinction and absorption
         # MODTRAN 6.0 convention treats negative visibility as AOT550
         if hasattr(self, 'aer_absc'):
             total_aot = fracs.sum()
             recursive_replace(param, 'VIS', -total_aot)
-            total_extc = self.aer_extc.T.dot(fracs) 
+            total_extc = self.aer_extc.T.dot(fracs)
             total_absc = self.aer_absc.T.dot(fracs)
 
             # Normalize to 550 nm
@@ -185,9 +184,9 @@ class ModtranRT(TabularRT):
             lvl0 = param[0]['MODTRANINPUT']['AEROSOLS']['IREGSPC'][0]
             lvl0['NARSPC'] = len(self.aer_wl)
             lvl0['VARSPC'] = [float(v) for v in self.aer_wl]
-            lvl0['EXTC']   = [float(v) / total_extc550 for v in total_extc]           
-            lvl0['ABSC']   = [float(v) / total_extc550 for v in total_absc]           
-            lvl0['ASYM']   = [q for q in self.aer_asym] # Heuristic
+            lvl0['EXTC'] = [float(v) / total_extc550 for v in total_extc]
+            lvl0['ABSC'] = [float(v) / total_extc550 for v in total_absc]
+            lvl0['ASYM'] = [q for q in self.aer_asym]  # Heuristic
 
         return json.dumps({"MODTRAN": param})
 
