@@ -30,7 +30,7 @@ issue <https://github.com/isofit/isofit/issues/new>`_.
 Fork and Create a Branch
 ------------------------
 
-ISOFIT follows the `Standard Fork and Pull Request <https://help.github.com/articles/fork-a-repo/>`_ workflow.
+ISOFIT follows the `Standard Fork and Pull Request <https://gist.github.com/Chaser324/ce0505fbed06b947d962>`_ workflow.
 
 When you have chosen an issue to work on, start by `forking <https://help.github.com/articles/fork-a-repo/>`_ the repo.
 
