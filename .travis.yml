@@ -19,4 +19,4 @@ deploy:
     - secure: "MWwEmqu+F/Vx0qTW9X6vduyXwcX+hvrx9PchcmyEcKuYC0Kja3E80FLCmmjLyE7BeFCyWOaq6HcerigcfVQOoyq5YTOWIobt5VOWpJNragybsoqv5RHA9PDVYMkO1xytrYEn/BcNqpzTsaFdcVuKJ9dR6hBws297G61YJA2r8BlW/iatxptB2pGzn6qyfvQXwEWUOgfVslg5W+wif7oznn9zvwlYUM/2NbKRveAvtsh/volW784obooAHQkXPFpwuvi4BtC8gkg+YJ0eQ+K1tLfD8KoBWoqVCy1/dxS/RkUOsN6OdDYHpzVrYkt1trLJLgB5NE8tC2Pqv8ryNSBA5nKx1T8aASzRh/VY2gUL0M7y0BBW5MgQjlt+dayTvYHlQujOcImNP6d2+GsaszKNQfB1o5jvocONU7/I34V7sAbEh4lxwIT0uxT9ti6YwMuMeJ+Hd/DT6VOQiLj2VakaPwy3Wh/XsP3MgrqK4vv6j2f4a3Rg4Zp0EqcWIdAtyusd0AhQTfiDmiXLrF5K7x62DWNJRFupH4vbD3x5yr7T9Yuu957IfkB7vY8WCOMQrEdZ9ycHq8qVUsOtPJu0MPEbKWeQyqpS9WcYjxRCEyi2aaJEhVrKg4kTSUl7qZw1oYpo/6aSlVcFeAokw7bnRkNk2rfP3Y4k5nnYD5zsdUw3/u8="
   on:
     branch: master
-    condition: type IS NOT cron
+    condition: type != cron
