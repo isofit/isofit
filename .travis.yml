@@ -1,22 +1,24 @@
+stages:
+  - install
+  - script
+  - name: deploy
+    if: branch = master AND repo = "isofit/isofit" AND type != cron
 language: python
 python:
-- '3.6'
+  - '3.6'
 install:
-- pip install scipy
-- pip install numba
-- pip install matplotlib
-- pip install scikit-learn
-- pip install spectral
-- pip install pytest
-- pip install pep8
-- pip install xxhash
+  - pip install scipy
+  - pip install numba
+  - pip install matplotlib
+  - pip install scikit-learn
+  - pip install spectral
+  - pip install pytest
+  - pip install pep8
+  - pip install xxhash
 script:
-- pytest
+  - pytest
 deploy:
   provider: pypi
   user: winstonolson
   password:
     secure: UnNGoF7HTRv1G8wvTEdCC044eUcP+gu9Zx0zz5d1+qneRQo/e6H1D2aKx2gJzUgBIC7/scyi0Qi42kcPGDmAenCJf/9OP0jZP7Ob+hI0ZRuYZOlTEMjkphDIaG/euJC0ghTNrK7ohu6ypt77/wGRMDEhdAGknLirTyp/eGyVtVz+CoQ/1Dju15qnvQt86NB9GBKz0mxQhG7JQALfrVlR1XsNjeADEwTi9gzTLS66o6fEk7XT1/KpIU0VEAES4caK/z2FpNSCA/XJPRMfl6YVlmb0VYZnVDc3Q1aj0xTN2o3odx/87DUrUBnT+eQOGw6sbWX0bb4FXY3i8wq5r2pPBrhY75n13qEmN3nKlSmxFh+gcCQKltWVK56dF6WAgdHClus5IUo21HZX8XsruK/sPgwdATIXGK2s9i6HVlfjR/NP4AKaA9U2TOjc5fpNZAnTxY5JUSnSB++Sj5U3liYzJPXxeNRh7QhivfjsBacH+0iMUhFM9w6moiDbCtNNAj0VS4S7ScdIAQ25bwX4psratcSFE9NLfh2+KHJtRS6zVn0NPpyFtBcEwBPWJT/ozdaKI6A9V8oHCqeUJ1JwCa/Mulqm5Ufo7dFuOhKf+Zz2uyZV5N/T0fr/0E7K1OUCyQC9DvAfuy2dTi0QOSwleJ3FUDKQvP1Njxi9LVx1Jernthg=
-  on:
-    branch: master
-    condition: type != cron
