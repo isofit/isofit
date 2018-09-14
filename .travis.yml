@@ -2,7 +2,7 @@ stages:
   - install
   - script
   - name: deploy
-    if: repo = isofit/isofit AND branch = master AND type != cron
+    if: repo = "isofit/isofit" AND branch = "master" AND type != "cron"
 language: python
 python:
   - '3.6'
