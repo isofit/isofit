@@ -20,13 +20,15 @@
 
 import scipy as s
 from sunposition import sunpos
+from datetime import datetime
 
 
 class Geometry:
     """The geometry of the observation, all we need to calculate sensor,
       surface and solar positions"""
 
-    def __init__(self, obs=None, glt=None, loc=None, pushbroom_column=None):
+    def __init__(self, obs=None, glt=None, loc=None, ds=None,
+            esd=None, pushbroom_column=None):
 
         self.earth_sun_file = None
         self.observer_zenith = None
@@ -66,6 +68,7 @@ class Geometry:
             self.surface_elevation_km = loc[2]
             self.latitude = loc[1]
             self.longitude = loc[0]
+            self.longitudeE = -loc[0]
             if self.longitude < 0:
                 self.IPARM2 = 360.0 - self.longitude
             else:
@@ -75,10 +78,18 @@ class Geometry:
             print('Geometry lat: %f, lon: %f' % (self.IPARM1, self.IPARM2))
             print('observer OBSZEN: %f, RELAZ: %f' % (self.OBSZEN, self.RELAZ))
 
+        if ds is not None:
+           self.datetime = datetime.strptime(ds, '%Y%m%dt%H%M%S')
+           self.day_of_year = self.datetime.timetuple().tm_yday
+
+        if esd is not None:
+           self.earth_sun_distance = esd.copy() 
+
     def coszen(self):
         self.dt = self.datetime
-        az, zen, ra, dec, h = sunpos(self.datetime, self.latitude, self.longitudeE,
-                                     self.surface_elevation_km * 1000.0, radians=True)
+        az, zen, ra, dec, h = sunpos(self.datetime, self.latitude, 
+                self.longitudeE, self.surface_elevation_km * 1000.0, 
+                radians=True)
         return s.cos(zen)
 
     def sundist(self):
