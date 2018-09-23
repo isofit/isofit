@@ -115,7 +115,7 @@ def main():
             for mi in range(nmix):
               s1, m1 = spectra[int(s.rand()*n)], s.rand()
               s2, m2 = spectra[int(s.rand()*n)], 1.0-m1
-              spectra.append(m1 * s1 + m2 * m2)
+              spectra.append(m1 * s1 + m2 * s2)
 
         spectra = s.array(spectra)
         use = s.all(s.isfinite(spectra), axis=1)
