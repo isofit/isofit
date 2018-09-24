@@ -42,9 +42,9 @@ class Inversion:
         self.max_table_size = 500
         self.windows = config['windows']
         if 'verbose' in config:
-          self.verbose = config['verbose']
+            self.verbose = config['verbose']
         else:
-          self.verbose = True
+            self.verbose = True
         if 'Cressie_MAP_confidence' in config:
             self.state_indep_S_hat = config['Cressie_MAP_confidence']
         else:
@@ -212,9 +212,9 @@ class Inversion:
             # Diagnostics
             if self.verbose:
                 lrfl, mdl, path, S_hat, K, G = \
-                  self.forward_uncertainty(x, rdn_meas, geom)
-                dof = s.mean(s.diag(G[:,self.winidx].dot(K[self.winidx,:])))
-                sys.stdout.write('Iteration: %s '%str(self.counts))
+                    self.forward_uncertainty(x, rdn_meas, geom)
+                dof = s.mean(s.diag(G[:, self.winidx].dot(K[self.winidx, :])))
+                sys.stdout.write('Iteration: %s ' % str(self.counts))
                 sys.stdout.write(' Residual: %6f ' % sum(pow(total_resid, 2)))
                 sys.stdout.write(' Mean DOF: %5.3f ' % dof)
                 sys.stdout.write('\n '+self.fm.summarize(x, geom)+'\n')
@@ -228,9 +228,9 @@ class Inversion:
         # Initialize and invert
         x0 = init.copy()
         xopt = least_squares(err, x0, jac=jac, method='trf',
-                             bounds=(self.fm.bounds[0]+eps, 
+                             bounds=(self.fm.bounds[0]+eps,
                                      self.fm.bounds[1]-eps),
-                             xtol=1e-4, ftol=1e-4, gtol=1e-4, 
+                             xtol=1e-4, ftol=1e-4, gtol=1e-4,
                              x_scale=self.fm.scale,
                              max_nfev=20, tr_solver='exact')
         return xopt.x

@@ -49,9 +49,9 @@ def main():
     reference_windows = config['reference_windows']
     outfile = expand_path(configdir, config['output_model_file'])
     if 'mixtures' in config:
-       mixtures = config['mixtures']
+        mixtures = config['mixtures']
     else:
-       mixtures = 0
+        mixtures = 0
 
     # load wavelengths file
     q = s.loadtxt(wavelength_file)
@@ -105,17 +105,17 @@ def main():
 
             # import spectra and resample
             for x1 in x:
-                p = interp1d(swl, x1, kind='linear', bounds_error=False, 
-                        fill_value='extrapolate')
+                p = interp1d(swl, x1, kind='linear', bounds_error=False,
+                             fill_value='extrapolate')
                 spectra.append(p(wl))
-            
+
             # calculate mixtures, if needed
-            n    = float(len(spectra))
+            n = float(len(spectra))
             nmix = int(n * mixtures)
             for mi in range(nmix):
-              s1, m1 = spectra[int(s.rand()*n)], s.rand()
-              s2, m2 = spectra[int(s.rand()*n)], 1.0-m1
-              spectra.append(m1 * s1 + m2 * s2)
+                s1, m1 = spectra[int(s.rand()*n)], s.rand()
+                s2, m2 = spectra[int(s.rand()*n)], 1.0-m1
+                spectra.append(m1 * s1 + m2 * s2)
 
         spectra = s.array(spectra)
         use = s.all(s.isfinite(spectra), axis=1)

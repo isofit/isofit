@@ -28,7 +28,7 @@ class Geometry:
       surface and solar positions"""
 
     def __init__(self, obs=None, glt=None, loc=None, ds=None,
-            esd=None, pushbroom_column=None):
+                 esd=None, pushbroom_column=None):
 
         self.earth_sun_file = None
         self.observer_zenith = None
@@ -51,15 +51,15 @@ class Geometry:
             self.solar_azimuth = obs[3]  # 0 to 360 clockwise from N
             self.solar_zenith = obs[4]  # 0 to 90 from zenith
             self.OBSZEN = 180.0 - abs(obs[2])  # MODTRAN convention?
-            self.RELAZ  = obs[1] - obs[3] + 180.0
-            self.PARM1  = self.RELAZ # MODTRAN convention
-            self.umu    = s.cos(obs[2]/360.0*2.0*s.pi)  # Libradtran
+            self.RELAZ = obs[1] - obs[3] + 180.0
+            self.PARM1 = self.RELAZ  # MODTRAN convention
+            self.umu = s.cos(obs[2]/360.0*2.0*s.pi)  # Libradtran
         else:
             self.observer_azimuth = 0
             self.observer_zenith = 0
             self.OBSZEN = 180.0
-            self.RELAZ  = 0.0
-            self.PARM1 = self.RELAZ 
+            self.RELAZ = 0.0
+            self.PARM1 = self.RELAZ
             self.TRUEAZ = 0.0
             self.umu = 1.0
 
@@ -73,21 +73,22 @@ class Geometry:
             if self.longitude < 0:
                 self.longitude = 360.0 - self.longitude
 
-            print('Geometry lat: %f, lon: %f' % (self.latitude, self.longitude))
+            print('Geometry lat: %f, lon: %f' %
+                  (self.latitude, self.longitude))
             print('observer OBSZEN: %f, RELAZ: %f' % (self.OBSZEN, self.RELAZ))
 
         if ds is not None:
-           self.datetime = datetime.strptime(ds, '%Y%m%dt%H%M%S')
-           self.day_of_year = self.datetime.timetuple().tm_yday
+            self.datetime = datetime.strptime(ds, '%Y%m%dt%H%M%S')
+            self.day_of_year = self.datetime.timetuple().tm_yday
 
         if esd is not None:
-           self.earth_sun_distance = esd.copy() 
+            self.earth_sun_distance = esd.copy()
 
     def coszen(self):
         self.dt = self.datetime
-        az, zen, ra, dec, h = sunpos(self.datetime, self.latitude, 
-                self.longitudeE, self.surface_elevation_km * 1000.0, 
-                radians=True)
+        az, zen, ra, dec, h = sunpos(self.datetime, self.latitude,
+                                     self.longitudeE, self.surface_elevation_km * 1000.0,
+                                     radians=True)
         return s.cos(zen)
 
     def sundist(self):
