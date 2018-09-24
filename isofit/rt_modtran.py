@@ -57,7 +57,7 @@ class ModtranRT(TabularRT):
             aer_data = aer_data[:, 1:].T
             self.naer = int(len(aer_data)/2)
             aer_absc, aer_extc = [], []
-            for i in range(self. naer):
+            for i in range(self.naer):
                 aer_extc.append(aer_data[i*2])
                 aer_absc.append(aer_data[i*2+1])
             self.aer_absc = s.array(aer_absc)

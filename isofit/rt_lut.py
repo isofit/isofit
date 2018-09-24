@@ -179,6 +179,8 @@ class TabularRT:
                     point[point_ind] = x_RT[x_RT_ind]
                 elif name == "OBSZEN":
                     point[point_ind] = geom.OBSZEN
+                elif name == "PARM1":
+                    point[point_ind] = geom.PARM1
                 elif name == "TRUEAZ":
                     point[point_ind] = geom.TRUEAZ
                 elif name == 'phi':

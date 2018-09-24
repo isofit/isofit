@@ -51,14 +51,15 @@ class Geometry:
             self.solar_azimuth = obs[3]  # 0 to 360 clockwise from N
             self.solar_zenith = obs[4]  # 0 to 90 from zenith
             self.OBSZEN = 180.0 - abs(obs[2])  # MODTRAN convention?
-            self.RELAZ = obs[1] - obs[3] + 180.0
-            self.TRUEAZ = obs[1]
-            self.umu = s.cos(obs[2]/360.0*2.0*s.pi)  # Libradtran
+            self.RELAZ  = obs[1] - obs[3] + 180.0
+            self.PARM1  = self.RELAZ # MODTRAN convention
+            self.umu    = s.cos(obs[2]/360.0*2.0*s.pi)  # Libradtran
         else:
             self.observer_azimuth = 0
             self.observer_zenith = 0
             self.OBSZEN = 180.0
-            self.RELAZ = 0.0
+            self.RELAZ  = 0.0
+            self.PARM1 = self.RELAZ 
             self.TRUEAZ = 0.0
             self.umu = 1.0
 
@@ -70,12 +71,9 @@ class Geometry:
             self.longitude = loc[0]
             self.longitudeE = -loc[0]
             if self.longitude < 0:
-                self.IPARM2 = 360.0 - self.longitude
-            else:
-                self.IPARM2 = self.longitude
-            self.IPARM1 = self.latitude
+                self.longitude = 360.0 - self.longitude
 
-            print('Geometry lat: %f, lon: %f' % (self.IPARM1, self.IPARM2))
+            print('Geometry lat: %f, lon: %f' % (self.latitude, self.longitude))
             print('observer OBSZEN: %f, RELAZ: %f' % (self.OBSZEN, self.RELAZ))
 
         if ds is not None:
