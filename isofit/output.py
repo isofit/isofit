@@ -100,14 +100,7 @@ class Output:
                     'Need reference spectrum for radiometry correction')
 
         if self.output.posterior_errors_file is not None:
-            xa = self.iv.fm.xa(x, geom)
-            Sa = self.iv.fm.Sa(x, geom)
-            Sa_inv = inv(Sa)
-            K = self.iv.fm.K(x, geom)
-            Seps_inv = inv(self.iv.fm.Seps(rdn_meas, geom))
-            S_hat = inv(K.T.dot(Seps_inv).dot(K) + Sa_inv)
-            G = S_hat.dot(K.T).dot(Seps_inv)
-            S_hat = inv(K.T.dot(Seps_inv).dot(K) + Sa_inv)
+            S_hat, K, G = self.iv.calc_posterior(x, geom, rdn_meas)
             package = {'K': K, 'S_hat': S_hat, 'G': G}
             savemat(self.output.posterior_errors_file, package)
 
@@ -148,9 +141,7 @@ class Output:
         K = self.iv.fm.K(x, geom)
         xinit = self.iv.fm.init(rdn_meas, geom)
         Sy = self.iv.fm.instrument.Sy(rdn_meas, geom)
-        Seps_inv = inv(self.iv.fm.Seps(rdn_meas, geom))
-        S_hat = inv(K.T.dot(Seps_inv).dot(K)+Sa_inv)
-        G = S_hat.dot(K.T).dot(Seps_inv)
+        S_hat, K, G = self.iv.calc_posterior(x, geom, rdn_meas)
         lrfl_est = self.iv.fm.calc_lrfl(x, geom)
         cost_jac_prior = s.diagflat(x - xa).dot(Sa_inv_sqrt)
         cost_jac_meas = Seps_inv_sqrt.dot(K[self.winidx, :])

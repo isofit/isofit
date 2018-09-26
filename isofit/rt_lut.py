@@ -179,12 +179,18 @@ class TabularRT:
                     point[point_ind] = x_RT[x_RT_ind]
                 elif name == "OBSZEN":
                     point[point_ind] = geom.OBSZEN
+                elif name == "PARM1":
+                    point[point_ind] = geom.PARM1
                 elif name == "TRUEAZ":
                     point[point_ind] = geom.TRUEAZ
                 elif name == 'phi':
                     point[point_ind] = geom.phi
                 elif name == 'umu':
                     point[point_ind] = geom.umu
+                else:
+                    # If a variable is defined in the lookup table but not 
+                    # specified elsewhere, we will default to the minimum
+                    point[point_ind] = min(self.lut_grid[name])
             for x_RT_ind, name in enumerate(self.statevec):
                 point_ind = self.lut_names.index(name)
                 point[point_ind] = x_RT[x_RT_ind]
