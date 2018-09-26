@@ -14,7 +14,6 @@ spectra in text format, or imaging spectrometer data cubes.
 The subdirectories contain:
 
 * data/      - shared data files
-* docs/      - documentation
 * examples/  - example runs packaged with input data and configuration files
 * isofit/    - the main Python codebase, with the top-level program isofit.py
 * utils/     - general purpose utilities and routines for the advanced user

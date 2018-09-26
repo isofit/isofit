@@ -34,9 +34,6 @@
 
     "modtran_radiative_transfer": {
       "lut_path":"../lut/",
-      "aerosol_template_file":"../../../data/aerosol_template.json",
-      "aerosol_model_file":"../../../data/aerosol_model.txt",
-      "wl2flt_exe":"../../../utils/wl2flt.py",
       "modtran_template_file":"ang20171108t184227_modtran.json",
       "domain": {"start": 350, "end": 2520, "step": 0.1},
 

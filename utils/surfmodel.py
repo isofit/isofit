@@ -48,6 +48,10 @@ def main():
     normalize = config['normalize']
     reference_windows = config['reference_windows']
     outfile = expand_path(configdir, config['output_model_file'])
+    if 'mixtures' in config:
+        mixtures = config['mixtures']
+    else:
+        mixtures = 0
 
     # load wavelengths file
     q = s.loadtxt(wavelength_file)
@@ -100,8 +104,18 @@ def main():
             swl = s.array([float(f) for f in rfl.metadata['wavelength']])
 
             # import spectra and resample
-            spectra.extend(([interp1d(
-                swl, x1, kind='linear', bounds_error=False, fill_value='extrapolate')(wl) for x1 in x]))
+            for x1 in x:
+                p = interp1d(swl, x1, kind='linear', bounds_error=False,
+                             fill_value='extrapolate')
+                spectra.append(p(wl))
+
+            # calculate mixtures, if needed
+            n = float(len(spectra))
+            nmix = int(n * mixtures)
+            for mi in range(nmix):
+                s1, m1 = spectra[int(s.rand()*n)], s.rand()
+                s2, m2 = spectra[int(s.rand()*n)], 1.0-m1
+                spectra.append(m1 * s1 + m2 * s2)
 
         spectra = s.array(spectra)
         use = s.all(s.isfinite(spectra), axis=1)
