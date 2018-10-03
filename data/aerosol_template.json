@@ -3,6 +3,7 @@
   "CDASTM": "b",
   "IHAZE": "AER_USER_DEFINED",
   "ARUSS": "USS",
+  "IPH": 2,
   "APLUS": "A+",
   "REGALT": {
     "ZAER1": [ 0.0, 3.0],

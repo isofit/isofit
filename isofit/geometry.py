@@ -66,7 +66,7 @@ class Geometry:
         if loc is not None:
             self.GNDALT = loc[2]
             self.altitude = loc[2]
-            self.surface_elevation_km = loc[2]
+            self.surface_elevation_km = loc[2] / 1000.0
             self.latitude = loc[1]
             self.longitude = loc[0]
             self.longitudeE = -loc[0]

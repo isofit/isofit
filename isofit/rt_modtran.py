@@ -55,14 +55,15 @@ class ModtranRT(TabularRT):
             aer_data = s.loadtxt(config['aerosol_model_file'])
             self.aer_wl = aer_data[:, 0]
             aer_data = aer_data[:, 1:].T
-            self.naer = int(len(aer_data)/2)
-            aer_absc, aer_extc = [], []
+            self.naer = int(len(aer_data)/3)
+            aer_absc, aer_extc, aer_asym = [], [], []
             for i in range(self.naer):
-                aer_extc.append(aer_data[i*2])
-                aer_absc.append(aer_data[i*2+1])
+                aer_extc.append(aer_data[i*3])
+                aer_absc.append(aer_data[i*3+1])
+                aer_asym.append(aer_data[i*3+2])
             self.aer_absc = s.array(aer_absc)
             self.aer_extc = s.array(aer_extc)
-            self.aer_asym = s.ones(len(self.aer_wl)) * 0.65  # heuristic
+            self.aer_asym = s.array(aer_asym)
 
         # Build the lookup table
         self.build_lut(instrument)
@@ -178,15 +179,17 @@ class ModtranRT(TabularRT):
             recursive_replace(param, 'VIS', -total_aot)
             total_extc = self.aer_extc.T.dot(fracs)
             total_absc = self.aer_absc.T.dot(fracs)
+            norm_fracs = fracs/(fracs.sum())
+            total_asym = self.aer_asym.T.dot(norm_fracs)
 
             # Normalize to 550 nm
             total_extc550 = interp1d(self.aer_wl, total_extc)(0.55)
             lvl0 = param[0]['MODTRANINPUT']['AEROSOLS']['IREGSPC'][0]
             lvl0['NARSPC'] = len(self.aer_wl)
             lvl0['VARSPC'] = [float(v) for v in self.aer_wl]
+            lvl0['ASYM'] = [float(v) for v in total_asym]
             lvl0['EXTC'] = [float(v) / total_extc550 for v in total_extc]
             lvl0['ABSC'] = [float(v) / total_extc550 for v in total_absc]
-            lvl0['ASYM'] = [q for q in self.aer_asym]  # Heuristic
 
         return json.dumps({"MODTRAN": param})
 
