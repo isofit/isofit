@@ -30,7 +30,7 @@ issue <https://github.com/isofit/isofit/issues/new>`_.
 Fork and Create a Branch
 ------------------------
 
-ISOFIT follows the `Standard Fork and Pull Request <https://help.github.com/articles/fork-a-repo/>`_ workflow.
+ISOFIT follows the `Standard Fork and Pull Request <https://gist.github.com/Chaser324/ce0505fbed06b947d962>`_ workflow.
 
 When you have chosen an issue to work on, start by `forking <https://help.github.com/articles/fork-a-repo/>`_ the repo.
 
@@ -156,13 +156,6 @@ Create release branch and pull in changes from pull request:
   git checkout -b release-0.3.0 master
   git pull https://github.com/davidraythompson/isofit.git feature-branch  (NOTE: this is the pull request branch)
 
-Merge release branch into master:
-
-.. code::
-
-  git checkout master
-  git merge --no-ff release-0.3.0
-
 Update version number and release notes:
 
 .. code::
@@ -178,12 +171,19 @@ Rebuild html docs:
   make -C docs html
   cp -pr docs/_build/html docs/html
 
-Commit and push changes to master:
+Commit changes to release branch:
 
 .. code::
 
   git add -A
-  git commit -m “Version 0.3.0 prepped and released."
+  git commit -m “Version 0.3.0 prepped for release."
+  
+Merge release branch into master:
+
+.. code::
+
+  git checkout master
+  git merge --no-ff release-0.3.0
   git push origin master
 
 Create and upload Pypi distribution:
@@ -301,3 +301,4 @@ Attribution
 -----------
 This Code of Conduct is adapted from the Contributor Covenant, version 1.4,
 available at https://www.contributor-covenant.org/version/1/4/code-of-conduct.html
+
