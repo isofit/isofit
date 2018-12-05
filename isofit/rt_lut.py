@@ -86,7 +86,7 @@ class TabularRT:
            is diagonal with very loose constraints.'''
         return s.diagflat(pow(self.prior_sigma, 2))
 
-    def build_lut(self, instrument):
+    def build_lut(self, instrument, rebuild=False):
         """ Each LUT is associated with a source directory.  We build a 
             lookup table by: 
               (1) defining the LUT dimensions, state vector names, and the grid 
