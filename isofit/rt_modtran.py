@@ -100,7 +100,8 @@ class ModtranRT(TabularRT):
                     te = i
                     break
             if ts < 0:
-                raise ValueError('Could not find solar geometry in %s'%infile)
+                raise ValueError(
+                    'Could not find solar geometry in %s' % infile)
         szen = s.array([float(lines[i].split()[3])
                         for i in range(ts, te)]).mean()
         return szen
