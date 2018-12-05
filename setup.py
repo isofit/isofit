@@ -27,7 +27,7 @@ with open('README.rst', 'r') as f:
 lic = 'Apache Software License (http://www.apache.org/licenses/LICENSE-2.0)'
 
 setup(name='isofit',
-    version='0.5.1',
+    version='0.5.2',
     url='http://github.com/davidraythompson/isofit/',
     license=lic,
     author='David R. Thompson, Winston Olson-Duvall, and Team',
