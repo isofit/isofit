@@ -42,6 +42,10 @@ class TabularRT:
 
     def __init__(self, config, instrument):
 
+        if 'auto_rebuild' in config:
+          self.auto_rebuild = config['auto_rebuild']
+        else:
+          self.auto_rebuild = True
         self.lut_grid = config['lut_grid']
         self.lut_dir = config['lut_path']
         self.statevec = list(config['statevector'].keys())
@@ -119,7 +123,7 @@ class TabularRT:
             except FileExistsError:
                 pass
 
-        if len(rebuild_cmds) > 0:
+        if len(rebuild_cmds) > 0 and self.auto_rebuild:
             print("rebuilding")
             import multiprocessing
             cwd = os.getcwd()
@@ -179,8 +183,6 @@ class TabularRT:
                     point[point_ind] = x_RT[x_RT_ind]
                 elif name == "OBSZEN":
                     point[point_ind] = geom.OBSZEN
-                elif name == "PARM1":
-                    point[point_ind] = geom.PARM1
                 elif name == "TRUEAZ":
                     point[point_ind] = geom.TRUEAZ
                 elif name == 'phi':

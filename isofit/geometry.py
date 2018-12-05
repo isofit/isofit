@@ -52,14 +52,13 @@ class Geometry:
             self.solar_zenith = obs[4]  # 0 to 90 from zenith
             self.OBSZEN = 180.0 - abs(obs[2])  # MODTRAN convention?
             self.RELAZ = obs[1] - obs[3] + 180.0
-            self.PARM1 = self.RELAZ  # MODTRAN convention
+            self.TRUEAZ = self.RELAZ  # MODTRAN convention?
             self.umu = s.cos(obs[2]/360.0*2.0*s.pi)  # Libradtran
         else:
             self.observer_azimuth = 0
             self.observer_zenith = 0
             self.OBSZEN = 180.0
             self.RELAZ = 0.0
-            self.PARM1 = self.RELAZ
             self.TRUEAZ = 0.0
             self.umu = 1.0
 
