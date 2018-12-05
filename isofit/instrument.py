@@ -40,7 +40,7 @@ class Instrument:
             q = q[:, 1:]
         if q[0, 0] < 100:
             q = q * 1000.0
-        nchans = q.shape[0]
+        self.nchans = q.shape[0]
         self.wl = q[:, 0]
         self.fwhm = q[:, 1]
         self.bounds, self.scale, self.statevec = [], [], []
