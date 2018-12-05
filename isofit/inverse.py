@@ -27,6 +27,7 @@ import xxhash
 from scipy.linalg import inv, norm, det, cholesky, qr, svd
 from hashlib import md5
 from numba import jit
+import time
 
 error_code = -1
 
@@ -36,6 +37,7 @@ class Inversion:
     def __init__(self, config, forward):
         """Initialization specifies retrieval subwindows for calculating
         measurement cost distributions"""
+        self.lasttime = time.time()
         self.fm = forward
         self.wl = self.fm.wl
         self.ht = OrderedDict()  # Hash table
@@ -148,6 +150,7 @@ class Inversion:
         """the least squares library seems to crash if we call it too many
     times without reloading.  Memory leak?"""
         # reload(scipy.optimize)
+        self.lasttime = time.time()
 
         """Calculate the initial solution, if needed."""
         if init is None:
@@ -211,13 +214,16 @@ class Inversion:
 
             # Diagnostics
             if self.verbose:
+                newtime = time.time()
                 lrfl, mdl, path, S_hat, K, G = \
                     self.forward_uncertainty(x, rdn_meas, geom)
                 dof = s.mean(s.diag(G[:, self.winidx].dot(K[self.winidx, :])))
                 sys.stdout.write('Iteration: %s ' % str(self.counts))
+                sys.stdout.write(' Time: %f ' % (newtime-self.lasttime))
                 sys.stdout.write(' Residual: %6f ' % sum(pow(total_resid, 2)))
                 sys.stdout.write(' Mean DOF: %5.3f ' % dof)
                 sys.stdout.write('\n '+self.fm.summarize(x, geom)+'\n')
+                self.lasttime = newtime
 
             # Plot interim solution?
             if out is not None:

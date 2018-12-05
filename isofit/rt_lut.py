@@ -42,6 +42,10 @@ class TabularRT:
 
     def __init__(self, config, instrument):
 
+        if 'auto_rebuild' in config:
+          self.auto_rebuild = config['auto_rebuild']
+        else:
+          self.auto_rebuild = True
         self.lut_grid = config['lut_grid']
         self.lut_dir = config['lut_path']
         self.statevec = list(config['statevector'].keys())
@@ -82,7 +86,7 @@ class TabularRT:
            is diagonal with very loose constraints.'''
         return s.diagflat(pow(self.prior_sigma, 2))
 
-    def build_lut(self, instrument, rebuild=False):
+    def build_lut(self, instrument):
         """ Each LUT is associated with a source directory.  We build a 
             lookup table by: 
               (1) defining the LUT dimensions, state vector names, and the grid 
@@ -119,8 +123,7 @@ class TabularRT:
             except FileExistsError:
                 pass
 
-        print(rebuild_cmds)
-        if len(rebuild_cmds) > 0:
+        if len(rebuild_cmds) > 0 and self.auto_rebuild:
             print("rebuilding")
             import multiprocessing
             cwd = os.getcwd()
