@@ -67,7 +67,7 @@ def main():
         iv = Inversion(config['inversion'], fm)
 
     # Output object
-    out = Output(config, iv)
+    out = Output(config, fm, iv)
 
     # Simulation mode? Binary or text mode?
     simulation_mode = (not ('input' in config)) or \

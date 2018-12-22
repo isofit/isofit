@@ -21,6 +21,8 @@
 import scipy as s
 from scipy.io import loadmat, savemat
 from scipy.interpolate import interp1d
+from scipy.signal import convolve
+from common import srf, load_wavelen
 from numpy.random import multivariate_normal as mvn
 
 
@@ -33,17 +35,15 @@ class Instrument:
         function of the radiance level."""
 
         # If needed, skip first index column and/or convert to nanometers
-        self.wavelength_file = config['wavelength_file']
-
-        q = s.loadtxt(self.wavelength_file)
-        if q.shape[1] > 2:
-            q = q[:, 1:]
-        if q[0, 0] < 100:
-            q = q * 1000.0
-        self.nchans = q.shape[0]
-        self.wl = q[:, 0]
-        self.fwhm = q[:, 1]
-        self.bounds, self.scale, self.statevec = [], [], []
+        self.wl_init, self.fwhm_init = load_wavelen(config['wavelength_file'])
+        self.nchan = len(self.wl_init)
+        self.bounds, self.scale, self.statevec, self.init_val = [], [], [], []
+        if 'statevector' in config:
+            for key in config['statevector']:
+                 self.statevec.append(key)
+                 self.init_val.append(config['statevector'][key]['init'])
+                 self.bounds.append(config['statevector'][key]['bounds'])
+                 self.scale.append(config['statevector'][key]['scale'])
 
         # noise specified as parametric model.
         if 'SNR' in config:
@@ -68,43 +68,50 @@ class Instrument:
                 p_c = interp1d(coeffs[:, 0], coeffs[:, 3],
                                fill_value='extrapolate')
                 self.noise = s.array([[p_a(w), p_b(w), p_c(w)]
-                                      for w in self.wl])
+                                      for w in self.wl_init])
 
             elif self.noise_file.endswith('.mat'):
 
                 self.model_type = 'pushbroom'
                 D = loadmat(self.noise_file)
-                nb = len(self.wl)
                 self.ncols = D['columns'][0, 0]
-                if nb != s.sqrt(D['bands'][0, 0]):
+                if self.nchan != s.sqrt(D['bands'][0, 0]):
                     raise ValueError(
                         'Noise model does not match wavelength # bands')
-                cshape = ((self.ncols, nb, nb))
+                cshape = ((self.ncols, self.nchan, self.nchan))
                 self.covs = D['covariances'].reshape(cshape)
 
         self.integrations = config['integrations']
 
-        # Variables not retrieved
-        self.bvec = ['Cal_Relative_%04i' % int(w) for w in self.wl]
+        # Variables not retrieved = always start with relative cal
+        self.bvec = ['Cal_Relative_%04i' % int(w) for w in self.wl_init] + \
+            ['Cal_Spectral', 'Cal_Stray_SRF']
+        self.bval = s.zeros(self.nchan+2)
 
         if 'unknowns' in config:
 
-            bval = []
+            special_unknowns = ['wavelength_calibration_uncertainty']
+
+            # Radiometric uncertainties combine via Root Sum Square...
             for key, val in config['unknowns'].items():
-                if type(val) is str:
+                if key in special_unknowns: 
+                    continue 
+                elif type(val) is str:
                     u = s.loadtxt(val, comments='#')
                     if (len(u.shape) > 0 and u.shape[1] > 1):
                         u = u[:, 1]
                 else:
-                    u = s.ones(len(self.wl)) * val
-                bval.append(u)
+                    u = s.ones(self.nchan) * val
+                self.bval[:self.nchan] = self.bval[:self.nchan] + pow(u,2)
 
-            # unretrieved uncertainties combine via Root Sum Square...
-            self.bval = s.sqrt(pow(s.array(bval), 2).sum(axis=0))
+            self.bval[:self.nchan] = s.sqrt(self.bval[:self.nchan])
 
-        else:
-            # no unknowns - measurement noise only
-            self.bval = s.zeros(len(self.wl))
+            # Now handle spectral uncertainties
+            if 'wavelength_calibration_uncertainty' in config['unknowns']:
+                self.bval[-2] = \
+                    config['unknowns']['wavelength_calibration_uncertainty']
+            if 'stray_srf_uncertainty' in config:
+                self.bval[-1] = config['unknowns']['stray_srf_uncertainty']
 
     def Sy(self, meas, geom):
         """ Calculate measurement error covariance.
@@ -133,10 +140,24 @@ class Instrument:
     def Kb_instrument(self, meas):
         """Jacobian of radiance with respect to NOT RETRIEVED instrument 
            variables (relative miscalibration error).
-           Input: meas, a vector of size nchans
+           Input: meas, a vector of size nchan
            Returns: Kb_instrument, a matrix of size 
             [n_measurements x nb_instrument]"""
-        Kb_instrument = s.diagflat(meas)
+
+        # Uncertainty due to radiometric calibration
+        Kb_instrument = s.hstack((s.diagflat(meas),
+                s.zeros((self.nchan,2))))
+
+        # Uncertainty due to spectral calibration - TODO: should do at high res
+        if self.bval[-2] > 1e-6:
+          Kb_instrument[:,-2] = s.hstack((s.diff(meas), s.array([0])))
+
+        # Uncertainty due to spectral stray light 
+        if self.bval[-1] > 1e-6:
+          ssrf = srf(s.arange(-10,11), 0, 4) 
+          blur = convolve(meas, ssrf, mode='same') 
+          Kb_instrument[:,-1] = blur - meas
+          
         return Kb_instrument
 
     def simulate_measurement(self, meas, geom):
@@ -145,3 +166,16 @@ class Instrument:
         mu = s.zeros(meas.shape)
         rdn_sim = meas + mvn(mu, Sy)
         return rdn_sim
+
+    def calibration(self, x_instrument):
+        """ Calculate the measured wavelengths"""
+        wl, fwhm = self.wl_init, self.fwhm_init
+        if 'FWHM_SCL' in self.statevec:
+            ind = self.statevec.index('FWHM_SCL')
+            fwhm = fwhm + x_instrument[ind]
+        if 'WL_SHIFT' in self.statevec:
+            ind = self.statevec.index('WL_SHIFT')
+            wl = self.wl_init + x_instrument[ind]
+        return wl, fwhm
+
+

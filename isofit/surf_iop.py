@@ -20,7 +20,7 @@
 
 import scipy as s
 from scipy.io import loadmat, savemat
-from common import recursive_replace, emissive_radiance, chol_inv, eps, srf
+from common import recursive_replace, load_wavelen, chol_inv, eps, srf
 from scipy.linalg import block_diag, det, norm, pinv, sqrtm, inv, cholesky
 from scipy.interpolate import interp1d
 from surf import Surface
@@ -30,10 +30,10 @@ class IOPSurface(Surface):
     """A model of the surface based on a collection of multivariate 
        Gaussians, extended with a surface glint term. """
 
-    def __init__(self, config, RT):
+    def __init__(self, config):
 
-        Surface.__init__(self, config, RT)
-        self.wl = RT.wl
+        Surface.__init__(self, config)
+        self.wl, fwhm = load_wavelen(config['wavelength_file'])
         self.statevec, self.bounds, self.scale, self.init_val = [], [], [], []
 
         # Each channel maps to a nonnegative absorption residual

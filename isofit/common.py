@@ -119,6 +119,17 @@ def emissive_radiance_old(emissivity, T, wl):
     return L, dL_dT
 
 
+def load_wavelen(wavelength_file):
+    """Load a wavelength file, and convert to nanometers if needed"""
+    q = s.loadtxt(wavelength_file)
+    if q.shape[1] > 2:
+        q = q[:, 1:3]
+    if q[0, 0] < 100:
+        q = q * 1000.0
+    wl, fwhm = q.T
+    return wl, fwhm
+
+
 def emissive_radiance(emissivity, T, wl):
     """Radiance of a surface due to emission"""
 

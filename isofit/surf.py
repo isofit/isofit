@@ -27,10 +27,8 @@ class Surface:
     """A model of the surface.
       Surface models are stored as MATLAB '.mat' format files"""
 
-    def __init__(self, config, RT):
+    def __init__(self, config):
 
-        self.wl = RT.wl.copy()
-        self.nwl = len(self.wl)
         self.statevec = []
         self.bounds = s.array([])
         self.scale = s.array([])
@@ -39,9 +37,8 @@ class Surface:
         self.bval = s.array([])
 
         if 'reflectance_file' in config:
-            rfl, wl = spectrumLoad(config['reflectance_file'])
-            p = interp1d(wl, rfl, bounds_error=False, fill_value='extrapolate')
-            self.rfl = p(self.wl)
+            self.rfl, self.wl = spectrumLoad(config['reflectance_file'])
+            self.nwl = len(self.wl)
 
     def xa(self, x_surface, geom):
         '''Mean of prior state vector distribution calculated at state x'''
@@ -49,7 +46,7 @@ class Surface:
 
     def Sa(self, x_surface, geom):
         '''Covariance of prior state vector distribution calculated at state x.'''
-        return s.array([[]])
+        return s.zeros((0,0), dtype=float)
 
     def heuristic_surface(self, rfl, Ls, geom):
         '''Given a directional reflectance estimate and one or more emissive 

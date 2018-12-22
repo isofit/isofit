@@ -29,6 +29,7 @@ from copy import deepcopy
 from scipy.stats import norm as normal
 from scipy.interpolate import interp1d
 from rt_lut import TabularRT, FileExistsError
+from rt_modtran import ModtranRT
 
 eps = 1e-5  # used for finite difference derivative calculations
 

@@ -45,14 +45,12 @@ eps = 1e-5  # used for finite difference derivative calculations
 class LibRadTranRT(TabularRT):
     """A model of photon transport including the atmosphere."""
 
-    def __init__(self, config, instrument):
+    def __init__(self, config):
 
-        TabularRT.__init__(self, config, instrument)
-        self.wl = instrument.wl
-        self.fwhm = instrument.fwhm
+        TabularRT.__init__(self, config)
         self.libradtran_dir = self.find_basedir(config)
         self.libradtran_template_file = config['libradtran_template_file']
-        self.build_lut(instrument)
+        self.build_lut()
 
     def find_basedir(self, config):
         '''Seek out a libradtran base directory'''

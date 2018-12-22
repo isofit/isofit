@@ -32,15 +32,12 @@ class Bunch(object):
 
 class Output:
 
-    def __init__(self, config, inverse):
+    def __init__(self, config, forward, inverse):
         """Initialization specifies retrieval subwindows for calculating
         measurement cost distributions"""
 
         self.iv = inverse
-        self.wl = self.iv.fm.instrument.wl
-        self.fwhm = self.iv.fm.instrument.fwhm
-        self.windows = inverse.windows
-        self.winidx = inverse.winidx
+        self.fm = forward
 
         self.output = Bunch(config['output'])
         for field in ['data_dump_file', 'algebraic_inverse_file',
@@ -77,7 +74,8 @@ class Output:
             if hasattr(self.output, field) and \
                getattr(self.output, field) is not None:
                 with open(getattr(self.output, field), 'w') as fout:
-                    for w, v in zip(self.iv.fm.instrument.wl, prod):
+                    wl, fwhm = self.fm.calibration(x)
+                    for w, v in zip(wl, prod):
                         fout.write('%7.5f %7.5f\n' % (w, v))
 
         if hasattr(self.output, "estimated_state_file") and \
@@ -88,12 +86,13 @@ class Output:
 
         if self.output.radiometry_correction_file is not None:
             if self.ref_wl is not None and self.ref_rfl is not None:
-                resamp = spectrumResample(self.ref_rfl, self.ref_wl, self.wl,
-                                          self.fwhm, fill=True)
-                rdn_reference = self.iv.fm.calc_rdn(x, geom, rfl=resamp)
-                factors = rdn_reference / rdn_meas
+                resamp = spectrumResample(self.ref_rfl, self.ref_wl, 
+                        self.fm.surface.wl, self.fm.surface.fwhm, fill=True)
+                rdn_predict = self.fm.calc_rdn_meas(x, geom, rfl=resamp)
+                factors = rdn_predict / rdn_meas
+                wl, fwhm = self.fm.calibration(x)
                 with open(self.output.radiometry_correction_file, 'w') as fout:
-                    for w, v in zip(self.iv.fm.instrument.wl, factors):
+                    for w, v in zip(wl, factors):
                         fout.write('%7.5f %7.5f\n' % (w, v))
             else:
                 raise ValueError(
@@ -119,38 +118,40 @@ class Output:
             rfl_alg_init, rfl_alg_opt, coeffs = \
                 self.iv.invert_algebraic(rdn_meas, x, geom)
             with open(self.output.algebraic_inverse_file, 'w') as fout:
-                for w, v, u in zip(self.iv.fm.instrument.wl, rfl_alg_init, rfl_alg_opt):
+                for w, v, u in zip(self.fm.surface.wl, rfl_alg_init, rfl_alg_opt):
                     fout.write('%7.5f %7.5f %7.5f\n' % (w, v, u))
 
     def data_dump(self, x, rdn_meas, geom, fname):
         """Dump diagnostic data to a file."""
 
         Seps_inv, Seps_inv_sqrt = self.iv.calc_Seps(rdn_meas, geom)
-        rdn_est = self.iv.fm.calc_rdn(x, geom)
-        rdn_est_window = rdn_est[self.winidx]
-        meas_window = rdn_meas[self.winidx]
+        rdn_est = self.fm.calc_rdn(x, geom)
+        rdn_est_window = rdn_est[self.iv.winidx]
+        meas_window = rdn_meas[self.iv.winidx]
         meas_resid = (rdn_est_window-meas_window).dot(Seps_inv_sqrt)
         xa, Sa, Sa_inv, Sa_inv_sqrt = self.iv.calc_prior(x, geom)
         prior_resid = (x - xa).dot(Sa_inv_sqrt)
-        xopt, coeffs = self.iv.fm.invert_algebraic(x, rdn_meas, geom)
+        xopt, coeffs = self.fm.invert_algebraic(x, rdn_meas, geom)
         rhoatm, sphalb, transm, solar_irr, coszen = coeffs
-        Ls = self.iv.fm.surface.calc_Ls(x[self.iv.fm.surface_inds], geom)
+        Ls = self.fm.surface.calc_Ls(x[self.fm.idx_surface], geom)
 
         # jacobian of cost
-        Kb = self.iv.fm.Kb(rdn_meas, geom)
-        K = self.iv.fm.K(x, geom)
-        xinit = self.iv.fm.init(rdn_meas, geom)
-        Sy = self.iv.fm.instrument.Sy(rdn_meas, geom)
+        Kb = self.fm.Kb(rdn_meas, geom)
+        K = self.fm.K(x, geom)
+        xinit = self.fm.init(rdn_meas, geom)
+        Sy = self.fm.instrument.Sy(rdn_meas, geom)
         S_hat, K, G = self.iv.calc_posterior(x, geom, rdn_meas)
-        lrfl_est = self.iv.fm.calc_lrfl(x, geom)
+        lrfl_est = self.fm.calc_lrfl(x, geom)
         cost_jac_prior = s.diagflat(x - xa).dot(Sa_inv_sqrt)
-        cost_jac_meas = Seps_inv_sqrt.dot(K[self.winidx, :])
-        meas_Cov = self.iv.fm.Seps(rdn_meas, geom)
+        cost_jac_meas = Seps_inv_sqrt.dot(K[self.iv.winidx, :])
+        meas_Cov = self.fm.Seps(rdn_meas, geom)
+        wl, fwhm = self.fm.calibration(x)
         mdict = {'K': K, 'G': G, 'S_hat': S_hat, 'prior_mu': xa, 'Ls': Ls,
                  'prior_Cov': Sa, 'rdn_meas': rdn_meas, 'rdn_est': rdn_est,
-                 'x': x, 'meas_Cov': meas_Cov, 'wl': self.iv.fm.wl,
+                 'x': x, 'meas_Cov': meas_Cov, 'wl': wl,
                  'lrfl_est': lrfl_est, 'cost_jac_prior': cost_jac_prior,
-                 'Kb': Kb, 'cost_jac_meas': cost_jac_meas, 'winidx': self.winidx,
+                 'Kb': Kb, 'cost_jac_meas': cost_jac_meas, 
+                 'winidx': self.iv.winidx,
                  'meas_resid': meas_resid, 'prior_resid': prior_resid,
                  'noise_Cov': Sy, 'xinit': xinit, 'rhoatm': rhoatm,
                  'sphalb': sphalb, 'transm': transm, 'solar_irr': solar_irr,
@@ -166,16 +167,17 @@ class Output:
             return
 
         plt.cla()
-        xmin, xmax = min(self.wl), max(self.wl)
+        wl, fwhm = self.fm.calibration(x)
+        xmin, xmax = min(wl), max(wl)
         fig = plt.subplots(1, 2, figsize=(10, 5))
         plt.subplot(1, 2, 1)
-        rdn_est = self.iv.fm.calc_rdn(x, geom)
-        for lo, hi in self.windows:
-            idx = s.where(s.logical_and(self.wl > lo, self.wl < hi))[0]
-            p1 = plt.plot(self.iv.fm.wl[idx], rdn_meas[idx],
-                          color=[0.7, 0.2, 0.2], linewidth=2)
+        rdn_est = self.fm.calc_rdn(x, geom)
+        for lo, hi in self.iv.windows:
+            idx = s.where(s.logical_and(wl>lo, wl<hi))[0]
+            p1 = plt.plot(wl[idx], rdn_meas[idx], color=[0.7, 0.2, 0.2], 
+                    linewidth=2)
             plt.hold(True)
-            p2 = plt.plot(self.iv.fm.wl, rdn_est, color='k', linewidth=2)
+            p2 = plt.plot(wl, rdn_est, color='k', linewidth=2)
         plt.title("Radiance")
         ymax = max(rdn_meas)*1.25
         plt.text(500, ymax*0.92, "Measured", color=[0.7, 0.2, 0.2])
@@ -186,9 +188,9 @@ class Output:
         plt.xlim([xmin, xmax])
 
         plt.subplot(1, 2, 2)
-        lrfl_est = self.iv.fm.calc_lrfl(x, geom)
-        ymax = min(max(lrfl_est)*1.25, 0.7)
-        for lo, hi in self.windows:
+        lrfl_est = self.fm.calc_lrfl(x, geom)
+        ymax = min(max(lrfl_est)*1.25, 0.10)
+        for lo, hi in self.iv.windows:
             if self.ref_wl is not None and self.ref_rfl is not None:
                 # red line
                 idx = s.where(s.logical_and(
@@ -198,19 +200,20 @@ class Output:
                 ymax = max(max(self.ref_rfl[idx]*1.2), ymax)
                 plt.hold(True)
             # black line
-            idx = s.where(s.logical_and(self.wl > lo, self.wl < hi))[0]
-            p2 = plt.plot(self.iv.fm.wl[idx], lrfl_est[idx],
-                          'k', linewidth=2)
+            idx = s.where(s.logical_and(wl > lo, wl < hi))[0]
+            p2 = plt.plot(wl[idx], lrfl_est[idx], 'k', linewidth=2)
             ymax = max(max(lrfl_est[idx]*1.2), ymax)
             # green and blue lines - surface components
-            if hasattr(self.iv.fm.surface, 'components'):
-                p3 = plt.plot(self.iv.fm.wl[idx], self.iv.fm.xa(x, geom)[idx],
+            if hasattr(self.fm.surface, 'components'):
+                idx = s.where(s.logical_and(self.fm.surface.wl > lo, 
+                        self.fm.surface.wl < hi))[0]
+                p3 = plt.plot(self.fm.surface.wl[idx], self.fm.xa(x, geom)[idx],
                               'b', linewidth=2)
-                for j in range(len(self.iv.fm.surface.components)):
-                    z = self.iv.fm.surface.norm(
-                        lrfl_est[self.iv.fm.surface.refidx])
-                    mu = self.iv.fm.surface.components[j][0] * z
-                    plt.plot(self.iv.fm.wl[idx], mu[idx], 'g:', linewidth=1)
+                for j in range(len(self.fm.surface.components)):
+                    z = self.fm.surface.norm(
+                        lrfl_est[self.fm.surface.refidx])
+                    mu = self.fm.surface.components[j][0] * z
+                    plt.plot(self.fm.surface.wl[idx], mu[idx], 'g:', linewidth=1)
         plt.ylim([-0.0010, ymax])
         plt.xlim([xmin, xmax])
         plt.title("Reflectance")
@@ -225,6 +228,3 @@ class Output:
         plt.savefig(fname)
         plt.close()
 
-
-if __name__ == '__main__':
-    main()

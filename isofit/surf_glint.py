@@ -27,9 +27,9 @@ class GlintSurface(MultiComponentSurface):
     """A model of the surface based on a collection of multivariate 
        Gaussians, extended with a surface glint term. """
 
-    def __init__(self, config, RT):
+    def __init__(self, config):
 
-        MultiComponentSurface.__init__(self, config, RT)
+        MultiComponentSurface.__init__(self, config)
         self.statevec.extend(['GLINT'])
         self.scale.extend([1.0])
         self.init_val.extend([0.005])

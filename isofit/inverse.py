@@ -35,11 +35,11 @@ error_code = -1
 class Inversion:
 
     def __init__(self, config, forward):
+
         """Initialization specifies retrieval subwindows for calculating
         measurement cost distributions"""
         self.lasttime = time.time()
         self.fm = forward
-        self.wl = self.fm.wl
         self.ht = OrderedDict()  # Hash table
         self.max_table_size = 500
         self.windows = config['windows']
@@ -53,10 +53,13 @@ class Inversion:
             self.state_indep_S_hat = False
         self.windows = config['windows']
 
+        """We calculate the instrument channel indices associated with the
+        retrieval windows using the initial instrument calibration.  These
+        window indices never change throughout the life of the object."""
         self.winidx = s.array((), dtype=int)  # indices of retrieval windows
-        inds = range(len(self.wl))
         for lo, hi in self.windows:
-            idx = s.where(s.logical_and(self.wl > lo, self.wl < hi))[0]
+            idx = s.where(s.logical_and(self.fm.instrument.wl_init > lo, 
+                        self.fm.instrument.wl_init < hi))[0]
             self.winidx = s.concatenate((self.winidx, idx), axis=0)
         self.counts = 0
         self.inversions = 0
@@ -257,6 +260,3 @@ class Inversion:
         xopt, coeffs = self.fm.invert_algebraic(x, rdn_meas, geom)
         return x0, xopt, coeffs
 
-
-if __name__ == '__main__':
-    main()

@@ -20,7 +20,7 @@
 
 import scipy as s
 from common import recursive_replace, emissive_radiance, chol_inv, eps
-from scipy.linalg import block_diag, det, norm, pinv, sqrtm, inv, cholesky
+from scipy.linalg import det, norm, pinv, sqrtm, inv, cholesky
 from scipy.optimize import minimize
 from surf_multicomp import MultiComponentSurface
 
@@ -29,9 +29,9 @@ class MixBBSurface(MultiComponentSurface):
     """A model of the surface based on a Mixture of a hot Black Body and 
         Multicomponent cold surfaces"""
 
-    def __init__(self, config, RT):
+    def __init__(self, config):
 
-        MultiComponentSurface.__init__(self, config, RT)
+        MultiComponentSurface.__init__(self, config)
         # Handle additional state vector elements
         self.statevec.extend(['SURF_TEMP_K'])
         self.init_val.extend([270.0])

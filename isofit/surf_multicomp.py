@@ -20,7 +20,7 @@
 
 import scipy as s
 from scipy.io import loadmat, savemat
-from common import recursive_replace, emissive_radiance, svd_inv, eps
+from common import recursive_replace, svd_inv, eps
 from scipy.linalg import block_diag, det, norm, pinv, sqrtm, inv
 from surf import Surface
 
@@ -34,13 +34,14 @@ class MultiComponentSurface(Surface):
        Mahalanobis distance to each component cluster, and use that as our
        Multivariate Gaussian surface model."""
 
-    def __init__(self, config, RT):
+    def __init__(self, config):
 
-        Surface.__init__(self, config, RT)
+        Surface.__init__(self, config)
         # Models are stored as dictionaries in .mat format
         model_dict = loadmat(config['surface_file'])
         self.components = list(zip(model_dict['means'], model_dict['covs']))
         self.ncomp = len(self.components)
+        self.wl = model_dict['wl'][0]
 
         # Set up normalization method
         self.normalize = model_dict['normalize']

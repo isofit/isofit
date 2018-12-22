@@ -22,7 +22,7 @@ import os
 import scipy as s
 from common import json_load_ascii, combos
 from common import VectorInterpolator, VectorInterpolatorJIT
-from common import recursive_replace, eps
+from common import recursive_replace, eps, load_wavelen
 from scipy.interpolate import interp1d
 from scipy.optimize import minimize_scalar as min1d
 
@@ -40,7 +40,10 @@ def spawn_rt(cmd):
 class TabularRT:
     """A model of photon transport including the atmosphere."""
 
-    def __init__(self, config, instrument):
+    def __init__(self, config):
+        
+        self.wl, self.fwhm = load_wavelen(config['wavelength_file'])
+        self.nchan = len(self.wl)
 
         if 'auto_rebuild' in config:
           self.auto_rebuild = config['auto_rebuild']
@@ -84,9 +87,11 @@ class TabularRT:
     def Sa(self):
         '''Covariance of prior distribution. Our state vector covariance 
            is diagonal with very loose constraints.'''
+        if n_state == 0: 
+           return s.zeros((0,0), dtype=float)
         return s.diagflat(pow(self.prior_sigma, 2))
 
-    def build_lut(self, instrument, rebuild=False):
+    def build_lut(self, rebuild=False):
         """ Each LUT is associated with a source directory.  We build a 
             lookup table by: 
               (1) defining the LUT dimensions, state vector names, and the grid 
@@ -145,7 +150,7 @@ class TabularRT:
             if self.solar_irr is None:  # first file
                 self.solar_irr = sol
                 self.coszen = s.cos(solzen * s.pi / 180.0)
-                dims_aug = self.lut_dims + [len(instrument.wl)]
+                dims_aug = self.lut_dims + [self.nchan]
                 self.sphalb = s.zeros(dims_aug, dtype=float)
                 self.transm = s.zeros(dims_aug, dtype=float)
                 self.rhoatm = s.zeros(dims_aug, dtype=float)
