@@ -22,7 +22,7 @@ import scipy as s
 from scipy.io import loadmat, savemat
 from scipy.interpolate import interp1d
 from scipy.signal import convolve
-from common import srf, load_wavelen
+from common import eps, srf, load_wavelen, resample_spectrum
 from numpy.random import multivariate_normal as mvn
 
 
@@ -36,7 +36,7 @@ class Instrument:
 
         # If needed, skip first index column and/or convert to nanometers
         self.wl_init, self.fwhm_init = load_wavelen(config['wavelength_file'])
-        self.nchan = len(self.wl_init)
+        self.n_chan = len(self.wl_init)
         self.bounds, self.scale, self.statevec, self.init_val = [], [], [], []
         if 'statevector' in config:
             for key in config['statevector']:
@@ -44,6 +44,7 @@ class Instrument:
                  self.init_val.append(config['statevector'][key]['init'])
                  self.bounds.append(config['statevector'][key]['bounds'])
                  self.scale.append(config['statevector'][key]['scale'])
+        self.n_state = len(self.statevec)
 
         # noise specified as parametric model.
         if 'SNR' in config:
@@ -75,10 +76,10 @@ class Instrument:
                 self.model_type = 'pushbroom'
                 D = loadmat(self.noise_file)
                 self.ncols = D['columns'][0, 0]
-                if self.nchan != s.sqrt(D['bands'][0, 0]):
+                if self.n_chan != s.sqrt(D['bands'][0, 0]):
                     raise ValueError(
                         'Noise model does not match wavelength # bands')
-                cshape = ((self.ncols, self.nchan, self.nchan))
+                cshape = ((self.ncols, self.n_chan, self.n_chan))
                 self.covs = D['covariances'].reshape(cshape)
 
         self.integrations = config['integrations']
@@ -86,7 +87,7 @@ class Instrument:
         # Variables not retrieved = always start with relative cal
         self.bvec = ['Cal_Relative_%04i' % int(w) for w in self.wl_init] + \
             ['Cal_Spectral', 'Cal_Stray_SRF']
-        self.bval = s.zeros(self.nchan+2)
+        self.bval = s.zeros(self.n_chan+2)
 
         if 'unknowns' in config:
 
@@ -101,10 +102,10 @@ class Instrument:
                     if (len(u.shape) > 0 and u.shape[1] > 1):
                         u = u[:, 1]
                 else:
-                    u = s.ones(self.nchan) * val
-                self.bval[:self.nchan] = self.bval[:self.nchan] + pow(u,2)
+                    u = s.ones(self.n_chan) * val
+                self.bval[:self.n_chan] = self.bval[:self.n_chan] + pow(u,2)
 
-            self.bval[:self.nchan] = s.sqrt(self.bval[:self.nchan])
+            self.bval[:self.n_chan] = s.sqrt(self.bval[:self.n_chan])
 
             # Now handle spectral uncertainties
             if 'wavelength_calibration_uncertainty' in config['unknowns']:
@@ -112,6 +113,16 @@ class Instrument:
                     config['unknowns']['wavelength_calibration_uncertainty']
             if 'stray_srf_uncertainty' in config:
                 self.bval[-1] = config['unknowns']['stray_srf_uncertainty']
+
+    def xa(self):
+        '''Mean of prior distribution, calculated at state x. '''
+        return self.init_val.copy()
+
+    def Sa(self):
+        '''Covariance of prior distribution. (diagonal)'''
+        if self.n_state == 0: 
+           return s.zeros((0,0), dtype=float)
+        return s.diagflat(pow(self.prior_sigma, 2))
 
     def Sy(self, meas, geom):
         """ Calculate measurement error covariance.
@@ -137,28 +148,55 @@ class Instrument:
                 C = self.covs[geom.pushbroom_column, :, :]
             return C / s.sqrt(self.integrations)
 
-    def Kb_instrument(self, meas):
+    def dmeas_dinstrument(self, x_instrument, wl_hi, rdn_hi):
+        """Jacobian of measurement  with respect to instrument 
+           variables.  We use finite differences for now.""" 
+
+        dmeas_dinstrument = s.zeros((self.n_chan, self.n_state), dtype=float)
+        if self.n_state == 0:
+          return dmeas_dinstrument
+
+        meas = self.sample(x_instrument, wl_hi, rdn_hi)
+        for ind in range(self.statevec):
+            x_instrument_perturb = x_instrument.copy()
+            x_instrument_perturb[ind] = x_instrument_perturb[ind]+eps
+            meas_perturb = self.sample(x_instrument_perturb, wl_hi, rdn_hi)
+            dmeas_dinstrument[:,ind] = (meas_perturb - meas) / eps
+        return dmeas_dinstrument
+
+    def dmeas_dinstrumentb(self, x_instrument, wl_hi, rdn_hi):
         """Jacobian of radiance with respect to NOT RETRIEVED instrument 
            variables (relative miscalibration error).
-           Input: meas, a vector of size nchan
+           Input: meas, a vector of size n_chan
            Returns: Kb_instrument, a matrix of size 
             [n_measurements x nb_instrument]"""
 
         # Uncertainty due to radiometric calibration
-        Kb_instrument = s.hstack((s.diagflat(meas),
-                s.zeros((self.nchan,2))))
+        meas = self.sample(x_instrument, wl_hi, rdn_hi)
+        dmeas_dinstrument = s.hstack((s.diagflat(meas),
+                s.zeros((self.n_chan,2))))
 
-        # Uncertainty due to spectral calibration - TODO: should do at high res
+        # Uncertainty due to spectral calibration 
         if self.bval[-2] > 1e-6:
-          Kb_instrument[:,-2] = s.hstack((s.diff(meas), s.array([0])))
+          dmeas_dinstrument[:,-2] = self.sample(x_instrument, wl_hi,
+                  s.hstack((s.diff(rdn_hi), s.array([0]))))
 
         # Uncertainty due to spectral stray light 
         if self.bval[-1] > 1e-6:
           ssrf = srf(s.arange(-10,11), 0, 4) 
           blur = convolve(meas, ssrf, mode='same') 
-          Kb_instrument[:,-1] = blur - meas
+          dmeas_dinstrument[:,-1] = blur - meas
           
-        return Kb_instrument
+        return dmeas_dinstrument
+
+    def sample(self, x_instrument, wl_hi, rdn_hi):
+        """ Apply instrument sampling to a radiance spectrum"""
+        wl, fwhm = self.calibration(x_instrument)
+        if rdn_hi.ndim == 1:
+            return resample_spectrum(rdn_hi, wl_hi, wl, fwhm)
+        else:
+            resamp = [resample_spectrum(r, wl_hi, wl, fwhm) for r in rdn_hi]
+            return s.array(resamp)
 
     def simulate_measurement(self, meas, geom):
         """ Simulate a measurement by the given sensor, for a true radiance."""

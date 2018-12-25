@@ -87,7 +87,7 @@ class TabularRT:
     def Sa(self):
         '''Covariance of prior distribution. Our state vector covariance 
            is diagonal with very loose constraints.'''
-        if n_state == 0: 
+        if self.n_state == 0: 
            return s.zeros((0,0), dtype=float)
         return s.diagflat(pow(self.prior_sigma, 2))
 
@@ -216,69 +216,7 @@ class TabularRT:
         rdn = rho/s.pi*(self.solar_irr*self.coszen) + (Ls * transup)
         return rdn
 
-    def estimate_Ls(self, x_RT, rfl, rdn, geom):
-        """Estimate the surface emission for a given state vector and 
-           reflectance/radiance pair"""
-
-        rhoatm, sphalb, transm, transup = self.get(x_RT, geom)
-        rho = rhoatm + transm * rfl / (1.0 - sphalb * rfl)
-        Ls = (rdn - rho/s.pi*(self.solar_irr*self.coszen)) / transup
-        return Ls
-
-    def heuristic_atmosphere(self, rdn, geom):
-        '''From a given radiance, estimate atmospheric state using band ratio
-        heuristics.  Used to initialize gradient descent inversions.'''
-
-        x = self.init_val.copy()
-
-        # Band ratio retrieval of H2O
-        for h2oname in ['H2OSTR', 'h2o']:
-            if (h2oname in self.lut_names) and \
-                    any(self.wl > 850) and any(self.wl < 1050):
-
-                ind_lut = self.lut_names.index(h2oname)
-                ind_sv = self.statevec.index(h2oname)
-                b865, b945, b1040 = [s.argmin(abs(self.wl-t))
-                                     for t in (865, 945, 1040)]
-                h2os, ratios = [], []  # will be corrected for transmission, path radiance
-
-                for h2o in self.lut_grids[ind_lut]:
-
-                    xnew = x.copy()
-                    xnew[ind_sv] = h2o
-                    rhoatm, sphalb, transm, transup = self.get(xnew, geom)
-
-                    # assume no surface emission
-                    r = (rdn*s.pi/(self.solar_irr*self.coszen) -
-                         rhoatm) / (transm+1e-8)
-                    ratios.append((r[b945]*2.0)/(r[b1040]+r[b865]))
-                    h2os.append(h2o)
-
-                p = interp1d(h2os, ratios)
-                bounds = (h2os[0]+0.001, h2os[-1]-0.001)
-                best = min1d(lambda h: abs(1-p(h)),
-                             bounds=bounds, method='bounded')
-                x[ind_sv] = best.x
-
-        Ls_est = s.zeros(rdn.shape)
-        rfl_est = self.invert_algebraic(x, rdn, Ls_est, geom)
-        return x, rfl_est
-
-    def invert_algebraic(self, x_RT, rdn, Ls, geom):
-        '''Inverts radiance algebraically to get a reflectance.
-           Ls is the surface emission, if present'''
-
-        rhoatm, sphalb, transm, transup = self.get(x_RT, geom)
-
-        if Ls is None:
-            rho = rdn * s.pi / (self.solar_irr * self.coszen)
-        else:
-            rdn_solref = rdn - (transup * Ls)
-            rho = rdn_solref * s.pi / (self.solar_irr * self.coszen)
-        rfl = 1.0 / (transm / (rho - rhoatm) + sphalb)
-        return rfl
-
-    def K_RT(self, x_RT, x_surface, rfl, drfl_dsurface, Ls, dLs_dsurface,
+    def drdn_dRT(self, x_RT, x_surface, rfl, drfl_dsurface, Ls, dLs_dsurface,
              geom):
         """Jacobian of radiance with respect to RT and surface state vectors"""
 
@@ -311,7 +249,7 @@ class TabularRT:
 
         return K_RT, K_surface
 
-    def Kb_RT(self, x_RT, rfl, Ls, geom):
+    def drdn_dRTb(self, x_RT, rfl, Ls, geom):
         """Jacobian of radiance with respect to NOT RETRIEVED RT and surface 
            state.  Right now, this is just the sky view factor."""
 

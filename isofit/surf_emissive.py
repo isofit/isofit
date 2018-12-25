@@ -65,7 +65,7 @@ class MixBBSurface(MultiComponentSurface):
         Cov[self.bb_frac_ind, self.bb_frac_ind] = f
         return Cov
 
-    def heuristic_surface(self, rfl_meas, Ls, geom):
+    def fit_params(self, rfl_meas, Ls, geom):
         '''Given a reflectance estimate and one or more emissive parameters, 
           fit a state vector.'''
 
@@ -76,8 +76,7 @@ class MixBBSurface(MultiComponentSurface):
             resid = Ls_est * bb_frac - Ls
             return sum(resid**2)
 
-        x_surface = MultiComponentSurface.heuristic_surface(self, rfl_meas,
-                                                                Ls, geom)
+        x_surface = MultiComponentSurface.fit_params(self, rfl_meas, Ls, geom)
         T, bb_frac = minimize(err, s.array([300, 0.1])).x
         bb_frac = max(eps, min(bb_frac, 1.0-eps))
         T = max(self.bounds[-2][0]+eps, min(T, self.bounds[-2][1]-eps))
@@ -85,12 +84,12 @@ class MixBBSurface(MultiComponentSurface):
         x_surface[self.surf_temp_ind] = T
         return x_surface
 
-    def conditional_solrfl(self, rfl_est, geom):
+    def conditional_solamb(self, rfl_est, geom):
         '''Conditions the reflectance on solar-reflected channels.'''
 
         sol_inds = s.logical_and(self.wl > 450, self.wl < 1250)
         x = s.zeros(len(self.statevec))
-        x[self.lrfl_inds] = rfl_est
+        x[self.lamb_inds] = rfl_est
         c = self.components[self.component(x, geom)]
         mu_sol = c[0][sol_inds]
         Cov_sol = s.array([c[1][i, sol_inds] for i in s.where(sol_inds)[0]])
@@ -102,27 +101,27 @@ class MixBBSurface(MultiComponentSurface):
     def calc_rfl(self, x_surface, geom):
         '''Reflectance'''
 
-        return self.calc_lrfl(x_surface, geom)
+        return self.calc_lamb(x_surface, geom)
 
-    def drfl_dx(self, x_surface, geom):
+    def drfl_dsurface(self, x_surface, geom):
         '''Partial derivative of reflectance with respect to state vector, 
         calculated at x_surface.'''
 
-        return self.dlrfl_dx(x_surface, geom)
+        return self.dlamb_dsurface(x_surface, geom)
 
-    def calc_lrfl(self, x_surface, geom):
+    def calc_lamb(self, x_surface, geom):
         '''Lambertian Reflectance'''
 
-        return MultiComponentSurface.calc_lrfl(self, x_surface, geom)
+        return MultiComponentSurface.calc_lamb(self, x_surface, geom)
 
-    def dlrfl_dx(self, x_surface, geom):
+    def dlamb_dsurface(self, x_surface, geom):
         '''Partial derivative of Lambertian reflectance with respect to state 
         vector, calculated at x_surface.'''
 
-        dlrfl = MultiComponentSurface.dlrfl_dx(self, x_surface, geom)
-        dlrfl[:, self.bb_frac_ind] = 0
-        dlrfl[:, self.surf_temp_ind] = 0
-        return dlrfl
+        dlamb = MultiComponentSurface.dlamb_dsurface(self, x_surface, geom)
+        dlamb[:, self.bb_frac_ind] = 0
+        dlamb[:, self.surf_temp_ind] = 0
+        return dlamb
 
     def calc_Ls(self, x_surface, geom):
         '''Emission of surface, as a radiance'''
@@ -133,18 +132,19 @@ class MixBBSurface(MultiComponentSurface):
         Ls, dLs_dT = emissive_radiance(emissivity, T, self.wl)
         return Ls * frac
 
-    def dLs_dx(self, x_surface, geom):
+    def dLs_dsurface(self, x_surface, geom):
         '''Partial derivative of surface emission with respect to state vector, 
         calculated at x_surface.'''
 
-        dLs_dx = MultiComponentSurface.dLs_dx(self, x_surface, geom)
+        dLs_dsurface =  MultiComponentSurface.dLs_dsurface(self, x_surface, 
+                geom)
         T = x_surface[self.surf_temp_ind]
         frac = x_surface[self.bb_frac_ind]
         emissivity = s.ones(self.nwl, dtype=float)
         Ls, dLs_dT = emissive_radiance(emissivity, T, self.wl)
-        dLs_dx[:, self.surf_temp_ind] = dLs_dT * frac
-        dLs_dx[:, self.bb_frac_ind] = Ls
-        return dLs_dx
+        dLs_dsurface[:, self.surf_temp_ind] = dLs_dT * frac
+        dLs_dsurface[:, self.bb_frac_ind] = Ls
+        return dLs_dsurface
 
     def summarize(self, x_surface, geom):
         '''Summary of state vector'''

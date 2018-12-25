@@ -308,7 +308,7 @@ def rdn_translate(wvn, rdn_wvn):
     return rdn_wvn*(dwl/dwvn)
 
 
-def spectrumResample(x, wl, wl2, fwhm2, fill=False):
+def resample_spectrum(x, wl, wl2, fwhm2, fill=False):
     """Resample a spectrum to a new wavelength / FWHM. 
        I assume Gaussian SRFs"""
     H = s.array([srf(wl, wi, fwhmi/2.355)
@@ -325,7 +325,7 @@ def spectrumResample(x, wl, wl2, fwhm2, fill=False):
         return xnew
 
 
-def spectrumLoad(init):
+def load_spectrum(init):
     """Load a single spectrum from a text file with initial columns giving
        wavelength and magnitude respectively"""
     wl, x = s.loadtxt(init)[:, :2].T

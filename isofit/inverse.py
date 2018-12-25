@@ -20,7 +20,7 @@
 
 import sys
 import scipy as s
-from common import spectrumLoad, svd_inv, svd_inv_sqrt, eps
+from common import svd_inv, svd_inv_sqrt, eps
 from collections import OrderedDict
 from scipy.optimize import least_squares
 import xxhash
@@ -81,7 +81,7 @@ class Inversion:
         return xa, Sa, Sa_inv, Sa_inv_sqrt
 
     @jit
-    def calc_posterior(self, x, geom, rdn_meas):
+    def calc_posterior(self, x, geom, meas):
         """Calculate posterior distribution of state vector. This depends 
         both on the location in the state space and the radiance (via noise)."""
 
@@ -89,7 +89,7 @@ class Inversion:
         Sa = self.fm.Sa(x, geom)
         Sa_inv = svd_inv(Sa, hashtable=self.ht)
         K = self.fm.K(x, geom)
-        Seps = self.fm.Seps(rdn_meas, geom, init=x)
+        Seps = self.fm.Seps(x, meas, geom)
         Seps_inv = svd_inv(Seps, hashtable=self.ht)
 
         # Gain matrix G reflects current state, so we use the state-dependent
@@ -112,13 +112,13 @@ class Inversion:
         return S_hat, K, G
 
     @jit
-    def calc_Seps(self, rdn_meas, geom, init=None):
+    def calc_Seps(self, x, meas, geom):
         """Calculate (zero-mean) measurement distribution in radiance terms.  
         This depends on the location in the state space. This distribution is 
         calculated over one or more subwindows of the spectrum. Return the 
         inverse covariance and its square root"""
 
-        Seps = self.fm.Seps(rdn_meas, geom, init=init)
+        Seps = self.fm.Seps(x, meas, geom)
         wn = len(self.winidx)
         Seps_win = s.zeros((wn, wn))
         for i in range(wn):
@@ -131,19 +131,19 @@ class Inversion:
 
         return Seps_inv, Seps_inv_sqrt
 
-    def invert(self, rdn_meas, geom, out=None, init=None):
+    def invert(self, meas, geom, out=None):
         """Inverts a meaurement and returns a state vector.
 
            Parameters:
 
-             rdn_meas       - a one-D scipy vector of radiance in uW/nm/sr/cm2
+             meas           - a one-D scipy vector of radiance in uW/nm/sr/cm2
              geom           - a geometry object.
              plot_directory - the base directory to which diagnostics are
                                 writtena preinitialized ForwardModel object
 
            Returns a tuple consisting of the following:
 
-             lrfl           - the converged lambertian surface reflectance
+             lamb           - the converged lambertian surface reflectance
              path           - the converged path radiance estimate
              mdl            - the modeled radiance estimate
              S_hat          - the posterior covariance of the state vector
@@ -152,18 +152,16 @@ class Inversion:
 
         """the least squares library seems to crash if we call it too many
     times without reloading.  Memory leak?"""
-        # reload(scipy.optimize)
         self.lasttime = time.time()
 
         """Calculate the initial solution, if needed."""
-        if init is None:
-            init = self.fm.init(rdn_meas, geom)
+        x0 = self.fm.init(meas, geom)
 
         """Seps is the covariance of "observation noise" including both 
     measurement noise from the instrument as well as variability due to 
     unknown variables.  For speed, we will calculate it just once based
     on the initial solution (a potential minor source of inaccuracy)"""
-        Seps_inv, Seps_inv_sqrt = self.calc_Seps(rdn_meas, geom, init=init)
+        Seps_inv, Seps_inv_sqrt = self.calc_Seps(x0, meas, geom)
 
         @jit
         def jac(x):
@@ -204,7 +202,7 @@ class Inversion:
             # the state vector.
             est_rdn = self.fm.calc_rdn(x, geom, rfl=None, Ls=None)
             est_rdn_window = est_rdn[self.winidx]
-            meas_window = rdn_meas[self.winidx]
+            meas_window = meas[self.winidx]
             meas_resid = (est_rdn_window-meas_window).dot(Seps_inv_sqrt)
 
             # Prior cost term
@@ -218,8 +216,8 @@ class Inversion:
             # Diagnostics
             if self.verbose:
                 newtime = time.time()
-                lrfl, mdl, path, S_hat, K, G = \
-                    self.forward_uncertainty(x, rdn_meas, geom)
+                lamb, mdl, path, S_hat, K, G = \
+                    self.forward_uncertainty(x, meas, geom)
                 dof = s.mean(s.diag(G[:, self.winidx].dot(K[self.winidx, :])))
                 sys.stdout.write('Iteration: %s ' % str(self.counts))
                 sys.stdout.write(' Time: %f ' % (newtime-self.lasttime))
@@ -230,12 +228,11 @@ class Inversion:
 
             # Plot interim solution?
             if out is not None:
-                out.plot_spectrum(x, rdn_meas, geom)
+                out.plot_spectrum(x, meas, geom)
 
             return s.real(total_resid)
 
         # Initialize and invert
-        x0 = init.copy()
         xopt = least_squares(err, x0, jac=jac, method='trf',
                              bounds=(self.fm.bounds[0]+eps,
                                      self.fm.bounds[1]-eps),
@@ -244,19 +241,19 @@ class Inversion:
                              max_nfev=20, tr_solver='exact')
         return xopt.x
 
-    def forward_uncertainty(self, x, rdn_meas, geom):
+    def forward_uncertainty(self, x, meas, geom):
         """Converged estimates of path radiance, radiance, reflectance
         # Also calculate the posterior distribution and Rodgers K, G matrices"""
 
-        dark_surface = s.zeros(rdn_meas.shape)
-        path = self.fm.calc_rdn(x, geom, rfl=dark_surface)
-        mdl = self.fm.calc_rdn(x, geom, rfl=None, Ls=None)
-        lrfl = self.fm.calc_lrfl(x, geom)
-        S_hat, K, G = self.calc_posterior(x, geom, rdn_meas)
-        return lrfl, mdl, path, S_hat, K, G
+        dark_surface = s.zeros(meas.shape)
+        path = self.fm.calc_meas(x, geom, rfl=dark_surface)
+        mdl = self.fm.calc_meas(x, geom, rfl=None, Ls=None)
+        lamb = self.fm.calc_lamb(x, geom)
+        S_hat, K, G = self.calc_posterior(x, geom, meas)
+        return lamb, mdl, path, S_hat, K, G
 
-    def invert_algebraic(self, rdn_meas, x, geom):
-        x0 = self.fm.init(rdn_meas, geom)
-        xopt, coeffs = self.fm.invert_algebraic(x, rdn_meas, geom)
-        return x0, xopt, coeffs
+    def invert_algebraic(self, x, meas, geom):
+        x0 = self.fm.init(meas, geom)
+        xopt, Ls, coeffs = self.fm.invert_algebraic(x, meas, geom)
+        return x0, xopt, Ls, coeffs
 

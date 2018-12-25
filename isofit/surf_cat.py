@@ -20,7 +20,7 @@
 
 import scipy as s
 from common import recursive_replace, emissive_radiance, chol_inv, eps
-from common import spectrumLoad, spectrumResample
+from common import load_spectrum, resample_spectrum
 from scipy.linalg import det, norm, pinv, sqrtm, inv, cholesky
 from scipy.optimize import minimize
 from surf_multicomp import MultiComponentSurface
@@ -66,8 +66,8 @@ class CATSurface(MultiComponentSurface):
         self.absorption_sigma = 9e99
 
         if 'reflectance_init_file' in config:
-            init_rfl, init_wl = spectrumLoad(config['reflectance_init_file'])
-            self.init_val[self.rfl_ind] = spectrumResample(init_rfl, init_wl,
+            init_rfl, init_wl = load_spectrum(config['reflectance_init_file'])
+            self.init_val[self.rfl_ind] = resample_spectrum(init_rfl, init_wl,
                    RT.wl, RT.fwhm, fill=False)
 
     def xa(self, x_surface, geom):
@@ -90,7 +90,7 @@ class CATSurface(MultiComponentSurface):
           Sa[i,i] = self.absorption_sigma
         return Sa
 
-    def heuristic_surface(self, rfl_meas, Ls, geom):
+    def fit_params(self, rfl_meas, Ls, geom):
         '''Given a reflectance estimate and one or more emissive parameters, 
           fit a state vector.'''
 
@@ -100,39 +100,24 @@ class CATSurface(MultiComponentSurface):
             resid = Ls_est - Ls
             return sum(resid**2)
 
-        x_surface = MultiComponentSurface.heuristic_surface(self, rfl_meas,
-                                                                Ls, geom)
+        x_surface = MultiComponentSurface.fit_params(self, rfl_meas, Ls, geom)
         T = minimize(err, s.array(self.init_val[self.surf_temp_ind])).x
         T = max(self.bounds[-2][0]+eps, min(T, self.bounds[-2][1]-eps))
         x_surface[self.surf_temp_ind] = T
         x_surface[self.absrb_inds] = 0
         return x_surface
 
-    def conditional_solrfl(self, rfl_est, geom):
+    def conditional_solamb(self, rfl_est, geom):
         '''Conditions the reflectance on solar-reflected channels.'''
 
         sol_inds = s.where(s.logical_and(self.wl > 450, self.wl < 2000))[0]
         x = s.zeros(len(self.statevec))
-        x[self.lrfl_inds] = rfl_est
+        x[self.lamb_inds] = rfl_est
 
         mu = self.xa(x, geom)
         mu_sol = mu[sol_inds]
         C = self.Sa(x, geom)
         Cov_sol = s.array([C[i, sol_inds] for i in sol_inds])
-       #mu = self.xa(x, geom)
-       #lrfl = self.calc_lrfl(x_surface, geom)
-       #ref_lrfl = lrfl[self.refidx]
-       #mu = s.zeros(len(self.statevec))
-       #ci = self.component(x_surface, geom)
-       #mu_lrfl = self.components[ci][0]
-       #mu_lrfl = mu_lrfl * self.norm(ref_lrfl)
-       #mu[self.lrfl_inds] = mu_lrfl
-       #return mu
-
-
-       #c = self.components[self.component(x, geom)]
-       #mu_sol = c[0][sol_inds]
-       #Cov_sol = s.array([c[1][i, sol_inds] for i in s.where(sol_inds)[0]])
         Cinv = inv(Cov_sol)
         diff = rfl_est[sol_inds] - mu_sol
         full = mu + C[:, sol_inds].dot(Cinv.dot(diff))
@@ -141,54 +126,57 @@ class CATSurface(MultiComponentSurface):
     def calc_rfl(self, x_surface, geom):
         '''Reflectance'''
 
-        return self.calc_lrfl(x_surface, geom)
+        return self.calc_lamb(x_surface, geom)
 
-    def drfl_dx(self, x_surface, geom):
+    def drfl_dsurface(self, x_surface, geom):
         '''Partial derivative of reflectance with respect to state vector, 
         calculated at x_surface.'''
 
-        return self.dlrfl_dx(x_surface, geom)
+        return self.dlamb_dsurface(x_surface, geom)
 
-    def calc_lrfl(self, x_surface, geom):
+    def calc_lamb(self, x_surface, geom):
         '''Lambertian Reflectance'''
 
-        lrfl = MultiComponentSurface.calc_lrfl(self, x_surface, geom)
-        lrfl = lrfl + lrfl * s.matmul(x_surface[self.absrb_inds],
+        lamb = MultiComponentSurface.calc_lamb(self, x_surface, geom)
+        lamb = lamb + lamb * s.matmul(x_surface[self.absrb_inds],
                  self.absorptions)
-        return lrfl
+        return lamb
 
-    def dlrfl_dx(self, x_surface, geom):
+    def dlamb_dsurface(self, x_surface, geom):
         '''Partial derivative of Lambertian reflectance with respect to state 
         vector, calculated at x_surface.'''
 
-        lrfl = MultiComponentSurface.calc_lrfl(self, x_surface, geom)
-        dlrfl = MultiComponentSurface.dlrfl_dx(self, x_surface, geom)
-        dlrfl[:, self.surf_temp_ind] = 0
+        lamb = MultiComponentSurface.calc_lamb(self, x_surface, geom)
+        dlamb = MultiComponentSurface.dlamb_dsurface(self, x_surface, geom)
+        dlamb[:, self.surf_temp_ind] = 0
         for i, a in zip(self.absrb_inds, self.absorptions):
-          dlrfl[:, i] = a * lrfl
-        return dlrfl
+          dlamb[:, i] = a * lamb
+        return dlamb
 
     def calc_Ls(self, x_surface, geom):
         '''Emission of surface, as a radiance'''
 
         T = x_surface[self.surf_temp_ind]
-        emissivity = s.ones(self.nwl) - self.calc_lrfl(x_surface, geom)
+        emissivity = s.ones(self.nwl) - self.calc_lamb(x_surface, geom)
         Ls, dLs_dT = emissive_radiance(emissivity, T, self.wl)
         return Ls 
 
-    def dLs_dx(self, x_surface, geom):
+    def dLs_dsurface(self, x_surface, geom):
         '''Partial derivative of surface emission with respect to state vector, 
         calculated at x_surface.'''
 
-        dLs_dx = MultiComponentSurface.dLs_dx(self, x_surface, geom)
+        dLs_dsurface = MultiComponentSurface.dLs_dsurface(self, x_surface, 
+                geom)
         T = x_surface[self.surf_temp_ind]
-        emissivity = s.ones(self.nwl) - self.calc_lrfl(x_surface, geom)
-        demissivity_dx = -self.dlrfl_dx(x_surface, geom)
+        emissivity = s.ones(self.nwl) - self.calc_lamb(x_surface, geom)
+        demissivity_dsurface = -self.dlamb_dsurface(x_surface, geom)
         Ls, dLs_dT = emissive_radiance(emissivity, T, self.wl)
-        dLs_dx[:, self.lrfl_inds] = (Ls * demissivity_dx[:,self.lrfl_inds].T).T
-        dLs_dx[:, self.surf_temp_ind] = dLs_dT
-        dLs_dx[:, self.absrb_inds] = (Ls * demissivity_dx[:,self.absrb_inds].T).T
-        return dLs_dx
+        dLs_dsurface[:, self.lamb_inds] = \
+            (Ls * demissivity_dsurface[:,self.lamb_inds].T).T
+        dLs_dsurface[:, self.surf_temp_ind] = dLs_dT
+        dLs_dsurface[:, self.absrb_inds] = \
+            (Ls * demissivity_dsurface[:,self.absrb_inds].T).T
+        return dLs_dsurface
 
     def summarize(self, x_surface, geom):
         '''Summary of state vector'''

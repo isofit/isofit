@@ -27,7 +27,7 @@ from spectral.io import envi
 from os.path import expandvars, split, abspath
 from scipy.io import savemat
 
-from common import expand_all_paths, spectrumLoad
+from common import expand_all_paths, load_spectrum
 from forward import ForwardModel
 from inverse import Inversion
 from inverse_mcmc import MCMCInversion
@@ -79,7 +79,7 @@ def main():
     if (not simulation_mode) and \
             'radiometry_correction_file' in config['input']:
         radiance_correction_file = config['input']['radiometry_correction_file']
-        radiance_correction, wl = spectrumLoad(radiance_correction_file)
+        radiance_correction, wl = load_spectrum(radiance_correction_file)
     else:
         radiance_correction = None
 
@@ -113,7 +113,7 @@ def main():
         else:
 
             # Get radiance
-            rdn_meas, wl = spectrumLoad(
+            rdn_meas, wl = load_spectrum(
                 config['input']['measured_radiance_file'])
             if radiance_correction is not None:
                 rdn_meas = rdn_meas * radiance_correction

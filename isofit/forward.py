@@ -23,6 +23,8 @@ import scipy as s
 from common import recursive_replace, eps
 from copy import deepcopy
 from scipy.linalg import det, norm, pinv, sqrtm, inv, block_diag
+from scipy.interpolate import interp1d
+from scipy.optimize import minimize_scalar as min1d
 from rt_modtran import ModtranRT
 from rt_libradtran import LibRadTranRT
 from rt_planetary import PlanetaryRT
@@ -45,7 +47,7 @@ class ForwardModel:
          matrices of Rodgers et al.'''
 
         self.instrument = Instrument(config['instrument'])
-        self.nmeas = self.instrument.nchan
+        self.n_meas = self.instrument.n_chan
 
         # Build the radiative transfer model
         if 'modtran_radiative_transfer' in config:
@@ -74,9 +76,6 @@ class ForwardModel:
             raise ValueError('Must specify a valid surface model')
 
         # Set up passthrough option
-        self.surf_RT_wl_match = (len(self.surface.wl) == len(self.RT.wl)) and \
-                                all(self.surface.wl == self.RT.wl)
-
         bounds, scale, init_val, statevec = [], [], [], []
 
         # Build state vector for each part of our forward model
@@ -145,38 +144,28 @@ class ForwardModel:
         Sa_surface = self.surface.Sa(x_surface, geom)[:, :]
         Sa_RT = self.RT.Sa()[:, :]
         Sa_instrument = self.instrument.Sa()[:,:]
-        return block_diag((Sa_surface, Sa_RT, Sa_instrument))
+        return block_diag(Sa_surface, Sa_RT, Sa_instrument)
 
-    def invert_algebraic(self, x, rdn, geom):
-        """Simple algebraic inversion of radiance based on the current 
-        atmospheric state. Return the reflectance, and the atmospheric
-        correction coefficients."""
-
-        x_RT = x[self.idx_RT]
-        x_surface = x[self.idx_surface]
-        rhoatm, sphalb, transm, transup = self.RT.get(x_RT, geom)
-        coeffs = rhoatm, sphalb, transm, self.RT.solar_irr, self.RT.coszen
-        Ls = self.surface.calc_Ls(x_surface, geom)
-        return self.RT.invert_algebraic(x_RT, rdn, Ls, geom), coeffs
-
-    def init(self, rdn_meas, geom):
+    def init(self, meas, geom):
         """Find an initial guess at the state vector.  This currently uses
         traditional (non-iterative, heuristic) atmospheric correction."""
 
-        # heuristic estimation of atmosphere using solar-reflected regime
-        x_RT, rfl_est = self.heuristic_atmosphere(rdn_meas, geom)
+        x = self.init_val.copy()
+        x[self.idx_RT] = self.heuristic_atmosphere(x, meas, geom)
+        rfl_est, Ls_est, coeffs = self.invert_algebraic(x, meas, geom)
+
         if not (isinstance(self.surface, MixBBSurface) or 
                 isinstance(self.surface, CATSurface)):
             Ls_est = None
         else:
             # modify reflectance and estimate surface emission
             rfl_est = self.surface.conditional_solrfl(rfl_est, geom)
-            Ls_est  = self.estimate_Ls(x_RT, rfl_est, rdn_meas, geom)
-        x_surface = self.surface.heuristic_surface(rfl_est, Ls_est, geom)
-        return s.concatenate((x_surface.copy(), x_RT.copy()), axis=0)
+            Ls_est  = self.estimate_Ls(x_RT, rfl_est, meas, geom)
+        x[self.idx_surface] = self.surface.fit_params(rfl_est, Ls_est, geom)
+        return x 
 
     def calc_rdn(self, x, geom, rfl=None, Ls=None):
-        """calculate the observed radiance, permitting overrides
+        """Calculate the high-resolution radiance, permitting overrides
         Project to top of atmosphere and translate to radiance"""
 
         x_surface, x_RT = x[self.idx_surface],  x[self.idx_RT]
@@ -188,6 +177,15 @@ class ForwardModel:
         Ls_hi  = self.upsample_surface(Ls)
         return self.RT.calc_rdn(x_RT, rfl_hi, Ls_hi, geom)
 
+    def calc_meas(self, x, geom, rfl=None, Ls=None):
+        """Calculate the model observation at insttrument wavelengths"""
+
+        x_surface = x[self.idx_surface]
+        x_RT = x[self.idx_RT]
+        x_instrument = x[self.idx_instrument]
+        rdn_hi = self.calc_rdn(x, geom, rfl, Ls)
+        return self.instrument.sample(x_instrument, self.RT.wl, rdn_hi)
+
     def calc_Ls(self, x, geom):
         """calculate the surface emission."""
 
@@ -198,17 +196,17 @@ class ForwardModel:
 
         return self.surface.calc_rfl(x[self.idx_surface], geom)
 
-    def calc_lrfl(self, x, geom):
-        """calculate the Lambertiansurface reflectance"""
+    def calc_lamb(self, x, geom):
+        """calculate the Lambertian surface reflectance"""
 
-        return self.surface.calc_lrfl(x[self.idx_surface], geom)
+        return self.surface.calc_lamb(x[self.idx_surface], geom)
 
-    def Seps(self, meas, geom, init=None):
+    def Seps(self, x, meas, geom):
         """Calculate the total uncertainty of the observation, including
         both the instrument noise and the uncertainty due to unmodeled
-        variables. This is the Sepsilon matrix of Rodgers et al."""
+        variables. This is the S_epsilon matrix of Rodgers et al."""
 
-        Kb = self.Kb(meas, geom, init=None)
+        Kb = self.Kb(x, geom)
         Sy = self.instrument.Sy(meas, geom)
         return Sy + Kb.dot(self.Sb).dot(Kb.T)
 
@@ -217,40 +215,71 @@ class ForwardModel:
         the concatenation of jacobians with respect to parameters of the 
         surface and radiative transfer model."""
 
+        # Unpack state vector
         x_surface = x[self.idx_surface]
         x_RT = x[self.idx_RT]
+        x_instrument = x[self.idx_instrument]
+
+        # Get partials of reflectance WRT state, and upsample
         rfl = self.surface.calc_rfl(x_surface, geom)
+        drfl_dsurface = self.surface.drfl_dsurface(x_surface, geom)
+        rfl_hi = self.upsample_surface(rfl)
+        drfl_dsurface_hi = self.upsample_surface(drfl_dsurface.T).T
+
+        # Get partials of emission WRT state, and upsample
         Ls = self.surface.calc_Ls(x_surface, geom)
-        drfl_dsurface = self.surface.drfl_dx(x_surface, geom)
-        dLs_dsurface = self.surface.dLs_dx(x_surface, geom)
-        K_RT, K_surface = self.RT.K_RT(x_RT, x_surface, rfl, drfl_dsurface,
-                                       Ls, dLs_dsurface, geom)
-        K = s.zeros((self.nmeas, self.nstate), dtype=float)
-        K[:, self.idx_surface] = K_surface
-        K[:, self.idx_RT] = K_RT
+        dLs_dsurface = self.surface.dLs_dsurface(x_surface, geom)
+        Ls_hi = self.upsample_surface(Ls)
+        dLs_dsurface_hi = self.upsample_surface(dLs_dsurface.T).T
+
+        # Derivatives of RTM radiance
+        drdn_dRT, drdn_dsurface = self.RT.drdn_dRT(x_RT, x_surface, rfl_hi, 
+            drfl_dsurface_hi, Ls_hi, dLs_dsurface_hi, geom)
+        
+        # Derivatives of measurement, avoiding recalculation of rfl, Ls
+        dmeas_dsurface = self.instrument.sample(x_instrument, self.RT.wl,
+            drdn_dsurface.T).T
+        dmeas_dRT = self.instrument.sample(x_instrument, self.RT.wl, drdn_dRT.T).T
+        rdn_hi = self.calc_rdn(x, geom, rfl=rfl, Ls=Ls)
+        dmeas_dinstrument = self.instrument.dmeas_dinstrument(x_instrument,
+            self.RT.wl, rdn_hi)
+
+        # Put it all together
+        K = s.zeros((self.n_meas, self.nstate), dtype=float)
+        K[:, self.idx_surface] = dmeas_dsurface
+        K[:, self.idx_RT] = dmeas_dRT
+        K[:, self.idx_instrument] = dmeas_dinstrument
         return K
 
-    def Kb(self, meas, geom, init=None):
+    def Kb(self, x, geom):
         """Derivative of measurement with respect to unmodeled & unretrieved
         unknown variables, e.g. S_b. This is  the concatenation of jacobians 
         with respect to parameters of the surface, radiative transfer model, 
         and instrument. """
 
-        if init is None:
-            x = self.init(meas, geom)
-        else:
-            x = init.copy()
+        # Unpack state vector
+        # TODO: Add reflectance uncertainty someday
         x_surface = x[self.idx_surface]
         x_RT = x[self.idx_RT]
+        x_instrument = x[self.idx_instrument]
+
+        # Get partials of reflectance and upsample
         rfl = self.surface.calc_rfl(x_surface, geom)
+        rfl_hi = self.upsample_surface(rfl)
         Ls = self.surface.calc_Ls(x_surface, geom)
-        Kb_RT = self.RT.Kb_RT(x_RT, rfl, Ls, geom)
-        Kb_instrument = self.instrument.Kb_instrument(meas)
-        Kb_surface = self.surface.Kb_surface(meas, geom)
-        Kb = s.zeros((self.nmeas, self.nbvec), dtype=float)
-        Kb[:, self.RT_b_inds] = Kb_RT
-        Kb[:, self.instrument_b_inds] = Kb_instrument
-        Kb[:, self.surface_b_inds] = Kb_surface
+        Ls_hi = self.upsample_surface(Ls)
+        rdn_hi = self.calc_rdn(x, geom, rfl=rfl, Ls = Ls)
+
+        drdn_dRTb = self.RT.drdn_dRTb(x_RT, rfl_hi, Ls_hi, geom)
+        dmeas_dRTb = self.instrument.sample(x_instrument,self.RT.wl,
+                drdn_dRTb.T).T
+        dmeas_dinstrumentb = self.instrument.dmeas_dinstrumentb(\
+                x_instrument, self.RT.wl, rdn_hi)
+
+        Kb = s.zeros((self.n_meas, self.nbvec), dtype=float)
+        #Kb[:, self.surface_b_inds] = dmeas_dsurfaceb
+        Kb[:, self.RT_b_inds] = dmeas_dRTb
+        Kb[:, self.instrument_b_inds] = dmeas_dinstrumentb
         return Kb
 
     def summarize(self, x, geom):
@@ -266,10 +295,111 @@ class ForwardModel:
         return self.instrument.calibration(x_inst)
 
     def upsample_surface(self, q):
-       """Linear interpolation of surface to RT wavelengths"""
-       if self.surf_RT_wl_match:
-         return q
-       p = interp1d(self.surface.wl, q, bounds_error=False, 
-               fill_value='extrapolate')
-       return p(self.RT.wl)
+        """Linear interpolation of surface to RT wavelengths"""
+        if q.ndim > 1:
+            q2 = []
+            for qi in q: 
+                p = interp1d(self.surface.wl, qi, bounds_error=False,
+                    fill_value='extrapolate')
+                q2.append(p(self.RT.wl))
+            return s.array(q2)
+        else:
+            p = interp1d(self.surface.wl, q, bounds_error=False, 
+                fill_value='extrapolate')
+            return p(self.RT.wl)
+
+    def heuristic_atmosphere(self, x, meas, geom):
+        '''From a given radiance, estimate atmospheric state with band ratios.
+        Used to initialize gradient descent inversions.'''
+
+        # unpack the state vector and determine the calibration
+        x_RT = x[self.idx_RT].copy()
+        x_instrument = x[self.idx_instrument].copy()
+        wl, fwhm = self.instrument.calibration(x_instrument)
+        b865 = s.argmin(abs(wl-865))
+        b945 = s.argmin(abs(wl-945))
+        b1040 = s.argmin(abs(wl-1040))
+    
+        # Band ratio retrieval of H2O
+        for h2oname in ['H2OSTR', 'h2o']:
+            if (h2oname in self.RT.lut_names) and \
+                    any(self.RT.wl > 850) and any(self.RT.wl < 1050):
+
+                ind_lut = self.RT.lut_names.index(h2oname)
+                ind_sv = self.RT.statevec.index(h2oname)
+                h2os, ratios = [], []  
+
+                for h2o in self.RT.lut_grids[ind_lut]:
+
+                    # Get Atmospheric terms at high spectral resolution
+                    x_RT_new = x_RT.copy()
+                    x_RT_new[ind_sv] = h2o
+                    rhoatm_hi, sphalb_hi, transm_hi, transup_hi = \
+                        self.RT.get(x_RT_new, geom)
+                    rhoatm = self.instrument.sample(x_instrument, 
+                            self.RT.wl, rhoatm_hi)
+                    transm = self.instrument.sample(x_instrument, 
+                            self.RT.wl, transm_hi)
+                    solar_irr = self.instrument.sample(x_instrument, 
+                            self.RT.wl, self.RT.solar_irr)
+
+                    # Assume no surface emission here
+                    r = (meas*s.pi/(solar_irr*self.RT.coszen) -
+                         rhoatm) / (transm+1e-8)
+                    ratios.append((r[b945]*2.0)/(r[b1040]+r[b865]))
+                    h2os.append(h2o)
+
+                p = interp1d(h2os, ratios)
+                bounds = (h2os[0]+0.001, h2os[-1]-0.001)
+                best = min1d(lambda h: abs(1-p(h)),
+                             bounds=bounds, method='bounded')
+                x_RT[ind_sv] = best.x
+        return x_RT
+
+    def invert_algebraic(self, x, meas, geom):
+        '''Inverts radiance algebraically to get a reflectance.'''
+
+        # Unpack the state vector
+        x_RT = x[self.idx_RT].copy()
+        x_surface = x[self.idx_surface].copy()
+        x_instrument = x[self.idx_instrument].copy()
+        wl, fwhm = self.instrument.calibration(x_instrument)
+
+        # Get atmospheric optical parameters (possibly at high 
+        # spectral resolution) and resample them if needed.
+        rhoatm_hi, sphalb_hi, transm_hi, transup_hi = \
+            self.RT.get(x_RT, geom)
+        rhoatm = self.instrument.sample(x_instrument, 
+                self.RT.wl, rhoatm_hi)
+        transm = self.instrument.sample(x_instrument, 
+                self.RT.wl, transm_hi)
+        solar_irr = self.instrument.sample(x_instrument, 
+                self.RT.wl, self.RT.solar_irr)
+        sphalb = self.instrument.sample(x_instrument, 
+                self.RT.wl, sphalb_hi)
+        transup = self.instrument.sample(x_instrument, 
+                self.RT.wl, transup_hi)
+
+        # surface and measured wavelengths may differ.  Calculate
+        # the initial emission and subtract from the measurement
+        Ls = self.surface.calc_Ls(x_surface, geom)
+        Ls_meas = interp1d(self.surface.wl, Ls)(wl)
+        rdn_solrfl = meas - (transup * Ls_meas)
+
+        # Now solve for the reflectance at measured wavelengths,
+        # and back-translate to surface wavelengths
+        rho = rdn_solrfl * s.pi / (self.RT.solar_irr * self.RT.coszen)
+        rfl = 1.0 / (transm / (rho - rhoatm) + sphalb)
+        rfl_est = interp1d(wl, rfl)(self.surface.wl)
+        coeffs = rhoatm, sphalb, transm, self.RT.solar_irr, self.RT.coszen
+        return rfl_est, Ls, coeffs
+
+    def estimate_Ls(self, x_RT, rfl, rdn, geom):
+        """Estimate the surface emission for a given state vector and 
+           reflectance/radiance pair"""
+
+        rhoatm, sphalb, transm, transup = self.get(x_RT, geom)
+        rho = rhoatm + transm * rfl / (1.0 - sphalb * rfl)
+        Ls = (rdn - rho/s.pi*(self.solar_irr*self.coszen)) / transup
+        return Ls
 

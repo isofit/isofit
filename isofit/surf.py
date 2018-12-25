@@ -19,7 +19,7 @@
 #
 
 import scipy as s
-from common import spectrumResample, spectrumLoad
+from common import load_spectrum
 from scipy.interpolate import interp1d
 
 
@@ -37,7 +37,7 @@ class Surface:
         self.bval = s.array([])
 
         if 'reflectance_file' in config:
-            self.rfl, self.wl = spectrumLoad(config['reflectance_file'])
+            self.rfl, self.wl = load_spectrum(config['reflectance_file'])
             self.nwl = len(self.wl)
 
     def xa(self, x_surface, geom):
@@ -48,12 +48,12 @@ class Surface:
         '''Covariance of prior state vector distribution calculated at state x.'''
         return s.zeros((0,0), dtype=float)
 
-    def heuristic_surface(self, rfl, Ls, geom):
+    def fit_params(self, rfl, Ls, geom):
         '''Given a directional reflectance estimate and one or more emissive 
            parameters, fit a state vector.'''
         return s.array([])
 
-    def calc_lrfl(self, x_surface, geom):
+    def calc_lamb(self, x_surface, geom):
         '''Calculate a Lambertian surface reflectance for this state vector.'''
         return self.rfl
 
@@ -62,26 +62,21 @@ class Surface:
            state vector.'''
         return self.rfl
 
-    def drfl_dx(self, x_surface, geom):
+    def drfl_dsurface(self, x_surface, geom):
         '''Partial derivative of reflectance with respect to state vector, 
         calculated at x_surface.'''
         return None
 
-    def drfl_dx(self, x_surface, geom):
-        '''Partial derivative of reflectance with respect to state vector, 
-        calculated at x_surface.'''
+    def drfl_dsurfaceb(self, x_surface, geom):
+        '''Partial derivative of reflectance with respect to unmodeled 
+            variables, calculated at x_surface.'''
         return None
 
     def calc_Ls(self, x_surface, geom):
         '''Emission of surface, as a radiance'''
         return s.zeros((self.nwl,))
 
-    def dLs_dx(self, x_surface, geom):
-        '''Partial derivative of surface emission with respect to state vector, 
-        calculated at x_surface.'''
-        return None
-
-    def Kb_surface(self, rdn_meas, geom):
+    def dLs_dsurface(self, x_surface, geom):
         '''Partial derivative of surface emission with respect to state vector, 
         calculated at x_surface.'''
         return None

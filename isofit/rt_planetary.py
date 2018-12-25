@@ -23,7 +23,7 @@ import scipy as s
 from common import json_load_ascii, combos
 from common import VectorInterpolator, VectorInterpolatorJIT
 from common import recursive_replace, eps
-from common import spectrumResample
+from common import resample_spectrum
 from scipy.interpolate import interp1d
 from scipy.optimize import minimize_scalar as min1d
 
@@ -46,7 +46,7 @@ class PlanetaryRT:
         self.unknowns = []
         self.bval     = []
         solar_irr = s.loadtxt(self.solar_irradiance_file, comments='#')
-        self.solar_irr = spectrumResample(solar_irr[:,1], 
+        self.solar_irr = resample_spectrum(solar_irr[:,1], 
                 solar_irr[:,0], self.wl, self.fwhm, fill=False)
         self.solar_irr = self.solar_irr / (self.distance**2)
 
@@ -73,13 +73,6 @@ class PlanetaryRT:
         rdn = rdn + Ls
         return rdn
 
-    def estimate_Ls(self, x_RT, rfl, rdn, geom):
-        """Estimate the surface emission for a given state vector and 
-           reflectance/radiance pair"""
-
-        Ls = rdn - rfl / s.pi * (self.solar_irr * self.coszen)
-        return Ls
-
     def heuristic_atmosphere(self, rdn, geom):
         '''From a given radiance, estimate atmospheric state using band ratio
         heuristics.  Used to initialize gradient descent inversions.'''
@@ -95,18 +88,7 @@ class PlanetaryRT:
         sphalb   = s.zeros((len(self.wl),), dtype=float)
         return rhoatm, sphalb, transm, transup
 
-    def invert_algebraic(self, x_RT, rdn, Ls, geom):
-        '''Inverts radiance algebraically to get a reflectance.
-           Ls is the surface emission, if present'''
-
-        if Ls is None:
-            rfl = rdn * s.pi / (self.solar_irr * self.coszen)
-        else:
-            rdn_solrefl = rdn - Ls
-            rfl = rdn_solrefl * s.pi / (self.solar_irr * self.coszen)
-        return rfl
-
-    def K_RT(self, x_RT, x_surface, rfl, drfl_dsurface, Ls, dLs_dsurface,
+    def drdn_dRT(self, x_RT, x_surface, rfl, drfl_dsurface, Ls, dLs_dsurface,
              geom):
         """Jacobian of radiance with respect to RT and surface state vectors"""
 
@@ -124,7 +106,7 @@ class PlanetaryRT:
         
         return K_RT, K_surface
 
-    def Kb_RT(self, x_RT, rfl, Ls, geom):
+    def drdn_dRTb(self, x_RT, rfl, Ls, geom):
         """Jacobian of radiance with respect to NOT RETRIEVED RT and surface 
            state. """
 

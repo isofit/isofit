@@ -37,7 +37,7 @@ import pylab as plt
 import multiprocessing
 import subprocess
 from rt_lut import TabularRT, FileExistsError, spawn_rt
-from common import spectrumResample
+from common import resample_spectrum
 
 eps = 1e-5  # used for finite difference derivative calculations
 
@@ -191,10 +191,10 @@ class LibRadTranRT(TabularRT):
         rho05 = rdn05 / 10.0 / irr * s.pi
 
         # Resample TOA reflectances to simulate the instrument observation
-        rhoatm = spectrumResample(rhoatm, wl, self.wl, self.fwhm)
-        rho025 = spectrumResample(rho025, wl, self.wl, self.fwhm)
-        rho05 = spectrumResample(rho05,  wl, self.wl, self.fwhm)
-        irr = spectrumResample(irr,    wl, self.wl, self.fwhm)
+        rhoatm = resample_spectrum(rhoatm, wl, self.wl, self.fwhm)
+        rho025 = resample_spectrum(rho025, wl, self.wl, self.fwhm)
+        rho05 = resample_spectrum(rho05,  wl, self.wl, self.fwhm)
+        irr = resample_spectrum(irr,    wl, self.wl, self.fwhm)
 
         # Calculate some atmospheric optical constants
         sphalb = 2.8*(2.0*rho025-rhoatm-rho05)/(rho025-rho05)
