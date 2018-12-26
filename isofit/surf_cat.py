@@ -45,6 +45,7 @@ class CATSurface(MultiComponentSurface):
         self.surf_temp_ind = len(self.statevec)-1
         self.surf_temp_sigma = 100.0
         self.library_file = config['absorption_library_file']
+        self.emissive = True
         lib_data = s.loadtxt(self.library_file)
         lib_wl, lib_absorptions = lib_data[:,0], lib_data[:,1:].T - 1.0
         self.absorptions = []

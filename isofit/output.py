@@ -23,6 +23,7 @@ import pylab as plt
 from common import load_spectrum, resample_spectrum
 from scipy.linalg import inv, norm, sqrtm, det
 from scipy.io import savemat
+from inverse_simple import invert_simple, invert_algebraic
 
 
 class Bunch(object):
@@ -104,8 +105,7 @@ class Output:
             savemat(self.output.posterior_errors_file, package)
 
         if self.output.atmospheric_coefficients_file:
-            rfl_alg_init, rfl_alg_opt, Ls, coeffs = \
-                self.iv.invert_algebraic(x, meas, geom)
+            rfl_alg_opt, Ls, coeffs = invert_algebraic(x, meas, geom)
             rhoatm, sphalb, transm, solar, coszen = coeffs
             package = {'rhoatm': rhoatm, 'transm': transm, 'sphalb': sphalb,
                        'solarirr': solar, 'coszen': coszen}
@@ -115,8 +115,11 @@ class Output:
             self.data_dump(x, meas, geom, self.output.data_dump_file)
 
         if self.output.algebraic_inverse_file is not None:
-            rfl_alg_init, rfl_alg_opt, Ls, coeffs = \
-                self.iv.invert_algebraic(x, meas, geom)
+            rfl_alg_init = invert_simple(self.fm, meas, geom)
+            x_surface, x_RT, x_instrument = self.fm.unpack(x)
+            rfl_alg_opt, Ls, coeffs = invert_algebraic(self.fm.surface, 
+                self.fm.RT, self.fm.instrument, x_surface, x_RT, 
+                x_instrument, meas, geom)
             with open(self.output.algebraic_inverse_file, 'w') as fout:
                 for w, v, u in zip(self.fm.surface.wl, rfl_alg_init, rfl_alg_opt):
                     fout.write('%7.5f %7.5f %7.5f\n' % (w, v, u))
@@ -131,14 +134,16 @@ class Output:
         meas_resid = (rdn_est_window-meas_window).dot(Seps_inv_sqrt)
         xa, Sa, Sa_inv, Sa_inv_sqrt = self.iv.calc_prior(x, geom)
         prior_resid = (x - xa).dot(Sa_inv_sqrt)
-        xopt, Ls, coeffs = self.fm.invert_algebraic(x, meas, geom)
+        x_surface, x_RT, x_instrument = self.fm.unpack(x)
+        xopt, Ls, coeffs  = invert_algebraic(self.fm.surface, self.fm.RT, 
+                    self.fm.instrument, x_surface, x_RT, x_instrument, meas, geom)
         rhoatm, sphalb, transm, solar_irr, coszen = coeffs
         Ls = self.fm.surface.calc_Ls(x[self.fm.idx_surface], geom)
 
         # jacobian of cost
         Kb = self.fm.Kb(x, geom)
         K = self.fm.K(x, geom)
-        xinit = self.fm.init(meas, geom)
+        xinit = invert_simple(self.fm, meas, geom)
         Sy = self.fm.instrument.Sy(meas, geom)
         S_hat, K, G = self.iv.calc_posterior(x, geom, meas)
         lamb_est = self.fm.calc_lamb(x, geom)

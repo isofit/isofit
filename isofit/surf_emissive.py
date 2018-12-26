@@ -44,6 +44,7 @@ class MixBBSurface(MultiComponentSurface):
         self.init_val.extend([0.1])
         self.bounds.extend([[0, 1]])
         self.bb_frac_ind = len(self.statevec)-1
+        self.emissive = True
 
     def xa(self, x_surface, geom):
         '''Mean of prior distribution, calculated at state x.  We find

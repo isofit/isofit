@@ -26,6 +26,10 @@ from common import eps, srf, load_wavelen, resample_spectrum
 from numpy.random import multivariate_normal as mvn
 
 
+# Max. wavelength difference (nm) that does not trigger expensive resampling
+wl_tol = 0.01 
+
+
 class Instrument:
 
     def __init__(self, config):
@@ -48,16 +52,11 @@ class Instrument:
 
         # noise specified as parametric model.
         if 'SNR' in config:
-
             self.model_type = 'SNR'
             self.snr = float(config['SNR'])
-
         else:
-
             self.noise_file = config['noise_file']
-
             if self.noise_file.endswith('.txt'):
-
                 # parametric version
                 self.model_type = 'parametric'
                 coeffs = s.loadtxt(
@@ -70,9 +69,8 @@ class Instrument:
                                fill_value='extrapolate')
                 self.noise = s.array([[p_a(w), p_b(w), p_c(w)]
                                       for w in self.wl_init])
-
             elif self.noise_file.endswith('.mat'):
-
+                # full FPA
                 self.model_type = 'pushbroom'
                 D = loadmat(self.noise_file)
                 self.ncols = D['columns'][0, 0]
@@ -81,18 +79,14 @@ class Instrument:
                         'Noise model does not match wavelength # bands')
                 cshape = ((self.ncols, self.n_chan, self.n_chan))
                 self.covs = D['covariances'].reshape(cshape)
-
         self.integrations = config['integrations']
 
         # Variables not retrieved = always start with relative cal
         self.bvec = ['Cal_Relative_%04i' % int(w) for w in self.wl_init] + \
             ['Cal_Spectral', 'Cal_Stray_SRF']
         self.bval = s.zeros(self.n_chan+2)
-
         if 'unknowns' in config:
-
             special_unknowns = ['wavelength_calibration_uncertainty']
-
             # Radiometric uncertainties combine via Root Sum Square...
             for key, val in config['unknowns'].items():
                 if key in special_unknowns: 
@@ -104,7 +98,6 @@ class Instrument:
                 else:
                     u = s.ones(self.n_chan) * val
                 self.bval[:self.n_chan] = self.bval[:self.n_chan] + pow(u,2)
-
             self.bval[:self.n_chan] = s.sqrt(self.bval[:self.n_chan])
 
             # Now handle spectral uncertainties
@@ -113,6 +106,9 @@ class Instrument:
                     config['unknowns']['wavelength_calibration_uncertainty']
             if 'stray_srf_uncertainty' in config:
                 self.bval[-1] = config['unknowns']['stray_srf_uncertainty']
+
+        self.calibration_fixed = (not ('FWHM_SCL' in self.statevec)) and \
+            (not ('WL_SHIFT' in self.statevec))
 
     def xa(self):
         '''Mean of prior distribution, calculated at state x. '''
@@ -191,6 +187,8 @@ class Instrument:
 
     def sample(self, x_instrument, wl_hi, rdn_hi):
         """ Apply instrument sampling to a radiance spectrum"""
+        if self.calibration_fixed and all((self.wl_init - wl_hi) < wl_tol):
+            return rdn_hi
         wl, fwhm = self.calibration(x_instrument)
         if rdn_hi.ndim == 1:
             return resample_spectrum(rdn_hi, wl_hi, wl, fwhm)

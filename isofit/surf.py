@@ -35,6 +35,7 @@ class Surface:
         self.init_val = s.array([])
         self.bvec = []
         self.bval = s.array([])
+        self.emissive = False
 
         if 'reflectance_file' in config:
             self.rfl, self.wl = load_spectrum(config['reflectance_file'])

@@ -24,6 +24,7 @@ from common import svd_inv, svd_inv_sqrt, eps
 from collections import OrderedDict
 from scipy.optimize import least_squares
 import xxhash
+from inverse_simple import invert_simple
 from scipy.linalg import inv, norm, det, cholesky, qr, svd
 from hashlib import md5
 from numba import jit
@@ -155,7 +156,7 @@ class Inversion:
         self.lasttime = time.time()
 
         """Calculate the initial solution, if needed."""
-        x0 = self.fm.init(meas, geom)
+        x0 = invert_simple(self.fm, meas, geom)
 
         """Seps is the covariance of "observation noise" including both 
     measurement noise from the instrument as well as variability due to 
@@ -251,9 +252,4 @@ class Inversion:
         lamb = self.fm.calc_lamb(x, geom)
         S_hat, K, G = self.calc_posterior(x, geom, meas)
         return lamb, mdl, path, S_hat, K, G
-
-    def invert_algebraic(self, x, meas, geom):
-        x0 = self.fm.init(meas, geom)
-        xopt, Ls, coeffs = self.fm.invert_algebraic(x, meas, geom)
-        return x0, xopt, Ls, coeffs
 
