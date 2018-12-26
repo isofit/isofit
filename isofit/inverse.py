@@ -37,26 +37,26 @@ class Inversion:
 
     def __init__(self, config, forward):
 
-        """Initialization specifies retrieval subwindows for calculating
-        measurement cost distributions"""
+        # Initialization specifies retrieval subwindows for calculating
+        # measurement cost distributions
         self.lasttime = time.time()
         self.fm = forward
-        self.ht = OrderedDict()  # Hash table
+        self.hashtable = OrderedDict() # Hash table for caching inverse matrices
         self.max_table_size = 500
-        self.windows = config['windows']
-        if 'verbose' in config:
-            self.verbose = config['verbose']
-        else:
-            self.verbose = True
-        if 'Cressie_MAP_confidence' in config:
-            self.state_indep_S_hat = config['Cressie_MAP_confidence']
-        else:
-            self.state_indep_S_hat = False
+        self.windows = config['windows'] # Retrieval windows
+        self.state_indep_S_hat = False
+        self.verbose = True
         self.windows = config['windows']
 
-        """We calculate the instrument channel indices associated with the
-        retrieval windows using the initial instrument calibration.  These
-        window indices never change throughout the life of the object."""
+        # Permit several overrides
+        if 'verbose' in config:
+            self.verbose = config['verbose']
+        if 'Cressie_MAP_confidence' in config:
+            self.state_indep_S_hat = config['Cressie_MAP_confidence']
+
+        # We calculate the instrument channel indices associated with the
+        # retrieval windows using the initial instrument calibration.  These
+        # window indices never change throughout the life of the object.
         self.winidx = s.array((), dtype=int)  # indices of retrieval windows
         for lo, hi in self.windows:
             idx = s.where(s.logical_and(self.fm.instrument.wl_init > lo, 
@@ -73,12 +73,7 @@ class Inversion:
 
         xa = self.fm.xa(x, geom)
         Sa = self.fm.Sa(x, geom)
-        Sa_inv, Sa_inv_sqrt = svd_inv_sqrt(Sa, hashtable=self.ht)
-
-        # Reduce the hash table, if needed
-        while len(self.ht) > self.max_table_size:
-            self.ht.popitem(last=False)
-
+        Sa_inv, Sa_inv_sqrt = svd_inv_sqrt(Sa, hashtable=self.hashtable)
         return xa, Sa, Sa_inv, Sa_inv_sqrt
 
     @jit
@@ -88,15 +83,15 @@ class Inversion:
 
         xa = self.fm.xa(x, geom)
         Sa = self.fm.Sa(x, geom)
-        Sa_inv = svd_inv(Sa, hashtable=self.ht)
+        Sa_inv = svd_inv(Sa, hashtable=self.hashtable)
         K = self.fm.K(x, geom)
         Seps = self.fm.Seps(x, meas, geom)
-        Seps_inv = svd_inv(Seps, hashtable=self.ht)
+        Seps_inv = svd_inv(Seps, hashtable=self.hashtable)
 
         # Gain matrix G reflects current state, so we use the state-dependent
         # Jacobian matrix K
         S_hat = svd_inv(K.T.dot(Seps_inv).dot(K) + Sa_inv,
-                        hashtable=self.ht)
+                        hashtable=self.hashtable)
         G = S_hat.dot(K.T).dot(Seps_inv)
 
         # N. Cressie [ASA 2018] suggests an alternate definition of S_hat for
@@ -104,12 +99,7 @@ class Inversion:
         if self.state_indep_S_hat:
             Ka = self.fm.K(xa, geom)
             S_hat = svd_inv(Ka.T.dot(Seps_inv).dot(Ka) + Sa_inv,
-                            hashtable=self.ht)
-
-        # Reduce the hash table, if needed
-        while len(self.ht) > self.max_table_size:
-            self.ht.popitem(last=False)
-
+                            hashtable=self.hashtable)
         return S_hat, K, G
 
     @jit
@@ -117,20 +107,14 @@ class Inversion:
         """Calculate (zero-mean) measurement distribution in radiance terms.  
         This depends on the location in the state space. This distribution is 
         calculated over one or more subwindows of the spectrum. Return the 
-        inverse covariance and its square root"""
+        inverse covariance and its square root."""
 
         Seps = self.fm.Seps(x, meas, geom)
         wn = len(self.winidx)
         Seps_win = s.zeros((wn, wn))
         for i in range(wn):
             Seps_win[i, :] = Seps[self.winidx[i], self.winidx]
-        Seps_inv, Seps_inv_sqrt = svd_inv_sqrt(Seps_win, hashtable=self.ht)
-
-        # Reduce the hash table, if needed
-        while len(self.ht) > self.max_table_size:
-            self.ht.popitem(last=False)
-
-        return Seps_inv, Seps_inv_sqrt
+        return svd_inv_sqrt(Seps_win, hashtable=self.hashtable)
 
     def invert(self, meas, geom, out=None):
         """Inverts a meaurement and returns a state vector.
@@ -252,4 +236,3 @@ class Inversion:
         lamb = self.fm.calc_lamb(x, geom)
         S_hat, K, G = self.calc_posterior(x, geom, meas)
         return lamb, mdl, path, S_hat, K, G
-

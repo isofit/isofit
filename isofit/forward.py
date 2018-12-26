@@ -19,22 +19,28 @@
 #
 
 import scipy as s
-
 from common import recursive_replace, eps
 from copy import deepcopy
 from scipy.linalg import det, norm, pinv, sqrtm, inv, block_diag
+from importlib import import_module
 from scipy.interpolate import interp1d
-from rt_modtran import ModtranRT
-from rt_libradtran import LibRadTranRT
-from rt_planetary import PlanetaryRT
-from surf import Surface
-from surf_multicomp import MultiComponentSurface
-from surf_cat import CATSurface
-from surf_glint import GlintSurface
-from surf_emissive import MixBBSurface
-from surf_iop import IOPSurface
 from instrument import Instrument
 
+
+# Supported RT modules, filenames, and class names
+RT_models = [('modtran_radiative_transfer','rt_modtran','ModtranRT'),
+    ('libradtran_radiative_transfer','rt_libradtran','LibRadTranRT'),
+    ('planetary_radiative_transfer','rt_planetary','PlanetaryRT')]
+
+
+# Supported surface modules, filenames, and class names
+surface_models = [('surface','surf','Surface'),
+    ('multicomponent_surface','surf_multicomp', 'MultiComponentSurface'),
+    ('emissive_surface','surf_emissive','MixBBSurface'),
+    ('cat_surface','surf_cat','CATSurface'),
+    ('glint_surface','surf_glint','GlintSurface'),
+    ('iop_surface','surf_iop','IOPSurface')]
+ 
 
 class ForwardModel:
 
@@ -49,33 +55,23 @@ class ForwardModel:
         self.n_meas = self.instrument.n_chan
 
         # Build the radiative transfer model
-        if 'modtran_radiative_transfer' in config:
-            self.RT = ModtranRT(config['modtran_radiative_transfer'])
-        elif 'libradtran_radiative_transfer' in config:
-            self.RT = LibRadTranRT(config['libradtran_radiative_transfer'])        
-        elif 'planetary_radiative_transfer' in config:
-            self.RT = PlanetaryRT(config['planetary_radiative_transfer'])
-        else:
+        self.RT = None
+        for key, module, cname in RT_models: 
+          if key in config:
+            self.RT = getattr(import_module(module), cname)(config[key])
+        if self.RT is None:
             raise ValueError('Must specify a valid radiative transfer model')
 
         # Build the surface model
-        if 'surface' in config:
-            self.surface = Surface(config['surface'])
-        elif 'multicomponent_surface' in config:
-            self.surface = MultiComponentSurface(config['multicomponent_surface'])
-        elif 'emissive_surface' in config:
-            self.surface = MixBBSurface(config['emissive_surface'])
-        elif 'cat_surface' in config:
-            self.surface = CATSurface(config['cat_surface'])
-        elif 'glint_surface' in config:
-            self.surface = GlintSurface(config['glint_surface'])
-        elif 'iop_surface' in config:
-            self.surface = IOPSurface(config['iop_surface'])
-        else:
+        self.surface = None
+        for key, module, cname in surface_models: 
+          if key in config:
+            self.surface = getattr(import_module(module), cname)(config[key])
+        if self.surface is None:
             raise ValueError('Must specify a valid surface model')
 
         # Set up passthrough option
-        bounds, scale, init_val, statevec = [], [], [], []
+        bounds, scale, init, statevec = [], [], [], []
 
         # Build state vector for each part of our forward model
         for name in ['surface', 'RT', 'instrument']:
@@ -86,13 +82,13 @@ class ForwardModel:
                 bounds.append(deepcopy(b))
             for c in obj.scale:
                 scale.append(deepcopy(c))
-            for v in obj.init_val:
-                init_val.append(deepcopy(v))
+            for v in obj.init:
+                init.append(deepcopy(v))
             for v in obj.statevec:
                 statevec.append(deepcopy(v))
         self.bounds = tuple(s.array(bounds).T)
         self.scale = s.array(scale)
-        self.init_val = s.array(init_val)
+        self.init = s.array(init)
         self.statevec = statevec
         self.nstate = len(self.statevec)
 

@@ -30,9 +30,10 @@ class Geometry:
     def __init__(self, obs=None, glt=None, loc=None, ds=None,
                  esd=None, pushbroom_column=None):
 
+        # Set some benign defaults...
         self.earth_sun_file = None
-        self.observer_zenith = None
-        self.observer_azimuth = None
+        self.observer_zenith = 0 
+        self.observer_azimuth = 0
         self.observer_altitude_km = None
         self.surface_elevation_km = None
         self.datetime = None
@@ -42,8 +43,15 @@ class Geometry:
         self.longitudeE = None
         self.gmtime = None
         self.earth_sun_distance = None
+        self.OBSZEN = 180.0
+        self.RELAZ = 0.0
+        self.TRUEAZ = 0.0
+        self.umu = 1.0
         self.pushbroom_column = pushbroom_column
 
+        # The 'obs' object is observation metadata that follows a historical
+        # AVIRIS-NG format.  It arrives to our initializer in the form of 
+        # a list-like object...
         if obs is not None:
             self.path_length = obs[0]
             self.observer_azimuth = obs[1]  # 0 to 360 clockwise from N
@@ -54,14 +62,10 @@ class Geometry:
             self.RELAZ = obs[1] - obs[3] + 180.0
             self.TRUEAZ = self.RELAZ  # MODTRAN convention?
             self.umu = s.cos(obs[2]/360.0*2.0*s.pi)  # Libradtran
-        else:
-            self.observer_azimuth = 0
-            self.observer_zenith = 0
-            self.OBSZEN = 180.0
-            self.RELAZ = 0.0
-            self.TRUEAZ = 0.0
-            self.umu = 1.0
 
+        # The 'loc' object is a list-like object that optionally contains
+        # latitude and longitude information about the surface being
+        # observed.
         if loc is not None:
             self.GNDALT = loc[2]
             self.altitude = loc[2]
@@ -72,24 +76,32 @@ class Geometry:
             if self.longitude < 0:
                 self.longitude = 360.0 - self.longitude
 
-            print('Geometry lat: %f, lon: %f' %
+            print('Geometry lat: %f lon: %f' %
                   (self.latitude, self.longitude))
-            print('observer OBSZEN: %f, RELAZ: %f' % (self.OBSZEN, self.RELAZ))
+            print('observer OBSZEN: %f RELAZ: %f' % (self.OBSZEN, self.RELAZ))
 
+        # The ds object is an optional date object, defining the time of 
+        # the observation.
         if ds is not None:
             self.datetime = datetime.strptime(ds, '%Y%m%dt%H%M%S')
             self.day_of_year = self.datetime.timetuple().tm_yday
 
+        # Finally, the earth sun distance is an array that maps the day of the
+        # year (zero-indexed!) onto the mean-relative distance to the sun.  
         if esd is not None:
             self.earth_sun_distance = esd.copy()
 
     def coszen(self):
+        """ Return the cosine of the solar zenith."""
         self.dt = self.datetime
         az, zen, ra, dec, h = sunpos(self.datetime, self.latitude,
-                                     self.longitudeE, self.surface_elevation_km * 1000.0,
+                                     self.longitudeE, 
+                                     self.surface_elevation_km * 1000.0,
                                      radians=True)
         return s.cos(zen)
 
     def sundist(self):
-        '''Use zero-indexed table'''
+        '''Return the mean-relative distance to the sun as defined by the
+        day of the year.  Note that we use zero-indexed table, offset by one 
+        from the actual cardenality, per Python conventions...'''
         return float(self.earth_sun_distance[self.day_of_year-1, 1])

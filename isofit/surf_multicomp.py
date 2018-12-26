@@ -82,7 +82,7 @@ class MultiComponentSurface(Surface):
         self.statevec = ['RFL_%04i' % int(w) for w in self.wl]
         self.bounds = [[rmin, rmax] for w in self.wl]
         self.scale = [1.0 for w in self.wl]
-        self.init_val = [0.15 * (rmax-rmin)+rmin for v in self.wl]
+        self.init = [0.15 * (rmax-rmin)+rmin for v in self.wl]
         self.idx_lamb = s.arange(self.n_wl)
         self.n_state = len(self.statevec)
 

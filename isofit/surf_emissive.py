@@ -34,14 +34,14 @@ class MixBBSurface(MultiComponentSurface):
         MultiComponentSurface.__init__(self, config)
         # Handle additional state vector elements
         self.statevec.extend(['SURF_TEMP_K'])
-        self.init_val.extend([270.0])
+        self.init.extend([270.0])
         self.scale.extend([1000.0])
         self.bounds.extend([[250.0, 2000.0]])
         self.surf_temp_ind = len(self.statevec)-1
         # Treat emissive surfaces as a fractional blackbody
         self.statevec.extend(['BB_MIX_FRAC'])
         self.scale.extend([1.0])
-        self.init_val.extend([0.1])
+        self.init.extend([0.1])
         self.bounds.extend([[0, 1]])
         self.bb_frac_ind = len(self.statevec)-1
         self.emissive = True
@@ -52,8 +52,8 @@ class MixBBSurface(MultiComponentSurface):
         normalize the result for the calling function.'''
 
         mu = MultiComponentSurface.xa(self, x_surface, geom)
-        mu[self.surf_temp_ind] = self.init_val[self.surf_temp_ind]
-        mu[self.bb_frac_ind] = self.init_val[self.bb_frac_ind]
+        mu[self.surf_temp_ind] = self.init[self.surf_temp_ind]
+        mu[self.bb_frac_ind] = self.init[self.bb_frac_ind]
         return mu
 
     def Sa(self, x_surface, geom):

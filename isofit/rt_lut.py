@@ -60,15 +60,15 @@ class TabularRT:
         # initial guesses for each state vector element.  The state
         # vector elements are all free parameters in the RT lookup table,
         # and they all have associated dimensions in the LUT grid.
-        self.bounds, self.scale, self.init_val = [], [], []
+        self.bounds, self.scale, self.init = [], [], []
         for key in self.statevec:
             element = config['statevector'][key]
             self.bounds.append(element['bounds'])
             self.scale.append(element['scale'])
-            self.init_val.append(element['init'])
+            self.init.append(element['init'])
         self.bounds = s.array(self.bounds)
         self.scale = s.array(self.scale)
-        self.init_val = s.array(self.init_val)
+        self.init = s.array(self.init)
         self.bval = s.array([config['unknowns'][k] for k in self.bvec])
 
         if 'prior_sigma' in config['statevector']:
@@ -82,7 +82,7 @@ class TabularRT:
     def xa(self):
         '''Mean of prior distribution, calculated at state x. This is the
            Mean of our LUT grid (why not).'''
-        return self.init_val.copy()
+        return self.init.copy()
 
     def Sa(self):
         '''Covariance of prior distribution. Our state vector covariance 

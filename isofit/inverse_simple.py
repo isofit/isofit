@@ -28,6 +28,8 @@ def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
     '''From a given radiance, estimate atmospheric state with band ratios.
     Used to initialize gradient descent inversions.'''
 
+    # Identify the latest instrument wavelength calibration (possibly 
+    # state-dependent) and identify channel numbers for the band ratio.
     wl, fwhm = instrument.calibration(x_instrument)
     b865 = s.argmin(abs(wl-865))
     b945 = s.argmin(abs(wl-945))
@@ -35,16 +37,23 @@ def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
     assert(any(RT.wl > 850) and any(RT.wl < 1050))
     x_new = x_RT.copy()
 
-    # Band ratio retrieval of H2O
+    # Band ratio retrieval of H2O.  Depending on the radiative transfer
+    # model we are using, this state parameter could go by several names.
     for h2oname in ['H2OSTR', 'h2o']:
 
+        # ignore unused names
         if not (h2oname in RT.lut_names):
             continue
 
+        # find the index in the lookup table associated with water vapor
         ind_lut = RT.lut_names.index(h2oname)
         ind_sv = RT.statevec.index(h2oname)
         h2os, ratios = [], []  
 
+        # We iterate through every possible grid point in the lookup table, 
+        # calculating the band ratio that we would see if this were the 
+        # atmospheric H2O content.  It assumes that defaults for all other
+        # atmospheric parameters (such as aerosol, if it is there).
         for h2o in RT.lut_grids[ind_lut]:
 
             # Get Atmospheric terms at high spectral resolution
@@ -55,11 +64,16 @@ def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
             transm = instrument.sample(x_instrument, RT.wl, transm_hi)
             solar_irr = instrument.sample(x_instrument, RT.wl, RT.solar_irr)
 
-            # Assume no surface emission here
+            # Assume no surface emission.  "Correct" the at-sensor radiance
+            # using this presumed amount of water vapor, and measure the 
+            # resulting residual (as measured from linear interpolation across 
+            # the absorption feature)
             r = (meas*s.pi/(solar_irr*RT.coszen) - rhoatm) / (transm+1e-8)
             ratios.append((r[b945]*2.0)/(r[b1040]+r[b865]))
             h2os.append(h2o)
 
+        # Finally, interpolate to determine the actual water vapor level that
+        # would optimize the continuum-relative correction
         p = interp1d(h2os, ratios)
         bounds = (h2os[0]+0.001, h2os[-1]-0.001)
         best = min1d(lambda h: abs(1-p(h)), bounds=bounds, method='bounded')
@@ -69,8 +83,8 @@ def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
 
 def invert_algebraic(surface, RT, instrument, x_surface, x_RT, x_instrument, 
         meas, geom):
-    '''Inverts radiance algebraically to get a reflectance.'''
-
+    '''Inverts radiance algebraically using Lambertian assumptions to get a 
+       reflectance.'''
 
     # Get atmospheric optical parameters (possibly at high 
     # spectral resolution) and resample them if needed.
@@ -94,13 +108,19 @@ def invert_algebraic(surface, RT, instrument, x_surface, x_RT, x_instrument,
     rho = rdn_solrfl * s.pi / (solar_irr * coszen)
     rfl = 1.0 / (transm / (rho - rhoatm) + sphalb)
     rfl_est = interp1d(wl, rfl)(surface.wl)
-    coeffs = rhoatm, sphalb, transm, RT.solar_irr, RT.coszen
+
+    # Some downstream code will benefit from our precalculated 
+    # atmospheric optical parameters
+    coeffs = rhoatm, sphalb, transm, solar_irr, coszen
     return rfl_est, Ls, coeffs
 
 
 def estimate_Ls(coeffs, rfl, rdn, geom):
     """Estimate the surface emission for a given state vector and 
-       reflectance/radiance pair"""
+       reflectance/radiance pair.  This is determined by the residual
+       between the upward-welling radiance due to surface and 
+       scattering, and the measured radiance.  We account for 
+       atmospheric transmission on the upward path."""
 
     rhoatm, sphalb, transm, solar_irr, coszen = coeffs
     rho = rhoatm + transm * rfl / (1.0 - sphalb * rfl)
@@ -112,19 +132,33 @@ def invert_simple(forward, meas, geom):
     """Find an initial guess at the state vector.  This currently uses
     traditional (non-iterative, heuristic) atmospheric correction."""
 
-    surface, RT, instrument = forward.surface, forward.RT, forward.instrument
-    x = forward.init_val.copy()
+    surface = forward.surface
+    RT = forward.RT 
+    instrument = forward.instrument
+
+    # First step is to get the atmosphere. We start from the initial state
+    # and estimate atmospheric terms using traditional heuristics.    
+    x = forward.init.copy()
     x_surface, x_RT, x_instrument = forward.unpack(x)
     x[forward.idx_RT] = heuristic_atmosphere(RT, instrument, 
             x_RT, x_instrument,  meas, geom)
+
+    # Now, with atmosphere fixed, we can invert the radiance algebraically
+    # via Lambertian approximations to get reflectance 
     rfl_est, Ls_est, coeffs = invert_algebraic(surface, RT, 
             instrument, x_surface, x_RT, x_instrument, meas, geom)
 
-    if not surface.emissive:
-        Ls_est = None
-    else:
-        # modify reflectance and estimate surface emission
+    # If there is an emissive (hot) surface, modify the reflectance and 
+    # upward additive radiance appropriately.
+    if surface.emissive:
         rfl_est = forward.surface.conditional_solrfl(rfl_est, geom)
         Ls_est  = forward.estimate_Ls(coeffs, rfl_est, meas, geom)
+    else:
+        Ls_est = None
+
+    # Now, fit the reflectance model parameters to our estimated reflectance 
+    # spectrum.  This will be simple for chnanelwise parameterizations but 
+    # possibly complex for more sophisticated parameterizations (e.g. mixture 
+    # models, etc.)
     x[forward.idx_surface] = forward.surface.fit_params(rfl_est, Ls_est, geom)
     return x 

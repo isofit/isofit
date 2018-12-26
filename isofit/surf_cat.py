@@ -39,7 +39,7 @@ class CATSurface(MultiComponentSurface):
 
         # Handle additional state vector elements
         self.statevec.extend(['SURF_TEMP_K'])
-        self.init_val.extend([config['temperature_K']])
+        self.init.extend([config['temperature_K']])
         self.scale.extend([100.0])
         self.bounds.extend([[0.0, 1000.0]])
         self.surf_temp_ind = len(self.statevec)-1
@@ -54,21 +54,21 @@ class CATSurface(MultiComponentSurface):
            self.absorptions.append(p(RT.wl)) 
            self.statevec.extend(['ABSRB_%i'%i])
            if 'absorption_init' in config:
-               self.init_val.extend([config['absorption_init'][i]])
+               self.init.extend([config['absorption_init'][i]])
            else:
-               self.init_val.extend([0])
+               self.init.extend([0])
            self.scale.extend([1.0])
            self.bounds.extend([[-eps,9e99]])
         self.absrb_inds = s.arange(self.surf_temp_ind+1, 
                 self.surf_temp_ind+len(lib_absorptions)+1, dtype=int)
-        self.init_val = s.array(self.init_val)
+        self.init = s.array(self.init)
         self.bounds = s.array(self.bounds)
         self.absorptions = s.array(self.absorptions)
         self.absorption_sigma = 9e99
 
         if 'reflectance_init_file' in config:
             init_rfl, init_wl = load_spectrum(config['reflectance_init_file'])
-            self.init_val[self.rfl_ind] = resample_spectrum(init_rfl, init_wl,
+            self.init[self.rfl_ind] = resample_spectrum(init_rfl, init_wl,
                    RT.wl, RT.fwhm, fill=False)
 
     def xa(self, x_surface, geom):
@@ -77,9 +77,9 @@ class CATSurface(MultiComponentSurface):
         normalize the result for the calling function.'''
 
         xa = MultiComponentSurface.xa(self, x_surface, geom)
-        xa[self.surf_temp_ind] = self.init_val[self.surf_temp_ind]
+        xa[self.surf_temp_ind] = self.init[self.surf_temp_ind]
         for i in self.absrb_inds:
-          xa[i] = self.init_val[i]
+          xa[i] = self.init[i]
         return xa
 
     def Sa(self, x_surface, geom):
@@ -102,7 +102,7 @@ class CATSurface(MultiComponentSurface):
             return sum(resid**2)
 
         x_surface = MultiComponentSurface.fit_params(self, rfl_meas, Ls, geom)
-        T = minimize(err, s.array(self.init_val[self.surf_temp_ind])).x
+        T = minimize(err, s.array(self.init[self.surf_temp_ind])).x
         T = max(self.bounds[-2][0]+eps, min(T, self.bounds[-2][1]-eps))
         x_surface[self.surf_temp_ind] = T
         x_surface[self.absrb_inds] = 0

@@ -32,7 +32,7 @@ class Surface:
         self.statevec = []
         self.bounds = s.array([])
         self.scale = s.array([])
-        self.init_val = s.array([])
+        self.init = s.array([])
         self.bvec = []
         self.bval = s.array([])
         self.emissive = False
@@ -43,7 +43,7 @@ class Surface:
 
     def xa(self, x_surface, geom):
         '''Mean of prior state vector distribution calculated at state x'''
-        return s.array(self.init_val)
+        return s.array(self.init)
 
     def Sa(self, x_surface, geom):
         '''Covariance of prior state vector distribution calculated at state x.'''

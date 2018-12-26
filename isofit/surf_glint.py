@@ -32,7 +32,7 @@ class GlintSurface(MultiComponentSurface):
         MultiComponentSurface.__init__(self, config)
         self.statevec.extend(['GLINT'])
         self.scale.extend([1.0])
-        self.init_val.extend([0.005])
+        self.init.extend([0.005])
         self.bounds.extend([[0, 0.2]])
         self.glint_ind = len(self.statevec)-1
 
@@ -40,7 +40,7 @@ class GlintSurface(MultiComponentSurface):
         '''Mean of prior distribution, calculated at state x.'''
 
         mu = MultiComponentSurface.xa(self, x_surface, geom)
-        mu[self.glint_ind] = self.init_val[self.glint_ind]
+        mu[self.glint_ind] = self.init[self.glint_ind]
         return mu
 
     def Sa(self, x_surface, geom):

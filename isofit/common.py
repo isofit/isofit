@@ -28,6 +28,9 @@ from os.path import expandvars
 from scipy.linalg import cholesky, inv, det, svd
 from numba import jit
 
+# Maximum size of our hash tables
+max_table_size = 500
+
 binary_table = [s.array([[]]),
                 s.array([[0], [1]]),
                 s.array([[0, 0], [0, 1], [1, 0], [1, 1]]),
@@ -169,11 +172,13 @@ def svd_inv_sqrt(C, mineig=0, hashtable=None):
     """Fast stable inverse using SVD. This can handle near-singular matrices.
        Also return the square root."""
 
+    # If we have a hash table, look for the precalculated solution
     h = None
     if hashtable is not None:
         h = xxhash.xxh64_digest(C)
         if h in hashtable:
             return hashtable[h]
+
     U, V, D = svd(C)
     ignore = s.where(V < mineig)[0]
     Vi = 1.0 / V
@@ -181,8 +186,14 @@ def svd_inv_sqrt(C, mineig=0, hashtable=None):
     Visqrt = s.sqrt(Vi)
     Cinv = (D.T).dot(s.diag(Vi)).dot(U.T)
     Cinv_sqrt = (D.T).dot(s.diag(Visqrt)).dot(U.T)
+
+    # If there is a hash table, cache our solution.  Bound the total cache
+    # size by removing any extra items in FIFO order. 
     if hashtable is not None:
         hashtable[h] = (Cinv, Cinv_sqrt)
+        while len(hashtable) > max_table_size:
+            hashtable.popitem(last=False)
+
     return Cinv, Cinv_sqrt
 
 

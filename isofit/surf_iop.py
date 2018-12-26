@@ -34,7 +34,7 @@ class IOPSurface(Surface):
 
         Surface.__init__(self, config)
         self.wl, fwhm = load_wavelen(config['wavelength_file'])
-        self.statevec, self.bounds, self.scale, self.init_val = [], [], [], []
+        self.statevec, self.bounds, self.scale, self.init = [], [], [], []
 
         # Each channel maps to a nonnegative absorption residual
         if 'absorption_resid_file' in config:
@@ -45,7 +45,7 @@ class IOPSurface(Surface):
             self.statevec.extend(['ABS_%04i' % int(w) for w in self.wl])
             self.bounds.extend([[amin, amax] for w in self.wl])
             self.scale.extend([0.01 for w in self.wl])
-            self.init_val.extend([0 for v in self.wl])
+            self.init.extend([0 for v in self.wl])
             ind_start = len(self.statevec)
         else:
             self.abs_inds = []
@@ -63,7 +63,7 @@ class IOPSurface(Surface):
         self.glint_ind = ind_start+4
         self.flh_ind = ind_start+5
         self.scale.extend([0.1, 1.0, 1.0, 1.0, 1.0, 1.0])
-        self.init_val.extend([0.1, 0.1, 0.1, 0.1, 0.1, 0.01])
+        self.init.extend([0.1, 0.1, 0.1, 0.1, 0.1, 0.01])
         self.bounds.extend(
             [[0, 1.0], [0, 1.0], [0, 10], [0, 2.5], [0, 1], [0, 10]])
 
@@ -92,7 +92,7 @@ class IOPSurface(Surface):
     def xa(self, x_surface, geom):
         '''Mean of prior distribution, calculated at state x.'''
 
-        return s.array(self.init_val)
+        return s.array(self.init)
 
     def Sa(self, x_surface, geom):
         '''Covariance of prior distribution, calculated at state x.  We find
@@ -110,7 +110,7 @@ class IOPSurface(Surface):
         '''Given a reflectance estimate and one or more emissive parameters, 
           fit a state vector.'''
 
-        init = s.array((self.init_val))
+        init = s.array((self.init))
         init[self.glint_ind] = min(max(rfl_meas[self.b1000],
                                        self.bounds[self.glint_ind][0]+eps),
                                    self.bounds[self.glint_ind][1]-eps)

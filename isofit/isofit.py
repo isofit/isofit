@@ -26,7 +26,6 @@ import scipy as s
 from spectral.io import envi
 from os.path import expandvars, split, abspath
 from scipy.io import savemat
-
 from common import expand_all_paths, load_spectrum
 from forward import ForwardModel
 from inverse import Inversion
@@ -38,7 +37,6 @@ import cProfile
 
 class OOBError(Exception):
     """Spectrum is out of bounds or has bad data"""
-
     def __init__(self):
         super(OOBError, self).__init__("")
 
@@ -49,222 +47,152 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('config_file')
     parser.add_argument('--row_column', default='')
-    parser.add_argument('--profile', default='')
+    parser.add_argument('--profile', action='store_true')
+    parser.add_argument('--simulation', action='store_true')
     args = parser.parse_args()
-
-    # Setup
+    simulation = args.simulation
+    
+    # Load the configuration file
     config = json.load(open(args.config_file, 'r'))
     configdir, f = split(abspath(args.config_file))
     config = expand_all_paths(config, configdir)
 
-    # Forward Model
+    # Build the forward model, inversion, and output
     fm = ForwardModel(config['forward_model'])
-
-    # Inversion method
+    iv = Inversion(config['inversion'], fm)
+    out = Output(config, fm, iv)
     if 'mcmc_inversion' in config:
         iv = MCMCInversion(config['mcmc_inversion'], fm)
-    else:
-        iv = Inversion(config['inversion'], fm)
-
-    # Output object
-    out = Output(config, fm, iv)
-
-    # Simulation mode? Binary or text mode?
-    simulation_mode = (not ('input' in config)) or \
-        (not ('measured_radiance_file' in config['input']))
-    text_mode = simulation_mode or \
-        config['input']['measured_radiance_file'].endswith('txt')
 
     # Do we apply a radiance correction?
-    if (not simulation_mode) and \
-            'radiometry_correction_file' in config['input']:
-        radiance_correction_file = config['input']['radiometry_correction_file']
-        radiance_correction, wl = load_spectrum(radiance_correction_file)
-    else:
-        radiance_correction = None
+    radiance_correction = None
+    if (not simulation) and ('radiometry_correction_file' in \
+            config['input']):
+        filename = config['input']['radiometry_correction_file']
+        radiance_correction, wl = load_spectrum(filename)
 
-    if text_mode:
+    # Text mode operates on just one spectrum.  Special options that are only 
+    # available in text mode include MCMC sampling, forward simulation of
+    # measured spectra with noise, and performance profiling.  We determine
+    # from filename suffixes (.txt) whether we are in text or binary mode
+    if simulation or config['input']['measured_radiance_file'].endswith('txt'):
 
-        # ------------------------------- Text mode
-
-        # build geometry object
+        # Build the geometry object.
+        geom, obs, loc, glt = None, None, None, None
         if 'input' in config:
-            obs, loc, glt = None, None, None
-            if 'glt_file' in config['input']:
-                glt = s.loadtxt(config['input']['glt_file'])
-            if 'obs_file' in config['input']:
-                obs = s.loadtxt(config['input']['obs_file'])
-            if 'loc_file' in config['input']:
-                loc = s.loadtxt(config['input']['loc_file'])
+            for m, f in [(glt,'glt_file'),(obs,'obs_file'),(loc,'loc_file')]:
+                if f in config['input']:
+                    m = s.loadtxt(config['input'][f])
             geom = Geometry(obs=obs, glt=glt, loc=loc)
-        else:
-            geom = None
 
-        if simulation_mode:
-
-            # Get our measurement from instrument data or the initial state vector
-            state_est = fm.init_val.copy()
+        # Simulation mode calculates a simulated measurement.
+        if simulation:
+            state_est = fm.init.copy()
             rdn_est = fm.calc_rdn(state_est, geom)
-            rdn_meas = rdn_est.copy()
-            rdn_sim = fm.instrument.simulate_measurement(rdn_meas, geom)
+            meas = rdn_est.copy()
+            rdn_sim = fm.instrument.simulate_measurement(meas, geom)
             rfl_est, rdn_est, path_est, S_hat, K, G =\
-                iv.forward_uncertainty(state_est, rdn_meas, geom)
+                iv.forward_uncertainty(state_est, meas, geom)
+            out.write_spectrum(state_est, rfl_est, rdn_est, path_est,
+                           meas, rdn_sim, geom)
+            sys.exit(0)
 
+        # Retrieval mode inverts a radiance spectrum.
+        meas, wl = load_spectrum(config['input']['measured_radiance_file'])
+        if radiance_correction is not None:
+            meas = meas * radiance_correction
+        rdn_sim = None
+
+        # MCMC Sampler
+        if 'mcmc_inversion' in config:
+            state_est, samples = iv.invert(meas, geom, out=out)
+            if 'mcmc_samples_file' in config['output']:
+                D = {'samples': samples}
+                savemat(config['output']['mcmc_samples_file'], D)
+            rfl_est, rdn_est, path_est, S_hat, K, G =\
+                iv.forward_uncertainty(state_est, meas, geom)
+
+        # Inversion by conjugate gradient descent, profile output
+        elif args.profile:
+            cProfile.runctx('iv.invert(meas, geom, None)',
+                globals(), locals())
+
+        # Inversion by conjugate gradient descent
         else:
-
-            # Get radiance
-            rdn_meas, wl = load_spectrum(
-                config['input']['measured_radiance_file'])
-            if radiance_correction is not None:
-                rdn_meas = rdn_meas * radiance_correction
-            rdn_sim = None
-
-            if len(args.profile) > 0:
-                cProfile.runctx('iv.invert(rdn_meas, geom, None)',
-                                globals(), locals())
-                sys.exit(0)
-
-            elif 'mcmc_inversion' in config:
-
-                # MCMC Sampler
-                state_est, samples = iv.invert(rdn_meas, geom, out=out)
-                if 'mcmc_samples_file' in config['output']:
-                    D = {'samples': samples}
-                    savemat(config['output']['mcmc_samples_file'], D)
-                rfl_est, rdn_est, path_est, S_hat, K, G =\
-                    iv.forward_uncertainty(state_est, rdn_meas, geom)
-
-            else:
-
-                # Conjugate Gradient
-                state_est = iv.invert(rdn_meas, geom, out=out)
-                rfl_est, rdn_est, path_est, S_hat, K, G =\
-                    iv.forward_uncertainty(state_est, rdn_meas, geom)
-
-        out.write_spectrum(state_est, rfl_est, rdn_est, path_est,
-                           rdn_meas, rdn_sim, geom)
-
+            state_est = iv.invert(meas, geom, out=out)
+            rfl_est, rdn_est, path_est, S_hat, K, G =\
+                iv.forward_uncertainty(state_est, meas, geom)
+            out.write_spectrum(state_est, rfl_est, rdn_est, path_est,
+                           meas, rdn_sim, geom)
+ 
+    # Binary mode operates on ENVI-format data cubes.
     else:
 
-        # ------------------------------ Binary mode
-
+        # The measurement file is strictly required for all inversions.
         meas_file = config['input']['measured_radiance_file']
-        meas_hdr = meas_file + '.hdr'
-        meas = envi.open(meas_hdr, meas_file)
+        meas = envi.open(meas_file + '.hdr', meas_file)
         nl, nb, ns = [int(meas.metadata[n])
                       for n in ('lines', 'bands', 'samples')]
 
         # Do we apply a flatfield correction?
+        flatfield = None
         if 'flatfield_correction_file' in config['input']:
             ffile = config['input']['flatfield_correction_file']
             fcor = envi.open(ffile+'.hdr', ffile)
             fcor_mm = fcor.open_memmap(interleave='source',  writable=False)
             flatfield = s.array(fcor_mm[0, :, :])
-        else:
-            flatfield = None
 
-        if 'obs_file' in config['input']:
-            obs_file = config['input']['obs_file']
-            obs_hdr = obs_file + '.hdr'
-            obs = envi.open(obs_hdr,  obs_file)
-            if int(obs.metadata['bands']) != 11 and \
-               int(obs.metadata['bands']) != 10:
-                raise ValueError('Expected 10 or 11 bands in OBS file')
-            if int(obs.metadata['lines']) != nl or \
-               int(obs.metadata['samples']) != ns:
-                raise ValueError('obs file dimensions do not match radiance')
-        else:
-            obs_file, obs_hdr = None, None
+        # We start with all input and output objects initialized to an empty
+        # list, and fill in whichever are specified by the configuration file.
+        # We open each in the local scope, and check to make sure that the 
+        # specified number of bands matches our prior expectations.
+        ins = [('obs', [10,11]), ('glt', [2]), ('loc', [3])]
+        for name, bands in ins:
+            if name+'_file' in config['input']:
+                lcl = locals()
+                fname = config['input'][name+'_file']
+                lcl[name+'_file'] = fname
+                lcl[name] = envi.open(fname + '.hdr', fname)
+                if not any([lcl[name].metadata['bands'] == q for q in bands]):
+                    raise ValueError('Channel number mismatch in '+fname)
+        
+        # We create output objects. These come in several flavors.  Some 
+        # output cubes have one band per instrument channel.  These are 
+        # initialized based on the template provided by our measurement.
+        # Another batch of output objects has one channel per state vector
+        # element.  A third option is simply the index of the surface model 
+        # component (which only makes sense for a multicomponent surface).
+        channel_outs = ['rfl', 'path', 'mdl']
+        state_outs = ['post','state']
+        comp_outs = ['comp']
+        for name in channel_outs + state_outs + comp_outs:
+            lcl = locals()
+            if name+'_file' in config['output']:
+                fname = config['output'][name+'_file']
+                meta = meas.metadata.copy()
+                if name in state_outs:
+                    meta['bands'] = len(fm.statevec)
+                    meta['band names'] = fm.statevec[:] 
+                elif name in comp_outs:
+                    meta['bands'] = 1
+                    meta['band names'] = '{Surface Model Component}'
+                if not os.path.exists(fname+'.hdr'):
+                    lcl[name] = envi.create_image(fname+'.hdr', meta, ext='', 
+                            force=True)
+                lcl[name] = envi.open(fname+'.hdr', fname)
+            else:
+                lcl[name] = None
+            lcl[name+'_mm'] = None
 
-        if 'glt_file' in config['input']:
-            glt_file = config['input']['glt_file']
-            glt_hdr = glt_file + '.hdr'
-            glt = envi.open(glt_hdr,  glt_file)
-            if int(glt.metadata['bands']) != 2:
-                raise ValueError('Expected two bands in GLT file')
-            if int(glt.metadata['lines']) != nl or \
-               int(glt.metadata['samples']) != ns:
-                raise ValueError('GLT file dimensions do not match radiance')
-        else:
-            glt_file, glt_hdr = None, None
-
-        if 'loc_file' in config['input']:
-            loc_file = config['input']['loc_file']
-            loc_hdr = loc_file + '.hdr'
-            loc = envi.open(loc_hdr,  loc_file)
-            if int(loc.metadata['bands']) != 3:
-                raise ValueError('Expected three bands in LOC file')
-            if int(loc.metadata['lines']) != nl or \
-               int(loc.metadata['samples']) != ns:
-                raise ValueError('loc file dimensions do not match radiance')
-        else:
-            loc_file, loc_hdr = None, None
-
-        rfl_file = config['output']['estimated_reflectance_file']
-        rfl_hdr = rfl_file+'.hdr'
-        rfl_meta = meas.metadata.copy()
-        if not os.path.exists(rfl_hdr):
-            rfl = envi.create_image(rfl_hdr, rfl_meta, ext='', force=True)
-            del rfl
-        rfl = envi.open(rfl_hdr, rfl_file)
-
-        state_file = config['output']['estimated_state_file']
-        state_hdr = state_file+'.hdr'
-        state_meta = meas.metadata.copy()
-        state_meta['bands'] = len(fm.statevec)
-        state_meta['band names'] = fm.statevec[:]
-        if not os.path.exists(state_hdr):
-            state = envi.create_image(
-                state_hdr, state_meta, ext='', force=True)
-            del state
-        state = envi.open(state_hdr, state_file)
-
-        mdl_file = config['output']['modeled_radiance_file']
-        mdl_hdr = mdl_file+'.hdr'
-        mdl_meta = meas.metadata.copy()
-        if not os.path.exists(mdl_hdr):
-            mdl = envi.create_image(mdl_hdr, mdl_meta, ext='', force=True)
-            del mdl
-        mdl = envi.open(mdl_hdr, mdl_file)
-
-        path_file = config['output']['path_radiance_file']
-        path_hdr = path_file+'.hdr'
-        path_meta = meas.metadata.copy()
-        if not os.path.exists(path_hdr):
-            path = envi.create_image(path_hdr, path_meta, ext='', force=True)
-            del path
-        path = envi.open(path_hdr, path_file)
-
-        post_file = config['output']['posterior_uncertainty_file']
-        post_hdr = post_file+'.hdr'
-        post_meta = state_meta.copy()
-        if not os.path.exists(post_hdr):
-            post = envi.create_image(post_hdr, post_meta, ext='', force=True)
-            del post
-        post = envi.open(post_hdr, post_file)
-
-        if 'component_file' in config['output']:
-            comp_file = config['output']['component_file']
-            comp_hdr = comp_file+'.hdr'
-            comp_meta = state_meta.copy()
-            comp_meta['bands'] = 1
-            comp_meta['band names'] = '{Surface Model Component}'
-            if not os.path.exists(comp_hdr):
-                comp = envi.create_image(
-                    comp_hdr, comp_meta, ext='', force=True)
-                del comp
-            comp = envi.open(comp_hdr, comp_file)
-        else:
-            comp = None
-
-        meas_mm, obs_mm, state_mm, rfl_mm, path_mm, mdl_mm = \
-            None, None, None, None, None, None
-
-        # Did the user specify a row,column tuple, or a row?
+        # We set the row and column range of our analysis. The user can 
+        # specify: a single number, in which case it is interpreted as a row; 
+        # a comma-separated pair, in which case it is interpreted as a 
+        # row/column tuple (i.e. a single spectrum); or a comma-separated 
+        # quartet, in which case it is interpreted as a row, column range in the
+        # order (line_start, line_end, sample_start, sample_end) - all values are
+        # inclusive. If none of the above, we will analyze the whole cube.
+        lines, samps = range(nl), range(ns)
         if len(args.row_column) < 1:
-            lines, samps = range(nl), range(ns)
-        else:
-            # Restrict the range of the retrieval if overridden.
             ranges = args.row_column.split(',')
             if len(ranges) == 1:
                 lines, samps = [int(ranges[0])], range(ns)
@@ -276,156 +204,112 @@ def main():
                 lines = range(int(line_start), int(line_end))
                 samps = range(int(samp_start), int(samp_end))
 
-        # analyze the image one frame at a time
+        nl = int(rfl_meta['lines'])
+        ns = int(rfl_meta['samples'])
+        nb = int(rfl_meta['bands'])
+        nsv = int(state_meta['bands'])
+        ins = ['meas','obs','glt','loc']
+        outs = ['rfl','path','comp','state','post']
+
+        # Analyze the image, loading and writing one frame (i.e. line of data)
+        # at a time.  
         for i in lines:
 
-            # Flush cache every once in a while
             print('line %i/%i' % (i, nl))
+            lcl = locals()
+
+            # Flush cache every once in a while
             if meas_mm is None or i % 100 == 0:
-
-                # Refresh Radiance buffer
-                del meas
-                meas = envi.open(meas_hdr,  meas_file)
-                meas_mm = meas.open_memmap(
-                    interleave='source',  writable=False)
-
-                # Refresh OBS buffer
-                if obs_hdr is not None:
-                    del obs
-                    obs = envi.open(obs_hdr,   obs_file)
-                    obs_mm = obs.open_memmap(
-                        interleave='source',   writable=False)
-
-                # Refresh GLT buffer
-                if glt_hdr is not None:
-                    del glt
-                    glt = envi.open(glt_hdr,   glt_file)
-                    glt_mm = glt.open_memmap(
-                        interleave='source',   writable=False)
-
-                # Refresh LOC buffer
-                if loc_hdr is not None:
-                    del loc
-                    loc = envi.open(loc_hdr,   loc_file)
-                    loc_mm = loc.open_memmap(
-                        interleave='source',   writable=False)
-
-                # Refresh Output buffers
-                del rfl
-                rfl = envi.open(rfl_hdr,   rfl_file)
-                rfl_mm = rfl.open_memmap(interleave='source',   writable=True)
-
-                del state
-                state = envi.open(state_hdr, state_file)
-                state_mm = state.open_memmap(
-                    interleave='source', writable=True)
-
-                del path
-                path = envi.open(path_hdr,  path_file)
-                path_mm = path.open_memmap(interleave='source',  writable=True)
-
-                del mdl
-                mdl = envi.open(mdl_hdr,  mdl_file)
-                mdl_mm = mdl.open_memmap(interleave='source',  writable=True)
-
-                del post
-                post = envi.open(post_hdr,  post_file)
-                post_mm = post.open_memmap(interleave='source',  writable=True)
-
-                if comp is not None:
-                    del comp
-                    comp = envi.open(comp_hdr,  comp_file)
-                    comp_mm = comp.open_memmap(
-                        interleave='source',  writable=True)
-
-            # translate to BIP
+                for name in outs + ins: 
+                    if lcl[name] is not None:
+                       eval('del '+name)
+                       eval('del '+name+'_mm')
+                       f = envi.open(name+'_file.hdr', name+'_file')
+                       w = (name in outs)
+                       m = f.open_memmap(interleave='source', writable=w)
+                       lcl[name] = f
+                       lcl[name+'_mm'] = m
+                    
+            # Input data, translating the BIL measurement cube to BIP
             meas_frame = s.array(meas_mm[i, :, :]).T
-
-            if obs_hdr is not None:
-                obs_frame = s.array(obs_mm[i, :, :])
-
-            if glt_hdr is not None:
-                glt_frame = s.array(glt_mm[i, :, :])
-
-            if loc_hdr is not None:
-                loc_frame = s.array(loc_mm[i, :, :])
-
+            for name in ['obs','glt','loc']:
+                lcl[name+'_frame'] = s.array(lcl[name+'_mm'][i,:,:])
             init = None
-
-            nl = int(rfl_meta['lines'])
-            ns = int(rfl_meta['samples'])
-            nb = int(rfl_meta['bands'])
-            nsv = int(state_meta['bands'])
-
             if comp is not None:
                 comp_frame = s.zeros((1, ns))
-            post_frame = s.zeros((nsv, ns), dtype=s.float32)
-            rfl_frame = s.zeros((nb, ns), dtype=s.float32)
-            state_frame = s.zeros((nsv, ns), dtype=s.float32)
-            path_frame = s.zeros((nb, ns), dtype=s.float32)
-            mdl_frame = s.zeros((nb, ns), dtype=s.float32)
+            for name in channel_outs:
+                lcl[name+'_frame'] = s.zeros((nb, ns), dtype=s.float32)
+            for name in state_outs:
+                lcl[name+'_frame'] = s.zeros((nsv, ns), dtype=s.float32)
+
+            # Use AVIRIS-C convention, translating meters to km?
+            convert_km = (loc is not None and "t01p00r" in loc_file)
 
             for j in samps:
+
+                # We must specify the pushbroom column for FPA indexing.
+                # For orthorectified data this is specified in the glt 
+                # cube.  By default, we will simply use the column number
+                pc = j 
+
                 try:
 
-                    # Use AVIRIS-C convention?
-                    if loc_hdr is not None and "t01p00r" in loc_file:
-                        loc_frame[:, 2] = loc_frame[:, 2] / \
-                            1000.0  # translate to km
-
-                    rdn_meas = meas_frame[j, :]
-
-                    # Bad data test
-                    if all(rdn_meas < -49.0):
+                    # get the radiance spectrum, watching for bad data flags
+                    # and applying any calibration corrections
+                    meas = meas_frame[j, :]
+                    if all(meas < -49.0):
                         raise OOBError()
-
-                    if obs_hdr is not None:
+                    if radiance_correction is not None:
+                        meas = meas * radiance_correction
+ 
+                    # Next we build our geometry object.  It accepts many
+                    # parameter options so there is some flexibility here.
+                    obs_spectrum, glt_spectrum, loc_spectrum = None, None, None
+                    if obs is not None:
                         obs_spectrum = obs_frame[j, :]
-                    else:
-                        obs_spectrum = None
-
-                    if glt_hdr is not None:
+                    if glt is not None:
                         pc = abs(glt_frame[j, 0])-1
                         if pc < 0:
                             raise OOBError()
                         glt_spectrum = glt_frame[j, :]
-                    else:
-                        pc = j
-                        glt_spectrum = None
-
-                    if loc_hdr is not None:
+                    if loc is not None:
                         loc_spectrum = loc_frame[j, :]
-                    else:
-                        loc_spectrum = None
-
-                    if flatfield is not None:
-                        rdn_meas = rdn_meas * flatfield[:, pc]
-                    if radiance_correction is not None:
-                        rdn_meas = rdn_meas * radiance_correction
+                        if convert_km:
+                           loc_spectrum[2] = loc_spectrum[2] / 1000.0
                     geom = Geometry(obs_spectrum, glt_spectrum, loc_spectrum,
                                     pushbroom_column=pc)
 
-                    # Inversion
-                    if len(args.profile) > 0:
-                        cProfile.runctx('iv.invert(rdn_meas, geom, None)',
-                                        globals(), locals())
-                        sys.exit(0)
-                    else:
-                        state_est = iv.invert(rdn_meas, geom, None, init=init)
-                        rfl_est, rdn_est, path_est, S_hat, K, G =\
-                            iv.forward_uncertainty(state_est, rdn_meas, geom)
+                    # We now know the true pusbroom column and can apply 
+                    # any FPA-column-indexed flat field corrections
+                    if flatfield is not None:
+                        meas = meas * flatfield[:, pc]
 
-                    # write spectrum
-                    state_surf = state_est[iv.fm.surface_inds]
-                    post_frame[:, j] = s.sqrt(s.diag(S_hat))
+                    # Inversion (magic happens here).  Calculate posterior
+                    # uncertainty predictions, and unpack the optimal state
+                    # vector.
+                    state_est = iv.invert(meas, geom, None, init=init)
+                    rfl_est, rdn_est, path_est, S_hat, K, G =\
+                            iv.forward_uncertainty(state_est, meas, geom)
+
+                    # Write all output spectra to our local (RAM) data frame.
                     rfl_frame[:, j] = rfl_est
                     state_frame[:, j] = state_est
                     path_frame[:, j] = path_est
                     mdl_frame[:, j] = rdn_est
-                    if comp is not None:
-                        comp_frame[:, j] = iv.fm.surface.component(
-                            state_surf, geom)
 
+                    # The "component" file is a special case, since it only 
+                    # works for multicomponent surface models.
+                    surf = state_est[iv.fm.surface_inds]
+                    if comp is not None:
+                        comp_frame[:, j] = iv.fm.surface.component(surf, geom)
+
+                    # The posterior file holds marginal standard deviations of
+                    # posterior uncertainty predictions for all state variables
+                    # (i.e. the square root of the S_hat diagonal)
+                    post_frame[:, j] = s.sqrt(s.diag(S_hat))
+
+                # Flag any bad data or ill-convergence due to numerical errors, 
+                # et cetera.
                 except OOBError:
                     post_frame[:, j] = -9999*s.ones((nsv))
                     rfl_frame[:, j] = -9999*s.ones((nb))
@@ -435,21 +319,17 @@ def main():
                     if comp is not None:
                         comp_frame[:, j] = -9999
 
-            post_mm[i, :, :] = post_frame.copy()
-            rfl_mm[i, :, :] = rfl_frame.copy()
-            state_mm[i, :, :] = state_frame.copy()
-            path_mm[i, :, :] = path_frame.copy()
-            mdl_mm[i, :, :] = mdl_frame.copy()
-            if comp is not None:
-                comp_mm[i, :, :] = comp_frame.copy()
+            # We have reached the end of our line of data.  Write to file.
+            lcl = locals()
+            for name in channel_outs + state_outs + ['comp']:
+                if lcl[name] is not None:
+                    lcl[name+'_mm'][i,:,:] = lcl[name+'_frame'].copy()
 
-        del post_mm
-        del rfl_mm
-        del state_mm
-        del path_mm
-        del mdl_mm
-        if comp is not None:
-            del comp_mm
+        # Clean up before exit, to ensure that all output buffers are flushed 
+        # and all output files are closed.  This would probably happen auto-
+        # matically when they go out of scope....
+        for name in channel_outs + state_outs + ['comp']:
+            eval('del '+name+'_mm')
 
 
 if __name__ == '__main__':

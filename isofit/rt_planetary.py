@@ -42,7 +42,7 @@ class PlanetaryRT:
         self.bvec     = [] 
         self.bounds   = []
         self.scale    = []
-        self.init_val = []
+        self.init     = []
         self.unknowns = []
         self.bval     = []
         solar_irr = s.loadtxt(self.solar_irradiance_file, comments='#')
@@ -77,7 +77,7 @@ class PlanetaryRT:
         '''From a given radiance, estimate atmospheric state using band ratio
         heuristics.  Used to initialize gradient descent inversions.'''
 
-        x_RT = self.init_val.copy()
+        x_RT = self.init.copy()
         rfl_est = self.invert_algebraic(x_RT, rdn, None, geom)
         return x_RT, rfl_est
 
