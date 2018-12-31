@@ -41,6 +41,7 @@ class Inversion:
         # measurement cost distributions
         self.lasttime = time.time()
         self.fm = forward
+        self.method = 'GradientDescent'
         self.hashtable = OrderedDict() # Hash table for caching inverse matrices
         self.max_table_size = 500
         self.windows = config['windows'] # Retrieval windows
@@ -116,7 +117,7 @@ class Inversion:
             Seps_win[i, :] = Seps[self.winidx[i], self.winidx]
         return svd_inv_sqrt(Seps_win, hashtable=self.hashtable)
 
-    def invert(self, meas, geom, out=None):
+    def invert(self, meas, geom):
         """Inverts a meaurement and returns a state vector.
 
            Parameters:
@@ -138,6 +139,8 @@ class Inversion:
         """the least squares library seems to crash if we call it too many
     times without reloading.  Memory leak?"""
         self.lasttime = time.time()
+        self.trajectory = []
+        self.counts = 0
 
         """Calculate the initial solution, if needed."""
         x0 = invert_simple(self.fm, meas, geom)
@@ -185,10 +188,10 @@ class Inversion:
 
             # Measurement cost term.  Will calculate reflectance and Ls from
             # the state vector.
-            est_rdn = self.fm.calc_rdn(x, geom, rfl=None, Ls=None)
-            est_rdn_window = est_rdn[self.winidx]
+            est_meas = self.fm.calc_meas(x, geom, rfl=None, Ls=None)
+            est_meas_window = est_meas[self.winidx]
             meas_window = meas[self.winidx]
-            meas_resid = (est_rdn_window-meas_window).dot(Seps_inv_sqrt)
+            meas_resid = (est_meas_window-meas_window).dot(Seps_inv_sqrt)
 
             # Prior cost term
             xa, Sa, Sa_inv, Sa_inv_sqrt = self.calc_prior(x, geom)
@@ -196,35 +199,33 @@ class Inversion:
 
             # Total cost
             total_resid = s.concatenate((meas_resid, prior_resid))
-            self.counts = self.counts + 1
 
-            # Diagnostics
+            # How long since the last call?
+            newtime = time.time()
+            secs = newtime-self.lasttime
+            self.lasttime = newtime
+
+            self.trajectory.append(x)
             if self.verbose:
-                newtime = time.time()
-                lamb, mdl, path, S_hat, K, G = \
-                    self.forward_uncertainty(x, meas, geom)
-                dof = s.mean(s.diag(G[:, self.winidx].dot(K[self.winidx, :])))
-                sys.stdout.write('Iteration: %s ' % str(self.counts))
+               #lamb, mdl, path, S_hat, K, G = \
+               #    self.forward_uncertainty(x, meas, geom)
+               #dof = s.mean(s.diag(G[:, self.winidx].dot(K[self.winidx, :])))
+                sys.stdout.write('Iteration: %s ' % str(len(self.trajectory)))
                 sys.stdout.write(' Time: %f ' % (newtime-self.lasttime))
                 sys.stdout.write(' Residual: %6f ' % sum(pow(total_resid, 2)))
-                sys.stdout.write(' Mean DOF: %5.3f ' % dof)
+               #sys.stdout.write(' Mean DOF: %5.3f ' % dof)
                 sys.stdout.write('\n '+self.fm.summarize(x, geom)+'\n')
-                self.lasttime = newtime
-
-            # Plot interim solution?
-            if out is not None:
-                out.plot_spectrum(x, meas, geom)
 
             return s.real(total_resid)
 
         # Initialize and invert
-        xopt = least_squares(err, x0, jac=jac, method='trf',
-                             bounds=(self.fm.bounds[0]+eps,
-                                     self.fm.bounds[1]-eps),
-                             xtol=1e-4, ftol=1e-4, gtol=1e-4,
-                             x_scale=self.fm.scale,
-                             max_nfev=20, tr_solver='exact')
-        return xopt.x
+        bounds = (self.fm.bounds[0]+eps, self.fm.bounds[1]-eps)
+        scale = self.fm.scale
+        xopt = least_squares(err, x0, jac=jac, method='trf', bounds=bounds, 
+                    xtol=1e-4, ftol=1e-4, gtol=1e-4, x_scale=scale, 
+                    max_nfev=20, tr_solver='exact')
+        self.trajectory.append(xopt.x)
+        return s.array(self.trajectory)
 
     def forward_uncertainty(self, x, meas, geom):
         """Converged estimates of path radiance, radiance, reflectance

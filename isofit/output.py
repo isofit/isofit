@@ -45,7 +45,8 @@ class Output:
                       'estimated_reflectance_file', 'modeled_radiance_file',
                       'posterior_errors_file', 'estimated_state_file', 'path_radiance_file',
                       'atmospheric_coefficients_file', 'plot_directory_file',
-                      'radiometry_correction_file', 'measured_radiance_file']:
+                      'radiometry_correction_file', 'measured_radiance_file',
+                      'spectral_calibration_file']:
             if not hasattr(self.output, field):
                 setattr(self.output, field, None)
 
@@ -61,14 +62,14 @@ class Output:
                 self.ref_rfl, self.ref_wl = \
                     load_spectrum(self.inputs.reference_reflectance_file)
 
-    def write_spectrum(self, x, lamb_est, rdn_est, path_est, meas, rdn_sim,
+    def write_spectrum(self, x, lamb_est, meas_est, path_est, meas, meas_sim,
                        geom):
         """Write the output products for a single spectrum.  This code 
         should probably be consolidated."""
 
         basic_products = {"estimated_reflectance_file": lamb_est,
-                          "modeled_radiance_file": rdn_est,
-                          "simulated_radiance_file": rdn_sim,
+                          "modeled_radiance_file": meas_est,
+                          "simulated_radiance_file": meas_sim,
                           "path_radiance_file": path_est}
 
         for field, prod in basic_products.items():
@@ -98,6 +99,12 @@ class Output:
             else:
                 raise ValueError(
                     'Need reference spectrum for radiometry correction')
+
+        if self.output.spectral_calibration_file is not None:
+            wl, fwhm = self.fm.calibration(x)
+            with open(self.output.spectral_calibration_file, 'w') as fout:
+                for i, (w, f) in enumerate(zip(wl, fwhm)):
+                    fout.write('%i %7.5f %7.5f\n' % (i, w, f))
 
         if self.output.posterior_errors_file is not None:
             S_hat, K, G = self.iv.calc_posterior(x, geom, meas)
@@ -176,20 +183,25 @@ class Output:
         xmin, xmax = min(wl), max(wl)
         fig = plt.subplots(1, 2, figsize=(10, 5))
         plt.subplot(1, 2, 1)
-        rdn_est = self.fm.calc_rdn(x, geom)
+        meas_est = self.fm.calc_meas(x, geom)
         for lo, hi in self.iv.windows:
             idx = s.where(s.logical_and(wl>lo, wl<hi))[0]
             p1 = plt.plot(wl[idx], meas[idx], color=[0.7, 0.2, 0.2], 
                     linewidth=2)
             plt.hold(True)
-            p2 = plt.plot(wl, rdn_est, color='k', linewidth=2)
+            p2 = plt.plot(wl, meas_est, color='k', linewidth=1)
         plt.title("Radiance")
+        plt.title("Measurement (Scaled DN + Floating Bias)")
         ymax = max(meas)*1.25
+        ymax = max(meas)+0.01
+        ymin = min(meas)-0.01
         plt.text(500, ymax*0.92, "Measured", color=[0.7, 0.2, 0.2])
         plt.text(500, ymax*0.86, "Model", color='k')
         plt.ylabel("$\mu$W nm$^{-1}$ sr$^{-1}$ cm$^{-2}$")
+        plt.ylabel("Intensity")
         plt.xlabel("Wavelength (nm)")
         plt.ylim([-0.001, ymax])
+        plt.ylim([ymin, ymax])
         plt.xlim([xmin, xmax])
 
         plt.subplot(1, 2, 2)
@@ -222,6 +234,7 @@ class Output:
         plt.ylim([-0.0010, ymax])
         plt.xlim([xmin, xmax])
         plt.title("Reflectance")
+        plt.title("Source Model (Smooth GP)")
         plt.xlabel("Wavelength (nm)")
         if self.ref_rfl is not None:
             plt.text(500, ymax*0.92, "In situ reference",

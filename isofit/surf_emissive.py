@@ -34,17 +34,20 @@ class MixBBSurface(MultiComponentSurface):
         MultiComponentSurface.__init__(self, config)
         # Handle additional state vector elements
         self.statevec.extend(['SURF_TEMP_K'])
-        self.init.extend([270.0])
+        #self.init.extend([270.0])
+        self.init.extend([6000.0])
         self.scale.extend([1000.0])
-        self.bounds.extend([[250.0, 2000.0]])
+        self.bounds.extend([[250.0, 10000.0]])
         self.surf_temp_ind = len(self.statevec)-1
         # Treat emissive surfaces as a fractional blackbody
         self.statevec.extend(['BB_MIX_FRAC'])
         self.scale.extend([1.0])
-        self.init.extend([0.1])
+        #self.init.extend([0.1])
+        self.init.extend([0.5])
         self.bounds.extend([[0, 1]])
         self.bb_frac_ind = len(self.statevec)-1
         self.emissive = True
+        self.n_state = len(self.init)
 
     def xa(self, x_surface, geom):
         '''Mean of prior distribution, calculated at state x.  We find
@@ -72,7 +75,7 @@ class MixBBSurface(MultiComponentSurface):
 
         def err(z):
             T, bb_frac = z
-            emissivity = s.ones(self.nwl, dtype=float)
+            emissivity = s.ones(self.n_wl, dtype=float)
             Ls_est, d = emissive_radiance(emissivity, T, self.wl)
             resid = Ls_est * bb_frac - Ls
             return sum(resid**2)
@@ -85,12 +88,14 @@ class MixBBSurface(MultiComponentSurface):
         x_surface[self.surf_temp_ind] = T
         return x_surface
 
-    def conditional_solamb(self, rfl_est, geom):
+    def conditional_solrfl(self, rfl_est, geom):
         '''Conditions the reflectance on solar-reflected channels.'''
 
         sol_inds = s.logical_and(self.wl > 450, self.wl < 1250)
+        if sum(sol_inds)<1:
+           return rfl_est
         x = s.zeros(len(self.statevec))
-        x[self.lamb_inds] = rfl_est
+        x[self.idx_lamb] = rfl_est
         c = self.components[self.component(x, geom)]
         mu_sol = c[0][sol_inds]
         Cov_sol = s.array([c[1][i, sol_inds] for i in s.where(sol_inds)[0]])
@@ -129,7 +134,7 @@ class MixBBSurface(MultiComponentSurface):
 
         T = x_surface[self.surf_temp_ind]
         frac = x_surface[self.bb_frac_ind]
-        emissivity = s.ones(self.nwl, dtype=float)
+        emissivity = s.ones(self.n_wl, dtype=float)
         Ls, dLs_dT = emissive_radiance(emissivity, T, self.wl)
         return Ls * frac
 
@@ -141,7 +146,7 @@ class MixBBSurface(MultiComponentSurface):
                 geom)
         T = x_surface[self.surf_temp_ind]
         frac = x_surface[self.bb_frac_ind]
-        emissivity = s.ones(self.nwl, dtype=float)
+        emissivity = s.ones(self.n_wl, dtype=float)
         Ls, dLs_dT = emissive_radiance(emissivity, T, self.wl)
         dLs_dsurface[:, self.surf_temp_ind] = dLs_dT * frac
         dLs_dsurface[:, self.bb_frac_ind] = Ls

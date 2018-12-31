@@ -24,7 +24,7 @@ import xxhash
 import scipy as s
 from collections import OrderedDict
 from scipy.interpolate import RegularGridInterpolator
-from os.path import expandvars
+from os.path import expandvars, split, abspath
 from scipy.linalg import cholesky, inv, det, svd
 from numba import jit
 
@@ -265,6 +265,14 @@ def json_load_ascii(filename, shell_replace=True):
     with open(filename, 'r') as fin:
         j = json.load(fin)
         return recursive_reincode(j)
+
+
+def load_config(config_file):
+    """Configuration files are typically .json, with relative paths"""
+
+    config = json.load(open(config_file, 'r'))
+    configdir, f = split(abspath(config_file))
+    return expand_all_paths(config, configdir)
 
 
 def expand_all_paths(config, configdir):

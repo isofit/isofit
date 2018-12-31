@@ -43,7 +43,7 @@ class TabularRT:
     def __init__(self, config):
         
         self.wl, self.fwhm = load_wavelen(config['wavelength_file'])
-        self.nchan = len(self.wl)
+        self.n_chan = len(self.wl)
 
         if 'auto_rebuild' in config:
           self.auto_rebuild = config['auto_rebuild']
@@ -150,7 +150,7 @@ class TabularRT:
             if self.solar_irr is None:  # first file
                 self.solar_irr = sol
                 self.coszen = s.cos(solzen * s.pi / 180.0)
-                dims_aug = self.lut_dims + [self.nchan]
+                dims_aug = self.lut_dims + [self.n_chan]
                 self.sphalb = s.zeros(dims_aug, dtype=float)
                 self.transm = s.zeros(dims_aug, dtype=float)
                 self.rhoatm = s.zeros(dims_aug, dtype=float)
@@ -254,7 +254,7 @@ class TabularRT:
            state.  Right now, this is just the sky view factor."""
 
         if len(self.bvec) == 0:
-            Kb_RT = s.zeros((1, len(self.wl.shape)))
+            Kb_RT = s.zeros((0, len(self.wl.shape)))
 
         else:
             # first the radiance at the current state vector
@@ -295,3 +295,7 @@ class TabularRT:
     def summarize(self, x_RT, geom):
         '''Summary of state vector'''
         return 'Atmosphere: '+' '.join(['%5.3f' % xi for xi in x_RT])
+
+    def reconfigure(self, config):
+        '''Not supported'''
+        return

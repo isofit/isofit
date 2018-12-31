@@ -30,7 +30,8 @@ from instrument import Instrument
 # Supported RT modules, filenames, and class names
 RT_models = [('modtran_radiative_transfer','rt_modtran','ModtranRT'),
     ('libradtran_radiative_transfer','rt_libradtran','LibRadTranRT'),
-    ('planetary_radiative_transfer','rt_planetary','PlanetaryRT')]
+    ('planetary_radiative_transfer','rt_planetary','PlanetaryRT'),
+    ('uplooking_radiative_transfer','rt_uplook','UplookRT')]
 
 
 # Supported surface modules, filenames, and class names
@@ -155,7 +156,7 @@ class ForwardModel:
         return self.RT.calc_rdn(x_RT, rfl_hi, Ls_hi, geom)
 
     def calc_meas(self, x, geom, rfl=None, Ls=None):
-        """Calculate the model observation at insttrument wavelengths"""
+        """Calculate the model observation at instrument wavelengths"""
 
         x_surface, x_RT, x_instrument = self.unpack(x)
         rdn_hi = self.calc_rdn(x, geom, rfl, Ls)
@@ -180,7 +181,7 @@ class ForwardModel:
         """Calculate the total uncertainty of the observation, including
         both the instrument noise and the uncertainty due to unmodeled
         variables. This is the S_epsilon matrix of Rodgers et al."""
-
+    
         Kb = self.Kb(x, geom)
         Sy = self.instrument.Sy(meas, geom)
         return Sy + Kb.dot(self.Sb).dot(Kb.T)
@@ -253,18 +254,21 @@ class ForwardModel:
 
     def summarize(self, x, geom):
         """State vector summary"""
-        x_RT = x[self.idx_RT]
-        x_surface = x[self.idx_surface]
+
+        x_surface, x_RT, x_instrument = self.unpack(x)
         return self.surface.summarize(x_surface, geom) + \
-            ' ' + self.RT.summarize(x_RT, geom)
+            ' ' + self.RT.summarize(x_RT, geom) + \
+            ' ' + self.instrument.summarize(x_instrument, geom)
 
     def calibration(self, x):
         """Calculate measured wavelengths and fwhm"""
+
         x_inst = x[self.idx_instrument]
         return self.instrument.calibration(x_inst)
 
     def upsample_surface(self, q):
         """Linear interpolation of surface to RT wavelengths"""
+            
         if q.ndim > 1:
             q2 = []
             for qi in q: 
@@ -285,3 +289,9 @@ class ForwardModel:
         x_instrument = x[self.idx_instrument]
         return x_surface, x_RT, x_instrument
 
+    def reconfigure(self, config_surface, config_rt, config_instrument):
+        """Reconfigure the components of the forward model."""
+
+        self.surface.reconfigure(config_surface)
+        self.RT.reconfigure(config_rt)
+        self.instrument.reconfigure(config_instrument)

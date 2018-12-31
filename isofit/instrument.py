@@ -24,6 +24,7 @@ from scipy.interpolate import interp1d
 from scipy.signal import convolve
 from common import eps, srf, load_wavelen, resample_spectrum
 from numpy.random import multivariate_normal as mvn
+from numba import jit
 
 
 # Max. wavelength difference (nm) that does not trigger expensive resampling
@@ -45,6 +46,12 @@ class Instrument:
         self.statevec = [] 
         self.init = []
         self.prior_sigma = []
+        self.fast_resample = True
+
+        # The "fast resample" option approximates a complete resampling by a 
+        # convolution with a uniform FWHM.
+        if 'fast_resample' in config:
+            self.fast_resample = config['fast_resample']
 
         # Are there free parameters?
         if 'statevector' in config:
@@ -146,14 +153,17 @@ class Instrument:
         # are the same, then we can bypass compputationally expensive sampling
         # operations later.
         self.calibration_fixed = (not ('FWHM_SCL' in self.statevec)) and \
-            (not ('WL_SHIFT' in self.statevec))
+            (not ('WL_SHIFT' in self.statevec)) and \
+            (not ('WL_SPACE' in self.statevec))
 
     def xa(self):
         '''Mean of prior distribution, calculated at state x. '''
-        return self.init.copy()
 
+        return self.init.copy()
+            
     def Sa(self):
         '''Covariance of prior distribution. (diagonal)'''
+            
         if self.n_state == 0: 
            return s.zeros((0,0), dtype=float)
         return s.diagflat(pow(self.prior_sigma, 2))
@@ -227,19 +237,32 @@ class Instrument:
     def sample(self, x_instrument, wl_hi, rdn_hi):
         """ Apply instrument sampling to a radiance spectrum, returning the
             predicted measurement"""
+
         if self.calibration_fixed and all((self.wl_init - wl_hi) < wl_tol):
             return rdn_hi
         wl, fwhm = self.calibration(x_instrument)
         if rdn_hi.ndim == 1:
             return resample_spectrum(rdn_hi, wl_hi, wl, fwhm)
         else:
-            resamp = [resample_spectrum(r, wl_hi, wl, fwhm) for r in rdn_hi]
+            resamp = []
+            # The "fast resample" option approximates a complete resampling 
+            # by a convolution with a uniform FWHM.
+            if self.fast_resample:
+                for i, r in enumerate(rdn_hi):
+                    ssrf = srf(s.arange(-10,11), 0, fwhm[0])
+                    blur = convolve(r, ssrf, mode='same') 
+                    resamp.append(interp1d(wl_hi, blur)(wl))
+            else:
+                for i, r in enumerate(rdn_hi):
+                    r2 = resample_spectrum(r, wl_hi, wl, fwhm)
+                    resamp.append(r2)
             return s.array(resamp)
 
     def simulate_measurement(self, meas, geom):
         """ Simulate a measurement by the given sensor, for a true radiance
             sampled to instrument wavelengths.  This basically just means
             drawing a sample from the noise distribution."""
+
         Sy = self.Sy(meas, geom)
         mu = s.zeros(meas.shape)
         rdn_sim = meas + mvn(mu, Sy)
@@ -247,13 +270,32 @@ class Instrument:
 
     def calibration(self, x_instrument):
         """ Calculate the measured wavelengths"""
+
         wl, fwhm = self.wl_init, self.fwhm_init
-        if 'FWHM_SCL' in self.statevec:
-            ind = self.statevec.index('FWHM_SCL')
+        space_orig = wl - wl[0]
+        offset = wl[0]
+        if 'GROW_FWHM' in self.statevec:
+            ind = self.statevec.index('GROW_FWHM')
             fwhm = fwhm + x_instrument[ind]
+        if 'WL_SPACE' in self.statevec:
+            ind = self.statevec.index('WL_SPACE')
+            space = x_instrument[ind]
+        else:
+            space = 1.0
         if 'WL_SHIFT' in self.statevec:
             ind = self.statevec.index('WL_SHIFT')
-            wl = self.wl_init + x_instrument[ind]
+            shift = x_instrument[ind]
+        else:
+            shift = 0.0
+        wl = offset + shift + space_orig * space
         return wl, fwhm
 
+    def summarize(self, x_instrument, geom):
+        '''Summary of state vector'''
 
+        return 'Instrument: '+' '.join(['%5.3f' % xi for xi in x_instrument])
+
+    def reconfigure(self, config):
+        '''Reconfiguration not yet supported''' 
+
+        return

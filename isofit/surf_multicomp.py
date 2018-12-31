@@ -37,6 +37,7 @@ class MultiComponentSurface(Surface):
     def __init__(self, config):
 
         Surface.__init__(self, config)
+
         # Models are stored as dictionaries in .mat format
         model_dict = loadmat(config['surface_file'])
         self.components = list(zip(model_dict['means'], model_dict['covs']))
@@ -78,7 +79,7 @@ class MultiComponentSurface(Surface):
             self.mus.append(self.components[i][0][self.idx_ref])
 
         # Variables retrieved: each channel maps to a reflectance model parameter
-        rmin, rmax = 0, 1.2
+        rmin, rmax = 0, 10.0
         self.statevec = ['RFL_%04i' % int(w) for w in self.wl]
         self.bounds = [[rmin, rmax] for w in self.wl]
         self.scale = [1.0 for w in self.wl]
@@ -203,3 +204,4 @@ class MultiComponentSurface(Surface):
     def summarize(self, x_surface, geom):
         '''Summary of state vector'''
         return 'Component: %i' % self.component(x_surface, geom)
+

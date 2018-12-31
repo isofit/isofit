@@ -34,7 +34,8 @@ def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
     b865 = s.argmin(abs(wl-865))
     b945 = s.argmin(abs(wl-945))
     b1040 = s.argmin(abs(wl-1040))
-    assert(any(RT.wl > 850) and any(RT.wl < 1050))
+    if not (any(RT.wl > 850) and any(RT.wl < 1050)):
+       return x_RT 
     x_new = x_RT.copy()
 
     # Band ratio retrieval of H2O.  Depending on the radiative transfer
@@ -111,7 +112,7 @@ def invert_algebraic(surface, RT, instrument, x_surface, x_RT, x_instrument,
 
     # Some downstream code will benefit from our precalculated 
     # atmospheric optical parameters
-    coeffs = rhoatm, sphalb, transm, solar_irr, coszen
+    coeffs = rhoatm, sphalb, transm, solar_irr, coszen, transup
     return rfl_est, Ls, coeffs
 
 
@@ -122,7 +123,7 @@ def estimate_Ls(coeffs, rfl, rdn, geom):
        scattering, and the measured radiance.  We account for 
        atmospheric transmission on the upward path."""
 
-    rhoatm, sphalb, transm, solar_irr, coszen = coeffs
+    rhoatm, sphalb, transm, solar_irr, coszen, transup = coeffs
     rho = rhoatm + transm * rfl / (1.0 - sphalb * rfl)
     Ls = (rdn - rho/s.pi*(solar_irr*coszen)) / transup
     return Ls
@@ -150,11 +151,11 @@ def invert_simple(forward, meas, geom):
 
     # If there is an emissive (hot) surface, modify the reflectance and 
     # upward additive radiance appropriately.
-    if surface.emissive:
-        rfl_est = forward.surface.conditional_solrfl(rfl_est, geom)
-        Ls_est  = forward.estimate_Ls(coeffs, rfl_est, meas, geom)
-    else:
-        Ls_est = None
+   #if surface.emissive:
+   #    rfl_est = forward.surface.conditional_solrfl(rfl_est, geom)
+   #    Ls_est  = estimate_Ls(coeffs, rfl_est, meas, geom)
+   #else:
+   #    Ls_est = None
 
     # Now, fit the reflectance model parameters to our estimated reflectance 
     # spectrum.  This will be simple for chnanelwise parameterizations but 
