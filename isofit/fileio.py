@@ -24,6 +24,7 @@ import pylab as plt
 from scipy.linalg import inv, norm, sqrtm, det
 from scipy.io import savemat
 from inverse_simple import invert_simple, invert_algebraic
+from spectral.io import envi
 from common import load_spectrum, resample_spectrum, expand_all_paths
 import logging.config
 from logging import getLogger
@@ -36,10 +37,12 @@ typemap = {s.uint8: 1, s.int16: 2, s.int32: 3, s.float32:4, s.float64: 5,
     s.complex64: 6, s.complex128: 9, s.uint16: 12, s.uint32: 13, s.int64: 14,
     s.uint64: 15}
 max_frames_size = 100
-flush_rate = 50
+flush_rate = 5
 
 
 class SpectrumFile:
+    """A buffered file object that contains configuration information about
+        formatting, etc."""
 
     def __init__(self, fname, write=False, n_rows=None, n_cols=None, 
             n_bands=None, interleave=None, dtype=s.float32, 
@@ -56,17 +59,24 @@ class SpectrumFile:
         self.n_cols = n_cols
         self.n_bands = n_bands
 
-        if fname.endswith('.txt'):
+        if self.fname.endswith('.txt'):
         
-            self.logger.info('Inferred ASCII file format for %s'%fname)
+            # The .txt suffix implies a space-separated ASCII text file of 
+            # one or more data columns.  This is cheap to load and store, so
+            # we do not defer read/write operations.  
+            self.logger.info('Inferred ASCII file format for %s'%self.fname)
             self.format = 'ASCII'
             if not self.write:
-                self.data,  self.wl  = load_spectrum(fname)
+                self.data,  self.wl  = load_spectrum(self.fname)
                 self.n_rows, self.n_cols, self.n_bands = 1,1,len(self.wl)
 
-        elif fname.endswith('.mat'):
+        elif self.fname.endswith('.mat'):
 
-            self.logger.info('Inferred MATLAB file format for %s'%fname)
+            # The .mat suffix implies a matlab-style file, i.e. a dictionary
+            # of 2D arrays and other matlab-like objects. This is typically
+            # only used for specific output products associated with single 
+            # spectrum retrievals; there is no read option.
+            self.logger.info('Inferred MATLAB file format for %s'%self.fname)
             self.format = 'MATLAB'
             if not self.write:
                 self.logger.error('Unsupported MATLAB file in input block')
@@ -74,27 +84,31 @@ class SpectrumFile:
          
         else:
 
-            # ENVI files have a detached header
-            self.logger.info('Inferred ENVI file format for %s'%fname)
+            # Otherwise we assume it is an ENVI-format file, which is 
+            # basically just a binary data cube with a detached human-
+            # readable ASCII header describing dimensions, interleave, and
+            # metadata.  We buffer this data in self.frames, reading and 
+            # writing individual rows of the cube on-demand.
+            self.logger.info('Inferred ENVI file format for %s'%self.fname)
             self.format = 'ENVI'
 
             if not self.write:
                 
                 # If we are an input file, the header must preexist.
-                if not os.path.exists(fname+'.hdr'):
-                    self.logger.error('Could not find %s'%(fname+'.hdr'))
-                    raise IOError('Could not find %s'%(fname+'.hdr'))
+                if not os.path.exists(self.fname+'.hdr'):
+                    self.logger.error('Could not find %s'%(self.fname+'.hdr'))
+                    raise IOError('Could not find %s'%(self.fname+'.hdr'))
 
                 # open file and copy metadata, checking interleave format
-                self.file = envi.open(fname + '.hdr', fname)
-                self.meta = copy(self.file.metadata)
+                self.file = envi.open(self.fname + '.hdr', fname)
+                self.meta = self.file.metadata.copy()
                 if self.meta['interleave'] not in ['bil','bip']:
                     self.logger.error('Unsupported interleave format.')
                     raise IOError('Unsupported interleave format.')
 
-                self.n_rows = self.meta['lines']
-                self.n_cols = self.meta['samples']
-                self.n_bands = self.meta['bands']
+                self.n_rows = int(self.meta['lines'])
+                self.n_cols = int(self.meta['samples'])
+                self.n_bands = int(self.meta['bands'])
 
             else:
 
@@ -104,7 +118,7 @@ class SpectrumFile:
                 meta = {'lines': n_rows, 'samples': n_cols, 'bands':n_bands,
                     'byte_order': 0, 'header_offset':0,
                     'file_type':'ENVI Standard', 'sensor_type': 'Unknown',
-                    'interleave': interleave, 'dtype': typemap(dtype)}
+                    'interleave': interleave, 'data type': typemap[dtype]}
                 for k,v in meta.items():
                     if v is None:
                         self.logger.error('Must specify %s'%(k))
@@ -132,11 +146,11 @@ class SpectrumFile:
         if not row in self.frames:
             if not self.write:
                 d = self.memmap[row,:,:]
-                if self.file.meta['interleave'] == 'bil':
+                if self.file.metadata['interleave'] == 'bil':
                      d = d.T
                 self.frames[row] = d
             else:
-                self.frames[row] = s.zeros((self.n_cols, self.n_bands))
+                self.frames[row] = s.nan * s.zeros((self.n_cols, self.n_bands))
         return self.frames[row]
         
     def write_spectrum(self, row, col, x):
@@ -178,12 +192,16 @@ class SpectrumFile:
         if self.format == 'ENVI':
             if self.write:
                 for row, frame in self.frames.items():
-                     if self.file.meta['interleave'] == 'bil':
-                         self.memmap[row,:,:] = frame[row].T
-                     else:
-                         self.memmap[row,:,:] = frame[row]
+                    valid = s.logical_not(s.isnan(frame[:,0]))
+                    if self.file.metadata['interleave'] == 'bil':
+                        print(self.memmap[row,:,valid].shape)
+                        print(frame[valid,:].shape)
+                        self.memmap[row,:,valid] = frame[valid,:].T
+                    else:
+                        self.memmap[row,valid,:] = frame[valid,:]
             self.frames = OrderedDict()
-            del self.memmap
+            del self.file
+            self.file = envi.open(self.fname+'.hdr',self.fname)
             self.memmap = self.file.open_memmap(interleave='source', 
                             writable=self.write)
 
@@ -237,7 +255,7 @@ class IO:
         # that we handle differently - the "plot_directory", "summary_file",
         # "Data dump file", etc.  
         wl_names = [('Channel %i' % i) for i in range(self.n_chan)]
-        sv_names = [self.fm.statevec.copy()]
+        sv_names = self.fm.statevec.copy()
         self.output_bands = {"estimated_state_file": sv_names,
                              "estimated_reflectance_file": wl_names,
                              "estimated_emission_file": wl_names,
@@ -268,7 +286,7 @@ class IO:
                 nb = len(self.output_bands[q])
                 self.outfiles[q] = SpectrumFile(self.output[q], write=True, 
                         n_rows=self.n_rows, n_cols=self.n_cols, 
-                        n_bands=nb, interleave='bil', dtype=s.float32, 
+                        n_bands=nb, interleave='bip', dtype=s.float32, 
                         wavelengths=self.meas_wl, fwhm=self.meas_fwhm, 
                         band_names=self.output_bands[q])
 
@@ -284,8 +302,8 @@ class IO:
             active_rows = s.arange(self.n_rows)
         if active_cols is None:
             active_cols = s.arange(self.n_cols)
-        self.iter_inds = s.array([q.flatten() for q in \
-                s.meshgrid(active_rows, active_cols)]).T
+        self.iter_inds = s.fliplr(s.array([q.flatten() for q in \
+                s.meshgrid(active_rows, active_cols)]).T)
 
     def flush_buffers(self):
         """ Write all buffered output data to disk, and erase read buffers."""
@@ -468,11 +486,10 @@ class IO:
                 'sphalb': sphalb, 'transm': transm, 'solar_irr': solar_irr}})
              
         for product in self.outfiles: 
-            print(product)
+            self.logger.info('Writing '+product)
             self.outfiles[product].write_spectrum(row, col, to_write[product])
-
-        if (self.writes % flush_rate) == 0:
-            self.infiles[source].flush_buffers()
+            if (self.writes % flush_rate) == 0:
+                self.outfiles[product].flush_buffers()
 
         # Write plots, if needed
         if len(states)>0 and 'plot_directory' in self.output:

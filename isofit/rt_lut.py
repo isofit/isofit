@@ -60,24 +60,26 @@ class TabularRT:
         # initial guesses for each state vector element.  The state
         # vector elements are all free parameters in the RT lookup table,
         # and they all have associated dimensions in the LUT grid.
-        self.bounds, self.scale, self.init = [], [], []
+        self.bounds, self.scale, self.init, self.prior_sigma = [], [], [], []
         for key in self.statevec:
             element = config['statevector'][key]
             self.bounds.append(element['bounds'])
             self.scale.append(element['scale'])
             self.init.append(element['init'])
+            self.prior_sigma.append(element['prior_sigma'])
         self.bounds = s.array(self.bounds)
         self.scale = s.array(self.scale)
         self.init = s.array(self.init)
+        self.prior_sigma = s.array(self.prior_sigma)
         self.bval = s.array([config['unknowns'][k] for k in self.bvec])
 
-        if 'prior_sigma' in config['statevector']:
-            self.prior_sigma = s.zeros((len(self.lut_grid),))
-            for name, val in config['prior_sigma'].items():
-                self.prior_sigma[self.statevec.index(name)] = val
-        else:
-            std_factor = 10.0
-            self.prior_sigma = (s.diff(self.bounds) * std_factor).flatten()
+       #if 'prior_sigma' in config['statevector']:
+       #    self.prior_sigma = s.zeros((len(self.lut_grid),))
+       #    for name, val in config['prior_sigma'].items():
+       #        self.prior_sigma[self.statevec.index(name)] = val
+       #else:
+       #    std_factor = 10.0
+       #    self.prior_sigma = (s.diff(self.bounds) * std_factor).flatten()
 
     def xa(self):
         '''Mean of prior distribution, calculated at state x. This is the
@@ -297,5 +299,13 @@ class TabularRT:
         return 'Atmosphere: '+' '.join(['%5.3f' % xi for xi in x_RT])
 
     def reconfigure(self, config):
-        '''Not supported'''
-        return
+        ''' Accept new configuration options.  We only support a few very 
+            specific reconfigurations.  Here, when performing multiple 
+            retrievals with the same radiative transfer model, we can 
+            reconfigure the prior distribution for this specific
+            retrieval event to incorporate variable atmospheric information 
+            from other sources.'''
+
+        if 'serialized_prior' in config and \
+            config['serialized_prior'] is not None:
+                self.prior_sigma = config['serialized_prior']

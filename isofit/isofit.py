@@ -30,16 +30,9 @@ from forward import ForwardModel
 from inverse import Inversion
 from inverse_mcmc import MCMCInversion
 from geometry import Geometry
-from output import Output
 from fileio import IO
 import cProfile
 import logging
-
-
-class OOBError(Exception):
-    """Spectrum is out of bounds or has bad data"""
-    def __init__(self):
-        super(OOBError, self).__init__("")
 
 
 def main():
@@ -54,7 +47,7 @@ def main():
     # Load the configuration file
     config = load_config(args.config_file)
 
-    # Build the forward model, inversion, and output
+    # Build the forward model and inversion objects. 
     fm = ForwardModel(config['forward_model'])
     if 'mcmc_inversion' in config:
         iv = MCMCInversion(config['mcmc_inversion'], fm)
@@ -86,7 +79,10 @@ def main():
             rows = range(int(row_start), int(row_end))
             cols = range(int(col_start), int(col_end))
 
-    # Iterate over all spectra
+    # Iterate over all spectra, reading and writing through the IO
+    # object to handle formatting, buffering, and deferred write-to-file.
+    # The idea is to avoid reading the entire file into memory, or hitting
+    # the physical disk too often.
     io = IO(config, fm, iv, rows, cols)
     for row, col, meas, geom, configs in io:
 
@@ -99,7 +95,7 @@ def main():
 
             # update model components with new configuration parameters 
             # specific to this spectrum.  Typically these would be empty, 
-            # though they couldcontain new location-specific prior 
+            # though they could contain new location-specific prior 
             # distributions.
             config_surface, config_rt, config_instrument = configs
             fm.reconfigure(config_surface, config_rt, config_instrument)
