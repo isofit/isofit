@@ -101,14 +101,14 @@ def invert_algebraic(surface, RT, instrument, x_surface, x_RT, x_instrument,
     # surface and measured wavelengths may differ.  Calculate
     # the initial emission and subtract from the measurement
     Ls = surface.calc_Ls(x_surface, geom)
-    Ls_meas = interp1d(surface.wl, Ls)(wl)
+    Ls_meas = interp1d(surface.wl, Ls, fill_value='extrapolate')(wl)
     rdn_solrfl = meas - (transup * Ls_meas)
 
     # Now solve for the reflectance at measured wavelengths,
     # and back-translate to surface wavelengths
     rho = rdn_solrfl * s.pi / (solar_irr * coszen)
     rfl = 1.0 / (transm / (rho - rhoatm) + sphalb)
-    rfl_est = interp1d(wl, rfl)(surface.wl)
+    rfl_est = interp1d(wl, rfl, fill_value='extrapolate')(surface.wl)
 
     # Some downstream code will benefit from our precalculated 
     # atmospheric optical parameters

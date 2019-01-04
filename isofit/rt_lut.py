@@ -20,6 +20,7 @@
 
 import os
 import scipy as s
+import logging
 from common import json_load_ascii, combos
 from common import VectorInterpolator, VectorInterpolatorJIT
 from common import recursive_replace, eps, load_wavelen
@@ -60,16 +61,19 @@ class TabularRT:
         # initial guesses for each state vector element.  The state
         # vector elements are all free parameters in the RT lookup table,
         # and they all have associated dimensions in the LUT grid.
-        self.bounds, self.scale, self.init, self.prior_sigma = [], [], [], []
+        self.bounds, self.scale, self.init = [],[],[]
+        self.prior_mean, self.prior_sigma = [], []
         for key in self.statevec:
             element = config['statevector'][key]
             self.bounds.append(element['bounds'])
             self.scale.append(element['scale'])
             self.init.append(element['init'])
             self.prior_sigma.append(element['prior_sigma'])
+            self.prior_mean.append(element['prior_mean'])
         self.bounds = s.array(self.bounds)
         self.scale = s.array(self.scale)
         self.init = s.array(self.init)
+        self.prior_mean = s.array(self.prior_mean)
         self.prior_sigma = s.array(self.prior_sigma)
         self.bval = s.array([config['unknowns'][k] for k in self.bvec])
 
@@ -84,7 +88,7 @@ class TabularRT:
     def xa(self):
         '''Mean of prior distribution, calculated at state x. This is the
            Mean of our LUT grid (why not).'''
-        return self.init.copy()
+        return self.prior_mean.copy()
 
     def Sa(self):
         '''Covariance of prior distribution. Our state vector covariance 
@@ -110,8 +114,8 @@ class TabularRT:
             self.lut_grids.append(s.array(val))
             self.lut_dims.append(len(val))
             if val != sorted(val):
-                raise ValueError(
-                    'Lookup table grid must be in ascending order')
+                logging.error('Lookup table grid needs ascending order')
+                raise ValueError('Lookup table grid needs ascending order')
 
         # "points" contains all combinations of grid points
         # We will have one filename prefix per point
@@ -131,7 +135,7 @@ class TabularRT:
                 pass
 
         if len(rebuild_cmds) > 0 and self.auto_rebuild:
-            print("rebuilding")
+            logging.info("rebuilding")
             import multiprocessing
             cwd = os.getcwd()
             os.chdir(self.lut_dir)
@@ -296,6 +300,9 @@ class TabularRT:
 
     def summarize(self, x_RT, geom):
         '''Summary of state vector'''
+
+        if len(x_RT) < 1:
+            return ''
         return 'Atmosphere: '+' '.join(['%5.3f' % xi for xi in x_RT])
 
     def reconfigure(self, config):
@@ -306,6 +313,13 @@ class TabularRT:
             retrieval event to incorporate variable atmospheric information 
             from other sources.'''
 
-        if 'serialized_prior' in config and \
-            config['serialized_prior'] is not None:
-                self.prior_sigma = config['serialized_prior']
+        if 'prior_means' in config and \
+                config['prior_means'] is not None:
+            self.prior_mean = config['prior_means']
+            self.init = s.minimum(s.maximum(config['prior_means'], 
+               self.bounds[:,0] + eps), self.bounds[:,1] - eps)
+
+        if 'prior_variances' in config and \
+                config['prior_variances'] is not None:
+            self.prior_sigma = s.sqrt(config['prior_variances'])
+            

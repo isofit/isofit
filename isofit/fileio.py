@@ -26,8 +26,7 @@ from scipy.io import savemat
 from inverse_simple import invert_simple, invert_algebraic
 from spectral.io import envi
 from common import load_spectrum, resample_spectrum, expand_all_paths
-import logging.config
-from logging import getLogger
+import logging
 from collections import OrderedDict
 from geometry import Geometry
 
@@ -46,9 +45,10 @@ class SpectrumFile:
 
     def __init__(self, fname, write=False, n_rows=None, n_cols=None, 
             n_bands=None, interleave=None, dtype=s.float32, 
-            wavelengths=None, fwhm=None, band_names=None):
+            wavelengths=None, fwhm=None, band_names=None,
+            bad_bands=[], zrange='{0.0, 1.0}', 
+            ztitles='{Wavelength (nm), Magnitude}', map_info='{}'):
 
-        self.logger = getLogger(__name__)
         self.frames = OrderedDict()
         self.write = write
         self.fname = fname
@@ -64,11 +64,16 @@ class SpectrumFile:
             # The .txt suffix implies a space-separated ASCII text file of 
             # one or more data columns.  This is cheap to load and store, so
             # we do not defer read/write operations.  
-            self.logger.info('Inferred ASCII file format for %s'%self.fname)
+            logging.debug('Inferred ASCII file format for %s'%self.fname)
             self.format = 'ASCII'
             if not self.write:
                 self.data,  self.wl  = load_spectrum(self.fname)
-                self.n_rows, self.n_cols, self.n_bands = 1,1,len(self.wl)
+                self.n_rows, self.n_cols, self.map_info = 1,1,'{}'
+                if self.wl is not None: 
+                    self.n_bands = len(self.wl)
+                else:
+                    self.n_bands = None
+                self.meta = {}
 
         elif self.fname.endswith('.mat'):
 
@@ -76,10 +81,10 @@ class SpectrumFile:
             # of 2D arrays and other matlab-like objects. This is typically
             # only used for specific output products associated with single 
             # spectrum retrievals; there is no read option.
-            self.logger.info('Inferred MATLAB file format for %s'%self.fname)
+            logging.debug('Inferred MATLAB file format for %s'%self.fname)
             self.format = 'MATLAB'
             if not self.write:
-                self.logger.error('Unsupported MATLAB file in input block')
+                logging.error('Unsupported MATLAB file in input block')
                 raise IOError('MATLAB format in input block not supported')
          
         else:
@@ -89,21 +94,21 @@ class SpectrumFile:
             # readable ASCII header describing dimensions, interleave, and
             # metadata.  We buffer this data in self.frames, reading and 
             # writing individual rows of the cube on-demand.
-            self.logger.info('Inferred ENVI file format for %s'%self.fname)
+            logging.debug('Inferred ENVI file format for %s'%self.fname)
             self.format = 'ENVI'
 
             if not self.write:
                 
                 # If we are an input file, the header must preexist.
                 if not os.path.exists(self.fname+'.hdr'):
-                    self.logger.error('Could not find %s'%(self.fname+'.hdr'))
+                    logging.error('Could not find %s'%(self.fname+'.hdr'))
                     raise IOError('Could not find %s'%(self.fname+'.hdr'))
 
                 # open file and copy metadata, checking interleave format
                 self.file = envi.open(self.fname + '.hdr', fname)
                 self.meta = self.file.metadata.copy()
                 if self.meta['interleave'] not in ['bil','bip']:
-                    self.logger.error('Unsupported interleave format.')
+                    logging.error('Unsupported interleave format.')
                     raise IOError('Unsupported interleave format.')
 
                 self.n_rows = int(self.meta['lines'])
@@ -116,19 +121,17 @@ class SpectrumFile:
                 # from scratch.  Hopefully the caller has supplied the 
                 # necessary metadata details.
                 meta = {'lines': n_rows, 'samples': n_cols, 'bands':n_bands,
-                    'byte_order': 0, 'header_offset':0,
-                    'file_type':'ENVI Standard', 'sensor_type': 'Unknown',
-                    'interleave': interleave, 'data type': typemap[dtype]}
+                    'byte order': 0, 'header offset':0, 'map info':map_info,
+                    'file_type':'ENVI Standard', 'sensor type': 'unknown',
+                    'interleave': interleave, 'data type': typemap[dtype],
+                    'wavelength units':'nm','z plot range':zrange,
+                    'z plot titles':ztitles, 'fwhm':fwhm, 'bbl':bad_bands, 
+                    'band names':band_names, 'wavelength': self.wl}
                 for k,v in meta.items():
                     if v is None:
-                        self.logger.error('Must specify %s'%(k))
+                        logging.error('Must specify %s'%(k))
                         raise IOError('Must specify %s'%(k))
 
-                # Create the image.
-                for k in ['fwhm','band_names','wavelengths']:
-                    lcl = locals()
-                    if lcl[k] is not None:
-                      meta[k] = lcl[k]
                 self.file = envi.create_image(fname+'.hdr', meta, ext='',
                             force=True)
 
@@ -194,8 +197,6 @@ class SpectrumFile:
                 for row, frame in self.frames.items():
                     valid = s.logical_not(s.isnan(frame[:,0]))
                     if self.file.metadata['interleave'] == 'bil':
-                        print(self.memmap[row,:,valid].shape)
-                        print(frame[valid,:].shape)
                         self.memmap[row,:,valid] = frame[valid,:].T
                     else:
                         self.memmap[row,valid,:] = frame[valid,:]
@@ -219,14 +220,16 @@ class IO:
         """Initialization specifies retrieval subwindows for calculating
         measurement cost distributions"""
 
+        # Default IO configuration options
+        self.input = {}
+        self.output = {'plot_surface_components':False}
+
         self.iv = inverse
         self.fm = forward
-        self.input = {}
-        self.output = {}
+        self.bbl = '[]'
         self.radiance_correction = None 
         self.meas_wl   = forward.instrument.wl_init
         self.meas_fwhm = forward.instrument.fwhm_init
-        self.logger = logging.getLogger(__name__)
         self.writes = 0
         self.n_rows = 0
         self.n_cols = 0
@@ -246,9 +249,12 @@ class IO:
                    "obs_file",
                    "glt_file",
                    "loc_file",
-                   "surface_prior_file",
-                   "atmosphere_prior_file",
-                   "instrument_prior_file",
+                   "surface_prior_mean_file",
+                   "surface_prior_variance_file",
+                   "rt_prior_mean_file",
+                   "rt_prior_variance_file",
+                   "instrument_prior_mean_file",
+                   "instrument_prior_variance_file",
                    "radiometry_correction_file"]
 
         # A list of all possible outputs.  There are several special cases
@@ -256,22 +262,60 @@ class IO:
         # "Data dump file", etc.  
         wl_names = [('Channel %i' % i) for i in range(self.n_chan)]
         sv_names = self.fm.statevec.copy()
-        self.output_bands = {"estimated_state_file": sv_names,
-                             "estimated_reflectance_file": wl_names,
-                             "estimated_emission_file": wl_names,
-                             "modeled_radiance_file": wl_names,
-                             "apparent_reflectance_file": wl_names,
-                             "path_radiance_file": wl_names,
-                             "simulated_measurement_file": wl_names,
-                             "algebraic_inverse_file": wl_names,
-                             "atmospheric_coefficients_file": wl_names,
-                             "radiometry_correction_file":  wl_names,
-                             "spectral_calibration_file":  wl_names,
-                             "posterior_uncertainty_file": sv_names}
+        self.output_info = {\
+            "estimated_state_file": 
+                (sv_names, 
+                 '{State Parameter, Value}',
+                 '{}'),
+            "estimated_reflectance_file": 
+                (wl_names, 
+                 '{Wavelength (nm), Lambertian Reflectance}',
+                 '{0.0,1.0}'),
+            "estimated_emission_file": 
+                (wl_names, 
+                '{Wavelength (nm), Emitted Radiance (uW nm-1 cm-2 sr-1)}',
+                '{}'),
+            "modeled_radiance_file": 
+                (wl_names,
+                '{Wavelength (nm), Modeled Radiance (uW nm-1 cm-2 sr-1)}',
+                '{}'),
+            "apparent_reflectance_file":
+                (wl_names, 
+                 '{Wavelength (nm), Apparent Surface Reflectance}',
+                '{}'),
+            "path_radiance_file":
+                (wl_names,
+                '{Wavelength (nm), Path Radiance (uW nm-1 cm-2 sr-1)}', 
+                '{}'),
+            "simulated_measurement_file": 
+                (wl_names,
+                '{Wavelength (nm), Simulated Radiance (uW nm-1 cm-2 sr-1)}',
+                '{}'),
+            "algebraic_inverse_file": 
+                (wl_names,
+                '{Wavelength (nm), Apparent Surface Reflectance}',
+                '{}'),
+            "atmospheric_coefficients_file": 
+                (wl_names,
+                '{Wavelength (nm), Atmospheric Optical Parameters}',
+                '{}'),
+            "radiometry_correction_file":  
+                (wl_names,
+                '{Wavelength (nm), Radiometric Correction Factors}',
+                '{}'),
+            "spectral_calibration_file": 
+                (wl_names,
+                '{}',
+                '{}'), 
+            "posterior_uncertainty_file":
+                (sv_names, 
+                 '{State Parameter, Value}',
+                 '{}')}
 
         self.defined_outputs, self.defined_inputs = {}, {}
-        self.infiles, self.outfiles = {}, {}
+        self.infiles, self.outfiles, self.map_info = {}, {}, '{}'
 
+        # Load input files and record relevant metadata
         for q in self.input:
             if q in self.possible_inputs:
                 self.infiles[q] = SpectrumFile(self.input[q])
@@ -281,35 +325,47 @@ class IO:
                     self.n_rows = self.infiles[q].n_rows
                     self.n_cols = self.infiles[q].n_cols
 
+                for inherit in ['map info','bbl']:
+                    if inherit in self.infiles[q].meta:
+                        setattr(self, inherit.replace(' ','_'), 
+                                self.infiles[q].meta[inherit])
+
         for q in self.output:
-            if q in self.output_bands:
-                nb = len(self.output_bands[q])
+            if q in self.output_info:
+                band_names, ztitle, zrange = self.output_info[q]
+                n_bands = len(band_names)
                 self.outfiles[q] = SpectrumFile(self.output[q], write=True, 
                         n_rows=self.n_rows, n_cols=self.n_cols, 
-                        n_bands=nb, interleave='bip', dtype=s.float32, 
+                        n_bands=n_bands, interleave='bip', dtype=s.float32, 
                         wavelengths=self.meas_wl, fwhm=self.meas_fwhm, 
-                        band_names=self.output_bands[q])
+                        band_names=band_names, bad_bands=self.bbl, 
+                        map_info=self.map_info, zrange = zrange, 
+                        ztitles = ztitle)
 
         # Do we apply a radiance correction?
         if 'radiometry_correction_file' in self.input:
             filename = self.input['radiometry_correction_file']
             self.radiance_correction, wl = load_spectrum(filename)
             if not self.same_wavelengths(wl):
-                self.logger.warn('Radiometry correction wavelength mismatch')
+                logging.warn('Radiometry correction wavelength mismatch')
 
         # Last thing is to define the active image area
         if active_rows is None: 
             active_rows = s.arange(self.n_rows)
         if active_cols is None:
             active_cols = s.arange(self.n_cols)
-        self.iter_inds = s.fliplr(s.array([q.flatten() for q in \
-                s.meshgrid(active_rows, active_cols)]).T)
+        self.iter_inds = []
+        for row in active_rows:
+            for col in active_cols:
+                self.iter_inds.append([row,col])
+        self.iter_inds = s.array(self.iter_inds)
 
     def flush_buffers(self):
         """ Write all buffered output data to disk, and erase read buffers."""
 
-        for fi in self.infiles + self.outfiles:
-            fi.flush_buffers()
+        for file_dictionary in [self.infiles, self.outfiles]:
+            for name, fi in file_dictionary.items():
+                fi.flush_buffers()
 
     def __iter__(self):
         """ Reset the iterator"""
@@ -322,6 +378,7 @@ class IO:
             into row/column indices and read from all input products."""
 
         if self.iter == len(self.iter_inds):
+            self.flush_buffers()
             raise StopIteration
 
         # Determine the appropriate row, column index. and initialize the
@@ -350,10 +407,13 @@ class IO:
 
         # Updates are simply serialized prior distribution vectors for this
         # spectrum (or 'None' if the file was not specified in the input
-        # configuration block)
-        updates = ({'serialized_prior': data['surface_prior_file']}, 
-                   {'serialized_prior': data['atmosphere_prior_file']}, 
-                   {'serialized_prior': data['instrument_prior_file']})
+        # configuration block).  The ordering is [surface, RT, instrument]
+        updates = ({'prior_means': data['surface_prior_mean_file'], 
+             'prior_variances': data['surface_prior_variance_file']}, 
+            {'prior_means': data['rt_prior_mean_file'],
+             'prior_variances': data['rt_prior_variance_file']},
+            {'prior_means': data['instrument_prior_mean_file'],
+             'prior_variances': data['instrument_prior_variance_file']})
 
         return r, c, meas, geom, updates
          
@@ -428,10 +488,11 @@ class IO:
                     meas_est = self.fm.calc_meas(x, geom, rfl=resamp)
                     factors = meas_est / meas
                 else:
-                    self.logger.warning('No reflectance reference')
+                    logging.warning('No reflectance reference')
 
         # Assemble all output products
-        to_write = {'estimated_state_file': state_est,
+        to_write = {'estimated_state_file': 
+                        state_est,
                     'estimated_reflectance_file': 
                         s.column_stack((self.fm.surface.wl, lamb_est)),
                     'estimated_emission_file': 
@@ -441,19 +502,25 @@ class IO:
                     'modeled_radiance_file': 
                         s.column_stack((wl, meas_est)),
                     'apparent_reflectance_file': 
-                        s.column_stack((wl, apparent_rfl_est)),
+                        s.column_stack((self.fm.surface.wl, apparent_rfl_est)),
                     'path_radiance_file': 
                         s.column_stack((wl, path_est)),
                     'simulated_measurement_file': 
                         s.column_stack((wl, meas_sim)),
                     'algebraic_inverse_file': 
                         s.column_stack((self.fm.surface.wl, rfl_alg_opt)),
-                    'mcmc_samples_file': {'samples': states},
-                    'state_trajectory_file': {'trajectory': states},
-                    'atmospheric_coefficients_file': atm,
-                    'radiometry_correction_file': factors,
-                    'spectral_calibration_file': cal,
-                    'posterior_uncertainty_file': s.sqrt(s.diag(S_hat))}
+                    'mcmc_samples_file': 
+                        {'samples': states},
+                    'state_trajectory_file': 
+                        {'trajectory': states},
+                    'atmospheric_coefficients_file': 
+                        atm,
+                    'radiometry_correction_file': 
+                        factors,
+                    'spectral_calibration_file': 
+                        cal,
+                    'posterior_uncertainty_file': 
+                        s.sqrt(s.diag(S_hat))}
 
         # Special case! Data dump file calculations are intensive so we do them 
         # on-demand.
@@ -486,7 +553,7 @@ class IO:
                 'sphalb': sphalb, 'transm': transm, 'solar_irr': solar_irr}})
              
         for product in self.outfiles: 
-            self.logger.info('Writing '+product)
+            logging.debug('IO: Writing '+product)
             self.outfiles[product].write_spectrum(row, col, to_write[product])
             if (self.writes % flush_rate) == 0:
                 self.outfiles[product].flush_buffers()
@@ -496,8 +563,8 @@ class IO:
 
             if 'reference_reflectance_file' in self.infiles:
                 reference_file = self.infiles['reference_reflectance_file']
-                self.ref_rfl = reference_file.read_spectrum(row, col)
-                self.ref_wl = reference_file.wl
+                self.rfl_ref = reference_file.read_spectrum(row, col)
+                self.wl_ref = reference_file.wl
 
             for i, x in enumerate(states):
 
@@ -506,6 +573,7 @@ class IO:
                      self.iv.forward_uncertainty(state_est, meas, geom)
 
                 plt.cla()
+                red=[0.7, 0.2, 0.2]
                 wl, fwhm = self.fm.calibration(x)
                 xmin, xmax = min(wl), max(wl)
                 fig = plt.subplots(1, 2, figsize=(10, 5))
@@ -513,16 +581,15 @@ class IO:
                 meas_est = self.fm.calc_meas(x, geom)
                 for lo, hi in self.iv.windows:
                     idx = s.where(s.logical_and(wl>lo, wl<hi))[0]
-                    p1 = plt.plot(wl[idx], meas[idx], color=[0.7, 0.2, 0.2], 
-                            linewidth=2)
+                    p1 = plt.plot(wl[idx], meas[idx], color=red, linewidth=2)
                     plt.hold(True)
                     p2 = plt.plot(wl, meas_est, color='k', linewidth=1)
                 plt.title("Radiance")
-                plt.title("Measurement (Scaled DN + Floating Bias)")
+                plt.title("Measurement (Scaled DN)")
                 ymax = max(meas)*1.25
                 ymax = max(meas)+0.01
                 ymin = min(meas)-0.01
-                plt.text(500, ymax*0.92, "Measured", color=[0.7, 0.2, 0.2])
+                plt.text(500, ymax*0.92, "Measured", color=red)
                 plt.text(500, ymax*0.86, "Model", color='k')
                 plt.ylabel("$\mu$W nm$^{-1}$ sr$^{-1}$ cm$^{-2}$")
                 plt.ylabel("Intensity")
@@ -539,10 +606,10 @@ class IO:
                     # red line
                     if 'reference_reflectance_file' in self.infiles:
                         idx = s.where(s.logical_and(
-                            self.ref_wl > lo, self.ref_wl < hi))[0]
-                        p1 = plt.plot(self.ref_wl[idx], self.ref_rfl[idx],
-                                      color=[0.7, 0.2, 0.2], linewidth=2)
-                        ymax = max(max(self.ref_rfl[idx]*1.2), ymax)
+                            self.wl_ref > lo, self.wl_ref < hi))[0]
+                        p1 = plt.plot(self.wl_ref[idx], self.rfl_ref[idx], 
+                                color=red, linewidth=2)
+                        ymax = max(max(self.rfl_ref[idx]*1.2), ymax)
                         plt.hold(True)
 
                     # black line
@@ -551,28 +618,28 @@ class IO:
                     ymax = max(max(lamb_est[idx]*1.2), ymax)
 
                     # green and blue lines - surface components
-                    if hasattr(self.fm.surface, 'components'):
+                    if hasattr(self.fm.surface, 'components') and \
+                        self.output['plot_surface_components']:
                         idx = s.where(s.logical_and(self.fm.surface.wl > lo, 
                                 self.fm.surface.wl < hi))[0]
-                        p3 = plt.plot(self.fm.surface.wl[idx], self.fm.xa(x, geom)[idx],
-                                      'b', linewidth=2)
+                        p3 = plt.plot(self.fm.surface.wl[idx], 
+                                self.fm.xa(x, geom)[idx], 'b', linewidth=2)
                         for j in range(len(self.fm.surface.components)):
                             z = self.fm.surface.norm(
                                 lamb_est[self.fm.surface.idx_ref])
                             mu = self.fm.surface.components[j][0] * z
-                            plt.plot(self.fm.surface.wl[idx], mu[idx], 'g:', linewidth=1)
+                            plt.plot(self.fm.surface.wl[idx], mu[idx], 'g:', 
+                                linewidth=1)
                 plt.ylim([-0.0010, ymax])
                 plt.xlim([xmin, xmax])
                 plt.title("Reflectance")
-                plt.title("Source Model (Smooth GP)")
+                plt.title("Source Model")
                 plt.xlabel("Wavelength (nm)")
-                if self.ref_rfl is not None:
-                    plt.text(500, ymax*0.92, "In situ reference",
-                             color=[0.7, 0.2, 0.2])
+                if 'reference_reflectance_file' in self.infiles:
+                    plt.text(500, ymax*0.92, "In situ reference", color=red)
                     plt.text(500, ymax*0.86, "Remote estimate", color='k')
                     plt.text(500, ymax*0.80, "Prior mean state ", color='b')
                     plt.text(500, ymax*0.74, "Surface components ", color='g')
-                
                 fn = self.output['plot_directory'] + ('/frame_%i.png' % i)
                 plt.savefig(fn)
                 plt.close()

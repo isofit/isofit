@@ -78,6 +78,7 @@ class ModtranRT(TabularRT):
         try:
             return os.getenv('MODTRAN_DIR')
         except KeyError:
+            logging.errorj('I could not find the MODTRAN base directory')
             raise KeyError('I could not find the MODTRAN base directory')
 
     def load_tp6(self, infile):
@@ -100,8 +101,8 @@ class ModtranRT(TabularRT):
                     te = i
                     break
             if ts < 0:
-                raise ValueError(
-                    'Could not find solar geometry in %s' % infile)
+                logging.error('%s is missing solar geometry' % infile)
+                raise ValueError('%s is missing solar geometry' % infile)
         szen = s.array([float(lines[i].split()[3])
                         for i in range(ts, te)]).mean()
         return szen

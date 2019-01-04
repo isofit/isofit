@@ -19,6 +19,7 @@
 #
 
 import scipy as s
+import logging
 from scipy.io import loadmat, savemat
 from scipy.interpolate import interp1d
 from scipy.signal import convolve
@@ -46,6 +47,7 @@ class Instrument:
         self.statevec = [] 
         self.init = []
         self.prior_sigma = []
+        self.prior_mean = []
         self.fast_resample = True
 
         # The "fast resample" option approximates a complete resampling by a 
@@ -60,6 +62,7 @@ class Instrument:
                  for attr in config['statevector'][key]:
                     getattr(self,attr).append(config['statevector'][key][attr])
         self.prior_sigma = s.array(self.prior_sigma)
+        self.prior_mean = s.array(self.prior_mean)
         self.n_state = len(self.statevec)
 
         # Number of integrations comprising the measurement.  Noise diminishes
@@ -99,12 +102,13 @@ class Instrument:
             D = loadmat(self.noise_file)
             self.ncols = D['columns'][0, 0]
             if self.n_chan != s.sqrt(D['bands'][0, 0]):
-                raise ValueError(
-                    'Noise model does not match wavelength # bands')
+                logging.error('Noise model mismatches wavelength # bands')
+                raise ValueError('Noise model mismatches wavelength # bands')
             cshape = ((self.ncols, self.n_chan, self.n_chan))
             self.covs = D['covariances'].reshape(cshape)
 
         else:
+            logging.error('Instrument noise not defined.')
             raise IndexError('Please define the instrument noise.')
 
         # We track several unretrieved free variables, that are specified 
@@ -293,6 +297,8 @@ class Instrument:
     def summarize(self, x_instrument, geom):
         '''Summary of state vector'''
 
+        if len(x_instrument) < 1:
+            return ''
         return 'Instrument: '+' '.join(['%5.3f' % xi for xi in x_instrument])
 
     def reconfigure(self, config):

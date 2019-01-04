@@ -19,6 +19,7 @@
 #
 
 import scipy as s
+import logging
 from sunposition import sunpos
 from datetime import datetime
 
@@ -76,9 +77,10 @@ class Geometry:
             if self.longitude < 0:
                 self.longitude = 360.0 - self.longitude
 
-            print('Geometry lat: %f lon: %f' %
-                  (self.latitude, self.longitude))
-            print('observer OBSZEN: %f RELAZ: %f' % (self.OBSZEN, self.RELAZ))
+            logging.debug('Geometry lat: %f lon: %f' %
+                (self.latitude, self.longitude))
+            logging.debug('Geometry observer OBSZEN: %f RELAZ: %f' % 
+                (self.OBSZEN, self.RELAZ))
 
         # The ds object is an optional date object, defining the time of 
         # the observation.

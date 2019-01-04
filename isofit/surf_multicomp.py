@@ -203,5 +203,8 @@ class MultiComponentSurface(Surface):
 
     def summarize(self, x_surface, geom):
         '''Summary of state vector'''
+
+        if len(x_surface) < 1:
+            return ''
         return 'Component: %i' % self.component(x_surface, geom)
 

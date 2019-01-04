@@ -347,10 +347,17 @@ def resample_spectrum(x, wl, wl2, fwhm2, fill=False):
 def load_spectrum(init):
     """Load a single spectrum from a text file with initial columns giving
        wavelength and magnitude respectively"""
-    wl, x = s.loadtxt(init)[:, :2].T
-    if wl[0] < 100:
-        wl = wl*1000.0  # convert microns -> nm if needed
-    return x, wl
+
+    x = s.loadtxt(init)
+    print(x.shape)
+    if x.ndim > 1:
+        x = x[:,:2]
+        wl, x = x.T
+        if wl[0] < 100:
+            wl = wl*1000.0  # convert microns -> nm if needed
+        return x, wl
+    else:   
+        return x, None
 
 
 def srf(x, mu, sigma):

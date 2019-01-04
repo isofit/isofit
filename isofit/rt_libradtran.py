@@ -22,6 +22,7 @@ import os
 import sys
 import re
 import time
+import logging
 import scipy as s
 from spectral.io import envi
 from scipy.io import loadmat, savemat
@@ -129,6 +130,7 @@ class LibRadTranRT(TabularRT):
             raise FileExistsError('Files exist')
 
         if self.libradtran_dir is None:
+            logging.error('Specify a LibRadTran installation')
             raise KeyError('Specify a LibRadTran installation')
 
         # write config files

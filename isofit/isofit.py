@@ -40,11 +40,13 @@ def main():
     description = 'Spectroscopic Surface & Atmosphere Fitting'
     parser = argparse.ArgumentParser()
     parser.add_argument('config_file')
+    parser.add_argument('--level', default='INFO')
     parser.add_argument('--row_column', default='')
     parser.add_argument('--profile', action='store_true')
     args = parser.parse_args()
+    logging.basicConfig(format='%(message)s', level=args.level)
 
-    # Load the configuration file
+    # Load the configuration file.
     config = load_config(args.config_file)
 
     # Build the forward model and inversion objects. 
@@ -97,8 +99,7 @@ def main():
             # specific to this spectrum.  Typically these would be empty, 
             # though they could contain new location-specific prior 
             # distributions.
-            config_surface, config_rt, config_instrument = configs
-            fm.reconfigure(config_surface, config_rt, config_instrument)
+            fm.reconfigure(*configs)
             
             if args.profile:
 

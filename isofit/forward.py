@@ -151,8 +151,8 @@ class ForwardModel:
             rfl = self.surface.calc_rfl(x_surface, geom)
         if Ls is None:
             Ls = self.surface.calc_Ls(x_surface, geom)
-        rfl_hi = self.upsample_surface(rfl)
-        Ls_hi  = self.upsample_surface(Ls)
+        rfl_hi = self.upsample(self.surface.wl, rfl)
+        Ls_hi  = self.upsample(self.surface.wl, Ls)
         return self.RT.calc_rdn(x_RT, rfl_hi, Ls_hi, geom)
 
     def calc_meas(self, x, geom, rfl=None, Ls=None):
@@ -197,14 +197,14 @@ class ForwardModel:
         # Get partials of reflectance WRT state, and upsample
         rfl = self.surface.calc_rfl(x_surface, geom)
         drfl_dsurface = self.surface.drfl_dsurface(x_surface, geom)
-        rfl_hi = self.upsample_surface(rfl)
-        drfl_dsurface_hi = self.upsample_surface(drfl_dsurface.T).T
+        rfl_hi = self.upsample(self.surface.wl, rfl)
+        drfl_dsurface_hi = self.upsample(self.surface.wl, drfl_dsurface.T).T
 
         # Get partials of emission WRT state, and upsample
         Ls = self.surface.calc_Ls(x_surface, geom)
         dLs_dsurface = self.surface.dLs_dsurface(x_surface, geom)
-        Ls_hi = self.upsample_surface(Ls)
-        dLs_dsurface_hi = self.upsample_surface(dLs_dsurface.T).T
+        Ls_hi = self.upsample(self.surface.wl, Ls)
+        dLs_dsurface_hi = self.upsample(self.surface.wl, dLs_dsurface.T).T
 
         # Derivatives of RTM radiance
         drdn_dRT, drdn_dsurface = self.RT.drdn_dRT(x_RT, x_surface, rfl_hi, 
@@ -213,7 +213,8 @@ class ForwardModel:
         # Derivatives of measurement, avoiding recalculation of rfl, Ls
         dmeas_dsurface = self.instrument.sample(x_instrument, self.RT.wl,
             drdn_dsurface.T).T
-        dmeas_dRT = self.instrument.sample(x_instrument, self.RT.wl, drdn_dRT.T).T
+        dmeas_dRT = self.instrument.sample(x_instrument, self.RT.wl, 
+            drdn_dRT.T).T
         rdn_hi = self.calc_rdn(x, geom, rfl=rfl, Ls=Ls)
         dmeas_dinstrument = self.instrument.dmeas_dinstrument(x_instrument,
             self.RT.wl, rdn_hi)
@@ -227,7 +228,7 @@ class ForwardModel:
 
     def Kb(self, x, geom):
         """Derivative of measurement with respect to unmodeled & unretrieved
-        unknown variables, e.g. S_b. This is  the concatenation of jacobians 
+        unknown variables, e.g. S_b. This is  the concatenation of Jacobians 
         with respect to parameters of the surface, radiative transfer model, 
         and instrument. """
 
@@ -236,9 +237,9 @@ class ForwardModel:
 
         # Get partials of reflectance and upsample
         rfl = self.surface.calc_rfl(x_surface, geom)
-        rfl_hi = self.upsample_surface(rfl)
+        rfl_hi = self.upsample(self.surface.wl, rfl)
         Ls = self.surface.calc_Ls(x_surface, geom)
-        Ls_hi = self.upsample_surface(Ls)
+        Ls_hi = self.upsample(self.surface.wl, Ls)
         rdn_hi = self.calc_rdn(x, geom, rfl = rfl, Ls = Ls)
 
         drdn_dRTb = self.RT.drdn_dRTb(x_RT, rfl_hi, Ls_hi, geom)
@@ -266,19 +267,17 @@ class ForwardModel:
         x_inst = x[self.idx_instrument]
         return self.instrument.calibration(x_inst)
 
-    def upsample_surface(self, q):
-        """Linear interpolation of surface to RT wavelengths"""
+    def upsample(self, wl, q):
+        """Linear interpolation to RT wavelengths"""
             
         if q.ndim > 1:
             q2 = []
             for qi in q: 
-                p = interp1d(self.surface.wl, qi, bounds_error=False,
-                    fill_value='extrapolate')
+                p = interp1d(wl, qi, fill_value='extrapolate')
                 q2.append(p(self.RT.wl))
             return s.array(q2)
         else:
-            p = interp1d(self.surface.wl, q, bounds_error=False, 
-                fill_value='extrapolate')
+            p = interp1d(wl, q, fill_value='extrapolate')
             return p(self.RT.wl)
 
     def unpack(self, x):
@@ -290,8 +289,11 @@ class ForwardModel:
         return x_surface, x_RT, x_instrument
 
     def reconfigure(self, config_surface, config_rt, config_instrument):
-        """Reconfigure the components of the forward model."""
+        """Reconfigure the components of the forward model. This could update
+            components' initialization values and/or priors."""
 
         self.surface.reconfigure(config_surface)
         self.RT.reconfigure(config_rt)
         self.instrument.reconfigure(config_instrument)
+        self.init = s.concatenate((self.surface.init, self.RT.init, 
+                    self.instrument.init))
