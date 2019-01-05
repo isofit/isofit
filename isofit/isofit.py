@@ -34,6 +34,10 @@ from fileio import IO
 import cProfile
 import logging
 
+# Suppress warnings that don't come from us
+import warnings
+warnings.filterwarnings("ignore")
+            
 
 def main():
 

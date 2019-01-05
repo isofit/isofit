@@ -37,12 +37,17 @@ class Surface:
         self.bval = s.array([])
         self.emissive = False
         self.reconfigure(config)
-
-    def reconfigure(self, config):
-
         if 'reflectance_file' in config:
             self.rfl, self.wl = load_spectrum(config['reflectance_file'])
-            self.nwl = len(self.wl)
+            self.n_wl = len(self.wl)
+        elif 'wavelength_file' in config:
+            self.rfl, self.wl = load_spectrum(config['wavelength_file'])
+        
+    def reconfigure(self, config):
+        """Adjust the surface reflectance (for predefined reflectances)"""
+
+        if 'reflectance' in config and config['reflectance'] is not None:
+            self.rfl = config['reflectance']
 
     def xa(self, x_surface, geom):
         '''Mean of prior state vector distribution calculated at state x'''
@@ -73,26 +78,29 @@ class Surface:
 
     def drfl_dsurface(self, x_surface, geom):
         '''Partial derivative of reflectance with respect to state vector, 
-        calculated at x_surface.'''
+           calculated at x_surface.  In the case that there are no free 
+           paramters our convention is to return the vector of zeros.'''
 
-        return None
+        return s.zeros((self.n_wl,1))
 
     def drfl_dsurfaceb(self, x_surface, geom):
         '''Partial derivative of reflectance with respect to unmodeled 
-            variables, calculated at x_surface.'''
+           variables, calculated at x_surface.  In the case that there are no
+           free paramters our convention is to return the vector of zeros.'''
 
-        return None
+        return s.zeros((self.n_wl,1))
 
     def calc_Ls(self, x_surface, geom):
         '''Emission of surface, as a radiance'''
 
-        return s.zeros((self.nwl,))
+        return s.zeros((self.n_wl,))
 
     def dLs_dsurface(self, x_surface, geom):
         '''Partial derivative of surface emission with respect to state vector, 
-        calculated at x_surface.'''
+           calculated at x_surface.  In the case that there are no
+           free paramters our convention is to return the vector of zeros.'''
 
-        return None
+        return s.zeros((self.n_wl,1))
 
     def summarize(self, x_surface, geom):
         '''Summary of state vector'''

@@ -24,21 +24,26 @@
     },
 
     "libradtran_radiative_transfer": {
+      "wavelength_file": "wavelengths.txt",
       "libradtran_template_file":"libradtran.inp",
       "lut_path":"lut_libradtran/",
       "statevector": {
         "H2OSTR": {
           "bounds": [1.5, 2.0],
           "scale": 0.01,
-          "init": 1.6
+          "prior_mean": 1.75,
+          "prior_sigma":0.5,
+          "init": 1.75
         },
         "AOT550": {
           "bounds": [0.01, 0.1],
           "scale": 0.01,
-          "init": 0.09
+          "prior_mean": 0.05,
+          "prior_sigma":0.2,
+          "init": 0.05
         }
       },
-      "lut_grid": { 
+     "lut_grid": { 
         "H2OSTR": [1.5, 2.0], 
         "AOT550": [0.01, 0.1]
       },
@@ -47,7 +52,7 @@
       }
     }
   },
-
+    
   "inversion": {
     "windows": [[380.0,1300.0],[1450,1780.0],[1950.0,2450.0]]
   }

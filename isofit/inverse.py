@@ -49,6 +49,9 @@ class Inversion:
         self.windows = config['windows'] # Retrieval windows
         self.state_indep_S_hat = False
         self.windows = config['windows']
+        self.simulation_mode = None
+        if 'simulation_mode' in config:
+            self.simulation_mode = config['simulation_mode']
         if 'Cressie_MAP_confidence' in config:
             self.state_indep_S_hat = config['Cressie_MAP_confidence']
 
@@ -142,19 +145,21 @@ class Inversion:
              G              - the G matrix from the CD Rodgers 2000 formalism
              xopt           - the converged state vector solution"""
 
-        """the least squares library seems to crash if we call it too many
-    times without reloading.  Memory leak?"""
         self.lasttime = time.time()
         self.trajectory = []
         self.counts = 0
 
-        """Calculate the initial solution, if needed."""
+        # Simulations are easy - return the initial state vector
+        if self.simulation_mode or meas is None:
+            return s.array([self.fm.init.copy()])
+
+        # Calculate the initial solution, if needed.
         x0 = invert_simple(self.fm, meas, geom)
 
-        """Seps is the covariance of "observation noise" including both 
-    measurement noise from the instrument as well as variability due to 
-    unknown variables.  For speed, we will calculate it just once based
-    on the initial solution (a potential minor source of inaccuracy)"""
+        # Seps is the covariance of "observation noise" including both 
+        # measurement noise from the instrument as well as variability due to 
+        # unknown variables.  For speed, we will calculate it just once based
+        # on the initial solution (a potential minor source of inaccuracy)
         Seps_inv, Seps_inv_sqrt = self.calc_Seps(x0, meas, geom)
 
         @jit
@@ -220,7 +225,7 @@ class Inversion:
             logging.debug('Iteration: %02i  Residual: %12.2f %s' % (it,rs,sm))
 
             return s.real(total_resid)
-
+       
         # Initialize and invert        
         try:
             xopt = least_squares(err, x0, jac=jac, **self.least_squares_params)

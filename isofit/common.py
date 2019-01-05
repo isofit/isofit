@@ -349,7 +349,6 @@ def load_spectrum(init):
        wavelength and magnitude respectively"""
 
     x = s.loadtxt(init)
-    print(x.shape)
     if x.ndim > 1:
         x = x[:,:2]
         wl, x = x.T

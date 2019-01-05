@@ -230,7 +230,8 @@ class ForwardModel:
         """Derivative of measurement with respect to unmodeled & unretrieved
         unknown variables, e.g. S_b. This is  the concatenation of Jacobians 
         with respect to parameters of the surface, radiative transfer model, 
-        and instrument. """
+        and instrument.  Currently we only treat uncertainties in the 
+        instrument and RT model."""
 
         # Unpack state vector
         x_surface, x_RT, x_instrument = self.unpack(x)
@@ -290,7 +291,9 @@ class ForwardModel:
 
     def reconfigure(self, config_surface, config_rt, config_instrument):
         """Reconfigure the components of the forward model. This could update
-            components' initialization values and/or priors."""
+            components' initialization values and/or priors, or (for the case
+            of a defined surface reflectance) the surface reflectance file 
+            itself."""
 
         self.surface.reconfigure(config_surface)
         self.RT.reconfigure(config_rt)

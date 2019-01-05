@@ -246,6 +246,7 @@ class IO:
         # A list of all possible input data sources
         self.possible_inputs = ["measured_radiance_file",
                    "reference_reflectance_file",
+                   "reflectance_file",
                    "obs_file",
                    "glt_file",
                    "loc_file",
@@ -409,7 +410,8 @@ class IO:
         # spectrum (or 'None' if the file was not specified in the input
         # configuration block).  The ordering is [surface, RT, instrument]
         updates = ({'prior_means': data['surface_prior_mean_file'], 
-             'prior_variances': data['surface_prior_variance_file']}, 
+             'prior_variances': data['surface_prior_variance_file'],
+             'reflectance': data['reflectance_file']}, 
             {'prior_means': data['rt_prior_mean_file'],
              'prior_variances': data['rt_prior_variance_file']},
             {'prior_means': data['instrument_prior_mean_file'],
@@ -455,6 +457,12 @@ class IO:
             # Spectral calibration
             wl, fwhm = self.fm.calibration(state_est) 
             cal = s.column_stack([s.arange(0,len(wl)), wl / 1000.0, fwhm / 1000.0])
+
+            # If there is no actual measurement, we use the simulated version
+            # in subsequent calculations.  Naturally in these cases we're 
+            # mostly just interested in the simulation result. 
+            if meas is None:
+                meas = self.fm.calc_rdn(state_est, geom)
             
             # Rodgers diagnostics
             lamb_est, meas_est, path_est, S_hat, K, G = \
@@ -603,6 +611,12 @@ class IO:
                 ymax = min(max(lamb_est)*1.25, 0.10)
                 for lo, hi in self.iv.windows:
                         
+                    # black line
+                    idx = s.where(s.logical_and(wl > lo, wl < hi))[0]
+                    p2 = plt.plot(wl[idx], lamb_est[idx], 'k', linewidth=2)
+                    plt.hold(True)
+                    ymax = max(max(lamb_est[idx]*1.2), ymax)
+
                     # red line
                     if 'reference_reflectance_file' in self.infiles:
                         idx = s.where(s.logical_and(
@@ -610,12 +624,6 @@ class IO:
                         p1 = plt.plot(self.wl_ref[idx], self.rfl_ref[idx], 
                                 color=red, linewidth=2)
                         ymax = max(max(self.rfl_ref[idx]*1.2), ymax)
-                        plt.hold(True)
-
-                    # black line
-                    idx = s.where(s.logical_and(wl > lo, wl < hi))[0]
-                    p2 = plt.plot(wl[idx], lamb_est[idx], 'k', linewidth=2)
-                    ymax = max(max(lamb_est[idx]*1.2), ymax)
 
                     # green and blue lines - surface components
                     if hasattr(self.fm.surface, 'components') and \
@@ -630,16 +638,20 @@ class IO:
                             mu = self.fm.surface.components[j][0] * z
                             plt.plot(self.fm.surface.wl[idx], mu[idx], 'g:', 
                                 linewidth=1)
+                plt.text(500, ymax*0.86, "Remote estimate", color='k')
+                if 'reference_reflectance_file' in self.infiles:
+                    plt.text(500, ymax*0.92, "In situ reference", color=red)
+                if hasattr(self.fm.surface, 'components') and \
+                        self.output['plot_surface_components']:
+                    plt.text(500, ymax*0.80, "Prior mean state ", 
+                            color='b')
+                    plt.text(500, ymax*0.74, "Surface components ", 
+                            color='g')
                 plt.ylim([-0.0010, ymax])
                 plt.xlim([xmin, xmax])
                 plt.title("Reflectance")
                 plt.title("Source Model")
                 plt.xlabel("Wavelength (nm)")
-                if 'reference_reflectance_file' in self.infiles:
-                    plt.text(500, ymax*0.92, "In situ reference", color=red)
-                    plt.text(500, ymax*0.86, "Remote estimate", color='k')
-                    plt.text(500, ymax*0.80, "Prior mean state ", color='b')
-                    plt.text(500, ymax*0.74, "Surface components ", color='g')
                 fn = self.output['plot_directory'] + ('/frame_%i.png' % i)
                 plt.savefig(fn)
                 plt.close()
