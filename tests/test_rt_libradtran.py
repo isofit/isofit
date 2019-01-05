@@ -32,7 +32,7 @@ datadir = join(testdir, 'data/')
 sys.path.append(join(testdir, '../isofit'))
 from forward import ForwardModel
 from inverse import Inversion
-from fileio  import IO
+from fileio import IO
 from common import load_spectrum
 from common import expand_all_paths
 from rt_libradtran import LibRadTranRT

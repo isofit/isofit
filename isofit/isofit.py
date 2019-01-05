@@ -37,7 +37,7 @@ import logging
 # Suppress warnings that don't come from us
 import warnings
 warnings.filterwarnings("ignore")
-            
+
 
 def main():
 
@@ -53,17 +53,17 @@ def main():
     # Load the configuration file.
     config = load_config(args.config_file)
 
-    # Build the forward model and inversion objects. 
+    # Build the forward model and inversion objects.
     fm = ForwardModel(config['forward_model'])
     if 'mcmc_inversion' in config:
         iv = MCMCInversion(config['mcmc_inversion'], fm)
     else:
         iv = Inversion(config['inversion'], fm)
 
-    # We set the row and column range of our analysis. The user can 
-    # specify: a single number, in which case it is interpreted as a row; 
-    # a comma-separated pair, in which case it is interpreted as a 
-    # row/column tuple (i.e. a single spectrum); or a comma-separated 
+    # We set the row and column range of our analysis. The user can
+    # specify: a single number, in which case it is interpreted as a row;
+    # a comma-separated pair, in which case it is interpreted as a
+    # row/column tuple (i.e. a single spectrum); or a comma-separated
     # quartet, in which case it is interpreted as a row, column range in the
     # order (line_start, line_end, sample_start, sample_end) - all values are
     # inclusive. If none of the above, we will analyze the whole cube.
@@ -96,15 +96,15 @@ def main():
 
             # Bad data flags
             states = []
- 
+
         else:
 
-            # update model components with new configuration parameters 
-            # specific to this spectrum.  Typically these would be empty, 
-            # though they could contain new location-specific prior 
+            # update model components with new configuration parameters
+            # specific to this spectrum.  Typically these would be empty,
+            # though they could contain new location-specific prior
             # distributions.
             fm.reconfigure(*configs)
-            
+
             if args.profile:
 
                 # Profile output
@@ -113,14 +113,14 @@ def main():
 
             else:
 
-                # The inversion returns a list of states, which are 
+                # The inversion returns a list of states, which are
                 # intepreted either as samples from the posterior (MCMC case)
-                # or as a gradient descent trajectory (standard case). For 
+                # or as a gradient descent trajectory (standard case). For
                 # a trajectory, the last spectrum is the converged solution.
                 states = iv.invert(meas, geom)
-      
+
         io.write_spectrum(row, col, states, meas, geom)
-   
+
 
 if __name__ == '__main__':
     main()

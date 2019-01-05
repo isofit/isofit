@@ -188,7 +188,7 @@ def svd_inv_sqrt(C, mineig=0, hashtable=None):
     Cinv_sqrt = (D.T).dot(s.diag(Visqrt)).dot(U.T)
 
     # If there is a hash table, cache our solution.  Bound the total cache
-    # size by removing any extra items in FIFO order. 
+    # size by removing any extra items in FIFO order.
     if hashtable is not None:
         hashtable[h] = (Cinv, Cinv_sqrt)
         while len(hashtable) > max_table_size:
@@ -350,12 +350,12 @@ def load_spectrum(init):
 
     x = s.loadtxt(init)
     if x.ndim > 1:
-        x = x[:,:2]
+        x = x[:, :2]
         wl, x = x.T
         if wl[0] < 100:
             wl = wl*1000.0  # convert microns -> nm if needed
         return x, wl
-    else:   
+    else:
         return x, None
 
 

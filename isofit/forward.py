@@ -28,20 +28,21 @@ from instrument import Instrument
 
 
 # Supported RT modules, filenames, and class names
-RT_models = [('modtran_radiative_transfer','rt_modtran','ModtranRT'),
-    ('libradtran_radiative_transfer','rt_libradtran','LibRadTranRT'),
-    ('planetary_radiative_transfer','rt_planetary','PlanetaryRT'),
-    ('uplooking_radiative_transfer','rt_uplook','UplookRT')]
+RT_models = [('modtran_radiative_transfer', 'rt_modtran', 'ModtranRT'),
+             ('libradtran_radiative_transfer', 'rt_libradtran', 'LibRadTranRT'),
+             ('planetary_radiative_transfer', 'rt_planetary', 'PlanetaryRT'),
+             ('uplooking_radiative_transfer', 'rt_uplook', 'UplookRT')]
 
 
 # Supported surface modules, filenames, and class names
-surface_models = [('surface','surf','Surface'),
-    ('multicomponent_surface','surf_multicomp', 'MultiComponentSurface'),
-    ('emissive_surface','surf_emissive','MixBBSurface'),
-    ('cat_surface','surf_cat','CATSurface'),
-    ('glint_surface','surf_glint','GlintSurface'),
-    ('iop_surface','surf_iop','IOPSurface')]
- 
+surface_models = [('surface', 'surf', 'Surface'),
+                  ('multicomponent_surface',
+                   'surf_multicomp', 'MultiComponentSurface'),
+                  ('emissive_surface', 'surf_emissive', 'MixBBSurface'),
+                  ('cat_surface', 'surf_cat', 'CATSurface'),
+                  ('glint_surface', 'surf_glint', 'GlintSurface'),
+                  ('iop_surface', 'surf_iop', 'IOPSurface')]
+
 
 class ForwardModel:
 
@@ -57,17 +58,18 @@ class ForwardModel:
 
         # Build the radiative transfer model
         self.RT = None
-        for key, module, cname in RT_models: 
-          if key in config:
-            self.RT = getattr(import_module(module), cname)(config[key])
+        for key, module, cname in RT_models:
+            if key in config:
+                self.RT = getattr(import_module(module), cname)(config[key])
         if self.RT is None:
             raise ValueError('Must specify a valid radiative transfer model')
 
         # Build the surface model
         self.surface = None
-        for key, module, cname in surface_models: 
-          if key in config:
-            self.surface = getattr(import_module(module), cname)(config[key])
+        for key, module, cname in surface_models:
+            if key in config:
+                self.surface = getattr(
+                    import_module(module), cname)(config[key])
         if self.surface is None:
             raise ValueError('Must specify a valid surface model')
 
@@ -139,7 +141,7 @@ class ForwardModel:
         x_surface = x[self.idx_surface]
         Sa_surface = self.surface.Sa(x_surface, geom)[:, :]
         Sa_RT = self.RT.Sa()[:, :]
-        Sa_instrument = self.instrument.Sa()[:,:]
+        Sa_instrument = self.instrument.Sa()[:, :]
         return block_diag(Sa_surface, Sa_RT, Sa_instrument)
 
     def calc_rdn(self, x, geom, rfl=None, Ls=None):
@@ -152,7 +154,7 @@ class ForwardModel:
         if Ls is None:
             Ls = self.surface.calc_Ls(x_surface, geom)
         rfl_hi = self.upsample(self.surface.wl, rfl)
-        Ls_hi  = self.upsample(self.surface.wl, Ls)
+        Ls_hi = self.upsample(self.surface.wl, Ls)
         return self.RT.calc_rdn(x_RT, rfl_hi, Ls_hi, geom)
 
     def calc_meas(self, x, geom, rfl=None, Ls=None):
@@ -181,7 +183,7 @@ class ForwardModel:
         """Calculate the total uncertainty of the observation, including
         both the instrument noise and the uncertainty due to unmodeled
         variables. This is the S_epsilon matrix of Rodgers et al."""
-    
+
         Kb = self.Kb(x, geom)
         Sy = self.instrument.Sy(meas, geom)
         return Sy + Kb.dot(self.Sb).dot(Kb.T)
@@ -207,17 +209,17 @@ class ForwardModel:
         dLs_dsurface_hi = self.upsample(self.surface.wl, dLs_dsurface.T).T
 
         # Derivatives of RTM radiance
-        drdn_dRT, drdn_dsurface = self.RT.drdn_dRT(x_RT, x_surface, rfl_hi, 
-            drfl_dsurface_hi, Ls_hi, dLs_dsurface_hi, geom)
-        
+        drdn_dRT, drdn_dsurface = self.RT.drdn_dRT(x_RT, x_surface, rfl_hi,
+                                                   drfl_dsurface_hi, Ls_hi, dLs_dsurface_hi, geom)
+
         # Derivatives of measurement, avoiding recalculation of rfl, Ls
         dmeas_dsurface = self.instrument.sample(x_instrument, self.RT.wl,
-            drdn_dsurface.T).T
-        dmeas_dRT = self.instrument.sample(x_instrument, self.RT.wl, 
-            drdn_dRT.T).T
+                                                drdn_dsurface.T).T
+        dmeas_dRT = self.instrument.sample(x_instrument, self.RT.wl,
+                                           drdn_dRT.T).T
         rdn_hi = self.calc_rdn(x, geom, rfl=rfl, Ls=Ls)
         dmeas_dinstrument = self.instrument.dmeas_dinstrument(x_instrument,
-            self.RT.wl, rdn_hi)
+                                                              self.RT.wl, rdn_hi)
 
         # Put it all together
         K = s.zeros((self.n_meas, self.nstate), dtype=float)
@@ -241,13 +243,13 @@ class ForwardModel:
         rfl_hi = self.upsample(self.surface.wl, rfl)
         Ls = self.surface.calc_Ls(x_surface, geom)
         Ls_hi = self.upsample(self.surface.wl, Ls)
-        rdn_hi = self.calc_rdn(x, geom, rfl = rfl, Ls = Ls)
+        rdn_hi = self.calc_rdn(x, geom, rfl=rfl, Ls=Ls)
 
         drdn_dRTb = self.RT.drdn_dRTb(x_RT, rfl_hi, Ls_hi, geom)
-        dmeas_dRTb = self.instrument.sample(x_instrument,self.RT.wl,
-                drdn_dRTb.T).T
-        dmeas_dinstrumentb = self.instrument.dmeas_dinstrumentb(\
-                x_instrument, self.RT.wl, rdn_hi)
+        dmeas_dRTb = self.instrument.sample(x_instrument, self.RT.wl,
+                                            drdn_dRTb.T).T
+        dmeas_dinstrumentb = self.instrument.dmeas_dinstrumentb(
+            x_instrument, self.RT.wl, rdn_hi)
 
         Kb = s.zeros((self.n_meas, self.nbvec), dtype=float)
         Kb[:, self.RT_b_inds] = dmeas_dRTb
@@ -270,10 +272,10 @@ class ForwardModel:
 
     def upsample(self, wl, q):
         """Linear interpolation to RT wavelengths"""
-            
+
         if q.ndim > 1:
             q2 = []
-            for qi in q: 
+            for qi in q:
                 p = interp1d(wl, qi, fill_value='extrapolate')
                 q2.append(p(self.RT.wl))
             return s.array(q2)
@@ -298,5 +300,5 @@ class ForwardModel:
         self.surface.reconfigure(config_surface)
         self.RT.reconfigure(config_rt)
         self.instrument.reconfigure(config_instrument)
-        self.init = s.concatenate((self.surface.init, self.RT.init, 
-                    self.instrument.init))
+        self.init = s.concatenate((self.surface.init, self.RT.init,
+                                   self.instrument.init))

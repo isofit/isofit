@@ -29,20 +29,18 @@ excludes = ['sunposition.py']
 
 
 def test_pep8_conformance():
-     """Test that we conform to PEP8."""
-     directories = [testdir + '/../isofit/', testdir + '/../utils/']
-     files = []
-     for directory in directories:
+    """Test that we conform to PEP8."""
+    directories = [testdir + '/../isofit/', testdir + '/../utils/']
+    files = []
+    for directory in directories:
         for fi in glob(directory+'*py'):
             if not any([e in fi for e in excludes]):
                 files.append(fi)
 
-     # After acceptance, this will be uncommented
-     pep8style = pep8.StyleGuide(config_file = config_file, quiet = False)
-     result = pep8style.check_files(files)
-     if result.total_errors != 0:
+    # After acceptance, this will be uncommented
+    pep8style = pep8.StyleGuide(config_file=config_file, quiet=False)
+    result = pep8style.check_files(files)
+    if result.total_errors != 0:
         print('Found PEP8 conformance error.')
         print('Please fix your style with autopep8.')
-     assert result.total_errors == 0
-
-
+    assert result.total_errors == 0

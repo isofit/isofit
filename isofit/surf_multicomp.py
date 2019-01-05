@@ -66,7 +66,8 @@ class MultiComponentSurface(Surface):
         # in the VSWIR regime, reflectances are normalized so that the model
         # is agnostic to absolute magnitude.
         self.refwl = s.squeeze(model_dict['refwl'])
-        self.idx_ref = [s.argmin(abs(self.wl-w)) for w in s.squeeze(self.refwl)]
+        self.idx_ref = [s.argmin(abs(self.wl-w))
+                        for w in s.squeeze(self.refwl)]
         self.idx_ref = s.array(self.idx_ref)
 
         # Cache some important computations
@@ -207,4 +208,3 @@ class MultiComponentSurface(Surface):
         if len(x_surface) < 1:
             return ''
         return 'Component: %i' % self.component(x_surface, geom)
-

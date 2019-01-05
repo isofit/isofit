@@ -44,9 +44,9 @@ class Inversion:
         self.lasttime = time.time()
         self.fm = forward
         self.method = 'GradientDescent'
-        self.hashtable = OrderedDict() # Hash table for caching inverse matrices
+        self.hashtable = OrderedDict()  # Hash table for caching inverse matrices
         self.max_table_size = 500
-        self.windows = config['windows'] # Retrieval windows
+        self.windows = config['windows']  # Retrieval windows
         self.state_indep_S_hat = False
         self.windows = config['windows']
         self.simulation_mode = None
@@ -60,18 +60,18 @@ class Inversion:
         # window indices never change throughout the life of the object.
         self.winidx = s.array((), dtype=int)  # indices of retrieval windows
         for lo, hi in self.windows:
-            idx = s.where(s.logical_and(self.fm.instrument.wl_init > lo, 
-                        self.fm.instrument.wl_init < hi))[0]
+            idx = s.where(s.logical_and(self.fm.instrument.wl_init > lo,
+                                        self.fm.instrument.wl_init < hi))[0]
             self.winidx = s.concatenate((self.winidx, idx), axis=0)
         self.counts = 0
         self.inversions = 0
 
         # Finally, configure Levenberg Marquardt.
-        self.least_squares_params = {'method':'trf', 'max_nfev':20,
-            'bounds':(self.fm.bounds[0]+eps, self.fm.bounds[1]-eps),
-            'x_scale':self.fm.scale, 'xtol':1e-4, 'ftol':1e-4,'gtol':1e-4,
-            'tr_solver':'exact'}
-        for k,v in config.items():
+        self.least_squares_params = {'method': 'trf', 'max_nfev': 20,
+                                     'bounds': (self.fm.bounds[0]+eps, self.fm.bounds[1]-eps),
+                                     'x_scale': self.fm.scale, 'xtol': 1e-4, 'ftol': 1e-4, 'gtol': 1e-4,
+                                     'tr_solver': 'exact'}
+        for k, v in config.items():
             if k in self.least_squares_params:
                 self.least_squares_params[k] = v
 
@@ -156,8 +156,8 @@ class Inversion:
         # Calculate the initial solution, if needed.
         x0 = invert_simple(self.fm, meas, geom)
 
-        # Seps is the covariance of "observation noise" including both 
-        # measurement noise from the instrument as well as variability due to 
+        # Seps is the covariance of "observation noise" including both
+        # measurement noise from the instrument as well as variability due to
         # unknown variables.  For speed, we will calculate it just once based
         # on the initial solution (a potential minor source of inaccuracy)
         Seps_inv, Seps_inv_sqrt = self.calc_Seps(x0, meas, geom)
@@ -222,16 +222,17 @@ class Inversion:
             tm = newtime - self.lasttime
             rs = sum(pow(total_resid, 2))
             sm = self.fm.summarize(x, geom)
-            logging.debug('Iteration: %02i  Residual: %12.2f %s' % (it,rs,sm))
+            logging.debug('Iteration: %02i  Residual: %12.2f %s' %
+                          (it, rs, sm))
 
             return s.real(total_resid)
-       
-        # Initialize and invert        
+
+        # Initialize and invert
         try:
             xopt = least_squares(err, x0, jac=jac, **self.least_squares_params)
             self.trajectory.append(xopt.x)
         except LinAlgError:
-            logging.warning('Levenberg Marquardt failed to converge')        
+            logging.warning('Levenberg Marquardt failed to converge')
         return s.array(self.trajectory)
 
     def forward_uncertainty(self, x, meas, geom):

@@ -33,7 +33,7 @@ class Geometry:
 
         # Set some benign defaults...
         self.earth_sun_file = None
-        self.observer_zenith = 0 
+        self.observer_zenith = 0
         self.observer_azimuth = 0
         self.observer_altitude_km = None
         self.surface_elevation_km = None
@@ -51,7 +51,7 @@ class Geometry:
         self.pushbroom_column = pushbroom_column
 
         # The 'obs' object is observation metadata that follows a historical
-        # AVIRIS-NG format.  It arrives to our initializer in the form of 
+        # AVIRIS-NG format.  It arrives to our initializer in the form of
         # a list-like object...
         if obs is not None:
             self.path_length = obs[0]
@@ -78,18 +78,18 @@ class Geometry:
                 self.longitude = 360.0 - self.longitude
 
             logging.debug('Geometry lat: %f lon: %f' %
-                (self.latitude, self.longitude))
-            logging.debug('Geometry observer OBSZEN: %f RELAZ: %f' % 
-                (self.OBSZEN, self.RELAZ))
+                          (self.latitude, self.longitude))
+            logging.debug('Geometry observer OBSZEN: %f RELAZ: %f' %
+                          (self.OBSZEN, self.RELAZ))
 
-        # The ds object is an optional date object, defining the time of 
+        # The ds object is an optional date object, defining the time of
         # the observation.
         if ds is not None:
             self.datetime = datetime.strptime(ds, '%Y%m%dt%H%M%S')
             self.day_of_year = self.datetime.timetuple().tm_yday
 
         # Finally, the earth sun distance is an array that maps the day of the
-        # year (zero-indexed!) onto the mean-relative distance to the sun.  
+        # year (zero-indexed!) onto the mean-relative distance to the sun.
         if esd is not None:
             self.earth_sun_distance = esd.copy()
 
@@ -97,7 +97,7 @@ class Geometry:
         """ Return the cosine of the solar zenith."""
         self.dt = self.datetime
         az, zen, ra, dec, h = sunpos(self.datetime, self.latitude,
-                                     self.longitudeE, 
+                                     self.longitudeE,
                                      self.surface_elevation_km * 1000.0,
                                      radians=True)
         return s.cos(zen)

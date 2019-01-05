@@ -42,14 +42,14 @@ class TabularRT:
     """A model of photon transport including the atmosphere."""
 
     def __init__(self, config):
-        
+
         self.wl, self.fwhm = load_wavelen(config['wavelength_file'])
         self.n_chan = len(self.wl)
 
         if 'auto_rebuild' in config:
-          self.auto_rebuild = config['auto_rebuild']
+            self.auto_rebuild = config['auto_rebuild']
         else:
-          self.auto_rebuild = True
+            self.auto_rebuild = True
         self.lut_grid = config['lut_grid']
         self.lut_dir = config['lut_path']
         self.statevec = list(config['statevector'].keys())
@@ -61,7 +61,7 @@ class TabularRT:
         # initial guesses for each state vector element.  The state
         # vector elements are all free parameters in the RT lookup table,
         # and they all have associated dimensions in the LUT grid.
-        self.bounds, self.scale, self.init = [],[],[]
+        self.bounds, self.scale, self.init = [], [], []
         self.prior_mean, self.prior_sigma = [], []
         for key in self.statevec:
             element = config['statevector'][key]
@@ -77,14 +77,6 @@ class TabularRT:
         self.prior_sigma = s.array(self.prior_sigma)
         self.bval = s.array([config['unknowns'][k] for k in self.bvec])
 
-       #if 'prior_sigma' in config['statevector']:
-       #    self.prior_sigma = s.zeros((len(self.lut_grid),))
-       #    for name, val in config['prior_sigma'].items():
-       #        self.prior_sigma[self.statevec.index(name)] = val
-       #else:
-       #    std_factor = 10.0
-       #    self.prior_sigma = (s.diff(self.bounds) * std_factor).flatten()
-
     def xa(self):
         '''Mean of prior distribution, calculated at state x. This is the
            Mean of our LUT grid (why not).'''
@@ -93,8 +85,8 @@ class TabularRT:
     def Sa(self):
         '''Covariance of prior distribution. Our state vector covariance 
            is diagonal with very loose constraints.'''
-        if self.n_state == 0: 
-           return s.zeros((0,0), dtype=float)
+        if self.n_state == 0:
+            return s.zeros((0, 0), dtype=float)
         return s.diagflat(pow(self.prior_sigma, 2))
 
     def build_lut(self, rebuild=False):
@@ -201,7 +193,7 @@ class TabularRT:
                 elif name == 'umu':
                     point[point_ind] = geom.umu
                 else:
-                    # If a variable is defined in the lookup table but not 
+                    # If a variable is defined in the lookup table but not
                     # specified elsewhere, we will default to the minimum
                     point[point_ind] = min(self.lut_grid[name])
             for x_RT_ind, name in enumerate(self.statevec):
@@ -223,7 +215,7 @@ class TabularRT:
         return rdn
 
     def drdn_dRT(self, x_RT, x_surface, rfl, drfl_dsurface, Ls, dLs_dsurface,
-             geom):
+                 geom):
         """Jacobian of radiance with respect to RT and surface state vectors"""
 
         # first the rdn at the current state vector
@@ -316,10 +308,9 @@ class TabularRT:
         if 'prior_means' in config and \
                 config['prior_means'] is not None:
             self.prior_mean = config['prior_means']
-            self.init = s.minimum(s.maximum(config['prior_means'], 
-               self.bounds[:,0] + eps), self.bounds[:,1] - eps)
+            self.init = s.minimum(s.maximum(config['prior_means'],
+                                            self.bounds[:, 0] + eps), self.bounds[:, 1] - eps)
 
         if 'prior_variances' in config and \
                 config['prior_variances'] is not None:
             self.prior_sigma = s.sqrt(config['prior_variances'])
-            

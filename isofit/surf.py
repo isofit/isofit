@@ -42,7 +42,7 @@ class Surface:
             self.n_wl = len(self.wl)
         elif 'wavelength_file' in config:
             self.rfl, self.wl = load_spectrum(config['wavelength_file'])
-        
+
     def reconfigure(self, config):
         """Adjust the surface reflectance (for predefined reflectances)"""
 
@@ -57,7 +57,7 @@ class Surface:
     def Sa(self, x_surface, geom):
         '''Covariance of prior state vector distribution calculated at state x.'''
 
-        return s.zeros((0,0), dtype=float)
+        return s.zeros((0, 0), dtype=float)
 
     def fit_params(self, rfl, Ls, geom):
         '''Given a directional reflectance estimate and one or more emissive 
@@ -81,14 +81,14 @@ class Surface:
            calculated at x_surface.  In the case that there are no free 
            paramters our convention is to return the vector of zeros.'''
 
-        return s.zeros((self.n_wl,1))
+        return s.zeros((self.n_wl, 1))
 
     def drfl_dsurfaceb(self, x_surface, geom):
         '''Partial derivative of reflectance with respect to unmodeled 
            variables, calculated at x_surface.  In the case that there are no
            free paramters our convention is to return the vector of zeros.'''
 
-        return s.zeros((self.n_wl,1))
+        return s.zeros((self.n_wl, 1))
 
     def calc_Ls(self, x_surface, geom):
         '''Emission of surface, as a radiance'''
@@ -100,7 +100,7 @@ class Surface:
            calculated at x_surface.  In the case that there are no
            free paramters our convention is to return the vector of zeros.'''
 
-        return s.zeros((self.n_wl,1))
+        return s.zeros((self.n_wl, 1))
 
     def summarize(self, x_surface, geom):
         '''Summary of state vector'''

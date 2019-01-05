@@ -34,7 +34,7 @@ class MixBBSurface(MultiComponentSurface):
         MultiComponentSurface.__init__(self, config)
         # Handle additional state vector elements
         self.statevec.extend(['SURF_TEMP_K'])
-        #self.init.extend([270.0])
+        # self.init.extend([270.0])
         self.init.extend([6000.0])
         self.scale.extend([1000.0])
         self.bounds.extend([[250.0, 10000.0]])
@@ -42,7 +42,7 @@ class MixBBSurface(MultiComponentSurface):
         # Treat emissive surfaces as a fractional blackbody
         self.statevec.extend(['BB_MIX_FRAC'])
         self.scale.extend([1.0])
-        #self.init.extend([0.1])
+        # self.init.extend([0.1])
         self.init.extend([0.5])
         self.bounds.extend([[0, 1]])
         self.bb_frac_ind = len(self.statevec)-1
@@ -92,8 +92,8 @@ class MixBBSurface(MultiComponentSurface):
         '''Conditions the reflectance on solar-reflected channels.'''
 
         sol_inds = s.logical_and(self.wl > 450, self.wl < 1250)
-        if sum(sol_inds)<1:
-           return rfl_est
+        if sum(sol_inds) < 1:
+            return rfl_est
         x = s.zeros(len(self.statevec))
         x[self.idx_lamb] = rfl_est
         c = self.components[self.component(x, geom)]
@@ -142,8 +142,8 @@ class MixBBSurface(MultiComponentSurface):
         '''Partial derivative of surface emission with respect to state vector, 
         calculated at x_surface.'''
 
-        dLs_dsurface =  MultiComponentSurface.dLs_dsurface(self, x_surface, 
-                geom)
+        dLs_dsurface = MultiComponentSurface.dLs_dsurface(self, x_surface,
+                                                          geom)
         T = x_surface[self.surf_temp_ind]
         frac = x_surface[self.bb_frac_ind]
         emissivity = s.ones(self.n_wl, dtype=float)
@@ -155,5 +155,6 @@ class MixBBSurface(MultiComponentSurface):
     def summarize(self, x_surface, geom):
         '''Summary of state vector'''
         mcm = MultiComponentSurface.summarize(self, x_surface, geom)
-        msg = ' Kelvins: %5.1f  BlackBody Fraction %4.2f ' % tuple(x_surface[-2:])
+        msg = ' Kelvins: %5.1f  BlackBody Fraction %4.2f ' % tuple(
+            x_surface[-2:])
         return msg+mcm
