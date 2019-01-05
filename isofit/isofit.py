@@ -92,7 +92,7 @@ def main():
     io = IO(config, fm, iv, rows, cols)
     for row, col, meas, geom, configs in io:
 
-        if all(meas < -49.0):
+        if meas is not None and all(meas < -49.0):
 
             # Bad data flags
             states = []

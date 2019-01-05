@@ -19,7 +19,7 @@
 #
 
 import scipy as s
-from common import load_spectrum
+from common import load_spectrum, load_wavelen
 from scipy.interpolate import interp1d
 
 
@@ -41,7 +41,8 @@ class Surface:
             self.rfl, self.wl = load_spectrum(config['reflectance_file'])
             self.n_wl = len(self.wl)
         elif 'wavelength_file' in config:
-            self.rfl, self.wl = load_spectrum(config['wavelength_file'])
+            self.wl, self.fwhm = load_wavelen(config['wavelength_file'])
+            self.n_wl = len(self.wl)
 
     def reconfigure(self, config):
         """Adjust the surface reflectance (for predefined reflectances)"""
