@@ -2,7 +2,7 @@
   "ISOFIT_BASE": "../",
 
   "output": {
-    "simulated_radiance_file":  "../output/libradtran_meas_rdn.txt"
+    "simulated_measurement_file":  "../output/libradtran_meas_rdn.txt"
   },
 
   "forward_model":{
