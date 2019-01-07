@@ -22,6 +22,7 @@ import os
 import sys
 import re
 import time
+import logging
 import scipy as s
 from spectral.io import envi
 from scipy.io import loadmat, savemat
@@ -37,7 +38,7 @@ import pylab as plt
 import multiprocessing
 import subprocess
 from rt_lut import TabularRT, FileExistsError, spawn_rt
-from common import spectrumResample
+from common import resample_spectrum
 
 eps = 1e-5  # used for finite difference derivative calculations
 
@@ -45,14 +46,12 @@ eps = 1e-5  # used for finite difference derivative calculations
 class LibRadTranRT(TabularRT):
     """A model of photon transport including the atmosphere."""
 
-    def __init__(self, config, instrument):
+    def __init__(self, config):
 
-        TabularRT.__init__(self, config, instrument)
-        self.wl = instrument.wl
-        self.fwhm = instrument.fwhm
+        TabularRT.__init__(self, config)
         self.libradtran_dir = self.find_basedir(config)
         self.libradtran_template_file = config['libradtran_template_file']
-        self.build_lut(instrument)
+        self.build_lut()
 
     def find_basedir(self, config):
         '''Seek out a libradtran base directory'''
@@ -131,6 +130,7 @@ class LibRadTranRT(TabularRT):
             raise FileExistsError('Files exist')
 
         if self.libradtran_dir is None:
+            logging.error('Specify a LibRadTran installation')
             raise KeyError('Specify a LibRadTran installation')
 
         # write config files
@@ -193,10 +193,10 @@ class LibRadTranRT(TabularRT):
         rho05 = rdn05 / 10.0 / irr * s.pi
 
         # Resample TOA reflectances to simulate the instrument observation
-        rhoatm = spectrumResample(rhoatm, wl, self.wl, self.fwhm)
-        rho025 = spectrumResample(rho025, wl, self.wl, self.fwhm)
-        rho05 = spectrumResample(rho05,  wl, self.wl, self.fwhm)
-        irr = spectrumResample(irr,    wl, self.wl, self.fwhm)
+        rhoatm = resample_spectrum(rhoatm, wl, self.wl, self.fwhm)
+        rho025 = resample_spectrum(rho025, wl, self.wl, self.fwhm)
+        rho05 = resample_spectrum(rho05,  wl, self.wl, self.fwhm)
+        irr = resample_spectrum(irr,    wl, self.wl, self.fwhm)
 
         # Calculate some atmospheric optical constants
         sphalb = 2.8*(2.0*rho025-rhoatm-rho05)/(rho025-rho05)

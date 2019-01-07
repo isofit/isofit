@@ -20,9 +20,10 @@
 
 import os
 import scipy as s
+import logging
 from common import json_load_ascii, combos
 from common import VectorInterpolator, VectorInterpolatorJIT
-from common import recursive_replace, eps
+from common import recursive_replace, eps, load_wavelen
 from scipy.interpolate import interp1d
 from scipy.optimize import minimize_scalar as min1d
 
@@ -40,12 +41,15 @@ def spawn_rt(cmd):
 class TabularRT:
     """A model of photon transport including the atmosphere."""
 
-    def __init__(self, config, instrument):
+    def __init__(self, config):
+
+        self.wl, self.fwhm = load_wavelen(config['wavelength_file'])
+        self.n_chan = len(self.wl)
 
         if 'auto_rebuild' in config:
-          self.auto_rebuild = config['auto_rebuild']
+            self.auto_rebuild = config['auto_rebuild']
         else:
-          self.auto_rebuild = True
+            self.auto_rebuild = True
         self.lut_grid = config['lut_grid']
         self.lut_dir = config['lut_path']
         self.statevec = list(config['statevector'].keys())
@@ -57,36 +61,35 @@ class TabularRT:
         # initial guesses for each state vector element.  The state
         # vector elements are all free parameters in the RT lookup table,
         # and they all have associated dimensions in the LUT grid.
-        self.bounds, self.scale, self.init_val = [], [], []
+        self.bounds, self.scale, self.init = [], [], []
+        self.prior_mean, self.prior_sigma = [], []
         for key in self.statevec:
             element = config['statevector'][key]
             self.bounds.append(element['bounds'])
             self.scale.append(element['scale'])
-            self.init_val.append(element['init'])
+            self.init.append(element['init'])
+            self.prior_sigma.append(element['prior_sigma'])
+            self.prior_mean.append(element['prior_mean'])
         self.bounds = s.array(self.bounds)
         self.scale = s.array(self.scale)
-        self.init_val = s.array(self.init_val)
+        self.init = s.array(self.init)
+        self.prior_mean = s.array(self.prior_mean)
+        self.prior_sigma = s.array(self.prior_sigma)
         self.bval = s.array([config['unknowns'][k] for k in self.bvec])
-
-        if 'prior_sigma' in config['statevector']:
-            self.prior_sigma = s.zeros((len(self.lut_grid),))
-            for name, val in config['prior_sigma'].items():
-                self.prior_sigma[self.statevec.index(name)] = val
-        else:
-            std_factor = 10.0
-            self.prior_sigma = (s.diff(self.bounds) * std_factor).flatten()
 
     def xa(self):
         '''Mean of prior distribution, calculated at state x. This is the
            Mean of our LUT grid (why not).'''
-        return self.init_val.copy()
+        return self.prior_mean.copy()
 
     def Sa(self):
         '''Covariance of prior distribution. Our state vector covariance 
            is diagonal with very loose constraints.'''
+        if self.n_state == 0:
+            return s.zeros((0, 0), dtype=float)
         return s.diagflat(pow(self.prior_sigma, 2))
 
-    def build_lut(self, instrument, rebuild=False):
+    def build_lut(self, rebuild=False):
         """ Each LUT is associated with a source directory.  We build a 
             lookup table by: 
               (1) defining the LUT dimensions, state vector names, and the grid 
@@ -103,8 +106,8 @@ class TabularRT:
             self.lut_grids.append(s.array(val))
             self.lut_dims.append(len(val))
             if val != sorted(val):
-                raise ValueError(
-                    'Lookup table grid must be in ascending order')
+                logging.error('Lookup table grid needs ascending order')
+                raise ValueError('Lookup table grid needs ascending order')
 
         # "points" contains all combinations of grid points
         # We will have one filename prefix per point
@@ -124,7 +127,7 @@ class TabularRT:
                 pass
 
         if len(rebuild_cmds) > 0 and self.auto_rebuild:
-            print("rebuilding")
+            logging.info("rebuilding")
             import multiprocessing
             cwd = os.getcwd()
             os.chdir(self.lut_dir)
@@ -145,7 +148,7 @@ class TabularRT:
             if self.solar_irr is None:  # first file
                 self.solar_irr = sol
                 self.coszen = s.cos(solzen * s.pi / 180.0)
-                dims_aug = self.lut_dims + [len(instrument.wl)]
+                dims_aug = self.lut_dims + [self.n_chan]
                 self.sphalb = s.zeros(dims_aug, dtype=float)
                 self.transm = s.zeros(dims_aug, dtype=float)
                 self.rhoatm = s.zeros(dims_aug, dtype=float)
@@ -190,7 +193,7 @@ class TabularRT:
                 elif name == 'umu':
                     point[point_ind] = geom.umu
                 else:
-                    # If a variable is defined in the lookup table but not 
+                    # If a variable is defined in the lookup table but not
                     # specified elsewhere, we will default to the minimum
                     point[point_ind] = min(self.lut_grid[name])
             for x_RT_ind, name in enumerate(self.statevec):
@@ -211,70 +214,8 @@ class TabularRT:
         rdn = rho/s.pi*(self.solar_irr*self.coszen) + (Ls * transup)
         return rdn
 
-    def estimate_Ls(self, x_RT, rfl, rdn, geom):
-        """Estimate the surface emission for a given state vector and 
-           reflectance/radiance pair"""
-
-        rhoatm, sphalb, transm, transup = self.get(x_RT, geom)
-        rho = rhoatm + transm * rfl / (1.0 - sphalb * rfl)
-        Ls = (rdn - rho/s.pi*(self.solar_irr*self.coszen)) / transup
-        return Ls
-
-    def heuristic_atmosphere(self, rdn, geom):
-        '''From a given radiance, estimate atmospheric state using band ratio
-        heuristics.  Used to initialize gradient descent inversions.'''
-
-        x = self.init_val.copy()
-
-        # Band ratio retrieval of H2O
-        for h2oname in ['H2OSTR', 'h2o']:
-            if (h2oname in self.lut_names) and \
-                    any(self.wl > 850) and any(self.wl < 1050):
-
-                ind_lut = self.lut_names.index(h2oname)
-                ind_sv = self.statevec.index(h2oname)
-                b865, b945, b1040 = [s.argmin(abs(self.wl-t))
-                                     for t in (865, 945, 1040)]
-                h2os, ratios = [], []  # will be corrected for transmission, path radiance
-
-                for h2o in self.lut_grids[ind_lut]:
-
-                    xnew = x.copy()
-                    xnew[ind_sv] = h2o
-                    rhoatm, sphalb, transm, transup = self.get(xnew, geom)
-
-                    # assume no surface emission
-                    r = (rdn*s.pi/(self.solar_irr*self.coszen) -
-                         rhoatm) / (transm+1e-8)
-                    ratios.append((r[b945]*2.0)/(r[b1040]+r[b865]))
-                    h2os.append(h2o)
-
-                p = interp1d(h2os, ratios)
-                bounds = (h2os[0]+0.001, h2os[-1]-0.001)
-                best = min1d(lambda h: abs(1-p(h)),
-                             bounds=bounds, method='bounded')
-                x[ind_sv] = best.x
-
-        Ls_est = s.zeros(rdn.shape)
-        rfl_est = self.invert_algebraic(x, rdn, Ls_est, geom)
-        return x, rfl_est
-
-    def invert_algebraic(self, x_RT, rdn, Ls, geom):
-        '''Inverts radiance algebraically to get a reflectance.
-           Ls is the surface emission, if present'''
-
-        rhoatm, sphalb, transm, transup = self.get(x_RT, geom)
-
-        if Ls is None:
-            rho = rdn * s.pi / (self.solar_irr * self.coszen)
-        else:
-            rdn_solref = rdn - (transup * Ls)
-            rho = rdn_solref * s.pi / (self.solar_irr * self.coszen)
-        rfl = 1.0 / (transm / (rho - rhoatm) + sphalb)
-        return rfl
-
-    def K_RT(self, x_RT, x_surface, rfl, drfl_dsurface, Ls, dLs_dsurface,
-             geom):
+    def drdn_dRT(self, x_RT, x_surface, rfl, drfl_dsurface, Ls, dLs_dsurface,
+                 geom):
         """Jacobian of radiance with respect to RT and surface state vectors"""
 
         # first the rdn at the current state vector
@@ -306,12 +247,12 @@ class TabularRT:
 
         return K_RT, K_surface
 
-    def Kb_RT(self, x_RT, rfl, Ls, geom):
+    def drdn_dRTb(self, x_RT, rfl, Ls, geom):
         """Jacobian of radiance with respect to NOT RETRIEVED RT and surface 
            state.  Right now, this is just the sky view factor."""
 
         if len(self.bvec) == 0:
-            Kb_RT = s.zeros((1, len(self.wl.shape)))
+            Kb_RT = s.zeros((0, len(self.wl.shape)))
 
         else:
             # first the radiance at the current state vector
@@ -351,4 +292,25 @@ class TabularRT:
 
     def summarize(self, x_RT, geom):
         '''Summary of state vector'''
+
+        if len(x_RT) < 1:
+            return ''
         return 'Atmosphere: '+' '.join(['%5.3f' % xi for xi in x_RT])
+
+    def reconfigure(self, config):
+        ''' Accept new configuration options.  We only support a few very 
+            specific reconfigurations.  Here, when performing multiple 
+            retrievals with the same radiative transfer model, we can 
+            reconfigure the prior distribution for this specific
+            retrieval event to incorporate variable atmospheric information 
+            from other sources.'''
+
+        if 'prior_means' in config and \
+                config['prior_means'] is not None:
+            self.prior_mean = config['prior_means']
+            self.init = s.minimum(s.maximum(config['prior_means'],
+                                            self.bounds[:, 0] + eps), self.bounds[:, 1] - eps)
+
+        if 'prior_variances' in config and \
+                config['prior_variances'] is not None:
+            self.prior_sigma = s.sqrt(config['prior_variances'])

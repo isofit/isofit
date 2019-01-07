@@ -32,8 +32,8 @@ datadir = join(testdir, 'data/')
 sys.path.append(join(testdir, '../isofit'))
 from forward import ForwardModel
 from inverse import Inversion
-from output import Output
-from common import spectrumLoad
+from fileio import IO
+from common import load_spectrum
 from common import expand_all_paths
 from rt_libradtran import LibRadTranRT
 
@@ -71,22 +71,15 @@ def run_forward():
     config = load_config('config_forward.json')
     fm = ForwardModel(config['forward_model'])
     iv = Inversion(config['inversion'], fm)
-    out = Output(config, iv)
-    geom = None
+    io = IO(config, fm, iv, [0], [0])
 
-    # Simulate a measurement
-    state_est = fm.init_val.copy()
-    rdn_est = fm.calc_rdn(state_est, geom)
-    rdn_meas = rdn_est.copy()
-    rdn_sim = fm.instrument.simulate_measurement(rdn_meas, geom)
+    # Simulate a measurement and write result
+    for row, col, meas, geom, configs in io:
+        states = iv.invert(meas, geom)
+        io.write_spectrum(row, col, states, meas, geom)
 
-    # Calculate uncertainties at the solution state, write result
-    rfl_est, rdn_est, path_est, S_hat, K, G =\
-        iv.forward_uncertainty(state_est, rdn_meas, geom)
-    out.write_spectrum(state_est, rfl_est, rdn_est, path_est,
-                       rdn_meas, rdn_sim, geom)
     assert True
-    return state_est
+    return states[0]
 
 
 def run_inverse():
@@ -96,17 +89,14 @@ def run_inverse():
     config = load_config('config_inversion.json')
     fm = ForwardModel(config['forward_model'])
     iv = Inversion(config['inversion'], fm)
-    out = Output(config, iv)
+    io = IO(config, fm, iv, [0], [0])
     geom = None
 
-    # Get our measurement from the simulation results, and invert
-    rdn_meas, wl = spectrumLoad(config['input']['measured_radiance_file'])
-    state_est = iv.invert(rdn_meas, geom, out)
-
+    # Get our measurement from the simulation results, and invert.
     # Calculate uncertainties at the solution state, write result
-    rfl_est, rdn_est, path_est, S_hat, K, G =\
-        iv.forward_uncertainty(state_est, rdn_meas, geom)
-    out.write_spectrum(state_est, rfl_est, rdn_est, path_est,
-                       rdn_meas, rdn_sim=None, geom=geom)
+    for row, col, meas, geom, configs in io:
+        states = iv.invert(meas, geom)
+        io.write_spectrum(row, col, states, meas, geom)
+
     assert True
-    return state_est
+    return states[-1]

@@ -20,7 +20,7 @@
 
 import scipy as s
 from scipy.io import loadmat, savemat
-from common import recursive_replace, emissive_radiance, chol_inv, eps, srf
+from common import recursive_replace, load_wavelen, chol_inv, eps, srf
 from scipy.linalg import block_diag, det, norm, pinv, sqrtm, inv, cholesky
 from scipy.interpolate import interp1d
 from surf import Surface
@@ -30,11 +30,11 @@ class IOPSurface(Surface):
     """A model of the surface based on a collection of multivariate 
        Gaussians, extended with a surface glint term. """
 
-    def __init__(self, config, RT):
+    def __init__(self, config):
 
-        Surface.__init__(self, config, RT)
-        self.wl = RT.wl
-        self.statevec, self.bounds, self.scale, self.init_val = [], [], [], []
+        Surface.__init__(self, config)
+        self.wl, fwhm = load_wavelen(config['wavelength_file'])
+        self.statevec, self.bounds, self.scale, self.init = [], [], [], []
 
         # Each channel maps to a nonnegative absorption residual
         if 'absorption_resid_file' in config:
@@ -45,7 +45,7 @@ class IOPSurface(Surface):
             self.statevec.extend(['ABS_%04i' % int(w) for w in self.wl])
             self.bounds.extend([[amin, amax] for w in self.wl])
             self.scale.extend([0.01 for w in self.wl])
-            self.init_val.extend([0 for v in self.wl])
+            self.init.extend([0 for v in self.wl])
             ind_start = len(self.statevec)
         else:
             self.abs_inds = []
@@ -63,7 +63,7 @@ class IOPSurface(Surface):
         self.glint_ind = ind_start+4
         self.flh_ind = ind_start+5
         self.scale.extend([0.1, 1.0, 1.0, 1.0, 1.0, 1.0])
-        self.init_val.extend([0.1, 0.1, 0.1, 0.1, 0.1, 0.01])
+        self.init.extend([0.1, 0.1, 0.1, 0.1, 0.1, 0.01])
         self.bounds.extend(
             [[0, 1.0], [0, 1.0], [0, 10], [0, 2.5], [0, 1], [0, 10]])
 
@@ -92,7 +92,7 @@ class IOPSurface(Surface):
     def xa(self, x_surface, geom):
         '''Mean of prior distribution, calculated at state x.'''
 
-        return s.array(self.init_val)
+        return s.array(self.init)
 
     def Sa(self, x_surface, geom):
         '''Covariance of prior distribution, calculated at state x.  We find
@@ -106,11 +106,11 @@ class IOPSurface(Surface):
             Sa = s.diag(pow(scales[self.nonabs_inds], 2))
         return Sa
 
-    def heuristic_surface(self, rfl_meas, Ls, geom):
+    def fit_params(self, rfl_meas, Ls, geom):
         '''Given a reflectance estimate and one or more emissive parameters, 
           fit a state vector.'''
 
-        init = s.array((self.init_val))
+        init = s.array((self.init))
         init[self.glint_ind] = min(max(rfl_meas[self.b1000],
                                        self.bounds[self.glint_ind][0]+eps),
                                    self.bounds[self.glint_ind][1]-eps)
@@ -145,58 +145,58 @@ class IOPSurface(Surface):
 
         # Water surface effects
         Rrs = 0.518*rrs / (1-1.562*rrs)
-        lrfl = Rrs * s.pi
-        return rrs, lrfl, bb, a, u
+        lamb = Rrs * s.pi
+        return rrs, lamb, bb, a, u
 
-    def calc_lrfl(self, x_surface, geom):
+    def calc_lamb(self, x_surface, geom):
         '''Lambertian-equivalent reflectance'''
 
-        rrs, lrfl, bb, a, u = self.qaa(x_surface)
-        return lrfl
+        rrs, lamb, bb, a, u = self.qaa(x_surface)
+        return lamb
 
-    def dlrfl_dx(self, x_surface, geom):
+    def dlamb_dsurface(self, x_surface, geom):
         '''Partial derivative of reflectance with respect to state vector, 
         calculated at x_surface.'''
 
-        rrs, lrfl, bb, a, u = self.qaa(x_surface)
+        rrs, lamb, bb, a, u = self.qaa(x_surface)
         X, G, P, Y, glint, flh = x_surface[self.nonabs_inds]
 
         # total backscatter from particle and water contributions
-        dbb_dx = s.zeros((len(self.wl), len(self.statevec)))
+        dbb_dsurface = s.zeros((len(self.wl), len(self.statevec)))
         w = 400.0/self.wl
-        dbb_dx[:, self.X_ind] = pow(w, Y)
-        dbb_dx[:, self.Y_ind] = X * pow(w, Y)*s.log(w)
+        dbb_dsurface[:, self.X_ind] = pow(w, Y)
+        dbb_dsurface[:, self.Y_ind] = X * pow(w, Y)*s.log(w)
 
         # total absorptions from Gelbstoff, phytoplankton, water and residual
-        da_dx = s.zeros((len(self.wl), len(self.statevec)))
+        da_dsurface = s.zeros((len(self.wl), len(self.statevec)))
         factor1 = (self.aphi_coeffs[:, 0] + self.aphi_coeffs[:, 1]*s.log(P))
         factor2 = (self.aphi_coeffs[:, 1]/P)*P
-        da_dx[:, self.P_ind] = factor1 + factor2
-        da_dx[:, self.G_ind] = s.exp(-0.015*(self.wl-440))
+        da_dsurface[:, self.P_ind] = factor1 + factor2
+        da_dsurface[:, self.G_ind] = s.exp(-0.015*(self.wl-440))
         for i in self.abs_inds:
-            da_dx[i, i] = 1.0
+            da_dsurface[i, i] = 1.0
 
         du_da = -bb/pow(a+bb, 2)
         du_dbb = -bb/pow(a+bb, 2) + 1.0/(a+bb)
-        du_dx = ((da_dx).T * du_da + (dbb_dx).T * du_dbb).T
+        du_dsurface = ((da_dsurface).T * du_da + (dbb_dsurface).T * du_dbb).T
         drrs_du = self.g0 + 2 * self.g1 * u
-        drrs_dx = ((du_dx).T * drrs_du).T
+        drrs_dsurface = ((du_dsurface).T * drrs_du).T
         dRrs_drrs = 0.518 / (1-1.562*rrs) + \
             (0.518*rrs) * -1.0/(pow(1-1.562*rrs, 2)*-1.562)
-        dRrs_dx = ((drrs_dx).T * dRrs_drrs).T
-        dlrfl_dx = dRrs_dx * s.pi
-        return dlrfl_dx
+        dRrs_dsurface = ((drrs_dsurface).T * dRrs_drrs).T
+        dlamb_dsurface = dRrs_dsurface * s.pi
+        return dlamb_dsurface
 
     def calc_rfl(self, x_surface, geom):
         '''Reflectance (includes specular glint)'''
 
-        return self.calc_lrfl(x_surface, geom) + x_surface[self.glint_ind]
+        return self.calc_lamb(x_surface, geom) + x_surface[self.glint_ind]
 
-    def drfl_dx(self, x_surface, geom):
+    def drfl_dsurface(self, x_surface, geom):
         '''Partial derivative of reflectance with respect to state vector, 
         calculated at x_surface.'''
 
-        drfl = self.dlrfl_dx(x_surface, geom)
+        drfl = self.dlamb_dsurface(x_surface, geom)
         drfl[:, self.glint_ind] = 1
         return drfl
 
@@ -207,7 +207,7 @@ class IOPSurface(Surface):
         ngauss = ngauss/max(ngauss)
         return ngauss * x_surface[self.flh_ind]
 
-    def dLs_dx(self, x_surface, geom):
+    def dLs_dsurface(self, x_surface, geom):
         '''Emission at surface includes fluorescence (here, a Gaussian)'''
 
         dLs = s.zeros((len(self.wl), len(self.statevec)))

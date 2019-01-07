@@ -24,9 +24,12 @@ import xxhash
 import scipy as s
 from collections import OrderedDict
 from scipy.interpolate import RegularGridInterpolator
-from os.path import expandvars
+from os.path import expandvars, split, abspath
 from scipy.linalg import cholesky, inv, det, svd
 from numba import jit
+
+# Maximum size of our hash tables
+max_table_size = 500
 
 binary_table = [s.array([[]]),
                 s.array([[0], [1]]),
@@ -119,6 +122,17 @@ def emissive_radiance_old(emissivity, T, wl):
     return L, dL_dT
 
 
+def load_wavelen(wavelength_file):
+    """Load a wavelength file, and convert to nanometers if needed"""
+    q = s.loadtxt(wavelength_file)
+    if q.shape[1] > 2:
+        q = q[:, 1:3]
+    if q[0, 0] < 100:
+        q = q * 1000.0
+    wl, fwhm = q.T
+    return wl, fwhm
+
+
 def emissive_radiance(emissivity, T, wl):
     """Radiance of a surface due to emission"""
 
@@ -158,11 +172,13 @@ def svd_inv_sqrt(C, mineig=0, hashtable=None):
     """Fast stable inverse using SVD. This can handle near-singular matrices.
        Also return the square root."""
 
+    # If we have a hash table, look for the precalculated solution
     h = None
     if hashtable is not None:
         h = xxhash.xxh64_digest(C)
         if h in hashtable:
             return hashtable[h]
+
     U, V, D = svd(C)
     ignore = s.where(V < mineig)[0]
     Vi = 1.0 / V
@@ -170,8 +186,14 @@ def svd_inv_sqrt(C, mineig=0, hashtable=None):
     Visqrt = s.sqrt(Vi)
     Cinv = (D.T).dot(s.diag(Vi)).dot(U.T)
     Cinv_sqrt = (D.T).dot(s.diag(Visqrt)).dot(U.T)
+
+    # If there is a hash table, cache our solution.  Bound the total cache
+    # size by removing any extra items in FIFO order.
     if hashtable is not None:
         hashtable[h] = (Cinv, Cinv_sqrt)
+        while len(hashtable) > max_table_size:
+            hashtable.popitem(last=False)
+
     return Cinv, Cinv_sqrt
 
 
@@ -245,6 +267,14 @@ def json_load_ascii(filename, shell_replace=True):
         return recursive_reincode(j)
 
 
+def load_config(config_file):
+    """Configuration files are typically .json, with relative paths"""
+
+    config = json.load(open(config_file, 'r'))
+    configdir, f = split(abspath(config_file))
+    return expand_all_paths(config, configdir)
+
+
 def expand_all_paths(config, configdir):
     """Expand any config entry containing the string 'file' into 
        an absolute path, if needed"""
@@ -297,7 +327,7 @@ def rdn_translate(wvn, rdn_wvn):
     return rdn_wvn*(dwl/dwvn)
 
 
-def spectrumResample(x, wl, wl2, fwhm2, fill=False):
+def resample_spectrum(x, wl, wl2, fwhm2, fill=False):
     """Resample a spectrum to a new wavelength / FWHM. 
        I assume Gaussian SRFs"""
     H = s.array([srf(wl, wi, fwhmi/2.355)
@@ -314,13 +344,19 @@ def spectrumResample(x, wl, wl2, fwhm2, fill=False):
         return xnew
 
 
-def spectrumLoad(init):
+def load_spectrum(init):
     """Load a single spectrum from a text file with initial columns giving
        wavelength and magnitude respectively"""
-    wl, x = s.loadtxt(init)[:, :2].T
-    if wl[0] < 100:
-        wl = wl*1000.0  # convert microns -> nm if needed
-    return x, wl
+
+    x = s.loadtxt(init)
+    if x.ndim > 1:
+        x = x[:, :2]
+        wl, x = x.T
+        if wl[0] < 100:
+            wl = wl*1000.0  # convert microns -> nm if needed
+        return x, wl
+    else:
+        return x, None
 
 
 def srf(x, mu, sigma):

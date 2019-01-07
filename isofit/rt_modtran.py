@@ -36,9 +36,9 @@ eps = 1e-5  # used for finite difference derivative calculations
 class ModtranRT(TabularRT):
     """A model of photon transport including the atmosphere."""
 
-    def __init__(self, config, instrument):
+    def __init__(self, config):
 
-        TabularRT.__init__(self, config, instrument)
+        TabularRT.__init__(self, config)
 
         self.modtran_dir = self.find_basedir(config)
         self.filtpath = os.path.join(self.lut_dir, 'wavelengths.flt')
@@ -66,7 +66,7 @@ class ModtranRT(TabularRT):
             self.aer_asym = s.array(aer_asym)
 
         # Build the lookup table
-        self.build_lut(instrument)
+        self.build_lut()
 
     def find_basedir(self, config):
         '''Seek out a modtran base directory'''
@@ -78,6 +78,7 @@ class ModtranRT(TabularRT):
         try:
             return os.getenv('MODTRAN_DIR')
         except KeyError:
+            logging.errorj('I could not find the MODTRAN base directory')
             raise KeyError('I could not find the MODTRAN base directory')
 
     def load_tp6(self, infile):
@@ -100,8 +101,8 @@ class ModtranRT(TabularRT):
                     te = i
                     break
             if ts < 0:
-                raise ValueError(
-                    'Could not find solar geometry in %s' % infile)
+                logging.error('%s is missing solar geometry' % infile)
+                raise ValueError('%s is missing solar geometry' % infile)
         szen = s.array([float(lines[i].split()[3])
                         for i in range(ts, te)]).mean()
         return szen
@@ -194,7 +195,7 @@ class ModtranRT(TabularRT):
 
         return json.dumps({"MODTRAN": param})
 
-    def build_lut(self, instrument, rebuild=False):
+    def build_lut(self, rebuild=False):
         """ Each LUT is associated with a source directory.  We build a 
             lookup table by: 
               (1) defining the LUT dimensions, state vector names, and the grid 
@@ -206,9 +207,9 @@ class ModtranRT(TabularRT):
 
         # Regenerate MODTRAN input wavelength file
         if not os.path.exists(self.filtpath):
-            self.wl2flt(instrument.wl, instrument.fwhm, self.filtpath)
+            self.wl2flt(self.wl, self.fwhm, self.filtpath)
 
-        TabularRT.build_lut(self, instrument, rebuild)
+        TabularRT.build_lut(self, rebuild)
 
     def rebuild_cmd(self, point, fn):
 

@@ -19,7 +19,7 @@
 #
 
 import scipy as s
-from common import spectrumResample, spectrumLoad
+from common import load_spectrum, load_wavelen
 from scipy.interpolate import interp1d
 
 
@@ -27,68 +27,83 @@ class Surface:
     """A model of the surface.
       Surface models are stored as MATLAB '.mat' format files"""
 
-    def __init__(self, config, RT):
+    def __init__(self, config):
 
-        self.wl = RT.wl.copy()
-        self.nwl = len(self.wl)
         self.statevec = []
         self.bounds = s.array([])
         self.scale = s.array([])
-        self.init_val = s.array([])
+        self.init = s.array([])
         self.bvec = []
         self.bval = s.array([])
-
+        self.emissive = False
+        self.reconfigure(config)
         if 'reflectance_file' in config:
-            rfl, wl = spectrumLoad(config['reflectance_file'])
-            p = interp1d(wl, rfl, bounds_error=False, fill_value='extrapolate')
-            self.rfl = p(self.wl)
+            self.rfl, self.wl = load_spectrum(config['reflectance_file'])
+            self.n_wl = len(self.wl)
+        elif 'wavelength_file' in config:
+            self.wl, self.fwhm = load_wavelen(config['wavelength_file'])
+            self.n_wl = len(self.wl)
+
+    def reconfigure(self, config):
+        """Adjust the surface reflectance (for predefined reflectances)"""
+
+        if 'reflectance' in config and config['reflectance'] is not None:
+            self.rfl = config['reflectance']
 
     def xa(self, x_surface, geom):
         '''Mean of prior state vector distribution calculated at state x'''
-        return s.array(self.init_val)
+
+        return s.array(self.init)
 
     def Sa(self, x_surface, geom):
         '''Covariance of prior state vector distribution calculated at state x.'''
-        return s.array([[]])
 
-    def heuristic_surface(self, rfl, Ls, geom):
+        return s.zeros((0, 0), dtype=float)
+
+    def fit_params(self, rfl, Ls, geom):
         '''Given a directional reflectance estimate and one or more emissive 
            parameters, fit a state vector.'''
+
         return s.array([])
 
-    def calc_lrfl(self, x_surface, geom):
+    def calc_lamb(self, x_surface, geom):
         '''Calculate a Lambertian surface reflectance for this state vector.'''
+
         return self.rfl
 
     def calc_rfl(self, x_surface, geom):
         '''Calculate the directed reflectance (specifically the HRDF) for this
            state vector.'''
+
         return self.rfl
 
-    def drfl_dx(self, x_surface, geom):
+    def drfl_dsurface(self, x_surface, geom):
         '''Partial derivative of reflectance with respect to state vector, 
-        calculated at x_surface.'''
-        return None
+           calculated at x_surface.  In the case that there are no free 
+           paramters our convention is to return the vector of zeros.'''
 
-    def drfl_dx(self, x_surface, geom):
-        '''Partial derivative of reflectance with respect to state vector, 
-        calculated at x_surface.'''
-        return None
+        return s.zeros((self.n_wl, 1))
+
+    def drfl_dsurfaceb(self, x_surface, geom):
+        '''Partial derivative of reflectance with respect to unmodeled 
+           variables, calculated at x_surface.  In the case that there are no
+           free paramters our convention is to return the vector of zeros.'''
+
+        return s.zeros((self.n_wl, 1))
 
     def calc_Ls(self, x_surface, geom):
         '''Emission of surface, as a radiance'''
-        return s.zeros((self.nwl,))
 
-    def dLs_dx(self, x_surface, geom):
-        '''Partial derivative of surface emission with respect to state vector, 
-        calculated at x_surface.'''
-        return None
+        return s.zeros((self.n_wl,))
 
-    def Kb_surface(self, rdn_meas, geom):
+    def dLs_dsurface(self, x_surface, geom):
         '''Partial derivative of surface emission with respect to state vector, 
-        calculated at x_surface.'''
-        return None
+           calculated at x_surface.  In the case that there are no
+           free paramters our convention is to return the vector of zeros.'''
+
+        return s.zeros((self.n_wl, 1))
 
     def summarize(self, x_surface, geom):
         '''Summary of state vector'''
+
         return ''

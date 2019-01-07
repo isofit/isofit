@@ -20,7 +20,7 @@
 
 import sys
 import scipy as s
-from common import spectrumLoad, chol_inv, eps
+from common import chol_inv, eps
 from inverse import Inversion
 import scipy.optimize
 from scipy.linalg import inv, norm, sqrtm, det, cholesky, qr, svd
@@ -33,11 +33,9 @@ class MCMCInversion(Inversion):
     def __init__(self, config, forward):
         """Initialize and apply defaults"""
         Inversion.__init__(self, config, forward)
-
-        defaults = {'iterations': 10000, 'burnin': 200,
+        defaults = {'iterations': 10000, 'burnin': 200, 'method': 'MCMC',
                     'regularizer': 1e-3, 'proposal_scaling': 0.01,
                     'verbose': True, 'restart_every': 2000}
-
         for key, val in defaults.items():
             if key in config:
                 setattr(self, key, config[key])

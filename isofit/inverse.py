@@ -20,14 +20,17 @@
 
 import sys
 import scipy as s
-from common import spectrumLoad, svd_inv, svd_inv_sqrt, eps
+from common import svd_inv, svd_inv_sqrt, eps
 from collections import OrderedDict
 from scipy.optimize import least_squares
 import xxhash
+from inverse_simple import invert_simple
 from scipy.linalg import inv, norm, det, cholesky, qr, svd
+from scipy.linalg import LinAlgError
 from hashlib import md5
 from numba import jit
 import time
+import logging
 
 error_code = -1
 
@@ -35,31 +38,42 @@ error_code = -1
 class Inversion:
 
     def __init__(self, config, forward):
-        """Initialization specifies retrieval subwindows for calculating
-        measurement cost distributions"""
+
+        # Initialization specifies retrieval subwindows for calculating
+        # measurement cost distributions
         self.lasttime = time.time()
         self.fm = forward
-        self.wl = self.fm.wl
-        self.ht = OrderedDict()  # Hash table
+        self.method = 'GradientDescent'
+        self.hashtable = OrderedDict()  # Hash table for caching inverse matrices
         self.max_table_size = 500
+        self.windows = config['windows']  # Retrieval windows
+        self.state_indep_S_hat = False
         self.windows = config['windows']
-        if 'verbose' in config:
-            self.verbose = config['verbose']
-        else:
-            self.verbose = True
+        self.simulation_mode = None
+        if 'simulation_mode' in config:
+            self.simulation_mode = config['simulation_mode']
         if 'Cressie_MAP_confidence' in config:
             self.state_indep_S_hat = config['Cressie_MAP_confidence']
-        else:
-            self.state_indep_S_hat = False
-        self.windows = config['windows']
 
+        # We calculate the instrument channel indices associated with the
+        # retrieval windows using the initial instrument calibration.  These
+        # window indices never change throughout the life of the object.
         self.winidx = s.array((), dtype=int)  # indices of retrieval windows
-        inds = range(len(self.wl))
         for lo, hi in self.windows:
-            idx = s.where(s.logical_and(self.wl > lo, self.wl < hi))[0]
+            idx = s.where(s.logical_and(self.fm.instrument.wl_init > lo,
+                                        self.fm.instrument.wl_init < hi))[0]
             self.winidx = s.concatenate((self.winidx, idx), axis=0)
         self.counts = 0
         self.inversions = 0
+
+        # Finally, configure Levenberg Marquardt.
+        self.least_squares_params = {'method': 'trf', 'max_nfev': 20,
+                                     'bounds': (self.fm.bounds[0]+eps, self.fm.bounds[1]-eps),
+                                     'x_scale': self.fm.scale, 'xtol': 1e-4, 'ftol': 1e-4, 'gtol': 1e-4,
+                                     'tr_solver': 'exact'}
+        for k, v in config.items():
+            if k in self.least_squares_params:
+                self.least_squares_params[k] = v
 
     @jit
     def calc_prior(self, x, geom):
@@ -69,30 +83,25 @@ class Inversion:
 
         xa = self.fm.xa(x, geom)
         Sa = self.fm.Sa(x, geom)
-        Sa_inv, Sa_inv_sqrt = svd_inv_sqrt(Sa, hashtable=self.ht)
-
-        # Reduce the hash table, if needed
-        while len(self.ht) > self.max_table_size:
-            self.ht.popitem(last=False)
-
+        Sa_inv, Sa_inv_sqrt = svd_inv_sqrt(Sa, hashtable=self.hashtable)
         return xa, Sa, Sa_inv, Sa_inv_sqrt
 
     @jit
-    def calc_posterior(self, x, geom, rdn_meas):
+    def calc_posterior(self, x, geom, meas):
         """Calculate posterior distribution of state vector. This depends 
         both on the location in the state space and the radiance (via noise)."""
 
         xa = self.fm.xa(x, geom)
         Sa = self.fm.Sa(x, geom)
-        Sa_inv = svd_inv(Sa, hashtable=self.ht)
+        Sa_inv = svd_inv(Sa, hashtable=self.hashtable)
         K = self.fm.K(x, geom)
-        Seps = self.fm.Seps(rdn_meas, geom, init=x)
-        Seps_inv = svd_inv(Seps, hashtable=self.ht)
+        Seps = self.fm.Seps(x, meas, geom)
+        Seps_inv = svd_inv(Seps, hashtable=self.hashtable)
 
         # Gain matrix G reflects current state, so we use the state-dependent
         # Jacobian matrix K
         S_hat = svd_inv(K.T.dot(Seps_inv).dot(K) + Sa_inv,
-                        hashtable=self.ht)
+                        hashtable=self.hashtable)
         G = S_hat.dot(K.T).dot(Seps_inv)
 
         # N. Cressie [ASA 2018] suggests an alternate definition of S_hat for
@@ -100,67 +109,58 @@ class Inversion:
         if self.state_indep_S_hat:
             Ka = self.fm.K(xa, geom)
             S_hat = svd_inv(Ka.T.dot(Seps_inv).dot(Ka) + Sa_inv,
-                            hashtable=self.ht)
-
-        # Reduce the hash table, if needed
-        while len(self.ht) > self.max_table_size:
-            self.ht.popitem(last=False)
-
+                            hashtable=self.hashtable)
         return S_hat, K, G
 
     @jit
-    def calc_Seps(self, rdn_meas, geom, init=None):
+    def calc_Seps(self, x, meas, geom):
         """Calculate (zero-mean) measurement distribution in radiance terms.  
         This depends on the location in the state space. This distribution is 
         calculated over one or more subwindows of the spectrum. Return the 
-        inverse covariance and its square root"""
+        inverse covariance and its square root."""
 
-        Seps = self.fm.Seps(rdn_meas, geom, init=init)
+        Seps = self.fm.Seps(x, meas, geom)
         wn = len(self.winidx)
         Seps_win = s.zeros((wn, wn))
         for i in range(wn):
             Seps_win[i, :] = Seps[self.winidx[i], self.winidx]
-        Seps_inv, Seps_inv_sqrt = svd_inv_sqrt(Seps_win, hashtable=self.ht)
+        return svd_inv_sqrt(Seps_win, hashtable=self.hashtable)
 
-        # Reduce the hash table, if needed
-        while len(self.ht) > self.max_table_size:
-            self.ht.popitem(last=False)
-
-        return Seps_inv, Seps_inv_sqrt
-
-    def invert(self, rdn_meas, geom, out=None, init=None):
+    def invert(self, meas, geom):
         """Inverts a meaurement and returns a state vector.
 
            Parameters:
 
-             rdn_meas       - a one-D scipy vector of radiance in uW/nm/sr/cm2
+             meas           - a one-D scipy vector of radiance in uW/nm/sr/cm2
              geom           - a geometry object.
              plot_directory - the base directory to which diagnostics are
                                 writtena preinitialized ForwardModel object
 
            Returns a tuple consisting of the following:
 
-             lrfl           - the converged lambertian surface reflectance
+             lamb           - the converged lambertian surface reflectance
              path           - the converged path radiance estimate
              mdl            - the modeled radiance estimate
              S_hat          - the posterior covariance of the state vector
              G              - the G matrix from the CD Rodgers 2000 formalism
              xopt           - the converged state vector solution"""
 
-        """the least squares library seems to crash if we call it too many
-    times without reloading.  Memory leak?"""
-        # reload(scipy.optimize)
         self.lasttime = time.time()
+        self.trajectory = []
+        self.counts = 0
 
-        """Calculate the initial solution, if needed."""
-        if init is None:
-            init = self.fm.init(rdn_meas, geom)
+        # Simulations are easy - return the initial state vector
+        if self.simulation_mode or meas is None:
+            return s.array([self.fm.init.copy()])
 
-        """Seps is the covariance of "observation noise" including both 
-    measurement noise from the instrument as well as variability due to 
-    unknown variables.  For speed, we will calculate it just once based
-    on the initial solution (a potential minor source of inaccuracy)"""
-        Seps_inv, Seps_inv_sqrt = self.calc_Seps(rdn_meas, geom, init=init)
+        # Calculate the initial solution, if needed.
+        x0 = invert_simple(self.fm, meas, geom)
+
+        # Seps is the covariance of "observation noise" including both
+        # measurement noise from the instrument as well as variability due to
+        # unknown variables.  For speed, we will calculate it just once based
+        # on the initial solution (a potential minor source of inaccuracy)
+        Seps_inv, Seps_inv_sqrt = self.calc_Seps(x0, meas, geom)
 
         @jit
         def jac(x):
@@ -199,10 +199,10 @@ class Inversion:
 
             # Measurement cost term.  Will calculate reflectance and Ls from
             # the state vector.
-            est_rdn = self.fm.calc_rdn(x, geom, rfl=None, Ls=None)
-            est_rdn_window = est_rdn[self.winidx]
-            meas_window = rdn_meas[self.winidx]
-            meas_resid = (est_rdn_window-meas_window).dot(Seps_inv_sqrt)
+            est_meas = self.fm.calc_meas(x, geom, rfl=None, Ls=None)
+            est_meas_window = est_meas[self.winidx]
+            meas_window = meas[self.winidx]
+            meas_resid = (est_meas_window-meas_window).dot(Seps_inv_sqrt)
 
             # Prior cost term
             xa, Sa, Sa_inv, Sa_inv_sqrt = self.calc_prior(x, geom)
@@ -210,53 +210,38 @@ class Inversion:
 
             # Total cost
             total_resid = s.concatenate((meas_resid, prior_resid))
-            self.counts = self.counts + 1
 
-            # Diagnostics
-            if self.verbose:
-                newtime = time.time()
-                lrfl, mdl, path, S_hat, K, G = \
-                    self.forward_uncertainty(x, rdn_meas, geom)
-                dof = s.mean(s.diag(G[:, self.winidx].dot(K[self.winidx, :])))
-                sys.stdout.write('Iteration: %s ' % str(self.counts))
-                sys.stdout.write(' Time: %f ' % (newtime-self.lasttime))
-                sys.stdout.write(' Residual: %6f ' % sum(pow(total_resid, 2)))
-                sys.stdout.write(' Mean DOF: %5.3f ' % dof)
-                sys.stdout.write('\n '+self.fm.summarize(x, geom)+'\n')
-                self.lasttime = newtime
+            # How long since the last call?
+            newtime = time.time()
+            secs = newtime-self.lasttime
+            self.lasttime = newtime
 
-            # Plot interim solution?
-            if out is not None:
-                out.plot_spectrum(x, rdn_meas, geom)
+            self.trajectory.append(x)
+
+            it = len(self.trajectory)
+            tm = newtime - self.lasttime
+            rs = sum(pow(total_resid, 2))
+            sm = self.fm.summarize(x, geom)
+            logging.debug('Iteration: %02i  Residual: %12.2f %s' %
+                          (it, rs, sm))
 
             return s.real(total_resid)
 
         # Initialize and invert
-        x0 = init.copy()
-        xopt = least_squares(err, x0, jac=jac, method='trf',
-                             bounds=(self.fm.bounds[0]+eps,
-                                     self.fm.bounds[1]-eps),
-                             xtol=1e-4, ftol=1e-4, gtol=1e-4,
-                             x_scale=self.fm.scale,
-                             max_nfev=20, tr_solver='exact')
-        return xopt.x
+        try:
+            xopt = least_squares(err, x0, jac=jac, **self.least_squares_params)
+            self.trajectory.append(xopt.x)
+        except LinAlgError:
+            logging.warning('Levenberg Marquardt failed to converge')
+        return s.array(self.trajectory)
 
-    def forward_uncertainty(self, x, rdn_meas, geom):
+    def forward_uncertainty(self, x, meas, geom):
         """Converged estimates of path radiance, radiance, reflectance
         # Also calculate the posterior distribution and Rodgers K, G matrices"""
 
-        dark_surface = s.zeros(rdn_meas.shape)
-        path = self.fm.calc_rdn(x, geom, rfl=dark_surface)
-        mdl = self.fm.calc_rdn(x, geom, rfl=None, Ls=None)
-        lrfl = self.fm.calc_lrfl(x, geom)
-        S_hat, K, G = self.calc_posterior(x, geom, rdn_meas)
-        return lrfl, mdl, path, S_hat, K, G
-
-    def invert_algebraic(self, rdn_meas, x, geom):
-        x0 = self.fm.init(rdn_meas, geom)
-        xopt, coeffs = self.fm.invert_algebraic(x, rdn_meas, geom)
-        return x0, xopt, coeffs
-
-
-if __name__ == '__main__':
-    main()
+        dark_surface = s.zeros(self.fm.surface.wl.shape)
+        path = self.fm.calc_meas(x, geom, rfl=dark_surface)
+        mdl = self.fm.calc_meas(x, geom, rfl=None, Ls=None)
+        lamb = self.fm.calc_lamb(x, geom)
+        S_hat, K, G = self.calc_posterior(x, geom, meas)
+        return lamb, mdl, path, S_hat, K, G

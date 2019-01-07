@@ -11,7 +11,7 @@
     "algebraic_inverse_file": "../output/ang20171108t184227_alg_v2p11_BeckmanLawn.txt",
     "modeled_radiance_file":  "../output/ang20171108t184227_mdl_v2p11_BeckmanLawn.txt",
     "data_dump_file":         "../output/ang20171108t184227_data_v2p11_BeckmanLawn.mat",
-    "posterior_errors_file":  "../output/ang20171108t184227_post_v2p11_BeckmanLawn.mat",
+    "posterior_uncertainty_file":  "../output/ang20171108t184227_uncert_v2p11_BeckmanLawn.txt",
     "plot_directory": "../images/"
   },
 
@@ -19,13 +19,13 @@
 
     "instrument": {
       "wavelength_file": "../remote/20170320_ang20170228_wavelength_fit.txt",
-      "unknowns": {
-        "cal_uncertainty_systematic_file": 
-          "../../../data/avirisng_systematic_error.txt",
-        "cal_uncertainty_flatfield": 0.01
-      },
+      "parametric_noise_file": "../../../data/avirisng_noise.txt",
       "integrations":294,
-      "noise_file": "../../../data/avirisng_noise.txt"
+      "unknowns": {
+        "channelized_radiometric_uncertainty_file": 
+          "../../../data/avirisng_systematic_error.txt",
+        "uncorrelated_radiometric_uncertainty": 0.01
+      }
     },
 
     "multicomponent_surface": {
@@ -33,6 +33,7 @@
     },
 
     "modtran_radiative_transfer": {
+      "wavelength_file": "../remote/20170320_ang20170228_wavelength_fit.txt",
       "lut_path":"../lut/",
       "modtran_template_file":"ang20171108t184227_modtran.json",
       "domain": {"start": 350, "end": 2520, "step": 0.1},
@@ -40,11 +41,15 @@
         "H2OSTR": {
           "bounds": [1.5, 2.0],
           "scale": 0.01,
+          "prior_mean": 1.75,
+          "prior_sigma":0.5,
           "init": 1.75
         },
         "AOT550": {
           "bounds": [0.01, 0.1],
           "scale": 0.01,
+          "prior_mean": 0.05,
+          "prior_sigma":0.2,
           "init": 0.05
         }
       },
