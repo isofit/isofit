@@ -152,7 +152,7 @@ class SpectrumFile:
                 d = self.memmap[row, :, :]
                 if self.file.metadata['interleave'] == 'bil':
                     d = d.T
-                self.frames[row] = d
+                self.frames[row] = d.copy()
             else:
                 self.frames[row] = s.nan * s.zeros((self.n_cols, self.n_bands))
         return self.frames[row]
@@ -189,7 +189,7 @@ class SpectrumFile:
             return self.data
         else:
             frame = self.get_frame(row)
-            return frame[col].copy()
+            return frame[col]
 
     def flush_buffers(self):
         """Write to file, and refresh the memory map object"""
