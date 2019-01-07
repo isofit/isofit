@@ -189,7 +189,7 @@ class SpectrumFile:
             return self.data
         else:
             frame = self.get_frame(row)
-            return frame[col]
+            return frame[col].copy()
 
     def flush_buffers(self):
         """Write to file, and refresh the memory map object"""
