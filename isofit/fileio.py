@@ -439,7 +439,6 @@ class IO:
                         'simulated_measurement_file': data_bad,
                         'algebraic_inverse_file': data_bad,
                         'atmospheric_coefficients_file': atm_bad,
-                        'data_dump_file': {},
                         'radiometry_correction_file': data_bad,
                         'spectral_calibration_file': data_bad,
                         'posterior_uncertainty_file': state_bad}
@@ -532,16 +531,23 @@ class IO:
                     'posterior_uncertainty_file':
                         s.sqrt(s.diag(S_hat))}
 
+        for product in self.outfiles:
+            logging.debug('IO: Writing '+product)
+            self.outfiles[product].write_spectrum(row, col, to_write[product])
+            if (self.writes % flush_rate) == 0:
+                self.outfiles[product].flush_buffers()
+
         # Special case! Data dump file calculations are intensive so we do them
         # on-demand.
-        if 'data_dump_file' in self.outfiles:
+        if 'data_dump_file' in self.output:
 
+            x = state_est
             Seps_inv, Seps_inv_sqrt = self.iv.calc_Seps(x, meas, geom)
             meas_est_window = meas_est[self.iv.winidx]
             meas_window = meas[self.iv.winidx]
-            meas_resid = (rdn_est_window-meas_window).dot(Seps_inv_sqrt)
             xa, Sa, Sa_inv, Sa_inv_sqrt = self.iv.calc_prior(x, geom)
             prior_resid = (x - xa).dot(Sa_inv_sqrt)
+            rdn_est = self.fm.calc_rdn(x, geom)
             x_surface, x_RT, x_instrument = self.fm.unpack(x)
             Kb = self.fm.Kb(x, geom)
             xinit = invert_simple(self.fm, meas, geom)
@@ -549,24 +555,22 @@ class IO:
             cost_jac_prior = s.diagflat(x - xa).dot(Sa_inv_sqrt)
             cost_jac_meas = Seps_inv_sqrt.dot(K[self.iv.winidx, :])
             meas_Cov = self.fm.Seps(x, meas, geom)
+            lamb_est, meas_est, path_est, S_hat, K, G = \
+                self.iv.forward_uncertainty(state_est, meas, geom)
+            A = s.matmul(K, G)
 
             # Form the MATLAB dictionary object and write to file
-            to_write.extend({'data_dump_file': {'K': K, 'G': G, 'S_hat': S_hat,
-                                                'prior_mu': xa, 'Ls': Ls, 'prior_Cov': Sa, 'meas': meas,
-                                                'rdn_est': rdn_est, 'x': x, 'x_surface': x_surface, 'x_RT': x_RT,
-                                                'x_instrument': x_instrument, 'meas_Cov': meas_Cov, 'wl': wl,
-                                                'fwhm': fwhm, 'lamb_est': lamb_est, 'coszen': coszen,
-                                                'cost_jac_prior': cost_jac_prior, 'Kb': Kb, 'A': A,
-                                                'cost_jac_meas': cost_jac_meas, 'winidx': self.iv.winidx,
-                                                'meas_resid': meas_resid, 'prior_resid': prior_resid,
-                                                'noise_Cov': Sy, 'xinit': xinit, 'rhoatm': rhoatm,
-                                                'sphalb': sphalb, 'transm': transm, 'solar_irr': solar_irr}})
-
-        for product in self.outfiles:
-            logging.debug('IO: Writing '+product)
-            self.outfiles[product].write_spectrum(row, col, to_write[product])
-            if (self.writes % flush_rate) == 0:
-                self.outfiles[product].flush_buffers()
+            mdict = {'K': K, 'G': G, 'S_hat': S_hat,
+                     'prior_mu': xa, 'Ls': Ls, 'prior_Cov': Sa, 'meas': meas,
+                     'rdn_est': rdn_est, 'x': x, 'x_surface': x_surface, 'x_RT': x_RT,
+                     'x_instrument': x_instrument, 'meas_Cov': meas_Cov, 'wl': wl,
+                     'fwhm': fwhm, 'lamb_est': lamb_est, 'coszen': coszen,
+                     'cost_jac_prior': cost_jac_prior, 'Kb': Kb, 'A': A,
+                     'cost_jac_meas': cost_jac_meas, 'winidx': self.iv.winidx,
+                     'prior_resid': prior_resid,
+                     'noise_Cov': Sy, 'xinit': xinit, 'rhoatm': rhoatm,
+                     'sphalb': sphalb, 'transm': transm, 'solar_irr': solar_irr}
+            s.io.savemat(self.output['data_dump_file'], mdict)
 
         # Write plots, if needed
         if len(states) > 0 and 'plot_directory' in self.output:
@@ -592,7 +596,6 @@ class IO:
                 for lo, hi in self.iv.windows:
                     idx = s.where(s.logical_and(wl > lo, wl < hi))[0]
                     p1 = plt.plot(wl[idx], meas[idx], color=red, linewidth=2)
-                    plt.hold(True)
                     p2 = plt.plot(wl, meas_est, color='k', linewidth=1)
                 plt.title("Radiance")
                 plt.title("Measurement (Scaled DN)")
@@ -616,7 +619,6 @@ class IO:
                     # black line
                     idx = s.where(s.logical_and(wl > lo, wl < hi))[0]
                     p2 = plt.plot(wl[idx], lamb_est[idx], 'k', linewidth=2)
-                    plt.hold(True)
                     ymax = max(max(lamb_est[idx]*1.2), ymax)
 
                     # red line
