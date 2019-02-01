@@ -21,6 +21,7 @@
 from sys import platform
 import json
 import os
+from os.path import split
 import re
 import scipy as s
 from common import json_load_ascii, combos, VectorInterpolator
@@ -138,7 +139,7 @@ class ModtranRT(TabularRT):
                 transms.append(transm)
                 sphalbs.append(sphalb)
                 rhoatms.append(rhoatm)
-                transups.append(rhoatm)
+                transups.append(transup)
                 wls.append(wl)
         params = [s.array(i) for i in
                   [wls, sols, rhoatms, transms, sphalbs, transups]]
@@ -193,7 +194,7 @@ class ModtranRT(TabularRT):
             lvl0['EXTC'] = [float(v) / total_extc550 for v in total_extc]
             lvl0['ABSC'] = [float(v) / total_extc550 for v in total_absc]
 
-        return json.dumps({"MODTRAN": param})
+        return json.dumps({"MODTRAN": param}), param
 
     def build_lut(self, rebuild=False):
         """ Each LUT is associated with a source directory.  We build a 
@@ -217,7 +218,7 @@ class ModtranRT(TabularRT):
         vals['DISALB'] = True
         vals['NAME'] = fn
         vals['FILTNM'] = os.path.normpath(self.filtpath)
-        modtran_config_str = self.modtran_driver(dict(vals))
+        modtran_config_str, modtran_config = self.modtran_driver(dict(vals))
 
         # Check rebuild conditions: LUT is missing or from a different config
         infilename = 'LUT_'+fn+'.json'
@@ -228,9 +229,17 @@ class ModtranRT(TabularRT):
            not os.path.exists(outchnpath):
             rebuild = True
         else:
-            with open(infilepath, 'r') as f:
-                current = f.read()
-                rebuild = (modtran_config_str.strip() != current.strip())
+            # We compare the two configuration files, ignoring names and
+            # wavelength paths which tend to be non-portable
+            with open(infilepath, 'r') as fin:
+                current_config = json.load(fin)['MODTRAN']
+                current_config[0]['MODTRANINPUT']['NAME'] = ''
+                modtran_config[0]['MODTRANINPUT']['NAME'] = ''
+                current_config[0]['MODTRANINPUT']['SPECTRAL']['FILTNM'] = ''
+                modtran_config[0]['MODTRANINPUT']['SPECTRAL']['FILTNM'] = ''
+                current_str = json.dumps(current_config)
+                modtran_str = json.dumps(current_config)
+                rebuild = (modtran_str.strip() != current_str.strip())
 
         if not rebuild:
             raise FileExistsError('File exists')

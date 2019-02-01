@@ -172,7 +172,7 @@ class TabularRT:
         rhoatm = s.array(self.rhoatm_interp(point)).ravel()
         sphalb = s.array(self.sphalb_interp(point)).ravel()
         transm = s.array(self.transm_interp(point)).ravel()
-        transup = s.array(self.transm_interp(point)).ravel()
+        transup = s.array(self.transup_interp(point)).ravel()
         return rhoatm, sphalb, transm, transup
 
     def get(self, x_RT, geom):
