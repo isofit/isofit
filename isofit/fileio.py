@@ -348,8 +348,6 @@ class IO:
         if 'radiometry_correction_file' in self.input:
             filename = self.input['radiometry_correction_file']
             self.radiance_correction, wl = load_spectrum(filename)
-            if not self.same_wavelengths(wl):
-                logging.warn('Radiometry correction wavelength mismatch')
 
         # Last thing is to define the active image area
         if active_rows is None:
