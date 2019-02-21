@@ -186,6 +186,14 @@ class TabularRT:
                     point[point_ind] = x_RT[x_RT_ind]
                 elif name == "OBSZEN":
                     point[point_ind] = geom.OBSZEN
+                elif name == "viewzen":
+                    point[point_ind] = geom.observer_zenith
+                elif name == "viewaz":
+                    point[point_ind] = geom.observer_azimuth
+                elif name == "solaz":
+                    point[point_ind] = geom.solar_azimuth
+                elif name == "solzen":
+                    point[point_ind] = geom.solar_zenith
                 elif name == "TRUEAZ":
                     point[point_ind] = geom.TRUEAZ
                 elif name == 'phi':

@@ -487,12 +487,13 @@ class IO:
             factors = s.ones(len(wl))
             if 'radiometry_correction_file' in self.outfiles:
                 if 'reference_reflectance_file' in self.infiles:
-                    reference_file = infiles['reference_reflectance_file']
+                    reference_file = self.infiles['reference_reflectance_file']
                     self.rfl_ref = reference_file.read_spectrum(row, col)
                     self.wl_ref = reference_file.wl
+                    w, fw = self.fm.instrument.calibration(x_instrument)
                     resamp = resample_spectrum(self.rfl_ref, self.wl_ref,
-                                               self.fm.surface.wl, self.fm.surface.fwhm, fill=True)
-                    meas_est = self.fm.calc_meas(x, geom, rfl=resamp)
+                                               w, fw, fill=True)
+                    meas_est = self.fm.calc_meas(state_est, geom, rfl=resamp)
                     factors = meas_est / meas
                 else:
                     logging.warning('No reflectance reference')
