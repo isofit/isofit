@@ -34,6 +34,7 @@ class GlintSurface(MultiComponentSurface):
         self.scale.extend([1.0])
         self.init.extend([0.005])
         self.bounds.extend([[0, 0.2]])
+        self.n_state = self.n_state + 1
         self.glint_ind = len(self.statevec)-1
 
     def xa(self, x_surface, geom):

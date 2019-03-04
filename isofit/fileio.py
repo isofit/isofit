@@ -232,8 +232,8 @@ class IO:
         self.meas_wl = forward.instrument.wl_init
         self.meas_fwhm = forward.instrument.fwhm_init
         self.writes = 0
-        self.n_rows = 0
-        self.n_cols = 0
+        self.n_rows = 1
+        self.n_cols = 1
         self.n_sv = len(self.fm.statevec)
         self.n_chan = len(self.fm.instrument.wl_init)
 
@@ -487,12 +487,13 @@ class IO:
             factors = s.ones(len(wl))
             if 'radiometry_correction_file' in self.outfiles:
                 if 'reference_reflectance_file' in self.infiles:
-                    reference_file = infiles['reference_reflectance_file']
+                    reference_file = self.infiles['reference_reflectance_file']
                     self.rfl_ref = reference_file.read_spectrum(row, col)
                     self.wl_ref = reference_file.wl
+                    w, fw = self.fm.instrument.calibration(x_instrument)
                     resamp = resample_spectrum(self.rfl_ref, self.wl_ref,
-                                               self.fm.surface.wl, self.fm.surface.fwhm, fill=True)
-                    meas_est = self.fm.calc_meas(x, geom, rfl=resamp)
+                                               w, fw, fill=True)
+                    meas_est = self.fm.calc_meas(state_est, geom, rfl=resamp)
                     factors = meas_est / meas
                 else:
                     logging.warning('No reflectance reference')
@@ -516,10 +517,6 @@ class IO:
                         s.column_stack((wl, meas_sim)),
                     'algebraic_inverse_file':
                         s.column_stack((self.fm.surface.wl, rfl_alg_opt)),
-                    'mcmc_samples_file':
-                        {'samples': states},
-                    'state_trajectory_file':
-                        {'trajectory': states},
                     'atmospheric_coefficients_file':
                         atm,
                     'radiometry_correction_file':
@@ -535,10 +532,16 @@ class IO:
             if (self.writes % flush_rate) == 0:
                 self.outfiles[product].flush_buffers()
 
-        # Special case! Data dump file calculations are intensive so we do them
-        # on-demand.
+        # Special case! samples file is matlab format.
+        if 'mcmc_samples_file' in self.output:
+            logging.debug('IO: Writing mcmc_samples_file')
+            mdict = {'samples': states}
+            s.io.savemat(self.output['mcmc_samples_file'], mdict)
+
+        # Special case! Data dump file is matlab format.
         if 'data_dump_file' in self.output:
 
+            logging.debug('IO: Writing data_dump_file')
             x = state_est
             Seps_inv, Seps_inv_sqrt = self.iv.calc_Seps(x, meas, geom)
             meas_est_window = meas_est[self.iv.winidx]

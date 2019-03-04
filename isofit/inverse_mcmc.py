@@ -70,14 +70,14 @@ class MCMCInversion(Inversion):
         pa = self.stable_mvnpdf(xa, Sa, x)
 
         # Data likelihood term
-        Seps = self.fm.Seps(rdn_meas, geom)
+        Seps = self.fm.Seps(x, rdn_meas, geom)
         Seps_win = s.array([Seps[i, self.winidx] for i in self.winidx])
         rdn_est = self.fm.calc_rdn(x, geom, rfl=None, Ls=None)
         pm = self.stable_mvnpdf(rdn_est[self.winidx], Seps_win,
                                 rdn_meas[self.winidx])
         return pa+pm
 
-    def invert(self, rdn_meas, geom, out=None, init=None):
+    def invert(self, rdn_meas, geom):
         """Inverts a meaurement. Returns an array of state vector samples.
            Similar to Inversion.invert() but returns a list of samples."""
 
@@ -85,10 +85,10 @@ class MCMCInversion(Inversion):
         # Surface reflectance unconstrained so it can dip slightly below zero
         # in a channel without invalidating the whole vector
         bounds = s.array([self.fm.bounds[0].copy(), self.fm.bounds[1].copy()])
-        bounds[:, self.fm.surface_inds] = s.array([[-s.inf], [s.inf]])
+        bounds[:, self.fm.idx_surface] = s.array([[-s.inf], [s.inf]])
 
         # Initialize to conjugate gradient solution
-        x_MAP = Inversion.invert(self, rdn_meas, geom, out, init)
+        x_MAP = Inversion.invert(self, rdn_meas, geom)[-1]
 
         # Proposal is based on the posterior uncertainty
         S_hat, K, G = self.calc_posterior(x_MAP, geom, rdn_meas)
@@ -137,7 +137,7 @@ class MCMCInversion(Inversion):
             if i % self.restart_every < self.burnin:
                 samples.append(x)
 
-        return x_MAP.copy(), s.array(samples)
+        return s.array(samples)
 
 
 if __name__ == '__main__':

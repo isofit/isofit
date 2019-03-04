@@ -101,6 +101,7 @@ class Instrument:
             # specifies noise columns and covariances independently for
             # each cross-track location via an ENVI-format binary data file.
             self.model_type = 'pushbroom'
+            self.noise_file = config['pushbroom_noise_file']
             D = loadmat(self.noise_file)
             self.ncols = D['columns'][0, 0]
             if self.n_chan != s.sqrt(D['bands'][0, 0]):
