@@ -31,7 +31,8 @@ from instrument import Instrument
 RT_models = [('modtran_radiative_transfer', 'rt_modtran', 'ModtranRT'),
              ('libradtran_radiative_transfer', 'rt_libradtran', 'LibRadTranRT'),
              ('planetary_radiative_transfer', 'rt_planetary', 'PlanetaryRT'),
-             ('uplooking_radiative_transfer', 'rt_uplook', 'UplookRT')]
+             ('uplooking_radiative_transfer', 'rt_uplook', 'UplookRT'),
+             ('sixs_radiative_transfer', 'rt_6s', 'SixSRT')]
 
 
 # Supported surface modules, filenames, and class names

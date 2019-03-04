@@ -42,6 +42,9 @@ def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
     # model we are using, this state parameter could go by several names.
     for h2oname in ['H2OSTR', 'h2o']:
 
+        if not h2oname in RT.statevec:
+            continue
+
         # ignore unused names
         if not (h2oname in RT.lut_names):
             continue
@@ -161,5 +164,6 @@ def invert_simple(forward, meas, geom):
     # spectrum.  This will be simple for chnanelwise parameterizations but
     # possibly complex for more sophisticated parameterizations (e.g. mixture
     # models, etc.)
+    
     x[forward.idx_surface] = forward.surface.fit_params(rfl_est, Ls_est, geom)
     return x

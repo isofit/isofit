@@ -232,8 +232,8 @@ class IO:
         self.meas_wl = forward.instrument.wl_init
         self.meas_fwhm = forward.instrument.fwhm_init
         self.writes = 0
-        self.n_rows = 0
-        self.n_cols = 0
+        self.n_rows = 1
+        self.n_cols = 1
         self.n_sv = len(self.fm.statevec)
         self.n_chan = len(self.fm.instrument.wl_init)
 
@@ -342,7 +342,7 @@ class IO:
                                                 wavelengths=self.meas_wl, fwhm=self.meas_fwhm,
                                                 band_names=band_names, bad_bands=self.bbl,
                                                 map_info=self.map_info, zrange=zrange,
-                                                ztitles=ztitle)
+                                                ztitles=ztitle)               
 
         # Do we apply a radiance correction?
         if 'radiometry_correction_file' in self.input:
@@ -500,7 +500,7 @@ class IO:
 
         # Assemble all output products
         to_write = {'estimated_state_file':
-                    state_est,
+                        state_est,
                     'estimated_reflectance_file':
                         s.column_stack((self.fm.surface.wl, lamb_est)),
                     'estimated_emission_file':
@@ -517,10 +517,6 @@ class IO:
                         s.column_stack((wl, meas_sim)),
                     'algebraic_inverse_file':
                         s.column_stack((self.fm.surface.wl, rfl_alg_opt)),
-                    'mcmc_samples_file':
-                        {'samples': states},
-                    'state_trajectory_file':
-                        {'trajectory': states},
                     'atmospheric_coefficients_file':
                         atm,
                     'radiometry_correction_file':
@@ -536,10 +532,17 @@ class IO:
             if (self.writes % flush_rate) == 0:
                 self.outfiles[product].flush_buffers()
 
-        # Special case! Data dump file calculations are intensive so we do them
-        # on-demand.
+        # Special case! samples file is matlab format.
+        if 'mcmc_samples_file' in self.output:
+            logging.debug('IO: Writing mcmc_samples_file')
+            mdict = {'samples': states}
+            s.io.savemat(self.output['mcmc_samples_file'], mdict)
+
+
+        # Special case! Data dump file is matlab format.
         if 'data_dump_file' in self.output:
 
+            logging.debug('IO: Writing data_dump_file')
             x = state_est
             Seps_inv, Seps_inv_sqrt = self.iv.calc_Seps(x, meas, geom)
             meas_est_window = meas_est[self.iv.winidx]
