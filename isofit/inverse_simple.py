@@ -42,11 +42,11 @@ def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
     # model we are using, this state parameter could go by several names.
     for h2oname in ['H2OSTR', 'h2o']:
 
-        if not h2oname in RT.statevec:
+        if h2oname not in RT.statevec:
             continue
 
         # ignore unused names
-        if not (h2oname in RT.lut_names):
+        if h2oname not in RT.lut_names:
             continue
 
         # find the index in the lookup table associated with water vapor
