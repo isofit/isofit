@@ -342,7 +342,7 @@ class IO:
                                                 wavelengths=self.meas_wl, fwhm=self.meas_fwhm,
                                                 band_names=band_names, bad_bands=self.bbl,
                                                 map_info=self.map_info, zrange=zrange,
-                                                ztitles=ztitle)               
+                                                ztitles=ztitle)
 
         # Do we apply a radiance correction?
         if 'radiometry_correction_file' in self.input:
@@ -500,7 +500,7 @@ class IO:
 
         # Assemble all output products
         to_write = {'estimated_state_file':
-                        state_est,
+                    state_est,
                     'estimated_reflectance_file':
                         s.column_stack((self.fm.surface.wl, lamb_est)),
                     'estimated_emission_file':
@@ -537,7 +537,6 @@ class IO:
             logging.debug('IO: Writing mcmc_samples_file')
             mdict = {'samples': states}
             s.io.savemat(self.output['mcmc_samples_file'], mdict)
-
 
         # Special case! Data dump file is matlab format.
         if 'data_dump_file' in self.output:

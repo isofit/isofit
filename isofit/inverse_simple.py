@@ -164,6 +164,6 @@ def invert_simple(forward, meas, geom):
     # spectrum.  This will be simple for chnanelwise parameterizations but
     # possibly complex for more sophisticated parameterizations (e.g. mixture
     # models, etc.)
-    
+
     x[forward.idx_surface] = forward.surface.fit_params(rfl_est, Ls_est, geom)
     return x
