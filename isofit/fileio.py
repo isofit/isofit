@@ -136,7 +136,7 @@ class SpectrumFile:
                 self.file = envi.create_image(fname+'.hdr', meta, ext='',
                                               force=True)
 
-            self.open_map_with_retries() 
+            self.open_map_with_retries()
 
     def open_map_with_retries(self):
         """Try to open a memory map, handling Beowulf I/O issues"""
@@ -212,7 +212,7 @@ class SpectrumFile:
             self.frames = OrderedDict()
             del self.file
             self.file = envi.open(self.fname+'.hdr', self.fname)
-            self.open_map_with_retries() 
+            self.open_map_with_retries()
 
 
 class IO:
@@ -509,29 +509,29 @@ class IO:
 
             # Assemble all output products
             to_write = {'estimated_state_file': state_est,
-                    'estimated_reflectance_file':
+                        'estimated_reflectance_file':
                         s.column_stack((self.fm.surface.wl, lamb_est)),
-                    'estimated_emission_file':
+                        'estimated_emission_file':
                         s.column_stack((self.fm.surface.wl, Ls_est)),
-                    'estimated_reflectance_file':
+                        'estimated_reflectance_file':
                         s.column_stack((self.fm.surface.wl, lamb_est)),
-                    'modeled_radiance_file':
+                        'modeled_radiance_file':
                         s.column_stack((wl, meas_est)),
-                    'apparent_reflectance_file':
+                        'apparent_reflectance_file':
                         s.column_stack((self.fm.surface.wl, apparent_rfl_est)),
-                    'path_radiance_file':
+                        'path_radiance_file':
                         s.column_stack((wl, path_est)),
-                    'simulated_measurement_file':
+                        'simulated_measurement_file':
                         s.column_stack((wl, meas_sim)),
-                    'algebraic_inverse_file':
+                        'algebraic_inverse_file':
                         s.column_stack((self.fm.surface.wl, rfl_alg_opt)),
-                    'atmospheric_coefficients_file':
+                        'atmospheric_coefficients_file':
                         atm,
-                    'radiometry_correction_file':
+                        'radiometry_correction_file':
                         factors,
-                    'spectral_calibration_file':
+                        'spectral_calibration_file':
                         cal,
-                    'posterior_uncertainty_file':
+                        'posterior_uncertainty_file':
                         s.sqrt(s.diag(S_hat))}
 
         for product in self.outfiles:
