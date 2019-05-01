@@ -37,7 +37,7 @@ typemap = {s.uint8: 1, s.int16: 2, s.int32: 3, s.float32: 4, s.float64: 5,
            s.complex64: 6, s.complex128: 9, s.uint16: 12, s.uint32: 13, s.int64: 14,
            s.uint64: 15}
 max_frames_size = 100
-flush_rate = 5
+flush_rate = 100
 
 
 class SpectrumFile:
@@ -136,9 +136,17 @@ class SpectrumFile:
                 self.file = envi.create_image(fname+'.hdr', meta, ext='',
                                               force=True)
 
-            # Open a memory map
+            self.open_map_with_retries() 
+
+    def open_map_with_retries(self):
+        """Try to open a memory map, handling Beowulf I/O issues"""
+        self.memmap = None
+        for attempt in range(10):
             self.memmap = self.file.open_memmap(interleave='source',
                                                 writable=self.write)
+            if self.memmap is not None:
+                return
+        raise IOError('could not open memmap for '+self.fname)
 
     def get_frame(self, row):
         """The frame is a 2D array, essentially a list of spectra.  The 
@@ -204,8 +212,7 @@ class SpectrumFile:
             self.frames = OrderedDict()
             del self.file
             self.file = envi.open(self.fname+'.hdr', self.fname)
-            self.memmap = self.file.open_memmap(interleave='source',
-                                                writable=self.write)
+            self.open_map_with_retries() 
 
 
 class IO:
@@ -363,6 +370,7 @@ class IO:
     def flush_buffers(self):
         """ Write all buffered output data to disk, and erase read buffers."""
 
+        print(self.file)
         for file_dictionary in [self.infiles, self.outfiles]:
             for name, fi in file_dictionary.items():
                 fi.flush_buffers()
@@ -426,8 +434,9 @@ class IO:
         if len(states) == 0:
 
             # Write a bad data flag
+            atm_bad = s.zeros(len(self.fm.statevec)) * -9999.0
             state_bad = s.zeros(len(self.fm.statevec)) * -9999.0
-            data_bad = s.zeros(len(self.fm.instrument.n_chan)) * -9999.0
+            data_bad = s.zeros(self.fm.instrument.n_chan) * -9999.0
             to_write = {'estimated_state_file': state_bad,
                         'estimated_reflectance_file': data_bad,
                         'estimated_emission_file': data_bad,
@@ -498,9 +507,8 @@ class IO:
                 else:
                     logging.warning('No reflectance reference')
 
-        # Assemble all output products
-        to_write = {'estimated_state_file':
-                    state_est,
+            # Assemble all output products
+            to_write = {'estimated_state_file': state_est,
                     'estimated_reflectance_file':
                         s.column_stack((self.fm.surface.wl, lamb_est)),
                     'estimated_emission_file':
