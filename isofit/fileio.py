@@ -370,7 +370,6 @@ class IO:
     def flush_buffers(self):
         """ Write all buffered output data to disk, and erase read buffers."""
 
-        print(self.file)
         for file_dictionary in [self.infiles, self.outfiles]:
             for name, fi in file_dictionary.items():
                 fi.flush_buffers()
