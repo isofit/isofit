@@ -37,7 +37,7 @@ typemap = {s.uint8: 1, s.int16: 2, s.int32: 3, s.float32: 4, s.float64: 5,
            s.complex64: 6, s.complex128: 9, s.uint16: 12, s.uint32: 13, s.int64: 14,
            s.uint64: 15}
 max_frames_size = 100
-flush_rate = 5
+flush_rate = 100
 
 
 class SpectrumFile:
@@ -136,9 +136,17 @@ class SpectrumFile:
                 self.file = envi.create_image(fname+'.hdr', meta, ext='',
                                               force=True)
 
-            # Open a memory map
+            self.open_map_with_retries()
+
+    def open_map_with_retries(self):
+        """Try to open a memory map, handling Beowulf I/O issues"""
+        self.memmap = None
+        for attempt in range(10):
             self.memmap = self.file.open_memmap(interleave='source',
                                                 writable=self.write)
+            if self.memmap is not None:
+                return
+        raise IOError('could not open memmap for '+self.fname)
 
     def get_frame(self, row):
         """The frame is a 2D array, essentially a list of spectra.  The 
@@ -204,8 +212,7 @@ class SpectrumFile:
             self.frames = OrderedDict()
             del self.file
             self.file = envi.open(self.fname+'.hdr', self.fname)
-            self.memmap = self.file.open_memmap(interleave='source',
-                                                writable=self.write)
+            self.open_map_with_retries()
 
 
 class IO:
@@ -426,8 +433,9 @@ class IO:
         if len(states) == 0:
 
             # Write a bad data flag
+            atm_bad = s.zeros(len(self.fm.statevec)) * -9999.0
             state_bad = s.zeros(len(self.fm.statevec)) * -9999.0
-            data_bad = s.zeros(len(self.fm.instrument.n_chan)) * -9999.0
+            data_bad = s.zeros(self.fm.instrument.n_chan) * -9999.0
             to_write = {'estimated_state_file': state_bad,
                         'estimated_reflectance_file': data_bad,
                         'estimated_emission_file': data_bad,
@@ -498,32 +506,31 @@ class IO:
                 else:
                     logging.warning('No reflectance reference')
 
-        # Assemble all output products
-        to_write = {'estimated_state_file':
-                    state_est,
-                    'estimated_reflectance_file':
+            # Assemble all output products
+            to_write = {'estimated_state_file': state_est,
+                        'estimated_reflectance_file':
                         s.column_stack((self.fm.surface.wl, lamb_est)),
-                    'estimated_emission_file':
+                        'estimated_emission_file':
                         s.column_stack((self.fm.surface.wl, Ls_est)),
-                    'estimated_reflectance_file':
+                        'estimated_reflectance_file':
                         s.column_stack((self.fm.surface.wl, lamb_est)),
-                    'modeled_radiance_file':
+                        'modeled_radiance_file':
                         s.column_stack((wl, meas_est)),
-                    'apparent_reflectance_file':
+                        'apparent_reflectance_file':
                         s.column_stack((self.fm.surface.wl, apparent_rfl_est)),
-                    'path_radiance_file':
+                        'path_radiance_file':
                         s.column_stack((wl, path_est)),
-                    'simulated_measurement_file':
+                        'simulated_measurement_file':
                         s.column_stack((wl, meas_sim)),
-                    'algebraic_inverse_file':
+                        'algebraic_inverse_file':
                         s.column_stack((self.fm.surface.wl, rfl_alg_opt)),
-                    'atmospheric_coefficients_file':
+                        'atmospheric_coefficients_file':
                         atm,
-                    'radiometry_correction_file':
+                        'radiometry_correction_file':
                         factors,
-                    'spectral_calibration_file':
+                        'spectral_calibration_file':
                         cal,
-                    'posterior_uncertainty_file':
+                        'posterior_uncertainty_file':
                         s.sqrt(s.diag(S_hat))}
 
         for product in self.outfiles:
