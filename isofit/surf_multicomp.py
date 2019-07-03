@@ -63,14 +63,13 @@ class MultiComponentSurface(Surface):
             self.selection_metric = 'Mahalanobis'
 
         # This field, if present and set to true, forces us to use
-        # any initialization state and never change.  The state is 
+        # any initialization state and never change.  The state is
         # preserved in the geometry object so that this object stays
         # stateless
         try:
             self.select_on_init = config['select_on_init']
         except KeyError:
             self.select_on_init = False
-
 
         # Reference values are used for normalizing the reflectances.
         # in the VSWIR regime, reflectances are normalized so that the model
@@ -108,9 +107,9 @@ class MultiComponentSurface(Surface):
 
         if self.n_comp <= 1:
             return 0
-        elif hasattr(geom,'surf_cmp_init'):
+        elif hasattr(geom, 'surf_cmp_init'):
             return geom.surf_cmp_init
-        elif self.select_on_init and hasattr(geom,'x_surf_init'):
+        elif self.select_on_init and hasattr(geom, 'x_surf_init'):
             x_surface = geom.x_surf_init
         else:
             x_surface = x
@@ -132,8 +131,8 @@ class MultiComponentSurface(Surface):
             mds.append(md)
         closest = s.argmin(mds)
 
-        if self.select_on_init and hasattr(geom,'x_surf_init') and \
-            (not hasattr(geom,'surf_cmp_init')):
+        if self.select_on_init and hasattr(geom, 'x_surf_init') and \
+                (not hasattr(geom, 'surf_cmp_init')):
             geom.surf_cmp_init = closest
         return closest
 
