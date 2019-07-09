@@ -82,7 +82,7 @@ def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
         bounds = (h2os[0]+0.001, h2os[-1]-0.001)
         best = min1d(lambda h: abs(1-p(h)), bounds=bounds, method='bounded')
         x_new[ind_sv] = best.x
-    return x_RT
+    return x_new
 
 
 def invert_algebraic(surface, RT, instrument, x_surface, x_RT, x_instrument,
