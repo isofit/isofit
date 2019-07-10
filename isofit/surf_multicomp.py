@@ -62,6 +62,15 @@ class MultiComponentSurface(Surface):
         except KeyError:
             self.selection_metric = 'Mahalanobis'
 
+        # This field, if present and set to true, forces us to use
+        # any initialization state and never change.  The state is
+        # preserved in the geometry object so that this object stays
+        # stateless
+        try:
+            self.select_on_init = config['select_on_init']
+        except KeyError:
+            self.select_on_init = False
+
         # Reference values are used for normalizing the reflectances.
         # in the VSWIR regime, reflectances are normalized so that the model
         # is agnostic to absolute magnitude.
@@ -88,13 +97,22 @@ class MultiComponentSurface(Surface):
         self.idx_lamb = s.arange(self.n_wl)
         self.n_state = len(self.statevec)
 
-    def component(self, x_surface, geom):
+    def component(self, x, geom):
         """ We pick a surface model component using the Mahalanobis distance.
             This always uses the Lambertian (non-specular) version of the 
-            surface reflectance."""
+            surface reflectance. If the forward model initialize via heuristic
+            (i.e. algebraic inversion), the component is only calculated once
+            based on that first solution.  That state is preserved in the 
+            geometry object"""
 
         if self.n_comp <= 1:
             return 0
+        elif hasattr(geom, 'surf_cmp_init'):
+            return geom.surf_cmp_init
+        elif self.select_on_init and hasattr(geom, 'x_surf_init'):
+            x_surface = geom.x_surf_init
+        else:
+            x_surface = x
 
         # Get the (possibly normalized) reflectance
         lamb = self.calc_lamb(x_surface, geom)
@@ -112,6 +130,10 @@ class MultiComponentSurface(Surface):
                 md = sum(pow(lamb_ref - ref_mu, 2))
             mds.append(md)
         closest = s.argmin(mds)
+
+        if self.select_on_init and hasattr(geom, 'x_surf_init') and \
+                (not hasattr(geom, 'surf_cmp_init')):
+            geom.surf_cmp_init = closest
         return closest
 
     def xa(self, x_surface, geom):
