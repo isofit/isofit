@@ -1,0 +1,76 @@
+{
+  "ISOFIT_base": "../../..",
+
+  "input": {
+    "measured_radiance_file":     "../remote/prm20151026t173213_rawrdn_v1h3_D8p5W_clip.txt",
+    "obs_file":                   "../remote/prm20151026t173213_obs_D8p5W.txt",
+    "radiometry_correction_file": "../data/prm20151026t173213_rdn_6s_factors.txt",
+    "reference_reflectance_file": "../insitu/D8p5W.txt"
+  },
+
+  "output": {
+    "estimated_reflectance_file": "../remote/prm20151026t173213_rfl_v1h3_D8p5W_6s.txt",
+    "modeled_radiance_file":      "../remote/prm20151026t173213_mdl_v1h3_D8p5W_6s.txt",
+    "state_file":                 "../remote/prm20151026t173213_state_v1h3_D8p5W_6s.txt",
+    "posterior_uncertainty_file": "../remote/prm20151026t173213_post_v1h3_D8p5W_6s.txt",
+    "data_dump_file":             "../remote/prm20151026t173213_data_D8p5W_6s.mat",
+    "plot_directory":             "../images/"
+  },
+
+  "forward_model":{
+
+    "instrument": {
+      "wavelength_file":      "../data/20140221_PRISM_wavelengths_truncated_clip.txt",
+      "SNR": 500,
+      "integrations":25
+    },
+
+    "glint_surface": {
+      "surface_file": "../data/prm20151028_surface_coastal_model.mat"
+    },
+
+    "sixs_radiative_transfer": {
+      "irradiance_file":         "../data/prism_optimized_irr.dat",
+      "earth_sun_distance_file": "../../../data/earth_sun_distance.txt",
+      "wavelength_file":         "../data/20140221_PRISM_wavelengths_truncated_clip.txt",
+      "sixs_installation":       "${SIXS_DIR}",
+      "solzen": 55.20,
+      "solaz": 141.72,
+      "elev":  0.0,
+      "alt": 20.0,
+      "viewzen": 6.28,
+      "viewaz": 231.6,
+      "month": 10,
+      "day": 26,
+      "lut_path":"../lut/",
+      "domain": {"start": 350, "end": 2520, "step": 0.1},
+      "statevector": {
+        "H2OSTR": {
+          "bounds": [0.5, 1.0],
+          "scale": 0.01,
+          "prior_sigma": 100.0,
+          "prior_mean": 1.0,
+          "init": 0.75
+        },
+        "AOT550": {
+          "bounds": [0.0, 0.1],
+          "scale": 0.1,
+          "prior_mean": 0.05,
+          "prior_sigma": 100.0,
+          "init": 0.04
+        }
+      },
+      "lut_grid": { 
+        "H2OSTR": [0.5,0.7,1.0],
+        "AOT550": [0.0,0.05,0.1]
+      },
+      "unknowns": {
+        "H2O_ABSCO": 0.01
+      }
+    }
+  },
+
+  "inversion": {
+    "windows": [[400.0,1000.0]]
+  }
+}

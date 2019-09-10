@@ -1,0 +1,69 @@
+{
+  "output_model_file": "../data/prm20151028_surface_coastal_model.mat", 
+  "wavelength_file": "../data/20140221_PRISM_wavelengths_truncated_clip.txt",
+  "normalize":"Euclidean",
+  "reference_windows":[[400,1000]],
+  "sources":
+    [
+      {
+        "input_spectrum_files":
+          [
+            "../../../data/reflectance/ocean_spectra_rev2"
+          ],
+        "n_components": 8,
+        "windows": 
+          [
+            {
+              "interval":[350,370],
+              "regularizer":1e-4,
+              "correlation":"decorrelated"
+            },
+            {
+              "interval":[370,400],
+              "regularizer":1e-6,
+              "correlation":"EM"
+            },
+            {
+              "interval":[400,750],
+              "regularizer":1e-6,
+              "correlation":"EM"
+            },
+            {
+              "interval":[750,1000],
+              "regularizer":1e-6,
+              "correlation":"EM"
+            },
+            {
+              "interval":[1000,1100],
+              "regularizer":1e-4,
+              "correlation":"decorrelated"
+            }
+          ]
+      },
+      {
+        "input_spectrum_files":
+          [
+            "../../../data/reflectance/surface_model_ucsb"
+          ],
+        "n_components": 8,
+        "windows": 
+          [
+            {
+              "interval":[350,370],
+              "regularizer":1e-4,
+              "correlation":"decorrelated"
+            },
+            {
+              "interval":[370,1000],
+              "regularizer":1e-4,
+              "correlation":"decorrelated"
+            },
+            {
+              "interval":[1000,1100],
+              "regularizer":1e-4,
+              "correlation":"decorrelated"
+            }
+          ]
+      }
+    ]
+}
