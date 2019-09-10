@@ -66,6 +66,7 @@ sixs_template = '''0 (User defined)
 -1 No atm. corrections selected
 '''
 
+
 class SixSRT(TabularRT):
     """A model of photon transport including the atmosphere."""
 
@@ -194,10 +195,10 @@ class SixSRT(TabularRT):
 
             self.grid[i] = float(w) * 1000.0  # convert to nm
             solzens[i] = float(solzen)
-            sphalbs[i] = float(salb) 
+            sphalbs[i] = float(salb)
             transups[i] = 0.0  # float(scau)
             transms[i] = float(scau) * float(scad) * float(gt)
-            rhoatms[i] = float(rhoa) 
+            rhoatms[i] = float(rhoa)
 
         solzen = resample_spectrum(solzens,  self.grid, self.wl, self.fwhm)
         rhoatm = resample_spectrum(rhoatms,  self.grid, self.wl, self.fwhm)
@@ -209,4 +210,3 @@ class SixSRT(TabularRT):
 
     def ext550_to_vis(self, ext550):
         return s.log(50.0) / (ext550 + 0.01159)
-
