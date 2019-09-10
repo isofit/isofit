@@ -28,7 +28,7 @@ lic = 'Apache Software License (http://www.apache.org/licenses/LICENSE-2.0)'
 
 setup(name='isofit',
     version='1.0.6',
-    url='http://github.com/davidraythompson/isofit/',
+    url='http://github.com/isofit/isofit/',
     license=lic,
     author='David R. Thompson, Winston Olson-Duvall, and Team',
     author_email='david.r.thompson@jpl.nasa.gov',
