@@ -27,7 +27,6 @@ from skimage.segmentation import slic
 from scipy.linalg import eigh, norm
 
 
-# parse the command line
 def main():
 
     # Parse arguments
@@ -61,18 +60,25 @@ def main():
     for lstart in s.arange(0,nl,nchunk):
 
         del img_mm
+
+        # Extract data
         lend = min(lstart+nchunk, nl)
-        print(lstart,lend)
         img_mm = in_img.open_memmap(interleave='source', writable=False)
         x = s.array(img_mm[lstart:lend, :, :]).transpose((0, 2, 1))
         nc = x.shape[0]
         nseg_this_chunk = int(nc / float(nchunk) * seg_per_chunk)
         x = x.reshape((nc * ns, nb))
+
+        # Excluding bad locations, calculate top PCA coefficients
         use = s.all(abs(x-flag)>1e-6, axis=1)
         mu = x[use,:].mean(axis=0)
         C = s.cov(x[use,:], rowvar=False)
         [v,d] = eigh(C)
+
+        # Determine segmentation compactness scaling based on eigenvalues
         cmpct = norm(s.sqrt(v[-npca:]))
+
+        # Project, redimension as an image with "npca" channels, and segment
         x_pca = (x-mu) @ d[:,-npca:]
         x_pca[use<1,:] = 0.0
         x_pca = x_pca.reshape([nc, ns, npca])
@@ -81,6 +87,8 @@ def main():
                 max_iter=10, sigma=0, multichannel=True, 
                 enforce_connectivity=True, min_size_factor=0.5, 
                 max_size_factor=3)
+
+        # Reindex the subscene labels and place them into the larger scene
         labels = labels.reshape([nc * ns])  
         labels[s.logical_not(use)]=0
         labels[use] = labels[use] + next_label
@@ -88,12 +96,13 @@ def main():
         labels = labels.reshape([nc, ns])  
         all_labels[lstart:lend,:] = labels
 
-    # reindex
+    # Reindex
     labels_sorted = s.sort(all_labels)
     lbl = s.zeros((nl, ns))
     for i, val in enumerate(labels_sorted):
         lbl[all_labels==val] = i
 
+    # Final file I/O
     del img_mm
     lbl_meta = {"samples":str(ns), "lines":str(nl), "bands":"1",
                 "header offset":"0","file type":"ENVI Standard",
@@ -102,6 +111,7 @@ def main():
     lbl_mm = lbl_img.open_memmap(interleave='source', writable=True)
     lbl_mm[:,:] = s.array(all_labels, dtype=s.float32).reshape((nl,1,ns))
     del lbl_mm
+
 
 if __name__ == "__main__":
     main()
