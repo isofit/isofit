@@ -24,61 +24,73 @@ from os.path import realpath, split, abspath, expandvars
 import scipy as s
 from spectral.io import envi
 from skimage.segmentation import slic
-from scipy.linalg import eigh
+from scipy.linalg import eigh, norm
 
 
 # parse the command line
 def main():
 
+    # Parse arguments
     parser = argparse.ArgumentParser(description="Representative subset")
-    parser.add_argument('spectra', type=str)
-    parser.add_argument('--flag', type=float, default=-9999)
-    parser.add_argument('--npca', type=int, default=5)
+    parser.add_argument('spectra',  type=str)
+    parser.add_argument('--flag',   type=float, default=-9999)
+    parser.add_argument('--npca',   type=int, default=5)
+    parser.add_argument('--nseg',   type=int, default=1000)
+    parser.add_argument('--nchunk', type=int, default=1000)
     args = parser.parse_args()
     in_file  = args.spectra
     sub_file = args.spectra + '_sub'
     lbl_file = args.spectra + '_lbl'
     npca     = args.npca
+    flag     = args.flag
+    nchunk   = args.nchunk
+    nseg     = args.nseg
     
-    in_img = envi.open(infile+'.hdr', infile)
+    # Open input data, get dimensions
+    in_img = envi.open(in_file+'.hdr', in_file)
     meta   = in_img.metadata
     nl, nb, ns = [int(meta[n]) for n in ('lines', 'bands', 'samples')]
-    all_labels = s.zeros((nl,ns))
-    
-    img_mm = in_img.open_memmap(interleave='source', writable=True)
+    img_mm = in_img.open_memmap(interleave='source', writable=False)
     if meta['interleave'] != 'bil':
        raise ValueError('I need BIL interleave.')
-    chunksize = 256
+    seg_per_chunk = int(nseg / s.floor(nl/nchunk))
+
+    # Iterate through image "chunks," segmenting as we go
     next_label = 1
-    for lstart in range(0, s.floor((nl-1)/chunksize)*chunksize+1, chunksize):
-        lend = lstart+chunksize
+    all_labels = s.zeros((nl,ns))
+    for lstart in s.arange(0,nl,nchunk):
 
         del img_mm
-        img_mm = in_img.open_memmap(interleave='source', writable=True)
+        lend = min(lstart+nchunk, nl)
+        print(lstart,lend)
+        img_mm = in_img.open_memmap(interleave='source', writable=False)
         x = s.array(img_mm[lstart:lend, :, :]).transpose((0, 2, 1))
-        x = x.reshape(chunksize*ns, nb)
-        use = s.all(abs(x-flag)>1e-6,axis=0)
+        nc = x.shape[0]
+        nseg_this_chunk = int(nc / float(nchunk) * seg_per_chunk)
+        x = x.reshape((nc * ns, nb))
+        use = s.all(abs(x-flag)>1e-6, axis=1)
         mu = x[use,:].mean(axis=0)
         C = s.cov(x[use,:], rowvar=False)
         [v,d] = eigh(C)
-        x_pca = (x-mu) @ d[:,npca]
-        x_pca[use<1] = 0.0
-        x_pca = x_pca.reshape([nl,ns,npca])
-        valid = use.reshape([nl,ns,1])
-        labels = slic(x_pca, n_segments=100, compactness=10., max_iter=10, sigma=0,
-            spacing=None, multichannel=True, convert2lab=None,
-            enforce_connectivity=True, min_size_factor=0.5, max_size_factor=3,
-            slic_zero=False)
-        labels = labels.reshape([nl*ns])  
+        cmpct = norm(s.sqrt(v[-npca:]))
+        x_pca = (x-mu) @ d[:,-npca:]
+        x_pca[use<1,:] = 0.0
+        x_pca = x_pca.reshape([nc, ns, npca])
+        valid = use.reshape([nc, ns, 1])
+        labels = slic(x_pca, n_segments=nseg_this_chunk, compactness=cmpct, 
+                max_iter=10, sigma=0, multichannel=True, 
+                enforce_connectivity=True, min_size_factor=0.5, 
+                max_size_factor=3)
+        labels = labels.reshape([nc * ns])  
         labels[s.logical_not(use)]=0
         labels[use] = labels[use] + next_label
         next_label = max(labels) + 1
-        labels = labels.reshape([nl,ns])  
+        labels = labels.reshape([nc, ns])  
         all_labels[lstart:lend,:] = labels
 
     # reindex
     labels_sorted = s.sort(all_labels)
-    lbl = s.zeros((nl,ns))
+    lbl = s.zeros((nl, ns))
     for i, val in enumerate(labels_sorted):
         lbl[all_labels==val] = i
 
@@ -88,7 +100,7 @@ def main():
                 "data type":"4", "interleave":"bil"}
     lbl_img = envi.create_image(lbl_file+'.hdr', lbl_meta, ext='', force=True)
     lbl_mm = lbl_img.open_memmap(interleave='source', writable=True)
-    lbl_mm[:,:] = s.array(all_labels, dtype=s.float32)
+    lbl_mm[:,:] = s.array(all_labels, dtype=s.float32).reshape((nl,1,ns))
     del lbl_mm
 
 if __name__ == "__main__":
