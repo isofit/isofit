@@ -18,25 +18,16 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-import argparse
+import argparse, time, os, sys, logging
 from scipy import logical_and as aand
 from os.path import realpath, split, abspath, expandvars
 import scipy as s
 from spectral.io import envi
 from skimage.segmentation import slic
 from scipy.linalg import eigh, norm, inv
-from sklearn.neighbors import KDTree
 from scipy.spatial import KDTree
-from numba import jit
+from scipy.stats import linregress
 
-@jit
-def linregress(xv,yv,nb,k):
-    b   = s.zeros((nb,2))
-    for i in s.arange(nb):
-        A = s.array((s.ones(k), xv[:,i])).T
-        Y = yv[:,i:i+1]
-        b[i,:] = (inv(A.T @ A) @ A.T @ Y).T
-    return b
 
 eps = 1e-6
 
@@ -50,14 +41,18 @@ def main():
     parser.add_argument('input_radiance',  type=str)
     parser.add_argument('input_locations',  type=str)
     parser.add_argument('output_reflectance',  type=str)
-    parser.add_argument('--flag',   type=float, default=-9999)
-    parser.add_argument('--nneighbors',   type=int, default=10)
+    parser.add_argument('--flag', type=float, default=-9999)
+    parser.add_argument('--nneighbors', type=int, default=10)
+    parser.add_argument('--level', type=str, default='INFO')
+    parser.add_argument('--skip', type=str, default=10)
     args = parser.parse_args()
     flag     = args.flag
+    skip     = args.skip
     k        = args.nneighbors
+    loglevel = args.level
     
     # Open input data, get dimensions
-
+    logging.basicConfig(format='%(message)s', level=loglevel)
     ref_rdn_file = args.reference_radiance 
     ref_rfl_file = args.reference_reflectance
     ref_loc_file = args.reference_locations
@@ -142,6 +137,7 @@ def main():
 
         out_rfl = s.zeros(inp_rdn.shape)
 
+        nspectra, start = 0, time.time()
         for col in s.arange(ns):
 
             x   = inp_rdn[col,:]
@@ -149,13 +145,23 @@ def main():
                 out_rfl[col,:] = flag
                 continue
 
-            loc = inp_loc[col,:] * loc_scaling
-            dists, nn  = tree.query(loc, k)
-            xv  = ref_rdn[nn,:] 
-            yv  = ref_rfl[nn,:]
-            b = linregress(xv,yv,nb,k)
+            if (nspectra == 0) or (col % skip == 0):
+
+              loc = inp_loc[col,:] * loc_scaling
+              dists, nn  = tree.query(loc, k)
+              xv  = ref_rdn[nn,:] 
+              yv  = ref_rfl[nn,:]
+              b   = s.zeros((nb,2))
+              for i in s.arange(nb):
+                  b[i,1], b[i,0], rval, pval, stdr = linregress(xv[:,i],yv[:,i])
+
             A = s.array((s.ones(nb), x))
             out_rfl[col,:] = (b.T * A).sum(axis=0)
+
+            nspectra = nspectra+1
+
+        elapsed = float(time.time()-start)
+        logging.info('%5.1f spectra per second'%(float(nspectra)/elapsed))
 
         out_rfl_mm = out_rfl_img.open_memmap(interleave='source', 
                 writable=True)
