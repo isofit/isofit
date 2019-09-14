@@ -35,11 +35,13 @@ def main():
     parser.add_argument('labels', type=str)
     parser.add_argument('output', type=str)
     parser.add_argument('--chunksize', type=int, default=300)
+    parser.add_argument('--flag', type=float, default=-9999.0)
     args = parser.parse_args()
     in_file    = args.input
     lbl_file   = args.labels
     out_file   = args.output
     nchunk     = args.chunksize
+    flag       = args.flag
     
     # Open input data, get dimensions
     in_img = envi.open(in_file+'.hdr', in_file)
@@ -68,7 +70,6 @@ def main():
 
     for lstart in s.arange(0,nl,nchunk):
 
-        print(lstart)
         del img_mm
         img_mm = in_img.open_memmap(interleave='source', writable=False)
 
@@ -92,16 +93,24 @@ def main():
         chunk_lbl = s.array(labels[lstart_adjust:lend_adjust,:])
 
         for i in active:
+            idx = int(i)
+            out[idx,:] = 0
             locs = s.where(chunk_lbl==i)
             for row, col in zip(locs[0],locs[1]):
-                out[int(i),:] = s.squeeze(chunk_inp[row,col,:])
+                out[idx,:] = out[idx,:] + s.squeeze(chunk_inp[row,col,:])
+            counts[idx] = len(locs[0])
 
     out = s.array((out.T / counts[s.newaxis,:]).T, dtype=s.float32)
-    out_meta = {"samples":"1", "lines":str(nout), "bands":str(nb),
-                "header offset":"0","file type":"ENVI Standard",
-                "data type":"4", "interleave":"bil"}
-    out_img = envi.save_image(out_file+'.hdr', out, meta=out_meta, 
+    out[s.logical_not(s.isfinite(out))] = flag
+    meta["lines"] = str(nout)
+    meta["bands"] = str(nb)
+    meta["bands"] = str(nb)
+    meta["samples"] = '1'
+    meta["interleave"]="bil"
+    out_img = envi.create_image(out_file+'.hdr',  metadata=meta, 
                 ext='', force=True)
+    out_mm = s.memmap(out_file, dtype='float32', mode='w+', shape=(nout,1,nb))
+    out_mm[:,0,:] = out
         
 
 
