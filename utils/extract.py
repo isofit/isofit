@@ -42,12 +42,11 @@ def main():
     out_file   = args.output
     nchunk     = args.chunksize
     flag       = args.flag
+    dtm        = {'4': s.float32, '5': s.float64}
     
     # Open input data, get dimensions
     in_img = envi.open(in_file+'.hdr', in_file)
     meta   = in_img.metadata
-    if meta['interleave'] != 'bil':
-        raise ValueError('I need BIL interleave')
         
     nl, nb, ns = [int(meta[n]) for n in ('lines', 'bands', 'samples')]
     img_mm = in_img.open_memmap(interleave='source', writable=False)
@@ -104,13 +103,16 @@ def main():
     out[s.logical_not(s.isfinite(out))] = flag
     meta["lines"] = str(nout)
     meta["bands"] = str(nb)
-    meta["bands"] = str(nb)
     meta["samples"] = '1'
     meta["interleave"]="bil"
     out_img = envi.create_image(out_file+'.hdr',  metadata=meta, 
                 ext='', force=True)
-    out_mm = s.memmap(out_file, dtype='float32', mode='w+', shape=(nout,1,nb))
-    out_mm[:,0,:] = out
+    out_mm = s.memmap(out_file, dtype=dtm[meta['data type']], mode='w+',
+                shape=(nout,1,nb))
+    if dtm[meta['data type']] == s.float32:
+        out_mm[:,0,:] = s.array(out, s.float32)
+    else:
+        out_mm[:,0,:] = s.array(out, s.float64)
         
 
 
