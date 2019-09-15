@@ -34,7 +34,7 @@ def main():
     parser.add_argument('spectra',  type=str)
     parser.add_argument('--flag',   type=float, default=-9999)
     parser.add_argument('--npca',   type=int, default=5)
-    parser.add_argument('--nseg',   type=int, default=1000)
+    parser.add_argument('--nseg',   type=int, default=10000)
     parser.add_argument('--nchunk', type=int, default=1000)
     args = parser.parse_args()
     in_file  = args.spectra
@@ -60,6 +60,7 @@ def main():
     for lstart in s.arange(0,nl,nchunk):
 
         del img_mm
+        print(lstart)
 
         # Extract data
         lend = min(lstart+nchunk, nl)
@@ -97,7 +98,7 @@ def main():
         all_labels[lstart:lend,:] = labels
 
     # Reindex
-    labels_sorted = s.sort(all_labels)
+    labels_sorted = s.sort(s.unique(all_labels))
     lbl = s.zeros((nl, ns))
     for i, val in enumerate(labels_sorted):
         lbl[all_labels==val] = i
@@ -109,7 +110,7 @@ def main():
                 "data type":"4", "interleave":"bil"}
     lbl_img = envi.create_image(lbl_file+'.hdr', lbl_meta, ext='', force=True)
     lbl_mm = lbl_img.open_memmap(interleave='source', writable=True)
-    lbl_mm[:,:] = s.array(all_labels, dtype=s.float32).reshape((nl,1,ns))
+    lbl_mm[:,:] = s.array(lbl, dtype=s.float32).reshape((nl,1,ns))
     del lbl_mm
 
 

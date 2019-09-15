@@ -53,13 +53,14 @@ def main():
 
     lbl_img = envi.open(lbl_file+'.hdr', lbl_file)
     labels  = lbl_img.read_band(0)
+    nout    = len(s.unique(labels))
 
     # reindex from zero to n
-    lbl     = s.sort(s.unique(labels.flat))
-    idx     = s.arange(len(lbl))
-    nout    = len(lbl)
-    for i, L in enumerate(lbl):
-        labels[labels==L] = i
+   #lbl     = s.sort(s.unique(labels.flat))
+   #idx     = s.arange(len(lbl))
+   #nout    = len(lbl)
+   #for i, L in enumerate(lbl):
+   #    labels[labels==L] = i
 
     # Iterate through image "chunks," segmenting as we go
     next_label = 1
