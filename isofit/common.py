@@ -392,12 +392,12 @@ class VectorInterpolatorJIT:
         self.grid = [i.copy() for i in grid]
         self.data = data.copy()
 
-    @jit
+    # @jit
     def __call__(self, point):
         return jitinterp(self.in_d, self.out_d, self.grid, self.data, point)
 
 
-@jit
+# @jit
 def jitinterp(s_in_d, s_out_d, s_grid, s_data, point):
 
         # we find the bottom index along each input dimension
