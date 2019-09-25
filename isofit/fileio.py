@@ -26,7 +26,7 @@ from scipy.linalg import inv, norm, sqrtm, det
 from scipy.io import savemat
 from inverse_simple import invert_simple, invert_algebraic
 from spectral.io import envi
-from common import load_spectrum, resample_spectrum, expand_all_paths
+from common import load_spectrum, eps, resample_spectrum, expand_all_paths
 import logging
 from collections import OrderedDict
 from geometry import Geometry
@@ -37,7 +37,7 @@ typemap = {s.uint8: 1, s.int16: 2, s.int32: 3, s.float32: 4, s.float64: 5,
            s.complex64: 6, s.complex128: 9, s.uint16: 12, s.uint32: 13, s.int64: 14,
            s.uint64: 15}
 max_frames_size = 100
-flush_rate = 100
+flush_rate = 10
 
 
 class SpectrumFile:
@@ -47,7 +47,7 @@ class SpectrumFile:
     def __init__(self, fname, write=False, n_rows=None, n_cols=None,
                  n_bands=None, interleave=None, dtype=s.float32,
                  wavelengths=None, fwhm=None, band_names=None,
-                 bad_bands=[], zrange='{0.0, 1.0}',
+                 bad_bands=[], zrange='{0.0, 1.0}', flag=-9999.0,
                  ztitles='{Wavelength (nm), Magnitude}', map_info='{}'):
 
         self.frames = OrderedDict()
@@ -56,6 +56,7 @@ class SpectrumFile:
         self.wl = wavelengths
         self.band_names = band_names
         self.fwhm = fwhm
+        self.flag = flag
         self.n_rows = n_rows
         self.n_cols = n_cols
         self.n_bands = n_bands
@@ -115,6 +116,10 @@ class SpectrumFile:
                 self.n_rows = int(self.meta['lines'])
                 self.n_cols = int(self.meta['samples'])
                 self.n_bands = int(self.meta['bands'])
+                if 'data ignore value' in self.meta:
+                    self.flag = float(self.meta['data ignore value'])
+                else:
+                    self.flag = -9999.0
 
             else:
 
@@ -384,22 +389,32 @@ class IO:
         """ Get the next spectrum from the file.  Turn the iteration number
             into row/column indices and read from all input products."""
 
-        if self.iter == len(self.iter_inds):
-            self.flush_buffers()
-            raise StopIteration
+        # Try to read data until we hit the end or find good values
+        success = False
+        while not success:
+          if self.iter == len(self.iter_inds):
+              self.flush_buffers()
+              raise StopIteration
+          
+          # Determine the appropriate row, column index. and initialize the
+          # data dictionary with empty entries.
+          r, c = self.iter_inds[self.iter]
+          self.iter = self.iter + 1
+          data = dict([(i, None) for i in self.possible_inputs])
+          logging.debug('Row %i Column %i'%(r,c))
+          
+          # Read data from any of the input files that are defined.
+          for source in self.infiles:
+              data[source] = self.infiles[source].read_spectrum(r, c)
+              if (self.iter % flush_rate) == 0:
+                  self.infiles[source].flush_buffers()
 
-        # Determine the appropriate row, column index. and initialize the
-        # data dictionary with empty entries.
-        r, c = self.iter_inds[self.iter]
-        self.iter = self.iter + 1
-        data = dict([(i, None) for i in self.possible_inputs])
-
-        # Read data from any of the input files that are defined.
-        for source in self.infiles:
-            data[source] = self.infiles[source].read_spectrum(r, c)
-            if (self.iter % flush_rate) == 0:
-                self.infiles[source].flush_buffers()
-
+          # Check for any bad data flags
+          success = True
+          for source in self.infiles:
+            if s.all(abs(data[source]-self.infiles[source].flag) < eps):
+                success = False
+             
         # We apply the calibration correciton here for simplicity.
         meas = data['measured_radiance_file']
         if data["radiometry_correction_file"] is not None:

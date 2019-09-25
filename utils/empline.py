@@ -22,6 +22,7 @@ import argparse, time, os, sys, logging
 from scipy import logical_and as aand
 from os.path import realpath, split, abspath, expandvars
 import scipy as s
+import pylab as plt
 from spectral.io import envi
 from skimage.segmentation import slic
 from scipy.linalg import eigh, norm, inv
@@ -30,6 +31,32 @@ from scipy.stats import linregress
 
 
 eps = 1e-6
+
+
+def plot_example(xv, yv, b):
+
+    # Plot for debugging purposes
+    import matplotlib
+    matplotlib.rcParams['font.family'] = "serif"
+    matplotlib.rcParams['font.sans-serif'] = "Times"
+    matplotlib.rcParams["legend.edgecolor"] = "None"
+    matplotlib.rcParams["axes.spines.top"] = False
+    matplotlib.rcParams["axes.spines.bottom"] = True
+    matplotlib.rcParams["axes.spines.left"] = True
+    matplotlib.rcParams["axes.spines.right"] = False
+    matplotlib.rcParams['axes.grid'] = True
+    matplotlib.rcParams['axes.grid.axis']='both'
+    matplotlib.rcParams['axes.grid.which']='major'
+    matplotlib.rcParams['legend.edgecolor']='1.0'
+    plt.plot(xv[:,113],yv[:,113],'ko')
+    plt.plot(xv[:,113],xv[:,113]*b[113,1] + b[113,0],'k')
+    plt.plot(x[113],x[113]*b[113,1] + b[113,0],'ro')
+    plt.grid(True)
+    plt.xlabel('Radiance, $\mu{W }nm^{-1} sr^{-1} cm^{-2}$')
+    plt.ylabel('Reflectance')
+    plt.show(block=True)
+    plt.savefig('empirical_line.pdf')
+
 
 def main():
 
@@ -41,6 +68,7 @@ def main():
     parser.add_argument('input_radiance',  type=str)
     parser.add_argument('input_locations',  type=str)
     parser.add_argument('output_reflectance',  type=str)
+    parser.add_argument('output_uncertainty',  type=str)
     parser.add_argument('--flag', type=float, default=-9999)
     parser.add_argument('--nneighbors', type=int, default=10)
     parser.add_argument('--level', type=str, default='INFO')
@@ -59,7 +87,9 @@ def main():
     inp_rdn_file = args.input_radiance
     inp_loc_file = args.input_locations
     out_rfl_file = args.output_reflectance
+    out_unc_file = args.output_uncertainty
 
+    # Load reference set radiance
     ref_rdn_img    = envi.open(ref_rdn_file+'.hdr', ref_rdn_file)
     meta           = ref_rdn_img.metadata
     nref, nb, sref = [int(meta[n]) for n in ('lines', 'bands', 'samples')]
@@ -68,6 +98,7 @@ def main():
     ref_rdn_mm  = ref_rdn_img.open_memmap(interleave='source', writable=False)
     ref_rdn     = s.array(ref_rdn_mm[:,:,:]).reshape((nref, nb))
 
+    # Load reference set reflectance
     ref_rfl_img     = envi.open(ref_rfl_file+'.hdr', ref_rfl_file)
     meta            = ref_rfl_img.metadata
     nrrf, nbr, srrf = [int(meta[n]) for n in ('lines', 'bands', 'samples')]
@@ -76,6 +107,7 @@ def main():
     ref_rfl_mm  = ref_rfl_img.open_memmap(interleave='source', writable=False)
     ref_rfl     = s.array(ref_rfl_mm[:,:,:]).reshape((nref, nb))
 
+    # Load reference set locations
     ref_loc_img     = envi.open(ref_loc_file+'.hdr', ref_loc_file)
     meta            = ref_loc_img.metadata
     nrrf, lb, ls    = [int(meta[n]) for n in ('lines', 'bands', 'samples')]
@@ -114,12 +146,18 @@ def main():
                         metadata=inp_rdn_img.metadata, force=True)
     out_rfl_mm  = out_rfl_img.open_memmap(interleave='source', writable=True)
 
+    out_unc_img = envi.create_image(out_unc_file+'.hdr', ext='',
+                        metadata=inp_rdn_img.metadata, force=True)
+    out_unc_mm  = out_unc_img.open_memmap(interleave='source', writable=True)
+
+
     # Iterate through image 
     for row in s.arange(nl):
 
         del inp_loc_mm
         del inp_rdn_mm
         del out_rfl_mm
+        del out_unc_mm
         print(row)
 
         # Extract data
@@ -136,6 +174,7 @@ def main():
             inp_loc = inp_loc.transpose((1, 0))
 
         out_rfl = s.zeros(inp_rdn.shape)
+        out_unc = s.zeros(inp_rdn.shape)
 
         nspectra, start = 0, time.time()
         for col in s.arange(ns):
@@ -143,21 +182,29 @@ def main():
             x   = inp_rdn[col,:]
             if s.all(abs(x-flag)<eps):
                 out_rfl[col,:] = flag
+                out_unc[col,:] = flag
                 continue
 
             if (nspectra == 0) or (col % skip == 0):
 
               loc = inp_loc[col,:] * loc_scaling
               dists, nn  = tree.query(loc, k)
+              
               xv  = ref_rdn[nn,:] 
               yv  = ref_rfl[nn,:]
               b   = s.zeros((nb,2))
+              unc   = s.zeros(nb,)
               for i in s.arange(nb):
-                  b[i,1], b[i,0], rval, pval, stdr = linregress(xv[:,i],yv[:,i])
+                  b[i,1], b[i,0], q1, q2, q3 = linregress(xv[:,i],yv[:,i])
+                  unc[i] = s.std(xv[:,i]*b[i,1]+b[i,0]-yv[:,i])
 
             A = s.array((s.ones(nb), x))
             out_rfl[col,:] = (b.T * A).sum(axis=0)
+            out_unc[col,:] = unc
 
+            if loglevel == 'DEBUG':
+                plot_example(xv,yv,b)
+                
             nspectra = nspectra+1
 
         elapsed = float(time.time()-start)
@@ -168,6 +215,13 @@ def main():
         if inp_rdn_meta['interleave'] == 'bil':
             out_rfl = out_rfl.transpose((1, 0))
         out_rfl_mm[row, :, :]  = out_rfl
+    
+        out_unc_mm = out_rfl_img.open_memmap(interleave='source', 
+                writable=True)
+        if inp_rdn_meta['interleave'] == 'bil':
+            out_unc = out_rfl.transpose((1, 0))
+        out_unc_mm[row, :, :]  = out_rfl
+
 
 
 if __name__ == "__main__":
