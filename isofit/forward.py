@@ -42,7 +42,8 @@ surface_models = [('surface', 'surf', 'Surface'),
                   ('emissive_surface', 'surf_emissive', 'MixBBSurface'),
                   ('cat_surface', 'surf_cat', 'CATSurface'),
                   ('glint_surface', 'surf_glint', 'GlintSurface'),
-                  ('iop_surface', 'surf_iop', 'IOPSurface')]
+                  ('iop_surface', 'surf_iop', 'IOPSurface'),
+                  ('poly_surface', 'surf_poly', 'PolySurface')]
 
 
 class ForwardModel:

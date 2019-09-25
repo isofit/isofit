@@ -392,29 +392,29 @@ class IO:
         # Try to read data until we hit the end or find good values
         success = False
         while not success:
-          if self.iter == len(self.iter_inds):
-              self.flush_buffers()
-              raise StopIteration
-          
-          # Determine the appropriate row, column index. and initialize the
-          # data dictionary with empty entries.
-          r, c = self.iter_inds[self.iter]
-          self.iter = self.iter + 1
-          data = dict([(i, None) for i in self.possible_inputs])
-          logging.debug('Row %i Column %i'%(r,c))
-          
-          # Read data from any of the input files that are defined.
-          for source in self.infiles:
-              data[source] = self.infiles[source].read_spectrum(r, c)
-              if (self.iter % flush_rate) == 0:
-                  self.infiles[source].flush_buffers()
+            if self.iter == len(self.iter_inds):
+                self.flush_buffers()
+                raise StopIteration
 
-          # Check for any bad data flags
-          success = True
-          for source in self.infiles:
-            if s.all(abs(data[source]-self.infiles[source].flag) < eps):
-                success = False
-             
+            # Determine the appropriate row, column index. and initialize the
+            # data dictionary with empty entries.
+            r, c = self.iter_inds[self.iter]
+            self.iter = self.iter + 1
+            data = dict([(i, None) for i in self.possible_inputs])
+            logging.debug('Row %i Column %i' % (r, c))
+
+            # Read data from any of the input files that are defined.
+            for source in self.infiles:
+                data[source] = self.infiles[source].read_spectrum(r, c)
+                if (self.iter % flush_rate) == 0:
+                    self.infiles[source].flush_buffers()
+
+            # Check for any bad data flags
+            success = True
+            for source in self.infiles:
+                if s.all(abs(data[source]-self.infiles[source].flag) < eps):
+                    success = False
+
         # We apply the calibration correciton here for simplicity.
         meas = data['measured_radiance_file']
         if data["radiometry_correction_file"] is not None:
