@@ -121,7 +121,7 @@ def main():
     rdn_subs_path        = abspath(join(input_path,  rdn_subs_fname))
     obs_subs_path        = abspath(join(input_path,  obs_subs_fname))
     loc_subs_path        = abspath(join(input_path,  loc_subs_fname))
-    rfl_subs_path        = abspath(join(output_path, lbl_subs_fname))
+    rfl_subs_path        = abspath(join(output_path, rfl_subs_fname))
     state_subs_path      = abspath(join(output_path, state_subs_fname))
     uncert_subs_path     = abspath(join(output_path, uncert_subs_fname))
     h2o_subs_path        = abspath(join(output_path, h2o_subs_fname))
@@ -206,18 +206,17 @@ def main():
     TRUEAZs        = RELAZs  # MODTRAN convention?
     GNDALT         = elevs
     latitude       = s.mean(lats[valid])
-    longitude      = s.mean(lons[valid])
-    longitudeE     = -s.mean(lons[valid])
-    if longitude < 0:
-        longitude = 360.0 - longitude
-    obs_azimuth  = obs_azimuths[valid][0]
-    obs_zenith   = obs_zeniths[valid][0]
-    obs_zenith_rdn = (17.0/360.0 * 2.0 * s.pi)
-    path_km      = paths_km[valid][0]
-    elev_km      = elevs[valid][0]
-    alt          = elev_km + s.cos(obs_zenith_rdn) * path_km
-    relative_alt = abs(s.cos(obs_zenith_rdn) * path_km)
-    logging.info('Altitude: %6.2f km' % alt)
+    longitude      = -s.mean(lons[valid])
+    longitudeE     = s.mean(lons[valid])
+    obs_azimuth    = obs_azimuths[valid][0]
+    obs_zenith     = obs_zeniths[valid][0]
+    obs_zenith_rad = (obs_zenith/360.0 * 2.0 * s.pi)
+    path_km        = paths_km[valid][0]
+    elev_km        = elevs_km[valid][0]
+    alt            = elev_km + s.cos(obs_zenith_rad) * path_km
+    relative_alt   = abs(s.cos(obs_zenith_rad) * path_km)
+    logging.info('Path: %f, Zenith: %f, Altitude: %6.2f km' % \
+            (path_km, obs_zenith_rad, alt))
     
     # make view zenith and relaz grid - two points only for now
     OBSZEN_grid = s.array([OBSZENs[valid].min(), 0])
@@ -412,8 +411,9 @@ def main():
 
     # Empirical line 
     logging.info('Empirical line inference')
-    os.system('pythonw ' +empline_exe+ ' --level DEBUG %s %s %s %s %s %s'%\
-            (rdn_subs_path, rfl_subs_path, loc_subs_path,
+    os.system(('pythonw ' +empline_exe+ ' --level INFO --hash %s '+\
+            '%s %s %s %s %s %s %s')%\
+            (lbl_working_path, rdn_subs_path, rfl_subs_path, loc_subs_path,
              rdn_working_path, loc_working_path, rfl_working_path,
              uncert_working_path))
 
