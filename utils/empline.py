@@ -54,7 +54,7 @@ def plot_example(xv, yv, b):
     matplotlib.rcParams['legend.edgecolor'] = '1.0'
     plt.plot(xv[:, 113], yv[:, 113], 'ko')
     plt.plot(xv[:, 113], xv[:, 113]*b[113, 1] + b[113, 0], 'k')
-    plt.plot(x[113], x[113]*b[113, 1] + b[113, 0], 'ro')
+    #plt.plot(x[113], x[113]*b[113, 1] + b[113, 0], 'ro')
     plt.grid(True)
     plt.xlabel('Radiance, $\mu{W }nm^{-1} sr^{-1} cm^{-2}$')
     plt.ylabel('Reflectance')
@@ -74,9 +74,10 @@ def main():
     parser.add_argument('output_reflectance',  type=str)
     parser.add_argument('output_uncertainty',  type=str)
     parser.add_argument('--flag', type=float, default=-9999)
+    parser.add_argument('--hash', type=str)
     parser.add_argument('--nneighbors', type=int, default=10)
     parser.add_argument('--level', type=str, default='INFO')
-    parser.add_argument('--skip', type=str, default=10)
+    parser.add_argument('--skip', type=str, default=0)
     args = parser.parse_args()
     flag = args.flag
     skip = args.skip
@@ -85,13 +86,14 @@ def main():
 
     # Open input data, get dimensions
     logging.basicConfig(format='%(message)s', level=loglevel)
-    ref_rdn_file = args.reference_radiance
-    ref_rfl_file = args.reference_reflectance
-    ref_loc_file = args.reference_locations
-    inp_rdn_file = args.input_radiance
-    inp_loc_file = args.input_locations
-    out_rfl_file = args.output_reflectance
-    out_unc_file = args.output_uncertainty
+    ref_rdn_file  = args.reference_radiance
+    ref_rfl_file  = args.reference_reflectance
+    ref_loc_file  = args.reference_locations
+    inp_hash_file = args.hash
+    inp_rdn_file  = args.input_radiance
+    inp_loc_file  = args.input_locations
+    out_rfl_file  = args.output_reflectance
+    out_unc_file  = args.output_uncertainty
 
     # Load reference set radiance
     ref_rdn_img = envi.open(ref_rdn_file+'.hdr', ref_rdn_file)
@@ -146,6 +148,12 @@ def main():
     inp_loc_mm = inp_loc_img.open_memmap(interleave='source', writable=False)
     inp_loc = s.array(inp_loc_mm).reshape((nl, nlb, ns))
 
+    if inp_hash_file:
+        inp_hash_img = envi.open(inp_hash_file+'.hdr', inp_hash_file)
+        hash_img = inp_hash_img.read_band(0)
+    else:
+        hash_img = None
+
     out_rfl_img = envi.create_image(out_rfl_file+'.hdr', ext='',
                                     metadata=inp_rdn_img.metadata, force=True)
     out_rfl_mm = out_rfl_img.open_memmap(interleave='source', writable=True)
@@ -155,13 +163,13 @@ def main():
     out_unc_mm = out_unc_img.open_memmap(interleave='source', writable=True)
 
     # Iterate through image
+    hash_table = {}
     for row in s.arange(nl):
 
         del inp_loc_mm
         del inp_rdn_mm
         del out_rfl_mm
         del out_unc_mm
-        print(row)
 
         # Extract data
         inp_rdn_mm = inp_rdn_img.open_memmap(interleave='source',
@@ -190,21 +198,46 @@ def main():
 
             if (nspectra == 0) or (col % skip == 0):
 
-                loc = inp_loc[col, :] * loc_scaling
-                dists, nn = tree.query(loc, k)
+                if hash_img is not None:
+            
+                    hash_idx = hash_img[row, col]
 
-                xv = ref_rdn[nn, :]
-                yv = ref_rfl[nn, :]
-                b = s.zeros((nb, 2))
-                unc = s.zeros(nb,)
-                for i in s.arange(nb):
-                    b[i, 1], b[i, 0], q1, q2, q3 = linregress(
-                        xv[:, i], yv[:, i])
-                    unc[i] = s.std(xv[:, i]*b[i, 1]+b[i, 0]-yv[:, i])
+                    if hash_idx in hash_table:
+                       b, unc = hash_table[hash_idx]
 
-            A = s.array((s.ones(nb), x))
-            out_rfl[col, :] = (b.T * A).sum(axis=0)
-            out_unc[col, :] = unc
+                    else:
+
+                      hash_loc = ref_loc[s.array(hash_idx, dtype=int)]
+                      dists, nn = tree.query(hash_loc, k)
+                      xv = ref_rdn[nn, :]
+                      yv = ref_rfl[nn, :]
+                      b = s.zeros((nb, 2))
+                      unc = s.zeros(nb,)
+                      for i in s.arange(nb):
+                          b[i, 1], b[i, 0], q1, q2, q3 = linregress(
+                              xv[:, i], yv[:, i])
+                          unc[i] = s.std(xv[:, i]*b[i, 1]+b[i, 0]-yv[:, i])
+                      hash_table[hash_idx] = b, unc
+
+                    A = s.array((s.ones(nb), x))
+                    out_rfl[col, :] = (b.T * A).sum(axis=0)
+                    out_unc[col, :] = unc
+                    
+                else:
+
+                    loc = inp_loc[col, :] * loc_scaling
+                    dists, nn = tree.query(loc, k)
+                    xv = ref_rdn[nn, :]
+                    yv = ref_rfl[nn, :]
+                    b = s.zeros((nb, 2))
+                    unc = s.zeros(nb,)
+                    for i in s.arange(nb):
+                        b[i, 1], b[i, 0], q1, q2, q3 = linregress(
+                            xv[:, i], yv[:, i])
+                        unc[i] = s.std(xv[:, i]*b[i, 1]+b[i, 0]-yv[:, i])
+                    A = s.array((s.ones(nb), x))
+                    out_rfl[col, :] = (b.T * A).sum(axis=0)
+                    out_unc[col, :] = unc
 
             if loglevel == 'DEBUG':
                 plot_example(xv, yv, b)
