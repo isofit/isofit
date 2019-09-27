@@ -49,6 +49,7 @@ def main():
     parser.add_argument('--wavelength_path', type=str)
     parser.add_argument('--rdn_factors_path', type=str)
     parser.add_argument('--surface_path', type=str)
+    parser.add_argument('--surface_h2o_path', type=str)
     parser.add_argument('--level', type=str, default="INFO")
     parser.add_argument('--flag', type=float, default=-9999)
     args = parser.parse_args()
@@ -77,6 +78,11 @@ def main():
         surface_path = args.surface_path
     else:
         surface_path = os.getenv('ISOFIT_SURFACE_MODEL')
+
+    if args.surface_h2o_path:
+        surface_h2o_path = args.surface_h2o_path
+    else:
+        surface_h2o_path = os.getenv('ISOFIT_SURFACE_H2O_MODEL')
 
     wrk_path = args.working_directory
     rdn_path = args.input_radiance
@@ -128,6 +134,7 @@ def main():
     uncert_subs_path     = abspath(join(output_path, uncert_subs_fname))
     h2o_subs_path        = abspath(join(output_path, h2o_subs_fname))
     surface_working_path = abspath(join(data_path,   'surface.mat'))
+    surface_h2o_working_path = abspath(join(data_path, 'surface_h2o.mat'))
     wl_path              = abspath(join(data_path,   'wavelengths.txt'))
     modtran_tpl_path     = abspath(join(config_path, fid+'_modtran_tpl.json'))
     modtran_config_path  = abspath(join(config_path, fid+'_modtran.json'))
@@ -153,7 +160,8 @@ def main():
         copyfile(src+'.hdr', dst+'.hdr')
 
     # Staging files without headers
-    for src, dst in [(surface_path, surface_working_path)]:
+    for src, dst in [(surface_path, surface_working_path),
+                     (surface_h2o_path, surface_h2o_working_path)]:
         logging.info('Staging %s to %s' % (src, dst))
         copyfile(src, dst)
 
@@ -247,8 +255,7 @@ def main():
         "statevector": { "H2OSTR": { "bounds": [0.5, 6.0], "scale": 0.01,
             "prior_sigma": 100.0, "prior_mean": 1.0, "init": 1.75 }, },
         "lut_grid": { "H2OSTR": [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 
-            4.5, 5.0, 5.5, 6.0],
-            "elev": list(elevation_grid)},
+            4.5, 5.0, 5.5, 6.0]},
         "unknowns": {},
         "wavelength_file": wl_path,
         "earth_sun_distance_file" : esd_path, 
@@ -275,7 +282,7 @@ def main():
             'parametric_noise_file': noise_path,
             'integrations':1 },
         "multicomponent_surface": {"wavelength_file":wl_path,
-            "surface_file":surface_working_path},
+            "surface_file":surface_h2o_working_path},
         "sixs_radiative_transfer": sixs_configuration},
         "inversion": {"windows": [[880.0,1000.0]], 'max_nfev': 10}}
 
@@ -387,7 +394,7 @@ def main():
         },
         "lut_grid": {
           "H2OSTR": [float(q) for q in h2o_grid],
-          "GNDALT": [float(q) for q in elevation_grid]
+          "GNDALT": [float(q) for q in elevation_grid],
           "VIS": [20,50,100]
         },
         "unknowns": {
