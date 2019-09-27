@@ -68,7 +68,7 @@ class Geometry:
         # latitude and longitude information about the surface being
         # observed.
         if loc is not None:
-            self.GNDALT = loc[2]
+            self.GNDALT = loc[2] / 1000.0
             self.altitude = loc[2]
             self.surface_elevation_km = loc[2] / 1000.0
             self.latitude = loc[1]
@@ -79,8 +79,8 @@ class Geometry:
 
             logging.debug('Geometry lat: %f lon: %f' %
                           (self.latitude, self.longitude))
-            logging.debug('Geometry observer OBSZEN: %f RELAZ: %f' %
-                          (self.OBSZEN, self.RELAZ))
+            logging.debug('Geometry observer OBSZEN: %f RELAZ: %f GNDALT: %f'%
+                          (self.OBSZEN, self.RELAZ, self.GNDALT))
 
         # The ds object is an optional date object, defining the time of
         # the observation.

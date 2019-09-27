@@ -186,6 +186,8 @@ class TabularRT:
                     point[point_ind] = x_RT[x_RT_ind]
                 elif name == "OBSZEN":
                     point[point_ind] = geom.OBSZEN
+                elif name == "GNDALT":
+                    point[point_ind] = geom.GNDALT
                 elif name == "viewzen":
                     point[point_ind] = geom.observer_zenith
                 elif name == "viewaz":

@@ -196,48 +196,43 @@ def main():
                 out_unc[col, :] = flag
                 continue
 
-            if (nspectra == 0) or (col % skip == 0):
-
-                if hash_img is not None:
+            if hash_img is not None:
             
-                    hash_idx = hash_img[row, col]
+                hash_idx = hash_img[row, col]
 
-                    if hash_idx in hash_table:
-                       b, unc = hash_table[hash_idx]
+                if hash_idx in hash_table:
+                   b, unc = hash_table[hash_idx]
 
-                    else:
-
-                      hash_loc = ref_loc[s.array(hash_idx, dtype=int)]
-                      dists, nn = tree.query(hash_loc, k)
-                      xv = ref_rdn[nn, :]
-                      yv = ref_rfl[nn, :]
-                      b = s.zeros((nb, 2))
-                      unc = s.zeros(nb,)
-                      for i in s.arange(nb):
-                          b[i, 1], b[i, 0], q1, q2, q3 = linregress(
-                              xv[:, i], yv[:, i])
-                          unc[i] = s.std(xv[:, i]*b[i, 1]+b[i, 0]-yv[:, i])
-                      hash_table[hash_idx] = b, unc
-
-                    A = s.array((s.ones(nb), x))
-                    out_rfl[col, :] = (b.T * A).sum(axis=0)
-                    out_unc[col, :] = unc
-                    
                 else:
 
-                    loc = inp_loc[col, :] * loc_scaling
-                    dists, nn = tree.query(loc, k)
-                    xv = ref_rdn[nn, :]
-                    yv = ref_rfl[nn, :]
-                    b = s.zeros((nb, 2))
-                    unc = s.zeros(nb,)
-                    for i in s.arange(nb):
-                        b[i, 1], b[i, 0], q1, q2, q3 = linregress(
-                            xv[:, i], yv[:, i])
-                        unc[i] = s.std(xv[:, i]*b[i, 1]+b[i, 0]-yv[:, i])
-                    A = s.array((s.ones(nb), x))
-                    out_rfl[col, :] = (b.T * A).sum(axis=0)
-                    out_unc[col, :] = unc
+                  loc = ref_loc[s.array(hash_idx, dtype=int),:] * loc_scaling
+                  dists, nn = tree.query(loc, k)
+                  xv = ref_rdn[nn, :]
+                  yv = ref_rfl[nn, :]
+                  b = s.zeros((nb, 2))
+                  unc = s.zeros(nb,)
+                  for i in s.arange(nb):
+                      b[i, 1], b[i, 0], q1, q2, q3 = linregress(
+                          xv[:, i], yv[:, i])
+                      unc[i] = s.std(xv[:, i]*b[i, 1]+b[i, 0]-yv[:, i])
+                  hash_table[hash_idx] = b, unc
+                
+            else:
+
+                loc = inp_loc[col, :] * loc_scaling
+                dists, nn = tree.query(loc, k)
+                xv = ref_rdn[nn, :]
+                yv = ref_rfl[nn, :]
+                b = s.zeros((nb, 2))
+                unc = s.zeros(nb,)
+                for i in s.arange(nb):
+                    b[i, 1], b[i, 0], q1, q2, q3 = linregress(
+                        xv[:, i], yv[:, i])
+                    unc[i] = s.std(xv[:, i]*b[i, 1]+b[i, 0]-yv[:, i])
+
+            A = s.array((s.ones(nb), x))
+            out_rfl[col, :] = (b.T * A).sum(axis=0)
+            out_unc[col, :] = unc
 
             if loglevel == 'DEBUG':
                 plot_example(xv, yv, b)

@@ -46,6 +46,8 @@ def main():
     parser.add_argument('--isofit_path', type=str)
     parser.add_argument('--modtran_path', type=str)
     parser.add_argument('--sixs_path', type=str)
+    parser.add_argument('--wavelength_path', type=str)
+    parser.add_argument('--rdn_factors_path', type=str)
     parser.add_argument('--surface_path', type=str)
     parser.add_argument('--level', type=str, default="INFO")
     parser.add_argument('--flag', type=float, default=-9999)
@@ -156,36 +158,41 @@ def main():
         copyfile(src, dst)
 
     # Superpixel segmentation
-   #logging.info('Segmenting...')
-   #os.system('pythonw ' + segment_exe + ' %s %s'%\
-   #        (rdn_working_path, lbl_working_path))
+    logging.info('Segmenting...')
+    os.system('pythonw ' + segment_exe + ' %s %s'%\
+            (rdn_working_path, lbl_working_path))
 
-   ## Extract input data 
-   #logging.info('Extracting radiances...')
-   #os.system('pythonw ' + extract_exe + ' %s %s %s'%\
-   #        (rdn_working_path, lbl_working_path, rdn_subs_path))
+    # Extract input data 
+    logging.info('Extracting radiances...')
+    os.system('pythonw ' + extract_exe + ' %s %s %s'%\
+            (rdn_working_path, lbl_working_path, rdn_subs_path))
 
-   #logging.info('Extracting obs...')
-   #os.system('pythonw ' + extract_exe + ' %s %s %s'%\
-   #        (obs_working_path, lbl_working_path, obs_subs_path))
+    logging.info('Extracting obs...')
+    os.system('pythonw ' + extract_exe + ' %s %s %s'%\
+            (obs_working_path, lbl_working_path, obs_subs_path))
 
-   #logging.info('Extracting loc...')
-   #os.system('pythonw ' + extract_exe + ' %s %s %s'%\
-   #        (loc_working_path, lbl_working_path, loc_subs_path))
+    logging.info('Extracting loc...')
+    os.system('pythonw ' + extract_exe + ' %s %s %s'%\
+            (loc_working_path, lbl_working_path, loc_subs_path))
 
     # get radiance file, wavelengths
     rdn = envi.open(rdn_subs_path+'.hdr')
-    wl = s.array([float(w) for w in rdn.metadata['wavelength']])
-    if 'fwhm' in rdn.metadata:
-        fwhm = s.array([float(f) for f in rdn.metadata['fwhm']])
+    if args.wavelength_path:
+        chn, wl, fwhm = s.loadtxt(args.wavelength_path).T
     else:
-        fwhm = s.ones(wl.shape) * (wl[1]-wl[0])
-    valid = (rdn.read_band(0) - args.flag) > eps
+        wl = s.array([float(w) for w in rdn.metadata['wavelength']])
+        if 'fwhm' in rdn.metadata:
+            fwhm = s.array([float(f) for f in rdn.metadata['fwhm']])
+        else:
+            fwhm = s.ones(wl.shape) * (wl[1]-wl[0])
     
     # Convert to microns if needed
     if wl[0]>100: 
         wl = wl / 1000.0
         fwhm = fwhm / 1000.0
+
+    # Recognize bad data flags
+    valid = (rdn.read_band(0) - args.flag) > eps
 
     # load bands to define the extrema of geometric information we
     # will need
@@ -223,10 +230,10 @@ def main():
     #TRUEAZ_grid = s.arange([TRUEAZs[valid].min(), TRUEAZs[valid.max(),])
 
     # make elevation grid
-    elev_grid_margin = 0.1
-    elev_grid_step   = 0.2
-    elevation_grid = s.arange(elevs_km[valid].min() - elev_grid_margin,
-            elevs_km[valid].max() + elev_grid_margin,
+    elev_grid_margin = 0.3
+    elev_grid_step   = 0.3
+    elevation_grid = s.arange(elevs_km[valid].min(),
+            elevs_km[valid].max() + elev_grid_margin + elev_grid_step,
             elev_grid_step)
 
     # write wavelength file
@@ -277,8 +284,8 @@ def main():
         fout.write(json.dumps(isofit_config_sixs, indent=4, sort_keys=True))
 
     # Run sixs retrieval
-   #logging.info('Running ISOFIT to generate h2o first guesses')
-   #os.system('pythonw ' + isofit_exe + ' --level DEBUG ' + sixs_config_path)
+    logging.info('Running ISOFIT to generate h2o first guesses')
+    os.system('pythonw ' + isofit_exe + ' --level DEBUG ' + sixs_config_path)
 
     # Extract h2o grid avoiding the zero label (periphery, bad data)
     h2o = envi.open(h2o_subs_path + '.hdr')
@@ -312,13 +319,13 @@ def main():
           "M4": atmosphere_type,
           "M5": atmosphere_type,
           "M6": atmosphere_type,
-          "CO2MX": 450.0,
+          "CO2MX": 410.0,
           "H2OSTR": 1.0,
           "H2OUNIT": "g",
           "O3STR": 0.3,
           "O3UNIT": "a"
         },
-        "AEROSOLS": { "IHAZE": "AER_NONE" },
+        "AEROSOLS": { "IHAZE": "AER_RURAL" },
         "GEOMETRY": {
           "ITYPE": 3,
           "H1ALT": alt,
@@ -369,11 +376,19 @@ def main():
             "init": s.mean(h2o_grid),
             "prior_sigma":0.5,
             "prior_mean":s.mean(h2o_grid)
+          },
+          "VIS": {
+            "bounds": [20,100],
+            "scale": 10,
+            "init": 50,
+            "prior_sigma":100,
+            "prior_mean":50
           }
         },
         "lut_grid": {
           "H2OSTR": [float(q) for q in h2o_grid],
           "GNDALT": [float(q) for q in elevation_grid]
+          "VIS": [20,50,100]
         },
         "unknowns": {
           "H2O_ABSCO": 0.0
@@ -400,6 +415,10 @@ def main():
             [[400.0,1300.0],
             [1450,1780.0],
             [2000.0,2450.0]]}}
+
+    if args.rdn_factors_path:
+        isofit_config_modtran['input']['radiommetry_correction_file'] = \
+            args.rdn_factors_path
 
     # write modtran_template 
     with open(modtran_config_path,'w') as fout:
