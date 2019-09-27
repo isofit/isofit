@@ -31,19 +31,21 @@ def main():
 
     # Parse arguments
     parser = argparse.ArgumentParser(description="Representative subset")
-    parser.add_argument('spectra',  type=str)
+    parser.add_argument('spectra',  nargs='+', type=str)
     parser.add_argument('--flag',   type=float, default=-9999)
     parser.add_argument('--npca',   type=int, default=5)
-    parser.add_argument('--nseg',   type=int, default=10000)
+    parser.add_argument('--segsize',   type=int, default=200)
     parser.add_argument('--nchunk', type=int, default=1000)
     args = parser.parse_args()
-    in_file = args.spectra
-    sub_file = args.spectra + '_sub'
-    lbl_file = args.spectra + '_lbl'
+    in_file = args.spectra[0]
+    if len(args.spectra) > 1:
+        lbl_file = args.spectra[1]
+    else:
+        lbl_file = args.spectra + '_lbl'
     npca = args.npca
     flag = args.flag
     nchunk = args.nchunk
-    nseg = args.nseg
+    segsize = args.segsize
 
     # Open input data, get dimensions
     in_img = envi.open(in_file+'.hdr', in_file)
@@ -52,7 +54,6 @@ def main():
     img_mm = in_img.open_memmap(interleave='source', writable=False)
     if meta['interleave'] != 'bil':
         raise ValueError('I need BIL interleave.')
-    seg_per_chunk = int(nseg / s.floor(nl/nchunk))
 
     # Iterate through image "chunks," segmenting as we go
     next_label = 1
@@ -67,7 +68,6 @@ def main():
         img_mm = in_img.open_memmap(interleave='source', writable=False)
         x = s.array(img_mm[lstart:lend, :, :]).transpose((0, 2, 1))
         nc = x.shape[0]
-        nseg_this_chunk = int(nc / float(nchunk) * seg_per_chunk)
         x = x.reshape((nc * ns, nb))
 
         # Excluding bad locations, calculate top PCA coefficients
@@ -84,7 +84,8 @@ def main():
         x_pca[use < 1, :] = 0.0
         x_pca = x_pca.reshape([nc, ns, npca])
         valid = use.reshape([nc, ns, 1])
-        labels = slic(x_pca, n_segments=nseg_this_chunk, compactness=cmpct,
+        seg_in_chunk = int(sum(use) / float(segsize))
+        labels = slic(x_pca, n_segments=seg_in_chunk, compactness=cmpct,
                       max_iter=10, sigma=0, multichannel=True,
                       enforce_connectivity=True, min_size_factor=0.5,
                       max_size_factor=3)

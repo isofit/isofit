@@ -25,6 +25,7 @@ from os.path import join, exists, split, abspath
 from shutil import copyfile
 import scipy as s
 from spectral.io import envi
+from datetime import datetime
 from skimage.segmentation import slic
 from scipy.linalg import eigh, norm
 from spectral.io import envi 
@@ -43,6 +44,7 @@ def main():
     parser.add_argument('working_directory', type=str)
     parser.add_argument('--h2o', action='store_true')
     parser.add_argument('--isofit_path', type=str)
+    parser.add_argument('--modtran_path', type=str)
     parser.add_argument('--sixs_path', type=str)
     parser.add_argument('--surface_path', type=str)
     parser.add_argument('--level', type=str, default="INFO")
@@ -54,12 +56,20 @@ def main():
         isofit_path = args.isofit_path
     else:
         isofit_path = os.getenv('ISOFIT_BASE')
-    isofit_exe = join(isofit_path,'isofit','isofit.py')
+    isofit_exe  = join(isofit_path,'isofit','isofit.py')
+    segment_exe = join(isofit_path,'utils','segment.py')
+    extract_exe = join(isofit_path,'utils','extract.py') 
+    empline_exe = join(isofit_path,'utils','empline.py')
     
     if args.sixs_path:
         sixs_path = args.sixs_path
     else:
         sixs_path = os.getenv('SIXS_DIR')
+
+    if args.modtran_path:
+        modtran_path = args.modtran_path
+    else:
+        modtran_path = os.getenv('MODTRAN_DIR')
 
     if args.surface_path:
         surface_path = args.surface_path
@@ -82,15 +92,43 @@ def main():
     logging.info('Flightline ID: %s' % fid)
     month = int(fid[7:9])
     day = int(fid[9:11])
+    hour = int(fid[12:14])
+    minute = int(fid[14:16])
+    gmtime = hour + float(minute)/60.0
+    dt = datetime.strptime(fid[3:], '%Y%m%dt%H%M%S')
+    dayofyear = dt.timetuple().tm_yday
 
     # define staged file locations
-    rdn_working_path     = abspath(join(input_path,  split(rdn_path)[-1]))
-    obs_working_path     = abspath(join(input_path,  split(obs_path)[-1]))
-    loc_working_path     = abspath(join(input_path,  split(loc_path)[-1]))
-    rfl_working_path     = abspath(join(output_path, split(loc_path)[-1]))
-    h2o_working_path     = abspath(join(output_path, fid+'_state_sixs'))
+    rdn_fname            = split(rdn_path)[-1]
+    obs_fname            = split(obs_path)[-1]
+    loc_fname            = split(loc_path)[-1]
+    rfl_fname            = rdn_fname.replace('_rdn','_rfl')
+    lbl_fname            = rdn_fname.replace('_rdn','_lbl')
+    uncert_fname         = rdn_fname.replace('_rdn','_uncert')
+    rdn_subs_fname       = rdn_fname.replace('_rdn','_subs_rdn')
+    obs_subs_fname       = obs_fname.replace('_obs','_subs_obs')
+    loc_subs_fname       = loc_fname.replace('_loc','_subs_loc')
+    rfl_subs_fname       = rfl_fname.replace('_rfl','_subs_rfl')
+    state_subs_fname     = rfl_fname.replace('_rfl','_subs_state')
+    uncert_subs_fname    = rfl_fname.replace('_rfl','_subs_uncert')
+    h2o_subs_fname       = loc_fname.replace('_loc','_subs_h2o')
+    rdn_working_path     = abspath(join(input_path,  rdn_fname))
+    obs_working_path     = abspath(join(input_path,  obs_fname))
+    loc_working_path     = abspath(join(input_path,  loc_fname))
+    rfl_working_path     = abspath(join(output_path, rfl_fname))
+    uncert_working_path  = abspath(join(output_path, uncert_fname))
+    lbl_working_path     = abspath(join(output_path, lbl_fname))
+    rdn_subs_path        = abspath(join(input_path,  rdn_subs_fname))
+    obs_subs_path        = abspath(join(input_path,  obs_subs_fname))
+    loc_subs_path        = abspath(join(input_path,  loc_subs_fname))
+    rfl_subs_path        = abspath(join(output_path, lbl_subs_fname))
+    state_subs_path      = abspath(join(output_path, state_subs_fname))
+    uncert_subs_path     = abspath(join(output_path, uncert_subs_fname))
+    h2o_subs_path        = abspath(join(output_path, h2o_subs_fname))
     surface_working_path = abspath(join(data_path,   'surface.mat'))
     wl_path              = abspath(join(data_path,   'wavelengths.txt'))
+    modtran_tpl_path     = abspath(join(config_path, fid+'_modtran_tpl.json'))
+    modtran_config_path  = abspath(join(config_path, fid+'_modtran.json'))
     sixs_config_path     = abspath(join(config_path, fid+'_sixs.json'))
     esd_path         = join(isofit_path, 'data', 'earth_sun_distance.txt')
     irradiance_path  = join(isofit_path, 'data', 'kurudz_0.1nm.dat')
@@ -117,8 +155,26 @@ def main():
         logging.info('Staging %s to %s' % (src, dst))
         copyfile(src, dst)
 
+    # Superpixel segmentation
+   #logging.info('Segmenting...')
+   #os.system('pythonw ' + segment_exe + ' %s %s'%\
+   #        (rdn_working_path, lbl_working_path))
+
+   ## Extract input data 
+   #logging.info('Extracting radiances...')
+   #os.system('pythonw ' + extract_exe + ' %s %s %s'%\
+   #        (rdn_working_path, lbl_working_path, rdn_subs_path))
+
+   #logging.info('Extracting obs...')
+   #os.system('pythonw ' + extract_exe + ' %s %s %s'%\
+   #        (obs_working_path, lbl_working_path, obs_subs_path))
+
+   #logging.info('Extracting loc...')
+   #os.system('pythonw ' + extract_exe + ' %s %s %s'%\
+   #        (loc_working_path, lbl_working_path, loc_subs_path))
+
     # get radiance file, wavelengths
-    rdn = envi.open(rdn_working_path+'.hdr')
+    rdn = envi.open(rdn_subs_path+'.hdr')
     wl = s.array([float(w) for w in rdn.metadata['wavelength']])
     if 'fwhm' in rdn.metadata:
         fwhm = s.array([float(f) for f in rdn.metadata['fwhm']])
@@ -134,8 +190,8 @@ def main():
     # load bands to define the extrema of geometric information we
     # will need
     logging.info('Building configuration for 6SV')
-    obs            = envi.open(obs_path + '.hdr')
-    loc            = envi.open(loc_path + '.hdr')
+    obs            = envi.open(obs_subs_path + '.hdr')
+    loc            = envi.open(loc_subs_path + '.hdr')
     lats           = loc.read_band(1)
     lons           = loc.read_band(0)
     elevs          = loc.read_band(2)
@@ -160,10 +216,19 @@ def main():
     path_km      = paths_km[valid][0]
     elev_km      = elevs[valid][0]
     alt          = elev_km + s.cos(obs_zenith_rdn) * path_km
-    logging.info('Altitude: %6.2f km' % alt)
-    elevation_grid = s.arange(elevs_km[valid].min()-0.1, 
-            elevs_km[valid].max()+0.1,0.2)
     relative_alt = abs(s.cos(obs_zenith_rdn) * path_km)
+    logging.info('Altitude: %6.2f km' % alt)
+    
+    # make view zenith and relaz grid - two points only for now
+    OBSZEN_grid = s.array([OBSZENs[valid].min(), 0])
+    #TRUEAZ_grid = s.arange([TRUEAZs[valid].min(), TRUEAZs[valid.max(),])
+
+    # make elevation grid
+    elev_grid_margin = 0.1
+    elev_grid_step   = 0.2
+    elevation_grid = s.arange(elevs_km[valid].min() - elev_grid_margin,
+            elevs_km[valid].max() + elev_grid_margin,
+            elev_grid_step)
 
     # write wavelength file
     wl_data = s.concatenate([s.arange(len(wl))[:,s.newaxis], wl[:,s.newaxis],
@@ -193,12 +258,12 @@ def main():
         "month": month,
         "day": day}
 
-    print(data_path)
-    print(wl_path)
     # make isofit configuration
     isofit_config_sixs = {'ISOFIT_base': isofit_path,
-        'input':{'measured_radiance_file':rdn_working_path},
-        'output':{'estimated_state_file':h2o_working_path},
+        'input':{'measured_radiance_file':rdn_subs_path,
+                 'loc_file':loc_subs_path,
+                 'obs_file':obs_subs_path},
+        'output':{'estimated_state_file':h2o_subs_path},
         'forward_model': {
             'instrument': { 'wavelength_file': wl_path,
             'parametric_noise_file': noise_path,
@@ -213,8 +278,147 @@ def main():
         fout.write(json.dumps(isofit_config_sixs, indent=4, sort_keys=True))
 
     # Run sixs retrieval
-    logging.info('Running ISOFIT to generate h2o first guesses')
-    os.system('pythonw ' + isofit_exe + ' --level DEBUG ' + sixs_config_path)
+   #logging.info('Running ISOFIT to generate h2o first guesses')
+   #os.system('pythonw ' + isofit_exe + ' --level DEBUG ' + sixs_config_path)
+
+    # Extract h2o grid avoiding the zero label (periphery, bad data)
+    h2o = envi.open(h2o_subs_path + '.hdr')
+    h2o_est = h2o.read_band(-1)
+    h2ostep = 0.2
+    h2o_grid = s.arange(h2o_est[1:].min(), h2o_est[1:].max()+h2ostep, h2ostep)
+
+    atmosphere_type = 'ATM_MIDLAT_SUMMER'
+
+    # make modtran configuration
+    modtran_template = {"MODTRAN": [{
+      "MODTRANINPUT": {
+        "NAME": fid,
+        "DESCRIPTION": "",
+        "CASE": 0,
+        "RTOPTIONS": {
+          "MODTRN": "RT_CORRK_FAST",
+          "LYMOLC": False,
+          "T_BEST": False,
+          "IEMSCT": "RT_SOLAR_AND_THERMAL",
+          "IMULT": "RT_DISORT",
+          "DISALB": False,
+          "NSTR": 8,
+          "SOLCON": 0.0
+        },
+        "ATMOSPHERE": {
+          "MODEL": atmosphere_type,
+          "M1": atmosphere_type,
+          "M2": atmosphere_type,
+          "M3": atmosphere_type,
+          "M4": atmosphere_type,
+          "M5": atmosphere_type,
+          "M6": atmosphere_type,
+          "CO2MX": 450.0,
+          "H2OSTR": 1.0,
+          "H2OUNIT": "g",
+          "O3STR": 0.3,
+          "O3UNIT": "a"
+        },
+        "AEROSOLS": { "IHAZE": "AER_NONE" },
+        "GEOMETRY": {
+          "ITYPE": 3,
+          "H1ALT": alt,
+          "IDAY": dayofyear,
+          "IPARM": 11,
+          "PARM1": latitude,
+          "PARM2": longitude,
+          "GMTIME": gmtime
+        },
+        "SURFACE": {
+          "SURFTYPE": "REFL_LAMBER_MODEL",
+          "GNDALT": elev_km,
+          "NSURF": 1,
+          "SURFP": { "CSALB": "LAMB_CONST_0_PCT" }
+        },
+        "SPECTRAL": {
+          "V1": 350.0,
+          "V2": 2520.0,
+          "DV": 0.1,
+          "FWHM": 0.1,
+          "YFLAG": "R",
+          "XFLAG": "N",
+          "FLAGS": "NT A   ",
+          "BMNAME": "p1_2013"
+        },
+        "FILEOPTIONS": {
+          "NOPRNT": 2,
+          "CKPRNT": True
+        }
+      }
+    }]}
+
+    # write modtran_template 
+    with open(modtran_tpl_path,'w') as fout:
+        fout.write(json.dumps(modtran_template, indent=4, sort_keys=True))
+
+    modtran_configuration = { 
+        "wavelength_file":wl_path,
+        "lut_path":lut_modtran_path,
+        "aerosol_template_file_old":aerosol_tpl_path,
+        "aerosol_model_file_old":aerosol_mdl_path,
+        "modtran_template_file":modtran_tpl_path,
+        "modtran_directory": modtran_path,
+        "statevector": {
+          "H2OSTR": {
+            "bounds": [min(h2o_grid), max(h2o_grid)],
+            "scale": 0.01,
+            "init": s.mean(h2o_grid),
+            "prior_sigma":0.5,
+            "prior_mean":s.mean(h2o_grid)
+          }
+        },
+        "lut_grid": {
+          "H2OSTR": [float(q) for q in h2o_grid],
+          "GNDALT": [float(q) for q in elevation_grid]
+        },
+        "unknowns": {
+          "H2O_ABSCO": 0.0
+        },
+        "domain": { "start": 350, "end": 2520, "step": 0.1}
+    }
+
+    # make isofit configuration
+    isofit_config_modtran = {'ISOFIT_base': isofit_path,
+        'input':{'measured_radiance_file':rdn_subs_path,
+                 'loc_file':loc_subs_path,
+                 'obs_file':obs_subs_path},
+        'output':{'estimated_state_file':state_subs_path,
+                  'posterior_uncertainty_file':uncert_subs_path,
+                  'estimated_reflectance_file':rfl_subs_path},
+        'forward_model': {
+            'instrument': { 'wavelength_file': wl_path,
+            'parametric_noise_file': noise_path,
+            'integrations':1 },
+        "multicomponent_surface": {"wavelength_file":wl_path,
+            "surface_file":surface_working_path},
+        "modtran_radiative_transfer": modtran_configuration},
+        "inversion": {"windows": 
+            [[400.0,1300.0],
+            [1450,1780.0],
+            [2000.0,2450.0]]}}
+
+    # write modtran_template 
+    with open(modtran_config_path,'w') as fout:
+        fout.write(json.dumps(isofit_config_modtran, indent=4, sort_keys=True))
+
+    # Run modtran retrieval
+    logging.info('Running ISOFIT with full LUT')
+    os.system('pythonw ' +isofit_exe+ ' --level DEBUG ' + modtran_config_path)
+
+    # Empirical line 
+    logging.info('Empirical line inference')
+    os.system('pythonw ' +empline_exe+ ' --level DEBUG %s %s %s %s %s %s'%\
+            (rdn_subs_path, rfl_subs_path, loc_subs_path,
+             rdn_working_path, loc_working_path, rfl_working_path,
+             uncert_working_path))
+
+    logging.info('Done.')
+    
 
 if __name__ == "__main__":
     main()
