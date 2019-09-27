@@ -67,12 +67,13 @@ def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
             rhoatm = instrument.sample(x_instrument, RT.wl, rhoatm_hi)
             transm = instrument.sample(x_instrument, RT.wl, transm_hi)
             solar_irr = instrument.sample(x_instrument, RT.wl, RT.solar_irr)
-
+            sphalb = instrument.sample(x_instrument, RT.wl, sphalb_hi)
             # Assume no surface emission.  "Correct" the at-sensor radiance
             # using this presumed amount of water vapor, and measure the
             # resulting residual (as measured from linear interpolation across
             # the absorption feature)
-            r = (meas*s.pi/(solar_irr*RT.coszen) - rhoatm) / (transm+1e-8)
+            rho = (meas*s.pi/(solar_irr*RT.coszen)
+            r = 1.0/(transm/(rho-rhoatm)+sphalb)
             ratios.append((r[b945]*2.0)/(r[b1040]+r[b865]))
             h2os.append(h2o)
 
