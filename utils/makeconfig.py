@@ -113,6 +113,7 @@ def main():
     rfl_fname            = rdn_fname.replace('_rdn','_rfl')
     lbl_fname            = rdn_fname.replace('_rdn','_lbl')
     uncert_fname         = rdn_fname.replace('_rdn','_uncert')
+    state_fname          = rdn_fname.replace('_rdn','_state')
     rdn_subs_fname       = rdn_fname.replace('_rdn','_subs_rdn')
     obs_subs_fname       = obs_fname.replace('_obs','_subs_obs')
     loc_subs_fname       = loc_fname.replace('_loc','_subs_loc')
@@ -290,9 +291,9 @@ def main():
     with open(sixs_config_path,'w') as fout:
         fout.write(json.dumps(isofit_config_sixs, indent=4, sort_keys=True))
 
-    # Run sixs retrieval
-    logging.info('Running ISOFIT to generate h2o first guesses')
-    os.system('pythonw ' + isofit_exe + ' --level DEBUG ' + sixs_config_path)
+   ## Run sixs retrieval
+   #logging.info('Running ISOFIT to generate h2o first guesses')
+   #os.system('pythonw ' + isofit_exe + ' --level DEBUG ' + sixs_config_path)
 
     # Extract h2o grid avoiding the zero label (periphery, bad data)
     h2o = envi.open(h2o_subs_path + '.hdr')
@@ -386,10 +387,10 @@ def main():
           },
           "VIS": {
             "bounds": [20,100],
-            "scale": 10,
-            "init": 50,
-            "prior_sigma":100,
-            "prior_mean":50
+            "scale": 1,
+            "init": 20.5,
+            "prior_sigma":1000,
+            "prior_mean":20
           }
         },
         "lut_grid": {
@@ -433,7 +434,9 @@ def main():
 
     # Run modtran retrieval
     logging.info('Running ISOFIT with full LUT')
-    os.system('pythonw ' +isofit_exe+ ' --level DEBUG ' + modtran_config_path)
+    cmd = 'pythonw ' +isofit_exe+ ' --level DEBUG ' + modtran_config_path
+    print(cmd)
+    os.system(cmd)
 
     # Empirical line 
     logging.info('Empirical line inference')
