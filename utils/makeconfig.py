@@ -236,7 +236,6 @@ def main():
     
     # make view zenith and relaz grid - two points only for now
     OBSZEN_grid = s.array([OBSZENs[valid].min(), 0])
-    #TRUEAZ_grid = s.arange([TRUEAZs[valid].min(), TRUEAZs[valid.max(),])
 
     # make elevation grid
     elev_grid_margin = 0.3
@@ -291,9 +290,9 @@ def main():
     with open(sixs_config_path,'w') as fout:
         fout.write(json.dumps(isofit_config_sixs, indent=4, sort_keys=True))
 
-   ## Run sixs retrieval
-   #logging.info('Running ISOFIT to generate h2o first guesses')
-   #os.system('pythonw ' + isofit_exe + ' --level DEBUG ' + sixs_config_path)
+    # Run sixs retrieval
+    logging.info('Running ISOFIT to generate h2o first guesses')
+    os.system('python ' + isofit_exe + ' --level DEBUG ' + sixs_config_path)
 
     # Extract h2o grid avoiding the zero label (periphery, bad data)
     h2o = envi.open(h2o_subs_path + '.hdr')
@@ -434,13 +433,13 @@ def main():
 
     # Run modtran retrieval
     logging.info('Running ISOFIT with full LUT')
-    cmd = 'pythonw ' +isofit_exe+ ' --level DEBUG ' + modtran_config_path
+    cmd = 'python ' +isofit_exe+ ' --level DEBUG ' + modtran_config_path
     print(cmd)
     os.system(cmd)
 
     # Empirical line 
     logging.info('Empirical line inference')
-    os.system(('pythonw ' +empline_exe+ ' --level INFO --hash %s '+\
+    os.system(('python ' +empline_exe+ ' --level INFO --hash %s '+\
             '%s %s %s %s %s %s %s')%\
             (lbl_working_path, rdn_subs_path, rfl_subs_path, loc_subs_path,
              rdn_working_path, loc_working_path, rfl_working_path,
