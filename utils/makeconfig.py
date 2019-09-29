@@ -391,7 +391,7 @@ def main():
               "H2OSTR": {
                 "bounds": [h2o_lo, h2o_hi],
                 "scale": 0.01,
-                "init": h2o_median
+                "init": h2o_median,
                 "prior_sigma": (h2o_hi - h2o_lo),
                 "prior_mean": h2o_median
               },
