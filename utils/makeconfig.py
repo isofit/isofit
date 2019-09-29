@@ -107,9 +107,9 @@ def main():
     dayofyear = dt.timetuple().tm_yday
 
     # define staged file locations
-    rdn_fname            = split(rdn_path)[-1]
-    obs_fname            = split(obs_path)[-1]
-    loc_fname            = split(loc_path)[-1]
+    rdn_fname            = fid+'_rdn'
+    obs_fname            = fid+'_obs'
+    loc_fname            = fid+'_loc'
     rfl_fname            = rdn_fname.replace('_rdn','_rfl')
     lbl_fname            = rdn_fname.replace('_rdn','_lbl')
     uncert_fname         = rdn_fname.replace('_rdn','_uncert')
@@ -168,20 +168,20 @@ def main():
 
     # Superpixel segmentation
     logging.info('Segmenting...')
-    os.system('pythonw ' + segment_exe + ' %s %s'%\
+    os.system('python ' + segment_exe + ' %s %s'%\
             (rdn_working_path, lbl_working_path))
 
     # Extract input data 
     logging.info('Extracting radiances...')
-    os.system('pythonw ' + extract_exe + ' %s %s %s'%\
+    os.system('python ' + extract_exe + ' %s %s %s'%\
             (rdn_working_path, lbl_working_path, rdn_subs_path))
 
     logging.info('Extracting obs...')
-    os.system('pythonw ' + extract_exe + ' %s %s %s'%\
+    os.system('python ' + extract_exe + ' %s %s %s'%\
             (obs_working_path, lbl_working_path, obs_subs_path))
 
     logging.info('Extracting loc...')
-    os.system('pythonw ' + extract_exe + ' %s %s %s'%\
+    os.system('python ' + extract_exe + ' %s %s %s'%\
             (loc_working_path, lbl_working_path, loc_subs_path))
 
     # get radiance file, wavelengths
