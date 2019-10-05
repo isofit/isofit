@@ -51,8 +51,8 @@ sixs_template = '''0 (User defined)
 {aermodel}
 0
 {AOT550}
--{elev} (target level)
--{alt} (sensor level)
+-{elev:.2f} (target level)
+-{alt:.2f} (sensor level)
 -{H2OSTR}, -{O3}
 {AOT550}
 -2 
