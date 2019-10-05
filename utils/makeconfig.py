@@ -109,33 +109,33 @@ def main():
     dayofyear = dt.timetuple().tm_yday
 
     # define staged file locations
-    rdn_fname = split(rdn_path)[-1]
-    obs_fname = split(obs_path)[-1]
-    loc_fname = split(loc_path)[-1]
-    rfl_fname = rdn_fname.replace('_rdn', '_rfl')
-    lbl_fname = rdn_fname.replace('_rdn', '_lbl')
-    uncert_fname = rdn_fname.replace('_rdn', '_uncert')
-    state_fname = rdn_fname.replace('_rdn', '_state')
-    rdn_subs_fname = rdn_fname.replace('_rdn', '_subs_rdn')
-    obs_subs_fname = obs_fname.replace('_obs', '_subs_obs')
-    loc_subs_fname = loc_fname.replace('_loc', '_subs_loc')
-    rfl_subs_fname = rfl_fname.replace('_rfl', '_subs_rfl')
-    state_subs_fname = rfl_fname.replace('_rfl', '_subs_state')
-    uncert_subs_fname = rfl_fname.replace('_rfl', '_subs_uncert')
-    h2o_subs_fname = loc_fname.replace('_loc', '_subs_h2o')
-    rdn_working_path = abspath(join(input_path,  rdn_fname))
-    obs_working_path = abspath(join(input_path,  obs_fname))
-    loc_working_path = abspath(join(input_path,  loc_fname))
-    rfl_working_path = abspath(join(output_path, rfl_fname))
-    uncert_working_path = abspath(join(output_path, uncert_fname))
-    lbl_working_path = abspath(join(output_path, lbl_fname))
-    rdn_subs_path = abspath(join(input_path,  rdn_subs_fname))
-    obs_subs_path = abspath(join(input_path,  obs_subs_fname))
-    loc_subs_path = abspath(join(input_path,  loc_subs_fname))
-    rfl_subs_path = abspath(join(output_path, rfl_subs_fname))
-    state_subs_path = abspath(join(output_path, state_subs_fname))
-    uncert_subs_path = abspath(join(output_path, uncert_subs_fname))
-    h2o_subs_path = abspath(join(output_path, h2o_subs_fname))
+    rdn_fname            = fid+'_rdn'
+    obs_fname            = fid+'_obs'
+    loc_fname            = fid+'_loc'
+    rfl_fname            = rdn_fname.replace('_rdn','_rfl')
+    lbl_fname            = rdn_fname.replace('_rdn','_lbl')
+    uncert_fname         = rdn_fname.replace('_rdn','_uncert')
+    state_fname          = rdn_fname.replace('_rdn','_state')
+    rdn_subs_fname       = rdn_fname.replace('_rdn','_subs_rdn')
+    obs_subs_fname       = obs_fname.replace('_obs','_subs_obs')
+    loc_subs_fname       = loc_fname.replace('_loc','_subs_loc')
+    rfl_subs_fname       = rfl_fname.replace('_rfl','_subs_rfl')
+    state_subs_fname     = rfl_fname.replace('_rfl','_subs_state')
+    uncert_subs_fname    = rfl_fname.replace('_rfl','_subs_uncert')
+    h2o_subs_fname       = loc_fname.replace('_loc','_subs_h2o')
+    rdn_working_path     = abspath(join(input_path,  rdn_fname))
+    obs_working_path     = abspath(join(input_path,  obs_fname))
+    loc_working_path     = abspath(join(input_path,  loc_fname))
+    rfl_working_path     = abspath(join(output_path, rfl_fname))
+    uncert_working_path  = abspath(join(output_path, uncert_fname))
+    lbl_working_path     = abspath(join(output_path, lbl_fname))
+    rdn_subs_path        = abspath(join(input_path,  rdn_subs_fname))
+    obs_subs_path        = abspath(join(input_path,  obs_subs_fname))
+    loc_subs_path        = abspath(join(input_path,  loc_subs_fname))
+    rfl_subs_path        = abspath(join(output_path, rfl_subs_fname))
+    state_subs_path      = abspath(join(output_path, state_subs_fname))
+    uncert_subs_path     = abspath(join(output_path, uncert_subs_fname))
+    h2o_subs_path        = abspath(join(output_path, h2o_subs_fname))
     surface_working_path = abspath(join(data_path,   'surface.mat'))
     surface_h2o_working_path = abspath(join(data_path, 'surface_h2o.mat'))
     wl_path = abspath(join(data_path,   'wavelengths.txt'))
@@ -155,36 +155,34 @@ def main():
             os.mkdir(dpath)
 
     # stage data files by copying into working directory
-    for src, dst in [(rdn_path, rdn_working_path),
-                     (obs_path, obs_working_path),
-                     (loc_path, loc_working_path)]:
-        logging.info('Staging %s to %s' % (src, dst))
-        copyfile(src, dst)
-        copyfile(src+'.hdr', dst+'.hdr')
+                (obs_path, obs_working_path),
+                (loc_path, loc_working_path)]:
+        if not exists(dst):
+            logging.info('Staging %s to %s' % (src, dst))
+            copyfile(src, dst)
+            copyfile(src+'.hdr', dst+'.hdr')
 
     # Staging files without headers
     for src, dst in [(surface_path, surface_working_path),
                      (surface_h2o_path, surface_h2o_working_path)]:
-        logging.info('Staging %s to %s' % (src, dst))
-        copyfile(src, dst)
+        if not exists(dst):
+            logging.info('Staging %s to %s' % (src, dst))
+            copyfile(src, dst)
 
     # Superpixel segmentation
-    logging.info('Segmenting...')
-    os.system('pythonw ' + segment_exe + ' %s %s' %
-              (rdn_working_path, lbl_working_path))
+    if not exists(lbl_working_path) or not exists(rdn_working_path):
+        logging.info('Segmenting...')
+        os.system('python ' + segment_exe + ' %s %s'%\
+                (rdn_working_path, lbl_working_path))
 
-    # Extract input data
-    logging.info('Extracting radiances...')
-    os.system('pythonw ' + extract_exe + ' %s %s %s' %
-              (rdn_working_path, lbl_working_path, rdn_subs_path))
-
-    logging.info('Extracting obs...')
-    os.system('pythonw ' + extract_exe + ' %s %s %s' %
-              (obs_working_path, lbl_working_path, obs_subs_path))
-
-    logging.info('Extracting loc...')
-    os.system('pythonw ' + extract_exe + ' %s %s %s' %
-              (loc_working_path, lbl_working_path, loc_subs_path))
+    # Extract input data 
+    for inp, outp in [(rdn_working_path, rdn_subs_path),
+                      (obs_working_path, obs_subs_path),
+                      (loc_working_path, loc_subs_path)]:
+        if not exists(outp):
+            logging.info('Extracting '+outp)
+            os.system('python ' + extract_exe + ' %s %s %s'%\
+                    (inp, lbl_working_path, outp))
 
     # get radiance file, wavelengths
     rdn = envi.open(rdn_subs_path+'.hdr')
@@ -238,7 +236,6 @@ def main():
 
     # make view zenith and relaz grid - two points only for now
     OBSZEN_grid = s.array([OBSZENs[valid].min(), 0])
-    # TRUEAZ_grid = s.arange([TRUEAZs[valid].min(), TRUEAZs[valid.max(),])
 
     # make elevation grid
     elev_grid_margin = 0.3
@@ -253,201 +250,220 @@ def main():
                              fwhm[:, s.newaxis]], axis=1)
     s.savetxt(wl_path, wl_data, delimiter=' ')
 
-    # make sixs configuration
-    sixs_configuration = {
-        "domain": {"start": 350, "end": 2520, "step": 0.1},
-        "statevector": {"H2OSTR": {"bounds": [0.5, 6.0], "scale": 0.01,
-                                   "prior_sigma": 100.0, "prior_mean": 1.0, "init": 1.75}, },
-        "lut_grid": {"H2OSTR": [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0,
-                                4.5, 5.0, 5.5, 6.0]},
-        "unknowns": {},
-        "wavelength_file": wl_path,
-        "earth_sun_distance_file": esd_path,
-        "irradiance_file": irradiance_path,
-        "sixs_installation": sixs_path,
-        "lut_path": lut_sixs_path,
-        'solzen': solar_zenith,
-        "solaz": solar_azimuth,
-        "elev": elev_km,
-        "alt": relative_alt,
-        "viewzen": obs_zenith,
-        "viewaz": obs_azimuth,
-        "month": month,
-        "day": day}
+    if not exists(h2o_subs_path + '.hdr') or not exists(h2o_subs_path):
 
-    # make isofit configuration
-    isofit_config_sixs = {'ISOFIT_base': isofit_path,
-                          'input': {'measured_radiance_file': rdn_subs_path,
-                                    'loc_file': loc_subs_path,
-                                    'obs_file': obs_subs_path},
-                          'output': {'estimated_state_file': h2o_subs_path},
-                          'forward_model': {
-                              'instrument': {'wavelength_file': wl_path,
-                                             'parametric_noise_file': noise_path,
-                                             'integrations': 1},
-                              "multicomponent_surface": {"wavelength_file": wl_path,
-                                                         "surface_file": surface_h2o_working_path},
-                              "sixs_radiative_transfer": sixs_configuration},
-                          "inversion": {"windows": [[880.0, 1000.0]], 'max_nfev': 10}}
+        # make sixs configuration
+        sixs_configuration = {
+            "domain": {"start": 350, "end": 2520, "step": 0.1},
+            "statevector": { "H2OSTR": { "bounds": [0.5, 6.0], "scale": 0.01,
+                "prior_sigma": 100.0, "prior_mean": 1.0, "init": 1.75 }, },
+            "lut_grid": { "H2OSTR": [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 
+                4.5, 5.0, 5.5, 6.0]},
+            "unknowns": {},
+            "wavelength_file": wl_path,
+            "earth_sun_distance_file" : esd_path, 
+            "irradiance_file" : irradiance_path,
+            "sixs_installation": sixs_path,
+            "lut_path": lut_sixs_path,
+            'solzen': solar_zenith,
+            "solaz": solar_azimuth,
+            "elev": elev_km,
+            "alt": relative_alt,
+            "viewzen": obs_zenith,
+            "viewaz": obs_azimuth,
+            "month": month,
+            "day": day}
+        
+        # make isofit configuration
+        isofit_config_sixs = {'ISOFIT_base': isofit_path,
+            'input':{'measured_radiance_file':rdn_subs_path,
+                     'loc_file':loc_subs_path,
+                     'obs_file':obs_subs_path},
+            'output':{'estimated_state_file':h2o_subs_path},
+            'forward_model': {
+                'instrument': { 'wavelength_file': wl_path,
+                'parametric_noise_file': noise_path,
+                'integrations':1 },
+            "multicomponent_surface": {"wavelength_file":wl_path,
+                "surface_file":surface_h2o_working_path},
+            "sixs_radiative_transfer": sixs_configuration},
+            "inversion": {"windows": [[880.0,1000.0]], 'max_nfev': 10}}
+        
+        # write sixs configuration
+        with open(sixs_config_path,'w') as fout:
+            fout.write(json.dumps(isofit_config_sixs, indent=4, sort_keys=True))
+        
+        # Run sixs retrieval
+        logging.info('Running ISOFIT to generate h2o first guesses')
+        os.system('python ' + isofit_exe + ' --level DEBUG ' + sixs_config_path)
 
-    # write sixs configuration
-    with open(sixs_config_path, 'w') as fout:
-        fout.write(json.dumps(isofit_config_sixs, indent=4, sort_keys=True))
-
-    # Run sixs retrieval
-    logging.info('Running ISOFIT to generate h2o first guesses')
-    os.system('pythonw ' + isofit_exe + ' --level DEBUG ' + sixs_config_path)
-
-    # Extract h2o grid avoiding the zero label (periphery, bad data)
+    # Extract h2o grid avoiding the zero label (periphery, bad data) 
+    # and outliers
     h2o = envi.open(h2o_subs_path + '.hdr')
     h2o_est = h2o.read_band(-1)
     h2ostep = 0.2
-    h2o_grid = s.arange(h2o_est[1:].min(), h2o_est[1:].max()+h2ostep, h2ostep)
+    h2o_sorted = s.sort(h2o_est[1:].flat)
+    nseg = len(h2o_sorted)
+    h2o_lo = h2o_sorted[int(nseg*0.025)]
+    h2o_hi = h2o_sorted[int(nseg*0.975)]
+    h2o_median = s.median(h2o_sorted)
+    h2o_grid = s.arange(h2o_lo, h2o_hi+h2ostep, h2ostep)
+   
+    if not exists(state_subs_path) or \
+            not exists(uncert_subs_path) or \
+            not exists(rfl_subs_path):
 
-    atmosphere_type = 'ATM_MIDLAT_SUMMER'
-
-    # make modtran configuration
-    modtran_template = {"MODTRAN": [{
-        "MODTRANINPUT": {
+        atmosphere_type = 'ATM_MIDLAT_SUMMER'
+        
+        # make modtran configuration
+        modtran_template = {"MODTRAN": [{
+          "MODTRANINPUT": {
             "NAME": fid,
             "DESCRIPTION": "",
             "CASE": 0,
             "RTOPTIONS": {
-                "MODTRN": "RT_CORRK_FAST",
-                "LYMOLC": False,
-                "T_BEST": False,
-                "IEMSCT": "RT_SOLAR_AND_THERMAL",
-                "IMULT": "RT_DISORT",
-                "DISALB": False,
-                "NSTR": 8,
-                "SOLCON": 0.0
+              "MODTRN": "RT_CORRK_FAST",
+              "LYMOLC": False,
+              "T_BEST": False,
+              "IEMSCT": "RT_SOLAR_AND_THERMAL",
+              "IMULT": "RT_DISORT",
+              "DISALB": False,
+              "NSTR": 8,
+              "SOLCON": 0.0
             },
             "ATMOSPHERE": {
-                "MODEL": atmosphere_type,
-                "M1": atmosphere_type,
-                "M2": atmosphere_type,
-                "M3": atmosphere_type,
-                "M4": atmosphere_type,
-                "M5": atmosphere_type,
-                "M6": atmosphere_type,
-                "CO2MX": 410.0,
-                "H2OSTR": 1.0,
-                "H2OUNIT": "g",
-                "O3STR": 0.3,
-                "O3UNIT": "a"
+              "MODEL": atmosphere_type,
+              "M1": atmosphere_type,
+              "M2": atmosphere_type,
+              "M3": atmosphere_type,
+              "M4": atmosphere_type,
+              "M5": atmosphere_type,
+              "M6": atmosphere_type,
+              "CO2MX": 410.0,
+              "H2OSTR": 1.0,
+              "H2OUNIT": "g",
+              "O3STR": 0.3,
+              "O3UNIT": "a"
             },
-            "AEROSOLS": {"IHAZE": "AER_RURAL"},
+            "AEROSOLS": { "IHAZE": "AER_RURAL" },
             "GEOMETRY": {
-                "ITYPE": 3,
-                "H1ALT": alt,
-                "IDAY": dayofyear,
-                "IPARM": 11,
-                "PARM1": latitude,
-                "PARM2": longitude,
-                "GMTIME": gmtime
+              "ITYPE": 3,
+              "H1ALT": alt,
+              "IDAY": dayofyear,
+              "IPARM": 11,
+              "PARM1": latitude,
+              "PARM2": longitude,
+              "GMTIME": gmtime
             },
             "SURFACE": {
-                "SURFTYPE": "REFL_LAMBER_MODEL",
-                "GNDALT": elev_km,
-                "NSURF": 1,
-                "SURFP": {"CSALB": "LAMB_CONST_0_PCT"}
+              "SURFTYPE": "REFL_LAMBER_MODEL",
+              "GNDALT": elev_km,
+              "NSURF": 1,
+              "SURFP": { "CSALB": "LAMB_CONST_0_PCT" }
             },
             "SPECTRAL": {
-                "V1": 350.0,
-                "V2": 2520.0,
-                "DV": 0.1,
-                "FWHM": 0.1,
-                "YFLAG": "R",
-                "XFLAG": "N",
-                "FLAGS": "NT A   ",
-                "BMNAME": "p1_2013"
+              "V1": 350.0,
+              "V2": 2520.0,
+              "DV": 0.1,
+              "FWHM": 0.1,
+              "YFLAG": "R",
+              "XFLAG": "N",
+              "FLAGS": "NT A   ",
+              "BMNAME": "p1_2013"
             },
             "FILEOPTIONS": {
-                "NOPRNT": 2,
-                "CKPRNT": True
+              "NOPRNT": 2,
+              "CKPRNT": True
             }
-        }
-    }]}
-
-    # write modtran_template
-    with open(modtran_tpl_path, 'w') as fout:
-        fout.write(json.dumps(modtran_template, indent=4, sort_keys=True))
-
-    modtran_configuration = {
-        "wavelength_file": wl_path,
-        "lut_path": lut_modtran_path,
-        "aerosol_template_file_old": aerosol_tpl_path,
-        "aerosol_model_file_old": aerosol_mdl_path,
-        "modtran_template_file": modtran_tpl_path,
-        "modtran_directory": modtran_path,
-        "statevector": {
-            "H2OSTR": {
-                "bounds": [min(h2o_grid), max(h2o_grid)],
+          }
+        }]}
+        
+        # write modtran_template 
+        with open(modtran_tpl_path,'w') as fout:
+            fout.write(json.dumps(modtran_template, indent=4, sort_keys=True))
+        
+        modtran_configuration = { 
+            "wavelength_file":wl_path,
+            "lut_path":lut_modtran_path,
+            "aerosol_template_file_old":aerosol_tpl_path,
+            "aerosol_model_file_old":aerosol_mdl_path,
+            "modtran_template_file":modtran_tpl_path,
+            "modtran_directory": modtran_path,
+            "statevector": {
+              "H2OSTR": {
+                "bounds": [h2o_lo, h2o_hi],
                 "scale": 0.01,
-                "init": s.mean(h2o_grid),
-                "prior_sigma": 0.5,
-                "prior_mean": s.mean(h2o_grid)
-            },
-            "VIS": {
-                "bounds": [20, 100],
+                "init": h2o_median,
+                "prior_sigma": (h2o_hi - h2o_lo),
+                "prior_mean": h2o_median
+              },
+              "VIS": {
+                "bounds": [20,100],
                 "scale": 1,
                 "init": 20.5,
-                "prior_sigma": 1000,
-                "prior_mean": 20
-            }
-        },
-        "lut_grid": {
-            "H2OSTR": [float(q) for q in h2o_grid],
-            "GNDALT": [float(q) for q in elevation_grid],
-            "VIS": [20, 50, 100]
-        },
-        "unknowns": {
-            "H2O_ABSCO": 0.0
-        },
-        "domain": {"start": 350, "end": 2520, "step": 0.1}
-    }
+                "prior_sigma":1000,
+                "prior_mean":20
+              }
+            },
+            "lut_grid": {
+              "H2OSTR": [float(q) for q in h2o_grid],
+              "GNDALT": [float(q) for q in elevation_grid],
+              "VIS": [20,50,100]
+            },
+            "unknowns": {
+              "H2O_ABSCO": 0.0
+            },
+            "domain": { "start": 350, "end": 2520, "step": 0.1}
+        }
+        
+        # make isofit configuration
+        isofit_config_modtran = {'ISOFIT_base': isofit_path,
+            'input':{'measured_radiance_file':rdn_subs_path,
+                     'loc_file':loc_subs_path,
+                     'obs_file':obs_subs_path},
+            'output':{'estimated_state_file':state_subs_path,
+                      'posterior_uncertainty_file':uncert_subs_path,
+                      'estimated_reflectance_file':rfl_subs_path},
+            'forward_model': {
+                'instrument': { 'wavelength_file': wl_path,
+                'parametric_noise_file': noise_path,
+                'integrations':1 },
+            "multicomponent_surface": {"wavelength_file":wl_path,
+                "surface_file":surface_working_path},
+            "modtran_radiative_transfer": modtran_configuration},
+            "inversion": {"windows": 
+                [[400.0,1300.0],
+                [1450,1780.0],
+                [2000.0,2450.0]]}}
+        
+        if args.rdn_factors_path:
+            isofit_config_modtran['input']['radiommetry_correction_file'] = \
+                args.rdn_factors_path
+        
+        # write modtran_template 
+        with open(modtran_config_path,'w') as fout:
+            fout.write(json.dumps(isofit_config_modtran, indent=4, sort_keys=True))
+        
+        # Run modtran retrieval
+        logging.info('Running ISOFIT with full LUT')
+        cmd = 'python ' +isofit_exe+ ' --level DEBUG ' + modtran_config_path
+        print(cmd)
+        os.system(cmd)
 
-    # make isofit configuration
-    isofit_config_modtran = {'ISOFIT_base': isofit_path,
-                             'input': {'measured_radiance_file': rdn_subs_path,
-                                       'loc_file': loc_subs_path,
-                                       'obs_file': obs_subs_path},
-                             'output': {'estimated_state_file': state_subs_path,
-                                        'posterior_uncertainty_file': uncert_subs_path,
-                                        'estimated_reflectance_file': rfl_subs_path},
-                             'forward_model': {
-                                 'instrument': {'wavelength_file': wl_path,
-                                                'parametric_noise_file': noise_path,
-                                                'integrations': 1},
-                                 "multicomponent_surface": {"wavelength_file": wl_path,
-                                                            "surface_file": surface_working_path},
-                                 "modtran_radiative_transfer": modtran_configuration},
-                             "inversion": {"windows":
-                                           [[400.0, 1300.0],
-                                            [1450, 1780.0],
-                                               [2000.0, 2450.0]]}}
+        # clean up unneeded storage
+        for to_rm in ['*r_k','*t_k','*tp7','*wrn','*psc','*plt','*7sc','*acd']:
+          cmd = 'rm '+ join(lut_modtran_path, to_rm)
+          print(cmd)
 
-    if args.rdn_factors_path:
-        isofit_config_modtran['input']['radiommetry_correction_file'] = \
-            args.rdn_factors_path
+    if not exists(rfl_working_path) or not exists(uncert_working_path):
 
-    # write modtran_template
-    with open(modtran_config_path, 'w') as fout:
-        fout.write(json.dumps(isofit_config_modtran, indent=4, sort_keys=True))
-
-    # Run modtran retrieval
-    logging.info('Running ISOFIT with full LUT')
-    cmd = 'pythonw ' + isofit_exe + ' --level DEBUG ' + modtran_config_path
-    print(cmd)
-    os.system(cmd)
-
-    # Empirical line
-    logging.info('Empirical line inference')
-    os.system(('pythonw ' + empline_exe + ' --level INFO --hash %s ' +
-               '%s %s %s %s %s %s %s') %
-              (lbl_working_path, rdn_subs_path, rfl_subs_path, loc_subs_path,
-               rdn_working_path, loc_working_path, rfl_working_path,
-               uncert_working_path))
+        # Empirical line 
+        logging.info('Empirical line inference')
+        os.system(('python ' +empline_exe+ ' --level INFO --hash %s '+\
+                '%s %s %s %s %s %s %s')%\
+                (lbl_working_path, rdn_subs_path, rfl_subs_path, loc_subs_path,
+                 rdn_working_path, loc_working_path, rfl_working_path,
+                 uncert_working_path))
 
     logging.info('Done.')
 

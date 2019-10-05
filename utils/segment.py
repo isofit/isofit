@@ -34,8 +34,8 @@ def main():
     parser.add_argument('spectra',  nargs='+', type=str)
     parser.add_argument('--flag',   type=float, default=-9999)
     parser.add_argument('--npca',   type=int, default=5)
-    parser.add_argument('--segsize',   type=int, default=200)
-    parser.add_argument('--nchunk', type=int, default=1000)
+    parser.add_argument('--segsize',   type=int, default=400)
+    parser.add_argument('--nchunk', type=int, default=256)
     args = parser.parse_args()
     in_file = args.spectra[0]
     if len(args.spectra) > 1:
