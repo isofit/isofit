@@ -86,14 +86,14 @@ def main():
 
     # Open input data, get dimensions
     logging.basicConfig(format='%(message)s', level=loglevel)
-    ref_rdn_file  = args.reference_radiance
-    ref_rfl_file  = args.reference_reflectance
-    ref_loc_file  = args.reference_locations
+    ref_rdn_file = args.reference_radiance
+    ref_rfl_file = args.reference_reflectance
+    ref_loc_file = args.reference_locations
     inp_hash_file = args.hash
-    inp_rdn_file  = args.input_radiance
-    inp_loc_file  = args.input_locations
-    out_rfl_file  = args.output_reflectance
-    out_unc_file  = args.output_uncertainty
+    inp_rdn_file = args.input_radiance
+    inp_loc_file = args.input_locations
+    out_rfl_file = args.output_reflectance
+    out_unc_file = args.output_uncertainty
 
     # Load reference set radiance
     ref_rdn_img = envi.open(ref_rdn_file+'.hdr', ref_rdn_file)
@@ -197,26 +197,27 @@ def main():
                 continue
 
             if hash_img is not None:
-            
+
                 hash_idx = hash_img[row, col]
 
                 if hash_idx in hash_table:
-                   b, unc = hash_table[hash_idx]
+                    b, unc = hash_table[hash_idx]
 
                 else:
 
-                  loc = ref_loc[s.array(hash_idx, dtype=int),:] * loc_scaling
-                  dists, nn = tree.query(loc, k)
-                  xv = ref_rdn[nn, :]
-                  yv = ref_rfl[nn, :]
-                  b = s.zeros((nb, 2))
-                  unc = s.zeros(nb,)
-                  for i in s.arange(nb):
-                      b[i, 1], b[i, 0], q1, q2, q3 = linregress(
-                          xv[:, i], yv[:, i])
-                      unc[i] = s.std(xv[:, i]*b[i, 1]+b[i, 0]-yv[:, i])
-                  hash_table[hash_idx] = b, unc
-                
+                    loc = ref_loc[s.array(
+                        hash_idx, dtype=int), :] * loc_scaling
+                    dists, nn = tree.query(loc, k)
+                    xv = ref_rdn[nn, :]
+                    yv = ref_rfl[nn, :]
+                    b = s.zeros((nb, 2))
+                    unc = s.zeros(nb,)
+                    for i in s.arange(nb):
+                        b[i, 1], b[i, 0], q1, q2, q3 = linregress(
+                            xv[:, i], yv[:, i])
+                        unc[i] = s.std(xv[:, i]*b[i, 1]+b[i, 0]-yv[:, i])
+                    hash_table[hash_idx] = b, unc
+
             else:
 
                 loc = inp_loc[col, :] * loc_scaling
