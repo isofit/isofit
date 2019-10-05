@@ -291,9 +291,9 @@ def main():
     with open(sixs_config_path,'w') as fout:
         fout.write(json.dumps(isofit_config_sixs, indent=4, sort_keys=True))
 
-   ## Run sixs retrieval
-   #logging.info('Running ISOFIT to generate h2o first guesses')
-   #os.system('pythonw ' + isofit_exe + ' --level DEBUG ' + sixs_config_path)
+    # Run sixs retrieval
+    logging.info('Running ISOFIT to generate h2o first guesses')
+    os.system('pythonw ' + isofit_exe + ' --level DEBUG ' + sixs_config_path)
 
     # Extract h2o grid avoiding the zero label (periphery, bad data)
     h2o = envi.open(h2o_subs_path + '.hdr')
