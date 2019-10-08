@@ -38,17 +38,26 @@ class Surface:
         self.emissive = False
         self.reconfigure(config)
         if 'reflectance_file' in config:
-            self.rfl, self.wl = load_spectrum(config['reflectance_file'])
+            self.rfl, self.rwl = load_spectrum(config['reflectance_file'])
+            self.wl = self.rwl.copy()
             self.n_wl = len(self.wl)
-        elif 'wavelength_file' in config:
+        if 'wavelength_file' in config:
             self.wl, self.fwhm = load_wavelen(config['wavelength_file'])
             self.n_wl = len(self.wl)
+            self.resample_reflectance()
 
     def reconfigure(self, config):
         """Adjust the surface reflectance (for predefined reflectances)"""
 
         if 'reflectance' in config and config['reflectance'] is not None:
             self.rfl = config['reflectance']
+            self.resample_reflectance()
+
+    def resample_reflectance(self):
+        """Make sure model wavelengths align with the wavelength file"""
+        if hasattr(self, 'rwl'):
+            p = interp1d(self.rwl, self.rfl, fill_value='extrapolate')
+            self.rfl = p(self.wl)
 
     def xa(self, x_surface, geom):
         '''Mean of prior state vector distribution calculated at state x'''

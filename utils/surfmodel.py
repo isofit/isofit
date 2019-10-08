@@ -90,18 +90,23 @@ def main():
         # load spectra
         spectra = []
         for infile in infiles:
+
             hdrfile = infile + '.hdr'
             rfl = envi.open(hdrfile, infile)
             nl, nb, ns = [int(rfl.metadata[n])
                           for n in ('lines', 'bands', 'samples')]
             swl = s.array([float(f) for f in rfl.metadata['wavelength']])
+
+            # Maybe convert to nanometers
+            if swl[0] < 100:
+                swl = swl * 1000.0
+
             rfl_mm = rfl.open_memmap(interleave='source', writable=True)
             if rfl.metadata['interleave'] == 'bip':
                 x = s.array(rfl_mm[:, :, :])
             if rfl.metadata['interleave'] == 'bil':
                 x = s.array(rfl_mm[:, :, :]).transpose((0, 2, 1))
             x = x.reshape(nl*ns, nb)
-            swl = s.array([float(f) for f in rfl.metadata['wavelength']])
 
             # import spectra and resample
             for x1 in x:
