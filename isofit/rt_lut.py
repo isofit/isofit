@@ -18,7 +18,7 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-import os
+import os, sys
 import scipy as s
 import logging
 from common import json_load_ascii, combos
@@ -46,10 +46,13 @@ class TabularRT:
         self.wl, self.fwhm = load_wavelen(config['wavelength_file'])
         self.n_chan = len(self.wl)
 
-        if 'auto_rebuild' in config:
-            self.auto_rebuild = config['auto_rebuild']
-        else:
-            self.auto_rebuild = True
+        defaults = {'configure_and_exit':False, 'auto_rebuild':True} 
+        for key, value in defaults.items():
+            if key in config:
+                setattr(self, key, config[key])
+            else:
+                setattr(self, key, value)
+
         self.lut_grid = config['lut_grid']
         self.lut_dir = config['lut_path']
         self.statevec = list(config['statevector'].keys())
@@ -126,7 +129,9 @@ class TabularRT:
             except FileExistsError:
                 pass
 
-        if len(rebuild_cmds) > 0 and self.auto_rebuild:
+        if self.configure_and_exit:
+            sys.exit(0)
+        elif len(rebuild_cmds) > 0 and self.auto_rebuild:
             logging.info("rebuilding")
             import multiprocessing
             cwd = os.getcwd()
