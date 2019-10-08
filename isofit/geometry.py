@@ -79,7 +79,7 @@ class Geometry:
 
             logging.debug('Geometry lat: %f lon: %f' %
                           (self.latitude, self.longitude))
-            logging.debug('Geometry observer OBSZEN: %f RELAZ: %f GNDALT: %f'%
+            logging.debug('Geometry observer OBSZEN: %f RELAZ: %f GNDALT: %f' %
                           (self.OBSZEN, self.RELAZ, self.GNDALT))
 
         # The ds object is an optional date object, defining the time of

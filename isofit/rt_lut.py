@@ -18,7 +18,8 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-import os, sys
+import os
+import sys
 import scipy as s
 import logging
 from common import json_load_ascii, combos
@@ -46,7 +47,7 @@ class TabularRT:
         self.wl, self.fwhm = load_wavelen(config['wavelength_file'])
         self.n_chan = len(self.wl)
 
-        defaults = {'configure_and_exit':False, 'auto_rebuild':True} 
+        defaults = {'configure_and_exit': False, 'auto_rebuild': True}
         for key, value in defaults.items():
             if key in config:
                 setattr(self, key, config[key])

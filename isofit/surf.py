@@ -55,7 +55,7 @@ class Surface:
 
     def resample_reflectance(self):
         """Make sure model wavelengths align with the wavelength file"""
-        if hasattr(self,'rwl'):
+        if hasattr(self, 'rwl'):
             p = interp1d(self.rwl, self.rfl, fill_value='extrapolate')
             self.rfl = p(self.wl)
 
