@@ -73,7 +73,6 @@ def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
             # using this presumed amount of water vapor, and measure the
             # resulting residual (as measured from linear interpolation across
             # the absorption feature)
-            # r = (meas*s.pi/(solar_irr*RT.coszen) - rhoatm) / (transm+1e-8)
             rho = meas * s.pi / (solar_irr * RT.coszen)
             r = 1.0 / (transm / (rho - rhoatm) + sphalb)
             ratios.append((r[b945]*2.0)/(r[b1040]+r[b865]))
