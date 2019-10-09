@@ -144,8 +144,9 @@ def invert_simple(forward, meas, geom):
     # and estimate atmospheric terms using traditional heuristics.
     x = forward.init.copy()
     x_surface, x_RT, x_instrument = forward.unpack(x)
-    x[forward.idx_RT] = heuristic_atmosphere(RT, instrument,
+    x_RT_new = heuristic_atmosphere(RT, instrument,
                                              x_RT, x_instrument,  meas, geom)
+    x[forward.idx_RT] = x_RT_new
 
     # Now, with atmosphere fixed, we can invert the radiance algebraically
     # via Lambertian approximations to get reflectance
