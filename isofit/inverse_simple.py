@@ -66,13 +66,15 @@ def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
             rhoatm_hi, sphalb_hi, transm_hi, transup_hi = RT.get(x_RT_2, geom)
             rhoatm = instrument.sample(x_instrument, RT.wl, rhoatm_hi)
             transm = instrument.sample(x_instrument, RT.wl, transm_hi)
+            sphalb = instrument.sample(x_instrument, RT.wl, sphalb_hi)
             solar_irr = instrument.sample(x_instrument, RT.wl, RT.solar_irr)
 
             # Assume no surface emission.  "Correct" the at-sensor radiance
             # using this presumed amount of water vapor, and measure the
             # resulting residual (as measured from linear interpolation across
             # the absorption feature)
-            r = (meas*s.pi/(solar_irr*RT.coszen) - rhoatm) / (transm+1e-8)
+            rho = meas * s.pi / (solar_irr * RT.coszen)
+            r = 1.0 / (transm / (rho - rhoatm) + sphalb)
             ratios.append((r[b945]*2.0)/(r[b1040]+r[b865]))
             h2os.append(h2o)
 
@@ -149,6 +151,7 @@ def invert_simple(forward, meas, geom):
 
     # Now, with atmosphere fixed, we can invert the radiance algebraically
     # via Lambertian approximations to get reflectance
+    x_surface, x_RT, x_instrument = forward.unpack(x)
     rfl_est, Ls_est, coeffs = invert_algebraic(surface, RT,
                                                instrument, x_surface, x_RT, x_instrument, meas, geom)
 
