@@ -20,6 +20,7 @@
           "CO2MX": 450.0,
           "H2OSTR": 0.64,
           "H2OUNIT": "g",
+          "H2OOPT": "+",
           "O3STR": 0.3,
           "O3UNIT": "a"
         },
