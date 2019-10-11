@@ -24,12 +24,12 @@ import scipy as s
 import pylab as plt
 from scipy.linalg import inv, norm, sqrtm, det
 from scipy.io import savemat
-from inverse_simple import invert_simple, invert_algebraic
+from .inverse_simple import invert_simple, invert_algebraic
 from spectral.io import envi
-from common import load_spectrum, eps, resample_spectrum, expand_all_paths
+from .common import load_spectrum, eps, resample_spectrum, expand_all_paths
 import logging
 from collections import OrderedDict
-from geometry import Geometry
+from .geometry import Geometry
 
 
 # Constants related to file I/O

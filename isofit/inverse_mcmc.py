@@ -20,8 +20,8 @@
 
 import sys
 import scipy as s
-from common import chol_inv, eps
-from inverse import Inversion
+from .common import chol_inv, eps
+from .inverse import Inversion
 import scipy.optimize
 from scipy.linalg import inv, norm, sqrtm, det, cholesky, qr, svd
 from scipy.stats import multivariate_normal

@@ -19,12 +19,12 @@
 #
 
 import scipy as s
-from common import recursive_replace, eps
+from .common import recursive_replace, eps
 from copy import deepcopy
 from scipy.linalg import det, norm, pinv, sqrtm, inv, block_diag
 from importlib import import_module
 from scipy.interpolate import interp1d
-from instrument import Instrument
+from .instrument import Instrument
 
 
 # Supported RT modules, filenames, and class names
@@ -61,6 +61,7 @@ class ForwardModel:
         # Build the radiative transfer model
         self.RT = None
         for key, module, cname in RT_models:
+            module = "isofit." + module
             if key in config:
                 self.RT = getattr(import_module(module), cname)(config[key])
         if self.RT is None:
@@ -69,6 +70,7 @@ class ForwardModel:
         # Build the surface model
         self.surface = None
         for key, module, cname in surface_models:
+            module = "isofit." + module
             if key in config:
                 self.surface = getattr(
                     import_module(module), cname)(config[key])
