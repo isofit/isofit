@@ -3,10 +3,14 @@
 *.swp
 
 # Ignore files with these names
-.DS_Store 
+.DS_Store
 .idea
 .buildinfo
 .nojekyll
+
+# Ignore folders and their contents with these names
+.vscode
+__pycache__
 
 # Ignore dynamic contents of example directories
 examples/*/*lut/*
@@ -22,7 +26,6 @@ isofit.egg-info/
 .pytest_cache/
 tests/output/*.txt
 
-# Ignore docs files
+# Ignore documentation files
 docs/_build/
 docs/html/_sources/
-

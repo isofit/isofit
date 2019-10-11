@@ -20,9 +20,9 @@
 
 import scipy as s
 from scipy.io import loadmat, savemat
-from common import recursive_replace, svd_inv, eps
+from .common import recursive_replace, svd_inv, eps
 from scipy.linalg import block_diag, det, norm, pinv, sqrtm, inv
-from surf import Surface
+from .surf import Surface
 
 
 class MultiComponentSurface(Surface):
