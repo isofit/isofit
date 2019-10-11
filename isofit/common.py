@@ -239,28 +239,29 @@ def get_absorption(wl, absfile):
     return water_abscf_intrp, ice_abscf_intrp
 
 
-def json_load_ascii(filename, shell_replace=True):
+def recursive_reincode(j, shell_replace=True):
+    if isinstance(j, dict):
+        for key, value in j.items():
+            j[key] = recursive_reincode(value)
+        return j
+    elif isinstance(j, list):
+        for i, k in enumerate(j):
+            j[i] = recursive_reincode(k)
+        return j
+    elif isinstance(j, tuple):
+        return tuple([recursive_reincode(k) for k in j])
+    else:
+        if shell_replace and type(j) is str:
+            try:
+                j = expandvars(j)
+            except IndexError:
+                pass
+        return j
+
+
+def json_load_ascii(filename):
     """Load a hierarchical structure, convert all unicode to ASCII and
     expand environment variables"""
-
-    def recursive_reincode(j):
-        if isinstance(j, dict):
-            for key, value in j.items():
-                j[key] = recursive_reincode(value)
-            return j
-        elif isinstance(j, list):
-            for i, k in enumerate(j):
-                j[i] = recursive_reincode(k)
-            return j
-        elif isinstance(j, tuple):
-            return tuple([recursive_reincode(k) for k in j])
-        else:
-            if shell_replace and type(j) is str:
-                try:
-                    j = expandvars(j)
-                except IndexError:
-                    pass
-            return j
 
     with open(filename, 'r') as fin:
         j = json.load(fin)
