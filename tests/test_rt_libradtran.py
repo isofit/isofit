@@ -22,6 +22,13 @@ import sys
 import json
 from os.path import expandvars, split, abspath, join
 
+from isofit.common import expand_all_paths
+from isofit.common import load_spectrum
+from isofit.fileio import IO
+from isofit.inverse import Inversion
+from isofit.forward import ForwardModel
+from isofit.rt_libradtran import LibRadTranRT
+
 # Get directory and file paths
 
 testdir, fname = split(abspath(__file__))
@@ -30,12 +37,6 @@ datadir = join(testdir, 'data/')
 # Import ISOFIT code
 
 sys.path.append(join(testdir, '../isofit'))
-from forward import ForwardModel
-from inverse import Inversion
-from fileio import IO
-from common import load_spectrum
-from common import expand_all_paths
-from rt_libradtran import LibRadTranRT
 
 
 def test_rt_libradtran():

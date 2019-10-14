@@ -26,8 +26,8 @@ import logging
 import scipy as s
 from spectral.io import envi
 from scipy.io import loadmat, savemat
-from common import json_load_ascii, combos, VectorInterpolator
-from common import recursive_replace
+from .common import json_load_ascii, combos, VectorInterpolator
+from .common import recursive_replace
 from copy import deepcopy
 from scipy.linalg import block_diag, det, norm, pinv, sqrtm, inv
 from scipy.signal import convolve, gaussian, medfilt
@@ -37,8 +37,8 @@ from scipy.stats import multivariate_normal as mvn
 import pylab as plt
 import multiprocessing
 import subprocess
-from rt_lut import TabularRT, FileExistsError, spawn_rt
-from common import resample_spectrum
+from .rt_lut import TabularRT, FileExistsError, spawn_rt
+from .common import resample_spectrum
 
 eps = 1e-5  # used for finite difference derivative calculations
 

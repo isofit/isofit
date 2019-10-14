@@ -20,10 +20,10 @@
 
 import scipy as s
 from scipy.io import loadmat, savemat
-from common import recursive_replace, load_wavelen, chol_inv, eps, srf
+from .common import recursive_replace, load_wavelen, chol_inv, eps, srf
 from scipy.linalg import block_diag, det, norm, pinv, sqrtm, inv, cholesky
 from scipy.interpolate import interp1d
-from surf import Surface
+from .surf import Surface
 
 
 class IOPSurface(Surface):

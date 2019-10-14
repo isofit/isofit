@@ -20,7 +20,7 @@
 
 import scipy as s
 import logging
-from sunposition import sunpos
+from .sunposition import sunpos
 from datetime import datetime
 
 
