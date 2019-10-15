@@ -65,7 +65,7 @@ class Inversion:
         self.counts = 0
         self.inversions = 0
 
-        # Finally, configure Levenberg Marquardt.
+        # Finally, configure Levenberg-Marquardt
         self.least_squares_params = {
             'method': 'trf',
             'max_nfev': 20,
@@ -170,14 +170,14 @@ class Inversion:
 
         @jit
         def jac(x):
-            """Calculate measurement jacobian and prior jacobians with 
-            respect to COST function.  This is the derivative of cost with
-            respect to the state.  The Cost is expressed as a vector of 
-            'residuals' with respect to the prior and measurement, 
-            expressed in absolute terms (not quadratic) for the solver, 
-            It is the square root of the Rodgers et. al Chi square version.
-            All measurement distributions are calculated over subwindows 
-            of the full spectrum."""
+            """Calculate measurement Jacobian and prior Jacobians with 
+            respect to cost function. This is the derivative of cost with
+            respect to the state, commonly known as the gradient or loss
+            surface. The Cost is expressed as a vector of  'residuals'
+            with respect to the prior and measurement, expressed in absolute
+            terms (not quadratic) for the solver; It is the square root of
+            the Rodgers et. al Chi square version. All measurement
+            distributions are calculated over subwindows of the full spectrum."""
 
             # jacobian of measurment cost term WRT state vector.
             K = self.fm.K(x, geom)[self.winidx, :]
@@ -196,9 +196,9 @@ class Inversion:
             return s.real(total_jac)
 
         def err(x):
-            """Calculate cost function expressed here in absolute terms
-            (not quadratic) for the solver, i.e. the square root of the 
-            Rodgers et. al Chi square version.  We concatenate 'residuals'
+            """Calculate cost function expressed here in absolute (not
+            quadratic) terms for the solver, i.e. the square root of the 
+            Rodgers (2000) Chi-square version. We concatenate 'residuals'
             due to measurment and prior terms, suitably scaled.
             All measurement distributions are calculated over subwindows 
             of the full spectrum."""
