@@ -48,7 +48,6 @@ class Inversion:
         self.max_table_size = 500
         self.windows = config['windows']  # Retrieval windows
         self.state_indep_S_hat = False
-        self.windows = config['windows']
         self.simulation_mode = None
         if 'simulation_mode' in config:
             self.simulation_mode = config['simulation_mode']
@@ -67,10 +66,17 @@ class Inversion:
         self.inversions = 0
 
         # Finally, configure Levenberg Marquardt.
-        self.least_squares_params = {'method': 'trf', 'max_nfev': 20,
-                                     'bounds': (self.fm.bounds[0]+eps, self.fm.bounds[1]-eps),
-                                     'x_scale': self.fm.scale, 'xtol': 1e-4, 'ftol': 1e-4, 'gtol': 1e-4,
-                                     'tr_solver': 'exact'}
+        self.least_squares_params = {
+            'method': 'trf',
+            'max_nfev': 20,
+            'bounds': (self.fm.bounds[0]+eps, self.fm.bounds[1]-eps),
+            'x_scale': self.fm.scale,
+            'xtol': 1e-4,
+            'ftol': 1e-4,
+            'gtol': 1e-4,
+            'tr_solver': 'exact'
+        }
+
         for k, v in config.items():
             if k in self.least_squares_params:
                 self.least_squares_params[k] = v
