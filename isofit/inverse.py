@@ -173,10 +173,10 @@ class Inversion:
             """Calculate measurement Jacobian and prior Jacobians with 
             respect to cost function. This is the derivative of cost with
             respect to the state, commonly known as the gradient or loss
-            surface. The Cost is expressed as a vector of  'residuals'
+            surface. The cost is expressed as a vector of 'residuals'
             with respect to the prior and measurement, expressed in absolute
-            terms (not quadratic) for the solver; It is the square root of
-            the Rodgers et. al Chi square version. All measurement
+            (not quadratic) terms for the solver; It is the square root of
+            the Rodgers (2000) Chi-square version. All measurement
             distributions are calculated over subwindows of the full spectrum."""
 
             # jacobian of measurment cost term WRT state vector.
