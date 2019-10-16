@@ -27,7 +27,7 @@ from scipy.io import savemat
 from scipy.interpolate import interp1d
 from sklearn.cluster import KMeans
 
-from common import find_header, expand_path, json_load_ascii
+from isofit.common import find_header, expand_path, json_load_ascii
 
 
 # parse the command line

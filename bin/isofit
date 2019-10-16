@@ -16,6 +16,7 @@
 #
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
+#         Adam Erickson, adam.m.erickson@nasa.gov
 #
 
 import os
@@ -25,12 +26,12 @@ import argparse
 import scipy as s
 from spectral.io import envi
 from scipy.io import savemat
-from .common import load_config, expand_all_paths, load_spectrum
-from .forward import ForwardModel
-from .inverse import Inversion
-from .inverse_mcmc import MCMCInversion
-from .geometry import Geometry
-from .fileio import IO
+from isofit.common import load_config, expand_all_paths, load_spectrum
+from isofit.forward import ForwardModel
+from isofit.inverse import Inversion
+from isofit.inverse_mcmc import MCMCInversion
+from isofit.geometry import Geometry
+from isofit.fileio import IO
 import cProfile
 import logging
 
@@ -41,13 +42,15 @@ warnings.filterwarnings("ignore")
 
 def main():
 
-    description = 'Spectroscopic Surface & Atmosphere Fitting'
+    description = "Spectroscopic Surface & Atmosphere Fitting"  # unused
+
     parser = argparse.ArgumentParser()
     parser.add_argument('config_file')
     parser.add_argument('--level', default='INFO')
     parser.add_argument('--row_column', default='')
     parser.add_argument('--profile', action='store_true')
     args = parser.parse_args()
+
     logging.basicConfig(format='%(message)s', level=args.level)
 
     # Load the configuration file.
