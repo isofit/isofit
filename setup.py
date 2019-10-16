@@ -23,29 +23,29 @@ from setuptools import setup, find_packages
 
 with open('README.rst', 'r') as f:
     long_description = f.read()
-     
+
 lic = 'Apache Software License (http://www.apache.org/licenses/LICENSE-2.0)'
 
 setup(name='isofit',
-    version='1.1.3',
-    url='http://github.com/isofit/isofit/',
-    license=lic,
-    author='David R. Thompson, Winston Olson-Duvall, and Team',
-    author_email='david.r.thompson@jpl.nasa.gov',
-    description='Imaging Spectrometer Optimal FITting',
-    long_description=long_description,
-    long_description_content_type='text/x-rst',
-    packages=find_packages(),
-    install_requires=['scipy>=1.1.0',
-                      'numba>=0.38.0',
-                      'matplotlib>=2.2.2',
-                      'scikit-learn>=0.19.1',
-                      'spectral>=0.19',
-                      'pytest>=3.5.1',
-                      'pep8>=1.7.1',
-                      'xxhash>=1.2.0'],
-    python_requires='>=3',
-    platforms='any',
-    classifiers=['Programming Language :: Python :: 3',
-        'License :: OSI Approved :: Apache Software License',
-        'Operating System :: OS Independent'])
+      version='1.1.4',
+      url='http://github.com/isofit/isofit/',
+      license=lic,
+      author='David R. Thompson, Winston Olson-Duvall, and Team',
+      author_email='david.r.thompson@jpl.nasa.gov',
+      description='Imaging Spectrometer Optimal FITting',
+      long_description=long_description,
+      long_description_content_type='text/x-rst',
+      packages=find_packages(),
+      install_requires=['scipy>=1.1.0',
+                        'numba>=0.38.0',
+                        'matplotlib>=2.2.2',
+                        'scikit-learn>=0.19.1',
+                        'spectral>=0.19',
+                        'pytest>=3.5.1',
+                        'pep8>=1.7.1',
+                        'xxhash>=1.2.0'],
+      python_requires='>=3',
+      platforms='any',
+      classifiers=['Programming Language :: Python :: 3',
+                   'License :: OSI Approved :: Apache Software License',
+                   'Operating System :: OS Independent'])
