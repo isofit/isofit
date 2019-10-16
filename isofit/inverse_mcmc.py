@@ -138,7 +138,3 @@ class MCMCInversion(Inversion):
                 samples.append(x)
 
         return s.array(samples)
-
-
-if __name__ == '__main__':
-    main()

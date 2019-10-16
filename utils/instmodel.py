@@ -29,7 +29,7 @@ from scipy.ndimage.filters import gaussian_filter1d
 from scipy.linalg import svd
 from os.path import abspath, split
 
-from common import find_header, expand_path, json_load_ascii
+from isofit.common import find_header, expand_path, json_load_ascii
 
 hdr_template = '''ENVI
 samples = {samples}

@@ -25,11 +25,10 @@ import scipy as s
 from numpy.random import multivariate_normal
 from os.path import abspath, split
 
-sys.path.insert(0, '../isofit/')
-from geometry import Geometry
-from instrument import Instrument
-from common import find_header, expand_path, json_load_ascii
-from common import expand_all_paths, json_load_ascii, spectrumLoad
+from isofit.common import expand_all_paths, json_load_ascii, spectrumLoad
+from isofit.common import find_header, expand_path, json_load_ascii
+from isofit.instrument import Instrument
+from isofit.geometry import Geometry
 
 
 hdr_template = '''ENVI
