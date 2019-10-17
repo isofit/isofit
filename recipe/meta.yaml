@@ -39,7 +39,7 @@ test:
   requires:
     - pytest
   commands:
-    - pytest --durations --pyargs {{ name }}
+    - pytest --durations=0 --pyargs {{ name }}
     - {{ name }} --version
     - sunposition --version
 
