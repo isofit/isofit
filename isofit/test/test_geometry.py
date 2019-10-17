@@ -19,5 +19,3 @@ def test_Geometry():
     assert geom.RELAZ == 0.0
     assert geom.TRUEAZ == 0.0
     assert geom.umu == 1.0
-    assert geom.coszen() > 0
-    assert geom.sundist() > 0
