@@ -2,6 +2,7 @@
 include LICENSE
 include docs/*.rst
 include utils/*
+include tests/*
 include examples/20171108_Pasadena/*
 include examples/20171108_Pasadena/configs/*
 include examples/20171108_Pasadena/insitu/*
@@ -15,4 +16,3 @@ graft docs/html
 
 # Exclude patterns
 exclude examples/20171108_Pasadena/remote/*.mat
-
