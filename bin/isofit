@@ -50,7 +50,7 @@ def main():
     parser.add_argument('--level', default='INFO')
     parser.add_argument('--row_column', default='')
     parser.add_argument('--profile', action='store_true')
-    parser.add_argument('--version', action='version',
+    parser.add_argument('-v,--version', action='version',
                         version='%(prog)s {version}'.format(version=__version__))
     args = parser.parse_args()
 

@@ -73,7 +73,7 @@ if __name__ == '__main__':
                         help='Output in radians instead of degrees')
     parser.add_argument('--csv', dest='csv', action='store_true',
                         help='Comma separated values (time,dt,lat,lon,elev,temp,pressure,az,zen,RA,dec,H)')
-    parser.add_argument('--version', action='version',
+    parser.add_argument('-v,--version', action='version',
                         version='%(prog)s {version}'.format(version=__version__))
     args = parser.parse_args()
 
