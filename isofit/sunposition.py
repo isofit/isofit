@@ -442,12 +442,12 @@ class _sp:
     def norm_lat_lon(lat, lon):
         if lat < -90 or lat > 90:
             # convert to cartesian and back
-            x = cos(deg2rad(lon))*cos(deg2rad(lat))
-            y = sin(deg2rad(lon))*cos(deg2rad(lat))
-            z = sin(deg2rad(lat))
-            r = sqrt(x**2 + y**2 + z**2)
-            lon = rad2deg(arctan2(y, x)) % 360
-            lat = rad2deg(arcsin(z/r))
+            x = np.cos(np.deg2rad(lon))*np.cos(np.deg2rad(lat))
+            y = np.sin(np.deg2rad(lon))*np.cos(np.deg2rad(lat))
+            z = np.sin(np.deg2rad(lat))
+            r = np.sqrt(x**2 + y**2 + z**2)
+            lon = np.rad2deg(np.arctan2(y, x)) % 360
+            lat = np.rad2deg(np.arcsin(z/r))
         elif lon < 0 or lon > 360:
             lon = lon % 360
         return lat, lon

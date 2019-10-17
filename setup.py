@@ -22,19 +22,19 @@ from io import open
 from setuptools import setup, find_packages
 from isofit import __version__
 
-with open('README.rst', 'r') as f:
-    long_description = f.read()
+with open('docs/README.rst', 'r') as f:
+    LONG_DESCRIPTION = f.read()
 
-lic = 'Apache Software License (http://www.apache.org/licenses/LICENSE-2.0)'
+LICENSE = "Apache Software License (http://www.apache.org/licenses/LICENSE-2.0)"
 
 setup(name='isofit',
       version=__version__,
       url='http://github.com/isofit/isofit/',
-      license=lic,
+      license=LICENSE,
       author='David R. Thompson, Winston Olson-Duvall, and Team',
       author_email='david.r.thompson@jpl.nasa.gov',
       description='Imaging Spectrometer Optimal FITting',
-      long_description=long_description,
+      long_description=LONG_DESCRIPTION,
       long_description_content_type='text/x-rst',
       packages=find_packages(),
       scripts=['bin/isofit',

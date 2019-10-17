@@ -1,6 +1,5 @@
 # Include patterns
 include LICENSE
-include *.rst
 include docs/*.rst
 include utils/*
 include examples/20171108_Pasadena/*
@@ -16,3 +15,4 @@ graft docs/html
 
 # Exclude patterns
 exclude examples/20171108_Pasadena/remote/*.mat
+

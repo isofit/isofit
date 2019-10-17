@@ -14,7 +14,7 @@ best support and contribute to this project.  Typical contributions may include:
 If you have ideas for new additions, that's great - please contact the maintainers 
 at the addresses given below, and we can coordinate efforts.  Our general policy 
 is to for the maintainers to delegate technical authority to individuals to make
-changes and additions to specific topics. 
+changes and additions to specific topics.
 
 
 Getting Started
@@ -119,23 +119,23 @@ Project Decision Making
 Minor changes follow an expedited acceptance process.  These are things like:
 
 * Bug fixes
-* Unit tests 
-* Documentation 
-* Consolidation that does not change algorithm results or provide significant new functionality  
+* Unit tests
+* Documentation
+* Consolidation that does not change algorithm results or provide significant new functionality
 * New functionality initiated by maintainers, or over which authority has been delegated in advance by maintainers (e.g. through issue assignment)
 
-Minor change pull requests are accepted once they: 
+Minor change pull requests are accepted once they:
 
 * Pass unit tests and adhere to project coding conventions
-* Get signoff from at least one maintainer, with no objections from any other maintainer.
+* Get signoff from at least one maintainer, with no objections from any other maintainer
 
 Accepted minor changes will be released in the next major or minor release version. Hotfixes will be expedited as needed.
 
-Major changes include: 
+Major changes include:
 
-* New functionality, including examples, data, and algorithm changes, over which authority was not delegated in advance.  
-* Official releases 
-* Project policy updates 
+* New functionality, including examples, data, and algorithm changes, over which authority was not delegated in advance.
+* Official releases
+* Project policy updates
  
 These are accepted through consensus of a quorum of maintainers.  **If you would like to include any new algorithms or examples, we highly recommend that they are supported by peer reviewed scientific research.**
 
@@ -203,7 +203,8 @@ The github maintainers, responsible for handling pull requests, are:
 
 Thanks to the following regular contributors:
 
-* Shanti Rao (JPL)
+* Adam Erickson (NASA GSFC)
+* Shanti Rao (NASA JPL)
 * Terry Mullen (UMass)
 
 The ISOFIT codebase was made possible with support from various sources.
