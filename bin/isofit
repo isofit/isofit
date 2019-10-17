@@ -32,6 +32,7 @@ from isofit.inverse import Inversion
 from isofit.inverse_mcmc import MCMCInversion
 from isofit.geometry import Geometry
 from isofit.fileio import IO
+from isofit import __version__
 import cProfile
 import logging
 
@@ -49,6 +50,8 @@ def main():
     parser.add_argument('--level', default='INFO')
     parser.add_argument('--row_column', default='')
     parser.add_argument('--profile', action='store_true')
+    parser.add_argument('--version', action='version',
+                        version='%(prog)s {version}'.format(version=__version__))
     args = parser.parse_args()
 
     logging.basicConfig(format='%(message)s', level=args.level)
