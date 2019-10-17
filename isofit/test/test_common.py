@@ -1,3 +1,4 @@
+import numpy as np
 from isofit.common import max_table_size, binary_table, eps, combos
 
 
@@ -14,6 +15,6 @@ def test_eps():
 
 
 def test_combos():
-    inds = [[1, 2], [3, 4, 5]]
-    result = [[1, 3], [1, 4], [1, 5], [2, 3], [2, 4], [2, 5]]
-    assert all([a == b for a, b in zip(combos(inds), result)])
+    inds = np.array([[1, 2], [3, 4, 5]])
+    result = np.array([[1, 3], [2, 3], [1, 4], [2, 4], [1, 5], [2, 5]])
+    assert np.array_equal(combos(inds), result)
