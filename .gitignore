@@ -22,7 +22,6 @@ examples/*/images/*.png
 # Ignore test, build and distribution files
 build/
 dist/
-logs/
 *.egg-info/
 .pytest_cache/
 isofit/tests/output/*.txt
