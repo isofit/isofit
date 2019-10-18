@@ -259,13 +259,13 @@ def recursive_reincode(j, shell_replace=True):
         return j
 
 
-def json_load_ascii(filename):
+def json_load_ascii(filename, shell_replace=True):
     """Load a hierarchical structure, convert all unicode to ASCII and
     expand environment variables"""
 
     with open(filename, 'r') as fin:
         j = json.load(fin)
-        return recursive_reincode(j)
+        return recursive_reincode(j, shell_replace)
 
 
 def load_config(config_file):
