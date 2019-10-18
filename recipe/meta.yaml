@@ -6,8 +6,8 @@ package:
   version: {{ version }}
 
 source:
-  url: https://github.com/adam-erickson/{{ name }}/archive/{{ version }}.tar.gz
-  sha256: 06f4ab1319829c61806c228491b8520f61fac52f269d3cbe5543efd9a8d9dd64
+  url: https://github.com/isofit/{{ name }}/raw/master/dist/{{ name }}-{{ version }}.tar.gz
+  sha256: 8ac58dc4d2db7df56b6fad1febbfc746cef8bc416c7f9ae9f9c4edbb77ec7b09
 
 build:
   noarch: python
