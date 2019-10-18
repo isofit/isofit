@@ -21,8 +21,8 @@ examples/*/images/*.png
 
 # Ignore test, build and distribution files
 build/
-dist/
-isofit.egg-info/
+dist/*.whl
+*.egg-info/
 .pytest_cache/
 tests/output/*.txt
 

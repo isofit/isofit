@@ -18,4 +18,5 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-name = "isofit"
+name = 'isofit'
+__version__ = '1.1.5'

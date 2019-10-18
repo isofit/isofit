@@ -48,7 +48,6 @@ class Inversion:
         self.max_table_size = 500
         self.windows = config['windows']  # Retrieval windows
         self.state_indep_S_hat = False
-        self.windows = config['windows']
         self.simulation_mode = None
         if 'simulation_mode' in config:
             self.simulation_mode = config['simulation_mode']
@@ -66,11 +65,18 @@ class Inversion:
         self.counts = 0
         self.inversions = 0
 
-        # Finally, configure Levenberg Marquardt.
-        self.least_squares_params = {'method': 'trf', 'max_nfev': 20,
-                                     'bounds': (self.fm.bounds[0]+eps, self.fm.bounds[1]-eps),
-                                     'x_scale': self.fm.scale, 'xtol': 1e-4, 'ftol': 1e-4, 'gtol': 1e-4,
-                                     'tr_solver': 'exact'}
+        # Finally, configure Levenberg-Marquardt
+        self.least_squares_params = {
+            'method': 'trf',
+            'max_nfev': 20,
+            'bounds': (self.fm.bounds[0]+eps, self.fm.bounds[1]-eps),
+            'x_scale': self.fm.scale,
+            'xtol': 1e-4,
+            'ftol': 1e-4,
+            'gtol': 1e-4,
+            'tr_solver': 'exact'
+        }
+
         for k, v in config.items():
             if k in self.least_squares_params:
                 self.least_squares_params[k] = v
@@ -164,14 +170,14 @@ class Inversion:
 
         @jit
         def jac(x):
-            """Calculate measurement jacobian and prior jacobians with 
-            respect to COST function.  This is the derivative of cost with
-            respect to the state.  The Cost is expressed as a vector of 
-            'residuals' with respect to the prior and measurement, 
-            expressed in absolute terms (not quadratic) for the solver, 
-            It is the square root of the Rodgers et. al Chi square version.
-            All measurement distributions are calculated over subwindows 
-            of the full spectrum."""
+            """Calculate measurement Jacobian and prior Jacobians with 
+            respect to cost function. This is the derivative of cost with
+            respect to the state, commonly known as the gradient or loss
+            surface. The cost is expressed as a vector of 'residuals'
+            with respect to the prior and measurement, expressed in absolute
+            (not quadratic) terms for the solver; It is the square root of
+            the Rodgers (2000) Chi-square version. All measurement
+            distributions are calculated over subwindows of the full spectrum."""
 
             # jacobian of measurment cost term WRT state vector.
             K = self.fm.K(x, geom)[self.winidx, :]
@@ -190,9 +196,9 @@ class Inversion:
             return s.real(total_jac)
 
         def err(x):
-            """Calculate cost function expressed here in absolute terms
-            (not quadratic) for the solver, i.e. the square root of the 
-            Rodgers et. al Chi square version.  We concatenate 'residuals'
+            """Calculate cost function expressed here in absolute (not
+            quadratic) terms for the solver, i.e. the square root of the 
+            Rodgers (2000) Chi-square version. We concatenate 'residuals'
             due to measurment and prior terms, suitably scaled.
             All measurement distributions are calculated over subwindows 
             of the full spectrum."""
