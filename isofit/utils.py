@@ -614,6 +614,8 @@ def segment(spectra, flag, npca, segsize, nchunk):
     lbl_mm[:, :] = s.array(lbl, dtype=s.float32).reshape((nl, 1, ns))
     del lbl_mm
 
+# SURFMODEL
+
 
 def surfmodel(config):
     """."""

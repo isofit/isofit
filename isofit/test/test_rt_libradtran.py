@@ -22,21 +22,11 @@ import sys
 import json
 from os.path import expandvars, split, abspath, join
 
-from isofit.common import expand_all_paths
-from isofit.common import load_spectrum
+from isofit.common import expand_all_paths, load_spectrum
 from isofit.fileio import IO
 from isofit.inverse import Inversion
 from isofit.forward import ForwardModel
 from isofit.rt_libradtran import LibRadTranRT
-
-# Get directory and file paths
-
-testdir, fname = split(abspath(__file__))
-datadir = join(testdir, 'data/')
-
-# Import ISOFIT code
-
-sys.path.append(join(testdir, '../isofit'))
 
 
 def test_rt_libradtran():
@@ -58,7 +48,7 @@ def test_rt_libradtran():
 def load_config(config_file):
     """Load a configuration file, expand paths"""
 
-    config_path = join(datadir, config_file)
+    config_path = join('data/', config_file)
     config = json.load(open(config_path, 'r'))
     configdir, f = split(abspath(config_path))
     config = expand_all_paths(config, configdir)

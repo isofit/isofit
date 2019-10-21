@@ -18,29 +18,23 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-import pep8
 import sys
-from os.path import expandvars, split, abspath, join
+import pep8
 from glob import glob
-
-testdir, fname = split(abspath(__file__))
-config_file = testdir+'/data/pep8_config.txt'
-excludes = ['sunposition.py']
 
 
 def test_pep8_conformance():
     """Test that we conform to PEP8."""
-    directories = [testdir + '/../isofit/', testdir + '/../utils/']
+
+    config_file = 'data/pep8_config.txt'
     files = []
-    for directory in directories:
-        for fi in glob(directory+'*py'):
-            if not any([e in fi for e in excludes]):
-                files.append(fi)
+    for fi in glob('../*.py'):
+        files.append(fi)
 
     # After acceptance, this will be uncommented
     pep8style = pep8.StyleGuide(config_file=config_file, quiet=False)
     result = pep8style.check_files(files)
     if result.total_errors != 0:
-        print('Found PEP8 conformance error.')
-        print('Please fix your style with autopep8.')
+        print("Found PEP8 conformance error.")
+        print("Please fix your style with autopep8.")
     assert result.total_errors == 0
