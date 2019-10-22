@@ -51,7 +51,7 @@ class Isofit:
     self.io = None
     self.states = None
 
-    def __init__(self, config_file, level='INFO', row_column='', profile=False):
+    def __init__(self, config_file, level='INFO', row_column=''):
         """Initialize the class."""
         self.profile = profile
         # Set logging level
@@ -86,7 +86,7 @@ class Isofit:
                 self.rows = range(int(row_start), int(row_end))
                 self.cols = range(int(col_start), int(col_end))
 
-    def run(self):
+    def run(self, profile=False):
         """
         Iterate over all spectra, reading and writing through the IO
         object to handle formatting, buffering, and deferred write-to-file.
