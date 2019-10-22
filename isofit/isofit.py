@@ -87,12 +87,11 @@ class Isofit:
                 self.cols = range(int(col_start), int(col_end))
 
     def run(self):
-        """Run the forward-to-inverse model process.
-
+        """
         Iterate over all spectra, reading and writing through the IO
-        # object to handle formatting, buffering, and deferred write-to-file.
-        # The idea is to avoid reading the entire file into memory, or hitting
-        # the physical disk too often. These are our main class variables.
+        object to handle formatting, buffering, and deferred write-to-file.
+        The idea is to avoid reading the entire file into memory, or hitting
+        the physical disk too often. These are our main class variables.
         """
         io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
         for row, col, meas, geom, configs in io:
