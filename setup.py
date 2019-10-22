@@ -22,7 +22,7 @@ from io import open
 from setuptools import setup, find_packages
 from isofit import __version__
 
-with open('docs/README.rst', 'r') as f:
+with open('README.rst', 'r') as f:
     LONG_DESCRIPTION = f.read()
 
 LICENSE = "Apache Software License (http://www.apache.org/licenses/LICENSE-2.0)"
