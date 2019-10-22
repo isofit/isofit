@@ -1,12 +1,12 @@
 {% set name = "isofit" %}
-{% set version = "v1.1.6" %}
+{% set version = "1.1.6" %}
 
 package:
   name: {{ name|lower }}
   version: {{ version }}
 
 source:
-  url: https://github.com/isofit/{{ name }}/archive/{{ version }}.tar.gz
+  url: https://github.com/isofit/{{ name }}/archive/v{{ version }}.tar.gz
   sha256: 358fc665bf2bb3ab5906bf4f0dc4118095422da0bef65a546d23fbacff78e81e 
 
 build:
