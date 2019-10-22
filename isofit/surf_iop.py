@@ -19,10 +19,10 @@
 #
 
 import scipy as s
-from scipy.io import loadmat, savemat
-from .common import recursive_replace, load_wavelen, chol_inv, eps, srf
 from scipy.linalg import block_diag, det, norm, pinv, sqrtm, inv, cholesky
 from scipy.interpolate import interp1d
+
+from .common import recursive_replace, load_wavelen, chol_inv, eps, srf
 from .surf import Surface
 
 
@@ -39,7 +39,7 @@ class IOPSurface(Surface):
         # Each channel maps to a nonnegative absorption residual
         if 'absorption_resid_file' in config:
             abs_file = config['absorption_resid_file']
-            self.C = loadmat(abs_file)['C']
+            self.C = s.io.loadmat(abs_file)['C']
             self.abs_inds = s.arange(len(self.wl))
             amin, amax = -1.0, 1.0
             self.statevec.extend(['ABS_%04i' % int(w) for w in self.wl])

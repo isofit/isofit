@@ -27,7 +27,7 @@ from numpy.random import multivariate_normal
 from scipy import logical_and as aand
 import pylab as plt
 import spectral
-from spectral import envi
+from spectral.io import envi
 from skimage.segmentation import slic
 import scipy as s
 from scipy.linalg import eigh, norm, inv
@@ -36,14 +36,13 @@ from scipy.stats import linregress
 from scipy.linalg import svd
 from scipy.interpolate import interp1d
 from scipy.ndimage.filters import gaussian_filter1d
-from scipy.io import savemat
 from sklearn.cluster import KMeans
 import matplotlib
 
-from isofit.common import expand_all_paths, spectrumLoad, \
+from .common import expand_all_paths, spectrumLoad, \
     find_header, expand_path, json_load_ascii
-from isofit.instrument import Instrument
-from isofit.geometry import Geometry
+from .instrument import Instrument
+from .geometry import Geometry
 
 # EMPLINE
 
@@ -485,7 +484,7 @@ def instmodel(config):
              'covariances': out, 'Xvert': Xvert, 'Xhoriz': Xhoriz,
              'Xvertp': Xvertp, 'Xhorizp': Xhorizp, 'use_ff': use_ff,
              'use_C': use_C}
-    savemat(outfile, mdict)
+    s.io.savemat(outfile, mdict)
 
 # REMAP
 
@@ -762,5 +761,5 @@ def surfmodel(config):
     model['means'] = s.array(model['means'])
     model['covs'] = s.array(model['covs'])
 
-    savemat(outfile, model)
+    s.io.savemat(outfile, model)
     print("saving results to", outfile)

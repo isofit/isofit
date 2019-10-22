@@ -23,19 +23,30 @@ import sys
 import scipy as s
 import pylab as plt
 from scipy.linalg import inv, norm, sqrtm, det
-from scipy.io import savemat
-from .inverse_simple import invert_simple, invert_algebraic
 from spectral.io import envi
-from .common import load_spectrum, eps, resample_spectrum, expand_all_paths
-import logging
 from collections import OrderedDict
+import logging
+
+from .common import load_spectrum, eps, resample_spectrum, expand_all_paths
 from .geometry import Geometry
+from .inverse_simple import invert_simple, invert_algebraic
 
 
 # Constants related to file I/O
-typemap = {s.uint8: 1, s.int16: 2, s.int32: 3, s.float32: 4, s.float64: 5,
-           s.complex64: 6, s.complex128: 9, s.uint16: 12, s.uint32: 13, s.int64: 14,
-           s.uint64: 15}
+typemap = {
+    s.uint8: 1,
+    s.int16: 2,
+    s.int32: 3,
+    s.float32: 4,
+    s.float64: 5,
+    s.complex64: 6,
+    s.complex128: 9,
+    s.uint16: 12,
+    s.uint32: 13,
+    s.int64: 14,
+    s.uint64: 15
+}
+
 max_frames_size = 100
 flush_rate = 10
 
@@ -183,7 +194,7 @@ class SpectrumFile:
         elif self.format == 'MATLAB':
 
             # Dictionary output for MATLAB products
-            savemat(self.fname, x)
+            s.io.savemat(self.fname, x)
 
         else:
 
