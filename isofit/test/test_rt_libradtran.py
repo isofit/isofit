@@ -20,7 +20,7 @@
 
 import sys
 import json
-from os.path import expandvars, split, abspath, join
+from os.path import expandvars, split, abspath, join, dirname
 
 from isofit.common import expand_all_paths, load_spectrum
 from isofit.fileio import IO
@@ -48,7 +48,8 @@ def test_rt_libradtran():
 def load_config(config_file):
     """Load a configuration file, expand paths"""
 
-    config_path = join('data/', config_file)
+    basedir = dirname(__file__)
+    config_path = join(basedir, 'data/', config_file)
     config = json.load(open(config_path, 'r'))
     configdir, f = split(abspath(config_path))
     config = expand_all_paths(config, configdir)
