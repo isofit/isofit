@@ -26,7 +26,6 @@
 # SOFTWARE.
 #
 
-
 import numpy as np
 from datetime import datetime
 
@@ -654,3 +653,76 @@ def sunpos(dt, latitude, longitude, elevation, temperature=None, pressure=None, 
     if radians:
         res = np.deg2rad(res)
     return res
+
+
+class Sunposition:
+    """Compute sun position parameters given the time and location."""
+
+    self.t = None
+    self.lat = None
+    self.lon = None
+    self.elev = None
+    self.temp = None
+    self.p = None
+    self.dt = None
+    self.rad = None
+
+    self.az = None
+    self.zen = None
+    self.ra = None
+    self.dec = None
+    self.h = None
+
+    def __init__(self, t, lat, lon, elev, temp, p, dt, rad, csv=False, cite=False):
+        """Initialize the class and run the model."""
+
+        self.lat = lat
+        self.lon = lon
+        self.elev = elev
+        self.temp = temp
+        self.p = p
+        self.dt = dt
+        self.rad = rad
+
+        if t == "now":
+            self.t = datetime.utcnow()
+        elif ":" in t and "-" in t:
+            try:
+                # with microseconds
+                self.t = datetime.strptime(t, '%Y-%m-%d %H:%M:%S.%f')
+            except:
+                try:
+                    # without microseconds
+                    self.t = datetime.strptime(t, '%Y-%m-%d %H:%M:%S.')
+                except:
+                    self.t = datetime.strptime(t, '%Y-%m-%d %H:%M:%S')
+        else:
+            self.t = datetime.utcfromtimestamp(int(t))
+
+        # Run the sun position calculation
+        self.az, self.zen, self.ra, self.dec, self.h = sunpos(
+            self.t, lat, lon, elev, temp, p, dt, rad)
+
+        # Format output to CSV?
+        if csv:
+            print('{t}, {dt}, {lat}, {lon}, {elev}, {temp}, {p}, {az}, {zen}, {ra}, {dec}, {h}'.format(
+                t=self.t, dt=dt, lat=lat, lon=lon, elev=elev, temp=temp, p=p, az=self.az, zen=self.zen, ra=self.ra, dec=self.dec, h=self.h))
+        else:
+            dr = 'deg'
+            if rad:
+                dr = 'rad'
+            print(
+                "Computing sun position at T = {t} + {dt} s".format(t=self.t, dt=dt))
+            print("Lat, Lon, Elev = {lat} deg, {lon} deg, {elev} m".format(
+                lat=lat, lon=lon, elev=elev))
+            print("T, P = {temp} C, {press} mbar".format(temp=temp, press=p))
+            print("Results:")
+            print("Azimuth, zenith = {az} {dr}, {zen} {dr}".format(
+                az=self.az, zen=self.zen, dr=dr))
+            print("RA, dec, H = {ra} {dr}, {dec} {dr}, {h} {dr}".format(
+                ra=self.ra, dec=self.dec, h=self.h, dr=dr))
+
+        if cite:
+            print("Implementation: Samuel Bear Powell, 2016")
+            print("Algorithm:")
+            print("Ibrahim Reda, Afshin Andreas, \"Solar position algorithm for solar radiation applications\", Solar Energy, Volume 76, Issue 5, 2004, Pages 577-589, ISSN 0038-092X, doi:10.1016/j.solener.2003.12.003")
