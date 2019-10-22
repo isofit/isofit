@@ -43,13 +43,13 @@ warnings.filterwarnings("ignore")
 class Isofit:
     """Spectroscopic Surface and Atmosphere Fitting."""
 
-    self.rows, self.cols = None, None
-    self.config = None
-    self.profile = None
-    self.fm = None
-    self.iv = None
-    self.io = None
-    self.states = None
+    rows, cols = None, None
+    config = None
+    profile = None
+    fm = None
+    iv = None
+    io = None
+    states = None
 
     def __init__(self, config_file, level='INFO', row_column=''):
         """Initialize the class."""

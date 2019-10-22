@@ -659,20 +659,19 @@ class Sunposition:
     """Compute sun position parameters given the time and location."""
 
     # Inputs
-    self.t = None
-    self.lat = None
-    self.lon = None
-    self.elev = None
-    self.temp = None
-    self.p = None
-    self.dt = None
-    self.rad = None
+    t = None
+    lat, lon = None, None
+    elev = None
+    temp = None
+    p = None
+    dt = None
+    rad = None
     # Outputs
-    self.az = None
-    self.zen = None
-    self.ra = None
-    self.dec = None
-    self.h = None
+    az = None
+    zen = None
+    ra = None
+    dec = None
+    h = None
 
     def __init__(self, t, lat, lon, elev, temp, p, dt, rad, csv=False):
         """Initialize the class and run the model."""
