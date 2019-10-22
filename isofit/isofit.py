@@ -51,7 +51,7 @@ class Isofit:
     self.io = None
     self.states = None
 
-    def __init__(self, config_file, level='INFO', row_column='', profile=True):
+    def __init__(self, config_file, level='INFO', row_column='', profile=False):
         """Initialize the class."""
         self.profile = profile
         # Set logging level

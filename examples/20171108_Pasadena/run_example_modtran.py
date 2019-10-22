@@ -1,29 +1,31 @@
 # David R Thompson, Adam Erickson
 
-import subprocess
+
+from isofit.isofit import Isofit
 from isofit.utils import surfmodel
+
 
 # Build the surface model
 surfmodel("configs/ang20171108t184227_surface.json")
 
 # Run retrievals
-subprocess.call(["isofit", "--level", "DEBUG", "configs/ang20171108t173546_darklot.json"],
-                shell=False)
+model1 = Isofit("configs/ang20171108t173546_darklot.json")
+model1.run()
 
-subprocess.call(["isofit", "--level", "DEBUG", "configs/ang20171108t173546_horse.json"],
-                shell=False)
+model2 = Isofit("configs/ang20171108t173546_horse.json")
+model2.run()
 
-subprocess.call(["isofit", "--level", "DEBUG", "configs/ang20171108t184227_astrored.json"],
-                shell=False)
+model3 = Isofit("configs/ang20171108t184227_astrored.json")
+model3.run()
 
-subprocess.call(["isofit", "--level", "DEBUG", "configs/ang20171108t184227_astrogreen.json"],
-                shell=False)
+model4 = Isofit("configs/ang20171108t184227_astrogreen.json")
+model4.run()
 
-subprocess.call(["isofit", "--level", "DEBUG", "configs/ang20171108t184227_beckmanlawn.json"],
-                shell=False)
+model5 = Isofit("configs/ang20171108t184227_beckmanlawn.json")
+model5.run()
 
-subprocess.call(["isofit", "--level", "DEBUG", "configs/ang20171108t184227_beckmanlawn-oversmoothed.json"],
-                shell=False)
+model6 = Isofit("configs/ang20171108t184227_beckmanlawn-oversmoothed.json")
+model6.run()
 
-subprocess.call(["isofit", "--level", "DEBUG", "configs/ang20171108t184227_beckmanlawn-undersmoothed.json"],
-                shell=False)
+model7 = Isofit("configs/ang20171108t184227_beckmanlawn-undersmoothed.json")
+model7.run()
