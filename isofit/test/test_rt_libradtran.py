@@ -29,10 +29,6 @@ from isofit.forward import ForwardModel
 from isofit.rt_libradtran import LibRadTranRT
 
 
-testdir, fname = split(abspath(__file__))
-datadir = join(testdir, 'data/')
-
-
 def test_rt_libradtran():
     """This simple unit test simulates an observation of a uniform
     10% reflectance surface, and then performs a retrieval (varying only
@@ -52,6 +48,8 @@ def test_rt_libradtran():
 def load_config(config_file):
     """Load a configuration file, expand paths"""
 
+    testdir, fname = split(abspath(__file__))
+    datadir = join(testdir, 'data/')
     config_path = join(datadir, config_file)
     config = json.load(open(config_path, 'r'))
     configdir, f = split(abspath(config_path))
