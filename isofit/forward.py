@@ -18,8 +18,8 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-import scipy as s
 from copy import deepcopy
+import scipy as s
 from scipy.linalg import det, norm, pinv, sqrtm, inv, block_diag
 from importlib import import_module
 from scipy.interpolate import interp1d

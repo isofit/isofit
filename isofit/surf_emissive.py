@@ -19,9 +19,10 @@
 #
 
 import scipy as s
-from .common import recursive_replace, emissive_radiance, chol_inv, eps
 from scipy.linalg import det, norm, pinv, sqrtm, inv, cholesky
 from scipy.optimize import minimize
+
+from .common import recursive_replace, emissive_radiance, chol_inv, eps
 from .surf_multicomp import MultiComponentSurface
 
 

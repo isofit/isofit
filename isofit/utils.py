@@ -24,12 +24,8 @@ import sys
 import time
 import logging
 from numpy.random import multivariate_normal
-from scipy import logical_and as aand
-import pylab as plt
-import spectral
-from spectral.io import envi
-from skimage.segmentation import slic
 import scipy as s
+from scipy import logical_and as aand
 from scipy.linalg import eigh, norm, inv
 from scipy.spatial import KDTree
 from scipy.stats import linregress
@@ -37,15 +33,18 @@ from scipy.linalg import svd
 from scipy.interpolate import interp1d
 from scipy.ndimage.filters import gaussian_filter1d
 from sklearn.cluster import KMeans
+from spectral.io import envi
+from skimage.segmentation import slic
 import matplotlib
+import pylab as plt
 
 from .common import expand_all_paths, spectrumLoad, \
     find_header, expand_path, json_load_ascii
 from .instrument import Instrument
 from .geometry import Geometry
 
-# EMPLINE
 
+# EMPLINE
 
 def empline(reference_radiance, reference_reflectance, reference_locations, hashfile,
             input_radiance, input_locations, output_reflectance, output_uncertainty,
@@ -246,8 +245,8 @@ def empline(reference_radiance, reference_reflectance, reference_locations, hash
 
         out_unc_mm[row, :, :] = out_rfl
 
-# EXTRACT
 
+# EXTRACT
 
 def extract(inputfile, labels, output, chunksize, flag):
     """..."""
@@ -329,8 +328,8 @@ def extract(inputfile, labels, output, chunksize, flag):
     else:
         out_mm[:, 0, :] = s.array(out, s.float64)
 
-# GENNOISE
 
+# GENNOISE
 
 def gennoise(config):
     """Add noise to a radiance spectrum or image."""
@@ -352,8 +351,8 @@ def gennoise(config):
     else:
         raise ValueError("Image cubes not yet implemented.")
 
-# INSTMODEL
 
+# INSTMODEL
 
 def percentile(X, p):
     """..."""
@@ -465,7 +464,7 @@ def instmodel(config):
     uniformity_thresh = float(config['uniformity_threshold'])
 
     infile_hdr = infile + '.hdr'
-    img = spectral.io.envi.open(infile_hdr, infile)
+    img = envi.open(infile_hdr, infile)
     inmm = img.open_memmap(interleave='source', writable=False)
     if img.interleave != 1:
         raise ValueError("I need BIL interleave.")
@@ -486,8 +485,8 @@ def instmodel(config):
              'use_C': use_C}
     s.io.savemat(outfile, mdict)
 
-# REMAP
 
+# REMAP
 
 def remap(inputfile, labels, outputfile, flag, chunksize):
     """."""
@@ -535,8 +534,8 @@ def remap(inputfile, labels, outputfile, flag, chunksize):
 
         out_mm[lstart:lend, :, :] = out
 
-# SEGMENT
 
+# SEGMENT
 
 def segment(spectra, flag, npca, segsize, nchunk):
     """."""
@@ -613,8 +612,8 @@ def segment(spectra, flag, npca, segsize, nchunk):
     lbl_mm[:, :] = s.array(lbl, dtype=s.float32).reshape((nl, 1, ns))
     del lbl_mm
 
-# SURFMODEL
 
+# SURFMODEL
 
 def surfmodel(config):
     """."""

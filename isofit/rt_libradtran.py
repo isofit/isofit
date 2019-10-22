@@ -23,6 +23,8 @@ import re
 import time
 import json
 import logging
+import multiprocessing
+import subprocess
 import scipy as s
 from spectral.io import envi
 from copy import deepcopy
@@ -32,13 +34,11 @@ from scipy.interpolate import interp1d
 from scipy.optimize import minimize_scalar as min1d
 from scipy.stats import multivariate_normal as mvn
 import pylab as plt
-import multiprocessing
-import subprocess
 
-from .common import json_load_ascii, combos, VectorInterpolator
-from .common import recursive_replace
+from .common import json_load_ascii, combos, VectorInterpolator, \
+    recursive_replace, resample_spectrum
 from .rt_lut import TabularRT, FileExistsError, spawn_rt
-from .common import resample_spectrum
+
 
 eps = 1e-5  # used for finite difference derivative calculations
 

@@ -33,6 +33,7 @@ from numba import jit
 from .inverse_simple import invert_simple
 from .common import svd_inv, svd_inv_sqrt, eps
 
+
 error_code = -1
 
 

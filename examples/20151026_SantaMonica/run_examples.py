@@ -1,6 +1,5 @@
 # David R Thompson, Adam Erickson
 
-
 from isofit.isofit import Isofit
 from isofit.utils import surfmodel
 
