@@ -658,6 +658,7 @@ def sunpos(dt, latitude, longitude, elevation, temperature=None, pressure=None, 
 class Sunposition:
     """Compute sun position parameters given the time and location."""
 
+    # Inputs
     self.t = None
     self.lat = None
     self.lon = None
@@ -666,14 +667,14 @@ class Sunposition:
     self.p = None
     self.dt = None
     self.rad = None
-
+    # Outputs
     self.az = None
     self.zen = None
     self.ra = None
     self.dec = None
     self.h = None
 
-    def __init__(self, t, lat, lon, elev, temp, p, dt, rad, csv=False, cite=False):
+    def __init__(self, t, lat, lon, elev, temp, p, dt, rad, csv=False):
         """Initialize the class and run the model."""
 
         self.lat = lat
@@ -722,7 +723,8 @@ class Sunposition:
             print("RA, dec, H = {ra} {dr}, {dec} {dr}, {h} {dr}".format(
                 ra=self.ra, dec=self.dec, h=self.h, dr=dr))
 
-        if cite:
-            print("Implementation: Samuel Bear Powell, 2016")
-            print("Algorithm:")
-            print("Ibrahim Reda, Afshin Andreas, \"Solar position algorithm for solar radiation applications\", Solar Energy, Volume 76, Issue 5, 2004, Pages 577-589, ISSN 0038-092X, doi:10.1016/j.solener.2003.12.003")
+    @property
+    def citation(self):
+        print("Implementation: Samuel Bear Powell, 2016")
+        print("Algorithm:")
+        print("Ibrahim Reda, Afshin Andreas, \"Solar position algorithm for solar radiation applications\", SolarEnergy, Volume 76, Issue 5, 2004, Pages 577-589, ISSN 0038-092X, doi:10.1016/j.solener.2003.12.003")
