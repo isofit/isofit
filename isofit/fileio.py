@@ -584,16 +584,37 @@ class IO:
             A = s.matmul(K, G)
 
             # Form the MATLAB dictionary object and write to file
-            mdict = {'K': K, 'G': G, 'S_hat': S_hat,
-                     'prior_mu': xa, 'Ls': Ls, 'prior_Cov': Sa, 'meas': meas,
-                     'rdn_est': rdn_est, 'x': x, 'x_surface': x_surface, 'x_RT': x_RT,
-                     'x_instrument': x_instrument, 'meas_Cov': meas_Cov, 'wl': wl,
-                     'fwhm': fwhm, 'lamb_est': lamb_est, 'coszen': coszen,
-                     'cost_jac_prior': cost_jac_prior, 'Kb': Kb, 'A': A,
-                     'cost_jac_meas': cost_jac_meas, 'winidx': self.iv.winidx,
-                     'prior_resid': prior_resid,
-                     'noise_Cov': Sy, 'xinit': xinit, 'rhoatm': rhoatm,
-                     'sphalb': sphalb, 'transm': transm, 'solar_irr': solar_irr}
+            mdict = {
+                'K': K,
+                'G': G,
+                'S_hat': S_hat,
+                'prior_mu': xa,
+                'Ls': Ls,
+                'prior_Cov': Sa,
+                'meas': meas,
+                'rdn_est': rdn_est,
+                'x': x,
+                'x_surface': x_surface,
+                'x_RT': x_RT,
+                'x_instrument': x_instrument,
+                'meas_Cov': meas_Cov,
+                'wl': wl,
+                'fwhm': fwhm,
+                'lamb_est': lamb_est,
+                'coszen': coszen,
+                'cost_jac_prior': cost_jac_prior,
+                'Kb': Kb,
+                'A': A,
+                'cost_jac_meas': cost_jac_meas,
+                'winidx': self.iv.winidx,
+                'prior_resid': prior_resid,
+                'noise_Cov': Sy,
+                'xinit': xinit,
+                'rhoatm': rhoatm,
+                'sphalb': sphalb,
+                'transm': transm,
+                'solar_irr': solar_irr
+            }
             s.io.savemat(self.output['data_dump_file'], mdict)
 
         # Write plots, if needed
