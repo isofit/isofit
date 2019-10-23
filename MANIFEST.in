@@ -12,7 +12,7 @@ include examples/20171108_Pasadena/output/README.rst
 # Include directories recursively using graft
 graft data
 graft docs/html
-graft isofit/test/data
+graft isofit/test
 
 # Exclude patterns
 exclude examples/20171108_Pasadena/remote/*.mat
