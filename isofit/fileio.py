@@ -533,31 +533,21 @@ class IO:
                     logging.warning('No reflectance reference')
 
             # Assemble all output products
-            to_write = {'estimated_state_file': state_est,
-                        'estimated_reflectance_file':
-                        s.column_stack((self.fm.surface.wl, lamb_est)),
-                        'estimated_emission_file':
-                        s.column_stack((self.fm.surface.wl, Ls_est)),
-                        'estimated_reflectance_file':
-                        s.column_stack((self.fm.surface.wl, lamb_est)),
-                        'modeled_radiance_file':
-                        s.column_stack((wl, meas_est)),
-                        'apparent_reflectance_file':
-                        s.column_stack((self.fm.surface.wl, apparent_rfl_est)),
-                        'path_radiance_file':
-                        s.column_stack((wl, path_est)),
-                        'simulated_measurement_file':
-                        s.column_stack((wl, meas_sim)),
-                        'algebraic_inverse_file':
-                        s.column_stack((self.fm.surface.wl, rfl_alg_opt)),
-                        'atmospheric_coefficients_file':
-                        atm,
-                        'radiometry_correction_file':
-                        factors,
-                        'spectral_calibration_file':
-                        cal,
-                        'posterior_uncertainty_file':
-                        s.sqrt(s.diag(S_hat))}
+            to_write = {
+                'estimated_state_file': state_est,
+                'estimated_reflectance_file': s.column_stack((self.fm.surface.wl, lamb_est)),
+                'estimated_emission_file': s.column_stack((self.fm.surface.wl, Ls_est)),
+                'estimated_reflectance_file': s.column_stack((self.fm.surface.wl, lamb_est)),
+                'modeled_radiance_file': s.column_stack((wl, meas_est)),
+                'apparent_reflectance_file': s.column_stack((self.fm.surface.wl, apparent_rfl_est)),
+                'path_radiance_file': s.column_stack((wl, path_est)),
+                'simulated_measurement_file': s.column_stack((wl, meas_sim)),
+                'algebraic_inverse_file': s.column_stack((self.fm.surface.wl, rfl_alg_opt)),
+                'atmospheric_coefficients_file': atm,
+                'radiometry_correction_file': factors,
+                'spectral_calibration_file': cal,
+                'posterior_uncertainty_file': s.sqrt(s.diag(S_hat))
+            }
 
         for product in self.outfiles:
             logging.debug('IO: Writing '+product)
