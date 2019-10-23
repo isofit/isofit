@@ -232,13 +232,7 @@ class SpectrumFile:
 
 
 class IO:
-
-    def check_wavelengths(self, wl):
-        """Make sure an input wavelengths align to the instrument 
-            definition"""
-
-        return (len(wl) == self.fm.instrument.wl) and \
-            all((wl-self.fm.instrument.wl) < 1e-2)
+    """..."""
 
     def __init__(self, config, forward, inverse, active_rows, active_cols):
         """Initialization specifies retrieval subwindows for calculating
@@ -268,19 +262,21 @@ class IO:
             logging.config.dictConfig(config)
 
         # A list of all possible input data sources
-        self.possible_inputs = ["measured_radiance_file",
-                                "reference_reflectance_file",
-                                "reflectance_file",
-                                "obs_file",
-                                "glt_file",
-                                "loc_file",
-                                "surface_prior_mean_file",
-                                "surface_prior_variance_file",
-                                "rt_prior_mean_file",
-                                "rt_prior_variance_file",
-                                "instrument_prior_mean_file",
-                                "instrument_prior_variance_file",
-                                "radiometry_correction_file"]
+        self.possible_inputs = [
+            "measured_radiance_file",
+            "reflectance_file",
+            "reference_reflectance_file",
+            "obs_file",
+            "glt_file",
+            "loc_file",
+            "surface_prior_mean_file",
+            "surface_prior_variance_file",
+            "rt_prior_mean_file",
+            "rt_prior_variance_file",
+            "instrument_prior_mean_file",
+            "instrument_prior_variance_file",
+            "radiometry_correction_file"
+        ]
 
         # A list of all possible outputs.  There are several special cases
         # that we handle differently - the "plot_directory", "summary_file",
@@ -383,13 +379,6 @@ class IO:
                 self.iter_inds.append([row, col])
         self.iter_inds = s.array(self.iter_inds)
 
-    def flush_buffers(self):
-        """ Write all buffered output data to disk, and erase read buffers."""
-
-        for file_dictionary in [self.infiles, self.outfiles]:
-            for name, fi in file_dictionary.items():
-                fi.flush_buffers()
-
     def __iter__(self):
         """ Reset the iterator"""
 
@@ -450,6 +439,20 @@ class IO:
                     'prior_variances': data['instrument_prior_variance_file']})
 
         return r, c, meas, geom, updates
+
+    def check_wavelengths(self, wl):
+        """Make sure an input wavelengths align to the instrument 
+            definition"""
+
+        return (len(wl) == self.fm.instrument.wl) and \
+            all((wl-self.fm.instrument.wl) < 1e-2)
+
+    def flush_buffers(self):
+        """ Write all buffered output data to disk, and erase read buffers."""
+
+        for file_dictionary in [self.infiles, self.outfiles]:
+            for name, fi in file_dictionary.items():
+                fi.flush_buffers()
 
     def write_spectrum(self, row, col, states, meas, geom):
         """Write data from a single inversion to all output buffers."""
