@@ -45,23 +45,24 @@ def test_rt_libradtran():
     assert err_aod < 0.01
 
 
-def load_config(config_file):
-    """Load a configuration file, expand paths"""
-
-    testdir, fname = split(abspath(__file__))
-    datadir = join(testdir, 'data/')
-    config_path = join(datadir, config_file)
-    config = json.load(open(config_path, 'r'))
-    configdir, f = split(abspath(config_path))
-    config = expand_all_paths(config, configdir)
-    return config
+# def load_config(config_file):
+#    """Load a configuration file, expand paths"""
+#
+#    testdir, fname = split(abspath(__file__))
+#    datadir = join(testdir, 'data/')
+#    config_path = join(datadir, config_file)
+#    config = json.load(open(config_path, 'r'))
+#    configdir, f = split(abspath(config_path))
+#    config = expand_all_paths(config, configdir)
+#    return config
 
 
 def run_forward():
     """Simulate the remote measurement of a spectrally uniform surface"""
 
     # Configure the surface/atmosphere/instrument model
-    config = load_config('config_forward.json')
+    #config = load_config('config_forward.json')
+    config = json.load(open('data/config_forward.json', 'r'))
     fm = ForwardModel(config['forward_model'])
     iv = Inversion(config['inversion'], fm)
     io = IO(config, fm, iv, [0], [0])
@@ -79,7 +80,8 @@ def run_inverse():
     """Invert the remote measurement"""
 
     # Configure the surface/atmosphere/instrument model
-    config = load_config('config_inversion.json')
+    #config = load_config('config_inversion.json')
+    config = json.load(open('data/config_inversion.json', 'r'))
     fm = ForwardModel(config['forward_model'])
     iv = Inversion(config['inversion'], fm)
     io = IO(config, fm, iv, [0], [0])
