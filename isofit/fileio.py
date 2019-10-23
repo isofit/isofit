@@ -63,7 +63,7 @@ class SpectrumFile:
 
         self.frames = OrderedDict()
         self.write = write
-        self.fname = fname
+        self.fname = os.path.abspath(os.path.join(os.getcwd(), fname))
         self.wl = wavelengths
         self.band_names = band_names
         self.fwhm = fwhm
@@ -465,18 +465,20 @@ class IO:
             atm_bad = s.zeros(len(self.fm.statevec)) * -9999.0
             state_bad = s.zeros(len(self.fm.statevec)) * -9999.0
             data_bad = s.zeros(self.fm.instrument.n_chan) * -9999.0
-            to_write = {'estimated_state_file': state_bad,
-                        'estimated_reflectance_file': data_bad,
-                        'estimated_emission_file': data_bad,
-                        'modeled_radiance_file': data_bad,
-                        'apparent_reflectance_file': data_bad,
-                        'path_radiance_file': data_bad,
-                        'simulated_measurement_file': data_bad,
-                        'algebraic_inverse_file': data_bad,
-                        'atmospheric_coefficients_file': atm_bad,
-                        'radiometry_correction_file': data_bad,
-                        'spectral_calibration_file': data_bad,
-                        'posterior_uncertainty_file': state_bad}
+            to_write = {
+                'estimated_state_file': state_bad,
+                'estimated_reflectance_file': data_bad,
+                'estimated_emission_file': data_bad,
+                'modeled_radiance_file': data_bad,
+                'apparent_reflectance_file': data_bad,
+                'path_radiance_file': data_bad,
+                'simulated_measurement_file': data_bad,
+                'algebraic_inverse_file': data_bad,
+                'atmospheric_coefficients_file': atm_bad,
+                'radiometry_correction_file': data_bad,
+                'spectral_calibration_file': data_bad,
+                'posterior_uncertainty_file': state_bad
+            }
 
         else:
 
@@ -520,7 +522,7 @@ class IO:
             Ls_est = self.fm.calc_Ls(state_est, geom)
             apparent_rfl_est = lamb_est + Ls_est
 
-            # radiometric calibration
+            # Radiometric calibration
             factors = s.ones(len(wl))
             if 'radiometry_correction_file' in self.outfiles:
                 if 'reference_reflectance_file' in self.infiles:
