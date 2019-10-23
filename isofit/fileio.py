@@ -63,7 +63,7 @@ class SpectrumFile:
 
         self.frames = OrderedDict()
         self.write = write
-        self.fname = os.path.abspath(os.path.join(os.getcwd(), fname))
+        self.fname = os.path.abspath(fname)
         self.wl = wavelengths
         self.band_names = band_names
         self.fwhm = fwhm
