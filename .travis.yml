@@ -6,6 +6,7 @@ install:
   - pip install numba
   - pip install matplotlib
   - pip install scikit-learn
+  - pip install scikit-image
   - pip install spectral
   - pip install pytest
   - pip install pep8
