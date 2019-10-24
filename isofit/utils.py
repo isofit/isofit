@@ -38,7 +38,7 @@ from skimage.segmentation import slic
 import matplotlib
 import pylab as plt
 
-from .common import expand_all_paths, spectrumLoad, \
+from .common import expand_all_paths, load_spectrum, \
     find_header, expand_path, json_load_ascii
 from .instrument import Instrument
 from .geometry import Geometry
@@ -342,7 +342,7 @@ def gennoise(config):
     geom = Geometry()
 
     if infile.endswith('txt'):
-        rdn, wl = spectrumLoad(infile)
+        rdn, wl = load_spectrum(infile)
         Sy = instrument.Sy(rdn, geom)
         rdn_noise = rdn + multivariate_normal(s.zeros(rdn.shape), Sy)
         with open(outfile, 'w') as fout:
@@ -617,8 +617,8 @@ def segment(spectra, flag, npca, segsize, nchunk):
 
 def surfmodel(config):
     """."""
-    config = json_load_ascii(config, shell_replace=True)
     configdir, configfile = split(abspath(config))
+    config = json_load_ascii(config, shell_replace=True)
 
     # Determine top level parameters
     for q in ['output_model_file', 'sources', 'normalize', 'wavelength_file']:

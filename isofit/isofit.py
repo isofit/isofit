@@ -51,7 +51,7 @@ class Isofit:
     io = None
     states = None
 
-    def __init__(self, config_file, level='INFO', row_column=''):
+    def __init__(self, config_file, level='INFO', row_column='', profile=False):
         """Initialize the class."""
         self.profile = profile
         # Set logging level
@@ -61,9 +61,9 @@ class Isofit:
         # Build the forward model and inversion objects
         self.fm = ForwardModel(self.config['forward_model'])
         if 'mcmc_inversion' in self.config:
-            self.iv = MCMCInversion(config['mcmc_inversion'], self.fm)
+            self.iv = MCMCInversion(self.config['mcmc_inversion'], self.fm)
         else:
-            self.iv = Inversion(config['inversion'], self.fm)
+            self.iv = Inversion(self.config['inversion'], self.fm)
 
         # We set the row and column range of our analysis. The user can
         # specify: a single number, in which case it is interpreted as a row;
@@ -97,7 +97,7 @@ class Isofit:
         for row, col, meas, geom, configs in io:
             if meas is not None and all(meas < -49.0):
                 # Bad data flags
-                states = []
+                self.states = []
             else:
                 # Update model components with new configuration parameters
                 # specific to this spectrum. Typically these would be empty,
@@ -116,4 +116,4 @@ class Isofit:
                     # a trajectory, the last spectrum is the converged solution.
                     self.states = self.iv.invert(meas, geom)
             # Write the spectra to disk
-            io.write_spectrum(row, col, states, meas, geom)
+            io.write_spectrum(row, col, self.states, meas, geom)
