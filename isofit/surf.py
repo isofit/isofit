@@ -19,8 +19,9 @@
 #
 
 import scipy as s
-from .common import load_spectrum, load_wavelen
 from scipy.interpolate import interp1d
+
+from .common import load_spectrum, load_wavelen
 
 
 class Surface:

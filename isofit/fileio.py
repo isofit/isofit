@@ -23,19 +23,30 @@ import sys
 import scipy as s
 import pylab as plt
 from scipy.linalg import inv, norm, sqrtm, det
-from scipy.io import savemat
-from .inverse_simple import invert_simple, invert_algebraic
 from spectral.io import envi
-from .common import load_spectrum, eps, resample_spectrum, expand_all_paths
-import logging
 from collections import OrderedDict
+import logging
+
+from .common import load_spectrum, eps, resample_spectrum, expand_all_paths
 from .geometry import Geometry
+from .inverse_simple import invert_simple, invert_algebraic
 
 
 # Constants related to file I/O
-typemap = {s.uint8: 1, s.int16: 2, s.int32: 3, s.float32: 4, s.float64: 5,
-           s.complex64: 6, s.complex128: 9, s.uint16: 12, s.uint32: 13, s.int64: 14,
-           s.uint64: 15}
+typemap = {
+    s.uint8: 1,
+    s.int16: 2,
+    s.int32: 3,
+    s.float32: 4,
+    s.float64: 5,
+    s.complex64: 6,
+    s.complex128: 9,
+    s.uint16: 12,
+    s.uint32: 13,
+    s.int64: 14,
+    s.uint64: 15
+}
+
 max_frames_size = 100
 flush_rate = 10
 
@@ -52,7 +63,7 @@ class SpectrumFile:
 
         self.frames = OrderedDict()
         self.write = write
-        self.fname = fname
+        self.fname = os.path.abspath(fname)
         self.wl = wavelengths
         self.band_names = band_names
         self.fwhm = fwhm
@@ -183,7 +194,7 @@ class SpectrumFile:
         elif self.format == 'MATLAB':
 
             # Dictionary output for MATLAB products
-            savemat(self.fname, x)
+            s.io.savemat(self.fname, x)
 
         else:
 
@@ -221,13 +232,7 @@ class SpectrumFile:
 
 
 class IO:
-
-    def check_wavelengths(self, wl):
-        """Make sure an input wavelengths align to the instrument 
-            definition"""
-
-        return (len(wl) == self.fm.instrument.wl) and \
-            all((wl-self.fm.instrument.wl) < 1e-2)
+    """..."""
 
     def __init__(self, config, forward, inverse, active_rows, active_cols):
         """Initialization specifies retrieval subwindows for calculating
@@ -257,19 +262,21 @@ class IO:
             logging.config.dictConfig(config)
 
         # A list of all possible input data sources
-        self.possible_inputs = ["measured_radiance_file",
-                                "reference_reflectance_file",
-                                "reflectance_file",
-                                "obs_file",
-                                "glt_file",
-                                "loc_file",
-                                "surface_prior_mean_file",
-                                "surface_prior_variance_file",
-                                "rt_prior_mean_file",
-                                "rt_prior_variance_file",
-                                "instrument_prior_mean_file",
-                                "instrument_prior_variance_file",
-                                "radiometry_correction_file"]
+        self.possible_inputs = [
+            "measured_radiance_file",
+            "reflectance_file",
+            "reference_reflectance_file",
+            "obs_file",
+            "glt_file",
+            "loc_file",
+            "surface_prior_mean_file",
+            "surface_prior_variance_file",
+            "rt_prior_mean_file",
+            "rt_prior_variance_file",
+            "instrument_prior_mean_file",
+            "instrument_prior_variance_file",
+            "radiometry_correction_file"
+        ]
 
         # A list of all possible outputs.  There are several special cases
         # that we handle differently - the "plot_directory", "summary_file",
@@ -372,13 +379,6 @@ class IO:
                 self.iter_inds.append([row, col])
         self.iter_inds = s.array(self.iter_inds)
 
-    def flush_buffers(self):
-        """ Write all buffered output data to disk, and erase read buffers."""
-
-        for file_dictionary in [self.infiles, self.outfiles]:
-            for name, fi in file_dictionary.items():
-                fi.flush_buffers()
-
     def __iter__(self):
         """ Reset the iterator"""
 
@@ -440,6 +440,20 @@ class IO:
 
         return r, c, meas, geom, updates
 
+    def check_wavelengths(self, wl):
+        """Make sure an input wavelengths align to the instrument 
+            definition"""
+
+        return (len(wl) == self.fm.instrument.wl) and \
+            all((wl-self.fm.instrument.wl) < 1e-2)
+
+    def flush_buffers(self):
+        """ Write all buffered output data to disk, and erase read buffers."""
+
+        for file_dictionary in [self.infiles, self.outfiles]:
+            for name, fi in file_dictionary.items():
+                fi.flush_buffers()
+
     def write_spectrum(self, row, col, states, meas, geom):
         """Write data from a single inversion to all output buffers."""
 
@@ -451,18 +465,20 @@ class IO:
             atm_bad = s.zeros(len(self.fm.statevec)) * -9999.0
             state_bad = s.zeros(len(self.fm.statevec)) * -9999.0
             data_bad = s.zeros(self.fm.instrument.n_chan) * -9999.0
-            to_write = {'estimated_state_file': state_bad,
-                        'estimated_reflectance_file': data_bad,
-                        'estimated_emission_file': data_bad,
-                        'modeled_radiance_file': data_bad,
-                        'apparent_reflectance_file': data_bad,
-                        'path_radiance_file': data_bad,
-                        'simulated_measurement_file': data_bad,
-                        'algebraic_inverse_file': data_bad,
-                        'atmospheric_coefficients_file': atm_bad,
-                        'radiometry_correction_file': data_bad,
-                        'spectral_calibration_file': data_bad,
-                        'posterior_uncertainty_file': state_bad}
+            to_write = {
+                'estimated_state_file': state_bad,
+                'estimated_reflectance_file': data_bad,
+                'estimated_emission_file': data_bad,
+                'modeled_radiance_file': data_bad,
+                'apparent_reflectance_file': data_bad,
+                'path_radiance_file': data_bad,
+                'simulated_measurement_file': data_bad,
+                'algebraic_inverse_file': data_bad,
+                'atmospheric_coefficients_file': atm_bad,
+                'radiometry_correction_file': data_bad,
+                'spectral_calibration_file': data_bad,
+                'posterior_uncertainty_file': state_bad
+            }
 
         else:
 
@@ -506,7 +522,7 @@ class IO:
             Ls_est = self.fm.calc_Ls(state_est, geom)
             apparent_rfl_est = lamb_est + Ls_est
 
-            # radiometric calibration
+            # Radiometric calibration
             factors = s.ones(len(wl))
             if 'radiometry_correction_file' in self.outfiles:
                 if 'reference_reflectance_file' in self.infiles:
@@ -522,31 +538,21 @@ class IO:
                     logging.warning('No reflectance reference')
 
             # Assemble all output products
-            to_write = {'estimated_state_file': state_est,
-                        'estimated_reflectance_file':
-                        s.column_stack((self.fm.surface.wl, lamb_est)),
-                        'estimated_emission_file':
-                        s.column_stack((self.fm.surface.wl, Ls_est)),
-                        'estimated_reflectance_file':
-                        s.column_stack((self.fm.surface.wl, lamb_est)),
-                        'modeled_radiance_file':
-                        s.column_stack((wl, meas_est)),
-                        'apparent_reflectance_file':
-                        s.column_stack((self.fm.surface.wl, apparent_rfl_est)),
-                        'path_radiance_file':
-                        s.column_stack((wl, path_est)),
-                        'simulated_measurement_file':
-                        s.column_stack((wl, meas_sim)),
-                        'algebraic_inverse_file':
-                        s.column_stack((self.fm.surface.wl, rfl_alg_opt)),
-                        'atmospheric_coefficients_file':
-                        atm,
-                        'radiometry_correction_file':
-                        factors,
-                        'spectral_calibration_file':
-                        cal,
-                        'posterior_uncertainty_file':
-                        s.sqrt(s.diag(S_hat))}
+            to_write = {
+                'estimated_state_file': state_est,
+                'estimated_reflectance_file': s.column_stack((self.fm.surface.wl, lamb_est)),
+                'estimated_emission_file': s.column_stack((self.fm.surface.wl, Ls_est)),
+                'estimated_reflectance_file': s.column_stack((self.fm.surface.wl, lamb_est)),
+                'modeled_radiance_file': s.column_stack((wl, meas_est)),
+                'apparent_reflectance_file': s.column_stack((self.fm.surface.wl, apparent_rfl_est)),
+                'path_radiance_file': s.column_stack((wl, path_est)),
+                'simulated_measurement_file': s.column_stack((wl, meas_sim)),
+                'algebraic_inverse_file': s.column_stack((self.fm.surface.wl, rfl_alg_opt)),
+                'atmospheric_coefficients_file': atm,
+                'radiometry_correction_file': factors,
+                'spectral_calibration_file': cal,
+                'posterior_uncertainty_file': s.sqrt(s.diag(S_hat))
+            }
 
         for product in self.outfiles:
             logging.debug('IO: Writing '+product)
@@ -583,16 +589,37 @@ class IO:
             A = s.matmul(K, G)
 
             # Form the MATLAB dictionary object and write to file
-            mdict = {'K': K, 'G': G, 'S_hat': S_hat,
-                     'prior_mu': xa, 'Ls': Ls, 'prior_Cov': Sa, 'meas': meas,
-                     'rdn_est': rdn_est, 'x': x, 'x_surface': x_surface, 'x_RT': x_RT,
-                     'x_instrument': x_instrument, 'meas_Cov': meas_Cov, 'wl': wl,
-                     'fwhm': fwhm, 'lamb_est': lamb_est, 'coszen': coszen,
-                     'cost_jac_prior': cost_jac_prior, 'Kb': Kb, 'A': A,
-                     'cost_jac_meas': cost_jac_meas, 'winidx': self.iv.winidx,
-                     'prior_resid': prior_resid,
-                     'noise_Cov': Sy, 'xinit': xinit, 'rhoatm': rhoatm,
-                     'sphalb': sphalb, 'transm': transm, 'solar_irr': solar_irr}
+            mdict = {
+                'K': K,
+                'G': G,
+                'S_hat': S_hat,
+                'prior_mu': xa,
+                'Ls': Ls,
+                'prior_Cov': Sa,
+                'meas': meas,
+                'rdn_est': rdn_est,
+                'x': x,
+                'x_surface': x_surface,
+                'x_RT': x_RT,
+                'x_instrument': x_instrument,
+                'meas_Cov': meas_Cov,
+                'wl': wl,
+                'fwhm': fwhm,
+                'lamb_est': lamb_est,
+                'coszen': coszen,
+                'cost_jac_prior': cost_jac_prior,
+                'Kb': Kb,
+                'A': A,
+                'cost_jac_meas': cost_jac_meas,
+                'winidx': self.iv.winidx,
+                'prior_resid': prior_resid,
+                'noise_Cov': Sy,
+                'xinit': xinit,
+                'rhoatm': rhoatm,
+                'sphalb': sphalb,
+                'transm': transm,
+                'solar_irr': solar_irr
+            }
             s.io.savemat(self.output['data_dump_file'], mdict)
 
         # Write plots, if needed

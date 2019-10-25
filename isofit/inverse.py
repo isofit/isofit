@@ -19,18 +19,20 @@
 #
 
 import sys
+import time
+import logging
+import xxhash
 import scipy as s
-from .common import svd_inv, svd_inv_sqrt, eps
 from collections import OrderedDict
 from scipy.optimize import least_squares
-import xxhash
-from .inverse_simple import invert_simple
 from scipy.linalg import inv, norm, det, cholesky, qr, svd
 from scipy.linalg import LinAlgError
 from hashlib import md5
 from numba import jit
-import time
-import logging
+
+from .inverse_simple import invert_simple
+from .common import svd_inv, svd_inv_sqrt, eps
+
 
 error_code = -1
 

@@ -18,10 +18,11 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-import scipy as s
 import logging
-from .sunposition import sunpos
 from datetime import datetime
+import scipy as s
+
+from .sunposition import sunpos
 
 
 class Geometry:

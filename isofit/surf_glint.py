@@ -19,6 +19,7 @@
 #
 
 import scipy as s
+
 from .common import recursive_replace, emissive_radiance, chol_inv, eps
 from .surf_multicomp import MultiComponentSurface
 

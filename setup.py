@@ -22,7 +22,7 @@ from io import open
 from setuptools import setup, find_packages
 from isofit import __version__
 
-with open('docs/README.rst', 'r') as f:
+with open('README.rst', 'r') as f:
     LONG_DESCRIPTION = f.read()
 
 LICENSE = "Apache Software License (http://www.apache.org/licenses/LICENSE-2.0)"
@@ -37,12 +37,14 @@ setup(name='isofit',
       long_description=LONG_DESCRIPTION,
       long_description_content_type='text/x-rst',
       packages=find_packages(),
+      include_package_data=True,
       scripts=['bin/isofit',
                'bin/sunposition'],
       install_requires=['scipy>=1.1.0',
                         'numba>=0.38.0',
                         'matplotlib>=2.2.2',
                         'scikit-learn>=0.19.1',
+                        'scikit-image>=0.16.2',
                         'spectral>=0.19',
                         'pytest>=3.5.1',
                         'pep8>=1.7.1',
