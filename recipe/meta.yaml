@@ -26,6 +26,7 @@ requirements:
     - numba >=0.38.0
     - matplotlib >=2.2.2
     - scikit-learn >=0.19.1
+    - scikit-image >=0.16.2
     - spectral >=0.19
     - pytest >=3.5.1
     - pep8 >=1.7.1
@@ -37,7 +38,7 @@ test:
 
 about:
   home: https://github.com/{{ name }}/{{ name }}
-  license: Apache 2.0
+  license: Apache-2.0
   license_family: Apache
   license_file: LICENSE
   summary: 'Imaging Spectrometer Optimal FITting (ISOFIT)'
