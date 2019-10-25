@@ -13,11 +13,13 @@ spectra in text format, or imaging spectrometer data cubes.
 
 The subdirectories contain:
 
+* bin/       - command line scripts for calling isofit and sunposition
 * data/      - shared data files
+* docs/      - documentation
 * examples/  - example runs packaged with input data and configuration files
-* isofit/    - the main Python codebase, with the top-level program isofit.py
-* utils/     - general purpose utilities and routines for the advanced user
-* tests/     - unit tests for use by pytest
+* isofit/    - the isofit Python module including utilities and tests
+* logs/      - Pytest logs
+* recipe/    - conda release recipe
 
 If you use ISOFIT in your research or production, we ask that you cite the 
 precursor publication:
@@ -44,16 +46,17 @@ The code repository, development branches, and user community are found on
   python3 -m pip install numba
   python3 -m pip install matplotlib
   python3 -m pip install scikit-learn
+  python3 -m pip install scikit-image
   python3 -m pip install spectral
   python3 -m pip install pytest 
   python3 -m pip install pep8 
   python3 -m pip install xxhash
 
-3. Make sure the isofit/ and utils/ subdirectories are in your Python path like this:
+3. Make sure the isofit base directory is in your Python path like this:
 
 .. code::
 
-    export PYTHONPATH="${PYTHONPATH}:/path/to/isofit/isofit:/path/to/isofit/utils"
+    export PYTHONPATH="${PYTHONPATH}:/path/to/isofit"
 
 From PyPI
 *********
@@ -65,7 +68,7 @@ so if you have `pip` installed, you can install ISOFIT from the command line wit
 
     pip install isofit
 
-This will install the "isofit" package into your environment as well as its dependencies.
+This will install the "isofit" package into your environment as well as its dependencies. 
 
 Quick Start using MODTRAN 6.0
 -----------------------------
@@ -73,7 +76,7 @@ Quick Start using MODTRAN 6.0
 This quick start presumes that you have an installation of the MODTRAN 6.0
 radiative transfer model.  This is the preferred radiative transfer option if available, though we have also included an interface to the open source LibRadTran RT code.  Other open source options and neural network emulators will be integrated in the future. 
 
-1. Configure your environment with the variables ISOFIT_BASE pointing to the base checkout directory of ISOFIT, and also MODTRAN_DIR pointing to the base MODTRAN 6.0 directory.
+1. Configure your environment with the variable MODTRAN_DIR pointing to the base MODTRAN 6.0 directory.
 
 2. Run the following code
 
@@ -91,7 +94,7 @@ Quick Start with LibRadTran 2.0.x
 
 This quick start presumes that you have an installation of the open source libRadTran radiative transfer model (`LibRadTran <http://www.libradtran.org/doku.php>`)_ .  We have tested with the 2.0.2 release.  You will need the "REPTRAN" absorption parameterization - follow the instructions on the libradtran installation page to get that data.
 
-1. Configure your environment with the variables ISOFIT_BASE pointing to the base checkout directory of ISOFIT, and also LIBRADTRAN_DIR pointing to the base libRadTran directory.
+1. Configure your environment with the variable LIBRADTRAN_DIR pointing to the base libRadTran directory.
 
 2. Run the following code
 
