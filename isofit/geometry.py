@@ -62,7 +62,7 @@ class Geometry:
             self.solar_zenith = obs[4]  # 0 to 90 from zenith
             self.OBSZEN = 180.0 - abs(obs[2])  # MODTRAN convention?
             self.RELAZ = obs[1] - obs[3] + 180.0
-            self.TRUEAZ = obs[1] # MODTRAN convention?
+            self.TRUEAZ = obs[1]  # MODTRAN convention?
             self.umu = s.cos(obs[2]/360.0*2.0*s.pi)  # Libradtran
 
         # The 'loc' object is a list-like object that optionally contains
