@@ -20,6 +20,7 @@
 
 import scipy as s
 from scipy.linalg import block_diag, det, norm, pinv, sqrtm, inv
+from scipy.io import loadmat
 
 from .common import recursive_replace, svd_inv, eps
 from .surf import Surface
@@ -39,7 +40,7 @@ class MultiComponentSurface(Surface):
         Surface.__init__(self, config)
 
         # Models are stored as dictionaries in .mat format
-        model_dict = s.io.loadmat(config['surface_file'])
+        model_dict = loadmat(config['surface_file'])
         self.components = list(zip(model_dict['means'], model_dict['covs']))
         self.n_comp = len(self.components)
         self.wl = model_dict['wl'][0]

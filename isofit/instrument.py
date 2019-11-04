@@ -22,6 +22,8 @@ import logging
 import scipy as s
 from scipy.interpolate import interp1d
 from scipy.signal import convolve
+from scipy.io import loadmat
+
 from numpy.random import multivariate_normal as mvn
 from numba import jit
 
@@ -102,7 +104,7 @@ class Instrument:
             # each cross-track location via an ENVI-format binary data file.
             self.model_type = 'pushbroom'
             self.noise_file = config['pushbroom_noise_file']
-            D = s.io.loadmat(self.noise_file)
+            D = loadmat(self.noise_file)
             self.ncols = D['columns'][0, 0]
             if self.n_chan != s.sqrt(D['bands'][0, 0]):
                 logging.error('Noise model mismatches wavelength # bands')

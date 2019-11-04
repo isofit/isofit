@@ -629,10 +629,6 @@ def surfmodel(config):
     normalize = config['normalize']
     reference_windows = config['reference_windows']
     outfile = expand_path(configdir, config['output_model_file'])
-    if 'mixtures' in config:
-        mixtures = config['mixtures']
-    else:
-        mixtures = 0
 
     # load wavelengths file
     q = s.loadtxt(wavelength_file)
@@ -667,6 +663,14 @@ def surfmodel(config):
             if q not in source_config:
                 raise ValueError(
                     'Source %i is missing a parameter: %s' % (si, q))
+                
+        # Determine whether we should synthesize our own mixtures
+        if 'mixtures' in source_config:
+            mixtures = source_config['mixtures']
+        elif 'mixtures' in config:
+            mixtures = config['mixtures']
+        else:
+            mixtures = 0
 
         infiles = [expand_path(configdir, fi) for fi in
                    source_config['input_spectrum_files']]
@@ -677,6 +681,7 @@ def surfmodel(config):
         spectra = []
         for infile in infiles:
 
+            print('Loading '+infile)
             hdrfile = infile + '.hdr'
             rfl = envi.open(hdrfile, infile)
             nl, nb, ns = [int(rfl.metadata[n])
@@ -700,13 +705,13 @@ def surfmodel(config):
                              fill_value='extrapolate')
                 spectra.append(p(wl))
 
-            # calculate mixtures, if needed
-            n = float(len(spectra))
-            nmix = int(n * mixtures)
-            for mi in range(nmix):
-                s1, m1 = spectra[int(s.rand()*n)], s.rand()
-                s2, m2 = spectra[int(s.rand()*n)], 1.0-m1
-                spectra.append(m1 * s1 + m2 * s2)
+        # calculate mixtures, if needed
+        n = float(len(spectra))
+        nmix = int(n * mixtures)
+        for mi in range(nmix):
+            s1, m1 = spectra[int(s.rand()*n)], s.rand()
+            s2, m2 = spectra[int(s.rand()*n)], 1.0-m1
+            spectra.append(m1 * s1 + m2 * s2)
 
         spectra = s.array(spectra)
         use = s.all(s.isfinite(spectra), axis=1)
