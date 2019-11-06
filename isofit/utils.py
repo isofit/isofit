@@ -46,12 +46,13 @@ from .geometry import Geometry
 
 # EMPLINE
 
-def empline(reference_radiance, reference_reflectance, reference_locations, hashfile,
+def empline(reference_radiance, reference_reflectance, reference_uncertainty,
+            reference_locations, hashfile,
             input_radiance, input_locations, output_reflectance, output_uncertainty,
             nneighbors, flag, skip, level):
     """..."""
 
-    def plot_example(xv, yv, b):
+    def plot_example(xv, yv, b, predx, predy):
         """Plot for debugging purposes."""
         matplotlib.rcParams['font.family'] = "serif"
         matplotlib.rcParams['font.sans-serif'] = "Times"
@@ -66,7 +67,8 @@ def empline(reference_radiance, reference_reflectance, reference_locations, hash
         matplotlib.rcParams['legend.edgecolor'] = '1.0'
         plt.plot(xv[:, 113], yv[:, 113], 'ko')
         plt.plot(xv[:, 113], xv[:, 113]*b[113, 1] + b[113, 0], 'k')
-        #plt.plot(x[113], x[113]*b[113, 1] + b[113, 0], 'ro')
+        plt.plot(predx[113], predx[113]*b[113, 1] + b[113, 0], 'ro')
+        plt.plot(predx[113], predy[113], 'bx')
         plt.grid(True)
         plt.xlabel('Radiance, $\mu{W }nm^{-1} sr^{-1} cm^{-2}$')
         plt.ylabel('Reflectance')
@@ -81,6 +83,7 @@ def empline(reference_radiance, reference_reflectance, reference_locations, hash
     logging.basicConfig(format='%(message)s', level=loglevel)
     ref_rdn_file = reference_radiance
     ref_rfl_file = reference_reflectance
+    ref_unc_file = reference_uncertainty
     ref_loc_file = reference_locations
     inp_hash_file = hashfile
     inp_rdn_file = input_radiance
@@ -100,17 +103,28 @@ def empline(reference_radiance, reference_reflectance, reference_locations, hash
     # Load reference set reflectance
     ref_rfl_img = envi.open(ref_rfl_file+'.hdr', ref_rfl_file)
     meta = ref_rfl_img.metadata
-    nrrf, nbr, srrf = [int(meta[n]) for n in ('lines', 'bands', 'samples')]
-    if nrrf != nref or nbr != nb or srrf != sref:
+    nrefr, nbr, srefr = [int(meta[n]) for n in ('lines', 'bands', 'samples')]
+    if nrefr != nref or nbr != nb or srefr != sref:
         raise IndexError("Reference file dimension mismatch (reflectance)")
     ref_rfl_mm = ref_rfl_img.open_memmap(interleave='source', writable=False)
     ref_rfl = s.array(ref_rfl_mm[:, :, :]).reshape((nref, nb))
 
+    # Load reference set uncertainty, assuming reflectance uncertainty is
+    # recoreded in the first nbr channels of data
+    ref_unc_img = envi.open(ref_unc_file+'.hdr', ref_unc_file)
+    meta = ref_unc_img.metadata
+    nrefu, ns, srefu = [int(meta[n]) for n in ('lines', 'bands', 'samples')]
+    if nrefu != nref or ns < nb or srefu != sref:
+        raise IndexError("Reference file dimension mismatch (uncertainty)")
+    ref_unc_mm = ref_unc_img.open_memmap(interleave='source', writable=False)
+    ref_unc = s.array(ref_unc_mm[:, :, :]).reshape((nref, ns))
+    ref_unc = ref_unc[:, :nbr].reshape((nref, nbr))
+
     # Load reference set locations
     ref_loc_img = envi.open(ref_loc_file+'.hdr', ref_loc_file)
     meta = ref_loc_img.metadata
-    nrrf, lb, ls = [int(meta[n]) for n in ('lines', 'bands', 'samples')]
-    if nrrf != nref or lb != 3:
+    nrefl, lb, ls = [int(meta[n]) for n in ('lines', 'bands', 'samples')]
+    if nrefl != nref or lb != 3:
         raise IndexError("Reference file dimension mismatch (locations)")
     ref_loc_mm = ref_loc_img.open_memmap(interleave='source', writable=False)
     ref_loc = s.array(ref_loc_mm[:, :, :]).reshape((nref, lb))
@@ -189,42 +203,43 @@ def empline(reference_radiance, reference_reflectance, reference_locations, hash
                 out_unc[col, :] = flag
                 continue
 
+            bhat = None
             if hash_img is not None:
                 hash_idx = hash_img[row, col]
                 if hash_idx in hash_table:
-                    b, unc = hash_table[hash_idx]
+                    bhat, bcov, bmarg = hash_table[hash_idx]
                 else:
                     loc = ref_loc[s.array(
                         hash_idx, dtype=int), :] * loc_scaling
-                    dists, nn = tree.query(loc, k)
-                    xv = ref_rdn[nn, :]
-                    yv = ref_rfl[nn, :]
-                    b = s.zeros((nb, 2))
-                    unc = s.zeros(nb,)
-
-                    for i in s.arange(nb):
-                        b[i, 1], b[i, 0], q1, q2, q3 = linregress(
-                            xv[:, i], yv[:, i])
-                        unc[i] = s.std(xv[:, i]*b[i, 1]+b[i, 0]-yv[:, i])
-
-                    hash_table[hash_idx] = b, unc
             else:
                 loc = inp_loc[col, :] * loc_scaling
-                dists, nn = tree.query(loc, k)
-                xv = ref_rdn[nn, :]
-                yv = ref_rfl[nn, :]
-                b = s.zeros((nb, 2))
-                unc = s.zeros(nb,)
-                for i in s.arange(nb):
-                    b[i, 1], b[i, 0], q1, q2, q3 = linregress(
-                        xv[:, i], yv[:, i])
-                    unc[i] = s.std(xv[:, i]*b[i, 1]+b[i, 0]-yv[:, i])
+
+            dists, nn = tree.query(loc, k)
+            xv = ref_rdn[nn, :]
+            yv = ref_rfl[nn, :]
+            uv = ref_unc[nn, :]
+            bhat = s.zeros((nb, 2))
+            bmarg = s.zeros((nb, 2))
+            bcov = s.zeros((nb, 2, 2))
+
+            for i in s.arange(nb):
+                use = yv[:, i] > 0
+                n = sum(use)
+                X = s.concatenate((s.ones((n, 1)), xv[use, i:i+1]), axis=1)
+                W = s.diag(s.ones(n)/uv[use, i])
+                y = yv[use, i:i+1]
+                bhat[i, :] = (inv(X.T @ W @ X) @ X.T @ W @ y).T
+                bcov[i, :, :] = inv(X.T @ W @ X)
+                bmarg[i, :] = s.diag(bcov[i, :, :])
+
+            if (hash_img is not None) and not (hash_idx in hash_table):
+                hash_table[hash_idx] = bhat, bcov, bmarg
 
             A = s.array((s.ones(nb), x))
-            out_rfl[col, :] = (b.T * A).sum(axis=0)
-            out_unc[col, :] = unc
+            out_rfl[col, :] = (s.multiply(bhat.T, A).sum(axis=0))
+            out_unc[col, :] = s.sqrt(s.multiply(bmarg.T, A).sum(axis=0))
             if loglevel == 'DEBUG':
-                plot_example(xv, yv, b)
+                plot_example(xv, yv, bhat, x, out_rfl[col, :])
 
             nspectra = nspectra+1
 
@@ -235,15 +250,12 @@ def empline(reference_radiance, reference_reflectance, reference_locations, hash
                                              writable=True)
         if inp_rdn_meta['interleave'] == 'bil':
             out_rfl = out_rfl.transpose((1, 0))
-
         out_rfl_mm[row, :, :] = out_rfl
-
         out_unc_mm = out_rfl_img.open_memmap(interleave='source',
                                              writable=True)
         if inp_rdn_meta['interleave'] == 'bil':
-            out_unc = out_rfl.transpose((1, 0))
-
-        out_unc_mm[row, :, :] = out_rfl
+            out_unc = out_unc.transpose((1, 0))
+        out_unc_mm[row, :, :] = out_unc
 
 
 # EXTRACT
@@ -629,6 +641,10 @@ def surfmodel(config):
     normalize = config['normalize']
     reference_windows = config['reference_windows']
     outfile = expand_path(configdir, config['output_model_file'])
+    if 'mixtures' in config:
+        mixtures = config['mixtures']
+    else:
+        mixtures = 0
 
     # load wavelengths file
     q = s.loadtxt(wavelength_file)
@@ -663,14 +679,6 @@ def surfmodel(config):
             if q not in source_config:
                 raise ValueError(
                     'Source %i is missing a parameter: %s' % (si, q))
-                
-        # Determine whether we should synthesize our own mixtures
-        if 'mixtures' in source_config:
-            mixtures = source_config['mixtures']
-        elif 'mixtures' in config:
-            mixtures = config['mixtures']
-        else:
-            mixtures = 0
 
         infiles = [expand_path(configdir, fi) for fi in
                    source_config['input_spectrum_files']]
@@ -681,7 +689,6 @@ def surfmodel(config):
         spectra = []
         for infile in infiles:
 
-            print('Loading '+infile)
             hdrfile = infile + '.hdr'
             rfl = envi.open(hdrfile, infile)
             nl, nb, ns = [int(rfl.metadata[n])
@@ -705,13 +712,13 @@ def surfmodel(config):
                              fill_value='extrapolate')
                 spectra.append(p(wl))
 
-        # calculate mixtures, if needed
-        n = float(len(spectra))
-        nmix = int(n * mixtures)
-        for mi in range(nmix):
-            s1, m1 = spectra[int(s.rand()*n)], s.rand()
-            s2, m2 = spectra[int(s.rand()*n)], 1.0-m1
-            spectra.append(m1 * s1 + m2 * s2)
+            # calculate mixtures, if needed
+            n = float(len(spectra))
+            nmix = int(n * mixtures)
+            for mi in range(nmix):
+                s1, m1 = spectra[int(s.rand()*n)], s.rand()
+                s2, m2 = spectra[int(s.rand()*n)], 1.0-m1
+                spectra.append(m1 * s1 + m2 * s2)
 
         spectra = s.array(spectra)
         use = s.all(s.isfinite(spectra), axis=1)
