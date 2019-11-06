@@ -20,8 +20,9 @@
 
 import scipy as s
 import logging
-from .sunposition import sunpos
 from datetime import datetime
+
+from .sunposition import sunpos
 
 
 class Geometry:

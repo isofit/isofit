@@ -20,3 +20,6 @@
 
 name = 'isofit'
 __version__ = '1.1.6'
+
+# Constants
+jit_enabled = False

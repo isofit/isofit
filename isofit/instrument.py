@@ -23,9 +23,10 @@ import logging
 from scipy.io import loadmat, savemat
 from scipy.interpolate import interp1d
 from scipy.signal import convolve
-from .common import eps, srf, load_wavelen, resample_spectrum
 from numpy.random import multivariate_normal as mvn
 from numba import jit
+
+from .common import eps, srf, load_wavelen, resample_spectrum
 
 
 # Max. wavelength difference (nm) that does not trigger expensive resampling

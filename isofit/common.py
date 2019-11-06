@@ -28,6 +28,9 @@ from os.path import expandvars, split, abspath
 from scipy.linalg import cholesky, inv, det, svd
 from numba import jit
 
+from . import jit_enabled
+
+
 # Maximum size of our hash tables
 max_table_size = 500
 
@@ -151,50 +154,93 @@ def emissive_radiance(emissivity, T, wl):
     return uW_per_cm2_sr_nm, dRdn_dT
 
 
-@jit
-def chol_inv(C):
-    """Fast stable inverse for Hermetian positive definite matrices"""
+if jit_enabled:
+    @jit
+    def chol_inv(C):
+        """Fast stable inverse for Hermetian positive definite matrices"""
 
-    R = cholesky(C, lower=False)
-    S = inv(R)
-    return S.dot(S.T)
+        R = cholesky(C, lower=False)
+        S = inv(R)
+        return S.dot(S.T)
+else:
+    def chol_inv(C):
+        """Fast stable inverse for Hermetian positive definite matrices"""
+
+        R = cholesky(C, lower=False)
+        S = inv(R)
+        return S.dot(S.T)
 
 
-@jit
-def svd_inv(C, mineig=0, hashtable=None):
-    """Fast stable inverse using SVD.  This can handle near-singular matrices"""
+if jit_enabled:
+    @jit
+    def svd_inv(C, mineig=0, hashtable=None):
+        """Fast stable inverse using SVD.  This can handle near-singular matrices"""
 
-    return svd_inv_sqrt(C, mineig, hashtable)[0]
+        return svd_inv_sqrt(C, mineig, hashtable)[0]
+else:
+    def svd_inv(C, mineig=0, hashtable=None):
+        """Fast stable inverse using SVD.  This can handle near-singular matrices"""
+
+        return svd_inv_sqrt(C, mineig, hashtable)[0]
 
 
-@jit
-def svd_inv_sqrt(C, mineig=0, hashtable=None):
-    """Fast stable inverse using SVD. This can handle near-singular matrices.
-       Also return the square root."""
+if jit_enabled:
+    @jit
+    def svd_inv_sqrt(C, mineig=0, hashtable=None):
+        """Fast stable inverse using SVD. This can handle near-singular matrices.
+           Also return the square root."""
 
-    # If we have a hash table, look for the precalculated solution
-    h = None
-    if hashtable is not None:
-        h = xxhash.xxh64_digest(C)
-        if h in hashtable:
-            return hashtable[h]
+        # If we have a hash table, look for the precalculated solution
+        h = None
+        if hashtable is not None:
+            h = xxhash.xxh64_digest(C)
+            if h in hashtable:
+                return hashtable[h]
 
-    U, V, D = svd(C)
-    ignore = s.where(V < mineig)[0]
-    Vi = 1.0 / V
-    Vi[ignore] = 0
-    Visqrt = s.sqrt(Vi)
-    Cinv = (D.T).dot(s.diag(Vi)).dot(U.T)
-    Cinv_sqrt = (D.T).dot(s.diag(Visqrt)).dot(U.T)
+        U, V, D = svd(C)
+        ignore = s.where(V < mineig)[0]
+        Vi = 1.0 / V
+        Vi[ignore] = 0
+        Visqrt = s.sqrt(Vi)
+        Cinv = (D.T).dot(s.diag(Vi)).dot(U.T)
+        Cinv_sqrt = (D.T).dot(s.diag(Visqrt)).dot(U.T)
 
-    # If there is a hash table, cache our solution.  Bound the total cache
-    # size by removing any extra items in FIFO order.
-    if hashtable is not None:
-        hashtable[h] = (Cinv, Cinv_sqrt)
-        while len(hashtable) > max_table_size:
-            hashtable.popitem(last=False)
+        # If there is a hash table, cache our solution.  Bound the total cache
+        # size by removing any extra items in FIFO order.
+        if hashtable is not None:
+            hashtable[h] = (Cinv, Cinv_sqrt)
+            while len(hashtable) > max_table_size:
+                hashtable.popitem(last=False)
 
-    return Cinv, Cinv_sqrt
+        return Cinv, Cinv_sqrt
+else:
+    def svd_inv_sqrt(C, mineig=0, hashtable=None):
+        """Fast stable inverse using SVD. This can handle near-singular matrices.
+           Also return the square root."""
+
+        # If we have a hash table, look for the precalculated solution
+        h = None
+        if hashtable is not None:
+            h = xxhash.xxh64_digest(C)
+            if h in hashtable:
+                return hashtable[h]
+
+        U, V, D = svd(C)
+        ignore = s.where(V < mineig)[0]
+        Vi = 1.0 / V
+        Vi[ignore] = 0
+        Visqrt = s.sqrt(Vi)
+        Cinv = (D.T).dot(s.diag(Vi)).dot(U.T)
+        Cinv_sqrt = (D.T).dot(s.diag(Visqrt)).dot(U.T)
+
+        # If there is a hash table, cache our solution.  Bound the total cache
+        # size by removing any extra items in FIFO order.
+        if hashtable is not None:
+            hashtable[h] = (Cinv, Cinv_sqrt)
+            while len(hashtable) > max_table_size:
+                hashtable.popitem(last=False)
+
+        return Cinv, Cinv_sqrt
 
 
 def expand_path(directory, subpath):
@@ -392,66 +438,124 @@ class VectorInterpolatorJIT:
         self.out_d = data.shape[-1]
         self.grid = [i.copy() for i in grid]
         self.data = data.copy()
+    if jit_enabled:
+        @jit
+        def __call__(self, point):
+            return jitinterp(self.in_d, self.out_d, self.grid, self.data, point)
+    else:
+        def __call__(self, point):
+            return jitinterp(self.in_d, self.out_d, self.grid, self.data, point)
 
-    # @jit
-    def __call__(self, point):
-        return jitinterp(self.in_d, self.out_d, self.grid, self.data, point)
 
+if jit_enabled:
+    @jit
+    def jitinterp(s_in_d, s_out_d, s_grid, s_data, point):
+        """Interpolation."""
+        # We find the bottom index along each input dimension
+        lo_inds = s.zeros(s_in_d)
+        lo_fracs = s.zeros(s_in_d)
+        stride = []
+        for i in s.arange(s_in_d):
+            stride.append(s.prod(s_data.shape[(i+1):]))
 
-# @jit
-def jitinterp(s_in_d, s_out_d, s_grid, s_data, point):
+        for d in s.arange(s_in_d):
+            n_gridpoints = len(s_grid[d])
+            for j in s.arange(n_gridpoints-1):
+                if j == 0 and s_grid[d][j] >= point[d]:
+                    lo_inds[d] = 0
+                    lo_fracs[d] = 1.0
+                    break
+                if j == n_gridpoints-2 and s_grid[d][-1] <= point[d]:
+                    lo_inds[d] = n_gridpoints-2
+                    lo_fracs[d] = 0.0
+                    break
+                if s_grid[d][j] < point[d] and s_grid[d][j+1] >= point[d]:
+                    lo_inds[d] = j
+                    denom = (s_grid[d][j+1]-s_grid[d][j])
+                    lo_fracs[d] = 1.0 - (point[d]-s_grid[d][j])/denom
 
-        # we find the bottom index along each input dimension
-    lo_inds = s.zeros(s_in_d)
-    lo_fracs = s.zeros(s_in_d)
-    stride = []
-    for i in s.arange(s_in_d):
-        stride.append(s.prod(s_data.shape[(i+1):]))
+        # Now we form a list of all points on the hypercube
+        # and the associated fractions of each
+        hypercube_bin = binary_table[s_in_d].copy()
+        n_hypercube = len(hypercube_bin)
+        hypercube_weights = s.ones((n_hypercube))
+        hypercube_flat_inds = s.zeros((n_hypercube))
 
-    for d in s.arange(s_in_d):
-        n_gridpoints = len(s_grid[d])
-        for j in s.arange(n_gridpoints-1):
-            if j == 0 and s_grid[d][j] >= point[d]:
-                lo_inds[d] = 0
-                lo_fracs[d] = 1.0
-                break
-            if j == n_gridpoints-2 and s_grid[d][-1] <= point[d]:
-                lo_inds[d] = n_gridpoints-2
-                lo_fracs[d] = 0.0
-                break
-            if s_grid[d][j] < point[d] and s_grid[d][j+1] >= point[d]:
-                lo_inds[d] = j
-                denom = (s_grid[d][j+1]-s_grid[d][j])
-                lo_fracs[d] = 1.0 - (point[d]-s_grid[d][j])/denom
+        # simple version
+        for i in range(n_hypercube):
+            for j in range(s_in_d):
+                if hypercube_bin[i, j]:
+                    hypercube_weights[i] = hypercube_weights[i] * lo_fracs[j]
+                    hypercube_flat_inds[i] = \
+                        hypercube_flat_inds[i] + (lo_inds[j]) * stride[j]
+                else:
+                    hypercube_weights[i] = hypercube_weights[i] * \
+                        (1.0-lo_fracs[j])
+                    hypercube_flat_inds[i] = \
+                        hypercube_flat_inds[i] + (lo_inds[j]+1) * stride[j]
 
-    # Now we form a list of all points on the hypercube
-    # and the associated fractions of each
+        # once per output datapoint
+        res = s.zeros(s_out_d)
+        for oi in s.arange(s_out_d):
+            val = 0
+            for i in s.arange(n_hypercube):
+                ind = int(hypercube_flat_inds[i]+oi)
+                res[oi] = res[oi] + s_data.flat[ind] * hypercube_weights[i]
+        return s.array(res)
+else:
+    def jitinterp(s_in_d, s_out_d, s_grid, s_data, point):
+        """Interpolation."""
+        # We find the bottom index along each input dimension
+        lo_inds = s.zeros(s_in_d)
+        lo_fracs = s.zeros(s_in_d)
+        stride = []
+        for i in s.arange(s_in_d):
+            stride.append(s.prod(s_data.shape[(i+1):]))
 
-    hypercube_bin = binary_table[s_in_d].copy()
-    n_hypercube = len(hypercube_bin)
-    hypercube_weights = s.ones((n_hypercube))
-    hypercube_flat_inds = s.zeros((n_hypercube))
+        for d in s.arange(s_in_d):
+            n_gridpoints = len(s_grid[d])
+            for j in s.arange(n_gridpoints-1):
+                if j == 0 and s_grid[d][j] >= point[d]:
+                    lo_inds[d] = 0
+                    lo_fracs[d] = 1.0
+                    break
+                if j == n_gridpoints-2 and s_grid[d][-1] <= point[d]:
+                    lo_inds[d] = n_gridpoints-2
+                    lo_fracs[d] = 0.0
+                    break
+                if s_grid[d][j] < point[d] and s_grid[d][j+1] >= point[d]:
+                    lo_inds[d] = j
+                    denom = (s_grid[d][j+1]-s_grid[d][j])
+                    lo_fracs[d] = 1.0 - (point[d]-s_grid[d][j])/denom
 
-    # simple version
-    for i in range(n_hypercube):
-        for j in range(s_in_d):
-            if hypercube_bin[i, j]:
-                hypercube_weights[i] = hypercube_weights[i] * lo_fracs[j]
-                hypercube_flat_inds[i] = \
-                    hypercube_flat_inds[i] + (lo_inds[j]) * stride[j]
-            else:
-                hypercube_weights[i] = hypercube_weights[i] * (1.0-lo_fracs[j])
-                hypercube_flat_inds[i] = \
-                    hypercube_flat_inds[i] + (lo_inds[j]+1) * stride[j]
+        # Now we form a list of all points on the hypercube
+        # and the associated fractions of each
+        hypercube_bin = binary_table[s_in_d].copy()
+        n_hypercube = len(hypercube_bin)
+        hypercube_weights = s.ones((n_hypercube))
+        hypercube_flat_inds = s.zeros((n_hypercube))
 
-    # once per output datapoint
-    res = s.zeros(s_out_d)
-    for oi in s.arange(s_out_d):
-        val = 0
-        for i in s.arange(n_hypercube):
-            ind = int(hypercube_flat_inds[i]+oi)
-            res[oi] = res[oi] + s_data.flat[ind] * hypercube_weights[i]
-    return s.array(res)
+        # simple version
+        for i in range(n_hypercube):
+            for j in range(s_in_d):
+                if hypercube_bin[i, j]:
+                    hypercube_weights[i] = hypercube_weights[i] * lo_fracs[j]
+                    hypercube_flat_inds[i] = \
+                        hypercube_flat_inds[i] + (lo_inds[j]) * stride[j]
+                else:
+                    hypercube_weights[i] = hypercube_weights[i] * \
+                        (1.0-lo_fracs[j])
+                    hypercube_flat_inds[i] = \
+                        hypercube_flat_inds[i] + (lo_inds[j]+1) * stride[j]
+
+        # once per output datapoint
+        res = s.zeros(s_out_d)
+        for oi in s.arange(s_out_d):
+            val = 0
+            for i in s.arange(n_hypercube):
+                ind = int(hypercube_flat_inds[i]+oi)
+                res[oi] = res[oi] + s_data.flat[ind] * hypercube_weights[i]
+        return s.array(res)
 
 
 def combos(inds):

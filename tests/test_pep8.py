@@ -23,6 +23,7 @@ import sys
 from os.path import expandvars, split, abspath, join
 from glob import glob
 
+
 testdir, fname = split(abspath(__file__))
 config_file = testdir+'/data/pep8_config.txt'
 excludes = ['sunposition.py']

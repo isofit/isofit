@@ -29,13 +29,12 @@ from isofit.inverse import Inversion
 from isofit.forward import ForwardModel
 from isofit.rt_libradtran import LibRadTranRT
 
-# Get directory and file paths
 
+# Get directory and file paths
 testdir, fname = split(abspath(__file__))
 datadir = join(testdir, 'data/')
 
 # Import ISOFIT code
-
 sys.path.append(join(testdir, '../isofit'))
 
 

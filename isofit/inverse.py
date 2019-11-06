@@ -20,17 +20,19 @@
 
 import sys
 import scipy as s
-from .common import svd_inv, svd_inv_sqrt, eps
 from collections import OrderedDict
 from scipy.optimize import least_squares
 import xxhash
-from .inverse_simple import invert_simple
 from scipy.linalg import inv, norm, det, cholesky, qr, svd
 from scipy.linalg import LinAlgError
 from hashlib import md5
 from numba import jit
 import time
 import logging
+
+from .common import svd_inv, svd_inv_sqrt, eps
+from .inverse_simple import invert_simple
+from . import jit_enabled
 
 error_code = -1
 
@@ -80,57 +82,107 @@ class Inversion:
         for k, v in config.items():
             if k in self.least_squares_params:
                 self.least_squares_params[k] = v
+    if jit_enabled:
+        @jit
+        def calc_prior(self, x, geom):
+            """Calculate prior distribution of radiance.  This depends on the 
+            location in the state space.  Return the inverse covariance and 
+            its square root (for non-quadratic error residual calculation)"""
 
-    @jit
-    def calc_prior(self, x, geom):
-        """Calculate prior distribution of radiance.  This depends on the 
-        location in the state space.  Return the inverse covariance and 
-        its square root (for non-quadratic error residual calculation)"""
+            xa = self.fm.xa(x, geom)
+            Sa = self.fm.Sa(x, geom)
+            Sa_inv, Sa_inv_sqrt = svd_inv_sqrt(Sa, hashtable=self.hashtable)
+            return xa, Sa, Sa_inv, Sa_inv_sqrt
+    else:
+        def calc_prior(self, x, geom):
+            """Calculate prior distribution of radiance.  This depends on the 
+            location in the state space.  Return the inverse covariance and 
+            its square root (for non-quadratic error residual calculation)"""
 
-        xa = self.fm.xa(x, geom)
-        Sa = self.fm.Sa(x, geom)
-        Sa_inv, Sa_inv_sqrt = svd_inv_sqrt(Sa, hashtable=self.hashtable)
-        return xa, Sa, Sa_inv, Sa_inv_sqrt
+            xa = self.fm.xa(x, geom)
+            Sa = self.fm.Sa(x, geom)
+            Sa_inv, Sa_inv_sqrt = svd_inv_sqrt(Sa, hashtable=self.hashtable)
+            return xa, Sa, Sa_inv, Sa_inv_sqrt
 
-    @jit
-    def calc_posterior(self, x, geom, meas):
-        """Calculate posterior distribution of state vector. This depends 
-        both on the location in the state space and the radiance (via noise)."""
+    if jit_enabled:
+        @jit
+        def calc_posterior(self, x, geom, meas):
+            """Calculate posterior distribution of state vector. This depends 
+            both on the location in the state space and the radiance (via noise)."""
 
-        xa = self.fm.xa(x, geom)
-        Sa = self.fm.Sa(x, geom)
-        Sa_inv = svd_inv(Sa, hashtable=self.hashtable)
-        K = self.fm.K(x, geom)
-        Seps = self.fm.Seps(x, meas, geom)
-        Seps_inv = svd_inv(Seps, hashtable=self.hashtable)
+            xa = self.fm.xa(x, geom)
+            Sa = self.fm.Sa(x, geom)
+            Sa_inv = svd_inv(Sa, hashtable=self.hashtable)
+            K = self.fm.K(x, geom)
+            Seps = self.fm.Seps(x, meas, geom)
+            Seps_inv = svd_inv(Seps, hashtable=self.hashtable)
 
-        # Gain matrix G reflects current state, so we use the state-dependent
-        # Jacobian matrix K
-        S_hat = svd_inv(K.T.dot(Seps_inv).dot(K) + Sa_inv,
-                        hashtable=self.hashtable)
-        G = S_hat.dot(K.T).dot(Seps_inv)
-
-        # N. Cressie [ASA 2018] suggests an alternate definition of S_hat for
-        # more statistically-consistent posterior confidence estimation
-        if self.state_indep_S_hat:
-            Ka = self.fm.K(xa, geom)
-            S_hat = svd_inv(Ka.T.dot(Seps_inv).dot(Ka) + Sa_inv,
+            # Gain matrix G reflects current state, so we use the state-dependent
+            # Jacobian matrix K
+            S_hat = svd_inv(K.T.dot(Seps_inv).dot(K) + Sa_inv,
                             hashtable=self.hashtable)
-        return S_hat, K, G
+            G = S_hat.dot(K.T).dot(Seps_inv)
 
-    @jit
-    def calc_Seps(self, x, meas, geom):
-        """Calculate (zero-mean) measurement distribution in radiance terms.  
-        This depends on the location in the state space. This distribution is 
-        calculated over one or more subwindows of the spectrum. Return the 
-        inverse covariance and its square root."""
+            # N. Cressie [ASA 2018] suggests an alternate definition of S_hat for
+            # more statistically-consistent posterior confidence estimation
+            if self.state_indep_S_hat:
+                Ka = self.fm.K(xa, geom)
+                S_hat = svd_inv(Ka.T.dot(Seps_inv).dot(Ka) + Sa_inv,
+                                hashtable=self.hashtable)
+            return S_hat, K, G
+    else:
+        def calc_posterior(self, x, geom, meas):
+            """Calculate posterior distribution of state vector. This depends 
+            both on the location in the state space and the radiance (via noise)."""
 
-        Seps = self.fm.Seps(x, meas, geom)
-        wn = len(self.winidx)
-        Seps_win = s.zeros((wn, wn))
-        for i in range(wn):
-            Seps_win[i, :] = Seps[self.winidx[i], self.winidx]
-        return svd_inv_sqrt(Seps_win, hashtable=self.hashtable)
+            xa = self.fm.xa(x, geom)
+            Sa = self.fm.Sa(x, geom)
+            Sa_inv = svd_inv(Sa, hashtable=self.hashtable)
+            K = self.fm.K(x, geom)
+            Seps = self.fm.Seps(x, meas, geom)
+            Seps_inv = svd_inv(Seps, hashtable=self.hashtable)
+
+            # Gain matrix G reflects current state, so we use the state-dependent
+            # Jacobian matrix K
+            S_hat = svd_inv(K.T.dot(Seps_inv).dot(K) + Sa_inv,
+                            hashtable=self.hashtable)
+            G = S_hat.dot(K.T).dot(Seps_inv)
+
+            # N. Cressie [ASA 2018] suggests an alternate definition of S_hat for
+            # more statistically-consistent posterior confidence estimation
+            if self.state_indep_S_hat:
+                Ka = self.fm.K(xa, geom)
+                S_hat = svd_inv(Ka.T.dot(Seps_inv).dot(Ka) + Sa_inv,
+                                hashtable=self.hashtable)
+            return S_hat, K, G
+
+    if jit_enabled:
+        @jit
+        def calc_Seps(self, x, meas, geom):
+            """Calculate (zero-mean) measurement distribution in radiance terms.  
+            This depends on the location in the state space. This distribution is 
+            calculated over one or more subwindows of the spectrum. Return the 
+            inverse covariance and its square root."""
+
+            Seps = self.fm.Seps(x, meas, geom)
+            wn = len(self.winidx)
+            Seps_win = s.zeros((wn, wn))
+            for i in range(wn):
+                Seps_win[i, :] = Seps[self.winidx[i], self.winidx]
+            return svd_inv_sqrt(Seps_win, hashtable=self.hashtable)
+    else:
+        def calc_Seps(self, x, meas, geom):
+            """Calculate (zero-mean) measurement distribution in radiance terms.  
+            This depends on the location in the state space. This distribution is 
+            calculated over one or more subwindows of the spectrum. Return the 
+            inverse covariance and its square root."""
+
+            Seps = self.fm.Seps(x, meas, geom)
+            wn = len(self.winidx)
+            Seps_win = s.zeros((wn, wn))
+            for i in range(wn):
+                Seps_win[i, :] = Seps[self.winidx[i], self.winidx]
+            return svd_inv_sqrt(Seps_win, hashtable=self.hashtable)
 
     def invert(self, meas, geom):
         """Inverts a meaurement and returns a state vector.
@@ -168,32 +220,59 @@ class Inversion:
         # on the initial solution (a potential minor source of inaccuracy)
         Seps_inv, Seps_inv_sqrt = self.calc_Seps(x0, meas, geom)
 
-        @jit
-        def jac(x):
-            """Calculate measurement Jacobian and prior Jacobians with 
-            respect to cost function. This is the derivative of cost with
-            respect to the state, commonly known as the gradient or loss
-            surface. The cost is expressed as a vector of 'residuals'
-            with respect to the prior and measurement, expressed in absolute
-            (not quadratic) terms for the solver; It is the square root of
-            the Rodgers (2000) Chi-square version. All measurement
-            distributions are calculated over subwindows of the full spectrum."""
+        if jit_enabled:
+            @jit
+            def jac(x):
+                """Calculate measurement Jacobian and prior Jacobians with 
+                respect to cost function. This is the derivative of cost with
+                respect to the state, commonly known as the gradient or loss
+                surface. The cost is expressed as a vector of 'residuals'
+                with respect to the prior and measurement, expressed in absolute
+                (not quadratic) terms for the solver; It is the square root of
+                the Rodgers (2000) Chi-square version. All measurement
+                distributions are calculated over subwindows of the full spectrum."""
 
-            # jacobian of measurment cost term WRT state vector.
-            K = self.fm.K(x, geom)[self.winidx, :]
-            meas_jac = Seps_inv_sqrt.dot(K)
+                # jacobian of measurment cost term WRT state vector.
+                K = self.fm.K(x, geom)[self.winidx, :]
+                meas_jac = Seps_inv_sqrt.dot(K)
 
-            # jacobian of prior cost term with respect to state vector.
-            xa, Sa, Sa_inv, Sa_inv_sqrt = self.calc_prior(x, geom)
-            prior_jac = Sa_inv_sqrt
+                # jacobian of prior cost term with respect to state vector.
+                xa, Sa, Sa_inv, Sa_inv_sqrt = self.calc_prior(x, geom)
+                prior_jac = Sa_inv_sqrt
 
-            # The total cost vector (as presented to the solver) is the
-            # concatenation of the "residuals" due to the measurement
-            # and prior distributions. They will be squared internally by
-            # the solver.
-            total_jac = s.concatenate((meas_jac, prior_jac), axis=0)
+                # The total cost vector (as presented to the solver) is the
+                # concatenation of the "residuals" due to the measurement
+                # and prior distributions. They will be squared internally by
+                # the solver.
+                total_jac = s.concatenate((meas_jac, prior_jac), axis=0)
 
-            return s.real(total_jac)
+                return s.real(total_jac)
+        else:
+            def jac(x):
+                """Calculate measurement Jacobian and prior Jacobians with 
+                respect to cost function. This is the derivative of cost with
+                respect to the state, commonly known as the gradient or loss
+                surface. The cost is expressed as a vector of 'residuals'
+                with respect to the prior and measurement, expressed in absolute
+                (not quadratic) terms for the solver; It is the square root of
+                the Rodgers (2000) Chi-square version. All measurement
+                distributions are calculated over subwindows of the full spectrum."""
+
+                # jacobian of measurment cost term WRT state vector.
+                K = self.fm.K(x, geom)[self.winidx, :]
+                meas_jac = Seps_inv_sqrt.dot(K)
+
+                # jacobian of prior cost term with respect to state vector.
+                xa, Sa, Sa_inv, Sa_inv_sqrt = self.calc_prior(x, geom)
+                prior_jac = Sa_inv_sqrt
+
+                # The total cost vector (as presented to the solver) is the
+                # concatenation of the "residuals" due to the measurement
+                # and prior distributions. They will be squared internally by
+                # the solver.
+                total_jac = s.concatenate((meas_jac, prior_jac), axis=0)
+
+                return s.real(total_jac)
 
         def err(x):
             """Calculate cost function expressed here in absolute (not

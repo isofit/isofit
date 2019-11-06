@@ -19,11 +19,12 @@
 #
 
 import scipy as s
-from .common import recursive_replace, eps
 from copy import deepcopy
 from scipy.linalg import det, norm, pinv, sqrtm, inv, block_diag
 from importlib import import_module
 from scipy.interpolate import interp1d
+
+from .common import recursive_replace, eps
 from .instrument import Instrument
 
 

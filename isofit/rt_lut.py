@@ -22,11 +22,12 @@ import os
 import sys
 import scipy as s
 import logging
+from scipy.interpolate import interp1d
+from scipy.optimize import minimize_scalar as min1d
+
 from .common import json_load_ascii, combos
 from .common import VectorInterpolator, VectorInterpolatorJIT
 from .common import recursive_replace, eps, load_wavelen
-from scipy.interpolate import interp1d
-from scipy.optimize import minimize_scalar as min1d
 
 
 class FileExistsError(Exception):
