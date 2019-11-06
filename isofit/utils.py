@@ -43,7 +43,6 @@ from .common import expand_all_paths, load_spectrum, \
 from .instrument import Instrument
 from .geometry import Geometry
 
-
 # EMPLINE
 
 def empline(reference_radiance, reference_reflectance, reference_uncertainty,
@@ -207,33 +206,34 @@ def empline(reference_radiance, reference_reflectance, reference_uncertainty,
             if hash_img is not None:
                 hash_idx = hash_img[row, col]
                 if hash_idx in hash_table:
-                    bhat, bcov, bmarg = hash_table[hash_idx]
+                    bhat, bmarg, bcov = hash_table[hash_idx]
                 else:
                     loc = ref_loc[s.array(
                         hash_idx, dtype=int), :] * loc_scaling
             else:
                 loc = inp_loc[col, :] * loc_scaling
 
-            dists, nn = tree.query(loc, k)
-            xv = ref_rdn[nn, :]
-            yv = ref_rfl[nn, :]
-            uv = ref_unc[nn, :]
-            bhat = s.zeros((nb, 2))
-            bmarg = s.zeros((nb, 2))
-            bcov = s.zeros((nb, 2, 2))
-
-            for i in s.arange(nb):
-                use = yv[:, i] > 0
-                n = sum(use)
-                X = s.concatenate((s.ones((n, 1)), xv[use, i:i+1]), axis=1)
-                W = s.diag(s.ones(n)/uv[use, i])
-                y = yv[use, i:i+1]
-                bhat[i, :] = (inv(X.T @ W @ X) @ X.T @ W @ y).T
-                bcov[i, :, :] = inv(X.T @ W @ X)
-                bmarg[i, :] = s.diag(bcov[i, :, :])
+            if bhat is None:
+                dists, nn = tree.query(loc, k)
+                xv = ref_rdn[nn, :]
+                yv = ref_rfl[nn, :]
+                uv = ref_unc[nn, :]
+                bhat = s.zeros((nb, 2))
+                bmarg = s.zeros((nb, 2))
+                bcov = s.zeros((nb, 2, 2))
+                
+                for i in s.arange(nb):
+                    use = yv[:, i] > 0
+                    n = sum(use)
+                    X = s.concatenate((s.ones((n, 1)), xv[use, i:i+1]), axis=1)
+                    W = s.diag(s.ones(n))#/uv[use, i])
+                    y = yv[use, i:i+1]
+                    bhat[i, :] =  (inv(X.T @ W @ X) @ X.T @ W @ y).T
+                    bcov[i, :, :] = inv(X.T @ W @ X)
+                    bmarg[i, :] = s.diag(bcov[i, :, :])
 
             if (hash_img is not None) and not (hash_idx in hash_table):
-                hash_table[hash_idx] = bhat, bcov, bmarg
+                hash_table[hash_idx] = bhat, bmarg, bcov
 
             A = s.array((s.ones(nb), x))
             out_rfl[col, :] = (s.multiply(bhat.T, A).sum(axis=0))
@@ -251,7 +251,8 @@ def empline(reference_radiance, reference_reflectance, reference_uncertainty,
         if inp_rdn_meta['interleave'] == 'bil':
             out_rfl = out_rfl.transpose((1, 0))
         out_rfl_mm[row, :, :] = out_rfl
-        out_unc_mm = out_rfl_img.open_memmap(interleave='source',
+
+        out_unc_mm = out_unc_img.open_memmap(interleave='source',
                                              writable=True)
         if inp_rdn_meta['interleave'] == 'bil':
             out_unc = out_unc.transpose((1, 0))
