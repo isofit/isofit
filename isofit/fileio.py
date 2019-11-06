@@ -24,11 +24,12 @@ import scipy as s
 import pylab as plt
 from scipy.linalg import inv, norm, sqrtm, det
 from scipy.io import savemat
-from .inverse_simple import invert_simple, invert_algebraic
 from spectral.io import envi
-from .common import load_spectrum, eps, resample_spectrum, expand_all_paths
 import logging
 from collections import OrderedDict
+
+from .common import load_spectrum, eps, resample_spectrum, expand_all_paths
+from .inverse_simple import invert_simple, invert_algebraic
 from .geometry import Geometry
 
 
@@ -257,19 +258,21 @@ class IO:
             logging.config.dictConfig(config)
 
         # A list of all possible input data sources
-        self.possible_inputs = ["measured_radiance_file",
-                                "reference_reflectance_file",
-                                "reflectance_file",
-                                "obs_file",
-                                "glt_file",
-                                "loc_file",
-                                "surface_prior_mean_file",
-                                "surface_prior_variance_file",
-                                "rt_prior_mean_file",
-                                "rt_prior_variance_file",
-                                "instrument_prior_mean_file",
-                                "instrument_prior_variance_file",
-                                "radiometry_correction_file"]
+        self.possible_inputs = [
+            "measured_radiance_file",
+            "reference_reflectance_file",
+            "reflectance_file",
+            "obs_file",
+            "glt_file",
+            "loc_file",
+            "surface_prior_mean_file",
+            "surface_prior_variance_file",
+            "rt_prior_mean_file",
+            "rt_prior_variance_file",
+            "instrument_prior_mean_file",
+            "instrument_prior_variance_file",
+            "radiometry_correction_file"
+        ]
 
         # A list of all possible outputs.  There are several special cases
         # that we handle differently - the "plot_directory", "summary_file",
@@ -451,18 +454,20 @@ class IO:
             atm_bad = s.zeros(len(self.fm.statevec)) * -9999.0
             state_bad = s.zeros(len(self.fm.statevec)) * -9999.0
             data_bad = s.zeros(self.fm.instrument.n_chan) * -9999.0
-            to_write = {'estimated_state_file': state_bad,
-                        'estimated_reflectance_file': data_bad,
-                        'estimated_emission_file': data_bad,
-                        'modeled_radiance_file': data_bad,
-                        'apparent_reflectance_file': data_bad,
-                        'path_radiance_file': data_bad,
-                        'simulated_measurement_file': data_bad,
-                        'algebraic_inverse_file': data_bad,
-                        'atmospheric_coefficients_file': atm_bad,
-                        'radiometry_correction_file': data_bad,
-                        'spectral_calibration_file': data_bad,
-                        'posterior_uncertainty_file': state_bad}
+            to_write = {
+                'estimated_state_file': state_bad,
+                'estimated_reflectance_file': data_bad,
+                'estimated_emission_file': data_bad,
+                'modeled_radiance_file': data_bad,
+                'apparent_reflectance_file': data_bad,
+                'path_radiance_file': data_bad,
+                'simulated_measurement_file': data_bad,
+                'algebraic_inverse_file': data_bad,
+                'atmospheric_coefficients_file': atm_bad,
+                'radiometry_correction_file': data_bad,
+                'spectral_calibration_file': data_bad,
+                'posterior_uncertainty_file': state_bad
+            }
 
         else:
 
@@ -522,31 +527,21 @@ class IO:
                     logging.warning('No reflectance reference')
 
             # Assemble all output products
-            to_write = {'estimated_state_file': state_est,
-                        'estimated_reflectance_file':
-                        s.column_stack((self.fm.surface.wl, lamb_est)),
-                        'estimated_emission_file':
-                        s.column_stack((self.fm.surface.wl, Ls_est)),
-                        'estimated_reflectance_file':
-                        s.column_stack((self.fm.surface.wl, lamb_est)),
-                        'modeled_radiance_file':
-                        s.column_stack((wl, meas_est)),
-                        'apparent_reflectance_file':
-                        s.column_stack((self.fm.surface.wl, apparent_rfl_est)),
-                        'path_radiance_file':
-                        s.column_stack((wl, path_est)),
-                        'simulated_measurement_file':
-                        s.column_stack((wl, meas_sim)),
-                        'algebraic_inverse_file':
-                        s.column_stack((self.fm.surface.wl, rfl_alg_opt)),
-                        'atmospheric_coefficients_file':
-                        atm,
-                        'radiometry_correction_file':
-                        factors,
-                        'spectral_calibration_file':
-                        cal,
-                        'posterior_uncertainty_file':
-                        s.sqrt(s.diag(S_hat))}
+            to_write = {
+                'estimated_state_file': state_est,
+                'estimated_reflectance_file': s.column_stack((self.fm.surface.wl, lamb_est)),
+                'estimated_emission_file': s.column_stack((self.fm.surface.wl, Ls_est)),
+                'estimated_reflectance_file': s.column_stack((self.fm.surface.wl, lamb_est)),
+                'modeled_radiance_file': s.column_stack((wl, meas_est)),
+                'apparent_reflectance_file': s.column_stack((self.fm.surface.wl, apparent_rfl_est)),
+                'path_radiance_file': s.column_stack((wl, path_est)),
+                'simulated_measurement_file': s.column_stack((wl, meas_sim)),
+                'algebraic_inverse_file': s.column_stack((self.fm.surface.wl, rfl_alg_opt)),
+                'atmospheric_coefficients_file': atm,
+                'radiometry_correction_file': factors,
+                'spectral_calibration_file': cal,
+                'posterior_uncertainty_file': s.sqrt(s.diag(S_hat))
+            }
 
         for product in self.outfiles:
             logging.debug('IO: Writing '+product)

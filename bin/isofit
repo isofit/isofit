@@ -26,6 +26,9 @@ import argparse
 import scipy as s
 from spectral.io import envi
 from scipy.io import savemat
+import cProfile
+import logging
+
 from isofit.common import load_config, expand_all_paths, load_spectrum
 from isofit.forward import ForwardModel
 from isofit.inverse import Inversion
@@ -33,8 +36,6 @@ from isofit.inverse_mcmc import MCMCInversion
 from isofit.geometry import Geometry
 from isofit.fileio import IO
 from isofit import __version__
-import cProfile
-import logging
 
 # Suppress warnings that don't come from us
 import warnings
