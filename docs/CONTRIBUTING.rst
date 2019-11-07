@@ -153,37 +153,48 @@ Create release branch and pull in changes from pull request:
 
 .. code::
 
-  git checkout -b release-0.3.0 master
+  git checkout -b release-1.2.0 master
   git pull https://github.com/davidraythompson/isofit.git feature-branch  (NOTE: this is the pull request branch)
 
-Update version number and release notes:
+Update version number:
 
 .. code::
 
-  vi setup.py
-  vi docs/release_notes.rst
-
-Rebuild html docs:
-
-.. code::
-
-  rm -rf docs/html
-  make -C docs html
-  cp -pr docs/_build/html docs/html
+  vi isofit/__init__.py
+  vi recipe/meta.yaml
 
 Commit changes to release branch:
 
 .. code::
 
   git add -A
-  git commit -m “Version 0.3.0 prepped for release."
+  git commit -m “Prepares version 1.2.0 for release."
   
 Merge release branch into master:
 
 .. code::
 
   git checkout master
-  git merge --no-ff release-0.3.0
+  git merge --no-ff release-1.2.0
+  git push origin master
+
+Create release tag and release archive:
+
+* Go to https://github.com/isofit/isofit/releases
+* Click "Draft a new release"
+* Enter tag version as "v1.2.0" (depending on latest version), and input release title and description
+* Click "Publish release"
+
+Update sha256 hash value for conda recipe:
+
+* Download latest tar.gz from https://github.com/isofit/isofit/releases/tag/v1.2.0
+* Run "openssl dgst -sha256 isofit-1.2.0.tar.gz"
+* Add sha256 hash value to reciples/meta.yaml and update master with the following:
+
+.. code::
+
+  git add -A
+  git commit -m "Adds sha256 hash value to conda-forge recipe"
   git push origin master
 
 Create and upload Pypi distribution:

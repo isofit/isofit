@@ -37,10 +37,6 @@ from isofit.geometry import Geometry
 from isofit.fileio import IO
 from isofit import __version__
 
-# Suppress warnings that don't come from us
-import warnings
-warnings.filterwarnings("ignore")
-
 
 def main():
 

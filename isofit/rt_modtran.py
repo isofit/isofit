@@ -19,17 +19,16 @@
 #
 
 from sys import platform
-import json
 import os
 from os.path import split
 import re
-import scipy as s
+import json
 from copy import deepcopy
+import scipy as s
 from scipy.stats import norm as normal
 from scipy.interpolate import interp1d
 
-from .common import json_load_ascii, combos, VectorInterpolator
-from .common import recursive_replace
+from .common import json_load_ascii, recursive_replace
 from .rt_lut import TabularRT, FileExistsError
 
 

@@ -1,7 +1,7 @@
-# David R Thompson
+# David R Thompson, Adam Erickson
 
 # Build the surface model
-pythonw ../../utils/surfmodel.py configs/prm20151026t173213_surface_coastal.json
+python3 -c "from isofit.utils import surfmodel; surfmodel('configs/prm20151026t173213_surface_coastal.json')"
 
 # Run retrievals
 isofit --level DEBUG configs/prm20151026t173213_D8W_6s.json

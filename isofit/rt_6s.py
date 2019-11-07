@@ -17,25 +17,25 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-import json
 import os
 import sys
 import re
 import time
+import json
 import logging
+import multiprocessing
+import subprocess
+from datetime import datetime
+from copy import deepcopy
 import scipy as s
 from spectral.io import envi
 from scipy.io import loadmat, savemat
-from copy import deepcopy
 from scipy.linalg import block_diag, det, norm, pinv, sqrtm, inv
 from scipy.signal import convolve, gaussian, medfilt
 from scipy.interpolate import interp1d
 from scipy.optimize import minimize_scalar as min1d
 from scipy.stats import multivariate_normal as mvn
 import pylab as plt
-import multiprocessing
-import subprocess
-from datetime import datetime
 
 from .common import json_load_ascii, combos, VectorInterpolator
 from .common import recursive_replace, eps
