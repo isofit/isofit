@@ -250,7 +250,11 @@ class ModtranRT(TabularRT):
             f.write(modtran_config_str)
 
         # Specify location of the proper MODTRAN 6.0 binary for this OS
-        xdir = {'linux': 'linux', 'darwin': 'macos', 'windows': 'windows'}
+        xdir = {
+            'linux': 'linux',
+            'darwin': 'macos',
+            'windows': 'windows'
+        }
         cmd = self.modtran_dir+'/bin/'+xdir[platform]+'/mod6c_cons '+infilename
         return cmd
 
