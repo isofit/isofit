@@ -652,7 +652,7 @@ class IO:
                 ymin = min(meas)-0.01
                 plt.text(500, ymax*0.92, "Measured", color=red)
                 plt.text(500, ymax*0.86, "Model", color='k')
-                plt.ylabel("$\mu$W nm$^{-1}$ sr$^{-1}$ cm$^{-2}$")
+                plt.ylabel(r"$\mu$W nm$^{-1}$ sr$^{-1}$ cm$^{-2}$")
                 plt.ylabel("Intensity")
                 plt.xlabel("Wavelength (nm)")
                 plt.ylim([-0.001, ymax])

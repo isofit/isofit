@@ -30,7 +30,8 @@ from isofit.core.instrument import Instrument
 
 # Supported RT modules, filenames, and class names
 RT_models = [('modtran_radiative_transfer', 'radiative_transfer.modtran', 'ModtranRT'),
-             ('libradtran_radiative_transfer', 'radiative_transfer.libradtran', 'LibRadTranRT'),
+             ('libradtran_radiative_transfer',
+              'radiative_transfer.libradtran', 'LibRadTranRT'),
              ('planetary_radiative_transfer', 'planetary', 'PlanetaryRT'),
              ('uplooking_radiative_transfer', 'uplook', 'UplookRT'),
              ('sixs_radiative_transfer', 'radiative_transfer.six_s', 'SixSRT')]
