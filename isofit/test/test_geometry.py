@@ -1,4 +1,4 @@
-from isofit.geometry import Geometry
+from isofit.core.geometry import Geometry
 
 
 def test_Geometry():

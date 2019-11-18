@@ -19,14 +19,13 @@
 #
 
 import os
-from os.path import realpath, split, abspath, expandvars
-import sys
+from os.path import split, abspath
 import time
 import logging
 from numpy.random import multivariate_normal
 import scipy as s
 from scipy import logical_and as aand
-from scipy.linalg import eigh, norm, inv
+from scipy.linalg import eigh, norm
 from scipy.spatial import KDTree
 from scipy.stats import linregress
 from scipy.linalg import svd
@@ -38,10 +37,10 @@ from skimage.segmentation import slic
 import matplotlib
 import pylab as plt
 
-from .common import expand_all_paths, load_spectrum, \
-    find_header, expand_path, json_load_ascii
-from .instrument import Instrument
-from .geometry import Geometry
+from isofit.core.common import load_spectrum, \
+    expand_path, json_load_ascii
+from isofit.core.instrument import Instrument
+from isofit.core.geometry import Geometry
 
 
 # EMPLINE

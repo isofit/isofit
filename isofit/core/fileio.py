@@ -19,17 +19,15 @@
 #
 
 import os
-import sys
 import scipy as s
 import pylab as plt
-from scipy.linalg import inv, norm, sqrtm, det
 from spectral.io import envi
 from collections import OrderedDict
 import logging
 
-from .common import load_spectrum, eps, resample_spectrum, expand_all_paths
-from .geometry import Geometry
-from .inverse_simple import invert_simple, invert_algebraic
+from isofit.core.common import load_spectrum, eps, resample_spectrum
+from isofit.core.geometry import Geometry
+from isofit.core.inverse_simple import invert_simple, invert_algebraic
 
 
 # Constants related to file I/O

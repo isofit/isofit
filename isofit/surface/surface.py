@@ -21,7 +21,7 @@
 import scipy as s
 from scipy.interpolate import interp1d
 
-from .common import load_spectrum, load_wavelen
+from isofit.core.common import load_spectrum, load_wavelen
 
 
 class Surface:
