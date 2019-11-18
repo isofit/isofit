@@ -34,7 +34,6 @@ def test_pep8_conformance():
     # After acceptance, this will be uncommented
     pep8style = pep8.StyleGuide(config_file=config_file, quiet=False)
     result = pep8style.check_files(files)
-    import ipdb; ipdb.set_trace()
     if result.total_errors != 0:
         print("Found PEP8 conformance error.")
         print("Please fix your style with autopep8.")
