@@ -29,7 +29,7 @@ from isofit.core.common import expand_path, json_load_ascii
 
 # SURFMODEL
 
-def surfmodel(config):
+def surface_model(config):
     """."""
     configdir, configfile = split(abspath(config))
     config = json_load_ascii(config, shell_replace=True)

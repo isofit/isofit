@@ -1,11 +1,11 @@
 # David R Thompson, Adam Erickson
 
 from isofit.core.isofit import Isofit
-from isofit.utils.surface_model import surfmodel
+from isofit.utils import surface_model
 
 
 # Build the surface model
-surfmodel("configs/prm20151026t173213_surface_coastal.json")
+surface_model("configs/prm20151026t173213_surface_coastal.json")
 
 # Run retrievals
 model1 = Isofit("configs/prm20151026t173213_D8W_6s.json")

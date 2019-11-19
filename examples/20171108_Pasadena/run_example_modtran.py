@@ -1,11 +1,11 @@
 # David R Thompson, Adam Erickson
 
 from isofit.core.isofit import Isofit
-from isofit.utils.surface_model import surfmodel
+from isofit.utils import surface_model
 
 
 # Build the surface model
-surfmodel("configs/ang20171108t184227_surface.json")
+surface_model("configs/ang20171108t184227_surface.json")
 
 # Run retrievals
 model1 = Isofit("configs/ang20171108t173546_darklot.json")

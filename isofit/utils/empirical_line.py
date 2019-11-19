@@ -29,7 +29,7 @@ from scipy.stats import linregress
 from spectral.io import envi
 
 
-def empline(reference_radiance, reference_reflectance, reference_locations, hashfile,
+def empirical_line(reference_radiance, reference_reflectance, reference_locations, hashfile,
             input_radiance, input_locations, output_reflectance, output_uncertainty,
             nneighbors, flag, skip, level):
     """..."""

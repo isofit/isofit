@@ -30,7 +30,7 @@ from isofit.core.geometry import Geometry
 
 # GENNOISE
 
-def gennoise(config):
+def generate_noise(config):
     """Add noise to a radiance spectrum or image."""
     config = json_load_ascii(config, shell_replace=True)
     configdir, configfile = split(abspath(config))

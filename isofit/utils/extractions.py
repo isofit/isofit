@@ -23,7 +23,7 @@ from spectral.io import envi
 
 # EXTRACT
 
-def extract(inputfile, labels, output, chunksize, flag):
+def extractions(inputfile, labels, output, chunksize, flag):
     """..."""
     in_file = inputfile
     lbl_file = labels

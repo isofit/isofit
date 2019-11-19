@@ -27,7 +27,7 @@ from spectral.io import envi
 from isofit.core.common import expand_path, json_load_ascii
 
 
-def instmodel(config):
+def instrument_model(config):
     """."""
     hdr_template = '''ENVI
     samples = {samples}
