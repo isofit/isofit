@@ -168,7 +168,7 @@ Commit changes to release branch:
 .. code::
 
   git add -A
-  git commit -m “Version 1.2.0 prepped for release."
+  git commit -m “Prepares version 1.2.0 for release."
   
 Merge release branch into master:
 
@@ -189,8 +189,13 @@ Update sha256 hash value for conda recipe:
 
 * Download latest tar.gz from https://github.com/isofit/isofit/releases/tag/v1.2.0
 * Run "openssl dgst -sha256 isofit-1.2.0.tar.gz"
-* Add sha256 hash value to reciples/meta.yaml
-* Run "git push origin master"
+* Add sha256 hash value to reciples/meta.yaml and update master with the following:
+
+.. code::
+
+  git add -A
+  git commit -m "Adds sha256 hash value to conda-forge recipe"
+  git push origin master
 
 Create and upload Pypi distribution:
 
