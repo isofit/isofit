@@ -48,7 +48,7 @@ from .geometry import Geometry
 def empline(reference_radiance, reference_reflectance, reference_uncertainty,
             reference_locations, hashfile,
             input_radiance, input_locations, output_reflectance, output_uncertainty,
-            nneighbors, flag, skip, level):
+            nneighbors=15, flag=-9999.0, skip=0, level='INFO'):
     """..."""
 
     def plot_example(xv, yv, b, predx, predy):
