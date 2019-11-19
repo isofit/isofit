@@ -40,7 +40,7 @@ RT_models = [('modtran_radiative_transfer', 'radiative_transfer.modtran', 'Modtr
 # Supported surface modules, filenames, and class names
 surface_models = [('surface', 'surface.surface', 'Surface'),
                   ('multicomponent_surface',
-                   'surface.surf_multicomp', 'MultiComponentSurface'),
+                   'surface.surface_multicomp', 'MultiComponentSurface'),
                   ('emissive_surface', 'surface.surface_emissive', 'MixBBSurface'),
                   ('cat_surface', 'surf_cat', 'CATSurface'),
                   ('glint_surface', 'surface.surface_glint', 'GlintSurface'),
