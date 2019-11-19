@@ -1,7 +1,7 @@
 # David R Thompson, Adam Erickson
 
 from isofit.core.isofit import Isofit
-from isofit.utils.utils import surfmodel
+from isofit.utils.surface_model import surfmodel
 
 
 # Build the surface model
