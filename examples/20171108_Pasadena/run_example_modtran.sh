@@ -1,7 +1,7 @@
 # David R Thompson, Adam Erickson
 
 # Create surface model
-python3 -c "from isofit.utils import surfmodel; surfmodel('configs/ang20171108t184227_surface.json')"
+python3 -c "from isofit.utils import surface_model; surface_model('configs/ang20171108t184227_surface.json')"
 
 # Run experiments
 isofit --level DEBUG configs/ang20171108t173546_darklot.json

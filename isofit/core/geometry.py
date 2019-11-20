@@ -22,7 +22,7 @@ import logging
 from datetime import datetime
 import scipy as s
 
-from .sunposition import sunpos
+from isofit.core.sunposition import sunpos
 
 
 class Geometry:

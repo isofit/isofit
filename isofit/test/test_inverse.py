@@ -1,4 +1,4 @@
-from isofit.inverse import error_code
+from isofit.core.inverse import error_code
 
 
 def test_error_code():

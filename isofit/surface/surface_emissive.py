@@ -19,11 +19,11 @@
 #
 
 import scipy as s
-from scipy.linalg import det, norm, pinv, sqrtm, inv, cholesky
+from scipy.linalg import inv
 from scipy.optimize import minimize
 
-from .common import recursive_replace, emissive_radiance, chol_inv, eps
-from .surf_multicomp import MultiComponentSurface
+from isofit.core.common import emissive_radiance, eps
+from isofit.surface.surface_multicomp import MultiComponentSurface
 
 
 class MixBBSurface(MultiComponentSurface):

@@ -19,11 +19,11 @@
 #
 
 import scipy as s
-from scipy.linalg import block_diag, det, norm, pinv, sqrtm, inv
+from scipy.linalg import block_diag, norm
 from scipy.io import loadmat
 
-from .common import recursive_replace, svd_inv, eps
-from .surf import Surface
+from isofit.core.common import svd_inv
+from isofit.surface.surface import Surface
 
 
 class MultiComponentSurface(Surface):

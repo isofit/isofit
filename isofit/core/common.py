@@ -252,7 +252,7 @@ def recursive_reincode(j, shell_replace=True):
     elif isinstance(j, tuple):
         return tuple([recursive_reincode(k) for k in j])
     else:
-        if shell_replace and type(j) is str:
+        if shell_replace and isinstance(j, str):
             try:
                 j = expandvars(j)
             except IndexError:

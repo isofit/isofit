@@ -18,19 +18,16 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-import sys
 import json
-from os.path import expandvars, split, abspath, join
+from os.path import split, abspath, join
 
-from isofit.common import expand_all_paths
-from isofit.common import load_spectrum
-from isofit.fileio import IO
-from isofit.inverse import Inversion
-from isofit.forward import ForwardModel
-from isofit.rt_libradtran import LibRadTranRT
+from isofit.core.common import expand_all_paths
+from isofit.core.fileio import IO
+from isofit.core.inverse import Inversion
+from isofit.core.forward import ForwardModel
 
 
-def test_rt_libradtran():
+def test_libradtran():
     """This simple unit test simulates an observation of a uniform
     10% reflectance surface, and then performs a retrieval (varying only
     Atmospheric parameters).  It then performs an inversion and tests for
