@@ -393,6 +393,7 @@ class IO:
         """
         # Determine the appropriate row, column index. and initialize the
         # data dictionary with empty entries.
+        logging.info('{} / {}'.format(self.iter,len(self.iter_inds)))
         r, c = self.iter_inds[index]
         data = dict([(i, None) for i in self.possible_inputs])
         logging.debug('Row %i Column %i' % (r, c))

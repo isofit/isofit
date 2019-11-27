@@ -81,8 +81,8 @@ class Isofit:
                 self.rows = range(int(row_start), int(row_end))
                 self.cols = range(int(col_start), int(col_end))
 
-    def _run_single_spectra(self, io, index):
-        success, row, col, meas, geom, configs = io.get_components_at_index(index)
+    def _run_single_spectra(self, index):
+        success, row, col, meas, geom, configs = self.io.get_components_at_index(index)
         # Only run through the inversion if we got some data
         if success:
             if meas is not None and all(meas < -49.0):
@@ -102,7 +102,7 @@ class Isofit:
                 self.states = self.iv.invert(meas, geom)
 
             # Write the spectra to disk
-            io.write_spectrum(row, col, self.states, meas, geom)
+            self.io.write_spectrum(row, col, self.states, meas, geom)
 
     def run(self, profile=False):
         """
@@ -111,7 +111,7 @@ class Isofit:
         The idea is to avoid reading the entire file into memory, or hitting
         the physical disk too often. These are our main class variables.
         """
-        io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
+        self.io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
 
         if profile:
             for row, col, meas, geom, configs in io:
@@ -130,11 +130,20 @@ class Isofit:
                         'self.iv.invert(meas, geom, configs)', gbl, lcl)
 
                 # Write the spectra to disk
-                io.write_spectrum(row, col, self.states, meas, geom)
+                self.io.write_spectrum(row, col, self.states, meas, geom)
         else:
             pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
 
             logging.info('Beginning parallel inversions')
-            r = pool.map_async(self._run_single_spectra, list(range(len(io.iter_inds))))
-            r.wait()
+
+            results = []
+            for l in range(len(self.io.iter_inds)):
+                results.append(pool.apply_async(self._run_single_spectra, args=(l,)))
+            results = [p.get() for p in results]
+            pool.close()
+            pool.join()
+
             logging.info('Parallel inversions complete')
+
+
+
