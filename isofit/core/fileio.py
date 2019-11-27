@@ -377,41 +377,36 @@ class IO:
                 self.iter_inds.append([row, col])
         self.iter_inds = s.array(self.iter_inds)
 
-    def __iter__(self):
-        """ Reset the iterator"""
+    def get_components_at_index(self, index):
+        """
+        Get the spectrum from the file at the specified index.  Helper/
+        parallel enabling function.
 
-        self.iter = 0
-        return self
+        :param index: reference location for iter_inds
 
-    def __next__(self):
-        """ Get the next spectrum from the file.  Turn the iteration number
-            into row/column indices and read from all input products."""
+        :return: success: boolean flag indicating if data present
+        :return: r: row index
+        :return: c: column index
+        :return: meas: measured radiance file
+        :return: geom: set up specified geometry files
+        :return: updates: set of prior reference files
+        """
+        # Determine the appropriate row, column index. and initialize the
+        # data dictionary with empty entries.
+        r, c = self.iter_inds[index]
+        data = dict([(i, None) for i in self.possible_inputs])
+        logging.debug('Row %i Column %i' % (r, c))
 
-        # Try to read data until we hit the end or find good values
-        success = False
-        while not success:
-            if self.iter == len(self.iter_inds):
-                self.flush_buffers()
-                raise StopIteration
+        # Read data from any of the input files that are defined.
+        for source in self.infiles:
+            data[source] = self.infiles[source].read_spectrum(r, c)
+            if (self.iter % flush_rate) == 0:
+                self.infiles[source].flush_buffers()
 
-            # Determine the appropriate row, column index. and initialize the
-            # data dictionary with empty entries.
-            r, c = self.iter_inds[self.iter]
-            self.iter = self.iter + 1
-            data = dict([(i, None) for i in self.possible_inputs])
-            logging.debug('Row %i Column %i' % (r, c))
-
-            # Read data from any of the input files that are defined.
-            for source in self.infiles:
-                data[source] = self.infiles[source].read_spectrum(r, c)
-                if (self.iter % flush_rate) == 0:
-                    self.infiles[source].flush_buffers()
-
-            # Check for any bad data flags
-            success = True
-            for source in self.infiles:
-                if s.all(abs(data[source]-self.infiles[source].flag) < eps):
-                    success = False
+        # Check for any bad data flags
+        for source in self.infiles:
+            if s.all(abs(data[source] - self.infiles[source].flag) < eps):
+                return False, r, c, None, None, None
 
         # We apply the calibration correciton here for simplicity.
         meas = data['measured_radiance_file']
@@ -435,6 +430,32 @@ class IO:
                     'prior_variances': data['rt_prior_variance_file']},
                    {'prior_means': data['instrument_prior_mean_file'],
                     'prior_variances': data['instrument_prior_variance_file']})
+
+        return True, r, c, meas, geom, updates
+
+
+
+    def __iter__(self):
+        """ Reset the iterator"""
+
+        self.iter = 0
+        return self
+
+    def __next__(self):
+        """ Get the next spectrum from the file.  Turn the iteration number
+            into row/column indices and read from all input products."""
+
+        # Try to read data until we hit the end or find good values
+        success = False
+        while not success:
+            if self.iter == len(self.iter_inds):
+                self.flush_buffers()
+                raise StopIteration
+
+            # Determine the appropriate row, column index. and initialize the
+            # data dictionary with empty entries.
+            success, r, c, meas, geom, updates = self.get_components_at_index(self.iter)
+            self.iter = self.iter + 1
 
         return r, c, meas, geom, updates
 
