@@ -36,7 +36,7 @@ sixs_template = '''0 (User defined)
 {aermodel}
 0
 {AOT550}
--{elev:.2f} (target level)
+{elev:.2f} (target level)
 -{alt:.2f} (sensor level)
 -{H2OSTR}, -{O3}
 {AOT550}
@@ -121,6 +121,7 @@ class SixSRT(TabularRT):
         # Translate a couple of special cases
         if 'H2OSTR' in self.lut_names:
             vals['h2o_mm'] = vals['H2OSTR']*10.0
+        vals['elev'] = vals['elev']*-1
 
         # Check rebuild conditions: LUT is missing or from a different config
         sixspath = self.sixs_dir+'/sixsV2.1'

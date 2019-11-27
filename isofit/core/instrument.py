@@ -131,11 +131,12 @@ class Instrument:
             # of wavelength.
             unknowns = config['unknowns']
             if 'channelized_radiometric_uncertainty_file' in unknowns:
-                f = unknowns['channelized_radiometric_uncertainty_file']
-                u = s.loadtxt(f, comments='#')
-                if (len(u.shape) > 0 and u.shape[1] > 1):
-                    u = u[:, 1]
-                self.bval[:self.n_chan] = self.bval[:self.n_chan] + pow(u, 2)
+                if unknowns['channelized_radiometric_uncertainty_file'] is not None:
+                    f = unknowns['channelized_radiometric_uncertainty_file']
+                    u = s.loadtxt(f, comments='#')
+                    if (len(u.shape) > 0 and u.shape[1] > 1):
+                        u = u[:, 1]
+                    self.bval[:self.n_chan] = self.bval[:self.n_chan] + pow(u, 2)
 
             # Uncorrelated radiometric uncertainties are consistent and
             # independent in all channels.
