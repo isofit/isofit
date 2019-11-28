@@ -43,7 +43,6 @@ class Isofit:
     profile = None
     fm = None
     iv = None
-    io = None
     states = None
 
     def __init__(self, config_file, level='INFO', row_column='', profile=False):
@@ -111,7 +110,7 @@ class Isofit:
                 self.states = self.iv.invert(meas, geom)
 
             # Write the spectra to disk
-            self.io.write_spectrum(row, col, self.states, meas, geom)
+            io.write_spectrum(row, col, self.states, meas, geom, flush_immediately=True)
 
     def run(self, profile=False):
         """
@@ -139,9 +138,10 @@ class Isofit:
                         'self.iv.invert(meas, geom, configs)', gbl, lcl)
 
                 # Write the spectra to disk
-                self.io.write_spectrum(row, col, self.states, meas, geom)
+                io.write_spectrum(row, col, self.states, meas, geom)
         else:
             n_iter = len(io.iter_inds)
+            n_iter = 10
             io = None
             self._clear_nonpicklable_objects()
             pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
@@ -156,6 +156,5 @@ class Isofit:
             pool.join()
 
             logging.info('Parallel inversions complete')
-
 
 

@@ -147,8 +147,11 @@ class SpectrumFile:
                         logging.error('Must specify %s' % (k))
                         raise IOError('Must specify %s' % (k))
 
-                self.file = envi.create_image(fname+'.hdr', meta, ext='',
+                if os.path.isfile(fname+'.hdr') is False:
+                    self.file = envi.create_image(fname+'.hdr', meta, ext='',
                                               force=True)
+                else:
+                    self.file = envi.open(fname+'.hdr')
 
             self.open_map_with_retries()
 
@@ -393,7 +396,6 @@ class IO:
         """
         # Determine the appropriate row, column index. and initialize the
         # data dictionary with empty entries.
-        logging.info('{} / {}'.format(self.iter,len(self.iter_inds)))
         r, c = self.iter_inds[index]
         data = dict([(i, None) for i in self.possible_inputs])
         logging.debug('Row %i Column %i' % (r, c))
@@ -401,7 +403,7 @@ class IO:
         # Read data from any of the input files that are defined.
         for source in self.infiles:
             data[source] = self.infiles[source].read_spectrum(r, c)
-            if (self.iter % flush_rate) == 0:
+            if (index % flush_rate) == 0:
                 self.infiles[source].flush_buffers()
 
         # Check for any bad data flags
@@ -433,7 +435,6 @@ class IO:
                     'prior_variances': data['instrument_prior_variance_file']})
 
         return True, r, c, meas, geom, updates
-
 
 
     def __iter__(self):
@@ -474,7 +475,7 @@ class IO:
             for name, fi in file_dictionary.items():
                 fi.flush_buffers()
 
-    def write_spectrum(self, row, col, states, meas, geom):
+    def write_spectrum(self, row, col, states, meas, geom, flush_immediately=False):
         """Write data from a single inversion to all output buffers."""
 
         self.writes = self.writes + 1
@@ -577,7 +578,7 @@ class IO:
         for product in self.outfiles:
             logging.debug('IO: Writing '+product)
             self.outfiles[product].write_spectrum(row, col, to_write[product])
-            if (self.writes % flush_rate) == 0:
+            if (self.writes % flush_rate) == 0 or flush_immediately:
                 self.outfiles[product].flush_buffers()
 
         # Special case! samples file is matlab format.
