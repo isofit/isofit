@@ -54,11 +54,7 @@ class Isofit:
         # Load configuration file
         self.config = load_config(config_file)
         # Build the forward model and inversion objects
-        self.fm = ForwardModel(self.config['forward_model'])
-        if 'mcmc_inversion' in self.config:
-            self.iv = MCMCInversion(self.config['mcmc_inversion'], self.fm)
-        else:
-            self.iv = Inversion(self.config['inversion'], self.fm)
+        self._init_nonpicklable_objects()
 
         # We set the row and column range of our analysis. The user can
         # specify: a single number, in which case it is interpreted as a row;
@@ -81,8 +77,21 @@ class Isofit:
                 self.rows = range(int(row_start), int(row_end))
                 self.cols = range(int(col_start), int(col_end))
 
+    def _init_nonpicklable_objects(self):
+        self.fm = ForwardModel(self.config['forward_model'])
+        if 'mcmc_inversion' in self.config:
+            self.iv = MCMCInversion(self.config['mcmc_inversion'], self.fm)
+        else:
+            self.iv = Inversion(self.config['inversion'], self.fm)
+
+    def _clear_nonpicklable_objects(self):
+        self.fm = None
+        self.iv = None
+
     def _run_single_spectra(self, index):
-        success, row, col, meas, geom, configs = self.io.get_components_at_index(index)
+        self._init_nonpicklable_objects()
+        io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
+        success, row, col, meas, geom, configs = io.get_components_at_index(index)
         # Only run through the inversion if we got some data
         if success:
             if meas is not None and all(meas < -49.0):
@@ -111,8 +120,8 @@ class Isofit:
         The idea is to avoid reading the entire file into memory, or hitting
         the physical disk too often. These are our main class variables.
         """
-        self.io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
 
+        io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
         if profile:
             for row, col, meas, geom, configs in io:
                 if meas is not None and all(meas < -49.0):
@@ -132,12 +141,15 @@ class Isofit:
                 # Write the spectra to disk
                 self.io.write_spectrum(row, col, self.states, meas, geom)
         else:
+            n_iter = len(io.iter_inds)
+            io = None
+            self._clear_nonpicklable_objects()
             pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
 
             logging.info('Beginning parallel inversions')
 
             results = []
-            for l in range(len(self.io.iter_inds)):
+            for l in range(n_iter):
                 results.append(pool.apply_async(self._run_single_spectra, args=(l,)))
             results = [p.get() for p in results]
             pool.close()
