@@ -141,7 +141,6 @@ class Isofit:
                 io.write_spectrum(row, col, self.states, meas, geom)
         else:
             n_iter = len(io.iter_inds)
-            n_iter = 10
             io = None
             self._clear_nonpicklable_objects()
             pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
