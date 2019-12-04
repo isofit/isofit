@@ -80,7 +80,11 @@ class Isofit:
                 line_start, line_end, samp_start, samp_end = ranges
                 self.rows = range(int(row_start), int(row_end))
                 self.cols = range(int(col_start), int(col_end))
-        self.run()
+        try:
+            self.run()
+        except Exception as e:
+            print(e)
+            raise Exception("ISOFIT process failed.")
 
     def run(self, profile=False):
         """
