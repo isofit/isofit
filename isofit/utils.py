@@ -48,7 +48,8 @@ from .geometry import Geometry
 def empline(reference_radiance, reference_reflectance, reference_uncertainty,
             reference_locations, hashfile,
             input_radiance, input_locations, output_reflectance, output_uncertainty,
-            nneighbors=15, flag=-9999.0, skip=0, level='INFO'):
+            nneighbors=15, flag=-9999.0, skip=0, level='INFO', 
+            radiance_factors=None):
     """..."""
 
     def plot_example(xv, yv, b, predx, predy):
@@ -128,6 +129,12 @@ def empline(reference_radiance, reference_reflectance, reference_uncertainty,
     ref_loc_mm = ref_loc_img.open_memmap(interleave='source', writable=False)
     ref_loc = s.array(ref_loc_mm[:, :, :]).reshape((nref, lb))
 
+    # Prepare radiance adjustment
+    if radiance_factors is None:
+      rdn_factors = s.ones(nb,)
+    else:
+      rdn_factors = s.loadtxt(radiance_factors)
+
     # Assume (heuristically) that, for distance purposes, 1 m vertically is
     # comparable to 10 m horizontally, and that there are 100 km per latitude
     # degree.  This is all approximate of course.  Elevation appears in the
@@ -183,6 +190,7 @@ def empline(reference_radiance, reference_reflectance, reference_uncertainty,
         inp_rdn = s.array(inp_rdn_mm[row, :, :])
         if inp_rdn_meta['interleave'] == 'bil':
             inp_rdn = inp_rdn.transpose((1, 0))
+        inp_rdn = inp_rdn * rdn_factors
 
         inp_loc_mm = inp_loc_img.open_memmap(
             interleave='source', writable=False)
