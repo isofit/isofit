@@ -29,9 +29,11 @@ from scipy.stats import linregress
 from spectral.io import envi
 
 
-def empirical_line(reference_radiance, reference_reflectance, reference_locations, hashfile,
+def empirical_line(reference_radiance, reference_reflectance, reference_uncertainty,
+            reference_locations, hashfile,
             input_radiance, input_locations, output_reflectance, output_uncertainty,
-            nneighbors, flag, skip, level):
+            nneighbors=15, flag=-9999.0, skip=0, level='INFO', 
+            radiance_factors=None):
     """..."""
 
     def plot_example(xv, yv, b):
@@ -64,6 +66,7 @@ def empirical_line(reference_radiance, reference_reflectance, reference_location
     logging.basicConfig(format='%(message)s', level=loglevel)
     ref_rdn_file = reference_radiance
     ref_rfl_file = reference_reflectance
+    ref_unc_file = reference_uncertainty
     ref_loc_file = reference_locations
     inp_hash_file = hashfile
     inp_rdn_file = input_radiance
@@ -83,20 +86,37 @@ def empirical_line(reference_radiance, reference_reflectance, reference_location
     # Load reference set reflectance
     ref_rfl_img = envi.open(ref_rfl_file+'.hdr', ref_rfl_file)
     meta = ref_rfl_img.metadata
-    nrrf, nbr, srrf = [int(meta[n]) for n in ('lines', 'bands', 'samples')]
-    if nrrf != nref or nbr != nb or srrf != sref:
+    nrefr, nbr, srefr = [int(meta[n]) for n in ('lines', 'bands', 'samples')]
+    if nrefr != nref or nbr != nb or srefr != sref:
         raise IndexError("Reference file dimension mismatch (reflectance)")
     ref_rfl_mm = ref_rfl_img.open_memmap(interleave='source', writable=False)
     ref_rfl = s.array(ref_rfl_mm[:, :, :]).reshape((nref, nb))
 
+    # Load reference set uncertainty, assuming reflectance uncertainty is
+    # recoreded in the first nbr channels of data
+    ref_unc_img = envi.open(ref_unc_file+'.hdr', ref_unc_file)
+    meta = ref_unc_img.metadata
+    nrefu, ns, srefu = [int(meta[n]) for n in ('lines', 'bands', 'samples')]
+    if nrefu != nref or ns < nb or srefu != sref:
+        raise IndexError("Reference file dimension mismatch (uncertainty)")
+    ref_unc_mm = ref_unc_img.open_memmap(interleave='source', writable=False)
+    ref_unc = s.array(ref_unc_mm[:, :, :]).reshape((nref, ns))
+    ref_unc = ref_unc[:, :nbr].reshape((nref, nbr))
+
     # Load reference set locations
     ref_loc_img = envi.open(ref_loc_file+'.hdr', ref_loc_file)
     meta = ref_loc_img.metadata
-    nrrf, lb, ls = [int(meta[n]) for n in ('lines', 'bands', 'samples')]
-    if nrrf != nref or lb != 3:
+    nrefl, lb, ls = [int(meta[n]) for n in ('lines', 'bands', 'samples')]
+    if nrefl != nref or lb != 3:
         raise IndexError("Reference file dimension mismatch (locations)")
     ref_loc_mm = ref_loc_img.open_memmap(interleave='source', writable=False)
     ref_loc = s.array(ref_loc_mm[:, :, :]).reshape((nref, lb))
+
+    # Prepare radiance adjustment
+    if radiance_factors is None:
+      rdn_factors = s.ones(nb,)
+    else:
+      rdn_factors = s.loadtxt(radiance_factors)
 
     # Assume (heuristically) that, for distance purposes, 1 m vertically is
     # comparable to 10 m horizontally, and that there are 100 km per latitude
@@ -153,6 +173,7 @@ def empirical_line(reference_radiance, reference_reflectance, reference_location
         inp_rdn = s.array(inp_rdn_mm[row, :, :])
         if inp_rdn_meta['interleave'] == 'bil':
             inp_rdn = inp_rdn.transpose((1, 0))
+        inp_rdn = inp_rdn * rdn_factors
 
         inp_loc_mm = inp_loc_img.open_memmap(
             interleave='source', writable=False)
@@ -172,42 +193,44 @@ def empirical_line(reference_radiance, reference_reflectance, reference_location
                 out_unc[col, :] = flag
                 continue
 
+            bhat = None
             if hash_img is not None:
                 hash_idx = hash_img[row, col]
                 if hash_idx in hash_table:
-                    b, unc = hash_table[hash_idx]
+                    bhat, bmarg, bcov = hash_table[hash_idx]
                 else:
                     loc = ref_loc[s.array(
                         hash_idx, dtype=int), :] * loc_scaling
-                    dists, nn = tree.query(loc, k)
-                    xv = ref_rdn[nn, :]
-                    yv = ref_rfl[nn, :]
-                    b = s.zeros((nb, 2))
-                    unc = s.zeros(nb,)
-
-                    for i in s.arange(nb):
-                        b[i, 1], b[i, 0], q1, q2, q3 = linregress(
-                            xv[:, i], yv[:, i])
-                        unc[i] = s.std(xv[:, i]*b[i, 1]+b[i, 0]-yv[:, i])
-
-                    hash_table[hash_idx] = b, unc
             else:
                 loc = inp_loc[col, :] * loc_scaling
+
+            if bhat is None:
                 dists, nn = tree.query(loc, k)
                 xv = ref_rdn[nn, :]
                 yv = ref_rfl[nn, :]
-                b = s.zeros((nb, 2))
-                unc = s.zeros(nb,)
+                uv = ref_unc[nn, :]
+                bhat = s.zeros((nb, 2))
+                bmarg = s.zeros((nb, 2))
+                bcov = s.zeros((nb, 2, 2))
+                
                 for i in s.arange(nb):
-                    b[i, 1], b[i, 0], q1, q2, q3 = linregress(
-                        xv[:, i], yv[:, i])
-                    unc[i] = s.std(xv[:, i]*b[i, 1]+b[i, 0]-yv[:, i])
+                    use = yv[:, i] > 0
+                    n = sum(use)
+                    X = s.concatenate((s.ones((n, 1)), xv[use, i:i+1]), axis=1)
+                    W = s.diag(s.ones(n))#/uv[use, i])
+                    y = yv[use, i:i+1]
+                    bhat[i, :] =  (inv(X.T @ W @ X) @ X.T @ W @ y).T
+                    bcov[i, :, :] = inv(X.T @ W @ X)
+                    bmarg[i, :] = s.diag(bcov[i, :, :])
+
+            if (hash_img is not None) and not (hash_idx in hash_table):
+                hash_table[hash_idx] = bhat, bmarg, bcov
 
             A = s.array((s.ones(nb), x))
-            out_rfl[col, :] = (b.T * A).sum(axis=0)
-            out_unc[col, :] = unc
+            out_rfl[col, :] = (s.multiply(bhat.T, A).sum(axis=0))
+            out_unc[col, :] = s.sqrt(s.multiply(bmarg.T, A).sum(axis=0))
             if loglevel == 'DEBUG':
-                plot_example(xv, yv, b)
+                plot_example(xv, yv, bhat, x, out_rfl[col, :])
 
             nspectra = nspectra+1
 
@@ -218,12 +241,10 @@ def empirical_line(reference_radiance, reference_reflectance, reference_location
                                              writable=True)
         if inp_rdn_meta['interleave'] == 'bil':
             out_rfl = out_rfl.transpose((1, 0))
-
         out_rfl_mm[row, :, :] = out_rfl
 
-        out_unc_mm = out_rfl_img.open_memmap(interleave='source',
+        out_unc_mm = out_unc_img.open_memmap(interleave='source',
                                              writable=True)
         if inp_rdn_meta['interleave'] == 'bil':
-            out_unc = out_rfl.transpose((1, 0))
-
-        out_unc_mm[row, :, :] = out_rfl
+            out_unc = out_unc.transpose((1, 0))
+        out_unc_mm[row, :, :] = out_unc
