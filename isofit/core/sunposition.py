@@ -40,7 +40,7 @@ class _sp:
             try:
                 # will raise OSError if dt is not acceptable
                 return _sp.calendar_time(datetime.utcfromtimestamp(dt))
-            except:
+            except BaseException:
                 raise TypeError(
                     'dt must be datetime object or POSIX timestamp')
 
@@ -690,11 +690,11 @@ class Sunposition:
             try:
                 # with microseconds
                 self.t = datetime.strptime(t, '%Y-%m-%d %H:%M:%S.%f')
-            except:
+            except BaseException:
                 try:
                     # without microseconds
                     self.t = datetime.strptime(t, '%Y-%m-%d %H:%M:%S.')
-                except:
+                except BaseException:
                     self.t = datetime.strptime(t, '%Y-%m-%d %H:%M:%S')
         else:
             self.t = datetime.utcfromtimestamp(int(t))

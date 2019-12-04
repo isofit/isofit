@@ -23,7 +23,7 @@ import sys
 from argparse import ArgumentParser
 from datetime import datetime
 
-from isofit import sunposition
+from isofit.core import sunposition
 from isofit import __version__
 
 

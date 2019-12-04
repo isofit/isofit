@@ -1,5 +1,5 @@
 import numpy as np
-from isofit.common import max_table_size, binary_table, eps, combos
+from isofit.core.common import max_table_size, binary_table, eps, combos
 
 
 def test_max_table_size():

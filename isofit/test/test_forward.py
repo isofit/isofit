@@ -1,4 +1,4 @@
-from isofit.forward import RT_models, surface_models
+from isofit.core.forward import RT_models, surface_models
 
 
 def test_RT_models():

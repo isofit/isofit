@@ -19,21 +19,15 @@
 #         Adam Erickson, adam.m.erickson@nasa.gov
 #
 
-import os
-import sys
-import json
-import scipy as s
-from spectral.io import envi
 import logging
 import warnings
 import cProfile
 
-from .common import load_config
-from .forward import ForwardModel
-from .inverse import Inversion
-from .inverse_mcmc import MCMCInversion
-from .geometry import Geometry
-from .fileio import IO
+from isofit.core.common import load_config
+from isofit.core.forward import ForwardModel
+from isofit.core.inverse import Inversion
+from isofit.core.inverse_mcmc import MCMCInversion
+from isofit.core.fileio import IO
 
 
 # Suppress warnings that don't come from us

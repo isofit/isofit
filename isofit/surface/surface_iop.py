@@ -19,12 +19,12 @@
 #
 
 import scipy as s
-from scipy.linalg import block_diag, det, norm, pinv, sqrtm, inv, cholesky
+from scipy.linalg import block_diag
 from scipy.interpolate import interp1d
 from scipy.io import loadmat
 
-from .common import recursive_replace, load_wavelen, chol_inv, eps, srf
-from .surf import Surface
+from isofit.core.common import load_wavelen, eps, srf
+from .surface import Surface
 
 
 class IOPSurface(Surface):
