@@ -176,7 +176,7 @@ class Instrument:
             return s.zeros((0, 0), dtype=float)
         return s.diagflat(pow(self.prior_sigma, 2))
 
-    def Sy(self, meas, geom):
+    def Sy(self, meas, geom=None):
         """ Calculate measurement error covariance.
            Input: meas, the instrument measurement
            Returns: Sy, the measurement error covariance due to instrument noise"""
