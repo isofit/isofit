@@ -18,26 +18,26 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
+from isofit.core.geometry import Geometry
+from scipy.linalg import inv
+from isofit.core.common import load_config
+from isofit.core.instrument import Instrument
+from spectral.io import envi
+from scipy.stats import linregress
+from scipy.spatial import KDTree
+import scipy as s
+import logging
+import time
 import matplotlib
 import pylab as plt
 plt.switch_backend("Agg")
-import time
-import logging
-import scipy as s
-from scipy.spatial import KDTree
-from scipy.stats import linregress
-from spectral.io import envi
-from isofit.core.instrument import Instrument
-from isofit.core.common import load_config
-from scipy.linalg import inv
-from isofit.core.geometry import Geometry
 
 
 def empirical_line(reference_radiance, reference_reflectance, reference_uncertainty,
-            reference_locations, hashfile,
-            input_radiance, input_locations, output_reflectance, output_uncertainty,
-            nneighbors=15, flag=-9999.0, skip=0, level='INFO', 
-            radiance_factors=None, isofit_config=None):
+                   reference_locations, hashfile,
+                   input_radiance, input_locations, output_reflectance, output_uncertainty,
+                   nneighbors=15, flag=-9999.0, skip=0, level='INFO',
+                   radiance_factors=None, isofit_config=None):
     """..."""
 
     def plot_example(xv, yv, b):
@@ -118,17 +118,17 @@ def empirical_line(reference_radiance, reference_reflectance, reference_uncertai
 
     # Prepare radiance adjustment
     if radiance_factors is None:
-      rdn_factors = s.ones(nb,)
+        rdn_factors = s.ones(nb,)
     else:
-      rdn_factors = s.loadtxt(radiance_factors)
+        rdn_factors = s.loadtxt(radiance_factors)
 
     # Prepare instrument model, if available
     if isofit_config is not None:
-       config = load_config(isofit_config)
-       instrument = Instrument(config['forward_model']['instrument'])
-       logging.info('Loading instrument')
+        config = load_config(isofit_config)
+        instrument = Instrument(config['forward_model']['instrument'])
+        logging.info('Loading instrument')
     else:
-       instrument = None
+        instrument = None
 
     # Assume (heuristically) that, for distance purposes, 1 m vertically is
     # comparable to 10 m horizontally, and that there are 100 km per latitude
@@ -224,14 +224,14 @@ def empirical_line(reference_radiance, reference_reflectance, reference_uncertai
                 bhat = s.zeros((nb, 2))
                 bmarg = s.zeros((nb, 2))
                 bcov = s.zeros((nb, 2, 2))
-                
+
                 for i in s.arange(nb):
                     use = yv[:, i] > 0
                     n = sum(use)
                     X = s.concatenate((s.ones((n, 1)), xv[use, i:i+1]), axis=1)
-                    W = s.diag(s.ones(n))#/uv[use, i])
+                    W = s.diag(s.ones(n))  # /uv[use, i])
                     y = yv[use, i:i+1]
-                    bhat[i, :] =  (inv(X.T @ W @ X) @ X.T @ W @ y).T
+                    bhat[i, :] = (inv(X.T @ W @ X) @ X.T @ W @ y).T
                     bcov[i, :, :] = inv(X.T @ W @ X)
                     bmarg[i, :] = s.diag(bcov[i, :, :])
 
@@ -241,23 +241,24 @@ def empirical_line(reference_radiance, reference_reflectance, reference_uncertai
             A = s.array((s.ones(nb), x))
             out_rfl[col, :] = (s.multiply(bhat.T, A).sum(axis=0))
 
-            # Calculate uncertainties.  Sy approximation rather than Seps for 
-            # speed, for now... but we do take into account instrument 
+            # Calculate uncertainties.  Sy approximation rather than Seps for
+            # speed, for now... but we do take into account instrument
             # radiometric uncertainties
             if instrument is None:
                 out_unc[col, :] = s.sqrt(s.multiply(bmarg.T, A).sum(axis=0))
             else:
                 Sy = instrument.Sy(x, geom=None)
                 calunc = instrument.bval[:instrument.n_chan]
-                out_unc[col, :] = s.sqrt(s.diag(Sy)+pow(calunc*x,2))*bhat[:,1]
+                out_unc[col, :] = s.sqrt(
+                    s.diag(Sy)+pow(calunc*x, 2))*bhat[:, 1]
             if loglevel == 'DEBUG':
                 plot_example(xv, yv, bhat, x, out_rfl[col, :])
 
             nspectra = nspectra+1
 
         elapsed = float(time.time()-start)
-        logging.info('row %i/%i, %5.1f spectra per second' % 
-            (row,nl,float(nspectra)/elapsed))
+        logging.info('row %i/%i, %5.1f spectra per second' %
+                     (row, nl, float(nspectra)/elapsed))
 
         out_rfl_mm = out_rfl_img.open_memmap(interleave='source',
                                              writable=True)
