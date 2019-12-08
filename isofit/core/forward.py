@@ -33,7 +33,7 @@ RT_models = [('modtran_radiative_transfer', 'radiative_transfer.modtran', 'Modtr
              ('libradtran_radiative_transfer',
               'radiative_transfer.libradtran', 'LibRadTranRT'),
              ('planetary_radiative_transfer', 'planetary', 'PlanetaryRT'),
-             ('uplooking_radiative_transfer', 'uplook', 'UplookRT'),
+             ('uplooking_radiative_transfer', 'radiative_transfer.rfm', 'UplookRT'),
              ('sixs_radiative_transfer', 'radiative_transfer.six_s', 'SixSRT')]
 
 
