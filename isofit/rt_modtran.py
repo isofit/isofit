@@ -252,6 +252,7 @@ class ModtranRT(TabularRT):
         # Specify location of the proper MODTRAN 6.0 binary for this OS
         xdir = {
             'linux': 'linux',
+            'macos': 'macos',
             'darwin': 'macos',
             'windows': 'windows'
         }

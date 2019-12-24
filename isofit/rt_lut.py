@@ -169,10 +169,12 @@ class TabularRT:
                 self.wl = wl
 
             ind = [s.where(g == p)[0] for g, p in zip(self.lut_grids, point)]
+            ind = s.array(ind)
             self.rhoatm[ind] = rhoatm
             self.sphalb[ind] = sphalb
             self.transm[ind] = transm
             self.transup[ind] = transup
+
         self.rhoatm_interp = VectorInterpolatorJIT(self.lut_grids, self.rhoatm)
         self.sphalb_interp = VectorInterpolatorJIT(self.lut_grids, self.sphalb)
         self.transm_interp = VectorInterpolatorJIT(self.lut_grids, self.transm)
