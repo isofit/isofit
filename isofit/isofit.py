@@ -101,7 +101,7 @@ class Isofit:
         """
 
         self.io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
-        for row, col, meas, geom, configs in io:
+        for row, col, meas, geom, configs in self.io:
             if meas is not None and all(meas < -49.0):
                 # Bad data flags
                 self.states = []
