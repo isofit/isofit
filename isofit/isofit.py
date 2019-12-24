@@ -58,7 +58,6 @@ class Isofit:
 
         # Load configuration file
         self.config = load_config(config_file)
-        print(self.config)
 
         # Build the forward model and inversion objects
         self.fm = ForwardModel(self.config['forward_model'])
