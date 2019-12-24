@@ -114,7 +114,6 @@ class ForwardModel:
         self.nbvec = len(self.bvec)
         self.bval = s.array(bval)
         self.Sb = s.diagflat(pow(self.bval, 2))
-        return
 
     def out_of_bounds(self, x):
         """Is state vector inside the bounds?"""

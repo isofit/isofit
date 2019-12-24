@@ -61,6 +61,7 @@ class Isofit:
 
         # Build the forward model and inversion objects
         self.fm = ForwardModel(self.config['forward_model'])
+
         if 'mcmc_inversion' in self.config:
             self.iv = MCMCInversion(self.config['mcmc_inversion'], self.fm)
         else:
