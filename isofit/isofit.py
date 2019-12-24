@@ -38,21 +38,28 @@ from .fileio import IO
 class Isofit:
     """Spectroscopic Surface and Atmosphere Fitting."""
 
-    rows, cols = None, None
-    config = None
-    profile = None
-    fm = None
-    iv = None
-    io = None
-    states = None
-
-    def __init__(self, config_file, level='INFO', row_column='', profile=False):
+    def __init__(self, config_file, row_column='', profile=False):  # level='INFO',
         """Initialize the class."""
+
+        self.rows = None
+        self.cols = None
+        self.config = None
+        self.profile = None
+        self.fm = None
+        self.iv = None
+        self.io = None
+        self.states = None
+
+        # Profiler boolean
         self.profile = profile
+
         # Set logging level
-        logging.basicConfig(format='%(message)s', level=level)
+        #logging.basicConfig(format='%(message)s', level=level)
+
         # Load configuration file
         self.config = load_config(config_file)
+        print(self.config)
+
         # Build the forward model and inversion objects
         self.fm = ForwardModel(self.config['forward_model'])
         if 'mcmc_inversion' in self.config:
@@ -93,7 +100,8 @@ class Isofit:
         The idea is to avoid reading the entire file into memory, or hitting
         the physical disk too often. These are our main class variables.
         """
-        io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
+
+        self.io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
         for row, col, meas, geom, configs in io:
             if meas is not None and all(meas < -49.0):
                 # Bad data flags
@@ -104,7 +112,7 @@ class Isofit:
                 # though they could contain new location-specific prior
                 # distributions.
                 self.fm.reconfigure(*configs)
-                if profile:
+                if self.profile:
                     # Profile output
                     gbl, lcl = globals(), locals()
                     cProfile.runctx(
@@ -115,5 +123,6 @@ class Isofit:
                     # or as a gradient descent trajectory (standard case). For
                     # a trajectory, the last spectrum is the converged solution.
                     self.states = self.iv.invert(meas, geom)
+
             # Write the spectra to disk
-            io.write_spectrum(row, col, self.states, meas, geom)
+            self.io.write_spectrum(row, col, self.states, meas, geom)
