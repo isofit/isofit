@@ -136,7 +136,9 @@ class TabularRT:
                 pass
 
         if self.configure_and_exit:
-            sys.exit(0)
+            raise SystemExit
+            # sys.exit(0)
+
         elif len(rebuild_cmds) > 0 and self.auto_rebuild:
             logging.info("rebuilding")
             import multiprocessing
