@@ -48,7 +48,11 @@ class TabularRT:
         self.wl, self.fwhm = load_wavelen(config['wavelength_file'])
         self.n_chan = len(self.wl)
 
-        defaults = {'configure_and_exit': False, 'auto_rebuild': True}
+        defaults = {
+            'configure_and_exit': False,
+            'auto_rebuild': True
+        }
+
         for key, value in defaults.items():
             if key in config:
                 setattr(self, key, config[key])
