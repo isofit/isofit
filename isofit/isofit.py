@@ -39,7 +39,7 @@ class Isofit:
     """Spectroscopic Surface and Atmosphere Fitting."""
 
     def __init__(self, config_file, row_column='', profile=False):  # level='INFO',
-        """Initialize the class."""
+        """Initialize the Isofit class."""
 
         self.rows = None
         self.cols = None
