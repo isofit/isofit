@@ -38,8 +38,11 @@ from .fileio import IO
 class Isofit:
     """Spectroscopic Surface and Atmosphere Fitting."""
 
-    def __init__(self, config_file, row_column='', profile=False):  # level='INFO',
+    def __init__(self, config_file, row_column='', profile=False, level='INFO'):
         """Initialize the Isofit class."""
+
+        # Set logging level
+        logging.basicConfig(format='%(message)s', level=level)
 
         self.rows = None
         self.cols = None
@@ -52,9 +55,6 @@ class Isofit:
 
         # Profiler boolean
         self.profile = profile
-
-        # Set logging level
-        #logging.basicConfig(format='%(message)s', level=level)
 
         # Load configuration file
         self.config = load_config(config_file)
