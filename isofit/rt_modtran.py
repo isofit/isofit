@@ -81,7 +81,7 @@ class ModtranRT(TabularRT):
         try:
             return os.getenv('MODTRAN_DIR')
         except KeyError:
-            logging.errorj('I could not find the MODTRAN base directory')
+            logging.error('I could not find the MODTRAN base directory')
             raise KeyError('I could not find the MODTRAN base directory')
 
     def load_tp6(self, infile):
@@ -218,7 +218,7 @@ class ModtranRT(TabularRT):
         """."""
 
         if not fn:
-            logging.errorj("Function is not defined.")
+            logging.error("Function is not defined.")
             raise SystemExit("Function is not defined.")
 
         vals = dict([(n, v) for n, v in zip(self.lut_names, point)])
@@ -265,7 +265,7 @@ class ModtranRT(TabularRT):
         # If self.modtran_dir is not defined, raise an exception
         # This occurs e.g., when MODTRAN is not installed
         if not self.modtran_dir:
-            logging.errorj("MODTRAN directory not defined in config file.")
+            logging.error("MODTRAN directory not defined in config file.")
             raise SystemExit("MODTRAN directory not defined in config file.")
 
         # Generate the CLI path
