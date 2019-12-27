@@ -216,6 +216,10 @@ class ModtranRT(TabularRT):
     def rebuild_cmd(self, point, fn):
         """."""
 
+        if not fn:
+            logging.errorj("Function is not defined.")
+            raise SystemExit("Function is not defined.")
+
         vals = dict([(n, v) for n, v in zip(self.lut_names, point)])
         vals['DISALB'] = True
         vals['NAME'] = fn
@@ -259,9 +263,9 @@ class ModtranRT(TabularRT):
 
         # If self.modtran_dir is not defined, raise an exception
         # This occurs e.g., when MODTRAN is not installed
-        # if not self.modtran_dir:
-        #    logging.errorj("MODTRAN directory not defined in config file.")
-        #    raise SystemExit("MODTRAN directory not defined in config file.")
+        if not self.modtran_dir:
+            logging.errorj("MODTRAN directory not defined in config file.")
+            raise SystemExit("MODTRAN directory not defined in config file.")
 
         # Generate the CLI path
         cmd = self.modtran_dir+'/bin/'+xdir[platform]+'/mod6c_cons '+infilename
