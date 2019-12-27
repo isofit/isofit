@@ -71,7 +71,7 @@ class ModtranRT(TabularRT):
         self.build_lut()
 
     def find_basedir(self, config):
-        '''Seek out a modtran base directory'''
+        """Seek out a modtran base directory."""
 
         try:
             return config['modtran_directory']
@@ -147,6 +147,7 @@ class ModtranRT(TabularRT):
         return tuple(params)
 
     def ext550_to_vis(self, ext550):
+        """."""
         return s.log(50.0) / (ext550 + 0.01159)
 
     def modtran_driver(self, overrides):
@@ -198,8 +199,7 @@ class ModtranRT(TabularRT):
         return json.dumps({"MODTRAN": param}), param
 
     def build_lut(self, rebuild=False):
-        """ Each LUT is associated with a source directory.  We build a 
-            lookup table by: 
+        """Each LUT is associated with a source directory.  We build a lookup table by: 
               (1) defining the LUT dimensions, state vector names, and the grid 
                   of values; 
               (2) running modtran if needed, with each MODTRAN run defining a 
@@ -214,6 +214,7 @@ class ModtranRT(TabularRT):
         TabularRT.build_lut(self, rebuild)
 
     def rebuild_cmd(self, point, fn):
+        """."""
 
         vals = dict([(n, v) for n, v in zip(self.lut_names, point)])
         vals['DISALB'] = True
@@ -252,14 +253,23 @@ class ModtranRT(TabularRT):
         # Specify location of the proper MODTRAN 6.0 binary for this OS
         xdir = {
             'linux': 'linux',
-            'macos': 'macos',
             'darwin': 'macos',
             'windows': 'windows'
         }
+
+        # If self.modtran_dir is not defined, raise an exception
+        # This occurs e.g., when MODTRAN is not installed
+        if not self.modtran_dir or not infilename:
+            logging.errorj("MODTRAN directory not defined in config file.")
+            raise SystemExit("MODTRAN directory not defined in config file.")
+
+        # Generate the CLI path
         cmd = self.modtran_dir+'/bin/'+xdir[platform]+'/mod6c_cons '+infilename
         return cmd
 
     def load_rt(self, point, fn):
+        """."""
+
         tp6file = self.lut_dir+'/'+fn+'.tp6'
         solzen = self.load_tp6(tp6file)
         coszen = s.cos(solzen * s.pi / 180.0)
@@ -269,8 +279,8 @@ class ModtranRT(TabularRT):
         return wl, sol, solzen, rhoatm, transm, sphalb, transup
 
     def wl2flt(self, wls, fwhms, outfile):
-        """ helper function to generate Gaussian distributions around the center 
-            wavelengths """
+        """Helper function to generate Gaussian distributions around the center wavelengths."""
+
         I = None
         sigmas = fwhms/2.355
         span = 2.0 * (wls[1]-wls[0])  # nm

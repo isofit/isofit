@@ -48,13 +48,13 @@ surface_models = [('surface', 'surf', 'Surface'),
 
 
 class ForwardModel:
+    """ForwardModel contains all the information about how to calculate
+     radiance measurements at a specific spectral calibration, given a 
+     state vector.  It also manages the distributions of unretrieved, 
+     unknown parameters of the state vector (i.e. the S_b and K_b 
+     matrices of Rodgers et al."""
 
     def __init__(self, config):
-        '''ForwardModel contains all the information about how to calculate
-         radiance measurements at a specific spectral calibration, given a 
-         state vector.  It also manages the distributions of unretrieved, 
-         unknown parameters of the state vector (i.e. the S_b and K_b 
-         matrices of Rodgers et al.'''
 
         self.instrument = Instrument(config['instrument'])
         self.n_meas = self.instrument.n_chan
@@ -117,6 +117,7 @@ class ForwardModel:
 
     def out_of_bounds(self, x):
         """Is state vector inside the bounds?"""
+
         x_RT = x[self.idx_RT]
         x_surface = x[self.idx_surface]
         bound_lwr = self.bounds[0]
@@ -150,7 +151,7 @@ class ForwardModel:
 
     def calc_rdn(self, x, geom, rfl=None, Ls=None):
         """Calculate the high-resolution radiance, permitting overrides
-        Project to top of atmosphere and translate to radiance"""
+        Project to top of atmosphere and translate to radiance."""
 
         x_surface, x_RT, x_instrument = self.unpack(x)
         if rfl is None:
@@ -162,24 +163,24 @@ class ForwardModel:
         return self.RT.calc_rdn(x_RT, rfl_hi, Ls_hi, geom)
 
     def calc_meas(self, x, geom, rfl=None, Ls=None):
-        """Calculate the model observation at instrument wavelengths"""
+        """Calculate the model observation at instrument wavelengths."""
 
         x_surface, x_RT, x_instrument = self.unpack(x)
         rdn_hi = self.calc_rdn(x, geom, rfl, Ls)
         return self.instrument.sample(x_instrument, self.RT.wl, rdn_hi)
 
     def calc_Ls(self, x, geom):
-        """calculate the surface emission."""
+        """Calculate the surface emission."""
 
         return self.surface.calc_Ls(x[self.idx_surface], geom)
 
     def calc_rfl(self, x, geom):
-        """calculate the surface reflectance"""
+        """Calculate the surface reflectance."""
 
         return self.surface.calc_rfl(x[self.idx_surface], geom)
 
     def calc_lamb(self, x, geom):
-        """calculate the Lambertian surface reflectance"""
+        """Calculate the Lambertian surface reflectance."""
 
         return self.surface.calc_lamb(x[self.idx_surface], geom)
 
@@ -261,7 +262,7 @@ class ForwardModel:
         return Kb
 
     def summarize(self, x, geom):
-        """State vector summary"""
+        """State vector summary."""
 
         x_surface, x_RT, x_instrument = self.unpack(x)
         return self.surface.summarize(x_surface, geom) + \
@@ -269,13 +270,13 @@ class ForwardModel:
             ' ' + self.instrument.summarize(x_instrument, geom)
 
     def calibration(self, x):
-        """Calculate measured wavelengths and fwhm"""
+        """Calculate measured wavelengths and fwhm."""
 
         x_inst = x[self.idx_instrument]
         return self.instrument.calibration(x_inst)
 
     def upsample(self, wl, q):
-        """Linear interpolation to RT wavelengths"""
+        """Linear interpolation to RT wavelengths."""
 
         if q.ndim > 1:
             q2 = []
@@ -288,7 +289,7 @@ class ForwardModel:
             return p(self.RT.wl)
 
     def unpack(self, x):
-        """Unpack the state vector in appropriate index ordering"""
+        """Unpack the state vector in appropriate index ordering."""
 
         x_surface = x[self.idx_surface]
         x_RT = x[self.idx_RT]

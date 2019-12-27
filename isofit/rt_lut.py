@@ -31,11 +31,15 @@ from .common import json_load_ascii, combos, \
 
 
 class FileExistsError(Exception):
+    """FileExistsError with a message."""
+
     def __init__(self, message):
         super(FileExistsError, self).__init__(message)
 
 
 def spawn_rt(cmd):
+    """Run a CLI command."""
+
     print(cmd)
     os.system(cmd)
 
@@ -87,20 +91,19 @@ class TabularRT:
         self.bval = s.array([config['unknowns'][k] for k in self.bvec])
 
     def xa(self):
-        '''Mean of prior distribution, calculated at state x. This is the
-           Mean of our LUT grid (why not).'''
+        """Mean of prior distribution, calculated at state x. This is the
+           Mean of our LUT grid (why not)."""
         return self.prior_mean.copy()
 
     def Sa(self):
-        '''Covariance of prior distribution. Our state vector covariance 
-           is diagonal with very loose constraints.'''
+        """Covariance of prior distribution. Our state vector covariance 
+           is diagonal with very loose constraints."""
         if self.n_state == 0:
             return s.zeros((0, 0), dtype=float)
         return s.diagflat(pow(self.prior_sigma, 2))
 
     def build_lut(self, rebuild=False):
-        """ Each LUT is associated with a source directory.  We build a 
-            lookup table by: 
+        """Each LUT is associated with a source directory.  We build a lookup table by: 
               (1) defining the LUT dimensions, state vector names, and the grid 
                   of values; 
               (2) running modtran if needed, with each MODTRAN run defining a 
@@ -182,7 +185,7 @@ class TabularRT:
             self.lut_grids, self.transm)
 
     def lookup_lut(self, point):
-        """Multi-linear interpolation in the LUT"""
+        """Multi-linear interpolation in the LUT."""
 
         rhoatm = s.array(self.rhoatm_interp(point)).ravel()
         sphalb = s.array(self.sphalb_interp(point)).ravel()
@@ -227,9 +230,9 @@ class TabularRT:
             return self.lookup_lut(point)
 
     def calc_rdn(self, x_RT, rfl, Ls, geom):
-        '''Calculate radiance at aperature for a radiative transfer state vector.
+        """Calculate radiance at aperature for a radiative transfer state vector.
            rfl is the reflectance at surface. 
-           Ls is the  emissive radiance at surface.'''
+           Ls is the  emissive radiance at surface."""
 
         if Ls is None:
             Ls = s.zeros(rfl.shape)
@@ -241,7 +244,7 @@ class TabularRT:
 
     def drdn_dRT(self, x_RT, x_surface, rfl, drfl_dsurface, Ls, dLs_dsurface,
                  geom):
-        """Jacobian of radiance with respect to RT and surface state vectors"""
+        """Jacobian of radiance with respect to RT and surface state vectors."""
 
         # first the rdn at the current state vector
         rhoatm, sphalb, transm, transup = self.get(x_RT, geom)
@@ -316,19 +319,19 @@ class TabularRT:
         return Kb_RT
 
     def summarize(self, x_RT, geom):
-        '''Summary of state vector'''
+        """Summary of state vector."""
 
         if len(x_RT) < 1:
             return ''
         return 'Atmosphere: '+' '.join(['%5.3f' % xi for xi in x_RT])
 
     def reconfigure(self, config):
-        ''' Accept new configuration options.  We only support a few very 
-            specific reconfigurations.  Here, when performing multiple 
-            retrievals with the same radiative transfer model, we can 
-            reconfigure the prior distribution for this specific
-            retrieval event to incorporate variable atmospheric information 
-            from other sources.'''
+        """Accept new configuration options. We only support a few very 
+           specific reconfigurations. Here, when performing multiple 
+           retrievals with the same radiative transfer model, we can 
+           reconfigure the prior distribution for this specific
+           retrieval event to incorporate variable atmospheric information 
+           from other sources."""
 
         if 'prior_means' in config and \
                 config['prior_means'] is not None:
