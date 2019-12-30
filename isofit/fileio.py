@@ -139,13 +139,26 @@ class SpectrumFile:
                 # If we are an output file, we may have to build the header
                 # from scratch.  Hopefully the caller has supplied the
                 # necessary metadata details.
-                meta = {'lines': n_rows, 'samples': n_cols, 'bands': n_bands,
-                        'byte order': 0, 'header offset': 0, 'map info': map_info,
-                        'file_type': 'ENVI Standard', 'sensor type': 'unknown',
-                        'interleave': interleave, 'data type': typemap[dtype],
-                        'wavelength units': 'nm', 'z plot range': zrange,
-                        'z plot titles': ztitles, 'fwhm': fwhm, 'bbl': bad_bands,
-                        'band names': band_names, 'wavelength': self.wl}
+                meta = {
+                    'lines': n_rows,
+                    'samples': n_cols,
+                    'bands': n_bands,
+                    'byte order': 0,
+                    'header offset': 0,
+                    'map info': map_info,
+                    'file_type': 'ENVI Standard',
+                    'sensor type': 'unknown',
+                    'interleave': interleave,
+                    'data type': typemap[dtype],
+                    'wavelength units': 'nm',
+                    'z plot range': zrange,
+                    'z plot titles': ztitles,
+                    'fwhm': fwhm,
+                    'bbl': bad_bands,
+                    'band names': band_names,
+                    'wavelength': self.wl
+                }
+
                 for k, v in meta.items():
                     if v is None:
                         logging.error('Must specify %s' % (k))
@@ -432,13 +445,21 @@ class IO:
         # Updates are simply serialized prior distribution vectors for this
         # spectrum (or 'None' if the file was not specified in the input
         # configuration block).  The ordering is [surface, RT, instrument]
-        updates = ({'prior_means': data['surface_prior_mean_file'],
-                    'prior_variances': data['surface_prior_variance_file'],
-                    'reflectance': data['reflectance_file']},
-                   {'prior_means': data['rt_prior_mean_file'],
-                    'prior_variances': data['rt_prior_variance_file']},
-                   {'prior_means': data['instrument_prior_mean_file'],
-                    'prior_variances': data['instrument_prior_variance_file']})
+        updates = (
+            {
+                'prior_means': data['surface_prior_mean_file'],
+                'prior_variances': data['surface_prior_variance_file'],
+                'reflectance': data['reflectance_file']
+            },
+            {
+                'prior_means': data['rt_prior_mean_file'],
+                'prior_variances': data['rt_prior_variance_file']
+            },
+            {
+                'prior_means': data['instrument_prior_mean_file'],
+                'prior_variances': data['instrument_prior_variance_file']
+            }
+        )
 
         return r, c, meas, geom, updates
 
