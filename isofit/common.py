@@ -101,6 +101,86 @@ binary_table = [s.array([[]]),
 eps = 1e-5  # small value used in finite difference derivatives
 
 
+### Classes ###
+
+class conditional_decorator(object):
+    """Decorator class to conditionally apply a decorator to a function definition.
+
+    Attributes
+    ----------
+    decorator : object
+        a decorator to conditionally apply to the funcion
+    condition : bool
+        a boolean indicating whether the condition is met
+    """
+
+    def __init__(self, dec, condition):
+        """
+        Parameters
+        ----------
+        dec : object
+            a decorator to conditionally apply to the funcion
+        condition : bool
+            a boolean indicating whether the condition is met
+        """
+
+        self.decorator = dec
+        self.condition = condition
+
+    def __call__(self, func):
+        """
+        Parameters
+        ----------
+        func : object
+            a function to return with or without a decorator
+
+        Returns
+        -------
+        object
+            original function without decorator if condition is unmet
+        """
+
+        if not self.condition:
+            return func
+        return self.decorator(func)
+
+
+class VectorInterpolator:
+    """."""
+
+    def __init__(self, grid, data):
+        self.n = data.shape[-1]
+        grid_aug = grid + [s.arange(data.shape[-1])]
+        self.itp = RegularGridInterpolator(grid_aug, data)
+
+    def __call__(self, points):
+        res = []
+        for v in s.arange(self.n):
+            p_aug = s.concatenate((points, s.array([v])), axis=0)
+            res.append(self.itp(p_aug))
+        return res
+
+
+class VectorInterpolatorJIT:
+    """JIT implementation for VectorInterpolator class."""
+
+    def __init__(self, grid, data):
+        """By convention, the final dimensionn of "data" is the wavelength.
+           "grid" contains a list of arrays, each representing the input grid 
+           points in the ith dimension of the table."""
+        self.in_d = len(data.shape)-1
+        self.out_d = data.shape[-1]
+        self.grid = [i.copy() for i in grid]
+        self.data = data.copy()
+    if jit_enabled:
+        @jit
+        def __call__(self, point):
+            return jitinterp(self.in_d, self.out_d, self.grid, self.data, point)
+    else:
+        def __call__(self, point):
+            return jitinterp(self.in_d, self.out_d, self.grid, self.data, point)
+
+
 ### Functions ###
 
 def emissive_radiance_old(emissivity, T, wl):
@@ -159,93 +239,50 @@ def emissive_radiance(emissivity, T, wl):
     return uW_per_cm2_sr_nm, dRdn_dT
 
 
-if jit_enabled:
-    @jit
-    def chol_inv(C):
-        """Fast stable inverse for Hermetian positive definite matrices."""
+@conditional_decorator(jit, jit_enabled)
+def chol_inv(C):
+    """Fast stable inverse for Hermetian positive definite matrices."""
 
-        R = cholesky(C, lower=False)
-        S = inv(R)
-        return S.dot(S.T)
-else:
-    def chol_inv(C):
-        """Fast stable inverse for Hermetian positive definite matrices."""
-
-        R = cholesky(C, lower=False)
-        S = inv(R)
-        return S.dot(S.T)
+    R = cholesky(C, lower=False)
+    S = inv(R)
+    return S.dot(S.T)
 
 
-if jit_enabled:
-    @jit
-    def svd_inv(C, mineig=0, hashtable=None):
-        """Fast stable inverse using SVD. This can handle near-singular matrices."""
+@conditional_decorator(jit, jit_enabled)
+def svd_inv(C, mineig=0, hashtable=None):
+    """Fast stable inverse using SVD. This can handle near-singular matrices."""
 
-        return svd_inv_sqrt(C, mineig, hashtable)[0]
-else:
-    def svd_inv(C, mineig=0, hashtable=None):
-        """Fast stable inverse using SVD. This can handle near-singular matrices."""
-
-        return svd_inv_sqrt(C, mineig, hashtable)[0]
+    return svd_inv_sqrt(C, mineig, hashtable)[0]
 
 
-if jit_enabled:
-    @jit
-    def svd_inv_sqrt(C, mineig=0, hashtable=None):
-        """Fast stable inverse using SVD. This can handle near-singular matrices.
-           Also return the square root."""
+@conditional_decorator(jit, jit_enabled)
+def svd_inv_sqrt(C, mineig=0, hashtable=None):
+    """Fast stable inverse using SVD. This can handle near-singular matrices.
+       Also return the square root."""
 
-        # If we have a hash table, look for the precalculated solution
-        h = None
-        if hashtable is not None:
-            h = xxhash.xxh64_digest(C)
-            if h in hashtable:
-                return hashtable[h]
+    # If we have a hash table, look for the precalculated solution
+    h = None
+    if hashtable is not None:
+        h = xxhash.xxh64_digest(C)
+        if h in hashtable:
+            return hashtable[h]
 
-        U, V, D = svd(C)
-        ignore = s.where(V < mineig)[0]
-        Vi = 1.0 / V
-        Vi[ignore] = 0
-        Visqrt = s.sqrt(Vi)
-        Cinv = (D.T).dot(s.diag(Vi)).dot(U.T)
-        Cinv_sqrt = (D.T).dot(s.diag(Visqrt)).dot(U.T)
+    U, V, D = svd(C)
+    ignore = s.where(V < mineig)[0]
+    Vi = 1.0 / V
+    Vi[ignore] = 0
+    Visqrt = s.sqrt(Vi)
+    Cinv = (D.T).dot(s.diag(Vi)).dot(U.T)
+    Cinv_sqrt = (D.T).dot(s.diag(Visqrt)).dot(U.T)
 
-        # If there is a hash table, cache our solution.  Bound the total cache
-        # size by removing any extra items in FIFO order.
-        if hashtable is not None:
-            hashtable[h] = (Cinv, Cinv_sqrt)
-            while len(hashtable) > max_table_size:
-                hashtable.popitem(last=False)
+    # If there is a hash table, cache our solution.  Bound the total cache
+    # size by removing any extra items in FIFO order.
+    if hashtable is not None:
+        hashtable[h] = (Cinv, Cinv_sqrt)
+        while len(hashtable) > max_table_size:
+            hashtable.popitem(last=False)
 
-        return Cinv, Cinv_sqrt
-else:
-    def svd_inv_sqrt(C, mineig=0, hashtable=None):
-        """Fast stable inverse using SVD. This can handle near-singular matrices.
-           Also return the square root."""
-
-        # If we have a hash table, look for the precalculated solution
-        h = None
-        if hashtable is not None:
-            h = xxhash.xxh64_digest(C)
-            if h in hashtable:
-                return hashtable[h]
-
-        U, V, D = svd(C)
-        ignore = s.where(V < mineig)[0]
-        Vi = 1.0 / V
-        Vi[ignore] = 0
-        Visqrt = s.sqrt(Vi)
-        Cinv = (D.T).dot(s.diag(Vi)).dot(U.T)
-        Cinv_sqrt = (D.T).dot(s.diag(Visqrt)).dot(U.T)
-
-        # If there is a hash table, cache our solution.  Bound the total cache
-        # size by removing any extra items in FIFO order.
-        if hashtable is not None:
-            hashtable[h] = (Cinv, Cinv_sqrt)
-            while len(hashtable) > max_table_size:
-                hashtable.popitem(last=False)
-
-        return Cinv, Cinv_sqrt
+    return Cinv, Cinv_sqrt
 
 
 def expand_path(directory, subpath):
@@ -290,19 +327,19 @@ def get_absorption(wl, absfile):
     return water_abscf_intrp, ice_abscf_intrp
 
 
-def recursive_reincode(j, shell_replace=True):
-    """."""
+def recursive_reencode(j, shell_replace=True):
+    """Recursively re-encode a dictionary."""
 
     if isinstance(j, dict):
         for key, value in j.items():
-            j[key] = recursive_reincode(value)
+            j[key] = recursive_reencode(value)
         return j
     elif isinstance(j, list):
         for i, k in enumerate(j):
-            j[i] = recursive_reincode(k)
+            j[i] = recursive_reencode(k)
         return j
     elif isinstance(j, tuple):
-        return tuple([recursive_reincode(k) for k in j])
+        return tuple([recursive_reencode(k) for k in j])
     else:
         if shell_replace and type(j) is str:
             try:
@@ -318,7 +355,7 @@ def json_load_ascii(filename, shell_replace=True):
 
     with open(filename, 'r') as fin:
         j = json.load(fin)
-        return recursive_reincode(j, shell_replace)
+        return recursive_reencode(j, shell_replace)
 
 
 def load_config(config_file):
@@ -350,7 +387,7 @@ def expand_all_paths(config, configdir):
                 j[i] = recursive_expand(k)
             return j
         elif isinstance(j, tuple):
-            return tuple([recursive_reincode(k) for k in j])
+            return tuple([recursive_reencode(k) for k in j])
         return j
 
     return recursive_expand(config)
@@ -427,153 +464,61 @@ def srf(x, mu, sigma):
     return y/y.sum()
 
 
-class VectorInterpolator:
-    """."""
+@conditional_decorator(jit, jit_enabled)
+def jitinterp(s_in_d, s_out_d, s_grid, s_data, point):
+    """Interpolation."""
 
-    def __init__(self, grid, data):
-        self.n = data.shape[-1]
-        grid_aug = grid + [s.arange(data.shape[-1])]
-        self.itp = RegularGridInterpolator(grid_aug, data)
+    # We find the bottom index along each input dimension
+    lo_inds = s.zeros(s_in_d)
+    lo_fracs = s.zeros(s_in_d)
+    stride = []
+    for i in s.arange(s_in_d):
+        stride.append(s.prod(s_data.shape[(i+1):]))
 
-    def __call__(self, points):
-        res = []
-        for v in s.arange(self.n):
-            p_aug = s.concatenate((points, s.array([v])), axis=0)
-            res.append(self.itp(p_aug))
-        return res
+    for d in s.arange(s_in_d):
+        n_gridpoints = len(s_grid[d])
+        for j in s.arange(n_gridpoints-1):
+            if j == 0 and s_grid[d][j] >= point[d]:
+                lo_inds[d] = 0
+                lo_fracs[d] = 1.0
+                break
+            if j == n_gridpoints-2 and s_grid[d][-1] <= point[d]:
+                lo_inds[d] = n_gridpoints-2
+                lo_fracs[d] = 0.0
+                break
+            if s_grid[d][j] < point[d] and s_grid[d][j+1] >= point[d]:
+                lo_inds[d] = j
+                denom = (s_grid[d][j+1]-s_grid[d][j])
+                lo_fracs[d] = 1.0 - (point[d]-s_grid[d][j])/denom
 
+    # Now we form a list of all points on the hypercube
+    # and the associated fractions of each
+    hypercube_bin = binary_table[s_in_d].copy()
+    n_hypercube = len(hypercube_bin)
+    hypercube_weights = s.ones((n_hypercube))
+    hypercube_flat_inds = s.zeros((n_hypercube))
 
-class VectorInterpolatorJIT:
-    """JIT implementation for VectorInterpolator class."""
+    # simple version
+    for i in range(n_hypercube):
+        for j in range(s_in_d):
+            if hypercube_bin[i, j]:
+                hypercube_weights[i] = hypercube_weights[i] * lo_fracs[j]
+                hypercube_flat_inds[i] = \
+                    hypercube_flat_inds[i] + (lo_inds[j]) * stride[j]
+            else:
+                hypercube_weights[i] = hypercube_weights[i] * \
+                    (1.0-lo_fracs[j])
+                hypercube_flat_inds[i] = \
+                    hypercube_flat_inds[i] + (lo_inds[j]+1) * stride[j]
 
-    def __init__(self, grid, data):
-        """By convention, the final dimensionn of "data" is the wavelength.
-           "grid" contains a list of arrays, each representing the input grid 
-           points in the ith dimension of the table."""
-        self.in_d = len(data.shape)-1
-        self.out_d = data.shape[-1]
-        self.grid = [i.copy() for i in grid]
-        self.data = data.copy()
-    if jit_enabled:
-        @jit
-        def __call__(self, point):
-            return jitinterp(self.in_d, self.out_d, self.grid, self.data, point)
-    else:
-        def __call__(self, point):
-            return jitinterp(self.in_d, self.out_d, self.grid, self.data, point)
-
-
-if jit_enabled:
-    @jit
-    def jitinterp(s_in_d, s_out_d, s_grid, s_data, point):
-        """Interpolation."""
-
-        # We find the bottom index along each input dimension
-        lo_inds = s.zeros(s_in_d)
-        lo_fracs = s.zeros(s_in_d)
-        stride = []
-        for i in s.arange(s_in_d):
-            stride.append(s.prod(s_data.shape[(i+1):]))
-
-        for d in s.arange(s_in_d):
-            n_gridpoints = len(s_grid[d])
-            for j in s.arange(n_gridpoints-1):
-                if j == 0 and s_grid[d][j] >= point[d]:
-                    lo_inds[d] = 0
-                    lo_fracs[d] = 1.0
-                    break
-                if j == n_gridpoints-2 and s_grid[d][-1] <= point[d]:
-                    lo_inds[d] = n_gridpoints-2
-                    lo_fracs[d] = 0.0
-                    break
-                if s_grid[d][j] < point[d] and s_grid[d][j+1] >= point[d]:
-                    lo_inds[d] = j
-                    denom = (s_grid[d][j+1]-s_grid[d][j])
-                    lo_fracs[d] = 1.0 - (point[d]-s_grid[d][j])/denom
-
-        # Now we form a list of all points on the hypercube
-        # and the associated fractions of each
-        hypercube_bin = binary_table[s_in_d].copy()
-        n_hypercube = len(hypercube_bin)
-        hypercube_weights = s.ones((n_hypercube))
-        hypercube_flat_inds = s.zeros((n_hypercube))
-
-        # simple version
-        for i in range(n_hypercube):
-            for j in range(s_in_d):
-                if hypercube_bin[i, j]:
-                    hypercube_weights[i] = hypercube_weights[i] * lo_fracs[j]
-                    hypercube_flat_inds[i] = \
-                        hypercube_flat_inds[i] + (lo_inds[j]) * stride[j]
-                else:
-                    hypercube_weights[i] = hypercube_weights[i] * \
-                        (1.0-lo_fracs[j])
-                    hypercube_flat_inds[i] = \
-                        hypercube_flat_inds[i] + (lo_inds[j]+1) * stride[j]
-
-        # once per output datapoint
-        res = s.zeros(s_out_d)
-        for oi in s.arange(s_out_d):
-            val = 0
-            for i in s.arange(n_hypercube):
-                ind = int(hypercube_flat_inds[i]+oi)
-                res[oi] = res[oi] + s_data.flat[ind] * hypercube_weights[i]
-        return s.array(res)
-else:
-    def jitinterp(s_in_d, s_out_d, s_grid, s_data, point):
-        """Interpolation."""
-
-        # We find the bottom index along each input dimension
-        lo_inds = s.zeros(s_in_d)
-        lo_fracs = s.zeros(s_in_d)
-        stride = []
-        for i in s.arange(s_in_d):
-            stride.append(s.prod(s_data.shape[(i+1):]))
-
-        for d in s.arange(s_in_d):
-            n_gridpoints = len(s_grid[d])
-            for j in s.arange(n_gridpoints-1):
-                if j == 0 and s_grid[d][j] >= point[d]:
-                    lo_inds[d] = 0
-                    lo_fracs[d] = 1.0
-                    break
-                if j == n_gridpoints-2 and s_grid[d][-1] <= point[d]:
-                    lo_inds[d] = n_gridpoints-2
-                    lo_fracs[d] = 0.0
-                    break
-                if s_grid[d][j] < point[d] and s_grid[d][j+1] >= point[d]:
-                    lo_inds[d] = j
-                    denom = (s_grid[d][j+1]-s_grid[d][j])
-                    lo_fracs[d] = 1.0 - (point[d]-s_grid[d][j])/denom
-
-        # Now we form a list of all points on the hypercube
-        # and the associated fractions of each
-        hypercube_bin = binary_table[s_in_d].copy()
-        n_hypercube = len(hypercube_bin)
-        hypercube_weights = s.ones((n_hypercube))
-        hypercube_flat_inds = s.zeros((n_hypercube))
-
-        # simple version
-        for i in range(n_hypercube):
-            for j in range(s_in_d):
-                if hypercube_bin[i, j]:
-                    hypercube_weights[i] = hypercube_weights[i] * lo_fracs[j]
-                    hypercube_flat_inds[i] = \
-                        hypercube_flat_inds[i] + (lo_inds[j]) * stride[j]
-                else:
-                    hypercube_weights[i] = hypercube_weights[i] * \
-                        (1.0-lo_fracs[j])
-                    hypercube_flat_inds[i] = \
-                        hypercube_flat_inds[i] + (lo_inds[j]+1) * stride[j]
-
-        # once per output datapoint
-        res = s.zeros(s_out_d)
-        for oi in s.arange(s_out_d):
-            val = 0
-            for i in s.arange(n_hypercube):
-                ind = int(hypercube_flat_inds[i]+oi)
-                res[oi] = res[oi] + s_data.flat[ind] * hypercube_weights[i]
-        return s.array(res)
+    # once per output datapoint
+    res = s.zeros(s_out_d)
+    for oi in s.arange(s_out_d):
+        val = 0
+        for i in s.arange(n_hypercube):
+            ind = int(hypercube_flat_inds[i]+oi)
+            res[oi] = res[oi] + s_data.flat[ind] * hypercube_weights[i]
+    return s.array(res)
 
 
 def combos(inds):
