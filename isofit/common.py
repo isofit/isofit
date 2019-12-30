@@ -31,6 +31,8 @@ from numba import jit
 from . import jit_enabled
 
 
+### Variables ###
+
 # Maximum size of our hash tables
 max_table_size = 500
 
@@ -98,6 +100,8 @@ binary_table = [s.array([[]]),
 
 eps = 1e-5  # small value used in finite difference derivatives
 
+
+### Functions ###
 
 def emissive_radiance_old(emissivity, T, wl):
     """Radiance of a surface due to emission."""

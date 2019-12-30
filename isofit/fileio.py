@@ -34,6 +34,8 @@ from .geometry import Geometry
 from .inverse_simple import invert_simple, invert_algebraic
 
 
+### Variables ###
+
 # Constants related to file I/O
 typemap = {
     s.uint8: 1,
@@ -52,6 +54,8 @@ typemap = {
 max_frames_size = 100
 flush_rate = 10
 
+
+### Classes ###
 
 class SpectrumFile:
     """A buffered file object that contains configuration information about
