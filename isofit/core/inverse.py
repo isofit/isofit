@@ -164,6 +164,14 @@ class Inversion:
         # Calculate the initial solution, if needed.
         x0 = invert_simple(self.fm, meas, geom)
 
+        # Catch any instances outside of bounds
+        lower_bound_violation = x0 < self.fm.bounds[0]
+        x0[lower_bound_violation] = self.fm.bounds[0][lower_bound_violation] + eps
+
+        upper_bound_violation = x0 > self.fm.bounds[1]
+        x0[upper_bound_violation] = self.fm.bounds[1][upper_bound_violation] - eps
+        del lower_bound_violation, upper_bound_violation
+
         # Seps is the covariance of "observation noise" including both
         # measurement noise from the instrument as well as variability due to
         # unknown variables.  For speed, we will calculate it just once based
