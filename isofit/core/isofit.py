@@ -145,6 +145,8 @@ class Isofit:
             self._clear_nonpicklable_objects()
             pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
 
+            import time
+            start_time = time.time()
             logging.info('Beginning parallel inversions')
 
             results = []
@@ -154,6 +156,7 @@ class Isofit:
             pool.close()
             pool.join()
 
-            logging.info('Parallel inversions complete')
+            total_time = time.time() - start_time 
+            logging.info('Parallel inversions complete.  {} s total, {} spectra/s'.format(total_time,n_iter/total_time))
 
 
