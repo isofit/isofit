@@ -23,10 +23,10 @@ from ..utils.path import absjoin
 from .. import base_directory
 
 
-def get(model):
+def get(config):
     """Get an ISOFIT template with dynamic path setting."""
 
-    if model == "modtran":
+    if config == "modtran":
         return {
             "MODTRAN": [
                 {
@@ -99,7 +99,7 @@ def get(model):
             ]
         }
 
-    elif model == "forward":
+    elif config == "forward":
         return {
             "input": {
                 "reflectance_file": absjoin(base_directory, "input", "reference_reflectance")
@@ -155,7 +155,7 @@ def get(model):
             }
         }
 
-    elif model == "inverse":
+    elif config == "inverse":
         return {
             "input": {
                 "measured_radiance_file": absjoin(base_directory, "remote", "ang20140625_v2gx_rdn_snr100")
