@@ -40,10 +40,6 @@ class Isofit:
     def __init__(self, config_file, row_column='', profile=False, level='INFO'):
         """Initialize the Isofit class."""
 
-        if not warnings_enabled:
-            warnings.simplefilter('ignore')
-            sc.seterr('ignore')
-
         # Set logging level
         logging.basicConfig(format='%(message)s', level=level)
 
@@ -92,12 +88,13 @@ class Isofit:
                 self.cols = range(int(col_start), int(col_end))
 
         # Run the model
-        self.__call__()
-
-        # Revert warnings to default
         if not warnings_enabled:
-            warnings.simplefilter('default')
-            sc.seterr('raise')
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore')
+                sc.seterr('ignore')
+                self.__call__()
+        else:
+            self.__call__()
 
     def __call__(self):
         """
