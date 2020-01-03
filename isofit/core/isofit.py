@@ -21,6 +21,7 @@
 
 import logging
 import cProfile
+import warnings
 
 from .common import load_config
 from .forward import ForwardModel
@@ -29,10 +30,6 @@ from .inverse_mcmc import MCMCInversion
 from .fileio import IO
 
 from .. import warnings_enabled
-
-if not warnings_enabled:
-    import warnings
-    warnings.simplefilter('ignore')
 
 
 class Isofit:
@@ -122,7 +119,12 @@ class Isofit:
                     # intepreted either as samples from the posterior (MCMC case)
                     # or as a gradient descent trajectory (standard case). For
                     # a trajectory, the last spectrum is the converged solution.
-                    self.states = self.iv.invert(meas, geom)
+                    if not warnings_enabled:
+                        with warnings.catch_warnings():
+                            warnings.simplefilter('ignore')
+                            self.states = self.iv.invert(meas, geom)
+                    else:
+                        self.states = self.iv.invert(meas, geom)
 
             # Write the spectra to disk
             self.io.write_spectrum(row, col, self.states, meas, geom)
