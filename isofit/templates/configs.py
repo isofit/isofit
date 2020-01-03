@@ -20,10 +20,9 @@
 #
 
 from ..utils.path import absjoin
-from .. import base_directory
 
 
-def get(config):
+def get(config, base_directory):
     """Get an ISOFIT template with dynamic path setting."""
 
     if config == "modtran":
