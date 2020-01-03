@@ -98,7 +98,6 @@ def get(config):
                 }
             ]
         }
-
     elif config == "forward":
         return {
             "input": {
@@ -154,7 +153,6 @@ def get(config):
                 "windows": [[400.0, 1300.0], [1450, 1780.0], [1950.0, 2450.0]]
             }
         }
-
     elif config == "inverse":
         return {
             "input": {
