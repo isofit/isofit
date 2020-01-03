@@ -32,11 +32,6 @@ from .fileio import IO
 from .. import warnings_enabled
 
 
-if not warnings_enabled:
-    print("Warnings disabled.")
-    warnings.simplefilter("ignore")
-
-
 class Isofit:
     """Spectroscopic Surface and Atmosphere Fitting."""
 
@@ -90,7 +85,10 @@ class Isofit:
                 self.rows = range(int(row_start), int(row_end))
                 self.cols = range(int(col_start), int(col_end))
         try:
-            self.run()
+            if not warnings_enabled:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    self.run()
         except Exception as e:
             print(e)
             raise Exception("ISOFIT process failed.")
