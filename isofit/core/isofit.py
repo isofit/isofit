@@ -89,6 +89,8 @@ class Isofit:
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
                     self.run()
+            else:
+                self.run()
         except Exception as e:
             print(e)
             raise Exception("ISOFIT process failed.")
