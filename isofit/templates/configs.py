@@ -19,17 +19,8 @@
 #         Adam Erickson, adam.m.erickson@nasa.gov
 #
 
-import os
-
+from ..utils.path import absjoin
 from .. import base_directory
-
-
-### Functions ###
-
-def absjoin(*args):
-    """Nest path join within an absolute path resolution."""
-
-    return os.path.abspath(os.path.join(*args))
 
 
 ### Variables ###
