@@ -21,9 +21,10 @@
 
 import logging
 import cProfile
+from contextlib import suppress
 import warnings
-from scipy import special as sc
-#from numba.errors import NumbaWarning, NumbaDeprecationWarning, NumbaPendingDeprecationWarning
+#from scipy import special as sc
+from numba.errors import NumbaWarning, NumbaDeprecationWarning, NumbaPendingDeprecationWarning
 
 from .common import load_config
 from .forward import ForwardModel
@@ -40,7 +41,6 @@ class Isofit:
     def __init__(self, config_file, row_column='', profile=False, level='INFO'):
         """Initialize the Isofit class."""
 
-        # Set logging level
         logging.basicConfig(format='%(message)s', level=level)
 
         self.rows = None
@@ -88,13 +88,7 @@ class Isofit:
                 self.cols = range(int(col_start), int(col_end))
 
         # Run the model
-        if not warnings_enabled:
-            with warnings.catch_warnings():
-                warnings.simplefilter(action='ignore', category=Warning)
-                sc.seterr(all='ignore')
-                self.__call__()
-        else:
-            self.__call__()
+        self.__call__()
 
     def __call__(self):
         """
@@ -103,6 +97,15 @@ class Isofit:
         The idea is to avoid reading the entire file into memory, or hitting
         the physical disk too often. These are our main class variables.
         """
+
+        # Ignore Numba warnings
+        if not warnings_enabled:
+            warnings.simplefilter(
+                action='ignore', category=NumbaWarning)
+            warnings.simplefilter(
+                action='ignore', category=NumbaDeprecationWarning)
+            warnings.simplefilter(
+                action='ignore', category=NumbaPendingDeprecationWarning)
 
         self.io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
         for row, col, meas, geom, configs in self.io:
@@ -115,6 +118,7 @@ class Isofit:
                 # though they could contain new location-specific prior
                 # distributions.
                 self.fm.reconfigure(*configs)
+
                 if self.profile:
                     # Profile output
                     gbl, lcl = globals(), locals()
