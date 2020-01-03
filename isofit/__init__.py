@@ -29,6 +29,8 @@ jit_enabled = True
 
 warnings_enabled = False
 
+base_directory = ".."
+
 
 ### Classes ###
 
