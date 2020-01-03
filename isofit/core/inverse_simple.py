@@ -18,15 +18,21 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
+import warnings
 import sys
 import scipy as s
 from scipy.interpolate import interp1d
 from scipy.optimize import minimize_scalar as min1d
 
+from .. import warnings_enabled
+
 
 def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
     """From a given radiance, estimate atmospheric state with band ratios.
     Used to initialize gradient descent inversions."""
+
+    if not warnings_enabled:
+        warnings.simplefilter('ignore')
 
     # Identify the latest instrument wavelength calibration (possibly
     # state-dependent) and identify channel numbers for the band ratio.
@@ -89,6 +95,9 @@ def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
 
 def invert_algebraic(surface, RT, instrument, x_surface, x_RT, x_instrument, meas, geom):
     """Inverts radiance algebraically using Lambertian assumptions to get a reflectance."""
+
+    if not warnings_enabled:
+        warnings.simplefilter('ignore')
 
     # Get atmospheric optical parameters (possibly at high
     # spectral resolution) and resample them if needed.

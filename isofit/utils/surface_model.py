@@ -19,17 +19,22 @@
 #
 
 from os.path import split, abspath
+import warnings
 import scipy as s
 from scipy import logical_and as aand
 from scipy.interpolate import interp1d
 from sklearn.cluster import KMeans
 from spectral.io import envi
 
-from isofit.core.common import expand_path, json_load_ascii
+from ..core.common import expand_path, json_load_ascii
+from .. import warnings_enabled
 
 
 def surface_model(config):
     """."""
+
+    if not warnings_enabled:
+        warnings.simplefilter('ignore')
 
     configdir, configfile = split(abspath(config))
     config = json_load_ascii(config, shell_replace=True)

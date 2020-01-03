@@ -30,7 +30,10 @@ def extractions(inputfile, labels, output, chunksize, flag):
     out_file = output
     nchunk = chunksize
 
-    dtm = {'4': s.float32, '5': s.float64}
+    dtm = {
+        '4': s.float32,
+        '5': s.float64
+    }
 
     # Open input data, get dimensions
     in_img = envi.open(in_file+'.hdr', in_file)
@@ -90,10 +93,12 @@ def extractions(inputfile, labels, output, chunksize, flag):
 
     out = s.array((out.T / counts[s.newaxis, :]).T, dtype=s.float32)
     out[s.logical_not(s.isfinite(out))] = flag
+
     meta["lines"] = str(nout)
     meta["bands"] = str(nb)
     meta["samples"] = '1'
     meta["interleave"] = "bil"
+
     out_img = envi.create_image(out_file+'.hdr',  metadata=meta,
                                 ext='', force=True)
     out_mm = s.memmap(out_file, dtype=dtm[meta['data type']], mode='w+',

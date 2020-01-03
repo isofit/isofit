@@ -22,9 +22,9 @@ from os.path import split, abspath
 from numpy.random import multivariate_normal
 import scipy as s
 
-from isofit.core.common import load_spectrum, expand_path, json_load_ascii
-from isofit.core.instrument import Instrument
-from isofit.core.geometry import Geometry
+from ..core.common import load_spectrum, expand_path, json_load_ascii
+from ..core.instrument import Instrument
+from ..core.geometry import Geometry
 
 
 def generate_noise(config):

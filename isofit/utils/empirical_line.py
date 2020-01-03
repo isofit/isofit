@@ -28,7 +28,7 @@ import matplotlib
 import pylab as plt
 
 
-plt.switch_backend("Agg")
+plt.switch_backend('Agg')
 
 
 def empirical_line(reference_radiance, reference_reflectance, reference_locations, hashfile,
@@ -65,6 +65,7 @@ def empirical_line(reference_radiance, reference_reflectance, reference_location
 
     # Open input data, get dimensions
     logging.basicConfig(format='%(message)s', level=loglevel)
+
     ref_rdn_file = reference_radiance
     ref_rfl_file = reference_reflectance
     ref_loc_file = reference_locations
