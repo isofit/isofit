@@ -22,9 +22,11 @@
 ### Variables ###
 
 name = 'isofit'
+
 __version__ = '1.3.1'
 
-jit_enabled = True
+jit_enabled = False
+
 warnings_enabled = False
 
 
