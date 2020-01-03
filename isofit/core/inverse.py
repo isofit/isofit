@@ -21,7 +21,6 @@
 import sys
 import time
 import logging
-import warnings
 import xxhash
 import scipy as s
 from collections import OrderedDict
@@ -33,11 +32,7 @@ from numba import jit
 from .common import svd_inv, svd_inv_sqrt, eps
 from .inverse_simple import invert_simple
 
-from .. import jit_enabled, warnings_enabled, conditional_decorator
-
-
-if not warnings_enabled:
-    warnings.simplefilter('ignore')
+from .. import jit_enabled, conditional_decorator
 
 
 ### Variables ###
