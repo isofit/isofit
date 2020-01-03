@@ -27,7 +27,6 @@ from scipy.io import loadmat
 from numpy.random import multivariate_normal as mvn
 
 from .common import eps, srf, load_wavelen, resample_spectrum
-from .. import warnings_enabled
 
 
 # Max. wavelength difference (nm) that does not trigger expensive resampling
@@ -41,9 +40,6 @@ class Instrument:
         response and noise covariance matrices. Noise is typically calculated
         from a parametric model, fit for the specific instrument.  It is a 
         function of the radiance level."""
-
-        if not warnings_enabled:
-            warnings.simplefilter('ignore')
 
         # If needed, skip first index column and/or convert to nanometers
         self.wl_init, self.fwhm_init = load_wavelen(config['wavelength_file'])
@@ -251,9 +247,6 @@ class Instrument:
 
     def sample(self, x_instrument, wl_hi, rdn_hi):
         """Apply instrument sampling to a radiance spectrum, returning predicted measurement."""
-
-        if not warnings_enabled:
-            warnings.simplefilter('ignore')
 
         if self.calibration_fixed and all((self.wl_init - wl_hi) < wl_tol):
             return rdn_hi

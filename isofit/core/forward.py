@@ -28,8 +28,6 @@ from scipy.interpolate import interp1d
 from .common import recursive_replace, eps
 from .instrument import Instrument
 
-from .. import warnings_enabled
-
 
 # Supported RT modules, filenames, and class names
 RT_models = [('modtran_radiative_transfer', 'radiative_transfer.modtran', 'ModtranRT'),
@@ -281,9 +279,6 @@ class ForwardModel:
 
     def upsample(self, wl, q):
         """Linear interpolation to RT wavelengths."""
-
-        if not warnings_enabled:
-            warnings.simplefilter('ignore')
 
         if q.ndim > 1:
             q2 = []

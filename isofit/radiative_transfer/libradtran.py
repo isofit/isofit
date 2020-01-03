@@ -25,7 +25,6 @@ from scipy.interpolate import interp1d
 
 from ..core.common import resample_spectrum
 from .look_up_tables import TabularRT, FileExistsError
-from .. import warnings_enabled
 
 
 ### Variables ###
@@ -170,9 +169,6 @@ class LibRadTranRT(TabularRT):
 
     def load_rt(self, point, fn):
         """Load the results of a LibRadTran run."""
-
-        if not warnings_enabled:
-            warnings.simplefilter('ignore')
 
         wl, rdn0,   irr = s.loadtxt(self.lut_dir+'/LUT_'+fn+'_alb0.out').T
         wl, rdn025, irr = s.loadtxt(self.lut_dir+'/LUT_'+fn+'_alb025.out').T

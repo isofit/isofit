@@ -23,7 +23,6 @@ import scipy as s
 from scipy.interpolate import interp1d
 
 from ..core.common import load_spectrum, load_wavelen
-from .. import warnings_enabled
 
 
 class Surface:
@@ -61,9 +60,6 @@ class Surface:
 
     def resample_reflectance(self):
         """Make sure model wavelengths align with the wavelength file."""
-
-        if not warnings_enabled:
-            warnings.simplefilter('ignore')
 
         if hasattr(self, 'rwl'):
             p = interp1d(self.rwl, self.rfl, fill_value='extrapolate')

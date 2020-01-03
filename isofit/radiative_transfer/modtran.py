@@ -32,7 +32,6 @@ from scipy.interpolate import interp1d
 
 from .look_up_tables import TabularRT, FileExistsError
 from ..core.common import json_load_ascii, recursive_replace
-from .. import warnings_enabled
 
 
 ### Variables ###
@@ -163,9 +162,6 @@ class ModtranRT(TabularRT):
 
     def modtran_driver(self, overrides):
         """Write a MODTRAN 6.0 input file."""
-
-        if not warnings_enabled:
-            warnings.simplefilter('ignore')
 
         param = deepcopy(self.template)
 

@@ -27,14 +27,10 @@ from sklearn.cluster import KMeans
 from spectral.io import envi
 
 from ..core.common import expand_path, json_load_ascii
-from .. import warnings_enabled
 
 
 def surface_model(config):
     """."""
-
-    if not warnings_enabled:
-        warnings.simplefilter('ignore')
 
     configdir, configfile = split(abspath(config))
     config = json_load_ascii(config, shell_replace=True)

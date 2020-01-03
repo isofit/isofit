@@ -25,7 +25,6 @@ from scipy.interpolate import interp1d
 
 from .surface import Surface
 from ..core.common import load_wavelen, eps, srf
-from .. import warnings_enabled
 
 
 class IOPSurface(Surface):
@@ -34,9 +33,6 @@ class IOPSurface(Surface):
 
     def __init__(self, config):
         """."""
-
-        if not warnings_enabled:
-            warnings.simplefilter('ignore')
 
         Surface.__init__(self, config)
         self.wl, fwhm = load_wavelen(config['wavelength_file'])
