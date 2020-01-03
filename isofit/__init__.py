@@ -1,4 +1,4 @@
-#! /usr/bin/env python3
+#! /usr/bin/env python
 #
 #  Copyright 2018 California Institute of Technology
 #
@@ -16,6 +16,7 @@
 #
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
+#         Adam Erickson, adam.m.erickson@nasa.gov
 #
 
 
