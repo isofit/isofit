@@ -89,6 +89,10 @@ class Isofit:
             if not warnings_enabled:
                 with warnings.catch_warnings():
                     warnings.simplefilter('ignore')
+                    warnings.simplefilter('ignore', NumbaWarning)
+                    warnings.simplefilter('ignore', NumbaDeprecationWarning)
+                    warnings.simplefilter(
+                        'ignore', NumbaPendingDeprecationWarning)
                     self.run()
             else:
                 self.run()
