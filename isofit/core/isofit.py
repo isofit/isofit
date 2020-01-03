@@ -21,7 +21,6 @@
 
 import logging
 import cProfile
-import warnings
 
 from .common import load_config
 from .forward import ForwardModel
@@ -30,6 +29,10 @@ from .inverse_mcmc import MCMCInversion
 from .fileio import IO
 
 from .. import warnings_enabled
+
+if not warnings_enabled:
+    import warnings
+    warnings.simplefilter('ignore')
 
 
 class Isofit:
@@ -85,12 +88,7 @@ class Isofit:
                 self.rows = range(int(row_start), int(row_end))
                 self.cols = range(int(col_start), int(col_end))
         try:
-            if not warnings_enabled:
-                with warnings.catch_warnings():
-                    warnings.simplefilter('ignore')
-                    self.run()
-            else:
-                self.run()
+            self.run()
         except Exception as e:
             print(e)
             raise Exception("ISOFIT process failed.")
