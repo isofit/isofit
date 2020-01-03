@@ -20,7 +20,6 @@
 
 from sys import platform
 import os
-import warnings
 import logging
 from os.path import split
 import re

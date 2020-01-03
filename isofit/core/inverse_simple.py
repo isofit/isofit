@@ -18,7 +18,6 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-import warnings
 import sys
 import scipy as s
 from scipy.interpolate import interp1d

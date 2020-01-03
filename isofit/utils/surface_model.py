@@ -19,7 +19,6 @@
 #
 
 from os.path import split, abspath
-import warnings
 import scipy as s
 from scipy import logical_and as aand
 from scipy.interpolate import interp1d

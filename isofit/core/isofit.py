@@ -22,6 +22,7 @@
 import logging
 import cProfile
 import warnings
+from scipy import special as sc
 #from numba.errors import NumbaWarning, NumbaDeprecationWarning, NumbaPendingDeprecationWarning
 
 from .common import load_config
@@ -41,6 +42,7 @@ class Isofit:
 
         if not warnings_enabled:
             warnings.simplefilter('ignore')
+            sc.seterr('ignore')
 
         # Set logging level
         logging.basicConfig(format='%(message)s', level=level)
@@ -92,6 +94,11 @@ class Isofit:
         # Run the model
         self.__call__()
 
+        # Revert warnings to default
+        if not warnings_enabled:
+            warnings.simplefilter('default')
+            sc.seterr('raise')
+
     def __call__(self):
         """
         Iterate over all spectra, reading and writing through the IO
@@ -99,9 +106,6 @@ class Isofit:
         The idea is to avoid reading the entire file into memory, or hitting
         the physical disk too often. These are our main class variables.
         """
-
-        if not warnings_enabled:
-            warnings.simplefilter('ignore')
 
         self.io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
         for row, col, meas, geom, configs in self.io:

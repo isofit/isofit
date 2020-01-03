@@ -18,7 +18,6 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-import warnings
 import scipy as s
 from scipy.linalg import block_diag
 from scipy.interpolate import interp1d

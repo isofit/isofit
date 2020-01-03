@@ -18,7 +18,6 @@
 #
 
 import os
-import warnings
 import logging
 import scipy as s
 from scipy.interpolate import interp1d
