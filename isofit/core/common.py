@@ -20,6 +20,7 @@
 
 import os
 import json
+import warnings
 import xxhash
 import scipy as s
 from collections import OrderedDict
@@ -28,7 +29,11 @@ from os.path import expandvars, split, abspath
 from scipy.linalg import cholesky, inv, det, svd
 from numba import jit
 
-from .. import jit_enabled, conditional_decorator
+from .. import jit_enabled, warnings_enabled, conditional_decorator
+
+
+if not warnings_enabled:
+    warnings.simplefilter('ignore')
 
 
 ### Variables ###
