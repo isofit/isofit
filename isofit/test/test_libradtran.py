@@ -18,30 +18,19 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-import sys
 import json
-from os.path import expandvars, split, abspath, join
+from os.path import split, abspath, join
 
-from isofit.common import expand_all_paths
-from isofit.common import load_spectrum
-from isofit.fileio import IO
-from isofit.inverse import Inversion
-from isofit.forward import ForwardModel
-from isofit.rt_libradtran import LibRadTranRT
+from isofit.core.common import expand_all_paths
+from isofit.core.fileio import IO
+from isofit.core.inverse import Inversion
+from isofit.core.forward import ForwardModel
 
 
-# Get directory and file paths
-testdir, fname = split(abspath(__file__))
-datadir = join(testdir, 'data/')
-
-# Import ISOFIT code
-sys.path.append(join(testdir, '../isofit'))
-
-
-def test_rt_libradtran():
+def test_libradtran():
     """This simple unit test simulates an observation of a uniform
     10% reflectance surface, and then performs a retrieval (varying only
-    Atmospheric parameters).  It then performs an inversion and tests for
+    Atmospheric parameters). It then performs an inversion and tests for
     consistency."""
 
     stateA = run_forward()
@@ -55,7 +44,7 @@ def test_rt_libradtran():
 
 
 def load_config(config_file):
-    """Load a configuration file, expand paths"""
+    """Load a configuration file, expand paths."""
 
     # Get directory and file paths
     testdir, fname = split(abspath(__file__))
@@ -68,7 +57,7 @@ def load_config(config_file):
 
 
 def run_forward():
-    """Simulate the remote measurement of a spectrally uniform surface"""
+    """Simulate the remote measurement of a spectrally uniform surface."""
 
     # Configure the surface/atmosphere/instrument model
     config = load_config('config_forward.json')
@@ -86,7 +75,7 @@ def run_forward():
 
 
 def run_inverse():
-    """Invert the remote measurement"""
+    """Invert the remote measurement."""
 
     # Configure the surface/atmosphere/instrument model
     config = load_config('config_inversion.json')

@@ -19,18 +19,19 @@
 #
 
 import scipy as s
-from scipy.linalg import det, norm, pinv, sqrtm, inv, cholesky
+from scipy.linalg import inv
 from scipy.optimize import minimize
 
-from .common import recursive_replace, emissive_radiance, chol_inv, eps
-from .surf_multicomp import MultiComponentSurface
+from ..core.common import emissive_radiance, eps
+from .surface_multicomp import MultiComponentSurface
 
 
 class MixBBSurface(MultiComponentSurface):
     """A model of the surface based on a Mixture of a hot Black Body and 
-        Multicomponent cold surfaces"""
+        Multicomponent cold surfaces."""
 
     def __init__(self, config):
+        """."""
 
         MultiComponentSurface.__init__(self, config)
         # Handle additional state vector elements
@@ -51,9 +52,9 @@ class MixBBSurface(MultiComponentSurface):
         self.n_state = len(self.init)
 
     def xa(self, x_surface, geom):
-        '''Mean of prior distribution, calculated at state x.  We find
+        """Mean of prior distribution, calculated at state x.  We find
         the covariance in a normalized space (normalizing by z) and then un-
-        normalize the result for the calling function.'''
+        normalize the result for the calling function."""
 
         mu = MultiComponentSurface.xa(self, x_surface, geom)
         mu[self.surf_temp_ind] = self.init[self.surf_temp_ind]
@@ -61,7 +62,7 @@ class MixBBSurface(MultiComponentSurface):
         return mu
 
     def Sa(self, x_surface, geom):
-        '''Covariance of prior distribution, calculated at state x'''
+        """Covariance of prior distribution, calculated at state x."""
 
         Cov = MultiComponentSurface.Sa(self, x_surface, geom)
         t = s.array([[(10.0 * self.scale[self.surf_temp_ind])**2]])
@@ -71,8 +72,8 @@ class MixBBSurface(MultiComponentSurface):
         return Cov
 
     def fit_params(self, rfl_meas, Ls, geom):
-        '''Given a reflectance estimate and one or more emissive parameters, 
-          fit a state vector.'''
+        """Given a reflectance estimate and one or more emissive parameters, 
+          fit a state vector."""
 
         def err(z):
             T, bb_frac = z
@@ -90,7 +91,7 @@ class MixBBSurface(MultiComponentSurface):
         return x_surface
 
     def conditional_solrfl(self, rfl_est, geom):
-        '''Conditions the reflectance on solar-reflected channels.'''
+        """Conditions the reflectance on solar-reflected channels."""
 
         sol_inds = s.logical_and(self.wl > 450, self.wl < 1250)
         if sum(sol_inds) < 1:
@@ -106,24 +107,24 @@ class MixBBSurface(MultiComponentSurface):
         return full
 
     def calc_rfl(self, x_surface, geom):
-        '''Reflectance'''
+        """Reflectance."""
 
         return self.calc_lamb(x_surface, geom)
 
     def drfl_dsurface(self, x_surface, geom):
-        '''Partial derivative of reflectance with respect to state vector, 
-        calculated at x_surface.'''
+        """Partial derivative of reflectance with respect to state vector, 
+        calculated at x_surface."""
 
         return self.dlamb_dsurface(x_surface, geom)
 
     def calc_lamb(self, x_surface, geom):
-        '''Lambertian Reflectance'''
+        """Lambertian Reflectance."""
 
         return MultiComponentSurface.calc_lamb(self, x_surface, geom)
 
     def dlamb_dsurface(self, x_surface, geom):
-        '''Partial derivative of Lambertian reflectance with respect to state 
-        vector, calculated at x_surface.'''
+        """Partial derivative of Lambertian reflectance with respect to state 
+        vector, calculated at x_surface."""
 
         dlamb = MultiComponentSurface.dlamb_dsurface(self, x_surface, geom)
         dlamb[:, self.bb_frac_ind] = 0
@@ -131,7 +132,7 @@ class MixBBSurface(MultiComponentSurface):
         return dlamb
 
     def calc_Ls(self, x_surface, geom):
-        '''Emission of surface, as a radiance'''
+        """Emission of surface, as a radiance."""
 
         T = x_surface[self.surf_temp_ind]
         frac = x_surface[self.bb_frac_ind]
@@ -140,8 +141,8 @@ class MixBBSurface(MultiComponentSurface):
         return Ls * frac
 
     def dLs_dsurface(self, x_surface, geom):
-        '''Partial derivative of surface emission with respect to state vector, 
-        calculated at x_surface.'''
+        """Partial derivative of surface emission with respect to state vector, 
+        calculated at x_surface."""
 
         dLs_dsurface = MultiComponentSurface.dLs_dsurface(self, x_surface,
                                                           geom)
@@ -154,7 +155,8 @@ class MixBBSurface(MultiComponentSurface):
         return dLs_dsurface
 
     def summarize(self, x_surface, geom):
-        '''Summary of state vector'''
+        """Summary of state vector."""
+
         mcm = MultiComponentSurface.summarize(self, x_surface, geom)
         msg = ' Kelvins: %5.1f  BlackBody Fraction %4.2f ' % tuple(
             x_surface[-2:])

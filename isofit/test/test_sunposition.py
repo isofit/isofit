@@ -1,4 +1,4 @@
-from isofit.sunposition import _sp
+from isofit.core.sunposition import _sp
 
 
 def test__sp():

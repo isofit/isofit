@@ -19,19 +19,19 @@
 #
 
 import scipy as s
-from scipy.io import loadmat, savemat
-from scipy.linalg import block_diag, det, norm, pinv, sqrtm, inv, cholesky
+from scipy.linalg import block_diag
 from scipy.interpolate import interp1d
 
-from .common import recursive_replace, load_wavelen, chol_inv, eps, srf
-from .surf import Surface
+from ..core.common import load_wavelen, eps, srf
+from .surface import Surface
 
 
 class IOPSurface(Surface):
     """A model of the surface based on a collection of multivariate 
-       Gaussians, extended with a surface glint term. """
+       Gaussians, extended with a surface glint term."""
 
     def __init__(self, config):
+        """."""
 
         Surface.__init__(self, config)
         self.wl, fwhm = load_wavelen(config['wavelength_file'])
@@ -91,14 +91,14 @@ class IOPSurface(Surface):
         self.fl_sigma = config.get('fl_fwhm', 25.0)/2.355
 
     def xa(self, x_surface, geom):
-        '''Mean of prior distribution, calculated at state x.'''
+        """Mean of prior distribution, calculated at state x."""
 
         return s.array(self.init)
 
     def Sa(self, x_surface, geom):
-        '''Covariance of prior distribution, calculated at state x.  We find
+        """Covariance of prior distribution, calculated at state x.  We find
         the covariance in a normalized space (normalizing by z) and then un-
-        normalize the result for the calling function.'''
+        normalize the result for the calling function."""
 
         scales = s.array(self.scale)
         if len(self.abs_inds) > 0:
@@ -108,8 +108,8 @@ class IOPSurface(Surface):
         return Sa
 
     def fit_params(self, rfl_meas, Ls, geom):
-        '''Given a reflectance estimate and one or more emissive parameters, 
-          fit a state vector.'''
+        """Given a reflectance estimate and one or more emissive parameters, 
+        fit a state vector."""
 
         init = s.array((self.init))
         init[self.glint_ind] = min(max(rfl_meas[self.b1000],
@@ -123,6 +123,7 @@ class IOPSurface(Surface):
         return init
 
     def qaa(self, x_surface):
+        """."""
 
         X, G, P, Y, glint, flh = x_surface[self.nonabs_inds]
 
@@ -150,14 +151,14 @@ class IOPSurface(Surface):
         return rrs, lamb, bb, a, u
 
     def calc_lamb(self, x_surface, geom):
-        '''Lambertian-equivalent reflectance'''
+        """Lambertian-equivalent reflectance."""
 
         rrs, lamb, bb, a, u = self.qaa(x_surface)
         return lamb
 
     def dlamb_dsurface(self, x_surface, geom):
-        '''Partial derivative of reflectance with respect to state vector, 
-        calculated at x_surface.'''
+        """Partial derivative of reflectance with respect to state vector, 
+        calculated at x_surface."""
 
         rrs, lamb, bb, a, u = self.qaa(x_surface)
         X, G, P, Y, glint, flh = x_surface[self.nonabs_inds]
@@ -189,27 +190,27 @@ class IOPSurface(Surface):
         return dlamb_dsurface
 
     def calc_rfl(self, x_surface, geom):
-        '''Reflectance (includes specular glint)'''
+        """Reflectance (includes specular glint)."""
 
         return self.calc_lamb(x_surface, geom) + x_surface[self.glint_ind]
 
     def drfl_dsurface(self, x_surface, geom):
-        '''Partial derivative of reflectance with respect to state vector, 
-        calculated at x_surface.'''
+        """Partial derivative of reflectance with respect to state vector, 
+        calculated at x_surface."""
 
         drfl = self.dlamb_dsurface(x_surface, geom)
         drfl[:, self.glint_ind] = 1
         return drfl
 
     def calc_Ls(self, x_surface, geom):
-        '''Emission at surface includes fluorescence (here, a Gaussian)'''
+        """Emission at surface includes fluorescence (here, a Gaussian)."""
 
         ngauss = srf(self.wl, self.fl_mu, self.fl_sigma)
         ngauss = ngauss/max(ngauss)
         return ngauss * x_surface[self.flh_ind]
 
     def dLs_dsurface(self, x_surface, geom):
-        '''Emission at surface includes fluorescence (here, a Gaussian)'''
+        """Emission at surface includes fluorescence (here, a Gaussian)."""
 
         dLs = s.zeros((len(self.wl), len(self.statevec)))
         ngauss = srf(self.wl, self.fl_mu, self.fl_sigma)

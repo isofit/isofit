@@ -23,35 +23,13 @@ import sys
 from argparse import ArgumentParser
 from datetime import datetime
 
-from isofit import sunposition
+from isofit.core import sunposition
 from isofit import __version__
 
 
-def main(args):
-    az, zen, ra, dec, h = sunposition.sunpos(
-        args.t, args.lat, args.lon, args.elev, args.temp, args.p, args.dt, args.rad)
-    if args.csv:
-        # machine readable
-        print('{t}, {dt}, {lat}, {lon}, {elev}, {temp}, {p}, {az}, {zen}, {ra}, {dec}, {h}'.format(
-            t=args.t, dt=args.dt, lat=args.lat, lon=args.lon, elev=args.elev, temp=args.temp, p=args.p, az=az, zen=zen, ra=ra, dec=dec, h=h))
-    else:
-        dr = 'deg'
-        if args.rad:
-            dr = 'rad'
-        print(
-            "Computing sun position at T = {t} + {dt} s".format(t=args.t, dt=args.dt))
-        print("Lat, Lon, Elev = {lat} deg, {lon} deg, {elev} m".format(
-            lat=args.lat, lon=args.lon, elev=args.elev))
-        print("T, P = {temp} C, {press} mbar".format(
-            temp=args.temp, press=args.p))
-        print("Results:")
-        print("Azimuth, zenith = {az} {dr}, {zen} {dr}".format(
-            az=az, zen=zen, dr=dr))
-        print("RA, dec, H = {ra} {dr}, {dec} {dr}, {h} {dr}".format(
-            ra=ra, dec=dec, h=h, dr=dr))
+def main():
+    """Sun position."""
 
-
-if __name__ == '__main__':
     parser = ArgumentParser(
         prog='sunposition', description='Compute sun position parameters given the time and location')
     parser.add_argument('--citation',
@@ -100,4 +78,31 @@ if __name__ == '__main__':
     else:
         args.t = datetime.datetime.utcfromtimestamp(int(args.t))
 
-    main(args)
+    # sunpos function
+    az, zen, ra, dec, h = sunposition.sunpos(
+        args.t, args.lat, args.lon, args.elev, args.temp, args.p, args.dt, args.rad)
+
+    # machine readable
+    if args.csv:
+        print('{t}, {dt}, {lat}, {lon}, {elev}, {temp}, {p}, {az}, {zen}, {ra}, {dec}, {h}'.format(
+            t=args.t, dt=args.dt, lat=args.lat, lon=args.lon, elev=args.elev, temp=args.temp, p=args.p, az=az, zen=zen, ra=ra, dec=dec, h=h))
+    else:
+        dr = 'deg'
+        if args.rad:
+            dr = 'rad'
+        print(
+            "Computing sun position at T = {t} + {dt} s".format(t=args.t, dt=args.dt))
+        print("Lat, Lon, Elev = {lat} deg, {lon} deg, {elev} m".format(
+            lat=args.lat, lon=args.lon, elev=args.elev))
+        print("T, P = {temp} C, {press} mbar".format(
+            temp=args.temp, press=args.p))
+        print("Results:")
+        print("Azimuth, zenith = {az} {dr}, {zen} {dr}".format(
+            az=az, zen=zen, dr=dr))
+        print("RA, dec, H = {ra} {dr}, {dec} {dr}, {h} {dr}".format(
+            ra=ra, dec=dec, h=h, dr=dr))
+
+
+if __name__ == '__main__':
+
+    main()

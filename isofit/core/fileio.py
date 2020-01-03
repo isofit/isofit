@@ -19,7 +19,6 @@
 #
 
 import os
-import sys
 import scipy as s
 import pylab as plt
 from scipy.linalg import inv, norm, sqrtm, det
@@ -31,7 +30,6 @@ from collections import OrderedDict
 from .common import load_spectrum, eps, resample_spectrum, expand_all_paths
 from .inverse_simple import invert_simple, invert_algebraic
 from .geometry import Geometry
-from .inverse_simple import invert_simple, invert_algebraic
 
 
 ### Variables ###
@@ -681,7 +679,7 @@ class IO:
                 ymin = min(meas)-0.01
                 plt.text(500, ymax*0.92, "Measured", color=red)
                 plt.text(500, ymax*0.86, "Model", color='k')
-                plt.ylabel("$\mu$W nm$^{-1}$ sr$^{-1}$ cm$^{-2}$")
+                plt.ylabel(r"$\mu$W nm$^{-1}$ sr$^{-1}$ cm$^{-2}$")
                 plt.ylabel("Intensity")
                 plt.xlabel("Wavelength (nm)")
                 plt.ylim([-0.001, ymax])

@@ -29,21 +29,22 @@ from .instrument import Instrument
 
 
 # Supported RT modules, filenames, and class names
-RT_models = [('modtran_radiative_transfer', 'rt_modtran', 'ModtranRT'),
-             ('libradtran_radiative_transfer', 'rt_libradtran', 'LibRadTranRT'),
-             ('planetary_radiative_transfer', 'rt_planetary', 'PlanetaryRT'),
-             ('uplooking_radiative_transfer', 'rt_uplook', 'UplookRT'),
-             ('sixs_radiative_transfer', 'rt_6s', 'SixSRT')]
+RT_models = [('modtran_radiative_transfer', 'radiative_transfer.modtran', 'ModtranRT'),
+             ('libradtran_radiative_transfer',
+              'radiative_transfer.libradtran', 'LibRadTranRT'),
+             ('planetary_radiative_transfer', 'planetary', 'PlanetaryRT'),
+             ('uplooking_radiative_transfer', 'uplook', 'UplookRT'),
+             ('sixs_radiative_transfer', 'radiative_transfer.six_s', 'SixSRT')]
 
 
 # Supported surface modules, filenames, and class names
-surface_models = [('surface', 'surf', 'Surface'),
+surface_models = [('surface', 'surface.surface', 'Surface'),
                   ('multicomponent_surface',
-                   'surf_multicomp', 'MultiComponentSurface'),
-                  ('emissive_surface', 'surf_emissive', 'MixBBSurface'),
+                   'surface.surface_multicomp', 'MultiComponentSurface'),
+                  ('emissive_surface', 'surface.surface_emissive', 'MixBBSurface'),
                   ('cat_surface', 'surf_cat', 'CATSurface'),
-                  ('glint_surface', 'surf_glint', 'GlintSurface'),
-                  ('iop_surface', 'surf_iop', 'IOPSurface'),
+                  ('glint_surface', 'surface.surface_glint', 'GlintSurface'),
+                  ('iop_surface', 'surface.surface_iop', 'IOPSurface'),
                   ('poly_surface', 'surf_poly', 'PolySurface')]
 
 

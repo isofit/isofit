@@ -19,20 +19,22 @@
 #         Adam Erickson, adam.m.erickson@nasa.gov
 #
 
-import os
-import sys
-import json
-import scipy as s
-from spectral.io import envi
 import logging
 import cProfile
+import warnings
 
 from .common import load_config
 from .forward import ForwardModel
 from .inverse import Inversion
 from .inverse_mcmc import MCMCInversion
-from .geometry import Geometry
 from .fileio import IO
+
+from .. import warnings_enabled
+
+
+if not warnings_enabled:
+    print("Warnings disabled.")
+    warnings.simplefilter("ignore")
 
 
 class Isofit:

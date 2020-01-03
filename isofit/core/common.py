@@ -28,7 +28,7 @@ from os.path import expandvars, split, abspath
 from scipy.linalg import cholesky, inv, det, svd
 from numba import jit
 
-from . import jit_enabled
+from .. import jit_enabled, conditional_decorator
 
 
 ### Variables ###
@@ -103,48 +103,6 @@ eps = 1e-5  # small value used in finite difference derivatives
 
 ### Classes ###
 
-class conditional_decorator(object):
-    """Decorator class to conditionally apply a decorator to a function definition.
-
-    Attributes
-    ----------
-    decorator : object
-        a decorator to conditionally apply to the funcion
-    condition : bool
-        a boolean indicating whether the condition is met
-    """
-
-    def __init__(self, dec, condition):
-        """
-        Parameters
-        ----------
-        dec : object
-            a decorator to conditionally apply to the funcion
-        condition : bool
-            a boolean indicating whether the condition is met
-        """
-
-        self.decorator = dec
-        self.condition = condition
-
-    def __call__(self, func):
-        """
-        Parameters
-        ----------
-        func : object
-            a function to return with or without a decorator
-
-        Returns
-        -------
-        object
-            original function without decorator if condition is unmet
-        """
-
-        if not self.condition:
-            return func
-        return self.decorator(func)
-
-
 class VectorInterpolator:
     """."""
 
@@ -165,20 +123,20 @@ class VectorInterpolatorJIT:
     """JIT implementation for VectorInterpolator class."""
 
     def __init__(self, grid, data):
-        """By convention, the final dimensionn of "data" is the wavelength.
-           "grid" contains a list of arrays, each representing the input grid 
-           points in the ith dimension of the table."""
+        """By convention, the final dimensionn of 'data' is the wavelength.
+        'grid' contains a list of arrays, each representing the input grid 
+        points in the ith dimension of the table."""
+
         self.in_d = len(data.shape)-1
         self.out_d = data.shape[-1]
         self.grid = [i.copy() for i in grid]
         self.data = data.copy()
-    if jit_enabled:
-        @jit
-        def __call__(self, point):
-            return jitinterp(self.in_d, self.out_d, self.grid, self.data, point)
-    else:
-        def __call__(self, point):
-            return jitinterp(self.in_d, self.out_d, self.grid, self.data, point)
+
+    @conditional_decorator(jit, jit_enabled)
+    def __call__(self, point):
+        """."""
+
+        return jitinterp(self.in_d, self.out_d, self.grid, self.data, point)
 
 
 ### Functions ###
@@ -258,7 +216,9 @@ def svd_inv(C, mineig=0, hashtable=None):
 @conditional_decorator(jit, jit_enabled)
 def svd_inv_sqrt(C, mineig=0, hashtable=None):
     """Fast stable inverse using SVD. This can handle near-singular matrices.
-       Also return the square root."""
+
+    Also return the square root.
+    """
 
     # If we have a hash table, look for the precalculated solution
     h = None
@@ -341,7 +301,7 @@ def recursive_reencode(j, shell_replace=True):
     elif isinstance(j, tuple):
         return tuple([recursive_reencode(k) for k in j])
     else:
-        if shell_replace and type(j) is str:
+        if shell_replace and isinstance(j, str):
             try:
                 j = expandvars(j)
             except IndexError:

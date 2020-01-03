@@ -29,17 +29,22 @@ import scipy as s
 from scipy.stats import norm as normal
 from scipy.interpolate import interp1d
 
-from .common import json_load_ascii, recursive_replace
-from .rt_lut import TabularRT, FileExistsError
+from ..core.common import json_load_ascii, recursive_replace
+from .look_up_tables import TabularRT, FileExistsError
 
+
+### Variables ###
 
 eps = 1e-5  # used for finite difference derivative calculations
 
+
+### Classes ###
 
 class ModtranRT(TabularRT):
     """A model of photon transport including the atmosphere."""
 
     def __init__(self, config):
+        """."""
 
         TabularRT.__init__(self, config)
 
@@ -85,8 +90,8 @@ class ModtranRT(TabularRT):
             raise KeyError('I could not find the MODTRAN base directory')
 
     def load_tp6(self, infile):
-        '''Load a .tp6 file.  This contains the solar geometry.  We 
-           Return cosine of mean solar zenith'''
+        """Load a '.tp6' file. This contains the solar geometry. We 
+           Return cosine of mean solar zenith."""
 
         with open(infile, 'r') as f:
             ts, te = -1, -1  # start and end indices
@@ -111,7 +116,8 @@ class ModtranRT(TabularRT):
         return szen
 
     def load_chn(self, infile, coszen):
-        """Load a .chn output file and parse critical coefficient vectors.  
+        """Load a '.chn' output file and parse critical coefficient vectors. 
+
            These are:
              wl      - wavelength vector
              sol_irr - solar irradiance
@@ -119,6 +125,7 @@ class ModtranRT(TabularRT):
              transm  - diffuse and direct irradiance along the 
                           sun-ground-sensor path
              transup - transmission along the ground-sensor path only 
+
            We parse them one wavelength at a time."""
 
         with open(infile) as f:
@@ -149,10 +156,11 @@ class ModtranRT(TabularRT):
 
     def ext550_to_vis(self, ext550):
         """."""
+
         return s.log(50.0) / (ext550 + 0.01159)
 
     def modtran_driver(self, overrides):
-        """Write a MODTRAN 6.0 input file"""
+        """Write a MODTRAN 6.0 input file."""
 
         param = deepcopy(self.template)
 
@@ -200,13 +208,16 @@ class ModtranRT(TabularRT):
         return json.dumps({"MODTRAN": param}), param
 
     def build_lut(self, rebuild=False):
-        """Each LUT is associated with a source directory.  We build a lookup table by: 
+        """Each LUT is associated with a source directory.
+
+        We build a lookup table by: 
               (1) defining the LUT dimensions, state vector names, and the grid 
                   of values; 
               (2) running modtran if needed, with each MODTRAN run defining a 
                   different point in the LUT; and 
               (3) loading the LUTs, one per key atmospheric coefficient vector,
-                  into memory as VectorInterpolator objects."""
+                  into memory as VectorInterpolator objects.
+        """
 
         # Regenerate MODTRAN input wavelength file
         if not os.path.exists(self.filtpath):

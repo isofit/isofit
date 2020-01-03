@@ -22,26 +22,26 @@ import os
 import sys
 import scipy as s
 import logging
-from scipy.interpolate import interp1d
-from scipy.optimize import minimize_scalar as min1d
 
-from .common import json_load_ascii, combos, \
-    VectorInterpolator, VectorInterpolatorJIT, \
-    recursive_replace, eps, load_wavelen
+from ..core.common import combos, VectorInterpolatorJIT, eps, load_wavelen
 
 
-class FileExistsError(Exception):
-    """FileExistsError with a message."""
-
-    def __init__(self, message):
-        super(FileExistsError, self).__init__(message)
-
+### Functions ###
 
 def spawn_rt(cmd):
     """Run a CLI command."""
 
     print(cmd)
     os.system(cmd)
+
+
+### Classes ###
+
+class FileExistsError(Exception):
+    """FileExistsError with a message."""
+
+    def __init__(self, message):
+        super(FileExistsError, self).__init__(message)
 
 
 class TabularRT:

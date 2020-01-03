@@ -1,4 +1,4 @@
-from isofit.instrument import wl_tol
+from isofit.core.instrument import wl_tol
 
 
 def test_wl_tol():

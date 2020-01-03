@@ -25,8 +25,8 @@ from scipy.optimize import minimize_scalar as min1d
 
 
 def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
-    '''From a given radiance, estimate atmospheric state with band ratios.
-    Used to initialize gradient descent inversions.'''
+    """From a given radiance, estimate atmospheric state with band ratios.
+    Used to initialize gradient descent inversions."""
 
     # Identify the latest instrument wavelength calibration (possibly
     # state-dependent) and identify channel numbers for the band ratio.
@@ -87,10 +87,8 @@ def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
     return x_new
 
 
-def invert_algebraic(surface, RT, instrument, x_surface, x_RT, x_instrument,
-                     meas, geom):
-    '''Inverts radiance algebraically using Lambertian assumptions to get a 
-       reflectance.'''
+def invert_algebraic(surface, RT, instrument, x_surface, x_RT, x_instrument, meas, geom):
+    """Inverts radiance algebraically using Lambertian assumptions to get a reflectance."""
 
     # Get atmospheric optical parameters (possibly at high
     # spectral resolution) and resample them if needed.
@@ -123,10 +121,10 @@ def invert_algebraic(surface, RT, instrument, x_surface, x_RT, x_instrument,
 
 def estimate_Ls(coeffs, rfl, rdn, geom):
     """Estimate the surface emission for a given state vector and 
-       reflectance/radiance pair.  This is determined by the residual
-       between the upward-welling radiance due to surface and 
-       scattering, and the measured radiance.  We account for 
-       atmospheric transmission on the upward path."""
+    reflectance/radiance pair. This is determined by the residual
+    between the upward-welling radiance due to surface and 
+    scattering, and the measured radiance. We account for 
+    atmospheric transmission on the upward path."""
 
     rhoatm, sphalb, transm, solar_irr, coszen, transup = coeffs
     rho = rhoatm + transm * rfl / (1.0 - sphalb * rfl)
@@ -135,7 +133,7 @@ def estimate_Ls(coeffs, rfl, rdn, geom):
 
 
 def invert_simple(forward, meas, geom):
-    """Find an initial guess at the state vector.  This currently uses
+    """Find an initial guess at the state vector. This currently uses
     traditional (non-iterative, heuristic) atmospheric correction."""
 
     surface = forward.surface

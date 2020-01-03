@@ -20,15 +20,16 @@
 
 import scipy as s
 
-from .common import recursive_replace, emissive_radiance, chol_inv, eps
-from .surf_multicomp import MultiComponentSurface
+from ..core.common import eps
+from .surface_multicomp import MultiComponentSurface
 
 
 class GlintSurface(MultiComponentSurface):
     """A model of the surface based on a collection of multivariate 
-       Gaussians, extended with a surface glint term. """
+       Gaussians, extended with a surface glint term."""
 
     def __init__(self, config):
+        """."""
 
         MultiComponentSurface.__init__(self, config)
         self.statevec.extend(['GLINT'])
@@ -39,16 +40,16 @@ class GlintSurface(MultiComponentSurface):
         self.glint_ind = len(self.statevec)-1
 
     def xa(self, x_surface, geom):
-        '''Mean of prior distribution, calculated at state x.'''
+        """Mean of prior distribution, calculated at state x."""
 
         mu = MultiComponentSurface.xa(self, x_surface, geom)
         mu[self.glint_ind] = self.init[self.glint_ind]
         return mu
 
     def Sa(self, x_surface, geom):
-        '''Covariance of prior distribution, calculated at state x.  We find
+        """Covariance of prior distribution, calculated at state x.  We find
         the covariance in a normalized space (normalizing by z) and then un-
-        normalize the result for the calling function.'''
+        normalize the result for the calling function."""
 
         Cov = MultiComponentSurface.Sa(self, x_surface, geom)
         f = s.array([[(10.0 * self.scale[self.glint_ind])**2]])
@@ -56,8 +57,8 @@ class GlintSurface(MultiComponentSurface):
         return Cov
 
     def fit_params(self, rfl_meas, Ls, geom):
-        '''Given a reflectance estimate and one or more emissive parameters, 
-          fit a state vector.'''
+        """Given a reflectance estimate and one or more emissive parameters, 
+          fit a state vector."""
 
         glint_band = s.argmin(abs(900-self.wl))
         glint = s.mean(rfl_meas[(glint_band-2):glint_band+2])
@@ -73,30 +74,31 @@ class GlintSurface(MultiComponentSurface):
         return x
 
     def calc_lamb(self, x_surface, geom):
-        '''Lambertian-equivalent reflectance'''
+        """Lambertian-equivalent reflectance."""
 
         return MultiComponentSurface.calc_lamb(self, x_surface, geom)
 
     def dlamb_dx(self, x_surface, geom):
-        '''Partial derivative of reflectance with respect to state vector, 
-        calculated at x_surface.'''
+        """Partial derivative of reflectance with respect to state vector, 
+        calculated at x_surface."""
 
         return MultiComponentSurface.dlamb_dx(self, x_surface, geom)
 
     def calc_rfl(self, x_surface, geom):
-        '''Reflectance (includes specular glint)'''
+        """Reflectance (includes specular glint)."""
 
         return self.calc_lamb(x_surface, geom) + x_surface[self.glint_ind]
 
     def drfl_dx(self, x_surface, geom):
-        '''Partial derivative of reflectance with respect to state vector, 
-        calculated at x_surface.'''
+        """Partial derivative of reflectance with respect to state vector, 
+        calculated at x_surface."""
 
         drfl = self.dlamb_dx(x_surface, geom)
         drfl[:, self.glint_ind] = 1
         return drfl
 
     def summarize(self, x_surface, geom):
-        '''Summary of state vector'''
+        """Summary of state vector."""
+
         return MultiComponentSurface.summarize(self, x_surface, geom) + \
             ' Glint: %5.3f' % x_surface[self.glint_ind]
