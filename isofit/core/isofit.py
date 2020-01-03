@@ -90,8 +90,8 @@ class Isofit:
         # Run the model
         if not warnings_enabled:
             with warnings.catch_warnings():
-                warnings.simplefilter('ignore')
-                sc.seterr('ignore')
+                warnings.simplefilter(action='ignore', category=Warning)
+                sc.seterr(all='ignore')
                 self.__call__()
         else:
             self.__call__()
