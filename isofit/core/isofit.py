@@ -22,7 +22,7 @@
 import logging
 import cProfile
 import warnings
-from numba.errors import NumbaWarning, NumbaDeprecationWarning, NumbaPendingDeprecationWarning
+#from numba.errors import NumbaWarning, NumbaDeprecationWarning, NumbaPendingDeprecationWarning
 
 from .common import load_config
 from .forward import ForwardModel
@@ -38,6 +38,9 @@ class Isofit:
 
     def __init__(self, config_file, row_column='', profile=False, level='INFO'):
         """Initialize the Isofit class."""
+
+        if not warnings_enabled:
+            warnings.simplefilter('ignore')
 
         # Set logging level
         logging.basicConfig(format='%(message)s', level=level)
@@ -85,28 +88,20 @@ class Isofit:
                 line_start, line_end, samp_start, samp_end = ranges
                 self.rows = range(int(row_start), int(row_end))
                 self.cols = range(int(col_start), int(col_end))
-        try:
-            if not warnings_enabled:
-                with warnings.catch_warnings():
-                    warnings.simplefilter('ignore')
-                    warnings.simplefilter('ignore', NumbaWarning)
-                    warnings.simplefilter('ignore', NumbaDeprecationWarning)
-                    warnings.simplefilter(
-                        'ignore', NumbaPendingDeprecationWarning)
-                    self.run()
-            else:
-                self.run()
-        except Exception as e:
-            print(e)
-            raise Exception("ISOFIT process failed.")
 
-    def run(self, profile=False):
+        # Run the model
+        self.__call__()
+
+    def __call__(self):
         """
         Iterate over all spectra, reading and writing through the IO
         object to handle formatting, buffering, and deferred write-to-file.
         The idea is to avoid reading the entire file into memory, or hitting
         the physical disk too often. These are our main class variables.
         """
+
+        if not warnings_enabled:
+            warnings.simplefilter('ignore')
 
         self.io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
         for row, col, meas, geom, configs in self.io:

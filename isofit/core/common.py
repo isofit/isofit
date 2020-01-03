@@ -206,7 +206,7 @@ def chol_inv(C):
     return S.dot(S.T)
 
 
-@conditional_decorator(jit, jit_enabled)
+@conditional_decorator(jit, jit_enabled, forceobj=True)
 def svd_inv(C, mineig=0, hashtable=None):
     """Fast stable inverse using SVD. This can handle near-singular matrices."""
 
