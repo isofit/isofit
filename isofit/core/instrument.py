@@ -28,9 +28,13 @@ from numpy.random import multivariate_normal as mvn
 from .common import eps, srf, load_wavelen, resample_spectrum
 
 
+### Variables ###
+
 # Max. wavelength difference (nm) that does not trigger expensive resampling
 wl_tol = 0.01
 
+
+### Classes ###
 
 class Instrument:
 

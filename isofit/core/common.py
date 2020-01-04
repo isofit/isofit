@@ -483,9 +483,13 @@ def jitinterp(s_in_d, s_out_d, s_grid, s_data, point):
 
 def combos(inds):
     """Return all combinations of indices in a list of index sublists.
+
     For example, for the input [[1, 2], [3, 4, 5]] it would return:
+
         [[1, 3], [2, 3], [1, 4], [2, 4], [1, 5], [2, 5]]
-    This is used for interpolation in the high-dimensional LUT."""
+
+    This is used for interpolation in the high-dimensional LUT.
+    """
 
     n = len(inds)
     cases = s.prod([len(i) for i in inds])

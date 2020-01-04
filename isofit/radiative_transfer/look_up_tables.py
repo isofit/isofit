@@ -231,8 +231,9 @@ class TabularRT:
 
     def calc_rdn(self, x_RT, rfl, Ls, geom):
         """Calculate radiance at aperature for a radiative transfer state vector.
-           rfl is the reflectance at surface. 
-           Ls is the  emissive radiance at surface."""
+
+        rfl is the reflectance at surface. 
+        Ls is the  emissive radiance at surface."""
 
         if Ls is None:
             Ls = s.zeros(rfl.shape)

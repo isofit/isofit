@@ -28,6 +28,8 @@ from .common import recursive_replace, eps
 from .instrument import Instrument
 
 
+### Variables ###
+
 # Supported RT modules, filenames, and class names
 RT_models = [('modtran_radiative_transfer', 'radiative_transfer.modtran', 'ModtranRT'),
              ('libradtran_radiative_transfer',
@@ -48,10 +50,12 @@ surface_models = [('surface', 'surface.surface', 'Surface'),
                   ('poly_surface', 'surf_poly', 'PolySurface')]
 
 
+### Classes ###
+
 class ForwardModel:
     """ForwardModel contains all the information about how to calculate
      radiance measurements at a specific spectral calibration, given a 
-     state vector.  It also manages the distributions of unretrieved, 
+     state vector. It also manages the distributions of unretrieved, 
      unknown parameters of the state vector (i.e. the S_b and K_b 
      matrices of Rodgers et al."""
 
@@ -95,6 +99,7 @@ class ForwardModel:
                 init.append(deepcopy(v))
             for v in obj.statevec:
                 statevec.append(deepcopy(v))
+
         self.bounds = tuple(s.array(bounds).T)
         self.scale = s.array(scale)
         self.init = s.array(init)
@@ -111,13 +116,14 @@ class ForwardModel:
                 bval.append(deepcopy(b))
             for v in obj.bvec:
                 bvec.append(deepcopy(v))
+
         self.bvec = s.array(bvec)
         self.nbvec = len(self.bvec)
         self.bval = s.array(bval)
         self.Sb = s.diagflat(pow(self.bval, 2))
 
     def out_of_bounds(self, x):
-        """Is state vector inside the bounds?"""
+        """Check if state vector is within bounds."""
 
         x_RT = x[self.idx_RT]
         x_surface = x[self.idx_surface]
@@ -129,8 +135,11 @@ class ForwardModel:
     def xa(self, x, geom):
         """Calculate the prior mean of the state vector (the concatenation
         of state vectors for the surface, Radiative Transfer model, and 
-        instrument). Note that the surface prior mean depends on the 
-        current state - this is so we can calculate the local prior."""
+        instrument).
+
+        NOTE: the surface prior mean depends on the current state;
+        this is so we can calculate the local prior.
+        """
 
         x_surface = x[self.idx_surface]
         xa_surface = self.surface.xa(x_surface, geom)
@@ -140,9 +149,11 @@ class ForwardModel:
 
     def Sa(self, x, geom):
         """Calculate the prior covariance of the state vector (the concatenation
-        of state vectors for the surface and Radiative Transfer model).
-        Note that the surface prior depends on the current state - this
-        is so we can calculate the local linearized answer."""
+        of state vectors for the surface and radiative transfer model).
+
+        NOTE: the surface prior depends on the current state; this
+        is so we can calculate the local linearized answer.
+        """
 
         x_surface = x[self.idx_surface]
         Sa_surface = self.surface.Sa(x_surface, geom)[:, :]
@@ -151,8 +162,9 @@ class ForwardModel:
         return block_diag(Sa_surface, Sa_RT, Sa_instrument)
 
     def calc_rdn(self, x, geom, rfl=None, Ls=None):
-        """Calculate the high-resolution radiance, permitting overrides
-        Project to top of atmosphere and translate to radiance."""
+        """Calculate the high-resolution radiance, permitting overrides.
+
+        Project to top-of-atmosphere and translate to radiance."""
 
         x_surface, x_RT, x_instrument = self.unpack(x)
         if rfl is None:
@@ -299,9 +311,8 @@ class ForwardModel:
 
     def reconfigure(self, config_surface, config_rt, config_instrument):
         """Reconfigure the components of the forward model. This could update
-            components' initialization values and/or priors, or (for the case
-            of a defined surface reflectance) the surface reflectance file 
-            itself."""
+        components' initialization values and/or priors, or (for the case
+        of a defined surface reflectance) the surface reflectance file itself."""
 
         self.surface.reconfigure(config_surface)
         self.RT.reconfigure(config_rt)

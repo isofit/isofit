@@ -40,7 +40,9 @@ class Surface:
         self.bvec = []
         self.bval = s.array([])
         self.emissive = False
+
         self.reconfigure(config)
+
         if 'reflectance_file' in config:
             self.rfl, self.rwl = load_spectrum(config['reflectance_file'])
             self.wl = self.rwl.copy()
@@ -112,8 +114,8 @@ class Surface:
 
     def dLs_dsurface(self, x_surface, geom):
         """Partial derivative of surface emission with respect to state vector, 
-        calculated at x_surface. In the case that there are no
-        free paramters our convention is to return the vector of zeros."""
+        calculated at x_surface. In the case that there are no free paramters
+        our convention is to return the vector of zeros."""
 
         return s.zeros((self.n_wl, 1))
 

@@ -72,7 +72,7 @@ class Inversion:
         self.counts = 0
         self.inversions = 0
 
-        # Finally, configure Levenberg-Marquardt
+        # Configure Levenberg-Marquardt
         self.least_squares_params = {
             'method': 'trf',
             'max_nfev': 20,
@@ -92,7 +92,7 @@ class Inversion:
     def calc_prior(self, x, geom):
         """Calculate prior distribution of radiance. This depends on the 
         location in the state space. Return the inverse covariance and 
-        its square root (for non-quadratic error residual calculation)"""
+        its square root (for non-quadratic error residual calculation)."""
 
         xa = self.fm.xa(x, geom)
         Sa = self.fm.Sa(x, geom)
@@ -171,8 +171,8 @@ class Inversion:
 
         # Seps is the covariance of "observation noise" including both
         # measurement noise from the instrument as well as variability due to
-        # unknown variables.  For speed, we will calculate it just once based
-        # on the initial solution (a potential minor source of inaccuracy)
+        # unknown variables. For speed, we will calculate it just once based
+        # on the initial solution (a potential minor source of inaccuracy).
         Seps_inv, Seps_inv_sqrt = self.calc_Seps(x0, meas, geom)
 
         @conditional_decorator(jit, jit_enabled)
@@ -204,7 +204,7 @@ class Inversion:
 
         def err(x):
             """Calculate cost function expressed here in absolute (not
-            quadratic) terms for the solver, i.e. the square root of the 
+            quadratic) terms for the solver, i.e., the square root of the 
             Rodgers (2000) Chi-square version. We concatenate 'residuals'
             due to measurment and prior terms, suitably scaled.
             All measurement distributions are calculated over subwindows 
@@ -250,7 +250,9 @@ class Inversion:
 
     def forward_uncertainty(self, x, meas, geom):
         """Converged estimates of path radiance, radiance, reflectance.
-        Also calculate the posterior distribution and Rodgers K, G matrices."""
+
+        Also calculate the posterior distribution and Rodgers K, G matrices.
+        """
 
         dark_surface = s.zeros(self.fm.surface.wl.shape)
         path = self.fm.calc_meas(x, geom, rfl=dark_surface)

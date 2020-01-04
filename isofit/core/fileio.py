@@ -56,14 +56,13 @@ flush_rate = 10
 ### Classes ###
 
 class SpectrumFile:
-    """A buffered file object that contains configuration information about
-        formatting, etc."""
+    """A buffered file object that contains configuration information about formatting, etc."""
 
-    def __init__(self, fname, write=False, n_rows=None, n_cols=None,
-                 n_bands=None, interleave=None, dtype=s.float32,
-                 wavelengths=None, fwhm=None, band_names=None,
-                 bad_bands=[], zrange='{0.0, 1.0}', flag=-9999.0,
+    def __init__(self, fname, write=False, n_rows=None, n_cols=None, n_bands=None,
+                 interleave=None, dtype=s.float32, wavelengths=None, fwhm=None,
+                 band_names=None, bad_bands=[], zrange='{0.0, 1.0}', flag=-9999.0,
                  ztitles='{Wavelength (nm), Magnitude}', map_info='{}'):
+        """."""
 
         self.frames = OrderedDict()
         self.write = write
@@ -172,7 +171,8 @@ class SpectrumFile:
             self.open_map_with_retries()
 
     def open_map_with_retries(self):
-        """Try to open a memory map, handling Beowulf I/O issues"""
+        """Try to open a memory map, handling Beowulf I/O issues."""
+
         self.memmap = None
         for attempt in range(10):
             self.memmap = self.file.open_memmap(interleave='source',
@@ -182,11 +182,11 @@ class SpectrumFile:
         raise IOError('could not open memmap for '+self.fname)
 
     def get_frame(self, row):
-        """The frame is a 2D array, essentially a list of spectra.  The 
-            self.frames list acts as a hash table to avoid storing the 
-            entire cube in memory.  So we read them or create them on an
-            as-needed basis.  When the buffer flushes via a call to 
-            flush_buffers, they will be deleted."""
+        """The frame is a 2D array, essentially a list of spectra. The 
+        self.frames list acts as a hash table to avoid storing the 
+        entire cube in memory. So we read them or create them on an
+        as-needed basis.  When the buffer flushes via a call to 
+        flush_buffers, they will be deleted."""
 
         if row not in self.frames:
             if not self.write:
@@ -199,9 +199,9 @@ class SpectrumFile:
         return self.frames[row]
 
     def write_spectrum(self, row, col, x):
-        """We write a spectrum.  If a binary format file, we simply change
-           the data cached in self.frames and defer file I/O until 
-           flush_buffers is called."""
+        """We write a spectrum. If a binary format file, we simply change
+        the data cached in self.frames and defer file I/O until 
+        flush_buffers is called."""
 
         if self.format == 'ASCII':
 
@@ -222,9 +222,9 @@ class SpectrumFile:
             frame[col, :] = x
 
     def read_spectrum(self, row, col):
-        """Get a spectrum from the frame list or ASCII file.  Note that if
-           we are an ASCII file, we have already read the single spectrum and 
-           return it as-is (ignoring the row/column indices)."""
+        """Get a spectrum from the frame list or ASCII file. Note that if
+        we are an ASCII file, we have already read the single spectrum and 
+        return it as-is (ignoring the row/column indices)."""
 
         if self.format == 'ASCII':
             return self.data
@@ -233,7 +233,8 @@ class SpectrumFile:
             return frame[col]
 
     def flush_buffers(self):
-        """Write to file, and refresh the memory map object"""
+        """Write to file, and refresh the memory map object."""
+
         if self.format == 'ENVI':
             if self.write:
                 for row, frame in self.frames.items():
@@ -253,7 +254,7 @@ class IO:
 
     def __init__(self, config, forward, inverse, active_rows, active_cols):
         """Initialization specifies retrieval subwindows for calculating
-        measurement cost distributions"""
+        measurement cost distributions."""
 
         # Default IO configuration options
         self.input = {}
@@ -372,13 +373,22 @@ class IO:
             if q in self.output_info:
                 band_names, ztitle, zrange = self.output_info[q]
                 n_bands = len(band_names)
-                self.outfiles[q] = SpectrumFile(self.output[q], write=True,
-                                                n_rows=self.n_rows, n_cols=self.n_cols,
-                                                n_bands=n_bands, interleave='bip', dtype=s.float32,
-                                                wavelengths=self.meas_wl, fwhm=self.meas_fwhm,
-                                                band_names=band_names, bad_bands=self.bbl,
-                                                map_info=self.map_info, zrange=zrange,
-                                                ztitles=ztitle)
+                self.outfiles[q] = SpectrumFile(
+                    self.output[q],
+                    write=True,
+                    n_rows=self.n_rows,
+                    n_cols=self.n_cols,
+                    n_bands=n_bands,
+                    interleave='bip',
+                    dtype=s.float32,
+                    wavelengths=self.meas_wl,
+                    fwhm=self.meas_fwhm,
+                    band_names=band_names,
+                    bad_bands=self.bbl,
+                    map_info=self.map_info,
+                    zrange=zrange,
+                    ztitles=ztitle
+                )
 
         # Do we apply a radiance correction?
         if 'radiometry_correction_file' in self.input:
@@ -397,14 +407,14 @@ class IO:
         self.iter_inds = s.array(self.iter_inds)
 
     def __iter__(self):
-        """ Reset the iterator"""
+        """Reset the iterator."""
 
         self.iter = 0
         return self
 
     def __next__(self):
-        """ Get the next spectrum from the file.  Turn the iteration number
-            into row/column indices and read from all input products."""
+        """Get the next spectrum from the file. Turn the iteration number
+        into row/column indices and read from all input products."""
 
         # Try to read data until we hit the end or find good values
         success = False
@@ -466,14 +476,13 @@ class IO:
         return r, c, meas, geom, updates
 
     def check_wavelengths(self, wl):
-        """Make sure an input wavelengths align to the instrument 
-            definition"""
+        """Make sure an input wavelengths align to the instrument definition."""
 
         return (len(wl) == self.fm.instrument.wl) and \
             all((wl-self.fm.instrument.wl) < 1e-2)
 
     def flush_buffers(self):
-        """ Write all buffered output data to disk, and erase read buffers."""
+        """Write all buffered output data to disk, and erase read buffers."""
 
         for file_dictionary in [self.infiles, self.outfiles]:
             for name, fi in file_dictionary.items():

@@ -23,7 +23,6 @@ import logging
 import cProfile
 from contextlib import suppress
 import warnings
-#from scipy import special as sc
 from numba.errors import NumbaWarning, NumbaDeprecationWarning, NumbaPendingDeprecationWarning
 
 from .common import load_config
@@ -41,19 +40,17 @@ class Isofit:
     def __init__(self, config_file, row_column='', profile=False, level='INFO'):
         """Initialize the Isofit class."""
 
+        # Set logging level
         logging.basicConfig(format='%(message)s', level=level)
 
         self.rows = None
         self.cols = None
         self.config = None
-        self.profile = None
+        self.profile = profile
         self.fm = None
         self.iv = None
         self.io = None
         self.states = None
-
-        # Profiler boolean
-        self.profile = profile
 
         # Load configuration file
         self.config = load_config(config_file)
@@ -101,6 +98,8 @@ class Isofit:
         # Ignore Numba warnings
         if not warnings_enabled:
             warnings.simplefilter(
+                action='ignore', category=RuntimeWarning)
+            warnings.simplefilter(
                 action='ignore', category=NumbaWarning)
             warnings.simplefilter(
                 action='ignore', category=NumbaDeprecationWarning)
@@ -117,7 +116,10 @@ class Isofit:
                 # specific to this spectrum. Typically these would be empty,
                 # though they could contain new location-specific prior
                 # distributions.
-                self.fm.reconfigure(*configs)
+
+                ### RAISES interp1d() ERROR! ###
+                # self.fm.reconfigure(*configs)
+                ###
 
                 if self.profile:
                     # Profile output
