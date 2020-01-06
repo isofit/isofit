@@ -101,8 +101,8 @@ def invert_algebraic(surface, RT, instrument, x_surface, x_RT, x_instrument, mea
     transup = instrument.sample(x_instrument, RT.wl, transup_hi)
     coszen = RT.coszen
 
-    # surface and measured wavelengths may differ.  Calculate
-    # the initial emission and subtract from the measurement
+    # Calculate the initial emission and subtract from the measurement.
+    # Surface and measured wavelengths may differ.
     Ls = surface.calc_Ls(x_surface, geom)
     Ls_meas = interp1d(surface.wl, Ls, fill_value='extrapolate')(wl)
     rdn_solrfl = meas - (transup * Ls_meas)
