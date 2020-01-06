@@ -22,14 +22,16 @@ import logging
 from datetime import datetime
 import scipy as s
 
-from isofit.core.common import resample_spectrum, load_wavelen
+from ..core.common import resample_spectrum, load_wavelen
 from .look_up_tables import TabularRT, FileExistsError
-from isofit.core.geometry import Geometry
+from ..core.geometry import Geometry
 
+
+### Variables ###
 
 eps = 1e-5  # used for finite difference derivative calculations
 
-sixs_template = '''0 (User defined)
+sixs_template = """0 (User defined)
 {solzen} {solaz} {viewzen} {viewaz} {month} {day}
 8  (User defined H2O, O3)
 {H2OSTR}, {O3}
@@ -49,13 +51,16 @@ sixs_template = '''0 (User defined)
 0
 0
 -1 No atm. corrections selected
-'''
+"""
 
+
+### Classes ###
 
 class SixSRT(TabularRT):
     """A model of photon transport including the atmosphere."""
 
     def __init__(self, config):
+        """."""
 
         TabularRT.__init__(self, config)
         self.sixs_dir = self.find_basedir(config)
@@ -103,7 +108,7 @@ class SixSRT(TabularRT):
         self.build_lut()
 
     def find_basedir(self, config):
-        '''Seek out a sixs base directory'''
+        """Seek out a sixs base directory."""
 
         if 'sixs_installation' in config:
             return config['sixs_installation']
@@ -112,6 +117,7 @@ class SixSRT(TabularRT):
         return None
 
     def rebuild_cmd(self, point, fn):
+        """."""
 
         # start with defaults
         vals = self.params.copy()
@@ -151,7 +157,7 @@ class SixSRT(TabularRT):
         return 'bash '+scriptfilepath
 
     def load_rt(self, point, fn):
-        """Load the results of a SixS run """
+        """Load the results of a SixS run."""
 
         with open(os.path.join(self.lut_dir, fn), 'r') as l:
             lines = l.readlines()
@@ -194,4 +200,6 @@ class SixSRT(TabularRT):
         return self.wl, irr, solzen, rhoatm, transm, sphalb, transup
 
     def ext550_to_vis(self, ext550):
+        """."""
+
         return s.log(50.0) / (ext550 + 0.01159)

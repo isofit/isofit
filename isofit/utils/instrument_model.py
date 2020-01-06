@@ -24,12 +24,13 @@ from scipy.linalg import svd
 from scipy.ndimage.filters import gaussian_filter1d
 from spectral.io import envi
 
-from isofit.core.common import expand_path, json_load_ascii
+from ..core.common import expand_path, json_load_ascii
 
 
 def instrument_model(config):
     """."""
-    hdr_template = '''ENVI
+
+    hdr_template = """ENVI
     samples = {samples}
     lines   = {lines}
     bands   = 1
@@ -38,7 +39,8 @@ def instrument_model(config):
     data type = 4
     interleave = bsq
     byte order = 0
-    '''
+    """
+
     config = json_load_ascii(config, shell_replace=True)
     configdir, configfile = split(abspath(config))
 
@@ -71,13 +73,15 @@ def instrument_model(config):
 
 
 def _percentile(X, p):
-    """..."""
+    """."""
+
     S = sorted(X)
     return S[int(s.floor(len(S)*(p/100.0)))]
 
 
 def _high_frequency_vert(X, sigma=4.0):
-    """..."""
+    """."""
+
     nl, nb, nr = X.shape
     Xvert = X.copy()
     for r in range(nr):
@@ -88,7 +92,8 @@ def _high_frequency_vert(X, sigma=4.0):
 
 
 def _low_frequency_horiz(X, sigma=4.0):
-    """..."""
+    """."""
+
     nl, nb, nr = X.shape
     Xhoriz = X.copy()
     for l in range(nl):
@@ -99,7 +104,8 @@ def _low_frequency_horiz(X, sigma=4.0):
 
 
 def _flat_field(X, uniformity_thresh):
-    """..."""
+    """."""
+
     Xhoriz = _low_frequency_horiz(X, sigma=4.0)
     Xhorizp = _low_frequency_horiz(X, sigma=3.0)
     nl, nb, nc = X.shape
@@ -123,6 +129,7 @@ def _flat_field(X, uniformity_thresh):
 
 def _column_covariances(X, uniformity_thresh):
     """."""
+
     Xvert = _high_frequency_vert(X, sigma=4.0)
     Xvertp = _high_frequency_vert(X, sigma=3.0)
     models = []
@@ -144,5 +151,3 @@ def _column_covariances(X, uniformity_thresh):
         models.append(C)
         use_C.append(use)
     return s.array(models), Xvert, Xvertp, s.array(use_C).T
-
-

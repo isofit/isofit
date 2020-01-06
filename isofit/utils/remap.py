@@ -21,9 +21,10 @@
 import scipy as s
 from spectral.io import envi
 
-# REMAP
+
 def remap(inputfile, labels, outputfile, flag, chunksize):
     """."""
+
     ref_file = inputfile
     lbl_file = labels
     out_file = outputfile
@@ -37,16 +38,19 @@ def remap(inputfile, labels, outputfile, flag, chunksize):
     lbl_img = envi.open(lbl_file+'.hdr', lbl_file)
     lbl_meta = lbl_img.metadata
     labels = lbl_img.read_band(0)
+
     nl = int(lbl_meta['lines'])
     ns = int(lbl_meta['samples'])
     nb = int(ref_meta['bands'])
 
     out_meta = dict([(k, v) for k, v in ref_meta.items()])
+
     out_meta["samples"] = ns
     out_meta["bands"] = nb
     out_meta["lines"] = nl
     out_meta['data type'] = ref_meta['data type']
     out_meta["interleave"] = "bil"
+
     out_img = envi.create_image(out_file+'.hdr',  metadata=out_meta,
                                 ext='', force=True)
     out_mm = out_img.open_memmap(interleave='source', writable=True)
@@ -67,5 +71,3 @@ def remap(inputfile, labels, outputfile, flag, chunksize):
                 out[row, :, col] = s.squeeze(ref[int(lbl[row, col]), :])
 
         out_mm[lstart:lend, :, :] = out
-
-

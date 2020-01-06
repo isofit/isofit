@@ -18,15 +18,17 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-from copy import deepcopy
 import scipy as s
+from copy import deepcopy
 from scipy.linalg import det, norm, pinv, sqrtm, inv, block_diag
 from importlib import import_module
 from scipy.interpolate import interp1d
 
-from isofit.core.common import recursive_replace, eps
-from isofit.core.instrument import Instrument
+from .common import recursive_replace, eps
+from .instrument import Instrument
 
+
+### Variables ###
 
 # Supported RT modules, filenames, and class names
 RT_models = [('modtran_radiative_transfer', 'radiative_transfer.modtran', 'ModtranRT'),
@@ -48,14 +50,16 @@ surface_models = [('surface', 'surface.surface', 'Surface'),
                   ('poly_surface', 'surf_poly', 'PolySurface')]
 
 
+### Classes ###
+
 class ForwardModel:
+    """ForwardModel contains all the information about how to calculate
+     radiance measurements at a specific spectral calibration, given a 
+     state vector. It also manages the distributions of unretrieved, 
+     unknown parameters of the state vector (i.e. the S_b and K_b 
+     matrices of Rodgers et al."""
 
     def __init__(self, config):
-        '''ForwardModel contains all the information about how to calculate
-         radiance measurements at a specific spectral calibration, given a 
-         state vector.  It also manages the distributions of unretrieved, 
-         unknown parameters of the state vector (i.e. the S_b and K_b 
-         matrices of Rodgers et al.'''
 
         self.instrument = Instrument(config['instrument'])
         self.n_meas = self.instrument.n_chan
@@ -95,6 +99,7 @@ class ForwardModel:
                 init.append(deepcopy(v))
             for v in obj.statevec:
                 statevec.append(deepcopy(v))
+
         self.bounds = tuple(s.array(bounds).T)
         self.scale = s.array(scale)
         self.init = s.array(init)
@@ -111,14 +116,15 @@ class ForwardModel:
                 bval.append(deepcopy(b))
             for v in obj.bvec:
                 bvec.append(deepcopy(v))
+
         self.bvec = s.array(bvec)
         self.nbvec = len(self.bvec)
         self.bval = s.array(bval)
         self.Sb = s.diagflat(pow(self.bval, 2))
-        return
 
     def out_of_bounds(self, x):
-        """Is state vector inside the bounds?"""
+        """Check if state vector is within bounds."""
+
         x_RT = x[self.idx_RT]
         x_surface = x[self.idx_surface]
         bound_lwr = self.bounds[0]
@@ -129,8 +135,11 @@ class ForwardModel:
     def xa(self, x, geom):
         """Calculate the prior mean of the state vector (the concatenation
         of state vectors for the surface, Radiative Transfer model, and 
-        instrument). Note that the surface prior mean depends on the 
-        current state - this is so we can calculate the local prior."""
+        instrument).
+
+        NOTE: the surface prior mean depends on the current state;
+        this is so we can calculate the local prior.
+        """
 
         x_surface = x[self.idx_surface]
         xa_surface = self.surface.xa(x_surface, geom)
@@ -140,9 +149,11 @@ class ForwardModel:
 
     def Sa(self, x, geom):
         """Calculate the prior covariance of the state vector (the concatenation
-        of state vectors for the surface and Radiative Transfer model).
-        Note that the surface prior depends on the current state - this
-        is so we can calculate the local linearized answer."""
+        of state vectors for the surface and radiative transfer model).
+
+        NOTE: the surface prior depends on the current state; this
+        is so we can calculate the local linearized answer.
+        """
 
         x_surface = x[self.idx_surface]
         Sa_surface = self.surface.Sa(x_surface, geom)[:, :]
@@ -151,8 +162,9 @@ class ForwardModel:
         return block_diag(Sa_surface, Sa_RT, Sa_instrument)
 
     def calc_rdn(self, x, geom, rfl=None, Ls=None):
-        """Calculate the high-resolution radiance, permitting overrides
-        Project to top of atmosphere and translate to radiance"""
+        """Calculate the high-resolution radiance, permitting overrides.
+
+        Project to top-of-atmosphere and translate to radiance."""
 
         x_surface, x_RT, x_instrument = self.unpack(x)
         if rfl is None:
@@ -164,24 +176,24 @@ class ForwardModel:
         return self.RT.calc_rdn(x_RT, rfl_hi, Ls_hi, geom)
 
     def calc_meas(self, x, geom, rfl=None, Ls=None):
-        """Calculate the model observation at instrument wavelengths"""
+        """Calculate the model observation at instrument wavelengths."""
 
         x_surface, x_RT, x_instrument = self.unpack(x)
         rdn_hi = self.calc_rdn(x, geom, rfl, Ls)
         return self.instrument.sample(x_instrument, self.RT.wl, rdn_hi)
 
     def calc_Ls(self, x, geom):
-        """calculate the surface emission."""
+        """Calculate the surface emission."""
 
         return self.surface.calc_Ls(x[self.idx_surface], geom)
 
     def calc_rfl(self, x, geom):
-        """calculate the surface reflectance"""
+        """Calculate the surface reflectance."""
 
         return self.surface.calc_rfl(x[self.idx_surface], geom)
 
     def calc_lamb(self, x, geom):
-        """calculate the Lambertian surface reflectance"""
+        """Calculate the Lambertian surface reflectance."""
 
         return self.surface.calc_lamb(x[self.idx_surface], geom)
 
@@ -263,7 +275,7 @@ class ForwardModel:
         return Kb
 
     def summarize(self, x, geom):
-        """State vector summary"""
+        """State vector summary."""
 
         x_surface, x_RT, x_instrument = self.unpack(x)
         return self.surface.summarize(x_surface, geom) + \
@@ -271,13 +283,13 @@ class ForwardModel:
             ' ' + self.instrument.summarize(x_instrument, geom)
 
     def calibration(self, x):
-        """Calculate measured wavelengths and fwhm"""
+        """Calculate measured wavelengths and fwhm."""
 
         x_inst = x[self.idx_instrument]
         return self.instrument.calibration(x_inst)
 
     def upsample(self, wl, q):
-        """Linear interpolation to RT wavelengths"""
+        """Linear interpolation to RT wavelengths."""
 
         if q.ndim > 1:
             q2 = []
@@ -290,7 +302,7 @@ class ForwardModel:
             return p(self.RT.wl)
 
     def unpack(self, x):
-        """Unpack the state vector in appropriate index ordering"""
+        """Unpack the state vector in appropriate index ordering."""
 
         x_surface = x[self.idx_surface]
         x_RT = x[self.idx_RT]
@@ -299,9 +311,8 @@ class ForwardModel:
 
     def reconfigure(self, config_surface, config_rt, config_instrument):
         """Reconfigure the components of the forward model. This could update
-            components' initialization values and/or priors, or (for the case
-            of a defined surface reflectance) the surface reflectance file 
-            itself."""
+        components' initialization values and/or priors, or (for the case
+        of a defined surface reflectance) the surface reflectance file itself."""
 
         self.surface.reconfigure(config_surface)
         self.RT.reconfigure(config_rt)

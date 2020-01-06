@@ -23,10 +23,10 @@ from scipy.linalg import eigh, norm
 from spectral.io import envi
 from skimage.segmentation import slic
 
-# SEGMENT
 
 def segment(spectra, flag, npca, segsize, nchunk):
     """."""
+
     in_file = spectra[0]
     if len(spectra) > 1:
         lbl_file = spectra[1]
@@ -71,6 +71,7 @@ def segment(spectra, flag, npca, segsize, nchunk):
         x_pca = x_pca.reshape([nc, ns, npca])
         valid = use.reshape([nc, ns, 1])
         seg_in_chunk = int(sum(use) / float(segsize))
+
         labels = slic(x_pca, n_segments=seg_in_chunk, compactness=cmpct,
                       max_iter=10, sigma=0, multichannel=True,
                       enforce_connectivity=True, min_size_factor=0.5,

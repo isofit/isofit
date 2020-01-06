@@ -25,24 +25,29 @@ import xxhash
 import scipy as s
 from collections import OrderedDict
 from scipy.optimize import least_squares
-from scipy.linalg import inv, norm, det, cholesky, qr, svd
-from scipy.linalg import LinAlgError
+from scipy.linalg import inv, norm, det, cholesky, qr, svd, LinAlgError
 from hashlib import md5
 from numba import jit
 
-from .inverse_simple import invert_simple
 from .common import svd_inv, svd_inv_sqrt, eps
+from .inverse_simple import invert_simple
 
+from .. import jit_enabled, conditional_decorator
+
+
+### Variables ###
 
 error_code = -1
 
 
+### Classes ###
+
 class Inversion:
 
     def __init__(self, config, forward):
+        """Initialization specifies retrieval subwindows for calculating
+        measurement cost distributions."""
 
-        # Initialization specifies retrieval subwindows for calculating
-        # measurement cost distributions
         self.lasttime = time.time()
         self.fm = forward
         self.method = 'GradientDescent'
@@ -67,7 +72,7 @@ class Inversion:
         self.counts = 0
         self.inversions = 0
 
-        # Finally, configure Levenberg-Marquardt
+        # Configure Levenberg-Marquardt
         self.least_squares_params = {
             'method': 'trf',
             'max_nfev': 20,
@@ -83,18 +88,18 @@ class Inversion:
             if k in self.least_squares_params:
                 self.least_squares_params[k] = v
 
-    @jit
+    @conditional_decorator(jit, jit_enabled)
     def calc_prior(self, x, geom):
-        """Calculate prior distribution of radiance.  This depends on the 
-        location in the state space.  Return the inverse covariance and 
-        its square root (for non-quadratic error residual calculation)"""
+        """Calculate prior distribution of radiance. This depends on the 
+        location in the state space. Return the inverse covariance and 
+        its square root (for non-quadratic error residual calculation)."""
 
         xa = self.fm.xa(x, geom)
         Sa = self.fm.Sa(x, geom)
         Sa_inv, Sa_inv_sqrt = svd_inv_sqrt(Sa, hashtable=self.hashtable)
         return xa, Sa, Sa_inv, Sa_inv_sqrt
 
-    @jit
+    @conditional_decorator(jit, jit_enabled)
     def calc_posterior(self, x, geom, meas):
         """Calculate posterior distribution of state vector. This depends 
         both on the location in the state space and the radiance (via noise)."""
@@ -108,8 +113,8 @@ class Inversion:
 
         # Gain matrix G reflects current state, so we use the state-dependent
         # Jacobian matrix K
-        S_hat = svd_inv(K.T.dot(Seps_inv).dot(K) + Sa_inv,
-                        hashtable=self.hashtable)
+        S_hat = svd_inv(K.T.dot(Seps_inv).dot(
+            K) + Sa_inv, hashtable=self.hashtable)
         G = S_hat.dot(K.T).dot(Seps_inv)
 
         # N. Cressie [ASA 2018] suggests an alternate definition of S_hat for
@@ -120,7 +125,7 @@ class Inversion:
                             hashtable=self.hashtable)
         return S_hat, K, G
 
-    @jit
+    @conditional_decorator(jit, jit_enabled)
     def calc_Seps(self, x, meas, geom):
         """Calculate (zero-mean) measurement distribution in radiance terms.  
         This depends on the location in the state space. This distribution is 
@@ -166,11 +171,11 @@ class Inversion:
 
         # Seps is the covariance of "observation noise" including both
         # measurement noise from the instrument as well as variability due to
-        # unknown variables.  For speed, we will calculate it just once based
-        # on the initial solution (a potential minor source of inaccuracy)
+        # unknown variables. For speed, we will calculate it just once based
+        # on the initial solution (a potential minor source of inaccuracy).
         Seps_inv, Seps_inv_sqrt = self.calc_Seps(x0, meas, geom)
 
-        @jit
+        @conditional_decorator(jit, jit_enabled)
         def jac(x):
             """Calculate measurement Jacobian and prior Jacobians with 
             respect to cost function. This is the derivative of cost with
@@ -199,7 +204,7 @@ class Inversion:
 
         def err(x):
             """Calculate cost function expressed here in absolute (not
-            quadratic) terms for the solver, i.e. the square root of the 
+            quadratic) terms for the solver, i.e., the square root of the 
             Rodgers (2000) Chi-square version. We concatenate 'residuals'
             due to measurment and prior terms, suitably scaled.
             All measurement distributions are calculated over subwindows 
@@ -244,8 +249,10 @@ class Inversion:
         return s.array(self.trajectory)
 
     def forward_uncertainty(self, x, meas, geom):
-        """Converged estimates of path radiance, radiance, reflectance
-        # Also calculate the posterior distribution and Rodgers K, G matrices"""
+        """Converged estimates of path radiance, radiance, reflectance.
+
+        Also calculate the posterior distribution and Rodgers K, G matrices.
+        """
 
         dark_surface = s.zeros(self.fm.surface.wl.shape)
         path = self.fm.calc_meas(x, geom, rfl=dark_surface)

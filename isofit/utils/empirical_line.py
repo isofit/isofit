@@ -42,6 +42,7 @@ def empirical_line(reference_radiance, reference_reflectance, reference_uncertai
 
     def plot_example(xv, yv, b):
         """Plot for debugging purposes."""
+
         matplotlib.rcParams['font.family'] = "serif"
         matplotlib.rcParams['font.sans-serif'] = "Times"
         matplotlib.rcParams["legend.edgecolor"] = "None"
@@ -68,6 +69,7 @@ def empirical_line(reference_radiance, reference_reflectance, reference_uncertai
 
     # Open input data, get dimensions
     logging.basicConfig(format='%(message)s', level=loglevel)
+
     ref_rdn_file = reference_radiance
     ref_rfl_file = reference_reflectance
     ref_unc_file = reference_uncertainty
