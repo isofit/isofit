@@ -22,20 +22,22 @@ import scipy as s
 from scipy.linalg import block_diag, norm
 from scipy.io import loadmat
 
-from isofit.core.common import svd_inv
-from isofit.surface.surface import Surface
+from ..core.common import svd_inv
+from .surface import Surface
 
 
 class MultiComponentSurface(Surface):
     """A model of the surface based on a collection of multivariate 
-       Gaussians, with one or more equiprobable components and full 
-       covariance matrices. 
+    Gaussians, with one or more equiprobable components and full 
+    covariance matrices. 
 
-       To evaluate the probability of a new spectrum, we calculate the
-       Mahalanobis distance to each component cluster, and use that as our
-       Multivariate Gaussian surface model."""
+    To evaluate the probability of a new spectrum, we calculate the
+    Mahalanobis distance to each component cluster, and use that as our
+    Multivariate Gaussian surface model.
+    """
 
     def __init__(self, config):
+        """."""
 
         Surface.__init__(self, config)
 
@@ -99,12 +101,14 @@ class MultiComponentSurface(Surface):
         self.n_state = len(self.statevec)
 
     def component(self, x, geom):
-        """ We pick a surface model component using the Mahalanobis distance.
-            This always uses the Lambertian (non-specular) version of the 
-            surface reflectance. If the forward model initialize via heuristic
-            (i.e. algebraic inversion), the component is only calculated once
-            based on that first solution.  That state is preserved in the 
-            geometry object"""
+        """We pick a surface model component using the Mahalanobis distance.
+
+        This always uses the Lambertian (non-specular) version of the 
+        surface reflectance. If the forward model initialize via heuristic
+        (i.e. algebraic inversion), the component is only calculated once
+        based on that first solution. That state is preserved in the 
+        geometry object.
+        """
 
         if self.n_comp <= 1:
             return 0
@@ -138,10 +142,10 @@ class MultiComponentSurface(Surface):
         return closest
 
     def xa(self, x_surface, geom):
-        '''Mean of prior distribution, calculated at state x.  We find
+        """Mean of prior distribution, calculated at state x. We find
         the covariance in a normalized space (normalizing by z) and then un-
-        normalize the result for the calling function.  This always uses the
-        Lambertian (non-specular) version of the surface reflectance.'''
+        normalize the result for the calling function. This always uses the
+        Lambertian (non-specular) version of the surface reflectance."""
 
         lamb = self.calc_lamb(x_surface, geom)
         lamb_ref = lamb[self.idx_ref]
@@ -153,9 +157,9 @@ class MultiComponentSurface(Surface):
         return mu
 
     def Sa(self, x_surface, geom):
-        '''Covariance of prior distribution, calculated at state x.  We find
+        """Covariance of prior distribution, calculated at state x. We find
         the covariance in a normalized space (normalizing by z) and then un-
-        normalize the result for the calling function.'''
+        normalize the result for the calling function."""
 
         lamb = self.calc_lamb(x_surface, geom)
         lamb_ref = lamb[self.idx_ref]
@@ -175,7 +179,7 @@ class MultiComponentSurface(Surface):
         return block_diag(Cov_prefix, Cov, Cov_suffix)
 
     def fit_params(self, rfl_meas, Ls, geom):
-        '''Given a reflectance estimate, fit a state vector.'''
+        """Given a reflectance estimate, fit a state vector."""
 
         x_surface = s.zeros(len(self.statevec))
         if len(rfl_meas) != len(self.idx_lamb):
@@ -186,24 +190,25 @@ class MultiComponentSurface(Surface):
         return x_surface
 
     def calc_rfl(self, x_surface, geom):
-        '''Non-Lambertian reflectance'''
+        """Non-Lambertian reflectance."""
 
         return self.calc_lamb(x_surface, geom)
 
     def calc_lamb(self, x_surface, geom):
-        '''Lambertian reflectance'''
+        """Lambertian reflectance."""
 
         return x_surface[self.idx_lamb]
 
     def drfl_dsurface(self, x_surface, geom):
-        '''Partial derivative of reflectance with respect to state vector, 
-        calculated at x_surface.'''
+        """Partial derivative of reflectance with respect to state vector, 
+        calculated at x_surface."""
 
         return self.dlamb_dsurface(x_surface, geom)
 
     def dlamb_dsurface(self, x_surface, geom):
-        '''Partial derivative of Lambertian reflectance with respect to 
-           state vector, calculated at x_surface.'''
+        """Partial derivative of Lambertian reflectance with respect to 
+        state vector, calculated at x_surface."""
+
         dlamb = s.eye(self.n_wl, dtype=float)
         nprefix = self.idx_lamb[0]
         nsuffix = self.n_state - self.idx_lamb[-1] - 1
@@ -212,12 +217,14 @@ class MultiComponentSurface(Surface):
         return s.concatenate((prefix, dlamb, suffix), axis=1)
 
     def calc_Ls(self, x_surface, geom):
-        '''Emission of surface, as a radiance'''
+        """Emission of surface, as a radiance."""
+
         return s.zeros(self.n_wl, dtype=float)
 
     def dLs_dsurface(self, x_surface, geom):
-        '''Partial derivative of surface emission with respect to state vector, 
-        calculated at x_surface.'''
+        """Partial derivative of surface emission with respect to state vector, 
+        calculated at x_surface."""
+
         dLs = s.zeros((self.n_wl, self.n_wl), dtype=float)
         nprefix = self.idx_lamb[0]
         nsuffix = len(self.statevec)-self.idx_lamb[-1]-1
@@ -226,7 +233,7 @@ class MultiComponentSurface(Surface):
         return s.concatenate((prefix, dLs, suffix), axis=1)
 
     def summarize(self, x_surface, geom):
-        '''Summary of state vector'''
+        """Summary of state vector."""
 
         if len(x_surface) < 1:
             return ''

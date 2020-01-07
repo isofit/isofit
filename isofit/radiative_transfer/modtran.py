@@ -20,6 +20,8 @@
 
 from sys import platform
 import os
+import logging
+from os.path import split
 import re
 import json
 from copy import deepcopy
@@ -27,17 +29,22 @@ import scipy as s
 from scipy.stats import norm as normal
 from scipy.interpolate import interp1d
 
-from isofit.core.common import json_load_ascii, recursive_replace
 from .look_up_tables import TabularRT, FileExistsError
+from ..core.common import json_load_ascii, recursive_replace
 
+
+### Variables ###
 
 eps = 1e-5  # used for finite difference derivative calculations
 
+
+### Classes ###
 
 class ModtranRT(TabularRT):
     """A model of photon transport including the atmosphere."""
 
     def __init__(self, config):
+        """."""
 
         TabularRT.__init__(self, config)
 
@@ -70,7 +77,7 @@ class ModtranRT(TabularRT):
         self.build_lut()
 
     def find_basedir(self, config):
-        '''Seek out a modtran base directory'''
+        """Seek out a modtran base directory."""
 
         try:
             return config['modtran_directory']
@@ -79,12 +86,12 @@ class ModtranRT(TabularRT):
         try:
             return os.getenv('MODTRAN_DIR')
         except KeyError:
-            logging.errorj('I could not find the MODTRAN base directory')
+            logging.error('I could not find the MODTRAN base directory')
             raise KeyError('I could not find the MODTRAN base directory')
 
     def load_tp6(self, infile):
-        '''Load a .tp6 file.  This contains the solar geometry.  We 
-           Return cosine of mean solar zenith'''
+        """Load a '.tp6' file. This contains the solar geometry. We 
+           Return cosine of mean solar zenith."""
 
         with open(infile, 'r') as f:
             ts, te = -1, -1  # start and end indices
@@ -109,7 +116,8 @@ class ModtranRT(TabularRT):
         return szen
 
     def load_chn(self, infile, coszen):
-        """Load a .chn output file and parse critical coefficient vectors.  
+        """Load a '.chn' output file and parse critical coefficient vectors. 
+
            These are:
              wl      - wavelength vector
              sol_irr - solar irradiance
@@ -117,6 +125,7 @@ class ModtranRT(TabularRT):
              transm  - diffuse and direct irradiance along the 
                           sun-ground-sensor path
              transup - transmission along the ground-sensor path only 
+
            We parse them one wavelength at a time."""
 
         with open(infile) as f:
@@ -146,10 +155,12 @@ class ModtranRT(TabularRT):
         return tuple(params)
 
     def ext550_to_vis(self, ext550):
+        """."""
+
         return s.log(50.0) / (ext550 + 0.01159)
 
     def modtran_driver(self, overrides):
-        """Write a MODTRAN 6.0 input file"""
+        """Write a MODTRAN 6.0 input file."""
 
         param = deepcopy(self.template)
 
@@ -197,14 +208,16 @@ class ModtranRT(TabularRT):
         return json.dumps({"MODTRAN": param}), param
 
     def build_lut(self, rebuild=False):
-        """ Each LUT is associated with a source directory.  We build a 
-            lookup table by: 
+        """Each LUT is associated with a source directory.
+
+        We build a lookup table by: 
               (1) defining the LUT dimensions, state vector names, and the grid 
                   of values; 
               (2) running modtran if needed, with each MODTRAN run defining a 
                   different point in the LUT; and 
               (3) loading the LUTs, one per key atmospheric coefficient vector,
-                  into memory as VectorInterpolator objects."""
+                  into memory as VectorInterpolator objects.
+        """
 
         # Regenerate MODTRAN input wavelength file
         if not os.path.exists(self.filtpath):
@@ -213,6 +226,11 @@ class ModtranRT(TabularRT):
         TabularRT.build_lut(self, rebuild)
 
     def rebuild_cmd(self, point, fn):
+        """."""
+
+        if not fn:
+            logging.error("Function is not defined.")
+            raise SystemExit("Function is not defined.")
 
         vals = dict([(n, v) for n, v in zip(self.lut_names, point)])
         vals['DISALB'] = True
@@ -249,11 +267,25 @@ class ModtranRT(TabularRT):
             f.write(modtran_config_str)
 
         # Specify location of the proper MODTRAN 6.0 binary for this OS
-        xdir = {'linux': 'linux', 'darwin': 'macos', 'windows': 'windows'}
+        xdir = {
+            'linux': 'linux',
+            'darwin': 'macos',
+            'windows': 'windows'
+        }
+
+        # If self.modtran_dir is not defined, raise an exception
+        # This occurs e.g., when MODTRAN is not installed
+        if not self.modtran_dir:
+            logging.error("MODTRAN directory not defined in config file.")
+            raise SystemExit("MODTRAN directory not defined in config file.")
+
+        # Generate the CLI path
         cmd = self.modtran_dir+'/bin/'+xdir[platform]+'/mod6c_cons '+infilename
         return cmd
 
     def load_rt(self, point, fn):
+        """."""
+
         tp6file = self.lut_dir+'/'+fn+'.tp6'
         solzen = self.load_tp6(tp6file)
         coszen = s.cos(solzen * s.pi / 180.0)
@@ -263,8 +295,8 @@ class ModtranRT(TabularRT):
         return wl, sol, solzen, rhoatm, transm, sphalb, transup
 
     def wl2flt(self, wls, fwhms, outfile):
-        """ helper function to generate Gaussian distributions around the center 
-            wavelengths """
+        """Helper function to generate Gaussian distributions around the center wavelengths."""
+
         I = None
         sigmas = fwhms/2.355
         span = 2.0 * (wls[1]-wls[0])  # nm

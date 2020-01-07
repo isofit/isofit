@@ -22,16 +22,14 @@ from os.path import split, abspath
 from numpy.random import multivariate_normal
 import scipy as s
 
-from isofit.core.common import load_spectrum, \
-    expand_path, json_load_ascii
-from isofit.core.instrument import Instrument
-from isofit.core.geometry import Geometry
+from ..core.common import load_spectrum, expand_path, json_load_ascii
+from ..core.instrument import Instrument
+from ..core.geometry import Geometry
 
-
-# GENNOISE
 
 def generate_noise(config):
     """Add noise to a radiance spectrum or image."""
+
     config = json_load_ascii(config, shell_replace=True)
     configdir, configfile = split(abspath(config))
 
@@ -49,4 +47,3 @@ def generate_noise(config):
                 fout.write('%8.5f %8.5f' % (w, r))
     else:
         raise ValueError("Image cubes not yet implemented.")
-

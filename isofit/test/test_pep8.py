@@ -21,6 +21,12 @@
 import sys
 import pep8
 from glob import glob
+from os.path import split, abspath
+
+
+testdir, fname = split(abspath(__file__))
+config_file = testdir+'/data/pep8_config.txt'
+excludes = ['sunposition.py']
 
 
 def test_pep8_conformance():

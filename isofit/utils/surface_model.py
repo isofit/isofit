@@ -25,12 +25,12 @@ from scipy.interpolate import interp1d
 from sklearn.cluster import KMeans
 from spectral.io import envi
 
-from isofit.core.common import expand_path, json_load_ascii
+from ..core.common import expand_path, json_load_ascii
 
-# SURFMODEL
 
 def surface_model(config):
     """."""
+
     configdir, configfile = split(abspath(config))
     config = json_load_ascii(config, shell_replace=True)
 
@@ -58,7 +58,7 @@ def surface_model(config):
     for wi, window in enumerate(reference_windows):
         active_wl = aand(wl >= window[0], wl < window[1])
         refwl.extend(wl[active_wl])
-    normind = s.array([s.argmin(abs(wl -w)) for w in refwl])
+    normind = s.array([s.argmin(abs(wl - w)) for w in refwl])
     refwl = s.array(refwl, dtype=float)
 
     # create basic model template
@@ -95,7 +95,7 @@ def surface_model(config):
         spectra = []
         for infile in infiles:
 
-            print('Loading  ' +infile)
+            print('Loading  ' + infile)
             hdrfile = infile + '.hdr'
             rfl = envi.open(hdrfile, infile)
             nl, nb, ns = [int(rfl.metadata[n])
@@ -111,7 +111,7 @@ def surface_model(config):
                 x = s.array(rfl_mm[:, :, :])
             if rfl.metadata['interleave'] == 'bil':
                 x = s.array(rfl_mm[:, :, :]).transpose((0, 2, 1))
-            x = x.reshape(nl *ns, nb)
+            x = x.reshape(nl * ns, nb)
 
             # import spectra and resample
             for x1 in x:
@@ -123,8 +123,8 @@ def surface_model(config):
         n = float(len(spectra))
         nmix = int(n * mixtures)
         for mi in range(nmix):
-            s1, m1 = spectra[int(s.rand( ) *n)], s.rand()
-            s2, m2 = spectra[int(s.rand( ) *n)], 1.0 -m1
+            s1, m1 = spectra[int(s.rand() * n)], s.rand()
+            s2, m2 = spectra[int(s.rand() * n)], 1.0 - m1
             spectra.append(m1 * s1 + m2 * s2)
 
         spectra = s.array(spectra)
@@ -158,7 +158,7 @@ def surface_model(config):
                     C[i, i] = ci + float(window['regularizer'])
                 else:
                     raise ValueError(
-                        'I do not recognize the source  ' +window['correlation'])
+                        'I do not recognize the source  ' + window['correlation'])
 
             # Normalize the component spectrum if desired
             if normalize == 'Euclidean':
@@ -170,7 +170,7 @@ def surface_model(config):
             else:
                 raise ValueError(
                     'Unrecognized normalization: %s\n' % normalize)
-            m = m/ z
+            m = m / z
             C = C / (z ** 2)
 
             model['means'].append(m)

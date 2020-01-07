@@ -31,8 +31,12 @@ from datetime import datetime
 
 
 class _sp:
+    """."""
+
     @staticmethod
     def calendar_time(dt):
+        """."""
+
         try:
             x = dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, dt.microsecond
             return x
@@ -46,7 +50,8 @@ class _sp:
 
     @staticmethod
     def julian_day(dt):
-        """Calculate the Julian Day from a datetime.datetime object in UTC"""
+        """Calculate the Julian Day from a datetime.datetime object in UTC."""
+
         # year and month numbers
         yr, mo, dy, hr, mn, sc, us = _sp.calendar_time(dt)
         if mo <= 2:  # From paper: "if M = 1 or 2, then Y = Y - 1 and M = M + 12"
@@ -65,17 +70,20 @@ class _sp:
 
     @staticmethod
     def julian_ephemeris_day(jd, deltat):
-        """Calculate the Julian Ephemeris Day from the Julian Day and delta-time = (terrestrial time - universal time) in seconds"""
+        """Calculate the Julian Ephemeris Day from the Julian Day and delta-time = (terrestrial time - universal time) in seconds."""
+
         return jd + deltat / 86400.0
 
     @staticmethod
     def julian_century(jd):
-        """Caluclate the Julian Century from Julian Day or Julian Ephemeris Day"""
+        """Caluclate the Julian Century from Julian Day or Julian Ephemeris Day."""
+
         return (jd - 2451545.0) / 36525.0
 
     @staticmethod
     def julian_millennium(jc):
-        """Calculate the Julian Millennium from Julian Ephemeris Century"""
+        """Calculate the Julian Millennium from Julian Ephemeris Century."""
+
         return jc / 10.0
 
     # Earth Periodic Terms
@@ -178,7 +186,8 @@ class _sp:
 
     @staticmethod
     def heliocentric_longitude(jme):
-        """Compute the Earth Heliocentric Longitude (L) in degrees given the Julian Ephemeris Millennium"""
+        """Compute the Earth Heliocentric Longitude (L) in degrees given the Julian Ephemeris Millennium."""
+
         #L5, ..., L0
         Li = [sum(a*np.cos(b + c*jme) for a, b, c in abcs)
               for abcs in reversed(_sp._EHL_)]
@@ -188,7 +197,8 @@ class _sp:
 
     @staticmethod
     def heliocentric_latitude(jme):
-        """Compute the Earth Heliocentric Latitude (B) in degrees given the Julian Ephemeris Millennium"""
+        """Compute the Earth Heliocentric Latitude (B) in degrees given the Julian Ephemeris Millennium."""
+
         Bi = [sum(a*np.cos(b + c*jme) for a, b, c in abcs)
               for abcs in reversed(_sp._EHB_)]
         B = np.polyval(Bi, jme) / 1e8
@@ -197,7 +207,8 @@ class _sp:
 
     @staticmethod
     def heliocentric_radius(jme):
-        """Compute the Earth Heliocentric Radius (R) in astronimical units given the Julian Ephemeris Millennium"""
+        """Compute the Earth Heliocentric Radius (R) in astronimical units given the Julian Ephemeris Millennium."""
+
         Ri = [sum(a*np.cos(b + c*jme) for a, b, c in abcs)
               for abcs in reversed(_sp._EHR_)]
         R = np.polyval(Ri, jme) / 1e8
@@ -205,14 +216,16 @@ class _sp:
 
     @staticmethod
     def heliocentric_position(jme):
-        """Compute the Earth Heliocentric Longitude, Latitude, and Radius given the Julian Ephemeris Millennium
-            Returns (L, B, R) where L = longitude in degrees, B = latitude in degrees, and R = radius in astronimical units
-        """
+        """Compute the Earth Heliocentric Longitude, Latitude, and Radius given the Julian Ephemeris Millennium.
+
+        Returns (L, B, R) where L = longitude in degrees, B = latitude in degrees, and R = radius in astronimical units."""
+
         return _sp.heliocentric_longitude(jme), _sp.heliocentric_latitude(jme), _sp.heliocentric_radius(jme)
 
     @staticmethod
     def geocentric_position(helio_pos):
-        """Compute the geocentric latitude (Theta) and longitude (beta) (in degrees) of the sun given the earth's heliocentric position (L, B, R)"""
+        """Compute the geocentric latitude (Theta) and longitude (beta) (in degrees) of the sun given Earth's heliocentric position (L, B, R)."""
+
         L, B, R = helio_pos
         th = L + 180
         b = -B
@@ -289,7 +302,8 @@ class _sp:
 
     @staticmethod
     def ecliptic_obliquity(jme, delta_epsilon):
-        """Calculate the true obliquity of the ecliptic (epsilon, in degrees) given the Julian Ephemeris Millennium and the obliquity"""
+        """Calculate the true obliquity of the ecliptic (epsilon, in degrees) given the Julian Ephemeris Millennium and the obliquity."""
+
         u = jme/10
         e0 = np.polyval([2.45, 5.79, 27.87, 7.12, -39.05, -
                          249.67, -51.38, 1999.25, -1.55, -4680.93, 84381.448], u)
@@ -298,7 +312,7 @@ class _sp:
 
     @staticmethod
     def nutation_obliquity(jce):
-        """compute the nutation in longitude (delta_psi) and the true obliquity (epsilon) given the Julian Ephemeris Century"""
+        """Compute the nutation in longitude (delta_psi) and the true obliquity (epsilon) given the Julian Ephemeris Century."""
 
         # mean elongation of the moon from the sun, in radians:
         #x0 = 297.85036 + 445267.111480*jce - 0.0019142*(jce**2) + (jce**3)/189474
@@ -338,12 +352,14 @@ class _sp:
 
     @staticmethod
     def abberation_correction(R):
-        """Calculate the abberation correction (delta_tau, in degrees) given the Earth Heliocentric Radius (in AU)"""
+        """Calculate the abberation correction (delta_tau, in degrees) given the Earth Heliocentric Radius (in AU)."""
+
         return -20.4898/(3600*R)
 
     @staticmethod
     def sun_longitude(helio_pos, delta_psi):
-        """Calculate the apparent sun longitude (lambda, in degrees) and geocentric longitude (beta, in degrees) given the earth heliocentric position and delta_psi"""
+        """Calculate the apparent sun longitude (lambda, in degrees) and geocentric longitude (beta, in degrees) given the earth heliocentric position and delta_psi."""
+
         L, B, R = helio_pos
         theta = L + 180  # geocentric latitude
         beta = -B
@@ -352,7 +368,8 @@ class _sp:
 
     @staticmethod
     def greenwich_sidereal_time(jd, delta_psi, epsilon):
-        """Calculate the apparent Greenwich sidereal time (v, in degrees) given the Julian Day"""
+        """Calculate the apparent Greenwich sidereal time (v, in degrees) given the Julian Day."""
+
         jc = _sp.julian_century(jd)
         # mean sidereal time at greenwich, in degrees:
         v0 = (280.46061837 + 360.98564736629*(jd - 2451545) +
@@ -362,7 +379,8 @@ class _sp:
 
     @staticmethod
     def sun_ra_decl(llambda, epsilon, beta):
-        """Calculate the sun's geocentric right ascension (alpha, in degrees) and declination (delta, in degrees)"""
+        """Calculate the sun's geocentric right ascension (alpha, in degrees) and declination (delta, in degrees)."""
+
         l, e, b = map(np.deg2rad, (llambda, epsilon, beta))
         alpha = np.arctan2(np.sin(l)*np.cos(e) - np.tan(b)
                            * np.sin(e), np.cos(l))  # x1 / x2
@@ -373,7 +391,7 @@ class _sp:
 
     @staticmethod
     def sun_topo_ra_decl_hour(latitude, longitude, elevation, jd, delta_t=0):
-        """Calculate the sun's topocentric right ascension (alpha'), declination (delta'), and hour angle (H')"""
+        """Calculate the sun's topocentric right ascension (alpha'), declination (delta'), and hour angle (H')."""
 
         jde = _sp.julian_ephemeris_day(jd, delta_t)
         jce = _sp.julian_century(jde)
@@ -417,11 +435,13 @@ class _sp:
 
     @staticmethod
     def sun_topo_azimuth_zenith(latitude, delta_prime, H_prime, temperature=14.6, pressure=1013):
-        """Compute the sun's topocentric azimuth and zenith angles
-        azimuth is measured eastward from north, zenith from vertical
-        temperature = average temperature in C (default is 14.6 = global average in 2013)
-        pressure = average pressure in mBar (default 1013 = global average)
+        """Compute the sun's topocentric azimuth and zenith angles.
+
+        Azimuth is measured eastward from north, zenith from vertical.
+        Temperature = average temperature in C (default is 14.6 = global average in 2013).
+        Pressure = average pressure in mBar (default 1013 = global average).
         """
+
         phi = np.deg2rad(latitude)
         dr, Hr = map(np.deg2rad, (delta_prime, H_prime))
         P, T = pressure, temperature
@@ -439,6 +459,8 @@ class _sp:
 
     @staticmethod
     def norm_lat_lon(lat, lon):
+        """."""
+
         if lat < -90 or lat > 90:
             # convert to cartesian and back
             x = np.cos(np.deg2rad(lon))*np.cos(np.deg2rad(lat))
@@ -453,7 +475,8 @@ class _sp:
 
     @staticmethod
     def topo_pos(t, lat, lon, elev, temp, press, dt):
-        """compute RA,dec,H, all in degrees"""
+        """Compute RA,dec,H, all in degrees."""
+
         lat, lon = _sp.norm_lat_lon(lat, lon)
         jd = _sp.julian_day(t)
         RA, dec, H = _sp.sun_topo_ra_decl_hour(lat, lon, elev, jd, dt)
@@ -461,7 +484,8 @@ class _sp:
 
     @staticmethod
     def pos(t, lat, lon, elev, temp, press, dt):
-        """Compute azimute,zenith,RA,dec,H all in degrees"""
+        """Compute azimute,zenith,RA,dec,H all in degree."""
+
         lat, lon = _sp.norm_lat_lon(lat, lon)
         jd = _sp.julian_day(t)
         RA, dec, H = _sp.sun_topo_ra_decl_hour(lat, lon, elev, jd, dt)
@@ -470,16 +494,19 @@ class _sp:
 
 
 def julian_day(dt):
-    """Convert UTC datetimes or UTC timestamps to Julian days
+    """Convert UTC datetimes or UTC timestamps to Julian days.
+
     Parameters
     ----------
     dt : array_like
         UTC datetime objects or UTC timestamps (as per datetime.utcfromtimestamp)
+
     Returns
     -------
     jd : ndarray
         datetimes converted to fractional Julian days
     """
+
     dts = np.array(dt)
     if len(dts.shape) == 0:
         return _sp.julian_day(dt)
@@ -491,7 +518,7 @@ def julian_day(dt):
 
 
 def arcdist(p0, p1, radians=False):
-    """Angular distance between azimuth,zenith pairs
+    """Angular distance between azimuth, zenith pairs.
 
     Parameters
     ----------
@@ -500,12 +527,14 @@ def arcdist(p0, p1, radians=False):
         p[...,0] = azimuth angles, p[...,1] = zenith angles
     radians : boolean (default False)
         If False, angles are in degrees, otherwise in radians
+
     Returns
     -------
     ad :  array_like, shape is broadcast(p0,p1).shape
         Arcdistances between corresponding pairs in p0,p1
         In degrees by default, in radians if radians=True
     """
+
     # formula comes from translating points into cartesian coordinates
     # taking the dot product to get the cosine between the two vectors
     # then arccos to return to angle, and simplify everything assuming real inputs
@@ -523,6 +552,7 @@ def arcdist(p0, p1, radians=False):
 
 def observed_sunpos(dt, latitude, longitude, elevation, temperature=None, pressure=None, delta_t=0, radians=False):
     """Compute the observed coordinates of the sun as viewed at the given time and location.
+
     Parameters
     ----------
     dt : array_like
@@ -539,6 +569,7 @@ def observed_sunpos(dt, latitude, longitude, elevation, temperature=None, pressu
         seconds, default is 0, difference between the earth's rotation time (TT) and universal time (UT)
     radians : {True, False}, optional
         return results in radians if True, degrees if False (default)
+
     Returns
     -------
     coords : ndarray, (...,2)
@@ -546,6 +577,7 @@ def observed_sunpos(dt, latitude, longitude, elevation, temperature=None, pressu
         coords[...,0] = observed azimuth angle, measured eastward from north
         coords[...,1] = observed zenith angle, measured down from vertical
     """
+
     if temperature is None:
         temperature = 14.6
     if pressure is None:
@@ -566,6 +598,7 @@ def observed_sunpos(dt, latitude, longitude, elevation, temperature=None, pressu
 
 def topocentric_sunpos(dt, latitude, longitude, temperature=None, pressure=None, delta_t=0, radians=False):
     """Compute the topocentric coordinates of the sun as viewed at the given time and location.
+
     Parameters
     ----------
     dt : array_like
@@ -582,6 +615,7 @@ def topocentric_sunpos(dt, latitude, longitude, temperature=None, pressure=None,
         seconds, default is 0, difference between the earth's rotation time (TT) and universal time (UT)
     radians : {True, False}, optional
         return results in radians if True, degrees if False (default)
+
     Returns
     -------
     coords : ndarray, (...,3)
@@ -590,6 +624,7 @@ def topocentric_sunpos(dt, latitude, longitude, temperature=None, pressure=None,
         coords[...,1] = topocentric declination
         coords[...,2] = topocentric hour angle
     """
+
     if temperature is None:
         temperature = 14.6
     if pressure is None:
@@ -610,6 +645,7 @@ def topocentric_sunpos(dt, latitude, longitude, temperature=None, pressure=None,
 
 def sunpos(dt, latitude, longitude, elevation, temperature=None, pressure=None, delta_t=0, radians=False):
     """Compute the observed and topocentric coordinates of the sun as viewed at the given time and location.
+
     Parameters
     ----------
     dt : array_like
@@ -626,6 +662,7 @@ def sunpos(dt, latitude, longitude, elevation, temperature=None, pressure=None, 
         seconds, default is 0, difference between the earth's rotation time (TT) and universal time (UT)
     radians : {True, False}, optional
         return results in radians if True, degrees if False (default)
+
     Returns
     -------
     coords : ndarray, (...,5)
@@ -724,6 +761,8 @@ class Sunposition:
 
     @property
     def citation(self):
+        """Print the citation."""
+
         print("Implementation: Samuel Bear Powell, 2016")
         print("Algorithm:")
         print("Ibrahim Reda, Afshin Andreas, \"Solar position algorithm for solar radiation applications\", SolarEnergy, Volume 76, Issue 5, 2004, Pages 577-589, ISSN 0038-092X, doi:10.1016/j.solener.2003.12.003")
