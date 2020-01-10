@@ -22,7 +22,8 @@
 from ..utils.path import absjoin
 
 
-def get(config, base_directory):
+def get(config, data_dir="../data", remote_dir="../remote", lut_dir="../luts",
+        config_dir="../configs", input_dir="../input", output_dir="../output"):
     """Get an ISOFIT template with dynamic path setting."""
 
     if config == "modtran":
@@ -100,26 +101,26 @@ def get(config, base_directory):
     elif config == "forward":
         return {
             "input": {
-                "reflectance_file": absjoin(base_directory, "input", "reference_reflectance")
+                "reflectance_file": absjoin(input_dir, "reference_reflectance")
             },
             "output": {
-                "simulated_measurement_file": absjoin(base_directory, "input", "reference_radiance")
+                "simulated_measurement_file": absjoin(input_dir, "reference_radiance")
             },
             "forward_model": {
                 "instrument": {
-                    "wavelength_file": absjoin(base_directory, "data", "wavelengths.txt"),
+                    "wavelength_file": absjoin(data_dir, "wavelengths.txt"),
                     "integrations": 1,
                     "SNR": 300
                 },
                 "surface": {
-                    "wavelength_file": absjoin(base_directory, "data", "wavelengths.txt"),
-                    "reflectance_file": absjoin(base_directory, "data", "stonewall_rfl.txt")
+                    "wavelength_file": absjoin(data_dir, "wavelengths.txt"),
+                    "reflectance_file": absjoin(data_dir, "stonewall_rfl.txt")
                 },
                 "modtran_radiative_transfer": {
-                    "wavelength_file": absjoin(base_directory, "data", "wavelengths.txt"),
-                    "lut_path": absjoin(base_directory, "lut"),
+                    "wavelength_file": absjoin(data_dir, "wavelengths.txt"),
+                    "lut_path": absjoin(lut_dir),
                     "configure_and_exit": False,
-                    "modtran_template_file": absjoin(base_directory, "config", "modtran.json"),
+                    "modtran_template_file": absjoin(config_dir, "modtran.json"),
                     "domain": {
                         "start": 350,
                         "end": 2520,
@@ -155,26 +156,26 @@ def get(config, base_directory):
     elif config == "inverse":
         return {
             "input": {
-                "measured_radiance_file": absjoin(base_directory, "remote", "ang20140625_v2gx_rdn_snr100")
+                "measured_radiance_file": absjoin(remote_dir, "ang20140625_v2gx_rdn_snr100")
             },
             "output": {
-                "estimated_reflectance_file": absjoin(base_directory, "output", "modeled_reflectance"),
-                "posterior_uncertainty_file": absjoin(base_directory, "output", "modeled_uncertainty"),
-                "estimated_state_file": absjoin(base_directory, "output", "modeled_state")
+                "estimated_reflectance_file": absjoin(output_dir, "modeled_reflectance"),
+                "posterior_uncertainty_file": absjoin(output_dir, "modeled_uncertainty"),
+                "estimated_state_file": absjoin(output_dir, "modeled_state")
             },
             "forward_model": {
                 "instrument": {
-                    "wavelength_file": absjoin(base_directory, "data", "wavelengths.txt"),
+                    "wavelength_file": absjoin(data_dir, "wavelengths.txt"),
                     "integrations": 1,
                     "SNR": 300
                 },
                 "multicomponent_surface": {
-                    "surface_file": absjoin(base_directory, "data", "simple_surface_model.mat")
+                    "surface_file": absjoin(data_dir, "simple_surface_model.mat")
                 },
                 "modtran_radiative_transfer": {
-                    "wavelength_file": absjoin(base_directory, "data", "wavelengths.txt"),
-                    "lut_path": absjoin(base_directory, "luts"),
-                    "modtran_template_file": absjoin(base_directory, "config", "modtran.json"),
+                    "wavelength_file": absjoin(data_dir, "wavelengths.txt"),
+                    "lut_path": absjoin(lut_dir),
+                    "modtran_template_file": absjoin(config_dir, "modtran.json"),
                     "domain": {
                         "start": 350,
                         "end": 2520,
