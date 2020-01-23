@@ -97,7 +97,6 @@ class Isofit:
 
         # Ignore Numba warnings
         if not warnings_enabled:
-            warnings.filterwarnings('ignore', message="finding looplift candidates")
             warnings.simplefilter(
                 action='ignore', category=RuntimeWarning)
             warnings.simplefilter(
