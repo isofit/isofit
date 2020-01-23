@@ -106,7 +106,7 @@ class Isofit:
             warnings.simplefilter(
                 action='ignore', category=NumbaPendingDeprecationWarning)
             warnings.filterwarnings(
-                action='ignore', message='finding looplift candidates')      
+                action='ignore', message='finding looplift candidates')
 
         self.io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
         for row, col, meas, geom, configs in self.io:
