@@ -313,7 +313,7 @@ class TabularRT:
                         x_RT_perturb, geom)
                     rhoe = rhoatme + transme * rfl / (1.0 - sphalbe * rfl)
                     rdne = rhoe/s.pi*(self.solar_irr*self.coszen) + (Ls *
-                                                                     transup)
+                                                                     transupe)
                     Kb_RT.append((rdne-rdn) / eps)
 
         Kb_RT = s.array(Kb_RT).T
