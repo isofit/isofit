@@ -26,7 +26,7 @@ name = 'isofit'
 
 __version__ = '1.4.2'
 
-jit_enabled = False 
+jit_enabled = False
 
 warnings_enabled = False
 
