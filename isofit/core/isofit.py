@@ -97,7 +97,6 @@ class Isofit:
 
         # Ignore Numba warnings
         if not warnings_enabled:
-            # Filter warnings by tyoe
             warnings.simplefilter(
                 action='ignore', category=RuntimeWarning)
             warnings.simplefilter(
@@ -106,9 +105,8 @@ class Isofit:
                 action='ignore', category=NumbaDeprecationWarning)
             warnings.simplefilter(
                 action='ignore', category=NumbaPendingDeprecationWarning)
-            # Filter warnings by message (catch new Numba transform warning)
             warnings.filterwarnings(
-                action='ignore', message='finding looplift candidates')
+                action='ignore', message='finding looplift candidates')      
 
         self.io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
         for row, col, meas, geom, configs in self.io:
