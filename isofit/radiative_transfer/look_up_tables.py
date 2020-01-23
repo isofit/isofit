@@ -24,6 +24,8 @@ import scipy as s
 import logging
 
 from ..core.common import combos, VectorInterpolatorJIT, eps, load_wavelen
+from ..core.common import VectorInterpolator
+
 
 
 ### Functions ###
@@ -178,10 +180,10 @@ class TabularRT:
             self.transm[ind] = transm
             self.transup[ind] = transup
 
-        self.rhoatm_interp = VectorInterpolatorJIT(self.lut_grids, self.rhoatm)
-        self.sphalb_interp = VectorInterpolatorJIT(self.lut_grids, self.sphalb)
-        self.transm_interp = VectorInterpolatorJIT(self.lut_grids, self.transm)
-        self.transup_interp = VectorInterpolatorJIT(
+        self.rhoatm_interp = VectorInterpolator(self.lut_grids, self.rhoatm)
+        self.sphalb_interp = VectorInterpolator(self.lut_grids, self.sphalb)
+        self.transm_interp = VectorInterpolator(self.lut_grids, self.transm)
+        self.transup_interp = VectorInterpolator(
             self.lut_grids, self.transup)
 
     def lookup_lut(self, point):
