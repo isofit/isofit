@@ -182,7 +182,7 @@ class TabularRT:
         self.sphalb_interp = VectorInterpolatorJIT(self.lut_grids, self.sphalb)
         self.transm_interp = VectorInterpolatorJIT(self.lut_grids, self.transm)
         self.transup_interp = VectorInterpolatorJIT(
-            self.lut_grids, self.transm)
+            self.lut_grids, self.transup)
 
     def lookup_lut(self, point):
         """Multi-linear interpolation in the LUT."""
