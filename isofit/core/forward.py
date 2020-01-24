@@ -26,6 +26,7 @@ from scipy.interpolate import interp1d
 
 from .common import recursive_replace, eps
 from .instrument import Instrument
+from ..radiative_transfer.radiative_transfer import RadiativeTransfer
 
 
 ### Variables ###
@@ -65,13 +66,7 @@ class ForwardModel:
         self.n_meas = self.instrument.n_chan
 
         # Build the radiative transfer model
-        self.RT = None
-        for key, module, cname in RT_models:
-            module = "isofit." + module
-            if key in config:
-                self.RT = getattr(import_module(module), cname)(config[key])
-        if self.RT is None:
-            raise ValueError('Must specify a valid radiative transfer model')
+        self.RT = RadiativeTransfer(config['radiative_transfer'])
 
         # Build the surface model
         self.surface = None

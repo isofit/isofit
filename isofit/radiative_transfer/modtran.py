@@ -39,14 +39,19 @@ from ..core.common import combos, VectorInterpolatorJIT, eps, load_wavelen
 
 eps = 1e-5  # used for finite difference derivative calculations
 
+modtran_bands_available = ['modtran_visnir']
 
 ### Classes ###
 
 class ModtranRT(TabularRT):
     """A model of photon transport including the atmosphere."""
 
-    def __init__(self, config):
+    def __init__(self, band_mode_string, config):
         """."""
+
+        self.band_mode_string = band_mode_string
+        if self.band_mode_string not in modtran_bands_available:
+            raise NotImplementedError
 
         TabularRT.__init__(self, config)
 
@@ -75,8 +80,7 @@ class ModtranRT(TabularRT):
             self.aer_extc = s.array(aer_extc)
             self.aer_asym = s.array(aer_asym)
         
-        self.band_mode_string = 'visnir'
-        if self.band_mode_string.lower() == 'visnir':
+        if self.band_mode_string.lower() == 'modtran_visnir':
             self.modtran_lut_names = ['rhoatm', 'transm', 'sphalb', 'transup']
 
         # Build the lookup table
@@ -376,7 +380,7 @@ class ModtranRT(TabularRT):
 
         r = self.get(x_RT, geom)
 
-        if self.band_mode_string.lower() == 'visnir':
+        if self.band_mode_string.lower() == 'modtran_visnir':
             return self.calc_rdn_visnir(r, rfl)
         else:
             raise NotImplementedError
@@ -392,7 +396,7 @@ class ModtranRT(TabularRT):
     def drdn_dRT(self, x_RT, x_surface, rfl, drfl_dsurface, Ls, dLs_dsurface,
                  geom):
         
-        if self.band_mode_string.lower() == 'visnir':
+        if self.band_mode_string.lower() == 'modtran_visnir':
             return self.drdn_dRT_visnir(x_RT, x_surface, rfl, drfl_dsurface, 
                                    Ls, dLs_dsurface, geom)
         else:
@@ -431,7 +435,7 @@ class ModtranRT(TabularRT):
 
     def drdn_dRTb(self, x_RT, rfl, Ls, geom):
 
-        if self.band_mode_string.lower() == 'visnir':
+        if self.band_mode_string.lower() == 'modtran_visnir':
             return self.drdn_dRTb_visnir(x_RT, rfl, Ls, geom)
         else:
             raise NotImplementedError
