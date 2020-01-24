@@ -63,10 +63,11 @@ def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
             # Get Atmospheric terms at high spectral resolution
             x_RT_2 = x_RT.copy()
             x_RT_2[ind_sv] = h2o
-            rhoatm_hi, sphalb_hi, transm_hi, transup_hi = RT.get(x_RT_2, geom)
-            rhoatm = instrument.sample(x_instrument, RT.wl, rhoatm_hi)
-            transm = instrument.sample(x_instrument, RT.wl, transm_hi)
-            sphalb = instrument.sample(x_instrument, RT.wl, sphalb_hi)
+            #rhoatm_hi, sphalb_hi, transm_hi, transup_hi = RT.get(x_RT_2, geom)
+            rhi = RT.get(x_RT_2, geom)
+            rhoatm = instrument.sample(x_instrument, RT.wl, rhi['rhoatm']) #_hi)
+            transm = instrument.sample(x_instrument, RT.wl, rhi['transm']) #_hi)
+            sphalb = instrument.sample(x_instrument, RT.wl, rhi['sphalb']) #_hi)
             solar_irr = instrument.sample(x_instrument, RT.wl, RT.solar_irr)
 
             # Assume no surface emission.  "Correct" the at-sensor radiance
@@ -92,13 +93,14 @@ def invert_algebraic(surface, RT, instrument, x_surface, x_RT, x_instrument, mea
 
     # Get atmospheric optical parameters (possibly at high
     # spectral resolution) and resample them if needed.
-    rhoatm_hi, sphalb_hi, transm_hi, transup_hi = RT.get(x_RT, geom)
+    #rhoatm_hi, sphalb_hi, transm_hi, transup_hi = RT.get(x_RT, geom)
+    rhi = RT.get(x_RT, geom)
     wl, fwhm = instrument.calibration(x_instrument)
-    rhoatm = instrument.sample(x_instrument, RT.wl, rhoatm_hi)
-    transm = instrument.sample(x_instrument, RT.wl, transm_hi)
+    rhoatm = instrument.sample(x_instrument, RT.wl, rhi['rhoatm']) #_hi)
+    transm = instrument.sample(x_instrument, RT.wl, rhi['transm']) #_hi)
     solar_irr = instrument.sample(x_instrument, RT.wl, RT.solar_irr)
-    sphalb = instrument.sample(x_instrument, RT.wl, sphalb_hi)
-    transup = instrument.sample(x_instrument, RT.wl, transup_hi)
+    sphalb = instrument.sample(x_instrument, RT.wl, rhi['sphalb']) #_hi)
+    transup = instrument.sample(x_instrument, RT.wl, rhi['transup']) #_hi)
     coszen = RT.coszen
 
     # Calculate the initial emission and subtract from the measurement.

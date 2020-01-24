@@ -70,6 +70,8 @@ class TabularRT:
         self.n_point = len(self.lut_grid)
         self.n_state = len(self.statevec)
 
+        self.luts = {}
+
         # Retrieved variables.  We establish scaling, bounds, and
         # initial guesses for each state vector element.  The state
         # vector elements are all free parameters in the RT lookup table,
@@ -153,82 +155,6 @@ class TabularRT:
             r.wait()
             os.chdir(cwd)
 
-        # load the RT runs, one per grid point of the LUT
-        # to do: use high-res output
-        self.solar_irr = None
-        for point, fn in zip(self.points, self.files):
-            chnfile = self.lut_dir+'/'+fn+'.chn'
-            wl, sol, solzen, rhoatm, transm, sphalb, transup = \
-                self.load_rt(point, fn)
-
-            if self.solar_irr is None:  # first file
-                self.solar_irr = sol
-                self.coszen = s.cos(solzen * s.pi / 180.0)
-                dims_aug = self.lut_dims + [self.n_chan]
-                self.sphalb = s.zeros(dims_aug, dtype=float)
-                self.transm = s.zeros(dims_aug, dtype=float)
-                self.rhoatm = s.zeros(dims_aug, dtype=float)
-                self.transup = s.zeros(dims_aug, dtype=float)
-                self.wl = wl
-
-            ind = [s.where(g == p)[0] for g, p in zip(self.lut_grids, point)]
-            ind = s.array(ind)
-            self.rhoatm[ind] = rhoatm
-            self.sphalb[ind] = sphalb
-            self.transm[ind] = transm
-            self.transup[ind] = transup
-
-        self.rhoatm_interp = VectorInterpolatorJIT(self.lut_grids, self.rhoatm)
-        self.sphalb_interp = VectorInterpolatorJIT(self.lut_grids, self.sphalb)
-        self.transm_interp = VectorInterpolatorJIT(self.lut_grids, self.transm)
-        self.transup_interp = VectorInterpolatorJIT(
-            self.lut_grids, self.transm)
-
-    def lookup_lut(self, point):
-        """Multi-linear interpolation in the LUT."""
-
-        rhoatm = s.array(self.rhoatm_interp(point)).ravel()
-        sphalb = s.array(self.sphalb_interp(point)).ravel()
-        transm = s.array(self.transm_interp(point)).ravel()
-        transup = s.array(self.transup_interp(point)).ravel()
-        return rhoatm, sphalb, transm, transup
-
-    def get(self, x_RT, geom):
-        if self.n_point == self.n_state:
-            return self.lookup_lut(x_RT)
-        else:
-            point = s.zeros((self.n_point,))
-            for point_ind, name in enumerate(self.lut_grid):
-                if name in self.statevec:
-                    x_RT_ind = self.statevec.index(name)
-                    point[point_ind] = x_RT[x_RT_ind]
-                elif name == "OBSZEN":
-                    point[point_ind] = geom.OBSZEN
-                elif name == "GNDALT":
-                    point[point_ind] = geom.GNDALT
-                elif name == "viewzen":
-                    point[point_ind] = geom.observer_zenith
-                elif name == "viewaz":
-                    point[point_ind] = geom.observer_azimuth
-                elif name == "solaz":
-                    point[point_ind] = geom.solar_azimuth
-                elif name == "solzen":
-                    point[point_ind] = geom.solar_zenith
-                elif name == "TRUEAZ":
-                    point[point_ind] = geom.TRUEAZ
-                elif name == 'phi':
-                    point[point_ind] = geom.phi
-                elif name == 'umu':
-                    point[point_ind] = geom.umu
-                else:
-                    # If a variable is defined in the lookup table but not
-                    # specified elsewhere, we will default to the minimum
-                    point[point_ind] = min(self.lut_grid[name])
-            for x_RT_ind, name in enumerate(self.statevec):
-                point_ind = self.lut_names.index(name)
-                point[point_ind] = x_RT[x_RT_ind]
-            return self.lookup_lut(point)
-
     def calc_rdn(self, x_RT, rfl, Ls, geom):
         """Calculate radiance at aperature for a radiative transfer state vector.
 
@@ -238,9 +164,12 @@ class TabularRT:
         if Ls is None:
             Ls = s.zeros(rfl.shape)
 
-        rhoatm, sphalb, transm, transup = self.get(x_RT, geom)
-        rho = rhoatm + transm * rfl / (1.0 - sphalb * rfl)
-        rdn = rho/s.pi*(self.solar_irr*self.coszen) + (Ls * transup)
+        #rhoatm, sphalb, transm, transup = self.get(x_RT, geom)
+        #rho = rhoatm + transm * rfl / (1.0 - sphalb * rfl)
+        #rdn = rho/s.pi*(self.solar_irr*self.coszen) + (Ls * transup)
+        r = self.get(x_RT, geom)
+        rho = r['rhoatm'] + r['transm'] * rfl / (1.0 - r['sphalb'] * rfl)
+        rdn = rho/s.pi*(self.solar_irr*self.coszen) + (Ls * r['transup'])
         return rdn
 
     def drdn_dRT(self, x_RT, x_surface, rfl, drfl_dsurface, Ls, dLs_dsurface,
@@ -248,18 +177,20 @@ class TabularRT:
         """Jacobian of radiance with respect to RT and surface state vectors."""
 
         # first the rdn at the current state vector
-        rhoatm, sphalb, transm, transup = self.get(x_RT, geom)
-        rho = rhoatm + transm * rfl / (1.0 - sphalb * rfl)
-        rdn = rho/s.pi*(self.solar_irr*self.coszen) + (Ls * transup)
+        #rhoatm, sphalb, transm, transup = self.get(x_RT, geom)
+        r = self.get(x_RT, geom)
+        rho = r['rhoatm'] + r['transm'] * rfl / (1.0 - r['sphalb'] * rfl)
+        rdn = rho/s.pi*(self.solar_irr*self.coszen) + (Ls * r['transup'])
 
         # perturb each element of the RT state vector (finite difference)
         K_RT = []
         for i in range(len(x_RT)):
             x_RT_perturb = x_RT.copy()
             x_RT_perturb[i] = x_RT[i] + eps
-            rhoatme, sphalbe, transme, transupe = self.get(x_RT_perturb, geom)
-            rhoe = rhoatme + transme * rfl / (1.0 - sphalbe * rfl)
-            rdne = rhoe/s.pi*(self.solar_irr*self.coszen) + (Ls * transupe)
+            #rhoatme, sphalbe, transme, transupe = self.get(x_RT_perturb, geom)
+            re = self.get(x_RT_perturb, geom)
+            rhoe = re['rhoatm'] + re['transm'] * rfl / (1.0 - re['sphalb'] * rfl)
+            rdne = rhoe/s.pi*(self.solar_irr*self.coszen) + (Ls * re['transup'])
             K_RT.append((rdne-rdn) / eps)
         K_RT = s.array(K_RT).T
 
@@ -267,9 +198,9 @@ class TabularRT:
         K_surface = []
         for i in range(len(x_surface)):
             drho_drfl = \
-                (transm/(1-sphalb*rfl)-(sphalb*transm*rfl)/pow(1-sphalb*rfl, 2))
+                (r['transm']/(1-r['sphalb']*rfl)-(r['sphalb']*r['transm']*rfl)/pow(1-r['sphalb']*rfl, 2))
             drdn_drfl = drho_drfl/s.pi*(self.solar_irr*self.coszen)
-            drdn_dLs = transup
+            drdn_dLs = r['transup']
             K_surface.append(drdn_drfl * drfl_dsurface[:, i] +
                              drdn_dLs * dLs_dsurface[:, i])
         K_surface = s.array(K_surface).T
@@ -285,9 +216,11 @@ class TabularRT:
 
         else:
             # first the radiance at the current state vector
-            rhoatm, sphalb, transm, transup = self.get(x_RT, geom)
-            rho = rhoatm + transm * rfl / (1.0 - sphalb * rfl)
-            rdn = rho/s.pi*(self.solar_irr*self.coszen) + (Ls * transup)
+            #rhoatm, sphalb, transm, transup = self.get(x_RT, geom)
+            r = self.get(x_RT, geom)
+            #rho = rhoatm + transm * rfl / (1.0 - sphalb * rfl)
+            rho = r['rhoatm'] + r['transm'] * rfl / (1.0 - r['sphalb'] * rfl)
+            rdn = rho/s.pi*(self.solar_irr*self.coszen) + (Ls * r['transup'])
 
             # perturb the sky view
             Kb_RT = []
@@ -295,25 +228,27 @@ class TabularRT:
             for unknown in self.bvec:
 
                 if unknown == 'Skyview':
-                    rhoe = rhoatm + transm * rfl / (1.0 - sphalb * rfl *
-                                                    perturb)
+                    rhoe = r['rhoatm'] + r['transm'] * rfl / (1.0 - r['sphalb'] * rfl * perturb)
                     rdne = rhoe/s.pi*(self.solar_irr*self.coszen)
                     Kb_RT.append((rdne-rdn) / eps)
 
                 elif unknown == 'H2O_ABSCO' and 'H2OSTR' in self.statevec:
                     # first the radiance at the current state vector
-                    rhoatm, sphalb, transm, transup = self.get(x_RT, geom)
-                    rho = rhoatm + transm * rfl / (1.0 - sphalb * rfl)
+                    #rhoatm, sphalb, transm, transup = self.get(x_RT, geom)
+                    r = self.get(x_RT, geom)
+                    #rho = rhoatm + transm * rfl / (1.0 - sphalb * rfl)
+                    rho = r['rhoatm'] + r['transm'] * rfl / (1.0 - r['sphalb'] * rfl)
                     rdn = rho/s.pi*(self.solar_irr*self.coszen) + (Ls *
-                                                                   transup)
+                                                                   r['transup'])
                     i = self.statevec.index('H2OSTR')
                     x_RT_perturb = x_RT.copy()
                     x_RT_perturb[i] = x_RT[i] * perturb
-                    rhoatme, sphalbe, transme, transupe = self.get(
-                        x_RT_perturb, geom)
-                    rhoe = rhoatme + transme * rfl / (1.0 - sphalbe * rfl)
+                    #rhoatme, sphalbe, transme, transupe = self.get(
+                    re = self.get(x_RT_perturb, geom)
+                    rhoe = re['rhoatm'] + re['transm'] * rfl / (1.0 - re['sphalb'] * rfl)
+                    #rhoe = rhoatme + transme * rfl / (1.0 - sphalbe * rfl)
                     rdne = rhoe/s.pi*(self.solar_irr*self.coszen) + (Ls *
-                                                                     transup)
+                                                                     re['transup'])
                     Kb_RT.append((rdne-rdn) / eps)
 
         Kb_RT = s.array(Kb_RT).T

@@ -29,8 +29,10 @@ import scipy as s
 from scipy.stats import norm as normal
 from scipy.interpolate import interp1d
 
-from .look_up_tables import TabularRT, FileExistsError
+from ..radiative_transfer.look_up_tables import TabularRT, FileExistsError
 from ..core.common import json_load_ascii, recursive_replace
+
+from ..core.common import combos, VectorInterpolatorJIT, eps, load_wavelen
 
 
 ### Variables ###
@@ -72,6 +74,10 @@ class ModtranRT(TabularRT):
             self.aer_absc = s.array(aer_absc)
             self.aer_extc = s.array(aer_extc)
             self.aer_asym = s.array(aer_asym)
+        
+        self.band_mode_string = 'visnir'
+        if self.band_mode_string.lower() == 'visnir':
+            self.modtran_lut_names = ['rhoatm', 'transm', 'sphalb', 'transup']
 
         # Build the lookup table
         self.build_lut()
@@ -225,6 +231,25 @@ class ModtranRT(TabularRT):
 
         TabularRT.build_lut(self, rebuild)
 
+        mod_outputs = []
+        for point, fn in zip(self.points, self.files):
+            chnfile = self.lut_dir+'/'+fn+'.chn'
+            mod_outputs.append(self.load_rt(point, fn))
+        self.wl = mod_outputs[0]['wl']
+        self.solar_irr = mod_outputs[0]['sol']
+        self.coszen = s.cos(mod_outputs[0]['solzen'] * s.pi / 180.0)
+
+        dims_aug = self.lut_dims + [self.n_chan]
+        for key in self.modtran_lut_names:
+            temp = s.zeros(dims_aug, dtype=float)
+            for mod_output, point in zip(mod_outputs, self.points):
+                ind = [s.where(g == p)[0] for g, p in zip(self.lut_grids, point)]
+                ind = s.array(ind)
+                temp[ind] = mod_output[key]
+
+            self.luts[key] = VectorInterpolatorJIT(self.lut_grids, temp)
+
+
     def rebuild_cmd(self, point, fn):
         """."""
 
@@ -290,9 +315,58 @@ class ModtranRT(TabularRT):
         solzen = self.load_tp6(tp6file)
         coszen = s.cos(solzen * s.pi / 180.0)
         chnfile = self.lut_dir+'/'+fn+'.chn'
-        wl, sol, rhoatm, transm, sphalb, transup = self.load_chn(
-            chnfile, coszen)
-        return wl, sol, solzen, rhoatm, transm, sphalb, transup
+        #wl, sol, rhoatm, transm, sphalb, transup = self.load_chn(
+        params = self.load_chn(chnfile, coszen)
+        names = ['wl', 'sol', 'rhoatm', 'transm', 'sphalb', 'transup']
+        results_dict = {name:param for name, param in zip(names,params)}
+        results_dict['solzen'] = solzen
+        results_dict['coszen'] = coszen
+        #return wl, sol, solzen, rhoatm, transm, sphalb, transup
+        return results_dict
+
+    def lookup_lut(self, point):
+        ret = {}
+        for key, lut in self.luts.items():
+            ret[key] = s.array(lut(point)).ravel()
+        
+        return ret
+
+    def get(self, x_RT, geom):
+        if self.n_point == self.n_state:
+            return self.lookup_lut(x_RT)
+        else:
+            point = s.zeros((self.n_point,))
+            for point_ind, name in enumerate(self.lut_grid):
+                if name in self.statevec:
+                    x_RT_ind = self.statevec.index(name)
+                    point[point_ind] = x_RT[x_RT_ind]
+                elif name == "OBSZEN":
+                    point[point_ind] = geom.OBSZEN
+                elif name == "GNDALT":
+                    point[point_ind] = geom.GNDALT
+                elif name == "viewzen":
+                    point[point_ind] = geom.observer_zenith
+                elif name == "viewaz":
+                    point[point_ind] = geom.observer_azimuth
+                elif name == "solaz":
+                    point[point_ind] = geom.solar_azimuth
+                elif name == "solzen":
+                    point[point_ind] = geom.solar_zenith
+                elif name == "TRUEAZ":
+                    point[point_ind] = geom.TRUEAZ
+                elif name == 'phi':
+                    point[point_ind] = geom.phi
+                elif name == 'umu':
+                    point[point_ind] = geom.umu
+                else:
+                    # If a variable is defined in the lookup table but not
+                    # specified elsewhere, we will default to the minimum
+                    point[point_ind] = min(self.lut_grid[name])
+            for x_RT_ind, name in enumerate(self.statevec):
+                point_ind = self.lut_names.index(name)
+                point[point_ind] = x_RT[x_RT_ind]
+            return self.lookup_lut(point)
+
 
     def wl2flt(self, wls, fwhms, outfile):
         """Helper function to generate Gaussian distributions around the center wavelengths."""
