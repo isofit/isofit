@@ -43,7 +43,6 @@ class FileExistsError(Exception):
     def __init__(self, message):
         super(FileExistsError, self).__init__(message)
 
-
 class TabularRT:
     """A model of photon transport including the atmosphere."""
 
@@ -154,94 +153,6 @@ class TabularRT:
             r = pool.map_async(spawn_rt, rebuild_cmds)
             r.wait()
             os.chdir(cwd)
-
-    def calc_rdn(self, x_RT, rfl, Ls, geom):
-        """Calculate radiance at aperature for a radiative transfer state vector.
-
-        rfl is the reflectance at surface. 
-        Ls is the  emissive radiance at surface."""
-
-        if Ls is None:
-            Ls = s.zeros(rfl.shape)
-
-        r = self.get(x_RT, geom)
-        rho = r['rhoatm'] + r['transm'] * rfl / (1.0 - r['sphalb'] * rfl)
-        rdn = rho/s.pi*(self.solar_irr*self.coszen) + (Ls * r['transup'])
-        return rdn
-
-    def drdn_dRT(self, x_RT, x_surface, rfl, drfl_dsurface, Ls, dLs_dsurface,
-                 geom):
-        """Jacobian of radiance with respect to RT and surface state vectors."""
-
-        # first the rdn at the current state vector
-        r = self.get(x_RT, geom)
-        rho = r['rhoatm'] + r['transm'] * rfl / (1.0 - r['sphalb'] * rfl)
-        rdn = rho/s.pi*(self.solar_irr*self.coszen) + (Ls * r['transup'])
-
-        # perturb each element of the RT state vector (finite difference)
-        K_RT = []
-        for i in range(len(x_RT)):
-            x_RT_perturb = x_RT.copy()
-            x_RT_perturb[i] = x_RT[i] + eps
-            re = self.get(x_RT_perturb, geom)
-            rhoe = re['rhoatm'] + re['transm'] * rfl / (1.0 - re['sphalb'] * rfl)
-            rdne = rhoe/s.pi*(self.solar_irr*self.coszen) + (Ls * re['transup'])
-            K_RT.append((rdne-rdn) / eps)
-        K_RT = s.array(K_RT).T
-
-        # analytical jacobians for surface model state vector, via chain rule
-        K_surface = []
-        for i in range(len(x_surface)):
-            drho_drfl = \
-                (r['transm']/(1-r['sphalb']*rfl)-(r['sphalb']*r['transm']*rfl)/pow(1-r['sphalb']*rfl, 2))
-            drdn_drfl = drho_drfl/s.pi*(self.solar_irr*self.coszen)
-            drdn_dLs = r['transup']
-            K_surface.append(drdn_drfl * drfl_dsurface[:, i] +
-                             drdn_dLs * dLs_dsurface[:, i])
-        K_surface = s.array(K_surface).T
-
-        return K_RT, K_surface
-
-    def drdn_dRTb(self, x_RT, rfl, Ls, geom):
-        """Jacobian of radiance with respect to NOT RETRIEVED RT and surface 
-           state.  Right now, this is just the sky view factor."""
-
-        if len(self.bvec) == 0:
-            Kb_RT = s.zeros((0, len(self.wl.shape)))
-
-        else:
-            # first the radiance at the current state vector
-            r = self.get(x_RT, geom)
-            rho = r['rhoatm'] + r['transm'] * rfl / (1.0 - r['sphalb'] * rfl)
-            rdn = rho/s.pi*(self.solar_irr*self.coszen) + (Ls * r['transup'])
-
-            # perturb the sky view
-            Kb_RT = []
-            perturb = (1.0+eps)
-            for unknown in self.bvec:
-
-                if unknown == 'Skyview':
-                    rhoe = r['rhoatm'] + r['transm'] * rfl / (1.0 - r['sphalb'] * rfl * perturb)
-                    rdne = rhoe/s.pi*(self.solar_irr*self.coszen)
-                    Kb_RT.append((rdne-rdn) / eps)
-
-                elif unknown == 'H2O_ABSCO' and 'H2OSTR' in self.statevec:
-                    # first the radiance at the current state vector
-                    r = self.get(x_RT, geom)
-                    rho = r['rhoatm'] + r['transm'] * rfl / (1.0 - r['sphalb'] * rfl)
-                    rdn = rho/s.pi*(self.solar_irr*self.coszen) + (Ls *
-                                                                   r['transup'])
-                    i = self.statevec.index('H2OSTR')
-                    x_RT_perturb = x_RT.copy()
-                    x_RT_perturb[i] = x_RT[i] * perturb
-                    re = self.get(x_RT_perturb, geom)
-                    rhoe = re['rhoatm'] + re['transm'] * rfl / (1.0 - re['sphalb'] * rfl)
-                    rdne = rhoe/s.pi*(self.solar_irr*self.coszen) + (Ls *
-                                                                     re['transup'])
-                    Kb_RT.append((rdne-rdn) / eps)
-
-        Kb_RT = s.array(Kb_RT).T
-        return Kb_RT
 
     def summarize(self, x_RT, geom):
         """Summary of state vector."""

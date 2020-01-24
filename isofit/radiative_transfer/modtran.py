@@ -368,6 +368,106 @@ class ModtranRT(TabularRT):
                 point[point_ind] = x_RT[x_RT_ind]
             return self.lookup_lut(point)
 
+    def calc_rdn(self, x_RT, rfl, Ls, geom):
+        """Calculate radiance at aperature for a radiative transfer state vector.
+
+        rfl is the reflectance at surface. 
+        Ls is the  emissive radiance at surface."""
+
+        r = self.get(x_RT, geom)
+
+        if self.band_mode_string.lower() == 'visnir':
+            return self.calc_rdn_visnir(r, rfl)
+        else:
+            raise NotImplementedError
+
+    def calc_rdn_visnir(self, r, rfl, perturb = 1.):
+
+        Ls = s.zeros(rfl.shape)
+
+        rho = r['rhoatm'] + r['transm'] * rfl / (1.0 - r['sphalb'] * rfl * perturb)
+        rdn = rho/s.pi*(self.solar_irr*self.coszen) + (Ls * r['transup'])
+        return rdn
+    
+    def drdn_dRT(self, x_RT, x_surface, rfl, drfl_dsurface, Ls, dLs_dsurface,
+                 geom):
+        
+        if self.band_mode_string.lower() == 'visnir':
+            return self.drdn_dRT_visnir(x_RT, x_surface, rfl, drfl_dsurface, 
+                                   Ls, dLs_dsurface, geom)
+        else:
+            raise NotImplementedError
+
+    def drdn_dRT_visnir(self, x_RT, x_surface, rfl, drfl_dsurface, Ls, dLs_dsurface,
+                 geom):
+        """Jacobian of radiance with respect to RT and surface state vectors."""
+
+        # first the rdn at the current state vector
+        r = self.get(x_RT, geom)
+        rdn = self.calc_rdn_visnir(r, rfl)
+
+        # perturb each element of the RT state vector (finite difference)
+        K_RT = []
+        x_RTs_perturb = x_RT + s.eye(len(x_RT))*eps
+        for x_RT_perturb in list(x_RTs_perturb): 
+            re = self.get(x_RT_perturb, geom)
+            rdne = self.calc_rdn_visnir(re, rfl)
+            K_RT.append((rdne-rdn) / eps)
+        K_RT = s.array(K_RT).T
+
+        # analytical jacobians for surface model state vector, via chain rule
+        K_surface = []
+        for i in range(len(x_surface)):
+            drho_drfl = \
+                (r['transm']/(1-r['sphalb']*rfl) -
+                 (r['sphalb']*r['transm']*rfl)/pow(1-r['sphalb']*rfl, 2))
+            drdn_drfl = drho_drfl/s.pi*(self.solar_irr*self.coszen)
+            drdn_dLs = r['transup']
+            K_surface.append(drdn_drfl * drfl_dsurface[:, i] +
+                             drdn_dLs * dLs_dsurface[:, i])
+        K_surface = s.array(K_surface).T
+
+        return K_RT, K_surface
+
+    def drdn_dRTb(self, x_RT, rfl, Ls, geom):
+
+        if self.band_mode_string.lower() == 'visnir':
+            return self.drdn_dRTb_visnir(x_RT, rfl, Ls, geom)
+        else:
+            raise NotImplementedError
+
+    def drdn_dRTb_visnir(self, x_RT, rfl, Ls, geom):
+        """Jacobian of radiance with respect to NOT RETRIEVED RT and surface 
+           state.  Right now, this is just the sky view factor."""
+
+        if len(self.bvec) == 0:
+            Kb_RT = s.zeros((0, len(self.wl.shape)))
+
+        else:
+            # first the radiance at the current state vector
+            r = self.get(x_RT, geom)
+            rdn = self.calc_rdn_visnir(r, rfl)
+
+            # perturb the sky view
+            Kb_RT = []
+            perturb = (1.0+eps)
+            for unknown in self.bvec:
+
+                if unknown == 'Skyview':
+                    rdne = self.calc_rdn_visnir(r, rfl, perturb = perturb)
+                    Kb_RT.append((rdne-rdn) / eps)
+
+                elif unknown == 'H2O_ABSCO' and 'H2OSTR' in self.statevec:
+                    # first the radiance at the current state vector
+                    i = self.statevec.index('H2OSTR')
+                    x_RT_perturb = x_RT.copy()
+                    x_RT_perturb[i] = x_RT[i] * perturb
+                    re = self.get(x_RT_perturb, geom)
+                    rdne = self.calc_rdn_visnir(re, rfl)
+                    Kb_RT.append((rdne-rdn) / eps)
+
+        Kb_RT = s.array(Kb_RT).T
+        return Kb_RT
 
     def wl2flt(self, wls, fwhms, outfile):
         """Helper function to generate Gaussian distributions around the center wavelengths."""
