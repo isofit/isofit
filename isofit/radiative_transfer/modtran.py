@@ -235,6 +235,7 @@ class ModtranRT(TabularRT):
         for point, fn in zip(self.points, self.files):
             chnfile = self.lut_dir+'/'+fn+'.chn'
             mod_outputs.append(self.load_rt(point, fn))
+
         self.wl = mod_outputs[0]['wl']
         self.solar_irr = mod_outputs[0]['sol']
         self.coszen = s.cos(mod_outputs[0]['solzen'] * s.pi / 180.0)
@@ -314,14 +315,14 @@ class ModtranRT(TabularRT):
         tp6file = self.lut_dir+'/'+fn+'.tp6'
         solzen = self.load_tp6(tp6file)
         coszen = s.cos(solzen * s.pi / 180.0)
+
         chnfile = self.lut_dir+'/'+fn+'.chn'
-        #wl, sol, rhoatm, transm, sphalb, transup = self.load_chn(
         params = self.load_chn(chnfile, coszen)
+
         names = ['wl', 'sol', 'rhoatm', 'transm', 'sphalb', 'transup']
         results_dict = {name:param for name, param in zip(names,params)}
         results_dict['solzen'] = solzen
         results_dict['coszen'] = coszen
-        #return wl, sol, solzen, rhoatm, transm, sphalb, transup
         return results_dict
 
     def lookup_lut(self, point):

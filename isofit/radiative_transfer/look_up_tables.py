@@ -164,9 +164,6 @@ class TabularRT:
         if Ls is None:
             Ls = s.zeros(rfl.shape)
 
-        #rhoatm, sphalb, transm, transup = self.get(x_RT, geom)
-        #rho = rhoatm + transm * rfl / (1.0 - sphalb * rfl)
-        #rdn = rho/s.pi*(self.solar_irr*self.coszen) + (Ls * transup)
         r = self.get(x_RT, geom)
         rho = r['rhoatm'] + r['transm'] * rfl / (1.0 - r['sphalb'] * rfl)
         rdn = rho/s.pi*(self.solar_irr*self.coszen) + (Ls * r['transup'])
@@ -177,7 +174,6 @@ class TabularRT:
         """Jacobian of radiance with respect to RT and surface state vectors."""
 
         # first the rdn at the current state vector
-        #rhoatm, sphalb, transm, transup = self.get(x_RT, geom)
         r = self.get(x_RT, geom)
         rho = r['rhoatm'] + r['transm'] * rfl / (1.0 - r['sphalb'] * rfl)
         rdn = rho/s.pi*(self.solar_irr*self.coszen) + (Ls * r['transup'])
@@ -187,7 +183,6 @@ class TabularRT:
         for i in range(len(x_RT)):
             x_RT_perturb = x_RT.copy()
             x_RT_perturb[i] = x_RT[i] + eps
-            #rhoatme, sphalbe, transme, transupe = self.get(x_RT_perturb, geom)
             re = self.get(x_RT_perturb, geom)
             rhoe = re['rhoatm'] + re['transm'] * rfl / (1.0 - re['sphalb'] * rfl)
             rdne = rhoe/s.pi*(self.solar_irr*self.coszen) + (Ls * re['transup'])
@@ -216,9 +211,7 @@ class TabularRT:
 
         else:
             # first the radiance at the current state vector
-            #rhoatm, sphalb, transm, transup = self.get(x_RT, geom)
             r = self.get(x_RT, geom)
-            #rho = rhoatm + transm * rfl / (1.0 - sphalb * rfl)
             rho = r['rhoatm'] + r['transm'] * rfl / (1.0 - r['sphalb'] * rfl)
             rdn = rho/s.pi*(self.solar_irr*self.coszen) + (Ls * r['transup'])
 
@@ -234,19 +227,15 @@ class TabularRT:
 
                 elif unknown == 'H2O_ABSCO' and 'H2OSTR' in self.statevec:
                     # first the radiance at the current state vector
-                    #rhoatm, sphalb, transm, transup = self.get(x_RT, geom)
                     r = self.get(x_RT, geom)
-                    #rho = rhoatm + transm * rfl / (1.0 - sphalb * rfl)
                     rho = r['rhoatm'] + r['transm'] * rfl / (1.0 - r['sphalb'] * rfl)
                     rdn = rho/s.pi*(self.solar_irr*self.coszen) + (Ls *
                                                                    r['transup'])
                     i = self.statevec.index('H2OSTR')
                     x_RT_perturb = x_RT.copy()
                     x_RT_perturb[i] = x_RT[i] * perturb
-                    #rhoatme, sphalbe, transme, transupe = self.get(
                     re = self.get(x_RT_perturb, geom)
                     rhoe = re['rhoatm'] + re['transm'] * rfl / (1.0 - re['sphalb'] * rfl)
-                    #rhoe = rhoatme + transme * rfl / (1.0 - sphalbe * rfl)
                     rdne = rhoe/s.pi*(self.solar_irr*self.coszen) + (Ls *
                                                                      re['transup'])
                     Kb_RT.append((rdne-rdn) / eps)
