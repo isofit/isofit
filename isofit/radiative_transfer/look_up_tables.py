@@ -91,18 +91,6 @@ class TabularRT:
         self.prior_sigma = s.array(self.prior_sigma)
         self.bval = s.array([config['unknowns'][k] for k in self.bvec])
 
-    def xa(self):
-        """Mean of prior distribution, calculated at state x. This is the
-           Mean of our LUT grid (why not)."""
-        return self.prior_mean.copy()
-
-    def Sa(self):
-        """Covariance of prior distribution. Our state vector covariance 
-           is diagonal with very loose constraints."""
-        if self.n_state == 0:
-            return s.zeros((0, 0), dtype=float)
-        return s.diagflat(pow(self.prior_sigma, 2))
-
     def build_lut(self, rebuild=False):
         """Each LUT is associated with a source directory.  We build a lookup table by: 
               (1) defining the LUT dimensions, state vector names, and the grid 

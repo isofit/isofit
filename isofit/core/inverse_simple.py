@@ -46,19 +46,20 @@ def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
             continue
 
         # ignore unused names
-        if h2oname not in RT.lut_names:
+        if h2oname not in RT.RTs['modtran_visnir'].lut_names:
             continue
 
         # find the index in the lookup table associated with water vapor
-        ind_lut = RT.lut_names.index(h2oname)
-        ind_sv = RT.statevec.index(h2oname)
+        #lut_names = RT.RTs['modtran_visnir'].lut_names
+        ind_lut = RT.RTs['modtran_visnir'].lut_names.index(h2oname)
+        ind_sv = RT.unique_statevec.index(h2oname)
         h2os, ratios = [], []
 
         # We iterate through every possible grid point in the lookup table,
         # calculating the band ratio that we would see if this were the
         # atmospheric H2O content.  It assumes that defaults for all other
         # atmospheric parameters (such as aerosol, if it is there).
-        for h2o in RT.lut_grids[ind_lut]:
+        for h2o in RT.RTs['modtran_visnir'].lut_grids[ind_lut]:
 
             # Get Atmospheric terms at high spectral resolution
             x_RT_2 = x_RT.copy()
