@@ -33,7 +33,7 @@
     },
 
     "radiative_transfer": {
-      "modtran_visnir": {
+      "modtran_vswir": {
         "wavelength_file": "../remote/20170320_ang20170228_wavelength_fit.txt",
         "lut_path":"../lut/",
         "modtran_template_file":"ang20171108t184227_modtran.json",
