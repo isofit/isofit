@@ -22,7 +22,6 @@ import scipy as s
 import logging
 from copy import deepcopy
 from collections import OrderedDict
-import pdb
 
 from ..core.common import json_load_ascii
 from ..radiative_transfer.modtran import modtran_bands_available, ModtranRT
@@ -63,113 +62,77 @@ class RadiativeTransfer():
             else:
                 raise NotImplementedError
 
-        #TODO: fix for multiple bands
         self.wl = s.squeeze(s.array([RT.wl for RT in self.RTs.values()]))
+
         # The state vector is made of up unique elements of the individual RTs.
         # The idea is that each RT LUT may need H20STR, for example, but we
         # only want a single H20STR value in the statevector as it is shared.
         all_statevec = [s for RT in self.RTs.values() for s in RT.statevec] # Flatten a list of lists
         self.unique_statevec = list(set(all_statevec)) # Get unique elements
         self.unique_statevec.sort()
-        self.len_statevecs = [RT.n_state for RT in self.RTs.values()]
 
-
-        #self.statevec = self.RTs['modtran_visnir'].statevec
         self.statevec = self.unique_statevec
 
-        #self.bounds = self.RTs['modtran_visnir'].bounds
-        #self.scale = self.RTs['modtran_visnir'].scale
-        #self.init = self.RTs['modtran_visnir'].init
-        bounds = []
-        scale = []
-        init = []
-        print(self.unique_statevec, self.RTs['modtran_visnir'].statevec)
-        for key in self.unique_statevec:
-            if key in self.RTs['modtran_visnir'].statevec:
-                RT_temp = self.RTs['modtran_visnir']
-                bounds.append(RT_temp.bounds[RT_temp.statevec.index(key)])
-                scale.append(RT_temp.scale[RT_temp.statevec.index(key)])
-                init.append(RT_temp.init[RT_temp.statevec.index(key)])
-        self.bounds = bounds
-        self.scale = scale
-        self.init = init
+        statevec_temp, bounds, scales, inits = [], [], [], []
+        for RT in self.RTs.values():
+            statevec_temp = statevec_temp + [statevec for statevec in RT.statevec]
+            bounds = bounds + [bound for bound in RT.bounds]
+            scales = scales + [scale for scale in RT.scale]
+            inits = inits + [init for init in RT.init]
+        
+        self.bounds, self.scale, self.init = [], [], []
+        for unique_statevec_component in self.unique_statevec:
+            self.bounds.append(bounds[statevec_temp.index(unique_statevec_component)])
+            self.scale.append(scales[statevec_temp.index(unique_statevec_component)])
+            self.init.append(inits[statevec_temp.index(unique_statevec_component)])
+        
+        self.bvec = [bvec for bvec in RT.bvec for RT in self.RTs.values()]
+        self.bval = s.hstack([RT.bval for RT in self.RTs.values()])
+        # Not quite sure what to do with this right now. This check is to ensure
+        # that future updates correctly handle additions to bvec and bval
+        if len(self.bvec) != 1:
+            raise NotImplementedError
 
-        self.bvec = self.RTs['modtran_visnir'].bvec
-        self.bval = self.RTs['modtran_visnir'].bval
-        #self.lut_names = self.RTs['modtran_visnir'].lut_names
-        #self.lut_names = self.unique_statevec
-
-        #lut_grids = []
-        #print(self.unique_statevec, self.RTs['modtran_visnir'].statevec)
-        #for key in self.unique_statevec:
-        #    if key in self.RTs['modtran_visnir'].statevec:
-        #        RT_temp = self.RTs['modtran_visnir']
-        #        lut_grids.append(RT_temp.lut_grids[RT_temp.statevec.index(key)])
-        #self.lut_grids = lut_grids
-        self.solar_irr = self.RTs['modtran_visnir'].solar_irr
-        self.coszen = self.RTs['modtran_visnir'].coszen
-
-        #self. = s.squeeze(s.array([RT. for RT in self.RTs.values()]))
-        #self. = s.squeeze(s.array([RT. for RT in self.RTs.values()]))
-        #self. = s.squeeze(s.array([RT. for RT in self.RTs.values()]))
-        #self. = s.squeeze(s.array([RT. for RT in self.RTs.values()]))
-        #self. = s.squeeze(s.array([RT. for RT in self.RTs.values()]))
-        #self. = s.squeeze(s.array([RT. for RT in self.RTs.values()]))
-        #self. = s.squeeze(s.array([RT. for RT in self.RTs.values()]))
-        #self. = s.squeeze(s.array([RT. for RT in self.RTs.values()]))
-        #self. = s.squeeze(s.array([RT. for RT in self.RTs.values()]))
-        #self. = s.squeeze(s.array([RT. for RT in self.RTs.values()]))
+        self.solar_irr = s.squeeze(s.array([RT.solar_irr for RT in self.RTs.values()]))
+        self.coszen = s.squeeze(s.array([RT.coszen for RT in self.RTs.values()]))
 
     def xa(self):
-        #xa = self.RTs['modtran_visnir'].xa()
+        """Pull the priors from each of the individual RTs and order them
+        in the same order as unique_statevec.
+        TODO: check that the user correctly entered the priors
+        TODO: the same for each radiative_transfer entry in the json input
+        """
         prior_means = []
-        # We want to get the prior mean for each unique_statevec
-        # element in its order. For state vector elements that are
-        # shared between multiple RTMs, assume that the user
-        # correctly entered the priors as being the same.
-        # TODO: check that the user correctly entered the priors
-        # TODO: the same for each radiative_transfer entry in the json input
 
-        prior_means = []
-        # List of tuples of all RTs: (statevec_name, prior_mean)
-        # For example: 
-        for key, RT in self.RTs.items():
-            prior_means = prior_means + \
-                          [(statevec, prior_mean) for statevec, prior_mean in zip(RT.statevec, RT.prior_mean)]
+        statevec_temp, all_prior_means = [], []
+        for RT in self.RTs.values():
+            statevec_temp = statevec_temp + [statevec for statevec in RT.statevec]
+            all_prior_means = all_prior_means + [prior_mean for prior_mean in RT.prior_mean]
+
+        prior_mean = []
+        for unique_statevec_component in self.unique_statevec:
+            prior_mean.append(all_prior_means[statevec_temp.index(unique_statevec_component)])
         
-        prior_means = list(set(prior_means)) # Keep only unique entries
-
-        # Unless the user entered different priors for the same state vector elements
-        # in different 'radiative_tranfer' json entries, these should be the same size.
-        if len(prior_means) != len(self.unique_statevec):
-            raise AssertionError
-
-        prior_means.sort()  # Sort them into the same order as self.unique_statevec
-        prior_means = [prior_mean for _, prior_mean in prior_means] # Pull out prior value
-        return s.array(prior_means)
+        return s.array(prior_mean)
 
     def Sa(self):
+        """Pull the priors from each of the individual RTs and order them
+        in the same order as unique_statevec.
+        TODO: check that the user correctly entered the priors
+        TODO: the same for each radiative_transfer entry in the json input
+        """
 
         prior_sigmas = []
-        # List of tuples of all RTs: (statevec_name, prior_sigma)
-        # For example: 
-        for key, RT in self.RTs.items():
-            prior_sigmas = prior_sigmas + \
-                           [(statevec, prior_sigma) for statevec, prior_sigma in zip(RT.statevec, RT.prior_sigma)]
-        
-        prior_sigmas = list(set(prior_sigmas)) # Keep only unique entries
+        statevec_temp, all_prior_sigmas = [], []
+        for RT in self.RTs.values():
+            statevec_temp = statevec_temp + [statevec for statevec in RT.statevec]
+            all_prior_sigmas = all_prior_sigmas + [prior_mean for prior_mean in RT.prior_sigma]
 
-        # Unless the user entered different priors for the same state vector elements
-        # in different 'radiative_tranfer' json entries, these should be the same size.
-        if len(prior_sigmas) != len(self.unique_statevec):
-            raise AssertionError
+        prior_sigmas = []
+        for unique_statevec_component in self.unique_statevec:
+            prior_sigmas.append(all_prior_sigmas[statevec_temp.index(unique_statevec_component)])
 
-        prior_sigmas.sort()  # Sort them into the same order as self.unique_statevec
-        prior_sigmas = [prior_sigmas for _, prior_sigmas in prior_sigmas] # Pull out prior value
-
-        ret = s.diagflat(pow(s.array(prior_sigmas), 2))
-        #temp = self.RTs['modtran_visnir'].Sa()
-        return ret
+        return s.diagflat(pow(s.array(prior_sigmas), 2))
 
     def get(self, x_RT, geom):
 
@@ -177,7 +140,7 @@ class RadiativeTransfer():
         ret = []
         for key, RT in self.RTs.items():
             ret.append(self.RTs[key].get(x_RT_dict[key], geom))
-        #pdb.set_trace()
+
         return self.pack_arrays(ret)
 
     def calc_rdn(self, x_RT, rfl, Ls, geom):
@@ -186,9 +149,7 @@ class RadiativeTransfer():
         for key, RT in self.RTs.items():
             #TODO: take rfl out of here and move it elsewhere
             ret.append(self.RTs[key].calc_rdn(x_RT_dict[key], rfl, Ls, geom))
-        #pdb.set_trace()
         return s.hstack(ret)
-        #return self.RTs['modtran_visnir'].calc_rdn(x_RT, rfl, Ls, geom)
 
     def drdn_dRT(self, x_RT, x_surface, rfl, drfl_dsurface, Ls,
                  dLs_dsurface, geom):
@@ -223,11 +184,7 @@ class RadiativeTransfer():
             sly = slice(init_y_offset, init_y_offset + ret_K_surface.shape[1])
             K_surface[slx, sly] = ret_K_surface
 
-        #pdb.set_trace()
-
         return K_RT, K_surface
-        #return self.RTs['modtran_visnir'].drdn_dRT(x_RT, x_surface, rfl, drfl_dsurface,
-        #                            Ls, dLs_dsurface, geom)
 
     def drdn_dRTb(self, x_RT, rfl, Ls, geom):
         x_RT_dict = self.make_statevecs(x_RT)
@@ -236,17 +193,20 @@ class RadiativeTransfer():
             #TODO: take rfl out of here and move it elsewhere
             temp = self.RTs[key].drdn_dRTb(x_RT_dict[key], rfl, Ls, geom)
             ret.append(s.squeeze(temp))
-        #pdb.set_trace()
+
         return s.hstack(ret)[:,s.newaxis]
-        #return self.RTs['modtran_visnir'].drdn_dRTb(x_RT, rfl, Ls, geom)
 
     def summarize(self, x_RT, geom):
-        #TODO: fix for multiple bands
-        return self.RTs['modtran_visnir'].summarize(x_RT, geom)
+        ret = []
+        for RT in self.RTs.values():
+            ret.append(RT.summarize(x_RT, geom))
+        ret = '\n'.join(ret)
+        return ret
 
     def reconfigure(self, config_rt):
-        #TODO: fix for multiple bands
-        return self.RTs['modtran_visnir'].reconfigure(config_rt)
+        for RT in self.RTs.values():
+            RT.reconfigure(config_rt)
+        return 
 
     def make_statevecs(self, x_RT):
         """Take the input state vector, whose elements are in the order

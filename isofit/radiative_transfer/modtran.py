@@ -39,7 +39,7 @@ from ..core.common import combos, VectorInterpolatorJIT, eps, load_wavelen
 
 eps = 1e-5  # used for finite difference derivative calculations
 
-modtran_bands_available = ['modtran_visnir']
+modtran_bands_available = ['modtran_vswir']
 
 ### Classes ###
 
@@ -80,7 +80,7 @@ class ModtranRT(TabularRT):
             self.aer_extc = s.array(aer_extc)
             self.aer_asym = s.array(aer_asym)
         
-        if self.band_mode_string.lower() == 'modtran_visnir':
+        if self.band_mode_string.lower() == 'modtran_vswir':
             self.modtran_lut_names = ['rhoatm', 'transm', 'sphalb', 'transup']
 
         # Build the lookup table
@@ -380,12 +380,12 @@ class ModtranRT(TabularRT):
 
         r = self.get(x_RT, geom)
 
-        if self.band_mode_string.lower() == 'modtran_visnir':
-            return self.calc_rdn_visnir(r, rfl)
+        if self.band_mode_string.lower() == 'modtran_vswir':
+            return self.calc_rdn_vswir(r, rfl)
         else:
             raise NotImplementedError
 
-    def calc_rdn_visnir(self, r, rfl, perturb = 1.):
+    def calc_rdn_vswir(self, r, rfl, perturb = 1.):
 
         Ls = s.zeros(rfl.shape)
 
@@ -396,26 +396,26 @@ class ModtranRT(TabularRT):
     def drdn_dRT(self, x_RT, x_surface, rfl, drfl_dsurface, Ls, dLs_dsurface,
                  geom):
         
-        if self.band_mode_string.lower() == 'modtran_visnir':
-            return self.drdn_dRT_visnir(x_RT, x_surface, rfl, drfl_dsurface, 
+        if self.band_mode_string.lower() == 'modtran_vswir':
+            return self.drdn_dRT_vswir(x_RT, x_surface, rfl, drfl_dsurface, 
                                    Ls, dLs_dsurface, geom)
         else:
             raise NotImplementedError
 
-    def drdn_dRT_visnir(self, x_RT, x_surface, rfl, drfl_dsurface, Ls, dLs_dsurface,
+    def drdn_dRT_vswir(self, x_RT, x_surface, rfl, drfl_dsurface, Ls, dLs_dsurface,
                  geom):
         """Jacobian of radiance with respect to RT and surface state vectors."""
 
         # first the rdn at the current state vector
         r = self.get(x_RT, geom)
-        rdn = self.calc_rdn_visnir(r, rfl)
+        rdn = self.calc_rdn_vswir(r, rfl)
 
         # perturb each element of the RT state vector (finite difference)
         K_RT = []
         x_RTs_perturb = x_RT + s.eye(len(x_RT))*eps
         for x_RT_perturb in list(x_RTs_perturb): 
             re = self.get(x_RT_perturb, geom)
-            rdne = self.calc_rdn_visnir(re, rfl)
+            rdne = self.calc_rdn_vswir(re, rfl)
             K_RT.append((rdne-rdn) / eps)
         K_RT = s.array(K_RT).T
 
@@ -435,12 +435,12 @@ class ModtranRT(TabularRT):
 
     def drdn_dRTb(self, x_RT, rfl, Ls, geom):
 
-        if self.band_mode_string.lower() == 'modtran_visnir':
-            return self.drdn_dRTb_visnir(x_RT, rfl, Ls, geom)
+        if self.band_mode_string.lower() == 'modtran_vswir':
+            return self.drdn_dRTb_vswir(x_RT, rfl, Ls, geom)
         else:
             raise NotImplementedError
 
-    def drdn_dRTb_visnir(self, x_RT, rfl, Ls, geom):
+    def drdn_dRTb_vswir(self, x_RT, rfl, Ls, geom):
         """Jacobian of radiance with respect to NOT RETRIEVED RT and surface 
            state.  Right now, this is just the sky view factor."""
 
@@ -450,7 +450,7 @@ class ModtranRT(TabularRT):
         else:
             # first the radiance at the current state vector
             r = self.get(x_RT, geom)
-            rdn = self.calc_rdn_visnir(r, rfl)
+            rdn = self.calc_rdn_vswir(r, rfl)
 
             # perturb the sky view
             Kb_RT = []
@@ -458,7 +458,7 @@ class ModtranRT(TabularRT):
             for unknown in self.bvec:
 
                 if unknown == 'Skyview':
-                    rdne = self.calc_rdn_visnir(r, rfl, perturb = perturb)
+                    rdne = self.calc_rdn_vswir(r, rfl, perturb = perturb)
                     Kb_RT.append((rdne-rdn) / eps)
 
                 elif unknown == 'H2O_ABSCO' and 'H2OSTR' in self.statevec:
@@ -467,7 +467,7 @@ class ModtranRT(TabularRT):
                     x_RT_perturb = x_RT.copy()
                     x_RT_perturb[i] = x_RT[i] * perturb
                     re = self.get(x_RT_perturb, geom)
-                    rdne = self.calc_rdn_visnir(re, rfl)
+                    rdne = self.calc_rdn_vswir(re, rfl)
                     Kb_RT.append((rdne-rdn) / eps)
 
         Kb_RT = s.array(Kb_RT).T
