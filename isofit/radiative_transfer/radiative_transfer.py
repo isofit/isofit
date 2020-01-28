@@ -148,10 +148,9 @@ class RadiativeTransfer():
         L_atm = self.get_L_atm(x_RT, geom)
         L_down = self.get_L_down(x_RT, geom)
 
-        #TODO: Ls should not be here!
-        L_up = self.get_L_up(x_RT, Ls, geom)
+        L_up = self.get_L_up(x_RT, geom)
+        L_up = L_up + Ls * r['transm']
 
-        #ret = L_atm + \
         ret = L_atm + \
               L_down * rfl * r['transm'] / (1.0 - r['sphalb'] * rfl) + \
               L_up
@@ -172,11 +171,11 @@ class RadiativeTransfer():
             L_downs.append(RT.get_L_down(x_RT_dict[key], geom))
         return s.hstack(L_downs)
 
-    def get_L_up(self, x_RT, Ls, geom):
+    def get_L_up(self, x_RT, geom):
         x_RT_dict = self.make_statevecs(x_RT)
         L_ups = []
         for key, RT in self.RTs.items():
-            L_ups.append(RT.get_L_up(x_RT_dict[key], Ls, geom))
+            L_ups.append(RT.get_L_up(x_RT_dict[key], geom))
         return s.hstack(L_ups)
 
     def drdn_dRT(self, x_RT, x_surface, rfl, drfl_dsurface, Ls,

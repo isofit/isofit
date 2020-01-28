@@ -390,22 +390,13 @@ class ModtranRT(TabularRT):
             raise NotImplementedError
 
     def get_L_down_vswir(self, x_RT, geom):
-        #r = self.get(x_RT, geom)
-        #rho = r['transm']
-        #rdn = rho/s.pi*(self.solar_irr*self.coszen)
         rdn = (self.solar_irr*self.coszen) / s.pi
         return rdn
 
-    def get_L_up(self, x_RT, Ls, geom):
-        if self.band_mode_string.lower() == 'modtran_vswir':
-            return self.get_L_up_vswir(x_RT, Ls, geom)
-        else:
-            raise NotImplementedError
-
-    def get_L_up_vswir(self, x_RT, Ls, geom):
-        r = self.get(x_RT, geom)
-        rdn = (Ls * r['transup'])
-        return rdn
+    def get_L_up(self, x_RT, geom):
+        """Thermal emission from the ground is provided by the thermal model, so
+        this function is a placeholder for future upgrades."""
+        return 0
 
     def wl2flt(self, wls, fwhms, outfile):
         """Helper function to generate Gaussian distributions around the center wavelengths."""

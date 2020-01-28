@@ -48,7 +48,8 @@ surface_models = [('surface', 'surface.surface', 'Surface'),
                   ('cat_surface', 'surf_cat', 'CATSurface'),
                   ('glint_surface', 'surface.surface_glint', 'GlintSurface'),
                   ('iop_surface', 'surface.surface_iop', 'IOPSurface'),
-                  ('poly_surface', 'surf_poly', 'PolySurface')]
+                  ('poly_surface', 'surf_poly', 'PolySurface'),
+                  ('thermal_surface', 'surface.surface_thermal', 'ThermalSurface')]
 
 
 ### Classes ###
