@@ -23,7 +23,7 @@ import logging
 from copy import deepcopy
 from collections import OrderedDict
 
-from ..core.common import json_load_ascii
+from ..core.common import json_load_ascii, eps
 from ..radiative_transfer.modtran import modtran_bands_available, ModtranRT
 
 class RadiativeTransfer():
@@ -144,57 +144,111 @@ class RadiativeTransfer():
         return self.pack_arrays(ret)
 
     def calc_rdn(self, x_RT, rfl, Ls, geom):
+        r = self.get(x_RT, geom)
+        L_atm = self.get_L_atm(x_RT, geom)
+        L_down = self.get_L_down(x_RT, geom)
+
+        #TODO: Ls should not be here!
+        L_up = self.get_L_up(x_RT, Ls, geom)
+
+        #ret = L_atm + \
+        ret = L_atm + \
+              L_down * rfl * r['transm'] / (1.0 - r['sphalb'] * rfl) + \
+              L_up
+
+        return ret
+
+    def get_L_atm(self, x_RT, geom):
         x_RT_dict = self.make_statevecs(x_RT)
-        ret = []
+        L_atms = []
         for key, RT in self.RTs.items():
-            #TODO: take rfl out of here and move it elsewhere
-            ret.append(self.RTs[key].calc_rdn(x_RT_dict[key], rfl, Ls, geom))
-        return s.hstack(ret)
+            L_atms.append(RT.get_L_atm(x_RT_dict[key], geom))
+        return s.hstack(L_atms)
+    
+    def get_L_down(self, x_RT, geom):
+        x_RT_dict = self.make_statevecs(x_RT)
+        L_downs = []
+        for key, RT in self.RTs.items():
+            L_downs.append(RT.get_L_down(x_RT_dict[key], geom))
+        return s.hstack(L_downs)
+
+    def get_L_up(self, x_RT, Ls, geom):
+        x_RT_dict = self.make_statevecs(x_RT)
+        L_ups = []
+        for key, RT in self.RTs.items():
+            L_ups.append(RT.get_L_up(x_RT_dict[key], Ls, geom))
+        return s.hstack(L_ups)
 
     def drdn_dRT(self, x_RT, x_surface, rfl, drfl_dsurface, Ls,
                  dLs_dsurface, geom):
-        x_RT_dict = self.make_statevecs(x_RT)
-        ret_K_RTs, ret_K_surfaces = [], []
-        for key, RT in self.RTs.items():
-            #TODO: take rfl out of here and move it elsewhere
-            K_RT_temp, K_surface_temp = \
-                self.RTs[key].drdn_dRT(x_RT_dict[key], x_surface, rfl, drfl_dsurface,
-                                       Ls, dLs_dsurface, geom)
-            ret_K_RTs.append(K_RT_temp)
-            ret_K_surfaces.append(K_surface_temp)
+        
+        # first the rdn at the current state vector
+        Ls = s.zeros(rfl.shape) # TODO: Fix me!
+        rdn = self.calc_rdn(x_RT, rfl, Ls, geom)
 
-        nxs = [x.shape[0] for x in ret_K_RTs]
-        init_offsets = s.cumsum([0] + nxs)
-        K_RT = s.zeros((sum(nxs), len(self.unique_statevec)))
-        for RT, ret_K_RT, init_offset in zip(self.RTs.values(), ret_K_RTs, init_offsets[:-1]):
-            tT = ret_K_RT.T
-            for state_component, ret_K_RT_line in zip(RT.statevec, tT):
-                st_ind = self.unique_statevec.index(state_component)
-                sl = slice(init_offset, init_offset + len(ret_K_RT_line))
-                K_RT[sl, st_ind] = ret_K_RT_line
+        # perturb each element of the RT state vector (finite difference)
+        K_RT = []
+        x_RTs_perturb = x_RT + s.eye(len(x_RT))*eps
+        for x_RT_perturb in list(x_RTs_perturb): 
+            rdne = self.calc_rdn(x_RT_perturb, rfl, Ls, geom)
+            K_RT.append((rdne-rdn) / eps)
+        K_RT = s.array(K_RT).T
 
-        nxs = [x.shape[0] for x in ret_K_surfaces]
-        nys = [x.shape[1] for x in ret_K_surfaces]
-        init_x_offsets = s.cumsum([0] + nxs)
-        init_y_offsets = s.cumsum([0] + nys)
-        K_surface = s.zeros((sum(nxs), sum(nys)))
-        for init_x_offset, init_y_offset, ret_K_surface in \
-                zip(init_x_offsets[:-1], init_y_offsets[:-1], ret_K_surfaces):
-            slx = slice(init_x_offset, init_x_offset + ret_K_surface.shape[0])
-            sly = slice(init_y_offset, init_y_offset + ret_K_surface.shape[1])
-            K_surface[slx, sly] = ret_K_surface
+        # Get K_surface
+        r = self.get(x_RT, geom) 
+        L_down = self.get_L_down(x_RT, geom)
+
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        # These two lines are correct, but commented out to allow comparison
+        # with the master branch. When ready, uncomment these two and remove
+        # the next four lines.
+        #drho_drfl = r['transm'] / (1 - r['sphalb']*rfl)**2
+        #drdn_drfl = drho_drfl * L_down
+
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        # This stretch has the sign error for testing
+        drho_drfl = \
+            (r['transm']/(1-r['sphalb']*rfl) -
+                (r['sphalb']*r['transm']*rfl)/pow(1-r['sphalb']*rfl, 2))
+        drdn_drfl = drho_drfl/s.pi*(self.solar_irr*self.coszen)
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+        drdn_dLs = r['transup']
+        K_surface = drdn_drfl[:, s.newaxis] * drfl_dsurface + \
+                    drdn_dLs[:, s.newaxis] * dLs_dsurface
 
         return K_RT, K_surface
 
     def drdn_dRTb(self, x_RT, rfl, Ls, geom):
-        x_RT_dict = self.make_statevecs(x_RT)
-        ret = []
-        for key, RT in self.RTs.items():
-            #TODO: take rfl out of here and move it elsewhere
-            temp = self.RTs[key].drdn_dRTb(x_RT_dict[key], rfl, Ls, geom)
-            ret.append(s.squeeze(temp))
 
-        return s.hstack(ret)[:,s.newaxis]
+        if len(self.bvec) == 0:
+            Kb_RT = s.zeros((0, len(self.wl.shape)))
+
+        else:
+            # first the radiance at the current state vector
+            r = self.get(x_RT, geom)
+            rdn = self.calc_rdn(x_RT, rfl, Ls, geom)
+
+            # perturb the sky view
+            Kb_RT = []
+            perturb = (1.0+eps)
+            for unknown in self.bvec:
+
+                if unknown == 'Skyview':
+                    #rdne = self.calc_rdn_vswir(r, rfl, perturb = perturb)
+                    #Kb_RT.append((rdne-rdn) / eps)
+                    raise NotImplementedError
+
+                elif unknown == 'H2O_ABSCO' and 'H2OSTR' in self.unique_statevec:
+                    # first the radiance at the current state vector
+                    i = self.unique_statevec.index('H2OSTR')
+                    x_RT_perturb = x_RT.copy()
+                    x_RT_perturb[i] = x_RT[i] * perturb
+                    rdne = self.calc_rdn(x_RT_perturb, rfl, Ls, geom)
+                    Kb_RT.append((rdne-rdn) / eps)
+
+        Kb_RT = s.array(Kb_RT).T
+        return Kb_RT
 
     def summarize(self, x_RT, geom):
         ret = []
