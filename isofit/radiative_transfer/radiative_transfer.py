@@ -197,22 +197,8 @@ class RadiativeTransfer():
         # Get K_surface
         r = self.get(x_RT, geom) 
         L_down = self.get_L_down(x_RT, geom)
-
-        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        # These two lines are correct, but commented out to allow comparison
-        # with the master branch. When ready, uncomment these two and remove
-        # the next four lines.
-        #drho_drfl = r['transm'] / (1 - r['sphalb']*rfl)**2
-        #drdn_drfl = drho_drfl * L_down
-
-        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        # This stretch has the sign error for testing
-        drho_drfl = \
-            (r['transm']/(1-r['sphalb']*rfl) -
-                (r['sphalb']*r['transm']*rfl)/pow(1-r['sphalb']*rfl, 2))
-        drdn_drfl = drho_drfl/s.pi*(self.solar_irr*self.coszen)
-        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+        drho_drfl = r['transm'] / (1 - r['sphalb']*rfl)**2
+        drdn_drfl = drho_drfl * L_down
         drdn_dLs = r['transup']
         K_surface = drdn_drfl[:, s.newaxis] * drfl_dsurface + \
                     drdn_dLs[:, s.newaxis] * dLs_dsurface
