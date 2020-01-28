@@ -24,7 +24,7 @@
 
 name = 'isofit'
 
-__version__ = '1.4.0'
+__version__ = '1.4.1'
 
 jit_enabled = False 
 
