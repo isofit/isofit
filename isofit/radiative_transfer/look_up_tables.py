@@ -267,7 +267,7 @@ class TabularRT:
         K_surface = []
         for i in range(len(x_surface)):
             drho_drfl = \
-                (transm/(1-sphalb*rfl)-(sphalb*transm*rfl)/pow(1-sphalb*rfl, 2))
+                (transm/(1-sphalb*rfl)+(sphalb*transm*rfl)/pow(1-sphalb*rfl, 2))
             drdn_drfl = drho_drfl/s.pi*(self.solar_irr*self.coszen)
             drdn_dLs = transup
             K_surface.append(drdn_drfl * drfl_dsurface[:, i] +
