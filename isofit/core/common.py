@@ -112,12 +112,17 @@ class VectorInterpolator:
         self.itp = RegularGridInterpolator(grid_aug, data)
 
     def __call__(self, points):
-        res = []
-        for v in s.arange(self.n):
-            p_aug = s.concatenate((points, s.array([v])), axis=0)
-            res.append(self.itp(p_aug))
-        return res
 
+        x = s.zeros((self.n,len(points)+1))
+        for i in range(len(points)):
+            x[:,i] = points[i]
+        # This last dimension is always an integer so no
+        # interpolation is performed. This is done only
+        # for performance reasons.
+        x[:,-1] = s.arange(self.n)
+        res = self.itp(x)
+
+        return res
 
 class VectorInterpolatorJIT:
     """JIT implementation for VectorInterpolator class."""
