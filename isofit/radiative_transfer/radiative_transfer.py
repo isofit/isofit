@@ -198,7 +198,7 @@ class RadiativeTransfer():
 
                 elif unknown == 'H2O_ABSCO' and 'H2OSTR' in self.statevec:
                     # first the radiance at the current state vector
-                    i = self.unique_statevec.index('H2OSTR')
+                    i = self.statevec.index('H2OSTR')
                     x_RT_perturb = x_RT.copy()
                     x_RT_perturb[i] = x_RT[i] * perturb
                     rdne = self.calc_rdn(x_RT_perturb, rfl, Ls, geom)

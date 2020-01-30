@@ -51,7 +51,7 @@ def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
 
         # find the index in the lookup table associated with water vapor
         ind_lut = RT.RTs['modtran_vswir'].lut_names.index(h2oname)
-        ind_sv = RT.unique_statevec.index(h2oname)
+        ind_sv = RT.statevec.index(h2oname)
         h2os, ratios = [], []
 
         # We iterate through every possible grid point in the lookup table,
