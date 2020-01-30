@@ -64,11 +64,11 @@ class TabularRT:
             else:
                 setattr(self, key, value)
 
-        self.lut_grid = config['lut_grid']
+        self.lut_grid_config = config['lut_grid']
         self.lut_dir = config['lut_path']
         self.statevec = list(config['statevector'].keys())
         self.bvec = list(config['unknowns'].keys())
-        self.n_point = len(self.lut_grid)
+        self.n_point = len(self.lut_grid_config)
         self.n_state = len(self.statevec)
 
         self.luts = {}
@@ -104,7 +104,7 @@ class TabularRT:
 
         # set up lookup table grid, and associated filename prefixes
         self.lut_dims, self.lut_grids, self.lut_names = [], [], []
-        for key, val in self.lut_grid.items():
+        for key, val in self.lut_grid_config.items():
             self.lut_names.append(key)
             self.lut_grids.append(s.array(val))
             self.lut_dims.append(len(val))

@@ -46,12 +46,13 @@ modtran_bands_available = ['modtran_vswir']
 class ModtranRT(TabularRT):
     """A model of photon transport including the atmosphere."""
 
-    def __init__(self, band_mode_string, config):
+    def __init__(self, band_mode_string, config, full_statevec):
         """."""
 
         self.band_mode_string = band_mode_string
         if self.band_mode_string not in modtran_bands_available:
             raise NotImplementedError
+        self.full_statevec = full_statevec
 
         TabularRT.__init__(self, config)
 
@@ -85,6 +86,15 @@ class ModtranRT(TabularRT):
 
         # Build the lookup table
         self.build_lut()
+
+        # This array is used to select the elements out of the full
+        # statevector to create a point for evaluation in the LUTs.
+        # For example: point = x_RT[self._x_RT_index_for_point]
+        # It should never be modified
+        x_RT_index_for_point = []
+        for sv in self.lut_names:
+            x_RT_index_for_point.append(full_statevec.index(sv))
+        self._x_RT_index_for_point = s.array(x_RT_index_for_point)
 
     def find_basedir(self, config):
         """Seek out a modtran base directory."""
@@ -238,7 +248,7 @@ class ModtranRT(TabularRT):
         mod_outputs = []
         for point, fn in zip(self.points, self.files):
             chnfile = self.lut_dir+'/'+fn+'.chn'
-            mod_outputs.append(self.load_rt(point, fn))
+            mod_outputs.append(self.load_rt(fn))
 
         self.wl = mod_outputs[0]['wl']
         self.solar_irr = mod_outputs[0]['sol']
@@ -312,7 +322,7 @@ class ModtranRT(TabularRT):
         cmd = self.modtran_dir+'/bin/'+xdir[platform]+'/mod6c_cons '+infilename
         return cmd
 
-    def load_rt(self, point, fn):
+    def load_rt(self, fn):
         """."""
 
         tp6file = self.lut_dir+'/'+fn+'.tp6'
@@ -328,8 +338,9 @@ class ModtranRT(TabularRT):
         results_dict['coszen'] = coszen
         return results_dict
 
-    def lookup_lut(self, point):
+    def lookup_lut(self, x_RT):
         ret = {}
+        point = x_RT[self._x_RT_index_for_point]
         for key, lut in self.luts.items():
             ret[key] = s.array(lut(point)).ravel()
         
