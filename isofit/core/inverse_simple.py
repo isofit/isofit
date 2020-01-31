@@ -38,6 +38,15 @@ def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
         return x_RT
     x_new = x_RT.copy()
 
+    # Figure out which RT object we are using
+    my_RT = None
+    for rt_name in ['modtran_vswir','sixs_vswir']:
+        if rt_name in RT.RTs:
+           my_RT = RT.RTs[rt_name]
+           continue
+    if not my_RT:
+        raise ValueError('No suiutable RT object for initialization')
+
     # Band ratio retrieval of H2O.  Depending on the radiative transfer
     # model we are using, this state parameter could go by several names.
     for h2oname in ['H2OSTR', 'h2o']:
@@ -46,11 +55,11 @@ def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
             continue
 
         # ignore unused names
-        if h2oname not in RT.RTs['modtran_vswir'].lut_names:
+        if h2oname not in my_RT.lut_names:
             continue
 
         # find the index in the lookup table associated with water vapor
-        ind_lut = RT.RTs['modtran_vswir'].lut_names.index(h2oname)
+        ind_lut = my_RT.lut_names.index(h2oname)
         ind_sv = RT.statevec.index(h2oname)
         h2os, ratios = [], []
 
@@ -58,7 +67,7 @@ def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
         # calculating the band ratio that we would see if this were the
         # atmospheric H2O content.  It assumes that defaults for all other
         # atmospheric parameters (such as aerosol, if it is there).
-        for h2o in RT.RTs['modtran_vswir'].lut_grids[ind_lut]:
+        for h2o in my_RT.lut_grids[ind_lut]:
 
             # Get Atmospheric terms at high spectral resolution
             x_RT_2 = x_RT.copy()
