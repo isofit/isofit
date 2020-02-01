@@ -25,6 +25,7 @@ from collections import OrderedDict
 
 from ..core.common import json_load_ascii, eps
 from ..radiative_transfer.modtran import modtran_bands_available, ModtranRT
+from ..radiative_transfer.six_s import sixs_names, SixSRT
 
 class RadiativeTransfer():
     """This class controls the radiative transfer component of the forward
@@ -50,19 +51,23 @@ class RadiativeTransfer():
 
         config_statevector = config['statevector']
         for key, local_config in config.items():
-            if key in modtran_bands_available:
 
-                # Construct a dict will the LUT info and state parameter
+            if type(local_config) == dict and 'lut_names' in local_config:
+                # Construct a dict with the LUT and state parameter
                 # info needed for each individual RT
-                local_lut_names = local_config['lut_names']
                 temp_statevec, temp_lut_grid = {}, {}
-                for local_lut_name in local_lut_names:
-                    temp_statevec[local_lut_name] = config_statevector[local_lut_name]
+                for local_lut_name in local_config['lut_names']:
                     temp_lut_grid[local_lut_name] = self.lut_grid[local_lut_name]
-                local_config["statevector"] = temp_statevec
                 local_config["lut_grid"] = temp_lut_grid
-                
+
+                for local_sv_name in local_config['statevector_names']:
+                    temp_statevec[local_sv_name] = config_statevector[local_sv_name]
+                local_config["statevector"] = temp_statevec
+
+            if key in modtran_bands_available:
                 self.RTs[key] = ModtranRT(key, local_config, self.statevec)
+            elif key in sixs_names:
+                self.RTs[key] = SixSRT(local_config, self.statevec)
 
         # Retrieved variables.  We establish scaling, bounds, and
         # initial guesses for each state vector element.  The state
