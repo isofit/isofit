@@ -22,26 +22,39 @@ import logging
 import scipy as s
 from scipy.interpolate import interp1d
 
-from ..core.common import resample_spectrum
+from ..core.common import resample_spectrum, VectorInterpolatorJIT
 from .look_up_tables import TabularRT, FileExistsError
 
 
 ### Variables ###
 
 eps = 1e-5  # used for finite difference derivative calculations
-
+libradtran_names = ['libradtran_vswir']
 
 ### Classes ###
 
 class LibRadTranRT(TabularRT):
     """A model of photon transport including the atmosphere."""
 
-    def __init__(self, config):
+    def __init__(self, config, full_statevec):
 
         TabularRT.__init__(self, config)
         self.libradtran_dir = self.find_basedir(config)
         self.libradtran_template_file = config['libradtran_template_file']
+
+        self.lut_quantities = ['rhoatm', 'transm', 'sphalb', 'transup']
+
+        # Build the lookup table
         self.build_lut()
+
+        # This array is used to select the elements out of the full
+        # statevector to create a point for evaluation in the LUTs.
+        # For example: point = x_RT[self._x_RT_index_for_point]
+        # It should never be modified
+        x_RT_index_for_point = []
+        for sv in self.lut_names:
+            x_RT_index_for_point.append(full_statevec.index(sv))
+        self._x_RT_index_for_point = s.array(x_RT_index_for_point)
 
     def find_basedir(self, config):
         """Seek out a libradtran base directory."""
@@ -166,7 +179,7 @@ class LibRadTranRT(TabularRT):
 
         return 'bash '+scriptfilepath
 
-    def load_rt(self, point, fn):
+    def load_rt(self, fn):
         """Load the results of a LibRadTran run."""
 
         wl, rdn0,   irr = s.loadtxt(self.lut_dir+'/LUT_'+fn+'_alb0.out').T
@@ -201,9 +214,96 @@ class LibRadTranRT(TabularRT):
         with open(self.lut_dir+'/LUT_'+fn+'.zen', 'r') as fin:
             output = fin.read().split()
             solzen, solaz = [float(q) for q in output[1:]]
-        irr = irr / s.cos(solzen/360.0*2.0*s.pi)
 
-        return self.wl, irr, solzen, rhoatm, transm, sphalb, transup
+        self.coszen = s.cos(solzen/360.0*2.0*s.pi)
+        irr = irr / self.coszen
+        self.solar_irr = irr.copy()
+
+        results = { "wl": self.wl, 'solzen':solzen, 'irr':irr,
+         "solzen": solzen, "rhoatm": rhoatm, "transm": transm, 
+         "sphalb": sphalb, "transup": transup}
+        return results
+
+
 
     def ext550_to_vis(self, ext550):
         return s.log(50.0) / (ext550 + 0.01159)
+
+    
+    def build_lut(self, rebuild=False):
+
+        TabularRT.build_lut(self, rebuild)
+
+        librt_outputs = []
+        for point, fn in zip(self.points, self.files):
+            librt_outputs.append(self.load_rt(fn))
+
+        self.cache = {}
+        dims_aug = self.lut_dims + [self.n_chan]
+        for key in self.lut_quantities:
+            temp = s.zeros(dims_aug, dtype=float)
+            for librt_output, point in zip(librt_outputs, self.points):
+                ind = [s.where(g == p)[0] for g, p in zip(self.lut_grids, point)]
+                temp[ind] = librt_output[key]
+        
+            self.luts[key] = VectorInterpolatorJIT(self.lut_grids, temp)
+   
+    def lookup_lut(self, x_RT):
+        ret = {}
+        point = x_RT[self._x_RT_index_for_point]
+        for key, lut in self.luts.items():
+            ret[key] = s.array(lut(point)).ravel()
+        return ret
+
+    def get(self, x_RT, geom):
+        if self.n_point == self.n_state:
+            return self.lookup_lut(x_RT)
+        else:
+            point = s.zeros((self.n_point,))
+            for point_ind, name in enumerate(self.lut_grid):
+                if name in self.statevec:
+                    x_RT_ind = self.statevec.index(name)
+                    point[point_ind] = x_RT[x_RT_ind]
+                elif name == "OBSZEN":
+                    point[point_ind] = geom.OBSZEN
+                elif name == "GNDALT":
+                    point[point_ind] = geom.GNDALT
+                elif name == "viewzen":
+                    point[point_ind] = geom.observer_zenith
+                elif name == "viewaz":
+                    point[point_ind] = geom.observer_azimuth
+                elif name == "solaz":
+                    point[point_ind] = geom.solar_azimuth
+                elif name == "solzen":
+                    point[point_ind] = geom.solar_zenith
+                elif name == "TRUEAZ":
+                    point[point_ind] = geom.TRUEAZ
+                elif name == 'phi':
+                    point[point_ind] = geom.phi
+                elif name == 'umu':
+                    point[point_ind] = geom.umu
+                else:
+                    # If a variable is defined in the lookup table but not
+                    # specified elsewhere, we will default to the minimum
+                    point[point_ind] = min(self.lut_grid[name])
+            for x_RT_ind, name in enumerate(self.statevec):
+                point_ind = self.lut_names.index(name)
+                point[point_ind] = x_RT[x_RT_ind]
+            return self.lookup_lut(point)
+ 
+    def get_L_atm(self, x_RT, geom):
+        r = self.get(x_RT, geom)
+        rho = r['rhoatm']
+        rdn = rho / s.pi*(self.solar_irr * self.coszen)
+        return rdn
+
+    def get_L_down(self, x_RT, geom):
+        rdn = (self.solar_irr * self.coszen) / s.pi
+        return rdn
+
+    def get_L_up(self, x_RT, geom):
+        """Thermal emission from the ground is provided by the thermal model, so
+        this function is a placeholder for future upgrades."""
+        return 0
+
+

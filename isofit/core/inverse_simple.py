@@ -40,7 +40,7 @@ def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
 
     # Figure out which RT object we are using
     my_RT = None
-    for rt_name in ['modtran_vswir','sixs_vswir']:
+    for rt_name in ['modtran_vswir','sixs_vswir','libradtran_vswir']:
         if rt_name in RT.RTs:
            my_RT = RT.RTs[rt_name]
            continue
@@ -86,7 +86,7 @@ def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
             r = 1.0 / (transm / (rho - rhoatm) + sphalb)
             ratios.append((r[b945]*2.0)/(r[b1040]+r[b865]))
             h2os.append(h2o)
-
+    
         # Finally, interpolate to determine the actual water vapor level that
         # would optimize the continuum-relative correction
         p = interp1d(h2os, ratios)

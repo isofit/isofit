@@ -26,6 +26,7 @@ from collections import OrderedDict
 from ..core.common import json_load_ascii, eps
 from ..radiative_transfer.modtran import modtran_bands_available, ModtranRT
 from ..radiative_transfer.six_s import sixs_names, SixSRT
+from ..radiative_transfer.libradtran import libradtran_names, LibRadTranRT
 
 class RadiativeTransfer():
     """This class controls the radiative transfer component of the forward
@@ -68,6 +69,8 @@ class RadiativeTransfer():
                 self.RTs[key] = ModtranRT(key, local_config, self.statevec)
             elif key in sixs_names:
                 self.RTs[key] = SixSRT(local_config, self.statevec)
+            elif key in libradtran_names:
+                self.RTs[key] = LibRadTranRT(local_config, self.statevec)
 
         # Retrieved variables.  We establish scaling, bounds, and
         # initial guesses for each state vector element.  The state

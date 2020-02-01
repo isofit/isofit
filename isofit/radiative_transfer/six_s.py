@@ -272,6 +272,7 @@ class SixSRT(TabularRT):
             for x_RT_ind, name in enumerate(self.statevec):
                 point_ind = self.lut_names.index(name)
                 point[point_ind] = x_RT[x_RT_ind]
+            return self.lookup_lut(point)
  
     def get_L_atm(self, x_RT, geom):
         r = self.get(x_RT, geom)
