@@ -59,6 +59,7 @@
         "modtran_template_file":"ang20171108t184227_modtran.json",
         "domain": {"start": 350, "end": 2520, "step": 0.1},
         "lut_names": ["H2OSTR", "AOT550"],
+        "statevector_names": ["H2OSTR", "AOT550"],
         "unknowns": {
           "H2O_ABSCO": 0.01
         }
