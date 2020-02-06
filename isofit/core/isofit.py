@@ -118,7 +118,7 @@ class Isofit:
                 # distributions.
 
                 ### RAISES interp1d() ERROR! ###
-                # self.fm.reconfigure(*configs)
+                self.fm.reconfigure(*configs)
                 ###
 
                 if self.profile:
