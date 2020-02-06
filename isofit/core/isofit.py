@@ -119,7 +119,6 @@ class Isofit:
 
                 # May raise interp1d() error
                 self.fm.reconfigure(*configs)
-                ###
 
                 if self.profile:
                     # Profile output
