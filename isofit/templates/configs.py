@@ -156,7 +156,7 @@ def get(config, data_dir="../data", remote_dir="../remote", lut_dir="../luts",
     elif config == "inverse":
         return {
             "input": {
-                "measured_radiance_file": absjoin(remote_dir, "ang20140625_v2gx_rdn_snr100")
+                "measured_radiance_file": absjoin(remote_dir, "measured_radiance")
             },
             "output": {
                 "estimated_reflectance_file": absjoin(output_dir, "modeled_reflectance"),
