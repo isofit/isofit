@@ -115,9 +115,7 @@ class Isofit:
                 # Update model components with new configuration parameters
                 # specific to this spectrum. Typically these would be empty,
                 # though they could contain new location-specific prior
-                # distributions.
-
-                # May raise interp1d() error
+                # distributions. NOTE: May raise interp1d() error.
                 self.fm.reconfigure(*configs)
 
                 if self.profile:
