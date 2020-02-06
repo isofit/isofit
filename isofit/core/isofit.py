@@ -117,7 +117,7 @@ class Isofit:
                 # though they could contain new location-specific prior
                 # distributions.
 
-                ### RAISES interp1d() ERROR! ###
+                # May raise interp1d() error
                 self.fm.reconfigure(*configs)
                 ###
 
