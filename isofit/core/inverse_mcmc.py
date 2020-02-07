@@ -25,7 +25,7 @@ from scipy.linalg import inv, norm, sqrtm, det, cholesky, qr, svd
 from scipy.stats import multivariate_normal
 from hashlib import md5
 
-from .common import chol_inv, eps
+from .common import eps
 from .inverse import Inversion
 
 

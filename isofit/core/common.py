@@ -124,52 +124,8 @@ class VectorInterpolator:
 
         return res
 
-class VectorInterpolatorJIT:
-    """JIT implementation for VectorInterpolator class."""
-
-    def __init__(self, grid, data):
-        """By convention, the final dimensionn of 'data' is the wavelength.
-        'grid' contains a list of arrays, each representing the input grid 
-        points in the ith dimension of the table."""
-
-        self.in_d = len(data.shape)-1
-        self.out_d = data.shape[-1]
-        self.grid = [i.copy() for i in grid]
-        self.data = data.copy()
-
-    @conditional_decorator(jit, jit_enabled)
-    def __call__(self, point):
-        """."""
-
-        return jitinterp(self.in_d, self.out_d, self.grid, self.data, point)
-
 
 ### Functions ###
-
-def emissive_radiance_old(emissivity, T, wl):
-    """Radiance of a surface due to emission."""
-
-    h = 6.62607004e-34  # m2 kg s-1
-    c = 299792458  # m s-1
-    numerator = 2.0*h*(c**2)  # m4 kg s-1
-    wl_m = wl*1e-9
-    numerator_per_lam5 = numerator * pow(wl_m, -5)  # kg s-1 m-1
-    k = 1.380648520-23  # Boltzmann constant, m2 kg s-2 K-1
-    denom = s.exp(h*c/(k*wl_m*T))-1.0  # dimensionless
-    L = numerator_per_lam5 / denom  # Watts per m3
-
-    cm2_per_m2, nm_per_m, uW_per_W = 10000, 1e9, 1e6
-    conversion = cm2_per_m2 * nm_per_m * uW_per_W / s.pi  # -> uW nm-1 cm-2 sr-1
-    L = L * conversion
-
-    ddenom_dT = s.exp(h*c/(k*wl_m*T)) * h*c*(-1.0)/(pow(k*wl_m*T, 2)) * k*wl_m
-    dL_dT = -numerator_per_lam5 / pow(denom, 2.0) * ddenom_dT * conversion
-
-    L = L * emissivity
-    dL_dT = dL_dT * emissivity
-    L[s.logical_not(s.isfinite(L))] = 0
-    dL_dT[s.logical_not(s.isfinite(dL_dT))] = 0
-    return L, dL_dT
 
 
 def load_wavelen(wavelength_file):
@@ -202,15 +158,6 @@ def emissive_radiance(emissivity, T, wl):
     return uW_per_cm2_sr_nm, dRdn_dT
 
 
-@conditional_decorator(jit, jit_enabled)
-def chol_inv(C):
-    """Fast stable inverse for Hermetian positive definite matrices."""
-
-    R = cholesky(C, lower=False)
-    S = inv(R)
-    return S.dot(S.T)
-
-
 @conditional_decorator(jit, jit_enabled, forceobj=True)
 def svd_inv(C, mineig=0, hashtable=None):
     """Fast stable inverse using SVD. This can handle near-singular matrices."""
@@ -221,25 +168,27 @@ def svd_inv(C, mineig=0, hashtable=None):
 @conditional_decorator(jit, jit_enabled)
 def svd_inv_sqrt(C, mineig=0, hashtable=None):
     """Fast stable inverse using SVD. This can handle near-singular matrices.
-
     Also return the square root.
     """
 
     # If we have a hash table, look for the precalculated solution
     h = None
     if hashtable is not None:
+        # If arrays are in Fortran ordering, they are not hashable.
+        if not C.flags['C_CONTIGUOUS']:
+            C = C.copy(order='C')
         h = xxhash.xxh64_digest(C)
         if h in hashtable:
             return hashtable[h]
 
-    U, V, D = svd(C)
-    ignore = s.where(V < mineig)[0]
-    Vi = 1.0 / V
-    Vi[ignore] = 0
-    Visqrt = s.sqrt(Vi)
-    Cinv = (D.T).dot(s.diag(Vi)).dot(U.T)
-    Cinv_sqrt = (D.T).dot(s.diag(Visqrt)).dot(U.T)
-
+    # Cholesky decomposition seems to be too unstable for solving this
+    # problem, so we use eigendecompostition instead.
+    D, P = eigh(C)
+    Ds = diag(1/sqrt(D))
+    L = P@Ds
+    Cinv_sqrt = L@P.T
+    Cinv = L@L.T
+    
     # If there is a hash table, cache our solution.  Bound the total cache
     # size by removing any extra items in FIFO order.
     if hashtable is not None:
@@ -429,70 +378,10 @@ def srf(x, mu, sigma):
     return y/y.sum()
 
 
-@conditional_decorator(jit, jit_enabled)
-def jitinterp(s_in_d, s_out_d, s_grid, s_data, point):
-    """Interpolation."""
-
-    # We find the bottom index along each input dimension
-    lo_inds = s.zeros(s_in_d)
-    lo_fracs = s.zeros(s_in_d)
-    stride = []
-    for i in s.arange(s_in_d):
-        stride.append(s.prod(s_data.shape[(i+1):]))
-
-    for d in s.arange(s_in_d):
-        n_gridpoints = len(s_grid[d])
-        for j in s.arange(n_gridpoints-1):
-            if j == 0 and s_grid[d][j] >= point[d]:
-                lo_inds[d] = 0
-                lo_fracs[d] = 1.0
-                break
-            if j == n_gridpoints-2 and s_grid[d][-1] <= point[d]:
-                lo_inds[d] = n_gridpoints-2
-                lo_fracs[d] = 0.0
-                break
-            if s_grid[d][j] < point[d] and s_grid[d][j+1] >= point[d]:
-                lo_inds[d] = j
-                denom = (s_grid[d][j+1]-s_grid[d][j])
-                lo_fracs[d] = 1.0 - (point[d]-s_grid[d][j])/denom
-
-    # Now we form a list of all points on the hypercube
-    # and the associated fractions of each
-    hypercube_bin = binary_table[s_in_d].copy()
-    n_hypercube = len(hypercube_bin)
-    hypercube_weights = s.ones((n_hypercube))
-    hypercube_flat_inds = s.zeros((n_hypercube))
-
-    # simple version
-    for i in range(n_hypercube):
-        for j in range(s_in_d):
-            if hypercube_bin[i, j]:
-                hypercube_weights[i] = hypercube_weights[i] * lo_fracs[j]
-                hypercube_flat_inds[i] = \
-                    hypercube_flat_inds[i] + (lo_inds[j]) * stride[j]
-            else:
-                hypercube_weights[i] = hypercube_weights[i] * \
-                    (1.0-lo_fracs[j])
-                hypercube_flat_inds[i] = \
-                    hypercube_flat_inds[i] + (lo_inds[j]+1) * stride[j]
-
-    # once per output datapoint
-    res = s.zeros(s_out_d)
-    for oi in s.arange(s_out_d):
-        val = 0
-        for i in s.arange(n_hypercube):
-            ind = int(hypercube_flat_inds[i]+oi)
-            res[oi] = res[oi] + s_data.flat[ind] * hypercube_weights[i]
-    return s.array(res)
-
-
 def combos(inds):
     """Return all combinations of indices in a list of index sublists.
-
     For example, for the input [[1, 2], [3, 4, 5]] it would return:
-
         [[1, 3], [2, 3], [1, 4], [2, 4], [1, 5], [2, 5]]
-
     This is used for interpolation in the high-dimensional LUT.
     """
 
