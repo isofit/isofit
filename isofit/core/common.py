@@ -25,7 +25,7 @@ import scipy as s
 from collections import OrderedDict
 from scipy.interpolate import RegularGridInterpolator
 from os.path import expandvars, split, abspath
-from scipy.linalg import cholesky, inv, det, svd
+from scipy.linalg import cholesky, inv, det, svd, eigh
 from numba import jit
 
 from .. import jit_enabled, conditional_decorator
@@ -184,7 +184,7 @@ def svd_inv_sqrt(C, mineig=0, hashtable=None):
     # Cholesky decomposition seems to be too unstable for solving this
     # problem, so we use eigendecompostition instead.
     D, P = eigh(C)
-    Ds = diag(1/sqrt(D))
+    Ds = s.diag(1/s.sqrt(D))
     L = P@Ds
     Cinv_sqrt = L@P.T
     Cinv = L@L.T
