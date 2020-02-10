@@ -109,7 +109,8 @@ class VectorInterpolator:
     def __init__(self, grid, data):
         self.n = data.shape[-1]
         grid_aug = grid + [s.arange(data.shape[-1])]
-        self.itp = RegularGridInterpolator(grid_aug, data)
+        self.itp = RegularGridInterpolator(grid_aug, data,
+                bounds_error=False, fill_value=None)
 
     def __call__(self, points):
 
