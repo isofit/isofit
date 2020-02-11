@@ -23,7 +23,7 @@ import sys
 import scipy as s
 import logging
 
-from ..core.common import combos, VectorInterpolatorJIT, eps, load_wavelen
+from ..core.common import combos, eps, load_wavelen
 from ..core.common import VectorInterpolator
 
 
@@ -174,7 +174,7 @@ class TabularRT:
                 self.wl = wl
 
             ind = [s.where(g == p)[0] for g, p in zip(self.lut_grids, point)]
-            ind = s.array(ind)
+            ind = tuple(ind)
             self.rhoatm[ind] = rhoatm
             self.sphalb[ind] = sphalb
             self.transm[ind] = transm
