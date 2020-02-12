@@ -32,7 +32,7 @@ from scipy.interpolate import interp1d
 from ..radiative_transfer.look_up_tables import TabularRT, FileExistsError
 from ..core.common import json_load_ascii, recursive_replace
 
-from ..core.common import combos, VectorInterpolatorJIT, eps, load_wavelen
+from ..core.common import combos, VectorInterpolator, eps, load_wavelen
 
 
 ### Variables ###
@@ -289,7 +289,7 @@ class ModtranRT(TabularRT):
                 ind = tuple(ind)
                 temp[ind] = mod_output[key]
 
-            self.luts[key] = VectorInterpolatorJIT(self.lut_grids, temp)
+            self.luts[key] = VectorInterpolator(self.lut_grids, temp)
 
     def rebuild_cmd(self, point, fn):
         """."""

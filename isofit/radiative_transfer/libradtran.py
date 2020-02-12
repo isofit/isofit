@@ -22,7 +22,7 @@ import logging
 import scipy as s
 from scipy.interpolate import interp1d
 
-from ..core.common import resample_spectrum, VectorInterpolatorJIT
+from ..core.common import resample_spectrum, VectorInterpolator
 from .look_up_tables import TabularRT, FileExistsError
 
 
@@ -247,7 +247,7 @@ class LibRadTranRT(TabularRT):
                 ind = tuple(ind)
                 temp[ind] = librt_output[key]
         
-            self.luts[key] = VectorInterpolatorJIT(self.lut_grids, temp)
+            self.luts[key] = VectorInterpolator(self.lut_grids, temp)
    
     def lookup_lut(self, x_RT):
         ret = {}

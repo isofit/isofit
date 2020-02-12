@@ -22,7 +22,7 @@ import logging
 from datetime import datetime
 import scipy as s
 
-from isofit.core.common import resample_spectrum, load_wavelen, VectorInterpolatorJIT
+from isofit.core.common import resample_spectrum, load_wavelen, VectorInterpolator
 from .look_up_tables import TabularRT, FileExistsError
 from isofit.core.geometry import Geometry
 
@@ -230,7 +230,7 @@ class SixSRT(TabularRT):
                 ind = tuple(ind)
                 temp[ind] = sixs_output[key]
         
-            self.luts[key] = VectorInterpolatorJIT(self.lut_grids, temp)
+            self.luts[key] = VectorInterpolator(self.lut_grids, temp)
    
     def lookup_lut(self, x_RT):
         ret = {}
