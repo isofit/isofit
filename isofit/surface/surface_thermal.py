@@ -126,6 +126,7 @@ class ThermalSurface(MultiComponentSurface):
         T = x_surface[self.surf_temp_ind]
         #emissivity = s.ones(self.n_wl, dtype=float)
         rfl = self.calc_rfl(x_surface, geom)
+        rfl[rfl > 1.] = 1.
         emissivity = 1 - rfl
         Ls, dLs_dT = emissive_radiance(emissivity, T, self.wl)
         return Ls
@@ -140,7 +141,7 @@ class ThermalSurface(MultiComponentSurface):
         rfl = self.calc_rfl(x_surface, geom)
         emissivity = 1 - rfl
         Ls, dLs_dT = emissive_radiance(emissivity, T, self.wl)
-        dLs_drfl = s.diag(Ls)
+        dLs_drfl = s.diag(-1*Ls)
                                                         
         #frac = x_surface[self.bb_frac_ind]
         #emissivity = s.ones(self.n_wl, dtype=float)

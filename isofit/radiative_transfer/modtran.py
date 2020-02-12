@@ -83,6 +83,9 @@ class ModtranRT(TabularRT):
         
         if self.band_mode_string.lower() == 'modtran_vswir':
             self.modtran_lut_names = ['rhoatm', 'transm', 'sphalb', 'transup']
+        elif self.band_mode_string.lower() == 'modtran_tir': 
+            self.modtran_lut_names = ['thermal_upwelling', 'thermal_downwelling', \
+                                      'rhoatm', 'transm', 'sphalb', 'transup']
 
         # Build the lookup table
         self.build_lut()
