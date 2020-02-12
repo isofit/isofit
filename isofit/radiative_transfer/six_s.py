@@ -227,6 +227,7 @@ class SixSRT(TabularRT):
             temp = s.zeros(dims_aug, dtype=float)
             for sixs_output, point in zip(sixs_outputs, self.points):
                 ind = [s.where(g == p)[0] for g, p in zip(self.lut_grids, point)]
+                ind = tuple(ind)
                 temp[ind] = sixs_output[key]
         
             self.luts[key] = VectorInterpolatorJIT(self.lut_grids, temp)

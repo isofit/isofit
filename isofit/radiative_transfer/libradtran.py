@@ -244,6 +244,7 @@ class LibRadTranRT(TabularRT):
             temp = s.zeros(dims_aug, dtype=float)
             for librt_output, point in zip(librt_outputs, self.points):
                 ind = [s.where(g == p)[0] for g, p in zip(self.lut_grids, point)]
+                ind = tuple(ind)
                 temp[ind] = librt_output[key]
         
             self.luts[key] = VectorInterpolatorJIT(self.lut_grids, temp)

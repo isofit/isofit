@@ -23,7 +23,7 @@ import sys
 import scipy as s
 import logging
 
-from ..core.common import combos, VectorInterpolatorJIT, eps, load_wavelen
+from ..core.common import combos, eps, load_wavelen
 from ..core.common import VectorInterpolator
 
 

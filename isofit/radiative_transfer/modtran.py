@@ -286,7 +286,7 @@ class ModtranRT(TabularRT):
             temp = s.zeros(dims_aug, dtype=float)
             for mod_output, point in zip(mod_outputs, self.points):
                 ind = [s.where(g == p)[0] for g, p in zip(self.lut_grids, point)]
-                ind = s.array(ind)
+                ind = tuple(ind)
                 temp[ind] = mod_output[key]
 
             self.luts[key] = VectorInterpolatorJIT(self.lut_grids, temp)
