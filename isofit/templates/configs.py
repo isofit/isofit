@@ -113,8 +113,8 @@ def get(config, data_dir="../data", remote_dir="../remote", lut_dir="../luts",
                     "SNR": 300
                 },
                 "surface": {
-                    "wavelength_file": absjoin(data_dir, "wavelengths.txt"),
-                    "reflectance_file": absjoin(data_dir, "stonewall_rfl.txt")
+                    "wavelength_file": absjoin(data_dir, "wavelengths.txt")
+                    # "reflectance_file": absjoin(data_dir, "stonewall_rfl.txt")
                 },
                 "modtran_radiative_transfer": {
                     "wavelength_file": absjoin(data_dir, "wavelengths.txt"),
