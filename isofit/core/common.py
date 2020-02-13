@@ -113,16 +113,17 @@ class VectorInterpolator:
 
     def __call__(self, points):
 
-        x = s.zeros((self.n,len(points)+1))
+        x = s.zeros((self.n, len(points)+1))
         for i in range(len(points)):
-            x[:,i] = points[i]
+            x[:, i] = points[i]
         # This last dimension is always an integer so no
         # interpolation is performed. This is done only
         # for performance reasons.
-        x[:,-1] = s.arange(self.n)
+        x[:, -1] = s.arange(self.n)
         res = self.itp(x)
 
         return res
+
 
 class VectorInterpolatorJIT:
     """JIT implementation for VectorInterpolator class."""
