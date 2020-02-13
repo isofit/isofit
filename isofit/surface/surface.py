@@ -47,6 +47,7 @@ class Surface:
             self.rfl, self.rwl = load_spectrum(config['reflectance_file'])
             self.wl = self.rwl.copy()
             self.n_wl = len(self.wl)
+
         if 'wavelength_file' in config:
             self.wl, self.fwhm = load_wavelen(config['wavelength_file'])
             self.n_wl = len(self.wl)
