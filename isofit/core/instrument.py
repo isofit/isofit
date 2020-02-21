@@ -125,7 +125,7 @@ class Instrument:
             noise_data_NEDT = self.noise_data[:,1]
             nedt = interp1d(noise_data_w_nm, noise_data_NEDT)(self.wl_init)
 
-            T, emis = 300., 1.
+            T, emis = 300., 0.95 # From Glynn Hulley, 2/18/2020
             _, drdn_dT = emissive_radiance(emis, T, self.wl_init)
             self.noise_NESR = nedt * drdn_dT
 
