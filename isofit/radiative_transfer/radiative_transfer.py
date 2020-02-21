@@ -50,6 +50,7 @@ class RadiativeTransfer():
 
         self.lut_grid = config['lut_grid']
 
+        temp_RTs_list, temp_min_wavelen_list = [], []
         config_statevector = config['statevector']
         for key, local_config in config.items():
 
@@ -65,12 +66,25 @@ class RadiativeTransfer():
                     temp_statevec[local_sv_name] = config_statevector[local_sv_name]
                 local_config["statevector"] = temp_statevec
 
+            temp_RT = None
             if key in modtran_bands_available:
-                self.RTs[key] = ModtranRT(key, local_config, self.statevec)
+                temp_RT = ModtranRT(key, local_config, self.statevec)
             elif key in sixs_names:
-                self.RTs[key] = SixSRT(local_config, self.statevec)
+                temp_RT = SixSRT(local_config, self.statevec)
             elif key in libradtran_names:
-                self.RTs[key] = LibRadTranRT(local_config, self.statevec)
+                temp_RT = LibRadTranRT(local_config, self.statevec)
+            
+            if temp_RT is not None:
+                temp_RTs_list.append((key, temp_RT))
+                temp_min_wavelen_list.append(temp_RT.wl[0])
+        
+        # Put the RT objects into self.RTs in wavelength order
+        # This assumes that the input data wavelengths are all
+        # ascending.
+        sort_inds = s.argsort(s.array(temp_min_wavelen_list))
+        for sort_ind in sort_inds:
+            key, RT = temp_RTs_list[sort_ind]
+            self.RTs[key] = RT
 
         # Retrieved variables.  We establish scaling, bounds, and
         # initial guesses for each state vector element.  The state
