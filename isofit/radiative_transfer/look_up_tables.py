@@ -67,7 +67,6 @@ class TabularRT:
         self.lut_grid_config = config['lut_grid']
         self.lut_dir = config['lut_path']
         self.statevec = list(config['statevector'].keys())
-        self.bvec = list(config['unknowns'].keys())
         self.n_point = len(self.lut_grid_config)
         self.n_state = len(self.statevec)
 
@@ -91,7 +90,6 @@ class TabularRT:
         self.init = s.array(self.init)
         self.prior_mean = s.array(self.prior_mean)
         self.prior_sigma = s.array(self.prior_sigma)
-        self.bval = s.array([config['unknowns'][k] for k in self.bvec])
 
     def build_lut(self, rebuild=False):
         """Each LUT is associated with a source directory.  We build a lookup table by: 

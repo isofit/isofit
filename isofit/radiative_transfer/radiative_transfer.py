@@ -107,20 +107,13 @@ class RadiativeTransfer():
         self.prior_mean = s.array(self.prior_mean)
         self.prior_sigma = s.array(self.prior_sigma)
 
-        self.wl = s.squeeze(s.array([RT.wl for RT in self.RTs.values()]))
+        self.wl = s.concatenate([RT.wl for RT in self.RTs.values()])
 
-        self.bvec = []
-        for RT in self.RTs.values():
-            self.bvec = self.bvec + [bvec for bvec in RT.bvec]
-        self.bval = s.hstack([RT.bval for RT in self.RTs.values()])
+        self.bvec = list(config['unknowns'].keys())
+        self.bval = s.array([config['unknowns'][k] for k in self.bvec])
 
-        # Not quite sure what to do with this right now. This check is to ensure
-        # that future updates correctly handle additions to bvec and bval
-        if len(self.bvec) != 1:
-            raise NotImplementedError
-
-        self.solar_irr = s.squeeze(s.array([RT.solar_irr for RT in self.RTs.values()]))
-        self.coszen = s.squeeze(s.array([RT.coszen for RT in self.RTs.values()]))
+        self.solar_irr = s.concatenate([RT.solar_irr for RT in self.RTs.values()])
+        self.coszen = [RT.coszen for RT in self.RTs.values()][0] # These should all be the same so just grab one
 
     def xa(self):
         """Pull the priors from each of the individual RTs.

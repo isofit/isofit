@@ -67,7 +67,6 @@ class ThermalSurface(MultiComponentSurface):
 
         def err(z):
             T = z
-            print(T)
             emissivity = s.ones(self.n_wl, dtype=float)
             Ls_est, d = emissive_radiance(emissivity, T, self.wl)
             resid = Ls_est - Ls
