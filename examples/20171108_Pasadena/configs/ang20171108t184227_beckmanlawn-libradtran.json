@@ -55,15 +55,15 @@
         "H2OSTR": [1.5, 2.0],
         "AOT550": [0.01, 0.1]
       },
+      "unknowns": {
+        "H2O_ABSCO": 0.01
+      },
       "libradtran_vswir": {
         "wavelength_file": "../remote/20170320_ang20170228_wavelength_fit.txt",
         "lut_path":"../lut/",
         "libradtran_template_file":"ang20171108t184227_libradtran.inp",
         "lut_names": ["H2OSTR","AOT550"], 
-        "statevector_names": ["H2OSTR","AOT550"], 
-        "unknowns": {
-          "H2O_ABSCO": 0.01
-        }
+        "statevector_names": ["H2OSTR","AOT550"]
       }
     }
   },
