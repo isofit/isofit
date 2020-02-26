@@ -389,3 +389,42 @@ def combos(inds):
     n = len(inds)
     cases = s.prod([len(i) for i in inds])
     return s.array(s.meshgrid(*inds)).reshape((n, cases)).T
+
+
+def conditional_gaussian(mu, sigma, inds_a, vals_a, inds_b):
+    """ For a mmultivariate gaussian parameterized by mean vector mu
+        and covariance matrix sigma, return the conditional mean and
+        covariance given a subspace of observed values. 
+
+        Inputs:
+           mu - mean of Gaussian distribution
+           sigma - covariance matrix of Gaussian distribution
+           inds_a - array of integers corresponding to indices of the
+              observed subset of values.
+           vals_a - array of floating point values for elements in 
+              inds_a.
+           inds_b - the remainder whose conditional distribution we are
+              inferring.
+
+        Returns:
+            mu_b_given_a - the mean vector for the conditional distribution 
+              of elements in inds_b given elements in inds_a.
+            sigma_b_given_a - the covariaance matrix for the conditional
+              distribution of elements in inds_b given elements in inds_a"""
+     
+    # Define submatrices
+    sigma_aa = s.array([sigma[i, inds_a] for i in inds_a])
+    sigma_bb = s.array([sigma[i, inds_b] for i in inds_b])
+    sigma_ba = s.array([sigma[i, inds_a] for i in inds_b])
+    sigma_ab = s.array([sigma[i, inds_b] for i in inds_a])
+
+    # Means of both subsets
+    mu_b = mu[inds_b]
+    mu_a = mu[inds_a]
+
+    # Standard Conditional Gaussian
+    inv_sigma_aa = inv(sigma_aa)
+    mu_b_given_a = mu_b + sigma_ba @ inv_sigma_aa @ (vals_a - mu_a)
+    sigma_b_given_a = sigma_bb + sigma_ba @ inv_sigma_aa @ sigma_ab
+
+    return mu_b_given_a, sigma_b_given_a

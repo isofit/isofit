@@ -169,6 +169,10 @@ class Inversion:
         # Calculate the initial solution, if needed.
         x0 = invert_simple(self.fm, meas, geom)
 
+        # Record initializaation state
+        geom.x_surf_init = x0[self.fm.idx_surface]
+        geom.x_RT_init = x0[self.fm.idx_RT]
+
         # Seps is the covariance of "observation noise" including both
         # measurement noise from the instrument as well as variability due to
         # unknown variables. For speed, we will calculate it just once based

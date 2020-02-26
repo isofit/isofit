@@ -167,6 +167,4 @@ def invert_simple(forward, meas, geom):
     # models, etc.)
 
     x[forward.idx_surface] = forward.surface.fit_params(rfl_est, Ls_est, geom)
-    geom.x_surf_init = x[forward.idx_surface]
-    geom.x_RT_init = x[forward.idx_RT]
     return x

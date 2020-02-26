@@ -29,6 +29,7 @@ from .common import load_config
 from .forward import ForwardModel
 from .inverse import Inversion
 from .inverse_mcmc import MCMCInversion
+from .inverse_grid import GridInversion
 from .fileio import IO
 
 from .. import warnings_enabled
@@ -60,6 +61,8 @@ class Isofit:
 
         if 'mcmc_inversion' in self.config:
             self.iv = MCMCInversion(self.config['mcmc_inversion'], self.fm)
+        elif 'grid_inversion' in self.config:
+            self.iv = GridInversion(self.config['grid_inversion'], self.fm)
         else:
             self.iv = Inversion(self.config['inversion'], self.fm)
 
