@@ -23,15 +23,18 @@ import scipy as s
 from scipy.interpolate import interp1d
 from scipy.signal import convolve
 from scipy.io import loadmat
-
 from numpy.random import multivariate_normal as mvn
 
-from isofit.core.common import eps, srf, load_wavelen, resample_spectrum
+from .common import eps, srf, load_wavelen, resample_spectrum
 
+
+### Variables ###
 
 # Max. wavelength difference (nm) that does not trigger expensive resampling
 wl_tol = 0.01
 
+
+### Classes ###
 
 class Instrument:
 
@@ -166,21 +169,23 @@ class Instrument:
             (not ('WL_SPACE' in self.statevec))
 
     def xa(self):
-        '''Mean of prior distribution, calculated at state x. '''
+        """Mean of prior distribution, calculated at state x."""
 
         return self.init.copy()
 
     def Sa(self):
-        '''Covariance of prior distribution. (diagonal)'''
+        """Covariance of prior distribution (diagonal)."""
 
         if self.n_state == 0:
             return s.zeros((0, 0), dtype=float)
         return s.diagflat(pow(self.prior_sigma, 2))
 
     def Sy(self, meas, geom):
-        """ Calculate measurement error covariance.
-           Input: meas, the instrument measurement
-           Returns: Sy, the measurement error covariance due to instrument noise"""
+        """Calculate measurement error covariance.
+
+        Input: meas, the instrument measurement
+        Returns: Sy, the measurement error covariance due to instrument noise
+        """
 
         if self.model_type == 'SNR':
             bad = meas < 1e-5
@@ -202,8 +207,8 @@ class Instrument:
             return C / s.sqrt(self.integrations)
 
     def dmeas_dinstrument(self, x_instrument, wl_hi, rdn_hi):
-        """Jacobian of measurement  with respect to the instrument 
-           free parameter state vector.  We use finite differences for now."""
+        """Jacobian of measurement with respect to the instrument 
+           free parameter state vector. We use finite differences for now."""
 
         dmeas_dinstrument = s.zeros((self.n_chan, self.n_state), dtype=float)
         if self.n_state == 0:
@@ -219,16 +224,17 @@ class Instrument:
 
     def dmeas_dinstrumentb(self, x_instrument, wl_hi, rdn_hi):
         """Jacobian of radiance with respect to the instrument parameters
-           that are unknown and not retrieved, i.e. the inevitable persisting
-           uncertainties in instrument spectral and radiometric calibration.
-           Input: meas, a vector of size n_chan
-           Returns: Kb_instrument, a matrix of size 
-            [n_measurements x nb_instrument]"""
+        that are unknown and not retrieved, i.e., the inevitable persisting
+        uncertainties in instrument spectral and radiometric calibration.
+
+        Input: meas, a vector of size n_chan
+        Returns: Kb_instrument, a matrix of size [n_measurements x nb_instrument]
+        """
 
         # Uncertainty due to radiometric calibration
         meas = self.sample(x_instrument, wl_hi, rdn_hi)
-        dmeas_dinstrument = s.hstack((s.diagflat(meas),
-                                      s.zeros((self.n_chan, 2))))
+        dmeas_dinstrument = s.hstack(
+            (s.diagflat(meas), s.zeros((self.n_chan, 2))))
 
         # Uncertainty due to spectral calibration
         if self.bval[-2] > 1e-6:
@@ -244,8 +250,7 @@ class Instrument:
         return dmeas_dinstrument
 
     def sample(self, x_instrument, wl_hi, rdn_hi):
-        """ Apply instrument sampling to a radiance spectrum, returning the
-            predicted measurement"""
+        """Apply instrument sampling to a radiance spectrum, returning predicted measurement."""
 
         if self.calibration_fixed and all((self.wl_init - wl_hi) < wl_tol):
             return rdn_hi
@@ -268,9 +273,9 @@ class Instrument:
             return s.array(resamp)
 
     def simulate_measurement(self, meas, geom):
-        """ Simulate a measurement by the given sensor, for a true radiance
-            sampled to instrument wavelengths.  This basically just means
-            drawing a sample from the noise distribution."""
+        """Simulate a measurement by the given sensor, for a true radiance
+        sampled to instrument wavelengths. This basically just means
+        drawing a sample from the noise distribution."""
 
         Sy = self.Sy(meas, geom)
         mu = s.zeros(meas.shape)
@@ -278,7 +283,7 @@ class Instrument:
         return rdn_sim
 
     def calibration(self, x_instrument):
-        """ Calculate the measured wavelengths"""
+        """Calculate the measured wavelengths."""
 
         wl, fwhm = self.wl_init, self.fwhm_init
         space_orig = wl - wl[0]
@@ -300,13 +305,13 @@ class Instrument:
         return wl, fwhm
 
     def summarize(self, x_instrument, geom):
-        '''Summary of state vector'''
+        """Summary of state vector."""
 
         if len(x_instrument) < 1:
             return ''
         return 'Instrument: '+' '.join(['%5.3f' % xi for xi in x_instrument])
 
     def reconfigure(self, config):
-        '''Reconfiguration not yet supported'''
+        """Reconfiguration not yet supported."""
 
         return

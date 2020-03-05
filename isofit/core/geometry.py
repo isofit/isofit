@@ -22,12 +22,12 @@ import logging
 from datetime import datetime
 import scipy as s
 
-from isofit.core.sunposition import sunpos
+from .sunposition import sunpos
 
 
 class Geometry:
     """The geometry of the observation, all we need to calculate sensor,
-      surface and solar positions"""
+      surface, and solar positions."""
 
     def __init__(self, obs=None, glt=None, loc=None, ds=None,
                  esd=None, pushbroom_column=None):

@@ -25,9 +25,13 @@ import scipy as s
 from collections import OrderedDict
 from scipy.interpolate import RegularGridInterpolator
 from os.path import expandvars, split, abspath
-from scipy.linalg import cholesky, inv, det, svd
+from scipy.linalg import cholesky, inv, det, svd, eigh
 from numba import jit
 
+from .. import jit_enabled, conditional_decorator
+
+
+### Variables ###
 
 # Maximum size of our hash tables
 max_table_size = 500
@@ -97,34 +101,37 @@ binary_table = [s.array([[]]),
 eps = 1e-5  # small value used in finite difference derivatives
 
 
-def emissive_radiance_old(emissivity, T, wl):
-    """Radiance of a surface due to emission"""
+### Classes ###
 
-    h = 6.62607004e-34  # m2 kg s-1
-    c = 299792458  # m s-1
-    numerator = 2.0*h*(c**2)  # m4 kg s-1
-    wl_m = wl*1e-9
-    numerator_per_lam5 = numerator * pow(wl_m, -5)  # kg s-1 m-1
-    k = 1.380648520-23  # Boltzmann constant, m2 kg s-2 K-1
-    denom = s.exp(h*c/(k*wl_m*T))-1.0  # dimensionless
-    L = numerator_per_lam5 / denom  # Watts per m3
+class VectorInterpolator:
+    """."""
 
-    cm2_per_m2, nm_per_m, uW_per_W = 10000, 1e9, 1e6
-    conversion = cm2_per_m2 * nm_per_m * uW_per_W / s.pi  # -> uW nm-1 cm-2 sr-1
-    L = L * conversion
+    def __init__(self, grid, data):
+        self.n = data.shape[-1]
+        grid_aug = grid + [s.arange(data.shape[-1])]
+        self.itp = RegularGridInterpolator(grid_aug, data,
+                bounds_error=False, fill_value=None)
 
-    ddenom_dT = s.exp(h*c/(k*wl_m*T)) * h*c*(-1.0)/(pow(k*wl_m*T, 2)) * k*wl_m
-    dL_dT = -numerator_per_lam5 / pow(denom, 2.0) * ddenom_dT * conversion
+    def __call__(self, points):
 
-    L = L * emissivity
-    dL_dT = dL_dT * emissivity
-    L[s.logical_not(s.isfinite(L))] = 0
-    dL_dT[s.logical_not(s.isfinite(dL_dT))] = 0
-    return L, dL_dT
+        x = s.zeros((self.n,len(points)+1))
+        for i in range(len(points)):
+            x[:,i] = points[i]
+        # This last dimension is always an integer so no
+        # interpolation is performed. This is done only
+        # for performance reasons.
+        x[:,-1] = s.arange(self.n)
+        res = self.itp(x)
+
+        return res
+
+
+### Functions ###
 
 
 def load_wavelen(wavelength_file):
-    """Load a wavelength file, and convert to nanometers if needed"""
+    """Load a wavelength file, and convert to nanometers if needed."""
+
     q = s.loadtxt(wavelength_file)
     if q.shape[1] > 2:
         q = q[:, 1:3]
@@ -135,7 +142,7 @@ def load_wavelen(wavelength_file):
 
 
 def emissive_radiance(emissivity, T, wl):
-    """Radiance of a surface due to emission"""
+    """Radiance of a surface due to emission."""
 
     c_1 = 1.88365e32/s.pi
     c_2 = 14387690
@@ -152,42 +159,37 @@ def emissive_radiance(emissivity, T, wl):
     return uW_per_cm2_sr_nm, dRdn_dT
 
 
-@jit
-def chol_inv(C):
-    """Fast stable inverse for Hermetian positive definite matrices"""
-
-    R = cholesky(C, lower=False)
-    S = inv(R)
-    return S.dot(S.T)
-
-
-@jit
+@conditional_decorator(jit, jit_enabled, forceobj=True)
 def svd_inv(C, mineig=0, hashtable=None):
-    """Fast stable inverse using SVD.  This can handle near-singular matrices"""
+    """Fast stable inverse using SVD. This can handle near-singular matrices."""
 
     return svd_inv_sqrt(C, mineig, hashtable)[0]
 
 
-@jit
+@conditional_decorator(jit, jit_enabled)
 def svd_inv_sqrt(C, mineig=0, hashtable=None):
     """Fast stable inverse using SVD. This can handle near-singular matrices.
-       Also return the square root."""
+    Also return the square root.
+    """
 
     # If we have a hash table, look for the precalculated solution
     h = None
     if hashtable is not None:
+        # If arrays are in Fortran ordering, they are not hashable.
+        if not C.flags['C_CONTIGUOUS']:
+            C = C.copy(order='C')
         h = xxhash.xxh64_digest(C)
         if h in hashtable:
             return hashtable[h]
 
-    U, V, D = svd(C)
-    ignore = s.where(V < mineig)[0]
-    Vi = 1.0 / V
-    Vi[ignore] = 0
-    Visqrt = s.sqrt(Vi)
-    Cinv = (D.T).dot(s.diag(Vi)).dot(U.T)
-    Cinv_sqrt = (D.T).dot(s.diag(Visqrt)).dot(U.T)
-
+    # Cholesky decomposition seems to be too unstable for solving this
+    # problem, so we use eigendecompostition instead.
+    D, P = eigh(C)
+    Ds = s.diag(1/s.sqrt(D))
+    L = P@Ds
+    Cinv_sqrt = L@P.T
+    Cinv = L@L.T
+    
     # If there is a hash table, cache our solution.  Bound the total cache
     # size by removing any extra items in FIFO order.
     if hashtable is not None:
@@ -199,7 +201,7 @@ def svd_inv_sqrt(C, mineig=0, hashtable=None):
 
 
 def expand_path(directory, subpath):
-    """Expand a path variable to an absolute path, if it is not one already"""
+    """Expand a path variable to an absolute path, if it is not one already."""
 
     if subpath.startswith('/'):
         return subpath
@@ -207,7 +209,7 @@ def expand_path(directory, subpath):
 
 
 def recursive_replace(obj, key, val):
-    """Find and replace a vector in a nested structure"""
+    """Find and replace a vector in a nested structure."""
 
     if isinstance(obj, dict):
         if key in obj:
@@ -220,8 +222,8 @@ def recursive_replace(obj, key, val):
 
 
 def get_absorption(wl, absfile):
-    '''Calculate water and ice absorption coefficients using indices of
-  refraction, and interpolate them to new wavelengths (user specifies nm)'''
+    """Calculate water and ice absorption coefficients using indices of
+    refraction, and interpolate them to new wavelengths (user specifies nm)."""
 
     # read the indices of refraction
     q = s.loadtxt(absfile, delimiter=',')
@@ -240,17 +242,19 @@ def get_absorption(wl, absfile):
     return water_abscf_intrp, ice_abscf_intrp
 
 
-def recursive_reincode(j, shell_replace=True):
+def recursive_reencode(j, shell_replace=True):
+    """Recursively re-encode a dictionary."""
+
     if isinstance(j, dict):
         for key, value in j.items():
-            j[key] = recursive_reincode(value)
+            j[key] = recursive_reencode(value)
         return j
     elif isinstance(j, list):
         for i, k in enumerate(j):
-            j[i] = recursive_reincode(k)
+            j[i] = recursive_reencode(k)
         return j
     elif isinstance(j, tuple):
-        return tuple([recursive_reincode(k) for k in j])
+        return tuple([recursive_reencode(k) for k in j])
     else:
         if shell_replace and isinstance(j, str):
             try:
@@ -262,24 +266,26 @@ def recursive_reincode(j, shell_replace=True):
 
 def json_load_ascii(filename, shell_replace=True):
     """Load a hierarchical structure, convert all unicode to ASCII and
-    expand environment variables"""
+    expand environment variables."""
 
     with open(filename, 'r') as fin:
         j = json.load(fin)
-        return recursive_reincode(j, shell_replace)
+        return recursive_reencode(j, shell_replace)
 
 
 def load_config(config_file):
-    """Configuration files are typically .json, with relative paths"""
+    """Configuration files are typically .json, with relative paths."""
 
-    config = json.load(open(config_file, 'r'))
+    with open(config_file, 'r') as f:
+        config = json.load(f)
+
     configdir, f = split(abspath(config_file))
     return expand_all_paths(config, configdir)
 
 
 def expand_all_paths(config, configdir):
     """Expand any config entry containing the string 'file' into 
-       an absolute path, if needed"""
+       an absolute path, if needed."""
 
     def recursive_expand(j):
         if isinstance(j, dict):
@@ -296,14 +302,15 @@ def expand_all_paths(config, configdir):
                 j[i] = recursive_expand(k)
             return j
         elif isinstance(j, tuple):
-            return tuple([recursive_reincode(k) for k in j])
+            return tuple([recursive_reencode(k) for k in j])
         return j
 
     return recursive_expand(config)
 
 
 def find_header(imgfile):
-    """Return the header associated with an image file"""
+    """Return the header associated with an image file."""
+
     if os.path.exists(imgfile+'.hdr'):
         return imgfile+'.hdr'
     ind = imgfile.rfind('.raw')
@@ -316,14 +323,16 @@ def find_header(imgfile):
 
 
 def expand_path(directory, subpath):
-    """Turn a subpath into an absolute path if it is not absolute already"""
+    """Turn a subpath into an absolute path if it is not absolute already."""
+
     if subpath.startswith('/'):
         return subpath
     return os.path.join(directory, subpath)
 
 
 def rdn_translate(wvn, rdn_wvn):
-    """Translate radiance out of wavenumber space"""
+    """Translate radiance out of wavenumber space."""
+
     dwvn = wvn[1:]-wvn[:-1]
     dwl = 10000.0/wvn[1:] - 10000.0/wvn[:-1]
     return rdn_wvn*(dwl/dwvn)
@@ -331,7 +340,8 @@ def rdn_translate(wvn, rdn_wvn):
 
 def resample_spectrum(x, wl, wl2, fwhm2, fill=False):
     """Resample a spectrum to a new wavelength / FWHM. 
-       I assume Gaussian SRFs"""
+       I assume Gaussian SRFs."""
+
     H = s.array([srf(wl, wi, fwhmi/2.355)
                  for wi, fwhmi in zip(wl2, fwhm2)])
     if fill is False:
@@ -348,7 +358,7 @@ def resample_spectrum(x, wl, wl2, fwhm2, fill=False):
 
 def load_spectrum(init):
     """Load a single spectrum from a text file with initial columns giving
-       wavelength and magnitude respectively"""
+       wavelength and magnitude, respectively."""
 
     x = s.loadtxt(init)
     if x.ndim > 1:
@@ -362,104 +372,19 @@ def load_spectrum(init):
 
 
 def srf(x, mu, sigma):
-    """Spectral Response Function """
+    """Spectral response function."""
+
     u = (x-mu)/abs(sigma)
     y = (1.0/(s.sqrt(2.0*s.pi)*abs(sigma)))*s.exp(-u*u/2.0)
     return y/y.sum()
 
 
-class VectorInterpolator:
-
-    def __init__(self, grid, data):
-        self.n = data.shape[-1]
-        grid_aug = grid + [s.arange(data.shape[-1])]
-        self.itp = RegularGridInterpolator(grid_aug, data)
-
-    def __call__(self, points):
-        res = []
-        for v in s.arange(self.n):
-            p_aug = s.concatenate((points, s.array([v])), axis=0)
-            res.append(self.itp(p_aug))
-        return res
-
-
-class VectorInterpolatorJIT:
-
-    def __init__(self, grid, data):
-        """By convention, the final dimensionn of "data" is the wavelength.
-           "grid" contains a list of arrays, each representing the input grid 
-           points in the ith dimension of the table."""
-        self.in_d = len(data.shape)-1
-        self.out_d = data.shape[-1]
-        self.grid = [i.copy() for i in grid]
-        self.data = data.copy()
-
-    # @jit
-    def __call__(self, point):
-        return jitinterp(self.in_d, self.out_d, self.grid, self.data, point)
-
-
-# @jit
-def jitinterp(s_in_d, s_out_d, s_grid, s_data, point):
-
-        # we find the bottom index along each input dimension
-    lo_inds = s.zeros(s_in_d)
-    lo_fracs = s.zeros(s_in_d)
-    stride = []
-    for i in s.arange(s_in_d):
-        stride.append(s.prod(s_data.shape[(i+1):]))
-
-    for d in s.arange(s_in_d):
-        n_gridpoints = len(s_grid[d])
-        for j in s.arange(n_gridpoints-1):
-            if j == 0 and s_grid[d][j] >= point[d]:
-                lo_inds[d] = 0
-                lo_fracs[d] = 1.0
-                break
-            if j == n_gridpoints-2 and s_grid[d][-1] <= point[d]:
-                lo_inds[d] = n_gridpoints-2
-                lo_fracs[d] = 0.0
-                break
-            if s_grid[d][j] < point[d] and s_grid[d][j+1] >= point[d]:
-                lo_inds[d] = j
-                denom = (s_grid[d][j+1]-s_grid[d][j])
-                lo_fracs[d] = 1.0 - (point[d]-s_grid[d][j])/denom
-
-    # Now we form a list of all points on the hypercube
-    # and the associated fractions of each
-
-    hypercube_bin = binary_table[s_in_d].copy()
-    n_hypercube = len(hypercube_bin)
-    hypercube_weights = s.ones((n_hypercube))
-    hypercube_flat_inds = s.zeros((n_hypercube))
-
-    # simple version
-    for i in range(n_hypercube):
-        for j in range(s_in_d):
-            if hypercube_bin[i, j]:
-                hypercube_weights[i] = hypercube_weights[i] * lo_fracs[j]
-                hypercube_flat_inds[i] = \
-                    hypercube_flat_inds[i] + (lo_inds[j]) * stride[j]
-            else:
-                hypercube_weights[i] = hypercube_weights[i] * (1.0-lo_fracs[j])
-                hypercube_flat_inds[i] = \
-                    hypercube_flat_inds[i] + (lo_inds[j]+1) * stride[j]
-
-    # once per output datapoint
-    res = s.zeros(s_out_d)
-    for oi in s.arange(s_out_d):
-        val = 0
-        for i in s.arange(n_hypercube):
-            ind = int(hypercube_flat_inds[i]+oi)
-            res[oi] = res[oi] + s_data.flat[ind] * hypercube_weights[i]
-    return s.array(res)
-
-
 def combos(inds):
-    '''Return all combinations of indices in a list of index sublists 
+    """Return all combinations of indices in a list of index sublists.
     For example, for the input [[1, 2], [3, 4, 5]] it would return:
         [[1, 3], [2, 3], [1, 4], [2, 4], [1, 5], [2, 5]]
-    This is used for interpolation in the high-dimensional LUT'''
+    This is used for interpolation in the high-dimensional LUT.
+    """
 
     n = len(inds)
     cases = s.prod([len(i) for i in inds])

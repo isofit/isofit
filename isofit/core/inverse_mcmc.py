@@ -25,18 +25,25 @@ from scipy.linalg import inv, norm, sqrtm, det, cholesky, qr, svd
 from scipy.stats import multivariate_normal
 from hashlib import md5
 
-from .common import chol_inv, eps
+from .common import eps
 from .inverse import Inversion
 
 
 class MCMCInversion(Inversion):
 
     def __init__(self, config, forward):
-        """Initialize and apply defaults"""
+        """Initialize and apply defaults."""
+
         Inversion.__init__(self, config, forward)
-        defaults = {'iterations': 10000, 'burnin': 200, 'method': 'MCMC',
-                    'regularizer': 1e-3, 'proposal_scaling': 0.01,
-                    'verbose': True, 'restart_every': 2000}
+        defaults = {
+            'iterations': 10000,
+            'burnin': 200,
+            'method': 'MCMC',
+            'regularizer': 1e-3,
+            'proposal_scaling': 0.01,
+            'verbose': True,
+            'restart_every': 2000
+        }
         for key, val in defaults.items():
             if key in config:
                 setattr(self, key, config[key])
@@ -44,9 +51,8 @@ class MCMCInversion(Inversion):
                 setattr(self, key, val)
 
     def stable_mvnpdf(self, mean, cov, x):
+        """Stable inverse via Singular Value Decomposition, using only the significant eigenvectors."""
 
-        # Stable inverse via Singular Value Decomposition, using only the
-        # significant eigenvectors
         U, V, D = svd(cov)
         use = s.where(V > 0)[0]
         Cinv = (D[use, :].T).dot(s.diag(1.0/V[use])).dot(U[:, use].T)
@@ -59,7 +65,7 @@ class MCMCInversion(Inversion):
         return lead + diverg
 
     def log_density(self, x, rdn_meas, geom, bounds):
-        """Log probability density combines prior and likelihood terms"""
+        """Log probability density combines prior and likelihood terms."""
 
         # First check bounds
         if bounds is not None and any(s.logical_or(x < bounds[0], x > bounds[1])):

@@ -20,38 +20,42 @@
 #
 
 import logging
-import warnings
 import cProfile
+from contextlib import suppress
+import warnings
+from numba.errors import NumbaWarning, NumbaDeprecationWarning, NumbaPendingDeprecationWarning
 
-from isofit.core.common import load_config
-from isofit.core.forward import ForwardModel
-from isofit.core.inverse import Inversion
-from isofit.core.inverse_mcmc import MCMCInversion
-from isofit.core.fileio import IO
+from .common import load_config
+from .forward import ForwardModel
+from .inverse import Inversion
+from .inverse_mcmc import MCMCInversion
+from .fileio import IO
 
 import multiprocessing
-
-# Suppress warnings that don't come from us
-warnings.filterwarnings("ignore")
+from .. import warnings_enabled
 
 
 class Isofit:
     """Spectroscopic Surface and Atmosphere Fitting."""
 
-    rows, cols = None, None
-    config = None
-    profile = None
-    fm = None
-    iv = None
-    states = None
+    def __init__(self, config_file, row_column='', profile=False, level='INFO'):
+        """Initialize the Isofit class."""
 
-    def __init__(self, config_file, level='INFO', row_column='', profile=False):
-        """Initialize the class."""
-        self.profile = profile
         # Set logging level
         logging.basicConfig(format='%(message)s', level=level)
+
+        self.rows = None
+        self.cols = None
+        self.config = None
+        self.profile = profile
+        self.fm = None
+        self.iv = None
+        self.io = None
+        self.states = None
+
         # Load configuration file
         self.config = load_config(config_file)
+
         # Build the forward model and inversion objects
         self._init_nonpicklable_objects()
 
@@ -88,6 +92,17 @@ class Isofit:
         self.iv = None
 
     def _run_single_spectra(self, index):
+        # Ignore Numba warnings
+        if not warnings_enabled:
+            warnings.simplefilter(
+                action='ignore', category=RuntimeWarning)
+            warnings.simplefilter(
+                action='ignore', category=NumbaWarning)
+            warnings.simplefilter(
+                action='ignore', category=NumbaDeprecationWarning)
+            warnings.simplefilter(
+                action='ignore', category=NumbaPendingDeprecationWarning)
+
         self._init_nonpicklable_objects()
         io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
         success, row, col, meas, geom, configs = io.get_components_at_index(index)
