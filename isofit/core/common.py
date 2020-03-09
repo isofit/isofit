@@ -181,13 +181,18 @@ def svd_inv_sqrt(C, mineig=0, hashtable=None):
         if h in hashtable:
             return hashtable[h]
 
-    # Cholesky decomposition seems to be too unstable for solving this
-    # problem, so we use eigendecompostition instead.
-    D, P = scipy.linalg.eigh(C)
-    Ds = np.diag(1/np.sqrt(D))
-    L = P@Ds
-    Cinv_sqrt = L@P.T
-    Cinv = L@L.T
+    Cinv = scipy.linalg.inv(C)
+    for count in range(3):
+        if np.any(Cinv < 0) or np.any(np.isnan(Cinv)):
+            inv_eps = 1e-6 * (count-1)*10
+            Cinv = scipy.linalg.inv(C + np.diag(np.ones(C.shape[0]) * inv_eps))
+        else:
+            break
+
+        if count == 3:
+            raise ValueError('Matrix inversion contains negative values, even after adding ' +
+                             '{} to the diagonal.  Sqrt fails'.format(inv_eps))
+    Cinv_sqrt = np.sqrt(Cinv)
 
     # If there is a hash table, cache our solution.  Bound the total cache
     # size by removing any extra items in FIFO order.
