@@ -21,11 +21,10 @@
 import os
 import json
 import xxhash
-import scipy as s
-from collections import OrderedDict
+import numpy as np
+import scipy.linalg
 from scipy.interpolate import RegularGridInterpolator
 from os.path import expandvars, split, abspath
-from scipy.linalg import cholesky, inv, det, svd, eigh
 from numba import jit
 
 from .. import jit_enabled, conditional_decorator
@@ -36,36 +35,36 @@ from .. import jit_enabled, conditional_decorator
 # Maximum size of our hash tables
 max_table_size = 500
 
-binary_table = [s.array([[]]),
-                s.array([[0], [1]]),
-                s.array([[0, 0], [0, 1], [1, 0], [1, 1]]),
-                s.array([[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1],
+binary_table = [np.array([[]]),
+                np.array([[0], [1]]),
+                np.array([[0, 0], [0, 1], [1, 0], [1, 1]]),
+                np.array([[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1],
                          [1, 0, 0], [1, 0, 1], [1, 1, 0], [1, 1, 1]]),
-                s.array([[0, 0, 0, 0], [0, 0, 0, 1],
-                         [0, 0, 1, 0], [0, 0, 1, 1],
-                         [0, 1, 0, 0], [0, 1, 0, 1],
-                         [0, 1, 1, 0], [0, 1, 1, 1],
-                         [1, 0, 0, 0], [1, 0, 0, 1],
-                         [1, 0, 1, 0], [1, 0, 1, 1],
-                         [1, 1, 0, 0], [1, 1, 0, 1],
-                         [1, 1, 1, 0], [1, 1, 1, 1]]),
-                s.array([[0, 0, 0, 0, 0], [0, 0, 0, 0, 1],
-                         [0, 0, 0, 1, 0], [0, 0, 0, 1, 1],
-                         [0, 0, 1, 0, 0], [0, 0, 1, 0, 1],
-                         [0, 0, 1, 1, 0], [0, 0, 1, 1, 1],
-                         [0, 1, 0, 0, 0], [0, 1, 0, 0, 1],
-                         [0, 1, 0, 1, 0], [0, 1, 0, 1, 1],
-                         [0, 1, 1, 0, 0], [0, 1, 1, 0, 1],
-                         [0, 1, 1, 1, 0], [0, 1, 1, 1, 1],
-                         [1, 0, 0, 0, 0], [1, 0, 0, 0, 1],
-                         [1, 0, 0, 1, 0], [1, 0, 0, 1, 1],
-                         [1, 0, 1, 0, 0], [1, 0, 1, 0, 1],
-                         [1, 0, 1, 1, 0], [1, 0, 1, 1, 1],
-                         [1, 1, 0, 0, 0], [1, 1, 0, 0, 1],
-                         [1, 1, 0, 1, 0], [1, 1, 0, 1, 1],
-                         [1, 1, 1, 0, 0], [1, 1, 1, 0, 1],
-                         [1, 1, 1, 1, 0], [1, 1, 1, 1, 1]]),
-                s.array([[0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 1],
+                np.array([[0, 0, 0, 0], [0, 0, 0, 1],
+                          [0, 0, 1, 0], [0, 0, 1, 1],
+                          [0, 1, 0, 0], [0, 1, 0, 1],
+                          [0, 1, 1, 0], [0, 1, 1, 1],
+                          [1, 0, 0, 0], [1, 0, 0, 1],
+                          [1, 0, 1, 0], [1, 0, 1, 1],
+                          [1, 1, 0, 0], [1, 1, 0, 1],
+                          [1, 1, 1, 0], [1, 1, 1, 1]]),
+                np.array([[0, 0, 0, 0, 0], [0, 0, 0, 0, 1],
+                          [0, 0, 0, 1, 0], [0, 0, 0, 1, 1],
+                          [0, 0, 1, 0, 0], [0, 0, 1, 0, 1],
+                          [0, 0, 1, 1, 0], [0, 0, 1, 1, 1],
+                          [0, 1, 0, 0, 0], [0, 1, 0, 0, 1],
+                          [0, 1, 0, 1, 0], [0, 1, 0, 1, 1],
+                          [0, 1, 1, 0, 0], [0, 1, 1, 0, 1],
+                          [0, 1, 1, 1, 0], [0, 1, 1, 1, 1],
+                          [1, 0, 0, 0, 0], [1, 0, 0, 0, 1],
+                          [1, 0, 0, 1, 0], [1, 0, 0, 1, 1],
+                          [1, 0, 1, 0, 0], [1, 0, 1, 0, 1],
+                          [1, 0, 1, 1, 0], [1, 0, 1, 1, 1],
+                          [1, 1, 0, 0, 0], [1, 1, 0, 0, 1],
+                          [1, 1, 0, 1, 0], [1, 1, 0, 1, 1],
+                          [1, 1, 1, 0, 0], [1, 1, 1, 0, 1],
+                          [1, 1, 1, 1, 0], [1, 1, 1, 1, 1]]),
+                np.array([[0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 1],
                          [0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 1, 1],
                          [0, 0, 0, 1, 0, 0], [0, 0, 0, 1, 0, 1],
                          [0, 0, 0, 1, 1, 0], [0, 0, 0, 1, 1, 1],
@@ -108,19 +107,19 @@ class VectorInterpolator:
 
     def __init__(self, grid, data):
         self.n = data.shape[-1]
-        grid_aug = grid + [s.arange(data.shape[-1])]
+        grid_aug = grid + [np.arange(data.shape[-1])]
         self.itp = RegularGridInterpolator(grid_aug, data,
                 bounds_error=False, fill_value=None)
 
     def __call__(self, points):
 
-        x = s.zeros((self.n,len(points)+1))
+        x = np.zeros((self.n,len(points)+1))
         for i in range(len(points)):
             x[:,i] = points[i]
         # This last dimension is always an integer so no
         # interpolation is performed. This is done only
         # for performance reasons.
-        x[:,-1] = s.arange(self.n)
+        x[:,-1] = np.arange(self.n)
         res = self.itp(x)
 
         return res
@@ -132,7 +131,7 @@ class VectorInterpolator:
 def load_wavelen(wavelength_file):
     """Load a wavelength file, and convert to nanometers if needed."""
 
-    q = s.loadtxt(wavelength_file)
+    q = np.loadtxt(wavelength_file)
     if q.shape[1] > 2:
         q = q[:, 1:3]
     if q[0, 0] < 100:
@@ -144,17 +143,17 @@ def load_wavelen(wavelength_file):
 def emissive_radiance(emissivity, T, wl):
     """Radiance of a surface due to emission."""
 
-    c_1 = 1.88365e32/s.pi
+    c_1 = 1.88365e32/np.pi
     c_2 = 14387690
     J_per_eV = 1.60218e-19
     wl_um = wl / 1000.0
-    ph_per_sec_cm2_sr_nm = c_1/(wl**4)/(s.exp(c_2/wl/T)-1.0) * emissivity
+    ph_per_sec_cm2_sr_nm = c_1/(wl**4)/(np.exp(c_2/wl/T)-1.0) * emissivity
     # photon energy in eV
     eV_per_sec_cm2_sr_nm = 1.2398 * ph_per_sec_cm2_sr_nm/wl_um
     W_per_cm2_sr_nm = J_per_eV * eV_per_sec_cm2_sr_nm
     uW_per_cm2_sr_nm = W_per_cm2_sr_nm*1e6
-    dRdn_dT = c_1/(wl**4)*(-pow(s.exp(c_2/wl/T)-1.0, -2.0)) *\
-        s.exp(c_2/wl/T)*(-pow(T, -2)*c_2/wl) *\
+    dRdn_dT = c_1/(wl**4)*(-pow(np.exp(c_2/wl/T)-1.0, -2.0)) *\
+        np.exp(c_2/wl/T)*(-pow(T, -2)*c_2/wl) *\
         emissivity/wl_um*1.2398*J_per_eV*1e6
     return uW_per_cm2_sr_nm, dRdn_dT
 
@@ -184,12 +183,12 @@ def svd_inv_sqrt(C, mineig=0, hashtable=None):
 
     # Cholesky decomposition seems to be too unstable for solving this
     # problem, so we use eigendecompostition instead.
-    D, P = eigh(C)
-    Ds = s.diag(1/s.sqrt(D))
+    D, P = scipy.linalg.eigh(C)
+    Ds = np.diag(1/np.sqrt(D))
     L = P@Ds
     Cinv_sqrt = L@P.T
     Cinv = L@L.T
-    
+
     # If there is a hash table, cache our solution.  Bound the total cache
     # size by removing any extra items in FIFO order.
     if hashtable is not None:
@@ -226,19 +225,19 @@ def get_absorption(wl, absfile):
     refraction, and interpolate them to new wavelengths (user specifies nm)."""
 
     # read the indices of refraction
-    q = s.loadtxt(absfile, delimiter=',')
+    q = np.loadtxt(absfile, delimiter=',')
     wl_orig_nm = q[:, 0]
     wl_orig_cm = wl_orig_nm/1e9*1e2
     water_imag = q[:, 2]
     ice_imag = q[:, 4]
 
     # calculate absorption coefficients in cm^-1
-    water_abscf = water_imag*s.pi*4.0/wl_orig_cm
-    ice_abscf = ice_imag*s.pi*4.0/wl_orig_cm
+    water_abscf = water_imag*np.pi*4.0/wl_orig_cm
+    ice_abscf = ice_imag*np.pi*4.0/wl_orig_cm
 
     # interpolate to new wavelengths (user provides nm)
-    water_abscf_intrp = s.interp(wl, wl_orig_nm, water_abscf)
-    ice_abscf_intrp = s.interp(wl, wl_orig_nm, ice_abscf)
+    water_abscf_intrp = np.interp(wl, wl_orig_nm, water_abscf)
+    ice_abscf_intrp = np.interp(wl, wl_orig_nm, ice_abscf)
     return water_abscf_intrp, ice_abscf_intrp
 
 
@@ -342,16 +341,16 @@ def resample_spectrum(x, wl, wl2, fwhm2, fill=False):
     """Resample a spectrum to a new wavelength / FWHM. 
        I assume Gaussian SRFs."""
 
-    H = s.array([srf(wl, wi, fwhmi/2.355)
+    H = np.array([srf(wl, wi, fwhmi/2.355)
                  for wi, fwhmi in zip(wl2, fwhm2)])
     if fill is False:
-        return s.dot(H, x[:, s.newaxis]).ravel()
+        return np.dot(H, x[:, np.newaxis]).ravel()
     else:
-        xnew = s.dot(H, x[:, s.newaxis]).ravel()
-        good = s.isfinite(xnew)
+        xnew = np.dot(H, x[:, np.newaxis]).ravel()
+        good = np.isfinite(xnew)
         for i, xi in enumerate(xnew):
             if not good[i]:
-                nearest_good_ind = s.argmin(abs(wl2[good]-wl2[i]))
+                nearest_good_ind = np.argmin(abs(wl2[good]-wl2[i]))
                 xnew[i] = xnew[nearest_good_ind]
         return xnew
 
@@ -360,7 +359,7 @@ def load_spectrum(init):
     """Load a single spectrum from a text file with initial columns giving
        wavelength and magnitude, respectively."""
 
-    x = s.loadtxt(init)
+    x = np.loadtxt(init)
     if x.ndim > 1:
         x = x[:, :2]
         wl, x = x.T
@@ -375,7 +374,7 @@ def srf(x, mu, sigma):
     """Spectral response function."""
 
     u = (x-mu)/abs(sigma)
-    y = (1.0/(s.sqrt(2.0*s.pi)*abs(sigma)))*s.exp(-u*u/2.0)
+    y = (1.0/(np.sqrt(2.0*np.pi)*abs(sigma)))*np.exp(-u*u/2.0)
     return y/y.sum()
 
 
@@ -387,5 +386,5 @@ def combos(inds):
     """
 
     n = len(inds)
-    cases = s.prod([len(i) for i in inds])
-    return s.array(s.meshgrid(*inds)).reshape((n, cases)).T
+    cases = np.prod([len(i) for i in inds])
+    return np.array(np.meshgrid(*inds)).reshape((n, cases)).T
