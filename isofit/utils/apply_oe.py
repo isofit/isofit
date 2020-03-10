@@ -26,6 +26,12 @@ num_h2o_lut_elements = 5
 num_to_sensor_azimuth_lut_elements = 1
 num_to_sensor_zenith_lut_elements = 1
 
+num_aerosol_1_lut_elements = 4
+num_aerosol_2_lut_elements = 4
+
+aerosol_1_lut_range = [0.001, 0.5]
+aerosol_2_lut_range = [0.001, 0.5]
+
 h2o_min = 0.2
 
 uncorrelated_radiometric_uncertainty = 0.02
@@ -372,21 +378,23 @@ def load_climatology(config_path: str, latitude: float, longitude: float, acquis
     """
 
     aerosol_model_path = join(isofit_path, 'data', 'aerosol_twopart_model.txt')
-    aerosol_lut_grid = {"AERFRAC_0": [0.001, 0.2, 0.5],
-                        "AERFRAC_1": [0.001, 0.2, 0.5]}
+    aerosol_1_lut = np.linspace(aerosol_1_lut_range[0], aerosol_1_lut_range[1], num_aerosol_1_lut_elements)
+    aerosol_2_lut = np.linspace(aerosol_2_lut_range[0], aerosol_2_lut_range[1], num_aerosol_2_lut_elements)
+    aerosol_lut_grid = {"AERFRAC_0": [float(q) for q in aerosol_1_lut],
+                        "AERFRAC_1": [float(q) for q in aerosol_2_lut]}
     aerosol_state_vector = {
         "AERFRAC_0": {
-            "bounds": [0.001, 0.5],
+            "bounds": [float(aerosol_1_lut_range[0]), float(aerosol_1_lut_range[1])],
             "scale": 1,
-            "init": 0.02,
+            "init": float((aerosol_1_lut_range[1]-aerosol_1_lut_range[0])/10. + aerosol_1_lut_range[0]),
             "prior_sigma": 10.0,
-            "prior_mean": 0.02},
+            "prior_mean": float((aerosol_1_lut_range[1]-aerosol_1_lut_range[0])/10. + aerosol_1_lut_range[0])},
         "AERFRAC_1": {
-            "bounds": [0.001, 0.5],
+            "bounds": [float(aerosol_2_lut_range[0]), float(aerosol_2_lut_range[1])],
             "scale": 1,
-            "init": 0.25,
+            "init": float((aerosol_2_lut_range[1]-aerosol_2_lut_range[0])/2. + aerosol_2_lut_range[0]),
             "prior_sigma": 10.0,
-            "prior_mean": 0.25}}
+            "prior_mean": float((aerosol_2_lut_range[1]-aerosol_2_lut_range[0])/2. + aerosol_2_lut_range[0])}}
 
     logging.info('Loading Climatology')
     # If a configuration path has been provided, use it to get relevant info
