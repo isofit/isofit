@@ -20,7 +20,7 @@
 
 import os
 import sys
-import scipy as s
+import numpy as np
 import logging
 
 from ..core.common import combos, eps, load_wavelen
@@ -85,12 +85,12 @@ class TabularRT:
             self.init.append(element['init'])
             self.prior_sigma.append(element['prior_sigma'])
             self.prior_mean.append(element['prior_mean'])
-        self.bounds = s.array(self.bounds)
-        self.scale = s.array(self.scale)
-        self.init = s.array(self.init)
-        self.prior_mean = s.array(self.prior_mean)
-        self.prior_sigma = s.array(self.prior_sigma)
-        self.bval = s.array([config['unknowns'][k] for k in self.bvec])
+        self.bounds = np.array(self.bounds)
+        self.scale = np.array(self.scale)
+        self.init = np.array(self.init)
+        self.prior_mean = np.array(self.prior_mean)
+        self.prior_sigma = np.array(self.prior_sigma)
+        self.bval = np.array([config['unknowns'][k] for k in self.bvec])
 
     def xa(self):
         """Mean of prior distribution, calculated at state x. This is the
@@ -101,8 +101,8 @@ class TabularRT:
         """Covariance of prior distribution. Our state vector covariance 
            is diagonal with very loose constraints."""
         if self.n_state == 0:
-            return s.zeros((0, 0), dtype=float)
-        return s.diagflat(pow(self.prior_sigma, 2))
+            return np.zeros((0, 0), dtype=float)
+        return np.diagflat(pow(self.prior_sigma, 2))
 
     def build_lut(self, rebuild=False):
         """Each LUT is associated with a source directory.  We build a lookup table by: 
@@ -117,7 +117,7 @@ class TabularRT:
         self.lut_dims, self.lut_grids, self.lut_names = [], [], []
         for key, val in self.lut_grid.items():
             self.lut_names.append(key)
-            self.lut_grids.append(s.array(val))
+            self.lut_grids.append(np.array(val))
             self.lut_dims.append(len(val))
             if val != sorted(val):
                 logging.error('Lookup table grid needs ascending order')
@@ -165,15 +165,15 @@ class TabularRT:
 
             if self.solar_irr is None:  # first file
                 self.solar_irr = sol
-                self.coszen = s.cos(solzen * s.pi / 180.0)
+                self.coszen = np.cos(solzen * np.pi / 180.0)
                 dims_aug = self.lut_dims + [self.n_chan]
-                self.sphalb = s.zeros(dims_aug, dtype=float)
-                self.transm = s.zeros(dims_aug, dtype=float)
-                self.rhoatm = s.zeros(dims_aug, dtype=float)
-                self.transup = s.zeros(dims_aug, dtype=float)
+                self.sphalb = np.zeros(dims_aug, dtype=float)
+                self.transm = np.zeros(dims_aug, dtype=float)
+                self.rhoatm = np.zeros(dims_aug, dtype=float)
+                self.transup = np.zeros(dims_aug, dtype=float)
                 self.wl = wl
 
-            ind = [s.where(g == p)[0] for g, p in zip(self.lut_grids, point)]
+            ind = [np.where(g == p)[0] for g, p in zip(self.lut_grids, point)]
             ind = tuple(ind)
             self.rhoatm[ind] = rhoatm
             self.sphalb[ind] = sphalb
@@ -189,17 +189,17 @@ class TabularRT:
     def lookup_lut(self, point):
         """Multi-linear interpolation in the LUT."""
 
-        rhoatm = s.array(self.rhoatm_interp(point)).ravel()
-        sphalb = s.array(self.sphalb_interp(point)).ravel()
-        transm = s.array(self.transm_interp(point)).ravel()
-        transup = s.array(self.transup_interp(point)).ravel()
+        rhoatm = np.array(self.rhoatm_interp(point)).ravel()
+        sphalb = np.array(self.sphalb_interp(point)).ravel()
+        transm = np.array(self.transm_interp(point)).ravel()
+        transup = np.array(self.transup_interp(point)).ravel()
         return rhoatm, sphalb, transm, transup
 
     def get(self, x_RT, geom):
         if self.n_point == self.n_state:
             return self.lookup_lut(x_RT)
         else:
-            point = s.zeros((self.n_point,))
+            point = np.zeros((self.n_point,))
             for point_ind, name in enumerate(self.lut_grid):
                 if name in self.statevec:
                     x_RT_ind = self.statevec.index(name)
@@ -238,11 +238,11 @@ class TabularRT:
         Ls is the  emissive radiance at surface."""
 
         if Ls is None:
-            Ls = s.zeros(rfl.shape)
+            Ls = np.zeros(rfl.shape)
 
         rhoatm, sphalb, transm, transup = self.get(x_RT, geom)
         rho = rhoatm + transm * rfl / (1.0 - sphalb * rfl)
-        rdn = rho/s.pi*(self.solar_irr*self.coszen) + (Ls * transup)
+        rdn = rho/np.pi*(self.solar_irr*self.coszen) + (Ls * transup)
         return rdn
 
     def drdn_dRT(self, x_RT, x_surface, rfl, drfl_dsurface, Ls, dLs_dsurface,
@@ -252,7 +252,7 @@ class TabularRT:
         # first the rdn at the current state vector
         rhoatm, sphalb, transm, transup = self.get(x_RT, geom)
         rho = rhoatm + transm * rfl / (1.0 - sphalb * rfl)
-        rdn = rho/s.pi*(self.solar_irr*self.coszen) + (Ls * transup)
+        rdn = rho/np.pi*(self.solar_irr*self.coszen) + (Ls * transup)
 
         # perturb each element of the RT state vector (finite difference)
         K_RT = []
@@ -261,20 +261,20 @@ class TabularRT:
             x_RT_perturb[i] = x_RT[i] + eps
             rhoatme, sphalbe, transme, transupe = self.get(x_RT_perturb, geom)
             rhoe = rhoatme + transme * rfl / (1.0 - sphalbe * rfl)
-            rdne = rhoe/s.pi*(self.solar_irr*self.coszen) + (Ls * transupe)
+            rdne = rhoe/np.pi*(self.solar_irr*self.coszen) + (Ls * transupe)
             K_RT.append((rdne-rdn) / eps)
-        K_RT = s.array(K_RT).T
+        K_RT = np.array(K_RT).T
 
         # analytical jacobians for surface model state vector, via chain rule
         K_surface = []
         for i in range(len(x_surface)):
             drho_drfl = \
                 (transm/(1-sphalb*rfl)+(sphalb*transm*rfl)/pow(1-sphalb*rfl, 2))
-            drdn_drfl = drho_drfl/s.pi*(self.solar_irr*self.coszen)
+            drdn_drfl = drho_drfl/np.pi*(self.solar_irr*self.coszen)
             drdn_dLs = transup
             K_surface.append(drdn_drfl * drfl_dsurface[:, i] +
                              drdn_dLs * dLs_dsurface[:, i])
-        K_surface = s.array(K_surface).T
+        K_surface = np.array(K_surface).T
 
         return K_RT, K_surface
 
@@ -283,13 +283,13 @@ class TabularRT:
            state.  Right now, this is just the sky view factor."""
 
         if len(self.bvec) == 0:
-            Kb_RT = s.zeros((0, len(self.wl.shape)))
+            Kb_RT = np.zeros((0, len(self.wl.shape)))
 
         else:
             # first the radiance at the current state vector
             rhoatm, sphalb, transm, transup = self.get(x_RT, geom)
             rho = rhoatm + transm * rfl / (1.0 - sphalb * rfl)
-            rdn = rho/s.pi*(self.solar_irr*self.coszen) + (Ls * transup)
+            rdn = rho/np.pi*(self.solar_irr*self.coszen) + (Ls * transup)
 
             # perturb the sky view
             Kb_RT = []
@@ -299,14 +299,14 @@ class TabularRT:
                 if unknown == 'Skyview':
                     rhoe = rhoatm + transm * rfl / (1.0 - sphalb * rfl *
                                                     perturb)
-                    rdne = rhoe/s.pi*(self.solar_irr*self.coszen)
+                    rdne = rhoe/np.pi*(self.solar_irr*self.coszen)
                     Kb_RT.append((rdne-rdn) / eps)
 
                 elif unknown == 'H2O_ABSCO' and 'H2OSTR' in self.statevec:
                     # first the radiance at the current state vector
                     rhoatm, sphalb, transm, transup = self.get(x_RT, geom)
                     rho = rhoatm + transm * rfl / (1.0 - sphalb * rfl)
-                    rdn = rho/s.pi*(self.solar_irr*self.coszen) + (Ls *
+                    rdn = rho/np.pi*(self.solar_irr*self.coszen) + (Ls *
                                                                    transup)
                     i = self.statevec.index('H2OSTR')
                     x_RT_perturb = x_RT.copy()
@@ -314,11 +314,11 @@ class TabularRT:
                     rhoatme, sphalbe, transme, transupe = self.get(
                         x_RT_perturb, geom)
                     rhoe = rhoatme + transme * rfl / (1.0 - sphalbe * rfl)
-                    rdne = rhoe/s.pi*(self.solar_irr*self.coszen) + (Ls *
+                    rdne = rhoe/np.pi*(self.solar_irr*self.coszen) + (Ls *
                                                                      transupe)
                     Kb_RT.append((rdne-rdn) / eps)
 
-        Kb_RT = s.array(Kb_RT).T
+        Kb_RT = np.array(Kb_RT).T
         return Kb_RT
 
     def summarize(self, x_RT, geom):
@@ -339,9 +339,9 @@ class TabularRT:
         if 'prior_means' in config and \
                 config['prior_means'] is not None:
             self.prior_mean = config['prior_means']
-            self.init = s.minimum(s.maximum(config['prior_means'],
+            self.init = np.minimum(np.maximum(config['prior_means'],
                                             self.bounds[:, 0] + eps), self.bounds[:, 1] - eps)
 
         if 'prior_variances' in config and \
                 config['prior_variances'] is not None:
-            self.prior_sigma = s.sqrt(config['prior_variances'])
+            self.prior_sigma = np.sqrt(config['prior_variances'])
