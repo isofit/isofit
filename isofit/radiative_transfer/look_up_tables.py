@@ -118,6 +118,8 @@ class TabularRT:
         for key, val in self.lut_grid.items():
             self.lut_names.append(key)
             self.lut_grids.append(np.array(val))
+            if len(self.lut_grids[-1] == 1):
+                raise ValueError('Only 1 value in LUT grid {}.  1-d LUT grids cannot be interpreted.'.format(key))
             self.lut_dims.append(len(val))
             if val != sorted(val):
                 logging.error('Lookup table grid needs ascending order')
