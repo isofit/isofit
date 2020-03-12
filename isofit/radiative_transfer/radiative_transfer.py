@@ -160,10 +160,14 @@ class RadiativeTransfer():
         return s.hstack(L_downs)
 
     def get_L_up(self, x_RT, geom):
-        L_ups = []
-        for key, RT in self.RTs.items():
-            L_ups.append(RT.get_L_up(x_RT, geom))
-        return s.hstack(L_ups)
+        '''L_up is provided by the surface model, so just return
+        0 here. The commented out code here is for future updates.'''
+        #L_ups = []
+        #for key, RT in self.RTs.items():
+        #    L_ups.append(RT.get_L_up(x_RT, geom))
+        #return s.hstack(L_ups)
+
+        return 0.
 
     def drdn_dRT(self, x_RT, x_surface, rfl, drfl_dsurface, Ls,
                  dLs_dsurface, geom):
