@@ -19,6 +19,7 @@
 #         Adam Erickson, adam.m.erickson@nasa.gov
 #
 
+import os
 import logging
 import cProfile
 from contextlib import suppress
@@ -40,6 +41,10 @@ class Isofit:
 
     def __init__(self, config_file, row_column='', profile=False, level='INFO'):
         """Initialize the Isofit class."""
+
+        # Explicitly set the number of threads to be 1, so we can make better
+        # use of multiprocessing
+        os.environ["MKL_NUM_THREADS"] = "1" 
 
         # Set logging level
         logging.basicConfig(format='%(message)s', level=level)
