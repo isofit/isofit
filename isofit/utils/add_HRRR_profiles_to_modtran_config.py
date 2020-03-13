@@ -40,26 +40,32 @@ class HRRR_to_MODTRAN_profiles():
 
         self.config = deepcopy(json_load_ascii(config_filename))
 
-        self.template = deepcopy(json_load_ascii(
-            self.config['modtran_config_json_filename'])['MODTRAN'])
-        
+        self.modtran_config_filenames = self.config['modtran_config_json_filenames']
+        self.output_modtran_config_filenames = self.config['output_modtran_config_filenames']
         self.year_for_HRRR_profiles_in_modtran = self.config['year_for_HRRR_profiles_in_modtran']
         self.HRRR_data_library_path = self.config['HRRR_data_library_path']
-        self.create_profiles()
 
-        self.template[0]['MODTRANINPUT']['ATMOSPHERE']['NLAYERS'] = len(self.prof_altitude_dict['PROFILE'])
-        self.template[0]['MODTRANINPUT']['ATMOSPHERE']['NPROF'] = 4
-        self.template[0]['MODTRANINPUT']['ATMOSPHERE']['PROFILES'] = [dict(self.prof_altitude_dict),
-                                                              dict(self.prof_pressure_dict),
-                                                              dict(self.prof_temperature_dict),
-                                                              dict(self.prof_H2O_dict)]
-        self.template_str = json.dumps({"MODTRAN": self.template})
-        with open(self.config["output_modtran_config_filename"], 'w') as f:
-            f.write(self.template_str)
-             
-        a = 0
+        for modtran_config_filename, output_modtran_config_filename in \
+                zip(self.modtran_config_filenames, self.output_modtran_config_filenames):
+            
+            template = deepcopy(json_load_ascii(modtran_config_filename)['MODTRAN'])
+        
+            prof_altitude_dict, prof_pressure_dict, prof_temperature_dict, prof_H2O_dict = self.create_profiles(template)
 
-    def create_profiles(self):
+            template[0]['MODTRANINPUT']['ATMOSPHERE']['NLAYERS'] = len(prof_altitude_dict['PROFILE'])
+            template[0]['MODTRANINPUT']['ATMOSPHERE']['NPROF'] = 4
+            template[0]['MODTRANINPUT']['ATMOSPHERE']['PROFILES'] = [dict(prof_altitude_dict),
+                                                                dict(prof_pressure_dict),
+                                                                dict(prof_temperature_dict),
+                                                                dict(prof_H2O_dict)]
+
+            template_str = json.dumps({"MODTRAN": template})
+            with open(output_modtran_config_filename, 'w') as f:
+                f.write(template_str)
+
+        return
+
+    def create_profiles(self, template):
         '''
         Create MODTRAN profile strings from HRRR data. For example:
 
@@ -74,12 +80,12 @@ class HRRR_to_MODTRAN_profiles():
         }
         '''
 
-        lat = self.template[0]['MODTRANINPUT']['GEOMETRY']['PARM1']
-        lon = self.template[0]['MODTRANINPUT']['GEOMETRY']['PARM2']
-        gmtime = self.template[0]['MODTRANINPUT']['GEOMETRY']['GMTIME']
-        iday = self.template[0]['MODTRANINPUT']['GEOMETRY']['IDAY']
-        h1alt_km = self.template[0]['MODTRANINPUT']['GEOMETRY']['H1ALT']
-        gndalt_km = self.template[0]['MODTRANINPUT']['SURFACE']['GNDALT']
+        lat = template[0]['MODTRANINPUT']['GEOMETRY']['PARM1']
+        lon = template[0]['MODTRANINPUT']['GEOMETRY']['PARM2']
+        gmtime = template[0]['MODTRANINPUT']['GEOMETRY']['GMTIME']
+        iday = template[0]['MODTRANINPUT']['GEOMETRY']['IDAY']
+        h1alt_km = template[0]['MODTRANINPUT']['GEOMETRY']['H1ALT']
+        gndalt_km = template[0]['MODTRANINPUT']['SURFACE']['GNDALT']
 
         date_to_get = date(self.year_for_HRRR_profiles_in_modtran, 1, 1) + \
                         timedelta(iday - 1)
@@ -126,25 +132,27 @@ class HRRR_to_MODTRAN_profiles():
         mod_mixing_ratio_ppmV = rho_sat * 0.01*mod_rh_profile_perc / 18.01528 * 22413.83 / \
                                 mod_pressure_profile_atm / tr
 
-        self.prof_altitude_dict = {}
-        self.prof_altitude_dict['TYPE'] = 'PROF_ALTITUDE'
-        self.prof_altitude_dict['UNITS'] = 'UNT_KILOMETERS'
-        self.prof_altitude_dict['PROFILE'] = list(mod_height_profile_km)
+        prof_altitude_dict = {}
+        prof_altitude_dict['TYPE'] = 'PROF_ALTITUDE'
+        prof_altitude_dict['UNITS'] = 'UNT_KILOMETERS'
+        prof_altitude_dict['PROFILE'] = list(mod_height_profile_km)
 
-        self.prof_pressure_dict = {}
-        self.prof_pressure_dict['TYPE'] = 'PROF_PRESSURE'
-        self.prof_pressure_dict['UNITS'] = 'UNT_PMILLIBAR'
-        self.prof_pressure_dict['PROFILE'] = list(mod_pressure_profile_atm * 1013.25) # Convert atm millibar
+        prof_pressure_dict = {}
+        prof_pressure_dict['TYPE'] = 'PROF_PRESSURE'
+        prof_pressure_dict['UNITS'] = 'UNT_PMILLIBAR'
+        prof_pressure_dict['PROFILE'] = list(mod_pressure_profile_atm * 1013.25) # Convert atm millibar
 
-        self.prof_temperature_dict = {}
-        self.prof_temperature_dict['TYPE'] = 'PROF_TEMPERATURE'
-        self.prof_temperature_dict['UNITS'] = 'UNT_TKELVIN'
-        self.prof_temperature_dict['PROFILE'] = list(mod_temperature_profile_K)
+        prof_temperature_dict = {}
+        prof_temperature_dict['TYPE'] = 'PROF_TEMPERATURE'
+        prof_temperature_dict['UNITS'] = 'UNT_TKELVIN'
+        prof_temperature_dict['PROFILE'] = list(mod_temperature_profile_K)
 
-        self.prof_H2O_dict = {}
-        self.prof_H2O_dict['TYPE'] = 'PROF_H2O'
-        self.prof_H2O_dict['UNITS'] = 'UNT_DPPMV'
-        self.prof_H2O_dict['PROFILE'] = list(mod_mixing_ratio_ppmV)
+        prof_H2O_dict = {}
+        prof_H2O_dict['TYPE'] = 'PROF_H2O'
+        prof_H2O_dict['UNITS'] = 'UNT_DPPMV'
+        prof_H2O_dict['PROFILE'] = list(mod_mixing_ratio_ppmV)
+
+        return prof_altitude_dict, prof_pressure_dict, prof_temperature_dict, prof_H2O_dict
 
 
 def reporthook(a, b, c):
