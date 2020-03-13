@@ -110,17 +110,17 @@ class VectorInterpolator:
         self.n = data.shape[-1]
         grid_aug = grid + [s.arange(data.shape[-1])]
         self.itp = RegularGridInterpolator(grid_aug, data,
-                bounds_error=False, fill_value=None)
+                                           bounds_error=False, fill_value=None)
 
     def __call__(self, points):
 
-        x = s.zeros((self.n,len(points)+1))
+        x = s.zeros((self.n, len(points)+1))
         for i in range(len(points)):
-            x[:,i] = points[i]
+            x[:, i] = points[i]
         # This last dimension is always an integer so no
         # interpolation is performed. This is done only
         # for performance reasons.
-        x[:,-1] = s.arange(self.n)
+        x[:, -1] = s.arange(self.n)
         res = self.itp(x)
 
         return res
@@ -189,7 +189,7 @@ def svd_inv_sqrt(C, mineig=0, hashtable=None):
     L = P@Ds
     Cinv_sqrt = L@P.T
     Cinv = L@L.T
-    
+
     # If there is a hash table, cache our solution.  Bound the total cache
     # size by removing any extra items in FIFO order.
     if hashtable is not None:

@@ -43,6 +43,7 @@ modtran_bands_available = ['modtran_vswir', 'modtran_tir']
 
 ### Classes ###
 
+
 class ModtranRT(TabularRT):
     """A model of photon transport including the atmosphere."""
 
@@ -81,11 +82,11 @@ class ModtranRT(TabularRT):
             self.aer_absc = s.array(aer_absc)
             self.aer_extc = s.array(aer_extc)
             self.aer_asym = s.array(aer_asym)
-        
+
         if self.band_mode_string.lower() == 'modtran_vswir':
             self.modtran_lut_names = ['rhoatm', 'transm', 'sphalb', 'transup']
-        elif self.band_mode_string.lower() == 'modtran_tir': 
-            self.modtran_lut_names = ['thermal_upwelling', 'thermal_downwelling', \
+        elif self.band_mode_string.lower() == 'modtran_tir':
+            self.modtran_lut_names = ['thermal_upwelling', 'thermal_downwelling',
                                       'rhoatm', 'transm', 'sphalb', 'transup']
 
         # Build the lookup table
@@ -182,11 +183,11 @@ class ModtranRT(TabularRT):
                 # Be careful with these! See note in function comments above
                 thermal_emission = float(toks[11])
                 thermal_scatter = float(toks[12])
-                thermal_upwelling = (thermal_emission + thermal_scatter) / wid * 1e6 # uW/nm/sr/cm2
+                thermal_upwelling = (thermal_emission + thermal_scatter) / wid * 1e6  # uW/nm/sr/cm2
 
                 # Be careful with these! See note in function comments above
                 grnd_rflt = float(toks[16])
-                thermal_downwelling = grnd_rflt / wid * 1e6 # uW/nm/sr/cm2
+                thermal_downwelling = grnd_rflt / wid * 1e6  # uW/nm/sr/cm2
 
                 sols.append(solar_irr)
                 transms.append(transm)
@@ -369,7 +370,7 @@ class ModtranRT(TabularRT):
         if self.band_mode_string == 'modtran_tir':
             names = names + ['thermal_upwelling', 'thermal_downwelling']
 
-        results_dict = {name:param for name, param in zip(names,params)}
+        results_dict = {name: param for name, param in zip(names, params)}
         results_dict['solzen'] = solzen
         results_dict['coszen'] = coszen
         return results_dict
@@ -379,7 +380,7 @@ class ModtranRT(TabularRT):
         point = x_RT[self._x_RT_index_for_point]
         for key, lut in self.luts.items():
             ret[key] = s.array(lut(point)).ravel()
-        
+
         return ret
 
     def get(self, x_RT, geom):

@@ -36,7 +36,7 @@ class ThermalSurface(MultiComponentSurface):
         MultiComponentSurface.__init__(self, config)
         # Handle additional state vector elements
         self.statevec.extend(['SURF_TEMP_K'])
-        self.init.extend([293.0]) # Room temperature
+        self.init.extend([293.0])  # Room temperature
         self.scale.extend([100.0])
         self.bounds.extend([[250.0, 400.0]])
         self.surf_temp_ind = len(self.statevec)-1
@@ -74,7 +74,7 @@ class ThermalSurface(MultiComponentSurface):
 
         x_surface = MultiComponentSurface.fit_params(self, rfl_meas, Ls, geom)
         T = minimize(err, s.array([self.init[self.surf_temp_ind]])).x
-        T = max(self.bounds[self.surf_temp_ind][0]+eps, 
+        T = max(self.bounds[self.surf_temp_ind][0]+eps,
                 min(T, self.bounds[self.surf_temp_ind][1]-eps))
         x_surface[self.surf_temp_ind] = T
         return x_surface
@@ -134,17 +134,17 @@ class ThermalSurface(MultiComponentSurface):
         """Partial derivative of surface emission with respect to state vector, 
         calculated at x_surface."""
 
-        #dLs_dsurface = MultiComponentSurface.dLs_dsurface(self, x_surface,
+        # dLs_dsurface = MultiComponentSurface.dLs_dsurface(self, x_surface,
         #                                                  geom)
         T = x_surface[self.surf_temp_ind]
         rfl = self.calc_rfl(x_surface, geom)
         emissivity = 1 - rfl
         Ls, dLs_dT = emissive_radiance(emissivity, T, self.wl)
         dLs_drfl = s.diag(-1*Ls)
-                                                        
+
         #frac = x_surface[self.bb_frac_ind]
         #emissivity = s.ones(self.n_wl, dtype=float)
-        #dLs_dsurface[:, self.surf_temp_ind] = dLs_dT * 
+        # dLs_dsurface[:, self.surf_temp_ind] = dLs_dT *
 
         dLs_dsurface = s.vstack([dLs_drfl, dLs_dT]).T
 

@@ -101,7 +101,7 @@ class SixSRT(TabularRT):
         irr = irr / 10.0  # convert, uW/nm/cm2
         irr = irr / self.irr_factor**2  # consider solar distance
         self.solar_irr = resample_spectrum(irr, iwl,  self.wl, self.fwhm)
-    
+
         self.lut_quantities = ['rhoatm', 'transm', 'sphalb', 'transup']
         self.build_lut()
 
@@ -113,7 +113,6 @@ class SixSRT(TabularRT):
         for sv in config['statevector_names']:
             x_RT_index_for_point.append(full_statevec.index(sv))
         self._x_RT_index_for_point = s.array(x_RT_index_for_point)
-
 
     def find_basedir(self, config):
         """Seek out a sixs base directory."""
@@ -201,11 +200,11 @@ class SixSRT(TabularRT):
             rhoatms[i] = float(rhoa)
 
         results = {
-         "solzen": resample_spectrum(solzens,  self.grid, self.wl, self.fwhm),
-         "rhoatm": resample_spectrum(rhoatms,  self.grid, self.wl, self.fwhm),
-         "transm": resample_spectrum(transms,  self.grid, self.wl, self.fwhm),
-         "sphalb": resample_spectrum(sphalbs,  self.grid, self.wl, self.fwhm),
-         "transup": resample_spectrum(transups, self.grid, self.wl, self.fwhm)}
+            "solzen": resample_spectrum(solzens,  self.grid, self.wl, self.fwhm),
+            "rhoatm": resample_spectrum(rhoatms,  self.grid, self.wl, self.fwhm),
+            "transm": resample_spectrum(transms,  self.grid, self.wl, self.fwhm),
+            "sphalb": resample_spectrum(sphalbs,  self.grid, self.wl, self.fwhm),
+            "transup": resample_spectrum(transups, self.grid, self.wl, self.fwhm)}
         return results
 
     def ext550_to_vis(self, ext550):
@@ -229,9 +228,9 @@ class SixSRT(TabularRT):
                 ind = [s.where(g == p)[0] for g, p in zip(self.lut_grids, point)]
                 ind = tuple(ind)
                 temp[ind] = sixs_output[key]
-        
+
             self.luts[key] = VectorInterpolator(self.lut_grids, temp)
-   
+
     def lookup_lut(self, x_RT):
         ret = {}
         point = x_RT[self._x_RT_index_for_point]
@@ -274,7 +273,7 @@ class SixSRT(TabularRT):
                 point_ind = self.lut_names.index(name)
                 point[point_ind] = x_RT[x_RT_ind]
             return self.lookup_lut(point)
- 
+
     def get_L_atm(self, x_RT, geom):
         r = self.get(x_RT, geom)
         rho = r['rhoatm']
@@ -289,5 +288,3 @@ class SixSRT(TabularRT):
         """Thermal emission from the ground is provided by the thermal model, so
         this function is a placeholder for future upgrades."""
         return 0
-
-

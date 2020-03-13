@@ -71,7 +71,6 @@ class Instrument:
         self.prior_mean = s.array(self.prior_mean)
         self.n_state = len(self.statevec)
 
-
         if 'SNR' in config:
 
             # We have several ways to define the instrument noise.  The
@@ -120,12 +119,12 @@ class Instrument:
         elif 'NEDT_noise_file' in config:
             self.model_type = 'NEDT'
             self.noise_file = config['NEDT_noise_file']
-            self.noise_data = s.loadtxt(self.noise_file, delimiter = ',', skiprows = 8)
-            noise_data_w_nm = self.noise_data[:,0] * 1000
-            noise_data_NEDT = self.noise_data[:,1]
+            self.noise_data = s.loadtxt(self.noise_file, delimiter=',', skiprows=8)
+            noise_data_w_nm = self.noise_data[:, 0] * 1000
+            noise_data_NEDT = self.noise_data[:, 1]
             nedt = interp1d(noise_data_w_nm, noise_data_NEDT)(self.wl_init)
 
-            T, emis = 300., 0.95 # From Glynn Hulley, 2/18/2020
+            T, emis = 300., 0.95  # From Glynn Hulley, 2/18/2020
             _, drdn_dT = emissive_radiance(emis, T, self.wl_init)
             self.noise_NESR = nedt * drdn_dT
 

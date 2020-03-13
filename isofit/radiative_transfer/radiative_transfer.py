@@ -28,6 +28,7 @@ from ..radiative_transfer.modtran import modtran_bands_available, ModtranRT
 from ..radiative_transfer.six_s import sixs_names, SixSRT
 from ..radiative_transfer.libradtran import libradtran_names, LibRadTranRT
 
+
 class RadiativeTransfer():
     """This class controls the radiative transfer component of the forward
     model. An ordered dict is maintained of individual RTMs (like MODTRAN,
@@ -73,11 +74,11 @@ class RadiativeTransfer():
                 temp_RT = SixSRT(local_config, self.statevec)
             elif key in libradtran_names:
                 temp_RT = LibRadTranRT(local_config, self.statevec)
-            
+
             if temp_RT is not None:
                 temp_RTs_list.append((key, temp_RT))
                 temp_min_wavelen_list.append(temp_RT.wl[0])
-        
+
         # Put the RT objects into self.RTs in wavelength order
         # This assumes that the input data wavelengths are all
         # ascending.
@@ -90,7 +91,7 @@ class RadiativeTransfer():
         # initial guesses for each state vector element.  The state
         # vector elements are all free parameters in the RT lookup table,
         # and they all have associated dimensions in the LUT grid.
-        self.bounds, self.scale, self.init = [], [], [] 
+        self.bounds, self.scale, self.init = [], [], []
         self.prior_mean, self.prior_sigma = [], []
 
         for sv_key in self.statevec:    # Go in order
@@ -113,7 +114,8 @@ class RadiativeTransfer():
         self.bval = s.array([config['unknowns'][k] for k in self.bvec])
 
         self.solar_irr = s.concatenate([RT.solar_irr for RT in self.RTs.values()])
-        self.coszen = [RT.coszen for RT in self.RTs.values()][0] # These should all be the same so just grab one
+        # These should all be the same so just grab one
+        self.coszen = [RT.coszen for RT in self.RTs.values()][0]
 
     def xa(self):
         """Pull the priors from each of the individual RTs.
@@ -142,8 +144,8 @@ class RadiativeTransfer():
         L_up = L_up + Ls * r['transm']
 
         ret = L_atm + \
-              L_down * rfl * r['transm'] / (1.0 - r['sphalb'] * rfl) + \
-              L_up
+            L_down * rfl * r['transm'] / (1.0 - r['sphalb'] * rfl) + \
+            L_up
 
         return ret
 
@@ -152,7 +154,7 @@ class RadiativeTransfer():
         for key, RT in self.RTs.items():
             L_atms.append(RT.get_L_atm(x_RT, geom))
         return s.hstack(L_atms)
-    
+
     def get_L_down(self, x_RT, geom):
         L_downs = []
         for key, RT in self.RTs.items():
@@ -163,35 +165,35 @@ class RadiativeTransfer():
         '''L_up is provided by the surface model, so just return
         0 here. The commented out code here is for future updates.'''
         #L_ups = []
-        #for key, RT in self.RTs.items():
+        # for key, RT in self.RTs.items():
         #    L_ups.append(RT.get_L_up(x_RT, geom))
-        #return s.hstack(L_ups)
+        # return s.hstack(L_ups)
 
         return 0.
 
     def drdn_dRT(self, x_RT, x_surface, rfl, drfl_dsurface, Ls,
                  dLs_dsurface, geom):
-        
+
         # first the rdn at the current state vector
-        Ls = s.zeros(rfl.shape) # TODO: Fix me!
+        Ls = s.zeros(rfl.shape)  # TODO: Fix me!
         rdn = self.calc_rdn(x_RT, rfl, Ls, geom)
 
         # perturb each element of the RT state vector (finite difference)
         K_RT = []
         x_RTs_perturb = x_RT + s.eye(len(x_RT))*eps
-        for x_RT_perturb in list(x_RTs_perturb): 
+        for x_RT_perturb in list(x_RTs_perturb):
             rdne = self.calc_rdn(x_RT_perturb, rfl, Ls, geom)
             K_RT.append((rdne-rdn) / eps)
         K_RT = s.array(K_RT).T
 
         # Get K_surface
-        r = self.get(x_RT, geom) 
+        r = self.get(x_RT, geom)
         L_down = self.get_L_down(x_RT, geom)
         drho_drfl = r['transm'] / (1 - r['sphalb']*rfl)**2
         drdn_drfl = drho_drfl * L_down
         drdn_dLs = r['transup']
         K_surface = drdn_drfl[:, s.newaxis] * drfl_dsurface + \
-                    drdn_dLs[:, s.newaxis] * dLs_dsurface
+            drdn_dLs[:, s.newaxis] * dLs_dsurface
 
         return K_RT, K_surface
 
@@ -236,7 +238,7 @@ class RadiativeTransfer():
     def reconfigure(self, config_rt):
         for RT in self.RTs.values():
             RT.reconfigure(config_rt)
-        return 
+        return
 
     def pack_arrays(self, list_of_r_dicts):
         """Take the list of dict outputs from each RTM (in order of RTs) and
@@ -247,9 +249,3 @@ class RadiativeTransfer():
             temp = [x[key] for x in list_of_r_dicts]
             r_stacked[key] = s.hstack(temp)
         return r_stacked
-
-
-
-
-
-

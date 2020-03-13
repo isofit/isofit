@@ -40,10 +40,10 @@ def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
 
     # Figure out which RT object we are using
     my_RT = None
-    for rt_name in ['modtran_vswir','sixs_vswir','libradtran_vswir']:
+    for rt_name in ['modtran_vswir', 'sixs_vswir', 'libradtran_vswir']:
         if rt_name in RT.RTs:
-           my_RT = RT.RTs[rt_name]
-           continue
+            my_RT = RT.RTs[rt_name]
+            continue
     if not my_RT:
         raise ValueError('No suiutable RT object for initialization')
 
@@ -73,9 +73,9 @@ def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
             x_RT_2 = x_RT.copy()
             x_RT_2[ind_sv] = h2o
             rhi = RT.get(x_RT_2, geom)
-            rhoatm = instrument.sample(x_instrument, RT.wl, rhi['rhoatm']) #_hi)
-            transm = instrument.sample(x_instrument, RT.wl, rhi['transm']) #_hi)
-            sphalb = instrument.sample(x_instrument, RT.wl, rhi['sphalb']) #_hi)
+            rhoatm = instrument.sample(x_instrument, RT.wl, rhi['rhoatm'])  # _hi)
+            transm = instrument.sample(x_instrument, RT.wl, rhi['transm'])  # _hi)
+            sphalb = instrument.sample(x_instrument, RT.wl, rhi['sphalb'])  # _hi)
             solar_irr = instrument.sample(x_instrument, RT.wl, RT.solar_irr)
 
             # Assume no surface emission.  "Correct" the at-sensor radiance
@@ -86,7 +86,7 @@ def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
             r = 1.0 / (transm / (rho - rhoatm) + sphalb)
             ratios.append((r[b945]*2.0)/(r[b1040]+r[b865]))
             h2os.append(h2o)
-    
+
         # Finally, interpolate to determine the actual water vapor level that
         # would optimize the continuum-relative correction
         p = interp1d(h2os, ratios)
