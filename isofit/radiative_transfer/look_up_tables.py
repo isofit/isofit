@@ -27,7 +27,6 @@ from ..core.common import combos, eps, load_wavelen
 from ..core.common import VectorInterpolator
 
 
-
 ### Functions ###
 
 def spawn_rt(cmd):
@@ -44,6 +43,7 @@ class FileExistsError(Exception):
 
     def __init__(self, message):
         super(FileExistsError, self).__init__(message)
+
 
 class TabularRT:
     """A model of photon transport including the atmosphere."""

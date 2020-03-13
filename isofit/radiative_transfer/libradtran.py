@@ -33,6 +33,7 @@ libradtran_names = ['libradtran_vswir']
 
 ### Classes ###
 
+
 class LibRadTranRT(TabularRT):
     """A model of photon transport including the atmosphere."""
 
@@ -219,17 +220,14 @@ class LibRadTranRT(TabularRT):
         irr = irr / self.coszen
         self.solar_irr = irr.copy()
 
-        results = { "wl": self.wl, 'solzen':solzen, 'irr':irr,
-         "solzen": solzen, "rhoatm": rhoatm, "transm": transm, 
-         "sphalb": sphalb, "transup": transup}
+        results = {"wl": self.wl, 'solzen': solzen, 'irr': irr,
+                   "solzen": solzen, "rhoatm": rhoatm, "transm": transm,
+                   "sphalb": sphalb, "transup": transup}
         return results
-
-
 
     def ext550_to_vis(self, ext550):
         return s.log(50.0) / (ext550 + 0.01159)
 
-    
     def build_lut(self, rebuild=False):
 
         TabularRT.build_lut(self, rebuild)
@@ -246,9 +244,9 @@ class LibRadTranRT(TabularRT):
                 ind = [s.where(g == p)[0] for g, p in zip(self.lut_grids, point)]
                 ind = tuple(ind)
                 temp[ind] = librt_output[key]
-        
+
             self.luts[key] = VectorInterpolator(self.lut_grids, temp)
-   
+
     def lookup_lut(self, x_RT):
         ret = {}
         point = x_RT[self._x_RT_index_for_point]
@@ -291,7 +289,7 @@ class LibRadTranRT(TabularRT):
                 point_ind = self.lut_names.index(name)
                 point[point_ind] = x_RT[x_RT_ind]
             return self.lookup_lut(point)
- 
+
     def get_L_atm(self, x_RT, geom):
         r = self.get(x_RT, geom)
         rho = r['rhoatm']
@@ -306,5 +304,3 @@ class LibRadTranRT(TabularRT):
         """Thermal emission from the ground is provided by the thermal model, so
         this function is a placeholder for future upgrades."""
         return 0
-
-
