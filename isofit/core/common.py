@@ -109,13 +109,13 @@ class VectorInterpolator:
         self.n = data.shape[-1]
         grid_aug = grid + [np.arange(data.shape[-1])]
         self.itp = RegularGridInterpolator(grid_aug, data,
-                bounds_error=False, fill_value=None)
+                                           bounds_error=False, fill_value=None)
 
     def __call__(self, points):
 
         x = np.zeros((self.n,len(points)+1))
         for i in range(len(points)):
-            x[:,i] = points[i]
+            x[:, i] = points[i]
         # This last dimension is always an integer so no
         # interpolation is performed. This is done only
         # for performance reasons.
