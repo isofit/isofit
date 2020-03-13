@@ -85,11 +85,11 @@ class TabularRT:
             self.init.append(element['init'])
             self.prior_sigma.append(element['prior_sigma'])
             self.prior_mean.append(element['prior_mean'])
-        self.bounds = s.array(self.bounds)
-        self.scale = s.array(self.scale)
-        self.init = s.array(self.init)
-        self.prior_mean = s.array(self.prior_mean)
-        self.prior_sigma = s.array(self.prior_sigma)
+        self.bounds = np.array(self.bounds)
+        self.scale = np.array(self.scale)
+        self.init = np.array(self.init)
+        self.prior_mean = np.array(self.prior_mean)
+        self.prior_sigma = np.array(self.prior_sigma)
 
     def build_lut(self, rebuild=False):
         """Each LUT is associated with a source directory.  We build a lookup table by: 
@@ -105,7 +105,7 @@ class TabularRT:
         for key, val in self.lut_grid_config.items():
             self.lut_names.append(key)
             self.lut_grids.append(np.array(val))
-            if len(self.lut_grids[-1] == 1):
+            if len(self.lut_grids[-1]) == 1:
                 raise ValueError('Only 1 value in LUT grid {}.  1-d LUT grids cannot be interpreted.'.format(key))
             self.lut_dims.append(len(val))
             if val != sorted(val):
