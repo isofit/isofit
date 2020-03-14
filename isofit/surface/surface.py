@@ -40,9 +40,10 @@ class Surface:
         self.bvec = []
         self.bval = s.array([])
         self.emissive = False
-
-        self.reconfigure(config)
-
+        
+        if 'reflectance' in config and config['reflectance'] is not None:
+            self.rfl = config['reflectance']
+            self.resample_reflectance()
         if 'reflectance_file' in config:
             self.rfl, self.rwl = load_spectrum(config['reflectance_file'])
             self.wl = self.rwl.copy()
@@ -50,13 +51,6 @@ class Surface:
         if 'wavelength_file' in config:
             self.wl, self.fwhm = load_wavelen(config['wavelength_file'])
             self.n_wl = len(self.wl)
-            self.resample_reflectance()
-
-    def reconfigure(self, config):
-        """Adjust the surface reflectance (for predefined reflectances)."""
-
-        if 'reflectance' in config and config['reflectance'] is not None:
-            self.rfl = config['reflectance']
             self.resample_reflectance()
 
     def resample_reflectance(self):

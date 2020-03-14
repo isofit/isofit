@@ -328,7 +328,3 @@ class Instrument:
             return ''
         return 'Instrument: '+' '.join(['%5.3f' % xi for xi in x_instrument])
 
-    def reconfigure(self, config):
-        """Reconfiguration not yet supported."""
-
-        return

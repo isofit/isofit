@@ -151,20 +151,3 @@ class TabularRT:
             return ''
         return 'Atmosphere: '+' '.join(['%5.3f' % xi for xi in x_RT])
 
-    def reconfigure(self, config):
-        """Accept new configuration options. We only support a few very 
-           specific reconfigurations. Here, when performing multiple 
-           retrievals with the same radiative transfer model, we can 
-           reconfigure the prior distribution for this specific
-           retrieval event to incorporate variable atmospheric information 
-           from other sources."""
-
-        if 'prior_means' in config and \
-                config['prior_means'] is not None:
-            self.prior_mean = config['prior_means']
-            self.init = np.minimum(np.maximum(config['prior_means'],
-                                            self.bounds[:, 0] + eps), self.bounds[:, 1] - eps)
-
-        if 'prior_variances' in config and \
-                config['prior_variances'] is not None:
-            self.prior_sigma = np.sqrt(config['prior_variances'])

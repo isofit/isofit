@@ -235,11 +235,6 @@ class RadiativeTransfer():
         ret = '\n'.join(ret)
         return ret
 
-    def reconfigure(self, config_rt):
-        for RT in self.RTs.values():
-            RT.reconfigure(config_rt)
-        return
-
     def pack_arrays(self, list_of_r_dicts):
         """Take the list of dict outputs from each RTM (in order of RTs) and
         stack their internal arrays in the same order.

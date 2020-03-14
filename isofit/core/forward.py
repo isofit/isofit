@@ -305,13 +305,3 @@ class ForwardModel:
         x_instrument = x[self.idx_instrument]
         return x_surface, x_RT, x_instrument
 
-    def reconfigure(self, config_surface, config_rt, config_instrument):
-        """Reconfigure the components of the forward model. This could update
-        components' initialization values and/or priors, or (for the case
-        of a defined surface reflectance) the surface reflectance file itself."""
-
-        self.surface.reconfigure(config_surface)
-        self.RT.reconfigure(config_rt)
-        self.instrument.reconfigure(config_instrument)
-        self.init = s.concatenate((self.surface.init, self.RT.init,
-                                   self.instrument.init))

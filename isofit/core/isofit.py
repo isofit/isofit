@@ -96,7 +96,7 @@ class Isofit:
         self.fm = None
         self.iv = None
 
-    def _run_single_spectra(self, index):
+    def _run_single_spectrum(self, index):
         # Ignore Numba warnings
         if not warnings_enabled:
             warnings.simplefilter(
@@ -117,12 +117,6 @@ class Isofit:
                 # Bad data flags
                 self.states = []
             else:
-                # Update model components with new configuration parameters
-                # specific to this spectrum. Typically these would be empty,
-                # though they could contain new location-specific prior
-                # distributions.
-                self.fm.reconfigure(*configs)
-
                 # The inversion returns a list of states, which are
                 # intepreted either as samples from the posterior (MCMC case)
                 # or as a gradient descent trajectory (standard case). For
@@ -149,11 +143,6 @@ class Isofit:
                     # Bad data flags
                     self.states = []
                 else:
-                    # Update model components with new configuration parameters
-                    # specific to this spectrum. Typically these would be empty,
-                    # though they could contain new location-specific prior
-                    # distributions.
-                    self.fm.reconfigure(*configs)
                     # Profile output
                     gbl, lcl = globals(), locals()
                     cProfile.runctx(
@@ -173,7 +162,7 @@ class Isofit:
 
             results = []
             for l in range(n_iter):
-                results.append(pool.apply_async(self._run_single_spectra, args=(l,)))
+                results.append(pool.apply_async(self._run_single_spectrum, args=(l,)))
             results = [p.get() for p in results]
             pool.close()
             pool.join()
