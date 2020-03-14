@@ -25,9 +25,6 @@ import numpy as np
 import scipy.linalg
 from scipy.interpolate import RegularGridInterpolator
 from os.path import expandvars, split, abspath
-from numba import jit
-
-from .. import jit_enabled, conditional_decorator
 
 
 ### Variables ###
@@ -97,14 +94,12 @@ def emissive_radiance(emissivity, T, wl):
     return uW_per_cm2_sr_nm, dRdn_dT
 
 
-@conditional_decorator(jit, jit_enabled, forceobj=True)
 def svd_inv(C, mineig=0, hashtable=None):
     """Fast stable inverse using SVD. This can handle near-singular matrices."""
 
     return svd_inv_sqrt(C, mineig, hashtable)[0]
 
 
-@conditional_decorator(jit, jit_enabled)
 def svd_inv_sqrt(C, mineig=0, hashtable=None):
     """Fast stable inverse using SVD. This can handle near-singular matrices.
     Also return the square root.

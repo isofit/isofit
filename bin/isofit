@@ -46,7 +46,9 @@ def main():
 
     logging.basicConfig(format='%(message)s', level=level)
 
-    return Isofit(config_file=config, level=level, row_column=row_column, profile=profile)
+    isofit = Isofit(config_file=config, level=level, row_column=row_column, profile=profile)
+    
+    return isofit.run()
 
 
 if __name__ == '__main__':
