@@ -22,12 +22,12 @@ segmentation_size = 400
 num_integrations = 400
 
 num_elev_lut_elements = 1
-num_h2o_lut_elements = 5
+num_h2o_lut_elements = 2
 num_to_sensor_azimuth_lut_elements = 1
 num_to_sensor_zenith_lut_elements = 1
 
-num_aerosol_1_lut_elements = 4
-num_aerosol_2_lut_elements = 4
+num_aerosol_1_lut_elements = 2
+num_aerosol_2_lut_elements = 2
 
 aerosol_1_lut_range = [0.001, 0.5]
 aerosol_2_lut_range = [0.001, 0.5]
@@ -603,25 +603,29 @@ def build_presolve_config(paths: Pathnames, num_integrations: int, uncorrelated_
     h2o_grid = np.linspace(h2o_lut_range[0], h2o_lut_range[1], num_h2o_lut_elements)
 
     h2o_configuration = {
-        "wavelength_file": paths.wavelength_path,
-        "lut_path": paths.lut_h2o_directory,
-        "modtran_template_file": paths.h2o_template_path,
-        "modtran_directory": paths.modtran_path,
-        "statevector": {
-            "H2OSTR": {
-                "bounds": [float(np.min(h2o_grid)), float(np.max(h2o_grid))],
-                "scale": 0.01,
-                "init": np.percentile(h2o_grid,25),
-                "prior_sigma": 100.0,
-                "prior_mean": 1.5}
-        },
-        "lut_grid": {
-            "H2OSTR": [float(x) for x in h2o_grid],
-        },
-        "unknowns": {
-            "H2O_ABSCO": 0.0
-        },
-        "domain": {"start": 340, "end": 2520, "step": 0.1}
+            "modtran_vswir": {
+                "wavelength_file": paths.wavelength_path,
+                "lut_path": paths.lut_h2o_directory,
+                "modtran_template_file": paths.h2o_template_path,
+                "modtran_directory": paths.modtran_path,
+                "lut_names": ["H2OSTR"],
+                "statevector_names": ["H2OSTR"],
+            },
+            "statevector": {
+                "H2OSTR": {
+                    "bounds": [float(np.min(h2o_grid)), float(np.max(h2o_grid))],
+                    "scale": 0.01,
+                    "init": np.percentile(h2o_grid,25),
+                    "prior_sigma": 100.0,
+                    "prior_mean": 1.5}
+            },
+            "lut_grid": {
+                "H2OSTR": [float(x) for x in h2o_grid],
+            },
+            "unknowns": {
+                "H2O_ABSCO": 0.0
+            },
+            "domain": {"start": 340, "end": 2520, "step": 0.1}
     }
 
     # make isofit configuration
@@ -639,7 +643,7 @@ def build_presolve_config(paths: Pathnames, num_integrations: int, uncorrelated_
                                                     'multicomponent_surface': {'wavelength_file': paths.wavelength_path,
                                                                                'surface_file': paths.surface_working_path,
                                                                                'select_on_init': True},
-                             'modtran_radiative_transfer': h2o_configuration},
+                             'radiative_transfer': h2o_configuration},
                          'inversion': {'windows': inversion_windows}}
 
     if paths.channelized_uncertainty_working_path is not None:
@@ -658,25 +662,29 @@ def build_main_config(paths, h2o_lut_grid: np.array, elevation_lut_grid: np.arra
                       to_sensor_azimuth_lut_grid: np.array, to_sensor_zenith_lut_grid: np.array, mean_latitude, mean_longitude, dt):
 
     modtran_configuration = {
-        "wavelength_file": paths.wavelength_path,
-        "lut_path": paths.lut_modtran_directory,
-        "aerosol_template_file": paths.aerosol_tpl_path,
-        "modtran_template_file": paths.modtran_template_path,
-        "modtran_directory": paths.modtran_path,
-        "statevector": {
-            "H2OSTR": {
-                "bounds": [h2o_lut_grid[0], h2o_lut_grid[-1]],
-                "scale": 0.01,
-                "init": (h2o_lut_grid[1] + h2o_lut_grid[-1]) / 2.0,
-                "prior_sigma": 100.0,
-                "prior_mean": (h2o_lut_grid[1] + h2o_lut_grid[-1]) / 2.0,
-            }
-        },
-        "lut_grid": {},
-        "unknowns": {
-            "H2O_ABSCO": 0.0
-        },
-        "domain": {"start": 340, "end": 2520, "step": 0.1}
+            "modtran_vswir": {
+                "wavelength_file": paths.wavelength_path,
+                "lut_path": paths.lut_modtran_directory,
+                "aerosol_template_file": paths.aerosol_tpl_path,
+                "modtran_template_file": paths.modtran_template_path,
+                "modtran_directory": paths.modtran_path,
+                "lut_names": ["H2OSTR"],
+                "statevector_names": ["H2OSTR"],
+            },
+            "statevector": {
+                "H2OSTR": {
+                    "bounds": [h2o_lut_grid[0], h2o_lut_grid[-1]],
+                    "scale": 0.01,
+                    "init": (h2o_lut_grid[1] + h2o_lut_grid[-1]) / 2.0,
+                    "prior_sigma": 100.0,
+                    "prior_mean": (h2o_lut_grid[1] + h2o_lut_grid[-1]) / 2.0,
+                }
+            },
+            "lut_grid": {},
+            "unknowns": {
+                "H2O_ABSCO": 0.0
+            },
+            "domain": {"start": 340, "end": 2520, "step": 0.1}
     }
     if h2o_lut_grid is not None:
         modtran_configuration['lut_grid']['H2OSTR'] = [max(0.0, float(q)) for q in h2o_lut_grid]
@@ -712,7 +720,7 @@ def build_main_config(paths, h2o_lut_grid: np.array, elevation_lut_grid: np.arra
                                  "multicomponent_surface": {"wavelength_file": paths.wavelength_path,
                                                             "surface_file": paths.surface_working_path,
                                                             "select_on_init": True},
-                                 "modtran_radiative_transfer": modtran_configuration},
+                                 "radiative_transfer": modtran_configuration},
                              "inversion": {"windows": inversion_windows}}
 
     if paths.channelized_uncertainty_working_path is not None:
