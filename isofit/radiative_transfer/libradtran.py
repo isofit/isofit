@@ -259,7 +259,7 @@ class LibRadTranRT(TabularRT):
             return self.lookup_lut(x_RT)
         else:
             point = s.zeros((self.n_point,))
-            for point_ind, name in enumerate(self.lut_grid):
+            for point_ind, name in enumerate(self.lut_grid_conflict):
                 if name in self.statevec:
                     x_RT_ind = self.statevec.index(name)
                     point[point_ind] = x_RT[x_RT_ind]
@@ -284,7 +284,7 @@ class LibRadTranRT(TabularRT):
                 else:
                     # If a variable is defined in the lookup table but not
                     # specified elsewhere, we will default to the minimum
-                    point[point_ind] = min(self.lut_grid[name])
+                    point[point_ind] = min(self.lut_grid_conflict[name])
             for x_RT_ind, name in enumerate(self.statevec):
                 point_ind = self.lut_names.index(name)
                 point[point_ind] = x_RT[x_RT_ind]
