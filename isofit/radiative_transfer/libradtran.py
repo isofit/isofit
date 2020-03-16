@@ -45,6 +45,8 @@ class LibRadTranRT(TabularRT):
 
         self.lut_quantities = ['rhoatm', 'transm', 'sphalb', 'transup']
 
+        self.angular_lut_keys_degrees = ['OBSZEN','TRUEAZ','viewzen','viewaz','solzen','solaz']
+
         # Build the lookup table
         self.build_lut()
 
@@ -56,6 +58,7 @@ class LibRadTranRT(TabularRT):
         for sv in self.lut_names:
             x_RT_index_for_point.append(full_statevec.index(sv))
         self._x_RT_index_for_point = s.array(x_RT_index_for_point)
+
 
     def find_basedir(self, config):
         """Seek out a libradtran base directory."""

@@ -50,12 +50,12 @@ class ModtranRT(TabularRT):
     def __init__(self, band_mode_string, config, full_statevec):
         """."""
 
+        TabularRT.__init__(self, config)
+
         self.band_mode_string = band_mode_string
         if self.band_mode_string not in modtran_bands_available:
             raise NotImplementedError
         self.full_statevec = full_statevec
-
-        TabularRT.__init__(self, config)
 
         self.modtran_dir = self.find_basedir(config)
         flt_name = 'wavelengths_' + self.band_mode_string + '.flt'
@@ -88,6 +88,8 @@ class ModtranRT(TabularRT):
         elif self.band_mode_string.lower() == 'modtran_tir':
             self.modtran_lut_names = ['thermal_upwelling', 'thermal_downwelling',
                                       'rhoatm', 'transm', 'sphalb', 'transup']
+
+        self.angular_lut_keys_degrees = ['OBSZEN','TRUEAZ','viewzen','viewaz','solzen','solaz']
 
         # Build the lookup table
         self.build_lut()
