@@ -72,6 +72,12 @@ class TabularRT:
 
         self.luts = {}
 
+        self.angular_lut_keys_degrees = []
+        self.angular_lut_keys_radians = []
+
+        # set up lookup table grid, and associated filename prefixes
+        self.lut_dims, self.lut_grids, self.lut_names, self.lut_interp_types = [], [], [], []
+
         # Retrieved variables.  We establish scaling, bounds, and
         # initial guesses for each state vector element.  The state
         # vector elements are all free parameters in the RT lookup table,
@@ -91,6 +97,7 @@ class TabularRT:
         self.prior_mean = np.array(self.prior_mean)
         self.prior_sigma = np.array(self.prior_sigma)
 
+
     def build_lut(self, rebuild=False):
         """Each LUT is associated with a source directory.  We build a lookup table by: 
               (1) defining the LUT dimensions, state vector names, and the grid 
@@ -100,17 +107,34 @@ class TabularRT:
               (3) loading the LUTs, one per key atmospheric coefficient vector,
                   into memory as VectorInterpolator objects."""
 
-        # set up lookup table grid, and associated filename prefixes
-        self.lut_dims, self.lut_grids, self.lut_names = [], [], []
-        for key, val in self.lut_grid_config.items():
-            self.lut_names.append(key)
-            self.lut_grids.append(np.array(val))
-            if len(self.lut_grids[-1]) == 1:
-                raise ValueError('Only 1 value in LUT grid {}.  1-d LUT grids cannot be interpreted.'.format(key))
-            self.lut_dims.append(len(val))
-            if val != sorted(val):
+        for key, original_grid_values in self.lut_grid_config.items():
+            # cast as numpy array to be sure
+            original_grid_values = np.array(original_grid_values)
+
+            # do some quick checks on the values
+            if len(original_grid_values) == 1:
+                err = 'Only 1 value in LUT grid {}.  1-d LUT grids cannot be interpreted.'.format(key)
+                raise ValueError(err)
+            if original_grid_values != sorted(original_grid_values):
                 logging.error('Lookup table grid needs ascending order')
                 raise ValueError('Lookup table grid needs ascending order')
+
+            # Store the values
+            self.lut_grids.append(original_grid_values)
+            self.lut_dims.append(len(original_grid_values))
+            self.lut_names.append(key)
+
+            # Store in an indication of the type of value each key is
+            # (normal - n, degree - d, radian - r)
+            if key in self.angular_lut_keys_radians:
+                self.lut_interp_types.append('r')
+            elif key in self.angular_lut_keys_degrees:
+                self.lut_interp_types.append('d')
+            else:
+                self.lut_interp_types.append('n')
+
+        # Cast as array for faster reference later
+        self.lut_interp_types = np.array(self.lut_interp_types)
 
         # "points" contains all combinations of grid points
         # We will have one filename prefix per point

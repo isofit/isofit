@@ -41,7 +41,45 @@ eps = 1e-5
 class VectorInterpolator:
     """."""
 
-    def __init__(self, grid, data):
+    def __init__(self, grid, data, lut_interp_types):
+        self.lut_interp_types = lut_interp_types
+
+        # expand grid dimensionality as needed
+        [radian_locations] = np.where(self.lut_interp_types == 'd')
+        [degree_locations] = np.where(self.lut_interp_types == 'r')
+        angle_locations = np.hstack([radian_locations,degree_locations])
+        angle_types = np.hstack([self.lut_interp_types[radian_locations],self.lut_interp_types[degree_locations]])
+        for _angle_loc in range(len(angle_locations)):
+
+            angle_loc = angle_locations[_angle_loc]
+            # get original grid at given location
+            original_grid_subset = np.array(grid[angle_loc])
+
+            # convert for angular coordinates
+            if (angle_types[_angle_loc] == 'r'):
+                grid_subset_cosin = np.cos(original_grid_subset)
+                grid_subset_sin = np.sin(original_grid_subset)
+            elif (angle_types[_angle_loc] == 'd'):
+                grid_subset_cosin = np.cos(original_grid_subset / 180. * np.pi)
+                grid_subset_sin = np.sin(original_grid_subset / 180. * np.pi)
+
+            # handle the fact that the grid may no longer be in order
+            grid_subset_cosin_order = np.argsort(grid_subset_cosin)
+            grid_subset_sin_order = np.argsort(grid_subset_sin)
+
+            # convert current grid location, and add a second
+            grid[angle_loc] = grid_subset_cosin[grid_subset_cosin_order]
+            grid.insert(angle_loc+1, grid_subset_sin[grid_subset_sin_order])
+
+            # now augment data in the same manner
+            original_data_subset = np.array(data[angle_loc])
+            data[angle_loc] = original_data_subset[grid_subset_cosin_order]
+            data.insert(angle_loc+1, original_data_subset[grid_subset_sin_order])
+
+            # update the rest of the angle locations
+            angle_locations += 1
+
+
         self.n = data.shape[-1]
         grid_aug = grid + [np.arange(data.shape[-1])]
         self.itp = RegularGridInterpolator(grid_aug, data,
@@ -49,9 +87,20 @@ class VectorInterpolator:
 
     def __call__(self, points):
 
-        x = np.zeros((self.n,len(points)+1))
+        x = np.zeros((self.n,len(points) + 1 + np.sum(self.lut_interp_types != 'n')))
+        offset_count = 0
         for i in range(len(points)):
-            x[:, i] = points[i]
+            if self.lut_interp_types[i] == 'a':
+                x[:, i + offset_count] = points[i]
+            elif self.lut_interp_types[i] == 'r':
+                x[:, i + offset_count] = np.cos(points[i])
+                x[:, i + 1 + offset_count] = np.sin(points[i])
+                offset_count += 1
+            elif self.lut_interp_types[i] == 'd':
+                x[:, i + offset_count] = np.cos(points[i] / 180. * np.pi)
+                x[:, i + 1 + offset_count] = np.sin(points[i] / 180. * np.pi)
+                offset_count += 1
+
         # This last dimension is always an integer so no
         # interpolation is performed. This is done only
         # for performance reasons.
