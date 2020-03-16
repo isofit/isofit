@@ -26,11 +26,14 @@ num_h2o_lut_elements = 2
 num_to_sensor_azimuth_lut_elements = 1
 num_to_sensor_zenith_lut_elements = 1
 
-num_aerosol_1_lut_elements = 2
-num_aerosol_2_lut_elements = 2
+# Setting any of these to '1' will also remove that aerosol from the statevector
+num_aerosol_1_lut_elements = 1
+num_aerosol_2_lut_elements = 3
+num_aerosol_3_lut_elements = 3
 
 aerosol_1_lut_range = [0.001, 0.5]
 aerosol_2_lut_range = [0.001, 0.5]
+aerosol_3_lut_range = [0.001, 0.5]
 
 h2o_min = 0.2
 
@@ -153,7 +156,7 @@ def main():
         write_modtran_template(atmosphere_type='ATM_MIDLAT_SUMMER', fid=paths.fid, altitude_km=mean_altitude_km,
                                dayofyear=dayofyear, latitude=mean_latitude, longitude=mean_longitude,
                                to_sensor_azimuth=mean_to_sensor_azimuth, gmtime=gmtime, elevation_km=mean_elevation_km,
-                               output_file=paths.h2o_template_path)
+                               output_file=paths.h2o_template_path, ihaze_type='AER_NONE')
 
 
         ################# HERE ###############
@@ -188,7 +191,6 @@ def main():
             not exists(paths.uncert_subs_path) or \
             not exists(paths.rfl_subs_path):
 
-        # TODO: consider only doing one modtran template write, it's a bit redundant
         write_modtran_template(atmosphere_type='ATM_MIDLAT_SUMMER', fid=paths.fid, altitude_km=mean_altitude_km,
                                dayofyear=dayofyear, latitude=mean_latitude, longitude=mean_longitude,
                                to_sensor_azimuth=mean_to_sensor_azimuth, gmtime=gmtime, elevation_km=mean_elevation_km,
@@ -377,24 +379,22 @@ def load_climatology(config_path: str, latitude: float, longitude: float, acquis
         aerosol_model_path: A path to the location of the aerosol model to use with MODTRAN.
     """
 
-    aerosol_model_path = join(isofit_path, 'data', 'aerosol_twopart_model.txt')
-    aerosol_1_lut = np.linspace(aerosol_1_lut_range[0], aerosol_1_lut_range[1], num_aerosol_1_lut_elements)
-    aerosol_2_lut = np.linspace(aerosol_2_lut_range[0], aerosol_2_lut_range[1], num_aerosol_2_lut_elements)
-    aerosol_lut_grid = {"AERFRAC_0": [float(q) for q in aerosol_1_lut],
-                        "AERFRAC_1": [float(q) for q in aerosol_2_lut]}
-    aerosol_state_vector = {
-        "AERFRAC_0": {
-            "bounds": [float(aerosol_1_lut_range[0]), float(aerosol_1_lut_range[1])],
-            "scale": 1,
-            "init": float((aerosol_1_lut_range[1]-aerosol_1_lut_range[0])/10. + aerosol_1_lut_range[0]),
-            "prior_sigma": 10.0,
-            "prior_mean": float((aerosol_1_lut_range[1]-aerosol_1_lut_range[0])/10. + aerosol_1_lut_range[0])},
-        "AERFRAC_1": {
-            "bounds": [float(aerosol_2_lut_range[0]), float(aerosol_2_lut_range[1])],
-            "scale": 1,
-            "init": float((aerosol_2_lut_range[1]-aerosol_2_lut_range[0])/2. + aerosol_2_lut_range[0]),
-            "prior_sigma": 10.0,
-            "prior_mean": float((aerosol_2_lut_range[1]-aerosol_2_lut_range[0])/2. + aerosol_2_lut_range[0])}}
+    aerosol_model_path = join(isofit_path, 'data', 'aerosol_model.txt')
+    aerosol_state_vector = {}
+    aerosol_lut_grid = {}
+    aerosol_lut_ranges = [aerosol_1_lut_range, aerosol_2_lut_range, aerosol_3_lut_range]
+    num_aerosol_lut_elements = [num_aerosol_1_lut_elements, num_aerosol_2_lut_elements, num_aerosol_3_lut_elements]
+    for _a, alr in enumerate(aerosol_lut_ranges):
+        if num_aerosol_lut_elements[_a] != 1:
+            aerosol_state_vector['AERFRAC_{}'.format(_a)] = {
+                "bounds": [float(alr[0]), float(alr[1])],
+                "scale": 1,
+                "init": float((alr[1] - alr[0]) / 10. + alr[0]),
+                "prior_sigma": 10.0,
+                "prior_mean": float((alr[1] - alr[0]) / 10. + alr[0])}
+
+            aerosol_lut = np.linspace(alr[0], alr[1], num_aerosol_lut_elements[_a])
+            aerosol_lut_grid['AERFRAC_{}'.format(_a)] = [float(q) for q in aerosol_lut]
 
     logging.info('Loading Climatology')
     # If a configuration path has been provided, use it to get relevant info
@@ -668,7 +668,7 @@ def build_main_config(paths, h2o_lut_grid: np.array, elevation_lut_grid: np.arra
                 "aerosol_template_file": paths.aerosol_tpl_path,
                 "modtran_template_file": paths.modtran_template_path,
                 "modtran_directory": paths.modtran_path,
-                "lut_names": ["H2OSTR"],
+                "lut_names": [],
                 "statevector_names": ["H2OSTR"],
             },
             "statevector": {
@@ -688,12 +688,16 @@ def build_main_config(paths, h2o_lut_grid: np.array, elevation_lut_grid: np.arra
     }
     if h2o_lut_grid is not None:
         modtran_configuration['lut_grid']['H2OSTR'] = [max(0.0, float(q)) for q in h2o_lut_grid]
+        modtran_configuration['modtran_vswir']['lut_names'].append('H2OSTR')
     if elevation_lut_grid is not None:
         modtran_configuration['lut_grid']['GNDALT'] =  [max(0.0, float(q)) for q in elevation_lut_grid]
+        modtran_configuration['modtran_vswir']['lut_names'].append('GNDALT')
     if to_sensor_azimuth_lut_grid is not None:
         modtran_configuration['lut_grid']['TRUEAZ'] = [float(q) for q in to_sensor_azimuth_lut_grid]
+        modtran_configuration['modtran_vswir']['lut_names'].append('TRUEAZ')
     if to_sensor_zenith_lut_grid is not None:
         modtran_configuration['lut_grid']['OBSZEN'] = [float(q) for q in to_sensor_zenith_lut_grid]
+        modtran_configuration['modtran_vswir']['lut_names'].append('OBSZEN')
 
     # add aerosol elements from climatology
     aerosol_state_vector, aerosol_lut_grid, aerosol_model_path = \
@@ -738,7 +742,7 @@ def build_main_config(paths, h2o_lut_grid: np.array, elevation_lut_grid: np.arra
 
 def write_modtran_template(atmosphere_type: str, fid: str, altitude_km: float, dayofyear: int,
                            latitude: float, longitude: float, to_sensor_azimuth: float, gmtime: float,
-                           elevation_km: float, output_file: str):
+                           elevation_km: float, output_file: str, ihaze_type: str = 'AER_RURAL'):
     """ Write a MODTRAN template file for use by isofit look up tables
     Args:
         atmosphere_type: label for the type of atmospheric profile to use in modtran
@@ -785,7 +789,7 @@ def write_modtran_template(atmosphere_type: str, fid: str, altitude_km: float, d
                 "O3STR": 0.3,
                 "O3UNIT": "a"
             },
-            "AEROSOLS": {"IHAZE": "AER_NONE"},
+            "AEROSOLS": {"IHAZE": ihaze_type},
             "GEOMETRY": {
                 "ITYPE": 3,
                 "H1ALT": altitude_km,
