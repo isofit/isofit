@@ -706,6 +706,7 @@ def build_main_config(paths, h2o_lut_grid: np.array, elevation_lut_grid: np.arra
     modtran_configuration['statevector'].update(aerosol_state_vector)
     modtran_configuration['lut_grid'].update(aerosol_lut_grid)
     modtran_configuration['aerosol_model_file'] = aerosol_model_path
+    modtran_configuration['modtran_vswir']['lut_names'].extend(list(aerosol_lut_grid.keys()))
 
     # make isofit configuration
     isofit_config_modtran = {'ISOFIT_base': paths.isofit_path,
