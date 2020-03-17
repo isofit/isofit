@@ -609,6 +609,7 @@ def build_presolve_config(paths: Pathnames, num_integrations: int, uncorrelated_
                 "modtran_template_file": paths.h2o_template_path,
                 "modtran_directory": paths.modtran_path,
                 "lut_names": ["H2OSTR"],
+                "statevector_names": ["H2OSTR"],
             },
             "statevector": {
                 "H2OSTR": {
@@ -667,7 +668,8 @@ def build_main_config(paths, h2o_lut_grid: np.array, elevation_lut_grid: np.arra
                 "aerosol_template_file": paths.aerosol_tpl_path,
                 "modtran_template_file": paths.modtran_template_path,
                 "modtran_directory": paths.modtran_path,
-                "lut_names": [],
+                #lut_names - populated below
+                #statevector_names - populated below
             },
             "statevector": {
                 "H2OSTR": {
@@ -686,16 +688,12 @@ def build_main_config(paths, h2o_lut_grid: np.array, elevation_lut_grid: np.arra
     }
     if h2o_lut_grid is not None:
         modtran_configuration['lut_grid']['H2OSTR'] = [max(0.0, float(q)) for q in h2o_lut_grid]
-        modtran_configuration['modtran_vswir']['lut_names'].append('H2OSTR')
     if elevation_lut_grid is not None:
         modtran_configuration['lut_grid']['GNDALT'] =  [max(0.0, float(q)) for q in elevation_lut_grid]
-        modtran_configuration['modtran_vswir']['lut_names'].append('GNDALT')
     if to_sensor_azimuth_lut_grid is not None:
         modtran_configuration['lut_grid']['TRUEAZ'] = [float(q) for q in to_sensor_azimuth_lut_grid]
-        modtran_configuration['modtran_vswir']['lut_names'].append('TRUEAZ')
     if to_sensor_zenith_lut_grid is not None:
         modtran_configuration['lut_grid']['OBSZEN'] = [float(q) for q in to_sensor_zenith_lut_grid]
-        modtran_configuration['modtran_vswir']['lut_names'].append('OBSZEN')
 
     # add aerosol elements from climatology
     aerosol_state_vector, aerosol_lut_grid, aerosol_model_path = \
@@ -704,7 +702,10 @@ def build_main_config(paths, h2o_lut_grid: np.array, elevation_lut_grid: np.arra
     modtran_configuration['statevector'].update(aerosol_state_vector)
     modtran_configuration['lut_grid'].update(aerosol_lut_grid)
     modtran_configuration['modtran_vswir']['aerosol_model_file'] = aerosol_model_path
-    modtran_configuration['modtran_vswir']['lut_names'].extend(list(aerosol_lut_grid.keys()))
+
+    # MODTRAN should know about our whole LUT grid and all of our statevectors, so copy them in
+    modtran_configuration['modtran_vswir']['statevector_names'] = list(modtran_configuration['statevector'].keys())
+    modtran_configuration['modtran_vswir']['lut_names'] = list(modtran_configuration['lut_grid'].keys())
 
     # make isofit configuration
     isofit_config_modtran = {'ISOFIT_base': paths.isofit_path,

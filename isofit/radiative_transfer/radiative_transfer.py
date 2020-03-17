@@ -64,6 +64,8 @@ class RadiativeTransfer():
                 local_config["lut_grid"] = temp_lut_grid
 
                 # copy statevector into local config
+                for local_sv_name in local_config['statevector_names']:
+                    temp_statevec[local_sv_name] = config_statevector[local_sv_name]
                 local_config["statevector"] = temp_statevec
 
             temp_RT = None
