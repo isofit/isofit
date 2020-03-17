@@ -609,7 +609,6 @@ def build_presolve_config(paths: Pathnames, num_integrations: int, uncorrelated_
                 "modtran_template_file": paths.h2o_template_path,
                 "modtran_directory": paths.modtran_path,
                 "lut_names": ["H2OSTR"],
-                "statevector_names": ["H2OSTR"],
             },
             "statevector": {
                 "H2OSTR": {
@@ -669,7 +668,6 @@ def build_main_config(paths, h2o_lut_grid: np.array, elevation_lut_grid: np.arra
                 "modtran_template_file": paths.modtran_template_path,
                 "modtran_directory": paths.modtran_path,
                 "lut_names": [],
-                "statevector_names": ["H2OSTR"],
             },
             "statevector": {
                 "H2OSTR": {
