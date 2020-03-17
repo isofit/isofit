@@ -63,10 +63,6 @@ class RadiativeTransfer():
                     temp_lut_grid[local_lut_name] = self.lut_grid[local_lut_name]
                 local_config["lut_grid"] = temp_lut_grid
 
-                for local_sv_name in local_config['statevector_names']:
-                    temp_statevec[local_sv_name] = config_statevector[local_sv_name]
-                local_config["statevector"] = temp_statevec
-
             temp_RT = None
             if key in modtran_bands_available:
                 temp_RT = ModtranRT(key, local_config, self.statevec)

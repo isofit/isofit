@@ -47,13 +47,12 @@ modtran_bands_available = ['modtran_vswir', 'modtran_tir']
 class ModtranRT(TabularRT):
     """A model of photon transport including the atmosphere."""
 
-    def __init__(self, band_mode_string, config, full_statevec):
+    def __init__(self, band_mode_string, config, full_lutnames):
         """."""
 
         self.band_mode_string = band_mode_string
         if self.band_mode_string not in modtran_bands_available:
             raise NotImplementedError
-        self.full_statevec = full_statevec
 
         TabularRT.__init__(self, config)
 
@@ -96,10 +95,10 @@ class ModtranRT(TabularRT):
         # statevector to create a point for evaluation in the LUTs.
         # For example: point = x_RT[self._x_RT_index_for_point]
         # It should never be modified
-        x_RT_index_for_point = []
+        lut_index_for_point = []
         for sv in self.lut_names:
-            x_RT_index_for_point.append(full_statevec.index(sv))
-        self._x_RT_index_for_point = s.array(x_RT_index_for_point)
+            lut_index_for_point.append(full_lutnames.index(sv))
+        self._lut_index_for_point = s.array(lut_index_for_point)
 
     def find_basedir(self, config):
         """Seek out a modtran base directory."""
@@ -377,7 +376,7 @@ class ModtranRT(TabularRT):
 
     def lookup_lut(self, x_RT):
         ret = {}
-        point = x_RT[self._x_RT_index_for_point]
+        point = x_RT[self._lut_index_for_point]
         for key, lut in self.luts.items():
             ret[key] = s.array(lut(point)).ravel()
 

@@ -56,7 +56,7 @@ sixs_template = '''0 (User defined)
 class SixSRT(TabularRT):
     """A model of photon transport including the atmosphere."""
 
-    def __init__(self, config, full_statevec):
+    def __init__(self, config, full_lutnames):
 
         TabularRT.__init__(self, config)
         self.sixs_dir = self.find_basedir(config)
@@ -109,10 +109,10 @@ class SixSRT(TabularRT):
         # statevector to create a point for evaluation in the LUTs.
         # For example: point = x_RT[self._x_RT_index_for_point]
         # It should never be modified
-        x_RT_index_for_point = []
-        for sv in config['statevector_names']:
-            x_RT_index_for_point.append(full_statevec.index(sv))
-        self._x_RT_index_for_point = s.array(x_RT_index_for_point)
+        lut_index_for_point = []
+        for ln in self.lut_names:
+                lut_index_for_point.append(full_lutnames.index(ln))
+        self._lut_index_for_point = s.array(lut_index_for_point)
 
     def find_basedir(self, config):
         """Seek out a sixs base directory."""
@@ -234,7 +234,7 @@ class SixSRT(TabularRT):
 
     def lookup_lut(self, x_RT):
         ret = {}
-        point = x_RT[self._x_RT_index_for_point]
+        point = x_RT[self._lut_index_for_point]
         for key, lut in self.luts.items():
             ret[key] = s.array(lut(point)).ravel()
         return ret
