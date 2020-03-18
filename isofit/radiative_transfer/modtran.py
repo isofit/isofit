@@ -98,8 +98,8 @@ class ModtranRT(TabularRT):
         # For example: point = x_RT[self._x_RT_index_for_point]
         # It should never be modified
         lut_index_for_point = []
-        for sv in self.lut_names:
-            lut_index_for_point.append(full_lutnames.index(sv))
+        for ln in self.lut_names:
+            lut_index_for_point.append(full_lutnames.index(ln))
         self._lut_index_for_point = s.array(lut_index_for_point)
 
     def find_basedir(self, config):
@@ -292,7 +292,7 @@ class ModtranRT(TabularRT):
                 ind = tuple(ind)
                 temp[ind] = mod_output[key]
 
-            self.luts[key] = VectorInterpolator(self.lut_grids, temp)
+            self.luts[key] = VectorInterpolator(self.lut_grids, temp, self.lut_interp_types)
 
     def rebuild_cmd(self, point, fn):
         """."""
