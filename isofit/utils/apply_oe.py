@@ -13,6 +13,8 @@ import logging
 import json
 import gdal
 import numpy as np
+from sklearn import mixture
+import scipy.linalg
 
 from isofit.utils import segment, extractions, empirical_line
 from isofit.core import isofit
@@ -90,7 +92,7 @@ def main():
         dayofyear = dt.timetuple().tm_yday
 
 
-    h_m_s, day_increment, mean_path_km, mean_to_sensor_azimuth, mean_to_sensor_zenith_rad, valid, \
+    h_m_s, day_increment, mean_path_km, mean_to_sensor_azimuth, mean_to_sensor_zenith, valid, \
     to_sensor_azimuth_lut_grid, to_sensor_zenith_lut_grid = get_metadata_from_obs(paths.obs_working_path)
 
     if day_increment:
@@ -136,17 +138,18 @@ def main():
 
     mean_latitude, mean_longitude, mean_elevation_km, elevation_lut_grid = get_metadata_from_loc(paths.loc_working_path)
 
-    mean_altitude_km = mean_elevation_km + np.cos(mean_to_sensor_zenith_rad) * mean_path_km
+    mean_altitude_km = mean_elevation_km + np.cos(np.deg2rad(180-mean_to_sensor_zenith)) * mean_path_km
 
-    logging.info('Path (km): %f, To-sensor Zenith (rad): %f, Mean Altitude: %6.2f km' %
-                 (mean_path_km, mean_to_sensor_zenith_rad, mean_altitude_km))
+    logging.info('Path (km): %f, To-sensor Zenith (deg): %f, Mean Altitude: %6.2f km' %
+                 (mean_path_km, mean_to_sensor_zenith, mean_altitude_km))
 
 
     if not exists(paths.h2o_subs_path + '.hdr') or not exists(paths.h2o_subs_path):
 
         write_modtran_template(atmosphere_type='ATM_MIDLAT_SUMMER', fid=paths.fid, altitude_km=mean_altitude_km,
                                dayofyear=dayofyear, latitude=mean_latitude, longitude=mean_longitude,
-                               to_sensor_azimuth=mean_to_sensor_azimuth, gmtime=gmtime, elevation_km=mean_elevation_km,
+                               to_sensor_azimuth=mean_to_sensor_azimuth, to_sensor_zenith=mean_to_sensor_zenith,
+                               gmtime=gmtime, elevation_km=mean_elevation_km,
                                output_file=paths.h2o_template_path, ihaze_type='AER_NONE')
 
         # Write the presolve connfiguration file
@@ -181,8 +184,8 @@ def main():
 
         write_modtran_template(atmosphere_type='ATM_MIDLAT_SUMMER', fid=paths.fid, altitude_km=mean_altitude_km,
                                dayofyear=dayofyear, latitude=mean_latitude, longitude=mean_longitude,
-                               to_sensor_azimuth=mean_to_sensor_azimuth, gmtime=gmtime, elevation_km=mean_elevation_km,
-                               output_file=paths.modtran_template_path)
+                               to_sensor_azimuth=mean_to_sensor_azimuth, to_sensor_zenith=mean_to_sensor_zenith,
+                               gmtime=gmtime, elevation_km=mean_elevation_km, output_file=paths.modtran_template_path)
 
         logging.info('Writing main configuration file.')
         build_main_config(paths, h2o_lut_grid, elevation_lut_grid, to_sensor_azimuth_lut_grid,
@@ -417,6 +420,73 @@ def load_climatology(config_path: str, latitude: float, longitude: float, acquis
     return aerosol_state_vector, aerosol_lut_grid, aerosol_model_path
 
 
+def find_angular_seeds(angle_data_input: np.array, num_points: int, units: str = 'd'):
+    """ Find either angular data 'center points' (num_points = 1), or a lut set that spans
+    angle variation in a systematic fashion.
+    Args:
+        angle_data_input: set of angle data to use to find center points
+        num_points: the number of points to find - if 1, this will return a single point (the 'centerpoint'), if > 1,
+                    this will return a numpy array spanning the specified number of poitns
+        units: specifies if data are in degrees (default) or radians
+
+    :Returns:
+    """
+
+    # Convert everything to radians so we don't have to track throughout
+    if units == 'r':
+        angle_data = angle_data_input.copy()
+    else:
+        angle_data = np.deg2rad(angle_data_input)
+
+    spatial_data = np.hstack([np.cos(angle_data).reshape(-1, 1),
+                              np.sin(angle_data).reshape(-1, 1)])
+
+    # find which quadrants have data
+    quadrants = np.zeros((2,2))
+    if np.any(np.logical_and(spatial_data[:,0] > 0, spatial_data[:,1] > 0 )):
+        quadrants[1,0] = 1
+    elif np.any(np.logical_and(spatial_data[:,0] > 0, spatial_data[:,1] < 0 )):
+        quadrants[1,1] += 1
+    elif np.any(np.logical_and(spatial_data[:,0] < 0, spatial_data[:,1] > 0 )):
+        quadrants[0,0] += 1
+    elif np.any(np.logical_and(spatial_data[:,0] < 0, spatial_data[:,1] < 0 )):
+        quadrants[0,1] += 1
+
+    # Handle the case where angles are < 180 degrees apart
+    if np.sum(quadrants) < 3 and num_points != 1:
+        if (np.sum(quadrants[1,:]) == 2):
+            # If angles cross the 0-degree line:
+            angle_spread = np.linspace(np.min(angle_data+180), np.max(angle_data+180), num_points) - 180
+            return np.array([x % 360 for x in angle_spread])
+        else:
+            # Otherwise, just space things out:
+            return np.linspace(np.min(angle_data), np.max(angle_data), num_points)
+    else:
+        # If we're greater than 180 degree spread, there's no universal answer. Try GMM.
+
+        if num_points == 2:
+            logging.warning('2 angle interpolation selected when angle divergence > 180. '
+                            'At least 3 points are recommended')
+
+        gmm = mixture.GaussianMixture(n_components=num_points, covariance_type='full')
+        gmm.fit(spatial_data)
+        central_angles = np.degrees(np.arctan2(gmm.means_[:,1], gmm.means_[:,0]))
+
+        ca_quadrants = np.zeros((2, 2))
+        if np.any(np.logical_and(gmm.means_[:, 0] > 0, gmm.means_[:, 1] > 0)):
+            ca_quadrants[1, 0] = 1
+        elif np.any(np.logical_and(gmm.means_[:, 0] > 0, gmm.means_[:, 1] < 0)):
+            ca_quadrants[1, 1] += 1
+        elif np.any(np.logical_and(gmm.means_[:, 0] < 0, gmm.means_[:, 1] > 0)):
+            ca_quadrants[0, 0] += 1
+        elif np.any(np.logical_and(gmm.means_[:, 0] < 0, gmm.means_[:, 1] < 0)):
+            ca_quadrants[0, 1] += 1
+
+        if np.sum(ca_quadrants) < np.sum(quadrants):
+            logging.warning('GMM angles {} span {} quadrants, while data spans {} quadrants'.format(central_angles,
+                            np.sum(ca_quadrants), np.sum(quadrants)))
+
+
 def get_metadata_from_obs(obs_file: str, trim_lines: int = 5,
                           max_flight_duration_h: int = 8, nodata_value: float = -9999):
     """ Get metadata needed for complete runs from the observation file
@@ -470,23 +540,30 @@ def get_metadata_from_obs(obs_file: str, trim_lines: int = 5,
     mean_path_km = np.mean(path_km[valid])
     del path_km
 
-    mean_to_sensor_azimuth = np.mean(to_sensor_azimuth[valid])
-    mean_to_sensor_zenith_rad = (np.mean(180 - to_sensor_zenith[valid]) / 360.0 * 2.0 * np.pi)
+    # TODO: remove if passes check
+    #mean_to_sensor_azimuth = np.mean(to_sensor_azimuth[valid])
+    #mean_to_sensor_zenith_rad = (np.mean(180 - to_sensor_zenith[valid]) / 360.0 * 2.0 * np.pi)
+    mean_to_sensor_azimuth = find_angular_seeds(to_sensor_azimuth[valid], 1)
+    mean_to_sensor_zenith = find_angular_seeds(to_sensor_zenith[valid], 1)
 
-    geom_margin = EPS * 2.0
-    if (NUM_TO_SENSOR_ZENITH_LUT_ELEMENTS == 1):
+    #geom_margin = EPS * 2.0
+    if NUM_TO_SENSOR_ZENITH_LUT_ELEMENTS == 1:
         to_sensor_zenith_lut_grid = None
     else:
-        to_sensor_zenith_lut_grid = np.linspace(max((to_sensor_zenith[valid].min() - geom_margin), 0),
-                                                180.0, NUM_TO_SENSOR_ZENITH_LUT_ELEMENTS)
+        # TODO: remove if passes check
+        #to_sensor_zenith_lut_grid = np.linspace(max((to_sensor_zenith[valid].min() - geom_margin), 0),
+        #                                        180.0, NUM_TO_SENSOR_ZENITH_LUT_ELEMENTS)
+        to_sensor_zenith_lut_grid = find_angular_seeds(to_sensor_zenith[valid], NUM_TO_SENSOR_ZENITH_LUT_ELEMENTS)
 
-    if (NUM_TO_SENSOR_AZIMUTH_LUT_ELEMENTS == 1):
+    if NUM_TO_SENSOR_AZIMUTH_LUT_ELEMENTS == 1:
         to_sensor_azimuth_lut_grid = None
     else:
         # TODO: check mod logic
-        to_sensor_azimuth_lut_grid = np.linspace((to_sensor_azimuth[valid].min() - geom_margin) % 360,
-                                                 (to_sensor_azimuth[valid].max() + geom_margin) % 360,
-                                                 NUM_TO_SENSOR_AZIMUTH_LUT_ELEMENTS)
+        #to_sensor_azimuth_lut_grid = np.linspace((to_sensor_azimuth[valid].min() - geom_margin) % 360,
+        #                                         (to_sensor_azimuth[valid].max() + geom_margin) % 360,
+        #                                         NUM_TO_SENSOR_AZIMUTH_LUT_ELEMENTS)
+        to_sensor_azimuth_lut_grid = find_angular_seeds(to_sensor_azimuth[valid], NUM_TO_SENSOR_AZIMUTH_LUT_ELEMENTS)
+
     del to_sensor_azimuth
     del to_sensor_zenith
 
@@ -516,7 +593,7 @@ def get_metadata_from_obs(obs_file: str, trim_lines: int = 5,
     if trim_lines != 0:
         valid = actual_valid
 
-    return h_m_s, increment_day, mean_path_km, mean_to_sensor_azimuth, mean_to_sensor_zenith_rad, valid, \
+    return h_m_s, increment_day, mean_path_km, mean_to_sensor_azimuth, mean_to_sensor_zenith, valid, \
            to_sensor_azimuth_lut_grid, to_sensor_zenith_lut_grid
 
 
@@ -548,8 +625,10 @@ def get_metadata_from_loc(loc_file: str, trim_lines: int = 5, nodata_value: floa
         valid[-trim_lines:, :] = False
 
     # Grab zensor position and orientation information
-    mean_latitude = np.mean(loc_data[1,valid])
-    mean_longitude = -np.mean(loc_data[0,valid])
+    #mean_latitude = np.mean(loc_data[1,valid])
+    #mean_longitude = -np.mean(loc_data[0,valid])
+    mean_latitude = find_angular_seeds(loc_data[1,valid].flatten(),1)
+    mean_longitude = find_angular_seeds(loc_data[0,valid].flatten(),1)
 
     mean_elevation_km = np.mean(loc_data[2,valid]) / 1000.0
 
@@ -678,11 +757,11 @@ def build_main_config(paths: Pathnames, h2o_lut_grid: np.array = None, elevation
     if h2o_lut_grid is not None:
         modtran_configuration['lut_grid']['H2OSTR'] = [max(0.0, float(q)) for q in h2o_lut_grid]
     if elevation_lut_grid is not None:
-        modtran_configuration['lut_grid']['GNDALT'] =  [max(0.0, float(q)) for q in elevation_lut_grid]
+        modtran_configuration['lut_grid']['GNDALT'] = [max(0.0, float(q)) for q in elevation_lut_grid]
     if to_sensor_azimuth_lut_grid is not None:
         modtran_configuration['lut_grid']['TRUEAZ'] = [float(q) for q in to_sensor_azimuth_lut_grid]
     if to_sensor_zenith_lut_grid is not None:
-        modtran_configuration['lut_grid']['OBSZEN'] = [float(q) for q in to_sensor_zenith_lut_grid]
+        modtran_configuration['lut_grid']['OBSZEN'] = [180 - abs(float(q)) for q in to_sensor_zenith_lut_grid] # modtran convension
 
     # add aerosol elements from climatology
     aerosol_state_vector, aerosol_lut_grid, aerosol_model_path = \
@@ -730,8 +809,8 @@ def build_main_config(paths: Pathnames, h2o_lut_grid: np.array = None, elevation
 
 
 def write_modtran_template(atmosphere_type: str, fid: str, altitude_km: float, dayofyear: int,
-                           latitude: float, longitude: float, to_sensor_azimuth: float, gmtime: float,
-                           elevation_km: float, output_file: str, ihaze_type: str = 'AER_RURAL'):
+                           latitude: float, longitude: float, to_sensor_azimuth: float, to_sensor_zenith: float,
+                           gmtime: float, elevation_km: float, output_file: str, ihaze_type: str = 'AER_RURAL'):
     """ Write a MODTRAN template file for use by isofit look up tables
     Args:
         atmosphere_type: label for the type of atmospheric profile to use in modtran
@@ -740,7 +819,8 @@ def write_modtran_template(atmosphere_type: str, fid: str, altitude_km: float, d
         dayofyear: the current day of the given year
         latitude: acquisition latitude
         longitude: acquisition longitude
-        to_sensor_azimuth: azimuth view angle to the sensor, in degrees TODO - verify that this is/should be in degrees
+        to_sensor_azimuth: azimuth view angle to the sensor, in degrees (AVIRIS convention)
+        to_sensor_zenith: azimuth view angle to the sensor, in degrees (AVIRIS convention)
         gmtime: greenwich mean time
         elevation_km: elevation of the land surface in km
         output_file: location to write the modtran template file to
@@ -787,6 +867,7 @@ def write_modtran_template(atmosphere_type: str, fid: str, altitude_km: float, d
                 "PARM1": latitude,
                 "PARM2": longitude,
                 "TRUEAZ": to_sensor_azimuth,
+                "OBSZEN": 180 - abs(to_sensor_zenith),
                 "GMTIME": gmtime
             },
             "SURFACE": {
