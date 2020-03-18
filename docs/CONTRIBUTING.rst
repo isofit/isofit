@@ -211,9 +211,11 @@ The github maintainers, responsible for handling pull requests, are:
 
 * David R. Thompson: david.r.thompson@jpl.nasa.gov
 * Winston Olson Duvall winston.olson-duvall@jpl.nasa.gov
+* Philip Brodrick 
 
 Thanks to the following regular contributors:
 
+* Jay Fahlen (NASA JPL)
 * Adam Erickson (NASA GSFC)
 * Shanti Rao (NASA JPL)
 * Terry Mullen (UMass)

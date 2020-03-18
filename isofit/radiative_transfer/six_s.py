@@ -56,7 +56,7 @@ sixs_template = '''0 (User defined)
 class SixSRT(TabularRT):
     """A model of photon transport including the atmosphere."""
 
-    def __init__(self, config, full_statevec):
+    def __init__(self, config, full_lutnames):
 
         TabularRT.__init__(self, config)
         self.sixs_dir = self.find_basedir(config)
@@ -111,10 +111,10 @@ class SixSRT(TabularRT):
         # statevector to create a point for evaluation in the LUTs.
         # For example: point = x_RT[self._x_RT_index_for_point]
         # It should never be modified
-        x_RT_index_for_point = []
-        for sv in config['statevector_names']:
-            x_RT_index_for_point.append(full_statevec.index(sv))
-        self._x_RT_index_for_point = s.array(x_RT_index_for_point)
+        lut_index_for_point = []
+        for ln in self.lut_names:
+                lut_index_for_point.append(full_lutnames.index(ln))
+        self._lut_index_for_point = s.array(lut_index_for_point)
 
     def find_basedir(self, config):
         """Seek out a sixs base directory."""
@@ -236,7 +236,7 @@ class SixSRT(TabularRT):
 
     def lookup_lut(self, x_RT):
         ret = {}
-        point = x_RT[self._x_RT_index_for_point]
+        point = x_RT[self._lut_index_for_point]
         for key, lut in self.luts.items():
             ret[key] = s.array(lut(point)).ravel()
         return ret
@@ -246,7 +246,7 @@ class SixSRT(TabularRT):
             return self.lookup_lut(x_RT)
         else:
             point = s.zeros((self.n_point,))
-            for point_ind, name in enumerate(self.lut_grid):
+            for point_ind, name in enumerate(self.lut_grid_config):
                 if name in self.statevec:
                     x_RT_ind = self.statevec.index(name)
                     point[point_ind] = x_RT[x_RT_ind]
@@ -271,7 +271,7 @@ class SixSRT(TabularRT):
                 else:
                     # If a variable is defined in the lookup table but not
                     # specified elsewhere, we will default to the minimum
-                    point[point_ind] = min(self.lut_grid[name])
+                    point[point_ind] = min(self.lut_grid_config[name])
             for x_RT_ind, name in enumerate(self.statevec):
                 point_ind = self.lut_names.index(name)
                 point[point_ind] = x_RT[x_RT_ind]

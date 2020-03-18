@@ -47,7 +47,7 @@ modtran_bands_available = ['modtran_vswir', 'modtran_tir']
 class ModtranRT(TabularRT):
     """A model of photon transport including the atmosphere."""
 
-    def __init__(self, band_mode_string, config, full_statevec):
+    def __init__(self, band_mode_string, config, full_lutnames):
         """."""
 
         TabularRT.__init__(self, config)
@@ -55,7 +55,6 @@ class ModtranRT(TabularRT):
         self.band_mode_string = band_mode_string
         if self.band_mode_string not in modtran_bands_available:
             raise NotImplementedError
-        self.full_statevec = full_statevec
 
         self.modtran_dir = self.find_basedir(config)
         flt_name = 'wavelengths_' + self.band_mode_string + '.flt'
@@ -98,10 +97,10 @@ class ModtranRT(TabularRT):
         # statevector to create a point for evaluation in the LUTs.
         # For example: point = x_RT[self._x_RT_index_for_point]
         # It should never be modified
-        x_RT_index_for_point = []
+        lut_index_for_point = []
         for sv in self.lut_names:
-            x_RT_index_for_point.append(full_statevec.index(sv))
-        self._x_RT_index_for_point = s.array(x_RT_index_for_point)
+            lut_index_for_point.append(full_lutnames.index(sv))
+        self._lut_index_for_point = s.array(lut_index_for_point)
 
     def find_basedir(self, config):
         """Seek out a modtran base directory."""
@@ -379,7 +378,7 @@ class ModtranRT(TabularRT):
 
     def lookup_lut(self, x_RT):
         ret = {}
-        point = x_RT[self._x_RT_index_for_point]
+        point = x_RT[self._lut_index_for_point]
         for key, lut in self.luts.items():
             ret[key] = s.array(lut(point)).ravel()
 
@@ -390,7 +389,7 @@ class ModtranRT(TabularRT):
             return self.lookup_lut(x_RT)
         else:
             point = s.zeros((self.n_point,))
-            for point_ind, name in enumerate(self.lut_grid):
+            for point_ind, name in enumerate(self.lut_grid_config):
                 if name in self.statevec:
                     x_RT_ind = self.statevec.index(name)
                     point[point_ind] = x_RT[x_RT_ind]
@@ -415,7 +414,7 @@ class ModtranRT(TabularRT):
                 else:
                     # If a variable is defined in the lookup table but not
                     # specified elsewhere, we will default to the minimum
-                    point[point_ind] = min(self.lut_grid[name])
+                    point[point_ind] = min(self.lut_grid_config[name])
             for x_RT_ind, name in enumerate(self.statevec):
                 point_ind = self.lut_names.index(name)
                 point[point_ind] = x_RT[x_RT_ind]
