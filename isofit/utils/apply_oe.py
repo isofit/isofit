@@ -16,35 +16,35 @@ import gdal
 import numpy as np
 from typing import List, Tuple
 
-eps = 1e-6
-chunksize = 256
-segmentation_size = 400
-num_integrations = 400
+EPS = 1e-6
+CHUNKSIZE = 256
+SEGMENTATION_SIZE = 400
+NUM_INTEGRATIONS = 400
 
-num_elev_lut_elements = 1
-num_h2o_lut_elements = 2
-num_to_sensor_azimuth_lut_elements = 1
-num_to_sensor_zenith_lut_elements = 1
+NUM_ELEV_LUT_ELEMENTS = 1
+NUM_H2O_LUT_ELEMENTS = 2
+NUM_TO_SENSOR_AZIMUTH_LUT_ELEMENTS = 1
+NUM_TO_SENSOR_ZENITH_LUT_ELEMENTS = 1
 
 # Setting any of these to '1' will also remove that aerosol from the statevector
-num_aerosol_1_lut_elements = 1
-num_aerosol_2_lut_elements = 3
-num_aerosol_3_lut_elements = 3
+NUM_AEROSOL_1_LUT_ELEMENTS = 1
+NUM_AEROSOL_2_LUT_ELEMENTS = 3
+NUM_AEROSOL_3_LUT_ELEMENTS = 3
 
-aerosol_1_lut_range = [0.001, 0.5]
-aerosol_2_lut_range = [0.001, 0.5]
-aerosol_3_lut_range = [0.001, 0.5]
+AEROSOL_1_LUT_RANGE = [0.001, 0.5]
+AEROSOL_2_LUT_RANGE = [0.001, 0.5]
+AEROSOL_3_LUT_RANGE = [0.001, 0.5]
 
-h2o_min = 0.2
+H2O_MIN = 0.2
 
-uncorrelated_radiometric_uncertainty = 0.02
+UNCORRELATED_RADIOMETRIC_UNCERTAINTY = 0.02
 
-inversion_windows = [[400.0, 1300.0], [1450, 1780.0], [2050.0, 2450.0]]
+INVERSION_WINDOWS = [[400.0, 1300.0], [1450, 1780.0], [2050.0, 2450.0]]
 
 
 def main():
     # Parse arguments
-    parser = argparse.ArgumentParser(description="Representative subset")
+    parser = argparse.ArgumentParser(description="Apply OE to a block of data.")
     parser.add_argument('input_radiance', type=str)
     parser.add_argument('input_loc', type=str)
     parser.add_argument('input_obs', type=str)
@@ -80,9 +80,7 @@ def main():
     paths.make_directories()
     paths.stage_files()
 
-
-    # TODO: Update this to a normal import, referencing the (likely ported) version of ISOFIT used for EMIT.
-    sys.path.append(paths.isofit_path)
+    # TODO: consider moving this to normal import - requires removing isofit_path option from arguments.
     from isofit.utils import segment, extractions, empirical_line
     from isofit.core import isofit
 
@@ -111,7 +109,7 @@ def main():
     if not exists(paths.lbl_working_path) or not exists(paths.radiance_working_path):
         logging.info('Segmenting...')
         segment(spectra=(paths.radiance_working_path, paths.lbl_working_path),
-                flag=args.nodata_value, npca=5, segsize=segmentation_size, nchunk=chunksize)
+                flag=args.nodata_value, npca=5, segsize=SEGMENTATION_SIZE, nchunk=CHUNKSIZE)
 
     # Extract input data per segment
     for inp, outp in [(paths.radiance_working_path, paths.rdn_subs_path),
@@ -120,7 +118,7 @@ def main():
         if not exists(outp):
             logging.info('Extracting ' + outp)
             extractions(inputfile=inp, labels=paths.lbl_working_path,
-                        output=outp, chunksize=chunksize, flag=args.nodata_value)
+                        output=outp, chunksize=CHUNKSIZE, flag=args.nodata_value)
 
     # get radiance file, wavelengths
     if args.wavelength_path:
@@ -158,11 +156,9 @@ def main():
                                to_sensor_azimuth=mean_to_sensor_azimuth, gmtime=gmtime, elevation_km=mean_elevation_km,
                                output_file=paths.h2o_template_path, ihaze_type='AER_NONE')
 
-
-        ################# HERE ###############
+        # Write the presolve connfiguration file
         logging.info('Writing H2O pre-solve configuration file.')
-        build_presolve_config(paths, num_integrations, uncorrelated_radiometric_uncertainty, inversion_windows,
-                              (0.5, 5), 10)
+        build_presolve_config(paths, np.linspace(0.5, 5, 10))
 
         # Run modtran retrieval
         logging.info('Run ISOFIT initial guess')
@@ -181,9 +177,8 @@ def main():
     h2o_est = h2o.read_band(-1)[:].flatten()
 
     h2o_lut_grid = np.linspace(np.percentile(
-        h2o_est[h2o_est > h2o_min], 5), np.percentile(h2o_est[h2o_est > h2o_min], 95), num_h2o_lut_elements)
+        h2o_est[h2o_est > H2O_MIN], 5), np.percentile(h2o_est[h2o_est > H2O_MIN], 95), NUM_H2O_LUT_ELEMENTS)
 
-    #TODO: update to also include aerosols
     logging.info('Full (non-aerosol) LUTs:\nElevation: {}\nTo-sensor azimuth: {}\nTo-sensor zenith: {}\nh2o-vis: {}:'.format(elevation_lut_grid, to_sensor_azimuth_lut_grid, to_sensor_zenith_lut_grid, h2o_lut_grid))
 
     logging.info(paths.state_subs_path)
@@ -308,7 +303,9 @@ class Pathnames():
         if args.isofit_path:
             self.isofit_path = args.isofit_path
         else:
-            self.isofit_path = os.getenv('ISOFIT_BASE')
+            import isofit
+            self.isofit_path = os.path.dirname(os.path.dirname(isofit.__file__))
+        sys.path.append(self.isofit_path)
 
         if args.sensor == 'ang':
             self.noise_path = join(self.isofit_path, 'data', 'avirisng_noise.txt')
@@ -382,8 +379,8 @@ def load_climatology(config_path: str, latitude: float, longitude: float, acquis
     aerosol_model_path = join(isofit_path, 'data', 'aerosol_model.txt')
     aerosol_state_vector = {}
     aerosol_lut_grid = {}
-    aerosol_lut_ranges = [aerosol_1_lut_range, aerosol_2_lut_range, aerosol_3_lut_range]
-    num_aerosol_lut_elements = [num_aerosol_1_lut_elements, num_aerosol_2_lut_elements, num_aerosol_3_lut_elements]
+    aerosol_lut_ranges = [AEROSOL_1_LUT_RANGE, AEROSOL_2_LUT_RANGE, AEROSOL_3_LUT_RANGE]
+    num_aerosol_lut_elements = [NUM_AEROSOL_1_LUT_ELEMENTS, NUM_AEROSOL_2_LUT_ELEMENTS, NUM_AEROSOL_3_LUT_ELEMENTS]
     for _a, alr in enumerate(aerosol_lut_ranges):
         if num_aerosol_lut_elements[_a] != 1:
             aerosol_state_vector['AERFRAC_{}'.format(_a)] = {
@@ -479,8 +476,27 @@ def get_time_from_obs(obs_filename: str, time_band: int = 9, max_flight_duration
 
 
 def get_metadata_from_obs(obs_file: str, trim_lines: int = 5,
-                          max_flight_duration_h: int = 8, nodata_value = -9999):
+                          max_flight_duration_h: int = 8, nodata_value: float = -9999):
+    """ Get metadata needed for complete runs from the observation file
+    (bands: path length, to-sensor azimuth, to-sensor zenith, to-sun azimuth,
+    to-sun zenith, phase, slope, aspect, cosine i, UTC time).
+    Args:
+        obs_file: file name to pull data from
+        trim_lines: number of lines to ignore at beginning and end of file (good if lines contain values that are
+                    erroneous but not nodata
+        max_flight_duration_h: maximum length of the current acquisition, used to check if we've lapped a UTC day
+        nodata_value: value to ignore from location file
 
+    :Returns:
+        h_m_s: list of the mean-time hour, minute, and second within the line
+        increment_day: indicator of whether the UTC day has been changed since the beginning of the line time
+        mean_path_km: mean distance between sensor and ground in km for good data
+        mean_to_sensor_azimuth: mean to-sensor-azimuth for good data
+        mean_to_sensor_zenith_rad: mean to-sensor-zenith in radians for good data
+        valid: boolean array indicating which pixels were NOT nodata
+        to_sensor_azimuth_lut_grid: the to-sensor azimuth angle look up table for good data
+        to_sensor_zenith_lut_grid: the to-sensor zenith look up table for good data
+    """
     obs_dataset = gdal.Open(obs_file, gdal.GA_ReadOnly)
 
     # Initialize values to populate
@@ -515,20 +531,20 @@ def get_metadata_from_obs(obs_file: str, trim_lines: int = 5,
     mean_to_sensor_azimuth = np.mean(to_sensor_azimuth[valid])
     mean_to_sensor_zenith_rad = (np.mean(180 - to_sensor_zenith[valid]) / 360.0 * 2.0 * np.pi)
 
-    geom_margin = eps * 2.0
-    if (num_to_sensor_zenith_lut_elements == 1):
+    geom_margin = EPS * 2.0
+    if (NUM_TO_SENSOR_ZENITH_LUT_ELEMENTS == 1):
         to_sensor_zenith_lut_grid = None
     else:
         to_sensor_zenith_lut_grid = np.linspace(max((to_sensor_zenith[valid].min() - geom_margin), 0),
-                                                180.0,num_to_sensor_zenith_lut_elements)
+                                                180.0, NUM_TO_SENSOR_ZENITH_LUT_ELEMENTS)
 
-    if (num_to_sensor_azimuth_lut_elements == 1):
+    if (NUM_TO_SENSOR_AZIMUTH_LUT_ELEMENTS == 1):
         to_sensor_azimuth_lut_grid = None
     else:
         # TODO: check mod logic
         to_sensor_azimuth_lut_grid = np.linspace((to_sensor_azimuth[valid].min() - geom_margin) % 360,
                                                  (to_sensor_azimuth[valid].max() + geom_margin) % 360,
-                                                 num_to_sensor_azimuth_lut_elements)
+                                                 NUM_TO_SENSOR_AZIMUTH_LUT_ELEMENTS)
     del to_sensor_azimuth
     del to_sensor_zenith
 
@@ -562,8 +578,20 @@ def get_metadata_from_obs(obs_file: str, trim_lines: int = 5,
            to_sensor_azimuth_lut_grid, to_sensor_zenith_lut_grid
 
 
-def get_metadata_from_loc(loc_file: str, trim_lines: int = 5,
-                          nodata_value=-9999):
+def get_metadata_from_loc(loc_file: str, trim_lines: int = 5, nodata_value: float = -9999):
+    """ Get metadata needed for complete runs from the location file (bands long, lat, elev).
+    Args:
+        loc_file: file name to pull data from
+        trim_lines: number of lines to ignore at beginning and end of file (good if lines contain values that are
+                    erroneous but not nodata
+        nodata_value: value to ignore from location file
+
+    :Returns:
+        mean_latitude: mean latitude of good values from the location file
+        mean_longitude: mean latitude of good values from the location file
+        mean_elevation_km: mean ground estimate of good values from the location file
+        elevation_lut_grid: the elevation look up table, based on globals and values from location file
+    """
 
     loc_dataset = gdal.Open(loc_file, gdal.GA_ReadOnly)
 
@@ -584,23 +612,28 @@ def get_metadata_from_loc(loc_file: str, trim_lines: int = 5,
     mean_elevation_km = np.mean(loc_data[2,valid]) / 1000.0
 
     # make elevation grid
-    if num_elev_lut_elements == 1:
+    if NUM_ELEV_LUT_ELEMENTS == 1:
         elevation_lut_grid = None
     else:
         min_elev = np.min(loc_data[2, valid])/1000.
         max_elev = np.max(loc_data[2, valid])/1000.
-        elevation_lut_grid = np.linspace(max(min_elev, eps),
+        elevation_lut_grid = np.linspace(max(min_elev, EPS),
                                          max_elev,
-                                         num_elev_lut_elements)
+                                         NUM_ELEV_LUT_ELEMENTS)
 
     return mean_latitude, mean_longitude, mean_elevation_km, elevation_lut_grid
 
 
 
-def build_presolve_config(paths: Pathnames, num_integrations: int, uncorrelated_radiometric_uncertainty: float,
-                          inversion_windows: List, h2o_lut_range: Tuple, num_h2o_lut_elements: int):
+def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array):
+    """ Write an isofit config file for a presolve, with limited info.
+    Args:
+        paths: object containing references to all relevant file locations
+        h2o_lut_grid: the water vapor look up table grid isofit should use for this solve
 
-    h2o_grid = np.linspace(h2o_lut_range[0], h2o_lut_range[1], num_h2o_lut_elements)
+    :Returns:
+        None
+    """
 
     h2o_configuration = {
             "modtran_vswir": {
@@ -613,14 +646,14 @@ def build_presolve_config(paths: Pathnames, num_integrations: int, uncorrelated_
             },
             "statevector": {
                 "H2OSTR": {
-                    "bounds": [float(np.min(h2o_grid)), float(np.max(h2o_grid))],
+                    "bounds": [float(np.min(h2o_lut_grid)), float(np.max(h2o_lut_grid))],
                     "scale": 0.01,
-                    "init": np.percentile(h2o_grid,25),
+                    "init": np.percentile(h2o_lut_grid,25),
                     "prior_sigma": 100.0,
                     "prior_mean": 1.5}
             },
             "lut_grid": {
-                "H2OSTR": [float(x) for x in h2o_grid],
+                "H2OSTR": [float(x) for x in h2o_lut_grid],
             },
             "unknowns": {
                 "H2O_ABSCO": 0.0
@@ -637,14 +670,14 @@ def build_presolve_config(paths: Pathnames, num_integrations: int, uncorrelated_
                          'forward_model': {
                              'instrument': {'wavelength_file': paths.wavelength_path,
                                             'parametric_noise_file': paths.noise_path,
-                                            'integrations': num_integrations,
+                                            'integrations': NUM_INTEGRATIONS,
                                             'unknowns': {
-                                                'uncorrelated_radiometric_uncertainty': uncorrelated_radiometric_uncertainty}},
+                                                'uncorrelated_radiometric_uncertainty': UNCORRELATED_RADIOMETRIC_UNCERTAINTY}},
                                                     'multicomponent_surface': {'wavelength_file': paths.wavelength_path,
                                                                                'surface_file': paths.surface_working_path,
                                                                                'select_on_init': True},
                              'radiative_transfer': h2o_configuration},
-                         'inversion': {'windows': inversion_windows}}
+                         'inversion': {'windows': INVERSION_WINDOWS}}
 
     if paths.channelized_uncertainty_working_path is not None:
         isofit_config_h2o['forward_model']['unknowns'][
@@ -658,9 +691,23 @@ def build_presolve_config(paths: Pathnames, num_integrations: int, uncorrelated_
         fout.write(json.dumps(isofit_config_h2o, cls=SerialEncoder, indent=4, sort_keys=True))
 
 
-def build_main_config(paths, h2o_lut_grid: np.array, elevation_lut_grid: np.array,
-                      to_sensor_azimuth_lut_grid: np.array, to_sensor_zenith_lut_grid: np.array, mean_latitude, mean_longitude, dt):
+def build_main_config(paths: Pathnames, h2o_lut_grid: np.array = None, elevation_lut_grid: np.array = None,
+                      to_sensor_azimuth_lut_grid: np.array = None, to_sensor_zenith_lut_grid: np.array = None,
+                      mean_latitude: float = None, mean_longitude: float = None, dt: datetime = None):
+    """ Write an isofit config file for the main solve, using the specified pathnames and all given info
+    Args:
+        paths: object containing references to all relevant file locations
+        h2o_lut_grid: the water vapor look up table grid isofit should use for this solve
+        elevation_lut_grid: the ground elevation look up table grid isofit should use for this solve
+        to_sensor_azimuth_lut_grid: the to-sensor azimuth angle look up table grid isofit should use for this solve
+        to_sensor_zenith_lut_grid: the to-sensor zenith angle look up table grid isofit should use for this solve
+        mean_latitude: the latitude isofit should use for this solve
+        mean_longitude: the longitude isofit should use for this solve
+        dt: the datetime object corresponding to this flightline to use for this solve
 
+    :Returns:
+        None
+    """
     modtran_configuration = {
             "modtran_vswir": {
                 "wavelength_file": paths.wavelength_path,
@@ -718,14 +765,14 @@ def build_main_config(paths, h2o_lut_grid: np.array, elevation_lut_grid: np.arra
                              'forward_model': {
                                  'instrument': {'wavelength_file': paths.wavelength_path,
                                                 'parametric_noise_file': paths.noise_path,
-                                                'integrations': num_integrations,
+                                                'integrations': NUM_INTEGRATIONS,
                                                 'unknowns': {
-                                                    'uncorrelated_radiometric_uncertainty': uncorrelated_radiometric_uncertainty}},
+                                                    'uncorrelated_radiometric_uncertainty': UNCORRELATED_RADIOMETRIC_UNCERTAINTY}},
                                  "multicomponent_surface": {"wavelength_file": paths.wavelength_path,
                                                             "surface_file": paths.surface_working_path,
                                                             "select_on_init": True},
                                  "radiative_transfer": modtran_configuration},
-                             "inversion": {"windows": inversion_windows}}
+                             "inversion": {"windows": INVERSION_WINDOWS}}
 
     if paths.channelized_uncertainty_working_path is not None:
         isofit_config_modtran['forward_model']['unknowns'][
