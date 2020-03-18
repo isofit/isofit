@@ -5,7 +5,6 @@
 
 import argparse
 import os
-import sys
 from os.path import join, exists, split, abspath
 from shutil import copyfile
 from datetime import datetime
@@ -14,7 +13,9 @@ import logging
 import json
 import gdal
 import numpy as np
-from typing import List, Tuple
+
+from isofit.utils import segment, extractions, empirical_line
+from isofit.core import isofit
 
 EPS = 1e-6
 CHUNKSIZE = 256
@@ -52,15 +53,13 @@ def main():
     parser.add_argument('sensor', type=str, choices=['ang', 'avcl'])
     parser.add_argument('--copy_input_files', type=int, choices=[0,1], default=0)
     parser.add_argument('--h2o', action='store_true')
-    parser.add_argument('--isofit_path', type=str)
     parser.add_argument('--modtran_path', type=str)
     parser.add_argument('--wavelength_path', type=str)
     parser.add_argument('--aerosol_climatology_path', type=str, default=None)
     parser.add_argument('--rdn_factors_path', type=str)
     parser.add_argument('--surface_path', type=str)
     parser.add_argument('--channelized_uncertainty_path', type=str)
-    parser.add_argument('--level', type=str, default="INFO")
-    parser.add_argument('--nodata_value', type=float, default=-9999)
+    parser.add_argument('--logging_level', type=str, default="INFO")
     parser.add_argument('--log_file', type=str, default=None)
 
     args = parser.parse_args()
@@ -71,19 +70,13 @@ def main():
         args.copy_input_files = False
 
     if args.log_file is None:
-        logging.basicConfig(format='%(message)s', level=args.level)
+        logging.basicConfig(format='%(message)s', level=args.logging_level)
     else:
-        logging.basicConfig(format='%(message)s', level=args.level, filename=args.log_file)
-
+        logging.basicConfig(format='%(message)s', level=args.logging_level, filename=args.log_file)
 
     paths = Pathnames(args)
     paths.make_directories()
     paths.stage_files()
-
-    # TODO: consider moving this to normal import - requires removing isofit_path option from arguments.
-    from isofit.utils import segment, extractions, empirical_line
-    from isofit.core import isofit
-
 
     # Based on the sensor type, get appropriate year/month/day info fro intial condition.
     # We'll adjust for line length and UTC day overrun later
@@ -109,7 +102,7 @@ def main():
     if not exists(paths.lbl_working_path) or not exists(paths.radiance_working_path):
         logging.info('Segmenting...')
         segment(spectra=(paths.radiance_working_path, paths.lbl_working_path),
-                flag=args.nodata_value, npca=5, segsize=SEGMENTATION_SIZE, nchunk=CHUNKSIZE)
+                flag=-9999, npca=5, segsize=SEGMENTATION_SIZE, nchunk=CHUNKSIZE)
 
     # Extract input data per segment
     for inp, outp in [(paths.radiance_working_path, paths.rdn_subs_path),
@@ -118,7 +111,7 @@ def main():
         if not exists(outp):
             logging.info('Extracting ' + outp)
             extractions(inputfile=inp, labels=paths.lbl_working_path,
-                        output=outp, chunksize=CHUNKSIZE, flag=args.nodata_value)
+                        output=outp, chunksize=CHUNKSIZE, flag=-9999)
 
     # get radiance file, wavelengths
     if args.wavelength_path:
@@ -300,12 +293,8 @@ class Pathnames():
         else:
             self.modtran_path = os.getenv('MODTRAN_DIR')
 
-        if args.isofit_path:
-            self.isofit_path = args.isofit_path
-        else:
-            import isofit
-            self.isofit_path = os.path.dirname(os.path.dirname(isofit.__file__))
-        sys.path.append(self.isofit_path)
+        # isofit file should live at isofit/isofit/core/isofit.py
+        self.isofit_path = os.path.dirname(os.path.dirname(os.path.dirname(isofit.__file__)))
 
         if args.sensor == 'ang':
             self.noise_path = join(self.isofit_path, 'data', 'avirisng_noise.txt')
@@ -426,53 +415,6 @@ def load_climatology(config_path: str, latitude: float, longitude: float, acquis
     logging.info('Climatology Loaded.  Aerosol State Vector:\n{}\nAerosol LUT Grid:\n{}\nAerosol model path:{}'.format(
         aerosol_state_vector, aerosol_lut_grid, aerosol_model_path))
     return aerosol_state_vector, aerosol_lut_grid, aerosol_model_path
-
-
-def get_time_from_obs(obs_filename: str, time_band: int = 9, max_flight_duration_h: int = 8):
-    """ Scan through the obs file and find mean flight time
-    Args:
-        obs_filename: observation file name
-        time_band: time band inside of observation file (normally 9)
-        max_flight_duration_h: assumed maximum length of a flight
-
-    :Returns:
-        h_m_s: list of the hour, minute, and second mean of the given data section
-        increment_day: a boolean to indicate if the mean day is greater than the starting day
-    """
-    dataset = gdal.Open(obs_filename, gdal.GA_ReadOnly)
-    min_time = 25
-    max_time = -1
-    mean_time = np.zeros(dataset.RasterYSize)
-    mean_time_w = np.zeros(dataset.RasterYSize)
-    for line in range(dataset.RasterYSize):
-        local_time = dataset.ReadAsArray(0, line, dataset.RasterXSize, 1)[time_band, ...]
-        local_time = local_time[local_time != -9999]
-        min_time = min(min_time, np.min(local_time))
-        max_time = max(max_time, np.max(local_time))
-        mean_time[line] = np.mean(local_time)
-        mean_time_w[line] = np.prod(local_time.shape)
-
-    mean_time = np.average(mean_time, weights=mean_time_w)
-
-    increment_day = False
-    # UTC day crossover corner case
-    if (max_time > 24 - max_flight_duration_h and
-            min_time < max_flight_duration_h):
-        mean_time[mean_time < max_flight_duration_h] += 24
-        mean_time = np.average(mean_time, weights=mean_time_w)
-
-        # This means the majority of the line was really in the next UTC day,
-        # increment the line accordingly
-        if (mean_time > 24):
-            mean_time -= 24
-            increment_day = True
-
-    # Calculate hour, minute, second
-    h_m_s = [np.floor(mean_time)]
-    h_m_s.append(np.floor((mean_time - h_m_s[-1]) * 60))
-    h_m_s.append(np.floor((mean_time - h_m_s[-2] - h_m_s[-1] / 60.) * 3600))
-
-    return h_m_s, increment_day
 
 
 def get_metadata_from_obs(obs_file: str, trim_lines: int = 5,
