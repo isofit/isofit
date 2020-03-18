@@ -115,7 +115,7 @@ class TabularRT:
             if len(original_grid_values) == 1:
                 err = 'Only 1 value in LUT grid {}.  1-d LUT grids cannot be interpreted.'.format(key)
                 raise ValueError(err)
-            if original_grid_values != sorted(original_grid_values):
+            if original_grid_values.tolist() != sorted(original_grid_values.tolist()):
                 logging.error('Lookup table grid needs ascending order')
                 raise ValueError('Lookup table grid needs ascending order')
 

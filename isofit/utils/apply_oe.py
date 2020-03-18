@@ -25,7 +25,7 @@ SEGMENTATION_SIZE = 400
 NUM_INTEGRATIONS = 400
 
 NUM_ELEV_LUT_ELEMENTS = 1
-NUM_H2O_LUT_ELEMENTS = 2
+NUM_H2O_LUT_ELEMENTS = 3
 NUM_TO_SENSOR_AZIMUTH_LUT_ELEMENTS = 1
 NUM_TO_SENSOR_ZENITH_LUT_ELEMENTS = 1
 
@@ -138,10 +138,10 @@ def main():
 
     mean_latitude, mean_longitude, mean_elevation_km, elevation_lut_grid = get_metadata_from_loc(paths.loc_working_path)
 
-    mean_altitude_km = mean_elevation_km + np.cos(np.deg2rad(180-mean_to_sensor_zenith)) * mean_path_km
+    mean_altitude_km = mean_elevation_km + np.cos(np.deg2rad(mean_to_sensor_zenith)) * mean_path_km
 
-    logging.info('Path (km): %f, To-sensor Zenith (deg): %f, Mean Altitude: %6.2f km' %
-                 (mean_path_km, mean_to_sensor_zenith, mean_altitude_km))
+    logging.info('Path (km): %f, 180 - To-sensor Zenith (deg): %f, To-sensor Azimuth (deg) : %f, Altitude: %6.2f km' %
+                 (mean_path_km, mean_to_sensor_zenith, mean_to_sensor_azimuth, mean_altitude_km))
 
 
     if not exists(paths.h2o_subs_path + '.hdr') or not exists(paths.h2o_subs_path):
@@ -457,7 +457,7 @@ def find_angular_seeds(angle_data_input: np.array, num_points: int, units: str =
         if (np.sum(quadrants[1,:]) == 2):
             # If angles cross the 0-degree line:
             angle_spread = np.linspace(np.min(angle_data+180), np.max(angle_data+180), num_points) - 180
-            return np.array([x % 360 for x in angle_spread])
+            return angle_spread
         else:
             # Otherwise, just space things out:
             return np.linspace(np.min(angle_data), np.max(angle_data), num_points)
@@ -471,6 +471,8 @@ def find_angular_seeds(angle_data_input: np.array, num_points: int, units: str =
         gmm = mixture.GaussianMixture(n_components=num_points, covariance_type='full')
         gmm.fit(spatial_data)
         central_angles = np.degrees(np.arctan2(gmm.means_[:,1], gmm.means_[:,0]))
+        if (num_points == 1):
+            return central_angles[0]
 
         ca_quadrants = np.zeros((2, 2))
         if np.any(np.logical_and(gmm.means_[:, 0] > 0, gmm.means_[:, 1] > 0)):
@@ -485,6 +487,8 @@ def find_angular_seeds(angle_data_input: np.array, num_points: int, units: str =
         if np.sum(ca_quadrants) < np.sum(quadrants):
             logging.warning('GMM angles {} span {} quadrants, while data spans {} quadrants'.format(central_angles,
                             np.sum(ca_quadrants), np.sum(quadrants)))
+
+        return central_angles
 
 
 def get_metadata_from_obs(obs_file: str, trim_lines: int = 5,
@@ -543,8 +547,8 @@ def get_metadata_from_obs(obs_file: str, trim_lines: int = 5,
     # TODO: remove if passes check
     #mean_to_sensor_azimuth = np.mean(to_sensor_azimuth[valid])
     #mean_to_sensor_zenith_rad = (np.mean(180 - to_sensor_zenith[valid]) / 360.0 * 2.0 * np.pi)
-    mean_to_sensor_azimuth = find_angular_seeds(to_sensor_azimuth[valid], 1)
-    mean_to_sensor_zenith = find_angular_seeds(to_sensor_zenith[valid], 1)
+    mean_to_sensor_azimuth = find_angular_seeds(to_sensor_azimuth[valid], 1) % 360
+    mean_to_sensor_zenith = 180 - find_angular_seeds(to_sensor_zenith[valid], 1)
 
     #geom_margin = EPS * 2.0
     if NUM_TO_SENSOR_ZENITH_LUT_ELEMENTS == 1:
@@ -553,7 +557,7 @@ def get_metadata_from_obs(obs_file: str, trim_lines: int = 5,
         # TODO: remove if passes check
         #to_sensor_zenith_lut_grid = np.linspace(max((to_sensor_zenith[valid].min() - geom_margin), 0),
         #                                        180.0, NUM_TO_SENSOR_ZENITH_LUT_ELEMENTS)
-        to_sensor_zenith_lut_grid = find_angular_seeds(to_sensor_zenith[valid], NUM_TO_SENSOR_ZENITH_LUT_ELEMENTS)
+        to_sensor_zenith_lut_grid = 180 - find_angular_seeds(to_sensor_zenith[valid], NUM_TO_SENSOR_ZENITH_LUT_ELEMENTS)
 
     if NUM_TO_SENSOR_AZIMUTH_LUT_ELEMENTS == 1:
         to_sensor_azimuth_lut_grid = None
@@ -562,7 +566,7 @@ def get_metadata_from_obs(obs_file: str, trim_lines: int = 5,
         #to_sensor_azimuth_lut_grid = np.linspace((to_sensor_azimuth[valid].min() - geom_margin) % 360,
         #                                         (to_sensor_azimuth[valid].max() + geom_margin) % 360,
         #                                         NUM_TO_SENSOR_AZIMUTH_LUT_ELEMENTS)
-        to_sensor_azimuth_lut_grid = find_angular_seeds(to_sensor_azimuth[valid], NUM_TO_SENSOR_AZIMUTH_LUT_ELEMENTS)
+        to_sensor_azimuth_lut_grid = np.array([x % 360 for x in find_angular_seeds(to_sensor_azimuth[valid], NUM_TO_SENSOR_AZIMUTH_LUT_ELEMENTS)])
 
     del to_sensor_azimuth
     del to_sensor_zenith
@@ -628,7 +632,7 @@ def get_metadata_from_loc(loc_file: str, trim_lines: int = 5, nodata_value: floa
     #mean_latitude = np.mean(loc_data[1,valid])
     #mean_longitude = -np.mean(loc_data[0,valid])
     mean_latitude = find_angular_seeds(loc_data[1,valid].flatten(),1)
-    mean_longitude = find_angular_seeds(loc_data[0,valid].flatten(),1)
+    mean_longitude = find_angular_seeds(-1 * loc_data[0,valid].flatten(),1)
 
     mean_elevation_km = np.mean(loc_data[2,valid]) / 1000.0
 
@@ -820,7 +824,7 @@ def write_modtran_template(atmosphere_type: str, fid: str, altitude_km: float, d
         latitude: acquisition latitude
         longitude: acquisition longitude
         to_sensor_azimuth: azimuth view angle to the sensor, in degrees (AVIRIS convention)
-        to_sensor_zenith: azimuth view angle to the sensor, in degrees (AVIRIS convention)
+        to_sensor_zenith: azimuth view angle to the sensor, in degrees (MODTRAN convention: 180 - AVIRIS convention)
         gmtime: greenwich mean time
         elevation_km: elevation of the land surface in km
         output_file: location to write the modtran template file to
@@ -867,7 +871,7 @@ def write_modtran_template(atmosphere_type: str, fid: str, altitude_km: float, d
                 "PARM1": latitude,
                 "PARM2": longitude,
                 "TRUEAZ": to_sensor_azimuth,
-                "OBSZEN": 180 - abs(to_sensor_zenith),
+                "OBSZEN": to_sensor_zenith,
                 "GMTIME": gmtime
             },
             "SURFACE": {
