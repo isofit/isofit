@@ -439,12 +439,12 @@ def find_angular_seeds(angle_data_input: np.array, num_points: int, units: str =
 
     # Convert everything to radians so we don't have to track throughout
     if units == 'r':
-        angle_data = angle_data_input.copy()
+        angle_data = np.rad2deg(angle_data_input)
     else:
-        angle_data = np.deg2rad(angle_data_input)
+        angle_data = angle_data_input.copy()
 
-    spatial_data = np.hstack([np.cos(angle_data).reshape(-1, 1),
-                              np.sin(angle_data).reshape(-1, 1)])
+    spatial_data = np.hstack([np.cos(np.deg2rad(angle_data)).reshape(-1, 1),
+                              np.sin(np.deg2rad(angle_data)).reshape(-1, 1)])
 
     # find which quadrants have data
     quadrants = np.zeros((2,2))
