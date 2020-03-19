@@ -138,7 +138,8 @@ def main():
 
     mean_latitude, mean_longitude, mean_elevation_km, elevation_lut_grid = get_metadata_from_loc(paths.loc_working_path)
 
-    mean_altitude_km = mean_elevation_km + np.cos(np.deg2rad(mean_to_sensor_zenith)) * mean_path_km
+    # Need a 180 - here, as this is already in MODTRAN convention
+    mean_altitude_km = mean_elevation_km + np.cos(np.deg2rad(180 - mean_to_sensor_zenith)) * mean_path_km
 
     logging.info('Path (km): %f, 180 - To-sensor Zenith (deg): %f, To-sensor Azimuth (deg) : %f, Altitude: %6.2f km' %
                  (mean_path_km, mean_to_sensor_zenith, mean_to_sensor_azimuth, mean_altitude_km))
@@ -533,7 +534,7 @@ def get_metadata_from_obs(obs_file: str, trim_lines: int = 5,
 
         path_km[line,:] = obs_line[0, ...] / 1000.
         to_sensor_azimuth[line,:] = obs_line[1, ...]
-        to_sensor_zenith[line,:] = 180. - obs_line[2, ...]
+        to_sensor_zenith[line,:] = obs_line[2, ...]
         time[line,:] = obs_line[9, ...]
 
     if trim_lines != 0:
@@ -544,9 +545,6 @@ def get_metadata_from_obs(obs_file: str, trim_lines: int = 5,
     mean_path_km = np.mean(path_km[valid])
     del path_km
 
-    # TODO: remove if passes check
-    #mean_to_sensor_azimuth = np.mean(to_sensor_azimuth[valid])
-    #mean_to_sensor_zenith_rad = (np.mean(180 - to_sensor_zenith[valid]) / 360.0 * 2.0 * np.pi)
     mean_to_sensor_azimuth = find_angular_seeds(to_sensor_azimuth[valid], 1) % 360
     mean_to_sensor_zenith = 180 - find_angular_seeds(to_sensor_zenith[valid], 1)
 
@@ -554,18 +552,11 @@ def get_metadata_from_obs(obs_file: str, trim_lines: int = 5,
     if NUM_TO_SENSOR_ZENITH_LUT_ELEMENTS == 1:
         to_sensor_zenith_lut_grid = None
     else:
-        # TODO: remove if passes check
-        #to_sensor_zenith_lut_grid = np.linspace(max((to_sensor_zenith[valid].min() - geom_margin), 0),
-        #                                        180.0, NUM_TO_SENSOR_ZENITH_LUT_ELEMENTS)
         to_sensor_zenith_lut_grid = 180 - find_angular_seeds(to_sensor_zenith[valid], NUM_TO_SENSOR_ZENITH_LUT_ELEMENTS)
 
     if NUM_TO_SENSOR_AZIMUTH_LUT_ELEMENTS == 1:
         to_sensor_azimuth_lut_grid = None
     else:
-        # TODO: check mod logic
-        #to_sensor_azimuth_lut_grid = np.linspace((to_sensor_azimuth[valid].min() - geom_margin) % 360,
-        #                                         (to_sensor_azimuth[valid].max() + geom_margin) % 360,
-        #                                         NUM_TO_SENSOR_AZIMUTH_LUT_ELEMENTS)
         to_sensor_azimuth_lut_grid = np.array([x % 360 for x in find_angular_seeds(to_sensor_azimuth[valid], NUM_TO_SENSOR_AZIMUTH_LUT_ELEMENTS)])
 
     del to_sensor_azimuth
@@ -629,8 +620,6 @@ def get_metadata_from_loc(loc_file: str, trim_lines: int = 5, nodata_value: floa
         valid[-trim_lines:, :] = False
 
     # Grab zensor position and orientation information
-    #mean_latitude = np.mean(loc_data[1,valid])
-    #mean_longitude = -np.mean(loc_data[0,valid])
     mean_latitude = find_angular_seeds(loc_data[1,valid].flatten(),1)
     mean_longitude = find_angular_seeds(-1 * loc_data[0,valid].flatten(),1)
 
@@ -765,7 +754,7 @@ def build_main_config(paths: Pathnames, h2o_lut_grid: np.array = None, elevation
     if to_sensor_azimuth_lut_grid is not None:
         modtran_configuration['lut_grid']['TRUEAZ'] = [float(q) for q in to_sensor_azimuth_lut_grid]
     if to_sensor_zenith_lut_grid is not None:
-        modtran_configuration['lut_grid']['OBSZEN'] = [180 - abs(float(q)) for q in to_sensor_zenith_lut_grid] # modtran convension
+        modtran_configuration['lut_grid']['OBSZEN'] = [float(q) for q in to_sensor_zenith_lut_grid] # modtran convension
 
     # add aerosol elements from climatology
     aerosol_state_vector, aerosol_lut_grid, aerosol_model_path = \
