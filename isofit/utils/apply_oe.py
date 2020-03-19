@@ -40,6 +40,10 @@ AEROSOL_3_LUT_RANGE = [0.001, 0.5]
 
 H2O_MIN = 0.2
 
+# Minimum degree-spacing for zenith angle.  Overule the number of lut elements if 
+# step size is smaller than this value
+ZENITH_MIN_SPACING = 2
+
 UNCORRELATED_RADIOMETRIC_UNCERTAINTY = 0.02
 
 INVERSION_WINDOWS = [[400.0, 1300.0], [1450, 1780.0], [2050.0, 2450.0]]
@@ -552,12 +556,14 @@ def get_metadata_from_obs(obs_file: str, trim_lines: int = 5,
     if NUM_TO_SENSOR_ZENITH_LUT_ELEMENTS == 1:
         to_sensor_zenith_lut_grid = None
     else:
-        to_sensor_zenith_lut_grid = 180 - find_angular_seeds(to_sensor_zenith[valid], NUM_TO_SENSOR_ZENITH_LUT_ELEMENTS)
+        to_sensor_zenith_lut_grid = np.sort(180 - find_angular_seeds(to_sensor_zenith[valid], NUM_TO_SENSOR_ZENITH_LUT_ELEMENTS))
+        if (to_sensor_zenith_lut_grid[1] - to_sensor_zenith_lut_grid[0] < ZENITH_MIN_SPACING):
+            to_sensor_zenith_lut_grid = None
 
     if NUM_TO_SENSOR_AZIMUTH_LUT_ELEMENTS == 1:
         to_sensor_azimuth_lut_grid = None
     else:
-        to_sensor_azimuth_lut_grid = np.array([x % 360 for x in find_angular_seeds(to_sensor_azimuth[valid], NUM_TO_SENSOR_AZIMUTH_LUT_ELEMENTS)])
+        to_sensor_azimuth_lut_grid = np.sort(np.array([x % 360 for x in find_angular_seeds(to_sensor_azimuth[valid], NUM_TO_SENSOR_AZIMUTH_LUT_ELEMENTS)]))
 
     del to_sensor_azimuth
     del to_sensor_zenith
