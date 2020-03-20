@@ -93,7 +93,7 @@ class ModtranRT(TabularRT):
 
         # This array is used to select the elements out of the full
         # statevector to create a point for evaluation in the LUTs.
-        # For example: point = x_RT[self._x_RT_index_for_point]
+        # For example: point = x_RT[self._lut_index_for_point]
         # It should never be modified
         lut_index_for_point = []
         for sv in self.lut_names:
