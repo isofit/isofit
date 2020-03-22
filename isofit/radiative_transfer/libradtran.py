@@ -37,7 +37,7 @@ libradtran_names = ['libradtran_vswir']
 class LibRadTranRT(TabularRT):
     """A model of photon transport including the atmosphere."""
 
-    def __init__(self, config, full_lutnames):
+    def __init__(self, config, statevector_names):
 
         TabularRT.__init__(self, config)
         self.libradtran_dir = self.find_basedir(config)
@@ -55,8 +55,8 @@ class LibRadTranRT(TabularRT):
         # For example: point = x_RT[self._x_RT_index_for_point]
         # It should never be modified
         lut_index_for_point = []
-        for ln in self.lut_names:
-            lut_index_for_point.append(full_lutnames.index(ln))
+        for sn in statevector_names:
+            lut_index_for_point.append(self.lut_names.index(sn))
         self._lut_index_for_point = s.array(lut_index_for_point)
 
 

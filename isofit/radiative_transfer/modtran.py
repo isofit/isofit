@@ -47,7 +47,7 @@ modtran_bands_available = ['modtran_vswir', 'modtran_tir']
 class ModtranRT(TabularRT):
     """A model of photon transport including the atmosphere."""
 
-    def __init__(self, band_mode_string, config, full_lutnames):
+    def __init__(self, band_mode_string, config, statevector_names):
         """."""
 
         TabularRT.__init__(self, config)
@@ -98,8 +98,8 @@ class ModtranRT(TabularRT):
         # For example: point = x_RT[self._x_RT_index_for_point]
         # It should never be modified
         lut_index_for_point = []
-        for ln in self.lut_names:
-            lut_index_for_point.append(full_lutnames.index(ln))
+        for sn in statevector_names:
+            lut_index_for_point.append(self.lut_names.index(sn))
         self._lut_index_for_point = s.array(lut_index_for_point)
 
     def find_basedir(self, config):
