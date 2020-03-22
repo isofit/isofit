@@ -42,8 +42,12 @@ eps = 1e-5
 class VectorInterpolator:
     """."""
 
-    def __init__(self, grid, data, lut_interp_types):
+    def __init__(self, grid_input, data_input, lut_interp_types):
         self.lut_interp_types = lut_interp_types
+
+        # Lists and arrays are mutable, so copy first
+        grid = grid_input.copy()
+        data = data_input.copy()
 
         # expand grid dimensionality as needed
         [radian_locations] = np.where(self.lut_interp_types == 'd')
@@ -85,6 +89,11 @@ class VectorInterpolator:
             # as broadcast_to doesn't do this
             for ind in range(data.shape[0]):
                 data[ind,...] = data[:,ind,...]
+
+            # No re-order the cosin dimension
+            data = data[grid_subset_cosin_order,...]
+            # No re-order the sin dimension
+            data = data[:,grid_subset_sin_order,...]
 
             # now re-arrange the axes so they're in the right order again,
             # remembering that we've added a new axis
