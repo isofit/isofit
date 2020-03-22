@@ -71,10 +71,31 @@ class VectorInterpolator:
             grid[angle_loc] = grid_subset_cosin[grid_subset_cosin_order]
             grid.insert(angle_loc+1, grid_subset_sin[grid_subset_sin_order])
 
-            # now augment data in the same manner
-            original_data_subset = np.array(data[angle_loc])
-            data[angle_loc] = original_data_subset[grid_subset_cosin_order]
-            data.insert(angle_loc+1, original_data_subset[grid_subset_sin_order])
+            # now copy the data to be interpolated through the extra dimension,
+            # at the specific angle_loc axes.  We'll use broadcast_to to do this,
+            # but broad_cast to only works on the 0th dimension.  So start by
+            # temporarily moving the target axes there, then broadcasting
+            data = np.swapaxes(data,0,angle_loc)
+            data_dim = list(np.shape(data))
+            data_dim.insert(0,data_dim[0])
+            data = np.broadcast_to(data,data_dim).copy()
+
+            # Now we need to actually copy the data between the first two axes,
+            # as broadcast_to doesn't do this
+            for ind in range(data.shape[0]):
+                data[ind,...] = data[:,ind,...]
+
+            # now re-arrange the axes so they're in the right order again,
+            # remembering that we've added a new axis
+            src_axes = np.arange(len(data.shape))
+            dst_axes = src_axes.copy()
+            dst_axes[np.array([0,1])] = np.array([angle_loc+1, angle_loc+2])
+            dst_axes[np.array([angle_loc + 1, angle_loc + 2])] = np.array([0,1])
+            data = np.moveaxis(data, src_axes, dst_axes)
+
+            #original_data_subset = np.array(data[angle_loc])
+            #data[angle_loc] = original_data_subset[grid_subset_cosin_order]
+            #data.insert(angle_loc+1, original_data_subset[grid_subset_sin_order])
 
             # update the rest of the angle locations
             angle_locations += 1
