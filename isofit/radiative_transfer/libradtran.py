@@ -250,16 +250,15 @@ class LibRadTranRT(TabularRT):
 
             self.luts[key] = VectorInterpolator(self.lut_grids, temp, self.lut_interp_types)
 
-    def lookup_lut(self, x_RT):
+    def _lookup_lut(self, x_RT):
         ret = {}
-        point = x_RT[self._lut_index_for_point]
         for key, lut in self.luts.items():
             ret[key] = s.array(lut(point)).ravel()
         return ret
 
     def get(self, x_RT, geom):
         if self.n_point == self.n_state:
-            return self.lookup_lut(x_RT)
+            return self._lookup_lut(x_RT)
         else:
             point = s.zeros((self.n_point,))
             for point_ind, name in enumerate(self.lut_grid_config):
@@ -291,7 +290,7 @@ class LibRadTranRT(TabularRT):
             for x_RT_ind, name in enumerate(self.statevec):
                 point_ind = self.lut_names.index(name)
                 point[point_ind] = x_RT[x_RT_ind]
-            return self.lookup_lut(point)
+            return self._lookup_lut(point)
 
     def get_L_atm(self, x_RT, geom):
         r = self.get(x_RT, geom)

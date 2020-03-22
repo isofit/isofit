@@ -378,9 +378,8 @@ class ModtranRT(TabularRT):
         results_dict['coszen'] = coszen
         return results_dict
 
-    def lookup_lut(self, x_RT):
+    def _lookup_lut(self, point):
         ret = {}
-        point = x_RT[self._lut_index_for_point]
         for key, lut in self.luts.items():
             ret[key] = s.array(lut(point)).ravel()
 
@@ -388,7 +387,7 @@ class ModtranRT(TabularRT):
 
     def get(self, x_RT, geom):
         if self.n_point == self.n_state:
-            return self.lookup_lut(x_RT)
+            return self._lookup_lut(x_RT)
         else:
             point = s.zeros((self.n_point,))
             for point_ind, name in enumerate(self.lut_grid_config):
@@ -420,7 +419,7 @@ class ModtranRT(TabularRT):
             for x_RT_ind, name in enumerate(self.statevec):
                 point_ind = self.lut_names.index(name)
                 point[point_ind] = x_RT[x_RT_ind]
-            return self.lookup_lut(point)
+            return self._lookup_lut(point)
 
     def get_L_atm(self, x_RT, geom):
         if self.band_mode_string.lower() == 'modtran_vswir':
