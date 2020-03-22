@@ -23,7 +23,7 @@ import sys
 import numpy as np
 import logging
 
-from ..core.common import combos, eps, load_wavelen
+from ..core.common import combos, eps, load_wavelen, safe_core_count
 from ..core.common import VectorInterpolator
 
 
@@ -162,7 +162,7 @@ class TabularRT:
             import multiprocessing
             cwd = os.getcwd()
             os.chdir(self.lut_dir)
-            count = multiprocessing.cpu_count()
+            count = safe_core_count()
             pool = multiprocessing.Pool(processes=count)
             r = pool.map_async(spawn_rt, rebuild_cmds)
             r.wait()

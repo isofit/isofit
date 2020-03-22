@@ -310,10 +310,12 @@ class ModtranRT(TabularRT):
         # Check rebuild conditions: LUT is missing or from a different config
         infilename = 'LUT_'+fn+'.json'
         infilepath = os.path.join(self.lut_dir, infilename)
-        outchnname = fn+'.chn'
-        outchnpath = os.path.join(self.lut_dir, outchnname)
+        outchnname = os.path.join(self.lut_dir, fn+'.chn')
+        outtp6name = os.path.join(self.lut_dir, fn+'.tp6')
+
         if not os.path.exists(infilepath) or\
-           not os.path.exists(outchnpath):
+           not os.path.exists(outchnname) or\
+           not os.path.exists(outtp6name):
             rebuild = True
         else:
             # We compare the two configuration files, ignoring names and

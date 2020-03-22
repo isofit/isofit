@@ -25,6 +25,7 @@ import numpy as np
 import scipy.linalg
 from scipy.interpolate import RegularGridInterpolator
 from os.path import expandvars, split, abspath
+import subprocess
 
 
 ### Variables ###
@@ -401,3 +402,27 @@ def combos(inds):
     n = len(inds)
     cases = np.prod([len(i) for i in inds])
     return np.array(np.meshgrid(*inds)).reshape((n, cases)).T
+
+def safe_core_count():
+    """ Get the number of cores on a single socket (what we can reach
+    through multirpocessing).  Currently,
+    only works for linux, defaults to CPU count on other systems.
+
+    TODO: expand for other operating systems, think about more elegant
+    solutions.
+
+    Returns:
+        num_cores: number of cores on current socket, if available
+    """
+    
+    import multiprocessing
+    try:
+        corelist = [x for x in subprocess.check_output(['lscpu']).decode("utf-8").split('\n') if 'Core' in x]
+        if len(corelist) > 0:
+            num_cores = int(corelist[0].split(':')[-1])
+        else:
+            num_cores = multiprocessing.cpu_count()
+    except:
+        num_cores = multiprocessing.cpu_count()
+
+    return num_cores
