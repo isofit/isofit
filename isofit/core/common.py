@@ -97,11 +97,10 @@ class VectorInterpolator:
 
             # now re-arrange the axes so they're in the right order again,
             # remembering that we've added a new axis
-            src_axes = np.arange(len(data.shape))
-            dst_axes = src_axes.copy()
-            dst_axes[np.array([0,1])] = np.array([angle_loc+1, angle_loc+2])
-            dst_axes[np.array([angle_loc + 1, angle_loc + 2])] = np.array([0,1])
-            data = np.moveaxis(data, src_axes, dst_axes)
+            dst_axes = np.arange(2,len(data.shape)).tolist()
+            dst_axes.insert(angle_loc,0)
+            dst_axes.insert(angle_loc+1,1)
+            data = np.transpose(data,axes=dst_axes)
 
             # update the rest of the angle locations
             angle_locations += 1
