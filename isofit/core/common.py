@@ -103,13 +103,8 @@ class VectorInterpolator:
             dst_axes[np.array([angle_loc + 1, angle_loc + 2])] = np.array([0,1])
             data = np.moveaxis(data, src_axes, dst_axes)
 
-            #original_data_subset = np.array(data[angle_loc])
-            #data[angle_loc] = original_data_subset[grid_subset_cosin_order]
-            #data.insert(angle_loc+1, original_data_subset[grid_subset_sin_order])
-
             # update the rest of the angle locations
             angle_locations += 1
-
 
         self.n = data.shape[-1]
         grid_aug = grid + [np.arange(data.shape[-1])]
@@ -121,7 +116,7 @@ class VectorInterpolator:
         x = np.zeros((self.n,len(points) + 1 + np.sum(self.lut_interp_types != 'n')))
         offset_count = 0
         for i in range(len(points)):
-            if self.lut_interp_types[i] == 'a':
+            if self.lut_interp_types[i] == 'n':
                 x[:, i + offset_count] = points[i]
             elif self.lut_interp_types[i] == 'r':
                 x[:, i + offset_count] = np.cos(points[i])

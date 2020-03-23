@@ -380,6 +380,7 @@ class ModtranRT(TabularRT):
 
     def _lookup_lut(self, point):
         ret = {}
+        point = point[self._lut_index_for_point]
         for key, lut in self.luts.items():
             ret[key] = s.array(lut(point)).ravel()
 
