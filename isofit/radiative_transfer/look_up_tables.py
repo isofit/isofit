@@ -107,21 +107,19 @@ class TabularRT:
               (3) loading the LUTs, one per key atmospheric coefficient vector,
                   into memory as VectorInterpolator objects."""
 
-        for key, original_grid_values in self.lut_grid_config.items():
-            # cast as numpy array to be sure
-            original_grid_values = np.array(original_grid_values)
+        for key, grid_values in self.lut_grid_config.items():
 
             # do some quick checks on the values
-            if len(original_grid_values) == 1:
+            if len(grid_values) == 1:
                 err = 'Only 1 value in LUT grid {}.  1-d LUT grids cannot be interpreted.'.format(key)
                 raise ValueError(err)
-            if original_grid_values.tolist() != sorted(original_grid_values.tolist()):
+            if grid_values != sorted(grid_values):
                 logging.error('Lookup table grid needs ascending order')
                 raise ValueError('Lookup table grid needs ascending order')
 
             # Store the values
-            self.lut_grids.append(original_grid_values)
-            self.lut_dims.append(len(original_grid_values))
+            self.lut_grids.append(grid_values)
+            self.lut_dims.append(len(grid_values))
             self.lut_names.append(key)
 
             # Store in an indication of the type of value each key is
