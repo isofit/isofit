@@ -50,7 +50,6 @@ class ModtranRT(TabularRT):
     def __init__(self, band_mode_string, config, statevector_names):
         """."""
 
-        self.statevector_names = statevector_names
         TabularRT.__init__(self, config)
 
         self.band_mode_string = band_mode_string
@@ -98,10 +97,10 @@ class ModtranRT(TabularRT):
         # statevector to create a point for evaluation in the LUTs.
         # For example: point = x_RT[self._x_RT_index_for_point]
         # It should never be modified
-        lut_index_for_point = []
-        for sn in statevector_names:
-            lut_index_for_point.append(self.lut_names.index(sn))
-        self._lut_index_for_point = s.array(lut_index_for_point)
+        full_to_local_statevector_position_mapping = []
+        for sn in self.statevec:
+            full_to_local_statevector_position_mapping.append(statevector_names.index(sn))
+        self._full_to_local_statevector_position_mapping = s.array(full_to_local_statevector_position_mapping)
 
     def find_basedir(self, config):
         """Seek out a modtran base directory."""
@@ -390,9 +389,9 @@ class ModtranRT(TabularRT):
         point = s.zeros((self.n_point,))
         for point_ind, name in enumerate(self.lut_grid_config):
             if name in self.statevec:
-                x_RT_ind = self.statevec.index(name)
-                point[self._lut_index_for_point[x_RT_ind]] = x_RT[x_RT_ind]
-            if name == "OBSZEN":
+                x_RT_ind = self._full_to_local_statevector_position_mapping[self.statevec.index(name)]
+                point[point_ind] = x_RT[x_RT_ind]
+            elif name == "OBSZEN":
                 point[point_ind] = geom.OBSZEN
             elif name == "GNDALT":
                 point[point_ind] = geom.GNDALT
