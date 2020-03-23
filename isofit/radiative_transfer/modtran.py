@@ -50,6 +50,7 @@ class ModtranRT(TabularRT):
     def __init__(self, band_mode_string, config, statevector_names):
         """."""
 
+        self.statevector_names = statevector_names
         TabularRT.__init__(self, config)
 
         self.band_mode_string = band_mode_string
@@ -380,47 +381,41 @@ class ModtranRT(TabularRT):
 
     def _lookup_lut(self, point):
         ret = {}
-        point = point[self._lut_index_for_point]
         for key, lut in self.luts.items():
             ret[key] = s.array(lut(point)).ravel()
 
         return ret
 
     def get(self, x_RT, geom):
-        if self.n_point == self.n_state:
-            return self._lookup_lut(x_RT)
-        else:
-            point = s.zeros((self.n_point,))
-            for point_ind, name in enumerate(self.lut_grid_config):
-                if name in self.statevec:
-                    x_RT_ind = self.statevec.index(name)
-                    point[point_ind] = x_RT[x_RT_ind]
-                elif name == "OBSZEN":
-                    point[point_ind] = geom.OBSZEN
-                elif name == "GNDALT":
-                    point[point_ind] = geom.GNDALT
-                elif name == "viewzen":
-                    point[point_ind] = geom.observer_zenith
-                elif name == "viewaz":
-                    point[point_ind] = geom.observer_azimuth
-                elif name == "solaz":
-                    point[point_ind] = geom.solar_azimuth
-                elif name == "solzen":
-                    point[point_ind] = geom.solar_zenith
-                elif name == "TRUEAZ":
-                    point[point_ind] = geom.TRUEAZ
-                elif name == 'phi':
-                    point[point_ind] = geom.phi
-                elif name == 'umu':
-                    point[point_ind] = geom.umu
-                else:
-                    # If a variable is defined in the lookup table but not
-                    # specified elsewhere, we will default to the minimum
-                    point[point_ind] = min(self.lut_grid_config[name])
-            for x_RT_ind, name in enumerate(self.statevec):
-                point_ind = self.lut_names.index(name)
-                point[point_ind] = x_RT[x_RT_ind]
-            return self._lookup_lut(point)
+        point = s.zeros((self.n_point,))
+        for point_ind, name in enumerate(self.lut_grid_config):
+            if name in self.statevec:
+                x_RT_ind = self.statevec.index(name)
+                point[self._lut_index_for_point[x_RT_ind]] = x_RT[x_RT_ind]
+            if name == "OBSZEN":
+                point[point_ind] = geom.OBSZEN
+            elif name == "GNDALT":
+                point[point_ind] = geom.GNDALT
+            elif name == "viewzen":
+                point[point_ind] = geom.observer_zenith
+            elif name == "viewaz":
+                point[point_ind] = geom.observer_azimuth
+            elif name == "solaz":
+                point[point_ind] = geom.solar_azimuth
+            elif name == "solzen":
+                point[point_ind] = geom.solar_zenith
+            elif name == "TRUEAZ":
+                point[point_ind] = geom.TRUEAZ
+            elif name == 'phi':
+                point[point_ind] = geom.phi
+            elif name == 'umu':
+                point[point_ind] = geom.umu
+            else:
+                # If a variable is defined in the lookup table but not
+                # specified elsewhere, we will default to the minimum
+                point[point_ind] = min(self.lut_grid_config[name])
+
+        return self._lookup_lut(point)
 
     def get_L_atm(self, x_RT, geom):
         if self.band_mode_string.lower() == 'modtran_vswir':
