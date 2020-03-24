@@ -83,7 +83,7 @@ class VectorInterpolator:
             # temporarily moving the target axes there, then broadcasting
             data = np.swapaxes(data,-1,angle_loc)
             data_dim = list(np.shape(data))
-            data_dim.append(data_dim[0])
+            data_dim.append(data_dim[-1])
             data = data[..., np.newaxis] * np.ones(data_dim)
 
             ## now copy the data to be interpolated through the extra dimension,
@@ -97,13 +97,13 @@ class VectorInterpolator:
 
             ## Now we need to actually copy the data between the first two axes,
             ## as broadcast_to doesn't do this
-            for ind in range(data.shape[0]):
+            for ind in range(data.shape[-1]):
                 data[..., ind] = data[..., :, ind]
 
             # Now re-order the cosin dimension
-            data = data[grid_subset_cosin_order, ...]
+            data = data[..., grid_subset_cosin_order, :]
             # Now re-order the sin dimension
-            data = data[:, grid_subset_sin_order, ...]
+            data = data[..., grid_subset_sin_order]
 
             ## now re-arrange the axes so they're in the right order again,
             ## remembering that we've added a new axis
@@ -114,8 +114,10 @@ class VectorInterpolator:
 
             ## now re-arrange the axes so they're in the right order again,
             dst_axes = np.arange(len(data.shape)-2).tolist()
-            dst_axes.insert(angle_loc, -2)
-            dst_axes.insert(angle_loc+1, -1)
+            dst_axes.insert(angle_loc, len(data.shape)-2)
+            dst_axes.insert(angle_loc+1, len(data.shape)-1)
+            dst_axes.remove(angle_loc)
+            dst_axes.append(angle_loc)
             data = np.ascontiguousarray(np.transpose(data, axes=dst_axes))
 
             # update the rest of the angle locations
