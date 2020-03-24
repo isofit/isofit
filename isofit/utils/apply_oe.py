@@ -457,7 +457,6 @@ def find_angular_seeds(angle_data_input: np.array, num_points: int, units: str =
     if np.any(np.logical_and(spatial_data[:,0] < 0, spatial_data[:,1] < 0 )):
         quadrants[0,1] += 1
 
-    import ipdb; ipdb.set_trace()
     # Handle the case where angles are < 180 degrees apart
     if np.sum(quadrants) < 3 and num_points != 1:
         if (np.sum(quadrants[1,:]) == 2):
