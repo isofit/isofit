@@ -142,7 +142,7 @@ class RadiativeTransfer():
         L_down = self.get_L_down(x_RT, geom)
 
         L_up = self.get_L_up(x_RT, geom)
-        L_up = L_up + Ls * r['transm']
+        L_up = L_up + Ls * r['transup']
 
         ret = L_atm + \
             L_down * rfl * r['transm'] / (1.0 - r['sphalb'] * rfl) + \
