@@ -22,6 +22,7 @@ import sys
 import scipy as s
 from scipy.interpolate import interp1d
 from scipy.optimize import minimize_scalar as min1d
+from .common import conditional_gaussian
 
 
 def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
@@ -160,22 +161,40 @@ def invert_simple(forward, meas, geom):
     # via Lambertian approximations to get reflectance
     x_surface, x_RT, x_instrument = forward.unpack(x)
     rfl_est, Ls_est, coeffs = invert_algebraic(surface, RT,
-                                               instrument, x_surface, x_RT, x_instrument, meas, geom)
+                                               instrument, x_surface, x_RT, 
+                                               x_instrument, meas, geom)
 
-    # If there is an emissive (hot) surface, modify the reflectance and
-    # upward additive radiance appropriately.
-    # if surface.emissive:
-    #    rfl_est = forward.surface.conditional_solrfl(rfl_est, geom)
-    #    Ls_est  = estimate_Ls(coeffs, rfl_est, meas, geom)
-    # else:
-    #    Ls_est = None
+    # Condition thermal part on the VSWIR portion. Only works for 
+    # Multicomponent surfaces.
+    if any(forward.surface.wl > 3000):
+        rfl_idx = s.array([i for i,v in enumerate(forward.surface.statevec) 
+                            if 'RFL' in v])
+        tir_idx = s.where(forward.surface.wl > 3000)[0]
+        vswir_idx = s.where(forward.surface.wl < 3000)[0]
+        vswir_idx = s.array([i for i in vswir_idx if i in forward.surface.idx_ref])
+        mu = forward.surface.xa(x_surface, geom)
+        C = forward.surface.Sa(x_surface, geom)
+        rfl_est[tir_idx], rfl_est_C = \
+                conditional_gaussian(mu, C, tir_idx, vswir_idx, rfl_est[vswir_idx])
+    
+    # Estimate the total radiance at sensor, leaving out the surface emission
+    rhoatm, sphalb, transm, solar_irr, coszen, transup = coeffs
+    L_atm = RT.get_L_atm(x_RT, geom)
+    L_down = RT.get_L_down(x_RT, geom)
+    L_total_without_surface_emission = \
+            L_atm + L_down * rfl_est * transm / (1. - sphalb * rfl_est)
+    clearest_wavelengths = [8304.61, 8375.99, 8465.06, 8625., 8748.78, 
+                            8872.20, 8960.40, 10125., 10390.00, 10690.00]
+    
+    # This is fragile if other instruments have different wavelength spacing 
+    # or range
+    clearest_indices = [s.argmin(s.absolute(RT.wl - w)) 
+            for w in clearest_wavelengths]
 
-    # Now, fit the reflectance model parameters to our estimated reflectance
-    # spectrum.  This will be simple for chnanelwise parameterizations but
-    # possibly complex for more sophisticated parameterizations (e.g. mixture
-    # models, etc.)
+    # This function call is a bit of a mess
+    x[forward.idx_surface] = forward.surface.fit_params(meas, rfl_est,
+        L_total_without_surface_emission, transup, clearest_indices, geom)
 
-    x[forward.idx_surface] = forward.surface.fit_params(rfl_est, Ls_est, geom)
     geom.x_surf_init = x[forward.idx_surface]
     geom.x_RT_init = x[forward.idx_RT]
     return x

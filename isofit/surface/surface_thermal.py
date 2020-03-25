@@ -36,7 +36,7 @@ class ThermalSurface(MultiComponentSurface):
         MultiComponentSurface.__init__(self, config)
         # Handle additional state vector elements
         self.statevec.extend(['SURF_TEMP_K'])
-        self.init.extend([293.0])  # Room temperature
+        self.init.extend([300.0])  # This is overwritten below
         self.scale.extend([100.0])
         self.bounds.extend([[250.0, 400.0]])
         self.surf_temp_ind = len(self.statevec)-1
@@ -57,26 +57,32 @@ class ThermalSurface(MultiComponentSurface):
         """Covariance of prior distribution, calculated at state x."""
 
         Cov = MultiComponentSurface.Sa(self, x_surface, geom)
-        t = s.array([[(10.0 * self.scale[self.surf_temp_ind])**2]])
+        t = s.array([[0.1]])  # Hard coded! Yikes!
         Cov[self.surf_temp_ind, self.surf_temp_ind] = t
         return Cov
 
-    def fit_params(self, rfl_meas, Ls, geom):
+    def fit_params(self, meas, rfl_meas, L_total_without_surface_emission, 
+                   trans_ground_to_sensor, clearest_indices, geom):
         """Given a reflectance estimate and one or more emissive parameters, 
           fit a state vector."""
 
         def err(z):
             T = z
-            emissivity = s.ones(self.n_wl, dtype=float)
-            Ls_est, d = emissive_radiance(emissivity, T, self.wl)
-            resid = Ls_est - Ls
+            emissivity = 1.00  # Should be conditional emissivity?
+            Ls_est, d = emissive_radiance(emissivity, T, self.wl[clearest_indices])
+            resid = trans_ground_to_sensor[clearest_indices]*Ls_est + \
+                    L_total_without_surface_emission[clearest_indices] - \
+                    meas[clearest_indices]
             return sum(resid**2)
 
-        x_surface = MultiComponentSurface.fit_params(self, rfl_meas, Ls, geom)
+        x_surface = MultiComponentSurface.fit_params(self, rfl_meas, 0, geom)
+
         T = minimize(err, s.array([self.init[self.surf_temp_ind]])).x
         T = max(self.bounds[self.surf_temp_ind][0]+eps,
                 min(T, self.bounds[self.surf_temp_ind][1]-eps))
         x_surface[self.surf_temp_ind] = T
+        self.init[self.surf_temp_ind] = T  # Kind of hacky
+
         return x_surface
 
     def conditional_solrfl(self, rfl_est, geom):
