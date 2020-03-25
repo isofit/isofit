@@ -93,9 +93,9 @@ class ModtranRT(TabularRT):
         # Build the lookup table
         self.build_lut()
 
-        # This array is used to select the elements out of the full
-        # statevector to create a point for evaluation in the LUTs.
-        # For example: point = x_RT[self._x_RT_index_for_point]
+        # This array is used to handle the potential indexing mismatch between the
+        # 'global statevector' (which may couple multiple radiative transform models)
+        # and this statevector
         # It should never be modified
         full_to_local_statevector_position_mapping = []
         for sn in self.statevec:

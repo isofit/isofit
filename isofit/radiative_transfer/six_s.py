@@ -107,14 +107,15 @@ class SixSRT(TabularRT):
         self.lut_quantities = ['rhoatm', 'transm', 'sphalb', 'transup']
         self.build_lut()
 
-        # This array is used to select the elements out of the full
-        # statevector to create a point for evaluation in the LUTs.
-        # For example: point = x_RT[self._x_RT_index_for_point]
+        # This array is used to handle the potential indexing mismatch between the
+        # 'global statevector' (which may couple multiple radiative transform models)
+        # and this statevector
         # It should never be modified
-        lut_index_for_point = []
-        for sn in statevector_names:
-            lut_index_for_point.append(self.lut_names.index(sn))
-        self._lut_index_for_point = s.array(lut_index_for_point)
+        full_to_local_statevector_position_mapping = []
+        for sn in self.statevec:
+            full_to_local_statevector_position_mapping.append(statevector_names.index(sn))
+        self._full_to_local_statevector_position_mapping = s.array(full_to_local_statevector_position_mapping)
+
 
     def find_basedir(self, config):
         """Seek out a sixs base directory."""
@@ -234,47 +235,42 @@ class SixSRT(TabularRT):
 
             self.luts[key] = VectorInterpolator(self.lut_grids, temp, self.lut_interp_types)
 
-    def _lookup_lut(self, x_RT):
+    def _lookup_lut(self, point):
         ret = {}
         for key, lut in self.luts.items():
             ret[key] = s.array(lut(point)).ravel()
         return ret
 
     def get(self, x_RT, geom):
-        if self.n_point == self.n_state:
-            return self._lookup_lut(x_RT)
-        else:
-            point = s.zeros((self.n_point,))
-            for point_ind, name in enumerate(self.lut_grid_config):
-                if name in self.statevec:
-                    x_RT_ind = self.statevec.index(name)
-                    point[point_ind] = x_RT[x_RT_ind]
-                elif name == "OBSZEN":
-                    point[point_ind] = geom.OBSZEN
-                elif name == "GNDALT":
-                    point[point_ind] = geom.GNDALT
-                elif name == "viewzen":
-                    point[point_ind] = geom.observer_zenith
-                elif name == "viewaz":
-                    point[point_ind] = geom.observer_azimuth
-                elif name == "solaz":
-                    point[point_ind] = geom.solar_azimuth
-                elif name == "solzen":
-                    point[point_ind] = geom.solar_zenith
-                elif name == "TRUEAZ":
-                    point[point_ind] = geom.TRUEAZ
-                elif name == 'phi':
-                    point[point_ind] = geom.phi
-                elif name == 'umu':
-                    point[point_ind] = geom.umu
-                else:
-                    # If a variable is defined in the lookup table but not
-                    # specified elsewhere, we will default to the minimum
-                    point[point_ind] = min(self.lut_grid_config[name])
-            for x_RT_ind, name in enumerate(self.statevec):
-                point_ind = self.lut_names.index(name)
+        point = s.zeros((self.n_point,))
+        for point_ind, name in enumerate(self.lut_grid_config):
+            if name in self.statevec:
+                x_RT_ind = self._full_to_local_statevector_position_mapping[self.statevec.index(name)]
                 point[point_ind] = x_RT[x_RT_ind]
-            return self._lookup_lut(point)
+            elif name == "OBSZEN":
+                point[point_ind] = geom.OBSZEN
+            elif name == "GNDALT":
+                point[point_ind] = geom.GNDALT
+            elif name == "viewzen":
+                point[point_ind] = geom.observer_zenith
+            elif name == "viewaz":
+                point[point_ind] = geom.observer_azimuth
+            elif name == "solaz":
+                point[point_ind] = geom.solar_azimuth
+            elif name == "solzen":
+                point[point_ind] = geom.solar_zenith
+            elif name == "TRUEAZ":
+                point[point_ind] = geom.TRUEAZ
+            elif name == 'phi':
+                point[point_ind] = geom.phi
+            elif name == 'umu':
+                point[point_ind] = geom.umu
+            else:
+                # If a variable is defined in the lookup table but not
+                # specified elsewhere, we will default to the minimum
+                point[point_ind] = min(self.lut_grid_config[name])
+
+        return self._lookup_lut(point)
 
     def get_L_atm(self, x_RT, geom):
         r = self.get(x_RT, geom)

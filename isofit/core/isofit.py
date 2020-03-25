@@ -128,7 +128,7 @@ class Isofit:
             if index % 1000 == 0:
                 logging.info('Completed inversion {}/{}'.format(index,len(io.iter_inds)))
 
-    def run(self, profile=False):
+    def run(self, profile=False, debug=False):
         """
         Iterate over all spectra, reading and writing through the IO
         object to handle formatting, buffering, and deferred write-to-file.
@@ -158,16 +158,25 @@ class Isofit:
 
             import time
             start_time = time.time()
-            logging.info('Beginning parallel inversions')
+            if debug:
+                logging.info('Beginning serial inversions for debugging')
+            else:
+                logging.info('Beginning parallel inversions')
 
             results = []
             for l in range(n_iter):
-                results.append(pool.apply_async(self._run_single_spectrum, args=(l,)))
+                if debug:
+                    self._run_single_spectrum(l)
+                else:
+                    results.append(pool.apply_async(self._run_single_spectrum, args=(l,)))
             results = [p.get() for p in results]
             pool.close()
             pool.join()
 
-            total_time = time.time() - start_time 
-            logging.info('Parallel inversions complete.  {} s total, {} spectra/s'.format(total_time,n_iter/total_time))
+            total_time = time.time() - start_time
+            if debug:
+                logging.info('Inversions complete.  {} s total, {} spectra/s'.format(total_time,n_iter/total_time))
+            else:
+                logging.info('Parallel inversions complete.  {} s total, {} spectra/s'.format(total_time,n_iter/total_time))
 
 
