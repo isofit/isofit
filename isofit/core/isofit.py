@@ -26,7 +26,7 @@ from contextlib import suppress
 import warnings
 from numba.errors import NumbaWarning, NumbaDeprecationWarning, NumbaPendingDeprecationWarning
 
-from .common import load_config
+from .common import load_config safe_core_count
 from .forward import ForwardModel
 from .inverse import Inversion
 from .inverse_mcmc import MCMCInversion
@@ -154,7 +154,7 @@ class Isofit:
             n_iter = len(io.iter_inds)
             io = None
             self._clear_nonpicklable_objects()
-            pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
+            pool = multiprocessing.Pool(processes=safe_core_count())
 
             import time
             start_time = time.time()
