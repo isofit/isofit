@@ -26,7 +26,7 @@ from contextlib import suppress
 import warnings
 from numba.errors import NumbaWarning, NumbaDeprecationWarning, NumbaPendingDeprecationWarning
 
-from .common import load_config safe_core_count
+from .common import load_config, safe_core_count
 from .forward import ForwardModel
 from .inverse import Inversion
 from .inverse_mcmc import MCMCInversion
