@@ -22,6 +22,7 @@ import os
 import sys
 import numpy as np
 import logging
+import multiprocessing
 
 from ..core.common import combos, eps, load_wavelen, safe_core_count
 from ..core.common import VectorInterpolator
@@ -157,8 +158,13 @@ class TabularRT:
 
         elif len(rebuild_cmds) > 0 and self.auto_rebuild:
             logging.info("rebuilding")
-            import multiprocessing
+
+            # check to make sure lut directory is there, create if not
             cwd = os.getcwd()
+            if os.path.isdir(self.lut_dir) is False:
+                os.mkdir(self.lut_dir)
+
+            # migrate to the appropriate directory and spool up runs
             os.chdir(self.lut_dir)
             count = safe_core_count()
             pool = multiprocessing.Pool(processes=count)
