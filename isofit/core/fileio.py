@@ -572,6 +572,11 @@ class IO:
                                                        self.fm.RT, self.fm.instrument, x_surface, x_RT,
                                                        x_instrument, meas, geom)
             rhoatm, sphalb, transm, solar_irr, coszen, transup = coeffs
+
+            L_atm = self.fm.RT.get_L_atm(x_RT, geom)
+            L_down = self.fm.RT.get_L_down(x_RT, geom)
+            L_up = self.fm.RT.get_L_up(x_RT, geom)
+
             atm = s.column_stack(list(coeffs[:4]) +
                                  [s.ones((len(wl), 1)) * coszen])
 
@@ -628,12 +633,15 @@ class IO:
 
             logging.debug('IO: Writing data_dump_file')
             x = state_est
+            xall = states
             Seps_inv, Seps_inv_sqrt = self.iv.calc_Seps(x, meas, geom)
             meas_est_window = meas_est[self.iv.winidx]
             meas_window = meas[self.iv.winidx]
             xa, Sa, Sa_inv, Sa_inv_sqrt = self.iv.calc_prior(x, geom)
             prior_resid = (x - xa).dot(Sa_inv_sqrt)
             rdn_est = self.fm.calc_rdn(x, geom)
+            rdn_est_all = s.array([self.fm.calc_rdn(xtemp, geom) for xtemp in states])
+            
             x_surface, x_RT, x_instrument = self.fm.unpack(x)
             Kb = self.fm.Kb(x, geom)
             xinit = invert_simple(self.fm, meas, geom)
@@ -655,7 +663,9 @@ class IO:
                 'prior_Cov': Sa,
                 'meas': meas,
                 'rdn_est': rdn_est,
+                'rdn_est_all': rdn_est_all,
                 'x': x,
+                'xall': xall,
                 'x_surface': x_surface,
                 'x_RT': x_RT,
                 'x_instrument': x_instrument,
@@ -669,13 +679,18 @@ class IO:
                 'A': A,
                 'cost_jac_meas': cost_jac_meas,
                 'winidx': self.iv.winidx,
+                'windows': self.iv.windows,
                 'prior_resid': prior_resid,
                 'noise_Cov': Sy,
                 'xinit': xinit,
                 'rhoatm': rhoatm,
                 'sphalb': sphalb,
                 'transm': transm,
-                'solar_irr': solar_irr
+                'transup': transup,
+                'solar_irr': solar_irr,
+                'L_atm': L_atm,
+                'L_down': L_down,
+                'L_up': L_up
             }
             s.io.savemat(self.output['data_dump_file'], mdict)
 
