@@ -209,7 +209,16 @@ class LibRadTranRT(TabularRT):
         irr = resample_spectrum(irr,    wl, self.wl, self.fwhm)
 
         # Calculate some atmospheric optical constants
+        # NOTE: This calc is not numerically stable for cases where rho025 and
+        # rho05 are the same (usually, when they are both zero). We interpolate
+        # over those non-finite cases here, but should really figure out a more
+        # robust way to do this calculation.
         sphalb = 2.8*(2.0*rho025-rhoatm-rho05)/(rho025-rho05)
+        sp_finite = s.isfinite(sphalb)
+        sp_gt0 = sphalb > 0
+        good = s.logical_and(sp_finite, sp_gt0)
+        bad = s.logical_not(good)
+        sphalb[bad] = interp1d(self.wl[good], sphalb[good])(self.wl[bad])
         transm = (rho05-rhoatm)*(2.0-sphalb)
 
         # For now, don't estimate this term!!
