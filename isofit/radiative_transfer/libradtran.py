@@ -153,6 +153,9 @@ class LibRadTranRT(TabularRT):
             lat, lon, yr, mon, day, hour, mn = \
                 None, None, None, None, None, None, None
             for line in fin.readlines():
+                # Skip comment lines
+                if line.strip().startswith("#"):
+                    continue
                 if 'latitude N' in line:
                     lat = float(line.split()[-1])
                 elif 'latitude S' in line:
