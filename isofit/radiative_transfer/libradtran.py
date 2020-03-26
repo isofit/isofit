@@ -188,27 +188,25 @@ class LibRadTranRT(TabularRT):
     def load_rt(self, fn):
         """Load the results of a LibRadTran run."""
 
-        wl, rdn0,   irr0 = s.loadtxt(self.lut_dir+'/LUT_'+fn+'_alb0.out').T
-        wl, rdn025, irr025 = s.loadtxt(self.lut_dir+'/LUT_'+fn+'_alb025.out').T
-        wl, rdn05,  irr05 = s.loadtxt(self.lut_dir+'/LUT_'+fn+'_alb05.out').T
+        wl, rdn0,   _ = s.loadtxt(self.lut_dir+'/LUT_'+fn+'_alb0.out').T
+        wl, rdn025, _ = s.loadtxt(self.lut_dir+'/LUT_'+fn+'_alb025.out').T
+        wl, rdn05,  irr = s.loadtxt(self.lut_dir+'/LUT_'+fn+'_alb05.out').T
 
         # Replace a few zeros in the irradiance spectrum via interpolation
-        # good = irr > 1e-15
-        # bad = s.logical_not(good)
-        # irr[bad] = interp1d(wl[good], irr[good])(wl[bad])
+        good = irr > 1e-15
+        bad = s.logical_not(good)
+        irr[bad] = interp1d(wl[good], irr[good])(wl[bad])
 
         # Translate to Top of Atmosphere (TOA) reflectance
-        rhoatm = rdn0 / 10.0 / irr0 * s.pi  # Translate to uW nm-1 cm-2 sr-1
-        rho025 = rdn025 / 10.0 / irr025 * s.pi
-        rho05 = rdn05 / 10.0 / irr05 * s.pi
+        rhoatm = rdn0 / 10.0 / irr * s.pi  # Translate to uW nm-1 cm-2 sr-1
+        rho025 = rdn025 / 10.0 / irr * s.pi
+        rho05 = rdn05 / 10.0 / irr * s.pi
 
         # Resample TOA reflectances to simulate the instrument observation
         rhoatm = resample_spectrum(rhoatm, wl, self.wl, self.fwhm)
         rho025 = resample_spectrum(rho025, wl, self.wl, self.fwhm)
         rho05 = resample_spectrum(rho05,  wl, self.wl, self.fwhm)
-        irr0 = resample_spectrum(irr0,    wl, self.wl, self.fwhm)
-        irr025 = resample_spectrum(irr025,    wl, self.wl, self.fwhm)
-        irr05 = resample_spectrum(irr05,    wl, self.wl, self.fwhm)
+        irr = resample_spectrum(irr,    wl, self.wl, self.fwhm)
 
         # Calculate some atmospheric optical constants
         sphalb = 2.8*(2.0*rho025-rhoatm-rho05)/(rho025-rho05)
