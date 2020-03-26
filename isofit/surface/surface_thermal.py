@@ -61,8 +61,8 @@ class ThermalSurface(MultiComponentSurface):
         Cov[self.surf_temp_ind, self.surf_temp_ind] = t
         return Cov
 
-    def fit_params(self, meas, rfl_meas, L_total_without_surface_emission, 
-                   trans_ground_to_sensor, clearest_indices, geom):
+    def fit_params(self, rfl_meas, geom, meas, L_total_without_surface_emission, 
+                   trans_ground_to_sensor, clearest_indices):
         """Given a reflectance estimate and one or more emissive parameters, 
           fit a state vector."""
 
@@ -75,7 +75,7 @@ class ThermalSurface(MultiComponentSurface):
                     meas[clearest_indices]
             return sum(resid**2)
 
-        x_surface = MultiComponentSurface.fit_params(self, rfl_meas, 0, geom)
+        x_surface = MultiComponentSurface.fit_params(self, rfl_meas, geom)
 
         T = minimize(err, s.array([self.init[self.surf_temp_ind]])).x
         T = max(self.bounds[self.surf_temp_ind][0]+eps,

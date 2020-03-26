@@ -70,7 +70,7 @@ class Surface:
 
         return s.zeros((0, 0), dtype=float)
 
-    def fit_params(self, rfl, Ls, geom):
+    def fit_params(self, rfl, geom, *args):
         """Given a directional reflectance estimate and one or more emissive 
         parameters, fit a state vector."""
 

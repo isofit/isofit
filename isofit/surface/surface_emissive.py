@@ -74,6 +74,9 @@ class MixBBSurface(MultiComponentSurface):
     def fit_params(self, rfl_meas, Ls, geom):
         """Given a reflectance estimate and one or more emissive parameters, 
           fit a state vector."""
+        
+        # This surface model needs to be reviewed for correctness before using.
+        raise NotImplementedError
 
         def err(z):
             T, bb_frac = z

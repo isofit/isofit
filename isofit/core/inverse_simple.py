@@ -177,6 +177,11 @@ def invert_simple(forward, meas, geom):
         rfl_est[tir_idx], rfl_est_C = \
                 conditional_gaussian(mu, C, tir_idx, vswir_idx, rfl_est[vswir_idx])
     
+    ##############################################################################
+    # This will generate nonsense results for VSWIR-only runs. However, it doesn't
+    # matter as these values will be ignored in the fit_params function if the
+    # SurfaceThermal is not being used.
+
     # Estimate the total radiance at sensor, leaving out the surface emission
     rhoatm, sphalb, transm, solar_irr, coszen, transup = coeffs
     L_atm = RT.get_L_atm(x_RT, geom)
@@ -186,14 +191,16 @@ def invert_simple(forward, meas, geom):
     clearest_wavelengths = [8304.61, 8375.99, 8465.06, 8625., 8748.78, 
                             8872.20, 8960.40, 10125., 10390.00, 10690.00]
     
-    # This is fragile if other instruments have different wavelength spacing 
-    # or range
+    # This is fragile if other instruments have different wavelength
+    # spacing or range
     clearest_indices = [s.argmin(s.absolute(RT.wl - w)) 
             for w in clearest_wavelengths]
+    ##############################################################################
 
-    # This function call is a bit of a mess
-    x[forward.idx_surface] = forward.surface.fit_params(meas, rfl_est,
-        L_total_without_surface_emission, transup, clearest_indices, geom)
+    # The parameters on the second line are only used when the ThermalSurface
+    # is used. Otherwise, they are ignored.
+    x[forward.idx_surface] = forward.surface.fit_params(rfl_est, geom,
+        meas, L_total_without_surface_emission, transup, clearest_indices)
 
     geom.x_surf_init = x[forward.idx_surface]
     geom.x_RT_init = x[forward.idx_RT]
