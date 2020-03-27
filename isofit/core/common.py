@@ -21,14 +21,11 @@
 import os
 import json
 import xxhash
-import scipy as s
-from collections import OrderedDict
+import numpy as np
+import scipy.linalg
 from scipy.interpolate import RegularGridInterpolator
 from os.path import expandvars, split, abspath
-from scipy.linalg import cholesky, inv, det, svd, eigh
-from numba import jit
-
-from .. import jit_enabled, conditional_decorator
+import subprocess
 
 
 ### Variables ###
@@ -36,69 +33,8 @@ from .. import jit_enabled, conditional_decorator
 # Maximum size of our hash tables
 max_table_size = 500
 
-binary_table = [s.array([[]]),
-                s.array([[0], [1]]),
-                s.array([[0, 0], [0, 1], [1, 0], [1, 1]]),
-                s.array([[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1],
-                         [1, 0, 0], [1, 0, 1], [1, 1, 0], [1, 1, 1]]),
-                s.array([[0, 0, 0, 0], [0, 0, 0, 1],
-                         [0, 0, 1, 0], [0, 0, 1, 1],
-                         [0, 1, 0, 0], [0, 1, 0, 1],
-                         [0, 1, 1, 0], [0, 1, 1, 1],
-                         [1, 0, 0, 0], [1, 0, 0, 1],
-                         [1, 0, 1, 0], [1, 0, 1, 1],
-                         [1, 1, 0, 0], [1, 1, 0, 1],
-                         [1, 1, 1, 0], [1, 1, 1, 1]]),
-                s.array([[0, 0, 0, 0, 0], [0, 0, 0, 0, 1],
-                         [0, 0, 0, 1, 0], [0, 0, 0, 1, 1],
-                         [0, 0, 1, 0, 0], [0, 0, 1, 0, 1],
-                         [0, 0, 1, 1, 0], [0, 0, 1, 1, 1],
-                         [0, 1, 0, 0, 0], [0, 1, 0, 0, 1],
-                         [0, 1, 0, 1, 0], [0, 1, 0, 1, 1],
-                         [0, 1, 1, 0, 0], [0, 1, 1, 0, 1],
-                         [0, 1, 1, 1, 0], [0, 1, 1, 1, 1],
-                         [1, 0, 0, 0, 0], [1, 0, 0, 0, 1],
-                         [1, 0, 0, 1, 0], [1, 0, 0, 1, 1],
-                         [1, 0, 1, 0, 0], [1, 0, 1, 0, 1],
-                         [1, 0, 1, 1, 0], [1, 0, 1, 1, 1],
-                         [1, 1, 0, 0, 0], [1, 1, 0, 0, 1],
-                         [1, 1, 0, 1, 0], [1, 1, 0, 1, 1],
-                         [1, 1, 1, 0, 0], [1, 1, 1, 0, 1],
-                         [1, 1, 1, 1, 0], [1, 1, 1, 1, 1]]),
-                s.array([[0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 1],
-                         [0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 1, 1],
-                         [0, 0, 0, 1, 0, 0], [0, 0, 0, 1, 0, 1],
-                         [0, 0, 0, 1, 1, 0], [0, 0, 0, 1, 1, 1],
-                         [0, 0, 1, 0, 0, 0], [0, 0, 1, 0, 0, 1],
-                         [0, 0, 1, 0, 1, 0], [0, 0, 1, 0, 1, 1],
-                         [0, 0, 1, 1, 0, 0], [0, 0, 1, 1, 0, 1],
-                         [0, 0, 1, 1, 1, 0], [0, 0, 1, 1, 1, 1],
-                         [0, 1, 0, 0, 0, 0], [0, 1, 0, 0, 0, 1],
-                         [0, 1, 0, 0, 1, 0], [0, 1, 0, 0, 1, 1],
-                         [0, 1, 0, 1, 0, 0], [0, 1, 0, 1, 0, 1],
-                         [0, 1, 0, 1, 1, 0], [0, 1, 0, 1, 1, 1],
-                         [0, 1, 1, 0, 0, 0], [0, 1, 1, 0, 0, 1],
-                         [0, 1, 1, 0, 1, 0], [0, 1, 1, 0, 1, 1],
-                         [0, 1, 1, 1, 0, 0], [0, 1, 1, 1, 0, 1],
-                         [0, 1, 1, 1, 1, 0], [0, 1, 1, 1, 1, 1],
-                         [1, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 1],
-                         [1, 0, 0, 0, 1, 0], [1, 0, 0, 0, 1, 1],
-                         [1, 0, 0, 1, 0, 0], [1, 0, 0, 1, 0, 1],
-                         [1, 0, 0, 1, 1, 0], [1, 0, 0, 1, 1, 1],
-                         [1, 0, 1, 0, 0, 0], [1, 0, 1, 0, 0, 1],
-                         [1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 1],
-                         [1, 0, 1, 1, 0, 0], [1, 0, 1, 1, 0, 1],
-                         [1, 0, 1, 1, 1, 0], [1, 0, 1, 1, 1, 1],
-                         [1, 1, 0, 0, 0, 0], [1, 1, 0, 0, 0, 1],
-                         [1, 1, 0, 0, 1, 0], [1, 1, 0, 0, 1, 1],
-                         [1, 1, 0, 1, 0, 0], [1, 1, 0, 1, 0, 1],
-                         [1, 1, 0, 1, 1, 0], [1, 1, 0, 1, 1, 1],
-                         [1, 1, 1, 0, 0, 0], [1, 1, 1, 0, 0, 1],
-                         [1, 1, 1, 0, 1, 0], [1, 1, 1, 0, 1, 1],
-                         [1, 1, 1, 1, 0, 0], [1, 1, 1, 1, 0, 1],
-                         [1, 1, 1, 1, 1, 0], [1, 1, 1, 1, 1, 1]])]
-
-eps = 1e-5  # small value used in finite difference derivatives
+# small value used in finite difference derivatives
+eps = 1e-5  
 
 
 ### Classes ###
@@ -106,21 +42,112 @@ eps = 1e-5  # small value used in finite difference derivatives
 class VectorInterpolator:
     """."""
 
-    def __init__(self, grid, data):
+    def __init__(self, grid_input, data_input, lut_interp_types):
+        self.lut_interp_types = lut_interp_types
+
+        # Lists and arrays are mutable, so copy first
+        grid = grid_input.copy()
+        data = data_input.copy()
+
+        # expand grid dimensionality as needed
+        [radian_locations] = np.where(self.lut_interp_types == 'd')
+        [degree_locations] = np.where(self.lut_interp_types == 'r')
+        angle_locations = np.hstack([radian_locations,degree_locations])
+        angle_types = np.hstack([self.lut_interp_types[radian_locations],self.lut_interp_types[degree_locations]])
+        for _angle_loc in range(len(angle_locations)):
+
+            angle_loc = angle_locations[_angle_loc]
+            # get original grid at given location
+            original_grid_subset = np.array(grid[angle_loc])
+
+            # convert for angular coordinates
+            if (angle_types[_angle_loc] == 'r'):
+                grid_subset_cosin = np.cos(original_grid_subset)
+                grid_subset_sin = np.sin(original_grid_subset)
+            elif (angle_types[_angle_loc] == 'd'):
+                grid_subset_cosin = np.cos(original_grid_subset / 180. * np.pi)
+                grid_subset_sin = np.sin(original_grid_subset / 180. * np.pi)
+
+            # handle the fact that the grid may no longer be in order
+            grid_subset_cosin_order = np.argsort(grid_subset_cosin)
+            grid_subset_sin_order = np.argsort(grid_subset_sin)
+
+            # convert current grid location, and add a second
+            grid[angle_loc] = grid_subset_cosin[grid_subset_cosin_order]
+            grid.insert(angle_loc+1, grid_subset_sin[grid_subset_sin_order])
+
+
+            # now copy the data to be interpolated through the extra dimension,
+            # at the specific angle_loc axes.  We'll use broadcast_to to do this,
+            # but we need to do it on the last dimension.  So start by
+            # temporarily moving the target axes there, then broadcasting
+            data = np.swapaxes(data,-1,angle_loc)
+            data_dim = list(np.shape(data))
+            data_dim.append(data_dim[-1])
+            data = data[..., np.newaxis] * np.ones(data_dim)
+
+            ## now copy the data to be interpolated through the extra dimension,
+            ## at the specific angle_loc axes.  We'll use broadcast_to to do this,
+            ## but broad_cast to only works on the 0th dimension.  So start by
+            ## temporarily moving the target axes there, then broadcasting
+            #data = np.swapaxes(data,0,angle_loc)
+            #data_dim = list(np.shape(data))
+            #data_dim.insert(0,data_dim[0])
+            #data = np.broadcast_to(data,data_dim).copy()
+
+            ## Now we need to actually copy the data between the first two axes,
+            ## as broadcast_to doesn't do this
+            for ind in range(data.shape[-1]):
+                data[..., ind] = data[..., :, ind]
+
+            # Now re-order the cosin dimension
+            data = data[..., grid_subset_cosin_order, :]
+            # Now re-order the sin dimension
+            data = data[..., grid_subset_sin_order]
+
+            ## now re-arrange the axes so they're in the right order again,
+            ## remembering that we've added a new axis
+            #dst_axes = np.arange(2,len(data.shape)).tolist()
+            #dst_axes.insert(angle_loc,0)
+            #dst_axes.insert(angle_loc+1,1)
+            #data = np.transpose(data,axes=dst_axes)
+
+            ## now re-arrange the axes so they're in the right order again,
+            dst_axes = np.arange(len(data.shape)-2).tolist()
+            dst_axes.insert(angle_loc, len(data.shape)-2)
+            dst_axes.insert(angle_loc+1, len(data.shape)-1)
+            dst_axes.remove(angle_loc)
+            dst_axes.append(angle_loc)
+            data = np.ascontiguousarray(np.transpose(data, axes=dst_axes))
+
+            # update the rest of the angle locations
+            angle_locations += 1
+
         self.n = data.shape[-1]
-        grid_aug = grid + [s.arange(data.shape[-1])]
+        grid_aug = grid + [np.arange(data.shape[-1])]
         self.itp = RegularGridInterpolator(grid_aug, data,
-                bounds_error=False, fill_value=None)
+                                           bounds_error=False, fill_value=None)
 
     def __call__(self, points):
 
-        x = s.zeros((self.n,len(points)+1))
+        x = np.zeros((self.n,len(points) + 1 + np.sum(self.lut_interp_types != 'n')))
+        offset_count = 0
         for i in range(len(points)):
-            x[:,i] = points[i]
+            if self.lut_interp_types[i] == 'n':
+                x[:, i + offset_count] = points[i]
+            elif self.lut_interp_types[i] == 'r':
+                x[:, i + offset_count] = np.cos(points[i])
+                x[:, i + 1 + offset_count] = np.sin(points[i])
+                offset_count += 1
+            elif self.lut_interp_types[i] == 'd':
+                x[:, i + offset_count] = np.cos(points[i] / 180. * np.pi)
+                x[:, i + 1 + offset_count] = np.sin(points[i] / 180. * np.pi)
+                offset_count += 1
+
         # This last dimension is always an integer so no
         # interpolation is performed. This is done only
         # for performance reasons.
-        x[:,-1] = s.arange(self.n)
+        x[:,-1] = np.arange(self.n)
         res = self.itp(x)
 
         return res
@@ -132,7 +159,7 @@ class VectorInterpolator:
 def load_wavelen(wavelength_file):
     """Load a wavelength file, and convert to nanometers if needed."""
 
-    q = s.loadtxt(wavelength_file)
+    q = np.loadtxt(wavelength_file)
     if q.shape[1] > 2:
         q = q[:, 1:3]
     if q[0, 0] < 100:
@@ -144,29 +171,27 @@ def load_wavelen(wavelength_file):
 def emissive_radiance(emissivity, T, wl):
     """Radiance of a surface due to emission."""
 
-    c_1 = 1.88365e32/s.pi
+    c_1 = 1.88365e32/np.pi
     c_2 = 14387690
     J_per_eV = 1.60218e-19
     wl_um = wl / 1000.0
-    ph_per_sec_cm2_sr_nm = c_1/(wl**4)/(s.exp(c_2/wl/T)-1.0) * emissivity
+    ph_per_sec_cm2_sr_nm = c_1/(wl**4)/(np.exp(c_2/wl/T)-1.0) * emissivity
     # photon energy in eV
     eV_per_sec_cm2_sr_nm = 1.2398 * ph_per_sec_cm2_sr_nm/wl_um
     W_per_cm2_sr_nm = J_per_eV * eV_per_sec_cm2_sr_nm
     uW_per_cm2_sr_nm = W_per_cm2_sr_nm*1e6
-    dRdn_dT = c_1/(wl**4)*(-pow(s.exp(c_2/wl/T)-1.0, -2.0)) *\
-        s.exp(c_2/wl/T)*(-pow(T, -2)*c_2/wl) *\
+    dRdn_dT = c_1/(wl**4)*(-pow(np.exp(c_2/wl/T)-1.0, -2.0)) *\
+        np.exp(c_2/wl/T)*(-pow(T, -2)*c_2/wl) *\
         emissivity/wl_um*1.2398*J_per_eV*1e6
     return uW_per_cm2_sr_nm, dRdn_dT
 
 
-@conditional_decorator(jit, jit_enabled, forceobj=True)
 def svd_inv(C, mineig=0, hashtable=None):
     """Fast stable inverse using SVD. This can handle near-singular matrices."""
 
     return svd_inv_sqrt(C, mineig, hashtable)[0]
 
 
-@conditional_decorator(jit, jit_enabled)
 def svd_inv_sqrt(C, mineig=0, hashtable=None):
     """Fast stable inverse using SVD. This can handle near-singular matrices.
     Also return the square root.
@@ -182,14 +207,23 @@ def svd_inv_sqrt(C, mineig=0, hashtable=None):
         if h in hashtable:
             return hashtable[h]
 
-    # Cholesky decomposition seems to be too unstable for solving this
-    # problem, so we use eigendecompostition instead.
-    D, P = eigh(C)
-    Ds = s.diag(1/s.sqrt(D))
+    D, P = scipy.linalg.eigh(C)
+    for count in range(3):
+        if np.any(D < 0) or np.any(np.isnan(D)):
+            inv_eps = 1e-6 * (count-1)*10
+            D, P = scipy.linalg.eigh(C + np.diag(np.ones(C.shape[0]) * inv_eps))
+        else:
+            break
+
+        if count == 3:
+            raise ValueError('Matrix inversion contains negative values, even after adding ' +
+                             '{} to the diagonal.  Sqrt fails'.format(inv_eps))
+
+    Ds = np.diag(1/np.sqrt(D))
     L = P@Ds
     Cinv_sqrt = L@P.T
     Cinv = L@L.T
-    
+
     # If there is a hash table, cache our solution.  Bound the total cache
     # size by removing any extra items in FIFO order.
     if hashtable is not None:
@@ -226,19 +260,19 @@ def get_absorption(wl, absfile):
     refraction, and interpolate them to new wavelengths (user specifies nm)."""
 
     # read the indices of refraction
-    q = s.loadtxt(absfile, delimiter=',')
+    q = np.loadtxt(absfile, delimiter=',')
     wl_orig_nm = q[:, 0]
     wl_orig_cm = wl_orig_nm/1e9*1e2
     water_imag = q[:, 2]
     ice_imag = q[:, 4]
 
     # calculate absorption coefficients in cm^-1
-    water_abscf = water_imag*s.pi*4.0/wl_orig_cm
-    ice_abscf = ice_imag*s.pi*4.0/wl_orig_cm
+    water_abscf = water_imag*np.pi*4.0/wl_orig_cm
+    ice_abscf = ice_imag*np.pi*4.0/wl_orig_cm
 
     # interpolate to new wavelengths (user provides nm)
-    water_abscf_intrp = s.interp(wl, wl_orig_nm, water_abscf)
-    ice_abscf_intrp = s.interp(wl, wl_orig_nm, ice_abscf)
+    water_abscf_intrp = np.interp(wl, wl_orig_nm, water_abscf)
+    ice_abscf_intrp = np.interp(wl, wl_orig_nm, ice_abscf)
     return water_abscf_intrp, ice_abscf_intrp
 
 
@@ -342,16 +376,16 @@ def resample_spectrum(x, wl, wl2, fwhm2, fill=False):
     """Resample a spectrum to a new wavelength / FWHM. 
        I assume Gaussian SRFs."""
 
-    H = s.array([srf(wl, wi, fwhmi/2.355)
+    H = np.array([srf(wl, wi, fwhmi/2.355)
                  for wi, fwhmi in zip(wl2, fwhm2)])
     if fill is False:
-        return s.dot(H, x[:, s.newaxis]).ravel()
+        return np.dot(H, x[:, np.newaxis]).ravel()
     else:
-        xnew = s.dot(H, x[:, s.newaxis]).ravel()
-        good = s.isfinite(xnew)
+        xnew = np.dot(H, x[:, np.newaxis]).ravel()
+        good = np.isfinite(xnew)
         for i, xi in enumerate(xnew):
             if not good[i]:
-                nearest_good_ind = s.argmin(abs(wl2[good]-wl2[i]))
+                nearest_good_ind = np.argmin(abs(wl2[good]-wl2[i]))
                 xnew[i] = xnew[nearest_good_ind]
         return xnew
 
@@ -360,7 +394,7 @@ def load_spectrum(init):
     """Load a single spectrum from a text file with initial columns giving
        wavelength and magnitude, respectively."""
 
-    x = s.loadtxt(init)
+    x = np.loadtxt(init)
     if x.ndim > 1:
         x = x[:, :2]
         wl, x = x.T
@@ -375,7 +409,7 @@ def srf(x, mu, sigma):
     """Spectral response function."""
 
     u = (x-mu)/abs(sigma)
-    y = (1.0/(s.sqrt(2.0*s.pi)*abs(sigma)))*s.exp(-u*u/2.0)
+    y = (1.0/(np.sqrt(2.0*np.pi)*abs(sigma)))*np.exp(-u*u/2.0)
     return y/y.sum()
 
 
@@ -387,5 +421,44 @@ def combos(inds):
     """
 
     n = len(inds)
-    cases = s.prod([len(i) for i in inds])
-    return s.array(s.meshgrid(*inds)).reshape((n, cases)).T
+    cases = np.prod([len(i) for i in inds])
+    return np.array(np.meshgrid(*inds)).reshape((n, cases)).T
+
+def conditional_gaussian(mu, C, window, remain, x):
+    """Define the conditional Gaussian distribution for convenience.
+    "remain" contains indices of the observed part x1. "window"
+    contains all other indices, 
+    such that len(window)+len(remain)=len(x)
+    """
+    C11 = np.array([C[i,remain] for i in remain])
+    C12 = np.array([C[i,window] for i in remain])
+    C21 = np.array([C[i,remain] for i in window])
+    C22 = np.array([C[i,window] for i in window])
+    Cinv = scipy.linalg.inv(C11)
+    conditional_mean = mu[window] + C21 @ Cinv @ (x-mu[remain]) 
+    conditional_Cov = C22 - C21 @ Cinv @ C12
+    return conditional_mean, conditional_Cov
+
+def safe_core_count():
+    """ Get the number of cores on a single socket (what we can reach
+    through multirpocessing).  Currently,
+    only works for linux, defaults to CPU count on other systems.
+
+    TODO: expand for other operating systems, think about more elegant
+    solutions.
+
+    Returns:
+        num_cores: number of cores on current socket, if available
+    """
+    
+    import multiprocessing
+    try:
+        corelist = [x for x in subprocess.check_output(['lscpu']).decode("utf-8").split('\n') if 'Core' in x]
+        if len(corelist) > 0:
+            num_cores = int(corelist[0].split(':')[-1])
+        else:
+            num_cores = multiprocessing.cpu_count()
+    except:
+        num_cores = multiprocessing.cpu_count()
+
+    return num_cores

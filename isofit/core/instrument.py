@@ -25,7 +25,7 @@ from scipy.signal import convolve
 from scipy.io import loadmat
 from numpy.random import multivariate_normal as mvn
 
-from .common import eps, srf, load_wavelen, resample_spectrum
+from .common import eps, srf, load_wavelen, resample_spectrum, emissive_radiance
 
 
 ### Variables ###
@@ -71,10 +71,6 @@ class Instrument:
         self.prior_mean = s.array(self.prior_mean)
         self.n_state = len(self.statevec)
 
-        # Number of integrations comprising the measurement.  Noise diminishes
-        # with the square root of this number.
-        self.integrations = config['integrations']
-
         if 'SNR' in config:
 
             # We have several ways to define the instrument noise.  The
@@ -99,6 +95,9 @@ class Instrument:
                                       fill_value='extrapolate') for col in (1, 2, 3)]
             self.noise = s.array([[p_a(w), p_b(w), p_c(w)]
                                   for w in self.wl_init])
+            # Number of integrations comprising the measurement.  Noise diminishes
+            # with the square root of this number.
+            self.integrations = config['integrations']
 
         elif 'pushbroom_noise_file' in config:
             # The third option is a full pushbroom noise model that
@@ -113,6 +112,21 @@ class Instrument:
                 raise ValueError('Noise model mismatches wavelength # bands')
             cshape = ((self.ncols, self.n_chan, self.n_chan))
             self.covs = D['covariances'].reshape(cshape)
+            # Number of integrations comprising the measurement.  Noise diminishes
+            # with the square root of this number.
+            self.integrations = config['integrations']
+
+        elif 'NEDT_noise_file' in config:
+            self.model_type = 'NEDT'
+            self.noise_file = config['NEDT_noise_file']
+            self.noise_data = s.loadtxt(self.noise_file, delimiter=',', skiprows=8)
+            noise_data_w_nm = self.noise_data[:, 0] * 1000
+            noise_data_NEDT = self.noise_data[:, 1]
+            nedt = interp1d(noise_data_w_nm, noise_data_NEDT)(self.wl_init)
+
+            T, emis = 300., 0.95  # From Glynn Hulley, 2/18/2020
+            _, drdn_dT = emissive_radiance(emis, T, self.wl_init)
+            self.noise_NESR = nedt * drdn_dT
 
         else:
             logging.error('Instrument noise not defined.')
@@ -134,11 +148,12 @@ class Instrument:
             # of wavelength.
             unknowns = config['unknowns']
             if 'channelized_radiometric_uncertainty_file' in unknowns:
-                f = unknowns['channelized_radiometric_uncertainty_file']
-                u = s.loadtxt(f, comments='#')
-                if (len(u.shape) > 0 and u.shape[1] > 1):
-                    u = u[:, 1]
-                self.bval[:self.n_chan] = self.bval[:self.n_chan] + pow(u, 2)
+                if unknowns['channelized_radiometric_uncertainty_file'] is not None:
+                    f = unknowns['channelized_radiometric_uncertainty_file']
+                    u = s.loadtxt(f, comments='#')
+                    if (len(u.shape) > 0 and u.shape[1] > 1):
+                        u = u[:, 1]
+                    self.bval[:self.n_chan] = self.bval[:self.n_chan] + pow(u, 2)
 
             # Uncorrelated radiometric uncertainties are consistent and
             # independent in all channels.
@@ -204,6 +219,9 @@ class Instrument:
             else:
                 C = self.covs[geom.pushbroom_column, :, :]
             return C / s.sqrt(self.integrations)
+
+        elif self.model_type == 'NEDT':
+            return pow(s.diagflat(self.noise_NESR), 2)
 
     def dmeas_dinstrument(self, x_instrument, wl_hi, rdn_hi):
         """Jacobian of measurement with respect to the instrument 
@@ -310,7 +328,3 @@ class Instrument:
             return ''
         return 'Instrument: '+' '.join(['%5.3f' % xi for xi in x_instrument])
 
-    def reconfigure(self, config):
-        """Reconfiguration not yet supported."""
-
-        return

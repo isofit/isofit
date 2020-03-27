@@ -26,6 +26,7 @@ from scipy.interpolate import interp1d
 
 from .common import recursive_replace, eps
 from .instrument import Instrument
+from ..radiative_transfer.radiative_transfer import RadiativeTransfer
 
 
 ### Variables ###
@@ -47,7 +48,8 @@ surface_models = [('surface', 'surface.surface', 'Surface'),
                   ('cat_surface', 'surf_cat', 'CATSurface'),
                   ('glint_surface', 'surface.surface_glint', 'GlintSurface'),
                   ('iop_surface', 'surface.surface_iop', 'IOPSurface'),
-                  ('poly_surface', 'surf_poly', 'PolySurface')]
+                  ('poly_surface', 'surf_poly', 'PolySurface'),
+                  ('thermal_surface', 'surface.surface_thermal', 'ThermalSurface')]
 
 
 ### Classes ###
@@ -57,21 +59,31 @@ class ForwardModel:
      radiance measurements at a specific spectral calibration, given a 
      state vector. It also manages the distributions of unretrieved, 
      unknown parameters of the state vector (i.e. the S_b and K_b 
-     matrices of Rodgers et al."""
+     matrices of Rodgers et al.
+
+     State vector elements always go in the following order: 
+       (1) Surface parameters
+       (2) Radiative Transfer (RT) parameters
+       (3) Instrument parameters
+     The parameter bounds, scales, initial values, and names are all
+     ordered in this way.  The variable self.statevec contains the name
+     of each state vector element, in the proper ordering.
+
+     The "b" vector corresponds to the K_b calculations in Rogers (2000); 
+     the variables bvec and bval represent the model unknowns' names and 
+     their  magnitudes, respectively.  Larger magnitudes correspond to
+     a larger variance in the unknown values.  This acts as additional 
+     noise for the purpose of weighting the measurement information
+     against the prior. """
 
     def __init__(self, config):
 
+        # Build the instrument model
         self.instrument = Instrument(config['instrument'])
         self.n_meas = self.instrument.n_chan
 
         # Build the radiative transfer model
-        self.RT = None
-        for key, module, cname in RT_models:
-            module = "isofit." + module
-            if key in config:
-                self.RT = getattr(import_module(module), cname)(config[key])
-        if self.RT is None:
-            raise ValueError('Must specify a valid radiative transfer model')
+        self.RT = RadiativeTransfer(config['radiative_transfer'])
 
         # Build the surface model
         self.surface = None
@@ -106,7 +118,7 @@ class ForwardModel:
         self.statevec = statevec
         self.nstate = len(self.statevec)
 
-        # Capture unmodeled variables
+        # Capture unmodeled variables. 
         bvec, bval = [], []
         for name in ['RT', 'instrument', 'surface']:
             obj = getattr(self, name)
@@ -148,11 +160,12 @@ class ForwardModel:
         return s.concatenate((xa_surface, xa_RT, xa_instrument), axis=0)
 
     def Sa(self, x, geom):
-        """Calculate the prior covariance of the state vector (the concatenation
-        of state vectors for the surface and radiative transfer model).
+        """Calculate the prior covariance of the state vector (the 
+        concatenation of state vectors for the surface and radiative transfer 
+        model).
 
         NOTE: the surface prior depends on the current state; this
-        is so we can calculate the local linearized answer.
+        is so we can calculate the local prior.
         """
 
         x_surface = x[self.idx_surface]
@@ -163,14 +176,17 @@ class ForwardModel:
 
     def calc_rdn(self, x, geom, rfl=None, Ls=None):
         """Calculate the high-resolution radiance, permitting overrides.
-
-        Project to top-of-atmosphere and translate to radiance."""
+        Project to top-of-atmosphere and translate to radiance. The 
+        radiative transfer calculations may take place at higher resolution 
+        so we upsample surface terms.       
+        """
 
         x_surface, x_RT, x_instrument = self.unpack(x)
         if rfl is None:
             rfl = self.surface.calc_rfl(x_surface, geom)
         if Ls is None:
             Ls = self.surface.calc_Ls(x_surface, geom)
+
         rfl_hi = self.upsample(self.surface.wl, rfl)
         Ls_hi = self.upsample(self.surface.wl, Ls)
         return self.RT.calc_rdn(x_RT, rfl_hi, Ls_hi, geom)
@@ -214,30 +230,30 @@ class ForwardModel:
         # Unpack state vector
         x_surface, x_RT, x_instrument = self.unpack(x)
 
-        # Get partials of reflectance WRT state, and upsample
+        # Get partials of reflectance WRT surface state variables, upsample
         rfl = self.surface.calc_rfl(x_surface, geom)
         drfl_dsurface = self.surface.drfl_dsurface(x_surface, geom)
         rfl_hi = self.upsample(self.surface.wl, rfl)
         drfl_dsurface_hi = self.upsample(self.surface.wl, drfl_dsurface.T).T
 
-        # Get partials of emission WRT state, and upsample
+        # Get partials of emission WRT surface state variables, upsample
         Ls = self.surface.calc_Ls(x_surface, geom)
         dLs_dsurface = self.surface.dLs_dsurface(x_surface, geom)
         Ls_hi = self.upsample(self.surface.wl, Ls)
         dLs_dsurface_hi = self.upsample(self.surface.wl, dLs_dsurface.T).T
 
         # Derivatives of RTM radiance
-        drdn_dRT, drdn_dsurface = self.RT.drdn_dRT(x_RT, x_surface, rfl_hi,
-                                                   drfl_dsurface_hi, Ls_hi, dLs_dsurface_hi, geom)
+        drdn_dRT, drdn_dsurface = \
+            self.RT.drdn_dRT(x_RT, x_surface, rfl_hi, drfl_dsurface_hi, Ls_hi, 
+                            dLs_dsurface_hi, geom)
 
         # Derivatives of measurement, avoiding recalculation of rfl, Ls
-        dmeas_dsurface = self.instrument.sample(x_instrument, self.RT.wl,
-                                                drdn_dsurface.T).T
-        dmeas_dRT = self.instrument.sample(x_instrument, self.RT.wl,
-                                           drdn_dRT.T).T
+        dmeas_dsurface = \
+            self.instrument.sample(x_instrument, self.RT.wl, drdn_dsurface.T).T
+        dmeas_dRT = self.instrument.sample(x_instrument, self.RT.wl, drdn_dRT.T).T
         rdn_hi = self.calc_rdn(x, geom, rfl=rfl, Ls=Ls)
-        dmeas_dinstrument = self.instrument.dmeas_dinstrument(x_instrument,
-                                                              self.RT.wl, rdn_hi)
+        dmeas_dinstrument = \
+            self.instrument.dmeas_dinstrument(x_instrument, self.RT.wl, rdn_hi)
 
         # Put it all together
         K = s.zeros((self.n_meas, self.nstate), dtype=float)
@@ -269,6 +285,7 @@ class ForwardModel:
         dmeas_dinstrumentb = self.instrument.dmeas_dinstrumentb(
             x_instrument, self.RT.wl, rdn_hi)
 
+        # Put it together
         Kb = s.zeros((self.n_meas, self.nbvec), dtype=float)
         Kb[:, self.RT_b_inds] = dmeas_dRTb
         Kb[:, self.instrument_b_inds] = dmeas_dinstrumentb
@@ -309,13 +326,3 @@ class ForwardModel:
         x_instrument = x[self.idx_instrument]
         return x_surface, x_RT, x_instrument
 
-    def reconfigure(self, config_surface, config_rt, config_instrument):
-        """Reconfigure the components of the forward model. This could update
-        components' initialization values and/or priors, or (for the case
-        of a defined surface reflectance) the surface reflectance file itself."""
-
-        self.surface.reconfigure(config_surface)
-        self.RT.reconfigure(config_rt)
-        self.instrument.reconfigure(config_instrument)
-        self.init = s.concatenate((self.surface.init, self.RT.init,
-                                   self.instrument.init))

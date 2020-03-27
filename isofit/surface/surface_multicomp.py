@@ -178,7 +178,7 @@ class MultiComponentSurface(Surface):
         Cov_suffix = s.zeros((nsuffix, nsuffix))
         return block_diag(Cov_prefix, Cov, Cov_suffix)
 
-    def fit_params(self, rfl_meas, Ls, geom):
+    def fit_params(self, rfl_meas, geom, *args):
         """Given a reflectance estimate, fit a state vector."""
 
         x_surface = s.zeros(len(self.statevec))

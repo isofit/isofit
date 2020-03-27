@@ -17,26 +17,24 @@
     "surface": {
       "reflectance_file": "constant_surface_model.txt"
     },
-    "libradtran_radiative_transfer": {
-      "wavelength_file": "wavelengths.txt",
-      "libradtran_template_file": "libradtran.inp",
-      "lut_path": "lut_libradtran/",
+    "radiative_transfer": {
+      "libradtran_vswir": {
+        "wavelength_file": "wavelengths.txt",
+        "libradtran_template_file": "libradtran.inp",
+        "lut_path": "lut_libradtran/",
+        "lut_names": ["H2OSTR","AOT550"],
+        "statevector_names": ["H2OSTR","AOT550"]
+      },
       "statevector": {
         "H2OSTR": {
-          "bounds": [
-            1.5,
-            2.0
-          ],
+          "bounds": [1.5,2.0],
           "scale": 0.01,
           "prior_mean": 1.75,
           "prior_sigma": 0.5,
           "init": 1.75
         },
         "AOT550": {
-          "bounds": [
-            0.01,
-            0.1
-          ],
+          "bounds": [0.01,0.1],
           "scale": 0.01,
           "prior_mean": 0.05,
           "prior_sigma": 0.2,
@@ -44,14 +42,8 @@
         }
       },
       "lut_grid": {
-        "H2OSTR": [
-          1.5,
-          2.0
-        ],
-        "AOT550": [
-          0.01,
-          0.1
-        ]
+        "H2OSTR": [1.5,2.0],
+        "AOT550": [0.01,0.1]
       },
       "unknowns": {
         "H2O_ABSCO": 0.01
@@ -60,8 +52,7 @@
   },
   "inversion": {
     "windows": [
-      [
-        380.0,
+      [380.0,
         1300.0
       ],
       [
