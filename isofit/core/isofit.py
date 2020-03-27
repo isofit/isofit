@@ -149,7 +149,7 @@ class Isofit:
                     # Profile output
                     gbl, lcl = globals(), locals()
                     cProfile.runctx(
-                        'self.iv.invert(meas, geom, configs)', gbl, lcl)
+                        'self.iv.invert(meas, geom)', gbl, lcl)
 
                 # Write the spectra to disk
                 io.write_spectrum(row, col, self.states, meas, geom)
