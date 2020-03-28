@@ -111,6 +111,8 @@ def main():
         wl = np.array([float(w) for w in radiance_dataset.metadata['wavelength']])
         if 'fwhm' in radiance_dataset.metadata:
             fwhm = np.array([float(f) for f in radiance_dataset.metadata['fwhm']])
+        if 'FWHM' in radiance_dataset.metadata:
+            fwhm = np.array([float(f) for f in radiance_dataset.metadata['FWHM']])
         else:
             fwhm = np.ones(wl.shape) * (wl[1] - wl[0])
 
