@@ -24,53 +24,7 @@
 
 name = 'isofit'
 
-__version__ = '1.4.3'
-
-jit_enabled = False 
+__version__ = '2.0.0'
 
 warnings_enabled = False
 
-
-### Classes ###
-
-class conditional_decorator(object):
-    """Decorator class to conditionally apply a decorator to a function definition.
-
-    Attributes
-    ----------
-    decorator : object
-        a decorator to conditionally apply to the funcion
-    condition : bool
-        a boolean indicating whether the condition is met
-    """
-
-    def __init__(self, dec, condition, **kwargs):
-        """
-        Parameters
-        ----------
-        dec : object
-            a decorator to conditionally apply to the funcion
-        condition : bool
-            a boolean indicating whether the condition is met
-        """
-
-        self.decorator = dec
-        self.condition = condition
-        self.kwargs = kwargs
-
-    def __call__(self, func):
-        """
-        Parameters
-        ----------
-        func : object
-            a function to return with or without a decorator
-
-        Returns
-        -------
-        object
-            original function without decorator if condition is unmet
-        """
-
-        if not self.condition:
-            return func
-        return self.decorator(func, **self.kwargs)

@@ -33,8 +33,6 @@ from .common import svd_inv, svd_inv_sqrt, eps, combos, conditional_gaussian
 from .inverse_simple import invert_simple
 from .inverse import Inversion
 
-from .. import jit_enabled, conditional_decorator
-
 
 ### Variables ###
 
@@ -69,7 +67,6 @@ class GridInversion(Inversion):
         return x
 
 
-    @conditional_decorator(jit, jit_enabled)
     def calc_conditional_prior(self, x_free, geom):
         """Calculate prior distribution of radiance. This depends on the 
         location in the state space. Return the inverse covariance and 
@@ -80,13 +77,12 @@ class GridInversion(Inversion):
         Sa = self.fm.Sa(x, geom)
 
         # condition on fixed variables
-        xa_free, Sa_free = conditional_gaussian(xa, Sa, self.inds_fixed, 
-                self.x_fixed, self.inds_free)
+        xa_free, Sa_free = conditional_gaussian(xa, Sa, self.inds_free,
+                self.inds_fixed, self.x_fixed)
         Sa_free_inv, Sa_free_inv_sqrt = svd_inv_sqrt(Sa_free, 
                 hashtable=self.hashtable)
         return xa_free, Sa_free, Sa_free_inv, Sa_free_inv_sqrt
 
-    @conditional_decorator(jit, jit_enabled)
     def calc_posterior(self, x, geom, meas):
         """Calculate posterior distribution of state vector. This depends 
         both on the location in the state space and the radiance (via noise)."""
@@ -112,7 +108,6 @@ class GridInversion(Inversion):
                             hashtable=self.hashtable)
         return S_hat, K, G
 
-    @conditional_decorator(jit, jit_enabled)
     def calc_Seps(self, x, meas, geom):
         """Calculate (zero-mean) measurement distribution in radiance terms.  
         This depends on the location in the state space. This distribution is 
@@ -154,6 +149,7 @@ class GridInversion(Inversion):
 
 
         for combo in combos(self.integration_grid.values()):
+           print(combo)
 
            self.x_fixed = combo.copy()
            trajectory = []
@@ -173,7 +169,6 @@ class GridInversion(Inversion):
            # on the initial solution (a potential minor source of inaccuracy).
            Seps_inv, Seps_inv_sqrt = self.calc_Seps(x, meas, geom)
            
-           @conditional_decorator(jit, jit_enabled)
            def jac(x_free):
                """Calculate measurement Jacobian and prior Jacobians with 
                respect to cost function. This is the derivative of cost with
@@ -236,6 +231,8 @@ class GridInversion(Inversion):
                it = len(trajectory)
                rs = sum(pow(total_resid, 2))
                sm = self.fm.summarize(x, geom)
+               print('Iteration: %02i  Residual: %12.2f %s' %
+                            (it, rs, sm))
                logging.debug('Iteration: %02i  Residual: %12.2f %s' %
                              (it, rs, sm))
            

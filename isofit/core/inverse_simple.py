@@ -22,6 +22,7 @@ import sys
 import scipy as s
 from scipy.interpolate import interp1d
 from scipy.optimize import minimize_scalar as min1d
+from .common import conditional_gaussian
 
 
 def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
@@ -38,6 +39,15 @@ def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
         return x_RT
     x_new = x_RT.copy()
 
+    # Figure out which RT object we are using
+    my_RT = None
+    for rt_name in ['modtran_vswir', 'sixs_vswir', 'libradtran_vswir']:
+        if rt_name in RT.RTs:
+            my_RT = RT.RTs[rt_name]
+            continue
+    if not my_RT:
+        raise ValueError('No suiutable RT object for initialization')
+
     # Band ratio retrieval of H2O.  Depending on the radiative transfer
     # model we are using, this state parameter could go by several names.
     for h2oname in ['H2OSTR', 'h2o']:
@@ -46,11 +56,11 @@ def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
             continue
 
         # ignore unused names
-        if h2oname not in RT.lut_names:
+        if h2oname not in my_RT.lut_names:
             continue
 
         # find the index in the lookup table associated with water vapor
-        ind_lut = RT.lut_names.index(h2oname)
+        ind_lut = my_RT.lut_names.index(h2oname)
         ind_sv = RT.statevec.index(h2oname)
         h2os, ratios = [], []
 
@@ -58,15 +68,15 @@ def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
         # calculating the band ratio that we would see if this were the
         # atmospheric H2O content.  It assumes that defaults for all other
         # atmospheric parameters (such as aerosol, if it is there).
-        for h2o in RT.lut_grids[ind_lut]:
+        for h2o in my_RT.lut_grids[ind_lut]:
 
             # Get Atmospheric terms at high spectral resolution
             x_RT_2 = x_RT.copy()
             x_RT_2[ind_sv] = h2o
-            rhoatm_hi, sphalb_hi, transm_hi, transup_hi = RT.get(x_RT_2, geom)
-            rhoatm = instrument.sample(x_instrument, RT.wl, rhoatm_hi)
-            transm = instrument.sample(x_instrument, RT.wl, transm_hi)
-            sphalb = instrument.sample(x_instrument, RT.wl, sphalb_hi)
+            rhi = RT.get(x_RT_2, geom)
+            rhoatm = instrument.sample(x_instrument, RT.wl, rhi['rhoatm'])  # _hi)
+            transm = instrument.sample(x_instrument, RT.wl, rhi['transm'])  # _hi)
+            sphalb = instrument.sample(x_instrument, RT.wl, rhi['sphalb'])  # _hi)
             solar_irr = instrument.sample(x_instrument, RT.wl, RT.solar_irr)
 
             # Assume no surface emission.  "Correct" the at-sensor radiance
@@ -92,13 +102,13 @@ def invert_algebraic(surface, RT, instrument, x_surface, x_RT, x_instrument, mea
 
     # Get atmospheric optical parameters (possibly at high
     # spectral resolution) and resample them if needed.
-    rhoatm_hi, sphalb_hi, transm_hi, transup_hi = RT.get(x_RT, geom)
+    rhi = RT.get(x_RT, geom)
     wl, fwhm = instrument.calibration(x_instrument)
-    rhoatm = instrument.sample(x_instrument, RT.wl, rhoatm_hi)
-    transm = instrument.sample(x_instrument, RT.wl, transm_hi)
+    rhoatm = instrument.sample(x_instrument, RT.wl, rhi['rhoatm'])
+    transm = instrument.sample(x_instrument, RT.wl, rhi['transm'])
     solar_irr = instrument.sample(x_instrument, RT.wl, RT.solar_irr)
-    sphalb = instrument.sample(x_instrument, RT.wl, sphalb_hi)
-    transup = instrument.sample(x_instrument, RT.wl, transup_hi)
+    sphalb = instrument.sample(x_instrument, RT.wl, rhi['sphalb'])
+    transup = instrument.sample(x_instrument, RT.wl, rhi['transup'])
     coszen = RT.coszen
 
     # Calculate the initial emission and subtract from the measurement.
@@ -151,20 +161,47 @@ def invert_simple(forward, meas, geom):
     # via Lambertian approximations to get reflectance
     x_surface, x_RT, x_instrument = forward.unpack(x)
     rfl_est, Ls_est, coeffs = invert_algebraic(surface, RT,
-                                               instrument, x_surface, x_RT, x_instrument, meas, geom)
+                                               instrument, x_surface, x_RT, 
+                                               x_instrument, meas, geom)
 
-    # If there is an emissive (hot) surface, modify the reflectance and
-    # upward additive radiance appropriately.
-    # if surface.emissive:
-    #    rfl_est = forward.surface.conditional_solrfl(rfl_est, geom)
-    #    Ls_est  = estimate_Ls(coeffs, rfl_est, meas, geom)
-    # else:
-    #    Ls_est = None
+    # Condition thermal part on the VSWIR portion. Only works for 
+    # Multicomponent surfaces.
+    if any(forward.surface.wl > 3000):
+        rfl_idx = s.array([i for i,v in enumerate(forward.surface.statevec) 
+                            if 'RFL' in v])
+        tir_idx = s.where(forward.surface.wl > 3000)[0]
+        vswir_idx = s.where(forward.surface.wl < 3000)[0]
+        vswir_idx = s.array([i for i in vswir_idx if i in forward.surface.idx_ref])
+        mu = forward.surface.xa(x_surface, geom)
+        C = forward.surface.Sa(x_surface, geom)
+        rfl_est[tir_idx], rfl_est_C = \
+                conditional_gaussian(mu, C, tir_idx, vswir_idx, rfl_est[vswir_idx])
+    
+    ##############################################################################
+    # This will generate nonsense results for VSWIR-only runs. However, it doesn't
+    # matter as these values will be ignored in the fit_params function if the
+    # SurfaceThermal is not being used.
 
-    # Now, fit the reflectance model parameters to our estimated reflectance
-    # spectrum.  This will be simple for chnanelwise parameterizations but
-    # possibly complex for more sophisticated parameterizations (e.g. mixture
-    # models, etc.)
+    # Estimate the total radiance at sensor, leaving out the surface emission
+    rhoatm, sphalb, transm, solar_irr, coszen, transup = coeffs
+    L_atm = RT.get_L_atm(x_RT, geom)
+    L_down = RT.get_L_down(x_RT, geom)
+    L_total_without_surface_emission = \
+            L_atm + L_down * rfl_est * transm / (1. - sphalb * rfl_est)
+    clearest_wavelengths = [8304.61, 8375.99, 8465.06, 8625., 8748.78, 
+                            8872.20, 8960.40, 10125., 10390.00, 10690.00]
+    
+    # This is fragile if other instruments have different wavelength
+    # spacing or range
+    clearest_indices = [s.argmin(s.absolute(RT.wl - w)) 
+            for w in clearest_wavelengths]
+    ##############################################################################
 
-    x[forward.idx_surface] = forward.surface.fit_params(rfl_est, Ls_est, geom)
+    # The parameters on the second line are only used when the ThermalSurface
+    # is used. Otherwise, they are ignored.
+    x[forward.idx_surface] = forward.surface.fit_params(rfl_est, geom,
+        meas, L_total_without_surface_emission, transup, clearest_indices)
+
+    geom.x_surf_init = x[forward.idx_surface]
+    geom.x_RT_init = x[forward.idx_RT]
     return x

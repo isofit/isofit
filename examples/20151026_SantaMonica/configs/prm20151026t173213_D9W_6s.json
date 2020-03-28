@@ -29,21 +29,8 @@
       "surface_file": "../data/prm20151028_surface_coastal_model.mat"
     },
 
-    "sixs_radiative_transfer": {
-      "irradiance_file":         "../data/prism_optimized_irr.dat",
-      "earth_sun_distance_file": "../../../data/earth_sun_distance.txt",
-      "wavelength_file":         "../data/20140221_PRISM_wavelengths_truncated_clip.txt",
-      "sixs_installation":       "${SIXS_DIR}",
-      "solzen": 55.19497,
-      "elev": 0.0,
-      "alt": 20.0,
-      "solaz":  141.73923,
-      "viewzen":  9.97147,
-      "viewaz": 234.70113,
-      "month": 10,
-      "day": 26,
-      "lut_path":"../lut/",
-      "domain": {"start": 350, "end": 2520, "step": 0.1},
+    "radiative_transfer": 
+    { 
       "statevector": {
         "H2OSTR": {
           "bounds": [0.5, 1.0],
@@ -66,9 +53,27 @@
       },
       "unknowns": {
         "H2O_ABSCO": 0.01
+      },
+      "sixs_vswir": {
+        "irradiance_file":         "../data/prism_optimized_irr.dat",
+        "earth_sun_distance_file": "../../../data/earth_sun_distance.txt",
+        "wavelength_file":         "../data/20140221_PRISM_wavelengths_truncated_clip.txt",
+        "sixs_installation":       "${SIXS_DIR}",
+        "solzen": 55.21,
+        "solaz": 141.70,
+        "elev": 0.0,
+        "alt": 20.0,
+        "viewzen": 202.89063,
+        "viewaz": 1.08,
+        "month": 10,
+        "day": 26,
+        "lut_path":"../lut/",
+        "domain": {"start": 350, "end": 2520, "step": 0.1},
+        "lut_names": ["H2OSTR","AOT550"],
+        "statevector_names": ["H2OSTR", "AOT550"]
       }
     }
-  },
+  },   
 
   "inversion": {
     "windows": [[400.0,1000.0]]

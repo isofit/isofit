@@ -165,8 +165,11 @@ class SpectrumFile:
                         logging.error('Must specify %s' % (k))
                         raise IOError('Must specify %s' % (k))
 
-                self.file = envi.create_image(fname+'.hdr', meta, ext='',
+                if os.path.isfile(fname+'.hdr') is False:
+                    self.file = envi.create_image(fname+'.hdr', meta, ext='',
                                               force=True)
+                else:
+                    self.file = envi.open(fname+'.hdr')
 
             self.open_map_with_retries()
 
@@ -406,41 +409,36 @@ class IO:
                 self.iter_inds.append([row, col])
         self.iter_inds = s.array(self.iter_inds)
 
-    def __iter__(self):
-        """Reset the iterator."""
+    def get_components_at_index(self, index):
+        """
+        Get the spectrum from the file at the specified index.  Helper/
+        parallel enabling function.
 
-        self.iter = 0
-        return self
+        :param index: reference location for iter_inds
 
-    def __next__(self):
-        """Get the next spectrum from the file. Turn the iteration number
-        into row/column indices and read from all input products."""
+        :return: success: boolean flag indicating if data present
+        :return: r: row index
+        :return: c: column index
+        :return: meas: measured radiance file
+        :return: geom: set up specified geometry files
+        :return: updates: set of prior reference files
+        """
+        # Determine the appropriate row, column index. and initialize the
+        # data dictionary with empty entries.
+        r, c = self.iter_inds[index]
+        data = dict([(i, None) for i in self.possible_inputs])
+        logging.debug('Row %i Column %i' % (r, c))
 
-        # Try to read data until we hit the end or find good values
-        success = False
-        while not success:
-            if self.iter == len(self.iter_inds):
-                self.flush_buffers()
-                raise StopIteration
+        # Read data from any of the input files that are defined.
+        for source in self.infiles:
+            data[source] = self.infiles[source].read_spectrum(r, c)
+            if (index % flush_rate) == 0:
+                self.infiles[source].flush_buffers()
 
-            # Determine the appropriate row, column index. and initialize the
-            # data dictionary with empty entries.
-            r, c = self.iter_inds[self.iter]
-            self.iter = self.iter + 1
-            data = dict([(i, None) for i in self.possible_inputs])
-            logging.debug('Row %i Column %i' % (r, c))
-
-            # Read data from any of the input files that are defined.
-            for source in self.infiles:
-                data[source] = self.infiles[source].read_spectrum(r, c)
-                if (self.iter % flush_rate) == 0:
-                    self.infiles[source].flush_buffers()
-
-            # Check for any bad data flags
-            success = True
-            for source in self.infiles:
-                if s.all(abs(data[source]-self.infiles[source].flag) < eps):
-                    success = False
+        # Check for any bad data flags
+        for source in self.infiles:
+            if s.all(abs(data[source] - self.infiles[source].flag) < eps):
+                return False, r, c, None, None, None
 
         # We apply the calibration correciton here for simplicity.
         meas = data['measured_radiance_file']
@@ -473,6 +471,31 @@ class IO:
             }
         )
 
+        return True, r, c, meas, geom, updates
+
+
+    def __iter__(self):
+        """ Reset the iterator"""
+
+        self.iter = 0
+        return self
+
+    def __next__(self):
+        """ Get the next spectrum from the file.  Turn the iteration number
+            into row/column indices and read from all input products."""
+
+        # Try to read data until we hit the end or find good values
+        success = False
+        while not success:
+            if self.iter == len(self.iter_inds):
+                self.flush_buffers()
+                raise StopIteration
+
+            # Determine the appropriate row, column index. and initialize the
+            # data dictionary with empty entries.
+            success, r, c, meas, geom, updates = self.get_components_at_index(self.iter)
+            self.iter = self.iter + 1
+
         return r, c, meas, geom, updates
 
     def check_wavelengths(self, wl):
@@ -488,7 +511,7 @@ class IO:
             for name, fi in file_dictionary.items():
                 fi.flush_buffers()
 
-    def write_spectrum(self, row, col, states, meas, geom):
+    def write_spectrum(self, row, col, states, meas, geom, flush_immediately=False):
         """Write data from a single inversion to all output buffers."""
 
         self.writes = self.writes + 1
@@ -549,6 +572,11 @@ class IO:
                                                        self.fm.RT, self.fm.instrument, x_surface, x_RT,
                                                        x_instrument, meas, geom)
             rhoatm, sphalb, transm, solar_irr, coszen, transup = coeffs
+
+            L_atm = self.fm.RT.get_L_atm(x_RT, geom)
+            L_down = self.fm.RT.get_L_down(x_RT, geom)
+            L_up = self.fm.RT.get_L_up(x_RT, geom)
+
             atm = s.column_stack(list(coeffs[:4]) +
                                  [s.ones((len(wl), 1)) * coszen])
 
@@ -591,7 +619,7 @@ class IO:
         for product in self.outfiles:
             logging.debug('IO: Writing '+product)
             self.outfiles[product].write_spectrum(row, col, to_write[product])
-            if (self.writes % flush_rate) == 0:
+            if (self.writes % flush_rate) == 0 or flush_immediately:
                 self.outfiles[product].flush_buffers()
 
         # Special case! samples file is matlab format.
@@ -605,12 +633,15 @@ class IO:
 
             logging.debug('IO: Writing data_dump_file')
             x = state_est
+            xall = states
             Seps_inv, Seps_inv_sqrt = self.iv.calc_Seps(x, meas, geom)
             meas_est_window = meas_est[self.iv.winidx]
             meas_window = meas[self.iv.winidx]
             xa, Sa, Sa_inv, Sa_inv_sqrt = self.iv.calc_prior(x, geom)
             prior_resid = (x - xa).dot(Sa_inv_sqrt)
             rdn_est = self.fm.calc_rdn(x, geom)
+            rdn_est_all = s.array([self.fm.calc_rdn(xtemp, geom) for xtemp in states])
+            
             x_surface, x_RT, x_instrument = self.fm.unpack(x)
             Kb = self.fm.Kb(x, geom)
             xinit = invert_simple(self.fm, meas, geom)
@@ -632,7 +663,9 @@ class IO:
                 'prior_Cov': Sa,
                 'meas': meas,
                 'rdn_est': rdn_est,
+                'rdn_est_all': rdn_est_all,
                 'x': x,
+                'xall': xall,
                 'x_surface': x_surface,
                 'x_RT': x_RT,
                 'x_instrument': x_instrument,
@@ -646,13 +679,18 @@ class IO:
                 'A': A,
                 'cost_jac_meas': cost_jac_meas,
                 'winidx': self.iv.winidx,
+                'windows': self.iv.windows,
                 'prior_resid': prior_resid,
                 'noise_Cov': Sy,
                 'xinit': xinit,
                 'rhoatm': rhoatm,
                 'sphalb': sphalb,
                 'transm': transm,
-                'solar_irr': solar_irr
+                'transup': transup,
+                'solar_irr': solar_irr,
+                'L_atm': L_atm,
+                'L_down': L_down,
+                'L_up': L_up
             }
             s.io.savemat(self.output['data_dump_file'], mdict)
 

@@ -1,13 +1,9 @@
 import numpy as np
-from isofit.core.common import max_table_size, binary_table, eps, combos
+from isofit.core.common import max_table_size, eps, combos
 
 
 def test_max_table_size():
     assert max_table_size == 500
-
-
-def test_binary_table():
-    assert len(binary_table) == 7
 
 
 def test_eps():

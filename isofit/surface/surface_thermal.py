@@ -26,7 +26,7 @@ from ..core.common import emissive_radiance, eps
 from .surface_multicomp import MultiComponentSurface
 
 
-class MixBBSurface(MultiComponentSurface):
+class ThermalSurface(MultiComponentSurface):
     """A model of the surface based on a Mixture of a hot Black Body and 
         Multicomponent cold surfaces."""
 
@@ -36,18 +36,11 @@ class MixBBSurface(MultiComponentSurface):
         MultiComponentSurface.__init__(self, config)
         # Handle additional state vector elements
         self.statevec.extend(['SURF_TEMP_K'])
-        # self.init.extend([270.0])
-        self.init.extend([6000.0])
-        self.scale.extend([1000.0])
-        self.bounds.extend([[250.0, 10000.0]])
+        self.init.extend([300.0])  # This is overwritten below
+        self.scale.extend([100.0])
+        self.bounds.extend([[250.0, 400.0]])
         self.surf_temp_ind = len(self.statevec)-1
         # Treat emissive surfaces as a fractional blackbody
-        self.statevec.extend(['BB_MIX_FRAC'])
-        self.scale.extend([1.0])
-        # self.init.extend([0.1])
-        self.init.extend([0.5])
-        self.bounds.extend([[0, 1]])
-        self.bb_frac_ind = len(self.statevec)-1
         self.emissive = True
         self.n_state = len(self.init)
 
@@ -58,39 +51,38 @@ class MixBBSurface(MultiComponentSurface):
 
         mu = MultiComponentSurface.xa(self, x_surface, geom)
         mu[self.surf_temp_ind] = self.init[self.surf_temp_ind]
-        mu[self.bb_frac_ind] = self.init[self.bb_frac_ind]
         return mu
 
     def Sa(self, x_surface, geom):
         """Covariance of prior distribution, calculated at state x."""
 
         Cov = MultiComponentSurface.Sa(self, x_surface, geom)
-        t = s.array([[(10.0 * self.scale[self.surf_temp_ind])**2]])
+        t = s.array([[0.1]])  # Hard coded! Yikes!
         Cov[self.surf_temp_ind, self.surf_temp_ind] = t
-        f = s.array([[(10.0 * self.scale[self.bb_frac_ind])**2]])
-        Cov[self.bb_frac_ind, self.bb_frac_ind] = f
         return Cov
 
-    def fit_params(self, rfl_meas, Ls, geom):
+    def fit_params(self, rfl_meas, geom, meas, L_total_without_surface_emission, 
+                   trans_ground_to_sensor, clearest_indices):
         """Given a reflectance estimate and one or more emissive parameters, 
           fit a state vector."""
-        
-        # This surface model needs to be reviewed for correctness before using.
-        raise NotImplementedError
 
         def err(z):
-            T, bb_frac = z
-            emissivity = s.ones(self.n_wl, dtype=float)
-            Ls_est, d = emissive_radiance(emissivity, T, self.wl)
-            resid = Ls_est * bb_frac - Ls
+            T = z
+            emissivity = 1.00  # Should be conditional emissivity?
+            Ls_est, d = emissive_radiance(emissivity, T, self.wl[clearest_indices])
+            resid = trans_ground_to_sensor[clearest_indices]*Ls_est + \
+                    L_total_without_surface_emission[clearest_indices] - \
+                    meas[clearest_indices]
             return sum(resid**2)
 
-        x_surface = MultiComponentSurface.fit_params(self, rfl_meas, Ls, geom)
-        T, bb_frac = minimize(err, s.array([300, 0.1])).x
-        bb_frac = max(eps, min(bb_frac, 1.0-eps))
-        T = max(self.bounds[-2][0]+eps, min(T, self.bounds[-2][1]-eps))
-        x_surface[self.bb_frac_ind] = bb_frac
+        x_surface = MultiComponentSurface.fit_params(self, rfl_meas, geom)
+
+        T = minimize(err, s.array([self.init[self.surf_temp_ind]])).x
+        T = max(self.bounds[self.surf_temp_ind][0]+eps,
+                min(T, self.bounds[self.surf_temp_ind][1]-eps))
         x_surface[self.surf_temp_ind] = T
+        self.init[self.surf_temp_ind] = T  # Kind of hacky
+
         return x_surface
 
     def conditional_solrfl(self, rfl_est, geom):
@@ -130,7 +122,6 @@ class MixBBSurface(MultiComponentSurface):
         vector, calculated at x_surface."""
 
         dlamb = MultiComponentSurface.dlamb_dsurface(self, x_surface, geom)
-        dlamb[:, self.bb_frac_ind] = 0
         dlamb[:, self.surf_temp_ind] = 0
         return dlamb
 
@@ -138,29 +129,36 @@ class MixBBSurface(MultiComponentSurface):
         """Emission of surface, as a radiance."""
 
         T = x_surface[self.surf_temp_ind]
-        frac = x_surface[self.bb_frac_ind]
-        emissivity = s.ones(self.n_wl, dtype=float)
+        #emissivity = s.ones(self.n_wl, dtype=float)
+        rfl = self.calc_rfl(x_surface, geom)
+        rfl[rfl > 1.] = 1.
+        emissivity = 1 - rfl
         Ls, dLs_dT = emissive_radiance(emissivity, T, self.wl)
-        return Ls * frac
+        return Ls
 
     def dLs_dsurface(self, x_surface, geom):
         """Partial derivative of surface emission with respect to state vector, 
         calculated at x_surface."""
 
-        dLs_dsurface = MultiComponentSurface.dLs_dsurface(self, x_surface,
-                                                          geom)
+        # dLs_dsurface = MultiComponentSurface.dLs_dsurface(self, x_surface,
+        #                                                  geom)
         T = x_surface[self.surf_temp_ind]
-        frac = x_surface[self.bb_frac_ind]
-        emissivity = s.ones(self.n_wl, dtype=float)
+        rfl = self.calc_rfl(x_surface, geom)
+        emissivity = 1 - rfl
         Ls, dLs_dT = emissive_radiance(emissivity, T, self.wl)
-        dLs_dsurface[:, self.surf_temp_ind] = dLs_dT * frac
-        dLs_dsurface[:, self.bb_frac_ind] = Ls
+        dLs_drfl = s.diag(-1*Ls)
+
+        #frac = x_surface[self.bb_frac_ind]
+        #emissivity = s.ones(self.n_wl, dtype=float)
+        # dLs_dsurface[:, self.surf_temp_ind] = dLs_dT *
+
+        dLs_dsurface = s.vstack([dLs_drfl, dLs_dT]).T
+
         return dLs_dsurface
 
     def summarize(self, x_surface, geom):
         """Summary of state vector."""
 
         mcm = MultiComponentSurface.summarize(self, x_surface, geom)
-        msg = ' Kelvins: %5.1f  BlackBody Fraction %4.2f ' % tuple(
-            x_surface[-2:])
+        msg = ' Kelvins: %5.1f ' % tuple(x_surface[-1:])
         return msg+mcm
