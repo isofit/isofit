@@ -14,35 +14,14 @@ import json
 import gdal
 import numpy as np
 from sklearn import mixture
-import scipy.linalg
 
 from isofit.utils import segment, extractions, empirical_line
-from isofit.core import isofit
+from isofit.core import isofit, common
 
 EPS = 1e-6
 CHUNKSIZE = 256
 SEGMENTATION_SIZE = 400
 NUM_INTEGRATIONS = 400
-
-NUM_ELEV_LUT_ELEMENTS = 1
-NUM_H2O_LUT_ELEMENTS = 3
-NUM_TO_SENSOR_AZIMUTH_LUT_ELEMENTS = 1
-NUM_TO_SENSOR_ZENITH_LUT_ELEMENTS = 1
-
-# Setting any of these to '1' will also remove that aerosol from the statevector
-NUM_AEROSOL_1_LUT_ELEMENTS = 1
-NUM_AEROSOL_2_LUT_ELEMENTS = 3
-NUM_AEROSOL_3_LUT_ELEMENTS = 3
-
-AEROSOL_1_LUT_RANGE = [0.001, 0.5]
-AEROSOL_2_LUT_RANGE = [0.001, 0.5]
-AEROSOL_3_LUT_RANGE = [0.001, 0.5]
-
-H2O_MIN = 0.2
-
-# Minimum degree-spacing for zenith angle.  Overule the number of lut elements if 
-# step size is smaller than this value
-ZENITH_MIN_SPACING = 2
 
 UNCORRELATED_RADIOMETRIC_UNCERTAINTY = 0.02
 
@@ -65,6 +44,7 @@ def main():
     parser.add_argument('--rdn_factors_path', type=str)
     parser.add_argument('--surface_path', type=str)
     parser.add_argument('--channelized_uncertainty_path', type=str)
+    parser.add_argument('--lut_config_file', type=str)
     parser.add_argument('--logging_level', type=str, default="INFO")
     parser.add_argument('--log_file', type=str, default=None)
 
@@ -80,6 +60,8 @@ def main():
     else:
         logging.basicConfig(format='%(message)s', level=args.logging_level, filename=args.log_file)
 
+    lut_params = LUTConfig(args.lut_config_file)
+
     paths = Pathnames(args)
     paths.make_directories()
     paths.stage_files()
@@ -94,10 +76,12 @@ def main():
         # parse flightline ID (AVIRIS-CL assumptions)
         dt = datetime.strptime('20{}t000000'.format(paths.fid[1:7]), '%Y%m%dt%H%M%S')
         dayofyear = dt.timetuple().tm_yday
-
+    elif args.sensor == 'neon':
+        dt = datetime.strptime(paths.fid[6:], 'NIS01_%Y%m%dt_%H%M%S')
+        dayofyear = dt.timetuple().tm_yday
 
     h_m_s, day_increment, mean_path_km, mean_to_sensor_azimuth, mean_to_sensor_zenith, valid, \
-    to_sensor_azimuth_lut_grid, to_sensor_zenith_lut_grid = get_metadata_from_obs(paths.obs_working_path)
+    to_sensor_azimuth_lut_grid, to_sensor_zenith_lut_grid = get_metadata_from_obs(paths.obs_working_path, lut_params)
 
     if day_increment:
         dayofyear += 1
@@ -140,7 +124,7 @@ def main():
                               fwhm[:, np.newaxis]], axis=1)
     np.savetxt(paths.wavelength_path, wl_data, delimiter=' ')
 
-    mean_latitude, mean_longitude, mean_elevation_km, elevation_lut_grid = get_metadata_from_loc(paths.loc_working_path)
+    mean_latitude, mean_longitude, mean_elevation_km, elevation_lut_grid = get_metadata_from_loc(paths.loc_working_path, lut_params)
 
     # Need a 180 - here, as this is already in MODTRAN convention
     mean_altitude_km = mean_elevation_km + np.cos(np.deg2rad(180 - mean_to_sensor_zenith)) * mean_path_km
@@ -178,7 +162,7 @@ def main():
     h2o_est = h2o.read_band(-1)[:].flatten()
 
     h2o_lut_grid = np.linspace(np.percentile(
-        h2o_est[h2o_est > H2O_MIN], 5), np.percentile(h2o_est[h2o_est > H2O_MIN], 95), NUM_H2O_LUT_ELEMENTS)
+        h2o_est[h2o_est > lut_params.h2o_min], 5), np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 95), lut_params.num_h2o_lut_elements)
 
     logging.info('Full (non-aerosol) LUTs:\nElevation: {}\nTo-sensor azimuth: {}\nTo-sensor zenith: {}\nh2o-vis: {}:'.format(elevation_lut_grid, to_sensor_azimuth_lut_grid, to_sensor_zenith_lut_grid, h2o_lut_grid))
 
@@ -234,6 +218,8 @@ class Pathnames():
         elif args.sensor == 'avcl':
             self.fid = split(args.input_radiance)[-1][:16]
             logging.info('Flightline ID: %s' % self.fid)
+        elif args.sensor == 'neon':
+            self.fid = split(args.input_radiance)[-1][:21]
 
         # Names from inputs
         self.aerosol_climatology = args.aerosol_climatology_path
@@ -358,7 +344,37 @@ class SerialEncoder(json.JSONEncoder):
             return super(SerialEncoder, self).default(obj)
 
 
-def load_climatology(config_path: str, latitude: float, longitude: float, acquisition_datetime: datetime, isofit_path: str):
+class LUTConfig:
+
+    def __init__(self, lut_config_file):
+        lut_config = common.load_config(lut_config_file)
+
+        self.num_elev_lut_elements = 1
+        self.num_h2o_lut_elements = 3
+        self.num_to_sensor_azimuth_lut_elements = 1
+        self.num_to_sensor_zenith_lut_elements = 1
+
+        # Setting any of these to '1' will also remove that aerosol from the statevector
+        self.num_aerosol_1_lut_elements = 1
+        self.num_aerosol_2_lut_elements = 3
+        self.num_aerosol_3_lut_elements = 3
+
+        self.aerosol_1_lut_range = [0.001, 0.5]
+        self.aerosol_2_lut_range = [0.001, 0.5]
+        self.aerosol_3_lut_range = [0.001, 0.5]
+
+        self.h2o_min = 0.2
+
+        self.zenith_min_spacing = 2
+
+        # overwrite anything that comes in from the config file
+        for key in lut_config:
+            if key in self.__dict__:
+                setattr(self, key, lut_config[key])
+
+
+def load_climatology(config_path: str, latitude: float, longitude: float, acquisition_datetime: datetime,
+                     isofit_path: str, lut_params: LUTConfig):
     """ Load climatology data, based on location and configuration
     Args:
         config_path: path to the base configuration directory for isofit
@@ -366,6 +382,7 @@ def load_climatology(config_path: str, latitude: float, longitude: float, acquis
         longitude: latitude to set for the segment (mean of acquisition suggested)
         acquisition_datetime: datetime to use for the segment( mean of acquisition suggested)
         isofit_path: base path to isofit installation (needed for data path references)
+        lut_params: parameters to use to define lut grid
 
     :Returns
         aerosol_state_vector: A dictionary that defines the aerosol state vectors for isofit
@@ -376,8 +393,8 @@ def load_climatology(config_path: str, latitude: float, longitude: float, acquis
     aerosol_model_path = join(isofit_path, 'data', 'aerosol_model.txt')
     aerosol_state_vector = {}
     aerosol_lut_grid = {}
-    aerosol_lut_ranges = [AEROSOL_1_LUT_RANGE, AEROSOL_2_LUT_RANGE, AEROSOL_3_LUT_RANGE]
-    num_aerosol_lut_elements = [NUM_AEROSOL_1_LUT_ELEMENTS, NUM_AEROSOL_2_LUT_ELEMENTS, NUM_AEROSOL_3_LUT_ELEMENTS]
+    aerosol_lut_ranges = [lut_params.aerosol_1_lut_range, lut_params.aerosol_2_lut_range, lut_params.aerosol_2_lut_range]
+    num_aerosol_lut_elements = [lut_params.num_aerosol_1_lut_elements, lut_params.num_aerosol_2_lut_elements, lut_params.num_aerosol_3_lut_elements]
     for _a, alr in enumerate(aerosol_lut_ranges):
         if num_aerosol_lut_elements[_a] != 1:
             aerosol_state_vector['AERFRAC_{}'.format(_a)] = {
@@ -496,13 +513,14 @@ def find_angular_seeds(angle_data_input: np.array, num_points: int, units: str =
         return central_angles
 
 
-def get_metadata_from_obs(obs_file: str, trim_lines: int = 5,
+def get_metadata_from_obs(obs_file: str, lut_params: LUTConfig, trim_lines: int = 5,
                           max_flight_duration_h: int = 8, nodata_value: float = -9999):
     """ Get metadata needed for complete runs from the observation file
     (bands: path length, to-sensor azimuth, to-sensor zenith, to-sun azimuth,
     to-sun zenith, phase, slope, aspect, cosine i, UTC time).
     Args:
         obs_file: file name to pull data from
+        lut_params: parameters to use to define lut grid
         trim_lines: number of lines to ignore at beginning and end of file (good if lines contain values that are
                     erroneous but not nodata
         max_flight_duration_h: maximum length of the current acquisition, used to check if we've lapped a UTC day
@@ -553,17 +571,17 @@ def get_metadata_from_obs(obs_file: str, trim_lines: int = 5,
     mean_to_sensor_zenith = 180 - find_angular_seeds(to_sensor_zenith[valid], 1)
 
     #geom_margin = EPS * 2.0
-    if NUM_TO_SENSOR_ZENITH_LUT_ELEMENTS == 1:
+    if lut_params.num_to_sensor_zenith_lut_elements == 1:
         to_sensor_zenith_lut_grid = None
     else:
-        to_sensor_zenith_lut_grid = np.sort(180 - find_angular_seeds(to_sensor_zenith[valid], NUM_TO_SENSOR_ZENITH_LUT_ELEMENTS))
-        if (to_sensor_zenith_lut_grid[1] - to_sensor_zenith_lut_grid[0] < ZENITH_MIN_SPACING):
+        to_sensor_zenith_lut_grid = np.sort(180 - find_angular_seeds(to_sensor_zenith[valid], lut_params.num_to_sensor_zenith_lut_elements))
+        if (to_sensor_zenith_lut_grid[1] - to_sensor_zenith_lut_grid[0] < lut_params.zenith_min_spacing):
             to_sensor_zenith_lut_grid = None
 
-    if NUM_TO_SENSOR_AZIMUTH_LUT_ELEMENTS == 1:
+    if lut_params.num_to_sensor_azimuth_lut_elements == 1:
         to_sensor_azimuth_lut_grid = None
     else:
-        to_sensor_azimuth_lut_grid = np.sort(np.array([x % 360 for x in find_angular_seeds(to_sensor_azimuth[valid], NUM_TO_SENSOR_AZIMUTH_LUT_ELEMENTS)]))
+        to_sensor_azimuth_lut_grid = np.sort(np.array([x % 360 for x in find_angular_seeds(to_sensor_azimuth[valid], lut_params.num_to_sensor_azimuth_lut_elements)]))
 
     del to_sensor_azimuth
     del to_sensor_zenith
@@ -598,10 +616,11 @@ def get_metadata_from_obs(obs_file: str, trim_lines: int = 5,
            to_sensor_azimuth_lut_grid, to_sensor_zenith_lut_grid
 
 
-def get_metadata_from_loc(loc_file: str, trim_lines: int = 5, nodata_value: float = -9999):
+def get_metadata_from_loc(loc_file: str, lut_params: LUTConfig, trim_lines: int = 5, nodata_value: float = -9999):
     """ Get metadata needed for complete runs from the location file (bands long, lat, elev).
     Args:
         loc_file: file name to pull data from
+        lut_params: parameters to use to define lut grid
         trim_lines: number of lines to ignore at beginning and end of file (good if lines contain values that are
                     erroneous but not nodata
         nodata_value: value to ignore from location file
@@ -632,14 +651,14 @@ def get_metadata_from_loc(loc_file: str, trim_lines: int = 5, nodata_value: floa
     mean_elevation_km = np.mean(loc_data[2,valid]) / 1000.0
 
     # make elevation grid
-    if NUM_ELEV_LUT_ELEMENTS == 1:
+    if lut_params.num_elev_lut_elements == 1:
         elevation_lut_grid = None
     else:
         min_elev = np.min(loc_data[2, valid])/1000.
         max_elev = np.max(loc_data[2, valid])/1000.
         elevation_lut_grid = np.linspace(max(min_elev, EPS),
                                          max_elev,
-                                         NUM_ELEV_LUT_ELEMENTS)
+                                         lut_params.num_elev_lut_elements)
 
     return mean_latitude, mean_longitude, mean_elevation_km, elevation_lut_grid
 
@@ -711,12 +730,14 @@ def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array):
         fout.write(json.dumps(isofit_config_h2o, cls=SerialEncoder, indent=4, sort_keys=True))
 
 
-def build_main_config(paths: Pathnames, h2o_lut_grid: np.array = None, elevation_lut_grid: np.array = None,
-                      to_sensor_azimuth_lut_grid: np.array = None, to_sensor_zenith_lut_grid: np.array = None,
-                      mean_latitude: float = None, mean_longitude: float = None, dt: datetime = None):
+def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.array = None,
+                      elevation_lut_grid: np.array = None, to_sensor_azimuth_lut_grid: np.array = None,
+                      to_sensor_zenith_lut_grid: np.array = None, mean_latitude: float = None,
+                      mean_longitude: float = None, dt: datetime = None):
     """ Write an isofit config file for the main solve, using the specified pathnames and all given info
     Args:
         paths: object containing references to all relevant file locations
+        lut_params: configuration parameters for the lut grid
         h2o_lut_grid: the water vapor look up table grid isofit should use for this solve
         elevation_lut_grid: the ground elevation look up table grid isofit should use for this solve
         to_sensor_azimuth_lut_grid: the to-sensor azimuth angle look up table grid isofit should use for this solve
@@ -765,7 +786,7 @@ def build_main_config(paths: Pathnames, h2o_lut_grid: np.array = None, elevation
     # add aerosol elements from climatology
     aerosol_state_vector, aerosol_lut_grid, aerosol_model_path = \
         load_climatology(paths.aerosol_climatology, mean_latitude, mean_longitude, dt,
-                         paths.isofit_path)
+                         paths.isofit_path, lut_params=lut_params)
     modtran_configuration['statevector'].update(aerosol_state_vector)
     modtran_configuration['lut_grid'].update(aerosol_lut_grid)
     modtran_configuration['modtran_vswir']['aerosol_model_file'] = aerosol_model_path
@@ -895,7 +916,6 @@ def write_modtran_template(atmosphere_type: str, fid: str, altitude_km: float, d
     # write modtran_template
     with open(output_file, 'w') as fout:
         fout.write(json.dumps(h2o_template, cls=SerialEncoder, indent=4, sort_keys=True))
-
 
 
 if __name__ == "__main__":
