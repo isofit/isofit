@@ -107,7 +107,7 @@ class IOPSurface(Surface):
             Sa = s.diag(pow(scales[self.nonabs_inds], 2))
         return Sa
 
-    def fit_params(self, rfl_meas, geom):
+    def fit_params(self, rfl_meas, geom, *args):
         """Given a reflectance estimate and one or more emissive parameters, 
         fit a state vector."""
 

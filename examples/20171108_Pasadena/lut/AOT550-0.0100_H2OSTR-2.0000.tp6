@@ -16,7 +16,7 @@
                     *             "GOVERNMENT PURPOSE USE" agreement can        *
                     *             only be used for Government Purposes.         *
                     *                                                           *
-                    *   I/O file root name: H2OSTR-2.0000_AOT550-0.1000         *
+                    *   I/O file root name: AOT550-0.0100_H2OSTR-2.0000         *
                     *                                                           *
                     *************************************************************
 
@@ -47,12 +47,17 @@
 
 SOLAR IRRADIANCE FILE:  "/Users/drt/src/MODTRAN6.0.0/DATA/SUNp1med2irradwnNormt.bin"
 
- CARD 2  *****    1    0def 0    3    0    0  -0.10000   0.00000   0.00000   0.00000   0.35000
+ CARD 2  *****    1    0def 0    3    0    0  -0.01000   0.00000   0.00000   0.00000   0.35000
 
    GNDALT =   0.35000
 
- The 550nm vertical optical depth (   0.10000) corresponds to a surface
- meteorological range (visibility) of  66.23175 km.
+Warning from routine GETVIS:  The input value for aerosol optical depth (AOD =   0.01000) is less than the
+                              minimum AOD (=   0.02417) for the given atmospheric conditions.  The surface
+                              meteorological range (visibility) is being set to its maximum value ( 323.57751 km),
+                              the assumed AOD is the minimum value.
+
+ The 550nm vertical optical depth (   0.01000) corresponds to a surface
+ meteorological range (visibility) of 323.57751 km.
 
  MODEL ATMOSPHERE NO.  3
 
@@ -142,7 +147,7 @@ AEROSOL SCATTERING PHASE FUNCTIONS FROM MIE DATA BASE
              IDV =       0.1 CM-1
            IFWHM =       0.1 CM-1
 
- Opened filter file:  /Users/drt/src/isofit-dev/examples/20171108_Pasadena/lut/wavelengths.flt
+ Opened filter file:  /Users/drt/src/isofit-dev/examples/20171108_Pasadena/lut/wavelengths_modtran_vswir.flt
 
 Comment from routine FILTER:  First filter weight for channel    1,
                               CENTER:  376.86 NM   FWHM:  5.57 NM,
@@ -151,7 +156,7 @@ Comment from routine FILTER:  First filter weight for channel    1,
 Comment from routine FILTER:  Last filter weight for channel    1,
                               CENTER:  376.86 NM   FWHM:  5.57 NM,
                               is non-zero.
-THE FILTER RESPONSE FUNCTION FILE /Users/drt/src/isofit-dev/examples/20171108_Pasadena/lut/wavelengths.flt WAS SUCCESSFULLY PROCESSED WITH   425 CHANNELS READ
+THE FILTER RESPONSE FUNCTION FILE /Users/drt/src/isofit-dev/examples/20171108_Pasadena/lut/wavelengths_modtran_vswir.flt WAS SUCCESSFULLY PROCESSED WITH   425 CHANNELS READ
 
 Comment from routine FINDMN:  Tangent path with H1ALT =     2.30000 km and OBSZEN = 180.00000 deg intersects the Earth.
                               H2ALT has been reset from   100.00000 km to     0.35000 km, and LENN reset from 1 to 0.
@@ -185,16 +190,16 @@ SUMMARY OF MULTIPLE SCATTERING VERTICAL PATH GEOMETRY CALCULATION
 
                  HNO3      O3 UV      CNTMSLF1    CNTMSLF2    CNTMFRN     N2 CONT    MOL SCAT     TOTAL AER
                (ATM CM)   (ATM CM)   (MOL CM-2)  (MOL CM-2)  (MOL CM-2)            (   550 NM EXTINCTION   )
-            3.8132E-04  3.0009E-01  4.7704E+20  1.1078E+20  5.4178E+22  3.4419E+00  0.09344800    0.09999965
+            3.8132E-04  3.0009E-01  4.7704E+20  1.1078E+20  5.4178E+22  3.4419E+00  0.09344800    0.02295540
 
 
                AER 1        AER 2       AER 3       AER 4      CIRRUS     WAT DROP    ICE PART   MEAN AER RH
            (                     550 NM EXTINCTION                   )   (KM GM/M3)  (KM GM/M3)   (PERCENT)
-             0.06648786  0.02585212  0.00762295  0.00003671   0.000000    0.000000    0.000000     63.5380
+             0.00044435  0.01485139  0.00762295  0.00003671   0.000000    0.000000    0.000000     72.3771
 
                MOL SCAT     TOT AER       AER 1       AER 2       AER 3       AER 4       CIRRUS
              (                              614.53 NM EXTINCTION                                )
-             0.05947177   0.08674617   0.05808584  0.02218536  0.00643915  0.00003582  0.00000000
+             0.05947177   0.01960853   0.00038863  0.01274492  0.00643915  0.00003582  0.00000000
 
                 H2O         O3          CO2         CO          CH4         N2O
              (                                   ATM CM                                   )
@@ -405,16 +410,16 @@ SUMMARY OF LINE-OF-SIGHT No.  1 GEOMETRY CALCULATION
 
                  HNO3      O3 UV      CNTMSLF1    CNTMSLF2    CNTMFRN     N2 CONT    MOL SCAT     TOTAL AER
                (ATM CM)   (ATM CM)   (MOL CM-2)  (MOL CM-2)  (MOL CM-2)            (   550 NM EXTINCTION   )
-            9.8796E-06  4.9589E-03  4.1323E+20  7.8303E+19  3.8344E+22  1.1866E+00  0.01921957    0.05900055
+            9.8796E-06  4.9589E-03  4.1323E+20  7.8303E+19  3.8344E+22  1.1866E+00  0.01921957    0.00044440
 
 
                AER 1        AER 2       AER 3       AER 4      CIRRUS     WAT DROP    ICE PART   MEAN AER RH
            (                     550 NM EXTINCTION                   )   (KM GM/M3)  (KM GM/M3)   (PERCENT)
-             0.05898143  0.00001912  0.00000000  0.00000000   0.000000    0.000000    0.000000     64.7081
+             0.00044435  0.00000005  0.00000000  0.00000000   0.000000    0.000000    0.000000     72.3771
 
                MOL SCAT     TOT AER       AER 1       AER 2       AER 3       AER 4       CIRRUS
              (                              614.53 NM EXTINCTION                                )
-             0.01223164   0.05154439   0.05152799  0.00001641  0.00000000  0.00000000  0.00000000
+             0.01223164   0.00038867   0.00038863  0.00000004  0.00000000  0.00000000  0.00000000
 
                 H2O         O3          CO2         CO          CH4         N2O
              (                                   ATM CM                                   )
@@ -492,7 +497,7 @@ From file:      /Users/drt/src/MODTRAN6.0.0/DATA/spec_alb.dat
 
 550 nm SINGLE SCATTERING ALBEDO and ASYMMETRY FACTOR of the four aerosol models
 [NOMINALLY: (1) Boundary Layer, (2) Tropospheric, (3) Stratospheric, and (4) Volcanic]
-     AER 1:      0.945320      0.661170
+     AER 1:      0.949119      0.670929
      AER 2:      0.963462      0.650960
      AER 3:      1.000000      0.684511
      AER 4:      0.994932      0.690804
@@ -609,6 +614,20 @@ Warning from routine CHKSPC:  Although the reciprocal line spacing parameter (th
                                  0.71588 Transmittance from combined species band model parameters
                                  0.70541 Product of single molecule band model transmittances
 
+Warning from routine RM_EM:  For Segment No.    1 and Correlated-k interval No.   17 of line-of-sight No.    1, the segment
+                             thermal emission (  1.593493E-14 W CM-2 SR-1 / CM-1) exceeds the DISORT emitted plus scattered
+                             thermal radiance (  1.591448E-14 W CM-2 SR-1 / CM-1)!  This tends to occur at high altitudes,
+                             where scattering contributions are small.  The thermal scattered radiance for this segment is
+                             being set to zero.  This warning will only be repeated if the problem occurs for a larger
+                             segment emitted radiance.
+
+Warning from routine RM_EM:  For Segment No.    1 and Correlated-k interval No.   11 of line-of-sight No.    1, the segment
+                             thermal emission (  1.681935E-14 W CM-2 SR-1 / CM-1) exceeds the DISORT emitted plus scattered
+                             thermal radiance (  1.680103E-14 W CM-2 SR-1 / CM-1)!  This tends to occur at high altitudes,
+                             where scattering contributions are small.  The thermal scattered radiance for this segment is
+                             being set to zero.  This warning will only be repeated if the problem occurs for a larger
+                             segment emitted radiance.
+
 Warning from routine CHKSPC:  Although the reciprocal line spacing parameter (the
                               number of lines per spectral bin) was increased by a
                               factor of 8, the combined species segment absorbance
@@ -616,19 +635,19 @@ Warning from routine CHKSPC:  Although the reciprocal line spacing parameter (th
                                  0.69783 Transmittance from combined species band model parameters
                                  0.68437 Product of single molecule band model transmittances
 
-SLANT PATH No.   1 AMBIENT ATMOSPHERE INTEGRATED ABSORPTION =   4002.0773 CM-1 (From  3965.00 to 28580.00 CM-1)
+SLANT PATH No.   1 AMBIENT ATMOSPHERE INTEGRATED ABSORPTION =   2908.7296 CM-1 (From  3965.00 to 28580.00 CM-1)
 
-SLANT PATH No.   1 AMBIENT ATMOSPHERE AVERAGE TRANSMITTANCE = 0.8374
+SLANT PATH No.   1 AMBIENT ATMOSPHERE AVERAGE TRANSMITTANCE = 0.8818
 
 VOIGT SINGLE LINE SPECTRAL BIN TRANSMITTANCES ARE COMPUTED FROM AN INFINITE SERIES OF MODIFIED
 BESSEL FUNCTIONS OF THE FIRST KIND TRUNCATED AFTER AT MOST 8 TERMS (I7).  THE MAXIMUM MAGNITUDE
 OF THE 8th TERM WAS  0.08236 AND THIS VALUE OCCURRED AT SPECTRAL FREQUENCY 13091.75 CM-1.
 
-SLANT PATH No.   1 AMBIENT ATMOSPHERE INTEGRATED TOTAL RADIANCE =  2.2460E-04 WATTS CM-2 STER-1 (From  3965.00 to 28580.00 CM-1 )
+SLANT PATH No.   1 AMBIENT ATMOSPHERE INTEGRATED TOTAL RADIANCE =  1.5370E-04 WATTS CM-2 STER-1 (From  3965.00 to 28580.00 CM-1 )
 
-SLANT PATH No.   1 AMBIENT ATMOSPHERE MINIMUM SPECTRAL RADIANCE =  3.1583E-29 WATTS CM-2 STER-1 / CM-1  AT 13144.55 CM-1
+SLANT PATH No.   1 AMBIENT ATMOSPHERE MINIMUM SPECTRAL RADIANCE =  3.1586E-29 WATTS CM-2 STER-1 / CM-1  AT 13144.55 CM-1
 
-SLANT PATH No.   1 AMBIENT ATMOSPHERE MAXIMUM SPECTRAL RADIANCE =  2.1175E-08 WATTS CM-2 STER-1 / CM-1  AT 23483.45 CM-1
+SLANT PATH No.   1 AMBIENT ATMOSPHERE MAXIMUM SPECTRAL RADIANCE =  1.7061E-08 WATTS CM-2 STER-1 / CM-1  AT 24014.05 CM-1
 
  AREA-AVERAGED GROUND TEMPERATURE [K] =    292.625
  IMAGED-PIXEL (H2ALT) SURFACE TEMPERATURES [K]
@@ -641,7 +660,7 @@ SLANT PATH No.   1 AMBIENT ATMOSPHERE MAXIMUM SPECTRAL RADIANCE =  2.1175E-08 WA
  Spectra are convolved using a  TRIANGULAR  slit function.
  BANDPASS =     350.000 TO    2520.000 NANOMETERS (  3968.25 TO 28571.43 CM-1).
 
-UNCONVOLVED INTEGRATED RADIANCE FROM  3968.25 TO 28571.43 CM-1:   2.24497E-04 W CM-2 SR-1
- CONVOLVED  INTEGRATED RADIANCE FROM  3968.25 TO 28571.43 CM-1:   2.24496E-04 W CM-2 SR-1
+UNCONVOLVED INTEGRATED RADIANCE FROM  3968.25 TO 28571.43 CM-1:   1.53605E-04 W CM-2 SR-1
+ CONVOLVED  INTEGRATED RADIANCE FROM  3968.25 TO 28571.43 CM-1:   1.53604E-04 W CM-2 SR-1
 
  CARD 5 *****    1   0       1.  0       1.  0       1.
