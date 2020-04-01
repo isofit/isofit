@@ -23,6 +23,7 @@ import sys
 import numpy as np
 import logging
 import multiprocessing
+from collections import OrderedDict
 
 from ..core.common import combos, eps, load_wavelen, safe_core_count
 from ..core.common import VectorInterpolator
@@ -65,7 +66,12 @@ class TabularRT:
             else:
                 setattr(self, key, value)
 
-        self.lut_grid_config = config['lut_grid']
+        # We use a sorted dictionary here so that filenames
+        # for LUT grid points are always constructed the same way, with
+        # consistent dimesion ordering)
+        sorted_grid = sorted(config['lut_grid'].items(), key=lambda t:t[0])
+        self.lut_grid_config = OrderedDict(sorted_grid)
+                    
         self.lut_dir = config['lut_path']
         self.statevec = list(config['statevector'].keys())
         self.n_point = len(self.lut_grid_config)
