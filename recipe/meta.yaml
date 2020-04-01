@@ -7,7 +7,7 @@ package:
 
 source:
   url: https://github.com/isofit/{{ name }}/archive/v{{ version }}.tar.gz
-  sha256: 22f53cca7bcb5a279c6a086c72d58ba64570f44b5d9b57c902daae38e8d18cc0
+  sha256: d916ccbd441b8d936d88c1db07744914a2083859f020345cbca1b48fc023d48d
 
 build:
   noarch: python
