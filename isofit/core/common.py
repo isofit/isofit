@@ -215,7 +215,7 @@ def svd_inv_sqrt(C, mineig=0, hashtable=None):
         else:
             break
 
-        if count == 3:
+        if count == 2:
             raise ValueError('Matrix inversion contains negative values, even after adding ' +
                              '{} to the diagonal.  Sqrt fails'.format(inv_eps))
 
