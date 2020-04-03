@@ -56,7 +56,7 @@ class GlintSurface(MultiComponentSurface):
         Cov[self.glint_ind, self.glint_ind] = f
         return Cov
 
-    def fit_params(self, rfl_meas, geom):
+    def fit_params(self, rfl_meas, geom, *args):
         """Given a reflectance estimate and one or more emissive parameters, 
           fit a state vector."""
 
