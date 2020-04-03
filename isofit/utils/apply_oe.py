@@ -35,7 +35,7 @@ def main():
     parser.add_argument('input_loc', type=str)
     parser.add_argument('input_obs', type=str)
     parser.add_argument('working_directory', type=str)
-    parser.add_argument('sensor', type=str, choices=['ang', 'avcl'])
+    parser.add_argument('sensor', type=str, choices=['ang', 'avcl', 'neon'])
     parser.add_argument('--copy_input_files', type=int, choices=[0,1], default=0)
     parser.add_argument('--h2o', action='store_true')
     parser.add_argument('--modtran_path', type=str)
@@ -77,7 +77,7 @@ def main():
         dt = datetime.strptime('20{}t000000'.format(paths.fid[1:7]), '%Y%m%dt%H%M%S')
         dayofyear = dt.timetuple().tm_yday
     elif args.sensor == 'neon':
-        dt = datetime.strptime(paths.fid[6:], 'NIS01_%Y%m%dt_%H%M%S')
+        dt = datetime.strptime(paths.fid, 'NIS01_%Y%m%d_%H%M%S')
         dayofyear = dt.timetuple().tm_yday
 
     h_m_s, day_increment, mean_path_km, mean_to_sensor_azimuth, mean_to_sensor_zenith, valid, \
@@ -179,7 +179,7 @@ def main():
                                gmtime=gmtime, elevation_km=mean_elevation_km, output_file=paths.modtran_template_path)
 
         logging.info('Writing main configuration file.')
-        build_main_config(paths, h2o_lut_grid, elevation_lut_grid, to_sensor_azimuth_lut_grid,
+        build_main_config(paths, lut_params, h2o_lut_grid, elevation_lut_grid, to_sensor_azimuth_lut_grid,
                           to_sensor_zenith_lut_grid, mean_latitude, mean_longitude, dt)
 
         # Run modtran retrieval
@@ -297,8 +297,9 @@ class Pathnames():
         elif args.sensor == 'avcl':
             self.noise_path = join(self.isofit_path, 'data', 'avirisc_noise.txt')
         else:
-            logging.info('no noise path found, check sensor type')
-            quit()
+            self.noise_path = None
+            logging.info('no noise path found, proceeding without')
+            #quit()
 
         self.aerosol_tpl_path = join(self.isofit_path, 'data', 'aerosol_template.json')
         self.rdn_factors_path = args.rdn_factors_path
@@ -349,7 +350,8 @@ class SerialEncoder(json.JSONEncoder):
 class LUTConfig:
 
     def __init__(self, lut_config_file):
-        lut_config = common.load_config(lut_config_file)
+        if lut_config_file is not None:
+            lut_config = common.load_config(lut_config_file)
 
         self.num_elev_lut_elements = 1
         self.num_h2o_lut_elements = 3
@@ -370,9 +372,10 @@ class LUTConfig:
         self.zenith_min_spacing = 2
 
         # overwrite anything that comes in from the config file
-        for key in lut_config:
-            if key in self.__dict__:
-                setattr(self, key, lut_config[key])
+        if lut_config_file is not None:
+            for key in lut_config:
+                if key in self.__dict__:
+                    setattr(self, key, lut_config[key])
 
 
 def load_climatology(config_path: str, latitude: float, longitude: float, acquisition_datetime: datetime,
@@ -710,7 +713,6 @@ def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array):
                          'output': {'estimated_state_file': paths.h2o_subs_path},
                          'forward_model': {
                              'instrument': {'wavelength_file': paths.wavelength_path,
-                                            'parametric_noise_file': paths.noise_path,
                                             'integrations': NUM_INTEGRATIONS,
                                             'unknowns': {
                                                 'uncorrelated_radiometric_uncertainty': UNCORRELATED_RADIOMETRIC_UNCERTAINTY}},
@@ -723,6 +725,11 @@ def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array):
     if paths.channelized_uncertainty_working_path is not None:
         isofit_config_h2o['forward_model']['unknowns'][
             'channelized_radiometric_uncertainty_file'] = paths.channelized_uncertainty_working_path
+
+    if paths.noise_path is not None:
+        isofit_config_h2o['forward_model']['instrument']['parametric_noise_file'] = paths.noise_path
+    else:
+        isofit_config_h2o['forward_model']['instrument']['SNR'] = 1000
 
     if paths.rdn_factors_path:
         isofit_config_h2o['input']['radiometry_correction_file'] = paths.rdn_factors_path
@@ -807,7 +814,6 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
                                         'estimated_reflectance_file': paths.rfl_subs_path},
                              'forward_model': {
                                  'instrument': {'wavelength_file': paths.wavelength_path,
-                                                'parametric_noise_file': paths.noise_path,
                                                 'integrations': NUM_INTEGRATIONS,
                                                 'unknowns': {
                                                     'uncorrelated_radiometric_uncertainty': UNCORRELATED_RADIOMETRIC_UNCERTAINTY}},
@@ -820,6 +826,11 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
     if paths.channelized_uncertainty_working_path is not None:
         isofit_config_modtran['forward_model']['unknowns'][
             'channelized_radiometric_uncertainty_file'] = paths.channelized_uncertainty_working_path
+
+    if paths.noise_path is not None:
+        isofit_config_modtran['forward_model']['instrument']['parametric_noise_file'] = paths.noise_path
+    else:
+        isofit_config_modtran['forward_model']['instrument']['SNR'] = 1000
 
     if paths.rdn_factors_path:
         isofit_config_modtran['input']['radiometry_correction_file'] = \
