@@ -229,7 +229,6 @@ class LibRadTranRT(TabularRT):
         with open(self.lut_dir+'/LUT_'+fn+'.zen', 'r') as fin:
             output = fin.read().split()
             solzen, solaz = [float(q) for q in output[1:]]
-        irr = (irr0 + irr025 + irr05) / 3.0
 
         self.coszen = s.cos(solzen/360.0*2.0*s.pi)
         irr = irr / self.coszen
