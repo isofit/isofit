@@ -176,7 +176,6 @@ class RadiativeTransfer():
                  dLs_dsurface, geom):
 
         # first the rdn at the current state vector
-        Ls = s.zeros(rfl.shape)  # TODO: Fix me!
         rdn = self.calc_rdn(x_RT, rfl, Ls, geom)
 
         # perturb each element of the RT state vector (finite difference)
