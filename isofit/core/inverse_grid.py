@@ -149,7 +149,6 @@ class GridInversion(Inversion):
 
 
         for combo in combos(self.integration_grid.values()):
-           print(combo)
 
            self.x_fixed = combo.copy()
            trajectory = []
@@ -231,8 +230,6 @@ class GridInversion(Inversion):
                it = len(trajectory)
                rs = sum(pow(total_resid, 2))
                sm = self.fm.summarize(x, geom)
-               print('Iteration: %02i  Residual: %12.2f %s' %
-                            (it, rs, sm))
                logging.debug('Iteration: %02i  Residual: %12.2f %s' %
                              (it, rs, sm))
            
