@@ -44,6 +44,15 @@ class ThermalSurface(MultiComponentSurface):
         self.emissive = True
         self.n_state = len(self.init)
 
+        # Value recommended by Glynn Hulley
+        self.emissivity_for_surface_T_init = 0.98
+        if "emissivity_for_surface_T_init" in config.keys():
+            self.emissivity_for_surface_T_init = config['emissivity_for_surface_T_init']
+
+        self.surface_T_prior_sigma_degK = 1.
+        if "surface_T_prior_sigma_degK" in config.keys():
+            self.surface_T_prior_sigma_degK = config['surface_T_prior_sigma_degK']
+
     def xa(self, x_surface, geom):
         """Mean of prior distribution, calculated at state x.  We find
         the covariance in a normalized space (normalizing by z) and then un-
@@ -57,8 +66,8 @@ class ThermalSurface(MultiComponentSurface):
         """Covariance of prior distribution, calculated at state x."""
 
         Cov = MultiComponentSurface.Sa(self, x_surface, geom)
-        t = s.array([[0.1]])  # Hard coded! Yikes!
-        Cov[self.surf_temp_ind, self.surf_temp_ind] = t
+        Cov[self.surf_temp_ind, self.surf_temp_ind] = self.surface_T_prior_sigma_degK**2
+
         return Cov
 
     def fit_params(self, rfl_meas, geom, meas, L_total_without_surface_emission, 
@@ -68,7 +77,7 @@ class ThermalSurface(MultiComponentSurface):
 
         def err(z):
             T = z
-            emissivity = 1.00  # Should be conditional emissivity?
+            emissivity = self.emissivity_for_surface_T_init
             Ls_est, d = emissive_radiance(emissivity, T, self.wl[clearest_indices])
             resid = trans_ground_to_sensor[clearest_indices]*Ls_est + \
                     L_total_without_surface_emission[clearest_indices] - \
