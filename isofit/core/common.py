@@ -434,7 +434,7 @@ def conditional_gaussian(mu, C, window, remain, x):
     C12 = np.array([C[i,window] for i in remain])
     C21 = np.array([C[i,remain] for i in window])
     C22 = np.array([C[i,window] for i in window])
-    Cinv = scipy.linalg.inv(C11)
+    Cinv = svd_inv(C11)
     conditional_mean = mu[window] + C21 @ Cinv @ (x-mu[remain]) 
     conditional_Cov = C22 - C21 @ Cinv @ C12
     return conditional_mean, conditional_Cov
