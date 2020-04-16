@@ -187,7 +187,7 @@ class ModtranRT(TabularRT):
                 thermal_upwelling = (thermal_emission + thermal_scatter) / wid * 1e6  # uW/nm/sr/cm2
 
                 # Be careful with these! See note in function comments above
-                grnd_rflt = float(toks[16])
+                grnd_rflt = float(toks[16]) # Already includes ground-to-sensor transmission
                 thermal_downwelling = grnd_rflt / wid * 1e6  # uW/nm/sr/cm2
 
                 sols.append(solar_irr)
@@ -434,19 +434,23 @@ class ModtranRT(TabularRT):
         r = self.get(x_RT, geom)
         return r['thermal_upwelling']
 
-    def get_L_down(self, x_RT, geom):
+    def get_L_down_times_multiscattering_transmission(self, x_RT, geom):
         if self.band_mode_string.lower() == 'modtran_vswir':
-            return self.get_L_down_vswir(x_RT, geom)
+            return self.get_L_down_times_multiscattering_transmission_vswir(x_RT, geom)
         elif self.band_mode_string.lower() == 'modtran_tir':
-            return self.get_L_down_tir(x_RT, geom)
+            return self.get_L_down_times_multiscattering_transmission_tir(x_RT, geom)
         else:
             raise NotImplementedError
 
-    def get_L_down_vswir(self, x_RT, geom):
-        rdn = (self.solar_irr*self.coszen) / s.pi
+    def get_L_down_times_multiscattering_transmission_vswir(self, x_RT, geom):
+        r = self.get(x_RT, geom)
+        rdn = (self.solar_irr*self.coszen) / s.pi * r['transm']
         return rdn
 
-    def get_L_down_tir(self, x_RT, geom):
+    def get_L_down_times_multiscattering_transmission_tir(self, x_RT, geom):
+        """thermal_downwelling already includes the transmission factor. Also
+        assume there is no multiple scattering for TIR.
+        """
         r = self.get(x_RT, geom)
         return r['thermal_downwelling']
 
