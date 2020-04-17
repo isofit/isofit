@@ -189,8 +189,14 @@ class RadiativeTransfer():
         # Get K_surface
         r = self.get(x_RT, geom)
         L_down_times_multiscattering_transmission = self.get_L_down_times_multiscattering_transmission(x_RT, geom)
-        drho_drfl = 1. / (1 - r['sphalb']*rfl)**2
-        drdn_drfl = drho_drfl * L_down_times_multiscattering_transmission
+
+        # The reflected downwelling light is:
+        # L_down_times_multiscattering_transmission * rfl / (1.0 - r['sphalb'] * rfl), or 
+        # L_down_times_multiscattering_transmission * rho_scaled_for_multiscattering
+        # This term is the derivative of rho_scaled_for_multiscattering
+        drho_scaled_for_multiscattering_drfl = 1. / (1 - r['sphalb']*rfl)**2
+
+        drdn_drfl = L_down_times_multiscattering_transmission * drho_scaled_for_multiscattering_drfl
         drdn_dLs = r['transup']
         K_surface = drdn_drfl[:, s.newaxis] * drfl_dsurface + \
             drdn_dLs[:, s.newaxis] * dLs_dsurface
