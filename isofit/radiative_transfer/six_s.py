@@ -278,7 +278,7 @@ class SixSRT(TabularRT):
         rdn = rho / s.pi*(self.solar_irr * self.coszen)
         return rdn
 
-    def get_L_down_times_multiscattering_transmission(self, x_RT, geom):
+    def get_L_down_transmitted(self, x_RT, geom):
         r = self.get(x_RT, geom)
         rdn = (self.solar_irr * self.coszen) / s.pi * r['transm']
         return rdn

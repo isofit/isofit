@@ -22,7 +22,9 @@ import sys
 import scipy as s
 from scipy.interpolate import interp1d
 from scipy.optimize import minimize_scalar as min1d
-from .common import conditional_gaussian
+from scipy.optimize import minimize
+
+from .common import conditional_gaussian, emissive_radiance, eps
 
 
 def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
@@ -74,9 +76,9 @@ def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
             x_RT_2 = x_RT.copy()
             x_RT_2[ind_sv] = h2o
             rhi = RT.get(x_RT_2, geom)
-            rhoatm = instrument.sample(x_instrument, RT.wl, rhi['rhoatm'])  # _hi)
-            transm = instrument.sample(x_instrument, RT.wl, rhi['transm'])  # _hi)
-            sphalb = instrument.sample(x_instrument, RT.wl, rhi['sphalb'])  # _hi)
+            rhoatm = instrument.sample(x_instrument, RT.wl, rhi['rhoatm'])
+            transm = instrument.sample(x_instrument, RT.wl, rhi['transm'])
+            sphalb = instrument.sample(x_instrument, RT.wl, rhi['sphalb'])
             solar_irr = instrument.sample(x_instrument, RT.wl, RT.solar_irr)
 
             # Assume no surface emission.  "Correct" the at-sensor radiance
@@ -97,8 +99,10 @@ def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
     return x_new
 
 
-def invert_algebraic(surface, RT, instrument, x_surface, x_RT, x_instrument, meas, geom):
-    """Inverts radiance algebraically using Lambertian assumptions to get a reflectance."""
+def invert_algebraic(surface, RT, instrument, x_surface, x_RT, x_instrument,
+                     meas, geom):
+    """Inverts radiance algebraically using Lambertian assumptions to get a 
+        reflectance."""
 
     # Get atmospheric optical parameters (possibly at high
     # spectral resolution) and resample them if needed.
@@ -148,52 +152,74 @@ def invert_simple(forward, meas, geom):
     # via Lambertian approximations to get reflectance
     x_surface, x_RT, x_instrument = forward.unpack(x)
     rfl_est, Ls_est, coeffs = invert_algebraic(surface, RT,
-                                               instrument, x_surface, x_RT, 
+                                               instrument, x_surface, x_RT,
                                                x_instrument, meas, geom)
 
-    # Condition thermal part on the VSWIR portion. Only works for 
+    # Condition thermal part on the VSWIR portion. Only works for
     # Multicomponent surfaces. Finds the cluster nearest the VSWIR heuristic
     # inversion and uses it for the TIR suface initialization.
     if any(forward.surface.wl > 3000):
-        rfl_idx = s.array([i for i,v in enumerate(forward.surface.statevec) 
-                            if 'RFL' in v])
+        rfl_idx = s.array([i for i, v in enumerate(forward.surface.statevec)
+                           if 'RFL' in v])
         tir_idx = s.where(forward.surface.wl > 3000)[0]
         vswir_idx = s.where(forward.surface.wl < 3000)[0]
-        vswir_idx = s.array([i for i in vswir_idx if i in forward.surface.idx_ref])
+        vswir_idx = s.array([i for i in vswir_idx if i in
+                             forward.surface.idx_ref])
         x_surface_temp = x_surface.copy()
         x_surface_temp[:len(rfl_est)] = rfl_est
         mu = forward.surface.xa(x_surface_temp, geom)
         C = forward.surface.Sa(x_surface_temp, geom)
         rfl_est[tir_idx] = mu[tir_idx]
-    
-    ##############################################################################
-    # This will generate nonsense results for VSWIR-only runs. However, it doesn't
-    # matter as these values will be ignored in the fit_params function if the
-    # SurfaceThermal is not being used.
 
-    # Estimate the total radiance at sensor, leaving out the surface emission
-    rhoatm, sphalb, transm, solar_irr, coszen, transup = coeffs
-    L_atm = RT.get_L_atm(x_RT, geom)
-    L_down_times_multiscattering_transmission = RT.get_L_down_times_multiscattering_transmission(x_RT, geom)
-    L_total_without_surface_emission = \
-            L_atm + L_down_times_multiscattering_transmission * rfl_est / (1. - sphalb * rfl_est)
-    
-    # These tend to have high transmission factors and the emissivity of most
-    # materials is nearly 1 for these bands, so they are good for initializing the 
-    # surface temperature.
-    clearest_wavelengths = [10125., 10390.00, 10690.00]
-    
-    # This is fragile if other instruments have different wavelength
-    # spacing or range
-    clearest_indices = [s.argmin(s.absolute(RT.wl - w)) 
-            for w in clearest_wavelengths]
-    ##############################################################################
+    # Now we have an estimated reflectance. Fit the surface parameters.
+    x_surface[forward.idx_surface] = forward.surface.fit_params(rfl_est, geom)
 
-    # The parameters on the second line are only used when the ThermalSurface
-    # is used. Otherwise, they are ignored.
-    x[forward.idx_surface] = forward.surface.fit_params(rfl_est, geom,
-        meas, L_total_without_surface_emission, transup, clearest_indices)
+    # Find temperature of emissive surfaces
+    if forward.surface.emissive:
 
+        # Estimate the total radiance at sensor, leaving out surface emission
+        rhoatm, sphalb, transm, solar_irr, coszen, transup = coeffs
+        L_atm = RT.get_L_atm(x_RT, geom)
+        L_down_transmitted = RT.get_L_down_transmitted(x_RT, geom)
+        L_total_without_surface_emission = \
+            L_atm + L_down_transmitted * rfl_est / (1. - sphalb * rfl_est)
+
+        # These tend to have high transmission factors; the emissivity of most
+        # materials is nearly 1 for these bands, so they are good for
+        # initializing the surface temperature.
+        clearest_wavelengths = [10125., 10390.00, 10690.00]
+
+        # This is fragile if other instruments have different wavelength
+        # spacing or range
+        clearest_indices = [s.argmin(s.absolute(RT.wl - w))
+                            for w in clearest_wavelengths]
+
+        # Error function for nonlinear temperature fit
+        def err(z):
+            T = z
+            emissivity = forward.surface.emissivity_for_surface_T_init
+            Ls_est, d = emissive_radiance(emissivity, T,
+                                          forward.surface.wl[clearest_indices])
+            resid = transup[clearest_indices] * Ls_est + \
+                L_total_without_surface_emission[clearest_indices] - \
+                meas[clearest_indices]
+            return sum(resid**2)
+
+        # Fit temperature, set bounds,  and set the initial values
+        idx_T = forward.surface.surf_temp_ind
+        Tinit = s.array([forward.surface.init[idx_T]])
+        Tbest = minimize(err, Tinit).x
+        T = max(forward.surface.bounds[idx_T][0]+eps,
+                min(Tbest, forward.surface.bounds[idx_T][1]-eps))
+        x_surface[idx_T] = Tbest
+        forward.surface.init[idx_T] = T
+
+    # Update the full state vector
+    x[forward.idx_surface] = x_surface
+
+    # We record these initial values in the geometry object - the only
+    # "stateful" part of the retrieval
     geom.x_surf_init = x[forward.idx_surface]
     geom.x_RT_init = x[forward.idx_RT]
+
     return x

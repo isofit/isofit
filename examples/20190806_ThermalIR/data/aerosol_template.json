@@ -1,0 +1,30 @@
+{
+  "VIS":50,
+  "CDASTM": "b",
+  "IHAZE": "AER_USER_DEFINED",
+  "ARUSS": "USS",
+  "IPH": 2,
+  "APLUS": "A+",
+  "REGALT": {
+    "ZAER1": [ 0.0, 3.0],
+    "SCALE1": 1.0,
+    "ZAER2": [ 2.0, 11.0],
+    "SCALE2": 1.0,
+    "ZAER3": [ 10.0, 35.0],
+    "SCALE3": 1.0,
+    "ZAER4": [ 30.0, 100.0],
+    "SCALE4": 1.0
+  },
+  "IREGSPC": [
+    {
+      "IREG": 1,
+      "NARSPC": 4,
+      "AWCCON": 0.0,
+      "AERNAM": "",
+      "VARSPC": [ 0.34, 0.5, 0.675, 0.87],
+      "EXTC": [ 0.3, 0.2, 0.15, 0.13],
+      "ABSC": [ 0.15, 0.1, 0.0, 0.0],
+      "ASYM": [ 0.65, 0.65, 0.65, 0.65]
+    }
+  ]
+}

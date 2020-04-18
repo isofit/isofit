@@ -139,13 +139,13 @@ class RadiativeTransfer():
     def calc_rdn(self, x_RT, rfl, Ls, geom):
         r = self.get(x_RT, geom)
         L_atm = self.get_L_atm(x_RT, geom)
-        L_down_times_multiscattering_transmission = self.get_L_down_times_multiscattering_transmission(x_RT, geom)
+        L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)
 
         L_up = self.get_L_up(x_RT, geom)
         L_up = L_up + Ls * r['transup']
 
         ret = L_atm + \
-            L_down_times_multiscattering_transmission * rfl / (1.0 - r['sphalb'] * rfl) + \
+            L_down_transmitted * rfl / (1.0 - r['sphalb'] * rfl) + \
             L_up
 
         return ret
@@ -156,10 +156,10 @@ class RadiativeTransfer():
             L_atms.append(RT.get_L_atm(x_RT, geom))
         return s.hstack(L_atms)
 
-    def get_L_down_times_multiscattering_transmission(self, x_RT, geom):
+    def get_L_down_transmitted(self, x_RT, geom):
         L_downs = []
         for key, RT in self.RTs.items():
-            L_downs.append(RT.get_L_down_times_multiscattering_transmission(x_RT, geom))
+            L_downs.append(RT.get_L_down_transmitted(x_RT, geom))
         return s.hstack(L_downs)
 
     def get_L_up(self, x_RT, geom):
@@ -188,15 +188,15 @@ class RadiativeTransfer():
 
         # Get K_surface
         r = self.get(x_RT, geom)
-        L_down_times_multiscattering_transmission = self.get_L_down_times_multiscattering_transmission(x_RT, geom)
+        L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)
 
         # The reflected downwelling light is:
-        # L_down_times_multiscattering_transmission * rfl / (1.0 - r['sphalb'] * rfl), or 
-        # L_down_times_multiscattering_transmission * rho_scaled_for_multiscattering
+        # L_down_transmitted * rfl / (1.0 - r['sphalb'] * rfl), or 
+        # L_down_transmitted * rho_scaled_for_multiscattering
         # This term is the derivative of rho_scaled_for_multiscattering
         drho_scaled_for_multiscattering_drfl = 1. / (1 - r['sphalb']*rfl)**2
 
-        drdn_drfl = L_down_times_multiscattering_transmission * drho_scaled_for_multiscattering_drfl
+        drdn_drfl = L_down_transmitted * drho_scaled_for_multiscattering_drfl
         drdn_dLs = r['transup']
         K_surface = drdn_drfl[:, s.newaxis] * drfl_dsurface + \
             drdn_dLs[:, s.newaxis] * dLs_dsurface

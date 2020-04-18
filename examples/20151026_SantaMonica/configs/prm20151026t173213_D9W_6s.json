@@ -4,7 +4,7 @@
   "input": {
     "measured_radiance_file":     "../remote/prm20151026t173213_rawrdn_v1h3_D9W_clip.txt",
     "obs_file":                   "../remote/prm20151026t173213_obs_D9W.txt",
-    "radiometry_correction_file": "../data/prm20151026t173213_rdn_6s_factors.txt",
+    "radiometry_correction_file": "../data/prm20151026t173213_vicarious_correction.txt",
     "reference_reflectance_file": "../insitu/D9W.txt"
   },
 
@@ -63,8 +63,8 @@
         "solaz": 141.70,
         "elev": 0.0,
         "alt": 20.0,
-        "viewzen": 202.89063,
-        "viewaz": 1.08,
+        "viewaz": 202.89063,
+        "viewzen": 1.08,
         "month": 10,
         "day": 26,
         "lut_path":"../lut/",
@@ -75,7 +75,8 @@
     }
   },   
 
-  "inversion": {
+  "grid_inversion": {
+    "integration_grid":{"GLINT":[0,0.001,0.002]},
     "windows": [[400.0,1000.0]]
   }
 }

@@ -49,13 +49,13 @@ class GridInversion(Inversion):
 
         super().__init__(config, forward)
         self.integration_grid = OrderedDict(config['integration_grid'])
-        self.inds_fixed = [self.fm.statevec.index(k) for k in \
-                          self.integration_grid.keys()]
-        self.inds_free = [i for i in s.arange(self.fm.nstate, dtype=int) if \
-                         not (i in self.inds_fixed)]
+        self.inds_fixed = [self.fm.statevec.index(k) for k in
+                           self.integration_grid.keys()]
+        self.inds_free = [i for i in s.arange(self.fm.nstate, dtype=int) if
+                          not (i in self.inds_fixed)]
         self.x_fixed = None
         self.least_squares_params['bounds'] = \
-            (self.fm.bounds[0][self.inds_free]+eps, 
+            (self.fm.bounds[0][self.inds_free]+eps,
              self.fm.bounds[1][self.inds_free]-eps)
         self.least_squares_params['x_scale'] = \
             self.fm.scale[self.inds_free]
@@ -65,7 +65,6 @@ class GridInversion(Inversion):
         x[self.inds_fixed] = self.x_fixed
         x[self.inds_free] = x_free
         return x
-
 
     def calc_conditional_prior(self, x_free, geom):
         """Calculate prior distribution of radiance. This depends on the 
@@ -78,9 +77,9 @@ class GridInversion(Inversion):
 
         # condition on fixed variables
         xa_free, Sa_free = conditional_gaussian(xa, Sa, self.inds_free,
-                self.inds_fixed, self.x_fixed)
-        Sa_free_inv, Sa_free_inv_sqrt = svd_inv_sqrt(Sa_free, 
-                hashtable=self.hashtable)
+                                                self.inds_fixed, self.x_fixed)
+        Sa_free_inv, Sa_free_inv_sqrt = svd_inv_sqrt(Sa_free,
+                                                     hashtable=self.hashtable)
         return xa_free, Sa_free, Sa_free_inv, Sa_free_inv_sqrt
 
     def calc_posterior(self, x, geom, meas):
@@ -141,112 +140,111 @@ class GridInversion(Inversion):
              xopt           - the converged state vector solution"""
 
         self.counts = 0
-        costs, solutions = [],[]
+        costs, solutions = [], []
 
         # Simulations are easy - return the initial state vector
         if self.simulation_mode or meas is None:
             return s.array([self.fm.init.copy()])
 
-
         for combo in combos(self.integration_grid.values()):
 
-           self.x_fixed = combo.copy()
-           trajectory = []
+            self.x_fixed = combo.copy()
+            trajectory = []
 
-           # Calculate the initial solution, if needed.
-           x0 = invert_simple(self.fm, meas, geom)
-           x0 = x0[self.inds_free]
-           x = self.full_statevector(x0)
-        
-           # Record initializaation state
-           geom.x_surf_init = x[self.fm.idx_surface]
-           geom.x_RT_init = x[self.fm.idx_RT]
+            # Calculate the initial solution, if needed.
+            x0 = invert_simple(self.fm, meas, geom)
+            x0 = x0[self.inds_free]
+            x = self.full_statevector(x0)
 
-           # Seps is the covariance of "observation noise" including both
-           # measurement noise from the instrument as well as variability due to
-           # unknown variables. For speed, we will calculate it just once based
-           # on the initial solution (a potential minor source of inaccuracy).
-           Seps_inv, Seps_inv_sqrt = self.calc_Seps(x, meas, geom)
-           
-           def jac(x_free):
-               """Calculate measurement Jacobian and prior Jacobians with 
-               respect to cost function. This is the derivative of cost with
-               respect to the state, commonly known as the gradient or loss
-               surface. The cost is expressed as a vector of 'residuals'
-               with respect to the prior and measurement, expressed in absolute
-               (not quadratic) terms for the solver; It is the square root of
-               the Rodgers (2000) Chi-square version. All measurement
-               distributions are calculated over subwindows of the full 
-               spectrum."""
-           
-               x = self.full_statevector(x_free)
-           
-               # jacobian of measurment cost term WRT full state vector.
-               K = self.fm.K(x, geom)[self.winidx, :]
-               K = K[:,self.inds_free]
-               meas_jac = Seps_inv_sqrt.dot(K)
-           
-               # jacobian of prior cost term with respect to state vector.
-               xa_free, Sa_free, Sa_free_inv, Sa_free_inv_sqrt = \
-                       self.calc_conditional_prior(x_free, geom)
-               prior_jac = Sa_free_inv_sqrt
-           
-               # The total cost vector (as presented to the solver) is the
-               # concatenation of the "residuals" due to the measurement
-               # and prior distributions. They will be squared internally by
-               # the solver.
-               total_jac = s.concatenate((meas_jac, prior_jac), axis=0)
-           
-               return s.real(total_jac)
-           
-           def err(x_free):
-               """Calculate cost function expressed here in absolute (not
-               quadratic) terms for the solver, i.e., the square root of the 
-               Rodgers (2000) Chi-square version. We concatenate 'residuals'
-               due to measurment and prior terms, suitably scaled.
-               All measurement distributions are calculated over subwindows 
-               of the full spectrum."""
-           
-               # set up full-sized state vector
-               x = self.full_statevector(x_free)
-           
-               # Measurement cost term.  Will calculate reflectance and Ls from
-               # the state vector.
-               est_meas = self.fm.calc_meas(x, geom, rfl=None, Ls=None)
-               est_meas_window = est_meas[self.winidx]
-               meas_window = meas[self.winidx]
-               meas_resid = (est_meas_window-meas_window).dot(Seps_inv_sqrt)
-           
-               # Prior cost term
-               xa_free, Sa_free, Sa_free_inv, Sa_free_inv_sqrt = \
-                       self.calc_conditional_prior(x_free, geom)
-               prior_resid = (x_free - xa_free).dot(Sa_free_inv_sqrt)
-           
-               # Total cost
-               total_resid = s.concatenate((meas_resid, prior_resid))
-           
-               trajectory.append(x)
-           
-               it = len(trajectory)
-               rs = sum(pow(total_resid, 2))
-               sm = self.fm.summarize(x, geom)
-               logging.debug('Iteration: %02i  Residual: %12.2f %s' %
-                             (it, rs, sm))
-           
-               return s.real(total_resid)
-           
-           # Initialize and invert
-           try:
-               xopt = least_squares(err, x0, jac=jac, 
-                                **self.least_squares_params)
-               x_full_solution = self.full_statevector(xopt.x)
-               trajectory.append(x_full_solution)
-               solutions.append(trajectory)
-               costs.append(s.sqrt(pow(xopt.fun,2).sum()))
-           except LinAlgError:
-               logging.warning('Levenberg Marquardt failed to converge')
-               solutions.append(trajectory)
-               costs.append(9e99)
+            # Record initializaation state
+            geom.x_surf_init = x[self.fm.idx_surface]
+            geom.x_RT_init = x[self.fm.idx_RT]
+
+            # Seps is the covariance of "observation noise" including both
+            # measurement noise from the instrument as well as variability due to
+            # unknown variables. For speed, we will calculate it just once based
+            # on the initial solution (a potential minor source of inaccuracy).
+            Seps_inv, Seps_inv_sqrt = self.calc_Seps(x, meas, geom)
+
+            def jac(x_free):
+                """Calculate measurement Jacobian and prior Jacobians with 
+                respect to cost function. This is the derivative of cost with
+                respect to the state, commonly known as the gradient or loss
+                surface. The cost is expressed as a vector of 'residuals'
+                with respect to the prior and measurement, expressed in absolute
+                (not quadratic) terms for the solver; It is the square root of
+                the Rodgers (2000) Chi-square version. All measurement
+                distributions are calculated over subwindows of the full 
+                spectrum."""
+
+                x = self.full_statevector(x_free)
+
+                # jacobian of measurment cost term WRT full state vector.
+                K = self.fm.K(x, geom)[self.winidx, :]
+                K = K[:, self.inds_free]
+                meas_jac = Seps_inv_sqrt.dot(K)
+
+                # jacobian of prior cost term with respect to state vector.
+                xa_free, Sa_free, Sa_free_inv, Sa_free_inv_sqrt = \
+                    self.calc_conditional_prior(x_free, geom)
+                prior_jac = Sa_free_inv_sqrt
+
+                # The total cost vector (as presented to the solver) is the
+                # concatenation of the "residuals" due to the measurement
+                # and prior distributions. They will be squared internally by
+                # the solver.
+                total_jac = s.concatenate((meas_jac, prior_jac), axis=0)
+
+                return s.real(total_jac)
+
+            def err(x_free):
+                """Calculate cost function expressed here in absolute (not
+                quadratic) terms for the solver, i.e., the square root of the 
+                Rodgers (2000) Chi-square version. We concatenate 'residuals'
+                due to measurment and prior terms, suitably scaled.
+                All measurement distributions are calculated over subwindows 
+                of the full spectrum."""
+
+                # set up full-sized state vector
+                x = self.full_statevector(x_free)
+
+                # Measurement cost term.  Will calculate reflectance and Ls from
+                # the state vector.
+                est_meas = self.fm.calc_meas(x, geom, rfl=None, Ls=None)
+                est_meas_window = est_meas[self.winidx]
+                meas_window = meas[self.winidx]
+                meas_resid = (est_meas_window-meas_window).dot(Seps_inv_sqrt)
+
+                # Prior cost term
+                xa_free, Sa_free, Sa_free_inv, Sa_free_inv_sqrt = \
+                    self.calc_conditional_prior(x_free, geom)
+                prior_resid = (x_free - xa_free).dot(Sa_free_inv_sqrt)
+
+                # Total cost
+                total_resid = s.concatenate((meas_resid, prior_resid))
+
+                trajectory.append(x)
+
+                it = len(trajectory)
+                rs = sum(pow(total_resid, 2))
+                sm = self.fm.summarize(x, geom)
+                logging.debug('Iteration: %02i  Residual: %12.2f %s' %
+                              (it, rs, sm))
+
+                return s.real(total_resid)
+
+            # Initialize and invert
+            try:
+                xopt = least_squares(err, x0, jac=jac,
+                                     **self.least_squares_params)
+                x_full_solution = self.full_statevector(xopt.x)
+                trajectory.append(x_full_solution)
+                solutions.append(trajectory)
+                costs.append(s.sqrt(pow(xopt.fun, 2).sum()))
+            except LinAlgError:
+                logging.warning('Levenberg Marquardt failed to converge')
+                solutions.append(trajectory)
+                costs.append(9e99)
         return s.array(solutions[s.argmin(costs)])
 
     def forward_uncertainty(self, x, meas, geom):

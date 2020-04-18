@@ -119,7 +119,8 @@ class Instrument:
         elif 'NEDT_noise_file' in config:
             self.model_type = 'NEDT'
             self.noise_file = config['NEDT_noise_file']
-            self.noise_data = s.loadtxt(self.noise_file, delimiter=',', skiprows=8)
+            self.noise_data = s.loadtxt(
+                self.noise_file, delimiter=',', skiprows=8)
             noise_data_w_nm = self.noise_data[:, 0] * 1000
             noise_data_NEDT = self.noise_data[:, 1]
             nedt = interp1d(noise_data_w_nm, noise_data_NEDT)(self.wl_init)
@@ -153,7 +154,8 @@ class Instrument:
                     u = s.loadtxt(f, comments='#')
                     if (len(u.shape) > 0 and u.shape[1] > 1):
                         u = u[:, 1]
-                    self.bval[:self.n_chan] = self.bval[:self.n_chan] + pow(u, 2)
+                    self.bval[:self.n_chan] = self.bval[:self.n_chan] + \
+                        pow(u, 2)
 
             # Uncorrelated radiometric uncertainties are consistent and
             # independent in all channels.
@@ -327,4 +329,3 @@ class Instrument:
         if len(x_instrument) < 1:
             return ''
         return 'Instrument: '+' '.join(['%5.3f' % xi for xi in x_instrument])
-

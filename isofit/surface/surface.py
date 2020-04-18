@@ -40,7 +40,7 @@ class Surface:
         self.bvec = []
         self.bval = s.array([])
         self.emissive = False
-        
+
         if 'reflectance' in config and config['reflectance'] is not None:
             self.rfl = config['reflectance']
             self.resample_reflectance()
@@ -70,7 +70,7 @@ class Surface:
 
         return s.zeros((0, 0), dtype=float)
 
-    def fit_params(self, rfl, geom, *args):
+    def fit_params(self, rfl_meas, geom, *args):
         """Given a directional reflectance estimate and one or more emissive 
         parameters, fit a state vector."""
 

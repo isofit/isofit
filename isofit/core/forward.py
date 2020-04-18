@@ -118,7 +118,7 @@ class ForwardModel:
         self.statevec = statevec
         self.nstate = len(self.statevec)
 
-        # Capture unmodeled variables. 
+        # Capture unmodeled variables.
         bvec, bval = [], []
         for name in ['RT', 'instrument', 'surface']:
             obj = getattr(self, name)
@@ -244,13 +244,14 @@ class ForwardModel:
 
         # Derivatives of RTM radiance
         drdn_dRT, drdn_dsurface = \
-            self.RT.drdn_dRT(x_RT, x_surface, rfl_hi, drfl_dsurface_hi, Ls_hi, 
-                            dLs_dsurface_hi, geom)
+            self.RT.drdn_dRT(x_RT, x_surface, rfl_hi, drfl_dsurface_hi, Ls_hi,
+                             dLs_dsurface_hi, geom)
 
         # Derivatives of measurement, avoiding recalculation of rfl, Ls
         dmeas_dsurface = \
             self.instrument.sample(x_instrument, self.RT.wl, drdn_dsurface.T).T
-        dmeas_dRT = self.instrument.sample(x_instrument, self.RT.wl, drdn_dRT.T).T
+        dmeas_dRT = self.instrument.sample(
+            x_instrument, self.RT.wl, drdn_dRT.T).T
         rdn_hi = self.calc_rdn(x, geom, rfl=rfl, Ls=Ls)
         dmeas_dinstrument = \
             self.instrument.dmeas_dinstrument(x_instrument, self.RT.wl, rdn_hi)
@@ -325,4 +326,3 @@ class ForwardModel:
         x_RT = x[self.idx_RT]
         x_instrument = x[self.idx_instrument]
         return x_surface, x_RT, x_instrument
-

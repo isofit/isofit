@@ -1,0 +1,92 @@
+{
+  "ISOFIT_BASE": "../../..",
+
+  "input": {
+    "measured_radiance_file": "../input/extracted_points_water_offset_adjust.txt"
+  },
+
+  "output": {
+    "estimated_reflectance_file": "../output/joint_test_rfl.txt",
+    "algebraic_inverse_file": "../output/joint_test_alg.txt",
+    "modeled_radiance_file":  "../output/joint_test_mdl.txt",
+    "data_dump_file":         "../output/joint_test_data.mat",
+    "posterior_errors_file":  "../output/joint_test_post.mat",
+    "estimated_state_file":  "../output/joint_test_state.txt",
+    "posterior_uncertainty_file":  "../output/joint_test_uncert.txt",
+    "plot_directory":"../images/"
+  },
+
+  "forward_model":{
+
+    "instrument": {
+      "wavelength_file": "../data/avirisc_hytes_wavelengths_FWHM_um.txt",
+      "integrations":1,
+      "parametric_noise_file": "../data/joint_avirisc_noise_233_hytes_parametric_noise_model.txt",
+      "unknowns": {
+        "channelized_radiometric_uncertainty_file": "../data/joint_avirisc_233_hytes_channelized_uncertainty.txt"
+      }
+    },
+
+    "thermal_surface": {
+      "select_on_init":true,
+      "selection_metric":"Euclidean",
+      "surface_file": "../data/ecostress_surface_model.mat"
+    },
+
+    "radiative_transfer": {
+      "statevector": {
+        "H2OSTR": {
+          "bounds": [0.5, 4.0],
+          "scale": 0.1,
+          "prior_mean": 1.5,
+          "prior_sigma": 2.0,
+          "init": 1.5
+        },
+        "AERFRAC_1": {
+          "bounds": [0.001, 0.2],
+          "scale": 0.1,
+          "init": 0.05,
+          "prior_mean": 0.01,
+          "prior_sigma": 1.0
+        },
+        "O3STR": {
+          "bounds": [0.01, 0.2],
+          "scale": 0.1,
+          "prior_mean": 0.100,
+          "prior_sigma": 0.2,
+          "init": 0.1
+        }
+      },
+      "unknowns": {
+        "H2O_ABSCO": 0.01
+      },
+      "lut_grid": {
+        "H2OSTR": [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0],
+        "AERFRAC_1": [0.01, 0.2],
+        "O3STR": [0.01, 0.075, 0.15, 0.2]
+      },
+      "modtran_vswir": {
+        "wavelength_file": "../data/avirisc_wavelengths.txt",
+        "lut_path":"../lut/",
+        "modtran_template_file":"./vswir_mod_config_WATER.json",
+        "aerosol_template_file":"../data/aerosol_template.json",
+        "aerosol_model_file":"../data/aerosol_twopart_model.txt",
+        "domain": {"start": 350, "end": 2520, "step": 0.1},
+        "lut_names": ["H2OSTR", "AERFRAC_1"],
+        "statevector_names": ["H2OSTR", "AERFRAC_1"]
+      },
+      "modtran_tir": {
+        "wavelength_file": "../data/HyTES_wavelengths_and_FWHM_RIGHT_FORMAT.txt",
+        "lut_path":"../lut/",
+        "modtran_template_file":"./tir_mod_config_WATER.json",
+        "domain": {"start": 7500, "end": 11100, "step": 0.2},
+        "lut_names": ["H2OSTR", "O3STR"],
+        "statevector_names": ["H2OSTR", "O3STR"]
+      }
+    }
+  },
+
+  "inversion": {
+    "windows": [[400.0,1300.0],[1450,1780.0],[2050.0,2450.0],[7500.0, 12000.0]]
+  }
+}
