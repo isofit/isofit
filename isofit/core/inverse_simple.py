@@ -129,19 +129,6 @@ def invert_algebraic(surface, RT, instrument, x_surface, x_RT, x_instrument, mea
     return rfl_est, Ls, coeffs
 
 
-def estimate_Ls(coeffs, rfl, rdn, geom):
-    """Estimate the surface emission for a given state vector and 
-    reflectance/radiance pair. This is determined by the residual
-    between the upward-welling radiance due to surface and 
-    scattering, and the measured radiance. We account for 
-    atmospheric transmission on the upward path."""
-
-    rhoatm, sphalb, transm, solar_irr, coszen, transup = coeffs
-    rho = rhoatm + transm * rfl / (1.0 - sphalb * rfl)
-    Ls = (rdn - rho/s.pi*(solar_irr*coszen)) / transup
-    return Ls
-
-
 def invert_simple(forward, meas, geom):
     """Find an initial guess at the state vector. This currently uses
     traditional (non-iterative, heuristic) atmospheric correction."""
@@ -187,9 +174,9 @@ def invert_simple(forward, meas, geom):
     # Estimate the total radiance at sensor, leaving out the surface emission
     rhoatm, sphalb, transm, solar_irr, coszen, transup = coeffs
     L_atm = RT.get_L_atm(x_RT, geom)
-    L_down = RT.get_L_down(x_RT, geom)
+    L_down_times_multiscattering_transmission = RT.get_L_down_times_multiscattering_transmission(x_RT, geom)
     L_total_without_surface_emission = \
-            L_atm + L_down * rfl_est * transm / (1. - sphalb * rfl_est)
+            L_atm + L_down_times_multiscattering_transmission * rfl_est / (1. - sphalb * rfl_est)
     
     # These tend to have high transmission factors and the emissivity of most
     # materials is nearly 1 for these bands, so they are good for initializing the 
