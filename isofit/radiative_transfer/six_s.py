@@ -102,19 +102,21 @@ class SixSRT(TabularRT):
         irr = irr / self.irr_factor**2  # consider solar distance
         self.solar_irr = resample_spectrum(irr, iwl,  self.wl, self.fwhm)
 
-        self.angular_lut_keys_degrees = ['OBSZEN','TRUEAZ','viewzen','viewaz','solzen','solaz']
+        self.angular_lut_keys_degrees = ['OBSZEN','TRUEAZ','viewzen','viewaz',
+            'solzen','solaz']
 
         self.lut_quantities = ['rhoatm', 'transm', 'sphalb', 'transup']
         self.build_lut()
 
-        # This array is used to handle the potential indexing mismatch between the
-        # 'global statevector' (which may couple multiple radiative transform models)
-        # and this statevector
-        # It should never be modified
+        # This array is used to handle the potential indexing mismatch between
+        # the 'global statevector' (which may couple multiple radiative 
+        # transform models) and this statevector. It should never be modified
         full_to_local_statevector_position_mapping = []
         for sn in self.statevec:
-            full_to_local_statevector_position_mapping.append(statevector_names.index(sn))
-        self._full_to_local_statevector_position_mapping = s.array(full_to_local_statevector_position_mapping)
+            ix = statevector_names.index(sn)
+            full_to_local_statevector_position_mapping.append(ix)
+        self._full_to_local_statevector_position_mapping = \
+            s.array(full_to_local_statevector_position_mapping)
 
 
     def find_basedir(self, config):
@@ -204,11 +206,16 @@ class SixSRT(TabularRT):
             rhoatms[i] = float(rhoa)
 
         results = {
-            "solzen": resample_spectrum(solzens,  self.grid, self.wl, self.fwhm),
-            "rhoatm": resample_spectrum(rhoatms,  self.grid, self.wl, self.fwhm),
-            "transm": resample_spectrum(transms,  self.grid, self.wl, self.fwhm),
-            "sphalb": resample_spectrum(sphalbs,  self.grid, self.wl, self.fwhm),
-            "transup": resample_spectrum(transups, self.grid, self.wl, self.fwhm)}
+            "solzen": resample_spectrum(solzens,  self.grid, self.wl, 
+                    self.fwhm),
+            "rhoatm": resample_spectrum(rhoatms,  self.grid, self.wl, 
+                    self.fwhm),
+            "transm": resample_spectrum(transms,  self.grid, self.wl, 
+                    self.fwhm),
+            "sphalb": resample_spectrum(sphalbs,  self.grid, self.wl, 
+                    self.fwhm),
+            "transup": resample_spectrum(transups, self.grid, self.wl, 
+                    self.fwhm)}
         return results
 
     def ext550_to_vis(self, ext550):
@@ -229,11 +236,13 @@ class SixSRT(TabularRT):
         for key in self.lut_quantities:
             temp = s.zeros(dims_aug, dtype=float)
             for sixs_output, point in zip(sixs_outputs, self.points):
-                ind = [s.where(g == p)[0] for g, p in zip(self.lut_grids, point)]
+                ind = [s.where(g == p)[0] for g, p in \
+                    zip(self.lut_grids, point)]
                 ind = tuple(ind)
                 temp[ind] = sixs_output[key]
 
-            self.luts[key] = VectorInterpolator(self.lut_grids, temp, self.lut_interp_types)
+            self.luts[key] = VectorInterpolator(self.lut_grids, temp, 
+                    self.lut_interp_types)
 
     def _lookup_lut(self, point):
         ret = {}
@@ -245,7 +254,8 @@ class SixSRT(TabularRT):
         point = s.zeros((self.n_point,))
         for point_ind, name in enumerate(self.lut_grid_config):
             if name in self.statevec:
-                x_RT_ind = self._full_to_local_statevector_position_mapping[self.statevec.index(name)]
+                ix = self.statevec.index(name)
+                x_RT_ind = self._full_to_local_statevector_position_mapping[ix]
                 point[point_ind] = x_RT[x_RT_ind]
             elif name == "OBSZEN":
                 point[point_ind] = geom.OBSZEN

@@ -32,11 +32,10 @@ from ..radiative_transfer.radiative_transfer import RadiativeTransfer
 ### Variables ###
 
 # Supported RT modules, filenames, and class names
-RT_models = [('modtran_radiative_transfer', 'radiative_transfer.modtran', 'ModtranRT'),
+RT_models = [('modtran_radiative_transfer', 'radiative_transfer.modtran', 
+              'ModtranRT'),
              ('libradtran_radiative_transfer',
               'radiative_transfer.libradtran', 'LibRadTranRT'),
-             ('planetary_radiative_transfer', 'planetary', 'PlanetaryRT'),
-             ('uplooking_radiative_transfer', 'radiative_transfer.rfm', 'UplookRT'),
              ('sixs_radiative_transfer', 'radiative_transfer.six_s', 'SixSRT')]
 
 
@@ -44,12 +43,10 @@ RT_models = [('modtran_radiative_transfer', 'radiative_transfer.modtran', 'Modtr
 surface_models = [('surface', 'surface.surface', 'Surface'),
                   ('multicomponent_surface',
                    'surface.surface_multicomp', 'MultiComponentSurface'),
-                  ('emissive_surface', 'surface.surface_emissive', 'MixBBSurface'),
-                  ('cat_surface', 'surf_cat', 'CATSurface'),
                   ('glint_surface', 'surface.surface_glint', 'GlintSurface'),
                   ('iop_surface', 'surface.surface_iop', 'IOPSurface'),
-                  ('poly_surface', 'surf_poly', 'PolySurface'),
-                  ('thermal_surface', 'surface.surface_thermal', 'ThermalSurface')]
+                  ('thermal_surface', 'surface.surface_thermal', 
+                   'ThermalSurface')]
 
 
 ### Classes ###

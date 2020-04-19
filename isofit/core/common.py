@@ -54,7 +54,8 @@ class VectorInterpolator:
         [degree_locations] = np.where(self.lut_interp_types == 'r')
         angle_locations = np.hstack([radian_locations, degree_locations])
         angle_types = np.hstack(
-            [self.lut_interp_types[radian_locations], self.lut_interp_types[degree_locations]])
+            [self.lut_interp_types[radian_locations], 
+            self.lut_interp_types[degree_locations]])
         for _angle_loc in range(len(angle_locations)):
 
             angle_loc = angle_locations[_angle_loc]
@@ -78,22 +79,13 @@ class VectorInterpolator:
             grid.insert(angle_loc+1, grid_subset_sin[grid_subset_sin_order])
 
             # now copy the data to be interpolated through the extra dimension,
-            # at the specific angle_loc axes.  We'll use broadcast_to to do this,
-            # but we need to do it on the last dimension.  So start by
+            # at the specific angle_loc axes.  We'll use broadcast_to to do 
+            # this, but we need to do it on the last dimension.  So start by
             # temporarily moving the target axes there, then broadcasting
             data = np.swapaxes(data, -1, angle_loc)
             data_dim = list(np.shape(data))
             data_dim.append(data_dim[-1])
             data = data[..., np.newaxis] * np.ones(data_dim)
-
-            # now copy the data to be interpolated through the extra dimension,
-            # at the specific angle_loc axes.  We'll use broadcast_to to do this,
-            # but broad_cast to only works on the 0th dimension.  So start by
-            # temporarily moving the target axes there, then broadcasting
-            #data = np.swapaxes(data,0,angle_loc)
-            #data_dim = list(np.shape(data))
-            # data_dim.insert(0,data_dim[0])
-            #data = np.broadcast_to(data,data_dim).copy()
 
             # Now we need to actually copy the data between the first two axes,
             # as broadcast_to doesn't do this
@@ -104,13 +96,6 @@ class VectorInterpolator:
             data = data[..., grid_subset_cosin_order, :]
             # Now re-order the sin dimension
             data = data[..., grid_subset_sin_order]
-
-            # now re-arrange the axes so they're in the right order again,
-            # remembering that we've added a new axis
-            #dst_axes = np.arange(2,len(data.shape)).tolist()
-            # dst_axes.insert(angle_loc,0)
-            # dst_axes.insert(angle_loc+1,1)
-            #data = np.transpose(data,axes=dst_axes)
 
             # now re-arrange the axes so they're in the right order again,
             dst_axes = np.arange(len(data.shape)-2).tolist()
@@ -188,7 +173,8 @@ def emissive_radiance(emissivity, T, wl):
 
 
 def svd_inv(C, mineig=0, hashtable=None):
-    """Fast stable inverse using SVD. This can handle near-singular matrices."""
+    """Fast stable inverse using SVD. This can handle near-singular 
+        matrices."""
 
     return svd_inv_sqrt(C, mineig, hashtable)[0]
 
@@ -218,8 +204,8 @@ def svd_inv_sqrt(C, mineig=0, hashtable=None):
             break
 
         if count == 2:
-            raise ValueError('Matrix inversion contains negative values, even after adding ' +
-                             '{} to the diagonal.  Sqrt fails'.format(inv_eps))
+            raise ValueError('Matrix inversion contains negative values,'+\
+                    'even after adding {} to the diagonal.'.format(inv_eps))
 
     Ds = np.diag(1/np.sqrt(D))
     L = P@Ds

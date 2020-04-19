@@ -66,9 +66,11 @@ class TabularRT:
             else:
                 setattr(self, key, value)
 
-        # We use a sorted dictionary here so that filenames
-        # for LUT grid points are always constructed the same way, with
-        # consistent dimesion ordering)
+        # We use a sorted dictionary here so that filenames for lookup
+        # table (LUT) grid points are always constructed the same way, with
+        # consistent dimesion ordering). Every state vector element has
+        # a lookup table dimension, but some lookup table dimensions 
+        # (like geometry parameters) may not be in the state vector.
         sorted_grid = sorted(config['lut_grid'].items(), key=lambda t:t[0])
         self.lut_grid_config = OrderedDict(sorted_grid)
                     
@@ -81,9 +83,10 @@ class TabularRT:
 
         self.angular_lut_keys_degrees = []
         self.angular_lut_keys_radians = []
-
-        # set up lookup table grid, and associated filename prefixes
-        self.lut_dims, self.lut_grids, self.lut_names, self.lut_interp_types = [], [], [], []
+        self.lut_dims = [] 
+        self.lut_grids = []
+        self.lut_names = [] 
+        self.lut_interp_types = []
 
         # Retrieved variables.  We establish scaling, bounds, and
         # initial guesses for each state vector element.  The state
@@ -106,11 +109,12 @@ class TabularRT:
 
 
     def build_lut(self, rebuild=False):
-        """Each LUT is associated with a source directory.  We build a lookup table by: 
-              (1) defining the LUT dimensions, state vector names, and the grid 
-                  of values; 
-              (2) running modtran if needed, with each MODTRAN run defining a 
-                  different point in the LUT; and 
+        """Each LUT is associated with a source directory.  We build a lookup 
+            table by: 
+              (1) defining the LUT dimensions, state vector names, and the 
+                    grid of values; 
+              (2) running the radiative transfer solver if needed, with each 
+                    run defining a different point in the LUT; and 
               (3) loading the LUTs, one per key atmospheric coefficient vector,
                   into memory as VectorInterpolator objects."""
 
@@ -118,7 +122,8 @@ class TabularRT:
 
             # do some quick checks on the values
             if len(grid_values) == 1:
-                err = 'Only 1 value in LUT grid {}.  1-d LUT grids cannot be interpreted.'.format(key)
+                err = 'Only 1 value in LUT grid {}. '+\
+                        '1-d LUT grids cannot be interpreted.'.format(key)
                 raise ValueError(err)
             if grid_values != sorted(grid_values):
                 logging.error('Lookup table grid needs ascending order')
@@ -150,6 +155,9 @@ class TabularRT:
                              for n, x in zip(self.lut_names, point)])
             self.files.append(outf)
 
+        # Build the list of radiative transfer run commands. This 
+        # rebuild_cmd() function will be overriden by the child class to 
+        # perform setup activities unique to each RTM.
         rebuild_cmds = []
         for point, fn in zip(self.points, self.files):
             try:
