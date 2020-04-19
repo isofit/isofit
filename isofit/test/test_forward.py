@@ -6,4 +6,4 @@ def test_RT_models():
 
 
 def test_surface_models():
-    assert len(surface_models) == 5
+    assert len(surface_models) == 4

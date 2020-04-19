@@ -44,7 +44,6 @@ surface_models = [('surface', 'surface.surface', 'Surface'),
                   ('multicomponent_surface',
                    'surface.surface_multicomp', 'MultiComponentSurface'),
                   ('glint_surface', 'surface.surface_glint', 'GlintSurface'),
-                  ('iop_surface', 'surface.surface_iop', 'IOPSurface'),
                   ('thermal_surface', 'surface.surface_thermal', 
                    'ThermalSurface')]
 
