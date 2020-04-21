@@ -7,3 +7,5 @@ surface_model("configs/surface.json")
 
 # Run retrievals
 model1 = Isofit("configs/joint_isofit_with_prof_WATER_nogrid.json").run(debug = True)
+
+

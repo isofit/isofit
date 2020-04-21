@@ -1,6 +1,6 @@
 {
-  "output_model_file": "../data/ecostress_surface_model.mat",
-  "wavelength_file":   "../data/avirisc_hytes_wavelengths_FWHM_um.txt",
+  "output_model_file": "../input/ecostress_surface_model.mat",
+  "wavelength_file":   "../input/avirisc_hytes_wavelengths.txt",
   "normalize":"None",
   "reference_windows":[[400,1300],[1450,1700],[2100,2450]],
   "sources":
