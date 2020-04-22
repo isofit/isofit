@@ -78,14 +78,14 @@ class ForwardModel:
     def __init__(self, config):
         """
         TODO: Members required by multiple functions, but never defined:
-        self.idx_surface, self.idx_RT, self.index_instrument,
+        self.idx_surface, self.idx_RT, self.idx_instrument,
         self.RT_b_inds, self.instrument_b_inds
         """
 
         # Missing class members
         # self.idx_RT = ?
         # self.idx_surface = ?
-        # self.index_instrument = ?
+        # self.idx_instrument = ?
         # self.RT_b_inds
         # self.instrument_b_inds
 
@@ -255,7 +255,7 @@ class ForwardModel:
         the concatenation of jacobians with respect to parameters of the 
         surface and radiative transfer model.
 
-        TODO: broken due to missing self.idx_surface, self.index_RT, self.index_instrument
+        TODO: broken due to missing self.idx_surface, self.idx_RT, self.idx_instrument
         """
 
         # Unpack state vector
