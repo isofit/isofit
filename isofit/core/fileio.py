@@ -20,6 +20,7 @@
 
 import os
 import pylab as plt
+import numpy as np
 from numpy.linalg import inv, norm, det
 from scipy.linalg import sqrtm
 from scipy.io import savemat
@@ -177,12 +178,12 @@ class SpectrumFile:
         """Try to open a memory map, handling Beowulf I/O issues."""
 
         self.memmap = None
-        for attempt in range(10):
-            self.memmap = self.file.open_memmap(interleave='source',
-                                                writable=self.write)
+        for _ in range(10):
+            self.memmap = self.file.open_memmap(
+                interleave='source', writable=self.write)
             if self.memmap is not None:
                 return
-        raise IOError('could not open memmap for '+self.fname)
+        raise IOError('could not open memmap for ' + self.fname)
 
     def get_frame(self, row):
         """The frame is a 2D array, essentially a list of spectra. The 
@@ -397,7 +398,7 @@ class IO:
         # Do we apply a radiance correction?
         if 'radiometry_correction_file' in self.input:
             filename = self.input['radiometry_correction_file']
-            self.radiance_correction, wl = load_spectrum(filename)
+            self.radiance_correction, _ = load_spectrum(filename)
 
         # Last thing is to define the active image area
         if active_rows is None:
@@ -411,9 +412,9 @@ class IO:
         self.iter_inds = np.array(self.iter_inds)
 
     def get_components_at_index(self, index):
-        """
-        Get the spectrum from the file at the specified index.  Helper/
-        parallel enabling function.
+        """Get the spectrum from the file at the specified index.
+
+        Helper parallel-enabling function.
 
         :param index: reference location for iter_inds
 
@@ -424,6 +425,7 @@ class IO:
         :return: geom: set up specified geometry files
         :return: updates: set of prior reference files
         """
+
         # Determine the appropriate row, column index. and initialize the
         # data dictionary with empty entries.
         r, c = self.iter_inds[index]
@@ -475,14 +477,16 @@ class IO:
         return True, r, c, meas, geom, updates
 
     def __iter__(self):
-        """ Reset the iterator"""
+        """Reset the iterator."""
 
         self.iter = 0
         return self
 
     def __next__(self):
-        """ Get the next spectrum from the file.  Turn the iteration number
-            into row/column indices and read from all input products."""
+        """Get the next spectrum from the file.
+
+        Turn the iteration number into row/column indices and read from all input products.
+        """
 
         # Try to read data until we hit the end or find good values
         success = False
@@ -509,7 +513,7 @@ class IO:
         """Write all buffered output data to disk, and erase read buffers."""
 
         for file_dictionary in [self.infiles, self.outfiles]:
-            for name, fi in file_dictionary.items():
+            for _, fi in file_dictionary.items():
                 fi.flush_buffers()
 
     def write_spectrum(self, row, col, states, meas, geom, flush_immediately=False):
@@ -569,17 +573,17 @@ class IO:
 
             # Algebraic inverse and atmospheric optical coefficients
             x_surface, x_RT, x_instrument = self.fm.unpack(state_est)
-            rfl_alg_opt, Ls, coeffs = invert_algebraic(self.fm.surface,
-                                                       self.fm.RT, self.fm.instrument, x_surface, x_RT, x_instrument,
-                                                       meas, geom)
+            rfl_alg_opt, Ls, coeffs = invert_algebraic(
+                self.fm.surface, self.fm.RT, self.fm.instrument, x_surface,
+                x_RT, x_instrument, meas, geom)
             rhoatm, sphalb, transm, solar_irr, coszen, transup = coeffs
 
             L_atm = self.fm.RT.get_L_atm(x_RT, geom)
             L_down_transmitted = self.fm.RT.get_L_down_transmitted(x_RT, geom)
             L_up = self.fm.RT.get_L_up(x_RT, geom)
 
-            atm = np.column_stack(list(coeffs[:4]) +
-                                  [np.ones((len(wl), 1)) * coszen])
+            atm = np.column_stack(
+                list(coeffs[:4]) + [np.ones((len(wl), 1)) * coszen])
 
             # Upward emission & glint and apparent reflectance
             Ls_est = self.fm.calc_Ls(state_est, geom)
@@ -593,8 +597,8 @@ class IO:
                     self.rfl_ref = reference_file.read_spectrum(row, col)
                     self.wl_ref = reference_file.wl
                     w, fw = self.fm.instrument.calibration(x_instrument)
-                    resamp = resample_spectrum(self.rfl_ref, self.wl_ref,
-                                               w, fw, fill=True)
+                    resamp = resample_spectrum(
+                        self.rfl_ref, self.wl_ref, w, fw, fill=True)
                     meas_est = self.fm.calc_meas(state_est, geom, rfl=resamp)
                     factors = meas_est / meas
                 else:
@@ -605,7 +609,6 @@ class IO:
                 'estimated_state_file': state_est,
                 'estimated_reflectance_file': np.column_stack((self.fm.surface.wl, lamb_est)),
                 'estimated_emission_file': np.column_stack((self.fm.surface.wl, Ls_est)),
-                'estimated_reflectance_file': np.column_stack((self.fm.surface.wl, lamb_est)),
                 'modeled_radiance_file': np.column_stack((wl, meas_est)),
                 'apparent_reflectance_file': np.column_stack((self.fm.surface.wl, apparent_rfl_est)),
                 'path_radiance_file': np.column_stack((wl, path_est)),
@@ -618,7 +621,7 @@ class IO:
             }
 
         for product in self.outfiles:
-            logging.debug('IO: Writing '+product)
+            logging.debug('IO: Writing ' + product)
             self.outfiles[product].write_spectrum(row, col, to_write[product])
             if (self.writes % flush_rate) == 0 or flush_immediately:
                 self.outfiles[product].flush_buffers()
@@ -635,10 +638,10 @@ class IO:
             logging.debug('IO: Writing data_dump_file')
             x = state_est
             xall = states
-            Seps_inv, Seps_inv_sqrt = self.iv.calc_Seps(x, meas, geom)
-            meas_est_window = meas_est[self.iv.winidx]
-            meas_window = meas[self.iv.winidx]
-            xa, Sa, Sa_inv, Sa_inv_sqrt = self.iv.calc_prior(x, geom)
+            _, Seps_inv_sqrt = self.iv.calc_Seps(x, meas, geom)
+            # meas_est_window = meas_est[self.iv.winidx]
+            # meas_window = meas[self.iv.winidx]
+            xa, Sa, _, Sa_inv_sqrt = self.iv.calc_prior(x, geom)
             prior_resid = (x - xa).dot(Sa_inv_sqrt)
             rdn_est = self.fm.calc_rdn(x, geom)
             rdn_est_all = np.array(
@@ -714,13 +717,13 @@ class IO:
                 red = [0.7, 0.2, 0.2]
                 wl, fwhm = self.fm.calibration(x)
                 xmin, xmax = min(wl), max(wl)
-                fig = plt.subplots(1, 2, figsize=(10, 5))
+                _ = plt.subplots(1, 2, figsize=(10, 5))
                 plt.subplot(1, 2, 1)
                 meas_est = self.fm.calc_meas(x, geom)
                 for lo, hi in self.iv.windows:
                     idx = np.where(np.logical_and(wl > lo, wl < hi))[0]
-                    p1 = plt.plot(wl[idx], meas[idx], color=red, linewidth=2)
-                    p2 = plt.plot(wl, meas_est, color='k', linewidth=1)
+                    plt.plot(wl[idx], meas[idx], color=red, linewidth=2)
+                    plt.plot(wl, meas_est, color='k', linewidth=1)
                 plt.title("Radiance")
                 plt.title("Measurement (Scaled DN)")
                 ymax = max(meas)*1.25
@@ -742,30 +745,30 @@ class IO:
 
                     # black line
                     idx = np.where(np.logical_and(wl > lo, wl < hi))[0]
-                    p2 = plt.plot(wl[idx], lamb_est[idx], 'k', linewidth=2)
+                    plt.plot(wl[idx], lamb_est[idx], 'k', linewidth=2)
                     ymax = max(max(lamb_est[idx]*1.2), ymax)
 
                     # red line
                     if 'reference_reflectance_file' in self.infiles:
                         idx = np.where(np.logical_and(
                             self.wl_ref > lo, self.wl_ref < hi))[0]
-                        p1 = plt.plot(self.wl_ref[idx], self.rfl_ref[idx],
-                                      color=red, linewidth=2)
+                        plt.plot(self.wl_ref[idx], self.rfl_ref[idx],
+                                 color=red, linewidth=2)
                         ymax = max(max(self.rfl_ref[idx]*1.2), ymax)
 
                     # green and blue lines - surface components
                     if hasattr(self.fm.surface, 'components') and \
                             self.output['plot_surface_components']:
-                        idx = np.where(np.logical_and(self.fm.surface.wl > lo,
-                                                      self.fm.surface.wl < hi))[0]
-                        p3 = plt.plot(self.fm.surface.wl[idx],
-                                      self.fm.xa(x, geom)[idx], 'b', linewidth=2)
+                        idx = np.where(np.logical_and(
+                            self.fm.surface.wl > lo, self.fm.surface.wl < hi))[0]
+                        plt.plot(self.fm.surface.wl[idx],
+                                 self.fm.xa(x, geom)[idx], 'b', linewidth=2)
                         for j in range(len(self.fm.surface.components)):
                             z = self.fm.surface.norm(
                                 lamb_est[self.fm.surface.idx_ref])
                             mu = self.fm.surface.components[j][0] * z
-                            plt.plot(self.fm.surface.wl[idx], mu[idx], 'g:',
-                                     linewidth=1)
+                            plt.plot(self.fm.surface.wl[idx],
+                                     mu[idx], 'g:', linewidth=1)
                 plt.text(500, ymax*0.86, "Remote estimate", color='k')
                 if 'reference_reflectance_file' in self.infiles:
                     plt.text(500, ymax*0.92, "In situ reference", color=red)
