@@ -22,7 +22,7 @@ import os
 import json
 import xxhash
 import numpy as np
-import scipy.linalg
+from numpy.linalg import eigh
 from scipy.interpolate import RegularGridInterpolator
 from os.path import expandvars, split, abspath
 import subprocess
@@ -54,8 +54,8 @@ class VectorInterpolator:
         [degree_locations] = np.where(self.lut_interp_types == 'r')
         angle_locations = np.hstack([radian_locations, degree_locations])
         angle_types = np.hstack(
-            [self.lut_interp_types[radian_locations], 
-            self.lut_interp_types[degree_locations]])
+            [self.lut_interp_types[radian_locations],
+             self.lut_interp_types[degree_locations]])
         for _angle_loc in range(len(angle_locations)):
 
             angle_loc = angle_locations[_angle_loc]
@@ -79,7 +79,7 @@ class VectorInterpolator:
             grid.insert(angle_loc+1, grid_subset_sin[grid_subset_sin_order])
 
             # now copy the data to be interpolated through the extra dimension,
-            # at the specific angle_loc axes.  We'll use broadcast_to to do 
+            # at the specific angle_loc axes.  We'll use broadcast_to to do
             # this, but we need to do it on the last dimension.  So start by
             # temporarily moving the target axes there, then broadcasting
             data = np.swapaxes(data, -1, angle_loc)
@@ -162,7 +162,8 @@ def emissive_radiance(emissivity, T, wl):
     J_per_eV = 1.60218e-19
     wl_um = wl / 1000.0
     ph_per_sec_cm2_sr_nm = c_1/(wl**4)/(np.exp(c_2/wl/T)-1.0) * emissivity
-    # photon energy in eV
+
+    # Photon energy in eV
     eV_per_sec_cm2_sr_nm = 1.2398 * ph_per_sec_cm2_sr_nm/wl_um
     W_per_cm2_sr_nm = J_per_eV * eV_per_sec_cm2_sr_nm
     uW_per_cm2_sr_nm = W_per_cm2_sr_nm*1e6
@@ -173,8 +174,7 @@ def emissive_radiance(emissivity, T, wl):
 
 
 def svd_inv(C, mineig=0, hashtable=None):
-    """Fast stable inverse using SVD. This can handle near-singular 
-        matrices."""
+    """Fast stable inverse using SVD. This can handle near-singular matrices."""
 
     return svd_inv_sqrt(C, mineig, hashtable)[0]
 
@@ -194,18 +194,17 @@ def svd_inv_sqrt(C, mineig=0, hashtable=None):
         if h in hashtable:
             return hashtable[h]
 
-    D, P = scipy.linalg.eigh(C)
+    D, P = eigh(C)
     for count in range(3):
         if np.any(D < 0) or np.any(np.isnan(D)):
             inv_eps = 1e-6 * (count-1)*10
-            D, P = scipy.linalg.eigh(
-                C + np.diag(np.ones(C.shape[0]) * inv_eps))
+            D, P = eigh(C + np.diag(np.ones(C.shape[0]) * inv_eps))
         else:
             break
 
         if count == 2:
-            raise ValueError('Matrix inversion contains negative values,'+\
-                    'even after adding {} to the diagonal.'.format(inv_eps))
+            raise ValueError(("Matrix inversion contains negative values, "
+                              "even after adding {} to the diagonal.").format(inv_eps))
 
     Ds = np.diag(1/np.sqrt(D))
     L = P@Ds
@@ -250,13 +249,13 @@ def get_absorption(wl, absfile):
     # read the indices of refraction
     q = np.loadtxt(absfile, delimiter=',')
     wl_orig_nm = q[:, 0]
-    wl_orig_cm = wl_orig_nm/1e9*1e2
+    wl_orig_cm = wl_orig_nm / 1e9 * 1e2
     water_imag = q[:, 2]
     ice_imag = q[:, 4]
 
     # calculate absorption coefficients in cm^-1
-    water_abscf = water_imag*np.pi*4.0/wl_orig_cm
-    ice_abscf = ice_imag*np.pi*4.0/wl_orig_cm
+    water_abscf = water_imag * np.pi * 4.0 / wl_orig_cm
+    ice_abscf = ice_imag * np.pi * 4.0 / wl_orig_cm
 
     # interpolate to new wavelengths (user provides nm)
     water_abscf_intrp = np.interp(wl, wl_orig_nm, water_abscf)
@@ -334,44 +333,36 @@ def find_header(imgfile):
     """Return the header associated with an image file."""
 
     if os.path.exists(imgfile+'.hdr'):
-        return imgfile+'.hdr'
+        return imgfile + '.hdr'
     ind = imgfile.rfind('.raw')
     if ind >= 0:
-        return imgfile[0:ind]+'.hdr'
+        return imgfile[0:ind] + '.hdr'
     ind = imgfile.rfind('.img')
     if ind >= 0:
-        return imgfile[0:ind]+'.hdr'
+        return imgfile[0:ind] + '.hdr'
     raise IOError('No header found for file {0}'.format(imgfile))
-
-
-def expand_path(directory, subpath):
-    """Turn a subpath into an absolute path if it is not absolute already."""
-
-    if subpath.startswith('/'):
-        return subpath
-    return os.path.join(directory, subpath)
 
 
 def rdn_translate(wvn, rdn_wvn):
     """Translate radiance out of wavenumber space."""
 
-    dwvn = wvn[1:]-wvn[:-1]
+    dwvn = wvn[1:] - wvn[:-1]
     dwl = 10000.0/wvn[1:] - 10000.0/wvn[:-1]
-    return rdn_wvn*(dwl/dwvn)
+    return rdn_wvn * (dwl/dwvn)
 
 
 def resample_spectrum(x, wl, wl2, fwhm2, fill=False):
     """Resample a spectrum to a new wavelength / FWHM. 
        I assume Gaussian SRFs."""
 
-    H = np.array([srf(wl, wi, fwhmi/2.355)
+    h = np.array([srf(wl, wi, fwhmi/2.355)
                   for wi, fwhmi in zip(wl2, fwhm2)])
     if fill is False:
-        return np.dot(H, x[:, np.newaxis]).ravel()
+        return np.dot(h, x[:, np.newaxis]).ravel()
     else:
-        xnew = np.dot(H, x[:, np.newaxis]).ravel()
+        xnew = np.dot(h, x[:, np.newaxis]).ravel()
         good = np.isfinite(xnew)
-        for i, xi in enumerate(xnew):
+        for i, _ in enumerate(xnew):
             if not good[i]:
                 nearest_good_ind = np.argmin(abs(wl2[good]-wl2[i]))
                 xnew[i] = xnew[nearest_good_ind]
@@ -386,8 +377,9 @@ def load_spectrum(init):
     if x.ndim > 1:
         x = x[:, :2]
         wl, x = x.T
+        # Convert μm to nm if minimum wavelength < 100
         if wl[0] < 100:
-            wl = wl*1000.0  # convert microns -> nm if needed
+            wl = wl * 1000.0
         return x, wl
     else:
         return x, None
@@ -396,9 +388,9 @@ def load_spectrum(init):
 def srf(x, mu, sigma):
     """Spectral response function."""
 
-    u = (x-mu)/abs(sigma)
-    y = (1.0/(np.sqrt(2.0*np.pi)*abs(sigma)))*np.exp(-u*u/2.0)
-    return y/y.sum()
+    u = (x-mu) / abs(sigma)
+    y = (1.0 / (np.sqrt(2.0*np.pi) * abs(sigma))) * np.exp(-u*u/2.0)
+    return y / y.sum()
 
 
 def combos(inds):
@@ -419,6 +411,7 @@ def conditional_gaussian(mu, C, window, remain, x):
     contains all other indices, 
     such that len(window)+len(remain)=len(x)
     """
+
     C11 = np.array([C[i, remain] for i in remain])
     C12 = np.array([C[i, window] for i in remain])
     C21 = np.array([C[i, remain] for i in window])
@@ -435,7 +428,7 @@ def safe_core_count():
     only works for linux, defaults to CPU count on other systems.
 
     TODO: expand for other operating systems, think about more elegant
-    solutions.
+    solutions. Consider concurrent.futures.
 
     Returns:
         num_cores: number of cores on current socket, if available
