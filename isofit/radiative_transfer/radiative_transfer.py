@@ -31,13 +31,13 @@ from ..radiative_transfer.libradtran import libradtran_names, LibRadTranRT
 
 class RadiativeTransfer():
     """This class controls the radiative transfer component of the forward
-    model. An ordered dict is maintained of individual RTMs (like MODTRAN,
-    for example). The dict is looped over and the radiation and derivatives
-    from each RTM and band are put together.
+    model. An ordered dictionary is maintained of individual RTMs (MODTRAN,
+    for example). We loop over the dictionary concatenating the radiation 
+    and derivatives from each RTM and interval to form the complete result.
 
     In general, some of the state vector components will be shared between
-    RTMs and bands. For example, H20STR is shared between both VISNIR and TIR.
-    This class maintains the master list of statevectors.
+    RTMs and bands. For example, H20STR is shared between both VISNIR and 
+    TIR. This class maintains the master list of statevectors.
     """
 
     def __init__(self, config):
@@ -56,16 +56,18 @@ class RadiativeTransfer():
         for key, local_config in config.items():
 
             if type(local_config) == dict and 'lut_names' in local_config:
-                # Construct a dict with the LUT and state parameter
+                # Construct a dictionary with the LUT and state parameter
                 # info needed for each individual RT
                 temp_statevec, temp_lut_grid = {}, {}
                 for local_lut_name in local_config['lut_names']:
-                    temp_lut_grid[local_lut_name] = self.lut_grid[local_lut_name]
+                    temp_lut_grid[local_lut_name] = \
+                        self.lut_grid[local_lut_name]
                 local_config["lut_grid"] = temp_lut_grid
 
-                # copy statevector into local config
+                # copy statevector into local configuration
                 for local_sv_name in local_config['statevector_names']:
-                    temp_statevec[local_sv_name] = config_statevector[local_sv_name]
+                    temp_statevec[local_sv_name] = \
+                        config_statevector[local_sv_name]
                 local_config["statevector"] = temp_statevec
 
             temp_RT = None
@@ -114,7 +116,8 @@ class RadiativeTransfer():
         self.bvec = list(config['unknowns'].keys())
         self.bval = s.array([config['unknowns'][k] for k in self.bvec])
 
-        self.solar_irr = s.concatenate([RT.solar_irr for RT in self.RTs.values()])
+        self.solar_irr = s.concatenate([RT.solar_irr for RT in \
+                self.RTs.values()])
         # These should all be the same so just grab one
         self.coszen = [RT.coszen for RT in self.RTs.values()][0]
 
@@ -139,13 +142,13 @@ class RadiativeTransfer():
     def calc_rdn(self, x_RT, rfl, Ls, geom):
         r = self.get(x_RT, geom)
         L_atm = self.get_L_atm(x_RT, geom)
-        L_down = self.get_L_down(x_RT, geom)
+        L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)
 
         L_up = self.get_L_up(x_RT, geom)
         L_up = L_up + Ls * r['transup']
 
         ret = L_atm + \
-            L_down * rfl * r['transm'] / (1.0 - r['sphalb'] * rfl) + \
+            L_down_transmitted * rfl / (1.0 - r['sphalb'] * rfl) + \
             L_up
 
         return ret
@@ -156,10 +159,10 @@ class RadiativeTransfer():
             L_atms.append(RT.get_L_atm(x_RT, geom))
         return s.hstack(L_atms)
 
-    def get_L_down(self, x_RT, geom):
+    def get_L_down_transmitted(self, x_RT, geom):
         L_downs = []
         for key, RT in self.RTs.items():
-            L_downs.append(RT.get_L_down(x_RT, geom))
+            L_downs.append(RT.get_L_down_transmitted(x_RT, geom))
         return s.hstack(L_downs)
 
     def get_L_up(self, x_RT, geom):
@@ -188,9 +191,15 @@ class RadiativeTransfer():
 
         # Get K_surface
         r = self.get(x_RT, geom)
-        L_down = self.get_L_down(x_RT, geom)
-        drho_drfl = r['transm'] / (1 - r['sphalb']*rfl)**2
-        drdn_drfl = drho_drfl * L_down
+        L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)
+
+        # The reflected downwelling light is:
+        # L_down_transmitted * rfl / (1.0 - r['sphalb'] * rfl), or 
+        # L_down_transmitted * rho_scaled_for_multiscattering
+        # This term is the derivative of rho_scaled_for_multiscattering
+        drho_scaled_for_multiscattering_drfl = 1. / (1 - r['sphalb']*rfl)**2
+
+        drdn_drfl = L_down_transmitted * drho_scaled_for_multiscattering_drfl
         drdn_dLs = r['transup']
         K_surface = drdn_drfl[:, s.newaxis] * drfl_dsurface + \
             drdn_dLs[:, s.newaxis] * dLs_dsurface
@@ -207,18 +216,13 @@ class RadiativeTransfer():
             r = self.get(x_RT, geom)
             rdn = self.calc_rdn(x_RT, rfl, Ls, geom)
 
-            # perturb the sky view
+            # unknown parameters modeled as random variables per 
+            # Rodgers et al (2000) K_b matrix.  We calculate these derivatives
+            # by finite differences
             Kb_RT = []
             perturb = (1.0+eps)
             for unknown in self.bvec:
-
-                if unknown == 'Skyview':
-                    #rdne = self.calc_rdn_vswir(r, rfl, perturb = perturb)
-                    #Kb_RT.append((rdne-rdn) / eps)
-                    raise NotImplementedError
-
-                elif unknown == 'H2O_ABSCO' and 'H2OSTR' in self.statevec:
-                    # first the radiance at the current state vector
+                if unknown == 'H2O_ABSCO' and 'H2OSTR' in self.statevec:
                     i = self.statevec.index('H2OSTR')
                     x_RT_perturb = x_RT.copy()
                     x_RT_perturb[i] = x_RT[i] * perturb

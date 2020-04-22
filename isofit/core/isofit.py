@@ -45,7 +45,7 @@ class Isofit:
 
         # Explicitly set the number of threads to be 1, so we can make better
         # use of multiprocessing
-        os.environ["MKL_NUM_THREADS"] = "1" 
+        os.environ["MKL_NUM_THREADS"] = "1"
 
         # Set logging level
         logging.basicConfig(format='%(message)s', level=level)
@@ -113,7 +113,8 @@ class Isofit:
 
         self._init_nonpicklable_objects()
         io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
-        success, row, col, meas, geom, configs = io.get_components_at_index(index)
+        success, row, col, meas, geom, configs = io.get_components_at_index(
+            index)
         # Only run through the inversion if we got some data
         if success:
             if meas is not None and all(meas < -49.0):
@@ -127,9 +128,11 @@ class Isofit:
                 self.states = self.iv.invert(meas, geom)
 
             # Write the spectra to disk
-            io.write_spectrum(row, col, self.states, meas, geom, flush_immediately=True)
+            io.write_spectrum(row, col, self.states, meas,
+                              geom, flush_immediately=True)
             if index % 1000 == 0:
-                logging.info('Completed inversion {}/{}'.format(index,len(io.iter_inds)))
+                logging.info(
+                    'Completed inversion {}/{}'.format(index, len(io.iter_inds)))
 
     def run(self, profile=False, debug=False):
         """
@@ -171,15 +174,16 @@ class Isofit:
                 if debug:
                     self._run_single_spectrum(l)
                 else:
-                    results.append(pool.apply_async(self._run_single_spectrum, args=(l,)))
+                    results.append(pool.apply_async(
+                        self._run_single_spectrum, args=(l,)))
             results = [p.get() for p in results]
             pool.close()
             pool.join()
 
             total_time = time.time() - start_time
             if debug:
-                logging.info('Inversions complete.  {} s total, {} spectra/s'.format(total_time,n_iter/total_time))
+                logging.info(
+                    'Inversions complete.  {} s total, {} spectra/s'.format(total_time, n_iter/total_time))
             else:
-                logging.info('Parallel inversions complete.  {} s total, {} spectra/s'.format(total_time,n_iter/total_time))
-
-
+                logging.info(
+                    'Parallel inversions complete.  {} s total, {} spectra/s'.format(total_time, n_iter/total_time))

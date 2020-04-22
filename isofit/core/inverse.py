@@ -41,7 +41,6 @@ error_code = -1
 
 class Inversion:
 
-
     def __init__(self, config, forward):
         """Initialization specifies retrieval subwindows for calculating
         measurement cost distributions."""
@@ -86,7 +85,6 @@ class Inversion:
             if k in self.least_squares_params:
                 self.least_squares_params[k] = v
 
-
     def calc_prior(self, x, geom):
         """Calculate prior distribution of radiance. This depends on the 
         location in the state space. Return the inverse covariance and 
@@ -97,7 +95,6 @@ class Inversion:
         Sa_inv, Sa_inv_sqrt = svd_inv_sqrt(Sa, hashtable=self.hashtable)
         return xa, Sa, Sa_inv, Sa_inv_sqrt
 
-    
     def calc_posterior(self, x, geom, meas):
         """Calculate posterior distribution of state vector. This depends 
         both on the location in the state space and the radiance (via noise)."""
@@ -123,7 +120,6 @@ class Inversion:
                             hashtable=self.hashtable)
         return S_hat, K, G
 
-    
     def calc_Seps(self, x, meas, geom):
         """Calculate (zero-mean) measurement distribution in radiance terms.  
         This depends on the location in the state space. This distribution is 
@@ -136,7 +132,6 @@ class Inversion:
         for i in range(wn):
             Seps_win[i, :] = Seps[self.winidx[i], self.winidx]
         return svd_inv_sqrt(Seps_win, hashtable=self.hashtable)
-
 
     def invert(self, meas, geom):
         """Inverts a meaurement and returns a state vector.
@@ -182,7 +177,6 @@ class Inversion:
         # on the initial solution (a potential minor source of inaccuracy).
         Seps_inv, Seps_inv_sqrt = self.calc_Seps(x0, meas, geom)
 
-        
         def jac(x):
             """Calculate measurement Jacobian and prior Jacobians with 
             respect to cost function. This is the derivative of cost with
@@ -208,7 +202,6 @@ class Inversion:
             total_jac = s.concatenate((meas_jac, prior_jac), axis=0)
 
             return s.real(total_jac)
-
 
         def err(x):
             """Calculate cost function expressed here in absolute (not
@@ -255,7 +248,6 @@ class Inversion:
         except LinAlgError:
             logging.warning('Levenberg Marquardt failed to converge')
         return s.array(self.trajectory)
-
 
     def forward_uncertainty(self, x, meas, geom):
         """Converged estimates of path radiance, radiance, reflectance.

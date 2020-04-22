@@ -167,7 +167,7 @@ class SpectrumFile:
 
                 if os.path.isfile(fname+'.hdr') is False:
                     self.file = envi.create_image(fname+'.hdr', meta, ext='',
-                                              force=True)
+                                                  force=True)
                 else:
                     self.file = envi.open(fname+'.hdr')
 
@@ -473,7 +473,6 @@ class IO:
 
         return True, r, c, meas, geom, updates
 
-
     def __iter__(self):
         """ Reset the iterator"""
 
@@ -493,7 +492,8 @@ class IO:
 
             # Determine the appropriate row, column index. and initialize the
             # data dictionary with empty entries.
-            success, r, c, meas, geom, updates = self.get_components_at_index(self.iter)
+            success, r, c, meas, geom, updates = self.get_components_at_index(
+                self.iter)
             self.iter = self.iter + 1
 
         return r, c, meas, geom, updates
@@ -569,12 +569,12 @@ class IO:
             # Algebraic inverse and atmospheric optical coefficients
             x_surface, x_RT, x_instrument = self.fm.unpack(state_est)
             rfl_alg_opt, Ls, coeffs = invert_algebraic(self.fm.surface,
-                                                       self.fm.RT, self.fm.instrument, x_surface, x_RT,
-                                                       x_instrument, meas, geom)
+                self.fm.RT, self.fm.instrument, x_surface, x_RT, x_instrument, 
+                meas, geom)
             rhoatm, sphalb, transm, solar_irr, coszen, transup = coeffs
 
             L_atm = self.fm.RT.get_L_atm(x_RT, geom)
-            L_down = self.fm.RT.get_L_down(x_RT, geom)
+            L_down_transmitted = self.fm.RT.get_L_down_transmitted(x_RT, geom)
             L_up = self.fm.RT.get_L_up(x_RT, geom)
 
             atm = s.column_stack(list(coeffs[:4]) +
@@ -640,8 +640,9 @@ class IO:
             xa, Sa, Sa_inv, Sa_inv_sqrt = self.iv.calc_prior(x, geom)
             prior_resid = (x - xa).dot(Sa_inv_sqrt)
             rdn_est = self.fm.calc_rdn(x, geom)
-            rdn_est_all = s.array([self.fm.calc_rdn(xtemp, geom) for xtemp in states])
-            
+            rdn_est_all = s.array([self.fm.calc_rdn(xtemp, geom)
+                                   for xtemp in states])
+
             x_surface, x_RT, x_instrument = self.fm.unpack(x)
             Kb = self.fm.Kb(x, geom)
             xinit = invert_simple(self.fm, meas, geom)
@@ -689,7 +690,7 @@ class IO:
                 'transup': transup,
                 'solar_irr': solar_irr,
                 'L_atm': L_atm,
-                'L_down': L_down,
+                'L_down_transmitted': L_down_transmitted,
                 'L_up': L_up
             }
             s.io.savemat(self.output['data_dump_file'], mdict)

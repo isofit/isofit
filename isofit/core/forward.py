@@ -32,11 +32,10 @@ from ..radiative_transfer.radiative_transfer import RadiativeTransfer
 ### Variables ###
 
 # Supported RT modules, filenames, and class names
-RT_models = [('modtran_radiative_transfer', 'radiative_transfer.modtran', 'ModtranRT'),
+RT_models = [('modtran_radiative_transfer', 'radiative_transfer.modtran', 
+              'ModtranRT'),
              ('libradtran_radiative_transfer',
               'radiative_transfer.libradtran', 'LibRadTranRT'),
-             ('planetary_radiative_transfer', 'planetary', 'PlanetaryRT'),
-             ('uplooking_radiative_transfer', 'radiative_transfer.rfm', 'UplookRT'),
              ('sixs_radiative_transfer', 'radiative_transfer.six_s', 'SixSRT')]
 
 
@@ -44,12 +43,9 @@ RT_models = [('modtran_radiative_transfer', 'radiative_transfer.modtran', 'Modtr
 surface_models = [('surface', 'surface.surface', 'Surface'),
                   ('multicomponent_surface',
                    'surface.surface_multicomp', 'MultiComponentSurface'),
-                  ('emissive_surface', 'surface.surface_emissive', 'MixBBSurface'),
-                  ('cat_surface', 'surf_cat', 'CATSurface'),
                   ('glint_surface', 'surface.surface_glint', 'GlintSurface'),
-                  ('iop_surface', 'surface.surface_iop', 'IOPSurface'),
-                  ('poly_surface', 'surf_poly', 'PolySurface'),
-                  ('thermal_surface', 'surface.surface_thermal', 'ThermalSurface')]
+                  ('thermal_surface', 'surface.surface_thermal', 
+                   'ThermalSurface')]
 
 
 ### Classes ###
@@ -118,7 +114,7 @@ class ForwardModel:
         self.statevec = statevec
         self.nstate = len(self.statevec)
 
-        # Capture unmodeled variables. 
+        # Capture unmodeled variables.
         bvec, bval = [], []
         for name in ['RT', 'instrument', 'surface']:
             obj = getattr(self, name)
@@ -244,13 +240,14 @@ class ForwardModel:
 
         # Derivatives of RTM radiance
         drdn_dRT, drdn_dsurface = \
-            self.RT.drdn_dRT(x_RT, x_surface, rfl_hi, drfl_dsurface_hi, Ls_hi, 
-                            dLs_dsurface_hi, geom)
+            self.RT.drdn_dRT(x_RT, x_surface, rfl_hi, drfl_dsurface_hi, Ls_hi,
+                             dLs_dsurface_hi, geom)
 
         # Derivatives of measurement, avoiding recalculation of rfl, Ls
         dmeas_dsurface = \
             self.instrument.sample(x_instrument, self.RT.wl, drdn_dsurface.T).T
-        dmeas_dRT = self.instrument.sample(x_instrument, self.RT.wl, drdn_dRT.T).T
+        dmeas_dRT = self.instrument.sample(
+            x_instrument, self.RT.wl, drdn_dRT.T).T
         rdn_hi = self.calc_rdn(x, geom, rfl=rfl, Ls=Ls)
         dmeas_dinstrument = \
             self.instrument.dmeas_dinstrument(x_instrument, self.RT.wl, rdn_hi)
@@ -325,4 +322,3 @@ class ForwardModel:
         x_RT = x[self.idx_RT]
         x_instrument = x[self.idx_instrument]
         return x_surface, x_RT, x_instrument
-

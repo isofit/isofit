@@ -24,13 +24,17 @@ from scipy import logical_and as aand
 from scipy.interpolate import interp1d
 from sklearn.cluster import KMeans
 from spectral.io import envi
+from scipy.stats import norm
 
 from ..core.common import expand_path, json_load_ascii
 
 
 def surface_model(config):
-    """."""
+    """The surface model tool contains everything you need to build basic 
+    multicomponent (i.e. colleciton of Gaussian) surface priors for the 
+    multicomponent surface model."""
 
+    # Load configuration JSON into a local dictionary
     configdir, configfile = split(abspath(config))
     config = json_load_ascii(config, shell_replace=True)
 
@@ -38,13 +42,12 @@ def surface_model(config):
     for q in ['output_model_file', 'sources', 'normalize', 'wavelength_file']:
         if q not in config:
             raise ValueError("Missing parameter: %s" % q)
-
     wavelength_file = expand_path(configdir, config['wavelength_file'])
     normalize = config['normalize']
     reference_windows = config['reference_windows']
     outfile = expand_path(configdir, config['output_model_file'])
 
-    # load wavelengths file
+    # load wavelengths file, and change units to nm if needed
     q = s.loadtxt(wavelength_file)
     if q.shape[1] > 2:
         q = q[:, 1:]
@@ -70,6 +73,7 @@ def surface_model(config):
         'refwl': refwl
     }
 
+    # each "source" (i.e. spectral library) is treated separately
     for si, source_config in enumerate(config['sources']):
 
         # Determine source parameters
@@ -95,7 +99,6 @@ def surface_model(config):
         spectra = []
         for infile in infiles:
 
-            print('Loading  ' + infile)
             hdrfile = infile + '.hdr'
             rfl = envi.open(hdrfile, infile)
             nl, nb, ns = [int(rfl.metadata[n])
@@ -106,6 +109,7 @@ def surface_model(config):
             if swl[0] < 100:
                 swl = swl * 1000.0
 
+            # Load library and adjust interleave, if needed
             rfl_mm = rfl.open_memmap(interleave='source', writable=True)
             if rfl.metadata['interleave'] == 'bip':
                 x = s.array(rfl_mm[:, :, :])
@@ -127,21 +131,25 @@ def surface_model(config):
             s2, m2 = spectra[int(s.rand() * n)], 1.0 - m1
             spectra.append(m1 * s1 + m2 * s2)
 
+        # Flag bad data
         spectra = s.array(spectra)
         use = s.all(s.isfinite(spectra), axis=1)
         spectra = spectra[use, :]
 
-        # accumulate total list of window indices
+        # Accumulate total list of window indices
         window_idx = -s.ones((nchan), dtype=int)
         for wi, win in enumerate(windows):
             active_wl = aand(wl >= win['interval'][0], wl < win['interval'][1])
             window_idx[active_wl] = wi
 
-        # Two step model.  First step is k-means initialization
+        # Two step model generation.  First step is k-means clustering.
+        # This is more "stable" than Expectation Maximization with an 
+        # unconstrained covariance matrix    
         kmeans = KMeans(init='k-means++', n_clusters=ncomp, n_init=10)
         kmeans.fit(spectra)
         Z = kmeans.predict(spectra)
 
+        # Now fit the full covariance for each component
         for ci in range(ncomp):
 
             m = s.mean(spectra[Z == ci, :], axis=0)
@@ -149,16 +157,35 @@ def surface_model(config):
 
             for i in range(nchan):
                 window = windows[window_idx[i]]
+
+                # Each spectral interval, or window, is constructed
+                # using one of several rules.  We can draw the covariance
+                # directly from the data...
                 if window['correlation'] == 'EM':
                     C[i, i] = C[i, i] + float(window['regularizer'])
+
+                # Alternatively, we can use a band diagonal form,
+                # a Gaussian process that promotes local smoothness.
+                elif window['correlation'] == 'GP':
+                    width = float(window['gp_width'])
+                    magnitude = float(window['gp_magnitude'])
+                    kernel = norm.pdf((wl-wl[i])/width)
+                    kernel = kernel/kernel.sum() * magnitude
+                    C[i, :] = kernel
+                    C[:, i] = kernel
+                    C[i, i] = C[i, i] + float(window['regularizer'])
+
+                # To minimize bias, leave the channels independent
+                # and uncorrelated
                 elif window['correlation'] == 'decorrelated':
                     ci = C[i, i]
                     C[:, i] = 0
                     C[i, :] = 0
                     C[i, i] = ci + float(window['regularizer'])
+
                 else:
                     raise ValueError(
-                        'I do not recognize the source  ' + window['correlation'])
+                        'I do not recognize the method ' + window['correlation'])
 
             # Normalize the component spectrum if desired
             if normalize == 'Euclidean':
@@ -180,4 +207,3 @@ def surface_model(config):
     model['covs'] = s.array(model['covs'])
 
     s.io.savemat(outfile, model)
-    print("saving results to", outfile)
