@@ -35,6 +35,7 @@ from .fileio import IO
 
 import multiprocessing
 from .. import warnings_enabled
+from isofit.configs import configs
 
 
 class Isofit:
@@ -61,6 +62,9 @@ class Isofit:
 
         # Load configuration file
         self.config = load_config(config_file)
+
+        o = configs.Config()
+
 
         # Build the forward model and inversion objects
         self._init_nonpicklable_objects()
