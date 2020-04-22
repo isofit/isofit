@@ -19,9 +19,9 @@
 #
 
 import os
-import scipy as s
 import pylab as plt
-from scipy.linalg import inv, norm, sqrtm, det
+from numpy.linalg import inv, norm, det
+from scipy.linalg import sqrtm
 from scipy.io import savemat
 from spectral.io import envi
 import logging
@@ -36,17 +36,17 @@ from .geometry import Geometry
 
 # Constants related to file I/O
 typemap = {
-    s.uint8: 1,
-    s.int16: 2,
-    s.int32: 3,
-    s.float32: 4,
-    s.float64: 5,
-    s.complex64: 6,
-    s.complex128: 9,
-    s.uint16: 12,
-    s.uint32: 13,
-    s.int64: 14,
-    s.uint64: 15
+    np.uint8: 1,
+    np.int16: 2,
+    np.int32: 3,
+    np.float32: 4,
+    np.float64: 5,
+    np.complex64: 6,
+    np.complex128: 9,
+    np.uint16: 12,
+    np.uint32: 13,
+    np.int64: 14,
+    np.uint64: 15
 }
 
 max_frames_size = 100
@@ -59,7 +59,7 @@ class SpectrumFile:
     """A buffered file object that contains configuration information about formatting, etc."""
 
     def __init__(self, fname, write=False, n_rows=None, n_cols=None, n_bands=None,
-                 interleave=None, dtype=s.float32, wavelengths=None, fwhm=None,
+                 interleave=None, dtype=np.float32, wavelengths=None, fwhm=None,
                  band_names=None, bad_bands=[], zrange='{0.0, 1.0}', flag=-9999.0,
                  ztitles='{Wavelength (nm), Magnitude}', map_info='{}'):
         """."""
@@ -198,7 +198,8 @@ class SpectrumFile:
                     d = d.T
                 self.frames[row] = d.copy()
             else:
-                self.frames[row] = s.nan * s.zeros((self.n_cols, self.n_bands))
+                self.frames[row] = np.nan * \
+                    np.zeros((self.n_cols, self.n_bands))
         return self.frames[row]
 
     def write_spectrum(self, row, col, x):
@@ -209,12 +210,12 @@ class SpectrumFile:
         if self.format == 'ASCII':
 
             # Multicolumn output for ASCII products
-            s.savetxt(self.fname, x, fmt='%10.6f')
+            np.savetxt(self.fname, x, fmt='%10.6f')
 
         elif self.format == 'MATLAB':
 
             # Dictionary output for MATLAB products
-            s.io.savemat(self.fname, x)
+            savemat(self.fname, x)
 
         else:
 
@@ -241,7 +242,7 @@ class SpectrumFile:
         if self.format == 'ENVI':
             if self.write:
                 for row, frame in self.frames.items():
-                    valid = s.logical_not(s.isnan(frame[:, 0]))
+                    valid = np.logical_not(np.isnan(frame[:, 0]))
                     if self.file.metadata['interleave'] == 'bil':
                         self.memmap[row, :, valid] = frame[valid, :].T
                     else:
@@ -383,7 +384,7 @@ class IO:
                     n_cols=self.n_cols,
                     n_bands=n_bands,
                     interleave='bip',
-                    dtype=s.float32,
+                    dtype=np.float32,
                     wavelengths=self.meas_wl,
                     fwhm=self.meas_fwhm,
                     band_names=band_names,
@@ -400,14 +401,14 @@ class IO:
 
         # Last thing is to define the active image area
         if active_rows is None:
-            active_rows = s.arange(self.n_rows)
+            active_rows = np.arange(self.n_rows)
         if active_cols is None:
-            active_cols = s.arange(self.n_cols)
+            active_cols = np.arange(self.n_cols)
         self.iter_inds = []
         for row in active_rows:
             for col in active_cols:
                 self.iter_inds.append([row, col])
-        self.iter_inds = s.array(self.iter_inds)
+        self.iter_inds = np.array(self.iter_inds)
 
     def get_components_at_index(self, index):
         """
@@ -437,7 +438,7 @@ class IO:
 
         # Check for any bad data flags
         for source in self.infiles:
-            if s.all(abs(data[source] - self.infiles[source].flag) < eps):
+            if np.all(abs(data[source] - self.infiles[source].flag) < eps):
                 return False, r, c, None, None, None
 
         # We apply the calibration correciton here for simplicity.
@@ -519,9 +520,9 @@ class IO:
         if len(states) == 0:
 
             # Write a bad data flag
-            atm_bad = s.zeros(len(self.fm.statevec)) * -9999.0
-            state_bad = s.zeros(len(self.fm.statevec)) * -9999.0
-            data_bad = s.zeros(self.fm.instrument.n_chan) * -9999.0
+            atm_bad = np.zeros(len(self.fm.statevec)) * -9999.0
+            state_bad = np.zeros(len(self.fm.statevec)) * -9999.0
+            data_bad = np.zeros(self.fm.instrument.n_chan) * -9999.0
             to_write = {
                 'estimated_state_file': state_bad,
                 'estimated_reflectance_file': data_bad,
@@ -550,8 +551,8 @@ class IO:
 
             # Spectral calibration
             wl, fwhm = self.fm.calibration(state_est)
-            cal = s.column_stack(
-                [s.arange(0, len(wl)), wl / 1000.0, fwhm / 1000.0])
+            cal = np.column_stack(
+                [np.arange(0, len(wl)), wl / 1000.0, fwhm / 1000.0])
 
             # If there is no actual measurement, we use the simulated version
             # in subsequent calculations.  Naturally in these cases we're
@@ -569,23 +570,23 @@ class IO:
             # Algebraic inverse and atmospheric optical coefficients
             x_surface, x_RT, x_instrument = self.fm.unpack(state_est)
             rfl_alg_opt, Ls, coeffs = invert_algebraic(self.fm.surface,
-                self.fm.RT, self.fm.instrument, x_surface, x_RT, x_instrument, 
-                meas, geom)
+                                                       self.fm.RT, self.fm.instrument, x_surface, x_RT, x_instrument,
+                                                       meas, geom)
             rhoatm, sphalb, transm, solar_irr, coszen, transup = coeffs
 
             L_atm = self.fm.RT.get_L_atm(x_RT, geom)
             L_down_transmitted = self.fm.RT.get_L_down_transmitted(x_RT, geom)
             L_up = self.fm.RT.get_L_up(x_RT, geom)
 
-            atm = s.column_stack(list(coeffs[:4]) +
-                                 [s.ones((len(wl), 1)) * coszen])
+            atm = np.column_stack(list(coeffs[:4]) +
+                                  [np.ones((len(wl), 1)) * coszen])
 
             # Upward emission & glint and apparent reflectance
             Ls_est = self.fm.calc_Ls(state_est, geom)
             apparent_rfl_est = lamb_est + Ls_est
 
             # Radiometric calibration
-            factors = s.ones(len(wl))
+            factors = np.ones(len(wl))
             if 'radiometry_correction_file' in self.outfiles:
                 if 'reference_reflectance_file' in self.infiles:
                     reference_file = self.infiles['reference_reflectance_file']
@@ -602,18 +603,18 @@ class IO:
             # Assemble all output products
             to_write = {
                 'estimated_state_file': state_est,
-                'estimated_reflectance_file': s.column_stack((self.fm.surface.wl, lamb_est)),
-                'estimated_emission_file': s.column_stack((self.fm.surface.wl, Ls_est)),
-                'estimated_reflectance_file': s.column_stack((self.fm.surface.wl, lamb_est)),
-                'modeled_radiance_file': s.column_stack((wl, meas_est)),
-                'apparent_reflectance_file': s.column_stack((self.fm.surface.wl, apparent_rfl_est)),
-                'path_radiance_file': s.column_stack((wl, path_est)),
-                'simulated_measurement_file': s.column_stack((wl, meas_sim)),
-                'algebraic_inverse_file': s.column_stack((self.fm.surface.wl, rfl_alg_opt)),
+                'estimated_reflectance_file': np.column_stack((self.fm.surface.wl, lamb_est)),
+                'estimated_emission_file': np.column_stack((self.fm.surface.wl, Ls_est)),
+                'estimated_reflectance_file': np.column_stack((self.fm.surface.wl, lamb_est)),
+                'modeled_radiance_file': np.column_stack((wl, meas_est)),
+                'apparent_reflectance_file': np.column_stack((self.fm.surface.wl, apparent_rfl_est)),
+                'path_radiance_file': np.column_stack((wl, path_est)),
+                'simulated_measurement_file': np.column_stack((wl, meas_sim)),
+                'algebraic_inverse_file': np.column_stack((self.fm.surface.wl, rfl_alg_opt)),
                 'atmospheric_coefficients_file': atm,
                 'radiometry_correction_file': factors,
                 'spectral_calibration_file': cal,
-                'posterior_uncertainty_file': s.sqrt(s.diag(S_hat))
+                'posterior_uncertainty_file': np.sqrt(np.diag(S_hat))
             }
 
         for product in self.outfiles:
@@ -626,7 +627,7 @@ class IO:
         if 'mcmc_samples_file' in self.output:
             logging.debug('IO: Writing mcmc_samples_file')
             mdict = {'samples': states}
-            s.io.savemat(self.output['mcmc_samples_file'], mdict)
+            savemat(self.output['mcmc_samples_file'], mdict)
 
         # Special case! Data dump file is matlab format.
         if 'data_dump_file' in self.output:
@@ -640,19 +641,19 @@ class IO:
             xa, Sa, Sa_inv, Sa_inv_sqrt = self.iv.calc_prior(x, geom)
             prior_resid = (x - xa).dot(Sa_inv_sqrt)
             rdn_est = self.fm.calc_rdn(x, geom)
-            rdn_est_all = s.array([self.fm.calc_rdn(xtemp, geom)
-                                   for xtemp in states])
+            rdn_est_all = np.array(
+                [self.fm.calc_rdn(xtemp, geom) for xtemp in states])
 
             x_surface, x_RT, x_instrument = self.fm.unpack(x)
             Kb = self.fm.Kb(x, geom)
             xinit = invert_simple(self.fm, meas, geom)
             Sy = self.fm.instrument.Sy(meas, geom)
-            cost_jac_prior = s.diagflat(x - xa).dot(Sa_inv_sqrt)
+            cost_jac_prior = np.diagflat(x - xa).dot(Sa_inv_sqrt)
             cost_jac_meas = Seps_inv_sqrt.dot(K[self.iv.winidx, :])
             meas_Cov = self.fm.Seps(x, meas, geom)
             lamb_est, meas_est, path_est, S_hat, K, G = \
                 self.iv.forward_uncertainty(state_est, meas, geom)
-            A = s.matmul(K, G)
+            A = np.matmul(K, G)
 
             # Form the MATLAB dictionary object and write to file
             mdict = {
@@ -693,7 +694,7 @@ class IO:
                 'L_down_transmitted': L_down_transmitted,
                 'L_up': L_up
             }
-            s.io.savemat(self.output['data_dump_file'], mdict)
+            savemat(self.output['data_dump_file'], mdict)
 
         # Write plots, if needed
         if len(states) > 0 and 'plot_directory' in self.output:
@@ -717,7 +718,7 @@ class IO:
                 plt.subplot(1, 2, 1)
                 meas_est = self.fm.calc_meas(x, geom)
                 for lo, hi in self.iv.windows:
-                    idx = s.where(s.logical_and(wl > lo, wl < hi))[0]
+                    idx = np.where(np.logical_and(wl > lo, wl < hi))[0]
                     p1 = plt.plot(wl[idx], meas[idx], color=red, linewidth=2)
                     p2 = plt.plot(wl, meas_est, color='k', linewidth=1)
                 plt.title("Radiance")
@@ -740,13 +741,13 @@ class IO:
                 for lo, hi in self.iv.windows:
 
                     # black line
-                    idx = s.where(s.logical_and(wl > lo, wl < hi))[0]
+                    idx = np.where(np.logical_and(wl > lo, wl < hi))[0]
                     p2 = plt.plot(wl[idx], lamb_est[idx], 'k', linewidth=2)
                     ymax = max(max(lamb_est[idx]*1.2), ymax)
 
                     # red line
                     if 'reference_reflectance_file' in self.infiles:
-                        idx = s.where(s.logical_and(
+                        idx = np.where(np.logical_and(
                             self.wl_ref > lo, self.wl_ref < hi))[0]
                         p1 = plt.plot(self.wl_ref[idx], self.rfl_ref[idx],
                                       color=red, linewidth=2)
@@ -755,8 +756,8 @@ class IO:
                     # green and blue lines - surface components
                     if hasattr(self.fm.surface, 'components') and \
                             self.output['plot_surface_components']:
-                        idx = s.where(s.logical_and(self.fm.surface.wl > lo,
-                                                    self.fm.surface.wl < hi))[0]
+                        idx = np.where(np.logical_and(self.fm.surface.wl > lo,
+                                                      self.fm.surface.wl < hi))[0]
                         p3 = plt.plot(self.fm.surface.wl[idx],
                                       self.fm.xa(x, geom)[idx], 'b', linewidth=2)
                         for j in range(len(self.fm.surface.components)):
