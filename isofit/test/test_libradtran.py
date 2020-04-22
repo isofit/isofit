@@ -47,11 +47,11 @@ def load_config(config_file):
     """Load a configuration file, expand paths."""
 
     # Get directory and file paths
-    testdir, fname = split(abspath(__file__))
+    testdir, _ = split(abspath(__file__))
     datadir = join(testdir, 'data/')
     config_path = join(datadir, config_file)
     config = json.load(open(config_path, 'r'))
-    configdir, f = split(abspath(config_path))
+    configdir, _ = split(abspath(config_path))
     config = expand_all_paths(config, configdir)
     return config
 
@@ -66,7 +66,7 @@ def run_forward():
     io = IO(config, fm, iv, [0], [0])
 
     # Simulate a measurement and write result
-    for row, col, meas, geom, configs in io:
+    for row, col, meas, geom, _ in io:
         states = iv.invert(meas, geom)
         io.write_spectrum(row, col, states, meas, geom)
 
@@ -86,7 +86,7 @@ def run_inverse():
 
     # Get our measurement from the simulation results, and invert.
     # Calculate uncertainties at the solution state, write result
-    for row, col, meas, geom, configs in io:
+    for row, col, meas, geom, _ in io:
         states = iv.invert(meas, geom)
         io.write_spectrum(row, col, states, meas, geom)
 

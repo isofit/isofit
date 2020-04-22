@@ -24,11 +24,6 @@ from glob import glob
 from os.path import split, abspath
 
 
-testdir, fname = split(abspath(__file__))
-config_file = testdir+'/data/pep8_config.txt'
-excludes = ['sunposition.py']
-
-
 def test_pep8_conformance():
     """Test that we conform to PEP8."""
 
@@ -37,10 +32,7 @@ def test_pep8_conformance():
     for fi in glob('../*.py'):
         files.append(fi)
 
-    # After acceptance, this will be uncommented
     pep8style = pep8.StyleGuide(config_file=config_file, quiet=False)
     result = pep8style.check_files(files)
-    if result.total_errors != 0:
-        print("Found PEP8 conformance error.")
-        print("Please fix your style with autopep8.")
-    assert result.total_errors == 0
+
+    assert result.total_errors == 0, "Please fix your style with autopep8."

@@ -31,7 +31,7 @@ dist/*.whl
 *.egg
 *.egg-info/
 .pytest_cache/
-tests/output/*.txt
+isofit/test/output/*.txt
 
 # Ignore documentation files
 docs/_build/
