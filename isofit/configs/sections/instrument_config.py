@@ -2,6 +2,7 @@
 from typing import Dict, List, Type
 from isofit.configs.configs import BaseConfigSection
 from isofit.configs.sections import StateVectorConfig
+import os
 
 
 
@@ -20,6 +21,16 @@ class InstrumentUnknowns(BaseConfigSection):
 
     stray_srf_uncertainty = None
     _stray_srf_uncertainty_type = float
+
+    def _check_config_validity(self) -> List[str]:
+        self.get_option_keys()
+        errors = list()
+
+        file_params = [self.channelized_radiometric_uncertainty_file, self.uncorrelated_radiometric_uncertainty]
+        for param in file_params:
+            if param is not None:
+                if os.path.isfile(param) is False:
+                    errors.append('Instrument unknown file: {} not found'.format(param))
 
 
 class InstrumentConfig(BaseConfigSection):
@@ -66,6 +77,12 @@ class InstrumentConfig(BaseConfigSection):
 
         if len(used_noise_options) > 1:
             errors.append('Multiple instrument noise options selected - please choose only 1.')
+
+        file_params = [self.parametric_noise_file, self.pushbroom_noise_file, self.nedt_noise_file]
+        for param in file_params:
+            if param is not None:
+                if os.path.isfile(param) is False:
+                    errors.append('Instrument config file: {} not found'.format(param))
 
         #TODO: figure out submodule checking
 

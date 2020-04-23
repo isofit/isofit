@@ -3,8 +3,12 @@ import logging
 import os
 import re
 from collections import OrderedDict
-from typing import Dict, List
+from typing import Dict, List, Type
 from isofit.configs import sections
+import isofit.core.common
+from importlib import import_module
+import json
+import yaml
 
 
 class Config(object):
@@ -14,11 +18,19 @@ class Config(object):
     modifying code, particularly given the highly flexible nature of Isofit.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, configdict: dict = None) -> None:
         self.input = None
         self.output = None
         self.forward_model = None
         self.inversion = None
+
+        # Load sub-classes and attributes
+        _set_callable_attributes(self, configdict)
+
+        # check for errors
+        self.get_human_readable_config_errors()
+
+
 
     def get_config_as_dict(self) -> dict:
         """Get configuration options as a nested dictionary with delineated sections.
@@ -27,40 +39,36 @@ class Config(object):
             Configuration options as a nested dictionary with delineated sections.
         """
         config = OrderedDict()
-        for config_section in []:#sections.get_config_sections():
+        for config_section in get_config_sections():
             section_name = config_section.get_config_name_as_snake_case()
             populated_section = getattr(self, section_name)
             config[section_name] = populated_section.get_config_options_as_dict()
-            #if config_section is sections.ModelTraining:
-            #    # Given ordered output, architecture options make the most sense after model training options
-            #    config["architecture"] = self.architecture.get_config_options_as_dict()
         return config
 
-    def get_config_errors(self, include_sections: List[str] = None, exclude_sections: List[str] = None) -> list:
-        """Get configuration option errors by checking the validity of each config section.
 
+    def get_config_errors(self, include_sections: List[str] = None, exclude_sections: List[str] = None):
+        """Get configuration option errors by checking the validity of each config section.
         Args:
             include_sections: Config sections that should be included. All config sections are included if None and
               exclude_sections is not specified. Cannot specify both include_sections and exclude_sections.
             exclude_sections: Config sections that should be excluded. All config sections are included if None and
               exclude_sections is not specified. Cannot specify both include_sections and exclude_sections.
-
-        Returns:
-            List of errors associated with the current configuration.
         """
-        assert not (
-                include_sections and exclude_sections
-        ), "Both include_sections and exclude_sections cannot be specified."
-        logging.debug("Checking config sections for configuration issues")
+        if include_sections and exclude_sections:
+            raise AttributeError("Both include_sections and exclude_sections cannot be specified.")
+
+        logging.info("Checking config sections for configuration issues")
         errors = list()
-        config_sections = []#sections.get_config_sections()
+
+        #TODO: do same thing here as with global hidden function used within BaseConfigSection
+        config_sections = get_config_sections()
         if include_sections:
-            logging.debug("Only checking config sections: {}".format(", ".join(include_sections)))
+            logging.info("Only checking config sections: {}".format(", ".join(include_sections)))
             config_sections = [
                 section for section in config_sections if section.get_config_name_as_snake_case() in include_sections
             ]
         if exclude_sections:
-            logging.debug("Not checking config sections: {}".format(", ".join(exclude_sections)))
+            logging.info("Not checking config sections: {}".format(", ".join(exclude_sections)))
             config_sections = [
                 section
                 for section in config_sections
@@ -70,30 +78,13 @@ class Config(object):
             section_name = config_section.get_config_name_as_snake_case()
             populated_section = getattr(self, section_name)
             errors.extend(populated_section.check_config_validity())
-            if config_section is []:#sections.ModelTraining:
-                errors.extend(self.architecture.check_config_validity())
-        logging.debug("{} configuration issues found".format(len(errors)))
-        return errors
 
-    def get_human_readable_config_errors(
-            self, include_sections: List[str] = None, exclude_sections: List[str] = None
-    ) -> str:
-        """Generates a human-readable string of configuration option errors.
+        logging.info("{} configuration issues found".format(len(errors)))
 
-        Args:
-            include_sections: Config sections that should be included. All config sections are included if None and
-              exclude_sections is not specified. Cannot specify both include_sections and exclude_sections.
-            exclude_sections: Config sections that should be excluded. All config sections are included if None and
-              exclude_sections is not specified. Cannot specify both include_sections and exclude_sections.
+        for e in errors:
+            logging.error(e)
 
-        Returns:
-            Human-readable string of configuration option errors.
-        """
-        errors = self.get_config_errors(include_sections=include_sections, exclude_sections=exclude_sections)
-        if not errors:
-            return ""
-        return "List of configuration section and option errors is as follows:\n" + "\n".join(error for error in errors)
-
+        raise AttributeError('Configuration error(s) found.  See log for details.')
 
 
 class BaseConfigSection(object):
@@ -148,28 +139,12 @@ class BaseConfigSection(object):
             config_options[key] = value
         return config_options
 
-    def get_option_keys(self) -> List[str]:
-        return [
-            key
-            for key in self.__class__.__dict__.keys()
-            if not key.startswith("_") and not callable(getattr(self, key))
-        ]
-
-    def set_config_options(self, config_options: dict, highlight_required: bool) -> None:
-        logging.debug("Setting config options for section {} from {}".format(self.__class__.__name__, config_options))
-        for key in self.get_option_keys():
-            if key in config_options:
-                value = config_options.pop(key)
-                logging.debug('Setting option "{}" to provided value "{}"'.format(key, value))
-            #TODO: verify non-use
-            #else:
-            #    value = getattr(self, key)
-            #    # We leave the labels for required and optional values as-is for templates, i.e., when highlights are
-            #    # required, otherwise we convert those labels to None
-            #    if not highlight_required and value in (DEFAULT_REQUIRED_VALUE, DEFAULT_OPTIONAL_VALUE):
-            #        value = None
-            #    logging.debug('Setting option "{}" to default value "{}"'.format(key, value))
-            #setattr(self, key, self._clean_config_option_value(key, value))
+    def set_config_options(self, configdict: dict) -> None:
+        for key in self.__dict__:
+            if callable(key) and key in configdict.keys:
+                _set_callable_attributes(self, configdict[key])
+            elif key in configdict.keys:
+                setattr(self, key, configdict[key])
         return
 
     def _clean_config_option_value(self, option_key: str, value: any) -> any:
@@ -219,87 +194,63 @@ class BaseConfigSection(object):
         return getattr(self, "_{}_type".format(option_key))
 
 
-def create_config_from_file(filepath: str) -> Config:
-    """Creates a Config object from a YAML file.
-
+def create_config_from_file(config_file: str) -> Config:
+    """Creates a Config object from a JSON or YAML file.
     Args:
-        filepath: Filepath to existing YAML file.
+        config_file: Filepath to existing JSON or YAML file.
 
     Returns:
-        Config object with parsed YAML file attributes.
+        Config object with parsed attributes.
     """
-    assert os.path.exists(filepath), "No config file found at {}".format(filepath)
-    logging.debug("Loading config file from {}".format(filepath))
-    with open(filepath) as file_:
-        raw_config = yaml.safe_load(file_)
-    return _create_config(raw_config, is_template=False)
+    if os.path.isfile(config_file) is False:
+        raise FileNotFoundError('No config file found at {}'.format(config_file))
 
+    logging.debug("Loading config file from {}".format(config_file))
 
-def create_config_template(architecture_name: str, filepath: str = None) -> Config:
-    """Creates a template version of a Config for a given architecture, with required and optional parameters
-    highlighted, and default values for other parameters. Config is returned but can optionally be written to YAML file.
+    if os.path.splitext(config_file)[-1].lower() == 'json':
+        with open(config_file, 'r') as f:
+            rawconfig = json.load(f)
+    elif os.path.splitext(config_file)[-1].lower() == 'yaml':
+        with open(config_file, 'r') as f:
+            rawconfig = yaml.safe_load(f)
+    else:
+        raise ImportError('File of known type - require either json or yaml')
 
-    Args:
-        architecture_name: Name of available architecture.
-        filepath: Filepath to which template YAML file is saved, if desired.
+    configdir, f = os.path.split(os.path.abspath(config_file))
+    configdict = isofit.core.common.expand_all_paths(rawconfig, configdir)
 
-    Returns:
-        Template version of a Config.
-    """
-    logging.debug("Creating config template for architecture {} at {}".format(architecture_name, filepath))
-    config_options = {"model_training": {"architecture_name": architecture_name}}
-    config = _create_config(config_options, is_template=True)
-    if filepath is not None:
-        save_config_to_file(config, filepath)
+    config = Config(configdict)
     return config
 
 
-def _create_config(config_options: dict, is_template: bool) -> Config:
-    config_copy = copy.deepcopy(config_options)  # Use a copy because config options are popped from the dict
-    # Populate config sections with the provided configuration options, tracking errors
-    populated_sections = dict()
-    for config_section in []:#sections.get_config_sections():
-        section_name = config_section.get_config_name_as_snake_case()
-        populated_section = config_section()
-        populated_section.set_config_options(config_copy.get(section_name, dict()), is_template)
-        populated_sections[section_name] = populated_section
-    # Populate architecture options given architecture name
-    architecture_name = populated_sections["model_training"].architecture_name
-    architecture = []#config_sections.get_architecture_config_section(architecture_name)
-    architecture.set_config_options(config_copy.get("architecture", dict()), is_template)
-    populated_sections["architecture"] = architecture
-    return Config(**populated_sections)
-
-
-def save_config_to_file(config: Config, filepath: str, include_sections: List[str] = None) -> None:
-    """Saves/serializes a Config object to a YAML file.
-
-    Args:
-        config: Config object.
-        filepath: Filepath to which YAML file is saved.
-        include_sections: Config sections that should be included. All config sections are included if None.
-
-    Returns:
-        None
-    """
-
-    def _represent_dictionary_order(self, dict_data):
-        # via https://stackoverflow.com/questions/31605131/dumping-a-dictionary-to-a-yaml-file-while-preserving-order
-        return self.represent_mapping("tag:yaml.org,2002:map", dict_data.items())
-
-    def _represent_list_inline(self, list_data):
-        return self.represent_sequence("tag:yaml.org,2002:seq", list_data, flow_style=True)
-
-    yaml.add_representer(OrderedDict, _represent_dictionary_order)
-    yaml.add_representer(list, _represent_list_inline)
-    config_out = config.get_config_as_dict()
-    logging.debug("Saving config file to {}".format(filepath))
-    if include_sections:
-        logging.debug("Only saving config sections: {}".format(", ".join(include_sections)))
-        config_out = {section: config_out[section] for section in include_sections}
-    with open(filepath, "w") as file_:
-        yaml.dump(config_out, file_, default_flow_style=False)
-
+#def save_config_to_file(config: Config, filepath: str, include_sections: List[str] = None) -> None:
+#    """Saves/serializes a Config object to a YAML file.
+#
+#    Args:
+#        config: Config object.
+#        filepath: Filepath to which YAML file is saved.
+#        include_sections: Config sections that should be included. All config sections are included if None.
+#
+#    Returns:
+#        None
+#    """
+#
+#    def _represent_dictionary_order(self, dict_data):
+#        # via https://stackoverflow.com/questions/31605131/dumping-a-dictionary-to-a-yaml-file-while-preserving-order
+#        return self.represent_mapping("tag:yaml.org,2002:map", dict_data.items())
+#
+#    def _represent_list_inline(self, list_data):
+#        return self.represent_sequence("tag:yaml.org,2002:seq", list_data, flow_style=True)
+#
+#    yaml.add_representer(OrderedDict, _represent_dictionary_order)
+#    yaml.add_representer(list, _represent_list_inline)
+#    config_out = config.get_config_as_dict()
+#    logging.debug("Saving config file to {}".format(filepath))
+#    if include_sections:
+#        logging.debug("Only saving config sections: {}".format(", ".join(include_sections)))
+#        config_out = {section: config_out[section] for section in include_sections}
+#    with open(filepath, "w") as file_:
+#        yaml.dump(config_out, file_, default_flow_style=False)
 
 def get_config_differences(config_a: Config, config_b: Config) -> Dict:
     differing_items = dict()
@@ -328,4 +279,17 @@ def get_config_sections() -> List[Type[BaseConfigSection]]:
         sections.input_config.Input,
         sections.output_config.Output,
     ]
+
+def snake_to_camel(word):
+    return ''.join(x.capitalize() or '_' for x in word.split('_'))
+
+def _set_callable_attributes(object, configdict):
+    for config_section_name in object.__dict__.keys():
+        camelcase_section_name = snake_to_camel(config_section_name)
+        subdict = None
+        if camelcase_section_name in configdict.keys:
+            subdict = configdict[camelcase_section_name]
+
+        setattr(object, config_section_name, getattr('isofit.configs.sections', camelcase_section_name)(subdict))
+
 
