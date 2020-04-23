@@ -27,7 +27,6 @@ from collections import OrderedDict
 from scipy.optimize import least_squares
 from scipy.linalg import inv, norm, det, cholesky, qr, svd, LinAlgError
 from hashlib import md5
-from numba import jit
 
 from .common import svd_inv, svd_inv_sqrt, eps, combos, conditional_gaussian
 from .inverse_simple import invert_simple
