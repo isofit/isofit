@@ -39,14 +39,16 @@ class LibRadTranRT(TabularRT):
 
     def __init__(self, config, statevector_names):
 
-        TabularRT.__init__(self, config)
+        super().__init__(self, config)
+
         self.libradtran_dir = self.find_basedir(config)
         self.libradtran_template_file = config['libradtran_template_file']
 
         self.lut_quantities = ['rhoatm', 'transm', 'sphalb', 'transup']
 
-        self.angular_lut_keys_degrees = ['OBSZEN', 'TRUEAZ', 'viewzen', 'viewaz',
-                                         'solzen', 'solaz']
+        self.angular_lut_keys_degrees = [
+            'OBSZEN', 'TRUEAZ', 'viewzen', 'viewaz', 'solzen', 'solaz'
+        ]
 
         # Build the lookup table
         self.build_lut()
