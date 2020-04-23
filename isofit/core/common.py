@@ -110,8 +110,8 @@ class VectorInterpolator:
 
         self.n = data.shape[-1]
         grid_aug = grid + [np.arange(data.shape[-1])]
-        self.itp = RegularGridInterpolator(grid_aug, data,
-                                           bounds_error=False, fill_value=None)
+        self.itp = RegularGridInterpolator(
+            grid_aug, data, bounds_error=False, fill_value=None)
 
     def __call__(self, points):
 
@@ -157,19 +157,21 @@ def load_wavelen(wavelength_file):
 def emissive_radiance(emissivity, T, wl):
     """Radiance of a surface due to emission."""
 
-    c_1 = 1.88365e32/np.pi
+    c_1 = 1.88365e32 / np.pi
     c_2 = 14387690
     J_per_eV = 1.60218e-19
     wl_um = wl / 1000.0
-    ph_per_sec_cm2_sr_nm = c_1/(wl**4)/(np.exp(c_2/wl/T)-1.0) * emissivity
+    ph_per_sec_cm2_sr_nm = c_1 / (wl**4) / (np.exp(c_2/wl/T)-1.0) * emissivity
 
     # Photon energy in eV
     eV_per_sec_cm2_sr_nm = 1.2398 * ph_per_sec_cm2_sr_nm/wl_um
     W_per_cm2_sr_nm = J_per_eV * eV_per_sec_cm2_sr_nm
-    uW_per_cm2_sr_nm = W_per_cm2_sr_nm*1e6
-    dRdn_dT = c_1/(wl**4)*(-pow(np.exp(c_2/wl/T)-1.0, -2.0)) *\
-        np.exp(c_2/wl/T)*(-pow(T, -2)*c_2/wl) *\
-        emissivity/wl_um*1.2398*J_per_eV*1e6
+    uW_per_cm2_sr_nm = W_per_cm2_sr_nm * 1e6
+
+    dRdn_dT = c_1 / (wl**4) * (-pow(np.exp(c_2/wl/T)-1.0, -2.0)) *\
+        np.exp(c_2/wl/T) * (-pow(T, -2)*c_2/wl) *\
+        emissivity / wl_um * 1.2398 * J_per_eV * 1e6
+
     return uW_per_cm2_sr_nm, dRdn_dT
 
 
