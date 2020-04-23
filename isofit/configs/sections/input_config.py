@@ -105,7 +105,7 @@ class InputConfig(BaseConfigSection):
         errors = list()
 
         # Check that all input files exist
-        for key in self.__dict__.keys():
+        for key in self._get_nontype_attributes():
             value = getattr(self, key)
             if value is not None:
                 if os.path.isfile(value) is False:

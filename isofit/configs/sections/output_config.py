@@ -55,7 +55,6 @@ class OutputConfig(BaseConfigSection):
 
 
     def _check_config_validity(self) -> List[str]:
-        self.get_option_keys()
         errors = list()
 
         #TODO: add flags for rile overright, and make sure files don't exist if not checked?

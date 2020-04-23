@@ -20,8 +20,8 @@ class Config(object):
     def __init__(self, configdict: dict = None) -> None:
         self.input = None
         self.output = None
-        self.forward_model = None
-        self.inversion = None
+        #self.forward_model = None
+        #self.inversion = None
 
         # Load sub-classes and attributes
         _set_callable_attributes(self, configdict)
@@ -57,13 +57,12 @@ class Config(object):
             raise AttributeError("Both include_sections and exclude_sections cannot be specified.")
 
         logging.info("Checking config sections for configuration issues")
-        errors = list()
 
         errors = []
         for key in self.__dict__.keys():
             value = getattr(self, key)
-            if callable(value):
-                errors.extend(value.get_config_errors())
+            #if callable(value):
+            errors.extend(value.check_config_validity())
 
         ##TODO: do same thing here as with global hidden function used within BaseConfigSection, so that this is
         ## recursive
@@ -90,7 +89,10 @@ class Config(object):
         for e in errors:
             logging.error(e)
 
-        raise AttributeError('Configuration error(s) found.  See log for details.')
+        if len(errors) > 0:
+            raise AttributeError('Configuration error(s) found.  See log for details.')
+
+        logging.info('Configuration file checks complete, no errors found.')
 
 
 class BaseConfigSection(object):
@@ -157,7 +159,7 @@ class BaseConfigSection(object):
         )
 
         # First check typing
-        for key in self.__dict__.keys():
+        for key in self._get_nontype_attributes():
 
             # get the actual parameter value
             value = getattr(self, key)
@@ -225,6 +227,14 @@ class BaseConfigSection(object):
 
     def _get_expected_type_for_option_key(self, option_key: str) -> type:
         return getattr(self, "_{}_type".format(option_key))
+
+    def _get_nontype_attributes(self) -> List[str]:
+        keys = []
+        for key in self.__dict__.keys():
+            if key[0] == '_' and key[-5:] == '_type':
+                continue
+            keys.append(key)
+        return keys
 
 
 def create_config_from_file(config_file: str) -> Config:
@@ -334,7 +344,6 @@ def _set_callable_attributes(object: object, configdict: dict) -> None:
     """
 
     for config_section_name in object.__dict__.keys():
-        import ipdb; ipdb.set_trace()
         camelcase_section_name = snake_to_camel(config_section_name)
 
         subdict = None
