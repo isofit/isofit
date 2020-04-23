@@ -21,12 +21,12 @@
 import sys
 import time
 import logging
-import xxhash
-import scipy as s
 from collections import OrderedDict
-from scipy.optimize import least_squares
-from scipy.linalg import inv, norm, det, cholesky, qr, svd, LinAlgError
+import xxhash
 from hashlib import md5
+import numpy as np
+from numpy.linalg import inv, norm, det, cholesky, qr, svd, LinAlgError
+from scipy.optimize import least_squares
 
 from .common import svd_inv, svd_inv_sqrt, eps
 from .inverse_simple import invert_simple
@@ -61,11 +61,11 @@ class Inversion:
         # We calculate the instrument channel indices associated with the
         # retrieval windows using the initial instrument calibration.  These
         # window indices never change throughout the life of the object.
-        self.winidx = s.array((), dtype=int)  # indices of retrieval windows
+        self.winidx = np.array((), dtype=int)  # indices of retrieval windows
         for lo, hi in self.windows:
-            idx = s.where(s.logical_and(self.fm.instrument.wl_init > lo,
-                                        self.fm.instrument.wl_init < hi))[0]
-            self.winidx = s.concatenate((self.winidx, idx), axis=0)
+            idx = np.where(np.logical_and(self.fm.instrument.wl_init > lo,
+                                          self.fm.instrument.wl_init < hi))[0]
+            self.winidx = np.concatenate((self.winidx, idx), axis=0)
         self.counts = 0
         self.inversions = 0
 
@@ -128,7 +128,7 @@ class Inversion:
 
         Seps = self.fm.Seps(x, meas, geom)
         wn = len(self.winidx)
-        Seps_win = s.zeros((wn, wn))
+        Seps_win = np.zeros((wn, wn))
         for i in range(wn):
             Seps_win[i, :] = Seps[self.winidx[i], self.winidx]
         return svd_inv_sqrt(Seps_win, hashtable=self.hashtable)
@@ -158,7 +158,7 @@ class Inversion:
 
         # Simulations are easy - return the initial state vector
         if self.simulation_mode or meas is None:
-            return s.array([self.fm.init.copy()])
+            return np.array([self.fm.init.copy()])
 
         # Calculate the initial solution, if needed.
         x0 = invert_simple(self.fm, meas, geom)
@@ -199,9 +199,9 @@ class Inversion:
             # concatenation of the "residuals" due to the measurement
             # and prior distributions. They will be squared internally by
             # the solver.
-            total_jac = s.concatenate((meas_jac, prior_jac), axis=0)
+            total_jac = np.concatenate((meas_jac, prior_jac), axis=0)
 
-            return s.real(total_jac)
+            return np.real(total_jac)
 
         def err(x):
             """Calculate cost function expressed here in absolute (not
@@ -223,7 +223,7 @@ class Inversion:
             prior_resid = (x - xa).dot(Sa_inv_sqrt)
 
             # Total cost
-            total_resid = s.concatenate((meas_resid, prior_resid))
+            total_resid = np.concatenate((meas_resid, prior_resid))
 
             # How long since the last call?
             newtime = time.time()
@@ -239,7 +239,7 @@ class Inversion:
             logging.debug('Iteration: %02i  Residual: %12.2f %s' %
                           (it, rs, sm))
 
-            return s.real(total_resid)
+            return np.real(total_resid)
 
         # Initialize and invert
         try:
@@ -247,7 +247,7 @@ class Inversion:
             self.trajectory.append(xopt.x)
         except LinAlgError:
             logging.warning('Levenberg Marquardt failed to converge')
-        return s.array(self.trajectory)
+        return np.array(self.trajectory)
 
     def forward_uncertainty(self, x, meas, geom):
         """Converged estimates of path radiance, radiance, reflectance.
@@ -255,7 +255,7 @@ class Inversion:
         Also calculate the posterior distribution and Rodgers K, G matrices.
         """
 
-        dark_surface = s.zeros(self.fm.surface.wl.shape)
+        dark_surface = np.zeros(self.fm.surface.wl.shape)
         path = self.fm.calc_meas(x, geom, rfl=dark_surface)
         mdl = self.fm.calc_meas(x, geom, rfl=None, Ls=None)
         lamb = self.fm.calc_lamb(x, geom)
