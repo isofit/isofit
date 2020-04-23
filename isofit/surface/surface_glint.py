@@ -18,7 +18,7 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-import scipy as s
+import numpy as np
 
 from ..core.common import eps
 from .surface_multicomp import MultiComponentSurface
@@ -47,12 +47,14 @@ class GlintSurface(MultiComponentSurface):
         return mu
 
     def Sa(self, x_surface, geom):
-        """Covariance of prior distribution, calculated at state x.  We find
-        the covariance in a normalized space (normalizing by z) and then un-
-        normalize the result for the calling function."""
+        """Covariance of prior distribution, calculated at state x.
+
+        We find the covariance in a normalized space (normalizing by z)
+        and then un-normalize the result for the calling function.
+        """
 
         Cov = MultiComponentSurface.Sa(self, x_surface, geom)
-        f = s.array([[(10.0 * self.scale[self.glint_ind])**2]])
+        f = np.array([[(10.0 * self.scale[self.glint_ind])**2]])
         Cov[self.glint_ind, self.glint_ind] = f
         return Cov
 
@@ -60,10 +62,10 @@ class GlintSurface(MultiComponentSurface):
         """Given a reflectance estimate and one or more emissive parameters, 
           fit a state vector."""
 
-        glint_band = s.argmin(abs(900-self.wl))
-        glint = s.mean(rfl_meas[(glint_band-2):glint_band+2])
-        water_band = s.argmin(abs(400-self.wl))
-        water = s.mean(rfl_meas[(water_band-2):water_band+2])
+        glint_band = np.argmin(abs(900-self.wl))
+        glint = np.mean(rfl_meas[(glint_band-2):glint_band+2])
+        water_band = np.argmin(abs(400-self.wl))
+        water = np.mean(rfl_meas[(water_band-2):water_band+2])
         if glint > 0.05 or water < glint:
             glint = 0
         glint = max(self.bounds[self.glint_ind][0]+eps,
@@ -71,6 +73,7 @@ class GlintSurface(MultiComponentSurface):
         lamb_est = rfl_meas - glint
         x = MultiComponentSurface.fit_params(self, lamb_est, geom)
         x[self.glint_ind] = glint
+
         return x
 
     def calc_lamb(self, x_surface, geom):
