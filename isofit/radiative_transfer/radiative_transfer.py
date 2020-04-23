@@ -18,15 +18,15 @@
 # Author: Jay E. Fahlen, jay.e.fahlen@jpl.nasa.gov
 #
 
-import scipy as s
 import logging
 from copy import deepcopy
 from collections import OrderedDict
+import numpy as np
 
+from .modtran import modtran_bands_available, ModtranRT
+from .six_s import sixs_names, SixSRT
+from .libradtran import libradtran_names, LibRadTranRT
 from ..core.common import json_load_ascii, eps
-from ..radiative_transfer.modtran import modtran_bands_available, ModtranRT
-from ..radiative_transfer.six_s import sixs_names, SixSRT
-from ..radiative_transfer.libradtran import libradtran_names, LibRadTranRT
 
 
 class RadiativeTransfer():
@@ -85,7 +85,7 @@ class RadiativeTransfer():
         # Put the RT objects into self.RTs in wavelength order
         # This assumes that the input data wavelengths are all
         # ascending.
-        sort_inds = s.argsort(s.array(temp_min_wavelen_list))
+        sort_inds = np.argsort(np.array(temp_min_wavelen_list))
         for sort_ind in sort_inds:
             key, RT = temp_RTs_list[sort_ind]
             self.RTs[key] = RT
@@ -97,7 +97,7 @@ class RadiativeTransfer():
         self.bounds, self.scale, self.init = [], [], []
         self.prior_mean, self.prior_sigma = [], []
 
-        for sv_key in self.statevec:    # Go in order
+        for sv_key in self.statevec:  # Go in order
             sv = config_statevector[sv_key]
             self.bounds.append(sv['bounds'])
             self.scale.append(sv['scale'])
@@ -105,41 +105,44 @@ class RadiativeTransfer():
             self.prior_sigma.append(sv['prior_sigma'])
             self.prior_mean.append(sv['prior_mean'])
 
-        self.bounds = s.array(self.bounds)
-        self.scale = s.array(self.scale)
-        self.init = s.array(self.init)
-        self.prior_mean = s.array(self.prior_mean)
-        self.prior_sigma = s.array(self.prior_sigma)
+        self.bounds = np.array(self.bounds)
+        self.scale = np.array(self.scale)
+        self.init = np.array(self.init)
+        self.prior_mean = np.array(self.prior_mean)
+        self.prior_sigma = np.array(self.prior_sigma)
 
-        self.wl = s.concatenate([RT.wl for RT in self.RTs.values()])
+        self.wl = np.concatenate([RT.wl for RT in self.RTs.values()])
 
         self.bvec = list(config['unknowns'].keys())
-        self.bval = s.array([config['unknowns'][k] for k in self.bvec])
+        self.bval = np.array([config['unknowns'][k] for k in self.bvec])
 
-        self.solar_irr = s.concatenate([RT.solar_irr for RT in \
-                self.RTs.values()])
+        self.solar_irr = np.concatenate([RT.solar_irr for RT in
+                                         self.RTs.values()])
         # These should all be the same so just grab one
         self.coszen = [RT.coszen for RT in self.RTs.values()][0]
 
     def xa(self):
-        """Pull the priors from each of the individual RTs.
-        """
+        """Pull the priors from each of the individual RTs."""
+
         return self.prior_mean
 
     def Sa(self):
-        """Pull the priors from each of the individual RTs.
-        """
-        return s.diagflat(pow(s.array(self.prior_sigma), 2))
+        """Pull the priors from each of the individual RTs."""
+
+        return np.diagflat(pow(np.array(self.prior_sigma), 2))
 
     def get(self, x_RT, geom):
+        """."""
 
         ret = []
-        for key, RT in self.RTs.items():
+        for _, RT in self.RTs.items():
             ret.append(RT.get(x_RT, geom))
 
         return self.pack_arrays(ret)
 
     def calc_rdn(self, x_RT, rfl, Ls, geom):
+        """."""
+
         r = self.get(x_RT, geom)
         L_atm = self.get_L_atm(x_RT, geom)
         L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)
@@ -154,69 +157,76 @@ class RadiativeTransfer():
         return ret
 
     def get_L_atm(self, x_RT, geom):
+        """."""
+
         L_atms = []
-        for key, RT in self.RTs.items():
+        for _, RT in self.RTs.items():
             L_atms.append(RT.get_L_atm(x_RT, geom))
-        return s.hstack(L_atms)
+        return np.hstack(L_atms)
 
     def get_L_down_transmitted(self, x_RT, geom):
+        """."""
+
         L_downs = []
-        for key, RT in self.RTs.items():
+        for _, RT in self.RTs.items():
             L_downs.append(RT.get_L_down_transmitted(x_RT, geom))
-        return s.hstack(L_downs)
+        return np.hstack(L_downs)
 
     def get_L_up(self, x_RT, geom):
-        '''L_up is provided by the surface model, so just return
-        0 here. The commented out code here is for future updates.'''
+        """L_up is provided by the surface model, so just return
+        0 here. The commented out code here is for future updates."""
+
         #L_ups = []
         # for key, RT in self.RTs.items():
         #    L_ups.append(RT.get_L_up(x_RT, geom))
-        # return s.hstack(L_ups)
+        # return np.hstack(L_ups)
 
         return 0.
 
     def drdn_dRT(self, x_RT, x_surface, rfl, drfl_dsurface, Ls,
                  dLs_dsurface, geom):
+        """."""
 
         # first the rdn at the current state vector
         rdn = self.calc_rdn(x_RT, rfl, Ls, geom)
 
         # perturb each element of the RT state vector (finite difference)
         K_RT = []
-        x_RTs_perturb = x_RT + s.eye(len(x_RT))*eps
+        x_RTs_perturb = x_RT + np.eye(len(x_RT))*eps
         for x_RT_perturb in list(x_RTs_perturb):
             rdne = self.calc_rdn(x_RT_perturb, rfl, Ls, geom)
             K_RT.append((rdne-rdn) / eps)
-        K_RT = s.array(K_RT).T
+        K_RT = np.array(K_RT).T
 
         # Get K_surface
         r = self.get(x_RT, geom)
         L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)
 
         # The reflected downwelling light is:
-        # L_down_transmitted * rfl / (1.0 - r['sphalb'] * rfl), or 
+        # L_down_transmitted * rfl / (1.0 - r['sphalb'] * rfl), or
         # L_down_transmitted * rho_scaled_for_multiscattering
         # This term is the derivative of rho_scaled_for_multiscattering
         drho_scaled_for_multiscattering_drfl = 1. / (1 - r['sphalb']*rfl)**2
 
         drdn_drfl = L_down_transmitted * drho_scaled_for_multiscattering_drfl
         drdn_dLs = r['transup']
-        K_surface = drdn_drfl[:, s.newaxis] * drfl_dsurface + \
-            drdn_dLs[:, s.newaxis] * dLs_dsurface
+        K_surface = drdn_drfl[:, np.newaxis] * drfl_dsurface + \
+            drdn_dLs[:, np.newaxis] * dLs_dsurface
 
         return K_RT, K_surface
 
     def drdn_dRTb(self, x_RT, rfl, Ls, geom):
+        """."""
 
         if len(self.bvec) == 0:
-            Kb_RT = s.zeros((0, len(self.wl.shape)))
+            Kb_RT = np.zeros((0, len(self.wl.shape)))
 
         else:
             # first the radiance at the current state vector
-            r = self.get(x_RT, geom)
+            # r = self.get(x_RT, geom)
             rdn = self.calc_rdn(x_RT, rfl, Ls, geom)
 
-            # unknown parameters modeled as random variables per 
+            # unknown parameters modeled as random variables per
             # Rodgers et al (2000) K_b matrix.  We calculate these derivatives
             # by finite differences
             Kb_RT = []
@@ -229,10 +239,12 @@ class RadiativeTransfer():
                     rdne = self.calc_rdn(x_RT_perturb, rfl, Ls, geom)
                     Kb_RT.append((rdne-rdn) / eps)
 
-        Kb_RT = s.array(Kb_RT).T
+        Kb_RT = np.array(Kb_RT).T
         return Kb_RT
 
     def summarize(self, x_RT, geom):
+        """."""
+
         ret = []
         for RT in self.RTs.values():
             ret.append(RT.summarize(x_RT, geom))
@@ -241,10 +253,10 @@ class RadiativeTransfer():
 
     def pack_arrays(self, list_of_r_dicts):
         """Take the list of dict outputs from each RTM (in order of RTs) and
-        stack their internal arrays in the same order.
-        """
+        stack their internal arrays in the same order."""
+
         r_stacked = {}
         for key in list_of_r_dicts[0].keys():
             temp = [x[key] for x in list_of_r_dicts]
-            r_stacked[key] = s.hstack(temp)
+            r_stacked[key] = np.hstack(temp)
         return r_stacked

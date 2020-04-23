@@ -29,7 +29,7 @@ import numpy as np
 from scipy.stats import norm as normal
 from scipy.interpolate import interp1d
 
-from ..radiative_transfer.look_up_tables import TabularRT, FileExistsError
+from .look_up_tables import TabularRT, FileExistsError
 from ..core.common import json_load_ascii, recursive_replace, combos, \
     VectorInterpolator, eps, load_wavelen
 
