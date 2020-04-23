@@ -24,7 +24,6 @@ import logging
 import cProfile
 from contextlib import suppress
 import warnings
-from numba.errors import NumbaWarning, NumbaDeprecationWarning, NumbaPendingDeprecationWarning
 
 from .common import load_config, safe_core_count
 from .forward import ForwardModel
@@ -102,14 +101,7 @@ class Isofit:
     def _run_single_spectrum(self, index):
         # Ignore Numba warnings
         if not warnings_enabled:
-            warnings.simplefilter(
-                action='ignore', category=RuntimeWarning)
-            warnings.simplefilter(
-                action='ignore', category=NumbaWarning)
-            warnings.simplefilter(
-                action='ignore', category=NumbaDeprecationWarning)
-            warnings.simplefilter(
-                action='ignore', category=NumbaPendingDeprecationWarning)
+            warnings.simplefilter(action='ignore')
 
         self._init_nonpicklable_objects()
         io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
