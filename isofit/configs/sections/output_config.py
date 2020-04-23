@@ -48,6 +48,9 @@ class OutputConfig(BaseConfigSection):
     _data_dump_file_type = str
     data_dump_file = None
 
+    def __init__(self, sub_configdic: dict = None):
+        self.set_config_options(sub_configdic)
+
 
     def _check_config_validity(self) -> List[str]:
         self.get_option_keys()

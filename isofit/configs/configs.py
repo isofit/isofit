@@ -6,7 +6,6 @@ from collections import OrderedDict
 from typing import Dict, List, Type
 from isofit.configs import sections
 import isofit.core.common
-from importlib import import_module
 import json
 import yaml
 
@@ -28,7 +27,7 @@ class Config(object):
         _set_callable_attributes(self, configdict)
 
         # check for errors
-        self.get_human_readable_config_errors()
+        self.get_config_errors()
 
 
 
@@ -126,6 +125,19 @@ class BaseConfigSection(object):
     def __init__(self) -> None:
         return
 
+    def set_config_options(self, configdict: dict) -> None:
+        """ Read dictionary and assign to attributes, leaning on _set_callable_attributes
+        Args:
+            configdict: dictionary-style config for parsing
+        """
+        for key in self.__dict__:
+            if callable(key) and key in configdict.keys:
+                _set_callable_attributes(self, configdict[key])
+            elif key in configdict.keys:
+                setattr(self, key, configdict[key])
+        return
+
+
     @classmethod
     def get_config_name_as_snake_case(cls) -> str:
         snake_case_converter = re.compile("((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))")
@@ -140,13 +152,6 @@ class BaseConfigSection(object):
             config_options[key] = value
         return config_options
 
-    def set_config_options(self, configdict: dict) -> None:
-        for key in self.__dict__:
-            if callable(key) and key in configdict.keys:
-                _set_callable_attributes(self, configdict[key])
-            elif key in configdict.keys:
-                setattr(self, key, configdict[key])
-        return
 
     def _clean_config_option_value(self, option_key: str, value: any) -> any:
         # None read as string so we need to convert to the None type
@@ -281,12 +286,29 @@ def get_config_sections() -> List[Type[BaseConfigSection]]:
         sections.output_config.Output,
     ]
 
-def snake_to_camel(word):
+def snake_to_camel(word: str) -> None:
+    """ Function to convert snake case to camel case, e.g.
+    snake_to_camel -> SnakeToCamel
+    Args:
+        word: snake_case string
+    Returns:
+        CamelCase string
+    """
     return ''.join(x.capitalize() or '_' for x in word.split('_'))
 
-def _set_callable_attributes(object, configdict):
+
+def _set_callable_attributes(object: object, configdict: dict) -> None:
+    """ Function to read a dictionary, determine if any of it's elements are config sections defined in
+    isofit.configs.sections. and if so, initialize an object and populate it's subdirectory.  Meant to be called
+    recursively.  Defined here for use in both Config and BaseConfigSection
+    Args:
+        object: Object to check for the existence of dictionary keys in
+        configdict: dictionary-style config for parsing
+    """
+
     for config_section_name in object.__dict__.keys():
         camelcase_section_name = snake_to_camel(config_section_name)
+
         subdict = None
         if camelcase_section_name in configdict.keys:
             subdict = configdict[camelcase_section_name]

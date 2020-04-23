@@ -97,6 +97,9 @@ class InputConfig(BaseConfigSection):
     Used to make minor channelized corrections to account for slight systematic errors not captured in calibration.
     """
 
+    def __init__(self, sub_configdic: dict = None):
+        self.set_config_options(sub_configdic)
+
     def _check_config_validity(self) -> List[str]:
         self.get_option_keys()
         errors = list()

@@ -28,6 +28,9 @@ class ForwardModelConfig(BaseConfigSection):
     RadiativeTransfer: radiative transfer config section.
     """
 
+    def __init__(self, sub_configdic: dict = None):
+        self.set_config_options(sub_configdic)
+
 
     def _check_config_validity(self) -> List[str]:
         self.get_option_keys()
