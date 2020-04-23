@@ -48,21 +48,21 @@ class GridInversion(Inversion):
 
         super().__init__(config, forward)
         self.integration_grid = OrderedDict(config['integration_grid'])
-        self.inds_fixed = [self.fm.statevec.index(k) for k in
-                           self.integration_grid.keys()]
-        self.inds_free = [i for i in np.arange(self.fm.nstate, dtype=int) if
-                          not (i in self.inds_fixed)]
+        self.inds_fixed = [self.fm.statevec.index(k)
+                           for k in self.integration_grid.keys()]
+        self.inds_free = [i for i in np.arange(self.fm.nstate, dtype=int)
+                          if not (i in self.inds_fixed)]
         self.x_fixed = None
         self.least_squares_params['bounds'] = \
-            (self.fm.bounds[0][self.inds_free]+eps,
-             self.fm.bounds[1][self.inds_free]-eps)
-        self.least_squares_params['x_scale'] = \
-            self.fm.scale[self.inds_free]
+            (self.fm.bounds[0][self.inds_free] + eps,
+             self.fm.bounds[1][self.inds_free] - eps)
+        self.least_squares_params['x_scale'] = self.fm.scale[self.inds_free]
 
     def full_statevector(self, x_free):
         x = np.zeros(self.fm.nstate)
         x[self.inds_fixed] = self.x_fixed
         x[self.inds_free] = x_free
+
         return x
 
     def calc_conditional_prior(self, x_free, geom):
@@ -75,10 +75,11 @@ class GridInversion(Inversion):
         Sa = self.fm.Sa(x, geom)
 
         # condition on fixed variables
-        xa_free, Sa_free = conditional_gaussian(xa, Sa, self.inds_free,
-                                                self.inds_fixed, self.x_fixed)
-        Sa_free_inv, Sa_free_inv_sqrt = svd_inv_sqrt(Sa_free,
-                                                     hashtable=self.hashtable)
+        xa_free, Sa_free = conditional_gaussian(
+            xa, Sa, self.inds_free, self.inds_fixed, self.x_fixed)
+        Sa_free_inv, Sa_free_inv_sqrt = svd_inv_sqrt(
+            Sa_free, hashtable=self.hashtable)
+
         return xa_free, Sa_free, Sa_free_inv, Sa_free_inv_sqrt
 
     def calc_posterior(self, x, geom, meas):
@@ -94,8 +95,8 @@ class GridInversion(Inversion):
 
         # Gain matrix G reflects current state, so we use the state-dependent
         # Jacobian matrix K
-        S_hat = svd_inv(K.T.dot(Seps_inv).dot(
-            K) + Sa_inv, hashtable=self.hashtable)
+        S_hat = svd_inv(K.T.dot(Seps_inv).dot(K) + Sa_inv,
+                        hashtable=self.hashtable)
         G = S_hat.dot(K.T).dot(Seps_inv)
 
         # N. Cressie [ASA 2018] suggests an alternate definition of S_hat for
@@ -104,6 +105,7 @@ class GridInversion(Inversion):
             Ka = self.fm.K(xa, geom)
             S_hat = svd_inv(Ka.T.dot(Seps_inv).dot(Ka) + Sa_inv,
                             hashtable=self.hashtable)
+
         return S_hat, K, G
 
     def calc_Seps(self, x, meas, geom):
@@ -117,26 +119,31 @@ class GridInversion(Inversion):
         Seps_win = np.zeros((wn, wn))
         for i in range(wn):
             Seps_win[i, :] = Seps[self.winidx[i], self.winidx]
+
         return svd_inv_sqrt(Seps_win, hashtable=self.hashtable)
 
     def invert(self, meas, geom):
         """Inverts a meaurement and returns a state vector.
 
-           Parameters:
+        Parameters:
 
-             meas           - a one-D scipy vector of radiance in uW/nm/sr/cm2
-             geom           - a geometry object.
-             plot_directory - the base directory to which diagnostics are
-                                writtena preinitialized ForwardModel object
+        meas           - a one-D scipy vector of radiance in uW/nm/sr/cm2
+        geom           - a geometry object.
+        plot_directory - the base directory to which diagnostics are
+                           writtena preinitialized ForwardModel object
 
-           Returns a tuple consisting of the following:
+        Returns a tuple consisting of the following:
 
-             lamb           - the converged lambertian surface reflectance
-             path           - the converged path radiance estimate
-             mdl            - the modeled radiance estimate
-             S_hat          - the posterior covariance of the state vector
-             G              - the G matrix from the CD Rodgers 2000 formalism
-             xopt           - the converged state vector solution"""
+        lamb           - the converged lambertian surface reflectance
+        path           - the converged path radiance estimate
+        mdl            - the modeled radiance estimate
+        S_hat          - the posterior covariance of the state vector
+        G              - the G matrix from the CD Rodgers 2000 formalism
+        xopt           - the converged state vector solution
+
+        TODO: remove nested functions: jac, err
+              fix non-iterable value warning from combos
+        """
 
         self.counts = 0
         costs, solutions = [], []
@@ -145,6 +152,7 @@ class GridInversion(Inversion):
         if self.simulation_mode or meas is None:
             return np.array([self.fm.init.copy()])
 
+        # TODO: fix non-iterable value warning from combos
         for combo in combos(self.integration_grid.values()):
 
             self.x_fixed = combo.copy()
@@ -163,7 +171,7 @@ class GridInversion(Inversion):
             # measurement noise from the instrument as well as variability due to
             # unknown variables. For speed, we will calculate it just once based
             # on the initial solution (a potential minor source of inaccuracy).
-            Seps_inv, Seps_inv_sqrt = self.calc_Seps(x, meas, geom)
+            _, Seps_inv_sqrt = self.calc_Seps(x, meas, geom)
 
             def jac(x_free):
                 """Calculate measurement Jacobian and prior Jacobians with 
@@ -244,6 +252,7 @@ class GridInversion(Inversion):
                 logging.warning('Levenberg Marquardt failed to converge')
                 solutions.append(trajectory)
                 costs.append(9e99)
+
         return np.array(solutions[np.argmin(costs)])
 
     def forward_uncertainty(self, x, meas, geom):
@@ -257,4 +266,5 @@ class GridInversion(Inversion):
         mdl = self.fm.calc_meas(x, geom, rfl=None, Ls=None)
         lamb = self.fm.calc_lamb(x, geom)
         S_hat, K, G = self.calc_posterior(x, geom, meas)
+
         return lamb, mdl, path, S_hat, K, G
