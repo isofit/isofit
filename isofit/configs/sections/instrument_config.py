@@ -1,7 +1,7 @@
 
 from typing import Dict, List, Type
 from isofit.configs.configs import BaseConfigSection
-from isofit.configs.sections import StateVectorConfig
+#from isofit.configs.sections import StateVectorConfig
 import os
 
 
@@ -38,34 +38,35 @@ class InstrumentConfig(BaseConfigSection):
     Instrument configuration.
     """
 
-    _wavelength_file_type = str
-    wavelength_file = None
-
-    _integrations_type = int
-    integrations = None
-
-    _unknowns_type = InstrumentUnknowns
-    unknowns = None
-
-    _fast_resample_type = bool
-    fast_resample = True
-
-    _statevector_type = StateVectorConfig
-    statevector = None
-
-    _snr_type = float
-    snr = None
-
-    _parametric_noise_file_type = str
-    parametric_noise_file = None
-
-    _pushbroom_noise_file_type = str
-    pushbroom_noise_file = None
-
-    _nedt_noise_file_type = str
-    nedt_noise_file = None
-
     def __init__(self, sub_configdic: dict = None):
+
+        self._wavelength_file_type = str
+        self.wavelength_file = None
+
+        self._integrations_type = int
+        self.integrations = None
+
+        self._unknowns_type = InstrumentUnknowns
+        self.unknowns = None
+
+        self._fast_resample_type = bool
+        self.fast_resample = True
+
+        #self._statevector_type = StateVectorConfig
+        #self.statevector = None
+
+        self._snr_type = float
+        self.snr = None
+
+        self._parametric_noise_file_type = str
+        self.parametric_noise_file = None
+
+        self._pushbroom_noise_file_type = str
+        self.pushbroom_noise_file = None
+
+        self._nedt_noise_file_type = str
+        self.nedt_noise_file = None
+
         self.set_config_options(sub_configdic)
 
     def _check_config_validity(self) -> List[str]:

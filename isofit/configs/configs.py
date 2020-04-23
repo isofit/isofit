@@ -3,8 +3,8 @@ import logging
 import os
 import re
 from collections import OrderedDict
+from importlib import import_module
 from typing import Dict, List, Type
-from isofit.configs import sections
 import isofit.core.common
 import json
 import yaml
@@ -59,27 +59,33 @@ class Config(object):
         logging.info("Checking config sections for configuration issues")
         errors = list()
 
-        #TODO: do same thing here as with global hidden function used within BaseConfigSection, so that this is
-        # recursive
-        config_sections = get_config_sections()
-        if include_sections:
-            logging.info("Only checking config sections: {}".format(", ".join(include_sections)))
-            config_sections = [
-                section for section in config_sections if section.get_config_name_as_snake_case() in include_sections
-            ]
-        if exclude_sections:
-            logging.info("Not checking config sections: {}".format(", ".join(exclude_sections)))
-            config_sections = [
-                section
-                for section in config_sections
-                if section.get_config_name_as_snake_case() not in exclude_sections
-            ]
-        for config_section in config_sections:
-            section_name = config_section.get_config_name_as_snake_case()
-            populated_section = getattr(self, section_name)
-            errors.extend(populated_section.check_config_validity())
+        errors = []
+        for key in self.__dict__.keys():
+            value = getattr(self, key)
+            if callable(value):
+                errors.extend(value.get_config_errors())
 
-        logging.info("{} configuration issues found".format(len(errors)))
+        ##TODO: do same thing here as with global hidden function used within BaseConfigSection, so that this is
+        ## recursive
+        #config_sections = get_config_sections()
+        #if include_sections:
+        #    logging.info("Only checking config sections: {}".format(", ".join(include_sections)))
+        #    config_sections = [
+        #        section for section in config_sections if section.get_config_name_as_snake_case() in include_sections
+        #    ]
+        #if exclude_sections:
+        #    logging.info("Not checking config sections: {}".format(", ".join(exclude_sections)))
+        #    config_sections = [
+        #        section
+        #        for section in config_sections
+        #        if section.get_config_name_as_snake_case() not in exclude_sections
+        #    ]
+        #for config_section in config_sections:
+        #    section_name = config_section.get_config_name_as_snake_case()
+        #    populated_section = getattr(self, section_name)
+        #    errors.extend(populated_section.check_config_validity())
+
+        #logging.info("{} configuration issues found".format(len(errors)))
 
         for e in errors:
             logging.error(e)
@@ -125,17 +131,63 @@ class BaseConfigSection(object):
     def __init__(self) -> None:
         return
 
-    def set_config_options(self, configdict: dict) -> None:
+    def set_config_options(self, configdict: dict = None) -> None:
         """ Read dictionary and assign to attributes, leaning on _set_callable_attributes
         Args:
             configdict: dictionary-style config for parsing
         """
         for key in self.__dict__:
-            if callable(key) and key in configdict.keys:
-                _set_callable_attributes(self, configdict[key])
-            elif key in configdict.keys:
-                setattr(self, key, configdict[key])
+            if callable(key):
+                if configdict is None:
+                    _set_callable_attributes(self, None)
+                elif key in configdict:
+                    _set_callable_attributes(self, configdict[key])
+            else:
+                if configdict is not None:
+                    if key in configdict:
+                        setattr(self, key, configdict[key])
         return
+
+
+    def check_config_validity(self) -> List[str]:
+        errors = list()
+        message_type = (
+                "Invalid type for config option {} in config section {}. The provided value {} is a {}, "
+                + "but the required value should be a {}."
+        )
+
+        # First check typing
+        for key in self.__dict__.keys():
+
+            # get the actual parameter value
+            value = getattr(self, key)
+
+            # check it against expected
+            type_expected = self._get_expected_type_for_option_key(key)
+            if type(value) is type_expected:
+                continue
+
+            # None's are okay too (unassigned)
+            if value is None:
+                continue
+
+            # At this point, we have a type mismatch, add to error list
+            errors.append(message_type.format(key, self.__class__.__name__, value, type(value), type_expected))
+
+        # Now do a full check on each submodule
+        errors.extend(self._check_config_validity())
+
+        return errors
+
+    def _get_callable_errors(object: object, configdict: dict) -> None:
+        for config_section_name in object.__dict__.keys():
+            camelcase_section_name = snake_to_camel(config_section_name)
+
+            subdict = None
+            if camelcase_section_name in configdict.keys:
+                subdict = configdict[camelcase_section_name]
+
+            setattr(object, config_section_name, getattr('isofit.configs.sections', camelcase_section_name)(subdict))
 
 
     @classmethod
@@ -167,31 +219,6 @@ class BaseConfigSection(object):
 
         return value
 
-    def check_config_validity(self) -> List[str]:
-        errors = list()
-        message_type = (
-                "Invalid type for config option {} in config section {}. The provided value {} is a {}, "
-                + "but the required value should be a {}."
-        )
-
-        # First check typing
-        for key in self.get_option_keys():
-            value = getattr(self, key)
-            # No further checking is necessary if the provided type matches to expected type
-            type_expected = self._get_expected_type_for_option_key(key)
-            if type(value) is type_expected:
-                continue
-
-            # None's are okay too at this point
-            if value is None:
-                continue
-
-            # At this point, we have a type mismatch
-            errors.append(message_type.format(key, self.__class__.__name__, value, type(value), type_expected))
-
-        # Now check section-specific requirements
-        errors.extend(self._check_config_validity())
-        return errors
 
     def _check_config_validity(self) -> List[str]:
         return list()
@@ -307,12 +334,15 @@ def _set_callable_attributes(object: object, configdict: dict) -> None:
     """
 
     for config_section_name in object.__dict__.keys():
+        import ipdb; ipdb.set_trace()
         camelcase_section_name = snake_to_camel(config_section_name)
 
         subdict = None
-        if camelcase_section_name in configdict.keys:
-            subdict = configdict[camelcase_section_name]
+        if config_section_name in configdict.keys():
+            subdict = configdict[config_section_name]
 
-        setattr(object, config_section_name, getattr('isofit.configs.sections', camelcase_section_name)(subdict))
+        sub_config = getattr(import_module('isofit.configs.sections'), camelcase_section_name + 'Config')(subdict)
+        setattr(object, config_section_name, sub_config)
+
 
 
