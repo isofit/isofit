@@ -77,17 +77,18 @@ class ForwardModel:
 
     def __init__(self, config):
         """
-        TODO: Members required by multiple functions, but never defined:
+        TODO: Make member initialization explicit by removing setattr():
         self.idx_surface, self.idx_RT, self.idx_instrument,
         self.RT_b_inds, self.instrument_b_inds
         """
 
-        # Missing class members
-        # self.idx_RT = ?
-        # self.idx_surface = ?
-        # self.idx_instrument = ?
-        # self.RT_b_inds
-        # self.instrument_b_inds
+        # Implicitly defined members set with setattr()
+        # TODO: make these definitions explicit during initialization
+        self.idx_RT = None
+        self.idx_surface = None
+        self.idx_instrument = None
+        self.RT_b_inds = None
+        self.instrument_b_inds = None
 
         # Build the instrument model
         self.instrument = Instrument(config['instrument'])
@@ -148,7 +149,7 @@ class ForwardModel:
     def out_of_bounds(self, x):
         """Check if state vector is within bounds.
 
-        TODO: broken due to missing self.idx_RT
+        NOTE: requires self.idx_RT
         """
 
         x_RT = x[self.idx_RT]
@@ -166,7 +167,7 @@ class ForwardModel:
         NOTE: the surface prior mean depends on the current state;
         this is so we can calculate the local prior.
 
-        TODO: broken due to missing self.idx_surface
+        NOTE: requires self.idx_surface
         """
 
         x_surface = x[self.idx_surface]
@@ -183,7 +184,7 @@ class ForwardModel:
         NOTE: the surface prior depends on the current state; this
         is so we can calculate the local prior.
 
-        TODO: broken due to missing self.idx_surface
+        NOTE: requires self.idx_surface
         """
 
         x_surface = x[self.idx_surface]
@@ -220,7 +221,7 @@ class ForwardModel:
     def calc_Ls(self, x, geom):
         """Calculate the surface emission.
 
-        TODO: broken due to missing self.idx_surface
+        NOTE: requires self.idx_surface
         """
 
         return self.surface.calc_Ls(x[self.idx_surface], geom)
@@ -228,7 +229,7 @@ class ForwardModel:
     def calc_rfl(self, x, geom):
         """Calculate the surface reflectance.
 
-        TODO: broken due to missing self.idx_surface
+        NOTE: requires self.idx_surface
         """
 
         return self.surface.calc_rfl(x[self.idx_surface], geom)
@@ -236,7 +237,7 @@ class ForwardModel:
     def calc_lamb(self, x, geom):
         """Calculate the Lambertian surface reflectance.
 
-        TODO: broken due to missing self.idx_surface
+        NOTE: requires self.idx_surface
         """
 
         return self.surface.calc_lamb(x[self.idx_surface], geom)
@@ -255,7 +256,7 @@ class ForwardModel:
         the concatenation of jacobians with respect to parameters of the 
         surface and radiative transfer model.
 
-        TODO: broken due to missing self.idx_surface, self.idx_RT, self.idx_instrument
+        NOTE: requires self.idx_surface, self.idx_RT, self.idx_instrument
         """
 
         # Unpack state vector
@@ -292,6 +293,7 @@ class ForwardModel:
         K[:, self.idx_surface] = dmeas_dsurface
         K[:, self.idx_RT] = dmeas_dRT
         K[:, self.idx_instrument] = dmeas_dinstrument
+
         return K
 
     def Kb(self, x, geom):
@@ -301,7 +303,7 @@ class ForwardModel:
         and instrument.  Currently we only treat uncertainties in the 
         instrument and RT model.
 
-        TODO: broken due to missing self.RT_b_inds, self.instrument_b_inds
+        NOTE: requires self.RT_b_inds, self.instrument_b_inds
         """
 
         # Unpack state vector
@@ -324,12 +326,14 @@ class ForwardModel:
         Kb = np.zeros((self.n_meas, self.nbvec), dtype=float)
         Kb[:, self.RT_b_inds] = dmeas_dRTb
         Kb[:, self.instrument_b_inds] = dmeas_dinstrumentb
+
         return Kb
 
     def summarize(self, x, geom):
         """State vector summary."""
 
         x_surface, x_RT, x_instrument = self.unpack(x)
+
         return self.surface.summarize(x_surface, geom) + \
             ' ' + self.RT.summarize(x_RT, geom) + \
             ' ' + self.instrument.summarize(x_instrument, geom)
@@ -337,7 +341,7 @@ class ForwardModel:
     def calibration(self, x):
         """Calculate measured wavelengths and fwhm.
 
-        TODO: broken due to missing self.idx_instrument
+        NOTE: requires self.idx_instrument
         """
 
         x_inst = x[self.idx_instrument]
@@ -359,7 +363,7 @@ class ForwardModel:
     def unpack(self, x):
         """Unpack the state vector in appropriate index ordering.
 
-        TODO: broken due to missing self.idx_surface, self.idx_RT, self.idx_instrument
+        NOTE: requires self.idx_surface, self.idx_RT, self.idx_instrument
         """
 
         x_surface = x[self.idx_surface]
