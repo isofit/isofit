@@ -21,7 +21,7 @@
 import sys
 import numpy as np
 from scipy.interpolate import interp1d
-from scipy.optimize import minimize_scalar as min1d
+from scipy.optimize import minimize_scalar
 from scipy.optimize import minimize
 
 from .common import conditional_gaussian, emissive_radiance, eps
@@ -29,16 +29,19 @@ from .common import conditional_gaussian, emissive_radiance, eps
 
 def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
     """From a given radiance, estimate atmospheric state with band ratios.
-    Used to initialize gradient descent inversions."""
+
+    Used to initialize gradient descent inversions.
+    """
 
     # Identify the latest instrument wavelength calibration (possibly
     # state-dependent) and identify channel numbers for the band ratio.
-    wl, fwhm = instrument.calibration(x_instrument)
+    wl, _ = instrument.calibration(x_instrument)
     b865 = np.argmin(abs(wl-865))
     b945 = np.argmin(abs(wl-945))
     b1040 = np.argmin(abs(wl-1040))
     if not (any(RT.wl > 850) and any(RT.wl < 1050)):
         return x_RT
+
     x_new = x_RT.copy()
 
     # Figure out which RT object we are using
@@ -47,6 +50,7 @@ def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
         if rt_name in RT.RTs:
             my_RT = RT.RTs[rt_name]
             continue
+
     if not my_RT:
         raise ValueError('No suiutable RT object for initialization')
 
@@ -87,27 +91,28 @@ def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
             # the absorption feature)
             rho = meas * np.pi / (solar_irr * RT.coszen)
             r = 1.0 / (transm / (rho - rhoatm) + sphalb)
-            ratios.append((r[b945]*2.0)/(r[b1040]+r[b865]))
+            ratios.append((r[b945] * 2.0) / (r[b1040] + r[b865]))
             h2os.append(h2o)
 
         # Finally, interpolate to determine the actual water vapor level that
         # would optimize the continuum-relative correction
         p = interp1d(h2os, ratios)
         bounds = (h2os[0]+0.001, h2os[-1]-0.001)
-        best = min1d(lambda h: abs(1-p(h)), bounds=bounds, method='bounded')
+        best = minimize_scalar(
+            lambda h: abs(1-p(h)), bounds=bounds, method='bounded')
         x_new[ind_sv] = best.x
+
     return x_new
 
 
 def invert_algebraic(surface, RT, instrument, x_surface, x_RT, x_instrument,
                      meas, geom):
-    """Inverts radiance algebraically using Lambertian assumptions to get a 
-        reflectance."""
+    """Invert radiance algebraically per Lambertian to get reflectance."""
 
     # Get atmospheric optical parameters (possibly at high
     # spectral resolution) and resample them if needed.
     rhi = RT.get(x_RT, geom)
-    wl, fwhm = instrument.calibration(x_instrument)
+    wl, _ = instrument.calibration(x_instrument)
     rhoatm = instrument.sample(x_instrument, RT.wl, rhi['rhoatm'])
     transm = instrument.sample(x_instrument, RT.wl, rhi['transm'])
     solar_irr = instrument.sample(x_instrument, RT.wl, RT.solar_irr)
@@ -130,12 +135,17 @@ def invert_algebraic(surface, RT, instrument, x_surface, x_RT, x_instrument,
     # Some downstream code will benefit from our precalculated
     # atmospheric optical parameters
     coeffs = rhoatm, sphalb, transm, solar_irr, coszen, transup
+
     return rfl_est, Ls, coeffs
 
 
 def invert_simple(forward, meas, geom):
-    """Find an initial guess at the state vector. This currently uses
-    traditional (non-iterative, heuristic) atmospheric correction."""
+    """Find an initial guess at the state vector.
+
+    Currently uses traditional (non-iterative, heuristic) atmospheric correction.
+
+    TODO: remove nested function err
+    """
 
     surface = forward.surface
     RT = forward.RT
@@ -145,30 +155,31 @@ def invert_simple(forward, meas, geom):
     # and estimate atmospheric terms using traditional heuristics.
     x = forward.init.copy()
     x_surface, x_RT, x_instrument = forward.unpack(x)
-    x[forward.idx_RT] = heuristic_atmosphere(RT, instrument,
-                                             x_RT, x_instrument,  meas, geom)
+    x[forward.idx_RT] = heuristic_atmosphere(
+        RT, instrument, x_RT, x_instrument,  meas, geom)
 
     # Now, with atmosphere fixed, we can invert the radiance algebraically
     # via Lambertian approximations to get reflectance
     x_surface, x_RT, x_instrument = forward.unpack(x)
-    rfl_est, Ls_est, coeffs = invert_algebraic(surface, RT,
-                                               instrument, x_surface, x_RT,
-                                               x_instrument, meas, geom)
+    rfl_est, _, coeffs = invert_algebraic(
+        surface, RT, instrument, x_surface, x_RT, x_instrument, meas, geom)
 
     # Condition thermal part on the VSWIR portion. Only works for
     # Multicomponent surfaces. Finds the cluster nearest the VSWIR heuristic
     # inversion and uses it for the TIR suface initialization.
     if any(forward.surface.wl > 3000):
-        rfl_idx = np.array([i for i, v in enumerate(forward.surface.statevec)
-                            if 'RFL' in v])
+
+        # rfl_idx = np.array([i for i, v in enumerate(forward.surface.statevec)
+        #                     if 'RFL' in v])
         tir_idx = np.where(forward.surface.wl > 3000)[0]
         vswir_idx = np.where(forward.surface.wl < 3000)[0]
         vswir_idx = np.array([i for i in vswir_idx if i in
                               forward.surface.idx_ref])
+
         x_surface_temp = x_surface.copy()
         x_surface_temp[:len(rfl_est)] = rfl_est
         mu = forward.surface.xa(x_surface_temp, geom)
-        C = forward.surface.Sa(x_surface_temp, geom)
+        _ = forward.surface.Sa(x_surface_temp, geom)
         rfl_est[tir_idx] = mu[tir_idx]
 
     # Now we have an estimated reflectance. Fit the surface parameters.
@@ -178,7 +189,7 @@ def invert_simple(forward, meas, geom):
     if forward.surface.emissive:
 
         # Estimate the total radiance at sensor, leaving out surface emission
-        rhoatm, sphalb, transm, solar_irr, coszen, transup = coeffs
+        _, sphalb, _, _, _, transup = coeffs
         L_atm = RT.get_L_atm(x_RT, geom)
         L_down_transmitted = RT.get_L_down_transmitted(x_RT, geom)
         L_total_without_surface_emission = \
@@ -198,19 +209,21 @@ def invert_simple(forward, meas, geom):
         def err(z):
             T = z
             emissivity = forward.surface.emissivity_for_surface_T_init
-            Ls_est, d = emissive_radiance(emissivity, T,
-                                          forward.surface.wl[clearest_indices])
+            Ls_est, d = emissive_radiance(
+                emissivity, T, forward.surface.wl[clearest_indices])
             resid = transup[clearest_indices] * Ls_est + \
                 L_total_without_surface_emission[clearest_indices] - \
                 meas[clearest_indices]
+
             return sum(resid**2)
 
         # Fit temperature, set bounds,  and set the initial values
         idx_T = forward.surface.surf_temp_ind
         Tinit = np.array([forward.surface.init[idx_T]])
         Tbest = minimize(err, Tinit).x
-        T = max(forward.surface.bounds[idx_T][0]+eps,
-                min(Tbest, forward.surface.bounds[idx_T][1]-eps))
+        T = max(forward.surface.bounds[idx_T][0] + eps,
+                min(Tbest, forward.surface.bounds[idx_T][1] - eps))
+
         x_surface[idx_T] = Tbest
         forward.surface.init[idx_T] = T
 
