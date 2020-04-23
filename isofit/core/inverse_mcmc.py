@@ -19,19 +19,25 @@
 #
 
 import sys
+from hashlib import md5
 import numpy as np
 from numpy import random
 from numpy.linalg import inv, norm, det, cholesky, qr, svd
 import scipy.optimize
 from scipy.linalg import sqrtm
 from scipy.stats import multivariate_normal
-from hashlib import md5
 
 from .common import eps
 from .inverse import Inversion
 
 
 class MCMCInversion(Inversion):
+
+    proposal_scaling = None
+    iterations = None
+    restart_every = None
+    burnin = None
+    verbose = None
 
     def __init__(self, config, forward):
         """Initialize and apply defaults."""
@@ -57,13 +63,14 @@ class MCMCInversion(Inversion):
 
         U, V, D = svd(cov)
         use = np.where(V > 0)[0]
-        Cinv = (D[use, :].T).dot(np.diag(1.0/V[use])).dot(U[:, use].T)
+        Cinv = (D[use, :].T).dot(np.diag(1.0 / V[use])).dot(U[:, use].T)
         logCdet = np.sum(np.log(2.0 * np.pi * V[use]))
 
         # Multivariate Gaussian PDF
         lead = -0.5 * logCdet
         dist = (x-mean)[:, np.newaxis]
         diverg = -0.5 * (dist.T).dot(Cinv).dot(dist)
+
         return lead + diverg
 
     def log_density(self, x, rdn_meas, geom, bounds):
@@ -82,13 +89,18 @@ class MCMCInversion(Inversion):
         Seps = self.fm.Seps(x, rdn_meas, geom)
         Seps_win = np.array([Seps[i, self.winidx] for i in self.winidx])
         rdn_est = self.fm.calc_rdn(x, geom, rfl=None, Ls=None)
-        pm = self.stable_mvnpdf(rdn_est[self.winidx], Seps_win,
-                                rdn_meas[self.winidx])
-        return pa+pm
+        pm = self.stable_mvnpdf(
+            rdn_est[self.winidx], Seps_win, rdn_meas[self.winidx])
+
+        return pa + pm
 
     def invert(self, rdn_meas, geom):
         """Inverts a meaurement. Returns an array of state vector samples.
-           Similar to Inversion.invert() but returns a list of samples."""
+
+        Similar to Inversion.invert() but returns a list of samples.
+
+        NOTE: remove nested function initialize
+        """
 
         # We will truncate non-surface parameters to their bounds, but leave
         # Surface reflectance unconstrained so it can dip slightly below zero
@@ -100,7 +112,7 @@ class MCMCInversion(Inversion):
         x_MAP = Inversion.invert(self, rdn_meas, geom)[-1]
 
         # Proposal is based on the posterior uncertainty
-        S_hat, K, G = self.calc_posterior(x_MAP, geom, rdn_meas)
+        S_hat, _, _ = self.calc_posterior(x_MAP, geom, rdn_meas)
         proposal_Cov = S_hat * self.proposal_scaling
         proposal = multivariate_normal(cov=proposal_Cov)
 
@@ -124,9 +136,8 @@ class MCMCInversion(Inversion):
             xp = x + proposal.rvs()
             dens_new = self.log_density(xp, rdn_meas,  geom, bounds=bounds)
 
-            # Test vs. the Metropolis / Hastings criterion
-            if np.isfinite(dens_new) and\
-                    np.log(random.rand()) <= min((dens_new - dens, 0.0)):
+            # Test vs. the Metropolis-Hastings criterion
+            if np.isfinite(dens_new) and np.log(random.rand()) <= min((dens_new - dens, 0.0)):
                 x = xp
                 dens = dens_new
                 acpts = acpts + 1
