@@ -19,7 +19,7 @@
 
 import os
 import logging
-import scipy as s
+import numpy as np
 from scipy.interpolate import interp1d
 
 from ..core.common import resample_spectrum, VectorInterpolator
@@ -45,14 +45,14 @@ class LibRadTranRT(TabularRT):
 
         self.lut_quantities = ['rhoatm', 'transm', 'sphalb', 'transup']
 
-        self.angular_lut_keys_degrees = ['OBSZEN','TRUEAZ','viewzen','viewaz',
-            'solzen','solaz']
+        self.angular_lut_keys_degrees = ['OBSZEN', 'TRUEAZ', 'viewzen', 'viewaz',
+                                         'solzen', 'solaz']
 
         # Build the lookup table
         self.build_lut()
 
-        # This array is used to handle the potential indexing mismatch 
-        # between the 'global statevector' (which may couple multiple 
+        # This array is used to handle the potential indexing mismatch
+        # between the 'global statevector' (which may couple multiple
         # radiative transform models) and this statevector
         # It should never be modified
         full_to_local_statevector_position_mapping = []
@@ -60,7 +60,7 @@ class LibRadTranRT(TabularRT):
             ix = statevector_names.index(sn)
             full_to_local_statevector_position_mapping.append(ix)
         self._full_to_local_statevector_position_mapping = \
-            s.array(full_to_local_statevector_position_mapping)
+            np.array(full_to_local_statevector_position_mapping)
 
     def find_basedir(self, config):
         """Seek out a libradtran base directory."""
@@ -188,19 +188,19 @@ class LibRadTranRT(TabularRT):
     def load_rt(self, fn):
         """Load the results of a LibRadTran run."""
 
-        wl, rdn0,   irr = s.loadtxt(self.lut_dir+'/LUT_'+fn+'_alb0.out').T
-        wl, rdn025, irr = s.loadtxt(self.lut_dir+'/LUT_'+fn+'_alb025.out').T
-        wl, rdn05,  irr = s.loadtxt(self.lut_dir+'/LUT_'+fn+'_alb05.out').T
+        wl, rdn0,   irr = np.loadtxt(self.lut_dir+'/LUT_'+fn+'_alb0.out').T
+        wl, rdn025, irr = np.loadtxt(self.lut_dir+'/LUT_'+fn+'_alb025.out').T
+        wl, rdn05,  irr = np.loadtxt(self.lut_dir+'/LUT_'+fn+'_alb05.out').T
 
         # Replace a few zeros in the irradiance spectrum via interpolation
         good = irr > 1e-15
-        bad = s.logical_not(good)
+        bad = np.logical_not(good)
         irr[bad] = interp1d(wl[good], irr[good])(wl[bad])
 
         # Translate to Top of Atmosphere (TOA) reflectance
-        rhoatm = rdn0 / 10.0 / irr * s.pi  # Translate to uW nm-1 cm-2 sr-1
-        rho025 = rdn025 / 10.0 / irr * s.pi
-        rho05 = rdn05 / 10.0 / irr * s.pi
+        rhoatm = rdn0 / 10.0 / irr * np.pi  # Translate to uW nm-1 cm-2 sr-1
+        rho025 = rdn025 / 10.0 / irr * np.pi
+        rho05 = rdn05 / 10.0 / irr * np.pi
 
         # Resample TOA reflectances to simulate the instrument observation
         rhoatm = resample_spectrum(rhoatm, wl, self.wl, self.fwhm)
@@ -214,14 +214,14 @@ class LibRadTranRT(TabularRT):
 
         # For now, don't estimate this term!!
         # TODO: Have LibRadTran calculate it directly
-        transup = s.zeros(self.wl.shape)
+        transup = np.zeros(self.wl.shape)
 
         # Get solar zenith, translate to irradiance at zenith = 0
         with open(self.lut_dir+'/LUT_'+fn+'.zen', 'r') as fin:
             output = fin.read().split()
             solzen, solaz = [float(q) for q in output[1:]]
 
-        self.coszen = s.cos(solzen/360.0*2.0*s.pi)
+        self.coszen = np.cos(solzen/360.0*2.0*np.pi)
         irr = irr / self.coszen
         self.solar_irr = irr.copy()
 
@@ -231,7 +231,7 @@ class LibRadTranRT(TabularRT):
         return results
 
     def ext550_to_vis(self, ext550):
-        return s.log(50.0) / (ext550 + 0.01159)
+        return np.log(50.0) / (ext550 + 0.01159)
 
     def build_lut(self, rebuild=False):
 
@@ -244,24 +244,24 @@ class LibRadTranRT(TabularRT):
         self.cache = {}
         dims_aug = self.lut_dims + [self.n_chan]
         for key in self.lut_quantities:
-            temp = s.zeros(dims_aug, dtype=float)
+            temp = np.zeros(dims_aug, dtype=float)
             for librt_output, point in zip(librt_outputs, self.points):
-                ind = [s.where(g == p)[0] for g, p in \
-                        zip(self.lut_grids, point)]
+                ind = [np.where(g == p)[0] for g, p in
+                       zip(self.lut_grids, point)]
                 ind = tuple(ind)
                 temp[ind] = librt_output[key]
 
-            self.luts[key] = VectorInterpolator(self.lut_grids, temp, 
-                    self.lut_interp_types)
+            self.luts[key] = VectorInterpolator(self.lut_grids, temp,
+                                                self.lut_interp_types)
 
     def _lookup_lut(self, point):
         ret = {}
         for key, lut in self.luts.items():
-            ret[key] = s.array(lut(point)).ravel()
+            ret[key] = np.array(lut(point)).ravel()
         return ret
 
     def get(self, x_RT, geom):
-        point = s.zeros((self.n_point,))
+        point = np.zeros((self.n_point,))
         for point_ind, name in enumerate(self.lut_grid_config):
             if name in self.statevec:
                 ix = self.statevec.index(name)
@@ -294,12 +294,12 @@ class LibRadTranRT(TabularRT):
     def get_L_atm(self, x_RT, geom):
         r = self.get(x_RT, geom)
         rho = r['rhoatm']
-        rdn = rho / s.pi*(self.solar_irr * self.coszen)
+        rdn = rho / np.pi*(self.solar_irr * self.coszen)
         return rdn
 
     def get_L_down_transmitted(self, x_RT, geom):
         r = self.get(x_RT, geom)
-        rdn = (self.solar_irr * self.coszen) / s.pi * r['transm']
+        rdn = (self.solar_irr * self.coszen) / np.pi * r['transm']
         return rdn
 
     def get_L_up(self, x_RT, geom):

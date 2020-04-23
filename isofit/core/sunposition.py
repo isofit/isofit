@@ -31,7 +31,10 @@ from datetime import datetime
 
 
 class _sp:
-    """."""
+    """Solar position algorithm of Reda and Andreas (2004).
+
+    TODO: add descriptions
+    """
 
     @staticmethod
     def calendar_time(dt):
@@ -41,8 +44,8 @@ class _sp:
             x = dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, dt.microsecond
             return x
         except AttributeError:
+            # raise OSError if dt is not acceptable
             try:
-                # will raise OSError if dt is not acceptable
                 return _sp.calendar_time(datetime.utcfromtimestamp(dt))
             except BaseException:
                 raise TypeError(
@@ -50,7 +53,7 @@ class _sp:
 
     @staticmethod
     def julian_day(dt):
-        """Calculate the Julian Day from a datetime.datetime object in UTC."""
+        """Calculate Julian Day from a datetime.datetime object in UTC."""
 
         # year and month numbers
         yr, mo, dy, hr, mn, sc, us = _sp.calendar_time(dt)
@@ -58,14 +61,15 @@ class _sp:
             mo += 12
             yr -= 1
         # day of the month with decimal time
-        dy = dy + hr/24.0 + mn/(24.0*60.0) + sc / \
-            (24.0*60.0*60.0) + us/(24.0*60.0*60.0*1e6)
+        dy = dy + hr / 24.0 + mn / (24.0*60.0) + sc / \
+            (24.0*60.0*60.0) + us / (24.0*60.0*60.0*1e6)
         # b is equal to 0 for the julian calendar and is equal to (2- A +
         # INT(A/4)), A = INT(Y/100), for the gregorian calendar
         a = int(yr / 100)
         b = 2 - a + int(a / 4)
         jd = int(365.25 * (yr + 4716)) + \
             int(30.6001 * (mo + 1)) + dy + b - 1524.5
+
         return jd
 
     @staticmethod
@@ -193,6 +197,7 @@ class _sp:
               for abcs in reversed(_sp._EHL_)]
         L = np.polyval(Li, jme) / 1e8
         L = np.rad2deg(L) % 360
+
         return L
 
     @staticmethod
@@ -203,6 +208,7 @@ class _sp:
               for abcs in reversed(_sp._EHB_)]
         B = np.polyval(Bi, jme) / 1e8
         B = np.rad2deg(B) % 360
+
         return B
 
     @staticmethod
@@ -212,6 +218,7 @@ class _sp:
         Ri = [sum(a*np.cos(b + c*jme) for a, b, c in abcs)
               for abcs in reversed(_sp._EHR_)]
         R = np.polyval(Ri, jme) / 1e8
+
         return R
 
     @staticmethod
@@ -229,6 +236,7 @@ class _sp:
         L, B, R = helio_pos
         th = L + 180
         b = -B
+
         return (th, b)
 
     # Nutation Longitude and Obliquity coefficients (Y)
@@ -308,6 +316,7 @@ class _sp:
         e0 = np.polyval([2.45, 5.79, 27.87, 7.12, -39.05, -
                          249.67, -51.38, 1999.25, -1.55, -4680.93, 84381.448], u)
         e = e0/3600.0 + delta_epsilon
+
         return e
 
     @staticmethod
@@ -354,7 +363,7 @@ class _sp:
     def abberation_correction(R):
         """Calculate the abberation correction (delta_tau, in degrees) given the Earth Heliocentric Radius (in AU)."""
 
-        return -20.4898/(3600*R)
+        return -20.4898 / (3600*R)
 
     @staticmethod
     def sun_longitude(helio_pos, delta_psi):
@@ -364,6 +373,7 @@ class _sp:
         theta = L + 180  # geocentric latitude
         beta = -B
         ll = theta + delta_psi + _sp.abberation_correction(R)
+
         return ll, beta
 
     @staticmethod
@@ -375,6 +385,7 @@ class _sp:
         v0 = (280.46061837 + 360.98564736629*(jd - 2451545) +
               0.000387933*(jc**2) - (jc**3)/38710000) % 360
         v = v0 + delta_psi*np.cos(np.deg2rad(epsilon))
+
         return v
 
     @staticmethod
@@ -387,6 +398,7 @@ class _sp:
         alpha = np.rad2deg(alpha) % 360
         delta = np.arcsin(np.sin(b)*np.cos(e) + np.cos(b)*np.sin(e)*np.sin(l))
         delta = np.rad2deg(delta)
+
         return alpha, delta
 
     @staticmethod
@@ -399,17 +411,18 @@ class _sp:
 
         helio_pos = _sp.heliocentric_position(jme)
         R = helio_pos[-1]
-        phi, sigma, E = latitude, longitude, elevation
+        phi, _, E = latitude, longitude, elevation
         # equatorial horizontal parallax of the sun, in radians
-        xi = np.deg2rad(8.794/(3600*R))
+        xi = np.deg2rad(8.794 / (3600*R))
         # rho = distance from center of earth in units of the equatorial radius
         # phi-prime = geocentric latitude
         # NB: These equations look like their based on WGS-84, but are rounded slightly
         # The WGS-84 reference ellipsoid has major axis a = 6378137 m, and flattening factor 1/f = 298.257223563
         # minor axis b = a*(1-f) = 6356752.3142 = 0.996647189335*a
-        u = np.arctan(0.99664719*np.tan(phi))
-        x = np.cos(u) + E*np.cos(phi)/6378140  # rho sin(phi-prime)
-        y = 0.99664719*np.sin(u) + E*np.sin(phi)/6378140  # rho cos(phi-prime)
+        u = np.arctan(0.99664719 * np.tan(phi))
+        x = np.cos(u) + E * np.cos(phi) / 6378140  # rho sin(phi-prime)
+        # rho cos(phi-prime)
+        y = 0.99664719 * np.sin(u) + E * np.sin(phi) / 6378140
 
         delta_psi, epsilon = _sp.nutation_obliquity(jce)
 
@@ -455,6 +468,7 @@ class _sp:
         gamma = np.rad2deg(np.arctan2(np.sin(Hr), np.cos(
             Hr)*np.sin(phi) - np.tan(dr)*np.cos(phi))) % 360
         Phi = (gamma + 180) % 360  # azimuth from north
+
         return Phi, zenith
 
     @staticmethod
@@ -471,6 +485,7 @@ class _sp:
             lat = np.rad2deg(np.arcsin(z/r))
         elif lon < 0 or lon > 360:
             lon = lon % 360
+
         return lat, lon
 
     @staticmethod
@@ -480,6 +495,7 @@ class _sp:
         lat, lon = _sp.norm_lat_lon(lat, lon)
         jd = _sp.julian_day(t)
         RA, dec, H = _sp.sun_topo_ra_decl_hour(lat, lon, elev, jd, dt)
+
         return RA, dec, H
 
     @staticmethod
@@ -490,6 +506,7 @@ class _sp:
         jd = _sp.julian_day(t)
         RA, dec, H = _sp.sun_topo_ra_decl_hour(lat, lon, elev, jd, dt)
         azimuth, zenith = _sp.sun_topo_azimuth_zenith(lat, dec, H, temp, press)
+
         return azimuth, zenith, RA, dec, H
 
 
@@ -514,6 +531,7 @@ def julian_day(dt):
     jds = np.empty(dts.shape)
     for i, d in enumerate(dts.flat):
         jds.flat[i] = _sp.julian_day(d)
+
     return jds
 
 
@@ -543,7 +561,9 @@ def arcdist(p0, p1, radians=False):
         p0, p1 = np.deg2rad(p0), np.deg2rad(p1)
     a0, z0 = p0[..., 0], p0[..., 1]
     a1, z1 = p1[..., 0], p1[..., 1]
-    d = np.arccos(np.cos(z0)*np.cos(z1)+np.cos(a0-a1)*np.sin(z0)*np.sin(z1))
+    d = np.arccos(np.cos(z0) * np.cos(z1) + np.cos(a0-a1)
+                  * np.sin(z0) * np.sin(z1))
+
     if radians:
         return d
     else:
@@ -593,6 +613,7 @@ def observed_sunpos(dt, latitude, longitude, elevation, temperature=None, pressu
         res_vec[i] = _sp.pos(*x)[:2]
     if radians:
         res = np.deg2rad(res)
+
     return res
 
 
@@ -640,6 +661,7 @@ def topocentric_sunpos(dt, latitude, longitude, temperature=None, pressure=None,
         res_vec[i] = _sp.topo_pos(*x)
     if radians:
         res = np.deg2rad(res)
+
     return res
 
 
@@ -689,6 +711,7 @@ def sunpos(dt, latitude, longitude, elevation, temperature=None, pressure=None, 
         res_vec[i] = _sp.pos(*x)
     if radians:
         res = np.deg2rad(res)
+
     return res
 
 
@@ -703,6 +726,7 @@ class Sunposition:
     p = None
     dt = None
     rad = None
+
     # Outputs
     az = None
     zen = None
