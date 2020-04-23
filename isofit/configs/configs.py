@@ -60,7 +60,8 @@ class Config(object):
         logging.info("Checking config sections for configuration issues")
         errors = list()
 
-        #TODO: do same thing here as with global hidden function used within BaseConfigSection
+        #TODO: do same thing here as with global hidden function used within BaseConfigSection, so that this is
+        # recursive
         config_sections = get_config_sections()
         if include_sections:
             logging.info("Only checking config sections: {}".format(", ".join(include_sections)))
