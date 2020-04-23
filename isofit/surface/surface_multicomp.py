@@ -37,6 +37,8 @@ class MultiComponentSurface(Surface):
     Multivariate Gaussian surface model.
     """
 
+    dlamb_dx = None
+
     def __init__(self, config):
         """."""
 
