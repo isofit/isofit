@@ -102,6 +102,7 @@ class TabularRT:
             self.init.append(element['init'])
             self.prior_sigma.append(element['prior_sigma'])
             self.prior_mean.append(element['prior_mean'])
+
         self.bounds = np.array(self.bounds)
         self.scale = np.array(self.scale)
         self.init = np.array(self.init)
@@ -122,8 +123,8 @@ class TabularRT:
 
             # do some quick checks on the values
             if len(grid_values) == 1:
-                err = 'Only 1 value in LUT grid {}. ' +\
-                    '1-d LUT grids cannot be interpreted.'.format(key)
+                err = 'Only 1 value in LUT grid {}. '.format(key) +\
+                    '1-d LUT grids cannot be interpreted.'
                 raise ValueError(err)
             if grid_values != sorted(grid_values):
                 logging.error('Lookup table grid needs ascending order')
