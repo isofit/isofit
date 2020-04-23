@@ -103,23 +103,23 @@ class LibRadTranRT(TabularRT):
             libradtran_config_str05 = template.format(**dict05)
 
         # Check rebuild conditions: LUT is missing or from a different config
-        infilename0 = 'LUT_'+fn+'_alb0.inp'
-        infilename05 = 'LUT_'+fn+'_alb05.inp'
-        infilename025 = 'LUT_'+fn+'_alb025.inp'
+        infilename0 = 'LUT_' + fn + '_alb0.inp'
+        infilename05 = 'LUT_' + fn + '_alb05.inp'
+        infilename025 = 'LUT_' + fn + '_alb025.inp'
         infilepath0 = os.path.join(self.lut_dir, infilename0)
         infilepath05 = os.path.join(self.lut_dir, infilename05)
         infilepath025 = os.path.join(self.lut_dir, infilename025)
 
-        outfilename0 = 'LUT_'+fn+'_alb0.out'
-        outfilename05 = 'LUT_'+fn+'_alb05.out'
-        outfilename025 = 'LUT_'+fn+'_alb025.out'
-        outfilenamezen = 'LUT_'+fn+'.zen'
+        outfilename0 = 'LUT_' + fn + '_alb0.out'
+        outfilename05 = 'LUT_' + fn + '_alb05.out'
+        outfilename025 = 'LUT_' + fn + '_alb025.out'
+        outfilenamezen = 'LUT_' + fn + '.zen'
         outfilepath0 = os.path.join(self.lut_dir, outfilename0)
         outfilepath05 = os.path.join(self.lut_dir, outfilename05)
         outfilepath025 = os.path.join(self.lut_dir, outfilename025)
         outfilepathzen = os.path.join(self.lut_dir, outfilenamezen)
 
-        scriptfilename = 'LUT_'+fn+'.sh'
+        scriptfilename = 'LUT_' + fn + '.sh'
         scriptfilepath = os.path.join(self.lut_dir, scriptfilename)
 
         # Are all files present?
@@ -314,7 +314,7 @@ class LibRadTranRT(TabularRT):
 
         r = self.get(x_RT, geom)
         rho = r['rhoatm']
-        rdn = rho / np.pi*(self.solar_irr * self.coszen)
+        rdn = rho / np.pi * (self.solar_irr * self.coszen)
         return rdn
 
     def get_L_down_transmitted(self, x_RT, geom):
