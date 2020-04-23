@@ -19,11 +19,11 @@
 #
 
 import logging
-import scipy as s
+import numpy as np
+from numpy.random import multivariate_normal
 from scipy.interpolate import interp1d
 from scipy.signal import convolve
 from scipy.io import loadmat
-from numpy.random import multivariate_normal as mvn
 
 from .common import eps, srf, load_wavelen, resample_spectrum, emissive_radiance
 
@@ -67,8 +67,8 @@ class Instrument:
                 for attr in config['statevector'][key]:
                     getattr(self, attr).append(
                         config['statevector'][key][attr])
-        self.prior_sigma = s.array(self.prior_sigma)
-        self.prior_mean = s.array(self.prior_mean)
+        self.prior_sigma = np.array(self.prior_sigma)
+        self.prior_mean = np.array(self.prior_mean)
         self.n_state = len(self.statevec)
 
         if 'SNR' in config:
@@ -89,12 +89,12 @@ class Instrument:
             # For the actual radiance L.
             self.noise_file = config['parametric_noise_file']
             self.model_type = 'parametric'
-            coeffs = s.loadtxt(
-                self.noise_file, delimiter=' ', comments='#')
-            p_a, p_b, p_c = [interp1d(coeffs[:, 0], coeffs[:, col],
-                                      fill_value='extrapolate') for col in (1, 2, 3)]
-            self.noise = s.array([[p_a(w), p_b(w), p_c(w)]
-                                  for w in self.wl_init])
+            coeffs = np.loadtxt(self.noise_file, delimiter=' ', comments='#')
+            p_a, p_b, p_c = [interp1d(coeffs[:, 0], coeffs[:, col], fill_value='extrapolate')
+                             for col in (1, 2, 3)]
+            self.noise = np.array([[p_a(w), p_b(w), p_c(w)]
+                                   for w in self.wl_init])
+
             # Number of integrations comprising the measurement.  Noise diminishes
             # with the square root of this number.
             self.integrations = config['integrations']
@@ -107,11 +107,13 @@ class Instrument:
             self.noise_file = config['pushbroom_noise_file']
             D = loadmat(self.noise_file)
             self.ncols = D['columns'][0, 0]
-            if self.n_chan != s.sqrt(D['bands'][0, 0]):
+            if self.n_chan != np.sqrt(D['bands'][0, 0]):
                 logging.error('Noise model mismatches wavelength # bands')
                 raise ValueError('Noise model mismatches wavelength # bands')
+
             cshape = ((self.ncols, self.n_chan, self.n_chan))
             self.covs = D['covariances'].reshape(cshape)
+
             # Number of integrations comprising the measurement.  Noise diminishes
             # with the square root of this number.
             self.integrations = config['integrations']
@@ -119,7 +121,7 @@ class Instrument:
         elif 'NEDT_noise_file' in config:
             self.model_type = 'NEDT'
             self.noise_file = config['NEDT_noise_file']
-            self.noise_data = s.loadtxt(
+            self.noise_data = np.loadtxt(
                 self.noise_file, delimiter=',', skiprows=8)
             noise_data_w_nm = self.noise_data[:, 0] * 1000
             noise_data_NEDT = self.noise_data[:, 1]
@@ -138,7 +140,7 @@ class Instrument:
         # calibration)
         self.bvec = ['Cal_Relative_%04i' % int(w) for w in self.wl_init] + \
             ['Cal_Spectral', 'Cal_Stray_SRF']
-        self.bval = s.zeros(self.n_chan+2)
+        self.bval = np.zeros(self.n_chan+2)
 
         if 'unknowns' in config:
 
@@ -151,7 +153,7 @@ class Instrument:
             if 'channelized_radiometric_uncertainty_file' in unknowns:
                 if unknowns['channelized_radiometric_uncertainty_file'] is not None:
                     f = unknowns['channelized_radiometric_uncertainty_file']
-                    u = s.loadtxt(f, comments='#')
+                    u = np.loadtxt(f, comments='#')
                     if (len(u.shape) > 0 and u.shape[1] > 1):
                         u = u[:, 1]
                     self.bval[:self.n_chan] = self.bval[:self.n_chan] + \
@@ -162,13 +164,14 @@ class Instrument:
             if 'uncorrelated_radiometric_uncertainty' in unknowns:
                 u = unknowns['uncorrelated_radiometric_uncertainty']
                 self.bval[:self.n_chan] = self.bval[:self.n_chan] + \
-                    pow(s.ones(self.n_chan) * u, 2)
+                    pow(np.ones(self.n_chan) * u, 2)
 
             # Radiometric uncertainties combine via Root Sum Square...
             # Be careful to avoid square roots of zero!
-            small = s.ones(self.n_chan)*eps
-            self.bval[:self.n_chan] = s.maximum(self.bval[:self.n_chan], small)
-            self.bval[:self.n_chan] = s.sqrt(self.bval[:self.n_chan])
+            small = np.ones(self.n_chan)*eps
+            self.bval[:self.n_chan] = np.maximum(
+                self.bval[:self.n_chan], small)
+            self.bval[:self.n_chan] = np.sqrt(self.bval[:self.n_chan])
 
             # Now handle spectral calibration uncertainties
             if 'wavelength_calibration_uncertainty' in unknowns:
@@ -193,8 +196,8 @@ class Instrument:
         """Covariance of prior distribution (diagonal)."""
 
         if self.n_state == 0:
-            return s.zeros((0, 0), dtype=float)
-        return s.diagflat(pow(self.prior_sigma, 2))
+            return np.zeros((0, 0), dtype=float)
+        return np.diagflat(pow(self.prior_sigma, 2))
 
     def Sy(self, meas, geom):
         """Calculate measurement error covariance.
@@ -207,29 +210,31 @@ class Instrument:
             bad = meas < 1e-5
             meas[bad] = 1e-5
             nedl = (1.0 / self.snr) * meas
-            return pow(s.diagflat(nedl), 2)
+            return pow(np.diagflat(nedl), 2)
 
         elif self.model_type == 'parametric':
             nedl = abs(
-                self.noise[:, 0]*s.sqrt(self.noise[:, 1]+meas)+self.noise[:, 2])
-            nedl = nedl/s.sqrt(self.integrations)
-            return pow(s.diagflat(nedl), 2)
+                self.noise[:, 0] * np.sqrt(self.noise[:, 1]+meas) + self.noise[:, 2])
+            nedl = nedl / np.sqrt(self.integrations)
+            return pow(np.diagflat(nedl), 2)
 
         elif self.model_type == 'pushbroom':
             if geom.pushbroom_column is None:
-                C = s.squeeze(self.covs.mean(axis=0))
+                C = np.squeeze(self.covs.mean(axis=0))
             else:
                 C = self.covs[geom.pushbroom_column, :, :]
-            return C / s.sqrt(self.integrations)
+            return C / np.sqrt(self.integrations)
 
         elif self.model_type == 'NEDT':
-            return pow(s.diagflat(self.noise_NESR), 2)
+            return pow(np.diagflat(self.noise_NESR), 2)
 
     def dmeas_dinstrument(self, x_instrument, wl_hi, rdn_hi):
-        """Jacobian of measurement with respect to the instrument 
-           free parameter state vector. We use finite differences for now."""
+        """Jacobian of measurement w.r.t instrument free parameter state vector.
 
-        dmeas_dinstrument = s.zeros((self.n_chan, self.n_state), dtype=float)
+        NOTE: uses finite differences for now.
+        """
+
+        dmeas_dinstrument = np.zeros((self.n_chan, self.n_state), dtype=float)
         if self.n_state == 0:
             return dmeas_dinstrument
 
@@ -242,9 +247,10 @@ class Instrument:
         return dmeas_dinstrument
 
     def dmeas_dinstrumentb(self, x_instrument, wl_hi, rdn_hi):
-        """Jacobian of radiance with respect to the instrument parameters
-        that are unknown and not retrieved, i.e., the inevitable persisting
-        uncertainties in instrument spectral and radiometric calibration.
+        """Jacobian of radiance w.r.t. unknown and not retrieved instrument parameters.
+
+        i.e., the inevitable persisting uncertainties in instrument spectral
+        and radiometric calibration.
 
         Input: meas, a vector of size n_chan
         Returns: Kb_instrument, a matrix of size [n_measurements x nb_instrument]
@@ -252,17 +258,17 @@ class Instrument:
 
         # Uncertainty due to radiometric calibration
         meas = self.sample(x_instrument, wl_hi, rdn_hi)
-        dmeas_dinstrument = s.hstack(
-            (s.diagflat(meas), s.zeros((self.n_chan, 2))))
+        dmeas_dinstrument = np.hstack(
+            (np.diagflat(meas), np.zeros((self.n_chan, 2))))
 
         # Uncertainty due to spectral calibration
         if self.bval[-2] > 1e-6:
-            dmeas_dinstrument[:, -2] = self.sample(x_instrument, wl_hi,
-                                                   s.hstack((s.diff(rdn_hi), s.array([0]))))
+            dmeas_dinstrument[:, -2] = self.sample(
+                x_instrument, wl_hi, np.hstack((np.diff(rdn_hi), np.array([0]))))
 
         # Uncertainty due to spectral stray light
         if self.bval[-1] > 1e-6:
-            ssrf = srf(s.arange(-10, 11), 0, 4)
+            ssrf = srf(np.arange(-10, 11), 0, 4)
             blur = convolve(meas, ssrf, mode='same')
             dmeas_dinstrument[:, -1] = blur - meas
 
@@ -282,14 +288,14 @@ class Instrument:
             # by a convolution with a uniform FWHM.
             if self.fast_resample:
                 for i, r in enumerate(rdn_hi):
-                    ssrf = srf(s.arange(-10, 11), 0, fwhm[0])
+                    ssrf = srf(np.arange(-10, 11), 0, fwhm[0])
                     blur = convolve(r, ssrf, mode='same')
                     resamp.append(interp1d(wl_hi, blur)(wl))
             else:
                 for i, r in enumerate(rdn_hi):
                     r2 = resample_spectrum(r, wl_hi, wl, fwhm)
                     resamp.append(r2)
-            return s.array(resamp)
+            return np.array(resamp)
 
     def simulate_measurement(self, meas, geom):
         """Simulate a measurement by the given sensor, for a true radiance
@@ -297,8 +303,9 @@ class Instrument:
         drawing a sample from the noise distribution."""
 
         Sy = self.Sy(meas, geom)
-        mu = s.zeros(meas.shape)
-        rdn_sim = meas + mvn(mu, Sy)
+        mu = np.zeros(meas.shape)
+        rdn_sim = meas + multivariate_normal(mu, Sy)
+
         return rdn_sim
 
     def calibration(self, x_instrument):
@@ -321,6 +328,7 @@ class Instrument:
         else:
             shift = 0.0
         wl = offset + shift + space_orig * space
+
         return wl, fwhm
 
     def summarize(self, x_instrument, geom):
