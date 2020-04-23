@@ -192,7 +192,7 @@ class GridInversion(Inversion):
                 meas_jac = Seps_inv_sqrt.dot(K)
 
                 # jacobian of prior cost term with respect to state vector.
-                xa_free, Sa_free, Sa_free_inv, Sa_free_inv_sqrt = \
+                _, _, _, Sa_free_inv_sqrt = \
                     self.calc_conditional_prior(x_free, geom)
                 prior_jac = Sa_free_inv_sqrt
 
