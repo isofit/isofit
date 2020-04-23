@@ -37,7 +37,19 @@ from .. import warnings_enabled
 
 
 class Isofit:
-    """Spectroscopic Surface and Atmosphere Fitting."""
+    """Spectroscopic Surface and Atmosphere Fitting.
+
+    TODO: add support for thread control on non-Intel architectures via OpenMP
+          consider using concurrent.futures wrappers instead of multiprocessing
+    """
+
+    rows = None
+    cols = None
+    config = None
+    fm = None
+    iv = None
+    io = None
+    states = None
 
     def __init__(self, config_file, row_column='', profile=False, level='INFO'):
         """Initialize the Isofit class."""
@@ -49,14 +61,7 @@ class Isofit:
         # Set logging level
         logging.basicConfig(format='%(message)s', level=level)
 
-        self.rows = None
-        self.cols = None
-        self.config = None
         self.profile = profile
-        self.fm = None
-        self.iv = None
-        self.io = None
-        self.states = None
 
         # Load configuration file
         self.config = load_config(config_file)
@@ -81,7 +86,7 @@ class Isofit:
                     int(row_start), int(row_end)), None
             elif len(ranges) == 4:
                 row_start, row_end, col_start, col_end = ranges
-                line_start, line_end, samp_start, samp_end = ranges
+                # line_start, line_end, samp_start, samp_end = ranges
                 self.rows = range(int(row_start), int(row_end))
                 self.cols = range(int(col_start), int(col_end))
 
@@ -99,14 +104,14 @@ class Isofit:
         self.iv = None
 
     def _run_single_spectrum(self, index):
-        # Ignore Numba warnings
+
         if not warnings_enabled:
             warnings.simplefilter(action='ignore')
 
         self._init_nonpicklable_objects()
         io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
-        success, row, col, meas, geom, configs = io.get_components_at_index(
-            index)
+        success, row, col, meas, geom, _ = io.get_components_at_index(index)
+
         # Only run through the inversion if we got some data
         if success:
             if meas is not None and all(meas < -49.0):
@@ -127,11 +132,12 @@ class Isofit:
                     'Completed inversion {}/{}'.format(index, len(io.iter_inds)))
 
     def run(self, profile=False, debug=False):
-        """
-        Iterate over all spectra, reading and writing through the IO
-        object to handle formatting, buffering, and deferred write-to-file.
-        The idea is to avoid reading the entire file into memory, or hitting
-        the physical disk too often. These are our main class variables.
+        """Iterate over all spectra.
+
+        Reads and writes through the IO object to handle formatting, buffering,
+        and deferred write-to-file. The idea is to avoid reading the entire file
+        into memory, or hitting the physical disk too often. These are our main
+        class variables.
         """
 
         io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
@@ -143,8 +149,7 @@ class Isofit:
                 else:
                     # Profile output
                     gbl, lcl = globals(), locals()
-                    cProfile.runctx(
-                        'self.iv.invert(meas, geom)', gbl, lcl)
+                    cProfile.runctx('self.iv.invert(meas, geom)', gbl, lcl)
 
                 # Write the spectra to disk
                 io.write_spectrum(row, col, self.states, meas, geom)
@@ -174,8 +179,8 @@ class Isofit:
 
             total_time = time.time() - start_time
             if debug:
-                logging.info(
-                    'Inversions complete.  {} s total, {} spectra/s'.format(total_time, n_iter/total_time))
+                logging.info('Inversions complete.  {} s total, {} spectra/s'.format(
+                    total_time, n_iter/total_time))
             else:
-                logging.info(
-                    'Parallel inversions complete.  {} s total, {} spectra/s'.format(total_time, n_iter/total_time))
+                logging.info('Parallel inversions complete.  {} s total, {} spectra/s'.format(
+                    total_time, n_iter/total_time))
