@@ -75,20 +75,20 @@ class ForwardModel:
      against the prior.
      """
 
+    # Implicitly defined members set with setattr()
+    # TODO: make these definitions explicit during initialization
+    idx_RT = None
+    idx_surface = None
+    idx_instrument = None
+    RT_b_inds = None
+    instrument_b_inds = None
+
     def __init__(self, config):
         """
         TODO: Make member initialization explicit by removing setattr():
         self.idx_surface, self.idx_RT, self.idx_instrument,
         self.RT_b_inds, self.instrument_b_inds
         """
-
-        # Implicitly defined members set with setattr()
-        # TODO: make these definitions explicit during initialization
-        self.idx_RT = None
-        self.idx_surface = None
-        self.idx_instrument = None
-        self.RT_b_inds = None
-        self.instrument_b_inds = None
 
         # Build the instrument model
         self.instrument = Instrument(config['instrument'])
