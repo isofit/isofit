@@ -156,6 +156,7 @@ class ForwardModel:
         # x_surface = x[self.idx_surface] # unused
         bound_lwr = self.bounds[0]
         bound_upr = self.bounds[1]
+
         return any(x_RT >= (bound_upr[self.idx_RT] - eps*2.0)) or \
             any(x_RT <= (bound_lwr[self.idx_RT] + eps*2.0))
 
@@ -174,6 +175,7 @@ class ForwardModel:
         xa_surface = self.surface.xa(x_surface, geom)
         xa_RT = self.RT.xa()
         xa_instrument = self.instrument.xa()
+
         return np.concatenate((xa_surface, xa_RT, xa_instrument), axis=0)
 
     def Sa(self, x, geom):
@@ -191,6 +193,7 @@ class ForwardModel:
         Sa_surface = self.surface.Sa(x_surface, geom)[:, :]
         Sa_RT = self.RT.Sa()[:, :]
         Sa_instrument = self.instrument.Sa()[:, :]
+
         return block_diag(Sa_surface, Sa_RT, Sa_instrument)
 
     def calc_rdn(self, x, geom, rfl=None, Ls=None):
@@ -209,6 +212,7 @@ class ForwardModel:
 
         rfl_hi = self.upsample(self.surface.wl, rfl)
         Ls_hi = self.upsample(self.surface.wl, Ls)
+
         return self.RT.calc_rdn(x_RT, rfl_hi, Ls_hi, geom)
 
     def calc_meas(self, x, geom, rfl=None, Ls=None):
@@ -216,6 +220,7 @@ class ForwardModel:
 
         _, _, x_instrument = self.unpack(x)
         rdn_hi = self.calc_rdn(x, geom, rfl, Ls)
+
         return self.instrument.sample(x_instrument, self.RT.wl, rdn_hi)
 
     def calc_Ls(self, x, geom):
@@ -249,6 +254,7 @@ class ForwardModel:
 
         Kb = self.Kb(x, geom)
         Sy = self.instrument.Sy(meas, geom)
+
         return Sy + Kb.dot(self.Sb).dot(Kb.T)
 
     def K(self, x, geom):
@@ -345,6 +351,7 @@ class ForwardModel:
         """
 
         x_inst = x[self.idx_instrument]
+
         return self.instrument.calibration(x_inst)
 
     def upsample(self, wl, q):
@@ -369,4 +376,5 @@ class ForwardModel:
         x_surface = x[self.idx_surface]
         x_RT = x[self.idx_RT]
         x_instrument = x[self.idx_instrument]
+
         return x_surface, x_RT, x_instrument

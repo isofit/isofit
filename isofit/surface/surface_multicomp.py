@@ -246,4 +246,5 @@ class MultiComponentSurface(Surface):
 
         if len(x_surface) < 1:
             return ''
-        return 'Component: %i' % self.component(x_surface, geom)
+        else:
+            return 'Component: %i' % self.component(x_surface, geom)

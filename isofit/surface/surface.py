@@ -60,6 +60,8 @@ class Surface:
             p = interp1d(self.rwl, self.rfl, fill_value='extrapolate')
             self.rfl = p(self.wl)
 
+        return None
+
     def xa(self, x_surface, geom):
         """Mean of prior state vector distribution calculated at state x."""
 

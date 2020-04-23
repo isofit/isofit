@@ -310,6 +310,8 @@ class ModtranRT(TabularRT):
             self.luts[key] = VectorInterpolator(
                 self.lut_grids, temp, self.lut_interp_types)
 
+        return None
+
     def rebuild_cmd(self, point, fn):
         """."""
 
@@ -463,6 +465,7 @@ class ModtranRT(TabularRT):
         """."""
 
         r = self.get(x_RT, geom)
+
         return r['thermal_upwelling']
 
     def get_L_down_transmitted(self, x_RT, geom):
@@ -480,6 +483,7 @@ class ModtranRT(TabularRT):
 
         r = self.get(x_RT, geom)
         rdn = (self.solar_irr*self.coszen) / np.pi * r['transm']
+
         return rdn
 
     def get_L_down_transmitted_tir(self, x_RT, geom):
@@ -488,6 +492,7 @@ class ModtranRT(TabularRT):
         """
 
         r = self.get(x_RT, geom)
+
         return r['thermal_downwelling']
 
     def get_L_up(self, x_RT, geom):
@@ -520,3 +525,5 @@ class ModtranRT(TabularRT):
 
                 for w, v, wn in zip(ws, vs, wns):
                     fout.write(' %9.4f %9.7f %9.2f\n' % (w, v, wn))
+
+        return None

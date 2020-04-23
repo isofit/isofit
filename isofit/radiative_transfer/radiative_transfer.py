@@ -162,6 +162,7 @@ class RadiativeTransfer():
         L_atms = []
         for _, RT in self.RTs.items():
             L_atms.append(RT.get_L_atm(x_RT, geom))
+
         return np.hstack(L_atms)
 
     def get_L_down_transmitted(self, x_RT, geom):
@@ -170,6 +171,7 @@ class RadiativeTransfer():
         L_downs = []
         for _, RT in self.RTs.items():
             L_downs.append(RT.get_L_down_transmitted(x_RT, geom))
+
         return np.hstack(L_downs)
 
     def get_L_up(self, x_RT, geom):
@@ -240,6 +242,7 @@ class RadiativeTransfer():
                     Kb_RT.append((rdne-rdn) / eps)
 
         Kb_RT = np.array(Kb_RT).T
+
         return Kb_RT
 
     def summarize(self, x_RT, geom):
@@ -249,6 +252,7 @@ class RadiativeTransfer():
         for RT in self.RTs.values():
             ret.append(RT.summarize(x_RT, geom))
         ret = '\n'.join(ret)
+
         return ret
 
     def pack_arrays(self, list_of_r_dicts):
@@ -259,4 +263,5 @@ class RadiativeTransfer():
         for key in list_of_r_dicts[0].keys():
             temp = [x[key] for x in list_of_r_dicts]
             r_stacked[key] = np.hstack(temp)
+
         return r_stacked

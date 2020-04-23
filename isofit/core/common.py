@@ -151,6 +151,7 @@ def load_wavelen(wavelength_file):
     if q[0, 0] < 100:
         q = q * 1000.0
     wl, fwhm = q.T
+
     return wl, fwhm
 
 
@@ -228,7 +229,8 @@ def expand_path(directory, subpath):
 
     if subpath.startswith('/'):
         return subpath
-    return os.path.join(directory, subpath)
+    else:
+        return os.path.join(directory, subpath)
 
 
 def recursive_replace(obj, key, val):
@@ -238,10 +240,10 @@ def recursive_replace(obj, key, val):
         if key in obj:
             obj[key] = val
         for item in obj.values():
-            recursive_replace(item, key, val)
+            return recursive_replace(item, key, val)
     elif any(isinstance(obj, t) for t in (list, tuple)):
         for item in obj:
-            recursive_replace(item, key, val)
+            return recursive_replace(item, key, val)
 
 
 def get_absorption(wl, absfile):
@@ -262,6 +264,7 @@ def get_absorption(wl, absfile):
     # interpolate to new wavelengths (user provides nm)
     water_abscf_intrp = np.interp(wl, wl_orig_nm, water_abscf)
     ice_abscf_intrp = np.interp(wl, wl_orig_nm, ice_abscf)
+
     return water_abscf_intrp, ice_abscf_intrp
 
 
@@ -293,7 +296,8 @@ def json_load_ascii(filename, shell_replace=True):
 
     with open(filename, 'r') as fin:
         j = json.load(fin)
-        return recursive_reencode(j, shell_replace)
+
+    return recursive_reencode(j, shell_replace)
 
 
 def load_config(config_file):
@@ -303,6 +307,7 @@ def load_config(config_file):
         config = json.load(f)
 
     configdir, f = split(abspath(config_file))
+
     return expand_all_paths(config, configdir)
 
 
@@ -350,6 +355,7 @@ def rdn_translate(wvn, rdn_wvn):
 
     dwvn = wvn[1:] - wvn[:-1]
     dwl = 10000.0/wvn[1:] - 10000.0/wvn[:-1]
+
     return rdn_wvn * (dwl/dwvn)
 
 
@@ -392,6 +398,7 @@ def srf(x, mu, sigma):
 
     u = (x-mu) / abs(sigma)
     y = (1.0 / (np.sqrt(2.0*np.pi) * abs(sigma))) * np.exp(-u*u/2.0)
+
     return y / y.sum()
 
 
@@ -404,6 +411,7 @@ def combos(inds):
 
     n = len(inds)
     cases = np.prod([len(i) for i in inds])
+
     return np.array(np.meshgrid(*inds)).reshape((n, cases)).T
 
 
@@ -421,6 +429,7 @@ def conditional_gaussian(mu, C, window, remain, x):
     Cinv = svd_inv(C11)
     conditional_mean = mu[window] + C21 @ Cinv @ (x-mu[remain])
     conditional_Cov = C22 - C21 @ Cinv @ C12
+
     return conditional_mean, conditional_Cov
 
 
@@ -430,7 +439,7 @@ def safe_core_count():
     only works for linux, defaults to CPU count on other systems.
 
     TODO: expand for other operating systems, think about more elegant
-    solutions. Consider concurrent.futures.
+    solutions. Consider using concurrent.futures.
 
     Returns:
         num_cores: number of cores on current socket, if available

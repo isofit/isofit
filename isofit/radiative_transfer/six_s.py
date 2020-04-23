@@ -244,8 +244,10 @@ class SixSRT(TabularRT):
                 ind = tuple(ind)
                 temp[ind] = sixs_output[key]
 
-            self.luts[key] = VectorInterpolator(self.lut_grids, temp,
-                                                self.lut_interp_types)
+            self.luts[key] = VectorInterpolator(
+                self.lut_grids, temp, self.lut_interp_types)
+
+        return None
 
     def _lookup_lut(self, point):
         """."""
@@ -253,6 +255,7 @@ class SixSRT(TabularRT):
         ret = {}
         for key, lut in self.luts.items():
             ret[key] = np.array(lut(point)).ravel()
+
         return ret
 
     def get(self, x_RT, geom):
@@ -295,6 +298,7 @@ class SixSRT(TabularRT):
         r = self.get(x_RT, geom)
         rho = r['rhoatm']
         rdn = rho / np.pi*(self.solar_irr * self.coszen)
+
         return rdn
 
     def get_L_down_transmitted(self, x_RT, geom):
@@ -302,6 +306,7 @@ class SixSRT(TabularRT):
 
         r = self.get(x_RT, geom)
         rdn = (self.solar_irr * self.coszen) / np.pi * r['transm']
+
         return rdn
 
     def get_L_up(self, x_RT, geom):

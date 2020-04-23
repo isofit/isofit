@@ -44,6 +44,7 @@ class GlintSurface(MultiComponentSurface):
 
         mu = MultiComponentSurface.xa(self, x_surface, geom)
         mu[self.glint_ind] = self.init[self.glint_ind]
+
         return mu
 
     def Sa(self, x_surface, geom):
@@ -56,6 +57,7 @@ class GlintSurface(MultiComponentSurface):
         Cov = MultiComponentSurface.Sa(self, x_surface, geom)
         f = np.array([[(10.0 * self.scale[self.glint_ind])**2]])
         Cov[self.glint_ind, self.glint_ind] = f
+
         return Cov
 
     def fit_params(self, rfl_meas, geom, *args):
@@ -98,6 +100,7 @@ class GlintSurface(MultiComponentSurface):
 
         drfl = self.dlamb_dx(x_surface, geom)
         drfl[:, self.glint_ind] = 1
+
         return drfl
 
     def summarize(self, x_surface, geom):

@@ -100,6 +100,7 @@ class TabularRT:
         # and they all have associated dimensions in the LUT grid.
         self.bounds, self.scale, self.init = [], [], []
         self.prior_mean, self.prior_sigma = [], []
+
         for key in self.statevec:
             element = config['statevector'][key]
             self.bounds.append(element['bounds'])
@@ -196,6 +197,8 @@ class TabularRT:
             r = pool.map_async(spawn_rt, rebuild_cmds)
             r.wait()
             os.chdir(cwd)
+
+        return None
 
     def summarize(self, x_RT, geom):
         """Summary of state vector."""

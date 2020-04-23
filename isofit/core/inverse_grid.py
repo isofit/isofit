@@ -223,7 +223,7 @@ class GridInversion(Inversion):
                 meas_resid = (est_meas_window-meas_window).dot(Seps_inv_sqrt)
 
                 # Prior cost term
-                xa_free, Sa_free, Sa_free_inv, Sa_free_inv_sqrt = \
+                xa_free, _, _, Sa_free_inv_sqrt = \
                     self.calc_conditional_prior(x_free, geom)
                 prior_resid = (x_free - xa_free).dot(Sa_free_inv_sqrt)
 

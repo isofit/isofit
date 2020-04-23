@@ -182,7 +182,7 @@ class SpectrumFile:
             self.memmap = self.file.open_memmap(
                 interleave='source', writable=self.write)
             if self.memmap is not None:
-                return
+                return None
         raise IOError('could not open memmap for ' + self.fname)
 
     def get_frame(self, row):
@@ -209,22 +209,21 @@ class SpectrumFile:
         flush_buffers is called."""
 
         if self.format == 'ASCII':
-
             # Multicolumn output for ASCII products
             np.savetxt(self.fname, x, fmt='%10.6f')
 
         elif self.format == 'MATLAB':
-
             # Dictionary output for MATLAB products
             savemat(self.fname, x)
 
         else:
-
             # Omit wavelength column for spectral products
             frame = self.get_frame(row)
             if x.ndim == 2:
                 x = x[:, -1]
             frame[col, :] = x
+
+        return None
 
     def read_spectrum(self, row, col):
         """Get a spectrum from the frame list or ASCII file. Note that if
@@ -252,6 +251,8 @@ class SpectrumFile:
             del self.file
             self.file = envi.open(self.fname+'.hdr', self.fname)
             self.open_map_with_retries()
+
+        return None
 
 
 class IO:
@@ -480,6 +481,7 @@ class IO:
         """Reset the iterator."""
 
         self.iter = 0
+
         return self
 
     def __next__(self):
@@ -515,6 +517,8 @@ class IO:
         for file_dictionary in [self.infiles, self.outfiles]:
             for _, fi in file_dictionary.items():
                 fi.flush_buffers()
+
+        return None
 
     def write_spectrum(self, row, col, states, meas, geom, flush_immediately=False):
         """Write data from a single inversion to all output buffers."""
@@ -786,3 +790,5 @@ class IO:
                 fn = self.output['plot_directory'] + ('/frame_%i.png' % i)
                 plt.savefig(fn)
                 plt.close()
+
+        return None

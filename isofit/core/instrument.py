@@ -197,7 +197,8 @@ class Instrument:
 
         if self.n_state == 0:
             return np.zeros((0, 0), dtype=float)
-        return np.diagflat(pow(self.prior_sigma, 2))
+        else:
+            return np.diagflat(pow(self.prior_sigma, 2))
 
     def Sy(self, meas, geom):
         """Calculate measurement error covariance.
@@ -244,6 +245,7 @@ class Instrument:
             x_instrument_perturb[ind] = x_instrument_perturb[ind]+eps
             meas_perturb = self.sample(x_instrument_perturb, wl_hi, rdn_hi)
             dmeas_dinstrument[:, ind] = (meas_perturb - meas) / eps
+
         return dmeas_dinstrument
 
     def dmeas_dinstrumentb(self, x_instrument, wl_hi, rdn_hi):
@@ -336,4 +338,5 @@ class Instrument:
 
         if len(x_instrument) < 1:
             return ''
-        return 'Instrument: '+' '.join(['%5.3f' % xi for xi in x_instrument])
+        else:
+            return 'Instrument: '+' '.join(['%5.3f' % xi for xi in x_instrument])

@@ -99,9 +99,13 @@ class Isofit:
         else:
             self.iv = Inversion(self.config['inversion'], self.fm)
 
+        return None
+
     def _clear_nonpicklable_objects(self):
         self.fm = None
         self.iv = None
+
+        return None
 
     def _run_single_spectrum(self, index):
 
@@ -130,6 +134,8 @@ class Isofit:
             if index % 1000 == 0:
                 logging.info(
                     'Completed inversion {}/{}'.format(index, len(io.iter_inds)))
+
+        return None
 
     def run(self, profile=False, debug=False):
         """Iterate over all spectra.
@@ -184,3 +190,5 @@ class Isofit:
             else:
                 logging.info('Parallel inversions complete.  {} s total, {} spectra/s'.format(
                     total_time, n_iter/total_time))
+
+        return None
