@@ -51,6 +51,11 @@ class FileExistsError(Exception):
 class TabularRT:
     """A model of photon transport including the atmosphere."""
 
+    rebuild_cmd = None
+    configure_and_exit = None
+    auto_rebuild = None
+    _full_to_local_statevector_position_mapping = None
+
     def __init__(self, config):
 
         self.wl, self.fwhm = load_wavelen(config['wavelength_file'])
@@ -110,14 +115,18 @@ class TabularRT:
         self.prior_sigma = np.array(self.prior_sigma)
 
     def build_lut(self, rebuild=False):
-        """Each LUT is associated with a source directory.  We build a lookup 
-            table by: 
-              (1) defining the LUT dimensions, state vector names, and the 
-                    grid of values; 
-              (2) running the radiative transfer solver if needed, with each 
-                    run defining a different point in the LUT; and 
-              (3) loading the LUTs, one per key atmospheric coefficient vector,
-                  into memory as VectorInterpolator objects."""
+        """Each LUT is associated with a source directory.
+
+        We build a lookup table by: 
+          (1) defining the LUT dimensions, state vector names, and the 
+                grid of values; 
+          (2) running the radiative transfer solver if needed, with each 
+                run defining a different point in the LUT; and 
+          (3) loading the LUTs, one per key atmospheric coefficient vector,
+              into memory as VectorInterpolator objects.
+
+        TODO: fix not-iterable warning from combos          
+        """
 
         for key, grid_values in self.lut_grid_config.items():
 
@@ -149,6 +158,7 @@ class TabularRT:
 
         # "points" contains all combinations of grid points
         # We will have one filename prefix per point
+        # TODO: fix not-iterable warning arising from combos
         self.points = combos(self.lut_grids)
         self.files = []
         for point in self.points:
@@ -192,5 +202,6 @@ class TabularRT:
 
         if len(x_RT) < 1:
             return ''
+
         return 'Atmosphere: '+' '.join(['%s: %5.3f' % (si, xi) for si, xi in
                                         zip(self.statevec, x_RT[self._full_to_local_statevector_position_mapping])])
