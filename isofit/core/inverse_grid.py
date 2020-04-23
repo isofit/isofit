@@ -21,12 +21,12 @@
 import sys
 import time
 import logging
-import xxhash
-import scipy as s
 from collections import OrderedDict
-from scipy.optimize import least_squares
-from scipy.linalg import inv, norm, det, cholesky, qr, svd, LinAlgError
+import xxhash
 from hashlib import md5
+import numpy as np
+from numpy.linalg import inv, norm, det, cholesky, qr, svd, LinAlgError
+from scipy.optimize import least_squares
 
 from .common import svd_inv, svd_inv_sqrt, eps, combos, conditional_gaussian
 from .inverse_simple import invert_simple
@@ -50,7 +50,7 @@ class GridInversion(Inversion):
         self.integration_grid = OrderedDict(config['integration_grid'])
         self.inds_fixed = [self.fm.statevec.index(k) for k in
                            self.integration_grid.keys()]
-        self.inds_free = [i for i in s.arange(self.fm.nstate, dtype=int) if
+        self.inds_free = [i for i in np.arange(self.fm.nstate, dtype=int) if
                           not (i in self.inds_fixed)]
         self.x_fixed = None
         self.least_squares_params['bounds'] = \
@@ -60,7 +60,7 @@ class GridInversion(Inversion):
             self.fm.scale[self.inds_free]
 
     def full_statevector(self, x_free):
-        x = s.zeros(self.fm.nstate)
+        x = np.zeros(self.fm.nstate)
         x[self.inds_fixed] = self.x_fixed
         x[self.inds_free] = x_free
         return x
@@ -114,7 +114,7 @@ class GridInversion(Inversion):
 
         Seps = self.fm.Seps(x, meas, geom)
         wn = len(self.winidx)
-        Seps_win = s.zeros((wn, wn))
+        Seps_win = np.zeros((wn, wn))
         for i in range(wn):
             Seps_win[i, :] = Seps[self.winidx[i], self.winidx]
         return svd_inv_sqrt(Seps_win, hashtable=self.hashtable)
@@ -143,7 +143,7 @@ class GridInversion(Inversion):
 
         # Simulations are easy - return the initial state vector
         if self.simulation_mode or meas is None:
-            return s.array([self.fm.init.copy()])
+            return np.array([self.fm.init.copy()])
 
         for combo in combos(self.integration_grid.values()):
 
@@ -192,9 +192,9 @@ class GridInversion(Inversion):
                 # concatenation of the "residuals" due to the measurement
                 # and prior distributions. They will be squared internally by
                 # the solver.
-                total_jac = s.concatenate((meas_jac, prior_jac), axis=0)
+                total_jac = np.concatenate((meas_jac, prior_jac), axis=0)
 
-                return s.real(total_jac)
+                return np.real(total_jac)
 
             def err(x_free):
                 """Calculate cost function expressed here in absolute (not
@@ -220,7 +220,7 @@ class GridInversion(Inversion):
                 prior_resid = (x_free - xa_free).dot(Sa_free_inv_sqrt)
 
                 # Total cost
-                total_resid = s.concatenate((meas_resid, prior_resid))
+                total_resid = np.concatenate((meas_resid, prior_resid))
 
                 trajectory.append(x)
 
@@ -230,7 +230,7 @@ class GridInversion(Inversion):
                 logging.debug('Iteration: %02i  Residual: %12.2f %s' %
                               (it, rs, sm))
 
-                return s.real(total_resid)
+                return np.real(total_resid)
 
             # Initialize and invert
             try:
@@ -239,12 +239,12 @@ class GridInversion(Inversion):
                 x_full_solution = self.full_statevector(xopt.x)
                 trajectory.append(x_full_solution)
                 solutions.append(trajectory)
-                costs.append(s.sqrt(pow(xopt.fun, 2).sum()))
+                costs.append(np.sqrt(pow(xopt.fun, 2).sum()))
             except LinAlgError:
                 logging.warning('Levenberg Marquardt failed to converge')
                 solutions.append(trajectory)
                 costs.append(9e99)
-        return s.array(solutions[s.argmin(costs)])
+        return np.array(solutions[np.argmin(costs)])
 
     def forward_uncertainty(self, x, meas, geom):
         """Converged estimates of path radiance, radiance, reflectance.
@@ -252,7 +252,7 @@ class GridInversion(Inversion):
         Also calculate the posterior distribution and Rodgers K, G matrices.
         """
 
-        dark_surface = s.zeros(self.fm.surface.wl.shape)
+        dark_surface = np.zeros(self.fm.surface.wl.shape)
         path = self.fm.calc_meas(x, geom, rfl=dark_surface)
         mdl = self.fm.calc_meas(x, geom, rfl=None, Ls=None)
         lamb = self.fm.calc_lamb(x, geom)
