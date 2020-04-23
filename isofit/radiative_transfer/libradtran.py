@@ -39,7 +39,7 @@ class LibRadTranRT(TabularRT):
 
     def __init__(self, config, statevector_names):
 
-        super().__init__(self, config)
+        super().__init__(config)
 
         self.libradtran_dir = self.find_basedir(config)
         self.libradtran_template_file = config['libradtran_template_file']

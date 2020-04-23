@@ -42,7 +42,7 @@ class MultiComponentSurface(Surface):
     def __init__(self, config):
         """."""
 
-        super().__init__(self, config)
+        super().__init__(config)
 
         # Models are stored as dictionaries in .mat format
         model_dict = loadmat(config['surface_file'])

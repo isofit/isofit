@@ -33,7 +33,7 @@ class ThermalSurface(MultiComponentSurface):
     def __init__(self, config):
         """."""
 
-        super().__init__(self, config)
+        super().__init__(config)
 
         # Handle additional state vector elements
         self.statevec.extend(['SURF_TEMP_K'])

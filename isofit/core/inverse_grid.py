@@ -47,6 +47,7 @@ class GridInversion(Inversion):
         measurement cost distributions."""
 
         super().__init__(config, forward)
+
         self.integration_grid = OrderedDict(config['integration_grid'])
         self.inds_fixed = [self.fm.statevec.index(k)
                            for k in self.integration_grid.keys()]

@@ -49,7 +49,7 @@ class ModtranRT(TabularRT):
     def __init__(self, band_mode_string, config, statevector_names):
         """."""
 
-        super().__init__(self, config)
+        super().__init__(config)
 
         self.band_mode_string = band_mode_string
         if self.band_mode_string not in modtran_bands_available:

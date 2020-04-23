@@ -31,7 +31,8 @@ class GlintSurface(MultiComponentSurface):
     def __init__(self, config):
         """."""
 
-        super().__init__(self, config)
+        super().__init__(config)
+
         self.statevec.extend(['GLINT'])
         self.scale.extend([1.0])
         self.init.extend([0.005])
