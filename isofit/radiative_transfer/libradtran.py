@@ -264,16 +264,20 @@ class LibRadTranRT(TabularRT):
                 ind = tuple(ind)
                 temp[ind] = librt_output[key]
 
-            self.luts[key] = VectorInterpolator(self.lut_grids, temp,
-                                                self.lut_interp_types)
+            self.luts[key] = VectorInterpolator(
+                self.lut_grids, temp, self.lut_interp_types)
 
     def _lookup_lut(self, point):
+        """."""
+
         ret = {}
         for key, lut in self.luts.items():
             ret[key] = np.array(lut(point)).ravel()
         return ret
 
     def get(self, x_RT, geom):
+        """."""
+
         point = np.zeros((self.n_point,))
         for point_ind, name in enumerate(self.lut_grid_config):
             if name in self.statevec:
@@ -302,15 +306,20 @@ class LibRadTranRT(TabularRT):
                 # If a variable is defined in the lookup table but not
                 # specified elsewhere, we will default to the minimum
                 point[point_ind] = min(self.lut_grid_config[name])
+
         return self._lookup_lut(point)
 
     def get_L_atm(self, x_RT, geom):
+        """."""
+
         r = self.get(x_RT, geom)
         rho = r['rhoatm']
         rdn = rho / np.pi*(self.solar_irr * self.coszen)
         return rdn
 
     def get_L_down_transmitted(self, x_RT, geom):
+        """."""
+
         r = self.get(x_RT, geom)
         rdn = (self.solar_irr * self.coszen) / np.pi * r['transm']
         return rdn
@@ -318,4 +327,5 @@ class LibRadTranRT(TabularRT):
     def get_L_up(self, x_RT, geom):
         """Thermal emission from the ground is provided by the thermal model, so
         this function is a placeholder for future upgrades."""
+
         return 0
