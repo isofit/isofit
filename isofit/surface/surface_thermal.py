@@ -18,8 +18,8 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-import scipy as s
-from scipy.linalg import inv
+import numpy as np
+from numpy.linalg import inv
 from scipy.optimize import minimize
 
 from ..core.common import emissive_radiance, eps
@@ -34,6 +34,7 @@ class ThermalSurface(MultiComponentSurface):
         """."""
 
         super().__init__(self, config)
+
         # Handle additional state vector elements
         self.statevec.extend(['SURF_TEMP_K'])
         self.init.extend([300.0])  # This is overwritten below
@@ -61,6 +62,7 @@ class ThermalSurface(MultiComponentSurface):
 
         mu = MultiComponentSurface.xa(self, x_surface, geom)
         mu[self.surf_temp_ind] = self.init[self.surf_temp_ind]
+
         return mu
 
     def Sa(self, x_surface, geom):
@@ -83,17 +85,18 @@ class ThermalSurface(MultiComponentSurface):
     def conditional_solrfl(self, rfl_est, geom):
         """Conditions the reflectance on solar-reflected channels."""
 
-        sol_inds = s.logical_and(self.wl > 450, self.wl < 1250)
+        sol_inds = np.logical_and(self.wl > 450, self.wl < 1250)
         if sum(sol_inds) < 1:
             return rfl_est
-        x = s.zeros(len(self.statevec))
+        x = np.zeros(len(self.statevec))
         x[self.idx_lamb] = rfl_est
         c = self.components[self.component(x, geom)]
         mu_sol = c[0][sol_inds]
-        Cov_sol = s.array([c[1][i, sol_inds] for i in s.where(sol_inds)[0]])
+        Cov_sol = np.array([c[1][i, sol_inds] for i in np.where(sol_inds)[0]])
         Cinv = inv(Cov_sol)
         diff = rfl_est[sol_inds] - mu_sol
         full = c[0] + c[1][:, sol_inds].dot(Cinv.dot(diff))
+
         return full
 
     def calc_rfl(self, x_surface, geom):
@@ -118,6 +121,7 @@ class ThermalSurface(MultiComponentSurface):
 
         dlamb = MultiComponentSurface.dlamb_dsurface(self, x_surface, geom)
         dlamb[:, self.surf_temp_ind] = 0
+
         return dlamb
 
     def calc_Ls(self, x_surface, geom):
@@ -125,9 +129,10 @@ class ThermalSurface(MultiComponentSurface):
 
         T = x_surface[self.surf_temp_ind]
         rfl = self.calc_rfl(x_surface, geom)
-        rfl[rfl > 1.] = 1.
+        rfl[rfl > 1.0] = 1.0
         emissivity = 1 - rfl
-        Ls, dLs_dT = emissive_radiance(emissivity, T, self.wl)
+        Ls, _ = emissive_radiance(emissivity, T, self.wl)
+
         return Ls
 
     def dLs_dsurface(self, x_surface, geom):
@@ -138,8 +143,8 @@ class ThermalSurface(MultiComponentSurface):
         rfl = self.calc_rfl(x_surface, geom)
         emissivity = 1 - rfl
         Ls, dLs_dT = emissive_radiance(emissivity, T, self.wl)
-        dLs_drfl = s.diag(-1*Ls)
-        dLs_dsurface = s.vstack([dLs_drfl, dLs_dT]).T
+        dLs_drfl = np.diag(-1*Ls)
+        dLs_dsurface = np.vstack([dLs_drfl, dLs_dT]).T
 
         return dLs_dsurface
 
@@ -148,4 +153,5 @@ class ThermalSurface(MultiComponentSurface):
 
         mcm = MultiComponentSurface.summarize(self, x_surface, geom)
         msg = ' Kelvins: %5.1f ' % tuple(x_surface[-1:])
-        return msg+mcm
+
+        return msg + mcm
