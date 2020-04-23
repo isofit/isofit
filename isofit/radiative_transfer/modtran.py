@@ -18,21 +18,20 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-from sys import platform
 import os
-import logging
 from os.path import split
+from sys import platform
+import logging
 import re
 import json
 from copy import deepcopy
-import scipy as s
+import numpy as np
 from scipy.stats import norm as normal
 from scipy.interpolate import interp1d
 
 from ..radiative_transfer.look_up_tables import TabularRT, FileExistsError
-from ..core.common import json_load_ascii, recursive_replace
-
-from ..core.common import combos, VectorInterpolator, eps, load_wavelen
+from ..core.common import json_load_ascii, recursive_replace, combos, \
+    VectorInterpolator, eps, load_wavelen
 
 
 ### Variables ###
@@ -50,7 +49,7 @@ class ModtranRT(TabularRT):
     def __init__(self, band_mode_string, config, statevector_names):
         """."""
 
-        TabularRT.__init__(self, config)
+        super().__init__(self, config)
 
         self.band_mode_string = band_mode_string
         if self.band_mode_string not in modtran_bands_available:
@@ -69,40 +68,44 @@ class ModtranRT(TabularRT):
 
         # Insert aerosol data, if specified
         if 'aerosol_model_file' in config:
-            aer_data = s.loadtxt(config['aerosol_model_file'])
+            aer_data = np.loadtxt(config['aerosol_model_file'])
             self.aer_wl = aer_data[:, 0]
             aer_data = aer_data[:, 1:].T
             self.naer = int(len(aer_data)/3)
             aer_absc, aer_extc, aer_asym = [], [], []
+
             for i in range(self.naer):
                 aer_extc.append(aer_data[i*3])
                 aer_absc.append(aer_data[i*3+1])
                 aer_asym.append(aer_data[i*3+2])
-            self.aer_absc = s.array(aer_absc)
-            self.aer_extc = s.array(aer_extc)
-            self.aer_asym = s.array(aer_asym)
+
+            self.aer_absc = np.array(aer_absc)
+            self.aer_extc = np.array(aer_extc)
+            self.aer_asym = np.array(aer_asym)
 
         if self.band_mode_string.lower() == 'modtran_vswir':
             self.modtran_lut_names = ['rhoatm', 'transm', 'sphalb', 'transup']
         elif self.band_mode_string.lower() == 'modtran_tir':
-            self.modtran_lut_names = ['thermal_upwelling', 
-                'thermal_downwelling', 'rhoatm', 'transm', 'sphalb', 'transup']
+            self.modtran_lut_names = [
+                'thermal_upwelling', 'thermal_downwelling', 'rhoatm', 'transm',
+                'sphalb', 'transup']
 
-        self.angular_lut_keys_degrees = ['OBSZEN','TRUEAZ','viewzen','viewaz',
-            'solzen','solaz']
+        self.angular_lut_keys_degrees = ['OBSZEN', 'TRUEAZ', 'viewzen',
+                                         'viewaz', 'solzen', 'solaz']
 
         # Build the lookup table
         self.build_lut()
 
-        # This array is used to handle the potential indexing mismatch between 
-        # the 'global statevector' (which may couple multiple radiative transform 
+        # This array is used to handle the potential indexing mismatch between
+        # the 'global statevector' (which may couple multiple radiative transform
         # models) and this statevector. It should never be modified
         full_to_local_statevector_position_mapping = []
         for sn in self.statevec:
             ix = statevector_names.index(sn)
             full_to_local_statevector_position_mapping.append(ix)
+
         self._full_to_local_statevector_position_mapping = \
-            s.array(full_to_local_statevector_position_mapping)
+            np.array(full_to_local_statevector_position_mapping)
 
     def find_basedir(self, config):
         """Seek out a modtran base directory."""
@@ -139,32 +142,34 @@ class ModtranRT(TabularRT):
             if ts < 0:
                 logging.error('%s is missing solar geometry' % infile)
                 raise ValueError('%s is missing solar geometry' % infile)
-        szen = s.array([float(lines[i].split()[3])
-                        for i in range(ts, te)]).mean()
+        szen = np.array([float(lines[i].split()[3])
+                         for i in range(ts, te)]).mean()
+
         return szen
 
     def load_chn(self, infile, coszen):
         """Load a '.chn' output file and parse critical coefficient vectors. 
 
-           These are:
-             wl      - wavelength vector
-             sol_irr - solar irradiance
-             sphalb  - spherical sky albedo at surface
-             transm  - diffuse and direct irradiance along the 
-                          sun-ground-sensor path
-             transup - transmission along the ground-sensor path only 
+        These are:
+          wl      - wavelength vector
+          sol_irr - solar irradiance
+          sphalb  - spherical sky albedo at surface
+          transm  - diffuse and direct irradiance along the 
+                       sun-ground-sensor path
+          transup - transmission along the ground-sensor path only 
 
-            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-             Be careful with these! They are to be used only by the 
-             modtran_tir functions because MODTRAN must be run with a 
-             reflectivity of 1 for them to be used in the RTM defined
-             in radiative_transfer.py.
-             thermal_upwelling - atmospheric path radiance
-             thermal_downwelling - sky-integrated thermal path radiance 
-                reflected off the ground and back into the sensor.
-            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+           Be careful with these! They are to be used only by the 
+           modtran_tir functions because MODTRAN must be run with a 
+           reflectivity of 1 for them to be used in the RTM defined
+           in radiative_transfer.py.
+           thermal_upwelling - atmospheric path radiance
+           thermal_downwelling - sky-integrated thermal path radiance 
+              reflected off the ground and back into the sensor.
+          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-           We parse them one wavelength at a time."""
+        We parse them one wavelength at a time.
+        """
 
         with open(infile) as f:
             sols, transms, sphalbs, wls, rhoatms, transups = \
@@ -178,9 +183,9 @@ class ModtranRT(TabularRT):
                 toks = re.findall(r"[\S]+", line.strip())
                 wl, wid = float(toks[0]), float(toks[8])  # nm
                 solar_irr = float(toks[18]) * 1e6 * \
-                    s.pi / wid / coszen  # uW/nm/sr/cm2
+                    np.pi / wid / coszen  # uW/nm/sr/cm2
                 rdnatm = float(toks[4]) * 1e6  # uW/nm/sr/cm2
-                rhoatm = rdnatm * s.pi / (solar_irr * coszen)
+                rhoatm = rdnatm * np.pi / (solar_irr * coszen)
                 sphalb = float(toks[23])
                 transm = float(toks[22]) + float(toks[21])
                 transup = float(toks[24])
@@ -188,12 +193,12 @@ class ModtranRT(TabularRT):
                 # Be careful with these! See note in function comments above
                 thermal_emission = float(toks[11])
                 thermal_scatter = float(toks[12])
-                thermal_upwelling = (thermal_emission + thermal_scatter) / \
-                                    wid * 1e6  # uW/nm/sr/cm2
+                thermal_upwelling = (
+                    thermal_emission + thermal_scatter) / wid * 1e6  # uW/nm/sr/cm2
 
                 # Be careful with these! See note in function comments above
                 # grnd_rflt already includes ground-to-sensor transmission
-                grnd_rflt = float(toks[16]) 
+                grnd_rflt = float(toks[16])
                 thermal_downwelling = grnd_rflt / wid * 1e6  # uW/nm/sr/cm2
 
                 sols.append(solar_irr)
@@ -206,14 +211,17 @@ class ModtranRT(TabularRT):
                 thermal_downwellings.append(thermal_downwelling)
 
                 wls.append(wl)
-        params = [s.array(i) for i in [wls, sols, rhoatms, transms, sphalbs,
-                    transups, thermal_upwellings, thermal_downwellings]]
+
+        params = [np.array(i) for i in [
+            wls, sols, rhoatms, transms, sphalbs, transups,
+            thermal_upwellings, thermal_downwellings]]
+
         return tuple(params)
 
     def ext550_to_vis(self, ext550):
         """."""
 
-        return s.log(50.0) / (ext550 + 0.01159)
+        return np.log(50.0) / (ext550 + 0.01159)
 
     def modtran_driver(self, overrides):
         """Write a MODTRAN 6.0 input file."""
@@ -221,7 +229,7 @@ class ModtranRT(TabularRT):
         param = deepcopy(self.template)
 
         if hasattr(self, 'aer_absc'):
-            fracs = s.zeros((self.naer))
+            fracs = np.zeros((self.naer))
 
         # Perform overrides
         for key, val in overrides.items():
@@ -267,12 +275,12 @@ class ModtranRT(TabularRT):
         """Each LUT is associated with a source directory.
 
         We build a lookup table by: 
-              (1) defining the LUT dimensions, state vector names, and the grid 
-                  of values; 
-              (2) running modtran if needed, with each MODTRAN run defining a 
-                  different point in the LUT; and 
-              (3) loading the LUTs, one per key atmospheric coefficient vector,
-                  into memory as VectorInterpolator objects.
+            (1) defining the LUT dimensions, state vector names, and the grid 
+                of values; 
+            (2) running modtran if needed, with each MODTRAN run defining a 
+                different point in the LUT; and 
+            (3) loading the LUTs, one per key atmospheric coefficient vector,
+                into memory as VectorInterpolator objects.
         """
 
         # Regenerate MODTRAN input wavelength file
@@ -283,24 +291,24 @@ class ModtranRT(TabularRT):
 
         mod_outputs = []
         for point, fn in zip(self.points, self.files):
-            chnfile = self.lut_dir+'/'+fn+'.chn'
+            # chnfile = self.lut_dir+'/'+fn+'.chn'
             mod_outputs.append(self.load_rt(fn))
 
         self.wl = mod_outputs[0]['wl']
         self.solar_irr = mod_outputs[0]['sol']
-        self.coszen = s.cos(mod_outputs[0]['solzen'] * s.pi / 180.0)
+        self.coszen = np.cos(mod_outputs[0]['solzen'] * np.pi / 180.0)
 
         dims_aug = self.lut_dims + [self.n_chan]
         for key in self.modtran_lut_names:
-            temp = s.zeros(dims_aug, dtype=float)
+            temp = np.zeros(dims_aug, dtype=float)
             for mod_output, point in zip(mod_outputs, self.points):
-                ind = [s.where(g == p)[0] for g, p in \
-                    zip(self.lut_grids, point)]
+                ind = [np.where(g == p)[0] for g, p in
+                       zip(self.lut_grids, point)]
                 ind = tuple(ind)
                 temp[ind] = mod_output[key]
 
-            self.luts[key] = VectorInterpolator(self.lut_grids, temp, 
-                    self.lut_interp_types)
+            self.luts[key] = VectorInterpolator(
+                self.lut_grids, temp, self.lut_interp_types)
 
     def rebuild_cmd(self, point, fn):
         """."""
@@ -359,22 +367,24 @@ class ModtranRT(TabularRT):
             raise SystemExit("MODTRAN directory not defined in config file.")
 
         # Generate the CLI path
-        cmd = self.modtran_dir+'/bin/'+xdir[platform]+'/mod6c_cons '+infilename
+        cmd = self.modtran_dir + '/bin/' + \
+            xdir[platform] + '/mod6c_cons ' + infilename
+
         return cmd
 
     def load_rt(self, fn):
         """."""
 
-        tp6file = self.lut_dir+'/'+fn+'.tp6'
+        tp6file = self.lut_dir + '/' + fn + '.tp6'
         solzen = self.load_tp6(tp6file)
-        coszen = s.cos(solzen * s.pi / 180.0)
+        coszen = np.cos(solzen * np.pi / 180.0)
 
-        chnfile = self.lut_dir+'/'+fn+'.chn'
+        chnfile = self.lut_dir + '/' + fn + '.chn'
         params = self.load_chn(chnfile, coszen)
 
-        # Be careful with the two thermal values! They can only be used in 
-        # the modtran_tir functions as they require the modtran reflectivity 
-        # be set to 1 in order to use them in the RTM in radiative_transfer.py. 
+        # Be careful with the two thermal values! They can only be used in
+        # the modtran_tir functions as they require the modtran reflectivity
+        # be set to 1 in order to use them in the RTM in radiative_transfer.py.
         # Don't add these to the VSWIR functions!
         names = ['wl', 'sol', 'rhoatm', 'transm', 'sphalb', 'transup']
 
@@ -385,17 +395,22 @@ class ModtranRT(TabularRT):
         results_dict = {name: param for name, param in zip(names, params)}
         results_dict['solzen'] = solzen
         results_dict['coszen'] = coszen
+
         return results_dict
 
     def _lookup_lut(self, point):
+        """."""
+
         ret = {}
         for key, lut in self.luts.items():
-            ret[key] = s.array(lut(point)).ravel()
+            ret[key] = np.array(lut(point)).ravel()
 
         return ret
 
     def get(self, x_RT, geom):
-        point = s.zeros((self.n_point,))
+        """."""
+
+        point = np.zeros((self.n_point,))
         for point_ind, name in enumerate(self.lut_grid_config):
             if name in self.statevec:
                 ix = self.statevec.index(name)
@@ -427,6 +442,7 @@ class ModtranRT(TabularRT):
         return self._lookup_lut(point)
 
     def get_L_atm(self, x_RT, geom):
+
         if self.band_mode_string.lower() == 'modtran_vswir':
             return self.get_L_atm_vswir(x_RT, geom)
         elif self.band_mode_string.lower() == 'modtran_tir':
@@ -435,16 +451,23 @@ class ModtranRT(TabularRT):
             raise NotImplementedError
 
     def get_L_atm_vswir(self, x_RT, geom):
+        """."""
+
         r = self.get(x_RT, geom)
         rho = r['rhoatm']
-        rdn = rho/s.pi*(self.solar_irr*self.coszen)
+        rdn = rho / np.pi * (self.solar_irr*self.coszen)
+
         return rdn
 
     def get_L_atm_tir(self, x_RT, geom):
+        """."""
+
         r = self.get(x_RT, geom)
         return r['thermal_upwelling']
 
     def get_L_down_transmitted(self, x_RT, geom):
+        """."""
+
         if self.band_mode_string.lower() == 'modtran_vswir':
             return self.get_L_down_transmitted_vswir(x_RT, geom)
         elif self.band_mode_string.lower() == 'modtran_tir':
@@ -453,27 +476,31 @@ class ModtranRT(TabularRT):
             raise NotImplementedError
 
     def get_L_down_transmitted_vswir(self, x_RT, geom):
+        """."""
+
         r = self.get(x_RT, geom)
-        rdn = (self.solar_irr*self.coszen) / s.pi * r['transm']
+        rdn = (self.solar_irr*self.coszen) / np.pi * r['transm']
         return rdn
 
     def get_L_down_transmitted_tir(self, x_RT, geom):
-        """thermal_downwelling already includes the transmission factor. Also
+        """Thermal_downwelling already includes the transmission factor. Also
         assume there is no multiple scattering for TIR.
         """
+
         r = self.get(x_RT, geom)
         return r['thermal_downwelling']
 
     def get_L_up(self, x_RT, geom):
         """Thermal emission from the ground is provided by the thermal model, 
         so this function is a placeholder for future upgrades."""
+
         return 0
 
     def wl2flt(self, wls, fwhms, outfile):
         """Helper function to generate Gaussian distributions around the 
         center wavelengths."""
 
-        I = None
+        # I = None
         sigmas = fwhms/2.355
         span = 2.0 * (wls[1]-wls[0])  # nm
         steps = 101
@@ -483,10 +510,10 @@ class ModtranRT(TabularRT):
             fout.write('Nanometer data for sensor\n')
             for wl, fwhm, sigma in zip(wls, fwhms, sigmas):
 
-                ws = wl + s.linspace(-span, span, steps)
+                ws = wl + np.linspace(-span, span, steps)
                 vs = normal.pdf(ws, wl, sigma)
-                vs = vs/vs[int(steps/2)]
-                wns = 10000.0/(ws/1000.0)
+                vs = vs / vs[int(steps/2)]
+                wns = 10000.0 / (ws/1000.0)
 
                 fout.write('CENTER:  %6.2f NM   FWHM:  %4.2f NM\n' %
                            (wl, fwhm))
