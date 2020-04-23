@@ -20,7 +20,7 @@
 
 import logging
 from datetime import datetime
-import scipy as s
+import numpy as np
 
 from .sunposition import sunpos
 
@@ -63,7 +63,7 @@ class Geometry:
             self.OBSZEN = 180.0 - abs(obs[2])  # MODTRAN convention?
             self.RELAZ = obs[1] - obs[3] + 180.0
             self.TRUEAZ = obs[1]  # MODTRAN convention?
-            self.umu = s.cos(obs[2]/360.0*2.0*s.pi)  # Libradtran
+            self.umu = np.cos(obs[2] / 360.0 * 2.0 * np.pi)  # Libradtran
 
         # The 'loc' object is a list-like object that optionally contains
         # latitude and longitude information about the surface being
@@ -95,16 +95,17 @@ class Geometry:
             self.earth_sun_distance = esd.copy()
 
     def coszen(self):
-        """ Return the cosine of the solar zenith."""
+        """Return the cosine of the solar zenith."""
         self.dt = self.datetime
-        az, zen, ra, dec, h = sunpos(self.datetime, self.latitude,
-                                     self.longitudeE,
-                                     self.surface_elevation_km * 1000.0,
-                                     radians=True)
-        return s.cos(zen)
+        _, zen, _, _, _ = sunpos(
+            self.datetime, self.latitude, self.longitudeE,
+            self.surface_elevation_km * 1000.0, radians=True)
+
+        return np.cos(zen)
 
     def sundist(self):
-        '''Return the mean-relative distance to the sun as defined by the
+        """Return the mean-relative distance to the sun as defined by the
         day of the year.  Note that we use zero-indexed table, offset by one 
-        from the actual cardenality, per Python conventions...'''
+        from the actual cardenality, per Python conventions..."""
+
         return float(self.earth_sun_distance[self.day_of_year-1, 1])
