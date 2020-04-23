@@ -43,9 +43,7 @@ class LibRadTranRT(TabularRT):
 
         self.libradtran_dir = self.find_basedir(config)
         self.libradtran_template_file = config['libradtran_template_file']
-
         self.lut_quantities = ['rhoatm', 'transm', 'sphalb', 'transup']
-
         self.angular_lut_keys_degrees = [
             'OBSZEN', 'TRUEAZ', 'viewzen', 'viewaz', 'solzen', 'solaz'
         ]
@@ -58,9 +56,11 @@ class LibRadTranRT(TabularRT):
         # radiative transform models) and this statevector
         # It should never be modified
         full_to_local_statevector_position_mapping = []
+
         for sn in self.statevec:
             ix = statevector_names.index(sn)
             full_to_local_statevector_position_mapping.append(ix)
+
         self._full_to_local_statevector_position_mapping = \
             np.array(full_to_local_statevector_position_mapping)
 
@@ -88,8 +88,9 @@ class LibRadTranRT(TabularRT):
         # Translate a couple of special cases
         if 'AOT550' in self.lut_names:
             vals['aerosol_visibility'] = self.ext550_to_vis(vals['AOT550'])
+
         if 'H2OSTR' in self.lut_names:
-            vals['h2o_mm'] = vals['H2OSTR']*10.0
+            vals['h2o_mm'] = vals['H2OSTR'] * 10.0
 
         with open(self.libradtran_template_file, 'r') as fin:
             template = fin.read()
@@ -123,9 +124,9 @@ class LibRadTranRT(TabularRT):
 
         # Are all files present?
         rebuild = False
-        for path in [infilepath0, infilepath05, infilepath025,
-                     outfilepath0, outfilepath05, outfilepath025,
-                     outfilepathzen, scriptfilepath]:
+        filepaths = [infilepath0, infilepath05, infilepath025, outfilepath0,
+                     outfilepath05, outfilepath025, outfilepathzen, scriptfilepath]
+        for path in filepaths:
             if not os.path.exists(path):
                 rebuild = True
 
@@ -167,7 +168,7 @@ class LibRadTranRT(TabularRT):
                 elif 'longitude E' in line:
                     lon = -float(line.split()[-1])
                 elif 'time' in line:
-                    yr, mon, day, hour, mn, sec = [
+                    yr, mon, day, hour, mn, _ = [
                         float(q) for q in line.split()[1:]]
 
         # Write runscript file
@@ -185,10 +186,10 @@ class LibRadTranRT(TabularRT):
                      outfilepathzen))
             f.write('cd $cwd\n')
 
-        return 'bash '+scriptfilepath
+        return 'bash ' + scriptfilepath
 
     def load_rt(self, fn):
-        """Load the results of a LibRadTran run."""
+        """Load results of a LibRadTran run."""
 
         wl, rdn0,   irr = np.loadtxt(self.lut_dir+'/LUT_'+fn+'_alb0.out').T
         wl, rdn025, irr = np.loadtxt(self.lut_dir+'/LUT_'+fn+'_alb025.out').T
@@ -211,31 +212,41 @@ class LibRadTranRT(TabularRT):
         irr = resample_spectrum(irr,    wl, self.wl, self.fwhm)
 
         # Calculate some atmospheric optical constants
-        sphalb = 2.8*(2.0*rho025-rhoatm-rho05)/(rho025-rho05)
-        transm = (rho05-rhoatm)*(2.0-sphalb)
+        sphalb = 2.8 * (2.0 * rho025-rhoatm-rho05) / (rho025-rho05)
+        transm = (rho05-rhoatm) * (2.0-sphalb)
 
         # For now, don't estimate this term!!
         # TODO: Have LibRadTran calculate it directly
         transup = np.zeros(self.wl.shape)
 
         # Get solar zenith, translate to irradiance at zenith = 0
-        with open(self.lut_dir+'/LUT_'+fn+'.zen', 'r') as fin:
+        with open(self.lut_dir + '/LUT_' + fn + '.zen', 'r') as fin:
             output = fin.read().split()
-            solzen, solaz = [float(q) for q in output[1:]]
+            solzen, _ = [float(q) for q in output[1:]]
 
         self.coszen = np.cos(solzen/360.0*2.0*np.pi)
         irr = irr / self.coszen
         self.solar_irr = irr.copy()
 
-        results = {"wl": self.wl, 'solzen': solzen, 'irr': irr,
-                   "solzen": solzen, "rhoatm": rhoatm, "transm": transm,
-                   "sphalb": sphalb, "transup": transup}
+        results = {
+            'wl': self.wl,
+            'irr': irr,
+            'solzen': solzen,
+            'rhoatm': rhoatm,
+            'transm': transm,
+            'sphalb': sphalb,
+            'transup': transup
+        }
+
         return results
 
     def ext550_to_vis(self, ext550):
+        """."""
+
         return np.log(50.0) / (ext550 + 0.01159)
 
     def build_lut(self, rebuild=False):
+        """."""
 
         TabularRT.build_lut(self, rebuild)
 
