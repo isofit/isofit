@@ -1,7 +1,7 @@
 
 from typing import Dict, List, Type
 from isofit.configs.configs import BaseConfigSection
-#from isofit.configs.sections import StateVectorConfig
+from isofit.configs.sections import StateVectorConfig
 import os
 
 
@@ -10,17 +10,21 @@ class InstrumentUnknowns(BaseConfigSection):
     """
     Instrument Unknowns configuration.
     """
-    channelized_radiometric_uncertainty_file = None
-    _channelized_radiometric_uncertainty_file_type = str
 
-    uncorrelated_radiometric_uncertainty = None
-    _uncorrelated_radiometric_uncertainty_type = float
+    def __init__(self, sub_configdic: dict = None):
+        self.channelized_radiometric_uncertainty_file = None
+        self._channelized_radiometric_uncertainty_file_type = str
 
-    wavelength_calibration_uncertainty = None
-    _wavelength_calibration_uncertainty = float
+        self.uncorrelated_radiometric_uncertainty = None
+        self._uncorrelated_radiometric_uncertainty_type = float
 
-    stray_srf_uncertainty = None
-    _stray_srf_uncertainty_type = float
+        self.wavelength_calibration_uncertainty = None
+        self._wavelength_calibration_uncertainty = float
+
+        self.stray_srf_uncertainty = None
+        self._stray_srf_uncertainty_type = float
+
+        self.set_config_options(sub_configdic)
 
     def _check_config_validity(self) -> List[str]:
         self.get_option_keys()
@@ -52,8 +56,8 @@ class InstrumentConfig(BaseConfigSection):
         self._fast_resample_type = bool
         self.fast_resample = True
 
-        #self._statevector_type = StateVectorConfig
-        #self.statevector = None
+        self._statevector_type = StateVectorConfig
+        self.statevector = None
 
         self._snr_type = float
         self.snr = None

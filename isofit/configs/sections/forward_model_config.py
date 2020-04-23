@@ -18,14 +18,14 @@ class ForwardModelConfig(BaseConfigSection):
         Instrument: instrument config section. 
         """
 
-        #self.surface = None
-        #self._surface_type = SurfaceConfig
+        self.surface = None
+        self._surface_type = SurfaceConfig
         """
         Instrument: instrument config section. 
         """
 
-        #self.radiative_transfer = None
-        #self._radiative_transfer_type = RadiativeTransferConfig
+        self.radiative_transfer = None
+        self._radiative_transfer_type = RadiativeTransferConfig
         """
         RadiativeTransfer: radiative transfer config section.
         """

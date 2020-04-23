@@ -20,6 +20,7 @@ class Config(object):
     def __init__(self, configdict: dict = None) -> None:
         self.input = None
         self.output = None
+        self.test = None
         #self.forward_model = None
         #self.inversion = None
 
@@ -61,8 +62,10 @@ class Config(object):
         errors = []
         for key in self.__dict__.keys():
             value = getattr(self, key)
-            #if callable(value):
-            errors.extend(value.check_config_validity())
+            try:
+                errors.extend(value.check_config_validity())
+            except AttributeError:
+                logging.debug('Configuration check: {} is not an object, skipping'.format(key))
 
         ##TODO: do same thing here as with global hidden function used within BaseConfigSection, so that this is
         ## recursive
@@ -350,8 +353,16 @@ def _set_callable_attributes(object: object, configdict: dict) -> None:
         if config_section_name in configdict.keys():
             subdict = configdict[config_section_name]
 
-        sub_config = getattr(import_module('isofit.configs.sections'), camelcase_section_name + 'Config')(subdict)
-        setattr(object, config_section_name, sub_config)
+        try:
+            sub_config = getattr(import_module('isofit.configs.sections'), camelcase_section_name + 'Config')(subdict)
+            setattr(object, config_section_name, sub_config)
+        except AttributeError:
+            logging.debug('Cannot set sub-attrubutes for: {}, skipping'.format(config_section_name))
+
+
+
+
+
 
 
 
