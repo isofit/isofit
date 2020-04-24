@@ -21,7 +21,7 @@ class Config(object):
         self.input = None
         self.output = None
         self.test = None
-        #self.forward_model = None
+        self.forward_model = None
         #self.inversion = None
 
         # Load sub-classes and attributes
@@ -141,6 +141,8 @@ class BaseConfigSection(object):
         Args:
             configdict: dictionary-style config for parsing
         """
+
+        #TODO: grab callable based on type
         for key in self.__dict__:
             if callable(key):
                 if configdict is None:

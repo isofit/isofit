@@ -1,7 +1,7 @@
 
 from typing import Dict, List, Type
 from isofit.configs.configs import BaseConfigSection
-from isofit.configs.sections import StateVectorConfig
+from isofit.configs.sections.statevector_config import StateVectorConfig
 import os
 
 
