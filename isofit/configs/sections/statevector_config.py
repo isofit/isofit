@@ -1,6 +1,6 @@
 
 from typing import Dict, List, Type
-from isofit.configs import BaseConfigSection
+from isofit.configs.base_config import BaseConfigSection
 import logging
 
 
@@ -10,7 +10,7 @@ class StateVectorElementConfig(BaseConfigSection):
     """
 
     def __init__(self, sub_configdic: dict = None):
-        self._bounds_type = List
+        self._bounds_type = list()
         self.bounds = None
 
         self._scale_type = float
@@ -37,7 +37,7 @@ class StateVectorConfig(BaseConfigSection):
     State vector configuration.
     """
 
-    def __init__(self, model_name: str, sub_configdic: dict = None):
+    def __init__(self, sub_configdic: dict = None):
         self._H2OSTR_type = StateVectorElementConfig
         self.H2OSTR = None
 
@@ -56,9 +56,10 @@ class StateVectorConfig(BaseConfigSection):
         self.set_statevector_config_options(sub_configdic)
 
     def set_statevector_config_options(self, configdic):
-        for key in configdic:
-            sv = StateVectorElementConfig(configdic['key'])
-            setattr(self, key, sv)
+        if configdic is not None:
+            for key in configdic:
+                sv = StateVectorElementConfig(configdic[key])
+                setattr(self, key, sv)
 
 
 

@@ -1,6 +1,6 @@
 
 from typing import Dict, List, Type
-from isofit.configs import BaseConfigSection
+from isofit.configs.base_config import BaseConfigSection
 from isofit.configs.sections.statevector_config import StateVectorConfig
 import logging
 
@@ -30,7 +30,7 @@ class DomainConfig(BaseConfigSection):
         return errors
 
 
-class RadiativeTransferModelConfig(BaseConfigSection):
+class RadiativeTransferEngineConfig(BaseConfigSection):
     """
     Radiative transfer unknowns configuration.
     """
@@ -92,9 +92,6 @@ class RadiativeTransferConfig(BaseConfigSection):
 
     def __init__(self, sub_configdic: dict = None):
 
-        self.model_name_type = str
-        self.model_name = str
-
         self._statevector_type = StateVectorConfig
         self.statevector = None
 
@@ -116,10 +113,10 @@ class RadiativeTransferConfig(BaseConfigSection):
         #self._radiative_transfer_models_type = List
         #self.radiative_transfer_models = []
 
-        self._vswir_model_type = RadiativeTransferModelConfig
+        self._vswir_model_type = RadiativeTransferEngineConfig
         self.vswir_model = None
 
-        self._tir_model_type = RadiativeTransferModelConfig
+        self._tir_model_type = RadiativeTransferEngineConfig
         self.tir_model = None
 
         #try:

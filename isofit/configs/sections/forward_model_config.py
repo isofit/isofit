@@ -1,6 +1,6 @@
 
 from typing import Dict, List, Type
-from isofit.configs import BaseConfigSection
+from isofit.configs.base_config import BaseConfigSection
 from isofit.configs.sections.instrument_config import InstrumentConfig
 from isofit.configs.sections.surface_config import SurfaceConfig
 from isofit.configs.sections.radiative_transfer_config import RadiativeTransferConfig
@@ -30,12 +30,10 @@ class ForwardModelConfig(BaseConfigSection):
         """
         RadiativeTransfer: radiative transfer config section.
         """
-
         self.set_config_options(sub_configdic)
 
 
     def _check_config_validity(self) -> List[str]:
-        self.get_option_keys()
         errors = list()
 
         #TODO: figure out submodule checking
