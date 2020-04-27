@@ -22,6 +22,7 @@ import scipy as s
 from scipy.interpolate import interp1d
 
 from ..core.common import load_spectrum, load_wavelen
+from isofit.configs import Config
 
 
 class Surface:
@@ -30,8 +31,9 @@ class Surface:
     Surface models are stored as MATLAB '.mat' format files.
     """
 
-    def __init__(self, config):
-        """."""
+    def __init__(self, full_config: Config):
+
+        config = full_config.forward_model.surface
 
         self.statevec = []
         self.bounds = s.array([])
@@ -41,15 +43,15 @@ class Surface:
         self.bval = s.array([])
         self.emissive = False
 
-        if 'reflectance' in config and config['reflectance'] is not None:
+        if config.reflectance is not None:
             self.rfl = config['reflectance']
             self.resample_reflectance()
-        if 'reflectance_file' in config:
-            self.rfl, self.rwl = load_spectrum(config['reflectance_file'])
+        if config.reflectance_file is not None:
+            self.rfl, self.rwl = load_spectrum(config.reflectance_file)
             self.wl = self.rwl.copy()
             self.n_wl = len(self.wl)
-        if 'wavelength_file' in config:
-            self.wl, self.fwhm = load_wavelen(config['wavelength_file'])
+        if config.wavelength_file is not None:
+            self.wl, self.fwhm = load_wavelen(config.wavelength_file)
             self.n_wl = len(self.wl)
             self.resample_reflectance()
 

@@ -22,16 +22,18 @@ import scipy as s
 
 from ..core.common import eps
 from .surface_multicomp import MultiComponentSurface
+from isofit.configs import Config
 
 
 class GlintSurface(MultiComponentSurface):
     """A model of the surface based on a collection of multivariate 
        Gaussians, extended with a surface glint term."""
 
-    def __init__(self, config):
-        """."""
+    def __init__(self, full_config: Config):
 
-        MultiComponentSurface.__init__(self, config)
+        MultiComponentSurface.__init__(self, full_config)
+
+        #TODO: Enforce this attribute in the config, not here (this is hidden)
         self.statevec.extend(['GLINT'])
         self.scale.extend([1.0])
         self.init.extend([0.005])

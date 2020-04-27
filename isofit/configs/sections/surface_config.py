@@ -18,19 +18,28 @@ class SurfaceConfig(BaseConfigSection):
         self._surface_category_type = str
         self.surface_category = None
 
+        self._reflectance_file_type = str
+        self.reflectance_file = None
+
+        self._reflectance_type = np.array #TODO: guess - this is currently not implemented, trace backwards
+        self.reflectance = None
+
+        self._wavelength_file_type = str
+        self.wavelength_file = None
+
         # Multicomponent Surface
         self._select_on_init_type = bool
         self.select_on_init = False
+        """bool: This field, if present and set to true, forces us to use any initialization state and never change. 
+        The state is preserved in the geometry object so that this object stays stateless"""
 
         self._selection_metric_type = str
         self.selection_metric = 'Mahalanobis'
 
-        self._normalize_type = str
-        self.normalize = 'Euclidean'
-
         # Surface Thermal
         self._emissivity_for_surface_T_init_type = float
-        self.emissivity_for_surface_T_init_type = 0.98
+        self.emissivity_for_surface_T_init = 0.98
+        """ Initial Value recommended by Glynn Hulley."""
 
         self._surface_T_prior_sigma_degK_type = float
         self.surface_T_prior_sigma_degK = 1.

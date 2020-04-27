@@ -259,7 +259,7 @@ class ForwardModel:
             self.instrument.dmeas_dinstrument(x_instrument, self.RT.wl, rdn_hi)
 
         # Put it all together
-        K = s.zeros((self.n_meas, self.nstate), dtype=float)
+        K = np.zeros((self.n_meas, self.nstate), dtype=float)
         K[:, self.idx_surface] = dmeas_dsurface
         K[:, self.idx_RT] = dmeas_dRT
         K[:, self.idx_instrument] = dmeas_dinstrument
