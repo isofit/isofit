@@ -8,6 +8,7 @@ import yaml
 from isofit.configs.sections.input_config import InputConfig
 from isofit.configs.sections.output_config import OutputConfig
 from isofit.configs.sections.forward_model_config import ForwardModelConfig
+from isofit.configs.sections.implementation_config import ImplementationConfig
 from isofit.configs.base_config import BaseConfigSection
 from isofit.core import common
 
@@ -22,20 +23,20 @@ class Config(BaseConfigSection):
     def __init__(self, configdict) -> None:
 
         self._input_type = InputConfig
-        self.input = None
+        self.input: InputConfig = None
         """InputConfig: Input config. Holds all input file information."""
 
         self._output_type = OutputConfig
-        self.output = None
+        self.output: OutputConfig = None
         """OutputConfig: Output config. Holds all output file information."""
 
         self._forward_model_type = ForwardModelConfig
-        self.forward_model = None
+        self.forward_model: ForwardModelConfig = None
         """ForwardModelConfig: forward_model config. Holds information about surface models, 
         radiative transfer models, and the instrument."""
 
         self._implementation_type = ImplementationConfig
-        self.implementation = None
+        self.implementation: ImplementationConfig = None
         """ImplementationConfig: holds information regarding how isofit is to be run, including relevant sub-configs 
         (e.g. inversion information)."""
 

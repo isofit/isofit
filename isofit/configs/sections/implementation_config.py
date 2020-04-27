@@ -11,22 +11,22 @@ class ImplementationConfig(BaseConfigSection):
         Input file(s) configuration.
         """
 
-        self._implementation_mode_type = str
-        self.implementation_mode = 'inversion'
+        self._mode_type = str
+        self.mode = 'inversion'
         """
         str: Defines the operating mode for isofit. Current options are: inversion, grid_inversion, inversion_mcmc.
         """
 
         self._inversion_type = InversionConfig
-        self.inversion = None
+        self.inversion: InversionConfig = None
         """InversionConfig: optional config for running in inversion mode."""
 
-        self._inversion_mcmc_type = McmcInversionConfig
-        self.mcmc_inversion = None
+        self._mcmc_inversion_type = McmcInversionConfig
+        self.mcmc_inversion: McmcInversionConfig = None
         """McmcInversionConfig: optional config for running in MCMC inversion mode."""
 
         self._grid_inversion_type = GridInversionConfig
-        self.grid_inversion = None
+        self.grid_inversion: GridInversionConfig = None
         """GridInversionConfig: optional config for running grid inversion mode."""
 
         self.set_config_options(sub_configdic)
@@ -35,9 +35,9 @@ class ImplementationConfig(BaseConfigSection):
         errors = list()
 
         valid_implementation_modes = ['inversion','grid_inversion','mcmc_inversion']
-        if self.implementation_mode not in valid_implementation_modes:
+        if self.mode not in valid_implementation_modes:
             errors.append('Invalid implementation mode: {}.  Valid options are: {}'.
-                          format(self.implementation_mode, valid_implementation_modes))
+                          format(self.mode, valid_implementation_modes))
 
         #TODO: recursive implmentation
 

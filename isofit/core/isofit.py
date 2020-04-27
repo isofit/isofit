@@ -91,12 +91,14 @@ class Isofit:
 
     def _init_nonpicklable_objects(self):
         self.fm = ForwardModel(self.config.forward_model)
-        if 'mcmc_inversion' in self.config:
-            self.iv = MCMCInversion(self.config['mcmc_inversion'], self.fm)
-        elif 'grid_inversion' in self.config:
-            self.iv = GridInversion(self.config['grid_inversion'], self.fm)
-        else:
-            self.iv = Inversion(self.config['inversion'], self.fm)
+
+        if self.config.implementation.mode == 'mcmc_inversion':
+            self.iv = MCMCInversion(self.config.implementation, self.fm)
+        elif self.config.implementation.mode == 'grid_inversion':
+            self.iv = GridInversion(self.config.implementation, self.fm)
+        elif self.config.implementation.mode == 'inversion':
+            self.iv = Inversion(self.config.implementation, self.fm)
+
 
     def _clear_nonpicklable_objects(self):
         self.fm = None
@@ -115,6 +117,7 @@ class Isofit:
                 action='ignore', category=NumbaPendingDeprecationWarning)
 
         self._init_nonpicklable_objects()
+        #TODO: fix config
         io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
         success, row, col, meas, geom, configs = io.get_components_at_index(
             index)

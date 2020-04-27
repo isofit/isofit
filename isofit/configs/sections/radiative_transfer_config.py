@@ -93,7 +93,7 @@ class RadiativeTransferConfig(BaseConfigSection):
     def __init__(self, sub_configdic: dict = None):
 
         self._statevector_type = StateVectorConfig
-        self.statevector = None
+        self.statevector:StateVectorConfig = None
 
         self._lut_grid_type = List
         self.lut_grid = None
@@ -108,16 +108,16 @@ class RadiativeTransferConfig(BaseConfigSection):
         self.aerosol_model_file = None
 
         self._unknowns_type = RadiativeTransferUnknownsConfig
-        self.unknowns = None
+        self.unknowns: RadiativeTransferUnknownsConfig = None
 
         #self._radiative_transfer_models_type = List
         #self.radiative_transfer_models = []
 
         self._vswir_model_type = RadiativeTransferEngineConfig
-        self.vswir_model = None
+        self.vswir_model: RadiativeTransferEngineConfig = None
 
         self._tir_model_type = RadiativeTransferEngineConfig
-        self.tir_model = None
+        self.tir_model: RadiativeTransferEngineConfig = None
 
         #try:
         #    self._set_rt_config_options(sub_configdic['radiative_transfer_models'])
@@ -128,7 +128,7 @@ class RadiativeTransferConfig(BaseConfigSection):
 
     def _set_rt_config_options(self, configdict):
         for key in configdict:
-            rt_model = RadiativeTransferModelConfig(configdict[key], name=key)
+            rt_model = RadiativeTransferEngineConfig(configdict[key], name=key)
             self.radiative_transfer_models.append(rt_model)
 
     def get_radiative_transfer_model_names(self):

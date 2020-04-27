@@ -14,19 +14,19 @@ class ForwardModelConfig(BaseConfigSection):
 
     def __init__(self, sub_configdic: dict = None):
         self._instrument_type = InstrumentConfig
-        self.instrument = None
+        self.instrument: InstrumentConfig = None
         """
         Instrument: instrument config section. 
         """
 
         self._surface_type = SurfaceConfig
-        self.surface = None
+        self.surface: SurfaceConfig = None
         """
         Instrument: instrument config section. 
         """
 
         self._radiative_transfer_type = RadiativeTransferConfig
-        self.radiative_transfer = None
+        self.radiative_transfer: RadiativeTransferConfig = None
         """
         RadiativeTransfer: radiative transfer config section.
         """

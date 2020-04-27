@@ -27,7 +27,9 @@ from scipy.interpolate import interp1d
 from .common import recursive_replace, eps
 from .instrument import Instrument
 from ..radiative_transfer.radiative_transfer import RadiativeTransfer
+from isofit.configs import Config
 
+from isofit.surface import Surface, ThermalSurface, MultiComponentSurface, GlintSurface
 
 ### Variables ###
 
@@ -72,29 +74,41 @@ class ForwardModel:
      noise for the purpose of weighting the measurement information
      against the prior. """
 
-    def __init__(self, config):
+    def __init__(self, full_config: Config):
+
+        # load in the full config (in case of inter-module dependencies) and
+        # then designate the current config
+        self.full_config = full_config
+        self.config = full_config.forward_model
 
         # Build the instrument model
-        self.instrument = Instrument(config['instrument'])
+        self.instrument = Instrument(self.full_config)
         self.n_meas = self.instrument.n_chan
 
         # Build the radiative transfer model
-        self.RT = RadiativeTransfer(config['radiative_transfer'])
+        self.RT = RadiativeTransfer(self.full_config)
 
-        # Build the surface model
+        # Build the surface model - this is a bit ugly with the conditionals, but the surface config should already be
+        # forced to have appropriate properties, so at least safe
+        # TODO: make surface a class with inheritance to make this cleaner
         self.surface = None
-        for key, module, cname in surface_models:
-            module = "isofit." + module
-            if key in config:
-                self.surface = getattr(
-                    import_module(module), cname)(config[key])
-        if self.surface is None:
+        if self.config.surface.surface_category == 'surface':
+            self.surface = Surface(self.full_config)
+        elif self.config.surface.surface_category == 'multicomponent_surface':
+            self.surface = MultiComponentSurface(self.full_config)
+        elif self.config.surface.surface_category == 'glint_surface':
+            self.surface = GlintSurface(self.full_config)
+        elif self.config.surface.surface_category == 'thermal_surface':
+            self.surface = ThermalSurface(self.full_config)
+        else:
             raise ValueError('Must specify a valid surface model')
+            # No need to be more specific - should have been checked in config already
 
         # Set up passthrough option
         bounds, scale, init, statevec = [], [], [], []
 
         # Build state vector for each part of our forward model
+        # TODO: make explicit for transparency
         for name in ['surface', 'RT', 'instrument']:
             obj = getattr(self, name)
             inds = len(statevec) + s.arange(len(obj.statevec), dtype=int)
@@ -115,6 +129,7 @@ class ForwardModel:
         self.nstate = len(self.statevec)
 
         # Capture unmodeled variables.
+        #TODO: revise to make explicit
         bvec, bval = [], []
         for name in ['RT', 'instrument', 'surface']:
             obj = getattr(self, name)
