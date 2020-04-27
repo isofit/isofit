@@ -2,6 +2,7 @@
 from typing import Dict, List, Type
 from isofit.configs.base_config import BaseConfigSection
 import os
+import numpy as np
 
 
 

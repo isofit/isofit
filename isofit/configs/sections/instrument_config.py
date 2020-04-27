@@ -27,7 +27,6 @@ class InstrumentUnknowns(BaseConfigSection):
         self.set_config_options(sub_configdic)
 
     def _check_config_validity(self) -> List[str]:
-        self.get_option_keys()
         errors = list()
 
         file_params = [self.channelized_radiometric_uncertainty_file, self.uncorrelated_radiometric_uncertainty]
@@ -35,6 +34,8 @@ class InstrumentUnknowns(BaseConfigSection):
             if param is not None:
                 if os.path.isfile(param) is False:
                     errors.append('Instrument unknown file: {} not found'.format(param))
+
+        return errors
 
 
 class InstrumentConfig(BaseConfigSection):
@@ -51,13 +52,14 @@ class InstrumentConfig(BaseConfigSection):
         self.integrations = None
 
         self._unknowns_type = InstrumentUnknowns
-        self.unknowns = None
+        self.unknowns: InstrumentUnknowns = None
 
         self._fast_resample_type = bool
         self.fast_resample = True
+        """bool: Approximates a complete resampling by a convolution with a uniform FWHM."""
 
         self._statevector_type = StateVectorConfig
-        self.statevector = None
+        self.statevector: StateVectorConfig = None
 
         self._snr_type = float
         self.snr = None
