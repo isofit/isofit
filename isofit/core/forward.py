@@ -18,7 +18,7 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-import scipy as s
+import numpy as np
 from copy import deepcopy
 from scipy.linalg import det, norm, pinv, sqrtm, inv, block_diag
 from importlib import import_module
@@ -34,7 +34,7 @@ from isofit.surface import Surface, ThermalSurface, MultiComponentSurface, Glint
 ### Variables ###
 
 # Supported RT modules, filenames, and class names
-RT_models = [('modtran_radiative_transfer', 'radiative_transfer.modtran', 
+RT_models = [('modtran_radiative_transfer', 'radiative_transfer.modtran',
               'ModtranRT'),
              ('libradtran_radiative_transfer',
               'radiative_transfer.libradtran', 'LibRadTranRT'),
@@ -46,7 +46,7 @@ surface_models = [('surface', 'surface.surface', 'Surface'),
                   ('multicomponent_surface',
                    'surface.surface_multicomp', 'MultiComponentSurface'),
                   ('glint_surface', 'surface.surface_glint', 'GlintSurface'),
-                  ('thermal_surface', 'surface.surface_thermal', 
+                  ('thermal_surface', 'surface.surface_thermal',
                    'ThermalSurface')]
 
 
@@ -104,46 +104,37 @@ class ForwardModel:
             raise ValueError('Must specify a valid surface model')
             # No need to be more specific - should have been checked in config already
 
-        # Set up passthrough option
-        bounds, scale, init, statevec = [], [], [], []
+        # Build combined vectors from surface, RT, and instrument
+        bounds, scale, init, statevec, bvec, bval = ([],)*6
+        for obj_with_statevec in [self.surface, self.RT, self.instrument]:
+            bounds.extend([deepcopy(x) for x in obj_with_statevec.bounds])
+            scale.extend([deepcopy(x) for x in obj_with_statevec.scale])
+            init.extend([deepcopy(x) for x in obj_with_statevec.init])
+            statevec.extend([deepcopy(x) for x in obj_with_statevec.statevec])
 
-        # Build state vector for each part of our forward model
-        # TODO: make explicit for transparency
-        for name in ['surface', 'RT', 'instrument']:
-            obj = getattr(self, name)
-            inds = len(statevec) + s.arange(len(obj.statevec), dtype=int)
-            setattr(self, 'idx_%s' % name, inds)
-            for b in obj.bounds:
-                bounds.append(deepcopy(b))
-            for c in obj.scale:
-                scale.append(deepcopy(c))
-            for v in obj.init:
-                init.append(deepcopy(v))
-            for v in obj.statevec:
-                statevec.append(deepcopy(v))
+            bvec.extend([deepcopy(x) for x in obj_with_statevec.bvec])
+            bval.extend([deepcopy(x) for x in obj_with_statevec.bval])
 
-        self.bounds = tuple(s.array(bounds).T)
-        self.scale = s.array(scale)
-        self.init = s.array(init)
+        self.bounds = tuple(np.array(bounds).T)
+        self.scale = np.array(scale)
+        self.init = np.array(init)
         self.statevec = statevec
         self.nstate = len(self.statevec)
 
-        # Capture unmodeled variables.
-        #TODO: revise to make explicit
-        bvec, bval = [], []
-        for name in ['RT', 'instrument', 'surface']:
-            obj = getattr(self, name)
-            inds = len(bvec) + s.arange(len(obj.bvec), dtype=int)
-            setattr(self, '%s_b_inds' % name, inds)
-            for b in obj.bval:
-                bval.append(deepcopy(b))
-            for v in obj.bvec:
-                bvec.append(deepcopy(v))
-
-        self.bvec = s.array(bvec)
+        self.bvec = np.array(bvec)
         self.nbvec = len(self.bvec)
-        self.bval = s.array(bval)
-        self.Sb = s.diagflat(pow(self.bval, 2))
+        self.bval = np.array(bval)
+        self.Sb = np.diagflat(np.power(self.bval, 2))
+
+        # Set up indices for references - MUST MATCH ORDER FROM ABOVE ASSIGNMENT
+        self.idx_surface = np.arange(len(self.surface.statevec), dtype=int)
+        self.idx_RT = np.arange(len(self.RT.statevec), dtype=int) + len(self.idx_surface)
+        self.idx_instrument = np.arange(len(self.RT.statevec), dtype=int) + len(self.idx_surface) + len(self.idx_RT)
+
+        self.surface_b_inds = np.arange(len(self.surface.bvec), dtype=int)
+        self.RT_b_inds = np.arange(len(self.RT.bvec), dtype=int) + len(self.surface_b_inds)
+        self.instrument_b_inds = np.arange(len(self.RT.bvec), dtype=int) + len(self.surface_b_inds) + len(self.RT_b_inds)
+
 
     def out_of_bounds(self, x):
         """Check if state vector is within bounds."""
@@ -168,7 +159,7 @@ class ForwardModel:
         xa_surface = self.surface.xa(x_surface, geom)
         xa_RT = self.RT.xa()
         xa_instrument = self.instrument.xa()
-        return s.concatenate((xa_surface, xa_RT, xa_instrument), axis=0)
+        return np.concatenate((xa_surface, xa_RT, xa_instrument), axis=0)
 
     def Sa(self, x, geom):
         """Calculate the prior covariance of the state vector (the 
@@ -298,7 +289,7 @@ class ForwardModel:
             x_instrument, self.RT.wl, rdn_hi)
 
         # Put it together
-        Kb = s.zeros((self.n_meas, self.nbvec), dtype=float)
+        Kb = np.zeros((self.n_meas, self.nbvec), dtype=float)
         Kb[:, self.RT_b_inds] = dmeas_dRTb
         Kb[:, self.instrument_b_inds] = dmeas_dinstrumentb
         return Kb
@@ -325,7 +316,7 @@ class ForwardModel:
             for qi in q:
                 p = interp1d(wl, qi, fill_value='extrapolate')
                 q2.append(p(self.RT.wl))
-            return s.array(q2)
+            return np.array(q2)
         else:
             p = interp1d(wl, q, fill_value='extrapolate')
             return p(self.RT.wl)
