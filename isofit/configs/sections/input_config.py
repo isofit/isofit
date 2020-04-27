@@ -101,6 +101,7 @@ class InputConfig(BaseConfigSection):
 
         self.set_config_options(sub_configdic)
 
+
     def _check_config_validity(self) -> List[str]:
         errors = list()
 

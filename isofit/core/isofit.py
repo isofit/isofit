@@ -32,6 +32,7 @@ from .inverse import Inversion
 from .inverse_mcmc import MCMCInversion
 from .inverse_grid import GridInversion
 from .fileio import IO
+from isofit import configs
 
 import multiprocessing
 from .. import warnings_enabled
@@ -61,10 +62,8 @@ class Isofit:
         self.states = None
 
         # Load configuration file
-        self.config = load_config(config_file)
-
-        o = configs.Config()
-
+        self.config_dict = load_config(config_file)
+        self.config = configs.create_new_config(config_file)
 
         # Build the forward model and inversion objects
         self._init_nonpicklable_objects()
@@ -91,7 +90,7 @@ class Isofit:
                 self.cols = range(int(col_start), int(col_end))
 
     def _init_nonpicklable_objects(self):
-        self.fm = ForwardModel(self.config['forward_model'])
+        self.fm = ForwardModel(self.config.forward_model)
         if 'mcmc_inversion' in self.config:
             self.iv = MCMCInversion(self.config['mcmc_inversion'], self.fm)
         elif 'grid_inversion' in self.config:

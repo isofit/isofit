@@ -3,11 +3,13 @@ import re
 from collections import OrderedDict
 from typing import Dict, List, Type
 import json
+import os
 import yaml
 from isofit.configs.sections.input_config import InputConfig
 from isofit.configs.sections.output_config import OutputConfig
 from isofit.configs.sections.forward_model_config import ForwardModelConfig
 from isofit.configs.base_config import BaseConfigSection
+from isofit.core import common
 
 
 class Config(BaseConfigSection):
@@ -18,15 +20,24 @@ class Config(BaseConfigSection):
     """
 
     def __init__(self, configdict) -> None:
+
         self._input_type = InputConfig
         self.input = None
+        """InputConfig: Input config. Holds all input file information."""
 
         self._output_type = OutputConfig
         self.output = None
+        """OutputConfig: Output config. Holds all output file information."""
 
         self._forward_model_type = ForwardModelConfig
         self.forward_model = None
-        #self.inversion = None
+        """ForwardModelConfig: forward_model config. Holds information about surface models, 
+        radiative transfer models, and the instrument."""
+
+        self._implementation_type = ImplementationConfig
+        self.implementation = None
+        """ImplementationConfig: holds information regarding how isofit is to be run, including relevant sub-configs 
+        (e.g. inversion information)."""
 
         # Load sub-classes and attributes
         self.set_config_options(configdict)
@@ -125,30 +136,23 @@ def get_config_differences(config_a: Config, config_b: Config) -> Dict:
     return differing_items
 
 
+def create_new_config(config_file: str) -> Config:
+    """Load a config file from disk.
+    Args:
+        config_file: file to load config from.  Currently accepted formats: JSON
 
-#def _set_callable_attributes(object: object, configdict: dict) -> None:
-#    """ Function to read a dictionary, determine if any of it's elements are config sections defined in
-#    isofit.configs.sections. and if so, initialize an object and populate it's subdirectory.  Meant to be called
-#    recursively.  Defined here for use in both Config and BaseConfigSection
-#    Args:
-#        object: Object to check for the existence of dictionary keys in
-#        configdict: dictionary-style config for parsing
-#    """
-#
-#    for config_section_name in object.__dict__.keys():
-#        camelcase_section_name = snake_to_camel(config_section_name)
-#
-#        subdict = None
-#        if config_section_name in configdict.keys():
-#            subdict = configdict[config_section_name]
-#
-#        try:
-#            sub_config = getattr(import_module('isofit.configs.sections'), camelcase_section_name + 'Config')(subdict)
-#            setattr(object, config_section_name, sub_config)
-#        except AttributeError:
-#            logging.debug('Cannot set sub-attrubutes for: {}, skipping'.format(config_section_name))
-#
+    Returns:
+        Config object, having completed all necessary config checks
+    """
+    #TODO: facilitate YAML read as well
+    with open(config_file, 'r') as f:
+        config_dict = json.load(f)
 
+    configdir, f = os.path.split(os.path.abspath(config_file))
 
+    config_dict = common.expand_all_paths(config_dict, configdir)
+    config = Config(config_dict)
+
+    return config
 
 

@@ -27,7 +27,7 @@ from spectral.io import envi
 import logging
 from collections import OrderedDict
 
-from .common import load_spectrum, eps, resample_spectrum, expand_all_paths
+from .common import load_spectrum, eps, resample_spectrum
 from .inverse_simple import invert_simple, invert_algebraic
 from .geometry import Geometry
 
