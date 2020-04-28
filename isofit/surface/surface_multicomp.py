@@ -86,12 +86,12 @@ class MultiComponentSurface(Surface):
 
         # Variables retrieved: each channel maps to a reflectance model parameter
         rmin, rmax = 0, 10.0
-        self.statevec = ['RFL_%04i' % int(w) for w in self.wl]
+        self.statevec_names = ['RFL_%04i' % int(w) for w in self.wl]
         self.bounds = [[rmin, rmax] for w in self.wl]
         self.scale = [1.0 for w in self.wl]
         self.init = [0.15 * (rmax-rmin)+rmin for v in self.wl]
         self.idx_lamb = np.arange(self.n_wl)
-        self.n_state = len(self.statevec)
+        self.n_state = len(self.statevec_names)
 
     def component(self, x, geom):
         """We pick a surface model component using the Mahalanobis distance.
@@ -161,12 +161,12 @@ class MultiComponentSurface(Surface):
         Cov = Cov * (self.norm(lamb_ref)**2)
 
         # If there are no other state vector elements, we're done.
-        if len(self.statevec) == len(self.idx_lamb):
+        if len(self.statevec_names) == len(self.idx_lamb):
             return Cov
 
         # Embed into a larger state vector covariance matrix
         nprefix = self.idx_lamb[0]
-        nsuffix = len(self.statevec)-self.idx_lamb[-1]-1
+        nsuffix = len(self.statevec_names) - self.idx_lamb[-1] - 1
         Cov_prefix = np.zeros((nprefix, nprefix))
         Cov_suffix = np.zeros((nsuffix, nsuffix))
         return block_diag(Cov_prefix, Cov, Cov_suffix)
@@ -174,7 +174,7 @@ class MultiComponentSurface(Surface):
     def fit_params(self, rfl_meas, geom, *args):
         """Given a reflectance estimate, fit a state vector."""
 
-        x_surface = np.zeros(len(self.statevec))
+        x_surface = np.zeros(len(self.statevec_names))
         if len(rfl_meas) != len(self.idx_lamb):
             raise ValueError('Mismatched reflectances')
         for i, r in zip(self.idx_lamb, rfl_meas):
@@ -220,7 +220,7 @@ class MultiComponentSurface(Surface):
 
         dLs = np.zeros((self.n_wl, self.n_wl), dtype=float)
         nprefix = self.idx_lamb[0]
-        nsuffix = len(self.statevec)-self.idx_lamb[-1]-1
+        nsuffix = len(self.statevec_names) - self.idx_lamb[-1] - 1
         prefix = np.zeros((self.n_wl, nprefix))
         suffix = np.zeros((self.n_wl, nsuffix))
         return np.concatenate((prefix, dLs, suffix), axis=1)

@@ -39,11 +39,11 @@ class ThermalSurface(MultiComponentSurface):
 
         #TODO: Enforce this attribute in the config, not here (this is hidden)
         # Handle additional state vector elements
-        self.statevec.extend(['SURF_TEMP_K'])
+        self.statevec_names.extend(['SURF_TEMP_K'])
         self.init.extend([300.0])  # This is overwritten below
         self.scale.extend([100.0])
         self.bounds.extend([[250.0, 400.0]])
-        self.surf_temp_ind = len(self.statevec)-1
+        self.surf_temp_ind = len(self.statevec_names) - 1
         self.emissive = True
         self.n_state = len(self.init)
 
@@ -82,7 +82,7 @@ class ThermalSurface(MultiComponentSurface):
         sol_inds = np.logical_and(self.wl > 450, self.wl < 1250)
         if sum(sol_inds) < 1:
             return rfl_est
-        x = np.zeros(len(self.statevec))
+        x = np.zeros(len(self.statevec_names))
         x[self.idx_lamb] = rfl_est
         c = self.components[self.component(x, geom)]
         mu_sol = c[0][sol_inds]

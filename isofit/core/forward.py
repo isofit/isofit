@@ -110,7 +110,7 @@ class ForwardModel:
             bounds.extend([deepcopy(x) for x in obj_with_statevec.bounds])
             scale.extend([deepcopy(x) for x in obj_with_statevec.scale])
             init.extend([deepcopy(x) for x in obj_with_statevec.init])
-            statevec.extend([deepcopy(x) for x in obj_with_statevec.statevec])
+            statevec.extend([deepcopy(x) for x in obj_with_statevec.statevec_names])
 
             bvec.extend([deepcopy(x) for x in obj_with_statevec.bvec])
             bval.extend([deepcopy(x) for x in obj_with_statevec.bval])
@@ -127,13 +127,13 @@ class ForwardModel:
         self.Sb = np.diagflat(np.power(self.bval, 2))
 
         # Set up indices for references - MUST MATCH ORDER FROM ABOVE ASSIGNMENT
-        self.idx_surface = np.arange(len(self.surface.statevec), dtype=int)
+        self.idx_surface = np.arange(len(self.surface.statevec_names), dtype=int)
         self.idx_RT = np.arange(len(self.RT.statevec), dtype=int) + len(self.idx_surface)
-        self.idx_instrument = np.arange(len(self.RT.statevec), dtype=int) + len(self.idx_surface) + len(self.idx_RT)
+        self.idx_instrument = np.arange(len(self.instrument.statevec_names), dtype=int) + len(self.idx_surface) + len(self.idx_RT)
 
         self.surface_b_inds = np.arange(len(self.surface.bvec), dtype=int)
         self.RT_b_inds = np.arange(len(self.RT.bvec), dtype=int) + len(self.surface_b_inds)
-        self.instrument_b_inds = np.arange(len(self.RT.bvec), dtype=int) + len(self.surface_b_inds) + len(self.RT_b_inds)
+        self.instrument_b_inds = np.arange(len(self.instrument.bvec), dtype=int) + len(self.surface_b_inds) + len(self.RT_b_inds)
 
 
     def out_of_bounds(self, x):

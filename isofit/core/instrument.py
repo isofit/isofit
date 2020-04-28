@@ -58,9 +58,8 @@ class Instrument:
         self.init = config.statevector.get_all_inits()
         self.prior_mean = np.array(config.statevector.get_all_prior_means())
         self.prior_sigma = np.array(config.statevector.get_all_prior_sigmas())
-        self.statevec = config.statevector.get_elements()
         self.statevec_names = config.statevector.get_element_names()
-        self.n_state = len(self.statevec)
+        self.n_state = len(self.statevec_names)
 
         if config.snr is not None:
             self.model_type = 'SNR'
