@@ -50,6 +50,9 @@ class InstrumentConfig(BaseConfigSection):
 
         self._integrations_type = int
         self.integrations = None
+        """Number of integrations comprising the measurement.  
+        Noise diminishes with the square root of this number.  Applicable in concert with parametric_noise_file 
+        or pushbroom_noise_file"""
 
         self._unknowns_type = InstrumentUnknowns
         self.unknowns: InstrumentUnknowns = None
@@ -63,20 +66,33 @@ class InstrumentConfig(BaseConfigSection):
 
         self._snr_type = float
         self.snr = None
+        """float: We have several ways to define the instrument noise.  The simplest model is based on a single uniform 
+        SNR number that is signal-independnet and applied uniformly to all wavelengths"""
 
         self._parametric_noise_file_type = str
         self.parametric_noise_file = None
+        """We have several ways to define the instrument noise.
+        The second option is a parametric, signal- and wavelength-
+        dependent noise function. This is given by a four-column
+        ASCII Text file.  Rows represent, respectively, the reference
+        wavelength, and coefficients A, B, and C that define the
+        noise-equivalent radiance via NeDL = A * sqrt(B+L) + C
+        For the actual radiance L."""
 
         self._pushbroom_noise_file_type = str
         self.pushbroom_noise_file = None
+        """We have several ways to define the instrument noise.
+        The third option is a full pushbroom noise model that
+        specifies noise columns and covariances independently for
+        each cross-track location via an ENVI-format binary data file."""
 
         self._nedt_noise_file_type = str
         self.nedt_noise_file = None
+        """We have several ways to define the instrument noise.  The last is NEDT noise"""
 
         self.set_config_options(sub_configdic)
 
     def _check_config_validity(self) -> List[str]:
-        self.get_option_keys()
         errors = list()
 
         noise_options = [self.snr, self.parametric_noise_file, self.pushbroom_noise_file, self.nedt_noise_file]

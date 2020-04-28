@@ -58,49 +58,27 @@ class Instrument:
         self.init = config.statevector.get_all_inits()
         self.prior_mean = np.array(config.statevector.get_all_prior_means())
         self.prior_sigma = np.array(config.statevector.get_all_prior_sigmas())
+        self.statevec = config.statevector.get_elements()
+        self.statevec_names = config.statevector.get_element_names()
         self.n_state = len(self.statevec)
 
-        #TODO: replace
-        self.statevec = []
-        if config.statevector is not None:
-            for key in config['statevector']:
-                self.statevec.append(key)
-
-
-        if 'SNR' in config:
-
-            # We have several ways to define the instrument noise.  The
-            # simplest model is based on a single uniform SNR number that
-            # is signal-independnet and applied uniformly to all wavelengths
+        if config.snr is not None:
             self.model_type = 'SNR'
-            self.snr = float(config['SNR'])
-
-        elif 'parametric_noise_file' in config:
-
-            # The second option is a parametric, signal- and wavelength-
-            # dependent noise function. This is given by a four-column
-            # ASCII Text file.  Rows represent, respectively, the reference
-            # wavelength, and coefficients A, B, and C that define the
-            # noise-equivalent radiance via NeDL = A * sqrt(B+L) + C
-            # For the actual radiance L.
-            self.noise_file = config['parametric_noise_file']
+            self.snr = config.snr
+        elif config.parametric_noise_file is not None:
             self.model_type = 'parametric'
+            self.noise_file = config.parametric_noise_file
             coeffs = np.loadtxt(
                 self.noise_file, delimiter=' ', comments='#')
             p_a, p_b, p_c = [interp1d(coeffs[:, 0], coeffs[:, col],
                                       fill_value='extrapolate') for col in (1, 2, 3)]
             self.noise = np.array([[p_a(w), p_b(w), p_c(w)]
                                   for w in self.wl_init])
-            # Number of integrations comprising the measurement.  Noise diminishes
-            # with the square root of this number.
-            self.integrations = config['integrations']
+            self.integrations = config.integrations
 
-        elif 'pushbroom_noise_file' in config:
-            # The third option is a full pushbroom noise model that
-            # specifies noise columns and covariances independently for
-            # each cross-track location via an ENVI-format binary data file.
+        elif config.pushbroom_noise_file is not None:
             self.model_type = 'pushbroom'
-            self.noise_file = config['pushbroom_noise_file']
+            self.noise_file = config.pushbroom_noise_file
             D = loadmat(self.noise_file)
             self.ncols = D['columns'][0, 0]
             if self.n_chan != np.sqrt(D['bands'][0, 0]):
@@ -108,13 +86,11 @@ class Instrument:
                 raise ValueError('Noise model mismatches wavelength # bands')
             cshape = ((self.ncols, self.n_chan, self.n_chan))
             self.covs = D['covariances'].reshape(cshape)
-            # Number of integrations comprising the measurement.  Noise diminishes
-            # with the square root of this number.
-            self.integrations = config['integrations']
+            self.integrations = config.integrations
 
-        elif 'NEDT_noise_file' in config:
+        elif config.nedt_noise_file is not None:
             self.model_type = 'NEDT'
-            self.noise_file = config['NEDT_noise_file']
+            self.noise_file = config.nedt_noise_file
             self.noise_data = np.loadtxt(
                 self.noise_file, delimiter=',', skiprows=8)
             noise_data_w_nm = self.noise_data[:, 0] * 1000
@@ -126,8 +102,8 @@ class Instrument:
             self.noise_NESR = nedt * drdn_dT
 
         else:
-            logging.error('Instrument noise not defined.')
             raise IndexError('Please define the instrument noise.')
+            # This should never be reached, as an error is designated in the config read
 
         # We track several unretrieved free variables, that are specified
         # in a fixed order (always start with relative radiometric
@@ -136,27 +112,25 @@ class Instrument:
             ['Cal_Spectral', 'Cal_Stray_SRF']
         self.bval = np.zeros(self.n_chan+2)
 
-        if 'unknowns' in config:
+        if config.unknowns is not None:
 
             # First we take care of radiometric uncertainties, which add
             # in quadrature.  We sum their squared values.  Systematic
             # radiometric uncertainties account for differences in sampling
             # and radiative transfer that manifest predictably as a function
             # of wavelength.
-            unknowns = config['unknowns']
-            if 'channelized_radiometric_uncertainty_file' in unknowns:
-                if unknowns['channelized_radiometric_uncertainty_file'] is not None:
-                    f = unknowns['channelized_radiometric_uncertainty_file']
-                    u = np.loadtxt(f, comments='#')
-                    if (len(u.shape) > 0 and u.shape[1] > 1):
-                        u = u[:, 1]
-                    self.bval[:self.n_chan] = self.bval[:self.n_chan] + \
-                        pow(u, 2)
+            if config.unknowns.channelized_radiometric_uncertainty_file is not None:
+                f = config.unknowns.channelized_radiometric_uncertainty_file
+                u = np.loadtxt(f, comments='#')
+                if (len(u.shape) > 0 and u.shape[1] > 1):
+                    u = u[:, 1]
+                self.bval[:self.n_chan] = self.bval[:self.n_chan] + \
+                    pow(u, 2)
 
             # Uncorrelated radiometric uncertainties are consistent and
             # independent in all channels.
-            if 'uncorrelated_radiometric_uncertainty' in unknowns:
-                u = unknowns['uncorrelated_radiometric_uncertainty']
+            if config.unknowns.uncorrelated_radiometric_uncertainty is not None:
+                u = config.unknowns.uncorrelated_radiometric_uncertainty
                 self.bval[:self.n_chan] = self.bval[:self.n_chan] + \
                     pow(np.ones(self.n_chan) * u, 2)
 
@@ -167,18 +141,19 @@ class Instrument:
             self.bval[:self.n_chan] = np.sqrt(self.bval[:self.n_chan])
 
             # Now handle spectral calibration uncertainties
-            if 'wavelength_calibration_uncertainty' in unknowns:
-                self.bval[-2] = unknowns['wavelength_calibration_uncertainty']
-            if 'stray_srf_uncertainty' in unknowns:
-                self.bval[-1] = unknowns['stray_srf_uncertainty']
+            if config.unknowns.wavelength_calibration_uncertainty is not None:
+                self.bval[-2] = config.unknowns.wavelength_calibration_uncertainty
+            if config.unknowns.stray_srf_uncertainty is not None:
+                self.bval[-1] = config.unknowns.stray_srf_uncertainty
 
         # Determine whether the calibration is fixed.  If it is fixed,
         # and the wavelengths of radiative transfer modeling and instrument
-        # are the same, then we can bypass compputationally expensive sampling
+        # are the same, then we can bypass computationally expensive sampling
         # operations later.
-        self.calibration_fixed = (not ('FWHM_SCL' in self.statevec)) and \
-            (not ('WL_SHIFT' in self.statevec)) and \
-            (not ('WL_SPACE' in self.statevec))
+        self.calibration_fixed = True
+        if config.statevector.GROW_FWHM is not None or config.statevector.WL_SHIFT is not None or \
+                config.statevector.WL_SPACE is not None:
+            self.calibration_fixed = False
 
     def xa(self):
         """Mean of prior distribution, calculated at state x."""
@@ -190,7 +165,7 @@ class Instrument:
 
         if self.n_state == 0:
             return np.zeros((0, 0), dtype=float)
-        return np.diagflat(pow(self.prior_sigma, 2))
+        return np.diagflat(np.power(self.prior_sigma, 2))
 
     def Sy(self, meas, geom):
         """Calculate measurement error covariance.
@@ -209,7 +184,7 @@ class Instrument:
             nedl = abs(
                 self.noise[:, 0]*np.sqrt(self.noise[:, 1]+meas)+self.noise[:, 2])
             nedl = nedl/np.sqrt(self.integrations)
-            return pow(np.diagflat(nedl), 2)
+            return np.power(np.diagflat(nedl), 2)
 
         elif self.model_type == 'pushbroom':
             if geom.pushbroom_column is None:
@@ -219,7 +194,7 @@ class Instrument:
             return C / np.sqrt(self.integrations)
 
         elif self.model_type == 'NEDT':
-            return pow(np.diagflat(self.noise_NESR), 2)
+            return np.power(np.diagflat(self.noise_NESR), 2)
 
     def dmeas_dinstrument(self, x_instrument, wl_hi, rdn_hi):
         """Jacobian of measurement with respect to the instrument 
@@ -303,19 +278,22 @@ class Instrument:
         wl, fwhm = self.wl_init, self.fwhm_init
         space_orig = wl - wl[0]
         offset = wl[0]
-        if 'GROW_FWHM' in self.statevec:
-            ind = self.statevec.index('GROW_FWHM')
+        if 'GROW_FWHM' in self.statevec_names:
+            ind = self.statevec_names.index('GROW_FWHM')
             fwhm = fwhm + x_instrument[ind]
-        if 'WL_SPACE' in self.statevec:
-            ind = self.statevec.index('WL_SPACE')
+
+        if 'WL_SPACE' in self.statevec_names:
+            ind = self.statevec_names.index('WL_SPACE')
             space = x_instrument[ind]
         else:
             space = 1.0
-        if 'WL_SHIFT' in self.statevec:
-            ind = self.statevec.index('WL_SHIFT')
+
+        if 'WL_SHIFT' in self.statevec_names:
+            ind = self.statevec_names.index('WL_SHIFT')
             shift = x_instrument[ind]
         else:
             shift = 0.0
+
         wl = offset + shift + space_orig * space
         return wl, fwhm
 

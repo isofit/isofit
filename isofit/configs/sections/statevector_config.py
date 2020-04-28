@@ -2,6 +2,7 @@
 from typing import Dict, List, Type
 from isofit.configs.base_config import BaseConfigSection
 import logging
+import numpy as np
 
 
 class StateVectorElementConfig(BaseConfigSection):
@@ -11,19 +12,19 @@ class StateVectorElementConfig(BaseConfigSection):
 
     def __init__(self, sub_configdic: dict = None):
         self._bounds_type = list()
-        self.bounds = None
+        self.bounds = [np.nan, np.nan]
 
         self._scale_type = float
-        self.scale = None
+        self.scale = np.nan
 
         self._prior_mean_type = float
-        self.prior_mean = None
+        self.prior_mean = np.nan
 
         self._prior_sigma_type = float
-        self.prior_sigma = None
+        self.prior_sigma = np.nan
 
         self._init_type = float
-        self.init = None
+        self.init = np.nan
 
         self.set_config_options(sub_configdic)
 
@@ -53,7 +54,16 @@ class StateVectorConfig(BaseConfigSection):
         self._AERFRAC_3_type = StateVectorElementConfig
         self.AERFRAC_3: StateVectorElementConfig = None
 
-        assert(len(self.get_elements()) == len(self.__dict__)/2)
+        self._GROW_FWHM = StateVectorElementConfig
+        self.GROW_FWHM: StateVectorElementConfig = None
+
+        self._WL_SHIFT = StateVectorElementConfig
+        self.WL_SHIFT: StateVectorElementConfig = None
+
+        self._WL_SPACE = StateVectorElementConfig
+        self.WL_SPACE: StateVectorElementConfig = None
+
+        assert(len(self.get_all_elements()) == len(self._get_nontype_attributes()))
 
         self._set_statevector_config_options(sub_configdic)
 
@@ -69,8 +79,30 @@ class StateVectorConfig(BaseConfigSection):
                 sv = StateVectorElementConfig(configdic[key])
                 setattr(self, key, sv)
 
+    def get_all_elements(self):
+        return [self.H2OSTR, self.AOT550, self.AERFRAC_1, self.AERFRAC_2, self.AERFRAC_3, self.GROW_FWHM, self.WL_SHIFT,
+                self.WL_SPACE]
+
     def get_elements(self):
-        return [self.H2OSTR, self.AOT550, self.AERFRAC_1, self.AERFRAC_2, self.AERFRAC_3]
+        return [x for x in self.get_all_elements() if x is not None]
+
+    def get_element_names(self):
+        #TODO: verify consistency, maybe add test
+        #element_names = ['H2OSTR', 'AOT550', 'AERFRAC_1', 'AERFRAC_2', 'AERFRAC_3', 'GROW_FWHM', 'WL_SHIFT', 'WL_SPACE']
+
+        element_names = self._get_nontype_attributes()
+        all_elements = self.get_all_elements()
+        return [element_names[idx] for idx in range(len(all_elements)) if all_elements[idx] is not None]
+
+
+    def get_element_index(self, element_name):
+        element_names = self._get_nontype_attributes()
+        all_elements = self.get_all_elements()
+        name_idx = element_names.index(element_name)
+        if all_elements[name_idx] is not None:
+            return name_idx
+        else:
+            return -1
 
     def get_all_bounds(self):
         bounds = []
