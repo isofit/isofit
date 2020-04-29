@@ -160,7 +160,10 @@ class Isofit:
             n_iter = len(io.iter_inds)
             io = None
             self._clear_nonpicklable_objects()
-            pool = multiprocessing.Pool(processes=safe_core_count())
+
+            def nice_me():
+                os.nice(19)
+            pool = multiprocessing.Pool(processes=safe_core_count(), initializer=nice_me)
 
             import time
             start_time = time.time()
