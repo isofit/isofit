@@ -81,7 +81,6 @@
         "wavelength_file": "../input/hytes_wavelengths.txt",
         "lut_path":"../lut/",
         "modtran_template_file":"./tir_mod_config_WATER.json",
-        "domain": {"start": 7500, "end": 11100, "step": 0.2},
         "lut_names": ["H2OSTR", "O3STR"],
         "statevector_names": ["H2OSTR", "O3STR"]
       }

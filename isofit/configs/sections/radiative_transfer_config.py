@@ -5,31 +5,6 @@ from isofit.configs.sections.statevector_config import StateVectorConfig
 import logging
 
 
-class DomainConfig(BaseConfigSection):
-    """
-    Domain configuration.
-    """
-
-    def __init__(self, sub_configdic: dict = None):
-
-        self._start_type = float
-        self.start = None
-
-        self._end_type = float
-        self.end = None
-
-        self._step_type = float
-        self.step = None
-
-        self.set_config_options(sub_configdic)
-
-    def _check_config_validity(self) -> List[str]:
-        errors = list()
-        if self.end < self.start:
-            errors.append('Domain end: {} is < domain start: {}'.format(self.end,self.start))
-        return errors
-
-
 class RadiativeTransferEngineConfig(BaseConfigSection):
     """
     Radiative transfer unknowns configuration.
@@ -50,9 +25,6 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
 
         self._template_file_type = str
         self.template_file = None
-
-        self._domain_type = DomainConfig
-        self.domain = None
 
         self._lut_names_type = str
         self.lut_names = None

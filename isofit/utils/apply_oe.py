@@ -701,8 +701,7 @@ def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array):
             },
             "unknowns": {
                 "H2O_ABSCO": 0.0
-            },
-            "domain": {"start": 340, "end": 2520, "step": 0.1}
+            }
     }
 
     # make isofit configuration
@@ -780,8 +779,7 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
             "lut_grid": {},
             "unknowns": {
                 "H2O_ABSCO": 0.0
-            },
-            "domain": {"start": 340, "end": 2520, "step": 0.1}
+            }
     }
     if h2o_lut_grid is not None:
         modtran_configuration['lut_grid']['H2OSTR'] = [max(0.0, float(q)) for q in h2o_lut_grid]
