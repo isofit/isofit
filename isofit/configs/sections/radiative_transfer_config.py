@@ -35,18 +35,21 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
     Radiative transfer unknowns configuration.
     """
 
-    def __init__(self, model_name: str, sub_configdic: dict = None):
-        self._model_name_type = str
-        self.model_name = model_name
+    def __init__(self, sub_configdic: dict = None, name: str = None):
+        self._name_type = str
+        self.name = name
+
+        self._engine_name_type = str
+        self.engine_name = None
 
         self._wavelength_file_type = str
         self.wavelength_file = None
 
-        self._lut_path = str
+        self._lut_path_type = str
         self.lut_path = None
 
-        self._modtran_template_file_str = str
-        self.modtran_template_file = None
+        self._template_file_type = str
+        self.template_file = None
 
         self._domain_type = DomainConfig
         self.domain = None
@@ -58,10 +61,14 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
 
     def _check_config_validity(self) -> List[str]:
         errors = list()
-        return errors
 
-    def get_all_unknowns(self):
-        return [self.H2O_ABSCO], ['H2O_ABSCO']
+        valid_rt_engines = ['modtran','libradtran','6s']
+        if self.engine_name not in valid_rt_engines:
+            errors.append('radiative_transfer->raditive_transfer_model: {} not in one of the available models: {}'.
+                          format(self.engine_name, valid_rt_engines))
+
+
+        return errors
 
 
 
@@ -110,14 +117,12 @@ class RadiativeTransferConfig(BaseConfigSection):
         self._unknowns_type = RadiativeTransferUnknownsConfig
         self.unknowns: RadiativeTransferUnknownsConfig = None
 
-        #self._radiative_transfer_models_type = List
-        #self.radiative_transfer_models = []
 
-        self._vswir_model_type = RadiativeTransferEngineConfig
-        self.vswir_model: RadiativeTransferEngineConfig = None
+        #self._vswir_model_type = RadiativeTransferEngineConfig
+        #self.vswir_model: RadiativeTransferEngineConfig = None
 
-        self._tir_model_type = RadiativeTransferEngineConfig
-        self.tir_model: RadiativeTransferEngineConfig = None
+        #self._tir_model_type = RadiativeTransferEngineConfig
+        #self.tir_model: RadiativeTransferEngineConfig = None
 
         #try:
         #    self._set_rt_config_options(sub_configdic['radiative_transfer_models'])
@@ -126,10 +131,20 @@ class RadiativeTransferConfig(BaseConfigSection):
 
         self.set_config_options(sub_configdic)
 
-    def _set_rt_config_options(self, configdict):
-        for key in configdict:
-            rt_model = RadiativeTransferEngineConfig(configdict[key], name=key)
-            self.radiative_transfer_models.append(rt_model)
+        self._radiative_transfer_engines_type = List[RadiativeTransferEngineConfig]
+        self.radiative_transfer_engines = []
+
+        self._set_rt_config_options(sub_configdic['radiative_transfer_engines'])
+
+    def _set_rt_config_options(self, subconfig):
+        if type(subconfig) is list:
+            for rte in subconfig:
+                rt_model = RadiativeTransferEngineConfig(rte)
+                self.radiative_transfer_engines.append(rt_model)
+        elif type(subconfig) is dict:
+            for key in subconfig:
+                rt_model = RadiativeTransferEngineConfig(subconfig[key], name=key)
+                self.radiative_transfer_engines.append(rt_model)
 
     def get_radiative_transfer_model_names(self):
         name_list = []
@@ -139,12 +154,6 @@ class RadiativeTransferConfig(BaseConfigSection):
 
     def _check_config_validity(self) -> List[str]:
         errors = list()
-
-        valid_rt_models = ['modtran','libradtran','6s']
-        if self.model_name not in valid_rt_models:
-            errors.append('radiative_transfer->raditive_transfer_model: {} not in one of the available models: {}'.
-                          format(self.model_name, valid_rt_models))
-
 
         #TODO: figure out submodule checking
 

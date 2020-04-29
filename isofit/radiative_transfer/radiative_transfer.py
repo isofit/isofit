@@ -18,7 +18,7 @@
 # Author: Jay E. Fahlen, jay.e.fahlen@jpl.nasa.gov
 #
 
-import scipy as s
+import numpy as np
 import logging
 from copy import deepcopy
 from collections import OrderedDict
@@ -27,6 +27,8 @@ from ..core.common import json_load_ascii, eps
 from ..radiative_transfer.modtran import modtran_bands_available, ModtranRT
 from ..radiative_transfer.six_s import sixs_names, SixSRT
 from ..radiative_transfer.libradtran import libradtran_names, LibRadTranRT
+from isofit.configs import Config
+from isofit.configs.sections.radiative_transfer_config import RadiativeTransferEngineConfig
 
 
 class RadiativeTransfer():
@@ -40,16 +42,15 @@ class RadiativeTransfer():
     TIR. This class maintains the master list of statevectors.
     """
 
-    def __init__(self, config):
-        """."""
+    def __init__(self, full_config: Config):
 
         # Maintain order when looping for indexing convenience
-        self.RTs = OrderedDict()
+        self.rt_engines = OrderedDict()
 
-        self.statevec = list(config['statevector'].keys())
-        self.statevec.sort()
+        config = full_config.forward_model.radiative_transfer
 
-        self.lut_grid = config['lut_grid']
+        self.statevec_names = config.statevector.get_element_names()
+        self.lut_grid = config.lut_grid
 
         temp_RTs_list, temp_min_wavelen_list = [], []
         config_statevector = config['statevector']
@@ -60,23 +61,21 @@ class RadiativeTransfer():
                 # info needed for each individual RT
                 temp_statevec, temp_lut_grid = {}, {}
                 for local_lut_name in local_config['lut_names']:
-                    temp_lut_grid[local_lut_name] = \
-                        self.lut_grid[local_lut_name]
+                    temp_lut_grid[local_lut_name] = self.lut_grid[local_lut_name]
                 local_config["lut_grid"] = temp_lut_grid
 
                 # copy statevector into local configuration
                 for local_sv_name in local_config['statevector_names']:
-                    temp_statevec[local_sv_name] = \
-                        config_statevector[local_sv_name]
+                    temp_statevec[local_sv_name] = config_statevector[local_sv_name]
                 local_config["statevector"] = temp_statevec
 
             temp_RT = None
             if key in modtran_bands_available:
-                temp_RT = ModtranRT(key, local_config, self.statevec)
+                temp_RT = ModtranRT(key, local_config, self.statevec_names)
             elif key in sixs_names:
-                temp_RT = SixSRT(local_config, self.statevec)
+                temp_RT = SixSRT(local_config, self.statevec_names)
             elif key in libradtran_names:
-                temp_RT = LibRadTranRT(local_config, self.statevec)
+                temp_RT = LibRadTranRT(local_config, self.statevec_names)
 
             if temp_RT is not None:
                 temp_RTs_list.append((key, temp_RT))
@@ -85,10 +84,10 @@ class RadiativeTransfer():
         # Put the RT objects into self.RTs in wavelength order
         # This assumes that the input data wavelengths are all
         # ascending.
-        sort_inds = s.argsort(s.array(temp_min_wavelen_list))
+        sort_inds = np.argsort(np.array(temp_min_wavelen_list))
         for sort_ind in sort_inds:
             key, RT = temp_RTs_list[sort_ind]
-            self.RTs[key] = RT
+            self.rt_engines[key] = RT
 
         # Retrieved variables.  We establish scaling, bounds, and
         # initial guesses for each state vector element.  The state
@@ -97,7 +96,7 @@ class RadiativeTransfer():
         self.bounds, self.scale, self.init = [], [], []
         self.prior_mean, self.prior_sigma = [], []
 
-        for sv_key in self.statevec:    # Go in order
+        for sv_key in self.statevec_names:    # Go in order
             sv = config_statevector[sv_key]
             self.bounds.append(sv['bounds'])
             self.scale.append(sv['scale'])
@@ -105,21 +104,21 @@ class RadiativeTransfer():
             self.prior_sigma.append(sv['prior_sigma'])
             self.prior_mean.append(sv['prior_mean'])
 
-        self.bounds = s.array(self.bounds)
-        self.scale = s.array(self.scale)
-        self.init = s.array(self.init)
-        self.prior_mean = s.array(self.prior_mean)
-        self.prior_sigma = s.array(self.prior_sigma)
+        self.bounds = np.array(self.bounds)
+        self.scale = np.array(self.scale)
+        self.init = np.array(self.init)
+        self.prior_mean = np.array(self.prior_mean)
+        self.prior_sigma = np.array(self.prior_sigma)
 
-        self.wl = s.concatenate([RT.wl for RT in self.RTs.values()])
+        self.wl = np.concatenate([RT.wl for RT in self.rt_engines.values()])
 
         self.bvec = list(config['unknowns'].keys())
-        self.bval = s.array([config['unknowns'][k] for k in self.bvec])
+        self.bval = np.array([config['unknowns'][k] for k in self.bvec])
 
-        self.solar_irr = s.concatenate([RT.solar_irr for RT in \
-                self.RTs.values()])
+        self.solar_irr = np.concatenate([RT.solar_irr for RT in \
+                                        self.rt_engines.values()])
         # These should all be the same so just grab one
-        self.coszen = [RT.coszen for RT in self.RTs.values()][0]
+        self.coszen = [RT.coszen for RT in self.rt_engines.values()][0]
 
     def xa(self):
         """Pull the priors from each of the individual RTs.
@@ -129,12 +128,12 @@ class RadiativeTransfer():
     def Sa(self):
         """Pull the priors from each of the individual RTs.
         """
-        return s.diagflat(pow(s.array(self.prior_sigma), 2))
+        return np.diagflat(np.power(np.array(self.prior_sigma), 2))
 
     def get(self, x_RT, geom):
 
         ret = []
-        for key, RT in self.RTs.items():
+        for key, RT in self.rt_engines.items():
             ret.append(RT.get(x_RT, geom))
 
         return self.pack_arrays(ret)
@@ -155,15 +154,15 @@ class RadiativeTransfer():
 
     def get_L_atm(self, x_RT, geom):
         L_atms = []
-        for key, RT in self.RTs.items():
+        for key, RT in self.rt_engines.items():
             L_atms.append(RT.get_L_atm(x_RT, geom))
-        return s.hstack(L_atms)
+        return np.hstack(L_atms)
 
     def get_L_down_transmitted(self, x_RT, geom):
         L_downs = []
-        for key, RT in self.RTs.items():
+        for key, RT in self.rt_engines.items():
             L_downs.append(RT.get_L_down_transmitted(x_RT, geom))
-        return s.hstack(L_downs)
+        return np.hstack(L_downs)
 
     def get_L_up(self, x_RT, geom):
         '''L_up is provided by the surface model, so just return
@@ -183,11 +182,11 @@ class RadiativeTransfer():
 
         # perturb each element of the RT state vector (finite difference)
         K_RT = []
-        x_RTs_perturb = x_RT + s.eye(len(x_RT))*eps
+        x_RTs_perturb = x_RT + np.eye(len(x_RT))*eps
         for x_RT_perturb in list(x_RTs_perturb):
             rdne = self.calc_rdn(x_RT_perturb, rfl, Ls, geom)
             K_RT.append((rdne-rdn) / eps)
-        K_RT = s.array(K_RT).T
+        K_RT = np.array(K_RT).T
 
         # Get K_surface
         r = self.get(x_RT, geom)
@@ -201,15 +200,15 @@ class RadiativeTransfer():
 
         drdn_drfl = L_down_transmitted * drho_scaled_for_multiscattering_drfl
         drdn_dLs = r['transup']
-        K_surface = drdn_drfl[:, s.newaxis] * drfl_dsurface + \
-            drdn_dLs[:, s.newaxis] * dLs_dsurface
+        K_surface = drdn_drfl[:, np.newaxis] * drfl_dsurface + \
+            drdn_dLs[:, np.newaxis] * dLs_dsurface
 
         return K_RT, K_surface
 
     def drdn_dRTb(self, x_RT, rfl, Ls, geom):
 
         if len(self.bvec) == 0:
-            Kb_RT = s.zeros((0, len(self.wl.shape)))
+            Kb_RT = np.zeros((0, len(self.wl.shape)))
 
         else:
             # first the radiance at the current state vector
@@ -222,19 +221,19 @@ class RadiativeTransfer():
             Kb_RT = []
             perturb = (1.0+eps)
             for unknown in self.bvec:
-                if unknown == 'H2O_ABSCO' and 'H2OSTR' in self.statevec:
-                    i = self.statevec.index('H2OSTR')
+                if unknown == 'H2O_ABSCO' and 'H2OSTR' in self.statevec_names:
+                    i = self.statevec_names.index('H2OSTR')
                     x_RT_perturb = x_RT.copy()
                     x_RT_perturb[i] = x_RT[i] * perturb
                     rdne = self.calc_rdn(x_RT_perturb, rfl, Ls, geom)
                     Kb_RT.append((rdne-rdn) / eps)
 
-        Kb_RT = s.array(Kb_RT).T
+        Kb_RT = np.array(Kb_RT).T
         return Kb_RT
 
     def summarize(self, x_RT, geom):
         ret = []
-        for RT in self.RTs.values():
+        for RT in self.rt_engines.values():
             ret.append(RT.summarize(x_RT, geom))
         ret = '\n'.join(ret)
         return ret
@@ -246,5 +245,5 @@ class RadiativeTransfer():
         r_stacked = {}
         for key in list_of_r_dicts[0].keys():
             temp = [x[key] for x in list_of_r_dicts]
-            r_stacked[key] = s.hstack(temp)
+            r_stacked[key] = np.hstack(temp)
         return r_stacked

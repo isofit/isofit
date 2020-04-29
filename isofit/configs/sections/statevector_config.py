@@ -54,13 +54,13 @@ class StateVectorConfig(BaseConfigSection):
         self._AERFRAC_3_type = StateVectorElementConfig
         self.AERFRAC_3: StateVectorElementConfig = None
 
-        self._GROW_FWHM = StateVectorElementConfig
+        self._GROW_FWHM_type = StateVectorElementConfig
         self.GROW_FWHM: StateVectorElementConfig = None
 
-        self._WL_SHIFT = StateVectorElementConfig
+        self._WL_SHIFT_type = StateVectorElementConfig
         self.WL_SHIFT: StateVectorElementConfig = None
 
-        self._WL_SPACE = StateVectorElementConfig
+        self._WL_SPACE_type = StateVectorElementConfig
         self.WL_SPACE: StateVectorElementConfig = None
 
         assert(len(self.get_all_elements()) == len(self._get_nontype_attributes()))
@@ -84,53 +84,45 @@ class StateVectorConfig(BaseConfigSection):
                 self.WL_SPACE]
 
     def get_elements(self):
-        return [x for x in self.get_all_elements() if x is not None]
+        elements = [x for x in self.get_all_elements() if x is not None]
+        element_names = self._get_nontype_attributes()
+
+        order = np.argsort(element_names)
+        elements = [elements[idx] for idx in order]
+
+        return elements, element_names
 
     def get_element_names(self):
-        #TODO: verify consistency, maybe add test
-        #element_names = ['H2OSTR', 'AOT550', 'AERFRAC_1', 'AERFRAC_2', 'AERFRAC_3', 'GROW_FWHM', 'WL_SHIFT', 'WL_SPACE']
-
-        element_names = self._get_nontype_attributes()
-        all_elements = self.get_all_elements()
-        return [element_names[idx] for idx in range(len(all_elements)) if all_elements[idx] is not None]
-
-
-    def get_element_index(self, element_name):
-        element_names = self._get_nontype_attributes()
-        all_elements = self.get_all_elements()
-        name_idx = element_names.index(element_name)
-        if all_elements[name_idx] is not None:
-            return name_idx
-        else:
-            return -1
+        elements, element_names = self.get_elements()
+        return element_names
 
     def get_all_bounds(self):
         bounds = []
-        for element in self.get_elements():
+        for element, name in zip(*self.get_elements()):
             bounds.append(element.bounds)
         return bounds
 
     def get_all_scales(self):
         scales = []
-        for element in self.get_elements():
-            scales.append(element.scale)
+        for element, name in zip(*self.get_elements()):
+                scales.append(element.scale)
         return scales
 
     def get_all_inits(self):
         inits = []
-        for element in self.get_elements():
+        for element, name in zip(*self.get_elements()):
             inits.append(element.init)
         return inits
 
     def get_all_prior_means(self):
         prior_means = []
-        for element in self.get_elements():
+        for element, name in zip(*self.get_elements()):
             prior_means.append(element.prior_mean)
         return prior_means
 
     def get_all_prior_sigmas(self):
         prior_sigmas = []
-        for element in self.get_elements():
+        for element, name in zip(*self.get_elements()):
             prior_sigmas.append(element.prior_sigma)
         return prior_sigmas
 
