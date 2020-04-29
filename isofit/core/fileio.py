@@ -21,14 +21,13 @@
 import os
 import scipy as s
 import pylab as plt
-from scipy.linalg import inv, norm, sqrtm, det
 from scipy.io import savemat
 from spectral.io import envi
 import logging
 from collections import OrderedDict
 
 from .common import load_spectrum, eps, resample_spectrum
-from .inverse_simple import invert_simple, invert_algebraic
+from isofit.inversion.inverse_simple import invert_simple, invert_algebraic
 from .geometry import Geometry
 
 

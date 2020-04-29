@@ -18,49 +18,44 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-import sys
-import scipy as s
-import scipy.optimize
-from scipy.linalg import inv, norm, sqrtm, det, cholesky, qr, svd
-from scipy.stats import multivariate_normal
-from hashlib import md5
+import numpy as np
+import scipy.linalg
+import scipy.stats
 
-from .common import eps
+from isofit.core.common import eps
 from .inverse import Inversion
+from isofit.configs import Config
+from isofit.core.forward import ForwardModel
 
 
 class MCMCInversion(Inversion):
 
-    def __init__(self, config, forward):
+    def __init__(self, full_config: Config, forward: ForwardModel):
         """Initialize and apply defaults."""
 
-        Inversion.__init__(self, config, forward)
-        defaults = {
-            'iterations': 10000,
-            'burnin': 200,
-            'method': 'MCMC',
-            'regularizer': 1e-3,
-            'proposal_scaling': 0.01,
-            'verbose': True,
-            'restart_every': 2000
-        }
-        for key, val in defaults.items():
-            if key in config:
-                setattr(self, key, config[key])
-            else:
-                setattr(self, key, val)
+        Inversion.__init__(self, full_config, forward)
+        config = full_config.implementation.mcmc_inversion
+
+        self.iterations = config.iterations
+        self.burnin = config.burnin
+        self.method = config.method
+        self.regularizer = config.regularizer
+        self.proposal_scaling = config.proposal_scaling
+        self.verbose = config.verbose
+        self.restart_every = config.restart_every
+
 
     def stable_mvnpdf(self, mean, cov, x):
         """Stable inverse via Singular Value Decomposition, using only the significant eigenvectors."""
 
-        U, V, D = svd(cov)
-        use = s.where(V > 0)[0]
-        Cinv = (D[use, :].T).dot(s.diag(1.0/V[use])).dot(U[:, use].T)
-        logCdet = s.sum(s.log(2.0 * s.pi * V[use]))
+        U, V, D = scipy.linalg.svd(cov)
+        use = np.where(V > 0)[0]
+        Cinv = (D[use, :].T).dot(np.diag(1.0/V[use])).dot(U[:, use].T)
+        logCdet = np.sum(np.log(2.0 * np.pi * V[use]))
 
         # Multivariate Gaussian PDF
         lead = -0.5 * logCdet
-        dist = (x-mean)[:, s.newaxis]
+        dist = (x-mean)[:, np.newaxis]
         diverg = -0.5 * (dist.T).dot(Cinv).dot(dist)
         return lead + diverg
 
@@ -68,8 +63,8 @@ class MCMCInversion(Inversion):
         """Log probability density combines prior and likelihood terms."""
 
         # First check bounds
-        if bounds is not None and any(s.logical_or(x < bounds[0], x > bounds[1])):
-            return -s.Inf
+        if bounds is not None and any(np.logical_or(x < bounds[0], x > bounds[1])):
+            return -np.Inf
 
         # Prior term
         Sa = self.fm.Sa(x, geom)
@@ -78,7 +73,7 @@ class MCMCInversion(Inversion):
 
         # Data likelihood term
         Seps = self.fm.Seps(x, rdn_meas, geom)
-        Seps_win = s.array([Seps[i, self.winidx] for i in self.winidx])
+        Seps_win = np.array([Seps[i, self.winidx] for i in self.winidx])
         rdn_est = self.fm.calc_rdn(x, geom, rfl=None, Ls=None)
         pm = self.stable_mvnpdf(rdn_est[self.winidx], Seps_win,
                                 rdn_meas[self.winidx])
@@ -91,8 +86,8 @@ class MCMCInversion(Inversion):
         # We will truncate non-surface parameters to their bounds, but leave
         # Surface reflectance unconstrained so it can dip slightly below zero
         # in a channel without invalidating the whole vector
-        bounds = s.array([self.fm.bounds[0].copy(), self.fm.bounds[1].copy()])
-        bounds[:, self.fm.idx_surface] = s.array([[-s.inf], [s.inf]])
+        bounds = np.array([self.fm.bounds[0].copy(), self.fm.bounds[1].copy()])
+        bounds[:, self.fm.idx_surface] = np.array([[-np.inf], [np.inf]])
 
         # Initialize to conjugate gradient solution
         x_MAP = Inversion.invert(self, rdn_meas, geom)[-1]
@@ -100,11 +95,11 @@ class MCMCInversion(Inversion):
         # Proposal is based on the posterior uncertainty
         S_hat, K, G = self.calc_posterior(x_MAP, geom, rdn_meas)
         proposal_Cov = S_hat * self.proposal_scaling
-        proposal = multivariate_normal(cov=proposal_Cov)
+        proposal = scipy.stats.multivariate_normal(cov=proposal_Cov)
 
         # We will use this routine for initializing
         def initialize():
-            x = multivariate_normal(mean=x_MAP, cov=S_hat).rvs()
+            x = scipy.stats.multivariate_normal(mean=x_MAP, cov=S_hat).rvs()
             too_low = x < bounds[0]
             x[too_low] = bounds[0][too_low]+eps
             too_high = x > bounds[1]
@@ -123,25 +118,25 @@ class MCMCInversion(Inversion):
             dens_new = self.log_density(xp, rdn_meas,  geom, bounds=bounds)
 
             # Test vs. the Metropolis / Hastings criterion
-            if s.isfinite(dens_new) and\
-                    s.log(s.rand()) <= min((dens_new - dens, 0.0)):
+            if np.isfinite(dens_new) and\
+                    np.log(np.rand()) <= min((dens_new - dens, 0.0)):
                 x = xp
                 dens = dens_new
                 acpts = acpts + 1
                 if self.verbose:
                     print('%8.5e %8.5e ACCEPT! rate %4.2f' %
-                          (dens, dens_new, s.mean(acpts/(acpts+rejs))))
+                          (dens, dens_new, np.mean(acpts/(acpts+rejs))))
             else:
                 rejs = rejs + 1
                 if self.verbose:
                     print('%8.5e %8.5e REJECT  rate %4.2f' %
-                          (dens, dens_new, s.mean(acpts/(acpts+rejs))))
+                          (dens, dens_new, np.mean(acpts/(acpts+rejs))))
 
             # Make sure we have not wandered off the map
-            if not s.isfinite(dens_new):
+            if not np.isfinite(dens_new):
                 x, dens = initialize()
 
             if i % self.restart_every < self.burnin:
                 samples.append(x)
 
-        return s.array(samples)
+        return np.array(samples)

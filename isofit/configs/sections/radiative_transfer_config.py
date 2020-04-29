@@ -17,8 +17,8 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         self._engine_name_type = str
         self.engine_name = None
 
-        self._wavelength_file_type = str
-        self.wavelength_file = None
+        self._wavelength_range = list()
+        self.wavelength_range = None
 
         self._lut_path_type = str
         self.lut_path = None
@@ -89,20 +89,9 @@ class RadiativeTransferConfig(BaseConfigSection):
         self._unknowns_type = RadiativeTransferUnknownsConfig
         self.unknowns: RadiativeTransferUnknownsConfig = None
 
-
-        #self._vswir_model_type = RadiativeTransferEngineConfig
-        #self.vswir_model: RadiativeTransferEngineConfig = None
-
-        #self._tir_model_type = RadiativeTransferEngineConfig
-        #self.tir_model: RadiativeTransferEngineConfig = None
-
-        #try:
-        #    self._set_rt_config_options(sub_configdic['radiative_transfer_models'])
-        #except KeyError:
-        #    logging.debug('No radiative_transfer_models section found, skipping')
-
         self.set_config_options(sub_configdic)
 
+        # Hold this parameter for after the config_options, as radiative_transfer_engines have a special (dynamic) load
         self._radiative_transfer_engines_type = List[RadiativeTransferEngineConfig]
         self.radiative_transfer_engines = []
 

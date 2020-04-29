@@ -23,7 +23,7 @@ from os.path import split, abspath, join
 
 from isofit.core.common import expand_all_paths
 from isofit.core.fileio import IO
-from isofit.core.inverse import Inversion
+from isofit.inversion.inverse import Inversion
 from isofit.core.forward import ForwardModel
 
 

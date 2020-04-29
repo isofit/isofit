@@ -15,8 +15,8 @@ class InversionConfig(BaseConfigSection):
         self._simulation_mode_type = bool
         self.simulation_mode = False
 
-        self._state_indep_S_hat_type = bool
-        self.state_indep_S_hat = False
+        self._cressie_map_confidence = bool
+        self.cressie_map_confidence = False
 
         self.set_config_options(sub_configdic)
 
@@ -38,7 +38,7 @@ class McmcInversionConfig(BaseConfigSection):
 
     def __init__(self, sub_configdic: dict = None):
         self._iterations_type = int
-        self.interations = 10000
+        self.iterations = 10000
 
         self._burnin_type = int
         self.burnin = 200

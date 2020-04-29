@@ -18,13 +18,12 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-import sys
-import scipy as s
+import numpy as np
 from scipy.interpolate import interp1d
 from scipy.optimize import minimize_scalar as min1d
 from scipy.optimize import minimize
 
-from .common import conditional_gaussian, emissive_radiance, eps
+from isofit.core.common import emissive_radiance, eps
 
 
 def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
@@ -34,9 +33,9 @@ def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
     # Identify the latest instrument wavelength calibration (possibly
     # state-dependent) and identify channel numbers for the band ratio.
     wl, fwhm = instrument.calibration(x_instrument)
-    b865 = s.argmin(abs(wl-865))
-    b945 = s.argmin(abs(wl-945))
-    b1040 = s.argmin(abs(wl-1040))
+    b865 = np.argmin(abs(wl-865))
+    b945 = np.argmin(abs(wl-945))
+    b1040 = np.argmin(abs(wl-1040))
     if not (any(RT.wl > 850) and any(RT.wl < 1050)):
         return x_RT
     x_new = x_RT.copy()
@@ -85,7 +84,7 @@ def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
             # using this presumed amount of water vapor, and measure the
             # resulting residual (as measured from linear interpolation across
             # the absorption feature)
-            rho = meas * s.pi / (solar_irr * RT.coszen)
+            rho = meas * np.pi / (solar_irr * RT.coszen)
             r = 1.0 / (transm / (rho - rhoatm) + sphalb)
             ratios.append((r[b945]*2.0)/(r[b1040]+r[b865]))
             h2os.append(h2o)
@@ -123,7 +122,7 @@ def invert_algebraic(surface, RT, instrument, x_surface, x_RT, x_instrument,
 
     # Now solve for the reflectance at measured wavelengths,
     # and back-translate to surface wavelengths
-    rho = rdn_solrfl * s.pi / (solar_irr * coszen)
+    rho = rdn_solrfl * np.pi / (solar_irr * coszen)
     rfl = 1.0 / (transm / (rho - rhoatm) + sphalb)
     rfl_est = interp1d(wl, rfl, fill_value='extrapolate')(surface.wl)
 
@@ -159,11 +158,11 @@ def invert_simple(forward, meas, geom):
     # Multicomponent surfaces. Finds the cluster nearest the VSWIR heuristic
     # inversion and uses it for the TIR suface initialization.
     if any(forward.surface.wl > 3000):
-        rfl_idx = s.array([i for i, v in enumerate(forward.surface.statevec)
+        rfl_idx = np.array([i for i, v in enumerate(forward.surface.statevec)
                            if 'RFL' in v])
-        tir_idx = s.where(forward.surface.wl > 3000)[0]
-        vswir_idx = s.where(forward.surface.wl < 3000)[0]
-        vswir_idx = s.array([i for i in vswir_idx if i in
+        tir_idx = np.where(forward.surface.wl > 3000)[0]
+        vswir_idx = np.where(forward.surface.wl < 3000)[0]
+        vswir_idx = np.array([i for i in vswir_idx if i in
                              forward.surface.idx_ref])
         x_surface_temp = x_surface.copy()
         x_surface_temp[:len(rfl_est)] = rfl_est
@@ -191,7 +190,7 @@ def invert_simple(forward, meas, geom):
 
         # This is fragile if other instruments have different wavelength
         # spacing or range
-        clearest_indices = [s.argmin(s.absolute(RT.wl - w))
+        clearest_indices = [np.argmin(np.absolute(RT.wl - w))
                             for w in clearest_wavelengths]
 
         # Error function for nonlinear temperature fit
@@ -207,7 +206,7 @@ def invert_simple(forward, meas, geom):
 
         # Fit temperature, set bounds,  and set the initial values
         idx_T = forward.surface.surf_temp_ind
-        Tinit = s.array([forward.surface.init[idx_T]])
+        Tinit = np.array([forward.surface.init[idx_T]])
         Tbest = minimize(err, Tinit).x
         T = max(forward.surface.bounds[idx_T][0]+eps,
                 min(Tbest, forward.surface.bounds[idx_T][1]-eps))

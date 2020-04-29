@@ -22,15 +22,14 @@
 import os
 import logging
 import cProfile
-from contextlib import suppress
 import warnings
 from numba.errors import NumbaWarning, NumbaDeprecationWarning, NumbaPendingDeprecationWarning
 
 from .common import load_config, safe_core_count
 from .forward import ForwardModel
-from .inverse import Inversion
-from .inverse_mcmc import MCMCInversion
-from .inverse_grid import GridInversion
+from isofit.inversion.inverse import Inversion
+from isofit.inversion.inverse_mcmc import MCMCInversion
+from isofit.inversion.inverse_grid import GridInversion
 from .fileio import IO
 from isofit import configs
 
