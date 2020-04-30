@@ -89,14 +89,14 @@ class Isofit:
                 self.cols = range(int(col_start), int(col_end))
 
     def _init_nonpicklable_objects(self):
-        self.fm = ForwardModel(self.config.forward_model)
+        self.fm = ForwardModel(self.config)
 
         if self.config.implementation.mode == 'mcmc_inversion':
-            self.iv = MCMCInversion(self.config.implementation, self.fm)
+            self.iv = MCMCInversion(self.config, self.fm)
         elif self.config.implementation.mode == 'grid_inversion':
-            self.iv = GridInversion(self.config.implementation, self.fm)
+            self.iv = GridInversion(self.config, self.fm)
         elif self.config.implementation.mode == 'inversion':
-            self.iv = Inversion(self.config.implementation, self.fm)
+            self.iv = Inversion(self.config, self.fm)
 
 
     def _clear_nonpicklable_objects(self):
