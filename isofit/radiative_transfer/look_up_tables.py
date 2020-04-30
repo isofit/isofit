@@ -19,14 +19,15 @@
 #
 
 import os
-import sys
 import numpy as np
 import logging
 import multiprocessing
 from collections import OrderedDict
 
 from ..core.common import combos, eps, load_wavelen, safe_core_count
-from ..core.common import VectorInterpolator
+from isofit.configs import Config
+from isofit.configs.sections.radiative_transfer_config import RadiativeTransferEngineConfig
+from isofit.configs.sections.statevector_config import StateVectorElementConfig
 
 
 ### Functions ###
@@ -50,34 +51,39 @@ class FileExistsError(Exception):
 class TabularRT:
     """A model of photon transport including the atmosphere."""
 
-    def __init__(self, config):
+    def __init__(self, full_config: Config, engine_config: RadiativeTransferEngineConfig):
 
-        self.wl, self.fwhm = load_wavelen(config['wavelength_file'])
+        self.wl, self.fwhm = load_wavelen(full_config.forward_model.instrument.wavelength_file)
+        valid_wl = np.logical_and(self.wl >= engine_config.wavelength_range[0],
+                                  self.wl <= engine_config.wavelength_range[1])
+        self.wl = self.wl[valid_wl]
+        self.fwhm = self.fwhm[valid_wl]
+
         self.n_chan = len(self.wl)
 
-        defaults = {
-            'configure_and_exit': False,
-            'auto_rebuild': True
-        }
-
-        for key, value in defaults.items():
-            if key in config:
-                setattr(self, key, config[key])
-            else:
-                setattr(self, key, value)
+        self.auto_rebuild = engine_config.auto_rebuild
+        self.configure_and_exit = engine_config.configure_and_exit
 
         # We use a sorted dictionary here so that filenames for lookup
         # table (LUT) grid points are always constructed the same way, with
         # consistent dimesion ordering). Every state vector element has
         # a lookup table dimension, but some lookup table dimensions 
         # (like geometry parameters) may not be in the state vector.
-        sorted_grid = sorted(config['lut_grid'].items(), key=lambda t:t[0])
-        self.lut_grid_config = OrderedDict(sorted_grid)
-                    
-        self.lut_dir = config['lut_path']
-        self.statevec = list(config['statevector'].keys())
+        #TODO: enforce a requirement that makes all SV elements be insdie the LUT
+        full_lut_grid = full_config.forward_model.radiative_transfer.lut_grid
+        # selectively get lut components that are in this particular RTE
+        self.lut_grid_config = OrderedDict()
+        for key, value in full_lut_grid.items():
+            if key in engine_config.lut_names:
+                self.lut_grid_config[key] = value
+
+        # selectively get statevector components that are in this particular RTE
+        full_sv_names = full_config.forward_model.radiative_transfer.statevector.get_element_names()
+        self.statevector_names = [x for x in full_sv_names if x in engine_config.statevector_names]
+
+        self.lut_dir = engine_config.lut_path
         self.n_point = len(self.lut_grid_config)
-        self.n_state = len(self.statevec)
+        self.n_state = len(self.statevector_names)
 
         self.luts = {}
 
@@ -94,13 +100,13 @@ class TabularRT:
         # and they all have associated dimensions in the LUT grid.
         self.bounds, self.scale, self.init = [], [], []
         self.prior_mean, self.prior_sigma = [], []
-        for key in self.statevec:
-            element = config['statevector'][key]
-            self.bounds.append(element['bounds'])
-            self.scale.append(element['scale'])
-            self.init.append(element['init'])
-            self.prior_sigma.append(element['prior_sigma'])
-            self.prior_mean.append(element['prior_mean'])
+        for key in self.statevector_names:
+            element: StateVectorElementConfig = full_config.forward_model.radiative_transfer.statevector.get_single_element_by_name(key)
+            self.bounds.append(element.bounds)
+            self.scale.append(element.scale)
+            self.init.append(element.init)
+            self.prior_sigma.append(element.prior_sigma)
+            self.prior_mean.append(element.prior_mean)
         self.bounds = np.array(self.bounds)
         self.scale = np.array(self.scale)
         self.init = np.array(self.init)
@@ -191,6 +197,6 @@ class TabularRT:
 
         if len(x_RT) < 1:
             return ''
-        return 'Atmosphere: '+' '.join(['%s: %5.3f' % (si, xi) for si, xi in 
-                    zip(self.statevec,x_RT[self._full_to_local_statevector_position_mapping])])
+        return 'Atmosphere: '+' '.join(['%s: %5.3f' % (si, xi) for si, xi in
+                                        zip(self.statevector_names, x_RT[self._full_to_local_statevector_position_mapping])])
 

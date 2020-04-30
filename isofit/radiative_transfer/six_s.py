@@ -112,7 +112,7 @@ class SixSRT(TabularRT):
         # the 'global statevector' (which may couple multiple radiative 
         # transform models) and this statevector. It should never be modified
         full_to_local_statevector_position_mapping = []
-        for sn in self.statevec:
+        for sn in self.statevector_names:
             ix = statevector_names.index(sn)
             full_to_local_statevector_position_mapping.append(ix)
         self._full_to_local_statevector_position_mapping = \
@@ -253,8 +253,8 @@ class SixSRT(TabularRT):
     def get(self, x_RT, geom):
         point = s.zeros((self.n_point,))
         for point_ind, name in enumerate(self.lut_grid_config):
-            if name in self.statevec:
-                ix = self.statevec.index(name)
+            if name in self.statevector_names:
+                ix = self.statevector_names.index(name)
                 x_RT_ind = self._full_to_local_statevector_position_mapping[ix]
                 point[point_ind] = x_RT[x_RT_ind]
             elif name == "OBSZEN":
