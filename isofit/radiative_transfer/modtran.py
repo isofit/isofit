@@ -91,6 +91,9 @@ class ModtranRT(TabularRT):
         self.angular_lut_keys_degrees = ['OBSZEN','TRUEAZ','viewzen','viewaz',
             'solzen','solaz']
 
+        self.last_point_looked_up = s.zeros(self.n_point)
+        self.last_point_lookup_values = s.zeros(self.n_point)
+
         # Build the lookup table
         self.build_lut()
 
@@ -388,11 +391,17 @@ class ModtranRT(TabularRT):
         return results_dict
 
     def _lookup_lut(self, point):
-        ret = {}
-        for key, lut in self.luts.items():
-            ret[key] = s.array(lut(point)).ravel()
 
-        return ret
+        if s.all(s.equal(point, self.last_point_looked_up)):
+            return self.last_point_lookup_values
+        else:
+            ret = {}
+            for key, lut in self.luts.items():
+                ret[key] = s.array(lut(point)).ravel()
+
+            self.last_point_looked_up = point
+            self.last_point_lookup_values = ret
+            return ret
 
     def get(self, x_RT, geom):
         point = s.zeros((self.n_point,))

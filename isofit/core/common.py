@@ -419,10 +419,13 @@ def conditional_gaussian(mu, C, window, remain, x):
     contains all other indices, 
     such that len(window)+len(remain)=len(x)
     """
-    C11 = np.array([C[i, remain] for i in remain])
-    C12 = np.array([C[i, window] for i in remain])
-    C21 = np.array([C[i, remain] for i in window])
-    C22 = np.array([C[i, window] for i in window])
+    w = np.array(window)[:,np.newaxis]
+    r = np.array(remain)[:,np.newaxis]
+    C11 = C[r, r.T]
+    C12 = C[r, w.T]
+    C21 = C[w, r.T]
+    C22 = C[w, w.T]
+
     Cinv = svd_inv(C11)
     conditional_mean = mu[window] + C21 @ Cinv @ (x-mu[remain])
     conditional_Cov = C22 - C21 @ Cinv @ C12

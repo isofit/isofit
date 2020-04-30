@@ -305,6 +305,11 @@ class ForwardModel:
     def upsample(self, wl, q):
         """Linear interpolation to RT wavelengths."""
 
+        # In some cases, these differ only by a tiny amount,
+        # so no need to waste time interpolating
+        if s.allclose(wl, self.RT.wl):
+            return q
+
         if q.ndim > 1:
             q2 = []
             for qi in q:
