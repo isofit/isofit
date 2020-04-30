@@ -121,3 +121,4 @@ class InputConfig(BaseConfigSection):
                 errors.extend(value.check_config_validity())
 
         return errors
+

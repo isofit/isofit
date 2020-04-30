@@ -112,13 +112,12 @@ class RadiativeTransfer():
         self.bounds, self.scale, self.init = [], [], []
         self.prior_mean, self.prior_sigma = [], []
 
-        for sv_key in self.statevec_names:    # Go in order
-            sv = config_statevector[sv_key]
-            self.bounds.append(sv['bounds'])
-            self.scale.append(sv['scale'])
-            self.init.append(sv['init'])
-            self.prior_sigma.append(sv['prior_sigma'])
-            self.prior_mean.append(sv['prior_mean'])
+        for sv, sv_name in zip(*config.statevector.get_elements()):
+            self.bounds.append(sv.bounds)
+            self.scale.append(sv.scale)
+            self.init.append(sv.init)
+            self.prior_sigma.append(sv.prior_sigma)
+            self.prior_mean.append(sv.prior_mean)
 
         self.bounds = np.array(self.bounds)
         self.scale = np.array(self.scale)
@@ -128,8 +127,8 @@ class RadiativeTransfer():
 
         self.wl = np.concatenate([RT.wl for RT in self.rt_engines])
 
-        self.bvec = list(config['unknowns'].keys())
-        self.bval = np.array([config['unknowns'][k] for k in self.bvec])
+        self.bvec = config.unknowns.get_element_names()
+        self.bval = np.array([x for x in config.unknowns.get_elements()[0]])
 
         self.solar_irr = np.concatenate([RT.solar_irr for RT in self.rt_engines])
         # These should all be the same so just grab one

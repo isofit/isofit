@@ -19,7 +19,7 @@ class InstrumentUnknowns(BaseConfigSection):
         self._uncorrelated_radiometric_uncertainty_type = float
 
         self.wavelength_calibration_uncertainty = None
-        self._wavelength_calibration_uncertainty = float
+        self._wavelength_calibration_uncertainty_type = float
 
         self.stray_srf_uncertainty = None
         self._stray_srf_uncertainty_type = float
@@ -91,6 +91,10 @@ class InstrumentConfig(BaseConfigSection):
         """We have several ways to define the instrument noise.  The last is NEDT noise"""
 
         self.set_config_options(sub_configdic)
+
+        #If necessary, initialize some blank options
+        if self.statevector is None:
+            self.statevector = StateVectorConfig({})
 
     def _check_config_validity(self) -> List[str]:
         errors = list()

@@ -105,7 +105,7 @@ class ForwardModel:
             # No need to be more specific - should have been checked in config already
 
         # Build combined vectors from surface, RT, and instrument
-        bounds, scale, init, statevec, bvec, bval = ([],)*6
+        bounds, scale, init, statevec, bvec, bval = ([] for i in range(6))
         for obj_with_statevec in [self.surface, self.RT, self.instrument]:
             bounds.extend([deepcopy(x) for x in obj_with_statevec.bounds])
             scale.extend([deepcopy(x) for x in obj_with_statevec.scale])

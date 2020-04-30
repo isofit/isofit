@@ -51,7 +51,7 @@ class FileExistsError(Exception):
 class TabularRT:
     """A model of photon transport including the atmosphere."""
 
-    def __init__(self, full_config: Config, engine_config: RadiativeTransferEngineConfig):
+    def __init__(self, engine_config: RadiativeTransferEngineConfig, full_config: Config):
 
         self.wl, self.fwhm = load_wavelen(full_config.forward_model.instrument.wavelength_file)
         valid_wl = np.logical_and(self.wl >= engine_config.wavelength_range[0],

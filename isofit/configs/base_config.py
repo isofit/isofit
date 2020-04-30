@@ -1,6 +1,7 @@
 import re
 from collections import OrderedDict
 from typing import Dict, List, Type
+import numpy as np
 
 
 
@@ -51,30 +52,11 @@ class BaseConfigSection(object):
             keytype = getattr(self, '_' + key + '_type')
             if key in configdict:
                 if callable(keytype):
-                    # camelcase_section_name = snake_to_camel(key)
-                    # sub_config = getattr(import_module('isofit.configs.sections'), camelcase_section_name + 'Config')(subdict)
-                    # setattr(object, config_section_name, sub_config)
-
                     sub_config = keytype(configdict[key])
                     setattr(self, key, sub_config)
                 else:
                     setattr(self, key, configdict[key])
         return
-
-        ##TODO: grab callable based on type
-        #for key in self._get_nontype_attributes():
-        #    keytype = getattr(self,'_' + key + '_type')
-        #    if callable(keytype):
-        #        if configdict is None:
-        #            _set_callable_attributes(self, None)
-        #        elif key in configdict:
-        #            _set_callable_attributes(self, configdict[key])
-        #    else:
-        #        if configdict is not None:
-        #            if key in configdict:
-        #                setattr(self, key, configdict[key])
-        #return
-
 
     def check_config_validity(self) -> List[str]:
         errors = list()
@@ -117,11 +99,6 @@ class BaseConfigSection(object):
             setattr(object, config_section_name, getattr('isofit.configs.sections', camelcase_section_name)(subdict))
 
 
-    @classmethod
-    def get_config_name_as_snake_case(cls) -> str:
-        snake_case_converter = re.compile("((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))")
-        return snake_case_converter.sub(r"_\1", cls.__name__).lower()
-
     def get_config_options_as_dict(self) -> Dict[str, Dict[str, any]]:
         config_options = OrderedDict()
         for key in self.get_option_keys():
@@ -156,7 +133,7 @@ class BaseConfigSection(object):
     def _get_nontype_attributes(self) -> List[str]:
         keys = []
         for key in self.__dict__.keys():
-            if key[0] == '_' and key[-5:] == '_type':
+            if key[0] == '_':
                 continue
             keys.append(key)
         return keys
@@ -167,6 +144,38 @@ class BaseConfigSection(object):
             if key[0] == '_' and key[-5:] == '_type':
                 keys.append(key)
         return keys
+
+    def _get_hidden_attributes(self) -> List[str]:
+        keys = []
+        for key in self.__dict__.keys():
+            if key[0] == '_' and key[-5:] != '_type':
+                keys.append(key)
+        return keys
+
+    def get_all_elements(self):
+        return [getattr(self, x) for x in self._get_nontype_attributes()]
+
+    def get_elements(self):
+        elements = self.get_all_elements()
+        element_names = self._get_nontype_attributes()
+        valid = [x is not None for x in elements]
+        elements = [elements[x] for x in range(len(elements)) if valid[x]]
+        element_names = [element_names[x] for x in range(len(elements)) if valid[x]]
+
+        order = np.argsort(element_names)
+        elements = [elements[idx] for idx in order]
+        element_names = [element_names[idx] for idx in order]
+
+        return elements, element_names
+
+    def get_element_names(self):
+        elements, element_names = self.get_elements()
+        return element_names
+
+    def get_single_element_by_name(self, name):
+        elements, element_names = self.get_elements()
+        return elements[element_names.index(name)]
+
 
 
 def snake_to_camel(word: str) -> None:

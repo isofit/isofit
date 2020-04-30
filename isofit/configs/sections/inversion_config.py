@@ -15,7 +15,7 @@ class InversionConfig(BaseConfigSection):
         self._simulation_mode_type = bool
         self.simulation_mode = False
 
-        self._cressie_map_confidence = bool
+        self._cressie_map_confidence_type = bool
         self.cressie_map_confidence = False
 
         self.set_config_options(sub_configdic)

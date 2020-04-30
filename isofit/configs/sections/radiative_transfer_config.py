@@ -3,6 +3,7 @@ from typing import Dict, List, Type
 from isofit.configs.base_config import BaseConfigSection
 from isofit.configs.sections.statevector_config import StateVectorConfig
 import logging
+import numpy as np
 from collections import OrderedDict
 
 
@@ -21,7 +22,7 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         self._engine_base_dir_type = str
         self.engine_base_dir = None
 
-        self._wavelength_range = list()
+        self._wavelength_range_type = list()
         self.wavelength_range = None
 
         self._lut_path_type = str
@@ -30,10 +31,10 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         self._template_file_type = str
         self.template_file = None
 
-        self._lut_names_type = str
+        self._lut_names_type = list()
         self.lut_names = None
 
-        self._statevector_names_type = str
+        self._statevector_names_type = list()
         self.statevector_names = None
 
         self._aerosol_template_file_type = str
@@ -83,9 +84,6 @@ class RadiativeTransferUnknownsConfig(BaseConfigSection):
 
         return errors
 
-    def get_all_unknowns(self):
-        return [self.H2O_ABSCO], ['H2O_ABSCO']
-
 
 class RadiativeTransferConfig(BaseConfigSection):
     """
@@ -107,7 +105,7 @@ class RadiativeTransferConfig(BaseConfigSection):
 
         # sort lut_grid
         for key, value in self.lut_grid.items():
-            self.lut_grid[key] = self.lut_grid[key].sort()
+            self.lut_grid[key] = sorted(self.lut_grid[key])
         self.lut_grid = OrderedDict(sorted(self.lut_grid.items(), key=lambda t:t[0]))
 
         # Hold this parameter for after the config_options, as radiative_transfer_engines have a special (dynamic) load

@@ -51,7 +51,7 @@ class ModtranRT(TabularRT):
     def __init__(self, engine_config: RadiativeTransferEngineConfig, full_config: Config):
         """."""
 
-        TabularRT.__init__(self, full_config)
+        TabularRT.__init__(self, engine_config, full_config)
 
         self.treat_as_emmisive = False
 
@@ -87,7 +87,7 @@ class ModtranRT(TabularRT):
 
         self.modtran_lut_names = ['rhoatm', 'transm', 'sphalb', 'transup']
         if self.treat_as_emmisive:
-            self.modtran_lut_names = ['thermal_upwelling', 'thermal_downwelling'].extend(self.modtran_lut_names)
+            self.modtran_lut_names = ['thermal_upwelling', 'thermal_downwelling'] + self.modtran_lut_names
 
         # Specify which of the potential MODTRAN LUT parameters are angular, which will be handled differently
         self.angular_lut_keys_degrees = ['OBSZEN','TRUEAZ','viewzen','viewaz','solzen','solaz']
@@ -381,7 +381,7 @@ class ModtranRT(TabularRT):
         names = ['wl', 'sol', 'rhoatm', 'transm', 'sphalb', 'transup']
 
         # Don't include the thermal terms in VSWIR runs to avoid incorrect usage
-        if self.band_mode_string == 'modtran_tir':
+        if self.treat_as_emmisive:
             names = names + ['thermal_upwelling', 'thermal_downwelling']
 
         results_dict = {name: param for name, param in zip(names, params)}
@@ -429,12 +429,10 @@ class ModtranRT(TabularRT):
         return self._lookup_lut(point)
 
     def get_L_atm(self, x_RT, geom):
-        if self.band_mode_string.lower() == 'modtran_vswir':
-            return self.get_L_atm_vswir(x_RT, geom)
-        elif self.band_mode_string.lower() == 'modtran_tir':
+        if self.treat_as_emmisive:
             return self.get_L_atm_tir(x_RT, geom)
         else:
-            raise NotImplementedError
+            return self.get_L_atm_vswir(x_RT, geom)
 
     def get_L_atm_vswir(self, x_RT, geom):
         r = self.get(x_RT, geom)
@@ -447,12 +445,10 @@ class ModtranRT(TabularRT):
         return r['thermal_upwelling']
 
     def get_L_down_transmitted(self, x_RT, geom):
-        if self.band_mode_string.lower() == 'modtran_vswir':
-            return self.get_L_down_transmitted_vswir(x_RT, geom)
-        elif self.band_mode_string.lower() == 'modtran_tir':
+        if self.treat_as_emmisive:
             return self.get_L_down_transmitted_tir(x_RT, geom)
         else:
-            raise NotImplementedError
+            return self.get_L_down_transmitted_vswir(x_RT, geom)
 
     def get_L_down_transmitted_vswir(self, x_RT, geom):
         r = self.get(x_RT, geom)

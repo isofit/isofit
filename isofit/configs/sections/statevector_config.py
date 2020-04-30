@@ -79,28 +79,6 @@ class StateVectorConfig(BaseConfigSection):
                 sv = StateVectorElementConfig(configdic[key])
                 setattr(self, key, sv)
 
-    def get_all_elements(self):
-        return [self.H2OSTR, self.AOT550, self.AERFRAC_1, self.AERFRAC_2, self.AERFRAC_3, self.GROW_FWHM, self.WL_SHIFT,
-                self.WL_SPACE]
-
-    def get_elements(self):
-        elements = [x for x in self.get_all_elements() if x is not None]
-        element_names = self._get_nontype_attributes()
-
-        order = np.argsort(element_names)
-        elements = [elements[idx] for idx in order]
-
-        return elements, element_names
-
-    def get_element_names(self):
-        elements, element_names = self.get_elements()
-        return element_names
-
-    def get_single_element_by_name(self, name):
-        elements, element_names = self.get_elements()
-        return elements[element_names.index(name)]
-
-
     def get_all_bounds(self):
         bounds = []
         for element, name in zip(*self.get_elements()):
