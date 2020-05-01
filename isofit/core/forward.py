@@ -31,24 +31,6 @@ from isofit.configs import Config
 
 from isofit.surface import Surface, ThermalSurface, MultiComponentSurface, GlintSurface
 
-### Variables ###
-
-# Supported RT modules, filenames, and class names
-RT_models = [('modtran_radiative_transfer', 'radiative_transfer.modtran',
-              'ModtranRT'),
-             ('libradtran_radiative_transfer',
-              'radiative_transfer.libradtran', 'LibRadTranRT'),
-             ('sixs_radiative_transfer', 'radiative_transfer.six_s', 'SixSRT')]
-
-
-# Supported surface modules, filenames, and class names
-surface_models = [('surface', 'surface.surface', 'Surface'),
-                  ('multicomponent_surface',
-                   'surface.surface_multicomp', 'MultiComponentSurface'),
-                  ('glint_surface', 'surface.surface_glint', 'GlintSurface'),
-                  ('thermal_surface', 'surface.surface_thermal',
-                   'ThermalSurface')]
-
 
 ### Classes ###
 

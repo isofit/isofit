@@ -66,43 +66,6 @@ class RadiativeTransfer():
 
             self.rt_engines.append(rte)
 
-        #temp_RTs_list, temp_min_wavelen_list = [], []
-        #config_statevector = config['statevector']
-        #for key, local_config in config.items():
-
-        #    if type(local_config) == dict and 'lut_names' in local_config:
-        #        # Construct a dictionary with the LUT and state parameter
-        #        # info needed for each individual RT
-        #        temp_statevec, temp_lut_grid = {}, {}
-        #        for local_lut_name in local_config['lut_names']:
-        #            temp_lut_grid[local_lut_name] = self.lut_grid[local_lut_name]
-        #        local_config["lut_grid"] = temp_lut_grid
-
-        #        # copy statevector into local configuration
-        #        for local_sv_name in local_config['statevector_names']:
-        #            temp_statevec[local_sv_name] = config_statevector[local_sv_name]
-        #        local_config["statevector"] = temp_statevec
-
-        #    temp_RT = None
-        #    if key in modtran_bands_available:
-        #        temp_RT = ModtranRT(key, local_config, self.statevec_names)
-        #    elif key in sixs_names:
-        #        temp_RT = SixSRT(local_config, self.statevec_names)
-        #    elif key in libradtran_names:
-        #        temp_RT = LibRadTranRT(local_config, self.statevec_names)
-
-        #    if temp_RT is not None:
-        #        temp_RTs_list.append((key, temp_RT))
-        #        temp_min_wavelen_list.append(temp_RT.wl[0])
-
-        ## Put the RT objects into self.RTs in wavelength order
-        ## This assumes that the input data wavelengths are all
-        ## ascending.
-        #sort_inds = np.argsort(np.array(temp_min_wavelen_list))
-        #for sort_ind in sort_inds:
-        #    key, RT = temp_RTs_list[sort_ind]
-        #    self.rt_engines[key] = RT
-
         # Retrieved variables.  We establish scaling, bounds, and
         # initial guesses for each state vector element.  The state
         # vector elements are all free parameters in the RT lookup table,
