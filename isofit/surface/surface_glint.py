@@ -31,7 +31,7 @@ class GlintSurface(MultiComponentSurface):
 
     def __init__(self, full_config: Config):
 
-        MultiComponentSurface.__init__(self, full_config)
+        super().__init__(full_config)
 
         # TODO: Enforce this attribute in the config, not here (this is hidden)
         self.statevec_names.extend(['GLINT'])

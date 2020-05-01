@@ -51,7 +51,7 @@ class ModtranRT(TabularRT):
     def __init__(self, engine_config: RadiativeTransferEngineConfig, full_config: Config):
         """."""
 
-        TabularRT.__init__(self, engine_config, full_config)
+        super().__init__(engine_config, full_config)
 
         self.treat_as_emmisive = False
 

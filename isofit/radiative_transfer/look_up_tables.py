@@ -23,6 +23,7 @@ import numpy as np
 import logging
 import multiprocessing
 from collections import OrderedDict
+import subprocess
 
 from isofit.core import common
 from isofit.configs import Config
@@ -37,7 +38,7 @@ def spawn_rt(cmd):
     """Run a CLI command."""
 
     print(cmd)
-    os.system(cmd)
+    subprocess.call(cmd, shell=True)
 
 
 ### Classes ###

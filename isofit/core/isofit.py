@@ -22,8 +22,6 @@
 import os
 import logging
 import cProfile
-import warnings
-from numba.errors import NumbaWarning, NumbaDeprecationWarning, NumbaPendingDeprecationWarning
 import time
 
 from isofit.core import common
@@ -34,7 +32,6 @@ from isofit.inversion.inverse_grid import GridInversion
 from .fileio import IO
 
 import multiprocessing
-from .. import warnings_enabled
 from isofit import configs
 from isofit.configs import configs
 
@@ -104,17 +101,6 @@ class Isofit:
         self.iv = None
 
     def _run_single_spectrum(self, index):
-        # Ignore Numba warnings
-        if not warnings_enabled:
-            warnings.simplefilter(
-                action='ignore', category=RuntimeWarning)
-            warnings.simplefilter(
-                action='ignore', category=NumbaWarning)
-            warnings.simplefilter(
-                action='ignore', category=NumbaDeprecationWarning)
-            warnings.simplefilter(
-                action='ignore', category=NumbaPendingDeprecationWarning)
-
         self._init_nonpicklable_objects()
         io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
         success, row, col, meas, geom, configs = io.get_components_at_index(

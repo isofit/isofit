@@ -35,7 +35,7 @@ class ThermalSurface(MultiComponentSurface):
 
         config = full_config.forward_model.surface
 
-        MultiComponentSurface.__init__(self, full_config)
+        super().__init__(full_config)
 
         # TODO: Enforce this attribute in the config, not here (this is hidden)
         # Handle additional state vector elements

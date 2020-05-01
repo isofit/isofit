@@ -40,7 +40,7 @@ class MultiComponentSurface(Surface):
     def __init__(self, full_config: Config):
         """."""
 
-        Surface.__init__(self, full_config)
+        super().__init__(full_config)
 
         config = full_config.forward_model.surface
 
