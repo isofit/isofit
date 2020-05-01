@@ -12,17 +12,17 @@ class InstrumentUnknowns(BaseConfigSection):
     """
 
     def __init__(self, sub_configdic: dict = None):
-        self.channelized_radiometric_uncertainty_file = None
         self._channelized_radiometric_uncertainty_file_type = str
+        self.channelized_radiometric_uncertainty_file = None
 
-        self.uncorrelated_radiometric_uncertainty = None
         self._uncorrelated_radiometric_uncertainty_type = float
+        self.uncorrelated_radiometric_uncertainty = None
 
-        self.wavelength_calibration_uncertainty = None
         self._wavelength_calibration_uncertainty_type = float
+        self.wavelength_calibration_uncertainty = None
 
-        self.stray_srf_uncertainty = None
         self._stray_srf_uncertainty_type = float
+        self.stray_srf_uncertainty = None
 
         self.set_config_options(sub_configdic)
 

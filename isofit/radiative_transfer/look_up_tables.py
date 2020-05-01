@@ -69,7 +69,7 @@ class TabularRT:
         # consistent dimesion ordering). Every state vector element has
         # a lookup table dimension, but some lookup table dimensions 
         # (like geometry parameters) may not be in the state vector.
-        #TODO: enforce a requirement that makes all SV elements be insdie the LUT
+        #TODO: enforce a requirement that makes all SV elements be inside the LUT
         full_lut_grid = full_config.forward_model.radiative_transfer.lut_grid
         # selectively get lut components that are in this particular RTE
         self.lut_grid_config = OrderedDict()
