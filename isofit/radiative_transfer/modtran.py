@@ -100,11 +100,12 @@ class ModtranRT(TabularRT):
         # models) and this statevector. It should never be modified
         full_to_local_statevector_position_mapping = []
         complete_statevector_names = full_config.forward_model.radiative_transfer.statevector.get_element_names()
-        for sn in engine_config.statevector_names:
+        for sn in self.statevector_names:
             ix = complete_statevector_names.index(sn)
             full_to_local_statevector_position_mapping.append(ix)
         self._full_to_local_statevector_position_mapping = \
             np.array(full_to_local_statevector_position_mapping)
+
 
     def find_basedir(self, config):
         """Seek out a modtran base directory."""
