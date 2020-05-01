@@ -95,18 +95,6 @@ class ModtranRT(TabularRT):
         # Build the lookup table
         self.build_lut()
 
-        # This array is used to handle the potential indexing mismatch between 
-        # the 'global statevector' (which may couple multiple radiative transform 
-        # models) and this statevector. It should never be modified
-        full_to_local_statevector_position_mapping = []
-        complete_statevector_names = full_config.forward_model.radiative_transfer.statevector.get_element_names()
-        for sn in self.statevector_names:
-            ix = complete_statevector_names.index(sn)
-            full_to_local_statevector_position_mapping.append(ix)
-        self._full_to_local_statevector_position_mapping = \
-            np.array(full_to_local_statevector_position_mapping)
-
-
     def find_basedir(self, config):
         """Seek out a modtran base directory."""
 

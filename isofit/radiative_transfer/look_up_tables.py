@@ -113,6 +113,18 @@ class TabularRT:
         self.prior_mean = np.array(self.prior_mean)
         self.prior_sigma = np.array(self.prior_sigma)
 
+        # This array is used to handle the potential indexing mismatch between
+        # the 'global statevector' (which may couple multiple radiative transform
+        # models) and this statevector. It should never be modified
+        full_to_local_statevector_position_mapping = []
+        complete_statevector_names = full_config.forward_model.radiative_transfer.statevector.get_element_names()
+        for sn in self.statevector_names:
+            ix = complete_statevector_names.index(sn)
+            full_to_local_statevector_position_mapping.append(ix)
+        self._full_to_local_statevector_position_mapping = \
+            np.array(full_to_local_statevector_position_mapping)
+
+
 
     def build_lut(self, rebuild=False):
         """Each LUT is associated with a source directory.  We build a lookup 

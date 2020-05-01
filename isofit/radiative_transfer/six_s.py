@@ -25,6 +25,8 @@ import scipy as s
 from isofit.core.common import resample_spectrum, load_wavelen, VectorInterpolator
 from .look_up_tables import TabularRT, FileExistsError
 from isofit.core.geometry import Geometry
+from isofit.configs import Config
+from isofit.configs.sections.radiative_transfer_config import RadiativeTransferEngineConfig
 
 sixs_names = ['sixs_vswir']
 
@@ -56,31 +58,29 @@ sixs_template = '''0 (User defined)
 class SixSRT(TabularRT):
     """A model of photon transport including the atmosphere."""
 
-    def __init__(self, config, statevector_names):
+    def __init__(self, engine_config: RadiativeTransferEngineConfig, full_config: Config):
 
-        TabularRT.__init__(self, config)
-        self.sixs_dir = self.find_basedir(config)
-        self.wl, self.fwhm = load_wavelen(config['wavelength_file'])
+        TabularRT.__init__(self, engine_config, full_config)
+        self.sixs_dir = self.find_basedir(engine_config)
         self.sixs_grid_init = s.arange(self.wl[0], self.wl[-1]+2.5, 2.5)
         self.sixs_ngrid_init = len(self.sixs_grid_init)
-        self.sixs_dir = self.find_basedir(config)
         self.params = {'aermodel': 1,
                        'AOT550': 0.01,
                        'H2OSTR': 0,
                        'O3': 0.40,
-                       'day':   config['day'],
-                       'month': config['month'],
-                       'elev':  config['elev'],
-                       'alt':   config['alt'],
+                       'day':   engine_config.day,
+                       'month': engine_config.month,
+                       'elev':  engine_config.elev,
+                       'alt':   engine_config.alt,
                        'atm_file': None,
                        'abscf_data_directory': None,
                        'wlinf': self.sixs_grid_init[0]/1000.0,  # convert to nm
                        'wlsup': self.sixs_grid_init[-1]/1000.0}
 
-        if 'obs_file' in config:
+        if engine_config.obs_file is not None:
             # A special case where we load the observation geometry
             # from a custom-crafted text file
-            g = Geometry(obs=config['obs_file'])
+            g = Geometry(obs=engine_config.obs_file)
             self.params['solzen'] = g.solar_zenith
             self.params['solaz'] = g.solar_azimuth
             self.params['viewzen'] = g.observer_zenith
@@ -88,15 +88,17 @@ class SixSRT(TabularRT):
         else:
             # We have to get geometry from somewhere, so we presume it is
             # in the configuration file.
-            for f in ['solzen', 'viewzen', 'solaz', 'viewaz']:
-                self.params[f] = config[f]
+            self.params['solzen'] = engine_config.solzen
+            self.params['viewzen'] = engine_config.viewzen
+            self.params['solaz'] = engine_config.solaz
+            self.params['viewaz'] = engine_config.viewaz
 
-        self.esd = s.loadtxt(config['earth_sun_distance_file'])
+        self.esd = s.loadtxt(engine_config.earth_sun_distance_file)
         dt = datetime(2000, self.params['month'], self.params['day'])
         self.day_of_year = dt.timetuple().tm_yday
         self.irr_factor = self.esd[self.day_of_year-1, 1]
 
-        irr = s.loadtxt(config['irradiance_file'], comments='#')
+        irr = s.loadtxt(engine_config.irradiance_file, comments='#')
         iwl, irr = irr.T
         irr = irr / 10.0  # convert, uW/nm/cm2
         irr = irr / self.irr_factor**2  # consider solar distance
@@ -108,22 +110,12 @@ class SixSRT(TabularRT):
         self.lut_quantities = ['rhoatm', 'transm', 'sphalb', 'transup']
         self.build_lut()
 
-        # This array is used to handle the potential indexing mismatch between
-        # the 'global statevector' (which may couple multiple radiative 
-        # transform models) and this statevector. It should never be modified
-        full_to_local_statevector_position_mapping = []
-        for sn in self.statevector_names:
-            ix = statevector_names.index(sn)
-            full_to_local_statevector_position_mapping.append(ix)
-        self._full_to_local_statevector_position_mapping = \
-            s.array(full_to_local_statevector_position_mapping)
 
-
-    def find_basedir(self, config):
+    def find_basedir(self, config: RadiativeTransferEngineConfig):
         """Seek out a sixs base directory."""
 
-        if 'sixs_installation' in config:
-            return config['sixs_installation']
+        if config.engine_base_dir is not None:
+            return config.engine_base_dir
         if 'SIXS_DIR' in os.getenv():
             return os.getenv('SIXS_DIR')
         return None

@@ -2,6 +2,7 @@
 from typing import Dict, List, Type
 from isofit.configs.base_config import BaseConfigSection
 from isofit.configs.sections.statevector_config import StateVectorConfig
+import os
 import logging
 import numpy as np
 from collections import OrderedDict
@@ -37,17 +38,53 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         self._statevector_names_type = list()
         self.statevector_names = None
 
+        self._configure_and_exit_type = bool
+        self.configure_and_exit = False
+
+        self._auto_rebuild_type = bool
+        self.auto_rebuild = True
+
+        # MODTRAN parameters
         self._aerosol_template_file_type = str
         self.aerosol_template_file = None
 
         self._aerosol_model_file_type = str
         self.aerosol_model_file = None
 
-        self._configure_and_exit_type = bool
-        self.configure_and_exit = False
+        #6S parameters - not the corcommemnd
+        #TODO: these should come from a template file, as in modtran
+        self._day_type = int
+        self.day = None
 
-        self._auto_rebuild_type = bool
-        self.auto_rebuild = True
+        self._month_type = int
+        self.month = None
+
+        self._elev_type = float
+        self.elev = None
+
+        self._alt_type = float
+        self.alt = None
+
+        self._obs_file_type = str
+        self.obs_file = None
+
+        self._solzen_type = float
+        self.solzen = None
+
+        self._solaz_type = float
+        self.solaz = None
+
+        self._viewzen_type = float
+        self.viewzen = None
+
+        self._viewaz_type = float
+        self.viewaz = None
+
+        self._earth_sun_distance_file_type = str
+        self.earth_sun_distance_file = None
+
+        self._irradiance_file_type = str
+        self.irradiance_file = None
 
         self.set_config_options(sub_configdic)
 
@@ -59,7 +96,18 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
             errors.append('radiative_transfer->raditive_transfer_model: {} not in one of the available models: {}'.
                           format(self.engine_name, valid_rt_engines))
 
+        if self.earth_sun_distance_file is None and self.engine_name == '6s':
+            errors.append('6s requires earth_sun_distance_file to be specified')
 
+        if self.irradiance_file is None and self.engine_name == '6s':
+            errors.append('6s requires irradiance_file to be specified')
+
+        files = [self.earth_sun_distance_file, self.irradiance_file, self.obs_file, self.aerosol_model_file, self.aerosol_template_file]
+        for f in files:
+            if f is not None:
+                if os.path.isfile(f) is False:
+                    errors.append('Radiative transfer engine file not found on system: {}'.
+                                  format(self.earth_sun_distance_file))
         return errors
 
     def get_lut_names(self):
