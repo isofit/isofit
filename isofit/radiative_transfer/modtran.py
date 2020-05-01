@@ -94,6 +94,9 @@ class ModtranRT(TabularRT):
         # Specify which of the potential MODTRAN LUT parameters are angular, which will be handled differently
         self.angular_lut_keys_degrees = ['OBSZEN', 'TRUEAZ', 'viewzen', 'viewaz', 'solzen', 'solaz']
 
+        self.last_point_looked_up = np.zeros(self.n_point)
+        self.last_point_lookup_values = np.zeros(self.n_point)
+
         # Build the lookup table
         self.build_lut()
 
@@ -246,7 +249,7 @@ class ModtranRT(TabularRT):
             total_asym = self.aer_asym.T.dot(norm_fracs)
 
             # Normalize to 550 nm
-            total_extc550 = sciopy.interpolate.interp1d(self.aer_wl, total_extc)(0.55)
+            total_extc550 = scipy.interpolate.interp1d(self.aer_wl, total_extc)(0.55)
             lvl0 = param[0]['MODTRANINPUT']['AEROSOLS']['IREGSPC'][0]
             lvl0['NARSPC'] = len(self.aer_wl)
             lvl0['VARSPC'] = [float(v) for v in self.aer_wl]
@@ -381,11 +384,16 @@ class ModtranRT(TabularRT):
         return results_dict
 
     def _lookup_lut(self, point):
-        ret = {}
-        for key, lut in self.luts.items():
-            ret[key] = np.array(lut(point)).ravel()
+        if np.all(np.equal(point, self.last_point_looked_up)):
+            return self.last_point_lookup_values
+        else:
+            ret = {}
+            for key, lut in self.luts.items():
+                ret[key] = np.array(lut(point)).ravel()
 
-        return ret
+            self.last_point_looked_up = point
+            self.last_point_lookup_values = ret
+            return ret
 
     def get(self, x_RT, geom):
         point = np.zeros((self.n_point,))
