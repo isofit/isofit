@@ -48,6 +48,15 @@ class ImplementationConfig(BaseConfigSection):
         self.grid_inversion: GridInversionConfig = None
         """GridInversionConfig: optional config for running grid inversion mode."""
 
+        self._n_cores_type = int
+        self.n_cores = None
+        """int: number of cores to use."""
+
+        self._runtime_nice_level_type = int
+        self.runtime_nice_level = None
+        """int: nice level to run multiprocessing at.  If None, will use all available.  If 1, will run without 
+        multiprocessing (good for debugging)"""
+
         self.set_config_options(sub_configdic)
 
     def _check_config_validity(self) -> List[str]:

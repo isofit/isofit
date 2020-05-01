@@ -24,10 +24,11 @@ import logging
 import multiprocessing
 from collections import OrderedDict
 
-from ..core.common import combos, eps, load_wavelen, safe_core_count
+from isofit.core import common
 from isofit.configs import Config
 from isofit.configs.sections.radiative_transfer_config import RadiativeTransferEngineConfig
 from isofit.configs.sections.statevector_config import StateVectorElementConfig
+from isofit.configs.sections.implementation_config import ImplementationConfig
 
 
 ### Functions ###
@@ -53,7 +54,8 @@ class TabularRT:
 
     def __init__(self, engine_config: RadiativeTransferEngineConfig, full_config: Config):
 
-        self.wl, self.fwhm = load_wavelen(full_config.forward_model.instrument.wavelength_file)
+        self.implementation_config: ImplementationConfig = full_config.implementation
+        self.wl, self.fwhm = common.load_wavelen(full_config.forward_model.instrument.wavelength_file)
         if engine_config.wavelength_range is not None:
             valid_wl = np.logical_and(self.wl >= engine_config.wavelength_range[0],
                                       self.wl <= engine_config.wavelength_range[1])
@@ -166,7 +168,7 @@ class TabularRT:
 
         # "points" contains all combinations of grid points
         # We will have one filename prefix per point
-        self.points = combos(self.lut_grids)
+        self.points = common.combos(self.lut_grids)
         self.files = []
         for point in self.points:
             outf = '_'.join(['%s-%6.4f' % (n, x)
@@ -198,8 +200,18 @@ class TabularRT:
 
             # migrate to the appropriate directory and spool up runs
             os.chdir(self.lut_dir)
-            count = safe_core_count()
-            pool = multiprocessing.Pool(processes=count)
+
+            if self.implementation_config.n_cores is None:
+                n_cores = multiprocessing.cpu_count()
+            else:
+                n_cores = self.implementation_config.n_cores
+
+            if self.implementation_config.runtime_nice_level is None:
+                pool = multiprocessing.Pool(processes=n_cores)
+            else:
+                pool = multiprocessing.Pool(processes=n_cores, initializer=
+                                            common.nice_me(self.implementation_config.runtime_nice_level))
+
             r = pool.map_async(spawn_rt, rebuild_cmds)
             r.wait()
             os.chdir(cwd)

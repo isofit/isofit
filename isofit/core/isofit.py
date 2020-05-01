@@ -24,8 +24,9 @@ import logging
 import cProfile
 import warnings
 from numba.errors import NumbaWarning, NumbaDeprecationWarning, NumbaPendingDeprecationWarning
+import time
 
-from .common import load_config, safe_core_count
+from isofit.core import common
 from .forward import ForwardModel
 from isofit.inversion.inverse import Inversion
 from isofit.inversion.inverse_mcmc import MCMCInversion
@@ -137,7 +138,7 @@ class Isofit:
                 logging.info(
                     'Completed inversion {}/{}'.format(index, len(io.iter_inds)))
 
-    def run(self, profile=False, debug=False):
+    def run(self, profile=False):
         """
         Iterate over all spectra, reading and writing through the IO
         object to handle formatting, buffering, and deferred write-to-file.
@@ -163,30 +164,31 @@ class Isofit:
             n_iter = len(io.iter_inds)
             io = None
             self._clear_nonpicklable_objects()
-            pool = multiprocessing.Pool(processes=safe_core_count())
 
-            import time
-            start_time = time.time()
-            if debug:
-                logging.info('Beginning serial inversions for debugging')
+            if self.config.implementation.n_cores is None:
+                n_cores = multiprocessing.cpu_count()
             else:
-                logging.info('Beginning parallel inversions')
+                n_cores = self.config.implementation.n_cores
+
+            if self.config.implementation.runtime_nice_level is None:
+                pool = multiprocessing.Pool(processes=n_cores)
+            else:
+                pool = multiprocessing.Pool(processes=n_cores, initializer=
+                                            common.nice_me(self.config.implementation.runtime_nice_level))
+
+            start_time = time.time()
+            logging.info('Beginning inversions using {} cores'.format(n_cores))
 
             results = []
             for l in range(n_iter):
-                if debug:
+                if n_cores == 1:
                     self._run_single_spectrum(l)
                 else:
-                    results.append(pool.apply_async(
-                        self._run_single_spectrum, args=(l,)))
+                    results.append(pool.apply_async(self._run_single_spectrum, args=(l,)))
             results = [p.get() for p in results]
             pool.close()
             pool.join()
 
             total_time = time.time() - start_time
-            if debug:
-                logging.info(
-                    'Inversions complete.  {} s total, {} spectra/s'.format(total_time, n_iter/total_time))
-            else:
-                logging.info(
-                    'Parallel inversions complete.  {} s total, {} spectra/s'.format(total_time, n_iter/total_time))
+            logging.info('Parallel inversions complete.  {} s total, {} spectra/s, {}/spectra/core'.format(
+                total_time, n_iter/total_time, n_iter/total_time/n_cores))
