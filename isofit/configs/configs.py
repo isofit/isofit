@@ -28,6 +28,7 @@ from isofit.configs.sections.forward_model_config import ForwardModelConfig
 from isofit.configs.sections.implementation_config import ImplementationConfig
 from isofit.configs.base_config import BaseConfigSection
 from isofit.core import common
+import yaml
 
 
 class Config(BaseConfigSection):
@@ -186,9 +187,14 @@ def create_new_config(config_file: str) -> Config:
     Returns:
         Config object, having completed all necessary config checks
     """
-    # TODO: facilitate YAML read as well
-    with open(config_file, 'r') as f:
-        config_dict = json.load(f)
+    if os.path.splitext(config_file)[-1] in ['.json','.JSON']:
+        with open(config_file, 'r') as f:
+            config_dict = json.load(f)
+    elif os.path.splitext(config_file)[-1] in ['.yaml','.YAML']:
+        with open(config_file, 'r') as f:
+            config_dict = yaml.load(f)
+    else:
+        raise IOError('Unexpected configuration file time, only json and yaml supported')
 
     configdir, f = os.path.split(os.path.abspath(config_file))
 
