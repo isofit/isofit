@@ -25,6 +25,9 @@ from scipy.interpolate import interp1d
 from ..core.common import resample_spectrum, VectorInterpolator
 from .look_up_tables import TabularRT, FileExistsError
 
+from isofit.configs.sections.radiative_transfer_config import RadiativeTransferEngineConfig
+from isofit.configs import Config
+
 
 ### Variables ###
 
@@ -37,11 +40,11 @@ libradtran_names = ['libradtran_vswir']
 class LibRadTranRT(TabularRT):
     """A model of photon transport including the atmosphere."""
 
-    def __init__(self, config, statevector_names):
+    def __init__(self, engine_config: RadiativeTransferEngineConfig, full_config: Config):
 
-        TabularRT.__init__(self, config)
-        self.libradtran_dir = self.find_basedir(config)
-        self.libradtran_template_file = config['libradtran_template_file']
+        TabularRT.__init__(self, engine_config, full_config)
+        self.libradtran_dir = self.find_basedir(engine_config)
+        self.libradtran_template_file = engine_config.template_file
 
         self.lut_quantities = ['rhoatm', 'transm', 'sphalb', 'transup']
 
@@ -51,22 +54,12 @@ class LibRadTranRT(TabularRT):
         # Build the lookup table
         self.build_lut()
 
-        # This array is used to handle the potential indexing mismatch 
-        # between the 'global statevector' (which may couple multiple 
-        # radiative transform models) and this statevector
-        # It should never be modified
-        full_to_local_statevector_position_mapping = []
-        for sn in self.statevector_names:
-            ix = statevector_names.index(sn)
-            full_to_local_statevector_position_mapping.append(ix)
-        self._full_to_local_statevector_position_mapping = \
-            s.array(full_to_local_statevector_position_mapping)
 
-    def find_basedir(self, config):
+    def find_basedir(self, config: RadiativeTransferEngineConfig):
         """Seek out a libradtran base directory."""
 
         try:
-            return config['libradtran_directory']
+            return config.engine_base_dir
         except KeyError:
             pass  # fall back to environment variable
         try:
