@@ -172,7 +172,6 @@ class Instrument:
         Input: meas, the instrument measurement
         Returns: Sy, the measurement error covariance due to instrument noise
         """
-
         if self.model_type == 'SNR':
             bad = meas < 1e-5
             meas[bad] = 1e-5
@@ -180,8 +179,7 @@ class Instrument:
             return np.power(np.diagflat(nedl), 2)
 
         elif self.model_type == 'parametric':
-            nedl = abs(
-                self.noise[:, 0]*np.sqrt(self.noise[:, 1]+meas)+self.noise[:, 2])
+            nedl = np.abs(self.noise[:, 0]*np.sqrt(self.noise[:, 1]+meas)+self.noise[:, 2])
             nedl = nedl/np.sqrt(self.integrations)
             return np.power(np.diagflat(nedl), 2)
 

@@ -24,9 +24,10 @@ from scipy.optimize import minimize_scalar as min1d
 from scipy.optimize import minimize
 
 from isofit.core.common import emissive_radiance, eps
+from isofit.radiative_transfer.radiative_transfer import RadiativeTransfer
 
 
-def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
+def heuristic_atmosphere(RT: RadiativeTransfer, instrument, x_RT, x_instrument,  meas, geom):
     """From a given radiance, estimate atmospheric state with band ratios.
     Used to initialize gradient descent inversions."""
 
@@ -41,11 +42,12 @@ def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
     x_new = x_RT.copy()
 
     # Figure out which RT object we are using
+    # TODO: this is currently very specific to vswir-tir 2-mode, eventually generalize
     my_RT = None
-    for rt_name in ['modtran_vswir', 'sixs_vswir', 'libradtran_vswir']:
-        if rt_name in RT.RTs:
-            my_RT = RT.RTs[rt_name]
-            continue
+    for rte in RT.rt_engines:
+        if rte.treat_as_emmisive is False:
+            my_RT = rte
+            break
     if not my_RT:
         raise ValueError('No suiutable RT object for initialization')
 
@@ -53,7 +55,7 @@ def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
     # model we are using, this state parameter could go by several names.
     for h2oname in ['H2OSTR', 'h2o']:
 
-        if h2oname not in RT.statevec:
+        if h2oname not in RT.statevec_names:
             continue
 
         # ignore unused names
@@ -62,7 +64,7 @@ def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
 
         # find the index in the lookup table associated with water vapor
         ind_lut = my_RT.lut_names.index(h2oname)
-        ind_sv = RT.statevec.index(h2oname)
+        ind_sv = RT.statevec_names.index(h2oname)
         h2os, ratios = [], []
 
         # We iterate through every possible grid point in the lookup table,
@@ -98,7 +100,7 @@ def heuristic_atmosphere(RT, instrument, x_RT, x_instrument,  meas, geom):
     return x_new
 
 
-def invert_algebraic(surface, RT, instrument, x_surface, x_RT, x_instrument,
+def invert_algebraic(surface, RT: RadiativeTransfer, instrument, x_surface, x_RT, x_instrument,
                      meas, geom):
     """Inverts radiance algebraically using Lambertian assumptions to get a 
         reflectance."""

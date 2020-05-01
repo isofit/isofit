@@ -155,6 +155,9 @@ class BaseConfigSection(object):
     def get_all_elements(self):
         return [getattr(self, x) for x in self._get_nontype_attributes()]
 
+    def get_all_element_names(self):
+        return self._get_nontype_attributes()
+
     def get_elements(self):
         elements = self.get_all_elements()
         element_names = self._get_nontype_attributes()

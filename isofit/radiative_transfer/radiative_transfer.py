@@ -20,8 +20,6 @@
 
 import numpy as np
 import logging
-from copy import deepcopy
-from collections import OrderedDict
 
 from ..core.common import json_load_ascii, eps
 from ..radiative_transfer.modtran import modtran_bands_available, ModtranRT
@@ -168,13 +166,13 @@ class RadiativeTransfer():
 
     def get_L_atm(self, x_RT, geom):
         L_atms = []
-        for key, RT in self.rt_engines:
+        for RT in self.rt_engines:
             L_atms.append(RT.get_L_atm(x_RT, geom))
         return np.hstack(L_atms)
 
     def get_L_down_transmitted(self, x_RT, geom):
         L_downs = []
-        for key, RT in self.rt_engines:
+        for RT in self.rt_engines:
             L_downs.append(RT.get_L_down_transmitted(x_RT, geom))
         return np.hstack(L_downs)
 

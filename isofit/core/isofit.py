@@ -61,7 +61,7 @@ class Isofit:
         self.states = None
 
         # Load configuration file
-        self.config_dict = load_config(config_file)
+        #self.config_dict = load_config(config_file)
         self.config = configs.create_new_config(config_file)
 
         # Build the forward model and inversion objects
@@ -116,7 +116,6 @@ class Isofit:
                 action='ignore', category=NumbaPendingDeprecationWarning)
 
         self._init_nonpicklable_objects()
-        #TODO: fix config
         io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
         success, row, col, meas, geom, configs = io.get_components_at_index(
             index)

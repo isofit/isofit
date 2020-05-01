@@ -357,7 +357,7 @@ class IO:
         # Determine the appropriate row, column index. and initialize the
         # data dictionary with empty entries.
         r, c = self.iter_inds[index]
-        data = dict([(i, None) for i in self.input.get_all_elements()])
+        data = dict([(i, None) for i in self.input.get_all_element_names()])
         logging.debug('Row %i Column %i' % (r, c))
 
         # Read data from any of the input files that are defined.
