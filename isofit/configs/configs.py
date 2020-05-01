@@ -1,10 +1,27 @@
+#! /usr/bin/env python3
+#
+#  Copyright 2018 California Institute of Technology
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# ISOFIT: Imaging Spectrometer Optimal FITting
+# Author: Philip G. Brodrick, philip.brodrick@jpl.nasa.gov
+
 import logging
-import re
 from collections import OrderedDict
 from typing import Dict, List, Type
 import json
 import os
-import yaml
 from isofit.configs.sections.input_config import InputConfig
 from isofit.configs.sections.output_config import OutputConfig
 from isofit.configs.sections.forward_model_config import ForwardModelConfig
@@ -18,6 +35,35 @@ class Config(BaseConfigSection):
     Handles the reading and formatting of configuration files.  Please note - there are many ways to do this, some
     of which require fewer lines of code.  This method was chosen to facilitate more clarity when using / adding /
     modifying code, particularly given the highly flexible nature of Isofit.
+
+    How to use:
+
+    To add an additional parameter to an existing class, simply go to the relevant config (e.g. for forward_model go
+    to sections/forward_model_config.py), and in the config class (e.g. ForwardModelConfig) add the parameter.  Also
+    Add a hidden parameter with the _type suffix, which will be used to check that configs read the appropriate type.
+    Add comments directly below, to be auto-appended to online documentation.
+
+    Example:
+
+    ```
+    class GenericConfigSection(BaseConfigSection):
+        _attribute_type = list()                  <-- Used to validate attributes have correct types
+        attribute = [2.2, 4.3]                    <-- Default value, can also be None
+        \""" List: attribute does whatever it happens to do\"""
+    ```
+
+    To validate that attributes have appropriate relationships or characteristics, use the hidden _check_config_validity
+    method to add more detailed validation checks. Simply return a list of string descriptions of errors from the
+    method as demonstrated:
+
+    ```
+    def _check_config_validity(self) -> List[str]:
+        errors = list()
+        if self.attribute_min >= self.attribute_max:
+            errors.append('attribute_min must be less than attribute_max.')
+        return errors
+    ```
+
     """
 
     def __init__(self, configdict) -> None:
