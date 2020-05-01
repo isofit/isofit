@@ -28,7 +28,8 @@
       }
     },
 
-    "multicomponent_surface": {
+    "surface": {
+      "surface_category": "multicomponent_surface",
       "surface_file": "../remote/ang20170228_surface_model.mat"
     },
 
@@ -56,17 +57,22 @@
       "unknowns": {
         "H2O_ABSCO": 0.01
       },
-      "modtran_vswir": {
-        "wavelength_file": "../remote/20170320_ang20170228_wavelength_fit.txt",
-        "lut_path":"../lut/",
-        "modtran_template_file":"ang20171108t184227_modtran.json",
-        "lut_names": ["H2OSTR", "AOT550"],
-        "statevector_names": ["H2OSTR", "AOT550"]
+      "radiative_transfer_engines": {
+        "vswir": {
+          "engine_name": "modtran",
+          "lut_path": "../lut/",
+          "wavelength_range": [376, 2501],
+          "modtran_template_file": "ang20171108t184227_modtran.json",
+          "lut_names": ["H2OSTR", "AOT550"],
+          "statevector_names": ["H2OSTR", "AOT550"]
+        }
       }
     }
   },
 
-  "inversion": {
-    "windows": [[380.0,1300.0],[1450,1780.0],[1950.0,2450.0]]
+  "implementation": {
+    "inversion": {
+      "windows": [[380.0, 1300.0], [1450, 1780.0], [1950.0, 2450.0]]
+    }
   }
 }

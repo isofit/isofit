@@ -25,7 +25,8 @@
       "integrations":25
     },
 
-    "glint_surface": {
+    "surface": {
+      "surface_category": "glint_surface",
       "surface_file": "../data/prm20151028_surface_coastal_model.mat"
     },
 
@@ -54,28 +55,32 @@
       "unknowns": {
         "H2O_ABSCO": 0.01
       },
-      "sixs_vswir": {
-        "irradiance_file":         "../data/prism_optimized_irr.dat",
-        "earth_sun_distance_file": "../../../data/earth_sun_distance.txt",
-        "wavelength_file":         "../data/20140221_PRISM_wavelengths_truncated_clip.txt",
-        "sixs_installation":       "${SIXS_DIR}",
-        "solzen": 55.21,
-        "solaz": 141.70,
-        "elev": 0.0,
-        "alt": 20.0,
-        "viewaz": 202.89063,
-        "viewzen": 1.08,
-        "month": 10,
-        "day": 26,
-        "lut_path":"../lut/",
-        "lut_names": ["H2OSTR","AOT550"],
-        "statevector_names": ["H2OSTR", "AOT550"]
+      "radiative_transfer_engines": {
+        "vswir": {
+          "irradiance_file": "../data/prism_optimized_irr.dat",
+          "earth_sun_distance_file": "../../../data/earth_sun_distance.txt",
+          "engine_base_dir": "${SIXS_DIR}",
+          "engine_name": "6s",
+          "solzen": 55.21,
+          "solaz": 141.70,
+          "elev": 0.0,
+          "alt": 20.0,
+          "viewaz": 202.89063,
+          "viewzen": 1.08,
+          "month": 10,
+          "day": 26,
+          "lut_path": "../lut/",
+          "lut_names": ["H2OSTR", "AOT550"],
+          "statevector_names": ["H2OSTR", "AOT550"]
+        }
       }
     }
-  },   
+  },
 
-  "grid_inversion": {
-    "integration_grid":{"GLINT":[0,0.001,0.002]},
-    "windows": [[400.0,1000.0]]
+  "implementation": {
+    "grid_inversion": {
+      "integration_grid": {"GLINT": [0, 0.001, 0.002]},
+      "windows": [[400.0, 1000.0]]
+    }
   }
 }

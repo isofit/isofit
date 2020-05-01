@@ -58,7 +58,7 @@
         "H2O_ABSCO": 0.01
       },
       "radiative_transfer_engines": {
-        "modtran_vswir": {
+        "vswir": {
           "engine_name": "modtran",
           "wavelength_range": [376, 2501],
           "lut_path": "../lut/",
@@ -69,6 +69,7 @@
       }
     }
   },
+
   "implementation": {
     "inversion": {
       "windows": [[380.0, 1300.0], [1450, 1780.0], [1950.0, 2450.0]]
