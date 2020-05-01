@@ -23,20 +23,20 @@ class Config(BaseConfigSection):
     def __init__(self, configdict) -> None:
 
         self._input_type = InputConfig
-        self.input: InputConfig = None
+        self.input = InputConfig({})
         """InputConfig: Input config. Holds all input file information."""
 
         self._output_type = OutputConfig
-        self.output: OutputConfig = None
+        self.output = OutputConfig({})
         """OutputConfig: Output config. Holds all output file information."""
 
         self._forward_model_type = ForwardModelConfig
-        self.forward_model: ForwardModelConfig = None
+        self.forward_model = ForwardModelConfig({})
         """ForwardModelConfig: forward_model config. Holds information about surface models, 
         radiative transfer models, and the instrument."""
 
         self._implementation_type = ImplementationConfig
-        self.implementation: ImplementationConfig = None
+        self.implementation = ImplementationConfig({})
         """ImplementationConfig: holds information regarding how isofit is to be run, including relevant sub-configs 
         (e.g. inversion information)."""
 

@@ -57,8 +57,8 @@ class TabularRT:
         if engine_config.wavelength_range is not None:
             valid_wl = np.logical_and(self.wl >= engine_config.wavelength_range[0],
                                       self.wl <= engine_config.wavelength_range[1])
-        self.wl = self.wl[valid_wl]
-        self.fwhm = self.fwhm[valid_wl]
+            self.wl = self.wl[valid_wl]
+            self.fwhm = self.fwhm[valid_wl]
 
         self.n_chan = len(self.wl)
 

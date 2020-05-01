@@ -19,12 +19,14 @@
 #
 
 import json
-from os.path import split, abspath, join
+import os
 
 from isofit.core.common import expand_all_paths
 from isofit.core.fileio import IO
 from isofit.inversion.inverse import Inversion
 from isofit.core.forward import ForwardModel
+
+from isofit.configs.configs import create_new_config
 
 
 def test_libradtran():
@@ -43,26 +45,15 @@ def test_libradtran():
     assert err_aod < 0.01
 
 
-def load_config(config_file):
-    """Load a configuration file, expand paths."""
-
-    # Get directory and file paths
-    testdir, fname = split(abspath(__file__))
-    datadir = join(testdir, 'data/')
-    config_path = join(datadir, config_file)
-    config = json.load(open(config_path, 'r'))
-    configdir, f = split(abspath(config_path))
-    config = expand_all_paths(config, configdir)
-    return config
-
-
 def run_forward():
     """Simulate the remote measurement of a spectrally uniform surface."""
 
     # Configure the surface/atmosphere/instrument model
-    config = load_config('config_forward.json')
-    fm = ForwardModel(config['forward_model'])
-    iv = Inversion(config['inversion'], fm)
+    testdir, fname = os.path.split(os.path.abspath(__file__))
+    datadir = os.path.join(testdir, 'data')
+    config = create_new_config(os.path.join(datadir,'config_forward.json'))
+    fm = ForwardModel(config)
+    iv = Inversion(config, fm)
     io = IO(config, fm, iv, [0], [0])
 
     # Simulate a measurement and write result
@@ -78,9 +69,11 @@ def run_inverse():
     """Invert the remote measurement."""
 
     # Configure the surface/atmosphere/instrument model
-    config = load_config('config_inversion.json')
-    fm = ForwardModel(config['forward_model'])
-    iv = Inversion(config['inversion'], fm)
+    testdir, fname = os.path.split(os.path.abspath(__file__))
+    datadir = os.path.join(testdir, 'data')
+    config = create_new_config(os.path.join(datadir,'config_forward.json'))
+    fm = ForwardModel(config)
+    iv = Inversion(config, fm)
     io = IO(config, fm, iv, [0], [0])
     geom = None
 

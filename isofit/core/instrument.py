@@ -61,9 +61,9 @@ class Instrument:
         self.statevec_names = config.statevector.get_element_names()
         self.n_state = len(self.statevec_names)
 
-        if config.snr is not None:
+        if config.SNR is not None:
             self.model_type = 'SNR'
-            self.snr = config.snr
+            self.snr = config.SNR
         elif config.parametric_noise_file is not None:
             self.model_type = 'parametric'
             self.noise_file = config.parametric_noise_file

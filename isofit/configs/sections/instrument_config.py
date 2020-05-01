@@ -64,8 +64,8 @@ class InstrumentConfig(BaseConfigSection):
         self._statevector_type = StateVectorConfig
         self.statevector: StateVectorConfig = None
 
-        self._snr_type = float
-        self.snr = None
+        self._SNR_type = float
+        self.SNR = None
         """float: We have several ways to define the instrument noise.  The simplest model is based on a single uniform 
         SNR number that is signal-independnet and applied uniformly to all wavelengths"""
 
@@ -99,7 +99,7 @@ class InstrumentConfig(BaseConfigSection):
     def _check_config_validity(self) -> List[str]:
         errors = list()
 
-        noise_options = [self.snr, self.parametric_noise_file, self.pushbroom_noise_file, self.nedt_noise_file]
+        noise_options = [self.SNR, self.parametric_noise_file, self.pushbroom_noise_file, self.nedt_noise_file]
         used_noise_options = [x for x in noise_options if x is not None]
 
         if len(used_noise_options) == 0:

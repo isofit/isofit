@@ -31,10 +31,10 @@ from isofit.inversion.inverse import Inversion
 from isofit.inversion.inverse_mcmc import MCMCInversion
 from isofit.inversion.inverse_grid import GridInversion
 from .fileio import IO
-from isofit import configs
 
 import multiprocessing
 from .. import warnings_enabled
+from isofit import configs
 from isofit.configs import configs
 
 
