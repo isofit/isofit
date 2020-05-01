@@ -172,8 +172,9 @@ class RadiativeTransferConfig(BaseConfigSection):
             self.lut_grid[key] = sorted(self.lut_grid[key])
         self.lut_grid = OrderedDict(sorted(self.lut_grid.items(), key=lambda t: t[0]))
 
-        # Hold this parameter for after the config_options, as radiative_transfer_engines have a special (dynamic) load
-        self._radiative_transfer_engines_type = List[RadiativeTransferEngineConfig]
+        # Hold this parameter for after the config_options, as radiative_transfer_engines
+        # have a special (dynamic) load
+        self._radiative_transfer_engines_type = list()
         self.radiative_transfer_engines = []
 
         self._set_rt_config_options(sub_configdic['radiative_transfer_engines'])

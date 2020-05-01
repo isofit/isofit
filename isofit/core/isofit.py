@@ -59,8 +59,9 @@ class Isofit:
         self.states = None
 
         # Load configuration file
-        #self.config_dict = load_config(config_file)
         self.config = configs.create_new_config(config_file)
+        self.config.get_config_errors()
+        quit()
 
         # Build the forward model and inversion objects
         self._init_nonpicklable_objects()

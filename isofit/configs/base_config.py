@@ -20,6 +20,7 @@
 from collections import OrderedDict
 from typing import Dict, List, Type
 import numpy as np
+import logging
 
 
 class BaseConfigSection(object):
@@ -59,21 +60,32 @@ class BaseConfigSection(object):
             # get the actual parameter value
             value = getattr(self, key)
 
-            # check it against expected
-            type_expected = self._get_expected_type_for_option_key(key)
-            if type(value) is type_expected:
+            # None assignments are fine
+            if value is None:
                 continue
 
-            # None's are okay too (unassigned)
-            if value is None:
+            # check it against expected
+            type_expected = self._get_expected_type_for_option_key(key)
+            # Lists are complicated, retype
+            if isinstance(type_expected, List):
+                type_expected = List
+
+            if isinstance(value, type_expected):
                 continue
 
             # At this point, we have a type mismatch, add to error list
             errors.append(message_type.format(key, self.__class__.__name__,
                                               value, type(value), type_expected))
 
+        #errors.extend(self._check_config_validity())
         # Now do a full check on each submodule
-        errors.extend(self._check_config_validity())
+        for key in self._get_nontype_attributes():
+            value = getattr(self, key)
+            try:
+                errors.extend(value.check_config_validity())
+            except AttributeError:
+                logging.debug('Configuration check: {} is not an object, skipping'.format(key))
+
 
         return errors
 
@@ -90,7 +102,7 @@ class BaseConfigSection(object):
 
     def get_config_options_as_dict(self) -> Dict[str, Dict[str, any]]:
         config_options = OrderedDict()
-        for key in self.get_option_keys():
+        for key in self._get_nontype_attributes():
             value = getattr(self, key)
             if type(value) is tuple:
                 value = list(value)  # Lists look nicer in config files and seem friendlier

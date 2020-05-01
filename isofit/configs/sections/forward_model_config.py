@@ -53,5 +53,5 @@ class ForwardModelConfig(BaseConfigSection):
         errors = list()
 
         # TODO: figure out submodule checking
-
+        print('here')
         return errors
