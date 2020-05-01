@@ -4,12 +4,10 @@ from typing import Dict, List, Type
 import numpy as np
 
 
-
 class BaseConfigSection(object):
     """
     Base Configuration Section from which all Configuration Sections inherit. Handles shared functionality like getting,
     setting, and cleaning configuration options.
-
 
     How to use sections:  Configs and ConfigSections are the tools we use to handle the numerous parameters
     associated with atmospheric correction. In general, we want to validate that ConfigSections have options with
@@ -61,8 +59,8 @@ class BaseConfigSection(object):
     def check_config_validity(self) -> List[str]:
         errors = list()
         message_type = (
-                "Invalid type for config option {} in config section {}. The provided value {} is a {}, "
-                + "but the required value should be a {}."
+            "Invalid type for config option {} in config section {}. The provided value {} is a {}, "
+            + "but the required value should be a {}."
         )
 
         # First check typing
@@ -81,7 +79,8 @@ class BaseConfigSection(object):
                 continue
 
             # At this point, we have a type mismatch, add to error list
-            errors.append(message_type.format(key, self.__class__.__name__, value, type(value), type_expected))
+            errors.append(message_type.format(key, self.__class__.__name__,
+                                              value, type(value), type_expected))
 
         # Now do a full check on each submodule
         errors.extend(self._check_config_validity())
@@ -96,8 +95,8 @@ class BaseConfigSection(object):
             if camelcase_section_name in configdict.keys:
                 subdict = configdict[camelcase_section_name]
 
-            setattr(object, config_section_name, getattr('isofit.configs.sections', camelcase_section_name)(subdict))
-
+            setattr(object, config_section_name, getattr(
+                'isofit.configs.sections', camelcase_section_name)(subdict))
 
     def get_config_options_as_dict(self) -> Dict[str, Dict[str, any]]:
         config_options = OrderedDict()
@@ -107,7 +106,6 @@ class BaseConfigSection(object):
                 value = list(value)  # Lists look nicer in config files and seem friendlier
             config_options[key] = value
         return config_options
-
 
     def _clean_config_option_value(self, option_key: str, value: any) -> any:
         # None read as string so we need to convert to the None type
@@ -122,7 +120,6 @@ class BaseConfigSection(object):
             value = float(value)
 
         return value
-
 
     def _check_config_validity(self) -> List[str]:
         return list()
@@ -180,7 +177,6 @@ class BaseConfigSection(object):
         return elements[element_names.index(name)]
 
 
-
 def snake_to_camel(word: str) -> None:
     """ Function to convert snake case to camel case, e.g.
     snake_to_camel -> SnakeToCamel
@@ -190,6 +186,3 @@ def snake_to_camel(word: str) -> None:
         CamelCase string
     """
     return ''.join(x.capitalize() or '_' for x in word.split('_'))
-
-
-

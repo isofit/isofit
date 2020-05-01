@@ -161,11 +161,11 @@ def invert_simple(forward, meas, geom):
     # inversion and uses it for the TIR suface initialization.
     if any(forward.surface.wl > 3000):
         rfl_idx = np.array([i for i, v in enumerate(forward.surface.statevec)
-                           if 'RFL' in v])
+                            if 'RFL' in v])
         tir_idx = np.where(forward.surface.wl > 3000)[0]
         vswir_idx = np.where(forward.surface.wl < 3000)[0]
         vswir_idx = np.array([i for i in vswir_idx if i in
-                             forward.surface.idx_ref])
+                              forward.surface.idx_ref])
         x_surface_temp = x_surface.copy()
         x_surface_temp[:len(rfl_est)] = rfl_est
         mu = forward.surface.xa(x_surface_temp, geom)

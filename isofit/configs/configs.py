@@ -46,8 +46,6 @@ class Config(BaseConfigSection):
         # check for errors
         self.get_config_errors()
 
-
-
     def get_config_as_dict(self) -> dict:
         """Get configuration options as a nested dictionary with delineated sections.
 
@@ -59,7 +57,6 @@ class Config(BaseConfigSection):
             populated_section = getattr(self, config_section)
             config[config_section] = populated_section.get_config_options_as_dict()
         return config
-
 
     def get_config_errors(self, include_sections: List[str] = None, exclude_sections: List[str] = None):
         """Get configuration option errors by checking the validity of each config section.
@@ -82,22 +79,22 @@ class Config(BaseConfigSection):
             except AttributeError:
                 logging.debug('Configuration check: {} is not an object, skipping'.format(key))
 
-        ##TODO: do same thing here as with global hidden function used within BaseConfigSection, so that this is
-        ## recursive
+        # TODO: do same thing here as with global hidden function used within BaseConfigSection, so that this is
+        # recursive
         #config_sections = get_config_sections()
-        #if include_sections:
+        # if include_sections:
         #    logging.info("Only checking config sections: {}".format(", ".join(include_sections)))
         #    config_sections = [
         #        section for section in config_sections if section.get_config_name_as_snake_case() in include_sections
         #    ]
-        #if exclude_sections:
+        # if exclude_sections:
         #    logging.info("Not checking config sections: {}".format(", ".join(exclude_sections)))
         #    config_sections = [
         #        section
         #        for section in config_sections
         #        if section.get_config_name_as_snake_case() not in exclude_sections
         #    ]
-        #for config_section in config_sections:
+        # for config_section in config_sections:
         #    section_name = config_section.get_config_name_as_snake_case()
         #    populated_section = getattr(self, section_name)
         #    errors.extend(populated_section.check_config_validity())
@@ -111,8 +108,6 @@ class Config(BaseConfigSection):
             raise AttributeError('Configuration error(s) found.  See log for details.')
 
         logging.info('Configuration file checks complete, no errors found.')
-
-
 
 
 def get_config_differences(config_a: Config, config_b: Config) -> Dict:
@@ -145,7 +140,7 @@ def create_new_config(config_file: str) -> Config:
     Returns:
         Config object, having completed all necessary config checks
     """
-    #TODO: facilitate YAML read as well
+    # TODO: facilitate YAML read as well
     with open(config_file, 'r') as f:
         config_dict = json.load(f)
 
@@ -155,5 +150,3 @@ def create_new_config(config_file: str) -> Config:
     config = Config(config_dict)
 
     return config
-
-

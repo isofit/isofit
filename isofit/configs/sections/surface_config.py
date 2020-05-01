@@ -5,7 +5,6 @@ import os
 import numpy as np
 
 
-
 class SurfaceConfig(BaseConfigSection):
     """
     Instrument configuration.
@@ -22,7 +21,7 @@ class SurfaceConfig(BaseConfigSection):
         self._reflectance_file_type = str
         self.reflectance_file = None
 
-        self._reflectance_type = np.array #TODO: guess - this is currently not implemented, trace backwards
+        self._reflectance_type = np.array  # TODO: guess - this is currently not implemented, trace backwards
         self.reflectance = None
 
         self._wavelength_file_type = str
@@ -50,19 +49,20 @@ class SurfaceConfig(BaseConfigSection):
     def _check_config_validity(self) -> List[str]:
         errors = list()
 
-        valid_surface_categories = ['surface','multicomponent_surface','glint_surface','thermal_surface']
+        valid_surface_categories = ['surface', 'multicomponent_surface',
+                                    'glint_surface', 'thermal_surface']
         if self.surface_category is None:
             errors.append('surface->surface_category must be specified')
         elif self.surface_category not in valid_surface_categories:
-            errors.append('surface->surface_category: {} not in valid surface categories: {}'.format(self.surface_category, valid_surface_categories))
+            errors.append('surface->surface_category: {} not in valid surface categories: {}'.format(
+                self.surface_category, valid_surface_categories))
 
         if self.surface_category is None:
             errors.append('surface->surface_category must be specified')
 
-        valid_normalize_categories = ['Euclidean','RMS','None']
+        valid_normalize_categories = ['Euclidean', 'RMS', 'None']
         if self.normalize not in valid_normalize_categories:
-            errors.append('surface->normalize: {} not in valid normalize choices: {}'.format(self.normalize, valid_normalize_categories))
+            errors.append(
+                'surface->normalize: {} not in valid normalize choices: {}'.format(self.normalize, valid_normalize_categories))
 
         return errors
-
-

@@ -6,7 +6,6 @@ from isofit.configs.sections.surface_config import SurfaceConfig
 from isofit.configs.sections.radiative_transfer_config import RadiativeTransferConfig
 
 
-
 class ForwardModelConfig(BaseConfigSection):
     """
     Forward model configuration.
@@ -32,11 +31,9 @@ class ForwardModelConfig(BaseConfigSection):
         """
         self.set_config_options(sub_configdic)
 
-
     def _check_config_validity(self) -> List[str]:
         errors = list()
 
-        #TODO: figure out submodule checking
+        # TODO: figure out submodule checking
 
         return errors
-

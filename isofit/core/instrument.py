@@ -72,7 +72,7 @@ class Instrument:
             p_a, p_b, p_c = [interp1d(coeffs[:, 0], coeffs[:, col],
                                       fill_value='extrapolate') for col in (1, 2, 3)]
             self.noise = np.array([[p_a(w), p_b(w), p_c(w)]
-                                  for w in self.wl_init])
+                                   for w in self.wl_init])
             self.integrations = config.integrations
 
         elif config.pushbroom_noise_file is not None:

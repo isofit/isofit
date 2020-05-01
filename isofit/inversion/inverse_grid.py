@@ -48,7 +48,7 @@ class GridInversion(Inversion):
 
         config = full_config.implementation.grid_inversion
 
-        #TODO: integration_grid should not have to be cast as an ordered dict (should already be done)....check
+        # TODO: integration_grid should not have to be cast as an ordered dict (should already be done)....check
         self.integration_grid = OrderedDict(config.integration_grid)
         self.inds_fixed = [self.fm.statevec.index(k) for k in
                            self.integration_grid.keys()]

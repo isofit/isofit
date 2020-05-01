@@ -500,8 +500,8 @@ class IO:
             # Algebraic inverse and atmospheric optical coefficients
             x_surface, x_RT, x_instrument = self.fm.unpack(state_est)
             rfl_alg_opt, Ls, coeffs = invert_algebraic(self.fm.surface,
-                self.fm.RT, self.fm.instrument, x_surface, x_RT, x_instrument, 
-                meas, geom)
+                                                       self.fm.RT, self.fm.instrument, x_surface, x_RT, x_instrument,
+                                                       meas, geom)
             rhoatm, sphalb, transm, solar_irr, coszen, transup = coeffs
 
             L_atm = self.fm.RT.get_L_atm(x_RT, geom)
@@ -509,7 +509,7 @@ class IO:
             L_up = self.fm.RT.get_L_up(x_RT, geom)
 
             atm = np.column_stack(list(coeffs[:4]) +
-                                 [np.ones((len(wl), 1)) * coszen])
+                                  [np.ones((len(wl), 1)) * coszen])
 
             # Upward emission & glint and apparent reflectance
             Ls_est = self.fm.calc_Ls(state_est, geom)
@@ -571,7 +571,7 @@ class IO:
             prior_resid = (x - xa).dot(Sa_inv_sqrt)
             rdn_est = self.fm.calc_rdn(x, geom)
             rdn_est_all = np.array([self.fm.calc_rdn(xtemp, geom)
-                                   for xtemp in states])
+                                    for xtemp in states])
 
             x_surface, x_RT, x_instrument = self.fm.unpack(x)
             Kb = self.fm.Kb(x, geom)
@@ -686,7 +686,7 @@ class IO:
                     if hasattr(self.fm.surface, 'components') and \
                             self.output.plot_surface_components:
                         idx = np.where(np.logical_and(self.fm.surface.wl > lo,
-                                                    self.fm.surface.wl < hi))[0]
+                                                      self.fm.surface.wl < hi))[0]
                         p3 = plt.plot(self.fm.surface.wl[idx],
                                       self.fm.xa(x, geom)[idx], 'b', linewidth=2)
                         for j in range(len(self.fm.surface.components)):

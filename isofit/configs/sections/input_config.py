@@ -1,9 +1,9 @@
 
 
-
 from typing import Dict, List, Type
 from isofit.configs.base_config import BaseConfigSection
 import os
+
 
 class InputConfig(BaseConfigSection):
 
@@ -101,7 +101,6 @@ class InputConfig(BaseConfigSection):
 
         self.set_config_options(sub_configdic)
 
-
     def _check_config_validity(self) -> List[str]:
         errors = list()
 
@@ -112,7 +111,7 @@ class InputConfig(BaseConfigSection):
                 if os.path.isfile(value) is False:
                     errors.append('Config value Input->{}: {} not found'.format(key, value))
 
-        #TODO: check that the right combination of input files exists
+        # TODO: check that the right combination of input files exists
 
         # Recursive call to any sub-config-module errors
         for key in self.__dict__.keys():
@@ -121,4 +120,3 @@ class InputConfig(BaseConfigSection):
                 errors.extend(value.check_config_validity())
 
         return errors
-

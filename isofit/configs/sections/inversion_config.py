@@ -3,6 +3,7 @@ from collections import OrderedDict
 from typing import Dict, List, Type
 from isofit.configs.base_config import BaseConfigSection
 
+
 class InversionConfig(BaseConfigSection):
     """
     Inversion configuration.
@@ -20,13 +21,12 @@ class InversionConfig(BaseConfigSection):
 
         self.set_config_options(sub_configdic)
 
-
     def _check_config_validity(self) -> List[str]:
         errors = list()
 
-        #TODO: add some checking to windows
+        # TODO: add some checking to windows
 
-        #TODO: add flags for rile overright, and make sure files don't exist if not checked?
+        # TODO: add flags for rile overright, and make sure files don't exist if not checked?
 
         return errors
 

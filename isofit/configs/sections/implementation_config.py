@@ -4,6 +4,7 @@ from isofit.configs.base_config import BaseConfigSection
 from isofit.configs.sections.inversion_config import InversionConfig, McmcInversionConfig, GridInversionConfig
 import os
 
+
 class ImplementationConfig(BaseConfigSection):
 
     def __init__(self, sub_configdic: dict = None):
@@ -34,11 +35,11 @@ class ImplementationConfig(BaseConfigSection):
     def _check_config_validity(self) -> List[str]:
         errors = list()
 
-        valid_implementation_modes = ['inversion','grid_inversion','mcmc_inversion']
+        valid_implementation_modes = ['inversion', 'grid_inversion', 'mcmc_inversion']
         if self.mode not in valid_implementation_modes:
             errors.append('Invalid implementation mode: {}.  Valid options are: {}'.
                           format(self.mode, valid_implementation_modes))
 
-        #TODO: recursive implmentation
+        # TODO: recursive implmentation
 
         return errors

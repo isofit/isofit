@@ -33,6 +33,7 @@ class StateVectorElementConfig(BaseConfigSection):
 
         return errors
 
+
 class StateVectorConfig(BaseConfigSection):
     """
     State vector configuration.
@@ -73,7 +74,7 @@ class StateVectorConfig(BaseConfigSection):
         return errors
 
     def _set_statevector_config_options(self, configdic):
-        #TODO: update using methods below
+        # TODO: update using methods below
         if configdic is not None:
             for key in configdic:
                 sv = StateVectorElementConfig(configdic[key])
@@ -88,7 +89,7 @@ class StateVectorConfig(BaseConfigSection):
     def get_all_scales(self):
         scales = []
         for element, name in zip(*self.get_elements()):
-                scales.append(element.scale)
+            scales.append(element.scale)
         return scales
 
     def get_all_inits(self):
@@ -108,7 +109,3 @@ class StateVectorConfig(BaseConfigSection):
         for element, name in zip(*self.get_elements()):
             prior_sigmas.append(element.prior_sigma)
         return prior_sigmas
-
-
-
-

@@ -98,7 +98,6 @@ class Isofit:
         elif self.config.implementation.mode == 'inversion':
             self.iv = Inversion(self.config, self.fm)
 
-
     def _clear_nonpicklable_objects(self):
         self.fm = None
         self.iv = None

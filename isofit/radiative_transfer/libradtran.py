@@ -48,12 +48,11 @@ class LibRadTranRT(TabularRT):
 
         self.lut_quantities = ['rhoatm', 'transm', 'sphalb', 'transup']
 
-        self.angular_lut_keys_degrees = ['OBSZEN','TRUEAZ','viewzen','viewaz',
-            'solzen','solaz']
+        self.angular_lut_keys_degrees = ['OBSZEN', 'TRUEAZ', 'viewzen', 'viewaz',
+                                         'solzen', 'solaz']
 
         # Build the lookup table
         self.build_lut()
-
 
     def find_basedir(self, config: RadiativeTransferEngineConfig):
         """Seek out a libradtran base directory."""
@@ -239,13 +238,13 @@ class LibRadTranRT(TabularRT):
         for key in self.lut_quantities:
             temp = s.zeros(dims_aug, dtype=float)
             for librt_output, point in zip(librt_outputs, self.points):
-                ind = [s.where(g == p)[0] for g, p in \
-                        zip(self.lut_grids, point)]
+                ind = [s.where(g == p)[0] for g, p in
+                       zip(self.lut_grids, point)]
                 ind = tuple(ind)
                 temp[ind] = librt_output[key]
 
-            self.luts[key] = VectorInterpolator(self.lut_grids, temp, 
-                    self.lut_interp_types)
+            self.luts[key] = VectorInterpolator(self.lut_grids, temp,
+                                                self.lut_interp_types)
 
     def _lookup_lut(self, point):
         ret = {}

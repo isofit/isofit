@@ -48,8 +48,8 @@ class RadiativeTransfer():
         self.statevec_names = config.statevector.get_element_names()
         self.lut_grid = config.lut_grid
 
-        #TODO: rework this so that we instead initialize an interpolator, that calls
-        #RTEs as necessary based on LUT grid or other parameters..which may happen higher up
+        # TODO: rework this so that we instead initialize an interpolator, that calls
+        # RTEs as necessary based on LUT grid or other parameters..which may happen higher up
         self.rt_engines = []
         for idx in range(len(config.radiative_transfer_engines)):
             rte_config: RadiativeTransferEngineConfig = config.radiative_transfer_engines[idx]
@@ -62,7 +62,8 @@ class RadiativeTransfer():
                 rte = SixSRT(rte_config, full_config)
             else:
                 # Should never get here, checked in config
-                raise AttributeError('Invalid radiative transfer engine name: {}'.format(rte_config.engine_name))
+                raise AttributeError(
+                    'Invalid radiative transfer engine name: {}'.format(rte_config.engine_name))
 
             self.rt_engines.append(rte)
 
@@ -168,7 +169,7 @@ class RadiativeTransfer():
         L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)
 
         # The reflected downwelling light is:
-        # L_down_transmitted * rfl / (1.0 - r['sphalb'] * rfl), or 
+        # L_down_transmitted * rfl / (1.0 - r['sphalb'] * rfl), or
         # L_down_transmitted * rho_scaled_for_multiscattering
         # This term is the derivative of rho_scaled_for_multiscattering
         drho_scaled_for_multiscattering_drfl = 1. / (1 - r['sphalb']*rfl)**2
@@ -190,7 +191,7 @@ class RadiativeTransfer():
             r = self.get(x_RT, geom)
             rdn = self.calc_rdn(x_RT, rfl, Ls, geom)
 
-            # unknown parameters modeled as random variables per 
+            # unknown parameters modeled as random variables per
             # Rodgers et al (2000) K_b matrix.  We calculate these derivatives
             # by finite differences
             Kb_RT = []

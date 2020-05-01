@@ -68,9 +68,9 @@ class TabularRT:
         # We use a sorted dictionary here so that filenames for lookup
         # table (LUT) grid points are always constructed the same way, with
         # consistent dimesion ordering). Every state vector element has
-        # a lookup table dimension, but some lookup table dimensions 
+        # a lookup table dimension, but some lookup table dimensions
         # (like geometry parameters) may not be in the state vector.
-        #TODO: enforce a requirement that makes all SV elements be inside the LUT
+        # TODO: enforce a requirement that makes all SV elements be inside the LUT
         full_lut_grid = full_config.forward_model.radiative_transfer.lut_grid
         # selectively get lut components that are in this particular RTE
         self.lut_grid_config = OrderedDict()
@@ -90,9 +90,9 @@ class TabularRT:
 
         self.angular_lut_keys_degrees = []
         self.angular_lut_keys_radians = []
-        self.lut_dims = [] 
+        self.lut_dims = []
         self.lut_grids = []
-        self.lut_names = [] 
+        self.lut_names = []
         self.lut_interp_types = []
 
         # Retrieved variables.  We establish scaling, bounds, and
@@ -102,7 +102,8 @@ class TabularRT:
         self.bounds, self.scale, self.init = [], [], []
         self.prior_mean, self.prior_sigma = [], []
         for key in self.statevector_names:
-            element: StateVectorElementConfig = full_config.forward_model.radiative_transfer.statevector.get_single_element_by_name(key)
+            element: StateVectorElementConfig = full_config.forward_model.radiative_transfer.statevector.get_single_element_by_name(
+                key)
             self.bounds.append(element.bounds)
             self.scale.append(element.scale)
             self.init.append(element.init)
@@ -125,8 +126,6 @@ class TabularRT:
         self._full_to_local_statevector_position_mapping = \
             np.array(full_to_local_statevector_position_mapping)
 
-
-
     def build_lut(self, rebuild=False):
         """Each LUT is associated with a source directory.  We build a lookup 
             table by: 
@@ -141,8 +140,8 @@ class TabularRT:
 
             # do some quick checks on the values
             if len(grid_values) == 1:
-                err = 'Only 1 value in LUT grid {}. '+\
-                        '1-d LUT grids cannot be interpreted.'.format(key)
+                err = 'Only 1 value in LUT grid {}. ' +\
+                    '1-d LUT grids cannot be interpreted.'.format(key)
                 raise ValueError(err)
             if grid_values != sorted(grid_values):
                 logging.error('Lookup table grid needs ascending order')
@@ -174,8 +173,8 @@ class TabularRT:
                              for n, x in zip(self.lut_names, point)])
             self.files.append(outf)
 
-        # Build the list of radiative transfer run commands. This 
-        # rebuild_cmd() function will be overriden by the child class to 
+        # Build the list of radiative transfer run commands. This
+        # rebuild_cmd() function will be overriden by the child class to
         # perform setup activities unique to each RTM.
         rebuild_cmds = []
         for point, fn in zip(self.points, self.files):
@@ -212,4 +211,3 @@ class TabularRT:
             return ''
         return 'Atmosphere: '+' '.join(['%s: %5.3f' % (si, xi) for si, xi in
                                         zip(self.statevector_names, x_RT[self._full_to_local_statevector_position_mapping])])
-

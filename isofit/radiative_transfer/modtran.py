@@ -61,7 +61,8 @@ class ModtranRT(TabularRT):
             self.treat_as_emmisive = True
 
         self.modtran_dir = self.find_basedir(engine_config)
-        flt_name = 'wavelengths_{}_{}_{}.flt'.format(engine_config.engine_name, engine_config.wavelength_range[0], engine_config.wavelength_range[1])
+        flt_name = 'wavelengths_{}_{}_{}.flt'.format(
+            engine_config.engine_name, engine_config.wavelength_range[0], engine_config.wavelength_range[1])
         self.filtpath = os.path.join(self.lut_dir, flt_name)
         self.template = deepcopy(json_load_ascii(engine_config.template_file)['MODTRAN'])
 
@@ -87,10 +88,11 @@ class ModtranRT(TabularRT):
 
         self.modtran_lut_names = ['rhoatm', 'transm', 'sphalb', 'transup']
         if self.treat_as_emmisive:
-            self.modtran_lut_names = ['thermal_upwelling', 'thermal_downwelling'] + self.modtran_lut_names
+            self.modtran_lut_names = ['thermal_upwelling',
+                                      'thermal_downwelling'] + self.modtran_lut_names
 
         # Specify which of the potential MODTRAN LUT parameters are angular, which will be handled differently
-        self.angular_lut_keys_degrees = ['OBSZEN','TRUEAZ','viewzen','viewaz','solzen','solaz']
+        self.angular_lut_keys_degrees = ['OBSZEN', 'TRUEAZ', 'viewzen', 'viewaz', 'solzen', 'solaz']
 
         # Build the lookup table
         self.build_lut()
@@ -131,7 +133,7 @@ class ModtranRT(TabularRT):
                 logging.error('%s is missing solar geometry' % infile)
                 raise ValueError('%s is missing solar geometry' % infile)
         szen = np.array([float(lines[i].split()[3])
-                        for i in range(ts, te)]).mean()
+                         for i in range(ts, te)]).mean()
         return szen
 
     def load_chn(self, infile, coszen):
@@ -180,11 +182,11 @@ class ModtranRT(TabularRT):
                 thermal_emission = float(toks[11])
                 thermal_scatter = float(toks[12])
                 thermal_upwelling = (thermal_emission + thermal_scatter) / \
-                                    wid * 1e6  # uW/nm/sr/cm2
+                    wid * 1e6  # uW/nm/sr/cm2
 
                 # Be careful with these! See note in function comments above
                 # grnd_rflt already includes ground-to-sensor transmission
-                grnd_rflt = float(toks[16]) 
+                grnd_rflt = float(toks[16])
                 thermal_downwelling = grnd_rflt / wid * 1e6  # uW/nm/sr/cm2
 
                 sols.append(solar_irr)
@@ -198,7 +200,7 @@ class ModtranRT(TabularRT):
 
                 wls.append(wl)
         params = [np.array(i) for i in [wls, sols, rhoatms, transms, sphalbs,
-                    transups, thermal_upwellings, thermal_downwellings]]
+                                        transups, thermal_upwellings, thermal_downwellings]]
         return tuple(params)
 
     def ext550_to_vis(self, ext550):
@@ -285,13 +287,13 @@ class ModtranRT(TabularRT):
         for key in self.modtran_lut_names:
             temp = np.zeros(dims_aug, dtype=float)
             for mod_output, point in zip(mod_outputs, self.points):
-                ind = [np.where(g == p)[0] for g, p in \
-                    zip(self.lut_grids, point)]
+                ind = [np.where(g == p)[0] for g, p in
+                       zip(self.lut_grids, point)]
                 ind = tuple(ind)
                 temp[ind] = mod_output[key]
 
-            self.luts[key] = VectorInterpolator(self.lut_grids, temp, 
-                    self.lut_interp_types)
+            self.luts[key] = VectorInterpolator(self.lut_grids, temp,
+                                                self.lut_interp_types)
 
     def rebuild_cmd(self, point, fn):
         """."""
@@ -363,9 +365,9 @@ class ModtranRT(TabularRT):
         chnfile = self.lut_dir+'/'+fn+'.chn'
         params = self.load_chn(chnfile, coszen)
 
-        # Be careful with the two thermal values! They can only be used in 
-        # the modtran_tir functions as they require the modtran reflectivity 
-        # be set to 1 in order to use them in the RTM in radiative_transfer.py. 
+        # Be careful with the two thermal values! They can only be used in
+        # the modtran_tir functions as they require the modtran reflectivity
+        # be set to 1 in order to use them in the RTM in radiative_transfer.py.
         # Don't add these to the VSWIR functions!
         names = ['wl', 'sol', 'rhoatm', 'transm', 'sphalb', 'transup']
 

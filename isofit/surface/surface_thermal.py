@@ -37,7 +37,7 @@ class ThermalSurface(MultiComponentSurface):
 
         MultiComponentSurface.__init__(self, full_config)
 
-        #TODO: Enforce this attribute in the config, not here (this is hidden)
+        # TODO: Enforce this attribute in the config, not here (this is hidden)
         # Handle additional state vector elements
         self.statevec_names.extend(['SURF_TEMP_K'])
         self.init.extend([300.0])  # This is overwritten below

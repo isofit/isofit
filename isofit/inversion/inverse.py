@@ -63,7 +63,7 @@ class Inversion:
         self.winidx = np.array((), dtype=int)  # indices of retrieval windows
         for lo, hi in self.windows:
             idx = np.where(np.logical_and(self.fm.instrument.wl_init > lo,
-                                        self.fm.instrument.wl_init < hi))[0]
+                                          self.fm.instrument.wl_init < hi))[0]
             self.winidx = np.concatenate((self.winidx, idx), axis=0)
         self.counts = 0
         self.inversions = 0
@@ -80,7 +80,7 @@ class Inversion:
             'tr_solver': 'exact'
         }
 
-        #TODO: consider brinigng in least_squares_parameters from config
+        # TODO: consider brinigng in least_squares_parameters from config
 
     def calc_prior(self, x, geom):
         """Calculate prior distribution of radiance. This depends on the 

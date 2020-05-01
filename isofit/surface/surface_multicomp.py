@@ -45,7 +45,7 @@ class MultiComponentSurface(Surface):
         config = full_config.forward_model.surface
 
         # Models are stored as dictionaries in .mat format
-        #TODO: inforce surface_file existence in the case of multicomponent_surface
+        # TODO: inforce surface_file existence in the case of multicomponent_surface
         model_dict = loadmat(config.surface_file)
         self.components = list(zip(model_dict['means'], model_dict['covs']))
         self.n_comp = len(self.components)
@@ -80,7 +80,7 @@ class MultiComponentSurface(Surface):
         for i in range(self.n_comp):
             Cov = self.components[i][1]
             self.Covs.append(np.array([Cov[j, self.idx_ref]
-                                      for j in self.idx_ref]))
+                                       for j in self.idx_ref]))
             self.Cinvs.append(svd_inv(self.Covs[-1]))
             self.mus.append(self.components[i][0][self.idx_ref])
 

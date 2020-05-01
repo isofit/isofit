@@ -44,7 +44,6 @@ class MCMCInversion(Inversion):
         self.verbose = config.verbose
         self.restart_every = config.restart_every
 
-
     def stable_mvnpdf(self, mean, cov, x):
         """Stable inverse via Singular Value Decomposition, using only the significant eigenvectors."""
 

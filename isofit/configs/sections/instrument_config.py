@@ -5,7 +5,6 @@ from isofit.configs.sections.statevector_config import StateVectorConfig
 import os
 
 
-
 class InstrumentUnknowns(BaseConfigSection):
     """
     Instrument Unknowns configuration.
@@ -29,7 +28,8 @@ class InstrumentUnknowns(BaseConfigSection):
     def _check_config_validity(self) -> List[str]:
         errors = list()
 
-        file_params = [self.channelized_radiometric_uncertainty_file, self.uncorrelated_radiometric_uncertainty]
+        file_params = [self.channelized_radiometric_uncertainty_file,
+                       self.uncorrelated_radiometric_uncertainty]
         for param in file_params:
             if param is not None:
                 if os.path.isfile(param) is False:
@@ -92,14 +92,15 @@ class InstrumentConfig(BaseConfigSection):
 
         self.set_config_options(sub_configdic)
 
-        #If necessary, initialize some blank options
+        # If necessary, initialize some blank options
         if self.statevector is None:
             self.statevector = StateVectorConfig({})
 
     def _check_config_validity(self) -> List[str]:
         errors = list()
 
-        noise_options = [self.SNR, self.parametric_noise_file, self.pushbroom_noise_file, self.nedt_noise_file]
+        noise_options = [self.SNR, self.parametric_noise_file,
+                         self.pushbroom_noise_file, self.nedt_noise_file]
         used_noise_options = [x for x in noise_options if x is not None]
 
         if len(used_noise_options) == 0:
@@ -114,7 +115,6 @@ class InstrumentConfig(BaseConfigSection):
                 if os.path.isfile(param) is False:
                     errors.append('Instrument config file: {} not found'.format(param))
 
-        #TODO: figure out submodule checking
+        # TODO: figure out submodule checking
 
         return errors
-

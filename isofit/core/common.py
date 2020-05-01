@@ -54,8 +54,8 @@ class VectorInterpolator:
         [degree_locations] = np.where(self.lut_interp_types == 'r')
         angle_locations = np.hstack([radian_locations, degree_locations])
         angle_types = np.hstack(
-            [self.lut_interp_types[radian_locations], 
-            self.lut_interp_types[degree_locations]])
+            [self.lut_interp_types[radian_locations],
+             self.lut_interp_types[degree_locations]])
         for _angle_loc in range(len(angle_locations)):
 
             angle_loc = angle_locations[_angle_loc]
@@ -79,7 +79,7 @@ class VectorInterpolator:
             grid.insert(angle_loc+1, grid_subset_sin[grid_subset_sin_order])
 
             # now copy the data to be interpolated through the extra dimension,
-            # at the specific angle_loc axes.  We'll use broadcast_to to do 
+            # at the specific angle_loc axes.  We'll use broadcast_to to do
             # this, but we need to do it on the last dimension.  So start by
             # temporarily moving the target axes there, then broadcasting
             data = np.swapaxes(data, -1, angle_loc)
@@ -204,8 +204,8 @@ def svd_inv_sqrt(C, mineig=0, hashtable=None):
             break
 
         if count == 2:
-            raise ValueError('Matrix inversion contains negative values,'+\
-                    'even after adding {} to the diagonal.'.format(inv_eps))
+            raise ValueError('Matrix inversion contains negative values,' +
+                             'even after adding {} to the diagonal.'.format(inv_eps))
 
     Ds = np.diag(1/np.sqrt(D))
     L = P@Ds

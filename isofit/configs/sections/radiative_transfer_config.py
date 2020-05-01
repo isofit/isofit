@@ -51,8 +51,8 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         self._aerosol_model_file_type = str
         self.aerosol_model_file = None
 
-        #6S parameters - not the corcommemnd
-        #TODO: these should come from a template file, as in modtran
+        # 6S parameters - not the corcommemnd
+        # TODO: these should come from a template file, as in modtran
         self._day_type = int
         self.day = None
 
@@ -91,7 +91,7 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
     def _check_config_validity(self) -> List[str]:
         errors = list()
 
-        valid_rt_engines = ['modtran','libradtran','6s']
+        valid_rt_engines = ['modtran', 'libradtran', '6s']
         if self.engine_name not in valid_rt_engines:
             errors.append('radiative_transfer->raditive_transfer_model: {} not in one of the available models: {}'.
                           format(self.engine_name, valid_rt_engines))
@@ -102,7 +102,8 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         if self.irradiance_file is None and self.engine_name == '6s':
             errors.append('6s requires irradiance_file to be specified')
 
-        files = [self.earth_sun_distance_file, self.irradiance_file, self.obs_file, self.aerosol_model_file, self.aerosol_template_file]
+        files = [self.earth_sun_distance_file, self.irradiance_file,
+                 self.obs_file, self.aerosol_model_file, self.aerosol_template_file]
         for f in files:
             if f is not None:
                 if os.path.isfile(f) is False:
@@ -113,7 +114,6 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
     def get_lut_names(self):
         self.lut_names.sort()
         return self.lut_names
-
 
 
 class RadiativeTransferUnknownsConfig(BaseConfigSection):
@@ -141,7 +141,7 @@ class RadiativeTransferConfig(BaseConfigSection):
     def __init__(self, sub_configdic: dict = None):
 
         self._statevector_type = StateVectorConfig
-        self.statevector:StateVectorConfig = None
+        self.statevector: StateVectorConfig = None
 
         self._lut_grid_type = OrderedDict
         self.lut_grid = None
@@ -154,14 +154,13 @@ class RadiativeTransferConfig(BaseConfigSection):
         # sort lut_grid
         for key, value in self.lut_grid.items():
             self.lut_grid[key] = sorted(self.lut_grid[key])
-        self.lut_grid = OrderedDict(sorted(self.lut_grid.items(), key=lambda t:t[0]))
+        self.lut_grid = OrderedDict(sorted(self.lut_grid.items(), key=lambda t: t[0]))
 
         # Hold this parameter for after the config_options, as radiative_transfer_engines have a special (dynamic) load
         self._radiative_transfer_engines_type = List[RadiativeTransferEngineConfig]
         self.radiative_transfer_engines = []
 
         self._set_rt_config_options(sub_configdic['radiative_transfer_engines'])
-
 
     def _set_rt_config_options(self, subconfig):
         if type(subconfig) is list:
@@ -185,6 +184,5 @@ class RadiativeTransferConfig(BaseConfigSection):
             if len(item) < 2:
                 errors.append('lut_grid item {} has less than the required 2 elements'.format(key))
 
-        #TODO: figure out submodule checking
+        # TODO: figure out submodule checking
         return errors
-

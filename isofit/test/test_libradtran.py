@@ -51,7 +51,7 @@ def run_forward():
     # Configure the surface/atmosphere/instrument model
     testdir, fname = os.path.split(os.path.abspath(__file__))
     datadir = os.path.join(testdir, 'data')
-    config = create_new_config(os.path.join(datadir,'config_forward.json'))
+    config = create_new_config(os.path.join(datadir, 'config_forward.json'))
     fm = ForwardModel(config)
     iv = Inversion(config, fm)
     io = IO(config, fm, iv, [0], [0])
@@ -71,7 +71,7 @@ def run_inverse():
     # Configure the surface/atmosphere/instrument model
     testdir, fname = os.path.split(os.path.abspath(__file__))
     datadir = os.path.join(testdir, 'data')
-    config = create_new_config(os.path.join(datadir,'config_forward.json'))
+    config = create_new_config(os.path.join(datadir, 'config_forward.json'))
     fm = ForwardModel(config)
     iv = Inversion(config, fm)
     io = IO(config, fm, iv, [0], [0])
