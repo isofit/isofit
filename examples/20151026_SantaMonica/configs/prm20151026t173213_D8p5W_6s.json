@@ -60,7 +60,6 @@
           "engine_name": "6s",
           "irradiance_file": "../data/prism_optimized_irr.dat",
           "earth_sun_distance_file": "../../../data/earth_sun_distance.txt",
-          "wavelength_range": [376, 2501],
           "engine_base_dir": "${SIXS_DIR}",
           "solzen": 55.21,
           "solaz": 141.70,

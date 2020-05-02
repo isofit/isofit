@@ -63,7 +63,6 @@
         "vswir": {
           "engine_name": "libradtran",
           "lut_path": "../lut/",
-          "wavelength_range": [376, 2501],
           "template_file": "ang20171108t184227_libradtran.inp",
           "lut_names": ["H2OSTR", "AOT550"],
           "statevector_names": ["H2OSTR", "AOT550"]

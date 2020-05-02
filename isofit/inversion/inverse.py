@@ -44,16 +44,22 @@ class Inversion:
         """Initialization specifies retrieval subwindows for calculating
         measurement cost distributions."""
 
-        config = full_config.implementation.inversion
+        #TODO: this is hacky, rework class structure
+        if full_config.implementation.inversion is not None:
+            config = full_config.implementation.inversion
+        elif full_config.implementation.grid_inversion is not None:
+            config = full_config.implementation.grid_inversion
+        elif full_config.implementation.mcmc_inversion is not None:
+            config = full_config.implementation.mcmc_inverson
 
         self.lasttime = time.time()
         self.fm = forward
         self.method = 'GradientDescent'
         self.hashtable = OrderedDict()  # Hash table for caching inverse matrices
         self.max_table_size = 500
-        self.windows = config.windows  # Retrieval windows
         self.state_indep_S_hat = False
 
+        self.windows = config.windows  # Retrieval windows
         self.simulation_mode = config.simulation_mode
         self.state_indep_S_hat = config.cressie_map_confidence
 

@@ -40,8 +40,6 @@ from isofit.configs import Config
 
 eps = 1e-5  # used for finite difference derivative calculations
 
-modtran_bands_available = ['modtran_vswir', 'modtran_tir']
-
 ### Classes ###
 
 
@@ -53,10 +51,10 @@ class ModtranRT(TabularRT):
 
         super().__init__(engine_config, full_config)
 
-        self.treat_as_emmisive = False
 
         # Flag to determine if MODTRAN should operate with reflectivity = 1
         # (enabling thermal_upwelling and thermal_downwelling to be determined - see comments below)
+        self.treat_as_emmisive = False
         if engine_config.wavelength_range[0] > 2500:
             self.treat_as_emmisive = True
 

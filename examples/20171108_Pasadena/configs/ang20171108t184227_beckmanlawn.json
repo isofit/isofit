@@ -60,7 +60,6 @@
       "radiative_transfer_engines": {
         "vswir": {
           "engine_name": "modtran",
-          "wavelength_range": [376, 2501],
           "lut_path": "../lut/",
           "template_file": "ang20171108t184227_modtran.json",
           "lut_names": ["H2OSTR", "AOT550" ],

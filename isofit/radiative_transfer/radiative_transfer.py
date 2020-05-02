@@ -21,10 +21,10 @@
 import numpy as np
 import logging
 
-from ..core.common import json_load_ascii, eps
-from ..radiative_transfer.modtran import modtran_bands_available, ModtranRT
-from ..radiative_transfer.six_s import sixs_names, SixSRT
-from ..radiative_transfer.libradtran import libradtran_names, LibRadTranRT
+from ..core.common import eps
+from ..radiative_transfer.modtran import ModtranRT
+from ..radiative_transfer.six_s import SixSRT
+from ..radiative_transfer.libradtran import LibRadTranRT
 from isofit.configs import Config
 from isofit.configs.sections.radiative_transfer_config import RadiativeTransferEngineConfig
 

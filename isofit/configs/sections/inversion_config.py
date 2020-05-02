@@ -49,12 +49,13 @@ class InversionConfig(BaseConfigSection):
         return errors
 
 
-class McmcInversionConfig(BaseConfigSection):
+class McmcInversionConfig(InversionConfig):
     """
-    Inversion configuration.
+    MCMC inversion configuration.
     """
 
     def __init__(self, sub_configdic: dict = None):
+        super().__init__(sub_configdic)
         self._iterations_type = int
         self.iterations = 10000
 
@@ -86,12 +87,13 @@ class McmcInversionConfig(BaseConfigSection):
         return errors
 
 
-class GridInversionConfig(BaseConfigSection):
+class GridInversionConfig(InversionConfig):
     """
-    Inversion configuration.
+    Grid inversion configuration.
     """
 
     def __init__(self, sub_configdic: dict = None):
+        super().__init__(sub_configdic)
         self._integration_grid_type = OrderedDict
         self.integration_grid = None
 

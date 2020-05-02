@@ -28,8 +28,6 @@ from isofit.core.geometry import Geometry
 from isofit.configs import Config
 from isofit.configs.sections.radiative_transfer_config import RadiativeTransferEngineConfig
 
-sixs_names = ['sixs_vswir']
-
 eps = 1e-5  # used for finite difference derivative calculations
 
 sixs_template = '''0 (User defined)
@@ -61,6 +59,9 @@ class SixSRT(TabularRT):
     def __init__(self, engine_config: RadiativeTransferEngineConfig, full_config: Config):
 
         super().__init__(engine_config, full_config)
+
+        self.treat_as_emmisive = False
+
         self.sixs_dir = self.find_basedir(engine_config)
         self.sixs_grid_init = s.arange(self.wl[0], self.wl[-1]+2.5, 2.5)
         self.sixs_ngrid_init = len(self.sixs_grid_init)

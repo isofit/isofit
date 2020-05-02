@@ -32,7 +32,6 @@ from isofit.configs import Config
 ### Variables ###
 
 eps = 1e-5  # used for finite difference derivative calculations
-libradtran_names = ['libradtran_vswir']
 
 ### Classes ###
 
@@ -43,6 +42,7 @@ class LibRadTranRT(TabularRT):
     def __init__(self, engine_config: RadiativeTransferEngineConfig, full_config: Config):
 
         super().__init__(engine_config, full_config)
+        self.treat_as_emmisive = False
         self.libradtran_dir = self.find_basedir(engine_config)
         self.libradtran_template_file = engine_config.template_file
 
