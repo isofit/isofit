@@ -46,8 +46,7 @@ class InstrumentUnknowns(BaseConfigSection):
     def _check_config_validity(self) -> List[str]:
         errors = list()
 
-        file_params = [self.channelized_radiometric_uncertainty_file,
-                       self.uncorrelated_radiometric_uncertainty]
+        file_params = [self.channelized_radiometric_uncertainty_file]
         for param in file_params:
             if param is not None:
                 if os.path.isfile(param) is False:
@@ -132,7 +131,5 @@ class InstrumentConfig(BaseConfigSection):
             if param is not None:
                 if os.path.isfile(param) is False:
                     errors.append('Instrument config file: {} not found'.format(param))
-
-        # TODO: figure out submodule checking
 
         return errors

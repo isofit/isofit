@@ -90,9 +90,6 @@ class Config(BaseConfigSection):
         # Load sub-classes and attributes
         self.set_config_options(configdict)
 
-        # check for errors
-        self.get_config_errors()
-
     def get_config_as_dict(self) -> dict:
         """Get configuration options as a nested dictionary with delineated sections.
 

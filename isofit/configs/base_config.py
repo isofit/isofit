@@ -77,7 +77,8 @@ class BaseConfigSection(object):
             errors.append(message_type.format(key, self.__class__.__name__,
                                               value, type(value), type_expected))
 
-        #errors.extend(self._check_config_validity())
+        errors.extend(self._check_config_validity())
+
         # Now do a full check on each submodule
         for key in self._get_nontype_attributes():
             value = getattr(self, key)
@@ -86,19 +87,7 @@ class BaseConfigSection(object):
             except AttributeError:
                 logging.debug('Configuration check: {} is not an object, skipping'.format(key))
 
-
         return errors
-
-    def _get_callable_errors(object: object, configdict: dict) -> None:
-        for config_section_name in object.__dict__.keys():
-            camelcase_section_name = snake_to_camel(config_section_name)
-
-            subdict = None
-            if camelcase_section_name in configdict.keys:
-                subdict = configdict[camelcase_section_name]
-
-            setattr(object, config_section_name, getattr(
-                'isofit.configs.sections', camelcase_section_name)(subdict))
 
     def get_config_options_as_dict(self) -> Dict[str, Dict[str, any]]:
         config_options = OrderedDict()
@@ -108,20 +97,6 @@ class BaseConfigSection(object):
                 value = list(value)  # Lists look nicer in config files and seem friendlier
             config_options[key] = value
         return config_options
-
-    def _clean_config_option_value(self, option_key: str, value: any) -> any:
-        # None read as string so we need to convert to the None type
-        if value in ("None", "none"):
-            value = None
-
-        # Some parameters are treated as floats, but ints are acceptable input formats
-        # Treating ints as floats is more flexible and requires fewer assumptions / accomodations in the code
-        # Example:  users are likely to provide -9999 instead of -9999.0
-        type_expected = self._get_expected_type_for_option_key(option_key)
-        if type(value) is int and type_expected is float:
-            value = float(value)
-
-        return value
 
     def _check_config_validity(self) -> List[str]:
         return list()
@@ -179,12 +154,3 @@ class BaseConfigSection(object):
         return elements[element_names.index(name)]
 
 
-def snake_to_camel(word: str) -> str:
-    """ Function to convert snake case to camel case, e.g.
-    snake_to_camel -> SnakeToCamel
-    Args:
-        word: snake_case string
-    Returns:
-        CamelCase string
-    """
-    return ''.join(x.capitalize() or '_' for x in word.split('_'))

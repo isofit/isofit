@@ -48,7 +48,6 @@ class StateVectorElementConfig(BaseConfigSection):
 
     def _check_config_validity(self) -> List[str]:
         errors = list()
-
         return errors
 
 

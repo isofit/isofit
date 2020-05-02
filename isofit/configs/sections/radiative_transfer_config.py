@@ -201,5 +201,4 @@ class RadiativeTransferConfig(BaseConfigSection):
             if len(item) < 2:
                 errors.append('lut_grid item {} has less than the required 2 elements'.format(key))
 
-        # TODO: figure out submodule checking
         return errors

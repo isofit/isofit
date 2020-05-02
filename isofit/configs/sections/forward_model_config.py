@@ -52,6 +52,4 @@ class ForwardModelConfig(BaseConfigSection):
     def _check_config_validity(self) -> List[str]:
         errors = list()
 
-        # TODO: figure out submodule checking
-        print('here')
         return errors
