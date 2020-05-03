@@ -174,6 +174,10 @@ def main():
         h2o_lut_grid = np.linspace(np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 5),
                                    np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 95),
                                    lut_params.num_h2o_lut_elements)
+
+        #TODO: adjust to better heuristic, (based on num_h2o_lut_elements perhaps)
+        if (np.abs(h2o_lut_grid[-1] - h2o_lut_grid[0]) < 0.1):
+            h2o_lut_grid = np.linspace(h2o_lut_grid[0] - 0.5, h2o_lut_grid[0] + 0.5, lut_params.num_h2o_lut_elements)
     else:
         h2o_lut_grid = np.linspace(lut_params.default_h2o_lut_range[0], lut_params.default_h2o_lut_range[1],
                                    lut_params.num_h2o_lut_elements)
