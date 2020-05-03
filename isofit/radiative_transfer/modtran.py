@@ -55,7 +55,7 @@ class ModtranRT(TabularRT):
         # Flag to determine if MODTRAN should operate with reflectivity = 1
         # (enabling thermal_upwelling and thermal_downwelling to be determined - see comments below)
         self.treat_as_emmisive = False
-        if engine_config.wavelength_range[0] > 2500:
+        if self.wl[0] > 2500:
             self.treat_as_emmisive = True
 
         self.modtran_dir = self.find_basedir(engine_config)
