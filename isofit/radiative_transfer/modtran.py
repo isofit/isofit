@@ -60,7 +60,7 @@ class ModtranRT(TabularRT):
 
         self.modtran_dir = self.find_basedir(engine_config)
         flt_name = 'wavelengths_{}_{}_{}.flt'.format(
-            engine_config.engine_name, engine_config.wavelength_range[0], engine_config.wavelength_range[1])
+            engine_config.engine_name, self.wl[0], self.wl[-1])
         self.filtpath = os.path.join(self.lut_dir, flt_name)
         self.template = deepcopy(json_load_ascii(engine_config.template_file)['MODTRAN'])
 
