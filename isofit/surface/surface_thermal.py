@@ -47,7 +47,8 @@ class ThermalSurface(MultiComponentSurface):
         self.emissive = True
         self.n_state = len(self.init)
 
-        self.emissivity_for_surface_T_init = config.emissivity_for_surface_T_init
+        self.emissivity_for_surface_T_init = \
+                config.emissivity_for_surface_T_init
         self.surface_T_prior_sigma_degK = config.surface_T_prior_sigma_degK
 
     def xa(self, x_surface, geom):
@@ -76,24 +77,9 @@ class ThermalSurface(MultiComponentSurface):
 
         return x_surface
 
-    def conditional_solrfl(self, rfl_est, geom):
-        """Conditions the reflectance on solar-reflected channels."""
-
-        sol_inds = np.logical_and(self.wl > 450, self.wl < 1250)
-        if sum(sol_inds) < 1:
-            return rfl_est
-        x = np.zeros(len(self.statevec_names))
-        x[self.idx_lamb] = rfl_est
-        c = self.components[self.component(x, geom)]
-        mu_sol = c[0][sol_inds]
-        Cov_sol = np.array([c[1][i, sol_inds] for i in np.where(sol_inds)[0]])
-        Cinv = scipy.linalg.inv(Cov_sol)
-        diff = rfl_est[sol_inds] - mu_sol
-        full = c[0] + c[1][:, sol_inds].dot(Cinv.dot(diff))
-        return full
-
     def calc_rfl(self, x_surface, geom):
-        """Reflectance."""
+        """Reflectance. This could be overriden to add (for example)
+            specular components"""
 
         return self.calc_lamb(x_surface, geom)
 
@@ -131,8 +117,8 @@ class ThermalSurface(MultiComponentSurface):
         calculated at x_surface."""
 
         T = x_surface[self.surf_temp_ind]
-        rfl = self.calc_rfl(x_surface, geom)
-        emissivity = 1 - rfl
+        lambertian_rfl = self.calc_lamb(x_surface, geom)
+        emissivity = 1 - lambertian_rfl
         Ls, dLs_dT = emissive_radiance(emissivity, T, self.wl)
         dLs_drfl = np.diag(-1*Ls)
         dLs_dsurface = np.vstack([dLs_drfl, dLs_dT]).T
