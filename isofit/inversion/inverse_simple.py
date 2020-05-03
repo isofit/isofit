@@ -45,7 +45,7 @@ def heuristic_atmosphere(RT: RadiativeTransfer, instrument, x_RT, x_instrument, 
     # TODO: this is currently very specific to vswir-tir 2-mode, eventually generalize
     my_RT = None
     for rte in RT.rt_engines:
-        if rte.treat_as_emmisive is False:
+        if rte.treat_as_emissive is False:
             my_RT = rte
             break
     if not my_RT:

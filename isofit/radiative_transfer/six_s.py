@@ -60,7 +60,7 @@ class SixSRT(TabularRT):
 
         super().__init__(engine_config, full_config)
 
-        self.treat_as_emmisive = False
+        self.treat_as_emissive = False
 
         self.sixs_dir = self.find_basedir(engine_config)
         self.sixs_grid_init = s.arange(self.wl[0], self.wl[-1]+2.5, 2.5)

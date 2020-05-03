@@ -54,9 +54,9 @@ class ModtranRT(TabularRT):
 
         # Flag to determine if MODTRAN should operate with reflectivity = 1
         # (enabling thermal_upwelling and thermal_downwelling to be determined - see comments below)
-        self.treat_as_emmisive = False
+        self.treat_as_emissive = False
         if self.wl[0] > 2500:
-            self.treat_as_emmisive = True
+            self.treat_as_emissive = True
 
         self.modtran_dir = self.find_basedir(engine_config)
         flt_name = 'wavelengths_{}_{}_{}.flt'.format(
@@ -73,7 +73,7 @@ class ModtranRT(TabularRT):
         if engine_config.aerosol_model_file is not None:
             aer_data = np.loadtxt(engine_config.aerosol_model_file)
             self.aer_wl = aer_data[:, 0]
-            aer_data = aer_data[:, 1:].T
+            aer_data = aer_data[:, 1:].t
             self.naer = int(len(aer_data)/3)
             aer_absc, aer_extc, aer_asym = [], [], []
             for i in range(self.naer):
@@ -85,7 +85,7 @@ class ModtranRT(TabularRT):
             self.aer_asym = np.array(aer_asym)
 
         self.modtran_lut_names = ['rhoatm', 'transm', 'sphalb', 'transup']
-        if self.treat_as_emmisive:
+        if self.treat_as_emissive:
             self.modtran_lut_names = ['thermal_upwelling',
                                       'thermal_downwelling'] + self.modtran_lut_names
 
@@ -373,7 +373,7 @@ class ModtranRT(TabularRT):
         names = ['wl', 'sol', 'rhoatm', 'transm', 'sphalb', 'transup']
 
         # Don't include the thermal terms in VSWIR runs to avoid incorrect usage
-        if self.treat_as_emmisive:
+        if self.treat_as_emissive:
             names = names + ['thermal_upwelling', 'thermal_downwelling']
 
         results_dict = {name: param for name, param in zip(names, params)}
@@ -426,7 +426,7 @@ class ModtranRT(TabularRT):
         return self._lookup_lut(point)
 
     def get_L_atm(self, x_RT, geom):
-        if self.treat_as_emmisive:
+        if self.treat_as_emissive:
             return self.get_L_atm_tir(x_RT, geom)
         else:
             return self.get_L_atm_vswir(x_RT, geom)
@@ -442,7 +442,7 @@ class ModtranRT(TabularRT):
         return r['thermal_upwelling']
 
     def get_L_down_transmitted(self, x_RT, geom):
-        if self.treat_as_emmisive:
+        if self.treat_as_emissive:
             return self.get_L_down_transmitted_tir(x_RT, geom)
         else:
             return self.get_L_down_transmitted_vswir(x_RT, geom)
