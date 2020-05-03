@@ -62,6 +62,7 @@
       "radiative_transfer_engines": {
         "vswir": {
           "engine_name": "libradtran",
+          "wavelength_range":[370,2505],
           "lut_path": "../lut/",
           "template_file": "ang20171108t184227_libradtran.inp",
           "lut_names": ["H2OSTR", "AOT550"],
