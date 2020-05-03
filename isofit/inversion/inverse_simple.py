@@ -160,8 +160,8 @@ def invert_simple(forward, meas, geom):
     # Multicomponent surfaces. Finds the cluster nearest the VSWIR heuristic
     # inversion and uses it for the TIR suface initialization.
     if any(forward.surface.wl > 3000):
-        rfl_idx = np.array([i for i, v in enumerate(forward.surface.statevec)
-                            if 'RFL' in v])
+        rfl_idx = np.array([i for i, v in \
+                enumerate(forward.surface.statevec_names) if 'RFL' in v])
         tir_idx = np.where(forward.surface.wl > 3000)[0]
         vswir_idx = np.where(forward.surface.wl < 3000)[0]
         vswir_idx = np.array([i for i in vswir_idx if i in

@@ -153,7 +153,7 @@ def main():
 
         # Write the presolve connfiguration file
         logging.info('Writing H2O pre-solve configuration file.')
-        build_presolve_config(paths, np.linspace(0.5, 5, 10))
+        build_presolve_config(paths, np.linspace(0.5, 5, 10), args.n_cores)
 
         # Run modtran retrieval
         logging.info('Run ISOFIT initial guess')
@@ -197,7 +197,8 @@ def main():
 
         logging.info('Writing main configuration file.')
         build_main_config(paths, lut_params, h2o_lut_grid, elevation_lut_grid, to_sensor_azimuth_lut_grid,
-                          to_sensor_zenith_lut_grid, mean_latitude, mean_longitude, dt, args.n_cores)
+                          to_sensor_zenith_lut_grid, mean_latitude, mean_longitude, dt, 
+                          args.empirical_line == 1, args.n_cores)
 
         # Run modtran retrieval
         logging.info('Running ISOFIT with full LUT')
@@ -689,24 +690,27 @@ def get_metadata_from_loc(loc_file: str, lut_params: LUTConfig, trim_lines: int 
 
 
 
-def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array):
+def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array, n_cores: int=-1):
     """ Write an isofit config file for a presolve, with limited info.
     Args:
         paths: object containing references to all relevant file locations
         h2o_lut_grid: the water vapor look up table grid isofit should use for this solve
+        n_cores: number of cores to use in processing
 
     :Returns:
         None
     """
 
-    h2o_configuration = {
-            "modtran_vswir": {
-                "wavelength_file": paths.wavelength_path,
-                "lut_path": paths.lut_h2o_directory,
-                "modtran_template_file": paths.h2o_template_path,
-                "modtran_directory": paths.modtran_path,
-                "lut_names": ["H2OSTR"],
-                "statevector_names": ["H2OSTR"],
+    radiative_transfer_config = {
+            "radiative_transfer_engines": {
+                "vswir": {
+                    "wavelength_file": paths.wavelength_path,
+                    "lut_path": paths.lut_h2o_directory,
+                    "modtran_template_file": paths.h2o_template_path,
+                    "modtran_directory": paths.modtran_path,
+                    "lut_names": ["H2OSTR"],
+                    "statevector_names": ["H2OSTR"],
+                }
             },
             "statevector": {
                 "H2OSTR": {
@@ -735,11 +739,14 @@ def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array):
                                             'integrations': NUM_INTEGRATIONS,
                                             'unknowns': {
                                                 'uncorrelated_radiometric_uncertainty': UNCORRELATED_RADIOMETRIC_UNCERTAINTY}},
-                                                    'multicomponent_surface': {'wavelength_file': paths.wavelength_path,
-                                                                               'surface_file': paths.surface_working_path,
-                                                                               'select_on_init': True},
+                                                    'surface': {"surface_category": "multicomponent_surface",
+                                                                'surface_file': paths.surface_working_path,
+                                                                'select_on_init': True},
                              'radiative_transfer': h2o_configuration},
-                         'inversion': {'windows': INVERSION_WINDOWS}}
+                         "implementation": {
+                            'inversion': {'windows': INVERSION_WINDOWS},
+                            "n_cores": n_cores}
+                         }
 
     if paths.channelized_uncertainty_working_path is not None:
         isofit_config_h2o['forward_model']['unknowns'][
@@ -761,7 +768,8 @@ def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array):
 def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.array = None,
                       elevation_lut_grid: np.array = None, to_sensor_azimuth_lut_grid: np.array = None,
                       to_sensor_zenith_lut_grid: np.array = None, mean_latitude: float = None,
-                      mean_longitude: float = None, dt: datetime = None, n_cores: int = -1):
+                      mean_longitude: float = None, dt: datetime = None, use_emp_line: bool = True, 
+                      n_cores: int = -1):
     """ Write an isofit config file for the main solve, using the specified pathnames and all given info
     Args:
         paths: object containing references to all relevant file locations
@@ -773,6 +781,8 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
         mean_latitude: the latitude isofit should use for this solve
         mean_longitude: the longitude isofit should use for this solve
         dt: the datetime object corresponding to this flightline to use for this solve
+        use_emp_line: flag whether or not to set up for the empirical line estimation
+        n_cores: the number of cores to use during processing
 
     :Returns:
         None
@@ -819,11 +829,11 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
                          paths.isofit_path, lut_params=lut_params)
     radiative_transfer_config['statevector'].update(aerosol_state_vector)
     radiative_transfer_config['lut_grid'].update(aerosol_lut_grid)
-    radiative_transfer_config['modtran_vswir']['aerosol_model_file'] = aerosol_model_path
+    radiative_transfer_config['radiative_transfer_engines']['vswir']['aerosol_model_file'] = aerosol_model_path
 
     # MODTRAN should know about our whole LUT grid and all of our statevectors, so copy them in
-    radiative_transfer_config['modtran_vswir']['statevector_names'] = list(radiative_transfer_config['statevector'].keys())
-    radiative_transfer_config['modtran_vswir']['lut_names'] = list(radiative_transfer_config['lut_grid'].keys())
+    radiative_transfer_config['radiative_transfer_engines']['vswir']['statevector_names'] = list(radiative_transfer_config['statevector'].keys())
+    radiative_transfer_config['radiative_transfer_engines']['vswir']['lut_names'] = list(radiative_transfer_config['lut_grid'].keys())
 
     # make isofit configuration
     isofit_config_modtran = {'ISOFIT_base': paths.isofit_path,
@@ -843,19 +853,19 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
                                 "n_cores": n_cores}
                              }
 
-    if empirical_line == 1:
-        isofit_config_modtran['input']['measured_radiance_file'] = paths.rdn_subs_path,
-        isofit_config_modtran['input']['loc_file'] = paths.loc_subs_path,
-        isofit_config_modtran['input']['obs_file'] = paths.obs_subs_path,
-        isofit_config_modtran['output']['estimated_state_file'] = paths.state_subs_path,
-        isofit_config_modtran['output']['posterior_uncertainty_file'] = paths.uncert_subs_path,
-        isofit_config_modtran['output']['estimated_reflectance_file'] = paths.rfl_subs_path,
+    if use_emp_line == 1:
+        isofit_config_modtran['input']['measured_radiance_file'] = paths.rdn_subs_path
+        isofit_config_modtran['input']['loc_file'] = paths.loc_subs_path
+        isofit_config_modtran['input']['obs_file'] = paths.obs_subs_path
+        isofit_config_modtran['output']['estimated_state_file'] = paths.state_subs_path
+        isofit_config_modtran['output']['posterior_uncertainty_file'] = paths.uncert_subs_path
+        isofit_config_modtran['output']['estimated_reflectance_file'] = paths.rfl_subs_path
     else:
-        isofit_config_modtran['input']['measured_radiance_file'] = paths.radiance_working_path,
-        isofit_config_modtran['input']['loc_file'] = paths.loc_working_path,
-        isofit_config_modtran['input']['obs_file'] = paths.obs_working_path,
-        isofit_config_modtran['output']['posterior_uncertainty_file'] = paths.uncert_working_path,
-        isofit_config_modtran['output']['estimated_reflectance_file'] = paths.rfl_working_path,
+        isofit_config_modtran['input']['measured_radiance_file'] = paths.radiance_working_path
+        isofit_config_modtran['input']['loc_file'] = paths.loc_working_path
+        isofit_config_modtran['input']['obs_file'] = paths.obs_working_path
+        isofit_config_modtran['output']['posterior_uncertainty_file'] = paths.uncert_working_path
+        isofit_config_modtran['output']['estimated_reflectance_file'] = paths.rfl_working_path
 
     if paths.channelized_uncertainty_working_path is not None:
         isofit_config_modtran['forward_model']['unknowns'][

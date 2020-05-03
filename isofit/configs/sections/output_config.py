@@ -120,8 +120,8 @@ class OutputConfig(BaseConfigSection):
 
         valid = [x is not None for x in elements]
         elements = [elements[x] for x in range(len(elements)) if valid[x]]
-        headers = [headers[x] for x in range(len(elements)) if valid[x]]
-        names = [names[x] for x in range(len(elements)) if valid[x]]
+        headers = [headers[x] for x in range(len(headers)) if valid[x]]
+        names = [names[x] for x in range(len(names)) if valid[x]]
 
         order = np.argsort(names)
         elements = [elements[idx] for idx in order]
