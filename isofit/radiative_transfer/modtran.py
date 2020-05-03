@@ -101,10 +101,9 @@ class ModtranRT(TabularRT):
     def find_basedir(self, config):
         """Seek out a modtran base directory."""
 
-        try:
+        if config.engine_base_dir is not None:
             return config.engine_base_dir
-        except KeyError:
-            pass  # fall back to environment variable
+
         try:
             return os.getenv('MODTRAN_DIR')
         except KeyError:
