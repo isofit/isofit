@@ -73,7 +73,7 @@ class ModtranRT(TabularRT):
         if engine_config.aerosol_model_file is not None:
             aer_data = np.loadtxt(engine_config.aerosol_model_file)
             self.aer_wl = aer_data[:, 0]
-            aer_data = aer_data[:, 1:].t
+            aer_data = np.transpose(aer_data[:, 1:])
             self.naer = int(len(aer_data)/3)
             aer_absc, aer_extc, aer_asym = [], [], []
             for i in range(self.naer):
