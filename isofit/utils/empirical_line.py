@@ -20,16 +20,15 @@
 
 from isofit.core.geometry import Geometry
 from scipy.linalg import inv
-from isofit.core.common import load_config
 from isofit.core.instrument import Instrument
 from spectral.io import envi
-from scipy.stats import linregress
 from scipy.spatial import KDTree
 import scipy as s
 import logging
 import time
 import matplotlib
 import pylab as plt
+from isofit.configs import configs
 plt.switch_backend("Agg")
 
 
@@ -126,8 +125,8 @@ def empirical_line(reference_radiance, reference_reflectance, reference_uncertai
 
     # Prepare instrument model, if available
     if isofit_config is not None:
-        config = load_config(isofit_config)
-        instrument = Instrument(config['forward_model']['instrument'])
+        config = configs.create_new_config(isofit_config)
+        instrument = Instrument(config.forward_model.instrument)
         logging.info('Loading instrument')
     else:
         instrument = None
