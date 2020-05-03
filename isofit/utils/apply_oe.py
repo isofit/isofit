@@ -48,6 +48,8 @@ def main():
     parser.add_argument('--logging_level', type=str, default="INFO")
     parser.add_argument('--log_file', type=str, default=None)
     parser.add_argument('-n_cores', type=int, default=-1)
+    parser.add_argument('--presolve', choices=[0,1], type=int, default=0)
+    parser.add_argument('--empirical_line', choices=[0,1], type=int, default=0)
 
     args = parser.parse_args()
 
@@ -89,26 +91,11 @@ def main():
 
     gmtime = float(h_m_s[0] + h_m_s[1] / 60.)
 
-    # Superpixel segmentation
-    if not exists(paths.lbl_working_path) or not exists(paths.radiance_working_path):
-        logging.info('Segmenting...')
-        segment(spectra=(paths.radiance_working_path, paths.lbl_working_path),
-                flag=-9999, npca=5, segsize=SEGMENTATION_SIZE, nchunk=CHUNKSIZE)
-
-    # Extract input data per segment
-    for inp, outp in [(paths.radiance_working_path, paths.rdn_subs_path),
-                      (paths.obs_working_path, paths.obs_subs_path),
-                      (paths.loc_working_path, paths.loc_subs_path)]:
-        if not exists(outp):
-            logging.info('Extracting ' + outp)
-            extractions(inputfile=inp, labels=paths.lbl_working_path,
-                        output=outp, chunksize=CHUNKSIZE, flag=-9999)
-
     # get radiance file, wavelengths
     if args.wavelength_path:
         chn, wl, fwhm = np.loadtxt(args.wavelength_path).T
     else:
-        radiance_dataset = envi.open(paths.rdn_subs_path + '.hdr')
+        radiance_dataset = envi.open(paths.radiance_working_path + '.hdr')
         wl = np.array([float(w) for w in radiance_dataset.metadata['wavelength']])
         if 'fwhm' in radiance_dataset.metadata:
             fwhm = np.array([float(f) for f in radiance_dataset.metadata['fwhm']])
@@ -116,6 +103,9 @@ def main():
             fwhm = np.array([float(f) for f in radiance_dataset.metadata['FWHM']])
         else:
             fwhm = np.ones(wl.shape) * (wl[1] - wl[0])
+
+        # Close out radiance dataset to avoid potential confusion
+        del radiance_dataset
 
     # Convert to microns if needed
     if wl[0] > 100:
@@ -136,8 +126,25 @@ def main():
                  (mean_path_km, mean_to_sensor_zenith, mean_to_sensor_azimuth, mean_altitude_km))
 
 
-    if not exists(paths.h2o_subs_path + '.hdr') or not exists(paths.h2o_subs_path):
 
+    # Superpixel segmentation
+    if args.empirical_line == 1:
+        if not exists(paths.lbl_working_path) or not exists(paths.radiance_working_path):
+            logging.info('Segmenting...')
+            segment(spectra=(paths.radiance_working_path, paths.lbl_working_path),
+                    flag=-9999, npca=5, segsize=SEGMENTATION_SIZE, nchunk=CHUNKSIZE)
+
+        # Extract input data per segment
+        for inp, outp in [(paths.radiance_working_path, paths.rdn_subs_path),
+                          (paths.obs_working_path, paths.obs_subs_path),
+                          (paths.loc_working_path, paths.loc_subs_path)]:
+            if not exists(outp):
+                logging.info('Extracting ' + outp)
+                extractions(inputfile=inp, labels=paths.lbl_working_path,
+                            output=outp, chunksize=CHUNKSIZE, flag=-9999)
+
+
+    if args.presolve == 1 and not exists(paths.h2o_subs_path + '.hdr') or not exists(paths.h2o_subs_path):
         write_modtran_template(atmosphere_type='ATM_MIDLAT_SUMMER', fid=paths.fid, altitude_km=mean_altitude_km,
                                dayofyear=dayofyear, latitude=mean_latitude, longitude=mean_longitude,
                                to_sensor_azimuth=mean_to_sensor_azimuth, to_sensor_zenith=mean_to_sensor_zenith,
@@ -159,13 +166,18 @@ def main():
             logging.info(cmd)
             os.system(cmd)
 
-    # Extract h2o grid avoiding the zero label (periphery, bad data)
-    # and outliers
-    h2o = envi.open(paths.h2o_subs_path + '.hdr')
-    h2o_est = h2o.read_band(-1)[:].flatten()
+    # Define h2o grid, either from presolve or LUTConfig
+    if args.presolve == 1:
+        h2o = envi.open(paths.h2o_subs_path + '.hdr')
+        h2o_est = h2o.read_band(-1)[:].flatten()
 
-    h2o_lut_grid = np.linspace(np.percentile(
-        h2o_est[h2o_est > lut_params.h2o_min], 5), np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 95), lut_params.num_h2o_lut_elements)
+        h2o_lut_grid = np.linspace(np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 5),
+                                   np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 95),
+                                   lut_params.num_h2o_lut_elements)
+    else:
+        h2o_lut_grid = np.linspace(lut_params.default_h2o_lut_range[0], lut_params.default_h2o_lut_range[1],
+                                   lut_params.num_h2o_lut_elements)
+
 
     logging.info('Full (non-aerosol) LUTs:\nElevation: {}\nTo-sensor azimuth: {}\nTo-sensor zenith: {}\nh2o-vis: {}:'.format(elevation_lut_grid, to_sensor_azimuth_lut_grid, to_sensor_zenith_lut_grid, h2o_lut_grid))
 
@@ -181,7 +193,7 @@ def main():
 
         logging.info('Writing main configuration file.')
         build_main_config(paths, lut_params, h2o_lut_grid, elevation_lut_grid, to_sensor_azimuth_lut_grid,
-                          to_sensor_zenith_lut_grid, mean_latitude, mean_longitude, dt, n_cores)
+                          to_sensor_zenith_lut_grid, mean_latitude, mean_longitude, dt, args.n_cores)
 
         # Run modtran retrieval
         logging.info('Running ISOFIT with full LUT')
@@ -371,6 +383,9 @@ class LUTConfig:
         self.h2o_min = 0.2
 
         self.zenith_min_spacing = 2
+
+        self.default_h2o_lut_range = [0.05, 5]
+
 
         # overwrite anything that comes in from the config file
         if lut_config_file is not None:
@@ -808,12 +823,8 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
 
     # make isofit configuration
     isofit_config_modtran = {'ISOFIT_base': paths.isofit_path,
-                             'input': {'measured_radiance_file': paths.rdn_subs_path,
-                                       'loc_file': paths.loc_subs_path,
-                                       'obs_file': paths.obs_subs_path},
-                             'output': {'estimated_state_file': paths.state_subs_path,
-                                        'posterior_uncertainty_file': paths.uncert_subs_path,
-                                        'estimated_reflectance_file': paths.rfl_subs_path},
+                             'input': {},
+                             'output': {},
                              'forward_model': {
                                  'instrument': {'wavelength_file': paths.wavelength_path,
                                                 'integrations': NUM_INTEGRATIONS,
@@ -827,6 +838,20 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
                                 "inversion": {"windows": INVERSION_WINDOWS},
                                 "n_cores": n_cores}
                              }
+
+    if empirical_line == 1:
+        isofit_config_modtran['input']['measured_radiance_file'] = paths.rdn_subs_path,
+        isofit_config_modtran['input']['loc_file'] = paths.loc_subs_path,
+        isofit_config_modtran['input']['obs_file'] = paths.obs_subs_path,
+        isofit_config_modtran['output']['estimated_state_file'] = paths.state_subs_path,
+        isofit_config_modtran['output']['posterior_uncertainty_file'] = paths.uncert_subs_path,
+        isofit_config_modtran['output']['estimated_reflectance_file'] = paths.rfl_subs_path,
+    else:
+        isofit_config_modtran['input']['measured_radiance_file'] = paths.radiance_working_path,
+        isofit_config_modtran['input']['loc_file'] = paths.loc_working_path,
+        isofit_config_modtran['input']['obs_file'] = paths.obs_working_path,
+        isofit_config_modtran['output']['posterior_uncertainty_file'] = paths.uncert_working_path,
+        isofit_config_modtran['output']['estimated_reflectance_file'] = paths.rfl_working_path,
 
     if paths.channelized_uncertainty_working_path is not None:
         isofit_config_modtran['forward_model']['unknowns'][
