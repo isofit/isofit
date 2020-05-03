@@ -137,7 +137,7 @@ class BaseConfigSection(object):
         element_names = self._get_nontype_attributes()
         valid = [x is not None for x in elements]
         elements = [elements[x] for x in range(len(elements)) if valid[x]]
-        element_names = [element_names[x] for x in range(len(elements)) if valid[x]]
+        element_names = [element_names[x] for x in range(len(element_names)) if valid[x]]
 
         order = np.argsort(element_names)
         elements = [elements[idx] for idx in order]
