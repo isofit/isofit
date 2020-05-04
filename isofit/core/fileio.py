@@ -474,7 +474,7 @@ class IO:
             # intepreted either as samples from the posterior (MCMC case)
             # or as a gradient descent trajectory (standard case). For
             # gradient descent the last spectrum is the converged solution.
-            if self.iv.method == 'MCMC':
+            if self.iv.mode == 'mcmc':
                 state_est = states.mean(axis=0)
             else:
                 state_est = states[-1, :]

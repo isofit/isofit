@@ -28,7 +28,6 @@ from isofit.core import common
 from .forward import ForwardModel
 from isofit.inversion.inverse import Inversion
 from isofit.inversion.inverse_mcmc import MCMCInversion
-from isofit.inversion.inverse_grid import GridInversion
 from .fileio import IO
 
 import multiprocessing
@@ -91,10 +90,11 @@ class Isofit:
 
         if self.config.implementation.mode == 'mcmc_inversion':
             self.iv = MCMCInversion(self.config, self.fm)
-        elif self.config.implementation.mode == 'grid_inversion':
-            self.iv = GridInversion(self.config, self.fm)
-        elif self.config.implementation.mode == 'inversion':
+        elif self.config.implementation.mode in ['inversion', 'simulation']:
             self.iv = Inversion(self.config, self.fm)
+        else:
+            # This should never be reached due to configuration checking
+            raise AttributeError('Config implementation mode node valid')
 
     def _clear_nonpicklable_objects(self):
         self.fm = None

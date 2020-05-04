@@ -34,15 +34,14 @@ class MCMCInversion(Inversion):
         """Initialize and apply defaults."""
 
         Inversion.__init__(self, full_config, forward)
-        config = full_config.implementation.mcmc_inversion
+        mcmc_config = full_config.implementation.inversion.mcmc
 
-        self.iterations = config.iterations
-        self.burnin = config.burnin
-        self.method = config.method
-        self.regularizer = config.regularizer
-        self.proposal_scaling = config.proposal_scaling
-        self.verbose = config.verbose
-        self.restart_every = config.restart_every
+        self.iterations = mcmc_config.iterations
+        self.burnin = mcmc_config.burnin
+        self.regularizer = mcmc_config.regularizer
+        self.proposal_scaling = mcmc_config.proposal_scaling
+        self.verbose = mcmc_config.verbose
+        self.restart_every = mcmc_config.restart_every
 
     def stable_mvnpdf(self, mean, cov, x):
         """Stable inverse via Singular Value Decomposition, using only the significant eigenvectors."""

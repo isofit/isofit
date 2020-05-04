@@ -30,12 +30,20 @@ class InversionConfig(BaseConfigSection):
     def __init__(self, sub_configdic: dict = None):
         self._windows_type = list()
         self.windows = None
-
-        self._simulation_mode_type = bool
-        self.simulation_mode = False
+        """List[List[float]]: inversion retrieval windows to operate over."""
 
         self._cressie_map_confidence_type = bool
         self.cressie_map_confidence = False
+        """bool: N. Cressie [ASA 2018] suggests an alternate definition of S_hat for
+        more statistically-consistent posterior confidence estimation, this flag runs in this mode"""
+
+        self._mcmc_type = McmcConfig
+        self.mcmc = McmcConfig({})
+        """MCMC parameters, only used if mode = mcmc."""
+
+        self._integration_grid_type = OrderedDict
+        self.integration_grid = OrderedDict({})
+        """Grid of inversion points to execute (implemented as fixed parameters) if mode='grid'."""
 
         self.set_config_options(sub_configdic)
 
@@ -43,32 +51,36 @@ class InversionConfig(BaseConfigSection):
         errors = list()
 
         # TODO: add some checking to windows
+        if self.windows is None and self.mode != 'simulation':
+            errors.append('windows is a required parameters inside of inversion')
+        else:
+            for subset in self.windows:
+                if isinstance(subset, List) is False:
+                    errors.append('windows parameter must be a list of lists of wavelength ranges')
+                elif subset[0] > subset[1]:
+                    errors.append('In inversion window subset {}, wavelength ranges must be in order'.format(subset))
 
-        # TODO: add flags for rile overright, and make sure files don't exist if not checked?
 
         return errors
 
 
-class McmcInversionConfig(InversionConfig):
+class McmcConfig(BaseConfigSection):
     """
     MCMC inversion configuration.
     """
 
     def __init__(self, sub_configdic: dict = None):
-        super().__init__(sub_configdic)
         self._iterations_type = int
         self.iterations = 10000
+        """int: Number of MCMC iterations to run."""
 
         self._burnin_type = int
         self.burnin = 200
 
-        self._method_type = str
-        self.method = 'MCMC'
-
         self._regularizer_type = float
         self.regularizer = 1e-3
 
-        self._proposal_scaling_type = 0.01
+        self._proposal_scaling_type = float
         self.proposal_scaling = 0.01
 
         self._verbose_type = bool
@@ -87,21 +99,3 @@ class McmcInversionConfig(InversionConfig):
         return errors
 
 
-class GridInversionConfig(InversionConfig):
-    """
-    Grid inversion configuration.
-    """
-
-    def __init__(self, sub_configdic: dict = None):
-        super().__init__(sub_configdic)
-        self._integration_grid_type = OrderedDict
-        self.integration_grid = None
-
-        self.set_config_options(sub_configdic)
-
-    def _check_config_validity(self) -> List[str]:
-        errors = list()
-
-        # TODO: add flags for rile overright, and make sure files don't exist if not checked?
-
-        return errors

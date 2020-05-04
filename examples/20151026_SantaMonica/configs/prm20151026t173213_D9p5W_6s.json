@@ -78,7 +78,7 @@
   },
 
   "implementation": {
-    "grid_inversion": {
+    "inversion": {
       "integration_grid": {"GLINT": [0, 0.001, 0.002]},
       "windows": [[400.0, 1000.0]]
     }
