@@ -126,7 +126,7 @@ def empirical_line(reference_radiance, reference_reflectance, reference_uncertai
     # Prepare instrument model, if available
     if isofit_config is not None:
         config = configs.create_new_config(isofit_config)
-        instrument = Instrument(config.forward_model.instrument)
+        instrument = Instrument(config)
         logging.info('Loading instrument')
     else:
         instrument = None
