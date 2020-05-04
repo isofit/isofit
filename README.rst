@@ -3,8 +3,9 @@ Imaging Spectrometer Optimal FITting (ISOFIT) Overview
 
 This repository has two main branches:
 
-[current-release](https://github.com/isofit/isofit/tree/current-release) : Latest stable, versioned release and
-[master](https://github.com/isofit/isofit): The latest non-breaking changes, sometimes pre-version
+`current-release <https://github.com/isofit/isofit/tree/current-release/>`_ : Latest stable, versioned release and
+
+`master <https://github.com/isofit/isofit/>`_: The latest non-breaking changes, sometimes pre-version
 
 This codebase contains a set of routines and utilities for fitting surface,
 atmosphere and instrument models to imaging spectrometer data.  It is
@@ -41,7 +42,7 @@ From Github
 The code repository, development branches, and user community are found on
 `GitHub <https://github.com/davidraythompson/isofit>`_. To install:
 
-1. Download or clone the git repo located at https://github.com/isofit/isofit, using either the [current-release](https://github.com/isofit/isofit/tree/current-release) or [master (current-release + reviewed development)](https://github.com/isofit/isofit) branch.
+1. Download or clone the git repo located at https://github.com/isofit/isofit, using either the `current-release <https://github.com/isofit/isofit/tree/current-release>`_ or `master (current-release + reviewed development) <https://github.com/isofit/isofit)`_ branch.
 
 2. Install the ISOFIT dependencies using pip
 
