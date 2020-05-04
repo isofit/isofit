@@ -77,13 +77,21 @@ class TabularRT:
         full_lut_grid = full_config.forward_model.radiative_transfer.lut_grid
         # selectively get lut components that are in this particular RTE
         self.lut_grid_config = OrderedDict()
+        if engine_config.lut_names is not None:
+            lut_names = engine_config.lut_names
+        else:
+            lut_names = full_config.forward_model.radiative_transfer.lut_grid.keys()
+
         for key, value in full_lut_grid.items():
-            if key in engine_config.lut_names:
+            if key in lut_names:
                 self.lut_grid_config[key] = value
 
         # selectively get statevector components that are in this particular RTE
         full_sv_names = full_config.forward_model.radiative_transfer.statevector.get_element_names()
-        self.statevector_names = [x for x in full_sv_names if x in engine_config.statevector_names]
+        if engine_config.statevector_names is not None:
+            self.statevector_names = [x for x in full_sv_names if x in engine_config.statevector_names]
+        else:
+            self.statevector_names = full_sv_names
 
         self.lut_dir = engine_config.lut_path
         self.n_point = len(self.lut_grid_config)

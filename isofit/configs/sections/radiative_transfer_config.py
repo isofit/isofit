@@ -32,77 +32,112 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
     def __init__(self, sub_configdic: dict = None, name: str = None):
         self._name_type = str
         self.name = name
+        """str: Name of config - optional, and not currently used."""
 
         self._engine_name_type = str
         self.engine_name = None
+        """str: Name of radiative transfer engine to use - options ['modtran', 'libradtran', '6s']."""
 
         self._engine_base_dir_type = str
         self.engine_base_dir = None
+        """str: base directory of the given radiative transfer engine on user's OS."""
 
         self._wavelength_range_type = list()
         self.wavelength_range = None
+        """List: The wavelength range to execute this radiative transfer engine over."""
 
         self._lut_path_type = str
         self.lut_path = None
+        """str: The path to the look up table directory used by the radiative transfer engine."""
 
         self._template_file_type = str
         self.template_file = None
+        """str: A template file to be used as the base-configuration for the given radiative transfer engine."""
 
         self._lut_names_type = list()
         self.lut_names = None
+        """List: Names of the elements to run this radiative transfer element on.  Must be a subset
+        of the keys in radiative_transfer->lut_grid.  If not specified, uses all keys from 
+        radiative_transfer-> lut_grid.  Auto-sorted (alphabetically) below."""
 
         self._statevector_names_type = list()
         self.statevector_names = None
+        """List: Names of the statevector elements to use with this radiative transfer engine.  Must be a subset
+        of the keys in radiative_transfer->statevector.  If not specified, uses all keys from 
+        radiative_transfer->statevector.  Auto-sorted (alphabetically) below."""
 
         self._configure_and_exit_type = bool
         self.configure_and_exit = False
+        """bool: Indicates that code should terminate as soon as all radiative transfer engine configuration files are
+        written (without running them)"""
 
         self._auto_rebuild_type = bool
         self.auto_rebuild = True
+        """bool: Flag indicating whether radiative transfer models should automatically rebuild."""
 
         # MODTRAN parameters
         self._aerosol_template_file_type = str
         self.aerosol_template_file = None
+        """str: Aerosol template file, currently only implemented for MODTRAN."""
 
         self._aerosol_model_file_type = str
         self.aerosol_model_file = None
+        """str: Aerosol model file, currently only implemented for MODTRAN."""
 
         # 6S parameters - not the corcommemnd
         # TODO: these should come from a template file, as in modtran
         self._day_type = int
         self.day = None
+        """int: 6s-only day parameter."""
 
         self._month_type = int
         self.month = None
+        """int: 6s-only month parameter."""
 
         self._elev_type = float
         self.elev = None
+        """float: 6s-only elevation parameter."""
 
         self._alt_type = float
         self.alt = None
+        """float: 6s-only altitude parameter."""
 
         self._obs_file_type = str
         self.obs_file = None
+        """str: 6s-only observation file."""
 
         self._solzen_type = float
         self.solzen = None
+        """float: 6s-only solar zenith."""
 
         self._solaz_type = float
         self.solaz = None
+        """float: 6s-only solar azimuth."""
 
         self._viewzen_type = float
         self.viewzen = None
+        """float: 6s-only view zenith."""
 
         self._viewaz_type = float
         self.viewaz = None
+        """float: 6s-only view azimuth."""
 
         self._earth_sun_distance_file_type = str
         self.earth_sun_distance_file = None
+        """str: 6s-only earth-to-sun distance file."""
 
         self._irradiance_file_type = str
         self.irradiance_file = None
+        """str: 6s-only irradiance file."""
 
         self.set_config_options(sub_configdic)
+
+        if self.lut_names is not None:
+            self.lut_names.sort()
+
+        if self.statevector_names is not None:
+            self.statevector_names.sort()
+
 
     def _check_config_validity(self) -> List[str]:
         errors = list()
@@ -126,10 +161,6 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
                     errors.append('Radiative transfer engine file not found on system: {}'.
                                   format(self.earth_sun_distance_file))
         return errors
-
-    def get_lut_names(self):
-        self.lut_names.sort()
-        return self.lut_names
 
 
 class RadiativeTransferUnknownsConfig(BaseConfigSection):

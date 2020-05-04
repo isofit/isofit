@@ -88,7 +88,7 @@ class InstrumentConfig(BaseConfigSection):
 
         self._parametric_noise_file_type = str
         self.parametric_noise_file = None
-        """We have several ways to define the instrument noise.
+        """str: We have several ways to define the instrument noise.
         The second option is a parametric, signal- and wavelength-
         dependent noise function. This is given by a four-column
         ASCII Text file.  Rows represent, respectively, the reference
@@ -98,14 +98,14 @@ class InstrumentConfig(BaseConfigSection):
 
         self._pushbroom_noise_file_type = str
         self.pushbroom_noise_file = None
-        """We have several ways to define the instrument noise.
+        """str: We have several ways to define the instrument noise.
         The third option is a full pushbroom noise model that
         specifies noise columns and covariances independently for
         each cross-track location via an ENVI-format binary data file."""
 
         self._nedt_noise_file_type = str
         self.nedt_noise_file = None
-        """We have several ways to define the instrument noise.  The last is NEDT noise"""
+        """str: We have several ways to define the instrument noise.  The last is NEDT noise"""
 
         self.set_config_options(sub_configdic)
 
