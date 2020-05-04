@@ -42,7 +42,7 @@ From Github
 The code repository, development branches, and user community are found on
 `GitHub <https://github.com/davidraythompson/isofit>`_. To install:
 
-1. Download or clone the git repo located at https://github.com/isofit/isofit, using either the `current-release <https://github.com/isofit/isofit/tree/current-release>`_ or `master (current-release + reviewed development) <https://github.com/isofit/isofit)`_ branch.
+1. Download or clone the git repo located at https://github.com/isofit/isofit, using either the `current-release <https://github.com/isofit/isofit/tree/current-release>`_ or `master (current-release + reviewed development) <https://github.com/isofit/isofit>`_ branch.
 
 2. Install the ISOFIT dependencies using pip
 
