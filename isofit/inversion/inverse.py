@@ -202,7 +202,6 @@ class Inversion:
         for combo in combo_values:
 
             self.x_fixed = combo
-            print('!!!!!',combo)
             trajectory = []
 
             # Calculate the initial solution, if needed.
