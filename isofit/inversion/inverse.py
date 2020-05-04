@@ -202,20 +202,25 @@ class Inversion:
         for combo in combo_values:
 
             self.x_fixed = combo
+            print('!!!!!',combo)
             trajectory = []
 
             # Calculate the initial solution, if needed.
             x0 = invert_simple(self.fm, meas, geom)
             x0 = x0[self.inds_free]
-            x = self.full_statevector(x0)
 
-            # Catch any instances outside of bounds
-            lower_bound_violation = x0 < self.fm.bounds[0]
-            x0[lower_bound_violation] = self.fm.bounds[0][lower_bound_violation] + eps
+            # Catch any state vector elements outside of bounds
+            lower_bound_violation = x0 < self.fm.bounds[0][self.inds_free]
+            x0[lower_bound_violation] = \
+                self.fm.bounds[0][self.inds_free][lower_bound_violation] + eps
 
-            upper_bound_violation = x0 > self.fm.bounds[1]
-            x0[upper_bound_violation] = self.fm.bounds[1][upper_bound_violation] - eps
+            upper_bound_violation = x0 > self.fm.bounds[1][self.inds_free]
+            x0[upper_bound_violation] = \
+                self.fm.bounds[1][self.inds_free][upper_bound_violation] - eps
             del lower_bound_violation, upper_bound_violation
+
+            # Find the full state vector with bounds checked
+            x = self.full_statevector(x0)
 
             # Record initializaation state
             geom.x_surf_init = x[self.fm.idx_surface]
