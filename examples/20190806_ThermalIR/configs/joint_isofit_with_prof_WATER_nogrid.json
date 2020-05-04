@@ -69,7 +69,6 @@
       "radiative_transfer_engines": {
         "vswir": {
           "engine_name": "modtran",
-          "auto_rebuild": false,
           "lut_path": "../lut/",
           "wavelength_range": [375, 2501],
           "template_file": "./vswir_mod_config_WATER.json",
@@ -80,7 +79,6 @@
         },
         "tir": {
           "engine_name": "modtran",
-          "auto_rebuild": false,
           "lut_path": "../lut/",
           "wavelength_range": [7501, 12100],
           "template_file": "./tir_mod_config_WATER.json",
@@ -94,6 +92,7 @@
   "implementation": {
     "inversion": {
       "windows": [[400.0, 1300.0], [1450, 1780.0], [2050.0, 2450.0], [7500.0, 12000.0]]
-    }
+    },
+    "rte_auto_rebuild": false
   }
 }

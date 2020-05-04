@@ -65,8 +65,8 @@ class TabularRT:
 
         self.n_chan = len(self.wl)
 
-        self.auto_rebuild = engine_config.auto_rebuild
-        self.configure_and_exit = engine_config.configure_and_exit
+        self.auto_rebuild = full_config.implementation.rte_auto_rebuild
+        self.configure_and_exit = full_config.implementation.rte_configure_and_exit
 
         # We use a sorted dictionary here so that filenames for lookup
         # table (LUT) grid points are always constructed the same way, with

@@ -57,6 +57,16 @@ class ImplementationConfig(BaseConfigSection):
         """int: nice level to run multiprocessing at.  If None, will use all available.  If 1, will run without 
         multiprocessing (good for debugging)"""
 
+        self._rte_configure_and_exit_type = bool
+        self.rte_configure_and_exit = False
+        """bool: Indicates that code should terminate as soon as all radiative transfer engine configuration files are
+        written (without running them)"""
+
+        self._rte_auto_rebuild_type = bool
+        self.rte_auto_rebuild = True
+        """bool: Flag indicating whether radiative transfer engines should automatically rebuild."""
+
+
         self.set_config_options(sub_configdic)
 
     def _check_config_validity(self) -> List[str]:

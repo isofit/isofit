@@ -66,15 +66,6 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         of the keys in radiative_transfer->statevector.  If not specified, uses all keys from 
         radiative_transfer->statevector.  Auto-sorted (alphabetically) below."""
 
-        self._configure_and_exit_type = bool
-        self.configure_and_exit = False
-        """bool: Indicates that code should terminate as soon as all radiative transfer engine configuration files are
-        written (without running them)"""
-
-        self._auto_rebuild_type = bool
-        self.auto_rebuild = True
-        """bool: Flag indicating whether radiative transfer models should automatically rebuild."""
-
         # MODTRAN parameters
         self._aerosol_template_file_type = str
         self.aerosol_template_file = None
