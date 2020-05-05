@@ -27,7 +27,8 @@
       }
     },
 
-    "thermal_surface": {
+    "surface": {
+      "surface_category": "glint_surface",
       "select_on_init":true,
       "selection_metric":"Euclidean",
       "surface_file": "../input/ecostress_surface_model.mat"
@@ -65,30 +66,33 @@
         "AERFRAC_1": [0.01, 0.2],
         "O3STR": [0.01, 0.075, 0.15, 0.2]
       },
-      "modtran_vswir": {
-        "auto_rebuild": false,
-        "wavelength_file": "../input/avirisc_wavelengths.txt",
-        "lut_path":"../lut/",
-        "modtran_template_file":"./vswir_mod_config_WATER.json",
-        "aerosol_template_file":"../../../data/aerosol_template.json",
-        "aerosol_model_file":"../../../data/aerosol_twopart_model.txt",
-        "domain": {"start": 350, "end": 2520, "step": 0.1},
-        "lut_names": ["H2OSTR", "AERFRAC_1"],
-        "statevector_names": ["H2OSTR", "AERFRAC_1"]
-      },
-      "modtran_tir": {
-        "auto_rebuild": false,
-        "wavelength_file": "../input/hytes_wavelengths.txt",
-        "lut_path":"../lut/",
-        "modtran_template_file":"./tir_mod_config_WATER.json",
-        "domain": {"start": 7500, "end": 11100, "step": 0.2},
-        "lut_names": ["H2OSTR", "O3STR"],
-        "statevector_names": ["H2OSTR", "O3STR"]
+      "radiative_transfer_engines": {
+        "vswir": {
+          "engine_name": "modtran",
+          "lut_path": "../lut/",
+          "wavelength_range": [375, 2501],
+          "template_file": "./vswir_mod_config_WATER.json",
+          "aerosol_template_file": "../../../data/aerosol_template.json",
+          "aerosol_model_file": "../../../data/aerosol_twopart_model.txt",
+          "lut_names": ["H2OSTR", "AERFRAC_1"],
+          "statevector_names": ["H2OSTR", "AERFRAC_1"]
+        },
+        "tir": {
+          "engine_name": "modtran",
+          "lut_path": "../lut/",
+          "wavelength_range": [7501, 12100],
+          "template_file": "./tir_mod_config_WATER.json",
+          "lut_names": ["H2OSTR", "O3STR"],
+          "statevector_names": ["H2OSTR", "O3STR"]
+        }
       }
     }
   },
 
-  "inversion": {
-    "windows": [[400.0,1300.0],[1450,1780.0],[2050.0,2450.0],[7500.0, 12000.0]]
+  "implementation": {
+    "inversion": {
+      "windows": [[400.0, 1300.0], [1450, 1780.0], [2050.0, 2450.0], [7500.0, 12000.0]]
+    },
+    "rte_auto_rebuild": false
   }
 }

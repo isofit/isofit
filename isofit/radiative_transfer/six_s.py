@@ -25,8 +25,8 @@ import scipy as s
 from isofit.core.common import resample_spectrum, load_wavelen, VectorInterpolator
 from .look_up_tables import TabularRT, FileExistsError
 from isofit.core.geometry import Geometry
-
-sixs_names = ['sixs_vswir']
+from isofit.configs import Config
+from isofit.configs.sections.radiative_transfer_config import RadiativeTransferEngineConfig
 
 eps = 1e-5  # used for finite difference derivative calculations
 
@@ -56,31 +56,32 @@ sixs_template = '''0 (User defined)
 class SixSRT(TabularRT):
     """A model of photon transport including the atmosphere."""
 
-    def __init__(self, config, statevector_names):
+    def __init__(self, engine_config: RadiativeTransferEngineConfig, full_config: Config):
 
-        TabularRT.__init__(self, config)
-        self.sixs_dir = self.find_basedir(config)
-        self.wl, self.fwhm = load_wavelen(config['wavelength_file'])
+        super().__init__(engine_config, full_config)
+
+        self.treat_as_emissive = False
+
+        self.sixs_dir = self.find_basedir(engine_config)
         self.sixs_grid_init = s.arange(self.wl[0], self.wl[-1]+2.5, 2.5)
         self.sixs_ngrid_init = len(self.sixs_grid_init)
-        self.sixs_dir = self.find_basedir(config)
         self.params = {'aermodel': 1,
                        'AOT550': 0.01,
                        'H2OSTR': 0,
                        'O3': 0.40,
-                       'day':   config['day'],
-                       'month': config['month'],
-                       'elev':  config['elev'],
-                       'alt':   config['alt'],
+                       'day':   engine_config.day,
+                       'month': engine_config.month,
+                       'elev':  engine_config.elev,
+                       'alt':   engine_config.alt,
                        'atm_file': None,
                        'abscf_data_directory': None,
                        'wlinf': self.sixs_grid_init[0]/1000.0,  # convert to nm
                        'wlsup': self.sixs_grid_init[-1]/1000.0}
 
-        if 'obs_file' in config:
+        if engine_config.obs_file is not None:
             # A special case where we load the observation geometry
             # from a custom-crafted text file
-            g = Geometry(obs=config['obs_file'])
+            g = Geometry(obs=engine_config.obs_file)
             self.params['solzen'] = g.solar_zenith
             self.params['solaz'] = g.solar_azimuth
             self.params['viewzen'] = g.observer_zenith
@@ -88,42 +89,33 @@ class SixSRT(TabularRT):
         else:
             # We have to get geometry from somewhere, so we presume it is
             # in the configuration file.
-            for f in ['solzen', 'viewzen', 'solaz', 'viewaz']:
-                self.params[f] = config[f]
+            self.params['solzen'] = engine_config.solzen
+            self.params['viewzen'] = engine_config.viewzen
+            self.params['solaz'] = engine_config.solaz
+            self.params['viewaz'] = engine_config.viewaz
 
-        self.esd = s.loadtxt(config['earth_sun_distance_file'])
+        self.esd = s.loadtxt(engine_config.earth_sun_distance_file)
         dt = datetime(2000, self.params['month'], self.params['day'])
         self.day_of_year = dt.timetuple().tm_yday
         self.irr_factor = self.esd[self.day_of_year-1, 1]
 
-        irr = s.loadtxt(config['irradiance_file'], comments='#')
+        irr = s.loadtxt(engine_config.irradiance_file, comments='#')
         iwl, irr = irr.T
         irr = irr / 10.0  # convert, uW/nm/cm2
         irr = irr / self.irr_factor**2  # consider solar distance
         self.solar_irr = resample_spectrum(irr, iwl,  self.wl, self.fwhm)
 
-        self.angular_lut_keys_degrees = ['OBSZEN','TRUEAZ','viewzen','viewaz',
-            'solzen','solaz']
+        self.angular_lut_keys_degrees = ['OBSZEN', 'TRUEAZ', 'viewzen', 'viewaz',
+                                         'solzen', 'solaz']
 
         self.lut_quantities = ['rhoatm', 'transm', 'sphalb', 'transup']
         self.build_lut()
 
-        # This array is used to handle the potential indexing mismatch between
-        # the 'global statevector' (which may couple multiple radiative 
-        # transform models) and this statevector. It should never be modified
-        full_to_local_statevector_position_mapping = []
-        for sn in self.statevec:
-            ix = statevector_names.index(sn)
-            full_to_local_statevector_position_mapping.append(ix)
-        self._full_to_local_statevector_position_mapping = \
-            s.array(full_to_local_statevector_position_mapping)
-
-
-    def find_basedir(self, config):
+    def find_basedir(self, config: RadiativeTransferEngineConfig):
         """Seek out a sixs base directory."""
 
-        if 'sixs_installation' in config:
-            return config['sixs_installation']
+        if config.engine_base_dir is not None:
+            return config.engine_base_dir
         if 'SIXS_DIR' in os.getenv():
             return os.getenv('SIXS_DIR')
         return None
@@ -206,16 +198,16 @@ class SixSRT(TabularRT):
             rhoatms[i] = float(rhoa)
 
         results = {
-            "solzen": resample_spectrum(solzens,  self.grid, self.wl, 
-                    self.fwhm),
-            "rhoatm": resample_spectrum(rhoatms,  self.grid, self.wl, 
-                    self.fwhm),
-            "transm": resample_spectrum(transms,  self.grid, self.wl, 
-                    self.fwhm),
-            "sphalb": resample_spectrum(sphalbs,  self.grid, self.wl, 
-                    self.fwhm),
-            "transup": resample_spectrum(transups, self.grid, self.wl, 
-                    self.fwhm)}
+            "solzen": resample_spectrum(solzens,  self.grid, self.wl,
+                                        self.fwhm),
+            "rhoatm": resample_spectrum(rhoatms,  self.grid, self.wl,
+                                        self.fwhm),
+            "transm": resample_spectrum(transms,  self.grid, self.wl,
+                                        self.fwhm),
+            "sphalb": resample_spectrum(sphalbs,  self.grid, self.wl,
+                                        self.fwhm),
+            "transup": resample_spectrum(transups, self.grid, self.wl,
+                                         self.fwhm)}
         return results
 
     def ext550_to_vis(self, ext550):
@@ -236,13 +228,13 @@ class SixSRT(TabularRT):
         for key in self.lut_quantities:
             temp = s.zeros(dims_aug, dtype=float)
             for sixs_output, point in zip(sixs_outputs, self.points):
-                ind = [s.where(g == p)[0] for g, p in \
-                    zip(self.lut_grids, point)]
+                ind = [s.where(g == p)[0] for g, p in
+                       zip(self.lut_grids, point)]
                 ind = tuple(ind)
                 temp[ind] = sixs_output[key]
 
-            self.luts[key] = VectorInterpolator(self.lut_grids, temp, 
-                    self.lut_interp_types)
+            self.luts[key] = VectorInterpolator(self.lut_grids, temp,
+                                                self.lut_interp_types)
 
     def _lookup_lut(self, point):
         ret = {}
@@ -253,8 +245,8 @@ class SixSRT(TabularRT):
     def get(self, x_RT, geom):
         point = s.zeros((self.n_point,))
         for point_ind, name in enumerate(self.lut_grid_config):
-            if name in self.statevec:
-                ix = self.statevec.index(name)
+            if name in self.statevector_names:
+                ix = self.statevector_names.index(name)
                 x_RT_ind = self._full_to_local_statevector_position_mapping[ix]
                 point[point_ind] = x_RT[x_RT_ind]
             elif name == "OBSZEN":

@@ -28,7 +28,7 @@ from isofit import __version__
 
 
 def main():
-    """Sun position."""
+    """Solar position algorithm of Reda & Andreas (2003)."""
 
     parser = ArgumentParser(
         prog='sunposition', description='Compute sun position parameters given the time and location')
@@ -63,20 +63,20 @@ def main():
         sys.exit(0)
 
     if args.t == "now":
-        args.t = datetime.datetime.utcnow()
+        args.t = datetime.utcnow()
     elif ":" in args.t and "-" in args.t:
         try:
-            args.t = datetime.datetime.strptime(
+            args.t = datetime.strptime(
                 args.t, '%Y-%m-%d %H:%M:%S.%f')  # with microseconds
         except:
             try:
-                args.t = datetime.datetime.strptime(
+                args.t = datetime.strptime(
                     args.t, '%Y-%m-%d %H:%M:%S.')  # without microseconds
             except:
-                args.t = datetime.datetime.strptime(
+                args.t = datetime.strptime(
                     args.t, '%Y-%m-%d %H:%M:%S')
     else:
-        args.t = datetime.datetime.utcfromtimestamp(int(args.t))
+        args.t = datetime.utcfromtimestamp(int(args.t))
 
     # sunpos function
     az, zen, ra, dec, h = sunposition.sunpos(

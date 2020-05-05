@@ -25,11 +25,13 @@ from scipy.interpolate import interp1d
 from ..core.common import resample_spectrum, VectorInterpolator
 from .look_up_tables import TabularRT, FileExistsError
 
+from isofit.configs.sections.radiative_transfer_config import RadiativeTransferEngineConfig
+from isofit.configs import Config
+
 
 ### Variables ###
 
 eps = 1e-5  # used for finite difference derivative calculations
-libradtran_names = ['libradtran_vswir']
 
 ### Classes ###
 
@@ -37,38 +39,27 @@ libradtran_names = ['libradtran_vswir']
 class LibRadTranRT(TabularRT):
     """A model of photon transport including the atmosphere."""
 
-    def __init__(self, config, statevector_names):
+    def __init__(self, engine_config: RadiativeTransferEngineConfig, full_config: Config):
 
-        TabularRT.__init__(self, config)
-        self.libradtran_dir = self.find_basedir(config)
-        self.libradtran_template_file = config['libradtran_template_file']
+        super().__init__(engine_config, full_config)
+        self.treat_as_emissive = False
+        self.libradtran_dir = self.find_basedir(engine_config)
+        self.libradtran_template_file = engine_config.template_file
 
         self.lut_quantities = ['rhoatm', 'transm', 'sphalb', 'transup']
 
-        self.angular_lut_keys_degrees = ['OBSZEN','TRUEAZ','viewzen','viewaz',
-            'solzen','solaz']
+        self.angular_lut_keys_degrees = ['OBSZEN', 'TRUEAZ', 'viewzen', 'viewaz',
+                                         'solzen', 'solaz']
 
         # Build the lookup table
         self.build_lut()
 
-        # This array is used to handle the potential indexing mismatch 
-        # between the 'global statevector' (which may couple multiple 
-        # radiative transform models) and this statevector
-        # It should never be modified
-        full_to_local_statevector_position_mapping = []
-        for sn in self.statevec:
-            ix = statevector_names.index(sn)
-            full_to_local_statevector_position_mapping.append(ix)
-        self._full_to_local_statevector_position_mapping = \
-            s.array(full_to_local_statevector_position_mapping)
-
-    def find_basedir(self, config):
+    def find_basedir(self, config: RadiativeTransferEngineConfig):
         """Seek out a libradtran base directory."""
 
-        try:
-            return config['libradtran_directory']
-        except KeyError:
-            pass  # fall back to environment variable
+        if config.engine_base_dir is not None:
+            return config.engine_base_dir
+
         try:
             return os.getenv('LIBRADTRAN_DIR')
         except KeyError:
@@ -246,13 +237,13 @@ class LibRadTranRT(TabularRT):
         for key in self.lut_quantities:
             temp = s.zeros(dims_aug, dtype=float)
             for librt_output, point in zip(librt_outputs, self.points):
-                ind = [s.where(g == p)[0] for g, p in \
-                        zip(self.lut_grids, point)]
+                ind = [s.where(g == p)[0] for g, p in
+                       zip(self.lut_grids, point)]
                 ind = tuple(ind)
                 temp[ind] = librt_output[key]
 
-            self.luts[key] = VectorInterpolator(self.lut_grids, temp, 
-                    self.lut_interp_types)
+            self.luts[key] = VectorInterpolator(self.lut_grids, temp,
+                                                self.lut_interp_types)
 
     def _lookup_lut(self, point):
         ret = {}
@@ -263,8 +254,8 @@ class LibRadTranRT(TabularRT):
     def get(self, x_RT, geom):
         point = s.zeros((self.n_point,))
         for point_ind, name in enumerate(self.lut_grid_config):
-            if name in self.statevec:
-                ix = self.statevec.index(name)
+            if name in self.statevector_names:
+                ix = self.statevector_names.index(name)
                 x_RT_ind = self._full_to_local_statevector_position_mapping[ix]
                 point[point_ind] = x_RT[x_RT_ind]
             elif name == "OBSZEN":

@@ -22,19 +22,17 @@
 import os
 import logging
 import cProfile
-from contextlib import suppress
-import warnings
-from numba.errors import NumbaWarning, NumbaDeprecationWarning, NumbaPendingDeprecationWarning
+import time
 
-from .common import load_config, safe_core_count
+from isofit.core import common
 from .forward import ForwardModel
-from .inverse import Inversion
-from .inverse_mcmc import MCMCInversion
-from .inverse_grid import GridInversion
+from isofit.inversion.inverse import Inversion
+from isofit.inversion.inverse_mcmc import MCMCInversion
 from .fileio import IO
 
 import multiprocessing
-from .. import warnings_enabled
+from isofit import configs
+from isofit.configs import configs
 
 
 class Isofit:
@@ -60,7 +58,8 @@ class Isofit:
         self.states = None
 
         # Load configuration file
-        self.config = load_config(config_file)
+        self.config = configs.create_new_config(config_file)
+        self.config.get_config_errors()
 
         # Build the forward model and inversion objects
         self._init_nonpicklable_objects()
@@ -87,30 +86,21 @@ class Isofit:
                 self.cols = range(int(col_start), int(col_end))
 
     def _init_nonpicklable_objects(self):
-        self.fm = ForwardModel(self.config['forward_model'])
-        if 'mcmc_inversion' in self.config:
-            self.iv = MCMCInversion(self.config['mcmc_inversion'], self.fm)
-        elif 'grid_inversion' in self.config:
-            self.iv = GridInversion(self.config['grid_inversion'], self.fm)
+        self.fm = ForwardModel(self.config)
+
+        if self.config.implementation.mode == 'mcmc_inversion':
+            self.iv = MCMCInversion(self.config, self.fm)
+        elif self.config.implementation.mode in ['inversion', 'simulation']:
+            self.iv = Inversion(self.config, self.fm)
         else:
-            self.iv = Inversion(self.config['inversion'], self.fm)
+            # This should never be reached due to configuration checking
+            raise AttributeError('Config implementation mode node valid')
 
     def _clear_nonpicklable_objects(self):
         self.fm = None
         self.iv = None
 
     def _run_single_spectrum(self, index):
-        # Ignore Numba warnings
-        if not warnings_enabled:
-            warnings.simplefilter(
-                action='ignore', category=RuntimeWarning)
-            warnings.simplefilter(
-                action='ignore', category=NumbaWarning)
-            warnings.simplefilter(
-                action='ignore', category=NumbaDeprecationWarning)
-            warnings.simplefilter(
-                action='ignore', category=NumbaPendingDeprecationWarning)
-
         self._init_nonpicklable_objects()
         io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
         success, row, col, meas, geom, configs = io.get_components_at_index(
@@ -134,7 +124,7 @@ class Isofit:
                 logging.info(
                     'Completed inversion {}/{}'.format(index, len(io.iter_inds)))
 
-    def run(self, profile=False, debug=False):
+    def run(self, profile=False):
         """
         Iterate over all spectra, reading and writing through the IO
         object to handle formatting, buffering, and deferred write-to-file.
@@ -160,30 +150,31 @@ class Isofit:
             n_iter = len(io.iter_inds)
             io = None
             self._clear_nonpicklable_objects()
-            pool = multiprocessing.Pool(processes=safe_core_count())
 
-            import time
-            start_time = time.time()
-            if debug:
-                logging.info('Beginning serial inversions for debugging')
+            if self.config.implementation.n_cores is None:
+                n_cores = multiprocessing.cpu_count()
             else:
-                logging.info('Beginning parallel inversions')
+                n_cores = self.config.implementation.n_cores
+
+            if self.config.implementation.runtime_nice_level is None:
+                pool = multiprocessing.Pool(processes=n_cores)
+            else:
+                pool = multiprocessing.Pool(processes=n_cores, initializer=
+                                            common.nice_me(self.config.implementation.runtime_nice_level))
+
+            start_time = time.time()
+            logging.info('Beginning inversions using {} cores'.format(n_cores))
 
             results = []
             for l in range(n_iter):
-                if debug:
+                if n_cores == 1:
                     self._run_single_spectrum(l)
                 else:
-                    results.append(pool.apply_async(
-                        self._run_single_spectrum, args=(l,)))
+                    results.append(pool.apply_async(self._run_single_spectrum, args=(l,)))
             results = [p.get() for p in results]
             pool.close()
             pool.join()
 
             total_time = time.time() - start_time
-            if debug:
-                logging.info(
-                    'Inversions complete.  {} s total, {} spectra/s'.format(total_time, n_iter/total_time))
-            else:
-                logging.info(
-                    'Parallel inversions complete.  {} s total, {} spectra/s'.format(total_time, n_iter/total_time))
+            logging.info('Parallel inversions complete.  {} s total, {} spectra/s, {}/spectra/core'.format(
+                total_time, n_iter/total_time, n_iter/total_time/n_cores))

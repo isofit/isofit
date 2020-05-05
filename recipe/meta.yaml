@@ -1,5 +1,5 @@
 {% set name = "isofit" %}
-{% set version = "2.0.5" %}
+{% set version = "2.0.5_+dev" %}
 
 package:
   name: {{ name|lower }}
@@ -31,6 +31,7 @@ requirements:
     - pytest >=3.5.1
     - pep8 >=1.7.1
     - python-xxhash >=1.2.0
+    - pyyaml >=5.3.1
 
 test:
   imports:

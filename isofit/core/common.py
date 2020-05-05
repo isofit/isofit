@@ -25,7 +25,6 @@ import numpy as np
 import scipy.linalg
 from scipy.interpolate import RegularGridInterpolator
 from os.path import expandvars, split, abspath
-import subprocess
 
 
 ### Variables ###
@@ -54,8 +53,8 @@ class VectorInterpolator:
         [degree_locations] = np.where(self.lut_interp_types == 'r')
         angle_locations = np.hstack([radian_locations, degree_locations])
         angle_types = np.hstack(
-            [self.lut_interp_types[radian_locations], 
-            self.lut_interp_types[degree_locations]])
+            [self.lut_interp_types[radian_locations],
+             self.lut_interp_types[degree_locations]])
         for _angle_loc in range(len(angle_locations)):
 
             angle_loc = angle_locations[_angle_loc]
@@ -79,7 +78,7 @@ class VectorInterpolator:
             grid.insert(angle_loc+1, grid_subset_sin[grid_subset_sin_order])
 
             # now copy the data to be interpolated through the extra dimension,
-            # at the specific angle_loc axes.  We'll use broadcast_to to do 
+            # at the specific angle_loc axes.  We'll use broadcast_to to do
             # this, but we need to do it on the last dimension.  So start by
             # temporarily moving the target axes there, then broadcasting
             data = np.swapaxes(data, -1, angle_loc)
@@ -204,8 +203,8 @@ def svd_inv_sqrt(C, mineig=0, hashtable=None):
             break
 
         if count == 2:
-            raise ValueError('Matrix inversion contains negative values,'+\
-                    'even after adding {} to the diagonal.'.format(inv_eps))
+            raise ValueError('Matrix inversion contains negative values,' +
+                             'even after adding {} to the diagonal.'.format(inv_eps))
 
     Ds = np.diag(1/np.sqrt(D))
     L = P@Ds
@@ -419,37 +418,23 @@ def conditional_gaussian(mu, C, window, remain, x):
     contains all other indices, 
     such that len(window)+len(remain)=len(x)
     """
-    C11 = np.array([C[i, remain] for i in remain])
-    C12 = np.array([C[i, window] for i in remain])
-    C21 = np.array([C[i, remain] for i in window])
-    C22 = np.array([C[i, window] for i in window])
+    w = np.array(window)[:,np.newaxis]
+    r = np.array(remain)[:,np.newaxis]
+    C11 = C[r, r.T]
+    C12 = C[r, w.T]
+    C21 = C[w, r.T]
+    C22 = C[w, w.T]
+
     Cinv = svd_inv(C11)
     conditional_mean = mu[window] + C21 @ Cinv @ (x-mu[remain])
     conditional_Cov = C22 - C21 @ Cinv @ C12
     return conditional_mean, conditional_Cov
 
 
-def safe_core_count():
-    """ Get the number of cores on a single socket (what we can reach
-    through multirpocessing).  Currently,
-    only works for linux, defaults to CPU count on other systems.
-
-    TODO: expand for other operating systems, think about more elegant
-    solutions.
-
-    Returns:
-        num_cores: number of cores on current socket, if available
+def nice_me(nice_level: int) -> None:
     """
-
-    import multiprocessing
-    try:
-        corelist = [x for x in subprocess.check_output(
-            ['lscpu']).decode("utf-8").split('\n') if 'Core' in x]
-        if len(corelist) > 0:
-            num_cores = int(corelist[0].split(':')[-1])
-        else:
-            num_cores = multiprocessing.cpu_count()
-    except:
-        num_cores = multiprocessing.cpu_count()
-
-    return num_cores
+    Helper function for multiprocessing niceness
+    Args:
+        nice_level: level to set system niceness at
+    """
+    os.nice(nice_level)

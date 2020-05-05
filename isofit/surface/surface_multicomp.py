@@ -18,12 +18,13 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-import scipy as s
+import numpy as np
 from scipy.linalg import block_diag, norm
 from scipy.io import loadmat
 
 from ..core.common import svd_inv
 from .surface import Surface
+from isofit.configs import Config
 
 
 class MultiComponentSurface(Surface):
@@ -36,13 +37,16 @@ class MultiComponentSurface(Surface):
     Multivariate Gaussian surface model.
     """
 
-    def __init__(self, config):
+    def __init__(self, full_config: Config):
         """."""
 
-        Surface.__init__(self, config)
+        super().__init__(full_config)
+
+        config = full_config.forward_model.surface
 
         # Models are stored as dictionaries in .mat format
-        model_dict = loadmat(config['surface_file'])
+        # TODO: inforce surface_file existence in the case of multicomponent_surface
+        model_dict = loadmat(config.surface_file)
         self.components = list(zip(model_dict['means'], model_dict['covs']))
         self.n_comp = len(self.components)
         self.wl = model_dict['wl'][0]
@@ -53,52 +57,41 @@ class MultiComponentSurface(Surface):
         if self.normalize == 'Euclidean':
             self.norm = lambda r: norm(r)
         elif self.normalize == 'RMS':
-            self.norm = lambda r: s.sqrt(s.mean(pow(r, 2)))
+            self.norm = lambda r: np.sqrt(np.mean(pow(r, 2)))
         elif self.normalize == 'None':
             self.norm = lambda r: 1.0
         else:
             raise ValueError('Unrecognized Normalization: %s\n' %
                              self.normalize)
 
-        try:
-            self.selection_metric = config['selection_metric']
-        except KeyError:
-            self.selection_metric = 'Mahalanobis'
-
-        # This field, if present and set to true, forces us to use
-        # any initialization state and never change.  The state is
-        # preserved in the geometry object so that this object stays
-        # stateless
-        try:
-            self.select_on_init = config['select_on_init']
-        except KeyError:
-            self.select_on_init = False
+        self.selection_metric = config.selection_metric
+        self.select_on_init = config.select_on_init
 
         # Reference values are used for normalizing the reflectances.
         # in the VSWIR regime, reflectances are normalized so that the model
         # is agnostic to absolute magnitude.
-        self.refwl = s.squeeze(model_dict['refwl'])
-        self.idx_ref = [s.argmin(abs(self.wl-w))
-                        for w in s.squeeze(self.refwl)]
-        self.idx_ref = s.array(self.idx_ref)
+        self.refwl = np.squeeze(model_dict['refwl'])
+        self.idx_ref = [np.argmin(abs(self.wl-w))
+                        for w in np.squeeze(self.refwl)]
+        self.idx_ref = np.array(self.idx_ref)
 
         # Cache some important computations
         self.Covs, self.Cinvs, self.mus = [], [], []
         for i in range(self.n_comp):
             Cov = self.components[i][1]
-            self.Covs.append(s.array([Cov[j, self.idx_ref]
-                                      for j in self.idx_ref]))
+            self.Covs.append(np.array([Cov[j, self.idx_ref]
+                                       for j in self.idx_ref]))
             self.Cinvs.append(svd_inv(self.Covs[-1]))
             self.mus.append(self.components[i][0][self.idx_ref])
 
         # Variables retrieved: each channel maps to a reflectance model parameter
         rmin, rmax = 0, 10.0
-        self.statevec = ['RFL_%04i' % int(w) for w in self.wl]
+        self.statevec_names = ['RFL_%04i' % int(w) for w in self.wl]
         self.bounds = [[rmin, rmax] for w in self.wl]
         self.scale = [1.0 for w in self.wl]
         self.init = [0.15 * (rmax-rmin)+rmin for v in self.wl]
-        self.idx_lamb = s.arange(self.n_wl)
-        self.n_state = len(self.statevec)
+        self.idx_lamb = np.arange(self.n_wl)
+        self.n_state = len(self.statevec_names)
 
     def component(self, x, geom):
         """We pick a surface model component using the Mahalanobis distance.
@@ -134,7 +127,7 @@ class MultiComponentSurface(Surface):
             else:
                 md = sum(pow(lamb_ref - ref_mu, 2))
             mds.append(md)
-        closest = s.argmin(mds)
+        closest = np.argmin(mds)
 
         if self.select_on_init and hasattr(geom, 'x_surf_init') and \
                 (not hasattr(geom, 'surf_cmp_init')):
@@ -149,7 +142,7 @@ class MultiComponentSurface(Surface):
 
         lamb = self.calc_lamb(x_surface, geom)
         lamb_ref = lamb[self.idx_ref]
-        mu = s.zeros(self.n_state)
+        mu = np.zeros(self.n_state)
         ci = self.component(x_surface, geom)
         lamb_mu = self.components[ci][0]
         lamb_mu = lamb_mu * self.norm(lamb_ref)
@@ -168,20 +161,20 @@ class MultiComponentSurface(Surface):
         Cov = Cov * (self.norm(lamb_ref)**2)
 
         # If there are no other state vector elements, we're done.
-        if len(self.statevec) == len(self.idx_lamb):
+        if len(self.statevec_names) == len(self.idx_lamb):
             return Cov
 
         # Embed into a larger state vector covariance matrix
         nprefix = self.idx_lamb[0]
-        nsuffix = len(self.statevec)-self.idx_lamb[-1]-1
-        Cov_prefix = s.zeros((nprefix, nprefix))
-        Cov_suffix = s.zeros((nsuffix, nsuffix))
+        nsuffix = len(self.statevec_names) - self.idx_lamb[-1] - 1
+        Cov_prefix = np.zeros((nprefix, nprefix))
+        Cov_suffix = np.zeros((nsuffix, nsuffix))
         return block_diag(Cov_prefix, Cov, Cov_suffix)
 
     def fit_params(self, rfl_meas, geom, *args):
         """Given a reflectance estimate, fit a state vector."""
 
-        x_surface = s.zeros(len(self.statevec))
+        x_surface = np.zeros(len(self.statevec_names))
         if len(rfl_meas) != len(self.idx_lamb):
             raise ValueError('Mismatched reflectances')
         for i, r in zip(self.idx_lamb, rfl_meas):
@@ -209,28 +202,28 @@ class MultiComponentSurface(Surface):
         """Partial derivative of Lambertian reflectance with respect to 
         state vector, calculated at x_surface."""
 
-        dlamb = s.eye(self.n_wl, dtype=float)
+        dlamb = np.eye(self.n_wl, dtype=float)
         nprefix = self.idx_lamb[0]
         nsuffix = self.n_state - self.idx_lamb[-1] - 1
-        prefix = s.zeros((self.n_wl, nprefix))
-        suffix = s.zeros((self.n_wl, nsuffix))
-        return s.concatenate((prefix, dlamb, suffix), axis=1)
+        prefix = np.zeros((self.n_wl, nprefix))
+        suffix = np.zeros((self.n_wl, nsuffix))
+        return np.concatenate((prefix, dlamb, suffix), axis=1)
 
     def calc_Ls(self, x_surface, geom):
         """Emission of surface, as a radiance."""
 
-        return s.zeros(self.n_wl, dtype=float)
+        return np.zeros(self.n_wl, dtype=float)
 
     def dLs_dsurface(self, x_surface, geom):
         """Partial derivative of surface emission with respect to state vector, 
         calculated at x_surface."""
 
-        dLs = s.zeros((self.n_wl, self.n_wl), dtype=float)
+        dLs = np.zeros((self.n_wl, self.n_wl), dtype=float)
         nprefix = self.idx_lamb[0]
-        nsuffix = len(self.statevec)-self.idx_lamb[-1]-1
-        prefix = s.zeros((self.n_wl, nprefix))
-        suffix = s.zeros((self.n_wl, nsuffix))
-        return s.concatenate((prefix, dLs, suffix), axis=1)
+        nsuffix = len(self.statevec_names) - self.idx_lamb[-1] - 1
+        prefix = np.zeros((self.n_wl, nprefix))
+        suffix = np.zeros((self.n_wl, nsuffix))
+        return np.concatenate((prefix, dLs, suffix), axis=1)
 
     def summarize(self, x_surface, geom):
         """Summary of state vector."""
