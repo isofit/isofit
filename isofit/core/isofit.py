@@ -33,6 +33,7 @@ from .fileio import IO
 import multiprocessing
 from isofit import configs
 from isofit.configs import configs
+import numpy as np
 
 
 class Isofit:
@@ -100,29 +101,30 @@ class Isofit:
         self.fm = None
         self.iv = None
 
-    def _run_single_spectrum(self, index):
+    def _run_set_of_spectra(self, index_start, index_stop):
         self._init_nonpicklable_objects()
         io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
-        success, row, col, meas, geom, configs = io.get_components_at_index(
-            index)
-        # Only run through the inversion if we got some data
-        if success:
-            if meas is not None and all(meas < -49.0):
-                # Bad data flags
-                self.states = []
-            else:
-                # The inversion returns a list of states, which are
-                # intepreted either as samples from the posterior (MCMC case)
-                # or as a gradient descent trajectory (standard case). For
-                # a trajectory, the last spectrum is the converged solution.
-                self.states = self.iv.invert(meas, geom)
+        for index in range(index_start, index_stop):
+            success, row, col, meas, geom, configs = io.get_components_at_index(
+                index)
+            # Only run through the inversion if we got some data
+            if success:
+                if meas is not None and all(meas < -49.0):
+                    # Bad data flags
+                    self.states = []
+                else:
+                    # The inversion returns a list of states, which are
+                    # intepreted either as samples from the posterior (MCMC case)
+                    # or as a gradient descent trajectory (standard case). For
+                    # a trajectory, the last spectrum is the converged solution.
+                    self.states = self.iv.invert(meas, geom)
 
-            # Write the spectra to disk
-            io.write_spectrum(row, col, self.states, meas,
-                              geom, flush_immediately=True)
-            if index % 1000 == 0:
-                logging.info(
-                    'Completed inversion {}/{}'.format(index, len(io.iter_inds)))
+                # Write the spectra to disk
+                io.write_spectrum(row, col, self.states, meas,
+                                  geom, flush_immediately=True)
+                if index % 1000 == 0:
+                    logging.info(
+                        'Completed inversion {}/{}'.format(index, len(io.iter_inds)))
 
     def run(self, profile=False):
         """
@@ -156,6 +158,9 @@ class Isofit:
             else:
                 n_cores = self.config.implementation.n_cores
 
+            # Don't use more cores than needed
+            n_cores = min(n_cores, n_iter)
+
             if self.config.implementation.runtime_nice_level is None:
                 pool = multiprocessing.Pool(processes=n_cores)
             else:
@@ -166,11 +171,12 @@ class Isofit:
             logging.info('Beginning inversions using {} cores'.format(n_cores))
 
             results = []
+            index_sets = np.linspace(0, n_iter, num=n_cores+1, dtype=int)
             for l in range(n_iter):
                 if n_cores == 1:
-                    self._run_single_spectrum(l)
+                    self._run_set_of_spectra(index_sets[0], index_sets[-1])
                 else:
-                    results.append(pool.apply_async(self._run_single_spectrum, args=(l,)))
+                    results.append(pool.apply_async(self._run_set_of_spectra, args=(index_sets[l], index_sets[l + 1])))
             results = [p.get() for p in results]
             pool.close()
             pool.join()
