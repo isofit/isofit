@@ -56,7 +56,8 @@ def run_chunk(start_line, stop_line, reference_radiance_file, reference_reflecta
     output_uncertainty_img = envi.open(reference_uncertainty_file + '.hdr', reference_uncertainty_file)
 
     reference_locations_mm = reference_locations_img.open_memmap(interleave='source', writable=False)
-    reference_locations = np.array(reference_locations_mm[:, :, :]).reshape((n_reference_lines, lb))
+    n_location_bands = input_locations_meta['bands']
+    reference_locations = np.array(reference_locations_mm[:, :, :]).reshape((n_reference_lines, n_location_bands))
 
     reference_radiance_mm = reference_radiance_img.open_memmap(interleave='source', writable=False)
     reference_radiance = np.array(reference_radiance_mm[:, :, :]).reshape((n_reference_lines, n_radiance_bands))
@@ -313,11 +314,12 @@ def empirical_line(reference_radiance_file, reference_reflectance_file, referenc
                                     metadata=input_radiance_img.metadata, force=True)
     del output_reflectance_img, output_uncertainty_img
 
-    n_cores = min(n_cores, n_input_lines)
-    line_sections = np.linspace(0,n_input_lines,num=n_cores+1,dtype=int)
-
     if n_cores == -1:
         n_cores = multiprocessing.cpu_count()
+    n_cores = min(n_cores, n_input_lines)
+
+    line_sections = np.linspace(0,n_input_lines,num=n_cores+1,dtype=int)
+
     pool = multiprocessing.Pool(processes=n_cores)
     start_time = time.time()
     logging.info('Beginning empirical line inversions using {} cores'.format(n_cores))
