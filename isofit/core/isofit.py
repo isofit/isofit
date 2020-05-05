@@ -172,7 +172,7 @@ class Isofit:
 
             results = []
             index_sets = np.linspace(0, n_iter, num=n_cores+1, dtype=int)
-            for l in range(n_iter):
+            for l in range(len(index_sets)-1):
                 if n_cores == 1:
                     self._run_set_of_spectra(index_sets[0], index_sets[-1])
                 else:
