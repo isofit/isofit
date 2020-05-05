@@ -142,6 +142,8 @@ These are accepted through consensus of a quorum of maintainers.  **If you would
 Release Steps (for Maintainers)
 -------------------------------
 
+Note, not all accepted PRs need to have a release.  Good reasons to not issue a release are that while the PR is stable, additional updates are expected, or multiple separate PRs are coming together.  However, if you accept a PR and choose not to make a release, update the `Roadmap <https://github.com/isofit/isofit/projects/4>`_ to indicate the current progress towards the next release.
+
 Get latest public repo:
 
 .. code::
@@ -177,6 +179,15 @@ Merge release branch into master:
   git checkout master
   git merge --no-ff release-1.2.0
   git push origin master
+  
+Update the 'current-release' branch:
+
+.. code::
+
+  git checkout current-release
+  git merge master
+  git push origin current-release
+  git checkout master
 
 Create release tag and release archive:
 
@@ -203,6 +214,8 @@ Create and upload Pypi distribution:
 
   python3 setup.py sdist bdist_wheel
   twine upload --repository-url https://upload.pypi.org/legacy/ dist/*
+  
+Lastly, update the `Roadmap <https://github.com/isofit/isofit/projects/4>`_ to note the current release changes.
 
 Contributors
 ------------
@@ -211,7 +224,7 @@ The github maintainers, responsible for handling pull requests, are:
 
 * David R. Thompson: david.r.thompson@jpl.nasa.gov
 * Winston Olson Duvall winston.olson-duvall@jpl.nasa.gov
-* Philip Brodrick 
+* Philip Brodrick philip.brodrick@jpl.nasa.gov
 
 Thanks to the following regular contributors:
 
