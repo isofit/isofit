@@ -176,12 +176,12 @@ class Instrument:
             bad = meas < 1e-5
             meas[bad] = 1e-5
             nedl = (1.0 / self.snr) * meas
-            return np.power(np.diagflat(nedl), 2)
+            return np.diagflat(np.power(nedl,2))
 
         elif self.model_type == 'parametric':
             nedl = np.abs(self.noise[:, 0]*np.sqrt(self.noise[:, 1]+meas)+self.noise[:, 2])
             nedl = nedl/np.sqrt(self.integrations)
-            return np.power(np.diagflat(nedl), 2)
+            return np.diagflat(np.power(nedl,2))
 
         elif self.model_type == 'pushbroom':
             if geom.pushbroom_column is None:
@@ -191,7 +191,7 @@ class Instrument:
             return C / np.sqrt(self.integrations)
 
         elif self.model_type == 'NEDT':
-            return np.power(np.diagflat(self.noise_NESR), 2)
+            return np.diagflat(np.power(self.noise_NESR,2))
 
     def dmeas_dinstrument(self, x_instrument, wl_hi, rdn_hi):
         """Jacobian of measurement with respect to the instrument 

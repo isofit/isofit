@@ -31,10 +31,12 @@ from isofit.configs import configs
 import multiprocessing
 plt.switch_backend("Agg")
 
+writelock = multiprocessing.Lock()
+
 def run_chunk(start_line, stop_line, reference_radiance_file, reference_reflectance_file, reference_uncertainty_file,
               reference_locations_file, input_radiance_file, input_locations_file, segmentation_file, isofit_config,
               output_reflectance_file, output_uncertainty_file,
-              radiance_adjustment, eps, nneighbors, nodata_value):
+              radiance_adjustment, eps, nneighbors, nodata_value,writechunk_size = 50):
 
 
     reference_radiance_img = envi.open(reference_radiance_file + '.hdr', reference_radiance_file)
@@ -56,8 +58,13 @@ def run_chunk(start_line, stop_line, reference_radiance_file, reference_reflecta
     input_locations_img = envi.open(input_locations_file + '.hdr', input_locations_file)
     input_locations_metadata = input_locations_img.metadata
 
-    output_reflectance_img = envi.open(output_reflectance_file + '.hdr', reference_reflectance_file)
-    output_uncertainty_img = envi.open(output_uncertainty_file + '.hdr', reference_uncertainty_file)
+    output_reflectance_img = envi.open(output_reflectance_file + '.hdr', output_reflectance_file)
+    output_uncertainty_img = envi.open(output_uncertainty_file + '.hdr', output_uncertainty_file)
+    output_reflectance_metadata = output_reflectance_img.metadata
+    output_uncertainty_metadata = output_uncertainty_img.metadata
+    n_output_lines, n_output_reflectance_bands, n_output_columns = [int(output_reflectance_metadata[n])
+                                        for n in ('lines', 'bands', 'samples')]
+    n_output_uncertainty_bands =int(output_reflectance_metadata['bands'])
 
     reference_locations_mm = reference_locations_img.open_memmap(interleave='source', writable=False)
     n_location_bands = int(input_locations_metadata['bands'])
@@ -93,6 +100,12 @@ def run_chunk(start_line, stop_line, reference_radiance_file, reference_reflecta
 
     # Iterate through image
     hash_table = {}
+
+    
+    output_reflectance_mm = output_reflectance_img.open_memmap(interleave='source',
+                                         writable=True)
+    output_uncertainty_mm = output_uncertainty_img.open_memmap(interleave='source',
+                                         writable=True)
 
     for row in np.arange(start_line, stop_line):
 
@@ -176,23 +189,29 @@ def run_chunk(start_line, stop_line, reference_radiance_file, reference_reflecta
         elapsed = float(time.time()-start)
         logging.info('row %i/%i, %5.1f spectra per second' %
                      (row, n_input_lines, float(nspectra)/elapsed))
-
-        output_reflectance_mm = output_reflectance_img.open_memmap(interleave='source',
-                                             writable=True)
+        
+                                             
         if input_radiance_metadata['interleave'] == 'bil':
             output_reflectance = output_reflectance.transpose((1, 0))
         output_reflectance_mm[row, :, :] = output_reflectance
 
-        output_uncertainty_mm = output_uncertainty_img.open_memmap(interleave='source',
-                                             writable=True)
         if input_radiance_metadata['interleave'] == 'bil':
             output_uncertainty = output_uncertainty.transpose((1, 0))
         output_uncertainty_mm[row, :, :] = output_uncertainty
 
         del input_locations_mm
         del input_radiance_mm
-        del output_reflectance_mm
-        del output_uncertainty_mm
+
+        if row % writechunk_size == 0 or row == stop_line -1 :
+            writelock.acquire()
+            del output_reflectance_mm
+            del output_uncertainty_mm
+
+            output_reflectance_mm = output_reflectance_img.open_memmap(interleave='source',
+                                                 writable=True)
+            output_uncertainty_mm = output_uncertainty_img.open_memmap(interleave='source',
+                                                 writable=True)
+            writelock.release()
 
 
 def plot_example(xv, yv, b):
@@ -318,6 +337,7 @@ def empirical_line(reference_radiance_file, reference_reflectance_file, referenc
                                     metadata=input_radiance_img.metadata, force=True)
 
     del output_reflectance_img, output_uncertainty_img
+    del reference_reflectance_img, reference_uncertainty_img, reference_locations_img, input_radiance_img, input_locations_img, segmentation_img 
 
     if n_cores == -1:
         n_cores = multiprocessing.cpu_count()
@@ -362,8 +382,8 @@ def empirical_line(reference_radiance_file, reference_reflectance_file, referenc
     input_locations_img = envi.open(input_locations_file + '.hdr', input_locations_file)
     input_locations_metadata = input_locations_img.metadata
 
-    output_reflectance_img = envi.open(reference_reflectance_file + '.hdr', reference_reflectance_file)
-    output_uncertainty_img = envi.open(reference_uncertainty_file + '.hdr', reference_uncertainty_file)
+    output_reflectance_img = envi.open(output_reflectance_file + '.hdr', output_reflectance_file)
+    output_uncertainty_img = envi.open(output_uncertainty_file + '.hdr', output_uncertainty_file)
 
 
     reference_locations_mm = reference_locations_img.open_memmap(interleave='source', writable=False)
