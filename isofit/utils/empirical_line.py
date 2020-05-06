@@ -36,7 +36,7 @@ writelock = multiprocessing.Lock()
 def run_chunk(start_line, stop_line, reference_radiance_file, reference_reflectance_file, reference_uncertainty_file,
               reference_locations_file, input_radiance_file, input_locations_file, segmentation_file, isofit_config,
               output_reflectance_file, output_uncertainty_file,
-              radiance_adjustment, eps, nneighbors, nodata_value,writechunk_size = 50):
+              radiance_adjustment, eps, nneighbors, nodata_value,writechunk_size = 1):
 
 
     reference_radiance_img = envi.open(reference_radiance_file + '.hdr', reference_radiance_file)
@@ -187,31 +187,38 @@ def run_chunk(start_line, stop_line, reference_radiance_file, reference_reflecta
             nspectra = nspectra+1
 
         elapsed = float(time.time()-start)
-        logging.info('row %i/%i, %5.1f spectra per second' %
+        print('row %i/%i, %5.1f spectra per second' %
                      (row, n_input_lines, float(nspectra)/elapsed))
         
                                              
-        if input_radiance_metadata['interleave'] == 'bil':
-            output_reflectance = output_reflectance.transpose((1, 0))
-        output_reflectance_mm[row, :, :] = output_reflectance
-
-        if input_radiance_metadata['interleave'] == 'bil':
-            output_uncertainty = output_uncertainty.transpose((1, 0))
-        output_uncertainty_mm[row, :, :] = output_uncertainty
-
-        del input_locations_mm
-        del input_radiance_mm
-
         if row % writechunk_size == 0 or row == stop_line -1 :
+            print('locking')
             writelock.acquire()
+            if input_radiance_metadata['interleave'] == 'bil':
+                output_reflectance = output_reflectance.transpose((1, 0))
+            output_reflectance_mm[row, :, :] = output_reflectance
+
+            if input_radiance_metadata['interleave'] == 'bil':
+                output_uncertainty = output_uncertainty.transpose((1, 0))
+            output_uncertainty_mm[row, :, :] = output_uncertainty
+
+            del input_locations_mm
+            del input_radiance_mm
+
             del output_reflectance_mm
             del output_uncertainty_mm
+            del output_reflectance_img
+            del output_uncertainty_img
 
+            output_reflectance_img = envi.open(output_reflectance_file + '.hdr', output_reflectance_file)
+            output_uncertainty_img = envi.open(output_uncertainty_file + '.hdr', output_uncertainty_file)
             output_reflectance_mm = output_reflectance_img.open_memmap(interleave='source',
                                                  writable=True)
             output_uncertainty_mm = output_uncertainty_img.open_memmap(interleave='source',
                                                  writable=True)
+
             writelock.release()
+            print('unlocked')
 
 
 def plot_example(xv, yv, b):
