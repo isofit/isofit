@@ -33,6 +33,7 @@ plt.switch_backend("Agg")
 
 def run_chunk(start_line, stop_line, reference_radiance_file, reference_reflectance_file, reference_uncertainty_file,
               reference_locations_file, input_radiance_file, input_locations_file, segmentation_file, isofit_config,
+              output_reflectance_file, output_uncertainty_file,
               radiance_adjustment, eps, nneighbors, nodata_value):
 
 
@@ -43,20 +44,23 @@ def run_chunk(start_line, stop_line, reference_radiance_file, reference_reflecta
 
     meta = reference_radiance_img.metadata
     n_reference_lines, n_radiance_bands, n_reference_columns = [int(meta[n]) for n in ('lines', 'bands', 'samples')]
+    
+    reference_uncertainty_meta = reference_uncertainty_img.metadata
+    n_reference_uncertainty_bands = int(reference_uncertainty_meta['bands'])
 
     input_radiance_img = envi.open(input_radiance_file + '.hdr', input_radiance_file)
     input_radiance_metadata = input_radiance_img.metadata
-    n_input_lines, n_input_bands, ns = [int(input_radiance_metadata[n])
+    n_input_lines, n_input_bands, n_input_samples = [int(input_radiance_metadata[n])
                                         for n in ('lines', 'bands', 'samples')]
 
     input_locations_img = envi.open(input_locations_file + '.hdr', input_locations_file)
     input_locations_metadata = input_locations_img.metadata
 
-    output_reflectance_img = envi.open(reference_reflectance_file + '.hdr', reference_reflectance_file)
-    output_uncertainty_img = envi.open(reference_uncertainty_file + '.hdr', reference_uncertainty_file)
+    output_reflectance_img = envi.open(output_reflectance_file + '.hdr', reference_reflectance_file)
+    output_uncertainty_img = envi.open(output_uncertainty_file + '.hdr', reference_uncertainty_file)
 
     reference_locations_mm = reference_locations_img.open_memmap(interleave='source', writable=False)
-    n_location_bands = input_locations_meta['bands']
+    n_location_bands = int(input_locations_metadata['bands'])
     reference_locations = np.array(reference_locations_mm[:, :, :]).reshape((n_reference_lines, n_location_bands))
 
     reference_radiance_mm = reference_radiance_img.open_memmap(interleave='source', writable=False)
@@ -66,7 +70,7 @@ def run_chunk(start_line, stop_line, reference_radiance_file, reference_reflecta
     reference_reflectance = np.array(reference_reflectance_mm[:, :, :]).reshape((n_reference_lines, n_radiance_bands))
 
     reference_uncertainty_mm = reference_uncertainty_img.open_memmap(interleave='source', writable=False)
-    reference_uncertainty = np.array(reference_uncertainty_mm[:, :, :]).reshape((n_reference_lines, ns))
+    reference_uncertainty = np.array(reference_uncertainty_mm[:, :, :]).reshape((n_reference_lines, n_reference_uncertainty_bands))
     reference_uncertainty = reference_uncertainty[:, :n_radiance_bands].reshape((n_reference_lines, n_radiance_bands))
 
     if segmentation_file:
@@ -110,7 +114,7 @@ def run_chunk(start_line, stop_line, reference_radiance_file, reference_reflecta
         output_uncertainty = np.zeros(input_radiance.shape)
 
         nspectra, start = 0, time.time()
-        for col in np.arange(ns):
+        for col in np.arange(n_input_samples):
 
             x = input_radiance[col, :]
             if np.all(abs(x-nodata_value) < eps):
@@ -312,6 +316,7 @@ def empirical_line(reference_radiance_file, reference_reflectance_file, referenc
 
     output_uncertainty_img = envi.create_image(output_uncertainty_file + '.hdr', ext='',
                                     metadata=input_radiance_img.metadata, force=True)
+
     del output_reflectance_img, output_uncertainty_img
 
     if n_cores == -1:
@@ -326,11 +331,17 @@ def empirical_line(reference_radiance_file, reference_reflectance_file, referenc
 
     results = []
     for l in range(len(line_sections) - 1):
-        results.append(pool.apply_async(run_chunk, args=(line_sections[l], line_sections[l], reference_radiance_file,
+        args = args=(line_sections[l], line_sections[l+1], reference_radiance_file,
                                                          reference_reflectance_file, reference_uncertainty_file,
                                                          reference_locations_file, input_radiance_file,
-                                                         input_locations_file, segmentation_file, isofit_config,
-                                                         radiance_adjustment, eps, nneighbors, nodata_value,)))
+                                                         input_locations_file, segmentation_file, isofit_config, 
+                                                         output_reflectance_file, output_uncertainty_file,
+                                                         radiance_adjustment, eps, nneighbors, nodata_value,)
+        if n_cores != 1:
+            results.append(pool.apply_async(run_chunk, args))
+        else:
+            run_chunk(*args)
+
     results = [p.get() for p in results]
     pool.close()
     pool.join()
