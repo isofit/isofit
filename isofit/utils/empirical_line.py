@@ -62,7 +62,7 @@ def run_chunk(start_line, stop_line, reference_radiance_file, reference_reflecta
     output_reflectance_img = envi.open(output_reflectance_file + '.hdr', output_reflectance_file)
     output_uncertainty_img = envi.open(output_uncertainty_file + '.hdr', output_uncertainty_file)
     n_output_reflectance_bands = int(output_reflectance_img.metadata['bands'])
-    n_output_uncertainty_bands = int(output_uncertainty_file.metadata['bands'])
+    n_output_uncertainty_bands = int(output_uncertainty_img.metadata['bands'])
 
 
     # Load reference data
@@ -227,13 +227,13 @@ def run_chunk(start_line, stop_line, reference_radiance_file, reference_reflecta
             output_uncertainty_mm = output_uncertainty_img.open_memmap(interleave='source',
                                                                        writable=True)
         else:
-            output_reflectance[row, :, :] = output_reflectance_row
-            output_uncertainty[row, :, :] = output_uncertainty_row
+            output_reflectance[row - start_line, :, :] = output_reflectance_row
+            output_uncertainty[row - start_line, :, :] = output_uncertainty_row
 
     if out_of_core:
-        return start_line, stop_line, output_reflectance, output_uncertainty
-    else:
         return None, None, None, None
+    else:
+        return start_line, stop_line, output_reflectance, output_uncertainty
 
 
 
@@ -325,7 +325,7 @@ def empirical_line(reference_radiance_file, reference_reflectance_file, referenc
 
     # Now cleanup inputs and outputs, we'll write dynamically above
     del output_reflectance_img, output_uncertainty_img
-    del reference_reflectance_img, reference_uncertainty_img, reference_locations_img, input_radiance_img, input_locations_img, segmentation_img 
+    del reference_reflectance_img, reference_uncertainty_img, reference_locations_img, input_radiance_img, input_locations_img 
 
     # Determine the number of cores to use
     if n_cores == -1:
