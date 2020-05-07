@@ -296,7 +296,7 @@ class ForwardModel:
 
         # In some cases, these differ only by a tiny amount,
         # so no need to waste time interpolating
-        if np.allclose(wl, self.RT.wl):
+        if (len(wl) == len(self.RT.wl)) and np.allclose(wl, self.RT.wl):
             return q
 
         if q.ndim > 1:
