@@ -100,8 +100,8 @@ def heuristic_atmosphere(RT: RadiativeTransfer, instrument, x_RT, x_instrument, 
     return x_new
 
 
-def invert_algebraic(surface, RT: RadiativeTransfer, instrument, x_surface, x_RT, x_instrument,
-                     meas, geom):
+def invert_algebraic(surface, RT: RadiativeTransfer, instrument, x_surface, 
+        x_RT, x_instrument, meas, geom):
     """Inverts radiance algebraically using Lambertian assumptions to get a 
         reflectance."""
 
@@ -179,11 +179,15 @@ def invert_simple(forward, meas, geom):
     if forward.surface.emissive:
 
         # Estimate the total radiance at sensor, leaving out surface emission
+        # Radiate transfer calculations could take place at high spectral resolution
+        # so we upsample the surface reflectance
+
+        rfl_hi = forward.upsample(forward.surface.wl, rfl_est)
         rhoatm, sphalb, transm, solar_irr, coszen, transup = coeffs
         L_atm = RT.get_L_atm(x_RT, geom)
         L_down_transmitted = RT.get_L_down_transmitted(x_RT, geom)
         L_total_without_surface_emission = \
-            L_atm + L_down_transmitted * rfl_est / (1. - sphalb * rfl_est)
+            L_atm + L_down_transmitted * rfl_hi / (1. - sphalb * rfl_hi)
 
         # These tend to have high transmission factors; the emissivity of most
         # materials is nearly 1 for these bands, so they are good for
