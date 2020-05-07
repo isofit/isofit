@@ -116,6 +116,9 @@ def invert_algebraic(surface, RT: RadiativeTransfer, instrument, x_surface,
     transup = instrument.sample(x_instrument, RT.wl, rhi['transup'])
     coszen = RT.coszen
 
+    #Prevent NaNs
+    transm[transm == 0] = 1e-5
+
     # Calculate the initial emission and subtract from the measurement.
     # Surface and measured wavelengths may differ.
     Ls = surface.calc_Ls(x_surface, geom)

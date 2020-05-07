@@ -179,7 +179,9 @@ class Instrument:
             return np.power(np.diagflat(nedl), 2)
 
         elif self.model_type == 'parametric':
-            nedl = np.abs(self.noise[:, 0]*np.sqrt(self.noise[:, 1]+meas)+self.noise[:, 2])
+            temp = self.noise[:, 1]+meas 
+            temp[temp <= 0] = 1e-5
+            nedl = np.abs(self.noise[:, 0]*np.sqrt(temp)+self.noise[:, 2])
             nedl = nedl/np.sqrt(self.integrations)
             return np.power(np.diagflat(nedl), 2)
 
