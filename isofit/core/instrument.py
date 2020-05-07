@@ -174,12 +174,18 @@ class Instrument:
         """
         if self.model_type == 'SNR':
             bad = meas < 1e-5
-            meas[bad] = 1e-5
+            if np.any(bad):
+                meas[bad] = 1e-5
+                logging.debug('SNR noise model found noise <= 0 - adjusting to slightly positive to avoid /0.')
             nedl = (1.0 / self.snr) * meas
             return np.power(np.diagflat(nedl), 2)
 
         elif self.model_type == 'parametric':
-            nedl = np.abs(self.noise[:, 0]*np.sqrt(self.noise[:, 1]+meas)+self.noise[:, 2])
+            noise_plus_meas = self.noise[:, 1]+meas
+            if np.any(noise_plus_meas <=0):
+                noise_plus_meas[noise_plus_meas <= 0] = 1e-5
+                logging.debug('Parametric noise model found noise <= 0 - adjusting to slightly positive to avoid /0.')
+            nedl = np.abs(self.noise[:, 0]*np.sqrt(noise_plus_meas)+self.noise[:, 2])
             nedl = nedl/np.sqrt(self.integrations)
             return np.power(np.diagflat(nedl), 2)
 
