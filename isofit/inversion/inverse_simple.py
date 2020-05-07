@@ -181,7 +181,6 @@ def invert_simple(forward, meas, geom):
         # Estimate the total radiance at sensor, leaving out surface emission
         # Radiate transfer calculations could take place at high spectral resolution
         # so we upsample the surface reflectance
-
         rfl_hi = forward.upsample(forward.surface.wl, rfl_est)
         rhoatm, sphalb, transm, solar_irr, coszen, transup = coeffs
         L_atm = RT.get_L_atm(x_RT, geom)
