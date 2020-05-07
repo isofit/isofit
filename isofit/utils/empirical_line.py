@@ -35,39 +35,38 @@ writelock = multiprocessing.Lock()
 
 def run_chunk(start_line, stop_line, reference_radiance_file, reference_reflectance_file, reference_uncertainty_file,
               reference_locations_file, input_radiance_file, input_locations_file, segmentation_file, isofit_config,
-              output_reflectance_file, output_uncertainty_file,
-              radiance_adjustment, eps, nneighbors, nodata_value,writechunk_size = 1):
+              output_reflectance_file, output_uncertainty_file, radiance_factors, eps, nneighbors, nodata_value,
+              out_of_core=True):
 
 
+    # Load reference images
     reference_radiance_img = envi.open(reference_radiance_file + '.hdr', reference_radiance_file)
     reference_reflectance_img = envi.open(reference_reflectance_file + '.hdr', reference_reflectance_file)
     reference_uncertainty_img = envi.open(reference_uncertainty_file + '.hdr', reference_uncertainty_file)
     reference_locations_img = envi.open(reference_locations_file + '.hdr', reference_locations_file)
 
-    meta = reference_radiance_img.metadata
-    n_reference_lines, n_radiance_bands, n_reference_columns = [int(meta[n]) for n in ('lines', 'bands', 'samples')]
-    
-    reference_uncertainty_meta = reference_uncertainty_img.metadata
-    n_reference_uncertainty_bands = int(reference_uncertainty_meta['bands'])
+    n_reference_lines, n_radiance_bands, n_reference_columns = [int(reference_radiance_img.metadata[n])
+                                                                for n in ('lines', 'bands', 'samples')]
+    n_reference_uncertainty_bands = int(reference_uncertainty_img.metadata['bands'])
 
+    # Load input images
     input_radiance_img = envi.open(input_radiance_file + '.hdr', input_radiance_file)
-    input_radiance_metadata = input_radiance_img.metadata
-    n_input_lines, n_input_bands, n_input_samples = [int(input_radiance_metadata[n])
+    n_input_lines, n_input_bands, n_input_samples = [int(input_radiance_img.metadata[n])
                                         for n in ('lines', 'bands', 'samples')]
 
     input_locations_img = envi.open(input_locations_file + '.hdr', input_locations_file)
-    input_locations_metadata = input_locations_img.metadata
+    n_location_bands = int(input_locations_img.metadata['bands'])
 
+
+    # Load output images
     output_reflectance_img = envi.open(output_reflectance_file + '.hdr', output_reflectance_file)
     output_uncertainty_img = envi.open(output_uncertainty_file + '.hdr', output_uncertainty_file)
-    output_reflectance_metadata = output_reflectance_img.metadata
-    output_uncertainty_metadata = output_uncertainty_img.metadata
-    n_output_lines, n_output_reflectance_bands, n_output_columns = [int(output_reflectance_metadata[n])
-                                        for n in ('lines', 'bands', 'samples')]
-    n_output_uncertainty_bands =int(output_reflectance_metadata['bands'])
+    n_output_reflectance_bands = int(output_reflectance_img.metadata['bands'])
+    n_output_uncertainty_bands = int(output_uncertainty_file.metadata['bands'])
 
+
+    # Load reference data
     reference_locations_mm = reference_locations_img.open_memmap(interleave='source', writable=False)
-    n_location_bands = int(input_locations_metadata['bands'])
     reference_locations = np.array(reference_locations_mm[:, :, :]).reshape((n_reference_lines, n_location_bands))
 
     reference_radiance_mm = reference_radiance_img.open_memmap(interleave='source', writable=False)
@@ -77,9 +76,11 @@ def run_chunk(start_line, stop_line, reference_radiance_file, reference_reflecta
     reference_reflectance = np.array(reference_reflectance_mm[:, :, :]).reshape((n_reference_lines, n_radiance_bands))
 
     reference_uncertainty_mm = reference_uncertainty_img.open_memmap(interleave='source', writable=False)
-    reference_uncertainty = np.array(reference_uncertainty_mm[:, :, :]).reshape((n_reference_lines, n_reference_uncertainty_bands))
+    reference_uncertainty = np.array(reference_uncertainty_mm[:, :, :]).reshape((n_reference_lines,
+                                                                                 n_reference_uncertainty_bands))
     reference_uncertainty = reference_uncertainty[:, :n_radiance_bands].reshape((n_reference_lines, n_radiance_bands))
 
+    # Load segmentation data
     if segmentation_file:
         segmentation_img = envi.open(segmentation_file + '.hdr', segmentation_file)
         segmentation_img = segmentation_img.read_band(0)
@@ -94,45 +95,61 @@ def run_chunk(start_line, stop_line, reference_radiance_file, reference_reflecta
     else:
         instrument = None
 
+    # Load radiance factors
+    if radiance_factors is None:
+        radiance_adjustment = np.ones(n_radiance_bands, )
+    else:
+        radiance_adjustment = np.loadtxt(radiance_factors)
+
+    # Load Tree
     loc_scaling = np.array([1e5, 1e5, 0.1])
     scaled_ref_loc = reference_locations * loc_scaling
     tree = KDTree(scaled_ref_loc)
+    # Assume (heuristically) that, for distance purposes, 1 m vertically is
+    # comparable to 10 m horizontally, and that there are 100 km per latitude
+    # degree.  This is all approximate of course.  Elevation appears in the
+    # Third element, and the first two are latitude/longitude coordinates
 
     # Iterate through image
     hash_table = {}
 
-    
-    output_reflectance_mm = output_reflectance_img.open_memmap(interleave='source',
-                                         writable=True)
-    output_uncertainty_mm = output_uncertainty_img.open_memmap(interleave='source',
-                                         writable=True)
+    if out_of_core:
+        output_reflectance_mm = output_reflectance_img.open_memmap(interleave='source',
+                                             writable=True)
+        output_uncertainty_mm = output_uncertainty_img.open_memmap(interleave='source',
+                                             writable=True)
+    else:
+        output_reflectance = np.zeros((stop_line-start_line, n_output_reflectance_bands, n_input_samples)) + nodata_value
+        output_uncertainty = np.zeros((stop_line-start_line, n_output_uncertainty_bands, n_input_samples)) + nodata_value
+
+
 
     for row in np.arange(start_line, stop_line):
 
-        # Extract data
+        # Load inline input data
         input_radiance_mm = input_radiance_img.open_memmap(
             interleave='source', writable=False)
         input_radiance = np.array(input_radiance_mm[row, :, :])
-        if input_radiance_metadata['interleave'] == 'bil':
+        if input_radiance_img.metadata['interleave'] == 'bil':
             input_radiance = input_radiance.transpose((1, 0))
         input_radiance = input_radiance * radiance_adjustment
 
         input_locations_mm = input_locations_img.open_memmap(
             interleave='source', writable=False)
         input_locations = np.array(input_locations_mm[row, :, :])
-        if input_locations_metadata['interleave'] == 'bil':
+        if input_locations_img.metadata['interleave'] == 'bil':
             input_locations = input_locations.transpose((1, 0))
 
-        output_reflectance = np.zeros(input_radiance.shape)
-        output_uncertainty = np.zeros(input_radiance.shape)
+        output_reflectance_row = np.zeros(input_radiance.shape) + nodata_value
+        output_uncertainty_row = np.zeros(input_radiance.shape) + nodata_value
 
         nspectra, start = 0, time.time()
         for col in np.arange(n_input_samples):
 
             x = input_radiance[col, :]
             if np.all(abs(x-nodata_value) < eps):
-                output_reflectance[col, :] = nodata_value
-                output_uncertainty[col, :] = nodata_value
+                output_reflectance_row[col, :] = nodata_value
+                output_uncertainty_row[col, :] = nodata_value
                 continue
 
             bhat = None
@@ -169,17 +186,17 @@ def run_chunk(start_line, stop_line, reference_radiance_file, reference_reflecta
                 hash_table[hash_idx] = bhat, bmarg, bcov
 
             A = np.array((np.ones(n_radiance_bands), x))
-            output_reflectance[col, :] = (np.multiply(bhat.T, A).sum(axis=0))
+            output_reflectance_row[col, :] = (np.multiply(bhat.T, A).sum(axis=0))
 
             # Calculate uncertainties.  Sy approximation rather than Seps for
             # speed, for now... but we do take into account instrument
             # radiometric uncertainties
             if instrument is None:
-                output_uncertainty[col, :] = np.sqrt(np.multiply(bmarg.T, A).sum(axis=0))
+                output_uncertainty_row[col, :] = np.sqrt(np.multiply(bmarg.T, A).sum(axis=0))
             else:
                 Sy = instrument.Sy(x, geom=None)
                 calunc = instrument.bval[:instrument.n_chan]
-                output_uncertainty[col, :] = np.sqrt(
+                output_uncertainty_row[col, :] = np.sqrt(
                     np.diag(Sy)+pow(calunc*x, 2))*bhat[:, 1]
             #if loglevel == 'DEBUG':
             #    plot_example(xv, yv, bhat)
@@ -187,38 +204,38 @@ def run_chunk(start_line, stop_line, reference_radiance_file, reference_reflecta
             nspectra = nspectra+1
 
         elapsed = float(time.time()-start)
-        print('row %i/%i, %5.1f spectra per second' %
+        logging.info('row %i/%i, %5.1f spectra per second' %
                      (row, n_input_lines, float(nspectra)/elapsed))
-        
-                                             
-        if row % writechunk_size == 0 or row == stop_line -1 :
-            print('locking')
-            writelock.acquire()
-            if input_radiance_metadata['interleave'] == 'bil':
-                output_reflectance = output_reflectance.transpose((1, 0))
-            output_reflectance_mm[row, :, :] = output_reflectance
 
-            if input_radiance_metadata['interleave'] == 'bil':
-                output_uncertainty = output_uncertainty.transpose((1, 0))
-            output_uncertainty_mm[row, :, :] = output_uncertainty
+        del input_locations_mm
+        del input_radiance_mm
 
-            del input_locations_mm
-            del input_radiance_mm
+        if input_radiance_img.metadata['interleave'] == 'bil':
+            output_reflectance_row = output_reflectance_row.transpose((1, 0))
+        if input_radiance_img.metadata['interleave'] == 'bil':
+            output_uncertainty_row = output_uncertainty_row.transpose((1, 0))
+
+        if out_of_core:
+            output_reflectance_mm[row, :, :] = output_reflectance_row
+            output_uncertainty_mm[row, :, :] = output_uncertainty_row
 
             del output_reflectance_mm
             del output_uncertainty_mm
-            del output_reflectance_img
-            del output_uncertainty_img
 
-            output_reflectance_img = envi.open(output_reflectance_file + '.hdr', output_reflectance_file)
-            output_uncertainty_img = envi.open(output_uncertainty_file + '.hdr', output_uncertainty_file)
             output_reflectance_mm = output_reflectance_img.open_memmap(interleave='source',
-                                                 writable=True)
+                                                                       writable=True)
             output_uncertainty_mm = output_uncertainty_img.open_memmap(interleave='source',
-                                                 writable=True)
+                                                                       writable=True)
+        else:
+            output_reflectance[row, :, :] = output_reflectance_row
+            output_uncertainty[row, :, :] = output_uncertainty_row
 
-            writelock.release()
-            print('unlocked')
+    if out_of_core:
+        return start_line, stop_line, output_reflectance, output_uncertainty
+    else:
+        return None, None, None, None
+
+
 
 
 def plot_example(xv, yv, b):
@@ -256,114 +273,86 @@ def empirical_line(reference_radiance_file, reference_reflectance_file, referenc
     eps = 1e-6
     loglevel = level
 
-    # Open input data, get dimensions
     logging.basicConfig(format='%(message)s', level=loglevel)
 
+    # Open input data to check that band formatting is correct
     # Load reference set radiance
     reference_radiance_img = envi.open(reference_radiance_file + '.hdr', reference_radiance_file)
-    meta = reference_radiance_img.metadata
-    n_reference_lines, n_radiance_bands, n_reference_columns = [int(meta[n]) for n in ('lines', 'bands', 'samples')]
+    n_reference_lines, n_radiance_bands, n_reference_columns = [int(reference_radiance_img.metadata[n])
+                                                                for n in ('lines', 'bands', 'samples')]
     if n_reference_columns != 1:
         raise IndexError("Reference data should be a single-column list")
 
     # Load reference set reflectance
     reference_reflectance_img = envi.open(reference_reflectance_file + '.hdr', reference_reflectance_file)
-    meta = reference_reflectance_img.metadata
-    nrefr, nbr, srefr = [int(meta[n]) for n in ('lines', 'bands', 'samples')]
+    nrefr, nbr, srefr = [int(reference_reflectance_img.metadata[n]) for n in ('lines', 'bands', 'samples')]
     if nrefr != n_reference_lines or nbr != n_radiance_bands or srefr != n_reference_columns:
         raise IndexError("Reference file dimension mismatch (reflectance)")
 
     # Load reference set uncertainty, assuming reflectance uncertainty is
     # recoreded in the first n_radiance_bands channels of data
     reference_uncertainty_img = envi.open(reference_uncertainty_file + '.hdr', reference_uncertainty_file)
-    meta = reference_uncertainty_img.metadata
-    nrefu, ns, srefu = [int(meta[n]) for n in ('lines', 'bands', 'samples')]
+    nrefu, ns, srefu = [int(reference_uncertainty_img.metadata[n]) for n in ('lines', 'bands', 'samples')]
     if nrefu != n_reference_lines or ns < n_radiance_bands or srefu != n_reference_columns:
         raise IndexError("Reference file dimension mismatch (uncertainty)")
 
     # Load reference set locations
     reference_locations_img = envi.open(reference_locations_file + '.hdr', reference_locations_file)
-    meta = reference_locations_img.metadata
-    nrefl, lb, ls = [int(meta[n]) for n in ('lines', 'bands', 'samples')]
+    nrefl, lb, ls = [int(reference_locations_img.metadata[n]) for n in ('lines', 'bands', 'samples')]
     if nrefl != n_reference_lines or lb != 3:
         raise IndexError("Reference file dimension mismatch (locations)")
 
     input_radiance_img = envi.open(input_radiance_file + '.hdr', input_radiance_file)
-    input_radiance_metadata = input_radiance_img.metadata
-    n_input_lines, n_input_bands, ns = [int(input_radiance_metadata[n])
+    n_input_lines, n_input_bands, ns = [int(input_radiance_img.metadata[n])
                   for n in ('lines', 'bands', 'samples')]
     if n_radiance_bands != n_input_bands:
         msg = 'Number of channels mismatch: input (%i) vs. reference (%i)'
         raise IndexError(msg % (nbr, n_radiance_bands))
 
     input_locations_img = envi.open(input_locations_file + '.hdr', input_locations_file)
-    input_locations_metadata = input_locations_img.metadata
-    nll, nlb, nls = [int(input_locations_metadata[n])
+    nll, nlb, nls = [int(input_locations_img.metadata[n])
                      for n in ('lines', 'bands', 'samples')]
     if nll != n_input_lines or nlb != 3 or nls != ns:
         raise IndexError('Input location dimension mismatch')
 
 
-    reference_locations_mm = reference_locations_img.open_memmap(interleave='source', writable=False)
-    reference_locations = np.array(reference_locations_mm[:, :, :]).reshape((n_reference_lines, lb))
-
-    # Assume (heuristically) that, for distance purposes, 1 m vertically is
-    # comparable to 10 m horizontally, and that there are 100 km per latitude
-    # degree.  This is all approximate of course.  Elevation appears in the
-    # Third element, and the first two are latitude/longitude coordinates
-    loc_scaling = np.array([1e5, 1e5, 0.1])
-    scaled_ref_loc = reference_locations * loc_scaling
-    tree = KDTree(scaled_ref_loc)
-    del reference_locations
-
-    # Prepare radiance adjustment
-    if radiance_factors is None:
-        radiance_adjustment = np.ones(n_radiance_bands,)
-    else:
-        radiance_adjustment = np.loadtxt(radiance_factors)
-
-    # Prepare instrument model, if available
-    if isofit_config is not None:
-        config = configs.create_new_config(isofit_config)
-        instrument = Instrument(config)
-        logging.info('Loading instrument')
-    else:
-        instrument = None
-
-
-    if segmentation_file:
-        segmentation_img = envi.open(segmentation_file + '.hdr', segmentation_file)
-        segmentation_img = segmentation_img.read_band(0)
-    else:
-        segmentation_img = None
-
+    # Create output files
     output_reflectance_img = envi.create_image(output_reflectance_file + '.hdr', ext='',
-                                    metadata=input_radiance_img.metadata, force=True)
+                                               metadata=input_radiance_img.metadata, force=True)
 
     output_uncertainty_img = envi.create_image(output_uncertainty_file + '.hdr', ext='',
-                                    metadata=input_radiance_img.metadata, force=True)
+                                               metadata=input_radiance_img.metadata, force=True)
 
+    # Now cleanup inputs and outputs, we'll write dynamically above
     del output_reflectance_img, output_uncertainty_img
     del reference_reflectance_img, reference_uncertainty_img, reference_locations_img, input_radiance_img, input_locations_img, segmentation_img 
 
+    # Determine the number of cores to use
     if n_cores == -1:
         n_cores = multiprocessing.cpu_count()
     n_cores = min(n_cores, n_input_lines)
 
-    line_sections = np.linspace(0,n_input_lines,num=n_cores+1,dtype=int)
+    # Break data into sections
+    line_sections = np.linspace(0, n_input_lines, num=n_cores+1, dtype=int)
 
+    # Set up our pool
     pool = multiprocessing.Pool(processes=n_cores)
     start_time = time.time()
     logging.info('Beginning empirical line inversions using {} cores'.format(n_cores))
 
+    # This shouldn't be necessary, but parallel write, despite significant effort with various locks, crashes the
+    # system.  Possibly due to print statements in spectral.io.envi....consider trying with pure memmaps or gdal.
+    # For now, if in parallel (n_cores != 1), run in-core, meaning substantial memory is required.  Keeping n_cores
+    # at 1 preserves original out-of-core functionality
+    out_of_core = n_cores == 1
+
+    # Run the pool (or run serially)
     results = []
     for l in range(len(line_sections) - 1):
-        args = args=(line_sections[l], line_sections[l+1], reference_radiance_file,
-                                                         reference_reflectance_file, reference_uncertainty_file,
-                                                         reference_locations_file, input_radiance_file,
-                                                         input_locations_file, segmentation_file, isofit_config, 
-                                                         output_reflectance_file, output_uncertainty_file,
-                                                         radiance_adjustment, eps, nneighbors, nodata_value,)
+        args = (line_sections[l], line_sections[l+1], reference_radiance_file, reference_reflectance_file,
+                reference_uncertainty_file, reference_locations_file, input_radiance_file,
+                input_locations_file, segmentation_file, isofit_config, output_reflectance_file,
+                output_uncertainty_file, radiance_factors, eps, nneighbors, nodata_value, out_of_core, )
         if n_cores != 1:
             results.append(pool.apply_async(run_chunk, args))
         else:
@@ -377,137 +366,26 @@ def empirical_line(reference_radiance_file, reference_reflectance_file, referenc
     logging.info('Parallel empirical line inversions complete.  {} s total, {} spectra/s, {}/spectra/core'.format(
         total_time, line_sections[-1] / total_time, line_sections[-1] / total_time / n_cores))
 
-    """
-    reference_radiance_img = envi.open(reference_radiance_file + '.hdr', reference_radiance_file)
-    reference_reflectance_img = envi.open(reference_reflectance_file + '.hdr', reference_reflectance_file)
-    reference_uncertainty_img = envi.open(reference_uncertainty_file + '.hdr', reference_uncertainty_file)
-    reference_locations_img = envi.open(reference_locations_file + '.hdr', reference_locations_file)
+    # Write results as necessary
+    if n_cores > 1:
+        logging.info('Beginning data write')
+        output_reflectance_img = envi.open(output_reflectance_file + '.hdr', output_reflectance_file)
+        output_uncertainty_img = envi.open(output_uncertainty_file + '.hdr', output_uncertainty_file)
 
-    input_radiance_img = envi.open(input_radiance_file + '.hdr', input_radiance_file)
-    input_radiance_metadata = input_radiance_img.metadata
-
-    input_locations_img = envi.open(input_locations_file + '.hdr', input_locations_file)
-    input_locations_metadata = input_locations_img.metadata
-
-    output_reflectance_img = envi.open(output_reflectance_file + '.hdr', output_reflectance_file)
-    output_uncertainty_img = envi.open(output_uncertainty_file + '.hdr', output_uncertainty_file)
-
-
-    reference_locations_mm = reference_locations_img.open_memmap(interleave='source', writable=False)
-    reference_locations = np.array(reference_locations_mm[:, :, :]).reshape((n_reference_lines, lb))
-
-    reference_radiance_mm = reference_radiance_img.open_memmap(interleave='source', writable=False)
-    reference_radiance = np.array(reference_radiance_mm[:, :, :]).reshape((n_reference_lines, n_radiance_bands))
-
-    reference_reflectance_mm = reference_reflectance_img.open_memmap(interleave='source', writable=False)
-    reference_reflectance = np.array(reference_reflectance_mm[:, :, :]).reshape((n_reference_lines, n_radiance_bands))
-
-    reference_uncertainty_mm = reference_uncertainty_img.open_memmap(interleave='source', writable=False)
-    reference_uncertainty = np.array(reference_uncertainty_mm[:, :, :]).reshape((n_reference_lines, ns))
-    reference_uncertainty = reference_uncertainty[:, :n_radiance_bands].reshape((n_reference_lines, n_radiance_bands))
-
-
-    # Iterate through image
-    hash_table = {}
-
-    for row in np.arange(n_input_lines):
-
-        # Extract data
-        input_radiance_mm = input_radiance_img.open_memmap(
-            interleave='source', writable=False)
-        input_radiance = np.array(input_radiance_mm[row, :, :])
-        if input_radiance_metadata['interleave'] == 'bil':
-            input_radiance = input_radiance.transpose((1, 0))
-        input_radiance = input_radiance * radiance_adjustment
-
-        input_locations_mm = input_locations_img.open_memmap(
-            interleave='source', writable=False)
-        input_locations = np.array(input_locations_mm[row, :, :])
-        if input_locations_metadata['interleave'] == 'bil':
-            input_locations = input_locations.transpose((1, 0))
-
-        output_reflectance = np.zeros(input_radiance.shape)
-        output_uncertainty = np.zeros(input_radiance.shape)
-
-        nspectra, start = 0, time.time()
-        for col in np.arange(ns):
-
-            x = input_radiance[col, :]
-            if np.all(abs(x - nodata_value) < eps):
-                output_reflectance[col, :] = nodata_value
-                output_uncertainty[col, :] = nodata_value
-                continue
-
-            bhat = None
-            if segmentation_img is not None:
-                hash_idx = segmentation_img[row, col]
-                if hash_idx in hash_table:
-                    bhat, bmarg, bcov = hash_table[hash_idx]
-                else:
-                    loc = reference_locations[np.array(
-                        hash_idx, dtype=int), :] * loc_scaling
+        for output in results:
+            # unpack
+            start_line, stop_line, reflectance, uncertainty = output
+            if start_line is None or stop_line is None or reflectance is None or uncertainty is None:
+                logging.error('Chunk {}-{} failed to return valid results',format(start_line,stop_line))
             else:
-                loc = input_locations[col, :] * loc_scaling
+                logging.info('Writing lines {}-{}'.format(start_line, stop_line))
+                output_reflectance_mm = output_reflectance_img.open_memmap(interleave='source', writable=True)
+                output_uncertainty_mm = output_uncertainty_img.open_memmap(interleave='source', writable=True)
 
-            if bhat is None:
-                dists, nn = tree.query(loc, nneighbors)
-                xv = reference_radiance[nn, :]
-                yv = reference_reflectance[nn, :]
-                uv = reference_uncertainty[nn, :]
-                bhat = np.zeros((n_radiance_bands, 2))
-                bmarg = np.zeros((n_radiance_bands, 2))
-                bcov = np.zeros((n_radiance_bands, 2, 2))
+                output_reflectance_mm[start_line:stop_line, ...] = reflectance
+                output_uncertainty_mm[start_line:stop_line, ...] = uncertainty
 
-                for i in np.arange(n_radiance_bands):
-                    use = yv[:, i] > 0
-                    n = sum(use)
-                    X = np.concatenate((np.ones((n, 1)), xv[use, i:i+1]), axis=1)
-                    W = np.diag(np.ones(n))  # /uv[use, i])
-                    y = yv[use, i:i+1]
-                    bhat[i, :] = (inv(X.T @ W @ X) @ X.T @ W @ y).T
-                    bcov[i, :, :] = inv(X.T @ W @ X)
-                    bmarg[i, :] = np.diag(bcov[i, :, :])
+                # Flush to keep memory from going too wild
+                del output_reflectance_mm, output_uncertainty_mm
 
-            if (segmentation_img is not None) and not (hash_idx in hash_table):
-                hash_table[hash_idx] = bhat, bmarg, bcov
-
-            A = np.array((np.ones(n_radiance_bands), x))
-            output_reflectance[col, :] = (np.multiply(bhat.T, A).sum(axis=0))
-
-            # Calculate uncertainties.  Sy approximation rather than Seps for
-            # speed, for now... but we do take into account instrument
-            # radiometric uncertainties
-            if instrument is None:
-                output_uncertainty[col, :] = np.sqrt(np.multiply(bmarg.T, A).sum(axis=0))
-            else:
-                Sy = instrument.Sy(x, geom=None)
-                calunc = instrument.bval[:instrument.n_chan]
-                output_uncertainty[col, :] = np.sqrt(
-                    np.diag(Sy)+pow(calunc*x, 2))*bhat[:, 1]
-            if loglevel == 'DEBUG':
-                plot_example(xv, yv, bhat)
-
-            nspectra = nspectra+1
-
-        elapsed = float(time.time()-start)
-        logging.info('row %i/%i, %5.1f spectra per second' %
-                     (row, n_input_lines, float(nspectra)/elapsed))
-
-        output_reflectance_mm = output_reflectance_img.open_memmap(interleave='source',
-                                             writable=True)
-        if input_radiance_metadata['interleave'] == 'bil':
-            output_reflectance = output_reflectance.transpose((1, 0))
-        output_reflectance_mm[row, :, :] = output_reflectance
-
-        output_uncertainty_mm = output_uncertainty_img.open_memmap(interleave='source',
-                                             writable=True)
-        if input_radiance_metadata['interleave'] == 'bil':
-            output_uncertainty = output_uncertainty.transpose((1, 0))
-        output_uncertainty_mm[row, :, :] = output_uncertainty
-
-        del input_locations_mm
-        del input_radiance_mm
-        del output_reflectance_mm
-        del output_uncertainty_mm
-    """
 
