@@ -268,6 +268,7 @@ class Pathnames():
         self.rfl_working_path = abspath(join(self.output_directory, rdn_fname.replace('_rdn', '_rfl')))
         self.uncert_working_path = abspath(join(self.output_directory, rdn_fname.replace('_rdn', '_uncert')))
         self.lbl_working_path = abspath(join(self.output_directory, rdn_fname.replace('_rdn', '_lbl')))
+        self.state_working_path = abspath(join(self.output_directory, rdn_fname.replace('_rdn', '_state')))
         self.surface_working_path = abspath(join(self.data_directory, 'surface.mat'))
 
         if args.copy_input_files is True:
@@ -875,6 +876,7 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
         isofit_config_modtran['input']['obs_file'] = paths.obs_working_path
         isofit_config_modtran['output']['posterior_uncertainty_file'] = paths.uncert_working_path
         isofit_config_modtran['output']['estimated_reflectance_file'] = paths.rfl_working_path
+        isofit_config_modtran['output']['estimated_state_file'] = paths.state_working_path
 
     if paths.channelized_uncertainty_working_path is not None:
         isofit_config_modtran['forward_model']['unknowns'][
