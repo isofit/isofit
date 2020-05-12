@@ -268,6 +268,7 @@ class Pathnames():
         self.rfl_working_path = abspath(join(self.output_directory, rdn_fname.replace('_rdn', '_rfl')))
         self.uncert_working_path = abspath(join(self.output_directory, rdn_fname.replace('_rdn', '_uncert')))
         self.lbl_working_path = abspath(join(self.output_directory, rdn_fname.replace('_rdn', '_lbl')))
+        self.state_working_path = abspath(join(self.output_directory, rdn_fname.replace('_rdn', '_state')))
         self.surface_working_path = abspath(join(self.data_directory, 'surface.mat'))
 
         if args.copy_input_files is True:
@@ -690,7 +691,7 @@ def get_metadata_from_loc(loc_file: str, lut_params: LUTConfig, trim_lines: int 
 
 
 
-def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array, n_cores: int=-1):
+def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array, n_cores: int=-1, use_emp_line=0):
     """ Write an isofit config file for a presolve, with limited info.
     Args:
         paths: object containing references to all relevant file locations
@@ -704,7 +705,7 @@ def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array, n_cores: int
     radiative_transfer_config = {
             "radiative_transfer_engines": {
                 "vswir": {
-                    "wavelength_file": paths.wavelength_path,
+                    "engine_name": 'modtran',
                     "lut_path": paths.lut_h2o_directory,
                     "template_file": paths.h2o_template_path,
                     "modtran_directory": paths.modtran_path,
@@ -730,10 +731,8 @@ def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array, n_cores: int
 
     # make isofit configuration
     isofit_config_h2o = {'ISOFIT_base': paths.isofit_path,
-                         'input': {'measured_radiance_file': paths.rdn_subs_path,
-                                   'loc_file': paths.loc_subs_path,
-                                   'obs_file': paths.obs_subs_path},
                          'output': {'estimated_state_file': paths.h2o_subs_path},
+                         'input': {},
                          'forward_model': {
                              'instrument': {'wavelength_file': paths.wavelength_path,
                                             'integrations': NUM_INTEGRATIONS,
@@ -742,7 +741,7 @@ def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array, n_cores: int
                                                     'surface': {"surface_category": "multicomponent_surface",
                                                                 'surface_file': paths.surface_working_path,
                                                                 'select_on_init': True},
-                             'radiative_transfer': h2o_configuration},
+                             'radiative_transfer': radiative_transfer_config},
                          "implementation": {
                             'inversion': {'windows': INVERSION_WINDOWS},
                             "n_cores": n_cores}
@@ -759,6 +758,17 @@ def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array, n_cores: int
 
     if paths.rdn_factors_path:
         isofit_config_h2o['input']['radiometry_correction_file'] = paths.rdn_factors_path
+
+    if use_emp_line == 1:
+        isofit_config_h2o['input']['measured_radiance_file'] = paths.rdn_subs_path
+        isofit_config_h2o['input']['loc_file'] = paths.loc_subs_path
+        isofit_config_h2o['input']['obs_file'] = paths.obs_subs_path
+    else:
+        isofit_config_h2o['input']['measured_radiance_file'] = paths.radiance_working_path
+        isofit_config_h2o['input']['loc_file'] = paths.loc_working_path
+        isofit_config_h2o['input']['obs_file'] = paths.obs_working_path
+
+
 
     # write modtran_template
     with open(paths.h2o_config_path, 'w') as fout:
@@ -866,6 +876,7 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
         isofit_config_modtran['input']['obs_file'] = paths.obs_working_path
         isofit_config_modtran['output']['posterior_uncertainty_file'] = paths.uncert_working_path
         isofit_config_modtran['output']['estimated_reflectance_file'] = paths.rfl_working_path
+        isofit_config_modtran['output']['estimated_state_file'] = paths.state_working_path
 
     if paths.channelized_uncertainty_working_path is not None:
         isofit_config_modtran['forward_model']['unknowns'][
