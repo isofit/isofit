@@ -1,0 +1,75 @@
+{
+  "ISOFIT_BASE": "../",
+  "output": {
+    "simulated_measurement_file": "../output/libradtran_meas_rdn.txt"
+  },
+  "forward_model": {
+    "instrument": {
+      "wavelength_file": "wavelengths.txt",
+      "SNR": 100000,
+      "integrations": 1
+    },
+    "surface": {
+      "surface_category": "surface",
+      "reflectance_file": "constant_surface_model.txt"
+    },
+
+    "radiative_transfer": {
+      "radiative_transfer_engines": {
+        "vswir": {
+          "engine_name": "libradtran",
+          "lut_path": "lut_libradtran/",
+          "template_file": "libradtran.inp",
+          "lut_names": ["H2OSTR", "AOT550"],
+          "statevector_names": ["H2OSTR", "AOT550"]
+        }
+      },
+
+      "statevector": {
+        "H2OSTR": {
+          "bounds": [
+            1.5,
+            2.0
+          ],
+          "scale": 0.01,
+          "prior_mean": 1.75,
+          "prior_sigma": 0.5,
+          "init": 1.75
+        },
+        "AOT550": {
+          "bounds": [
+            0.01,
+            0.1
+          ],
+          "scale": 0.01,
+          "prior_mean": 0.05,
+          "prior_sigma": 0.2,
+          "init": 0.05
+        }
+      },
+      "lut_grid": {
+        "H2OSTR": [
+          1.5,
+          2.0
+        ],
+        "AOT550": [
+          0.01,
+          0.1
+        ]
+      },
+      "unknowns": {
+        "H2O_ABSCO": 0.01
+      }
+    }
+  },
+  "implementation": {
+    "inversion": {
+      "simulation_mode": true,
+      "windows": [
+        [380.0, 1300.0],
+        [1450, 1780.0],
+        [1950.0, 2450.0]
+      ]
+    }
+  }
+}
