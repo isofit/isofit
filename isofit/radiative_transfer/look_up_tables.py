@@ -178,11 +178,7 @@ class TabularRT:
         # "points" contains all combinations of grid points
         # We will have one filename prefix per point
         self.points = common.combos(self.lut_grids)
-        self.files = []
-        for point in self.points:
-            outf = '_'.join(['%s-%6.4f' % (n, x)
-                             for n, x in zip(self.lut_names, point)])
-            self.files.append(outf)
+        self.files = self.get_lut_filenames()
 
         # Build the list of radiative transfer run commands. This
         # rebuild_cmd() function will be overriden by the child class to
@@ -224,6 +220,14 @@ class TabularRT:
             r = pool.map_async(spawn_rt, rebuild_cmds)
             r.wait()
             os.chdir(cwd)
+
+    def get_lut_filenames(self):
+        files = []
+        for point in self.points:
+            outf = '_'.join(['%s-%6.4f' % (n, x)
+                             for n, x in zip(self.lut_names, point)])
+            files.append(outf)
+        return files
 
     def summarize(self, x_RT, geom):
         """Summary of state vector."""

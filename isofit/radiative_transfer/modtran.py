@@ -34,6 +34,7 @@ from ..core.common import json_load_ascii, recursive_replace
 from ..core.common import VectorInterpolator
 from isofit.configs.sections.radiative_transfer_config import RadiativeTransferEngineConfig
 from isofit.configs import Config
+import subprocess
 
 
 ### Variables ###
@@ -272,11 +273,48 @@ class ModtranRT(TabularRT):
         if not os.path.exists(self.filtpath):
             self.wl2flt(self.wl, self.fwhm, self.filtpath)
 
+        # Check that the H2OSTR value, if present, is not too high.
+        # MODTRAN caps the value at 5x profile specified value or 100% RH, as
+        # defined in PDF-page 52 of the MODTRAN user guide.
+        if 'H2OSTR' in self.lut_names:
+
+            # Only do this check if we don't have a LUT provided:
+            need_to_rebuild = np.any([self.required_results_exist(x) for x in self.get_lut_filenames()])
+            if need_to_rebuild:
+
+                # Define a realistic point, based on lut grid
+                point = np.array([x[-1] for x in self.lut_grids])
+
+                # Set the H2OSTR value as arbitrarily high - 50 g/cm2 in this case
+                point[self.lut_names.index('H2OSTR')] = 50
+
+                filebase = os.path.join(os.path.dirname(self.files[-1]), 'H2O_bound_test')
+                cmd = self.rebuild_cmd(point, filebase + '.json')
+
+                # Run MODTRAN for up to 10 seconds - this should be plenty of time
+                subprocess.call(cmd, shell=True, timeout=10)
+
+                max_water = None
+                with open(filebase + '.tp6') as tp6file:
+                    for count, line in enumerate(tp6file):
+                        if 'The water column is being set to the maximum' in line:
+                            max_water = line.split(',')[1].strip()
+                            max_water = float(max_water.split(' ')[0])
+                        break
+
+                if max_water is None:
+                    logging.error('Could not find MODTRAN H2O upper bound in file {}'.format(filebase + '.tp6'))
+                    raise KeyError('Could not find MODTRAN H2O upper bound')
+
+                if np.max(self.lut_grids[self.lut_names.index('H2OSTR')]) < max_water:
+                    logging.error('MODTRAN max H2OSTR with current profile is {}, while H2O lut_grid is {}.  Either adjust MODTRAN profile or lut_grid'.format(max_water, self.lut_grids[self.lut_names.index('H2OSTR')]))
+                    raise KeyError('Specified ')
+
+
         TabularRT.build_lut(self, rebuild)
 
         mod_outputs = []
         for point, fn in zip(self.points, self.files):
-            chnfile = self.lut_dir+'/'+fn+'.chn'
             mod_outputs.append(self.load_rt(fn))
 
         self.wl = mod_outputs[0]['wl']
@@ -295,6 +333,7 @@ class ModtranRT(TabularRT):
             self.luts[key] = VectorInterpolator(self.lut_grids, temp,
                                                 self.lut_interp_types)
 
+
     def rebuild_cmd(self, point, fn):
         """."""
 
@@ -310,13 +349,9 @@ class ModtranRT(TabularRT):
 
         # Check rebuild conditions: LUT is missing or from a different config
         infilename = 'LUT_'+fn+'.json'
-        infilepath = os.path.join(self.lut_dir, infilename)
-        outchnname = os.path.join(self.lut_dir, fn+'.chn')
-        outtp6name = os.path.join(self.lut_dir, fn+'.tp6')
+        infilepath = os.path.join(self.lut_dir, 'LUT_'+fn+'.json')
 
-        if not os.path.exists(infilepath) or\
-           not os.path.exists(outchnname) or\
-           not os.path.exists(outtp6name):
+        if not self.required_results_exist(fn):
             rebuild = True
         else:
             # We compare the two configuration files, ignoring names and
@@ -328,6 +363,7 @@ class ModtranRT(TabularRT):
                 current_config[0]['MODTRANINPUT']['SPECTRAL']['FILTNM'] = ''
                 modtran_config[0]['MODTRANINPUT']['SPECTRAL']['FILTNM'] = ''
                 current_str = json.dumps(current_config)
+                #TODO: check if current_config below is correct, or should be modtran_config
                 modtran_str = json.dumps(current_config)
                 rebuild = (modtran_str.strip() != current_str.strip())
 
@@ -355,14 +391,24 @@ class ModtranRT(TabularRT):
         cmd = os.path.join(self.modtran_dir, 'bin', xdir[platform], 'mod6c_cons' + infilename)
         return cmd
 
+    def required_results_exist(self, fn):
+        infilename = os.path.join(self.lut_dir, 'LUT_'+fn+'.json')
+        outchnname = os.path.join(self.lut_dir, fn+'.chn')
+        outtp6name = os.path.join(self.lut_dir, fn+'.tp6')
+
+        if os.path.isfile(infilename) and os.path.isfile(outchnname) and os.path.isfile(outtp6name):
+            return True
+        else:
+            return False
+
     def load_rt(self, fn):
         """."""
 
-        tp6file = self.lut_dir+'/'+fn+'.tp6'
+        tp6file = os.path.join(self.lut_dir, fn+'.tp6')
         solzen = self.load_tp6(tp6file)
         coszen = np.cos(solzen * np.pi / 180.0)
 
-        chnfile = self.lut_dir+'/'+fn+'.chn'
+        chnfile = os.path.join(self.lut_dir, fn+'.chn')
         params = self.load_chn(chnfile, coszen)
 
         # Be careful with the two thermal values! They can only be used in
