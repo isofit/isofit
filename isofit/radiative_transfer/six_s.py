@@ -58,6 +58,10 @@ class SixSRT(TabularRT):
 
     def __init__(self, engine_config: RadiativeTransferEngineConfig, full_config: Config):
 
+        self.angular_lut_keys_degrees = ['OBSZEN', 'TRUEAZ', 'viewzen', 'viewaz',
+                                         'solzen', 'solaz']
+        self.angular_lut_keys_radians = []
+
         super().__init__(engine_config, full_config)
 
         self.treat_as_emissive = False
@@ -105,8 +109,6 @@ class SixSRT(TabularRT):
         irr = irr / self.irr_factor**2  # consider solar distance
         self.solar_irr = resample_spectrum(irr, iwl,  self.wl, self.fwhm)
 
-        self.angular_lut_keys_degrees = ['OBSZEN', 'TRUEAZ', 'viewzen', 'viewaz',
-                                         'solzen', 'solaz']
 
         self.lut_quantities = ['rhoatm', 'transm', 'sphalb', 'transup']
         self.build_lut()

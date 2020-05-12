@@ -50,8 +50,11 @@ class ModtranRT(TabularRT):
     def __init__(self, engine_config: RadiativeTransferEngineConfig, full_config: Config):
         """."""
 
-        super().__init__(engine_config, full_config)
+        # Specify which of the potential MODTRAN LUT parameters are angular, which will be handled differently
+        self.angular_lut_keys_degrees = ['OBSZEN', 'TRUEAZ', 'viewzen', 'viewaz', 'solzen', 'solaz']
+        self.angular_lut_keys_radians = []
 
+        super().__init__(engine_config, full_config)
 
         # Flag to determine if MODTRAN should operate with reflectivity = 1
         # (enabling thermal_upwelling and thermal_downwelling to be determined - see comments below)
@@ -89,9 +92,6 @@ class ModtranRT(TabularRT):
         if self.treat_as_emissive:
             self.modtran_lut_names = ['thermal_upwelling',
                                       'thermal_downwelling'] + self.modtran_lut_names
-
-        # Specify which of the potential MODTRAN LUT parameters are angular, which will be handled differently
-        self.angular_lut_keys_degrees = ['OBSZEN', 'TRUEAZ', 'viewzen', 'viewaz', 'solzen', 'solaz']
 
         self.last_point_looked_up = np.zeros(self.n_point)
         self.last_point_lookup_values = np.zeros(self.n_point)
@@ -279,7 +279,7 @@ class ModtranRT(TabularRT):
         if 'H2OSTR' in self.lut_names:
 
             # Only do this check if we don't have a LUT provided:
-            need_to_rebuild = np.any([self.required_results_exist(x) for x in self.get_lut_filenames()])
+            need_to_rebuild = np.any([not self.required_results_exist(x) for x in self.get_lut_filenames()])
             if need_to_rebuild:
 
                 # Define a realistic point, based on lut grid
