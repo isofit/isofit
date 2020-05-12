@@ -289,26 +289,35 @@ class ModtranRT(TabularRT):
                 point[self.lut_names.index('H2OSTR')] = 50
 
                 filebase = os.path.join(os.path.dirname(self.files[-1]), 'H2O_bound_test')
-                cmd = self.rebuild_cmd(point, filebase + '.json')
+                cmd = self.rebuild_cmd(point, filebase)
 
                 # Run MODTRAN for up to 10 seconds - this should be plenty of time
-                subprocess.call(cmd, shell=True, timeout=10)
+                cwd = os.getcwd()
+                if os.path.isdir(self.lut_dir) is False:
+                    os.mkdir(self.lut_dir)
+                os.chdir(self.lut_dir)
+                try:
+                    subprocess.call(cmd, shell=True, timeout=10)
+                except:
+                    pass
+                os.chdir(cwd)
+
 
                 max_water = None
-                with open(filebase + '.tp6') as tp6file:
+                with open(os.path.join(self.lut_dir,filebase + '.tp6')) as tp6file:
                     for count, line in enumerate(tp6file):
                         if 'The water column is being set to the maximum' in line:
                             max_water = line.split(',')[1].strip()
                             max_water = float(max_water.split(' ')[0])
-                        break
+                            break
 
                 if max_water is None:
                     logging.error('Could not find MODTRAN H2O upper bound in file {}'.format(filebase + '.tp6'))
                     raise KeyError('Could not find MODTRAN H2O upper bound')
 
-                if np.max(self.lut_grids[self.lut_names.index('H2OSTR')]) < max_water:
+                if np.max(self.lut_grids[self.lut_names.index('H2OSTR')]) > max_water:
                     logging.error('MODTRAN max H2OSTR with current profile is {}, while H2O lut_grid is {}.  Either adjust MODTRAN profile or lut_grid'.format(max_water, self.lut_grids[self.lut_names.index('H2OSTR')]))
-                    raise KeyError('Specified ')
+                    raise KeyError('MODTRAN H2O lut grid is invalid - see logs for details.')
 
 
         TabularRT.build_lut(self, rebuild)
