@@ -144,7 +144,7 @@ def main():
                             output=outp, chunksize=CHUNKSIZE, flag=-9999)
 
 
-    if args.presolve == 1 and not exists(paths.h2o_subs_path + '.hdr') or not exists(paths.h2o_subs_path):
+    if args.presolve == 1 and (not exists(paths.h2o_subs_path + '.hdr') or not exists(paths.h2o_subs_path)):
         write_modtran_template(atmosphere_type='ATM_MIDLAT_SUMMER', fid=paths.fid, altitude_km=mean_altitude_km,
                                dayofyear=dayofyear, latitude=mean_latitude, longitude=mean_longitude,
                                to_sensor_azimuth=mean_to_sensor_azimuth, to_sensor_zenith=mean_to_sensor_zenith,
