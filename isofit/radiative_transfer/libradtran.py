@@ -41,15 +41,16 @@ class LibRadTranRT(TabularRT):
 
     def __init__(self, engine_config: RadiativeTransferEngineConfig, full_config: Config):
 
+        self.angular_lut_keys_degrees = ['OBSZEN', 'TRUEAZ', 'viewzen', 'viewaz',
+                                         'solzen', 'solaz']
+        self.angular_lut_keys_radians = []
+
         super().__init__(engine_config, full_config)
         self.treat_as_emissive = False
         self.libradtran_dir = self.find_basedir(engine_config)
         self.libradtran_template_file = engine_config.template_file
 
         self.lut_quantities = ['rhoatm', 'transm', 'sphalb', 'transup']
-
-        self.angular_lut_keys_degrees = ['OBSZEN', 'TRUEAZ', 'viewzen', 'viewaz',
-                                         'solzen', 'solaz']
 
         # Build the lookup table
         self.build_lut()
