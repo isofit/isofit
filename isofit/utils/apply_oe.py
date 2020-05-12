@@ -14,6 +14,8 @@ import json
 import gdal
 import numpy as np
 from sklearn import mixture
+import subprocess
+from sys import platform
 
 from isofit.utils import segment, extractions, empirical_line
 from isofit.core import isofit, common
@@ -99,7 +101,7 @@ def main():
         wl = np.array([float(w) for w in radiance_dataset.metadata['wavelength']])
         if 'fwhm' in radiance_dataset.metadata:
             fwhm = np.array([float(f) for f in radiance_dataset.metadata['fwhm']])
-        if 'FWHM' in radiance_dataset.metadata:
+        elif 'FWHM' in radiance_dataset.metadata:
             fwhm = np.array([float(f) for f in radiance_dataset.metadata['FWHM']])
         else:
             fwhm = np.ones(wl.shape) * (wl[1] - wl[0])
@@ -151,9 +153,39 @@ def main():
                                gmtime=gmtime, elevation_km=mean_elevation_km,
                                output_file=paths.h2o_template_path, ihaze_type='AER_NONE')
 
+        # TODO: this is effectively redundant from the radiative_transfer->modtran. Either devise a way
+        # to port in from there, or put in utils to reduce redundancy.
+        xdir = {
+            'linux': 'linux',
+            'darwin': 'macos',
+            'windows': 'windows'
+        }
+        filebase = os.path.join(paths.lut_h2o_directory, 'H2O_bound_test')
+        copyfile(paths.h2o_template_path, filebase + '.json')
+        cwd = os.getcwd()
+        os.chdir(paths.lut_h2o_directory)
+        cmd = os.path.join(paths.modtran_path, 'bin', xdir[platform], 'mod6c_cons ' + filebase + '.json')
+        try:
+            subprocess.call(cmd, shell=True, timeout=10)
+        except:
+            pass
+        os.chdir(cwd)
+
+        max_water = None
+        with open(filebase + '.tp6') as tp6file:
+            for count, line in enumerate(tp6file):
+                if 'The water column is being set to the maximum' in line:
+                    max_water = line.split(',')[1].strip()
+                    max_water = float(max_water.split(' ')[0])
+                    break
+
+        if max_water is None:
+            logging.error('Could not find MODTRAN H2O upper bound in file {}'.format(filebase + '.tp6'))
+            raise KeyError('Could not find MODTRAN H2O upper bound')
+
         # Write the presolve connfiguration file
         logging.info('Writing H2O pre-solve configuration file.')
-        build_presolve_config(paths, np.linspace(0.5, 5, 10), args.n_cores)
+        build_presolve_config(paths, np.linspace(0.01, max_water, 10).round(2), args.n_cores)
 
         # Run modtran retrieval
         logging.info('Run ISOFIT initial guess')
