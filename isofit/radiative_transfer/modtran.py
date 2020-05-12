@@ -352,7 +352,7 @@ class ModtranRT(TabularRT):
             raise SystemExit("MODTRAN directory not defined in config file.")
 
         # Generate the CLI path
-        cmd = os.path.join(self.modtran_dir, 'bin', xdir[platform], 'mod6c_cons' + infilename)
+        cmd = os.path.join(self.modtran_dir, 'bin', xdir[platform], 'mod6c_cons ' + infilename)
         return cmd
 
     def load_rt(self, fn):
