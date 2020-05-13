@@ -217,9 +217,12 @@ def main():
                                    np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 95),
                                    lut_params.num_h2o_lut_elements)
 
-        #TODO: adjust to better heuristic, (based on num_h2o_lut_elements perhaps)
-        if (np.abs(h2o_lut_grid[-1] - h2o_lut_grid[0]) < 0.1):
-            h2o_lut_grid = np.linspace(h2o_lut_grid[0] - 0.5, h2o_lut_grid[0] + 0.5, lut_params.num_h2o_lut_elements)
+        if (np.abs(h2o_lut_grid[-1] - h2o_lut_grid[0]) < 0.03):
+            new_h2o_lut_grid = np.linspace(h2o_lut_grid[0] - 0.1* np.ceil(lut_params.num_h2o_lut_elements/2.), 
+                                           h2o_lut_grid[0] + 0.1*np.ceil(lut_params.num_h2o_lut_elements/2.), 
+                                           lut_params.num_h2o_lut_elements)
+            logging.warning('Warning: h2o lut grid from presolve detected as {}-{}, which is very narrow.  Expanding to {}-{}.  Advised to check presolve solutions thoroughly.'.format(h2o_lut_grid[0],h2o_lut_grid[-1], new_h2o_lut_grid[0], new_h2o_lut_grid[-1]))
+            h2o_lut_grid = new_h2o_lut_grid
     else:
         h2o_lut_grid = np.linspace(lut_params.default_h2o_lut_range[0], lut_params.default_h2o_lut_range[1],
                                    lut_params.num_h2o_lut_elements)
