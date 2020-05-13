@@ -160,8 +160,16 @@ def main():
             'darwin': 'macos',
             'windows': 'windows'
         }
-        filebase = os.path.join(paths.lut_h2o_directory, 'H2O_bound_test')
-        copyfile(paths.h2o_template_path, filebase + '.json')
+        name = 'H2O_bound_test'
+        filebase = os.path.join(paths.lut_h2o_directory, name)
+        with open(paths.h2o_template_path, 'r') as f:
+            bound_test_config = json.load(f)
+
+        bound_test_config['MODTRAN'][0]['MODTRANINPUT']['NAME'] = name
+        bound_test_config['MODTRAN'][0]['MODTRANINPUT']['ATMOSPHERE']['H2OSTR'] = 50
+        with open(filebase + '.json', 'w') as fout:
+            fout.write(json.dumps(bound_test_config, cls=SerialEncoder, indent=4, sort_keys=True))
+
         cwd = os.getcwd()
         os.chdir(paths.lut_h2o_directory)
         cmd = os.path.join(paths.modtran_path, 'bin', xdir[platform], 'mod6c_cons ' + filebase + '.json')
@@ -184,8 +192,10 @@ def main():
             raise KeyError('Could not find MODTRAN H2O upper bound')
 
         # Write the presolve connfiguration file
+        h2o_grid = np.linspace(0.01, max_water, 10).round(2)
+        logging.info('Pre-solve H2O grid: {}'.format(h2o_grid))
         logging.info('Writing H2O pre-solve configuration file.')
-        build_presolve_config(paths, np.linspace(0.01, max_water, 10).round(2), args.n_cores)
+        build_presolve_config(paths, h2o_grid, args.n_cores)
 
         # Run modtran retrieval
         logging.info('Run ISOFIT initial guess')
