@@ -25,7 +25,6 @@ import numpy as np
 import scipy.linalg
 from scipy.interpolate import RegularGridInterpolator
 from os.path import expandvars, split, abspath
-import subprocess
 
 
 ### Variables ###
@@ -34,7 +33,7 @@ import subprocess
 max_table_size = 500
 
 # small value used in finite difference derivatives
-eps = 1e-5  
+eps = 1e-5
 
 
 ### Classes ###
@@ -52,8 +51,10 @@ class VectorInterpolator:
         # expand grid dimensionality as needed
         [radian_locations] = np.where(self.lut_interp_types == 'd')
         [degree_locations] = np.where(self.lut_interp_types == 'r')
-        angle_locations = np.hstack([radian_locations,degree_locations])
-        angle_types = np.hstack([self.lut_interp_types[radian_locations],self.lut_interp_types[degree_locations]])
+        angle_locations = np.hstack([radian_locations, degree_locations])
+        angle_types = np.hstack(
+            [self.lut_interp_types[radian_locations],
+             self.lut_interp_types[degree_locations]])
         for _angle_loc in range(len(angle_locations)):
 
             angle_loc = angle_locations[_angle_loc]
@@ -76,27 +77,17 @@ class VectorInterpolator:
             grid[angle_loc] = grid_subset_cosin[grid_subset_cosin_order]
             grid.insert(angle_loc+1, grid_subset_sin[grid_subset_sin_order])
 
-
             # now copy the data to be interpolated through the extra dimension,
-            # at the specific angle_loc axes.  We'll use broadcast_to to do this,
-            # but we need to do it on the last dimension.  So start by
+            # at the specific angle_loc axes.  We'll use broadcast_to to do
+            # this, but we need to do it on the last dimension.  So start by
             # temporarily moving the target axes there, then broadcasting
-            data = np.swapaxes(data,-1,angle_loc)
+            data = np.swapaxes(data, -1, angle_loc)
             data_dim = list(np.shape(data))
             data_dim.append(data_dim[-1])
             data = data[..., np.newaxis] * np.ones(data_dim)
 
-            ## now copy the data to be interpolated through the extra dimension,
-            ## at the specific angle_loc axes.  We'll use broadcast_to to do this,
-            ## but broad_cast to only works on the 0th dimension.  So start by
-            ## temporarily moving the target axes there, then broadcasting
-            #data = np.swapaxes(data,0,angle_loc)
-            #data_dim = list(np.shape(data))
-            #data_dim.insert(0,data_dim[0])
-            #data = np.broadcast_to(data,data_dim).copy()
-
-            ## Now we need to actually copy the data between the first two axes,
-            ## as broadcast_to doesn't do this
+            # Now we need to actually copy the data between the first two axes,
+            # as broadcast_to doesn't do this
             for ind in range(data.shape[-1]):
                 data[..., ind] = data[..., :, ind]
 
@@ -105,14 +96,7 @@ class VectorInterpolator:
             # Now re-order the sin dimension
             data = data[..., grid_subset_sin_order]
 
-            ## now re-arrange the axes so they're in the right order again,
-            ## remembering that we've added a new axis
-            #dst_axes = np.arange(2,len(data.shape)).tolist()
-            #dst_axes.insert(angle_loc,0)
-            #dst_axes.insert(angle_loc+1,1)
-            #data = np.transpose(data,axes=dst_axes)
-
-            ## now re-arrange the axes so they're in the right order again,
+            # now re-arrange the axes so they're in the right order again,
             dst_axes = np.arange(len(data.shape)-2).tolist()
             dst_axes.insert(angle_loc, len(data.shape)-2)
             dst_axes.insert(angle_loc+1, len(data.shape)-1)
@@ -130,7 +114,8 @@ class VectorInterpolator:
 
     def __call__(self, points):
 
-        x = np.zeros((self.n,len(points) + 1 + np.sum(self.lut_interp_types != 'n')))
+        x = np.zeros((self.n, len(points) + 1 +
+                      np.sum(self.lut_interp_types != 'n')))
         offset_count = 0
         for i in range(len(points)):
             if self.lut_interp_types[i] == 'n':
@@ -147,7 +132,7 @@ class VectorInterpolator:
         # This last dimension is always an integer so no
         # interpolation is performed. This is done only
         # for performance reasons.
-        x[:,-1] = np.arange(self.n)
+        x[:, -1] = np.arange(self.n)
         res = self.itp(x)
 
         return res
@@ -187,7 +172,8 @@ def emissive_radiance(emissivity, T, wl):
 
 
 def svd_inv(C, mineig=0, hashtable=None):
-    """Fast stable inverse using SVD. This can handle near-singular matrices."""
+    """Fast stable inverse using SVD. This can handle near-singular 
+        matrices."""
 
     return svd_inv_sqrt(C, mineig, hashtable)[0]
 
@@ -211,13 +197,14 @@ def svd_inv_sqrt(C, mineig=0, hashtable=None):
     for count in range(3):
         if np.any(D < 0) or np.any(np.isnan(D)):
             inv_eps = 1e-6 * (count-1)*10
-            D, P = scipy.linalg.eigh(C + np.diag(np.ones(C.shape[0]) * inv_eps))
+            D, P = scipy.linalg.eigh(
+                C + np.diag(np.ones(C.shape[0]) * inv_eps))
         else:
             break
 
         if count == 2:
-            raise ValueError('Matrix inversion contains negative values, even after adding ' +
-                             '{} to the diagonal.  Sqrt fails'.format(inv_eps))
+            raise ValueError('Matrix inversion contains negative values,' +
+                             'even after adding {} to the diagonal.'.format(inv_eps))
 
     Ds = np.diag(1/np.sqrt(D))
     L = P@Ds
@@ -377,7 +364,7 @@ def resample_spectrum(x, wl, wl2, fwhm2, fill=False):
        I assume Gaussian SRFs."""
 
     H = np.array([srf(wl, wi, fwhmi/2.355)
-                 for wi, fwhmi in zip(wl2, fwhm2)])
+                  for wi, fwhmi in zip(wl2, fwhm2)])
     if fill is False:
         return np.dot(H, x[:, np.newaxis]).ravel()
     else:
@@ -424,41 +411,30 @@ def combos(inds):
     cases = np.prod([len(i) for i in inds])
     return np.array(np.meshgrid(*inds)).reshape((n, cases)).T
 
+
 def conditional_gaussian(mu, C, window, remain, x):
     """Define the conditional Gaussian distribution for convenience.
     "remain" contains indices of the observed part x1. "window"
     contains all other indices, 
     such that len(window)+len(remain)=len(x)
     """
-    C11 = np.array([C[i,remain] for i in remain])
-    C12 = np.array([C[i,window] for i in remain])
-    C21 = np.array([C[i,remain] for i in window])
-    C22 = np.array([C[i,window] for i in window])
-    Cinv = scipy.linalg.inv(C11)
-    conditional_mean = mu[window] + C21 @ Cinv @ (x-mu[remain]) 
+    w = np.array(window)[:,np.newaxis]
+    r = np.array(remain)[:,np.newaxis]
+    C11 = C[r, r.T]
+    C12 = C[r, w.T]
+    C21 = C[w, r.T]
+    C22 = C[w, w.T]
+
+    Cinv = svd_inv(C11)
+    conditional_mean = mu[window] + C21 @ Cinv @ (x-mu[remain])
     conditional_Cov = C22 - C21 @ Cinv @ C12
     return conditional_mean, conditional_Cov
 
-def safe_core_count():
-    """ Get the number of cores on a single socket (what we can reach
-    through multirpocessing).  Currently,
-    only works for linux, defaults to CPU count on other systems.
 
-    TODO: expand for other operating systems, think about more elegant
-    solutions.
-
-    Returns:
-        num_cores: number of cores on current socket, if available
+def nice_me(nice_level: int) -> None:
     """
-    
-    import multiprocessing
-    try:
-        corelist = [x for x in subprocess.check_output(['lscpu']).decode("utf-8").split('\n') if 'Core' in x]
-        if len(corelist) > 0:
-            num_cores = int(corelist[0].split(':')[-1])
-        else:
-            num_cores = multiprocessing.cpu_count()
-    except:
-        num_cores = multiprocessing.cpu_count()
-
-    return num_cores
+    Helper function for multiprocessing niceness
+    Args:
+        nice_level: level to set system niceness at
+    """
+    os.nice(nice_level)

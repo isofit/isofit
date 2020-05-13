@@ -1,9 +1,5 @@
-from isofit.core.forward import RT_models, surface_models
+from isofit.inversion.inverse import error_code
 
 
-def test_RT_models():
-    assert len(RT_models) == 5
-
-
-def test_surface_models():
-    assert len(surface_models) == 8
+def test_error_code():
+    assert error_code == -1

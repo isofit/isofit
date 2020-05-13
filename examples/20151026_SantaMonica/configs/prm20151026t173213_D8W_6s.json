@@ -4,7 +4,6 @@
   "input": {
     "measured_radiance_file":     "../remote/prm20151026t173213_rawrdn_v1h3_D8W_clip.txt",
     "obs_file":                   "../remote/prm20151026t173213_obs_D8W.txt",
-    "radiometry_correction_file": "../data/prm20151026t173213_rdn_6s_factors.txt",
     "reference_reflectance_file": "../insitu/D8W.txt"
   },
 
@@ -14,6 +13,7 @@
     "state_file":                 "../remote/prm20151026t173213_state_v1h3_D8W_6s.txt",
     "posterior_uncertainty_file": "../remote/prm20151026t173213_post_v1h3_D8W_6s.txt",
     "data_dump_file":             "../remote/prm20151026t173213_data_D8W_6s.mat",
+    "radiometry_correction_file": "../data/prm20151026t173213_vicarious_correction.txt",
     "plot_directory":             "../images/"
   },
 
@@ -25,7 +25,8 @@
       "integrations":25
     },
 
-    "glint_surface": {
+    "surface": {
+      "surface_category": "glint_surface",
       "surface_file": "../data/prm20151028_surface_coastal_model.mat"
     },
 
@@ -54,28 +55,32 @@
       "unknowns": {
         "H2O_ABSCO": 0.01
       },
-      "sixs_vswir": {
-        "irradiance_file":         "../data/prism_optimized_irr.dat",
-        "earth_sun_distance_file": "../../../data/earth_sun_distance.txt",
-        "wavelength_file":         "../data/20140221_PRISM_wavelengths_truncated_clip.txt",
-        "sixs_installation":       "${SIXS_DIR}",
-        "solzen": 55.21,
-        "solaz": 141.70,
-        "elev": 0.0,
-        "alt": 20.0,
-        "viewzen": 202.89063,
-        "viewaz": 1.08,
-        "month": 10,
-        "day": 26,
-        "lut_path":"../lut/",
-        "domain": {"start": 350, "end": 2520, "step": 0.1},
-        "lut_names": ["H2OSTR","AOT550"],
-        "statevector_names": ["H2OSTR", "AOT550"]
+      "radiative_transfer_engines": {
+        "vswir": {
+          "irradiance_file": "../data/prism_optimized_irr.dat",
+          "earth_sun_distance_file": "../../../data/earth_sun_distance.txt",
+          "engine_base_dir": "${SIXS_DIR}",
+          "engine_name": "6s",
+          "solzen": 55.21,
+          "solaz": 141.70,
+          "elev": 0.0,
+          "alt": 20.0,
+          "viewaz": 202.89063,
+          "viewzen": 1.08,
+          "month": 10,
+          "day": 26,
+          "lut_path": "../lut/",
+          "lut_names": ["H2OSTR", "AOT550"],
+          "statevector_names": ["H2OSTR", "AOT550"]
+        }
       }
     }
   },
 
-  "inversion": {
-    "windows": [[400.0,1000.0]]
+  "implementation": {
+    "inversion": {
+      "integration_grid": {"GLINT": [0, 0.001, 0.002]},
+      "windows": [[400.0, 1000.0]]
+    }
   }
 }

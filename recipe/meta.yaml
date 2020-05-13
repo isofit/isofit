@@ -1,5 +1,5 @@
 {% set name = "isofit" %}
-{% set version = "2.0.2" %}
+{% set version = "2.0.5_+dev" %}
 
 package:
   name: {{ name|lower }}
@@ -7,7 +7,7 @@ package:
 
 source:
   url: https://github.com/isofit/{{ name }}/archive/v{{ version }}.tar.gz
-  sha256: 9b11d8243a1eb2590b9a829bd3b17a8d3351f9b244ee35b156246ce1359676ee
+  sha256: 045f5600a3e089a01cf5d890fb092909de9df9c62acea95317a1dc1d495d8e32 
 
 build:
   noarch: python
@@ -31,6 +31,7 @@ requirements:
     - pytest >=3.5.1
     - pep8 >=1.7.1
     - python-xxhash >=1.2.0
+    - pyyaml >=5.3.1
 
 test:
   imports:
