@@ -19,7 +19,7 @@
 
 import os
 import logging
-import scipy as s
+import numpy as np
 from scipy.interpolate import interp1d
 
 from ..core.common import resample_spectrum, VectorInterpolator
@@ -182,19 +182,19 @@ class LibRadTranRT(TabularRT):
     def load_rt(self, fn):
         """Load the results of a LibRadTran run."""
 
-        wl, rdn0,   _ = s.loadtxt(self.lut_dir+'/LUT_'+fn+'_alb0.out').T
-        wl, rdn025, _ = s.loadtxt(self.lut_dir+'/LUT_'+fn+'_alb025.out').T
-        wl, rdn05,  irr = s.loadtxt(self.lut_dir+'/LUT_'+fn+'_alb05.out').T
+        wl, rdn0,   _ = np.loadtxt(self.lut_dir+'/LUT_'+fn+'_alb0.out').T
+        wl, rdn025, _ = np.loadtxt(self.lut_dir+'/LUT_'+fn+'_alb025.out').T
+        wl, rdn05,  irr = np.loadtxt(self.lut_dir+'/LUT_'+fn+'_alb05.out').T
 
         # Replace a few zeros in the irradiance spectrum via interpolation
         good = irr > 1e-15
-        bad = s.logical_not(good)
+        bad = np.logical_not(good)
         irr[bad] = interp1d(wl[good], irr[good])(wl[bad])
 
         # Translate to Top of Atmosphere (TOA) reflectance
-        rhoatm = rdn0 / 10.0 / irr * s.pi  # Translate to uW nm-1 cm-2 sr-1
-        rho025 = rdn025 / 10.0 / irr * s.pi
-        rho05 = rdn05 / 10.0 / irr * s.pi
+        rhoatm = rdn0 / 10.0 / irr * np.pi  # Translate to uW nm-1 cm-2 sr-1
+        rho025 = rdn025 / 10.0 / irr * np.pi
+        rho05 = rdn05 / 10.0 / irr * np.pi
 
         # Resample TOA reflectances to simulate the instrument observation
         rhoatm = resample_spectrum(rhoatm, wl, self.wl, self.fwhm)
@@ -208,23 +208,25 @@ class LibRadTranRT(TabularRT):
         # over those non-finite cases here, but should really figure out a more
         # robust way to do this calculation.
         sphalb = 2.8*(2.0*rho025-rhoatm-rho05)/(rho025-rho05)
-        sp_finite = s.isfinite(sphalb)
+        sp_finite = np.isfinite(sphalb)
         sp_gt0 = sphalb > 0
-        good = s.logical_and(sp_finite, sp_gt0)
-        bad = s.logical_not(good)
-        sphalb[bad] = interp1d(self.wl[good], sphalb[good])(self.wl[bad])
+        good = np.logical_and(sp_finite, sp_gt0)
+        bad = np.logical_not(good)
+        if np.sum(bad) > 0:
+            logging.debug('Interpolating through 0 and non-finite spherical albedo values.')
+            sphalb[bad] = interp1d(self.wl[good], sphalb[good])(self.wl[bad])
         transm = (rho05-rhoatm)*(2.0-sphalb)
 
         # For now, don't estimate this term!!
         # TODO: Have LibRadTran calculate it directly
-        transup = s.zeros(self.wl.shape)
+        transup = np.zeros(self.wl.shape)
 
         # Get solar zenith, translate to irradiance at zenith = 0
         with open(self.lut_dir+'/LUT_'+fn+'.zen', 'r') as fin:
             output = fin.read().split()
             solzen, solaz = [float(q) for q in output[1:]]
 
-        self.coszen = s.cos(solzen/360.0*2.0*s.pi)
+        self.coszen = np.cos(solzen/360.0*2.0*np.pi)
         irr = irr / self.coszen
         self.solar_irr = irr.copy()
 
@@ -234,7 +236,7 @@ class LibRadTranRT(TabularRT):
         return results
 
     def ext550_to_vis(self, ext550):
-        return s.log(50.0) / (ext550 + 0.01159)
+        return np.log(50.0) / (ext550 + 0.01159)
 
     def build_lut(self, rebuild=False):
 
@@ -247,9 +249,9 @@ class LibRadTranRT(TabularRT):
         self.cache = {}
         dims_aug = self.lut_dims + [self.n_chan]
         for key in self.lut_quantities:
-            temp = s.zeros(dims_aug, dtype=float)
+            temp = np.zeros(dims_aug, dtype=float)
             for librt_output, point in zip(librt_outputs, self.points):
-                ind = [s.where(g == p)[0] for g, p in
+                ind = [np.where(g == p)[0] for g, p in
                        zip(self.lut_grids, point)]
                 ind = tuple(ind)
                 temp[ind] = librt_output[key]
@@ -260,11 +262,11 @@ class LibRadTranRT(TabularRT):
     def _lookup_lut(self, point):
         ret = {}
         for key, lut in self.luts.items():
-            ret[key] = s.array(lut(point)).ravel()
+            ret[key] = np.array(lut(point)).ravel()
         return ret
 
     def get(self, x_RT, geom):
-        point = s.zeros((self.n_point,))
+        point = np.zeros((self.n_point,))
         for point_ind, name in enumerate(self.lut_grid_config):
             if name in self.statevector_names:
                 ix = self.statevector_names.index(name)
@@ -297,12 +299,12 @@ class LibRadTranRT(TabularRT):
     def get_L_atm(self, x_RT, geom):
         r = self.get(x_RT, geom)
         rho = r['rhoatm']
-        rdn = rho / s.pi*(self.solar_irr * self.coszen)
+        rdn = rho / np.pi*(self.solar_irr * self.coszen)
         return rdn
 
     def get_L_down_transmitted(self, x_RT, geom):
         r = self.get(x_RT, geom)
-        rdn = (self.solar_irr * self.coszen) / s.pi * r['transm']
+        rdn = (self.solar_irr * self.coszen) / np.pi * r['transm']
         return rdn
 
     def get_L_up(self, x_RT, geom):
