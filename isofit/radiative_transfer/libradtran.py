@@ -182,8 +182,8 @@ class LibRadTranRT(TabularRT):
     def load_rt(self, fn):
         """Load the results of a LibRadTran run."""
 
-        wl, rdn0,   _ = np.loadtxt(self.lut_dir+'/LUT_'+fn+'_alb0.out').T
-        wl, rdn025, _ = np.loadtxt(self.lut_dir+'/LUT_'+fn+'_alb025.out').T
+        _, rdn0,   _ = np.loadtxt(self.lut_dir+'/LUT_'+fn+'_alb0.out').T
+        _, rdn025, _ = np.loadtxt(self.lut_dir+'/LUT_'+fn+'_alb025.out').T
         wl, rdn05,  irr = np.loadtxt(self.lut_dir+'/LUT_'+fn+'_alb05.out').T
 
         # Replace a few zeros in the irradiance spectrum via interpolation
@@ -202,19 +202,18 @@ class LibRadTranRT(TabularRT):
         rho05 = resample_spectrum(rho05,  wl, self.wl, self.fwhm)
         irr = resample_spectrum(irr,    wl, self.wl, self.fwhm)
 
-        # Calculate some atmospheric optical constants
-        # NOTE: This calc is not numerically stable for cases where rho025 and
-        # rho05 are the same (usually, when they are both zero). We interpolate
-        # over those non-finite cases here, but should really figure out a more
-        # robust way to do this calculation.
+        # Calculate some atmospheric optical constants NOTE: This calc is not
+        # numerically stable for cases where rho025 and rho05 are the same.
+        # Anecdotally, in all of these cases, they are also the same as rhoatm,
+        # so the equation reduces to 0 / 0. Therefore, we assume that spherical
+        # albedo here is zero. Any other non-finite results are (currently)
+        # unexpected, so we convert them to errors.
+        bad = np.logical_and(rho025 == rhoatm, rho05 == rhoatm)
         sphalb = 2.8*(2.0*rho025-rhoatm-rho05)/(rho025-rho05)
-        sp_finite = np.isfinite(sphalb)
-        sp_gt0 = sphalb > 0
-        good = np.logical_and(sp_finite, sp_gt0)
-        bad = np.logical_not(good)
         if np.sum(bad) > 0:
-            logging.debug('Interpolating through 0 and non-finite spherical albedo values.')
-            sphalb[bad] = interp1d(self.wl[good], sphalb[good])(self.wl[bad])
+            logging.debug('Setting sphalb = 0 where rho025 == rho05 == rhoatm.')
+            sphalb[bad] = 0
+        assert(all(np.isfinite(sphalb))), 'Non-finite values in spherical albedo calculation'
         transm = (rho05-rhoatm)*(2.0-sphalb)
 
         # For now, don't estimate this term!!
