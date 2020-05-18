@@ -41,8 +41,7 @@ def write_bil_chunk(dat, outfile, line, shape, dtype='float32'):
 
 def run_chunk(start_line, stop_line, reference_radiance_file, reference_reflectance_file, reference_uncertainty_file,
               reference_locations_file, input_radiance_file, input_locations_file, segmentation_file, isofit_config,
-              output_reflectance_file, output_uncertainty_file, radiance_factors, eps, nneighbors, nodata_value,
-              out_of_core=True):
+              output_reflectance_file, output_uncertainty_file, radiance_factors, eps, nneighbors, nodata_value):
 
 
     # Load reference images
@@ -320,19 +319,13 @@ def empirical_line(reference_radiance_file, reference_reflectance_file, referenc
     start_time = time.time()
     logging.info('Beginning empirical line inversions using {} cores'.format(n_cores))
 
-    # This shouldn't be necessary, but parallel write, despite significant effort with various locks, crashes the
-    # system.  Possibly due to print statements in spectral.io.envi....consider trying with pure memmaps or gdal.
-    # For now, if in parallel (n_cores != 1), run in-core, meaning substantial memory is required.  Keeping n_cores
-    # at 1 preserves original out-of-core functionality
-    out_of_core = n_cores == 1
-
     # Run the pool (or run serially)
     results = []
     for l in range(len(line_sections) - 1):
         args = (line_sections[l], line_sections[l+1], reference_radiance_file, reference_reflectance_file,
                 reference_uncertainty_file, reference_locations_file, input_radiance_file,
                 input_locations_file, segmentation_file, isofit_config, output_reflectance_file,
-                output_uncertainty_file, radiance_factors, eps, nneighbors, nodata_value, out_of_core, )
+                output_uncertainty_file, radiance_factors, eps, nneighbors, nodata_value, )
         if n_cores != 1:
             results.append(pool.apply_async(run_chunk, args))
         else:
