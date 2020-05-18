@@ -29,20 +29,56 @@ import matplotlib
 import pylab as plt
 from isofit.configs import configs
 import multiprocessing
+
 plt.switch_backend("Agg")
 
-def write_bil_chunk(dat, outfile, line, shape, dtype='float32'):
+
+def _write_bil_chunk(dat: np.array, outfile: str, line: int, shape: tuple, dtype: str = 'float32') -> None:
+    """
+    Write a chunk of data to a binary, BIL formatted data cube.
+    Args:
+        dat: data to write
+        outfile: output file to write to
+        line: line of the output file to write to
+        shape: shape of the output file
+        dtype: output data type
+
+    Returns:
+        None
+    """
     outfile = open(outfile, 'rb+')
     outfile.seek(line * shape[1] * shape[2] * np.dtype(dtype).itemsize)
     outfile.write(dat.astype(dtype).tobytes())
     outfile.close()
 
 
+def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, reference_reflectance_file: str,
+               reference_uncertainty_file: str, reference_locations_file: str, input_radiance_file: str,
+               input_locations_file: str, segmentation_file: str, isofit_config: dict, output_reflectance_file: str,
+               output_uncertainty_file: str, radiance_factors: np.array, nneighbors: int,
+               nodata_value: float) -> None:
+    """
+    Args:
+        start_line: line to start empirical line run at
+        stop_line:  line to stop empirical line run at
+        reference_radiance_file: source file for radiance (interpolation built from this)
+        reference_reflectance_file:  source file for reflectance (interpolation built from this)
+        reference_uncertainty_file:  source file for uncertainty (interpolation built from this)
+        reference_locations_file:  source file for file locations (lon, lat, elev), (interpolation built from this)
+        input_radiance_file: input radiance file (interpolate over this)
+        input_locations_file: input location file (interpolate over this)
+        segmentation_file: input file noting the per-pixel segmentation used
+        isofit_config: dictionary-stype isofit configuration
+        output_reflectance_file: location to write output reflectance to
+        output_uncertainty_file: location to write output uncertainty to
+        radiance_factors: radiance adjustment factors
+        nneighbors: number of neighbors to use for interpolation
+        nodata_value: nodata value of input and output
 
-def run_chunk(start_line, stop_line, reference_radiance_file, reference_reflectance_file, reference_uncertainty_file,
-              reference_locations_file, input_radiance_file, input_locations_file, segmentation_file, isofit_config,
-              output_reflectance_file, output_uncertainty_file, radiance_factors, eps, nneighbors, nodata_value):
+    Returns:
+        None
 
+    """
 
     # Load reference images
     reference_radiance_img = envi.open(reference_radiance_file + '.hdr', reference_radiance_file)
@@ -57,18 +93,16 @@ def run_chunk(start_line, stop_line, reference_radiance_file, reference_reflecta
     # Load input images
     input_radiance_img = envi.open(input_radiance_file + '.hdr', input_radiance_file)
     n_input_lines, n_input_bands, n_input_samples = [int(input_radiance_img.metadata[n])
-                                        for n in ('lines', 'bands', 'samples')]
+                                                     for n in ('lines', 'bands', 'samples')]
 
     input_locations_img = envi.open(input_locations_file + '.hdr', input_locations_file)
     n_location_bands = int(input_locations_img.metadata['bands'])
-
 
     # Load output images
     output_reflectance_img = envi.open(output_reflectance_file + '.hdr', output_reflectance_file)
     output_uncertainty_img = envi.open(output_uncertainty_file + '.hdr', output_uncertainty_file)
     n_output_reflectance_bands = int(output_reflectance_img.metadata['bands'])
     n_output_uncertainty_bands = int(output_uncertainty_img.metadata['bands'])
-
 
     # Load reference data
     reference_locations_mm = reference_locations_img.open_memmap(interleave='source', writable=False)
@@ -141,7 +175,7 @@ def run_chunk(start_line, stop_line, reference_radiance_file, reference_reflecta
         for col in np.arange(n_input_samples):
 
             x = input_radiance[col, :]
-            if np.all(abs(x-nodata_value) < eps):
+            if np.all(np.isclose(x, nodata_value)):
                 output_reflectance_row[col, :] = nodata_value
                 output_uncertainty_row[col, :] = nodata_value
                 continue
@@ -169,9 +203,9 @@ def run_chunk(start_line, stop_line, reference_radiance_file, reference_reflecta
                 for i in np.arange(n_radiance_bands):
                     use = yv[:, i] > 0
                     n = sum(use)
-                    X = np.concatenate((np.ones((n, 1)), xv[use, i:i+1]), axis=1)
+                    X = np.concatenate((np.ones((n, 1)), xv[use, i:i + 1]), axis=1)
                     W = np.diag(np.ones(n))  # /uv[use, i])
-                    y = yv[use, i:i+1]
+                    y = yv[use, i:i + 1]
                     bhat[i, :] = (inv(X.T @ W @ X) @ X.T @ W @ y).T
                     bcov[i, :, :] = inv(X.T @ W @ X)
                     bmarg[i, :] = np.diag(bcov[i, :, :])
@@ -191,14 +225,16 @@ def run_chunk(start_line, stop_line, reference_radiance_file, reference_reflecta
                 Sy = instrument.Sy(x, geom=None)
                 calunc = instrument.bval[:instrument.n_chan]
                 output_uncertainty_row[col, :] = np.sqrt(
-                    np.diag(Sy)+pow(calunc*x, 2))*bhat[:, 1]
-            #if loglevel == 'DEBUG':
+                    np.diag(Sy) + pow(calunc * x, 2)) * bhat[:, 1]
+            # if loglevel == 'DEBUG':
             #    plot_example(xv, yv, bhat)
 
-            nspectra = nspectra+1
+            nspectra = nspectra + 1
 
-        elapsed = float(time.time()-start)
-        logging.info('row {}/{}, ({}/{} local), {} spectra per second'.format(row, n_input_lines, int(row-start_line), int(stop_line - start_line), round(float(nspectra)/elapsed,2)))
+        elapsed = float(time.time() - start)
+        logging.info('row {}/{}, ({}/{} local), {} spectra per second'.format(row, n_input_lines, int(row - start_line),
+                                                                              int(stop_line - start_line),
+                                                                              round(float(nspectra) / elapsed, 2)))
 
         del input_locations_mm
         del input_radiance_mm
@@ -210,12 +246,13 @@ def run_chunk(start_line, stop_line, reference_radiance_file, reference_reflecta
         shp = output_uncertainty_row.shape
         output_uncertainty_row = output_uncertainty_row.reshape((1, shp[0], shp[1]))
 
-        write_bil_chunk(output_reflectance_row, output_reflectance_file, row, (n_input_lines, n_output_reflectance_bands, n_input_samples))
-        write_bil_chunk(output_uncertainty_row, output_uncertainty_file, row, (n_input_lines, n_output_uncertainty_bands, n_input_samples))
+        _write_bil_chunk(output_reflectance_row, output_reflectance_file, row,
+                         (n_input_lines, n_output_reflectance_bands, n_input_samples))
+        _write_bil_chunk(output_uncertainty_row, output_uncertainty_file, row,
+                         (n_input_lines, n_output_uncertainty_bands, n_input_samples))
 
 
-
-def plot_example(xv, yv, b):
+def _plot_example(xv, yv, b):
     """Plot for debugging purposes."""
 
     matplotlib.rcParams['font.family'] = "serif"
@@ -230,8 +267,8 @@ def plot_example(xv, yv, b):
     matplotlib.rcParams['axes.grid.which'] = 'major'
     matplotlib.rcParams['legend.edgecolor'] = '1.0'
     plt.plot(xv[:, 113], yv[:, 113], 'ko')
-    plt.plot(xv[:, 113], xv[:, 113]*b[113, 1] + b[113, 0], 'nneighbors')
-    #plt.plot(x[113], x[113]*b[113, 1] + b[113, 0], 'ro')
+    plt.plot(xv[:, 113], xv[:, 113] * b[113, 1] + b[113, 0], 'nneighbors')
+    # plt.plot(x[113], x[113]*b[113, 1] + b[113, 0], 'ro')
     plt.grid(True)
     plt.xlabel('Radiance, $\mu{W }nm^{-1} sr^{-1} cm^{-2}$')
     plt.ylabel('Reflectance')
@@ -239,15 +276,34 @@ def plot_example(xv, yv, b):
     plt.savefig('empirical_line.pdf')
 
 
-def empirical_line(reference_radiance_file, reference_reflectance_file, reference_uncertainty_file,
-                   reference_locations_file, segmentation_file,
-                   input_radiance_file, input_locations_file, output_reflectance_file, output_uncertainty_file,
-                   nneighbors=15, nodata_value=-9999.0, level='INFO',
-                   radiance_factors=None, isofit_config=None, n_cores=-1):
-    """..."""
+def empirical_line(reference_radiance_file: str, reference_reflectance_file: str, reference_uncertainty_file: str,
+                   reference_locations_file: str, segmentation_file: str, input_radiance_file: str,
+                   input_locations_file: str, output_reflectance_file: str, output_uncertainty_file: str,
+                   nneighbors: int = 15, nodata_value: float = -9999.0, level: str = 'INFO',
+                   radiance_factors: np.array = None, isofit_config: dict = None, n_cores: int = -1) -> None:
+    """
+    Perform an empirical line interpolation for reflectance and uncertainty extrapolation
+    Args:
+        reference_radiance_file: source file for radiance (interpolation built from this)
+        reference_reflectance_file:  source file for reflectance (interpolation built from this)
+        reference_uncertainty_file:  source file for uncertainty (interpolation built from this)
+        reference_locations_file:  source file for file locations (lon, lat, elev), (interpolation built from this)
+        segmentation_file: input file noting the per-pixel segmentation used
+        input_radiance_file: input radiance file (interpolate over this)
+        input_locations_file: input location file (interpolate over this)
+        output_reflectance_file: location to write output reflectance to
+        output_uncertainty_file: location to write output uncertainty to
 
+        nneighbors: number of neighbors to use for interpolation
+        nodata_value: nodata value of input and output
+        level: logging level
+        radiance_factors: radiance adjustment factors
+        isofit_config: dictionary-stype isofit configuration
+        n_cores: number of cores to run on
+    Returns:
+        None
+    """
 
-    eps = 1e-6
     loglevel = level
 
     logging.basicConfig(format='%(message)s', level=loglevel)
@@ -281,7 +337,7 @@ def empirical_line(reference_radiance_file, reference_reflectance_file, referenc
 
     input_radiance_img = envi.open(input_radiance_file + '.hdr', input_radiance_file)
     n_input_lines, n_input_bands, n_input_samples = [int(input_radiance_img.metadata[n])
-                  for n in ('lines', 'bands', 'samples')]
+                                                     for n in ('lines', 'bands', 'samples')]
     if n_radiance_bands != n_input_bands:
         msg = 'Number of channels mismatch: input (%i) vs. reference (%i)'
         raise IndexError(msg % (nbr, n_radiance_bands))
@@ -291,7 +347,6 @@ def empirical_line(reference_radiance_file, reference_reflectance_file, referenc
                      for n in ('lines', 'bands', 'samples')]
     if nll != n_input_lines or nlb != 3 or nls != n_input_samples:
         raise IndexError('Input location dimension mismatch')
-
 
     # Create output files
     output_metadata = input_radiance_img.metadata
@@ -304,7 +359,7 @@ def empirical_line(reference_radiance_file, reference_reflectance_file, referenc
 
     # Now cleanup inputs and outputs, we'll write dynamically above
     del output_reflectance_img, output_uncertainty_img
-    del reference_reflectance_img, reference_uncertainty_img, reference_locations_img, input_radiance_img, input_locations_img 
+    del reference_reflectance_img, reference_uncertainty_img, reference_locations_img, input_radiance_img, input_locations_img
 
     # Determine the number of cores to use
     if n_cores == -1:
@@ -312,7 +367,7 @@ def empirical_line(reference_radiance_file, reference_reflectance_file, referenc
     n_cores = min(n_cores, n_input_lines)
 
     # Break data into sections
-    line_sections = np.linspace(0, n_input_lines, num=n_cores+1, dtype=int)
+    line_sections = np.linspace(0, n_input_lines, num=n_cores + 1, dtype=int)
 
     # Set up our pool
     pool = multiprocessing.Pool(processes=n_cores)
@@ -322,22 +377,19 @@ def empirical_line(reference_radiance_file, reference_reflectance_file, referenc
     # Run the pool (or run serially)
     results = []
     for l in range(len(line_sections) - 1):
-        args = (line_sections[l], line_sections[l+1], reference_radiance_file, reference_reflectance_file,
+        args = (line_sections[l], line_sections[l + 1], reference_radiance_file, reference_reflectance_file,
                 reference_uncertainty_file, reference_locations_file, input_radiance_file,
                 input_locations_file, segmentation_file, isofit_config, output_reflectance_file,
-                output_uncertainty_file, radiance_factors, eps, nneighbors, nodata_value, )
+                output_uncertainty_file, radiance_factors, nneighbors, nodata_value,)
         if n_cores != 1:
-            results.append(pool.apply_async(run_chunk, args))
+            results.append(pool.apply_async(_run_chunk, args))
         else:
-            run_chunk(*args)
+            _run_chunk(*args)
 
-    #results = [p.get() for p in results]
     pool.close()
     pool.join()
 
     total_time = time.time() - start_time
     logging.info('Parallel empirical line inversions complete.  {} s total, {} spectra/s, {} spectra/s/core'.format(
-        total_time, line_sections[-1]*n_input_samples / total_time, line_sections[-1]*n_input_samples / total_time / n_cores))
-
-
-
+        total_time, line_sections[-1] * n_input_samples / total_time,
+                    line_sections[-1] * n_input_samples / total_time / n_cores))
