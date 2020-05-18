@@ -70,6 +70,9 @@ def surface_model(config):
         'wl': wl,
         'means': [],
         'covs': [],
+        'attribute_means': [],
+        'attribute_covs': [],
+        'attributes': [],
         'refwl': refwl
     }
 
@@ -90,14 +93,27 @@ def surface_model(config):
         else:
             mixtures = 0
 
+        # open input files associated with this source
         infiles = [expand_path(configdir, fi) for fi in
                    source_config['input_spectrum_files']]
+
+        # associate attributes, if they exist. These will not be used
+        # in the retrieval, but can be used in post-analysis
+        if 'input_attribute_files' in source_config:
+            infiles_attributes = [expand_path(configdir, fi) for fi in
+                   source_config['input_attribute_files']]
+            if len(infiles_attributes) != len(infiles):
+                raise IndexError('spectrum / attribute file mismatch')
+        else:
+            infiles_attributes = [None for fi in 
+                source_config['input_spectrum_files']]
+
         ncomp = int(source_config['n_components'])
         windows = source_config['windows']
 
         # load spectra
-        spectra = []
-        for infile in infiles:
+        spectra, attributes = [],[]
+        for infile, attribute_file in zip(infiles, infiles_attributes):
 
             hdrfile = infile + '.hdr'
             rfl = envi.open(hdrfile, infile)
@@ -123,7 +139,35 @@ def surface_model(config):
                              fill_value='extrapolate')
                 spectra.append(p(wl))
 
+            # Load attributes
+            if attribute_file is not None:
+
+                hdrfile = attribute_file + '.hdr'
+                attr = envi.open(hdrfile, attribute_file)
+                nla, nba, nsa = [int(attr.metadata[n])
+                          for n in ('lines', 'bands', 'samples')]
+
+                # Load library and adjust interleave, if needed
+                attr_mm = attr.open_memmap(interleave='source', writable=True)
+                if attr.metadata['interleave'] == 'bip':
+                    x = s.array(attr_mm[:, :, :])
+                if attr.metadata['interleave'] == 'bil':
+                    x = s.array(attr_mm[:, :, :]).transpose((0, 2, 1))
+                x = x.reshape(nla * nsa, nba)
+                model['attributes'] = attr.metadata['band names']
+
+                # import spectra and resample
+                for x1 in x:
+                    attributes.append(x1)
+
+        if len(attributes)>0 and len(attributes) != len(spectra):
+            raise IndexError('Mismatch in number of spectra vs. attributes')
+
+
         # calculate mixtures, if needed
+        if len(attributes)>0 and mixtures > 0:
+            raise ValueError('Synthetic mixtures w/ attributes is not advised')
+
         n = float(len(spectra))
         nmix = int(n * mixtures)
         for mi in range(nmix):
@@ -131,10 +175,15 @@ def surface_model(config):
             s2, m2 = spectra[int(s.rand() * n)], 1.0 - m1
             spectra.append(m1 * s1 + m2 * s2)
 
-        # Flag bad data
+        # Lists to arrays
         spectra = s.array(spectra)
+        attributes = s.array(attributes)
+
+        # Flag bad data
         use = s.all(s.isfinite(spectra), axis=1)
         spectra = spectra[use, :]
+        if len(attributes)>0:
+            attributes = attributes[use,:]
 
         # Accumulate total list of window indices
         window_idx = -s.ones((nchan), dtype=int)
@@ -149,11 +198,18 @@ def surface_model(config):
         kmeans.fit(spectra)
         Z = kmeans.predict(spectra)
 
+        # Build a combined dataset of attributes and spectra
+        if len(attributes)>0:
+            spectra_attr = s.concatenate((spectra,attributes), axis=1)
+
         # Now fit the full covariance for each component
         for ci in range(ncomp):
 
             m = s.mean(spectra[Z == ci, :], axis=0)
             C = s.cov(spectra[Z == ci, :], rowvar=False)
+            if len(attributes)>0:
+                m_attr = s.mean(spectra_attr[Z == ci, :], axis=0)
+                C_attr = s.cov(spectra_attr[Z == ci, :], rowvar=False)
 
             for i in range(nchan):
                 window = windows[window_idx[i]]
@@ -203,7 +259,13 @@ def surface_model(config):
             model['means'].append(m)
             model['covs'].append(C)
 
+            if len(attributes)>0:
+                model['attribute_means'].append(m_attr)
+                model['attribute_covs'].append(C_attr)
+
     model['means'] = s.array(model['means'])
     model['covs'] = s.array(model['covs'])
+    model['attribute_means'] = s.array(model['attribute_means'])
+    model['attribute_covs'] = s.array(model['attribute_covs'])
 
     s.io.savemat(outfile, model)
