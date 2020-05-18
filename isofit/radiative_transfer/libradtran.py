@@ -213,7 +213,10 @@ class LibRadTranRT(TabularRT):
         if np.sum(bad) > 0:
             logging.debug('Setting sphalb = 0 where rho025 == rho05 == rhoatm.')
             sphalb[bad] = 0
-        assert(all(np.isfinite(sphalb))), 'Non-finite values in spherical albedo calculation'
+
+        if not np.all(np.isfinite(sphalb)):
+            raise AttributeError('Non-finite values in spherical albedo calculation')
+
         transm = (rho05-rhoatm)*(2.0-sphalb)
 
         # For now, don't estimate this term!!
