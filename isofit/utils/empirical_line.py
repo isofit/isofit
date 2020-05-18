@@ -31,12 +31,17 @@ from isofit.configs import configs
 import multiprocessing
 plt.switch_backend("Agg")
 
-writelock = multiprocessing.Lock()
+def write_bil_chunk(dat, outfile, line, shape, dtype='float32'):
+    outfile = open(outfile, 'rb+')
+    outfile.seek(line * shape[1] * shape[2] * np.dtype(dtype).itemsize)
+    outfile.write(dat.astype(dtype).tobytes())
+    outfile.close()
+
+
 
 def run_chunk(start_line, stop_line, reference_radiance_file, reference_reflectance_file, reference_uncertainty_file,
               reference_locations_file, input_radiance_file, input_locations_file, segmentation_file, isofit_config,
-              output_reflectance_file, output_uncertainty_file, radiance_factors, eps, nneighbors, nodata_value,
-              out_of_core=True):
+              output_reflectance_file, output_uncertainty_file, radiance_factors, eps, nneighbors, nodata_value):
 
 
     # Load reference images
@@ -62,7 +67,7 @@ def run_chunk(start_line, stop_line, reference_radiance_file, reference_reflecta
     output_reflectance_img = envi.open(output_reflectance_file + '.hdr', output_reflectance_file)
     output_uncertainty_img = envi.open(output_uncertainty_file + '.hdr', output_uncertainty_file)
     n_output_reflectance_bands = int(output_reflectance_img.metadata['bands'])
-    n_output_uncertainty_bands = int(output_uncertainty_file.metadata['bands'])
+    n_output_uncertainty_bands = int(output_uncertainty_img.metadata['bands'])
 
 
     # Load reference data
@@ -112,17 +117,6 @@ def run_chunk(start_line, stop_line, reference_radiance_file, reference_reflecta
 
     # Iterate through image
     hash_table = {}
-
-    if out_of_core:
-        output_reflectance_mm = output_reflectance_img.open_memmap(interleave='source',
-                                             writable=True)
-        output_uncertainty_mm = output_uncertainty_img.open_memmap(interleave='source',
-                                             writable=True)
-    else:
-        output_reflectance = np.zeros((stop_line-start_line, n_output_reflectance_bands, n_input_samples)) + nodata_value
-        output_uncertainty = np.zeros((stop_line-start_line, n_output_uncertainty_bands, n_input_samples)) + nodata_value
-
-
 
     for row in np.arange(start_line, stop_line):
 
@@ -204,37 +198,20 @@ def run_chunk(start_line, stop_line, reference_radiance_file, reference_reflecta
             nspectra = nspectra+1
 
         elapsed = float(time.time()-start)
-        logging.info('row %i/%i, %5.1f spectra per second' %
-                     (row, n_input_lines, float(nspectra)/elapsed))
+        logging.info('row {}/{}, ({}/{} local), {} spectra per second'.format(row, n_input_lines, int(row-start_line), int(stop_line - start_line), round(float(nspectra)/elapsed,2)))
 
         del input_locations_mm
         del input_radiance_mm
 
-        if input_radiance_img.metadata['interleave'] == 'bil':
-            output_reflectance_row = output_reflectance_row.transpose((1, 0))
-        if input_radiance_img.metadata['interleave'] == 'bil':
-            output_uncertainty_row = output_uncertainty_row.transpose((1, 0))
+        output_reflectance_row = output_reflectance_row.transpose((1, 0))
+        output_uncertainty_row = output_uncertainty_row.transpose((1, 0))
+        shp = output_reflectance_row.shape
+        output_reflectance_row = output_reflectance_row.reshape((1, shp[0], shp[1]))
+        shp = output_uncertainty_row.shape
+        output_uncertainty_row = output_uncertainty_row.reshape((1, shp[0], shp[1]))
 
-        if out_of_core:
-            output_reflectance_mm[row, :, :] = output_reflectance_row
-            output_uncertainty_mm[row, :, :] = output_uncertainty_row
-
-            del output_reflectance_mm
-            del output_uncertainty_mm
-
-            output_reflectance_mm = output_reflectance_img.open_memmap(interleave='source',
-                                                                       writable=True)
-            output_uncertainty_mm = output_uncertainty_img.open_memmap(interleave='source',
-                                                                       writable=True)
-        else:
-            output_reflectance[row, :, :] = output_reflectance_row
-            output_uncertainty[row, :, :] = output_uncertainty_row
-
-    if out_of_core:
-        return start_line, stop_line, output_reflectance, output_uncertainty
-    else:
-        return None, None, None, None
-
+        write_bil_chunk(output_reflectance_row, output_reflectance_file, row, (n_input_lines, n_output_reflectance_bands, n_input_samples))
+        write_bil_chunk(output_uncertainty_row, output_uncertainty_file, row, (n_input_lines, n_output_uncertainty_bands, n_input_samples))
 
 
 
@@ -303,7 +280,7 @@ def empirical_line(reference_radiance_file, reference_reflectance_file, referenc
         raise IndexError("Reference file dimension mismatch (locations)")
 
     input_radiance_img = envi.open(input_radiance_file + '.hdr', input_radiance_file)
-    n_input_lines, n_input_bands, ns = [int(input_radiance_img.metadata[n])
+    n_input_lines, n_input_bands, n_input_samples = [int(input_radiance_img.metadata[n])
                   for n in ('lines', 'bands', 'samples')]
     if n_radiance_bands != n_input_bands:
         msg = 'Number of channels mismatch: input (%i) vs. reference (%i)'
@@ -312,20 +289,22 @@ def empirical_line(reference_radiance_file, reference_reflectance_file, referenc
     input_locations_img = envi.open(input_locations_file + '.hdr', input_locations_file)
     nll, nlb, nls = [int(input_locations_img.metadata[n])
                      for n in ('lines', 'bands', 'samples')]
-    if nll != n_input_lines or nlb != 3 or nls != ns:
+    if nll != n_input_lines or nlb != 3 or nls != n_input_samples:
         raise IndexError('Input location dimension mismatch')
 
 
     # Create output files
+    output_metadata = input_radiance_img.metadata
+    output_metadata['interleave'] = 'bil'
     output_reflectance_img = envi.create_image(output_reflectance_file + '.hdr', ext='',
-                                               metadata=input_radiance_img.metadata, force=True)
+                                               metadata=output_metadata, force=True)
 
     output_uncertainty_img = envi.create_image(output_uncertainty_file + '.hdr', ext='',
-                                               metadata=input_radiance_img.metadata, force=True)
+                                               metadata=output_metadata, force=True)
 
     # Now cleanup inputs and outputs, we'll write dynamically above
     del output_reflectance_img, output_uncertainty_img
-    del reference_reflectance_img, reference_uncertainty_img, reference_locations_img, input_radiance_img, input_locations_img, segmentation_img 
+    del reference_reflectance_img, reference_uncertainty_img, reference_locations_img, input_radiance_img, input_locations_img 
 
     # Determine the number of cores to use
     if n_cores == -1:
@@ -340,52 +319,25 @@ def empirical_line(reference_radiance_file, reference_reflectance_file, referenc
     start_time = time.time()
     logging.info('Beginning empirical line inversions using {} cores'.format(n_cores))
 
-    # This shouldn't be necessary, but parallel write, despite significant effort with various locks, crashes the
-    # system.  Possibly due to print statements in spectral.io.envi....consider trying with pure memmaps or gdal.
-    # For now, if in parallel (n_cores != 1), run in-core, meaning substantial memory is required.  Keeping n_cores
-    # at 1 preserves original out-of-core functionality
-    out_of_core = n_cores == 1
-
     # Run the pool (or run serially)
     results = []
     for l in range(len(line_sections) - 1):
         args = (line_sections[l], line_sections[l+1], reference_radiance_file, reference_reflectance_file,
                 reference_uncertainty_file, reference_locations_file, input_radiance_file,
                 input_locations_file, segmentation_file, isofit_config, output_reflectance_file,
-                output_uncertainty_file, radiance_factors, eps, nneighbors, nodata_value, out_of_core, )
+                output_uncertainty_file, radiance_factors, eps, nneighbors, nodata_value, )
         if n_cores != 1:
             results.append(pool.apply_async(run_chunk, args))
         else:
             run_chunk(*args)
 
-    results = [p.get() for p in results]
+    #results = [p.get() for p in results]
     pool.close()
     pool.join()
 
     total_time = time.time() - start_time
-    logging.info('Parallel empirical line inversions complete.  {} s total, {} spectra/s, {}/spectra/core'.format(
-        total_time, line_sections[-1] / total_time, line_sections[-1] / total_time / n_cores))
+    logging.info('Parallel empirical line inversions complete.  {} s total, {} spectra/s, {} spectra/s/core'.format(
+        total_time, line_sections[-1]*n_input_samples / total_time, line_sections[-1]*n_input_samples / total_time / n_cores))
 
-    # Write results as necessary
-    if n_cores > 1:
-        logging.info('Beginning data write')
-        output_reflectance_img = envi.open(output_reflectance_file + '.hdr', output_reflectance_file)
-        output_uncertainty_img = envi.open(output_uncertainty_file + '.hdr', output_uncertainty_file)
-
-        for output in results:
-            # unpack
-            start_line, stop_line, reflectance, uncertainty = output
-            if start_line is None or stop_line is None or reflectance is None or uncertainty is None:
-                logging.error('Chunk {}-{} failed to return valid results',format(start_line,stop_line))
-            else:
-                logging.info('Writing lines {}-{}'.format(start_line, stop_line))
-                output_reflectance_mm = output_reflectance_img.open_memmap(interleave='source', writable=True)
-                output_uncertainty_mm = output_uncertainty_img.open_memmap(interleave='source', writable=True)
-
-                output_reflectance_mm[start_line:stop_line, ...] = reflectance
-                output_uncertainty_mm[start_line:stop_line, ...] = uncertainty
-
-                # Flush to keep memory from going too wild
-                del output_reflectance_mm, output_uncertainty_mm
 
 
