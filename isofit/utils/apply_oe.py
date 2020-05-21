@@ -263,15 +263,15 @@ def main():
     if not exists(paths.rfl_working_path) or not exists(paths.uncert_working_path):
         # Empirical line
         logging.info('Empirical line inference')
-        empirical_line(reference_radiance=paths.rdn_subs_path,
-                       reference_reflectance=paths.rfl_subs_path,
-                       reference_uncertainty=paths.uncert_subs_path,
-                       reference_locations=paths.loc_subs_path,
-                       hashfile=paths.lbl_working_path,
-                       input_radiance=paths.radiance_working_path,
-                       input_locations=paths.loc_working_path,
-                       output_reflectance=paths.rfl_working_path,
-                       output_uncertainty=paths.uncert_working_path,
+        empirical_line(reference_radiance_file=paths.rdn_subs_path,
+                       reference_reflectance_file=paths.rfl_subs_path,
+                       reference_uncertainty_file=paths.uncert_subs_path,
+                       reference_locations_file=paths.loc_subs_path,
+                       segmentation_file=paths.lbl_working_path,
+                       input_radiance_file=paths.radiance_working_path,
+                       input_locations_file=paths.loc_working_path,
+                       output_reflectance_file=paths.rfl_working_path,
+                       output_uncertainty_file=paths.uncert_working_path,
                        isofit_config=paths.modtran_config_path)
 
     logging.info('Done.')
