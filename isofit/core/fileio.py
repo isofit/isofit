@@ -275,6 +275,8 @@ class IO:
         self.n_sv = len(self.fm.statevec)
         self.n_chan = len(self.fm.instrument.wl_init)
 
+        self.simulation_mode = config.implementation.mode == 'simulation'
+
         # Names of either the wavelength or statevector outputs
         wl_names = [('Channel %i' % i) for i in range(self.n_chan)]
         sv_names = self.fm.statevec.copy()
@@ -340,7 +342,7 @@ class IO:
                 self.iter_inds.append([row, col])
         self.iter_inds = np.array(self.iter_inds)
 
-    def get_components_at_index(self, index):
+    def get_components_at_index(self, index: int) -> (int, int, np.array, Geometry, dict):
         """
         Get the spectrum from the file at the specified index.  Helper/
         parallel enabling function.
@@ -371,10 +373,15 @@ class IO:
             if np.all(abs(data[source] - self.infiles[source].flag) < eps):
                 return False, r, c, None, None, None
 
-        # We apply the calibration correciton here for simplicity.
-        meas = data['measured_radiance_file']
-        if data["radiometry_correction_file"] is not None:
-            meas = meas.copy() * data['radiometry_correction_file']
+        if self.simulation_mode:
+            # If solving the inverse problem, the measurment is the reflectance
+            meas = data['reflectance_file']
+        else:
+            # If solving the inverse problem, the measurment is the radiance
+            # We apply the calibration correciton here for simplicity.
+            meas = data['measured_radiance_file']
+            if data["radiometry_correction_file"] is not None:
+                meas = meas.copy() * data['radiometry_correction_file']
 
         # We build the geometry object for this spectrum.  For files not
         # specified in the input configuration block, the associated entries
@@ -383,9 +390,6 @@ class IO:
                         glt=data['glt_file'],
                         loc=data['loc_file'])
 
-        # Updates are simply serialized prior distribution vectors for this
-        # spectrum (or 'None' if the file was not specified in the input
-        # configuration block).  The ordering is [surface, RT, instrument]
         updates = (
             {
                 'prior_means': data['surface_prior_mean_file'],
