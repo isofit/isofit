@@ -373,8 +373,10 @@ class IO:
                 return False, r, c, None, None, None
 
         if self.simulation_mode:
-            # If solving the inverse problem, the measurment is the reflectance
+            # If solving the inverse problem, the measurment is the surface reflectance
             meas = data['reflectance_file']
+            self.fm.surface.rfl = meas.copy()
+            self.fm.surface.resample_reflectance()
         else:
             # If solving the inverse problem, the measurment is the radiance
             # We apply the calibration correciton here for simplicity.

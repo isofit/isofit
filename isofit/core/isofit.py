@@ -62,6 +62,7 @@ class Isofit:
 
         # Build the forward model and inversion objects
         self._init_nonpicklable_objects()
+        self.io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
 
         # We set the row and column range of our analysis. The user can
         # specify: a single number, in which case it is interpreted as a row;
@@ -134,6 +135,7 @@ class Isofit:
 
         n_iter = len(self.io.iter_inds)
         self._clear_nonpicklable_objects()
+        self.io = None
 
         if self.config.implementation.n_cores is None:
             n_cores = multiprocessing.cpu_count()
