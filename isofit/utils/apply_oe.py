@@ -37,11 +37,12 @@ def main():
     parser.add_argument('input_loc', type=str)
     parser.add_argument('input_obs', type=str)
     parser.add_argument('working_directory', type=str)
-    parser.add_argument('sensor', type=str, choices=['ang', 'avcl', 'neon'])
+    parser.add_argument('sensor', type=str, choices=['ang', 'avcl', 'neon', 'prism'])
     parser.add_argument('--copy_input_files', type=int, choices=[0,1], default=0)
     parser.add_argument('--h2o', action='store_true')
     parser.add_argument('--modtran_path', type=str)
     parser.add_argument('--wavelength_path', type=str)
+    parser.add_argument('--surface_category', type=str, default="multicomponent_surface")
     parser.add_argument('--aerosol_climatology_path', type=str, default=None)
     parser.add_argument('--rdn_factors_path', type=str)
     parser.add_argument('--surface_path', type=str)
@@ -49,7 +50,7 @@ def main():
     parser.add_argument('--lut_config_file', type=str)
     parser.add_argument('--logging_level', type=str, default="INFO")
     parser.add_argument('--log_file', type=str, default=None)
-    parser.add_argument('-n_cores', type=int, default=-1)
+    parser.add_argument('--n_cores', type=int, default=-1)
     parser.add_argument('--presolve', choices=[0,1], type=int, default=0)
     parser.add_argument('--empirical_line', choices=[0,1], type=int, default=0)
 
@@ -83,6 +84,9 @@ def main():
         dayofyear = dt.timetuple().tm_yday
     elif args.sensor == 'neon':
         dt = datetime.strptime(paths.fid, 'NIS01_%Y%m%d_%H%M%S')
+        dayofyear = dt.timetuple().tm_yday
+    elif args.sensor == 'prism':
+        dt = datetime.strptime(paths.fid[3:], '%Y%m%dt%H%M%S')
         dayofyear = dt.timetuple().tm_yday
 
     h_m_s, day_increment, mean_path_km, mean_to_sensor_azimuth, mean_to_sensor_zenith, valid, \
@@ -195,7 +199,7 @@ def main():
         h2o_grid = np.linspace(0.01, max_water - 0.01, 10).round(2)
         logging.info('Pre-solve H2O grid: {}'.format(h2o_grid))
         logging.info('Writing H2O pre-solve configuration file.')
-        build_presolve_config(paths, h2o_grid, args.n_cores)
+        build_presolve_config(paths, h2o_grid, args.n_cores, args.surface_category)
 
         # Run modtran retrieval
         logging.info('Run ISOFIT initial guess')
@@ -243,7 +247,7 @@ def main():
         logging.info('Writing main configuration file.')
         build_main_config(paths, lut_params, h2o_lut_grid, elevation_lut_grid, to_sensor_azimuth_lut_grid,
                           to_sensor_zenith_lut_grid, mean_latitude, mean_longitude, dt, 
-                          args.empirical_line == 1, args.n_cores)
+                          args.empirical_line == 1, args.n_cores, args.surface_category)
 
         # Run modtran retrieval
         logging.info('Running ISOFIT with full LUT')
@@ -259,15 +263,15 @@ def main():
     if not exists(paths.rfl_working_path) or not exists(paths.uncert_working_path):
         # Empirical line
         logging.info('Empirical line inference')
-        empirical_line(reference_radiance=paths.rdn_subs_path,
-                       reference_reflectance=paths.rfl_subs_path,
-                       reference_uncertainty=paths.uncert_subs_path,
-                       reference_locations=paths.loc_subs_path,
-                       hashfile=paths.lbl_working_path,
-                       input_radiance=paths.radiance_working_path,
-                       input_locations=paths.loc_working_path,
-                       output_reflectance=paths.rfl_working_path,
-                       output_uncertainty=paths.uncert_working_path,
+        empirical_line(reference_radiance_file=paths.rdn_subs_path,
+                       reference_reflectance_file=paths.rfl_subs_path,
+                       reference_uncertainty_file=paths.uncert_subs_path,
+                       reference_locations_file=paths.loc_subs_path,
+                       segmentation_file=paths.lbl_working_path,
+                       input_radiance_file=paths.radiance_working_path,
+                       input_locations_file=paths.loc_working_path,
+                       output_reflectance_file=paths.rfl_working_path,
+                       output_uncertainty_file=paths.uncert_working_path,
                        isofit_config=paths.modtran_config_path)
 
     logging.info('Done.')
@@ -278,6 +282,9 @@ class Pathnames():
 
         # Determine FID based on sensor name
         if args.sensor == 'ang':
+            self.fid = split(args.input_radiance)[-1][:18]
+            logging.info('Flightline ID: %s' % self.fid)
+        elif args.sensor == 'prism':
             self.fid = split(args.input_radiance)[-1][:18]
             logging.info('Flightline ID: %s' % self.fid)
         elif args.sensor == 'avcl':
@@ -299,6 +306,8 @@ class Pathnames():
             self.surface_path = args.surface_path
         else:
             self.surface_path = os.getenv('ISOFIT_SURFACE_MODEL')
+        if self.surface_path is None:
+            logging.info('No surface model defined')
 
         # set up some sub-directories
         self.lut_h2o_directory = abspath(join(self.working_directory, 'lut_h2o/'))
@@ -562,7 +571,9 @@ def find_angular_seeds(angle_data_input: np.array, num_points: int, units: str =
             logging.warning('2 angle interpolation selected when angle divergence > 180. '
                             'At least 3 points are recommended')
 
-        gmm = mixture.GaussianMixture(n_components=num_points, covariance_type='full')
+        # We initialize the GMM with a static seed for repeatability across runs
+        gmm = mixture.GaussianMixture(n_components=num_points, covariance_type='full',
+                random_state=1)
         gmm.fit(spatial_data)
         central_angles = np.degrees(np.arctan2(gmm.means_[:,1], gmm.means_[:,0]))
         if (num_points == 1):
@@ -624,7 +635,7 @@ def get_metadata_from_obs(obs_file: str, lut_params: LUTConfig, trim_lines: int 
         obs_line = obs_dataset.ReadAsArray(0, line, obs_dataset.RasterXSize, 1)
 
         # Populate valid
-        valid[line,:] = np.logical_not(np.any(obs_line == nodata_value,axis=0))
+        valid[line,:] = np.logical_not(np.any(np.isclose(obs_line,nodata_value),axis=0))
 
         path_km[line,:] = obs_line[0, ...] / 1000.
         to_sensor_azimuth[line,:] = obs_line[1, ...]
@@ -736,7 +747,8 @@ def get_metadata_from_loc(loc_file: str, lut_params: LUTConfig, trim_lines: int 
 
 
 
-def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array, n_cores: int=-1, use_emp_line=0):
+def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array, n_cores: int=-1,
+        use_emp_line=0, surface_category="multicomponent_surface"):
     """ Write an isofit config file for a presolve, with limited info.
     Args:
         paths: object containing references to all relevant file locations
@@ -783,7 +795,7 @@ def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array, n_cores: int
                                             'integrations': NUM_INTEGRATIONS,
                                             'unknowns': {
                                                 'uncorrelated_radiometric_uncertainty': UNCORRELATED_RADIOMETRIC_UNCERTAINTY}},
-                                                    'surface': {"surface_category": "multicomponent_surface",
+                                                    'surface': {"surface_category": surface_category,
                                                                 'surface_file': paths.surface_working_path,
                                                                 'select_on_init': True},
                              'radiative_transfer': radiative_transfer_config},
@@ -824,7 +836,7 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
                       elevation_lut_grid: np.array = None, to_sensor_azimuth_lut_grid: np.array = None,
                       to_sensor_zenith_lut_grid: np.array = None, mean_latitude: float = None,
                       mean_longitude: float = None, dt: datetime = None, use_emp_line: bool = True, 
-                      n_cores: int = -1):
+                      n_cores: int = -1, surface_category='multicomponent_surface'):
     """ Write an isofit config file for the main solve, using the specified pathnames and all given info
     Args:
         paths: object containing references to all relevant file locations
@@ -900,7 +912,7 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
                                                 'unknowns': {
                                                     'uncorrelated_radiometric_uncertainty': UNCORRELATED_RADIOMETRIC_UNCERTAINTY}},
                                  "surface": {"surface_file": paths.surface_working_path,
-                                             "surface_category": "multicomponent_surface",
+                                             "surface_category": surface_category,
                                              "select_on_init": True},
                                  "radiative_transfer": radiative_transfer_config},
                              "implementation": {
@@ -924,7 +936,7 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
         isofit_config_modtran['output']['estimated_state_file'] = paths.state_working_path
 
     if paths.channelized_uncertainty_working_path is not None:
-        isofit_config_modtran['forward_model']['unknowns'][
+        isofit_config_modtran['forward_model']['instrument']['unknowns'][
             'channelized_radiometric_uncertainty_file'] = paths.channelized_uncertainty_working_path
 
     if paths.noise_path is not None:

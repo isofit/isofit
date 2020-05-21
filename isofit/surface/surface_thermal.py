@@ -129,5 +129,5 @@ class ThermalSurface(MultiComponentSurface):
         """Summary of state vector."""
 
         mcm = MultiComponentSurface.summarize(self, x_surface, geom)
-        msg = ' Kelvins: %5.1f ' % tuple(x_surface[-1:])
+        msg = ' Kelvins: %5.1f ' % x_surface[self.surf_temp_ind]
         return msg+mcm
