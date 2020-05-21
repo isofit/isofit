@@ -342,7 +342,7 @@ class IO:
                 self.iter_inds.append([row, col])
         self.iter_inds = np.array(self.iter_inds)
 
-    def get_components_at_index(self, index: int) -> (int, int, np.array, Geometry, dict):
+    def get_components_at_index(self, index: int) -> (int, int, np.array, Geometry):
         """
         Get the spectrum from the file at the specified index.  Helper/
         parallel enabling function.
@@ -354,7 +354,6 @@ class IO:
         :return: c: column index
         :return: meas: measured radiance file
         :return: geom: set up specified geometry files
-        :return: updates: set of prior reference files
         """
         # Determine the appropriate row, column index. and initialize the
         # data dictionary with empty entries.
@@ -390,23 +389,7 @@ class IO:
                         glt=data['glt_file'],
                         loc=data['loc_file'])
 
-        updates = (
-            {
-                'prior_means': data['surface_prior_mean_file'],
-                'prior_variances': data['surface_prior_variance_file'],
-                'reflectance': data['reflectance_file']
-            },
-            {
-                'prior_means': data['rt_prior_mean_file'],
-                'prior_variances': data['rt_prior_variance_file']
-            },
-            {
-                'prior_means': data['instrument_prior_mean_file'],
-                'prior_variances': data['instrument_prior_variance_file']
-            }
-        )
-
-        return True, r, c, meas, geom, updates
+        return True, r, c, meas, geom
 
     def __iter__(self):
         """ Reset the iterator"""
@@ -427,11 +410,11 @@ class IO:
 
             # Determine the appropriate row, column index. and initialize the
             # data dictionary with empty entries.
-            success, r, c, meas, geom, updates = self.get_components_at_index(
+            success, r, c, meas, geom = self.get_components_at_index(
                 self.iter)
             self.iter = self.iter + 1
 
-        return r, c, meas, geom, updates
+        return r, c, meas, geom
 
     def check_wavelengths(self, wl):
         """Make sure an input wavelengths align to the instrument definition."""

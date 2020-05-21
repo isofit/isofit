@@ -105,7 +105,7 @@ class Isofit:
         self._init_nonpicklable_objects()
         io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
         for index in range(index_start, index_stop):
-            success, row, col, meas, geom, configs = io.get_components_at_index(
+            success, row, col, meas, geom = io.get_components_at_index(
                 index)
             # Only run through the inversion if we got some data
             if success:
@@ -136,7 +136,7 @@ class Isofit:
 
         io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
         if profile:
-            for row, col, meas, geom, configs in io:
+            for row, col, meas, geom in io:
                 if meas is not None and all(meas < -49.0):
                     # Bad data flags
                     self.states = []
