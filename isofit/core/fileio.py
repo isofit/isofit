@@ -378,7 +378,8 @@ class IO:
         if self.simulation_mode:
             # If solving the inverse problem, the measurment is the surface reflectance
             self.fm.surface.rfl = data['reflectance_file'].copy()
-            self.fm.surface.resample_reflectance()
+            if self.fm.surface.wl is not None:
+                self.fm.surface.resample_reflectance()
             meas = self.fm.surface.rfl
         else:
             # If solving the inverse problem, the measurment is the radiance
