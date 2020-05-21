@@ -342,6 +342,9 @@ class IO:
                 self.iter_inds.append([row, col])
         self.iter_inds = np.array(self.iter_inds)
 
+        if self.simulation_mode:
+            self.fm.surface.rwl = np.array([float(x) for x in self.infiles['reflectance_file'].meta['wavelength']])
+
     def get_components_at_index(self, index: int) -> (int, int, np.array, Geometry):
         """
         Get the spectrum from the file at the specified index.  Helper/
@@ -374,9 +377,9 @@ class IO:
 
         if self.simulation_mode:
             # If solving the inverse problem, the measurment is the surface reflectance
-            meas = data['reflectance_file']
-            self.fm.surface.rfl = meas.copy()
+            self.fm.surface.rfl = data['reflectance_file'].copy()
             self.fm.surface.resample_reflectance()
+            meas = self.fm.surface.rfl
         else:
             # If solving the inverse problem, the measurment is the radiance
             # We apply the calibration correciton here for simplicity.
