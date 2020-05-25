@@ -23,7 +23,6 @@ from isofit.core import isofit, common
 EPS = 1e-6
 CHUNKSIZE = 256
 SEGMENTATION_SIZE = 400
-NUM_INTEGRATIONS = 400
 
 UNCORRELATED_RADIOMETRIC_UNCERTAINTY = 0.02
 
@@ -217,8 +216,11 @@ def main():
         h2o = envi.open(paths.h2o_subs_path + '.hdr')
         h2o_est = h2o.read_band(-1)[:].flatten()
 
-        h2o_lut_grid = np.linspace(np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 5),
-                                   np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 95),
+        p05 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 5)
+        p95 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 95)
+        margin = (p95-p05) * 0.25
+        h2o_lut_grid = np.linspace(max(lut_params.h2o_min, p05 - margin),
+                                   max(lut_params.h2o_min, p95 + margin),
                                    lut_params.num_h2o_lut_elements)
 
         if (np.abs(h2o_lut_grid[-1] - h2o_lut_grid[0]) < 0.03):
@@ -759,6 +761,13 @@ def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array, n_cores: int
         None
     """
 
+    # Determine number of spectra included in each retrieval.  If we are
+    # operating on segments, this will average down instrument noise
+    if use_emp_line:
+        spectra_per_inversion = SEGMENTATION_SIZE
+    else: 
+        spectra_per_inversion = 1 
+
     radiative_transfer_config = {
             "radiative_transfer_engines": {
                 "vswir": {
@@ -792,7 +801,7 @@ def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array, n_cores: int
                          'input': {},
                          'forward_model': {
                              'instrument': {'wavelength_file': paths.wavelength_path,
-                                            'integrations': NUM_INTEGRATIONS,
+                                            'integrations': spectra_per_inversion,
                                             'unknowns': {
                                                 'uncorrelated_radiometric_uncertainty': UNCORRELATED_RADIOMETRIC_UNCERTAINTY}},
                                                     'surface': {"surface_category": surface_category,
@@ -854,6 +863,14 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
     :Returns:
         None
     """
+
+    # Determine number of spectra included in each retrieval.  If we are
+    # operating on segments, this will average down instrument noise
+    if use_emp_line:
+        spectra_per_inversion = SEGMENTATION_SIZE
+    else: 
+        spectra_per_inversion = 1 
+
     radiative_transfer_config = {
 
             "radiative_transfer_engines": {
@@ -908,7 +925,7 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
                              'output': {},
                              'forward_model': {
                                  'instrument': {'wavelength_file': paths.wavelength_path,
-                                                'integrations': NUM_INTEGRATIONS,
+                                                'integrations': spectra_per_inversion,
                                                 'unknowns': {
                                                     'uncorrelated_radiometric_uncertainty': UNCORRELATED_RADIOMETRIC_UNCERTAINTY}},
                                  "surface": {"surface_file": paths.surface_working_path,

@@ -84,7 +84,7 @@ class Inversion:
                        self.fm.bounds[1][self.inds_free] - eps),
             'x_scale': self.fm.scale[self.inds_free],
             'xtol': 1e-4,
-            'ftol': 1e-4,
+            'ftol': 1e-8,
             'gtol': 1e-4,
             'tr_solver': 'exact'
         }
