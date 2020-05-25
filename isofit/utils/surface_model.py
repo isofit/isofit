@@ -19,8 +19,8 @@
 #
 
 from os.path import split, abspath
-import scipy as s
-from scipy import logical_and as aand
+import numpy as np
+import scipy.io
 from scipy.interpolate import interp1d
 from sklearn.cluster import KMeans
 from spectral.io import envi
@@ -29,14 +29,20 @@ from scipy.stats import norm
 from ..core.common import expand_path, json_load_ascii
 
 
-def surface_model(config):
-    """The surface model tool contains everything you need to build basic 
-    multicomponent (i.e. colleciton of Gaussian) surface priors for the 
-    multicomponent surface model."""
+def surface_model(config_file: str) -> None:
+    """The surface model tool contains everything you need to build basic
+    multicomponent (i.e. colleciton of Gaussian) surface priors for the
+    multicomponent surface model.
+
+    Args:
+        config_file: path to a JSON formatted surface model configuration
+    Returns:
+        None
+    """
 
     # Load configuration JSON into a local dictionary
-    configdir, configfile = split(abspath(config))
-    config = json_load_ascii(config, shell_replace=True)
+    configdir, _ = split(abspath(config_file))
+    config = json_load_ascii(config_file, shell_replace=True)
 
     # Determine top level parameters
     for q in ['output_model_file', 'sources', 'normalize', 'wavelength_file']:
@@ -48,7 +54,7 @@ def surface_model(config):
     outfile = expand_path(configdir, config['output_model_file'])
 
     # load wavelengths file, and change units to nm if needed
-    q = s.loadtxt(wavelength_file)
+    q = np.loadtxt(wavelength_file)
     if q.shape[1] > 2:
         q = q[:, 1:]
     if q[0, 0] < 100:
@@ -59,10 +65,10 @@ def surface_model(config):
     # build global reference windows
     refwl = []
     for wi, window in enumerate(reference_windows):
-        active_wl = aand(wl >= window[0], wl < window[1])
+        active_wl = np.logical_and(wl >= window[0], wl < window[1])
         refwl.extend(wl[active_wl])
-    normind = s.array([s.argmin(abs(wl - w)) for w in refwl])
-    refwl = s.array(refwl, dtype=float)
+    normind = np.array([np.argmin(abs(wl - w)) for w in refwl])
+    refwl = np.array(refwl, dtype=float)
 
     # create basic model template
     model = {
@@ -119,18 +125,18 @@ def surface_model(config):
             rfl = envi.open(hdrfile, infile)
             nl, nb, ns = [int(rfl.metadata[n])
                           for n in ('lines', 'bands', 'samples')]
-            swl = s.array([float(f) for f in rfl.metadata['wavelength']])
+            swl = np.array([float(f) for f in rfl.metadata['wavelength']])
 
             # Maybe convert to nanometers
             if swl[0] < 100:
                 swl = swl * 1000.0
 
             # Load library and adjust interleave, if needed
-            rfl_mm = rfl.open_memmap(interleave='source', writable=True)
+            rfl_mm = rfl.open_memmap(interleave='source', writable=False)
             if rfl.metadata['interleave'] == 'bip':
-                x = s.array(rfl_mm[:, :, :])
+                x = np.array(rfl_mm[:, :, :])
             if rfl.metadata['interleave'] == 'bil':
-                x = s.array(rfl_mm[:, :, :]).transpose((0, 2, 1))
+                x = np.array(rfl_mm[:, :, :]).transpose((0, 2, 1))
             x = x.reshape(nl * ns, nb)
 
             # import spectra and resample
@@ -148,11 +154,11 @@ def surface_model(config):
                           for n in ('lines', 'bands', 'samples')]
 
                 # Load library and adjust interleave, if needed
-                attr_mm = attr.open_memmap(interleave='source', writable=True)
+                attr_mm = attr.open_memmap(interleave='source', writable=False)
                 if attr.metadata['interleave'] == 'bip':
-                    x = s.array(attr_mm[:, :, :])
+                    x = np.array(attr_mm[:, :, :])
                 if attr.metadata['interleave'] == 'bil':
-                    x = s.array(attr_mm[:, :, :]).transpose((0, 2, 1))
+                    x = np.array(attr_mm[:, :, :]).transpose((0, 2, 1))
                 x = x.reshape(nla * nsa, nba)
                 model['attributes'] = attr.metadata['band names']
 
@@ -171,24 +177,24 @@ def surface_model(config):
         n = float(len(spectra))
         nmix = int(n * mixtures)
         for mi in range(nmix):
-            s1, m1 = spectra[int(s.rand() * n)], s.rand()
-            s2, m2 = spectra[int(s.rand() * n)], 1.0 - m1
+            s1, m1 = spectra[int(np.random.rand() * n)], np.random.rand()
+            s2, m2 = spectra[int(np.random.rand() * n)], 1.0 - m1
             spectra.append(m1 * s1 + m2 * s2)
 
         # Lists to arrays
-        spectra = s.array(spectra)
-        attributes = s.array(attributes)
+        spectra = np.array(spectra)
+        attributes = np.array(attributes)
 
         # Flag bad data
-        use = s.all(s.isfinite(spectra), axis=1)
+        use = np.all(np.isfinite(spectra), axis=1)
         spectra = spectra[use, :]
         if len(attributes)>0:
             attributes = attributes[use,:]
 
         # Accumulate total list of window indices
-        window_idx = -s.ones((nchan), dtype=int)
+        window_idx = -np.ones((nchan), dtype=int)
         for wi, win in enumerate(windows):
-            active_wl = aand(wl >= win['interval'][0], wl < win['interval'][1])
+            active_wl = np.logical_and(wl >= win['interval'][0], wl < win['interval'][1])
             window_idx[active_wl] = wi
 
         # Two step model generation.  First step is k-means clustering.
@@ -200,16 +206,16 @@ def surface_model(config):
 
         # Build a combined dataset of attributes and spectra
         if len(attributes)>0:
-            spectra_attr = s.concatenate((spectra,attributes), axis=1)
+            spectra_attr = np.concatenate((spectra,attributes), axis=1)
 
         # Now fit the full covariance for each component
         for ci in range(ncomp):
 
-            m = s.mean(spectra[Z == ci, :], axis=0)
-            C = s.cov(spectra[Z == ci, :], rowvar=False)
-            if len(attributes)>0:
-                m_attr = s.mean(spectra_attr[Z == ci, :], axis=0)
-                C_attr = s.cov(spectra_attr[Z == ci, :], rowvar=False)
+            m = np.mean(spectra[Z == ci, :], axis=0)
+            C = np.cov(spectra[Z == ci, :], rowvar=False)
+            if len(attributes) > 0:
+                m_attr = np.mean(spectra_attr[Z == ci, :], axis=0)
+                C_attr = np.cov(spectra_attr[Z == ci, :], rowvar=False)
 
             for i in range(nchan):
                 window = windows[window_idx[i]]
@@ -245,9 +251,9 @@ def surface_model(config):
 
             # Normalize the component spectrum if desired
             if normalize == 'Euclidean':
-                z = s.sqrt(s.sum(pow(m[normind], 2)))
+                z = np.sqrt(np.sum(pow(m[normind], 2)))
             elif normalize == 'RMS':
-                z = s.sqrt(s.mean(pow(m[normind], 2)))
+                z = np.sqrt(np.mean(pow(m[normind], 2)))
             elif normalize == 'None':
                 z = 1.0
             else:
@@ -263,9 +269,9 @@ def surface_model(config):
                 model['attribute_means'].append(m_attr)
                 model['attribute_covs'].append(C_attr)
 
-    model['means'] = s.array(model['means'])
-    model['covs'] = s.array(model['covs'])
-    model['attribute_means'] = s.array(model['attribute_means'])
-    model['attribute_covs'] = s.array(model['attribute_covs'])
+    model['means'] = np.array(model['means'])
+    model['covs'] = np.array(model['covs'])
+    model['attribute_means'] = np.array(model['attribute_means'])
+    model['attribute_covs'] = np.array(model['attribute_covs'])
 
-    s.io.savemat(outfile, model)
+    scipy.io.savemat(outfile, model)
