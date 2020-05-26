@@ -782,7 +782,7 @@ def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array, n_cores: int
             "statevector": {
                 "H2OSTR": {
                     "bounds": [float(np.min(h2o_lut_grid)), float(np.max(h2o_lut_grid))],
-                    "scale": 0.01,
+                    "scale": 1,
                     "init": np.percentile(h2o_lut_grid,25),
                     "prior_sigma": 100.0,
                     "prior_mean": 1.5}
@@ -887,7 +887,7 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
             "statevector": {
                 "H2OSTR": {
                     "bounds": [h2o_lut_grid[0], h2o_lut_grid[-1]],
-                    "scale": 0.01,
+                    "scale": 1,
                     "init": (h2o_lut_grid[1] + h2o_lut_grid[-1]) / 2.0,
                     "prior_sigma": 100.0,
                     "prior_mean": (h2o_lut_grid[1] + h2o_lut_grid[-1]) / 2.0,
