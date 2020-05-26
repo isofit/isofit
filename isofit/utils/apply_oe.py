@@ -220,7 +220,7 @@ def main():
         p95 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 95)
         margin = (p95-p05) * 0.25
         h2o_lut_grid = np.linspace(max(lut_params.h2o_min, p05 - margin),
-                                   max(lut_params.h2o_min, p95 + margin),
+                                   min(max_water,max(lut_params.h2o_min, p95 + margin)),
                                    lut_params.num_h2o_lut_elements)
 
         if (np.abs(h2o_lut_grid[-1] - h2o_lut_grid[0]) < 0.03):
