@@ -182,5 +182,5 @@ class Isofit:
             pool.join()
 
             total_time = time.time() - start_time
-            logging.info('Parallel inversions complete.  {} s total, {} spectra/s, {}/spectra/core'.format(
-                total_time, n_iter/total_time, n_iter/total_time/n_cores))
+            logging.info('Inversions complete.  {} s total, {} spectra/s, {} spectra/s/core'.format(
+                round(total_time,2), round(n_iter/total_time,4), round(n_iter/total_time/n_cores,4)))
