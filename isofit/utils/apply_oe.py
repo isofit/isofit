@@ -183,7 +183,7 @@ def main():
         os.chdir(cwd)
 
         max_water = None
-        with open(filebase + '.tp6') as tp6file:
+        with open(filebase + '.tp6', errors='ignore') as tp6file:
             for count, line in enumerate(tp6file):
                 if 'The water column is being set to the maximum' in line:
                     max_water = line.split(',')[1].strip()
