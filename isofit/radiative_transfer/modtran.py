@@ -112,7 +112,7 @@ class ModtranRT(TabularRT):
             raise KeyError('I could not find the MODTRAN base directory')
 
     def load_tp6(self, infile):
-        """Load a '.tp6' file. This contains the solar geometry. We 
+        """Load a '.tp6' file. This contains the solar geometry. We
            Return cosine of mean solar zenith."""
 
         with open(infile, 'r') as f:
@@ -138,23 +138,23 @@ class ModtranRT(TabularRT):
         return szen
 
     def load_chn(self, infile, coszen):
-        """Load a '.chn' output file and parse critical coefficient vectors. 
+        """Load a '.chn' output file and parse critical coefficient vectors.
 
            These are:
              wl      - wavelength vector
              sol_irr - solar irradiance
              sphalb  - spherical sky albedo at surface
-             transm  - diffuse and direct irradiance along the 
+             transm  - diffuse and direct irradiance along the
                           sun-ground-sensor path
-             transup - transmission along the ground-sensor path only 
+             transup - transmission along the ground-sensor path only
 
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-             Be careful with these! They are to be used only by the 
-             modtran_tir functions because MODTRAN must be run with a 
+             Be careful with these! They are to be used only by the
+             modtran_tir functions because MODTRAN must be run with a
              reflectivity of 1 for them to be used in the RTM defined
              in radiative_transfer.py.
              thermal_upwelling - atmospheric path radiance
-             thermal_downwelling - sky-integrated thermal path radiance 
+             thermal_downwelling - sky-integrated thermal path radiance
                 reflected off the ground and back into the sensor.
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -260,11 +260,11 @@ class ModtranRT(TabularRT):
     def build_lut(self, rebuild=False):
         """Each LUT is associated with a source directory.
 
-        We build a lookup table by: 
-              (1) defining the LUT dimensions, state vector names, and the grid 
-                  of values; 
-              (2) running modtran if needed, with each MODTRAN run defining a 
-                  different point in the LUT; and 
+        We build a lookup table by:
+              (1) defining the LUT dimensions, state vector names, and the grid
+                  of values;
+              (2) running modtran if needed, with each MODTRAN run defining a
+                  different point in the LUT; and
               (3) loading the LUTs, one per key atmospheric coefficient vector,
                   into memory as VectorInterpolator objects.
         """
@@ -306,7 +306,7 @@ class ModtranRT(TabularRT):
 
 
                     max_water = None
-                    with open(os.path.join(self.lut_dir,filebase + '.tp6')) as tp6file:
+                    with open(os.path.join(self.lut_dir,filebase + '.tp6'), errors='ignore') as tp6file:
                         for count, line in enumerate(tp6file):
                             if 'The water column is being set to the maximum' in line:
                                 max_water = line.split(',')[1].strip()
@@ -515,12 +515,12 @@ class ModtranRT(TabularRT):
         return r['thermal_downwelling']
 
     def get_L_up(self, x_RT, geom):
-        """Thermal emission from the ground is provided by the thermal model, 
+        """Thermal emission from the ground is provided by the thermal model,
         so this function is a placeholder for future upgrades."""
         return 0
 
     def wl2flt(self, wls, fwhms, outfile):
-        """Helper function to generate Gaussian distributions around the 
+        """Helper function to generate Gaussian distributions around the
         center wavelengths."""
 
         I = None
