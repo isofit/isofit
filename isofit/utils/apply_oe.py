@@ -224,7 +224,7 @@ def main():
         h2o_lo = max(lut_params.h2o_min, p05 - margin)
         h2o_hi = max(lut_params.h2o_min, p95 + margin)
         if max_water is not None:
-            min(max_water, h2o_hi)
+            h2o_hi = min(max_water, h2o_hi)
         h2o_lut_grid = np.linspace(h2o_lo, h2o_hi, 
                 lut_params.num_h2o_lut_elements)
 
