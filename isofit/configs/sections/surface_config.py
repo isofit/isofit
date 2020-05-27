@@ -52,7 +52,7 @@ class SurfaceConfig(BaseConfigSection):
         The state is preserved in the geometry object so that this object stays stateless"""
 
         self._selection_metric_type = str
-        self.selection_metric = 'Mahalanobis'
+        self.selection_metric = 'Euclidean'
 
         # Surface Thermal
         self._emissivity_for_surface_T_init_type = float
