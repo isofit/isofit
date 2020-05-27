@@ -148,6 +148,8 @@ def main():
                 extractions(inputfile=inp, labels=paths.lbl_working_path,
                             output=outp, chunksize=CHUNKSIZE, flag=-9999)
 
+    # MODTRAN may put a ceiling on "legal" H2O concentrations
+    max_water = None
 
     if args.presolve == 1 and (not exists(paths.h2o_subs_path + '.hdr') or not exists(paths.h2o_subs_path)):
         write_modtran_template(atmosphere_type='ATM_MIDLAT_SUMMER', fid=paths.fid, altitude_km=mean_altitude_km,
@@ -182,7 +184,7 @@ def main():
             pass
         os.chdir(cwd)
 
-        max_water = None
+        # set Max. water using MODTRAN output
         with open(filebase + '.tp6') as tp6file:
             for count, line in enumerate(tp6file):
                 if 'The water column is being set to the maximum' in line:
@@ -219,9 +221,12 @@ def main():
         p05 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 5)
         p95 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 95)
         margin = (p95-p05) * 0.25
-        h2o_lut_grid = np.linspace(max(lut_params.h2o_min, p05 - margin),
-                                   min(max_water,max(lut_params.h2o_min, p95 + margin)),
-                                   lut_params.num_h2o_lut_elements)
+        h2o_lo = max(lut_params.h2o_min, p05 - margin)
+        h2o_hi = max(lut_params.h2o_min, p95 + margin)
+        if max_water is not None:
+            min(max_water, h2o_hi)
+        h2o_lut_grid = np.linspace(h2o_lo, h2o_hi, 
+                lut_params.num_h2o_lut_elements)
 
         if (np.abs(h2o_lut_grid[-1] - h2o_lut_grid[0]) < 0.03):
             new_h2o_lut_grid = np.linspace(h2o_lut_grid[0] - 0.1* np.ceil(lut_params.num_h2o_lut_elements/2.), 
