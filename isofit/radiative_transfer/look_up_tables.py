@@ -88,10 +88,7 @@ class TabularRT:
 
         # selectively get statevector components that are in this particular RTE
         full_sv_names = full_config.forward_model.radiative_transfer.statevector.get_element_names()
-        if engine_config.statevector_names is not None:
-            self.statevector_names = [x for x in full_sv_names if x in engine_config.statevector_names]
-        else:
-            self.statevector_names = full_sv_names
+        self.statevector_names = full_sv_names
 
         self.lut_dir = engine_config.lut_path
         self.n_point = len(self.lut_grid_config)
@@ -119,19 +116,6 @@ class TabularRT:
         self.prior_mean = np.array(self.prior_mean)
         self.prior_sigma = np.array(self.prior_sigma)
 
-        # This array is used to handle the potential indexing mismatch between
-        # the 'global statevector' (which may couple multiple radiative transform
-        # models) and this statevector. It should never be modified
-        full_to_local_statevector_position_mapping = []
-        complete_statevector_names = full_config.forward_model.radiative_transfer.statevector.get_element_names()
-        for sn in self.statevector_names:
-            ix = complete_statevector_names.index(sn)
-            full_to_local_statevector_position_mapping.append(ix)
-        self._full_to_local_statevector_position_mapping = \
-            np.array(full_to_local_statevector_position_mapping)
-
-
-        #
         self.lut_dims = []
         self.lut_grids = []
         self.lut_names = []
@@ -234,4 +218,4 @@ class TabularRT:
         if len(x_RT) < 1:
             return ''
         return 'Atmosphere: '+' '.join(['%s: %5.3f' % (si, xi) for si, xi in
-                                        zip(self.statevector_names, x_RT[self._full_to_local_statevector_position_mapping])])
+                                        zip(self.statevector_names, x_RT)])

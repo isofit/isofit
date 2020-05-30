@@ -70,8 +70,7 @@
           "month": 10,
           "day": 26,
           "lut_path": "../lut/",
-          "lut_names": ["H2OSTR", "AOT550"],
-          "statevector_names": ["H2OSTR", "AOT550"]
+          "lut_names": ["H2OSTR", "AOT550"]
         }
       }
     }
