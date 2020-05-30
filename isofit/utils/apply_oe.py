@@ -148,73 +148,39 @@ def main():
                 extractions(inputfile=inp, labels=paths.lbl_working_path,
                             output=outp, chunksize=CHUNKSIZE, flag=-9999)
 
-    # MODTRAN may put a ceiling on "legal" H2O concentrations
-    max_water = None
 
-    if args.presolve == 1 and (not exists(paths.h2o_subs_path + '.hdr') or not exists(paths.h2o_subs_path)):
+    if args.presolve == 1:
+
+        # write modtran presolve template
         write_modtran_template(atmosphere_type='ATM_MIDLAT_SUMMER', fid=paths.fid, altitude_km=mean_altitude_km,
                                dayofyear=dayofyear, latitude=mean_latitude, longitude=mean_longitude,
                                to_sensor_azimuth=mean_to_sensor_azimuth, to_sensor_zenith=mean_to_sensor_zenith,
                                gmtime=gmtime, elevation_km=mean_elevation_km,
                                output_file=paths.h2o_template_path, ihaze_type='AER_NONE')
 
-        # TODO: this is effectively redundant from the radiative_transfer->modtran. Either devise a way
-        # to port in from there, or put in utils to reduce redundancy.
-        xdir = {
-            'linux': 'linux',
-            'darwin': 'macos',
-            'windows': 'windows'
-        }
-        name = 'H2O_bound_test'
-        filebase = os.path.join(paths.lut_h2o_directory, name)
-        with open(paths.h2o_template_path, 'r') as f:
-            bound_test_config = json.load(f)
+        max_water = calc_modtran_max_water(paths)
 
-        bound_test_config['MODTRAN'][0]['MODTRANINPUT']['NAME'] = name
-        bound_test_config['MODTRAN'][0]['MODTRANINPUT']['ATMOSPHERE']['H2OSTR'] = 50
-        with open(filebase + '.json', 'w') as fout:
-            fout.write(json.dumps(bound_test_config, cls=SerialEncoder, indent=4, sort_keys=True))
+        # run H2O grid as necessary
+        if not exists(paths.h2o_subs_path + '.hdr') or not exists(paths.h2o_subs_path):
+            # Write the presolve connfiguration file
+            h2o_grid = np.linspace(0.01, max_water - 0.01, 10).round(2)
+            logging.info('Pre-solve H2O grid: {}'.format(h2o_grid))
+            logging.info('Writing H2O pre-solve configuration file.')
+            build_presolve_config(paths, h2o_grid, args.n_cores, args.surface_category)
 
-        cwd = os.getcwd()
-        os.chdir(paths.lut_h2o_directory)
-        cmd = os.path.join(paths.modtran_path, 'bin', xdir[platform], 'mod6c_cons ' + filebase + '.json')
-        try:
-            subprocess.call(cmd, shell=True, timeout=10)
-        except:
-            pass
-        os.chdir(cwd)
+            # Run modtran retrieval
+            logging.info('Run ISOFIT initial guess')
+            retrieval_h2o = isofit.Isofit(paths.h2o_config_path, level='DEBUG')
+            retrieval_h2o.run()
 
-        # set Max. water using MODTRAN output
-        with open(filebase + '.tp6') as tp6file:
-            for count, line in enumerate(tp6file):
-                if 'The water column is being set to the maximum' in line:
-                    max_water = line.split(',')[1].strip()
-                    max_water = float(max_water.split(' ')[0])
-                    break
+            # clean up unneeded storage
+            for to_rm in ['*r_k', '*t_k', '*tp7', '*wrn', '*psc', '*plt', '*7sc', '*acd']:
+                cmd = 'rm ' + join(paths.lut_h2o_directory, to_rm)
+                logging.info(cmd)
+                os.system(cmd)
+        else:
+            logging.info('Existing h2o-presolve solutions found, using those.')
 
-        if max_water is None:
-            logging.error('Could not find MODTRAN H2O upper bound in file {}'.format(filebase + '.tp6'))
-            raise KeyError('Could not find MODTRAN H2O upper bound')
-
-        # Write the presolve connfiguration file
-        h2o_grid = np.linspace(0.01, max_water - 0.01, 10).round(2)
-        logging.info('Pre-solve H2O grid: {}'.format(h2o_grid))
-        logging.info('Writing H2O pre-solve configuration file.')
-        build_presolve_config(paths, h2o_grid, args.n_cores, args.surface_category)
-
-        # Run modtran retrieval
-        logging.info('Run ISOFIT initial guess')
-        retrieval_h2o = isofit.Isofit(paths.h2o_config_path, level='DEBUG')
-        retrieval_h2o.run()
-
-        # clean up unneeded storage
-        for to_rm in ['*r_k', '*t_k', '*tp7', '*wrn', '*psc', '*plt', '*7sc', '*acd']:
-            cmd = 'rm ' + join(paths.lut_h2o_directory, to_rm)
-            logging.info(cmd)
-            os.system(cmd)
-
-    # Define h2o grid, either from presolve or LUTConfig
-    if args.presolve == 1:
         h2o = envi.open(paths.h2o_subs_path + '.hdr')
         h2o_est = h2o.read_band(-1)[:].flatten()
 
@@ -222,10 +188,8 @@ def main():
         p95 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 95)
         margin = (p95-p05) * 0.25
         h2o_lo = max(lut_params.h2o_min, p05 - margin)
-        h2o_hi = max(lut_params.h2o_min, p95 + margin)
-        if max_water is not None:
-            h2o_hi = min(max_water, h2o_hi)
-        h2o_lut_grid = np.linspace(h2o_lo, h2o_hi, 
+        h2o_hi = min(max_water, max(lut_params.h2o_min, p95 + margin))
+        h2o_lut_grid = np.linspace(h2o_lo, h2o_hi,
                 lut_params.num_h2o_lut_elements)
 
         if (np.abs(h2o_lut_grid[-1] - h2o_lut_grid[0]) < 0.03):
@@ -528,6 +492,57 @@ def load_climatology(config_path: str, latitude: float, longitude: float, acquis
     logging.info('Climatology Loaded.  Aerosol State Vector:\n{}\nAerosol LUT Grid:\n{}\nAerosol model path:{}'.format(
         aerosol_state_vector, aerosol_lut_grid, aerosol_model_path))
     return aerosol_state_vector, aerosol_lut_grid, aerosol_model_path
+
+
+def calc_modtran_max_water(paths: Pathnames) -> float:
+    """
+    Args:
+        paths: object containing references to all relevant file locations
+
+    Returns:
+        max_water: maximum MODTRAN H2OSTR value for provided obs conditions
+    """
+    # MODTRAN may put a ceiling on "legal" H2O concentrations
+
+    max_water = None
+    # TODO: this is effectively redundant from the radiative_transfer->modtran. Either devise a way
+    # to port in from there, or put in utils to reduce redundancy.
+    xdir = {
+        'linux': 'linux',
+        'darwin': 'macos',
+        'windows': 'windows'
+    }
+    name = 'H2O_bound_test'
+    filebase = os.path.join(paths.lut_h2o_directory, name)
+    with open(paths.h2o_template_path, 'r') as f:
+        bound_test_config = json.load(f)
+
+    bound_test_config['MODTRAN'][0]['MODTRANINPUT']['NAME'] = name
+    bound_test_config['MODTRAN'][0]['MODTRANINPUT']['ATMOSPHERE']['H2OSTR'] = 50
+    with open(filebase + '.json', 'w') as fout:
+        fout.write(json.dumps(bound_test_config, cls=SerialEncoder, indent=4, sort_keys=True))
+
+    cwd = os.getcwd()
+    os.chdir(paths.lut_h2o_directory)
+    cmd = os.path.join(paths.modtran_path, 'bin', xdir[platform], 'mod6c_cons ' + filebase + '.json')
+    try:
+        subprocess.call(cmd, shell=True, timeout=10)
+    except:
+        pass
+    os.chdir(cwd)
+
+    with open(filebase + '.tp6', errors='ignore') as tp6file:
+        for count, line in enumerate(tp6file):
+            if 'The water column is being set to the maximum' in line:
+                max_water = line.split(',')[1].strip()
+                max_water = float(max_water.split(' ')[0])
+                break
+
+    if max_water is None:
+        logging.error('Could not find MODTRAN H2O upper bound in file {}'.format(filebase + '.tp6'))
+        raise KeyError('Could not find MODTRAN H2O upper bound')
+
+    return max_water
 
 
 def find_angular_seeds(angle_data_input: np.array, num_points: int, units: str = 'd'):
