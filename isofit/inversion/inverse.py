@@ -102,7 +102,7 @@ class Inversion:
             'xtol': None,
             'ftol': 1e-2,
             'gtol': None,
-            'tr_solver': 'exact'
+            'tr_solver': 'lsmr'
         }
 
     def full_statevector(self, x_free):
