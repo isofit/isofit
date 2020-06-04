@@ -122,9 +122,10 @@ class Isofit:
                 # Write the spectra to disk
                 io.write_spectrum(row, col, self.states, meas,
                                   geom, flush_immediately=True)
-                if index % 1000 == 0:
+                if (index - index_start) % 100 == 0:
                     logging.info(
-                        'Completed inversion {}/{}'.format(index, len(io.iter_inds)))
+                        'Core at start index {} completed inversion {}/{}'.format(index_start, index-index_start,
+                                                                                  index_stop-index_start))
 
     def run(self, profile=False):
         """
