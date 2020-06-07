@@ -45,6 +45,19 @@ class ImplementationConfig(BaseConfigSection):
         self.n_cores = None
         """int: number of cores to use."""
 
+        self._ip_head_type = str
+        self.ip_head = None
+        """str: Ray - parameter.  IP-head (for multi-node runs)."""
+
+        self._redis_password_type = str
+        self.redis_password = None
+        """str: Ray - parameter.  Redis-password (for multi-node runs)."""
+
+        self._ray_multinode_cores_type = int
+        self.ray_multinode_cores = None
+        """str: Ray - parameter.  Total number of multi-node cores to use.  Only 
+        to be used in multi-node mode."""
+
         self._runtime_nice_level_type = int
         self.runtime_nice_level = None
         """int: nice level to run multiprocessing at.  If None, will use all available.  If 1, will run without 

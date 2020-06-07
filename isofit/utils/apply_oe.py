@@ -198,7 +198,7 @@ def main():
         h2o_grid = np.linspace(0.01, max_water - 0.01, 10).round(2)
         logging.info('Pre-solve H2O grid: {}'.format(h2o_grid))
         logging.info('Writing H2O pre-solve configuration file.')
-        build_presolve_config(paths, h2o_grid, args.n_cores, args.surface_category)
+        build_presolve_config(paths, h2o_grid, args.n_cores, args.empirical_line == 1, args.surface_category)
 
         # Run modtran retrieval
         logging.info('Run ISOFIT initial guess')

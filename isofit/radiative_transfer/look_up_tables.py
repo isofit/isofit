@@ -21,7 +21,7 @@
 import os
 import numpy as np
 import logging
-import multiprocessing
+import ray
 from collections import OrderedDict
 import subprocess
 
@@ -34,6 +34,7 @@ from isofit.configs.sections.implementation_config import ImplementationConfig
 
 ### Functions ###
 
+@ray.remote
 def spawn_rt(cmd):
     """Run a CLI command."""
 
@@ -195,7 +196,7 @@ class TabularRT:
             # sys.exit(0)
 
         elif len(rebuild_cmds) > 0 and self.auto_rebuild:
-            logging.info("rebuilding")
+            logging.info("Rebuilding radiative transfer look up table")
 
             # check to make sure lut directory is there, create if not
             cwd = os.getcwd()
@@ -205,19 +206,16 @@ class TabularRT:
             # migrate to the appropriate directory and spool up runs
             os.chdir(self.lut_dir)
 
-            if self.implementation_config.n_cores is None:
-                n_cores = multiprocessing.cpu_count()
-            else:
-                n_cores = self.implementation_config.n_cores
+            # Initialize ray instance for parallel runs
+            ray.init(num_cpus=self.implementation_config.n_cores)
+            
+            # Set up remote commands
+            result_ids = [spawn_rt.remote(rebuild_cmd) for rebuild_cmd in rebuild_cmds]
+            
+            # Run in parallel
+            results = ray.get(result_ids)
 
-            if self.implementation_config.runtime_nice_level is None:
-                pool = multiprocessing.Pool(processes=n_cores)
-            else:
-                pool = multiprocessing.Pool(processes=n_cores, initializer=
-                                            common.nice_me(self.implementation_config.runtime_nice_level))
-
-            r = pool.map_async(spawn_rt, rebuild_cmds)
-            r.wait()
+            # Change back to local directory
             os.chdir(cwd)
 
     def get_lut_filenames(self):
