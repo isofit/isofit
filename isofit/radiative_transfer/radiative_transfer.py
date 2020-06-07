@@ -118,9 +118,7 @@ class RadiativeTransfer():
         r = self.get(x_RT, geom)
         L_atm = self.get_L_atm(x_RT, geom)
         L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)
-
-        L_up = self.get_L_up(x_RT, geom)
-        L_up = L_up + Ls * r['transup']
+        L_up = Ls * r['transup']
 
         ret = L_atm + \
             L_down_transmitted * rfl / (1.0 - r['sphalb'] * rfl) + \
@@ -139,16 +137,6 @@ class RadiativeTransfer():
         for RT in self.rt_engines:
             L_downs.append(RT.get_L_down_transmitted(x_RT, geom))
         return np.hstack(L_downs)
-
-    def get_L_up(self, x_RT, geom):
-        '''L_up is provided by the surface model, so just return
-        0 here. The commented out code here is for future updates.'''
-        #L_ups = []
-        # for key, RT in self.RTs.items():
-        #    L_ups.append(RT.get_L_up(x_RT, geom))
-        # return s.hstack(L_ups)
-
-        return 0.
 
     def drdn_dRT(self, x_RT, x_surface, rfl, drfl_dsurface, Ls,
                  dLs_dsurface, geom):

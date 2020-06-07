@@ -453,8 +453,7 @@ class ModtranRT(TabularRT):
         for point_ind, name in enumerate(self.lut_grid_config):
             if name in self.statevector_names:
                 ix = self.statevector_names.index(name)
-                x_RT_ind = self._full_to_local_statevector_position_mapping[ix]
-                point[point_ind] = x_RT[x_RT_ind]
+                point[point_ind] = x_RT[ix]
             elif name == "OBSZEN":
                 point[point_ind] = geom.OBSZEN
             elif name == "GNDALT":
@@ -513,11 +512,6 @@ class ModtranRT(TabularRT):
         """
         r = self.get(x_RT, geom)
         return r['thermal_downwelling']
-
-    def get_L_up(self, x_RT, geom):
-        """Thermal emission from the ground is provided by the thermal model, 
-        so this function is a placeholder for future upgrades."""
-        return 0
 
     def wl2flt(self, wls, fwhms, outfile):
         """Helper function to generate Gaussian distributions around the 
