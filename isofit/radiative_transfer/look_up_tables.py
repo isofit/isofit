@@ -190,14 +190,11 @@ class TabularRT:
             # migrate to the appropriate directory and spool up runs
             os.chdir(self.lut_dir)
 
-            # Initialize ray instance for parallel runs
-            ray.init(num_cpus=self.implementation_config.n_cores)
-            
-            # Set up remote commands
-            result_ids = [spawn_rt.remote(rebuild_cmd) for rebuild_cmd in rebuild_cmds]
-            
-            # Run in parallel
-            results = ray.get(result_ids)
+            # Make the LUT calls (in parallel if specified)
+            if self.implementation_config.n_cores is None or self.implementation_config.n_cores > 1:
+                results = ray.get([spawn_rt.remote(rebuild_cmd) for rebuild_cmd in rebuild_cmds])
+            else:
+                results = [spawn_rt(rebuild_cmd) for rebuild_cmd in rebuild_cmds]
 
             # Change back to local directory
             os.chdir(cwd)
