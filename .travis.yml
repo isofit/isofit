@@ -12,5 +12,6 @@ install:
   - pip install pep8
   - pip install xxhash
   - pip install pyyaml
+  - pip install ray
 script:
   - pytest
