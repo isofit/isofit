@@ -165,10 +165,8 @@ class Isofit:
         index_sets = np.linspace(0, n_iter, num=n_workers+1, dtype=int)
 
         # Run spectra, in either serial or parallel depending on n_workers
-        result_ids = [self._run_set_of_spectra.remote(self, index_sets[l], index_sets[l + 1])
-                       for l in range(len(index_sets)-1)]
-
-        results = ray.get(result_ids)
+        results = ray.get([self._run_set_of_spectra.remote(self, index_sets[l], index_sets[l + 1])
+                           for l in range(len(index_sets)-1)])
 
         total_time = time.time() - start_time
         logging.info('Inversions complete.  {} s total, {} spectra/s, {} spectra/s/core'.format(
