@@ -24,6 +24,7 @@ import logging
 import ray
 from collections import OrderedDict
 import subprocess
+import time
 
 from isofit.core import common
 from isofit.configs import Config
@@ -35,12 +36,20 @@ from isofit.configs.sections.implementation_config import ImplementationConfig
 ### Functions ###
 
 @ray.remote
-def spawn_rt(cmd):
+def spawn_rt(cmd, local_dir=None):
     """Run a CLI command."""
 
     print(cmd)
+    time.sleep(float(np.random.random(1)))
+
+    if local_dir is not None:
+        cwd = os.getcwd()
+        os.chdir(local_dir)
+
     subprocess.call(cmd, shell=True)
 
+    if local_dir is not None:
+        os.chdir(cwd)
 
 ### Classes ###
 
@@ -183,7 +192,6 @@ class TabularRT:
             logging.info("Rebuilding radiative transfer look up table")
 
             # check to make sure lut directory is there, create if not
-            cwd = os.getcwd()
             if os.path.isdir(self.lut_dir) is False:
                 os.mkdir(self.lut_dir)
 
@@ -192,12 +200,10 @@ class TabularRT:
 
             # Make the LUT calls (in parallel if specified)
             if self.implementation_config.n_cores is None or self.implementation_config.n_cores > 1:
-                results = ray.get([spawn_rt.remote(rebuild_cmd) for rebuild_cmd in rebuild_cmds])
+                results = ray.get([spawn_rt.remote(rebuild_cmd, self.lut_dir) for rebuild_cmd in rebuild_cmds])
             else:
-                results = [spawn_rt(rebuild_cmd) for rebuild_cmd in rebuild_cmds]
+                results = [spawn_rt(rebuild_cmd, self.lut_dir) for rebuild_cmd in rebuild_cmds]
 
-            # Change back to local directory
-            os.chdir(cwd)
 
     def get_lut_filenames(self):
         files = []

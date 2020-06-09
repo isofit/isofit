@@ -69,7 +69,7 @@ class Isofit:
                        'redis_password': self.config.implementation.redis_password}
 
             # We can only set the num_cpus if running on a single-node
-            if self.config.implementation.ip_head is None and self.config.implementation.radis_password is None:
+            if self.config.implementation.ip_head is None and self.config.implementation.redis_password is None:
                 rayargs['num_cpus'] = self.config.implementation.n_cores
             ray.init(**rayargs)
 
@@ -188,4 +188,4 @@ class Isofit:
 
             total_time = time.time() - start_time
             logging.info('Inversions complete.  {} s total, {} spectra/s, {} spectra/s/core'.format(
-                round(total_time,2), round(n_iter/total_time,4), round(n_iter/total_time/n_cores,4)))
+                round(total_time,2), round(n_iter/total_time,4), round(n_iter/total_time/n_workers,4)))
