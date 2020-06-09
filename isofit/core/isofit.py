@@ -39,7 +39,7 @@ import numpy as np
 class Isofit:
     """Spectroscopic Surface and Atmosphere Fitting."""
 
-    def __init__(self, config_file, row_column='', level='INFO'):
+    def __init__(self, config_file, row_column='', level='INFO', logfile=None):
         """Initialize the Isofit class."""
 
         # Explicitly set the number of threads to be 1, so we more effectively 
@@ -47,7 +47,9 @@ class Isofit:
         os.environ["MKL_NUM_THREADS"] = "1"
 
         # Set logging level
-        logging.basicConfig(format='%(levelname)s:%(message)s', level=level)
+        self.loglevel = level
+        self.logfile = logfile
+        logging.basicConfig(format='%(levelname)s:%(message)s', level=self.loglevel, filename=self.logfile)
 
         self.rows = None
         self.cols = None
@@ -113,6 +115,7 @@ class Isofit:
 
     @ray.remote
     def _run_set_of_spectra(self, index_start, index_stop):
+        logging.basicConfig(format='%(levelname)s:%(message)s', level=self.loglevel, filename=self.logfile)
         self._init_nonpicklable_objects()
         io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
         for index in range(index_start, index_stop):

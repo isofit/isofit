@@ -170,7 +170,7 @@ def main():
 
             # Run modtran retrieval
             logging.info('Run ISOFIT initial guess')
-            retrieval_h2o = isofit.Isofit(paths.h2o_config_path, level='DEBUG')
+            retrieval_h2o = isofit.Isofit(paths.h2o_config_path, level='INFO', logfile=args.log_file)
             retrieval_h2o.run()
 
             # clean up unneeded storage
@@ -222,7 +222,7 @@ def main():
 
         # Run modtran retrieval
         logging.info('Running ISOFIT with full LUT')
-        retrieval_full = isofit.Isofit(paths.modtran_config_path, level='DEBUG')
+        retrieval_full = isofit.Isofit(paths.modtran_config_path, level='INFO', logfile=args.log_file)
         retrieval_full.run()
 
         # clean up unneeded storage
