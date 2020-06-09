@@ -373,7 +373,7 @@ class IO:
         # Check for any bad data flags
         for source in self.infiles:
             if np.all(abs(data[source] - self.infiles[source].flag) < eps):
-                return False, r, c, None, None, None
+                return False, r, c, None, None
 
         if self.simulation_mode:
             # If solving the inverse problem, the measurment is the surface reflectance
