@@ -45,6 +45,14 @@ class ImplementationConfig(BaseConfigSection):
         self.n_cores = None
         """int: number of cores to use."""
 
+        self._ip_head_type = str
+        self.ip_head = None
+        """str: Ray - parameter.  IP-head (for multi-node runs)."""
+
+        self._redis_password_type = str
+        self.redis_password = None
+        """str: Ray - parameter.  Redis-password (for multi-node runs)."""
+
         self._runtime_nice_level_type = int
         self.runtime_nice_level = None
         """int: nice level to run multiprocessing at.  If None, will use all available.  If 1, will run without 
@@ -75,5 +83,8 @@ class ImplementationConfig(BaseConfigSection):
             #TODO: fix this
             errors.append('Even in simulation mode, and inversion config must be defined, though'
                           'it may be blank.')
+
+        if int(self.ip_head is not None) + int(self.redis_password is not None) == 1:
+            errors.append('If either ip_head or redis_password are specified, both must be specified')
 
         return errors

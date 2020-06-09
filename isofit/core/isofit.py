@@ -29,6 +29,7 @@ from isofit.inversion.inverse import Inversion
 from isofit.inversion.inverse_mcmc import MCMCInversion
 from .fileio import IO
 
+import ray
 import multiprocessing
 from isofit import configs
 from isofit.configs import configs
@@ -38,15 +39,17 @@ import numpy as np
 class Isofit:
     """Spectroscopic Surface and Atmosphere Fitting."""
 
-    def __init__(self, config_file, row_column='', level='INFO'):
+    def __init__(self, config_file, row_column='', level='INFO', logfile=None):
         """Initialize the Isofit class."""
 
-        # Explicitly set the number of threads to be 1, so we can make better
-        # use of multiprocessing
+        # Explicitly set the number of threads to be 1, so we more effectively 
+        #run in parallel 
         os.environ["MKL_NUM_THREADS"] = "1"
 
         # Set logging level
-        logging.basicConfig(format='%(message)s', level=level)
+        self.loglevel = level
+        self.logfile = logfile
+        logging.basicConfig(format='%(levelname)s:%(message)s', level=self.loglevel, filename=self.logfile)
 
         self.rows = None
         self.cols = None
@@ -59,6 +62,16 @@ class Isofit:
         # Load configuration file
         self.config = configs.create_new_config(config_file)
         self.config.get_config_errors()
+
+        # Initialize ray for parallel execution
+        rayargs = {'address': self.config.implementation.ip_head,
+                   'redis_password': self.config.implementation.redis_password,
+                   'local_mode': self.config.implementation.n_cores == 1}
+
+        # We can only set the num_cpus if running on a single-node
+        if self.config.implementation.ip_head is None and self.config.implementation.redis_password is None:
+            rayargs['num_cpus'] = self.config.implementation.n_cores
+        ray.init(**rayargs)
 
         # Build the forward model and inversion objects
         self._init_nonpicklable_objects()
@@ -100,7 +113,9 @@ class Isofit:
         self.fm = None
         self.iv = None
 
+    @ray.remote
     def _run_set_of_spectra(self, index_start, index_stop):
+        logging.basicConfig(format='%(levelname)s:%(message)s', level=self.loglevel, filename=self.logfile)
         self._init_nonpicklable_objects()
         io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
         for index in range(index_start, index_stop):
@@ -121,9 +136,10 @@ class Isofit:
                 # Write the spectra to disk
                 io.write_spectrum(row, col, self.states, meas,
                                   geom, flush_immediately=True)
-                if index % 1000 == 0:
+                if (index - index_start) % 100 == 0:
                     logging.info(
-                        'Completed inversion {}/{}'.format(index, len(io.iter_inds)))
+                        'Core at start index {} completed inversion {}/{}'.format(index_start, index-index_start,
+                                                                                  index_stop-index_start))
 
     def run(self):
         """
@@ -138,33 +154,20 @@ class Isofit:
         self.io = None
 
         if self.config.implementation.n_cores is None:
-            n_cores = multiprocessing.cpu_count()
+            n_workers = min(multiprocessing.cpu_count(), n_iter)
         else:
-            n_cores = self.config.implementation.n_cores
-
-        # Don't use more cores than needed
-        n_cores = min(n_cores, n_iter)
-
-        if self.config.implementation.runtime_nice_level is None:
-            pool = multiprocessing.Pool(processes=n_cores)
-        else:
-            pool = multiprocessing.Pool(processes=n_cores, initializer=
-                                        common.nice_me(self.config.implementation.runtime_nice_level))
+            n_workers = min(self.config.implementation.n_cores, n_iter)
 
         start_time = time.time()
-        logging.info('Beginning inversions using {} cores'.format(n_cores))
+        logging.info('Beginning inversions using {} cores'.format(n_workers))
 
-        results = []
-        index_sets = np.linspace(0, n_iter, num=n_cores+1, dtype=int)
-        for l in range(len(index_sets)-1):
-            if n_cores == 1:
-                self._run_set_of_spectra(index_sets[0], index_sets[-1])
-            else:
-                results.append(pool.apply_async(self._run_set_of_spectra, args=(index_sets[l], index_sets[l + 1])))
-        results = [p.get() for p in results]
-        pool.close()
-        pool.join()
+        # Divide up spectra to run into chunks
+        index_sets = np.linspace(0, n_iter, num=n_workers+1, dtype=int)
+
+        # Run spectra, in either serial or parallel depending on n_workers
+        results = ray.get([self._run_set_of_spectra.remote(self, index_sets[l], index_sets[l + 1])
+                           for l in range(len(index_sets)-1)])
 
         total_time = time.time() - start_time
-        logging.info('Parallel inversions complete.  {} s total, {} spectra/s, {}/spectra/core'.format(
-            total_time, n_iter/total_time, n_iter/total_time/n_cores))
+        logging.info('Inversions complete.  {} s total, {} spectra/s, {} spectra/s/core'.format(
+            round(total_time,2), round(n_iter/total_time,4), round(n_iter/total_time/n_workers,4)))

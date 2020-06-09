@@ -21,9 +21,10 @@
 import os
 import numpy as np
 import logging
-import multiprocessing
+import ray
 from collections import OrderedDict
 import subprocess
+import time
 
 from isofit.core import common
 from isofit.configs import Config
@@ -34,12 +35,24 @@ from isofit.configs.sections.implementation_config import ImplementationConfig
 
 ### Functions ###
 
-def spawn_rt(cmd):
+@ray.remote
+def spawn_rt(cmd, local_dir=None):
     """Run a CLI command."""
 
     print(cmd)
+
+    # Add a very slight timing offset to prevent all subprocesses
+    # starting simultaneously
+    time.sleep(float(np.random.random(1))*0.1)
+
+    if local_dir is not None:
+        cwd = os.getcwd()
+        os.chdir(local_dir)
+
     subprocess.call(cmd, shell=True)
 
+    if local_dir is not None:
+        os.chdir(cwd)
 
 ### Classes ###
 
@@ -179,30 +192,18 @@ class TabularRT:
             # sys.exit(0)
 
         elif len(rebuild_cmds) > 0 and self.auto_rebuild:
-            logging.info("rebuilding")
+            logging.info("Rebuilding radiative transfer look up table")
 
             # check to make sure lut directory is there, create if not
-            cwd = os.getcwd()
             if os.path.isdir(self.lut_dir) is False:
                 os.mkdir(self.lut_dir)
 
             # migrate to the appropriate directory and spool up runs
             os.chdir(self.lut_dir)
 
-            if self.implementation_config.n_cores is None:
-                n_cores = multiprocessing.cpu_count()
-            else:
-                n_cores = self.implementation_config.n_cores
+            # Make the LUT calls (in parallel if specified)
+            results = ray.get([spawn_rt.remote(rebuild_cmd, self.lut_dir) for rebuild_cmd in rebuild_cmds])
 
-            if self.implementation_config.runtime_nice_level is None:
-                pool = multiprocessing.Pool(processes=n_cores)
-            else:
-                pool = multiprocessing.Pool(processes=n_cores, initializer=
-                                            common.nice_me(self.implementation_config.runtime_nice_level))
-
-            r = pool.map_async(spawn_rt, rebuild_cmds)
-            r.wait()
-            os.chdir(cwd)
 
     def get_lut_filenames(self):
         files = []

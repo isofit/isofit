@@ -109,13 +109,6 @@ class Config(BaseConfigSection):
         logging.info("Checking config sections for configuration issues")
 
         errors = self.check_config_validity()
-        #errors = []
-        #for key in self._get_nontype_attributes():
-        #    value = getattr(self, key)
-        #    try:
-        #        errors.extend(value.check_config_validity())
-        #    except AttributeError:
-        #        logging.debug('Configuration check: {} is not an object, skipping'.format(key))
 
         for e in errors:
             logging.error(e)

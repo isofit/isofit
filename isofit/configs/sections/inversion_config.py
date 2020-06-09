@@ -43,7 +43,15 @@ class InversionConfig(BaseConfigSection):
 
         self._integration_grid_type = OrderedDict
         self.integration_grid = OrderedDict({})
-        """Grid of inversion points to execute (implemented as fixed parameters) if mode='grid'."""
+        """Grid of inversion points to execute if mode='grid'.  Either fixed, or starting points, depending
+        on self.fixed_inversion_grid"""
+
+        self._inversion_grid_as_preseed_type = bool
+        self.inversion_grid_as_preseed = False
+        """Parameter indicating whether to treat the inversion grid as:
+         (True) - a series of seeds for the optimization (variable by the optimization algorithm).
+         (False) - a set of fixed points (not variable by the optimization algorithm)
+        """
 
         self.set_config_options(sub_configdic)
 
