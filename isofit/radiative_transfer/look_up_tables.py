@@ -40,7 +40,10 @@ def spawn_rt(cmd, local_dir=None):
     """Run a CLI command."""
 
     print(cmd)
-    time.sleep(float(np.random.random(1)))
+
+    # Add a very slight timing offset to prevent all subprocesses
+    # starting simultaneously
+    time.sleep(float(np.random.random(1))*0.1)
 
     if local_dir is not None:
         cwd = os.getcwd()
@@ -199,10 +202,7 @@ class TabularRT:
             os.chdir(self.lut_dir)
 
             # Make the LUT calls (in parallel if specified)
-            if self.implementation_config.n_cores is None or self.implementation_config.n_cores > 1:
-                results = ray.get([spawn_rt.remote(rebuild_cmd, self.lut_dir) for rebuild_cmd in rebuild_cmds])
-            else:
-                results = [spawn_rt(rebuild_cmd, self.lut_dir) for rebuild_cmd in rebuild_cmds]
+            results = ray.get([spawn_rt.remote(rebuild_cmd, self.lut_dir) for rebuild_cmd in rebuild_cmds])
 
 
     def get_lut_filenames(self):

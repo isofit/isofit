@@ -47,7 +47,7 @@ class Isofit:
         os.environ["MKL_NUM_THREADS"] = "1"
 
         # Set logging level
-        logging.basicConfig(format='%(message)s', level=level)
+        logging.basicConfig(format='%(levelname)s:%(message)s', level=level)
 
         self.rows = None
         self.cols = None
@@ -62,14 +62,14 @@ class Isofit:
         self.config.get_config_errors()
 
         # Initialize ray for parallel execution
-        if self.config.implementation.n_cores is not None and self.config.implementation.n_cores > 1:
-            rayargs = {'address': self.config.implementation.ip_head,
-                       'redis_password': self.config.implementation.redis_password}
+        rayargs = {'address': self.config.implementation.ip_head,
+                   'redis_password': self.config.implementation.redis_password,
+                   'local_mode': self.config.implementation.n_cores == 1}
 
-            # We can only set the num_cpus if running on a single-node
-            if self.config.implementation.ip_head is None and self.config.implementation.redis_password is None:
-                rayargs['num_cpus'] = self.config.implementation.n_cores
-            ray.init(**rayargs)
+        # We can only set the num_cpus if running on a single-node
+        if self.config.implementation.ip_head is None and self.config.implementation.redis_password is None:
+            rayargs['num_cpus'] = self.config.implementation.n_cores
+        ray.init(**rayargs)
 
         # Build the forward model and inversion objects
         self._init_nonpicklable_objects()
@@ -162,13 +162,10 @@ class Isofit:
         index_sets = np.linspace(0, n_iter, num=n_workers+1, dtype=int)
 
         # Run spectra, in either serial or parallel depending on n_workers
-        if n_workers == 1:
-            self._run_set_of_spectra(index_sets[0], index_sets[-1])
-        else:
-            result_ids = [self._run_set_of_spectra.remote(self, index_sets[l], index_sets[l + 1])
+        result_ids = [self._run_set_of_spectra.remote(self, index_sets[l], index_sets[l + 1])
                        for l in range(len(index_sets)-1)]
 
-            results = ray.get(result_ids)
+        results = ray.get(result_ids)
 
         total_time = time.time() - start_time
         logging.info('Inversions complete.  {} s total, {} spectra/s, {} spectra/s/core'.format(
