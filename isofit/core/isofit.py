@@ -21,7 +21,6 @@
 
 import os
 import logging
-import cProfile
 import time
 
 from isofit.core import common
@@ -40,7 +39,7 @@ import numpy as np
 class Isofit:
     """Spectroscopic Surface and Atmosphere Fitting."""
 
-    def __init__(self, config_file, row_column='', profile=False, level='INFO'):
+    def __init__(self, config_file, row_column='', level='INFO'):
         """Initialize the Isofit class."""
 
         # Explicitly set the number of threads to be 1, so we more effectively 
@@ -53,7 +52,6 @@ class Isofit:
         self.rows = None
         self.cols = None
         self.config = None
-        self.profile = profile
         self.fm = None
         self.iv = None
         self.io = None
@@ -75,6 +73,7 @@ class Isofit:
 
         # Build the forward model and inversion objects
         self._init_nonpicklable_objects()
+        self.io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
 
         # We set the row and column range of our analysis. The user can
         # specify: a single number, in which case it is interpreted as a row;
@@ -117,7 +116,7 @@ class Isofit:
         self._init_nonpicklable_objects()
         io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
         for index in range(index_start, index_stop):
-            success, row, col, meas, geom, configs = io.get_components_at_index(
+            success, row, col, meas, geom = io.get_components_at_index(
                 index)
             # Only run through the inversion if we got some data
             if success:
@@ -139,7 +138,7 @@ class Isofit:
                         'Core at start index {} completed inversion {}/{}'.format(index_start, index-index_start,
                                                                                   index_stop-index_start))
 
-    def run(self, profile=False):
+    def run(self):
         """
         Iterate over all spectra, reading and writing through the IO
         object to handle formatting, buffering, and deferred write-to-file.
@@ -147,45 +146,30 @@ class Isofit:
         the physical disk too often. These are our main class variables.
         """
 
-        io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
-        if profile:
-            for row, col, meas, geom, configs in io:
-                if meas is not None and all(meas < -49.0):
-                    # Bad data flags
-                    self.states = []
-                else:
-                    # Profile output
-                    gbl, lcl = globals(), locals()
-                    cProfile.runctx(
-                        'self.iv.invert(meas, geom)', gbl, lcl)
+        n_iter = len(self.io.iter_inds)
+        self._clear_nonpicklable_objects()
+        self.io = None
 
-                # Write the spectra to disk
-                io.write_spectrum(row, col, self.states, meas, geom)
+        if self.config.implementation.n_cores is None:
+            n_workers = min(multiprocessing.cpu_count(), n_iter)
         else:
-            n_iter = len(io.iter_inds)
-            io = None
-            self._clear_nonpicklable_objects()
+            n_workers = min(self.config.implementation.n_cores, n_iter)
 
-            if self.config.implementation.n_cores is None:
-                n_workers = min(multiprocessing.cpu_count(), n_iter)
-            else:
-                n_workers = min(self.config.implementation.n_cores, n_iter)
+        start_time = time.time()
+        logging.info('Beginning inversions using {} cores'.format(n_workers))
 
-            start_time = time.time()
-            logging.info('Beginning inversions using {} cores'.format(n_workers))
+        # Divide up spectra to run into chunks
+        index_sets = np.linspace(0, n_iter, num=n_workers+1, dtype=int)
 
-            # Divide up spectra to run into chunks
-            index_sets = np.linspace(0, n_iter, num=n_workers+1, dtype=int)
+        # Run spectra, in either serial or parallel depending on n_workers
+        if n_workers == 1:
+            self._run_set_of_spectra(index_sets[0], index_sets[-1])
+        else:
+            result_ids = [self._run_set_of_spectra.remote(self, index_sets[l], index_sets[l + 1])
+                       for l in range(len(index_sets)-1)]
 
-            # Run spectra, in either serial or parallel depending on n_workers
-            if n_workers == 1:
-                self._run_set_of_spectra(index_sets[0], index_sets[-1])
-            else:
-                result_ids = [self._run_set_of_spectra.remote(self, index_sets[l], index_sets[l + 1]) 
-                           for l in range(len(index_sets)-1)]
+            results = ray.get(result_ids)
 
-                results = ray.get(result_ids)
-
-            total_time = time.time() - start_time
-            logging.info('Inversions complete.  {} s total, {} spectra/s, {} spectra/s/core'.format(
-                round(total_time,2), round(n_iter/total_time,4), round(n_iter/total_time/n_workers,4)))
+        total_time = time.time() - start_time
+        logging.info('Inversions complete.  {} s total, {} spectra/s, {} spectra/s/core'.format(
+            round(total_time,2), round(n_iter/total_time,4), round(n_iter/total_time/n_workers,4)))
