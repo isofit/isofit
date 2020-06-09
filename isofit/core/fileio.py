@@ -275,6 +275,8 @@ class IO:
         self.n_sv = len(self.fm.statevec)
         self.n_chan = len(self.fm.instrument.wl_init)
 
+        self.simulation_mode = config.implementation.mode == 'simulation'
+
         # Names of either the wavelength or statevector outputs
         wl_names = [('Channel %i' % i) for i in range(self.n_chan)]
         sv_names = self.fm.statevec.copy()
@@ -340,7 +342,10 @@ class IO:
                 self.iter_inds.append([row, col])
         self.iter_inds = np.array(self.iter_inds)
 
-    def get_components_at_index(self, index):
+        if self.simulation_mode:
+            self.fm.surface.rwl = np.array([float(x) for x in self.infiles['reflectance_file'].meta['wavelength']])
+
+    def get_components_at_index(self, index: int) -> (int, int, np.array, Geometry):
         """
         Get the spectrum from the file at the specified index.  Helper/
         parallel enabling function.
@@ -352,7 +357,6 @@ class IO:
         :return: c: column index
         :return: meas: measured radiance file
         :return: geom: set up specified geometry files
-        :return: updates: set of prior reference files
         """
         # Determine the appropriate row, column index. and initialize the
         # data dictionary with empty entries.
@@ -371,10 +375,18 @@ class IO:
             if np.all(abs(data[source] - self.infiles[source].flag) < eps):
                 return False, r, c, None, None, None
 
-        # We apply the calibration correciton here for simplicity.
-        meas = data['measured_radiance_file']
-        if data["radiometry_correction_file"] is not None:
-            meas = meas.copy() * data['radiometry_correction_file']
+        if self.simulation_mode:
+            # If solving the inverse problem, the measurment is the surface reflectance
+            self.fm.surface.rfl = data['reflectance_file'].copy()
+            if self.fm.surface.wl is not None:
+                self.fm.surface.resample_reflectance()
+            meas = self.fm.surface.rfl
+        else:
+            # If solving the inverse problem, the measurment is the radiance
+            # We apply the calibration correciton here for simplicity.
+            meas = data['measured_radiance_file']
+            if data["radiometry_correction_file"] is not None:
+                meas = meas.copy() * data['radiometry_correction_file']
 
         # We build the geometry object for this spectrum.  For files not
         # specified in the input configuration block, the associated entries
@@ -383,26 +395,7 @@ class IO:
                         glt=data['glt_file'],
                         loc=data['loc_file'])
 
-        # Updates are simply serialized prior distribution vectors for this
-        # spectrum (or 'None' if the file was not specified in the input
-        # configuration block).  The ordering is [surface, RT, instrument]
-        updates = (
-            {
-                'prior_means': data['surface_prior_mean_file'],
-                'prior_variances': data['surface_prior_variance_file'],
-                'reflectance': data['reflectance_file']
-            },
-            {
-                'prior_means': data['rt_prior_mean_file'],
-                'prior_variances': data['rt_prior_variance_file']
-            },
-            {
-                'prior_means': data['instrument_prior_mean_file'],
-                'prior_variances': data['instrument_prior_variance_file']
-            }
-        )
-
-        return True, r, c, meas, geom, updates
+        return True, r, c, meas, geom
 
     def __iter__(self):
         """ Reset the iterator"""
@@ -423,11 +416,11 @@ class IO:
 
             # Determine the appropriate row, column index. and initialize the
             # data dictionary with empty entries.
-            success, r, c, meas, geom, updates = self.get_components_at_index(
+            success, r, c, meas, geom = self.get_components_at_index(
                 self.iter)
             self.iter = self.iter + 1
 
-        return r, c, meas, geom, updates
+        return r, c, meas, geom
 
     def check_wavelengths(self, wl):
         """Make sure an input wavelengths align to the instrument definition."""
