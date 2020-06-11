@@ -1,0 +1,4 @@
+sphinx_rtd_theme
+sphinxcontrib-napoleon
+sphinxcontrib-napoleon
+sphinx-autodoc-typehints
