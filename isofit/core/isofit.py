@@ -73,10 +73,6 @@ class Isofit:
             rayargs['num_cpus'] = self.config.implementation.n_cores
         ray.init(**rayargs)
 
-        # Build the forward model and inversion objects
-        self._init_nonpicklable_objects()
-        self.io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
-
         # We set the row and column range of our analysis. The user can
         # specify: a single number, in which case it is interpreted as a row;
         # a comma-separated pair, in which case it is interpreted as a
@@ -97,6 +93,13 @@ class Isofit:
                 line_start, line_end, samp_start, samp_end = ranges
                 self.rows = range(int(row_start), int(row_end))
                 self.cols = range(int(col_start), int(col_end))
+
+        # Build the forward model and inversion objects
+        self._init_nonpicklable_objects()
+        self.io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
+    
+    def __del__(self):
+        ray.shutdown()
 
     def _init_nonpicklable_objects(self):
         self.fm = ForwardModel(self.config)
