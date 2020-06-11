@@ -395,7 +395,8 @@ class LUTConfig:
 
     def __init__(self, lut_config_file):
         if lut_config_file is not None:
-            lut_config = common.load_config(lut_config_file)
+            with open(lut_config_file, 'r') as f:
+                lut_config = json.load(f)
 
         self.num_elev_lut_elements = 1
         self.num_h2o_lut_elements = 3
