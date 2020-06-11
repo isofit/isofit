@@ -58,6 +58,8 @@ html_theme = 'sphinx_rtd_theme'
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
+autodoc_mock_imports = ["ray"]
+
 autodoc_member_order = 'bysource'
 todo_include_todos = True
 add_module_names = False
