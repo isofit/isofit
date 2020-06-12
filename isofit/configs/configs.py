@@ -43,27 +43,20 @@ class Config(BaseConfigSection):
     to sections/forward_model_config.py), and in the config class (e.g. ForwardModelConfig) add the parameter.  Also
     Add a hidden parameter with the _type suffix, which will be used to check that configs read the appropriate type.
     Add comments directly below, to be auto-appended to online documentation.
-
-    Example:
-
-    ```
-    class GenericConfigSection(BaseConfigSection):
-        _attribute_type = list()                  <-- Used to validate attributes have correct types
-        attribute = [2.2, 4.3]                    <-- Default value, can also be None
-        \""" List: attribute does whatever it happens to do\"""
-    ```
+    Example::
+        class GenericConfigSection(BaseConfigSection):
+            _attribute_type = str
+            attribute = 'my attribute'
+            \"""str: attribute does whatever it happens to do\"""
 
     To validate that attributes have appropriate relationships or characteristics, use the hidden _check_config_validity
     method to add more detailed validation checks. Simply return a list of string descriptions of errors from the
-    method as demonstrated:
-
-    ```
-    def _check_config_validity(self) -> List[str]:
-        errors = list()
-        if self.attribute_min >= self.attribute_max:
-            errors.append('attribute_min must be less than attribute_max.')
-        return errors
-    ```
+    method as demonstrated::
+        def _check_config_validity(self) -> List[str]:
+            errors = list()
+            if self.attribute_min >= self.attribute_max:
+                errors.append('attribute_min must be less than attribute_max.')
+            return errors
 
     """
 
@@ -71,21 +64,25 @@ class Config(BaseConfigSection):
 
         self._input_type = InputConfig
         self.input = InputConfig({})
-        """InputConfig: Input config. Holds all input file information."""
+        """InputConfig: Input config. Holds all input file information.
+        """
 
         self._output_type = OutputConfig
         self.output = OutputConfig({})
-        """OutputConfig: Output config. Holds all output file information."""
+        """OutputConfig: Output config. Holds all output file information.
+        """
 
         self._forward_model_type = ForwardModelConfig
         self.forward_model = ForwardModelConfig({})
         """ForwardModelConfig: forward_model config. Holds information about surface models, 
-        radiative transfer models, and the instrument."""
+        radiative transfer models, and the instrument.
+        """
 
         self._implementation_type = ImplementationConfig
         self.implementation = ImplementationConfig({})
         """ImplementationConfig: holds information regarding how isofit is to be run, including relevant sub-configs 
-        (e.g. inversion information)."""
+        (e.g. inversion information).
+        """
 
         # Load sub-classes and attributes
         self.set_config_options(configdict)

@@ -48,6 +48,7 @@ class Isofit:
                     * a comma-separated quartet, in which case it is interpreted as
                       a row, column range in the order (line_start, line_end, sample_start,
                       sample_end) all values are inclusive.
+
                     If none of the above, the whole cube will be analyzed.
         level: logging level (ERROR, WARNING, INFO, DEBUG)
         logfile: file to write output logs to

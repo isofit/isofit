@@ -512,9 +512,10 @@ def spectral_response_function(response_range: np.array, mu: float, sigma: float
 
 def combos(inds: List[List[float]]) -> np.array:
     """Return all combinations of indices in a list of index sublists.
+    For example, the call::
+        combos([[1, 2], [3, 4, 5]])
+        ...[[1, 3], [2, 3], [1, 4], [2, 4], [1, 5], [2, 5]]
 
-    For example, for the input [[1, 2], [3, 4, 5]] it would return:
-        [[1, 3], [2, 3], [1, 4], [2, 4], [1, 5], [2, 5]]
     This is used for interpolation in the high-dimensional LUT.
 
     Args:

@@ -19,8 +19,7 @@
 #
 
 from os.path import split, abspath
-from numpy.random import multivariate_normal
-import scipy as s
+import numpy as np
 
 from ..core.common import load_spectrum, expand_path, json_load_ascii
 from ..core.instrument import Instrument
@@ -41,7 +40,7 @@ def generate_noise(config):
     if infile.endswith('txt'):
         rdn, wl = load_spectrum(infile)
         Sy = instrument.Sy(rdn, geom)
-        rdn_noise = rdn + multivariate_normal(s.zeros(rdn.shape), Sy)
+        rdn_noise = rdn + np.random.multivariate_normal(np.zeros(rdn.shape), Sy)
         with open(outfile, 'w') as fout:
             for w, r in zip(wl, rdn_noise):
                 fout.write('%8.5f %8.5f' % (w, r))
