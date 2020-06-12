@@ -37,6 +37,13 @@ extensions = [
     'sphinx_autodoc_typehints',
 ]
 
+intersphinx_mapping = {
+    'python': ('http://docs.python.org/2', None),
+    'numpy': ('http://docs.scipy.org/doc/numpy', None),
+    'sklearn': ('https://sklearn-features.readthedocs.io/en/stable', None),
+    'scipy': ('https://www.scipy.org/docs.html', None)
+}
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
