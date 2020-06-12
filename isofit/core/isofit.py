@@ -15,34 +15,48 @@
 #  limitations under the License.
 #
 # ISOFIT: Imaging Spectrometer Optimal FITting
-# Author: David R Thompson, david.r.thompson@jpl.nasa.gov
-#         Adam Erickson, adam.m.erickson@nasa.gov
+# Authors: David R Thompson, david.r.thompson@jpl.nasa.gov
+#          Philip G Brodrick, philip.brodrick@jpl.nasa.gov
+#          Adam Erickson, adam.m.erickson@nasa.gov
 #
 
 import os
 import logging
 import time
 
-from isofit.core import common
-from .forward import ForwardModel
+import multiprocessing
+import numpy as np
+import ray
+
+from isofit.core.forward import ForwardModel
 from isofit.inversion.inverse import Inversion
 from isofit.inversion.inverse_mcmc import MCMCInversion
-from .fileio import IO
-
-import ray
-import multiprocessing
-from isofit import configs
+from isofit.core.fileio import IO
 from isofit.configs import configs
-import numpy as np
 
 
 class Isofit:
-    """Spectroscopic Surface and Atmosphere Fitting."""
+    """Initialize the Isofit class.
+
+    Args:
+        config_file: isofit configuration file in JSON or YAML format
+        row_column: The user can specify
+
+                    * a single number, in which case it is interpreted as a row
+                    * a comma-separated pair, in which case it is interpreted as a
+                      row/column tuple (i.e. a single spectrum)
+                    * a comma-separated quartet, in which case it is interpreted as
+                      a row, column range in the order (line_start, line_end, sample_start,
+                      sample_end) all values are inclusive.
+
+                    If none of the above, the whole cube will be analyzed.
+        level: logging level (ERROR, WARNING, INFO, DEBUG)
+        logfile: file to write output logs to
+    """
 
     def __init__(self, config_file, row_column='', level='INFO', logfile=None):
-        """Initialize the Isofit class."""
 
-        # Explicitly set the number of threads to be 1, so we more effectively 
+        # Explicitly set the number of threads to be 1, so we more effectively
         #run in parallel 
         os.environ["MKL_NUM_THREADS"] = "1"
 
@@ -73,13 +87,6 @@ class Isofit:
             rayargs['num_cpus'] = self.config.implementation.n_cores
         ray.init(**rayargs)
 
-        # We set the row and column range of our analysis. The user can
-        # specify: a single number, in which case it is interpreted as a row;
-        # a comma-separated pair, in which case it is interpreted as a
-        # row/column tuple (i.e. a single spectrum); or a comma-separated
-        # quartet, in which case it is interpreted as a row, column range in the
-        # order (line_start, line_end, sample_start, sample_end) - all values are
-        # inclusive. If none of the above, we will analyze the whole cube.
         if len(row_column) > 0:
             ranges = row_column.split(',')
             if len(ranges) == 1:
@@ -97,11 +104,10 @@ class Isofit:
         # Build the forward model and inversion objects
         self._init_nonpicklable_objects()
         self.io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
-    
-    def __del__(self):
-        ray.shutdown()
 
-    def _init_nonpicklable_objects(self):
+    def _init_nonpicklable_objects(self) -> None:
+        """ Internal function to initialize objects that cannot be pickled
+        """
         self.fm = ForwardModel(self.config)
 
         if self.config.implementation.mode == 'mcmc_inversion':
@@ -113,11 +119,20 @@ class Isofit:
             raise AttributeError('Config implementation mode node valid')
 
     def _clear_nonpicklable_objects(self):
+        """ Internal function to clean objects that cannot be pickled
+        """
         self.fm = None
         self.iv = None
 
     @ray.remote
-    def _run_set_of_spectra(self, index_start, index_stop):
+    def _run_set_of_spectra(self, index_start: int, index_stop: int) -> None:
+        """Internal function to run a chunk of spectra
+
+        Args:
+            index_start: spectral index to start execution at
+            index_stop: spectral index to stop execution at
+
+        """
         logging.basicConfig(format='%(levelname)s:%(message)s', level=self.loglevel, filename=self.logfile)
         self._init_nonpicklable_objects()
         io = IO(self.config, self.fm, self.iv, self.rows, self.cols)

@@ -53,11 +53,6 @@ class ImplementationConfig(BaseConfigSection):
         self.redis_password = None
         """str: Ray - parameter.  Redis-password (for multi-node runs)."""
 
-        self._runtime_nice_level_type = int
-        self.runtime_nice_level = None
-        """int: nice level to run multiprocessing at.  If None, will use all available.  If 1, will run without 
-        multiprocessing (good for debugging)"""
-
         self._rte_configure_and_exit_type = bool
         self.rte_configure_and_exit = False
         """bool: Indicates that code should terminate as soon as all radiative transfer engine configuration files are

@@ -23,9 +23,8 @@ import numpy as np
 from scipy.interpolate import interp1d
 from scipy.signal import convolve
 from scipy.io import loadmat
-from numpy.random import multivariate_normal as mvn
 
-from .common import eps, srf, load_wavelen, resample_spectrum, emissive_radiance
+from .common import eps, spectral_response_function, load_wavelen, resample_spectrum, emissive_radiance
 from isofit.configs import Config
 
 
@@ -236,7 +235,7 @@ class Instrument:
 
         # Uncertainty due to spectral stray light
         if self.bval[-1] > 1e-6:
-            ssrf = srf(np.arange(-10, 11), 0, 4)
+            ssrf = spectral_response_function(np.arange(-10, 11), 0, 4)
             blur = convolve(meas, ssrf, mode='same')
             dmeas_dinstrument[:, -1] = blur - meas
 
@@ -256,7 +255,7 @@ class Instrument:
             # by a convolution with a uniform FWHM.
             if self.fast_resample:
                 for i, r in enumerate(rdn_hi):
-                    ssrf = srf(np.arange(-10, 11), 0, fwhm[0])
+                    ssrf = spectral_response_function(np.arange(-10, 11), 0, fwhm[0])
                     blur = convolve(r, ssrf, mode='same')
                     resamp.append(interp1d(wl_hi, blur)(wl))
             else:
@@ -272,7 +271,7 @@ class Instrument:
 
         Sy = self.Sy(meas, geom)
         mu = np.zeros(meas.shape)
-        rdn_sim = meas + mvn(mu, Sy)
+        rdn_sim = meas + np.random.multivariate_normal(mu, Sy)
         return rdn_sim
 
     def calibration(self, x_instrument):

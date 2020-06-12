@@ -141,22 +141,24 @@ class ModtranRT(TabularRT):
         """Load a '.chn' output file and parse critical coefficient vectors. 
 
            These are:
-             wl      - wavelength vector
-             sol_irr - solar irradiance
-             sphalb  - spherical sky albedo at surface
-             transm  - diffuse and direct irradiance along the 
+             * wl      - wavelength vector
+             * sol_irr - solar irradiance
+             * sphalb  - spherical sky albedo at surface
+             * transm  - diffuse and direct irradiance along the
                           sun-ground-sensor path
-             transup - transmission along the ground-sensor path only 
+             * transup - transmission along the ground-sensor path only
 
-            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-             Be careful with these! They are to be used only by the 
-             modtran_tir functions because MODTRAN must be run with a 
-             reflectivity of 1 for them to be used in the RTM defined
-             in radiative_transfer.py.
-             thermal_upwelling - atmospheric path radiance
-             thermal_downwelling - sky-integrated thermal path radiance 
+           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            Be careful with these! They are to be used only by the
+            modtran_tir functions because MODTRAN must be run with a
+            reflectivity of 1 for them to be used in the RTM defined
+            in radiative_transfer.py.
+
+            * thermal_upwelling - atmospheric path radiance
+            * thermal_downwelling - sky-integrated thermal path radiance
                 reflected off the ground and back into the sensor.
-            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
            We parse them one wavelength at a time."""
 

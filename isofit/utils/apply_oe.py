@@ -16,6 +16,7 @@ import numpy as np
 from sklearn import mixture
 import subprocess
 from sys import platform
+from typing import List
 
 from isofit.utils import segment, extractions, empirical_line
 from isofit.core import isofit, common
@@ -30,6 +31,60 @@ INVERSION_WINDOWS = [[400.0, 1300.0], [1450, 1780.0], [2050.0, 2450.0]]
 
 
 def main():
+    """ This is a helper script to apply OE over a flightline using the MODTRAN radiative transfer engine.
+
+    The goal is to run isofit in a fairly 'standard' way, accounting for the types of variation that might be
+    considered typical.  For instance, we use the observation (obs) and location (loc) files to determine appropriate
+    MODTRAN view-angle geometry look up tables, and provide a heuristic means of determing atmospheric water ranges.
+
+    This code also proivdes the capicity for speedup through the empirical line solution.
+
+    Args:
+        input_radiance (str): radiance data cube [expected ENVI format]
+        input_loc (str): location data cube, (Lon, Lat, Elevation) [expected ENVI format]
+        input_obs (str): observation data cube, (path length, to-sensor azimuth, to-sensor zenith, to-sun azimuth,
+            to-sun zenith, phase, slope, aspect, cosine i, UTC time) [expected ENVI format]
+        working_directory (str): directory to stage multiple outputs, will contain subdirectories
+        sensor (str): the sensor used for acquisition, will be used to set noise and datetime settings.  choices are:
+            [ang, avcl, neon, prism]
+        copy_input_files (Optional, int): flag to choose to copy input_radiance, input_loc, and input_obs locally into
+            the working_directory.  0 for no, 1 for yes.  Default 0
+        modtran_path (Optional, str): Location of MODTRAN utility, alternately set with MODTRAN_DIR environment variable
+        wavelength_path (Optional, str): Location to get wavelength information from, if not specified the radiance
+            header will be used
+        surface_category (Optional, str): The type of isofit surface priors to use.  Default is multicomponent_surface
+        aerosol_climatology_path (Optional, str): Specific aerosol climatology information to use in MODTRAN,
+            default None
+        rdn_factors_path (Optional, str): Specify a radiometric correction factor, if desired. default None
+        surface_path (Optional, str): Path to surface model - required if surface is multicomponent_surface (default
+            above).  Alternately set with ISOFIT_SURFACE_MODEL environment variable. default None
+        channelized_uncertainty_path (Optional, str): path to a channelized uncertainty file.  default None
+        lut_config_file (Optional, str): Path to a look up table configuration file, which will override defaults
+            chocies. default None
+        logging_level (Optional, str): Logging level with which to run isofit.  Default INFO
+        log_file (Optional, str): File path to write isofit logs to.  Default None
+        n_cores (Optional, int): Number of cores to run isofit with.  Substantial parallelism is available, and full
+            runs will be very slow in serial.  Suggested to max this out on the available system.  Default 1
+        presolve (Optional, int): Flag to use a presolve mode to estimate the available atmospheric water range.  Runs
+            a preliminary inversion over the image with a 1-D LUT of water vapor, and uses the resulting range (slightly
+            expanded) to bound determine the full LUT.  Advisable to only use with small cubes or in concert with the
+            empirical_line setting, or a significant speed penalty will be incurred.  Choices - 0 off, 1 on. Default 0
+        empirical_line (Optional, int): Use an empirical line interpolation to run full inversions over only a subset
+            of pixels, determined using a SLIC superpixel segmentation, and use a KDTREE Of local solutions to
+            interpolate radiance->reflectance.  Generally a good option if not trying to analyze the atmospheric state
+            at fine scale resolution.  Choices - 0 off, 1 on.  Default 0
+
+            Reference:
+            D.R. Thompson, A. Braverman,P.G. Brodrick, A. Candela, N. Carbon, R.N. Clark,D. Connelly, R.O. Green, R.F.
+            Kokaly, L. Li, N. Mahowald, R.L. Miller, G.S. Okin, T.H.Painter, G.A. Swayze, M. Turmon, J. Susilouto, and
+            D.S. Wettergreen. Quantifying Uncertainty for Remote Spectroscopy of Surface Composition. Remote Sensing of
+            Environment, 2020. doi: https://doi.org/10.1016/j.rse.2020.111898.
+
+
+    Returns:
+        np.array
+
+    """
     # Parse arguments
     parser = argparse.ArgumentParser(description="Apply OE to a block of data.")
     parser.add_argument('input_radiance', type=str)
@@ -38,7 +93,6 @@ def main():
     parser.add_argument('working_directory', type=str)
     parser.add_argument('sensor', type=str, choices=['ang', 'avcl', 'neon', 'prism'])
     parser.add_argument('--copy_input_files', type=int, choices=[0,1], default=0)
-    parser.add_argument('--h2o', action='store_true')
     parser.add_argument('--modtran_path', type=str)
     parser.add_argument('--wavelength_path', type=str)
     parser.add_argument('--surface_category', type=str, default="multicomponent_surface")
@@ -49,7 +103,7 @@ def main():
     parser.add_argument('--lut_config_file', type=str)
     parser.add_argument('--logging_level', type=str, default="INFO")
     parser.add_argument('--log_file', type=str, default=None)
-    parser.add_argument('--n_cores', type=int, default=-1)
+    parser.add_argument('--n_cores', type=int, default=1)
     parser.add_argument('--presolve', choices=[0,1], type=int, default=0)
     parser.add_argument('--empirical_line', choices=[0,1], type=int, default=0)
 
@@ -248,8 +302,14 @@ def main():
     logging.info('Done.')
 
 class Pathnames():
+    """ Class to determine and hold the large number of relative and absolute paths that are needed for isofit and
+    MODTRAN configuration files.
 
-    def __init__(self, args):
+    Args:
+        args: an argparse Namespace object with all inputs
+    """
+
+    def __init__(self, args: argparse.Namespace):
 
         # Determine FID based on sensor name
         if args.sensor == 'ang':
@@ -349,14 +409,16 @@ class Pathnames():
         self.rdn_factors_path = args.rdn_factors_path
 
     def make_directories(self):
-        # create missing directories
+        """ Build required subdirectories inside working_directory
+        """
         for dpath in [self.working_directory, self.lut_h2o_directory, self.lut_modtran_directory, self.config_directory,
                       self.data_directory, self.input_data_directory, self.output_directory]:
             if not exists(dpath):
                 os.mkdir(dpath)
 
     def stage_files(self):
-        # stage data files by copying into working directory
+        """ Stage data files by copying into working directory
+        """
         files_to_stage = [(self.input_radiance_file, self.radiance_working_path, True),
                           (self.input_obs_file, self.obs_working_path, True),
                           (self.input_loc_file, self.loc_working_path, True),
@@ -379,7 +441,6 @@ class Pathnames():
 
 class SerialEncoder(json.JSONEncoder):
     """Encoder for json to help ensure json objects can be passed to the workflow manager.
-
     """
 
     def default(self, obj):
@@ -392,10 +453,17 @@ class SerialEncoder(json.JSONEncoder):
 
 
 class LUTConfig:
+    """ A look up table class, containing default grid options.  All properties may be overridden with the optional
+        input configuration file path
 
-    def __init__(self, lut_config_file):
+    Args:
+        lut_config_file: configuration file to override default values
+    """
+
+    def __init__(self, lut_config_file: str = None):
         if lut_config_file is not None:
-            lut_config = common.load_config(lut_config_file)
+            with open(lut_config_file, 'r') as f:
+                lut_config = json.load(f)
 
         self.num_elev_lut_elements = 1
         self.num_h2o_lut_elements = 3
@@ -426,8 +494,9 @@ class LUTConfig:
 
 
 def load_climatology(config_path: str, latitude: float, longitude: float, acquisition_datetime: datetime,
-                     isofit_path: str, lut_params: LUTConfig):
+                     isofit_path: str, lut_params: LUTConfig) -> (np.array, np.array, np.array):
     """ Load climatology data, based on location and configuration
+
     Args:
         config_path: path to the base configuration directory for isofit
         latitude: latitude to set for the segment (mean of acquisition suggested)
@@ -437,9 +506,11 @@ def load_climatology(config_path: str, latitude: float, longitude: float, acquis
         lut_params: parameters to use to define lut grid
 
     :Returns
-        aerosol_state_vector: A dictionary that defines the aerosol state vectors for isofit
-        aerosol_lut_grid: A dictionary of the aerosol lookup table (lut) grid to be explored
-        aerosol_model_path: A path to the location of the aerosol model to use with MODTRAN.
+        tuple containing:
+            aerosol_state_vector - A dictionary that defines the aerosol state vectors for isofit
+            aerosol_lut_grid - A dictionary of the aerosol lookup table (lut) grid to be explored
+            aerosol_model_path - A path to the location of the aerosol model to use with MODTRAN.
+
     """
 
     aerosol_model_path = join(isofit_path, 'data', 'aerosol_model.txt')
@@ -495,14 +566,15 @@ def load_climatology(config_path: str, latitude: float, longitude: float, acquis
 
 
 def calc_modtran_max_water(paths: Pathnames) -> float:
-    """
+    """MODTRAN may put a ceiling on "legal" H2O concentrations.  This function calculates that ceiling.  The intended
+     use is to make sure the LUT does not contain useless gridpoints above it.
+
     Args:
         paths: object containing references to all relevant file locations
 
     Returns:
-        max_water: maximum MODTRAN H2OSTR value for provided obs conditions
+        max_water - maximum MODTRAN H2OSTR value for provided obs conditions
     """
-    # MODTRAN may put a ceiling on "legal" H2O concentrations
 
     max_water = None
     # TODO: this is effectively redundant from the radiative_transfer->modtran. Either devise a way
@@ -545,9 +617,10 @@ def calc_modtran_max_water(paths: Pathnames) -> float:
     return max_water
 
 
-def find_angular_seeds(angle_data_input: np.array, num_points: int, units: str = 'd'):
+def find_angular_seeds(angle_data_input: np.array, num_points: int, units: str = 'd') -> np.array:
     """ Find either angular data 'center points' (num_points = 1), or a lut set that spans
     angle variation in a systematic fashion.
+
     Args:
         angle_data_input: set of angle data to use to find center points
         num_points: the number of points to find - if 1, this will return a single point (the 'centerpoint'), if > 1,
@@ -555,6 +628,8 @@ def find_angular_seeds(angle_data_input: np.array, num_points: int, units: str =
         units: specifies if data are in degrees (default) or radians
 
     :Returns:
+        central_angle - angular data center point or lut set spanning space
+
     """
 
     # Convert everything to radians so we don't have to track throughout
@@ -619,10 +694,12 @@ def find_angular_seeds(angle_data_input: np.array, num_points: int, units: str =
 
 
 def get_metadata_from_obs(obs_file: str, lut_params: LUTConfig, trim_lines: int = 5,
-                          max_flight_duration_h: int = 8, nodata_value: float = -9999):
+                          max_flight_duration_h: int = 8, nodata_value: float = -9999) -> \
+                          (List, bool, float, float, float, np.array, List, List):
     """ Get metadata needed for complete runs from the observation file
     (bands: path length, to-sensor azimuth, to-sensor zenith, to-sun azimuth,
     to-sun zenith, phase, slope, aspect, cosine i, UTC time).
+
     Args:
         obs_file: file name to pull data from
         lut_params: parameters to use to define lut grid
@@ -632,14 +709,15 @@ def get_metadata_from_obs(obs_file: str, lut_params: LUTConfig, trim_lines: int 
         nodata_value: value to ignore from location file
 
     :Returns:
-        h_m_s: list of the mean-time hour, minute, and second within the line
-        increment_day: indicator of whether the UTC day has been changed since the beginning of the line time
-        mean_path_km: mean distance between sensor and ground in km for good data
-        mean_to_sensor_azimuth: mean to-sensor-azimuth for good data
-        mean_to_sensor_zenith_rad: mean to-sensor-zenith in radians for good data
-        valid: boolean array indicating which pixels were NOT nodata
-        to_sensor_azimuth_lut_grid: the to-sensor azimuth angle look up table for good data
-        to_sensor_zenith_lut_grid: the to-sensor zenith look up table for good data
+        tuple containing:
+            h_m_s - list of the mean-time hour, minute, and second within the line
+            increment_day - indicator of whether the UTC day has been changed since the beginning of the line time
+            mean_path_km - mean distance between sensor and ground in km for good data
+            mean_to_sensor_azimuth - mean to-sensor-azimuth for good data
+            mean_to_sensor_zenith_rad - mean to-sensor-zenith in radians for good data
+            valid - boolean array indicating which pixels were NOT nodata
+            to_sensor_azimuth_lut_grid - the to-sensor azimuth angle look up table for good data
+            to_sensor_zenith_lut_grid - the to-sensor zenith look up table for good data
     """
     obs_dataset = gdal.Open(obs_file, gdal.GA_ReadOnly)
 
@@ -721,8 +799,10 @@ def get_metadata_from_obs(obs_file: str, lut_params: LUTConfig, trim_lines: int 
            to_sensor_azimuth_lut_grid, to_sensor_zenith_lut_grid
 
 
-def get_metadata_from_loc(loc_file: str, lut_params: LUTConfig, trim_lines: int = 5, nodata_value: float = -9999):
+def get_metadata_from_loc(loc_file: str, lut_params: LUTConfig, trim_lines: int = 5, nodata_value: float = -9999) -> \
+        (float, float, float, np.array):
     """ Get metadata needed for complete runs from the location file (bands long, lat, elev).
+
     Args:
         loc_file: file name to pull data from
         lut_params: parameters to use to define lut grid
@@ -731,10 +811,11 @@ def get_metadata_from_loc(loc_file: str, lut_params: LUTConfig, trim_lines: int 
         nodata_value: value to ignore from location file
 
     :Returns:
-        mean_latitude: mean latitude of good values from the location file
-        mean_longitude: mean latitude of good values from the location file
-        mean_elevation_km: mean ground estimate of good values from the location file
-        elevation_lut_grid: the elevation look up table, based on globals and values from location file
+        tuple containing:
+            mean_latitude - mean latitude of good values from the location file
+            mean_longitude - mean latitude of good values from the location file
+            mean_elevation_km - mean ground estimate of good values from the location file
+            elevation_lut_grid - the elevation look up table, based on globals and values from location file
     """
 
     loc_dataset = gdal.Open(loc_file, gdal.GA_ReadOnly)
@@ -772,13 +853,11 @@ def get_metadata_from_loc(loc_file: str, lut_params: LUTConfig, trim_lines: int 
 def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array, n_cores: int=-1,
         use_emp_line=0, surface_category="multicomponent_surface"):
     """ Write an isofit config file for a presolve, with limited info.
+
     Args:
         paths: object containing references to all relevant file locations
         h2o_lut_grid: the water vapor look up table grid isofit should use for this solve
         n_cores: number of cores to use in processing
-
-    :Returns:
-        None
     """
 
     # Determine number of spectra included in each retrieval.  If we are
@@ -867,6 +946,7 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
                       mean_longitude: float = None, dt: datetime = None, use_emp_line: bool = True, 
                       n_cores: int = -1, surface_category='multicomponent_surface'):
     """ Write an isofit config file for the main solve, using the specified pathnames and all given info
+
     Args:
         paths: object containing references to all relevant file locations
         lut_params: configuration parameters for the lut grid
@@ -880,8 +960,6 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
         use_emp_line: flag whether or not to set up for the empirical line estimation
         n_cores: the number of cores to use during processing
 
-    :Returns:
-        None
     """
 
     # Determine number of spectra included in each retrieval.  If we are
@@ -994,6 +1072,7 @@ def write_modtran_template(atmosphere_type: str, fid: str, altitude_km: float, d
                            latitude: float, longitude: float, to_sensor_azimuth: float, to_sensor_zenith: float,
                            gmtime: float, elevation_km: float, output_file: str, ihaze_type: str = 'AER_RURAL'):
     """ Write a MODTRAN template file for use by isofit look up tables
+
     Args:
         atmosphere_type: label for the type of atmospheric profile to use in modtran
         fid: flight line id (name)
@@ -1007,8 +1086,6 @@ def write_modtran_template(atmosphere_type: str, fid: str, altitude_km: float, d
         elevation_km: elevation of the land surface in km
         output_file: location to write the modtran template file to
 
-    :Returns:
-        None
     """
     # make modtran configuration
     h2o_template = {"MODTRAN": [{

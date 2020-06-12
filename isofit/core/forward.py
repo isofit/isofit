@@ -45,6 +45,7 @@ class ForwardModel:
        (1) Surface parameters
        (2) Radiative Transfer (RT) parameters
        (3) Instrument parameters
+
      The parameter bounds, scales, initial values, and names are all
      ordered in this way.  The variable self.statevec contains the name
      of each state vector element, in the proper ordering.
