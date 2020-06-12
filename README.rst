@@ -1,6 +1,8 @@
 Imaging Spectrometer Optimal FITting (ISOFIT) Overview
 ======================================================
 
+You can find documentation for isofit at our `readthedocs site <https://isofit.readthedocs.io/en/latest/index.html>`_.
+
 This repository has two main branches:
 
 `current-release <https://github.com/isofit/isofit/tree/current-release/>`_ : Latest stable, versioned release and
