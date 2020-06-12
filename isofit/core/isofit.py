@@ -87,10 +87,6 @@ class Isofit:
             rayargs['num_cpus'] = self.config.implementation.n_cores
         ray.init(**rayargs)
 
-        # Build the forward model and inversion objects
-        self._init_nonpicklable_objects()
-        self.io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
-
         if len(row_column) > 0:
             ranges = row_column.split(',')
             if len(ranges) == 1:
@@ -104,6 +100,10 @@ class Isofit:
                 line_start, line_end, samp_start, samp_end = ranges
                 self.rows = range(int(row_start), int(row_end))
                 self.cols = range(int(col_start), int(col_end))
+
+        # Build the forward model and inversion objects
+        self._init_nonpicklable_objects()
+        self.io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
 
     def _init_nonpicklable_objects(self) -> None:
         """ Internal function to initialize objects that cannot be pickled
