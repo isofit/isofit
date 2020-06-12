@@ -17,6 +17,7 @@
    :maxdepth: 2
 
    custom/CONTRIBUTING.rst
+   custom/documentation.rst
 
 .. toctree::
    :Caption: Code of Conduct
