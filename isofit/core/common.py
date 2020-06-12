@@ -148,14 +148,14 @@ class VectorInterpolator:
         return res
 
 
-### Functions ###
-
-
 def load_wavelen(wavelength_file: str):
     """Load a wavelength file, and convert to nanometers if needed.
 
     Args:
         wavelength_file: file to read wavelengths from
+
+    Returns:
+        (np.array, np.array): wavelengths, full-width-half-max
 
     """
 
@@ -168,8 +168,6 @@ def load_wavelen(wavelength_file: str):
     return wl, fwhm
 
 
-
-
 def emissive_radiance(emissivity: np.array, T: np.array, wl: np.array) -> (np.array, np.array):
     """Calcluate the radiance of a surface due to emission.
 
@@ -179,8 +177,8 @@ def emissive_radiance(emissivity: np.array, T: np.array, wl: np.array) -> (np.ar
         wl: emmissivity wavelengths [nm]
 
     Returns:
-        uW_per_cm2_sr_nm: surface upwelling radiance in uW $cm^{-2} sr^{-1} nm^{-nm}$
-        dRdn_dT: partial derivative of radiance with respect to temperature uW $cm^{-2} sr^{-1} nm^{-1} k^{-1}$
+        np.array: surface upwelling radiance in uW $cm^{-2} sr^{-1} nm^{-nm}$
+        np.array: partial derivative of radiance with respect to temperature uW $cm^{-2} sr^{-1} nm^{-1} k^{-1}$
 
     """
 
@@ -207,14 +205,14 @@ def svd_inv(C: np.array, hashtable: OrderedDict = None):
         hashtable: if used, the hashtable to store/retrieve results in/from
 
     Return:
-        inverse of C
+        np.array: inverse of C
 
     """
 
     return svd_inv_sqrt(C, hashtable)[0]
 
 
-def svd_inv_sqrt(C: np.array, hashtable: OrderedDict = None):
+def svd_inv_sqrt(C: np.array, hashtable: OrderedDict = None) -> (np.array, np.array):
     """Matrix inversion, based on decomposition.  Built to be stable, and positive.
 
     Args:
@@ -222,7 +220,7 @@ def svd_inv_sqrt(C: np.array, hashtable: OrderedDict = None):
         hashtable: if used, the hashtable to store/retrieve results in/from
 
     Return:
-        inverse of C
+        (np.array, np.array): inverse of C and square root of the inverse of C
 
     """
 
@@ -272,7 +270,7 @@ def expand_path(directory: str, subpath: str) -> str:
         subpath: path to expand
 
     Returns:
-        expanded path
+        str: expanded path
 
     """
 
@@ -310,8 +308,8 @@ def get_absorption(wl: np.array, absfile: str) -> (np.array, np.array):
         absfile: file containing indices of refraction
 
     Returns:
-        water_abscf_intrp: interpolated, wavelength-specific water absorption coefficients
-        ice_abscf_intrp: interpolated, wavelength-specific ice absorption coefficients
+        np.array: interpolated, wavelength-specific water absorption coefficients
+        np.array: interpolated, wavelength-specific ice absorption coefficients
 
     """
 
@@ -338,6 +336,9 @@ def recursive_reencode(j, shell_replace: bool = True):
     Args:
         j: object to reencode
         shell_replace: boolean helper for recursive calls
+
+    Returns:
+        Object: expanded, reencoded object
 
     """
 
@@ -369,7 +370,7 @@ def json_load_ascii(filename: str, shell_replace: bool = True) -> dict:
         shell_replace: boolean
 
     Returns:
-        encoded dictionary
+        dict: encoded dictionary
 
     """
 
@@ -387,7 +388,7 @@ def expand_all_paths(to_expand: dict, absdir: str):
         absdir: path to expand with (absolute directory)
 
     Returns:
-        dictionary with expanded paths
+        dict: dictionary with expanded paths
 
     """
 
@@ -419,7 +420,7 @@ def find_header(imgfile: str) -> str:
         imgfile: file name of base image
 
     Returns:
-        header filename if one exists
+        str: header filename if one exists
 
     """
 
@@ -434,17 +435,6 @@ def find_header(imgfile: str) -> str:
     raise IOError('No header found for file {0}'.format(imgfile))
 
 
-
-
-#def rdn_translate(wvn, rdn_wvn):
-#    """Translate radiance out of wavenumber space.
-#    """
-#
-#    dwvn = wvn[1:]-wvn[:-1]
-#    dwl = 10000.0/wvn[1:] - 10000.0/wvn[:-1]
-#    return rdn_wvn*(dwl/dwvn)
-
-
 def resample_spectrum(x: np.array, wl: np.array, wl2: np.array, fwhm2: np.array, fill: bool = False) -> np.array:
     """Resample a spectrum to a new wavelength / FWHM.
        Assumes Gaussian SRFs.
@@ -457,7 +447,7 @@ def resample_spectrum(x: np.array, wl: np.array, wl2: np.array, fwhm2: np.array,
         fill: boolean indicating whether to fill in extrapolated regions
 
     Returns:
-        interpolated radiance vector
+        np.array: interpolated radiance vector
 
     """
 
@@ -483,8 +473,8 @@ def load_spectrum(spectrum_file: str) -> (np.array, np.array):
         spectrum_file: file to load spectrum from
 
     Returns:
-        spectrum: array of spectrum values
-        wavelengths: and array of wavelengths, if available in the file
+        np.array: spectrum values
+        np.array: wavelengths, if available in the file
 
     """
 
@@ -508,7 +498,7 @@ def spectral_response_function(response_range: np.array, mu: float, sigma: float
         sigma: signal variation
 
     Returns:
-        srf: spectral response function
+        np.array: spectral response function
 
     """
 
@@ -531,7 +521,7 @@ def combos(inds: List[List[float]]) -> np.array:
         inds: list of lists of values to expand
 
     Returns:
-        gridded_combinations: meshgrid array of combinations
+        np.array: meshgrid array of combinations
 
     """
 
@@ -555,8 +545,7 @@ def conditional_gaussian(mu: np.array, C: np.array, window: np.array, remain: np
         x: values to condition with
 
     Returns:
-        conditional_mean: conditional mean
-        conditional_cov: conditional covariance
+        (np.array, np.array): conditional mean, conditional covariance
 
     """
     w = np.array(window)[:,np.newaxis]
