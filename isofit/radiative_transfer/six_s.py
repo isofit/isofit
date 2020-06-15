@@ -118,9 +118,13 @@ class SixSRT(TabularRT):
 
         if config.engine_base_dir is not None:
             return config.engine_base_dir
-        if 'SIXS_DIR' in os.getenv():
+
+        try:
             return os.getenv('SIXS_DIR')
-        return None
+        except KeyError:
+            logging.error('I could not find the SIXS base directory')
+            raise KeyError('I could not find the SIXS base directory')
+
 
     def rebuild_cmd(self, point, fn):
         """."""
