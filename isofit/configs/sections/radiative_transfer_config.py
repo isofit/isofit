@@ -179,7 +179,7 @@ class RadiativeTransferConfig(BaseConfigSection):
     def __init__(self, sub_configdic: dict = None):
 
         self._statevector_type = StateVectorConfig
-        self.statevector: StateVectorConfig = None
+        self.statevector: StateVectorConfig = StateVectorConfig({})
 
         self._lut_grid_type = OrderedDict
         self.lut_grid = None

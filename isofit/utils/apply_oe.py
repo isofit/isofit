@@ -873,7 +873,7 @@ def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array, n_cores: int
                     "engine_name": 'modtran',
                     "lut_path": paths.lut_h2o_directory,
                     "template_file": paths.h2o_template_path,
-                    "modtran_directory": paths.modtran_path,
+                    "engine_base_dir": paths.modtran_path,
                     "lut_names": ["H2OSTR"],
                     "statevector_names": ["H2OSTR"],
                 }
@@ -977,7 +977,7 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
                     "lut_path": paths.lut_modtran_directory,
                     "aerosol_template_file": paths.aerosol_tpl_path,
                     "template_file": paths.modtran_template_path,
-                    "modtran_directory": paths.modtran_path,
+                    "engine_base_dir": paths.modtran_path,
                     #lut_names - populated below
                     #statevector_names - populated below
                 }
