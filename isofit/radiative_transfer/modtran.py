@@ -546,19 +546,25 @@ class ModtranRT(TabularRT):
         r = self.get(x_RT, geom)
         return r['thermal_downwelling']
 
-    def wl2flt(self, wls, fwhms, outfile):
-        """Helper function to generate Gaussian distributions around the 
-        center wavelengths."""
+    def wl2flt(self, wavelengths: np.array, fwhms: np.array, outfile: str) -> None:
+        """Helper function to generate Gaussian distributions around the
+        center wavelengths.
 
-        I = None
+        Args:
+            wavelengths: wavelength centers
+            fwhms: full width at half max
+            outfile: file to write to
+
+        """
+
         sigmas = fwhms/2.355
-        span = 2.0 * (wls[1]-wls[0])  # nm
+        span = 2.0 * (wavelengths[1]-wavelengths[0])  # nm
         steps = 101
 
         with open(outfile, 'w') as fout:
 
             fout.write('Nanometer data for sensor\n')
-            for wl, fwhm, sigma in zip(wls, fwhms, sigmas):
+            for wl, fwhm, sigma in zip(wavelengths, fwhms, sigmas):
 
                 ws = wl + np.linspace(-span, span, steps)
                 vs = scipy.stats.norm.pdf(ws, wl, sigma)
