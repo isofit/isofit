@@ -34,6 +34,7 @@ from ..core.common import json_load_ascii, recursive_replace
 from ..core.common import VectorInterpolator
 from isofit.configs.sections.radiative_transfer_config import RadiativeTransferEngineConfig
 from isofit.configs import Config
+from isofit.core.geometry import Geometry
 import subprocess
 
 
@@ -450,7 +451,17 @@ class ModtranRT(TabularRT):
             self.last_point_lookup_values = ret
             return ret
 
-    def get(self, x_RT, geom):
+    def get(self, x_RT: np.array, geom: Geometry) -> dict:
+        """ Get interpolated MODTRAN results at a particular location
+
+        Args:
+            x_RT: radiative-transfer portion of the statevector
+            geom: local geometry conditions for lookup
+
+        Returns:
+            interpolated modtran result
+
+        """
         point = np.zeros((self.n_point,))
         for point_ind, name in enumerate(self.lut_grid_config):
             if name in self.statevector_names:
@@ -481,34 +492,54 @@ class ModtranRT(TabularRT):
 
         return self._lookup_lut(point)
 
-    def get_L_atm(self, x_RT, geom):
-        if self.treat_as_emissive:
-            return self.get_L_atm_tir(x_RT, geom)
-        else:
-            return self.get_L_atm_vswir(x_RT, geom)
+    def get_L_atm(self, x_RT: np.array, geom: Geometry) -> np.array:
+        """ Get the interpolated MODTRAN modeled atmospheric reflectance (aka path radiance).
 
-    def get_L_atm_vswir(self, x_RT, geom):
+        Args:
+            x_RT: radiative-transfer portion of the statevector
+            geom: local geometry conditions for lookup
+
+        Returns:
+            the interpolated MODTRAN modeled atmospheric reflectance
+
+        """
+        if self.treat_as_emissive:
+            return self._get_L_atm_tir(x_RT, geom)
+        else:
+            return self._get_L_atm_vswir(x_RT, geom)
+
+    def _get_L_atm_vswir(self, x_RT: np.array, geom: Geometry) -> np.array:
         r = self.get(x_RT, geom)
         rho = r['rhoatm']
         rdn = rho/np.pi*(self.solar_irr*self.coszen)
         return rdn
 
-    def get_L_atm_tir(self, x_RT, geom):
+    def _get_L_atm_tir(self, x_RT: np.array, geom: Geometry) -> np.array:
         r = self.get(x_RT, geom)
         return r['thermal_upwelling']
 
-    def get_L_down_transmitted(self, x_RT, geom):
-        if self.treat_as_emissive:
-            return self.get_L_down_transmitted_tir(x_RT, geom)
-        else:
-            return self.get_L_down_transmitted_vswir(x_RT, geom)
+    def get_L_down_transmitted(self, x_RT: np.array, geom: Geometry) -> np.array:
+        """ Get the interpolated MODTRAN downward atmospheric transmittance.
 
-    def get_L_down_transmitted_vswir(self, x_RT, geom):
+        Args:
+            x_RT: radiative-transfer portion of the statevector
+            geom: local geometry conditions for lookup
+
+        Returns:
+            The interpolated MODTRAN downward atmospheric transmittance
+        """
+
+        if self.treat_as_emissive:
+            return self._get_L_down_transmitted_tir(x_RT, geom)
+        else:
+            return self._get_L_down_transmitted_vswir(x_RT, geom)
+
+    def _get_L_down_transmitted_vswir(self, x_RT, geom):
         r = self.get(x_RT, geom)
         rdn = (self.solar_irr*self.coszen) / np.pi * r['transm']
         return rdn
 
-    def get_L_down_transmitted_tir(self, x_RT, geom):
+    def _get_L_down_transmitted_tir(self, x_RT, geom):
         """thermal_downwelling already includes the transmission factor. Also
         assume there is no multiple scattering for TIR.
         """

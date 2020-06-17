@@ -140,7 +140,6 @@ class SixSRT(TabularRT):
         vals['elev'] = vals['elev']*-1
 
         # Check rebuild conditions: LUT is missing or from a different config
-        sixspath = self.sixs_dir+'/sixsV2.1'
         scriptfilename = 'LUT_'+fn+'.sh'
         scriptfilepath = os.path.join(self.lut_dir, scriptfilename)
         infilename = 'LUT_'+fn+'.inp'
@@ -149,6 +148,8 @@ class SixSRT(TabularRT):
         outfilepath = os.path.join(self.lut_dir, outfilename)
         if os.path.exists(outfilepath) and os.path.exists(infilepath):
             raise FileExistsError('Files exist')
+
+        sixspath = self.sixs_dir+'/sixsV2.1'
 
         if self.sixs_dir is None:
             logging.error('Specify a SixS installation')
