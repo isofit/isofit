@@ -43,7 +43,7 @@ def spawn_rt(cmd, local_dir=None):
 
     # Add a very slight timing offset to prevent all subprocesses
     # starting simultaneously
-    time.sleep(float(np.random.random(1))*0.1)
+    time.sleep(float(np.random.random(1))*2)
 
     if local_dir is not None:
         cwd = os.getcwd()

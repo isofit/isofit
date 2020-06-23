@@ -20,7 +20,7 @@
 import os
 import logging
 from datetime import datetime
-import scipy as s
+import numpy as np
 
 from isofit.core.common import resample_spectrum, load_wavelen, VectorInterpolator
 from .look_up_tables import TabularRT, FileExistsError
@@ -67,7 +67,7 @@ class SixSRT(TabularRT):
         self.treat_as_emissive = False
 
         self.sixs_dir = self.find_basedir(engine_config)
-        self.sixs_grid_init = s.arange(self.wl[0], self.wl[-1]+2.5, 2.5)
+        self.sixs_grid_init = np.arange(self.wl[0], self.wl[-1]+2.5, 2.5)
         self.sixs_ngrid_init = len(self.sixs_grid_init)
         self.params = {'aermodel': 1,
                        'AOT550': 0.01,
@@ -98,12 +98,12 @@ class SixSRT(TabularRT):
             self.params['solaz'] = engine_config.solaz
             self.params['viewaz'] = engine_config.viewaz
 
-        self.esd = s.loadtxt(engine_config.earth_sun_distance_file)
+        self.esd = np.loadtxt(engine_config.earth_sun_distance_file)
         dt = datetime(2000, self.params['month'], self.params['day'])
         self.day_of_year = dt.timetuple().tm_yday
         self.irr_factor = self.esd[self.day_of_year-1, 1]
 
-        irr = s.loadtxt(engine_config.irradiance_file, comments='#')
+        irr = np.loadtxt(engine_config.irradiance_file, comments='#')
         iwl, irr = irr.T
         irr = irr / 10.0  # convert, uW/nm/cm2
         irr = irr / self.irr_factor**2  # consider solar distance
@@ -118,9 +118,13 @@ class SixSRT(TabularRT):
 
         if config.engine_base_dir is not None:
             return config.engine_base_dir
-        if 'SIXS_DIR' in os.getenv():
+
+        try:
             return os.getenv('SIXS_DIR')
-        return None
+        except KeyError:
+            logging.error('I could not find the SIXS base directory')
+            raise KeyError('I could not find the SIXS base directory')
+
 
     def rebuild_cmd(self, point, fn):
         """."""
@@ -136,7 +140,6 @@ class SixSRT(TabularRT):
         vals['elev'] = vals['elev']*-1
 
         # Check rebuild conditions: LUT is missing or from a different config
-        sixspath = self.sixs_dir+'/sixsV2.1'
         scriptfilename = 'LUT_'+fn+'.sh'
         scriptfilepath = os.path.join(self.lut_dir, scriptfilename)
         infilename = 'LUT_'+fn+'.inp'
@@ -145,6 +148,8 @@ class SixSRT(TabularRT):
         outfilepath = os.path.join(self.lut_dir, outfilename)
         if os.path.exists(outfilepath) and os.path.exists(infilepath):
             raise FileExistsError('Files exist')
+
+        sixspath = self.sixs_dir+'/sixsV2.1'
 
         if self.sixs_dir is None:
             logging.error('Specify a SixS installation')
@@ -172,7 +177,7 @@ class SixSRT(TabularRT):
         with open(os.path.join(self.lut_dir, 'LUT_'+fn+'.inp'), 'r') as l:
             inlines = l.readlines()
             solzen = float(inlines[1].strip().split()[0])
-        self.coszen = s.cos(solzen/360*2.0*s.pi)
+        self.coszen = np.cos(solzen/360*2.0*np.pi)
 
         # Strip header
         for i, ln in enumerate(lines):
@@ -180,12 +185,12 @@ class SixSRT(TabularRT):
                 lines = lines[(i + 1):(i + 1 + self.sixs_ngrid_init)]
                 break
 
-        solzens = s.zeros(len(lines))
-        sphalbs = s.zeros(len(lines))
-        transups = s.zeros(len(lines))
-        transms = s.zeros(len(lines))
-        rhoatms = s.zeros(len(lines))
-        self.grid = s.zeros(len(lines))
+        solzens = np.zeros(len(lines))
+        sphalbs = np.zeros(len(lines))
+        transups = np.zeros(len(lines))
+        transms = np.zeros(len(lines))
+        rhoatms = np.zeros(len(lines))
+        self.grid = np.zeros(len(lines))
 
         for i, ln in enumerate(lines):
             ln = ln.replace('*', ' ').strip()
@@ -215,7 +220,7 @@ class SixSRT(TabularRT):
     def ext550_to_vis(self, ext550):
         """."""
 
-        return s.log(50.0) / (ext550 + 0.01159)
+        return np.log(50.0) / (ext550 + 0.01159)
 
     def build_lut(self, rebuild=False):
 
@@ -228,9 +233,9 @@ class SixSRT(TabularRT):
         self.cache = {}
         dims_aug = self.lut_dims + [self.n_chan]
         for key in self.lut_quantities:
-            temp = s.zeros(dims_aug, dtype=float)
+            temp = np.zeros(dims_aug, dtype=float)
             for sixs_output, point in zip(sixs_outputs, self.points):
-                ind = [s.where(g == p)[0] for g, p in
+                ind = [np.where(g == p)[0] for g, p in
                        zip(self.lut_grids, point)]
                 ind = tuple(ind)
                 temp[ind] = sixs_output[key]
@@ -241,11 +246,11 @@ class SixSRT(TabularRT):
     def _lookup_lut(self, point):
         ret = {}
         for key, lut in self.luts.items():
-            ret[key] = s.array(lut(point)).ravel()
+            ret[key] = np.array(lut(point)).ravel()
         return ret
 
     def get(self, x_RT, geom):
-        point = s.zeros((self.n_point,))
+        point = np.zeros((self.n_point,))
         for point_ind, name in enumerate(self.lut_grid_config):
             if name in self.statevector_names:
                 ix = self.statevector_names.index(name)
@@ -278,10 +283,10 @@ class SixSRT(TabularRT):
     def get_L_atm(self, x_RT, geom):
         r = self.get(x_RT, geom)
         rho = r['rhoatm']
-        rdn = rho / s.pi*(self.solar_irr * self.coszen)
+        rdn = rho / np.pi*(self.solar_irr * self.coszen)
         return rdn
 
     def get_L_down_transmitted(self, x_RT, geom):
         r = self.get(x_RT, geom)
-        rdn = (self.solar_irr * self.coszen) / s.pi * r['transm']
+        rdn = (self.solar_irr * self.coszen) / np.pi * r['transm']
         return rdn
