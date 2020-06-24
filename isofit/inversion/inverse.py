@@ -290,7 +290,8 @@ class Inversion:
 
         for combo in combo_values:
 
-            self.x_fixed = combo
+            if self.grid_as_starting_points is False:
+                self.x_fixed = combo
             trajectory = []
 
             # Calculate the initial solution, if needed.
@@ -307,13 +308,13 @@ class Inversion:
                 self.fm.bounds[1][self.inds_free][upper_bound_violation] - eps
             del lower_bound_violation, upper_bound_violation
 
+            # Find the full state vector with bounds checked
+            x = self.full_statevector(x0)
+
             # Regardless of anything we did for the heuristic guess, bring the
             # static preseed back into play (only does anything if inds_preseed
             # is not blank)
             x0[self.inds_preseed] = combo
-
-            # Find the full state vector with bounds checked
-            x = self.full_statevector(x0)
 
             # Record initializaation state
             geom.x_surf_init = x[self.fm.idx_surface]
