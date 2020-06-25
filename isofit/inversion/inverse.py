@@ -75,18 +75,18 @@ class Inversion:
             # We're using the integration grid to preseed, not fix values.  So
             # Track the grid, but don't fix the integration grid points
             self.inds_fixed = []
-            self.inds_preseed = [self.fm.statevec.index(k) for k in
-                               self.integration_grid.keys()]
-            self.inds_free = [i for i in np.arange(self.fm.nstate, dtype=int) if
-                              not (i in self.inds_fixed)]
+            self.inds_preseed = np.array([self.fm.statevec.index(k) for k in
+                               self.integration_grid.keys()])
+            self.inds_free = np.array([i for i in np.arange(self.fm.nstate, dtype=int) if
+                              not (i in self.inds_fixed)])
 
         else:
             # We're using the integration grid to fix values.  So
             # Get set up to fix the integration grid points
-            self.inds_fixed = [self.fm.statevec.index(k) for k in
-                               self.integration_grid.keys()]
-            self.inds_free = [i for i in np.arange(self.fm.nstate, dtype=int) if
-                              not (i in self.inds_fixed)]
+            self.inds_fixed = np.array([self.fm.statevec.index(k) for k in
+                               self.integration_grid.keys()])
+            self.inds_free = np.array([i for i in np.arange(self.fm.nstate, dtype=int) if
+                              not (i in self.inds_fixed)])
             self.inds_preseed = []
 
         self.x_fixed = None
@@ -290,7 +290,8 @@ class Inversion:
 
         for combo in combo_values:
 
-            self.x_fixed = combo
+            if self.grid_as_starting_points is False:
+                self.x_fixed = combo
             trajectory = []
 
             # Calculate the initial solution, if needed.
@@ -307,13 +308,14 @@ class Inversion:
                 self.fm.bounds[1][self.inds_free][upper_bound_violation] - eps
             del lower_bound_violation, upper_bound_violation
 
+            # Find the full state vector with bounds checked
+            x = self.full_statevector(x0)
+
             # Regardless of anything we did for the heuristic guess, bring the
             # static preseed back into play (only does anything if inds_preseed
             # is not blank)
-            x0[self.inds_preseed] = combo
-
-            # Find the full state vector with bounds checked
-            x = self.full_statevector(x0)
+            if len(self.inds_preseed) > 0:
+                x0[self.inds_preseed] = combo
 
             # Record initializaation state
             geom.x_surf_init = x[self.fm.idx_surface]
