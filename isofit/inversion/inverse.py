@@ -290,7 +290,8 @@ class Inversion:
 
         for combo in combo_values:
 
-            self.x_fixed = combo
+            if len(self.inds_fixed) > 0: 
+                self.x_fixed = combo
             trajectory = []
 
             # Calculate the initial solution, if needed.
@@ -310,7 +311,8 @@ class Inversion:
             # Regardless of anything we did for the heuristic guess, bring the
             # static preseed back into play (only does anything if inds_preseed
             # is not blank)
-            x0[self.inds_preseed] = combo
+            if len(self.inds_preseed) > 0:
+                x0[self.inds_preseed] = combo
 
             # Find the full state vector with bounds checked
             x = self.full_statevector(x0)
