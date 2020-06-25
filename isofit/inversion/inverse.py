@@ -314,7 +314,8 @@ class Inversion:
             # Regardless of anything we did for the heuristic guess, bring the
             # static preseed back into play (only does anything if inds_preseed
             # is not blank)
-            x0[self.inds_preseed] = combo
+            if len(self.inds_preseed) > 0:
+                x0[self.inds_preseed] = combo
 
             # Record initializaation state
             geom.x_surf_init = x[self.fm.idx_surface]
