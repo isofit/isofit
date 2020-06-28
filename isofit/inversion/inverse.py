@@ -316,12 +316,6 @@ class Inversion:
             # is not blank)
             if len(self.inds_preseed) > 0:
                 x0[self.inds_preseed] = combo
-<<<<<<< HEAD
-
-            # Find the full state vector with bounds checked
-            x = self.full_statevector(x0)
-=======
->>>>>>> upstream/master
 
             # Record initializaation state
             geom.x_surf_init = x[self.fm.idx_surface]
