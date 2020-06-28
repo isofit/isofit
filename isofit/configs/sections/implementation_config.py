@@ -64,6 +64,7 @@ class ImplementationConfig(BaseConfigSection):
 
         self._ray_temp_dir_type = str
         self.ray_temp_dir = '/tmp/ray'
+        """str: Overrides the standard ray temporary directory.  Useful for multiuser systems."""
 
         self.set_config_options(sub_configdic)
 
