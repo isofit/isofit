@@ -80,6 +80,7 @@ class Isofit:
         # Initialize ray for parallel execution
         rayargs = {'address': self.config.implementation.ip_head,
                    'redis_password': self.config.implementation.redis_password,
+                   'temp_dir': self.config.implementation.ray_temp_dir,
                    'local_mode': self.config.implementation.n_cores == 1}
 
         # We can only set the num_cpus if running on a single-node

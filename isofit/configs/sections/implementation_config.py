@@ -62,6 +62,10 @@ class ImplementationConfig(BaseConfigSection):
         self.rte_auto_rebuild = True
         """bool: Flag indicating whether radiative transfer engines should automatically rebuild."""
 
+        self._ray_temp_dir_type = str
+        self.ray_temp_dir = '/tmp/ray'
+        """str: Overrides the standard ray temporary directory.  Useful for multiuser systems."""
+
         self.set_config_options(sub_configdic)
 
     def _check_config_validity(self) -> List[str]:

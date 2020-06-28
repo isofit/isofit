@@ -68,7 +68,7 @@ class OutputConfig(BaseConfigSection):
         self.algebraic_inverse_file = None
 
         self._atmospheric_coefficients_file_header = (
-            'wavelength', '{Wavelength (nm), Atmospheric Optical Parameters}', '{}')
+            'atm_coeffs', '{Wavelength (nm), Atmospheric Optical Parameters}', '{}')
         self._atmospheric_coefficients_file_type = str
         self.atmospheric_coefficients_file = None
 
