@@ -73,6 +73,8 @@ def main():
             of pixels, determined using a SLIC superpixel segmentation, and use a KDTREE Of local solutions to
             interpolate radiance->reflectance.  Generally a good option if not trying to analyze the atmospheric state
             at fine scale resolution.  Choices - 0 off, 1 on.  Default 0
+        ray_temp_dir (Optional, str): Location of temporary directory for ray parallelization engine.  Default is
+            '/tmp/ray'
 
             Reference:
             D.R. Thompson, A. Braverman,P.G. Brodrick, A. Candela, N. Carbon, R.N. Clark,D. Connelly, R.O. Green, R.F.
@@ -106,6 +108,7 @@ def main():
     parser.add_argument('--n_cores', type=int, default=1)
     parser.add_argument('--presolve', choices=[0,1], type=int, default=0)
     parser.add_argument('--empirical_line', choices=[0,1], type=int, default=0)
+    parser.add_argument('--ray_temp_dir', type=str, default='/tmp/ray')
 
     args = parser.parse_args()
 
@@ -376,6 +379,7 @@ class Pathnames():
         self.obs_subs_path = abspath(join(self.input_data_directory, self.fid + '_subs_obs'))
         self.loc_subs_path = abspath(join(self.input_data_directory, self.fid + '_subs_loc'))
         self.rfl_subs_path = abspath(join(self.output_directory, self.fid + '_subs_rfl'))
+        self.atm_coeff_path = abspath(join(self.output_directory, self.fid + '_subs_atm'))
         self.state_subs_path = abspath(join(self.output_directory, self.fid + '_subs_state'))
         self.uncert_subs_path = abspath(join(self.output_directory, self.fid + '_subs_uncert'))
         self.h2o_subs_path = abspath(join(self.output_directory, self.fid + '_subs_h2o'))
@@ -407,6 +411,8 @@ class Pathnames():
 
         self.aerosol_tpl_path = join(self.isofit_path, 'data', 'aerosol_template.json')
         self.rdn_factors_path = args.rdn_factors_path
+
+        self.ray_temp_dir = args.ray_temp_dir
 
     def make_directories(self):
         """ Build required subdirectories inside working_directory
@@ -908,6 +914,7 @@ def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array, n_cores: int
                                                                 'select_on_init': True},
                              'radiative_transfer': radiative_transfer_config},
                          "implementation": {
+                            "ray_temp_dir": paths.ray_temp_dir,
                             'inversion': {'windows': INVERSION_WINDOWS},
                             "n_cores": n_cores}
                          }
@@ -1031,6 +1038,7 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
                                              "select_on_init": True},
                                  "radiative_transfer": radiative_transfer_config},
                              "implementation": {
+                                "ray_temp_dir": paths.ray_temp_dir,
                                 "inversion": {"windows": INVERSION_WINDOWS},
                                 "n_cores": n_cores}
                              }
@@ -1042,6 +1050,7 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
         isofit_config_modtran['output']['estimated_state_file'] = paths.state_subs_path
         isofit_config_modtran['output']['posterior_uncertainty_file'] = paths.uncert_subs_path
         isofit_config_modtran['output']['estimated_reflectance_file'] = paths.rfl_subs_path
+        isofit_config_modtran['output']['atmospheric_coefficients_file'] = paths.atm_coeff_path
     else:
         isofit_config_modtran['input']['measured_radiance_file'] = paths.radiance_working_path
         isofit_config_modtran['input']['loc_file'] = paths.loc_working_path

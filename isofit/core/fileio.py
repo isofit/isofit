@@ -305,6 +305,8 @@ class IO:
                 band_names = sv_names
             elif band_names == 'wavelength':
                 band_names = wl_names
+            elif band_names == 'atm_coeffs':
+                band_names = wl_names*5
             else:
                 band_names = '{}'
 
@@ -443,7 +445,7 @@ class IO:
         if len(states) == 0:
 
             # Write a bad data flag
-            atm_bad = np.zeros(len(self.fm.statevec)) * -9999.0
+            atm_bad = np.zeros(len(self.fm.n_chan)*5) * -9999.0
             state_bad = np.zeros(len(self.fm.statevec)) * -9999.0
             data_bad = np.zeros(self.fm.instrument.n_chan) * -9999.0
             to_write = {
@@ -502,6 +504,7 @@ class IO:
 
             atm = np.column_stack(list(coeffs[:4]) +
                                   [np.ones((len(wl), 1)) * coszen])
+            atm = atm.T.reshape((len(wl)*5,))
 
             # Upward emission & glint and apparent reflectance
             Ls_est = self.fm.calc_Ls(state_est, geom)
