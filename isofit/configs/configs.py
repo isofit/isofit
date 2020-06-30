@@ -147,7 +147,7 @@ def create_new_config(config_file: str) -> Config:
     """
     try:
         with open(config_file, 'r') as f:
-            config_dict = yaml.load(f)
+            config_dict = yaml.safe_load(f)
     except:
         raise IOError('Unexpected configuration file time, only json and yaml supported')
 
