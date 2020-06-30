@@ -20,7 +20,6 @@
 import logging
 from collections import OrderedDict
 from typing import Dict, List, Type
-import json
 import os
 from isofit.configs.sections.input_config import InputConfig
 from isofit.configs.sections.output_config import OutputConfig
@@ -141,18 +140,15 @@ def get_config_differences(config_a: Config, config_b: Config) -> Dict:
 def create_new_config(config_file: str) -> Config:
     """Load a config file from disk.
     Args:
-        config_file: file to load config from.  Currently accepted formats: JSON
+        config_file: file to load config from.  Currently accepted formats: JSON and YAML
 
     Returns:
         Config object, having completed all necessary config checks
     """
-    if os.path.splitext(config_file)[-1] in ['.json','.JSON']:
-        with open(config_file, 'r') as f:
-            config_dict = json.load(f)
-    elif os.path.splitext(config_file)[-1] in ['.yaml','.YAML']:
+    try:
         with open(config_file, 'r') as f:
             config_dict = yaml.load(f)
-    else:
+    except:
         raise IOError('Unexpected configuration file time, only json and yaml supported')
 
     configdir, f = os.path.split(os.path.abspath(config_file))
