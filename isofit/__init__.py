@@ -24,7 +24,7 @@
 
 name = 'isofit'
 
-__version__ = '2.0.5_+dev'
+__version__ = '2.5.0'
 
 warnings_enabled = False
 
