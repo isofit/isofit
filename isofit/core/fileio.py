@@ -386,9 +386,9 @@ class IO:
         else:
             # If solving the inverse problem, the measurment is the radiance
             # We apply the calibration correciton here for simplicity.
-            meas = data['measured_radiance_file']
+            meas = data['measured_radiance_file'].copy()
             if data["radiometry_correction_file"] is not None:
-                meas = meas.copy() * data['radiometry_correction_file']
+                meas = meas * data['radiometry_correction_file']
 
         # We build the geometry object for this spectrum.  For files not
         # specified in the input configuration block, the associated entries
