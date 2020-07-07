@@ -5,9 +5,9 @@ You can find documentation for isofit at our `readthedocs site <https://isofit.r
 
 This repository has two main branches:
 
-`current-release <https://github.com/isofit/isofit/tree/current-release/>`_ : Latest stable, versioned release and
+`current-release <https://github.com/isofit/isofit/tree/current-release/>`__: Latest stable, versioned release and
 
-`master <https://github.com/isofit/isofit/>`_: The latest non-breaking changes, sometimes pre-version
+`master <https://github.com/isofit/isofit/>`__: The latest non-breaking changes, sometimes pre-version
 
 This codebase contains a set of routines and utilities for fitting surface,
 atmosphere and instrument models to imaging spectrometer data.  It is
