@@ -21,9 +21,10 @@
 import os
 import numpy as np
 import logging
-import multiprocessing
+import ray
 from collections import OrderedDict
 import subprocess
+import time
 
 from isofit.core import common
 from isofit.configs import Config
@@ -34,12 +35,24 @@ from isofit.configs.sections.implementation_config import ImplementationConfig
 
 ### Functions ###
 
-def spawn_rt(cmd):
+@ray.remote
+def spawn_rt(cmd, local_dir=None):
     """Run a CLI command."""
 
     print(cmd)
+
+    # Add a very slight timing offset to prevent all subprocesses
+    # starting simultaneously
+    time.sleep(float(np.random.random(1))*2)
+
+    if local_dir is not None:
+        cwd = os.getcwd()
+        os.chdir(local_dir)
+
     subprocess.call(cmd, shell=True)
 
+    if local_dir is not None:
+        os.chdir(cwd)
 
 ### Classes ###
 
@@ -88,10 +101,7 @@ class TabularRT:
 
         # selectively get statevector components that are in this particular RTE
         full_sv_names = full_config.forward_model.radiative_transfer.statevector.get_element_names()
-        if engine_config.statevector_names is not None:
-            self.statevector_names = [x for x in full_sv_names if x in engine_config.statevector_names]
-        else:
-            self.statevector_names = full_sv_names
+        self.statevector_names = full_sv_names
 
         self.lut_dir = engine_config.lut_path
         self.n_point = len(self.lut_grid_config)
@@ -119,19 +129,6 @@ class TabularRT:
         self.prior_mean = np.array(self.prior_mean)
         self.prior_sigma = np.array(self.prior_sigma)
 
-        # This array is used to handle the potential indexing mismatch between
-        # the 'global statevector' (which may couple multiple radiative transform
-        # models) and this statevector. It should never be modified
-        full_to_local_statevector_position_mapping = []
-        complete_statevector_names = full_config.forward_model.radiative_transfer.statevector.get_element_names()
-        for sn in self.statevector_names:
-            ix = complete_statevector_names.index(sn)
-            full_to_local_statevector_position_mapping.append(ix)
-        self._full_to_local_statevector_position_mapping = \
-            np.array(full_to_local_statevector_position_mapping)
-
-
-        #
         self.lut_dims = []
         self.lut_grids = []
         self.lut_names = []
@@ -195,30 +192,18 @@ class TabularRT:
             # sys.exit(0)
 
         elif len(rebuild_cmds) > 0 and self.auto_rebuild:
-            logging.info("rebuilding")
+            logging.info("Rebuilding radiative transfer look up table")
 
             # check to make sure lut directory is there, create if not
-            cwd = os.getcwd()
             if os.path.isdir(self.lut_dir) is False:
                 os.mkdir(self.lut_dir)
 
             # migrate to the appropriate directory and spool up runs
             os.chdir(self.lut_dir)
 
-            if self.implementation_config.n_cores is None:
-                n_cores = multiprocessing.cpu_count()
-            else:
-                n_cores = self.implementation_config.n_cores
+            # Make the LUT calls (in parallel if specified)
+            results = ray.get([spawn_rt.remote(rebuild_cmd, self.lut_dir) for rebuild_cmd in rebuild_cmds])
 
-            if self.implementation_config.runtime_nice_level is None:
-                pool = multiprocessing.Pool(processes=n_cores)
-            else:
-                pool = multiprocessing.Pool(processes=n_cores, initializer=
-                                            common.nice_me(self.implementation_config.runtime_nice_level))
-
-            r = pool.map_async(spawn_rt, rebuild_cmds)
-            r.wait()
-            os.chdir(cwd)
 
     def get_lut_filenames(self):
         files = []
@@ -234,4 +219,4 @@ class TabularRT:
         if len(x_RT) < 1:
             return ''
         return 'Atmosphere: '+' '.join(['%s: %5.3f' % (si, xi) for si, xi in
-                                        zip(self.statevector_names, x_RT[self._full_to_local_statevector_position_mapping])])
+                                        zip(self.statevector_names, x_RT)])

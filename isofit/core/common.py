@@ -25,6 +25,8 @@ import numpy as np
 import scipy.linalg
 from scipy.interpolate import RegularGridInterpolator
 from os.path import expandvars, split, abspath
+from typing import List
+from collections import OrderedDict
 
 
 ### Variables ###
@@ -39,9 +41,17 @@ eps = 1e-5
 ### Classes ###
 
 class VectorInterpolator:
-    """."""
+    """ Linear look up table interpolator.  Support linear interpolation through radial space by expanding the look
+        up tables with sin and cos dimensions.
 
-    def __init__(self, grid_input, data_input, lut_interp_types):
+        Args:
+            grid_input: list of lists of floats, indicating the gridpoint elements in each grid dimension
+            data_input: n dimensional array of radiative transfer engine outputs (each dimension size corresponds to the
+                        given grid_input list length, with the last dimensions equal to the number of sensor channels)
+            lut_interp_types: a list indicating if each dimension is in radiance (r), degrees (r), or normal (n) units.
+        """
+
+    def __init__(self, grid_input: List[List[float]], data_input: np.array, lut_interp_types: List[str]):
         self.lut_interp_types = lut_interp_types
 
         # Lists and arrays are mutable, so copy first
@@ -138,11 +148,16 @@ class VectorInterpolator:
         return res
 
 
-### Functions ###
+def load_wavelen(wavelength_file: str):
+    """Load a wavelength file, and convert to nanometers if needed.
 
+    Args:
+        wavelength_file: file to read wavelengths from
 
-def load_wavelen(wavelength_file):
-    """Load a wavelength file, and convert to nanometers if needed."""
+    Returns:
+        (np.array, np.array): wavelengths, full-width-half-max
+
+    """
 
     q = np.loadtxt(wavelength_file)
     if q.shape[1] > 2:
@@ -153,8 +168,19 @@ def load_wavelen(wavelength_file):
     return wl, fwhm
 
 
-def emissive_radiance(emissivity, T, wl):
-    """Radiance of a surface due to emission."""
+def emissive_radiance(emissivity: np.array, T: np.array, wl: np.array) -> (np.array, np.array):
+    """Calcluate the radiance of a surface due to emission.
+
+    Args:
+        emissivity: surface emissivity.
+        T: surface temperature [K]
+        wl: emmissivity wavelengths [nm]
+
+    Returns:
+        np.array: surface upwelling radiance in uW $cm^{-2} sr^{-1} nm^{-nm}$
+        np.array: partial derivative of radiance with respect to temperature uW $cm^{-2} sr^{-1} nm^{-1} k^{-1}$
+
+    """
 
     c_1 = 1.88365e32/np.pi
     c_2 = 14387690
@@ -171,16 +197,31 @@ def emissive_radiance(emissivity, T, wl):
     return uW_per_cm2_sr_nm, dRdn_dT
 
 
-def svd_inv(C, mineig=0, hashtable=None):
-    """Fast stable inverse using SVD. This can handle near-singular 
-        matrices."""
+def svd_inv(C: np.array, hashtable: OrderedDict = None):
+    """Matrix inversion, based on decomposition.  Built to be stable, and positive.
 
-    return svd_inv_sqrt(C, mineig, hashtable)[0]
+    Args:
+        C: matrix to invert
+        hashtable: if used, the hashtable to store/retrieve results in/from
+
+    Return:
+        np.array: inverse of C
+
+    """
+
+    return svd_inv_sqrt(C, hashtable)[0]
 
 
-def svd_inv_sqrt(C, mineig=0, hashtable=None):
-    """Fast stable inverse using SVD. This can handle near-singular matrices.
-    Also return the square root.
+def svd_inv_sqrt(C: np.array, hashtable: OrderedDict = None) -> (np.array, np.array):
+    """Matrix inversion, based on decomposition.  Built to be stable, and positive.
+
+    Args:
+        C: matrix to invert
+        hashtable: if used, the hashtable to store/retrieve results in/from
+
+    Return:
+        (np.array, np.array): inverse of C and square root of the inverse of C
+
     """
 
     # If we have a hash table, look for the precalculated solution
@@ -221,16 +262,32 @@ def svd_inv_sqrt(C, mineig=0, hashtable=None):
     return Cinv, Cinv_sqrt
 
 
-def expand_path(directory, subpath):
-    """Expand a path variable to an absolute path, if it is not one already."""
+def expand_path(directory: str, subpath: str) -> str:
+    """Expand a path variable to an absolute path, if it is not one already.
+
+    Args:
+        directory:  absolute location
+        subpath: path to expand
+
+    Returns:
+        str: expanded path
+
+    """
 
     if subpath.startswith('/'):
         return subpath
     return os.path.join(directory, subpath)
 
 
-def recursive_replace(obj, key, val):
-    """Find and replace a vector in a nested structure."""
+def recursive_replace(obj, key, val) -> None:
+    """Find and replace a vector in a nested (mutable) structure.
+
+    Args:
+        obj: object to replace within
+        key: key to replace
+        val: value to replace with
+
+    """
 
     if isinstance(obj, dict):
         if key in obj:
@@ -242,9 +299,19 @@ def recursive_replace(obj, key, val):
             recursive_replace(item, key, val)
 
 
-def get_absorption(wl, absfile):
+def get_absorption(wl: np.array, absfile: str) -> (np.array, np.array):
     """Calculate water and ice absorption coefficients using indices of
-    refraction, and interpolate them to new wavelengths (user specifies nm)."""
+    refraction, and interpolate them to new wavelengths (user specifies nm).
+
+    Args:
+        wl: wavelengths to interpolate to
+        absfile: file containing indices of refraction
+
+    Returns:
+        np.array: interpolated, wavelength-specific water absorption coefficients
+        np.array: interpolated, wavelength-specific ice absorption coefficients
+
+    """
 
     # read the indices of refraction
     q = np.loadtxt(absfile, delimiter=',')
@@ -263,8 +330,17 @@ def get_absorption(wl, absfile):
     return water_abscf_intrp, ice_abscf_intrp
 
 
-def recursive_reencode(j, shell_replace=True):
-    """Recursively re-encode a dictionary."""
+def recursive_reencode(j, shell_replace: bool = True):
+    """Recursively re-encode a mutable object (ascii->str).
+
+    Args:
+        j: object to reencode
+        shell_replace: boolean helper for recursive calls
+
+    Returns:
+        Object: expanded, reencoded object
+
+    """
 
     if isinstance(j, dict):
         for key, value in j.items():
@@ -285,28 +361,36 @@ def recursive_reencode(j, shell_replace=True):
         return j
 
 
-def json_load_ascii(filename, shell_replace=True):
+def json_load_ascii(filename: str, shell_replace: bool = True) -> dict:
     """Load a hierarchical structure, convert all unicode to ASCII and
-    expand environment variables."""
+    expand environment variables.
+
+    Args:
+        filename: json file to load from
+        shell_replace: boolean
+
+    Returns:
+        dict: encoded dictionary
+
+    """
 
     with open(filename, 'r') as fin:
         j = json.load(fin)
         return recursive_reencode(j, shell_replace)
 
 
-def load_config(config_file):
-    """Configuration files are typically .json, with relative paths."""
+def expand_all_paths(to_expand: dict, absdir: str):
+    """Expand any dictionary entry containing the string 'file' into
+       an absolute path, if needed.
 
-    with open(config_file, 'r') as f:
-        config = json.load(f)
+    Args:
+        to_expand: dictionary to expand
+        absdir: path to expand with (absolute directory)
 
-    configdir, f = split(abspath(config_file))
-    return expand_all_paths(config, configdir)
+    Returns:
+        dict: dictionary with expanded paths
 
-
-def expand_all_paths(config, configdir):
-    """Expand any config entry containing the string 'file' into 
-       an absolute path, if needed."""
+    """
 
     def recursive_expand(j):
         if isinstance(j, dict):
@@ -314,7 +398,7 @@ def expand_all_paths(config, configdir):
                 if isinstance(key, str) and \
                     ('file' in key or 'directory' in key or 'path' in key) and \
                         isinstance(value, str):
-                    j[key] = expand_path(configdir, value)
+                    j[key] = expand_path(absdir, value)
                 else:
                     j[key] = recursive_expand(value)
             return j
@@ -326,11 +410,19 @@ def expand_all_paths(config, configdir):
             return tuple([recursive_reencode(k) for k in j])
         return j
 
-    return recursive_expand(config)
+    return recursive_expand(to_expand)
 
 
-def find_header(imgfile):
-    """Return the header associated with an image file."""
+def find_header(imgfile: str) -> str:
+    """Safely return the header associated with an image file.
+
+    Args:
+        imgfile: file name of base image
+
+    Returns:
+        str: header filename if one exists
+
+    """
 
     if os.path.exists(imgfile+'.hdr'):
         return imgfile+'.hdr'
@@ -343,27 +435,23 @@ def find_header(imgfile):
     raise IOError('No header found for file {0}'.format(imgfile))
 
 
-def expand_path(directory, subpath):
-    """Turn a subpath into an absolute path if it is not absolute already."""
+def resample_spectrum(x: np.array, wl: np.array, wl2: np.array, fwhm2: np.array, fill: bool = False) -> np.array:
+    """Resample a spectrum to a new wavelength / FWHM.
+       Assumes Gaussian SRFs.
 
-    if subpath.startswith('/'):
-        return subpath
-    return os.path.join(directory, subpath)
+    Args:
+        x: radiance vector
+        wl: sample starting wavelengths
+        wl2: wavelengths to resample to
+        fwhm2: full-width-half-max at resample resolution
+        fill: boolean indicating whether to fill in extrapolated regions
 
+    Returns:
+        np.array: interpolated radiance vector
 
-def rdn_translate(wvn, rdn_wvn):
-    """Translate radiance out of wavenumber space."""
+    """
 
-    dwvn = wvn[1:]-wvn[:-1]
-    dwl = 10000.0/wvn[1:] - 10000.0/wvn[:-1]
-    return rdn_wvn*(dwl/dwvn)
-
-
-def resample_spectrum(x, wl, wl2, fwhm2, fill=False):
-    """Resample a spectrum to a new wavelength / FWHM. 
-       I assume Gaussian SRFs."""
-
-    H = np.array([srf(wl, wi, fwhmi/2.355)
+    H = np.array([spectral_response_function(wl, wi, fwhmi / 2.355)
                   for wi, fwhmi in zip(wl2, fwhm2)])
     if fill is False:
         return np.dot(H, x[:, np.newaxis]).ravel()
@@ -377,46 +465,89 @@ def resample_spectrum(x, wl, wl2, fwhm2, fill=False):
         return xnew
 
 
-def load_spectrum(init):
+def load_spectrum(spectrum_file: str) -> (np.array, np.array):
     """Load a single spectrum from a text file with initial columns giving
-       wavelength and magnitude, respectively."""
+       wavelength and magnitude, respectively.
 
-    x = np.loadtxt(init)
-    if x.ndim > 1:
-        x = x[:, :2]
-        wl, x = x.T
-        if wl[0] < 100:
-            wl = wl*1000.0  # convert microns -> nm if needed
-        return x, wl
+    Args:
+        spectrum_file: file to load spectrum from
+
+    Returns:
+        np.array: spectrum values
+        np.array: wavelengths, if available in the file
+
+    """
+
+    spectrum = np.loadtxt(spectrum_file)
+    if spectrum.ndim > 1:
+        spectrum = spectrum[:, :2]
+        wavelengths, spectrum = spectrum.T
+        if wavelengths[0] < 100:
+            wavelengths = wavelengths * 1000.0  # convert microns -> nm if needed
+        return spectrum, wavelengths
     else:
-        return x, None
+        return spectrum, None
 
 
-def srf(x, mu, sigma):
-    """Spectral response function."""
+def spectral_response_function(response_range: np.array, mu: float, sigma: float):
+    """Calculate the spectral response function.
 
-    u = (x-mu)/abs(sigma)
+    Args:
+        response_range: signal range to calculate over
+        mu: mean signal value
+        sigma: signal variation
+
+    Returns:
+        np.array: spectral response function
+
+    """
+
+    u = (response_range-mu)/abs(sigma)
     y = (1.0/(np.sqrt(2.0*np.pi)*abs(sigma)))*np.exp(-u*u/2.0)
-    return y/y.sum()
+    srf = y/y.sum()
+    return srf
 
 
-def combos(inds):
+
+
+def combos(inds: List[List[float]]) -> np.array:
     """Return all combinations of indices in a list of index sublists.
-    For example, for the input [[1, 2], [3, 4, 5]] it would return:
-        [[1, 3], [2, 3], [1, 4], [2, 4], [1, 5], [2, 5]]
+    For example, the call::
+        combos([[1, 2], [3, 4, 5]])
+        ...[[1, 3], [2, 3], [1, 4], [2, 4], [1, 5], [2, 5]]
+
     This is used for interpolation in the high-dimensional LUT.
+
+    Args:
+        inds: list of lists of values to expand
+
+    Returns:
+        np.array: meshgrid array of combinations
+
     """
 
     n = len(inds)
     cases = np.prod([len(i) for i in inds])
-    return np.array(np.meshgrid(*inds)).reshape((n, cases)).T
+    gridded_combinations = np.array(np.meshgrid(*inds)).reshape((n, cases)).T
+    return gridded_combinations
 
 
-def conditional_gaussian(mu, C, window, remain, x):
+def conditional_gaussian(mu: np.array, C: np.array, window: np.array, remain: np.array, x: np.array) -> \
+        (np.array, np.array):
     """Define the conditional Gaussian distribution for convenience.
-    "remain" contains indices of the observed part x1. "window"
-    contains all other indices, 
-    such that len(window)+len(remain)=len(x)
+
+    len(window)+len(remain)=len(x)
+
+    Args:
+        mu: mean values
+        C: matrix for conditioning
+        window: contains all indices not in remain
+        remain: contains indices of the observed part x1
+        x: values to condition with
+
+    Returns:
+        (np.array, np.array): conditional mean, conditional covariance
+
     """
     w = np.array(window)[:,np.newaxis]
     r = np.array(remain)[:,np.newaxis]
@@ -427,14 +558,6 @@ def conditional_gaussian(mu, C, window, remain, x):
 
     Cinv = svd_inv(C11)
     conditional_mean = mu[window] + C21 @ Cinv @ (x-mu[remain])
-    conditional_Cov = C22 - C21 @ Cinv @ C12
-    return conditional_mean, conditional_Cov
+    conditional_cov = C22 - C21 @ Cinv @ C12
+    return conditional_mean, conditional_cov
 
-
-def nice_me(nice_level: int) -> None:
-    """
-    Helper function for multiprocessing niceness
-    Args:
-        nice_level: level to set system niceness at
-    """
-    os.nice(nice_level)

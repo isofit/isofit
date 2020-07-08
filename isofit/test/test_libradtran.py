@@ -57,7 +57,7 @@ def run_forward():
     io = IO(config, fm, iv, [0], [0])
 
     # Simulate a measurement and write result
-    for row, col, meas, geom, configs in io:
+    for row, col, meas, geom in io:
         states = iv.invert(meas, geom)
         io.write_spectrum(row, col, states, meas, geom)
 
@@ -79,7 +79,7 @@ def run_inverse():
 
     # Get our measurement from the simulation results, and invert.
     # Calculate uncertainties at the solution state, write result
-    for row, col, meas, geom, configs in io:
+    for row, col, meas, geom in io:
         states = iv.invert(meas, geom)
         io.write_spectrum(row, col, states, meas, geom)
 

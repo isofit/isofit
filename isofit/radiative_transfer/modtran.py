@@ -34,6 +34,7 @@ from ..core.common import json_load_ascii, recursive_replace
 from ..core.common import VectorInterpolator
 from isofit.configs.sections.radiative_transfer_config import RadiativeTransferEngineConfig
 from isofit.configs import Config
+from isofit.core.geometry import Geometry
 import subprocess
 
 
@@ -141,22 +142,24 @@ class ModtranRT(TabularRT):
         """Load a '.chn' output file and parse critical coefficient vectors.
 
            These are:
-             wl      - wavelength vector
-             sol_irr - solar irradiance
-             sphalb  - spherical sky albedo at surface
-             transm  - diffuse and direct irradiance along the
+             * wl      - wavelength vector
+             * sol_irr - solar irradiance
+             * sphalb  - spherical sky albedo at surface
+             * transm  - diffuse and direct irradiance along the
                           sun-ground-sensor path
-             transup - transmission along the ground-sensor path only
+             * transup - transmission along the ground-sensor path only
 
-            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-             Be careful with these! They are to be used only by the
-             modtran_tir functions because MODTRAN must be run with a
-             reflectivity of 1 for them to be used in the RTM defined
-             in radiative_transfer.py.
-             thermal_upwelling - atmospheric path radiance
-             thermal_downwelling - sky-integrated thermal path radiance
+           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            Be careful with these! They are to be used only by the
+            modtran_tir functions because MODTRAN must be run with a
+            reflectivity of 1 for them to be used in the RTM defined
+            in radiative_transfer.py.
+
+            * thermal_upwelling - atmospheric path radiance
+            * thermal_downwelling - sky-integrated thermal path radiance
                 reflected off the ground and back into the sensor.
-            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
            We parse them one wavelength at a time."""
 
@@ -448,13 +451,22 @@ class ModtranRT(TabularRT):
             self.last_point_lookup_values = ret
             return ret
 
-    def get(self, x_RT, geom):
+    def get(self, x_RT: np.array, geom: Geometry) -> dict:
+        """ Get interpolated MODTRAN results at a particular location
+
+        Args:
+            x_RT: radiative-transfer portion of the statevector
+            geom: local geometry conditions for lookup
+
+        Returns:
+            interpolated modtran result
+
+        """
         point = np.zeros((self.n_point,))
         for point_ind, name in enumerate(self.lut_grid_config):
             if name in self.statevector_names:
                 ix = self.statevector_names.index(name)
-                x_RT_ind = self._full_to_local_statevector_position_mapping[ix]
-                point[point_ind] = x_RT[x_RT_ind]
+                point[point_ind] = x_RT[ix]
             elif name == "OBSZEN":
                 point[point_ind] = geom.OBSZEN
             elif name == "GNDALT":
@@ -480,40 +492,61 @@ class ModtranRT(TabularRT):
 
         return self._lookup_lut(point)
 
-    def get_L_atm(self, x_RT, geom):
-        if self.treat_as_emissive:
-            return self.get_L_atm_tir(x_RT, geom)
-        else:
-            return self.get_L_atm_vswir(x_RT, geom)
+    def get_L_atm(self, x_RT: np.array, geom: Geometry) -> np.array:
+        """ Get the interpolated MODTRAN modeled atmospheric reflectance (aka path radiance).
 
-    def get_L_atm_vswir(self, x_RT, geom):
+        Args:
+            x_RT: radiative-transfer portion of the statevector
+            geom: local geometry conditions for lookup
+
+        Returns:
+            the interpolated MODTRAN modeled atmospheric reflectance
+
+        """
+        if self.treat_as_emissive:
+            return self._get_L_atm_tir(x_RT, geom)
+        else:
+            return self._get_L_atm_vswir(x_RT, geom)
+
+    def _get_L_atm_vswir(self, x_RT: np.array, geom: Geometry) -> np.array:
         r = self.get(x_RT, geom)
         rho = r['rhoatm']
         rdn = rho/np.pi*(self.solar_irr*self.coszen)
         return rdn
 
-    def get_L_atm_tir(self, x_RT, geom):
+    def _get_L_atm_tir(self, x_RT: np.array, geom: Geometry) -> np.array:
         r = self.get(x_RT, geom)
         return r['thermal_upwelling']
 
-    def get_L_down_transmitted(self, x_RT, geom):
-        if self.treat_as_emissive:
-            return self.get_L_down_transmitted_tir(x_RT, geom)
-        else:
-            return self.get_L_down_transmitted_vswir(x_RT, geom)
+    def get_L_down_transmitted(self, x_RT: np.array, geom: Geometry) -> np.array:
+        """ Get the interpolated MODTRAN downward atmospheric transmittance.
 
-    def get_L_down_transmitted_vswir(self, x_RT, geom):
+        Args:
+            x_RT: radiative-transfer portion of the statevector
+            geom: local geometry conditions for lookup
+
+        Returns:
+            The interpolated MODTRAN downward atmospheric transmittance
+        """
+
+        if self.treat_as_emissive:
+            return self._get_L_down_transmitted_tir(x_RT, geom)
+        else:
+            return self._get_L_down_transmitted_vswir(x_RT, geom)
+
+    def _get_L_down_transmitted_vswir(self, x_RT, geom):
         r = self.get(x_RT, geom)
         rdn = (self.solar_irr*self.coszen) / np.pi * r['transm']
         return rdn
 
-    def get_L_down_transmitted_tir(self, x_RT, geom):
+    def _get_L_down_transmitted_tir(self, x_RT, geom):
         """thermal_downwelling already includes the transmission factor. Also
         assume there is no multiple scattering for TIR.
         """
         r = self.get(x_RT, geom)
         return r['thermal_downwelling']
 
+<<<<<<< HEAD
     def get_L_up(self, x_RT, geom):
         """Thermal emission from the ground is provided by the thermal model,
         so this function is a placeholder for future upgrades."""
@@ -522,16 +555,27 @@ class ModtranRT(TabularRT):
     def wl2flt(self, wls, fwhms, outfile):
         """Helper function to generate Gaussian distributions around the
         center wavelengths."""
+=======
+    def wl2flt(self, wavelengths: np.array, fwhms: np.array, outfile: str) -> None:
+        """Helper function to generate Gaussian distributions around the
+        center wavelengths.
 
-        I = None
+        Args:
+            wavelengths: wavelength centers
+            fwhms: full width at half max
+            outfile: file to write to
+
+        """
+>>>>>>> 61e0e479a5e0e1410fa823659050cd1ac630e336
+
         sigmas = fwhms/2.355
-        span = 2.0 * (wls[1]-wls[0])  # nm
+        span = 2.0 * (wavelengths[1]-wavelengths[0])  # nm
         steps = 101
 
         with open(outfile, 'w') as fout:
 
             fout.write('Nanometer data for sensor\n')
-            for wl, fwhm, sigma in zip(wls, fwhms, sigmas):
+            for wl, fwhm, sigma in zip(wavelengths, fwhms, sigmas):
 
                 ws = wl + np.linspace(-span, span, steps)
                 vs = scipy.stats.norm.pdf(ws, wl, sigma)

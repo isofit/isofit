@@ -45,10 +45,13 @@ class ImplementationConfig(BaseConfigSection):
         self.n_cores = None
         """int: number of cores to use."""
 
-        self._runtime_nice_level_type = int
-        self.runtime_nice_level = None
-        """int: nice level to run multiprocessing at.  If None, will use all available.  If 1, will run without 
-        multiprocessing (good for debugging)"""
+        self._ip_head_type = str
+        self.ip_head = None
+        """str: Ray - parameter.  IP-head (for multi-node runs)."""
+
+        self._redis_password_type = str
+        self.redis_password = None
+        """str: Ray - parameter.  Redis-password (for multi-node runs)."""
 
         self._rte_configure_and_exit_type = bool
         self.rte_configure_and_exit = False
@@ -58,6 +61,10 @@ class ImplementationConfig(BaseConfigSection):
         self._rte_auto_rebuild_type = bool
         self.rte_auto_rebuild = True
         """bool: Flag indicating whether radiative transfer engines should automatically rebuild."""
+
+        self._ray_temp_dir_type = str
+        self.ray_temp_dir = '/tmp/ray'
+        """str: Overrides the standard ray temporary directory.  Useful for multiuser systems."""
 
         self.set_config_options(sub_configdic)
 
@@ -75,5 +82,8 @@ class ImplementationConfig(BaseConfigSection):
             #TODO: fix this
             errors.append('Even in simulation mode, and inversion config must be defined, though'
                           'it may be blank.')
+
+        if int(self.ip_head is not None) + int(self.redis_password is not None) == 1:
+            errors.append('If either ip_head or redis_password are specified, both must be specified')
 
         return errors

@@ -275,6 +275,8 @@ class IO:
         self.n_sv = len(self.fm.statevec)
         self.n_chan = len(self.fm.instrument.wl_init)
 
+        self.simulation_mode = config.implementation.mode == 'simulation'
+
         # Names of either the wavelength or statevector outputs
         wl_names = [('Channel %i' % i) for i in range(self.n_chan)]
         sv_names = self.fm.statevec.copy()
@@ -303,6 +305,8 @@ class IO:
                 band_names = sv_names
             elif band_names == 'wavelength':
                 band_names = wl_names
+            elif band_names == 'atm_coeffs':
+                band_names = wl_names*5
             else:
                 band_names = '{}'
 
@@ -340,7 +344,10 @@ class IO:
                 self.iter_inds.append([row, col])
         self.iter_inds = np.array(self.iter_inds)
 
-    def get_components_at_index(self, index):
+        if self.simulation_mode:
+            self.fm.surface.rwl = np.array([float(x) for x in self.infiles['reflectance_file'].meta['wavelength']])
+
+    def get_components_at_index(self, index: int) -> (int, int, np.array, Geometry):
         """
         Get the spectrum from the file at the specified index.  Helper/
         parallel enabling function.
@@ -352,7 +359,6 @@ class IO:
         :return: c: column index
         :return: meas: measured radiance file
         :return: geom: set up specified geometry files
-        :return: updates: set of prior reference files
         """
         # Determine the appropriate row, column index. and initialize the
         # data dictionary with empty entries.
@@ -369,12 +375,22 @@ class IO:
         # Check for any bad data flags
         for source in self.infiles:
             if np.all(abs(data[source] - self.infiles[source].flag) < eps):
-                return False, r, c, None, None, None
+                return False, r, c, None, None
 
-        # We apply the calibration correciton here for simplicity.
-        meas = data['measured_radiance_file']
-        if data["radiometry_correction_file"] is not None:
-            meas = meas.copy() * data['radiometry_correction_file']
+        if self.simulation_mode:
+            # If solving the inverse problem, the measurment is the surface reflectance
+            self.fm.surface.rfl = data['reflectance_file'].copy()
+            if self.fm.surface.wl is not None:
+                self.fm.surface.resample_reflectance()
+            meas = self.fm.surface.rfl
+        else:
+            # If solving the inverse problem, the measurment is the radiance
+            # We apply the calibration correciton here for simplicity.
+            meas = data['measured_radiance_file']
+            if meas is not None:
+                meas = meas.copy()
+            if data["radiometry_correction_file"] is not None:
+                meas *= data['radiometry_correction_file']
 
         # We build the geometry object for this spectrum.  For files not
         # specified in the input configuration block, the associated entries
@@ -383,26 +399,7 @@ class IO:
                         glt=data['glt_file'],
                         loc=data['loc_file'])
 
-        # Updates are simply serialized prior distribution vectors for this
-        # spectrum (or 'None' if the file was not specified in the input
-        # configuration block).  The ordering is [surface, RT, instrument]
-        updates = (
-            {
-                'prior_means': data['surface_prior_mean_file'],
-                'prior_variances': data['surface_prior_variance_file'],
-                'reflectance': data['reflectance_file']
-            },
-            {
-                'prior_means': data['rt_prior_mean_file'],
-                'prior_variances': data['rt_prior_variance_file']
-            },
-            {
-                'prior_means': data['instrument_prior_mean_file'],
-                'prior_variances': data['instrument_prior_variance_file']
-            }
-        )
-
-        return True, r, c, meas, geom, updates
+        return True, r, c, meas, geom
 
     def __iter__(self):
         """ Reset the iterator"""
@@ -423,11 +420,11 @@ class IO:
 
             # Determine the appropriate row, column index. and initialize the
             # data dictionary with empty entries.
-            success, r, c, meas, geom, updates = self.get_components_at_index(
+            success, r, c, meas, geom = self.get_components_at_index(
                 self.iter)
             self.iter = self.iter + 1
 
-        return r, c, meas, geom, updates
+        return r, c, meas, geom
 
     def check_wavelengths(self, wl):
         """Make sure an input wavelengths align to the instrument definition."""
@@ -450,7 +447,7 @@ class IO:
         if len(states) == 0:
 
             # Write a bad data flag
-            atm_bad = np.zeros(len(self.fm.statevec)) * -9999.0
+            atm_bad = np.zeros(len(self.fm.n_chan)*5) * -9999.0
             state_bad = np.zeros(len(self.fm.statevec)) * -9999.0
             data_bad = np.zeros(self.fm.instrument.n_chan) * -9999.0
             to_write = {
@@ -506,10 +503,10 @@ class IO:
 
             L_atm = self.fm.RT.get_L_atm(x_RT, geom)
             L_down_transmitted = self.fm.RT.get_L_down_transmitted(x_RT, geom)
-            L_up = self.fm.RT.get_L_up(x_RT, geom)
 
             atm = np.column_stack(list(coeffs[:4]) +
                                   [np.ones((len(wl), 1)) * coszen])
+            atm = atm.T.reshape((len(wl)*5,))
 
             # Upward emission & glint and apparent reflectance
             Ls_est = self.fm.calc_Ls(state_est, geom)
@@ -620,8 +617,7 @@ class IO:
                 'transup': transup,
                 'solar_irr': solar_irr,
                 'L_atm': L_atm,
-                'L_down_transmitted': L_down_transmitted,
-                'L_up': L_up
+                'L_down_transmitted': L_down_transmitted
             }
             scipy.io.savemat(self.output.data_dump_file, mdict)
 
