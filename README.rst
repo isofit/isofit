@@ -125,3 +125,8 @@ Additional Installation Info for Mac OSX
   xcode-select --install
 
 2. Download the python3 installer from https://www.python.org/downloads/mac-osx/
+
+
+Known Incompatibilities
+-----------------------
+Ray may have compatability issues with older machines with glibc < 2.14.
