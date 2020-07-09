@@ -56,7 +56,8 @@ sixs_template = '''0 (User defined)
 class SixSRT(TabularRT):
     """A model of photon transport including the atmosphere."""
 
-    def __init__(self, engine_config: RadiativeTransferEngineConfig, full_config: Config):
+    def __init__(self, engine_config: RadiativeTransferEngineConfig, full_config: Config,
+                        build_lut=True, build_lut_only=False):
 
         self.angular_lut_keys_degrees = ['OBSZEN', 'TRUEAZ', 'viewzen', 'viewaz',
                                          'solzen', 'solaz']
@@ -65,6 +66,7 @@ class SixSRT(TabularRT):
         super().__init__(engine_config, full_config)
 
         self.treat_as_emissive = False
+        self.lut_quantities = ['rhoatm', 'transm', 'sphalb', 'transup']
 
         self.sixs_dir = self.find_basedir(engine_config)
         self.sixs_grid_init = np.arange(self.wl[0], self.wl[-1]+2.5, 2.5)
@@ -98,20 +100,20 @@ class SixSRT(TabularRT):
             self.params['solaz'] = engine_config.solaz
             self.params['viewaz'] = engine_config.viewaz
 
-        self.esd = np.loadtxt(engine_config.earth_sun_distance_file)
-        dt = datetime(2000, self.params['month'], self.params['day'])
-        self.day_of_year = dt.timetuple().tm_yday
-        self.irr_factor = self.esd[self.day_of_year-1, 1]
+        if build_lut_only is False:
+            self.esd = np.loadtxt(engine_config.earth_sun_distance_file)
+            dt = datetime(2000, self.params['month'], self.params['day'])
+            self.day_of_year = dt.timetuple().tm_yday
+            self.irr_factor = self.esd[self.day_of_year-1, 1]
 
-        irr = np.loadtxt(engine_config.irradiance_file, comments='#')
-        iwl, irr = irr.T
-        irr = irr / 10.0  # convert, uW/nm/cm2
-        irr = irr / self.irr_factor**2  # consider solar distance
-        self.solar_irr = resample_spectrum(irr, iwl,  self.wl, self.fwhm)
+            irr = np.loadtxt(engine_config.irradiance_file, comments='#')
+            iwl, irr = irr.T
+            irr = irr / 10.0  # convert, uW/nm/cm2
+            irr = irr / self.irr_factor**2  # consider solar distance
+            self.solar_irr = resample_spectrum(irr, iwl,  self.wl, self.fwhm)
 
-
-        self.lut_quantities = ['rhoatm', 'transm', 'sphalb', 'transup']
-        self.build_lut()
+        if build_lut:
+            self.build_lut()
 
     def find_basedir(self, config: RadiativeTransferEngineConfig):
         """Seek out a sixs base directory."""
@@ -149,11 +151,11 @@ class SixSRT(TabularRT):
         if os.path.exists(outfilepath) and os.path.exists(infilepath):
             raise FileExistsError('Files exist')
 
-        sixspath = self.sixs_dir+'/sixsV2.1'
-
         if self.sixs_dir is None:
             logging.error('Specify a SixS installation')
             raise KeyError('Specify a SixS installation')
+
+        sixspath = self.sixs_dir+'/sixsV2.1'
 
         # write config files
         sixs_config_str = sixs_template.format(**vals)

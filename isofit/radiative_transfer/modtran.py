@@ -48,7 +48,8 @@ eps = 1e-5  # used for finite difference derivative calculations
 class ModtranRT(TabularRT):
     """A model of photon transport including the atmosphere."""
 
-    def __init__(self, engine_config: RadiativeTransferEngineConfig, full_config: Config):
+    def __init__(self, engine_config: RadiativeTransferEngineConfig, full_config: Config, 
+                 build_lut: bool = True):
         """."""
 
         # Specify which of the potential MODTRAN LUT parameters are angular, which will be handled differently
@@ -98,7 +99,8 @@ class ModtranRT(TabularRT):
         self.last_point_lookup_values = np.zeros(self.n_point)
 
         # Build the lookup table
-        self.build_lut()
+        if build_lut:
+            self.build_lut()
 
     def find_basedir(self, config):
         """Seek out a modtran base directory."""

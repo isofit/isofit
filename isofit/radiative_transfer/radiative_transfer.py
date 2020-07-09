@@ -25,6 +25,7 @@ from ..core.common import eps
 from ..radiative_transfer.modtran import ModtranRT
 from ..radiative_transfer.six_s import SixSRT
 from ..radiative_transfer.libradtran import LibRadTranRT
+from ..radiative_transfer.simulated_modtran import SimulatedModtranRT
 from isofit.configs import Config
 from isofit.configs.sections.radiative_transfer_config import RadiativeTransferEngineConfig
 
@@ -60,6 +61,8 @@ class RadiativeTransfer():
                 rte = LibRadTranRT(rte_config, full_config)
             elif rte_config.engine_name == '6s':
                 rte = SixSRT(rte_config, full_config)
+            elif rte_config.engine_name == 'simulated_modtran':
+                rte = SimulatedModtranRT(rte_config, full_config)
             else:
                 # Should never get here, checked in config
                 raise AttributeError(
