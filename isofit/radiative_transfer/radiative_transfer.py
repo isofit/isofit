@@ -66,6 +66,10 @@ class RadiativeTransfer():
                     'Invalid radiative transfer engine name: {}'.format(rte_config.engine_name))
 
             self.rt_engines.append(rte)
+        
+        # The rest of the code relies on sorted order of the individual RT engines which cannot
+        # be guaranteed by the dict JSON or YAML input
+        self.rt_engines.sort(key=lambda x: x.wl[0])
 
         # Retrieved variables.  We establish scaling, bounds, and
         # initial guesses for each state vector element.  The state

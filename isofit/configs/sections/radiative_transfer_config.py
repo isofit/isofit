@@ -211,8 +211,6 @@ class RadiativeTransferConfig(BaseConfigSection):
                 rt_model = RadiativeTransferEngineConfig(subconfig[key], name=key)
                 self.radiative_transfer_engines.append(rt_model)
 
-        self.radiative_transfer_engines.sort(key=lambda x: x.wavelength_range[0])
-
     def _check_config_validity(self) -> List[str]:
         errors = list()
 
