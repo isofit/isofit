@@ -145,12 +145,22 @@ def invert_simple(forward, meas, geom):
     RT = forward.RT
     instrument = forward.instrument
 
+    vswir_present = False
+    if any(forward.surface.wl < 3000):
+        vswir_present = True 
+
+    tir_present = False
+    if any(forward.surface.wl > 7000):
+        tir_present = True 
+
     # First step is to get the atmosphere. We start from the initial state
     # and estimate atmospheric terms using traditional heuristics.
     x = forward.init.copy()
     x_surface, x_RT, x_instrument = forward.unpack(x)
-    x[forward.idx_RT] = heuristic_atmosphere(RT, instrument,
-                                             x_RT, x_instrument,  meas, geom)
+
+    if vswir_present:
+        x[forward.idx_RT] = heuristic_atmosphere(RT, instrument, 
+                                                 x_RT, x_instrument,  meas, geom)
 
     # Now, with atmosphere fixed, we can invert the radiance algebraically
     # via Lambertian approximations to get reflectance
@@ -162,30 +172,35 @@ def invert_simple(forward, meas, geom):
     # Condition thermal part on the VSWIR portion. Only works for
     # Multicomponent surfaces. Finds the cluster nearest the VSWIR heuristic
     # inversion and uses it for the TIR suface initialization.
-    if any(forward.surface.wl > 3000):
-        rfl_idx = np.array([i for i, v in \
-                enumerate(forward.surface.statevec_names) if 'RFL' in v])
-        tir_idx = np.where(forward.surface.wl > 3000)[0]
-        vswir_idx = np.where(forward.surface.wl < 3000)[0]
-        vswir_idx = np.array([i for i in vswir_idx if i in
-                              forward.surface.idx_ref])
-        x_surface_temp = x_surface.copy()
-        x_surface_temp[:len(rfl_est)] = rfl_est
-        mu = forward.surface.xa(x_surface_temp, geom)
-        C = forward.surface.Sa(x_surface_temp, geom)
-        rfl_est[tir_idx] = mu[tir_idx]
+    if tir_present:
+        tir_idx = np.where(forward.surface.wl > 7000)[0]
+
+        if vswir_present:
+            x_surface_temp = x_surface.copy()
+            x_surface_temp[:len(rfl_est)] = rfl_est
+            mu = forward.surface.xa(x_surface_temp, geom)
+            rfl_est[tir_idx] = mu[tir_idx]
+        else:
+            rfl_est = 0.03 * np.ones(len(forward.surface.wl))
 
     # Now we have an estimated reflectance. Fit the surface parameters.
     x_surface[forward.idx_surface] = forward.surface.fit_params(rfl_est, geom)
 
     # Find temperature of emissive surfaces
-    if forward.surface.emissive:
+    if tir_present:
 
         # Estimate the total radiance at sensor, leaving out surface emission
         # Radiate transfer calculations could take place at high spectral resolution
         # so we upsample the surface reflectance
         rfl_hi = forward.upsample(forward.surface.wl, rfl_est)
         rhoatm, sphalb, transm, solar_irr, coszen, transup = coeffs
+
+        if vswir_present:
+            _, sphalb, _, _, _, transup = coeffs
+        else:
+            sphalb = 0. * np.ones(len(forward.surface.wl))
+            transup = 0.9 * np.ones(len(forward.surface.wl))
+
         L_atm = RT.get_L_atm(x_RT, geom)
         L_down_transmitted = RT.get_L_down_transmitted(x_RT, geom)
         L_total_without_surface_emission = \
