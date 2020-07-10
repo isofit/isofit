@@ -109,6 +109,10 @@ class Isofit:
         # Build the forward model and inversion objects
         self._init_nonpicklable_objects()
         self.io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
+    
+
+    def __del__(self):
+        ray.shutdown()
 
     def _init_nonpicklable_objects(self) -> None:
         """ Internal function to initialize objects that cannot be pickled
