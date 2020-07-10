@@ -195,12 +195,6 @@ def invert_simple(forward, meas, geom):
         rfl_hi = forward.upsample(forward.surface.wl, rfl_est)
         rhoatm, sphalb, transm, solar_irr, coszen, transup = coeffs
 
-        if vswir_present:
-            _, sphalb, _, _, _, transup = coeffs
-        else:
-            sphalb = 0. * np.ones(len(forward.surface.wl))
-            transup = 0.9 * np.ones(len(forward.surface.wl))
-
         L_atm = RT.get_L_atm(x_RT, geom)
         L_down_transmitted = RT.get_L_down_transmitted(x_RT, geom)
         L_total_without_surface_emission = \
