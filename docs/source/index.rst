@@ -5,6 +5,7 @@
    :maxdepth: 2
 
    custom/readme_ref.rst
+   custom/best_practices.rst
 
 .. toctree::
    :Caption: The Code
