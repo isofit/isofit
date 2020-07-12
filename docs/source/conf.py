@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.abspath('../../isofit'))
 
 project = 'ISOFIT: Imaging Spectrometer Optimal FITting'
 copyright = 'Copyright 2018 California Institute of Technology'
-author = 'David R. Thompson, Philip G. Brodrick, Winston Olson Duvall, and many others'
+author = ''' D. R. Thompson, P. G. Brodrick, W. Olson Duvall, others'''
 
 
 # -- General configuration ---------------------------------------------------
