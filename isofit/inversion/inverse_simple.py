@@ -76,7 +76,7 @@ def heuristic_atmosphere(RT: RadiativeTransfer, instrument, x_RT, x_instrument, 
             # Get Atmospheric terms at high spectral resolution
             x_RT_2 = x_RT.copy()
             x_RT_2[ind_sv] = h2o
-            rhi = RT.get(x_RT_2, geom)
+            rhi = RT.get_shared_rtm_quantities(x_RT_2, geom)
             rhoatm = instrument.sample(x_instrument, RT.wl, rhi['rhoatm'])
             transm = instrument.sample(x_instrument, RT.wl, rhi['transm'])
             sphalb = instrument.sample(x_instrument, RT.wl, rhi['sphalb'])
@@ -107,7 +107,7 @@ def invert_algebraic(surface, RT: RadiativeTransfer, instrument, x_surface,
 
     # Get atmospheric optical parameters (possibly at high
     # spectral resolution) and resample them if needed.
-    rhi = RT.get(x_RT, geom)
+    rhi = RT.get_shared_rtm_quantities(x_RT, geom)
     wl, fwhm = instrument.calibration(x_instrument)
     rhoatm = instrument.sample(x_instrument, RT.wl, rhi['rhoatm'])
     transm = instrument.sample(x_instrument, RT.wl, rhi['transm'])
