@@ -102,6 +102,7 @@ class ModtranRT(TabularRT):
         if build_lut:
             self.build_lut()
 
+
     def find_basedir(self, config):
         """Seek out a modtran base directory."""
 
@@ -222,6 +223,23 @@ class ModtranRT(TabularRT):
         if hasattr(self, 'aer_absc'):
             fracs = np.zeros((self.naer))
 
+        if 'IPARM' not in param[0]['MODTRANINPUT']['GEOMETRY']:
+            raise AttributeError('MODTRAN template requires an IPARM specification')
+
+        if param[0]['MODTRANINPUT']['GEOMETRY']['ITYPE'] != 3:
+            raise AttributeError('Currently unsupported modtran ITYPE specification')
+
+        # Geometry values that depend on IPARM
+        if param[0]['MODTRANINPUT']['GEOMETRY']['IPARM'] == 12 and \
+            'GMTIME' in overrides.keys():
+            raise AttributeError('GMTIME in MODTRAN driver overrides, but IPARM set to 12.  Check modtran template.')
+        elif param[0]['MODTRANINPUT']['GEOMETRY']['IPARM'] == 11 and \
+            set(['solar_azimuth','solaz','solar_zenith','solzen']).intersection(set(overrides.keys())):
+            raise AttributeError('Solar geometry (solar az/azimuth zen/zenith) is specified, but IPARM is set to 12.  Check MODTRAN template') 
+        
+        if set(['PARM1','PARM2']).intersection(set(overrides.keys())):
+            raise AttributeError('PARM1 and PARM2 keys not supported as LUT dimensions.  Please use either solar_azimuth/solaz or solar_zenith/solzen')
+
         # Perform overrides
         for key, val in overrides.items():
             recursive_replace(param, key, val)
@@ -230,16 +248,33 @@ class ModtranRT(TabularRT):
                 i = int(key.split('_')[-1])
                 fracs[i] = val
 
-            elif key == 'EXT550' or key == 'AOT550' or key == 'AOD550':
+            elif key in ['EXT550', 'AOT550', 'AOD550']:
                 # MODTRAN 6.0 convention treats negative visibility as AOT550
                 recursive_replace(param, 'VIS', -val)
 
             elif key == 'FILTNM':
                 param[0]['MODTRANINPUT']['SPECTRAL']['FILTNM'] = val
-
-            elif key in ['ITYPE', 'H1ALT', 'IDAY', 'IPARM', 'PARM1',
-                         'PARM2', 'GMTIME', 'TRUEAZ', 'OBSZEN']:
+            
+            # Geometry parameters we want to populate even if unassigned
+            elif key in ['H1ALT', 'IDAY', 'TRUEAZ','OBSZEN', 'GMTIME' ]:
                 param[0]['MODTRANINPUT']['GEOMETRY'][key] = val
+
+            elif key in ['solar_azimuth''solaz']:
+                if 'TRUEAZ' not in param[0]['MODTRANINPUT']['GEOMETRY']:
+                    raise AttributeError('Cannot have solar azimuth in LUT without specifying TRUEAZ.  Use RELAZ instead.')
+                param[0]['MODTRANINPUT']['GEOMETRY']['PARM1'] = param[0]['MODTRANINPUT']['GEOMETRY']['TRUEAZ'] - val + 180
+
+            elif key in ['solar_zenith', 'solzen']:
+                param[0]['MODTRANINPUT']['GEOMETRY']['PARM1'] = abs(val)
+            
+            #elif key in ['altitude_km']
+
+            elif key in ['DISALB', 'NAME']:
+                recursive_replace(param, key, val)
+            elif key in param[0]['MODTRANINPUT']['ATMOSPHERE'].keys():
+                recursive_replace(param, key, val)
+            else:
+                raise AttributeError('Unsupported MODTRAN parameter {} specified'.format(key))
 
         # For custom aerosols, specify final extinction and absorption
         # MODTRAN 6.0 convention treats negative visibility as AOT550
@@ -335,6 +370,7 @@ class ModtranRT(TabularRT):
 
         self.wl = mod_outputs[0]['wl']
         self.solar_irr = mod_outputs[0]['sol']
+        np.save('solar_irr.npy',self.solar_irr)
         self.coszen = np.cos(mod_outputs[0]['solzen'] * np.pi / 180.0)
 
         dims_aug = self.lut_dims + [self.n_chan]
@@ -472,7 +508,9 @@ class ModtranRT(TabularRT):
             elif name == "OBSZEN":
                 point[point_ind] = geom.OBSZEN
             elif name == "GNDALT":
-                point[point_ind] = geom.GNDALT
+                point[point_ind] = geom.surface_elevation_km
+            elif name == "H1ALT":
+                point[point_ind] = geom.observer_altitude_km
             elif name == "viewzen":
                 point[point_ind] = geom.observer_zenith
             elif name == "viewaz":

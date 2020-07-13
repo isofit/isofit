@@ -251,16 +251,26 @@ class SixSRT(TabularRT):
             ret[key] = np.array(lut(point)).ravel()
         return ret
 
-    def get(self, x_RT, geom):
+    def get(self, x_RT: np.array, geom: Geometry):
+        """ Get interpolated six-s results at a particular location
+
+        Args:
+            x_RT: radiative-transfer portion of the statevector
+            geom: local geometry conditions for lookup
+
+        Returns:
+            interpolated modtran result
+
+        """
         point = np.zeros((self.n_point,))
         for point_ind, name in enumerate(self.lut_grid_config):
             if name in self.statevector_names:
                 ix = self.statevector_names.index(name)
                 point[point_ind] = x_RT[ix]
-            elif name == "OBSZEN":
-                point[point_ind] = geom.OBSZEN
-            elif name == "GNDALT":
-                point[point_ind] = geom.GNDALT
+            elif name == "elev":
+                point[point_ind] = geom.surface_elevation_km
+            elif name == "alt":
+                point[point_ind] = geom.observer_altitude_km
             elif name == "viewzen":
                 point[point_ind] = geom.observer_zenith
             elif name == "viewaz":
@@ -269,8 +279,6 @@ class SixSRT(TabularRT):
                 point[point_ind] = geom.solar_azimuth
             elif name == "solzen":
                 point[point_ind] = geom.solar_zenith
-            elif name == "TRUEAZ":
-                point[point_ind] = geom.TRUEAZ
             elif name == 'phi':
                 point[point_ind] = geom.phi
             elif name == 'umu':
