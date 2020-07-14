@@ -259,6 +259,10 @@ class ModtranRT(TabularRT):
             elif key in ['H1ALT', 'IDAY', 'TRUEAZ','OBSZEN', 'GMTIME' ]:
                 param[0]['MODTRANINPUT']['GEOMETRY'][key] = val
 
+            # Surface parameters we want to populate even if unassigned
+            elif key in ['GNDALT']:
+                param[0]['MODTRANINPUT']['SURFACE'][key] = val
+
             elif key in ['solar_azimuth''solaz']:
                 if 'TRUEAZ' not in param[0]['MODTRANINPUT']['GEOMETRY']:
                     raise AttributeError('Cannot have solar azimuth in LUT without specifying TRUEAZ.  Use RELAZ instead.')
