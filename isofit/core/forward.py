@@ -120,6 +120,10 @@ class ForwardModel:
         self.instrument_b_inds = np.arange(
             len(self.instrument.bvec), dtype=int) + len(self.surface_b_inds) + len(self.RT_b_inds)
 
+        # Load model discrepancy correction
+        if self.model_discrepancy_file is not None:
+            self.model_discrepancy = np.load(self.model_discrepancy_file)
+
     def out_of_bounds(self, x):
         """Check if state vector is within bounds."""
 
@@ -201,12 +205,20 @@ class ForwardModel:
 
     def Seps(self, x, meas, geom):
         """Calculate the total uncertainty of the observation, including
-        both the instrument noise and the uncertainty due to unmodeled
-        variables. This is the S_epsilon matrix of Rodgers et al."""
+        up to three terms: (1) the instrument noise; (2) the uncertainty 
+        due to explicit unmodeled variables, i.e. the S_epsilon matrix of
+        Rodgers et al.; and (3) an aggregate 'model discrepancy' term."""
+
+        if self.model_discrepancy_file is not None:
+            # Model discrepancy is represented relative to radiance,
+            # so we must rescale it.
+            Gamma = rdn @ self.model_discrepancy @ rdn
+        else:
+            Gamma = 0
 
         Kb = self.Kb(x, geom)
         Sy = self.instrument.Sy(meas, geom)
-        return Sy + Kb.dot(self.Sb).dot(Kb.T)
+        return Sy + Kb.dot(self.Sb).dot(Kb.T) + Gamma 
 
     def K(self, x, geom):
         """Derivative of observation with respect to state vector. This is 

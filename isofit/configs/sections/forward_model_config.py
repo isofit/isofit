@@ -49,6 +49,12 @@ class ForwardModelConfig(BaseConfigSection):
         """
         self.set_config_options(sub_configdic)
 
+        self._model_discrepancy_file_type = str
+        self.model_discrepancy_file: None
+        """
+        Points to an numpy-format covariance matrix. 
+        """
+
     def _check_config_validity(self) -> List[str]:
         errors = list()
 
