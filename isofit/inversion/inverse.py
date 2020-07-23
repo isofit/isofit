@@ -96,8 +96,8 @@ class Inversion:
         self.least_squares_params = {
             'method': 'trf',
             'max_nfev': 20,
-            'bounds': (self.fm.bounds[0][self.inds_free] + eps,
-                       self.fm.bounds[1][self.inds_free] - eps),
+            'bounds': (self.fm.bounds[0][self.inds_free],
+                       self.fm.bounds[1][self.inds_free]),
             'x_scale': self.fm.scale[self.inds_free],
             'xtol': None,
             'ftol': 1e-2,

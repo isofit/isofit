@@ -36,7 +36,6 @@ from isofit.radiative_transfer.six_s import SixSRT
 import keras
 from sklearn.preprocessing import StandardScaler
 
-
 class SimulatedModtranRT(TabularRT):
     """A hybrid simulator and emulator of MODTRAN-like results
 
@@ -54,7 +53,7 @@ class SimulatedModtranRT(TabularRT):
         super().__init__(engine_config, full_config)
 
         #self.lut_quantities = ['rhoatm', 'transm', 'sphalb', 'transup']
-        self.lut_quantities = ['transm', 'rhoatm', 'sphalb','transup']
+        self.lut_quantities = ['transm', 'rhoatm', 'sphalb']
         self.treat_as_emissive = False
 
         # Load in the emulator
@@ -78,12 +77,11 @@ class SimulatedModtranRT(TabularRT):
         with open(sixs_config.template_file, 'r') as infile:
             modtran_input = yaml.safe_load(infile)['MODTRAN'][0]['MODTRANINPUT']
 
-        # Do a quick conversion from modtran to 
+        # Do a quickk conversion to put things in solar azimuth/zenith terms for 6s
         dt = datetime.datetime(2000, 1, 1) + datetime.timedelta(days=modtran_input['GEOMETRY']['IDAY'] - 1)  + \
              datetime.timedelta(hours = modtran_input['GEOMETRY']['GMTIME'])
 
-        solar_azimuth, solar_zenith, ra, dec, h = sunpos(dt, modtran_input['GEOMETRY']['PARM1'],
-            -1*modtran_input['GEOMETRY']['PARM2'],modtran_input['SURFACE']['GNDALT'] * 1000.0)  
+        solar_azimuth, solar_zenith, ra, dec, h = sunpos(dt, modtran_input['GEOMETRY']['PARM1'],-modtran_input['GEOMETRY']['PARM2'],modtran_input['SURFACE']['GNDALT'] * 1000.0)  
 
         sixs_config.day = dt.day
         sixs_config.month = dt.month
@@ -101,29 +99,17 @@ class SimulatedModtranRT(TabularRT):
         self.solar_irr = sixs_rte.solar_irr
         self.esd = sixs_rte.esd
         self.coszen = sixs_rte.coszen
-        print('SOLAR_IRR: {}'.format(self.solar_irr))
-        print('COSZEN: {}'.format(self.coszen))
-        self.solar_irr = np.load('solar_irr.npy')[:-1]
+        self.solar_irr = emulator_aux['solar_irr'][:-1]
 
         # Couple emulator-simulator
-        emulator_inputs = np.zeros((sixs_rte.points.shape[0],self.n_chan*len(emulator_aux['rt_quantities']) + len(emulator_aux['lut_names'])), dtype=float)
+        emulator_inputs = np.zeros((sixs_rte.points.shape[0],self.n_chan*len(emulator_aux['rt_quantities'])), dtype=float)
 
-        #populate geometry values with means, in case our local LUT doesn't know anythign about them
-        for nameind, name in enumerate(emulator_aux['lut_names']):
-            value_from_modtran = self.recursive_dict_search(modtran_input, name)
-            if value_from_modtran is not None:
-                emulator_inputs[:,len(emulator_aux['rt_quantities'])*self.n_chan + nameind] = value_from_modtran
-            # Otherwise we just leave the value as zero, which will be the mean post-standard scaling
-
-        # Get the corresponding indices of where we are going to place point values that are in the LUT
-        reorder_simulator_ind = np.array([emulator_aux['lut_names'].tolist().index(x) for x in sixs_rte.lut_names])
 
         logging.info('loading 6s results for emulator')
         for ind, (point, fn) in enumerate(zip(self.points, sixs_rte.files)):
             simulator_output = sixs_rte.load_rt(fn)
             for keyind, key in enumerate(emulator_aux['rt_quantities']):
                 emulator_inputs[ind,keyind*self.n_chan:(keyind+1)*self.n_chan] = simulator_output[key]
-            emulator_inputs[ind, reorder_simulator_ind] = point
         
         logging.debug('loading SimulatedModtran feature scaler')
         feature_scaler = StandardScaler()
@@ -138,11 +124,10 @@ class SimulatedModtranRT(TabularRT):
         response_scaler.scale_ = emulator_aux['response_scaler_scale']
 
         logging.debug('Emulating')
-        #emulator_outputs = emulator.predict(feature_scaler.transform(emulator_inputs))
-        #emulator_outputs = response_scaler.inverse_transform(emulator_outputs)
+        emulator_outputs = emulator.predict(emulator_inputs)
 
-        emulator_outputs = emulator.predict(emulator_inputs / feature_scaler.mean_)
-        emulator_outputs = emulator_outputs * response_scaler.mean_
+        emulator_outputs = emulator.predict(feature_scaler.transform(emulator_inputs))
+        emulator_outputs = response_scaler.inverse_transform(emulator_outputs)
 
         dims_aug = self.lut_dims + [self.n_chan]
         for key_ind, key in enumerate(self.lut_quantities):
@@ -153,23 +138,15 @@ class SimulatedModtranRT(TabularRT):
                 ind = tuple(ind)
                 interpolator_inputs[ind] = emulator_outputs[point_ind:point_ind+1, key_ind*self.n_chan: (key_ind+1)*self.n_chan]
 
-            #if key == 'transm':
-            #    import matplotlib.pyplot as plt 
-            #    import ipdb; ipdb.set_trace()
-            #    for _i in range(interpolator_inputs.shape[0]):
-            #        plt.plot(interpolator_inputs[ind][_i,:])
-            #        plt.show()
-
             if key == 'transup':
                 interpolator_inputs[...] = 0
 
             self.luts[key] = VectorInterpolator(self.lut_grids, interpolator_inputs,
                                                 self.lut_interp_types)
+        self.luts['transup'] = VectorInterpolator(self.lut_grids, interpolator_inputs*0, self.lut_interp_types )
 
 
         
-        
-
     def recursive_dict_search(self, indict, key):
         for k, v  in indict.items():
             if k == key:
@@ -180,8 +157,6 @@ class SimulatedModtranRT(TabularRT):
                     return found 
 
 
-
-        
     def _lookup_lut(self, point):
         ret = {}
         for key, lut in self.luts.items():
@@ -199,6 +174,8 @@ class SimulatedModtranRT(TabularRT):
                 point[point_ind] = geom.OBSZEN
             elif name == "GNDALT":
                 point[point_ind] = geom.ground_elevation_km
+            elif name == "H1ALT":
+                point[point_ind] = geom.observer_altitude_km
             elif name == "viewzen":
                 point[point_ind] = geom.observer_zenith
             elif name == "viewaz":

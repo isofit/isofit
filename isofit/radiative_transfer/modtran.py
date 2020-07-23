@@ -263,7 +263,7 @@ class ModtranRT(TabularRT):
             elif key in ['GNDALT']:
                 param[0]['MODTRANINPUT']['SURFACE'][key] = val
 
-            elif key in ['solar_azimuth''solaz']:
+            elif key in ['solar_azimuth', 'solaz']:
                 if 'TRUEAZ' not in param[0]['MODTRANINPUT']['GEOMETRY']:
                     raise AttributeError('Cannot have solar azimuth in LUT without specifying TRUEAZ.  Use RELAZ instead.')
                 param[0]['MODTRANINPUT']['GEOMETRY']['PARM1'] = param[0]['MODTRANINPUT']['GEOMETRY']['TRUEAZ'] - val + 180
