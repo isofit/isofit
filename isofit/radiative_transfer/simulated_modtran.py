@@ -33,7 +33,7 @@ from isofit.configs.sections.radiative_transfer_config import RadiativeTransferE
 from isofit.core.sunposition import sunpos
 from isofit.radiative_transfer.six_s import SixSRT
 
-import keras
+from tensorflow import keras
 from sklearn.preprocessing import StandardScaler
 
 class SimulatedModtranRT(TabularRT):
@@ -99,8 +99,15 @@ class SimulatedModtranRT(TabularRT):
         self.solar_irr = sixs_rte.solar_irr
         self.esd = sixs_rte.esd
         self.coszen = sixs_rte.coszen
-        self.solar_irr = emulator_aux['solar_irr'][:-1]
+        #self.solar_irr = emulator_aux['solar_irr']
 
+        emulator_irr = emulator_aux['solar_irr']
+        irr_factor_ref = sixs_rte.esd[200, 1]
+        irr_factor_current = sixs_rte.esd[sixs_rte.day_of_year-1, 1]
+
+        # First, convert our irr to date 0, then back to current date
+        self.solar_irr = emulator_irr  * irr_factor_ref**2 / irr_factor_current**2
+        
         # Couple emulator-simulator
         emulator_inputs = np.zeros((sixs_rte.points.shape[0],self.n_chan*len(emulator_aux['rt_quantities'])), dtype=float)
 
