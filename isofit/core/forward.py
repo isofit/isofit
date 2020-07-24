@@ -121,8 +121,12 @@ class ForwardModel:
             len(self.instrument.bvec), dtype=int) + len(self.surface_b_inds) + len(self.RT_b_inds)
 
         # Load model discrepancy correction
-        if self.model_discrepancy_file is not None:
-            self.model_discrepancy = np.load(self.model_discrepancy_file)
+        if self.config.model_discrepancy_file is not None:
+            self.model_discrepancy = np.load(self.config.model_discrepancy_file)
+            a = 0.05
+            self.model_discrepancy =  (1-a) * self.model_discrepancy + np.eye(self.model_discrepancy.shape[0]) * a
+        else:
+            self.model_discrepancy = None
 
     def out_of_bounds(self, x):
         """Check if state vector is within bounds."""
@@ -162,6 +166,7 @@ class ForwardModel:
         Sa_surface = self.surface.Sa(x_surface, geom)[:, :]
         Sa_RT = self.RT.Sa()[:, :]
         Sa_instrument = self.instrument.Sa()[:, :]
+        
         return block_diag(Sa_surface, Sa_RT, Sa_instrument)
 
     def calc_rdn(self, x, geom, rfl=None, Ls=None):
@@ -209,15 +214,17 @@ class ForwardModel:
         due to explicit unmodeled variables, i.e. the S_epsilon matrix of
         Rodgers et al.; and (3) an aggregate 'model discrepancy' term."""
 
-        if self.model_discrepancy_file is not None:
+        if self.model_discrepancy is not None:
             # Model discrepancy is represented relative to radiance,
             # so we must rescale it.
-            Gamma = rdn @ self.model_discrepancy @ rdn
+            scale = meas[:,np.newaxis] @ meas[np.newaxis,:]  
+            Gamma = self.model_discrepancy * scale * 0.1
         else:
             Gamma = 0
 
         Kb = self.Kb(x, geom)
         Sy = self.instrument.Sy(meas, geom)
+
         return Sy + Kb.dot(self.Sb).dot(Kb.T) + Gamma 
 
     def K(self, x, geom):
