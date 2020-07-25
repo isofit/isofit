@@ -80,6 +80,7 @@ class Isofit:
         # Initialize ray for parallel execution
         rayargs = {'address': self.config.implementation.ip_head,
                    'redis_password': self.config.implementation.redis_password,
+                   'ignore_reinit_error':True,
                    'local_mode': self.config.implementation.n_cores == 1}
 
         # only specify a temporary directory if we are not connecting to 
