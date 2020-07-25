@@ -47,7 +47,7 @@ class SurfaceConfig(BaseConfigSection):
 
         # Multicomponent Surface
         self._select_on_init_type = bool
-        self.select_on_init = False
+        self.select_on_init = True
         """bool: This field, if present and set to true, forces us to use any initialization state and never change. 
         The state is preserved in the geometry object so that this object stays stateless"""
 
