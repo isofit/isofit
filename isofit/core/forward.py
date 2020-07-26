@@ -123,8 +123,6 @@ class ForwardModel:
         # Load model discrepancy correction
         if self.config.model_discrepancy_file is not None:
             self.model_discrepancy = np.load(self.config.model_discrepancy_file)
-            a = 0.05
-            self.model_discrepancy =  (1-a) * self.model_discrepancy + np.eye(self.model_discrepancy.shape[0]) * a
         else:
             self.model_discrepancy = None
 
@@ -212,13 +210,11 @@ class ForwardModel:
         """Calculate the total uncertainty of the observation, including
         up to three terms: (1) the instrument noise; (2) the uncertainty 
         due to explicit unmodeled variables, i.e. the S_epsilon matrix of
-        Rodgers et al.; and (3) an aggregate 'model discrepancy' term."""
+        Rodgers et al.; and (3) an aggregate 'model discrepancy' term,
+        Gamma."""
 
         if self.model_discrepancy is not None:
-            # Model discrepancy is represented relative to radiance,
-            # so we must rescale it.
-            scale = meas[:,np.newaxis] @ meas[np.newaxis,:]  
-            Gamma = self.model_discrepancy * scale * 0.1
+            Gamma = self.model_discrepancy 
         else:
             Gamma = 0
 
