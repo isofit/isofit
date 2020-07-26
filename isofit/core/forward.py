@@ -23,6 +23,7 @@ from copy import deepcopy
 from scipy.linalg import det, norm, pinv, sqrtm, inv, block_diag
 from importlib import import_module
 from scipy.interpolate import interp1d
+from scipy.io import loadmat
 
 from .common import recursive_replace, eps
 from .instrument import Instrument
@@ -122,7 +123,8 @@ class ForwardModel:
 
         # Load model discrepancy correction
         if self.config.model_discrepancy_file is not None:
-            self.model_discrepancy = np.load(self.config.model_discrepancy_file)
+            D = loadmat(self.config.model_discrepancy_file)
+            self.model_discrepancy = D['cov']
         else:
             self.model_discrepancy = None
 
