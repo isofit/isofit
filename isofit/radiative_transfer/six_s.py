@@ -170,7 +170,7 @@ class SixSRT(TabularRT):
 
         return 'bash '+scriptfilepath
 
-    def load_rt(self, fn):
+    def load_rt(self, fn, resample=True):
         """Load the results of a SixS run."""
 
         with open(os.path.join(self.lut_dir, fn), 'r') as l:
@@ -206,17 +206,15 @@ class SixSRT(TabularRT):
             transms[i] = float(scau) * float(scad) * float(gt)
             rhoatms[i] = float(rhoa)
 
-        results = {
-            "solzen": resample_spectrum(solzens,  self.grid, self.wl,
-                                        self.fwhm),
-            "rhoatm": resample_spectrum(rhoatms,  self.grid, self.wl,
-                                        self.fwhm),
-            "transm": resample_spectrum(transms,  self.grid, self.wl,
-                                        self.fwhm),
-            "sphalb": resample_spectrum(sphalbs,  self.grid, self.wl,
-                                        self.fwhm),
-            "transup": resample_spectrum(transups, self.grid, self.wl,
-                                         self.fwhm)}
+        if resample:
+            solzens = resample_spectrum(solzens,  self.grid, self.wl, self.fwhm)
+            rhoatms = resample_spectrum(rhoatms,  self.grid, self.wl, self.fwhm)
+            transms = resample_spectrum(transms,  self.grid, self.wl, self.fwhm)
+            sphalbs = resample_spectrum(sphalbs,  self.grid, self.wl, self.fwhm)
+            transups = resample_spectrum(transups,  self.grid, self.wl, self.fwhm)
+
+        results = {"solzen": solzens, "rhoatm": rhoatms, "transm": transms, "sphalb": sphalbs,
+               "transup": transups}
         return results
 
     def ext550_to_vis(self, ext550):
