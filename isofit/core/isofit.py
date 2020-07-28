@@ -80,12 +80,15 @@ class Isofit:
         # Initialize ray for parallel execution
         rayargs = {'address': self.config.implementation.ip_head,
                    'redis_password': self.config.implementation.redis_password,
+                   'ignore_reinit_error':True,
                    'local_mode': self.config.implementation.n_cores == 1}
 
         # only specify a temporary directory if we are not connecting to 
         # a ray cluster
         if rayargs['local_mode']:
             rayargs['temp_dir'] = self.config.implementation.ray_temp_dir
+            # Used to run on a VPN
+            ray.services.get_node_ip_address = lambda: '127.0.0.1'
 
         # We can only set the num_cpus if running on a single-node
         if self.config.implementation.ip_head is None and self.config.implementation.redis_password is None:

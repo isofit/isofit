@@ -25,7 +25,7 @@ EPS = 1e-6
 CHUNKSIZE = 256
 SEGMENTATION_SIZE = 400
 
-UNCORRELATED_RADIOMETRIC_UNCERTAINTY = 0.02
+UNCORRELATED_RADIOMETRIC_UNCERTAINTY = 0.01
 
 INVERSION_WINDOWS = [[400.0, 1300.0], [1450, 1780.0], [2050.0, 2450.0]]
 
@@ -102,6 +102,7 @@ def main():
     parser.add_argument('--rdn_factors_path', type=str)
     parser.add_argument('--surface_path', type=str)
     parser.add_argument('--channelized_uncertainty_path', type=str)
+    parser.add_argument('--model_discrepancy_path', type=str)
     parser.add_argument('--lut_config_file', type=str)
     parser.add_argument('--logging_level', type=str, default="INFO")
     parser.add_argument('--log_file', type=str, default=None)
@@ -375,6 +376,13 @@ class Pathnames():
 
         self.channelized_uncertainty_working_path = abspath(join(self.data_directory, 'channelized_uncertainty.txt'))
 
+        if args.model_discrepancy_path:
+            self.input_model_discrepancy_path = args.model_discrepancy_path
+        else:
+            self.input_model_discrepancy_path = None
+
+        self.model_discrepancy_working_path = abspath(join(self.data_directory, 'model_discrepancy.npy'))
+
         self.rdn_subs_path = abspath(join(self.input_data_directory, self.fid + '_subs_rdn'))
         self.obs_subs_path = abspath(join(self.input_data_directory, self.fid + '_subs_obs'))
         self.loc_subs_path = abspath(join(self.input_data_directory, self.fid + '_subs_loc'))
@@ -428,16 +436,15 @@ class Pathnames():
         files_to_stage = [(self.input_radiance_file, self.radiance_working_path, True),
                           (self.input_obs_file, self.obs_working_path, True),
                           (self.input_loc_file, self.loc_working_path, True),
-                          (self.surface_path, self.surface_working_path, False)]
-
-        if (self.input_channelized_uncertainty_path is not None):
-            files_to_stage.append((self.input_channelized_uncertainty_path, self.channelized_uncertainty_working_path, False))
-        else:
-            self.channelized_uncertainty_working_path = None
-            logging.info('No valid channelized uncertainty file found, proceeding without uncertainty')
-
+                          (self.surface_path, self.surface_working_path, False),
+                          (self.input_channelized_uncertainty_path, 
+                                self.channelized_uncertainty_working_path, False),
+                          (self.input_model_discrepancy_path,
+                                self.model_discrepancy_working_path, False)]
 
         for src, dst, hasheader in files_to_stage:
+            if src is None:
+                continue
             if not exists(dst):
                 logging.info('Staging %s to %s' % (src, dst))
                 copyfile(src, dst)
@@ -919,9 +926,13 @@ def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array, n_cores: int
                             "n_cores": n_cores}
                          }
 
-    if paths.channelized_uncertainty_working_path is not None:
-        isofit_config_h2o['forward_model']['unknowns'][
+    if paths.input_channelized_uncertainty_path is not None:
+        isofit_config_h2o['forward_model']['instrument']['unknowns'][
             'channelized_radiometric_uncertainty_file'] = paths.channelized_uncertainty_working_path
+
+    if paths.input_model_discrepancy_path is not None:
+        isofit_config_h2o['forward_model']['model_discrepancy_file'] = \
+            paths.model_discrepancy_working_path
 
     if paths.noise_path is not None:
         isofit_config_h2o['forward_model']['instrument']['parametric_noise_file'] = paths.noise_path
@@ -1059,9 +1070,13 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
         isofit_config_modtran['output']['estimated_reflectance_file'] = paths.rfl_working_path
         isofit_config_modtran['output']['estimated_state_file'] = paths.state_working_path
 
-    if paths.channelized_uncertainty_working_path is not None:
+    if paths.input_channelized_uncertainty_path is not None:
         isofit_config_modtran['forward_model']['instrument']['unknowns'][
             'channelized_radiometric_uncertainty_file'] = paths.channelized_uncertainty_working_path
+
+    if paths.input_model_discrepancy_path is not None:
+        isofit_config_h2o['forward_model']['model_discrepancy_file'] = \
+            paths.model_discrepancy_working_path
 
     if paths.noise_path is not None:
         isofit_config_modtran['forward_model']['instrument']['parametric_noise_file'] = paths.noise_path
