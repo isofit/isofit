@@ -60,6 +60,12 @@ class SimulatedModtranRT(TabularRT):
         emulator = keras.models.load_model(engine_config.emulator_file)
         emulator_aux = np.load(engine_config.emulator_aux_file)
 
+        simulator_wavelengths = emulator_aux['simulator_wavelengths']
+        simulator_wavelengths = np.arange(350, 2500+2.5, 2.5)
+        emulator_wavelengths = emulator_aux['emulator_wavelengths']
+        n_simulator_chan = len(simulator_wavelengths)
+        n_emulator_chan = len(emulator_wavelengths)
+
         #if len(self.wl) != len(emulator_aux['wavelengths']) or np.any(self.wl != emulator_aux['wavelengths']):
         #    raise AttributeError('Emulator wavelengths do not match simulator wavelengths')
 
@@ -93,11 +99,14 @@ class SimulatedModtranRT(TabularRT):
         sixs_config.viewaz = modtran_input['GEOMETRY']['TRUEAZ']
         sixs_config.wlinf = 0.35
         sixs_config.wlsup = 2.5
+        #sixs_config.wlinf = 0.37686
+        #sixs_config.wlsup = 2.4968600000000003
         #sixs_config.earth_sun_distance_file = None
         #sixs_config.irradiance_file = None
 
         # Build the simulator
-        sixs_rte = SixSRT(sixs_config, full_config, build_lut_only = False)
+        sixs_rte = SixSRT(sixs_config, full_config, build_lut_only = False, 
+                          wavelength_override=simulator_wavelengths, fwhm_override=np.ones(n_simulator_chan)*2.)
         self.solar_irr = sixs_rte.solar_irr
         self.esd = sixs_rte.esd
         self.coszen = sixs_rte.coszen
@@ -108,20 +117,15 @@ class SimulatedModtranRT(TabularRT):
         irr_factor_current = sixs_rte.esd[sixs_rte.day_of_year-1, 1]
 
         # First, convert our irr to date 0, then back to current date
-        self.solar_irr = emulator_irr  * irr_factor_ref**2 / irr_factor_current**2
+        self.solar_irr = resample_spectrum(emulator_irr  * irr_factor_ref**2 / irr_factor_current**2, emulator_wavelengths, self.wl, self.fwhm)
 
-        simulator_wavelengths = emulator_aux['simulator_wavelengths']
-        emulator_wavelengths = emulator_aux['emulator_wavelengths']
-        n_simulator_chan = len(simulator_wavelengths)
-        n_emulator_chan = len(emulator_wavelengths)
-        
         # Couple emulator-simulator
         emulator_inputs = np.zeros((sixs_rte.points.shape[0],n_simulator_chan*len(emulator_aux['rt_quantities'])), dtype=float)
 
 
         logging.info('loading 6s results for emulator')
         for ind, (point, fn) in enumerate(zip(self.points, sixs_rte.files)):
-            simulator_output = sixs_rte.load_rt(fn)
+            simulator_output = sixs_rte.load_rt(fn, resample=False)
             for keyind, key in enumerate(emulator_aux['rt_quantities']):
                 emulator_inputs[ind,keyind*n_simulator_chan:(keyind+1)*n_simulator_chan] = simulator_output[key]
         
@@ -143,7 +147,6 @@ class SimulatedModtranRT(TabularRT):
         emulator_outputs = emulator.predict(feature_scaler.transform(emulator_inputs))
         emulator_outputs = response_scaler.inverse_transform(emulator_outputs)
 
-        emulator_outputs = resample_spectrum(emulator_outputs, emulator_wavelengths, self.wl, self.fwhm)
 
         dims_aug = self.lut_dims + [self.n_chan]
         for key_ind, key in enumerate(self.lut_quantities):
@@ -152,7 +155,7 @@ class SimulatedModtranRT(TabularRT):
                 ind = [np.where(g == p)[0] for g, p in
                        zip(self.lut_grids, point)]
                 ind = tuple(ind)
-                interpolator_inputs[ind] = emulator_outputs[point_ind:point_ind+1, key_ind*self.n_chan: (key_ind+1)*self.n_chan]
+                interpolator_inputs[ind] = resample_spectrum(emulator_outputs[point_ind, key_ind*n_emulator_chan: (key_ind+1)*n_emulator_chan], emulator_wavelengths, self.wl, self.fwhm)
 
             if key == 'transup':
                 interpolator_inputs[...] = 0

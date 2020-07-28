@@ -57,7 +57,7 @@ class SixSRT(TabularRT):
     """A model of photon transport including the atmosphere."""
 
     def __init__(self, engine_config: RadiativeTransferEngineConfig, full_config: Config,
-                        build_lut=True, build_lut_only=False):
+                        build_lut=True, build_lut_only=False, wavelength_override=None, fwhm_override=None):
 
         self.angular_lut_keys_degrees = ['OBSZEN', 'TRUEAZ', 'viewzen', 'viewaz',
                                          'solzen', 'solaz']
@@ -67,6 +67,12 @@ class SixSRT(TabularRT):
 
         self.treat_as_emissive = False
         self.lut_quantities = ['rhoatm', 'transm', 'sphalb', 'transup']
+
+        if wavelength_override is not None:
+            self.wl = wavelength_override
+            self.n_chan = len(self.wl)
+        if fwhm_override is not None:
+            self.fwhm = fwhm_override
 
         self.sixs_dir = self.find_basedir(engine_config)
         self.sixs_grid_init = np.arange(self.wl[0], self.wl[-1]+2.5, 2.5)
