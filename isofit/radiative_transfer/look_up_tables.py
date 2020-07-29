@@ -25,6 +25,7 @@ import ray
 from collections import OrderedDict
 import subprocess
 import time
+import atexit
 
 from isofit.core import common
 from isofit.configs import Config
@@ -45,14 +46,7 @@ def spawn_rt(cmd, local_dir=None):
     # starting simultaneously
     time.sleep(float(np.random.random(1))*2)
 
-    if local_dir is not None:
-        cwd = os.getcwd()
-        os.chdir(local_dir)
-
-    subprocess.call(cmd, shell=True)
-
-    if local_dir is not None:
-        os.chdir(cwd)
+    subprocess.call(cmd, shell=True, cwd=local_dir)
 
 ### Classes ###
 
@@ -199,6 +193,8 @@ class TabularRT:
                 os.mkdir(self.lut_dir)
 
             # migrate to the appropriate directory and spool up runs
+            cwd = os.getcwd()
+            atexit.register(os.chdir, cwd)
             os.chdir(self.lut_dir)
 
             # Make the LUT calls (in parallel if specified)

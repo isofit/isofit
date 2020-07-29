@@ -297,15 +297,13 @@ class ModtranRT(TabularRT):
                     cmd = self.rebuild_cmd(point, filebase)
 
                     # Run MODTRAN for up to 10 seconds - this should be plenty of time
-                    cwd = os.getcwd()
                     if os.path.isdir(self.lut_dir) is False:
                         os.mkdir(self.lut_dir)
-                    os.chdir(self.lut_dir)
                     try:
-                        subprocess.call(cmd, shell=True, timeout=10)
+                        subprocess.call(cmd, shell=True, timeout=10,
+                                        cwd=self.lut_dir)
                     except:
                         pass
-                    os.chdir(cwd)
 
 
                     max_water = None

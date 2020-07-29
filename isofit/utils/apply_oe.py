@@ -607,14 +607,11 @@ def calc_modtran_max_water(paths: Pathnames) -> float:
     with open(filebase + '.json', 'w') as fout:
         fout.write(json.dumps(bound_test_config, cls=SerialEncoder, indent=4, sort_keys=True))
 
-    cwd = os.getcwd()
-    os.chdir(paths.lut_h2o_directory)
     cmd = os.path.join(paths.modtran_path, 'bin', xdir[platform], 'mod6c_cons ' + filebase + '.json')
     try:
-        subprocess.call(cmd, shell=True, timeout=10)
+        subprocess.call(cmd, shell=True, timeout=10, cwd=paths.lut_h2o_directory)
     except:
         pass
-    os.chdir(cwd)
 
     with open(filebase + '.tp6', errors='ignore') as tp6file:
         for count, line in enumerate(tp6file):
