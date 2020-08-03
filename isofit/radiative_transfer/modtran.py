@@ -258,6 +258,29 @@ class ModtranRT(TabularRT):
             # Geometry parameters we want to populate even if unassigned
             elif key in ['H1ALT', 'IDAY', 'TRUEAZ','OBSZEN', 'GMTIME' ]:
                 param[0]['MODTRANINPUT']['GEOMETRY'][key] = val
+            
+            elif key == 'AIRT_DELTA_K':
+                param[0]['MODTRANINPUT']['ATMOSPHERE']['MODEL'] = "ATM_USER_ALT_PROFILE"
+                param[0]['MODTRANINPUT']['ATMOSPHERE']['NPROF'] = 2
+
+                # MODTRAN cannot accept a ground altitude above 6 km, so keep all layers after that
+                hi_altitudes = [6.0,7.0,8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0,16.0,17.0,18.0,19.0,
+                                20.0,21.0,22.0,23.0,24.0,25.0,30.0,35.0,40.0,45.0,50.0,55.0,60.0,70.0,80.0,100.0] 
+                gndalt = param[0]['MODTRANINPUT']['SURFACE']['GNDALT']
+                
+                # E.g.: [1.5, 2, 3, 4, 5]
+                low_altitudes = [gndalt] + list(np.arange(6 - np.ceil(gndalt)) + np.ceil(gndalt))
+
+                altitudes = low_altitudes + hi_altitudes # Append lists, don't add altitudes!
+                param[0]['MODTRANINPUT']['ATMOSPHERE']['NLAYERS'] = len(altitudes)
+
+                altitude_dict = {
+                    'TYPE': 'PROF_ALTITUDE', 'UNITS': 'UNT_KILOMETERS', 'PROFILE': altitudes}
+                delta_kelvin_dict = {
+                    'TYPE': 'PROF_TEMPERATURE', 'UNITS': 'UNT_TDELTA_KELVIN', 'PROFILE': [val]*len(altitudes) }
+                param[0]['MODTRANINPUT']['ATMOSPHERE']['PROFILES'] = [altitude_dict, delta_kelvin_dict]
+                
+
 
             # Surface parameters we want to populate even if unassigned
             elif key in ['GNDALT']:
