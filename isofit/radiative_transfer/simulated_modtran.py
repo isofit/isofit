@@ -35,6 +35,7 @@ from isofit.radiative_transfer.six_s import SixSRT
 
 from tensorflow import keras
 from sklearn.preprocessing import StandardScaler
+from scipy import interpolate
 
 class SimulatedModtranRT(TabularRT):
     """A hybrid simulator and emulator of MODTRAN-like results
@@ -121,6 +122,7 @@ class SimulatedModtranRT(TabularRT):
 
         # Couple emulator-simulator
         emulator_inputs = np.zeros((sixs_rte.points.shape[0],n_simulator_chan*len(emulator_aux['rt_quantities'])), dtype=float)
+        #emulator_inputs = np.zeros((sixs_rte.points.shape[0],self.n_chan*len(emulator_aux['rt_quantities'])), dtype=float)
 
 
         logging.info('loading 6s results for emulator')
@@ -128,7 +130,16 @@ class SimulatedModtranRT(TabularRT):
             simulator_output = sixs_rte.load_rt(fn, resample=False)
             for keyind, key in enumerate(emulator_aux['rt_quantities']):
                 emulator_inputs[ind,keyind*n_simulator_chan:(keyind+1)*n_simulator_chan] = simulator_output[key]
-        
+                #emulator_inputs[ind,keyind*self.n_chan:(keyind+1)*self.n_chan] = resample_spectrum(simulator_output[key],simulator_wavelengths, self.wl, self.fwhm)
+
+        emulator_inputs_match_output = np.zeros((emulator_inputs.shape[0],n_emulator_chan*len(emulator_aux['rt_quantities'])))
+        for key_ind, key in enumerate(emulator_aux['rt_quantities']):
+            band_range_o = np.arange(n_emulator_chan * key_ind, n_emulator_chan * (key_ind + 1))
+            band_range_i = np.arange(n_simulator_chan * key_ind, n_simulator_chan * (key_ind + 1))
+
+            finterp = interpolate.interp1d(simulator_wavelengths,emulator_inputs[:,band_range_i])
+            emulator_inputs_match_output[:,band_range_o] = finterp(emulator_wavelengths)
+
         logging.debug('loading SimulatedModtran feature scaler')
         feature_scaler = StandardScaler()
         feature_scaler.mean_ = emulator_aux['feature_scaler_mean']
@@ -144,8 +155,11 @@ class SimulatedModtranRT(TabularRT):
         logging.debug('Emulating')
         emulator_outputs = emulator.predict(emulator_inputs)
 
-        emulator_outputs = emulator.predict(feature_scaler.transform(emulator_inputs))
-        emulator_outputs = response_scaler.inverse_transform(emulator_outputs)
+
+        #emulator_outputs = emulator.predict(feature_scaler.transform(emulator_inputs))
+        #emulator_outputs = response_scaler.inverse_transform(emulator_outputs) + emulator_inputs
+        emulator_outputs = emulator.predict(emulator_inputs)/100.
+        emulator_outputs = emulator_outputs + emulator_inputs_match_output
 
 
         dims_aug = self.lut_dims + [self.n_chan]
