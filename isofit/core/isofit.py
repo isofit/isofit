@@ -164,12 +164,22 @@ class Isofit:
                     self.states = self.iv.invert(meas, geom)
 
                 # Write the spectra to disk
-                io.write_spectrum(row, col, self.states, meas,
-                                  geom, flush_immediately=True)
+                try:
+                    io.write_spectrum(row, col, self.states, meas,
+                                      geom, flush_immediately=True)
+                except ValueError as err:
+                    logging.warning(
+                        """
+                        ValueError in row %d and col %d: %s.
+                        Results for this pixel will be all zeros.
+                        """, row, col, err
+                    )
                 if (index - index_start) % 100 == 0:
                     logging.info(
-                        'Core at start index {} completed inversion {}/{}'.format(index_start, index-index_start,
-                                                                                  index_stop-index_start))
+                        'Core at start index %d completed inversion %d/%d',
+                        index_start, 1+index-index_start,
+                        index_stop-index_start
+                    )
 
     def run(self):
         """
