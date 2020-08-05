@@ -166,17 +166,17 @@ class LibRadTranRT(TabularRT):
         # Write runscript file
         with open(scriptfilepath, 'w') as f:
             f.write('#!/usr/bin/bash\n')
-            f.write('export cwd=`pwd`\n')
-            f.write('cd %s/test\n' % self.libradtran_dir)
-            f.write('../bin/uvspec < %s > %s\n' % (infilepath0, outfilepath0))
-            f.write('../bin/uvspec < %s > %s\n' %
-                    (infilepath05, outfilepath05))
-            f.write('../bin/uvspec < %s > %s\n' %
-                    (infilepath025, outfilepath025))
-            f.write('../bin/zenith %s -a %s -o %s -y %s %s %s %s %s > %s\n' %
-                    ('-s 0 -q', lat, lon, yr, day, mon, hour, mn,
+            f.write('%s\n' % self.libradtran_environment)
+            f.write('(cd %s/bin && ./uvspec < %s > %s)\n' %
+                    (self.libradtran_dir, infilepath0, outfilepath0))
+            f.write('(cd %s/bin && ./uvspec < %s > %s)\n' %
+                    (self.libradtran_dir, infilepath05, outfilepath05))
+            f.write('(cd %s/bin && ./uvspec < %s > %s)\n' %
+                    (self.libradtran_dir, infilepath025, outfilepath025))
+            f.write('(cd %s/bin && ./zenith %s -a %s -o %s -y %s %s %s %s %s > %s)\n' %
+                    (self.libradtran_dir,
+                     '-s 0 -q', lat, lon, yr, day, mon, hour, mn,
                      outfilepathzen))
-            f.write('cd $cwd\n')
 
         return 'bash '+scriptfilepath
 

@@ -192,11 +192,6 @@ class TabularRT:
             if os.path.isdir(self.lut_dir) is False:
                 os.mkdir(self.lut_dir)
 
-            # migrate to the appropriate directory and spool up runs
-            cwd = os.getcwd()
-            atexit.register(os.chdir, cwd)
-            os.chdir(self.lut_dir)
-
             # Make the LUT calls (in parallel if specified)
             results = ray.get([spawn_rt.remote(rebuild_cmd, self.lut_dir) for rebuild_cmd in rebuild_cmds])
 
