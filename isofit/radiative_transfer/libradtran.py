@@ -49,6 +49,7 @@ class LibRadTranRT(TabularRT):
         self.treat_as_emissive = False
         self.libradtran_dir = self.find_basedir(engine_config)
         self.libradtran_template_file = engine_config.template_file
+        self.libradtran_environment = engine_config.environment
 
         self.lut_quantities = ['rhoatm', 'transm', 'sphalb', 'transup']
 
