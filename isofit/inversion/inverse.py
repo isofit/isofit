@@ -91,7 +91,6 @@ class Inversion:
 
         self.x_fixed = None
 
-        # TODO: consider brinigng in least_squares_parameters from config
         # Configure Levenberg-Marquardt
         self.least_squares_params = {
             'method': 'trf',
@@ -104,6 +103,10 @@ class Inversion:
             'gtol': None,
             'tr_solver': 'lsmr'
         }
+
+        # Update with parameters from config. If they are an empty dict
+        # (default), this does nothing.
+        self.least_squares_params.update(config.least_squares_params)
 
     def full_statevector(self, x_free):
         x = np.zeros(self.fm.nstate)

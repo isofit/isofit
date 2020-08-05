@@ -53,6 +53,14 @@ class InversionConfig(BaseConfigSection):
          (False) - a set of fixed points (not variable by the optimization algorithm)
         """
 
+        self._least_squares_params_type = dict
+        self.least_squares_params = {}
+        """
+        Dict of arguments corresponding to options of
+        `scipy.optimize.least_squares`. Isofit ships with sensible defaults, so
+        modify at your own risk.
+        """
+
         self.set_config_options(sub_configdic)
 
     def _check_config_validity(self) -> List[str]:
