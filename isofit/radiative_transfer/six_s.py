@@ -71,6 +71,10 @@ class SixSRT(TabularRT):
         if wavelength_override is not None:
             self.wl = wavelength_override
             self.n_chan = len(self.wl)
+            self.resample_wavelengths = False
+        else:
+            self.resample_wavelengths = True
+
         if fwhm_override is not None:
             self.fwhm = fwhm_override
 
@@ -80,7 +84,7 @@ class SixSRT(TabularRT):
         self.params = {'aermodel': 1,
                        'AOT550': 0.01,
                        'H2OSTR': 0,
-                       'O3': 0.40,
+                       'O3': 0.30,
                        'day':   engine_config.day,
                        'month': engine_config.month,
                        'elev':  engine_config.elev,
@@ -234,7 +238,7 @@ class SixSRT(TabularRT):
 
         sixs_outputs = []
         for point, fn in zip(self.points, self.files):
-            sixs_outputs.append(self.load_rt(fn))
+            sixs_outputs.append(self.load_rt(fn,resample=self.resample_wavelengths))
 
         self.cache = {}
         dims_aug = self.lut_dims + [self.n_chan]

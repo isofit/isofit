@@ -109,6 +109,7 @@ def main():
     parser.add_argument('--presolve', choices=[0,1], type=int, default=0)
     parser.add_argument('--empirical_line', choices=[0,1], type=int, default=0)
     parser.add_argument('--ray_temp_dir', type=str, default='/tmp/ray')
+    parser.add_argument('--emulator_base', type=str, default=None)
 
     args = parser.parse_args()
 
@@ -275,7 +276,8 @@ def main():
         logging.info('Writing main configuration file.')
         build_main_config(paths, lut_params, h2o_lut_grid, elevation_lut_grid, to_sensor_azimuth_lut_grid,
                           to_sensor_zenith_lut_grid, mean_latitude, mean_longitude, dt, 
-                          args.empirical_line == 1, args.n_cores, args.surface_category)
+                          args.empirical_line == 1, args.n_cores, args.surface_category, 
+                          emulator_base=args.emulator_base)
 
         # Run modtran retrieval
         logging.info('Running ISOFIT with full LUT')
@@ -397,6 +399,8 @@ class Pathnames():
         else:
             self.modtran_path = os.getenv('MODTRAN_DIR')
 
+        self.sixs_path = os.getenv('SIXS_DIR')
+
         # isofit file should live at isofit/isofit/core/isofit.py
         self.isofit_path = os.path.dirname(os.path.dirname(os.path.dirname(isofit.__file__)))
 
@@ -408,6 +412,9 @@ class Pathnames():
             self.noise_path = None
             logging.info('no noise path found, proceeding without')
             #quit()
+
+        self.earth_sun_distance_path = abspath(join(self.isofit_path,'data','earth_sun_distance.txt'))
+        self.irradiance_file = abspath(join(self.isofit_path,'examples','20151026_SantaMonica','data','prism_optimized_irr.dat'))
 
         self.aerosol_tpl_path = join(self.isofit_path, 'data', 'aerosol_template.json')
         self.rdn_factors_path = args.rdn_factors_path
@@ -534,7 +541,7 @@ def load_climatology(config_path: str, latitude: float, longitude: float, acquis
                 "prior_mean": float((alr[1] - alr[0]) / 10. + alr[0])}
 
             aerosol_lut = np.linspace(alr[0], alr[1], num_aerosol_lut_elements[_a])
-            aerosol_lut_grid['AERFRAC_{}'.format(_a)] = [float(q) for q in aerosol_lut]
+            aerosol_lut_grid['AERFRAC_{}'.format(_a)] = [round(float(q),4) for q in aerosol_lut]
 
     logging.info('Loading Climatology')
     # If a configuration path has been provided, use it to get relevant info
@@ -951,7 +958,8 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
                       elevation_lut_grid: np.array = None, to_sensor_azimuth_lut_grid: np.array = None,
                       to_sensor_zenith_lut_grid: np.array = None, mean_latitude: float = None,
                       mean_longitude: float = None, dt: datetime = None, use_emp_line: bool = True, 
-                      n_cores: int = -1, surface_category='multicomponent_surface'):
+                      n_cores: int = -1, surface_category='multicomponent_surface', 
+                      emulator_base: str = None):
     """ Write an isofit config file for the main solve, using the specified pathnames and all given info
 
     Args:
@@ -966,6 +974,7 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
         dt: the datetime object corresponding to this flightline to use for this solve
         use_emp_line: flag whether or not to set up for the empirical line estimation
         n_cores: the number of cores to use during processing
+        emulator_base: the basename of the emulator, if used
 
     """
 
@@ -976,15 +985,18 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
     else: 
         spectra_per_inversion = 1 
 
+    if emulator_base is None:
+        engine_name = 'modtran'
+    else:
+        engine_name = 'simulated_modtran'
     radiative_transfer_config = {
 
             "radiative_transfer_engines": {
                 "vswir": {
-                    "engine_name": 'modtran',
+                    "engine_name": engine_name,
                     "lut_path": paths.lut_modtran_directory,
                     "aerosol_template_file": paths.aerosol_tpl_path,
                     "template_file": paths.modtran_template_path,
-                    "engine_base_dir": paths.modtran_path,
                     #lut_names - populated below
                     #statevector_names - populated below
                 }
@@ -1003,14 +1015,27 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
                 "H2O_ABSCO": 0.0
             }
     }
+
+    if emulator_base is not None:
+        radiative_transfer_config['radiative_transfer_engines']['vswir']['emulator_file'] = abspath(emulator_base)
+        radiative_transfer_config['radiative_transfer_engines']['vswir']['emulator_aux_file'] = abspath(emulator_base + '_aux.npz')
+        radiative_transfer_config['radiative_transfer_engines']['vswir']['interpolator_base_path'] = abspath(os.path.join(paths.lut_modtran_directory,os.path.basename(emulator_base) + '_vi'))
+        radiative_transfer_config['radiative_transfer_engines']['vswir']['earth_sun_distance_file'] = paths.earth_sun_distance_path
+        radiative_transfer_config['radiative_transfer_engines']['vswir']['irradiance_file'] = paths.irradiance_file
+        radiative_transfer_config['radiative_transfer_engines']['vswir']["engine_base_dir"] = paths.sixs_path
+  
+    else:
+        radiative_transfer_config['radiative_transfer_engines']['vswir']["engine_base_dir"] = paths.modtran_path
+
+
     if h2o_lut_grid is not None:
-        radiative_transfer_config['lut_grid']['H2OSTR'] = [max(0.0, float(q)) for q in h2o_lut_grid]
+        radiative_transfer_config['lut_grid']['H2OSTR'] = [round(max(0.0, float(q)),4) for q in h2o_lut_grid]
     if elevation_lut_grid is not None:
-        radiative_transfer_config['lut_grid']['GNDALT'] = [max(0.0, float(q)) for q in elevation_lut_grid]
+        radiative_transfer_config['lut_grid']['GNDALT'] = [round(max(0.0, float(q)),4) for q in elevation_lut_grid]
     if to_sensor_azimuth_lut_grid is not None:
-        radiative_transfer_config['lut_grid']['TRUEAZ'] = [float(q) for q in to_sensor_azimuth_lut_grid]
+        radiative_transfer_config['lut_grid']['TRUEAZ'] = [round(float(q),4) for q in to_sensor_azimuth_lut_grid]
     if to_sensor_zenith_lut_grid is not None:
-        radiative_transfer_config['lut_grid']['OBSZEN'] = [float(q) for q in to_sensor_zenith_lut_grid] # modtran convension
+        radiative_transfer_config['lut_grid']['OBSZEN'] = [round(float(q),4) for q in to_sensor_zenith_lut_grid] # modtran convension
 
     # add aerosol elements from climatology
     aerosol_state_vector, aerosol_lut_grid, aerosol_model_path = \

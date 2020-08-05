@@ -84,6 +84,10 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         self.emulator_aux_file = None
         """str: path to emulator auxiliary data - expected npz format"""
 
+        self._interpolator_base_path_type = str
+        self.interpolator_base_path = None
+        """str: path to emulator interpolator base - will dump multiple pkl extensions to this location"""
+
         # 6S parameters - not the corcommemnd
         # TODO: these should come from a template file, as in modtran
         self._day_type = int

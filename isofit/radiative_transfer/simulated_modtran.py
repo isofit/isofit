@@ -24,6 +24,7 @@ from sys import platform
 import numpy as np
 from copy import deepcopy
 import yaml
+import pickle
 
 from isofit.core.common import resample_spectrum, load_wavelen, VectorInterpolator
 from .look_up_tables import TabularRT, FileExistsError
@@ -52,12 +53,13 @@ class SimulatedModtranRT(TabularRT):
 
         super().__init__(engine_config, full_config)
 
-        #self.lut_quantities = ['rhoatm', 'transm', 'sphalb', 'transup']
-        self.lut_quantities = ['transm', 'rhoatm', 'sphalb']
+        self.lut_quantities = ['rhoatm', 'transm', 'sphalb', 'transup']
+        #self.lut_quantities = ['transm', 'rhoatm', 'sphalb']
         self.treat_as_emissive = False
 
-        # Load in the emulator
-        emulator = keras.models.load_model(engine_config.emulator_file)
+        # Load in the emulator aux - hold off on emulator till last
+        # second, as the model is large, and we don't want to load in 
+        # parallel if possible
         emulator_aux = np.load(engine_config.emulator_aux_file)
 
         simulator_wavelengths = emulator_aux['simulator_wavelengths']
@@ -69,10 +71,14 @@ class SimulatedModtranRT(TabularRT):
         #if len(self.wl) != len(emulator_aux['wavelengths']) or np.any(self.wl != emulator_aux['wavelengths']):
         #    raise AttributeError('Emulator wavelengths do not match simulator wavelengths')
 
-        if len(self.lut_quantities) != len(emulator_aux['rt_quantities']) or \
-            np.any(np.array(self.lut_quantities) != np.array(emulator_aux['rt_quantities'])):
-            raise AttributeError('lut_quantities: {} do not match emulator_aux rt_quantities: {}'.format(self.lut_quantities, emulator_aux['rt_quantities']))
+        for lq in self.lut_quantities:
+            if lq not in emulator_aux['rt_quantities'].tolist() and lq != 'transup':
+                raise AttributeError('lut_quantities: {} do not match emulator_aux rt_quantities: {}'.format(self.lut_quantities, emulator_aux['rt_quantities']))
+
+        interpolator_disk_paths = [engine_config.interpolator_base_path + '_' + rtq + '.pkl' for rtq in self.lut_quantities]
+
         
+        logging.info('LUTs not yet built - constructing')
         # Build a new config for sixs simulation runs using existing config
         sixs_config: RadiativeTransferEngineConfig = deepcopy(engine_config)
         sixs_config.aerosol_model_file = None
@@ -105,6 +111,7 @@ class SimulatedModtranRT(TabularRT):
         #sixs_config.irradiance_file = None
 
         # Build the simulator
+        logging.debug('Create RTE simulator')
         sixs_rte = SixSRT(sixs_config, full_config, build_lut_only = False, 
                           wavelength_override=simulator_wavelengths, fwhm_override=np.ones(n_simulator_chan)*2.)
         self.solar_irr = sixs_rte.solar_irr
@@ -119,50 +126,67 @@ class SimulatedModtranRT(TabularRT):
         # First, convert our irr to date 0, then back to current date
         self.solar_irr = resample_spectrum(emulator_irr  * irr_factor_ref**2 / irr_factor_current**2, emulator_wavelengths, self.wl, self.fwhm)
 
-        # Couple emulator-simulator
-        emulator_inputs = np.zeros((sixs_rte.points.shape[0],n_simulator_chan*len(emulator_aux['rt_quantities'])), dtype=float)
+        # First, check if we've already got the vector interpolators built on disk:
+        prebuilt = np.all([os.path.isfile(x) for x in interpolator_disk_paths])
+        if prebuilt == False:
+            # Load the emulator
+            emulator = keras.models.load_model(engine_config.emulator_file)
+
+            # Couple emulator-simulator
+            emulator_inputs = np.zeros((sixs_rte.points.shape[0],n_simulator_chan*len(emulator_aux['rt_quantities'])), dtype=float)
+
+            logging.info('loading 6s results for emulator')
+            for ind, (point, fn) in enumerate(zip(self.points, sixs_rte.files)):
+                simulator_output = sixs_rte.load_rt(fn, resample=False)
+                for keyind, key in enumerate(emulator_aux['rt_quantities']):
+                    emulator_inputs[ind,keyind*n_simulator_chan:(keyind+1)*n_simulator_chan] = simulator_output[key]
+            
+            logging.debug('loading SimulatedModtran feature scaler')
+            feature_scaler = StandardScaler()
+            feature_scaler.mean_ = emulator_aux['feature_scaler_mean']
+            feature_scaler.var_ = emulator_aux['feature_scaler_var']
+            feature_scaler.scale_ = emulator_aux['feature_scaler_scale']
+
+            logging.debug('loading SimulatedModtran response scaler')
+            response_scaler = StandardScaler()
+            response_scaler.mean_ = emulator_aux['response_scaler_mean']
+            response_scaler.var_ = emulator_aux['response_scaler_var']
+            response_scaler.scale_ = emulator_aux['response_scaler_scale']
+
+            logging.debug('Emulating')
+            emulator_outputs = emulator.predict(emulator_inputs)
+
+            emulator_outputs = emulator.predict(feature_scaler.transform(emulator_inputs))
+            emulator_outputs = response_scaler.inverse_transform(emulator_outputs)
 
 
-        logging.info('loading 6s results for emulator')
-        for ind, (point, fn) in enumerate(zip(self.points, sixs_rte.files)):
-            simulator_output = sixs_rte.load_rt(fn, resample=False)
-            for keyind, key in enumerate(emulator_aux['rt_quantities']):
-                emulator_inputs[ind,keyind*n_simulator_chan:(keyind+1)*n_simulator_chan] = simulator_output[key]
-        
-        logging.debug('loading SimulatedModtran feature scaler')
-        feature_scaler = StandardScaler()
-        feature_scaler.mean_ = emulator_aux['feature_scaler_mean']
-        feature_scaler.var_ = emulator_aux['feature_scaler_var']
-        feature_scaler.scale_ = emulator_aux['feature_scaler_scale']
+            dims_aug = self.lut_dims + [self.n_chan]
+            for key_ind, key in enumerate(emulator_aux['rt_quantities']):
+                interpolator_inputs = np.zeros(dims_aug, dtype=float)
+                for point_ind, point in enumerate(self.points):
+                    print(key, point_ind)
+                    ind = [np.where(g == p)[0] for g, p in
+                           zip(self.lut_grids, point)]
+                    ind = tuple(ind)
+                    interpolator_inputs[ind] = resample_spectrum(emulator_outputs[point_ind, key_ind*n_emulator_chan: (key_ind+1)*n_emulator_chan], emulator_wavelengths, self.wl, self.fwhm)
 
-        logging.debug('loading SimulatedModtran response scaler')
-        response_scaler = StandardScaler()
-        response_scaler.mean_ = emulator_aux['response_scaler_mean']
-        response_scaler.var_ = emulator_aux['response_scaler_var']
-        response_scaler.scale_ = emulator_aux['response_scaler_scale']
+                if key == 'transup':
+                    interpolator_inputs[...] = 0
 
-        logging.debug('Emulating')
-        emulator_outputs = emulator.predict(emulator_inputs)
+                self.luts[key] = VectorInterpolator(self.lut_grids, interpolator_inputs,
+                                                    self.lut_interp_types)
 
-        emulator_outputs = emulator.predict(feature_scaler.transform(emulator_inputs))
-        emulator_outputs = response_scaler.inverse_transform(emulator_outputs)
+            self.luts['transup'] = VectorInterpolator(self.lut_grids, interpolator_inputs*0, self.lut_interp_types )
+            
+            for key_ind, key in enumerate(self.lut_quantities):
+                with open(interpolator_disk_paths[key_ind], 'wb') as fi:
+                    pickle.dump(self.luts[key], fi)
 
-
-        dims_aug = self.lut_dims + [self.n_chan]
-        for key_ind, key in enumerate(self.lut_quantities):
-            interpolator_inputs = np.zeros(dims_aug, dtype=float)
-            for point_ind, point in enumerate(self.points):
-                ind = [np.where(g == p)[0] for g, p in
-                       zip(self.lut_grids, point)]
-                ind = tuple(ind)
-                interpolator_inputs[ind] = resample_spectrum(emulator_outputs[point_ind, key_ind*n_emulator_chan: (key_ind+1)*n_emulator_chan], emulator_wavelengths, self.wl, self.fwhm)
-
-            if key == 'transup':
-                interpolator_inputs[...] = 0
-
-            self.luts[key] = VectorInterpolator(self.lut_grids, interpolator_inputs,
-                                                self.lut_interp_types)
-        self.luts['transup'] = VectorInterpolator(self.lut_grids, interpolator_inputs*0, self.lut_interp_types )
+        else:
+            logging.info('Prebuilt LUT interpolators found, loading from disk')
+            for key_ind, key in enumerate(self.lut_quantities):
+                with open(interpolator_disk_paths[key_ind], 'rb') as fi:
+                    self.luts[key] = pickle.load(fi)
 
 
         
@@ -192,7 +216,7 @@ class SimulatedModtranRT(TabularRT):
             elif name == "OBSZEN":
                 point[point_ind] = geom.OBSZEN
             elif name == "GNDALT":
-                point[point_ind] = geom.ground_elevation_km
+                point[point_ind] = geom.surface_elevation_km
             elif name == "H1ALT":
                 point[point_ind] = geom.observer_altitude_km
             elif name == "viewzen":
