@@ -168,9 +168,11 @@ class Isofit:
                     io.write_spectrum(row, col, self.states, meas,
                                       geom, flush_immediately=True)
                 except ValueError as err:
-                    logging.warning(
+                    logging.error(err)
+                    logging.info(
                         """
-                        ValueError in row %d and col %d: %s.
+                        Encountered the following ValueError in row %d and col %d:
+                        %s.
                         Results for this pixel will be all zeros.
                         """, row, col, err
                     )
