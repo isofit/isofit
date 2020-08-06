@@ -56,9 +56,11 @@ class InversionConfig(BaseConfigSection):
         self._least_squares_params_type = dict
         self.least_squares_params = {}
         """
-        Dict of arguments corresponding to options of
+        Dict of arguments corresponding to a subset of options of
         `scipy.optimize.least_squares`. Isofit ships with sensible defaults, so
-        modify at your own risk.
+        modify at your own risk. Only the following arguments can be modified:
+        "method", "max_nfev", "bounds", "x_scale", "xtol", "ftol", "gtol",
+        "tr_solver".
         """
 
         self.set_config_options(sub_configdic)
