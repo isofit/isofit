@@ -36,6 +36,7 @@ from isofit.radiative_transfer.six_s import SixSRT
 
 from tensorflow import keras
 from sklearn.preprocessing import StandardScaler
+from scipy import interpolate
 
 class SimulatedModtranRT(TabularRT):
     """A hybrid simulator and emulator of MODTRAN-like results
@@ -117,7 +118,6 @@ class SimulatedModtranRT(TabularRT):
         self.solar_irr = sixs_rte.solar_irr
         self.esd = sixs_rte.esd
         self.coszen = sixs_rte.coszen
-        #self.solar_irr = emulator_aux['solar_irr']
 
         emulator_irr = emulator_aux['solar_irr']
         irr_factor_ref = sixs_rte.esd[200, 1]
@@ -140,24 +140,37 @@ class SimulatedModtranRT(TabularRT):
                 simulator_output = sixs_rte.load_rt(fn, resample=False)
                 for keyind, key in enumerate(emulator_aux['rt_quantities']):
                     emulator_inputs[ind,keyind*n_simulator_chan:(keyind+1)*n_simulator_chan] = simulator_output[key]
-            
+            emulator_inputs_match_output = np.zeros((emulator_inputs.shape[0],n_emulator_chan*len(emulator_aux['rt_quantities'])))
+            for key_ind, key in enumerate(emulator_aux['rt_quantities']):
+                band_range_o = np.arange(n_emulator_chan * key_ind, n_emulator_chan * (key_ind + 1))
+                band_range_i = np.arange(n_simulator_chan * key_ind, n_simulator_chan * (key_ind + 1))
+
+                finterp = interpolate.interp1d(simulator_wavelengths,emulator_inputs[:,band_range_i])
+                emulator_inputs_match_output[:,band_range_o] = finterp(emulator_wavelengths)
+ 
             logging.debug('loading SimulatedModtran feature scaler')
-            feature_scaler = StandardScaler()
-            feature_scaler.mean_ = emulator_aux['feature_scaler_mean']
-            feature_scaler.var_ = emulator_aux['feature_scaler_var']
-            feature_scaler.scale_ = emulator_aux['feature_scaler_scale']
+            #feature_scaler = StandardScaler()
+            #feature_scaler.mean_ = emulator_aux['feature_scaler_mean']
+            #feature_scaler.var_ = emulator_aux['feature_scaler_var']
+            #feature_scaler.scale_ = emulator_aux['feature_scaler_scale']
 
             logging.debug('loading SimulatedModtran response scaler')
-            response_scaler = StandardScaler()
-            response_scaler.mean_ = emulator_aux['response_scaler_mean']
-            response_scaler.var_ = emulator_aux['response_scaler_var']
-            response_scaler.scale_ = emulator_aux['response_scaler_scale']
+            #response_scaler = StandardScaler()
+            #response_scaler.mean_ = emulator_aux['response_scaler_mean']
+            #response_scaler.var_ = emulator_aux['response_scaler_var']
+            #response_scaler.scale_ = emulator_aux['response_scaler_scale']
+
+            if 'response_scaler' in emulator_aux.keys():
+                response_scaler = emulator_aux['response_scaler']
+            else:
+                response_scaler = 100.
 
             logging.debug('Emulating')
-            emulator_outputs = emulator.predict(emulator_inputs)
+            emulator_outputs = emulator.predict(emulator_inputs) / response_scaler
+            emulator_outputs = emulator_outputs + emulator_inputs_match_output
 
-            emulator_outputs = emulator.predict(feature_scaler.transform(emulator_inputs))
-            emulator_outputs = response_scaler.inverse_transform(emulator_outputs)
+            #emulator_outputs = emulator.predict(feature_scaler.transform(emulator_inputs))
+            #emulator_outputs = response_scaler.inverse_transform(emulator_outputs)
 
 
             dims_aug = self.lut_dims + [self.n_chan]
