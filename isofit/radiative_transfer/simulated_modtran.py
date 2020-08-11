@@ -153,8 +153,6 @@ class SimulatedModtranRT(TabularRT):
         response_scaler.scale_ = emulator_aux['response_scaler_scale']
 
         logging.debug('Emulating')
-        emulator_outputs = emulator.predict(emulator_inputs)
-
 
         #emulator_outputs = emulator.predict(feature_scaler.transform(emulator_inputs))
         #emulator_outputs = response_scaler.inverse_transform(emulator_outputs) + emulator_inputs
