@@ -91,33 +91,16 @@ class Inversion:
 
         self.x_fixed = None
 
-        # Configure Levenberg-Marquardt
+        # Set least squares params that come from the forward model
         self.least_squares_params = {
-            'method': 'trf',
-            'max_nfev': 20,
             'bounds': (self.fm.bounds[0][self.inds_free] + eps,
                        self.fm.bounds[1][self.inds_free] - eps),
             'x_scale': self.fm.scale[self.inds_free],
-            'xtol': None,
-            'ftol': 1e-2,
-            'gtol': None,
-            'tr_solver': 'lsmr'
         }
 
-        # Check that all of the user-specified parameters in the config exist in
-        # `self.least_squares_params`.
-        lsq_keys = list(self.least_squares_params.keys())
-        bad_lsq_keys = []
-        for key in config.least_squares_params.keys():
-            if key not in lsq_keys:
-                bad_lsq_keys.append(key)
-        assert len(bad_lsq_keys) == 0, \
-            "The following least squares parameters are invalid or unknown: " +\
-            ", ".join(bad_lsq_keys)
-
-        # Update with parameters from config. If they are an empty dict
-        # (default), this does nothing.
-        self.least_squares_params.update(config.least_squares_params)
+        # Update the rest from the config
+        for key, item in config.least_squares_params.get_config_options_as_dict().items():
+            self.least_squares_params[key] = item
 
     def full_statevector(self, x_free):
         x = np.zeros(self.fm.nstate)

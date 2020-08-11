@@ -53,14 +53,12 @@ class InversionConfig(BaseConfigSection):
          (False) - a set of fixed points (not variable by the optimization algorithm)
         """
 
-        self._least_squares_params_type = dict
-        self.least_squares_params = {}
+        self._least_squares_params_type = LeastSquaresConfig
+        self.least_squares_params = LeastSquaresConfig({})
         """
-        Dict of arguments corresponding to a subset of options of
-        `scipy.optimize.least_squares`. Isofit ships with sensible defaults, so
-        modify at your own risk. Only the following arguments can be modified:
-        "method", "max_nfev", "bounds", "x_scale", "xtol", "ftol", "gtol",
-        "tr_solver".
+        Least squares parameters for core inversion solve.  
+        See https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html
+        for details.
         """
 
         self.set_config_options(sub_configdic)
@@ -77,8 +75,7 @@ class InversionConfig(BaseConfigSection):
                     errors.append('windows parameter must be a list of lists of wavelength ranges')
                 elif subset[0] > subset[1]:
                     errors.append('In inversion window subset {}, wavelength ranges must be in order'.format(subset))
-
-
+        
         return errors
 
 
@@ -113,6 +110,54 @@ class McmcConfig(BaseConfigSection):
         errors = list()
 
         # TODO: add flags for rile overright, and make sure files don't exist if not checked?
+
+        return errors
+
+
+class LeastSquaresConfig(BaseConfigSection):
+    """
+    Least squares config parameters.
+    """
+
+    def __init__(self, sub_configdic: dict = None):
+        self._method_type = str
+        self.method = 'trf'
+        """str: Optimzation method to use. Default 'trf'."""
+
+        self._max_nfev_type = int
+        self.max_nfev = 20
+        """int: Maximum number of function evaluations before the termination. 
+        If None (default), the value is chosen automatically. Default 20."""
+
+        self._xtol_type = float
+        self.xtol = None
+        """float: Tolerance for termination by the change of the independent variables.  
+        Default is None, which disables termination from this criteria."""
+
+        self._ftol_type = float
+        self.ftol = 0.01
+        """float: Tolerance for termination by the change of the cost function.
+        Default is 0.01"""
+
+        self._gtol_type = float
+        self.gtol = None
+        """float: Tolerance for termination by the norm of the gradient. 
+        Default is None, which disables termination from this criteria."""
+
+        self._tr_solver_type = str
+        self.tr_solver = 'lsmr'
+        """str: Method for solving trust-region subproblems, relevant only for ‘trf’ and ‘dogbox’ methods.
+        Options are None, 'exact', or 'lsmr'"""
+
+        self.set_config_options(sub_configdic)
+
+    def _check_config_validity(self) -> List[str]:
+        errors = list()
+
+        # TODO: add flags for rile overright, and make sure files don't exist if not checked?
+        if self.tr_solver is not None:
+            if self.tr_solver not in [None, 'exact', 'lsmr']:
+                errors.append('Least squares tr_solver must be in [None, \'exact\', \'lsmr\']')
 
         return errors
 
