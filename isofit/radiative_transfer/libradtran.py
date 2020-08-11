@@ -49,6 +49,7 @@ class LibRadTranRT(TabularRT):
         self.treat_as_emissive = False
         self.libradtran_dir = self.find_basedir(engine_config)
         self.libradtran_template_file = engine_config.template_file
+        self.libradtran_environment = engine_config.environment
 
         self.lut_quantities = ['rhoatm', 'transm', 'sphalb', 'transup']
 
@@ -166,17 +167,17 @@ class LibRadTranRT(TabularRT):
         # Write runscript file
         with open(scriptfilepath, 'w') as f:
             f.write('#!/usr/bin/bash\n')
-            f.write('export cwd=`pwd`\n')
-            f.write('cd %s/test\n' % self.libradtran_dir)
-            f.write('../bin/uvspec < %s > %s\n' % (infilepath0, outfilepath0))
-            f.write('../bin/uvspec < %s > %s\n' %
-                    (infilepath05, outfilepath05))
-            f.write('../bin/uvspec < %s > %s\n' %
-                    (infilepath025, outfilepath025))
-            f.write('../bin/zenith %s -a %s -o %s -y %s %s %s %s %s > %s\n' %
-                    ('-s 0 -q', lat, lon, yr, day, mon, hour, mn,
+            f.write('%s\n' % self.libradtran_environment)
+            f.write('(cd %s/bin && ./uvspec < %s > %s)\n' %
+                    (self.libradtran_dir, infilepath0, outfilepath0))
+            f.write('(cd %s/bin && ./uvspec < %s > %s)\n' %
+                    (self.libradtran_dir, infilepath05, outfilepath05))
+            f.write('(cd %s/bin && ./uvspec < %s > %s)\n' %
+                    (self.libradtran_dir, infilepath025, outfilepath025))
+            f.write('(cd %s/bin && ./zenith %s -a %s -o %s -y %s %s %s %s %s > %s)\n' %
+                    (self.libradtran_dir,
+                     '-s 0 -q', lat, lon, yr, day, mon, hour, mn,
                      outfilepathzen))
-            f.write('cd $cwd\n')
 
         return 'bash '+scriptfilepath
 
@@ -225,7 +226,13 @@ class LibRadTranRT(TabularRT):
         transup = np.zeros(self.wl.shape)
 
         # Get solar zenith, translate to irradiance at zenith = 0
-        with open(self.lut_dir+'/LUT_'+fn+'.zen', 'r') as fin:
+        # HACK: If a file called `prescribed_geom` exists in the LUT directory,
+        # use that instead of the LibRadtran calculated zenith angle. This is
+        # not the most elegant or efficient solution, but it seems to work.
+        zenfile = os.path.join(self.lut_dir, "prescribed_geom")
+        if not os.path.exists(zenfile):
+            zenfile = os.path.join(self.lut_dir, 'LUT_'+fn+'.zen')
+        with open(zenfile, 'r') as fin:
             output = fin.read().split()
             solzen, solaz = [float(q) for q in output[1:]]
 

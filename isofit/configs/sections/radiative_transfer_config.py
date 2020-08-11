@@ -46,6 +46,10 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         self.wavelength_range = None
         """List: The wavelength range to execute this radiative transfer engine over."""
 
+        self._environment_type = str
+        self.environment = None
+        """str: Additional environment directives for the shell script."""
+
         self._lut_path_type = str
         self.lut_path = None
         """str: The path to the look up table directory used by the radiative transfer engine."""
