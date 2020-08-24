@@ -101,6 +101,7 @@ def main():
     parser.add_argument('--aerosol_climatology_path', type=str, default=None)
     parser.add_argument('--rdn_factors_path', type=str)
     parser.add_argument('--surface_path', type=str)
+    parser.add_argument('--atmosphere_type', type=str, default='ATM_MIDLAT_SUMMER')
     parser.add_argument('--channelized_uncertainty_path', type=str)
     parser.add_argument('--model_discrepancy_path', type=str)
     parser.add_argument('--lut_config_file', type=str)
@@ -188,7 +189,12 @@ def main():
     logging.info('Path (km): %f, 180 - To-sensor Zenith (deg): %f, To-sensor Azimuth (deg) : %f, Altitude: %6.2f km' %
                  (mean_path_km, mean_to_sensor_zenith, mean_to_sensor_azimuth, mean_altitude_km))
 
-
+    # We will use the model discrepancy with covariance OR uncorrelated 
+    # Calibration error, but not both.
+    if args.model_discrepancy_path is not None:
+        uncorrelated_radiometric_uncertainty = 0
+    else:
+        uncorrelated_radiometric_uncertainty = UNCORRELATED_RADIOMETRIC_UNCERTAINTY 
 
     # Superpixel segmentation
     if args.empirical_line == 1:
@@ -210,7 +216,7 @@ def main():
     if args.presolve == 1:
 
         # write modtran presolve template
-        write_modtran_template(atmosphere_type='ATM_MIDLAT_SUMMER', fid=paths.fid, altitude_km=mean_altitude_km,
+        write_modtran_template(atmosphere_type=args.atmosphere_type, fid=paths.fid, altitude_km=mean_altitude_km,
                                dayofyear=dayofyear, latitude=mean_latitude, longitude=mean_longitude,
                                to_sensor_azimuth=mean_to_sensor_azimuth, to_sensor_zenith=mean_to_sensor_zenith,
                                gmtime=gmtime, elevation_km=mean_elevation_km,
@@ -224,7 +230,8 @@ def main():
             h2o_grid = np.linspace(0.01, max_water - 0.01, 10).round(2)
             logging.info('Pre-solve H2O grid: {}'.format(h2o_grid))
             logging.info('Writing H2O pre-solve configuration file.')
-            build_presolve_config(paths, h2o_grid, args.n_cores, args.empirical_line == 1, args.surface_category)
+            build_presolve_config(paths, h2o_grid, args.n_cores, args.empirical_line == 1, args.surface_category,
+                uncorrelated_radiometric_uncertainty)
 
             # Run modtran retrieval
             logging.info('Run ISOFIT initial guess')
@@ -268,7 +275,7 @@ def main():
             not exists(paths.uncert_subs_path) or \
             not exists(paths.rfl_subs_path):
 
-        write_modtran_template(atmosphere_type='ATM_MIDLAT_SUMMER', fid=paths.fid, altitude_km=mean_altitude_km,
+        write_modtran_template(atmosphere_type=atmosphere_type, fid=paths.fid, altitude_km=mean_altitude_km,
                                dayofyear=dayofyear, latitude=mean_latitude, longitude=mean_longitude,
                                to_sensor_azimuth=mean_to_sensor_azimuth, to_sensor_zenith=mean_to_sensor_zenith,
                                gmtime=gmtime, elevation_km=mean_elevation_km, output_file=paths.modtran_template_path)
@@ -276,7 +283,8 @@ def main():
         logging.info('Writing main configuration file.')
         build_main_config(paths, lut_params, h2o_lut_grid, elevation_lut_grid, to_sensor_azimuth_lut_grid,
                           to_sensor_zenith_lut_grid, mean_latitude, mean_longitude, dt, 
-                          args.empirical_line == 1, args.n_cores, args.surface_category)
+                          args.empirical_line == 1, args.n_cores, args.surface_category,
+                          uncorrelated_radiometric_uncertainty)
 
         # Run modtran retrieval
         logging.info('Running ISOFIT with full LUT')
@@ -381,7 +389,7 @@ class Pathnames():
         else:
             self.input_model_discrepancy_path = None
 
-        self.model_discrepancy_working_path = abspath(join(self.data_directory, 'model_discrepancy.npy'))
+        self.model_discrepancy_working_path = abspath(join(self.data_directory, 'model_discrepancy.mat'))
 
         self.rdn_subs_path = abspath(join(self.input_data_directory, self.fid + '_subs_rdn'))
         self.obs_subs_path = abspath(join(self.input_data_directory, self.fid + '_subs_obs'))
@@ -861,7 +869,8 @@ def get_metadata_from_loc(loc_file: str, lut_params: LUTConfig, trim_lines: int 
 
 
 def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array, n_cores: int=-1,
-        use_emp_line=0, surface_category="multicomponent_surface"):
+        use_emp_line=0, surface_category="multicomponent_surface",
+        uncorrelated_radiometric_uncertainty: float = 0.0):
     """ Write an isofit config file for a presolve, with limited info.
 
     Args:
@@ -912,7 +921,7 @@ def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array, n_cores: int
                              'instrument': {'wavelength_file': paths.wavelength_path,
                                             'integrations': spectra_per_inversion,
                                             'unknowns': {
-                                                'uncorrelated_radiometric_uncertainty': UNCORRELATED_RADIOMETRIC_UNCERTAINTY}},
+                                                'uncorrelated_radiometric_uncertainty': uncorrelated_radiometric_uncertainty}},
                                                     'surface': {"surface_category": surface_category,
                                                                 'surface_file': paths.surface_working_path,
                                                                 'select_on_init': True},
@@ -959,7 +968,8 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
                       elevation_lut_grid: np.array = None, to_sensor_azimuth_lut_grid: np.array = None,
                       to_sensor_zenith_lut_grid: np.array = None, mean_latitude: float = None,
                       mean_longitude: float = None, dt: datetime = None, use_emp_line: bool = True, 
-                      n_cores: int = -1, surface_category='multicomponent_surface'):
+                      n_cores: int = -1, surface_category='multicomponent_surface',
+                      uncorrelated_radiometric_uncertainty: float = 0.0):
     """ Write an isofit config file for the main solve, using the specified pathnames and all given info
 
     Args:
@@ -1040,7 +1050,7 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
                                  'instrument': {'wavelength_file': paths.wavelength_path,
                                                 'integrations': spectra_per_inversion,
                                                 'unknowns': {
-                                                    'uncorrelated_radiometric_uncertainty': UNCORRELATED_RADIOMETRIC_UNCERTAINTY}},
+                                                    'uncorrelated_radiometric_uncertainty': uncorrelated_radiometric_uncertainty}},
                                  "surface": {"surface_file": paths.surface_working_path,
                                              "surface_category": surface_category,
                                              "select_on_init": True},
