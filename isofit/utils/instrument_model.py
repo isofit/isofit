@@ -107,13 +107,9 @@ def _flat_field(X, uniformity_thresh):
     use_ff = np.ones((X.shape[0], X.shape[2])) > 0
     for b in range(nb):
         xsub = Xhoriz[:, b, :]
-        xsubp = Xhorizp[:, b, :]
         mu = xsub.mean(axis=0)
         dists = abs(xsub - mu)
-        distsp = abs(xsubp - mu)
-        thresh = np.percentile(dists.flatten(), 90.0, interpolation='nearest')
-        uthresh = dists * uniformity_thresh
-        #use       = np.logical_and(dists<thresh, abs(dists-distsp) < uthresh)
+        thresh = np.percentile(dists.flatten(), 90.0)
         use = dists < thresh
         FF[b, :] = ((xsub*use).sum(axis=0)/use.sum(axis=0)) / \
             ((X[:, b, :]*use).sum(axis=0)/use.sum(axis=0))
@@ -130,13 +126,9 @@ def _column_covariances(X, uniformity_thresh):
     use_C = []
     for i in range(X.shape[2]):
         xsub = Xvert[:, :, i]
-        xsubp = Xvertp[:, :, i]
         mu = xsub.mean(axis=0)
         dists = np.sqrt(pow((xsub - mu), 2).sum(axis=1))
-        distsp = np.sqrt(pow((xsubp - mu), 2).sum(axis=1))
-        thresh = np.percentile(dists, 95.0, interpolation='nearest')
-        uthresh = dists * uniformity_thresh
-        #use       = np.logical_and(dists<thresh, abs(dists-distsp) < uthresh)
+        thresh = np.percentile(dists, 95.0)
         use = dists < thresh
         C = np.cov(xsub[use, :], rowvar=False)
         [U, V, D] = scipy.linalg.svd(C)
