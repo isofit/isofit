@@ -24,7 +24,7 @@ import scipy
 from scipy.ndimage.filters import gaussian_filter1d
 from spectral.io import envi
 
-from ..core.common import expand_path, json_load_ascii
+from isofit.core.common import expand_path, json_load_ascii
 
 
 def instrument_model(config):
