@@ -177,7 +177,6 @@ class SimulatedModtranRT(TabularRT):
             for key_ind, key in enumerate(emulator_aux['rt_quantities']):
                 interpolator_inputs = np.zeros(dims_aug, dtype=float)
                 for point_ind, point in enumerate(self.points):
-                    print(key, point_ind)
                     ind = [np.where(g == p)[0] for g, p in
                            zip(self.lut_grids, point)]
                     ind = tuple(ind)
