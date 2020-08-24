@@ -72,12 +72,6 @@ def instrument_model(config):
     scipy.io.savemat(outfile, mdict)
 
 
-def _percentile(X, p):
-    """."""
-
-    S = sorted(X)
-    return S[int(np.floor(len(S)*(p/100.0)))]
-
 
 def _high_frequency_vert(X, sigma=4.0):
     """."""
@@ -117,7 +111,7 @@ def _flat_field(X, uniformity_thresh):
         mu = xsub.mean(axis=0)
         dists = abs(xsub - mu)
         distsp = abs(xsubp - mu)
-        thresh = _percentile(dists.flatten(), 90.0)
+        thresh = np.percentile(dists.flatten(), 90.0, interpolation='nearest')
         uthresh = dists * uniformity_thresh
         #use       = np.logical_and(dists<thresh, abs(dists-distsp) < uthresh)
         use = dists < thresh
@@ -140,7 +134,7 @@ def _column_covariances(X, uniformity_thresh):
         mu = xsub.mean(axis=0)
         dists = np.sqrt(pow((xsub - mu), 2).sum(axis=1))
         distsp = np.sqrt(pow((xsubp - mu), 2).sum(axis=1))
-        thresh = _percentile(dists, 95.0)
+        thresh = np.percentile(dists, 95.0, interpolation='nearest')
         uthresh = dists * uniformity_thresh
         #use       = np.logical_and(dists<thresh, abs(dists-distsp) < uthresh)
         use = dists < thresh
