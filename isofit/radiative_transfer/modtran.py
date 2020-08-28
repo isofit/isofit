@@ -279,8 +279,6 @@ class ModtranRT(TabularRT):
                 delta_kelvin_dict = {
                     'TYPE': 'PROF_TEMPERATURE', 'UNITS': 'UNT_TDELTA_KELVIN', 'PROFILE': [val]*len(altitudes) }
                 param[0]['MODTRANINPUT']['ATMOSPHERE']['PROFILES'] = [altitude_dict, delta_kelvin_dict]
-                
-
 
             # Surface parameters we want to populate even if unassigned
             elif key in ['GNDALT']:
