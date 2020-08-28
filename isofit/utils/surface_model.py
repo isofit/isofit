@@ -18,15 +18,12 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-from os.path import split, abspath
 import numpy as np
-import scipy.io
-from scipy.interpolate import interp1d
+import scipy
 from sklearn.cluster import KMeans
 from spectral.io import envi
-from scipy.stats import norm
 
-from ..core.common import expand_path, json_load_ascii
+from isofit.core.common import expand_path, json_load_ascii
 
 
 def surface_model(config_file: str) -> None:
@@ -41,7 +38,7 @@ def surface_model(config_file: str) -> None:
     """
 
     # Load configuration JSON into a local dictionary
-    configdir, _ = split(abspath(config_file))
+    configdir, _ = os.path.split(os.path.abspath(config_file))
     config = json_load_ascii(config_file, shell_replace=True)
 
     # Determine top level parameters
@@ -141,7 +138,7 @@ def surface_model(config_file: str) -> None:
 
             # import spectra and resample
             for x1 in x:
-                p = interp1d(swl, x1, kind='linear', bounds_error=False,
+                p = scipy.interpolate.interp1d(swl, x1, kind='linear', bounds_error=False,
                              fill_value='extrapolate')
                 spectra.append(p(wl))
 
@@ -231,7 +228,7 @@ def surface_model(config_file: str) -> None:
                 elif window['correlation'] == 'GP':
                     width = float(window['gp_width'])
                     magnitude = float(window['gp_magnitude'])
-                    kernel = norm.pdf((wl-wl[i])/width)
+                    kernel = scipy.stats.norm.pdf((wl-wl[i])/width)
                     kernel = kernel/kernel.sum() * magnitude
                     C[i, :] = kernel
                     C[:, i] = kernel
