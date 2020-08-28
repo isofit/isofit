@@ -13,7 +13,7 @@ This codebase contains a set of routines and utilities for fitting surface,
 atmosphere and instrument models to imaging spectrometer data.  It is
 written primarily in Python, with JSON format configuration files and some
 dependencies on widely-available numerical and scientific libraries such as
-scipy, scikit-learn, and numba.  It is designed for maximum flexibility, so
+scipy, numpy, and scikit-learn.  It is designed for maximum flexibility, so
 that users can swap in and evaluate model components based on different
 radiative transfer models (RTMs) and various statistical descriptions of
 surface, instrument, and atmosphere.  It can run on individual radiance
@@ -51,7 +51,6 @@ The code repository, development branches, and user community are found on
 .. code::
 
   python3 -m pip install scipy
-  python3 -m pip install numba
   python3 -m pip install matplotlib
   python3 -m pip install scikit-learn
   python3 -m pip install scikit-image
