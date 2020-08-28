@@ -3,7 +3,6 @@ python:
   - '3.6'
 install:
   - pip install scipy
-  - pip install numba
   - pip install matplotlib
   - pip install scikit-learn
   - pip install scikit-image
