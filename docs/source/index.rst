@@ -14,6 +14,12 @@
    isofit.rst
 
 .. toctree::
+   :Caption: Bibliography
+   :maxdepth: 2
+
+   custom/bibliography.rst
+
+.. toctree::
    :Caption: Contributing
    :maxdepth: 2
 
