@@ -129,6 +129,7 @@ def invert_algebraic(surface, RT: RadiativeTransfer, instrument, x_surface,
     # and back-translate to surface wavelengths
     rho = rdn_solrfl * np.pi / (solar_irr * coszen)
     rfl = 1.0 / (transm / (rho - rhoatm) + sphalb)
+    rfl[rfl > 1.0] = 1.0
     rfl_est = interp1d(wl, rfl, fill_value='extrapolate')(surface.wl)
 
     # Some downstream code will benefit from our precalculated
