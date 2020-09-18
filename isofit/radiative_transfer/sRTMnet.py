@@ -27,19 +27,17 @@ import yaml
 import pickle
 
 from isofit.core.common import resample_spectrum, load_wavelen, VectorInterpolator
-from .look_up_tables import TabularRT, FileExistsError
-from isofit.core.geometry import Geometry
+from .look_up_tables import TabularRT
 from isofit.configs import Config
 from isofit.configs.sections.radiative_transfer_config import RadiativeTransferEngineConfig
 from isofit.core.sunposition import sunpos
 from isofit.radiative_transfer.six_s import SixSRT
 
 from tensorflow import keras
-from sklearn.preprocessing import StandardScaler
 from scipy import interpolate
 
 class SimulatedModtranRT(TabularRT):
-    """A hybrid simulator and emulator of MODTRAN-like results
+    """A hybrid surrogate-model and emulator of MODTRAN-like results
 
     Args:
         engine_config: the configuration for this particular engine
@@ -55,7 +53,6 @@ class SimulatedModtranRT(TabularRT):
         super().__init__(engine_config, full_config)
 
         self.lut_quantities = ['rhoatm', 'transm', 'sphalb', 'transup']
-        #self.lut_quantities = ['transm', 'rhoatm', 'sphalb']
         self.treat_as_emissive = False
 
         # Load in the emulator aux - hold off on emulator till last
@@ -105,10 +102,6 @@ class SimulatedModtranRT(TabularRT):
         sixs_config.viewaz = modtran_input['GEOMETRY']['TRUEAZ']
         sixs_config.wlinf = 0.35
         sixs_config.wlsup = 2.5
-        #sixs_config.wlinf = 0.37686
-        #sixs_config.wlsup = 2.4968600000000003
-        #sixs_config.earth_sun_distance_file = None
-        #sixs_config.irradiance_file = None
 
         # Build the simulator
         logging.debug('Create RTE simulator')
@@ -148,18 +141,6 @@ class SimulatedModtranRT(TabularRT):
                 finterp = interpolate.interp1d(simulator_wavelengths,emulator_inputs[:,band_range_i])
                 emulator_inputs_match_output[:,band_range_o] = finterp(emulator_wavelengths)
  
-            logging.debug('loading SimulatedModtran feature scaler')
-            #feature_scaler = StandardScaler()
-            #feature_scaler.mean_ = emulator_aux['feature_scaler_mean']
-            #feature_scaler.var_ = emulator_aux['feature_scaler_var']
-            #feature_scaler.scale_ = emulator_aux['feature_scaler_scale']
-
-            logging.debug('loading SimulatedModtran response scaler')
-            #response_scaler = StandardScaler()
-            #response_scaler.mean_ = emulator_aux['response_scaler_mean']
-            #response_scaler.var_ = emulator_aux['response_scaler_var']
-            #response_scaler.scale_ = emulator_aux['response_scaler_scale']
-
             if 'response_scaler' in emulator_aux.keys():
                 response_scaler = emulator_aux['response_scaler']
             else:
@@ -168,11 +149,6 @@ class SimulatedModtranRT(TabularRT):
             logging.debug('Emulating')
             emulator_outputs = emulator.predict(emulator_inputs) / response_scaler
             emulator_outputs = emulator_outputs + emulator_inputs_match_output
-
-            #emulator_outputs = emulator.predict(feature_scaler.transform(emulator_inputs))
-            #emulator_outputs = response_scaler.inverse_transform(emulator_outputs)
-            #emulator_outputs[emulator_outputs < 0] = 0
-
 
             dims_aug = self.lut_dims + [self.n_chan]
             for key_ind, key in enumerate(emulator_aux['rt_quantities']):

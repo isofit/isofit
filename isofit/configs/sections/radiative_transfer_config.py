@@ -22,6 +22,7 @@ from isofit.configs.base_config import BaseConfigSection
 from isofit.configs.sections.statevector_config import StateVectorConfig
 import os
 from collections import OrderedDict
+import logging
 
 
 class RadiativeTransferEngineConfig(BaseConfigSection):
@@ -141,6 +142,10 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
 
         if self.statevector_names is not None:
             self.statevector_names.sort()
+        
+        if self.interpolator_base_path is None and self.emulator_file is not None:
+            self.interpolator_base_path = self.emulator_file + '_interpolator'
+            logging.info('No interpolator base path set, and emulator used, so auto-setting interpolator path at: {}'.format(self.interpolator_base_path))
 
 
     def _check_config_validity(self) -> List[str]:
