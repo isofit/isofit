@@ -492,6 +492,9 @@ class LUTConfig:
         self.aerosol_2_lut_range = [0.001, 0.5]
         self.aerosol_3_lut_range = [0.001, 0.5]
 
+        self.aot_550_lut_range = [0.001, 0.5]
+        self.num_aot_550_elements = 1
+
         self.h2o_min = 0.2
 
         self.zenith_min_spacing = 2
@@ -543,6 +546,9 @@ def load_climatology(config_path: str, latitude: float, longitude: float, acquis
             aerosol_lut = np.linspace(alr[0], alr[1], num_aerosol_lut_elements[_a])
             aerosol_lut_grid['AERFRAC_{}'.format(_a)] = [round(float(q),4) for q in aerosol_lut]
 
+    if lut_params.num_aot_550_elements != 1:
+        aerosol_lut = np.linspace(lut_params.aot_550_lut_range[0], lut_params.aot_550_lut_range[1], lut_params.num_aot_550_elements)
+        aerosol_lut_grid['AOT550'] = [round(float(q),4) for q in aerosol_lut]
     logging.info('Loading Climatology')
     # If a configuration path has been provided, use it to get relevant info
     if config_path is not None:

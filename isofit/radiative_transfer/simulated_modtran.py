@@ -79,7 +79,6 @@ class SimulatedModtranRT(TabularRT):
         interpolator_disk_paths = [engine_config.interpolator_base_path + '_' + rtq + '.pkl' for rtq in self.lut_quantities]
 
         
-        logging.info('LUTs not yet built - constructing')
         # Build a new config for sixs simulation runs using existing config
         sixs_config: RadiativeTransferEngineConfig = deepcopy(engine_config)
         sixs_config.aerosol_model_file = None
@@ -140,6 +139,7 @@ class SimulatedModtranRT(TabularRT):
                 simulator_output = sixs_rte.load_rt(fn, resample=False)
                 for keyind, key in enumerate(emulator_aux['rt_quantities']):
                     emulator_inputs[ind,keyind*n_simulator_chan:(keyind+1)*n_simulator_chan] = simulator_output[key]
+            emulator_inputs[np.isnan(emulator_inputs)] = 0
             emulator_inputs_match_output = np.zeros((emulator_inputs.shape[0],n_emulator_chan*len(emulator_aux['rt_quantities'])))
             for key_ind, key in enumerate(emulator_aux['rt_quantities']):
                 band_range_o = np.arange(n_emulator_chan * key_ind, n_emulator_chan * (key_ind + 1))
@@ -171,13 +171,13 @@ class SimulatedModtranRT(TabularRT):
 
             #emulator_outputs = emulator.predict(feature_scaler.transform(emulator_inputs))
             #emulator_outputs = response_scaler.inverse_transform(emulator_outputs)
+            #emulator_outputs[emulator_outputs < 0] = 0
 
 
             dims_aug = self.lut_dims + [self.n_chan]
             for key_ind, key in enumerate(emulator_aux['rt_quantities']):
                 interpolator_inputs = np.zeros(dims_aug, dtype=float)
                 for point_ind, point in enumerate(self.points):
-                    print(key, point_ind)
                     ind = [np.where(g == p)[0] for g, p in
                            zip(self.lut_grids, point)]
                     ind = tuple(ind)
