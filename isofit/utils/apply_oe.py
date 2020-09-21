@@ -549,6 +549,15 @@ def load_climatology(config_path: str, latitude: float, longitude: float, acquis
     if lut_params.num_aot_550_elements != 1:
         aerosol_lut = np.linspace(lut_params.aot_550_lut_range[0], lut_params.aot_550_lut_range[1], lut_params.num_aot_550_elements)
         aerosol_lut_grid['AOT550'] = [round(float(q),4) for q in aerosol_lut]
+        alr = [aerosol_lut_grid['AOT550'][0], aerosol_lut_grid['AOT550'][-1]]
+        aerosol_state_vector['AOT550'] = {
+                        "bounds": [float(alr[0]), float(alr[1])],
+                        "scale": 1,
+                        "init": float((alr[1] - alr[0]) / 10. + alr[0]),
+                        "prior_sigma": 10.0,
+                        "prior_mean": float((alr[1] - alr[0]) / 10. + alr[0])}
+
+
     logging.info('Loading Climatology')
     # If a configuration path has been provided, use it to get relevant info
     if config_path is not None:
@@ -1010,7 +1019,7 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
             "statevector": {
                 "H2OSTR": {
                     "bounds": [h2o_lut_grid[0], h2o_lut_grid[-1]],
-                    "scale": 0.01,
+                    "scale": 1,
                     "init": (h2o_lut_grid[1] + h2o_lut_grid[-1]) / 2.0,
                     "prior_sigma": 100.0,
                     "prior_mean": (h2o_lut_grid[1] + h2o_lut_grid[-1]) / 2.0,
