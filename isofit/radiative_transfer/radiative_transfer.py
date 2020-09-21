@@ -25,7 +25,7 @@ from ..core.common import eps
 from ..radiative_transfer.modtran import ModtranRT
 from ..radiative_transfer.six_s import SixSRT
 from ..radiative_transfer.libradtran import LibRadTranRT
-from ..radiative_transfer.simulated_modtran import SimulatedModtranRT
+from ..radiative_transfer.sRTMnet import SimulatedModtranRT
 from isofit.configs import Config
 from isofit.configs.sections.radiative_transfer_config import RadiativeTransferEngineConfig
 
