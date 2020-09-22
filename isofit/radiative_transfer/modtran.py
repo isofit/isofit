@@ -41,6 +41,7 @@ import subprocess
 ### Variables ###
 
 eps = 1e-5  # used for finite difference derivative calculations
+tropopause_altitude_km = 17.
 
 ### Classes ###
 
@@ -260,25 +261,58 @@ class ModtranRT(TabularRT):
                 param[0]['MODTRANINPUT']['GEOMETRY'][key] = val
             
             elif key == 'AIRT_DELTA_K':
-                param[0]['MODTRANINPUT']['ATMOSPHERE']['MODEL'] = "ATM_USER_ALT_PROFILE"
-                param[0]['MODTRANINPUT']['ATMOSPHERE']['NPROF'] = 2
+                # If there is no profile already provided ...
+                if param[0]['MODTRANINPUT']['ATMOSPHERE']['MODEL'] != "ATM_USER_ALT_PROFILE":
 
-                # MODTRAN cannot accept a ground altitude above 6 km, so keep all layers after that
-                hi_altitudes = [6.0,7.0,8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0,16.0,17.0,18.0,19.0,
-                                20.0,21.0,22.0,23.0,24.0,25.0,30.0,35.0,40.0,45.0,50.0,55.0,60.0,70.0,80.0,100.0] 
-                gndalt = param[0]['MODTRANINPUT']['SURFACE']['GNDALT']
+                    # MODTRAN cannot accept a ground altitude above 6 km, so keep all layers after that
+                    gndalt = param[0]['MODTRANINPUT']['SURFACE']['GNDALT']
+
+                    # E.g.: [1.5, 2, 3, 4, 5]
+                    low_altitudes = [gndalt] + list(np.arange(6 - np.ceil(gndalt)) + np.ceil(gndalt))
+
+                    # MODTRAN cannot accept a ground altitude above 6 km, so keep all layers after that
+                    hi_altitudes = [6.0,7.0,8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0,16.0,17.0,18.0,19.0,
+                                    20.0,21.0,22.0,23.0,24.0,25.0,30.0,35.0,40.0,45.0,50.0,55.0,60.0,70.0,80.0,100.0] 
+
+                    altitudes = low_altitudes + hi_altitudes # Append lists, don't add altitudes!
+
+                    prof_unt_tdelta_kelvin = np.where(np.array(altitudes) <= tropopause_altitude_km, val, 0)
+
+                    altitude_dict = {
+                        'TYPE': 'PROF_ALTITUDE', 'UNITS': 'UNT_KILOMETERS', 'PROFILE': altitudes}
+                    delta_kelvin_dict = {
+                        'TYPE': 'PROF_TEMPERATURE', 'UNITS': 'UNT_TDELTA_KELVIN', 'PROFILE': prof_unt_tdelta_kelvin.tolist() }
+
+                    param[0]['MODTRANINPUT']['ATMOSPHERE']['MODEL'] = "ATM_USER_ALT_PROFILE"
+                    param[0]['MODTRANINPUT']['ATMOSPHERE']['NPROF'] = 2
+                    param[0]['MODTRANINPUT']['ATMOSPHERE']['NLAYERS'] = len(altitudes)
+                    param[0]['MODTRANINPUT']['ATMOSPHERE']['PROFILES'] = [altitude_dict, delta_kelvin_dict]
+
                 
-                # E.g.: [1.5, 2, 3, 4, 5]
-                low_altitudes = [gndalt] + list(np.arange(6 - np.ceil(gndalt)) + np.ceil(gndalt))
+                else: # A profile is already provided, assume that it includes PROF_ALTITUDE
+                    nprof = param[0]['MODTRANINPUT']['ATMOSPHERE']['NPROF']
+                    profile_types = []
+                    for i in range(nprof):
+                        profile_types.append(param[0]['MODTRANINPUT']['ATMOSPHERE']['PROFILES'][i]['TYPE'])
 
-                altitudes = low_altitudes + hi_altitudes # Append lists, don't add altitudes!
-                param[0]['MODTRANINPUT']['ATMOSPHERE']['NLAYERS'] = len(altitudes)
+                    ind_prof_altitude = profile_types.index('PROF_ALTITUDE')
+                    prof_altitude = np.array(param[0]['MODTRANINPUT']['ATMOSPHERE']['PROFILES'][ind_prof_altitude]['PROFILE'])
 
-                altitude_dict = {
-                    'TYPE': 'PROF_ALTITUDE', 'UNITS': 'UNT_KILOMETERS', 'PROFILE': altitudes}
-                delta_kelvin_dict = {
-                    'TYPE': 'PROF_TEMPERATURE', 'UNITS': 'UNT_TDELTA_KELVIN', 'PROFILE': [val]*len(altitudes) }
-                param[0]['MODTRANINPUT']['ATMOSPHERE']['PROFILES'] = [altitude_dict, delta_kelvin_dict]
+                    if 'PROF_TEMPERATURE' in profile_types:
+                        # If a temperature profile already exists, then we must add the temperature delta to that
+                        # as MODTRAN apparently does not allow have both an offset and a specified temperature
+                        ind_prof_temperature = profile_types.index('PROF_TEMPERATURE')
+                        prof_temperature = np.array(param[0]['MODTRANINPUT']['ATMOSPHERE']['PROFILES'][ind_prof_temperature]['PROFILE'])
+                        prof_temperature = np.where(prof_altitude <= tropopause_altitude_km, prof_temperature + val, prof_temperature)
+                        param[0]['MODTRANINPUT']['ATMOSPHERE']['PROFILES'][ind_prof_temperature]['PROFILE'] = prof_temperature.tolist()
+                    
+                    else:
+                        # If a temperature profile does not exist, then use UNT_TDELTA_KELVIN
+                        prof_unt_tdelta_kelvin = np.where(prof_altitude <= tropopause_altitude_km, val, 0.)
+                        prof_unt_tdelta_kelvin_dict = {
+                            'TYPE': 'PROF_TEMPERATURE', 'UNITS': 'UNT_TDELTA_KELVIN', 'PROFILE': prof_unt_tdelta_kelvin.tolist() }
+                        param[0]['MODTRANINPUT']['ATMOSPHERE']['PROFILES'].append(prof_unt_tdelta_kelvin_dict)
+                        param[0]['MODTRANINPUT']['ATMOSPHERE']['NPROF'] = nprof + 1
 
             # Surface parameters we want to populate even if unassigned
             elif key in ['GNDALT']:
