@@ -54,7 +54,7 @@ def _write_bil_chunk(dat: np.array, outfile: str, line: int, shape: tuple, dtype
 
 def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, reference_reflectance_file: str,
                reference_uncertainty_file: str, reference_locations_file: str, input_radiance_file: str,
-               input_locations_file: str, segmentation_file: str, isofit_config: dict, output_reflectance_file: str,
+               input_locations_file: str, segmentation_file: str, isofit_config: str, output_reflectance_file: str,
                output_uncertainty_file: str, radiance_factors: np.array, nneighbors: int,
                nodata_value: float) -> None:
     """
@@ -68,7 +68,7 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
         input_radiance_file: input radiance file (interpolate over this)
         input_locations_file: input location file (interpolate over this)
         segmentation_file: input file noting the per-pixel segmentation used
-        isofit_config: dictionary-stype isofit configuration
+        isofit_config: path to isofit configuration JSON file
         output_reflectance_file: location to write output reflectance to
         output_uncertainty_file: location to write output uncertainty to
         radiance_factors: radiance adjustment factors
@@ -280,7 +280,7 @@ def empirical_line(reference_radiance_file: str, reference_reflectance_file: str
                    reference_locations_file: str, segmentation_file: str, input_radiance_file: str,
                    input_locations_file: str, output_reflectance_file: str, output_uncertainty_file: str,
                    nneighbors: int = 15, nodata_value: float = -9999.0, level: str = 'INFO',
-                   radiance_factors: np.array = None, isofit_config: dict = None, n_cores: int = -1) -> None:
+                   radiance_factors: np.array = None, isofit_config: str = None, n_cores: int = -1) -> None:
     """
     Perform an empirical line interpolation for reflectance and uncertainty extrapolation
     Args:
@@ -298,7 +298,7 @@ def empirical_line(reference_radiance_file: str, reference_reflectance_file: str
         nodata_value: nodata value of input and output
         level: logging level
         radiance_factors: radiance adjustment factors
-        isofit_config: dictionary-stype isofit configuration
+        isofit_config: path to isofit configuration JSON file
         n_cores: number of cores to run on
     Returns:
         None
