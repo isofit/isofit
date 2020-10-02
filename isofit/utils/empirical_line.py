@@ -28,7 +28,8 @@ import time
 import matplotlib
 import pylab as plt
 from isofit.configs import configs
-import multiprocessing
+import ray
+import atexit
 
 plt.switch_backend("Agg")
 
@@ -52,6 +53,7 @@ def _write_bil_chunk(dat: np.array, outfile: str, line: int, shape: tuple, dtype
     outfile.close()
 
 
+@ray.remote
 def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, reference_reflectance_file: str,
                reference_uncertainty_file: str, reference_locations_file: str, input_radiance_file: str,
                input_locations_file: str, segmentation_file: str, isofit_config: str, output_reflectance_file: str,
@@ -361,18 +363,39 @@ def empirical_line(reference_radiance_file: str, reference_reflectance_file: str
     del output_reflectance_img, output_uncertainty_img
     del reference_reflectance_img, reference_uncertainty_img, reference_locations_img, input_radiance_img, input_locations_img
 
-    # Determine the number of cores to use
+    # Initialize ray cluster
+    start_time = time.time()
+    iconfig = configs.create_new_config(isofit_config)
     if n_cores == -1:
-        n_cores = multiprocessing.cpu_count()
-    n_cores = min(n_cores, n_input_lines)
+        n_cores = iconfig.implementation.n_cores
+    rayargs = {'ignore_reinit_error': True,
+               'local_mode': n_cores == 1,
+               "address": iconfig.implementation.ip_head,
+               "redis_password": iconfig.implementation.redis_password}
+
+    # only specify a temporary directory if we are not connecting to
+    # a ray cluster
+    if rayargs['local_mode']:
+        rayargs['temp_dir'] = iconfig.implementation.ray_temp_dir
+        # Used to run on a VPN
+        ray.services.get_node_ip_address = lambda: '127.0.0.1'
+
+    # We can only set the num_cpus if running on a single-node
+    if iconfig.implementation.ip_head is None and iconfig.implementation.redis_password is None:
+        rayargs['num_cpus'] = n_cores
+
+    ray.init(**rayargs)
+    atexit.register(ray.shutdown)
+
+    n_ray_cores = ray.available_resources()["CPU"]
+    n_cores = min(n_ray_cores, n_input_lines)
+
+    logging.info('Beginning empirical line inversions using {} cores'.format(n_cores))
 
     # Break data into sections
     line_sections = np.linspace(0, n_input_lines, num=n_cores + 1, dtype=int)
 
-    # Set up our pool
-    pool = multiprocessing.Pool(processes=n_cores)
     start_time = time.time()
-    logging.info('Beginning empirical line inversions using {} cores'.format(n_cores))
 
     # Run the pool (or run serially)
     results = []
@@ -381,13 +404,9 @@ def empirical_line(reference_radiance_file: str, reference_reflectance_file: str
                 reference_uncertainty_file, reference_locations_file, input_radiance_file,
                 input_locations_file, segmentation_file, isofit_config, output_reflectance_file,
                 output_uncertainty_file, radiance_factors, nneighbors, nodata_value,)
-        if n_cores != 1:
-            results.append(pool.apply_async(_run_chunk, args))
-        else:
-            _run_chunk(*args)
+        results.append(_run_chunk.remote(*args))
 
-    pool.close()
-    pool.join()
+    _ = ray.get(results)
 
     total_time = time.time() - start_time
     logging.info('Parallel empirical line inversions complete.  {} s total, {} spectra/s, {} spectra/s/core'.format(
