@@ -58,7 +58,7 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
                reference_uncertainty_file: str, reference_locations_file: str, input_radiance_file: str,
                input_locations_file: str, segmentation_file: str, isofit_config: str, output_reflectance_file: str,
                output_uncertainty_file: str, radiance_factors: np.array, nneighbors: int,
-               nodata_value: float) -> None:
+               nodata_value: float, loglevel: str, logfile: str) -> None:
     """
     Args:
         start_line: line to start empirical line run at
@@ -76,11 +76,15 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
         radiance_factors: radiance adjustment factors
         nneighbors: number of neighbors to use for interpolation
         nodata_value: nodata value of input and output
+        loglevel: logging level
+        logfile: logging file
 
     Returns:
         None
 
     """
+
+    logging.basicConfig(format='%(message)s', level=loglevel, filename=logfile)
 
     # Load reference images
     reference_radiance_img = envi.open(reference_radiance_file + '.hdr', reference_radiance_file)
@@ -281,7 +285,7 @@ def _plot_example(xv, yv, b):
 def empirical_line(reference_radiance_file: str, reference_reflectance_file: str, reference_uncertainty_file: str,
                    reference_locations_file: str, segmentation_file: str, input_radiance_file: str,
                    input_locations_file: str, output_reflectance_file: str, output_uncertainty_file: str,
-                   nneighbors: int = 15, nodata_value: float = -9999.0, level: str = 'INFO',
+                   nneighbors: int = 15, nodata_value: float = -9999.0, level: str = 'INFO', logfile: str = None,
                    radiance_factors: np.array = None, isofit_config: str = None, n_cores: int = -1) -> None:
     """
     Perform an empirical line interpolation for reflectance and uncertainty extrapolation
@@ -299,6 +303,7 @@ def empirical_line(reference_radiance_file: str, reference_reflectance_file: str
         nneighbors: number of neighbors to use for interpolation
         nodata_value: nodata value of input and output
         level: logging level
+        logfile: logging file
         radiance_factors: radiance adjustment factors
         isofit_config: path to isofit configuration JSON file
         n_cores: number of cores to run on
@@ -308,7 +313,7 @@ def empirical_line(reference_radiance_file: str, reference_reflectance_file: str
 
     loglevel = level
 
-    logging.basicConfig(format='%(message)s', level=loglevel)
+    logging.basicConfig(format='%(message)s', level=loglevel, filename=logfile)
 
     # Open input data to check that band formatting is correct
     # Load reference set radiance
@@ -365,7 +370,11 @@ def empirical_line(reference_radiance_file: str, reference_reflectance_file: str
 
     # Initialize ray cluster
     start_time = time.time()
-    iconfig = configs.create_new_config(isofit_config)
+    if isofit_config is not None:
+        iconfig = configs.create_new_config(isofit_config)
+    else:
+        # If none, create a temporary config to get default ray parameters
+        iconfig = configs.Config({})
     if n_cores == -1:
         n_cores = iconfig.implementation.n_cores
     rayargs = {'ignore_reinit_error': True,
@@ -393,7 +402,7 @@ def empirical_line(reference_radiance_file: str, reference_reflectance_file: str
     logging.info('Beginning empirical line inversions using {} cores'.format(n_cores))
 
     # Break data into sections
-    line_sections = np.linspace(0, n_input_lines, num=n_cores + 1, dtype=int)
+    line_sections = np.linspace(0, n_input_lines, num=int(n_cores + 1), dtype=int)
 
     start_time = time.time()
 
@@ -403,7 +412,7 @@ def empirical_line(reference_radiance_file: str, reference_reflectance_file: str
         args = (line_sections[l], line_sections[l + 1], reference_radiance_file, reference_reflectance_file,
                 reference_uncertainty_file, reference_locations_file, input_radiance_file,
                 input_locations_file, segmentation_file, isofit_config, output_reflectance_file,
-                output_uncertainty_file, radiance_factors, nneighbors, nodata_value,)
+                output_uncertainty_file, radiance_factors, nneighbors, nodata_value, level, logfile)
         results.append(_run_chunk.remote(*args))
 
     _ = ray.get(results)
