@@ -402,7 +402,7 @@ def empirical_line(reference_radiance_file: str, reference_reflectance_file: str
     logging.info('Beginning empirical line inversions using {} cores'.format(n_cores))
 
     # Break data into sections
-    line_sections = np.linspace(0, n_input_lines, num=n_cores + 1, dtype=int)
+    line_sections = np.linspace(0, n_input_lines, num=int(n_cores + 1), dtype=int)
 
     start_time = time.time()
 
