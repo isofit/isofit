@@ -1,6 +1,7 @@
 # Hypertrace
 
-Objective: Starting from known surface reflectance and atmospheric conditions, simulate top-of-atmosphere radiance and then perform atmospheric correction to estimate surface reflectance from this simulated radiance.
+Hypertrace is a wrapper around Isofit that links forward and inverse modeling.
+Starting from known surface reflectance and atmospheric conditions, simulate top-of-atmosphere radiance and then perform atmospheric correction to estimate surface reflectance from this simulated radiance.
 
 ## Lightning introduction
 
