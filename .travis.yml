@@ -12,5 +12,6 @@ install:
   - pip install xxhash
   - pip install pyyaml
   - pip install ray
+  - pip install pandas
 script:
   - pytest
