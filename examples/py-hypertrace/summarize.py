@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+#
+# Authors: Alexey Shiklomanov
 
 from pathlib import Path
 import re
