@@ -46,6 +46,10 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         self.wavelength_range = None
         """List: The wavelength range to execute this radiative transfer engine over."""
 
+        self._environment_type = str
+        self.environment = None
+        """str: Additional environment directives for the shell script."""
+
         self._lut_path_type = str
         self.lut_path = None
         """str: The path to the look up table directory used by the radiative transfer engine."""
@@ -210,11 +214,6 @@ class RadiativeTransferConfig(BaseConfigSection):
             for key in subconfig:
                 rt_model = RadiativeTransferEngineConfig(subconfig[key], name=key)
                 self.radiative_transfer_engines.append(rt_model)
-
-    def get_ordered_radiative_transfer_engines(self):
-
-        self.radiative_transfer_engines.sort(key=lambda x: x.wavelength_range[0])
-        return self.radiative_transfer_engines
 
     def _check_config_validity(self) -> List[str]:
         errors = list()

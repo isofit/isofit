@@ -18,10 +18,10 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-import scipy as s
-from scipy.linalg import eigh, norm
+import scipy
 from spectral.io import envi
 from skimage.segmentation import slic
+import numpy as np
 
 
 def segment(spectra, flag, npca, segsize, nchunk):
@@ -43,8 +43,8 @@ def segment(spectra, flag, npca, segsize, nchunk):
 
     # Iterate through image "chunks," segmenting as we go
     next_label = 1
-    all_labels = s.zeros((nl, ns))
-    for lstart in s.arange(0, nl, nchunk):
+    all_labels = np.zeros((nl, ns))
+    for lstart in np.arange(0, nl, nchunk):
 
         del img_mm
         print(lstart)
@@ -52,18 +52,18 @@ def segment(spectra, flag, npca, segsize, nchunk):
         # Extract data
         lend = min(lstart+nchunk, nl)
         img_mm = in_img.open_memmap(interleave='source', writable=False)
-        x = s.array(img_mm[lstart:lend, :, :]).transpose((0, 2, 1))
+        x = np.array(img_mm[lstart:lend, :, :]).transpose((0, 2, 1))
         nc = x.shape[0]
         x = x.reshape((nc * ns, nb))
 
         # Excluding bad locations, calculate top PCA coefficients
-        use = s.all(abs(x-flag) > 1e-6, axis=1)
+        use = np.all(abs(x-flag) > 1e-6, axis=1)
         mu = x[use, :].mean(axis=0)
-        C = s.cov(x[use, :], rowvar=False)
-        [v, d] = eigh(C)
+        C = np.cov(x[use, :], rowvar=False)
+        [v, d] = scipy.linalg.eigh(C)
 
         # Determine segmentation compactness scaling based on eigenvalues
-        cmpct = norm(s.sqrt(v[-npca:]))
+        cmpct = scipy.linalg.norm(np.sqrt(v[-npca:]))
 
         # Project, redimension as an image with "npca" channels, and segment
         x_pca = (x-mu) @ d[:, -npca:]
@@ -79,15 +79,15 @@ def segment(spectra, flag, npca, segsize, nchunk):
 
         # Reindex the subscene labels and place them into the larger scene
         labels = labels.reshape([nc * ns])
-        labels[s.logical_not(use)] = 0
+        labels[np.logical_not(use)] = 0
         labels[use] = labels[use] + next_label
         next_label = max(labels) + 1
         labels = labels.reshape([nc, ns])
         all_labels[lstart:lend, :] = labels
 
     # Reindex
-    labels_sorted = s.sort(s.unique(all_labels))
-    lbl = s.zeros((nl, ns))
+    labels_sorted = np.sort(np.unique(all_labels))
+    lbl = np.zeros((nl, ns))
     for i, val in enumerate(labels_sorted):
         lbl[all_labels == val] = i
 
@@ -98,5 +98,5 @@ def segment(spectra, flag, npca, segsize, nchunk):
                 "data type": "4", "interleave": "bil"}
     lbl_img = envi.create_image(lbl_file+'.hdr', lbl_meta, ext='', force=True)
     lbl_mm = lbl_img.open_memmap(interleave='source', writable=True)
-    lbl_mm[:, :] = s.array(lbl, dtype=s.float32).reshape((nl, 1, ns))
+    lbl_mm[:, :] = np.array(lbl, dtype=np.float32).reshape((nl, 1, ns))
     del lbl_mm
