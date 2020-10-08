@@ -40,7 +40,7 @@ def extractions(inputfile, labels, output, chunksize, flag):
     meta = in_img.metadata
 
     nl, nb, ns = [int(meta[n]) for n in ('lines', 'bands', 'samples')]
-    img_mm = in_img.open_memmap(interleave='source', writable=False)
+    img_mm = in_img.open_memmap(interleave='bip', writable=False)
 
     lbl_img = envi.open(lbl_file+'.hdr', lbl_file)
     labels = lbl_img.read_band(0)
@@ -53,7 +53,7 @@ def extractions(inputfile, labels, output, chunksize, flag):
     for lstart in np.arange(0, nl, nchunk):
 
         del img_mm
-        img_mm = in_img.open_memmap(interleave='source', writable=False)
+        img_mm = in_img.open_memmap(interleave='bip', writable=False)
 
         # Which labels will we extract? ignore zero index
         lend = min(lstart+nchunk, nl)
@@ -70,8 +70,6 @@ def extractions(inputfile, labels, output, chunksize, flag):
         lend_adjust = max(active_locs[0])+1
 
         chunk_inp = np.array(img_mm[lstart_adjust:lend_adjust, :, :])
-        if meta['interleave'] == 'bil':
-            chunk_inp = chunk_inp.transpose((0, 2, 1))
         chunk_lbl = np.array(labels[lstart_adjust:lend_adjust, :])
 
         for i in active:
