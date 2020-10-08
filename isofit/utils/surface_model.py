@@ -22,6 +22,7 @@ import numpy as np
 import scipy
 from sklearn.cluster import KMeans
 from spectral.io import envi
+import os
 
 from isofit.core.common import expand_path, json_load_ascii
 
@@ -129,11 +130,8 @@ def surface_model(config_file: str) -> None:
                 swl = swl * 1000.0
 
             # Load library and adjust interleave, if needed
-            rfl_mm = rfl.open_memmap(interleave='source', writable=False)
-            if rfl.metadata['interleave'] == 'bip':
-                x = np.array(rfl_mm[:, :, :])
-            if rfl.metadata['interleave'] == 'bil':
-                x = np.array(rfl_mm[:, :, :]).transpose((0, 2, 1))
+            rfl_mm = rfl.open_memmap(interleave='bip', writable=False)
+            x = np.array(rfl_mm[:, :, :])
             x = x.reshape(nl * ns, nb)
 
             # import spectra and resample
@@ -151,11 +149,8 @@ def surface_model(config_file: str) -> None:
                           for n in ('lines', 'bands', 'samples')]
 
                 # Load library and adjust interleave, if needed
-                attr_mm = attr.open_memmap(interleave='source', writable=False)
-                if attr.metadata['interleave'] == 'bip':
-                    x = np.array(attr_mm[:, :, :])
-                if attr.metadata['interleave'] == 'bil':
-                    x = np.array(attr_mm[:, :, :]).transpose((0, 2, 1))
+                attr_mm = attr.open_memmap(interleave='bip', writable=False)
+                x = np.array(attr_mm[:, :, :])
                 x = x.reshape(nla * nsa, nba)
                 model['attributes'] = attr.metadata['band names']
 
