@@ -1,6 +1,7 @@
 # Hypertrace
 
-Objective: Starting from known surface reflectance and atmospheric conditions, simulate top-of-atmosphere radiance and then perform atmospheric correction to estimate surface reflectance from this simulated radiance.
+Hypertrace is a wrapper around Isofit that links forward and inverse modeling.
+Starting from known surface reflectance and atmospheric conditions, simulate top-of-atmosphere radiance and then perform atmospheric correction to estimate surface reflectance from this simulated radiance.
 
 ## Lightning introduction
 
@@ -26,9 +27,6 @@ Hypertrace also ships with a script to quickly calculate some basic summary stat
 This script also takes the config file as an input:
 
 ``` sh
-# NOTE that this also depends on pandas, so if you don't have it installed in
-# your environment, run:
-#     pip install pandas
 python summarize.py myconfig.json
 ```
 
@@ -65,39 +63,6 @@ Top level settings are as follows:
         - `"simple"` -- Algebraic inversion. This uses the same underlying code as `"inversion"`, but for the least-squares optimization step, sets the number of function evaluations to 1. This works because Isofit uses the algebraic inversion as its initial condition.
     - `create_lut` -- If `true` (default), use LibRadtran to create look-up tables as necessary. If `false`, use whatever LUT configuration (path, engine, etc.) you provided in the Isofit config (note that this is untested and experimental).
     
-## Installation
-
-### Isofit
-
-We recommend installing Isofit into a new conda environment.
-Therefore, make sure you have anaconda or miniconda installed.
-In this document, we'll call the conda environment `r-isofit`, but you can call it whatever you'd like (just replace `r-isofit` with your own environment name everywhere in these instructions).
-
-First, download Isofit and checkout this branch.
-
-``` sh
-git clone https://github.com/ashiklom/isofit
-cd isofit
-git checkout py-hypertrace
-```
-
-Create a new conda environment and activate it.
-
-``` sh
-conda create -n hypertrace python
-# Go through the interactive prompts...
-conda activate hypertrace
-```
-
-Install Isofit and its dependencies.
-
-``` sh
-# From inside the isofit root directory (same directory as README.rst, LICENSE, etc.)
-pip install .
-# Alternatively, if you are in the `examples/py-hypertrace` directory, you can do:
-pip install ../..
-```
-
 ### Libradtran
 
 To generate your own atmospheric look-up tables, you'll need a working installation of LibRadTran.
