@@ -105,6 +105,7 @@ def main():
     parser.add_argument('--channelized_uncertainty_path', type=str)
     parser.add_argument('--model_discrepancy_path', type=str)
     parser.add_argument('--lut_config_file', type=str)
+    parser.add_argument('--multiple_restarts', action='store_true')
     parser.add_argument('--logging_level', type=str, default="INFO")
     parser.add_argument('--log_file', type=str, default=None)
     parser.add_argument('--n_cores', type=int, default=1)
@@ -275,7 +276,7 @@ def main():
             not exists(paths.uncert_subs_path) or \
             not exists(paths.rfl_subs_path):
 
-        write_modtran_template(atmosphere_type=atmosphere_type, fid=paths.fid, altitude_km=mean_altitude_km,
+        write_modtran_template(atmosphere_type=args.atmosphere_type, fid=paths.fid, altitude_km=mean_altitude_km,
                                dayofyear=dayofyear, latitude=mean_latitude, longitude=mean_longitude,
                                to_sensor_azimuth=mean_to_sensor_azimuth, to_sensor_zenith=mean_to_sensor_zenith,
                                gmtime=gmtime, elevation_km=mean_elevation_km, output_file=paths.modtran_template_path)
@@ -284,7 +285,7 @@ def main():
         build_main_config(paths, lut_params, h2o_lut_grid, elevation_lut_grid, to_sensor_azimuth_lut_grid,
                           to_sensor_zenith_lut_grid, mean_latitude, mean_longitude, dt, 
                           args.empirical_line == 1, args.n_cores, args.surface_category,
-                          uncorrelated_radiometric_uncertainty)
+                          uncorrelated_radiometric_uncertainty, args.multiple_restarts)
 
         # Run modtran retrieval
         logging.info('Running ISOFIT with full LUT')
@@ -928,7 +929,8 @@ def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array, n_cores: int
                              'radiative_transfer': radiative_transfer_config},
                          "implementation": {
                             "ray_temp_dir": paths.ray_temp_dir,
-                            'inversion': {'windows': INVERSION_WINDOWS},
+                            'inversion': {
+                              'windows': INVERSION_WINDOWS},
                             "n_cores": n_cores}
                          }
 
@@ -969,7 +971,7 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
                       to_sensor_zenith_lut_grid: np.array = None, mean_latitude: float = None,
                       mean_longitude: float = None, dt: datetime = None, use_emp_line: bool = True, 
                       n_cores: int = -1, surface_category='multicomponent_surface',
-                      uncorrelated_radiometric_uncertainty: float = 0.0):
+                      uncorrelated_radiometric_uncertainty: float = 0.0, multiple_restarts = False):
     """ Write an isofit config file for the main solve, using the specified pathnames and all given info
 
     Args:
@@ -1077,12 +1079,22 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
         isofit_config_modtran['output']['estimated_reflectance_file'] = paths.rfl_working_path
         isofit_config_modtran['output']['estimated_state_file'] = paths.state_working_path
 
+    if multiple_restarts:
+        eps = 1e-2
+        grid = {'H2OSTR':[float(h2o_lut_grid[0]+eps), float(h2o_lut_grid[-1]-eps)]}
+        # We will initialize using different AODs for the first aerosol in the LUT
+        if len(aerosol_lut_grid)>0:
+           key = list(aerosol_lut_grid.keys())[0]
+           grid[key] = [float(aerosol_lut_grid[key][0]+eps), float(aerosol_lut_grid[key][-1]-eps)]
+        isofit_config_modtran['implementation']['inversion']['integration_grid'] = grid
+        isofit_config_modtran['implementation']['inversion']['inversion_grid_as_preseed'] = True
+
     if paths.input_channelized_uncertainty_path is not None:
         isofit_config_modtran['forward_model']['instrument']['unknowns'][
             'channelized_radiometric_uncertainty_file'] = paths.channelized_uncertainty_working_path
 
     if paths.input_model_discrepancy_path is not None:
-        isofit_config_h2o['forward_model']['model_discrepancy_file'] = \
+        isofit_config_modtran['forward_model']['model_discrepancy_file'] = \
             paths.model_discrepancy_working_path
 
     if paths.noise_path is not None:
