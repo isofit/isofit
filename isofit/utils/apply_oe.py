@@ -971,7 +971,7 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
                       to_sensor_zenith_lut_grid: np.array = None, mean_latitude: float = None,
                       mean_longitude: float = None, dt: datetime = None, use_emp_line: bool = True, 
                       n_cores: int = -1, surface_category='multicomponent_surface',
-                      uncorrelated_radiometric_uncertainty: float = 0.0, multiple_restarts = False):
+                      uncorrelated_radiometric_uncertainty: float = 0.0, multiple_restarts: bool = False):
     """ Write an isofit config file for the main solve, using the specified pathnames and all given info
 
     Args:
