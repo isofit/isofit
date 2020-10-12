@@ -121,11 +121,11 @@ def do_hypertrace(isofit_config, wavelength_file, reflectance_file,
         h2o = atm_aod_h2o[2]
 
     lrttag = f"atm_{lrt_atmosphere_type}__" +\
-        f"szen_{solar_zenith}__" +\
-        f"ozen_{observer_zenith}__" +\
-        f"saz_{solar_azimuth}__" +\
-        f"oaz_{observer_azimuth}"
-    atmtag = f"aod_{aod}__h2o_{h2o}"
+        f"szen_{solar_zenith:.2f}__" +\
+        f"ozen_{observer_zenith:.2f}__" +\
+        f"saz_{solar_azimuth:.2f}__" +\
+        f"oaz_{observer_azimuth:.2f}"
+    atmtag = f"aod_{aod:.3f}__h2o_{h2o:.3f}"
 
     if create_lut:
         lutdir = mkabs(lutdir)
