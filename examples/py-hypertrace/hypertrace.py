@@ -5,12 +5,14 @@
 import copy
 import pathlib
 import json
+import logging
 
 import numpy as np
 from scipy.io import loadmat
 
 from isofit.core.isofit import Isofit
 
+logger = logging.getLogger(__name__)
 
 def do_hypertrace(isofit_config, wavelength_file, reflectance_file,
                   libradtran_template_file,
