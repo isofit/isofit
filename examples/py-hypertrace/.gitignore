@@ -13,6 +13,7 @@ output/*
 # JSON files that are NOT the config example
 *.json
 !config-example.json
+!config-example-modtran.json
 
 # Example look-up table directory
 /luts/

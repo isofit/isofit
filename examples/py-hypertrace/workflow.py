@@ -27,7 +27,9 @@ with open(configfile) as f:
 
 wavelength_file = mkabs(config["wavelength_file"])
 reflectance_file = mkabs(config["reflectance_file"])
-libradtran_template_file = mkabs(config["libradtran_template_file"])
+if "libradtran_template_file" in config:
+    raise Exception("`libradtran_template_file` is deprecated. Use `rtm_template_file` instead.")
+rtm_template_file = mkabs(config["rtm_template_file"])
 lutdir = mkabs(config["lutdir"])
 outdir = mkabs(config["outdir"])
 
@@ -53,6 +55,6 @@ for ht in ht_iter:
         argd[key] = value
     logger.info("Running config: %s", argd)
     do_hypertrace(isofit_config, wavelength_file, reflectance_file,
-                  libradtran_template_file, lutdir, outdir,
+                  rtm_template_file, lutdir, outdir,
                   **argd)
 logging.info("Workflow completed successfully.")

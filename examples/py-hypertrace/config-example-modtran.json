@@ -1,9 +1,9 @@
 {
     "wavelength_file": "./hypertrace-data/priors/avirisc-wavelengths.txt",
     "reflectance_file": "./hypertrace-data/reflectance/reference/reference_reflectance",
-    "rtm_template_file": "./lrt-template.inp",
-    "lutdir": "./luts",
-    "outdir": "./output",
+    "rtm_template_file": "./modtran-template.json",
+    "lutdir": "./luts/modtran",
+    "outdir": "./output/modtran",
     "isofit": {
         "forward_model": {
             "instrument": {
@@ -15,8 +15,8 @@
             },
             "radiative_transfer": {
                 "lut_grid": {
-                    "AOT550": [0.001, 0.123, 0.6],
-                    "H2OSTR": [1.0, 2.5, 3.25]
+                    "AOT550": [0.001, 0.6],
+                    "H2OSTR": [0.543, 3.216]
                 },
                 "statevector": {
                     "AOT550": {
@@ -37,9 +37,8 @@
                 "unknowns": {"H2O_ABSCO": 0.01},
                 "radiative_transfer_engines": {
                     "vswir": {
-                        "engine_name": "libradtran",
-                        "engine_base_dir": "~/projects/models/libRadtran-2.0.3",
-                        "environment": "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CONDA_PREFIX/lib",
+                        "engine_name": "modtran",
+                        "engine_base_dir": "/dev/null",
                         "lut_names": ["H2OSTR", "AOT550"],
                         "statevector_names": ["H2OSTR", "AOT550"]
                     }
@@ -53,12 +52,12 @@
         }
     },
     "hypertrace": {
-        "atm_aod_h2o": [["midlatitude_winter", 0.2, 1.0], ["midlatitude_winter", 0.3, 2.0]],
-        "observer_zenith": [0.0, 20.0],
-        "inversion_mode": ["simple", "inversion"],
-        "noisefile": ["./hypertrace-data/noise/noise_coeff_sbg_cbe0.txt",
-                      "./hypertrace-data/noise/noise_coeff_sbg_cbe1.txt"],
-        "surface_file": ["./hypertrace-data/priors/uninformative.mat",
-                        "./hypertrace-data/priors/basemap_surface_model.mat"]
+        "lrt_atmosphere_type": ["ATM_MIDLAT_SUMMER"],
+        "aod": [0.2, 0.3],
+        "h2o": [1.0, 2.0],
+        "observer_zenith": [0, 22.5],
+        "inversion_mode": ["inversion"],
+        "noisefile": ["./hypertrace-data/noise/noise_coeff_sbg_cbe0.txt"],
+        "surface_file": ["./hypertrace-data/priors/uninformative.mat"]
     }
 }

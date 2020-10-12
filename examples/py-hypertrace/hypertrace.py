@@ -15,7 +15,7 @@ from isofit.core.isofit import Isofit
 logger = logging.getLogger(__name__)
 
 def do_hypertrace(isofit_config, wavelength_file, reflectance_file,
-                  libradtran_template_file,
+                  rtm_template_file,
                   lutdir, outdir,
                   surface_file="./data/prior.mat",
                   noisefile=None, snr=300,
@@ -39,11 +39,11 @@ def do_hypertrace(isofit_config, wavelength_file, reflectance_file,
         the convention of the `spectral` Python library, which will be used to
         read this file).
 
-        libradtran_template_file: Path to the LibRadtran template. Note that
-        this is slightly different from the Isofit template in that the Isofit
-        fields are surrounded by two sets of `{{` while a few additional options
-        related to geometry are surrounded by just `{` (this is because
-        Hypertrace does an initial pass at formatting the files).
+        rtm_template_file: Path to the atmospheric RTM template. For LibRadtran,
+        note that this is slightly different from the Isofit template in that
+        the Isofit fields are surrounded by two sets of `{{` while a few
+        additional options related to geometry are surrounded by just `{` (this
+        is because Hypertrace does an initial pass at formatting the files).
 
         `lutdir`: Directory where look-up tables will be stored. Will be created
         if missing.
@@ -65,8 +65,8 @@ def do_hypertrace(isofit_config, wavelength_file, reflectance_file,
 
       h2o: True water vapor content. Default = 1.0
 
-      lrt_atmosphere_type: LibRadtran atmosphere type. See LibRadtran manual for
-      details. Default = `midlatitude_winter`
+      lrt_atmosphere_type: LibRadtran or Modtran atmosphere type. See RTM
+      manuals for details. Default = `midlatitude_winter`
 
       atm_aod_h2o: A list containing three elements: The atmosphere type, AOD,
       and H2O. This provides a way to iterate over specific known atmospheres
@@ -132,17 +132,34 @@ def do_hypertrace(isofit_config, wavelength_file, reflectance_file,
         lutdir.mkdir(parents=True, exist_ok=True)
         lutdir2 = lutdir / lrttag
         lutdir2.mkdir(parents=True, exist_ok=True)
-        lrtfile = lutdir2 / "lrt-template.inp"
         vswir_conf = forward_settings["radiative_transfer"]["radiative_transfer_engines"]["vswir"]
-        with open(libradtran_template_file, "r") as f:
-            fs = f.read()
-            open(lrtfile, "w").write(fs.format(
-                atmosphere=lrt_atmosphere_type, solar_azimuth=solar_azimuth,
-                solar_zenith=solar_zenith,
-                cos_observer_zenith=np.cos(observer_zenith * np.pi / 180.0),
-                observer_azimuth=observer_azimuth
-            ))
-        open(lutdir2 / "prescribed_geom", "w").write(f"99:99:99   {solar_zenith}  {solar_azimuth}")
+        atmospheric_rtm = vswir_conf["engine_name"]
+
+        if atmospheric_rtm == "libradtran":
+            lrtfile = lutdir2 / "lrt-template.inp"
+            with open(rtm_template_file, "r") as f:
+                fs = f.read()
+                open(lrtfile, "w").write(fs.format(
+                    atmosphere=lrt_atmosphere_type, solar_azimuth=solar_azimuth,
+                    solar_zenith=solar_zenith,
+                    cos_observer_zenith=np.cos(observer_zenith * np.pi / 180.0),
+                    observer_azimuth=observer_azimuth
+                ))
+            open(lutdir2 / "prescribed_geom", "w").write(f"99:99:99   {solar_zenith}  {solar_azimuth}")
+
+        elif atmospheric_rtm == "modtran":
+            lrtfile = lutdir2 / "modtran-template.json"
+            with open(rtm_template_file, "r") as f:
+                fdict = json.load(f)
+            mod = fdict["MODTRAN"][0]["MODTRANINPUT"]
+            for key in ['MODEL', 'M1', 'M2', 'M3', 'M4', 'M5', 'M6']:
+                mod['ATMOSPHERE'][key] = lrt_atmosphere_type
+            mod["GEOMETRY"]["PARM1"] = 180 - solar_azimuth
+            mod["GEOMETRY"]["PARM2"] = solar_zenith
+            # TODO: Is this angle correct?
+            mod["GEOMETRY"]["OBSZEN"] = observer_zenith
+            json.dump(fdict, open(lrtfile, "w"), indent=2)
+
         vswir_conf["lut_path"] = str(lutdir2)
         vswir_conf["template_file"] = str(lrtfile)
 
