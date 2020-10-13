@@ -546,7 +546,7 @@ class ModtranRT(TabularRT):
         r = self.get(x_RT, geom)
         return r['thermal_downwelling']
 
-<<<<<<< HEAD
+
     def get_L_up(self, x_RT, geom):
         """Thermal emission from the ground is provided by the thermal model,
         so this function is a placeholder for future upgrades."""
@@ -555,7 +555,7 @@ class ModtranRT(TabularRT):
     def wl2flt(self, wls, fwhms, outfile):
         """Helper function to generate Gaussian distributions around the
         center wavelengths."""
-=======
+
     def wl2flt(self, wavelengths: np.array, fwhms: np.array, outfile: str) -> None:
         """Helper function to generate Gaussian distributions around the
         center wavelengths.
@@ -566,7 +566,7 @@ class ModtranRT(TabularRT):
             outfile: file to write to
 
         """
->>>>>>> 61e0e479a5e0e1410fa823659050cd1ac630e336
+
 
         sigmas = fwhms/2.355
         span = 2.0 * (wavelengths[1]-wavelengths[0])  # nm

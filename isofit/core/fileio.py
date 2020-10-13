@@ -31,7 +31,7 @@ from isofit.inversion.inverse_simple import invert_simple, invert_algebraic
 from .geometry import Geometry
 from isofit.configs import Config
 from isofit.core.forward import ForwardModel
-
+import pdb
 
 ### Variables ###
 
@@ -276,7 +276,6 @@ class IO:
         self.n_chan = len(self.fm.instrument.wl_init)
 
         self.simulation_mode = config.implementation.mode == 'simulation'
-
         # Names of either the wavelength or statevector outputs
         wl_names = [('Channel %i' % i) for i in range(self.n_chan)]
         sv_names = self.fm.statevec.copy()
