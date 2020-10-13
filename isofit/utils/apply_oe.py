@@ -1081,11 +1081,13 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
 
     if multiple_restarts:
         eps = 1e-2
-        grid = {'H2OSTR':[float(h2o_lut_grid[0]+eps), float(h2o_lut_grid[-1]-eps)]}
+        h2o_delta = float(h2o_lut_grid[-1]) - float(h2o_lut_grid[0])
+        grid = {'H2OSTR':[round(h2o_lut_grid[0]+h2o_delta*0.02,4), round(h2o_lut_grid[-1]-h2o_delta*0.02,4)]}
         # We will initialize using different AODs for the first aerosol in the LUT
         if len(aerosol_lut_grid)>0:
-           key = list(aerosol_lut_grid.keys())[0]
-           grid[key] = [float(aerosol_lut_grid[key][0]+eps), float(aerosol_lut_grid[key][-1]-eps)]
+            key = list(aerosol_lut_grid.keys())[0]
+            aer_delta = aerosol_lut_grid[key][-1] - aerosol_lut_grid[key][0]
+            grid[key] = [round(aerosol_lut_grid[key][0]+aer_delta*0.02), round(aerosol_lut_grid[key][-1]-aer_delta*0.02,4)]
         isofit_config_modtran['implementation']['inversion']['integration_grid'] = grid
         isofit_config_modtran['implementation']['inversion']['inversion_grid_as_preseed'] = True
 
