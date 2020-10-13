@@ -37,9 +37,7 @@ def segment(spectra, flag, npca, segsize, nchunk):
     in_img = envi.open(in_file+'.hdr', in_file)
     meta = in_img.metadata
     nl, nb, ns = [int(meta[n]) for n in ('lines', 'bands', 'samples')]
-    img_mm = in_img.open_memmap(interleave='source', writable=False)
-    if meta['interleave'] != 'bil':
-        raise ValueError('I need BIL interleave.')
+    img_mm = in_img.open_memmap(interleave='bip', writable=False)
 
     # Iterate through image "chunks," segmenting as we go
     next_label = 1
@@ -51,8 +49,7 @@ def segment(spectra, flag, npca, segsize, nchunk):
 
         # Extract data
         lend = min(lstart+nchunk, nl)
-        img_mm = in_img.open_memmap(interleave='source', writable=False)
-        x = np.array(img_mm[lstart:lend, :, :]).transpose((0, 2, 1))
+        img_mm = in_img.open_memmap(interleave='bip', writable=False)
         nc = x.shape[0]
         x = x.reshape((nc * ns, nb))
 
