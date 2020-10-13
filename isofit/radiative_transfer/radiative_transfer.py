@@ -66,6 +66,10 @@ class RadiativeTransfer():
                     'Invalid radiative transfer engine name: {}'.format(rte_config.engine_name))
 
             self.rt_engines.append(rte)
+        
+        # The rest of the code relies on sorted order of the individual RT engines which cannot
+        # be guaranteed by the dict JSON or YAML input
+        self.rt_engines.sort(key=lambda x: x.wl[0])
 
         # Retrieved variables.  We establish scaling, bounds, and
         # initial guesses for each state vector element.  The state
@@ -106,7 +110,10 @@ class RadiativeTransfer():
         """
         return np.diagflat(np.power(np.array(self.prior_sigma), 2))
 
-    def get(self, x_RT, geom):
+    def get_shared_rtm_quantities(self, x_RT, geom):
+        """Return only the set of RTM quantities (transup, sphalb, etc.) that are contained
+        in all RT engines.
+        """
 
         ret = []
         for RT in self.rt_engines:
@@ -115,7 +122,7 @@ class RadiativeTransfer():
         return self.pack_arrays(ret)
 
     def calc_rdn(self, x_RT, rfl, Ls, geom):
-        r = self.get(x_RT, geom)
+        r = self.get_shared_rtm_quantities(x_RT, geom)
         L_atm = self.get_L_atm(x_RT, geom)
         L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)
         L_up = Ls * r['transup']
@@ -153,7 +160,7 @@ class RadiativeTransfer():
         K_RT = np.array(K_RT).T
 
         # Get K_surface
-        r = self.get(x_RT, geom)
+        r = self.get_shared_rtm_quantities(x_RT, geom)
         L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)
 
         # The reflected downwelling light is:
@@ -176,7 +183,7 @@ class RadiativeTransfer():
 
         else:
             # first the radiance at the current state vector
-            r = self.get(x_RT, geom)
+            r = self.get_shared_rtm_quantities(x_RT, geom)
             rdn = self.calc_rdn(x_RT, rfl, Ls, geom)
 
             # unknown parameters modeled as random variables per
@@ -202,12 +209,22 @@ class RadiativeTransfer():
         ret = '\n'.join(ret)
         return ret
 
-    def pack_arrays(self, list_of_r_dicts):
-        """Take the list of dict outputs from each RTM (in order of RTs) and
-        stack their internal arrays in the same order.
+    def pack_arrays(self, rtm_quantities_from_RT_engines):
+        """Take the list of dict outputs from each RT engine and
+        stack their internal arrays in the same order. Keep only
+        those quantities that are common to all RT engines.
         """
-        r_stacked = {}
-        for key in list_of_r_dicts[0].keys():
-            temp = [x[key] for x in list_of_r_dicts]
-            r_stacked[key] = np.hstack(temp)
-        return r_stacked
+
+        # Get the intersection of the sets of keys from each of the rtm_quantities_from_RT_engines
+        shared_rtm_keys = set(rtm_quantities_from_RT_engines[0].keys())
+        if len(rtm_quantities_from_RT_engines) > 1:
+            for rtm_quantities_from_one_RT_engine in rtm_quantities_from_RT_engines[1:]:
+                shared_rtm_keys.intersection_update(rtm_quantities_from_one_RT_engine.keys())
+
+        # Concatenate the different band ranges
+        rtm_quantities_concatenated_over_RT_bands = {}
+        for key in shared_rtm_keys:
+            temp = [x[key] for x in rtm_quantities_from_RT_engines]
+            rtm_quantities_concatenated_over_RT_bands[key] = np.hstack(temp)
+
+        return rtm_quantities_concatenated_over_RT_bands

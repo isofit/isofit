@@ -13,7 +13,7 @@ This codebase contains a set of routines and utilities for fitting surface,
 atmosphere and instrument models to imaging spectrometer data.  It is
 written primarily in Python, with JSON format configuration files and some
 dependencies on widely-available numerical and scientific libraries such as
-scipy, scikit-learn, and numba.  It is designed for maximum flexibility, so
+scipy, numpy, and scikit-learn.  It is designed for maximum flexibility, so
 that users can swap in and evaluate model components based on different
 radiative transfer models (RTMs) and various statistical descriptions of
 surface, instrument, and atmosphere.  It can run on individual radiance
@@ -46,25 +46,11 @@ The code repository, development branches, and user community are found on
 
 1. Download or clone the git repo located at https://github.com/isofit/isofit, using either the `current-release <https://github.com/isofit/isofit/tree/current-release>`_ or `master (current-release + reviewed development) <https://github.com/isofit/isofit>`_ branch.
 
-2. Install the ISOFIT dependencies using pip
+2. Install the ISOFIT using pip - be sure to use a full path reference.
 
 .. code::
 
-  python3 -m pip install scipy
-  python3 -m pip install numba
-  python3 -m pip install matplotlib
-  python3 -m pip install scikit-learn
-  python3 -m pip install scikit-image
-  python3 -m pip install spectral
-  python3 -m pip install pytest 
-  python3 -m pip install pep8 
-  python3 -m pip install xxhash
-
-3. Make sure the isofit base directory is in your Python path like this:
-
-.. code::
-
-    export PYTHONPATH="${PYTHONPATH}:/path/to/isofit"
+    pip install --editable /path/to/isofit
 
 From PyPI
 *********
@@ -125,3 +111,8 @@ Additional Installation Info for Mac OSX
   xcode-select --install
 
 2. Download the python3 installer from https://www.python.org/downloads/mac-osx/
+
+
+Known Incompatibilities
+-----------------------
+Ray may have compatability issues with older machines with glibc < 2.14.

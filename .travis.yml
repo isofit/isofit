@@ -3,7 +3,6 @@ python:
   - '3.6'
 install:
   - pip install scipy
-  - pip install numba
   - pip install matplotlib
   - pip install scikit-learn
   - pip install scikit-image
@@ -13,5 +12,6 @@ install:
   - pip install xxhash
   - pip install pyyaml
   - pip install ray
+  - pip install pandas
 script:
   - pytest
