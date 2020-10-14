@@ -170,12 +170,13 @@ def do_hypertrace(isofit_config, wavelength_file, reflectance_file,
     outdir2.mkdir(parents=True, exist_ok=True)
 
     # Observation file, which describes the geometry
+    # Angles follow LibRadtran conventions
     obsfile = outdir2 / "obs.txt"
     geomvec = [
         -999,              # path length; not used
         observer_azimuth,  # Degrees 0-360; 0 = Sensor in N, looking S; 90 = Sensor in W, looking E
         observer_zenith,   # Degrees 0-90; 0 = directly overhead, 90 = horizon
-        solar_azimuth,     # Degrees 0-360; 0 = N, 90 = W, 180 = S, 270 = E
+        solar_azimuth,     # Degrees 0-360; 0 = Sun in S; 90 = Sun in W.
         solar_zenith,      # Same units as observer zenith
         180.0 - abs(observer_zenith),  # MODTRAN OBSZEN -- t
         observer_azimuth - solar_azimuth + 180.0,  # MODTRAN relative azimuth
