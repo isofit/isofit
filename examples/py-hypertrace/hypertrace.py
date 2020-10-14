@@ -154,6 +154,9 @@ def do_hypertrace(isofit_config, wavelength_file, reflectance_file,
             mod = fdict["MODTRAN"][0]["MODTRANINPUT"]
             for key in ['MODEL', 'M1', 'M2', 'M3', 'M4', 'M5', 'M6']:
                 mod['ATMOSPHERE'][key] = lrt_atmosphere_type
+            assert mod["GEOMETRY"]["IPARM"] == 12, \
+                "MODTRAN GEOMETRY IPARM must be set to 12, " +\
+                f"but is currently set to {mod['GEOMETRY']['IPARM']}"
             mod["GEOMETRY"]["PARM1"] = 180 - solar_azimuth
             mod["GEOMETRY"]["PARM2"] = solar_zenith
             # TODO: Is this angle correct?
