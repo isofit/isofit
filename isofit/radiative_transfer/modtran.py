@@ -269,7 +269,7 @@ class ModtranRT(TabularRT):
                 param[0]['MODTRANINPUT']['GEOMETRY']['PARM1'] = param[0]['MODTRANINPUT']['GEOMETRY']['TRUEAZ'] - val + 180
 
             elif key in ['solar_zenith', 'solzen']:
-                param[0]['MODTRANINPUT']['GEOMETRY']['PARM1'] = abs(val)
+                param[0]['MODTRANINPUT']['GEOMETRY']['PARM2'] = abs(val)
             
             #elif key in ['altitude_km']
 
