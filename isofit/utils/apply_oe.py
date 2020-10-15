@@ -1122,7 +1122,7 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
             'channelized_radiometric_uncertainty_file'] = paths.channelized_uncertainty_working_path
 
     if paths.input_model_discrepancy_path is not None:
-        isofit_config_h2o['forward_model']['model_discrepancy_file'] = \
+        isofit_config_modtran['forward_model']['model_discrepancy_file'] = \
             paths.model_discrepancy_working_path
 
     if paths.noise_path is not None:
