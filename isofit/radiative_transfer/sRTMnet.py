@@ -66,16 +66,12 @@ class SimulatedModtranRT(TabularRT):
         n_simulator_chan = len(simulator_wavelengths)
         n_emulator_chan = len(emulator_wavelengths)
 
-        #if len(self.wl) != len(emulator_aux['wavelengths']) or np.any(self.wl != emulator_aux['wavelengths']):
-        #    raise AttributeError('Emulator wavelengths do not match simulator wavelengths')
-
         for lq in self.lut_quantities:
             if lq not in emulator_aux['rt_quantities'].tolist() and lq != 'transup':
                 raise AttributeError('lut_quantities: {} do not match emulator_aux rt_quantities: {}'.format(self.lut_quantities, emulator_aux['rt_quantities']))
 
         interpolator_disk_paths = [engine_config.interpolator_base_path + '_' + rtq + '.pkl' for rtq in self.lut_quantities]
 
-        
         # Build a new config for sixs simulation runs using existing config
         sixs_config: RadiativeTransferEngineConfig = deepcopy(engine_config)
         sixs_config.aerosol_model_file = None

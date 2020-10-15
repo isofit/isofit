@@ -5,12 +5,19 @@
    :maxdepth: 2
 
    custom/readme_ref.rst
+   custom/best_practices.rst
 
 .. toctree::
    :Caption: The Code
    :maxdepth: 4
 
    isofit.rst
+
+.. toctree::
+   :Caption: Bibliography
+   :maxdepth: 2
+
+   custom/bibliography.rst
 
 .. toctree::
    :Caption: Contributing

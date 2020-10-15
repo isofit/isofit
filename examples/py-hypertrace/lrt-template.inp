@@ -1,0 +1,82 @@
+# Libradtran template file
+# Based on ISOFIT file
+# Annotated by Alexey Shiklomanov
+# Full documentation: http://www.libradtran.org/doc/libRadtran.pdf
+
+# Type of atmosphere Either point to a file, or one of the following
+# "hard-coded" ones:
+# tropics,
+# midlatitude_summer, midlatitude_winter,
+# subarctic_summer, subarctic_winter,
+# US-standard
+atmosphere_file {atmosphere}
+
+# File path for incident solar spectrum
+# Relative to libradtran `test` directory
+# source solar ~/projects/models/libRadtran-2.0.3/test/test.pl.in
+source solar ../data/solar_flux/kurudz_0.1nm.dat
+
+# Albedo -- this will be modified by isofit
+albedo {{albedo}}
+
+# Radiative transfer equation solver
+rte_solver disort
+pseudospherical
+
+# Spectral band parameterization
+mol_abs_param reptran fine
+
+# Cross-section model
+crs_model rayleigh bodhaine
+
+# Cosine output polar (zenith) angle
+# Negative -- downwelling radiance, looking up
+# Positive -- upwelling radiance, looking down
+umu 1.0
+
+# Azimuth output angle (degrees)
+phi {observer_azimuth}
+
+# Solar azimuth (degrees, 0-360)
+# South -- 0
+# West -- 90
+# North -- 180
+# East -- 270
+phi0 {solar_azimuth}
+
+sza {solar_zenith}
+
+# Output altitude (above surface altitude) (km)
+zout 2.3
+
+# Bottom of atmosphere altitude (km above sea level)
+altitude 0.24
+
+# Local time (Y M D H M S)
+time 2017 01 01 19 00 00
+
+# Modify given gas column (altitude to TOA) to given value and unit
+mol_modify O3 300 DU
+mol_modify H2O {{h2o_mm}} MM
+
+# Coordinates
+latitude N 34.139247
+longitude W 118.127521
+
+# Output format
+# lambda: wavelength (nm)
+# uu: Radiance ()
+# eglo: Global upward irradiance
+output_user lambda uu eglo
+
+# Wavelength range
+wavelength 350.0 2520.0
+
+# Default aerosol properties
+aerosol_default
+
+# Aerosol optical depth
+aerosol_visibility {{aerosol_visibility}}
+
+# Don't print error messages
+quiet

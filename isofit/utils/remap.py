@@ -18,7 +18,7 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-import scipy as s
+import numpy as np
 from spectral.io import envi
 
 
@@ -33,7 +33,7 @@ def remap(inputfile, labels, outputfile, flag, chunksize):
     ref_img = envi.open(ref_file+'.hdr', ref_file)
     ref_meta = ref_img.metadata
     ref_mm = ref_img.open_memmap(interleave='source', writable=False)
-    ref = s.array(ref_mm[:, :])
+    ref = np.array(ref_mm[:, :])
 
     lbl_img = envi.open(lbl_file+'.hdr', lbl_file)
     lbl_meta = lbl_img.metadata
@@ -56,7 +56,7 @@ def remap(inputfile, labels, outputfile, flag, chunksize):
     out_mm = out_img.open_memmap(interleave='source', writable=True)
 
     # Iterate through image "chunks," restoring as we go
-    for lstart in s.arange(0, nl, nchunk):
+    for lstart in np.arange(0, nl, nchunk):
         print(lstart)
         del out_mm
         out_mm = out_img.open_memmap(interleave='source', writable=True)
@@ -65,9 +65,9 @@ def remap(inputfile, labels, outputfile, flag, chunksize):
         lend = min(lstart+nchunk, nl)
 
         lbl = labels[lstart:lend, :]
-        out = flag * s.ones((lbl.shape[0], nb, lbl.shape[1]))
+        out = flag * np.ones((lbl.shape[0], nb, lbl.shape[1]))
         for row in range(lbl.shape[0]):
             for col in range(lbl.shape[1]):
-                out[row, :, col] = s.squeeze(ref[int(lbl[row, col]), :])
+                out[row, :, col] = np.squeeze(ref[int(lbl[row, col]), :])
 
         out_mm[lstart:lend, :, :] = out

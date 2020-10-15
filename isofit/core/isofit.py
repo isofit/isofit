@@ -80,12 +80,15 @@ class Isofit:
         # Initialize ray for parallel execution
         rayargs = {'address': self.config.implementation.ip_head,
                    'redis_password': self.config.implementation.redis_password,
+                   'ignore_reinit_error':True,
                    'local_mode': self.config.implementation.n_cores == 1}
 
         # only specify a temporary directory if we are not connecting to 
         # a ray cluster
         if rayargs['local_mode']:
             rayargs['temp_dir'] = self.config.implementation.ray_temp_dir
+            # Used to run on a VPN
+            ray.services.get_node_ip_address = lambda: '127.0.0.1'
 
         # We can only set the num_cpus if running on a single-node
         if self.config.implementation.ip_head is None and self.config.implementation.redis_password is None:
@@ -109,6 +112,10 @@ class Isofit:
         # Build the forward model and inversion objects
         self._init_nonpicklable_objects()
         self.io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
+    
+
+    def __del__(self):
+        ray.shutdown()
 
     def _init_nonpicklable_objects(self) -> None:
         """ Internal function to initialize objects that cannot be pickled
@@ -157,12 +164,24 @@ class Isofit:
                     self.states = self.iv.invert(meas, geom)
 
                 # Write the spectra to disk
-                io.write_spectrum(row, col, self.states, meas,
-                                  geom, flush_immediately=True)
+                try:
+                    io.write_spectrum(row, col, self.states, meas,
+                                      geom, flush_immediately=True)
+                except ValueError as err:
+                    logging.error(err)
+                    logging.info(
+                        """
+                        Encountered the following ValueError in row %d and col %d:
+                        %s.
+                        Results for this pixel will be all zeros.
+                        """, row, col, err
+                    )
                 if (index - index_start) % 100 == 0:
                     logging.info(
-                        'Core at start index {} completed inversion {}/{}'.format(index_start, index-index_start,
-                                                                                  index_stop-index_start))
+                        'Core at start index %d completed inversion %d/%d',
+                        index_start, 1+index-index_start,
+                        index_stop-index_start
+                    )
 
     def run(self):
         """
