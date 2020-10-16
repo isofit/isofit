@@ -3,6 +3,6 @@ python:
   - '3.6'
 install:
   - pip install --upgrade pip
-  - pip install --editable ./isofit/isofit --use-feature=2020-resolver
+  - pip install --editable . --use-feature=2020-resolver
 script:
   - pytest
