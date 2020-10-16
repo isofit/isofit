@@ -208,8 +208,12 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
                     X = np.concatenate((np.ones((n, 1)), xv[use, i:i + 1]), axis=1)
                     W = np.diag(np.ones(n))  # /uv[use, i])
                     y = yv[use, i:i + 1]
-                    bhat[i, :] = (inv(X.T @ W @ X) @ X.T @ W @ y).T
-                    bcov[i, :, :] = inv(X.T @ W @ X)
+                    try:
+                        bhat[i, :] = (inv(X.T @ W @ X) @ X.T @ W @ y).T
+                        bcov[i, :, :] = inv(X.T @ W @ X)
+                    except:
+                        bhat[i, :] = 0
+                        bcov[i, :, :] = 0
                     bmarg[i, :] = np.diag(bcov[i, :, :])
 
             if (segmentation_img is not None) and not (hash_idx in hash_table):

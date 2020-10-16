@@ -34,7 +34,9 @@
           "IPARM": 11,
           "PARM1": 34.139247,
           "PARM2":  118.127521,
-          "GMTIME": 18.708
+          "GMTIME": 18.708,
+          "OBSZEN": 180,
+          "TRUEAZ": 0
         },
         "SURFACE": {
           "SURFTYPE": "REFL_LAMBER_MODEL",
