@@ -50,7 +50,7 @@ The code repository, development branches, and user community are found on
 
 .. code::
 
-    pip install --editable /path/to/isofit
+    pip install --editable /path/to/isofit --use-feature=2020-resolver
 
 From PyPI
 *********

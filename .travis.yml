@@ -2,6 +2,6 @@ language: python
 python:
   - '3.6'
 install:
-  - python setup.py
+  - pip install --editable . --use-feature=2020-resolver
 script:
   - pytest
