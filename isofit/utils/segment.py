@@ -50,6 +50,7 @@ def segment(spectra, flag, npca, segsize, nchunk):
         # Extract data
         lend = min(lstart+nchunk, nl)
         img_mm = in_img.open_memmap(interleave='bip', writable=False)
+        x = np.array(img_mm[lstart:lend, :, :])
         nc = x.shape[0]
         x = x.reshape((nc * ns, nb))
 

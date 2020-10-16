@@ -223,7 +223,10 @@ def main():
                                gmtime=gmtime, elevation_km=mean_elevation_km,
                                output_file=paths.h2o_template_path, ihaze_type='AER_NONE')
 
-        max_water = calc_modtran_max_water(paths)
+        if args.emulator_base is None:
+            max_water = calc_modtran_max_water(paths)
+        else:
+            max_water = 6
 
         # run H2O grid as necessary
         if not exists(paths.h2o_subs_path + '.hdr') or not exists(paths.h2o_subs_path):
@@ -232,12 +235,13 @@ def main():
             logging.info('Pre-solve H2O grid: {}'.format(h2o_grid))
             logging.info('Writing H2O pre-solve configuration file.')
             build_presolve_config(paths, h2o_grid, args.n_cores, args.empirical_line == 1, args.surface_category,
-                uncorrelated_radiometric_uncertainty)
+                args.emulator_base, uncorrelated_radiometric_uncertainty)
 
             # Run modtran retrieval
             logging.info('Run ISOFIT initial guess')
             retrieval_h2o = isofit.Isofit(paths.h2o_config_path, level='INFO', logfile=args.log_file)
             retrieval_h2o.run()
+            del retrieval_h2o
 
             # clean up unneeded storage
             for to_rm in ['*r_k', '*t_k', '*tp7', '*wrn', '*psc', '*plt', '*7sc', '*acd']:
@@ -374,9 +378,9 @@ class Pathnames():
             self.obs_working_path = abspath(join(self.input_data_directory, self.fid + '_obs'))
             self.loc_working_path = abspath(join(self.input_data_directory, self.fid + '_loc'))
         else:
-            self.radiance_working_path = self.input_radiance_file
-            self.obs_working_path = self.input_obs_file
-            self.loc_working_path = self.input_loc_file
+            self.radiance_working_path = abspath(self.input_radiance_file)
+            self.obs_working_path = abspath(self.input_obs_file)
+            self.loc_working_path = abspath(self.input_loc_file)
 
         if args.channelized_uncertainty_path:
             self.input_channelized_uncertainty_path = args.channelized_uncertainty_path
@@ -781,7 +785,8 @@ def get_metadata_from_obs(obs_file: str, lut_params: LUTConfig, trim_lines: int 
         to_sensor_zenith[line,:] = obs_line[2, ...]
         time[line,:] = obs_line[9, ...]
 
-    if trim_lines != 0:
+    use_trim = trim_lines != 0 and valid.shape[0] > trim_lines*2
+    if use_trim:
         actual_valid = valid.copy()
         valid[:trim_lines,:] = False
         valid[-trim_lines:,:] = False
@@ -831,7 +836,7 @@ def get_metadata_from_obs(obs_file: str, lut_params: LUTConfig, trim_lines: int 
     h_m_s.append(np.floor((mean_time - h_m_s[-1]) * 60))
     h_m_s.append(np.floor((mean_time - h_m_s[-2] - h_m_s[-1] / 60.) * 3600))
 
-    if trim_lines != 0:
+    if use_trim:
         valid = actual_valid
 
     return h_m_s, increment_day, mean_path_km, mean_to_sensor_azimuth, mean_to_sensor_zenith, valid, \
@@ -865,7 +870,8 @@ def get_metadata_from_loc(loc_file: str, lut_params: LUTConfig, trim_lines: int 
         loc_data[:,line:line+1,:] = loc_dataset.ReadAsArray(0, line, loc_dataset.RasterXSize, 1)
 
     valid = np.logical_not(np.any(loc_data == nodata_value,axis=0))
-    if trim_lines != 0:
+    use_trim = trim_lines != 0 and valid.shape[0] > trim_lines*2
+    if use_trim:
         valid[:trim_lines, :] = False
         valid[-trim_lines:, :] = False
 
@@ -891,7 +897,7 @@ def get_metadata_from_loc(loc_file: str, lut_params: LUTConfig, trim_lines: int 
 
 def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array, n_cores: int=-1,
         use_emp_line=0, surface_category="multicomponent_surface",
-        uncorrelated_radiometric_uncertainty: float = 0.0):
+        emulator_base: str = None, uncorrelated_radiometric_uncertainty: float = 0.0):
     """ Write an isofit config file for a presolve, with limited info.
 
     Args:
@@ -907,13 +913,18 @@ def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array, n_cores: int
     else: 
         spectra_per_inversion = 1 
 
+
+    if emulator_base is None:
+        engine_name = 'modtran'
+    else:
+        engine_name = 'simulated_modtran'
+
     radiative_transfer_config = {
             "radiative_transfer_engines": {
                 "vswir": {
-                    "engine_name": 'modtran',
+                    "engine_name": engine_name,
                     "lut_path": paths.lut_h2o_directory,
                     "template_file": paths.h2o_template_path,
-                    "engine_base_dir": paths.modtran_path,
                     "lut_names": ["H2OSTR"],
                     "statevector_names": ["H2OSTR"],
                 }
@@ -933,6 +944,17 @@ def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array, n_cores: int
                 "H2O_ABSCO": 0.0
             }
     }
+
+    if emulator_base is not None:
+        radiative_transfer_config['radiative_transfer_engines']['vswir']['emulator_file'] = abspath(emulator_base)
+        radiative_transfer_config['radiative_transfer_engines']['vswir']['emulator_aux_file'] = abspath(emulator_base + '_aux.npz')
+        radiative_transfer_config['radiative_transfer_engines']['vswir']['interpolator_base_path'] = abspath(os.path.join(paths.lut_h2o_directory,os.path.basename(emulator_base) + '_vi'))
+        radiative_transfer_config['radiative_transfer_engines']['vswir']['earth_sun_distance_file'] = paths.earth_sun_distance_path
+        radiative_transfer_config['radiative_transfer_engines']['vswir']['irradiance_file'] = paths.irradiance_file
+        radiative_transfer_config['radiative_transfer_engines']['vswir']["engine_base_dir"] = paths.sixs_path
+  
+    else:
+        radiative_transfer_config['radiative_transfer_engines']['vswir']["engine_base_dir"] = paths.modtran_path
 
     # make isofit configuration
     isofit_config_h2o = {'ISOFIT_base': paths.isofit_path,
@@ -969,7 +991,7 @@ def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array, n_cores: int
     if paths.rdn_factors_path:
         isofit_config_h2o['input']['radiometry_correction_file'] = paths.rdn_factors_path
 
-    if use_emp_line == 1:
+    if use_emp_line is True:
         isofit_config_h2o['input']['measured_radiance_file'] = paths.rdn_subs_path
         isofit_config_h2o['input']['loc_file'] = paths.loc_subs_path
         isofit_config_h2o['input']['obs_file'] = paths.obs_subs_path
