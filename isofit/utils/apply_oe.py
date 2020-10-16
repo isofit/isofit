@@ -105,6 +105,7 @@ def main():
     parser.add_argument('--channelized_uncertainty_path', type=str)
     parser.add_argument('--model_discrepancy_path', type=str)
     parser.add_argument('--lut_config_file', type=str)
+    parser.add_argument('--multiple_restarts', action='store_true')
     parser.add_argument('--logging_level', type=str, default="INFO")
     parser.add_argument('--log_file', type=str, default=None)
     parser.add_argument('--n_cores', type=int, default=1)
@@ -289,7 +290,7 @@ def main():
         build_main_config(paths, lut_params, h2o_lut_grid, elevation_lut_grid, to_sensor_azimuth_lut_grid,
                           to_sensor_zenith_lut_grid, mean_latitude, mean_longitude, dt, 
                           args.empirical_line == 1, args.n_cores, args.surface_category,
-                          args.emulator_base, uncorrelated_radiometric_uncertainty)
+                          args.emulator_base, uncorrelated_radiometric_uncertainty, args.multiple_restarts)
 
         # Run modtran retrieval
         logging.info('Running ISOFIT with full LUT')
@@ -896,7 +897,7 @@ def get_metadata_from_loc(loc_file: str, lut_params: LUTConfig, trim_lines: int 
 
 
 def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array, n_cores: int=-1,
-        use_emp_line=0, surface_category="multicomponent_surface",
+        use_emp_line:bool = False, surface_category="multicomponent_surface",
         emulator_base: str = None, uncorrelated_radiometric_uncertainty: float = 0.0):
     """ Write an isofit config file for a presolve, with limited info.
 
@@ -971,7 +972,8 @@ def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array, n_cores: int
                              'radiative_transfer': radiative_transfer_config},
                          "implementation": {
                             "ray_temp_dir": paths.ray_temp_dir,
-                            'inversion': {'windows': INVERSION_WINDOWS},
+                            'inversion': {
+                              'windows': INVERSION_WINDOWS},
                             "n_cores": n_cores}
                          }
 
@@ -991,7 +993,7 @@ def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array, n_cores: int
     if paths.rdn_factors_path:
         isofit_config_h2o['input']['radiometry_correction_file'] = paths.rdn_factors_path
 
-    if use_emp_line is True:
+    if use_emp_line:
         isofit_config_h2o['input']['measured_radiance_file'] = paths.rdn_subs_path
         isofit_config_h2o['input']['loc_file'] = paths.loc_subs_path
         isofit_config_h2o['input']['obs_file'] = paths.obs_subs_path
@@ -1011,8 +1013,8 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
                       elevation_lut_grid: np.array = None, to_sensor_azimuth_lut_grid: np.array = None,
                       to_sensor_zenith_lut_grid: np.array = None, mean_latitude: float = None,
                       mean_longitude: float = None, dt: datetime = None, use_emp_line: bool = True, 
-                      n_cores: int = -1, surface_category: str = 'multicomponent_surface',
-                      emulator_base: str = None, uncorrelated_radiometric_uncertainty: float = 0.0):
+                      n_cores: int = -1, surface_category='multicomponent_surface',
+                      emulator_base: str = None, uncorrelated_radiometric_uncertainty: float = 0.0, multiple_restarts: bool = False):
     """ Write an isofit config file for the main solve, using the specified pathnames and all given info
 
     Args:
@@ -1123,7 +1125,7 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
                                 "n_cores": n_cores}
                              }
 
-    if use_emp_line == 1:
+    if use_emp_line:
         isofit_config_modtran['input']['measured_radiance_file'] = paths.rdn_subs_path
         isofit_config_modtran['input']['loc_file'] = paths.loc_subs_path
         isofit_config_modtran['input']['obs_file'] = paths.obs_subs_path
@@ -1138,6 +1140,18 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
         isofit_config_modtran['output']['posterior_uncertainty_file'] = paths.uncert_working_path
         isofit_config_modtran['output']['estimated_reflectance_file'] = paths.rfl_working_path
         isofit_config_modtran['output']['estimated_state_file'] = paths.state_working_path
+
+    if multiple_restarts:
+        eps = 1e-2
+        h2o_delta = float(h2o_lut_grid[-1]) - float(h2o_lut_grid[0])
+        grid = {'H2OSTR':[round(h2o_lut_grid[0]+h2o_delta*0.02,4), round(h2o_lut_grid[-1]-h2o_delta*0.02,4)]}
+        # We will initialize using different AODs for the first aerosol in the LUT
+        if len(aerosol_lut_grid)>0:
+            key = list(aerosol_lut_grid.keys())[0]
+            aer_delta = aerosol_lut_grid[key][-1] - aerosol_lut_grid[key][0]
+            grid[key] = [round(aerosol_lut_grid[key][0]+aer_delta*0.02), round(aerosol_lut_grid[key][-1]-aer_delta*0.02,4)]
+        isofit_config_modtran['implementation']['inversion']['integration_grid'] = grid
+        isofit_config_modtran['implementation']['inversion']['inversion_grid_as_preseed'] = True
 
     if paths.input_channelized_uncertainty_path is not None:
         isofit_config_modtran['forward_model']['instrument']['unknowns'][
