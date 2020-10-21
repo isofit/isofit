@@ -2,15 +2,7 @@ language: python
 python:
   - '3.6'
 install:
-  - pip install scipy
-  - pip install matplotlib
-  - pip install scikit-learn
-  - pip install scikit-image
-  - pip install spectral
-  - pip install pytest
-  - pip install pep8
-  - pip install xxhash
-  - pip install pyyaml
-  - pip install ray
+  - pip install --upgrade pip
+  - pip install --editable . --use-feature=2020-resolver
 script:
   - pytest

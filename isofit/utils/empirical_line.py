@@ -111,16 +111,16 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
     n_output_uncertainty_bands = int(output_uncertainty_img.metadata['bands'])
 
     # Load reference data
-    reference_locations_mm = reference_locations_img.open_memmap(interleave='source', writable=False)
+    reference_locations_mm = reference_locations_img.open_memmap(interleave='bip', writable=False)
     reference_locations = np.array(reference_locations_mm[:, :, :]).reshape((n_reference_lines, n_location_bands))
 
-    reference_radiance_mm = reference_radiance_img.open_memmap(interleave='source', writable=False)
+    reference_radiance_mm = reference_radiance_img.open_memmap(interleave='bip', writable=False)
     reference_radiance = np.array(reference_radiance_mm[:, :, :]).reshape((n_reference_lines, n_radiance_bands))
 
-    reference_reflectance_mm = reference_reflectance_img.open_memmap(interleave='source', writable=False)
+    reference_reflectance_mm = reference_reflectance_img.open_memmap(interleave='bip', writable=False)
     reference_reflectance = np.array(reference_reflectance_mm[:, :, :]).reshape((n_reference_lines, n_radiance_bands))
 
-    reference_uncertainty_mm = reference_uncertainty_img.open_memmap(interleave='source', writable=False)
+    reference_uncertainty_mm = reference_uncertainty_img.open_memmap(interleave='bip', writable=False)
     reference_uncertainty = np.array(reference_uncertainty_mm[:, :, :]).reshape((n_reference_lines,
                                                                                  n_reference_uncertainty_bands))
     reference_uncertainty = reference_uncertainty[:, :n_radiance_bands].reshape((n_reference_lines, n_radiance_bands))
@@ -162,17 +162,13 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
 
         # Load inline input data
         input_radiance_mm = input_radiance_img.open_memmap(
-            interleave='source', writable=False)
+            interleave='bip', writable=False)
         input_radiance = np.array(input_radiance_mm[row, :, :])
-        if input_radiance_img.metadata['interleave'] == 'bil':
-            input_radiance = input_radiance.transpose((1, 0))
         input_radiance = input_radiance * radiance_adjustment
 
         input_locations_mm = input_locations_img.open_memmap(
-            interleave='source', writable=False)
+            interleave='bip', writable=False)
         input_locations = np.array(input_locations_mm[row, :, :])
-        if input_locations_img.metadata['interleave'] == 'bil':
-            input_locations = input_locations.transpose((1, 0))
 
         output_reflectance_row = np.zeros(input_radiance.shape) + nodata_value
         output_uncertainty_row = np.zeros(input_radiance.shape) + nodata_value
@@ -212,8 +208,12 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
                     X = np.concatenate((np.ones((n, 1)), xv[use, i:i + 1]), axis=1)
                     W = np.diag(np.ones(n))  # /uv[use, i])
                     y = yv[use, i:i + 1]
-                    bhat[i, :] = (inv(X.T @ W @ X) @ X.T @ W @ y).T
-                    bcov[i, :, :] = inv(X.T @ W @ X)
+                    try:
+                        bhat[i, :] = (inv(X.T @ W @ X) @ X.T @ W @ y).T
+                        bcov[i, :, :] = inv(X.T @ W @ X)
+                    except:
+                        bhat[i, :] = 0
+                        bcov[i, :, :] = 0
                     bmarg[i, :] = np.diag(bcov[i, :, :])
 
             if (segmentation_img is not None) and not (hash_idx in hash_table):

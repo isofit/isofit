@@ -46,24 +46,11 @@ The code repository, development branches, and user community are found on
 
 1. Download or clone the git repo located at https://github.com/isofit/isofit, using either the `current-release <https://github.com/isofit/isofit/tree/current-release>`_ or `master (current-release + reviewed development) <https://github.com/isofit/isofit>`_ branch.
 
-2. Install the ISOFIT dependencies using pip
+2. Install the ISOFIT using pip - be sure to use a full path reference.
 
 .. code::
 
-  python3 -m pip install scipy
-  python3 -m pip install matplotlib
-  python3 -m pip install scikit-learn
-  python3 -m pip install scikit-image
-  python3 -m pip install spectral
-  python3 -m pip install pytest 
-  python3 -m pip install pep8 
-  python3 -m pip install xxhash
-
-3. Make sure the isofit base directory is in your Python path like this:
-
-.. code::
-
-    export PYTHONPATH="${PYTHONPATH}:/path/to/isofit"
+    pip install --editable /path/to/isofit --use-feature=2020-resolver
 
 From PyPI
 *********

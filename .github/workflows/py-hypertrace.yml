@@ -1,0 +1,58 @@
+name: Hypertrace
+
+on: [push, pull_request]
+
+jobs:
+  hypertrace:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+
+    - name: Install Isofit
+      run: |
+        python -m pip install --upgrade pip
+        pip install .
+        pip install pandas
+
+    - name: Install libradtran dependencies
+      run: |
+        # apt-get update && apt-get install -y sudo build-essential gfortran python2
+        sudo apt-get install -y libnetcdf-dev libnetcdff-dev libgsl-dev
+
+    - name: Download and install libradtran
+      run: |
+        wget -nv http://www.libradtran.org/download/libRadtran-2.0.3.tar.gz
+        tar -xf libRadtran-2.0.3.tar.gz
+        cd libRadtran-2.0.3
+        wget -nv http://www.meteo.physik.uni-muenchen.de/~libradtran/lib/exe/fetch.php?media=download:reptran_2017_all.tar.gz -O reptran-2017-all.tar.gz
+        tar -xf reptran-2017-all.tar.gz
+        PYTHON=$(which python2) ./configure --prefix=$(pwd)
+        # For some reason, uvspecfunction compilation fails...
+        make --ignore-errors
+
+    - name: Download and extract hypertrace data
+      run: |
+        cd examples/py-hypertrace
+        wget -nv https://github.com/ashiklom/isofit/releases/download/hypertrace-data/hypertrace-data.tar.gz
+        tar -xf hypertrace-data.tar.gz
+
+    - name: Run continuous integration workflow
+      run: |
+        cd examples/py-hypertrace
+        # Modify the workflow file for GitHub actions
+        export LIBRADTRAN_DIR=$GITHUB_WORKSPACE/libRadtran-2.0.3
+        jq -r ".isofit.forward_model.radiative_transfer.radiative_transfer_engines.vswir += {\"engine_base_dir\": \"/$GITHUB_WORKSPACE/libRadtran-2.0.3\", \"environment\": \"\"}" config-example.json > config.json
+        python workflow.py config.json
+        python summarize.py config.json
+
+    - name: Upload summary from CI workflow
+      uses: actions/upload-artifact@v2
+      with:
+        name: summary
+        path: examples/py-hypertrace/output/summary.csv

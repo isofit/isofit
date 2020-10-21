@@ -51,9 +51,7 @@ def instrument_model(config):
 
     infile_hdr = infile + '.hdr'
     img = envi.open(infile_hdr, infile)
-    inmm = img.open_memmap(interleave='source', writable=False)
-    if img.interleave != 1:
-        raise ValueError("I need BIL interleave.")
+    inmm = img.open_memmap(interleave='bil', writable=False)
     X = np.array(inmm[:, :, :], dtype=np.float32)
     nr, nb, nc = X.shape
 
