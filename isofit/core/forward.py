@@ -76,7 +76,6 @@ class ForwardModel:
         # forced to have appropriate properties, so at least safe
         # TODO: make surface a class with inheritance to make this cleaner
         self.surface = None
-        print(self.config.surface.surface_category)
         if self.config.surface.surface_category == 'surface':
             self.surface = Surface(self.full_config)
         elif self.config.surface.surface_category == 'multicomponent_surface':
