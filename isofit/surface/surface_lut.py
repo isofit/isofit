@@ -27,7 +27,7 @@ from .surface import Surface
 from isofit.configs import Config
 
 
-class TabularSurface(Surface):
+class LUTSurface(Surface):
     """A model of the surface based on a collection of multivariate 
     Gaussians, with one or more equiprobable components and full 
     covariance matrices. 
@@ -46,22 +46,22 @@ class TabularSurface(Surface):
 
         # Models are stored as dictionaries in .mat format
         model_dict = loadmat(config.surface_file)
-        self.lut_grid = [grid for grid in model_dict['grids']]
-        self.lut_names = [l for l in model_dict['lut_names']]
-        self.statevec_names = [sv for sv in model_dict['statevec_names']]
+        self.lut_grid = [grid[0] for grid in model_dict['grids'][0]]
+        self.lut_names = [l.strip() for l in model_dict['lut_names']]
+        self.statevec_names = [sv.strip() for sv in model_dict['statevec_names']]
         self.data = model_dict['data']
-        interp_types = ['n' for n in lut_grid]
+        interp_types = np.array(['n' for n in self.lut_grid])
         self.itp = VectorInterpolator(self.lut_grid, self.data, interp_types)
         self.wl = model_dict['wl'][0]
         self.n_wl = len(self.wl)
         self.bounds = model_dict['bounds']
-        self.scale = model_dict['scale']
-        self.init = model_dict['init']
-        self.mean = model_dict['mean']
-        self.sigma = model_dict['sigma']
+        self.scale = model_dict['scale'][0]
+        self.init = model_dict['init'][0]
+        self.mean = model_dict['mean'][0]
+        self.sigma = model_dict['sigma'][0]
         self.n_state = len(self.statevec_names)
         self.n_lut = len(self.lut_names)
-        self.idx_lamb = np.arange(n_state)
+        self.idx_lamb = np.arange(self.n_state)
 
 
     def xa(self, x_surface, geom):
@@ -71,7 +71,7 @@ class TabularSurface(Surface):
         Lambertian (non-specular) version of the surface reflectance."""
         
         mu = np.zeros(self.n_state)
-        mu[self.idx_lamb] = np.mean.copy()
+        mu[self.idx_lamb] = self.mean.copy()
         return mu
 
     def Sa(self, x_surface, geom):
@@ -96,7 +96,7 @@ class TabularSurface(Surface):
     def fit_params(self, rfl_meas, geom, *args):
         """Given a reflectance estimate, fit a state vector."""
 
-        x_surface = self.mean()
+        x_surface = self.mean.copy()
         return x_surface
 
     def calc_rfl(self, x_surface, geom):
@@ -107,16 +107,16 @@ class TabularSurface(Surface):
     def calc_lamb(self, x_surface, geom):
         """Lambertian reflectance."""
 
-        point = np.zeros(n_lut)
+        point = np.zeros(self.n_lut)
         for v,name in zip(x_surface, self.statevec_names):
-          point[self.lut_grid.index(name)] = v
+          point[self.lut_names.index(name)] = v
         if 'SOLZEN' in self.lut_names:
           solzen_ind = self.lut_names.index('SOLZEN')
           point[solzen_ind] = geom.solar_zenith
         if 'VIEWZEN' in self.lut_names:
           viewzen_ind = self.lut_names.index('VIEWZEN')
           point[viewzen_ind] = geom.observer_zenith
-        lamb = itp(point)
+        lamb = self.itp(point)
         return lamb
 
     def drfl_dsurface(self, x_surface, geom):
@@ -153,7 +153,7 @@ class TabularSurface(Surface):
         """Partial derivative of surface emission with respect to state vector, 
         calculated at x_surface."""
 
-        dLs = np.zeros((self.n_wl, self.n_wl), dtype=float)
+        dLs = np.zeros((self.n_wl, self.n_state), dtype=float)
         nprefix = self.idx_lamb[0]
         nsuffix = len(self.statevec_names) - self.idx_lamb[-1] - 1
         prefix = np.zeros((self.n_wl, nprefix))
