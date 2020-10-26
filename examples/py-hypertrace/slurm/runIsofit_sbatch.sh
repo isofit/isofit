@@ -46,8 +46,6 @@ which python
 ### run workflow and summary script
 echo " "
 echo "Run Hypertrace workflow"
-#/data2/sserbin/conda_envs/isofit_master/bin/python workflow.py myconfig.json
-#/data2/sserbin/conda_envs/isofit_master/bin/python summarize.py myconfig.json
 python workflow.py ${workflow_config}
 python summarize.py ${workflow_config}
 
