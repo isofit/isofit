@@ -203,7 +203,7 @@ def main():
         if not exists(paths.lbl_working_path) or not exists(paths.radiance_working_path):
             logging.info('Segmenting...')
             segment(spectra=(paths.radiance_working_path, paths.lbl_working_path),
-                    flag=-9999, npca=5, segsize=SEGMENTATION_SIZE, nchunk=CHUNKSIZE)
+                    nodata_value=-9999, npca=5, segsize=SEGMENTATION_SIZE, nchunk=CHUNKSIZE, n_cores=args.n_cores)
 
         # Extract input data per segment
         for inp, outp in [(paths.radiance_working_path, paths.rdn_subs_path),

@@ -69,7 +69,7 @@ def segment_chunk(lstart, lend, in_file, nodata_value, npca, segsize):
     return lstart, lend, labels
 
 
-def segment(spectra, flag, npca, segsize, nchunk, n_cores=1, ray_address=None, ray_redis_password=None,
+def segment(spectra, nodata_value, npca, segsize, nchunk, n_cores=1, ray_address=None, ray_redis_password=None,
             ray_temp_dir=None, ray_ip_head=None):
     """."""
 
@@ -109,11 +109,10 @@ def segment(spectra, flag, npca, segsize, nchunk, n_cores=1, ray_address=None, r
     jobs = []
     for lstart in np.arange(0, nl, nchunk):
 
-        print(lstart)
         # Extract data
         lend = min(lstart+nchunk, nl)
 
-        jobs.append(segment_chunk.remote(lstart, lend, in_file, npca, segsize))
+        jobs.append(segment_chunk.remote(lstart, lend, nodata_value, in_file, npca, segsize))
 
     # Collect results, making sure each chunk is distinct (note, label indexing is arbitrary,
     # so not attempt at sorting is made)
