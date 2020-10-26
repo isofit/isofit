@@ -38,6 +38,11 @@ def segment_chunk(lstart, lend, in_file, nodata_value, npca, segsize):
 
     # Excluding bad locations, calculate top PCA coefficients
     use = np.all(abs(x - nodata_value) > 1e-6, axis=1)
+
+    # If this chunk is empty, return immediately
+    if np.sum(use) == 0:
+        return lstart, lend, np.zeros((nc,ns))
+
     mu = x[use, :].mean(axis=0)
     C = np.cov(x[use, :], rowvar=False)
     [v, d] = scipy.linalg.eigh(C)
@@ -49,7 +54,6 @@ def segment_chunk(lstart, lend, in_file, nodata_value, npca, segsize):
     x_pca = (x - mu) @ d[:, -npca:]
     x_pca[use < 1, :] = 0.0
     x_pca = x_pca.reshape([nc, ns, npca])
-    valid = use.reshape([nc, ns, 1])
     seg_in_chunk = int(sum(use) / float(segsize))
 
     labels = slic(x_pca, n_segments=seg_in_chunk, compactness=cmpct,
