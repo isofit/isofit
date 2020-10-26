@@ -22,3 +22,6 @@ output/*
 
 # Scratch files (prefixed with zz-)
 zz-*
+
+# SLURM log files
+IsoFit_slurm_job-*.*out
