@@ -22,9 +22,51 @@ import scipy
 from spectral.io import envi
 from skimage.segmentation import slic
 import numpy as np
+import ray
+import atexit
+
+@ray.remote
+def segment_chunk(lstart, lend, in_file, nodata_value, npca, segsize):
+
+    in_img = envi.open(in_file + '.hdr', in_file)
+    meta = in_img.metadata
+    nl, nb, ns = [int(meta[n]) for n in ('lines', 'bands', 'samples')]
+    img_mm = in_img.open_memmap(interleave='bip', writable=False)
+    x = np.array(img_mm[lstart:lend, :, :])
+    nc = x.shape[0]
+    x = x.reshape((nc * ns, nb))
+
+    # Excluding bad locations, calculate top PCA coefficients
+    use = np.all(abs(x - nodata_value) > 1e-6, axis=1)
+    mu = x[use, :].mean(axis=0)
+    C = np.cov(x[use, :], rowvar=False)
+    [v, d] = scipy.linalg.eigh(C)
+
+    # Determine segmentation compactness scaling based on eigenvalues
+    cmpct = scipy.linalg.norm(np.sqrt(v[-npca:]))
+
+    # Project, redimension as an image with "npca" channels, and segment
+    x_pca = (x - mu) @ d[:, -npca:]
+    x_pca[use < 1, :] = 0.0
+    x_pca = x_pca.reshape([nc, ns, npca])
+    valid = use.reshape([nc, ns, 1])
+    seg_in_chunk = int(sum(use) / float(segsize))
+
+    labels = slic(x_pca, n_segments=seg_in_chunk, compactness=cmpct,
+                  max_iter=10, sigma=0, multichannel=True,
+                  enforce_connectivity=True, min_size_factor=0.5,
+                  max_size_factor=3)
+
+    # Reindex the subscene labels and place them into the larger scene
+    labels = labels.reshape([nc * ns])
+    labels[np.logical_not(use)] = 0
+    labels = labels.reshape([nc, ns])
+
+    return lstart, lend, labels
 
 
-def segment(spectra, flag, npca, segsize, nchunk):
+def segment(spectra, flag, npca, segsize, nchunk, n_cores=1, ray_address=None, ray_redis_password=None,
+            ray_temp_dir=None, ray_ip_head=None):
     """."""
 
     in_file = spectra[0]
@@ -37,51 +79,47 @@ def segment(spectra, flag, npca, segsize, nchunk):
     in_img = envi.open(in_file+'.hdr', in_file)
     meta = in_img.metadata
     nl, nb, ns = [int(meta[n]) for n in ('lines', 'bands', 'samples')]
-    img_mm = in_img.open_memmap(interleave='bip', writable=False)
+
+    # Start up a ray instance for parallel work
+    rayargs = {'ignore_reinit_error': True,
+               'local_mode': n_cores == 1,
+               "address": ray_address,
+               "redis_password": ray_redis_password}
+
+    if rayargs['local_mode']:
+        rayargs['temp_dir'] = ray_temp_dir
+        # Used to run on a VPN
+        ray.services.get_node_ip_address = lambda: '127.0.0.1'
+
+    # We can only set the num_cpus if running on a single-node
+    if ray_ip_head is None and ray_redis_password is None:
+        rayargs['num_cpus'] = n_cores
+
+    ray.init(**rayargs)
+    atexit.register(ray.shutdown)
+
 
     # Iterate through image "chunks," segmenting as we go
     next_label = 1
     all_labels = np.zeros((nl, ns))
+    jobs = []
     for lstart in np.arange(0, nl, nchunk):
 
-        del img_mm
         print(lstart)
-
         # Extract data
         lend = min(lstart+nchunk, nl)
-        img_mm = in_img.open_memmap(interleave='bip', writable=False)
-        x = np.array(img_mm[lstart:lend, :, :])
-        nc = x.shape[0]
-        x = x.reshape((nc * ns, nb))
 
-        # Excluding bad locations, calculate top PCA coefficients
-        use = np.all(abs(x-flag) > 1e-6, axis=1)
-        mu = x[use, :].mean(axis=0)
-        C = np.cov(x[use, :], rowvar=False)
-        [v, d] = scipy.linalg.eigh(C)
+        jobs.append(segment_chunk.remote(lstart, lend, in_file, npca, segsize))
 
-        # Determine segmentation compactness scaling based on eigenvalues
-        cmpct = scipy.linalg.norm(np.sqrt(v[-npca:]))
+    # Collect results, making sure each chunk is distinct (note, label indexing is arbitrary,
+    # so not attempt at sorting is made)
+    rreturn = [ray.get(jid) for jid in jobs]
+    for lstart, lend, chunk_label in rreturn:
+        if chunk_label is not None:
+            chunk_label[chunk_label != 0] += np.max(all_labels)
+            all_labels[lstart:lend,...] = chunk_label
 
-        # Project, redimension as an image with "npca" channels, and segment
-        x_pca = (x-mu) @ d[:, -npca:]
-        x_pca[use < 1, :] = 0.0
-        x_pca = x_pca.reshape([nc, ns, npca])
-        valid = use.reshape([nc, ns, 1])
-        seg_in_chunk = int(sum(use) / float(segsize))
-
-        labels = slic(x_pca, n_segments=seg_in_chunk, compactness=cmpct,
-                      max_iter=10, sigma=0, multichannel=True,
-                      enforce_connectivity=True, min_size_factor=0.5,
-                      max_size_factor=3)
-
-        # Reindex the subscene labels and place them into the larger scene
-        labels = labels.reshape([nc * ns])
-        labels[np.logical_not(use)] = 0
-        labels[use] = labels[use] + next_label
-        next_label = max(labels) + 1
-        labels = labels.reshape([nc, ns])
-        all_labels[lstart:lend, :] = labels
+    ray.shutdown()
 
     # Reindex
     labels_sorted = np.sort(np.unique(all_labels))
@@ -90,7 +128,6 @@ def segment(spectra, flag, npca, segsize, nchunk):
         lbl[all_labels == val] = i
 
     # Final file I/O
-    del img_mm
     lbl_meta = {"samples": str(ns), "lines": str(nl), "bands": "1",
                 "header offset": "0", "file type": "ENVI Standard",
                 "data type": "4", "interleave": "bil"}
