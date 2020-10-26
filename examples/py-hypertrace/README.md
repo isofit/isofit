@@ -79,3 +79,12 @@ Note that you must install LibRadTran into the source code directory for it to w
 ./configure --prefix=$(pwd)
 make
 ```
+
+## Running with SLURM
+[developing this documentation]
+
+Example SLURM job submission scripts can be found in slurm/. For example, a basic sbatch example is provded in slurm/runIsofit_sbatch.sh. The script can be edited to match your specific HPC environment, including module, $PATH, and conda requirements.  Once ready you can run this script from the main py-hypertrace directory using:
+
+``` sh
+sbatch slurm/runIsofit_sbatch.sh
+```
