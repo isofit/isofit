@@ -11,6 +11,11 @@ In addition, you will need to have a working compiled version of the LibRadtran 
 Second, download the support datasets from here: https://github.com/ashiklom/isofit/releases/tag/hypertrace-data (~60 MB compressed, ~135 MB uncompressed).
 Extract these into the `examples/py-hypertrace/` directory (so that you have a `examples/py-hypertrace/hypertrace-data` folder).
 
+A script has been provided that will accomplish this for you:
+``` sh
+./prepare_hypertrace_data.sh
+```
+
 Finally, make a local copy of the `config-example.json` and modify to fit your system (most important is radiative transfer engine base directly and environment.
 
 ``` sh
@@ -73,4 +78,13 @@ Note that you must install LibRadTran into the source code directory for it to w
 # From the LibRadTran source code directory:
 ./configure --prefix=$(pwd)
 make
+```
+
+## Running with SLURM
+[developing this documentation]
+
+Example SLURM job submission scripts can be found in slurm/. For example, a basic sbatch example is provded in slurm/runIsofit_sbatch.sh. The script can be edited to match your specific HPC environment, including module, $PATH, and conda requirements.  Once ready you can run this script from the main py-hypertrace directory using:
+
+``` sh
+sbatch slurm/runIsofit_sbatch.sh
 ```
