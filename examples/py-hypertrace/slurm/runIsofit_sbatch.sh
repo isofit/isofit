@@ -2,7 +2,7 @@
 #SBATCH --job-name=IsoFit-slurm
 #SBATCH --out="IsoFit_slurm_job-%j.out"
 #SBATCH --nodes=1
-#SBATCH --cpus-per-task=25
+#SBATCH --cpus-per-task=12
 #SBATCH	--tasks-per-node=1
 #SBATCH	--mem-per-cpu=4GB
 #SBATCH --partition compute
@@ -10,7 +10,7 @@
 #SBATCH --mail-user=sserbin@bnl.gov
 
 ### Set script options:
-workflow_config=myconfig.json
+#workflow_config=myconfig.json
 conda_env=/data2/sserbin/conda_envs/isofit_develop
 
 echo " "
@@ -46,8 +46,8 @@ which python
 ### run workflow and summary script
 echo " "
 echo "Run Hypertrace workflow"
-python workflow.py ${workflow_config}
-python summarize.py ${workflow_config}
+python workflow.py ${1}
+python summarize.py ${1}
 
 echo " "
 echo "Run completed on: " `date`

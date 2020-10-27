@@ -25,3 +25,4 @@ zz-*
 
 # SLURM log files
 IsoFit_slurm_job-*.*out
+isofit_broadcast-*.*out
