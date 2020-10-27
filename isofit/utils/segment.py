@@ -47,7 +47,7 @@ def segment_chunk(lstart, lend, in_file, nodata_value, npca, segsize, logfile=No
     x = np.array(img_mm[lstart:lend, :, :]).astype(np.float32)
     nc = x.shape[0]
     x = x.reshape((nc * ns, nb))
-    logging.info(f'{lstart}: read and reshaped data')
+    logging.debug(f'{lstart}: read and reshaped data')
 
     # Excluding bad locations, calculate top PCA coefficients
     use = np.all(abs(x - nodata_value) > 1e-6, axis=1)
@@ -74,7 +74,7 @@ def segment_chunk(lstart, lend, in_file, nodata_value, npca, segsize, logfile=No
     x_pca = x_pca.reshape([nc, ns, npca])
     seg_in_chunk = int(sum(use) / float(segsize))
 
-    logging.info(f'{lstart}: starting slic')
+    logging.debug(f'{lstart}: starting slic')
     labels = slic(x_pca, n_segments=seg_in_chunk, compactness=cmpct,
                   max_iter=10, sigma=0, multichannel=True,
                   enforce_connectivity=True, min_size_factor=0.5,
@@ -127,10 +127,9 @@ def segment(spectra, nodata_value, npca, segsize, nchunk, n_cores=1, ray_address
 
     # Iterate through image "chunks," segmenting as we go
     next_label = 1
-    all_labels = np.zeros((nl, ns))
+    all_labels = np.zeros((nl, ns),dtype=np.int64)
     jobs = []
     for lstart in np.arange(0, nl, nchunk):
-
         # Extract data
         lend = min(lstart+nchunk, nl)
 
@@ -141,24 +140,19 @@ def segment(spectra, nodata_value, npca, segsize, nchunk, n_cores=1, ray_address
     rreturn = [ray.get(jid) for jid in jobs]
     for lstart, lend, ret in rreturn:
         if ret is not None:
+            logging.debug(f'Collecting chunk: {lstart}')
             chunk_label = ret.copy()
-            chunk_label[chunk_label != 0] += np.max(all_labels.astyp(np.float32)) + 1
+            chunk_label[chunk_label != 0] += np.max(all_labels)
             all_labels[lstart:lend,...] = chunk_label
-
+    del rreturn
     ray.shutdown()
-    all_labels = all_labels.astype(int)
-
-    # Reindex
-    labels_sorted = np.sort(np.unique(all_labels))
-    lbl = np.zeros((nl, ns))
-    for i, val in enumerate(labels_sorted):
-        lbl[all_labels == val] = i
 
     # Final file I/O
+    logging.debug('Writing output')
     lbl_meta = {"samples": str(ns), "lines": str(nl), "bands": "1",
                 "header offset": "0", "file type": "ENVI Standard",
                 "data type": "4", "interleave": "bil"}
     lbl_img = envi.create_image(lbl_file+'.hdr', lbl_meta, ext='', force=True)
     lbl_mm = lbl_img.open_memmap(interleave='source', writable=True)
-    lbl_mm[:, :] = np.array(lbl, dtype=np.float32).reshape((nl, 1, ns))
+    lbl_mm[:, :] = np.array(all_labels, dtype=np.float32).reshape((nl, 1, ns))
     del lbl_mm
