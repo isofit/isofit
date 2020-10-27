@@ -28,6 +28,25 @@ import logging
 
 @ray.remote
 def segment_chunk(lstart, lend, in_file, nodata_value, npca, segsize, logfile=None, loglevel='INFO'):
+    """
+    Segment a small chunk of the image
+
+    Args:
+        lstart: starting position in image file
+        lend:  stopping position in image file
+        in_file: file path to segment
+        nodata_value: value to ignore
+        npca:  number of pca components to use
+        segsize: mean segmentation size
+        logfile: logging file name
+        loglevel: logging level
+
+    Returns:
+        lstart: starting position in image file
+        lend: stopping position in image file
+        labels: labeled image chunk
+
+    """
     logging.basicConfig(format='%(levelname)s:%(message)s', level=loglevel, filename=logfile)
 
     logging.info(f'{lstart}: starting')
@@ -89,14 +108,32 @@ def segment_chunk(lstart, lend, in_file, nodata_value, npca, segsize, logfile=No
     return lstart, lend, labels
 
 
-def segment(spectra, nodata_value, npca, segsize, nchunk, n_cores=1, ray_address=None, ray_redis_password=None,
+def segment(spectra: tuple, nodata_value: float, npca: int, segsize: int, nchunk: int, n_cores: int = 1,
+            ray_address: str = None, ray_redis_password: str = None,
             ray_temp_dir=None, ray_ip_head=None, logfile=None, loglevel='INFO'):
-    """."""
+    """
+    Segment an image using SLIC on a PCA.
+
+    Args:
+        spectra: tuple of filepaths of image to segment and (optionally) output label file
+        nodata_value: data to ignore in radiance image
+        npca: number of pca components to use
+        segsize: mean segmentation size
+        nchunk: size of each image chunk
+        n_cores: number of cores to use
+        ray_address: ray address to connect to (for multinode implementation)
+        ray_redis_password: ray password to use (for multinode implementation)
+        ray_temp_dir: ray temp directory to reference
+        ray_ip_head: ray ip head to reference (for multinode use)
+        logfile: logging file to output to
+        loglevel: logging level to use
+
+    """
 
     logging.basicConfig(format='%(levelname)s:%(message)s', level=loglevel, filename=logfile)
 
     in_file = spectra[0]
-    if len(spectra) > 1:
+    if len(spectra) > 1 and type(spectra) is tuple:
         lbl_file = spectra[1]
     else:
         lbl_file = spectra + '_lbl'
