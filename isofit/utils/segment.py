@@ -24,23 +24,36 @@ from skimage.segmentation import slic
 import numpy as np
 import ray
 import atexit
+import logging
 
 @ray.remote
-def segment_chunk(lstart, lend, in_file, nodata_value, npca, segsize):
+def segment_chunk(lstart, lend, in_file, nodata_value, npca, segsize, logfile=None, loglevel='INFO'):
+    logging.basicConfig(format='%(levelname)s:%(message)s', level=loglevel, filename=logfile)
+
+    logging.info(f'{lstart}: starting')
 
     in_img = envi.open(in_file + '.hdr', in_file)
     meta = in_img.metadata
     nl, nb, ns = [int(meta[n]) for n in ('lines', 'bands', 'samples')]
     img_mm = in_img.open_memmap(interleave='bip', writable=False)
-    x = np.array(img_mm[lstart:lend, :, :])
+
+    # Do quick single-band screen before reading all bands
+    use = np.logical_not(np.isclose(np.array(img_mm[lstart:lend, :, 0]), nodata_value))
+    if np.sum(use) == 0:
+        logging.info(f'{lstart}: no non null data present, returning early')
+
+
+    x = np.array(img_mm[lstart:lend, :, :]).astype(np.float32)
     nc = x.shape[0]
     x = x.reshape((nc * ns, nb))
+    logging.info(f'{lstart}: read and reshaped data')
 
     # Excluding bad locations, calculate top PCA coefficients
     use = np.all(abs(x - nodata_value) > 1e-6, axis=1)
 
     # If this chunk is empty, return immediately
     if np.sum(use) == 0:
+        logging.info(f'{lstart}: no non null data present, returning early')
         return lstart, lend, np.zeros((nc,ns))
 
     mu = x[use, :].mean(axis=0)
@@ -56,6 +69,7 @@ def segment_chunk(lstart, lend, in_file, nodata_value, npca, segsize):
     x_pca = x_pca.reshape([nc, ns, npca])
     seg_in_chunk = int(sum(use) / float(segsize))
 
+    logging.info(f'{lstart}: starting slic')
     labels = slic(x_pca, n_segments=seg_in_chunk, compactness=cmpct,
                   max_iter=10, sigma=0, multichannel=True,
                   enforce_connectivity=True, min_size_factor=0.5,
@@ -66,12 +80,15 @@ def segment_chunk(lstart, lend, in_file, nodata_value, npca, segsize):
     labels[np.logical_not(use)] = 0
     labels = labels.reshape([nc, ns])
 
+    logging.info(f'{lstart}: completing')
     return lstart, lend, labels
 
 
 def segment(spectra, nodata_value, npca, segsize, nchunk, n_cores=1, ray_address=None, ray_redis_password=None,
-            ray_temp_dir=None, ray_ip_head=None):
+            ray_temp_dir=None, ray_ip_head=None, logfile=None, loglevel='INFO'):
     """."""
+
+    logging.basicConfig(format='%(levelname)s:%(message)s', level=loglevel, filename=logfile)
 
     in_file = spectra[0]
     if len(spectra) > 1:
@@ -112,14 +129,15 @@ def segment(spectra, nodata_value, npca, segsize, nchunk, n_cores=1, ray_address
         # Extract data
         lend = min(lstart+nchunk, nl)
 
-        jobs.append(segment_chunk.remote(lstart, lend, nodata_value, in_file, npca, segsize))
+        jobs.append(segment_chunk.remote(lstart, lend, in_file, nodata_value, npca, segsize, logfile=logfile, loglevel=loglevel))
 
     # Collect results, making sure each chunk is distinct (note, label indexing is arbitrary,
     # so not attempt at sorting is made)
     rreturn = [ray.get(jid) for jid in jobs]
-    for lstart, lend, chunk_label in rreturn:
-        if chunk_label is not None:
-            chunk_label[chunk_label != 0] += np.max(all_labels)
+    for lstart, lend, ret in rreturn:
+        if ret is not None:
+            chunk_label = ret.copy()
+            chunk_label[chunk_label != 0] += np.max(all_labels) + 1
             all_labels[lstart:lend,...] = chunk_label
 
     ray.shutdown()
