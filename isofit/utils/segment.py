@@ -41,6 +41,7 @@ def segment_chunk(lstart, lend, in_file, nodata_value, npca, segsize, logfile=No
     use = np.logical_not(np.isclose(np.array(img_mm[lstart:lend, :, 0]), nodata_value))
     if np.sum(use) == 0:
         logging.info(f'{lstart}: no non null data present, returning early')
+        return lstart, lend, np.zeros((use.shape[0],ns))
 
 
     x = np.array(img_mm[lstart:lend, :, :]).astype(np.float32)
@@ -64,8 +65,12 @@ def segment_chunk(lstart, lend, in_file, nodata_value, npca, segsize, logfile=No
     cmpct = scipy.linalg.norm(np.sqrt(v[-npca:]))
 
     # Project, redimension as an image with "npca" channels, and segment
-    x_pca = (x - mu) @ d[:, -npca:]
-    x_pca[use < 1, :] = 0.0
+    x_pca_subset = (x[use,:] - mu) @ d[:, -npca:]
+    del x, mu, d
+    x_pca = np.zeros((nc,ns,npca))
+    x_pca[use.reshape(nc,ns),:] = x_pca_subset
+    del x_pca_subset
+    
     x_pca = x_pca.reshape([nc, ns, npca])
     seg_in_chunk = int(sum(use) / float(segsize))
 
@@ -73,7 +78,7 @@ def segment_chunk(lstart, lend, in_file, nodata_value, npca, segsize, logfile=No
     labels = slic(x_pca, n_segments=seg_in_chunk, compactness=cmpct,
                   max_iter=10, sigma=0, multichannel=True,
                   enforce_connectivity=True, min_size_factor=0.5,
-                  max_size_factor=3)
+                  max_size_factor=3, mask=use.reshape(nc,ns))
 
     # Reindex the subscene labels and place them into the larger scene
     labels = labels.reshape([nc * ns])
@@ -137,10 +142,11 @@ def segment(spectra, nodata_value, npca, segsize, nchunk, n_cores=1, ray_address
     for lstart, lend, ret in rreturn:
         if ret is not None:
             chunk_label = ret.copy()
-            chunk_label[chunk_label != 0] += np.max(all_labels) + 1
+            chunk_label[chunk_label != 0] += np.max(all_labels.astyp(np.float32)) + 1
             all_labels[lstart:lend,...] = chunk_label
 
     ray.shutdown()
+    all_labels = all_labels.astype(int)
 
     # Reindex
     labels_sorted = np.sort(np.unique(all_labels))
