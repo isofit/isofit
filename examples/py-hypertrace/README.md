@@ -58,7 +58,13 @@ Top level settings are as follows:
     - `h2o` -- True water vapor content. Default = 1.0
     - `lrt_atmosphere_type` -- LibRadtran atmosphere type. See LibRadtran manual for details. Default = `midlatitude_winter`
     - `atm_aod_h2o` -- A list containing three elements: The atmosphere type, AOD, and H2O. This provides a way to iterate over specific known atmospheres that are combinations of the three previous variables. If this is set, it overrides the three previous arguments. Default = `None`
-        - For example, `"atm_aod_h2o": [["midlatitude_winter", 0.1, 2.0], ["midlatitude_summer", 0.08, 1.5]]` means to iterate over _two_ atmospheres. On the other hand, a config like `"atm": ["midlatitude_winter", "midlatitude_summer"], "aod": [0.1, 0.08], "h2o": [2.0, 1.5]` would run 2 x 2 x 2 = 8 atmospheres -- one for each combination of these three fields.
+        - For example, `"atm_aod_h2o": [["midlatitude_winter", 0.1, 2.0], ["midlatitude_summer", 0.08, 1.5]]` means to iterate over _two_ atmospheres. 
+        
+        On the other hand, if you prefer to conduct a factorial experiment over a range of standard atmospheres, aerosol optical depths, and water vapor contents you would instead remove the `atm_aod_h2o` entry and list out atmospheric parameter options, for example: <br>
+        `"lrt_atmosphere_type": ["midlatitude_winter","midlatitude_summer"],`<br>
+        `"aod": [0.1, 0.08],`<br>
+        `"h2o": [2.0, 1.5]`<br>
+        would run 2 x 2 x 2 = 8 atmospheres -- one for each combination of these three fields.
     - `solar_zenith`, `observer_zenith` -- Solar and observer zenith angles, respectively (0 = directly overhead, 90 = horizon). These are in degrees off nadir. Default = 0 for both. (Note that using LibRadtran to generate look up tables for off-nadir angles is ~10x slower than at nadir; however, this step only affects the LUT generation, so it shouldn't introduce additional delay if these LUTs already exist).
     - `solar_azimuth`, `observer_azimuth` -- Solar and observer azimuth angles, respectively, in degrees. Observer azimuth is the sensor _position_ (so 180 degrees off from view direction) relative to N, rotating counterclockwise; i.e., 0 = Sensor in N, looking S; 90 = Sensor in W, looking E (this follows the LibRadtran convention). Default = 0 for both.
     - `inversion_mode` -- One of three options:
