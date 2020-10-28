@@ -4,7 +4,7 @@
 #
 #
 # e.g.
-# ./hypertrace_cleanup.sh --ht_luts=luts/ --ht_output_dir=/output/
+# ./hypertrace_cleanup.sh --ht_luts=luts/ --ht_output_dir=output/
 #
 ##################################################################
 echo $PWD
@@ -18,7 +18,7 @@ case $i in
     ;;
     -ho=*|--ht_output_dir=*)
     ht_output_dir="${i#*=}"
-    shift # past argument=value
+    shift
     ;;
     *)
           # unknown option

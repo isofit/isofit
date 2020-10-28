@@ -1,6 +1,6 @@
 #!/bin/bash
-#SBATCH --job-name=IsoFit-slurm
-#SBATCH --out="IsoFit_slurm_job-%j.out"
+#SBATCH --job-name=hypertrace-slurm
+#SBATCH --out="hypertrace_job-%j.out"
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=12
 #SBATCH	--tasks-per-node=1
@@ -9,9 +9,13 @@
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=sserbin@bnl.gov
 
+#######################################################################################
 ### Set script options:
-#workflow_config=myconfig.json
 conda_env=/data2/sserbin/conda_envs/isofit_develop
+
+# define any required modules, e.g. 
+module load libradtran
+#######################################################################################
 
 echo " "
 echo "Starting at: " `date`
@@ -20,9 +24,6 @@ echo "Job name: ${SLURM_JOB_NAME}, Job ID: ${SLURM_JOB_ID}"
 echo "  I have ${SLURM_CPUS_ON_NODE} CPUs on compute node $(hostname)"
 
 echo "Run started on: " `date`
-
-### define any required modules, e.g. 
-module load libradtran
 
 ### set conda environment, if required. e.g.
 # https://github.com/conda/conda/issues/7980
@@ -51,3 +52,5 @@ python summarize.py ${1}
 
 echo " "
 echo "Run completed on: " `date`
+
+### EOF

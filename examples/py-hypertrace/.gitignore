@@ -9,6 +9,7 @@ build
 htmlcov
 
 output/*
+output*
 
 # JSON files that are NOT the config example
 *.json
@@ -16,6 +17,8 @@ output/*
 
 # Example look-up table directory
 /luts/
+luts/*
+luts*
 
 # Recommended hypertrace data directory
 /hypertrace-data
@@ -23,6 +26,17 @@ output/*
 # Scratch files (prefixed with zz-)
 zz-*
 
+# Custom LibRadTran templates
+*.inp
+!lrt-template.inp
+
 # SLURM log files
 IsoFit_slurm_job-*.*out
 isofit_broadcast-*.*out
+hypertrace_job-*.*out
+
+# Hidden files
+.*
+.*/
+!.gitignore
+!/.gitignore
