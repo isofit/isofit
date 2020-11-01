@@ -82,7 +82,7 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
 
         self._multipart_transmittance_type = bool
         self.multipart_transmittance = False
-        """str: None, or 'triple' to specify diffuse & direct transmittance 
+        """str: Use True to specify triple-run diffuse & direct transmittance 
            estimation.  Only implemented for MODTRAN."""
 
         # MODTRAN simulator
