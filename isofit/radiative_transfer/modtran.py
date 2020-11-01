@@ -196,9 +196,21 @@ class ModtranRT(TabularRT):
             thermal_upwellings, thermal_downwellings = [], []
             lines = f.readlines()
             nheader = 5
+
+            # Mark header and data segments
+            nwl = len(self.wl)
+            case = -np.ones(nheader*3+nwl*3)
+            case[nheader:(nheader+nwl)] = 0
+            case[(nheader*2+nwl):(nheader*2+nwl*2)] = 1
+            case[(nheader*3+nwl*2):(nheader*3+nwl*3)] = 2
+
             for i, line in enumerate(lines):
-                if i < nheader:
+
+                # exclude headers
+                if case[i] < 0:
                     continue
+                    
+                # parse data out of each line in the MODTRAN output
                 toks = line.strip().split(' ')
                 toks = re.findall(r"[\S]+", line.strip())
                 wl, wid = float(toks[0]), float(toks[8])  # nm
@@ -208,7 +220,7 @@ class ModtranRT(TabularRT):
                 rhoatm  = rdnatm * np.pi / (solar_irr * coszen)
                 sphalb  = float(toks[23])
                 A_coeff = float(toks[21]) 
-                B_coeff = float(toks[21])
+                B_coeff = float(toks[22])
                 transm  = A_coeff + B_coeff 
                 transup = float(toks[24])
 
@@ -225,7 +237,7 @@ class ModtranRT(TabularRT):
                 path_rdn  = float(toks[14]) * 1e6 + float(toks[14]) * 1e6  
                 thermal_downwelling = grnd_rflt / wid # uW/nm/sr/cm2
 
-                if i >= nheader and i < (len(self.wl) + nheader):
+                if case[i] == 0:
 
                      sols.append(solar_irr)
                      transms.append(transm)
@@ -240,13 +252,13 @@ class ModtranRT(TabularRT):
                      thermal_downwellings.append(thermal_downwelling)
                      wls.append(wl)
 
-                elif i >= (len(self.wl) + nheader) and i < (len(self.wl)*2 + nheader):
+                elif case[i] == 1:
 
                      grnd_rflts_1.append(grnd_rflt)
                      drct_rflts_1.append(drct_rflt)
                      lp_1.append(path_rdn)
 
-                elif i >= (len(self.wl)*2 + nheader) and i < (len(self.wl)*3 + nheader):
+                elif case[i] == 2:
 
                      grnd_rflts_2.append(grnd_rflt)
                      drct_rflts_2.append(drct_rflt)
@@ -261,7 +273,7 @@ class ModtranRT(TabularRT):
             lg_dd_2    = np.array(grnd_rflts_2)
             lp_1       = np.array(lp_1)
             lp_2       = np.array(lp_2)
-            TOA_Irad   = sols * coszen / np.pi
+            TOA_Irad   = np.array(sols) * coszen / np.pi
             rfl_1      = self.test_rfls[1]
             rfl_2      = self.test_rfls[2]
             mus        = coszen
@@ -272,7 +284,6 @@ class ModtranRT(TabularRT):
             egl_2 = lg_dd_2 * np.pi / rfl_2 / t_up_dirs
             lp00 = (rfl_2 * lp_1 * egl_2 - rfl_1 * lp_2 * egl_1) / (rfl_2 * egl_2 - rfl_1 * egl_1)
             t_up_difs =  np.pi * (lp_1 - lp00) / (rfl_1 * egl_1) #- tdir_up # Po Kavur Hakelev
-            ttot_up = tdir_up + tdif_up
             sab = (egl_1 - egl_2) / (rfl_1 * egl_1 - rfl_2 * egl_2)
             edir_t = edir_1/mus
             edif_t = edif_1*(1.-rfl_1*sab)
@@ -282,6 +293,8 @@ class ModtranRT(TabularRT):
             tot_down = ((edir_t*coszen+edif_tt)/wid/np.pi)/TOA_Irad
             t_down_dirs = ((edir_t*coszen)/wid/np.pi)/TOA_Irad
             t_down_difs = ((edif_tt)/wid/np.pi)/TOA_Irad
+            sphalbs = sab
+            transms = (t_down_dirs + t_down_difs) * (t_up_dirs + t_up_difs)
             
         params = [np.array(i) for i in [wls, sols, rhoatms, transms, sphalbs, transups,
                                         t_down_dirs, t_down_difs, t_up_dirs, t_up_difs, 
