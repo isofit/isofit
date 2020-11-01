@@ -1,4 +1,4 @@
-#! /usr/bin/env python3
+#! /usr/bin/env python4
 #
 #  Copyright 2018 California Institute of Technology
 #
@@ -15,7 +15,8 @@
 #  limitations under the License.
 #
 # ISOFIT: Imaging Spectrometer Optimal FITting
-# Author: David R Thompson, david.r.thompson@jpl.nasa.gov
+# Authors: David R Thompson, david.r.thompson@jpl.nasa.gov
+#          Nimrod Carmon, nimrod.carmon@jpl.nasa.gov
 #
 
 from sys import platform
@@ -90,10 +91,20 @@ class ModtranRT(TabularRT):
             self.aer_extc = np.array(aer_extc)
             self.aer_asym = np.array(aer_asym)
 
-        self.modtran_lut_names = ['rhoatm', 'transm', 'sphalb', 'transup']
+        # Determine whether we are using the three run or single run strategy
+        self.multipart_transmittance = engine_config.multipart_transmittance
+
+        # Idenfity the physical quantities we will calculate
+        self.modtran_lut_names = ['rhoatm', 'transm', 'sphalb', 'transup',
+            't_down_dir', 't_down_dif', 't_up_dir', 't_up_dif']
         if self.treat_as_emissive:
             self.modtran_lut_names = ['thermal_upwelling',
                                       'thermal_downwelling'] + self.modtran_lut_names
+
+        # If excercising the multipart transmittance option we will run with
+        # three reflectance values
+        if self.multipart_transmittance:
+            self.test_rfls = [0, 0.1, 0.5]
 
         self.last_point_looked_up = np.zeros(self.n_point)
         self.last_point_lookup_values = np.zeros(self.n_point)
@@ -151,6 +162,14 @@ class ModtranRT(TabularRT):
              * transm  - diffuse and direct irradiance along the
                           sun-ground-sensor path
              * transup - transmission along the ground-sensor path only
+             
+           If the "multipart transmittance" option is active, we will use
+           a combination of three MODTRAN runs to estimate the following 
+           additional quantities:
+             * t_down_dir - direct downwelling transmittance
+             * t_down_dif - diffuse downwelling transmittance
+             * t_up_dir   - direct upwelling transmittance
+             * t_up_dif   - diffuse upwelling transmittance
 
            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             Be careful with these! They are to be used only by the
@@ -169,20 +188,28 @@ class ModtranRT(TabularRT):
         with open(infile) as f:
             sols, transms, sphalbs, wls, rhoatms, transups = \
                 [], [], [], [], [], []
+            t_down_dirs, t_down_difs, t_up_dirs, t_up_difs = [],[],[],[]
+            grnd_rflts_1, drct_rflts_1, grnd_rflts_2, drct_rflts_2 = \
+                [], [], [], []
+            transm_dirs, transm_difs, widths = [],[],[]
+            lp_0, lp_1, lp_2 = [],[],[]
             thermal_upwellings, thermal_downwellings = [], []
             lines = f.readlines()
+            nheader = 5
             for i, line in enumerate(lines):
-                if i < 5:
+                if i < nheader:
                     continue
                 toks = line.strip().split(' ')
                 toks = re.findall(r"[\S]+", line.strip())
                 wl, wid = float(toks[0]), float(toks[8])  # nm
                 solar_irr = float(toks[18]) * 1e6 * \
                     np.pi / wid / coszen  # uW/nm/sr/cm2
-                rdnatm = float(toks[4]) * 1e6  # uW/nm/sr/cm2
-                rhoatm = rdnatm * np.pi / (solar_irr * coszen)
-                sphalb = float(toks[23])
-                transm = float(toks[22]) + float(toks[21])
+                rdnatm  = float(toks[4]) * 1e6  # uW/nm/sr/cm2
+                rhoatm  = rdnatm * np.pi / (solar_irr * coszen)
+                sphalb  = float(toks[23])
+                A_coeff = float(toks[21]) 
+                B_coeff = float(toks[21])
+                transm  = A_coeff + B_coeff 
                 transup = float(toks[24])
 
                 # Be careful with these! See note in function comments above
@@ -193,21 +220,73 @@ class ModtranRT(TabularRT):
 
                 # Be careful with these! See note in function comments above
                 # grnd_rflt already includes ground-to-sensor transmission
-                grnd_rflt = float(toks[16])
-                thermal_downwelling = grnd_rflt / wid * 1e6  # uW/nm/sr/cm2
+                grnd_rflt = float(toks[16]) * 1e6  
+                drct_rflt = float(toks[17]) * 1e6  
+                path_rdn  = float(toks[14]) * 1e6 + float(toks[14]) * 1e6  
+                thermal_downwelling = grnd_rflt / wid # uW/nm/sr/cm2
 
-                sols.append(solar_irr)
-                transms.append(transm)
-                sphalbs.append(sphalb)
-                rhoatms.append(rhoatm)
-                transups.append(transup)
+                if i >= nheader and i < (len(self.wl) + nheader):
 
-                thermal_upwellings.append(thermal_upwelling)
-                thermal_downwellings.append(thermal_downwelling)
+                     sols.append(solar_irr)
+                     transms.append(transm)
+                     sphalbs.append(sphalb)
+                     rhoatms.append(rhoatm)
+                     transups.append(transup)
+                     transm_dirs.append(A_coeff)
+                     transm_difs.append(B_coeff)
+                     widths.append(wid)
+                     lp_0.append(path_rdn)
+                     thermal_upwellings.append(thermal_upwelling)
+                     thermal_downwellings.append(thermal_downwelling)
+                     wls.append(wl)
 
-                wls.append(wl)
-        params = [np.array(i) for i in [wls, sols, rhoatms, transms, sphalbs,
-                                        transups, thermal_upwellings, thermal_downwellings]]
+                elif i >= (len(self.wl) + nheader) and i < (len(self.wl)*2 + nheader):
+
+                     grnd_rflts_1.append(grnd_rflt)
+                     drct_rflts_1.append(drct_rflt)
+                     lp_1.append(path_rdn)
+
+                elif i >= (len(self.wl)*2 + nheader) and i < (len(self.wl)*3 + nheader):
+
+                     grnd_rflts_2.append(grnd_rflt)
+                     drct_rflts_2.append(drct_rflt)
+                     lp_2.append(path_rdn)
+
+        if self.multipart_transmittance:  
+
+            t_up_dirs  = np.array(transups)
+            lg_dir_1   = np.array(drct_rflts_1)
+            lg_dd_1    = np.array(grnd_rflts_1)
+            lg_dir_2   = np.array(drct_rflts_2)
+            lg_dd_2    = np.array(grnd_rflts_2)
+            lp_1       = np.array(lp_1)
+            lp_2       = np.array(lp_2)
+            TOA_Irad   = sols * coszen / np.pi
+            rfl_1      = self.test_rfls[1]
+            rfl_2      = self.test_rfls[2]
+            mus        = coszen
+            
+            edir_1 = lg_dir_1 * np.pi / rfl_1 / t_up_dirs #/mus no per nm, no per sr
+            egl_1 = lg_dd_1 * np.pi / rfl_1 / t_up_dirs # global flux
+            edif_1 = egl_1 - edir_1 #diffuse flux
+            egl_2 = lg_dd_2 * np.pi / rfl_2 / t_up_dirs
+            lp00 = (rfl_2 * lp_1 * egl_2 - rfl_1 * lp_2 * egl_1) / (rfl_2 * egl_2 - rfl_1 * egl_1)
+            t_up_difs =  np.pi * (lp_1 - lp00) / (rfl_1 * egl_1) #- tdir_up # Po Kavur Hakelev
+            ttot_up = tdir_up + tdif_up
+            sab = (egl_1 - egl_2) / (rfl_1 * egl_1 - rfl_2 * egl_2)
+            edir_t = edir_1/mus
+            edif_t = edif_1*(1.-rfl_1*sab)
+            Eg_zero = egl_1*(1.-rfl_1*sab) # This might be coupled with total upwelling t 
+            edif_tt = Eg_zero-edir_t*coszen
+            
+            tot_down = ((edir_t*coszen+edif_tt)/wid/np.pi)/TOA_Irad
+            t_down_dirs = ((edir_t*coszen)/wid/np.pi)/TOA_Irad
+            t_down_difs = ((edif_tt)/wid/np.pi)/TOA_Irad
+            
+        params = [np.array(i) for i in [wls, sols, rhoatms, transms, sphalbs, transups,
+                                        t_down_dirs, t_down_difs, t_up_dirs, t_up_difs, 
+                                        thermal_upwellings, thermal_downwellings]]
+
         return tuple(params)
 
     def ext550_to_vis(self, ext550):
@@ -298,6 +377,19 @@ class ModtranRT(TabularRT):
             lvl0['ASYM'] = [float(v) for v in total_asym]
             lvl0['EXTC'] = [float(v) / total_extc550 for v in total_extc]
             lvl0['ABSC'] = [float(v) / total_extc550 for v in total_absc]
+
+        if self.multipart_transmittance:
+            # Here we copy the original config and just change the surface reflectance 
+            param[0]['MODTRANINPUT']['CASE'] = 0
+            param[0]['MODTRANINPUT']['SURFACE']['SURREF']= self.test_rfls[0]
+            param1 = deepcopy(param[0])
+            param1['MODTRANINPUT']['CASE'] = 1
+            param1['MODTRANINPUT']['SURFACE']['SURREF']= self.test_rfls[1]
+            param.append(param1)
+            param2 = deepcopy(param[0]) 
+            param2['MODTRANINPUT']['CASE'] = 2
+            param2['MODTRANINPUT']['SURFACE']['SURREF']= self.test_rfls[2]
+            param.append(param2)
 
         return json.dumps({"MODTRAN": param}), param
 
@@ -468,7 +560,8 @@ class ModtranRT(TabularRT):
         # the modtran_tir functions as they require the modtran reflectivity
         # be set to 1 in order to use them in the RTM in radiative_transfer.py.
         # Don't add these to the VSWIR functions!
-        names = ['wl', 'sol', 'rhoatm', 'transm', 'sphalb', 'transup']
+        names = ['wl', 'sol', 'rhoatm', 'transm', 'sphalb', 'transup',
+                't_down_dir','t_down_dif','t_up_dir','t_up_dif']
 
         # Don't include the thermal terms in VSWIR runs to avoid incorrect usage
         if self.treat_as_emissive:
