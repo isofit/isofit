@@ -95,8 +95,9 @@ class ModtranRT(TabularRT):
         self.multipart_transmittance = engine_config.multipart_transmittance
 
         # Idenfity the physical quantities we will calculate
-        self.modtran_lut_names = ['rhoatm', 'transm', 'sphalb', 'transup',
-            't_down_dir', 't_down_dif', 't_up_dir', 't_up_dif']
+        self.modtran_lut_names = ['rhoatm', 'transm', 'sphalb', 'transup']
+
+        # Special emissive terms
         if self.treat_as_emissive:
             self.modtran_lut_names = ['thermal_upwelling',
                                       'thermal_downwelling'] + self.modtran_lut_names
@@ -105,6 +106,8 @@ class ModtranRT(TabularRT):
         # three reflectance values
         if self.multipart_transmittance:
             self.test_rfls = [0, 0.1, 0.5]
+            self.modtran_lut_names = self.modtran_lut_names + \
+                  ['t_down_dir', 't_down_dif', 't_up_dir', 't_up_dif']
 
         self.last_point_looked_up = np.zeros(self.n_point)
         self.last_point_lookup_values = np.zeros(self.n_point)
