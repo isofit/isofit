@@ -235,72 +235,87 @@ class ModtranRT(TabularRT):
 
                 # Be careful with these! See note in function comments above
                 # grnd_rflt already includes ground-to-sensor transmission
-                grnd_rflt = float(toks[16]) * 1e6  
-                drct_rflt = float(toks[17]) * 1e6  
-                path_rdn  = float(toks[14]) * 1e6 + float(toks[14]) * 1e6  
+                grnd_rflt = float(toks[16]) * 1e6  # ground reflected radiance (direct+diffuse+multiple scattering)
+                drct_rflt = float(toks[17]) * 1e6  # same as 16 but only on the sun->surface->sensor path (only direct)
+                path_rdn  = float(toks[14]) * 1e6 + float(toks[14]) * 1e6  # The sum of the (1) single scattering and (2) multiple scattering 
                 thermal_downwelling = grnd_rflt / wid # uW/nm/sr/cm2
 
                 if case[i] == 0:
 
-                     sols.append(solar_irr)
-                     transms.append(transm)
-                     sphalbs.append(sphalb)
-                     rhoatms.append(rhoatm)
-                     transups.append(transup)
-                     transm_dirs.append(A_coeff)
-                     transm_difs.append(B_coeff)
-                     widths.append(wid)
-                     lp_0.append(path_rdn)
+                     sols.append(solar_irr) #solar irradiance 
+                     transms.append(transm) #total transmittence 
+                     sphalbs.append(sphalb) #spherical albedo 
+                     rhoatms.append(rhoatm) # atmospheric reflectance 
+                     transups.append(transup) #upwelling direct tranmittence 
+                     transm_dirs.append(A_coeff) # total direct tranmittence 
+                     transm_difs.append(B_coeff) # total diffuse tranmittence 
+                     widths.append(wid) # channel width in nm 
+                     lp_0.append(path_rdn) # path radiance of zero surface reflectance 
                      thermal_upwellings.append(thermal_upwelling)
                      thermal_downwellings.append(thermal_downwelling)
-                     wls.append(wl)
+                     wls.append(wl) #wavelengths in nm 
 
                 elif case[i] == 1:
 
-                     grnd_rflts_1.append(grnd_rflt)
-                     drct_rflts_1.append(drct_rflt)
-                     lp_1.append(path_rdn)
+                     grnd_rflts_1.append(grnd_rflt) #total ground reflected radiance 
+                     drct_rflts_1.append(drct_rflt) #direct path ground reflected radiance 
+                     lp_1.append(path_rdn) #path radiance (sum of single and multiple scattering)
 
                 elif case[i] == 2:
 
-                     grnd_rflts_2.append(grnd_rflt)
-                     drct_rflts_2.append(drct_rflt)
-                     lp_2.append(path_rdn)
+                     grnd_rflts_2.append(grnd_rflt) #total ground reflected radiance 
+                     drct_rflts_2.append(drct_rflt) #direct path ground reflected radiance 
+                     lp_2.append(path_rdn) #path radiance (sum of single and multiple scattering)
 
-        if self.multipart_transmittance:  
-
-            t_up_dirs  = np.array(transups)
-            lg_dir_1   = np.array(drct_rflts_1)
-            lg_dd_1    = np.array(grnd_rflts_1)
-            lg_dir_2   = np.array(drct_rflts_2)
-            lg_dd_2    = np.array(grnd_rflts_2)
-            lp_1       = np.array(lp_1)
-            lp_2       = np.array(lp_2)
+        if self.multipart_transmittance: 
+            ''' 
+                This implementation is following Gaunter et al. (2009) (DOI:10.1080/01431160802438555),
+                and modified by Nimrod Carmon. It is called the "2-albedo" method, referring to running 
+                modtran with 2 different surface albedo. The 3-albedo method is similar to this one with 
+                the single difference where the "path_radiance_no_surface" variable is taken from a
+                zero-surface-reflectance modtran run instead of being calculated from 2 modtran outputs.
+                There are a few argument as to why this approach is beneficiel:
+                (1) for each grid point on the lookup table you sample modtran 2 or 3 times, i.e. you get 
+                2 or 3 "data points" for the atmospheric parameter of interest. This in theory allows us 
+                to use a lower band model resolution modtran run, which is much faster, while keeping 
+                high accuracy. Currently we have the 5 cm-1 band model resolution configured.
+                The second advantage is the possibility to use the decoupled tranmittence products to exapnd 
+                the forward model and account for more physics e.g. shadows \ sky view \ adjacency \ terrain etc.
+                  
+            '''
+            direct_upwelling_transmittence  = np.array(transups) #t_up_dirs
+            direct_ground_reflected_1   = np.array(drct_rflts_1) #lg_dir_1
+            total_ground_reflected_1    = np.array(grnd_rflts_1) #lg_dd_1
+            direct_ground_reflected_2   = np.array(drct_rflts_2) #lg_dir_2
+            total_ground_reflected_2    = np.array(grnd_rflts_2) #lg_dd_2
+            path_radiance_1       = np.array(lp_1) #lp_1
+            path_radiance_2       = np.array(lp_2) #lp_2
             TOA_Irad   = np.array(sols) * coszen / np.pi
             rfl_1      = self.test_rfls[1]
             rfl_2      = self.test_rfls[2]
             mus        = coszen
             
-            edir_1 = lg_dir_1 * np.pi / rfl_1 / t_up_dirs #/mus no per nm, no per sr
-            egl_1 = lg_dd_1 * np.pi / rfl_1 / t_up_dirs # global flux
-            edif_1 = egl_1 - edir_1 #diffuse flux
-            egl_2 = lg_dd_2 * np.pi / rfl_2 / t_up_dirs
-            lp00 = (rfl_2 * lp_1 * egl_2 - rfl_1 * lp_2 * egl_1) / (rfl_2 * egl_2 - rfl_1 * egl_1)
-            t_up_difs =  np.pi * (lp_1 - lp00) / (rfl_1 * egl_1) #- tdir_up # Po Kavur Hakelev
-            sab = (egl_1 - egl_2) / (rfl_1 * egl_1 - rfl_2 * egl_2)
-            edir_t = edir_1/mus
-            edif_t = edif_1*(1.-rfl_1*sab)
-            Eg_zero = egl_1*(1.-rfl_1*sab) # This might be coupled with total upwelling t 
-            edif_tt = Eg_zero-edir_t*coszen
+
+            direct_flux_1 = direct_ground_reflected_1 * np.pi / rfl_1 / direct_upwelling_transmittence #/mus no per nm, no per sr
+            global_flux_1 = total_ground_reflected_1 * np.pi / rfl_1 / direct_upwelling_transmittence # global flux
+            diffuse_flux_1 = global_flux_1 - direct_flux_1 #diffuse flux
+            global_flux_2 = total_ground_reflected_2 * np.pi / rfl_2 / direct_upwelling_transmittence
+            path_radiance_no_surface = (rfl_2 * path_radiance_1 * global_flux_2 - rfl_1 * path_radiance_2 * global_flux_1) / (rfl_2 * global_flux_2 - rfl_1 * global_flux_1)
+            diffuse_upwelling_transmittence =  np.pi * (path_radiance_1 - path_radiance_no_surface) / (rfl_1 * global_flux_1) #- tdir_up # Po Kavur Hakelev
+            spherical_albedo = (global_flux_1 - global_flux_2) / (rfl_1 * global_flux_1 - rfl_2 * global_flux_2)
+            direct_flux_radiance = direct_flux_1/mus
+            #edif_t = diffuse_flux_1*(1.-rfl_1*spherical_albedo)
+            global_flux_no_surface = global_flux_1*(1.-rfl_1*spherical_albedo) # This might be coupled with total upwelling t 
+            diffuse_flux_no_surface = global_flux_no_surface-direct_flux_radiance*coszen
             
-            tot_down = ((edir_t*coszen+edif_tt)/wid/np.pi)/TOA_Irad
-            t_down_dirs = ((edir_t*coszen)/wid/np.pi)/TOA_Irad
-            t_down_difs = ((edif_tt)/wid/np.pi)/TOA_Irad
-            sphalbs = sab
-            transms = (t_down_dirs + t_down_difs) * (t_up_dirs + t_up_difs)
+            #tot_down = ((direct_flux_radiance*coszen+diffuse_flux_no_surface)/wid/np.pi)/TOA_Irad
+            direct_downwelling_transmittence = ((direct_flux_radiance*coszen)/wid/np.pi)/TOA_Irad
+            diffuse_downwelling_transmittence = ((diffuse_flux_no_surface)/wid/np.pi)/TOA_Irad
+            sphalbs = spherical_albedo
+            total_tranmittence = (direct_downwelling_transmittence + diffuse_downwelling_transmittence) * (direct_upwelling_transmittence + diffuse_upwelling_transmittence)
             
-        params = [np.array(i) for i in [wls, sols, rhoatms, transms, sphalbs, transups,
-                                        t_down_dirs, t_down_difs, t_up_dirs, t_up_difs, 
+        params = [np.array(i) for i in [wls, sols, rhoatms, total_tranmittence, sphalbs, transups,
+                                        direct_downwelling_transmittence, diffuse_downwelling_transmittence, direct_upwelling_transmittence, diffuse_upwelling_transmittence, 
                                         thermal_upwellings, thermal_downwellings]]
 
         return tuple(params)
