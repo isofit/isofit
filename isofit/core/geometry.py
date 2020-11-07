@@ -30,7 +30,7 @@ class Geometry:
       surface, and solar positions."""
 
     def __init__(self, obs=None, glt=None, loc=None, ds=None,
-                 esd=None, pushbroom_column=None):
+                 esd=None, pushbroom_column=None, bg_rfl=None):
 
         # Set some benign defaults...
         self.earth_sun_file = None
@@ -51,6 +51,7 @@ class Geometry:
         self.H1ALT = None
         self.umu = 1.0
         self.pushbroom_column = pushbroom_column
+        self.bg_rfl = bg_rfl
 
         # The 'obs' object is observation metadata that follows a historical
         # AVIRIS-NG format.  It arrives to our initializer in the form of
