@@ -73,6 +73,7 @@
     "mode": "inversion",
     "inversion": {
       "windows": [[380.0, 1300.0], [1450, 1780.0], [1950.0, 2450.0]]
-    }
+    },
+    "rte_auto_rebuild": false
   }
 }

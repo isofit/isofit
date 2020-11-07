@@ -174,9 +174,9 @@ class Instrument:
         if self.model_type == 'SNR':
             bad = meas < 1e-5
             if np.any(bad):
-                meas[bad] = 1e-5
                 logging.debug('SNR noise model found noise <= 0 - adjusting to slightly positive to avoid /0.')
             nedl = (1.0 / self.snr) * meas
+            nedl[bad] = 1/self.snr * 1e-5
             return np.diagflat(np.power(nedl,2))
 
         elif self.model_type == 'parametric':

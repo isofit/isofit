@@ -56,7 +56,8 @@ sixs_template = '''0 (User defined)
 class SixSRT(TabularRT):
     """A model of photon transport including the atmosphere."""
 
-    def __init__(self, engine_config: RadiativeTransferEngineConfig, full_config: Config):
+    def __init__(self, engine_config: RadiativeTransferEngineConfig, full_config: Config,
+                        build_lut=True, build_lut_only=False, wavelength_override=None, fwhm_override=None):
 
         self.angular_lut_keys_degrees = ['OBSZEN', 'TRUEAZ', 'viewzen', 'viewaz',
                                          'solzen', 'solaz']
@@ -65,6 +66,17 @@ class SixSRT(TabularRT):
         super().__init__(engine_config, full_config)
 
         self.treat_as_emissive = False
+        self.lut_quantities = ['rhoatm', 'transm', 'sphalb', 'transup']
+
+        if wavelength_override is not None:
+            self.wl = wavelength_override
+            self.n_chan = len(self.wl)
+            self.resample_wavelengths = False
+        else:
+            self.resample_wavelengths = True
+
+        if fwhm_override is not None:
+            self.fwhm = fwhm_override
 
         self.sixs_dir = self.find_basedir(engine_config)
         self.sixs_grid_init = np.arange(self.wl[0], self.wl[-1]+2.5, 2.5)
@@ -72,7 +84,7 @@ class SixSRT(TabularRT):
         self.params = {'aermodel': 1,
                        'AOT550': 0.01,
                        'H2OSTR': 0,
-                       'O3': 0.40,
+                       'O3': 0.30,
                        'day':   engine_config.day,
                        'month': engine_config.month,
                        'elev':  engine_config.elev,
@@ -98,20 +110,20 @@ class SixSRT(TabularRT):
             self.params['solaz'] = engine_config.solaz
             self.params['viewaz'] = engine_config.viewaz
 
-        self.esd = np.loadtxt(engine_config.earth_sun_distance_file)
-        dt = datetime(2000, self.params['month'], self.params['day'])
-        self.day_of_year = dt.timetuple().tm_yday
-        self.irr_factor = self.esd[self.day_of_year-1, 1]
+        if build_lut_only is False:
+            self.esd = np.loadtxt(engine_config.earth_sun_distance_file)
+            dt = datetime(2000, self.params['month'], self.params['day'])
+            self.day_of_year = dt.timetuple().tm_yday
+            self.irr_factor = self.esd[self.day_of_year-1, 1]
 
-        irr = np.loadtxt(engine_config.irradiance_file, comments='#')
-        iwl, irr = irr.T
-        irr = irr / 10.0  # convert, uW/nm/cm2
-        irr = irr / self.irr_factor**2  # consider solar distance
-        self.solar_irr = resample_spectrum(irr, iwl,  self.wl, self.fwhm)
+            irr = np.loadtxt(engine_config.irradiance_file, comments='#')
+            iwl, irr = irr.T
+            irr = irr / 10.0  # convert, uW/nm/cm2
+            irr = irr / self.irr_factor**2  # consider solar distance
+            self.solar_irr = resample_spectrum(irr, iwl,  self.wl, self.fwhm)
 
-
-        self.lut_quantities = ['rhoatm', 'transm', 'sphalb', 'transup']
-        self.build_lut()
+        if build_lut:
+            self.build_lut()
 
     def find_basedir(self, config: RadiativeTransferEngineConfig):
         """Seek out a sixs base directory."""
@@ -149,11 +161,11 @@ class SixSRT(TabularRT):
         if os.path.exists(outfilepath) and os.path.exists(infilepath):
             raise FileExistsError('Files exist')
 
-        sixspath = self.sixs_dir+'/sixsV2.1'
-
         if self.sixs_dir is None:
             logging.error('Specify a SixS installation')
             raise KeyError('Specify a SixS installation')
+
+        sixspath = self.sixs_dir+'/sixsV2.1'
 
         # write config files
         sixs_config_str = sixs_template.format(**vals)
@@ -168,7 +180,7 @@ class SixSRT(TabularRT):
 
         return 'bash '+scriptfilepath
 
-    def load_rt(self, fn):
+    def load_rt(self, fn, resample=True):
         """Load the results of a SixS run."""
 
         with open(os.path.join(self.lut_dir, fn), 'r') as l:
@@ -204,17 +216,15 @@ class SixSRT(TabularRT):
             transms[i] = float(scau) * float(scad) * float(gt)
             rhoatms[i] = float(rhoa)
 
-        results = {
-            "solzen": resample_spectrum(solzens,  self.grid, self.wl,
-                                        self.fwhm),
-            "rhoatm": resample_spectrum(rhoatms,  self.grid, self.wl,
-                                        self.fwhm),
-            "transm": resample_spectrum(transms,  self.grid, self.wl,
-                                        self.fwhm),
-            "sphalb": resample_spectrum(sphalbs,  self.grid, self.wl,
-                                        self.fwhm),
-            "transup": resample_spectrum(transups, self.grid, self.wl,
-                                         self.fwhm)}
+        if resample:
+            solzens = resample_spectrum(solzens,  self.grid, self.wl, self.fwhm)
+            rhoatms = resample_spectrum(rhoatms,  self.grid, self.wl, self.fwhm)
+            transms = resample_spectrum(transms,  self.grid, self.wl, self.fwhm)
+            sphalbs = resample_spectrum(sphalbs,  self.grid, self.wl, self.fwhm)
+            transups = resample_spectrum(transups,  self.grid, self.wl, self.fwhm)
+
+        results = {"solzen": solzens, "rhoatm": rhoatms, "transm": transms, "sphalb": sphalbs,
+               "transup": transups}
         return results
 
     def ext550_to_vis(self, ext550):
@@ -228,7 +238,7 @@ class SixSRT(TabularRT):
 
         sixs_outputs = []
         for point, fn in zip(self.points, self.files):
-            sixs_outputs.append(self.load_rt(fn))
+            sixs_outputs.append(self.load_rt(fn,resample=self.resample_wavelengths))
 
         self.cache = {}
         dims_aug = self.lut_dims + [self.n_chan]
@@ -249,16 +259,26 @@ class SixSRT(TabularRT):
             ret[key] = np.array(lut(point)).ravel()
         return ret
 
-    def get(self, x_RT, geom):
+    def get(self, x_RT: np.array, geom: Geometry):
+        """ Get interpolated six-s results at a particular location
+
+        Args:
+            x_RT: radiative-transfer portion of the statevector
+            geom: local geometry conditions for lookup
+
+        Returns:
+            interpolated modtran result
+
+        """
         point = np.zeros((self.n_point,))
         for point_ind, name in enumerate(self.lut_grid_config):
             if name in self.statevector_names:
                 ix = self.statevector_names.index(name)
                 point[point_ind] = x_RT[ix]
-            elif name == "OBSZEN":
-                point[point_ind] = geom.OBSZEN
-            elif name == "GNDALT":
-                point[point_ind] = geom.GNDALT
+            elif name == "elev":
+                point[point_ind] = geom.surface_elevation_km
+            elif name == "alt":
+                point[point_ind] = geom.observer_altitude_km
             elif name == "viewzen":
                 point[point_ind] = geom.observer_zenith
             elif name == "viewaz":
@@ -267,8 +287,6 @@ class SixSRT(TabularRT):
                 point[point_ind] = geom.solar_azimuth
             elif name == "solzen":
                 point[point_ind] = geom.solar_zenith
-            elif name == "TRUEAZ":
-                point[point_ind] = geom.TRUEAZ
             elif name == 'phi':
                 point[point_ind] = geom.phi
             elif name == 'umu':

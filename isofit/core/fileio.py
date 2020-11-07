@@ -121,12 +121,9 @@ class SpectrumFile:
                     logging.error('Could not find %s' % (self.fname+'.hdr'))
                     raise IOError('Could not find %s' % (self.fname+'.hdr'))
 
-                # open file and copy metadata, checking interleave format
+                # open file and copy metadata
                 self.file = envi.open(self.fname + '.hdr', fname)
                 self.meta = self.file.metadata.copy()
-                if self.meta['interleave'] not in ['bil', 'bip']:
-                    logging.error('Unsupported interleave format.')
-                    raise IOError('Unsupported interleave format.')
 
                 self.n_rows = int(self.meta['lines'])
                 self.n_cols = int(self.meta['samples'])
@@ -179,7 +176,7 @@ class SpectrumFile:
 
         self.memmap = None
         for attempt in range(10):
-            self.memmap = self.file.open_memmap(interleave='source',
+            self.memmap = self.file.open_memmap(interleave='bip',
                                                 writable=self.write)
             if self.memmap is not None:
                 return
@@ -195,8 +192,6 @@ class SpectrumFile:
         if row not in self.frames:
             if not self.write:
                 d = self.memmap[row, :, :]
-                if self.file.metadata['interleave'] == 'bil':
-                    d = d.T
                 self.frames[row] = d.copy()
             else:
                 self.frames[row] = np.nan * np.zeros((self.n_cols, self.n_bands))
@@ -243,10 +238,7 @@ class SpectrumFile:
             if self.write:
                 for row, frame in self.frames.items():
                     valid = np.logical_not(np.isnan(frame[:, 0]))
-                    if self.file.metadata['interleave'] == 'bil':
-                        self.memmap[row, :, valid] = frame[valid, :].T
-                    else:
-                        self.memmap[row, valid, :] = frame[valid, :]
+                    self.memmap[row, valid, :] = frame[valid, :]
             self.frames = OrderedDict()
             del self.file
             self.file = envi.open(self.fname+'.hdr', self.fname)
@@ -387,8 +379,10 @@ class IO:
             # If solving the inverse problem, the measurment is the radiance
             # We apply the calibration correciton here for simplicity.
             meas = data['measured_radiance_file']
+            if meas is not None:
+                meas = meas.copy()
             if data["radiometry_correction_file"] is not None:
-                meas = meas.copy() * data['radiometry_correction_file']
+                meas *= data['radiometry_correction_file']
 
         # We build the geometry object for this spectrum.  For files not
         # specified in the input configuration block, the associated entries
