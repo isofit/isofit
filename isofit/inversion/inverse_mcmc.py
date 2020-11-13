@@ -117,7 +117,7 @@ class MCMCInversion(Inversion):
 
             # Test vs. the Metropolis / Hastings criterion
             if np.isfinite(dens_new) and\
-                    np.log(np.rand()) <= min((dens_new - dens, 0.0)):
+                    np.log(np.random.rand()) <= min((dens_new - dens, 0.0)):
                 x = xp
                 dens = dens_new
                 acpts = acpts + 1

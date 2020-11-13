@@ -16,7 +16,7 @@
           "SOLCON": 0.0
         },
         "ATMOSPHERE": {
-          "MODEL": "ATM_MIDLAT_WINTER",
+          "MODEL": "ATM_MIDLAT_SUMMER",
           "CO2MX": 450.0,
           "H2OSTR": 0.64,
           "H2OUNIT": "g",
@@ -34,7 +34,9 @@
           "IPARM": 11,
           "PARM1": 34.139247,
           "PARM2":  118.127521,
-          "GMTIME": 18.708
+          "GMTIME": 18.708,
+          "OBSZEN": 180,
+          "TRUEAZ": 0
         },
         "SURFACE": {
           "SURFTYPE": "REFL_LAMBER_MODEL",

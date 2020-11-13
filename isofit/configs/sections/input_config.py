@@ -72,6 +72,14 @@ class InputConfig(BaseConfigSection):
         str: Input 'loc', or location, file.  Can be either a .mat, .txt, or ENVI formatted binary cube.
         Provides per-pixel lat, long, and elevation information.
         """
+                
+        self._background_reflectance_file_type = str
+        self.background_reflectance_file = None
+        """
+        str: Background reflectance file used for spatial inference.
+        Should be an ENVI formatted binary cube that is the same
+        dimensions as the input data cube.
+        """
 
         self._surface_prior_mean_file_type = str
         self.surface_prior_mean_file = None
