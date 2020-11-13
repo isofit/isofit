@@ -296,6 +296,7 @@ def main():
         logging.info('Running ISOFIT with full LUT')
         retrieval_full = isofit.Isofit(paths.modtran_config_path, level='INFO', logfile=args.log_file)
         retrieval_full.run()
+        del retrieval_full
 
         # clean up unneeded storage
         for to_rm in ['*r_k', '*t_k', '*tp7', '*wrn', '*psc', '*plt', '*7sc', '*acd']:
