@@ -80,6 +80,11 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         self.aerosol_model_file = None
         """str: Aerosol model file, currently only implemented for MODTRAN."""
 
+        self._multipart_transmittance_type = bool
+        self.multipart_transmittance = False
+        """str: Use True to specify triple-run diffuse & direct transmittance 
+           estimation.  Only implemented for MODTRAN."""
+
         # MODTRAN simulator
         self._emulator_file_type = str
         self.emulator_file = None
@@ -166,6 +171,9 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         if self.engine_name not in valid_rt_engines:
             errors.append('radiative_transfer->raditive_transfer_model: {} not in one of the available models: {}'.
                           format(self.engine_name, valid_rt_engines))
+
+        if self.multipart_trasmittance and self.engine_name != 'modtran':
+            errors.append('Multipart transmittance is supported for MODTRAN only')
 
         if self.earth_sun_distance_file is None and self.engine_name == '6s':
             errors.append('6s requires earth_sun_distance_file to be specified')

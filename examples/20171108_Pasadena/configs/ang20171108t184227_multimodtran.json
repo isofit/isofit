@@ -39,22 +39,21 @@
           "TRUEAZ": 0
         },
         "SURFACE": {
-          "SURFTYPE": "REFL_LAMBER_MODEL",
+          "SURFTYPE": "REFL_CONSTANT",
+          "SURREF": 0,
           "GNDALT": 0.35,
           "NSURF": 1,
-          "SURFP": {
-            "CSALB": "LAMB_CONST_0_PCT"
-          }
+          "SALBFL": ""
         },
         "SPECTRAL": {
           "V1": 350.0,
           "V2": 2520.0,
-          "DV": 0.1,
-          "FWHM": 0.1,
+          "DV": 5,
+          "FWHM": 5.0,
           "YFLAG": "R",
           "XFLAG": "N",
           "FLAGS": "NT A   ",
-          "BMNAME": "p1_2013"
+          "BMNAME": "05_2013"
         },
         "FILEOPTIONS": {
           "NOPRNT": 2,
