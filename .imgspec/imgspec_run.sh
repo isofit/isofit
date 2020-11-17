@@ -3,15 +3,23 @@
 # Get directories and paths for scripts
 basedir=$( cd "$(dirname "$0")" ; pwd -P )
 isofit_dir=$(dirname $basedir)
-apply_glt_exe="$isofit_dir/isofit/utils/apply_glt.py"
-wavelength_file_exe="$isofit_dir/isofit/utils/wavelength_file.py"
-surface_model_exe="$isofit_dir/isofit/utils/surface_model.py"
-apply_oe_exe="$isofit_dir/isofit/utils/apply_oe.py"
-basic_surface_json_path="$isofit_dir/data/basic_surface.json"
-input_spectrum_files_path="$isofit_dir/data/reflectance/surface_model_ucsb"
+
 echo "basedir is $basedir"
 echo "isofit_dir is $isofit_dir"
 
+# .imgspec paths
+apply_glt_exe="$isofit_dir/.imgspec/apply_glt.py"
+wavelength_file_exe="$isofit_dir/.imgspec/wavelength_file.py"
+basic_surface_json_path="$isofit_dir/.imgspec/basic_surface.json"
+
+# utils paths
+surface_model_exe="$isofit_dir/isofit/utils/surface_model.py"
+apply_oe_exe="$isofit_dir/isofit/utils/apply_oe.py"
+
+# data path
+input_spectrum_files_path="$isofit_dir/data/reflectance/surface_model_ucsb"
+
+# input/output dirs
 input="input"
 mkdir output
 
@@ -98,3 +106,7 @@ isofit_cmd="""python $apply_oe_exe $rdn_path $loc_ort_path $obs_ort_path $workin
 --surface_path $input/basic_surface.mat --log_file isofit.log"""
 echo "Executing command: $isofit_cmd"
 $isofit_cmd
+
+# Clean up output directory
+rm -f output/*lbl*
+rm -f output/*subs*
