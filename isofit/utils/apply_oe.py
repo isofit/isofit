@@ -212,7 +212,7 @@ def main():
             if not exists(outp):
                 logging.info('Extracting ' + outp)
                 extractions(inputfile=inp, labels=paths.lbl_working_path,
-                            output=outp, chunksize=CHUNKSIZE, flag=-9999)
+                            output=outp, chunksize=CHUNKSIZE, flag=-9999, n_cores=args.n_cores)
 
 
     if args.presolve == 1:
