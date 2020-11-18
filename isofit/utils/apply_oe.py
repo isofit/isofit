@@ -498,14 +498,14 @@ class LUTConfig:
             with open(lut_config_file, 'r') as f:
                 lut_config = json.load(f)
 
-        self.num_elev_lut_elements = 1
+        self.elevation_lut_spacing_m = 200 # Set to 0 to use single elevation point
         self.num_h2o_lut_elements = 3
         self.num_to_sensor_azimuth_lut_elements = 1
         self.num_to_sensor_zenith_lut_elements = 1
 
         # Setting any of these to '1' will also remove that aerosol from the statevector
         self.num_aerosol_1_lut_elements = 1
-        self.num_aerosol_2_lut_elements = 3
+        self.num_aerosol_2_lut_elements = 1
         self.num_aerosol_3_lut_elements = 3
 
         self.aerosol_1_lut_range = [0.001, 0.5]
@@ -884,14 +884,14 @@ def get_metadata_from_loc(loc_file: str, lut_params: LUTConfig, trim_lines: int 
     mean_elevation_km = np.mean(loc_data[2,valid]) / 1000.0
 
     # make elevation grid
-    if lut_params.num_elev_lut_elements == 1:
+    if lut_params.elevation_lut_spacing_m == 0:
         elevation_lut_grid = None
     else:
         min_elev = np.min(loc_data[2, valid])/1000.
         max_elev = np.max(loc_data[2, valid])/1000.
-        elevation_lut_grid = np.linspace(max(min_elev, EPS),
-                                         max_elev,
-                                         lut_params.num_elev_lut_elements)
+        elevation_lut_grid = np.arange(max(min_elev, EPS),
+                                       max_elev,
+                                       max_elev,step=lut_params.elevation_lut_spacing_m)
 
     return mean_latitude, mean_longitude, mean_elevation_km, elevation_lut_grid
 
