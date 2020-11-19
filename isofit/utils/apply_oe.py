@@ -936,14 +936,10 @@ def get_metadata_from_loc(loc_file: str, lut_params: LUTConfig, trim_lines: int 
     mean_elevation_km = np.mean(loc_data[2,valid]) / 1000.0
 
     # make elevation grid
-    if lut_params.elevation_spacing == 0:
-        elevation_lut_grid = None
-    else:
-        min_elev = np.min(loc_data[2, valid])/1000.
-        max_elev = np.max(loc_data[2, valid])/1000.
-        elevation_lut_grid = np.arange(max(min_elev, EPS),
-                                       max_elev,
-                                       max_elev, step=lut_params.elevation_spacing)
+    min_elev = np.min(loc_data[2, valid]) / 1000.
+    max_elev = np.max(loc_data[2, valid]) / 1000.
+    elevation_lut_grid = lut_params.get_grid(min_elev, max_elev, lut_params.elevation_spacing,
+                                             lut_params.elevation_spacing_min)
 
     return mean_latitude, mean_longitude, mean_elevation_km, elevation_lut_grid
 
