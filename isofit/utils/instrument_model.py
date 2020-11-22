@@ -19,12 +19,12 @@
 #
 
 from os.path import split, abspath
-import scipy as s
-from scipy.linalg import svd
+import numpy as np
+import scipy
 from scipy.ndimage.filters import gaussian_filter1d
 from spectral.io import envi
 
-from ..core.common import expand_path, json_load_ascii
+from isofit.core.common import expand_path, json_load_ascii
 
 
 def instrument_model(config):
@@ -51,32 +51,24 @@ def instrument_model(config):
 
     infile_hdr = infile + '.hdr'
     img = envi.open(infile_hdr, infile)
-    inmm = img.open_memmap(interleave='source', writable=False)
-    if img.interleave != 1:
-        raise ValueError("I need BIL interleave.")
-    X = s.array(inmm[:, :, :], dtype=s.float32)
+    inmm = img.open_memmap(interleave='bil', writable=False)
+    X = np.array(inmm[:, :, :], dtype=np.float32)
     nr, nb, nc = X.shape
 
     FF, Xhoriz, Xhorizp, use_ff = _flat_field(X, uniformity_thresh)
-    s.array(FF, dtype=s.float32).tofile(flatfile)
+    np.array(FF, dtype=np.float32).tofile(flatfile)
     with open(flatfile+'.hdr', 'w') as fout:
         fout.write(hdr_template.format(lines=nb, samples=nc))
 
     C, Xvert, Xvertp, use_C = _column_covariances(X, uniformity_thresh)
     cshape = (C.shape[0], C.shape[1]**2)
-    out = s.array(C, dtype=s.float32).reshape(cshape)
+    out = np.array(C, dtype=np.float32).reshape(cshape)
     mdict = {'columns': out.shape[0], 'bands': out.shape[1],
              'covariances': out, 'Xvert': Xvert, 'Xhoriz': Xhoriz,
              'Xvertp': Xvertp, 'Xhorizp': Xhorizp, 'use_ff': use_ff,
              'use_C': use_C}
-    s.io.savemat(outfile, mdict)
+    scipy.io.savemat(outfile, mdict)
 
-
-def _percentile(X, p):
-    """."""
-
-    S = sorted(X)
-    return S[int(s.floor(len(S)*(p/100.0)))]
 
 
 def _high_frequency_vert(X, sigma=4.0):
@@ -109,22 +101,18 @@ def _flat_field(X, uniformity_thresh):
     Xhoriz = _low_frequency_horiz(X, sigma=4.0)
     Xhorizp = _low_frequency_horiz(X, sigma=3.0)
     nl, nb, nc = X.shape
-    FF = s.zeros((nb, nc))
-    use_ff = s.ones((X.shape[0], X.shape[2])) > 0
+    FF = np.zeros((nb, nc))
+    use_ff = np.ones((X.shape[0], X.shape[2])) > 0
     for b in range(nb):
         xsub = Xhoriz[:, b, :]
-        xsubp = Xhorizp[:, b, :]
         mu = xsub.mean(axis=0)
         dists = abs(xsub - mu)
-        distsp = abs(xsubp - mu)
-        thresh = _percentile(dists.flatten(), 90.0)
-        uthresh = dists * uniformity_thresh
-        #use       = s.logical_and(dists<thresh, abs(dists-distsp) < uthresh)
+        thresh = np.percentile(dists.flatten(), 90.0)
         use = dists < thresh
         FF[b, :] = ((xsub*use).sum(axis=0)/use.sum(axis=0)) / \
             ((X[:, b, :]*use).sum(axis=0)/use.sum(axis=0))
-        use_ff = s.logical_and(use_ff, use)
-    return FF, Xhoriz, Xhorizp, s.array(use_ff)
+        use_ff = np.logical_and(use_ff, use)
+    return FF, Xhoriz, Xhorizp, np.array(use_ff)
 
 
 def _column_covariances(X, uniformity_thresh):
@@ -136,18 +124,14 @@ def _column_covariances(X, uniformity_thresh):
     use_C = []
     for i in range(X.shape[2]):
         xsub = Xvert[:, :, i]
-        xsubp = Xvertp[:, :, i]
         mu = xsub.mean(axis=0)
-        dists = s.sqrt(pow((xsub - mu), 2).sum(axis=1))
-        distsp = s.sqrt(pow((xsubp - mu), 2).sum(axis=1))
-        thresh = _percentile(dists, 95.0)
-        uthresh = dists * uniformity_thresh
-        #use       = s.logical_and(dists<thresh, abs(dists-distsp) < uthresh)
+        dists = np.sqrt(pow((xsub - mu), 2).sum(axis=1))
+        thresh = np.percentile(dists, 95.0)
         use = dists < thresh
-        C = s.cov(xsub[use, :], rowvar=False)
-        [U, V, D] = svd(C)
+        C = np.cov(xsub[use, :], rowvar=False)
+        [U, V, D] = scipy.linalg.svd(C)
         V[V < 1e-8] = 1e-8
-        C = U.dot(s.diagflat(V)).dot(D)
+        C = U.dot(np.diagflat(V)).dot(D)
         models.append(C)
         use_C.append(use)
-    return s.array(models), Xvert, Xvertp, s.array(use_C).T
+    return np.array(models), Xvert, Xvertp, np.array(use_C).T

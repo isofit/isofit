@@ -47,7 +47,7 @@ class SurfaceConfig(BaseConfigSection):
 
         # Multicomponent Surface
         self._select_on_init_type = bool
-        self.select_on_init = False
+        self.select_on_init = True
         """bool: This field, if present and set to true, forces us to use any initialization state and never change. 
         The state is preserved in the geometry object so that this object stays stateless"""
 
@@ -68,7 +68,8 @@ class SurfaceConfig(BaseConfigSection):
         errors = list()
 
         valid_surface_categories = ['surface', 'multicomponent_surface',
-                                    'glint_surface', 'thermal_surface']
+                                    'glint_surface', 'thermal_surface',
+                                    'lut_surface']
         if self.surface_category is None:
             errors.append('surface->surface_category must be specified')
         elif self.surface_category not in valid_surface_categories:

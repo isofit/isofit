@@ -47,6 +47,13 @@ class ForwardModelConfig(BaseConfigSection):
         """
         RadiativeTransfer: radiative transfer config section.
         """
+
+        self._model_discrepancy_file_type = str
+        self.model_discrepancy_file = None
+        """
+        Points to an numpy-format covariance matrix. 
+        """
+
         self.set_config_options(sub_configdic)
 
     def _check_config_validity(self) -> List[str]:

@@ -23,13 +23,14 @@ from copy import deepcopy
 from scipy.linalg import det, norm, pinv, sqrtm, inv, block_diag
 from importlib import import_module
 from scipy.interpolate import interp1d
+from scipy.io import loadmat
 
 from .common import recursive_replace, eps
 from .instrument import Instrument
 from ..radiative_transfer.radiative_transfer import RadiativeTransfer
 from isofit.configs import Config
 
-from isofit.surface import Surface, ThermalSurface, MultiComponentSurface, GlintSurface
+from isofit.surface import Surface, ThermalSurface, MultiComponentSurface, GlintSurface, LUTSurface
 
 
 ### Classes ###
@@ -83,6 +84,8 @@ class ForwardModel:
             self.surface = GlintSurface(self.full_config)
         elif self.config.surface.surface_category == 'thermal_surface':
             self.surface = ThermalSurface(self.full_config)
+        elif self.config.surface.surface_category == 'lut_surface':
+            self.surface = LUTSurface(self.full_config)
         else:
             raise ValueError('Must specify a valid surface model')
             # No need to be more specific - should have been checked in config already
@@ -119,6 +122,13 @@ class ForwardModel:
         self.RT_b_inds = np.arange(len(self.RT.bvec), dtype=int) + len(self.surface_b_inds)
         self.instrument_b_inds = np.arange(
             len(self.instrument.bvec), dtype=int) + len(self.surface_b_inds) + len(self.RT_b_inds)
+
+        # Load model discrepancy correction
+        if self.config.model_discrepancy_file is not None:
+            D = loadmat(self.config.model_discrepancy_file)
+            self.model_discrepancy = D['cov']
+        else:
+            self.model_discrepancy = None
 
     def out_of_bounds(self, x):
         """Check if state vector is within bounds."""
@@ -158,6 +168,7 @@ class ForwardModel:
         Sa_surface = self.surface.Sa(x_surface, geom)[:, :]
         Sa_RT = self.RT.Sa()[:, :]
         Sa_instrument = self.instrument.Sa()[:, :]
+        
         return block_diag(Sa_surface, Sa_RT, Sa_instrument)
 
     def calc_rdn(self, x, geom, rfl=None, Ls=None):
@@ -201,12 +212,20 @@ class ForwardModel:
 
     def Seps(self, x, meas, geom):
         """Calculate the total uncertainty of the observation, including
-        both the instrument noise and the uncertainty due to unmodeled
-        variables. This is the S_epsilon matrix of Rodgers et al."""
+        up to three terms: (1) the instrument noise; (2) the uncertainty 
+        due to explicit unmodeled variables, i.e. the S_epsilon matrix of
+        Rodgers et al.; and (3) an aggregate 'model discrepancy' term,
+        Gamma."""
+
+        if self.model_discrepancy is not None:
+            Gamma = self.model_discrepancy 
+        else:
+            Gamma = 0
 
         Kb = self.Kb(x, geom)
         Sy = self.instrument.Sy(meas, geom)
-        return Sy + Kb.dot(self.Sb).dot(Kb.T)
+
+        return Sy + Kb.dot(self.Sb).dot(Kb.T) + Gamma 
 
     def K(self, x, geom):
         """Derivative of observation with respect to state vector. This is 
