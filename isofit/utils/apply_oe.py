@@ -858,11 +858,11 @@ def get_metadata_from_obs(obs_file: str, lut_params: LUTConfig, trim_lines: int 
     #geom_margin = EPS * 2.0
     to_sensor_zenith_lut_grid = lut_params.get_angular_grid(to_sensor_zenith[valid], lut_params.to_sensor_zenith_spacing, lut_params.to_sensor_zenith_spacing_min)
     if to_sensor_zenith_lut_grid is not None:
-        np.sort(180 - to_sensor_zenith_lut_grid)
+        to_sensor_zenith_lut_grid = np.sort(180 - to_sensor_zenith_lut_grid)
 
     to_sensor_azimuth_lut_grid = lut_params.get_angular_grid(to_sensor_azimuth[valid], lut_params.to_sensor_azimuth_spacing, lut_params.to_sensor_azimuth_spacing_min)
     if to_sensor_azimuth_lut_grid is not None:
-        np.sort(np.array([x % 360 for x in to_sensor_azimuth_lut_grid]))
+        to_sensor_azimuth_lut_grid = np.sort(np.array([x % 360 for x in to_sensor_azimuth_lut_grid]))
 
     del to_sensor_azimuth
     del to_sensor_zenith
