@@ -561,7 +561,7 @@ class LUTConfig:
         if spacing == 0:
             logging.debug('Grid spacing set at 0, using no grid.')
             return None
-        num_gridpoints = int(np.ceil((maxval-minval)/spacing))
+        num_gridpoints = int(np.ceil((maxval-minval)/spacing)) + 1
 
         grid = np.linspace(minval, maxval, num_gridpoints)
 
