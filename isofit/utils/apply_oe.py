@@ -508,8 +508,8 @@ class LUTConfig:
         # point will be used.
 
         # Units of kilometers
-        self.elevation_spacing = 0.2
-        self.elevation_spacing_min = 0.1
+        self.elevation_spacing = 0.5
+        self.elevation_spacing_min = 0.2
 
         # Units of g / m2
         self.h2o_spacing = 0.25
