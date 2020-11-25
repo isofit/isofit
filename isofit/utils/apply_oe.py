@@ -507,9 +507,9 @@ class LUTConfig:
         # does not meet this threshold based on the available data, on a single
         # point will be used.
 
-        # Units of meters
-        self.elevation_spacing = 0
-        self.elevation_spacing_min = 0
+        # Units of kilometers
+        self.elevation_spacing = 0.5
+        self.elevation_spacing_min = 0.2
 
         # Units of g / m2
         self.h2o_spacing = 0.25
