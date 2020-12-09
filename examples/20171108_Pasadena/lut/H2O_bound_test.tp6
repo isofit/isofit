@@ -1,0 +1,549 @@
+
+                    *************************************************************
+                    *                                                           *
+                    *   MODTRAN(R) 6.0.2r2                                      *
+                    *                                                           *
+                    *   MODTRAN is an atmospheric radiative transfer model      *
+                    *   developed collaboratively by SPECTRAL SCIENCES, INC.    *
+                    *   (SSI) [www.spectral.com] and the AIR FORCE RESEARCH     *
+                    *   LABORATORY (AFRL) [www.kirtland.af.mil/afrl_vs/]        *
+                    *                                                           *
+                    *      Please address questions and/or comments to          *
+                    *      SSI at modtran@spectral.com and/or to AFRL           *
+                    *      at jeannette.van_den_bosch@us.af.mil                 *
+                    *                                                           *
+                    *   WARNING:  Versions of MODTRAN acquired via a            *
+                    *             "GOVERNMENT PURPOSE USE" agreement can        *
+                    *             only be used for Government Purposes.         *
+                    *                                                           *
+                    *   I/O file root name: H2O_bound_test                      *
+                    *                                                           *
+                    *************************************************************
+
+ Calculations will be done using multiple scattering.
+
+ CARD 1  *****CMF 2F   3    2   -1    2    2    2    2    2    2    1    0T   2   0.000LAMBER 
+
+ PROGRAM WILL COMPUTE RADIANCE + SOLAR SCATTER
+
+ ATMOSPHERIC MODEL
+         TEMPERATURE =    2     MID-LATITUDE SUMMER 
+         WATER VAPOR =    2     MID-LATITUDE SUMMER 
+         OZONE       =    2     MID-LATITUDE SUMMER 
+                      M4 =     2 M5 =     2 M6 =     2 MDEF =     1
+
+ CARD 1A *****TTT  8 0.0 450.00000 g 50.00000 a  0.30000 0      F       0.000    0.0000    0.0000    0.0000    0.0000         0
+
+ MOLECULAR BAND MODEL DATA FILES
+ -------------------------------
+ /shared/MODTRAN6/MODTRAN6.0.0/DATA/p1_2013c.bn4
+ /shared/MODTRAN6/MODTRAN6.0.0/DATA/p1_2013t.bin
+
+ CFC BAND MODEL DATA FILE:               /shared/MODTRAN6/MODTRAN6.0.0/DATA/CFC04_p1.ASC
+
+ Version 2.5 of the Mlawer, Tobin-Clough, Kneizys, Davies Water Continuum Data from LBLRTM (19oct2012).
+
+ Successfully read correlated-K distributions file:  /shared/MODTRAN6/MODTRAN6.0.0/DATA/CORKp1.BIN
+
+SOLAR IRRADIANCE FILE:  "/shared/MODTRAN6/MODTRAN6.0.0/DATA/SUNp1med2irradwnNormt.bin"
+
+ CARD 2  *****    1    0def 0    3    0    0  -0.10000   0.00000   0.00000   0.00000   0.35000
+
+   GNDALT =   0.35000
+
+ The 550nm vertical optical depth (   0.10000) corresponds to a surface
+ meteorological range (visibility) of  82.72642 km.
+
+ MODEL ATMOSPHERE NO.  2
+
+
+        Z         P        T     REL H    H2O    AEROSOL             AEROSOL
+      (KM)      (MB)      (K)     (%)  (GM / M3) TYPE                PROFILE
+                                [Before scaling]
+   0.3500000   972.674  292.62   72.38 1.213E+01 RURAL               RURAL
+   1.2916667   871.850  288.45   62.76 8.196E+00 RURAL               RURAL
+   2.2333333   779.724  283.88   52.89 5.202E+00 RURAL               RURAL
+   3.1750000   694.990  278.15   44.00 2.989E+00 TROPOSPHERIC        TROPOSPHERIC        SPRING-SUMMER
+   4.1166667   618.976  272.50   38.15 1.768E+00 TROPOSPHERIC        TROPOSPHERIC        SPRING-SUMMER
+   5.0583333   549.908  266.85   31.16 9.669E-01 TROPOSPHERIC        TROPOSPHERIC        SPRING-SUMMER
+   6.0000000   486.998  261.20   29.98 6.100E-01 TROPOSPHERIC        TROPOSPHERIC        SPRING-SUMMER
+   7.0000000   426.000  254.70   30.31 3.696E-01 TROPOSPHERIC        TROPOSPHERIC        SPRING-SUMMER
+   8.0000000   371.999  248.20   29.63 2.099E-01 TROPOSPHERIC        TROPOSPHERIC        SPRING-SUMMER
+   9.0000000   323.999  241.70   30.15 1.199E-01 TROPOSPHERIC        TROPOSPHERIC        SPRING-SUMMER
+  10.0000000   280.999  235.30   29.44 6.396E-02 TROPOSPHERIC        TROPOSPHERIC        SPRING-SUMMER
+  11.0000000   243.000  228.80   19.48 2.199E-02 BCKGD_STRATOSPHERIC BCKGD_STRATOSPHERIC SPRING-SUMMER
+  12.0000000   208.999  222.30   10.69 5.997E-03 BCKGD_STRATOSPHERIC BCKGD_STRATOSPHERIC SPRING-SUMMER
+  13.0000000   179.001  215.80    5.42 1.438E-03 BCKGD_STRATOSPHERIC BCKGD_STRATOSPHERIC SPRING-SUMMER
+  14.0000000   153.000  215.70    2.93 7.685E-04 BCKGD_STRATOSPHERIC BCKGD_STRATOSPHERIC SPRING-SUMMER
+  15.0000000   129.999  215.70    1.69 4.440E-04 BCKGD_STRATOSPHERIC BCKGD_STRATOSPHERIC SPRING-SUMMER
+  16.0000000   111.000  215.70    1.40 3.680E-04 BCKGD_STRATOSPHERIC BCKGD_STRATOSPHERIC SPRING-SUMMER
+  17.0000000    95.000  215.70    1.17 3.054E-04 BCKGD_STRATOSPHERIC BCKGD_STRATOSPHERIC SPRING-SUMMER
+  18.0000000    81.200  216.80    0.86 2.556E-04 BCKGD_STRATOSPHERIC BCKGD_STRATOSPHERIC SPRING-SUMMER
+  19.0000000    69.500  217.90    0.65 2.211E-04 BCKGD_STRATOSPHERIC BCKGD_STRATOSPHERIC SPRING-SUMMER
+  20.0000000    59.500  219.20    0.49 1.941E-04 BCKGD_STRATOSPHERIC BCKGD_STRATOSPHERIC SPRING-SUMMER
+  21.0000000    51.000  220.40    0.38 1.730E-04 BCKGD_STRATOSPHERIC BCKGD_STRATOSPHERIC SPRING-SUMMER
+  22.0000000    43.700  221.60    0.30 1.538E-04 BCKGD_STRATOSPHERIC BCKGD_STRATOSPHERIC SPRING-SUMMER
+  23.0000000    37.600  222.80    0.24 1.408E-04 BCKGD_STRATOSPHERIC BCKGD_STRATOSPHERIC SPRING-SUMMER
+  24.0000000    32.200  223.90    0.19 1.246E-04 BCKGD_STRATOSPHERIC BCKGD_STRATOSPHERIC SPRING-SUMMER
+  25.0000000    27.700  225.10    0.15 1.120E-04 BCKGD_STRATOSPHERIC BCKGD_STRATOSPHERIC SPRING-SUMMER
+  30.0000000    13.200  233.70    0.03 5.752E-05 BCKGD_STRATOSPHERIC BCKGD_STRATOSPHERIC SPRING-SUMMER
+  35.0000000  6.519971  245.20    0.01 2.852E-05 BCKGD_STRATOSPHERIC BCKGD_STRATOSPHERIC SPRING-SUMMER
+  40.0000000  3.329993  257.50    0.00 1.429E-05 BCKGD_STRATOSPHERIC BCKGD_STRATOSPHERIC SPRING-SUMMER
+  45.0000000  1.759993  269.90    0.00 7.700E-06 BCKGD_STRATOSPHERIC BCKGD_STRATOSPHERIC SPRING-SUMMER
+  50.0000000  0.951001  275.70    0.00 4.111E-06 BCKGD_STRATOSPHERIC BCKGD_STRATOSPHERIC SPRING-SUMMER
+  55.0000000  0.514999  269.30    0.00 2.217E-06 BCKGD_STRATOSPHERIC BCKGD_STRATOSPHERIC SPRING-SUMMER
+  60.0000000  0.272001  257.10    0.00 1.146E-06 BCKGD_STRATOSPHERIC BCKGD_STRATOSPHERIC SPRING-SUMMER
+  70.0000000  0.067000  218.10    0.00 2.463E-07 BCKGD_STRATOSPHERIC BCKGD_STRATOSPHERIC SPRING-SUMMER
+  80.0000000  0.012000  174.10    0.07 3.136E-08 BCKGD_STRATOSPHERIC BCKGD_STRATOSPHERIC SPRING-SUMMER
+ 100.0000000  0.000258  190.50    0.00 1.174E-10 BCKGD_STRATOSPHERIC BCKGD_STRATOSPHERIC SPRING-SUMMER
+
+ *** OZONE DENSITIES ARE BEING SCALED BY   0.90720
+     THE ORIGINAL VERTICAL COLUMN CONTAINED   7.08148 GM / M2 OF OZONE
+     THE CURRENT  VERTICAL COLUMM CONTAINS    6.42434 GM / M2 OF OZONE
+
+Warning from routine SCLCOL:  Input water column,  50.00000 gm/cm2, is above maximum allowed.
+                              The water column is being set to the maximum,   4.73365 gm/cm2.
+
+ CARD 3  *****   2.30000   0.00000 180.00000   0.00000   0.00000     0.00000  0        0.00000   0.00000
+
+     6371.23  RADIUS OF THE EARTH [KM].
+
+ SLANT PATH TO SPACE (OR GROUND)
+          H1ALT  =    2.30000 KM
+          HMIN   =    0.00000 KM
+          OBSZEN =  180.00000 DEG
+
+ CARD 3A1*****   11    2  312    0
+
+ CARD 3A2*****  34.13925 118.12752   0.00000   0.00000  18.70800   0.00000   0.00000   0.80000
+
+ SINGLE SCATTERING CONTROL PARAMETERS SUMMARY
+
+          LATITUDE AT H2ALT =                     34.1392 DEG NORTH OF EQUATOR
+          LONGITUDE AT H2ALT =                   118.1275 DEG WEST OF GREENWICH
+
+          SUBSOLAR LATITUDE =                    -16.2562 DEG NORTH OF EQUATOR
+          SUBSOLAR LONGITUDE =                   104.6175 DEG WEST OF GREENWICH
+          TIME (<0 UNDEF) =                       18.7080 GREENWICH TIME
+          PATH AZIMUTH (FROM H2ALT TO H1ALT) =     0.0000 DEG EAST OF NORTH
+          DAY OF THE YEAR =                           312
+
+EXTRA-TERRESTIAL SOURCE IS THE SUN
+
+AEROSOL SCATTERING PHASE FUNCTIONS FROM MIE DATA BASE
+
+ CARD 4  *****    3965.0   28580.0       0.1       0.1   SCANNING FUNCTION:TRIANGULAR
+
+ FREQUENCY RANGE
+             IV1 =    3965.0 CM-1  (      2.5221 MICRONS)
+             IV2 =   28580.0 CM-1  (      0.3499 MICRONS)
+             IDV =       0.1 CM-1
+           IFWHM =       0.1 CM-1
+
+ Opened filter file:  /home/drt/src/isofit-dev/examples/20171108_Pasadena/lut/wavelengths_modtran_376.85999999999996_2500.54.flt
+
+Comment from routine FILTER:  First filter weight for channel    1,
+                              CENTER:  376.86 NM   FWHM:  5.57 NM,
+                              is non-zero.
+
+Comment from routine FILTER:  Last filter weight for channel    1,
+                              CENTER:  376.86 NM   FWHM:  5.57 NM,
+                              is non-zero.
+THE FILTER RESPONSE FUNCTION FILE /home/drt/src/isofit-dev/examples/20171108_Pasadena/lut/wavelengths_modtran_376.85999999999996_2500.54.flt WAS SUCCESSFULLY PROCESSED WITH   425 CHANNELS READ
+
+Comment from routine FINDMN:  Tangent path with H1ALT =     2.30000 km and OBSZEN = 180.00000 deg intersects the Earth.
+                              H2ALT has been reset from   100.00000 km to     0.35000 km, and LENN reset from 1 to 0.
+
+ CONVERT FROM IPARM=10 TARGET (H2ALT) SOLAR/LUNAR GEOMETRY PARAMETERS
+     34.13925   TARGET (H2ALT) LATITUDE (DEG NORTH OF EQUATOR)
+    118.12752   TARGET (H2ALT) LONGITUDE (DEG WEST OF GREENWICH)
+      0.00000   TRUE PATH AZIMUTH FROM H2ALT TO H1ALT (DEG EAST OF NORTH)
+
+ TO IPARM=0 OBSERVER (H1ALT) SOLAR/LUNAR GEOMETRY PARAMETERS
+     34.13925   OBSERVER (H1ALT) LATITUDE (DEG NORTH OF EQUATOR)
+    118.12752   OBSERVER (H1ALT) LONGITUDE (DEG WEST OF GREENWICH)
+    -90.00000   TRUE PATH AZIMUTH FROM H1ALT TO H2ALT (DEG EAST OF NORTH)
+
+
+SUMMARY OF MULTIPLE SCATTERING VERTICAL PATH GEOMETRY CALCULATION
+
+          H1ALT   =    0.35000 KM
+          H2ALT   =  100.00000 KM
+          OBSZEN  =    0.00000 DEG
+          HRANGE  =   99.65000 KM
+          ECA     =    0.00000 DEG
+          BCKZEN  =  180.00000 DEG
+          HMIN    =    0.35000 KM
+          BENDING =    0.00000 DEG
+          CKRANG  =    0.00000 KM
+          LENN    =          0
+
+
+   TOTAL COLUMN ABSORBER AMOUNTS FOR A VERTICAL PATH FROM GROUND TO SPACE:
+
+               HNO3       O3 UV      CNTMSLF1    CNTMSLF2    CNTMFRN     N2 CONT     MOL SCAT     TOTAL AER
+             (ATM CM)    (ATM CM)   (MOL CM-2)  (MOL CM-2)  (MOL CM-2)  (ATM^2 KM)  (  550 NM EXTINCTION   )
+            3.8132E-04  3.0009E-01  2.0255E+21  5.8137E+20  1.2158E+23  3.4419E+00  0.09344800    0.09999746
+
+
+               AER 1        AER 2       AER 3       AER 4      CIRRUS     WAT DROP    ICE PART   MEAN AER RH
+           (                     550 NM EXTINCTION                   )   (KM GM/M3)  (KM GM/M3)   (PERCENT)
+             0.04991821  0.04284747  0.00719506  0.00003671   0.000000    0.000000    0.000000     63.5511
+
+               MOL SCAT     TOT AER       AER 1       AER 2       AER 3       AER 4       CIRRUS
+             (                              614.53 NM EXTINCTION                                )
+             0.05947177   0.08649378   0.04361009  0.03677015  0.00607771  0.00003582  0.00000000
+
+                H2O         O3          CO2         CO          CH4         N2O
+            (                               ATM CM                               )
+            5.8894E+03  3.0009E-01  3.4697E+02  8.2978E-02  1.2141E+00  2.2722E-01
+
+                O2          NH3         NO          NO2         SO2
+            (                         ATM CM                         )
+            1.6115E+05  1.5519E-04  3.1314E-04  2.1740E-04  9.8911E-05
+
+                 F11         F12       CCl3F         CF4         F22        F113        F114
+            (                                     ATM CM                                     )
+            1.0070E-04  1.7691E-04  7.7105E-13  7.7105E-13  4.4746E-05  1.3901E-05  8.9722E-06
+
+                R115      ClONO2        HNO4      CHCl2F        CCl4        N2O5
+            (                               ATM CM                               )
+            7.7105E-13  4.1857E-05  4.4096E-05  7.7105E-13  9.2922E-05  2.9333E-06
+
+               H2-H2       H2-HE      H2-CH4     CH4-CH4
+            (                  ATM^2 CM                  )
+            1.2625E-07  1.1319E-06  3.6178E-07  1.0393E-06
+
+
+ SINGLE SCATTER SOLAR PATH GEOMETRY TABLE FOR MULTIPLE SCATTERING VERTICAL GROUND-TO-SPACE PATH
+ ----------------------------------------------------------------------------------------------
+ SCT       SCATTER     SUBTENDED         SOLAR          PATH      RELATIVE       SCATTER
+ PNT      ALTITUDE         ANGLE        ZENITH        ZENITH       AZIMUTH         ANGLE
+              [KM]         [DEG]         [DEG]         [DEG]         [DEG]         [DEG]
+   1    0.35000000    0.00000000   51.99286379    0.00000000   73.46725576   51.99286379
+   2    1.29166667    0.00000000   51.99457966    0.00000000   73.46725576   51.99457966
+   3    2.23333333    0.00000000   51.99615062    0.00000000   73.46725576   51.99615062
+   4    3.17500000    0.00000000   51.99756317    0.00000000   73.46725576   51.99756317
+   5    4.11666667    0.00000000   51.99885961    0.00000000   73.46725576   51.99885961
+   6    5.05833333    0.00000000   52.00006492    0.00000000   73.46725576   52.00006492
+   7    6.00000000    0.00000000   52.00118883    0.00000000   73.46725576   52.00118883
+   8    7.00000000    0.00000000   52.00228913    0.00000000   73.46725576   52.00228913
+   9    8.00000000    0.00000000   52.00328647    0.00000000   73.46725576   52.00328647
+  10    9.00000000    0.00000000   52.00419566    0.00000000   73.46725576   52.00419566
+  11   10.00000000    0.00000000   52.00503646    0.00000000   73.46725576   52.00503646
+  12   11.00000000    0.00000000   52.00579633    0.00000000   73.46725576   52.00579633
+  13   12.00000000    0.00000000   52.00649741    0.00000000   73.46725576   52.00649741
+  14   13.00000000    0.00000000   52.00713431    0.00000000   73.46725576   52.00713431
+  15   14.00000000    0.00000000   52.00782619    0.00000000   73.46725576   52.00782619
+  16   15.00000000    0.00000000   52.00844030    0.00000000   73.46725576   52.00844030
+  17   16.00000000    0.00000000   52.00894757    0.00000000   73.46725576   52.00894757
+  18   17.00000000    0.00000000   52.00937473    0.00000000   73.46725576   52.00937473
+  19   18.00000000    0.00000000   52.00975420    0.00000000   73.46725576   52.00975420
+  20   19.00000000    0.00000000   52.01007434    0.00000000   73.46725576   52.01007434
+  21   20.00000000    0.00000000   52.01034801    0.00000000   73.46725576   52.01034801
+  22   21.00000000    0.00000000   52.01057864    0.00000000   73.46725576   52.01057864
+  23   22.00000000    0.00000000   52.01077560    0.00000000   73.46725576   52.01077560
+  24   23.00000000    0.00000000   52.01093940    0.00000000   73.46725576   52.01093940
+  25   24.00000000    0.00000000   52.01108308    0.00000000   73.46725576   52.01108308
+  26   25.00000000    0.00000000   52.01120264    0.00000000   73.46725576   52.01120264
+  27   30.00000000    0.00000000   52.01158606    0.00000000   73.46725576   52.01158606
+  28   35.00000000    0.00000000   52.01175821    0.00000000   73.46725576   52.01175821
+  29   40.00000000    0.00000000   52.01183686    0.00000000   73.46725576   52.01183686
+  30   45.00000000    0.00000000   52.01187377    0.00000000   73.46725576   52.01187377
+  31   50.00000000    0.00000000   52.01189145    0.00000000   73.46725576   52.01189145
+  32   55.00000000    0.00000000   52.01190030    0.00000000   73.46725576   52.01190030
+  33   60.00000000    0.00000000   52.01190522    0.00000000   73.46725576   52.01190522
+  34   70.00000000    0.00000000   52.01190954    0.00000000   73.46725576   52.01190954
+  35   80.00000000    0.00000000   52.01191091    0.00000000   73.46725576   52.01191091
+  36  100.00000000    0.00000000   52.01191130    0.00000000   73.46725576   52.01191130
+
+
+SOLAR ILLUMINATION PATH COLUMN DENSITIES TO LEVELS ALONG THE MULTIPLE SCATTERING VERTICAL PATH
+
+ISEG     END_ALT    H2O       O3        CO2       CO        CH4       N2O       O2        NH3       NO        NO2       SO2
+          (KM)   (                                                       ATM CM                                              )
+
+   0    0.350000 9.560E+03 4.847E-01 5.625E+02 1.346E-01 1.969E+00 3.685E-01 2.613E+05 2.519E-04 5.066E-04 3.510E-04 1.605E-04
+   1    1.291667 6.740E+03 4.809E-01 5.038E+02 1.156E-01 1.747E+00 3.267E-01 2.340E+05 1.870E-04 4.675E-04 3.481E-04 1.243E-04
+   2    2.233333 4.577E+03 4.772E-01 4.505E+02 9.882E-02 1.545E+00 2.888E-01 2.092E+05 1.312E-04 4.320E-04 3.455E-04 9.523E-05
+   3    3.175000 3.014E+03 4.733E-01 4.019E+02 8.410E-02 1.362E+00 2.543E-01 1.867E+05 8.752E-05 3.997E-04 3.431E-04 7.329E-05
+   4    4.116667 1.941E+03 4.693E-01 3.578E+02 7.109E-02 1.195E+00 2.229E-01 1.662E+05 5.615E-05 3.703E-04 3.409E-04 5.744E-05
+   5    5.058333 1.215E+03 4.652E-01 3.177E+02 5.945E-02 1.045E+00 1.944E-01 1.476E+05 3.498E-05 3.436E-04 3.389E-04 4.593E-05
+   6    6.000000 7.331E+02 4.609E-01 2.814E+02 4.898E-02 9.092E-01 1.685E-01 1.307E+05 2.108E-05 3.194E-04 3.371E-04 3.731E-05
+   7    7.000000 4.114E+02 4.561E-01 2.467E+02 3.919E-02 7.810E-01 1.438E-01 1.146E+05 1.170E-05 2.963E-04 3.354E-04 3.036E-05
+   8    8.000000 2.213E+02 4.509E-01 2.155E+02 3.076E-02 6.675E-01 1.217E-01 1.001E+05 6.087E-06 2.755E-04 3.339E-04 2.499E-05
+   9    9.000000 1.125E+02 4.454E-01 1.876E+02 2.369E-02 5.669E-01 1.020E-01 8.714E+04 2.965E-06 2.570E-04 3.326E-04 2.072E-05
+  10   10.000000 5.224E+01 4.394E-01 1.627E+02 1.790E-02 4.785E-01 8.463E-02 7.557E+04 1.398E-06 2.404E-04 3.314E-04 1.722E-05
+  11   11.000000 2.040E+01 4.327E-01 1.405E+02 1.323E-02 4.016E-01 6.963E-02 6.528E+04 6.478E-07 2.257E-04 3.302E-04 1.429E-05
+  12   12.000000 7.968E+00 4.249E-01 1.209E+02 9.563E-03 3.349E-01 5.668E-02 5.614E+04 2.784E-07 2.126E-04 3.290E-04 1.180E-05
+  13   13.000000 4.743E+00 4.159E-01 1.035E+02 6.824E-03 2.771E-01 4.547E-02 4.807E+04 1.021E-07 2.011E-04 3.277E-04 9.641E-06
+  14   14.000000 3.664E+00 4.049E-01 8.838E+01 4.912E-03 2.279E-01 3.596E-02 4.105E+04 3.584E-08 1.911E-04 3.258E-04 7.756E-06
+  15   15.000000 3.067E+00 3.928E-01 7.550E+01 3.630E-03 1.868E-01 2.805E-02 3.507E+04 1.470E-08 1.829E-04 3.226E-04 6.125E-06
+  16   16.000000 2.659E+00 3.808E-01 6.453E+01 2.777E-03 1.525E-01 2.154E-02 2.997E+04 6.952E-09 1.762E-04 3.169E-04 4.723E-06
+  17   17.000000 2.320E+00 3.686E-01 5.516E+01 2.198E-03 1.239E-01 1.629E-02 2.562E+04 3.690E-09 1.708E-04 3.085E-04 3.563E-06
+  18   18.000000 2.038E+00 3.552E-01 4.716E+01 1.802E-03 1.000E-01 1.220E-02 2.190E+04 2.136E-09 1.665E-04 2.973E-04 2.660E-06
+  19   19.000000 1.798E+00 3.384E-01 4.035E+01 1.537E-03 8.033E-02 9.163E-03 1.874E+04 1.340E-09 1.628E-04 2.836E-04 1.997E-06
+  20   20.000000 1.589E+00 3.182E-01 3.455E+01 1.351E-03 6.418E-02 6.939E-03 1.605E+04 9.349E-10 1.597E-04 2.681E-04 1.537E-06
+  21   21.000000 1.404E+00 2.965E-01 2.962E+01 1.211E-03 5.113E-02 5.331E-03 1.376E+04 6.975E-10 1.568E-04 2.510E-04 1.215E-06
+  22   22.000000 1.239E+00 2.742E-01 2.541E+01 1.096E-03 4.074E-02 4.176E-03 1.180E+04 5.271E-10 1.541E-04 2.328E-04 9.835E-07
+  23   23.000000 1.091E+00 2.515E-01 2.182E+01 9.944E-04 3.259E-02 3.305E-03 1.013E+04 3.948E-10 1.515E-04 2.140E-04 8.096E-07
+  24   24.000000 9.573E-01 2.287E-01 1.875E+01 9.023E-04 2.626E-02 2.623E-03 8.707E+03 2.913E-10 1.488E-04 1.949E-04 6.742E-07
+  25   25.000000 8.380E-01 2.056E-01 1.613E+01 8.175E-04 2.140E-02 2.081E-03 7.490E+03 2.135E-10 1.456E-04 1.752E-04 5.678E-07
+  26   30.000000 4.257E-01 1.092E-01 7.717E+00 4.968E-04 7.988E-03 6.003E-04 3.584E+03 3.803E-11 1.218E-04 8.744E-05 2.759E-07
+  27   35.000000 2.172E-01 4.782E-02 3.814E+00 3.061E-04 3.026E-03 1.458E-04 1.772E+03 4.126E-12 8.632E-05 2.986E-05 1.667E-07
+  28   40.000000 1.133E-01 1.666E-02 1.950E+00 1.948E-04 1.160E-03 3.347E-05 9.060E+02 2.893E-13 4.998E-05 6.268E-06 1.152E-07
+  29   45.000000 5.958E-02 5.387E-03 1.029E+00 1.312E-04 4.579E-04 8.048E-06 4.783E+02 2.377E-14 2.661E-05 1.232E-06 8.127E-08
+  30   50.000000 3.073E-02 1.871E-03 5.550E-01 9.481E-05 2.019E-04 2.397E-06 2.580E+02 5.806E-15 1.495E-05 4.113E-07 5.294E-08
+  31   55.000000 1.526E-02 6.759E-04 2.987E-01 7.341E-05 1.010E-04 8.953E-07 1.389E+02 2.385E-15 9.142E-06 1.870E-07 3.015E-08
+  32   60.000000 7.072E-03 2.289E-04 1.567E-01 6.006E-05 5.242E-05 3.508E-07 7.301E+01 1.041E-15 5.960E-06 8.793E-08 1.489E-08
+  33   70.000000 1.166E-03 2.304E-05 3.730E-02 4.159E-05 1.260E-05 5.351E-08 1.753E+01 1.930E-16 3.140E-06 1.824E-08 2.129E-09
+  34   80.000000 1.129E-04 3.247E-06 5.992E-03 2.357E-05 2.144E-06 6.809E-09 2.958E+00 2.853E-17 2.008E-06 2.921E-09 1.063E-10
+  35  100.000000 0.000E+00 0.000E+00 0.000E+00 0.000E+00 0.000E+00 0.000E+00 0.000E+00 0.000E+00 0.000E+00 0.000E+00 0.000E+00
+
+
+SOLAR ILLUMINATION PATH COLUMN DENSITIES TO LEVELS ALONG THE MULTIPLE SCATTERING VERTICAL PATH
+
+CROSS-SECTION (X) SPECIES
+-------------------------
+ISEG     END_ALT       F11       F12     CCl3F       CF4       F22      F113      F114      R115    ClONO2      HNO4    CHCl2F      CCl4      N2O5
+                     H2-H2     H2-HE    H2-CH4   CH4-CH4
+          (KM)   (                                                 ATM CM [ATM^2 CM for DIMERS]                                                  )
+   0    0.350000 1.633E-04 2.869E-04 1.250E-12 1.250E-12 7.255E-05 2.254E-05 1.455E-05 1.250E-12 6.761E-05 7.132E-05 1.250E-12 1.507E-04 4.738E-06
+                 2.048E-07 1.836E-06 5.870E-07 1.686E-06
+   1    1.291667 1.450E-04 2.556E-04 1.120E-12 1.120E-12 6.473E-05 2.006E-05 1.298E-05 1.120E-12 6.694E-05 7.115E-05 1.120E-12 1.337E-04 4.739E-06
+                 1.673E-07 1.500E-06 4.769E-07 1.364E-06
+   2    2.233333 1.284E-04 2.271E-04 1.001E-12 1.001E-12 5.763E-05 1.781E-05 1.156E-05 1.001E-12 6.640E-05 7.078E-05 1.001E-12 1.183E-04 4.740E-06
+                 1.362E-07 1.221E-06 3.858E-07 1.097E-06
+   3    3.175000 1.133E-04 2.012E-04 8.932E-13 8.932E-13 5.117E-05 1.576E-05 1.027E-05 8.932E-13 6.598E-05 7.026E-05 8.932E-13 1.043E-04 4.741E-06
+                 1.105E-07 9.910E-07 3.106E-07 8.762E-07
+   4    4.116667 9.960E-05 1.777E-04 7.951E-13 7.951E-13 4.530E-05 1.390E-05 9.089E-06 7.951E-13 6.565E-05 6.960E-05 7.951E-13 9.154E-05 4.742E-06
+                 8.931E-08 8.007E-07 2.485E-07 6.943E-07
+   5    5.058333 8.713E-05 1.563E-04 7.061E-13 7.061E-13 3.998E-05 1.221E-05 8.020E-06 7.061E-13 6.540E-05 6.850E-05 7.061E-13 7.997E-05 4.742E-06
+                 7.180E-08 6.437E-07 1.974E-07 5.453E-07
+   6    6.000000 7.583E-05 1.369E-04 6.254E-13 6.254E-13 3.516E-05 1.067E-05 7.051E-06 6.254E-13 6.522E-05 6.663E-05 6.254E-13 6.951E-05 4.743E-06
+                 5.742E-08 5.148E-07 1.558E-07 4.248E-07
+   7    7.000000 6.502E-05 1.184E-04 5.481E-13 5.481E-13 3.054E-05 9.204E-06 6.125E-06 5.481E-13 6.508E-05 6.400E-05 5.481E-13 5.951E-05 4.744E-06
+                 4.503E-08 4.037E-07 1.203E-07 3.232E-07
+   8    8.000000 5.532E-05 1.018E-04 4.789E-13 4.789E-13 2.641E-05 7.889E-06 5.294E-06 4.789E-13 6.499E-05 6.089E-05 4.789E-13 5.057E-05 4.745E-06
+                 3.506E-08 3.144E-07 9.210E-08 2.435E-07
+   9    9.000000 4.665E-05 8.689E-05 4.169E-13 4.169E-13 2.271E-05 6.711E-06 4.550E-06 4.169E-13 6.493E-05 5.780E-05 4.169E-13 4.257E-05 4.746E-06
+                 2.708E-08 2.428E-07 6.976E-08 1.810E-07
+  10   10.000000 3.892E-05 7.363E-05 3.616E-13 3.616E-13 1.941E-05 5.661E-06 3.885E-06 3.616E-13 6.488E-05 5.514E-05 3.616E-13 3.543E-05 4.747E-06
+                 2.071E-08 1.857E-07 5.222E-08 1.327E-07
+  11   11.000000 3.205E-05 6.183E-05 3.123E-13 3.123E-13 1.647E-05 4.728E-06 3.294E-06 3.123E-13 6.484E-05 5.286E-05 3.123E-13 2.907E-05 4.748E-06
+                 1.567E-08 1.405E-07 3.864E-08 9.619E-08
+  12   12.000000 2.596E-05 5.137E-05 2.686E-13 2.686E-13 1.387E-05 3.901E-06 2.770E-06 2.686E-13 6.481E-05 5.092E-05 2.686E-13 2.343E-05 4.748E-06
+                 1.170E-08 1.049E-07 2.820E-08 6.871E-08
+  13   13.000000 2.066E-05 4.220E-05 2.300E-13 2.300E-13 1.158E-05 3.177E-06 2.308E-06 2.300E-13 6.469E-05 4.901E-05 2.300E-13 1.852E-05 4.746E-06
+                 8.593E-09 7.704E-08 2.020E-08 4.812E-08
+  14   14.000000 1.619E-05 3.435E-05 1.964E-13 1.964E-13 9.611E-06 2.560E-06 1.911E-06 1.964E-13 6.434E-05 4.692E-05 1.964E-13 1.439E-05 4.726E-06
+                 6.249E-09 5.602E-08 1.428E-08 3.314E-08
+  15   15.000000 1.250E-05 2.776E-05 1.678E-13 1.678E-13 7.949E-06 2.043E-06 1.577E-06 1.678E-13 6.384E-05 4.477E-05 1.678E-13 1.098E-05 4.696E-06
+                 4.545E-09 4.075E-08 1.006E-08 2.268E-08
+  16   16.000000 9.449E-06 2.223E-05 1.434E-13 1.434E-13 6.547E-06 1.612E-06 1.295E-06 1.434E-13 6.324E-05 4.262E-05 1.434E-13 8.170E-06 4.661E-06
+                 3.309E-09 2.966E-08 7.058E-09 1.541E-08
+  17   17.000000 6.995E-06 1.764E-05 1.226E-13 1.226E-13 5.371E-06 1.257E-06 1.058E-06 1.226E-13 6.208E-05 4.020E-05 1.226E-13 5.930E-06 4.573E-06
+                 2.406E-09 2.157E-08 4.919E-09 1.034E-08
+  18   18.000000 5.091E-06 1.391E-05 1.048E-13 1.048E-13 4.395E-06 9.719E-07 8.621E-07 1.048E-13 5.971E-05 3.727E-05 1.048E-13 4.217E-06 4.363E-06
+                 1.748E-09 1.567E-08 3.399E-09 6.826E-09
+  19   19.000000 3.633E-06 1.089E-05 8.967E-14 8.967E-14 3.589E-06 7.437E-07 7.003E-07 8.967E-14 5.658E-05 3.407E-05 8.967E-14 2.930E-06 4.076E-06
+                 1.272E-09 1.140E-08 2.329E-09 4.422E-09
+  20   20.000000 2.529E-06 8.452E-06 7.679E-14 7.679E-14 2.922E-06 5.620E-07 5.667E-07 7.679E-14 5.297E-05 3.072E-05 7.679E-14 1.978E-06 3.739E-06
+                 9.269E-10 8.311E-09 1.583E-09 2.809E-09
+  21   21.000000 1.712E-06 6.502E-06 6.582E-14 6.582E-14 2.374E-06 4.193E-07 4.571E-07 6.582E-14 4.876E-05 2.725E-05 6.582E-14 1.290E-06 3.354E-06
+                 6.766E-10 6.066E-09 1.069E-09 1.753E-09
+  22   22.000000 1.124E-06 4.962E-06 5.647E-14 5.647E-14 1.926E-06 3.091E-07 3.679E-07 5.647E-14 4.386E-05 2.367E-05 5.647E-14 8.072E-07 2.916E-06
+                 4.948E-10 4.436E-09 7.208E-10 1.084E-09
+  23   23.000000 7.140E-07 3.751E-06 4.848E-14 4.848E-14 1.558E-06 2.248E-07 2.953E-07 4.848E-14 3.854E-05 2.008E-05 4.848E-14 4.837E-07 2.449E-06
+                 3.621E-10 3.247E-09 4.872E-10 6.730E-10
+  24   24.000000 4.433E-07 2.805E-06 4.166E-14 4.166E-14 1.258E-06 1.611E-07 2.363E-07 4.166E-14 3.304E-05 1.655E-05 4.166E-14 2.835E-07 1.971E-06
+                 2.654E-10 2.380E-09 3.324E-10 4.250E-10
+  25   25.000000 2.649E-07 2.074E-06 3.584E-14 3.584E-14 1.014E-06 1.136E-07 1.886E-07 3.584E-14 2.766E-05 1.325E-05 3.584E-14 1.589E-07 1.525E-06
+                 1.949E-10 1.747E-09 2.308E-10 2.783E-10
+  26   30.000000 1.283E-08 4.055E-07 1.715E-14 1.715E-14 3.412E-07 1.649E-08 6.005E-08 1.715E-14 8.151E-06 2.979E-06 1.715E-14 4.753E-09 2.735E-07
+                 4.261E-11 3.820E-10 3.988E-11 3.817E-11
+  27   35.000000 2.145E-10 6.435E-08 8.477E-15 8.477E-15 1.176E-07 1.715E-09 1.929E-08 8.477E-15 9.379E-07 2.514E-07 8.477E-15 3.019E-11 1.355E-08
+                 9.912E-12 8.887E-11 7.199E-12 5.390E-12
+  28   40.000000 1.424E-12 1.021E-08 4.336E-15 4.336E-15 4.513E-08 1.752E-10 6.790E-09 4.336E-15 3.079E-08 9.047E-09 4.336E-15 2.267E-14 1.290E-10
+                 2.483E-12 2.226E-11 1.348E-12 7.619E-13
+  29   45.000000 3.911E-14 2.030E-09 2.289E-15 2.289E-15 2.004E-08 2.603E-11 2.719E-09 2.289E-15 5.682E-10 4.059E-10 2.289E-15 1.744E-16 1.178E-12
+                 6.758E-13 6.059E-12 2.622E-13 1.053E-13
+  30   50.000000 1.560E-15 4.854E-10 1.235E-15 1.235E-15 9.876E-09 4.860E-12 1.195E-09 1.235E-15 8.269E-12 1.911E-11 1.235E-15 2.079E-18 1.011E-14
+                 1.988E-13 1.782E-12 5.862E-14 1.742E-14
+  31   55.000000 7.890E-17 1.266E-10 6.656E-16 6.656E-16 5.048E-09 1.012E-12 5.386E-10 6.656E-16 1.037E-13 8.994E-13 6.656E-16 3.255E-20 7.408E-17
+                 6.021E-14 5.398E-13 1.589E-14 4.196E-15
+  32   60.000000 3.468E-18 3.126E-11 3.502E-16 3.502E-16 2.547E-09 1.962E-13 2.355E-10 3.502E-16 1.181E-15 5.605E-14 3.502E-16 3.237E-22 3.091E-19
+                 1.768E-14 1.585E-13 4.572E-15 1.182E-15
+  33   70.000000 9.719E-21 1.484E-12 8.477E-17 8.477E-17 5.580E-10 5.668E-15 3.725E-11 8.477E-17 1.083E-18 8.376E-16 8.477E-17 1.381E-25 1.242E-22
+                 1.238E-15 1.110E-14 3.198E-16 8.263E-17
+  34   80.000000 7.972E-24 3.377E-14 1.504E-17 1.504E-17 7.490E-11 6.889E-17 3.172E-12 1.504E-17 8.538E-23 1.686E-18 1.504E-17 9.073E-30 1.272E-26
+                 4.797E-17 4.301E-16 1.206E-17 3.036E-18
+  35  100.000000 0.000E+00 0.000E+00 0.000E+00 0.000E+00 0.000E+00 0.000E+00 0.000E+00 0.000E+00 0.000E+00 0.000E+00 0.000E+00 0.000E+00 0.000E+00
+                 0.000E+00 0.000E+00 0.000E+00 0.000E+00
+
+Comment from routine FINDMN:  Tangent path with H1ALT =     2.30000 km and OBSZEN = 180.00000 deg intersects the Earth.
+                              H2ALT has been reset from   100.00000 km to     0.35000 km, and LENN reset from 1 to 0.
+
+
+SUMMARY OF LINE-OF-SIGHT No.  1 GEOMETRY CALCULATION
+
+          H1ALT   =    2.30000 KM
+          H2ALT   =    0.35000 KM
+          OBSZEN  =  180.00000 DEG
+          HRANGE  =    1.95000 KM
+          ECA     =    0.00000 DEG
+          BCKZEN  =    0.00000 DEG
+          HMIN    =    0.35000 KM
+          BENDING =    0.00000 DEG
+          CKRANG  =    0.00000 KM
+          LENN    =          0
+
+
+   TOTAL COLUMN ABSORBER AMOUNTS FOR LINE-OF-SIGHT PATH No.  1:
+
+               HNO3       O3 UV      CNTMSLF1    CNTMSLF2    CNTMFRN     N2 CONT     MOL SCAT     TOTAL AER
+             (ATM CM)    (ATM CM)   (MOL CM-2)  (MOL CM-2)  (MOL CM-2)  (ATM^2 KM)  (  550 NM EXTINCTION   )
+            9.8796E-06  4.9589E-03  1.5190E+21  3.0170E+20  7.3742E+22  1.1866E+00  0.01921957    0.04431222
+
+
+               AER 1        AER 2       AER 3       AER 4      CIRRUS     WAT DROP    ICE PART   MEAN AER RH
+           (                     550 NM EXTINCTION                   )   (KM GM/M3)  (KM GM/M3)   (PERCENT)
+             0.04429367  0.00001855  0.00000000  0.00000000   0.000000    0.000000    0.000000     64.7199
+
+               MOL SCAT     TOT AER       AER 1       AER 2       AER 3       AER 4       CIRRUS
+             (                              614.53 NM EXTINCTION                                )
+             0.01223164   0.03871224   0.03869632  0.00001592  0.00000000  0.00000000  0.00000000
+
+                H2O         O3          CO2         CO          CH4         N2O
+            (                               ATM CM                               )
+            3.1502E+03  4.9589E-03  7.1362E+01  2.2751E-02  2.6959E-01  5.0746E-02
+
+                O2          NH3         NO          NO2         SO2
+            (                         ATM CM                         )
+            3.3144E+04  7.6548E-05  4.7575E-05  3.6474E-06  4.1320E-05
+
+                 F11         F12       CCl3F         CF4         F22        F113        F114
+            (                                     ATM CM                                     )
+            2.2202E-05  3.8060E-05  1.5858E-13  1.5858E-13  9.5047E-06  3.0131E-06  1.9030E-06
+
+                R115      ClONO2        HNO4      CHCl2F        CCl4        N2O5
+            (                               ATM CM                               )
+            1.5858E-13  7.8303E-07  3.7784E-07  1.5858E-13  2.0616E-05  1.6928E-10
+
+               H2-H2       H2-HE      H2-CH4     CH4-CH4
+            (                  ATM^2 CM                  )
+            4.3525E-08  3.9023E-07  1.2757E-07  3.7392E-07
+
+Line-of-Sight No.    1 location and direction:
+       34.13925   Latitude at H1ALT [Deg North of Equator]
+      118.12752   Longitude at H1ALT [Deg West of Greenwich]
+      -90.00000   True Azimuth at H1ALT [Deg East of North]
+
+
+ SINGLE SCATTER SOLAR PATH GEOMETRY TABLE FOR LINE-OF-SIGHT PATH No.  1
+ ----------------------------------------------------------------------
+ SCT       SCATTER     SUBTENDED         SOLAR          PATH      RELATIVE       SCATTER
+ PNT      ALTITUDE         ANGLE        ZENITH        ZENITH       AZIMUTH         ANGLE
+              [KM]         [DEG]         [DEG]         [DEG]         [DEG]         [DEG]
+   1    2.30000000    0.00000000   51.99625505  180.00000000 -106.53274424  128.00373840
+   2    2.23333333    0.00000000   51.99615062  180.00000000 -106.53274424  128.00384521
+   3    1.29166667    0.00000000   51.99457966  180.00000000 -106.53274424  128.00541687
+   4    0.35000000    0.00000000   51.99286379  180.00000000 -106.53274424  128.00712585
+
+
+SOLAR ILLUMINATION PATH COLUMN DENSITIES TO LEVELS ALONG LINE-OF-SIGHT PATH NO.    1
+
+ISEG     END_ALT    H2O       O3        CO2       CO        CH4       N2O       O2        NH3       NO        NO2       SO2
+          (KM)   (                                                       ATM CM                                              )
+
+   0    2.300000 4.447E+03 4.769E-01 4.469E+02 9.771E-02 1.532E+00 2.862E-01 2.075E+05 1.277E-04 4.296E-04 3.453E-04 9.344E-05
+   1    2.233333 4.577E+03 4.772E-01 4.505E+02 9.882E-02 1.545E+00 2.888E-01 2.092E+05 1.312E-04 4.320E-04 3.455E-04 9.523E-05
+   2    1.291667 6.740E+03 4.809E-01 5.038E+02 1.156E-01 1.747E+00 3.267E-01 2.340E+05 1.870E-04 4.675E-04 3.481E-04 1.243E-04
+   3    0.350000 9.560E+03 4.847E-01 5.625E+02 1.346E-01 1.969E+00 3.685E-01 2.613E+05 2.519E-04 5.066E-04 3.510E-04 1.605E-04
+
+
+SOLAR ILLUMINATION PATH COLUMN DENSITIES TO LEVELS ALONG LINE-OF-SIGHT PATH NO.    1
+
+CROSS-SECTION (X) SPECIES
+-------------------------
+ISEG     END_ALT       F11       F12     CCl3F       CF4       F22      F113      F114      R115    ClONO2      HNO4    CHCl2F      CCl4      N2O5
+                     H2-H2     H2-HE    H2-CH4   CH4-CH4
+          (KM)   (                                                 ATM CM [ATM^2 CM for DIMERS]                                                  )
+   0    2.300000 1.273E-04 2.252E-04 9.930E-13 9.930E-13 5.715E-05 1.766E-05 1.146E-05 9.930E-13 6.637E-05 7.074E-05 9.930E-13 1.173E-04 4.740E-06
+                 1.342E-07 1.203E-06 3.800E-07 1.080E-06
+   1    2.233333 1.284E-04 2.271E-04 1.001E-12 1.001E-12 5.763E-05 1.781E-05 1.156E-05 1.001E-12 6.640E-05 7.078E-05 1.001E-12 1.183E-04 4.740E-06
+                 1.362E-07 1.221E-06 3.858E-07 1.097E-06
+   2    1.291667 1.450E-04 2.556E-04 1.120E-12 1.120E-12 6.473E-05 2.006E-05 1.298E-05 1.120E-12 6.694E-05 7.115E-05 1.120E-12 1.337E-04 4.739E-06
+                 1.673E-07 1.500E-06 4.769E-07 1.364E-06
+   3    0.350000 1.633E-04 2.869E-04 1.250E-12 1.250E-12 7.255E-05 2.254E-05 1.455E-05 1.250E-12 6.761E-05 7.132E-05 1.250E-12 1.507E-04 4.738E-06
+                 2.048E-07 1.836E-06 5.870E-07 1.686E-06
+
+ Uniform ground surface (NSURF=1)
+
+ The IMAGED PIXEL No.   1 is modeled as Lambertian with the surface name
+    20
+
+Using surface:  20,    constant, 0%
+From file:      /shared/MODTRAN6/MODTRAN6.0.0/DATA/spec_alb.dat
+
+ SUN ELLIPTIC ORBIT SOLAR IRRADIANCE FACTOR FOR DAY 312:   1.01827
+
+550 nm SINGLE SCATTERING ALBEDO and ASYMMETRY FACTOR of the four aerosol models
+[NOMINALLY: (1) Boundary Layer, (2) Tropospheric, (3) Stratospheric, and (4) Volcanic]
+     AER 1:      0.945322      0.661175
+     AER 2:      0.963462      0.650960
+     AER 3:      1.000000      0.684511
+     AER 4:      0.994932      0.690804
+
+Warning from routine CHKSPC:  Although the reciprocal line spacing parameter (the
+                              number of lines per spectral bin) was increased by a
+                              factor of 8, the combined species segment absorptivity
+                              is still 0.00042 less than the band model value.
+                                 0.93355 Transmittance from combined species band model parameters
+                                 0.93313 Product of single molecule band model transmittances
+
+Comment from routine KNTRP:  The Lorentz half-width = 0.00000081 cm-1 is less than the table minimum value of 0.00000100 cm-1.
+                             The K-distribution interpolation will be based on the table minimum value.
+                             ***  THIS WARNING WILL NOT BE REPEATED  ***
+
+Warning from routine CHKSPC:  Although the reciprocal line spacing parameter (the
+                              number of lines per spectral bin) was increased by a
+                              factor of 8, the combined species segment absorptivity
+                              is still 0.00080 less than the band model value.
+                                 0.95795 Transmittance from combined species band model parameters
+                                 0.95714 Product of single molecule band model transmittances
+
+Warning from routine CHKSPC:  Although the reciprocal line spacing parameter (the
+                              number of lines per spectral bin) was increased by a
+                              factor of 8, the combined species segment absorptivity
+                              is still 0.00090 less than the band model value.
+                                 0.97059 Transmittance from combined species band model parameters
+                                 0.96970 Product of single molecule band model transmittances
+
+Warning from routine CHKSPC:  Although the reciprocal line spacing parameter (the
+                              number of lines per spectral bin) was increased by a
+                              factor of 8, the combined species segment absorptivity
+                              is still 0.00128 less than the band model value.
+                                 0.97877 Transmittance from combined species band model parameters
+                                 0.97749 Product of single molecule band model transmittances
+
+Warning from routine CHKSPC:  Although the reciprocal line spacing parameter (the
+                              number of lines per spectral bin) was increased by a
+                              factor of 8, the combined species segment absorptivity
+                              is still 0.00129 less than the band model value.
+                                 0.98195 Transmittance from combined species band model parameters
+                                 0.98065 Product of single molecule band model transmittances
+
+Warning from routine CHKSPC:  Although the reciprocal line spacing parameter (the
+                              number of lines per spectral bin) was increased by a
+                              factor of 8, the combined species segment absorptivity
+                              is still 0.00153 less than the band model value.
+                                 0.98088 Transmittance from combined species band model parameters
+                                 0.97936 Product of single molecule band model transmittances
+
+Warning from routine CHKSPC:  Although the reciprocal line spacing parameter (the
+                              number of lines per spectral bin) was increased by a
+                              factor of 8, the combined species segment absorptivity
+                              is still 0.00165 less than the band model value.
+                                 0.98510 Transmittance from combined species band model parameters
+                                 0.98345 Product of single molecule band model transmittances

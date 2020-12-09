@@ -22,6 +22,7 @@ from isofit.configs.base_config import BaseConfigSection
 from isofit.configs.sections.statevector_config import StateVectorConfig
 import os
 from collections import OrderedDict
+import logging
 
 
 class RadiativeTransferEngineConfig(BaseConfigSection):
@@ -79,6 +80,24 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         self.aerosol_model_file = None
         """str: Aerosol model file, currently only implemented for MODTRAN."""
 
+        self._multipart_transmittance_type = bool
+        self.multipart_transmittance = False
+        """str: Use True to specify triple-run diffuse & direct transmittance 
+           estimation.  Only implemented for MODTRAN."""
+
+        # MODTRAN simulator
+        self._emulator_file_type = str
+        self.emulator_file = None
+        """str: Path to emulator model file"""
+
+        self._emulator_aux_file_type = str
+        self.emulator_aux_file = None
+        """str: path to emulator auxiliary data - expected npz format"""
+
+        self._interpolator_base_path_type = str
+        self.interpolator_base_path = None
+        """str: path to emulator interpolator base - will dump multiple pkl extensions to this location"""
+
         # 6S parameters - not the corcommemnd
         # TODO: these should come from a template file, as in modtran
         self._day_type = int
@@ -132,21 +151,41 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
 
         if self.statevector_names is not None:
             self.statevector_names.sort()
+        
+        if self.interpolator_base_path is None and self.emulator_file is not None:
+            self.interpolator_base_path = self.emulator_file + '_interpolator'
+            logging.info('No interpolator base path set, and emulator used, so auto-setting interpolator path at: {}'.format(self.interpolator_base_path))
 
 
     def _check_config_validity(self) -> List[str]:
         errors = list()
 
-        valid_rt_engines = ['modtran', 'libradtran', '6s']
+        # Check that all input files exist
+        for key in self._get_nontype_attributes():
+            value = getattr(self, key)
+            if value is not None and key[-5:] == '_file' and key != 'emulator_file':
+                if os.path.isfile(value) is False:
+                    errors.append('Config value radiative_transfer->{}: {} not found'.format(key, value))
+
+        valid_rt_engines = ['modtran', 'libradtran', '6s', 'simulated_modtran']
         if self.engine_name not in valid_rt_engines:
             errors.append('radiative_transfer->raditive_transfer_model: {} not in one of the available models: {}'.
                           format(self.engine_name, valid_rt_engines))
+
+        if self.multipart_trasmittance and self.engine_name != 'modtran':
+            errors.append('Multipart transmittance is supported for MODTRAN only')
 
         if self.earth_sun_distance_file is None and self.engine_name == '6s':
             errors.append('6s requires earth_sun_distance_file to be specified')
 
         if self.irradiance_file is None and self.engine_name == '6s':
             errors.append('6s requires irradiance_file to be specified')
+
+        if self.engine_name == 'simulated_modtran' and self.emulator_file is None:
+            errors.append('The Modtran Simulator requires an emulator_file to be specified.')
+
+        if self.engine_name == 'simulated_modtran' and self.emulator_aux_file is None:
+            errors.append('The Modtran Simulator requires an emulator_aux_file to be specified.')
 
         files = [self.earth_sun_distance_file, self.irradiance_file,
                  self.obs_file, self.aerosol_model_file, self.aerosol_template_file]
@@ -221,5 +260,8 @@ class RadiativeTransferConfig(BaseConfigSection):
         for key, item in self.lut_grid.items():
             if len(item) < 2:
                 errors.append('lut_grid item {} has less than the required 2 elements'.format(key))
+        
+        for rte in self.radiative_transfer_engines:
+            errors.extend(rte.check_config_validity())
 
         return errors

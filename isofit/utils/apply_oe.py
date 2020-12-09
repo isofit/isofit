@@ -105,12 +105,14 @@ def main():
     parser.add_argument('--channelized_uncertainty_path', type=str)
     parser.add_argument('--model_discrepancy_path', type=str)
     parser.add_argument('--lut_config_file', type=str)
+    parser.add_argument('--multiple_restarts', action='store_true')
     parser.add_argument('--logging_level', type=str, default="INFO")
     parser.add_argument('--log_file', type=str, default=None)
     parser.add_argument('--n_cores', type=int, default=1)
     parser.add_argument('--presolve', choices=[0,1], type=int, default=0)
     parser.add_argument('--empirical_line', choices=[0,1], type=int, default=0)
     parser.add_argument('--ray_temp_dir', type=str, default='/tmp/ray')
+    parser.add_argument('--emulator_base', type=str, default=None)
 
     args = parser.parse_args()
 
@@ -125,6 +127,11 @@ def main():
         logging.basicConfig(format='%(message)s', level=args.logging_level, filename=args.log_file)
 
     lut_params = LUTConfig(args.lut_config_file)
+    if args.emulator_base is not None:
+        lut_params.aot_550_range = lut_params.aerosol_2_range
+        lut_params.aot_550_spacing = lut_params.aerosol_2_spacing
+        lut_params.aot_550_spacing_min = lut_params.aerosol_2_spacing_min
+        lut_params.aerosol_2_spacing = 0
 
     paths = Pathnames(args)
     paths.make_directories()
@@ -181,13 +188,17 @@ def main():
                               fwhm[:, np.newaxis]], axis=1)
     np.savetxt(paths.wavelength_path, wl_data, delimiter=' ')
 
-    mean_latitude, mean_longitude, mean_elevation_km, elevation_lut_grid = get_metadata_from_loc(paths.loc_working_path, lut_params)
+    mean_latitude, mean_longitude, mean_elevation_km, elevation_lut_grid = \
+        get_metadata_from_loc(paths.loc_working_path, lut_params)
 
     # Need a 180 - here, as this is already in MODTRAN convention
     mean_altitude_km = mean_elevation_km + np.cos(np.deg2rad(180 - mean_to_sensor_zenith)) * mean_path_km
 
-    logging.info('Path (km): %f, 180 - To-sensor Zenith (deg): %f, To-sensor Azimuth (deg) : %f, Altitude: %6.2f km' %
-                 (mean_path_km, mean_to_sensor_zenith, mean_to_sensor_azimuth, mean_altitude_km))
+    logging.info('Observation means:')
+    logging.info(f'Path (km): {mean_path_km}')
+    logging.info(f'To-sensor Zenith (deg): {mean_to_sensor_zenith}')
+    logging.info(f'To-sensor Azimuth (deg): {mean_to_sensor_azimuth}')
+    logging.info(f'Altitude (km): {mean_altitude_km}')
 
     # We will use the model discrepancy with covariance OR uncorrelated 
     # Calibration error, but not both.
@@ -201,7 +212,8 @@ def main():
         if not exists(paths.lbl_working_path) or not exists(paths.radiance_working_path):
             logging.info('Segmenting...')
             segment(spectra=(paths.radiance_working_path, paths.lbl_working_path),
-                    flag=-9999, npca=5, segsize=SEGMENTATION_SIZE, nchunk=CHUNKSIZE)
+                    nodata_value=-9999, npca=5, segsize=SEGMENTATION_SIZE, nchunk=CHUNKSIZE,
+                    n_cores=args.n_cores)
 
         # Extract input data per segment
         for inp, outp in [(paths.radiance_working_path, paths.rdn_subs_path),
@@ -210,8 +222,7 @@ def main():
             if not exists(outp):
                 logging.info('Extracting ' + outp)
                 extractions(inputfile=inp, labels=paths.lbl_working_path,
-                            output=outp, chunksize=CHUNKSIZE, flag=-9999)
-
+                            output=outp, chunksize=CHUNKSIZE, flag=-9999, n_cores=args.n_cores)
 
     if args.presolve == 1:
 
@@ -222,21 +233,25 @@ def main():
                                gmtime=gmtime, elevation_km=mean_elevation_km,
                                output_file=paths.h2o_template_path, ihaze_type='AER_NONE')
 
-        max_water = calc_modtran_max_water(paths)
+        if args.emulator_base is None:
+            max_water = calc_modtran_max_water(paths)
+        else:
+            max_water = 6
 
         # run H2O grid as necessary
         if not exists(paths.h2o_subs_path + '.hdr') or not exists(paths.h2o_subs_path):
             # Write the presolve connfiguration file
             h2o_grid = np.linspace(0.01, max_water - 0.01, 10).round(2)
-            logging.info('Pre-solve H2O grid: {}'.format(h2o_grid))
+            logging.info(f'Pre-solve H2O grid: {h2o_grid}')
             logging.info('Writing H2O pre-solve configuration file.')
             build_presolve_config(paths, h2o_grid, args.n_cores, args.empirical_line == 1, args.surface_category,
-                uncorrelated_radiometric_uncertainty)
+                args.emulator_base, uncorrelated_radiometric_uncertainty)
 
             # Run modtran retrieval
             logging.info('Run ISOFIT initial guess')
             retrieval_h2o = isofit.Isofit(paths.h2o_config_path, level='INFO', logfile=args.log_file)
             retrieval_h2o.run()
+            del retrieval_h2o
 
             # clean up unneeded storage
             for to_rm in ['*r_k', '*t_k', '*tp7', '*wrn', '*psc', '*plt', '*7sc', '*acd']:
@@ -252,30 +267,24 @@ def main():
         p05 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 5)
         p95 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 95)
         margin = (p95-p05) * 0.25
-        h2o_lo = max(lut_params.h2o_min, p05 - margin)
-        h2o_hi = min(max_water, max(lut_params.h2o_min, p95 + margin))
-        h2o_lut_grid = np.linspace(h2o_lo, h2o_hi,
-                lut_params.num_h2o_lut_elements)
 
-        if (np.abs(h2o_lut_grid[-1] - h2o_lut_grid[0]) < 0.03):
-            new_h2o_lut_grid = np.linspace(h2o_lut_grid[0] - 0.1* np.ceil(lut_params.num_h2o_lut_elements/2.), 
-                                           h2o_lut_grid[0] + 0.1*np.ceil(lut_params.num_h2o_lut_elements/2.), 
-                                           lut_params.num_h2o_lut_elements)
-            logging.warning('Warning: h2o lut grid from presolve detected as {}-{}, which is very narrow.  Expanding to {}-{}.  Advised to check presolve solutions thoroughly.'.format(h2o_lut_grid[0],h2o_lut_grid[-1], new_h2o_lut_grid[0], new_h2o_lut_grid[-1]))
-            h2o_lut_grid = new_h2o_lut_grid
-    else:
-        h2o_lut_grid = np.linspace(lut_params.default_h2o_lut_range[0], lut_params.default_h2o_lut_range[1],
-                                   lut_params.num_h2o_lut_elements)
+        lut_params.h2o_range[0] = max(lut_params.h2o_min, p05 - margin)
+        lut_params.h2o_range[1] = min(max_water, max(lut_params.h2o_min, p95 + margin))
 
+    h2o_lut_grid = lut_params.get_grid(lut_params.h2o_range[0], lut_params.h2o_range[1], lut_params.h2o_spacing, lut_params.h2o_spacing_min)
 
-    logging.info('Full (non-aerosol) LUTs:\nElevation: {}\nTo-sensor azimuth: {}\nTo-sensor zenith: {}\nh2o-vis: {}:'.format(elevation_lut_grid, to_sensor_azimuth_lut_grid, to_sensor_zenith_lut_grid, h2o_lut_grid))
+    logging.info('Full (non-aerosol) LUTs:')
+    logging.info(f'Elevation: {elevation_lut_grid}')
+    logging.info(f'To-sensor azimuth: {to_sensor_azimuth_lut_grid}')
+    logging.info(f'To-sensor zenith: {to_sensor_zenith_lut_grid}')
+    logging.info(f'H2O Vapor: {h2o_lut_grid}')
 
     logging.info(paths.state_subs_path)
     if not exists(paths.state_subs_path) or \
             not exists(paths.uncert_subs_path) or \
             not exists(paths.rfl_subs_path):
 
-        write_modtran_template(atmosphere_type=atmosphere_type, fid=paths.fid, altitude_km=mean_altitude_km,
+        write_modtran_template(atmosphere_type=args.atmosphere_type, fid=paths.fid, altitude_km=mean_altitude_km,
                                dayofyear=dayofyear, latitude=mean_latitude, longitude=mean_longitude,
                                to_sensor_azimuth=mean_to_sensor_azimuth, to_sensor_zenith=mean_to_sensor_zenith,
                                gmtime=gmtime, elevation_km=mean_elevation_km, output_file=paths.modtran_template_path)
@@ -284,12 +293,13 @@ def main():
         build_main_config(paths, lut_params, h2o_lut_grid, elevation_lut_grid, to_sensor_azimuth_lut_grid,
                           to_sensor_zenith_lut_grid, mean_latitude, mean_longitude, dt, 
                           args.empirical_line == 1, args.n_cores, args.surface_category,
-                          uncorrelated_radiometric_uncertainty)
+                          args.emulator_base, uncorrelated_radiometric_uncertainty, args.multiple_restarts)
 
         # Run modtran retrieval
         logging.info('Running ISOFIT with full LUT')
         retrieval_full = isofit.Isofit(paths.modtran_config_path, level='INFO', logfile=args.log_file)
         retrieval_full.run()
+        del retrieval_full
 
         # clean up unneeded storage
         for to_rm in ['*r_k', '*t_k', '*tp7', '*wrn', '*psc', '*plt', '*7sc', '*acd']:
@@ -373,9 +383,9 @@ class Pathnames():
             self.obs_working_path = abspath(join(self.input_data_directory, self.fid + '_obs'))
             self.loc_working_path = abspath(join(self.input_data_directory, self.fid + '_loc'))
         else:
-            self.radiance_working_path = self.input_radiance_file
-            self.obs_working_path = self.input_obs_file
-            self.loc_working_path = self.input_loc_file
+            self.radiance_working_path = abspath(self.input_radiance_file)
+            self.obs_working_path = abspath(self.input_obs_file)
+            self.loc_working_path = abspath(self.input_loc_file)
 
         if args.channelized_uncertainty_path:
             self.input_channelized_uncertainty_path = args.channelized_uncertainty_path
@@ -413,6 +423,8 @@ class Pathnames():
         else:
             self.modtran_path = os.getenv('MODTRAN_DIR')
 
+        self.sixs_path = os.getenv('SIXS_DIR')
+
         # isofit file should live at isofit/isofit/core/isofit.py
         self.isofit_path = os.path.dirname(os.path.dirname(os.path.dirname(isofit.__file__)))
 
@@ -424,6 +436,9 @@ class Pathnames():
             self.noise_path = None
             logging.info('no noise path found, proceeding without')
             #quit()
+
+        self.earth_sun_distance_path = abspath(join(self.isofit_path,'data','earth_sun_distance.txt'))
+        self.irradiance_file = abspath(join(self.isofit_path,'examples','20151026_SantaMonica','data','prism_optimized_irr.dat'))
 
         self.aerosol_tpl_path = join(self.isofit_path, 'data', 'aerosol_template.json')
         self.rdn_factors_path = args.rdn_factors_path
@@ -486,32 +501,163 @@ class LUTConfig:
             with open(lut_config_file, 'r') as f:
                 lut_config = json.load(f)
 
-        self.num_elev_lut_elements = 1
-        self.num_h2o_lut_elements = 3
-        self.num_to_sensor_azimuth_lut_elements = 1
-        self.num_to_sensor_zenith_lut_elements = 1
+        # For each element, set the look up table spacing (lut_spacing) as the
+        # anticipated spacing value, or 0 to use a single point (not LUT).
+        # Set the 'lut_spacing_min' as the minimum distance allowed - if separation
+        # does not meet this threshold based on the available data, on a single
+        # point will be used.
 
-        # Setting any of these to '1' will also remove that aerosol from the statevector
-        self.num_aerosol_1_lut_elements = 1
-        self.num_aerosol_2_lut_elements = 3
-        self.num_aerosol_3_lut_elements = 3
+        # Units of kilometers
+        self.elevation_spacing = 0.5
+        self.elevation_spacing_min = 0.2
 
-        self.aerosol_1_lut_range = [0.001, 0.5]
-        self.aerosol_2_lut_range = [0.001, 0.5]
-        self.aerosol_3_lut_range = [0.001, 0.5]
+        # Units of g / m2
+        self.h2o_spacing = 0.25
+        self.h2o_spacing_min = 0.03
 
+        # Special parameter to specify the minimum allowable water vapor value in g / m2
         self.h2o_min = 0.2
 
-        self.zenith_min_spacing = 2
+        # Set defaults, will override based on settings
+        # Units of g / m2
+        self.h2o_range = [0.05, 5]
 
-        self.default_h2o_lut_range = [0.05, 5]
+        # Units of degrees
+        self.to_sensor_azimuth_spacing = 0
+        self.to_sensor_azimuth_spacing_min = 0
 
+        # Units of degrees
+        self.to_sensor_zenith_spacing = 10
+        self.to_sensor_zenith_spacing_min = 2
+
+        # Units of AOD
+        self.aerosol_0_spacing = 0
+        self.aerosol_0_spacing_min = 0
+
+        # Units of AOD
+        self.aerosol_1_spacing = 0
+        self.aerosol_1_spacing_min = 0
+
+        # Units of AOD
+        self.aerosol_2_spacing = 0.25
+        self.aerosol_2_spacing_min = 0
+
+        # Units of AOD
+        self.aerosol_0_range = [0.001, 0.5]
+        self.aerosol_1_range = [0.001, 0.5]
+        self.aerosol_2_range = [0.001, 0.5]
+        self.aot_550_range = [0.001, 0.5]
+
+        self.aot_550_spacing = 0
+        self.aot_550_spacing_min = 0
 
         # overwrite anything that comes in from the config file
         if lut_config_file is not None:
             for key in lut_config:
                 if key in self.__dict__:
                     setattr(self, key, lut_config[key])
+
+    def get_grid(self, minval: float, maxval: float, spacing: float, min_spacing: float):
+        if spacing == 0:
+            logging.debug('Grid spacing set at 0, using no grid.')
+            return None
+        num_gridpoints = int(np.ceil((maxval-minval)/spacing)) + 1
+
+        grid = np.linspace(minval, maxval, num_gridpoints)
+
+        if min_spacing > 0.0001:
+            grid = np.round(grid, 4)
+        if np.abs(grid[1] - grid[0]) < min_spacing:
+            logging.debug(f'Grid spacing is {grid[1]-grid[0]}, which is less than {min_spacing}.  No grid used')
+            return None
+        else:
+            return grid
+
+    def get_angular_grid(self, angle_data_input: np.array, spacing: float, min_spacing: float, units : str = 'd'):
+        """ Find either angular data 'center points' (num_points = 1), or a lut set that spans
+        angle variation in a systematic fashion.
+
+        Args:
+            angle_data_input: set of angle data to use to find center points
+            spacing: the desired angular spacing between points, or mean if -1
+            min_spacing: the minimum angular spacing between points allowed (if less, no grid)
+            units: specifies if data are in degrees (default) or radians
+
+        :Returns:
+            angular data center point or lut set spanning space
+
+        """
+        if spacing == 0:
+            logging.debug('Grid spacing set at 0, using no grid.')
+            return None
+
+        # Convert everything to radians so we don't have to track throughout
+        if units == 'r':
+            angle_data = np.rad2deg(angle_data_input)
+        else:
+            angle_data = angle_data_input.copy()
+
+        spatial_data = np.hstack([np.cos(np.deg2rad(angle_data)).reshape(-1, 1),
+                                  np.sin(np.deg2rad(angle_data)).reshape(-1, 1)])
+
+        # find which quadrants have data
+        quadrants = np.zeros((2, 2))
+        if np.any(np.logical_and(spatial_data[:, 0] > 0, spatial_data[:, 1] > 0)):
+            quadrants[1, 0] = 1
+        if np.any(np.logical_and(spatial_data[:, 0] > 0, spatial_data[:, 1] < 0)):
+            quadrants[1, 1] += 1
+        if np.any(np.logical_and(spatial_data[:, 0] < 0, spatial_data[:, 1] > 0)):
+            quadrants[0, 0] += 1
+        if np.any(np.logical_and(spatial_data[:, 0] < 0, spatial_data[:, 1] < 0)):
+            quadrants[0, 1] += 1
+
+        # Handle the case where angles are < 180 degrees apart
+        if np.sum(quadrants) < 3 and spacing != -1:
+            if np.sum(quadrants[1, :]) == 2:
+                # If angles cross the 0-degree line:
+                angle_spread = self.get_grid(np.min(angle_data + 180), np.max(angle_data + 180), spacing, min_spacing)
+                if angle_spread is None:
+                    return None
+                else:
+                    return angle_spread - 180
+            else:
+                # Otherwise, just space things out:
+                return self.get_grid(np.min(angle_data), np.max(angle_data), spacing, min_spacing)
+        else:
+            if spacing >= 180:
+                logging.warning(f'Requested angle spacing is {spacing}, but obs angle divergence is > 180.  '
+                                'Tighter  spacing recommended')
+
+            # If we're greater than 180 degree spread, there's no universal answer. Try GMM.
+            if spacing == -1:
+                num_points = 1
+            else:
+                # This very well might overly space the grid, but we don't / can't know in general
+                num_points = 360 / spacing
+
+            # We initialize the GMM with a static seed for repeatability across runs
+            gmm = mixture.GaussianMixture(n_components=num_points, covariance_type='full',
+                                          random_state=1)
+            gmm.fit(spatial_data)
+            central_angles = np.degrees(np.arctan2(gmm.means_[:, 1], gmm.means_[:, 0]))
+            if num_points == 1:
+                return central_angles[0]
+
+            ca_quadrants = np.zeros((2, 2))
+            if np.any(np.logical_and(gmm.means_[:, 0] > 0, gmm.means_[:, 1] > 0)):
+                ca_quadrants[1, 0] = 1
+            elif np.any(np.logical_and(gmm.means_[:, 0] > 0, gmm.means_[:, 1] < 0)):
+                ca_quadrants[1, 1] += 1
+            elif np.any(np.logical_and(gmm.means_[:, 0] < 0, gmm.means_[:, 1] > 0)):
+                ca_quadrants[0, 0] += 1
+            elif np.any(np.logical_and(gmm.means_[:, 0] < 0, gmm.means_[:, 1] < 0)):
+                ca_quadrants[0, 1] += 1
+
+            if np.sum(ca_quadrants) < np.sum(quadrants):
+                logging.warning(f'GMM angles {central_angles} span {np.sum(ca_quadrants)} quadrants, '
+                                f'while data spans {np.sum(ca_quadrants)} quadrants')
+
+            return central_angles
 
 
 def load_climatology(config_path: str, latitude: float, longitude: float, acquisition_datetime: datetime,
@@ -537,10 +683,12 @@ def load_climatology(config_path: str, latitude: float, longitude: float, acquis
     aerosol_model_path = join(isofit_path, 'data', 'aerosol_model.txt')
     aerosol_state_vector = {}
     aerosol_lut_grid = {}
-    aerosol_lut_ranges = [lut_params.aerosol_1_lut_range, lut_params.aerosol_2_lut_range, lut_params.aerosol_2_lut_range]
-    num_aerosol_lut_elements = [lut_params.num_aerosol_1_lut_elements, lut_params.num_aerosol_2_lut_elements, lut_params.num_aerosol_3_lut_elements]
+    aerosol_lut_ranges = [lut_params.aerosol_0_range, lut_params.aerosol_1_range, lut_params.aerosol_2_range]
+    aerosol_lut_spacing = [lut_params.aerosol_0_spacing, lut_params.aerosol_1_spacing, lut_params.aerosol_2_spacing]
+    aerosol_lut_spacing_mins = [lut_params.aerosol_0_spacing_min, lut_params.aerosol_1_spacing_min, lut_params.aerosol_2_spacing_min]
     for _a, alr in enumerate(aerosol_lut_ranges):
-        if num_aerosol_lut_elements[_a] != 1:
+        aerosol_lut = lut_params.get_grid(alr[0], alr[1], aerosol_lut_spacing[_a], aerosol_lut_spacing_mins[_a])
+        if aerosol_lut is not None:
             aerosol_state_vector['AERFRAC_{}'.format(_a)] = {
                 "bounds": [float(alr[0]), float(alr[1])],
                 "scale": 1,
@@ -548,8 +696,19 @@ def load_climatology(config_path: str, latitude: float, longitude: float, acquis
                 "prior_sigma": 10.0,
                 "prior_mean": float((alr[1] - alr[0]) / 10. + alr[0])}
 
-            aerosol_lut = np.linspace(alr[0], alr[1], num_aerosol_lut_elements[_a])
-            aerosol_lut_grid['AERFRAC_{}'.format(_a)] = [float(q) for q in aerosol_lut]
+            aerosol_lut_grid['AERFRAC_{}'.format(_a)] = aerosol_lut.tolist()
+
+    aot_550_lut = lut_params.get_grid(lut_params.aot_550_range[0], lut_params.aot_550_range[1],
+                                      lut_params.aot_550_spacing, lut_params.aot_550_spacing_min)
+    if aot_550_lut is not None:
+        aerosol_lut_grid['AOT550'] = aot_550_lut.tolist()
+        alr = [aerosol_lut_grid['AOT550'][0], aerosol_lut_grid['AOT550'][-1]]
+        aerosol_state_vector['AOT550'] = {
+                        "bounds": [float(alr[0]), float(alr[1])],
+                        "scale": 1,
+                        "init": float((alr[1] - alr[0]) / 10. + alr[0]),
+                        "prior_sigma": 10.0,
+                        "prior_mean": float((alr[1] - alr[0]) / 10. + alr[0])}
 
     logging.info('Loading Climatology')
     # If a configuration path has been provided, use it to get relevant info
@@ -635,82 +794,6 @@ def calc_modtran_max_water(paths: Pathnames) -> float:
     return max_water
 
 
-def find_angular_seeds(angle_data_input: np.array, num_points: int, units: str = 'd') -> np.array:
-    """ Find either angular data 'center points' (num_points = 1), or a lut set that spans
-    angle variation in a systematic fashion.
-
-    Args:
-        angle_data_input: set of angle data to use to find center points
-        num_points: the number of points to find - if 1, this will return a single point (the 'centerpoint'), if > 1,
-                    this will return a numpy array spanning the specified number of poitns
-        units: specifies if data are in degrees (default) or radians
-
-    :Returns:
-        central_angle - angular data center point or lut set spanning space
-
-    """
-
-    # Convert everything to radians so we don't have to track throughout
-    if units == 'r':
-        angle_data = np.rad2deg(angle_data_input)
-    else:
-        angle_data = angle_data_input.copy()
-
-    spatial_data = np.hstack([np.cos(np.deg2rad(angle_data)).reshape(-1, 1),
-                              np.sin(np.deg2rad(angle_data)).reshape(-1, 1)])
-
-    # find which quadrants have data
-    quadrants = np.zeros((2,2))
-    if np.any(np.logical_and(spatial_data[:,0] > 0, spatial_data[:,1] > 0 )):
-        quadrants[1,0] = 1
-    if np.any(np.logical_and(spatial_data[:,0] > 0, spatial_data[:,1] < 0 )):
-        quadrants[1,1] += 1
-    if np.any(np.logical_and(spatial_data[:,0] < 0, spatial_data[:,1] > 0 )):
-        quadrants[0,0] += 1
-    if np.any(np.logical_and(spatial_data[:,0] < 0, spatial_data[:,1] < 0 )):
-        quadrants[0,1] += 1
-
-    # Handle the case where angles are < 180 degrees apart
-    if np.sum(quadrants) < 3 and num_points != 1:
-        if (np.sum(quadrants[1,:]) == 2):
-            # If angles cross the 0-degree line:
-            angle_spread = np.linspace(np.min(angle_data+180), np.max(angle_data+180), num_points) - 180
-            return angle_spread
-        else:
-            # Otherwise, just space things out:
-            return np.linspace(np.min(angle_data), np.max(angle_data), num_points)
-    else:
-        # If we're greater than 180 degree spread, there's no universal answer. Try GMM.
-
-        if num_points == 2:
-            logging.warning('2 angle interpolation selected when angle divergence > 180. '
-                            'At least 3 points are recommended')
-
-        # We initialize the GMM with a static seed for repeatability across runs
-        gmm = mixture.GaussianMixture(n_components=num_points, covariance_type='full',
-                random_state=1)
-        gmm.fit(spatial_data)
-        central_angles = np.degrees(np.arctan2(gmm.means_[:,1], gmm.means_[:,0]))
-        if (num_points == 1):
-            return central_angles[0]
-
-        ca_quadrants = np.zeros((2, 2))
-        if np.any(np.logical_and(gmm.means_[:, 0] > 0, gmm.means_[:, 1] > 0)):
-            ca_quadrants[1, 0] = 1
-        elif np.any(np.logical_and(gmm.means_[:, 0] > 0, gmm.means_[:, 1] < 0)):
-            ca_quadrants[1, 1] += 1
-        elif np.any(np.logical_and(gmm.means_[:, 0] < 0, gmm.means_[:, 1] > 0)):
-            ca_quadrants[0, 0] += 1
-        elif np.any(np.logical_and(gmm.means_[:, 0] < 0, gmm.means_[:, 1] < 0)):
-            ca_quadrants[0, 1] += 1
-
-        if np.sum(ca_quadrants) < np.sum(quadrants):
-            logging.warning('GMM angles {} span {} quadrants, while data spans {} quadrants'.format(central_angles,
-                            np.sum(ca_quadrants), np.sum(quadrants)))
-
-        return central_angles
-
-
 def get_metadata_from_obs(obs_file: str, lut_params: LUTConfig, trim_lines: int = 5,
                           max_flight_duration_h: int = 8, nodata_value: float = -9999) -> \
                           (List, bool, float, float, float, np.array, List, List):
@@ -760,7 +843,8 @@ def get_metadata_from_obs(obs_file: str, lut_params: LUTConfig, trim_lines: int 
         to_sensor_zenith[line,:] = obs_line[2, ...]
         time[line,:] = obs_line[9, ...]
 
-    if trim_lines != 0:
+    use_trim = trim_lines != 0 and valid.shape[0] > trim_lines*2
+    if use_trim:
         actual_valid = valid.copy()
         valid[:trim_lines,:] = False
         valid[-trim_lines:,:] = False
@@ -768,21 +852,17 @@ def get_metadata_from_obs(obs_file: str, lut_params: LUTConfig, trim_lines: int 
     mean_path_km = np.mean(path_km[valid])
     del path_km
 
-    mean_to_sensor_azimuth = find_angular_seeds(to_sensor_azimuth[valid], 1) % 360
-    mean_to_sensor_zenith = 180 - find_angular_seeds(to_sensor_zenith[valid], 1)
+    mean_to_sensor_azimuth = lut_params.get_angular_grid(to_sensor_azimuth[valid], -1, 0) % 360
+    mean_to_sensor_zenith = 180 - lut_params.get_angular_grid(to_sensor_zenith[valid], -1, 0)
 
     #geom_margin = EPS * 2.0
-    if lut_params.num_to_sensor_zenith_lut_elements == 1:
-        to_sensor_zenith_lut_grid = None
-    else:
-        to_sensor_zenith_lut_grid = np.sort(180 - find_angular_seeds(to_sensor_zenith[valid], lut_params.num_to_sensor_zenith_lut_elements))
-        if (to_sensor_zenith_lut_grid[1] - to_sensor_zenith_lut_grid[0] < lut_params.zenith_min_spacing):
-            to_sensor_zenith_lut_grid = None
+    to_sensor_zenith_lut_grid = lut_params.get_angular_grid(to_sensor_zenith[valid], lut_params.to_sensor_zenith_spacing, lut_params.to_sensor_zenith_spacing_min)
+    if to_sensor_zenith_lut_grid is not None:
+        to_sensor_zenith_lut_grid = np.sort(180 - to_sensor_zenith_lut_grid)
 
-    if lut_params.num_to_sensor_azimuth_lut_elements == 1:
-        to_sensor_azimuth_lut_grid = None
-    else:
-        to_sensor_azimuth_lut_grid = np.sort(np.array([x % 360 for x in find_angular_seeds(to_sensor_azimuth[valid], lut_params.num_to_sensor_azimuth_lut_elements)]))
+    to_sensor_azimuth_lut_grid = lut_params.get_angular_grid(to_sensor_azimuth[valid], lut_params.to_sensor_azimuth_spacing, lut_params.to_sensor_azimuth_spacing_min)
+    if to_sensor_azimuth_lut_grid is not None:
+        to_sensor_azimuth_lut_grid = np.sort(np.array([x % 360 for x in to_sensor_azimuth_lut_grid]))
 
     del to_sensor_azimuth
     del to_sensor_zenith
@@ -810,7 +890,7 @@ def get_metadata_from_obs(obs_file: str, lut_params: LUTConfig, trim_lines: int 
     h_m_s.append(np.floor((mean_time - h_m_s[-1]) * 60))
     h_m_s.append(np.floor((mean_time - h_m_s[-2] - h_m_s[-1] / 60.) * 3600))
 
-    if trim_lines != 0:
+    if use_trim:
         valid = actual_valid
 
     return h_m_s, increment_day, mean_path_km, mean_to_sensor_azimuth, mean_to_sensor_zenith, valid, \
@@ -844,33 +924,29 @@ def get_metadata_from_loc(loc_file: str, lut_params: LUTConfig, trim_lines: int 
         loc_data[:,line:line+1,:] = loc_dataset.ReadAsArray(0, line, loc_dataset.RasterXSize, 1)
 
     valid = np.logical_not(np.any(loc_data == nodata_value,axis=0))
-    if trim_lines != 0:
+    use_trim = trim_lines != 0 and valid.shape[0] > trim_lines*2
+    if use_trim:
         valid[:trim_lines, :] = False
         valid[-trim_lines:, :] = False
 
     # Grab zensor position and orientation information
-    mean_latitude = find_angular_seeds(loc_data[1,valid].flatten(),1)
-    mean_longitude = find_angular_seeds(-1 * loc_data[0,valid].flatten(),1)
+    mean_latitude = lut_params.get_angular_grid(loc_data[1,valid].flatten(), -1, 0)
+    mean_longitude = lut_params.get_angular_grid(-1 * loc_data[0,valid].flatten(), -1, 0)
 
     mean_elevation_km = np.mean(loc_data[2,valid]) / 1000.0
 
     # make elevation grid
-    if lut_params.num_elev_lut_elements == 1:
-        elevation_lut_grid = None
-    else:
-        min_elev = np.min(loc_data[2, valid])/1000.
-        max_elev = np.max(loc_data[2, valid])/1000.
-        elevation_lut_grid = np.linspace(max(min_elev, EPS),
-                                         max_elev,
-                                         lut_params.num_elev_lut_elements)
+    min_elev = np.min(loc_data[2, valid]) / 1000.
+    max_elev = np.max(loc_data[2, valid]) / 1000.
+    elevation_lut_grid = lut_params.get_grid(min_elev, max_elev, lut_params.elevation_spacing,
+                                             lut_params.elevation_spacing_min)
 
     return mean_latitude, mean_longitude, mean_elevation_km, elevation_lut_grid
 
 
-
 def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array, n_cores: int=-1,
-        use_emp_line=0, surface_category="multicomponent_surface",
-        uncorrelated_radiometric_uncertainty: float = 0.0):
+        use_emp_line:bool = False, surface_category="multicomponent_surface",
+        emulator_base: str = None, uncorrelated_radiometric_uncertainty: float = 0.0):
     """ Write an isofit config file for a presolve, with limited info.
 
     Args:
@@ -886,13 +962,18 @@ def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array, n_cores: int
     else: 
         spectra_per_inversion = 1 
 
+
+    if emulator_base is None:
+        engine_name = 'modtran'
+    else:
+        engine_name = 'simulated_modtran'
+
     radiative_transfer_config = {
             "radiative_transfer_engines": {
                 "vswir": {
-                    "engine_name": 'modtran',
+                    "engine_name": engine_name,
                     "lut_path": paths.lut_h2o_directory,
                     "template_file": paths.h2o_template_path,
-                    "engine_base_dir": paths.modtran_path,
                     "lut_names": ["H2OSTR"],
                     "statevector_names": ["H2OSTR"],
                 }
@@ -913,6 +994,17 @@ def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array, n_cores: int
             }
     }
 
+    if emulator_base is not None:
+        radiative_transfer_config['radiative_transfer_engines']['vswir']['emulator_file'] = abspath(emulator_base)
+        radiative_transfer_config['radiative_transfer_engines']['vswir']['emulator_aux_file'] = abspath(emulator_base + '_aux.npz')
+        radiative_transfer_config['radiative_transfer_engines']['vswir']['interpolator_base_path'] = abspath(os.path.join(paths.lut_h2o_directory,os.path.basename(emulator_base) + '_vi'))
+        radiative_transfer_config['radiative_transfer_engines']['vswir']['earth_sun_distance_file'] = paths.earth_sun_distance_path
+        radiative_transfer_config['radiative_transfer_engines']['vswir']['irradiance_file'] = paths.irradiance_file
+        radiative_transfer_config['radiative_transfer_engines']['vswir']["engine_base_dir"] = paths.sixs_path
+  
+    else:
+        radiative_transfer_config['radiative_transfer_engines']['vswir']["engine_base_dir"] = paths.modtran_path
+
     # make isofit configuration
     isofit_config_h2o = {'ISOFIT_base': paths.isofit_path,
                          'output': {'estimated_state_file': paths.h2o_subs_path},
@@ -928,7 +1020,8 @@ def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array, n_cores: int
                              'radiative_transfer': radiative_transfer_config},
                          "implementation": {
                             "ray_temp_dir": paths.ray_temp_dir,
-                            'inversion': {'windows': INVERSION_WINDOWS},
+                            'inversion': {
+                              'windows': INVERSION_WINDOWS},
                             "n_cores": n_cores}
                          }
 
@@ -948,7 +1041,7 @@ def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array, n_cores: int
     if paths.rdn_factors_path:
         isofit_config_h2o['input']['radiometry_correction_file'] = paths.rdn_factors_path
 
-    if use_emp_line == 1:
+    if use_emp_line:
         isofit_config_h2o['input']['measured_radiance_file'] = paths.rdn_subs_path
         isofit_config_h2o['input']['loc_file'] = paths.loc_subs_path
         isofit_config_h2o['input']['obs_file'] = paths.obs_subs_path
@@ -969,7 +1062,7 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
                       to_sensor_zenith_lut_grid: np.array = None, mean_latitude: float = None,
                       mean_longitude: float = None, dt: datetime = None, use_emp_line: bool = True, 
                       n_cores: int = -1, surface_category='multicomponent_surface',
-                      uncorrelated_radiometric_uncertainty: float = 0.0):
+                      emulator_base: str = None, uncorrelated_radiometric_uncertainty: float = 0.0, multiple_restarts: bool = False):
     """ Write an isofit config file for the main solve, using the specified pathnames and all given info
 
     Args:
@@ -984,6 +1077,9 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
         dt: the datetime object corresponding to this flightline to use for this solve
         use_emp_line: flag whether or not to set up for the empirical line estimation
         n_cores: the number of cores to use during processing
+        surface_category: type of surface to use
+        emulator_base: the basename of the emulator, if used
+        uncorrelated_radiometric_uncertainty: uncorrelated radiometric uncertainty parameter for isofit
 
     """
 
@@ -994,41 +1090,58 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
     else: 
         spectra_per_inversion = 1 
 
+    if emulator_base is None:
+        engine_name = 'modtran'
+    else:
+        engine_name = 'simulated_modtran'
     radiative_transfer_config = {
 
             "radiative_transfer_engines": {
                 "vswir": {
-                    "engine_name": 'modtran',
+                    "engine_name": engine_name,
                     "lut_path": paths.lut_modtran_directory,
                     "aerosol_template_file": paths.aerosol_tpl_path,
                     "template_file": paths.modtran_template_path,
-                    "engine_base_dir": paths.modtran_path,
                     #lut_names - populated below
                     #statevector_names - populated below
                 }
             },
-            "statevector": {
-                "H2OSTR": {
-                    "bounds": [h2o_lut_grid[0], h2o_lut_grid[-1]],
-                    "scale": 0.01,
-                    "init": (h2o_lut_grid[1] + h2o_lut_grid[-1]) / 2.0,
-                    "prior_sigma": 100.0,
-                    "prior_mean": (h2o_lut_grid[1] + h2o_lut_grid[-1]) / 2.0,
-                }
-            },
+            "statevector": {},
             "lut_grid": {},
             "unknowns": {
                 "H2O_ABSCO": 0.0
             }
     }
+
     if h2o_lut_grid is not None:
-        radiative_transfer_config['lut_grid']['H2OSTR'] = [max(0.0, float(q)) for q in h2o_lut_grid]
+        radiative_transfer_config['statevector']['H2OSTR'] = {
+            "bounds": [h2o_lut_grid[0], h2o_lut_grid[-1]],
+            "scale": 1,
+            "init": (h2o_lut_grid[1] + h2o_lut_grid[-1]) / 2.0,
+            "prior_sigma": 100.0,
+            "prior_mean": (h2o_lut_grid[1] + h2o_lut_grid[-1]) / 2.0,
+        }
+
+    if emulator_base is not None:
+        radiative_transfer_config['radiative_transfer_engines']['vswir']['emulator_file'] = abspath(emulator_base)
+        radiative_transfer_config['radiative_transfer_engines']['vswir']['emulator_aux_file'] = abspath(emulator_base + '_aux.npz')
+        radiative_transfer_config['radiative_transfer_engines']['vswir']['interpolator_base_path'] = abspath(os.path.join(paths.lut_modtran_directory,os.path.basename(emulator_base) + '_vi'))
+        radiative_transfer_config['radiative_transfer_engines']['vswir']['earth_sun_distance_file'] = paths.earth_sun_distance_path
+        radiative_transfer_config['radiative_transfer_engines']['vswir']['irradiance_file'] = paths.irradiance_file
+        radiative_transfer_config['radiative_transfer_engines']['vswir']["engine_base_dir"] = paths.sixs_path
+  
+    else:
+        radiative_transfer_config['radiative_transfer_engines']['vswir']["engine_base_dir"] = paths.modtran_path
+
+
+    if h2o_lut_grid is not None:
+        radiative_transfer_config['lut_grid']['H2OSTR'] = h2o_lut_grid.tolist()
     if elevation_lut_grid is not None:
-        radiative_transfer_config['lut_grid']['GNDALT'] = [max(0.0, float(q)) for q in elevation_lut_grid]
+        radiative_transfer_config['lut_grid']['GNDALT'] = elevation_lut_grid.tolist()
     if to_sensor_azimuth_lut_grid is not None:
-        radiative_transfer_config['lut_grid']['TRUEAZ'] = [float(q) for q in to_sensor_azimuth_lut_grid]
+        radiative_transfer_config['lut_grid']['TRUEAZ'] = to_sensor_azimuth_lut_grid.tolist()
     if to_sensor_zenith_lut_grid is not None:
-        radiative_transfer_config['lut_grid']['OBSZEN'] = [float(q) for q in to_sensor_zenith_lut_grid] # modtran convension
+        radiative_transfer_config['lut_grid']['OBSZEN'] = to_sensor_zenith_lut_grid.tolist() # modtran convension
 
     # add aerosol elements from climatology
     aerosol_state_vector, aerosol_lut_grid, aerosol_model_path = \
@@ -1061,7 +1174,7 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
                                 "n_cores": n_cores}
                              }
 
-    if use_emp_line == 1:
+    if use_emp_line:
         isofit_config_modtran['input']['measured_radiance_file'] = paths.rdn_subs_path
         isofit_config_modtran['input']['loc_file'] = paths.loc_subs_path
         isofit_config_modtran['input']['obs_file'] = paths.obs_subs_path
@@ -1077,12 +1190,27 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
         isofit_config_modtran['output']['estimated_reflectance_file'] = paths.rfl_working_path
         isofit_config_modtran['output']['estimated_state_file'] = paths.state_working_path
 
+    if multiple_restarts:
+        eps = 1e-2
+        grid = {}
+        if h2o_lut_grid is not None:
+            h2o_delta = float(h2o_lut_grid[-1]) - float(h2o_lut_grid[0])
+            grid['H2OSTR'] = [round(h2o_lut_grid[0]+h2o_delta*0.02,4), round(h2o_lut_grid[-1]-h2o_delta*0.02,4)]
+
+        # We will initialize using different AODs for the first aerosol in the LUT
+        if len(aerosol_lut_grid)>0:
+            key = list(aerosol_lut_grid.keys())[0]
+            aer_delta = aerosol_lut_grid[key][-1] - aerosol_lut_grid[key][0]
+            grid[key] = [round(aerosol_lut_grid[key][0]+aer_delta*0.02), round(aerosol_lut_grid[key][-1]-aer_delta*0.02,4)]
+        isofit_config_modtran['implementation']['inversion']['integration_grid'] = grid
+        isofit_config_modtran['implementation']['inversion']['inversion_grid_as_preseed'] = True
+
     if paths.input_channelized_uncertainty_path is not None:
         isofit_config_modtran['forward_model']['instrument']['unknowns'][
             'channelized_radiometric_uncertainty_file'] = paths.channelized_uncertainty_working_path
 
     if paths.input_model_discrepancy_path is not None:
-        isofit_config_h2o['forward_model']['model_discrepancy_file'] = \
+        isofit_config_modtran['forward_model']['model_discrepancy_file'] = \
             paths.model_discrepancy_working_path
 
     if paths.noise_path is not None:

@@ -20,7 +20,7 @@
 
 import logging
 from datetime import datetime
-import scipy as s
+import numpy as np
 
 from .sunposition import sunpos
 
@@ -30,7 +30,7 @@ class Geometry:
       surface, and solar positions."""
 
     def __init__(self, obs=None, glt=None, loc=None, ds=None,
-                 esd=None, pushbroom_column=None):
+                 esd=None, pushbroom_column=None, bg_rfl=None):
 
         # Set some benign defaults...
         self.earth_sun_file = None
@@ -48,8 +48,10 @@ class Geometry:
         self.OBSZEN = 180.0
         self.RELAZ = 0.0
         self.TRUEAZ = 0.0
+        self.H1ALT = None
         self.umu = 1.0
         self.pushbroom_column = pushbroom_column
+        self.bg_rfl = bg_rfl
 
         # The 'obs' object is observation metadata that follows a historical
         # AVIRIS-NG format.  It arrives to our initializer in the form of
@@ -63,14 +65,12 @@ class Geometry:
             self.OBSZEN = 180.0 - abs(obs[2])  # MODTRAN convention?
             self.RELAZ = obs[1] - obs[3] + 180.0
             self.TRUEAZ = obs[1]  # MODTRAN convention?
-            self.umu = s.cos(obs[2]/360.0*2.0*s.pi)  # Libradtran
+            self.umu = np.cos(obs[2]/360.0*2.0*np.pi)  # Libradtran
 
         # The 'loc' object is a list-like object that optionally contains
         # latitude and longitude information about the surface being
         # observed.
         if loc is not None:
-            self.GNDALT = loc[2] / 1000.0
-            self.altitude = loc[2]
             self.surface_elevation_km = loc[2] / 1000.0
             self.latitude = loc[1]
             self.longitude = loc[0]
@@ -81,7 +81,11 @@ class Geometry:
             logging.debug('Geometry lat: %f lon: %f' %
                           (self.latitude, self.longitude))
             logging.debug('Geometry observer OBSZEN: %f RELAZ: %f GNDALT: %f' %
-                          (self.OBSZEN, self.RELAZ, self.GNDALT))
+                          (self.OBSZEN, self.RELAZ, self.surface_elevation_km))
+        
+        if loc is not None and obs is not None:
+            self.H1ALT = self.surface_elevation_km + self.path_length*np.cos(np.deg2rad(self.observer_zenith))
+            self.observer_altitude_km = self.surface_elevation_km + self.path_length*np.cos(np.deg2rad(self.observer_zenith))
 
         # The ds object is an optional date object, defining the time of
         # the observation.
@@ -101,7 +105,7 @@ class Geometry:
                                      self.longitudeE,
                                      self.surface_elevation_km * 1000.0,
                                      radians=True)
-        return s.cos(zen)
+        return np.cos(zen)
 
     def sundist(self):
         '''Return the mean-relative distance to the sun as defined by the

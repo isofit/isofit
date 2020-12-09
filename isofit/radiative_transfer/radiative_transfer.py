@@ -25,6 +25,7 @@ from ..core.common import eps
 from ..radiative_transfer.modtran import ModtranRT
 from ..radiative_transfer.six_s import SixSRT
 from ..radiative_transfer.libradtran import LibRadTranRT
+from ..radiative_transfer.sRTMnet import SimulatedModtranRT
 from isofit.configs import Config
 from isofit.configs.sections.radiative_transfer_config import RadiativeTransferEngineConfig
 
@@ -60,6 +61,8 @@ class RadiativeTransfer():
                 rte = LibRadTranRT(rte_config, full_config)
             elif rte_config.engine_name == '6s':
                 rte = SixSRT(rte_config, full_config)
+            elif rte_config.engine_name == 'simulated_modtran':
+                rte = SimulatedModtranRT(rte_config, full_config)
             else:
                 # Should never get here, checked in config
                 raise AttributeError(
@@ -124,12 +127,26 @@ class RadiativeTransfer():
     def calc_rdn(self, x_RT, rfl, Ls, geom):
         r = self.get_shared_rtm_quantities(x_RT, geom)
         L_atm = self.get_L_atm(x_RT, geom)
-        L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)
         L_up = Ls * r['transup']
 
-        ret = L_atm + \
-            L_down_transmitted * rfl / (1.0 - r['sphalb'] * rfl) + \
-            L_up
+        if geom.bg_rfl is not None:
+
+            # adjacency effects are counted
+            I = (self.solar_irr*self.coszen) / np.pi
+            bg = geom.bg_rfl
+            t_down = r['t_down_dif'] + r['t_down_dir']
+
+            ret = L_atm + \
+              I / (1.0-r['sphalb'] * bg) * bg * t_down * r['t_up_dif'] + \
+              I / (1.0-r['sphalb'] * bg) * rfl * t_down * r['t_up_dir'] + \
+              L_up
+
+        else:
+            L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)
+             
+            ret = L_atm + \
+                L_down_transmitted * rfl / (1.0 - r['sphalb'] * rfl) + \
+                L_up
 
         return ret
 
@@ -161,15 +178,26 @@ class RadiativeTransfer():
 
         # Get K_surface
         r = self.get_shared_rtm_quantities(x_RT, geom)
-        L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)
 
-        # The reflected downwelling light is:
-        # L_down_transmitted * rfl / (1.0 - r['sphalb'] * rfl), or
-        # L_down_transmitted * rho_scaled_for_multiscattering
-        # This term is the derivative of rho_scaled_for_multiscattering
-        drho_scaled_for_multiscattering_drfl = 1. / (1 - r['sphalb']*rfl)**2
+        if geom.bg_rfl is not None:
 
-        drdn_drfl = L_down_transmitted * drho_scaled_for_multiscattering_drfl
+             # adjacency effects are counted
+            I = (self.solar_irr*self.coszen) / np.pi
+            bg = geom.bg_rfl
+            t_down = r['t_down_dif'] + r['t_down_dir']
+            drdn_drfl = I / (1.0-r['sphalb'] * bg) * t_down * r['t_up_dir'] 
+
+        else:
+            L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)
+            
+            # The reflected downwelling light is:
+            # L_down_transmitted * rfl / (1.0 - r['sphalb'] * rfl), or
+            # L_down_transmitted * rho_scaled_for_multiscattering
+            # This term is the derivative of rho_scaled_for_multiscattering
+            drho_scaled_for_multiscattering_drfl = 1. / (1 - r['sphalb']*rfl)**2
+            
+            drdn_drfl = L_down_transmitted * drho_scaled_for_multiscattering_drfl
+
         drdn_dLs = r['transup']
         K_surface = drdn_drfl[:, np.newaxis] * drfl_dsurface + \
             drdn_dLs[:, np.newaxis] * dLs_dsurface

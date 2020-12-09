@@ -83,6 +83,7 @@ class BaseConfigSection(object):
         for key in self._get_nontype_attributes():
             value = getattr(self, key)
             try:
+                logging.debug('Configuration check of: {}'.format(key))
                 errors.extend(value.check_config_validity())
             except AttributeError:
                 logging.debug('Configuration check: {} is not an object, skipping'.format(key))

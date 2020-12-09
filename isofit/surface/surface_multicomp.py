@@ -85,7 +85,7 @@ class MultiComponentSurface(Surface):
             self.mus.append(self.components[i][0][self.idx_ref])
 
         # Variables retrieved: each channel maps to a reflectance model parameter
-        rmin, rmax = 0, 10.0
+        rmin, rmax = 0, 2.0
         self.statevec_names = ['RFL_%04i' % int(w) for w in self.wl]
         self.bounds = [[rmin, rmax] for w in self.wl]
         self.scale = [1.0 for w in self.wl]
