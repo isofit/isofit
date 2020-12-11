@@ -28,7 +28,6 @@ jobs:
 
     - name: Check Utils
       run: |
-        python -c 'from isofit.utils import add_HRRR_profiles_to_modtran_config'
         python -c 'from isofit.utils import apply_oe'
         python -c 'from isofit.utils import empirical_line'
         python -c 'from isofit.utils import extractions'
