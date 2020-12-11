@@ -19,14 +19,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install --editable . --use-feature=2020-resolver
 
-    - name: Check Utils
+    - name: Run Test
       run: |
-        python -c 'from isofit.utils import add_HRRR_profiles_to_modtran_config.py'
-        python -c 'from isofit.utils import apply_oe.py'
-        python -c 'from isofit.utils import empirical_line.py'
-        python -c 'from isofit.utils import extractions.py'
-        python -c 'from isofit.utils import instrument_model.py'
-        python -c 'from isofit.utils import path.py'
-        python -c 'from isofit.utils import remap.py'
-        python -c 'from isofit.utils import segment.py'
-        python -c 'from isofit.utils import surface_model.py'
+        pytest
+
