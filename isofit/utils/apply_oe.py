@@ -11,7 +11,7 @@ from datetime import datetime
 from spectral.io import envi
 import logging
 import json
-import gdal
+from osgeo import gdal
 import numpy as np
 from sklearn import mixture
 import subprocess
@@ -441,7 +441,7 @@ class Pathnames():
         self.irradiance_file = abspath(join(self.isofit_path,'examples','20151026_SantaMonica','data','prism_optimized_irr.dat'))
 
         self.aerosol_tpl_path = join(self.isofit_path, 'data', 'aerosol_template.json')
-        self.rdn_factors_path = args.rdn_factors_path
+        self.rdn_factors_path = abspath(args.rdn_factors_path)
 
         self.ray_temp_dir = args.ray_temp_dir
 
@@ -567,7 +567,10 @@ class LUTConfig:
 
         if min_spacing > 0.0001:
             grid = np.round(grid, 4)
-        if np.abs(grid[1] - grid[0]) < min_spacing:
+        if len(grid) == 1:
+            logging.debug(f'Grid spacing is 0, which is less than {min_spacing}.  No grid used')
+            return None
+        elif np.abs(grid[1] - grid[0]) < min_spacing:
             logging.debug(f'Grid spacing is {grid[1]-grid[0]}, which is less than {min_spacing}.  No grid used')
             return None
         else:
@@ -633,11 +636,14 @@ class LUTConfig:
                 num_points = 1
             else:
                 # This very well might overly space the grid, but we don't / can't know in general
-                num_points = 360 / spacing
+                num_points = int(np.ceil(360 / spacing))
 
             # We initialize the GMM with a static seed for repeatability across runs
             gmm = mixture.GaussianMixture(n_components=num_points, covariance_type='full',
                                           random_state=1)
+            if spatial_data.shape[0]  == 1:
+                spatial_data = np.vstack([spatial_data, spatial_data])
+
             gmm.fit(spatial_data)
             central_angles = np.degrees(np.arctan2(gmm.means_[:, 1], gmm.means_[:, 0]))
             if num_points == 1:
