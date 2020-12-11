@@ -17,6 +17,7 @@ jobs:
     - name: Install GDAL
       run: |
         sudo apt-get install gdal-bin
+        sudo apt-get install libgdal-dev
 
     - name: Install Isofit
       run: |
