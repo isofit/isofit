@@ -11,7 +11,7 @@ from datetime import datetime
 from spectral.io import envi
 import logging
 import json
-import gdal
+from osgeo import gdal
 import numpy as np
 from sklearn import mixture
 import subprocess

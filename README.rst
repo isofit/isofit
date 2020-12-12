@@ -62,7 +62,15 @@ so if you have `pip` installed, you can install ISOFIT from the command line wit
 
     pip install isofit
 
-This will install the "isofit" package into your environment as well as its dependencies. 
+This will install the "isofit" package into your environment as well as its dependencies.
+
+Using Utils
+***********
+
+Several utilities are provided to facilitate using ISOFIT in different workflows.  Some
+of the utilities (such as `apply_oe.py <https://github.com/isofit/isofit/blob/master/isofit/utils/apply_oe.py>`_)
+require GDAL, which is not required in setup.py currently to facilitate diverse compatibility.
+An example installation is available in the `utils workflow <https://github.com/isofit/isofit/blob/master/.github/workflows/utils-workflow.yml>`_
 
 Quick Start using MODTRAN 6.0
 -----------------------------
