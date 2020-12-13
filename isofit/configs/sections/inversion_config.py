@@ -137,7 +137,7 @@ class LeastSquaresConfig(BaseConfigSection):
         self._ftol_type = float
         self.ftol = 0.01
         """float: Tolerance for termination by the change of the cost function.
-        Default is 0.0001"""
+        Default is 0.01"""
 
         self._gtol_type = float
         self.gtol = None
