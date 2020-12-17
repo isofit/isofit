@@ -195,7 +195,7 @@ class SimulatedModtranRT(TabularRT):
             
             for key_ind, key in enumerate(self.lut_quantities):
                 with open(interpolator_disk_paths[key_ind], 'wb') as fi:
-                    pickle.dump(self.luts[key], fi)
+                    pickle.dump(self.luts[key], fi, protocol=4)
 
         else:
             logging.info('Prebuilt LUT interpolators found, loading from disk')
