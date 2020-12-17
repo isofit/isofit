@@ -50,6 +50,34 @@ class SimulatedModtranRT(TabularRT):
         self.angular_lut_keys_degrees = ['OBSZEN', 'TRUEAZ', 'viewzen', 'viewaz', 'solzen', 'solaz']
         self.angular_lut_keys_radians = []
 
+        self.modtran_6s_name_conversion = [
+            ['GNDALT','H1ALT','TRUEAZ','OBSZEN','AERFRAC_2'],
+            ['elev','alt','viewaz','viewzen','AOT550']
+        ]
+
+        logging.info('Swapping MODTRAN names for 6s names in lut_names')
+        for _i, name in enumerate(engine_config.lut_names):
+            if name in self.modtran_6s_name_conversion[0]:
+                to_update = self.modtran_6s_name_conversion[1][self.modtran_6s_name_conversion[0].index(name)]
+                logging.info(f'Switching {name} for {to_update}')
+                engine_config.lut_names[_i] = to_update
+                full_config.forward_model.radiative_transfer.lut_grid[to_update] = full_config.forward_model.\
+                    radiative_transfer.lut_grid[name]
+                del full_config.forward_model.radiative_transfer.lut_grid[name]
+                if name == 'OBSZEN':
+                    full_config.forward_model.radiative_transfer.lut_grid[to_update] = \
+                        [180 - x for x in full_config.forward_model.radiative_transfer.lut_grid[to_update]]
+
+        for _i, name in enumerate(full_config.forward_model.radiative_transfer.lut_grid):
+            if name in self.modtran_6s_name_conversion[0]:
+                to_update = self.modtran_6s_name_conversion[1][self.modtran_6s_name_conversion[0].index(name)]
+                logging.info(f'Switching {name} for {to_update} in forward_model->radiative_transfer_engines->[]'
+                             '->lut_names')
+                self.lut_names[_i] = to_update
+
+        logging.info('Swap known configuration names')
+
+
         super().__init__(engine_config, full_config)
 
         self.lut_quantities = ['rhoatm', 'transm', 'sphalb', 'transup']
@@ -98,6 +126,8 @@ class SimulatedModtranRT(TabularRT):
         sixs_config.viewaz = modtran_input['GEOMETRY']['TRUEAZ']
         sixs_config.wlinf = 0.35
         sixs_config.wlsup = 2.5
+
+
 
         # Build the simulator
         logging.debug('Create RTE simulator')
