@@ -25,6 +25,7 @@ import numpy as np
 from copy import deepcopy
 import yaml
 import pickle
+from collections import OrderedDict
 
 from isofit.core.common import resample_spectrum, load_wavelen, VectorInterpolator
 from .look_up_tables import TabularRT
@@ -68,12 +69,8 @@ class SimulatedModtranRT(TabularRT):
                     full_config.forward_model.radiative_transfer.lut_grid[to_update] = \
                         [180 - x for x in full_config.forward_model.radiative_transfer.lut_grid[to_update]]
 
-        for _i, name in enumerate(full_config.forward_model.radiative_transfer.lut_grid):
-            if name in self.modtran_6s_name_conversion[0]:
-                to_update = self.modtran_6s_name_conversion[1][self.modtran_6s_name_conversion[0].index(name)]
-                logging.info(f'Switching {name} for {to_update} in forward_model->radiative_transfer_engines->[]'
-                             '->lut_names')
-                self.lut_names[_i] = to_update
+        full_config.forward_model.radiative_transfer.lut_grid = OrderedDict(sorted(full_config.forward_model.radiative_transfer.lut_grid.items(), key=lambda t: t[0]))
+        engine_config.lut_names = engine_config.lut_names.sort()
 
         logging.info('Swap known configuration names')
 
