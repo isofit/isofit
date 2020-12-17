@@ -67,7 +67,7 @@ class SimulatedModtranRT(TabularRT):
                 del full_config.forward_model.radiative_transfer.lut_grid[name]
                 if name == 'OBSZEN':
                     full_config.forward_model.radiative_transfer.lut_grid[to_update] = \
-                        [180 - x for x in full_config.forward_model.radiative_transfer.lut_grid[to_update]]
+                        [180 - x for x in full_config.forward_model.radiative_transfer.lut_grid[to_update]].sort()
 
         full_config.forward_model.radiative_transfer.lut_grid = OrderedDict(sorted(full_config.forward_model.radiative_transfer.lut_grid.items(), key=lambda t: t[0]))
         engine_config.lut_names = engine_config.lut_names.sort()
