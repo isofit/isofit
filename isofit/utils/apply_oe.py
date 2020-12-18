@@ -441,7 +441,10 @@ class Pathnames():
         self.irradiance_file = abspath(join(self.isofit_path,'examples','20151026_SantaMonica','data','prism_optimized_irr.dat'))
 
         self.aerosol_tpl_path = join(self.isofit_path, 'data', 'aerosol_template.json')
-        self.rdn_factors_path = abspath(args.rdn_factors_path)
+        self.rdn_factors_path = None
+        if args.rdn_factors_path is not None:
+            self.rdn_factors_path = abspath(args.rdn_factors_path)
+
 
         self.ray_temp_dir = args.ray_temp_dir
 

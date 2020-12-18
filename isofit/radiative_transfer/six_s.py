@@ -164,8 +164,8 @@ class SixSRT(TabularRT):
             if 'AERFRAC_2' in vals:
                 vals['AOT550'] = vals['AERFRAC_2']
 
-        vals['elev'] = vals['elev']*-1
-        vals['alt'] = vals['alt']*-1
+        if 'elev' in vals:
+            vals['elev'] = vals['elev']*-1
 
         # Check rebuild conditions: LUT is missing or from a different config
         scriptfilename = 'LUT_'+fn+'.sh'
