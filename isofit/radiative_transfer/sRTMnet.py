@@ -51,31 +51,6 @@ class SimulatedModtranRT(TabularRT):
         self.angular_lut_keys_degrees = ['OBSZEN', 'TRUEAZ', 'viewzen', 'viewaz', 'solzen', 'solaz']
         self.angular_lut_keys_radians = []
 
-        self.modtran_6s_name_conversion = [
-            ['GNDALT','H1ALT','TRUEAZ','OBSZEN','AERFRAC_2'],
-            ['elev','alt','viewaz','viewzen','AOT550']
-        ]
-
-        logging.info('Swapping MODTRAN names for 6s names in lut_names')
-        for _i, name in enumerate(engine_config.lut_names):
-            if name in self.modtran_6s_name_conversion[0]:
-                to_update = self.modtran_6s_name_conversion[1][self.modtran_6s_name_conversion[0].index(name)]
-                logging.info(f'Switching {name} for {to_update}')
-                engine_config.lut_names[_i] = to_update
-                full_config.forward_model.radiative_transfer.lut_grid[to_update] = full_config.forward_model.\
-                    radiative_transfer.lut_grid[name]
-                del full_config.forward_model.radiative_transfer.lut_grid[name]
-                if name == 'OBSZEN':
-                    full_config.forward_model.radiative_transfer.lut_grid[to_update] = \
-                        [180 - x for x in full_config.forward_model.radiative_transfer.lut_grid[to_update]]
-                    full_config.forward_model.radiative_transfer.lut_grid[to_update].sort()
-
-        full_config.forward_model.radiative_transfer.lut_grid = OrderedDict(sorted(full_config.forward_model.radiative_transfer.lut_grid.items(), key=lambda t: t[0]))
-        engine_config.lut_names.sort()
-
-        logging.info('Swap known configuration names')
-
-
         super().__init__(engine_config, full_config)
 
         self.lut_quantities = ['rhoatm', 'transm', 'sphalb', 'transup']
@@ -116,8 +91,8 @@ class SimulatedModtranRT(TabularRT):
 
         sixs_config.day = dt.day
         sixs_config.month = dt.month
-        sixs_config.elev = modtran_input['SURFACE']['GNDALT']
-        sixs_config.alt = modtran_input['GEOMETRY']['H1ALT']
+        sixs_config.elev = -1*modtran_input['SURFACE']['GNDALT']
+        sixs_config.alt = -1*modtran_input['GEOMETRY']['H1ALT']
         sixs_config.solzen = solar_zenith
         sixs_config.solaz = solar_azimuth
         sixs_config.viewzen = 180 - modtran_input['GEOMETRY']['OBSZEN']
@@ -130,7 +105,8 @@ class SimulatedModtranRT(TabularRT):
         # Build the simulator
         logging.debug('Create RTE simulator')
         sixs_rte = SixSRT(sixs_config, full_config, build_lut_only = False, 
-                          wavelength_override=simulator_wavelengths, fwhm_override=np.ones(n_simulator_chan)*2.)
+                          wavelength_override=simulator_wavelengths, fwhm_override=np.ones(n_simulator_chan)*2.,
+                          modtran_emulation=True)
         self.solar_irr = sixs_rte.solar_irr
         self.esd = sixs_rte.esd
         self.coszen = sixs_rte.coszen
