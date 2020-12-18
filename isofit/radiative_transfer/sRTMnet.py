@@ -91,8 +91,8 @@ class SimulatedModtranRT(TabularRT):
 
         sixs_config.day = dt.day
         sixs_config.month = dt.month
-        sixs_config.elev = -1*modtran_input['SURFACE']['GNDALT']
-        sixs_config.alt = -1*modtran_input['GEOMETRY']['H1ALT']
+        sixs_config.elev = modtran_input['SURFACE']['GNDALT']
+        sixs_config.alt = modtran_input['GEOMETRY']['H1ALT']
         sixs_config.solzen = solar_zenith
         sixs_config.solaz = solar_azimuth
         sixs_config.viewzen = 180 - modtran_input['GEOMETRY']['OBSZEN']
