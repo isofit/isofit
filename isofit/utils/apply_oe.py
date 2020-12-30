@@ -190,6 +190,13 @@ def main():
 
     mean_latitude, mean_longitude, mean_elevation_km, elevation_lut_grid = \
         get_metadata_from_loc(paths.loc_working_path, lut_params)
+    if args.emulator_base is not None:
+        if np.any(elevation_lut_grid < 0):
+            to_rem = elevation_lut_grid[elevation_lut_grid < 0].copy()
+            elevation_lut_grid[ elevation_lut_grid< 0] = 0
+            elevation_lut_grid = np.unique(elevation_lut_grid)
+            logging.info("Scene contains target lut grid elements < 0 km, and uses 6s (via sRTMnet).  6s does not "
+                         f"support targets below sea level in km units.  Setting grid points {to_rem} to 0.")
 
     # Need a 180 - here, as this is already in MODTRAN convention
     mean_altitude_km = mean_elevation_km + np.cos(np.deg2rad(180 - mean_to_sensor_zenith)) * mean_path_km
@@ -441,7 +448,10 @@ class Pathnames():
         self.irradiance_file = abspath(join(self.isofit_path,'examples','20151026_SantaMonica','data','prism_optimized_irr.dat'))
 
         self.aerosol_tpl_path = join(self.isofit_path, 'data', 'aerosol_template.json')
-        self.rdn_factors_path = abspath(args.rdn_factors_path)
+        self.rdn_factors_path = None
+        if args.rdn_factors_path is not None:
+            self.rdn_factors_path = abspath(args.rdn_factors_path)
+
 
         self.ray_temp_dir = args.ray_temp_dir
 
