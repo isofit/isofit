@@ -166,17 +166,19 @@ class Instrument:
         return np.diagflat(np.power(self.prior_sigma, 2))
 
     def Sy(self, meas, geom):
-        """Calculate measurement error covariance.
+        """Calculate measuremment error covariance.  Kelvin Man Yiu Leung and 
+            Jayanth Jagalur Mohan (MIT) developed the noise clipping strategy.
 
         Input: meas, the instrument measurement
         Returns: Sy, the measurement error covariance due to instrument noise
         """
         if self.model_type == 'SNR':
-            bad = meas < 1e-5
+            nedl = (1.0 / self.snr) * meas
+            minimum_noise = np.sqrt(1e-7) 
+            bad = nedl < minimum_noise
             if np.any(bad):
                 logging.debug('SNR noise model found noise <= 0 - adjusting to slightly positive to avoid /0.')
-            nedl = (1.0 / self.snr) * meas
-            nedl[bad] = 1/self.snr * 1e-5
+            nedl[bad] = minimum_noise
             return np.diagflat(np.power(nedl,2))
 
         elif self.model_type == 'parametric':
