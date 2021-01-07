@@ -5,8 +5,12 @@
 import sys
 import json
 import itertools
+import logging
 
 from hypertrace import do_hypertrace, mkabs
+
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 clean = False
 if len(sys.argv) > 1:
@@ -16,14 +20,16 @@ if len(sys.argv) > 1:
 else:
     configfile = "./config.json"
 configfile = mkabs(configfile)
-print(f"Using config file `{configfile}`")
+logger.info("Using config file `%s`", configfile)
 
 with open(configfile) as f:
     config = json.load(f)
 
 wavelength_file = mkabs(config["wavelength_file"])
 reflectance_file = mkabs(config["reflectance_file"])
-libradtran_template_file = mkabs(config["libradtran_template_file"])
+if "libradtran_template_file" in config:
+    raise Exception("`libradtran_template_file` is deprecated. Use `rtm_template_file` instead.")
+rtm_template_file = mkabs(config["rtm_template_file"])
 lutdir = mkabs(config["lutdir"])
 outdir = mkabs(config["outdir"])
 
@@ -42,13 +48,13 @@ for key in ["lut_path", "template_file", "engine_base_dir"]:
 
 # Create iterable config permutation object
 ht_iter = itertools.product(*hypertrace_config.values())
-print("Starting Hypertrace workflow.")
+logger.info("Starting Hypertrace workflow.")
 for ht in ht_iter:
     argd = dict()
     for key, value in zip(hypertrace_config.keys(), ht):
         argd[key] = value
-    print(f"Running config: {argd}")
+    logger.info("Running config: %s", argd)
     do_hypertrace(isofit_config, wavelength_file, reflectance_file,
-                  libradtran_template_file, lutdir, outdir,
+                  rtm_template_file, lutdir, outdir,
                   **argd)
-print("Workflow completed successfully.")
+logging.info("Workflow completed successfully.")
