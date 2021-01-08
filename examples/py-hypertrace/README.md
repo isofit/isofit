@@ -5,33 +5,45 @@ Starting from known surface reflectance and atmospheric conditions, simulate top
 
 ## Lightning introduction
 
-First, make sure you have Isofit installed.
-In addition, you will need to have a working compiled version of the LibRadtran atmospheric radiative transfer model (see Installation section below).
+This tutorial will walk you through an example Hypertrace workflow using the (recommended) `sRTMnet` MODTRAN model emulator.
+Instructions for other models (e.g., libRadtran) are provided below.
+NOTE: All of these instructions assume you are operating from inside this directory (`examples/py-hypertrace`) unless otherwise indicated.
 
-Second, download the support datasets from here: https://github.com/ashiklom/isofit/releases/tag/hypertrace-data (~60 MB compressed, ~135 MB uncompressed).
-Extract these into the `examples/py-hypertrace/` directory (so that you have a `examples/py-hypertrace/hypertrace-data` folder).
+1. Install Isofit, following the standard instructions.
 
-Finally, make a local copy of the `config-example.json` and modify to fit your system (most important is radiative transfer engine base directly and environment.
+2. Create a folder called `6Sv-2.1`.
+Download and compile the 6Sv atmospheric radiative transfer model inside this directory.
+The default source code location is here (http://6s.ltdri.org/pages/downloads.html),
+but if that link doesn't work, you can download a mirrored version from here (https://github.com/ashiklom/isofit/releases/tag/6sv-mirror).
+Once downloaded, compile the code by calling `make` inside the source code directory.
+(NOTE: If you have `gfortran/gcc` > v8.0, you may need to append the string ` -std=legacy` to the `FFLAGS` in the `Makefile` to prevent errors during compilation.)
+The compiled model executable will be located in that directory.
 
-``` sh
-cp config-example.json myconfig.json
-```
+3. Create a folder called `sRTMnet_v100`.
+Download the `sRTMnet` model emulator from here (https://doi.org/10.5281/zenodo.4096627) and extract it inside this directory.
+Note that these files are quite large -- ~3.3 GB!
 
-Then, run the `workflow.py` script with your config file as an argument:
+4. Download the remaining Hypertrace support datasets from here (https://github.com/ashiklom/isofit/releases/tag/hypertrace-data) and extract them. 
 
-```sh
-python workflow.py myconfig.json
-```
+5. At this point, confirm that, inside the `examples/py-hypertrace` directory, you have
+a `6Sv-2.1` directory containing the `sixv2.1` binary executable;
+a `sRTMnet_v100` directory containing a subdirectory also called `sRTMnet_v100` and a file `sRTMnet_v100_aux.npz`;
+and
+a `hypertrace-data` directory containing subdirectories including `noise`, `priors`, `wavelengths`, and `reflectance`.
+Assuming this is the case, run the example Hypertrace workflow with the following command:
+    ``` sh
+    python3 workflow.py configs/example-srtmnet.json
+    ```
+    
 
-Hypertrace also ships with a script to quickly calculate some basic summary statistics and diagnostics.
-This script also takes the config file as an input:
-
-``` sh
-python summarize.py myconfig.json
-```
-
+6. Hypertrace also ships with an experimental script to quickly calculate some basic summary statistics and diagnostics.
 Note that these statistics are (1) calculated inefficiently, and (2) are probably simpler than what is warranted by the data.
 They are primarily intended for quick diagnostics on relatively small images (ones that fit in memory multiple times).
+This script also takes the config file as an input:
+
+    ``` sh
+    python summarize.py configs/example-srtmnet.json
+    ```
 
 
 ## Configuration file
@@ -51,11 +63,17 @@ Top level settings are as follows:
     - `snr` -- Instrument signal-to-noise ratio. Ignored if `noisefile` is present. Default = 300
     - `aod` -- True aerosol optical depth. Default = 0.1
     - `h2o` -- True water vapor content. Default = 1.0
-    - `lrt_atmosphere_type` -- LibRadtran atmosphere type. See LibRadtran manual for details. Default = `midlatitude_winter`
+    - `atmosphere_type` -- LibRadtran atmosphere type. See LibRadtran manual for details. Default = `midlatitude_winter`
     - `atm_aod_h2o` -- A list containing three elements: The atmosphere type, AOD, and H2O. This provides a way to iterate over specific known atmospheres that are combinations of the three previous variables. If this is set, it overrides the three previous arguments. Default = `None`
         - For example, `"atm_aod_h2o": [["midlatitude_winter", 0.1, 2.0], ["midlatitude_summer", 0.08, 1.5]]` means to iterate over _two_ atmospheres. On the other hand, a config like `"atm": ["midlatitude_winter", "midlatitude_summer"], "aod": [0.1, 0.08], "h2o": [2.0, 1.5]` would run 2 x 2 x 2 = 8 atmospheres -- one for each combination of these three fields.
-    - `solar_zenith`, `observer_zenith` -- Solar and observer zenith angles, respectively (0 = directly overhead, 90 = horizon). These are in degrees off nadir. Default = 0 for both. (Note that using LibRadtran to generate look up tables for off-nadir angles is ~10x slower than at nadir; however, this step only affects the LUT generation, so it shouldn't introduce additional delay if these LUTs already exist).
-    - `solar_azimuth`, `observer_azimuth` -- Solar and observer azimuth angles, respectively, in degrees. Observer azimuth is the sensor _position_ (so 180 degrees off from view direction) relative to N, rotating counterclockwise; i.e., 0 = Sensor in N, looking S; 90 = Sensor in W, looking E (this follows the LibRadtran convention). Default = 0 for both.
+    - `solar_zenith`, `observer_zenith` -- Solar and observer zenith angles, respectively (0 = directly overhead, 90 = horizon). These are in degrees off nadir. Default = 0 for both. (Note that using LibRadtran to generate look up tables for off-nadir angles is ~10x slower than at nadir; however, this step only affects the LUT generation, so it shouldn't introduce additional delay if these LUTs already exist). (Note: For `modtran` and `modtran_simulator`, `solar_zenith` is calculated from the `gmtime` and location, so this parameter is ignored.)
+    - `solar_azimuth`, `observer_azimuth` -- Solar and observer azimuth angles, respectively, in degrees. Observer azimuth is the sensor _position_ (so 180 degrees off from view direction) relative to N, rotating counterclockwise; i.e., 0 = Sensor in N, looking S; 90 = Sensor in W, looking E (this follows the LibRadtran convention). Default = 0 for both. Note: For `modtran` and `modtran_simulator`, `observer_azimuth` is used as `to_sensor_azimuth`; i.e., the *relative* azimuth of the sensor. The true solar azimuth is calculated from lat/lon and time, so `solar_azimuth` is ignored.
+    - The following parameters are currently only supported for `modtran` and `modtran_simulator`:
+        - `observer_altitude_km` -- Sensor altitude in km. Must be less than 100. Default = 99.9.
+        - `dayofyear` -- Julian date of observation. Default = 200
+        - `latitude, longitude` -- Decimal degree coordinates of observation. Default = 34.15, -118.14 (Pasadena, CA).
+        - `localtime` -- Local time, in decimal hours (0-24). Default = 10.0
+        - `elevation_km` -- Target elevation above sea level, in km. Default = 0.01
     - `inversion_mode` -- One of three options:
         - `"inversion"` (default) -- Standard optimal estimation algorithm in Isofit.
         - `"mcmc_inversion"` -- MCMC inversion using Metropolis-Hastings algorithm. Note that this probably takes significantly longer than the default.
@@ -65,8 +83,9 @@ Top level settings are as follows:
     
 ### Libradtran
 
-To generate your own atmospheric look-up tables, you'll need a working installation of LibRadTran.
-Follow the instructions in the [Isofit `README`](https://github.com/ashiklom/isofit/tree/r-geom-2#quick-start-with-libradtran-20x) to install.
+Alternatively, you can generate LUTs using the open source atmospheric RTM LibRadtran.
+To do this, you'll need a working installation of LibRadTran.
+Follow the instructions in the [Isofit `README`](https://github.com/isofit/isofit#quick-start-with-libradtran-20x) to install.
 Note that you must install LibRadTran into the source code directory for it to work properly; i.e.
 
 ``` sh
