@@ -39,7 +39,10 @@ def parse_dir(ddir):
         if match is not None:
             match = match.group(1)
         grps[key] = [match]
-    for key in ["szen", "ozen", "saz", "oaz", "snr", "aod", "h2o"]:
+    for key in ["szen", "ozen", "zen",
+                "saz", "oaz", "az",
+                "time", "elev",
+                "snr", "aod", "h2o"]:
         pat = f".*{key}_([0-9.]+)" + r"(__|/|\Z)"
         match = re.match(pat, str(ddir))
         if match is not None:

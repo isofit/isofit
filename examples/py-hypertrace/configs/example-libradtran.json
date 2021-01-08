@@ -1,8 +1,8 @@
 {
-    "wavelength_file": "./hypertrace-data/priors/avirisc-wavelengths.txt",
+    "wavelength_file": "./hypertrace-data/wavelengths/aviris-ng.txt",
     "reflectance_file": "./hypertrace-data/reflectance/reference/reference_reflectance",
     "rtm_template_file": "./lrt-template.inp",
-    "lutdir": "./luts",
+    "lutdir": "./luts/libradtran",
     "outdir": "./output-libradtran",
     "isofit": {
         "forward_model": {
@@ -56,9 +56,7 @@
         "atm_aod_h2o": [["midlatitude_winter", 0.2, 1.0], ["midlatitude_winter", 0.3, 2.0]],
         "observer_zenith": [0.0, 20.0],
         "inversion_mode": ["simple", "inversion"],
-        "noisefile": ["./hypertrace-data/noise/noise_coeff_sbg_cbe0.txt",
-                      "./hypertrace-data/noise/noise_coeff_sbg_cbe1.txt"],
-        "surface_file": ["./hypertrace-data/priors/uninformative.mat",
-                        "./hypertrace-data/priors/basemap_surface_model.mat"]
+        "noisefile": ["./hypertrace-data/noise/noise_coeff_sbg_cbe0.txt"],
+        "surface_file": ["./hypertrace-data/priors/aviris-ng/surface_EMIT.mat"]
     }
 }
