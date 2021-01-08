@@ -53,9 +53,9 @@
         }
     },
     "hypertrace": {
-        "atm_aod_h2o": [["midlatitude_winter", 0.2, 1.0], ["midlatitude_winter", 0.3, 2.0]],
-        "observer_zenith": [0.0, 20.0],
-        "inversion_mode": ["simple", "inversion"],
+        "atm_aod_h2o": [["midlatitude_winter", 0.2, 1.0]],
+        "observer_zenith": [0.0],
+        "inversion_mode": ["inversion"],
         "noisefile": ["./hypertrace-data/noise/noise_coeff_sbg_cbe0.txt"],
         "surface_file": ["./hypertrace-data/priors/aviris-ng/surface_EMIT.mat"]
     }
