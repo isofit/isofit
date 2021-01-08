@@ -3,7 +3,7 @@
     "reflectance_file": "./hypertrace-data/reflectance/reference/reference_reflectance",
     "rtm_template_file": "./lrt-template.inp",
     "lutdir": "./luts",
-    "outdir": "./output",
+    "outdir": "./output-libradtran",
     "isofit": {
         "forward_model": {
             "instrument": {
@@ -38,7 +38,7 @@
                 "radiative_transfer_engines": {
                     "vswir": {
                         "engine_name": "libradtran",
-                        "engine_base_dir": "~/projects/models/libRadtran-2.0.3",
+                        "engine_base_dir": "./libRadtran-2.0.3",
                         "environment": "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CONDA_PREFIX/lib",
                         "lut_names": ["H2OSTR", "AOT550"],
                         "statevector_names": ["H2OSTR", "AOT550"]
