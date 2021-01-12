@@ -57,11 +57,13 @@ class SixSRT(TabularRT):
     """A model of photon transport including the atmosphere."""
 
     def __init__(self, engine_config: RadiativeTransferEngineConfig, full_config: Config,
-                        build_lut=True, build_lut_only=False, wavelength_override=None, fwhm_override=None):
+                 build_lut=True, build_lut_only=False, wavelength_override=None, fwhm_override=None,
+                 modtran_emulation=False):
 
         self.angular_lut_keys_degrees = ['OBSZEN', 'TRUEAZ', 'viewzen', 'viewaz',
                                          'solzen', 'solaz']
         self.angular_lut_keys_radians = []
+        self.modtran_emulation = modtran_emulation
 
         super().__init__(engine_config, full_config)
 
@@ -149,7 +151,21 @@ class SixSRT(TabularRT):
         # Translate a couple of special cases
         if 'H2OSTR' in self.lut_names:
             vals['h2o_mm'] = vals['H2OSTR']*10.0
-        vals['elev'] = vals['elev']*-1
+        if 'GNDALT' in vals:
+            vals['elev'] = vals['GNDALT']
+        if 'H1ALT' in vals:
+            vals['alt'] = vals['H1ALT']
+        if 'TRUEAZ' in vals:
+            vals['viewaz'] = vals['TRUEAZ']
+        if 'OBSZEN' in vals:
+            vals['viewzen'] = 180 - vals['OBSZEN']
+
+        if self.modtran_emulation:
+            if 'AERFRAC_2' in vals:
+                vals['AOT550'] = vals['AERFRAC_2']
+
+        if 'elev' in vals:
+            vals['elev'] = vals['elev']*-1
 
         # Check rebuild conditions: LUT is missing or from a different config
         scriptfilename = 'LUT_'+fn+'.sh'
