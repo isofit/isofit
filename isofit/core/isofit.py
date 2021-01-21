@@ -168,14 +168,13 @@ class Isofit:
                     io.write_spectrum(row, col, self.states, meas,
                                       geom, flush_immediately=True)
                 except ValueError as err:
-                    logging.error(err)
                     logging.info(
                         """
-                        Encountered the following ValueError in row %d and col %d:
-                        %s.
+                        Encountered the following ValueError in row %d and col %d.
                         Results for this pixel will be all zeros.
-                        """, row, col, err
+                        """, row, col
                     )
+                    logging.error(err)
                 if (index - index_start) % 100 == 0:
                     logging.info(
                         'Core at start index %d completed inversion %d/%d',

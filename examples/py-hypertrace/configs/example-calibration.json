@@ -1,9 +1,9 @@
 {
     "wavelength_file": "./hypertrace-data/priors/avirisc-wavelengths.txt",
     "reflectance_file": "./hypertrace-data/reflectance/reference/reference_reflectance",
-    "libradtran_template_file": "./lrt-template.inp",
+    "rtm_template_file": "./lrt-template.inp",
     "lutdir": "./luts",
-    "outdir": "./output",
+    "outdir": "./output/calibration",
     "isofit": {
         "forward_model": {
             "instrument": {
@@ -53,12 +53,12 @@
         }
     },
     "hypertrace": {
-        "atm_aod_h2o": [["midlatitude_winter", 0.2, 1.0], ["midlatitude_winter", 0.3, 2.0]],
-        "observer_zenith": [0.0, 20.0],
-        "inversion_mode": ["simple", "inversion"],
-        "noisefile": ["./hypertrace-data/noise/noise_coeff_sbg_cbe0.txt",
-                      "./hypertrace-data/noise/noise_coeff_sbg_cbe1.txt"],
-        "surface_file": ["./hypertrace-data/priors/uninformative.mat",
-                        "./hypertrace-data/priors/basemap_surface_model.mat"]
+        "calibration_uncertainty_file": ["./hypertrace-data/other/20201006_calibration_drift.mat"],
+        "n_calibration_draws": [5],
+        "calibration_scale": [16],
+        "atm_aod_h2o": [["midlatitude_winter", 0.2, 1.0]],
+        "inversion_mode": ["inversion"],
+        "noisefile": ["./hypertrace-data/noise/noise_coeff_sbg_cbe0.txt"],
+        "surface_file": ["./hypertrace-data/priors/uninformative.mat"]
     }
 }
