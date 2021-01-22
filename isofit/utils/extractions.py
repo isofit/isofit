@@ -116,7 +116,7 @@ def extractions(inputfile, labels, output, chunksize, flag, n_cores: int = 1, ra
 
     lbl_img = envi.open(lbl_file+'.hdr', lbl_file)
     labels = lbl_img.read_band(0)
-    nout = len(np.unique(labels))
+    nout = len(np.unique(labels[labels != 0]))
 
 
     # Start up a ray instance for parallel work
@@ -151,7 +151,7 @@ def extractions(inputfile, labels, output, chunksize, flag, n_cores: int = 1, ra
     out = np.zeros((nout, nb))
     for idx, ret in rreturn:
         if ret is not None:
-            out[idx.copy(),...] = ret.copy()
+            out[idx.copy() - 1,...] = ret.copy()
     del rreturn
     ray.shutdown()
 

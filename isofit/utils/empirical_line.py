@@ -184,7 +184,7 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
 
             bhat = None
             if segmentation_img is not None:
-                hash_idx = segmentation_img[row, col]
+                hash_idx = segmentation_img[row, col] - 1
                 if hash_idx in hash_table:
                     bhat, bmarg, bcov = hash_table[hash_idx]
                 else:
