@@ -11,7 +11,7 @@ from datetime import datetime
 from spectral.io import envi
 import logging
 import json
-import gdal
+from osgeo import gdal
 import numpy as np
 from sklearn import mixture
 import subprocess
@@ -93,7 +93,7 @@ def main():
     parser.add_argument('input_loc', type=str)
     parser.add_argument('input_obs', type=str)
     parser.add_argument('working_directory', type=str)
-    parser.add_argument('sensor', type=str, choices=['ang', 'avcl', 'neon', 'prism'])
+    parser.add_argument('sensor', type=str)
     parser.add_argument('--copy_input_files', type=int, choices=[0,1], default=0)
     parser.add_argument('--modtran_path', type=str)
     parser.add_argument('--wavelength_path', type=str)
@@ -115,6 +115,11 @@ def main():
     parser.add_argument('--emulator_base', type=str, default=None)
 
     args = parser.parse_args()
+
+    if args.sensor not in ['ang', 'avcl', 'neon', 'prism']:
+        if args.sensor[:3] != 'NA-':
+            raise ValueError('argument sensor: invalid choice: "NA-test" (choose from '
+                             '"ang", "avcl", "neon", "prism", "NA-*")')
 
     if args.copy_input_files == 1:
         args.copy_input_files = True
@@ -153,6 +158,9 @@ def main():
     elif args.sensor == 'prism':
         dt = datetime.strptime(paths.fid[3:], '%Y%m%dt%H%M%S')
         dayofyear = dt.timetuple().tm_yday
+    elif args.sensor[:3] == 'NA-':
+        dt = datetime.strptime(args.sensor[3:], '%Y%m%d')
+        dayofyear = dt.timetuple().tm_yday
 
     h_m_s, day_increment, mean_path_km, mean_to_sensor_azimuth, mean_to_sensor_zenith, valid, \
     to_sensor_azimuth_lut_grid, to_sensor_zenith_lut_grid = get_metadata_from_obs(paths.obs_working_path, lut_params)
@@ -190,6 +198,13 @@ def main():
 
     mean_latitude, mean_longitude, mean_elevation_km, elevation_lut_grid = \
         get_metadata_from_loc(paths.loc_working_path, lut_params)
+    if args.emulator_base is not None:
+        if elevation_lut_grid is not None and np.any(elevation_lut_grid < 0):
+            to_rem = elevation_lut_grid[elevation_lut_grid < 0].copy()
+            elevation_lut_grid[ elevation_lut_grid< 0] = 0
+            elevation_lut_grid = np.unique(elevation_lut_grid)
+            logging.info("Scene contains target lut grid elements < 0 km, and uses 6s (via sRTMnet).  6s does not "
+                         f"support targets below sea level in km units.  Setting grid points {to_rem} to 0.")
 
     # Need a 180 - here, as this is already in MODTRAN convention
     mean_altitude_km = mean_elevation_km + np.cos(np.deg2rad(180 - mean_to_sensor_zenith)) * mean_path_km
@@ -345,6 +360,8 @@ class Pathnames():
             logging.info('Flightline ID: %s' % self.fid)
         elif args.sensor == 'neon':
             self.fid = split(args.input_radiance)[-1][:21]
+        elif args.sensor[3:] == 'NA-':
+            self.fid = os.path.splitext(os.path.basename(args.input_radiance))[0]
 
         # Names from inputs
         self.aerosol_climatology = args.aerosol_climatology_path
@@ -441,7 +458,10 @@ class Pathnames():
         self.irradiance_file = abspath(join(self.isofit_path,'examples','20151026_SantaMonica','data','prism_optimized_irr.dat'))
 
         self.aerosol_tpl_path = join(self.isofit_path, 'data', 'aerosol_template.json')
-        self.rdn_factors_path = args.rdn_factors_path
+        self.rdn_factors_path = None
+        if args.rdn_factors_path is not None:
+            self.rdn_factors_path = abspath(args.rdn_factors_path)
+
 
         self.ray_temp_dir = args.ray_temp_dir
 
@@ -567,7 +587,10 @@ class LUTConfig:
 
         if min_spacing > 0.0001:
             grid = np.round(grid, 4)
-        if np.abs(grid[1] - grid[0]) < min_spacing:
+        if len(grid) == 1:
+            logging.debug(f'Grid spacing is 0, which is less than {min_spacing}.  No grid used')
+            return None
+        elif np.abs(grid[1] - grid[0]) < min_spacing:
             logging.debug(f'Grid spacing is {grid[1]-grid[0]}, which is less than {min_spacing}.  No grid used')
             return None
         else:
@@ -633,11 +656,14 @@ class LUTConfig:
                 num_points = 1
             else:
                 # This very well might overly space the grid, but we don't / can't know in general
-                num_points = 360 / spacing
+                num_points = int(np.ceil(360 / spacing))
 
             # We initialize the GMM with a static seed for repeatability across runs
             gmm = mixture.GaussianMixture(n_components=num_points, covariance_type='full',
                                           random_state=1)
+            if spatial_data.shape[0]  == 1:
+                spatial_data = np.vstack([spatial_data, spatial_data])
+
             gmm.fit(spatial_data)
             central_angles = np.degrees(np.arctan2(gmm.means_[:, 1], gmm.means_[:, 0]))
             if num_points == 1:
@@ -1195,13 +1221,15 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
         grid = {}
         if h2o_lut_grid is not None:
             h2o_delta = float(h2o_lut_grid[-1]) - float(h2o_lut_grid[0])
-            grid['H2OSTR'] = [round(h2o_lut_grid[0]+h2o_delta*0.02,4), round(h2o_lut_grid[-1]-h2o_delta*0.02,4)]
+            grid['H2OSTR'] = [round(h2o_lut_grid[0]+h2o_delta*0.02,4), 
+                              round(h2o_lut_grid[-1]-h2o_delta*0.02,4)]
 
         # We will initialize using different AODs for the first aerosol in the LUT
         if len(aerosol_lut_grid)>0:
             key = list(aerosol_lut_grid.keys())[0]
             aer_delta = aerosol_lut_grid[key][-1] - aerosol_lut_grid[key][0]
-            grid[key] = [round(aerosol_lut_grid[key][0]+aer_delta*0.02), round(aerosol_lut_grid[key][-1]-aer_delta*0.02,4)]
+            grid[key] = [round(aerosol_lut_grid[key][0]+aer_delta*0.02,4), 
+                         round(aerosol_lut_grid[key][-1]-aer_delta*0.02,4)]
         isofit_config_modtran['implementation']['inversion']['integration_grid'] = grid
         isofit_config_modtran['implementation']['inversion']['inversion_grid_as_preseed'] = True
 

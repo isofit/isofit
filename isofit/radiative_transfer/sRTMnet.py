@@ -25,6 +25,7 @@ import numpy as np
 from copy import deepcopy
 import yaml
 import pickle
+from collections import OrderedDict
 
 from isofit.core.common import resample_spectrum, load_wavelen, VectorInterpolator
 from .look_up_tables import TabularRT
@@ -99,10 +100,13 @@ class SimulatedModtranRT(TabularRT):
         sixs_config.wlinf = 0.35
         sixs_config.wlsup = 2.5
 
+
+
         # Build the simulator
         logging.debug('Create RTE simulator')
         sixs_rte = SixSRT(sixs_config, full_config, build_lut_only = False, 
-                          wavelength_override=simulator_wavelengths, fwhm_override=np.ones(n_simulator_chan)*2.)
+                          wavelength_override=simulator_wavelengths, fwhm_override=np.ones(n_simulator_chan)*2.,
+                          modtran_emulation=True)
         self.solar_irr = sixs_rte.solar_irr
         self.esd = sixs_rte.esd
         self.coszen = sixs_rte.coszen
@@ -165,7 +169,7 @@ class SimulatedModtranRT(TabularRT):
             
             for key_ind, key in enumerate(self.lut_quantities):
                 with open(interpolator_disk_paths[key_ind], 'wb') as fi:
-                    pickle.dump(self.luts[key], fi)
+                    pickle.dump(self.luts[key], fi, protocol=4)
 
         else:
             logging.info('Prebuilt LUT interpolators found, loading from disk')
