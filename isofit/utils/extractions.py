@@ -23,10 +23,9 @@ from spectral.io import envi
 import ray
 import logging
 import atexit
-from typing import List
 
 @ray.remote
-def extract_chunk(lstart: int, lend: int, in_file: str, labels, unique_labels: List, flag, logfile=None, loglevel='INFO'):
+def extract_chunk(lstart: int, lend: int, in_file: str, labels, flag, logfile=None, loglevel='INFO'):
     """
     Extract a small chunk of the image
 
@@ -35,7 +34,6 @@ def extract_chunk(lstart: int, lend: int, in_file: str, labels, unique_labels: L
         lend: line to end extraction at
         in_file: file to read image from
         label: labels to use for data read
-        unique_labels: array of unique label entries to use
         flag: nodata value of image
         logfile: logging file name
         loglevel: logging level
@@ -83,8 +81,7 @@ def extract_chunk(lstart: int, lend: int, in_file: str, labels, unique_labels: L
     out_data = np.zeros((len(active),img_mm.shape[-1])) + flag
 
     logging.debug(f'{lstart}: running extraction from local array')
-    for lab in active:
-        _lab = unique_labels.index(lab)
+    for _lab, lab in enumerate(active):
         out_data[_lab, :] = 0
         locs = np.where(chunk_lbl == lab)
         for row, col in zip(locs[0], locs[1]):
@@ -119,7 +116,7 @@ def extractions(inputfile, labels, output, chunksize, flag, n_cores: int = 1, ra
 
     lbl_img = envi.open(lbl_file+'.hdr', lbl_file)
     labels = lbl_img.read_band(0)
-    un_labels = np.unique(labels).tolist()
+    un_labels = np.unique(labels)
     nout = len(un_labels)
 
 
@@ -145,7 +142,7 @@ def extractions(inputfile, labels, output, chunksize, flag, n_cores: int = 1, ra
     jobs = []
     for lstart in np.arange(0, nl, nchunk):
         lend = min(lstart+nchunk, nl)
-        jobs.append(extract_chunk.remote(lstart, lend, in_file, labelid, un_labels, flag, logfile=logfile, loglevel=loglevel))
+        jobs.append(extract_chunk.remote(lstart, lend, in_file, labelid, flag, logfile=logfile, loglevel=loglevel))
 
 
     # Collect results
@@ -155,7 +152,8 @@ def extractions(inputfile, labels, output, chunksize, flag, n_cores: int = 1, ra
     out = np.zeros((nout, nb))
     for idx, ret in rreturn:
         if ret is not None:
-            out[idx.copy(),...] = ret.copy()
+            for _output_index in range(len(idx)):
+                out[un_labels.index(idx[_output_index]),...] = ret[_output_index,...]
     del rreturn
     ray.shutdown()
 
