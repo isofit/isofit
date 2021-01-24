@@ -163,7 +163,6 @@ def segment(spectra: tuple, nodata_value: float, npca: int, segsize: int, nchunk
 
 
     # Iterate through image "chunks," segmenting as we go
-    next_label = 1
     all_labels = np.zeros((nl, ns),dtype=np.int64)
     jobs = []
     for lstart in np.arange(0, nl, nchunk):
@@ -172,15 +171,19 @@ def segment(spectra: tuple, nodata_value: float, npca: int, segsize: int, nchunk
 
         jobs.append(segment_chunk.remote(lstart, lend, in_file, nodata_value, npca, segsize, logfile=logfile, loglevel=loglevel))
 
-    # Collect results, making sure each chunk is distinct (note, label indexing is arbitrary,
-    # so not attempt at sorting is made)
+    # Collect results, making sure each chunk is distinct, and enforce an order
+    next_label = 1
     rreturn = [ray.get(jid) for jid in jobs]
     for lstart, lend, ret in rreturn:
         if ret is not None:
             logging.debug(f'Collecting chunk: {lstart}')
             chunk_label = ret.copy()
-            chunk_label[chunk_label != 0] += np.max(all_labels)
-            all_labels[lstart:lend,...] = chunk_label
+            unique_chunk_labels = np.unique(chunk_label[chunk_label != 0])
+            ordered_chunk_labels = np.zeros(chunk_label.shape)
+            for lbl in unique_chunk_labels:
+                ordered_chunk_labels[chunk_label == lbl] = next_label
+                next_label += 1
+            all_labels[lstart:lend,...] = ordered_chunk_labels
     del rreturn
     ray.shutdown()
 
