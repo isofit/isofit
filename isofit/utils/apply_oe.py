@@ -116,10 +116,10 @@ def main():
 
     args = parser.parse_args()
 
-    if args.sensor not in ['ang', 'avcl', 'neon', 'prism']:
+    if args.sensor not in ['ang', 'avcl', 'neon', 'prism', 'emit']:
         if args.sensor[:3] != 'NA-':
             raise ValueError('argument sensor: invalid choice: "NA-test" (choose from '
-                             '"ang", "avcl", "neon", "prism", "NA-*")')
+                             '"ang", "avcl", "neon", "prism", "emit", "NA-*")')
 
     if args.copy_input_files == 1:
         args.copy_input_files = True
@@ -147,20 +147,19 @@ def main():
     if args.sensor == 'ang':
         # parse flightline ID (AVIRIS-NG assumptions)
         dt = datetime.strptime(paths.fid[3:], '%Y%m%dt%H%M%S')
-        dayofyear = dt.timetuple().tm_yday
     elif args.sensor == 'avcl':
         # parse flightline ID (AVIRIS-CL assumptions)
         dt = datetime.strptime('20{}t000000'.format(paths.fid[1:7]), '%Y%m%dt%H%M%S')
-        dayofyear = dt.timetuple().tm_yday
     elif args.sensor == 'neon':
         dt = datetime.strptime(paths.fid, 'NIS01_%Y%m%d_%H%M%S')
-        dayofyear = dt.timetuple().tm_yday
     elif args.sensor == 'prism':
         dt = datetime.strptime(paths.fid[3:], '%Y%m%dt%H%M%S')
-        dayofyear = dt.timetuple().tm_yday
+    elif args.sensor == 'emit':
+        dt = datetime.strptime(paths.fid[:19], 'emit%Y%m%dt%H%M%S')
     elif args.sensor[:3] == 'NA-':
         dt = datetime.strptime(args.sensor[3:], '%Y%m%d')
-        dayofyear = dt.timetuple().tm_yday
+
+    dayofyear = dt.timetuple().tm_yday
 
     h_m_s, day_increment, mean_path_km, mean_to_sensor_azimuth, mean_to_sensor_zenith, valid, \
     to_sensor_azimuth_lut_grid, to_sensor_zenith_lut_grid = get_metadata_from_obs(paths.obs_working_path, lut_params)
@@ -360,6 +359,8 @@ class Pathnames():
             logging.info('Flightline ID: %s' % self.fid)
         elif args.sensor == 'neon':
             self.fid = split(args.input_radiance)[-1][:21]
+        elif args.sensor == 'emit':
+            self.fid = split(args.input_radiance)[-1][:19]
         elif args.sensor[3:] == 'NA-':
             self.fid = os.path.splitext(os.path.basename(args.input_radiance))[0]
 
