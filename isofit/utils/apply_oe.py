@@ -307,11 +307,7 @@ def main():
         build_main_config(paths, lut_params, h2o_lut_grid, elevation_lut_grid, to_sensor_azimuth_lut_grid,
                           to_sensor_zenith_lut_grid, mean_latitude, mean_longitude, dt, 
                           args.empirical_line == 1, args.n_cores, args.surface_category,
-<<<<<<< HEAD
                           args.emulator_base, uncorrelated_radiometric_uncertainty, args.multiple_restarts)
-=======
-                          uncorrelated_radiometric_uncertainty, args.multiple_restarts)
->>>>>>> multiple restarts
 
         # Run modtran retrieval
         logging.info('Running ISOFIT with full LUT')
@@ -548,8 +544,8 @@ class LUTConfig:
         self.h2o_range = [0.05, 5]
 
         # Units of degrees
-        self.to_sensor_azimuth_spacing = 0
-        self.to_sensor_azimuth_spacing_min = 0
+        self.to_sensor_azimuth_spacing = 60
+        self.to_sensor_azimuth_spacing_min = 60
 
         # Units of degrees
         self.to_sensor_zenith_spacing = 10
@@ -1223,7 +1219,6 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
 
     if multiple_restarts:
         eps = 1e-2
-<<<<<<< HEAD
         grid = {}
         if h2o_lut_grid is not None:
             h2o_delta = float(h2o_lut_grid[-1]) - float(h2o_lut_grid[0])
@@ -1236,13 +1231,6 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
             aer_delta = aerosol_lut_grid[key][-1] - aerosol_lut_grid[key][0]
             grid[key] = [round(aerosol_lut_grid[key][0]+aer_delta*0.02,4), 
                          round(aerosol_lut_grid[key][-1]-aer_delta*0.02,4)]
-=======
-        grid = {'H2OSTR':[float(h2o_lut_grid[0]+eps), float(h2o_lut_grid[-1]-eps)]}
-        # We will initialize using different AODs for the first aerosol in the LUT
-        if len(aerosol_lut_grid)>0:
-           key = list(aerosol_lut_grid.keys())[0]
-           grid[key] = [float(aerosol_lut_grid[key][0]+eps), float(aerosol_lut_grid[key][-1]-eps)]
->>>>>>> multiple restarts
         isofit_config_modtran['implementation']['inversion']['integration_grid'] = grid
         isofit_config_modtran['implementation']['inversion']['inversion_grid_as_preseed'] = True
 
