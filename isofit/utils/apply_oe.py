@@ -544,8 +544,8 @@ class LUTConfig:
         self.h2o_range = [0.05, 5]
 
         # Units of degrees
-        self.to_sensor_azimuth_spacing = 0
-        self.to_sensor_azimuth_spacing_min = 0
+        self.to_sensor_azimuth_spacing = 60
+        self.to_sensor_azimuth_spacing_min = 60
 
         # Units of degrees
         self.to_sensor_zenith_spacing = 10
