@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 #
-#  Copyright 2019 California Institute of Technology
+#  Copyright 2020 California Institute of Technology
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -28,8 +28,10 @@ import time
 import matplotlib
 import pylab as plt
 from isofit.configs import configs
-import ray
-import atexit
+import multiprocessing
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import RBF, WhiteKernel
+from sklearn.decomposition import PCA
 
 plt.switch_backend("Agg")
 
@@ -53,53 +55,46 @@ def _write_bil_chunk(dat: np.array, outfile: str, line: int, shape: tuple, dtype
     outfile.close()
 
 
-@ray.remote
-def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, reference_reflectance_file: str,
-               reference_uncertainty_file: str, reference_locations_file: str, input_radiance_file: str,
-               input_locations_file: str, segmentation_file: str, isofit_config: str, output_reflectance_file: str,
+def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, reference_atm_file: str,
+               reference_locations_file: str, input_radiance_file: str,
+               input_locations_file: str, segmentation_file: str, isofit_config: dict, output_reflectance_file: str,
                output_uncertainty_file: str, radiance_factors: np.array, nneighbors: int,
-               nodata_value: float, loglevel: str, logfile: str) -> None:
+               nodata_value: float) -> None:
     """
     Args:
         start_line: line to start empirical line run at
         stop_line:  line to stop empirical line run at
         reference_radiance_file: source file for radiance (interpolation built from this)
-        reference_reflectance_file:  source file for reflectance (interpolation built from this)
-        reference_uncertainty_file:  source file for uncertainty (interpolation built from this)
+        reference_atm_file:  source file for atmosphere coefficients (interpolation built from this)
         reference_locations_file:  source file for file locations (lon, lat, elev), (interpolation built from this)
         input_radiance_file: input radiance file (interpolate over this)
         input_locations_file: input location file (interpolate over this)
         segmentation_file: input file noting the per-pixel segmentation used
-        isofit_config: path to isofit configuration JSON file
+        isofit_config: dictionary-stype isofit configuration
         output_reflectance_file: location to write output reflectance to
         output_uncertainty_file: location to write output uncertainty to
         radiance_factors: radiance adjustment factors
         nneighbors: number of neighbors to use for interpolation
         nodata_value: nodata value of input and output
-        loglevel: logging level
-        logfile: logging file
 
     Returns:
         None
 
     """
 
-    logging.basicConfig(format='%(message)s', level=loglevel, filename=logfile)
-
     # Load reference images
     reference_radiance_img = envi.open(reference_radiance_file + '.hdr', reference_radiance_file)
-    reference_reflectance_img = envi.open(reference_reflectance_file + '.hdr', reference_reflectance_file)
-    reference_uncertainty_img = envi.open(reference_uncertainty_file + '.hdr', reference_uncertainty_file)
+    reference_atm_img = envi.open(reference_atm_file + '.hdr', reference_atm_file)
     reference_locations_img = envi.open(reference_locations_file + '.hdr', reference_locations_file)
 
     n_reference_lines, n_radiance_bands, n_reference_columns = [int(reference_radiance_img.metadata[n])
                                                                 for n in ('lines', 'bands', 'samples')]
-    n_reference_uncertainty_bands = int(reference_uncertainty_img.metadata['bands'])
 
     # Load input images
     input_radiance_img = envi.open(input_radiance_file + '.hdr', input_radiance_file)
     n_input_lines, n_input_bands, n_input_samples = [int(input_radiance_img.metadata[n])
                                                      for n in ('lines', 'bands', 'samples')]
+    wl = np.array([float(w) for w in input_radiance_img.metadata['wavelength']])
 
     input_locations_img = envi.open(input_locations_file + '.hdr', input_locations_file)
     n_location_bands = int(input_locations_img.metadata['bands'])
@@ -111,19 +106,19 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
     n_output_uncertainty_bands = int(output_uncertainty_img.metadata['bands'])
 
     # Load reference data
-    reference_locations_mm = reference_locations_img.open_memmap(interleave='bip', writable=False)
+    reference_locations_mm = reference_locations_img.open_memmap(interleave='source', writable=False)
     reference_locations = np.array(reference_locations_mm[:, :, :]).reshape((n_reference_lines, n_location_bands))
 
-    reference_radiance_mm = reference_radiance_img.open_memmap(interleave='bip', writable=False)
+    reference_radiance_mm = reference_radiance_img.open_memmap(interleave='source', writable=False)
     reference_radiance = np.array(reference_radiance_mm[:, :, :]).reshape((n_reference_lines, n_radiance_bands))
 
-    reference_reflectance_mm = reference_reflectance_img.open_memmap(interleave='bip', writable=False)
-    reference_reflectance = np.array(reference_reflectance_mm[:, :, :]).reshape((n_reference_lines, n_radiance_bands))
-
-    reference_uncertainty_mm = reference_uncertainty_img.open_memmap(interleave='bip', writable=False)
-    reference_uncertainty = np.array(reference_uncertainty_mm[:, :, :]).reshape((n_reference_lines,
-                                                                                 n_reference_uncertainty_bands))
-    reference_uncertainty = reference_uncertainty[:, :n_radiance_bands].reshape((n_reference_lines, n_radiance_bands))
+    reference_atm_mm = reference_atm_img.open_memmap(interleave='source', writable=False)
+    reference_atm = np.array(reference_atm_mm[:, :, :]).reshape((n_reference_lines, n_radiance_bands*5))
+    rhoatm = reference_atm[:,:n_radiance_bands]
+    sphalb = reference_atm[:,n_radiance_bands:(n_radiance_bands*2)] 
+    transm = reference_atm[:,(n_radiance_bands*2):(n_radiance_bands*3)] 
+    solirr = reference_atm[:,(n_radiance_bands*3):(n_radiance_bands*4)] 
+    coszen = reference_atm[:,(n_radiance_bands*4):(n_radiance_bands*5)]  
 
     # Load segmentation data
     if segmentation_file:
@@ -146,29 +141,53 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
     else:
         radiance_adjustment = np.loadtxt(radiance_factors)
 
-    # Load Tree
-    loc_scaling = np.array([1e5, 1e5, 0.1])
-    scaled_ref_loc = reference_locations * loc_scaling
-    tree = KDTree(scaled_ref_loc)
+    # PCA coefficients
+    rdn_pca = PCA(n_components=2)
+    reference_pca = rdn_pca.fit_transform(reference_radiance * radiance_adjustment)
+
+    # Create the tree to find nearest neighbor segments.
     # Assume (heuristically) that, for distance purposes, 1 m vertically is
     # comparable to 10 m horizontally, and that there are 100 km per latitude
     # degree.  This is all approximate of course.  Elevation appears in the
     # Third element, and the first two are latitude/longitude coordinates
+    # The fourth and fifth elements are "spectral distance" determined by the
+    # top principal component coefficients
+    loc_scaling = np.array([1e5, 1e5, 10, 100, 100])
+    scaled_ref_loc = np.concatenate((reference_locations,reference_pca),axis=1) * loc_scaling
+    tree = KDTree(scaled_ref_loc)
 
-    # Iterate through image
+    # Fit GP parameters on transmissivity of an H2O feature, in the 
+    # first 400 datapoints
+    use = np.arange(min(len(rhoatm),400))
+    h2oband = np.argmin(abs(wl-940))
+    scale = (500,500,500,500,500)
+    bounds = ((100,2000),(100,2000),(100,2000),(100,2000),(100,2000))
+    kernel =  RBF(length_scale=scale, length_scale_bounds=bounds) +\
+                  WhiteKernel(noise_level=0.01, noise_level_bounds=(1e-10, 0.1))
+    gp = GaussianProcessRegressor(kernel=kernel, alpha=0.0, normalize_y=True)
+    gp = gp.fit(scaled_ref_loc[use,:], transm[use,h2oband])
+    kernel = gp.kernel_
+    
+
+    # Iterate through image.  Each segment has its own GP, stored in a 
+    # hash table indexed by location in the segmentation map
     hash_table = {}
 
     for row in np.arange(start_line, stop_line):
 
         # Load inline input data
         input_radiance_mm = input_radiance_img.open_memmap(
-            interleave='bip', writable=False)
+            interleave='source', writable=False)
         input_radiance = np.array(input_radiance_mm[row, :, :])
+        if input_radiance_img.metadata['interleave'] == 'bil':
+            input_radiance = input_radiance.transpose((1, 0))
         input_radiance = input_radiance * radiance_adjustment
 
         input_locations_mm = input_locations_img.open_memmap(
-            interleave='bip', writable=False)
+            interleave='source', writable=False)
         input_locations = np.array(input_locations_mm[row, :, :])
+        if input_locations_img.metadata['interleave'] == 'bil':
+            input_locations = input_locations.transpose((1, 0))
 
         output_reflectance_row = np.zeros(input_radiance.shape) + nodata_value
         output_uncertainty_row = np.zeros(input_radiance.shape) + nodata_value
@@ -176,62 +195,65 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
         nspectra, start = 0, time.time()
         for col in np.arange(n_input_samples):
 
-            x = input_radiance[col, :]
-            if np.all(np.isclose(x, nodata_value)):
+            # Get radiance, pca coordinates, physical location for this datum
+            my_rdn = input_radiance[col, :]
+            my_pca = rdn_pca.transform(my_rdn[np.newaxis,:])
+            my_loc = np.r_[input_locations[col, :], my_pca[0,:]] * loc_scaling
+
+            if np.all(np.isclose(my_rdn, nodata_value)):
                 output_reflectance_row[col, :] = nodata_value
                 output_uncertainty_row[col, :] = nodata_value
                 continue
 
-            bhat = None
-            if segmentation_img is not None:
-                hash_idx = segmentation_img[row, col]
-                if hash_idx in hash_table:
-                    bhat, bmarg, bcov = hash_table[hash_idx]
-                else:
-                    loc = reference_locations[np.array(
-                        hash_idx, dtype=int), :] * loc_scaling
+            # Retrieve or build the GP
+            gp_rhoatm, gp_sphalb, gp_transm, irr = None, None, None, None
+            hash_idx = segmentation_img[row, col]
+            if hash_idx in hash_table:
+                gp_rhoatm, gp_sphalb, gp_transm, irr = hash_table[hash_idx]
             else:
-                loc = input_locations[col, :] * loc_scaling
 
-            if bhat is None:
-                dists, nn = tree.query(loc, nneighbors)
-                xv = reference_radiance[nn, :]
-                yv = reference_reflectance[nn, :]
-                uv = reference_uncertainty[nn, :]
-                bhat = np.zeros((n_radiance_bands, 2))
-                bmarg = np.zeros((n_radiance_bands, 2))
-                bcov = np.zeros((n_radiance_bands, 2, 2))
+                # There is no GP for this segment, so we build one from 
+                # the atmospheric coefficients from closest neighbors
+                dists, nn = tree.query(my_loc, nneighbors)
+                neighbor_rhoatm = rhoatm[nn, :]
+                neighbor_transm = transm[nn, :]
+                neighbor_sphalb = sphalb[nn, :]
+                neighbor_coszen = coszen[nn, :]
+                neighbor_solirr = solirr[nn, :]
+                neighbor_locs = scaled_ref_loc[nn, :]
 
-                for i in np.arange(n_radiance_bands):
-                    use = yv[:, i] > 0
-                    n = sum(use)
-                    X = np.concatenate((np.ones((n, 1)), xv[use, i:i + 1]), axis=1)
-                    W = np.diag(np.ones(n))  # /uv[use, i])
-                    y = yv[use, i:i + 1]
-                    try:
-                        bhat[i, :] = (inv(X.T @ W @ X) @ X.T @ W @ y).T
-                        bcov[i, :, :] = inv(X.T @ W @ X)
-                    except:
-                        bhat[i, :] = 0
-                        bcov[i, :, :] = 0
-                    bmarg[i, :] = np.diag(bcov[i, :, :])
+                # Create a new GP using the optimized parameters as a fixed kernel
+                gp_rhoatm = GaussianProcessRegressor(kernel=kernel, alpha=0.0, 
+                      normalize_y=True, optimizer=None)
+                gp_rhoatm.fit(neighbor_locs, neighbor_rhoatm)
+                gp_sphalb = GaussianProcessRegressor(kernel=kernel, alpha=0.0, 
+                      normalize_y=True, optimizer=None)
+                gp_sphalb.fit(neighbor_locs, neighbor_sphalb)
+                gp_transm = GaussianProcessRegressor(kernel=kernel, alpha=0.0, 
+                      normalize_y=True, optimizer=None)
+                gp_transm.fit(neighbor_locs, neighbor_transm)
+                irr = solirr[1,:]*coszen[1,:]
+                irr[irr<1e-8] = 1e-8
 
-            if (segmentation_img is not None) and not (hash_idx in hash_table):
-                hash_table[hash_idx] = bhat, bmarg, bcov
+                hash_table[hash_idx] = (gp_rhoatm, gp_sphalb, gp_transm, irr)
 
-            A = np.array((np.ones(n_radiance_bands), x))
-            output_reflectance_row[col, :] = (np.multiply(bhat.T, A).sum(axis=0))
+            my_rhoatm = gp_rhoatm.predict(my_loc[np.newaxis,:])
+            my_sphalb = gp_sphalb.predict(my_loc[np.newaxis,:])
+            my_transm = gp_transm.predict(my_loc[np.newaxis,:])
+            my_rho = (my_rdn * np.pi) / irr
+            my_rfl = 1.0 / (my_transm / (my_rho - my_rhoatm) + my_sphalb)
+            output_reflectance_row[col, :] = my_rfl
 
             # Calculate uncertainties.  Sy approximation rather than Seps for
             # speed, for now... but we do take into account instrument
             # radiometric uncertainties
-            if instrument is None:
-                output_uncertainty_row[col, :] = np.sqrt(np.multiply(bmarg.T, A).sum(axis=0))
-            else:
-                Sy = instrument.Sy(x, geom=None)
-                calunc = instrument.bval[:instrument.n_chan]
-                output_uncertainty_row[col, :] = np.sqrt(
-                    np.diag(Sy) + pow(calunc * x, 2)) * bhat[:, 1]
+            #output_uncertainty_row[col, :] = np.zeros()
+            #if instrument is None:
+            #else:
+            #    Sy = instrument.Sy(x, geom=None)
+            #    calunc = instrument.bval[:instrument.n_chan]
+            #    output_uncertainty_row[col, :] = np.sqrt(
+            #        np.diag(Sy) + pow(calunc * x, 2)) * bhat[:, 1]
             # if loglevel == 'DEBUG':
             #    plot_example(xv, yv, bhat)
 
@@ -258,54 +280,34 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
                          (n_input_lines, n_output_uncertainty_bands, n_input_samples))
 
 
-def _plot_example(xv, yv, b):
-    """Plot for debugging purposes."""
 
-    matplotlib.rcParams['font.family'] = "serif"
-    matplotlib.rcParams['font.sans-serif'] = "Times"
-    matplotlib.rcParams["legend.edgecolor"] = "None"
-    matplotlib.rcParams["axes.spines.top"] = False
-    matplotlib.rcParams["axes.spines.bottom"] = True
-    matplotlib.rcParams["axes.spines.left"] = True
-    matplotlib.rcParams["axes.spines.right"] = False
-    matplotlib.rcParams['axes.grid'] = True
-    matplotlib.rcParams['axes.grid.axis'] = 'both'
-    matplotlib.rcParams['axes.grid.which'] = 'major'
-    matplotlib.rcParams['legend.edgecolor'] = '1.0'
-    plt.plot(xv[:, 113], yv[:, 113], 'ko')
-    plt.plot(xv[:, 113], xv[:, 113] * b[113, 1] + b[113, 0], 'nneighbors')
-    # plt.plot(x[113], x[113]*b[113, 1] + b[113, 0], 'ro')
-    plt.grid(True)
-    plt.xlabel('Radiance, $\mu{W }nm^{-1} sr^{-1} cm^{-2}$')
-    plt.ylabel('Reflectance')
-    plt.show(block=True)
-    plt.savefig('empirical_line.pdf')
-
-
-def empirical_line(reference_radiance_file: str, reference_reflectance_file: str, reference_uncertainty_file: str,
+def interpolate_atmosphere(reference_radiance_file: str, reference_atm_file: str, 
                    reference_locations_file: str, segmentation_file: str, input_radiance_file: str,
                    input_locations_file: str, output_reflectance_file: str, output_uncertainty_file: str,
-                   nneighbors: int = 50, nodata_value: float = -9999.0, level: str = 'INFO', logfile: str = None,
-                   radiance_factors: np.array = None, isofit_config: str = None, n_cores: int = -1) -> None:
+                   nneighbors: int = 15, nodata_value: float = -9999.0, level: str = 'INFO',
+                   radiance_factors: np.array = None, isofit_config: dict = None, n_cores: int = -1) -> None:
     """
-    Perform an empirical line interpolation for reflectance and uncertainty extrapolation
+    Perform a Gaussian process interpolation of atmospheric parameters.  It relies on precalculated
+    atmospheric coefficients at a subset of spatial locations stored in a file.  The file has 
+    each coefficient defined for every radiance channel, appearing in the order: (1) atmospheric
+    path reflectance; (2) spherical sky albedo; (3) total diffuse and direct transmittance of the 
+    two-part downwelling and upwelling path; (4) extraterrestrial solar irradiance; (5) cosine of solar
+    zenith angle.
     Args:
         reference_radiance_file: source file for radiance (interpolation built from this)
-        reference_reflectance_file:  source file for reflectance (interpolation built from this)
-        reference_uncertainty_file:  source file for uncertainty (interpolation built from this)
-        reference_locations_file:  source file for file locations (lon, lat, elev), (interpolation built from this)
+        reference_atm_file:  source file for atmospheric coefficients (interpolation from this)
+        reference_locations_file:  source file for file locations (lon, lat, elev), (interpolation from this)
         segmentation_file: input file noting the per-pixel segmentation used
         input_radiance_file: input radiance file (interpolate over this)
         input_locations_file: input location file (interpolate over this)
-        output_reflectance_file: location to write output reflectance to
-        output_uncertainty_file: location to write output uncertainty to
+        output_reflectance_file: location to write output reflectance
+        output_uncertainty_file: location to write output uncertainty
 
         nneighbors: number of neighbors to use for interpolation
         nodata_value: nodata value of input and output
         level: logging level
-        logfile: logging file
         radiance_factors: radiance adjustment factors
-        isofit_config: path to isofit configuration JSON file
+        isofit_config: dictionary-stype isofit configuration
         n_cores: number of cores to run on
     Returns:
         None
@@ -313,7 +315,7 @@ def empirical_line(reference_radiance_file: str, reference_reflectance_file: str
 
     loglevel = level
 
-    logging.basicConfig(format='%(message)s', level=loglevel, filename=logfile)
+    logging.basicConfig(format='%(message)s', level=loglevel)
 
     # Open input data to check that band formatting is correct
     # Load reference set radiance
@@ -323,18 +325,13 @@ def empirical_line(reference_radiance_file: str, reference_reflectance_file: str
     if n_reference_columns != 1:
         raise IndexError("Reference data should be a single-column list")
 
-    # Load reference set reflectance
-    reference_reflectance_img = envi.open(reference_reflectance_file + '.hdr', reference_reflectance_file)
-    nrefr, nbr, srefr = [int(reference_reflectance_img.metadata[n]) for n in ('lines', 'bands', 'samples')]
-    if nrefr != n_reference_lines or nbr != n_radiance_bands or srefr != n_reference_columns:
-        raise IndexError("Reference file dimension mismatch (reflectance)")
-
-    # Load reference set uncertainty, assuming reflectance uncertainty is
-    # recoreded in the first n_radiance_bands channels of data
-    reference_uncertainty_img = envi.open(reference_uncertainty_file + '.hdr', reference_uncertainty_file)
-    nrefu, ns, srefu = [int(reference_uncertainty_img.metadata[n]) for n in ('lines', 'bands', 'samples')]
-    if nrefu != n_reference_lines or ns < n_radiance_bands or srefu != n_reference_columns:
-        raise IndexError("Reference file dimension mismatch (uncertainty)")
+    # Load reference set atmospheric coefficients
+    reference_atm_img = envi.open(reference_atm_file + '.hdr', reference_atm_file)
+    nrefa, nba, srefa = [int(reference_atm_img.metadata[n]) for n in ('lines', 'bands', 'samples')]
+    if nrefa != n_reference_lines  or srefa != n_reference_columns:
+        raise IndexError("Reference file dimension mismatch (atmosphere)")
+    if nba  != (n_radiance_bands * 5):
+        raise IndexError("Reference atmosphere file has incorrect dimensioning")
 
     # Load reference set locations
     reference_locations_img = envi.open(reference_locations_file + '.hdr', reference_locations_file)
@@ -347,7 +344,7 @@ def empirical_line(reference_radiance_file: str, reference_reflectance_file: str
                                                      for n in ('lines', 'bands', 'samples')]
     if n_radiance_bands != n_input_bands:
         msg = 'Number of channels mismatch: input (%i) vs. reference (%i)'
-        raise IndexError(msg % (nbr, n_radiance_bands))
+        raise IndexError(msg % (n_input_bands, n_radiance_bands))
 
     input_locations_img = envi.open(input_locations_file + '.hdr', input_locations_file)
     nll, nlb, nls = [int(input_locations_img.metadata[n])
@@ -366,56 +363,35 @@ def empirical_line(reference_radiance_file: str, reference_reflectance_file: str
 
     # Now cleanup inputs and outputs, we'll write dynamically above
     del output_reflectance_img, output_uncertainty_img
-    del reference_reflectance_img, reference_uncertainty_img, reference_locations_img, input_radiance_img, input_locations_img
+    del reference_atm_img, reference_locations_img, input_radiance_img, input_locations_img
 
-    # Initialize ray cluster
-    start_time = time.time()
-    if isofit_config is not None:
-        iconfig = configs.create_new_config(isofit_config)
-    else:
-        # If none, create a temporary config to get default ray parameters
-        iconfig = configs.Config({})
+    # Determine the number of cores to use
     if n_cores == -1:
-        n_cores = iconfig.implementation.n_cores
-    rayargs = {'ignore_reinit_error': True,
-               'local_mode': n_cores == 1,
-               "address": iconfig.implementation.ip_head,
-               "redis_password": iconfig.implementation.redis_password}
-
-    # only specify a temporary directory if we are not connecting to
-    # a ray cluster
-    if rayargs['local_mode']:
-        rayargs['temp_dir'] = iconfig.implementation.ray_temp_dir
-        # Used to run on a VPN
-        ray.services.get_node_ip_address = lambda: '127.0.0.1'
-
-    # We can only set the num_cpus if running on a single-node
-    if iconfig.implementation.ip_head is None and iconfig.implementation.redis_password is None:
-        rayargs['num_cpus'] = n_cores
-
-    ray.init(**rayargs)
-    atexit.register(ray.shutdown)
-
-    n_ray_cores = ray.available_resources()["CPU"]
-    n_cores = min(n_ray_cores, n_input_lines)
-
-    logging.info('Beginning empirical line inversions using {} cores'.format(n_cores))
+        n_cores = multiprocessing.cpu_count()
+    n_cores = min(n_cores, n_input_lines)
 
     # Break data into sections
-    line_sections = np.linspace(0, n_input_lines, num=int(n_cores + 1), dtype=int)
+    line_sections = np.linspace(0, n_input_lines, num=n_cores + 1, dtype=int)
 
+    # Set up our pool
+    pool = multiprocessing.Pool(processes=n_cores)
     start_time = time.time()
+    logging.info('Beginning atmospheric interpolation inversions using {} cores'.format(n_cores))
 
     # Run the pool (or run serially)
     results = []
     for l in range(len(line_sections) - 1):
-        args = (line_sections[l], line_sections[l + 1], reference_radiance_file, reference_reflectance_file,
-                reference_uncertainty_file, reference_locations_file, input_radiance_file,
+        args = (line_sections[l], line_sections[l + 1], reference_radiance_file, reference_atm_file,
+                reference_locations_file, input_radiance_file,
                 input_locations_file, segmentation_file, isofit_config, output_reflectance_file,
-                output_uncertainty_file, radiance_factors, nneighbors, nodata_value, level, logfile)
-        results.append(_run_chunk.remote(*args))
+                output_uncertainty_file, radiance_factors, nneighbors, nodata_value,)
+        if n_cores != 1:
+            results.append(pool.apply_async(_run_chunk, args))
+        else:
+            _run_chunk(*args)
 
-    _ = ray.get(results)
+    pool.close()
+    pool.join()
 
     total_time = time.time() - start_time
     logging.info('Parallel empirical line inversions complete.  {} s total, {} spectra/s, {} spectra/s/core'.format(

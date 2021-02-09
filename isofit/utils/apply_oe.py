@@ -27,7 +27,7 @@ SEGMENTATION_SIZE = 400
 
 UNCORRELATED_RADIOMETRIC_UNCERTAINTY = 0.01
 
-INVERSION_WINDOWS = [[400.0, 1300.0], [1450, 1780.0], [2050.0, 2450.0]]
+INVERSION_WINDOWS = [[380.0, 1340.0], [1450, 1800.0], [1970.0, 2500.0]]
 
 
 def main():
@@ -93,7 +93,7 @@ def main():
     parser.add_argument('input_loc', type=str)
     parser.add_argument('input_obs', type=str)
     parser.add_argument('working_directory', type=str)
-    parser.add_argument('sensor', type=str, choices=['ang', 'avcl', 'neon', 'prism'])
+    parser.add_argument('sensor', type=str)
     parser.add_argument('--copy_input_files', type=int, choices=[0,1], default=0)
     parser.add_argument('--modtran_path', type=str)
     parser.add_argument('--wavelength_path', type=str)
@@ -115,6 +115,11 @@ def main():
     parser.add_argument('--emulator_base', type=str, default=None)
 
     args = parser.parse_args()
+
+    if args.sensor not in ['ang', 'avcl', 'neon', 'prism', 'emit']:
+        if args.sensor[:3] != 'NA-':
+            raise ValueError('argument sensor: invalid choice: "NA-test" (choose from '
+                             '"ang", "avcl", "neon", "prism", "emit", "NA-*")')
 
     if args.copy_input_files == 1:
         args.copy_input_files = True
@@ -142,17 +147,19 @@ def main():
     if args.sensor == 'ang':
         # parse flightline ID (AVIRIS-NG assumptions)
         dt = datetime.strptime(paths.fid[3:], '%Y%m%dt%H%M%S')
-        dayofyear = dt.timetuple().tm_yday
     elif args.sensor == 'avcl':
         # parse flightline ID (AVIRIS-CL assumptions)
         dt = datetime.strptime('20{}t000000'.format(paths.fid[1:7]), '%Y%m%dt%H%M%S')
-        dayofyear = dt.timetuple().tm_yday
     elif args.sensor == 'neon':
         dt = datetime.strptime(paths.fid, 'NIS01_%Y%m%d_%H%M%S')
-        dayofyear = dt.timetuple().tm_yday
     elif args.sensor == 'prism':
         dt = datetime.strptime(paths.fid[3:], '%Y%m%dt%H%M%S')
-        dayofyear = dt.timetuple().tm_yday
+    elif args.sensor == 'emit':
+        dt = datetime.strptime(paths.fid[:19], 'emit%Y%m%dt%H%M%S')
+    elif args.sensor[:3] == 'NA-':
+        dt = datetime.strptime(args.sensor[3:], '%Y%m%d')
+
+    dayofyear = dt.timetuple().tm_yday
 
     h_m_s, day_increment, mean_path_km, mean_to_sensor_azimuth, mean_to_sensor_zenith, valid, \
     to_sensor_azimuth_lut_grid, to_sensor_zenith_lut_grid = get_metadata_from_obs(paths.obs_working_path, lut_params)
@@ -191,7 +198,7 @@ def main():
     mean_latitude, mean_longitude, mean_elevation_km, elevation_lut_grid = \
         get_metadata_from_loc(paths.loc_working_path, lut_params)
     if args.emulator_base is not None:
-        if np.any(elevation_lut_grid < 0):
+        if elevation_lut_grid is not None and np.any(elevation_lut_grid < 0):
             to_rem = elevation_lut_grid[elevation_lut_grid < 0].copy()
             elevation_lut_grid[ elevation_lut_grid< 0] = 0
             elevation_lut_grid = np.unique(elevation_lut_grid)
@@ -352,6 +359,10 @@ class Pathnames():
             logging.info('Flightline ID: %s' % self.fid)
         elif args.sensor == 'neon':
             self.fid = split(args.input_radiance)[-1][:21]
+        elif args.sensor == 'emit':
+            self.fid = split(args.input_radiance)[-1][:19]
+        elif args.sensor[3:] == 'NA-':
+            self.fid = os.path.splitext(os.path.basename(args.input_radiance))[0]
 
         # Names from inputs
         self.aerosol_climatology = args.aerosol_climatology_path
@@ -533,8 +544,8 @@ class LUTConfig:
         self.h2o_range = [0.05, 5]
 
         # Units of degrees
-        self.to_sensor_azimuth_spacing = 0
-        self.to_sensor_azimuth_spacing_min = 0
+        self.to_sensor_azimuth_spacing = 60
+        self.to_sensor_azimuth_spacing_min = 60
 
         # Units of degrees
         self.to_sensor_zenith_spacing = 10
