@@ -81,7 +81,11 @@ def segment_chunk(lstart, lend, in_file, nodata_value, npca, segsize, logfile=No
     [v, d] = scipy.linalg.eigh(C)
 
     # Determine segmentation compactness scaling based on eigenvalues
+    # Override with a floor value to prevent zeros
     cmpct = scipy.linalg.norm(np.sqrt(v[-npca:]))
+    if cmpct < 1e-6:
+        cmpct = 10.0
+        print('Compactness override: %f'%cmpct)
 
     # Project, redimension as an image with "npca" channels, and segment
     x_pca_subset = (x[use,:] - mu) @ d[:, -npca:]

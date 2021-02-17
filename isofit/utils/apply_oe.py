@@ -665,6 +665,11 @@ class LUTConfig:
             if spatial_data.shape[0]  == 1:
                 spatial_data = np.vstack([spatial_data, spatial_data])
 
+            # Protect memory against huge images
+            if spatial_data.shape[0] > 1e6:
+                 use = np.linspace(0,spatial_data.shape[0]-1,1e6,dtype=int)
+                 spatial_data = spatial_data[use,:]
+
             gmm.fit(spatial_data)
             central_angles = np.degrees(np.arctan2(gmm.means_[:, 1], gmm.means_[:, 0]))
             if num_points == 1:
