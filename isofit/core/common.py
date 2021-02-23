@@ -27,6 +27,7 @@ from scipy.interpolate import RegularGridInterpolator
 from os.path import expandvars, split, abspath
 from typing import List
 from collections import OrderedDict
+from interpolation.splines import eval_linear, CGrid
 
 
 ### Variables ###
@@ -119,8 +120,9 @@ class VectorInterpolator:
 
         self.n = data.shape[-1]
         grid_aug = grid + [np.arange(data.shape[-1])]
-        self.itp = RegularGridInterpolator(grid_aug, data,
-                                           bounds_error=False, fill_value=None)
+        self.grid = CGrid(*[np.array(x) for x in grid_aug])
+        self.data = data
+
 
     def __call__(self, points):
 
@@ -143,7 +145,7 @@ class VectorInterpolator:
         # interpolation is performed. This is done only
         # for performance reasons.
         x[:, -1] = np.arange(self.n)
-        res = self.itp(x)
+        res = eval_linear(self.grid,self.data, x)
 
         return res
 
