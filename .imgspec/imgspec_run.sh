@@ -102,7 +102,7 @@ python -c "from isofit.utils import surface_model; surface_model('$input/basic_s
 # Run isofit
 working_dir=$(pwd)
 isofit_cmd="""python $apply_oe_exe $rdn_path $loc_ort_path $obs_ort_path $working_dir ang --presolve=1 \
---empirical_line=1 --emulator_base=$EMULATOR_DIR --n_cores 16 --wavelength_path $input/wavelengths.txt \
+--empirical_line=1 --emulator_base=$EMULATOR_DIR --n_cores 24 --wavelength_path $input/wavelengths.txt \
 --surface_path $input/basic_surface.mat --log_file isofit.log"""
 echo "Executing command: $isofit_cmd"
 $isofit_cmd
