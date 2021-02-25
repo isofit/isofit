@@ -7,23 +7,30 @@ from isofit.utils import surface_model
 surface_model("configs/ang20171108t184227_surface.json")
 
 # Run retrievals
-model1 = Isofit("configs/ang20171108t173546_darklot.json")
-model1.run()
+model = Isofit("configs/ang20171108t173546_darklot.json")
+model.run()
+del model
 
-model2 = Isofit("configs/ang20171108t173546_horse.json")
-model2.run()
+model = Isofit("configs/ang20171108t173546_horse.json")
+model.run()
+del model
 
-model3 = Isofit("configs/ang20171108t184227_astrored.json")
-model3.run()
+model = Isofit("configs/ang20171108t184227_astrored.json")
+model.run()
+del model
 
-model4 = Isofit("configs/ang20171108t184227_astrogreen.json")
-model4.run()
+model = Isofit("configs/ang20171108t184227_astrogreen.json")
+model.run()
+del model
 
-model5 = Isofit("configs/ang20171108t184227_beckmanlawn.json")
-model5.run()
+model = Isofit("configs/ang20171108t184227_beckmanlawn.json")
+model.run()
+del model
 
-model6 = Isofit("configs/ang20171108t184227_beckmanlawn-oversmoothed.json")
-model6.run()
+model = Isofit("configs/ang20171108t184227_beckmanlawn-oversmoothed.json")
+model.run()
+del model
 
-model7 = Isofit("configs/ang20171108t184227_beckmanlawn-undersmoothed.json")
-model7.run()
+model = Isofit("configs/ang20171108t184227_beckmanlawn-undersmoothed.json")
+model.run()
+del model
