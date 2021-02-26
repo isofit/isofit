@@ -377,15 +377,15 @@ def empirical_line(reference_radiance_file: str, reference_reflectance_file: str
         iconfig = configs.Config({})
     if n_cores == -1:
         n_cores = iconfig.implementation.n_cores
-    rayargs = {'ignore_reinit_error': True,
+    rayargs = {'ignore_reinit_error': self.config.implementation.ray_ignore_reinit_error,
                'local_mode': n_cores == 1,
                "address": iconfig.implementation.ip_head,
-               "redis_password": iconfig.implementation.redis_password}
+               "_redis_password": iconfig.implementation.redis_password}
 
     # only specify a temporary directory if we are not connecting to
     # a ray cluster
     if rayargs['local_mode']:
-        rayargs['temp_dir'] = iconfig.implementation.ray_temp_dir
+        rayargs['_temp_dir'] = iconfig.implementation.ray_temp_dir
         # Used to run on a VPN
         ray.services.get_node_ip_address = lambda: '127.0.0.1'
 

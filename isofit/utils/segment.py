@@ -144,13 +144,13 @@ def segment(spectra: tuple, nodata_value: float, npca: int, segsize: int, nchunk
     nl, nb, ns = [int(meta[n]) for n in ('lines', 'bands', 'samples')]
 
     # Start up a ray instance for parallel work
-    rayargs = {'ignore_reinit_error': True,
+    rayargs = {'ignore_reinit_error': self.config.implementation.ray_ignore_reinit_error,
                'local_mode': n_cores == 1,
                "address": ray_address,
-               "redis_password": ray_redis_password}
+               "_redis_password": ray_redis_password}
 
     if rayargs['local_mode']:
-        rayargs['temp_dir'] = ray_temp_dir
+        rayargs['_temp_dir'] = ray_temp_dir
         # Used to run on a VPN
         ray.services.get_node_ip_address = lambda: '127.0.0.1'
 

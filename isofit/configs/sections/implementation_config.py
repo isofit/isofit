@@ -66,6 +66,10 @@ class ImplementationConfig(BaseConfigSection):
         self.ray_temp_dir = '/tmp/ray'
         """str: Overrides the standard ray temporary directory.  Useful for multiuser systems."""
 
+        self._ray_ignore_reinit_error_type = bool
+        self.ray_ignore_reinit_error = True
+        """bool: Boolean to tell ray to ignore re-initilaization.  Can be convenient for multiple Isofit instances."""
+
         self.set_config_options(sub_configdic)
 
     def _check_config_validity(self) -> List[str]:
