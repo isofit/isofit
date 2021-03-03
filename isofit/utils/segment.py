@@ -144,7 +144,7 @@ def segment(spectra: tuple, nodata_value: float, npca: int, segsize: int, nchunk
     nl, nb, ns = [int(meta[n]) for n in ('lines', 'bands', 'samples')]
 
     # Start up a ray instance for parallel work
-    rayargs = {'ignore_reinit_error': self.config.implementation.ray_ignore_reinit_error,
+    rayargs = {'ignore_reinit_error': True,
                'local_mode': n_cores == 1,
                "address": ray_address,
                "_redis_password": ray_redis_password}

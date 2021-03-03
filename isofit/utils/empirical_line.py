@@ -377,7 +377,7 @@ def empirical_line(reference_radiance_file: str, reference_reflectance_file: str
         iconfig = configs.Config({})
     if n_cores == -1:
         n_cores = iconfig.implementation.n_cores
-    rayargs = {'ignore_reinit_error': self.config.implementation.ray_ignore_reinit_error,
+    rayargs = {'ignore_reinit_error': iconfig.implementation.ray_ignore_reinit_error,
                'local_mode': n_cores == 1,
                "address": iconfig.implementation.ip_head,
                "_redis_password": iconfig.implementation.redis_password}
