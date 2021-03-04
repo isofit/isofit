@@ -290,6 +290,17 @@ def do_hypertrace(isofit_config, wavelength_file, reflectance_file,
     fwd_state["AOT550"]["init"] = aod
     fwd_state["H2OSTR"]["init"] = h2o
 
+    # Also set the LUT grid to only target state. We don't want to interpolate
+    # over the LUT for our forward simulations!
+    fwd_lut = isofit_fwd["forward_model"]["radiative_transfer"]["lut_grid"]
+    fwd_lut["AOT550"] = [aod]
+    fwd_lut["H2OSTR"] = [h2o]
+    # Also have to create a one-off LUT directory for the forward run, to avoid
+    # using an (incorrect) previously cached one.
+    fwd_lutdir = outdir2 / "fwd_lut"
+    fwd_lutdir.mkdir(parents=True, exist_ok=True)
+    isofit_fwd["forward_model"]["radiative_transfer"]["radiative_transfer_engines"]["vswir"]["lut_path"] = str(fwd_lutdir)
+
     if radfile.exists() and not overwrite:
         logger.info("Skipping forward simulation because file exists.")
     else:
