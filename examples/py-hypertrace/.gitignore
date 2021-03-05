@@ -27,6 +27,10 @@ zz-*
 # SLURM log files
 hypertrace_job-*.*out
 
+# sRTM files
+6sV-2.1/*
+sRTMnet_v100/*
+
 # Hidden files
 *._*
 .DS_Store

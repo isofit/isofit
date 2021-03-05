@@ -71,15 +71,27 @@ ip_prefix=$(srun --nodes=1 --ntasks=1 -w $node1 hostname --ip-address) # Making 
 suffix=':6379'
 ip_head=$ip_prefix$suffix
 redis_password=$(uuidgen)
+echo "Redis password $redis_password"
+#######################################################################################
+
+#######################################################################################
+# Stop anything previous
+for ((  i=0; i<=$worker_num; i++ ))
+do
+  node2=${nodes_array[$i]}
+  srun --nodes=1 --ntasks=1 -w $node2 rm -rf /tmp/ray/*
+  srun --nodes=1 --ntasks=1 -w $node2 ray stop --force
+  srun --nodes=1 --ntasks=1 -w $node2 rm -rf /dev/shm/*
+done
 #######################################################################################
 
 #######################################################################################
 # Start the head
-srun --nodes=1 --ntasks=1 -w $node1 ray start --block --head --redis-password=$redis_password &
+srun --nodes=1 --ntasks=1 -w $node1 ray start --node-ip-address=$ip_prefix --num-cpus=$SLURM_CPUS_PER_TASK --block --head --port=6379 --redis-password=$redis_password &
 echo "Head started on $node1"
 
 # Give the head time to start before connecting workers
-sleep 5
+sleep 2
 # Make sure the head successfully starts before any worker does, otherwise
 # the worker will not be able to connect to redis. In case of longer delay,
 # adjust the sleeptime above to ensure proper order.
@@ -92,9 +104,8 @@ do
   node2=${nodes_array[$i]}
   echo "starting on node $node2"
   srun --nodes=1 --ntasks=1 -w $node2 ray start --num-cpus=$SLURM_CPUS_PER_TASK --block --address=$ip_head --redis-password=$redis_password &
-  #srun --nodes=1 --ntasks=1 -w $node2 ray start --block --address=$ip_head --redis-password=$redis_password & # Starting the workers
   # Flag --block will keep ray process alive on each compute node.
-  sleep 5
+  sleep 1
 done
 
 total_cores=$(( SLURM_JOB_NUM_NODES * SLURM_CPUS_PER_TASK ))
