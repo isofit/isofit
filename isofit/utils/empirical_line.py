@@ -137,8 +137,12 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
         config = configs.create_new_config(isofit_config)
         instrument = Instrument(config)
         logging.info('Loading instrument')
+
+        # Make sure the instrument is configured for single-pixel noise (no averaging)
+        instrument.integrations = 1
     else:
         instrument = None
+
 
     # Load radiance factors
     if radiance_factors is None:
