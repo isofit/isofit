@@ -4,8 +4,8 @@
 #SBATCH --out="hypertrace_job-%j.out"
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=12
-#SBATCH	--tasks-per-node=1
-#SBATCH	--mem-per-cpu=4GB
+#SBATCH --tasks-per-node=1
+#SBATCH --mem-per-cpu=4GB
 #SBATCH --mail-type=ALL
 #######################################################################################
 
