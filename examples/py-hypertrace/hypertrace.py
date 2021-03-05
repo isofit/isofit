@@ -299,7 +299,12 @@ def do_hypertrace(isofit_config, wavelength_file, reflectance_file,
     # using an (incorrect) previously cached one.
     fwd_lutdir = outdir2 / "fwd_lut"
     fwd_lutdir.mkdir(parents=True, exist_ok=True)
-    isofit_fwd["forward_model"]["radiative_transfer"]["radiative_transfer_engines"]["vswir"]["lut_path"] = str(fwd_lutdir)
+    fwd_vswir = (isofit_fwd["forward_model"]
+                 ["radiative_transfer"]
+                 ["radiative_transfer_engines"]
+                 ["vswir"])
+    fwd_vswir["lut_path"] = str(fwd_lutdir)
+    fwd_vswir["interpolator_base_path"] = str(fwd_lutdir)
 
     if radfile.exists() and not overwrite:
         logger.info("Skipping forward simulation because file exists.")
