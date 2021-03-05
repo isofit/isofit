@@ -117,3 +117,11 @@ This will generate a run across more than one node, e.g.
 JOBID   PARTITION   NAME        USER     ST TIME  NODES NODELIST(REASON)
 281     compute     py-hyper    sserbin  R  5:24      2 node[01-02]
 ```
+
+## Creating output graphics in "headless" mode
+If you are running on an HPC you may want to setup python to output graphics to file instead to the screen. You can do this by setting:
+
+```
+export MPLBACKEND=Agg
+```
+in your ~/.bashrc
