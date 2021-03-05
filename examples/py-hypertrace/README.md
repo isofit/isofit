@@ -26,9 +26,9 @@ Note that these files are quite large -- ~3.3 GB!
 4. Download the remaining Hypertrace support datasets from here (https://github.com/ashiklom/isofit/releases/tag/hypertrace-data) and extract them. 
 
 A script has been provided that will accomplish this for you:
-    ``` sh
-    ./prepare_hypertrace_data.sh
-    ```
+``` sh
+./prepare_hypertrace_data.sh
+```
 
 5. At this point, confirm that, inside the `examples/py-hypertrace` directory, you have
 a `6Sv-2.1` directory containing the `sixv2.1` binary executable;
