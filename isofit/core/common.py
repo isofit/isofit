@@ -53,10 +53,15 @@ class VectorInterpolator:
 
     def __init__(self, grid_input: List[List[float]], data_input: np.array, lut_interp_types: List[str]):
         self.lut_interp_types = lut_interp_types
+        self.single_point_data = None
 
         # Lists and arrays are mutable, so copy first
         grid = grid_input.copy()
         data = data_input.copy()
+
+        # Check if we are using a single grid point. If so, store the grid input.
+        if np.prod(list(map(len, grid))) == 1:
+            self.single_point_data = data
 
         # expand grid dimensionality as needed
         [radian_locations] = np.where(self.lut_interp_types == 'd')
@@ -123,6 +128,11 @@ class VectorInterpolator:
                                            bounds_error=False, fill_value=None)
 
     def __call__(self, points):
+
+        # If we only have one point, we can't do any interpolation, so just
+        # return the original data.
+        if self.single_point_data is not None:
+            return self.single_point_data
 
         x = np.zeros((self.n, len(points) + 1 +
                       np.sum(self.lut_interp_types != 'n')))
