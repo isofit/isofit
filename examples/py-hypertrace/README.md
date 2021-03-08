@@ -11,8 +11,8 @@ NOTE: All of these instructions assume you are operating from inside this direct
 
 1. Install Isofit, following the standard instructions.
 
-2. Create a folder called `6Sv-2.1`.
-Download and compile the 6Sv atmospheric radiative transfer model inside this directory.
+2. Create a folder called `6sv-2.1`.
+Download and compile the 6SV atmospheric radiative transfer model inside this directory.
 The default source code location is here (http://6s.ltdri.org/pages/downloads.html),
 but if that link doesn't work, you can download a mirrored version from here (https://github.com/ashiklom/isofit/releases/tag/6sv-mirror).
 Once downloaded, compile the code by calling `make` inside the source code directory.
@@ -31,7 +31,7 @@ A script has been provided that will accomplish this for you:
 ```
 
 5. At this point, confirm that, inside the `examples/py-hypertrace` directory, you have
-a `6Sv-2.1` directory containing the `sixv2.1` binary executable;
+a `6sv-2.1` directory containing the `sixv2.1` binary executable;
 a `sRTMnet_v100` directory containing a subdirectory also called `sRTMnet_v100` and a file `sRTMnet_v100_aux.npz`;
 and
 a `hypertrace-data` directory containing subdirectories including `noise`, `priors`, `wavelengths`, and `reflectance`.

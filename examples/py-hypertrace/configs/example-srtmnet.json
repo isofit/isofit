@@ -38,7 +38,7 @@
                 "radiative_transfer_engines": {
                     "vswir": {
                         "engine_name": "sRTMnet",
-                        "engine_base_dir": "./6sV-2.1",
+                        "engine_base_dir": "./6sv-2.1",
                         "aerosol_template_path": "../../data/aerosol_template.json",
                         "earth_sun_distance_file": "../../data/earth_sun_distance.txt",
                         "irradiance_file": "../../examples/20151026_SantaMonica/data/prism_optimized_irr.dat",
