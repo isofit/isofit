@@ -28,8 +28,8 @@ from ..radiative_transfer.libradtran import LibRadTranRT
 #from ..radiative_transfer.sRTMnet import SimulatedModtranRT
 from isofit.configs import Config
 from isofit.configs.sections.radiative_transfer_config import RadiativeTransferEngineConfig
-
-
+import pdb
+import matplotlib.pyplot as plt
 class RadiativeTransfer():
     """This class controls the radiative transfer component of the forward
     model. An ordered dictionary is maintained of individual RTMs (MODTRAN,
@@ -125,10 +125,11 @@ class RadiativeTransfer():
         return self.pack_arrays(ret)
 
     def calc_rdn(self, x_RT, rfl, Ls, geom):
+        #pdb.set_trace()
         r = self.get_shared_rtm_quantities(x_RT, geom)
         L_atm = self.get_L_atm(x_RT, geom)
         L_up = Ls * r['transup']
-
+        #pdb.set_trace()
         if geom.bg_rfl is not None:
 
             # adjacency effects are counted
@@ -141,12 +142,38 @@ class RadiativeTransfer():
               I / (1.0-r['sphalb'] * bg) * rfl * t_down * r['t_up_dir'] + \
               L_up
 
+        if geom.cos_i is not None:
+            I = (self.solar_irr) / np.pi 
+            t_dir_down = r['t_down_dir']
+            t_dif_down = r['t_down_dif']
+            cos_i = geom.cos_i 
+            cos_theta = geom.cos_theta
+            t_total_up = (r['t_up_dif']+r['t_up_dir'])
+            t_total_down = t_dir_down+t_dif_down
+            s_alb = r['sphalb']
+
+            E_dir = I*cos_i/(1.0-s_alb*rfl)*t_dir_down
+            E_diff_down = cos_theta*I*self.coszen*t_dif_down
+            E_diff_up = (1-cos_theta)*I*self.coszen*t_total_down*rfl
+            #pdb.set_trace()
+
+            ret = L_atm + \
+                (I*cos_i/(1.0-s_alb*rfl)*t_dir_down + \
+                    I*self.coszen/(1.0-s_alb*rfl)*t_dif_down) * rfl * t_total_up
+            '''ret = L_atm + \
+                (I*cos_i/(1.0-s_alb*rfl)*t_dir_down + \
+                    cos_theta*I*self.coszen*t_dif_down + \
+                        (1-cos_theta)*I*self.coszen*t_total_down*rfl) * \
+                            rfl * t_total_up'''
+
         else:
             L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)
              
             ret = L_atm + \
                 L_down_transmitted * rfl / (1.0 - r['sphalb'] * rfl) + \
                 L_up
+
+        
 
         return ret
 
@@ -176,7 +203,7 @@ class RadiativeTransfer():
             K_RT.append((rdne-rdn) / eps)
         K_RT = np.array(K_RT).T
 
-        # Get K_surface
+        # Get K_surface (drdn_dsurface)
         r = self.get_shared_rtm_quantities(x_RT, geom)
 
         if geom.bg_rfl is not None:
@@ -186,6 +213,21 @@ class RadiativeTransfer():
             bg = geom.bg_rfl
             t_down = r['t_down_dif'] + r['t_down_dir']
             drdn_drfl = I / (1.0-r['sphalb'] * bg) * t_down * r['t_up_dir'] 
+        
+        if geom.cos_i is not None:
+
+            # Get the full geometry expansion thing
+            I = (self.solar_irr) / np.pi 
+            t_dir_down = r['t_down_dir']
+            t_dif_down = r['t_down_dif']
+            cos_i = geom.cos_i 
+            cos_theta = geom.cos_theta
+            t_total_up = (r['t_up_dif']+r['t_up_dir'])
+            t_total_down = t_dir_down+t_dif_down
+            s_alb = r['sphalb']
+
+            a = t_total_up * (I*cos_i*t_dir_down+I*self.coszen*t_dif_down)
+            drdn_drfl = a / (1-s_alb*rfl)**2
 
         else:
             L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)

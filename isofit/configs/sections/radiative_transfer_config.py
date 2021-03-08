@@ -228,6 +228,8 @@ class RadiativeTransferConfig(BaseConfigSection):
         self.lut_grid = None
 
         self._unknowns_type = RadiativeTransferUnknownsConfig
+        # This is type annotation syntax. Basically assigns "None" to the variable, but
+        # adds the class to the __annotations__ attribute, so other things could check
         self.unknowns: RadiativeTransferUnknownsConfig = None
 
         self.set_config_options(sub_configdic)

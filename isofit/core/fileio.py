@@ -359,6 +359,7 @@ class IO:
 
         # Read data from any of the input files that are defined.
         for source in self.infiles:
+            #pdb.set_trace()
             data[source] = self.infiles[source].read_spectrum(r, c)
             if (index % flush_rate) == 0:
                 self.infiles[source].flush_buffers()
@@ -389,7 +390,8 @@ class IO:
         geom = Geometry(obs=data['obs_file'],
                         glt=data['glt_file'],
                         loc=data['loc_file'],
-                        bg_rfl=data['background_reflectance_file'])
+                        bg_rfl=data['background_reflectance_file'],
+                        surf_geo=data['surface_geometry_file'])
 
         return True, r, c, meas, geom
 
@@ -668,7 +670,8 @@ class IO:
                             self.wl_ref > lo, self.wl_ref < hi))[0]
                         p1 = plt.plot(self.wl_ref[idx], self.rfl_ref[idx],
                                       color=red, linewidth=2)
-                        ymax = max(max(self.rfl_ref[idx]*1.2), ymax)
+                        #ymax = max(max(self.rfl_ref[idx]*1.2), ymax)
+                        ymax = 1
 
                     # green and blue lines - surface components
                     if hasattr(self.fm.surface, 'components') and \
@@ -692,7 +695,7 @@ class IO:
                              color='b')
                     plt.text(500, ymax*0.74, "Surface components ",
                              color='g')
-                plt.ylim([-0.0010, ymax])
+                plt.ylim([-0.0010, 1])
                 plt.xlim([xmin, xmax])
                 plt.title("Reflectance")
                 plt.title("Source Model")

@@ -86,7 +86,7 @@ class Isofit:
         # only specify a temporary directory if we are not connecting to 
         # a ray cluster
         if rayargs['local_mode']:
-            rayargs['temp_dir'] = self.config.implementation.ray_temp_dir
+            #rayargs['temp_dir'] = self.config.implementation.ray_temp_dir
             # Used to run on a VPN
             ray.services.get_node_ip_address = lambda: '127.0.0.1'
 
