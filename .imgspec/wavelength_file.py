@@ -31,16 +31,15 @@ def main():
     wl = hdr["wavelength"]
     fwhm = hdr["fwhm"]
 
-    if len(wl) != len(fwhm):
-        print("Wavelength and fwhm lists are not of the same length. Exiting...")
-        sys.exit(1)
-
+    # Need to offset fwhm if its length is not the same as the wavelengths' length.  This is a known bug in
+    # the AVIRIS-NG data.
+    fwhm_offset = 0 if len(wl) == len(fwhm) else 23
     wl_arr = []
     for i in range(len(wl)):
-        wl_arr.append([i, wl[i], fwhm[i]])
+        wl_arr.append([i, wl[i], fwhm[i + fwhm_offset]])
 
     np.savetxt(output_path, np.array(wl_arr, dtype=np.float32))
 
-
 if __name__ == "__main__":
     main()
+
