@@ -140,7 +140,7 @@ def main():
             err_str = f'Input argument {infile_name} give as: {infile}.  File not found on system.'
             raise ValueError('argument ' + err_str)
         if infile_name != 'input_radiance':
-            input_dataset = gdal.Open(infile_name, gdal.GA_ReadOnly)
+            input_dataset = gdal.Open(infile, gdal.GA_ReadOnly)
             input_size = (input_dataset.RasterXSize, input_dataset.RasterYSize)
             if not (input_size[0] == rdn_size[0] and input_size[1] == rdn_size[1]):
                 err_str = f'Input file: {infile_name} size is {input_size}, which does not match input_radiance size: {rdn_size}'
