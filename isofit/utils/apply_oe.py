@@ -361,7 +361,7 @@ class Pathnames():
             self.fid = split(args.input_radiance)[-1][:21]
         elif args.sensor == 'emit':
             self.fid = split(args.input_radiance)[-1][:19]
-        elif args.sensor[3:] == 'NA-':
+        elif args.sensor[:3] == 'NA-':
             self.fid = os.path.splitext(os.path.basename(args.input_radiance))[0]
 
         # Names from inputs
