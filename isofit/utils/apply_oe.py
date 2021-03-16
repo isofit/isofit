@@ -667,7 +667,7 @@ class LUTConfig:
 
             # Protect memory against huge images
             if spatial_data.shape[0] > 1e6:
-                 use = np.linspace(0,spatial_data.shape[0]-1,1e6,dtype=int)
+                 use = np.linspace(0,spatial_data.shape[0]-1,int(1e6),dtype=int)
                  spatial_data = spatial_data[use,:]
 
             gmm.fit(spatial_data)
