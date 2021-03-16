@@ -27,6 +27,7 @@ import time
 import multiprocessing
 import numpy as np
 import ray
+import ray.services
 
 from isofit.core.forward import ForwardModel
 from isofit.inversion.inverse import Inversion
