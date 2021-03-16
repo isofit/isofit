@@ -144,7 +144,7 @@ def main():
             input_size = (input_dataset.RasterXSize, input_dataset.RasterYSize)
             if not (input_size[0] == rdn_size[0] and input_size[1] == rdn_size[1]):
                 err_str = f'Input file: {infile_name} size is {input_size}, which does not match input_radiance size: {rdn_size}'
-                ValueError(err_str)
+                raise ValueError(err_str)
 
 
 
