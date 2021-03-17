@@ -200,17 +200,14 @@ class Isofit:
         else:
             n_workers = self.config.implementation.n_cores
 
-        # Inflate the number of tasks to run, to prevent 1 or two cores holding up everything
-        n_tasks = min(n_workers * self.config.implementation.task_inflation_factor, n_iter)
-
         # Max out the number of workers based on the number of tasks
-        n_workers = min(n_workers, n_tasks)
+        n_workers = min(n_workers, n_iter)
 
         start_time = time.time()
         logging.info('Beginning inversions using {} cores'.format(n_workers))
 
         # Divide up spectra to run into chunks
-        index_sets = np.linspace(0, n_iter, num=n_tasks+1, dtype=int)
+        index_sets = np.linspace(0, n_iter, num=n_workers+1, dtype=int)
 
         # Run spectra, in either serial or parallel depending on n_workers
         results = ray.get([self._run_set_of_spectra.remote(self, index_sets[l], index_sets[l + 1])
