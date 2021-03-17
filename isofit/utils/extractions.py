@@ -21,6 +21,7 @@
 import numpy as np
 from spectral.io import envi
 import ray
+import ray.services
 import logging
 import atexit
 

@@ -45,6 +45,10 @@ class ImplementationConfig(BaseConfigSection):
         self.n_cores = None
         """int: number of cores to use."""
 
+        self._task_inflation_factor_type = int
+        self.task_inflation_factor = 10
+        """int: Submit task_inflation_factor*n_cores number of tasks."""
+
         self._ip_head_type = str
         self.ip_head = None
         """str: Ray - parameter.  IP-head (for multi-node runs)."""

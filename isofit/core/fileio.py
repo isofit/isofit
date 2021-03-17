@@ -440,7 +440,7 @@ class IO:
         if len(states) == 0:
 
             # Write a bad data flag
-            atm_bad = np.zeros(len(self.fm.n_chan)*5) * -9999.0
+            atm_bad = np.zeros(len(self.fm.instrument.n_chan)*5) * -9999.0
             state_bad = np.zeros(len(self.fm.statevec)) * -9999.0
             data_bad = np.zeros(self.fm.instrument.n_chan) * -9999.0
             to_write = {

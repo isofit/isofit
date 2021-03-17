@@ -131,6 +131,23 @@ def main():
     else:
         logging.basicConfig(format='%(message)s', level=args.logging_level, filename=args.log_file)
 
+    rdn_dataset = gdal.Open(args.input_radiance, gdal.GA_ReadOnly)
+    rdn_size = (rdn_dataset.RasterXSize, rdn_dataset.RasterYSize)
+    del rdn_dataset
+    for infile_name, infile in zip(['input_radiance','input_loc','input_obs'],
+                                   [args.input_radiance, args.input_loc, args.input_obs]):
+        if os.path.isfile(infile) is False:
+            err_str = f'Input argument {infile_name} give as: {infile}.  File not found on system.'
+            raise ValueError('argument ' + err_str)
+        if infile_name != 'input_radiance':
+            input_dataset = gdal.Open(infile, gdal.GA_ReadOnly)
+            input_size = (input_dataset.RasterXSize, input_dataset.RasterYSize)
+            if not (input_size[0] == rdn_size[0] and input_size[1] == rdn_size[1]):
+                err_str = f'Input file: {infile_name} size is {input_size}, which does not match input_radiance size: {rdn_size}'
+                raise ValueError(err_str)
+
+
+
     lut_params = LUTConfig(args.lut_config_file)
     if args.emulator_base is not None:
         lut_params.aot_550_range = lut_params.aerosol_2_range
@@ -361,7 +378,7 @@ class Pathnames():
             self.fid = split(args.input_radiance)[-1][:21]
         elif args.sensor == 'emit':
             self.fid = split(args.input_radiance)[-1][:19]
-        elif args.sensor[3:] == 'NA-':
+        elif args.sensor[:3] == 'NA-':
             self.fid = os.path.splitext(os.path.basename(args.input_radiance))[0]
 
         # Names from inputs
@@ -667,7 +684,7 @@ class LUTConfig:
 
             # Protect memory against huge images
             if spatial_data.shape[0] > 1e6:
-                 use = np.linspace(0,spatial_data.shape[0]-1,1e6,dtype=int)
+                 use = np.linspace(0,spatial_data.shape[0]-1,int(1e6),dtype=int)
                  spatial_data = spatial_data[use,:]
 
             gmm.fit(spatial_data)

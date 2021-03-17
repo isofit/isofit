@@ -27,6 +27,7 @@ import time
 import multiprocessing
 import numpy as np
 import ray
+import ray.services
 
 from isofit.core.forward import ForwardModel
 from isofit.inversion.inverse import Inversion
@@ -195,9 +196,12 @@ class Isofit:
         self.io = None
 
         if self.config.implementation.n_cores is None:
-            n_workers = min(multiprocessing.cpu_count(), n_iter)
+            n_workers = multiprocessing.cpu_count()
         else:
-            n_workers = min(self.config.implementation.n_cores, n_iter)
+            n_workers = self.config.implementation.n_cores
+
+        # Max out the number of workers based on the number of tasks
+        n_workers = min(n_workers, n_iter)
 
         start_time = time.time()
         logging.info('Beginning inversions using {} cores'.format(n_workers))
