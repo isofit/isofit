@@ -58,7 +58,7 @@ class Isofit:
     def __init__(self, config_file, row_column='', level='INFO', logfile=None):
 
         # Explicitly set the number of threads to be 1, so we more effectively
-        #run in parallel 
+        # run in parallel
         os.environ["MKL_NUM_THREADS"] = "1"
 
         # Set logging level
@@ -69,10 +69,6 @@ class Isofit:
         self.rows = None
         self.cols = None
         self.config = None
-        self.fm = None
-        self.iv = None
-        self.io = None
-        self.states = None
 
         # Load configuration file
         self.config = configs.create_new_config(config_file)
@@ -107,20 +103,64 @@ class Isofit:
             elif len(ranges) == 4:
                 row_start, row_end, col_start, col_end = ranges
                 line_start, line_end, samp_start, samp_end = ranges
-                self.rows = range(int(row_start), int(row_end))
-                self.cols = range(int(col_start), int(col_end))
+                self.rows = range(int(row_start), int(row_end) + 1)
+                self.cols = range(int(col_start), int(col_end) + 1)
+        else:
+            io = IO(self.config, ForwardModel(self.config), None)
+            self.rows = range(io.n_rows)
+            self.cols = range(io.n_cols)
 
-        # Build the forward model and inversion objects
-        self._init_nonpicklable_objects()
-        self.io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
-    
+        self.index_pairs = np.vstack([x.flatten(order='f') for x in np.meshgrid(self.rows, self.cols)]).T
+        self.workers = None
+
 
     def __del__(self):
         ray.shutdown()
 
-    def _init_nonpicklable_objects(self) -> None:
-        """ Internal function to initialize objects that cannot be pickled
+
+    def run(self):
         """
+        Iterate over all spectra, reading and writing through the IO
+        object to handle formatting, buffering, and deferred write-to-file.
+        The idea is to avoid reading the entire file into memory, or hitting
+        the physical disk too often. These are our main class variables.
+        """
+
+        n_iter = self.index_pairs.shape[0]
+
+        if self.config.implementation.n_cores is None:
+            n_workers = multiprocessing.cpu_count()
+        else:
+            n_workers = self.config.implementation.n_cores
+
+        # Max out the number of workers based on the number of tasks
+        n_workers = min(n_workers, n_iter)
+
+        if self.workers is None:
+            remote_worker = ray.remote(Worker)
+            self.workers = ray.util.ActorPool([remote_worker.remote(self.config, self.loglevel, self.logfile)
+                                               for n in range(n_workers)])
+
+        start_time = time.time()
+        logging.info('Beginning inversions using {} cores'.format(n_workers))
+
+        # Divide up spectra to run into chunks
+        index_sets = np.linspace(0, n_iter, num=n_workers+1, dtype=int)
+
+        # Run spectra, in either serial or parallel depending on n_workers
+        res = list(self.workers.map_unordered(lambda a, b: a.run_set_of_spectra.remote(b),
+                   [self.index_pairs[index_sets[l]:index_sets[l+1],:] for l in range(len(index_sets)-1)]))
+
+        total_time = time.time() - start_time
+        logging.info('Inversions complete.  {} s total, {} spectra/s, {} spectra/s/core'.format(
+            round(total_time,2), round(n_iter/total_time,4), round(n_iter/total_time/n_workers,4)))
+
+
+class Worker(object):
+    def __init__(self, config: configs.Config, loglevel: str, logfile: str):
+        self.config = config
+        self.loglevel= loglevel
+        self.logfile= logfile
         self.fm = ForwardModel(self.config)
 
         if self.config.implementation.mode == 'mcmc_inversion':
@@ -131,88 +171,44 @@ class Isofit:
             # This should never be reached due to configuration checking
             raise AttributeError('Config implementation mode node valid')
 
-    def _clear_nonpicklable_objects(self):
-        """ Internal function to clean objects that cannot be pickled
-        """
-        self.fm = None
-        self.iv = None
+        self.io = IO(self.config, self.fm, self.iv)
 
-    @ray.remote
-    def _run_set_of_spectra(self, index_start: int, index_stop: int) -> None:
-        """Internal function to run a chunk of spectra
+    def run_set_of_spectra(self, indices: np.array):
 
-        Args:
-            index_start: spectral index to start execution at
-            index_stop: spectral index to stop execution at
-
-        """
         logging.basicConfig(format='%(levelname)s:%(message)s', level=self.loglevel, filename=self.logfile)
-        self._init_nonpicklable_objects()
-        io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
-        for index in range(index_start, index_stop):
-            success, row, col, meas, geom = io.get_components_at_index(
-                index)
-            # Only run through the inversion if we got some data
-            if success:
-                if meas is not None and all(meas < -49.0):
-                    # Bad data flags
-                    self.states = []
-                else:
-                    # The inversion returns a list of states, which are
-                    # intepreted either as samples from the posterior (MCMC case)
-                    # or as a gradient descent trajectory (standard case). For
-                    # a trajectory, the last spectrum is the converged solution.
-                    self.states = self.iv.invert(meas, geom)
 
+        for index in range(0, indices.shape[0], self.config.implementation.io_buffer_size):
+
+            logging.debug("Read chunk of spectra")
+            #TODO - expand for multi-pixel buffer size
+            # TODO - add IO flag...hard-coded -49 has been placed in IO
+            row, col = indices[index,0], indices[index,1]
+            success, meas, geom = self.io.get_components_at_index(row, col)
+
+            if success:
+                logging.debug("Run model")
+                # The inversion returns a list of states, which are
+                # intepreted either as samples from the posterior (MCMC case)
+                # or as a gradient descent trajectory (standard case). For
+                # a trajectory, the last spectrum is the converged solution.
+                states = self.iv.invert(meas, geom)
+
+                logging.debug("Write chunk of spectra")
                 # Write the spectra to disk
                 try:
-                    io.write_spectrum(row, col, self.states, meas,
-                                      geom, flush_immediately=True)
+                    #TODO: Cadapt for multi-pixel buffer size
+                    self.io.write_spectrum(row, col, states, meas, geom, flush_immediately=True)
                 except ValueError as err:
                     logging.info(
-                        """
-                        Encountered the following ValueError in row %d and col %d.
+                        f"""
+                        Encountered the following ValueError in (row,col) ({row},{col}).
                         Results for this pixel will be all zeros.
-                        """, row, col
+                        """
                     )
                     logging.error(err)
-                if (index - index_start) % 100 == 0:
-                    logging.info(
-                        'Core at start index %d completed inversion %d/%d',
-                        index_start, 1+index-index_start,
-                        index_stop-index_start
-                    )
+                if index % 100 == 0:
+                    logging.info(f'Core at start location ({row},{col}) completed {index}/{indices.shape[0]}')
 
-    def run(self):
-        """
-        Iterate over all spectra, reading and writing through the IO
-        object to handle formatting, buffering, and deferred write-to-file.
-        The idea is to avoid reading the entire file into memory, or hitting
-        the physical disk too often. These are our main class variables.
-        """
 
-        n_iter = len(self.io.iter_inds)
-        self._clear_nonpicklable_objects()
-        self.io = None
 
-        if self.config.implementation.n_cores is None:
-            n_workers = multiprocessing.cpu_count()
-        else:
-            n_workers = self.config.implementation.n_cores
 
-        # Max out the number of workers based on the number of tasks
-        n_workers = min(n_workers, n_iter)
-
-        start_time = time.time()
-        logging.info('Beginning inversions using {} cores'.format(n_workers))
-
-        # Divide up spectra to run into chunks
-        index_sets = np.linspace(0, n_iter, num=n_workers+1, dtype=int)
-
-        # Run spectra, in either serial or parallel depending on n_workers
-        results = ray.get([self._run_set_of_spectra.remote(self, index_sets[l], index_sets[l + 1])
-                           for l in range(len(index_sets)-1)])
-
-        total_time = time.time() - start_time
-        logging.info('Inversions complete.  {} s total, {} spectra/s, {} spectra/s/core'.format(
-            round(total_time,2), round(n_iter/total_time,4), round(n_iter/total_time/n_workers,4)))

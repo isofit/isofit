@@ -248,7 +248,7 @@ class SpectrumFile:
 class IO:
     """..."""
 
-    def __init__(self, config: Config, forward: ForwardModel, inverse, active_rows, active_cols):
+    def __init__(self, config: Config, forward: ForwardModel, inverse):
         """Initialization specifies retrieval subwindows for calculating
         measurement cost distributions."""
 
@@ -326,20 +326,20 @@ class IO:
             self.radiance_correction, wl = load_spectrum(filename)
 
         # Last thing is to define the active image area
-        if active_rows is None:
-            active_rows = np.arange(self.n_rows)
-        if active_cols is None:
-            active_cols = np.arange(self.n_cols)
-        self.iter_inds = []
-        for row in active_rows:
-            for col in active_cols:
-                self.iter_inds.append([row, col])
-        self.iter_inds = np.array(self.iter_inds)
+        #if active_rows is None:
+        #    active_rows = np.arange(self.n_rows)
+        #if active_cols is None:
+        #    active_cols = np.arange(self.n_cols)
+        #self.iter_inds = []
+        #for row in active_rows:
+        #    for col in active_cols:
+        #        self.iter_inds.append([row, col])
+        #self.iter_inds = np.array(self.iter_inds)
 
         if self.simulation_mode:
             self.fm.surface.rwl = np.array([float(x) for x in self.infiles['reflectance_file'].meta['wavelength']])
 
-    def get_components_at_index(self, index: int) -> (int, int, np.array, Geometry):
+    def get_components_at_index(self, row: int, col: int) -> (int, int, np.array, Geometry):
         """
         Get the spectrum from the file at the specified index.  Helper/
         parallel enabling function.
@@ -347,27 +347,25 @@ class IO:
         :param index: reference location for iter_inds
 
         :return: success: boolean flag indicating if data present
-        :return: r: row index
-        :return: c: column index
         :return: meas: measured radiance file
         :return: geom: set up specified geometry files
         """
         # Determine the appropriate row, column index. and initialize the
         # data dictionary with empty entries.
-        r, c = self.iter_inds[index]
         data = dict([(i, None) for i in self.input.get_all_element_names()])
-        logging.debug('Row %i Column %i' % (r, c))
+        logging.debug(f'Row {row} Column {col}')
 
         # Read data from any of the input files that are defined.
         for source in self.infiles:
-            data[source] = self.infiles[source].read_spectrum(r, c)
-            if (index % flush_rate) == 0:
-                self.infiles[source].flush_buffers()
+            data[source] = self.infiles[source].read_spectrum(row, col)
+            #TODO
+            #if (index % flush_rate) == 0:
+            #    self.infiles[source].flush_buffers()
 
         # Check for any bad data flags
         for source in self.infiles:
             if np.all(abs(data[source] - self.infiles[source].flag) < eps):
-                return False, r, c, None, None
+                return False, None, None
 
         if self.simulation_mode:
             # If solving the inverse problem, the measurment is the surface reflectance
@@ -384,6 +382,9 @@ class IO:
             if data["radiometry_correction_file"] is not None:
                 meas *= data['radiometry_correction_file']
 
+        if meas is None or np.all(meas < -49):
+            return False, None, None
+
         # We build the geometry object for this spectrum.  For files not
         # specified in the input configuration block, the associated entries
         # will be 'None'. The Geometry object will use reasonable defaults.
@@ -392,7 +393,7 @@ class IO:
                         loc=data['loc_file'],
                         bg_rfl=data['background_reflectance_file'])
 
-        return True, r, c, meas, geom
+        return True, meas, geom
 
     def __iter__(self):
         """ Reset the iterator"""
