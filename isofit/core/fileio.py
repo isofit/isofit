@@ -337,9 +337,10 @@ class IO:
         #self.iter_inds = np.array(self.iter_inds)
 
         if self.simulation_mode:
-            self.fm.surface.rwl = np.array([float(x) for x in self.infiles['reflectance_file'].meta['wavelength']])
+            #self.fm.surface.rwl = np.array([float(x) for x in self.infiles['reflectance_file'].meta['wavelength']])
+            simulation_input_rfl, simulation_input_wl = load_spectrum(config.input.reflectance_file)
 
-    def get_components_at_index(self, row: int, col: int) -> (int, int, np.array, Geometry):
+    def get_components_at_index(self, row: int, col: int) -> (bool, np.array, Geometry):
         """
         Get the spectrum from the file at the specified index.  Helper/
         parallel enabling function.
@@ -356,16 +357,13 @@ class IO:
         logging.debug(f'Row {row} Column {col}')
 
         # Read data from any of the input files that are defined.
+        #import ipdb; ipdb.set_trace()
         for source in self.infiles:
             data[source] = self.infiles[source].read_spectrum(row, col)
+            self.infiles[source].flush_buffers()
             #TODO
             #if (index % flush_rate) == 0:
             #    self.infiles[source].flush_buffers()
-
-        # Check for any bad data flags
-        for source in self.infiles:
-            if np.all(abs(data[source] - self.infiles[source].flag) < eps):
-                return False, None, None
 
         if self.simulation_mode:
             # If solving the inverse problem, the measurment is the surface reflectance
@@ -385,6 +383,11 @@ class IO:
         if meas is None or np.all(meas < -49):
             return False, None, None
 
+        ## Check for any bad data flags
+        for source in self.infiles:
+            if np.all(abs(data[source] - self.infiles[source].flag) < eps):
+                return False, None, None
+
         # We build the geometry object for this spectrum.  For files not
         # specified in the input configuration block, the associated entries
         # will be 'None'. The Geometry object will use reasonable defaults.
@@ -395,12 +398,14 @@ class IO:
 
         return True, meas, geom
 
+    # TODO: - revise
     def __iter__(self):
         """ Reset the iterator"""
 
         self.iter = 0
         return self
 
+    # TODO: - revise
     def __next__(self):
         """ Get the next spectrum from the file.  Turn the iteration number
             into row/column indices and read from all input products."""
