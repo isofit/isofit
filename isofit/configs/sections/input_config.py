@@ -81,42 +81,6 @@ class InputConfig(BaseConfigSection):
         dimensions as the input data cube.
         """
 
-        self._surface_prior_mean_file_type = str
-        self.surface_prior_mean_file = None
-        """
-        str: Input surface prior mean file.  Can be either a .mat, .txt, or ENVI formatted binary cube.
-        """
-
-        self._surface_prior_variance_file_type = str
-        self.surface_prior_variance_file = None
-        """
-        str: Input surface prior variance file.  Can be either a .mat, .txt, or ENVI formatted binary cube.
-        """
-
-        self._rt_prior_mean_file_type = str
-        self.rt_prior_mean_file = None
-        """
-        str: Input rt prior mean file.  Can be either a .mat, .txt, or ENVI formatted binary cube.
-        """
-
-        self._rt_prior_variance_file_type = str
-        self.rt_prior_variance_file = None
-        """
-        str: Input rt prior variance file.  Can be either a .mat, .txt, or ENVI formatted binary cube.
-        """
-
-        self._instrument_prior_mean_file_type = str
-        self.instrument_prior_mean_file = None
-        """
-        str: Input instrument prior mean file.  Can be either a .mat, .txt, or ENVI formatted binary cube.
-        """
-
-        self._instrument_prior_variance_file_type = str
-        self.instrument_prior_variance_file = None
-        """
-        str: Input instrument prior variance file.  Can be either a .mat, .txt, or ENVI formatted binary cube.
-        """
-
         self._radiometry_correction_file_type = str
         self.radiometry_correction_file = None
         """
