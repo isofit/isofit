@@ -325,31 +325,22 @@ class IO:
             filename = self.input.radiometry_correction_file
             self.radiance_correction, wl = load_spectrum(filename)
 
-        # Last thing is to define the active image area
-        #if active_rows is None:
-        #    active_rows = np.arange(self.n_rows)
-        #if active_cols is None:
-        #    active_cols = np.arange(self.n_cols)
-        #self.iter_inds = []
-        #for row in active_rows:
-        #    for col in active_cols:
-        #        self.iter_inds.append([row, col])
-        #self.iter_inds = np.array(self.iter_inds)
-
         if self.simulation_mode:
             #self.fm.surface.rwl = np.array([float(x) for x in self.infiles['reflectance_file'].meta['wavelength']])
             simulation_input_rfl, simulation_input_wl = load_spectrum(config.input.reflectance_file)
 
     def get_components_at_index(self, row: int, col: int) -> (bool, np.array, Geometry):
         """
-        Get the spectrum from the file at the specified index.  Helper/
-        parallel enabling function.
+        Load data from input files at the specified (row, col) index.
 
-        :param index: reference location for iter_inds
+        Args:
+            row: reference location for iter_inds
+            col: reference location for iter_inds
 
-        :return: success: boolean flag indicating if data present
-        :return: meas: measured radiance file
-        :return: geom: set up specified geometry files
+        Returns:
+            bool: flag indicating if data present
+            np.array: measured radiance file
+            Geometry: geometry object
         """
         # Determine the appropriate row, column index. and initialize the
         # data dictionary with empty entries.

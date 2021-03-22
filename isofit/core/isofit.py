@@ -41,16 +41,6 @@ class Isofit:
 
     Args:
         config_file: isofit configuration file in JSON or YAML format
-        row_column: The user can specify
-
-                    * a single number, in which case it is interpreted as a row
-                    * a comma-separated pair, in which case it is interpreted as a
-                      row/column tuple (i.e. a single spectrum)
-                    * a comma-separated quartet, in which case it is interpreted as
-                      a row, column range in the order (line_start, line_end, sample_start,
-                      sample_end) all values are inclusive.
-
-                    If none of the above, the whole cube will be analyzed.
         level: logging level (ERROR, WARNING, INFO, DEBUG)
         logfile: file to write output logs to
     """
@@ -92,7 +82,32 @@ class Isofit:
             rayargs['num_cpus'] = self.config.implementation.n_cores
         ray.init(**rayargs)
 
-        if len(row_column) > 0:
+        self.workers = None
+
+
+    def __del__(self):
+        ray.shutdown()
+
+
+    def run(self, row_column = None):
+        """
+        Iterate over spectra, reading and writing through the IO
+        object to handle formatting, buffering, and deferred write-to-file.
+        Attempts to avoid reading the entire file into memory, or hitting
+        the physical disk too often.
+
+        row_column: The user can specify
+            * a single number, in which case it is interpreted as a row
+            * a comma-separated pair, in which case it is interpreted as a
+              row/column tuple (i.e. a single spectrum)
+            * a comma-separated quartet, in which case it is interpreted as
+              a row, column range in the order (line_start, line_end, sample_start,
+              sample_end) all values are inclusive.
+
+            If none of the above, the whole cube will be analyzed.
+        """
+
+        if row_column is not None:
             ranges = row_column.split(',')
             if len(ranges) == 1:
                 self.rows, self.cols = [int(ranges[0])], None
@@ -102,31 +117,17 @@ class Isofit:
                     int(row_start), int(row_end)), None
             elif len(ranges) == 4:
                 row_start, row_end, col_start, col_end = ranges
-                line_start, line_end, samp_start, samp_end = ranges
                 self.rows = range(int(row_start), int(row_end) + 1)
                 self.cols = range(int(col_start), int(col_end) + 1)
         else:
             io = IO(self.config, ForwardModel(self.config), None)
             self.rows = range(io.n_rows)
             self.cols = range(io.n_cols)
+            del io
 
-        self.index_pairs = np.vstack([x.flatten(order='f') for x in np.meshgrid(self.rows, self.cols)]).T
-        self.workers = None
+        index_pairs = np.vstack([x.flatten(order='f') for x in np.meshgrid(self.rows, self.cols)]).T
 
-
-    def __del__(self):
-        ray.shutdown()
-
-
-    def run(self):
-        """
-        Iterate over all spectra, reading and writing through the IO
-        object to handle formatting, buffering, and deferred write-to-file.
-        The idea is to avoid reading the entire file into memory, or hitting
-        the physical disk too often. These are our main class variables.
-        """
-
-        n_iter = self.index_pairs.shape[0]
+        n_iter = index_pairs.shape[0]
 
         if self.config.implementation.n_cores is None:
             n_workers = multiprocessing.cpu_count()
@@ -149,7 +150,7 @@ class Isofit:
 
         # Run spectra, in either serial or parallel depending on n_workers
         res = list(self.workers.map_unordered(lambda a, b: a.run_set_of_spectra.remote(b),
-                   [self.index_pairs[index_sets[l]:index_sets[l+1],:] for l in range(len(index_sets)-1)]))
+                   [index_pairs[index_sets[l]:index_sets[l+1],:] for l in range(len(index_sets)-1)]))
 
         total_time = time.time() - start_time
         logging.info('Inversions complete.  {} s total, {} spectra/s, {} spectra/s/core'.format(
