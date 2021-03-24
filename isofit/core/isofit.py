@@ -120,7 +120,7 @@ class Isofit:
                 self.rows = range(int(row_start), int(row_end) + 1)
                 self.cols = range(int(col_start), int(col_end) + 1)
         else:
-            io = IO(self.config, ForwardModel(self.config), None)
+            io = IO(self.config, ForwardModel(self.config))
             self.rows = range(io.n_rows)
             self.cols = range(io.n_cols)
             del io
@@ -172,34 +172,36 @@ class Worker(object):
             # This should never be reached due to configuration checking
             raise AttributeError('Config implementation mode node valid')
 
-        self.io = IO(self.config, self.fm, self.iv)
+        self.io = IO(self.config, self.fm)
 
 
     def run_set_of_spectra(self, indices: np.array):
 
         logging.basicConfig(format='%(levelname)s:%(message)s', level=self.loglevel, filename=self.logfile)
 
-        for index in range(0, indices.shape[0], self.config.implementation.io_buffer_size):
+        #for index in range(0, indices.shape[0], self.config.implementation.io_buffer_size):
+        for index in range(0, indices.shape[0]):
 
             logging.debug("Read chunk of spectra")
             #TODO - expand for multi-pixel buffer size
             # TODO - add IO flag...hard-coded -49 has been placed in IO
             row, col = indices[index,0], indices[index,1]
-            success, meas, geom = self.io.get_components_at_index(row, col)
 
-            if success:
+            input_data = self.io.get_components_at_index(row, col)
+
+            if input_data is not None:
                 logging.debug("Run model")
                 # The inversion returns a list of states, which are
                 # intepreted either as samples from the posterior (MCMC case)
                 # or as a gradient descent trajectory (standard case). For
                 # a trajectory, the last spectrum is the converged solution.
-                states = self.iv.invert(meas, geom)
+                states = self.iv.invert(input_data.meas, input_data.geom)
 
                 logging.debug("Write chunk of spectra")
                 # Write the spectra to disk
                 try:
                     #TODO: Cadapt for multi-pixel buffer size
-                    self.io.write_spectrum(row, col, states, meas, geom, self.fm, self.iv, flush_immediately=True)
+                    self.io.write_spectrum(row, col, states, self.fm, self.iv)
                 except ValueError as err:
                     logging.info(
                         f"""
@@ -211,6 +213,7 @@ class Worker(object):
                 if index % 100 == 0:
                     logging.info(f'Core at start location ({row},{col}) completed {index}/{indices.shape[0]}')
 
+        self.io.flush_buffers()
 
 
 

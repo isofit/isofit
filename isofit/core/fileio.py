@@ -248,18 +248,24 @@ class SpectrumFile:
             self.file = envi.open(self.fname+'.hdr', self.fname)
             self.open_map_with_retries()
 
+class InputData:
+    def __init__(self):
+        self.meas = None
+        self.geom = None
+        self.reference_reflectance = None
+
+    def clear(self):
+        self.__init__()
 
 class IO:
     """..."""
 
-    def __init__(self, config: Config, forward: ForwardModel, inverse):
+    def __init__(self, config: Config, forward: ForwardModel):
         """Initialization specifies retrieval subwindows for calculating
         measurement cost distributions."""
 
         self.config = config
 
-        #self.fm = forward
-        fm = forward
         self.bbl = '[]'
         self.radiance_correction = None
         self.meas_wl = forward.instrument.wl_init
@@ -267,16 +273,18 @@ class IO:
         self.writes = 0
         self.n_rows = 1
         self.n_cols = 1
-        self.n_sv = len(fm.statevec)
-        self.n_chan = len(fm.instrument.wl_init)
+        self.n_sv = len(forward.statevec)
+        self.n_chan = len(forward.instrument.wl_init)
 
         self.simulation_mode = config.implementation.mode == 'simulation'
 
         self.total_time = 0
 
+        self.current_input_data = InputData()
+
         # Names of either the wavelength or statevector outputs
         wl_names = [('Channel %i' % i) for i in range(self.n_chan)]
-        sv_names = fm.statevec.copy()
+        sv_names = forward.statevec.copy()
 
         self.input_datasets, self.output_datasets, self.map_info = {}, {}, '{}'
 
@@ -329,7 +337,7 @@ class IO:
             filename = self.config.input.radiometry_correction_file
             self.radiance_correction, wl = load_spectrum(filename)
 
-    def get_components_at_index(self, row: int, col: int) -> (bool, np.array, Geometry):
+    def get_components_at_index(self, row: int, col: int) -> InputData:
         """
         Load data from input files at the specified (row, col) index.
 
@@ -338,23 +346,21 @@ class IO:
             col: column to retrieve data from
 
         Returns:
-            bool: flag indicating if data present
-            np.array: measured radiance file
-            Geometry: geometry object
+            InputData: object containing all current data reads
         """
+
+        # Prepare out input data object by blanking it out
+        self.current_input_data.clear()
+
         # Determine the appropriate row, column index. and initialize the
         # data dictionary with empty entries.
         data = dict([(i, None) for i in self.config.input.get_all_element_names()])
         logging.debug(f'Row {row} Column {col}')
 
         # Read data from any of the input files that are defined.
-        #import ipdb; ipdb.set_trace()
         for source in self.input_datasets:
             data[source] = self.input_datasets[source].read_spectrum(row, col)
             self.input_datasets[source].flush_buffers()
-            #TODO
-            #if (index % flush_rate) == 0:
-            #    self.infiles[source].flush_buffers()
 
         if self.simulation_mode:
             # If solving the inverse problem, the measurment is the surface reflectance
@@ -368,13 +374,15 @@ class IO:
             if data["radiometry_correction_file"] is not None:
                 meas *= data['radiometry_correction_file']
 
-        if meas is None or np.all(meas < -49):
-            return False, None, None
+        self.current_input_data.meas = meas
+
+        if self.current_input_data.meas is None or np.all(self.current_input_data.meas < -49):
+            return None
 
         ## Check for any bad data flags
         for source in self.input_datasets:
             if np.all(abs(data[source] - self.input_datasets[source].flag) < eps):
-                return False, None, None
+                return None
 
         # We build the geometry object for this spectrum.  For files not
         # specified in the input configuration block, the associated entries
@@ -384,41 +392,11 @@ class IO:
                         loc=data['loc_file'],
                         bg_rfl=data['background_reflectance_file'])
 
-        return True, meas, geom
+        self.current_input_data.geom = geom
+        self.current_input_data.reference_reflectance = data['reference_reflectance_file']
 
+        return self.current_input_data
 
-#    ## TODO: - revise
-#    def __iter__(self):
-#        """ Reset the iterator"""
-#
-#        self.iter = 0
-#        return self
-#
-#    # TODO: - revise
-#    def __next__(self):
-#        """ Get the next spectrum from the file.  Turn the iteration number
-#            into row/column indices and read from all input products."""
-#
-#        # Try to read data until we hit the end or find good values
-#        success = False
-#        while not success:
-#            if self.iter == len(self.iter_inds):
-#                self.flush_buffers()
-#                raise StopIteration
-#
-#            # Determine the appropriate row, column index. and initialize the
-#            # data dictionary with empty entries.
-#            success, r, c, meas, geom = self.get_components_at_index(
-#                self.iter)
-#            self.iter = self.iter + 1
-#
-#        return r, c, meas, geom
-#
-#    def check_wavelengths(self, wl):
-#        """Make sure an input wavelengths align to the instrument definition."""
-#
-#        return (len(wl) == fm.instrument.wl) and \
-#            all((wl-fm.instrument.wl) < 1e-2)
 
     def flush_buffers(self):
         """Write all buffered output data to disk, and erase read buffers."""
@@ -427,16 +405,49 @@ class IO:
             for name, fi in file_dictionary.items():
                 fi.flush_buffers()
 
+    def write_datasets(self, row: int, col: int, output: dict, states: List, flush_immediately=False):
+        """
+        Write all valid datasets to disk (possibly buffered).
 
-    def write_spectrum(self, row: int, col: int, states: List, meas: np.array, geom: Geometry, fm: ForwardModel, iv: Inversion, flush_immediately=False):
-        """Write data from a single inversion to all output buffers."""
+        Args:
+            row: row to write to
+            col: column to write to
+            output: dictionary with keys corresponding to config.input file references
+            states: results states from inversion.  In the MCMC case, these are interpreted as samples from the
+            posterior, otherwise they are a gradient descent trajectory (with the last spectrum being the converged
+            solution).
+            flush_immediately: IO argument telling us to immediately write to disk, ignoring config settings
 
-        self.writes = self.writes + 1
+        """
+
+        for product in self.output_datasets:
+            logging.debug('IO: Writing '+product)
+            self.output_datasets[product].write_spectrum(row, col, output[product])
+            if (self.writes % flush_rate) == 0 or flush_immediately:
+                self.output_datasets[product].flush_buffers()
+
+        # Special case! samples file is matlab format.
+        if self.config.output.mcmc_samples_file is not None:
+            logging.debug('IO: Writing mcmc_samples_file')
+            mdict = {'samples': states}
+            scipy.io.savemat(self.config.output.mcmc_samples_file, mdict)
+
+    def build_output(self, states: List, input_data: InputData, fm: ForwardModel, iv: Inversion):
+        """
+        Build the output to be written to disk as a dictionary
+
+        Args:
+            states: results states from inversion.  In the MCMC case, these are interpreted as samples from the
+            posterior, otherwise they are a gradient descent trajectory (with the last spectrum being the converged
+            solution).
+            input_data: an InputData object
+            fm: the forward model used to solve the inversion
+            iv: the inversion object
+        """
 
         if len(states) == 0:
-
             # Write a bad data flag
-            atm_bad = np.zeros(len(fm.instrument.n_chan)*5) * -9999.0
+            atm_bad = np.zeros(len(fm.instrument.n_chan) * 5) * -9999.0
             state_bad = np.zeros(len(fm.statevec)) * -9999.0
             data_bad = np.zeros(fm.instrument.n_chan) * -9999.0
             to_write = {
@@ -457,10 +468,10 @@ class IO:
         else:
             to_write = {}
 
-            # The inversion returns a list of states, which are
-            # intepreted either as samples from the posterior (MCMC case)
-            # or as a gradient descent trajectory (standard case). For
-            # gradient descent the last spectrum is the converged solution.
+            meas = input_data.meas
+            geom = input_data.geom
+            reference_reflectance = input_data.reference_reflectance
+
             if self.config.implementation.mode == 'inversion_mcmc':
                 state_est = states.mean(axis=0)
             else:
@@ -499,7 +510,8 @@ class IO:
             if any(item in ['estimated_emission_file', 'apparent_reflectance_file'] for item in self.output_datasets):
                 Ls_est = fm.calc_Ls(state_est, geom)
 
-            if any(item in ['estimated_reflectance_file', 'apparent_reflectance_file'] for item in self.output_datasets):
+            if any(item in ['estimated_reflectance_file', 'apparent_reflectance_file'] for item in
+                   self.output_datasets):
                 lamb_est = fm.calc_lamb(state_est, geom)
 
             if 'estimated_emission_file' in self.output_datasets:
@@ -514,7 +526,8 @@ class IO:
                 to_write['apparent_reflectance_file'] = np.column_stack((self.meas_wl, apparent_rfl_est))
 
             x_surface, x_RT, x_instrument = fm.unpack(state_est)
-            if any(item in ['algebraic_inverse_file', 'atmospheric_coefficients_file'] for item in self.output_datasets):
+            if any(item in ['algebraic_inverse_file', 'atmospheric_coefficients_file'] for item in
+                   self.output_datasets):
                 rfl_alg_opt, Ls, coeffs = invert_algebraic(fm.surface,
                                                            fm.RT, fm.instrument, x_surface, x_RT,
                                                            x_instrument,
@@ -533,9 +546,8 @@ class IO:
             if 'radiometry_correction_file' in self.output_datasets:
                 factors = np.ones(len(self.meas_wl))
                 if 'reference_reflectance_file' in self.input_datasets:
-                    reference_file = self.input_datasets['reference_reflectance_file']
-                    reference_reflectance = reference_file.read_spectrum(row, col)
-                    reference_wavelengths = reference_file.wl
+                    reference_wavelengths = reference_reflectance.wl
+                    reference_reflectance = reference_reflectance.copy()
                     w, fw = fm.instrument.calibration(x_instrument)
                     resamp = resample_spectrum(reference_reflectance, reference_wavelengths,
                                                w, fw, fill=True)
@@ -545,15 +557,32 @@ class IO:
                     logging.warning('No reflectance reference')
                 to_write['radiometry_correction_file'] = factors
 
-        for product in self.output_datasets:
-            logging.debug('IO: Writing '+product)
-            self.output_datasets[product].write_spectrum(row, col, to_write[product])
-            if (self.writes % flush_rate) == 0 or flush_immediately:
-                self.output_datasets[product].flush_buffers()
+        return to_write
 
-        # Special case! samples file is matlab format.
-        if self.config.output.mcmc_samples_file is not None:
-            logging.debug('IO: Writing mcmc_samples_file')
-            mdict = {'samples': states}
-            scipy.io.savemat(self.config.output.mcmc_samples_file, mdict)
+    def write_spectrum(self, row: int, col: int, states: List, fm: ForwardModel,
+                       iv: Inversion, flush_immediately=False, input_data: InputData = None):
+        """
+        Convenience function to build and write output in one step
+
+        Args:
+            row: data row to write
+            col: data column to write
+            states: results states from inversion.  In the MCMC case, these are interpreted as samples from the
+            posterior, otherwise they are a gradient descent trajectory (with the last spectrum being the converged
+            solution).
+            meas: measurement radiance
+            geom: geometry object of the observation
+            fm: the forward model used to solve the inversion
+            iv: the inversion object
+            flush_immediately: IO argument telling us to immediately write to disk, ignoring config settings
+            input_data: optionally overwride self.current_input_data
+        """
+
+        self.writes = self.writes + 1
+
+        if input_data is None:
+            to_write = self.build_output(states, self.current_input_data, fm, iv)
+        else:
+            to_write = self.build_output(states, input_data, fm, iv)
+        self.write_datasets(row, col, to_write, states, flush_immediately=flush_immediately)
 
