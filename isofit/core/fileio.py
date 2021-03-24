@@ -29,9 +29,11 @@ from collections import OrderedDict
 
 from .common import load_spectrum, eps, resample_spectrum
 from isofit.inversion.inverse_simple import invert_simple, invert_algebraic
+from isofit.inversion.inverse import Inversion
 from .geometry import Geometry
 from isofit.configs import Config
 from isofit.core.forward import ForwardModel
+from typing import List
 import time
 
 
@@ -256,9 +258,8 @@ class IO:
 
         self.config = config
 
-        self.iv = inverse
-        self.fm = forward
-        #fm = forward
+        #self.fm = forward
+        fm = forward
         self.bbl = '[]'
         self.radiance_correction = None
         self.meas_wl = forward.instrument.wl_init
@@ -266,8 +267,8 @@ class IO:
         self.writes = 0
         self.n_rows = 1
         self.n_cols = 1
-        self.n_sv = len(self.fm.statevec)
-        self.n_chan = len(self.fm.instrument.wl_init)
+        self.n_sv = len(fm.statevec)
+        self.n_chan = len(fm.instrument.wl_init)
 
         self.simulation_mode = config.implementation.mode == 'simulation'
 
@@ -275,7 +276,7 @@ class IO:
 
         # Names of either the wavelength or statevector outputs
         wl_names = [('Channel %i' % i) for i in range(self.n_chan)]
-        sv_names = self.fm.statevec.copy()
+        sv_names = fm.statevec.copy()
 
         self.input_datasets, self.output_datasets, self.map_info = {}, {}, '{}'
 
@@ -333,8 +334,8 @@ class IO:
         Load data from input files at the specified (row, col) index.
 
         Args:
-            row: reference location for iter_inds
-            col: reference location for iter_inds
+            row: row to retrieve data from
+            col: column to retrieve data from
 
         Returns:
             bool: flag indicating if data present
@@ -416,8 +417,8 @@ class IO:
 #    def check_wavelengths(self, wl):
 #        """Make sure an input wavelengths align to the instrument definition."""
 #
-#        return (len(wl) == self.fm.instrument.wl) and \
-#            all((wl-self.fm.instrument.wl) < 1e-2)
+#        return (len(wl) == fm.instrument.wl) and \
+#            all((wl-fm.instrument.wl) < 1e-2)
 
     def flush_buffers(self):
         """Write all buffered output data to disk, and erase read buffers."""
@@ -427,7 +428,7 @@ class IO:
                 fi.flush_buffers()
 
 
-    def write_spectrum(self, row, col, states, meas, geom, flush_immediately=False):
+    def write_spectrum(self, row: int, col: int, states: List, meas: np.array, geom: Geometry, fm: ForwardModel, iv: Inversion, flush_immediately=False):
         """Write data from a single inversion to all output buffers."""
 
         self.writes = self.writes + 1
@@ -435,9 +436,9 @@ class IO:
         if len(states) == 0:
 
             # Write a bad data flag
-            atm_bad = np.zeros(len(self.fm.instrument.n_chan)*5) * -9999.0
-            state_bad = np.zeros(len(self.fm.statevec)) * -9999.0
-            data_bad = np.zeros(self.fm.instrument.n_chan) * -9999.0
+            atm_bad = np.zeros(len(fm.instrument.n_chan)*5) * -9999.0
+            state_bad = np.zeros(len(fm.statevec)) * -9999.0
+            data_bad = np.zeros(fm.instrument.n_chan) * -9999.0
             to_write = {
                 'estimated_state_file': state_bad,
                 'estimated_reflectance_file': data_bad,
@@ -470,36 +471,36 @@ class IO:
                 to_write['estimated_state_file'] = state_est
 
             if 'path_radiance_file' in self.output_datasets:
-                path_est = self.fm.calc_meas(state_est, geom, rfl=np.zeros(self.meas_wl.shape))
-                to_write['path_radiance_file'] = np.column_stack((self.fm.instrument.wl, path_est))
+                path_est = fm.calc_meas(state_est, geom, rfl=np.zeros(self.meas_wl.shape))
+                to_write['path_radiance_file'] = np.column_stack((fm.instrument.wl, path_est))
 
             if 'spectral_calibration_file' in self.output_datasets:
                 # Spectral calibration
-                wl, fwhm = self.fm.calibration(state_est)
+                wl, fwhm = fm.calibration(state_est)
                 cal = np.column_stack(
                     [np.arange(0, len(wl)), wl / 1000.0, fwhm / 1000.0])
                 to_write['spectral_calibration_file'] = cal
 
             if 'posterior_uncertainty_file' in self.output_datasets:
-                S_hat, K, G = self.iv.calc_posterior(state_est, geom, meas)
+                S_hat, K, G = iv.calc_posterior(state_est, geom, meas)
                 to_write['posterior_uncertainty_file'] = np.sqrt(np.diag(S_hat))
 
             ############ Now proceed to the calcs where they may be some overlap
             if any(item in ['modeled_radiance_file', 'simulated_measurement_file'] for item in self.output_datasets):
-                meas_est = self.fm.calc_meas(state_est, geom, rfl=np.zeros(self.meas_wl.shape))
+                meas_est = fm.calc_meas(state_est, geom, rfl=np.zeros(self.meas_wl.shape))
 
                 if 'modeled_radiance_file' in self.output_datasets:
-                    to_write['modeled_radiance_file'] = np.column_stack((self.fm.instrument.wl, meas_est))
+                    to_write['modeled_radiance_file'] = np.column_stack((fm.instrument.wl, meas_est))
 
                 if 'simulated_measurement_file' in self.output_datasets:
-                    meas_sim = self.fm.instrument.simulate_measurement(meas_est, geom)
+                    meas_sim = fm.instrument.simulate_measurement(meas_est, geom)
                     to_write['simulated_measurement_file'] = np.column_stack((self.meas_wl, meas_sim))
 
             if any(item in ['estimated_emission_file', 'apparent_reflectance_file'] for item in self.output_datasets):
-                Ls_est = self.fm.calc_Ls(state_est, geom)
+                Ls_est = fm.calc_Ls(state_est, geom)
 
             if any(item in ['estimated_reflectance_file', 'apparent_reflectance_file'] for item in self.output_datasets):
-                lamb_est = self.fm.calc_lamb(state_est, geom)
+                lamb_est = fm.calc_lamb(state_est, geom)
 
             if 'estimated_emission_file' in self.output_datasets:
                 to_write['estimated_emission_file'] = np.column_stack((self.meas_wl, Ls_est))
@@ -512,10 +513,10 @@ class IO:
                 apparent_rfl_est = lamb_est + Ls_est
                 to_write['apparent_reflectance_file'] = np.column_stack((self.meas_wl, apparent_rfl_est))
 
-            x_surface, x_RT, x_instrument = self.fm.unpack(state_est)
+            x_surface, x_RT, x_instrument = fm.unpack(state_est)
             if any(item in ['algebraic_inverse_file', 'atmospheric_coefficients_file'] for item in self.output_datasets):
-                rfl_alg_opt, Ls, coeffs = invert_algebraic(self.fm.surface,
-                                                           self.fm.RT, self.fm.instrument, x_surface, x_RT,
+                rfl_alg_opt, Ls, coeffs = invert_algebraic(fm.surface,
+                                                           fm.RT, fm.instrument, x_surface, x_RT,
                                                            x_instrument,
                                                            meas, geom)
 
@@ -535,10 +536,10 @@ class IO:
                     reference_file = self.input_datasets['reference_reflectance_file']
                     reference_reflectance = reference_file.read_spectrum(row, col)
                     reference_wavelengths = reference_file.wl
-                    w, fw = self.fm.instrument.calibration(x_instrument)
+                    w, fw = fm.instrument.calibration(x_instrument)
                     resamp = resample_spectrum(reference_reflectance, reference_wavelengths,
                                                w, fw, fill=True)
-                    meas_est = self.fm.calc_meas(state_est, geom, rfl=resamp)
+                    meas_est = fm.calc_meas(state_est, geom, rfl=resamp)
                     factors = meas_est / meas
                 else:
                     logging.warning('No reflectance reference')

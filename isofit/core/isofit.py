@@ -199,7 +199,7 @@ class Worker(object):
                 # Write the spectra to disk
                 try:
                     #TODO: Cadapt for multi-pixel buffer size
-                    self.io.write_spectrum(row, col, states, meas, geom, flush_immediately=True)
+                    self.io.write_spectrum(row, col, states, meas, geom, self.fm, self.iv, flush_immediately=True)
                 except ValueError as err:
                     logging.info(
                         f"""

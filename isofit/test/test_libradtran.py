@@ -62,7 +62,7 @@ def run_forward():
             success, meas, geom = io.get_components_at_index(row, col)
             if success:
                 states = iv.invert(meas, geom)
-                io.write_spectrum(row, col, states, meas, geom)
+                io.write_spectrum(row, col, states, meas, geom, fm, iv)
 
     assert True
     return states[0]
@@ -96,7 +96,7 @@ def run_inverse():
             success, meas, geom = io.get_components_at_index(row, col)
             if success:
                 states = iv.invert(meas, geom)
-                io.write_spectrum(row, col, states, meas, geom)
+                io.write_spectrum(row, col, states, meas, geom, fm, iv)
 
     assert True
     return states[-1]
