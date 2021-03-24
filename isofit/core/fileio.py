@@ -470,7 +470,7 @@ class IO:
                 to_write['estimated_state_file'] = state_est
 
             if 'path_radiance_file' in self.output_datasets:
-                path_est = self.fm.calc_meas(state_est, geom, rfl=np.zeros(self.fm.surface.wl.shape))
+                path_est = self.fm.calc_meas(state_est, geom, rfl=np.zeros(self.meas_wl.shape))
                 to_write['path_radiance_file'] = np.column_stack((self.fm.instrument.wl, path_est))
 
             if 'spectral_calibration_file' in self.output_datasets:
@@ -486,14 +486,14 @@ class IO:
 
             ############ Now proceed to the calcs where they may be some overlap
             if any(item in ['modeled_radiance_file', 'simulated_measurement_file'] for item in self.output_datasets):
-                meas_est = self.fm.calc_meas(state_est, geom, rfl=np.zeros(self.fm.surface.wl.shape))
+                meas_est = self.fm.calc_meas(state_est, geom, rfl=np.zeros(self.meas_wl.shape))
 
                 if 'modeled_radiance_file' in self.output_datasets:
                     to_write['modeled_radiance_file'] = np.column_stack((self.fm.instrument.wl, meas_est))
 
                 if 'simulated_measurement_file' in self.output_datasets:
                     meas_sim = self.fm.instrument.simulate_measurement(meas_est, geom)
-                    to_write['simulated_measurement_file'] = np.column_stack((self.fm.instrument.wl, meas_sim))
+                    to_write['simulated_measurement_file'] = np.column_stack((self.meas_wl, meas_sim))
 
             if any(item in ['estimated_emission_file', 'apparent_reflectance_file'] for item in self.output_datasets):
                 Ls_est = self.fm.calc_Ls(state_est, geom)
@@ -502,15 +502,15 @@ class IO:
                 lamb_est = self.fm.calc_lamb(state_est, geom)
 
             if 'estimated_emission_file' in self.output_datasets:
-                to_write['estimated_emission_file'] = np.column_stack((self.fm.surface.wl, Ls_est))
+                to_write['estimated_emission_file'] = np.column_stack((self.meas_wl, Ls_est))
 
             if 'estimated_reflectance_file' in self.output_datasets:
-                to_write['estimated_reflectance_file'] = np.column_stack((self.fm.surface.wl, lamb_est))
+                to_write['estimated_reflectance_file'] = np.column_stack((self.meas_wl, lamb_est))
 
             if 'apparent_reflectance_file' in self.output_datasets:
                 # Upward emission & glint and apparent reflectance
                 apparent_rfl_est = lamb_est + Ls_est
-                to_write['apparent_reflectance_file'] = np.column_stack((self.fm.surface.wl, apparent_rfl_est))
+                to_write['apparent_reflectance_file'] = np.column_stack((self.meas_wl, apparent_rfl_est))
 
             x_surface, x_RT, x_instrument = self.fm.unpack(state_est)
             if any(item in ['algebraic_inverse_file', 'atmospheric_coefficients_file'] for item in self.output_datasets):
@@ -520,17 +520,17 @@ class IO:
                                                            meas, geom)
 
             if 'algebraic_inverse_file' in self.output_datasets:
-                to_write['algebraic_inverse_file'] = np.column_stack((self.fm.surface.wl, rfl_alg_opt))
+                to_write['algebraic_inverse_file'] = np.column_stack((self.meas_wl, rfl_alg_opt))
 
             if 'atmospheric_coefficients_file' in self.output_datasets:
                 rhoatm, sphalb, transm, solar_irr, coszen, transup = coeffs
                 atm = np.column_stack(list(coeffs[:4]) +
-                                      [np.ones((len(self.fm.instrument.wl), 1)) * coszen])
-                atm = atm.T.reshape((len(self.fm.instrument.wl) * 5,))
+                                      [np.ones((len(self.meas_wl), 1)) * coszen])
+                atm = atm.T.reshape((len(self.meas_wl) * 5,))
                 to_write['atmospheric_coefficients_file'] = atm
 
             if 'radiometry_correction_file' in self.output_datasets:
-                factors = np.ones(len(self.fm.instrument.wl))
+                factors = np.ones(len(self.meas_wl))
                 if 'reference_reflectance_file' in self.input_datasets:
                     reference_file = self.input_datasets['reference_reflectance_file']
                     reference_reflectance = reference_file.read_spectrum(row, col)
