@@ -39,7 +39,7 @@ class InputConfig(BaseConfigSection):
         self._reference_reflectance_file_type = str
         self.reference_reflectance_file = None
         """
-        str: Input reference reflectance file.  Can be either a .mat, .txt, or ENVI formatted binary cube.
+        str: Input reference reflectance (to be compared against) file.  Can be either a .mat, .txt, or ENVI formatted binary cube.
         Used for radiometric calibration.
         """
 

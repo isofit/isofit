@@ -174,6 +174,7 @@ class Worker(object):
 
         self.io = IO(self.config, self.fm, self.iv)
 
+
     def run_set_of_spectra(self, indices: np.array):
 
         logging.basicConfig(format='%(levelname)s:%(message)s', level=self.loglevel, filename=self.logfile)

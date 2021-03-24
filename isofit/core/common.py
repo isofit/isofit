@@ -212,6 +212,43 @@ def svd_inv(C: np.array, hashtable: OrderedDict = None):
     return svd_inv_sqrt(C, hashtable)[0]
 
 
+def svd_inv_2(C: np.array, hashtable: OrderedDict = None):
+    # If we have a hash table, look for the precalculated solution
+    h = None
+    if hashtable is not None:
+        # If arrays are in Fortran ordering, they are not hashable.
+        if not C.flags['C_CONTIGUOUS']:
+            C = C.copy(order='C')
+        h = xxhash.xxh64_digest(C)
+        if h in hashtable:
+            return hashtable[h]
+
+    D, P = scipy.linalg.eigh(C)
+    for count in range(3):
+        if np.any(D < 0) or np.any(np.isnan(D)):
+            inv_eps = 1e-6 * (count-1)*10
+            D, P = scipy.linalg.eigh(
+                C + np.diag(np.ones(C.shape[0]) * inv_eps))
+        else:
+            break
+
+        if count == 2:
+            raise ValueError('Matrix inversion contains negative values,' +
+                             'even after adding {} to the diagonal.'.format(inv_eps))
+
+    Ds = np.diag(1/np.sqrt(D))
+    L = P@Ds
+    Cinv = L@L.T
+
+    # If there is a hash table, cache our solution.  Bound the total cache
+    # size by removing any extra items in FIFO order.
+    if hashtable is not None:
+        hashtable[h] = (Cinv)
+        while len(hashtable) > max_table_size:
+            hashtable.popitem(last=False)
+
+    return Cinv
+
 def svd_inv_sqrt(C: np.array, hashtable: OrderedDict = None) -> (np.array, np.array):
     """Matrix inversion, based on decomposition.  Built to be stable, and positive.
 
