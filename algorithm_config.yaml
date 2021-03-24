@@ -17,12 +17,12 @@ inputs:
 # remove below this line if no inputs
 # rename and set algorithm input names accordingly
   - name: l1_granule
-    download: true
+    type: file
   - name: surface_reflectance_spectra
-    download: false
+    type: positional
   - name: vegetation_reflectance_spectra
-    download: false
+    type: positional
   - name: water_reflectance_spectra
-    download: false
+    type: positional
   - name: snow_and_liquids_reflectance_spectra
-    download: false
+    type: positional
