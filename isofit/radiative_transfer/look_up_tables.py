@@ -200,7 +200,6 @@ class TabularRT:
         # rebuild_cmd() function will be overriden by the child class to
         # perform setup activities unique to each RTM.
         rebuild_cmds = self.get_rebuild_cmds(rebuild=rebuild)
-        print(rebuild_cmds)
 
         if self.configure_and_exit:
             logging.info("configure_and_exit flag set - terminating")
