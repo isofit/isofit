@@ -84,10 +84,8 @@ class Isofit:
 
         self.workers = None
 
-
     def __del__(self):
         ray.shutdown()
-
 
     def run(self, row_column = None):
         """
@@ -107,6 +105,8 @@ class Isofit:
             If none of the above, the whole cube will be analyzed.
         """
 
+        logging.info("Building first forward model, will generate any necessary LUTs")
+        fm = ForwardModel(self.config)
         if row_column is not None:
             ranges = row_column.split(',')
             if len(ranges) == 1:
@@ -120,10 +120,10 @@ class Isofit:
                 self.rows = range(int(row_start), int(row_end) + 1)
                 self.cols = range(int(col_start), int(col_end) + 1)
         else:
-            io = IO(self.config, ForwardModel(self.config))
+            io = IO(self.config, fm)
             self.rows = range(io.n_rows)
             self.cols = range(io.n_cols)
-            del io
+            del io, fm
 
         index_pairs = np.vstack([x.flatten(order='f') for x in np.meshgrid(self.rows, self.cols)]).T
 
@@ -143,18 +143,20 @@ class Isofit:
                                                for n in range(n_workers)])
 
         start_time = time.time()
-        logging.info('Beginning inversions using {} cores'.format(n_workers))
+        n_tasks = min(n_workers * self.config.implementation.task_inflation_factor, n_iter)
+
+        logging.info(f'Beginning {n_iter} inversions in {n_tasks} chunks using {n_workers} cores')
 
         # Divide up spectra to run into chunks
-        index_sets = np.linspace(0, n_iter, num=n_workers+1, dtype=int)
+        index_sets = np.linspace(0, n_iter, num=n_iter, dtype=int)
 
         # Run spectra, in either serial or parallel depending on n_workers
         res = list(self.workers.map_unordered(lambda a, b: a.run_set_of_spectra.remote(b),
                    [index_pairs[index_sets[l]:index_sets[l+1],:] for l in range(len(index_sets)-1)]))
 
         total_time = time.time() - start_time
-        logging.info('Inversions complete.  {} s total, {} spectra/s, {} spectra/s/core'.format(
-            round(total_time,2), round(n_iter/total_time,4), round(n_iter/total_time/n_workers,4)))
+        logging.info(f'Inversions complete.  {round(total_time,2)}s total, {round(n_iter/total_time,4)} spectra/s, '
+                     f'{round(n_iter/total_time/n_workers,4)} spectra/s/core')
 
 
 class Worker(object):
@@ -179,12 +181,9 @@ class Worker(object):
 
         logging.basicConfig(format='%(levelname)s:%(message)s', level=self.loglevel, filename=self.logfile)
 
-        #for index in range(0, indices.shape[0], self.config.implementation.io_buffer_size):
         for index in range(0, indices.shape[0]):
 
             logging.debug("Read chunk of spectra")
-            #TODO - expand for multi-pixel buffer size
-            # TODO - add IO flag...hard-coded -49 has been placed in IO
             row, col = indices[index,0], indices[index,1]
 
             input_data = self.io.get_components_at_index(row, col)
@@ -200,7 +199,6 @@ class Worker(object):
                 logging.debug("Write chunk of spectra")
                 # Write the spectra to disk
                 try:
-                    #TODO: Cadapt for multi-pixel buffer size
                     self.io.write_spectrum(row, col, states, self.fm, self.iv)
                 except ValueError as err:
                     logging.info(

@@ -25,7 +25,7 @@ import ray
 from collections import OrderedDict
 import subprocess
 import time
-import atexit
+from typing import List
 
 from isofit.core import common
 from isofit.configs import Config
@@ -160,17 +160,17 @@ class TabularRT:
         self.points = common.combos(self.lut_grids)
         self.files = self.get_lut_filenames()
 
-    def build_lut(self, rebuild=False):
-        """Each LUT is associated with a source directory.  We build a lookup 
-            table by: 
-              (1) defining the LUT dimensions, state vector names, and the 
-                    grid of values; 
-              (2) running the radiative transfer solver if needed, with each 
-                    run defining a different point in the LUT; and 
-              (3) loading the LUTs, one per key atmospheric coefficient vector,
-                  into memory as VectorInterpolator objects."""
+    def get_rebuild_cmds(self, rebuild=False) -> List:
+        """
+        Generate a full set of RTM subprocess calls to run
+        Args:
+            rebuild: optional flag to rebuild all RTM simulations from scratch
 
-       # Build the list of radiative transfer run commands. This
+        Returns:
+            A series of strings to execute as subprocess calls.
+        """
+
+        # Build the list of radiative transfer run commands. This
         # rebuild_cmd() function will be overriden by the child class to
         # perform setup activities unique to each RTM.
         rebuild_cmds = []
@@ -181,10 +181,30 @@ class TabularRT:
             except FileExistsError:
                 pass
 
-        if self.configure_and_exit:
-            raise SystemExit
-            # sys.exit(0)
+        return rebuild_cmds
 
+    def build_lut(self, rebuild=False):
+        """Build a lookup table by:
+               (1) defining the LUT dimensions, state vector names, and the
+                     grid of values;
+               (2) running the radiative transfer solver if needed, with each
+                     run defining a different point in the LUT; and
+               (3) loading the LUTs, one per key atmospheric coefficient vector,
+                   into memory as VectorInterpolator objects.
+
+        Args:
+            rebuild: optional flag to rebuild all RTM simulations from scratch
+        """
+
+        # Build the list of radiative transfer run commands. This
+        # rebuild_cmd() function will be overriden by the child class to
+        # perform setup activities unique to each RTM.
+        rebuild_cmds = self.get_rebuild_cmds(rebuild=rebuild)
+        print(rebuild_cmds)
+
+        if self.configure_and_exit:
+            logging.info("configure_and_exit flag set - terminating")
+            raise SystemExit
         elif len(rebuild_cmds) > 0 and self.auto_rebuild:
             logging.info("Rebuilding radiative transfer look up table")
 
@@ -194,7 +214,6 @@ class TabularRT:
 
             # Make the LUT calls (in parallel if specified)
             results = ray.get([spawn_rt.remote(rebuild_cmd, self.lut_dir) for rebuild_cmd in rebuild_cmds])
-
 
     def get_lut_filenames(self):
         files = []
