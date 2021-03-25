@@ -75,7 +75,7 @@ class ImplementationConfig(BaseConfigSection):
         """bool: Boolean to tell ray to ignore re-initilaization.  Can be convenient for multiple Isofit instances."""
 
         self._io_buffer_size_type = int
-        self.io_buffer_size = 1
+        self.io_buffer_size = 100
         """bool: Integer indicating how large (how many spectra) of chunks to read/process/write.  A
         buffer size of 1 means pixels are processed independently.  Large buffers can help prevent IO choke points, 
         especially if the """
