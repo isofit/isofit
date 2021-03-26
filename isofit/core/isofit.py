@@ -148,7 +148,7 @@ class Isofit:
         logging.info(f'Beginning {n_iter} inversions in {n_tasks} chunks using {n_workers} cores')
 
         # Divide up spectra to run into chunks
-        index_sets = np.linspace(0, n_iter, num=n_iter, dtype=int)
+        index_sets = np.linspace(0, n_iter, num=n_tasks, dtype=int)
 
         # Run spectra, in either serial or parallel depending on n_workers
         res = list(self.workers.map_unordered(lambda a, b: a.run_set_of_spectra.remote(b),
@@ -161,9 +161,9 @@ class Isofit:
 
 class Worker(object):
     def __init__(self, config: configs.Config, loglevel: str, logfile: str):
+
+        logging.basicConfig(format='%(levelname)s:%(message)s', level=loglevel, filename=logfile)
         self.config = config
-        self.loglevel= loglevel
-        self.logfile= logfile
         self.fm = ForwardModel(self.config)
 
         if self.config.implementation.mode == 'mcmc_inversion':
@@ -179,7 +179,6 @@ class Worker(object):
 
     def run_set_of_spectra(self, indices: np.array):
 
-        logging.basicConfig(format='%(levelname)s:%(message)s', level=self.loglevel, filename=self.logfile)
 
         for index in range(0, indices.shape[0]):
 
