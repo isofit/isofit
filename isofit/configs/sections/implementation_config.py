@@ -46,7 +46,7 @@ class ImplementationConfig(BaseConfigSection):
         """int: number of cores to use."""
 
         self._task_inflation_factor_type = int
-        self.task_inflation_factor = 2
+        self.task_inflation_factor = 10
         """int: Submit task_inflation_factor*n_cores number of tasks."""
 
         self._ip_head_type = str
