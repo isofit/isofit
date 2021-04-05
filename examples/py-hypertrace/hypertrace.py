@@ -198,7 +198,7 @@ def do_hypertrace(isofit_config, wavelength_file, reflectance_file,
                 ))
             open(lutdir2 / "prescribed_geom", "w").write(f"99:99:99   {solar_zenith}  {solar_azimuth}")
 
-        elif atmospheric_rtm in ("modtran", "simulated_modtran"):
+        elif atmospheric_rtm in ("modtran", "sRTMnet"):
             loctag = f"atm_{atmosphere_type}__" +\
                 f"alt_{observer_altitude_km:.2f}__" +\
                 f"doy_{dayofyear:.0f}__" +\
@@ -231,7 +231,7 @@ def do_hypertrace(isofit_config, wavelength_file, reflectance_file,
             write_modtran_template(**mt_params)
 
             vswir_conf["modtran_template_path"] = str(mt_params["output_file"])
-            if atmospheric_rtm == "simulated_modtran":
+            if atmospheric_rtm == "sRTMnet":
                 vswir_conf["interpolator_base_path"] = str(lutdir2 / "sRTMnet_interpolator")
                 # These need to be absolute file paths
                 for path in ["emulator_aux_file", "emulator_file",

@@ -285,10 +285,11 @@ def main():
             del retrieval_h2o
 
             # clean up unneeded storage
-            for to_rm in ['*r_k', '*t_k', '*tp7', '*wrn', '*psc', '*plt', '*7sc', '*acd']:
-                cmd = 'rm ' + join(paths.lut_h2o_directory, to_rm)
-                logging.info(cmd)
-                os.system(cmd)
+            if args.emulator_base is None:
+                for to_rm in ['*r_k', '*t_k', '*tp7', '*wrn', '*psc', '*plt', '*7sc', '*acd']:
+                    cmd = 'rm ' + join(paths.lut_h2o_directory, to_rm)
+                    logging.info(cmd)
+                    os.system(cmd)
         else:
             logging.info('Existing h2o-presolve solutions found, using those.')
 
@@ -333,10 +334,11 @@ def main():
         del retrieval_full
 
         # clean up unneeded storage
-        for to_rm in ['*r_k', '*t_k', '*tp7', '*wrn', '*psc', '*plt', '*7sc', '*acd']:
-            cmd = 'rm ' + join(paths.lut_modtran_directory, to_rm)
-            logging.info(cmd)
-            os.system(cmd)
+        if args.emulator_base is None:
+            for to_rm in ['*r_k', '*t_k', '*tp7', '*wrn', '*psc', '*plt', '*7sc', '*acd']:
+                cmd = 'rm ' + join(paths.lut_modtran_directory, to_rm)
+                logging.info(cmd)
+                os.system(cmd)
 
     if not exists(paths.rfl_working_path) or not exists(paths.uncert_working_path):
         # Empirical line
@@ -1015,7 +1017,7 @@ def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array, n_cores: int
     if emulator_base is None:
         engine_name = 'modtran'
     else:
-        engine_name = 'simulated_modtran'
+        engine_name = 'sRTMnet'
 
     radiative_transfer_config = {
             "radiative_transfer_engines": {
@@ -1142,7 +1144,7 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
     if emulator_base is None:
         engine_name = 'modtran'
     else:
-        engine_name = 'simulated_modtran'
+        engine_name = 'sRTMnet'
     radiative_transfer_config = {
 
             "radiative_transfer_engines": {

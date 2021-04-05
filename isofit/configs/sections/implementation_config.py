@@ -68,11 +68,18 @@ class ImplementationConfig(BaseConfigSection):
 
         self._ray_temp_dir_type = str
         self.ray_temp_dir = '/tmp/ray'
-        """str: Overrides the standard ray temporary directory.  Useful for multiuser systems."""
+        """str: Overrides the standard ray temporary directory.  Useful for Smultiuser systems."""
 
         self._ray_ignore_reinit_error_type = bool
         self.ray_ignore_reinit_error = True
         """bool: Boolean to tell ray to ignore re-initilaization.  Can be convenient for multiple Isofit instances."""
+
+        self._io_buffer_size_type = int
+        self.io_buffer_size = 100
+        """bool: Integer indicating how large (how many spectra) of chunks to read/process/write.  A
+        buffer size of 1 means pixels are processed independently.  Large buffers can help prevent IO choke points, 
+        especially if the """
+
 
         self.set_config_options(sub_configdic)
 

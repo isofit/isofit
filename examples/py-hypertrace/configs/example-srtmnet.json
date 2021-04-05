@@ -37,7 +37,7 @@
                 "unknowns": {"H2O_ABSCO": 0.01},
                 "radiative_transfer_engines": {
                     "vswir": {
-                        "engine_name": "simulated_modtran",
+                        "engine_name": "sRTMnet",
                         "engine_base_dir": "./6sV-2.1",
                         "aerosol_template_path": "../../data/aerosol_template.json",
                         "earth_sun_distance_file": "../../data/earth_sun_distance.txt",
