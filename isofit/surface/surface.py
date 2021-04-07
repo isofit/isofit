@@ -23,6 +23,7 @@ from scipy.interpolate import interp1d
 
 from ..core.common import load_spectrum, load_wavelen
 from isofit.configs import Config
+import logging
 
 
 class Surface:
@@ -43,17 +44,17 @@ class Surface:
         self.bval = np.array([])
         self.emissive = False
 
-        if config.reflectance is not None:
-            self.rfl = config['reflectance']
-            self.resample_reflectance()
-        if config.reflectance_file is not None:
-            self.rfl, self.rwl = load_spectrum(config.reflectance_file)
-            self.wl = self.rwl.copy()
-            self.n_wl = len(self.wl)
+        self.wl = None
+        self.fwhm = None
+
         if config.wavelength_file is not None:
             self.wl, self.fwhm = load_wavelen(config.wavelength_file)
+        elif full_config.implementation.mode == 'simulation':
+            logging.info('No surface wavelength_file provided, getting wavelengths from input.reflectance_file')
+            _, self.wl = load_spectrum(full_config.input.reflectance_file)
+
+        if self.wl is not None:
             self.n_wl = len(self.wl)
-            self.resample_reflectance()
 
     def resample_reflectance(self):
         """Make sure model wavelengths align with the wavelength file."""

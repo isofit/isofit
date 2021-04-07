@@ -131,6 +131,23 @@ def main():
     else:
         logging.basicConfig(format='%(message)s', level=args.logging_level, filename=args.log_file)
 
+    rdn_dataset = gdal.Open(args.input_radiance, gdal.GA_ReadOnly)
+    rdn_size = (rdn_dataset.RasterXSize, rdn_dataset.RasterYSize)
+    del rdn_dataset
+    for infile_name, infile in zip(['input_radiance','input_loc','input_obs'],
+                                   [args.input_radiance, args.input_loc, args.input_obs]):
+        if os.path.isfile(infile) is False:
+            err_str = f'Input argument {infile_name} give as: {infile}.  File not found on system.'
+            raise ValueError('argument ' + err_str)
+        if infile_name != 'input_radiance':
+            input_dataset = gdal.Open(infile, gdal.GA_ReadOnly)
+            input_size = (input_dataset.RasterXSize, input_dataset.RasterYSize)
+            if not (input_size[0] == rdn_size[0] and input_size[1] == rdn_size[1]):
+                err_str = f'Input file: {infile_name} size is {input_size}, which does not match input_radiance size: {rdn_size}'
+                raise ValueError(err_str)
+
+
+
     lut_params = LUTConfig(args.lut_config_file)
     if args.emulator_base is not None:
         lut_params.aot_550_range = lut_params.aerosol_2_range
@@ -268,10 +285,11 @@ def main():
             del retrieval_h2o
 
             # clean up unneeded storage
-            for to_rm in ['*r_k', '*t_k', '*tp7', '*wrn', '*psc', '*plt', '*7sc', '*acd']:
-                cmd = 'rm ' + join(paths.lut_h2o_directory, to_rm)
-                logging.info(cmd)
-                os.system(cmd)
+            if args.emulator_base is None:
+                for to_rm in ['*r_k', '*t_k', '*tp7', '*wrn', '*psc', '*plt', '*7sc', '*acd']:
+                    cmd = 'rm ' + join(paths.lut_h2o_directory, to_rm)
+                    logging.info(cmd)
+                    os.system(cmd)
         else:
             logging.info('Existing h2o-presolve solutions found, using those.')
 
@@ -316,10 +334,11 @@ def main():
         del retrieval_full
 
         # clean up unneeded storage
-        for to_rm in ['*r_k', '*t_k', '*tp7', '*wrn', '*psc', '*plt', '*7sc', '*acd']:
-            cmd = 'rm ' + join(paths.lut_modtran_directory, to_rm)
-            logging.info(cmd)
-            os.system(cmd)
+        if args.emulator_base is None:
+            for to_rm in ['*r_k', '*t_k', '*tp7', '*wrn', '*psc', '*plt', '*7sc', '*acd']:
+                cmd = 'rm ' + join(paths.lut_modtran_directory, to_rm)
+                logging.info(cmd)
+                os.system(cmd)
 
     if not exists(paths.rfl_working_path) or not exists(paths.uncert_working_path):
         # Empirical line
@@ -361,7 +380,7 @@ class Pathnames():
             self.fid = split(args.input_radiance)[-1][:21]
         elif args.sensor == 'emit':
             self.fid = split(args.input_radiance)[-1][:19]
-        elif args.sensor[3:] == 'NA-':
+        elif args.sensor[:3] == 'NA-':
             self.fid = os.path.splitext(os.path.basename(args.input_radiance))[0]
 
         # Names from inputs
@@ -666,8 +685,8 @@ class LUTConfig:
                 spatial_data = np.vstack([spatial_data, spatial_data])
 
             # Protect memory against huge images
-            if spatial_data.shape[0] > 1e5:
-                 use = np.linspace(0,spatial_data.shape[0]-1,1e5,dtype=int)
+            if spatial_data.shape[0] > 1e6:
+                 use = np.linspace(0,spatial_data.shape[0]-1,int(1e6),dtype=int)
                  spatial_data = spatial_data[use,:]
 
             gmm.fit(spatial_data)
@@ -998,7 +1017,7 @@ def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array, n_cores: int
     if emulator_base is None:
         engine_name = 'modtran'
     else:
-        engine_name = 'simulated_modtran'
+        engine_name = 'sRTMnet'
 
     radiative_transfer_config = {
             "radiative_transfer_engines": {
@@ -1125,7 +1144,7 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
     if emulator_base is None:
         engine_name = 'modtran'
     else:
-        engine_name = 'simulated_modtran'
+        engine_name = 'sRTMnet'
     radiative_transfer_config = {
 
             "radiative_transfer_engines": {

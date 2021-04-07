@@ -29,6 +29,7 @@ import matplotlib
 import pylab as plt
 from isofit.configs import configs
 import ray
+import ray.services
 import atexit
 
 plt.switch_backend("Agg")

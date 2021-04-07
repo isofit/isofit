@@ -36,12 +36,6 @@ class SurfaceConfig(BaseConfigSection):
         self._surface_category_type = str
         self.surface_category = None
 
-        self._reflectance_file_type = str
-        self.reflectance_file = None
-
-        self._reflectance_type = np.array  # TODO: guess - this is currently not implemented, trace backwards
-        self.reflectance = None
-
         self._wavelength_file_type = str
         self.wavelength_file = None
 

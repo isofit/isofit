@@ -85,12 +85,6 @@ class OutputConfig(BaseConfigSection):
         self._posterior_uncertainty_file_type = str
         self.posterior_uncertainty_file = None
 
-        self._plot_directory_type = str
-        self.plot_directory = None
-
-        self._data_dump_file_type = str
-        self.data_dump_file = None
-
         self._plot_surface_components_type = bool
         self.plot_surface_components = False
 

@@ -23,6 +23,7 @@ from spectral.io import envi
 from skimage.segmentation import slic
 import numpy as np
 import ray
+import ray.services
 import atexit
 import logging
 

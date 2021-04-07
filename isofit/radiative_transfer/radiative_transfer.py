@@ -61,7 +61,7 @@ class RadiativeTransfer():
                 rte = LibRadTranRT(rte_config, full_config)
             elif rte_config.engine_name == '6s':
                 rte = SixSRT(rte_config, full_config)
-            elif rte_config.engine_name == 'simulated_modtran':
+            elif rte_config.engine_name == 'sRTMnet':
                 rte = SimulatedModtranRT(rte_config, full_config)
             else:
                 # Should never get here, checked in config
