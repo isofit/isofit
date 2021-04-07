@@ -290,7 +290,7 @@ def _plot_example(xv, yv, b):
 def empirical_line(reference_radiance_file: str, reference_reflectance_file: str, reference_uncertainty_file: str,
                    reference_locations_file: str, segmentation_file: str, input_radiance_file: str,
                    input_locations_file: str, output_reflectance_file: str, output_uncertainty_file: str,
-                   nneighbors: int = 50, nodata_value: float = -9999.0, level: str = 'INFO', logfile: str = None,
+                   nneighbors: int = 400, nodata_value: float = -9999.0, level: str = 'INFO', logfile: str = None,
                    radiance_factors: np.array = None, isofit_config: str = None, n_cores: int = -1) -> None:
     """
     Perform an empirical line interpolation for reflectance and uncertainty extrapolation
