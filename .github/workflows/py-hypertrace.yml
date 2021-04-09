@@ -56,8 +56,8 @@ jobs:
       run: |
         cd examples/py-hypertrace
         # Modify the workflow file for GitHub actions
-        python workflow.py configs/example-srtmnet.json
-        python summarize.py configs/example-srtmnet.json
+        python workflow.py configs/example-srtmnet-ci.json
+        python summarize.py configs/example-srtmnet-ci.json
 
     - name: Upload summary from CI workflow
       uses: actions/upload-artifact@v2
