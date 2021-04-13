@@ -74,6 +74,7 @@ class TabularRT:
 
         self.auto_rebuild = full_config.implementation.rte_auto_rebuild
         self.configure_and_exit = full_config.implementation.rte_configure_and_exit
+        self.implementation_mode = full_config.implementation.mode
 
         # We use a sorted dictionary here so that filenames for lookup
         # table (LUT) grid points are always constructed the same way, with
@@ -130,9 +131,10 @@ class TabularRT:
         for key, grid_values in self.lut_grid_config.items():
 
             # do some quick checks on the values
-            if len(grid_values) == 1:
-                err = 'Only 1 value in LUT grid {}. ' +\
-                    '1-d LUT grids cannot be interpreted.'.format(key)
+            # For forward (simulation) mode, 1-dimensional LUT grids are OK!
+            if len(grid_values) == 1 and not self.implementation_mode == "simulation":
+                err = 'Only 1 value in LUT grid {}. '.format(key) +\
+                    '1-d LUT grids cannot be interpreted.'
                 raise ValueError(err)
             if grid_values != sorted(grid_values):
                 logging.error('Lookup table grid needs ascending order')
