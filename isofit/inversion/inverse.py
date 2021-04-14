@@ -69,72 +69,23 @@ class Inversion:
         self.inversions = 0
 
         self.integration_grid = OrderedDict(config.integration_grid)
-        self.grid_as_starting_points = config.inversion_grid_as_preseed
 
-        if self.grid_as_starting_points:
-            # We're using the integration grid to preseed, not fix values.  So
-            # Track the grid, but don't fix the integration grid points
-            self.inds_fixed = []
-            self.inds_preseed = np.array([self.fm.statevec.index(k) for k in
-                               self.integration_grid.keys()])
-            self.inds_free = np.array([i for i in np.arange(self.fm.nstate, dtype=int) if
-                              not (i in self.inds_fixed)])
-
-        else:
-            # We're using the integration grid to fix values.  So
-            # Get set up to fix the integration grid points
-            self.inds_fixed = np.array([self.fm.statevec.index(k) for k in
-                               self.integration_grid.keys()])
-            self.inds_free = np.array([i for i in np.arange(self.fm.nstate, dtype=int) if
-                              not (i in self.inds_fixed)])
-            self.inds_preseed = []
-
-        self.x_fixed = None
+        # We're using the integration grid to preseed, not fix values.  So
+        # track the grid for overwrite once we do a simple inverse
+        self.inds_preseed = np.array([self.fm.statevec.index(k) for k in
+                           self.integration_grid.keys()])
 
         # Set least squares params that come from the forward model
         self.least_squares_params = {
-            'method': 'trf',
-            'max_nfev': 20,
-            'bounds': (self.fm.bounds[0][self.inds_free],
-                       self.fm.bounds[1][self.inds_free]),
-            'x_scale': self.fm.scale[self.inds_free],
+            'bounds': (self.fm.bounds[0], self.fm.bounds[1]),
+            'x_scale': self.fm.scale,
         }
 
         # Update the rest from the config
         for key, item in config.least_squares_params.get_config_options_as_dict().items():
             self.least_squares_params[key] = item
 
-    def full_statevector(self, x_free):
-        x = np.zeros(self.fm.nstate)
-        if self.x_fixed is not None:
-            x[self.inds_fixed] = self.x_fixed
-        x[self.inds_free] = x_free
-        return x
-
-    def calc_conditional_prior(self, x_free, geom):
-        """Calculate prior distribution of radiance. This depends on the
-        location in the state space. Return the inverse covariance and
-        its square root (for non-quadratic error residual calculation)."""
-
-        x = self.full_statevector(x_free)
-        xa = self.fm.xa(x, geom)
-        Sa = self.fm.Sa(x, geom)
-
-        # If there aren't any fixed parameters, we just directly
-        if self.x_fixed is None or self.grid_as_starting_points:
-            Sa_inv, Sa_inv_sqrt = svd_inv_sqrt(Sa, hashtable=self.hashtable)
-            return xa, Sa, Sa_inv, Sa_inv_sqrt
-
-        else:
-            # otherwise condition on fixed variables
-            #TODO: could make the below calculation without the svd_inv (using full initial inversion),
-            # which would be way cheaper
-            xa_free, Sa_free = conditional_gaussian(xa, Sa, self.inds_free,
-                                                    self.inds_fixed, self.x_fixed)
-            Sa_free_inv, Sa_free_inv_sqrt = svd_inv_sqrt(Sa_free,
-                                                         hashtable=self.hashtable)
-            return xa_free, Sa_free, Sa_free_inv, Sa_free_inv_sqrt
-
+        self.mog_config = config.mog
 
     def calc_prior(self, x, geom):
         """Calculate prior distribution of radiance. This depends on the 
@@ -159,8 +110,7 @@ class Inversion:
 
         # Gain matrix G reflects current state, so we use the state-dependent
         # Jacobian matrix K
-        S_hat = svd_inv(K.T.dot(Seps_inv).dot(
-            K) + Sa_inv, hashtable=self.hashtable)
+        S_hat = svd_inv(K.T.dot(Seps_inv).dot(K) + Sa_inv, hashtable=self.hashtable)
         G = S_hat.dot(K.T).dot(Seps_inv)
 
         # N. Cressie [ASA 2018] suggests an alternate definition of S_hat for
@@ -185,7 +135,7 @@ class Inversion:
         return svd_inv_sqrt(Seps_win, hashtable=self.hashtable)
 
 
-    def jacobian(self, x_free, geom, Seps_inv_sqrt) -> np.ndarray:
+    def jacobian(self, x, geom, Seps_inv_sqrt) -> np.ndarray:
         """Calculate measurement Jacobian and prior Jacobians with
         respect to cost function. This is the derivative of cost with
         respect to the state, commonly known as the gradient or loss
@@ -196,7 +146,7 @@ class Inversion:
         distributions are calculated over subwindows of the full
         spectrum.
         Args:
-            x_free: decision variables - portion of the statevector not fixed by a static integration grid
+            x: statevector (aka decision variables)
             geom: Geometry to use for inversion
             Seps_inv_sqrt: Inverse square root of the covariance of "observation noise",
              including both measurement noise from the instrument as well as variability due to
@@ -205,17 +155,16 @@ class Inversion:
         Returns:
             total_jac: The complete (measurement and prior) jacobian
         """
-        x = self.full_statevector(x_free)
-
         # jacobian of measurment cost term WRT full state vector.
         K = self.fm.K(x, geom)[self.winidx, :]
-        K = K[:, self.inds_free]
         meas_jac = Seps_inv_sqrt.dot(K)
 
         # jacobian of prior cost term with respect to state vector.
-        xa_free, Sa_free, Sa_free_inv, Sa_free_inv_sqrt = \
-            self.calc_conditional_prior(x_free, geom)
-        prior_jac = Sa_free_inv_sqrt
+        if self.mode == 'mog_inversion':
+            #TODO
+        else:
+            xa, Sa, Sa_inv, Sa_inv_sqrt = self.calc_prior(x, geom)
+            prior_jac = Sa_inv_sqrt
 
         # The total cost vector (as presented to the solver) is the
         # concatenation of the "residuals" due to the measurement
@@ -225,7 +174,7 @@ class Inversion:
 
         return total_jac
 
-    def loss_function(self, x_free, geom, Seps_inv_sqrt, meas) -> (np.array, np.array):
+    def loss_function(self, x, geom, Seps_inv_sqrt, meas, MM_weights_k) -> (np.array, np.array):
         """Calculate cost function expressed here in absolute (not
         quadratic) terms for the solver, i.e., the square root of the
         Rodgers (2000) Chi-square version. We concatenate 'residuals'
@@ -234,20 +183,18 @@ class Inversion:
         of the full spectrum.
 
         Args:
-            x_free: decision variables - portion of the statevector not fixed by a static integration grid
+            x: decision variables - portion of the statevector not fixed by a static integration grid
             geom: Geometry to use for inversion
             Seps_inv_sqrt: Inverse square root of the covariance of "observation noise",
              including both measurement noise from the instrument as well as variability due to
              unknown variables.
             meas: a one-D scipy vector of radiance in uW/nm/sr/cm2
+            MM_weights_k:
 
         Returns:
             total_residual: the complete, calculated residual
             x: the complete (x_free + any x_fixed augmented in)
         """
-
-        # set up full-sized state vector
-        x = self.full_statevector(x_free)
 
         # Measurement cost term.  Will calculate reflectance and Ls from
         # the state vector.
@@ -257,9 +204,13 @@ class Inversion:
         meas_resid = (est_meas_window - meas_window).dot(Seps_inv_sqrt)
 
         # Prior cost term
-        xa_free, Sa_free, Sa_free_inv, Sa_free_inv_sqrt = \
-            self.calc_conditional_prior(x_free, geom)
-        prior_resid = (x_free - xa_free).dot(Sa_free_inv_sqrt)
+        if self.mode == 'mog_inversion':
+            gaussian_idx = np.append(self.fm.idx_RT, self.fm.idx_instrument)
+            prior_resid = np.dot(MM_weights_k, np.log(self.fm.surface.component_pdfs(x[self.fm.idx_surface])))
+            prior_resid = np.concatenate(prior_resid, self.fm.surface.log_pdf(x[gaussian_idx]))
+        else:
+            xa, Sa, Sa_inv, Sa_inv_sqrt = self.calc_prior(x, geom)
+            prior_resid = (x - xa).dot(Sa_inv_sqrt)
 
         # Total cost
         total_resid = np.concatenate((meas_resid, prior_resid))
@@ -289,26 +240,18 @@ class Inversion:
 
         for combo in combo_values:
 
-            if self.grid_as_starting_points is False:
-                self.x_fixed = combo
             trajectory = []
 
             # Calculate the initial solution, if needed.
             x0 = invert_simple(self.fm, meas, geom)
-            x0 = x0[self.inds_free]
 
             # Catch any state vector elements outside of bounds
-            lower_bound_violation = x0 < self.fm.bounds[0][self.inds_free]
-            x0[lower_bound_violation] = \
-                self.fm.bounds[0][self.inds_free][lower_bound_violation] + eps
+            lower_bound_violation = x0 < self.fm.bounds[0]
+            x0[lower_bound_violation] = self.fm.bounds[0][lower_bound_violation] + eps
 
-            upper_bound_violation = x0 > self.fm.bounds[1][self.inds_free]
-            x0[upper_bound_violation] = \
-                self.fm.bounds[1][self.inds_free][upper_bound_violation] - eps
+            upper_bound_violation = x0 > self.fm.bounds[1]
+            x0[upper_bound_violation] = self.fm.bounds[1][upper_bound_violation] - eps
             del lower_bound_violation, upper_bound_violation
-
-            # Find the full state vector with bounds checked
-            x = self.full_statevector(x0)
 
             # Regardless of anything we did for the heuristic guess, bring the
             # static preseed back into play (only does anything if inds_preseed
@@ -317,22 +260,22 @@ class Inversion:
                 x0[self.inds_preseed] = combo
 
             # Record initializaation state
-            geom.x_surf_init = x[self.fm.idx_surface]
-            geom.x_RT_init = x[self.fm.idx_RT]
+            geom.x_surf_init = x0[self.fm.idx_surface]
+            geom.x_RT_init = x0[self.fm.idx_RT]
 
             # Seps is the covariance of "observation noise" including both
             # measurement noise from the instrument as well as variability due to
             # unknown variables. For speed, we will calculate it just once based
             # on the initial solution (a potential minor source of inaccuracy).
-            Seps_inv, Seps_inv_sqrt = self.calc_Seps(x, meas, geom)
+            Seps_inv, Seps_inv_sqrt = self.calc_Seps(x0, meas, geom)
 
-            def jac(x_free):
+            def jac(x):
                 """Short wrapper function for use with scipy opt"""
-                return self.jacobian(x_free, geom, Seps_inv_sqrt)
+                return self.jacobian(x, geom, Seps_inv_sqrt)
 
-            def err(x_free):
+            def err(x):
                 """Short wrapper function for use with scipy opt and logging"""
-                residual, x = self.loss_function(x_free, geom, Seps_inv_sqrt, meas)
+                residual, x = self.loss_function(x, geom, Seps_inv_sqrt, meas, self.MM_weights_k)
 
                 trajectory.append(x)
 
@@ -345,20 +288,43 @@ class Inversion:
                 return np.real(residual)
 
             # Initialize and invert
-            try:
-                xopt = least_squares(err, x0, jac=jac, **self.least_squares_params)
-                x_full_solution = self.full_statevector(xopt.x)
-                trajectory.append(x_full_solution)
-                solutions.append(trajectory)
-                costs.append(np.sqrt(np.power(xopt.fun, 2).sum()))
-            except scipy.linalg.LinAlgError:
-                logging.warning('Optimization failed to converge')
-                solutions.append(trajectory)
-                costs.append(9e99)
+            if self.mode == 'mog_inversion':
+                x_current = x0
+
+                mog_costs = [err(x0)]
+                mog_states = [x0]
+                mog_converged = False
+                for iteration in range(self.mog_config.max_outer_iter):
+                    self.MM_weights_k = self.fm.surface.weights_for_MM_upper_bound(x_current)
+                    inner_xopt = least_squares(err, x_current, jac=jac, **self.least_squares_params)
+
+                    mog_states.append(inner_xopt.x)
+                    mog_costs.append(xopt.fun)
+
+                    if abs(mog_costs[-1] - mog_costs[-2]) <= self.mog_config.outer_tol:
+                        mog_converged = True
+                        break
+
+                solutions.append(mog_states[-1])
+                if mog_converged:
+                    costs.append(mog_costs[-1])
+                else:
+                    costs.append(9e99)
+                    logging.warning('Optimization failed to converge')
+
+            else:
+                try:
+                    xopt = least_squares(err, x0, jac=jac, **self.least_squares_params)
+                    trajectory.append(xopt.x)
+                    solutions.append(trajectory)
+                    costs.append(np.sqrt(np.power(xopt.fun, 2).sum()))
+                except scipy.linalg.LinAlgError:
+                    logging.warning('Optimization failed to converge')
+                    solutions.append(trajectory)
+                    costs.append(9e99)
 
         final_solution = np.array(solutions[np.argmin(costs)])
         return final_solution
-
 
     def forward_uncertainty(self, x, meas, geom):
         """

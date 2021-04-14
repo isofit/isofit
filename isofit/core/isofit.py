@@ -168,7 +168,7 @@ class Worker(object):
 
         if self.config.implementation.mode == 'mcmc_inversion':
             self.iv = MCMCInversion(self.config, self.fm)
-        elif self.config.implementation.mode in ['inversion', 'simulation']:
+        elif self.config.implementation.mode in ['inversion', 'simulation', 'mog_inversion']:
             self.iv = Inversion(self.config, self.fm)
         else:
             # This should never be reached due to configuration checking

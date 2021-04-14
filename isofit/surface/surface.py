@@ -73,12 +73,6 @@ class Surface:
 
         return np.zeros((0, 0), dtype=float)
 
-    def fit_params(self, rfl_meas, geom, *args):
-        """Given a directional reflectance estimate and one or more emissive 
-        parameters, fit a state vector."""
-
-        return np.array([])
-
     def calc_lamb(self, x_surface, geom):
         """Calculate a Lambertian surface reflectance for this state vector."""
 

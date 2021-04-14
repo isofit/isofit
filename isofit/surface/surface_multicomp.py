@@ -171,17 +171,6 @@ class MultiComponentSurface(Surface):
         Cov_suffix = np.zeros((nsuffix, nsuffix))
         return block_diag(Cov_prefix, Cov, Cov_suffix)
 
-    def fit_params(self, rfl_meas, geom, *args):
-        """Given a reflectance estimate, fit a state vector."""
-
-        x_surface = np.zeros(len(self.statevec_names))
-        if len(rfl_meas) != len(self.idx_lamb):
-            raise ValueError('Mismatched reflectances')
-        for i, r in zip(self.idx_lamb, rfl_meas):
-            x_surface[i] = max(self.bounds[i][0]+0.001,
-                               min(self.bounds[i][1]-0.001, r))
-        return x_surface
-
     def calc_rfl(self, x_surface, geom):
         """Non-Lambertian reflectance."""
 

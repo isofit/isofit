@@ -30,7 +30,8 @@ from .instrument import Instrument
 from ..radiative_transfer.radiative_transfer import RadiativeTransfer
 from isofit.configs import Config
 
-from isofit.surface import Surface, ThermalSurface, MultiComponentSurface, GlintSurface, LUTSurface
+from isofit.surface import Surface, ThermalSurface, MultiComponentSurface, GlintSurface, LUTSurface, \
+    MixtureOfGaussianSurface
 
 
 ### Classes ###
@@ -86,6 +87,8 @@ class ForwardModel:
             self.surface = ThermalSurface(self.full_config)
         elif self.config.surface.surface_category == 'lut_surface':
             self.surface = LUTSurface(self.full_config)
+        elif self.config.surface.surface_category == 'mog_surface':
+            self.surface = MixtureOfGaussianSurface(self.full_config)
         else:
             raise ValueError('Must specify a valid surface model')
             # No need to be more specific - should have been checked in config already

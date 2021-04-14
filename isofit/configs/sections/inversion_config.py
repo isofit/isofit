@@ -41,10 +41,13 @@ class InversionConfig(BaseConfigSection):
         self.mcmc = McmcConfig({})
         """MCMC parameters, only used if mode = mcmc."""
 
+        self._mog_type = MoGConfig
+        self.mog = MoGConfig({})
+        """MoG parameters, only used if mode = mog."""
+
         self._integration_grid_type = OrderedDict
         self.integration_grid = OrderedDict({})
-        """Grid of inversion points to execute if mode='grid'.  Either fixed, or starting points, depending
-        on self.fixed_inversion_grid"""
+        """Grid of inversion points to use as starting points for the optimization."""
 
         self._inversion_grid_as_preseed_type = bool
         self.inversion_grid_as_preseed = False
@@ -109,7 +112,36 @@ class McmcConfig(BaseConfigSection):
     def _check_config_validity(self) -> List[str]:
         errors = list()
 
-        # TODO: add flags for rile overright, and make sure files don't exist if not checked?
+        return errors
+
+
+class MoGConfig(BaseConfigSection):
+    """
+    Mixture of Gaussians inversion configuration.
+    """
+
+    def __init__(self, sub_configdic: dict = None):
+
+        self._outer_tol_type = float
+        self.outer_tol = 0.001
+        """float: Outer loop tolerance"""
+
+        self._max_outer_iter_type = int
+        self.max_outer_iter = 10
+        """int: number of outer loop iterations"""
+
+        self._least_squares_params_type = LeastSquaresConfig
+        self.least_squares_params = LeastSquaresConfig({})
+        """
+        Least squares parameters for inner loop inversion solve.  
+        See https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html
+        for details.
+        """
+
+        self.set_config_options(sub_configdic)
+
+    def _check_config_validity(self) -> List[str]:
+        errors = list()
 
         return errors
 

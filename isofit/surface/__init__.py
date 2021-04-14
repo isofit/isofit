@@ -4,3 +4,4 @@ from .surface_glint import GlintSurface
 from .surface_thermal import ThermalSurface
 from .surface_thermal import ThermalSurface
 from .surface_lut import LUTSurface
+from .surface_mog import MixtureOfGaussianSurface
