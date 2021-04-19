@@ -21,6 +21,7 @@
 import numpy as np
 from scipy.linalg import block_diag, norm
 from scipy.io import loadmat
+from scipy.stats import multivariate_normal
 
 from ..core.common import svd_inv
 from .surface import Surface
@@ -220,3 +221,25 @@ class MultiComponentSurface(Surface):
         if len(x_surface) < 1:
             return ''
         return 'Component: %i' % self.component(x_surface, geom)
+
+    def component_weights(self, x_surface):
+        x_lamb = x_surface[self.idx_lamb]
+        reg = np.eye(len(self.idx_lamb)) *  1.0 # HEAVY regularization
+        wts = [multivariate_normal.pdf(x_lamb, m, c+reg) \
+                for m,c in self.components]
+        wts = np.array(wts)
+        wts[np.isnan(wts)] = 0
+        return wts / np.sum(wts)
+
+    def fit_params(self, rfl_meas, geom, *args):
+        """Given a reflectance estimate, fit a state vector."""
+
+        x_surface = np.zeros(len(self.statevec_names))
+        if len(rfl_meas) != len(self.idx_lamb):
+            raise ValueError('Mismatched reflectances')
+        for i, r in zip(self.idx_lamb, rfl_meas):
+            x_surface[i] = max(self.bounds[i][0]+0.001,
+                               min(self.bounds[i][1]-0.001, r))
+        return x_surface
+
+

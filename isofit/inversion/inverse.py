@@ -52,6 +52,7 @@ class Inversion:
         self.hashtable = OrderedDict()  # Hash table for caching inverse matrices
         self.max_table_size = 500
         self.state_indep_S_hat = False
+        self.MM_weights_k = None
 
         self.windows = config.windows  # Retrieval windows
         self.mode = full_config.implementation.mode
@@ -161,7 +162,24 @@ class Inversion:
 
         # jacobian of prior cost term with respect to state vector.
         if self.mode == 'mog_inversion':
-            #TODO
+
+            # First append the weighted mixture components
+            prior_jac = None
+            for i in range(self.fm.surface.n_comp):
+                Sa = self.fm.surface.components[i][1]
+                Sa_inv, Sa_inv_sqrt = svd_inv_sqrt(Sa, hashtable=self.hashtable)
+                weighted_jac= Sa_inv_sqrt * np.sqrt(self.MM_weights_k[i]+1e-9)  
+                if prior_jac is None:
+                    prior_jac = weighted_jac
+                else:
+                    prior_jac = np.concatenate((prior_jac, weighted_jac))
+
+            # Now append the non-[gausssian mixture] prior terms
+            xa, Sa, Sa_inv, Sa_inv_sqrt = self.calc_prior(x, geom)
+            othr_idx = np.append(self.fm.idx_RT, self.fm.idx_instrument)
+            Sa_inv_sqrt_othr = np.array([Sa[i,othr_idx] for i in othr_idx])
+            prior_jac = scipy.linalg.block_diag(prior_jac, Sa_inv_sqrt_othr)
+ 
         else:
             xa, Sa, Sa_inv, Sa_inv_sqrt = self.calc_prior(x, geom)
             prior_jac = Sa_inv_sqrt
@@ -174,7 +192,7 @@ class Inversion:
 
         return total_jac
 
-    def loss_function(self, x, geom, Seps_inv_sqrt, meas, MM_weights_k) -> (np.array, np.array):
+    def loss_function(self, x, geom, Seps_inv_sqrt, meas) -> (np.array, np.array):
         """Calculate cost function expressed here in absolute (not
         quadratic) terms for the solver, i.e., the square root of the
         Rodgers (2000) Chi-square version. We concatenate 'residuals'
@@ -205,9 +223,28 @@ class Inversion:
 
         # Prior cost term
         if self.mode == 'mog_inversion':
-            gaussian_idx = np.append(self.fm.idx_RT, self.fm.idx_instrument)
-            prior_resid = np.dot(MM_weights_k, np.log(self.fm.surface.component_pdfs(x[self.fm.idx_surface])))
-            prior_resid = np.concatenate(prior_resid, self.fm.surface.log_pdf(x[gaussian_idx]))
+
+            # First append the weighted mixture components
+            prior_resid = None
+            x_surface = x[self.fm.idx_surface]
+            for i in range(self.fm.surface.n_comp):
+                xa = self.fm.surface.components[i][0]
+                Sa = self.fm.surface.components[i][1]
+                Sa_inv, Sa_inv_sqrt = svd_inv_sqrt(Sa, hashtable=self.hashtable)
+                resid = (x_surface - xa).dot(Sa_inv_sqrt) 
+                weighted_resid = np.sqrt(self.MM_weights_k[i]+1e-9) * resid
+                if prior_resid is None:
+                    prior_resid = weighted_resid
+                else:
+                    prior_resid = np.concatenate((prior_resid, weighted_resid))
+
+            # Now append the non-[gausssian mixture] prior terms
+            xa, Sa, Sa_inv, Sa_inv_sqrt = self.calc_prior(x, geom)
+            othr_idx = np.append(self.fm.idx_RT, self.fm.idx_instrument)
+            Sa_inv_sqrt_othr = np.array([Sa[i,othr_idx] for i in othr_idx])
+            othr_resid = (x[othr_idx] - xa[othr_idx]).dot(Sa_inv_sqrt_othr)
+            prior_resid = np.concatenate((prior_resid, othr_resid))
+
         else:
             xa, Sa, Sa_inv, Sa_inv_sqrt = self.calc_prior(x, geom)
             prior_resid = (x - xa).dot(Sa_inv_sqrt)
@@ -275,7 +312,7 @@ class Inversion:
 
             def err(x):
                 """Short wrapper function for use with scipy opt and logging"""
-                residual, x = self.loss_function(x, geom, Seps_inv_sqrt, meas, self.MM_weights_k)
+                residual, x = self.loss_function(x, geom, Seps_inv_sqrt, meas)
 
                 trajectory.append(x)
 
@@ -290,17 +327,19 @@ class Inversion:
             # Initialize and invert
             if self.mode == 'mog_inversion':
                 x_current = x0
-
-                mog_costs = [err(x0)]
-                mog_states = [x0]
+                x_surface = x_current[self.fm.idx_surface]
+                self.MM_weights_k = self.fm.surface.component_weights(x_surface)
+                mog_costs = [abs(err(x0)).sum()]
+                mog_states = []
                 mog_converged = False
                 for iteration in range(self.mog_config.max_outer_iter):
-                    self.MM_weights_k = self.fm.surface.weights_for_MM_upper_bound(x_current)
+                    trajectory = []
+                    x_surface = x_current[self.fm.idx_surface]
+                    self.MM_weights_k = self.fm.surface.component_weights(x_surface)
                     inner_xopt = least_squares(err, x_current, jac=jac, **self.least_squares_params)
-
-                    mog_states.append(inner_xopt.x)
-                    mog_costs.append(xopt.fun)
-
+                    trajectory.append(inner_xopt.x)
+                    mog_states.append(trajectory)
+                    mog_costs.append(abs(inner_xopt.fun).sum())
                     if abs(mog_costs[-1] - mog_costs[-2]) <= self.mog_config.outer_tol:
                         mog_converged = True
                         break
