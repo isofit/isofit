@@ -27,6 +27,7 @@ import time
 import multiprocessing
 import numpy as np
 import ray
+import ray.services
 
 from isofit.core.forward import ForwardModel
 from isofit.inversion.inverse import Inversion
@@ -40,16 +41,6 @@ class Isofit:
 
     Args:
         config_file: isofit configuration file in JSON or YAML format
-        row_column: The user can specify
-
-                    * a single number, in which case it is interpreted as a row
-                    * a comma-separated pair, in which case it is interpreted as a
-                      row/column tuple (i.e. a single spectrum)
-                    * a comma-separated quartet, in which case it is interpreted as
-                      a row, column range in the order (line_start, line_end, sample_start,
-                      sample_end) all values are inclusive.
-
-                    If none of the above, the whole cube will be analyzed.
         level: logging level (ERROR, WARNING, INFO, DEBUG)
         logfile: file to write output logs to
     """
@@ -57,7 +48,7 @@ class Isofit:
     def __init__(self, config_file, row_column='', level='INFO', logfile=None):
 
         # Explicitly set the number of threads to be 1, so we more effectively
-        #run in parallel 
+        # run in parallel
         os.environ["MKL_NUM_THREADS"] = "1"
 
         # Set logging level
@@ -68,10 +59,6 @@ class Isofit:
         self.rows = None
         self.cols = None
         self.config = None
-        self.fm = None
-        self.iv = None
-        self.io = None
-        self.states = None
 
         # Load configuration file
         self.config = configs.create_new_config(config_file)
@@ -79,14 +66,14 @@ class Isofit:
 
         # Initialize ray for parallel execution
         rayargs = {'address': self.config.implementation.ip_head,
-                   'redis_password': self.config.implementation.redis_password,
-                   'ignore_reinit_error':True,
+                   '_redis_password': self.config.implementation.redis_password,
+                   'ignore_reinit_error': self.config.implementation.ray_ignore_reinit_error,
                    'local_mode': self.config.implementation.n_cores == 1}
 
         # only specify a temporary directory if we are not connecting to 
         # a ray cluster
         if rayargs['local_mode']:
-            rayargs['temp_dir'] = self.config.implementation.ray_temp_dir
+            rayargs['_temp_dir'] = self.config.implementation.ray_temp_dir
             # Used to run on a VPN
             ray.services.get_node_ip_address = lambda: '127.0.0.1'
 
@@ -95,7 +82,32 @@ class Isofit:
             rayargs['num_cpus'] = self.config.implementation.n_cores
         ray.init(**rayargs)
 
-        if len(row_column) > 0:
+        self.workers = None
+
+    def __del__(self):
+        ray.shutdown()
+
+    def run(self, row_column = None):
+        """
+        Iterate over spectra, reading and writing through the IO
+        object to handle formatting, buffering, and deferred write-to-file.
+        Attempts to avoid reading the entire file into memory, or hitting
+        the physical disk too often.
+
+        row_column: The user can specify
+            * a single number, in which case it is interpreted as a row
+            * a comma-separated pair, in which case it is interpreted as a
+              row/column tuple (i.e. a single spectrum)
+            * a comma-separated quartet, in which case it is interpreted as
+              a row, column range in the order (line_start, line_end, sample_start,
+              sample_end) all values are inclusive.
+
+            If none of the above, the whole cube will be analyzed.
+        """
+
+        logging.info("Building first forward model, will generate any necessary LUTs")
+        fm = ForwardModel(self.config)
+        if row_column is not None:
             ranges = row_column.split(',')
             if len(ranges) == 1:
                 self.rows, self.cols = [int(ranges[0])], None
@@ -105,21 +117,53 @@ class Isofit:
                     int(row_start), int(row_end)), None
             elif len(ranges) == 4:
                 row_start, row_end, col_start, col_end = ranges
-                line_start, line_end, samp_start, samp_end = ranges
-                self.rows = range(int(row_start), int(row_end))
-                self.cols = range(int(col_start), int(col_end))
+                self.rows = range(int(row_start), int(row_end) + 1)
+                self.cols = range(int(col_start), int(col_end) + 1)
+        else:
+            io = IO(self.config, fm)
+            self.rows = range(io.n_rows)
+            self.cols = range(io.n_cols)
+            del io, fm
 
-        # Build the forward model and inversion objects
-        self._init_nonpicklable_objects()
-        self.io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
-    
+        index_pairs = np.vstack([x.flatten(order='f') for x in np.meshgrid(self.rows, self.cols)]).T
 
-    def __del__(self):
-        ray.shutdown()
+        n_iter = index_pairs.shape[0]
 
-    def _init_nonpicklable_objects(self) -> None:
-        """ Internal function to initialize objects that cannot be pickled
-        """
+        if self.config.implementation.n_cores is None:
+            n_workers = multiprocessing.cpu_count()
+        else:
+            n_workers = self.config.implementation.n_cores
+
+        # Max out the number of workers based on the number of tasks
+        n_workers = min(n_workers, n_iter)
+
+        if self.workers is None:
+            remote_worker = ray.remote(Worker)
+            self.workers = ray.util.ActorPool([remote_worker.remote(self.config, self.loglevel, self.logfile)
+                                               for n in range(n_workers)])
+
+        start_time = time.time()
+        n_tasks = min(n_workers * self.config.implementation.task_inflation_factor, n_iter)
+
+        logging.info(f'Beginning {n_iter} inversions in {n_tasks} chunks using {n_workers} cores')
+
+        # Divide up spectra to run into chunks
+        index_sets = np.linspace(0, n_iter, num=n_tasks, dtype=int)
+
+        # Run spectra, in either serial or parallel depending on n_workers
+        res = list(self.workers.map_unordered(lambda a, b: a.run_set_of_spectra.remote(b),
+                   [index_pairs[index_sets[l]:index_sets[l+1],:] for l in range(len(index_sets)-1)]))
+
+        total_time = time.time() - start_time
+        logging.info(f'Inversions complete.  {round(total_time,2)}s total, {round(n_iter/total_time,4)} spectra/s, '
+                     f'{round(n_iter/total_time/n_workers,4)} spectra/s/core')
+
+
+class Worker(object):
+    def __init__(self, config: configs.Config, loglevel: str, logfile: str):
+
+        logging.basicConfig(format='%(levelname)s:%(message)s', level=loglevel, filename=logfile)
+        self.config = config
         self.fm = ForwardModel(self.config)
 
         if self.config.implementation.mode == 'mcmc_inversion':
@@ -130,86 +174,43 @@ class Isofit:
             # This should never be reached due to configuration checking
             raise AttributeError('Config implementation mode node valid')
 
-    def _clear_nonpicklable_objects(self):
-        """ Internal function to clean objects that cannot be pickled
-        """
-        self.fm = None
-        self.iv = None
+        self.io = IO(self.config, self.fm)
 
-    @ray.remote
-    def _run_set_of_spectra(self, index_start: int, index_stop: int) -> None:
-        """Internal function to run a chunk of spectra
 
-        Args:
-            index_start: spectral index to start execution at
-            index_stop: spectral index to stop execution at
+    def run_set_of_spectra(self, indices: np.array):
 
-        """
-        logging.basicConfig(format='%(levelname)s:%(message)s', level=self.loglevel, filename=self.logfile)
-        self._init_nonpicklable_objects()
-        io = IO(self.config, self.fm, self.iv, self.rows, self.cols)
-        for index in range(index_start, index_stop):
-            success, row, col, meas, geom = io.get_components_at_index(
-                index)
-            # Only run through the inversion if we got some data
-            if success:
-                if meas is not None and all(meas < -49.0):
-                    # Bad data flags
-                    self.states = []
-                else:
-                    # The inversion returns a list of states, which are
-                    # intepreted either as samples from the posterior (MCMC case)
-                    # or as a gradient descent trajectory (standard case). For
-                    # a trajectory, the last spectrum is the converged solution.
-                    self.states = self.iv.invert(meas, geom)
 
+        for index in range(0, indices.shape[0]):
+
+            logging.debug("Read chunk of spectra")
+            row, col = indices[index,0], indices[index,1]
+
+            input_data = self.io.get_components_at_index(row, col)
+
+            if input_data is not None:
+                logging.debug("Run model")
+                # The inversion returns a list of states, which are
+                # intepreted either as samples from the posterior (MCMC case)
+                # or as a gradient descent trajectory (standard case). For
+                # a trajectory, the last spectrum is the converged solution.
+                states = self.iv.invert(input_data.meas, input_data.geom)
+
+                logging.debug("Write chunk of spectra")
                 # Write the spectra to disk
                 try:
-                    io.write_spectrum(row, col, self.states, meas,
-                                      geom, flush_immediately=True)
+                    self.io.write_spectrum(row, col, states, self.fm, self.iv)
                 except ValueError as err:
-                    logging.error(err)
                     logging.info(
-                        """
-                        Encountered the following ValueError in row %d and col %d:
-                        %s.
+                        f"""
+                        Encountered the following ValueError in (row,col) ({row},{col}).
                         Results for this pixel will be all zeros.
-                        """, row, col, err
+                        """
                     )
-                if (index - index_start) % 100 == 0:
-                    logging.info(
-                        'Core at start index %d completed inversion %d/%d',
-                        index_start, 1+index-index_start,
-                        index_stop-index_start
-                    )
+                    logging.error(err)
+                if index % 100 == 0:
+                    logging.info(f'Core at start location ({row},{col}) completed {index}/{indices.shape[0]}')
 
-    def run(self):
-        """
-        Iterate over all spectra, reading and writing through the IO
-        object to handle formatting, buffering, and deferred write-to-file.
-        The idea is to avoid reading the entire file into memory, or hitting
-        the physical disk too often. These are our main class variables.
-        """
+        self.io.flush_buffers()
 
-        n_iter = len(self.io.iter_inds)
-        self._clear_nonpicklable_objects()
-        self.io = None
 
-        if self.config.implementation.n_cores is None:
-            n_workers = min(multiprocessing.cpu_count(), n_iter)
-        else:
-            n_workers = min(self.config.implementation.n_cores, n_iter)
 
-        start_time = time.time()
-        logging.info('Beginning inversions using {} cores'.format(n_workers))
-
-        # Divide up spectra to run into chunks
-        index_sets = np.linspace(0, n_iter, num=n_workers+1, dtype=int)
-
-        # Run spectra, in either serial or parallel depending on n_workers
-        results = ray.get([self._run_set_of_spectra.remote(self, index_sets[l], index_sets[l + 1])
-                           for l in range(len(index_sets)-1)])
-
-        total_time = time.time() - start_time
-        logging.info('Inversions complete.  {} s total, {} spectra/s, {} spectra/s/core'.format(
-            round(total_time,2), round(n_iter/total_time,4), round(n_iter/total_time/n_workers,4)))
