@@ -63,7 +63,7 @@ class SurfaceConfig(BaseConfigSection):
 
         valid_surface_categories = ['surface', 'multicomponent_surface',
                                     'glint_surface', 'thermal_surface',
-                                    'lut_surface']
+                                    'lut_surface', 'mog_surface']
         if self.surface_category is None:
             errors.append('surface->surface_category must be specified')
         elif self.surface_category not in valid_surface_categories:

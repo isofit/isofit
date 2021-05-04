@@ -475,7 +475,7 @@ class IO:
             if self.config.implementation.mode == 'inversion_mcmc':
                 state_est = states.mean(axis=0)
             else:
-                state_est = states[-1, :]
+                state_est = states[-1,:]
 
             ############ Start with all of the 'independent' calculations
             if 'estimated_state_file' in self.output_datasets:
@@ -483,7 +483,7 @@ class IO:
 
             if 'path_radiance_file' in self.output_datasets:
                 path_est = fm.calc_meas(state_est, geom, rfl=np.zeros(self.meas_wl.shape))
-                to_write['path_radiance_file'] = np.column_stack((fm.instrument.wl, path_est))
+                to_write['path_radiance_file'] = np.column_stack((fm.instrument.wl_init, path_est))
 
             if 'spectral_calibration_file' in self.output_datasets:
                 # Spectral calibration
@@ -501,7 +501,7 @@ class IO:
                 meas_est = fm.calc_meas(state_est, geom, rfl=np.zeros(self.meas_wl.shape))
 
                 if 'modeled_radiance_file' in self.output_datasets:
-                    to_write['modeled_radiance_file'] = np.column_stack((fm.instrument.wl, meas_est))
+                    to_write['modeled_radiance_file'] = np.column_stack((fm.instrument.wl_init, meas_est))
 
                 if 'simulated_measurement_file' in self.output_datasets:
                     meas_sim = fm.instrument.simulate_measurement(meas_est, geom)

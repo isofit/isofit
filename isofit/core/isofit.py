@@ -149,9 +149,13 @@ class Isofit:
 
         # Divide up spectra to run into chunks
         index_sets = np.linspace(0, n_iter, num=n_tasks, dtype=int)
-
+        
         # Run spectra, in either serial or parallel depending on n_workers
-        res = list(self.workers.map_unordered(lambda a, b: a.run_set_of_spectra.remote(b),
+        if len(index_sets) == 1:
+            res = list(self.workers.map_unordered(lambda a, b: a.run_set_of_spectra.remote(b),
+                   [index_pairs[0:1,:]]))
+        else:
+            res = list(self.workers.map_unordered(lambda a, b: a.run_set_of_spectra.remote(b),
                    [index_pairs[index_sets[l]:index_sets[l+1],:] for l in range(len(index_sets)-1)]))
 
         total_time = time.time() - start_time
@@ -168,7 +172,7 @@ class Worker(object):
 
         if self.config.implementation.mode == 'mcmc_inversion':
             self.iv = MCMCInversion(self.config, self.fm)
-        elif self.config.implementation.mode in ['inversion', 'simulation']:
+        elif self.config.implementation.mode in ['inversion', 'simulation', 'mog_inversion']:
             self.iv = Inversion(self.config, self.fm)
         else:
             # This should never be reached due to configuration checking
@@ -178,7 +182,6 @@ class Worker(object):
 
 
     def run_set_of_spectra(self, indices: np.array):
-
 
         for index in range(0, indices.shape[0]):
 

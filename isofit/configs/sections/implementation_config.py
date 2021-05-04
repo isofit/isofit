@@ -33,8 +33,8 @@ class ImplementationConfig(BaseConfigSection):
         self._mode_type = str
         self.mode = 'inversion'
         """
-        str: Defines the operating mode for isofit. Current options are: inversion, inversion_mcmc, 
-        and 'simulation'.
+        str: Defines the operating mode for isofit. Current options are: inversion, mcmc_inversion, 
+        mog_inversion, and simulation.
         """
 
         self._inversion_type = InversionConfig
@@ -86,7 +86,7 @@ class ImplementationConfig(BaseConfigSection):
     def _check_config_validity(self) -> List[str]:
         errors = list()
 
-        valid_implementation_modes = ['inversion', 'mcmc_inversion', 'simulation']
+        valid_implementation_modes = ['inversion', 'mcmc_inversion', 'mog_inversion', 'simulation']
         if self.mode not in valid_implementation_modes:
             errors.append('Invalid implementation mode: {}.  Valid options are: {}'.
                           format(self.mode, valid_implementation_modes))
