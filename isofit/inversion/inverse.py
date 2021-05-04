@@ -254,7 +254,7 @@ class Inversion:
 
         return np.real(total_resid), x
 
-    def invert(self, meas, geom):
+    def invert(self, meas, geom, alpha=0.01):
         """Inverts a meaurement and returns a state vector.
         Args:
             meas: a one-D scipy vector of radiance in uW/nm/sr/cm2
@@ -328,7 +328,7 @@ class Inversion:
             if self.mode == 'mog_inversion':
                 x_current = x0
                 x_surface = x_current[self.fm.idx_surface]
-                self.MM_weights_k = self.fm.surface.component_weights(x_surface)
+                self.MM_weights_k = self.fm.surface.component_weights(x_surface, alpha)
                 mog_costs = [abs(err(x0)).sum()]
                 mog_states = []
                 mog_converged = False

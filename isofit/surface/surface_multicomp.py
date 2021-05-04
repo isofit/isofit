@@ -222,9 +222,9 @@ class MultiComponentSurface(Surface):
             return ''
         return 'Component: %i' % self.component(x_surface, geom)
 
-    def component_weights(self, x_surface):
+    def component_weights(self, x_surface, alpha=0.01):
         x_lamb = x_surface[self.idx_lamb]
-        reg = np.eye(len(self.idx_lamb)) *  1.0 # HEAVY regularization
+        reg = np.eye(len(self.idx_lamb)) * alpha# 1.0 # HEAVY regularization
         wts = [multivariate_normal.pdf(x_lamb, m, c+reg) \
                 for m,c in self.components]
         wts = np.array(wts)
