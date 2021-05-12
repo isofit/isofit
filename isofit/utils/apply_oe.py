@@ -462,8 +462,11 @@ class Pathnames():
 
         self.sixs_path = os.getenv('SIXS_DIR')
 
-        # isofit file should live at isofit/isofit/core/isofit.py
-        self.isofit_path = os.path.dirname(os.path.dirname(os.path.dirname(isofit.__file__)))
+        if os.getenv('ISOFIT_DATA_DIR'):
+            self.isofit_path = os.path.dirname(os.getenv('ISOFIT_DATA_DIR'))
+        else:
+             # isofit file should live at isofit/isofit/core/isofit.py
+            self.isofit_path = os.path.dirname(os.path.dirname(os.path.dirname(isofit.__file__)))
 
         if args.sensor == 'ang':
             self.noise_path = join(self.isofit_path, 'data', 'avirisng_noise.txt')
