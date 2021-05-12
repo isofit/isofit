@@ -30,7 +30,7 @@ UNCORRELATED_RADIOMETRIC_UNCERTAINTY = 0.01
 INVERSION_WINDOWS = [[380.0, 1340.0], [1450, 1800.0], [1970.0, 2500.0]]
 
 
-def main():
+def main(rawargs=None):
     """ This is a helper script to apply OE over a flightline using the MODTRAN radiative transfer engine.
 
     The goal is to run isofit in a fairly 'standard' way, accounting for the types of variation that might be
@@ -114,7 +114,7 @@ def main():
     parser.add_argument('--ray_temp_dir', type=str, default='/tmp/ray')
     parser.add_argument('--emulator_base', type=str, default=None)
 
-    args = parser.parse_args()
+    args = parser.parse_args(rawargs)
 
     if args.sensor not in ['ang', 'avcl', 'neon', 'prism', 'emit']:
         if args.sensor[:3] != 'NA-':
