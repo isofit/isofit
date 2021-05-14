@@ -30,7 +30,7 @@ UNCORRELATED_RADIOMETRIC_UNCERTAINTY = 0.01
 INVERSION_WINDOWS = [[380.0, 1340.0], [1450, 1800.0], [1970.0, 2500.0]]
 
 
-def main():
+def main(rawargs=None):
     """ This is a helper script to apply OE over a flightline using the MODTRAN radiative transfer engine.
 
     The goal is to run isofit in a fairly 'standard' way, accounting for the types of variation that might be
@@ -114,9 +114,9 @@ def main():
     parser.add_argument('--ray_temp_dir', type=str, default='/tmp/ray')
     parser.add_argument('--emulator_base', type=str, default=None)
 
-    args = parser.parse_args()
+    args = parser.parse_args(rawargs)
 
-    if args.sensor not in ['ang', 'avcl', 'neon', 'prism', 'emit']:
+    if args.sensor not in ['ang', 'avcl', 'neon', 'prism', 'emit', 'hyp']:
         if args.sensor[:3] != 'NA-':
             raise ValueError('argument sensor: invalid choice: "NA-test" (choose from '
                              '"ang", "avcl", "neon", "prism", "emit", "NA-*")')
@@ -175,7 +175,9 @@ def main():
         dt = datetime.strptime(paths.fid[:19], 'emit%Y%m%dt%H%M%S')
     elif args.sensor[:3] == 'NA-':
         dt = datetime.strptime(args.sensor[3:], '%Y%m%d')
-
+    elif args.sensor == 'hyp':
+        dt = datetime.strptime(paths.fid[10:17], '%Y%j')
+        
     dayofyear = dt.timetuple().tm_yday
 
     h_m_s, day_increment, mean_path_km, mean_to_sensor_azimuth, mean_to_sensor_zenith, valid, \
@@ -382,6 +384,8 @@ class Pathnames():
             self.fid = split(args.input_radiance)[-1][:19]
         elif args.sensor[:3] == 'NA-':
             self.fid = os.path.splitext(os.path.basename(args.input_radiance))[0]
+        elif args.sensor == 'hyp': 
+            self.fid = split(args.input_radiance)[-1][:22]
 
         # Names from inputs
         self.aerosol_climatology = args.aerosol_climatology_path
@@ -462,8 +466,11 @@ class Pathnames():
 
         self.sixs_path = os.getenv('SIXS_DIR')
 
-        # isofit file should live at isofit/isofit/core/isofit.py
-        self.isofit_path = os.path.dirname(os.path.dirname(os.path.dirname(isofit.__file__)))
+        if os.getenv('ISOFIT_DIR'):
+            self.isofit_path = os.getenv('ISOFIT_DIR')
+        else:
+             # isofit file should live at isofit/isofit/core/isofit.py
+            self.isofit_path = os.path.dirname(os.path.dirname(os.path.dirname(isofit.__file__)))
 
         if args.sensor == 'ang':
             self.noise_path = join(self.isofit_path, 'data', 'avirisng_noise.txt')
