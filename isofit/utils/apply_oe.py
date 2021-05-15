@@ -75,12 +75,19 @@ def main(rawargs=None):
             at fine scale resolution.  Choices - 0 off, 1 on.  Default 0
         ray_temp_dir (Optional, str): Location of temporary directory for ray parallelization engine.  Default is
             '/tmp/ray'
+        emulator_base (Optional, str): Location of emulator base path.  Point this at the base of sRTMnet to use the
+            emulator instead of MODTRAN.
 
             Reference:
             D.R. Thompson, A. Braverman,P.G. Brodrick, A. Candela, N. Carbon, R.N. Clark,D. Connelly, R.O. Green, R.F.
             Kokaly, L. Li, N. Mahowald, R.L. Miller, G.S. Okin, T.H.Painter, G.A. Swayze, M. Turmon, J. Susilouto, and
             D.S. Wettergreen. Quantifying Uncertainty for Remote Spectroscopy of Surface Composition. Remote Sensing of
             Environment, 2020. doi: https://doi.org/10.1016/j.rse.2020.111898.
+
+            Emulator reference:
+            P.G. Brodrick, D.R. Thompson, J.E. Fahlen, M.L. Eastwood, C.M. Sarture, S.R. Lundeen, W. Olson-Duvall,
+            N. Carmon, and R.O. Green. Generalized radiative transfer emulation for imaging spectroscopy reflectance
+            retrievals. Remote Sensing of Environment, 261:112476, 2021.doi: 10.1016/j.rse.2021.112476.
 
 
     Returns:
