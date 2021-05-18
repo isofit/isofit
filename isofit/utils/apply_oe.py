@@ -23,14 +23,14 @@ from isofit.core import isofit, common
 
 EPS = 1e-6
 CHUNKSIZE = 256
-SEGMENTATION_SIZE = 400
+SEGMENTATION_SIZE = 40
 
 UNCORRELATED_RADIOMETRIC_UNCERTAINTY = 0.01
 
-INVERSION_WINDOWS = [[400.0, 1300.0], [1450, 1780.0], [2050.0, 2450.0]]
+INVERSION_WINDOWS = [[380.0, 1340.0], [1450, 1800.0], [1970.0, 2500.0]]
 
 
-def main():
+def main(rawargs=None):
     """ This is a helper script to apply OE over a flightline using the MODTRAN radiative transfer engine.
 
     The goal is to run isofit in a fairly 'standard' way, accounting for the types of variation that might be
@@ -75,12 +75,19 @@ def main():
             at fine scale resolution.  Choices - 0 off, 1 on.  Default 0
         ray_temp_dir (Optional, str): Location of temporary directory for ray parallelization engine.  Default is
             '/tmp/ray'
+        emulator_base (Optional, str): Location of emulator base path.  Point this at the base of sRTMnet to use the
+            emulator instead of MODTRAN.
 
             Reference:
             D.R. Thompson, A. Braverman,P.G. Brodrick, A. Candela, N. Carbon, R.N. Clark,D. Connelly, R.O. Green, R.F.
             Kokaly, L. Li, N. Mahowald, R.L. Miller, G.S. Okin, T.H.Painter, G.A. Swayze, M. Turmon, J. Susilouto, and
             D.S. Wettergreen. Quantifying Uncertainty for Remote Spectroscopy of Surface Composition. Remote Sensing of
             Environment, 2020. doi: https://doi.org/10.1016/j.rse.2020.111898.
+
+            Emulator reference:
+            P.G. Brodrick, D.R. Thompson, J.E. Fahlen, M.L. Eastwood, C.M. Sarture, S.R. Lundeen, W. Olson-Duvall,
+            N. Carmon, and R.O. Green. Generalized radiative transfer emulation for imaging spectroscopy reflectance
+            retrievals. Remote Sensing of Environment, 261:112476, 2021.doi: 10.1016/j.rse.2021.112476.
 
 
     Returns:
@@ -93,7 +100,7 @@ def main():
     parser.add_argument('input_loc', type=str)
     parser.add_argument('input_obs', type=str)
     parser.add_argument('working_directory', type=str)
-    parser.add_argument('sensor', type=str, choices=['ang', 'avcl', 'neon', 'prism'])
+    parser.add_argument('sensor', type=str)
     parser.add_argument('--copy_input_files', type=int, choices=[0,1], default=0)
     parser.add_argument('--modtran_path', type=str)
     parser.add_argument('--wavelength_path', type=str)
@@ -114,7 +121,12 @@ def main():
     parser.add_argument('--ray_temp_dir', type=str, default='/tmp/ray')
     parser.add_argument('--emulator_base', type=str, default=None)
 
-    args = parser.parse_args()
+    args = parser.parse_args(rawargs)
+
+    if args.sensor not in ['ang', 'avcl', 'neon', 'prism', 'emit', 'hyp']:
+        if args.sensor[:3] != 'NA-':
+            raise ValueError('argument sensor: invalid choice: "NA-test" (choose from '
+                             '"ang", "avcl", "neon", "prism", "emit", "NA-*")')
 
     if args.copy_input_files == 1:
         args.copy_input_files = True
@@ -125,6 +137,23 @@ def main():
         logging.basicConfig(format='%(message)s', level=args.logging_level)
     else:
         logging.basicConfig(format='%(message)s', level=args.logging_level, filename=args.log_file)
+
+    rdn_dataset = gdal.Open(args.input_radiance, gdal.GA_ReadOnly)
+    rdn_size = (rdn_dataset.RasterXSize, rdn_dataset.RasterYSize)
+    del rdn_dataset
+    for infile_name, infile in zip(['input_radiance','input_loc','input_obs'],
+                                   [args.input_radiance, args.input_loc, args.input_obs]):
+        if os.path.isfile(infile) is False:
+            err_str = f'Input argument {infile_name} give as: {infile}.  File not found on system.'
+            raise ValueError('argument ' + err_str)
+        if infile_name != 'input_radiance':
+            input_dataset = gdal.Open(infile, gdal.GA_ReadOnly)
+            input_size = (input_dataset.RasterXSize, input_dataset.RasterYSize)
+            if not (input_size[0] == rdn_size[0] and input_size[1] == rdn_size[1]):
+                err_str = f'Input file: {infile_name} size is {input_size}, which does not match input_radiance size: {rdn_size}'
+                raise ValueError(err_str)
+
+
 
     lut_params = LUTConfig(args.lut_config_file)
     if args.emulator_base is not None:
@@ -142,17 +171,21 @@ def main():
     if args.sensor == 'ang':
         # parse flightline ID (AVIRIS-NG assumptions)
         dt = datetime.strptime(paths.fid[3:], '%Y%m%dt%H%M%S')
-        dayofyear = dt.timetuple().tm_yday
     elif args.sensor == 'avcl':
         # parse flightline ID (AVIRIS-CL assumptions)
         dt = datetime.strptime('20{}t000000'.format(paths.fid[1:7]), '%Y%m%dt%H%M%S')
-        dayofyear = dt.timetuple().tm_yday
     elif args.sensor == 'neon':
         dt = datetime.strptime(paths.fid, 'NIS01_%Y%m%d_%H%M%S')
-        dayofyear = dt.timetuple().tm_yday
     elif args.sensor == 'prism':
         dt = datetime.strptime(paths.fid[3:], '%Y%m%dt%H%M%S')
-        dayofyear = dt.timetuple().tm_yday
+    elif args.sensor == 'emit':
+        dt = datetime.strptime(paths.fid[:19], 'emit%Y%m%dt%H%M%S')
+    elif args.sensor[:3] == 'NA-':
+        dt = datetime.strptime(args.sensor[3:], '%Y%m%d')
+    elif args.sensor == 'hyp':
+        dt = datetime.strptime(paths.fid[10:17], '%Y%j')
+        
+    dayofyear = dt.timetuple().tm_yday
 
     h_m_s, day_increment, mean_path_km, mean_to_sensor_azimuth, mean_to_sensor_zenith, valid, \
     to_sensor_azimuth_lut_grid, to_sensor_zenith_lut_grid = get_metadata_from_obs(paths.obs_working_path, lut_params)
@@ -191,7 +224,7 @@ def main():
     mean_latitude, mean_longitude, mean_elevation_km, elevation_lut_grid = \
         get_metadata_from_loc(paths.loc_working_path, lut_params)
     if args.emulator_base is not None:
-        if np.any(elevation_lut_grid < 0):
+        if elevation_lut_grid is not None and np.any(elevation_lut_grid < 0):
             to_rem = elevation_lut_grid[elevation_lut_grid < 0].copy()
             elevation_lut_grid[ elevation_lut_grid< 0] = 0
             elevation_lut_grid = np.unique(elevation_lut_grid)
@@ -261,10 +294,11 @@ def main():
             del retrieval_h2o
 
             # clean up unneeded storage
-            for to_rm in ['*r_k', '*t_k', '*tp7', '*wrn', '*psc', '*plt', '*7sc', '*acd']:
-                cmd = 'rm ' + join(paths.lut_h2o_directory, to_rm)
-                logging.info(cmd)
-                os.system(cmd)
+            if args.emulator_base is None:
+                for to_rm in ['*r_k', '*t_k', '*tp7', '*wrn', '*psc', '*plt', '*7sc', '*acd']:
+                    cmd = 'rm ' + join(paths.lut_h2o_directory, to_rm)
+                    logging.info(cmd)
+                    os.system(cmd)
         else:
             logging.info('Existing h2o-presolve solutions found, using those.')
 
@@ -309,10 +343,11 @@ def main():
         del retrieval_full
 
         # clean up unneeded storage
-        for to_rm in ['*r_k', '*t_k', '*tp7', '*wrn', '*psc', '*plt', '*7sc', '*acd']:
-            cmd = 'rm ' + join(paths.lut_modtran_directory, to_rm)
-            logging.info(cmd)
-            os.system(cmd)
+        if args.emulator_base is None:
+            for to_rm in ['*r_k', '*t_k', '*tp7', '*wrn', '*psc', '*plt', '*7sc', '*acd']:
+                cmd = 'rm ' + join(paths.lut_modtran_directory, to_rm)
+                logging.info(cmd)
+                os.system(cmd)
 
     if not exists(paths.rfl_working_path) or not exists(paths.uncert_working_path):
         # Empirical line
@@ -352,6 +387,12 @@ class Pathnames():
             logging.info('Flightline ID: %s' % self.fid)
         elif args.sensor == 'neon':
             self.fid = split(args.input_radiance)[-1][:21]
+        elif args.sensor == 'emit':
+            self.fid = split(args.input_radiance)[-1][:19]
+        elif args.sensor[:3] == 'NA-':
+            self.fid = os.path.splitext(os.path.basename(args.input_radiance))[0]
+        elif args.sensor == 'hyp': 
+            self.fid = split(args.input_radiance)[-1][:22]
 
         # Names from inputs
         self.aerosol_climatology = args.aerosol_climatology_path
@@ -432,8 +473,11 @@ class Pathnames():
 
         self.sixs_path = os.getenv('SIXS_DIR')
 
-        # isofit file should live at isofit/isofit/core/isofit.py
-        self.isofit_path = os.path.dirname(os.path.dirname(os.path.dirname(isofit.__file__)))
+        if os.getenv('ISOFIT_DIR'):
+            self.isofit_path = os.getenv('ISOFIT_DIR')
+        else:
+             # isofit file should live at isofit/isofit/core/isofit.py
+            self.isofit_path = os.path.dirname(os.path.dirname(os.path.dirname(isofit.__file__)))
 
         if args.sensor == 'ang':
             self.noise_path = join(self.isofit_path, 'data', 'avirisng_noise.txt')
@@ -533,8 +577,8 @@ class LUTConfig:
         self.h2o_range = [0.05, 5]
 
         # Units of degrees
-        self.to_sensor_azimuth_spacing = 0
-        self.to_sensor_azimuth_spacing_min = 0
+        self.to_sensor_azimuth_spacing = 60
+        self.to_sensor_azimuth_spacing_min = 60
 
         # Units of degrees
         self.to_sensor_zenith_spacing = 10
@@ -653,6 +697,11 @@ class LUTConfig:
                                           random_state=1)
             if spatial_data.shape[0]  == 1:
                 spatial_data = np.vstack([spatial_data, spatial_data])
+
+            # Protect memory against huge images
+            if spatial_data.shape[0] > 1e6:
+                 use = np.linspace(0,spatial_data.shape[0]-1,int(1e6),dtype=int)
+                 spatial_data = spatial_data[use,:]
 
             gmm.fit(spatial_data)
             central_angles = np.degrees(np.arctan2(gmm.means_[:, 1], gmm.means_[:, 0]))
@@ -982,7 +1031,7 @@ def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array, n_cores: int
     if emulator_base is None:
         engine_name = 'modtran'
     else:
-        engine_name = 'simulated_modtran'
+        engine_name = 'sRTMnet'
 
     radiative_transfer_config = {
             "radiative_transfer_engines": {
@@ -1109,7 +1158,7 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
     if emulator_base is None:
         engine_name = 'modtran'
     else:
-        engine_name = 'simulated_modtran'
+        engine_name = 'sRTMnet'
     radiative_transfer_config = {
 
             "radiative_transfer_engines": {

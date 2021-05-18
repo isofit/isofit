@@ -21,6 +21,7 @@
 import numpy as np
 from spectral.io import envi
 import ray
+import ray.services
 import logging
 import atexit
 
@@ -116,17 +117,20 @@ def extractions(inputfile, labels, output, chunksize, flag, n_cores: int = 1, ra
 
     lbl_img = envi.open(lbl_file+'.hdr', lbl_file)
     labels = lbl_img.read_band(0)
-    nout = len(np.unique(labels))
+    un_labels = np.unique(labels).tolist()
+    if 0 not in un_labels:
+        un_labels.insert(0,0)
+    nout = len(un_labels)
 
 
     # Start up a ray instance for parallel work
     rayargs = {'ignore_reinit_error': True,
                'local_mode': n_cores == 1,
                "address": ray_address,
-               "redis_password": ray_redis_password}
+               "_redis_password": ray_redis_password}
 
     if rayargs['local_mode']:
-        rayargs['temp_dir'] = ray_temp_dir
+        rayargs['_temp_dir'] = ray_temp_dir
         # Used to run on a VPN
         ray.services.get_node_ip_address = lambda: '127.0.0.1'
 
@@ -151,7 +155,8 @@ def extractions(inputfile, labels, output, chunksize, flag, n_cores: int = 1, ra
     out = np.zeros((nout, nb))
     for idx, ret in rreturn:
         if ret is not None:
-            out[idx.copy(),...] = ret.copy()
+            for _output_index in range(len(idx)):
+                out[un_labels.index(idx[_output_index]),...] = ret[_output_index,...]
     del rreturn
     ray.shutdown()
 

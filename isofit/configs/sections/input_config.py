@@ -39,7 +39,7 @@ class InputConfig(BaseConfigSection):
         self._reference_reflectance_file_type = str
         self.reference_reflectance_file = None
         """
-        str: Input reference reflectance file.  Can be either a .mat, .txt, or ENVI formatted binary cube.
+        str: Input reference reflectance (to be compared against) file.  Can be either a .mat, .txt, or ENVI formatted binary cube.
         Used for radiometric calibration.
         """
 
@@ -79,42 +79,6 @@ class InputConfig(BaseConfigSection):
         str: Background reflectance file used for spatial inference.
         Should be an ENVI formatted binary cube that is the same
         dimensions as the input data cube.
-        """
-
-        self._surface_prior_mean_file_type = str
-        self.surface_prior_mean_file = None
-        """
-        str: Input surface prior mean file.  Can be either a .mat, .txt, or ENVI formatted binary cube.
-        """
-
-        self._surface_prior_variance_file_type = str
-        self.surface_prior_variance_file = None
-        """
-        str: Input surface prior variance file.  Can be either a .mat, .txt, or ENVI formatted binary cube.
-        """
-
-        self._rt_prior_mean_file_type = str
-        self.rt_prior_mean_file = None
-        """
-        str: Input rt prior mean file.  Can be either a .mat, .txt, or ENVI formatted binary cube.
-        """
-
-        self._rt_prior_variance_file_type = str
-        self.rt_prior_variance_file = None
-        """
-        str: Input rt prior variance file.  Can be either a .mat, .txt, or ENVI formatted binary cube.
-        """
-
-        self._instrument_prior_mean_file_type = str
-        self.instrument_prior_mean_file = None
-        """
-        str: Input instrument prior mean file.  Can be either a .mat, .txt, or ENVI formatted binary cube.
-        """
-
-        self._instrument_prior_variance_file_type = str
-        self.instrument_prior_variance_file = None
-        """
-        str: Input instrument prior variance file.  Can be either a .mat, .txt, or ENVI formatted binary cube.
         """
 
         self._radiometry_correction_file_type = str

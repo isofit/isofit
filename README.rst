@@ -1,6 +1,12 @@
 Imaging Spectrometer Optimal FITting (ISOFIT) Overview
 ======================================================
 
+.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.4614338.svg
+   :target: https://doi.org/10.5281/zenodo.4614338
+   
+.. image:: https://readthedocs.org/projects/pip/badge/?version=stable
+   :target: https://pip.pypa.io/en/stable/?badge=stable
+
 You can find documentation for isofit at our `readthedocs site <https://isofit.readthedocs.io/en/latest/index.html>`_.
 
 This repository has two main branches:
