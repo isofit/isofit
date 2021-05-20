@@ -1,0 +1,126 @@
+name: Hypertrace
+
+on: [push, pull_request]
+
+jobs:
+  sRTMnet:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+
+    - name: Install GDAL
+      run: |
+        sudo add-apt-repository ppa:ubuntugis/ppa && sudo apt-get update
+        sudo apt-get install gdal-bin
+        sudo apt-get install libgdal-dev
+        pip install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==`gdal-config --version`
+
+    - name: Install Isofit
+      run: |
+        python -m pip install --upgrade pip
+        pip install .
+        pip install pandas
+
+    - name: Download and compile 6Sv
+      run: |
+        cd examples/py-hypertrace
+        wget -nv https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar
+        mkdir -p 6sv-2.1
+        tar -xf 6sv-2.1.tar --directory 6sv-2.1
+        cd 6sv-2.1
+        # Necessary for compilation to work with recent GCC versions
+        sed -i Makefile -e 's/FFLAGS.*/& -std=legacy/'
+        make
+
+    - name: Download and extract hypertrace data
+      run: |
+        cd examples/py-hypertrace
+        wget -nv https://github.com/ashiklom/isofit/releases/download/hypertrace-data/hypertrace-data.tar.gz
+        tar -xf hypertrace-data.tar.gz
+
+    - name: Download sRTMnet
+      run: |
+        cd examples/py-hypertrace
+        mkdir sRTMnet_v100
+        cd sRTMnet_v100
+        wget -nv https://zenodo.org/record/4096627/files/sRTMnet_v100.zip
+        unzip sRTMnet_v100.zip && rm sRTMnet_v100.zip
+
+    - name: Run Hypertrace
+      run: |
+        cd examples/py-hypertrace
+        # Modify the workflow file for GitHub actions
+        python workflow.py configs/example-srtmnet-ci.json
+        python summarize.py configs/example-srtmnet-ci.json
+
+    - name: Upload summary from CI workflow
+      uses: actions/upload-artifact@v2
+      with:
+        name: srtmnet-summary
+        path: examples/py-hypertrace/output/example-srtmnet/summary.csv
+
+  libradtran:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+
+    - name: Install GDAL
+      run: |
+        sudo add-apt-repository ppa:ubuntugis/ppa && sudo apt-get update
+        sudo apt-get install gdal-bin
+        sudo apt-get install libgdal-dev
+        pip install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==`gdal-config --version`
+
+    - name: Install Isofit
+      run: |
+        python -m pip install --upgrade pip
+        pip install .
+        pip install pandas
+
+    - name: Install libradtran dependencies
+      run: |
+        sudo apt-get install -y libnetcdf-dev libnetcdff-dev libgsl-dev
+
+    - name: Download and install libradtran
+      run: |
+        cd examples/py-hypertrace
+        wget -nv http://www.libradtran.org/download/history/libRadtran-2.0.3.tar.gz
+        tar -xf libRadtran-2.0.3.tar.gz
+        cd libRadtran-2.0.3
+        wget -nv http://www.meteo.physik.uni-muenchen.de/~libradtran/lib/exe/fetch.php?media=download:reptran_2017_all.tar.gz -O reptran-2017-all.tar.gz
+        tar -xf reptran-2017-all.tar.gz
+        PYTHON=$(which python2) ./configure --prefix=$(pwd)
+        # For some reason, uvspecfunction compilation fails...
+        make --ignore-errors
+
+    - name: Download and extract Hypertrace data
+      run: |
+        cd examples/py-hypertrace
+        wget -nv https://github.com/ashiklom/isofit/releases/download/hypertrace-data/hypertrace-data.tar.gz
+        tar -xf hypertrace-data.tar.gz
+
+    - name: Run continuous integration workflow
+      run: |
+        cd examples/py-hypertrace
+        # Modify the workflow file for GitHub actions
+        export LIBRADTRAN_DIR=$GITHUB_WORKSPACE/libRadtran-2.0.3
+        python workflow.py configs/example-libradtran.json
+        python summarize.py configs/example-libradtran.json
+
+    - name: Upload summary from CI workflow
+      uses: actions/upload-artifact@v2
+      with:
+        name: summary-libradtran
+        path: examples/py-hypertrace/output-libradtran/summary.csv

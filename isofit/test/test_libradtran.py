@@ -54,12 +54,15 @@ def run_forward():
     config = create_new_config(os.path.join(datadir, 'config_forward.json'))
     fm = ForwardModel(config)
     iv = Inversion(config, fm)
-    io = IO(config, fm, iv, [0], [0])
+    io = IO(config, fm)
 
     # Simulate a measurement and write result
-    for row, col, meas, geom in io:
-        states = iv.invert(meas, geom)
-        io.write_spectrum(row, col, states, meas, geom)
+    for row in range(io.n_rows):
+        for col in range(io.n_cols):
+            id = io.get_components_at_index(row, col)
+            if id is not None:
+                states = iv.invert(id.meas, id.geom)
+                io.write_spectrum(row, col, states, fm, iv)
 
     assert True
     return states[0]
@@ -74,14 +77,16 @@ def run_inverse():
     config = create_new_config(os.path.join(datadir, 'config_forward.json'))
     fm = ForwardModel(config)
     iv = Inversion(config, fm)
-    io = IO(config, fm, iv, [0], [0])
-    geom = None
+    io = IO(config, fm)
 
     # Get our measurement from the simulation results, and invert.
     # Calculate uncertainties at the solution state, write result
-    for row, col, meas, geom in io:
-        states = iv.invert(meas, geom)
-        io.write_spectrum(row, col, states, meas, geom)
+    for row in range(io.n_rows):
+        for col in range(io.n_cols):
+            id = io.get_components_at_index(row, col)
+            if id is not None:
+                states = iv.invert(id.meas, id.geom)
+                io.write_spectrum(row, col, states, fm, iv)
 
     assert True
     return states[-1]
