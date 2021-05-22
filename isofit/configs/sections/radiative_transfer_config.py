@@ -43,6 +43,10 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         self.engine_base_dir = None
         """str: base directory of the given radiative transfer engine on user's OS."""
 
+        self._wavelength_file_type = str
+        self.wavelength_file = None
+        """str: Optional path to wavelength file for high-res atmospheric calculations"""
+
         self._wavelength_range_type = list()
         self.wavelength_range = None
         """List: The wavelength range to execute this radiative transfer engine over."""

@@ -63,7 +63,11 @@ class TabularRT:
     def __init__(self, engine_config: RadiativeTransferEngineConfig, full_config: Config):
 
         self.implementation_config: ImplementationConfig = full_config.implementation
-        self.wl, self.fwhm = common.load_wavelen(full_config.forward_model.instrument.wavelength_file)
+        if engine_config.wavelength_file is not None:
+            wavelength_file = engine_config.wavelength_file 
+        else:
+            wavelength_file = full_config.forward_model.instrument.wavelength_file
+        self.wl, self.fwhm = common.load_wavelen(wavelength_file)
         if engine_config.wavelength_range is not None:
             valid_wl = np.logical_and(self.wl >= engine_config.wavelength_range[0],
                                       self.wl <= engine_config.wavelength_range[1])
