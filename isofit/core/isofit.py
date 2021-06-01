@@ -149,16 +149,14 @@ class Isofit:
 
         # Divide up spectra to run into chunks
         index_sets = np.linspace(0, n_iter, num=n_tasks, dtype=int)
-
-        # Run spectra, in either serial or parallel depending on n_workers
         if len(index_sets) == 1:
-            res = list(self.workers.map_unordered(lambda a, b: 
-                  a.run_set_of_spectra.remote(b), [index_pairs[0:1,:]]))
+            indices_to_run = [index_pairs[0:1,:]]
         else:
-            res = list(self.workers.map_unordered(lambda a, b: 
-                  a.run_set_of_spectra.remote(b),
-                   [index_pairs[index_sets[l]:index_sets[l+1],:] \
-                       for l in range(len(index_sets)-1)]))
+            indices_to_run = [index_pairs[index_sets[l]:index_sets[l + 1], :]
+                              for l in range(len(index_sets) - 1)]
+
+        res = list(self.workers.map_unordered(lambda a, b: a.run_set_of_spectra.remote(b),
+                                              indices_to_run))
 
         total_time = time.time() - start_time
         logging.info(f'Inversions complete.  {round(total_time,2)}s total, {round(n_iter/total_time,4)} spectra/s, '
