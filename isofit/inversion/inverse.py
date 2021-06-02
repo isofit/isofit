@@ -279,7 +279,8 @@ class Inversion:
         costs, solutions = [], []
 
         # Simulations are easy - return the initial state vector
-        if self.mode == 'simulation' or meas is None:
+        if self.mode == 'simulation':
+            self.fm.surface.rfl = meas
             return np.array([self.fm.init.copy()])
 
         if len(self.integration_grid.values()) == 0:
