@@ -483,7 +483,7 @@ class IO:
 
             if 'path_radiance_file' in self.output_datasets:
                 path_est = fm.calc_meas(state_est, geom, rfl=np.zeros(self.meas_wl.shape))
-                to_write['path_radiance_file'] = np.column_stack((fm.instrument.wl, path_est))
+                to_write['path_radiance_file'] = np.column_stack((fm.instrument.wl_init, path_est))
 
             if 'spectral_calibration_file' in self.output_datasets:
                 # Spectral calibration
@@ -509,7 +509,7 @@ class IO:
             if any(item in ['modeled_radiance_file', 'simulated_measurement_file'] for item in self.output_datasets):
                 meas_est = fm.calc_meas(state_est, geom, rfl=lamb_est)
                 if 'modeled_radiance_file' in self.output_datasets:
-                    to_write['modeled_radiance_file'] = np.column_stack((fm.instrument.wl, meas_est))
+                    to_write['modeled_radiance_file'] = np.column_stack((fm.instrument.wl_init, meas_est))
 
                 if 'simulated_measurement_file' in self.output_datasets:
                     meas_sim = fm.instrument.simulate_measurement(meas_est, geom)
