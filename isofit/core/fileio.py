@@ -502,7 +502,7 @@ class IO:
                 Ls_est = fm.calc_Ls(state_est, geom)
 
             if any(item in ['estimated_reflectance_file', 'apparent_reflectance_file',
-                            'modeled_radiance_file', 'simulated_measurement_file'] for item in
+                            'modeled_radiance_file'] for item in
                    self.output_datasets):
                 lamb_est = fm.calc_lamb(state_est, geom)
 
