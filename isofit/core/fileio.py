@@ -483,7 +483,7 @@ class IO:
 
             if 'path_radiance_file' in self.output_datasets:
                 path_est = fm.calc_meas(state_est, geom, rfl=np.zeros(self.meas_wl.shape))
-                to_write['path_radiance_file'] = np.column_stack((fm.instrument.wl, path_est))
+                to_write['path_radiance_file'] = np.column_stack((fm.instrument.wl_init, path_est))
 
             if 'spectral_calibration_file' in self.output_datasets:
                 # Spectral calibration
@@ -497,22 +497,22 @@ class IO:
                 to_write['posterior_uncertainty_file'] = np.sqrt(np.diag(S_hat))
 
             ############ Now proceed to the calcs where they may be some overlap
-            if any(item in ['modeled_radiance_file', 'simulated_measurement_file'] for item in self.output_datasets):
-                meas_est = fm.calc_meas(state_est, geom, rfl=np.zeros(self.meas_wl.shape))
-
-                if 'modeled_radiance_file' in self.output_datasets:
-                    to_write['modeled_radiance_file'] = np.column_stack((fm.instrument.wl, meas_est))
-
-                if 'simulated_measurement_file' in self.output_datasets:
-                    meas_sim = fm.instrument.simulate_measurement(meas_est, geom)
-                    to_write['simulated_measurement_file'] = np.column_stack((self.meas_wl, meas_sim))
 
             if any(item in ['estimated_emission_file', 'apparent_reflectance_file'] for item in self.output_datasets):
                 Ls_est = fm.calc_Ls(state_est, geom)
 
-            if any(item in ['estimated_reflectance_file', 'apparent_reflectance_file'] for item in
-                   self.output_datasets):
+            if any(item in ['estimated_reflectance_file', 'apparent_reflectance_file',
+                            'modeled_radiance_file', 'simulated_measurement_file'] for item in self.output_datasets):
                 lamb_est = fm.calc_lamb(state_est, geom)
+
+            if any(item in ['modeled_radiance_file', 'simulated_measurement_file'] for item in self.output_datasets):
+                meas_est = fm.calc_meas(state_est, geom, rfl=lamb_est)
+                if 'modeled_radiance_file' in self.output_datasets:
+                    to_write['modeled_radiance_file'] = np.column_stack((fm.instrument.wl_init, meas_est))
+
+                if 'simulated_measurement_file' in self.output_datasets:
+                    meas_sim = fm.instrument.simulate_measurement(meas_est, geom)
+                    to_write['simulated_measurement_file'] = np.column_stack((self.meas_wl, meas_sim))
 
             if 'estimated_emission_file' in self.output_datasets:
                 to_write['estimated_emission_file'] = np.column_stack((self.meas_wl, Ls_est))
