@@ -30,7 +30,6 @@
 
     "surface": {
       "surface_category": "multicomponent_surface",
-      "wavelength_file": "../remote/20170320_ang20170228_wavelength_fit.txt",
       "surface_file": "../remote/ang20170228_surface_model.mat",
       "selection_metric": "Euclidean"
     },
@@ -72,6 +71,7 @@
   },
 
   "implementation": {
+    "mode": "inversion",
     "inversion": {
       "windows": [[380.0, 1300.0], [1450, 1780.0], [1950.0, 2450.0]]
     }
