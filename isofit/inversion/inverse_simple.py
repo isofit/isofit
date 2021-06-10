@@ -147,11 +147,11 @@ def invert_simple(forward, meas, geom):
     instrument = forward.instrument
 
     vswir_present = False
-    if any(forward.surface.wl < 3000):
+    if any(forward.surface.wl < 2600):
         vswir_present = True 
 
     tir_present = False
-    if any(forward.surface.wl > 7000):
+    if any(forward.surface.wl > 2600):
         tir_present = True 
 
     # First step is to get the atmosphere. We start from the initial state
@@ -174,7 +174,7 @@ def invert_simple(forward, meas, geom):
     # Multicomponent surfaces. Finds the cluster nearest the VSWIR heuristic
     # inversion and uses it for the TIR suface initialization.
     if tir_present:
-        tir_idx = np.where(forward.surface.wl > 7000)[0]
+        tir_idx = np.where(forward.surface.wl > 3000)[0]
 
         if vswir_present:
             x_surface_temp = x_surface.copy()
