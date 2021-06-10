@@ -98,3 +98,8 @@ J. P. Harringmeyer, K. Kaiser, D. R. Thompson, M. M. Gierach, C. L. Cash, C. G. 
 `Detection and Sourcing of CDOM in Urban Coastal Waters With UV-Visible Imaging Spectroscopy.
 <https://doi.org/10.3389/fenvs.2021.647966>`__
 *Frontiers in Environmental Science*, 2021.  DOI: 10.3389/fenvs.2021.647966
+
+G. Stephens, O. Kalashnikova, J. J. Gristey, P. Pilewskie, D. R. Thompson, X. Huang, M. Lebsock, S. Schmidt.
+`The Spectral Nature of Earth’s Reflected Radiation: Measurement and Science Applications.
+<https://doi.org/10.3389/frsen.2021.664291>`__
+*Frontiers in Remote Sensing*, 2, 2021.  DOI: 10.3389/frsen.2021.664291
