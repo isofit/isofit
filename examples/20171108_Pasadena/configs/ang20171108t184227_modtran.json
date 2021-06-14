@@ -16,7 +16,7 @@
           "SOLCON": 0.0
         },
         "ATMOSPHERE": {
-          "MODEL": "ATM_MIDLAT_WINTER",
+          "MODEL": "ATM_MIDLAT_SUMMER",
           "CO2MX": 450.0,
           "H2OSTR": 0.64,
           "H2OUNIT": "g",

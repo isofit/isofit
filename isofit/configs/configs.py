@@ -105,6 +105,7 @@ class Config(BaseConfigSection):
         logging.info("Checking config sections for configuration issues")
 
         errors = self.check_config_validity()
+        errors.extend(self.check_inter_section_validity())
 
         for e in errors:
             logging.error(e)
@@ -113,6 +114,14 @@ class Config(BaseConfigSection):
             raise AttributeError('Configuration error(s) found.  See log for details.')
 
         logging.info('Configuration file checks complete, no errors found.')
+
+    def check_inter_section_validity(self):
+        return_errors = []
+        if self.implementation.mode == 'simulation' and self.input.reflectance_file is None:
+            return_errors.append('If implementation.mode is set to simulation, input.reflectance_file must be set')
+        return return_errors
+
+
 
 
 def get_config_differences(config_a: Config, config_b: Config) -> Dict:

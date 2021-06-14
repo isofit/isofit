@@ -3,6 +3,9 @@
   "output": {
     "simulated_measurement_file": "../output/libradtran_meas_rdn.txt"
   },
+  "input": {
+    "reflectance_file": "constant_surface_model.txt"
+  },
   "forward_model": {
     "instrument": {
       "wavelength_file": "wavelengths.txt",
@@ -10,8 +13,7 @@
       "integrations": 1
     },
     "surface": {
-      "surface_category": "surface",
-      "reflectance_file": "constant_surface_model.txt"
+      "surface_category": "surface"
     },
 
     "radiative_transfer": {
@@ -63,8 +65,8 @@
     }
   },
   "implementation": {
+    "mode": "simulation",
     "inversion": {
-      "simulation_mode": true,
       "windows": [
         [380.0, 1300.0],
         [1450, 1780.0],

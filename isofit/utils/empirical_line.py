@@ -29,6 +29,7 @@ import matplotlib
 import pylab as plt
 from isofit.configs import configs
 import ray
+import ray.services
 import atexit
 
 plt.switch_backend("Agg")
@@ -137,8 +138,12 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
         config = configs.create_new_config(isofit_config)
         instrument = Instrument(config)
         logging.info('Loading instrument')
+
+        # Make sure the instrument is configured for single-pixel noise (no averaging)
+        instrument.integrations = 1
     else:
         instrument = None
+
 
     # Load radiance factors
     if radiance_factors is None:
@@ -285,7 +290,7 @@ def _plot_example(xv, yv, b):
 def empirical_line(reference_radiance_file: str, reference_reflectance_file: str, reference_uncertainty_file: str,
                    reference_locations_file: str, segmentation_file: str, input_radiance_file: str,
                    input_locations_file: str, output_reflectance_file: str, output_uncertainty_file: str,
-                   nneighbors: int = 15, nodata_value: float = -9999.0, level: str = 'INFO', logfile: str = None,
+                   nneighbors: int = 400, nodata_value: float = -9999.0, level: str = 'INFO', logfile: str = None,
                    radiance_factors: np.array = None, isofit_config: str = None, n_cores: int = -1) -> None:
     """
     Perform an empirical line interpolation for reflectance and uncertainty extrapolation
@@ -377,15 +382,15 @@ def empirical_line(reference_radiance_file: str, reference_reflectance_file: str
         iconfig = configs.Config({})
     if n_cores == -1:
         n_cores = iconfig.implementation.n_cores
-    rayargs = {'ignore_reinit_error': True,
+    rayargs = {'ignore_reinit_error': iconfig.implementation.ray_ignore_reinit_error,
                'local_mode': n_cores == 1,
                "address": iconfig.implementation.ip_head,
-               "redis_password": iconfig.implementation.redis_password}
+               "_redis_password": iconfig.implementation.redis_password}
 
     # only specify a temporary directory if we are not connecting to
     # a ray cluster
     if rayargs['local_mode']:
-        rayargs['temp_dir'] = iconfig.implementation.ray_temp_dir
+        rayargs['_temp_dir'] = iconfig.implementation.ray_temp_dir
         # Used to run on a VPN
         ray.services.get_node_ip_address = lambda: '127.0.0.1'
 

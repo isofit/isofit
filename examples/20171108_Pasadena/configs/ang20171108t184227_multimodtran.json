@@ -1,0 +1,65 @@
+{
+  "MODTRAN": [
+    {
+      "MODTRANINPUT": {
+        "NAME": "test",
+        "DESCRIPTION": "",
+        "CASE": 0,
+        "RTOPTIONS": {
+          "MODTRN": "RT_CORRK_FAST",
+          "LYMOLC": false,
+          "T_BEST": false,
+          "IEMSCT": "RT_SOLAR_AND_THERMAL",
+          "IMULT": "RT_DISORT",
+          "DISALB": false,
+          "NSTR": 8,
+          "SOLCON": 0.0
+        },
+        "ATMOSPHERE": {
+          "MODEL": "ATM_MIDLAT_SUMMER",
+          "CO2MX": 450.0,
+          "H2OSTR": 0.64,
+          "H2OUNIT": "g",
+          "O3STR": 0.3,
+          "O3UNIT": "a"
+        },
+        "AEROSOLS": {
+          "IHAZE": "AER_RURAL",
+          "VIS": 50
+        },
+        "GEOMETRY": {
+          "ITYPE": 3,
+          "H1ALT": 2.3,
+          "IDAY": 312,
+          "IPARM": 11,
+          "PARM1": 34.139247,
+          "PARM2":  118.127521,
+          "GMTIME": 18.708,
+          "OBSZEN": 180,
+          "TRUEAZ": 0
+        },
+        "SURFACE": {
+          "SURFTYPE": "REFL_CONSTANT",
+          "SURREF": 0,
+          "GNDALT": 0.35,
+          "NSURF": 1,
+          "SALBFL": ""
+        },
+        "SPECTRAL": {
+          "V1": 350.0,
+          "V2": 2520.0,
+          "DV": 5,
+          "FWHM": 5.0,
+          "YFLAG": "R",
+          "XFLAG": "N",
+          "FLAGS": "NT A   ",
+          "BMNAME": "05_2013"
+        },
+        "FILEOPTIONS": {
+          "NOPRNT": 2,
+          "CKPRNT": true
+        }
+      }
+    }
+  ]
+}

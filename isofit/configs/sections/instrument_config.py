@@ -79,7 +79,7 @@ class InstrumentConfig(BaseConfigSection):
         """bool: Approximates a complete resampling by a convolution with a uniform FWHM."""
 
         self._statevector_type = StateVectorConfig
-        self.statevector: StateVectorConfig = None
+        self.statevector: StateVectorConfig = StateVectorConfig({})
 
         self._SNR_type = float
         self.SNR = None

@@ -25,6 +25,7 @@ import numpy as np
 from copy import deepcopy
 import yaml
 import pickle
+from collections import OrderedDict
 
 from isofit.core.common import resample_spectrum, load_wavelen, VectorInterpolator
 from .look_up_tables import TabularRT
@@ -37,7 +38,11 @@ from tensorflow import keras
 from scipy import interpolate
 
 class SimulatedModtranRT(TabularRT):
-    """A hybrid surrogate-model and emulator of MODTRAN-like results
+    """A hybrid surrogate-model and emulator of MODTRAN-like results.  A description of the model can be found in:
+
+     P.G. Brodrick, D.R. Thompson, J.E. Fahlen, M.L. Eastwood, C.M. Sarture, S.R. Lundeen, W. Olson-Duvall,
+     N. Carmon, and R.O. Green. Generalized radiative transfer emulation for imaging spectroscopy reflectance
+     retrievals. Remote Sensing of Environment, 261:112476, 2021.doi: 10.1016/j.rse.2021.112476.
 
     Args:
         engine_config: the configuration for this particular engine
@@ -99,10 +104,13 @@ class SimulatedModtranRT(TabularRT):
         sixs_config.wlinf = 0.35
         sixs_config.wlsup = 2.5
 
+
+
         # Build the simulator
         logging.debug('Create RTE simulator')
         sixs_rte = SixSRT(sixs_config, full_config, build_lut_only = False, 
-                          wavelength_override=simulator_wavelengths, fwhm_override=np.ones(n_simulator_chan)*2.)
+                          wavelength_override=simulator_wavelengths, fwhm_override=np.ones(n_simulator_chan)*2.,
+                          modtran_emulation=True)
         self.solar_irr = sixs_rte.solar_irr
         self.esd = sixs_rte.esd
         self.coszen = sixs_rte.coszen
@@ -165,7 +173,7 @@ class SimulatedModtranRT(TabularRT):
             
             for key_ind, key in enumerate(self.lut_quantities):
                 with open(interpolator_disk_paths[key_ind], 'wb') as fi:
-                    pickle.dump(self.luts[key], fi)
+                    pickle.dump(self.luts[key], fi, protocol=4)
 
         else:
             logging.info('Prebuilt LUT interpolators found, loading from disk')
