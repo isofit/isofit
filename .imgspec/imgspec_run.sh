@@ -2,10 +2,10 @@
 
 # Get directories and paths for scripts
 imgspec_dir=$( cd "$(dirname "$0")" ; pwd -P )
-ISOFIT_DIR=$(dirname $imgspec_dir)
+isofit_dir=$(dirname $imgspec_dir)
 
 echo "imgspec_dir is $imgspec_dir"
-echo "ISOFIT_DIR is $ISOFIT_DIR"
+echo "isofit_dir is $isofit_dir"
 
 # input/output dirs
 input="input"
@@ -18,8 +18,8 @@ covnert_csv_to_envi_exe="$imgspec_dir/convert_csv_to_envi.py"
 surface_json_path="$imgspec_dir/surface.json"
 
 # utils paths
-surface_model_exe="$ISOFIT_DIR/isofit/utils/surface_model.py"
-apply_oe_exe="$ISOFIT_DIR/isofit/utils/apply_oe.py"
+surface_model_exe="$isofit_dir/isofit/utils/surface_model.py"
+apply_oe_exe="$isofit_dir/isofit/utils/apply_oe.py"
 
 # ecosis input spectra paths
 filtered_other_csv_path="$input/surface-reflectance-spectra.csv"
