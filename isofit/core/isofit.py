@@ -66,7 +66,7 @@ class Isofit:
 
         # Initialize ray for parallel execution
         rayargs = {'address': self.config.implementation.ip_head,
-                   'redis_password': self.config.implementation.redis_password,
+                   '_redis_password': self.config.implementation.redis_password,
                    'ignore_reinit_error': self.config.implementation.ray_ignore_reinit_error,
                    'webui_host': "127.0.0.1",
                    'local_mode': self.config.implementation.n_cores == 1}
