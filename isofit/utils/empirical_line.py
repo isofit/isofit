@@ -19,6 +19,7 @@
 #
 
 from scipy.linalg import inv
+from isofit.core.fileio import write_bil_chunk
 from isofit.core.instrument import Instrument
 from spectral.io import envi
 from scipy.spatial import KDTree
@@ -33,25 +34,6 @@ import ray.services
 import atexit
 
 plt.switch_backend("Agg")
-
-
-def _write_bil_chunk(dat: np.array, outfile: str, line: int, shape: tuple, dtype: str = 'float32') -> None:
-    """
-    Write a chunk of data to a binary, BIL formatted data cube.
-    Args:
-        dat: data to write
-        outfile: output file to write to
-        line: line of the output file to write to
-        shape: shape of the output file
-        dtype: output data type
-
-    Returns:
-        None
-    """
-    outfile = open(outfile, 'rb+')
-    outfile.seek(line * shape[1] * shape[2] * np.dtype(dtype).itemsize)
-    outfile.write(dat.astype(dtype).tobytes())
-    outfile.close()
 
 
 @ray.remote
@@ -257,9 +239,9 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
         shp = output_uncertainty_row.shape
         output_uncertainty_row = output_uncertainty_row.reshape((1, shp[0], shp[1]))
 
-        _write_bil_chunk(output_reflectance_row, output_reflectance_file, row,
+        write_bil_chunk(output_reflectance_row, output_reflectance_file, row,
                          (n_input_lines, n_output_reflectance_bands, n_input_samples))
-        _write_bil_chunk(output_uncertainty_row, output_uncertainty_file, row,
+        write_bil_chunk(output_uncertainty_row, output_uncertainty_file, row,
                          (n_input_lines, n_output_uncertainty_bands, n_input_samples))
 
 

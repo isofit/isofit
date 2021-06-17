@@ -581,3 +581,21 @@ class IO:
             to_write = self.build_output(states, input_data, fm, iv)
         self.write_datasets(row, col, to_write, states, flush_immediately=flush_immediately)
 
+
+def write_bil_chunk(dat: np.array, outfile: str, line: int, shape: tuple, dtype: str = 'float32') -> None:
+    """
+    Write a chunk of data to a binary, BIL formatted data cube.
+    Args:
+        dat: data to write
+        outfile: output file to write to
+        line: line of the output file to write to
+        shape: shape of the output file
+        dtype: output data type
+
+    Returns:
+        None
+    """
+    outfile = open(outfile, 'rb+')
+    outfile.seek(line * shape[1] * shape[2] * np.dtype(dtype).itemsize)
+    outfile.write(dat.astype(dtype).tobytes())
+    outfile.close()
