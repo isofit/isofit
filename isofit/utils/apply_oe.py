@@ -253,7 +253,7 @@ def main(rawargs=None):
             logging.info('Segmenting...')
             segment(spectra=(paths.radiance_working_path, paths.lbl_working_path),
                     nodata_value=-9999, npca=5, segsize=SEGMENTATION_SIZE, nchunk=CHUNKSIZE,
-                    n_cores=args.n_cores, loglevel=args.log_level, logfile=args.log_file)
+                    n_cores=args.n_cores, loglevel=args.logging_level, logfile=args.log_file)
 
         # Extract input data per segment
         for inp, outp in [(paths.radiance_working_path, paths.rdn_subs_path),
