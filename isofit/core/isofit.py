@@ -68,7 +68,6 @@ class Isofit:
         rayargs = {'address': self.config.implementation.ip_head,
                    '_redis_password': self.config.implementation.redis_password,
                    'ignore_reinit_error': self.config.implementation.ray_ignore_reinit_error,
-                   'webui_host': "127.0.0.1",
                    'local_mode': self.config.implementation.n_cores == 1}
 
         # only specify a temporary directory if we are not connecting to 
