@@ -63,7 +63,7 @@ class ModtranRT(TabularRT):
         # Flag to determine if MODTRAN should operate with reflectivity = 1
         # (enabling thermal_upwelling and thermal_downwelling to be determined - see comments below)
         self.treat_as_emissive = False
-        if self.wl[0] > 2500:
+        if self.wl[0] > 2600:
             self.treat_as_emissive = True
 
         self.modtran_dir = self.find_basedir(engine_config)
@@ -795,7 +795,7 @@ class ModtranRT(TabularRT):
         """
 
         sigmas = fwhms/2.355
-        span = 2.0 * (wavelengths[1]-wavelengths[0])  # nm
+        span = 2.0 * np.abs(wavelengths[1]-wavelengths[0])  # nm
         steps = 101
 
         with open(outfile, 'w') as fout:
