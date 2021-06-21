@@ -139,7 +139,7 @@ class Isofit:
 
         if self.workers is None:
             remote_worker = ray.remote(Worker)
-            self.workers = ray.util.ActorPool([remote_worker.remote(self.config, self.loglevel, self.logfile)
+            self.workers = ray.util.ActorPool([remote_worker.remote(self.config, self.loglevel, self.logfile, 1, n_workers)
                                                for n in range(n_workers)])
 
         start_time = time.time()
@@ -165,6 +165,16 @@ class Isofit:
 
 class Worker(object):
     def __init__(self, config: configs.Config, loglevel: str, logfile: str, worker_id: int = None, total_workers: int = None):
+        """
+        Worker class to help run a subset of spectra.
+
+        Args:
+            config: isofit configuration
+            loglevel: output logging level
+            logfile: output logging file
+            worker_id: worker ID for logging reference
+            total_workers: the total number of workers running, for logging reference
+        """
 
         logging.basicConfig(format='%(levelname)s:%(message)s', level=loglevel, filename=logfile)
         self.config = config
