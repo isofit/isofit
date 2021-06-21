@@ -139,7 +139,7 @@ class Isofit:
 
         if self.workers is None:
             remote_worker = ray.remote(Worker)
-            self.workers = ray.util.ActorPool([remote_worker.remote(self.config, self.loglevel, self.logfile, 1, n_workers)
+            self.workers = ray.util.ActorPool([remote_worker.remote(self.config, self.loglevel, self.logfile, n, n_workers)
                                                for n in range(n_workers)])
 
         start_time = time.time()
