@@ -27,7 +27,7 @@ import atexit
 from isofit.core.fileio import write_bil_chunk
 
 @ray.remote
-def extract_chunk(lstart: int, lend: int, in_file: str, out_file: str, labels, flag, logfile=None, loglevel='INFO'):
+def extract_chunk(lstart: int, lend: int, in_file: str, labels: np.array, flag: float, logfile=None, loglevel='INFO'):
     """
     Extract a small chunk of the image
 
@@ -35,8 +35,7 @@ def extract_chunk(lstart: int, lend: int, in_file: str, out_file: str, labels, f
         lstart: line to start extraction at
         lend: line to end extraction at
         in_file: file to read image from
-        out_file: file to write output to
-        label: labels to use for data read
+        labels: labels to use for data read
         flag: nodata value of image
         logfile: logging file name
         loglevel: logging level
@@ -91,10 +90,17 @@ def extract_chunk(lstart: int, lend: int, in_file: str, out_file: str, labels, f
             out_data[_lab, :] += np.squeeze(chunk_inp[row, col, :])
         out_data[_lab,:] /= float(len(locs[0]))
 
+    unique_labels = np.unique(labels)
+    unique_labels = unique_labels[unique_labels >= 1]
+    if unique_labels[0] != 0:
+        unique_labels = np.stack([np.zeros(1), unique_labels])
+
+    match_idx = np.searchsorted(unique_labels, active)
+
+    out_data[np.logical_not(np.isfinite(out_data))] = flag
     logging.debug(f'{lstart}: complete')
 
-    write_bil_chunk(out_data, out_file, lstart, out_data.shape, 'float32')
-
+    return match_idx, out_data
 
 
 
@@ -125,7 +131,6 @@ def extractions(inputfile, labels, output, chunksize, flag, n_cores: int = 1, ra
         un_labels.insert(0,0)
     nout = len(un_labels)
 
-
     # Start up a ray instance for parallel work
     rayargs = {'ignore_reinit_error': True,
                'local_mode': n_cores == 1,
@@ -148,6 +153,7 @@ def extractions(inputfile, labels, output, chunksize, flag, n_cores: int = 1, ra
 
     out_img = envi.create_image(out_file + '.hdr', metadata=meta,
                                 ext='', force=True)
+    outshape = out_img.shape
     del out_img
 
     ray.init(**rayargs)
@@ -157,10 +163,33 @@ def extractions(inputfile, labels, output, chunksize, flag, n_cores: int = 1, ra
     jobs = []
     for lstart in np.arange(0, nl, nchunk):
         lend = min(lstart+nchunk, nl)
-        jobs.append(extract_chunk.remote(lstart, lend, in_file, out_file, labelid, flag, logfile=logfile, loglevel=loglevel))
+        jobs.append(extract_chunk.remote(lstart, lend, in_file, labelid, flag, logfile=logfile, loglevel=loglevel))
 
     # Collect results
     rreturn = [ray.get(jid) for jid in jobs]
+
+    ## Iterate through image "chunks," segmenting as we go
+    out = np.zeros((nout, nb))
+    for idx, ret in rreturn:
+        if ret is not None:
+            out[idx, :] = ret
+    del rreturn
+    ray.shutdown()
+
+    meta["lines"] = str(nout)
+    meta["bands"] = str(nb)
+    meta["samples"] = '1'
+    meta["interleave"] = "bil"
+
+    out_img = envi.create_image(out_file+'.hdr',  metadata=meta, ext='', force=True)
+    del out_img
+    if dtm[meta['data type']] == np.float32:
+        type = 'float32'
+    else:
+        type = 'float64'
+
+    write_bil_chunk(out.transpose((0,2,1)), out_file, 0, out.shape, dtype=type)
+
 
     ## Iterate through image "chunks," segmenting as we go
     #out = np.zeros((nout, nb))
