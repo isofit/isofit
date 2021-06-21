@@ -93,7 +93,7 @@ def extract_chunk(lstart: int, lend: int, in_file: str, labels: np.array, flag: 
     unique_labels = np.unique(labels)
     unique_labels = unique_labels[unique_labels >= 1]
     if unique_labels[0] != 0:
-        unique_labels = np.stack([np.zeros(1), unique_labels])
+        unique_labels = np.hstack([np.zeros(1), unique_labels])
 
     match_idx = np.searchsorted(unique_labels, active)
 
@@ -146,16 +146,6 @@ def extractions(inputfile, labels, output, chunksize, flag, n_cores: int = 1, ra
     if ray_ip_head is None and ray_redis_password is None:
         rayargs['num_cpus'] = n_cores
 
-    meta["lines"] = str(nout)
-    meta["bands"] = str(nb)
-    meta["samples"] = '1'
-    meta["interleave"] = "bil"
-
-    out_img = envi.create_image(out_file + '.hdr', metadata=meta,
-                                ext='', force=True)
-    outshape = out_img.shape
-    del out_img
-
     ray.init(**rayargs)
     atexit.register(ray.shutdown)
 
@@ -169,10 +159,10 @@ def extractions(inputfile, labels, output, chunksize, flag, n_cores: int = 1, ra
     rreturn = [ray.get(jid) for jid in jobs]
 
     ## Iterate through image "chunks," segmenting as we go
-    out = np.zeros((nout, nb))
+    out = np.zeros((nout, nb, 1))
     for idx, ret in rreturn:
         if ret is not None:
-            out[idx, :] = ret
+            out[idx, :, 0] = ret
     del rreturn
     ray.shutdown()
 
@@ -188,30 +178,5 @@ def extractions(inputfile, labels, output, chunksize, flag, n_cores: int = 1, ra
     else:
         type = 'float64'
 
-    write_bil_chunk(out.transpose((0,2,1)), out_file, 0, out.shape, dtype=type)
+    write_bil_chunk(out, out_file, 0, out.shape, dtype=type)
 
-
-    ## Iterate through image "chunks," segmenting as we go
-    #out = np.zeros((nout, nb))
-    #for idx, ret in rreturn:
-    #    if ret is not None:
-    #        for _output_index in range(len(idx)):
-    #            out[un_labels.index(idx[_output_index]),...] = ret[_output_index,...]
-    #del rreturn
-    #ray.shutdown()
-
-    #out[np.logical_not(np.isfinite(out))] = flag
-
-    #meta["lines"] = str(nout)
-    #meta["bands"] = str(nb)
-    #meta["samples"] = '1'
-    #meta["interleave"] = "bil"
-
-    #out_img = envi.create_image(out_file+'.hdr',  metadata=meta,
-    #                            ext='', force=True)
-    #out_mm = np.memmap(out_file, dtype=dtm[meta['data type']], mode='w+',
-    #                  shape=(nout, 1, nb))
-    #if dtm[meta['data type']] == np.float32:
-    #    out_mm[:, 0, :] = np.array(out, np.float32)
-    #else:
-    #    out_mm[:, 0, :] = np.array(out, np.float64)
