@@ -164,7 +164,7 @@ class Isofit:
 
 
 class Worker(object):
-    def __init__(self, config: configs.Config, loglevel: str, logfile: str):
+    def __init__(self, config: configs.Config, loglevel: str, logfile: str, worker_id: int = None, total_workers: int = None):
 
         logging.basicConfig(format='%(levelname)s:%(message)s', level=loglevel, filename=logfile)
         self.config = config
@@ -180,6 +180,12 @@ class Worker(object):
 
         self.io = IO(self.config, self.fm)
 
+        self.approximate_total_spectra = None
+        if total_workers is not None:
+            self.approximate_total_spectra = self.io.n_cols * self.io.n_rows / total_workers
+        self.worker_id = worker_id
+        self.completed_spectra = 0
+
 
     def run_set_of_spectra(self, indices: np.array):
 
@@ -191,6 +197,7 @@ class Worker(object):
 
             input_data = self.io.get_components_at_index(row, col)
 
+            self.completed_spectra += 1
             if input_data is not None:
                 logging.debug("Run model")
                 # The inversion returns a list of states, which are
@@ -211,8 +218,13 @@ class Worker(object):
                         """
                     )
                     logging.error(err)
+
                 if index % 100 == 0:
-                    logging.info(f'Core at start location ({row},{col}) completed {index}/{indices.shape[0]}')
+                    if self.worker_id is not None and self.approximate_total_spectra is not None:
+                        percent = np.round(self.completed_spectra / self.approximate_total_spectra * 100,2)
+                        logging.info(f'Worker {self.worker_id} completed {self.completed_spectra}/~{self.approximate_total_spectra}:: {percent}% complete')
+                    else:
+                        logging.info(f'Worker at start location ({row},{col}) completed {index}/{indices.shape[0]}')
 
         self.io.flush_buffers()
 
