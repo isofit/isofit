@@ -73,7 +73,7 @@ loc_ort_path=""
 if [[ $instrument == "avcl" ]]; then
     # AVIRIS Classic typically includes an IGM file with lon, lat, alt bands
     loc_ort_path=$igm_path$ort_suffix
-    apply_glt_cmd="python $apply_glt_exe $igqm_path $glt_path $loc_ort_path"
+    apply_glt_cmd="python $apply_glt_exe $igm_path $glt_path $loc_ort_path"
     echo "Executing command: $apply_glt_cmd"
     $apply_glt_cmd
 elif [[ $instrument == "ang" ]]; then
