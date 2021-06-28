@@ -9,7 +9,7 @@ import tarfile
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    products = ["rdn", "obs_ort", "loc", "glt", "rfl", "topo", "brdf", "topo_brdf"]
+    products = ["rdn", "obs_ort", "loc", "igm", "glt", "rfl", "topo", "brdf", "topo_brdf"]
     formats = ["envi", "hdf"]
     parser.add_argument("-p", "--product",
                         help=("Choose one of the following product types: " + ", ".join(products)))
@@ -47,6 +47,8 @@ def main():
         paths = glob.glob(os.path.join(input_dir, "*rdn*", "*obs_ort"))
     elif args.product == "loc":
         paths = glob.glob(os.path.join(input_dir, "*rdn*", "*loc"))
+    elif args.product == "igm":
+        paths = glob.glob(os.path.join(input_dir, "*rdn*", "*igm"))
     elif args.product == "glt":
         paths = glob.glob(os.path.join(input_dir, "*rdn*", "*glt"))
     elif args.product == "rfl":

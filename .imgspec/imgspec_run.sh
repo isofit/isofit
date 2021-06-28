@@ -45,6 +45,8 @@ rdn_path=$(python ${imgspec_dir}/get_paths_from_granules.py -p rdn)
 echo "Found input radiance file: $rdn_path"
 loc_path=$(python ${imgspec_dir}/get_paths_from_granules.py -p loc)
 echo "Found input loc file: $loc_path"
+igm_path=$(python ${imgspec_dir}/get_paths_from_granules.py -p igm)
+echo "Found input igm file: $igm_path"
 glt_path=$(python ${imgspec_dir}/get_paths_from_granules.py -p glt)
 echo "Found input glt file: $glt_path"
 obs_ort_path=$(python ${imgspec_dir}/get_paths_from_granules.py -p obs_ort)
@@ -65,12 +67,23 @@ wavelength_file_cmd="python $wavelength_file_exe $rdn_path.hdr $input/wavelength
 echo "Executing command: $wavelength_file_cmd"
 $wavelength_file_cmd
 
-# Orthocorrect the loc file
+# Get the orthocorrected loc/igm file depending on instrument
 ort_suffix="_ort"
-loc_ort_path=$loc_path$ort_suffix
-apply_glt_cmd="python $apply_glt_exe $loc_path $glt_path $loc_ort_path"
-echo "Executing command: $apply_glt_cmd"
-$apply_glt_cmd
+loc_ort_path=""
+if [[ $instrument == "avcl" ]]; then
+    # AVIRIS Classic typically includes an IGM file with lon, lat, alt bands
+    loc_ort_path=$igm_path$ort_suffix
+    apply_glt_cmd="python $apply_glt_exe $igqm_path $glt_path $loc_ort_path"
+    echo "Executing command: $apply_glt_cmd"
+    $apply_glt_cmd
+elif [[ $instrument == "ang" ]]; then
+    # For AVIRIS-NG we must orthocorrect the given loc file
+    loc_ort_path=$loc_path$ort_suffix
+    apply_glt_cmd="python $apply_glt_exe $loc_path $glt_path $loc_ort_path"
+    echo "Executing command: $apply_glt_cmd"
+    $apply_glt_cmd
+fi
+echo "Based on instrument, using loc_ort_path: $loc_ort_path"
 
 # Build surface model based on surface.json template and input spectra CSV
 # First convert CSV to ENVI for 3 spectra files
