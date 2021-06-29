@@ -14,6 +14,7 @@ mkdir -p output
 # .imgspec paths
 apply_glt_exe="$imgspec_dir/apply_glt.py"
 wavelength_file_exe="$imgspec_dir/wavelength_file.py"
+upgrade_exe="$imgspec_dir/upgrade.py"
 covnert_csv_to_envi_exe="$imgspec_dir/convert_csv_to_envi.py"
 surface_json_path="$imgspec_dir/surface.json"
 
@@ -62,11 +63,6 @@ elif [[ $rdn_name == ang* ]]; then
 fi
 echo "Instrument is $instrument"
 
-# Create wavelength file
-wavelength_file_cmd="python $wavelength_file_exe $rdn_path.hdr $input/wavelengths.txt"
-echo "Executing command: $wavelength_file_cmd"
-$wavelength_file_cmd
-
 # Get the orthocorrected loc/igm file depending on instrument
 ort_suffix="_ort"
 loc_ort_path=""
@@ -84,6 +80,22 @@ elif [[ $instrument == "ang" ]]; then
     $apply_glt_cmd
 fi
 echo "Based on instrument, using loc_ort_path: $loc_ort_path"
+
+# Convert AVIRIS Classic radiance to 32-bit float and scale
+if [[ $instrument == "avcl" ]]; then
+    upgrade_suffix="_up"
+    rdn_up_path=$rdn_path$upgrade_suffix
+    upgrade_cmd="python $upgrade_exe $rdn_path $rdn_up_path"
+    echo "Executing command: $upgrade_cmd"
+    $upgrade_cmd
+    # Use new upgraded file in place of original radiance file
+    rdn_path=$rdn_up_path
+fi
+
+# Create wavelength file
+wavelength_file_cmd="python $wavelength_file_exe $rdn_path.hdr $input/wavelengths.txt"
+echo "Executing command: $wavelength_file_cmd"
+$wavelength_file_cmd
 
 # Build surface model based on surface.json template and input spectra CSV
 # First convert CSV to ENVI for 3 spectra files
