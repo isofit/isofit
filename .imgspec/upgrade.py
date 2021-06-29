@@ -52,6 +52,8 @@ def main():
     hdr['byte order'] = '0'
     if hdr['interleave'] != 'bip':
         raise ValueError('I expected BIP interleave')
+    hdr['interleave'] = 'bil'
+    hdr['data ignore value'] = '-9999'
     envi.write_envi_header(args.outfile + '.hdr', hdr)
     lines = int(hdr['lines'])
     samples = int(hdr['samples'])
