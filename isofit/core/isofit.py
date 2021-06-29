@@ -123,7 +123,7 @@ class Isofit:
             io = IO(self.config, fm)
             self.rows = range(io.n_rows)
             self.cols = range(io.n_cols)
-            del io, fm
+            del io
 
         index_pairs = np.vstack([x.flatten(order='f') for x in np.meshgrid(self.rows, self.cols)]).T
 
@@ -137,9 +137,11 @@ class Isofit:
         # Max out the number of workers based on the number of tasks
         n_workers = min(n_workers, n_iter)
 
+        fm_id = ray.put(fm)
+
         if self.workers is None:
             remote_worker = ray.remote(Worker)
-            self.workers = ray.util.ActorPool([remote_worker.remote(self.config, self.loglevel, self.logfile)
+            self.workers = ray.util.ActorPool([remote_worker.remote(self.config, fm_id, self.loglevel, self.logfile, n, n_workers)
                                                for n in range(n_workers)])
 
         start_time = time.time()
@@ -164,11 +166,22 @@ class Isofit:
 
 
 class Worker(object):
-    def __init__(self, config: configs.Config, loglevel: str, logfile: str):
+    def __init__(self, config: configs.Config, forward_model: ForwardModel, loglevel: str, logfile: str, worker_id: int = None, total_workers: int = None):
+        """
+        Worker class to help run a subset of spectra.
+
+        Args:
+            config: isofit configuration
+            loglevel: output logging level
+            logfile: output logging file
+            worker_id: worker ID for logging reference
+            total_workers: the total number of workers running, for logging reference
+        """
 
         logging.basicConfig(format='%(levelname)s:%(message)s', level=loglevel, filename=logfile)
         self.config = config
-        self.fm = ForwardModel(self.config)
+        self.fm = forward_model
+        #self.fm = ForwardModel(self.config)
 
         if self.config.implementation.mode == 'mcmc_inversion':
             self.iv = MCMCInversion(self.config, self.fm)
@@ -179,6 +192,12 @@ class Worker(object):
             raise AttributeError('Config implementation mode node valid')
 
         self.io = IO(self.config, self.fm)
+
+        self.approximate_total_spectra = None
+        if total_workers is not None:
+            self.approximate_total_spectra = self.io.n_cols * self.io.n_rows / total_workers
+        self.worker_id = worker_id
+        self.completed_spectra = 0
 
 
     def run_set_of_spectra(self, indices: np.array):
@@ -191,6 +210,7 @@ class Worker(object):
 
             input_data = self.io.get_components_at_index(row, col)
 
+            self.completed_spectra += 1
             if input_data is not None:
                 logging.debug("Run model")
                 # The inversion returns a list of states, which are
@@ -211,8 +231,13 @@ class Worker(object):
                         """
                     )
                     logging.error(err)
+
                 if index % 100 == 0:
-                    logging.info(f'Core at start location ({row},{col}) completed {index}/{indices.shape[0]}')
+                    if self.worker_id is not None and self.approximate_total_spectra is not None:
+                        percent = np.round(self.completed_spectra / self.approximate_total_spectra * 100,2)
+                        logging.info(f'Worker {self.worker_id} completed {self.completed_spectra}/~{self.approximate_total_spectra}:: {percent}% complete')
+                    else:
+                        logging.info(f'Worker at start location ({row},{col}) completed {index}/{indices.shape[0]}')
 
         self.io.flush_buffers()
 

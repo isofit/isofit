@@ -253,7 +253,7 @@ def main(rawargs=None):
             logging.info('Segmenting...')
             segment(spectra=(paths.radiance_working_path, paths.lbl_working_path),
                     nodata_value=-9999, npca=5, segsize=SEGMENTATION_SIZE, nchunk=CHUNKSIZE,
-                    n_cores=args.n_cores)
+                    n_cores=args.n_cores, loglevel=args.logging_level, logfile=args.log_file)
 
         # Extract input data per segment
         for inp, outp in [(paths.radiance_working_path, paths.rdn_subs_path),
@@ -261,8 +261,9 @@ def main(rawargs=None):
                           (paths.loc_working_path, paths.loc_subs_path)]:
             if not exists(outp):
                 logging.info('Extracting ' + outp)
-                extractions(inputfile=inp, labels=paths.lbl_working_path,
-                            output=outp, chunksize=CHUNKSIZE, flag=-9999, n_cores=args.n_cores)
+                extractions(inputfile=inp, labels=paths.lbl_working_path, output=outp,
+                            chunksize=CHUNKSIZE, flag=-9999, n_cores=args.n_cores,
+                            loglevel=args.logging_level, logfile=args.log_file)
 
     if args.presolve == 1:
 
