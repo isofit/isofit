@@ -60,6 +60,8 @@ if [[ $rdn_name == f* ]]; then
     instrument="avcl"
 elif [[ $rdn_name == ang* ]]; then
     instrument="ang"
+elif [[ $rdn_name == PRS* ]]; then
+    instrument="prisma"
 fi
 echo "Instrument is $instrument"
 
@@ -78,6 +80,9 @@ elif [[ $instrument == "ang" ]]; then
     apply_glt_cmd="python $apply_glt_exe $loc_path $glt_path $loc_ort_path"
     echo "Executing command: $apply_glt_cmd"
     $apply_glt_cmd
+elif [[ $instrument == "prisma" ]]; then
+    # PRISMA already has a projected loc file
+    loc_ort_path=$loc_path
 fi
 echo "Based on instrument, using loc_ort_path: $loc_ort_path"
 
@@ -127,12 +132,29 @@ python -c "from isofit.utils import surface_model; surface_model('$input/surface
 
 # Run isofit
 working_dir=$(pwd)
-isofit_cmd="""python $apply_oe_exe $rdn_path $loc_ort_path $obs_ort_path $working_dir $instrument --presolve=1 \
---empirical_line=1 --emulator_base=$EMULATOR_DIR --n_cores 24 --wavelength_path $input/wavelengths.txt \
---surface_path $input/surface.mat --log_file isofit.log"""
+isofit_cmd=""
+if [[ $instrument == "avcl" ]] || [[ $instrument == "ang" ]]; then
+    isofit_cmd="""python $apply_oe_exe $rdn_path $loc_ort_path $obs_ort_path $working_dir $instrument --presolve=1 \
+    --empirical_line=1 --emulator_base=$EMULATOR_DIR --n_cores 24 --wavelength_path $input/wavelengths.txt \
+    --surface_path $input/surface.mat --log_file isofit.log"""
+elif [[ $instrument == "prisma" ]]; then
+    # Use NA-YYYYMMDD for instrument
+    prisma_prefix="NA-"
+    instrument=$prisma_prefix$(echo $rdn_name | cut -c5-12)
+    echo "For PRISMA, using $instrument as instrument argument in apply_oe command"
+    # Get rdn_factors_file
+    rdn_factors_path="$input/rdn_factors.txt"
+    echo "Getting radiance_factors file from $5"
+    wget -O $rdn_factors_path $5
+    isofit_cmd="""python $apply_oe_exe $rdn_path $loc_ort_path $obs_ort_path $working_dir $instrument --presolve=1 \
+    --empirical_line=1 --emulator_base=$EMULATOR_DIR --n_cores 24 --wavelength_path $input/wavelengths.txt \
+    --surface_path $input/surface.mat --log_file isofit.log  --rdn_factors_path $rdn_factors_path"""
+fi
 echo "Executing command: $isofit_cmd"
 $isofit_cmd
 
 # Clean up output directory
 rm -f output/*lbl*
 rm -f output/*subs*
+
+

@@ -26,3 +26,5 @@ inputs:
     type: positional
   - name: snow_and_liquids_reflectance_spectra
     type: positional
+  - name: radiance_factors_file
+    type: positional

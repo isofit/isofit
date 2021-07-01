@@ -9,7 +9,7 @@ import tarfile
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    products = ["rdn", "obs_ort", "loc", "igm", "glt", "rfl", "topo", "brdf", "topo_brdf"]
+    products = ["rdn", "obs_ort", "loc", "igm", "glt"]
     formats = ["envi", "hdf"]
     parser.add_argument("-p", "--product",
                         help=("Choose one of the following product types: " + ", ".join(products)))
@@ -40,22 +40,29 @@ def main():
         tar_file.close()
         os.remove(g)
 
+    dirs = [d for d in os.listdir(input_dir) if os.path.isdir(os.path.join(input_dir, d))]
+    instrument = "PRISMA" if dirs[0][:3] == "PRS" else "AVIRIS"
+
     # Get paths based on product type file matching
-    if args.product == "rdn":
-        paths = glob.glob(os.path.join(input_dir, "*rdn*", "*rdn*img"))
-    elif args.product == "obs_ort":
-        paths = glob.glob(os.path.join(input_dir, "*rdn*", "*obs_ort"))
-    elif args.product == "loc":
-        paths = glob.glob(os.path.join(input_dir, "*rdn*", "*loc"))
-    elif args.product == "igm":
-        paths = glob.glob(os.path.join(input_dir, "*rdn*", "*igm"))
-    elif args.product == "glt":
-        paths = glob.glob(os.path.join(input_dir, "*rdn*", "*glt"))
-    elif args.product == "rfl":
-        paths = glob.glob(os.path.join(input_dir, "*rfl*", "*rfl*img"))
-        paths += glob.glob(os.path.join(input_dir, "*refl*", "*rfl*img"))
-        paths += glob.glob(os.path.join(input_dir, "*rfl*", "*corr*img"))
-        paths += glob.glob(os.path.join(input_dir, "*refl*", "*corr*img"))
+    paths = []
+    if instrument == "PRISMA":
+        if args.product == "rdn":
+            paths = glob.glob(os.path.join(input_dir, "*", "*rdn_prj"))
+        elif args.product == "obs_ort":
+            paths = glob.glob(os.path.join(input_dir, "*", "*obs_prj"))
+        elif args.product == "loc":
+            paths = glob.glob(os.path.join(input_dir, "*", "*loc_prj"))
+    elif instrument == "AVIRIS":
+        if args.product == "rdn":
+            paths = glob.glob(os.path.join(input_dir, "*rdn*", "*rdn*img"))
+        elif args.product == "obs_ort":
+            paths = glob.glob(os.path.join(input_dir, "*rdn*", "*obs_ort"))
+        elif args.product == "loc":
+            paths = glob.glob(os.path.join(input_dir, "*rdn*", "*loc"))
+        elif args.product == "igm":
+            paths = glob.glob(os.path.join(input_dir, "*rdn*", "*igm"))
+        elif args.product == "glt":
+            paths = glob.glob(os.path.join(input_dir, "*rdn*", "*glt"))
     print(",".join(paths))
 
 
