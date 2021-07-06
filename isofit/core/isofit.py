@@ -123,7 +123,7 @@ class Isofit:
             io = IO(self.config, fm)
             self.rows = range(io.n_rows)
             self.cols = range(io.n_cols)
-            del io, fm
+            del io
 
         index_pairs = np.vstack([x.flatten(order='f') for x in np.meshgrid(self.rows, self.cols)]).T
 
@@ -137,9 +137,11 @@ class Isofit:
         # Max out the number of workers based on the number of tasks
         n_workers = min(n_workers, n_iter)
 
+        fm_id = ray.put(fm)
+
         if self.workers is None:
             remote_worker = ray.remote(Worker)
-            self.workers = ray.util.ActorPool([remote_worker.remote(self.config, self.loglevel, self.logfile, n, n_workers)
+            self.workers = ray.util.ActorPool([remote_worker.remote(self.config, fm_id, self.loglevel, self.logfile, n, n_workers)
                                                for n in range(n_workers)])
 
         start_time = time.time()
@@ -164,7 +166,7 @@ class Isofit:
 
 
 class Worker(object):
-    def __init__(self, config: configs.Config, loglevel: str, logfile: str, worker_id: int = None, total_workers: int = None):
+    def __init__(self, config: configs.Config, forward_model: ForwardModel, loglevel: str, logfile: str, worker_id: int = None, total_workers: int = None):
         """
         Worker class to help run a subset of spectra.
 
@@ -178,7 +180,8 @@ class Worker(object):
 
         logging.basicConfig(format='%(levelname)s:%(message)s', level=loglevel, filename=logfile)
         self.config = config
-        self.fm = ForwardModel(self.config)
+        self.fm = forward_model
+        #self.fm = ForwardModel(self.config)
 
         if self.config.implementation.mode == 'mcmc_inversion':
             self.iv = MCMCInversion(self.config, self.fm)
