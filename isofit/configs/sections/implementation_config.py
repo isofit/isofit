@@ -80,6 +80,12 @@ class ImplementationConfig(BaseConfigSection):
         buffer size of 1 means pixels are processed independently.  Large buffers can help prevent IO choke points, 
         especially if the """
 
+        self._max_hash_table_size_type = int
+        self.max_hash_table_size = 50
+        """int: The maximum size of inversion hash tables.  Can provide speedups with redundant surfaces, but comes
+        with increased memory costs.
+        """
+
 
         self.set_config_options(sub_configdic)
 
