@@ -63,7 +63,7 @@ class ModtranRT(TabularRT):
         # Flag to determine if MODTRAN should operate with reflectivity = 1
         # (enabling thermal_upwelling and thermal_downwelling to be determined - see comments below)
         self.treat_as_emissive = False
-        if self.wl[0] > 2500:
+        if self.wl[0] > 2600:
             self.treat_as_emissive = True
 
         self.modtran_dir = self.find_basedir(engine_config)
@@ -213,9 +213,15 @@ class ModtranRT(TabularRT):
                 # exclude headers
                 if case[i] < 0:
                     continue
+
+                # Columns 1 and 2 can touch for large datasets.
+                # Since we don't care about the values, we overwrite the
+                # character to the left of column 1 with a space so that
+                # we can use simple space-separated parsing later and 
+                # preserve data indices.
+                line = line[:17]+' '+line[18:]
                     
                 # parse data out of each line in the MODTRAN output
-                toks = line.strip().split(' ')
                 toks = re.findall(r"[\S]+", line.strip())
                 wl, wid = float(toks[0]), float(toks[8])  # nm
                 solar_irr = float(toks[18]) * 1e6 * \
@@ -789,7 +795,7 @@ class ModtranRT(TabularRT):
         """
 
         sigmas = fwhms/2.355
-        span = 2.0 * (wavelengths[1]-wavelengths[0])  # nm
+        span = 2.0 * np.abs(wavelengths[1]-wavelengths[0])  # nm
         steps = 101
 
         with open(outfile, 'w') as fout:

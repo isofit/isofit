@@ -246,7 +246,8 @@ class Instrument:
     def sample(self, x_instrument, wl_hi, rdn_hi):
         """Apply instrument sampling to a radiance spectrum, returning predicted measurement."""
 
-        if self.calibration_fixed and all((self.wl_init - wl_hi) < wl_tol):
+        if self.calibration_fixed and (len(self.wl_init) == len(wl_hi)) and \
+                    all((self.wl_init - wl_hi) < wl_tol):
             return rdn_hi
         wl, fwhm = self.calibration(x_instrument)
         if rdn_hi.ndim == 1:

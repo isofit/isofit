@@ -50,7 +50,7 @@ class Inversion:
         self.lasttime = time.time()
         self.fm = forward
         self.hashtable = OrderedDict()  # Hash table for caching inverse matrices
-        self.max_table_size = 500
+        self.max_table_size = full_config.implementation.max_hash_table_size
         self.state_indep_S_hat = False
         self.MM_weights_k = None
 
@@ -88,6 +88,38 @@ class Inversion:
 
         self.mog_config = config.mog
 
+    def full_statevector(self, x_free):
+        x = np.zeros(self.fm.nstate)
+        if self.x_fixed is not None:
+            x[self.inds_fixed] = self.x_fixed
+        x[self.inds_free] = x_free
+        return x
+
+    def calc_conditional_prior(self, x_free, geom):
+        """Calculate prior distribution of radiance. This depends on the
+        location in the state space. Return the inverse covariance and
+        its square root (for non-quadratic error residual calculation)."""
+
+        x = self.full_statevector(x_free)
+        xa = self.fm.xa(x, geom)
+        Sa = self.fm.Sa(x, geom)
+
+        # If there aren't any fixed parameters, we just directly
+        if self.x_fixed is None or self.grid_as_starting_points:
+            Sa_inv, Sa_inv_sqrt = svd_inv_sqrt(Sa, hashtable=self.hashtable, max_hash_size=self.max_table_size)
+            return xa, Sa, Sa_inv, Sa_inv_sqrt
+
+        else:
+            # otherwise condition on fixed variables
+            #TODO: could make the below calculation without the svd_inv (using full initial inversion),
+            # which would be way cheaper
+            xa_free, Sa_free = conditional_gaussian(xa, Sa, self.inds_free,
+                                                    self.inds_fixed, self.x_fixed)
+            Sa_free_inv, Sa_free_inv_sqrt = svd_inv_sqrt(Sa_free, hashtable=self.hashtable,
+                                                         max_hash_size=self.max_table_size)
+            return xa_free, Sa_free, Sa_free_inv, Sa_free_inv_sqrt
+
+
     def calc_prior(self, x, geom):
         """Calculate prior distribution of radiance. This depends on the 
         location in the state space. Return the inverse covariance and 
@@ -95,7 +127,7 @@ class Inversion:
 
         xa = self.fm.xa(x, geom)
         Sa = self.fm.Sa(x, geom)
-        Sa_inv, Sa_inv_sqrt = svd_inv_sqrt(Sa, hashtable=self.hashtable)
+        Sa_inv, Sa_inv_sqrt = svd_inv_sqrt(Sa, hashtable=self.hashtable, max_hash_size=self.max_table_size)
         return xa, Sa, Sa_inv, Sa_inv_sqrt
 
     def calc_posterior(self, x, geom, meas):
@@ -104,14 +136,15 @@ class Inversion:
 
         xa = self.fm.xa(x, geom)
         Sa = self.fm.Sa(x, geom)
-        Sa_inv = svd_inv(Sa, hashtable=self.hashtable)
+        Sa_inv = svd_inv(Sa, hashtable=self.hashtable, max_hash_size=self.max_table_size)
         K = self.fm.K(x, geom)
         Seps = self.fm.Seps(x, meas, geom)
-        Seps_inv = svd_inv(Seps, hashtable=self.hashtable)
+        Seps_inv = svd_inv(Seps, hashtable=self.hashtable, max_hash_size=self.max_table_size)
 
         # Gain matrix G reflects current state, so we use the state-dependent
         # Jacobian matrix K
-        S_hat = svd_inv(K.T.dot(Seps_inv).dot(K) + Sa_inv, hashtable=self.hashtable)
+        S_hat = svd_inv(K.T.dot(Seps_inv).dot(
+            K) + Sa_inv, hashtable=self.hashtable, max_hash_size=self.max_table_size)
         G = S_hat.dot(K.T).dot(Seps_inv)
 
         # N. Cressie [ASA 2018] suggests an alternate definition of S_hat for
@@ -119,7 +152,7 @@ class Inversion:
         if self.state_indep_S_hat:
             Ka = self.fm.K(xa, geom)
             S_hat = svd_inv(Ka.T.dot(Seps_inv).dot(Ka) + Sa_inv,
-                            hashtable=self.hashtable)
+                            hashtable=self.hashtable, max_hash_size=self.max_table_size)
         return S_hat, K, G
 
     def calc_Seps(self, x, meas, geom):
@@ -133,7 +166,7 @@ class Inversion:
         Seps_win = np.zeros((wn, wn))
         for i in range(wn):
             Seps_win[i, :] = Seps[self.winidx[i], self.winidx]
-        return svd_inv_sqrt(Seps_win, hashtable=self.hashtable)
+        return svd_inv_sqrt(Seps_win, hashtable=self.hashtable, max_hash_size=self.max_table_size)
 
 
     def jacobian(self, x, geom, Seps_inv_sqrt) -> np.ndarray:
@@ -267,7 +300,8 @@ class Inversion:
         costs, solutions = [], []
 
         # Simulations are easy - return the initial state vector
-        if self.mode == 'simulation' or meas is None:
+        if self.mode == 'simulation':
+            self.fm.surface.rfl = meas
             return np.array([self.fm.init.copy()])
 
         if len(self.integration_grid.values()) == 0:
