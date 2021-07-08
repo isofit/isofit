@@ -263,7 +263,7 @@ def svd_inv_sqrt(C: np.array, hashtable: OrderedDict = None, max_hash_size: int 
 
     # If there is a hash table, cache our solution.  Bound the total cache
     # size by removing any extra items in FIFO order.
-    if hashtable is not None:
+    if (hashtable is not None) and (max_hash_size is not None):
         hashtable[h] = (Cinv, Cinv_sqrt)
         while len(hashtable) > max_hash_size:
             hashtable.popitem(last=False)
