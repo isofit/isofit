@@ -19,9 +19,11 @@
 #
 
 import numpy as np
-from scipy.linalg import block_diag, norm
+import scipy as sp
+from scipy.linalg import block_diag, norm, solve, svdvals
 from scipy.io import loadmat
 from scipy.stats import multivariate_normal
+from scipy.special import logsumexp
 
 from ..core.common import svd_inv
 from .surface import Surface
@@ -84,7 +86,7 @@ class MultiComponentSurface(Surface):
                                        for j in self.idx_ref]))
             self.Cinvs.append(svd_inv(self.Covs[-1]))
             self.mus.append(self.components[i][0][self.idx_ref])
-
+         
         # Variables retrieved: each channel maps to a reflectance model parameter
         rmin, rmax = 0, 2.0
         self.statevec_names = ['RFL_%04i' % int(w) for w in self.wl]
@@ -222,14 +224,26 @@ class MultiComponentSurface(Surface):
             return ''
         return 'Component: %i' % self.component(x_surface, geom)
 
-    def component_weights(self, x_surface, alpha=0.01):
-        x_lamb = x_surface[self.idx_lamb]
-        reg = np.eye(len(self.idx_lamb)) * alpha# 1.0 # HEAVY regularization
-        wts = [multivariate_normal.pdf(x_lamb, m, c+reg) \
-                for m,c in self.components]
+    def log_gaussian(self, x, mean, cov):
+        diff_x_mean = x - mean
+        c_eigs = svdvals(cov)
+        return -0.5*np.dot(diff_x_mean, solve(cov, diff_x_mean)) - cov.shape[0]/2. * np.log(2*np.pi) - 0.5*np.sum(np.log(c_eigs))
+
+
+    def component_weights(self, x_surface):
+
+        # Get the (possibly normalized) reflectance
+        lamb = x_surface[self.idx_lamb]
+        lamb_ref = lamb[self.idx_ref]
+        lamb_ref = lamb_ref / self.norm(lamb_ref)
+
+        wts = []
+        for mu,cov in zip(self.mus, self.Covs):
+           wts.append(self.log_gaussian(lamb_ref, mu, cov))
         wts = np.array(wts)
-        wts[np.isnan(wts)] = 0
-        return wts / np.sum(wts)
+
+        # Normalize using stable logsumexp
+        return np.exp(wts - logsumexp(wts))
 
     def fit_params(self, rfl_meas, geom, *args):
         """Given a reflectance estimate, fit a state vector."""
