@@ -198,8 +198,12 @@ class Inversion:
 
             # First append the weighted mixture components
             prior_jac = None
+            x_surface = x[self.fm.idx_surface]
+            lamb = self.fm.calc_lamb(x_surface, geom)
+            lamb_ref = lamb[self.fm.surface.idx_ref]
             for i in range(self.fm.surface.n_comp):
                 Sa = self.fm.surface.components[i][1]
+                Sa = Sa * (self.fm.surface.norm(lamb_ref)**2)
                 Sa_inv, Sa_inv_sqrt = svd_inv_sqrt(Sa, hashtable=self.hashtable)
                 weighted_jac= Sa_inv_sqrt * np.sqrt(self.MM_weights_k[i]+1e-9)  
                 if prior_jac is None:
@@ -260,9 +264,13 @@ class Inversion:
             # First append the weighted mixture components
             prior_resid = None
             x_surface = x[self.fm.idx_surface]
+            lamb = self.fm.surface.calc_lamb(x_surface, geom)
+            lamb_ref = lamb[self.fm.surface.idx_ref]
             for i in range(self.fm.surface.n_comp):
                 xa = self.fm.surface.components[i][0]
+                xa = xa * (self.fm.surface.norm(lamb_ref))
                 Sa = self.fm.surface.components[i][1]
+                Sa = Sa * (self.fm.surface.norm(lamb_ref)**2)
                 Sa_inv, Sa_inv_sqrt = svd_inv_sqrt(Sa, hashtable=self.hashtable)
                 resid = (x_surface - xa).dot(Sa_inv_sqrt) 
                 weighted_resid = np.sqrt(self.MM_weights_k[i]+1e-9) * resid
@@ -287,7 +295,7 @@ class Inversion:
 
         return np.real(total_resid), x
 
-    def invert(self, meas, geom, alpha=0.01):
+    def invert(self, meas, geom, start=None):
         """Inverts a meaurement and returns a state vector.
         Args:
             meas: a one-D scipy vector of radiance in uW/nm/sr/cm2
@@ -315,6 +323,10 @@ class Inversion:
 
             # Calculate the initial solution, if needed.
             x0 = invert_simple(self.fm, meas, geom)
+
+            # Override surface initialization?
+            if start is not None:
+                x0[self.fm.idx_surface][self.fm.surface.idx_lamb] = start
 
             # Catch any state vector elements outside of bounds
             lower_bound_violation = x0 < self.fm.bounds[0]
@@ -362,7 +374,7 @@ class Inversion:
             if self.mode == 'mog_inversion':
                 x_current = x0
                 x_surface = x_current[self.fm.idx_surface]
-                self.MM_weights_k = self.fm.surface.component_weights(x_surface, alpha)
+                self.MM_weights_k = self.fm.surface.component_weights(x_surface)
                 mog_costs = [abs(err(x0)).sum()]
                 mog_states = []
                 mog_converged = False
