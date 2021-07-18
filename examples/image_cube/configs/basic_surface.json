@@ -1,6 +1,6 @@
 {
   "output_model_file": "./basic_surface.mat",
-  "wavelength_file":   "../remote/20171108_Pasadena/20170320_ang20170228_wavelength_fit.txt",
+  "wavelength_file":   "../../20171108_Pasadena/remote/20170320_ang20170228_wavelength_fit.txt",
   "normalize":"Euclidean",
   "reference_windows":[[400,1300],[1450,1700],[2100,2450]],
   "sources":
