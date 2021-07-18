@@ -76,6 +76,7 @@ def main(rawargs=None):
             '/tmp/ray'
         emulator_base (Optional, str): Location of emulator base path.  Point this at the base of sRTMnet to use the
             emulator instead of MODTRAN.
+        segmentation_size (Optional, int): Size of segments to construct for empirical line (if used).
 
             Reference:
             D.R. Thompson, A. Braverman,P.G. Brodrick, A. Candela, N. Carbon, R.N. Clark,D. Connelly, R.O. Green, R.F.
@@ -356,7 +357,7 @@ def main(rawargs=None):
         logging.info('Empirical line inference')
         # Determine the number of neighbors to use.  Provides backwards stability and works
         # well with defaults, but is arbitrary
-        nneighbors = int(round(3950 / 9 - 35/36 * args.segmenation_size))
+        nneighbors = int(round(3950 / 9 - 35/36 * args.segmentation_size))
         empirical_line(reference_radiance_file=paths.rdn_subs_path,
                        reference_reflectance_file=paths.rfl_subs_path,
                        reference_uncertainty_file=paths.uncert_subs_path,
