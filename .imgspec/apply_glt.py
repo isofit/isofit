@@ -6,8 +6,6 @@ import os
 import sys
 import spectral
 import argparse
-from scipy import *
-from scipy import linalg
 
 
 chunksize = 500  # process this many lines at once

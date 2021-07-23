@@ -29,7 +29,6 @@ filtered_ocean_csv_path="$input/water_reflectance_spectra.csv"
 surface_liquids_csv_path="$input/snow_and_liquids_reflectance_spectra.csv"
 
 # Process positional args to get EcoSIS CSV files
-#wget  --directory-prefix input --content-disposition $1
 wget -O $filtered_other_csv_path $1
 wget -O $filtered_veg_csv_path $2
 wget -O $filtered_ocean_csv_path $3
@@ -157,5 +156,3 @@ $isofit_cmd
 # Clean up output directory
 rm -f output/*lbl*
 rm -f output/*subs*
-
-
