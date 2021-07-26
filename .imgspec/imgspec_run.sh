@@ -1,5 +1,22 @@
 #!/bin/bash
 
+# Description:
+#
+# The top-level run script to execute ISOFIT on ImgSPEC. This script accepts the inputs described in the
+# algorithm_config.yaml file and pre-processes them as needed to pass into isofit/util/apply_oe.py.  This script
+# is currently compatible with AVIRIS Classic, AVIRIS-NG, and PRISMA data.
+#
+# Inputs:
+#
+# $1: EcoSIS URL of surface_reflectance_spectra
+# $2: EcoSIS URL of vegetation_reflectance_spectra
+# $3: EcoSIS URL of water_reflectance_spectra
+# $4: EcoSIS URL of snow_and_liquids_reflectance_spectra
+# $5: URL of radiance_factors_file
+#
+# In addition to the positional arguments, this script expects a downloaded radiance granule to be present in a folder
+# called "input".
+
 # Get directories and paths for scripts
 imgspec_dir=$( cd "$(dirname "$0")" ; pwd -P )
 isofit_dir=$(dirname $imgspec_dir)
