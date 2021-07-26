@@ -3,7 +3,7 @@
 algo_name: isofit
 version: 2.9.0
 environment: ubuntu
-repository_url: https://gitlab.com/geospec/isofit.git
+repository_url: https://github.com/isofit/isofit.git
 docker_url: registry.imgspec.org/root/ade_base_images/isofit:latest
 
 # fill out these fields
