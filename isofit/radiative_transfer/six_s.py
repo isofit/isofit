@@ -41,7 +41,7 @@ sixs_template = '''0 (User defined)
 -{alt:.2f} (sensor level)
 -{H2OSTR}, -{O3}
 {AOT550}
--2
+-2 
 {wlinf}
 {wlsup}
 0 Homogeneous surface
@@ -51,6 +51,7 @@ sixs_template = '''0 (User defined)
 0
 -1 No atm. corrections selected
 '''
+
 
 class SixSRT(TabularRT):
     """A model of photon transport including the atmosphere."""
@@ -182,14 +183,8 @@ class SixSRT(TabularRT):
 
         sixspath = self.sixs_dir+'/sixsV2.1'
 
-        if vals['alt']  < 100:
-            sixs_config_str = sixs_template.format(**vals)
-        else:
-            vals['alt'] = 1000
-            # Remove below sensor atmosphere parameters
-            sixs_config_str = sixs_template.replace('\n-{H2OSTR}, -{O3}\n{AOT550}','').format(**vals)
-
         # write config files
+        sixs_config_str = sixs_template.format(**vals)
         with open(infilepath, 'w') as f:
             f.write(sixs_config_str)
 

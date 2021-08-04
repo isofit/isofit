@@ -77,6 +77,7 @@ def main(rawargs=None):
             '/tmp/ray'
         emulator_base (Optional, str): Location of emulator base path.  Point this at the base of sRTMnet to use the
             emulator instead of MODTRAN.
+        segmentation_size (Optional, int): Size of segments to construct for empirical line (if used).
 
             Reference:
             D.R. Thompson, A. Braverman,P.G. Brodrick, A. Candela, N. Carbon, R.N. Clark,D. Connelly, R.O. Green, R.F.
@@ -120,6 +121,7 @@ def main(rawargs=None):
     parser.add_argument('--empirical_line', choices=[0,1], type=int, default=0)
     parser.add_argument('--ray_temp_dir', type=str, default='/tmp/ray')
     parser.add_argument('--emulator_base', type=str, default=None)
+    parser.add_argument('--segmentation_size', type=int, default=40)
 
     args = parser.parse_args(rawargs)
 
@@ -252,7 +254,7 @@ def main(rawargs=None):
         if not exists(paths.lbl_working_path) or not exists(paths.radiance_working_path):
             logging.info('Segmenting...')
             segment(spectra=(paths.radiance_working_path, paths.lbl_working_path),
-                    nodata_value=-9999, npca=5, segsize=SEGMENTATION_SIZE, nchunk=CHUNKSIZE,
+                    nodata_value=-9999, npca=5, segsize=args.segmentation_size, nchunk=CHUNKSIZE,
                     n_cores=args.n_cores, loglevel=args.logging_level, logfile=args.log_file)
 
         # Extract input data per segment
@@ -335,7 +337,8 @@ def main(rawargs=None):
         build_main_config(paths, lut_params, h2o_lut_grid, elevation_lut_grid, to_sensor_azimuth_lut_grid,
                           to_sensor_zenith_lut_grid, mean_latitude, mean_longitude, dt, 
                           args.empirical_line == 1, args.n_cores, args.surface_category,
-                          args.emulator_base, uncorrelated_radiometric_uncertainty, args.multiple_restarts)
+                          args.emulator_base, uncorrelated_radiometric_uncertainty, args.multiple_restarts,
+                          args.segmentation_size)
 
         # Run modtran retrieval
         logging.info('Running ISOFIT with full LUT')
@@ -353,6 +356,9 @@ def main(rawargs=None):
     if not exists(paths.rfl_working_path) or not exists(paths.uncert_working_path):
         # Empirical line
         logging.info('Empirical line inference')
+        # Determine the number of neighbors to use.  Provides backwards stability and works
+        # well with defaults, but is arbitrary
+        nneighbors = int(round(3950 / 9 - 35/36 * args.segmentation_size))
         empirical_line(reference_radiance_file=paths.rdn_subs_path,
                        reference_reflectance_file=paths.rfl_subs_path,
                        reference_uncertainty_file=paths.uncert_subs_path,
@@ -362,7 +368,8 @@ def main(rawargs=None):
                        input_locations_file=paths.loc_working_path,
                        output_reflectance_file=paths.rfl_working_path,
                        output_uncertainty_file=paths.uncert_working_path,
-                       isofit_config=paths.modtran_config_path)
+                       isofit_config=paths.modtran_config_path,
+                       nneighbors=nneighbors)
 
     logging.info('Done.')
 
@@ -1012,19 +1019,25 @@ def get_metadata_from_loc(loc_file: str, lut_params: LUTConfig, trim_lines: int 
 
 def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array, n_cores: int=-1,
         use_emp_line:bool = False, surface_category="multicomponent_surface",
-        emulator_base: str = None, uncorrelated_radiometric_uncertainty: float = 0.0):
+        emulator_base: str = None, uncorrelated_radiometric_uncertainty: float = 0.0,
+        segmentation_size: int = 400):
     """ Write an isofit config file for a presolve, with limited info.
 
     Args:
         paths: object containing references to all relevant file locations
         h2o_lut_grid: the water vapor look up table grid isofit should use for this solve
         n_cores: number of cores to use in processing
+        use_emp_line: flag whether or not to set up for the empirical line estimation
+        surface_category: type of surface to use
+        emulator_base: the basename of the emulator, if used
+        uncorrelated_radiometric_uncertainty: uncorrelated radiometric uncertainty parameter for isofit
+        segmentation_size: image segmentation size if empirical line is used
     """
 
     # Determine number of spectra included in each retrieval.  If we are
     # operating on segments, this will average down instrument noise
     if use_emp_line:
-        spectra_per_inversion = SEGMENTATION_SIZE
+        spectra_per_inversion = segmentation_size
     else: 
         spectra_per_inversion = 1 
 
@@ -1128,7 +1141,8 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
                       to_sensor_zenith_lut_grid: np.array = None, mean_latitude: float = None,
                       mean_longitude: float = None, dt: datetime = None, use_emp_line: bool = True, 
                       n_cores: int = -1, surface_category='multicomponent_surface',
-                      emulator_base: str = None, uncorrelated_radiometric_uncertainty: float = 0.0, multiple_restarts: bool = False):
+                      emulator_base: str = None, uncorrelated_radiometric_uncertainty: float = 0.0,
+                      multiple_restarts: bool = False, segmentation_size=400):
     """ Write an isofit config file for the main solve, using the specified pathnames and all given info
 
     Args:
@@ -1146,13 +1160,13 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
         surface_category: type of surface to use
         emulator_base: the basename of the emulator, if used
         uncorrelated_radiometric_uncertainty: uncorrelated radiometric uncertainty parameter for isofit
-
+        segmentation_size: image segmentation size if empirical line is used
     """
 
     # Determine number of spectra included in each retrieval.  If we are
     # operating on segments, this will average down instrument noise
     if use_emp_line:
-        spectra_per_inversion = SEGMENTATION_SIZE
+        spectra_per_inversion = segmentation_size
     else: 
         spectra_per_inversion = 1 
 
