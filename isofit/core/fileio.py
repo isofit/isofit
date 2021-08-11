@@ -265,7 +265,7 @@ class IO:
 
         self.config = config
 
-        self.bbl = '[]'
+        self.bbl = '{}'
         self.radiance_correction = None
         self.meas_wl = forward.instrument.wl_init
         self.meas_fwhm = forward.instrument.fwhm_init
