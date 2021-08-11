@@ -241,6 +241,11 @@ def main(rawargs=None):
     logging.info(f'To-sensor Azimuth (deg): {mean_to_sensor_azimuth}')
     logging.info(f'Altitude (km): {mean_altitude_km}')
 
+    if args.emulator_base is not None and mean_altitude_km > 99:
+        logging.info('Adjusting altitude to 99 km for integration with 6S, because emulator is chosen.')
+        mean_altitude_km = 99
+
+
     # We will use the model discrepancy with covariance OR uncorrelated 
     # Calibration error, but not both.
     if args.model_discrepancy_path is not None:
