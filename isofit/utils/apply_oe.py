@@ -1411,7 +1411,7 @@ def envi_header(inputpath):
 
     """
     if os.path.splitext()[-1] == '.img' or os.path.splitext()[-1] == '.dat':
-        return os.path.splitext()[-1] + '.hdr'
+        return os.path.splitext()[0] + '.hdr'
     elif os.path.splitext()[-1] == '.hdr':
         return inputpath
     else:
