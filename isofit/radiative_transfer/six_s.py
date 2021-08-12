@@ -90,7 +90,7 @@ class SixSRT(TabularRT):
                        'day':   engine_config.day,
                        'month': engine_config.month,
                        'elev':  engine_config.elev,
-                       'alt':   engine_config.alt,
+                       'alt':   min(engine_config.alt, 99),
                        'atm_file': None,
                        'abscf_data_directory': None,
                        'wlinf': self.sixs_grid_init[0]/1000.0,  # convert to nm
@@ -154,7 +154,7 @@ class SixSRT(TabularRT):
         if 'GNDALT' in vals:
             vals['elev'] = vals['GNDALT']
         if 'H1ALT' in vals:
-            vals['alt'] = vals['H1ALT']
+            vals['alt'] = min(vals['H1ALT'], 99)
         if 'TRUEAZ' in vals:
             vals['viewaz'] = vals['TRUEAZ']
         if 'OBSZEN' in vals:
@@ -294,7 +294,7 @@ class SixSRT(TabularRT):
             elif name == "elev":
                 point[point_ind] = geom.surface_elevation_km
             elif name == "alt":
-                point[point_ind] = geom.observer_altitude_km
+                point[point_ind] = min(geom.observer_altitude_km, 99)
             elif name == "viewzen":
                 point[point_ind] = geom.observer_zenith
             elif name == "viewaz":
