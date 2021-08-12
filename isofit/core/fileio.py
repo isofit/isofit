@@ -22,7 +22,6 @@ import os
 import numpy as np
 import scipy.io
 import scipy.interpolate
-import pylab as plt
 from spectral.io import envi
 import logging
 from collections import OrderedDict
@@ -34,7 +33,7 @@ from .geometry import Geometry
 from isofit.configs import Config
 from isofit.core.forward import ForwardModel
 from typing import List
-import time
+from isofit.core.common import envi_header
 
 
 ### Variables ###
@@ -120,12 +119,12 @@ class SpectrumFile:
             if not self.write:
 
                 # If we are an input file, the header must preexist.
-                if not os.path.exists(self.fname+'.hdr'):
-                    logging.error('Could not find %s' % (self.fname+'.hdr'))
-                    raise IOError('Could not find %s' % (self.fname+'.hdr'))
+                if not os.path.exists(envi_header(self.fname)):
+                    logging.error('Could not find %s' % (envi_header(self.fname)))
+                    raise IOError('Could not find %s' % (envi_header(self.fname)))
 
                 # open file and copy metadata
-                self.file = envi.open(self.fname + '.hdr', fname)
+                self.file = envi.open(envi_header(self.fname), fname)
                 self.meta = self.file.metadata.copy()
 
                 self.n_rows = int(self.meta['lines'])
@@ -166,11 +165,11 @@ class SpectrumFile:
                         logging.error('Must specify %s' % (k))
                         raise IOError('Must specify %s' % (k))
 
-                if os.path.isfile(fname+'.hdr') is False:
-                    self.file = envi.create_image(fname+'.hdr', meta, ext='',
+                if os.path.isfile(envi_header(fname)) is False:
+                    self.file = envi.create_image(envi_header(fname), meta, ext='',
                                                   force=True)
                 else:
-                    self.file = envi.open(fname+'.hdr')
+                    self.file = envi.open(envi_header(fname))
 
             self.open_map_with_retries()
 
@@ -244,7 +243,7 @@ class SpectrumFile:
                     self.memmap[row, valid, :] = frame[valid, :]
             self.frames = OrderedDict()
             del self.file
-            self.file = envi.open(self.fname+'.hdr', self.fname)
+            self.file = envi.open(envi_header(self.fname), self.fname)
             self.open_map_with_retries()
 
 class InputData:

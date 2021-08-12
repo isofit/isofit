@@ -26,6 +26,7 @@ import ray
 import ray.services
 import atexit
 import logging
+from isofit.core.common import envi_header
 
 @ray.remote
 def segment_chunk(lstart, lend, in_file, nodata_value, npca, segsize, logfile=None, loglevel='INFO'):
@@ -52,7 +53,7 @@ def segment_chunk(lstart, lend, in_file, nodata_value, npca, segsize, logfile=No
 
     logging.info(f'{lstart}: starting')
 
-    in_img = envi.open(in_file + '.hdr', in_file)
+    in_img = envi.open(envi_header(in_file), in_file)
     meta = in_img.metadata
     nl, nb, ns = [int(meta[n]) for n in ('lines', 'bands', 'samples')]
     img_mm = in_img.open_memmap(interleave='bip', writable=False)
@@ -144,7 +145,7 @@ def segment(spectra: tuple, nodata_value: float, npca: int, segsize: int, nchunk
         lbl_file = spectra + '_lbl'
 
     # Open input data, get dimensions
-    in_img = envi.open(in_file+'.hdr', in_file)
+    in_img = envi.open(envi_header(in_file), in_file)
     meta = in_img.metadata
     nl, nb, ns = [int(meta[n]) for n in ('lines', 'bands', 'samples')]
 
@@ -197,7 +198,7 @@ def segment(spectra: tuple, nodata_value: float, npca: int, segsize: int, nchunk
     lbl_meta = {"samples": str(ns), "lines": str(nl), "bands": "1",
                 "header offset": "0", "file type": "ENVI Standard",
                 "data type": "4", "interleave": "bil"}
-    lbl_img = envi.create_image(lbl_file+'.hdr', lbl_meta, ext='', force=True)
+    lbl_img = envi.create_image(envi_header(lbl_file), lbl_meta, ext='', force=True)
     lbl_mm = lbl_img.open_memmap(interleave='source', writable=True)
     lbl_mm[:, :] = np.array(all_labels, dtype=np.float32).reshape((nl, 1, ns))
     del lbl_mm

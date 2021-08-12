@@ -24,7 +24,7 @@ import scipy
 from scipy.ndimage.filters import gaussian_filter1d
 from spectral.io import envi
 
-from isofit.core.common import expand_path, json_load_ascii
+from isofit.core.common import expand_path, json_load_ascii, envi_header
 
 
 def instrument_model(config):
@@ -49,7 +49,7 @@ def instrument_model(config):
     flatfile = expand_path(configdir, config['output_flatfield_file'])
     uniformity_thresh = float(config['uniformity_threshold'])
 
-    infile_hdr = infile + '.hdr'
+    infile_hdr = envi_header(infile)
     img = envi.open(infile_hdr, infile)
     inmm = img.open_memmap(interleave='bil', writable=False)
     X = np.array(inmm[:, :, :], dtype=np.float32)
@@ -57,7 +57,7 @@ def instrument_model(config):
 
     FF, Xhoriz, Xhorizp, use_ff = _flat_field(X, uniformity_thresh)
     np.array(FF, dtype=np.float32).tofile(flatfile)
-    with open(flatfile+'.hdr', 'w') as fout:
+    with open(envi_header(flatfile), 'w') as fout:
         fout.write(hdr_template.format(lines=nb, samples=nc))
 
     C, Xvert, Xvertp, use_C = _column_covariances(X, uniformity_thresh)

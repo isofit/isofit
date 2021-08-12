@@ -20,6 +20,7 @@ from typing import List
 
 from isofit.utils import segment, extractions, empirical_line
 from isofit.core import isofit, common
+from isofit.core.common import envi_header
 
 EPS = 1e-6
 CHUNKSIZE = 256
@@ -1400,23 +1401,6 @@ def write_modtran_template(atmosphere_type: str, fid: str, altitude_km: float, d
     # write modtran_template
     with open(output_file, 'w') as fout:
         fout.write(json.dumps(h2o_template, cls=SerialEncoder, indent=4, sort_keys=True))
-
-def envi_header(inputpath):
-    """
-    Convert a envi binary/header path to a header, handling extensions
-    Args:
-        inputpath: path to envi binary file
-    Returns:
-        str
-
-    """
-    if os.path.splitext()[-1] == '.img' or os.path.splitext()[-1] == '.dat':
-        return os.path.splitext()[0] + '.hdr'
-    elif os.path.splitext()[-1] == '.hdr':
-        return inputpath
-    else:
-        return inputpath + '.hdr'
-
 
 if __name__ == "__main__":
     main()
