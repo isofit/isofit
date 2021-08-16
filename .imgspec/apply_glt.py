@@ -35,6 +35,7 @@ def main():
     parser.add_argument('--redis_password', type=str)
     parser.add_argument('--one_based_glt', type=int, choices=[0, 1], default=0)
     parser.add_argument('--mosaic', type=int, choices=[0, 1], default=0)
+    global GLT_NODATA_VALUE
     parser.add_argument('--glt_nodata_value', type=float, default=GLT_NODATA_VALUE)
     args = parser.parse_args()
 
@@ -47,7 +48,6 @@ def main():
     args.one_based_glt = args.one_based_glt == 1
     args.run_with_missing_files = args.run_with_missing_files == 1
     args.mosaic = args.mosaic == 1
-    global GLT_NODATA_VALUE
     GLT_NODATA_VALUE = args.glt_nodata_value
 
     # Log the current time
