@@ -517,8 +517,6 @@ def spectral_response_function(response_range: np.array, mu: float, sigma: float
     return srf
 
 
-
-
 def combos(inds: List[List[float]]) -> np.array:
     """Return all combinations of indices in a list of index sublists.
     For example, the call::
@@ -570,3 +568,25 @@ def conditional_gaussian(mu: np.array, C: np.array, window: np.array, remain: np
     conditional_cov = C22 - C21 @ Cinv @ C12
     return conditional_mean, conditional_cov
 
+def envi_header(inputpath):
+    """
+    Convert a envi binary/header path to a header, handling extensions
+    Args:
+        inputpath: path to envi binary file
+    Returns:
+        str: the header file associated with the input reference.
+
+    """
+    if os.path.splitext(inputpath)[-1] == '.img' or os.path.splitext(inputpath)[-1] == '.dat' or os.path.splitext(inputpath)[-1] == '.raw':
+        # headers could be at either filename.img.hdr or filename.hdr.  Check both, return the one that exists if it
+        # does, if not return the latter (new file creation presumed).
+        hdrfile = os.path.splitext(inputpath)[0] + '.hdr'
+        if os.path.isfile(hdrfile):
+            return hdrfile
+        elif os.path.isfile(inputpath + '.hdr'):
+            return inputpath + '.hdr'
+        return hdrfile
+    elif os.path.splitext(inputpath)[-1] == '.hdr':
+        return inputpath
+    else:
+        return inputpath + '.hdr'

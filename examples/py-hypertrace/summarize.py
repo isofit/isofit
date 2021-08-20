@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import spectral as sp
 import matplotlib.pyplot as plt
+from isofit.core.common import envi_header
 
 assert len(sys.argv) > 1, "Please specify a JSON config file."
 
@@ -25,7 +26,7 @@ reflfiles = list(outdir.glob("**/estimated-reflectance"))
 assert len(reflfiles) > 0, f"No reflectance files found in directory {outdir}"
 
 true_refl_file = Path(config["reflectance_file"]).expanduser()
-true_reflectance = sp.open_image(str(true_refl_file) + ".hdr")
+true_reflectance = sp.open_image(envi_header(str(true_refl_file)))
 true_waves = np.array(true_reflectance.metadata["wavelength"], dtype=float)
 true_refl_m = true_reflectance.open_memmap()
 
@@ -72,7 +73,7 @@ info["rel_bias"] = np.nan
 for i in range(info.shape[0]):
     ddir = Path(info["directory"][i])
     est_refl_file = ddir / "estimated-reflectance"
-    est_refl = sp.open_image(str(est_refl_file) + ".hdr")
+    est_refl = sp.open_image(envi_header(str(est_refl_file)))
     est_refl_waves = np.array(est_refl.metadata["wavelength"], dtype=float)
     est_refl_m = est_refl.open_memmap()
     if est_refl_m.shape != true_refl_m.shape:
