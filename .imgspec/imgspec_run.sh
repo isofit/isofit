@@ -12,7 +12,9 @@
 # $2: EcoSIS URL of vegetation_reflectance_spectra
 # $3: EcoSIS URL of water_reflectance_spectra
 # $4: EcoSIS URL of snow_and_liquids_reflectance_spectra
-# $5: URL of radiance_factors_file
+# $5: ISOFIT apply_oe.py segmentation_size argument
+# $6: ISOFIT apply_oe.py n_cores argument
+# $7: URL of radiance_factors_file
 #
 # In addition to the positional arguments, this script expects a downloaded radiance granule to be present in a folder
 # called "input".
@@ -151,8 +153,8 @@ working_dir=$(pwd)
 isofit_cmd=""
 if [[ $instrument == "avcl" ]] || [[ $instrument == "ang" ]]; then
     isofit_cmd="""python $apply_oe_exe $rdn_path $loc_ort_path $obs_ort_path $working_dir $instrument --presolve=1 \
-    --empirical_line=1 --emulator_base=$EMULATOR_DIR --n_cores 32 --wavelength_path $input/wavelengths.txt \
-    --surface_path $input/surface.mat --log_file isofit.log"""
+    --empirical_line=1 --emulator_base=$EMULATOR_DIR --n_cores $6 --wavelength_path $input/wavelengths.txt \
+    --segmentation_size $5 --surface_path $input/surface.mat --log_file isofit.log"""
 elif [[ $instrument == "prisma" ]]; then
     # Use NA-YYYYMMDD for instrument
     prisma_prefix="NA-"
@@ -160,11 +162,12 @@ elif [[ $instrument == "prisma" ]]; then
     echo "For PRISMA, using $instrument as instrument argument in apply_oe command"
     # Get rdn_factors_file
     rdn_factors_path="$input/rdn_factors.txt"
-    echo "Getting radiance_factors file from $5"
-    wget -O $rdn_factors_path $5
+    echo "Getting radiance_factors file from $7"
+    wget -O $rdn_factors_path $7
     isofit_cmd="""python $apply_oe_exe $rdn_path $loc_ort_path $obs_ort_path $working_dir $instrument --presolve=1 \
-    --empirical_line=1 --emulator_base=$EMULATOR_DIR --n_cores 32 --wavelength_path $input/wavelengths.txt \
-    --surface_path $input/surface.mat --log_file isofit.log  --rdn_factors_path $rdn_factors_path"""
+    --empirical_line=1 --emulator_base=$EMULATOR_DIR --n_cores $6 --wavelength_path $input/wavelengths.txt \
+    --segmentation_size $5 --rdn_factors_path $rdn_factors_path --surface_path $input/surface.mat \
+    --log_file isofit.log"""
 fi
 
 echo "Executing command: $isofit_cmd"

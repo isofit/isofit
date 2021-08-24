@@ -23,7 +23,6 @@ from isofit.core import isofit, common
 
 EPS = 1e-6
 CHUNKSIZE = 256
-SEGMENTATION_SIZE = 200
 
 UNCORRELATED_RADIOMETRIC_UNCERTAINTY = 0.01
 

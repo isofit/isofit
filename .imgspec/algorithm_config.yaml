@@ -27,6 +27,12 @@ inputs:
     type: positional
   - name: snow_and_liquids_reflectance_spectra
     type: positional
+  - name: segmentation_size
+    type: positional
+    default: 200
+  - name: n_cores
+    type: positional
+    default: 32
   - name: radiance_factors_file
     type: positional
     default: None
