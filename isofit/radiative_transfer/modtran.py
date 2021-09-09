@@ -244,7 +244,7 @@ class ModtranRT(TabularRT):
                 # grnd_rflt already includes ground-to-sensor transmission
                 grnd_rflt = float(toks[16]) * 1e6  # ground reflected radiance (direct+diffuse+multiple scattering)
                 drct_rflt = float(toks[17]) * 1e6  # same as 16 but only on the sun->surface->sensor path (only direct)
-                path_rdn  = float(toks[14]) * 1e6 + float(toks[14]) * 1e6  # The sum of the (1) single scattering and (2) multiple scattering 
+                path_rdn  = float(toks[14]) * 1e6 + float(toks[15]) * 1e6  # The sum of the (1) single scattering and (2) multiple scattering 
                 thermal_downwelling = grnd_rflt / wid # uW/nm/sr/cm2
 
                 if case[i] == 0:
