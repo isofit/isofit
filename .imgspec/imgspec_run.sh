@@ -50,7 +50,7 @@ surface_liquids_csv_path="$input/snow_and_liquids_reflectance_spectra.csv"
 # Process positional args to get EcoSIS CSV files
 curl --retry 10 --output $filtered_other_csv_path $1
 curl --retry 10 --output $filtered_veg_csv_path $2
-curl --retry 10 --output $filtered_ocean_csv_path $3:q
+curl --retry 10 --output $filtered_ocean_csv_path $3
 curl --retry 10 --output $surface_liquids_csv_path $4
 
 # Converted spectra ENVI paths
