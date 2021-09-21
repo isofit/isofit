@@ -48,10 +48,10 @@ filtered_ocean_csv_path="$input/water_reflectance_spectra.csv"
 surface_liquids_csv_path="$input/snow_and_liquids_reflectance_spectra.csv"
 
 # Process positional args to get EcoSIS CSV files
-wget -O $filtered_other_csv_path $1
-wget -O $filtered_veg_csv_path $2
-wget -O $filtered_ocean_csv_path $3
-wget -O $surface_liquids_csv_path $4
+curl --retry 10 --output $filtered_other_csv_path $1
+curl --retry 10 --output $filtered_veg_csv_path $2
+curl --retry 10 --output $filtered_ocean_csv_path $3
+curl --retry 10 --output $surface_liquids_csv_path $4
 
 # Converted spectra ENVI paths
 filtered_other_img_path=${filtered_other_csv_path/.csv/}
@@ -163,7 +163,7 @@ elif [[ $instrument == "prisma" ]]; then
     # Get rdn_factors_file
     rdn_factors_path="$input/rdn_factors.txt"
     echo "Getting radiance_factors file from $7"
-    wget -O $rdn_factors_path $7
+    curl --retry 10 --output $rdn_factors_path $7
     isofit_cmd="""python $apply_oe_exe $rdn_path $loc_ort_path $obs_ort_path $working_dir $instrument --presolve=1 \
     --empirical_line=1 --emulator_base=$EMULATOR_DIR --n_cores $6 --wavelength_path $input/wavelengths.txt \
     --segmentation_size $5 --rdn_factors_path $rdn_factors_path --surface_path $input/surface.mat \
