@@ -30,10 +30,10 @@ jobs:
     - name: Download and compile 6Sv
       run: |
         cd examples/py-hypertrace
-        wget -nv https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sV-2.1.tar
-        mkdir -p 6sV-2.1
-        tar -xf 6sV-2.1.tar --directory 6sV-2.1
-        cd 6sV-2.1
+        wget -nv https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar
+        mkdir -p 6sv-2.1
+        tar -xf 6sv-2.1.tar --directory 6sv-2.1
+        cd 6sv-2.1
         # Necessary for compilation to work with recent GCC versions
         sed -i Makefile -e 's/FFLAGS.*/& -std=legacy/'
         make
@@ -56,8 +56,8 @@ jobs:
       run: |
         cd examples/py-hypertrace
         # Modify the workflow file for GitHub actions
-        python workflow.py configs/example-srtmnet.json
-        python summarize.py configs/example-srtmnet.json
+        python workflow.py configs/example-srtmnet-ci.json
+        python summarize.py configs/example-srtmnet-ci.json
 
     - name: Upload summary from CI workflow
       uses: actions/upload-artifact@v2

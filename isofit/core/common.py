@@ -31,9 +31,6 @@ from collections import OrderedDict
 
 ### Variables ###
 
-# Maximum size of our hash tables
-max_table_size = 500
-
 # small value used in finite difference derivatives
 eps = 1e-5
 
@@ -53,10 +50,15 @@ class VectorInterpolator:
 
     def __init__(self, grid_input: List[List[float]], data_input: np.array, lut_interp_types: List[str]):
         self.lut_interp_types = lut_interp_types
+        self.single_point_data = None
 
         # Lists and arrays are mutable, so copy first
         grid = grid_input.copy()
         data = data_input.copy()
+
+        # Check if we are using a single grid point. If so, store the grid input.
+        if np.prod(list(map(len, grid))) == 1:
+            self.single_point_data = data
 
         # expand grid dimensionality as needed
         [radian_locations] = np.where(self.lut_interp_types == 'd')
@@ -123,6 +125,11 @@ class VectorInterpolator:
                                            bounds_error=False, fill_value=None)
 
     def __call__(self, points):
+
+        # If we only have one point, we can't do any interpolation, so just
+        # return the original data.
+        if self.single_point_data is not None:
+            return self.single_point_data
 
         x = np.zeros((self.n, len(points) + 1 +
                       np.sum(self.lut_interp_types != 'n')))
@@ -197,27 +204,29 @@ def emissive_radiance(emissivity: np.array, T: np.array, wl: np.array) -> (np.ar
     return uW_per_cm2_sr_nm, dRdn_dT
 
 
-def svd_inv(C: np.array, hashtable: OrderedDict = None):
+def svd_inv(C: np.array, hashtable: OrderedDict = None, max_hash_size: int = None):
     """Matrix inversion, based on decomposition.  Built to be stable, and positive.
 
     Args:
         C: matrix to invert
         hashtable: if used, the hashtable to store/retrieve results in/from
+        max_hash_size: maximum size of hashtable
 
     Return:
         np.array: inverse of C
 
     """
 
-    return svd_inv_sqrt(C, hashtable)[0]
+    return svd_inv_sqrt(C, hashtable, max_hash_size)[0]
 
 
-def svd_inv_sqrt(C: np.array, hashtable: OrderedDict = None) -> (np.array, np.array):
+def svd_inv_sqrt(C: np.array, hashtable: OrderedDict = None, max_hash_size: int = None) -> (np.array, np.array):
     """Matrix inversion, based on decomposition.  Built to be stable, and positive.
 
     Args:
         C: matrix to invert
         hashtable: if used, the hashtable to store/retrieve results in/from
+        max_hash_size: maximum size of hashtable
 
     Return:
         (np.array, np.array): inverse of C and square root of the inverse of C
@@ -254,9 +263,9 @@ def svd_inv_sqrt(C: np.array, hashtable: OrderedDict = None) -> (np.array, np.ar
 
     # If there is a hash table, cache our solution.  Bound the total cache
     # size by removing any extra items in FIFO order.
-    if hashtable is not None:
+    if (hashtable is not None) and (max_hash_size is not None):
         hashtable[h] = (Cinv, Cinv_sqrt)
-        while len(hashtable) > max_table_size:
+        while len(hashtable) > max_hash_size:
             hashtable.popitem(last=False)
 
     return Cinv, Cinv_sqrt
@@ -508,8 +517,6 @@ def spectral_response_function(response_range: np.array, mu: float, sigma: float
     return srf
 
 
-
-
 def combos(inds: List[List[float]]) -> np.array:
     """Return all combinations of indices in a list of index sublists.
     For example, the call::
@@ -561,3 +568,25 @@ def conditional_gaussian(mu: np.array, C: np.array, window: np.array, remain: np
     conditional_cov = C22 - C21 @ Cinv @ C12
     return conditional_mean, conditional_cov
 
+def envi_header(inputpath):
+    """
+    Convert a envi binary/header path to a header, handling extensions
+    Args:
+        inputpath: path to envi binary file
+    Returns:
+        str: the header file associated with the input reference.
+
+    """
+    if os.path.splitext(inputpath)[-1] == '.img' or os.path.splitext(inputpath)[-1] == '.dat' or os.path.splitext(inputpath)[-1] == '.raw':
+        # headers could be at either filename.img.hdr or filename.hdr.  Check both, return the one that exists if it
+        # does, if not return the latter (new file creation presumed).
+        hdrfile = os.path.splitext(inputpath)[0] + '.hdr'
+        if os.path.isfile(hdrfile):
+            return hdrfile
+        elif os.path.isfile(inputpath + '.hdr'):
+            return inputpath + '.hdr'
+        return hdrfile
+    elif os.path.splitext(inputpath)[-1] == '.hdr':
+        return inputpath
+    else:
+        return inputpath + '.hdr'

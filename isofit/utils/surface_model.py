@@ -24,7 +24,7 @@ from sklearn.cluster import KMeans
 from spectral.io import envi
 import os
 
-from isofit.core.common import expand_path, json_load_ascii
+from isofit.core.common import expand_path, json_load_ascii, envi_header
 
 
 def surface_model(config_path: str, wavelength_path: str = None, 
@@ -130,8 +130,7 @@ def surface_model(config_path: str, wavelength_path: str = None,
         spectra, attributes = [],[]
         for infile, attribute_file in zip(infiles, infiles_attributes):
 
-            hdrfile = infile + '.hdr'
-            rfl = envi.open(hdrfile, infile)
+            rfl = envi.open(envi_header(infile), infile)
             nl, nb, ns = [int(rfl.metadata[n])
                           for n in ('lines', 'bands', 'samples')]
             swl = np.array([float(f) for f in rfl.metadata['wavelength']])
@@ -154,8 +153,7 @@ def surface_model(config_path: str, wavelength_path: str = None,
             # Load attributes
             if attribute_file is not None:
 
-                hdrfile = attribute_file + '.hdr'
-                attr = envi.open(hdrfile, attribute_file)
+                attr = envi.open(envi_header(attribute_file), attribute_file)
                 nla, nba, nsa = [int(attr.metadata[n])
                           for n in ('lines', 'bands', 'samples')]
 

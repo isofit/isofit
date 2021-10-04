@@ -15,8 +15,8 @@
             },
             "radiative_transfer": {
                 "lut_grid": {
-                    "AOT550": [0.01, 0.1, 0.258, 0.505, 0.752, 1.0],
-                    "H2OSTR": [0.1, 0.6125, 1.325, 2.55, 3.775, 5.0]
+                    "AOT550": [0.01, 0.505, 1.0],
+                    "H2OSTR": [0.1, 1.325, 3.775]
                 },
                 "statevector": {
                     "AOT550": {
@@ -56,8 +56,8 @@
         }
     },
     "hypertrace": {
-        "atm_aod_h2o": [["ATM_MIDLAT_SUMMER", 0.2, 1.0], ["ATM_MIDLAT_SUMMER", 0.3, 2.0]],
-        "observer_zenith": [0, 22.5],
+        "atm_aod_h2o": [["ATM_MIDLAT_SUMMER", 0.2, 1.0]],
+        "observer_zenith": [0],
         "inversion_mode": ["inversion"],
         "noisefile": ["./hypertrace-data/noise/noise_coeff_sbg_cbe0.txt"],
         "surface_file": ["./hypertrace-data/priors/aviris-ng/surface_EMIT.mat"]

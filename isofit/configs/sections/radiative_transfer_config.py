@@ -43,6 +43,10 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         self.engine_base_dir = None
         """str: base directory of the given radiative transfer engine on user's OS."""
 
+        self._wavelength_file_type = str
+        self.wavelength_file = None
+        """str: Optional path to wavelength file for high-res atmospheric calculations"""
+
         self._wavelength_range_type = list()
         self.wavelength_range = None
         """List: The wavelength range to execute this radiative transfer engine over."""
@@ -167,7 +171,7 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
                 if os.path.isfile(value) is False:
                     errors.append('Config value radiative_transfer->{}: {} not found'.format(key, value))
 
-        valid_rt_engines = ['modtran', 'libradtran', '6s', 'simulated_modtran']
+        valid_rt_engines = ['modtran', 'libradtran', '6s', 'sRTMnet']
         if self.engine_name not in valid_rt_engines:
             errors.append('radiative_transfer->raditive_transfer_model: {} not in one of the available models: {}'.
                           format(self.engine_name, valid_rt_engines))
@@ -181,11 +185,11 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         if self.irradiance_file is None and self.engine_name == '6s':
             errors.append('6s requires irradiance_file to be specified')
 
-        if self.engine_name == 'simulated_modtran' and self.emulator_file is None:
-            errors.append('The Modtran Simulator requires an emulator_file to be specified.')
+        if self.engine_name == 'sRTMnet' and self.emulator_file is None:
+            errors.append('The sRTMnet requires an emulator_file to be specified.')
 
-        if self.engine_name == 'simulated_modtran' and self.emulator_aux_file is None:
-            errors.append('The Modtran Simulator requires an emulator_aux_file to be specified.')
+        if self.engine_name == 'sRTMnet' and self.emulator_aux_file is None:
+            errors.append('The sRTMnet requires an emulator_aux_file to be specified.')
 
         files = [self.earth_sun_distance_file, self.irradiance_file,
                  self.obs_file, self.aerosol_model_file, self.aerosol_template_file]

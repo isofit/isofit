@@ -19,6 +19,7 @@
 #
 
 from scipy.linalg import inv
+from isofit.core.fileio import write_bil_chunk
 from isofit.core.instrument import Instrument
 from spectral.io import envi
 from scipy.spatial import KDTree
@@ -29,28 +30,11 @@ import matplotlib
 import pylab as plt
 from isofit.configs import configs
 import ray
+import ray.services
 import atexit
+from isofit.core.common import envi_header
 
 plt.switch_backend("Agg")
-
-
-def _write_bil_chunk(dat: np.array, outfile: str, line: int, shape: tuple, dtype: str = 'float32') -> None:
-    """
-    Write a chunk of data to a binary, BIL formatted data cube.
-    Args:
-        dat: data to write
-        outfile: output file to write to
-        line: line of the output file to write to
-        shape: shape of the output file
-        dtype: output data type
-
-    Returns:
-        None
-    """
-    outfile = open(outfile, 'rb+')
-    outfile.seek(line * shape[1] * shape[2] * np.dtype(dtype).itemsize)
-    outfile.write(dat.astype(dtype).tobytes())
-    outfile.close()
 
 
 @ray.remote
@@ -87,26 +71,26 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
     logging.basicConfig(format='%(message)s', level=loglevel, filename=logfile)
 
     # Load reference images
-    reference_radiance_img = envi.open(reference_radiance_file + '.hdr', reference_radiance_file)
-    reference_reflectance_img = envi.open(reference_reflectance_file + '.hdr', reference_reflectance_file)
-    reference_uncertainty_img = envi.open(reference_uncertainty_file + '.hdr', reference_uncertainty_file)
-    reference_locations_img = envi.open(reference_locations_file + '.hdr', reference_locations_file)
+    reference_radiance_img = envi.open(envi_header(reference_radiance_file), reference_radiance_file)
+    reference_reflectance_img = envi.open(envi_header(reference_reflectance_file), reference_reflectance_file)
+    reference_uncertainty_img = envi.open(envi_header(reference_uncertainty_file), reference_uncertainty_file)
+    reference_locations_img = envi.open(envi_header(reference_locations_file), reference_locations_file)
 
     n_reference_lines, n_radiance_bands, n_reference_columns = [int(reference_radiance_img.metadata[n])
                                                                 for n in ('lines', 'bands', 'samples')]
     n_reference_uncertainty_bands = int(reference_uncertainty_img.metadata['bands'])
 
     # Load input images
-    input_radiance_img = envi.open(input_radiance_file + '.hdr', input_radiance_file)
+    input_radiance_img = envi.open(envi_header(input_radiance_file), input_radiance_file)
     n_input_lines, n_input_bands, n_input_samples = [int(input_radiance_img.metadata[n])
                                                      for n in ('lines', 'bands', 'samples')]
 
-    input_locations_img = envi.open(input_locations_file + '.hdr', input_locations_file)
+    input_locations_img = envi.open(envi_header(input_locations_file), input_locations_file)
     n_location_bands = int(input_locations_img.metadata['bands'])
 
     # Load output images
-    output_reflectance_img = envi.open(output_reflectance_file + '.hdr', output_reflectance_file)
-    output_uncertainty_img = envi.open(output_uncertainty_file + '.hdr', output_uncertainty_file)
+    output_reflectance_img = envi.open(envi_header(output_reflectance_file), output_reflectance_file)
+    output_uncertainty_img = envi.open(envi_header(output_uncertainty_file), output_uncertainty_file)
     n_output_reflectance_bands = int(output_reflectance_img.metadata['bands'])
     n_output_uncertainty_bands = int(output_uncertainty_img.metadata['bands'])
 
@@ -127,7 +111,7 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
 
     # Load segmentation data
     if segmentation_file:
-        segmentation_img = envi.open(segmentation_file + '.hdr', segmentation_file)
+        segmentation_img = envi.open(envi_header(segmentation_file), segmentation_file)
         segmentation_img = segmentation_img.read_band(0)
     else:
         segmentation_img = None
@@ -137,8 +121,12 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
         config = configs.create_new_config(isofit_config)
         instrument = Instrument(config)
         logging.info('Loading instrument')
+
+        # Make sure the instrument is configured for single-pixel noise (no averaging)
+        instrument.integrations = 1
     else:
         instrument = None
+
 
     # Load radiance factors
     if radiance_factors is None:
@@ -252,9 +240,9 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
         shp = output_uncertainty_row.shape
         output_uncertainty_row = output_uncertainty_row.reshape((1, shp[0], shp[1]))
 
-        _write_bil_chunk(output_reflectance_row, output_reflectance_file, row,
+        write_bil_chunk(output_reflectance_row, output_reflectance_file, row,
                          (n_input_lines, n_output_reflectance_bands, n_input_samples))
-        _write_bil_chunk(output_uncertainty_row, output_uncertainty_file, row,
+        write_bil_chunk(output_uncertainty_row, output_uncertainty_file, row,
                          (n_input_lines, n_output_uncertainty_bands, n_input_samples))
 
 
@@ -285,7 +273,7 @@ def _plot_example(xv, yv, b):
 def empirical_line(reference_radiance_file: str, reference_reflectance_file: str, reference_uncertainty_file: str,
                    reference_locations_file: str, segmentation_file: str, input_radiance_file: str,
                    input_locations_file: str, output_reflectance_file: str, output_uncertainty_file: str,
-                   nneighbors: int = 50, nodata_value: float = -9999.0, level: str = 'INFO', logfile: str = None,
+                   nneighbors: int = 400, nodata_value: float = -9999.0, level: str = 'INFO', logfile: str = None,
                    radiance_factors: np.array = None, isofit_config: str = None, n_cores: int = -1) -> None:
     """
     Perform an empirical line interpolation for reflectance and uncertainty extrapolation
@@ -317,39 +305,39 @@ def empirical_line(reference_radiance_file: str, reference_reflectance_file: str
 
     # Open input data to check that band formatting is correct
     # Load reference set radiance
-    reference_radiance_img = envi.open(reference_radiance_file + '.hdr', reference_radiance_file)
+    reference_radiance_img = envi.open(envi_header(reference_radiance_file), reference_radiance_file)
     n_reference_lines, n_radiance_bands, n_reference_columns = [int(reference_radiance_img.metadata[n])
                                                                 for n in ('lines', 'bands', 'samples')]
     if n_reference_columns != 1:
         raise IndexError("Reference data should be a single-column list")
 
     # Load reference set reflectance
-    reference_reflectance_img = envi.open(reference_reflectance_file + '.hdr', reference_reflectance_file)
+    reference_reflectance_img = envi.open(envi_header(reference_reflectance_file), reference_reflectance_file)
     nrefr, nbr, srefr = [int(reference_reflectance_img.metadata[n]) for n in ('lines', 'bands', 'samples')]
     if nrefr != n_reference_lines or nbr != n_radiance_bands or srefr != n_reference_columns:
         raise IndexError("Reference file dimension mismatch (reflectance)")
 
     # Load reference set uncertainty, assuming reflectance uncertainty is
     # recoreded in the first n_radiance_bands channels of data
-    reference_uncertainty_img = envi.open(reference_uncertainty_file + '.hdr', reference_uncertainty_file)
+    reference_uncertainty_img = envi.open(envi_header(reference_uncertainty_file), reference_uncertainty_file)
     nrefu, ns, srefu = [int(reference_uncertainty_img.metadata[n]) for n in ('lines', 'bands', 'samples')]
     if nrefu != n_reference_lines or ns < n_radiance_bands or srefu != n_reference_columns:
         raise IndexError("Reference file dimension mismatch (uncertainty)")
 
     # Load reference set locations
-    reference_locations_img = envi.open(reference_locations_file + '.hdr', reference_locations_file)
+    reference_locations_img = envi.open(envi_header(reference_locations_file), reference_locations_file)
     nrefl, lb, ls = [int(reference_locations_img.metadata[n]) for n in ('lines', 'bands', 'samples')]
     if nrefl != n_reference_lines or lb != 3:
         raise IndexError("Reference file dimension mismatch (locations)")
 
-    input_radiance_img = envi.open(input_radiance_file + '.hdr', input_radiance_file)
+    input_radiance_img = envi.open(envi_header(input_radiance_file), input_radiance_file)
     n_input_lines, n_input_bands, n_input_samples = [int(input_radiance_img.metadata[n])
                                                      for n in ('lines', 'bands', 'samples')]
     if n_radiance_bands != n_input_bands:
         msg = 'Number of channels mismatch: input (%i) vs. reference (%i)'
         raise IndexError(msg % (nbr, n_radiance_bands))
 
-    input_locations_img = envi.open(input_locations_file + '.hdr', input_locations_file)
+    input_locations_img = envi.open(envi_header(input_locations_file), input_locations_file)
     nll, nlb, nls = [int(input_locations_img.metadata[n])
                      for n in ('lines', 'bands', 'samples')]
     if nll != n_input_lines or nlb != 3 or nls != n_input_samples:
@@ -358,10 +346,10 @@ def empirical_line(reference_radiance_file: str, reference_reflectance_file: str
     # Create output files
     output_metadata = input_radiance_img.metadata
     output_metadata['interleave'] = 'bil'
-    output_reflectance_img = envi.create_image(output_reflectance_file + '.hdr', ext='',
+    output_reflectance_img = envi.create_image(envi_header(output_reflectance_file), ext='',
                                                metadata=output_metadata, force=True)
 
-    output_uncertainty_img = envi.create_image(output_uncertainty_file + '.hdr', ext='',
+    output_uncertainty_img = envi.create_image(envi_header(output_uncertainty_file), ext='',
                                                metadata=output_metadata, force=True)
 
     # Now cleanup inputs and outputs, we'll write dynamically above
@@ -377,15 +365,15 @@ def empirical_line(reference_radiance_file: str, reference_reflectance_file: str
         iconfig = configs.Config({})
     if n_cores == -1:
         n_cores = iconfig.implementation.n_cores
-    rayargs = {'ignore_reinit_error': True,
+    rayargs = {'ignore_reinit_error': iconfig.implementation.ray_ignore_reinit_error,
                'local_mode': n_cores == 1,
                "address": iconfig.implementation.ip_head,
-               "redis_password": iconfig.implementation.redis_password}
+               "_redis_password": iconfig.implementation.redis_password}
 
     # only specify a temporary directory if we are not connecting to
     # a ray cluster
     if rayargs['local_mode']:
-        rayargs['temp_dir'] = iconfig.implementation.ray_temp_dir
+        rayargs['_temp_dir'] = iconfig.implementation.ray_temp_dir
         # Used to run on a VPN
         ray.services.get_node_ip_address = lambda: '127.0.0.1'
 

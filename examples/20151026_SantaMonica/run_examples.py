@@ -8,14 +8,18 @@ from isofit.utils import surface_model
 surface_model("configs/prm20151026t173213_surface_coastal.json")
 
 # Run retrievals
-model1 = Isofit("configs/prm20151026t173213_D8W_6s.json")
-model1.run()
+model = Isofit("configs/prm20151026t173213_D8W_6s.json")
+model.run()
+del model
 
-model2 = Isofit("configs/prm20151026t173213_D8p5W_6s.json")
-model2.run()
+model = Isofit("configs/prm20151026t173213_D8p5W_6s.json")
+model.run()
+del model
 
-model3 = Isofit("configs/prm20151026t173213_D9W_6s.json")
-model3.run()
+model = Isofit("configs/prm20151026t173213_D9W_6s.json")
+model.run()
+del model
 
-model4 = Isofit("configs/prm20151026t173213_D9p5W_6s.json")
-model4.run()
+model = Isofit("configs/prm20151026t173213_D9p5W_6s.json")
+model.run()
+del model

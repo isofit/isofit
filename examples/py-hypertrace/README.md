@@ -11,8 +11,8 @@ NOTE: All of these instructions assume you are operating from inside this direct
 
 1. Install Isofit, following the standard instructions.
 
-2. Create a folder called `6Sv-2.1`.
-Download and compile the 6Sv atmospheric radiative transfer model inside this directory.
+2. Create a folder called `6sv-2.1`.
+Download and compile the 6SV atmospheric radiative transfer model inside this directory.
 The default source code location is here (http://6s.ltdri.org/pages/downloads.html),
 but if that link doesn't work, you can download a mirrored version from here (https://github.com/ashiklom/isofit/releases/tag/6sv-mirror).
 Once downloaded, compile the code by calling `make` inside the source code directory.
@@ -25,8 +25,13 @@ Note that these files are quite large -- ~3.3 GB!
 
 4. Download the remaining Hypertrace support datasets from here (https://github.com/ashiklom/isofit/releases/tag/hypertrace-data) and extract them. 
 
+A script has been provided that will accomplish this for you:
+``` sh
+./prepare_hypertrace_data.sh
+```
+
 5. At this point, confirm that, inside the `examples/py-hypertrace` directory, you have
-a `6Sv-2.1` directory containing the `sixv2.1` binary executable;
+a `6sv-2.1` directory containing the `sixv2.1` binary executable;
 a `sRTMnet_v100` directory containing a subdirectory also called `sRTMnet_v100` and a file `sRTMnet_v100_aux.npz`;
 and
 a `hypertrace-data` directory containing subdirectories including `noise`, `priors`, `wavelengths`, and `reflectance`.
@@ -93,3 +98,30 @@ Note that you must install LibRadTran into the source code directory for it to w
 ./configure --prefix=$(pwd)
 make
 ```
+
+## Running with SLURM
+Example SLURM job submission scripts can be found in the slurm/ directory.  For example, a basic sbatch example is provded in slurm/run_hypertrace_sbatch.sh. The script can be edited to match your specific HPC environment, including module, $PATH, and conda requirements.  Once ready you can run this script from the main py-hypertrace directory using, for example:
+
+``` sh
+sbatch -w node03 -c 12 --partition compute --job-name=py-hypertrace --mail-user=sserbin@bnl.gov slurm/run_hypertrace_sbatch.sh configs/libradtran.json
+```
+
+For an example that will run a broadcast simulation experiment across multiple nodes, you can modify the example run_hypertrace_sbatch_broadcast.sh. That script also leverages the functions contained in set_ray_params.py. For example:
+
+``` sh
+sbatch --partition compute --job-name=py-hypertrace --mail-user=sserbin@bnl.gov slurm/run_hypertrace_sbatch_broadcast.sh configs/libradtran.json
+```
+
+This will generate a run across more than one node, e.g. 
+```
+JOBID   PARTITION   NAME        USER     ST TIME  NODES NODELIST(REASON)
+281     compute     py-hyper    sserbin  R  5:24      2 node[01-02]
+```
+
+## Creating output graphics in "headless" mode
+If you are running on an HPC you may want to setup python to output graphics to file instead to the screen. You can do this by setting:
+
+```
+export MPLBACKEND=Agg
+```
+in your ~/.bashrc

@@ -45,6 +45,10 @@ class ImplementationConfig(BaseConfigSection):
         self.n_cores = None
         """int: number of cores to use."""
 
+        self._task_inflation_factor_type = int
+        self.task_inflation_factor = 10
+        """int: Submit task_inflation_factor*n_cores number of tasks."""
+
         self._ip_head_type = str
         self.ip_head = None
         """str: Ray - parameter.  IP-head (for multi-node runs)."""
@@ -64,7 +68,24 @@ class ImplementationConfig(BaseConfigSection):
 
         self._ray_temp_dir_type = str
         self.ray_temp_dir = '/tmp/ray'
-        """str: Overrides the standard ray temporary directory.  Useful for multiuser systems."""
+        """str: Overrides the standard ray temporary directory.  Useful for Smultiuser systems."""
+
+        self._ray_ignore_reinit_error_type = bool
+        self.ray_ignore_reinit_error = True
+        """bool: Boolean to tell ray to ignore re-initilaization.  Can be convenient for multiple Isofit instances."""
+
+        self._io_buffer_size_type = int
+        self.io_buffer_size = 100
+        """bool: Integer indicating how large (how many spectra) of chunks to read/process/write.  A
+        buffer size of 1 means pixels are processed independently.  Large buffers can help prevent IO choke points, 
+        especially if the """
+
+        self._max_hash_table_size_type = int
+        self.max_hash_table_size = 50
+        """int: The maximum size of inversion hash tables.  Can provide speedups with redundant surfaces, but comes
+        with increased memory costs.
+        """
+
 
         self.set_config_options(sub_configdic)
 

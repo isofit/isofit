@@ -16,6 +16,7 @@ from scipy.interpolate import interp1d
 from isofit.core.isofit import Isofit
 from isofit.utils import empirical_line, segment, extractions
 from isofit.utils.apply_oe import write_modtran_template
+from isofit.core.common import envi_header
 
 logger = logging.getLogger(__name__)
 
@@ -198,7 +199,7 @@ def do_hypertrace(isofit_config, wavelength_file, reflectance_file,
                 ))
             open(lutdir2 / "prescribed_geom", "w").write(f"99:99:99   {solar_zenith}  {solar_azimuth}")
 
-        elif atmospheric_rtm in ("modtran", "simulated_modtran"):
+        elif atmospheric_rtm in ("modtran", "sRTMnet"):
             loctag = f"atm_{atmosphere_type}__" +\
                 f"alt_{observer_altitude_km:.2f}__" +\
                 f"doy_{dayofyear:.0f}__" +\
@@ -231,7 +232,7 @@ def do_hypertrace(isofit_config, wavelength_file, reflectance_file,
             write_modtran_template(**mt_params)
 
             vswir_conf["modtran_template_path"] = str(mt_params["output_file"])
-            if atmospheric_rtm == "simulated_modtran":
+            if atmospheric_rtm == "sRTMnet":
                 vswir_conf["interpolator_base_path"] = str(lutdir2 / "sRTMnet_interpolator")
                 # These need to be absolute file paths
                 for path in ["emulator_aux_file", "emulator_file",
@@ -290,6 +291,22 @@ def do_hypertrace(isofit_config, wavelength_file, reflectance_file,
     fwd_state["AOT550"]["init"] = aod
     fwd_state["H2OSTR"]["init"] = h2o
 
+    # Also set the LUT grid to only target state. We don't want to interpolate
+    # over the LUT for our forward simulations!
+    fwd_lut = isofit_fwd["forward_model"]["radiative_transfer"]["lut_grid"]
+    fwd_lut["AOT550"] = [aod]
+    fwd_lut["H2OSTR"] = [h2o]
+    # Also have to create a one-off LUT directory for the forward run, to avoid
+    # using an (incorrect) previously cached one.
+    fwd_lutdir = outdir2 / "fwd_lut"
+    fwd_lutdir.mkdir(parents=True, exist_ok=True)
+    fwd_vswir = (isofit_fwd["forward_model"]
+                 ["radiative_transfer"]
+                 ["radiative_transfer_engines"]
+                 ["vswir"])
+    fwd_vswir["lut_path"] = str(fwd_lutdir)
+    fwd_vswir["interpolator_base_path"] = str(fwd_lutdir)
+
     if radfile.exists() and not overwrite:
         logger.info("Skipping forward simulation because file exists.")
     else:
@@ -329,7 +346,7 @@ def do_hypertrace(isofit_config, wavelength_file, reflectance_file,
         cov = calmat["Covariance"]
         cov_l = np.linalg.cholesky(cov)
         cov_wl = np.squeeze(calmat["wavelengths"])
-        rad_img = sp.open_image(str(radfile) + ".hdr")
+        rad_img = sp.open_image(envi_header(str(radfile)))
         rad_wl = rad_img.bands.centers
         del rad_img
         for ical in range(n_calibration_draws):
@@ -398,7 +415,7 @@ def do_inverse(isofit_inv: dict,
             logger.info("Skipping segmentation and extraction because files exist.")
         else:
             logger.info("Fixing any radiance values slightly less than zero...")
-            rad_img = sp.open_image(str(radfile) + ".hdr")
+            rad_img = sp.open_image(envi_header(str(radfile)))
             rad_m = rad_img.open_memmap(writable=True)
             nearzero = np.logical_and(rad_m < 0, rad_m > -2)
             rad_m[nearzero] = 0.0001
@@ -456,8 +473,8 @@ def sample_calibration_uncertainty(input_file: pathlib.Path,
                                    cov_wl: np.ndarray,
                                    rad_wl: np.ndarray,
                                    bias_scale=1.0):
-    input_file_hdr = str(input_file) + ".hdr"
-    output_file_hdr = str(output_file) + ".hdr"
+    input_file_hdr = envi_header(str(input_file))
+    output_file_hdr = envi_header(str(output_file))
     shutil.copy(input_file, output_file)
     shutil.copy(input_file_hdr, output_file_hdr)
 

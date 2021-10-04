@@ -49,6 +49,12 @@ for key in ["lut_path", "template_file", "engine_base_dir"]:
 # Create iterable config permutation object
 ht_iter = itertools.product(*hypertrace_config.values())
 logger.info("Starting Hypertrace workflow.")
+
+# Print iter list to record what iterations will be run
+print('\n'.join([','.join(map(str,item)) for item in list(itertools.product(*hypertrace_config.values()))]))
+with open("py-hypertrace_iteration_list.txt", "w") as outfile:
+    outfile.write('\n'.join([','.join(map(str,item)) for item in list(itertools.product(*hypertrace_config.values()))]))
+
 for ht in ht_iter:
     argd = dict()
     for key, value in zip(hypertrace_config.keys(), ht):

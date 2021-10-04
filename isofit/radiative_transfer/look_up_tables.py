@@ -25,7 +25,7 @@ import ray
 from collections import OrderedDict
 import subprocess
 import time
-import atexit
+from typing import List
 
 from isofit.core import common
 from isofit.configs import Config
@@ -63,7 +63,11 @@ class TabularRT:
     def __init__(self, engine_config: RadiativeTransferEngineConfig, full_config: Config):
 
         self.implementation_config: ImplementationConfig = full_config.implementation
-        self.wl, self.fwhm = common.load_wavelen(full_config.forward_model.instrument.wavelength_file)
+        if engine_config.wavelength_file is not None:
+            wavelength_file = engine_config.wavelength_file 
+        else:
+            wavelength_file = full_config.forward_model.instrument.wavelength_file
+        self.wl, self.fwhm = common.load_wavelen(wavelength_file)
         if engine_config.wavelength_range is not None:
             valid_wl = np.logical_and(self.wl >= engine_config.wavelength_range[0],
                                       self.wl <= engine_config.wavelength_range[1])
@@ -74,6 +78,7 @@ class TabularRT:
 
         self.auto_rebuild = full_config.implementation.rte_auto_rebuild
         self.configure_and_exit = full_config.implementation.rte_configure_and_exit
+        self.implementation_mode = full_config.implementation.mode
 
         # We use a sorted dictionary here so that filenames for lookup
         # table (LUT) grid points are always constructed the same way, with
@@ -130,9 +135,10 @@ class TabularRT:
         for key, grid_values in self.lut_grid_config.items():
 
             # do some quick checks on the values
-            if len(grid_values) == 1:
-                err = 'Only 1 value in LUT grid {}. ' +\
-                    '1-d LUT grids cannot be interpreted.'.format(key)
+            # For forward (simulation) mode, 1-dimensional LUT grids are OK!
+            if len(grid_values) == 1 and not self.implementation_mode == "simulation":
+                err = 'Only 1 value in LUT grid {}. '.format(key) +\
+                    '1-d LUT grids cannot be interpreted.'
                 raise ValueError(err)
             if grid_values != sorted(grid_values):
                 logging.error('Lookup table grid needs ascending order')
@@ -160,17 +166,17 @@ class TabularRT:
         self.points = common.combos(self.lut_grids)
         self.files = self.get_lut_filenames()
 
-    def build_lut(self, rebuild=False):
-        """Each LUT is associated with a source directory.  We build a lookup 
-            table by: 
-              (1) defining the LUT dimensions, state vector names, and the 
-                    grid of values; 
-              (2) running the radiative transfer solver if needed, with each 
-                    run defining a different point in the LUT; and 
-              (3) loading the LUTs, one per key atmospheric coefficient vector,
-                  into memory as VectorInterpolator objects."""
+    def get_rebuild_cmds(self, rebuild=False) -> List:
+        """
+        Generate a full set of RTM subprocess calls to run
+        Args:
+            rebuild: optional flag to rebuild all RTM simulations from scratch
 
-       # Build the list of radiative transfer run commands. This
+        Returns:
+            A series of strings to execute as subprocess calls.
+        """
+
+        # Build the list of radiative transfer run commands. This
         # rebuild_cmd() function will be overriden by the child class to
         # perform setup activities unique to each RTM.
         rebuild_cmds = []
@@ -181,10 +187,29 @@ class TabularRT:
             except FileExistsError:
                 pass
 
-        if self.configure_and_exit:
-            raise SystemExit
-            # sys.exit(0)
+        return rebuild_cmds
 
+    def build_lut(self, rebuild=False):
+        """Build a lookup table by:
+               (1) defining the LUT dimensions, state vector names, and the
+                     grid of values;
+               (2) running the radiative transfer solver if needed, with each
+                     run defining a different point in the LUT; and
+               (3) loading the LUTs, one per key atmospheric coefficient vector,
+                   into memory as VectorInterpolator objects.
+
+        Args:
+            rebuild: optional flag to rebuild all RTM simulations from scratch
+        """
+
+        # Build the list of radiative transfer run commands. This
+        # rebuild_cmd() function will be overriden by the child class to
+        # perform setup activities unique to each RTM.
+        rebuild_cmds = self.get_rebuild_cmds(rebuild=rebuild)
+
+        if self.configure_and_exit:
+            logging.info("configure_and_exit flag set - terminating")
+            raise SystemExit
         elif len(rebuild_cmds) > 0 and self.auto_rebuild:
             logging.info("Rebuilding radiative transfer look up table")
 
@@ -194,7 +219,6 @@ class TabularRT:
 
             # Make the LUT calls (in parallel if specified)
             results = ray.get([spawn_rt.remote(rebuild_cmd, self.lut_dir) for rebuild_cmd in rebuild_cmds])
-
 
     def get_lut_filenames(self):
         files = []

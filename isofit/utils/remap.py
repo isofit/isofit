@@ -20,6 +20,7 @@
 
 import numpy as np
 from spectral.io import envi
+from isofit.core.common import envi_header
 
 
 def remap(inputfile, labels, outputfile, flag, chunksize):
@@ -30,12 +31,12 @@ def remap(inputfile, labels, outputfile, flag, chunksize):
     out_file = outputfile
     nchunk = chunksize
 
-    ref_img = envi.open(ref_file+'.hdr', ref_file)
+    ref_img = envi.open(envi_header(ref_file), ref_file)
     ref_meta = ref_img.metadata
     ref_mm = ref_img.open_memmap(interleave='source', writable=False)
     ref = np.array(ref_mm[:, :])
 
-    lbl_img = envi.open(lbl_file+'.hdr', lbl_file)
+    lbl_img = envi.open(envi_header(lbl_file), lbl_file)
     lbl_meta = lbl_img.metadata
     labels = lbl_img.read_band(0)
 
@@ -51,7 +52,7 @@ def remap(inputfile, labels, outputfile, flag, chunksize):
     out_meta['data type'] = ref_meta['data type']
     out_meta["interleave"] = "bil"
 
-    out_img = envi.create_image(out_file+'.hdr',  metadata=out_meta,
+    out_img = envi.create_image(envi_header(out_file),  metadata=out_meta,
                                 ext='', force=True)
     out_mm = out_img.open_memmap(interleave='source', writable=True)
 

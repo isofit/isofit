@@ -23,8 +23,10 @@ from spectral.io import envi
 from skimage.segmentation import slic
 import numpy as np
 import ray
+import ray.services
 import atexit
 import logging
+from isofit.core.common import envi_header
 
 @ray.remote
 def segment_chunk(lstart, lend, in_file, nodata_value, npca, segsize, logfile=None, loglevel='INFO'):
@@ -51,7 +53,7 @@ def segment_chunk(lstart, lend, in_file, nodata_value, npca, segsize, logfile=No
 
     logging.info(f'{lstart}: starting')
 
-    in_img = envi.open(in_file + '.hdr', in_file)
+    in_img = envi.open(envi_header(in_file), in_file)
     meta = in_img.metadata
     nl, nb, ns = [int(meta[n]) for n in ('lines', 'bands', 'samples')]
     img_mm = in_img.open_memmap(interleave='bip', writable=False)
@@ -81,7 +83,11 @@ def segment_chunk(lstart, lend, in_file, nodata_value, npca, segsize, logfile=No
     [v, d] = scipy.linalg.eigh(C)
 
     # Determine segmentation compactness scaling based on eigenvalues
+    # Override with a floor value to prevent zeros
     cmpct = scipy.linalg.norm(np.sqrt(v[-npca:]))
+    if cmpct < 1e-6:
+        cmpct = 10.0
+        print('Compactness override: %f'%cmpct)
 
     # Project, redimension as an image with "npca" channels, and segment
     x_pca_subset = (x[use,:] - mu) @ d[:, -npca:]
@@ -139,7 +145,7 @@ def segment(spectra: tuple, nodata_value: float, npca: int, segsize: int, nchunk
         lbl_file = spectra + '_lbl'
 
     # Open input data, get dimensions
-    in_img = envi.open(in_file+'.hdr', in_file)
+    in_img = envi.open(envi_header(in_file), in_file)
     meta = in_img.metadata
     nl, nb, ns = [int(meta[n]) for n in ('lines', 'bands', 'samples')]
 
@@ -147,10 +153,10 @@ def segment(spectra: tuple, nodata_value: float, npca: int, segsize: int, nchunk
     rayargs = {'ignore_reinit_error': True,
                'local_mode': n_cores == 1,
                "address": ray_address,
-               "redis_password": ray_redis_password}
+               "_redis_password": ray_redis_password}
 
     if rayargs['local_mode']:
-        rayargs['temp_dir'] = ray_temp_dir
+        rayargs['_temp_dir'] = ray_temp_dir
         # Used to run on a VPN
         ray.services.get_node_ip_address = lambda: '127.0.0.1'
 
@@ -192,7 +198,7 @@ def segment(spectra: tuple, nodata_value: float, npca: int, segsize: int, nchunk
     lbl_meta = {"samples": str(ns), "lines": str(nl), "bands": "1",
                 "header offset": "0", "file type": "ENVI Standard",
                 "data type": "4", "interleave": "bil"}
-    lbl_img = envi.create_image(lbl_file+'.hdr', lbl_meta, ext='', force=True)
+    lbl_img = envi.create_image(envi_header(lbl_file), lbl_meta, ext='', force=True)
     lbl_mm = lbl_img.open_memmap(interleave='source', writable=True)
     lbl_mm[:, :] = np.array(all_labels, dtype=np.float32).reshape((nl, 1, ns))
     del lbl_mm
