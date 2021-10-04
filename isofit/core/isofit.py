@@ -35,7 +35,7 @@ from isofit.inversion.inverse_mcmc import MCMCInversion
 from isofit.core.fileio import IO
 from isofit.configs import configs
 
-
+import pdb
 class Isofit:
     """Initialize the Isofit class.
 
@@ -50,8 +50,9 @@ class Isofit:
         # Explicitly set the number of threads to be 1, so we more effectively
         # run in parallel
         os.environ["MKL_NUM_THREADS"] = "1"
-
+        #pdb.set_trace()
         # Set logging level
+        #logfile = "/configs/logfile2.txt"
         self.loglevel = level
         self.logfile = logfile
         logging.basicConfig(format='%(levelname)s:%(message)s', level=self.loglevel, filename=self.logfile)
@@ -65,21 +66,24 @@ class Isofit:
         self.config.get_config_errors()
 
         # Initialize ray for parallel execution
-        rayargs = {'address': self.config.implementation.ip_head,
+        rayargs = {#self.config.implementation.ip_head, ! this is so isofit works with vpn on
                    '_redis_password': self.config.implementation.redis_password,
                    'ignore_reinit_error': self.config.implementation.ray_ignore_reinit_error,
                    'local_mode': self.config.implementation.n_cores == 1}
-
+        
         # only specify a temporary directory if we are not connecting to 
         # a ray cluster
         if rayargs['local_mode']:
             rayargs['_temp_dir'] = self.config.implementation.ray_temp_dir
             # Used to run on a VPN
-            ray.services.get_node_ip_address = lambda: '127.0.0.1'
+            #ray.services.get_node_ip_address = lambda: '127.0.0.1'
 
         # We can only set the num_cpus if running on a single-node
         if self.config.implementation.ip_head is None and self.config.implementation.redis_password is None:
             rayargs['num_cpus'] = self.config.implementation.n_cores
+        _node_ip_address = '192.168.1.247'
+        #pdb.set_trace()
+        ray._private.services.address_to_ip = lambda _node_ip_address: _node_ip_address
         ray.init(**rayargs)
 
         self.workers = None
