@@ -1,0 +1,15 @@
+ENVI
+description = {
+  flines//ang20160910t185702_rdn_v1n2/working/remote/ang20160910t185702_obs_ort}
+samples = 30
+lines = 25
+bands = 11
+header offset = 0
+file type = ENVI Standard
+data type = 5
+interleave = bsq
+byte order = 0
+map info = { UTM , 1 , 1 , 353128.751647949 , 3813729.76806641 , 15 , 15 , 11 , North , WGS-84 }
+coordinate system string = { PROJCS["unnamed" , GEOGCS["GCS_WGS_1984" , DATUM["D_WGS_1984" , SPHEROID["WGS_1984" , 6378137.0 , 298.257223563]] , PRIMEM["Greenwich" , 0.0] , UNIT["Degree" , 0.0174532925199433]] , PROJECTION["Transverse_Mercator"] , PARAMETER["False_Easting" , 500000.0] , PARAMETER["False_Northing" , 0.0] , PARAMETER["Central_Meridian" , -117.0] , PARAMETER["Scale_Factor" , 0.9996] , PARAMETER["Latitude_Of_Origin" , 0.0] , UNIT["Meter" , 1.0]] }
+band names = { Path length (m) , To-sensor azimuth (0 to 360 degrees cw from N) , To-sensor zenith (0 to 90 degrees from zenith) , To-sun azimuth (0 to 360 degrees cw from N) , To-sun zenith (0 to 90 degrees from zenith) , Solar phase , Slope , Aspect , Cosine(i) , UTC Time , Earth-sun distance (AU) }
+data ignore value = -9999
