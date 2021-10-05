@@ -1,0 +1,102 @@
+{
+    "ISOFIT_BASE": "../../..",
+    "input": {
+        "measured_radiance_file": "../remote/ang20160910t185702_2rdn_img",
+        "surface_geometry_file": "../remote/ang20160910t185702_obs_ortdem_mod"
+    },
+    "output": {
+        "estimated_reflectance_file": "../output/ang20160910t185702_yesgeom2_rfl2",
+        "posterior_uncertainty_file": "../output/ang20160910t185702_yesgeom2_post2"
+    },
+    "forward_model": {
+        "instrument": {
+            "wavelength_file": "../configs/wavelength.txt",
+            "SNR": 400,
+            "integrations": 8,
+            "unknowns": {
+                "uncorrelated_radiometric_uncertainty": 0.01
+            }
+        },
+        "surface": {
+            "surface_category": "multicomponent_surface",
+            "surface_file": "../data/surface_model1.mat"
+        },
+        "radiative_transfer": {
+            "statevector": {
+                "H2OSTR": {
+                    "bounds": [
+                        0.25,
+                        3.5
+                    ],
+                    "scale": 0.05,
+                    "prior_mean": 0.75,
+                    "prior_sigma": 1,
+                    "init": 1.0
+                },
+                "AOT550": {
+                    "bounds": [
+                        0.01,
+                        0.2
+                    ],
+                    "scale": 0.05,
+                    "prior_mean": 0.08,
+                    "prior_sigma": 1,
+                    "init": 0.08
+                }
+            },
+            "lut_grid": {
+                "H2OSTR": [
+                    0.75,
+                    1.25,
+                    1.75,
+                    2.25
+                ],
+                "AOT550": [
+                    0.01,
+                    0.05,
+                    0.1,
+                    0.2
+                ]
+            },
+            "unknowns": {
+                "H2O_ABSCO": 0.01
+            },
+            "radiative_transfer_engines": {
+                "vswir": {
+                    "engine_name": "modtran",
+                    "multipart_transmittance": true,
+                    "wavelength_range": [
+                        370,
+                        2507
+                    ],
+                    "lut_path": "../lut/",
+                    "template_file": "modtran_template.json",
+                    "lut_names": [
+                        "H2OSTR",
+                        "AOT550"
+                    ]
+                }
+            }
+        }
+    },
+    "implementation": {
+        "n_cores": 6,
+        "rte_auto_rebuild": true,
+        "inversion": {
+            "windows": [
+                [
+                    380.0,
+                    1300.0
+                ],
+                [
+                    1450,
+                    1780.0
+                ],
+                [
+                    1950.0,
+                    2450.0
+                ]
+            ]
+        }
+    }
+}
