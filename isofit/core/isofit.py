@@ -35,7 +35,6 @@ from isofit.inversion.inverse_mcmc import MCMCInversion
 from isofit.core.fileio import IO
 from isofit.configs import configs
 
-import pdb
 class Isofit:
     """Initialize the Isofit class.
 
@@ -50,9 +49,7 @@ class Isofit:
         # Explicitly set the number of threads to be 1, so we more effectively
         # run in parallel
         os.environ["MKL_NUM_THREADS"] = "1"
-        #pdb.set_trace()
         # Set logging level
-        #logfile = "/configs/logfile2.txt"
         self.loglevel = level
         self.logfile = logfile
         logging.basicConfig(format='%(levelname)s:%(message)s', level=self.loglevel, filename=self.logfile)
@@ -81,8 +78,7 @@ class Isofit:
         # We can only set the num_cpus if running on a single-node
         if self.config.implementation.ip_head is None and self.config.implementation.redis_password is None:
             rayargs['num_cpus'] = self.config.implementation.n_cores
-        _node_ip_address = '192.168.1.247'
-        #pdb.set_trace()
+        _node_ip_address = '192.168.1.247' # the changes here are so we can run with vpn on
         ray._private.services.address_to_ip = lambda _node_ip_address: _node_ip_address
         ray.init(**rayargs)
 

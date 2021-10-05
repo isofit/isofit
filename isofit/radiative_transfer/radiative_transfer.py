@@ -25,11 +25,10 @@ from ..core.common import eps
 from ..radiative_transfer.modtran import ModtranRT
 from ..radiative_transfer.six_s import SixSRT
 from ..radiative_transfer.libradtran import LibRadTranRT
-#from ..radiative_transfer.sRTMnet import SimulatedModtranRT
+from ..radiative_transfer.sRTMnet import SimulatedModtranRT
 from isofit.configs import Config
 from isofit.configs.sections.radiative_transfer_config import RadiativeTransferEngineConfig
-import pdb
-import matplotlib.pyplot as plt
+
 class RadiativeTransfer():
     """This class controls the radiative transfer component of the forward
     model. An ordered dictionary is maintained of individual RTMs (MODTRAN,
@@ -125,11 +124,11 @@ class RadiativeTransfer():
         return self.pack_arrays(ret)
 
     def calc_rdn(self, x_RT, rfl, Ls, geom):
-        #pdb.set_trace()
+
         r = self.get_shared_rtm_quantities(x_RT, geom)
         L_atm = self.get_L_atm(x_RT, geom)
         L_up = Ls * r['transup']
-        #pdb.set_trace()
+
         if geom.bg_rfl is not None:
 
             # adjacency effects are counted
@@ -152,19 +151,17 @@ class RadiativeTransfer():
             t_total_down = t_dir_down+t_dif_down
             s_alb = r['sphalb']
 
-            E_dir = I*cos_i/(1.0-s_alb*rfl)*t_dir_down
-            E_diff_down = cos_theta*I*self.coszen*t_dif_down
-            E_diff_up = (1-cos_theta)*I*self.coszen*t_total_down*rfl
-            #pdb.set_trace()
+            '''
+            We seperate between the direct flux and the diffuse flux. The direct flux, i.e.,
+            photons stricktly in the sun-to-surface-to-sensor path, is scaled by cos_i, where
+            cos_i is the effective SZA saved in the geom object. The diffuse flux is scaled
+            by the original top-of-atmosphere SZA, saved in self.coszen.
+            '''
 
             ret = L_atm + \
                 (I*cos_i/(1.0-s_alb*rfl)*t_dir_down + \
                     I*self.coszen/(1.0-s_alb*rfl)*t_dif_down) * rfl * t_total_up
-            '''ret = L_atm + \
-                (I*cos_i/(1.0-s_alb*rfl)*t_dir_down + \
-                    cos_theta*I*self.coszen*t_dif_down + \
-                        (1-cos_theta)*I*self.coszen*t_total_down*rfl) * \
-                            rfl * t_total_up'''
+
 
         else:
             L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)

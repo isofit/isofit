@@ -88,6 +88,10 @@ class Geometry:
             self.observer_altitude_km = self.surface_elevation_km + self.path_length*np.cos(np.deg2rad(self.observer_zenith))
         self.cos_i = None
         if surf_geo is not None:
+            '''
+            This reads from a standard observation file, but calculates cosine_i independtly from the slope
+            and aspect bands. 
+            '''
             azimuth = surf_geo[3]#(360.0 - surf_geo[3] + 90) #right angle correction
             zenith = surf_geo[4] * np.pi / 180.0
             slope = surf_geo[6] * np.pi / 180.0
