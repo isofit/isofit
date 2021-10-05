@@ -30,7 +30,7 @@ class Geometry:
       surface, and solar positions."""
 
     def __init__(self, obs=None, glt=None, loc=None, ds=None,
-                 esd=None, pushbroom_column=None, bg_rfl=None):
+                 esd=None, pushbroom_column=None, bg_rfl=None, surf_geo=None):
 
         # Set some benign defaults...
         self.earth_sun_file = None
@@ -86,6 +86,23 @@ class Geometry:
         if loc is not None and obs is not None:
             self.H1ALT = self.surface_elevation_km + self.path_length*np.cos(np.deg2rad(self.observer_zenith))
             self.observer_altitude_km = self.surface_elevation_km + self.path_length*np.cos(np.deg2rad(self.observer_zenith))
+        self.cos_i = None
+        if surf_geo is not None:
+            azimuth = surf_geo[3]#(360.0 - surf_geo[3] + 90) #right angle correction
+            zenith = surf_geo[4] * np.pi / 180.0
+            slope = surf_geo[6] * np.pi / 180.0
+            aspect = surf_geo[7] 
+            az_to_as = (azimuth-aspect) * np.pi / 180.0
+            # nullify negative values please
+            cos_i = np.cos(zenith) * np.cos(slope) + \
+                np.sin(zenith) * np.sin(slope) * np.cos(az_to_as)
+            if cos_i<0:
+                self.cos_i = 0
+            else:
+                self.cos_i = cos_i
+
+            self.cos_theta = np.power(np.cos(slope/2), 2)
+            self.smth_cos_i = surf_geo[8]
 
         # The ds object is an optional date object, defining the time of
         # the observation.

@@ -393,7 +393,8 @@ class IO:
         geom = Geometry(obs=data['obs_file'],
                         glt=data['glt_file'],
                         loc=data['loc_file'],
-                        bg_rfl=data['background_reflectance_file'])
+                        bg_rfl=data['background_reflectance_file'],
+                        surf_geo=data['surface_geometry_file'])
 
         self.current_input_data.geom = geom
         self.current_input_data.reference_reflectance = data['reference_reflectance_file']

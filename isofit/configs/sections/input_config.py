@@ -72,6 +72,13 @@ class InputConfig(BaseConfigSection):
         str: Input 'loc', or location, file.  Can be either a .mat, .txt, or ENVI formatted binary cube.
         Provides per-pixel lat, long, and elevation information.
         """
+
+        self._surface_geometry_file_type = str
+        self.surface_geometry_file = None
+        """
+        str: Input 'loc', or location, file.  Can be either a .mat, .txt, or ENVI formatted binary cube.
+        Provides per-pixel lat, long, and elevation information. xxx surface geometry file
+        """
                 
         self._background_reflectance_file_type = str
         self.background_reflectance_file = None
