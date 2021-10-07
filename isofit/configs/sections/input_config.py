@@ -76,8 +76,11 @@ class InputConfig(BaseConfigSection):
         self._surface_geometry_file_type = str
         self.surface_geometry_file = None
         """
-        str: Input 'loc', or location, file.  Can be either a .mat, .txt, or ENVI formatted binary cube.
-        Provides per-pixel lat, long, and elevation information. xxx surface geometry file
+        str: Input 'surface_geometry', similar to the 'obs', or observation, file. It Needs to be ENVI formatted binary cube.
+        Assumed to be in the band-wise format:
+        {path length, to-sensor azimuth, to-sensor zenith, to-sun azimuth, to-sun zenith, phase, slope, aspect, cosine i, 
+        UTC time}. The original obs file has the surface geometry bands derived based on SRTM DSM. Here
+        It is recommended to use a higher resolution DSM to create these bands.
         """
                 
         self._background_reflectance_file_type = str
