@@ -86,7 +86,7 @@ class ImplementationConfig(BaseConfigSection):
         with increased memory costs.
         """
 
-        self._debug_mode = bool
+        self._debug_mode_type = bool
         self.debug_mode = False
         """bool: A flag to run the code in debug mode, which circumvents ray.
         """
