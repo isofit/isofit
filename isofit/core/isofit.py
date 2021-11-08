@@ -27,7 +27,6 @@ import time
 import multiprocessing
 import numpy as np
 import ray
-import ray.services
 
 from isofit.core.forward import ForwardModel
 from isofit.inversion.inverse import Inversion
@@ -68,14 +67,8 @@ class Isofit:
         rayargs = {'address': self.config.implementation.ip_head,
                    '_redis_password': self.config.implementation.redis_password,
                    'ignore_reinit_error': self.config.implementation.ray_ignore_reinit_error,
-                   'local_mode': self.config.implementation.n_cores == 1}
-
-        # only specify a temporary directory if we are not connecting to 
-        # a ray cluster
-        if rayargs['local_mode']:
-            rayargs['_temp_dir'] = self.config.implementation.ray_temp_dir
-            # Used to run on a VPN
-            ray.services.get_node_ip_address = lambda: '127.0.0.1'
+                   '_temp_dir': self.config.implementation.ray_temp_dir,
+                    'local_mode': self.config.implementation.n_cores == 1}
 
         # We can only set the num_cpus if running on a single-node
         if self.config.implementation.ip_head is None and self.config.implementation.redis_password is None:
