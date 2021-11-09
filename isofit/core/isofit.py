@@ -197,7 +197,20 @@ class Worker(object):
         if total_workers is not None:
             self.approximate_total_spectra = self.io.n_cols * self.io.n_rows / total_workers
         self.worker_id = worker_id
+        self.total_workers = total_workers
         self.completed_spectra = 0
+        
+        # We want to have about 200 lines in the log max, but we also don't want
+        # to log at intervals closer together than one message per 100 steps. Also,
+        # we want each worker to have a shot at logging so that the user can see that
+        # the workers are all alive. Thus:
+        
+        logging_interval_max_msg = round(self.approximate_total_spectra / 200)
+        logging_interval_min_spacing = 100
+        self.logging_interval = max(logging_interval_min_spacing, logging_interval_max_msg)
+        if self.worker_id == 0:
+            logging.info('logging interval: {}'.format(self.logging_interval))
+        self.log_message_counter = 0
 
 
     def run_set_of_spectra(self, indices: np.array):
@@ -231,15 +244,18 @@ class Worker(object):
                         """
                     )
                     logging.error(err)
-
-                if index % 100 == 0:
+                    
+                if self.completed_spectra % self.logging_interval == 0:
                     if self.worker_id is not None and self.approximate_total_spectra is not None:
-                        percent = np.round(self.completed_spectra / self.approximate_total_spectra * 100,2)
-                        logging.info(f'Worker {self.worker_id} completed {self.completed_spectra}/~{self.approximate_total_spectra}:: {percent}% complete')
+                        if self.log_message_counter % self.total_workers == self.worker_id:
+                            percent = np.round(self.completed_spectra / self.approximate_total_spectra * 100,2)
+                            logging.info(f'Worker {self.worker_id} completed {self.completed_spectra}/~{self.approximate_total_spectra}:: {percent}% complete')
+                        self.log_message_counter = self.log_message_counter + 1
                     else:
                         logging.info(f'Worker at start location ({row},{col}) completed {index}/{indices.shape[0]}')
-
-        self.io.flush_buffers()
+                        
+            # flush buffers at the end of each loop
+            self.io.flush_buffers()
 
 
 
