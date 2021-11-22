@@ -21,7 +21,6 @@
 import numpy as np
 from spectral.io import envi
 import ray
-import ray.services
 import logging
 import atexit
 from isofit.core.fileio import write_bil_chunk
@@ -136,12 +135,8 @@ def extractions(inputfile, labels, output, chunksize, flag, n_cores: int = 1, ra
     rayargs = {'ignore_reinit_error': True,
                'local_mode': n_cores == 1,
                "address": ray_address,
-               "_redis_password": ray_redis_password}
-
-    if rayargs['local_mode']:
-        rayargs['_temp_dir'] = ray_temp_dir
-        # Used to run on a VPN
-        ray.services.get_node_ip_address = lambda: '127.0.0.1'
+               '_temp_dir': ray_temp_dir,
+                '_redis_password': ray_redis_password}
 
     # We can only set the num_cpus if running on a single-node
     if ray_ip_head is None and ray_redis_password is None:
