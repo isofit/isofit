@@ -161,6 +161,8 @@ class Isofit:
         else:
             self.workers.run_set_of_spectra(index_pairs)
 
+
+
         total_time = time.time() - start_time
         logging.info(f'Inversions complete.  {round(total_time,2)}s total, {round(n_iter/total_time,4)} spectra/s, '
                      f'{round(n_iter/total_time/n_workers,4)} spectra/s/core')
