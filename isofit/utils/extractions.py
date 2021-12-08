@@ -21,12 +21,13 @@
 import numpy as np
 from spectral.io import envi
 import ray
-import ray.services
 import logging
 import atexit
+from isofit.core.fileio import write_bil_chunk
+from isofit.core.common import envi_header
 
 @ray.remote
-def extract_chunk(lstart: int, lend: int, in_file: str, labels, flag, logfile=None, loglevel='INFO'):
+def extract_chunk(lstart: int, lend: int, in_file: str, labels: np.array, flag: float, logfile=None, loglevel='INFO'):
     """
     Extract a small chunk of the image
 
@@ -34,7 +35,7 @@ def extract_chunk(lstart: int, lend: int, in_file: str, labels, flag, logfile=No
         lstart: line to start extraction at
         lend: line to end extraction at
         in_file: file to read image from
-        label: labels to use for data read
+        labels: labels to use for data read
         flag: nodata value of image
         logfile: logging file name
         loglevel: logging level
@@ -47,7 +48,7 @@ def extract_chunk(lstart: int, lend: int, in_file: str, labels, flag, logfile=No
     logging.basicConfig(format='%(levelname)s:%(message)s', level=loglevel, filename=logfile)
     logging.info(f'{lstart}: starting')
 
-    in_img = envi.open(in_file + '.hdr')
+    in_img = envi.open(envi_header(in_file))
     img_mm = in_img.open_memmap(interleave='bip', writable=False)
 
     # Which labels will we extract? ignore zero index
@@ -89,9 +90,17 @@ def extract_chunk(lstart: int, lend: int, in_file: str, labels, flag, logfile=No
             out_data[_lab, :] += np.squeeze(chunk_inp[row, col, :])
         out_data[_lab,:] /= float(len(locs[0]))
 
-    logging.debug(f'{lstart}: complete')
-    return active.astype(int), out_data
+    unique_labels = np.unique(labels)
+    unique_labels = unique_labels[unique_labels >= 1]
+    if unique_labels[0] != 0:
+        unique_labels = np.hstack([np.zeros(1), unique_labels])
 
+    match_idx = np.searchsorted(unique_labels, active)
+
+    out_data[np.logical_not(np.isfinite(out_data))] = flag
+    logging.debug(f'{lstart}: complete')
+
+    return match_idx, out_data
 
 
 
@@ -109,30 +118,25 @@ def extractions(inputfile, labels, output, chunksize, flag, n_cores: int = 1, ra
     }
 
     # Open input data, get dimensions
-    in_img = envi.open(in_file+'.hdr', in_file)
+    in_img = envi.open(envi_header(in_file), in_file)
     meta = in_img.metadata
 
     nl, nb, ns = [int(meta[n]) for n in ('lines', 'bands', 'samples')]
     img_mm = in_img.open_memmap(interleave='bip', writable=False)
 
-    lbl_img = envi.open(lbl_file+'.hdr', lbl_file)
+    lbl_img = envi.open(envi_header(lbl_file), lbl_file)
     labels = lbl_img.read_band(0)
     un_labels = np.unique(labels).tolist()
     if 0 not in un_labels:
         un_labels.insert(0,0)
     nout = len(un_labels)
 
-
     # Start up a ray instance for parallel work
     rayargs = {'ignore_reinit_error': True,
                'local_mode': n_cores == 1,
                "address": ray_address,
-               "_redis_password": ray_redis_password}
-
-    if rayargs['local_mode']:
-        rayargs['_temp_dir'] = ray_temp_dir
-        # Used to run on a VPN
-        ray.services.get_node_ip_address = lambda: '127.0.0.1'
+               '_temp_dir': ray_temp_dir,
+                '_redis_password': ray_redis_password}
 
     # We can only set the num_cpus if running on a single-node
     if ray_ip_head is None and ray_redis_password is None:
@@ -147,31 +151,28 @@ def extractions(inputfile, labels, output, chunksize, flag, n_cores: int = 1, ra
         lend = min(lstart+nchunk, nl)
         jobs.append(extract_chunk.remote(lstart, lend, in_file, labelid, flag, logfile=logfile, loglevel=loglevel))
 
-
     # Collect results
     rreturn = [ray.get(jid) for jid in jobs]
 
-    # Iterate through image "chunks," segmenting as we go
-    out = np.zeros((nout, nb))
+    ## Iterate through image "chunks," segmenting as we go
+    out = np.zeros((nout, nb, 1))
     for idx, ret in rreturn:
         if ret is not None:
-            for _output_index in range(len(idx)):
-                out[un_labels.index(idx[_output_index]),...] = ret[_output_index,...]
+            out[idx, :, 0] = ret
     del rreturn
     ray.shutdown()
-
-    out[np.logical_not(np.isfinite(out))] = flag
 
     meta["lines"] = str(nout)
     meta["bands"] = str(nb)
     meta["samples"] = '1'
     meta["interleave"] = "bil"
 
-    out_img = envi.create_image(out_file+'.hdr',  metadata=meta,
-                                ext='', force=True)
-    out_mm = np.memmap(out_file, dtype=dtm[meta['data type']], mode='w+',
-                      shape=(nout, 1, nb))
+    out_img = envi.create_image(envi_header(out_file),  metadata=meta, ext='', force=True)
+    del out_img
     if dtm[meta['data type']] == np.float32:
-        out_mm[:, 0, :] = np.array(out, np.float32)
+        type = 'float32'
     else:
-        out_mm[:, 0, :] = np.array(out, np.float64)
+        type = 'float64'
+
+    write_bil_chunk(out, out_file, 0, out.shape, dtype=type)
+

@@ -22,7 +22,6 @@ import os
 import numpy as np
 import scipy.io
 import scipy.interpolate
-import pylab as plt
 from spectral.io import envi
 import logging
 from collections import OrderedDict
@@ -34,7 +33,7 @@ from .geometry import Geometry
 from isofit.configs import Config
 from isofit.core.forward import ForwardModel
 from typing import List
-import time
+from isofit.core.common import envi_header
 
 
 ### Variables ###
@@ -55,7 +54,6 @@ typemap = {
 }
 
 max_frames_size = 100
-flush_rate = 10
 
 
 ### Classes ###
@@ -121,12 +119,12 @@ class SpectrumFile:
             if not self.write:
 
                 # If we are an input file, the header must preexist.
-                if not os.path.exists(self.fname+'.hdr'):
-                    logging.error('Could not find %s' % (self.fname+'.hdr'))
-                    raise IOError('Could not find %s' % (self.fname+'.hdr'))
+                if not os.path.exists(envi_header(self.fname)):
+                    logging.error('Could not find %s' % (envi_header(self.fname)))
+                    raise IOError('Could not find %s' % (envi_header(self.fname)))
 
                 # open file and copy metadata
-                self.file = envi.open(self.fname + '.hdr', fname)
+                self.file = envi.open(envi_header(self.fname), fname)
                 self.meta = self.file.metadata.copy()
 
                 self.n_rows = int(self.meta['lines'])
@@ -167,11 +165,11 @@ class SpectrumFile:
                         logging.error('Must specify %s' % (k))
                         raise IOError('Must specify %s' % (k))
 
-                if os.path.isfile(fname+'.hdr') is False:
-                    self.file = envi.create_image(fname+'.hdr', meta, ext='',
+                if os.path.isfile(envi_header(fname)) is False:
+                    self.file = envi.create_image(envi_header(fname), meta, ext='',
                                                   force=True)
                 else:
-                    self.file = envi.open(fname+'.hdr')
+                    self.file = envi.open(envi_header(fname))
 
             self.open_map_with_retries()
 
@@ -245,7 +243,7 @@ class SpectrumFile:
                     self.memmap[row, valid, :] = frame[valid, :]
             self.frames = OrderedDict()
             del self.file
-            self.file = envi.open(self.fname+'.hdr', self.fname)
+            self.file = envi.open(envi_header(self.fname), self.fname)
             self.open_map_with_retries()
 
 class InputData:
@@ -266,15 +264,17 @@ class IO:
 
         self.config = config
 
-        self.bbl = '[]'
+        self.bbl = '{}'
         self.radiance_correction = None
         self.meas_wl = forward.instrument.wl_init
         self.meas_fwhm = forward.instrument.fwhm_init
         self.writes = 0
+        self.reads = 0
         self.n_rows = 1
         self.n_cols = 1
         self.n_sv = len(forward.statevec)
         self.n_chan = len(forward.instrument.wl_init)
+        self.flush_rate = config.implementation.io_buffer_size
 
         self.simulation_mode = config.implementation.mode == 'simulation'
 
@@ -360,7 +360,10 @@ class IO:
         # Read data from any of the input files that are defined.
         for source in self.input_datasets:
             data[source] = self.input_datasets[source].read_spectrum(row, col)
-            self.input_datasets[source].flush_buffers()
+
+        self.reads += 1
+        if self.reads >= self.flush_rate:
+            self.flush_buffers()
 
         if self.simulation_mode:
             # If solving the inverse problem, the measurment is the surface reflectance
@@ -404,6 +407,8 @@ class IO:
         for file_dictionary in [self.input_datasets, self.output_datasets]:
             for name, fi in file_dictionary.items():
                 fi.flush_buffers()
+        self.reads = 0
+        self.writes = 0
 
     def write_datasets(self, row: int, col: int, output: dict, states: List, flush_immediately=False):
         """
@@ -423,14 +428,16 @@ class IO:
         for product in self.output_datasets:
             logging.debug('IO: Writing '+product)
             self.output_datasets[product].write_spectrum(row, col, output[product])
-            if (self.writes % flush_rate) == 0 or flush_immediately:
-                self.output_datasets[product].flush_buffers()
 
         # Special case! samples file is matlab format.
         if self.config.output.mcmc_samples_file is not None:
             logging.debug('IO: Writing mcmc_samples_file')
             mdict = {'samples': states}
             scipy.io.savemat(self.config.output.mcmc_samples_file, mdict)
+
+        self.writes += 1
+        if self.writes >= self.flush_rate or flush_immediately:
+            self.flush_buffers()
 
     def build_output(self, states: List, input_data: InputData, fm: ForwardModel, iv: Inversion):
         """
@@ -483,7 +490,7 @@ class IO:
 
             if 'path_radiance_file' in self.output_datasets:
                 path_est = fm.calc_meas(state_est, geom, rfl=np.zeros(self.meas_wl.shape))
-                to_write['path_radiance_file'] = np.column_stack((fm.instrument.wl, path_est))
+                to_write['path_radiance_file'] = np.column_stack((fm.instrument.wl_init, path_est))
 
             if 'spectral_calibration_file' in self.output_datasets:
                 # Spectral calibration
@@ -497,22 +504,22 @@ class IO:
                 to_write['posterior_uncertainty_file'] = np.sqrt(np.diag(S_hat))
 
             ############ Now proceed to the calcs where they may be some overlap
-            if any(item in ['modeled_radiance_file', 'simulated_measurement_file'] for item in self.output_datasets):
-                meas_est = fm.calc_meas(state_est, geom, rfl=np.zeros(self.meas_wl.shape))
-
-                if 'modeled_radiance_file' in self.output_datasets:
-                    to_write['modeled_radiance_file'] = np.column_stack((fm.instrument.wl, meas_est))
-
-                if 'simulated_measurement_file' in self.output_datasets:
-                    meas_sim = fm.instrument.simulate_measurement(meas_est, geom)
-                    to_write['simulated_measurement_file'] = np.column_stack((self.meas_wl, meas_sim))
 
             if any(item in ['estimated_emission_file', 'apparent_reflectance_file'] for item in self.output_datasets):
                 Ls_est = fm.calc_Ls(state_est, geom)
 
-            if any(item in ['estimated_reflectance_file', 'apparent_reflectance_file'] for item in
-                   self.output_datasets):
+            if any(item in ['estimated_reflectance_file', 'apparent_reflectance_file',
+                            'modeled_radiance_file', 'simulated_measurement_file'] for item in self.output_datasets):
                 lamb_est = fm.calc_lamb(state_est, geom)
+
+            if any(item in ['modeled_radiance_file', 'simulated_measurement_file'] for item in self.output_datasets):
+                meas_est = fm.calc_meas(state_est, geom, rfl=lamb_est)
+                if 'modeled_radiance_file' in self.output_datasets:
+                    to_write['modeled_radiance_file'] = np.column_stack((fm.instrument.wl_init, meas_est))
+
+                if 'simulated_measurement_file' in self.output_datasets:
+                    meas_sim = fm.instrument.simulate_measurement(meas_est, geom)
+                    to_write['simulated_measurement_file'] = np.column_stack((self.meas_wl, meas_sim))
 
             if 'estimated_emission_file' in self.output_datasets:
                 to_write['estimated_emission_file'] = np.column_stack((self.meas_wl, Ls_est))
@@ -573,11 +580,28 @@ class IO:
             input_data: optionally overwride self.current_input_data
         """
 
-        self.writes = self.writes + 1
-
         if input_data is None:
             to_write = self.build_output(states, self.current_input_data, fm, iv)
         else:
             to_write = self.build_output(states, input_data, fm, iv)
         self.write_datasets(row, col, to_write, states, flush_immediately=flush_immediately)
 
+
+
+def write_bil_chunk(dat: np.array, outfile: str, line: int, shape: tuple, dtype: str = 'float32') -> None:
+    """
+    Write a chunk of data to a binary, BIL formatted data cube.
+    Args:
+        dat: data to write
+        outfile: output file to write to
+        line: line of the output file to write to
+        shape: shape of the output file
+        dtype: output data type
+
+    Returns:
+        None
+    """
+    outfile = open(outfile, 'rb+')
+    outfile.seek(line * shape[1] * shape[2] * np.dtype(dtype).itemsize)
+    outfile.write(dat.astype(dtype).tobytes())
+    outfile.close()

@@ -63,7 +63,7 @@ class ModtranRT(TabularRT):
         # Flag to determine if MODTRAN should operate with reflectivity = 1
         # (enabling thermal_upwelling and thermal_downwelling to be determined - see comments below)
         self.treat_as_emissive = False
-        if self.wl[0] > 2500:
+        if self.wl[0] > 2600:
             self.treat_as_emissive = True
 
         self.modtran_dir = self.find_basedir(engine_config)
@@ -244,7 +244,7 @@ class ModtranRT(TabularRT):
                 # grnd_rflt already includes ground-to-sensor transmission
                 grnd_rflt = float(toks[16]) * 1e6  # ground reflected radiance (direct+diffuse+multiple scattering)
                 drct_rflt = float(toks[17]) * 1e6  # same as 16 but only on the sun->surface->sensor path (only direct)
-                path_rdn  = float(toks[14]) * 1e6 + float(toks[14]) * 1e6  # The sum of the (1) single scattering and (2) multiple scattering 
+                path_rdn  = float(toks[14]) * 1e6 + float(toks[15]) * 1e6  # The sum of the (1) single scattering and (2) multiple scattering 
                 thermal_downwelling = grnd_rflt / wid # uW/nm/sr/cm2
 
                 if case[i] == 0:
@@ -795,7 +795,7 @@ class ModtranRT(TabularRT):
         """
 
         sigmas = fwhms/2.355
-        span = 2.0 * (wavelengths[1]-wavelengths[0])  # nm
+        span = 2.0 * np.abs(wavelengths[1]-wavelengths[0])  # nm
         steps = 101
 
         with open(outfile, 'w') as fout:

@@ -31,9 +31,6 @@ from collections import OrderedDict
 
 ### Variables ###
 
-# Maximum size of our hash tables
-max_table_size = 500
-
 # small value used in finite difference derivatives
 eps = 1e-5
 
@@ -207,64 +204,29 @@ def emissive_radiance(emissivity: np.array, T: np.array, wl: np.array) -> (np.ar
     return uW_per_cm2_sr_nm, dRdn_dT
 
 
-def svd_inv(C: np.array, hashtable: OrderedDict = None):
+def svd_inv(C: np.array, hashtable: OrderedDict = None, max_hash_size: int = None):
     """Matrix inversion, based on decomposition.  Built to be stable, and positive.
 
     Args:
         C: matrix to invert
         hashtable: if used, the hashtable to store/retrieve results in/from
+        max_hash_size: maximum size of hashtable
 
     Return:
         np.array: inverse of C
 
     """
 
-    return svd_inv_sqrt(C, hashtable)[0]
+    return svd_inv_sqrt(C, hashtable, max_hash_size)[0]
 
 
-def svd_inv_2(C: np.array, hashtable: OrderedDict = None):
-    # If we have a hash table, look for the precalculated solution
-    h = None
-    if hashtable is not None:
-        # If arrays are in Fortran ordering, they are not hashable.
-        if not C.flags['C_CONTIGUOUS']:
-            C = C.copy(order='C')
-        h = xxhash.xxh64_digest(C)
-        if h in hashtable:
-            return hashtable[h]
-
-    D, P = scipy.linalg.eigh(C)
-    for count in range(3):
-        if np.any(D < 0) or np.any(np.isnan(D)):
-            inv_eps = 1e-6 * (count-1)*10
-            D, P = scipy.linalg.eigh(
-                C + np.diag(np.ones(C.shape[0]) * inv_eps))
-        else:
-            break
-
-        if count == 2:
-            raise ValueError('Matrix inversion contains negative values,' +
-                             'even after adding {} to the diagonal.'.format(inv_eps))
-
-    Ds = np.diag(1/np.sqrt(D))
-    L = P@Ds
-    Cinv = L@L.T
-
-    # If there is a hash table, cache our solution.  Bound the total cache
-    # size by removing any extra items in FIFO order.
-    if hashtable is not None:
-        hashtable[h] = (Cinv)
-        while len(hashtable) > max_table_size:
-            hashtable.popitem(last=False)
-
-    return Cinv
-
-def svd_inv_sqrt(C: np.array, hashtable: OrderedDict = None) -> (np.array, np.array):
+def svd_inv_sqrt(C: np.array, hashtable: OrderedDict = None, max_hash_size: int = None) -> (np.array, np.array):
     """Matrix inversion, based on decomposition.  Built to be stable, and positive.
 
     Args:
         C: matrix to invert
         hashtable: if used, the hashtable to store/retrieve results in/from
+        max_hash_size: maximum size of hashtable
 
     Return:
         (np.array, np.array): inverse of C and square root of the inverse of C
@@ -301,9 +263,9 @@ def svd_inv_sqrt(C: np.array, hashtable: OrderedDict = None) -> (np.array, np.ar
 
     # If there is a hash table, cache our solution.  Bound the total cache
     # size by removing any extra items in FIFO order.
-    if hashtable is not None:
+    if (hashtable is not None) and (max_hash_size is not None):
         hashtable[h] = (Cinv, Cinv_sqrt)
-        while len(hashtable) > max_table_size:
+        while len(hashtable) > max_hash_size:
             hashtable.popitem(last=False)
 
     return Cinv, Cinv_sqrt
@@ -555,8 +517,6 @@ def spectral_response_function(response_range: np.array, mu: float, sigma: float
     return srf
 
 
-
-
 def combos(inds: List[List[float]]) -> np.array:
     """Return all combinations of indices in a list of index sublists.
     For example, the call::
@@ -608,3 +568,25 @@ def conditional_gaussian(mu: np.array, C: np.array, window: np.array, remain: np
     conditional_cov = C22 - C21 @ Cinv @ C12
     return conditional_mean, conditional_cov
 
+def envi_header(inputpath):
+    """
+    Convert a envi binary/header path to a header, handling extensions
+    Args:
+        inputpath: path to envi binary file
+    Returns:
+        str: the header file associated with the input reference.
+
+    """
+    if os.path.splitext(inputpath)[-1] == '.img' or os.path.splitext(inputpath)[-1] == '.dat' or os.path.splitext(inputpath)[-1] == '.raw':
+        # headers could be at either filename.img.hdr or filename.hdr.  Check both, return the one that exists if it
+        # does, if not return the latter (new file creation presumed).
+        hdrfile = os.path.splitext(inputpath)[0] + '.hdr'
+        if os.path.isfile(hdrfile):
+            return hdrfile
+        elif os.path.isfile(inputpath + '.hdr'):
+            return inputpath + '.hdr'
+        return hdrfile
+    elif os.path.splitext(inputpath)[-1] == '.hdr':
+        return inputpath
+    else:
+        return inputpath + '.hdr'

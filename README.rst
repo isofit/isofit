@@ -115,6 +115,34 @@ This quick start presumes that you have an installation of the open source libRa
 
 4. Look for output data in examples/20171108_Pasadena/output/.  Diagnostic images are written to examples/20171108_Pasadena/images/.
 
+
+Quick Start with sRTMnet
+------------------------
+
+sRTMnet is an emulator for MODTRAN 6, that works by coupling a neural network with a surrogate RTM (6S v2.1).
+Installation requires two steps:
+
+1. Download `6S v2.1 <https://salsa.umd.edu/files/6S/6sV2.1.tar>`_, and compile.  If you use a modern system,
+it is likely you will need to specify a legacy compiling configuration by changing line 3 of the Makefile to:
+
+.. code::
+
+    EXTRA   = -O -ffixed-line-length-132 -std=legacy
+
+2. Configure your environment by pointing the SIXS_DIR variable to point to your installation directory.
+
+3. Download the `pre-trained sRTMnet neural network <https://zenodo.org/record/4096627>`_, and (for the example below)
+point the environment variable EMULATOR_PATH to the base unzipped path.
+
+4. Run the following code
+
+.. code::
+
+    cd examples/image_cube/
+    sh ./run_example_cube.sh
+
+
+
 Additional Installation Info for Mac OSX
 ------------------------------------------
 
