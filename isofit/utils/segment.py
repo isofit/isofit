@@ -165,10 +165,20 @@ def segment(spectra: tuple, nodata_value: float, npca: int, segsize: int, nchunk
     # Iterate through image "chunks," segmenting as we go
     all_labels = np.zeros((nl, ns),dtype=np.int64)
     jobs = []
-    for lstart in np.arange(0, nl, nchunk):
-        # Extract data
-        lend = min(lstart+nchunk, nl)
 
+    # Enforce a minimum chunk size to prevent singularities downstream
+    # This could eventually be made a user-tunable parameter but this
+    # value should work in all cases
+    min_lines_per_chunk = 10
+    for lstart in np.arange(0, nl-min_lines_per_chunk, nchunk):
+
+        # Extend any chunk that falls within a small margin of the
+        # end of the flightline
+        lend = min(lstart+nchunk, nl)
+        if lend>(nl-min_lines_per_chunk):
+            lend = nl
+
+        # Extract data
         jobs.append(segment_chunk.remote(lstart, lend, in_file, nodata_value, npca, segsize, logfile=logfile, loglevel=loglevel))
 
     # Collect results, making sure each chunk is distinct, and enforce an order
