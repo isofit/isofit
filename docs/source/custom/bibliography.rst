@@ -103,3 +103,6 @@ G. Stephens, O. Kalashnikova, J. J. Gristey, P. Pilewskie, D. R. Thompson, X. Hu
 `The Spectral Nature of Earth’s Reflected Radiation: Measurement and Science Applications.
 <https://doi.org/10.3389/frsen.2021.664291>`__
 *Frontiers in Remote Sensing*, 2, 2021.  DOI: 10.3389/frsen.2021.664291
+
+M. T. Richardson,  D. R. Thompson, M. J. Kurowski, and M. D. Lebsock. `New Sampling Strategy Mitigates a Solar-geometry-induced Bias in Sub-kilometre Vapour Scaling Statistics Derived from Imaging Spectroscopy. <https://doi.org/10.5194/amt-15-117-2022>`__ 
+*Atmospheric Measurement Techniques*, 15, 117–129, 2022.  DOI: 10.5194/amt-15-117-2022
