@@ -61,8 +61,8 @@ class VectorInterpolator:
             self.single_point_data = data
 
         # expand grid dimensionality as needed
-        [radian_locations] = np.where(self.lut_interp_types == 'd')
-        [degree_locations] = np.where(self.lut_interp_types == 'r')
+        [radian_locations] = np.where(self.lut_interp_types == 'r')
+        [degree_locations] = np.where(self.lut_interp_types == 'd')
         angle_locations = np.hstack([radian_locations, degree_locations])
         angle_types = np.hstack(
             [self.lut_interp_types[radian_locations],
@@ -78,8 +78,8 @@ class VectorInterpolator:
                 grid_subset_cosin = np.cos(original_grid_subset)
                 grid_subset_sin = np.sin(original_grid_subset)
             elif (angle_types[_angle_loc] == 'd'):
-                grid_subset_cosin = np.cos(original_grid_subset / 180. * np.pi)
-                grid_subset_sin = np.sin(original_grid_subset / 180. * np.pi)
+                grid_subset_cosin = np.cos(np.deg2rad(original_grid_subset))
+                grid_subset_sin = np.sin(np.deg2rad(original_grid_subset))
 
             # handle the fact that the grid may no longer be in order
             grid_subset_cosin_order = np.argsort(grid_subset_cosin)
@@ -142,8 +142,8 @@ class VectorInterpolator:
                 x[:, i + 1 + offset_count] = np.sin(points[i])
                 offset_count += 1
             elif self.lut_interp_types[i] == 'd':
-                x[:, i + offset_count] = np.cos(points[i] / 180. * np.pi)
-                x[:, i + 1 + offset_count] = np.sin(points[i] / 180. * np.pi)
+                x[:, i + offset_count] = np.cos(np.deg2rad(points[i]))
+                x[:, i + 1 + offset_count] = np.sin(np.deg2rad(points[i]))
                 offset_count += 1
 
         # This last dimension is always an integer so no
