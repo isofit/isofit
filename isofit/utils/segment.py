@@ -23,7 +23,6 @@ from spectral.io import envi
 from skimage.segmentation import slic
 import numpy as np
 import ray
-import ray.services
 import atexit
 import logging
 from isofit.core.common import envi_header
@@ -153,12 +152,8 @@ def segment(spectra: tuple, nodata_value: float, npca: int, segsize: int, nchunk
     rayargs = {'ignore_reinit_error': True,
                'local_mode': n_cores == 1,
                "address": ray_address,
+               '_temp_dir': ray_temp_dir,
                "_redis_password": ray_redis_password}
-
-    if rayargs['local_mode']:
-        rayargs['_temp_dir'] = ray_temp_dir
-        # Used to run on a VPN
-        ray.services.get_node_ip_address = lambda: '127.0.0.1'
 
     # We can only set the num_cpus if running on a single-node
     if ray_ip_head is None and ray_redis_password is None:
@@ -167,14 +162,23 @@ def segment(spectra: tuple, nodata_value: float, npca: int, segsize: int, nchunk
     ray.init(**rayargs)
     atexit.register(ray.shutdown)
 
-
     # Iterate through image "chunks," segmenting as we go
     all_labels = np.zeros((nl, ns),dtype=np.int64)
     jobs = []
-    for lstart in np.arange(0, nl, nchunk):
-        # Extract data
-        lend = min(lstart+nchunk, nl)
 
+    # Enforce a minimum chunk size to prevent singularities downstream
+    # This could eventually be made a user-tunable parameter but this
+    # value should work in all cases
+    min_lines_per_chunk = 10
+    for lstart in np.arange(0, nl-min_lines_per_chunk, nchunk):
+
+        # Extend any chunk that falls within a small margin of the
+        # end of the flightline
+        lend = min(lstart+nchunk, nl)
+        if lend>(nl-min_lines_per_chunk):
+            lend = nl
+
+        # Extract data
         jobs.append(segment_chunk.remote(lstart, lend, in_file, nodata_value, npca, segsize, logfile=logfile, loglevel=loglevel))
 
     # Collect results, making sure each chunk is distinct, and enforce an order
