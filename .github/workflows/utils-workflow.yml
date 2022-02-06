@@ -5,15 +5,22 @@ on: [push, pull_request]
 jobs:
   main:
     runs-on: ubuntu-latest
-    container:
-      image: osgeo/gdal:ubuntu-full-3.4.0
 
     steps:
     - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: '3.8.x'
+    
+    - name: Install GDAL
+      run: |
+        sudo add-apt-repository ppa:ubuntugis/ppa && sudo apt-get update
+        sudo apt-get install gdal-bin
+        sudo apt-get install libgdal-dev
+        pip install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==`gdal-config --version`
 
     - name: Install Isofit
       run: |
-        python -m pip install --upgrade pip
         pip install --editable .
 
     - name: Check Utils
