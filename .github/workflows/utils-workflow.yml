@@ -13,21 +13,19 @@ jobs:
 
     - name: Install Isofit
       run: |
-        apt-get update
-        apt install python3-pip
-        python3 -m pip install --upgrade pip
-        pip3 install --editable .
+        python -m pip install --upgrade pip
+        pip install --editable .
 
     - name: Check Utils
       run: |
-        python3 -c 'from isofit.utils import apply_oe'
-        python3 -c 'from isofit.utils import empirical_line'
-        python3 -c 'from isofit.utils import extractions'
-        python3 -c 'from isofit.utils import instrument_model'
-        python3 -c 'from isofit.utils import path'
-        python3 -c 'from isofit.utils import remap'
-        python3 -c 'from isofit.utils import segment'
-        python3 -c 'from isofit.utils import surface_model'
+        python -c 'from isofit.utils import apply_oe'
+        python -c 'from isofit.utils import empirical_line'
+        python -c 'from isofit.utils import extractions'
+        python -c 'from isofit.utils import instrument_model'
+        python -c 'from isofit.utils import path'
+        python -c 'from isofit.utils import remap'
+        python -c 'from isofit.utils import segment'
+        python -c 'from isofit.utils import surface_model'
 
     - name: Run Test
       run: |
