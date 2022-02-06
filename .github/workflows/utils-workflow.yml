@@ -11,16 +11,11 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.8
-
     - name: Install Isofit
       run: |
+        apt-get update
+        apt install python3-pip
         python3 -m pip install --upgrade pip
-        pip3 install wheel
-        pip3 install GDAL==`gdal-config --version`
         pip3 install --editable .
 
     - name: Check Utils
