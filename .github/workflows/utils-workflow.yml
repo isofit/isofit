@@ -17,8 +17,9 @@ jobs:
         sudo add-apt-repository ppa:ubuntugis/ppa && sudo apt-get update
         sudo apt-get install gdal-bin
         sudo apt-get install libgdal-dev
-        pip install GDAL==`gdal-config --version`
         export PYTHONPATH=${PYTHONPATH}:/usr/lib/python3/dist-packages/osgeo
+        export PATH=${PATH}:/usr/lib/python3/dist-packages/osgeo
+        pip install GDAL==`gdal-config --version`
 
     - name: Install Isofit
       run: |
