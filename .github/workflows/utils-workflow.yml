@@ -5,6 +5,8 @@ on: [push, pull_request]
 jobs:
   main:
     runs-on: ubuntu-latest
+    container:
+      image: osgeo/gdal:ubuntu-full-3.4.0
 
     steps:
     - uses: actions/checkout@v2
@@ -13,14 +15,6 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: 3.8
-
-    - name: Install GDAL
-      run: |
-        sudo add-apt-repository ppa:ubuntugis/ppa && sudo apt-get update
-        sudo apt-get install gdal-bin
-        sudo apt-get install libgdal-dev
-        export CPLUS_INCLUDE_PATH=/usr/include/gdal
-        export C_INCLUDE_PATH=/usr/include/gdal
 
     - name: Install Isofit
       run: |
