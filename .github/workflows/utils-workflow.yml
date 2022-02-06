@@ -21,11 +21,6 @@ jobs:
         sudo apt-get install libgdal-dev
         export CPLUS_INCLUDE_PATH=/usr/include/gdal
         export C_INCLUDE_PATH=/usr/include/gdal
-        pip3 install GDAL==`gdal-config --version`
-        which pip
-        which pip3
-        which python
-        which python3
 
     - name: Install Isofit
       run: |
