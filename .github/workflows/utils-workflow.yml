@@ -19,6 +19,7 @@ jobs:
     - name: Install Isofit
       run: |
         python3 -m pip install --upgrade pip
+        pip3 install wheel
         pip3 install GDAL==`gdal-config --version`
         pip3 install --editable .
 
