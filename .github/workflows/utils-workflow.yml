@@ -19,7 +19,8 @@ jobs:
     - name: Install Isofit
       run: |
         python3 -m pip install --upgrade pip
-        pip3 install --editable . --use-deprecated=legacy-resolver
+        pip3 install GDAL==`gdal-config --version`
+        pip3 install --editable .
 
     - name: Check Utils
       run: |
