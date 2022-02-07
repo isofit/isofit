@@ -5,36 +5,26 @@ on: [push, pull_request]
 jobs:
   main:
     runs-on: ubuntu-latest
+    container:
+      image: pgbrodrick/isofit
 
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v2
-      with:
-        python-version: '3.8.x'
-    
-    - name: Install GDAL
-      run: |
-        sudo add-apt-repository ppa:ubuntugis/ppa && sudo apt-get update
-        sudo apt-get install gdal-bin
-        sudo apt-get install libgdal-dev
-        export PYTHONPATH=${PYTHONPATH}:/usr/lib/python3/dist-packages/osgeo:/usr/lib/python3/dist-packages/osgeo_utils:/usr/bin
-        export PATH=${PATH}:/usr/lib/python3/dist-packages/osgeo:/usr/lib/python3/dist-packages/osgeo_utils
-        pip install GDAL==`gdal-config --version`
+    - name: Checkout
+      uses: actions/checkout@v2
 
     - name: Install Isofit
-      run: |
-        pip install --editable .
+        pip3 install --editable .
 
     - name: Check Utils
       run: |
-        python -c 'from isofit.utils import apply_oe'
-        python -c 'from isofit.utils import empirical_line'
-        python -c 'from isofit.utils import extractions'
-        python -c 'from isofit.utils import instrument_model'
-        python -c 'from isofit.utils import path'
-        python -c 'from isofit.utils import remap'
-        python -c 'from isofit.utils import segment'
-        python -c 'from isofit.utils import surface_model'
+        python3 -c 'from isofit.utils import apply_oe'
+        python3 -c 'from isofit.utils import empirical_line'
+        python3 -c 'from isofit.utils import extractions'
+        python3 -c 'from isofit.utils import instrument_model'
+        python3 -c 'from isofit.utils import path'
+        python3 -c 'from isofit.utils import remap'
+        python3 -c 'from isofit.utils import segment'
+        python3 -c 'from isofit.utils import surface_model'
 
     - name: Run Test
       run: |
