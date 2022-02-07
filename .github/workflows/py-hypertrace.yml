@@ -13,6 +13,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Install Isofit
+      run: |
         pip3 install --editable .
 
     - name: Download and compile 6Sv
@@ -63,6 +64,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Install Isofit
+      run: |
         pip3 install --editable .
 
     - name: Download and install libradtran
