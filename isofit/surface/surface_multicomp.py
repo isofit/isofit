@@ -158,7 +158,7 @@ class MultiComponentSurface(Surface):
         lamb_ref = lamb[self.idx_ref]
         ci = self.component(x_surface, geom)
         Cov = self.components[ci][1]
-        Cov = Cov * (self.norm(lamb_ref)**2)
+        #Cov = Cov * (self.norm(lamb_ref)**2)
 
         # If there are no other state vector elements, we're done.
         if len(self.statevec_names) == len(self.idx_lamb):

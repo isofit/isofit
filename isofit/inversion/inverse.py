@@ -24,7 +24,7 @@ import numpy as np
 from collections import OrderedDict
 from scipy.optimize import least_squares
 import scipy.linalg
-
+from scipy.linalg import norm
 from isofit.core.common import svd_inv, svd_inv_sqrt, eps, combos, conditional_gaussian
 from .inverse_simple import invert_simple
 from isofit.configs import Config
