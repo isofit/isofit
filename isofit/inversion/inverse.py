@@ -123,7 +123,11 @@ class Inversion:
         # If there aren't any fixed parameters, we just directly
         if self.x_fixed is None or self.grid_as_starting_points:
             Sa_inv, Sa_inv_sqrt = svd_inv_sqrt(Sa, hashtable=self.hashtable, max_hash_size=self.max_table_size)
-            return xa, Sa, Sa_inv, Sa_inv_sqrt
+            norm_scale = (norm(x[self.fm.idx_surface])**2)
+            norm_inverse_scale = 1/norm_scale
+            norm_inverse_scale_sqrt = np.sqrt(norm_inverse_scale)
+            return xa, Sa*norm_scale, Sa_inv*norm_inverse_scale, Sa_inv_sqrt*norm_inverse_scale_sqrt
+            
 
         else:
             # otherwise condition on fixed variables
