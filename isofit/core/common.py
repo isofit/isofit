@@ -18,6 +18,7 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
+from argparse import ArgumentError
 import os
 import json
 import xxhash
@@ -27,6 +28,7 @@ from scipy.interpolate import RegularGridInterpolator
 from os.path import expandvars, split, abspath
 from typing import List
 from collections import OrderedDict
+import ndsplines
 
 
 ### Variables ###
@@ -46,9 +48,10 @@ class VectorInterpolator:
             data_input: n dimensional array of radiative transfer engine outputs (each dimension size corresponds to the
                         given grid_input list length, with the last dimensions equal to the number of sensor channels)
             lut_interp_types: a list indicating if each dimension is in radiance (r), degrees (r), or normal (n) units.
+            version: version to use: 'rg' for scipy RegularGridInterpolator, 'nds-k' for ndsplines, where k is the degrees
         """
 
-    def __init__(self, grid_input: List[List[float]], data_input: np.array, lut_interp_types: List[str]):
+    def __init__(self, grid_input: List[List[float]], data_input: np.array, lut_interp_types: List[str], version='nds-1'):
         self.lut_interp_types = lut_interp_types
         self.single_point_data = None
 
@@ -120,9 +123,18 @@ class VectorInterpolator:
             angle_locations += 1
 
         self.n = data.shape[-1]
-        grid_aug = grid + [np.arange(data.shape[-1])]
-        self.itp = RegularGridInterpolator(grid_aug, data,
-                                           bounds_error=False, fill_value=None)
+        if version == 'rg':
+            grid_aug = grid + [np.arange(data.shape[-1])]
+            self.itp = RegularGridInterpolator(grid_aug, data,
+                                               bounds_error=False, fill_value=None)
+        elif version[:3] == 'nds':
+            degrees = int(version[4:])
+            grid_aug = grid + [np.arange(data.shape[-1]).tolist()]
+            grid_arr = np.stack(np.meshgrid(*grid_aug, indexing='ij'),axis=-1)
+            self.itp = ndsplines.make_interp_spline(grid_arr, data, degrees=degrees)
+        else:
+            raise_str = f'Unknown interpoloator version {version}'
+            raise ArgumentError(raise_str)
 
     def __call__(self, points):
 

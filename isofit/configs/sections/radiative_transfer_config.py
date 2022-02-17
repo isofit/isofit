@@ -246,6 +246,11 @@ class RadiativeTransferConfig(BaseConfigSection):
         self._radiative_transfer_engines_type = list()
         self.radiative_transfer_engines = []
 
+        self._interpolator_style_type = str
+        self.interpolator_style = 'nds-1'
+        """str: Style of interpolation.  Options are rd for scipy RegularGridInterpolator or nds-k 
+        for ndsplines with k degrees"""
+
         self._set_rt_config_options(sub_configdic['radiative_transfer_engines'])
 
     def _set_rt_config_options(self, subconfig):
@@ -267,5 +272,16 @@ class RadiativeTransferConfig(BaseConfigSection):
         
         for rte in self.radiative_transfer_engines:
             errors.extend(rte.check_config_validity())
+
+        if not (self.interpolator_style[:2] == 'rg' or self.interpolator_style[:3] == 'nds'):
+            errors.append(f'Interpolator style {self.interpolator_style} should start with rg or nds')
+        elif self.interpolator_style[:3] == 'nds':
+            degree_err = f'Invalid degree number - should be an integer, e.g. nds-3, got {self.interpolator_style}'
+            try:
+                degree = int(self.interpolator_style[4:])
+                if degree <= 0 or np.isfinite(degree) is False:
+                    errors.append(degree_err)
+            except:
+                errors.append(degree_err)
 
         return errors

@@ -80,6 +80,8 @@ class TabularRT:
         self.configure_and_exit = full_config.implementation.rte_configure_and_exit
         self.implementation_mode = full_config.implementation.mode
 
+        self.interpolator_style = full_config.forward_model.radiative_transfer.interpolator_style
+
         # We use a sorted dictionary here so that filenames for lookup
         # table (LUT) grid points are always constructed the same way, with
         # consistent dimesion ordering). Every state vector element has
