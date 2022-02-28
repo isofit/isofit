@@ -38,7 +38,9 @@ class SurfaceConfig(BaseConfigSection):
 
         self._wavelength_file_type = str
         self.wavelength_file = None
-
+        # Topoflux geometry
+        self._surface_geometry_type = bool
+        self.surface_geometry = False
         # Multicomponent Surface
         self._select_on_init_type = bool
         self.select_on_init = True

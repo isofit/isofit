@@ -177,12 +177,18 @@ class ForwardModel:
         radiative transfer calculations may take place at higher resolution 
         so we upsample surface terms.       
         """
-
         x_surface, x_RT, x_instrument = self.unpack(x)
         if rfl is None:
             rfl = self.surface.calc_rfl(x_surface, geom)
         if Ls is None:
             Ls = self.surface.calc_Ls(x_surface, geom)
+        if self.surface.surface_geometry == True:
+            geom.use_cos_i = True
+            # if there is no data in geom.cos_i, get it from RT
+            # notice that in this case the forward model is 
+            # the same as the original. NC.
+            if geom.cos_i is None:
+                geom.cos_i = self.RT.coszen
 
         rfl_hi = self.upsample(self.surface.wl, rfl)
         Ls_hi = self.upsample(self.surface.wl, Ls)

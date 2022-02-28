@@ -52,6 +52,8 @@ class Geometry:
         self.umu = 1.0
         self.pushbroom_column = pushbroom_column
         self.bg_rfl = bg_rfl
+        self.cos_i = None
+        self.use_cos_i = False
 
         # The 'obs' object is observation metadata that follows a historical
         # AVIRIS-NG format.  It arrives to our initializer in the form of
@@ -66,6 +68,7 @@ class Geometry:
             self.RELAZ = obs[1] - obs[3] + 180.0
             self.TRUEAZ = obs[1]  # MODTRAN convention?
             self.umu = np.cos(obs[2]/360.0*2.0*np.pi)  # Libradtran
+            self.cos_i = obs[8] # cosine of eSZA
 
         # The 'loc' object is a list-like object that optionally contains
         # latitude and longitude information about the surface being
