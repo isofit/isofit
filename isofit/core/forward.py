@@ -123,6 +123,9 @@ class ForwardModel:
         self.instrument_b_inds = np.arange(
             len(self.instrument.bvec), dtype=int) + len(self.surface_b_inds) + len(self.RT_b_inds)
 
+        # add a flag for topoflux correction
+        self.topoflux = self.config.radiative_transfer.radiative_transfer_engines[0].surface_geometry
+
         # Load model discrepancy correction
         if self.config.model_discrepancy_file is not None:
             D = loadmat(self.config.model_discrepancy_file)
@@ -182,11 +185,11 @@ class ForwardModel:
             rfl = self.surface.calc_rfl(x_surface, geom)
         if Ls is None:
             Ls = self.surface.calc_Ls(x_surface, geom)
-        if self.surface.surface_geometry == True:
+        
+        if self.topoflux == True:
+            # update geometry object (will be read from the radiative_transfer)
             geom.use_cos_i = True
-            # if there is no data in geom.cos_i, get it from RT
-            # notice that in this case the forward model is 
-            # the same as the original. NC.
+            # if no observation file, assign TOA SZA cosine instead
             if geom.cos_i is None:
                 geom.cos_i = self.RT.coszen
 

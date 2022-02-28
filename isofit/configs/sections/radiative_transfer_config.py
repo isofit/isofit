@@ -89,6 +89,11 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         """str: Use True to specify triple-run diffuse & direct transmittance 
            estimation.  Only implemented for MODTRAN."""
 
+        self._surface_geometry_type = bool
+        self.surface_geometry = False
+        """ std: User True to specify we want a topographic-flux (topoflux)
+            correction within the forward model. Only implemented for multipart MODTRAN """ 
+
         # MODTRAN simulator
         self._emulator_file_type = str
         self.emulator_file = None
@@ -178,6 +183,9 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
 
         if self.multipart_trasmittance and self.engine_name != 'modtran':
             errors.append('Multipart transmittance is supported for MODTRAN only')
+        
+        if self.surface_geometry and self.multipart_transmittance is not True:
+            errors.append('Topoflux is only supported with MODTRAN multipart transmittance')
 
         if self.earth_sun_distance_file is None and self.engine_name == '6s':
             errors.append('6s requires earth_sun_distance_file to be specified')

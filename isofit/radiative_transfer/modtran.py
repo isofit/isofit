@@ -38,7 +38,7 @@ from isofit.configs import Config
 from isofit.core.geometry import Geometry
 import subprocess
 
-
+import pdb
 ### Variables ###
 
 eps = 1e-5  # used for finite difference derivative calculations
@@ -91,10 +91,10 @@ class ModtranRT(TabularRT):
             self.aer_absc = np.array(aer_absc)
             self.aer_extc = np.array(aer_extc)
             self.aer_asym = np.array(aer_asym)
-
+        
         # Determine whether we are using the three run or single run strategy
         self.multipart_transmittance = engine_config.multipart_transmittance
-
+        self.surface_geometry = engine_config.surface_geometry
         # Idenfity the physical quantities we will calculate
         self.modtran_lut_names = ['rhoatm', 'transm', 'sphalb', 'transup']
 

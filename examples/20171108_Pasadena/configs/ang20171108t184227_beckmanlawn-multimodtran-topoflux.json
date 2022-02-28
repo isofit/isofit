@@ -29,7 +29,6 @@
     },
 
     "surface": {
-      "surface_geometry": true,
       "surface_category": "multicomponent_surface",
       "surface_file": "../remote/ang20170228_surface_model.mat"
     },
@@ -62,6 +61,7 @@
         "vswir": {
           "engine_name": "modtran",
           "multipart_transmittance": true,
+          "surface_geometry": true,
           "wavelength_range":[370,2505],
           "lut_path": "../lut_multi2/",
           "template_file": "ang20171108t184227_multimodtran.json",
@@ -76,7 +76,6 @@
     "inversion": {
       "windows": [[380.0, 1300.0], [1450, 1780.0], [1950.0, 2450.0]]
     },
-    "rte_auto_rebuild": false,
     "n_cores": 1
   }
 }

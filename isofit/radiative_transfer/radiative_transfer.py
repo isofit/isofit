@@ -103,6 +103,7 @@ class RadiativeTransfer():
         # These should all be the same so just grab one
         self.coszen = [RT.coszen for RT in self.rt_engines][0]
 
+
     def xa(self):
         """Pull the priors from each of the individual RTs.
         """

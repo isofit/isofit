@@ -43,7 +43,6 @@ class Surface:
         self.bvec = []
         self.bval = np.array([])
         self.emissive = False
-        self.surface_geometry = config.surface_geometry
 
         self.wl = None
         self.fwhm = None
