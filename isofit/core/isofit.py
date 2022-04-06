@@ -34,7 +34,6 @@ from isofit.inversion.inverse_mcmc import MCMCInversion
 from isofit.core.fileio import IO
 from isofit.configs import configs
 
-import pdb
 class Isofit:
     """Initialize the Isofit class.
 
@@ -83,10 +82,8 @@ class Isofit:
         if self.config.implementation.ip_head is None and self.config.implementation.redis_password is None:
             rayargs['num_cpus'] = self.config.implementation.n_cores
 
-        _node_ip_address = '192.168.1.247'
-        #pdb.set_trace()
-        ray._private.services.address_to_ip = lambda _node_ip_address: _node_ip_address
-        ray.init(**rayargs)
+        if self.config.implementation.debug_mode is False:
+            ray.init(**rayargs)
 
 
         self.workers = None

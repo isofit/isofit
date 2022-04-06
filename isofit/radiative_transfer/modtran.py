@@ -38,7 +38,6 @@ from isofit.configs import Config
 from isofit.core.geometry import Geometry
 import subprocess
 
-import pdb
 ### Variables ###
 
 eps = 1e-5  # used for finite difference derivative calculations
