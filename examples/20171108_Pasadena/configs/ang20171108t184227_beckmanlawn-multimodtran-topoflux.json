@@ -63,7 +63,7 @@
           "multipart_transmittance": true,
           "surface_geometry": true,
           "wavelength_range":[370,2505],
-          "lut_path": "../lut_multi2/",
+          "lut_path": "../lut_multi/",
           "template_file": "ang20171108t184227_multimodtran.json",
           "lut_names": ["H2OSTR", "AOT550" ]
         }
