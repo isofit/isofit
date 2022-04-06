@@ -267,7 +267,8 @@ class LibRadTranRT(TabularRT):
                 temp[ind] = librt_output[key]
 
             self.luts[key] = VectorInterpolator(self.lut_grids, temp,
-                                                self.lut_interp_types)
+                                                self.lut_interp_types,
+                                                self.interpolator_style)
 
     def _lookup_lut(self, point):
         ret = {}

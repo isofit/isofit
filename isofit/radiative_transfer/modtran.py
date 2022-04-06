@@ -579,7 +579,8 @@ class ModtranRT(TabularRT):
                 temp[ind] = mod_output[key]
 
             self.luts[key] = VectorInterpolator(self.lut_grids, temp,
-                                                self.lut_interp_types)
+                                                self.lut_interp_types,
+                                                self.interpolator_style)
 
 
     def rebuild_cmd(self, point, fn):

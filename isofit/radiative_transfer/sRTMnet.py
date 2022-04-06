@@ -167,9 +167,9 @@ class SimulatedModtranRT(TabularRT):
                     interpolator_inputs[...] = 0
 
                 self.luts[key] = VectorInterpolator(self.lut_grids, interpolator_inputs,
-                                                    self.lut_interp_types)
+                                                    self.lut_interp_types, self.interpolator_style)
 
-            self.luts['transup'] = VectorInterpolator(self.lut_grids, interpolator_inputs*0, self.lut_interp_types )
+            self.luts['transup'] = VectorInterpolator(self.lut_grids, interpolator_inputs*0, self.lut_interp_types, self.interpolator_style)
             
             for key_ind, key in enumerate(self.lut_quantities):
                 with open(interpolator_disk_paths[key_ind], 'wb') as fi:
