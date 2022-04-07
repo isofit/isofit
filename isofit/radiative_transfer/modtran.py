@@ -93,7 +93,7 @@ class ModtranRT(TabularRT):
         
         # Determine whether we are using the three run or single run strategy
         self.multipart_transmittance = engine_config.multipart_transmittance
-        self.surface_geometry = engine_config.surface_geometry
+
         # Idenfity the physical quantities we will calculate
         self.modtran_lut_names = ['rhoatm', 'transm', 'sphalb', 'transup']
 

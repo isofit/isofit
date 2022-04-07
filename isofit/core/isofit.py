@@ -74,11 +74,13 @@ class Isofit:
         if self.config.implementation.debug_mode is False:
             ray.init(**rayargs)
 
-
         self.workers = None
 
     def __del__(self):
-        ray.shutdown()
+        try:
+            ray.shutdown()
+        except:
+            return
 
     def run(self, row_column = None):
         """

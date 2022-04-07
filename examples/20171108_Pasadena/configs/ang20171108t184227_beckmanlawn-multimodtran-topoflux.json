@@ -34,6 +34,7 @@
     },
 
     "radiative_transfer": {
+     "topography_model": true,
       "statevector": {
         "H2OSTR": {
           "bounds": [1.5, 2.0],
@@ -61,7 +62,6 @@
         "vswir": {
           "engine_name": "modtran",
           "multipart_transmittance": true,
-          "surface_geometry": true,
           "wavelength_range":[370,2505],
           "lut_path": "../lut_multi/",
           "template_file": "ang20171108t184227_multimodtran.json",
