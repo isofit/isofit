@@ -28,7 +28,6 @@ from isofit.configs.sections.implementation_config import ImplementationConfig
 from isofit.configs.base_config import BaseConfigSection
 from isofit.core import common
 import yaml
-import pdb
 
 class Config(BaseConfigSection):
     """
