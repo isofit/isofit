@@ -38,7 +38,6 @@ from isofit.configs import Config
 from isofit.core.geometry import Geometry
 import subprocess
 
-
 ### Variables ###
 
 eps = 1e-5  # used for finite difference derivative calculations
@@ -91,7 +90,7 @@ class ModtranRT(TabularRT):
             self.aer_absc = np.array(aer_absc)
             self.aer_extc = np.array(aer_extc)
             self.aer_asym = np.array(aer_asym)
-
+        
         # Determine whether we are using the three run or single run strategy
         self.multipart_transmittance = engine_config.multipart_transmittance
 
@@ -131,7 +130,7 @@ class ModtranRT(TabularRT):
             raise KeyError('I could not find the MODTRAN base directory')
 
     def load_tp6(self, infile):
-        """Load a '.tp6' file. This contains the solar geometry. We 
+        """Load a '.tp6' file. This contains the solar geometry. We
            Return cosine of mean solar zenith."""
 
         with open(infile, 'r') as f:
@@ -157,7 +156,7 @@ class ModtranRT(TabularRT):
         return szen
 
     def load_chn(self, infile, coszen):
-        """Load a '.chn' output file and parse critical coefficient vectors. 
+        """Load a '.chn' output file and parse critical coefficient vectors.
 
            These are:
              * wl      - wavelength vector
@@ -498,11 +497,11 @@ class ModtranRT(TabularRT):
     def build_lut(self, rebuild=False):
         """Each LUT is associated with a source directory.
 
-        We build a lookup table by: 
-              (1) defining the LUT dimensions, state vector names, and the grid 
-                  of values; 
-              (2) running modtran if needed, with each MODTRAN run defining a 
-                  different point in the LUT; and 
+        We build a lookup table by:
+              (1) defining the LUT dimensions, state vector names, and the grid
+                  of values;
+              (2) running modtran if needed, with each MODTRAN run defining a
+                  different point in the LUT; and
               (3) loading the LUTs, one per key atmospheric coefficient vector,
                   into memory as VectorInterpolator objects.
         """
@@ -784,6 +783,16 @@ class ModtranRT(TabularRT):
         r = self.get(x_RT, geom)
         return r['thermal_downwelling']
 
+
+    def get_L_up(self, x_RT, geom):
+        """Thermal emission from the ground is provided by the thermal model,
+        so this function is a placeholder for future upgrades."""
+        return 0
+
+    def wl2flt(self, wls, fwhms, outfile):
+        """Helper function to generate Gaussian distributions around the
+        center wavelengths."""
+
     def wl2flt(self, wavelengths: np.array, fwhms: np.array, outfile: str) -> None:
         """Helper function to generate Gaussian distributions around the
         center wavelengths.
@@ -794,6 +803,7 @@ class ModtranRT(TabularRT):
             outfile: file to write to
 
         """
+
 
         sigmas = fwhms/2.355
         span = 2.0 * np.abs(wavelengths[1]-wavelengths[0])  # nm

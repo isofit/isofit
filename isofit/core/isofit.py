@@ -34,7 +34,6 @@ from isofit.inversion.inverse_mcmc import MCMCInversion
 from isofit.core.fileio import IO
 from isofit.configs import configs
 
-
 class Isofit:
     """Initialize the Isofit class.
 
@@ -49,7 +48,6 @@ class Isofit:
         # Explicitly set the number of threads to be 1, so we more effectively
         # run in parallel
         os.environ["MKL_NUM_THREADS"] = "1"
-
         # Set logging level
         self.loglevel = level
         self.logfile = logfile
@@ -67,9 +65,8 @@ class Isofit:
         rayargs = {'address': self.config.implementation.ip_head,
                    '_redis_password': self.config.implementation.redis_password,
                    'ignore_reinit_error': self.config.implementation.ray_ignore_reinit_error,
-                   '_temp_dir': self.config.implementation.ray_temp_dir,
-                    'local_mode': self.config.implementation.n_cores == 1}
-
+                   'local_mode': self.config.implementation.n_cores == 1}
+        
         # We can only set the num_cpus if running on a single-node
         if self.config.implementation.ip_head is None and self.config.implementation.redis_password is None:
             rayargs['num_cpus'] = self.config.implementation.n_cores
@@ -80,7 +77,10 @@ class Isofit:
         self.workers = None
 
     def __del__(self):
-        ray.shutdown()
+        try:
+            ray.shutdown()
+        except:
+            return
 
     def run(self, row_column = None):
         """
