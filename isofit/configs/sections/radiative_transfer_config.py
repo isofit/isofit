@@ -89,11 +89,6 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         """str: Use True to specify triple-run diffuse & direct transmittance 
            estimation.  Only implemented for MODTRAN."""
 
-        self._surface_geometry_type = bool
-        self.surface_geometry = False
-        """ std: User True to specify we want a topographic-flux (topoflux)
-            correction within the forward model. Only implemented for multipart MODTRAN """ 
-
         # MODTRAN simulator
         self._emulator_file_type = str
         self.emulator_file = None
@@ -181,12 +176,9 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
             errors.append('radiative_transfer->raditive_transfer_model: {} not in one of the available models: {}'.
                           format(self.engine_name, valid_rt_engines))
 
-        if self.multipart_trasmittance and self.engine_name != 'modtran':
+        if self.multipart_transmittance and self.engine_name != 'modtran':
             errors.append('Multipart transmittance is supported for MODTRAN only')
         
-        if self.surface_geometry and self.multipart_transmittance is not True:
-            errors.append('Topoflux is only supported with MODTRAN multipart transmittance')
-
         if self.earth_sun_distance_file is None and self.engine_name == '6s':
             errors.append('6s requires earth_sun_distance_file to be specified')
 
@@ -233,6 +225,14 @@ class RadiativeTransferConfig(BaseConfigSection):
 
     def __init__(self, sub_configdic: dict = None):
 
+        self._topography_model_type = bool
+        self.topography_model = False
+        """ 
+        Flag to indicated whether to use atopographic-flux (topoflux)
+        implementation of the forward model. Only currently functional
+        with multipart MODTRAN
+        """
+
         self._statevector_type = StateVectorConfig
         self.statevector: StateVectorConfig = StateVectorConfig({})
 
@@ -272,6 +272,16 @@ class RadiativeTransferConfig(BaseConfigSection):
         for key, item in self.lut_grid.items():
             if len(item) < 2:
                 errors.append('lut_grid item {} has less than the required 2 elements'.format(key))
+
+        if self.topography_model:
+            for rtm in self.radiative_transfer_engines:
+                if rtm.engine_name != 'modtran':
+                    errors.append('All self.forward_model.radiative_transfer.radiative_transfer_engines must ' \
+                                  'be of type "modtran" if forward_model.topograph_model is set to True')
+                if rtm.multipart_transmittance is False:
+                    errors.append('All self.forward_model.radiative_transfer.radiative_transfer_engines must ' \
+                                   'have multipart_transmittance set as True if forward_model.topograph_model ' \
+                                   'is set to True')
         
         for rte in self.radiative_transfer_engines:
             errors.extend(rte.check_config_validity())

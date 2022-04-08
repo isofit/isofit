@@ -103,6 +103,7 @@ class RadiativeTransfer():
         # These should all be the same so just grab one
         self.coszen = [RT.coszen for RT in self.rt_engines][0]
 
+        self.topography_model = config.topography_model
 
     def xa(self):
         """Pull the priors from each of the individual RTs.
@@ -142,11 +143,14 @@ class RadiativeTransfer():
               I / (1.0-r['sphalb'] * bg) * rfl * t_down * r['t_up_dir'] + \
               L_up
         
-        if geom.use_cos_i is True:
+        if self.topography_model:
             I = (self.solar_irr) / np.pi 
             t_dir_down = r['t_down_dir']
             t_dif_down = r['t_down_dif']
-            cos_i = geom.cos_i 
+            if geom.cos_i is None:
+                cos_i = self.coszen
+            else:
+                cos_i = geom.cos_i 
             t_total_up = (r['t_up_dif']+r['t_up_dir'])
             t_total_down = t_dir_down+t_dif_down
             s_alb = r['sphalb']
@@ -201,13 +205,16 @@ class RadiativeTransfer():
             t_down = r['t_down_dif'] + r['t_down_dir']
             drdn_drfl = I / (1.0-r['sphalb'] * bg) * t_down * r['t_up_dir'] 
 
-        elif geom.use_cos_i is True:
+        elif self.topography_model:
 
             # jac w.r.t. topoflux correct radiance
             I = (self.solar_irr) / np.pi 
             t_dir_down = r['t_down_dir']
             t_dif_down = r['t_down_dif']
-            cos_i = geom.cos_i 
+            if geom.cos_i is None:
+                cos_i = self.coszen
+            else:
+                cos_i = geom.cos_i 
             t_total_up = (r['t_up_dif']+r['t_up_dir'])
             t_total_down = t_dir_down+t_dif_down
             s_alb = r['sphalb']

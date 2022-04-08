@@ -53,7 +53,6 @@ class Geometry:
         self.pushbroom_column = pushbroom_column
         self.bg_rfl = bg_rfl
         self.cos_i = None
-        self.use_cos_i = False
 
         # The 'obs' object is observation metadata that follows a historical
         # AVIRIS-NG format.  It arrives to our initializer in the form of
