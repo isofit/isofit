@@ -20,6 +20,7 @@
 from typing import Dict, List, Type
 from isofit.configs.base_config import BaseConfigSection
 from isofit.configs.sections.statevector_config import StateVectorConfig
+import numpy as np
 import os
 from collections import OrderedDict
 import logging
