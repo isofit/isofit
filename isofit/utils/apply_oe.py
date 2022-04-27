@@ -232,6 +232,10 @@ def main(rawargs=None):
             elevation_lut_grid = np.unique(elevation_lut_grid)
             logging.info("Scene contains target lut grid elements < 0 km, and uses 6s (via sRTMnet).  6s does not "
                          f"support targets below sea level in km units.  Setting grid points {to_rem} to 0.")
+        if mean_elevation_km < 0:
+            mean_elevation_km = 0
+            logging.info("Scene contains a mean target elevation < 0.  6s does not "
+                         f"support targets below sea level in km units.  Setting mean elevation to 0.")
 
     # Need a 180 - here, as this is already in MODTRAN convention
     mean_altitude_km = mean_elevation_km + np.cos(np.deg2rad(180 - mean_to_sensor_zenith)) * mean_path_km
