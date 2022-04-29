@@ -75,14 +75,20 @@ DOI: 10.1016/j.rse.2021.112476.
 
 Applications
 ------------
+
+P. R. Nelson, A. J. Maguire, Z. Pierrat, E. L. Orcutt, et al. (2022) `Remote Sensing of Tundra Ecosystems Using High Spectral Resolution Reflectance: Opportunities and Challenges. <https://doi.org/10.1029/2021JG006697>`__ *Journal of Geophysical Research - Biogeosciences*. doi: 10.1029/2021JG006697.
+
+E. Greenberg, D. R. Thompson, D. Jensen, P. A. Townsend, N. Queally, A. Chlus, C. G. Fichot, J. P. Harringmeyer, M. Simard `An improved scheme for correcting remote spectral surface reflectance simultaneously for terrestrial BRDF and water-surface sunglint in coastal environments.<https://doi.org/10.1029/2021JG006712>`__
+*Journal of Geophysical Research - Biogeosciences*.  doi: 10.1029/2021JG006712.
+
+P. G. Brodrick, D. R. Thompson, M. J. Garay, D. M. Giles, B. N. Holben, and O. V. Kalashnikova.
+`Simultaneous characterization of wildfire smoke and surface properties with imaging spectroscopy during the FIREX-AQ
+field campaign. <https://doi.org/10.1029/2021JD034905>`__ *Journal of Geophysical Research - Atmospheres* 2022. doi: 10.1029/2021JD034905.
+
 D. R. Thompson, B. H. Kahn, P. G. Brodrick, M. D. Lebsock, M. Richardson, and R. O. Green.
 `Spectroscopic Imaging of Sub-Kilometer Spatial Structure in Lower Tropospheric Water Vapor.
 <https://doi.org/10.5194/amt-14-2827-2021>`__
 *Atmospheric Measurement Techniques*, 14, 2021. doi: 10.5194/amt-14-2827-2021.
-
-P. G. Brodrick, D. R. Thompson, M. J. Garay, D. M. Giles, B. N. Holben, and O. V. Kalashnikova.
-`Simultaneous characterization of wildfire smoke and surface properties with imaging spectroscopy during the FIREX-AQ
-field campaign. <https://www.essoar.org/doi/abs/10.1002/essoar.10506794.1>`__ 2021.
 
 M. T. Richardson, D. R. Thompson, M. J. Kurowski and M. D. Lebsock. 
 `Boundary layer water vapour statistics from high-spatial-resolution spaceborne imaging spectroscopy. 
