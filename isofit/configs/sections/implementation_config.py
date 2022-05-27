@@ -57,7 +57,7 @@ class ImplementationConfig(BaseConfigSection):
         self.redis_password = None
         """str: Ray - parameter.  Redis-password (for multi-node runs)."""
 
-        self._ray_include_dashboard_type = str
+        self._ray_include_dashboard_type = bool
         self.ray_include_dashboard = False
         """str: Ray - parameter.  Boolean to include dashboard."""
 
