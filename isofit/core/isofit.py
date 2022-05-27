@@ -48,6 +48,8 @@ class Isofit:
         # Explicitly set the number of threads to be 1, so we more effectively
         # run in parallel
         os.environ["MKL_NUM_THREADS"] = "1"
+        # Update the ray timeout rate
+        os.environ["RAY_worker_register_timeout_seconds"] = str(self.config.implementation.ray_worker_timeout)
         # Set logging level
         self.loglevel = level
         self.logfile = logfile
@@ -64,7 +66,9 @@ class Isofit:
         # Initialize ray for parallel execution
         rayargs = {'address': self.config.implementation.ip_head,
                    '_redis_password': self.config.implementation.redis_password,
+                   '_temp_dir': self.config.implementation.ray_temp_dir,
                    'ignore_reinit_error': self.config.implementation.ray_ignore_reinit_error,
+                   'include_dashboard': self.config.implementation.ray_include_dashboard,
                    'local_mode': self.config.implementation.n_cores == 1}
         
         # We can only set the num_cpus if running on a single-node
