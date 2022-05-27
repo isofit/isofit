@@ -48,8 +48,6 @@ class Isofit:
         # Explicitly set the number of threads to be 1, so we more effectively
         # run in parallel
         os.environ["MKL_NUM_THREADS"] = "1"
-        # Update the ray timeout rate
-        os.environ["RAY_worker_register_timeout_seconds"] = str(self.config.implementation.ray_worker_timeout)
         # Set logging level
         self.loglevel = level
         self.logfile = logfile

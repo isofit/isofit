@@ -152,6 +152,7 @@ def segment(spectra: tuple, nodata_value: float, npca: int, segsize: int, nchunk
     rayargs = {'ignore_reinit_error': True,
                'local_mode': n_cores == 1,
                "address": ray_address,
+               'include_dashboard': False,
                '_temp_dir': ray_temp_dir,
                "_redis_password": ray_redis_password}
 

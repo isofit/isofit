@@ -61,10 +61,6 @@ class ImplementationConfig(BaseConfigSection):
         self.ray_include_dashboard = False
         """str: Ray - parameter.  Boolean to include dashboard."""
 
-        self._ray_worker_timeout_type = int
-        self.ray_worker_timeout = 600
-        """str: Ray - parameter.  Updates enviornment variable RAY_worker_register_timeout_seconds."""
-
         self._rte_configure_and_exit_type = bool
         self.rte_configure_and_exit = False
         """bool: Indicates that code should terminate as soon as all radiative transfer engine configuration files are
