@@ -135,10 +135,7 @@ def main(rawargs=None):
     else:
         args.copy_input_files = False
 
-    if args.log_file is None:
-        logging.basicConfig(format='%(message)s', level=args.logging_level)
-    else:
-        logging.basicConfig(format='%(message)s', level=args.logging_level, filename=args.log_file)
+    logging.basicConfig(format='%(levelname)s:%(asctime)s ||| %(message)s', level=args.logging_level, filename=args.log_file, datefmt='%Y-%m-%d,%H:%M:%S')
 
     rdn_dataset = gdal.Open(args.input_radiance, gdal.GA_ReadOnly)
     rdn_size = (rdn_dataset.RasterXSize, rdn_dataset.RasterYSize)
