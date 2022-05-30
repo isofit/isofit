@@ -48,7 +48,7 @@ def segment_chunk(lstart, lend, in_file, nodata_value, npca, segsize, logfile=No
         labels: labeled image chunk
 
     """
-    logging.basicConfig(format='%(levelname)s:%(message)s', level=loglevel, filename=logfile)
+    logging.basicConfig(format='%(levelname)s:%(asctime)s ||| %(message)s', level=loglevel, filename=logfile, datefmt='%Y-%m-%d,%H:%M:%S')
 
     logging.info(f'{lstart}: starting')
 

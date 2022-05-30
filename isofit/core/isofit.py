@@ -51,7 +51,7 @@ class Isofit:
         # Set logging level
         self.loglevel = level
         self.logfile = logfile
-        logging.basicConfig(format='%(levelname)s:%(message)s', level=self.loglevel, filename=self.logfile)
+        logging.basicConfig(format='%(levelname)s:%(asctime)s ||| %(message)s', level=self.loglevel, filename=self.logfile, datefmt='%Y-%m-%d,%H:%M:%S')
 
         self.rows = None
         self.cols = None
@@ -183,7 +183,7 @@ class Worker(object):
             total_workers: the total number of workers running, for logging reference
         """
 
-        logging.basicConfig(format='%(levelname)s:%(message)s', level=loglevel, filename=logfile)
+        logging.basicConfig(format='%(levelname)s:%(asctime)s ||| %(message)s', level=loglevel, filename=logfile, datefmt='%Y-%m-%d,%H:%M:%S')
         self.config = config
         self.fm = forward_model
         #self.fm = ForwardModel(self.config)
