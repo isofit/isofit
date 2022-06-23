@@ -49,6 +49,26 @@ def emissive_radiance(emissivity: np.array, T: np.array, wl: np.array) -> (np.ar
     return uW_per_cm2_sr_nm, dRdn_dT
 
 
+def spectral_response_function(response_range: np.array, mu: float, sigma: float):
+    """Calculate the spectral response function.
+
+    Args:
+        response_range: signal range to calculate over
+        mu: mean signal value
+        sigma: signal variation
+
+    Returns:
+        np.array: spectral response function
+
+    """
+
+    u = (response_range-mu)/abs(sigma)
+    y = (1.0/(np.sqrt(2.0*np.pi)*abs(sigma)))*np.exp(-u*u/2.0)
+    srf = y/y.sum()
+    return srf
+
+
+
 
 print("BEGIN")
 
@@ -86,9 +106,20 @@ wavelength = np.array([400, 600])
 #print(uW_per_cm2_sr_nm_modified)
 #print(dRdn_dT_modified)
 
-print(pow(4,-2))
+#assert(uW_per_cm2_sr_nm_modified = 7.90527265e-44)
+
+    
+#def test_spectral_response_function():
+response_range = np.array([10, 8])
+mu = 6.0
+sigma = -2.0
+srf = spectral_response_function(response_range, mu, sigma)
+assert(abs(srf[0] - 0.182425524) < 0.0000001)
+assert(abs(srf[1] - 0.817574476) < 0.0000001)
+
+
     
 
-
-
 print("FINISHED")
+
+
