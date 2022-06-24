@@ -2,6 +2,8 @@ import numpy as np
 import os
 from io import StringIO
 
+from sqlalchemy import false, true
+
 #from isofit.core.common import get_absorption
 #from isofit.core.common import load_wavelen, spectral_response_function, emissive_radiance
 # Test for load_wavelen(...)
@@ -77,10 +79,6 @@ def spectral_response_function(response_range: np.array, mu: float, sigma: float
 
 print("BEGIN")
 
-myList = ["Ames", "Marshall", "Goddard", "Kennedy"]
-
-for i in myList:
-    print(i)
 
 
 
@@ -176,11 +174,6 @@ assert(i_abscf_new[0] == 1.5e7*np.pi)
 assert(w_abscf_new[1] == 1.75e7*np.pi)
 assert(i_abscf_new[1] == 2.5e7*np.pi)
 
-
-
-
     
 
 print("FINISHED")
-
-
