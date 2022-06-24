@@ -2,7 +2,6 @@ import numpy as np
 import os
 from io import StringIO
 
-from sqlalchemy import false, true
 
 #from isofit.core.common import get_absorption
 #from isofit.core.common import load_wavelen, spectral_response_function, emissive_radiance
@@ -19,7 +18,6 @@ def load_wavelen(wavelength_file: str):
     """""
 
     q = np.loadtxt(wavelength_file)
-    print(q)
     if q.shape[1] > 2:
         q = q[:, 1:3]
     if q[0, 0] < 100:
@@ -96,6 +94,16 @@ print("BEGIN")
 #assert(wl_modified.ndim == 1)
 #assert(fwhm_modified.ndim == 1)
 #assert(wl_modified[0] > 100)
+
+file = StringIO('0 0.37686 0.00557 \n 1 0.38187 0.00558 \n 2 0.38688 0.00558')
+#print(np.loadtxt(file))
+#wl_modified, fwhm_modified = load_wavelen("C:/Users/vpatro/Desktop/wl_sample.txt")
+wl_modified, fwhm_modified = load_wavelen(file)
+print(wl_modified)
+print(fwhm_modified)
+assert(wl_modified.ndim == 1)
+assert(fwhm_modified.ndim == 1)
+assert(wl_modified[0] > 100)
 
 
 #wl_modified, fwhm_modified = load_wavelen("C:/Users/vpatro/Desktop/Test/wl_multicol.txt")

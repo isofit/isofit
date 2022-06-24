@@ -1,5 +1,5 @@
 import numpy as np
-from isofit.core.common import eps, combos, get_absorption, expand_path, spectral_response_function
+from isofit.core.common import eps, combos, get_absorption, expand_path, load_wavelen, spectral_response_function 
 from io import StringIO
 
 def test_eps():
@@ -11,9 +11,17 @@ def test_combos():
     result = np.array([[1, 3], [2, 3], [1, 4], [2, 4], [1, 5], [2, 5]])
     assert np.array_equal(combos(inds), result)
 
+def test_load_wavelen():
+    file = StringIO('0 0.37686 0.00557 \n 1 0.38187 0.00558 \n 2 0.38688 0.00558')
+    wl_modified, fwhm_modified = load_wavelen(file)
+    print(wl_modified)
+    print(fwhm_modified)
+    assert(wl_modified.ndim == 1)
+    assert(fwhm_modified.ndim == 1)
+    assert(wl_modified[0] > 100)
+
 def test_get_absorption():
     file = StringIO('12e7,2e7,3e7,4e7,3e7\n16e7,3e7,8e7,5e7,12e7')
-    #print(np.loadtxt(file, delimiter = ','))
     wavelengths = np.array([13e7, 15e7])
     w_abscf_new, i_abscf_new = get_absorption(wavelengths, file)
     assert(w_abscf_new[0] == 1.25e7*np.pi)
