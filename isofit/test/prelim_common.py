@@ -1,6 +1,8 @@
 import numpy as np
 import os
 from io import StringIO
+from os.path import expandvars, split, abspath
+
 
 
 #from isofit.core.common import get_absorption
@@ -269,20 +271,134 @@ assert(spectrum_new.ndim == 1)
 assert(wavelength_new[0] > 100)
 
 
-existing_path = "\wl_multicol.txt"
-abs_path = os.path.isabs(existing_path)
-print(abs_path)
-abs_path = os.path.abspath('wl_multicol.txt')
-print(abs_path)
+#existing_path = r"C:\Users\vpatro\Desktop\isofit\wl_multicol.txt"
+#abs_path = os.path.isabs(existing_path)
+#print(abs_path)
+#abs_path = os.path.abspath('wl_multicol.txt')
+#print(abs_path)
 
-print(os.path.isabs("\hasdfuilhasdfh"))
+#print(os.path.isabs("\hasdfuilhasdfh"))
 
 # new function to check if a path is an absolute path, isabs only checks it if begins with a backslash however
+# still have issues with this function
 def get_absolute_path(subpath: str, file_name: str) -> str: 
-    if os.path.isabs(subpath):
-        abs_path = os.path.abspath(file_name)
-        return abs_path
-    return subpath
+    if os.path.isfile(subpath):
+        if os.path.isabs(subpath):
+            abs_path = os.path.abspath(file_name)
+            return abs_path
+        return subpath
+    raise Exception("Invalid Path")
+
+#print(get_absolute_path(existing_path, "wl_multicol.txt"))
+
+def find_header(inputpath: str) -> str:
+
+    """
+    Convert a envi binary/header path to a header, handling extensions
+    Args:
+        inputpath: path to envi binary file
+    Returns:
+        str: the header file associated with the input reference.
+    """
+    if os.path.splitext(inputpath)[-1] == '.img' or os.path.splitext(inputpath)[-1] == '.dat' or os.path.splitext(inputpath)[-1] == '.raw':
+        # headers could be at either filename.img.hdr or filename.hdr.  Check both, return the one that exists if it
+        # does, if not return the latter (new file creation presumed).
+        hdrfile = os.path.splitext(inputpath)[0] + '.hdr'
+        if os.path.isfile(hdrfile):
+            return hdrfile
+        elif os.path.isfile(inputpath + '.hdr'):
+            return inputpath + '.hdr'
+        return hdrfile
+    elif os.path.splitext(inputpath)[-1] == '.hdr':
+        return inputpath
+    else:
+        return inputpath + '.hdr'
+
+def recursive_reencode(j, shell_replace: bool = True): 
+    """Recursively re-encode a mutable object (ascii->str).
+
+    Args:
+        j: object to reencode
+        shell_replace: boolean helper for recursive calls
+
+    Returns:
+        Object: expanded, reencoded object
+
+    """
+
+    if isinstance(j, dict): # if a dictionary
+        for key, value in j.items(): # iterate through items in the dictionary
+            j[key] = recursive_reencode(value) # at each key, run the function with the value
+        return j
+    elif isinstance(j, list):
+        for i, k in enumerate(j):
+            j[i] = recursive_reencode(k)
+        return j
+    elif isinstance(j, tuple):
+        return tuple([recursive_reencode(k) for k in j])
+    else:
+        if shell_replace and isinstance(j, str):
+            try:
+                j = expandvars(j)
+            except IndexError:
+                pass
+        return j
+
+sampleDict = {1: {1: 'Goddard', 2: ['Ames', 'Edwards']}, 2: 'Marshall', 3: 'Kennedy'}
+assert(sampleDict == recursive_reencode(sampleDict))
+
+sampleList = ['Marshall', ['Kennedy', 'Glenn'], ('Goddard', 'Johnson')]
+assert(sampleList == recursive_reencode(sampleList))
+
+
+sampleTuple = ({1: 'Glenn', 2: ('Marshall', 'Ames')}, ['Johnson', 'Kennedy'], 'JPL')
+assert(sampleTuple == recursive_reencode(sampleTuple))
+
+#print(sampleDict.items())
+#print(sampleDict.values())
+
+def recursive_replace(obj, key, val) -> None: # doesn't return anything
+    """Find and replace a vector in a nested (mutable) structure.
+
+    Args:
+        obj: object to replace within
+        key: key to replace
+        val: value to replace with
+
+    """
+
+    if isinstance(obj, dict): # if object a dictinoary
+        if key in obj: # if specified key contained
+            obj[key] = val # replace with specified value
+        for item in obj.values(): # for all values in the dictionary
+            recursive_replace(item, key, val) # pass those in as new objects
+    elif any(isinstance(obj, t) for t in (list, tuple)): # if object is a list or tuple
+        for item in obj: # iterating through
+            recursive_replace(item, key, val)
+
+
+dict1 = {1: 'Val1', 2: 'Val2', 3: 'Val2=3'}
+dict1_copy = dict1
+key = 3
+val = 'replacement_val'
+returned_dict1 = {1: 'Val1', 2: 'Val2', 3: 'replacement_val'}
+print(returned_dict1)
+print(recursive_replace(dict1, key, val))
+assert(returned_dict1 == recursive_replace(dict1, key, val))
+list1 = ['Val1', 'Val2', 'Val3']
+returned_list1 = ['Val1', 'Val2', 'Val3']
+list2 = ['Val1', 'Val2', dict1_copy]
+returned_list2 = ['Val1', 'Val2', {1: 'Val1', 2: 'Val2', 3: 'replacement_val'}]
+assert(returned_list1 == recursive_replace(list1, key, val))
+assert(returned_list2 == recursive_replace(list2, key, val))
+
+
+
+
+
+
+
+
 
     
     
