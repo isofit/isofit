@@ -14,8 +14,6 @@ def test_combos():
 def test_load_wavelen():
     file = StringIO('0 0.37686 0.00557 \n 1 0.38187 0.00558 \n 2 0.38688 0.00558')
     wl_modified, fwhm_modified = load_wavelen(file)
-    print(wl_modified)
-    print(fwhm_modified)
     assert(wl_modified.ndim == 1)
     assert(fwhm_modified.ndim == 1)
     assert(wl_modified[0] > 100)

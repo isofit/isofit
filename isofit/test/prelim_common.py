@@ -78,13 +78,6 @@ def spectral_response_function(response_range: np.array, mu: float, sigma: float
 print("BEGIN")
 
 
-
-
-
-# Case 1: More than 2 columns
-
-
-
 #wl = np.random.rand(425,4)
 #file = open("wl_sample.txt", "w+")
 #np.savetxt("wl_sample.txt", wl)
@@ -99,8 +92,8 @@ file = StringIO('0 0.37686 0.00557 \n 1 0.38187 0.00558 \n 2 0.38688 0.00558')
 #print(np.loadtxt(file))
 #wl_modified, fwhm_modified = load_wavelen("C:/Users/vpatro/Desktop/wl_sample.txt")
 wl_modified, fwhm_modified = load_wavelen(file)
-print(wl_modified)
-print(fwhm_modified)
+#print(wl_modified)
+#print(fwhm_modified)
 assert(wl_modified.ndim == 1)
 assert(fwhm_modified.ndim == 1)
 assert(wl_modified[0] > 100)
@@ -182,6 +175,101 @@ assert(i_abscf_new[0] == 1.5e7*np.pi)
 assert(w_abscf_new[1] == 1.75e7*np.pi)
 assert(i_abscf_new[1] == 2.5e7*np.pi)
 
-    
+def resample_spectrum(x: np.array, wl: np.array, wl2: np.array, fwhm2: np.array, fill: bool = False) -> np.array:
+    """Resample a spectrum to a new wavelength / FWHM.
+       Assumes Gaussian SRFs.
+
+    Args:
+        x: radiance vector
+        wl: sample starting wavelengths
+        wl2: wavelengths to resample to
+        fwhm2: full-width-half-max at resample resolution
+        fill: boolean indicating whether to fill in extrapolated regions
+
+    Returns:
+        np.array: interpolated radiance vector
+
+    """
+
+    H = np.array([spectral_response_function(wl, wi, fwhmi / 2.355)
+                  for wi, fwhmi in zip(wl2, fwhm2)])
+    if fill is False:
+        return np.dot(H, x[:, np.newaxis]).ravel()
+    else:
+        xnew = np.dot(H, x[:, np.newaxis]).ravel()
+        good = np.isfinite(xnew)
+        for i, xi in enumerate(xnew):
+            if not good[i]:
+                nearest_good_ind = np.argmin(abs(wl2[good]-wl2[i]))
+                xnew[i] = xnew[nearest_good_ind]
+        return xnew
+
+"""""
+arr1 = np.array([1, 2, 3, 4])
+arr2 = np.array([5, 6, 7, 8])
+print(tuple(zip(arr1, arr2)))
+print(list(zip(arr1, arr2)))
+
+print(np.dot([1,2], [2,3]))
+
+
+wl2 = np.array([400, 500])
+fwhm2 = np.array([100, 200])
+wl = np.array([600, 700])
+print(tuple(zip(wl2, fwhm2)))
+print(type(zip(wl2,fwhm2)))
+
+print(np.array([spectral_response_function(wl, wi, fwhmi / 2.355)
+                  for wi, fwhmi in zip(wl2, fwhm2)]))
+
+x = np.array([[1, 2], [3, 4]])
+print(x)
+y = np.array([[1], [2]])
+print(y)
+print(y.ndim)
+print(y[:, np.newaxis])
+print(y.ndim)
+z = np.dot(x,y[:, np.newaxis])
+"""
+
+"""
+H = np.array([spectral_response_function(wl, wi, fwhmi / 2.355)
+    for wi, fwhmi in zip(wl2, fwhm2)])
+print(np.dot(H, x[:, np.newaxis]))    
+print(np.dot(H, x[:, np.newaxis]).ravel())
+"""
+
+def load_spectrum(spectrum_file: str) -> (np.array, np.array):
+    """Load a single spectrum from a text file with initial columns giving
+       wavelength and magnitude, respectively.
+
+    Args:
+        spectrum_file: file to load spectrum from
+
+    Returns:
+        np.array: spectrum values
+        np.array: wavelengths, if available in the file
+
+    """
+
+    spectrum = np.loadtxt(spectrum_file)
+    if spectrum.ndim > 1:
+        spectrum = spectrum[:, :2]
+        wavelengths, spectrum = spectrum.T
+        if wavelengths[0] < 100:
+            wavelengths = wavelengths * 1000.0  # convert microns -> nm if needed
+        return spectrum, wavelengths
+    else:
+        return spectrum, None
+
+file = StringIO('0.123 0.132 0.426 \n 0.234 0.234 0.132 \n 0.123 0.423 0.435')
+spectrum_new, wavelength_new = load_spectrum(file)
+assert(wavelength_new.ndim == 1)
+assert(spectrum_new.ndim == 1)
+assert(wavelength_new[0] > 100)
+
+
 
 print("FINISHED")
+
+
