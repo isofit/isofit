@@ -269,6 +269,26 @@ assert(spectrum_new.ndim == 1)
 assert(wavelength_new[0] > 100)
 
 
+existing_path = "\wl_multicol.txt"
+abs_path = os.path.isabs(existing_path)
+print(abs_path)
+abs_path = os.path.abspath('wl_multicol.txt')
+print(abs_path)
+
+print(os.path.isabs("\hasdfuilhasdfh"))
+
+# new function to check if a path is an absolute path, isabs only checks it if begins with a backslash however
+def get_absolute_path(subpath: str, file_name: str) -> str: 
+    if os.path.isabs(subpath):
+        abs_path = os.path.abspath(file_name)
+        return abs_path
+    return subpath
+
+    
+    
+
+
+
 
 print("FINISHED")
 
