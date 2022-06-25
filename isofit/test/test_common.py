@@ -1,5 +1,5 @@
 import numpy as np
-from isofit.core.common import eps, combos, get_absorption, expand_path, load_wavelen, spectral_response_function 
+from isofit.core.common import eps, combos, get_absorption, expand_path, load_spectrum, load_wavelen, spectral_response_function
 from io import StringIO
 
 def test_eps():
@@ -38,5 +38,12 @@ def test_spectral_response_function():
     srf = spectral_response_function(response_range, mu, sigma)
     assert(abs(srf[0] - 0.182425524) < 0.0000001)
     assert(abs(srf[1] - 0.817574476) < 0.0000001)
+
+def test_load_spectrum():
+    file = StringIO('0.123 0.132 0.426 \n 0.234 0.234 0.132 \n 0.123 0.423 0.435')
+    spectrum_new, wavelength_new = load_spectrum(file)
+    assert(wavelength_new.ndim == 1)
+    assert(spectrum_new.ndim == 1)
+    assert(wavelength_new[0] > 100)
 
 
