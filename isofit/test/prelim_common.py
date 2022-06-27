@@ -1,7 +1,11 @@
+from operator import inv
 import numpy as np
 import os
 from io import StringIO
 from os.path import expandvars, split, abspath
+import xxhash
+import scipy.linalg
+from collections import OrderedDict
 
 
 
@@ -26,6 +30,32 @@ def load_wavelen(wavelength_file: str):
         q = q * 1000.0
     wl, fwhm = q.T
     return wl, fwhm
+
+print("BEGIN")
+
+#wl = np.random.rand(425,4)
+#file = open("wl_sample.txt", "w+")
+#np.savetxt("wl_sample.txt", wl)
+
+#wl_modified, fwhm_modified = load_wavelen("C:/Users/vpatro/Desktop/wl_sample.txt")
+#file.close()
+#assert(wl_modified.ndim == 1)
+#assert(fwhm_modified.ndim == 1)
+#assert(wl_modified[0] > 100)
+
+file = StringIO('0 0.37686 0.00557 \n 1 0.38187 0.00558 \n 2 0.38688 0.00558')
+#print(np.loadtxt(file))
+#wl_modified, fwhm_modified = load_wavelen("C:/Users/vpatro/Desktop/wl_sample.txt")
+wl_modified, fwhm_modified = load_wavelen(file)
+#print(wl_modified)
+#print(fwhm_modified)
+assert(wl_modified.ndim == 1)
+assert(fwhm_modified.ndim == 1)
+assert(wl_modified[0] > 100)
+
+
+#wl_modified, fwhm_modified = load_wavelen("C:/Users/vpatro/Desktop/Test/wl_multicol.txt")
+#print(wl_modified.shape)
 
 def emissive_radiance(emissivity: np.array, T: np.array, wl: np.array) -> (np.array, np.array):
     """Calcluate the radiance of a surface due to emission.
@@ -55,6 +85,16 @@ def emissive_radiance(emissivity: np.array, T: np.array, wl: np.array) -> (np.ar
         emissivity/wl_um*1.2398*J_per_eV*1e6
     return uW_per_cm2_sr_nm, dRdn_dT
 
+emissivity = np.array([0.8, 0.8])
+T = np.array([300, 300])
+wavelength = np.array([400, 600])
+
+#uW_per_cm2_sr_nm_modified, dRdn_dT_modified = emissive_radiance(emissivity, T, wavelength)
+#print(uW_per_cm2_sr_nm_modified)
+#print(dRdn_dT_modified)
+
+#assert(uW_per_cm2_sr_nm_modified = 7.90527265e-44)
+
 
 def spectral_response_function(response_range: np.array, mu: float, sigma: float):
     """Calculate the spectral response function.
@@ -75,46 +115,6 @@ def spectral_response_function(response_range: np.array, mu: float, sigma: float
     return srf
 
 
-
-
-print("BEGIN")
-
-
-#wl = np.random.rand(425,4)
-#file = open("wl_sample.txt", "w+")
-#np.savetxt("wl_sample.txt", wl)
-
-#wl_modified, fwhm_modified = load_wavelen("C:/Users/vpatro/Desktop/wl_sample.txt")
-#file.close()
-#assert(wl_modified.ndim == 1)
-#assert(fwhm_modified.ndim == 1)
-#assert(wl_modified[0] > 100)
-
-file = StringIO('0 0.37686 0.00557 \n 1 0.38187 0.00558 \n 2 0.38688 0.00558')
-#print(np.loadtxt(file))
-#wl_modified, fwhm_modified = load_wavelen("C:/Users/vpatro/Desktop/wl_sample.txt")
-wl_modified, fwhm_modified = load_wavelen(file)
-#print(wl_modified)
-#print(fwhm_modified)
-assert(wl_modified.ndim == 1)
-assert(fwhm_modified.ndim == 1)
-assert(wl_modified[0] > 100)
-
-
-#wl_modified, fwhm_modified = load_wavelen("C:/Users/vpatro/Desktop/Test/wl_multicol.txt")
-#print(wl_modified.shape)
-
-emissivity = np.array([0.8, 0.8])
-T = np.array([300, 300])
-wavelength = np.array([400, 600])
-
-#uW_per_cm2_sr_nm_modified, dRdn_dT_modified = emissive_radiance(emissivity, T, wavelength)
-#print(uW_per_cm2_sr_nm_modified)
-#print(dRdn_dT_modified)
-
-#assert(uW_per_cm2_sr_nm_modified = 7.90527265e-44)
-
-    
 #def test_spectral_response_function():
 response_range = np.array([10, 8])
 mu = 6.0
@@ -139,6 +139,11 @@ def expand_path(directory: str, subpath: str) -> str:
 #def test_expand_path() -- backslash vs forward slash discrepancy
 assert(expand_path("NASA", "JPL") == "NASA\JPL")
 assert(expand_path("NASA", "/JPL") == "/JPL")
+
+def expand_path_to_absolute(subpath: str):
+    file_name = os.path.basename(subpath)
+    return os.path.abspath(file_name)
+
 
 
 def get_absorption(wl: np.array, absfile: str) -> (np.array, np.array):
@@ -314,7 +319,7 @@ def find_header(inputpath: str) -> str:
     else:
         return inputpath + '.hdr'
 
-def recursive_reencode(j, shell_replace: bool = True): 
+def recursive_reencode(j, shell_replace: bool = True): # to be deleted
     """Recursively re-encode a mutable object (ascii->str).
 
     Args:
@@ -377,22 +382,165 @@ def recursive_replace(obj, key, val) -> None: # doesn't return anything
             recursive_replace(item, key, val)
 
 
-dict1 = {1: 'Val1', 2: 'Val2', 3: 'Val2=3'}
+dict1 = {1: 'Val1', 2: 'Val2', 3: 'Val3'}
 dict1_copy = dict1
 key = 3
 val = 'replacement_val'
-returned_dict1 = {1: 'Val1', 2: 'Val2', 3: 'replacement_val'}
-print(returned_dict1)
-print(recursive_replace(dict1, key, val))
-assert(returned_dict1 == recursive_replace(dict1, key, val))
-list1 = ['Val1', 'Val2', 'Val3']
-returned_list1 = ['Val1', 'Val2', 'Val3']
-list2 = ['Val1', 'Val2', dict1_copy]
-returned_list2 = ['Val1', 'Val2', {1: 'Val1', 2: 'Val2', 3: 'replacement_val'}]
-assert(returned_list1 == recursive_replace(list1, key, val))
-assert(returned_list2 == recursive_replace(list2, key, val))
+modified_dict1 = {1: 'Val1', 2: 'Val2', 3: 'replacement_val'}
+recursive_replace(dict1, key, val)
+assert(modified_dict1 == dict1)
+#assert(returned_dict1 == recursive_replace(dict1, key, val))
+#list1 = ['Val1', 'Val2', 'Val3']
+#returned_list1 = ['Val1', 'Val2', 'Val3']
+#list2 = ['Val1', 'Val2', dict1_copy]
+#returned_list2 = ['Val1', 'Val2', {1: 'Val1', 2: 'Val2', 3: 'replacement_val'}]
+#assert(returned_list1 == recursive_replace(list1, key, val))
+#assert(returned_list2 == recursive_replace(list2, key, val))
+
+def svd_inv_sqrt(C: np.array, hashtable: OrderedDict = None, max_hash_size: int = None) -> (np.array, np.array):
+    """Matrix inversion, based on decomposition.  Built to be stable, and positive.
+
+    Args:
+        C: matrix to invert
+        hashtable: if used, the hashtable to store/retrieve results in/from
+        max_hash_size: maximum size of hashtable
+
+    Return:
+        (np.array, np.array): inverse of C and square root of the inverse of C
+
+    """
+
+    # If we have a hash table, look for the precalculated solution
+    h = None
+    if hashtable is not None:
+        # If arrays are in Fortran ordering, they are not hashable.
+        if not C.flags['C_CONTIGUOUS']:
+            C = C.copy(order='C')
+        h = xxhash.xxh64_digest(C)
+        if h in hashtable:
+            return hashtable[h]
+
+    D, P = scipy.linalg.eigh(C)
+    for count in range(3):
+        if np.any(D < 0) or np.any(np.isnan(D)):
+            inv_eps = 1e-6 * (count+1)*10
+            D, P = scipy.linalg.eigh(
+                C + np.diag(np.ones(C.shape[0]) * inv_eps))
+        else:
+            break
+
+        if count == 2:
+            raise ValueError('Matrix inversion contains negative values,' +
+                             'even after adding {} to the diagonal.'.format(inv_eps))
+
+    Ds = np.diag(1/np.sqrt(D))
+    L = P@Ds
+    Cinv_sqrt = L@P.T
+    Cinv = L@L.T
+
+    # If there is a hash table, cache our solution.  Bound the total cache
+    # size by removing any extra items in FIFO order.
+    if (hashtable is not None) and (max_hash_size is not None):
+        hashtable[h] = (Cinv, Cinv_sqrt)
+        while len(hashtable) > max_hash_size:
+            hashtable.popitem(last=False)
+
+    return Cinv, Cinv_sqrt
 
 
+# POSITIVE SEMI-DEFINITE
+sample_array = np.array([[13, -4], [-4, 3]])
+sample_matrix = np.asmatrix(sample_array)
+result_matrix, result_matrix_sq = svd_inv_sqrt(sample_array)
+assert(result_matrix.all() == scipy.linalg.inv(sample_matrix).all())
+assert((result_matrix_sq @ result_matrix_sq).all() == result_matrix.all())
+
+sample_array_2 = np.array([[7, 2], [2, 1]])
+sample_matrix_2 = np.asmatrix(sample_array_2)
+result_matrix_2, result_matrix_sq_2 = svd_inv_sqrt(sample_array_2)
+assert(result_matrix_2.all() == scipy.linalg.inv(sample_matrix_2).all())
+assert((result_matrix_sq_2 @ result_matrix_sq_2).all() == result_matrix_2.all())
+
+
+sample_array_3 = np.array([[27, 20], [20, 16]])
+sample_matrix_3 = np.asmatrix(sample_array_3)
+result_matrix_3, result_matrix_sq_3 = svd_inv_sqrt(sample_array_3)
+assert(result_matrix_3.all() == scipy.linalg.inv(sample_matrix_3).all())
+assert((result_matrix_sq_3 @ result_matrix_sq_3).all() == result_matrix_3.all())
+
+
+# POSITIVE DEFINITE
+sample_array_4 = np.array([[2, -1, 0], [-1, 2, -1], [0, -1, 2]])
+sample_matrix_4 = np.asmatrix(sample_array_4)
+result_matrix_4, result_matrix_sq_4 = svd_inv_sqrt(sample_array_4)
+assert((scipy.linalg.inv(sample_matrix_4)).all() == result_matrix_4.all())
+assert((result_matrix_sq_4 @ result_matrix_sq_4).all() == result_matrix_4.all())
+
+
+sample_array_5 = np.array([[25, 15, -5], [15, 18, 0], [-5, 0, 11]])
+sample_matrix_5 = np.asmatrix(sample_array_5)
+result_matrix_5, result_matrix_sq_5 = svd_inv_sqrt(sample_array_5)
+assert((scipy.linalg.inv(sample_matrix_5)).all() == result_matrix_5.all())
+assert((result_matrix_sq_5 @ result_matrix_sq_5).all() == result_matrix_5.all())
+
+def svd_inv(C: np.array, hashtable: OrderedDict = None, max_hash_size: int = None):
+    """Matrix inversion, based on decomposition.  Built to be stable, and positive.
+
+    Args:
+        C: matrix to invert
+        hashtable: if used, the hashtable to store/retrieve results in/from
+        max_hash_size: maximum size of hashtable
+
+    Return:
+        np.array: inverse of C
+
+    """
+
+    return svd_inv_sqrt(C, hashtable, max_hash_size)[0]
+
+assert(svd_inv(sample_array_3).all() == svd_inv_sqrt(sample_array_3)[0].all())
+assert(svd_inv(sample_array_4).all() == svd_inv_sqrt(sample_array_4)[0].all())
+
+
+
+
+
+subpath = '/Desktop/Work_Updates.txt'
+file_address = os.path.basename(subpath)
+print(os.path.abspath(file_address))
+
+def expand_all_paths(to_expand: dict, absdir: str):
+    """Expand any dictionary entry containing the string 'file' into
+       an absolute path, if needed.
+
+    Args:
+        to_expand: dictionary to expand
+        absdir: path to expand with (absolute directory)
+
+    Returns:
+        dict: dictionary with expanded paths
+
+    """
+
+    def recursive_expand(j):
+        if isinstance(j, dict): # if dictionary
+            for key, value in j.items(): # through all pairs
+                if isinstance(key, str) and \
+                    ('file' in key or 'directory' in key or 'path' in key) and \
+                        isinstance(value, str): # if key is a string and contains specified word
+                    j[key] = expand_path(absdir, value) # replace it with its absolute path
+                else:
+                    j[key] = recursive_expand(value)
+            return j
+        elif isinstance(j, list):
+            for i, k in enumerate(j):
+                j[i] = recursive_expand(k)
+            return j
+        elif isinstance(j, tuple):
+            return tuple([recursive_reencode(k) for k in j])
+        return j
+
+    return recursive_expand(to_expand)
 
 
 

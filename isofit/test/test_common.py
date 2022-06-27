@@ -1,6 +1,7 @@
 import numpy as np
 from isofit.core.common import eps, combos, get_absorption, expand_path, load_spectrum, load_wavelen, spectral_response_function
 from io import StringIO
+import scipy
 
 def test_eps():
     assert eps == 1e-5
@@ -46,4 +47,24 @@ def test_load_spectrum():
     assert(spectrum_new.ndim == 1)
     assert(wavelength_new[0] > 100)
 
+def svd_inv_sqrt():
+    # PSD
+    sample_array_3 = np.array([[27, 20], [20, 16]])
+    sample_matrix_3 = np.asmatrix(sample_array_3)
+    result_matrix_3, result_matrix_sq_3 = svd_inv_sqrt(sample_array_3)
+    assert(result_matrix_3.all() == scipy.linalg.inv(sample_matrix_3).all())
+    assert((result_matrix_sq_3 @ result_matrix_sq_3).all() == result_matrix_3.all())
+
+    # PD
+    sample_array_4 = np.array([[2, -1, 0], [-1, 2, -1], [0, -1, 2]])
+    sample_matrix_4 = np.asmatrix(sample_array_4)
+    result_matrix_4, result_matrix_sq_4 = svd_inv_sqrt(sample_array_4)
+    assert((scipy.linalg.inv(sample_matrix_4)).all() == result_matrix_4.all())
+    assert((result_matrix_sq_4 @ result_matrix_sq_4).all() == result_matrix_4.all())
+
+def svd_inv():
+    sample_array_3 = np.array([[27, 20], [20, 16]])
+    assert(svd_inv(sample_array_3).all() == svd_inv_sqrt(sample_array_3)[0].all())
+    sample_array_4 = np.array([[2, -1, 0], [-1, 2, -1], [0, -1, 2]])
+    assert(svd_inv(sample_array_4).all() == svd_inv_sqrt(sample_array_4)[0].all())
 

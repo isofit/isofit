@@ -220,7 +220,7 @@ def svd_inv(C: np.array, hashtable: OrderedDict = None, max_hash_size: int = Non
     """Matrix inversion, based on decomposition.  Built to be stable, and positive.
 
     Args:
-        C: matrix to invert
+        C: matrix to invert, should be PD or PSD
         hashtable: if used, the hashtable to store/retrieve results in/from
         max_hash_size: maximum size of hashtable
 
@@ -236,7 +236,7 @@ def svd_inv_sqrt(C: np.array, hashtable: OrderedDict = None, max_hash_size: int 
     """Matrix inversion, based on decomposition.  Built to be stable, and positive.
 
     Args:
-        C: matrix to invert
+        C: matrix to invert, should be PD or PSD
         hashtable: if used, the hashtable to store/retrieve results in/from
         max_hash_size: maximum size of hashtable
 
