@@ -362,7 +362,11 @@ assert(sampleTuple == recursive_reencode(sampleTuple))
 #print(sampleDict.items())
 #print(sampleDict.values())
 
-def recursive_replace(obj, key, val) -> None: # doesn't return anything
+def recursive_replace(obj, key, val) -> None: # wondering how you know the key for the value you want to repace \
+    # might it not be the same key for every nested dictionary?
+
+    # potential issue: might replace objects with dictionaries in them
+    # the value of the specified key will get replaced, taking along anything inside with it
     """Find and replace a vector in a nested (mutable) structure.
 
     Args:
@@ -379,23 +383,33 @@ def recursive_replace(obj, key, val) -> None: # doesn't return anything
             recursive_replace(item, key, val) # pass those in as new objects
     elif any(isinstance(obj, t) for t in (list, tuple)): # if object is a list or tuple
         for item in obj: # iterating through
-            recursive_replace(item, key, val)
+            recursive_replace(item, key, val) # ultimately trying to see if any of the items inside is a dictionary containing \
+            # specified key
 
+list1 = ['list_val_1', 'list_val_2', 'list_val_3']
+recursive_replace(list1,2, 'replacement_val')
+unchanged_list1 = ['list_val_1', 'list_val_2', 'list_val_3']
+assert(unchanged_list1 == list1)
 
-dict1 = {1: 'Val1', 2: 'Val2', 3: 'Val3'}
-dict1_copy = dict1
-key = 3
-val = 'replacement_val'
-modified_dict1 = {1: 'Val1', 2: 'Val2', 3: 'replacement_val'}
-recursive_replace(dict1, key, val)
+dict1 = {1: 'dict_val_1', 2: 'dict_val_2', 3: 'dict_val_3'}
+modified_dict1 = {1: 'dict_val_1', 2: 'dict_val_2', 3: 'replacement_val'}
+recursive_replace(dict1, 3, 'replacement_val')
 assert(modified_dict1 == dict1)
-#assert(returned_dict1 == recursive_replace(dict1, key, val))
-#list1 = ['Val1', 'Val2', 'Val3']
-#returned_list1 = ['Val1', 'Val2', 'Val3']
-#list2 = ['Val1', 'Val2', dict1_copy]
-#returned_list2 = ['Val1', 'Val2', {1: 'Val1', 2: 'Val2', 3: 'replacement_val'}]
-#assert(returned_list1 == recursive_replace(list1, key, val))
-#assert(returned_list2 == recursive_replace(list2, key, val))
+
+dict2 = {1: 'dict_val_1', 2: ['list_val_1', {1: 'dict_val_2', 2: 'dict_val_3'\
+    , 3: ['list_val_2', 'list_val_3']}, 'list_val4'], 3:'dict_val_5'}
+recursive_replace(dict2,2,'replacement_val')
+modified_dict2 = {1: 'dict_val_1', 2: 'replacement_val', 3:'dict_val_5'}
+assert(dict2 == modified_dict2)
+
+dict3 = {1: ['list_val_1', {1: 'dict_val_1' , 2: 'dict_val_2'}, {1:'dict_val_3', 2:'dict_val_4', 3: ('tuple_val_5'\
+    , 'tuple_val_4')}], 2: (['list_val_2', 'list_val_3'], {1: 'dict_val_5',2: ['list_val_4', 'list_val_5'] ,3: 'dict_val_5'}),3: 'dict_val_6'}
+
+modified_dict3 = {1: ['list_val_1', {1: 'dict_val_1' , 2: 'dict_val_2'}, {1:'dict_val_3', 2:'dict_val_4', 3: 'replacement_val'}]\
+    , 2: (['list_val_2', 'list_val_3'], {1: 'dict_val_5',2: ['list_val_4', 'list_val_5'] ,3: 'replacement_val'}),3: 'replacement_val'}
+recursive_replace(dict3,3,'replacement_val')
+assert(modified_dict3 == dict3)
+
 
 def svd_inv_sqrt(C: np.array, hashtable: OrderedDict = None, max_hash_size: int = None) -> (np.array, np.array):
     """Matrix inversion, based on decomposition.  Built to be stable, and positive.
@@ -455,7 +469,7 @@ result_matrix, result_matrix_sq = svd_inv_sqrt(sample_array)
 assert(result_matrix.all() == scipy.linalg.inv(sample_matrix).all())
 assert((result_matrix_sq @ result_matrix_sq).all() == result_matrix.all())
 
-sample_array_2 = np.array([[7, 2], [2, 1]])
+sample_array_2 = np.array([[7, 0], [0, 1]])
 sample_matrix_2 = np.asmatrix(sample_array_2)
 result_matrix_2, result_matrix_sq_2 = svd_inv_sqrt(sample_array_2)
 assert(result_matrix_2.all() == scipy.linalg.inv(sample_matrix_2).all())

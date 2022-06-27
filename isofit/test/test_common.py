@@ -6,7 +6,6 @@ import scipy
 def test_eps():
     assert eps == 1e-5
 
-
 def test_combos():
     inds = np.array([[1, 2], [3, 4, 5]])
     result = np.array([[1, 3], [2, 3], [1, 4], [2, 4], [1, 5], [2, 5]])
@@ -47,7 +46,7 @@ def test_load_spectrum():
     assert(spectrum_new.ndim == 1)
     assert(wavelength_new[0] > 100)
 
-def svd_inv_sqrt():
+def test_svd_inv_sqrt():
     # PSD
     sample_array_3 = np.array([[27, 20], [20, 16]])
     sample_matrix_3 = np.asmatrix(sample_array_3)
@@ -62,9 +61,34 @@ def svd_inv_sqrt():
     assert((scipy.linalg.inv(sample_matrix_4)).all() == result_matrix_4.all())
     assert((result_matrix_sq_4 @ result_matrix_sq_4).all() == result_matrix_4.all())
 
-def svd_inv():
+def test_svd_inv():
     sample_array_3 = np.array([[27, 20], [20, 16]])
     assert(svd_inv(sample_array_3).all() == svd_inv_sqrt(sample_array_3)[0].all())
     sample_array_4 = np.array([[2, -1, 0], [-1, 2, -1], [0, -1, 2]])
     assert(svd_inv(sample_array_4).all() == svd_inv_sqrt(sample_array_4)[0].all())
+
+def test_recursive_replace():
+    list1 = ['list_val_1', 'list_val_2', 'list_val_3']
+    recursive_replace(list1,2, 'replacement_val')
+    unchanged_list1 = ['list_val_1', 'list_val_2', 'list_val_3']
+    assert(unchanged_list1 == list1)
+
+    dict1 = {1: 'dict_val_1', 2: 'dict_val_2', 3: 'dict_val_3'}
+    modified_dict1 = {1: 'dict_val_1', 2: 'dict_val_2', 3: 'replacement_val'}
+    recursive_replace(dict1, 3, 'replacement_val')
+    assert(modified_dict1 == dict1)
+
+    dict2 = {1: 'dict_val_1', 2: ['list_val_1', {1: 'dict_val_2', 2: 'dict_val_3'\
+        , 3: ['list_val_2', 'list_val_3']}, 'list_val4'], 3:'dict_val_5'}
+    recursive_replace(dict2,2,'replacement_val')
+    modified_dict2 = {1: 'dict_val_1', 2: 'replacement_val', 3:'dict_val_5'}
+    assert(dict2 == modified_dict2)
+
+    dict3 = {1: ['list_val_1', {1: 'dict_val_1' , 2: 'dict_val_2'}, {1:'dict_val_3', 2:'dict_val_4', 3: ('tuple_val_5'\
+        , 'tuple_val_4')}], 2: (['list_val_2', 'list_val_3'], {1: 'dict_val_5',2: ['list_val_4', 'list_val_5'] ,3: 'dict_val_5'}),3: 'dict_val_6'}
+
+    modified_dict3 = {1: ['list_val_1', {1: 'dict_val_1' , 2: 'dict_val_2'}, {1:'dict_val_3', 2:'dict_val_4', 3: 'replacement_val'}]\
+        , 2: (['list_val_2', 'list_val_3'], {1: 'dict_val_5',2: ['list_val_4', 'list_val_5'] ,3: 'replacement_val'}),3: 'replacement_val'}
+    recursive_replace(dict3,3,'replacement_val')
+    assert(modified_dict3 == dict3)
 
