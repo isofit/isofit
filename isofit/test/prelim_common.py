@@ -1,11 +1,15 @@
+from importlib.resources import path
 from operator import inv
+from unittest.case import _AssertRaisesContext
 import numpy as np
 import os
 from io import StringIO
 from os.path import expandvars, split, abspath
+from pytest import MonkeyPatch
 import xxhash
 import scipy.linalg
 from collections import OrderedDict
+import unittest
 
 
 
@@ -81,7 +85,7 @@ def emissive_radiance(emissivity: np.array, T: np.array, wl: np.array) -> (np.ar
     W_per_cm2_sr_nm = J_per_eV * eV_per_sec_cm2_sr_nm
     uW_per_cm2_sr_nm = W_per_cm2_sr_nm*1e6
     dRdn_dT = c_1/(wl**4)*(-pow(np.exp(c_2/wl/T)-1.0, -2.0)) *\
-        np.exp(c_2/wl/T)*(-pow(T, -2)*c_2/wl) *\
+        np.exp(c_2/wl/T)*(-pow(T, -2.0)*c_2/wl) *\
         emissivity/wl_um*1.2398*J_per_eV*1e6
     return uW_per_cm2_sr_nm, dRdn_dT
 
@@ -89,11 +93,12 @@ emissivity = np.array([0.8, 0.8])
 T = np.array([300, 300])
 wavelength = np.array([400, 600])
 
+
 #uW_per_cm2_sr_nm_modified, dRdn_dT_modified = emissive_radiance(emissivity, T, wavelength)
 #print(uW_per_cm2_sr_nm_modified)
 #print(dRdn_dT_modified)
 
-#assert(uW_per_cm2_sr_nm_modified = 7.90527265e-44)
+#assert(uW_per_cm2_sr_nm_modified == 7.90527265e-44)
 
 
 def spectral_response_function(response_range: np.array, mu: float, sigma: float):
@@ -123,26 +128,6 @@ srf = spectral_response_function(response_range, mu, sigma)
 assert(abs(srf[0] - 0.182425524) < 0.0000001)
 assert(abs(srf[1] - 0.817574476) < 0.0000001)
 
-def expand_path(directory: str, subpath: str) -> str:
-    """Expand a path variable to an absolute path, if it is not one already.
-    Args:
-        directory:  absolute location
-        subpath: path to expand
-    Returns:
-        str: expanded path
-    """
-
-    if subpath.startswith('/'):
-        return subpath
-    return os.path.join(directory, subpath)
-
-#def test_expand_path() -- backslash vs forward slash discrepancy
-assert(expand_path("NASA", "JPL") == "NASA\JPL")
-assert(expand_path("NASA", "/JPL") == "/JPL")
-
-def expand_path_to_absolute(subpath: str):
-    file_name = os.path.basename(subpath)
-    return os.path.abspath(file_name)
 
 
 
@@ -286,13 +271,36 @@ assert(wavelength_new[0] > 100)
 
 # new function to check if a path is an absolute path, isabs only checks it if begins with a backslash however
 # still have issues with this function
-def get_absolute_path(subpath: str, file_name: str) -> str: 
-    if os.path.isfile(subpath):
-        if os.path.isabs(subpath):
-            abs_path = os.path.abspath(file_name)
-            return abs_path
+
+def expand_path(directory: str, subpath: str) -> str:
+    """Expand a path variable to an absolute path, if it is not one already.
+    Args:
+        directory:  absolute location
+        subpath: path to expand
+    Returns:
+        str: expanded path
+    """
+
+    if subpath.startswith('/'):
         return subpath
-    raise Exception("Invalid Path")
+    return os.path.join(directory, subpath)
+
+#def test_expand_path() -- backslash vs forward slash discrepancy
+assert(expand_path("NASA", "JPL") == "NASA\JPL")
+assert(expand_path("NASA", "/JPL") == "/JPL")
+
+def expand_path_to_absolute(subpath: str):
+    if os.path.exists(subpath):
+        file_name = os.path.basename(subpath)
+        return os.path.abspath(file_name)
+    print('Invalid')
+
+path1 = '..\isofit'
+print(expand_path_to_absolute(path1))
+assert(r'C:\Users\vpatro\Desktop\isofit\isofit' == expand_path_to_absolute(path1))
+path2 = '..\Desktop\fake_subpath'
+
+
 
 #print(get_absolute_path(existing_path, "wl_multicol.txt"))
 
@@ -519,11 +527,11 @@ assert(svd_inv(sample_array_4).all() == svd_inv_sqrt(sample_array_4)[0].all())
 
 
 
-subpath = '/Desktop/Work_Updates.txt'
-file_address = os.path.basename(subpath)
-print(os.path.abspath(file_address))
+#subpath = '/Desktop/Work_Updates.txt'
+#file_address = os.path.basename(subpath)
+#print(os.path.abspath(file_address))
 
-def expand_all_paths(to_expand: dict, absdir: str):
+def expand_all_paths(to_expand: dict):
     """Expand any dictionary entry containing the string 'file' into
        an absolute path, if needed.
 
@@ -541,8 +549,8 @@ def expand_all_paths(to_expand: dict, absdir: str):
             for key, value in j.items(): # through all pairs
                 if isinstance(key, str) and \
                     ('file' in key or 'directory' in key or 'path' in key) and \
-                        isinstance(value, str): # if key is a string and contains specified word
-                    j[key] = expand_path(absdir, value) # replace it with its absolute path
+                        isinstance(value, str): # if both value and key are strings and contain specified word
+                    j[key] = expand_path_to_absolute(value) # replace it with its absolute path
                 else:
                     j[key] = recursive_expand(value)
             return j
@@ -551,10 +559,21 @@ def expand_all_paths(to_expand: dict, absdir: str):
                 j[i] = recursive_expand(k)
             return j
         elif isinstance(j, tuple):
-            return tuple([recursive_reencode(k) for k in j])
+            return tuple([recursive_expand(k) for k in j])
         return j
 
     return recursive_expand(to_expand)
+
+sample_dict = {'file': ['string_1', {'directory': '..\isofit'}], 'path': '..\isofit'}
+expanded_dict = {'file': ['string_1', {'directory': os.path.abspath('.\isofit')}], \
+    'path': os.path.abspath('.\isofit')}
+assert(expanded_dict == expand_all_paths(sample_dict))
+sample_list = ['file', ('string_1', {'path': '..\isofit', 'random': {'directory': '..\isofit'}}\
+    , 'random')]
+expanded_list = ['file', ('string_1', {'path': os.path.abspath('.\isofit')\
+    , 'random': {'directory': os.path.abspath('.\isofit')}}\
+    , 'random')]
+assert(expanded_list == expand_all_paths(sample_list))
 
 
 

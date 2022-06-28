@@ -10,6 +10,7 @@ surface_model("configs/ang20171108t184227_surface.json")
 model = Isofit("configs/ang20171108t173546_darklot.json")
 model.run()
 del model
+quit()
 
 model = Isofit("configs/ang20171108t173546_horse.json")
 model.run()

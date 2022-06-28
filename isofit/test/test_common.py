@@ -1,5 +1,6 @@
 import numpy as np
-from isofit.core.common import eps, combos, get_absorption, expand_path, load_spectrum, load_wavelen, spectral_response_function
+from isofit.core.common import eps, combos, get_absorption, expand_path, load_spectrum, load_wavelen, \
+    spectral_response_function, recursive_replace
 from io import StringIO
 import scipy
 
