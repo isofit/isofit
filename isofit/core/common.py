@@ -254,7 +254,10 @@ def svd_inv_sqrt(C: np.array, hashtable: OrderedDict = None, max_hash_size: int 
         h = xxhash.xxh64_digest(C)
         if h in hashtable:
             return hashtable[h]
-    # check condition
+    if (np.linalg.eigvals(C)).all() >= 0:
+        print('PD OR PSD')
+    else:
+        print('NEITHER PD NOR PSD')
     D, P = scipy.linalg.eigh(C)
     for count in range(3):
         if np.any(D < 0) or np.any(np.isnan(D)):

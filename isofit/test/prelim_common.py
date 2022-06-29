@@ -80,6 +80,7 @@ def emissive_radiance(emissivity: np.array, T: np.array, wl: np.array) -> (np.ar
     J_per_eV = 1.60218e-19
     wl_um = wl / 1000.0
     ph_per_sec_cm2_sr_nm = c_1/(wl**4)/(np.exp(c_2/wl/T)-1.0) * emissivity
+    print(ph_per_sec_cm2_sr_nm)
     # photon energy in eV
     eV_per_sec_cm2_sr_nm = 1.2398 * ph_per_sec_cm2_sr_nm/wl_um
     W_per_cm2_sr_nm = J_per_eV * eV_per_sec_cm2_sr_nm
@@ -92,7 +93,8 @@ def emissive_radiance(emissivity: np.array, T: np.array, wl: np.array) -> (np.ar
 emissivity = np.array([0.8, 0.8])
 T = np.array([300, 300])
 wavelength = np.array([400, 600])
-
+#print(400**4)
+#print((((1.88365e32/np.pi)/(400**4)/(np.exp(14387690/400/300)-1.0))*0.8)*0.4*1.2398*1.60218e-19*1e6)
 
 #uW_per_cm2_sr_nm_modified, dRdn_dT_modified = emissive_radiance(emissivity, T, wavelength)
 #print(uW_per_cm2_sr_nm_modified)
@@ -289,20 +291,17 @@ def expand_path(directory: str, subpath: str) -> str:
 assert(expand_path("NASA", "JPL") == "NASA\JPL")
 assert(expand_path("NASA", "/JPL") == "/JPL")
 
+subpath = 'isofit/test/test_common.py'
+
 def expand_path_to_absolute(subpath: str):
     if os.path.exists(subpath):
-        file_name = os.path.basename(subpath)
-        return os.path.abspath(file_name)
+        return os.path.abspath(subpath)
     print('Invalid')
 
-path1 = '..\isofit'
-print(expand_path_to_absolute(path1))
-assert(r'C:\Users\vpatro\Desktop\isofit\isofit' == expand_path_to_absolute(path1))
-path2 = '..\Desktop\fake_subpath'
+absolute_path = r'C:\Users\vpatro\Desktop\isofit\isofit\test\test_common.py'
+assert(absolute_path == os.path.abspath(subpath))
+assert(os.path.abspath(subpath) == expand_path_to_absolute(subpath))
 
-
-
-#print(get_absolute_path(existing_path, "wl_multicol.txt"))
 
 def find_header(inputpath: str) -> str:
 
@@ -564,14 +563,15 @@ def expand_all_paths(to_expand: dict):
 
     return recursive_expand(to_expand)
 
-sample_dict = {'file': ['string_1', {'directory': '..\isofit'}], 'path': '..\isofit'}
-expanded_dict = {'file': ['string_1', {'directory': os.path.abspath('.\isofit')}], \
-    'path': os.path.abspath('.\isofit')}
+subpath = 'isofit/test/test_common.py'
+sample_dict = {'file': ['string_1', {'directory': subpath}], 'path': subpath}
+expanded_dict = {'file': ['string_1', {'directory': os.path.abspath(subpath)}], \
+    'path': os.path.abspath(subpath)}
 assert(expanded_dict == expand_all_paths(sample_dict))
-sample_list = ['file', ('string_1', {'path': '..\isofit', 'random': {'directory': '..\isofit'}}\
+sample_list = ['file', ('string_1', {'path': subpath, 'random': {'directory': subpath}}\
     , 'random')]
-expanded_list = ['file', ('string_1', {'path': os.path.abspath('.\isofit')\
-    , 'random': {'directory': os.path.abspath('.\isofit')}}\
+expanded_list = ['file', ('string_1', {'path': os.path.abspath(subpath)\
+    , 'random': {'directory': os.path.abspath(subpath)}}\
     , 'random')]
 assert(expanded_list == expand_all_paths(sample_list))
 
