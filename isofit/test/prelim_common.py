@@ -12,10 +12,10 @@ from collections import OrderedDict
 import unittest
 
 
+from isofit.core.common import load_wavelen, spectral_response_function, get_absorption, \
+    resample_spectrum, load_spectrum, expand_path, find_header, recursive_reencode, recursive_replace, \
+        svd_inv_sqrt, svd_inv, expand_all_paths
 
-#from isofit.core.common import get_absorption
-#from isofit.core.common import load_wavelen, spectral_response_function, emissive_radiance
-# Test for load_wavelen(...)
 
 def load_wavelen(wavelength_file: str):
 
@@ -468,7 +468,6 @@ def svd_inv_sqrt(C: np.array, hashtable: OrderedDict = None, max_hash_size: int 
 
     return Cinv, Cinv_sqrt
 
-
 # POSITIVE SEMI-DEFINITE
 sample_array = np.array([[13, -4], [-4, 3]])
 sample_matrix = np.asmatrix(sample_array)
@@ -523,13 +522,6 @@ assert(svd_inv(sample_array_3).all() == svd_inv_sqrt(sample_array_3)[0].all())
 assert(svd_inv(sample_array_4).all() == svd_inv_sqrt(sample_array_4)[0].all())
 
 
-
-
-
-#subpath = '/Desktop/Work_Updates.txt'
-#file_address = os.path.basename(subpath)
-#print(os.path.abspath(file_address))
-
 def expand_all_paths(to_expand: dict):
     """Expand any dictionary entry containing the string 'file' into
        an absolute path, if needed.
@@ -574,17 +566,6 @@ expanded_list = ['file', ('string_1', {'path': os.path.abspath(subpath)\
     , 'random': {'directory': os.path.abspath(subpath)}}\
     , 'random')]
 assert(expanded_list == expand_all_paths(sample_list))
-
-
-
-
-
-
-
-    
-    
-
-
 
 
 print("FINISHED")

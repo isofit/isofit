@@ -302,6 +302,11 @@ def expand_path(directory: str, subpath: str) -> str:
         return subpath
     return os.path.join(directory, subpath)
 
+def expand_path_to_absolute(subpath: str):
+    if os.path.exists(subpath):
+        return os.path.abspath(subpath)
+    print('Invalid')
+
 
 def recursive_replace(obj, key, val) -> None:
     """Find and replace a vector in a nested (mutable) structure.
