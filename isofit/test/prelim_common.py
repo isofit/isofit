@@ -326,6 +326,10 @@ def find_header(inputpath: str) -> str:
     else:
         return inputpath + '.hdr'
 
+
+
+
+
 def recursive_reencode(j, shell_replace: bool = True): # to be deleted
     """Recursively re-encode a mutable object (ascii->str).
 

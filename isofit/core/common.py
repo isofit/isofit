@@ -234,9 +234,11 @@ def svd_inv(C: np.array, hashtable: OrderedDict = None, max_hash_size: int = Non
 
 def svd_inv_sqrt(C: np.array, hashtable: OrderedDict = None, max_hash_size: int = None) -> (np.array, np.array):
     """Matrix inversion, based on decomposition.  Built to be stable, and positive.
+    Written to operate on matrices that are at the least, positive semi-definite. This is achieved by 
+    conditioning of the diagonal to make all eigenvalues greater than or equal to 0.
 
     Args:
-        C: matrix to invert, should be PD or PSD
+        C: matrix to invert
         hashtable: if used, the hashtable to store/retrieve results in/from
         max_hash_size: maximum size of hashtable
 
@@ -254,10 +256,7 @@ def svd_inv_sqrt(C: np.array, hashtable: OrderedDict = None, max_hash_size: int 
         h = xxhash.xxh64_digest(C)
         if h in hashtable:
             return hashtable[h]
-    if (np.linalg.eigvals(C)).all() >= 0:
-        print('PD OR PSD')
-    else:
-        print('NEITHER PD NOR PSD')
+
     D, P = scipy.linalg.eigh(C)
     for count in range(3):
         if np.any(D < 0) or np.any(np.isnan(D)):
