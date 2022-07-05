@@ -1,8 +1,9 @@
 import numpy as np
 from isofit.core.common import eps, combos, get_absorption, expand_path, load_spectrum, load_wavelen, \
-    spectral_response_function, recursive_replace
+    spectral_response_function, recursive_replace, expand_path_to_absolute
 from io import StringIO
 import scipy
+import os
 
 def test_eps():
     assert eps == 1e-5
@@ -28,9 +29,9 @@ def test_get_absorption():
     assert(w_abscf_new[1] == 1.75e7*np.pi)
     assert(i_abscf_new[1] == 2.5e7*np.pi)
 
-def test_expand_path(): # -- backslash vs forward slash discrepancy
-    assert(expand_path("NASA", "JPL") == "NASA\JPL")
-    assert(expand_path("NASA", "/JPL") == "/JPL")
+def test_expand_to_absolute():
+    subpath = 'isofit/test/test_common.py'
+    assert(os.path.abspath(subpath) == expand_path_to_absolute(subpath))
 
 def test_spectral_response_function():
     response_range = np.array([10, 8])

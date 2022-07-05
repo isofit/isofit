@@ -6,15 +6,15 @@ import os
 from io import StringIO
 from os.path import expandvars, split, abspath
 from pytest import MonkeyPatch
-import xxhash
-import scipy.linalg
+#import xxhash
+#import scipy.linalg
 from collections import OrderedDict
 import unittest
 
 
-from isofit.core.common import load_wavelen, spectral_response_function, get_absorption, \
-    resample_spectrum, load_spectrum, expand_path, find_header, recursive_reencode, recursive_replace, \
-        svd_inv_sqrt, svd_inv, expand_all_paths
+#from isofit.core.common import load_wavelen, spectral_response_function, get_absorption, \
+    #resample_spectrum, load_spectrum, expand_path, find_header, recursive_reencode, recursive_replace, \
+        #svd_inv_sqrt, svd_inv, expand_all_paths
 
 
 def load_wavelen(wavelength_file: str):
@@ -288,7 +288,7 @@ def expand_path(directory: str, subpath: str) -> str:
     return os.path.join(directory, subpath)
 
 #def test_expand_path() -- backslash vs forward slash discrepancy
-assert(expand_path("NASA", "JPL") == "NASA\JPL")
+assert(expand_path("NASA", "JPL") == "NASA/JPL")
 assert(expand_path("NASA", "/JPL") == "/JPL")
 
 subpath = 'isofit/test/test_common.py'
@@ -298,8 +298,10 @@ def expand_path_to_absolute(subpath: str):
         return os.path.abspath(subpath)
     print('Invalid')
 
-absolute_path = r'C:\Users\vpatro\Desktop\isofit\isofit\test\test_common.py'
-assert(absolute_path == os.path.abspath(subpath))
+#absolute_path = r'C:\Users\vpatro\Desktop\isofit\isofit\test\test_common.py'
+#assert(absolute_path == os.path.abspath(subpath))
+
+subpath = 'isofit/test/test_common.py'
 assert(os.path.abspath(subpath) == expand_path_to_absolute(subpath))
 
 
@@ -326,6 +328,7 @@ def find_header(inputpath: str) -> str:
     else:
         return inputpath + '.hdr'
 
+print(os.path.isfile('Varun_Patro_Resume.pdf'))
 
 
 
@@ -421,9 +424,9 @@ modified_dict3 = {1: ['list_val_1', {1: 'dict_val_1' , 2: 'dict_val_2'}, {1:'dic
 recursive_replace(dict3,3,'replacement_val')
 assert(modified_dict3 == dict3)
 
-
+"""
 def svd_inv_sqrt(C: np.array, hashtable: OrderedDict = None, max_hash_size: int = None) -> (np.array, np.array):
-    """Matrix inversion, based on decomposition.  Built to be stable, and positive.
+    Matrix inversion, based on decomposition.  Built to be stable, and positive.
 
     Args:
         C: matrix to invert
@@ -433,7 +436,7 @@ def svd_inv_sqrt(C: np.array, hashtable: OrderedDict = None, max_hash_size: int 
     Return:
         (np.array, np.array): inverse of C and square root of the inverse of C
 
-    """
+    
 
     # If we have a hash table, look for the precalculated solution
     h = None
@@ -508,7 +511,8 @@ assert((scipy.linalg.inv(sample_matrix_5)).all() == result_matrix_5.all())
 assert((result_matrix_sq_5 @ result_matrix_sq_5).all() == result_matrix_5.all())
 
 def svd_inv(C: np.array, hashtable: OrderedDict = None, max_hash_size: int = None):
-    """Matrix inversion, based on decomposition.  Built to be stable, and positive.
+    
+    Matrix inversion, based on decomposition.  Built to be stable, and positive.
 
     Args:
         C: matrix to invert
@@ -518,12 +522,14 @@ def svd_inv(C: np.array, hashtable: OrderedDict = None, max_hash_size: int = Non
     Return:
         np.array: inverse of C
 
-    """
+    
 
     return svd_inv_sqrt(C, hashtable, max_hash_size)[0]
 
 assert(svd_inv(sample_array_3).all() == svd_inv_sqrt(sample_array_3)[0].all())
 assert(svd_inv(sample_array_4).all() == svd_inv_sqrt(sample_array_4)[0].all())
+
+"""
 
 
 def expand_all_paths(to_expand: dict):
