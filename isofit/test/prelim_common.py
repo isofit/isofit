@@ -6,15 +6,15 @@ import os
 from io import StringIO
 from os.path import expandvars, split, abspath
 from pytest import MonkeyPatch
-#import xxhash
-#import scipy.linalg
+import xxhash
+import scipy.linalg
 from collections import OrderedDict
 import unittest
 
 
-#from isofit.core.common import load_wavelen, spectral_response_function, get_absorption, \
-    #resample_spectrum, load_spectrum, expand_path, find_header, recursive_reencode, recursive_replace, \
-        #svd_inv_sqrt, svd_inv, expand_all_paths
+from isofit.core.common import load_wavelen, spectral_response_function, get_absorption, \
+    resample_spectrum, load_spectrum, expand_path, find_header, recursive_reencode, recursive_replace, \
+        svd_inv_sqrt, svd_inv, expand_all_paths
 
 
 def load_wavelen(wavelength_file: str):
@@ -328,8 +328,6 @@ def find_header(inputpath: str) -> str:
     else:
         return inputpath + '.hdr'
 
-print(os.path.isfile('Varun_Patro_Resume.pdf'))
-
 
 
 
@@ -373,8 +371,6 @@ assert(sampleList == recursive_reencode(sampleList))
 sampleTuple = ({1: 'Glenn', 2: ('Marshall', 'Ames')}, ['Johnson', 'Kennedy'], 'JPL')
 assert(sampleTuple == recursive_reencode(sampleTuple))
 
-#print(sampleDict.items())
-#print(sampleDict.values())
 
 def recursive_replace(obj, key, val) -> None: # wondering how you know the key for the value you want to repace \
     # might it not be the same key for every nested dictionary?
@@ -424,8 +420,9 @@ modified_dict3 = {1: ['list_val_1', {1: 'dict_val_1' , 2: 'dict_val_2'}, {1:'dic
 recursive_replace(dict3,3,'replacement_val')
 assert(modified_dict3 == dict3)
 
-"""
+
 def svd_inv_sqrt(C: np.array, hashtable: OrderedDict = None, max_hash_size: int = None) -> (np.array, np.array):
+    """
     Matrix inversion, based on decomposition.  Built to be stable, and positive.
 
     Args:
@@ -436,6 +433,7 @@ def svd_inv_sqrt(C: np.array, hashtable: OrderedDict = None, max_hash_size: int 
     Return:
         (np.array, np.array): inverse of C and square root of the inverse of C
 
+    """
     
 
     # If we have a hash table, look for the precalculated solution
@@ -488,11 +486,15 @@ result_matrix_2, result_matrix_sq_2 = svd_inv_sqrt(sample_array_2)
 assert(result_matrix_2.all() == scipy.linalg.inv(sample_matrix_2).all())
 assert((result_matrix_sq_2 @ result_matrix_sq_2).all() == result_matrix_2.all())
 
-
-sample_array_3 = np.array([[27, 20], [20, 16]])
+###### SOME ISSUE HERE
+sample_array_3 = np.array([[4, 7], [2, 6]])
 sample_matrix_3 = np.asmatrix(sample_array_3)
+#print(sample_matrix_3)
 result_matrix_3, result_matrix_sq_3 = svd_inv_sqrt(sample_array_3)
-assert(result_matrix_3.all() == scipy.linalg.inv(sample_matrix_3).all())
+inverse = scipy.linalg.inv(sample_matrix_3)
+assert(result_matrix_3.all() == inverse.all())
+#print(scipy.linalg.inv(sample_matrix_3))
+#print(result_matrix_3)
 assert((result_matrix_sq_3 @ result_matrix_sq_3).all() == result_matrix_3.all())
 
 
@@ -510,30 +512,35 @@ result_matrix_5, result_matrix_sq_5 = svd_inv_sqrt(sample_array_5)
 assert((scipy.linalg.inv(sample_matrix_5)).all() == result_matrix_5.all())
 assert((result_matrix_sq_5 @ result_matrix_sq_5).all() == result_matrix_5.all())
 
+
 def svd_inv(C: np.array, hashtable: OrderedDict = None, max_hash_size: int = None):
-    
-    Matrix inversion, based on decomposition.  Built to be stable, and positive.
 
-    Args:
-        C: matrix to invert
-        hashtable: if used, the hashtable to store/retrieve results in/from
-        max_hash_size: maximum size of hashtable
+    """
+        
+        Matrix inversion, based on decomposition.  Built to be stable, and positive.
 
-    Return:
-        np.array: inverse of C
+        Args:
+            C: matrix to invert
+            hashtable: if used, the hashtable to store/retrieve results in/from
+            max_hash_size: maximum size of hashtable
 
-    
+        Return:
+            np.array: inverse of C
+
+    """
+
+  
 
     return svd_inv_sqrt(C, hashtable, max_hash_size)[0]
 
 assert(svd_inv(sample_array_3).all() == svd_inv_sqrt(sample_array_3)[0].all())
 assert(svd_inv(sample_array_4).all() == svd_inv_sqrt(sample_array_4)[0].all())
 
-"""
-
 
 def expand_all_paths(to_expand: dict):
-    """Expand any dictionary entry containing the string 'file' into
+
+    """
+    Expand any dictionary entry containing the string 'file' into
        an absolute path, if needed.
 
     Args:
@@ -576,6 +583,65 @@ expanded_list = ['file', ('string_1', {'path': os.path.abspath(subpath)\
     , 'random': {'directory': os.path.abspath(subpath)}}\
     , 'random')]
 assert(expanded_list == expand_all_paths(sample_list))
+
+
+def resample_spectrum(x: np.array, wl: np.array, wl2: np.array, fwhm2: np.array, fill: bool = False) -> np.array:
+    """Resample a spectrum to a new wavelength / FWHM.
+       Assumes Gaussian SRFs.
+
+    Args:
+        x: radiance vector
+        wl: sample starting wavelengths
+        wl2: wavelengths to resample to
+        fwhm2: full-width-half-max at resample resolution
+        fill: boolean indicating whether to fill in extrapolated regions
+
+    Returns:
+        np.array: interpolated radiance vector
+
+    """
+    
+    H = np.array([spectral_response_function(wl, wi, fwhmi / 2.355)
+                  for wi, fwhmi in zip(wl2, fwhm2)])
+    if fill is False:
+        return np.dot(H, x[:, np.newaxis]).ravel()
+    else:
+        xnew = np.dot(H, x[:, np.newaxis]).ravel()
+        good = np.isfinite(xnew)
+        for i, xi in enumerate(xnew):
+            if not good[i]:
+                nearest_good_ind = np.argmin(abs(wl2[good]-wl2[i]))
+                xnew[i] = xnew[nearest_good_ind]
+        return xnew
+
+
+
+
+
+
+wl2 = np.array([10, 12])
+fwhm2 = np.array([26, 32])
+wl = np.array([20, 30])
+x = np.array([2, 3])
+# fill is False
+assert((resample_spectrum(x, wl, wl2, fwhm2)).all() == (np.array([2.22607173, 2.33090711])).all())
+
+xnew = np.array([2, np.nan])
+#print(xnew)
+good = np.isfinite(xnew)
+#print(type(good))
+for i, xi in enumerate(xnew):
+    if not good[i]:
+        nearest_good_ind = np.argmin(abs(wl2[good]-wl2[i]))
+        #print(good)
+        #print(wl2)
+        #print(wl2[good])
+        xnew[i] = xnew[nearest_good_ind]
+
+print(xnew) 
+
+
+
 
 
 print("FINISHED")

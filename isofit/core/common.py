@@ -301,6 +301,7 @@ def expand_path(directory: str, subpath: str) -> str:
         return subpath
     return os.path.join(directory, subpath)
 
+# throw an exception if invalid path
 def expand_path_to_absolute(subpath: str):
     if os.path.exists(subpath):
         return os.path.abspath(subpath)
