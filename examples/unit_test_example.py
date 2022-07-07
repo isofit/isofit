@@ -6,6 +6,7 @@ from isofit.core.forward import ForwardModel
 from isofit.configs.configs import create_new_config, get_config_differences
 from isofit.inversion.inverse import Inversion
 from isofit.core.fileio import IO
+import numpy as np
 
 
 print('BUILDING ...')
@@ -71,16 +72,22 @@ assert(get_config_differences(config1, config2) == {'input': {'measured_radiance
 #print(config1.get_config_as_dict())
 #print(config1.get_config_errors())
 
-"""
+
 config = create_new_config("20171108_Pasadena/configs/ang20171108t184227_beckmanlawn.json")
 fm = ForwardModel(config)
+sample_state_vector = np.random.rand(427,1)
+sample_state_vector[425] = 1.75
+sample_state_vector[426] = 0.05
+#print(sample_state_vector.shape)
+
 inv = Inversion(config, fm)
 io = IO(config, fm)
 
 io.get_components_at_index(0, 0)
 geom = io.current_input_data.geom # alternately, call via geom = Geometry()...this won't have data from the above config file
 meas = io.current_input_data.meas  # alternately, pass in a num_wavelength numpy array (e.g., 425)
+print(fm.out_of_bounds(sample_state_vector))
 
-"""
+#print(fm.xa(sample_state_vector, geom))
 
 print('END')
