@@ -638,7 +638,7 @@ for i, xi in enumerate(xnew):
         #print(wl2[good])
         xnew[i] = xnew[nearest_good_ind]
 
-print(xnew) 
+#print(xnew) 
 
 
 
