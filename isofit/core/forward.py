@@ -137,8 +137,9 @@ class ForwardModel:
         x_surface = x[self.idx_surface]
         bound_lwr = self.bounds[0]
         bound_upr = self.bounds[1]
-        return any(x_RT >= (bound_upr[self.idx_RT] - eps*2.0)) or \
-            any(x_RT <= (bound_lwr[self.idx_RT] + eps*2.0))
+        print(x_RT.shape)
+        return ((x_RT >= (bound_upr[self.idx_RT] - eps*2.0)) or \
+            (x_RT <= (bound_lwr[self.idx_RT] + eps*2.0)))
 
     def xa(self, x, geom):
         """Calculate the prior mean of the state vector (the concatenation
