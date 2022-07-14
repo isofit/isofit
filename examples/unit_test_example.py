@@ -79,6 +79,8 @@ sample_state_vector = np.random.rand(427,1)
 sample_state_vector[425] = 1.75
 sample_state_vector[426] = 0.05
 #print(sample_state_vector.shape)
+print(fm.out_of_bounds(sample_state_vector))
+
 
 inv = Inversion(config, fm)
 io = IO(config, fm)
@@ -86,7 +88,6 @@ io = IO(config, fm)
 io.get_components_at_index(0, 0)
 geom = io.current_input_data.geom # alternately, call via geom = Geometry()...this won't have data from the above config file
 meas = io.current_input_data.meas  # alternately, pass in a num_wavelength numpy array (e.g., 425)
-print(fm.out_of_bounds(sample_state_vector))
 
 #print(fm.xa(sample_state_vector, geom))
 
