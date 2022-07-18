@@ -127,7 +127,9 @@ class MultiComponentSurface(Surface):
             else:
                 md = sum(pow(lamb_ref - ref_mu, 2))
             mds.append(md)
+            print('cluster:', len(mds))
         closest = np.argmin(mds)
+        print('closest:', closest)
 
         if self.select_on_init and hasattr(geom, 'x_surf_init') and \
                 (not hasattr(geom, 'surf_cmp_init')):

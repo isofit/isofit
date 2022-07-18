@@ -61,10 +61,10 @@ assert(config2._get_hidden_attributes() == [])
 assert(config1.get_all_element_names() == ['input', 'output', 'forward_model', 'implementation'])
 assert(config1.get_element_names() == ['forward_model', 'implementation', 'input', 'output'])
 
-print(config1.get_all_elements())
+#print(config1.get_all_elements())
 
 
-print(config1.get_single_element_by_name('input'))
+#print(config1.get_single_element_by_name('input'))
 
 
 #print(config1.check_config_validity())
@@ -87,14 +87,14 @@ fm = ForwardModel(config)
 
 
 # randomly generated surface reflectance values for 425 channels
-sample_state_vector = np.random.rand(427,1)
+sample_state_vector = np.random.rand(427)
 # water vapor
 sample_state_vector[425] = 1.75
 # aerosol
 sample_state_vector[426] = 0.05
 #print(fm.out_of_bounds(sample_state_vector))
 
-
+print(sample_state_vector.shape)
 inv = Inversion(config, fm)
 io = IO(config, fm)
 
@@ -102,9 +102,18 @@ io.get_components_at_index(0, 0)
 geom = io.current_input_data.geom # alternately, call via geom = Geometry()...this won't have data from the above config file
 meas = io.current_input_data.meas  # alternately, pass in a num_wavelength numpy array (e.g., 425)
 x_surface = sample_state_vector[fm.idx_surface]
-#import pdb; pdb.set_trace();
-#xa_surface = fm.surface.xa(x_surface, geom)
+xa_surface = fm.surface.xa(x_surface, geom)
 
-#print(fm.xa(sample_state_vector, geom))
+assert(fm.xa(sample_state_vector, geom).shape == sample_state_vector.shape)
+# RT parameters should not have changed
+assert(fm.xa(sample_state_vector, geom)[-2:].all() == sample_state_vector[-2:].all())
+
+#import pdb; pdb.set_trace();
+assert(fm.Sa(sample_state_vector,geom).shape == (427,427))
+assert(fm.calc_lamb(sample_state_vector,geom).shape == (425,))
+import pdb; pdb.set_trace()
+fm.calc_rfl(sample_state_vector, geom)
+
+
 
 print('END')
