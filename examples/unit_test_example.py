@@ -46,16 +46,25 @@ config1 = Config(sample_dict_1)
 config1_duplicate = Config(sample_dict_1)
 config2 = Config(sample_dict_2)
 config3 = Config(sample_dict_3)
+
+#import pdb; pdb.set_trace()
+#print(config1._get_expected_type_for_option_key('input'))
+#print(config1._get_expected_type_for_option_key('input') == 'isofit.configs.sections.input_config.InputConfig')
+#print(config1.get_config_options_as_dict())
 assert(config1._get_nontype_attributes() == ['input', 'output', 'forward_model', 'implementation'])
-assert(config1.get_all_element_names() == ['input', 'output', 'forward_model', 'implementation'])
-#print(config1.get_all_elements())
 assert(config1._get_type_attributes() == ['_input_type', '_output_type', \
     '_forward_model_type', '_implementation_type'])
-assert(config2._get_type_attributes() == ['_input_type', '_output_type', \
-    '_forward_model_type', '_implementation_type'])
+# would ideally also include an example config containing a hidden attribute
+assert(config1._get_hidden_attributes() == [])
 assert(config2._get_hidden_attributes() == [])
-assert(config3._get_hidden_attributes() == [])
-#print(config1.get_single_element_by_name('input'))
+
+assert(config1.get_all_element_names() == ['input', 'output', 'forward_model', 'implementation'])
+assert(config1.get_element_names() == ['forward_model', 'implementation', 'input', 'output'])
+
+print(config1.get_all_elements())
+
+
+print(config1.get_single_element_by_name('input'))
 
 
 #print(config1.check_config_validity())
@@ -75,11 +84,15 @@ assert(get_config_differences(config1, config2) == {'input': {'measured_radiance
 
 config = create_new_config("20171108_Pasadena/configs/ang20171108t184227_beckmanlawn.json")
 fm = ForwardModel(config)
+
+
+# randomly generated surface reflectance values for 425 channels
 sample_state_vector = np.random.rand(427,1)
+# water vapor
 sample_state_vector[425] = 1.75
+# aerosol
 sample_state_vector[426] = 0.05
-#print(sample_state_vector.shape)
-print(fm.out_of_bounds(sample_state_vector))
+#print(fm.out_of_bounds(sample_state_vector))
 
 
 inv = Inversion(config, fm)
@@ -88,6 +101,9 @@ io = IO(config, fm)
 io.get_components_at_index(0, 0)
 geom = io.current_input_data.geom # alternately, call via geom = Geometry()...this won't have data from the above config file
 meas = io.current_input_data.meas  # alternately, pass in a num_wavelength numpy array (e.g., 425)
+x_surface = sample_state_vector[fm.idx_surface]
+#import pdb; pdb.set_trace();
+#xa_surface = fm.surface.xa(x_surface, geom)
 
 #print(fm.xa(sample_state_vector, geom))
 

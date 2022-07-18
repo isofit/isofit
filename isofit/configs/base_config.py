@@ -135,13 +135,25 @@ class BaseConfigSection(object):
 
     def get_elements(self):
         elements = self.get_all_elements()
+        #print('elements:', elements)
+        #for i in elements:
+            #print(type(i))
         element_names = self._get_nontype_attributes()
+        #print('element names:', element_names)
         valid = [x is not None for x in elements]
+        #print('valid elements:', valid)
         elements = [elements[x] for x in range(len(elements)) if valid[x]]
+        #print('modified elements:', elements)
         element_names = [element_names[x] for x in range(len(element_names)) if valid[x]]
 
+        # sorts them
         order = np.argsort(element_names)
+        unsorted_elements = elements
         elements = [elements[idx] for idx in order]
+        #print('\n')
+        #print('sorted elements:', elements)
+        #if (unsorted_elements == elements):
+            #print('no sorting required')
         element_names = [element_names[idx] for idx in order]
 
         return elements, element_names

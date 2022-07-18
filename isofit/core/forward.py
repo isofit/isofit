@@ -133,14 +133,19 @@ class ForwardModel:
     def out_of_bounds(self, x):
         """Check if state vector is within bounds."""
 
+
         x_RT = x[self.idx_RT]
-        print(x_RT.shape)
-        print('ACKNOWLEDGE')
+        #print(x_RT.shape)
+        #print(x_RT)
         x_surface = x[self.idx_surface]
         bound_lwr = self.bounds[0]
+        #print(bound_lwr.shape)
+        #print(bound_lwr)
         bound_upr = self.bounds[1]
-        return ((x_RT >= (bound_upr[self.idx_RT] - eps*2.0)) or \
-            (x_RT <= (bound_lwr[self.idx_RT] + eps*2.0)))
+        #print(bound_upr.shape)
+        #print(bound_upr)
+        return ((x_RT[0] >= ((bound_upr[self.idx_RT]).all() - eps*2.0)) or \
+            (x_RT[1] <= ((bound_lwr[self.idx_RT]).all() + eps*2.0)))
 
     def xa(self, x, geom):
         """Calculate the prior mean of the state vector (the concatenation

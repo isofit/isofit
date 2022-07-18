@@ -144,6 +144,8 @@ class MultiComponentSurface(Surface):
         lamb_ref = lamb[self.idx_ref]
         mu = np.zeros(self.n_state)
         ci = self.component(x_surface, geom)
+        print('ci:', ci)
+        print('length of self.components:', len(self.components))
         lamb_mu = self.components[ci][0]
         lamb_mu = lamb_mu * self.norm(lamb_ref)
         mu[self.idx_lamb] = lamb_mu

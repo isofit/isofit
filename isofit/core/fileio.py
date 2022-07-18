@@ -366,7 +366,7 @@ class IO:
             self.flush_buffers()
 
         if self.simulation_mode:
-            # If solving the inverse problem, the measurment is the surface reflectance
+            # If solving the inverse problem, the measurment is the surface reflectance (FORWARD?)
             meas = data['reflectance_file'].copy()
         else:
             # If solving the inverse problem, the measurment is the radiance
