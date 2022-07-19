@@ -28,7 +28,7 @@ from isofit.core.common import expand_path, json_load_ascii, envi_header
 
 
 def surface_model(config_path: str, wavelength_path: str = None, 
-        output_path: str = None) -> None:
+        output_path: str = None, seed=13) -> None:
     """The surface model tool contains everything you need to build basic
     multicomponent (i.e. colleciton of Gaussian) surface priors for the
     multicomponent surface model.
@@ -39,9 +39,13 @@ def surface_model(config_path: str, wavelength_path: str = None,
            overriding the configuration file settings
         output_path: optional path to the destination .mat file, overriding
            the configuration file settings
+        seed: seed used for clustering
     Returns:
         None
     """
+
+    # Set seed for random draws later
+    np.random.seed(seed)
 
     # Load configuration JSON into a local dictionary
     configdir, _ = os.path.split(os.path.abspath(config_path))
@@ -201,7 +205,7 @@ def surface_model(config_path: str, wavelength_path: str = None,
         # Two step model generation.  First step is k-means clustering.
         # This is more "stable" than Expectation Maximization with an 
         # unconstrained covariance matrix    
-        kmeans = KMeans(init='k-means++', n_clusters=ncomp, n_init=10)
+        kmeans = KMeans(init='k-means++', n_clusters=ncomp, n_init=10, random_state=seed)
         kmeans.fit(spectra)
         Z = kmeans.predict(spectra)
 
