@@ -213,7 +213,6 @@ class ForwardModel:
 
     def calc_lamb(self, x, geom):
         """Calculate the Lambertian surface reflectance."""
-        print(len(self.idx_lamb))
         return self.surface.calc_lamb(x[self.idx_surface], geom)
 
     def Seps(self, x, meas, geom):

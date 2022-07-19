@@ -83,6 +83,7 @@ assert(get_config_differences(config1, config2) == {'input': {'measured_radiance
 
 
 config = create_new_config("20171108_Pasadena/configs/ang20171108t184227_beckmanlawn.json")
+
 fm = ForwardModel(config)
 
 
@@ -93,6 +94,10 @@ sample_state_vector[425] = 1.75
 # aerosol
 sample_state_vector[426] = 0.05
 #print(fm.out_of_bounds(sample_state_vector))
+val = 0
+for i in range(425):
+  val = val + 0.001
+  sample_state_vector[i] = val
 
 print(sample_state_vector.shape)
 inv = Inversion(config, fm)
@@ -106,13 +111,13 @@ xa_surface = fm.surface.xa(x_surface, geom)
 
 assert(fm.xa(sample_state_vector, geom).shape == sample_state_vector.shape)
 # RT parameters should not have changed
+import pdb; pdb.set_trace()
 assert(fm.xa(sample_state_vector, geom)[-2:].all() == sample_state_vector[-2:].all())
 
 #import pdb; pdb.set_trace();
-assert(fm.Sa(sample_state_vector,geom).shape == (427,427))
-assert(fm.calc_lamb(sample_state_vector,geom).shape == (425,))
-import pdb; pdb.set_trace()
-fm.calc_rfl(sample_state_vector, geom)
+#assert(fm.Sa(sample_state_vector,geom).shape == (427,427))
+#assert(fm.calc_lamb(sample_state_vector,geom).shape == (425,))
+#fm.calc_rfl(sample_state_vector, geom)
 
 
 
