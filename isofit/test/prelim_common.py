@@ -627,15 +627,15 @@ x = np.array([2, 3])
 assert((resample_spectrum(x, wl, wl2, fwhm2)).all() == (np.array([2.22607173, 2.33090711])).all())
 
 xnew = np.array([2, np.nan])
-#print(xnew)
+print('xnew:', xnew)
 good = np.isfinite(xnew)
-#print(type(good))
+print('type (good):', type(good))
 for i, xi in enumerate(xnew):
     if not good[i]:
         nearest_good_ind = np.argmin(abs(wl2[good]-wl2[i]))
-        #print(good)
-        #print(wl2)
-        #print(wl2[good])
+        print('good:', good)
+        print('wl2:', wl2)
+        print('wl2[good]:', wl2[good])
         xnew[i] = xnew[nearest_good_ind]
 
 #print(xnew) 
@@ -645,8 +645,11 @@ for i, xi in enumerate(xnew):
 
 
 
-myList = [(1, 2), (3,4 ), (5,6)]
-print(myList[1][0])
+#myArray = np.array([1, 2, 3, np.inf, 4, 5])
+#isGood = np.isfinite(myArray)
+#print(len(isGood))
+#print(myArray[good])
+
 
 
 
