@@ -109,15 +109,23 @@ meas = io.current_input_data.meas  # alternately, pass in a num_wavelength numpy
 x_surface = sample_state_vector[fm.idx_surface]
 xa_surface = fm.surface.xa(x_surface, geom)
 
-assert(fm.xa(sample_state_vector, geom).shape == sample_state_vector.shape)
+##assert(fm.xa(sample_state_vector, geom).shape == sample_state_vector.shape)
 # RT parameters should not have changed
-import pdb; pdb.set_trace()
-assert(fm.xa(sample_state_vector, geom)[-2:].all() == sample_state_vector[-2:].all())
+#import pdb; pdb.set_trace()
+##assert(fm.xa(sample_state_vector, geom)[-2:].all() == sample_state_vector[-2:].all())
 
 #import pdb; pdb.set_trace();
-#assert(fm.Sa(sample_state_vector,geom).shape == (427,427))
+##assert(fm.Sa(sample_state_vector,geom).shape == (427,427))
 #assert(fm.calc_lamb(sample_state_vector,geom).shape == (425,))
 #fm.calc_rfl(sample_state_vector, geom)
+##print((fm.calc_meas(sample_state_vector, geom)).shape)
+
+##assert(len(fm.unpack(sample_state_vector)) == 3)
+##assert(fm.unpack(sample_state_vector)[0].all() == sample_state_vector[:425].all())
+##assert(fm.unpack(sample_state_vector)[1].all() == sample_state_vector[425:].all())
+
+
+
 
 
 

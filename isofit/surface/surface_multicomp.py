@@ -46,7 +46,21 @@ class MultiComponentSurface(Surface):
 
         # Models are stored as dictionaries in .mat format
         # TODO: inforce surface_file existence in the case of multicomponent_surface
+
+        count = 0
         model_dict = loadmat(config.surface_file)
+        for key,value in model_dict.items():
+            if key == 'normalize':
+                print('value of normalize key', value)
+            if count > 2:
+                print('key:', key)
+                print(type(value))
+                print(value.shape)
+            count = count + 1
+
+
+
+  
         self.components = list(zip(model_dict['means'], model_dict['covs']))
         self.n_comp = len(self.components)
         self.wl = model_dict['wl'][0]
@@ -102,6 +116,15 @@ class MultiComponentSurface(Surface):
         based on that first solution. That state is preserved in the 
         geometry object.
         """
+        """
+
+        for i in range(len(self.components)):
+            print('component:', i)
+            for j in range(len(self.components[i])):
+                print('type:' , type(self.components[i][j]))
+                print('shape:', self.components[i][j].shape)
+
+        """
 
         if self.n_comp <= 1:
             return 0
@@ -127,9 +150,9 @@ class MultiComponentSurface(Surface):
             else:
                 md = sum(pow(lamb_ref - ref_mu, 2))
             mds.append(md)
-            print('cluster:', len(mds))
+            #print('cluster:', len(mds))
         closest = np.argmin(mds)
-        print('closest:', closest)
+        #print('closest:', closest)
 
         if self.select_on_init and hasattr(geom, 'x_surf_init') and \
                 (not hasattr(geom, 'surf_cmp_init')):
@@ -146,8 +169,8 @@ class MultiComponentSurface(Surface):
         lamb_ref = lamb[self.idx_ref]
         mu = np.zeros(self.n_state)
         ci = self.component(x_surface, geom)
-        print('ci:', ci)
-        print('length of self.components:', len(self.components))
+        #print('ci:', ci)
+        #print('length of self.components:', len(self.components))
         lamb_mu = self.components[ci][0]
         lamb_mu = lamb_mu * self.norm(lamb_ref)
         mu[self.idx_lamb] = lamb_mu
