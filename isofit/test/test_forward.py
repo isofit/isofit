@@ -44,7 +44,6 @@ xa_surface = fm.surface.xa(x_surface, geom)
 
 ##assert(fm.xa(sample_state_vector, geom).shape == sample_state_vector.shape)
 # RT parameters should not have changed
-#import pdb; pdb.set_trace()
 ##assert(fm.xa(sample_state_vector, geom)[-2:].all() == sample_state_vector[-2:].all())
 
 #import pdb; pdb.set_trace();
@@ -52,6 +51,10 @@ xa_surface = fm.surface.xa(x_surface, geom)
 #assert(fm.calc_lamb(sample_state_vector,geom).shape == (425,))
 #fm.calc_rfl(sample_state_vector, geom)
 ##print((fm.calc_meas(sample_state_vector, geom)).shape)
+
+assert(fm.calc_lamb(sample_state_vector, geom).all() == sample_state_vector[:425].all())
+assert(fm.calc_rfl(sample_state_vector, geom).all() == sample_state_vector[:425].all())
+
 
 assert(len(fm.unpack(sample_state_vector)) == 3)
 assert(fm.unpack(sample_state_vector)[0].all() == sample_state_vector[:425].all())
@@ -61,11 +64,11 @@ assert(fm.unpack(sample_state_vector)[1].all() == sample_state_vector[425:].all(
 
 #multicomponent_surface.py
 
-assert(fm.calc_lamb(sample_state_vector, geom).all() == sample_state_vector[:425].all())
-assert(fm.calc_rfl(sample_state_vector, geom).all() == sample_state_vector[:425].all())
+assert(fm.surface.calc_lamb(sample_state_vector, geom).all() == sample_state_vector[:425].all())
+assert(fm.surface.calc_rfl(sample_state_vector, geom).all() == sample_state_vector[:425].all())
 
 #print(fm.surface.dlamb_dsurface(sample_state_vector, geom))
 #print(fm.surface.summarize(sample_state_vector, geom))
 
 
-print('COMPLETE')
+print('TESTS COMPLETE')
