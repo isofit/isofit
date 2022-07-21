@@ -94,3 +94,17 @@ def test_recursive_replace():
     recursive_replace(dict3,3,'replacement_val')
     assert(modified_dict3 == dict3)
 
+def main():
+    test_eps()
+    test_load_wavelen()
+    test_load_spectrum()
+    test_get_absorption()
+    test_recursive_replace()
+    test_expand_to_absolute()
+    test_spectral_response_function()
+
+    print('TESTS COMPLETE')
+
+main()
+
+

@@ -181,7 +181,9 @@ class MultiComponentSurface(Surface):
         Lambertian (non-specular) version of the surface reflectance."""
 
         lamb = self.calc_lamb(x_surface, geom)
+        print('lamb shape:', lamb.shape)
         lamb_ref = lamb[self.idx_ref]
+        print('lamb_ref shape', lamb_ref)
         mu = np.zeros(self.n_state)
         ci = self.component(x_surface, geom)
         #print('ci:', ci)
