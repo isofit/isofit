@@ -1,0 +1,140 @@
+#from isofit.core.isofit import Isofit
+from isofit.configs.base_config import BaseConfigSection
+from isofit.configs.configs import Config
+from isofit.utils import surface_model
+from isofit.core.forward import ForwardModel
+from isofit.configs.configs import create_new_config, get_config_differences
+from isofit.inversion.inverse import Inversion
+from isofit.core.fileio import IO
+import numpy as np
+
+
+print('BUILDING ...')
+
+
+# Surface model
+surface_model("20171108_Pasadena/configs/ang20171108t184227_surface.json")
+
+# Instantiate Isofit
+#example = Isofit("20171108_Pasadena/configs/ang20171108t184227_beckmanlawn.json")
+#example.run()
+#del example
+
+# created dictionary with first two keys and values
+# of beckmanlawn.json
+sample_dict_1 = {
+  "ISOFIT_BASE": "../../..",
+
+  "input": {
+    "measured_radiance_file": "../remote/ang20171108t184227_rdn_v2p11_BeckmanLawn.txt",
+    "reference_reflectance_file": "../insitu/BeckmanLawn.txt"
+  }}
+
+sample_dict_2 = {
+  "ISOFIT_BASE": "../../.."
+  }
+
+sample_dict_3 = {
+
+  "input": {
+    "measured_radiance_file": "../remote/ang20171108t184227_rdn_v2p11_BeckmanLawn.txt",
+    "reference_reflectance_file": "../insitu/BeckmanLawn.txt"
+  }}
+
+
+config1 = Config(sample_dict_1)
+config1_duplicate = Config(sample_dict_1)
+config2 = Config(sample_dict_2)
+config3 = Config(sample_dict_3)
+
+#import pdb; pdb.set_trace()
+#print(config1._get_expected_type_for_option_key('input'))
+#print(config1._get_expected_type_for_option_key('input') == 'isofit.configs.sections.input_config.InputConfig')
+#print(config1.get_config_options_as_dict())
+assert(config1._get_nontype_attributes() == ['input', 'output', 'forward_model', 'implementation'])
+assert(config1._get_type_attributes() == ['_input_type', '_output_type', \
+    '_forward_model_type', '_implementation_type'])
+# would ideally also include an example config containing a hidden attribute
+assert(config1._get_hidden_attributes() == [])
+assert(config2._get_hidden_attributes() == [])
+
+assert(config1.get_all_element_names() == ['input', 'output', 'forward_model', 'implementation'])
+assert(config1.get_element_names() == ['forward_model', 'implementation', 'input', 'output'])
+
+#print(config1.get_all_elements())
+
+
+#print(config1.get_single_element_by_name('input'))
+
+
+#print(config1.check_config_validity())
+
+
+# functions in config.py
+
+# returns empty dict since configs have no differences
+assert(get_config_differences(config1, config1_duplicate) == {})
+assert(get_config_differences(config1, config2) == {'input': {'measured_radiance_file': \
+    ('../remote/ang20171108t184227_rdn_v2p11_BeckmanLawn.txt', None), 'reference_reflectance_file': \
+         ('../insitu/BeckmanLawn.txt', None)}})
+
+#print(config1.get_config_as_dict())
+#print(config1.get_config_errors())
+
+
+config = create_new_config("20171108_Pasadena/configs/ang20171108t184227_beckmanlawn.json")
+
+fm = ForwardModel(config)
+
+
+# randomly generated surface reflectance values for 425 channels
+sample_state_vector = np.random.rand(427)
+# water vapor
+sample_state_vector[425] = 1.75
+# aerosol
+sample_state_vector[426] = 0.05
+#print(fm.out_of_bounds(sample_state_vector))
+val = 0
+for i in range(425):
+  val = val + 0.001
+  sample_state_vector[i] = val
+
+print(sample_state_vector.shape)
+inv = Inversion(config, fm)
+io = IO(config, fm)
+
+io.get_components_at_index(0, 0)
+geom = io.current_input_data.geom # alternately, call via geom = Geometry()...this won't have data from the above config file
+meas = io.current_input_data.meas  # alternately, pass in a num_wavelength numpy array (e.g., 425)
+x_surface = sample_state_vector[fm.idx_surface]
+xa_surface = fm.surface.xa(x_surface, geom)
+
+##assert(fm.xa(sample_state_vector, geom).shape == sample_state_vector.shape)
+# RT parameters should not have changed
+#import pdb; pdb.set_trace()
+##assert(fm.xa(sample_state_vector, geom)[-2:].all() == sample_state_vector[-2:].all())
+
+#import pdb; pdb.set_trace();
+##assert(fm.Sa(sample_state_vector,geom).shape == (427,427))
+#assert(fm.calc_lamb(sample_state_vector,geom).shape == (425,))
+#fm.calc_rfl(sample_state_vector, geom)
+##print((fm.calc_meas(sample_state_vector, geom)).shape)
+
+##assert(len(fm.unpack(sample_state_vector)) == 3)
+##assert(fm.unpack(sample_state_vector)[0].all() == sample_state_vector[:425].all())
+##assert(fm.unpack(sample_state_vector)[1].all() == sample_state_vector[425:].all())
+
+assert(fm.calc_lamb(sample_state_vector, geom).all() == sample_state_vector[:425].all())
+assert(fm.calc_rfl(sample_state_vector, geom).all() == sample_state_vector[:425].all())
+
+print(fm.surface.dlamb_dsurface(sample_state_vector, geom))
+print(fm.surface.summarize(sample_state_vector, geom))
+
+
+
+
+
+
+
+
+print('END')

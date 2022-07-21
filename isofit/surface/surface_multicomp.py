@@ -48,7 +48,9 @@ class MultiComponentSurface(Surface):
         # TODO: inforce surface_file existence in the case of multicomponent_surface
 
         count = 0
-        model_dict = loadmat(config.surface_file)
+        model_dict = loadmat(config.surface_file) # dictionary containing surface info
+
+        """
         for key,value in model_dict.items():
             if key == 'normalize':
                 print('value of normalize key', value)
@@ -58,13 +60,14 @@ class MultiComponentSurface(Surface):
                 print(value.shape)
             count = count + 1
 
-
+        """
 
   
-        self.components = list(zip(model_dict['means'], model_dict['covs']))
-        self.n_comp = len(self.components)
-        self.wl = model_dict['wl'][0]
-        self.n_wl = len(self.wl)
+        self.components = list(zip(model_dict['means'], model_dict['covs'])) # means and covs loaded
+        self.n_comp = len(self.components) #8
+        self.wl = model_dict['wl'][0] # 425 channels
+        self.n_wl = len(self.wl) # 425
+        #print(self.n_wl) 
 
         # Set up normalization method
         self.normalize = model_dict['normalize']
@@ -85,27 +88,37 @@ class MultiComponentSurface(Surface):
         # in the VSWIR regime, reflectances are normalized so that the model
         # is agnostic to absolute magnitude.
         self.refwl = np.squeeze(model_dict['refwl'])
+        #print('self.refwl:', (self.refwl).shape)
         self.idx_ref = [np.argmin(abs(self.wl-w))
                         for w in np.squeeze(self.refwl)]
-        self.idx_ref = np.array(self.idx_ref)
+        self.idx_ref = np.array(self.idx_ref) # array containing 299 wavelengths
+        #print(self.idx_ref.shape) # 299
 
         # Cache some important computations
         self.Covs, self.Cinvs, self.mus = [], [], []
         for i in range(self.n_comp):
-            Cov = self.components[i][1]
-            self.Covs.append(np.array([Cov[j, self.idx_ref]
-                                       for j in self.idx_ref]))
-            self.Cinvs.append(svd_inv(self.Covs[-1]))
-            self.mus.append(self.components[i][0][self.idx_ref])
+            Cov = self.components[i][1] # storing all 8 425 by 425 covariance matrices
+            self.Covs.append(np.array([Cov[j, self.idx_ref] # (299, 299)
+                                       for j in self.idx_ref])) 
+            self.Cinvs.append(svd_inv(self.Covs[-1])) # (299, 299)
+            self.mus.append(self.components[i][0][self.idx_ref]) # (299,)
+            
+        #print('shape of arrays within self.Covs:', (self.Covs[0]).shape)
+        #print('shape of arrays within self.Cinvs:', (self.Cinvs[0]).shape)
+        #print('shpe of array within mu:', self.mus[0].shape)
 
         # Variables retrieved: each channel maps to a reflectance model parameter
         rmin, rmax = 0, 2.0
-        self.statevec_names = ['RFL_%04i' % int(w) for w in self.wl]
-        self.bounds = [[rmin, rmax] for w in self.wl]
+        self.statevec_names = ['RFL_%04i' % int(w) for w in self.wl] # list of strings, 427
+        self.bounds = [[rmin, rmax] for w in self.wl] # 427
+
         self.scale = [1.0 for w in self.wl]
         self.init = [0.15 * (rmax-rmin)+rmin for v in self.wl]
-        self.idx_lamb = np.arange(self.n_wl)
-        self.n_state = len(self.statevec_names)
+        #print('type:', type(self.init))
+        #print('type:', type(self.init[0]))
+        # print('length:', len(self.init))
+        self.idx_lamb = np.arange(self.n_wl) # indices 0-424
+        self.n_state = len(self.statevec_names) # 425
 
     def component(self, x, geom):
         """We pick a surface model component using the Mahalanobis distance.
@@ -125,6 +138,8 @@ class MultiComponentSurface(Surface):
                 print('shape:', self.components[i][j].shape)
 
         """
+
+        # the Geometry class doesn't possess either of the below attributes it seems
 
         if self.n_comp <= 1:
             return 0
@@ -217,6 +232,7 @@ class MultiComponentSurface(Surface):
     def calc_lamb(self, x_surface, geom):
         """Lambertian reflectance."""
 
+        # first 425 elements
         return x_surface[self.idx_lamb]
 
     def drfl_dsurface(self, x_surface, geom):
@@ -229,16 +245,26 @@ class MultiComponentSurface(Surface):
         """Partial derivative of Lambertian reflectance with respect to 
         state vector, calculated at x_surface."""
 
-        dlamb = np.eye(self.n_wl, dtype=float)
+        # this seems to do nothing 
+
+        dlamb = np.eye(self.n_wl, dtype=float) # identity N by N where N = 425
+        #print('shape of I:', dlamb.shape) (425, 425)
         nprefix = self.idx_lamb[0]
+        #print('nprefix:', nprefix) -> 0
         nsuffix = self.n_state - self.idx_lamb[-1] - 1
+        #print('nsuffix:', nsuffix) -> 0
         prefix = np.zeros((self.n_wl, nprefix))
+        #print('prefix shape:', prefix.shape) -> (425,0)
+        #print('prefix', prefix) -> []
         suffix = np.zeros((self.n_wl, nsuffix))
+        #print('suffix shape:', suffix.shape) -> (425,0)
+        #print('suffix', suffix) -> []
         return np.concatenate((prefix, dlamb, suffix), axis=1)
 
     def calc_Ls(self, x_surface, geom):
         """Emission of surface, as a radiance."""
 
+        # not understanding why we return 0s
         return np.zeros(self.n_wl, dtype=float)
 
     def dLs_dsurface(self, x_surface, geom):

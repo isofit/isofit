@@ -651,7 +651,8 @@ for i, xi in enumerate(xnew):
 #print(myArray[good])
 
 
-
+#myArray = np.array([[[2, 3]]])
+#print(myArray.shape)
 
 
 
