@@ -32,7 +32,6 @@ for i in range(425):
   val = val + 0.001
   sample_state_vector[i] = val
 
-print(sample_state_vector.shape)
 inv = Inversion(config, fm)
 io = IO(config, fm)
 
