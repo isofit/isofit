@@ -68,10 +68,4 @@ assert(fm.calc_rfl(sample_state_vector, geom).all() == sample_state_vector[:425]
 #print(fm.surface.summarize(sample_state_vector, geom))
 
 
-
-
-
-
-
-
 print('COMPLETE')
