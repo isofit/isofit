@@ -72,7 +72,7 @@ class MultiComponentSurface(Surface):
         # Set up normalization method
         self.normalize = model_dict['normalize']
         if self.normalize == 'Euclidean':
-            self.norm = lambda r: norm(r)
+            self.norm = lambda r: norm(r) # 2 or Euclidean norm
         elif self.normalize == 'RMS':
             self.norm = lambda r: np.sqrt(np.mean(pow(r, 2)))
         elif self.normalize == 'None':
@@ -151,8 +151,10 @@ class MultiComponentSurface(Surface):
             x_surface = x
 
         # Get the (possibly normalized) reflectance
-        lamb = self.calc_lamb(x_surface, geom)
-        lamb_ref = lamb[self.idx_ref]
+        lamb = self.calc_lamb(x_surface, geom) #0-424
+        print('self.idx_ref:', self.idx_ref)
+        print('shape:', self.idx_ref.shape)
+        lamb_ref = lamb[self.idx_ref] 
         lamb_ref = lamb_ref / self.norm(lamb_ref)
 
         # Mahalanobis or Euclidean distances
@@ -188,8 +190,8 @@ class MultiComponentSurface(Surface):
         ci = self.component(x_surface, geom)
         #print('ci:', ci)
         #print('length of self.components:', len(self.components))
-        lamb_mu = self.components[ci][0]
-        lamb_mu = lamb_mu * self.norm(lamb_ref)
+        lamb_mu = self.components[ci][0] # selected one of eight prior means
+        lamb_mu = lamb_mu * self.norm(lamb_ref) 
         mu[self.idx_lamb] = lamb_mu
         return mu
 

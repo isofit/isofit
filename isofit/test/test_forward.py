@@ -8,7 +8,7 @@ from isofit.inversion.inverse import Inversion
 from isofit.core.fileio import IO
 import numpy as np
 import matplotlib.pyplot as plt
-from tkinter import * 
+#from tkinter import * 
 
 print('BUILDING ...')
 
@@ -44,9 +44,14 @@ x_surface = sample_state_vector[fm.idx_surface]
 
 print(fm.surface.component(sample_state_vector, geom))
 
+"""
+
 channels = np.linspace(1,425,425)
 plt.plot(sample_state_vector[:425], channels, label = 'surface reflectance')
-plt.show()
+plt.savefig()
+
+"""
+
 
 
 
