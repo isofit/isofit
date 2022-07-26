@@ -43,14 +43,19 @@ x_surface = sample_state_vector[fm.idx_surface]
 ##assert(fm.xa(sample_state_vector, geom)[-2:].all() == sample_state_vector[-2:].all())
 
 print(fm.surface.component(sample_state_vector, geom))
+print(type(fm.calc_rdn(sample_state_vector, geom)))
+print((fm.calc_rdn(sample_state_vector, geom)).shape)
+
 
 """
 
 channels = np.linspace(1,425,425)
 plt.plot(sample_state_vector[:425], channels, label = 'surface reflectance')
-plt.savefig()
+plt.savefig(r'C:/Users/vpatro\Desktop')
 
 """
+
+
 
 
 

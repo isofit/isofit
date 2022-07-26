@@ -69,7 +69,7 @@ class Inversion:
         self.inversions = 0
 
         self.integration_grid = OrderedDict(config.integration_grid)
-        self.grid_as_starting_points = config.inversion_grid_as_preseed
+        self.grid_as_starting_points = config.inversion_grid_as_preseed # False for beckman lawn
 
         if self.grid_as_starting_points:
             # We're using the integration grid to preseed, not fix values.  So
@@ -84,7 +84,7 @@ class Inversion:
             # We're using the integration grid to fix values.  So
             # Get set up to fix the integration grid points
             self.inds_fixed = np.array([self.fm.statevec.index(k) for k in
-                               self.integration_grid.keys()])
+                               self.integration_grid.keys()]) # shape (0,)
             self.inds_free = np.array([i for i in np.arange(self.fm.nstate, dtype=int) if
                               not (i in self.inds_fixed)])
             self.inds_preseed = []
@@ -105,7 +105,7 @@ class Inversion:
             self.least_squares_params[key] = item
 
     def full_statevector(self, x_free):
-        x = np.zeros(self.fm.nstate)
+        x = np.zeros(self.fm.nstate) 
         if self.x_fixed is not None:
             x[self.inds_fixed] = self.x_fixed
         x[self.inds_free] = x_free
@@ -121,7 +121,7 @@ class Inversion:
         Sa = self.fm.Sa(x, geom)
 
         # If there aren't any fixed parameters, we just directly
-        if self.x_fixed is None or self.grid_as_starting_points:
+        if self.x_fixed is None or self.grid_as_starting_points: # self.x_fixed seems to always be None as defined in __init()
             Sa_inv, Sa_inv_sqrt = svd_inv_sqrt(Sa, hashtable=self.hashtable, max_hash_size=self.max_table_size)
             return xa, Sa, Sa_inv, Sa_inv_sqrt
 

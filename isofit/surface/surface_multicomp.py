@@ -152,8 +152,8 @@ class MultiComponentSurface(Surface):
 
         # Get the (possibly normalized) reflectance
         lamb = self.calc_lamb(x_surface, geom) #0-424
-        print('self.idx_ref:', self.idx_ref)
-        print('shape:', self.idx_ref.shape)
+        #print('self.idx_ref:', self.idx_ref) # 5-413
+        #print('shape:', self.idx_ref.shape) # (299,)
         lamb_ref = lamb[self.idx_ref] 
         lamb_ref = lamb_ref / self.norm(lamb_ref)
 
@@ -183,9 +183,9 @@ class MultiComponentSurface(Surface):
         Lambertian (non-specular) version of the surface reflectance."""
 
         lamb = self.calc_lamb(x_surface, geom)
-        print('lamb shape:', lamb.shape)
+        #print('lamb shape:', lamb.shape)
         lamb_ref = lamb[self.idx_ref]
-        print('lamb_ref shape', lamb_ref)
+        #print('lamb_ref shape', lamb_ref)
         mu = np.zeros(self.n_state)
         ci = self.component(x_surface, geom)
         #print('ci:', ci)

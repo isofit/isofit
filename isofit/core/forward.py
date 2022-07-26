@@ -105,7 +105,8 @@ class ForwardModel:
         self.scale = np.array(scale)
         self.init = np.array(init)
         self.statevec = statevec
-        self.nstate = len(self.statevec)
+        self.nstate = len(self.statevec) # 427
+
 
         self.bvec = np.array(bvec)
         self.nbvec = len(self.bvec)
