@@ -1,5 +1,5 @@
 {% set name = "isofit" %}
-{% set version = "2.9.2" %}
+{% set version = "2.9.3" %}
 
 package:
   name: {{ name|lower }}
