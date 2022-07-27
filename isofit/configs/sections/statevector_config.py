@@ -55,8 +55,8 @@ class StateVectorConfig(BaseConfigSection):
     """
     State vector configuration.
     """
-
     def __init__(self, sub_configdic: dict = None):
+        print('StateVectorConfig created')
         self._H2OSTR_type = StateVectorElementConfig
         self.H2OSTR: StateVectorElementConfig = None
 

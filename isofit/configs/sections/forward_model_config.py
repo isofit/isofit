@@ -30,6 +30,7 @@ class ForwardModelConfig(BaseConfigSection):
     """
 
     def __init__(self, sub_configdic: dict = None):
+        print('ForwardModelConfig created')
         self._instrument_type = InstrumentConfig
         self.instrument: InstrumentConfig = None
         """

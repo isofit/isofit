@@ -288,6 +288,8 @@ class Inversion:
         else:
             combo_values = combos(self.integration_grid.values()).copy()
 
+        print('combo_values:', combo_values)
+
         for combo in combo_values:
 
             if self.grid_as_starting_points is False:

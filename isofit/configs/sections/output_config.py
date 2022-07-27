@@ -28,6 +28,7 @@ class OutputConfig(BaseConfigSection):
     """
 
     def __init__(self, sub_configdic: dict = None):
+        print('OutputConfig created')
         self._estimated_state_file_header = ('statevector', '{State Parameter, Value}', '{}')
         self._estimated_state_file_type = str
         self.estimated_state_file = None

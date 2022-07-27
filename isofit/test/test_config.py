@@ -69,7 +69,7 @@ def test_get_config_differences():
       ('../remote/ang20171108t184227_rdn_v2p11_BeckmanLawn.txt', None), 'reference_reflectance_file': \
           ('../insitu/BeckmanLawn.txt', None)}})
 
-#print(config1.get_config_as_dict())
+print(config1.get_config_as_dict())
 #print(config1.get_config_errors())
 
 

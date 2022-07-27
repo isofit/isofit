@@ -40,6 +40,8 @@ class MultiComponentSurface(Surface):
     def __init__(self, full_config: Config):
         """."""
 
+        print('MultiComponent Surface init')
+
         super().__init__(full_config)
 
         config = full_config.forward_model.surface
@@ -108,9 +110,10 @@ class MultiComponentSurface(Surface):
         #print('shpe of array within mu:', self.mus[0].shape)
 
         # Variables retrieved: each channel maps to a reflectance model parameter
-        rmin, rmax = 0, 2.0
+        rmin, rmax = 0, 2.0 # confused on why rmax is not 1.0
         self.statevec_names = ['RFL_%04i' % int(w) for w in self.wl] # list of strings, 427
-        self.bounds = [[rmin, rmax] for w in self.wl] # 427
+        self.bounds = [[rmin, rmax] for w in self.wl] # len 425
+        #print('forward.surface.bounds', len(self.bounds))
 
         self.scale = [1.0 for w in self.wl]
         self.init = [0.15 * (rmax-rmin)+rmin for v in self.wl]

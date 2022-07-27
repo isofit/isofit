@@ -19,6 +19,7 @@ surface_model("examples/20171108_Pasadena/configs/ang20171108t184227_surface.jso
 config = create_new_config("examples/20171108_Pasadena/configs/ang20171108t184227_beckmanlawn.json")
 
 fm = ForwardModel(config)
+quit()
 
 
 sample_state_vector = np.zeros(427)

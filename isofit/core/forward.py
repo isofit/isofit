@@ -59,6 +59,7 @@ class ForwardModel:
      against the prior. """
 
     def __init__(self, full_config: Config):
+        print('ForwardModel created')
 
         # load in the full config (in case of inter-module dependencies) and
         # then designate the current config
@@ -90,16 +91,23 @@ class ForwardModel:
             raise ValueError('Must specify a valid surface model')
             # No need to be more specific - should have been checked in config already
 
+        #print('self.surface.bounds', len(self.surface.bounds)) # len 425
+
         # Build combined vectors from surface, RT, and instrument
         bounds, scale, init, statevec, bvec, bval = ([] for i in range(6))
         for obj_with_statevec in [self.surface, self.RT, self.instrument]:
             bounds.extend([deepcopy(x) for x in obj_with_statevec.bounds])
+            #print('obj_with_statevector', obj_with_statevec)
+            #print(type(bounds)) 
+            #print(len(bounds)) len 425, 427, 427
             scale.extend([deepcopy(x) for x in obj_with_statevec.scale])
             init.extend([deepcopy(x) for x in obj_with_statevec.init])
             statevec.extend([deepcopy(x) for x in obj_with_statevec.statevec_names])
 
             bvec.extend([deepcopy(x) for x in obj_with_statevec.bvec])
             bval.extend([deepcopy(x) for x in obj_with_statevec.bval])
+
+        
 
         self.bounds = tuple(np.array(bounds).T)
         self.scale = np.array(scale)
@@ -198,8 +206,8 @@ class ForwardModel:
     def calc_meas(self, x, geom, rfl=None, Ls=None):
         """Calculate the model observation at instrument wavelengths."""
 
-        x_surface, x_RT, x_instrument = self.unpack(x)
-        rdn_hi = self.calc_rdn(x, geom, rfl, Ls)
+        x_surface, x_RT, x_instrument = self.unpack(x) # splits up statevector
+        rdn_hi = self.calc_rdn(x, geom, rfl, Ls) 
         return self.instrument.sample(x_instrument, self.RT.wl, rdn_hi)
 
     def calc_Ls(self, x, geom):

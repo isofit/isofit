@@ -61,6 +61,7 @@ class InstrumentConfig(BaseConfigSection):
     """
 
     def __init__(self, sub_configdic: dict = None):
+        print('InstrumentConfig created')
 
         self._wavelength_file_type = str
         self.wavelength_file = None

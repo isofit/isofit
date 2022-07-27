@@ -42,11 +42,12 @@ class RadiativeTransfer():
     """
 
     def __init__(self, full_config: Config):
-
+        print('RadiativeTransfer created')
         # Maintain order when looping for indexing convenience
         config = full_config.forward_model.radiative_transfer
 
         self.statevec_names = config.statevector.get_element_names()
+        #print('StatevectorConfigNames:', self.statevec_names) # AOT 550 and H20 STR
         self.lut_grid = config.lut_grid
 
         # TODO: rework this so that we instead initialize an interpolator, that calls

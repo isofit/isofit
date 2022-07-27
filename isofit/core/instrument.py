@@ -39,6 +39,7 @@ wl_tol = 0.01
 class Instrument:
 
     def __init__(self, full_config: Config):
+        print('Instrument created')
         """A model of the spectrometer instrument, including spectral 
         response and noise covariance matrices. Noise is typically calculated
         from a parametric model, fit for the specific instrument.  It is a 
