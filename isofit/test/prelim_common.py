@@ -1,5 +1,6 @@
 from importlib.resources import path
 from operator import inv
+from re import I
 from unittest.case import _AssertRaisesContext
 import numpy as np
 import os
@@ -654,7 +655,8 @@ for i, xi in enumerate(xnew):
 #myArray = np.array([[[2, 3]]])
 #print(myArray.shape)
 
-
+for i in [2, 3, 7]:
+    print(i)
 
 
 

@@ -21,14 +21,10 @@ surface_model("examples/20171108_Pasadena/configs/ang20171108t184227_surface.jso
 config = create_new_config("examples/20171108_Pasadena/configs/ang20171108t184227_beckmanlawn.json")
 fm = ForwardModel(config)
 
-x = np.random.rand(427)
-x[425] = 1.75
-x[426] = 0.05
-val = 0
-for i in range(425):
-  val = val + 0.001
-  x[i] = val
 
+x = np.loadtxt(r'/Users/varunpatro/Desktop/statevec_data.txt')
+x = np.append(x,1.75)
+x = np.append(x,0.05)
 
 inv = Inversion(config, fm)
 io = IO(config, fm)
@@ -40,9 +36,11 @@ meas = io.current_input_data.meas  # a numpy  array
 assert(inv.full_statevector(x).all() == x.all()) # inv.self_fixed = None
 
 radiance_measurement = fm.calc_rdn(x, geom)
+
 #print(type(inv.invert(radiance_measurement, geom)))
 #print(inv.invert(radiance_measurement, geom).shape)
-print(inv.invert(radiance_measurement, geom)[0])
+calculated_reflectance = inv.invert(radiance_measurement, geom)[0]
+np.savetxt(r'/Users/varunpatro/Desktop/reflectance_data.txt', calculated_reflectance)
 
 print('TESTS COMPLETE')
 
