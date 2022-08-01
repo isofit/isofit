@@ -42,7 +42,7 @@ class RadiativeTransfer():
     """
 
     def __init__(self, full_config: Config):
-        print('RadiativeTransfer created')
+        #print('RadiativeTransfer created')
         # Maintain order when looping for indexing convenience
         config = full_config.forward_model.radiative_transfer
 

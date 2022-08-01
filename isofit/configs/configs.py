@@ -60,7 +60,7 @@ class Config(BaseConfigSection):
 
     def __init__(self, configdict) -> None:
 
-        print('Config created')
+        #print('Config created')
 
         self._input_type = InputConfig
         self.input = InputConfig({})

@@ -225,7 +225,7 @@ class RadiativeTransferConfig(BaseConfigSection):
     """
 
     def __init__(self, sub_configdic: dict = None):
-        print('RadiativeTransferConfig created')
+        #print('RadiativeTransferConfig created')
 
         self._topography_model_type = bool
         self.topography_model = False

@@ -29,7 +29,7 @@ class SurfaceConfig(BaseConfigSection):
     """
 
     def __init__(self, sub_configdic: dict = None):
-        print('SurfaceConfig created')
+        #print('SurfaceConfig created')
 
         self._surface_file_type = str
         self.surface_file = None

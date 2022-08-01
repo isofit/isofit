@@ -59,7 +59,7 @@ class ForwardModel:
      against the prior. """
 
     def __init__(self, full_config: Config):
-        print('ForwardModel created')
+        #print('ForwardModel created')
 
         # load in the full config (in case of inter-module dependencies) and
         # then designate the current config

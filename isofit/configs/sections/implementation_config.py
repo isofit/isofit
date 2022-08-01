@@ -26,7 +26,7 @@ import os
 class ImplementationConfig(BaseConfigSection):
 
     def __init__(self, sub_configdic: dict = None):
-        print('ImplementationConfig created')
+        #print('ImplementationConfig created')
         """
         Input file(s) configuration.
         """

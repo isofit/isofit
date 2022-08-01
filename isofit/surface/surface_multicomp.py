@@ -40,7 +40,7 @@ class MultiComponentSurface(Surface):
     def __init__(self, full_config: Config):
         """."""
 
-        print('MultiComponent Surface init')
+        #print('MultiComponent Surface init')
 
         super().__init__(full_config)
 
