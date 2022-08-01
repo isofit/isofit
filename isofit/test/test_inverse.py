@@ -22,7 +22,7 @@ config = create_new_config("examples/20171108_Pasadena/configs/ang20171108t18422
 fm = ForwardModel(config)
 
 
-x = np.loadtxt(r'/Users/varunpatro/Desktop/statevec_data.txt')
+x = np.loadtxt(r'/Users/varunpatro/Desktop/avirisng_input.txt')
 x = np.append(x,1.75)
 x = np.append(x,0.05)
 
@@ -35,12 +35,33 @@ meas = io.current_input_data.meas  # a numpy  array
 
 assert(inv.full_statevector(x).all() == x.all()) # inv.self_fixed = None
 
-radiance_measurement = fm.calc_rdn(x, geom)
+count = 0
+OE_estimations = [[], [], [], [], []]
+for i in range(5):
+    radiance_measurement = fm.calc_rdn(x,geom)
+    calculated_reflectance = inv.invert(radiance_measurement, geom)[0]
+    OE_estimations[i] = calculated_reflectance
+
+OE_estimations = np.array(OE_estimations)
+
+assert(OE_estimations[0,:].all() == OE_estimations[1,:].all())
+assert(OE_estimations[0,:].all() == OE_estimations[2,:].all())
+assert(OE_estimations[0,:].all() == OE_estimations[3,:].all())
+assert(OE_estimations[0,:].all() == OE_estimations[4,:].all())
+
 
 #print(type(inv.invert(radiance_measurement, geom)))
 #print(inv.invert(radiance_measurement, geom).shape)
-calculated_reflectance = inv.invert(radiance_measurement, geom)[0]
-np.savetxt(r'/Users/varunpatro/Desktop/reflectance_data.txt', calculated_reflectance)
+np.savetxt(r'/Users/varunpatro/Desktop/OE_reflectance_estimation.txt',\
+     OE_estimations)
+
+#first_col = OE_estimations[0,:]
+#print(OE_estimations.shape)
+#print(first_col.shape)
+
+#for i in range(1,5):
+
+
 
 print('TESTS COMPLETE')
 
