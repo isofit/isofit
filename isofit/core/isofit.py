@@ -34,7 +34,6 @@ from isofit.inversion.inverse_mcmc import MCMCInversion
 from isofit.core.fileio import IO
 from isofit.configs import configs
 
-
 class Isofit:
     """Initialize the Isofit class.
 
@@ -49,11 +48,10 @@ class Isofit:
         # Explicitly set the number of threads to be 1, so we more effectively
         # run in parallel
         os.environ["MKL_NUM_THREADS"] = "1"
-
         # Set logging level
         self.loglevel = level
         self.logfile = logfile
-        logging.basicConfig(format='%(levelname)s:%(message)s', level=self.loglevel, filename=self.logfile)
+        logging.basicConfig(format='%(levelname)s:%(asctime)s ||| %(message)s', level=self.loglevel, filename=self.logfile, datefmt='%Y-%m-%d,%H:%M:%S')
 
         self.rows = None
         self.cols = None
@@ -66,10 +64,11 @@ class Isofit:
         # Initialize ray for parallel execution
         rayargs = {'address': self.config.implementation.ip_head,
                    '_redis_password': self.config.implementation.redis_password,
-                   'ignore_reinit_error': self.config.implementation.ray_ignore_reinit_error,
                    '_temp_dir': self.config.implementation.ray_temp_dir,
-                    'local_mode': self.config.implementation.n_cores == 1}
-
+                   'ignore_reinit_error': self.config.implementation.ray_ignore_reinit_error,
+                   'include_dashboard': self.config.implementation.ray_include_dashboard,
+                   'local_mode': self.config.implementation.n_cores == 1}
+        
         # We can only set the num_cpus if running on a single-node
         if self.config.implementation.ip_head is None and self.config.implementation.redis_password is None:
             rayargs['num_cpus'] = self.config.implementation.n_cores
@@ -80,7 +79,10 @@ class Isofit:
         self.workers = None
 
     def __del__(self):
-        ray.shutdown()
+        try:
+            ray.shutdown()
+        except:
+            return
 
     def run(self, row_column = None):
         """
@@ -181,7 +183,7 @@ class Worker(object):
             total_workers: the total number of workers running, for logging reference
         """
 
-        logging.basicConfig(format='%(levelname)s:%(message)s', level=loglevel, filename=logfile)
+        logging.basicConfig(format='%(levelname)s:%(asctime)s ||| %(message)s', level=loglevel, filename=logfile, datefmt='%Y-%m-%d,%H:%M:%S')
         self.config = config
         self.fm = forward_model
         #self.fm = ForwardModel(self.config)

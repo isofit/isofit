@@ -29,7 +29,6 @@ from isofit.configs.base_config import BaseConfigSection
 from isofit.core import common
 import yaml
 
-
 class Config(BaseConfigSection):
     """
     Handles the reading and formatting of configuration files.  Please note - there are many ways to do this, some
@@ -154,8 +153,10 @@ def create_new_config(config_file: str) -> Config:
     Returns:
         Config object, having completed all necessary config checks
     """
+    #pdb.set_trace()
     try:
         with open(config_file, 'r') as f:
+            #pdb.set_trace()
             config_dict = yaml.safe_load(f)
     except:
         raise IOError('Unexpected configuration file time, only json and yaml supported')

@@ -67,7 +67,7 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
 
     """
 
-    logging.basicConfig(format='%(message)s', level=loglevel, filename=logfile)
+    logging.basicConfig(format='%(levelname)s:%(asctime)s ||| %(message)s', level=loglevel, filename=logfile, datefmt='%Y-%m-%d,%H:%M:%S')
 
     # Load reference images
     reference_radiance_img = envi.open(envi_header(reference_radiance_file), reference_radiance_file)
@@ -300,7 +300,7 @@ def empirical_line(reference_radiance_file: str, reference_reflectance_file: str
 
     loglevel = level
 
-    logging.basicConfig(format='%(message)s', level=loglevel, filename=logfile)
+    logging.basicConfig(format='%(levelname)s:%(asctime)s ||| %(message)s', level=loglevel, filename=logfile, datefmt='%Y-%m-%d,%H:%M:%S')
 
     # Open input data to check that band formatting is correct
     # Load reference set radiance
@@ -368,6 +368,7 @@ def empirical_line(reference_radiance_file: str, reference_reflectance_file: str
                'local_mode': n_cores == 1,
                "address": iconfig.implementation.ip_head,
                '_temp_dir': iconfig.implementation.ray_temp_dir,
+               'include_dashboard': iconfig.implementation.ray_include_dashboard,
                "_redis_password": iconfig.implementation.redis_password}
 
     # We can only set the num_cpus if running on a single-node

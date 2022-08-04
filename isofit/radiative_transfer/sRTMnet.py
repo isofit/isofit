@@ -26,6 +26,7 @@ from copy import deepcopy
 import yaml
 import pickle
 from collections import OrderedDict
+import ray
 
 from isofit.core.common import resample_spectrum, load_wavelen, VectorInterpolator
 from .look_up_tables import TabularRT
@@ -36,6 +37,12 @@ from isofit.radiative_transfer.six_s import SixSRT
 
 from tensorflow import keras
 from scipy import interpolate
+
+@ray.remote
+def resample_single(ind, ind_emulator_output, emulator_wavelengths, wavelengths, fwhm): 
+    return ind, resample_spectrum(ind_emulator_output, emulator_wavelengths, wavelengths, fwhm)
+
+
 
 class SimulatedModtranRT(TabularRT):
     """A hybrid surrogate-model and emulator of MODTRAN-like results.  A description of the model can be found in:
@@ -111,6 +118,7 @@ class SimulatedModtranRT(TabularRT):
         sixs_rte = SixSRT(sixs_config, full_config, build_lut_only = False, 
                           wavelength_override=simulator_wavelengths, fwhm_override=np.ones(n_simulator_chan)*2.,
                           modtran_emulation=True)
+        logging.debug('Initialize basic values')
         self.solar_irr = sixs_rte.solar_irr
         self.esd = sixs_rte.esd
         self.coszen = sixs_rte.coszen
@@ -126,6 +134,7 @@ class SimulatedModtranRT(TabularRT):
         prebuilt = np.all([os.path.isfile(x) for x in interpolator_disk_paths])
         if prebuilt == False:
             # Load the emulator
+            logging.debug('Load emulator')
             emulator = keras.models.load_model(engine_config.emulator_file)
 
             # Couple emulator-simulator
@@ -138,6 +147,7 @@ class SimulatedModtranRT(TabularRT):
                     emulator_inputs[ind,keyind*n_simulator_chan:(keyind+1)*n_simulator_chan] = simulator_output[key]
             emulator_inputs[np.isnan(emulator_inputs)] = 0
             emulator_inputs_match_output = np.zeros((emulator_inputs.shape[0],n_emulator_chan*len(emulator_aux['rt_quantities'])))
+            logging.debug('Interpolate 6s results')
             for key_ind, key in enumerate(emulator_aux['rt_quantities']):
                 band_range_o = np.arange(n_emulator_chan * key_ind, n_emulator_chan * (key_ind + 1))
                 band_range_i = np.arange(n_simulator_chan * key_ind, n_simulator_chan * (key_ind + 1))
@@ -156,20 +166,28 @@ class SimulatedModtranRT(TabularRT):
 
             dims_aug = self.lut_dims + [self.n_chan]
             for key_ind, key in enumerate(emulator_aux['rt_quantities']):
+                logging.debug(f'Prep {key}')
                 interpolator_inputs = np.zeros(dims_aug, dtype=float)
+                resample_jobs = []
                 for point_ind, point in enumerate(self.points):
-                    ind = [np.where(g == p)[0] for g, p in
-                           zip(self.lut_grids, point)]
+                    ind = [np.where(g == p)[0] for g, p in zip(self.lut_grids, point)]
                     ind = tuple(ind)
-                    interpolator_inputs[ind] = resample_spectrum(emulator_outputs[point_ind, key_ind*n_emulator_chan: (key_ind+1)*n_emulator_chan], emulator_wavelengths, self.wl, self.fwhm)
+                    leo = emulator_outputs[point_ind, key_ind*n_emulator_chan: (key_ind+1)*n_emulator_chan]
+                    resample_jobs.append(resample_single.remote(ind,leo,emulator_wavelengths,self.wl,self.fwhm))
+                resample_results = ray.get(resample_jobs)
+                for ind, res in resample_results:
+                    interpolator_inputs[ind] = res
+                del resample_results
+                del resample_jobs
 
                 if key == 'transup':
                     interpolator_inputs[...] = 0
 
+                logging.debug(f'Building Interpolator for {key}')
                 self.luts[key] = VectorInterpolator(self.lut_grids, interpolator_inputs,
-                                                    self.lut_interp_types)
+                                                    self.lut_interp_types, self.interpolator_style)
 
-            self.luts['transup'] = VectorInterpolator(self.lut_grids, interpolator_inputs*0, self.lut_interp_types )
+            self.luts['transup'] = VectorInterpolator(self.lut_grids, interpolator_inputs*0, self.lut_interp_types, self.interpolator_style)
             
             for key_ind, key in enumerate(self.lut_quantities):
                 with open(interpolator_disk_paths[key_ind], 'wb') as fi:

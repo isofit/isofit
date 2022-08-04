@@ -75,31 +75,40 @@ DOI: 10.1016/j.rse.2021.112476.
 
 Applications
 ------------
-D. R. Thompson, B. H. Kahn, P. G. Brodrick, M. D. Lebsock, M. Richardson, and R. O. Green.
+
+P\. R. Nelson, A. J. Maguire, Z. Pierrat, E. L. Orcutt, et al. (2022) `Remote Sensing of Tundra Ecosystems Using High Spectral Resolution Reflectance: Opportunities and Challenges. <https://doi.org/10.1029/2021JG006697>`__ *Journal of Geophysical Research - Biogeosciences*. doi: 10.1029/2021JG006697.
+
+E\. Greenberg, D. R. Thompson, D. Jensen, P. A. Townsend, N. Queally, A. Chlus, C. G. Fichot, J. P. Harringmeyer, M. Simard `An improved scheme for correcting remote spectral surface reflectance simultaneously for terrestrial BRDF and water-surface sunglint in coastal environments.<https://doi.org/10.1029/2021JG006712>`__
+*Journal of Geophysical Research - Biogeosciences*.  doi: 10.1029/2021JG006712.
+
+P\. G. Brodrick, D. R. Thompson, M. J. Garay, D. M. Giles, B. N. Holben, and O. V. Kalashnikova.
+`Simultaneous characterization of wildfire smoke and surface properties with imaging spectroscopy during the FIREX-AQ
+field campaign. <https://doi.org/10.1029/2021JD034905>`__ *Journal of Geophysical Research - Atmospheres* 2022. doi: 10.1029/2021JD034905.
+
+D\. R. Thompson, B. H. Kahn, P. G. Brodrick, M. D. Lebsock, M. Richardson, and R. O. Green.
 `Spectroscopic Imaging of Sub-Kilometer Spatial Structure in Lower Tropospheric Water Vapor.
 <https://doi.org/10.5194/amt-14-2827-2021>`__
 *Atmospheric Measurement Techniques*, 14, 2021. doi: 10.5194/amt-14-2827-2021.
 
-P. G. Brodrick, D. R. Thompson, M. J. Garay, D. M. Giles, B. N. Holben, and O. V. Kalashnikova.
-`Simultaneous characterization of wildfire smoke and surface properties with imaging spectroscopy during the FIREX-AQ
-field campaign. <https://www.essoar.org/doi/abs/10.1002/essoar.10506794.1>`__ 2021.
-
-M. T. Richardson, D. R. Thompson, M. J. Kurowski and M. D. Lebsock. 
+M\. T. Richardson, D. R. Thompson, M. J. Kurowski and M. D. Lebsock. 
 `Boundary layer water vapour statistics from high-spatial-resolution spaceborne imaging spectroscopy. 
 <https://doi.org/10.5194/amt-2021-89>`__
 *Atmospheric Measurement Techniques Discussions* [preprint], in review, 2021. DOI: 10.5194/amt-2021-89.
 
-D. S. Connelly, D. R. Thompson, N. M. Mahowald, L. Li, N. Carmon, G. S. Okin, R. O. Green.  
+D\. S. Connelly, D. R. Thompson, N. M. Mahowald, L. Li, N. Carmon, G. S. Okin, R. O. Green.  
 `The EMIT mission information yield for mineral dust radiative forcing. 
 <https://doi.org/10.1016/j.rse.2021.112380>`__ 
 *Remote Sensing of Environment*, 258:112380, 2021.  DOI: 10.1016/j.rse.2021.112380.
 
-J. P. Harringmeyer, K. Kaiser, D. R. Thompson, M. M. Gierach, C. L. Cash, C. G. Fichot.
+J\. P. Harringmeyer, K. Kaiser, D. R. Thompson, M. M. Gierach, C. L. Cash, C. G. Fichot.
 `Detection and Sourcing of CDOM in Urban Coastal Waters With UV-Visible Imaging Spectroscopy.
 <https://doi.org/10.3389/fenvs.2021.647966>`__
 *Frontiers in Environmental Science*, 2021.  DOI: 10.3389/fenvs.2021.647966
 
-G. Stephens, O. Kalashnikova, J. J. Gristey, P. Pilewskie, D. R. Thompson, X. Huang, M. Lebsock, S. Schmidt.
+G\. Stephens, O. Kalashnikova, J. J. Gristey, P. Pilewskie, D. R. Thompson, X. Huang, M. Lebsock, S. Schmidt.
 `The Spectral Nature of Earth’s Reflected Radiation: Measurement and Science Applications.
 <https://doi.org/10.3389/frsen.2021.664291>`__
 *Frontiers in Remote Sensing*, 2, 2021.  DOI: 10.3389/frsen.2021.664291
+
+M\. T. Richardson,  D. R. Thompson, M. J. Kurowski, and M. D. Lebsock. `New Sampling Strategy Mitigates a Solar-geometry-induced Bias in Sub-kilometre Vapour Scaling Statistics Derived from Imaging Spectroscopy. <https://doi.org/10.5194/amt-15-117-2022>`__ 
+*Atmospheric Measurement Techniques*, 15, 117–129, 2022.  DOI: 10.5194/amt-15-117-2022

@@ -4,7 +4,7 @@
   "input": {
     "measured_radiance_file":     "../remote/prm20151026t173213_rawrdn_v1h3_D9W_clip.txt",
     "obs_file":                   "../remote/prm20151026t173213_obs_D9W.txt",
-    "radiometry_correction_file": "../data/prm20151026t173213_vicarious_correction.txt",
+    "radiometry_correction_file": "../data/prm20151026t173213_rdn_6s_factors.txt",
     "reference_reflectance_file": "../insitu/D9W.txt"
   },
 

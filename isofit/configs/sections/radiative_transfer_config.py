@@ -20,6 +20,7 @@
 from typing import Dict, List, Type
 from isofit.configs.base_config import BaseConfigSection
 from isofit.configs.sections.statevector_config import StateVectorConfig
+import numpy as np
 import os
 from collections import OrderedDict
 import logging
@@ -176,9 +177,9 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
             errors.append('radiative_transfer->raditive_transfer_model: {} not in one of the available models: {}'.
                           format(self.engine_name, valid_rt_engines))
 
-        if self.multipart_trasmittance and self.engine_name != 'modtran':
+        if self.multipart_transmittance and self.engine_name != 'modtran':
             errors.append('Multipart transmittance is supported for MODTRAN only')
-
+        
         if self.earth_sun_distance_file is None and self.engine_name == '6s':
             errors.append('6s requires earth_sun_distance_file to be specified')
 
@@ -225,6 +226,14 @@ class RadiativeTransferConfig(BaseConfigSection):
 
     def __init__(self, sub_configdic: dict = None):
 
+        self._topography_model_type = bool
+        self.topography_model = False
+        """ 
+        Flag to indicated whether to use atopographic-flux (topoflux)
+        implementation of the forward model. Only currently functional
+        with multipart MODTRAN
+        """
+
         self._statevector_type = StateVectorConfig
         self.statevector: StateVectorConfig = StateVectorConfig({})
 
@@ -246,6 +255,11 @@ class RadiativeTransferConfig(BaseConfigSection):
         self._radiative_transfer_engines_type = list()
         self.radiative_transfer_engines = []
 
+        self._interpolator_style_type = str
+        self.interpolator_style = 'nds-1'
+        """str: Style of interpolation.  Options are rd for scipy RegularGridInterpolator or nds-k 
+        for ndsplines with k degrees"""
+
         self._set_rt_config_options(sub_configdic['radiative_transfer_engines'])
 
     def _set_rt_config_options(self, subconfig):
@@ -264,8 +278,29 @@ class RadiativeTransferConfig(BaseConfigSection):
         for key, item in self.lut_grid.items():
             if len(item) < 2:
                 errors.append('lut_grid item {} has less than the required 2 elements'.format(key))
+
+        if self.topography_model:
+            for rtm in self.radiative_transfer_engines:
+                if rtm.engine_name != 'modtran':
+                    errors.append('All self.forward_model.radiative_transfer.radiative_transfer_engines must ' \
+                                  'be of type "modtran" if forward_model.topograph_model is set to True')
+                if rtm.multipart_transmittance is False:
+                    errors.append('All self.forward_model.radiative_transfer.radiative_transfer_engines must ' \
+                                   'have multipart_transmittance set as True if forward_model.topograph_model ' \
+                                   'is set to True')
         
         for rte in self.radiative_transfer_engines:
             errors.extend(rte.check_config_validity())
+
+        if not (self.interpolator_style[:2] == 'rg' or self.interpolator_style[:3] == 'nds'):
+            errors.append(f'Interpolator style {self.interpolator_style} should start with rg or nds')
+        elif self.interpolator_style[:3] == 'nds':
+            degree_err = f'Invalid degree number - should be an integer, e.g. nds-3, got {self.interpolator_style}'
+            try:
+                degree = int(self.interpolator_style[4:])
+                if degree <= 0 or np.isfinite(degree) is False:
+                    errors.append(degree_err)
+            except:
+                errors.append(degree_err)
 
         return errors

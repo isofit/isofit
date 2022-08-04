@@ -75,8 +75,9 @@ def main(rawargs=None):
             at fine scale resolution.  Choices - 0 off, 1 on.  Default 0
         ray_temp_dir (Optional, str): Location of temporary directory for ray parallelization engine.  Default is
             '/tmp/ray'
-        emulator_base (Optional, str): Location of emulator base path.  Point this at the base of sRTMnet to use the
-            emulator instead of MODTRAN.
+        emulator_base (Optional, str): Location of emulator base path.  Point this at the model folder (or h5 file) of 
+            sRTMnet to use the emulator instead of MODTRAN.  An additional file with the same basename and the extention
+            _aux.npz must accompany (e.g. /path/to/emulator.h5 /path/to/emulator_aux.npz)
         segmentation_size (Optional, int): Size of segments to construct for empirical line (if used).
 
             Reference:
@@ -92,7 +93,6 @@ def main(rawargs=None):
 
 
     Returns:
-        np.array
 
     """
     # Parse arguments
@@ -135,10 +135,7 @@ def main(rawargs=None):
     else:
         args.copy_input_files = False
 
-    if args.log_file is None:
-        logging.basicConfig(format='%(message)s', level=args.logging_level)
-    else:
-        logging.basicConfig(format='%(message)s', level=args.logging_level, filename=args.log_file)
+    logging.basicConfig(format='%(levelname)s:%(asctime)s ||| %(message)s', level=args.logging_level, filename=args.log_file, datefmt='%Y-%m-%d,%H:%M:%S')
 
     rdn_dataset = gdal.Open(args.input_radiance, gdal.GA_ReadOnly)
     rdn_size = (rdn_dataset.RasterXSize, rdn_dataset.RasterYSize)
@@ -232,6 +229,10 @@ def main(rawargs=None):
             elevation_lut_grid = np.unique(elevation_lut_grid)
             logging.info("Scene contains target lut grid elements < 0 km, and uses 6s (via sRTMnet).  6s does not "
                          f"support targets below sea level in km units.  Setting grid points {to_rem} to 0.")
+        if mean_elevation_km < 0:
+            mean_elevation_km = 0
+            logging.info("Scene contains a mean target elevation < 0.  6s does not "
+                         f"support targets below sea level in km units.  Setting mean elevation to 0.")
 
     # Need a 180 - here, as this is already in MODTRAN convention
     mean_altitude_km = mean_elevation_km + np.cos(np.deg2rad(180 - mean_to_sensor_zenith)) * mean_path_km
@@ -1080,7 +1081,7 @@ def build_presolve_config(paths: Pathnames, h2o_lut_grid: np.array, n_cores: int
 
     if emulator_base is not None:
         radiative_transfer_config['radiative_transfer_engines']['vswir']['emulator_file'] = abspath(emulator_base)
-        radiative_transfer_config['radiative_transfer_engines']['vswir']['emulator_aux_file'] = abspath(emulator_base + '_aux.npz')
+        radiative_transfer_config['radiative_transfer_engines']['vswir']['emulator_aux_file'] = abspath(os.path.splitext(emulator_base)[0] + '_aux.npz')
         radiative_transfer_config['radiative_transfer_engines']['vswir']['interpolator_base_path'] = abspath(os.path.join(paths.lut_h2o_directory,os.path.basename(emulator_base) + '_vi'))
         radiative_transfer_config['radiative_transfer_engines']['vswir']['earth_sun_distance_file'] = paths.earth_sun_distance_path
         radiative_transfer_config['radiative_transfer_engines']['vswir']['irradiance_file'] = paths.irradiance_file
@@ -1209,8 +1210,8 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
 
     if emulator_base is not None:
         radiative_transfer_config['radiative_transfer_engines']['vswir']['emulator_file'] = abspath(emulator_base)
-        radiative_transfer_config['radiative_transfer_engines']['vswir']['emulator_aux_file'] = abspath(emulator_base + '_aux.npz')
-        radiative_transfer_config['radiative_transfer_engines']['vswir']['interpolator_base_path'] = abspath(os.path.join(paths.lut_modtran_directory,os.path.basename(emulator_base) + '_vi'))
+        radiative_transfer_config['radiative_transfer_engines']['vswir']['emulator_aux_file'] = abspath(os.path.splitext(emulator_base)[0] + '_aux.npz')
+        radiative_transfer_config['radiative_transfer_engines']['vswir']['interpolator_base_path'] = abspath(os.path.join(paths.lut_modtran_directory,os.path.basename(os.path.splitext(emulator_base)[0]) + '_vi'))
         radiative_transfer_config['radiative_transfer_engines']['vswir']['earth_sun_distance_file'] = paths.earth_sun_distance_path
         radiative_transfer_config['radiative_transfer_engines']['vswir']['irradiance_file'] = paths.irradiance_file
         radiative_transfer_config['radiative_transfer_engines']['vswir']["engine_base_dir"] = paths.sixs_path

@@ -103,6 +103,8 @@ class RadiativeTransfer():
         # These should all be the same so just grab one
         self.coszen = [RT.coszen for RT in self.rt_engines][0]
 
+        self.topography_model = config.topography_model
+
     def xa(self):
         """Pull the priors from each of the individual RTs.
         """
@@ -140,6 +142,22 @@ class RadiativeTransfer():
               I / (1.0-r['sphalb'] * bg) * bg * t_down * r['t_up_dif'] + \
               I / (1.0-r['sphalb'] * bg) * rfl * t_down * r['t_up_dir'] + \
               L_up
+        
+        if self.topography_model:
+            I = (self.solar_irr) / np.pi 
+            t_dir_down = r['t_down_dir']
+            t_dif_down = r['t_down_dif']
+            if geom.cos_i is None:
+                cos_i = self.coszen
+            else:
+                cos_i = geom.cos_i 
+            t_total_up = (r['t_up_dif']+r['t_up_dir'])
+            t_total_down = t_dir_down+t_dif_down
+            s_alb = r['sphalb']
+            # topographic flux (topoflux) effect corrected
+            ret = L_atm + \
+                (I*cos_i/(1.0-s_alb*rfl)*t_dir_down + \
+                    I*self.coszen/(1.0-s_alb*rfl)*t_dif_down) * rfl * t_total_up
 
         else:
             L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)
@@ -187,6 +205,22 @@ class RadiativeTransfer():
             t_down = r['t_down_dif'] + r['t_down_dir']
             drdn_drfl = I / (1.0-r['sphalb'] * bg) * t_down * r['t_up_dir'] 
 
+        elif self.topography_model:
+
+            # jac w.r.t. topoflux correct radiance
+            I = (self.solar_irr) / np.pi 
+            t_dir_down = r['t_down_dir']
+            t_dif_down = r['t_down_dif']
+            if geom.cos_i is None:
+                cos_i = self.coszen
+            else:
+                cos_i = geom.cos_i 
+            t_total_up = (r['t_up_dif']+r['t_up_dir'])
+            t_total_down = t_dir_down+t_dif_down
+            s_alb = r['sphalb']
+
+            a = t_total_up * (I*cos_i*t_dir_down+I*self.coszen*t_dif_down)
+            drdn_drfl = a / (1-s_alb*rfl)**2
         else:
             L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)
             

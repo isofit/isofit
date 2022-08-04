@@ -57,6 +57,10 @@ class ImplementationConfig(BaseConfigSection):
         self.redis_password = None
         """str: Ray - parameter.  Redis-password (for multi-node runs)."""
 
+        self._ray_include_dashboard_type = bool
+        self.ray_include_dashboard = False
+        """str: Ray - parameter.  Boolean to include dashboard."""
+
         self._rte_configure_and_exit_type = bool
         self.rte_configure_and_exit = False
         """bool: Indicates that code should terminate as soon as all radiative transfer engine configuration files are

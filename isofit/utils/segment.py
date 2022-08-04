@@ -48,7 +48,7 @@ def segment_chunk(lstart, lend, in_file, nodata_value, npca, segsize, logfile=No
         labels: labeled image chunk
 
     """
-    logging.basicConfig(format='%(levelname)s:%(message)s', level=loglevel, filename=logfile)
+    logging.basicConfig(format='%(levelname)s:%(asctime)s ||| %(message)s', level=loglevel, filename=logfile, datefmt='%Y-%m-%d,%H:%M:%S')
 
     logging.info(f'{lstart}: starting')
 
@@ -152,6 +152,7 @@ def segment(spectra: tuple, nodata_value: float, npca: int, segsize: int, nchunk
     rayargs = {'ignore_reinit_error': True,
                'local_mode': n_cores == 1,
                "address": ray_address,
+               'include_dashboard': False,
                '_temp_dir': ray_temp_dir,
                "_redis_password": ray_redis_password}
 

@@ -45,7 +45,7 @@ def extract_chunk(lstart: int, lend: int, in_file: str, labels: np.array, flag: 
         out_data: array of output data
     """
         
-    logging.basicConfig(format='%(levelname)s:%(message)s', level=loglevel, filename=logfile)
+    logging.basicConfig(format='%(levelname)s:%(asctime)s ||| %(message)s', level=loglevel, filename=logfile, datefmt='%Y-%m-%d,%H:%M:%S')
     logging.info(f'{lstart}: starting')
 
     in_img = envi.open(envi_header(in_file))
@@ -135,6 +135,7 @@ def extractions(inputfile, labels, output, chunksize, flag, n_cores: int = 1, ra
     rayargs = {'ignore_reinit_error': True,
                'local_mode': n_cores == 1,
                "address": ray_address,
+               'include_dashboard': False,
                '_temp_dir': ray_temp_dir,
                 '_redis_password': ray_redis_password}
 
