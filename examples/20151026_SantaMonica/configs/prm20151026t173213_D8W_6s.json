@@ -13,7 +13,6 @@
     "state_file":                 "../remote/prm20151026t173213_state_v1h3_D8W_6s.txt",
     "posterior_uncertainty_file": "../remote/prm20151026t173213_post_v1h3_D8W_6s.txt",
     "data_dump_file":             "../remote/prm20151026t173213_data_D8W_6s.mat",
-    "radiometry_correction_file": "../data/prm20151026t173213_rdn_6s_factors.txt",
     "plot_directory":             "../images/"
   },
 

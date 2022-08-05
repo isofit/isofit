@@ -38,7 +38,7 @@ The subdirectories contain:
 If you use ISOFIT in your research or production, we ask that you cite the 
 precursor publication:
 
-  Thompson, David R., Vijay Natraj, Robert O. Green, Mark C. Helmlinger, Bo-Cai Gao, and Michael L. Eastwood. "Optimal estimation for imaging spectrometer atmospheric correction." Remote Sensing of Environment 216 (2018): 355-373. 
+  Thompson, David R., Vijay Natraj, Robert O. Green, Mark C. Helmlinger, Bo-Cai Gao, and Michael L. Eastwood. "Optimal estimation for imaging spectrometer atmospheric correction." Remote Sensing of Environment 216 (2018): 355-373.
 
 
 Installation Instructions
@@ -78,13 +78,71 @@ of the utilities (such as `apply_oe.py <https://github.com/isofit/isofit/blob/ma
 require GDAL, which is not required in setup.py currently to facilitate diverse compatibility.
 An example installation is available in the `utils workflow <https://github.com/isofit/isofit/blob/master/.github/workflows/utils-workflow.yml>`_
 
+
+Setting environment variables
+-----------------------------
+
+Depending on the selected RTM, specific environment variables pointing to the RTM's base directory have to be set prior to running ISOFIT.
+In the following, general instructions on how to set these variables on MacOS, Linux and Windows are provided.
+
+MacOS
+*****
+
+- Most MacOS systems load environment variables from the user's .bash_profile configuration file. Open this file with your preferred text editor, such as vim:
+
+.. code::
+
+    vim ~/.bash_profile
+
+- Add this line to your .bash_profile:
+
+.. code::
+
+    export VARIABLE_NAME=DIRECTORY (use your actual path)
+
+- Save your changes and run:
+
+.. code::
+
+    source ~/.bash_profile
+
+Linux
+*****
+
+- Most Linux profiles use either bash or csh/tcsh shells.  These shells load environment variables from the user's .bashrc or .cshrc configuration files.
+
+- (BASH) Add this parameter to the .bashrc (see MacOS description):
+
+.. code::
+
+    export VARIABLE_NAME=DIRECTORY (use your actual path)
+
+- (T/CSH) Add this parameter to the .cshrc (see MacOS description):
+
+.. code::
+
+    setenv VARIABLE_NAME=DIRECTORY (use your actual path)
+
+Windows
+*******
+
+- Using a command prompt, type one of the following:
+
+.. code::
+
+    setx /M VARIABLE_NAME "DIRECTORY" (use your actual path)
+
+    setx VARIABLE_NAME "DIRECTORY" (use your actual path)
+
+
 Quick Start using MODTRAN 6.0
 -----------------------------
 
-This quick start presumes that you have an installation of the MODTRAN 6.0
-radiative transfer model.  This is the preferred radiative transfer option if available, though we have also included an interface to the open source LibRadTran RT code.  Other open source options and neural network emulators will be integrated in the future. 
+This quick start presumes that you have an installation of the MODTRAN 6.0 radiative transfer model. This is the
+preferred radiative transfer option if available, though we have also included interfaces to the open source
+LibRadTran RT code as well as to neural network emulators.
 
-1. Configure your environment with the variable MODTRAN_DIR pointing to the base MODTRAN 6.0 directory.
+1. Create an environment variable MODTRAN_DIR pointing to the base MODTRAN 6.0 directory.
 
 2. Run the following code
 
@@ -95,26 +153,54 @@ radiative transfer model.  This is the preferred radiative transfer option if av
 
 3. This will build a surface model and run the retrieval. The default example uses a lookup table approximation, and the code should recognize that the tables do not currently exist.  It will call MODTRAN to rebuild them, which will take a few minutes.
 
-4. Look for output data in examples/20171108_Pasadena/output/.  Each retrieval writes diagnostic images to examples/20171108_Pasadena/images/ as it runs.
+4. Look for output data in examples/20171108_Pasadena/output/.
 
 Quick Start with LibRadTran 2.0.x
 ---------------------------------
 
-This quick start presumes that you have an installation of the open source libRadTran radiative transfer model (`LibRadTran <http://www.libradtran.org/doku.php>`)_ .  We have tested with the 2.0.2 release.  You will need the "REPTRAN" absorption parameterization - follow the instructions on the libradtran installation page to get that data.
+This quick start requires an installation of the open source LibRadTran radiative transfer model (`LibRadTran <http://www.libradtran.org/doku.php>`_).
+A few important steps have to be considered when installing the software, which are outlined below. We have tested with the latest 2.0.4 release.
 
-1. Configure your environment with the variable LIBRADTRAN_DIR pointing to the base libRadTran directory.
+1. Download and unpack the latest version of LibRadTran:
 
-2. Run the following code
+.. code::
+
+    wget -nv http://www.libradtran.org/download/libRadtran-2.0.4.tar.gz
+    tar -xf libRadtran-2.0.4.tar.gz
+
+2. Download and unpack the "REPTRAN" absorption parameterization:
+
+.. code::
+
+    wget -nv http://www.meteo.physik.uni-muenchen.de/~libradtran/lib/exe/fetch.php?media=download:reptran_2017_all.tar.gz -O reptran-2017-all.tar.gz
+    tar -xf reptran-2017-all.tar.gz
+
+3. Unpacking REPTRAN will create a folder called 'data' with a subfolder 'correlated_k'. Copy this subfolder to the LibRadTran data directory:
+
+.. code::
+
+    cp -r data/correlated_k libRadtran-2.0.4/data
+
+4. Go to the LibRadTran base directory, configure and compile the software. It's important to set python2 as interpreter and 'ignore-errors' when running the 'make' command:
+
+.. code::
+
+    cd libRadtran-2.0.4
+    PYTHON=$(which python2) ./configure --prefix=$(pwd)
+    make --ignore-errors
+
+5. Create an environment variable LIBRADTRAN_DIR pointing to the base libRadTran directory.
+
+6. Run the following code
 
 .. code::
 
     cd examples/20171108_Pasadena
     ./run_example_libradtran.sh
 
-3. This will build a surface model and run the retrieval. The default example uses a lookup table approximation, and the code should recognize that the tables do not currently exist.  It will call libRadTran to rebuild them, which will take a few minutes.
+7. This will build a surface model and run the retrieval. The default example uses a lookup table approximation, and the code should recognize that the tables do not currently exist.  It will call LibRadTran to rebuild them, which will take a few minutes.
 
-4. Look for output data in examples/20171108_Pasadena/output/.  Diagnostic images are written to examples/20171108_Pasadena/images/.
-
+8. Look for output data in examples/20171108_Pasadena/output/.
 
 Quick Start with sRTMnet
 ------------------------
