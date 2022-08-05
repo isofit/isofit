@@ -34,6 +34,7 @@ from isofit.inversion.inverse_mcmc import MCMCInversion
 from isofit.core.fileio import IO
 from isofit.configs import configs
 
+
 class Isofit:
     """Initialize the Isofit class.
 
@@ -51,7 +52,8 @@ class Isofit:
         # Set logging level
         self.loglevel = level
         self.logfile = logfile
-        logging.basicConfig(format='%(levelname)s:%(asctime)s ||| %(message)s', level=self.loglevel, filename=self.logfile, datefmt='%Y-%m-%d,%H:%M:%S')
+        logging.basicConfig(format='%(levelname)s:%(asctime)s ||| %(message)s', level=self.loglevel,
+                            filename=self.logfile, datefmt='%Y-%m-%d,%H:%M:%S')
 
         self.rows = None
         self.cols = None
@@ -84,7 +86,7 @@ class Isofit:
         except:
             return
 
-    def run(self, row_column = None):
+    def run(self, row_column=None):
         """
         Iterate over spectra, reading and writing through the IO
         object to handle formatting, buffering, and deferred write-to-file.
@@ -139,7 +141,8 @@ class Isofit:
 
         if self.workers is None and not self.config.implementation.debug_mode:
             remote_worker = ray.remote(Worker)
-            self.workers = ray.util.ActorPool([remote_worker.remote(self.config, fm_id, self.loglevel, self.logfile, n, n_workers)
+            self.workers = ray.util.ActorPool([remote_worker.remote(self.config, fm_id, self.loglevel, self.logfile, n,
+                                                                    n_workers)
                                                for n in range(n_workers)])
         elif self.config.implementation.debug_mode:
             self.workers = Worker(self.config, fm, self.loglevel, self.logfile, 0, 1)
@@ -158,12 +161,9 @@ class Isofit:
                 indices_to_run = [index_pairs[index_sets[l]:index_sets[l + 1], :]
                                   for l in range(len(index_sets) - 1)]
 
-            res = list(self.workers.map_unordered(lambda a, b: a.run_set_of_spectra.remote(b),
-                                              indices_to_run))
+            res = list(self.workers.map_unordered(lambda a, b: a.run_set_of_spectra.remote(b), indices_to_run))
         else:
             self.workers.run_set_of_spectra(index_pairs)
-
-
 
         total_time = time.time() - start_time
         logging.info(f'Inversions complete.  {round(total_time,2)}s total, {round(n_iter/total_time,4)} spectra/s, '
@@ -171,7 +171,8 @@ class Isofit:
 
 
 class Worker(object):
-    def __init__(self, config: configs.Config, forward_model: ForwardModel, loglevel: str, logfile: str, worker_id: int = None, total_workers: int = None):
+    def __init__(self, config: configs.Config, forward_model: ForwardModel, loglevel: str, logfile: str,
+                 worker_id: int = None, total_workers: int = None):
         """
         Worker class to help run a subset of spectra.
 
@@ -183,10 +184,11 @@ class Worker(object):
             total_workers: the total number of workers running, for logging reference
         """
 
-        logging.basicConfig(format='%(levelname)s:%(asctime)s ||| %(message)s', level=loglevel, filename=logfile, datefmt='%Y-%m-%d,%H:%M:%S')
+        logging.basicConfig(format='%(levelname)s:%(asctime)s ||| %(message)s', level=loglevel, filename=logfile,
+                            datefmt='%Y-%m-%d,%H:%M:%S')
         self.config = config
         self.fm = forward_model
-        #self.fm = ForwardModel(self.config)
+        # self.fm = ForwardModel(self.config)
 
         if self.config.implementation.mode == 'mcmc_inversion':
             self.iv = MCMCInversion(self.config, self.fm)
@@ -204,9 +206,7 @@ class Worker(object):
         self.worker_id = worker_id
         self.completed_spectra = 0
 
-
     def run_set_of_spectra(self, indices: np.array):
-
 
         for index in range(0, indices.shape[0]):
 
@@ -240,7 +240,8 @@ class Worker(object):
                 if index % 100 == 0:
                     if self.worker_id is not None and self.approximate_total_spectra is not None:
                         percent = np.round(self.completed_spectra / self.approximate_total_spectra * 100,2)
-                        logging.info(f'Worker {self.worker_id} completed {self.completed_spectra}/~{self.approximate_total_spectra}:: {percent}% complete')
+                        logging.info(f'Worker {self.worker_id} completed {self.completed_spectra}/'
+                                     f'~{self.approximate_total_spectra}:: {percent}% complete')
                     else:
                         logging.info(f'Worker at start location ({row},{col}) completed {index}/{indices.shape[0]}')
 
