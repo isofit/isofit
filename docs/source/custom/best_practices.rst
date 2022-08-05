@@ -1,7 +1,7 @@
 Best Practices
 ==============
 
-ISOFIT is highly configurable.  This provides a great deal of design flexibility for analysts to build their own custom retrieval algorithms for specific investigations.  Scientists can construct custom instrument models to handle new sensors, or define new observation uncertanties to account for model discrepancy errors.  They can refine or constrain the prior distribution based on background knowledge of the state vector.  This flexibility can be powerful, but it can also be daunting for the beginner.  Consequently, we have developed recommendations for best practices that are likely to provide good results over a wide range of conditions.
+ISOFIT is highly configurable.  This provides a great deal of design flexibility for analysts to build their own custom retrieval algorithms for specific investigations.  Scientists can construct custom instrument models to handle new sensors, or define new observation uncertainties to account for model discrepancy errors.  They can refine or constrain the prior distribution based on background knowledge of the state vector.  This flexibility can be powerful, but it can also be daunting for the beginner.  Consequently, we have developed recommendations for best practices that are likely to provide good results over a wide range of conditions.
 
 Surface Models
 --------------

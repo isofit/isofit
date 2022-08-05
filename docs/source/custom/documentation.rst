@@ -11,7 +11,7 @@ are changed, documentation will update automatically via githooks and be availab
 https://isofit.readthedocs.io/en/latest/index.html
 
 However, if there are major structural changes, the source rst files will need to be rebuilt.
-This can me done by ::
+This can be done by ::
 
     cd docs/
     rm source/isofit*.rst
