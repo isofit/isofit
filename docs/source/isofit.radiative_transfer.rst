@@ -16,4 +16,5 @@ isofit.radiative\_transfer
    isofit.radiative_transfer.look_up_tables
    isofit.radiative_transfer.modtran
    isofit.radiative_transfer.radiative_transfer
+   isofit.radiative_transfer.sRTMnet
    isofit.radiative_transfer.six_s
