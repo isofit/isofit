@@ -22,6 +22,8 @@ from typing import List
 from isofit.utils import segment, extractions, empirical_line
 from isofit.core import isofit, common
 from isofit.core.common import envi_header
+from isofit.core.sunposition import sunpos
+from isofit.core.common import resample_spectrum
 
 EPS = 1e-6
 CHUNKSIZE = 256
@@ -265,7 +267,7 @@ def main(rawargs=None):
                 nodata_value=-9999, npca=5, segsize=args.segmentation_size, nchunk=CHUNKSIZE,
                 n_cores=args.n_cores, loglevel=args.logging_level, logfile=args.log_file)
 
-    surface_type_labels = define_surface_types(paths.rdn_subs_path, paths.loc_subs_path, paths.obs_subs_path, paths.class_subs_path, paths.surface_config_paths.keys())
+    surface_type_labels = define_surface_types(paths.rdn_subs_path, paths.loc_subs_path, dt, paths.class_subs_path, wl_data[:,1], wl_data[:,2])
 
     # Extract input data per segment
     for inp, outp in [(paths.radiance_working_path, paths.rdn_subs_path),
@@ -1529,7 +1531,7 @@ def reassemble_cube(matching_indices:np.array, paths: Pathnames):
     header = input_ds.metadata.copy()
     header['lines'] = len(matching_indices)
     header['bands'] = rdn_ds.meta['bands']
-    if 'band names' in header:
+    if 'band names' in header.keys():
         header['band names'] = [input_ds.meta['band names'][x] for x in range(int(header['bands']))]
     output_ds = envi.create_image(envi_header(paths.uncert_subs_path), header, ext='', force=True)
     output_mm = output_ds.open_memmap(interleave='bip')
@@ -1537,6 +1539,73 @@ def reassemble_cube(matching_indices:np.array, paths: Pathnames):
         input_ds = envi.open(envi_header(paths.surface_config_paths[surface_type]['uncert']))
         output_mm[matching_indices == _st,...] = input_ds.open_memmap(interleave='bip').copy()
  
+
+def define_surface_types(rdnfile, locfile, datetime, out_class_path, wl, fwhm):
+
+
+    irr_file = os.path.join(os.path.dirname(isofit.__file__),'..','data','kurudz_0.1nm.dat')
+    irr_wl, irr = np.loadtxt(irr_file, comments='#').T
+    irr = irr / 10  # convert to uW cm-2 sr-1 nm-1
+    irr_resamp = resample_spectrum(irr, irr_wl, wl, fwhm)
+    irr_resamp = np.array(irr_resamp, dtype=np.float32)
+
+    # determine glint bands having negligible water reflectance
+    BLUE = np.logical_and(wl > 440, wl < 460)
+    NIR = np.logical_and(wl > 950, wl < 1000)
+    SWIRA = np.logical_and(wl > 1250, wl < 1270)
+    SWIRB = np.logical_and(wl > 1640, wl < 1660)
+    SWIRC = np.logical_and(wl > 2200, wl < 2500)
+    b450 = np.argmin(abs(wl-450))
+    b762 = np.argmin(abs(wl-762))
+    b780 = np.argmin(abs(wl-780))
+    b1000 = np.argmin(abs(wl-1000))
+    b1250 = np.argmin(abs(wl-1250))
+    b1380 = np.argmin(abs(wl-1380))
+    b1650 = np.argmin(abs(wl-1650))
+
+    rdn_ds = envi.open(envi_header(rdnfile)).open_memmap(interleave='bip')
+    loc_ds = envi.open(envi_header(locfile)).open_memmap(interleave='bip')
+
+    classes = np.zeros(rdn_ds.shape[0])
+    for line in range(len(classes)):
+        loc = np.squeeze(loc_ds[line,...].copy().astype(np.float32))
+        rdn = np.squeeze(rdn_ds[line,...].copy().astype(np.float32))
+
+        elevation_m = loc[2]
+        latitude = loc[1]
+        longitudeE = loc[0]
+        az, zen, ra, dec, h = sunpos(datetime, latitude, longitudeE,
+                                     elevation_m, radians=True).T
+
+        rho = (((rdn * np.pi) / (irr.T)).T / np.cos(zen)).T
+
+        rho[rho[0] < -9990, :] = -9999.0
+
+        if rho[0] < -9999:
+            classes[line] = -1
+            continue
+
+        # Cloud threshold from Sandford et al.
+        total = np.array(rho[b450] > 0.28, dtype=int) + \
+            np.array(rho[b1250] > 0.46, dtype=int) + \
+            np.array(rho[b1650] > 0.22, dtype=int)
+
+        if total > 2 or rho[b1380] > 0.1:
+            classes[line] = 1
+        if rho[b1000] < 0.05:
+            classes[line] = 2
+
+
+    header = loc_ds.metadata.copy()
+    header['bands'] = 1
+    if 'band names' in header.keys():
+        header['band names'] = "Class"
+
+    output_ds = envi.create_image(envi_header(out_class_path), header, ext='', force=True)
+    output_mm = output_ds.open_memmap(interleave='bip')
+    output_mm[...] = classes
+
+    return classes
 
 
 
