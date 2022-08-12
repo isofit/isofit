@@ -124,6 +124,7 @@ def main(rawargs=None):
     parser.add_argument('--ray_temp_dir', type=str, default='/tmp/ray')
     parser.add_argument('--emulator_base', type=str, default=None)
     parser.add_argument('--segmentation_size', type=int, default=40)
+    parser.add_argument('--multisurface', type=int, default=1)
 
     args = parser.parse_args(rawargs)
 
