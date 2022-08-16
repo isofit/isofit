@@ -4,7 +4,8 @@
    :Caption: Getting Started
    :maxdepth: 2
 
-   custom/readme_ref.rst
+   custom/about.rst
+   custom/installation.rst
    custom/best_practices.rst
 
 .. toctree::

@@ -14,5 +14,6 @@ isofit.surface
 
    isofit.surface.surface
    isofit.surface.surface_glint
+   isofit.surface.surface_lut
    isofit.surface.surface_multicomp
    isofit.surface.surface_thermal
