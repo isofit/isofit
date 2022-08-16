@@ -111,8 +111,10 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
     if reference_class_file is not None:
         reference_class = np.squeeze(np.array(envi.open(envi_header(reference_class_file), reference_class_file).open_memmap(interleave='bip')))
         un_reference_class = np.unique(reference_class)
+        un_reference_class = un_reference_class[un_reference_class != -1]
     else:
         reference_class = None
+    logging.info(f"Reference classes found: {un_reference_class}")
 
     # Load segmentation data
     if segmentation_file:
@@ -144,7 +146,7 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
     scaled_ref_loc = reference_locations * loc_scaling
     tree = KDTree(scaled_ref_loc)
     if reference_class is not None:
-        trees = [KDTree(scaled_ref_loc[reference_class == _c]) for _c in un_reference_class]
+        trees = [KDTree(scaled_ref_loc[reference_class == _c,:]) for _c in un_reference_class]
     # Assume (heuristically) that, for distance purposes, 1 m vertically is
     # comparable to 10 m horizontally, and that there are 100 km per latitude
     # degree.  This is all approximate of course.  Elevation appears in the
@@ -196,10 +198,19 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
                 else:
                     dists, nn = tree.query(loc, 1)
                     loc_class = int(reference_class[nn])
-                    dists, nn = trees[loc_class].query(loc[reference_class == loc_class,:], nneighbors)
-                    xv = reference_radiance[reference_class == loc_class,:][nn, :]
-                    yv = reference_reflectance[reference_class == loc_class,:][nn, :]
-                    uv = reference_uncertainty[reference_class == loc_class,:][nn, :]
+                    dists, nn = trees[loc_class].query(loc, nneighbors)
+                    try:
+                        xv = reference_radiance[reference_class == loc_class,:][nn, :]
+                        yv = reference_reflectance[reference_class == loc_class,:][nn, :]
+                        uv = reference_uncertainty[reference_class == loc_class,:][nn, :]
+                    except:
+                        print(loc_class)
+                        print(nneighbors)
+                        print(np.sum(reference_class == loc_class))
+                        print(nn)
+                        print(reference_radiance.shape)
+                        quit()
+
 
                 bhat = np.zeros((n_radiance_bands, 2))
                 bmarg = np.zeros((n_radiance_bands, 2))
