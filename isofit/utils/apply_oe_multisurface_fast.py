@@ -281,7 +281,7 @@ def main(rawargs=None):
 
     # Run surface type classification
     if args.multisurface == 1:
-        surface_type_labels = define_surface_types(paths.rdn_subs_path, paths.loc_subs_path, dt, paths.class_subs_path, wl_data[:,1], wl_data[:,2])
+        surface_type_labels = define_surface_types(paths.rdn_subs_path, paths.loc_subs_path, dt, paths.class_subs_path, wl_data[:,1]*1000, wl_data[:,2]*1000)
         un_surface_type_labels = np.unique(surface_type_labels)
         un_surface_type_labels = un_surface_type_labels[un_surface_type_labels != -1].astype(int)
         for ustl in un_surface_type_labels:
@@ -1551,10 +1551,7 @@ def define_surface_types(rdnfile, locfile, datetime, out_class_path, wl, fwhm):
     irr_file = os.path.join(os.path.dirname(isofit.__file__),'..','..','data','kurudz_0.1nm.dat')
     irr_wl, irr = np.loadtxt(irr_file, comments='#').T
     irr = irr / 10  # convert to uW cm-2 sr-1 nm-1
-    if np.all(wl < 10):
-        irr_resamp = resample_spectrum(irr, irr_wl, wl*1000, fwhm*1000)
-    else:
-        irr_resamp = resample_spectrum(irr, irr_wl, wl*1000, fwhm*1000)
+    irr_resamp = resample_spectrum(irr, irr_wl, wl, fwhm)
     irr_resamp = np.array(irr_resamp, dtype=np.float32)
     irr = irr_resamp
 
@@ -1591,10 +1588,6 @@ def define_surface_types(rdnfile, locfile, datetime, out_class_path, wl, fwhm):
 
         rho[rho[0] < -9990, :] = -9999.0
 
-        if rho[0] < -9999:
-            classes[line] = -1
-            continue
-
         # Cloud threshold from Sandford et al.
         total = np.array(rho[b450] > 0.31, dtype=int) + \
             np.array(rho[b1250] > 0.51, dtype=int) + \
@@ -1602,12 +1595,17 @@ def define_surface_types(rdnfile, locfile, datetime, out_class_path, wl, fwhm):
 
         if rho[b1000] < 0.05:
             classes[line] = 2
+            print(b1000, rho[b1000], classes[2], rdn[b1000],irr[b1000], np.cos(zen))
         if total > 2 or rho[b1380] > 0.1:
             classes[line] = 1
 
+        if rho[0] < -9999:
+            classes[line] = -1
 
     header = loc_src.metadata.copy()
     header['bands'] = 1
+    header['data type'] = 2
+    header['description'] = 'Surface classification: [base, cloud, water]'
     if 'band names' in header.keys():
         header['band names'] = "Class"
 

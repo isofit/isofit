@@ -199,17 +199,10 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
                     dists, nn = tree.query(loc, 1)
                     loc_class = int(reference_class[nn])
                     dists, nn = trees[loc_class].query(loc, nneighbors)
-                    try:
-                        xv = reference_radiance[reference_class == loc_class,:][nn, :]
-                        yv = reference_reflectance[reference_class == loc_class,:][nn, :]
-                        uv = reference_uncertainty[reference_class == loc_class,:][nn, :]
-                    except:
-                        print(loc_class)
-                        print(nneighbors)
-                        print(np.sum(reference_class == loc_class))
-                        print(nn)
-                        print(reference_radiance.shape)
-                        quit()
+                    nn = nn[nn < np.sum(reference_class == loc_class)]
+                    xv = reference_radiance[reference_class == loc_class,:][nn, :]
+                    yv = reference_reflectance[reference_class == loc_class,:][nn, :]
+                    uv = reference_uncertainty[reference_class == loc_class,:][nn, :]
 
 
                 bhat = np.zeros((n_radiance_bands, 2))
