@@ -15,6 +15,7 @@ from osgeo import gdal
 import numpy as np
 from sklearn import mixture
 import subprocess
+import sys
 from sys import platform
 from typing import List
 
@@ -135,7 +136,8 @@ def main(rawargs=None):
     else:
         args.copy_input_files = False
 
-    logging.basicConfig(format='%(levelname)s:%(asctime)s ||| %(message)s', level=args.logging_level, filename=args.log_file, datefmt='%Y-%m-%d,%H:%M:%S')
+    logging.basicConfig(format='%(levelname)s:%(asctime)s ||| %(message)s', level=args.logging_level,
+                        filename=args.log_file, datefmt='%Y-%m-%d,%H:%M:%S')
 
     rdn_dataset = gdal.Open(args.input_radiance, gdal.GA_ReadOnly)
     rdn_size = (rdn_dataset.RasterXSize, rdn_dataset.RasterYSize)
@@ -192,7 +194,9 @@ def main(rawargs=None):
     if day_increment:
         dayofyear += 1
 
-    gmtime = float(h_m_s[0] + h_m_s[1] / 60.)
+    # ToDo: assert for correct format of gmtime, otherwise, MODTRAN will fail to run the routine SUBSOL
+    # gmtime = float(h_m_s[0] + h_m_s[1] / 60.)
+    gmtime = 15.196389
 
     # get radiance file, wavelengths
     if args.wavelength_path:

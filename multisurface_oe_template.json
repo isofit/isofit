@@ -1,76 +1,68 @@
 {
-    "workflow":
-        {
-            "copy_input_files": false,
-            "segmentation_size": 40,
-            "ray_temp_dir": "/tmp/ray",
-            "n_cores": -1,
-            "chunksize": 256,
-            "eps": 1e-6,
-            "presolve_wv": true
-        },
-    "general_inversion_parameters":
-    {
-        "multiple_restarts": false,
-        "emulator_base": "",
-        "model_discrepency_path": "",
-        "surface_category": "multicomponent_surface",
-        "aerosol_climatology_path": "",
-        "channelized_uncertainty_path": "",
-        "atmosphere_type": "ATM_MIDLAT_SUMMER",
-        "surface_path": "",
-        "rdn_factors_path": "",
-        "uncorrelated_radiometric_uncertainty": 0.01,
-        "inversion_windows": [[380.0, 1340.0], [1450, 1800.0], [1970.0, 2500.0]],
-        "statevector_elements": ["H2OSTR" ],
-        "radiative_transfer_parameters":
-        {
-            "H2OSTR":
-            {
-                "lut_spacing": 0.25,
-                "lut_spacing_min": 0.03,
-                "default_range": [0.05, 5],
-                "min": 0.2
-            },
-            "GNDALT":
-            {
-                "lut_space": 0.5,
-                "lut_spacing_min": 0.2
-            },
-            "AOT550":
-            {
-                "range": [0.001, 0.75],
-                "lut_spacing": 0.2,
-                "lut_spacing_min": 0
-            }
-        }
+    "general_opts": {
+        "n_cores": -1,
+        "segmentation_size": 40,
+        "chunksize": 256,
+        "eps": 1e-6,
+        "copy_input_files": false,
+        "presolve_wv": true,
+        "ray_temp_dir": "/tmp/ray"
     },
-    "presolve_inversion_parameters":
-    {
-        "max_sample_points": 200
-    },
-    "type_specific_inversion_parameters":
-    {
-        "cloud":
-        {
-            "toa_threshold_wavelengths": [450,1250,1650],
-            "toa_threshold_values": [0.28, 0.46, 0.22],
-            "toa_threshold_comparisons": ["gt","gt","gt"],
-            "statevector_elements":
-            {
-                "GNDALT":
-                {
-                    "bounds": [0.1, 5.5],
-                    "lut_spacing": 2
+
+    "processors": {
+        "general_inversion_parameters": {
+            "filepaths": {
+                "model_discrepency_path": "",
+                "aerosol_climatology_path": "",
+                "channelized_uncertainty_path": "",
+                "surface_path": "",
+                "rdn_factors_path": "",
+                 "emulator_base": ""
+            },
+            "opts": {
+                "multiple_restarts": false,
+                "uncorrelated_radiometric_uncertainty": 0.01,
+                "inversion_windows": [[380.0, 1340.0], [1450, 1800.0], [1970.0, 2500.0]],
+                "statevector_elements": ["H2OSTR", "AOT550"],
+                "surface_category": "multicomponent_surface"
+            },
+            "radiative_transfer_parameters": {
+                "atmosphere_type": "ATM_MIDLAT_SUMMER",
+                "H2OSTR": {
+                    "lut_spacing": 0.25,
+                    "lut_spacing_min": 0.03,
+                    "default_range": [0.05, 5],
+                    "min": 0.2
+                },
+                "AOT550": {
+                    "lut_spacing": 0.2,
+                    "lut_spacing_min": 0,
+                    "default_range": [0.001, 0.75]
+                },
+                "GNDALT": {
+                    "lut_space": 0.5,
+                    "lut_spacing_min": 0.2
                 }
             }
         },
-        "water":
-        {
-            "toa_threshold_wavelengths": [1000],
-            "toa_threshold_values": [0.05],
-            "toa_threshold_comparisons": ["lt"],
-            "surface_category":  "glint_surface"
+
+        "presolve_inversion_parameters": {
+            "max_sample_points": 200
+        },
+
+        "type_specific_inversion_parameters": {
+            "cloud": {
+                "toa_threshold_wavelengths": [450,1250,1650],
+                "toa_threshold_values": [0.28, 0.46, 0.22],
+                "toa_threshold_comparisons": ["gt","gt","gt"],
+                "statevector_elements": ["GNDALT"]
+            },
+            "water": {
+                "toa_threshold_wavelengths": [1000],
+                "toa_threshold_values": [0.05],
+                "toa_threshold_comparisons": ["lt"],
+                "surface_category":  "glint_surface"
+            }
         }
     }
 }

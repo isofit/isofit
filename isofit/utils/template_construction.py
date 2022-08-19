@@ -1,3 +1,7 @@
+#! /usr/bin/env python3
+#
+# Authors: Philip G. Brodrick and Niklas Bohn
+#
 
 import logging
 import os
@@ -9,13 +13,13 @@ from shutil import copyfile
 from datetime import datetime
 import subprocess
 
-
-
 INVERSION_WINDOWS = [[380.0, 1340.0], [1450, 1800.0], [1970.0, 2500.0]]
 
-class Pathnames():
-    """ Class to determine and hold the large number of relative and absolute paths that are needed for isofit and
-    MODTRAN configuration files.
+
+class Pathnames:
+    """
+    Class to determine and hold the large number of relative and absolute paths that are needed for isofit and MODTRAN
+    configuration files.
 
     Args:
         args: an argparse Namespace object with all inputs

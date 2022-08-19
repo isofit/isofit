@@ -1,38 +1,29 @@
-
-
-
+#! /usr/bin/env python3
+#
+# Authors: Philip G. Brodrick and Niklas Bohn
+#
 
 import argparse
 import os
-from os.path import join, exists, split, abspath
-from shutil import copyfile
-from datetime import datetime
+from os.path import join, exists
 from spectral.io import envi
 import logging
-import json
-from osgeo import gdal
+from geoarray import GeoArray
 import numpy as np
-from sklearn import mixture
-import subprocess
-from sys import platform
 from typing import List
 import yaml
 from collections import OrderedDict
 
-from template_construction import build_main_config, build_presolve_config, Pathnames, calc_modtran_max_water
+from template_construction import Pathnames, build_presolve_config, calc_modtran_max_water
 
-
-from isofit.utils import segment, extractions, empirical_line
-from isofit.core import isofit, common
+from isofit.core import isofit
 from isofit.core.common import envi_header
-from isofit.utils import segment, extractions, empirical_line
-
+from isofit.utils import segment, extractions
 
 
 def main(rawargs=None):
 
-
-    parser = argparse.ArgumentParser(description="Apply OE to a block of data with mixed surface.")
+    parser = argparse.ArgumentParser(description="Apply ISOFIT to a block of data with mixed surface.")
     parser.add_argument('input_radiance', type=str)
     parser.add_argument('input_loc', type=str)
     parser.add_argument('input_obs', type=str)
@@ -41,35 +32,39 @@ def main(rawargs=None):
     parser.add_argument('--wavelength_path', type=str)
     parser.add_argument('--modtran_path', type=str)
     parser.add_argument('--log_file', type=str, default=None)
-    parser.add_argument('--log_file', type=str, default=None)
     args = parser.parse_args(rawargs)
 
-
     # Check files exist
-    infiles = {'input_radiance': args.input_radiance, 'input_loc': args.input_loc, 
-               'input_obs': args.input_obs, 'config_file': args.config_file }
-    for infile_name, infile in infiles.itmes():
+    infiles = {'input_radiance': args.input_radiance, 'input_loc': args.input_loc, 'input_obs': args.input_obs,
+               'config_file': args.config_file}
+
+    for infile_name, infile in infiles.items():
         if os.path.isfile(infile) is False:
             err_str = f'Input argument {infile_name} give as: {infile}.  File not found on system.'
             raise ValueError('argument ' + err_str)
 
     # Check file sizes match
-    rdn_dataset = gdal.Open(args.input_radiance, gdal.GA_ReadOnly)
-    rdn_size = (rdn_dataset.RasterXSize, rdn_dataset.RasterYSize)
+    rdn_dataset = GeoArray(args.input_radiance)
+    rdn_size = rdn_dataset.shape[:2]
     del rdn_dataset
-    for infile_name, infile in infiles.itmes():
-        if infile_name != 'input_radiance':
-            input_dataset = gdal.Open(infile, gdal.GA_ReadOnly)
-            input_size = (input_dataset.RasterXSize, input_dataset.RasterYSize)
+
+    for infile_name, infile in infiles.items():
+        if infile_name != 'input_radiance' and infile_name != 'config_file':
+            input_dataset = GeoArray(infile)
+            input_size = input_dataset.shape[:2]
             if not (input_size[0] == rdn_size[0] and input_size[1] == rdn_size[1]):
-                err_str = f'Input file: {infile_name} size is {input_size}, which does not match input_radiance size: {rdn_size}'
+                err_str = f'Input file: {infile_name} size is {input_size}, ' \
+                          f'which does not match input_radiance size: {rdn_size}'
                 raise ValueError(err_str)
 
     with open(args.config_file, 'r') as f:
         config = OrderedDict(yaml.safe_load(f))
-    gip = config['general_inversion_parameters']
+
     wf = config['workflow']
+    gip = config['general_inversion_parameters']
     tsip = config['type_specific_inversion_parameters']
+
+    paths = Pathnames(args)
 
     # Calc mask
 
