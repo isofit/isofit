@@ -268,7 +268,6 @@ def main(rawargs=None):
                 nodata_value=-9999, npca=5, segsize=args.segmentation_size, nchunk=CHUNKSIZE,
                 n_cores=args.n_cores, loglevel=args.logging_level, logfile=args.log_file)
 
-    surface_type_labels = define_surface_types(paths.rdn_subs_path, paths.loc_subs_path, dt, paths.class_subs_path, wl_data[:,1], wl_data[:,2])
 
     # Extract input data per segment
     for inp, outp in [(paths.radiance_working_path, paths.rdn_subs_path),
@@ -280,10 +279,20 @@ def main(rawargs=None):
                         chunksize=CHUNKSIZE, flag=-9999, n_cores=args.n_cores,
                         loglevel=args.logging_level, logfile=args.log_file)
 
+    # Run surface type classification
+    if args.multisurface == 1:
+        surface_type_labels = define_surface_types(paths.rdn_subs_path, paths.loc_subs_path, dt, paths.class_subs_path, wl_data[:,1], wl_data[:,2])
+        un_surface_type_labels = np.unique(surface_type_labels)
+        un_surface_type_labels = un_surface_type_labels[un_surface_type_labels != -1].astype(int)
+        for ustl in un_surface_type_labels:
+            logging.info(f'Found surface type: {["base","cloud","water"][ustl]}')
+            
+
     for _st, surface_type in enumerate(list(paths.surface_config_paths.keys())):
-        copy_file_subset(surface_type_labels == _st, [(paths.rdn_subs_path, paths.surface_subs_files[surface_type]['rdn']), 
-                                                (paths.loc_subs_path, paths.surface_subs_files[surface_type]['loc']),
-                                                (paths.obs_subs_path, paths.surface_subs_files[surface_type]['obs'])] )
+        if np.sum(surface_type_labels == _st) > 0:
+            copy_file_subset(surface_type_labels == _st, [(paths.rdn_subs_path, paths.surface_subs_files[surface_type]['rdn']), 
+                                                          (paths.loc_subs_path, paths.surface_subs_files[surface_type]['loc']),
+                                                          (paths.obs_subs_path, paths.surface_subs_files[surface_type]['obs'])] )
  
 
     if args.presolve == 1:
@@ -327,8 +336,10 @@ def main(rawargs=None):
         h2o = envi.open(envi_header(paths.h2o_subs_path))
         h2o_est = h2o.read_band(-1)[:].flatten()
 
-        p05 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 5)
-        p95 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 95)
+        #p05 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 5)
+        #p95 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 95)
+        p05 = np.min(h2o_est[h2o_est > lut_params.h2o_min])
+        p95 = np.max(h2o_est[h2o_est > lut_params.h2o_min])
         margin = (p95-p05) * 0.25
 
         lut_params.h2o_range[0] = max(lut_params.h2o_min, p05 - margin)
@@ -342,9 +353,12 @@ def main(rawargs=None):
     logging.info(f'To-sensor zenith: {to_sensor_zenith_lut_grid}')
     logging.info(f'H2O Vapor: {h2o_lut_grid}')
 
-    logging.info(paths.state_subs_path)
-    if not exists(paths.state_subs_path) or \
-            not exists(paths.uncert_subs_path) or \
+
+    surface_types = list(paths.surface_config_paths.keys())
+    surface_types.append(None)
+
+    logging.info(f"Surface Types: {surface_types}")
+    if not exists(paths.uncert_subs_path) or \
             not exists(paths.rfl_subs_path):
 
         
@@ -354,9 +368,6 @@ def main(rawargs=None):
                                gmtime=gmtime, elevation_km=mean_elevation_km, output_file=paths.modtran_template_path)
 
         logging.info('Writing main configuration file.')
-        surface_types = paths.surface_config_paths.keys()
-        if len(surface_types) == 0:
-            surface_types.append(None)
         for st in surface_types:
             build_main_config(paths, lut_params, h2o_lut_grid, elevation_lut_grid, to_sensor_azimuth_lut_grid,
                           to_sensor_zenith_lut_grid, mean_latitude, mean_longitude, dt, 
@@ -365,13 +376,18 @@ def main(rawargs=None):
                           args.segmentation_size, st)
 
         # Run modtran retrieval
-        for st in surface_types:
-            if st is None:
+        for _st, st in enumerate(surface_types):
+            if st is None and _st == 0:
                 logging.info('Running ISOFIT with full LUT - Universal Surface')
                 retrieval_full = isofit.Isofit(paths.modtran_config_path, level='INFO', logfile=args.log_file)
+            elif st is None:
+                continue
             else:
-                logging.info(f'Running ISOFIT with full LUT - Surface: {st}')
-                retrieval_full = isofit.Isofit(paths.surface_config_paths[st], level='INFO', logfile=args.log_file)
+                if os.path.isfile(paths.surface_subs_files[st]['rdn']):
+                    logging.info(f'Running ISOFIT with full LUT - Surface: {st}')
+                    retrieval_full = isofit.Isofit(paths.surface_config_paths[st], level='INFO', logfile=args.log_file)
+                else:
+                    continue
             retrieval_full.run()
             del retrieval_full
 
@@ -1279,7 +1295,7 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
 
     if h2o_lut_grid is not None:
         radiative_transfer_config['lut_grid']['H2OSTR'] = h2o_lut_grid.tolist()
-    if elevation_lut_grid is not None:
+    if elevation_lut_grid is not None and 'GNDALT' not in list(radiative_transfer_config['lut_grid'].keys()):
         radiative_transfer_config['lut_grid']['GNDALT'] = elevation_lut_grid.tolist()
     if to_sensor_azimuth_lut_grid is not None:
         radiative_transfer_config['lut_grid']['TRUEAZ'] = to_sensor_azimuth_lut_grid.tolist()
@@ -1383,8 +1399,8 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
         output_config_name = paths.modtran_config_path
     else:
         output_config_name = paths.surface_config_paths[surface_type]
-    with open(paths.modtran_config_path, 'w') as fout:
-        fout.write(json.dumps(output_config_name, cls=SerialEncoder, indent=4, sort_keys=True))
+    with open(output_config_name, 'w') as fout:
+        fout.write(json.dumps(isofit_config_modtran, cls=SerialEncoder, indent=4, sort_keys=True))
 
 
 def write_modtran_template(atmosphere_type: str, fid: str, altitude_km: float, dayofyear: int,
@@ -1486,10 +1502,12 @@ def copy_file_subset(matching_indices:np.array, pathnames:List):
         input_ds = envi.open(envi_header(inp), inp)
         header = input_ds.metadata.copy()
         header['lines'] = np.sum(matching_indices)
+        logging.info(f'Subsetting {inp} to {outp}')
         output_ds = envi.create_image(envi_header(outp), header, ext='', force=True)
         output_mm = output_ds.open_memmap(interleave='bip', writable=True)
-        input_mm = input_ds.open_memmap(interleave='bip', writable=True)
+        input_mm = input_ds.open_memmap(interleave='bip')
         output_mm[...] = input_mm[matching_indices,...].copy()
+        del output_ds, output_mm
  
 def reassemble_cube(matching_indices:np.array, paths: Pathnames):
     """Copy over subsets of given files to new locations 
@@ -1499,56 +1517,46 @@ def reassemble_cube(matching_indices:np.array, paths: Pathnames):
         paths (Pathnames): output file array set
     """
 
-    input_ds = envi.open(envi_header(paths.surface_config_paths['base']['rfl']))
+    logging.info(f'Reassemble {paths.rfl_subs_path}')
+    input_ds = envi.open(envi_header(paths.surface_subs_files['base']['rfl']))
     header = input_ds.metadata.copy()
     header['lines'] = len(matching_indices)
-    output_ds = envi.create_image(envi_header(paths.rdn_subs_path), header, ext='', force=True)
-    output_mm = output_ds.open_memmap(interleave='bip')
+    output_ds = envi.create_image(envi_header(paths.rfl_subs_path), header, ext='', force=True)
+    output_mm = output_ds.open_memmap(interleave='bip', writable=True)
     for _st, surface_type in enumerate(list(paths.surface_config_paths.keys())):
-        input_ds = envi.open(envi_header(paths.surface_config_paths[surface_type]['rfl']))
-        output_mm[matching_indices == _st,...] = input_ds.open_memmap(interleave='bip').copy()
+        if np.sum(matching_indices == _st) > 0:
+            input_ds = envi.open(envi_header(paths.surface_subs_files[surface_type]['rfl']))
+            output_mm[matching_indices == _st,...] = input_ds.open_memmap(interleave='bip').copy()
     
-    input_ds = envi.open(envi_header(paths.surface_config_paths['base']['obs']))
-    header = input_ds.metadata.copy()
-    header['lines'] = len(matching_indices)
-    output_ds = envi.create_image(envi_header(paths.obs_subs_path), header, ext='', force=True)
-    output_mm = output_ds.open_memmap(interleave='bip')
-    for _st, surface_type in enumerate(list(paths.surface_config_paths.keys())):
-        input_ds = envi.open(envi_header(paths.surface_config_paths[surface_type]['obs']))
-        output_mm[matching_indices == _st,...] = input_ds.open_memmap(interleave='bip').copy()
- 
-    input_ds = envi.open(envi_header(paths.surface_config_paths['base']['loc']))
-    header = input_ds.metadata.copy()
-    header['lines'] = len(matching_indices)
-    output_ds = envi.create_image(envi_header(paths.loc_subs_path), header, ext='', force=True)
-    output_mm = output_ds.open_memmap(interleave='bip')
-    for _st, surface_type in enumerate(list(paths.surface_config_paths.keys())):
-        input_ds = envi.open(envi_header(paths.surface_config_paths[surface_type]['loc']))
-        output_mm[matching_indices == _st,...] = input_ds.open_memmap(interleave='bip').copy()
- 
     # TODO: only records reflectance uncetainties, could grab additional states (consistent between classes)
-    input_ds = envi.open(envi_header(paths.surface_config_paths['base']['uncert']))
-    rdn_ds = envi.open(envi_header(paths.surface_config_paths['base']['rdn']))
+    logging.info(f'Reassemble {paths.uncert_subs_path}')
+    input_ds = envi.open(envi_header(paths.surface_subs_files['base']['uncert']))
+    rdn_ds = envi.open(envi_header(paths.surface_subs_files['base']['rdn']))
     header = input_ds.metadata.copy()
     header['lines'] = len(matching_indices)
-    header['bands'] = rdn_ds.meta['bands']
+    header['bands'] = rdn_ds.metadata['bands']
     if 'band names' in header.keys():
-        header['band names'] = [input_ds.meta['band names'][x] for x in range(int(header['bands']))]
+        header['band names'] = [input_ds.metadata['band names'][x] for x in range(int(header['bands']))]
     output_ds = envi.create_image(envi_header(paths.uncert_subs_path), header, ext='', force=True)
-    output_mm = output_ds.open_memmap(interleave='bip')
+    output_mm = output_ds.open_memmap(interleave='bip', writable=True)
     for _st, surface_type in enumerate(list(paths.surface_config_paths.keys())):
-        input_ds = envi.open(envi_header(paths.surface_config_paths[surface_type]['uncert']))
-        output_mm[matching_indices == _st,...] = input_ds.open_memmap(interleave='bip').copy()
+        if np.sum(matching_indices == _st) > 0:
+            input_ds = envi.open(envi_header(paths.surface_subs_files[surface_type]['uncert']))
+            output_mm[matching_indices == _st,...] = input_ds.open_memmap(interleave='bip')[:,:,:int(header['bands'])].copy()
  
 
 def define_surface_types(rdnfile, locfile, datetime, out_class_path, wl, fwhm):
 
 
-    irr_file = os.path.join(os.path.dirname(isofit.__file__),'..','data','kurudz_0.1nm.dat')
+    irr_file = os.path.join(os.path.dirname(isofit.__file__),'..','..','data','kurudz_0.1nm.dat')
     irr_wl, irr = np.loadtxt(irr_file, comments='#').T
     irr = irr / 10  # convert to uW cm-2 sr-1 nm-1
-    irr_resamp = resample_spectrum(irr, irr_wl, wl, fwhm)
+    if np.all(wl < 10):
+        irr_resamp = resample_spectrum(irr, irr_wl, wl*1000, fwhm*1000)
+    else:
+        irr_resamp = resample_spectrum(irr, irr_wl, wl*1000, fwhm*1000)
     irr_resamp = np.array(irr_resamp, dtype=np.float32)
+    irr = irr_resamp
 
     # determine glint bands having negligible water reflectance
     BLUE = np.logical_and(wl > 440, wl < 460)
@@ -1565,7 +1573,8 @@ def define_surface_types(rdnfile, locfile, datetime, out_class_path, wl, fwhm):
     b1650 = np.argmin(abs(wl-1650))
 
     rdn_ds = envi.open(envi_header(rdnfile)).open_memmap(interleave='bip')
-    loc_ds = envi.open(envi_header(locfile)).open_memmap(interleave='bip')
+    loc_src = envi.open(envi_header(locfile))
+    loc_ds = loc_src.open_memmap(interleave='bip')
 
     classes = np.zeros(rdn_ds.shape[0])
     for line in range(len(classes)):
@@ -1587,24 +1596,24 @@ def define_surface_types(rdnfile, locfile, datetime, out_class_path, wl, fwhm):
             continue
 
         # Cloud threshold from Sandford et al.
-        total = np.array(rho[b450] > 0.28, dtype=int) + \
-            np.array(rho[b1250] > 0.46, dtype=int) + \
+        total = np.array(rho[b450] > 0.31, dtype=int) + \
+            np.array(rho[b1250] > 0.51, dtype=int) + \
             np.array(rho[b1650] > 0.22, dtype=int)
 
-        if total > 2 or rho[b1380] > 0.1:
-            classes[line] = 1
         if rho[b1000] < 0.05:
             classes[line] = 2
+        if total > 2 or rho[b1380] > 0.1:
+            classes[line] = 1
 
 
-    header = loc_ds.metadata.copy()
+    header = loc_src.metadata.copy()
     header['bands'] = 1
     if 'band names' in header.keys():
         header['band names'] = "Class"
 
     output_ds = envi.create_image(envi_header(out_class_path), header, ext='', force=True)
-    output_mm = output_ds.open_memmap(interleave='bip')
-    output_mm[...] = classes
+    output_mm = output_ds.open_memmap(interleave='bip', writable=True)
+    output_mm[:,0,0] = classes
 
     return classes
 
