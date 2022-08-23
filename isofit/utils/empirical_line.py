@@ -112,9 +112,9 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
         reference_class = np.squeeze(np.array(envi.open(envi_header(reference_class_file), reference_class_file).open_memmap(interleave='bip')))
         un_reference_class = np.unique(reference_class)
         un_reference_class = un_reference_class[un_reference_class != -1]
+        logging.info(f"Reference classes found: {un_reference_class}")
     else:
         reference_class = None
-    logging.info(f"Reference classes found: {un_reference_class}")
 
     # Load segmentation data
     if segmentation_file:
