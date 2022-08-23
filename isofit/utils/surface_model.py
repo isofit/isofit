@@ -192,11 +192,11 @@ def surface_model(config_path: str, wavelength_path: str = None,
         if len(attributes)>0:
             attributes = attributes[use,:]
 
-        # Accumulate total list of window indices
-        window_idx = -np.ones((nchan), dtype=int)
-        for wi, win in enumerate(windows):
-            active_wl = np.logical_and(wl >= win['interval'][0], wl < win['interval'][1])
-            window_idx[active_wl] = wi
+        ## Accumulate total list of window indices
+        #window_idx = -np.ones((nchan), dtype=int)
+        #for wi, win in enumerate(windows):
+        #    active_wl = np.logical_and(wl >= win['interval'][0], wl < win['interval'][1])
+        #    window_idx[active_wl] = wi
 
         # Two step model generation.  First step is k-means clustering.
         # This is more "stable" than Expectation Maximization with an 
@@ -218,37 +218,82 @@ def surface_model(config_path: str, wavelength_path: str = None,
                 m_attr = np.mean(spectra_attr[Z == ci, :], axis=0)
                 C_attr = np.cov(spectra_attr[Z == ci, :], rowvar=False)
 
-            for i in range(nchan):
-                window = windows[window_idx[i]]
+            #for i in range(nchan):
+            for window in windows:
+                window_idx = np.where(np.logical_and(wl >= window['interval'][0], wl < window['interval'][1]))[0]
+                if len(window_idx) == 0:
+                    continue
+                window_range = slice(window_idx[0],window_idx[-1]+1)
+
+                # To minimize bias, leave the channels independent
+                # and uncorrelated
+                if window['correlation'] == 'decorrelated':
+                    ci = (C[window_range, window_range] + float(window['regularizer']) )* np.eye(len(window_idx)) 
+                    C[window_range,:] = 0
+                    C[:,window_range] = 0
+                    C[window_range, window_range] = ci
+
+            for window in windows:
+                window_idx = np.where(np.logical_and(wl >= window['interval'][0], wl < window['interval'][1]))[0]
+                if len(window_idx) == 0:
+                    continue
+                window_range = slice(window_idx[0],window_idx[-1]+1)
 
                 # Each spectral interval, or window, is constructed
                 # using one of several rules.  We can draw the covariance
                 # directly from the data...
                 if window['correlation'] == 'EM':
-                    C[i, i] = C[i, i] + float(window['regularizer'])
+                    C[window_range, window_range] += np.eye(len(window_idx)) * float(window['regularizer'])
 
-                # Alternatively, we can use a band diagonal form,
-                # a Gaussian process that promotes local smoothness.
-                elif window['correlation'] == 'GP':
-                    width = float(window['gp_width'])
-                    magnitude = float(window['gp_magnitude'])
-                    kernel = scipy.stats.norm.pdf((wl-wl[i])/width)
-                    kernel = kernel/kernel.sum() * magnitude
-                    C[i, :] = kernel
-                    C[:, i] = kernel
-                    C[i, i] = C[i, i] + float(window['regularizer'])
+                elif window['correlation'] == 'EM-gauss':
+                    
+                    interval_steps = int(round(window['smoothing_interval'] / ((wl[window_idx[-1]] - wl[window_idx[1]]) / len(window_idx)) ))
+                    mu = 0
+                    if 'sigma' in window.keys():
+                        sigma = window['sigma']
+                    else:
+                        sigma = 1
+                    gaussian_reg = np.exp(-( (np.linspace(-1,1,interval_steps*2)-mu)**2 / ( 2.0 * sigma**2 ) ) ) 
+
+                    # left / bottom
+                    if window_idx[0] - interval_steps < 0:
+                        num_cutoff = interval_steps - window_idx[0]
+                    else:
+                        num_cutoff = 0
+                    bottom_idx = max(0, window_idx[0] - interval_steps)
+
+                    C[bottom_idx:window_idx[0],window_range] = C[window_idx[0], window_range][np.newaxis,:] * gaussian_reg[num_cutoff:interval_steps, np.newaxis]
+                    C[window_range,bottom_idx:window_idx[0]] = C[window_range, window_idx[0]][:,np.newaxis] * gaussian_reg[np.newaxis, num_cutoff:interval_steps]
+
+                    # right / top
+                    if window_idx[-1] + interval_steps >= len(wl):
+                        top_gauss_idx = len(wl) - (window_idx[-1] + interval_steps)
+                    else:
+                        top_gauss_idx = len(wl) - 1
+                    C[window_idx[-1]:window_idx[-1] + interval_steps,window_range] = C[window_idx[-1], window_range][np.newaxis,:] *gaussian_reg[interval_steps:top_gauss_idx, np.newaxis]
+                    C[window_range, window_idx[-1]:window_idx[-1] + interval_steps] = C[window_range,window_idx[-1]][:, np.newaxis] *gaussian_reg[np.newaxis, interval_steps:top_gauss_idx]
 
                 # To minimize bias, leave the channels independent
                 # and uncorrelated
                 elif window['correlation'] == 'decorrelated':
-                    ci = C[i, i]
-                    C[:, i] = 0
-                    C[i, :] = 0
-                    C[i, i] = ci + float(window['regularizer'])
+                    ci = (C[window_range, window_range] + float(window['regularizer']) )* np.eye(len(window_idx)) 
+                    C[window_range, window_range] = ci
+
+                elif window['correlation'] == 'GP':
+                    for i in window_idx:
+                        # Alternatively, we can use a band diagonal form,
+                        # a Gaussian process that promotes local smoothness.
+                        width = float(window['gp_width'])
+                        magnitude = float(window['gp_magnitude'])
+                        kernel = scipy.stats.norm.pdf((wl-wl[i])/width)
+                        kernel = kernel/kernel.sum() * magnitude
+                        C[i, :] = kernel
+                        C[:, i] = kernel
+                        C[i, i] = C[i, i] + float(window['regularizer'])
 
                 else:
-                    raise ValueError(
-                        'I do not recognize the method ' + window['correlation'])
+                      raise ValueError(
+                          'I do not recognize the method ' + window['correlation'])
 
             # Normalize the component spectrum if desired
             if normalize == 'Euclidean':
@@ -276,3 +321,5 @@ def surface_model(config_path: str, wavelength_path: str = None,
     model['attribute_covs'] = np.array(model['attribute_covs'])
 
     scipy.io.savemat(outfile, model)
+
+surface_model("surface/surface_20220714_gp.json")
