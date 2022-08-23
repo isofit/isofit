@@ -41,7 +41,7 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
                reference_uncertainty_file: str, reference_locations_file: str, input_radiance_file: str,
                input_locations_file: str, segmentation_file: str, isofit_config: str, output_reflectance_file: str,
                output_uncertainty_file: str, radiance_factors: np.array, nneighbors: int,
-               nodata_value: float, loglevel: str, logfile: str) -> None:
+               nodata_value: float, loglevel: str, logfile: str, reference_class_file) -> None:
     """
     Args:
         start_line: line to start empirical line run at
@@ -108,6 +108,12 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
                                                                                  n_reference_uncertainty_bands))
     reference_uncertainty = reference_uncertainty[:, :n_radiance_bands].reshape((n_reference_lines, n_radiance_bands))
 
+    if reference_class_file is not None:
+        reference_class = np.squeeze(np.array(envi.open(envi_header(reference_class_file), reference_class_file).open_memmap(interleave='bip')))
+        un_reference_class = np.unique(reference_class)
+    else:
+        reference_class = None
+
     # Load segmentation data
     if segmentation_file:
         segmentation_img = envi.open(envi_header(segmentation_file), segmentation_file)
@@ -137,6 +143,8 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
     loc_scaling = np.array([1e5, 1e5, 0.1])
     scaled_ref_loc = reference_locations * loc_scaling
     tree = KDTree(scaled_ref_loc)
+    if reference_class is not None:
+        trees = [KDTree(scaled_ref_loc[reference_class == _c]) for _c in un_reference_class]
     # Assume (heuristically) that, for distance purposes, 1 m vertically is
     # comparable to 10 m horizontally, and that there are 100 km per latitude
     # degree.  This is all approximate of course.  Elevation appears in the
@@ -175,16 +183,24 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
                 if hash_idx in hash_table:
                     bhat, bmarg, bcov = hash_table[hash_idx]
                 else:
-                    loc = reference_locations[np.array(
-                        hash_idx, dtype=int), :] * loc_scaling
+                    loc = reference_locations[np.array(hash_idx, dtype=int), :] * loc_scaling
             else:
                 loc = input_locations[col, :] * loc_scaling
 
             if bhat is None:
-                dists, nn = tree.query(loc, nneighbors)
-                xv = reference_radiance[nn, :]
-                yv = reference_reflectance[nn, :]
-                uv = reference_uncertainty[nn, :]
+                if reference_class is None:
+                    dists, nn = tree.query(loc, nneighbors)
+                    xv = reference_radiance[nn, :]
+                    yv = reference_reflectance[nn, :]
+                    uv = reference_uncertainty[nn, :]
+                else:
+                    dists, nn = tree.query(loc, 1)
+                    loc_class = int(reference_class[nn])
+                    dists, nn = trees[loc_class].query(loc[reference_class == loc_class,:], nneighbors)
+                    xv = reference_radiance[reference_class == loc_class,:][nn, :]
+                    yv = reference_reflectance[reference_class == loc_class,:][nn, :]
+                    uv = reference_uncertainty[reference_class == loc_class,:][nn, :]
+
                 bhat = np.zeros((n_radiance_bands, 2))
                 bmarg = np.zeros((n_radiance_bands, 2))
                 bcov = np.zeros((n_radiance_bands, 2, 2))
@@ -273,7 +289,8 @@ def empirical_line(reference_radiance_file: str, reference_reflectance_file: str
                    reference_locations_file: str, segmentation_file: str, input_radiance_file: str,
                    input_locations_file: str, output_reflectance_file: str, output_uncertainty_file: str,
                    nneighbors: int = 400, nodata_value: float = -9999.0, level: str = 'INFO', logfile: str = None,
-                   radiance_factors: np.array = None, isofit_config: str = None, n_cores: int = -1) -> None:
+                   radiance_factors: np.array = None, isofit_config: str = None, n_cores: int = -1, 
+                   reference_class_file: str = None) -> None:
     """
     Perform an empirical line interpolation for reflectance and uncertainty extrapolation
     Args:
@@ -294,6 +311,7 @@ def empirical_line(reference_radiance_file: str, reference_reflectance_file: str
         radiance_factors: radiance adjustment factors
         isofit_config: path to isofit configuration JSON file
         n_cores: number of cores to run on
+        reference_class_file: optional source file for sub-type-classifications, in order: [base, cloud, water]
     Returns:
         None
     """
@@ -394,7 +412,7 @@ def empirical_line(reference_radiance_file: str, reference_reflectance_file: str
         args = (line_sections[l], line_sections[l + 1], reference_radiance_file, reference_reflectance_file,
                 reference_uncertainty_file, reference_locations_file, input_radiance_file,
                 input_locations_file, segmentation_file, isofit_config, output_reflectance_file,
-                output_uncertainty_file, radiance_factors, nneighbors, nodata_value, level, logfile)
+                output_uncertainty_file, radiance_factors, nneighbors, nodata_value, level, logfile, reference_class_file)
         results.append(_run_chunk.remote(*args))
 
     _ = ray.get(results)
