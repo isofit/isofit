@@ -43,7 +43,7 @@ class Isofit:
         logfile: file to write output logs to
     """
 
-    def __init__(self, config_file, row_column='', level='INFO', logfile=None):
+    def __init__(self, config_file, level='INFO', logfile=None):
 
         # Explicitly set the number of threads to be 1, so we more effectively
         # run in parallel
@@ -84,7 +84,7 @@ class Isofit:
         except:
             return
 
-    def run(self, row_column = None):
+    def run(self, row_column=None):
         """
         Iterate over spectra, reading and writing through the IO
         object to handle formatting, buffering, and deferred write-to-file.

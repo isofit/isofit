@@ -76,7 +76,7 @@ def main(rawargs=None):
                         filename=args.log_file, datefmt='%Y-%m-%d,%H:%M:%S')
 
     # get LUT parameters
-    lut_params = LUTConfig(gip["filepaths"]["lut_config_path"])
+    lut_params = LUTConfig(lut_config_file=gip["filepaths"]["lut_config_path"])
     if gip["filepaths"]["emulator_base"] is not None:
         lut_params.aot_550_range = lut_params.aerosol_2_range
         lut_params.aot_550_spacing = lut_params.aerosol_2_spacing
@@ -84,11 +84,11 @@ def main(rawargs=None):
         lut_params.aerosol_2_spacing = 0
 
     # get path names
-    paths = Pathnames(opt, gip, args)
+    paths = Pathnames(opt=opt, gip=gip, args=args)
 
     if len(tsip.items()) > 0:
         for st in tsip.keys():
-            paths.add_surface_subs_files(st)
+            paths.add_surface_subs_files(surface_type=st)
 
     paths.make_directories()
     paths.stage_files()
@@ -117,7 +117,14 @@ def main(rawargs=None):
     dayofyear = dt.timetuple().tm_yday
 
     h_m_s, day_increment, mean_path_km, mean_to_sensor_azimuth, mean_to_sensor_zenith, valid, \
-    to_sensor_azimuth_lut_grid, to_sensor_zenith_lut_grid = get_metadata_from_obs(paths.obs_working_path, lut_params)
+    to_sensor_azimuth_lut_grid, to_sensor_zenith_lut_grid = get_metadata_from_obs(obs_file=paths.obs_working_path,
+                                                                                  lut_params=lut_params)
+
+    # overwrite the time in case original obs has an error in that band
+    if h_m_s[0] != dt.hour:
+        h_m_s[0] = dt.hour
+    if h_m_s[1] != dt.minute:
+        h_m_s[1] = dt.minute
 
     if day_increment:
         dayofyear += 1
@@ -142,7 +149,7 @@ def main(rawargs=None):
     np.savetxt(paths.wavelength_path, wl_data, delimiter=' ')
 
     mean_latitude, mean_longitude, mean_elevation_km, elevation_lut_grid = get_metadata_from_loc(
-        paths.loc_working_path, lut_params)
+        loc_file=paths.loc_working_path, lut_params=lut_params)
 
     if gip["filepaths"]["emulator_base"] is not None:
         if elevation_lut_grid is not None and np.any(elevation_lut_grid < 0):
@@ -192,8 +199,8 @@ def main(rawargs=None):
 
     # Run surface type classification
     if len(tsip.items()) > 0:
-        surface_type_labels = define_surface_types(paths.rdn_subs_path, paths.loc_subs_path, dt, paths.class_subs_path,
-                                                   wl, fwhm)
+        surface_type_labels = define_surface_types(rdnfile=paths.rdn_subs_path, locfile=paths.loc_subs_path, dt=dt,
+                                                   out_class_path=paths.class_subs_path, wl=wl, fwhm=fwhm)
         un_surface_type_labels = np.unique(surface_type_labels)
         un_surface_type_labels = un_surface_type_labels[un_surface_type_labels != -1].astype(int)
 
@@ -204,7 +211,7 @@ def main(rawargs=None):
 
         # Break up input files based on surface type
         for _st, surface_type in enumerate(list(tsip.keys())):
-            paths.add_surface_subs_files(surface_type)
+            paths.add_surface_subs_files(surface_type=surface_type)
             copy_file_subset(surface_types == _st, [(paths.rdn_subs_path,
                                                      paths.surface_subs_files[surface_type]['rdn']),
                                                     (paths.loc_subs_path,
@@ -221,7 +228,7 @@ def main(rawargs=None):
                                output_file=paths.h2o_template_path, ihaze_type='AER_NONE')
 
         if gip['emulator_base'] is None:
-            max_water = calc_modtran_max_water(paths)
+            max_water = calc_modtran_max_water(paths=paths)
         else:
             max_water = 6
 
@@ -231,13 +238,12 @@ def main(rawargs=None):
             h2o_grid = np.linspace(0.01, max_water - 0.01, 10).round(2)
             logging.info(f'Pre-solve H2O grid: {h2o_grid}')
             logging.info('Writing H2O pre-solve configuration file.')
-            build_presolve_config(opt, gip, paths, h2o_grid, opt["n_cores"], opt["empirical_line"],
-                                  gip["options"]["surface_category"], gip["filepaths"]["emulator_base"],
-                                  uncorrelated_radiometric_uncertainty)
+            build_presolve_config(opt=opt, gip=gip, paths=paths, h2o_lut_grid=h2o_grid,
+                                  uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty)
 
             # Run modtran retrieval
             logging.info('Run ISOFIT initial guess')
-            retrieval_h2o = isofit.Isofit(paths.h2o_config_path, level='INFO', logfile=args.log_file)
+            retrieval_h2o = isofit.Isofit(config_file=paths.h2o_config_path, level='INFO', logfile=args.log_file)
             retrieval_h2o.run()
             del retrieval_h2o
 
@@ -260,8 +266,8 @@ def main(rawargs=None):
         lut_params.h2o_range[0] = max(lut_params.h2o_min, p05 - margin)
         lut_params.h2o_range[1] = min(max_water, max(lut_params.h2o_min, p95 + margin))
 
-        h2o_lut_grid = get_grid(lut_params.h2o_range[0], lut_params.h2o_range[1], lut_params.h2o_spacing,
-                                lut_params.h2o_spacing_min)
+        h2o_lut_grid = get_grid(minval=lut_params.h2o_range[0], maxval=lut_params.h2o_range[1],
+                                spacing=lut_params.h2o_spacing, min_spacing=lut_params.h2o_spacing_min)
 
         logging.info('Full (non-aerosol) LUTs:')
         logging.info(f'Elevation: {elevation_lut_grid}')
@@ -283,23 +289,26 @@ def main(rawargs=None):
 
             logging.info('Writing main configuration file.')
             for st in surface_types:
-                build_main_config(paths, lut_params, h2o_lut_grid, elevation_lut_grid, to_sensor_azimuth_lut_grid,
-                                  to_sensor_zenith_lut_grid, mean_latitude, mean_longitude, dt, True, opt["n_cores"],
-                                  gip["options"]["args.surface_category"], gip["filepaths"]["emulator_base"],
-                                  uncorrelated_radiometric_uncertainty, gip["options"]["multiple_restarts"],
-                                  opt["segmentation_size"], st)
+                build_main_config(opt=opt, gip=gip, paths=paths, lut_params=lut_params, h2o_lut_grid=h2o_lut_grid,
+                                  elevation_lut_grid=elevation_lut_grid,
+                                  to_sensor_azimuth_lut_grid=to_sensor_azimuth_lut_grid,
+                                  to_sensor_zenith_lut_grid=to_sensor_zenith_lut_grid, mean_latitude=mean_latitude,
+                                  mean_longitude=mean_longitude, dt=dt,
+                                  uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
+                                  surface_type=st)
 
             # Run modtran retrieval
             for _st, st in enumerate(surface_types):
                 if st is None and _st == 0:
                     logging.info('Running ISOFIT with full LUT - Universal Surface')
-                    retrieval_full = isofit.Isofit(paths.modtran_config_path, level='INFO', logfile=args.log_file)
+                    retrieval_full = isofit.Isofit(config_file=paths.modtran_config_path, level='INFO',
+                                                   logfile=args.log_file)
                 elif st is None:
                     continue
                 else:
                     if os.path.isfile(paths.surface_subs_files[st]['rdn']):
                         logging.info(f'Running ISOFIT with full LUT - Surface: {st}')
-                        retrieval_full = isofit.Isofit(paths.surface_config_paths[st], level='INFO',
+                        retrieval_full = isofit.Isofit(config_file=paths.surface_config_paths[st], level='INFO',
                                                        logfile=args.log_file)
                     else:
                         continue
@@ -314,7 +323,7 @@ def main(rawargs=None):
                     os.system(cmd)
 
         if surface_types[0] is not None:
-            reassemble_cube(surface_type_labels, paths)
+            reassemble_cube(matching_indices=surface_type_labels, paths=paths)
             stl_path = paths.class_subs_path
         else:
             stl_path = None

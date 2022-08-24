@@ -405,9 +405,8 @@ def get_angular_grid(angle_data_input: np.array, spacing: float, min_spacing: fl
         return central_angles
 
 
-def build_presolve_config(opt: dict, gip: dict, paths: Pathnames, h2o_lut_grid: np.array, use_emp_line: bool = False,
-                          surface_category="multicomponent_surface",
-                          uncorrelated_radiometric_uncertainty: float = 0.0, segmentation_size: int = 400):
+def build_presolve_config(opt: dict, gip: dict, paths: Pathnames, h2o_lut_grid: np.array,
+                          uncorrelated_radiometric_uncertainty: float = 0.0):
     """ Write an isofit config file for a presolve, with limited info.
 
     Args:
@@ -415,16 +414,12 @@ def build_presolve_config(opt: dict, gip: dict, paths: Pathnames, h2o_lut_grid: 
         gip: dictionary of general inversion parameters
         paths: object containing references to all relevant file locations
         h2o_lut_grid: the water vapor look up table grid isofit should use for this solve
-        use_emp_line: flag whether or not to set up for the empirical line estimation
-        surface_category: type of surface to use
         uncorrelated_radiometric_uncertainty: uncorrelated radiometric uncertainty parameter for isofit
-        segmentation_size: image segmentation size if empirical line is used
     """
-
     # Determine number of spectra included in each retrieval.  If we are
     # operating on segments, this will average down instrument noise
-    if use_emp_line:
-        spectra_per_inversion = segmentation_size
+    if opt["empirical_line"]:
+        spectra_per_inversion = opt["segmentation_size"]
     else:
         spectra_per_inversion = 1
 
@@ -484,7 +479,7 @@ def build_presolve_config(opt: dict, gip: dict, paths: Pathnames, h2o_lut_grid: 
                                             'unknowns': {
                                                 'uncorrelated_radiometric_uncertainty':
                                                     uncorrelated_radiometric_uncertainty}},
-                             'surface': {"surface_category": surface_category,
+                             'surface': {"surface_category": gip["options"]["surface_category"],
                                          'surface_file': paths.surface_working_path,
                                          'select_on_init': True},
                              'radiative_transfer': radiative_transfer_config},
@@ -511,7 +506,7 @@ def build_presolve_config(opt: dict, gip: dict, paths: Pathnames, h2o_lut_grid: 
     if paths.rdn_factors_path:
         isofit_config_h2o['input']['radiometry_correction_file'] = paths.rdn_factors_path
 
-    if use_emp_line:
+    if opt["empirical_line"]:
         isofit_config_h2o['input']['measured_radiance_file'] = paths.rdn_subs_path
         isofit_config_h2o['input']['loc_file'] = paths.loc_subs_path
         isofit_config_h2o['input']['obs_file'] = paths.obs_subs_path
@@ -525,16 +520,17 @@ def build_presolve_config(opt: dict, gip: dict, paths: Pathnames, h2o_lut_grid: 
         fout.write(json.dumps(isofit_config_h2o, cls=SerialEncoder, indent=4, sort_keys=True))
 
 
-def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.array = None,
+def build_main_config(opt: dict, gip: dict, paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.array = None,
                       elevation_lut_grid: np.array = None, to_sensor_azimuth_lut_grid: np.array = None,
                       to_sensor_zenith_lut_grid: np.array = None, mean_latitude: float = None,
-                      mean_longitude: float = None, dt: datetime = None, use_emp_line: bool = True,
-                      n_cores: int = -1, surface_category='multicomponent_surface',
-                      emulator_base: str = None, uncorrelated_radiometric_uncertainty: float = 0.0,
-                      multiple_restarts: bool = False, segmentation_size=400, surface_type: str = None):
+                      mean_longitude: float = None, dt: datetime = None,
+                      uncorrelated_radiometric_uncertainty: float = 0.0,
+                      surface_type: str = None):
     """ Write an isofit config file for the main solve, using the specified pathnames and all given info
 
     Args:
+        opt: dictionary of general options
+        gip: dictionary of general inversion parameters
         paths: object containing references to all relevant file locations
         lut_params: configuration parameters for the lut grid
         h2o_lut_grid: the water vapor look up table grid isofit should use for this solve
@@ -544,23 +540,18 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
         mean_latitude: the latitude isofit should use for this solve
         mean_longitude: the longitude isofit should use for this solve
         dt: the datetime object corresponding to this flightline to use for this solve
-        use_emp_line: flag whether or not to set up for the empirical line estimation
-        n_cores: the number of cores to use during processing
-        surface_category: type of surface to use
-        emulator_base: the basename of the emulator, if used
         uncorrelated_radiometric_uncertainty: uncorrelated radiometric uncertainty parameter for isofit
-        segmentation_size: image segmentation size if empirical line is used
         surface_type: surface type to run retrievals over - if None, do generic for all locations
     """
 
     # Determine number of spectra included in each retrieval.  If we are
     # operating on segments, this will average down instrument noise
-    if use_emp_line:
-        spectra_per_inversion = segmentation_size
+    if opt["empirical_line"]:
+        spectra_per_inversion = opt["segmentation_size"]
     else:
         spectra_per_inversion = 1
 
-    if emulator_base is None:
+    if gip["filepaths"]["emulator_base"] is None:
         engine_name = 'modtran'
     else:
         engine_name = 'sRTMnet'
@@ -602,12 +593,14 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
         }
         radiative_transfer_config['lut_grid']['GNDALT'] = [0, 1, 2, 3, 4, 5]
 
-    if emulator_base is not None:
-        radiative_transfer_config['radiative_transfer_engines']['vswir']['emulator_file'] = abspath(emulator_base)
-        radiative_transfer_config['radiative_transfer_engines']['vswir']['emulator_aux_file'] = abspath(
-            os.path.splitext(emulator_base)[0] + '_aux.npz')
-        radiative_transfer_config['radiative_transfer_engines']['vswir']['interpolator_base_path'] = abspath(
-            os.path.join(paths.lut_modtran_directory, os.path.basename(os.path.splitext(emulator_base)[0]) + '_vi'))
+    if gip["filepaths"]["emulator_base"] is not None:
+        radiative_transfer_config['radiative_transfer_engines']['vswir']['emulator_file'] = os.path.abspath(
+            gip["filepaths"]["emulator_base"])
+        radiative_transfer_config['radiative_transfer_engines']['vswir']['emulator_aux_file'] = os.path.abspath(
+            os.path.splitext(gip["filepaths"]["emulator_base"])[0] + '_aux.npz')
+        radiative_transfer_config['radiative_transfer_engines']['vswir']['interpolator_base_path'] = os.path.abspath(
+            os.path.join(paths.lut_modtran_directory, os.path.basename(os.path.splitext(
+                gip["filepaths"]["emulator_base"])[0]) + '_vi'))
         radiative_transfer_config['radiative_transfer_engines']['vswir'][
             'earth_sun_distance_file'] = paths.earth_sun_distance_path
         radiative_transfer_config['radiative_transfer_engines']['vswir']['irradiance_file'] = paths.irradiance_file
@@ -650,18 +643,19 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
                                  'instrument': {'wavelength_file': paths.wavelength_path,
                                                 'integrations': spectra_per_inversion,
                                                 'unknowns': {
-                                                    'uncorrelated_radiometric_uncertainty': uncorrelated_radiometric_uncertainty}},
+                                                    'uncorrelated_radiometric_uncertainty':
+                                                        uncorrelated_radiometric_uncertainty}},
                                  "surface": {"surface_file": paths.surface_working_path,
-                                             "surface_category": surface_category,
+                                             "surface_category": gip["options"]["surface_category"],
                                              "select_on_init": True},
                                  "radiative_transfer": radiative_transfer_config},
                              "implementation": {
                                  "ray_temp_dir": paths.ray_temp_dir,
-                                 "inversion": {"windows": INVERSION_WINDOWS},
-                                 "n_cores": n_cores}
+                                 "inversion": {"windows": gip["options"]["inversion_windows"]},
+                                 "n_cores": opt["n_cores"]}
                              }
 
-    if use_emp_line:
+    if opt["empirical_line"]:
         if surface_type is None:
             isofit_config_modtran['input']['measured_radiance_file'] = paths.rdn_subs_path
             isofit_config_modtran['input']['loc_file'] = paths.loc_subs_path
@@ -687,7 +681,7 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
         isofit_config_modtran['output']['estimated_reflectance_file'] = paths.rfl_working_path
         isofit_config_modtran['output']['estimated_state_file'] = paths.state_working_path
 
-    if multiple_restarts:
+    if gip["options"]["multiple_restarts"]:
         eps = 1e-2
         grid = {}
         if h2o_lut_grid is not None:
@@ -955,7 +949,7 @@ def calc_modtran_max_water(paths: Pathnames) -> float:
     return max_water
 
 
-def define_surface_types(rdnfile, locfile, dt, out_class_path, wl, fwhm):
+def define_surface_types(rdnfile: str, locfile: str, dt: datetime, out_class_path: str, wl: np.array, fwhm: np.array):
     irr_file = os.path.join(os.path.dirname(isofit.__file__), '..', '..', 'data', 'kurudz_0.1nm.dat')
     irr_wl, irr = np.loadtxt(irr_file, comments='#').T
     irr = irr / 10  # convert to uW cm-2 sr-1 nm-1

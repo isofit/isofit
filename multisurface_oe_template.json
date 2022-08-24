@@ -2,7 +2,7 @@
     "general_options": {
         "sensor": "",
         "n_cores": -1,
-        "segmentation_size": 40,
+        "segmentation_size": 400,
         "chunksize": 256,
         "eps": 1e-6,
         "copy_input_files": false,
