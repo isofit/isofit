@@ -1,11 +1,13 @@
 {
-    "general_opts": {
+    "general_options": {
+        "sensor": "",
         "n_cores": -1,
         "segmentation_size": 40,
         "chunksize": 256,
         "eps": 1e-6,
         "copy_input_files": false,
         "presolve_wv": true,
+        "empirical_line": true,
         "ray_temp_dir": "/tmp/ray"
     },
 
@@ -17,9 +19,11 @@
                 "channelized_uncertainty_path": "",
                 "surface_path": "",
                 "rdn_factors_path": "",
-                 "emulator_base": ""
+                "modtran_path": "",
+                "lut_config_path": "",
+                "emulator_base": ""
             },
-            "opts": {
+            "options": {
                 "multiple_restarts": false,
                 "uncorrelated_radiometric_uncertainty": 0.01,
                 "inversion_windows": [[380.0, 1340.0], [1450, 1800.0], [1970.0, 2500.0]],
