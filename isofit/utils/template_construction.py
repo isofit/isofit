@@ -949,7 +949,8 @@ def calc_modtran_max_water(paths: Pathnames) -> float:
     return max_water
 
 
-def define_surface_types(rdnfile: str, locfile: str, dt: datetime, out_class_path: str, wl: np.array, fwhm: np.array):
+def define_surface_types(tsip: dict, rdnfile: str, locfile: str, dt: datetime, out_class_path: str, wl: np.array,
+                         fwhm: np.array):
     irr_file = os.path.join(os.path.dirname(isofit.__file__), '..', '..', 'data', 'kurudz_0.1nm.dat')
     irr_wl, irr = np.loadtxt(irr_file, comments='#').T
     irr = irr / 10  # convert to uW cm-2 sr-1 nm-1
@@ -961,11 +962,11 @@ def define_surface_types(rdnfile: str, locfile: str, dt: datetime, out_class_pat
     irr = irr_resamp
 
     # determine glint bands having negligible water reflectance
-    b450 = np.argmin(abs(wl - 450))
-    b1000 = np.argmin(abs(wl - 1000))
-    b1250 = np.argmin(abs(wl - 1250))
-    b1380 = np.argmin(abs(wl - 1380))
-    b1650 = np.argmin(abs(wl - 1650))
+    b450 = np.argmin(abs(wl - tsip["cloud"]["toa_threshold_wavelengths"][0]))
+    b1000 = np.argmin(abs(wl - tsip["water"]["toa_threshold_wavelengths"][0]))
+    b1250 = np.argmin(abs(wl - tsip["cloud"]["toa_threshold_wavelengths"][1]))
+    b1380 = np.argmin(abs(wl - tsip["water"]["toa_threshold_wavelengths"][1]))
+    b1650 = np.argmin(abs(wl - tsip["cloud"]["toa_threshold_wavelengths"][2]))
 
     rdn_ds = envi.open(envi_header(rdnfile)).open_memmap(interleave='bip')
     loc_src = envi.open(envi_header(locfile))
@@ -990,12 +991,14 @@ def define_surface_types(rdnfile: str, locfile: str, dt: datetime, out_class_pat
             continue
 
         # Cloud threshold from Sandford et al.
-        total = np.array(rho[b450] > 0.31, dtype=int) + np.array(rho[b1250] > 0.51, dtype=int) + np.array(
-            rho[b1650] > 0.22, dtype=int)
+        total = np.array(rho[b450] > tsip["cloud"]["toa_threshold_values"][0], dtype=int) + np.array(rho[b1250] > tsip[
+            "cloud"]["toa_threshold_values"][1], dtype=int) + np.array(rho[b1650] >
+                                                                       tsip["cloud"]["toa_threshold_values"][2],
+                                                                       dtype=int)
 
-        if rho[b1000] < 0.05:
+        if rho[b1000] < tsip["water"]["toa_threshold_values"][0]:
             classes[line] = 2
-        if total > 2 or rho[b1380] > 0.1:
+        if total > 2 or rho[b1380] > tsip["water"]["toa_threshold_values"][1]:
             classes[line] = 1
 
     header = loc_src.metadata.copy()
@@ -1118,8 +1121,9 @@ def get_metadata_from_obs(obs_file: str, lut_params: LUTConfig, trim_lines: int 
             increment_day = True
 
     # Calculate hour, minute, second
-    h_m_s = [np.floor(mean_time), np.floor((mean_time - [np.floor(mean_time)][-1]) * 60),
-             np.floor((mean_time - [np.floor(mean_time)][-2] - [np.floor(mean_time)][-1] / 60.) * 3600)]
+    h_m_s = [np.floor(mean_time)]
+    h_m_s.append(np.floor((mean_time - h_m_s[-1]) * 60))
+    h_m_s.append(np.floor((mean_time - h_m_s[-2] - h_m_s[-1] / 60.) * 3600))
 
     if use_trim:
         valid = actual_valid

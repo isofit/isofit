@@ -1,7 +1,7 @@
 {
     "general_options": {
-        "sensor": "",
-        "n_cores": -1,
+        "sensor": "ang",
+        "n_cores": 8,
         "segmentation_size": 400,
         "chunksize": 256,
         "eps": 1e-6,
@@ -14,13 +14,13 @@
     "processors": {
         "general_inversion_parameters": {
             "filepaths": {
-                "model_discrepency_path": "",
+                "model_discrepancy_path": "",
                 "aerosol_climatology_path": "",
                 "channelized_uncertainty_path": "",
                 "surface_path": "",
                 "rdn_factors_path": "",
                 "modtran_path": "",
-                "lut_config_path": "",
+                "lut_config_path": null,
                 "emulator_base": ""
             },
             "options": {
@@ -57,13 +57,13 @@
         "type_specific_inversion_parameters": {
             "cloud": {
                 "toa_threshold_wavelengths": [450,1250,1650],
-                "toa_threshold_values": [0.28, 0.46, 0.22],
+                "toa_threshold_values": [0.31, 0.51, 0.22],
                 "toa_threshold_comparisons": ["gt","gt","gt"],
                 "statevector_elements": ["GNDALT"]
             },
             "water": {
-                "toa_threshold_wavelengths": [1000],
-                "toa_threshold_values": [0.05],
+                "toa_threshold_wavelengths": [1000, 1380],
+                "toa_threshold_values": [0.05, 0.1],
                 "toa_threshold_comparisons": ["lt"],
                 "surface_category":  "glint_surface"
             }

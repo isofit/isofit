@@ -14,7 +14,7 @@ import yaml
 from collections import OrderedDict
 from datetime import datetime
 
-from template_construction import LUTConfig, Pathnames, build_presolve_config, calc_modtran_max_water,\
+from isofit.utils.template_construction import LUTConfig, Pathnames, build_presolve_config, calc_modtran_max_water,\
     define_surface_types, copy_file_subset, get_metadata_from_obs, get_metadata_from_loc, write_modtran_template,\
     get_grid, build_main_config, reassemble_cube
 
@@ -199,25 +199,28 @@ def main(rawargs=None):
 
     # Run surface type classification
     if len(tsip.items()) > 0:
-        surface_type_labels = define_surface_types(rdnfile=paths.rdn_subs_path, locfile=paths.loc_subs_path, dt=dt,
-                                                   out_class_path=paths.class_subs_path, wl=wl, fwhm=fwhm)
+        surface_type_labels = define_surface_types(tsip=tsip, rdnfile=paths.rdn_subs_path, locfile=paths.loc_subs_path,
+                                                   dt=dt, out_class_path=paths.class_subs_path, wl=wl, fwhm=fwhm)
         un_surface_type_labels = np.unique(surface_type_labels)
         un_surface_type_labels = un_surface_type_labels[un_surface_type_labels != -1].astype(int)
+        detected_surface_types = []
 
         for ustl in un_surface_type_labels:
             logging.info(f'Found surface type: {["base", "cloud", "water"][ustl]}')
+            detected_surface_types.append(["base", "cloud", "water"][ustl])
 
         surface_types = envi.open(envi_header(paths.class_subs_path)).open_memmap(interleave='bip').copy()
 
         # Break up input files based on surface type
         for _st, surface_type in enumerate(list(tsip.keys())):
-            paths.add_surface_subs_files(surface_type=surface_type)
-            copy_file_subset(surface_types == _st, [(paths.rdn_subs_path,
-                                                     paths.surface_subs_files[surface_type]['rdn']),
-                                                    (paths.loc_subs_path,
-                                                     paths.surface_subs_files[surface_type]['loc']),
-                                                    (paths.obs_subs_path,
-                                                     paths.surface_subs_files[surface_type]['obs'])])
+            if surface_type in detected_surface_types:
+                paths.add_surface_subs_files(surface_type=surface_type)
+                copy_file_subset(surface_types == _st + 1, [(paths.rdn_subs_path,
+                                                             paths.surface_subs_files[surface_type]['rdn']),
+                                                            (paths.loc_subs_path,
+                                                             paths.surface_subs_files[surface_type]['loc']),
+                                                            (paths.obs_subs_path,
+                                                             paths.surface_subs_files[surface_type]['obs'])])
 
     if opt['presolve_wv']:
         # write modtran presolve template
