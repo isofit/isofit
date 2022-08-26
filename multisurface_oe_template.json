@@ -2,11 +2,11 @@
     "general_options": {
         "sensor": "ang",
         "n_cores": 8,
-        "segmentation_size": 400,
+        "segmentation_size": 40,
         "chunksize": 256,
         "eps": 1e-6,
         "copy_input_files": false,
-        "presolve_wv": true,
+        "presolve_wv": false,
         "empirical_line": true,
         "ray_temp_dir": "/tmp/ray"
     },
@@ -14,14 +14,14 @@
     "processors": {
         "general_inversion_parameters": {
             "filepaths": {
-                "model_discrepancy_path": "",
-                "aerosol_climatology_path": "",
-                "channelized_uncertainty_path": "",
-                "surface_path": "",
-                "rdn_factors_path": "",
-                "modtran_path": "",
+                "model_discrepancy_path": null,
+                "aerosol_climatology_path": null,
+                "channelized_uncertainty_path": null,
+                "surface_path": null,
+                "rdn_factors_path": null,
+                "modtran_path": null,
                 "lut_config_path": null,
-                "emulator_base": ""
+                "emulator_base": null
             },
             "options": {
                 "multiple_restarts": false,
@@ -44,7 +44,7 @@
                     "default_range": [0.001, 0.75]
                 },
                 "GNDALT": {
-                    "lut_space": 0.5,
+                    "lut_spacing": 0.5,
                     "lut_spacing_min": 0.2
                 }
             }

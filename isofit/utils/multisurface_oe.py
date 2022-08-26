@@ -76,7 +76,7 @@ def main(rawargs=None):
                         filename=args.log_file, datefmt='%Y-%m-%d,%H:%M:%S')
 
     # get LUT parameters
-    lut_params = LUTConfig(lut_config_file=gip["filepaths"]["lut_config_path"])
+    lut_params = LUTConfig(gip=gip, lut_config_file=gip["filepaths"]["lut_config_path"])
     if gip["filepaths"]["emulator_base"] is not None:
         lut_params.aot_550_range = lut_params.aerosol_2_range
         lut_params.aot_550_spacing = lut_params.aerosol_2_spacing
@@ -186,7 +186,7 @@ def main(rawargs=None):
     if not exists(paths.lbl_working_path) or not exists(paths.radiance_working_path):
         logging.info('Segmenting...')
         segment(spectra=(paths.radiance_working_path, paths.lbl_working_path), nodata_value=-9999, npca=5,
-                segsize=gip['segmentation_size'], nchunk=opt['chunksize'], n_cores=opt["n_cores"],
+                segsize=opt['segmentation_size'], nchunk=opt['chunksize'], n_cores=opt["n_cores"],
                 loglevel=args.logging_level, logfile=args.log_file)
 
     # Extract input data per segment
@@ -230,7 +230,7 @@ def main(rawargs=None):
                                to_sensor_zenith=mean_to_sensor_zenith, gmtime=gmtime, elevation_km=mean_elevation_km,
                                output_file=paths.h2o_template_path, ihaze_type='AER_NONE')
 
-        if gip['emulator_base'] is None:
+        if gip["filepaths"]['emulator_base'] is None:
             max_water = calc_modtran_max_water(paths=paths)
         else:
             max_water = 6
@@ -269,83 +269,83 @@ def main(rawargs=None):
         lut_params.h2o_range[0] = max(lut_params.h2o_min, p05 - margin)
         lut_params.h2o_range[1] = min(max_water, max(lut_params.h2o_min, p95 + margin))
 
-        h2o_lut_grid = get_grid(minval=lut_params.h2o_range[0], maxval=lut_params.h2o_range[1],
-                                spacing=lut_params.h2o_spacing, min_spacing=lut_params.h2o_spacing_min)
+    h2o_lut_grid = get_grid(minval=lut_params.h2o_range[0], maxval=lut_params.h2o_range[1],
+                            spacing=lut_params.h2o_spacing, min_spacing=lut_params.h2o_spacing_min)
 
-        logging.info('Full (non-aerosol) LUTs:')
-        logging.info(f'Elevation: {elevation_lut_grid}')
-        logging.info(f'To-sensor azimuth: {to_sensor_azimuth_lut_grid}')
-        logging.info(f'To-sensor zenith: {to_sensor_zenith_lut_grid}')
-        logging.info(f'H2O Vapor: {h2o_lut_grid}')
+    logging.info('Full (non-aerosol) LUTs:')
+    logging.info(f'Elevation: {elevation_lut_grid}')
+    logging.info(f'To-sensor azimuth: {to_sensor_azimuth_lut_grid}')
+    logging.info(f'To-sensor zenith: {to_sensor_zenith_lut_grid}')
+    logging.info(f'H2O Vapor: {h2o_lut_grid}')
 
-        surface_types = list(paths.surface_config_paths.keys())
-        surface_types.append(None)
+    surface_types = list(paths.surface_config_paths.keys())
+    surface_types.append(None)
 
-        logging.info(f"Surface Types: {surface_types}")
-        if not exists(paths.uncert_subs_path) or not exists(paths.rfl_subs_path):
-            write_modtran_template(atmosphere_type=gip["radiative_transfer_parameters"]["atmosphere_type"],
-                                   fid=paths.fid, altitude_km=mean_altitude_km, dayofyear=dayofyear,
-                                   latitude=mean_latitude, longitude=mean_longitude,
-                                   to_sensor_azimuth=mean_to_sensor_azimuth, to_sensor_zenith=mean_to_sensor_zenith,
-                                   gmtime=gmtime, elevation_km=mean_elevation_km,
-                                   output_file=paths.modtran_template_path)
+    logging.info(f"Surface Types: {surface_types}")
+    if not exists(paths.uncert_subs_path) or not exists(paths.rfl_subs_path):
+        write_modtran_template(atmosphere_type=gip["radiative_transfer_parameters"]["atmosphere_type"],
+                               fid=paths.fid, altitude_km=mean_altitude_km, dayofyear=dayofyear,
+                               latitude=mean_latitude, longitude=mean_longitude,
+                               to_sensor_azimuth=mean_to_sensor_azimuth, to_sensor_zenith=mean_to_sensor_zenith,
+                               gmtime=gmtime, elevation_km=mean_elevation_km,
+                               output_file=paths.modtran_template_path)
 
-            logging.info('Writing main configuration file.')
-            for st in surface_types:
-                build_main_config(opt=opt, gip=gip, paths=paths, lut_params=lut_params, h2o_lut_grid=h2o_lut_grid,
-                                  elevation_lut_grid=elevation_lut_grid,
-                                  to_sensor_azimuth_lut_grid=to_sensor_azimuth_lut_grid,
-                                  to_sensor_zenith_lut_grid=to_sensor_zenith_lut_grid, mean_latitude=mean_latitude,
-                                  mean_longitude=mean_longitude, dt=dt,
-                                  uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
-                                  surface_type=st)
+        logging.info('Writing main configuration file.')
+        for st in surface_types:
+            build_main_config(opt=opt, gip=gip, tsip=tsip, paths=paths, lut_params=lut_params,
+                              h2o_lut_grid=h2o_lut_grid, elevation_lut_grid=elevation_lut_grid,
+                              to_sensor_azimuth_lut_grid=to_sensor_azimuth_lut_grid,
+                              to_sensor_zenith_lut_grid=to_sensor_zenith_lut_grid, mean_latitude=mean_latitude,
+                              mean_longitude=mean_longitude, dt=dt,
+                              uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
+                              surface_type=st)
 
-            # Run modtran retrieval
-            for _st, st in enumerate(surface_types):
-                if st is None and _st == 0:
-                    logging.info('Running ISOFIT with full LUT - Universal Surface')
-                    retrieval_full = isofit.Isofit(config_file=paths.modtran_config_path, level='INFO',
+        # Run modtran retrieval
+        for _st, st in enumerate(surface_types):
+            if st is None and _st == 0:
+                logging.info('Running ISOFIT with full LUT - Universal Surface')
+                retrieval_full = isofit.Isofit(config_file=paths.modtran_config_path, level='INFO',
+                                               logfile=args.log_file)
+            elif st is None:
+                continue
+            else:
+                if os.path.isfile(paths.surface_subs_files[st]['rdn']):
+                    logging.info(f'Running ISOFIT with full LUT - Surface: {st}')
+                    retrieval_full = isofit.Isofit(config_file=paths.surface_config_paths[st], level='INFO',
                                                    logfile=args.log_file)
-                elif st is None:
-                    continue
                 else:
-                    if os.path.isfile(paths.surface_subs_files[st]['rdn']):
-                        logging.info(f'Running ISOFIT with full LUT - Surface: {st}')
-                        retrieval_full = isofit.Isofit(config_file=paths.surface_config_paths[st], level='INFO',
-                                                       logfile=args.log_file)
-                    else:
-                        continue
-                retrieval_full.run()
-                del retrieval_full
+                    continue
+            retrieval_full.run()
+            del retrieval_full
 
-            # clean up unneeded storage
-            if gip["filepaths"]["emulator_base"] is None:
-                for to_rm in ['*r_k', '*t_k', '*tp7', '*wrn', '*psc', '*plt', '*7sc', '*acd']:
-                    cmd = 'rm ' + join(paths.lut_modtran_directory, to_rm)
-                    logging.info(cmd)
-                    os.system(cmd)
+        # clean up unneeded storage
+        if gip["filepaths"]["emulator_base"] is None:
+            for to_rm in ['*r_k', '*t_k', '*tp7', '*wrn', '*psc', '*plt', '*7sc', '*acd']:
+                cmd = 'rm ' + join(paths.lut_modtran_directory, to_rm)
+                logging.info(cmd)
+                os.system(cmd)
 
-        if surface_types[0] is not None:
-            reassemble_cube(matching_indices=surface_type_labels, paths=paths)
-            stl_path = paths.class_subs_path
-        else:
-            stl_path = None
+    if surface_types[0] is not None:
+        reassemble_cube(matching_indices=surface_type_labels, paths=paths)
+        stl_path = paths.class_subs_path
+    else:
+        stl_path = None
 
-        if not exists(paths.rfl_working_path) or not exists(paths.uncert_working_path):
-            # Empirical line
-            logging.info('Empirical line inference')
-            # Determine the number of neighbors to use. Provides backwards stability and works
-            # well with defaults, but is arbitrary
-            nneighbors = int(round(3950 / 9 - 35 / 36 * opt["segmentation_size"]))
-            empirical_line(reference_radiance_file=paths.rdn_subs_path, reference_reflectance_file=paths.rfl_subs_path,
-                           reference_uncertainty_file=paths.uncert_subs_path,
-                           reference_locations_file=paths.loc_subs_path, segmentation_file=paths.lbl_working_path,
-                           input_radiance_file=paths.radiance_working_path, input_locations_file=paths.loc_working_path,
-                           output_reflectance_file=paths.rfl_working_path,
-                           output_uncertainty_file=paths.uncert_working_path, isofit_config=paths.modtran_config_path,
-                           nneighbors=nneighbors, reference_class_file=stl_path)
+    if not exists(paths.rfl_working_path) or not exists(paths.uncert_working_path):
+        # Empirical line
+        logging.info('Empirical line inference')
+        # Determine the number of neighbors to use. Provides backwards stability and works
+        # well with defaults, but is arbitrary
+        nneighbors = int(round(3950 / 9 - 35 / 36 * opt["segmentation_size"]))
+        empirical_line(reference_radiance_file=paths.rdn_subs_path, reference_reflectance_file=paths.rfl_subs_path,
+                       reference_uncertainty_file=paths.uncert_subs_path,
+                       reference_locations_file=paths.loc_subs_path, segmentation_file=paths.lbl_working_path,
+                       input_radiance_file=paths.radiance_working_path, input_locations_file=paths.loc_working_path,
+                       output_reflectance_file=paths.rfl_working_path,
+                       output_uncertainty_file=paths.uncert_working_path, isofit_config=paths.modtran_config_path,
+                       nneighbors=nneighbors, reference_class_file=stl_path)
 
-        logging.info('Done.')
+    logging.info('Done.')
 
 
 if __name__ == "__main__":

@@ -206,6 +206,9 @@ class Pathnames:
             'h2o': self.h2o_subs_path + '_' + surface_type
         }
 
+        self.surface_config_paths[surface_type] = os.path.abspath(
+            os.path.join(self.config_directory, f'{self.fid}_{surface_type}_isofit.json'))
+
 
 class LUTConfig:
     """ A look up table class, containing default grid options.  All properties may be overridden with the optional
@@ -215,7 +218,7 @@ class LUTConfig:
         lut_config_file: configuration file to override default values
     """
 
-    def __init__(self, lut_config_file: str = None):
+    def __init__(self, gip: dict, lut_config_file: str = None):
         if lut_config_file is not None:
             with open(lut_config_file, 'r') as f:
                 lut_config = json.load(f)
@@ -227,19 +230,19 @@ class LUTConfig:
         # point will be used.
 
         # Units of kilometers
-        self.elevation_spacing = 0.5
-        self.elevation_spacing_min = 0.2
+        self.elevation_spacing = gip["radiative_transfer_parameters"]["GNDALT"]["lut_spacing"]
+        self.elevation_spacing_min = gip["radiative_transfer_parameters"]["GNDALT"]["lut_spacing_min"]
 
         # Units of g / m2
-        self.h2o_spacing = 0.25
-        self.h2o_spacing_min = 0.03
+        self.h2o_spacing = gip["radiative_transfer_parameters"]["H2OSTR"]["lut_spacing"]
+        self.h2o_spacing_min = gip["radiative_transfer_parameters"]["H2OSTR"]["lut_spacing_min"]
 
         # Special parameter to specify the minimum allowable water vapor value in g / m2
-        self.h2o_min = 0.2
+        self.h2o_min = gip["radiative_transfer_parameters"]["H2OSTR"]["min"]
 
         # Set defaults, will override based on settings
         # Units of g / m2
-        self.h2o_range = [0.05, 5]
+        self.h2o_range = gip["radiative_transfer_parameters"]["H2OSTR"]["default_range"]
 
         # Units of degrees
         self.to_sensor_azimuth_spacing = 60
@@ -252,23 +255,16 @@ class LUTConfig:
         # Units of AOD
         self.aerosol_0_spacing = 0
         self.aerosol_0_spacing_min = 0
-
-        # Units of AOD
         self.aerosol_1_spacing = 0
         self.aerosol_1_spacing_min = 0
-
-        # Units of AOD
         self.aerosol_2_spacing = 0.25
         self.aerosol_2_spacing_min = 0
-
-        # Units of AOD
         self.aerosol_0_range = [0.001, 0.5]
         self.aerosol_1_range = [0.001, 0.5]
         self.aerosol_2_range = [0.001, 0.5]
-        self.aot_550_range = [0.001, 0.5]
-
-        self.aot_550_spacing = 0
-        self.aot_550_spacing_min = 0
+        self.aot_550_range = gip["radiative_transfer_parameters"]["AOT550"]["default_range"]
+        self.aot_550_spacing = gip["radiative_transfer_parameters"]["AOT550"]["lut_spacing"]
+        self.aot_550_spacing_min = gip["radiative_transfer_parameters"]["AOT550"]["lut_spacing_min"]
 
         # overwrite anything that comes in from the config file
         if lut_config_file is not None:
@@ -520,17 +516,17 @@ def build_presolve_config(opt: dict, gip: dict, paths: Pathnames, h2o_lut_grid: 
         fout.write(json.dumps(isofit_config_h2o, cls=SerialEncoder, indent=4, sort_keys=True))
 
 
-def build_main_config(opt: dict, gip: dict, paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.array = None,
-                      elevation_lut_grid: np.array = None, to_sensor_azimuth_lut_grid: np.array = None,
-                      to_sensor_zenith_lut_grid: np.array = None, mean_latitude: float = None,
-                      mean_longitude: float = None, dt: datetime = None,
-                      uncorrelated_radiometric_uncertainty: float = 0.0,
-                      surface_type: str = None):
+def build_main_config(opt: dict, gip: dict, tsip: dict, paths: Pathnames, lut_params: LUTConfig,
+                      h2o_lut_grid: np.array = None, elevation_lut_grid: np.array = None,
+                      to_sensor_azimuth_lut_grid: np.array = None, to_sensor_zenith_lut_grid: np.array = None,
+                      mean_latitude: float = None, mean_longitude: float = None, dt: datetime = None,
+                      uncorrelated_radiometric_uncertainty: float = 0.0, surface_type: str = None):
     """ Write an isofit config file for the main solve, using the specified pathnames and all given info
 
     Args:
         opt: dictionary of general options
         gip: dictionary of general inversion parameters
+        tsip: dictionary of type specific inversion parameters
         paths: object containing references to all relevant file locations
         lut_params: configuration parameters for the lut grid
         h2o_lut_grid: the water vapor look up table grid isofit should use for this solve
@@ -562,9 +558,7 @@ def build_main_config(opt: dict, gip: dict, paths: Pathnames, lut_params: LUTCon
                 "engine_name": engine_name,
                 "lut_path": paths.lut_modtran_directory,
                 "aerosol_template_file": paths.aerosol_tpl_path,
-                "template_file": paths.modtran_template_path,
-                # lut_names - populated below
-                # statevector_names - populated below
+                "template_file": paths.modtran_template_path
             }
         },
         "statevector": {},
@@ -633,7 +627,9 @@ def build_main_config(opt: dict, gip: dict, paths: Pathnames, lut_params: LUTCon
         radiative_transfer_config['lut_grid'].keys())
 
     if surface_type == 'water':
-        surface_category = 'glint_surface'
+        surface_category = tsip["water"]["surface_category"]
+    else:
+        surface_category = gip["options"]["surface_category"]
 
     # make isofit configuration
     isofit_config_modtran = {'ISOFIT_base': paths.isofit_path,
@@ -646,7 +642,7 @@ def build_main_config(opt: dict, gip: dict, paths: Pathnames, lut_params: LUTCon
                                                     'uncorrelated_radiometric_uncertainty':
                                                         uncorrelated_radiometric_uncertainty}},
                                  "surface": {"surface_file": paths.surface_working_path,
-                                             "surface_category": gip["options"]["surface_category"],
+                                             "surface_category": surface_category,
                                              "select_on_init": True},
                                  "radiative_transfer": radiative_transfer_config},
                              "implementation": {
@@ -795,12 +791,12 @@ def write_modtran_template(atmosphere_type: str, fid: str, altitude_km: float, d
             "SPECTRAL": {
                 "V1": 340.0,
                 "V2": 2520.0,
-                "DV": 0.1,
-                "FWHM": 0.1,
+                "DV": 5,
+                "FWHM": 5,
                 "YFLAG": "R",
                 "XFLAG": "N",
                 "FLAGS": "NT A   ",
-                "BMNAME": "p1_2013"
+                "BMNAME": "05_2013"
             },
             "FILEOPTIONS": {
                 "NOPRNT": 2,
@@ -1027,7 +1023,7 @@ def copy_file_subset(matching_indices: np.array, pathnames: List):
         output_ds = envi.create_image(envi_header(outp), header, ext='', force=True)
         output_mm = output_ds.open_memmap(interleave='bip', writable=True)
         input_mm = input_ds.open_memmap(interleave='bip', writable=True)
-        output_mm[...] = input_mm[matching_indices, ...].copy()
+        output_mm[...] = input_mm[matching_indices[:, 0, 0], ...].copy()
 
 
 def get_metadata_from_obs(obs_file: str, lut_params: LUTConfig, trim_lines: int = 5,

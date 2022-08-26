@@ -154,8 +154,6 @@ def main(rawargs=None):
                 err_str = f'Input file: {infile_name} size is {input_size}, which does not match input_radiance size: {rdn_size}'
                 raise ValueError(err_str)
 
-    test
-
     lut_params = LUTConfig(args.lut_config_file)
     if args.emulator_base is not None:
         lut_params.aot_550_range = lut_params.aerosol_2_range
