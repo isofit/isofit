@@ -720,13 +720,13 @@ def build_main_config(opt: dict, gip: dict, tsip: dict, paths: Pathnames, lut_pa
         fout.write(json.dumps(isofit_config_modtran, cls=SerialEncoder, indent=4, sort_keys=True))
 
 
-def write_modtran_template(atmosphere_type: str, fid: str, altitude_km: float, dayofyear: int,
+def write_modtran_template(gip: dict, fid: str, altitude_km: float, dayofyear: int,
                            latitude: float, longitude: float, to_sensor_azimuth: float, to_sensor_zenith: float,
                            gmtime: float, elevation_km: float, output_file: str, ihaze_type: str = 'AER_RURAL'):
     """ Write a MODTRAN template file for use by isofit look up tables
 
     Args:
-        atmosphere_type: label for the type of atmospheric profile to use in modtran
+        gip: dictionary of general inversion parameters
         fid: flight line id (name)
         altitude_km: altitude of the sensor in km
         dayofyear: the current day of the given year
@@ -757,13 +757,13 @@ def write_modtran_template(atmosphere_type: str, fid: str, altitude_km: float, d
                 "SOLCON": 0.0
             },
             "ATMOSPHERE": {
-                "MODEL": atmosphere_type,
-                "M1": atmosphere_type,
-                "M2": atmosphere_type,
-                "M3": atmosphere_type,
-                "M4": atmosphere_type,
-                "M5": atmosphere_type,
-                "M6": atmosphere_type,
+                "MODEL": gip["radiative_transfer_parameters"]["atmosphere_type"],
+                "M1": gip["radiative_transfer_parameters"]["atmosphere_type"],
+                "M2": gip["radiative_transfer_parameters"]["atmosphere_type"],
+                "M3": gip["radiative_transfer_parameters"]["atmosphere_type"],
+                "M4": gip["radiative_transfer_parameters"]["atmosphere_type"],
+                "M5": gip["radiative_transfer_parameters"]["atmosphere_type"],
+                "M6": gip["radiative_transfer_parameters"]["atmosphere_type"],
                 "CO2MX": 410.0,
                 "H2OSTR": 1.0,
                 "H2OUNIT": "g",
@@ -791,12 +791,12 @@ def write_modtran_template(atmosphere_type: str, fid: str, altitude_km: float, d
             "SPECTRAL": {
                 "V1": 340.0,
                 "V2": 2520.0,
-                "DV": 5,
-                "FWHM": 5,
+                "DV": gip["radiative_transfer_parameters"]["spectral_DV"],
+                "FWHM": gip["radiative_transfer_parameters"]["spectral_FWHM"],
                 "YFLAG": "R",
                 "XFLAG": "N",
                 "FLAGS": "NT A   ",
-                "BMNAME": "05_2013"
+                "BMNAME": gip["radiative_transfer_parameters"]["spectral_BMNAME"]
             },
             "FILEOPTIONS": {
                 "NOPRNT": 2,

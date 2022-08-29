@@ -185,7 +185,7 @@ def main(rawargs=None):
     # Chunk scene => superpixel segmentation
     if not exists(paths.lbl_working_path) or not exists(paths.radiance_working_path):
         logging.info('Segmenting...')
-        segment(spectra=(paths.radiance_working_path, paths.lbl_working_path), nodata_value=-9999, npca=5,
+        segment(spectra=(paths.radiance_working_path, paths.lbl_working_path), nodata_value=-9999, npca=opt["n_pca"],
                 segsize=opt['segmentation_size'], nchunk=opt['chunksize'], n_cores=opt["n_cores"],
                 loglevel=args.logging_level, logfile=args.log_file)
 
@@ -224,11 +224,11 @@ def main(rawargs=None):
 
     if opt['presolve_wv']:
         # write modtran presolve template
-        write_modtran_template(atmosphere_type=gip["radiative_transfer_parameters"]["atmosphere_type"], fid=paths.fid,
-                               altitude_km=mean_altitude_km, dayofyear=dayofyear, latitude=mean_latitude,
-                               longitude=mean_longitude, to_sensor_azimuth=mean_to_sensor_azimuth,
-                               to_sensor_zenith=mean_to_sensor_zenith, gmtime=gmtime, elevation_km=mean_elevation_km,
-                               output_file=paths.h2o_template_path, ihaze_type='AER_NONE')
+        write_modtran_template(gip=gip, fid=paths.fid, altitude_km=mean_altitude_km, dayofyear=dayofyear,
+                               latitude=mean_latitude, longitude=mean_longitude,
+                               to_sensor_azimuth=mean_to_sensor_azimuth, to_sensor_zenith=mean_to_sensor_zenith,
+                               gmtime=gmtime, elevation_km=mean_elevation_km, output_file=paths.h2o_template_path,
+                               ihaze_type='AER_NONE')
 
         if gip["filepaths"]['emulator_base'] is None:
             max_water = calc_modtran_max_water(paths=paths)
@@ -283,8 +283,7 @@ def main(rawargs=None):
 
     logging.info(f"Surface Types: {surface_types}")
     if not exists(paths.uncert_subs_path) or not exists(paths.rfl_subs_path):
-        write_modtran_template(atmosphere_type=gip["radiative_transfer_parameters"]["atmosphere_type"],
-                               fid=paths.fid, altitude_km=mean_altitude_km, dayofyear=dayofyear,
+        write_modtran_template(gip=gip, fid=paths.fid, altitude_km=mean_altitude_km, dayofyear=dayofyear,
                                latitude=mean_latitude, longitude=mean_longitude,
                                to_sensor_azimuth=mean_to_sensor_azimuth, to_sensor_zenith=mean_to_sensor_zenith,
                                gmtime=gmtime, elevation_km=mean_elevation_km,

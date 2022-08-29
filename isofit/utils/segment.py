@@ -89,20 +89,18 @@ def segment_chunk(lstart, lend, in_file, nodata_value, npca, segsize, logfile=No
         print('Compactness override: %f'%cmpct)
 
     # Project, redimension as an image with "npca" channels, and segment
-    x_pca_subset = (x[use,:] - mu) @ d[:, -npca:]
+    x_pca_subset = (x[use, :] - mu) @ d[:, -npca:]
     del x, mu, d
-    x_pca = np.zeros((nc,ns,npca))
-    x_pca[use.reshape(nc,ns),:] = x_pca_subset
+    x_pca = np.zeros((nc, ns, npca))
+    x_pca[use.reshape(nc, ns), :] = x_pca_subset
     del x_pca_subset
     
     x_pca = x_pca.reshape([nc, ns, npca])
     seg_in_chunk = int(sum(use) / float(segsize))
 
     logging.debug(f'{lstart}: starting slic')
-    labels = slic(x_pca, n_segments=seg_in_chunk, compactness=cmpct,
-                  max_iter=10, sigma=0, multichannel=True,
-                  enforce_connectivity=True, min_size_factor=0.5,
-                  max_size_factor=3, mask=use.reshape(nc,ns))
+    labels = slic(x_pca, n_segments=seg_in_chunk, compactness=cmpct, max_num_iter=10, sigma=0, channel_axis=True,
+                  enforce_connectivity=True, min_size_factor=0.5, max_size_factor=3, mask=use.reshape(nc, ns))
 
     # Reindex the subscene labels and place them into the larger scene
     labels = labels.reshape([nc * ns])
