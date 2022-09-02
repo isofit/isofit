@@ -1,0 +1,49 @@
+You are welcome to use and modify the `isofit` project.
+See the README.rst and LICENSE files for details.
+
+If you use this software for research we would appreciate appropriate citation.
+This may be prepared using the bibliographic metadata contained in our DOI, accessible through the DOI system and at
+https://doi.org/10.5281/zenodo.6908949
+
+If you use ISOFIT in your research or production, we ask that you cite the precursor publication:
+
+  Thompson, David R., Natraj, Vijay, Green, Robert O., Helmlinger, Mark C., Gao, Bo-Cai, & Eastwood, Michael L. (2018). Optimal estimation for imaging spectrometer atmospheric correction. Remote Sensing of Environment 216, 355-373.
+
+In addition, you can optionally cite the `isofit` Python package in your publication (modify the version number if needed):
+
+  Thompson, David R., Brodrick, Philip G., Olson-Duvall, Winston, Carmon, Nimrod, Bohn, Niklas, Shiklomanov, Alexey, Serbin, Shawn P., Fahlen, Jay, Erickson, Adam, & McGibbney, Lewis J. (2022, July 26). ISOFIT - Imaging Spectrometer Optimal FITting (Version v2.9.3). Zenodo. https://doi.org/10.5281/zenodo.6908949.
+
+This may need modification for the citation style of your publication.
+You are encouraged to include the version number of the software.
+
+A BibTeX entry for LaTeX users should look like this
+(find the one for the latest version here: https://zenodo.org/record/6908949/export/hx):
+
+@software{phil_brodrick_2022_6908949,
+  author       = {Phil Brodrick and
+                  isofit and
+                  Adam Erickson and
+                  winstonolson and
+                  David R Thompson and
+                  jfahlen and
+                  Alexey Shiklomanov and
+                  Shawn P. Serbin and
+                  NimrodCarmon and
+                  yshinozu and
+                  Lewis John McGibbney and
+                  unbohn},
+  title        = {isofit/isofit: 2.9.3},
+  month        = jul,
+  year         = 2022,
+  publisher    = {Zenodo},
+  version      = {v2.9.3},
+  doi          = {10.5281/zenodo.6908949},
+  url          = {https://doi.org/10.5281/zenodo.6908949}
+}
+
+For information on citing software products generally, see the
+FORCE11 document [*].
+
+
+[*] FORCE11 Software Citation Working Group (2016), "Software Citation Principles", (Editors: Arfon M. Smith, Daniel S. Katz, Kyle E. Niemeyer).
+    Accessed 2017-08-08 at https://www.force11.org/sites/default/files/shared-documents/software-citation-principles.pdf

@@ -18,6 +18,7 @@ isofit.utils
    isofit.utils.extractions
    isofit.utils.generate_noise
    isofit.utils.instrument_model
+   isofit.utils.interpolate_atmosphere
    isofit.utils.path
    isofit.utils.remap
    isofit.utils.segment
