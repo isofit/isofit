@@ -378,5 +378,3 @@ def surface_model(config_path: str, wavelength_path: str = None,
     model['attribute_covs'] = np.array(model['attribute_covs'])
 
     scipy.io.savemat(outfile, model)
-
-surface_model("surface/surface_20220714_gp.json")
