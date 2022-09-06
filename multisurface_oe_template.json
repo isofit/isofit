@@ -22,7 +22,7 @@
                 "rdn_factors_path": null,
                 "modtran_path": null,
                 "lut_config_path": null,
-                "emulator_base": null
+                "emulator_base": "/Users/bohn/Desktop/sRTMnet_v100/sRTMnet_v100"
             },
             "options": {
                 "multiple_restarts": false,

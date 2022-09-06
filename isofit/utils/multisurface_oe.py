@@ -121,10 +121,12 @@ def main(rawargs=None):
                                                                                   lut_params=lut_params)
 
     # overwrite the time in case original obs has an error in that band
+    # ToDo: if h_m_s[0] exceeds 24 hours do ...
     if h_m_s[0] != dt.hour:
         h_m_s[0] = dt.hour
     if h_m_s[1] != dt.minute:
         h_m_s[1] = dt.minute
+        logging.info("UTC minute did not match start time minute. Adjusting to that value.")
 
     if day_increment:
         dayofyear += 1
@@ -206,6 +208,7 @@ def main(rawargs=None):
         detected_surface_types = []
 
         for ustl in un_surface_type_labels:
+            # ToDo: get surface type names from config
             logging.info(f'Found surface type: {["base", "cloud", "water"][ustl]}')
             detected_surface_types.append(["base", "cloud", "water"][ustl])
 
