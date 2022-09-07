@@ -20,7 +20,7 @@
 
 import logging
 import numpy as np
-from scipy.interpolate import interp1d
+from scipy.interpolate import interp1d, splev, splrep
 from scipy.signal import convolve
 from scipy.io import loadmat
 
@@ -286,6 +286,17 @@ class Instrument:
         if 'GROW_FWHM' in self.statevec_names:
             ind = self.statevec_names.index('GROW_FWHM')
             fwhm = fwhm + x_instrument[ind]
+        elif any([v.startswith('FWHMSPL') for v in self.statevec_names]):
+            # cubic spline perturbation
+            channels,vals = [],[]
+            for i,v in enumerate(self.statevec_names):
+                if v.startswith('FWHMSPL'):
+                    chan = float(v.split('_')[1])
+                    channels.append(chan)
+                    vals.append(x_instrument[i])
+            sp = splrep(channels, vals, s=0)
+            xnew = np.arange(len(wl))
+            fwhm = fwhm + splev(xnew, sp)
 
         if 'WL_SPACE' in self.statevec_names:
             ind = self.statevec_names.index('WL_SPACE')
@@ -296,6 +307,17 @@ class Instrument:
         if 'WL_SHIFT' in self.statevec_names:
             ind = self.statevec_names.index('WL_SHIFT')
             shift = x_instrument[ind]
+        elif any([v.startswith('WLSPL') for v in self.statevec_names]):
+            # cubic spline perturbation
+            channels,vals = [],[]
+            for i,v in enumerate(self.statevec_names):
+                if v.startswith('WLSPL'):
+                    chan = int(v.split('_')[1])
+                    channels.append(chan)
+                    vals.append(x_instrument[i])
+            sp = splrep(channels, vals, s=0)
+            xnew = np.arange(len(wl))
+            shift = splev(xnew, sp)
         else:
             shift = 0.0
 
