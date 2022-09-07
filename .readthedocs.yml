@@ -12,7 +12,9 @@ sphinx:
 # Build documentation with MkDocs
 #mkdocs:
 #  configuration: mkdocs.yml
-
+build:
+  os: pgbrodrick/isofit
+  
 python:
   version: 3.6
   install:
