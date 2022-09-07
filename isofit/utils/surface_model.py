@@ -259,7 +259,11 @@ def surface_model(config_path: str, wavelength_path: str = None,
                 # using one of several rules.  We can draw the covariance
                 # directly from the data...
                 if window['correlation'] in ['EM', 'EM-gauss']:
-                    C[window_range, window_range] = C_base[window_range,window_range] + np.eye(len(window_idx)) * float(window['regularizer'])
+                    cdiag = (C_base[window_range,window_range] + np.eye(len(window_idx)) * float(window['regularizer'])).copy()
+                    if 'isolated' in list(window.keys()) and window['isolated'] == 1:
+                        C[window_range,:] = 0
+                        C[:,window_range] = 0
+                    C[window_range, window_range] = cdiag
 
                 window_idx = np.where(np.logical_and(wl >= window['interval'][0], wl < window['interval'][1]))[0]
                 if len(window_idx) == 0:

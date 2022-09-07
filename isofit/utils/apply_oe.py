@@ -27,7 +27,7 @@ CHUNKSIZE = 256
 
 UNCORRELATED_RADIOMETRIC_UNCERTAINTY = 0.01
 
-INVERSION_WINDOWS = [[380.0, 1340.0], [1450, 1800.0], [1970.0, 2500.0]]
+INVERSION_WINDOWS = [[380.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
 
 
 def main(rawargs=None):
@@ -128,6 +128,7 @@ def main(rawargs=None):
     parser.add_argument('--num_neighbors', type=int, default=None)
     parser.add_argument('--pressure_elevation', action='store_true', default=None)
 
+
     args = parser.parse_args(rawargs)
 
     if args.sensor not in ['ang', 'avcl', 'neon', 'prism', 'emit', 'hyp']:
@@ -226,7 +227,7 @@ def main(rawargs=None):
     np.savetxt(paths.wavelength_path, wl_data, delimiter=' ')
 
     mean_latitude, mean_longitude, mean_elevation_km, elevation_lut_grid = \
-        get_metadata_from_loc(paths.loc_working_path, lut_params, args.pressure_elevation)
+        get_metadata_from_loc(paths.loc_working_path, lut_params, pressure_elevation=args.pressure_elevation)
 
     if args.emulator_base is not None:
         if elevation_lut_grid is not None and np.any(elevation_lut_grid < 0):
@@ -372,7 +373,7 @@ def main(rawargs=None):
         if args.num_neighbors is None:
             nneighbors = int(round(3950 / 9 - 35/36 * args.segmentation_size))
         else:
-            nneighbors = args.nneighbors
+            nneighbors = args.num_neighbors
         empirical_line(reference_radiance_file=paths.rdn_subs_path,
                        reference_reflectance_file=paths.rfl_subs_path,
                        reference_uncertainty_file=paths.uncert_subs_path,
@@ -984,7 +985,7 @@ def get_metadata_from_obs(obs_file: str, lut_params: LUTConfig, trim_lines: int 
            to_sensor_azimuth_lut_grid, to_sensor_zenith_lut_grid
 
 
-def get_metadata_from_loc(loc_file: str, lut_params: LUTConfig, trim_lines: int = 5, nodata_value: float = -9999, pressure_elevation: bool) -> \
+def get_metadata_from_loc(loc_file: str, lut_params: LUTConfig, trim_lines: int = 5, nodata_value: float = -9999, pressure_elevation: bool = False) -> \
         (float, float, float, np.array):
     """ Get metadata needed for complete runs from the location file (bands long, lat, elev).
 
@@ -1026,9 +1027,9 @@ def get_metadata_from_loc(loc_file: str, lut_params: LUTConfig, trim_lines: int 
     # make elevation grid
     min_elev = np.min(loc_data[2, valid]) / 1000.
     max_elev = np.max(loc_data[2, valid]) / 1000.
-    if args.pressure_elevation:
-        min_elev = max(min_elev - 1000, 0)
-        max_elev += 1000
+    if pressure_elevation:
+        min_elev = max(min_elev - 1, 0)
+        max_elev += 1
     elevation_lut_grid = lut_params.get_grid(min_elev, max_elev, lut_params.elevation_spacing,
                                              lut_params.elevation_spacing_min)
 
