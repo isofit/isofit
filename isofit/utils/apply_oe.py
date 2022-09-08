@@ -185,7 +185,8 @@ def main(rawargs=None):
         dt = datetime.strptime(paths.fid[3:], '%Y%m%dt%H%M%S')
     elif args.sensor == 'emit':
         dt = datetime.strptime(paths.fid[:19], 'emit%Y%m%dt%H%M%S')
-        global INVERSION_WINDOWS = [[380.0, 1270.0], [1410, 1800.0], [1970.0, 2500.0]]
+        global INVERSION_WINDOWS 
+        INVERSION_WINDOWS = [[380.0, 1270.0], [1410, 1800.0], [1970.0, 2500.0]]
     elif args.sensor[:3] == 'NA-':
         dt = datetime.strptime(args.sensor[3:], '%Y%m%d')
     elif args.sensor == 'hyp':
