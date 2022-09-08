@@ -27,6 +27,7 @@ import atexit
 import logging
 from isofit.core.common import envi_header
 
+
 @ray.remote
 def segment_chunk(lstart, lend, in_file, nodata_value, npca, segsize, logfile=None, loglevel='INFO'):
     """
@@ -48,7 +49,8 @@ def segment_chunk(lstart, lend, in_file, nodata_value, npca, segsize, logfile=No
         labels: labeled image chunk
 
     """
-    logging.basicConfig(format='%(levelname)s:%(asctime)s ||| %(message)s', level=loglevel, filename=logfile, datefmt='%Y-%m-%d,%H:%M:%S')
+    logging.basicConfig(format='%(levelname)s:%(asctime)s ||| %(message)s', level=loglevel, filename=logfile,
+                        datefmt='%Y-%m-%d,%H:%M:%S')
 
     logging.info(f'{lstart}: starting')
 
@@ -61,8 +63,7 @@ def segment_chunk(lstart, lend, in_file, nodata_value, npca, segsize, logfile=No
     use = np.logical_not(np.isclose(np.array(img_mm[lstart:lend, :, 0]), nodata_value))
     if np.sum(use) == 0:
         logging.info(f'{lstart}: no non null data present, returning early')
-        return lstart, lend, np.zeros((use.shape[0],ns))
-
+        return lstart, lend, np.zeros((use.shape[0], ns))
 
     x = np.array(img_mm[lstart:lend, :, :]).astype(np.float32)
     nc = x.shape[0]
@@ -75,7 +76,7 @@ def segment_chunk(lstart, lend, in_file, nodata_value, npca, segsize, logfile=No
     # If this chunk is empty, return immediately
     if np.sum(use) == 0:
         logging.info(f'{lstart}: no non null data present, returning early')
-        return lstart, lend, np.zeros((nc,ns))
+        return lstart, lend, np.zeros((nc, ns))
 
     mu = x[use, :].mean(axis=0)
     C = np.cov(x[use, :], rowvar=False)
@@ -86,7 +87,7 @@ def segment_chunk(lstart, lend, in_file, nodata_value, npca, segsize, logfile=No
     cmpct = scipy.linalg.norm(np.sqrt(v[-npca:]))
     if cmpct < 1e-6:
         cmpct = 10.0
-        print('Compactness override: %f'%cmpct)
+        print('Compactness override: %f' % cmpct)
 
     # Project, redimension as an image with "npca" channels, and segment
     x_pca_subset = (x[use, :] - mu) @ d[:, -npca:]
@@ -99,7 +100,7 @@ def segment_chunk(lstart, lend, in_file, nodata_value, npca, segsize, logfile=No
     seg_in_chunk = int(sum(use) / float(segsize))
 
     logging.debug(f'{lstart}: starting slic')
-    labels = slic(x_pca, n_segments=seg_in_chunk, compactness=cmpct, max_num_iter=10, sigma=0, channel_axis=True,
+    labels = slic(x_pca, n_segments=seg_in_chunk, compactness=cmpct, max_num_iter=10, sigma=0, channel_axis=2,
                   enforce_connectivity=True, min_size_factor=0.5, max_size_factor=3, mask=use.reshape(nc, ns))
 
     # Reindex the subscene labels and place them into the larger scene
@@ -162,7 +163,7 @@ def segment(spectra: tuple, nodata_value: float, npca: int, segsize: int, nchunk
     atexit.register(ray.shutdown)
 
     # Iterate through image "chunks," segmenting as we go
-    all_labels = np.zeros((nl, ns),dtype=np.int64)
+    all_labels = np.zeros((nl, ns), dtype=np.int64)
     jobs = []
 
     # Enforce a minimum chunk size to prevent singularities downstream
@@ -174,11 +175,12 @@ def segment(spectra: tuple, nodata_value: float, npca: int, segsize: int, nchunk
         # Extend any chunk that falls within a small margin of the
         # end of the flightline
         lend = min(lstart+nchunk, nl)
-        if lend>(nl-min_lines_per_chunk):
+        if lend > (nl-min_lines_per_chunk):
             lend = nl
 
         # Extract data
-        jobs.append(segment_chunk.remote(lstart, lend, in_file, nodata_value, npca, segsize, logfile=logfile, loglevel=loglevel))
+        jobs.append(segment_chunk.remote(lstart, lend, in_file, nodata_value, npca, segsize, logfile=logfile,
+                                         loglevel=loglevel))
 
     # Collect results, making sure each chunk is distinct, and enforce an order
     next_label = 1
@@ -192,7 +194,7 @@ def segment(spectra: tuple, nodata_value: float, npca: int, segsize: int, nchunk
             for lbl in unique_chunk_labels:
                 ordered_chunk_labels[chunk_label == lbl] = next_label
                 next_label += 1
-            all_labels[lstart:lend,...] = ordered_chunk_labels
+            all_labels[lstart:lend, ...] = ordered_chunk_labels
     del rreturn
     ray.shutdown()
 

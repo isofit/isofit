@@ -29,29 +29,13 @@ class Pathnames:
     configuration files.
 
     Args:
+        opt: dictionary of general options
+        gip: dictionary of general inversion parameters
         args: an argparse Namespace object with all inputs
+        fid: string of instrument specific flight identification number
     """
 
-    def __init__(self, opt: dict, gip: dict, args: argparse.Namespace):
-
-        # Determine FID based on sensor name
-        if opt["sensor"] == 'ang':
-            self.fid = os.path.split(args.input_radiance)[-1][:18]
-            logging.info('Flightline ID: %s' % self.fid)
-        elif opt["sensor"] == 'prism':
-            self.fid = os.path.split(args.input_radiance)[-1][:18]
-            logging.info('Flightline ID: %s' % self.fid)
-        elif opt["sensor"] == 'avcl':
-            self.fid = os.path.split(args.input_radiance)[-1][:16]
-            logging.info('Flightline ID: %s' % self.fid)
-        elif opt["sensor"] == 'neon':
-            self.fid = os.path.split(args.input_radiance)[-1][:21]
-        elif opt["sensor"] == 'emit':
-            self.fid = os.path.split(args.input_radiance)[-1][:19]
-        elif opt["sensor"][:3] == 'NA-':
-            self.fid = os.path.splitext(os.path.basename(args.input_radiance))[0]
-        elif opt["sensor"] == 'hyp':
-            self.fid = os.path.split(args.input_radiance)[-1][:22]
+    def __init__(self, opt: dict, gip: dict, args: argparse.Namespace, fid: str):
 
         # Names from inputs
         self.aerosol_climatology = gip["filepaths"]["aerosol_climatology_path"]
@@ -59,15 +43,9 @@ class Pathnames:
         self.input_loc_file = args.input_loc
         self.input_obs_file = args.input_obs
         self.working_directory = os.path.abspath(args.working_directory)
+        self.fid = fid
 
         self.lut_modtran_directory = os.path.abspath(os.path.join(self.working_directory, 'lut_full', ''))
-
-        if gip["filepaths"]["surface_path"]:
-            self.surface_path = gip["filepaths"]["surface_path"]
-        else:
-            self.surface_path = os.getenv('ISOFIT_SURFACE_MODEL')
-        if self.surface_path is None:
-            logging.info('No surface model defined')
 
         # set up some sub-directories
         self.lut_h2o_directory = os.path.abspath(os.path.join(self.working_directory, 'lut_h2o', ''))
@@ -75,6 +53,14 @@ class Pathnames:
         self.data_directory = os.path.abspath(os.path.join(self.working_directory, 'data', ''))
         self.input_data_directory = os.path.abspath(os.path.join(self.working_directory, 'input', ''))
         self.output_directory = os.path.abspath(os.path.join(self.working_directory, 'output', ''))
+
+        # get surface model, rebuild if needed
+        if gip["filepaths"]["surface_path"]:
+            self.surface_path = gip["filepaths"]["surface_path"]
+        elif os.getenv('ISOFIT_SURFACE_MODEL'):
+            self.surface_path = os.getenv('ISOFIT_SURFACE_MODEL')
+        else:
+            self.surface_path = os.path.abspath(os.path.join(self.data_directory, 'surface.mat'))
 
         # define all output names
         rdn_fname = self.fid + '_rdn'
@@ -399,6 +385,77 @@ def get_angular_grid(angle_data_input: np.array, spacing: float, min_spacing: fl
                             f'while data spans {np.sum(ca_quadrants)} quadrants')
 
         return central_angles
+
+
+def build_surface_config(flight_id: str, output_path: str, wvl_file: str):
+    """ Write a surface config file, using the specified pathnames and all given info
+
+        Args:
+            flight_id: string of instrument specific flight identification number
+            output_path: output directory for surface config file
+            wvl_file: directory of instrument wavelength file
+
+    """
+    surface_path = os.path.abspath(os.path.join(output_path, 'surface.mat'))
+
+    surface_config = {
+        "output_model_file": surface_path,
+        "wavelength_file": wvl_file,
+        "normalize": "Euclidean",
+        "reference_windows": [[400, 1300], [1450, 1700], [2100, 2450]],
+        "sources":
+            [
+                {
+                    "input_spectrum_files":
+                        [
+                            "surface_model_ucsb"
+                        ],
+                    "n_components": 8,
+                    "windows": [
+                        {
+                            "interval": [300, 400],
+                            "regularizer": 1e-4,
+                            "correlation": "EM"
+                        },
+                        {
+                            "interval": [400, 1300],
+                            "regularizer": 1e-6,
+                            "correlation": "EM"
+                        },
+                        {
+                            "interval": [1300, 1450],
+                            "regularizer": 1e-4,
+                            "correlation": "EM"
+                        },
+                        {
+                            "interval": [1450, 1700],
+                            "regularizer": 1e-6,
+                            "correlation": "EM"
+                        },
+                        {
+                            "interval": [1700, 2100],
+                            "regularizer": 1e-4,
+                            "correlation": "EM"
+                        },
+                        {
+                            "interval": [2100, 2450],
+                            "regularizer": 1e-6,
+                            "correlation": "EM"
+                        },
+                        {
+                            "interval": [2450, 2550],
+                            "regularizer": 1e-4,
+                            "correlation": "EM"
+                        }
+                                ]
+                }
+            ]
+    }
+
+    output_config_name = os.path.join(output_path, flight_id + '_surface.json')
+
+    with open(output_config_name, 'w') as fout:
+        fout.write(json.dumps(surface_config, cls=SerialEncoder, indent=4, sort_keys=True))
 
 
 def build_presolve_config(opt: dict, gip: dict, paths: Pathnames, h2o_lut_grid: np.array,

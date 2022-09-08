@@ -13,14 +13,15 @@ import numpy as np
 import yaml
 from collections import OrderedDict
 from datetime import datetime
+from shutil import copyfile
 
 from isofit.utils.template_construction import LUTConfig, Pathnames, build_presolve_config, calc_modtran_max_water,\
     define_surface_types, copy_file_subset, get_metadata_from_obs, get_metadata_from_loc, write_modtran_template,\
-    get_grid, build_main_config, reassemble_cube
+    get_grid, build_main_config, reassemble_cube, build_surface_config
 
 from isofit.core import isofit
 from isofit.core.common import envi_header
-from isofit.utils import segment, extractions, empirical_line
+from isofit.utils import segment, extractions, empirical_line, surface_model
 
 
 def main(rawargs=None):
@@ -75,6 +76,74 @@ def main(rawargs=None):
     logging.basicConfig(format='%(levelname)s:%(asctime)s ||| %(message)s', level=args.logging_level,
                         filename=args.log_file, datefmt='%Y-%m-%d,%H:%M:%S')
 
+    # Determine FID based on sensor name
+    # Based on the sensor type, get appropriate year/month/day info for initial condition.
+    # We'll adjust for line length and UTC day overrun later
+    if opt["sensor"] == 'ang':
+        fid = os.path.split(args.input_radiance)[-1][:18]
+        logging.info('Flightline ID: %s' % fid)
+        # parse flightline ID (AVIRIS-NG assumptions)
+        dt = datetime.strptime(fid[3:], '%Y%m%dt%H%M%S')
+    elif opt["sensor"] == 'avcl':
+        fid = os.path.split(args.input_radiance)[-1][:16]
+        logging.info('Flightline ID: %s' % fid)
+        # parse flightline ID (AVIRIS-CL assumptions)
+        dt = datetime.strptime('20{}t000000'.format(fid[1:7]), '%Y%m%dt%H%M%S')
+    elif opt["sensor"] == 'prism':
+        fid = os.path.split(args.input_radiance)[-1][:18]
+        logging.info('Flightline ID: %s' % fid)
+        # parse flightline ID (PRISM assumptions)
+        dt = datetime.strptime(fid[3:], '%Y%m%dt%H%M%S')
+    elif opt["sensor"] == 'neon':
+        fid = os.path.split(args.input_radiance)[-1][:21]
+        logging.info('Flightline ID: %s' % fid)
+        # parse flightline ID (NEON assumptions)
+        dt = datetime.strptime(fid, 'NIS01_%Y%m%d_%H%M%S')
+    elif opt["sensor"] == 'emit':
+        fid = os.path.split(args.input_radiance)[-1][:19]
+        logging.info('Flightline ID: %s' % fid)
+        # parse flightline ID (EMIT assumptions)
+        dt = datetime.strptime(fid[:19], 'emit%Y%m%dt%H%M%S')
+    elif opt["sensor"][:3] == 'NA-':
+        fid = os.path.splitext(os.path.basename(args.input_radiance))[0]
+        logging.info('Flightline ID: %s' % fid)
+        # parse flightline ID (PRISMA assumptions)
+        dt = datetime.strptime(args.sensor[3:], '%Y%m%d')
+    elif opt["sensor"] == 'hyp':
+        fid = os.path.split(args.input_radiance)[-1][:22]
+        logging.info('Flightline ID: %s' % fid)
+        # parse flightline ID (Hyperion assumptions)
+        dt = datetime.strptime(fid[10:17], '%Y%j')
+    else:
+        raise ValueError('Neither flightline ID nor datetime object could be obtained. '
+                         'Please check file name of input data.')
+
+    # get path names
+    paths = Pathnames(opt=opt, gip=gip, args=args, fid=fid)
+
+    if len(tsip.items()) > 0:
+        for st in tsip.keys():
+            paths.add_surface_subs_files(surface_type=st)
+
+    paths.make_directories()
+
+    # get wavelengths and fwhm
+    if args.wavelength_path:
+        chn, wl, fwhm = np.loadtxt(args.wavelength_path).T
+        del rdn_dataset
+    else:
+        wl = np.array(rdn_dataset.metadata.band_meta["wavelength"])
+        fwhm = np.array(rdn_dataset.metadata.band_meta["fwhm"])
+        del rdn_dataset
+
+    # Convert to microns if needed
+    if wl[0] > 100:
+        wl = wl / 1000.0
+        fwhm = fwhm / 1000.0
+
+    wl_data = np.concatenate([np.arange(len(wl))[:, np.newaxis], wl[:, np.newaxis], fwhm[:, np.newaxis]], axis=1)
+    np.savetxt(paths.wavelength_path, wl_data, delimiter=' ')
+
     # get LUT parameters
     lut_params = LUTConfig(gip=gip, lut_config_file=gip["filepaths"]["lut_config_path"])
     if gip["filepaths"]["emulator_base"] is not None:
@@ -83,36 +152,26 @@ def main(rawargs=None):
         lut_params.aot_550_spacing_min = lut_params.aerosol_2_spacing_min
         lut_params.aerosol_2_spacing = 0
 
-    # get path names
-    paths = Pathnames(opt=opt, gip=gip, args=args)
-
-    if len(tsip.items()) > 0:
-        for st in tsip.keys():
-            paths.add_surface_subs_files(surface_type=st)
-
-    paths.make_directories()
-    paths.stage_files()
-
-    # Based on the sensor type, get appropriate year/month/day info for initial condition.
-    # We'll adjust for line length and UTC day overrun later
-    if opt["sensor"] == 'ang':
-        # parse flightline ID (AVIRIS-NG assumptions)
-        dt = datetime.strptime(paths.fid[3:], '%Y%m%dt%H%M%S')
-    elif opt["sensor"] == 'avcl':
-        # parse flightline ID (AVIRIS-CL assumptions)
-        dt = datetime.strptime('20{}t000000'.format(paths.fid[1:7]), '%Y%m%dt%H%M%S')
-    elif opt["sensor"] == 'neon':
-        dt = datetime.strptime(paths.fid, 'NIS01_%Y%m%d_%H%M%S')
-    elif opt["sensor"] == 'prism':
-        dt = datetime.strptime(paths.fid[3:], '%Y%m%dt%H%M%S')
-    elif opt["sensor"] == 'emit':
-        dt = datetime.strptime(paths.fid[:19], 'emit%Y%m%dt%H%M%S')
-    elif opt["sensor"][:3] == 'NA-':
-        dt = datetime.strptime(args.sensor[3:], '%Y%m%d')
-    elif opt["sensor"] == 'hyp':
-        dt = datetime.strptime(paths.fid[10:17], '%Y%j')
+    # get surface model, rebuild if needed
+    if gip["filepaths"]["surface_path"]:
+        pass
+    elif os.getenv('ISOFIT_SURFACE_MODEL'):
+        pass
     else:
-        raise ValueError('No datetime object could be obtained. Please check file name of input data.')
+        logging.info('No surface model defined. Build new one.')
+        build_surface_config(flight_id=fid, output_path=paths.data_directory, wvl_file=paths.wavelength_path)
+        config_path = os.path.join(paths.data_directory, fid + '_surface.json')
+        if os.getenv('ISOFIT_DIR'):
+            isofit_path = os.getenv('ISOFIT_DIR')
+        else:
+            # isofit file should live at isofit/isofit/core/isofit.py
+            isofit_path = os.path.dirname(os.path.dirname(os.path.dirname(isofit.__file__)))
+        for file in ['surface_model_ucsb', 'surface_model_ucsb.hdr']:
+            copyfile(os.path.abspath(os.path.join(isofit_path, 'data', 'reflectance', file)),
+                     os.path.abspath(os.path.join(paths.data_directory, file)))
+        surface_model(config_path=config_path)
+
+    paths.stage_files()
 
     dayofyear = dt.timetuple().tm_yday
 
@@ -132,23 +191,6 @@ def main(rawargs=None):
         dayofyear += 1
 
     gmtime = float(h_m_s[0] + h_m_s[1] / 60.)
-
-    # get wavelengths and fwhm
-    if args.wavelength_path:
-        chn, wl, fwhm = np.loadtxt(args.wavelength_path).T
-        del rdn_dataset
-    else:
-        wl = np.array(rdn_dataset.metadata.band_meta["wavelength"])
-        fwhm = np.array(rdn_dataset.metadata.band_meta["fwhm"])
-        del rdn_dataset
-
-    # Convert to microns if needed
-    if wl[0] > 100:
-        wl = wl / 1000.0
-        fwhm = fwhm / 1000.0
-
-    wl_data = np.concatenate([np.arange(len(wl))[:, np.newaxis], wl[:, np.newaxis], fwhm[:, np.newaxis]], axis=1)
-    np.savetxt(paths.wavelength_path, wl_data, delimiter=' ')
 
     mean_latitude, mean_longitude, mean_elevation_km, elevation_lut_grid = get_metadata_from_loc(
         loc_file=paths.loc_working_path, lut_params=lut_params)

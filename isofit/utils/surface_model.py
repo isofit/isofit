@@ -27,8 +27,7 @@ import os
 from isofit.core.common import expand_path, json_load_ascii, envi_header
 
 
-def surface_model(config_path: str, wavelength_path: str = None, 
-        output_path: str = None) -> None:
+def surface_model(config_path: str, wavelength_path: str = None, output_path: str = None) -> None:
     """The surface model tool contains everything you need to build basic
     multicomponent (i.e. colleciton of Gaussian) surface priors for the
     multicomponent surface model.
