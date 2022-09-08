@@ -24,8 +24,21 @@ from sklearn.cluster import KMeans
 from spectral.io import envi
 import os
 
-from isofit.core.common import expand_path, json_load_ascii, envi_header
+from isofit.core.common import expand_path, json_load_ascii, envi_header, svd_inv
 
+
+def next_diag_val(C: np.ndarray, starting_index, direction):
+
+    if direction == 1:
+        for i in range(starting_index, C.shape[0]):
+            if np.isnan(C[i, i]) == False:
+                return C[i,i]
+    if direction == -1:
+        for i in range(starting_index, -1, -1):
+            if np.isnan(C[i, i]) == False:
+                return C[i,i]
+
+    return None
 
 def surface_model(config_path: str, wavelength_path: str = None, 
         output_path: str = None, seed=13) -> None:
@@ -196,11 +209,11 @@ def surface_model(config_path: str, wavelength_path: str = None,
         if len(attributes)>0:
             attributes = attributes[use,:]
 
-        # Accumulate total list of window indices
-        window_idx = -np.ones((nchan), dtype=int)
-        for wi, win in enumerate(windows):
-            active_wl = np.logical_and(wl >= win['interval'][0], wl < win['interval'][1])
-            window_idx[active_wl] = wi
+        ## Accumulate total list of window indices
+        #window_idx = -np.ones((nchan), dtype=int)
+        #for wi, win in enumerate(windows):
+        #    active_wl = np.logical_and(wl >= win['interval'][0], wl < win['interval'][1])
+        #    window_idx[active_wl] = wi
 
         # Two step model generation.  First step is k-means clustering.
         # This is more "stable" than Expectation Maximization with an 
@@ -213,46 +226,133 @@ def surface_model(config_path: str, wavelength_path: str = None,
         if len(attributes)>0:
             spectra_attr = np.concatenate((spectra,attributes), axis=1)
 
-        # Now fit the full covariance for each component
+        # now fit the full covariance for each component
         for ci in range(ncomp):
+            print(ci, source_config['input_spectrum_files'])
 
             m = np.mean(spectra[Z == ci, :], axis=0)
             C = np.cov(spectra[Z == ci, :], rowvar=False)
+            C_base = C.copy()
+            
             if len(attributes) > 0:
                 m_attr = np.mean(spectra_attr[Z == ci, :], axis=0)
                 C_attr = np.cov(spectra_attr[Z == ci, :], rowvar=False)
 
-            for i in range(nchan):
-                window = windows[window_idx[i]]
+            #for i in range(nchan):
+            for window in windows:
+                window_idx = np.where(np.logical_and(wl >= window['interval'][0], wl < window['interval'][1]))[0]
+                if len(window_idx) == 0:
+                    continue
+                window_range = slice(window_idx[0],window_idx[-1]+1)
+
+                # To minimize bias, leave the channels independent
+                # and uncorrelated
+                if window['correlation'] == 'decorrelated':
+                    c_diag = (C[window_range, window_range] + float(window['regularizer']) )* np.eye(len(window_idx)) 
+                    C[window_range,:] = 0
+                    C[:,window_range] = 0
+                    C[window_range, window_range] = c_diag
+
+            for window in windows:
+                window_idx = np.where(np.logical_and(wl >= window['interval'][0], wl < window['interval'][1]))[0]
+                if len(window_idx) == 0:
+                    continue
+                window_range = slice(window_idx[0],window_idx[-1]+1)
 
                 # Each spectral interval, or window, is constructed
                 # using one of several rules.  We can draw the covariance
                 # directly from the data...
-                if window['correlation'] == 'EM':
-                    C[i, i] = C[i, i] + float(window['regularizer'])
+                if window['correlation'] in ['EM', 'EM-gauss']:
+                    cdiag = (C_base[window_range,window_range] + np.eye(len(window_idx)) * float(window['regularizer'])).copy()
+                    if 'isolated' in list(window.keys()) and window['isolated'] == 1:
+                        C[window_range,:] = 0
+                        C[:,window_range] = 0
+                    C[window_range, window_range] = cdiag
 
-                # Alternatively, we can use a band diagonal form,
-                # a Gaussian process that promotes local smoothness.
+                window_idx = np.where(np.logical_and(wl >= window['interval'][0], wl < window['interval'][1]))[0]
+                if len(window_idx) == 0:
+                    continue
+                window_range = slice(window_idx[0],window_idx[-1]+1)
+                if window['correlation'] == 'EM-gauss':
+
+                    interval_steps = int(round(window['smoothing_interval'] / ((wl[window_idx[-1]] - wl[window_idx[1]]) / len(window_idx)) ))
+                    mu = 0
+                    if 'sigma' in window.keys():
+                        sigma = window['sigma']
+                    else:
+                        sigma = 1
+                    gaussian_reg = np.exp(-( (np.linspace(-1,1,interval_steps*2)-mu)**2 / ( 2.0 * sigma**2 ) ) ) 
+                    x, y = np.meshgrid(np.linspace(-1,1,interval_steps*2), np.linspace(-1,1,interval_steps*2))
+                    d = np.sqrt(x*x+y*y)
+                    gaussian_reg_2d = np.exp(-( (d-mu)**2 / ( 2.0 * sigma**2 ) ) ) 
+
+
+                    outer_left = max(0, window_idx[0] - interval_steps)
+                    inner_left = window_idx[0]
+
+                    outer_right = min(C.shape[1], interval_steps + window_idx[-1])
+                    inner_right = window_idx[-1]
+
+                    if window_idx[0] - interval_steps < 0:
+                        bottom_gauss_idx = interval_steps - window_idx[0]
+                    else:
+                        bottom_gauss_idx = 0
+                    if window_idx[-1] + interval_steps >= len(wl):
+                        top_gauss_idx = len(wl) - (window_idx[-1] + interval_steps)
+                    else:
+                        top_gauss_idx = len(gaussian_reg) 
+
+
+                    # Outer edges
+                    C[outer_left:inner_left,window_range] = np.maximum(C[outer_left:inner_left,window_range], C[inner_left, window_range][np.newaxis,:] * gaussian_reg[bottom_gauss_idx:interval_steps, np.newaxis])
+                    C[window_range,outer_left:inner_left] = np.maximum(C[window_range,outer_left:inner_left], C[window_range, inner_left][:,np.newaxis] * gaussian_reg[np.newaxis, bottom_gauss_idx:interval_steps])
+
+                    C[inner_right:outer_right,window_range] = np.maximum(C[inner_right:outer_right,window_range], C[inner_right, window_range][np.newaxis,:] * gaussian_reg[interval_steps:top_gauss_idx, np.newaxis])
+                    C[window_range,inner_right:outer_right] = np.maximum(C[window_range,inner_right:outer_right], C[window_range, inner_right][:,np.newaxis] * gaussian_reg[np.newaxis, interval_steps:top_gauss_idx])
+
+                    # Outer corners
+                    C[outer_left:inner_left,outer_left:inner_left] = np.maximum(C[outer_left:inner_left,outer_left:inner_left], gaussian_reg_2d[bottom_gauss_idx:interval_steps, bottom_gauss_idx:interval_steps] * C[inner_left,inner_left])
+                    C[outer_left:inner_left,inner_right:outer_right] = np.maximum(C[outer_left:inner_left,inner_right:outer_right],gaussian_reg_2d[bottom_gauss_idx:interval_steps, interval_steps:top_gauss_idx] * C[inner_left,inner_right])
+
+                    C[inner_right:outer_right,outer_left:inner_left] = np.maximum(C[inner_right:outer_right,outer_left:inner_left],gaussian_reg_2d[interval_steps:top_gauss_idx, bottom_gauss_idx:interval_steps] * C[inner_right,inner_left])
+                    C[inner_right:outer_right,inner_right:outer_right] = np.maximum(C[inner_right:outer_right,inner_right:outer_right],gaussian_reg_2d[interval_steps:top_gauss_idx, interval_steps:top_gauss_idx] * C[inner_right,inner_right])
+
+
+                    # Handle diagonals
+                    outer_left_m1 = max(outer_left-1,0)
+                    lower_C_diag = C[outer_left_m1, outer_left_m1]
+                    if np.isnan(lower_C_diag) == False:
+                        f = scipy.interpolate.interp1d([outer_left_m1, inner_left], [lower_C_diag, C[inner_left, inner_left]])
+                        C[range(outer_left,inner_left),range(outer_left,inner_left)] = f(np.arange(outer_left, inner_left)) 
+                        C[range(outer_left,inner_left),range(outer_left,inner_left)] = C[outer_left_m1, outer_left_m1]
+
+                    outer_right_p1 = min(outer_right+1, C.shape[1]-1)
+                    upper_C_diag = C[outer_right_p1, outer_right_p1]
+                    if np.isnan(upper_C_diag) == False:
+                        f = scipy.interpolate.interp1d([inner_right, outer_right_p1], [C[inner_right, inner_right], upper_C_diag])
+                        C[range(inner_right,outer_right),range(inner_right,outer_right)] = f(np.arange(inner_right, outer_right)) 
+                        C[range(inner_right,outer_right),range(inner_right,outer_right)] = C[outer_right_p1, outer_right_p1]
+
+
                 elif window['correlation'] == 'GP':
-                    width = float(window['gp_width'])
-                    magnitude = float(window['gp_magnitude'])
-                    kernel = scipy.stats.norm.pdf((wl-wl[i])/width)
-                    kernel = kernel/kernel.sum() * magnitude
-                    C[i, :] = kernel
-                    C[:, i] = kernel
-                    C[i, i] = C[i, i] + float(window['regularizer'])
+                    for i in window_idx:
+                        # Alternatively, we can use a band diagonal form,
+                        # a Gaussian process that promotes local smoothness.
+                        width = float(window['gp_width'])
+                        magnitude = float(window['gp_magnitude'])
+                        kernel = scipy.stats.norm.pdf((wl-wl[i])/width)
+                        kernel = kernel/kernel.sum() * magnitude
+                        C[i, :] = kernel
+                        C[:, i] = kernel
+                        C[i, i] = C[i, i] + float(window['regularizer'])
 
-                # To minimize bias, leave the channels independent
-                # and uncorrelated
-                elif window['correlation'] == 'decorrelated':
-                    ci = C[i, i]
-                    C[:, i] = 0
-                    C[i, :] = 0
-                    C[i, i] = ci + float(window['regularizer'])
+                elif window['correlation'] in ['decorrelated', 'EM']:
+                    # alread handled
+                    continue
 
                 else:
-                    raise ValueError(
-                        'I do not recognize the method ' + window['correlation'])
+                      raise ValueError(
+                          'I do not recognize the method ' + window['correlation'])
 
             # Normalize the component spectrum if desired
             if normalize == 'Euclidean':
@@ -266,6 +366,12 @@ def surface_model(config_path: str, wavelength_path: str = None,
                     'Unrecognized normalization: %s\n' % normalize)
             m = m / z
             C = C / (z ** 2)
+
+            try:
+                Cinv = svd_inv(C)
+            except:
+                errstr = f"C from group {si, ci} is not invertible."
+                raise AttributeError(errstr)
 
             model['means'].append(m)
             model['covs'].append(C)
