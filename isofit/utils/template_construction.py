@@ -47,6 +47,8 @@ class Pathnames:
 
         self.lut_modtran_directory = os.path.abspath(os.path.join(self.working_directory, 'lut_full', ''))
 
+        self.surface_lut_paths = {}
+
         # set up some sub-directories
         self.lut_h2o_directory = os.path.abspath(os.path.join(self.working_directory, 'lut_h2o', ''))
         self.config_directory = os.path.abspath(os.path.join(self.working_directory, 'config', ''))
@@ -152,14 +154,22 @@ class Pathnames:
 
         self.ray_temp_dir = opt["ray_temp_dir"]
 
-    def make_directories(self):
+    def make_directories(self, surface_types: list):
         """
         Build required subdirectories inside working_directory.
+
+        Args:
+            surface_types: list of optional surface types
         """
         for dpath in [self.working_directory, self.lut_h2o_directory, self.lut_modtran_directory, self.config_directory,
                       self.data_directory, self.input_data_directory, self.output_directory]:
             if not os.path.exists(dpath):
                 os.mkdir(dpath)
+
+        # build directories for storing surface-dependent LUTs
+        for surface_type in surface_types:
+            if not os.path.exists(self.surface_lut_paths[surface_type]):
+                os.mkdir(self.surface_lut_paths[surface_type])
 
     def stage_files(self):
         """
@@ -194,6 +204,9 @@ class Pathnames:
 
         self.surface_config_paths[surface_type] = os.path.abspath(
             os.path.join(self.config_directory, f'{self.fid}_{surface_type}_isofit.json'))
+
+        self.surface_lut_paths[surface_type] = os.path.abspath(os.path.join(self.lut_modtran_directory,
+                                                                            f'{surface_type}'))
 
 
 class LUTConfig:
@@ -540,7 +553,8 @@ def build_presolve_config(opt: dict, gip: dict, paths: Pathnames, h2o_lut_grid: 
                              "ray_temp_dir": paths.ray_temp_dir,
                              'inversion': {
                                  'windows': gip["options"]["inversion_windows"]},
-                             "n_cores": opt["n_cores"]}
+                             "n_cores": opt["n_cores"],
+                             "debug_mode": opt["debug_mode"]}
                          }
 
     if paths.input_channelized_uncertainty_path is not None:
@@ -613,7 +627,7 @@ def build_main_config(opt: dict, gip: dict, tsip: dict, paths: Pathnames, lut_pa
         "radiative_transfer_engines": {
             "vswir": {
                 "engine_name": engine_name,
-                "lut_path": paths.lut_modtran_directory,
+                "lut_path": paths.surface_lut_paths[surface_type],
                 "aerosol_template_file": paths.aerosol_tpl_path,
                 "template_file": paths.modtran_template_path
             }
@@ -650,7 +664,7 @@ def build_main_config(opt: dict, gip: dict, tsip: dict, paths: Pathnames, lut_pa
         radiative_transfer_config['radiative_transfer_engines']['vswir']['emulator_aux_file'] = os.path.abspath(
             os.path.splitext(gip["filepaths"]["emulator_base"])[0] + '_aux.npz')
         radiative_transfer_config['radiative_transfer_engines']['vswir']['interpolator_base_path'] = os.path.abspath(
-            os.path.join(paths.lut_modtran_directory, os.path.basename(os.path.splitext(
+            os.path.join(paths.surface_lut_paths[surface_type], os.path.basename(os.path.splitext(
                 gip["filepaths"]["emulator_base"])[0]) + '_vi'))
         radiative_transfer_config['radiative_transfer_engines']['vswir'][
             'earth_sun_distance_file'] = paths.earth_sun_distance_path
@@ -705,7 +719,8 @@ def build_main_config(opt: dict, gip: dict, tsip: dict, paths: Pathnames, lut_pa
                              "implementation": {
                                  "ray_temp_dir": paths.ray_temp_dir,
                                  "inversion": {"windows": gip["options"]["inversion_windows"]},
-                                 "n_cores": opt["n_cores"]}
+                                 "n_cores": opt["n_cores"],
+                                 "debug_mode": opt["debug_mode"]}
                              }
 
     if opt["empirical_line"]:

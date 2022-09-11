@@ -158,8 +158,7 @@ class Isofit:
                 indices_to_run = [index_pairs[index_sets[l]:index_sets[l + 1], :]
                                   for l in range(len(index_sets) - 1)]
 
-            res = list(self.workers.map_unordered(lambda a, b: a.run_set_of_spectra.remote(b),
-                                              indices_to_run))
+            res = list(self.workers.map_unordered(lambda a, b: a.run_set_of_spectra.remote(b), indices_to_run))
         else:
             self.workers.run_set_of_spectra(index_pairs)
 

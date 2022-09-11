@@ -121,11 +121,15 @@ def main(rawargs=None):
     # get path names
     paths = Pathnames(opt=opt, gip=gip, args=args, fid=fid)
 
+    # build subdirectories for surface-dependent in- and output files
+    surface_types = ['base']
+    paths.add_surface_subs_files(surface_type=surface_types[0])
     if len(tsip.items()) > 0:
         for st in tsip.keys():
+            surface_types.append(st)
             paths.add_surface_subs_files(surface_type=st)
 
-    paths.make_directories()
+    paths.make_directories(surface_types=surface_types)
 
     # get wavelengths and fwhm
     if args.wavelength_path:
@@ -242,12 +246,12 @@ def main(rawargs=None):
                         flag=-9999, n_cores=opt["n_cores"], loglevel=args.logging_level, logfile=args.log_file)
 
     # Run surface type classification
+    detected_surface_types = []
     if len(tsip.items()) > 0:
         surface_type_labels = define_surface_types(tsip=tsip, rdnfile=paths.rdn_subs_path, locfile=paths.loc_subs_path,
                                                    dt=dt, out_class_path=paths.class_subs_path, wl=wl, fwhm=fwhm)
         un_surface_type_labels = np.unique(surface_type_labels)
         un_surface_type_labels = un_surface_type_labels[un_surface_type_labels != -1].astype(int)
-        detected_surface_types = []
 
         for ustl in un_surface_type_labels:
             # ToDo: get surface type names from config
@@ -257,15 +261,14 @@ def main(rawargs=None):
         surface_types = envi.open(envi_header(paths.class_subs_path)).open_memmap(interleave='bip').copy()
 
         # Break up input files based on surface type
-        for _st, surface_type in enumerate(list(tsip.keys())):
-            if surface_type in detected_surface_types:
-                paths.add_surface_subs_files(surface_type=surface_type)
-                copy_file_subset(surface_types == _st + 1, [(paths.rdn_subs_path,
-                                                             paths.surface_subs_files[surface_type]['rdn']),
-                                                            (paths.loc_subs_path,
-                                                             paths.surface_subs_files[surface_type]['loc']),
-                                                            (paths.obs_subs_path,
-                                                             paths.surface_subs_files[surface_type]['obs'])])
+        for _st, surface_type in enumerate(detected_surface_types):
+            paths.add_surface_subs_files(surface_type=surface_type)
+            copy_file_subset(surface_types == _st, [(paths.rdn_subs_path,
+                                                     paths.surface_subs_files[surface_type]['rdn']),
+                                                    (paths.loc_subs_path,
+                                                     paths.surface_subs_files[surface_type]['loc']),
+                                                    (paths.obs_subs_path,
+                                                     paths.surface_subs_files[surface_type]['obs'])])
 
     if opt['presolve_wv']:
         # write modtran presolve template
@@ -323,10 +326,10 @@ def main(rawargs=None):
     logging.info(f'To-sensor zenith: {to_sensor_zenith_lut_grid}')
     logging.info(f'H2O Vapor: {h2o_lut_grid}')
 
-    surface_types = list(paths.surface_config_paths.keys())
-    surface_types.append(None)
+    if len(detected_surface_types) == 0:
+        detected_surface_types.append('base')
 
-    logging.info(f"Surface Types: {surface_types}")
+    logging.info(f"Surface Types: {detected_surface_types}")
     if not exists(paths.uncert_subs_path) or not exists(paths.rfl_subs_path):
         write_modtran_template(gip=gip, fid=paths.fid, altitude_km=mean_altitude_km, dayofyear=dayofyear,
                                latitude=mean_latitude, longitude=mean_longitude,
@@ -335,7 +338,7 @@ def main(rawargs=None):
                                output_file=paths.modtran_template_path)
 
         logging.info('Writing main configuration file.')
-        for st in surface_types:
+        for st in detected_surface_types:
             build_main_config(opt=opt, gip=gip, tsip=tsip, paths=paths, lut_params=lut_params,
                               h2o_lut_grid=h2o_lut_grid, elevation_lut_grid=elevation_lut_grid,
                               to_sensor_azimuth_lut_grid=to_sensor_azimuth_lut_grid,
@@ -345,13 +348,11 @@ def main(rawargs=None):
                               surface_type=st)
 
         # Run modtran retrieval
-        for _st, st in enumerate(surface_types):
-            if st is None and _st == 0:
+        for st in detected_surface_types:
+            if st == 'base' and len(detected_surface_types) == 1:
                 logging.info('Running ISOFIT with full LUT - Universal Surface')
                 retrieval_full = isofit.Isofit(config_file=paths.modtran_config_path, level='INFO',
                                                logfile=args.log_file)
-            elif st is None:
-                continue
             else:
                 if os.path.isfile(paths.surface_subs_files[st]['rdn']):
                     logging.info(f'Running ISOFIT with full LUT - Surface: {st}')
