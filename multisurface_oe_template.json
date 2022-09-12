@@ -2,7 +2,7 @@
     "general_options": {
         "sensor": "ang",
         "n_cores": 8,
-        "segmentation_size": 400,
+        "segmentation_size": 4000,
         "chunksize": 256,
         "n_pca": 5,
         "eps": 1e-6,
@@ -40,13 +40,13 @@
                 "H2OSTR": {
                     "lut_spacing": 0.25,
                     "lut_spacing_min": 0.03,
-                    "default_range": [1.5, 2.0],
+                    "default_range": [0.05, 5],
                     "min": 0.2
                 },
                 "AOT550": {
-                    "lut_spacing": 0.1,
+                    "lut_spacing": 0,
                     "lut_spacing_min": 0,
-                    "default_range": [0.01, 0.2]
+                    "default_range": [0.001, 0.5]
                 },
                 "GNDALT": {
                     "lut_spacing": 0.5,

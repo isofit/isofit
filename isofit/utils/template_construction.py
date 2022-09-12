@@ -166,7 +166,7 @@ class Pathnames:
             if not os.path.exists(dpath):
                 os.mkdir(dpath)
 
-        # build directories for storing surface-dependent LUTs
+        # build directories for storing surface-specific LUTs
         for surface_type in surface_types:
             if not os.path.exists(self.surface_lut_paths[surface_type]):
                 os.mkdir(self.surface_lut_paths[surface_type])
@@ -784,10 +784,8 @@ def build_main_config(opt: dict, gip: dict, tsip: dict, paths: Pathnames, lut_pa
             paths.rdn_factors_path
 
     # write modtran_template
-    if surface_type is None:
-        output_config_name = paths.modtran_config_path
-    else:
-        output_config_name = paths.surface_config_paths[surface_type]
+    output_config_name = paths.surface_config_paths[surface_type]
+
     with open(output_config_name, 'w') as fout:
         fout.write(json.dumps(isofit_config_modtran, cls=SerialEncoder, indent=4, sort_keys=True))
 

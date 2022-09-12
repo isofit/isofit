@@ -121,7 +121,7 @@ def main(rawargs=None):
     # get path names
     paths = Pathnames(opt=opt, gip=gip, args=args, fid=fid)
 
-    # build subdirectories for surface-dependent in- and output files
+    # build subdirectories for surface-specific in- and output files
     surface_types = ['base']
     paths.add_surface_subs_files(surface_type=surface_types[0])
     if len(tsip.items()) > 0:
@@ -351,7 +351,7 @@ def main(rawargs=None):
         for st in detected_surface_types:
             if st == 'base' and len(detected_surface_types) == 1:
                 logging.info('Running ISOFIT with full LUT - Universal Surface')
-                retrieval_full = isofit.Isofit(config_file=paths.modtran_config_path, level='INFO',
+                retrieval_full = isofit.Isofit(config_file=paths.surface_config_paths[st], level='INFO',
                                                logfile=args.log_file)
             else:
                 if os.path.isfile(paths.surface_subs_files[st]['rdn']):
@@ -370,7 +370,7 @@ def main(rawargs=None):
                 logging.info(cmd)
                 os.system(cmd)
 
-    if surface_types[0] is not None:
+    if len(detected_surface_types) > 1:
         reassemble_cube(matching_indices=surface_type_labels, paths=paths)
         stl_path = paths.class_subs_path
     else:
@@ -387,8 +387,9 @@ def main(rawargs=None):
                        reference_locations_file=paths.loc_subs_path, segmentation_file=paths.lbl_working_path,
                        input_radiance_file=paths.radiance_working_path, input_locations_file=paths.loc_working_path,
                        output_reflectance_file=paths.rfl_working_path,
-                       output_uncertainty_file=paths.uncert_working_path, isofit_config=paths.modtran_config_path,
-                       nneighbors=nneighbors, reference_class_file=stl_path)
+                       output_uncertainty_file=paths.uncert_working_path,
+                       isofit_config=paths.surface_config_paths['base'], nneighbors=nneighbors,
+                       reference_class_file=stl_path)
 
     logging.info('Done.')
 
