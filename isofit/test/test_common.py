@@ -1,6 +1,6 @@
 import numpy as np
 from isofit.core.common import eps, combos, get_absorption, expand_path, load_spectrum, load_wavelen, \
-    spectral_response_function, recursive_replace, expand_path_to_absolute
+    spectral_response_function, recursive_replace, expand_path_to_absolute, svd_inv_sqrt, svd_inv
 from io import StringIO
 import scipy
 import os
@@ -49,23 +49,24 @@ def test_load_spectrum():
     assert(wavelength_new[0] > 100)
 
 def test_svd_inv_sqrt():
-    # PSD
-    sample_array_3 = np.array([[27, 20], [20, 16]])
-    sample_matrix_3 = np.asmatrix(sample_array_3)
-    result_matrix_3, result_matrix_sq_3 = svd_inv_sqrt(sample_array_3)
-    assert(result_matrix_3.all() == scipy.linalg.inv(sample_matrix_3).all())
-    assert((result_matrix_sq_3 @ result_matrix_sq_3).all() == result_matrix_3.all())
+    sample_array_1 = np.array([[7, 0], [0, 1]])
+    result_matrix_1, result_matrix_sq_1 = svd_inv_sqrt(sample_array_1)
+    assert(result_matrix_1.all() == scipy.linalg.inv(sample_array_1).all())
+    assert((result_matrix_sq_1 @ result_matrix_sq_1).all() == scipy.linalg.inv(sample_array_1).all())
 
-    # PD
     sample_array_4 = np.array([[2, -1, 0], [-1, 2, -1], [0, -1, 2]])
-    sample_matrix_4 = np.asmatrix(sample_array_4)
     result_matrix_4, result_matrix_sq_4 = svd_inv_sqrt(sample_array_4)
-    assert((scipy.linalg.inv(sample_matrix_4)).all() == result_matrix_4.all())
-    assert((result_matrix_sq_4 @ result_matrix_sq_4).all() == result_matrix_4.all())
+    assert((scipy.linalg.inv(sample_array_4)).all() == result_matrix_4.all())
+    assert((result_matrix_sq_4 @ result_matrix_sq_4).all() == scipy.linalg.inv(sample_array_4).all())
 
 def test_svd_inv():
-    sample_array_3 = np.array([[27, 20], [20, 16]])
-    assert(svd_inv(sample_array_3).all() == svd_inv_sqrt(sample_array_3)[0].all())
+
+    """
+    Written to operate on matrices that are at least positive semi-definite. This is achieved by 
+    conditioning of the diagonal to make all eigenvalues greater than or equal to 0.
+    """
+    sample_array_1 = np.array([[7, 0], [0, 1]])
+    assert(svd_inv(sample_array_1).all() == svd_inv_sqrt(sample_array_1)[0].all())
     sample_array_4 = np.array([[2, -1, 0], [-1, 2, -1], [0, -1, 2]])
     assert(svd_inv(sample_array_4).all() == svd_inv_sqrt(sample_array_4)[0].all())
 
@@ -102,6 +103,8 @@ def main():
     test_recursive_replace()
     test_expand_to_absolute()
     test_spectral_response_function()
+    test_svd_inv_sqrt()
+    test_svd_inv()
 
     print('TESTS COMPLETE')
 

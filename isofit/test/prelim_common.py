@@ -54,6 +54,7 @@ file = StringIO('0 0.37686 0.00557 \n 1 0.38187 0.00558 \n 2 0.38688 0.00558')
 wl_modified, fwhm_modified = load_wavelen(file)
 #print(wl_modified)
 #print(fwhm_modified)
+
 assert(wl_modified.ndim == 1)
 assert(fwhm_modified.ndim == 1)
 assert(wl_modified[0] > 100)
@@ -479,39 +480,42 @@ sample_array = np.array([[13, -4], [-4, 3]])
 sample_matrix = np.asmatrix(sample_array)
 result_matrix, result_matrix_sq = svd_inv_sqrt(sample_array)
 assert(result_matrix.all() == scipy.linalg.inv(sample_matrix).all())
-assert((result_matrix_sq @ result_matrix_sq).all() == result_matrix.all())
+assert((result_matrix_sq @ result_matrix_sq).all() == scipy.linalg.inv(sample_matrix).all())
 
 sample_array_2 = np.array([[7, 0], [0, 1]])
 sample_matrix_2 = np.asmatrix(sample_array_2)
 result_matrix_2, result_matrix_sq_2 = svd_inv_sqrt(sample_array_2)
 assert(result_matrix_2.all() == scipy.linalg.inv(sample_matrix_2).all())
-assert((result_matrix_sq_2 @ result_matrix_sq_2).all() == result_matrix_2.all())
+assert((result_matrix_sq_2 @ result_matrix_sq_2).all() == scipy.linalg.inv(sample_matrix_2).all())
+
 
 ###### SOME ISSUE HERE
 sample_array_3 = np.array([[4, 7], [2, 6]])
+"""
 sample_matrix_3 = np.asmatrix(sample_array_3)
-#print(sample_matrix_3)
+print('starting matrix:', sample_array_3)
 result_matrix_3, result_matrix_sq_3 = svd_inv_sqrt(sample_array_3)
 inverse = scipy.linalg.inv(sample_matrix_3)
 assert(result_matrix_3.all() == inverse.all())
-#print(scipy.linalg.inv(sample_matrix_3))
-#print(result_matrix_3)
+print('python way:', scipy.linalg.inv(sample_matrix_3))
+print('python way:', inverse)
+print('JPL way:', result_matrix_3)
 assert((result_matrix_sq_3 @ result_matrix_sq_3).all() == result_matrix_3.all())
-
+"""
 
 # POSITIVE DEFINITE
 sample_array_4 = np.array([[2, -1, 0], [-1, 2, -1], [0, -1, 2]])
 sample_matrix_4 = np.asmatrix(sample_array_4)
 result_matrix_4, result_matrix_sq_4 = svd_inv_sqrt(sample_array_4)
 assert((scipy.linalg.inv(sample_matrix_4)).all() == result_matrix_4.all())
-assert((result_matrix_sq_4 @ result_matrix_sq_4).all() == result_matrix_4.all())
+assert((result_matrix_sq_4 @ result_matrix_sq_4).all() == scipy.linalg.inv(sample_matrix_4).all())
 
 
 sample_array_5 = np.array([[25, 15, -5], [15, 18, 0], [-5, 0, 11]])
 sample_matrix_5 = np.asmatrix(sample_array_5)
 result_matrix_5, result_matrix_sq_5 = svd_inv_sqrt(sample_array_5)
 assert((scipy.linalg.inv(sample_matrix_5)).all() == result_matrix_5.all())
-assert((result_matrix_sq_5 @ result_matrix_sq_5).all() == result_matrix_5.all())
+assert((result_matrix_sq_5 @ result_matrix_sq_5).all() == scipy.linalg.inv(sample_matrix_5).all())
 
 
 def svd_inv(C: np.array, hashtable: OrderedDict = None, max_hash_size: int = None):
@@ -628,15 +632,15 @@ x = np.array([2, 3])
 assert((resample_spectrum(x, wl, wl2, fwhm2)).all() == (np.array([2.22607173, 2.33090711])).all())
 
 xnew = np.array([2, np.nan])
-print('xnew:', xnew)
+#print('xnew:', xnew)
 good = np.isfinite(xnew)
-print('type (good):', type(good))
+#print('type (good):', type(good))
 for i, xi in enumerate(xnew):
     if not good[i]:
         nearest_good_ind = np.argmin(abs(wl2[good]-wl2[i]))
-        print('good:', good)
-        print('wl2:', wl2)
-        print('wl2[good]:', wl2[good])
+        #print('good:', good)
+        #print('wl2:', wl2)
+        #print('wl2[good]:', wl2[good])
         xnew[i] = xnew[nearest_good_ind]
 
 #print(xnew) 
@@ -655,8 +659,6 @@ for i, xi in enumerate(xnew):
 #myArray = np.array([[[2, 3]]])
 #print(myArray.shape)
 
-for i in [2, 3, 7]:
-    print(i)
 
 
 
