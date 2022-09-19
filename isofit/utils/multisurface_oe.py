@@ -248,8 +248,8 @@ def main(rawargs=None):
     # Run surface type classification
     detected_surface_types = []
     if len(tsip.items()) > 0:
-        surface_type_labels = define_surface_types(tsip=tsip, rdnfile=paths.rdn_subs_path, locfile=paths.loc_subs_path,
-                                                   dt=dt, out_class_path=paths.class_subs_path, wl=wl, fwhm=fwhm)
+        surface_type_labels = define_surface_types(tsip=tsip, rdnfile=paths.rdn_subs_path, obsfile=paths.obs_subs_path,
+                                                   out_class_path=paths.class_subs_path, wl=wl, fwhm=fwhm)
         un_surface_type_labels = np.unique(surface_type_labels)
         un_surface_type_labels = un_surface_type_labels[un_surface_type_labels != -1].astype(int)
 
@@ -269,6 +269,8 @@ def main(rawargs=None):
                                                      paths.surface_subs_files[surface_type]['loc']),
                                                     (paths.obs_subs_path,
                                                      paths.surface_subs_files[surface_type]['obs'])])
+    else:
+        surface_type_labels = None
 
     if opt['presolve_wv']:
         # write modtran presolve template
@@ -379,9 +381,13 @@ def main(rawargs=None):
     if not exists(paths.rfl_working_path) or not exists(paths.uncert_working_path):
         # Empirical line
         logging.info('Empirical line inference')
-        # Determine the number of neighbors to use. Provides backwards stability and works
-        # well with defaults, but is arbitrary
-        nneighbors = int(round(3950 / 9 - 35 / 36 * opt["segmentation_size"]))
+        if not opt['nneighbors']:
+            nneighbors = int(round(3950 / 9 - 35 / 36 * opt["segmentation_size"]))
+            if opt["segmentation_size"] > 441:
+                nneighbors = 10
+        else:
+            nneighbors = opt['nneighbors']
+
         empirical_line(reference_radiance_file=paths.rdn_subs_path, reference_reflectance_file=paths.rfl_subs_path,
                        reference_uncertainty_file=paths.uncert_subs_path,
                        reference_locations_file=paths.loc_subs_path, segmentation_file=paths.lbl_working_path,

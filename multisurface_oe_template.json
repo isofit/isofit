@@ -2,7 +2,8 @@
     "general_options": {
         "sensor": "ang",
         "n_cores": 8,
-        "segmentation_size": 4000,
+        "segmentation_size": 400,
+        "nneighbors": 15,
         "chunksize": 256,
         "n_pca": 5,
         "eps": 1e-6,

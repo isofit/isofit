@@ -17,10 +17,10 @@ from sys import platform
 from spectral.io import envi
 from typing import List
 from osgeo import gdal
+import utm
 
 from isofit.core import isofit
 from isofit.core.common import resample_spectrum
-from isofit.core.sunposition import sunpos
 
 
 class Pathnames:
@@ -166,7 +166,7 @@ class Pathnames:
             if not os.path.exists(dpath):
                 os.mkdir(dpath)
 
-        # build directories for storing surface-specific LUTs
+        # build directories for storing surface-specific LUTs and interpolators
         for surface_type in surface_types:
             if not os.path.exists(self.surface_lut_paths[surface_type]):
                 os.mkdir(self.surface_lut_paths[surface_type])
@@ -395,13 +395,13 @@ def get_angular_grid(angle_data_input: np.array, spacing: float, min_spacing: fl
 
         if np.sum(ca_quadrants) < np.sum(quadrants):
             logging.warning(f'GMM angles {central_angles} span {np.sum(ca_quadrants)} quadrants, '
-                            f'while data spans {np.sum(ca_quadrants)} quadrants')
+                            f'while data spans {np.sum(quadrants)} quadrants')
 
         return central_angles
 
 
 def build_surface_config(flight_id: str, output_path: str, wvl_file: str):
-    """ Write a surface config file, using the specified pathnames and all given info
+    """ Write a surface config file, using the specified pathnames and all given info.
 
         Args:
             flight_id: string of instrument specific flight identification number
@@ -1015,38 +1015,48 @@ def calc_modtran_max_water(paths: Pathnames) -> float:
     return max_water
 
 
-def define_surface_types(tsip: dict, rdnfile: str, locfile: str, dt: datetime, out_class_path: str, wl: np.array,
-                         fwhm: np.array):
+def define_surface_types(tsip: dict, rdnfile: str, obsfile: str, out_class_path: str, wl: np.array, fwhm: np.array):
+
+    if np.all(wl < 10):
+        wl = wl * 1000
+        fwhm = fwhm * 1000
+
     irr_file = os.path.join(os.path.dirname(isofit.__file__), '..', '..', 'data', 'kurudz_0.1nm.dat')
     irr_wl, irr = np.loadtxt(irr_file, comments='#').T
     irr = irr / 10  # convert to uW cm-2 sr-1 nm-1
-    if np.all(wl < 10):
-        irr_resamp = resample_spectrum(irr, irr_wl, wl * 1000, fwhm * 1000)
-    else:
-        irr_resamp = resample_spectrum(irr, irr_wl, wl * 1000, fwhm * 1000)
+    irr_resamp = resample_spectrum(irr, irr_wl, wl, fwhm)
     irr_resamp = np.array(irr_resamp, dtype=np.float32)
     irr = irr_resamp
 
-    # determine glint bands having negligible water reflectance
-    b450 = np.argmin(abs(wl - tsip["cloud"]["toa_threshold_wavelengths"][0]))
-    b1000 = np.argmin(abs(wl - tsip["water"]["toa_threshold_wavelengths"][0]))
-    b1250 = np.argmin(abs(wl - tsip["cloud"]["toa_threshold_wavelengths"][1]))
-    b1380 = np.argmin(abs(wl - tsip["water"]["toa_threshold_wavelengths"][1]))
-    b1650 = np.argmin(abs(wl - tsip["cloud"]["toa_threshold_wavelengths"][2]))
-
     rdn_ds = envi.open(envi_header(rdnfile)).open_memmap(interleave='bip')
-    loc_src = envi.open(envi_header(locfile))
-    loc_ds = loc_src.open_memmap(interleave='bip')
+    obs_src = envi.open(envi_header(obsfile))
+    obs_ds = obs_src.open_memmap(interleave='bip')
+
+    # determine glint bands having negligible water reflectance
+    try:
+        b1000 = np.argmin(abs(wl - tsip["water"]["toa_threshold_wavelengths"][0]))
+        b1380 = np.argmin(abs(wl - tsip["water"]["toa_threshold_wavelengths"][1]))
+    except KeyError:
+        b1000 = np.argmin(abs(wl - 1000))
+        b1380 = np.argmin(abs(wl - 1380))
+
+    # determine cloud bands having high TOA reflectance
+    try:
+        b450 = np.argmin(abs(wl - tsip["cloud"]["toa_threshold_wavelengths"][0]))
+        b1250 = np.argmin(abs(wl - tsip["cloud"]["toa_threshold_wavelengths"][1]))
+        b1650 = np.argmin(abs(wl - tsip["cloud"]["toa_threshold_wavelengths"][2]))
+    except KeyError:
+        b450 = np.argmin(abs(wl - 450))
+        b1250 = np.argmin(abs(wl - 1250))
+        b1650 = np.argmin(abs(wl - 1650))
 
     classes = np.zeros(rdn_ds.shape[0])
+
     for line in range(len(classes)):
-        loc = np.squeeze(loc_ds[line, ...].copy().astype(np.float32))
+        obs = np.squeeze(obs_ds[line, ...].copy().astype(np.float32))
         rdn = np.squeeze(rdn_ds[line, ...].copy().astype(np.float32))
 
-        elevation_m = loc[2]
-        latitude = loc[1]
-        longitude = loc[0]
-        az, zen, ra, dec, h = sunpos(dt, latitude, longitude, elevation_m, radians=True).T
+        zen = np.cos(np.deg2rad(obs[4]))
 
         rho = (((rdn * np.pi) / irr.T).T / np.cos(zen)).T
 
@@ -1067,7 +1077,7 @@ def define_surface_types(tsip: dict, rdnfile: str, locfile: str, dt: datetime, o
         if total > 2 or rho[b1380] > tsip["water"]["toa_threshold_values"][1]:
             classes[line] = 1
 
-    header = loc_src.metadata.copy()
+    header = obs_src.metadata.copy()
     header['bands'] = 1
     if 'band names' in header.keys():
         header['band names'] = "Class"
@@ -1229,9 +1239,19 @@ def get_metadata_from_loc(loc_file: str, lut_params: LUTConfig, trim_lines: int 
         valid[:trim_lines, :] = False
         valid[-trim_lines:, :] = False
 
+    if 'Easting (m)' or 'Northing (m)' in loc_dataset.GetMetadata().values():
+        loc_hdr = envi.open(loc_file + '.hdr')
+        zone = [int(s) for s in loc_hdr.metadata["description"].split() if s.isdigit()][0]
+        hemisphere = [s for s in loc_hdr.metadata["description"].split() if s in ["North", "South"]][0]
+        lat, lon = utm.to_latlon(loc_data[0, valid].flatten(), loc_data[1, valid].flatten(), zone_number=zone,
+                                 northern=hemisphere == "North")
+    else:
+        lat = loc_data[1, valid].flatten()
+        lon = loc_data[0, valid].flatten()
+
     # Grab sensor position and orientation information
-    mean_latitude = get_angular_grid(loc_data[1, valid].flatten(), -1, 0)
-    mean_longitude = get_angular_grid(-1 * loc_data[0, valid].flatten(), -1, 0)
+    mean_latitude = get_angular_grid(lat, -1, 0)
+    mean_longitude = get_angular_grid(-1 * lon, -1, 0)
 
     mean_elevation_km = np.mean(loc_data[2, valid]) / 1000.0
 
