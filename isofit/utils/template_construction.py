@@ -400,70 +400,23 @@ def get_angular_grid(angle_data_input: np.array, spacing: float, min_spacing: fl
         return central_angles
 
 
-def build_surface_config(flight_id: str, output_path: str, wvl_file: str):
+def build_surface_config(macro_config: dict, flight_id: str, output_path: str, wvl_file: str):
     """ Write a surface config file, using the specified pathnames and all given info.
 
         Args:
+            macro_config: dictionary of macro options for surface model
             flight_id: string of instrument specific flight identification number
             output_path: output directory for surface config file
             wvl_file: directory of instrument wavelength file
-
     """
-    surface_path = os.path.abspath(os.path.join(output_path, 'surface.mat'))
+    if not macro_config["output_model_file"]:
+        surface_path = os.path.abspath(os.path.join(output_path, 'surface.mat'))
+        macro_config["output_model_file"] = surface_path
 
-    surface_config = {
-        "output_model_file": surface_path,
-        "wavelength_file": wvl_file,
-        "normalize": "Euclidean",
-        "reference_windows": [[400, 1300], [1450, 1700], [2100, 2450]],
-        "sources":
-            [
-                {
-                    "input_spectrum_files":
-                        [
-                            "surface_model_ucsb"
-                        ],
-                    "n_components": 8,
-                    "windows": [
-                        {
-                            "interval": [300, 400],
-                            "regularizer": 1e-4,
-                            "correlation": "EM"
-                        },
-                        {
-                            "interval": [400, 1300],
-                            "regularizer": 1e-6,
-                            "correlation": "EM"
-                        },
-                        {
-                            "interval": [1300, 1450],
-                            "regularizer": 1e-4,
-                            "correlation": "EM"
-                        },
-                        {
-                            "interval": [1450, 1700],
-                            "regularizer": 1e-6,
-                            "correlation": "EM"
-                        },
-                        {
-                            "interval": [1700, 2100],
-                            "regularizer": 1e-4,
-                            "correlation": "EM"
-                        },
-                        {
-                            "interval": [2100, 2450],
-                            "regularizer": 1e-6,
-                            "correlation": "EM"
-                        },
-                        {
-                            "interval": [2450, 2550],
-                            "regularizer": 1e-4,
-                            "correlation": "EM"
-                        }
-                                ]
-                }
-            ]
-    }
+    if not macro_config["wavelength_file"]:
+        macro_config["wavelength_file"] = wvl_file
+
+    surface_config = macro_config
 
     output_config_name = os.path.join(output_path, flight_id + '_surface.json')
 

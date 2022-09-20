@@ -65,6 +65,7 @@ def main(rawargs=None):
     opt = config['general_options']
     gip = config['processors']['general_inversion_parameters']
     tsip = config['processors']['type_specific_inversion_parameters']
+    surface_macro_config = config["surface"]
 
     # check if name of sensor is given and valid
     if opt["sensor"] not in ['ang', 'avcl', 'neon', 'prism', 'emit', 'hyp']:
@@ -159,17 +160,13 @@ def main(rawargs=None):
     # get surface model, rebuild if needed
     if gip["filepaths"]["surface_path"]:
         pass
-    elif os.getenv('ISOFIT_SURFACE_MODEL'):
-        pass
     else:
         logging.info('No surface model defined. Build new one.')
-        build_surface_config(flight_id=fid, output_path=paths.data_directory, wvl_file=paths.wavelength_path)
+        build_surface_config(macro_config=surface_macro_config, flight_id=fid, output_path=paths.data_directory,
+                             wvl_file=paths.wavelength_path)
         config_path = os.path.join(paths.data_directory, fid + '_surface.json')
-        if os.getenv('ISOFIT_DIR'):
-            isofit_path = os.getenv('ISOFIT_DIR')
-        else:
-            # isofit file should live at isofit/isofit/core/isofit.py
-            isofit_path = os.path.dirname(os.path.dirname(os.path.dirname(isofit.__file__)))
+        # isofit file should live at isofit/isofit/core/isofit.py
+        isofit_path = os.path.dirname(os.path.dirname(os.path.dirname(isofit.__file__)))
         for file in ['surface_model_ucsb', 'surface_model_ucsb.hdr']:
             copyfile(os.path.abspath(os.path.join(isofit_path, 'data', 'reflectance', file)),
                      os.path.abspath(os.path.join(paths.data_directory, file)))
