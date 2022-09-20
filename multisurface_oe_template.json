@@ -126,6 +126,50 @@
                             "correlation": "EM"
                         }
                                 ]
+                },
+                {
+                    "input_spectrum_files":
+                        [
+                            "ocean_spectra_rev2"
+                        ],
+                    "n_components": 8,
+                    "windows": [
+                        {
+                            "interval": [300, 400],
+                            "regularizer": 1e-4,
+                            "correlation": "decorrelated"
+                        },
+                        {
+                            "interval": [400, 1300],
+                            "regularizer": 1e-6,
+                            "correlation": "EM"
+                        },
+                        {
+                            "interval": [1300, 1450],
+                            "regularizer": 1e-4,
+                            "correlation": "decorrelated"
+                        },
+                        {
+                            "interval": [1450, 1700],
+                            "regularizer": 1e-6,
+                            "correlation": "decorrelated"
+                        },
+                        {
+                            "interval": [1700, 2100],
+                            "regularizer": 1e-4,
+                            "correlation": "decorrelated"
+                        },
+                        {
+                            "interval": [2100, 2450],
+                            "regularizer": 1e-6,
+                            "correlation": "decorrelated"
+                        },
+                        {
+                            "interval": [2450, 2550],
+                            "regularizer": 1e-4,
+                            "correlation": "decorrelated"
+                        }
+                                ]
                 }
             ]
     }

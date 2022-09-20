@@ -161,15 +161,16 @@ def main(rawargs=None):
     if gip["filepaths"]["surface_path"]:
         pass
     else:
-        logging.info('No surface model defined. Build new one.')
+        logging.info('No surface model defined. Build new one including each given "source" (i.e., spectral library).')
         build_surface_config(macro_config=surface_macro_config, flight_id=fid, output_path=paths.data_directory,
                              wvl_file=paths.wavelength_path)
         config_path = os.path.join(paths.data_directory, fid + '_surface.json')
         # isofit file should live at isofit/isofit/core/isofit.py
         isofit_path = os.path.dirname(os.path.dirname(os.path.dirname(isofit.__file__)))
-        for file in ['surface_model_ucsb', 'surface_model_ucsb.hdr']:
-            copyfile(os.path.abspath(os.path.join(isofit_path, 'data', 'reflectance', file)),
-                     os.path.abspath(os.path.join(paths.data_directory, file)))
+        for source in surface_macro_config["sources"]:
+            for file in [source["input_spectrum_files"][0], source["input_spectrum_files"][0] + '.hdr']:
+                copyfile(os.path.abspath(os.path.join(isofit_path, 'data', 'reflectance', file)),
+                         os.path.abspath(os.path.join(paths.data_directory, file)))
         surface_model(config_path=config_path)
 
     paths.stage_files()
