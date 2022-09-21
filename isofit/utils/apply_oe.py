@@ -183,18 +183,26 @@ def main(rawargs=None):
         dt = datetime.strptime(args.sensor[3:], '%Y%m%d')
     elif args.sensor == 'hyp':
         dt = datetime.strptime(paths.fid[10:17], '%Y%j')
+    else:
+        raise ValueError('Datetime object could not be obtained. Please check file name of input data.')
         
     dayofyear = dt.timetuple().tm_yday
 
     h_m_s, day_increment, mean_path_km, mean_to_sensor_azimuth, mean_to_sensor_zenith, valid, \
     to_sensor_azimuth_lut_grid, to_sensor_zenith_lut_grid = get_metadata_from_obs(paths.obs_working_path, lut_params)
 
+    # overwrite the time in case original obs has an error in that band
+    if h_m_s[0] != dt.hour and h_m_s[0] >= 24:
+        h_m_s[0] = dt.hour
+        logging.info("UTC hour did not match start time minute. Adjusting to that value.")
+    if h_m_s[1] != dt.minute and h_m_s[1] >= 60:
+        h_m_s[1] = dt.minute
+        logging.info("UTC minute did not match start time minute. Adjusting to that value.")
+
     if day_increment:
         dayofyear += 1
 
-    # ToDo: assert for correct format of gmtime, otherwise, MODTRAN will fail to run the routine SUBSOL
-    # gmtime = float(h_m_s[0] + h_m_s[1] / 60.)
-    gmtime = 15.196389
+    gmtime = float(h_m_s[0] + h_m_s[1] / 60.)
 
     # get radiance file, wavelengths
     if args.wavelength_path:

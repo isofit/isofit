@@ -182,10 +182,10 @@ def main(rawargs=None):
                                                                                   lut_params=lut_params)
 
     # overwrite the time in case original obs has an error in that band
-    # ToDo: if h_m_s[0] exceeds 24 hours do ...
-    if h_m_s[0] != dt.hour:
+    if h_m_s[0] != dt.hour and h_m_s[0] >= 24:
         h_m_s[0] = dt.hour
-    if h_m_s[1] != dt.minute:
+        logging.info("UTC hour did not match start time minute. Adjusting to that value.")
+    if h_m_s[1] != dt.minute and h_m_s[1] >= 60:
         h_m_s[1] = dt.minute
         logging.info("UTC minute did not match start time minute. Adjusting to that value.")
 
