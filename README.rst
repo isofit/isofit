@@ -1,160 +1,65 @@
-Imaging Spectrometer Optimal FITting (ISOFIT) Overview
-======================================================
+=============================================
+ISOFIT - Imaging Spectrometer Optimal FITting
+=============================================
 
-.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.4614338.svg
-   :target: https://doi.org/10.5281/zenodo.4614338
-   
-.. image:: https://readthedocs.org/projects/pip/badge/?version=stable
-   :target: https://pip.pypa.io/en/stable/?badge=stable
+ISOFIT contains a set of routines and utilities for fitting surface, atmosphere and instrument models to imaging
+spectrometer data. It is written primarily in Python, with JSON format configuration files and some dependencies on
+widely-available numerical and scientific libraries such as scipy, numpy, and scikit-learn. It is designed for maximum
+flexibility, so that users can swap in and evaluate model components based on different radiative transfer models (RTMs)
+and various statistical descriptions of surface, instrument, and atmosphere. It can run on individual radiance spectra
+in text format, or imaging spectrometer data cubes.
 
-You can find documentation for isofit at our `readthedocs site <https://isofit.readthedocs.io/en/latest/index.html>`_.
-
-This repository has two main branches:
-
-`current-release <https://github.com/isofit/isofit/tree/current-release/>`__: Latest stable, versioned release and
-
-`master <https://github.com/isofit/isofit/>`__: The latest non-breaking changes, sometimes pre-version
-
-This codebase contains a set of routines and utilities for fitting surface,
-atmosphere and instrument models to imaging spectrometer data.  It is
-written primarily in Python, with JSON format configuration files and some
-dependencies on widely-available numerical and scientific libraries such as
-scipy, numpy, and scikit-learn.  It is designed for maximum flexibility, so
-that users can swap in and evaluate model components based on different
-radiative transfer models (RTMs) and various statistical descriptions of
-surface, instrument, and atmosphere.  It can run on individual radiance
-spectra in text format, or imaging spectrometer data cubes.
-
-The subdirectories contain:
-
-* bin/       - command line scripts for calling isofit and sunposition
-* data/      - shared data files
-* docs/      - documentation
-* examples/  - example runs packaged with input data and configuration files
-* isofit/    - the isofit Python module including utilities and tests
-* logs/      - Pytest logs
-* recipe/    - conda release recipe
-
-If you use ISOFIT in your research or production, we ask that you cite the 
-precursor publication:
-
-  Thompson, David R., Vijay Natraj, Robert O. Green, Mark C. Helmlinger, Bo-Cai Gao, and Michael L. Eastwood. "Optimal estimation for imaging spectrometer atmospheric correction." Remote Sensing of Environment 216 (2018): 355-373. 
+* Please check the documentation_ for installation and usage instructions and in depth information.
+* Information on how to **cite the ISOFIT Python package** can be found in the
+  `CITATION <https://github.com/unbohn/isofit_build_workflow/blob/master/CITATION>`__ file.
 
 
-Installation Instructions
--------------------------
+License
+-------
+Free software: Apache License v2
 
-From Github
-***********
+All images contained in any (sub-)directory of this repository are licensed under the CC0 license which can be found
+`here <https://creativecommons.org/publicdomain/zero/1.0/legalcode.txt>`__.
 
-The code repository, development branches, and user community are found on
-`GitHub <https://github.com/davidraythompson/isofit>`_. To install:
+Feature overview
+----------------
 
-1. Download or clone the git repo located at https://github.com/isofit/isofit, using either the `current-release <https://github.com/isofit/isofit/tree/current-release>`_ or `master (current-release + reviewed development) <https://github.com/isofit/isofit>`_ branch.
+* utilities for fitting surface, atmosphere and instrument models to imaging spectrometer data
+* a selection of radiative transfer models (RTMs) incl. MODTRAN, LibRadTran, and 6S
+* sRTMnet emulator for MODTRAN 6 by coupling a neural network with a surrogate RTM (6S v2.1)
+* various statistical descriptions of surface, instrument, and atmosphere
+* application to both individual radiance spectra and imaging spectrometer data cubes
+* custom instrument models to handle new sensors
+* observation uncertanities to account for model discrepancy errors
+* prior distribution based on background knowledge of the state vector
 
-2. Install the ISOFIT using pip - be sure to use a full path reference.
+Status
+------
 
-.. code::
+|badge1| |badge2| |badge3| |badge4| |badge5| |badge6| |badge7| |badge8|
 
-    pip install --editable /path/to/isofit --use-feature=2020-resolver
+.. |badge1| image:: https://img.shields.io/static/v1?label=Documentation&message=readthedocs&color=blue
+    :target: https://isofit.readthedocs.io/en/latest/index.html
 
-From PyPI
-*********
+.. |badge2| image:: https://readthedocs.org/projects/pip/badge/?version=stable
+    :target: https://pip.pypa.io/en/stable/?badge=stable
 
-Also, the latest release is always hosted on `PyPI <https://pypi.python.org/pypi/isofit>`_,
-so if you have `pip` installed, you can install ISOFIT from the command line with
+.. |badge3| image:: https://img.shields.io/pypi/v/isofit.svg
+    :target: https://pypi.python.org/pypi/isofit
 
-.. code::
+.. |badge4| image:: https://img.shields.io/conda/vn/conda-forge/isofit.svg
+    :target: https://anaconda.org/conda-forge/isofit
 
-    pip install isofit
+.. |badge5| image:: https://img.shields.io/pypi/l/isofit.svg
+    :target: https://github.com/isofit/isofit/blob/master/LICENSE
 
-This will install the "isofit" package into your environment as well as its dependencies.
+.. |badge6| image:: https://img.shields.io/pypi/pyversions/isofit.svg
+    :target: https://img.shields.io/pypi/pyversions/isofit.svg
 
-Using Utils
-***********
+.. |badge7| image:: https://img.shields.io/pypi/dm/isofit.svg
+    :target: https://pypi.python.org/pypi/isofit
 
-Several utilities are provided to facilitate using ISOFIT in different workflows.  Some
-of the utilities (such as `apply_oe.py <https://github.com/isofit/isofit/blob/master/isofit/utils/apply_oe.py>`_)
-require GDAL, which is not required in setup.py currently to facilitate diverse compatibility.
-An example installation is available in the `utils workflow <https://github.com/isofit/isofit/blob/master/.github/workflows/utils-workflow.yml>`_
+.. |badge8| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.6908949.svg
+   :target: https://doi.org/10.5281/zenodo.6908949
 
-Quick Start using MODTRAN 6.0
------------------------------
-
-This quick start presumes that you have an installation of the MODTRAN 6.0
-radiative transfer model.  This is the preferred radiative transfer option if available, though we have also included an interface to the open source LibRadTran RT code.  Other open source options and neural network emulators will be integrated in the future. 
-
-1. Configure your environment with the variable MODTRAN_DIR pointing to the base MODTRAN 6.0 directory.
-
-2. Run the following code
-
-.. code::
-
-    cd examples/20171108_Pasadena
-    ./run_examples_modtran.sh
-
-3. This will build a surface model and run the retrieval. The default example uses a lookup table approximation, and the code should recognize that the tables do not currently exist.  It will call MODTRAN to rebuild them, which will take a few minutes.
-
-4. Look for output data in examples/20171108_Pasadena/output/.  Each retrieval writes diagnostic images to examples/20171108_Pasadena/images/ as it runs.
-
-Quick Start with LibRadTran 2.0.x
----------------------------------
-
-This quick start presumes that you have an installation of the open source libRadTran radiative transfer model (`LibRadTran <http://www.libradtran.org/doku.php>`)_ .  We have tested with the 2.0.2 release.  You will need the "REPTRAN" absorption parameterization - follow the instructions on the libradtran installation page to get that data.
-
-1. Configure your environment with the variable LIBRADTRAN_DIR pointing to the base libRadTran directory.
-
-2. Run the following code
-
-.. code::
-
-    cd examples/20171108_Pasadena
-    ./run_example_libradtran.sh
-
-3. This will build a surface model and run the retrieval. The default example uses a lookup table approximation, and the code should recognize that the tables do not currently exist.  It will call libRadTran to rebuild them, which will take a few minutes.
-
-4. Look for output data in examples/20171108_Pasadena/output/.  Diagnostic images are written to examples/20171108_Pasadena/images/.
-
-
-Quick Start with sRTMnet
-------------------------
-
-sRTMnet is an emulator for MODTRAN 6, that works by coupling a neural network with a surrogate RTM (6S v2.1).
-Installation requires two steps:
-
-1. Download `6S v2.1 <https://salsa.umd.edu/files/6S/6sV2.1.tar>`_, and compile.  If you use a modern system,
-it is likely you will need to specify a legacy compiling configuration by changing line 3 of the Makefile to:
-
-.. code::
-
-    EXTRA   = -O -ffixed-line-length-132 -std=legacy
-
-2. Configure your environment by pointing the SIXS_DIR variable to point to your installation directory.
-
-3. Download the `pre-trained sRTMnet neural network <https://zenodo.org/record/4096627>`_, and (for the example below)
-point the environment variable EMULATOR_PATH to the base unzipped path.
-
-4. Run the following code
-
-.. code::
-
-    cd examples/image_cube/
-    sh ./run_example_cube.sh
-
-
-
-Additional Installation Info for Mac OSX
-------------------------------------------
-
-1. Install the command-line compiler
-
-.. code::
-
-  xcode-select --install
-
-2. Download the python3 installer from https://www.python.org/downloads/mac-osx/
-
-
-Known Incompatibilities
------------------------
-Ray may have compatability issues with older machines with glibc < 2.14.
+.. _documentation: https://isofit.readthedocs.io/en/latest/index.html

@@ -1,5 +1,5 @@
 {% set name = "isofit" %}
-{% set version = "2.9.2" %}
+{% set version = "2.9.4" %}
 
 package:
   name: {{ name|lower }}
@@ -7,7 +7,7 @@ package:
 
 source:
   url: https://github.com/isofit/{{ name }}/archive/v{{ version }}.tar.gz
-  sha256: cade3f414966543bab75c45ed7ed30c96968db80f4011732f55ededfdb63df90 
+  sha256: 558ba50f48b2e08badbba2eaba75e1531977502ad7f2c176f8153a0d7d436e7c 
 
 build:
   noarch: python

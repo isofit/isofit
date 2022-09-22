@@ -20,6 +20,7 @@
 
 import scipy
 from spectral.io import envi
+import skimage
 from skimage.segmentation import slic
 import numpy as np
 import ray
@@ -100,8 +101,13 @@ def segment_chunk(lstart, lend, in_file, nodata_value, npca, segsize, logfile=No
     seg_in_chunk = int(sum(use) / float(segsize))
 
     logging.debug(f'{lstart}: starting slic')
-    labels = slic(x_pca, n_segments=seg_in_chunk, compactness=cmpct, max_num_iter=10, sigma=0, channel_axis=2,
-                  enforce_connectivity=True, min_size_factor=0.5, max_size_factor=3, mask=use.reshape(nc, ns))
+    # for now, check the version of skimage to support call with deprecated parameters
+    if skimage.__version__ >= '0.19.0':
+        labels = slic(x_pca, n_segments=seg_in_chunk, compactness=cmpct, max_num_iter=10, sigma=0, channel_axis=2,
+                      enforce_connectivity=True, min_size_factor=0.5, max_size_factor=3, mask=use.reshape(nc, ns))
+    else:
+        labels = slic(x_pca, n_segments=seg_in_chunk, compactness=cmpct, max_iter=10, sigma=0, multichannel=True,
+                      enforce_connectivity=True, min_size_factor=0.5, max_size_factor=3, mask=use.reshape(nc, ns))
 
     # Reindex the subscene labels and place them into the larger scene
     labels = labels.reshape([nc * ns])

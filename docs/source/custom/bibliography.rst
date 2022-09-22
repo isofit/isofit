@@ -73,6 +73,10 @@ retrievals <https://doi.org/10.1016/j.rse.2021.112476>`__.
 *Remote Sensing of Environment*, 261:112476, 2021.
 DOI: 10.1016/j.rse.2021.112476.
 
+D.\ R. Thompson, N. Bohn, P. G. Brodrick, N. Carmon, M. L. Eastwood, R. Eckert, C. G. Fichot, J. P. Harringmeyer, H. M. Nguyen, M. Simard, and A. K. Thorpe.  `Atmospheric Lengthscales for Global VSWIR Imaging Spectroscopy <https://doi.org/10.1029/2021JG006711>`__. 
+*Journal of Geophysical Research: Biogeosciences*, 2021JG006711, 2022. 
+DOI: 10.1029/2021JG006711.
+
 Applications
 ------------
 
@@ -110,5 +114,11 @@ G\. Stephens, O. Kalashnikova, J. J. Gristey, P. Pilewskie, D. R. Thompson, X. H
 <https://doi.org/10.3389/frsen.2021.664291>`__
 *Frontiers in Remote Sensing*, 2, 2021.  DOI: 10.3389/frsen.2021.664291
 
+D\. R. Thompson, P. G. Brodrick, K. Cawse-Nicholson, K. Dana Chadwick, R. O. Green, B. Poulter, S. Serbin, A. N. Shiklomanov, P. A. Townsend, K. R. Turpie.  `Spectral Fidelity of Earth's Terrestrial and Aquatic Ecosystems. <https://doi.org/10.1029/2021JG006273>`_
+*Journal of Geophysical Research: Biogeosciences*, 2021JG006273, 2021.  DOI: 10.1029/2021JG006273 
+
 M\. T. Richardson,  D. R. Thompson, M. J. Kurowski, and M. D. Lebsock. `New Sampling Strategy Mitigates a Solar-geometry-induced Bias in Sub-kilometre Vapour Scaling Statistics Derived from Imaging Spectroscopy. <https://doi.org/10.5194/amt-15-117-2022>`__ 
 *Atmospheric Measurement Techniques*, 15, 117–129, 2022.  DOI: 10.5194/amt-15-117-2022
+
+K\. Cawse-Nicholson, A. M. Raiho, D. R. Thompson, G. C. Hulley, C. E. Miller, K. R. Miner, B. Poulter, D. Schimel, F. D. Schneider, P. A. Townsend, S. K. Zareh.  `Intrinsic Dimensionality as a Metric for the Impact of Mission Design Parameters. <https://doi.org/10.1029/2022JG006876>`__
+*Journal of Geophysical Research: Biogeosciences*, 2022JG006876, 2022.  DOI: 10.1029/2022JG006876

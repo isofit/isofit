@@ -28,7 +28,7 @@ CHUNKSIZE = 256
 
 UNCORRELATED_RADIOMETRIC_UNCERTAINTY = 0.01
 
-INVERSION_WINDOWS = [[380.0, 1340.0], [1450, 1800.0], [1970.0, 2500.0]]
+INVERSION_WINDOWS = [[380.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
 
 
 def main(rawargs=None):
@@ -80,6 +80,9 @@ def main(rawargs=None):
             sRTMnet to use the emulator instead of MODTRAN.  An additional file with the same basename and the extention
             _aux.npz must accompany (e.g. /path/to/emulator.h5 /path/to/emulator_aux.npz)
         segmentation_size (Optional, int): Size of segments to construct for empirical line (if used).
+        num_neighbors (Optional, int): Forced number of neighbors for empirical line extrapolation - overides default
+            set from segmentation_size parameter.
+        pressure_elevation (Optional, bool): If set, retrieves elevation.
 
             Reference:
             D.R. Thompson, A. Braverman,P.G. Brodrick, A. Candela, N. Carbon, R.N. Clark,D. Connelly, R.O. Green, R.F.
@@ -123,6 +126,9 @@ def main(rawargs=None):
     parser.add_argument('--ray_temp_dir', type=str, default='/tmp/ray')
     parser.add_argument('--emulator_base', type=str, default=None)
     parser.add_argument('--segmentation_size', type=int, default=40)
+    parser.add_argument('--num_neighbors', type=int, default=None)
+    parser.add_argument('--pressure_elevation', action='store_true', default=None)
+
 
     args = parser.parse_args(rawargs)
 
@@ -179,6 +185,8 @@ def main(rawargs=None):
         dt = datetime.strptime(paths.fid[3:], '%Y%m%dt%H%M%S')
     elif args.sensor == 'emit':
         dt = datetime.strptime(paths.fid[:19], 'emit%Y%m%dt%H%M%S')
+        global INVERSION_WINDOWS 
+        INVERSION_WINDOWS = [[380.0, 1270.0], [1410, 1800.0], [1970.0, 2500.0]]
     elif args.sensor[:3] == 'NA-':
         dt = datetime.strptime(args.sensor[3:], '%Y%m%d')
     elif args.sensor == 'hyp':
@@ -231,7 +239,8 @@ def main(rawargs=None):
     np.savetxt(paths.wavelength_path, wl_data, delimiter=' ')
 
     mean_latitude, mean_longitude, mean_elevation_km, elevation_lut_grid = \
-        get_metadata_from_loc(paths.loc_working_path, lut_params)
+        get_metadata_from_loc(paths.loc_working_path, lut_params, pressure_elevation=args.pressure_elevation)
+
     if args.emulator_base is not None:
         if elevation_lut_grid is not None and np.any(elevation_lut_grid < 0):
             to_rem = elevation_lut_grid[elevation_lut_grid < 0].copy()
@@ -256,7 +265,6 @@ def main(rawargs=None):
     if args.emulator_base is not None and mean_altitude_km > 99:
         logging.info('Adjusting altitude to 99 km for integration with 6S, because emulator is chosen.')
         mean_altitude_km = 99
-
 
     # We will use the model discrepancy with covariance OR uncorrelated 
     # Calibration error, but not both.
@@ -324,9 +332,9 @@ def main(rawargs=None):
         h2o = envi.open(envi_header(paths.h2o_subs_path))
         h2o_est = h2o.read_band(-1)[:].flatten()
 
-        p05 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 5)
-        p95 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 95)
-        margin = (p95-p05) * 0.25
+        p05 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 2)
+        p95 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 98)
+        margin = (p95-p05) * 0.5
 
         lut_params.h2o_range[0] = max(lut_params.h2o_min, p05 - margin)
         lut_params.h2o_range[1] = min(max_water, max(lut_params.h2o_min, p95 + margin))
@@ -354,7 +362,7 @@ def main(rawargs=None):
                           to_sensor_zenith_lut_grid, mean_latitude, mean_longitude, dt, 
                           args.empirical_line == 1, args.n_cores, args.surface_category,
                           args.emulator_base, uncorrelated_radiometric_uncertainty, args.multiple_restarts,
-                          args.segmentation_size)
+                          args.segmentation_size, args.pressure_elevation)
 
         # Run modtran retrieval
         logging.info('Running ISOFIT with full LUT')
@@ -374,7 +382,10 @@ def main(rawargs=None):
         logging.info('Empirical line inference')
         # Determine the number of neighbors to use.  Provides backwards stability and works
         # well with defaults, but is arbitrary
-        nneighbors = int(round(3950 / 9 - 35/36 * args.segmentation_size))
+        if args.num_neighbors is None:
+            nneighbors = int(round(3950 / 9 - 35/36 * args.segmentation_size))
+        else:
+            nneighbors = args.num_neighbors
         empirical_line(reference_radiance_file=paths.rdn_subs_path,
                        reference_reflectance_file=paths.rfl_subs_path,
                        reference_uncertainty_file=paths.uncert_subs_path,
@@ -507,6 +518,10 @@ class Pathnames():
             self.noise_path = join(self.isofit_path, 'data', 'avirisng_noise.txt')
         elif args.sensor == 'avcl':
             self.noise_path = join(self.isofit_path, 'data', 'avirisc_noise.txt')
+        elif args.sensor == 'emit':
+            self.noise_path = join(self.isofit_path, 'data', 'emit_noise.txt')
+            if args.channelized_uncertainty_path is None:
+                self.input_channelized_uncertainty_path = join(self.isofit_path, 'data', 'emit_osf_uncertainty.txt')
         else:
             self.noise_path = None
             logging.info('no noise path found, proceeding without')
@@ -986,7 +1001,7 @@ def get_metadata_from_obs(obs_file: str, lut_params: LUTConfig, trim_lines: int 
            to_sensor_azimuth_lut_grid, to_sensor_zenith_lut_grid
 
 
-def get_metadata_from_loc(loc_file: str, lut_params: LUTConfig, trim_lines: int = 5, nodata_value: float = -9999) -> \
+def get_metadata_from_loc(loc_file: str, lut_params: LUTConfig, trim_lines: int = 5, nodata_value: float = -9999, pressure_elevation: bool = False) -> \
         (float, float, float, np.array):
     """ Get metadata needed for complete runs from the location file (bands long, lat, elev).
 
@@ -996,6 +1011,7 @@ def get_metadata_from_loc(loc_file: str, lut_params: LUTConfig, trim_lines: int 
         trim_lines: number of lines to ignore at beginning and end of file (good if lines contain values that are
                     erroneous but not nodata
         nodata_value: value to ignore from location file
+        pressure_elevation: retrieve pressure elevation (requires expanded ranges)
 
     :Returns:
         tuple containing:
@@ -1027,6 +1043,9 @@ def get_metadata_from_loc(loc_file: str, lut_params: LUTConfig, trim_lines: int 
     # make elevation grid
     min_elev = np.min(loc_data[2, valid]) / 1000.
     max_elev = np.max(loc_data[2, valid]) / 1000.
+    if pressure_elevation:
+        min_elev = max(min_elev - 1, 0)
+        max_elev += 1
     elevation_lut_grid = lut_params.get_grid(min_elev, max_elev, lut_params.elevation_spacing,
                                              lut_params.elevation_spacing_min)
 
@@ -1158,7 +1177,7 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
                       mean_longitude: float = None, dt: datetime = None, use_emp_line: bool = True, 
                       n_cores: int = -1, surface_category='multicomponent_surface',
                       emulator_base: str = None, uncorrelated_radiometric_uncertainty: float = 0.0,
-                      multiple_restarts: bool = False, segmentation_size=400):
+                      multiple_restarts: bool = False, segmentation_size=400, pressure_elevation: bool = False):
     """ Write an isofit config file for the main solve, using the specified pathnames and all given info
 
     Args:
@@ -1177,6 +1196,7 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
         emulator_base: the basename of the emulator, if used
         uncorrelated_radiometric_uncertainty: uncorrelated radiometric uncertainty parameter for isofit
         segmentation_size: image segmentation size if empirical line is used
+        pressure_elevation: if true, retrieve pressure elevation
     """
 
     # Determine number of spectra included in each retrieval.  If we are
@@ -1216,6 +1236,15 @@ def build_main_config(paths: Pathnames, lut_params: LUTConfig, h2o_lut_grid: np.
             "init": (h2o_lut_grid[1] + h2o_lut_grid[-1]) / 2.0,
             "prior_sigma": 100.0,
             "prior_mean": (h2o_lut_grid[1] + h2o_lut_grid[-1]) / 2.0,
+        }
+
+    if pressure_elevation:
+        radiative_transfer_config['statevector']['GNDALT'] = {
+            "bounds": [elevation_lut_grid[0], elevation_lut_grid[-1]],
+            "scale": 100,
+            "init": (elevation_lut_grid[1] + elevation_lut_grid[-1]) / 2.0,
+            "prior_sigma": 1000.0,
+            "prior_mean": (elevation_lut_grid[1] + elevation_lut_grid[-1]) / 2.0,
         }
 
     if emulator_base is not None:

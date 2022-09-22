@@ -67,8 +67,7 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
 
     """
 
-    logging.basicConfig(format='%(levelname)s:%(asctime)s ||| %(message)s', level=loglevel, filename=logfile,
-                        datefmt='%Y-%m-%d,%H:%M:%S')
+    logging.basicConfig(format='%(levelname)s:%(asctime)s ||| %(message)s', level=loglevel, filename=logfile, datefmt='%Y-%m-%d,%H:%M:%S')
 
     # Load reference images
     reference_radiance_img = envi.open(envi_header(reference_radiance_file), reference_radiance_file)
@@ -110,8 +109,7 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
     reference_uncertainty = reference_uncertainty[:, :n_radiance_bands].reshape((n_reference_lines, n_radiance_bands))
 
     if reference_class_file is not None:
-        reference_class = np.squeeze(
-            np.array(envi.open(envi_header(reference_class_file), reference_class_file).open_memmap(interleave='bip')))
+        reference_class = np.squeeze(np.array(envi.open(envi_header(reference_class_file), reference_class_file).open_memmap(interleave='bip')))
         un_reference_class = np.unique(reference_class)
         un_reference_class = un_reference_class[un_reference_class != -1]
         logging.info(f"Reference classes found: {un_reference_class}")
@@ -136,6 +134,7 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
     else:
         instrument = None
 
+
     # Load radiance factors
     if radiance_factors is None:
         radiance_adjustment = np.ones(n_radiance_bands, )
@@ -147,11 +146,11 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
     scaled_ref_loc = reference_locations * loc_scaling
     tree = KDTree(scaled_ref_loc)
     if reference_class is not None:
-        trees = [KDTree(scaled_ref_loc[reference_class == _c, :]) for _c in un_reference_class]
+        trees = [KDTree(scaled_ref_loc[reference_class == _c,:]) for _c in un_reference_class]
     # Assume (heuristically) that, for distance purposes, 1 m vertically is
     # comparable to 10 m horizontally, and that there are 100 km per latitude
     # degree.  This is all approximate of course.  Elevation appears in the
-    # third element, and the first two are latitude/longitude coordinates
+    # Third element, and the first two are latitude/longitude coordinates
 
     # Iterate through image
     hash_table = {}
@@ -200,17 +199,11 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
                     dists, nn = tree.query(loc, 1)
                     loc_class = int(reference_class[nn])
                     dists, nn = trees[loc_class].query(loc, nneighbors)
-                    try:
-                        xv = reference_radiance[reference_class == loc_class, :][nn, :]
-                        yv = reference_reflectance[reference_class == loc_class, :][nn, :]
-                        uv = reference_uncertainty[reference_class == loc_class, :][nn, :]
-                    except:
-                        print(loc_class)
-                        print(nneighbors)
-                        print(np.sum(reference_class == loc_class))
-                        print(nn)
-                        print(reference_radiance.shape)
-                        quit()
+                    nn = nn[nn < np.sum(reference_class == loc_class)]
+                    xv = reference_radiance[reference_class == loc_class,:][nn, :]
+                    yv = reference_reflectance[reference_class == loc_class,:][nn, :]
+                    uv = reference_uncertainty[reference_class == loc_class,:][nn, :]
+
 
                 bhat = np.zeros((n_radiance_bands, 2))
                 bmarg = np.zeros((n_radiance_bands, 2))
@@ -236,7 +229,7 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
             A = np.array((np.ones(n_radiance_bands), x))
             output_reflectance_row[col, :] = (np.multiply(bhat.T, A).sum(axis=0))
 
-            # Calculate uncertainties. Sy approximation rather than Seps for
+            # Calculate uncertainties.  Sy approximation rather than Seps for
             # speed, for now... but we do take into account instrument
             # radiometric uncertainties
             if instrument is None:
@@ -267,9 +260,9 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
         output_uncertainty_row = output_uncertainty_row.reshape((1, shp[0], shp[1]))
 
         write_bil_chunk(output_reflectance_row, output_reflectance_file, row,
-                        (n_input_lines, n_output_reflectance_bands, n_input_samples))
+                         (n_input_lines, n_output_reflectance_bands, n_input_samples))
         write_bil_chunk(output_uncertainty_row, output_uncertainty_file, row,
-                        (n_input_lines, n_output_uncertainty_bands, n_input_samples))
+                         (n_input_lines, n_output_uncertainty_bands, n_input_samples))
 
 
 def _plot_example(xv, yv, b):
@@ -300,7 +293,7 @@ def empirical_line(reference_radiance_file: str, reference_reflectance_file: str
                    reference_locations_file: str, segmentation_file: str, input_radiance_file: str,
                    input_locations_file: str, output_reflectance_file: str, output_uncertainty_file: str,
                    nneighbors: int = 400, nodata_value: float = -9999.0, level: str = 'INFO', logfile: str = None,
-                   radiance_factors: np.array = None, isofit_config: str = None, n_cores: int = -1,
+                   radiance_factors: np.array = None, isofit_config: str = None, n_cores: int = -1, 
                    reference_class_file: str = None) -> None:
     """
     Perform an empirical line interpolation for reflectance and uncertainty extrapolation
@@ -329,8 +322,7 @@ def empirical_line(reference_radiance_file: str, reference_reflectance_file: str
 
     loglevel = level
 
-    logging.basicConfig(format='%(levelname)s:%(asctime)s ||| %(message)s', level=loglevel, filename=logfile,
-                        datefmt='%Y-%m-%d,%H:%M:%S')
+    logging.basicConfig(format='%(levelname)s:%(asctime)s ||| %(message)s', level=loglevel, filename=logfile, datefmt='%Y-%m-%d,%H:%M:%S')
 
     # Open input data to check that band formatting is correct
     # Load reference set radiance
@@ -383,8 +375,7 @@ def empirical_line(reference_radiance_file: str, reference_reflectance_file: str
 
     # Now cleanup inputs and outputs, we'll write dynamically above
     del output_reflectance_img, output_uncertainty_img
-    del reference_reflectance_img, reference_uncertainty_img, reference_locations_img, input_radiance_img,\
-        input_locations_img
+    del reference_reflectance_img, reference_uncertainty_img, reference_locations_img, input_radiance_img, input_locations_img
 
     # Initialize ray cluster
     start_time = time.time()
@@ -425,8 +416,7 @@ def empirical_line(reference_radiance_file: str, reference_reflectance_file: str
         args = (line_sections[l], line_sections[l + 1], reference_radiance_file, reference_reflectance_file,
                 reference_uncertainty_file, reference_locations_file, input_radiance_file,
                 input_locations_file, segmentation_file, isofit_config, output_reflectance_file,
-                output_uncertainty_file, radiance_factors, nneighbors, nodata_value, level, logfile,
-                reference_class_file)
+                output_uncertainty_file, radiance_factors, nneighbors, nodata_value, level, logfile, reference_class_file)
         results.append(_run_chunk.remote(*args))
 
     _ = ray.get(results)
@@ -434,4 +424,4 @@ def empirical_line(reference_radiance_file: str, reference_reflectance_file: str
     total_time = time.time() - start_time
     logging.info('Parallel empirical line inversions complete.  {} s total, {} spectra/s, {} spectra/s/core'.format(
         total_time, line_sections[-1] * n_input_samples / total_time,
-        line_sections[-1] * n_input_samples / total_time / n_cores))
+                    line_sections[-1] * n_input_samples / total_time / n_cores))
