@@ -1,6 +1,6 @@
 import numpy as np
 from isofit.core.common import eps, combos, get_absorption, expand_path, load_spectrum, load_wavelen, \
-    spectral_response_function, recursive_replace
+    spectral_response_function, recursive_replace, svd_inv, svd_inv_sqrt
 from io import StringIO
 import scipy
 
@@ -29,7 +29,7 @@ def test_get_absorption():
     assert(i_abscf_new[1] == 2.5e7*np.pi)
 
 def test_expand_path(): # -- backslash vs forward slash discrepancy
-    assert(expand_path("NASA", "JPL") == "NASA\JPL")
+    assert(expand_path("NASA", "JPL") == "NASA/JPL")
     assert(expand_path("NASA", "/JPL") == "/JPL")
 
 def test_spectral_response_function():
