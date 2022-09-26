@@ -601,15 +601,14 @@ def build_main_config(opt: dict, gip: dict, tsip: dict, paths: Pathnames, lut_pa
             "prior_mean": (h2o_lut_grid[1] + h2o_lut_grid[-1]) / 2.0,
         }
 
-    if surface_type == 'cloud':
+    if gip["options"]["pressure_elevation"]:
         radiative_transfer_config['statevector']['GNDALT'] = {
-            "bounds": [0, 5],
-            "scale": 1,
-            "init": 2.0,
-            "prior_sigma": 10.0,
-            "prior_mean": 2.0,
+            "bounds": [elevation_lut_grid[0], elevation_lut_grid[-1]],
+            "scale": 100,
+            "init": (elevation_lut_grid[1] + elevation_lut_grid[-1]) / 2.0,
+            "prior_sigma": 1000.0,
+            "prior_mean": (elevation_lut_grid[1] + elevation_lut_grid[-1]) / 2.0,
         }
-        radiative_transfer_config['lut_grid']['GNDALT'] = [0, 1, 2, 3, 4, 5]
 
     if gip["filepaths"]["emulator_base"] is not None:
         radiative_transfer_config['radiative_transfer_engines']['vswir']['emulator_file'] = os.path.abspath(
@@ -629,7 +628,7 @@ def build_main_config(opt: dict, gip: dict, tsip: dict, paths: Pathnames, lut_pa
 
     if h2o_lut_grid is not None:
         radiative_transfer_config['lut_grid']['H2OSTR'] = h2o_lut_grid.tolist()
-    if elevation_lut_grid is not None and 'GNDALT' not in list(radiative_transfer_config['lut_grid'].keys()):
+    if elevation_lut_grid is not None:
         radiative_transfer_config['lut_grid']['GNDALT'] = elevation_lut_grid.tolist()
     if to_sensor_azimuth_lut_grid is not None:
         radiative_transfer_config['lut_grid']['TRUEAZ'] = to_sensor_azimuth_lut_grid.tolist()
@@ -1161,15 +1160,19 @@ def get_metadata_from_obs(obs_file: str, lut_params: LUTConfig, trim_lines: int 
            to_sensor_azimuth_lut_grid, to_sensor_zenith_lut_grid
 
 
-def get_metadata_from_loc(loc_file: str, lut_params: LUTConfig, trim_lines: int = 5, nodata_value: float = -9999):
+def get_metadata_from_loc(loc_file: str, gip: dict, lut_params: LUTConfig, trim_lines: int = 5,
+                          nodata_value: float = -9999, pressure_elevation: bool = False) \
+        -> (float, float, float, np.array):
     """ Get metadata needed for complete runs from the location file (bands long, lat, elev).
 
     Args:
         loc_file: file name to pull data from
+        gip: dictionary of general inversion parameters
         lut_params: parameters to use to define lut grid
         trim_lines: number of lines to ignore at beginning and end of file (good if lines contain values that are
                     erroneous but not nodata
         nodata_value: value to ignore from location file
+        pressure_elevation: retrieve pressure elevation (requires expanded ranges)
 
     :Returns:
         tuple containing:
@@ -1211,6 +1214,10 @@ def get_metadata_from_loc(loc_file: str, lut_params: LUTConfig, trim_lines: int 
     # make elevation grid
     min_elev = np.min(loc_data[2, valid]) / 1000.
     max_elev = np.max(loc_data[2, valid]) / 1000.
+    if pressure_elevation:
+        exp_range = gip["radiative_transfer_parameters"]["GNDALT"]["expand_range"]
+        min_elev = max(min_elev - exp_range, 0)
+        max_elev += exp_range
     elevation_lut_grid = get_grid(min_elev, max_elev, lut_params.elevation_spacing, lut_params.elevation_spacing_min)
 
     return mean_latitude, mean_longitude, mean_elevation_km, elevation_lut_grid

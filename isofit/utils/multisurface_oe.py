@@ -195,7 +195,8 @@ def main(rawargs=None):
     gmtime = float(h_m_s[0] + h_m_s[1] / 60.)
 
     mean_latitude, mean_longitude, mean_elevation_km, elevation_lut_grid = get_metadata_from_loc(
-        loc_file=paths.loc_working_path, lut_params=lut_params)
+        loc_file=paths.loc_working_path, gip=gip, lut_params=lut_params,
+        pressure_elevation=gip["options"]["pressure_elevation"])
 
     if gip["filepaths"]["emulator_base"] is not None:
         if elevation_lut_grid is not None and np.any(elevation_lut_grid < 0):
@@ -379,12 +380,12 @@ def main(rawargs=None):
     if not exists(paths.rfl_working_path) or not exists(paths.uncert_working_path):
         # Empirical line
         logging.info('Empirical line inference')
-        if not opt['nneighbors']:
+        if not opt['num_neighbors']:
             nneighbors = int(round(3950 / 9 - 35 / 36 * opt["segmentation_size"]))
             if opt["segmentation_size"] > 441:
                 nneighbors = 10
         else:
-            nneighbors = opt['nneighbors']
+            nneighbors = opt['num_neighbors']
 
         empirical_line(reference_radiance_file=paths.rdn_subs_path, reference_reflectance_file=paths.rfl_subs_path,
                        reference_uncertainty_file=paths.uncert_subs_path,

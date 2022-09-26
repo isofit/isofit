@@ -3,12 +3,12 @@
         "sensor": "ang",
         "n_cores": 8,
         "segmentation_size": 400,
-        "nneighbors": 15,
+        "num_neighbors": 15,
         "chunksize": 256,
         "n_pca": 5,
         "eps": 1e-6,
         "copy_input_files": false,
-        "presolve_wv": false,
+        "presolve_wv": true,
         "empirical_line": true,
         "debug_mode": false,
         "ray_temp_dir": "/tmp/ray"
@@ -31,6 +31,7 @@
                 "uncorrelated_radiometric_uncertainty": 0.01,
                 "inversion_windows": [[380.0, 1340.0], [1450, 1800.0], [1970.0, 2500.0]],
                 "statevector_elements": ["H2OSTR", "AOT550"],
+                "pressure_elevation": true,
                 "surface_category": "multicomponent_surface"
             },
             "radiative_transfer_parameters": {
@@ -51,7 +52,8 @@
                 },
                 "GNDALT": {
                     "lut_spacing": 0.5,
-                    "lut_spacing_min": 0.2
+                    "lut_spacing_min": 0.2,
+                    "expand_range": 1
                 }
             }
         },
