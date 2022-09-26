@@ -138,6 +138,11 @@ class Pathnames:
             self.noise_path = os.path.join(self.isofit_path, 'data', 'avirisng_noise.txt')
         elif opt["sensor"] == 'avcl':
             self.noise_path = os.path.join(self.isofit_path, 'data', 'avirisc_noise.txt')
+        elif args.sensor == 'emit':
+            self.noise_path = os.path.join(self.isofit_path, 'data', 'emit_noise.txt')
+            if gip["filepaths"]["channelized_uncertainty_path"] is None:
+                self.input_channelized_uncertainty_path = os.path.join(self.isofit_path, 'data',
+                                                                       'emit_osf_uncertainty.txt')
         else:
             self.noise_path = None
             logging.info('no noise path found, proceeding without')

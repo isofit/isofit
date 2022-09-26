@@ -105,6 +105,7 @@ def main(rawargs=None):
         logging.info('Flightline ID: %s' % fid)
         # parse flightline ID (EMIT assumptions)
         dt = datetime.strptime(fid[:19], 'emit%Y%m%dt%H%M%S')
+        gip["options"]["inversion_windows"] = [[380.0, 1270.0], [1410, 1800.0], [1970.0, 2500.0]]
     elif opt["sensor"][:3] == 'NA-':
         fid = os.path.splitext(os.path.basename(args.input_radiance))[0]
         logging.info('Flightline ID: %s' % fid)
@@ -311,9 +312,9 @@ def main(rawargs=None):
         h2o = envi.open(envi_header(paths.h2o_subs_path))
         h2o_est = h2o.read_band(-1)[:].flatten()
 
-        p05 = np.min(h2o_est[h2o_est > lut_params.h2o_min])
-        p95 = np.max(h2o_est[h2o_est > lut_params.h2o_min])
-        margin = (p95-p05) * 0.25
+        p05 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 2)
+        p95 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 98)
+        margin = (p95 - p05) * 0.5
 
         lut_params.h2o_range[0] = max(lut_params.h2o_min, p05 - margin)
         lut_params.h2o_range[1] = min(max_water, max(lut_params.h2o_min, p95 + margin))
