@@ -117,8 +117,9 @@ def main(rawargs=None):
         # parse flightline ID (Hyperion assumptions)
         dt = datetime.strptime(fid[10:17], '%Y%j')
     else:
-        raise ValueError('Neither flightline ID nor datetime object could be obtained. '
-                         'Please check file name of input data.')
+        raise ValueError('Neither flight line ID nor datetime object could be obtained. '
+                         'Please provide sensor name in config file '
+                         '(choose from "ang", "avcl", "prism", "neon", "emit", "NA-*", "hyp").')
 
     # get path names
     paths = Pathnames(opt=opt, gip=gip, args=args, fid=fid)
@@ -196,8 +197,7 @@ def main(rawargs=None):
     gmtime = float(h_m_s[0] + h_m_s[1] / 60.)
 
     mean_latitude, mean_longitude, mean_elevation_km, elevation_lut_grid = get_metadata_from_loc(
-        loc_file=paths.loc_working_path, gip=gip, lut_params=lut_params,
-        pressure_elevation=gip["options"]["pressure_elevation"])
+        loc_file=paths.loc_working_path, gip=gip, lut_params=lut_params)
 
     if gip["filepaths"]["emulator_base"] is not None:
         if elevation_lut_grid is not None and np.any(elevation_lut_grid < 0):
@@ -233,9 +233,11 @@ def main(rawargs=None):
     # Chunk scene => superpixel segmentation
     if not exists(paths.lbl_working_path) or not exists(paths.radiance_working_path):
         logging.info('Segmenting...')
+        if not opt['segmentation_size']:
+            logging.info("Segmentation size not  given in config. Setting to default value of 400.")
         segment(spectra=(paths.radiance_working_path, paths.lbl_working_path), nodata_value=-9999, npca=opt["n_pca"],
-                segsize=opt['segmentation_size'], nchunk=opt['chunksize'], n_cores=opt["n_cores"],
-                loglevel=args.logging_level, logfile=args.log_file)
+                segsize=400 if not opt['segmentation_size'] else opt['segmentation_size'], nchunk=opt['chunksize'],
+                n_cores=opt["n_cores"], loglevel=args.logging_level, logfile=args.log_file)
 
     # Extract input data per segment
     for inp, outp in [(paths.radiance_working_path, paths.rdn_subs_path), (paths.obs_working_path, paths.obs_subs_path),
@@ -381,10 +383,18 @@ def main(rawargs=None):
     if not exists(paths.rfl_working_path) or not exists(paths.uncert_working_path):
         # Empirical line
         logging.info('Empirical line inference')
-        if not opt['num_neighbors']:
-            nneighbors = int(round(3950 / 9 - 35 / 36 * opt["segmentation_size"]))
+        if not opt['num_neighbors'] and opt["segmentation_size"]:
             if opt["segmentation_size"] > 441:
+                logging.info(f"Segmentation size of {opt['segmentation_size']} too large (max. allowed size: 441). "
+                             f"Setting number of neighbors to minimum value of 10.")
                 nneighbors = 10
+            else:
+                logging.info("Number of neighbors not given in config. Calculating based on segmentation size.")
+                nneighbors = int(round(3950 / 9 - 35 / 36 * opt["segmentation_size"]))
+        elif not opt['num_neighbors'] and not opt["segmentation_size"]:
+            logging.info("Neither number of neighbors nor segmentation size given in config. "
+                         "Setting number of neighbors to minimum value of 10.")
+            nneighbors = 10
         else:
             nneighbors = opt['num_neighbors']
 

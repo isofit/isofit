@@ -138,7 +138,7 @@ class Pathnames:
             self.noise_path = os.path.join(self.isofit_path, 'data', 'avirisng_noise.txt')
         elif opt["sensor"] == 'avcl':
             self.noise_path = os.path.join(self.isofit_path, 'data', 'avirisc_noise.txt')
-        elif args.sensor == 'emit':
+        elif opt["sensor"] == 'emit':
             self.noise_path = os.path.join(self.isofit_path, 'data', 'emit_noise.txt')
             if gip["filepaths"]["channelized_uncertainty_path"] is None:
                 self.input_channelized_uncertainty_path = os.path.join(self.isofit_path, 'data',
@@ -511,7 +511,7 @@ def build_presolve_config(opt: dict, gip: dict, paths: Pathnames, h2o_lut_grid: 
                              "ray_temp_dir": paths.ray_temp_dir,
                              'inversion': {
                                  'windows': gip["options"]["inversion_windows"]},
-                             "n_cores": opt["n_cores"],
+                             "n_cores": 1 if not opt["n_cores"] else opt["n_cores"],
                              "debug_mode": opt["debug_mode"]}
                          }
 
@@ -605,8 +605,8 @@ def build_main_config(opt: dict, gip: dict, tsip: dict, paths: Pathnames, lut_pa
             "prior_sigma": 100.0,
             "prior_mean": (h2o_lut_grid[1] + h2o_lut_grid[-1]) / 2.0,
         }
-
-    if gip["options"]["pressure_elevation"]:
+    # ToDo: implement GNDALT first guess in separate PR
+    if 'GNDALT' in gip["options"]["statevector_elements"]:
         radiative_transfer_config['statevector']['GNDALT'] = {
             "bounds": [elevation_lut_grid[0], elevation_lut_grid[-1]],
             "scale": 100,
@@ -676,7 +676,7 @@ def build_main_config(opt: dict, gip: dict, tsip: dict, paths: Pathnames, lut_pa
                              "implementation": {
                                  "ray_temp_dir": paths.ray_temp_dir,
                                  "inversion": {"windows": gip["options"]["inversion_windows"]},
-                                 "n_cores": opt["n_cores"],
+                                 "n_cores": 1 if not opt["n_cores"] else opt["n_cores"],
                                  "debug_mode": opt["debug_mode"]}
                              }
 
@@ -994,6 +994,8 @@ def define_surface_types(tsip: dict, rdnfile: str, obsfile: str, out_class_path:
         b1000 = np.argmin(abs(wl - tsip["water"]["toa_threshold_wavelengths"][0]))
         b1380 = np.argmin(abs(wl - tsip["water"]["toa_threshold_wavelengths"][1]))
     except KeyError:
+        logging.info("No threshold wavelengths for water classification found in config file. "
+                     "Setting to 1000 and 1380 nm.")
         b1000 = np.argmin(abs(wl - 1000))
         b1380 = np.argmin(abs(wl - 1380))
 
@@ -1003,6 +1005,8 @@ def define_surface_types(tsip: dict, rdnfile: str, obsfile: str, out_class_path:
         b1250 = np.argmin(abs(wl - tsip["cloud"]["toa_threshold_wavelengths"][1]))
         b1650 = np.argmin(abs(wl - tsip["cloud"]["toa_threshold_wavelengths"][2]))
     except KeyError:
+        logging.info("No threshold wavelengths for cloud classification found in config file. "
+                     "Setting to 450, 1250, and 1650 nm.")
         b450 = np.argmin(abs(wl - 450))
         b1250 = np.argmin(abs(wl - 1250))
         b1650 = np.argmin(abs(wl - 1650))
@@ -1166,8 +1170,7 @@ def get_metadata_from_obs(obs_file: str, lut_params: LUTConfig, trim_lines: int 
 
 
 def get_metadata_from_loc(loc_file: str, gip: dict, lut_params: LUTConfig, trim_lines: int = 5,
-                          nodata_value: float = -9999, pressure_elevation: bool = False) \
-        -> (float, float, float, np.array):
+                          nodata_value: float = -9999) -> (float, float, float, np.array):
     """ Get metadata needed for complete runs from the location file (bands long, lat, elev).
 
     Args:
@@ -1177,7 +1180,6 @@ def get_metadata_from_loc(loc_file: str, gip: dict, lut_params: LUTConfig, trim_
         trim_lines: number of lines to ignore at beginning and end of file (good if lines contain values that are
                     erroneous but not nodata
         nodata_value: value to ignore from location file
-        pressure_elevation: retrieve pressure elevation (requires expanded ranges)
 
     :Returns:
         tuple containing:
@@ -1219,7 +1221,8 @@ def get_metadata_from_loc(loc_file: str, gip: dict, lut_params: LUTConfig, trim_
     # make elevation grid
     min_elev = np.min(loc_data[2, valid]) / 1000.
     max_elev = np.max(loc_data[2, valid]) / 1000.
-    if pressure_elevation:
+    if 'GNDALT' in gip["options"]["statevector_elements"]:
+        # ToDo: add GNDALT related parameters to type specific options as well
         exp_range = gip["radiative_transfer_parameters"]["GNDALT"]["expand_range"]
         min_elev = max(min_elev - exp_range, 0)
         max_elev += exp_range
