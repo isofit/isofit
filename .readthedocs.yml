@@ -13,9 +13,12 @@ sphinx:
 #mkdocs:
 #  configuration: mkdocs.yml
 
-python:
-  version: 3.6
-  install:
-    - requirements: docs/source/requirements.txt
-    - method: pip
-      path: .
+conda:
+  environment: recipe/environment_isofit_basic.yml
+
+#python:
+  #version: 3.6
+  #install:
+    #- requirements: docs/source/requirements.txt
+    #- method: pip
+      #path: .
