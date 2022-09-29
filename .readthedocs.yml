@@ -16,9 +16,3 @@ conda:
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
   configuration: docs/source/conf.py
-
-python:
-  install:
-    - requirements: docs/source/requirements.txt
-    - method: pip
-      path: .
