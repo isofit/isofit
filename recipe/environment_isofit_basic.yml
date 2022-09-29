@@ -6,6 +6,7 @@ channels: &id1
 dependencies:
     - python=3.*.*
     - pip
+    - numpy>=1.19.2
     - protobuf~=3.19.0
     - scipy>=1.3.0
     - matplotlib>=2.2.2
