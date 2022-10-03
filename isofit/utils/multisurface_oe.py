@@ -152,7 +152,7 @@ def main(rawargs=None):
     np.savetxt(paths.wavelength_path, wl_data, delimiter=' ')
 
     # get LUT parameters
-    lut_params = LUTConfig(gip=gip, lut_config_file=gip["filepaths"]["lut_config_path"])
+    lut_params = LUTConfig(gip=gip, tsip=tsip, lut_config_file=gip["filepaths"]["lut_config_path"])
     if gip["filepaths"]["emulator_base"] is not None:
         lut_params.aot_550_range = lut_params.aerosol_2_range
         lut_params.aot_550_spacing = lut_params.aerosol_2_spacing
@@ -197,7 +197,7 @@ def main(rawargs=None):
     gmtime = float(h_m_s[0] + h_m_s[1] / 60.)
 
     mean_latitude, mean_longitude, mean_elevation_km, elevation_lut_grid = get_metadata_from_loc(
-        loc_file=paths.loc_working_path, gip=gip, lut_params=lut_params)
+        loc_file=paths.loc_working_path, gip=gip, tsip=tsip, lut_params=lut_params)
 
     if gip["filepaths"]["emulator_base"] is not None:
         if elevation_lut_grid is not None and np.any(elevation_lut_grid < 0):
@@ -235,17 +235,20 @@ def main(rawargs=None):
         logging.info('Segmenting...')
         if not opt['segmentation_size']:
             logging.info("Segmentation size not  given in config. Setting to default value of 400.")
-        segment(spectra=(paths.radiance_working_path, paths.lbl_working_path), nodata_value=-9999, npca=opt["n_pca"],
-                segsize=400 if not opt['segmentation_size'] else opt['segmentation_size'], nchunk=opt['chunksize'],
-                n_cores=opt["n_cores"], loglevel=args.logging_level, logfile=args.log_file)
+        segment(spectra=(paths.radiance_working_path, paths.lbl_working_path), nodata_value=-9999,
+                npca=5 if not opt['n_pca'] else opt['n_pca'],
+                segsize=400 if not opt['segmentation_size'] else opt['segmentation_size'],
+                nchunk=256 if not opt['chunksize'] else opt['chunksize'], n_cores=opt["n_cores"],
+                loglevel=args.logging_level, logfile=args.log_file)
 
     # Extract input data per segment
     for inp, outp in [(paths.radiance_working_path, paths.rdn_subs_path), (paths.obs_working_path, paths.obs_subs_path),
                       (paths.loc_working_path, paths.loc_subs_path)]:
         if not exists(outp):
             logging.info('Extracting ' + outp)
-            extractions(inputfile=inp, labels=paths.lbl_working_path, output=outp, chunksize=opt["chunksize"],
-                        flag=-9999, n_cores=opt["n_cores"], loglevel=args.logging_level, logfile=args.log_file)
+            extractions(inputfile=inp, labels=paths.lbl_working_path, output=outp,
+                        chunksize=256 if not opt['chunksize'] else opt['chunksize'], flag=-9999, n_cores=opt["n_cores"],
+                        loglevel=args.logging_level, logfile=args.log_file)
 
     # Run surface type classification
     detected_surface_types = []

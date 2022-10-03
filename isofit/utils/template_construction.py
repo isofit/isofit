@@ -145,7 +145,7 @@ class Pathnames:
                                                                        'emit_osf_uncertainty.txt')
         else:
             self.noise_path = None
-            logging.info('no noise path found, proceeding without')
+            logging.info('No noise path found, proceeding without.')
 
         self.earth_sun_distance_path = os.path.abspath(os.path.join(self.isofit_path, 'data', 'earth_sun_distance.txt'))
         self.irradiance_file = os.path.abspath(
@@ -222,7 +222,7 @@ class LUTConfig:
         lut_config_file: configuration file to override default values
     """
 
-    def __init__(self, gip: dict, lut_config_file: str = None):
+    def __init__(self, gip: dict, tsip: dict, lut_config_file: str = None):
         if lut_config_file is not None:
             with open(lut_config_file, 'r') as f:
                 lut_config = json.load(f)
@@ -234,8 +234,18 @@ class LUTConfig:
         # point will be used.
 
         # Units of kilometers
-        self.elevation_spacing = gip["radiative_transfer_parameters"]["GNDALT"]["lut_spacing"]
-        self.elevation_spacing_min = gip["radiative_transfer_parameters"]["GNDALT"]["lut_spacing_min"]
+        if 'GNDALT' in gip["options"]["statevector_elements"] or "cloud" in tsip.keys():
+            try:
+                self.elevation_spacing = tsip["cloud"]["GNDALT"]["lut_spacing"]
+                self.elevation_spacing_min = tsip["cloud"]["GNDALT"]["lut_spacing_min"]
+            except KeyError:
+                self.elevation_spacing = gip["radiative_transfer_parameters"]["GNDALT"]["lut_spacing"]
+                self.elevation_spacing_min = gip["radiative_transfer_parameters"]["GNDALT"]["lut_spacing_min"]
+        else:
+            logging.info('No spacing information for elevation LUT found in config file. '
+                         'Setting spacing to 0.5 and minimum spacing to 0.2.')
+            self.elevation_spacing = 0.5
+            self.elevation_spacing_min = 0.2
 
         # Units of g / m2
         self.h2o_spacing = gip["radiative_transfer_parameters"]["H2OSTR"]["lut_spacing"]
@@ -605,8 +615,8 @@ def build_main_config(opt: dict, gip: dict, tsip: dict, paths: Pathnames, lut_pa
             "prior_sigma": 100.0,
             "prior_mean": (h2o_lut_grid[1] + h2o_lut_grid[-1]) / 2.0,
         }
-    # ToDo: implement GNDALT first guess in separate PR
-    if 'GNDALT' in gip["options"]["statevector_elements"]:
+
+    if 'GNDALT' in gip["options"]["statevector_elements"] or surface_type == "cloud":
         radiative_transfer_config['statevector']['GNDALT'] = {
             "bounds": [elevation_lut_grid[0], elevation_lut_grid[-1]],
             "scale": 100,
@@ -707,19 +717,19 @@ def build_main_config(opt: dict, gip: dict, tsip: dict, paths: Pathnames, lut_pa
         isofit_config_modtran['output']['estimated_state_file'] = paths.state_working_path
 
     if gip["options"]["multiple_restarts"]:
-        eps = 1e-2
+        eps = 0.02 if not gip["options"]["eps"] else gip["options"]["eps"]
         grid = {}
         if h2o_lut_grid is not None:
             h2o_delta = float(h2o_lut_grid[-1]) - float(h2o_lut_grid[0])
-            grid['H2OSTR'] = [round(h2o_lut_grid[0] + h2o_delta * 0.02, 4),
-                              round(h2o_lut_grid[-1] - h2o_delta * 0.02, 4)]
+            grid['H2OSTR'] = [round(h2o_lut_grid[0] + h2o_delta * eps, 4),
+                              round(h2o_lut_grid[-1] - h2o_delta * eps, 4)]
 
         # We will initialize using different AODs for the first aerosol in the LUT
         if len(aerosol_lut_grid) > 0:
             key = list(aerosol_lut_grid.keys())[0]
             aer_delta = aerosol_lut_grid[key][-1] - aerosol_lut_grid[key][0]
-            grid[key] = [round(aerosol_lut_grid[key][0] + aer_delta * 0.02, 4),
-                         round(aerosol_lut_grid[key][-1] - aer_delta * 0.02, 4)]
+            grid[key] = [round(aerosol_lut_grid[key][0] + aer_delta * eps, 4),
+                         round(aerosol_lut_grid[key][-1] - aer_delta * eps, 4)]
         isofit_config_modtran['implementation']['inversion']['integration_grid'] = grid
         isofit_config_modtran['implementation']['inversion']['inversion_grid_as_preseed'] = True
 
@@ -1169,13 +1179,14 @@ def get_metadata_from_obs(obs_file: str, lut_params: LUTConfig, trim_lines: int 
            to_sensor_azimuth_lut_grid, to_sensor_zenith_lut_grid
 
 
-def get_metadata_from_loc(loc_file: str, gip: dict, lut_params: LUTConfig, trim_lines: int = 5,
+def get_metadata_from_loc(loc_file: str, gip: dict, tsip: dict, lut_params: LUTConfig, trim_lines: int = 5,
                           nodata_value: float = -9999) -> (float, float, float, np.array):
     """ Get metadata needed for complete runs from the location file (bands long, lat, elev).
 
     Args:
         loc_file: file name to pull data from
         gip: dictionary of general inversion parameters
+        tsip: dictionary of type specific inversion parameters
         lut_params: parameters to use to define lut grid
         trim_lines: number of lines to ignore at beginning and end of file (good if lines contain values that are
                     erroneous but not nodata
@@ -1221,9 +1232,11 @@ def get_metadata_from_loc(loc_file: str, gip: dict, lut_params: LUTConfig, trim_
     # make elevation grid
     min_elev = np.min(loc_data[2, valid]) / 1000.
     max_elev = np.max(loc_data[2, valid]) / 1000.
-    if 'GNDALT' in gip["options"]["statevector_elements"]:
-        # ToDo: add GNDALT related parameters to type specific options as well
-        exp_range = gip["radiative_transfer_parameters"]["GNDALT"]["expand_range"]
+    if 'GNDALT' in gip["options"]["statevector_elements"] or "cloud" in tsip.keys():
+        try:
+            exp_range = tsip["cloud"]["GNDALT"]["expand_range"]
+        except KeyError:
+            exp_range = gip["radiative_transfer_parameters"]["GNDALT"]["expand_range"]
         min_elev = max(min_elev - exp_range, 0)
         max_elev += exp_range
     elevation_lut_grid = get_grid(min_elev, max_elev, lut_params.elevation_spacing, lut_params.elevation_spacing_min)
