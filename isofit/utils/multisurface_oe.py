@@ -67,12 +67,6 @@ def main(rawargs=None):
     tsip = config['processors']['type_specific_inversion_parameters']
     surface_macro_config = config["surface"]
 
-    # check if name of sensor is given and valid
-    if opt["sensor"] not in ['ang', 'avcl', 'neon', 'prism', 'emit', 'hyp']:
-        if opt["sensor"][:3] != 'NA-':
-            raise ValueError('argument sensor: invalid choice: "NA-test" (choose from "ang", "avcl", "neon", "prism", '
-                             '"emit", "NA-*")')
-
     # set up logger
     logging.basicConfig(format='%(levelname)s:%(asctime)s ||| %(message)s', level=args.logging_level,
                         filename=args.log_file, datefmt='%Y-%m-%d,%H:%M:%S')
@@ -118,7 +112,7 @@ def main(rawargs=None):
         dt = datetime.strptime(fid[10:17], '%Y%j')
     else:
         raise ValueError('Neither flight line ID nor datetime object could be obtained. '
-                         'Please provide sensor name in config file '
+                         'Please provide valid sensor name in config file '
                          '(choose from "ang", "avcl", "prism", "neon", "emit", "NA-*", "hyp").')
 
     # get path names
@@ -228,7 +222,8 @@ def main(rawargs=None):
     if gip["filepaths"]["model_discrepancy_path"] is not None:
         uncorrelated_radiometric_uncertainty = 0
     else:
-        uncorrelated_radiometric_uncertainty = gip["options"]["uncorrelated_radiometric_uncertainty"]
+        uncorrelated_radiometric_uncertainty = 0.01 if not gip["options"]["uncorrelated_radiometric_uncertainty"] \
+            else gip["options"]["uncorrelated_radiometric_uncertainty"]
 
     # Chunk scene => superpixel segmentation
     if not exists(paths.lbl_working_path) or not exists(paths.radiance_working_path):

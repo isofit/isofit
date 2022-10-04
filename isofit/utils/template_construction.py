@@ -157,7 +157,7 @@ class Pathnames:
         if gip["filepaths"]["rdn_factors_path"] is not None:
             self.rdn_factors_path = os.path.abspath(gip["filepaths"]["rdn_factors_path"])
 
-        self.ray_temp_dir = opt["ray_temp_dir"]
+        self.ray_temp_dir = '/tmp/ray' if not opt["ray_temp_dir"] else opt["ray_temp_dir"]
 
     def make_directories(self, surface_types: list):
         """
@@ -453,7 +453,7 @@ def build_presolve_config(opt: dict, gip: dict, paths: Pathnames, h2o_lut_grid: 
     # Determine number of spectra included in each retrieval.  If we are
     # operating on segments, this will average down instrument noise
     if opt["empirical_line"]:
-        spectra_per_inversion = opt["segmentation_size"]
+        spectra_per_inversion = 400 if not opt['segmentation_size'] else opt['segmentation_size']
     else:
         spectra_per_inversion = 1
 
@@ -582,7 +582,7 @@ def build_main_config(opt: dict, gip: dict, tsip: dict, paths: Pathnames, lut_pa
     # Determine number of spectra included in each retrieval.  If we are
     # operating on segments, this will average down instrument noise
     if opt["empirical_line"]:
-        spectra_per_inversion = opt["segmentation_size"]
+        spectra_per_inversion = 400 if not opt['segmentation_size'] else opt['segmentation_size']
     else:
         spectra_per_inversion = 1
 
