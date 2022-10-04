@@ -15,6 +15,7 @@ from osgeo import gdal
 import numpy as np
 from sklearn import mixture
 import subprocess
+import sys
 from sys import platform
 from typing import List
 
@@ -142,7 +143,8 @@ def main(rawargs=None):
     else:
         args.copy_input_files = False
 
-    logging.basicConfig(format='%(levelname)s:%(asctime)s ||| %(message)s', level=args.logging_level, filename=args.log_file, datefmt='%Y-%m-%d,%H:%M:%S')
+    logging.basicConfig(format='%(levelname)s:%(asctime)s ||| %(message)s', level=args.logging_level,
+                        filename=args.log_file, datefmt='%Y-%m-%d,%H:%M:%S')
 
     rdn_dataset = gdal.Open(args.input_radiance, gdal.GA_ReadOnly)
     rdn_size = (rdn_dataset.RasterXSize, rdn_dataset.RasterYSize)
@@ -158,8 +160,6 @@ def main(rawargs=None):
             if not (input_size[0] == rdn_size[0] and input_size[1] == rdn_size[1]):
                 err_str = f'Input file: {infile_name} size is {input_size}, which does not match input_radiance size: {rdn_size}'
                 raise ValueError(err_str)
-
-
 
     lut_params = LUTConfig(args.lut_config_file)
     if args.emulator_base is not None:
@@ -192,11 +192,21 @@ def main(rawargs=None):
         dt = datetime.strptime(args.sensor[3:], '%Y%m%d')
     elif args.sensor == 'hyp':
         dt = datetime.strptime(paths.fid[10:17], '%Y%j')
-
+    else:
+        raise ValueError('Datetime object could not be obtained. Please check file name of input data.')
+        
     dayofyear = dt.timetuple().tm_yday
 
     h_m_s, day_increment, mean_path_km, mean_to_sensor_azimuth, mean_to_sensor_zenith, valid, \
     to_sensor_azimuth_lut_grid, to_sensor_zenith_lut_grid = get_metadata_from_obs(paths.obs_working_path, lut_params)
+
+    # overwrite the time in case original obs has an error in that band
+    if h_m_s[0] != dt.hour and h_m_s[0] >= 24:
+        h_m_s[0] = dt.hour
+        logging.info("UTC hour did not match start time minute. Adjusting to that value.")
+    if h_m_s[1] != dt.minute and h_m_s[1] >= 60:
+        h_m_s[1] = dt.minute
+        logging.info("UTC minute did not match start time minute. Adjusting to that value.")
 
     if day_increment:
         dayofyear += 1

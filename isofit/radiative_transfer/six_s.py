@@ -22,7 +22,7 @@ import logging
 from datetime import datetime
 import numpy as np
 
-from isofit.core.common import resample_spectrum, load_wavelen, VectorInterpolator
+from isofit.core.common import resample_spectrum, VectorInterpolator
 from .look_up_tables import TabularRT, FileExistsError
 from isofit.core.geometry import Geometry
 from isofit.configs import Config
@@ -139,7 +139,6 @@ class SixSRT(TabularRT):
             logging.error('I could not find the SIXS base directory')
             raise KeyError('I could not find the SIXS base directory')
 
-
     def rebuild_cmd(self, point, fn):
         """."""
 
@@ -221,9 +220,10 @@ class SixSRT(TabularRT):
         self.grid = np.zeros(len(lines))
 
         for i, ln in enumerate(lines):
+            ln = ln.replace('******', '0.0').strip()
             ln = ln.replace('*', ' ').strip()
-            w, gt, scad, scau, salb, rhoa, swl, step, sbor, dsol, toar = \
-                ln.split()
+
+            w, gt, scad, scau, salb, rhoa, swl, step, sbor, dsol, toar = ln.split()
 
             self.grid[i] = float(w) * 1000.0  # convert to nm
             solzens[i] = float(solzen)
@@ -239,8 +239,7 @@ class SixSRT(TabularRT):
             sphalbs = resample_spectrum(sphalbs,  self.grid, self.wl, self.fwhm)
             transups = resample_spectrum(transups,  self.grid, self.wl, self.fwhm)
 
-        results = {"solzen": solzens, "rhoatm": rhoatms, "transm": transms, "sphalb": sphalbs,
-               "transup": transups}
+        results = {"solzen": solzens, "rhoatm": rhoatms, "transm": transms, "sphalb": sphalbs, "transup": transups}
         return results
 
     def ext550_to_vis(self, ext550):
@@ -255,7 +254,7 @@ class SixSRT(TabularRT):
         if self.modtran_emulation is False:
             sixs_outputs = []
             for point, fn in zip(self.points, self.files):
-                sixs_outputs.append(self.load_rt(fn,resample=self.resample_wavelengths))
+                sixs_outputs.append(self.load_rt(fn, resample=self.resample_wavelengths))
 
             self.cache = {}
             dims_aug = self.lut_dims + [self.n_chan]
@@ -271,7 +270,7 @@ class SixSRT(TabularRT):
                                                     self.lut_interp_types,
                                                     self.interpolator_style)
         else:
-            one_file = self.load_rt(self.files[0],resample=False)
+            one_file = self.load_rt(self.files[0], resample=False)
 
     def _lookup_lut(self, point):
         ret = {}
