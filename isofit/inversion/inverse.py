@@ -65,6 +65,9 @@ class Inversion:
             idx = np.where(np.logical_and(self.fm.instrument.wl_init > lo,
                                           self.fm.instrument.wl_init < hi))[0]
             self.winidx = np.concatenate((self.winidx, idx), axis=0)
+        self.outside_ret_windows = np.ones(self.fm.n_meas, dtype=bool)
+        self.outside_ret_windows[self.winidx] = False
+
         self.counts = 0
         self.inversions = 0
 
@@ -296,6 +299,14 @@ class Inversion:
 
             # Calculate the initial solution, if needed.
             x0 = invert_simple(self.fm, meas, geom)
+
+            # Update regions outside retrieval windows to match priors
+            prev_x0 = x0.copy()
+            prior_subset_idx = np.arange(len(x0))[self.fm.idx_surface][self.outside_ret_windows]
+            x0[prior_subset_idx] = self.fm.surface.xa(x0, geom)[prior_subset_idx]
+
+            trajectory.append(x0)
+
             x0 = x0[self.inds_free]
 
             # Catch any state vector elements outside of bounds
