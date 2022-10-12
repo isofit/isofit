@@ -324,8 +324,8 @@ class ModtranRT(TabularRT):
             global_flux_no_surface = global_flux_1*(1.-rfl_1 * sphalbs) 
             diffuse_flux_no_surface = global_flux_no_surface - direct_flux_radiance * coszen
             
-            t_down_dirs = (direct_flux_radiance * coszen / wid / np.pi) / TOA_Irad
-            t_down_difs = (diffuse_flux_no_surface / wid / np.pi) / TOA_Irad
+            t_down_dirs = (direct_flux_radiance * coszen / widths / np.pi) / TOA_Irad
+            t_down_difs = (diffuse_flux_no_surface / widths / np.pi) / TOA_Irad
             
             # total transmittance
             transms = (t_down_dirs + t_down_difs) * (t_up_dirs + t_up_difs)
