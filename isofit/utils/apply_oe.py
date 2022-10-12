@@ -591,7 +591,7 @@ class LUTConfig:
         # point will be used.
 
         # Units of kilometers
-        self.elevation_spacing = 0.5
+        self.elevation_spacing = 0.25
         self.elevation_spacing_min = 0.2
 
         # Units of g / m2
@@ -599,7 +599,7 @@ class LUTConfig:
         self.h2o_spacing_min = 0.03
 
         # Special parameter to specify the minimum allowable water vapor value in g / m2
-        self.h2o_min = 0.2
+        self.h2o_min = 0.05
 
         # Set defaults, will override based on settings
         # Units of g / m2
@@ -622,14 +622,14 @@ class LUTConfig:
         self.aerosol_1_spacing_min = 0
 
         # Units of AOD
-        self.aerosol_2_spacing = 0.25
+        self.aerosol_2_spacing = 0.1
         self.aerosol_2_spacing_min = 0
 
         # Units of AOD
-        self.aerosol_0_range = [0.001, 0.5]
-        self.aerosol_1_range = [0.001, 0.5]
-        self.aerosol_2_range = [0.001, 0.5]
-        self.aot_550_range = [0.001, 0.5]
+        self.aerosol_0_range = [0.001, 1]
+        self.aerosol_1_range = [0.001, 1]
+        self.aerosol_2_range = [0.001, 1]
+        self.aot_550_range = [0.001, 1]
 
         self.aot_550_spacing = 0
         self.aot_550_spacing_min = 0
@@ -1034,8 +1034,8 @@ def get_metadata_from_loc(loc_file: str, lut_params: LUTConfig, trim_lines: int 
     min_elev = np.min(loc_data[2, valid]) / 1000.
     max_elev = np.max(loc_data[2, valid]) / 1000.
     if pressure_elevation:
-        min_elev = max(min_elev - 1, 0)
-        max_elev += 1
+        min_elev = max(min_elev - 2, 0)
+        max_elev += 2
     elevation_lut_grid = lut_params.get_grid(min_elev, max_elev, lut_params.elevation_spacing,
                                              lut_params.elevation_spacing_min)
 
