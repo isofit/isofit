@@ -44,7 +44,7 @@ class Isofit:
         logfile: file to write output logs to
     """
 
-    def __init__(self, config_file, row_column='', level='INFO', logfile=None):
+    def __init__(self, config_file, level='INFO', logfile=None):
 
         # Explicitly set the number of threads to be 1, so we more effectively
         # run in parallel
@@ -70,7 +70,7 @@ class Isofit:
                    'ignore_reinit_error': self.config.implementation.ray_ignore_reinit_error,
                    'include_dashboard': self.config.implementation.ray_include_dashboard,
                    'local_mode': self.config.implementation.n_cores == 1}
-        
+
         # We can only set the num_cpus if running on a single-node
         if self.config.implementation.ip_head is None and self.config.implementation.redis_password is None:
             rayargs['num_cpus'] = self.config.implementation.n_cores
@@ -246,6 +246,3 @@ class Worker(object):
                         logging.info(f'Worker at start location ({row},{col}) completed {index}/{indices.shape[0]}')
 
         self.io.flush_buffers()
-
-
-

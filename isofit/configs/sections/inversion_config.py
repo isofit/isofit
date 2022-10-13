@@ -46,6 +46,11 @@ class InversionConfig(BaseConfigSection):
         """Grid of inversion points to execute if mode='grid'.  Either fixed, or starting points, depending
         on self.fixed_inversion_grid"""
 
+        self._priors_in_initial_guess_type = bool
+        self.priors_in_initial_guess = True
+        """Boolean to inidicate the use of surface priors outside of the inversion windows during the 
+        intial guess."""
+
         self._inversion_grid_as_preseed_type = bool
         self.inversion_grid_as_preseed = False
         """Parameter indicating whether to treat the inversion grid as:

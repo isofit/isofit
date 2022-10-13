@@ -25,7 +25,7 @@ import xxhash
 import numpy as np
 import scipy.linalg
 from scipy.interpolate import RegularGridInterpolator
-from os.path import expandvars, split, abspath
+from os.path import expandvars
 from typing import List
 from collections import OrderedDict
 import ndsplines
@@ -48,10 +48,12 @@ class VectorInterpolator:
             data_input: n dimensional array of radiative transfer engine outputs (each dimension size corresponds to the
                         given grid_input list length, with the last dimensions equal to the number of sensor channels)
             lut_interp_types: a list indicating if each dimension is in radiance (r), degrees (r), or normal (n) units.
-            version: version to use: 'rg' for scipy RegularGridInterpolator, 'nds-k' for ndsplines, where k is the degrees
+            version: version to use: 'rg' for scipy RegularGridInterpolator, 'nds-k' for ndsplines, where k is the
+                     degrees.
         """
 
-    def __init__(self, grid_input: List[List[float]], data_input: np.array, lut_interp_types: List[str], version='nds-1'):
+    def __init__(self, grid_input: List[List[float]], data_input: np.array, lut_interp_types: List[str],
+                 version='nds-1'):
         self.lut_interp_types = lut_interp_types
         self.single_point_data = None
 
@@ -77,10 +79,10 @@ class VectorInterpolator:
             original_grid_subset = np.array(grid[angle_loc])
 
             # convert for angular coordinates
-            if (angle_types[_angle_loc] == 'r'):
+            if angle_types[_angle_loc] == 'r':
                 grid_subset_cosin = np.cos(original_grid_subset)
                 grid_subset_sin = np.sin(original_grid_subset)
-            elif (angle_types[_angle_loc] == 'd'):
+            elif angle_types[_angle_loc] == 'd':
                 grid_subset_cosin = np.cos(np.deg2rad(original_grid_subset))
                 grid_subset_sin = np.sin(np.deg2rad(original_grid_subset))
 
@@ -123,6 +125,7 @@ class VectorInterpolator:
             angle_locations += 1
 
         self.n = data.shape[-1]
+
         if version == 'rg':
             grid_aug = grid + [np.arange(data.shape[-1])]
             self.itp = RegularGridInterpolator(grid_aug, data,
@@ -130,10 +133,10 @@ class VectorInterpolator:
         elif version[:3] == 'nds':
             degrees = int(version[4:])
             grid_aug = grid + [np.arange(data.shape[-1]).tolist()]
-            grid_arr = np.stack(np.meshgrid(*grid_aug, indexing='ij'),axis=-1)
+            grid_arr = np.stack(np.meshgrid(*grid_aug, indexing='ij'), axis=-1)
             self.itp = ndsplines.make_interp_spline(grid_arr, data, degrees=degrees)
         else:
-            raise_str = f'Unknown interpoloator version {version}'
+            raise_str = f'Unknown interpolator version {version}'
             raise ArgumentError(raise_str)
 
     def __call__(self, points):
@@ -568,8 +571,8 @@ def conditional_gaussian(mu: np.array, C: np.array, window: np.array, remain: np
         (np.array, np.array): conditional mean, conditional covariance
 
     """
-    w = np.array(window)[:,np.newaxis]
-    r = np.array(remain)[:,np.newaxis]
+    w = np.array(window)[:, np.newaxis]
+    r = np.array(remain)[:, np.newaxis]
     C11 = C[r, r.T]
     C12 = C[r, w.T]
     C21 = C[w, r.T]
@@ -580,6 +583,7 @@ def conditional_gaussian(mu: np.array, C: np.array, window: np.array, remain: np
     conditional_cov = C22 - C21 @ Cinv @ C12
     return conditional_mean, conditional_cov
 
+
 def envi_header(inputpath):
     """
     Convert a envi binary/header path to a header, handling extensions
@@ -589,7 +593,8 @@ def envi_header(inputpath):
         str: the header file associated with the input reference.
 
     """
-    if os.path.splitext(inputpath)[-1] == '.img' or os.path.splitext(inputpath)[-1] == '.dat' or os.path.splitext(inputpath)[-1] == '.raw':
+    if os.path.splitext(inputpath)[-1] == '.img' or os.path.splitext(inputpath)[-1] == '.dat' or os.path.splitext(
+            inputpath)[-1] == '.raw':
         # headers could be at either filename.img.hdr or filename.hdr.  Check both, return the one that exists if it
         # does, if not return the latter (new file creation presumed).
         hdrfile = os.path.splitext(inputpath)[0] + '.hdr'
