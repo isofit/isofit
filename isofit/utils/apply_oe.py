@@ -544,8 +544,10 @@ class Pathnames():
             self.noise_path = join(self.isofit_path, 'data', 'avirisc_noise.txt')
         elif args.sensor == 'emit':
             self.noise_path = join(self.isofit_path, 'data', 'emit_noise.txt')
-            if args.channelized_uncertainty_path is None:
+            if self.input_channelized_uncertainty_path is None:
                 self.input_channelized_uncertainty_path = join(self.isofit_path, 'data', 'emit_osf_uncertainty.txt')
+            if self.input_model_discrepancy_path is None:
+                self.input_model_discrepancy_path = join(self.isofit_path, 'data', 'emit_model_discrepancy.mat')
         else:
             self.noise_path = None
             logging.info('no noise path found, proceeding without')
