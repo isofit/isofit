@@ -42,7 +42,7 @@ release and automatically resolve all the dependencies.
 
 The Ray_ package, which is a unified framework for scaling AI and Python applications, is currently not available for
 MacOS on conda-forge. Furthermore, the Ray conda package is maintained by the community, not the Ray team. While using
-a conda environment, please install Ray from PyPi using pip:
+a mamba or conda environment, please install Ray from PyPi using pip:
 
 .. code-block:: bash
 
