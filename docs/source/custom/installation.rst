@@ -40,6 +40,14 @@ installing any packages:
 Mamba_ or Conda_ are the preferred methods to install ISOFIT, as they will always install the most recent stable
 release and automatically resolve all the dependencies.
 
+The Ray_ package, which is a unified framework for scaling AI and Python applications, is currently not available for
+MacOS on conda-forge. Furthermore, the Ray conda package is maintained by the community, not the Ray team. While using
+a conda environment, please install Ray from PyPi using pip:
+
+.. code-block:: bash
+
+    $ pip install ray
+
 From PyPI (not recommended)
 ***************************
 
@@ -57,7 +65,7 @@ before the pip installer is run:
     * pep8>=1.7.1
     * python-xxhash>=1.2.0
     * pyyaml>=5.3.2
-    * ray-all>=1.2.0
+    * ray>=1.2.0
     * pandas>=0.24.0
     * gdal>=2.0.0
     * tensorflow>=2.0.1
@@ -272,3 +280,4 @@ Ray may have compatability issues with older machines with glibc < 2.14.
 .. _Miniconda: https://docs.conda.io/en/latest/miniconda.html
 .. _pip: https://pip.pypa.io
 .. _Python installation guide: http://docs.python-guide.org/en/latest/starting/installation/
+.. _Ray: https://docs.ray.io/en/latest/index.html
