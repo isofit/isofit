@@ -25,6 +25,7 @@ from scipy.optimize import minimize
 
 from isofit.core.common import emissive_radiance, eps
 from isofit.radiative_transfer.radiative_transfer import RadiativeTransfer
+from isofit.core.common import envi_header, svd_inv, svd_inv_sqrt
 
 
 def heuristic_atmosphere(RT: RadiativeTransfer, instrument, x_RT, x_instrument,  meas, geom):
@@ -136,6 +137,92 @@ def invert_algebraic(surface, RT: RadiativeTransfer, instrument, x_surface,
     # atmospheric optical parameters
     coeffs = rhoatm, sphalb, transm, solar_irr, coszen, transup
     return rfl_est, Ls, coeffs
+
+
+def invert_analytical(fm, winidx, meas, geom, x0, num_iter=1, hash_table=None, hash_size=None, diag_uncert=True):
+    """ Perform an analytical estimate of the conditional MAP estimate for
+    a fixed atmosphere.  Baed on Susiluoto, 2022.
+
+    Args:
+        meas: a one-D numpy vector of radiance in uW/nm/sr/cm2
+        geom: a geometry object
+        x0: the initial guess - warning, atmosphere will not updates
+        num_iter: number of interations to run through
+        diag_uncert: flag indicating whether to diagonalize the uncertainty
+
+    Returns:
+        x: MAP estimate of the mean
+        S: diagonal conditional posterior covariance estimate
+    """
+    from scipy.linalg.lapack import dpotrf, dpotri 
+    from scipy.linalg.blas import dsymv
+
+    x = x0.copy()
+    x_surface, x_RT, x_instrument = fm.unpack(x)
+    x_alg = invert_algebraic(fm.surface, fm.RT, fm.instrument,\
+                             x_surface, x_RT, x_instrument, meas, geom)
+    x[fm.surface.idx_lamb] = x_alg[0]
+    trajectory = [x] 
+
+    for n in range(num_iter):
+        x_surface, x_RT, x_instrument = fm.unpack(x)
+
+        Seps = fm.Seps(x, meas, geom)[winidx,:][:,winidx]
+        #Seps_inv = svd_inv_sqrt(Seps, hash_table, hash_size)[0]
+        diag_Seps = np.diagonal(Seps)
+        if np.count_nonzero(Seps - np.diag(diag_Seps)):
+            Seps_inv = np.eye(len(diag_Seps)) * (1. / diag_Seps)
+        else:
+            Seps_inv = svd_inv_sqrt(Seps, hash_table, hash_size)[0]
+
+        Sa = fm.Sa(x, geom)
+        Sa_surface = Sa[fm.surface.idx_lamb,:][:,fm.surface.idx_lamb]
+        Sa_surface = Sa_surface[winidx,:][:,winidx]
+        Sa_inv = svd_inv_sqrt(Sa_surface, hash_table, hash_size)[0]
+
+        xa = fm.xa(x, geom)[fm.surface.idx_lamb][winidx]
+
+        L_atm = fm.RT.get_L_atm(x_RT, geom)[winidx]
+        L_tot = fm.calc_rdn(x, geom)[winidx]
+
+        L_surf = (L_tot - L_atm) / x_surface[winidx]# = Ldiag
+        L_surf[L_surf < 0] = 1e-9
+        L_surf_inv = np.eye(len(L_tot)) * (1 / (L_tot - L_atm))
+
+        # Match Jouni's convention
+        C = Seps# C = 'meas_Cov' = Seps
+        C_rpr = Sa_surface# C = 'prior_Cov' = Sa
+        L = dpotrf(C, 1)[0]
+        P = dpotri(L, 1)[0]
+        P_rpr = Sa_inv
+        mu_rpr = xa
+        
+        priorprod = P_rpr @ mu_rpr
+
+        P_tilde = ((L_surf*P).T*L_surf).T
+        P_rcond = P_rpr + P_tilde
+
+        LI_rcond = dpotrf(P_rcond)[0] 
+        C_rcond = dpotri(LI_rcond)[0]
+
+        mu = dsymv(1, C_rcond, L_surf*dsymv(1, P, meas[winidx] - L_atm) + priorprod)
+
+        full_mu = np.zeros(len(x_surface))
+        full_mu[winidx] = mu
+
+        x[fm.idx_surface] = full_mu
+        trajectory.append(x)
+
+    if diag_uncert:
+        full_unc = np.zeros(len(x_surface))
+        full_unc[winidx] = np.diag(C_rcond)
+        
+        return trajectory, full_unc
+    else:
+        return trajectory, C_rcond
+
+
+
 
 
 def invert_simple(forward, meas, geom):
