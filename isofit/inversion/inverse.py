@@ -46,6 +46,7 @@ class Inversion:
         measurement cost distributions."""
 
         config: InversionConfig = full_config.implementation.inversion
+        self.config = config
 
         self.lasttime = time.time()
         self.fm = forward
@@ -301,9 +302,9 @@ class Inversion:
             x0 = invert_simple(self.fm, meas, geom)
 
             # Update regions outside retrieval windows to match priors
-            prev_x0 = x0.copy()
-            prior_subset_idx = np.arange(len(x0))[self.fm.idx_surface][self.outside_ret_windows]
-            x0[prior_subset_idx] = self.fm.surface.xa(x0, geom)[prior_subset_idx]
+            if self.config.priors_in_initial_guess:
+                prior_subset_idx = np.arange(len(x0))[self.fm.idx_surface][self.outside_ret_windows]
+                x0[prior_subset_idx] = self.fm.surface.xa(x0, geom)[prior_subset_idx]
 
             trajectory.append(x0)
 

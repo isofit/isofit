@@ -375,6 +375,14 @@ def invert_simple(forward: ForwardModel, meas: np.array, geom: Geometry):
     # Update the full state vector
     x[forward.idx_surface] = x_surface
 
+    # If available, get initial guess of surface elevation from location file.
+    if geom.surface_elevation_km and 'GNDALT' in RT.statevec_names:
+        ind_sv = forward.idx_RT[RT.statevec_names.index('GNDALT')]
+        if geom.surface_elevation_km < 0.0:
+            x[ind_sv] = 0.0
+        else:
+            x[ind_sv] = geom.surface_elevation_km
+
     # We record these initial values in the geometry object - the only
     # "stateful" part of the retrieval
     geom.x_surf_init = x[forward.idx_surface]

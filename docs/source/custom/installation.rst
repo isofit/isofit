@@ -3,43 +3,109 @@
 Installation
 ============
 
+From conda-forge (recommended)
+******************************
+
+ISOFIT can be installed from the conda-forge channel by using different types of package managers. It is highly
+recommended to use the Mambaforge version of the Miniforge_ minimal installer. It allows to install the conda package
+manager with some useful features pre-configured:
+
+- conda-forge is set as the default (and only) channel
+- support for Mamba_ in place of Conda, which is a reimplementation of the conda package manager in C++ that allows parallel downloading and much faster dependency solving
+- emphasis on supporting various CPU architectures (x86_64, ppc64le, and aarch64 including Apple M1)
+
+Using Mamba_ (latest version recommended), ISOFIT can be installed by first creating a virtual environment
+(optional but recommended), followed by the installation itself:
+
+.. code-block:: bash
+
+    $ mamba create -n isofit_env isofit
+    $ mamba activate isofit_env
+
+Alternatively, you can of course install ISOFIT in an already existing environment by simply running:
+
+.. code-block:: bash
+
+    $ mamba install isofit
+
+Of course, you can also use the Conda_ installer from the Anaconda_ or Miniconda_ package managers. The installation
+procedure is equal to using Mamba_, but you should make sure to set the conda-forge channel as default prior to
+installing any packages:
+
+.. code-block:: bash
+
+    $ conda config --add channels conda-forge
+    $ conda config --set channel_priority strict
+
+Mamba_ or Conda_ are the preferred methods to install ISOFIT, as they will always install the most recent stable
+release and automatically resolve all the dependencies.
+
+The Ray_ package, which is a unified framework for scaling AI and Python applications, is currently not available for
+MacOS on conda-forge. Furthermore, the Ray conda package is maintained by the community, not the Ray team. While using
+a mamba or conda environment, please install Ray from PyPi using pip:
+
+.. code-block:: bash
+
+    $ pip install ray
+
+From PyPI (not recommended)
+***************************
+
+There is also a pip_ installer for ISOFIT. However, please note that ISOFIT depends on some open source packages that
+may cause problems when installed with pip. Therefore, we strongly recommend to resolve the following dependencies
+before the pip installer is run:
+
+    * numpy>=1.20
+    * matplotlib-base>=2.2.2
+    * scipy>=1.3.0
+    * scikit-learn>=0.19.1
+    * scikit-image >=0.17.0
+    * spectral>=0.19
+    * pytest>=3.5.1
+    * pep8>=1.7.1
+    * python-xxhash>=1.2.0
+    * pyyaml>=5.3.2
+    * ray>=1.2.0
+    * pandas>=0.24.0
+    * gdal>=2.0.0
+    * tensorflow>=2.0.1
+
+Then, the pip installer can be run by:
+
+.. code-block:: bash
+
+    $ pip install isofit
+
+If you don't have pip_ installed, this `Python installation guide`_ can guide you through the process.
+
 From Github
 ***********
 
-The code repository, development branches, and user community are found on
-`GitHub <https://github.com/davidraythompson/isofit>`_. To install:
+Alternatively, you can install ISOFIT from source by cloning the respective repository hosted on Github:
 
-1. Download or clone the git repo located at https://github.com/isofit/isofit, using either the `current-release <https://github.com/isofit/isofit/tree/current-release>`_ or `master (current-release + reviewed development) <https://github.com/isofit/isofit>`_ branch.
+.. code-block:: bash
 
-2. Install the ISOFIT using pip - be sure to use a full path reference.
+    $ git clone https://github.com/isofit/isofit
 
-.. code::
+The repository contains an environment file that includes all needed dependencies. It is recommended to create this
+specific environment prior to installing ISOFIT from source:
 
-    pip install --editable /path/to/isofit --use-feature=2020-resolver
+.. code-block:: bash
 
-From PyPI
-*********
+    $ cd isofit/recipe
+    $ mamba env create -f environment_isofit_basic.yml
+    $ mamba activate isofit_env
 
-Also, the latest release is always hosted on `PyPI <https://pypi.python.org/pypi/isofit>`_,
-so if you have `pip` installed, you can install ISOFIT from the command line with
+Finally, install ISOFIT in editable mode:
 
-.. code::
+.. code-block:: bash
 
-    pip install isofit
-
-This will install the "isofit" package into your environment as well as its dependencies.
-
-Using Utils
-***********
-
-Several utilities are provided to facilitate using ISOFIT in different workflows.  Some
-of the utilities (such as `apply_oe.py <https://github.com/isofit/isofit/blob/master/isofit/utils/apply_oe.py>`_)
-require GDAL, which is not required in setup.py currently to facilitate diverse compatibility.
-An example installation is available in the `utils workflow <https://github.com/isofit/isofit/blob/master/.github/workflows/utils-workflow.yml>`_
+    $ cd ..
+    $ pip install -e .
 
 
 Setting environment variables
------------------------------
+=============================
 
 Depending on the selected RTM, specific environment variables pointing to the RTM's base directory have to be set prior to running ISOFIT.
 In the following, general instructions on how to set these variables on MacOS, Linux and Windows are provided.
@@ -95,7 +161,7 @@ Windows
 
 
 Quick Start using MODTRAN 6.0
------------------------------
+=============================
 
 This quick start presumes that you have an installation of the MODTRAN 6.0 radiative transfer model. This is the
 preferred radiative transfer option if available, though we have also included interfaces to the open source
@@ -114,8 +180,9 @@ LibRadTran RT code as well as to neural network emulators.
 
 4. Look for output data in examples/20171108_Pasadena/output/.
 
+
 Quick Start with LibRadTran 2.0.x
----------------------------------
+=================================
 
 This quick start requires an installation of the open source LibRadTran radiative transfer model (`LibRadTran <http://www.libradtran.org/doku.php>`_).
 A few important steps have to be considered when installing the software, which are outlined below. We have tested with the latest 2.0.4 release.
@@ -161,8 +228,9 @@ A few important steps have to be considered when installing the software, which 
 
 8. Look for output data in examples/20171108_Pasadena/output/.
 
+
 Quick Start with sRTMnet
-------------------------
+========================
 
 sRTMnet is an emulator for MODTRAN 6, that works by coupling a neural network with a surrogate RTM (6S v2.1).
 Installation requires two steps:
@@ -187,9 +255,8 @@ point the environment variable EMULATOR_PATH to the base unzipped path.
     sh ./run_example_cube.sh
 
 
-
 Additional Installation Info for Mac OSX
-------------------------------------------
+========================================
 
 1. Install the command-line compiler
 
@@ -201,5 +268,16 @@ Additional Installation Info for Mac OSX
 
 
 Known Incompatibilities
------------------------
+=======================
+
 Ray may have compatability issues with older machines with glibc < 2.14.
+
+
+.. _Conda: https://conda.io/docs/
+.. _Miniforge: https://github.com/conda-forge/miniforge
+.. _Mamba: https://github.com/mamba-org/mamba
+.. _Anaconda: https://www.anaconda.com/products/distribution
+.. _Miniconda: https://docs.conda.io/en/latest/miniconda.html
+.. _pip: https://pip.pypa.io
+.. _Python installation guide: http://docs.python-guide.org/en/latest/starting/installation/
+.. _Ray: https://docs.ray.io/en/latest/index.html
