@@ -23,7 +23,7 @@ from scipy.interpolate import interp1d
 from scipy.optimize import minimize_scalar as min1d
 from scipy.optimize import minimize
 
-from isofit.core.common import emissive_radiance, eps
+from isofit.core.common import emissive_radiance, eps, conditional_gaussian
 from isofit.core.forward import ForwardModel
 from isofit.core.geometry import Geometry
 from isofit.core.instrument import Instrument
@@ -172,7 +172,7 @@ def invert_algebraic(surface: Surface, RT: RadiativeTransfer, instrument: Instru
     return rfl_est, Ls, coeffs
 
 
-def invert_analytical(fm: ForwardModel, winidx: np.array, meas: np.array, geom: Geometry, x0: np.array, num_iter:int = 1, 
+def invert_analytical(fm: ForwardModel, winidx: np.array, meas: np.array, geom: Geometry, x_RT: np.array, num_iter:int = 1, 
                       hash_table:OrderedDict = None, hash_size:int = None, diag_uncert:bool = True):
     """ Perform an analytical estimate of the conditional MAP estimate for
     a fixed atmosphere.  Based on the "Inner loop" from Susiluoto, 2022.
@@ -182,7 +182,7 @@ def invert_analytical(fm: ForwardModel, winidx: np.array, meas: np.array, geom: 
         winidx: indices of surface components of state vector (to be solved)
         meas: a one-D numpy vector of radiance in uW/nm/sr/cm2
         geom: geometry object corresponding to given measurement
-        x0: the initial guess - warning, atmosphere will not updates
+        x_RT: the radiative transfer state variables
         num_iter: number of interations to run through
         hash_table: a hash table to use locally
         hash_size: max size of given hash table
@@ -208,6 +208,9 @@ def invert_analytical(fm: ForwardModel, winidx: np.array, meas: np.array, geom: 
                              x[fm.idx_surface], x_RT, x[fm.idx_instrument], meas, geom)
     x[fm.idx_surface] = x_alg[0]
     trajectory = [x] 
+    outside_ret_windows = np.ones(len(fm.surface.idx_lamb),dtype=bool)
+    outside_ret_windows[winidx] = False
+    outside_ret_windows = np.where(outside_ret_windows)[0]
 
     for n in range(num_iter):
         x_surface, x_RT, x_instrument = fm.unpack(x)
@@ -219,7 +222,10 @@ def invert_analytical(fm: ForwardModel, winidx: np.array, meas: np.array, geom: 
         Sa_surface = Sa_surface[winidx,:][:,winidx]
         Sa_inv = svd_inv_sqrt(Sa_surface, hash_table, hash_size)[0]
 
-        xa = fm.xa(x, geom)[fm.surface.idx_lamb][winidx]
+        xa_full = fm.xa(x, geom)
+        xa_surface = xa_full[fm.surface.idx_lamb]
+        xa = xa_surface[winidx]
+        xa_iv = xa_surface[outside_ret_windows]
 
         L_atm = fm.RT.get_L_atm(x_RT, geom)[winidx]
         L_tot = fm.calc_rdn(x, geom)[winidx]
@@ -242,18 +248,23 @@ def invert_analytical(fm: ForwardModel, winidx: np.array, meas: np.array, geom: 
         LI_rcond = dpotrf(P_rcond)[0] 
         C_rcond = dpotri(LI_rcond)[0]
 
+        # Calculate AOE mean
         mu = dsymv(1, C_rcond, L_surf*dsymv(1, P, meas[winidx] - L_atm) + priorprod)
 
         full_mu = np.zeros(len(x_surface))
         full_mu[winidx] = mu
 
+        # Calculate conditional prior mean to fill in
+        #xa_cond, Sa_cond = conditional_gaussian(xa_full, Sa, outside_ret_windows, winidx, mu)
+        #full_mu[outside_ret_windows] = xa_cond
+        full_mu[outside_ret_windows] = xa[outside_ret_windows]
+
         x[fm.idx_surface] = full_mu
         trajectory.append(x)
 
     if diag_uncert:
-        full_unc = np.zeros(len(x_surface))
+        full_unc = np.ones(len(x))
         full_unc[winidx] = np.sqrt(np.diag(C_rcond))
-        
         return trajectory, full_unc
     else:
         return trajectory, C_rcond
