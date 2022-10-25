@@ -139,7 +139,8 @@ def invert_algebraic(surface, RT: RadiativeTransfer, instrument, x_surface,
     return rfl_est, Ls, coeffs
 
 
-def invert_analytical(fm, winidx, meas, geom, x0, num_iter=1, hash_table=None, hash_size=None, diag_uncert=True):
+def invert_analytical(fm, winidx, meas, geom, x_RT, num_iter=1, hash_table=None, 
+                      hash_size=None, diag_uncert=True):
     """ Perform an analytical estimate of the conditional MAP estimate for
     a fixed atmosphere.  Baed on Susiluoto, 2022.
 
@@ -157,11 +158,18 @@ def invert_analytical(fm, winidx, meas, geom, x0, num_iter=1, hash_table=None, h
     from scipy.linalg.lapack import dpotrf, dpotri 
     from scipy.linalg.blas import dsymv
 
-    x = x0.copy()
-    x_surface, x_RT, x_instrument = fm.unpack(x)
+    #x = x0.copy()
+    #x_surface, x_RT, x_instrument = fm.unpack(x)
+
+    # Note, this will fail if x_instrument is populated
+    if len(fm.idx_instrument) > 0:
+        raise AttributeError('Invert analytical not currently set to handle instrument state variable indexing')
+
+    x = np.zeros(fm.nstate)
+    x[fm.idx_RT] = x_RT
     x_alg = invert_algebraic(fm.surface, fm.RT, fm.instrument,\
-                             x_surface, x_RT, x_instrument, meas, geom)
-    x[fm.surface.idx_lamb] = x_alg[0]
+                             x[fm.idx_surface], x_RT, x[fm.idx_instrument], meas, geom)
+    x[fm.idx_surface] = x_alg[0]
     trajectory = [x] 
 
     for n in range(num_iter):
@@ -215,7 +223,7 @@ def invert_analytical(fm, winidx, meas, geom, x0, num_iter=1, hash_table=None, h
 
     if diag_uncert:
         full_unc = np.zeros(len(x_surface))
-        full_unc[winidx] = np.diag(C_rcond)
+        full_unc[winidx] = np.sqrt(np.diag(C_rcond))
         
         return trajectory, full_unc
     else:
