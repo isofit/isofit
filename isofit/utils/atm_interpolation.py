@@ -249,7 +249,7 @@ def atm_interpolation(reference_state_file: str,
     n_ray_cores = int(ray.available_resources()["CPU"])
     n_cores = min(n_ray_cores, n_input_lines)
 
-    logging.info('Beginning empirical line inversions using {} cores'.format(n_cores))
+    logging.info('Beginning atmospheric interpolation {} cores'.format(n_cores))
 
     # Break data into sections
     line_sections = np.linspace(0, n_input_lines, num=int(n_cores + 1), dtype=int)
@@ -268,7 +268,7 @@ def atm_interpolation(reference_state_file: str,
     _ = ray.get(results)
 
     total_time = time.time() - start_time
-    logging.info('Parallel empirical line inversions complete.  {} s total, {} spectra/s, {} spectra/s/core'.format(
+    logging.info('Parallel atmospheric interpolations complete.  {} s total, {} spectra/s, {} spectra/s/core'.format(
         total_time, line_sections[-1] * n_input_samples / total_time,
                     line_sections[-1] * n_input_samples / total_time / n_cores))
 

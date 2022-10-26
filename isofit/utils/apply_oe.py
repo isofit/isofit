@@ -134,7 +134,7 @@ def main(rawargs=None):
 
     args = parser.parse_args(rawargs)
 
-    use_superpixels = args.empirical_line == 1 or args.analytical_line == 1
+    use_superpixels = ((args.empirical_line == 1) or (args.analytical_line == 1))
 
     if args.sensor not in ['ang', 'avcl', 'neon', 'prism', 'emit', 'hyp']:
         if args.sensor[:3] != 'NA-':
@@ -405,15 +405,17 @@ def main(rawargs=None):
                 os.system(cmd)
 
     if not exists(paths.rfl_working_path) or not exists(paths.uncert_working_path):
+
+        if args.num_neighbors is None:
+            nneighbors = int(round(3950 / 9 - 35/36 * args.segmentation_size))
+        else:
+            nneighbors = args.num_neighbors
+
         if args.empirical_line == 1:
             # Empirical line
             logging.info('Empirical line inference')
             # Determine the number of neighbors to use.  Provides backwards stability and works
             # well with defaults, but is arbitrary
-            if args.num_neighbors is None:
-                nneighbors = int(round(3950 / 9 - 35/36 * args.segmentation_size))
-            else:
-                nneighbors = args.num_neighbors
             empirical_line(reference_radiance_file=paths.rdn_subs_path,
                            reference_reflectance_file=paths.rfl_subs_path,
                            reference_uncertainty_file=paths.uncert_subs_path,
@@ -426,10 +428,6 @@ def main(rawargs=None):
                            isofit_config=paths.modtran_config_path,
                            nneighbors=nneighbors)
         elif args.analytical_line == 1:
-            if args.num_neighbors is None:
-                nneighbors = int(round(3950 / 9 - 35/36 * args.segmentation_size))
-            else:
-                nneighbors = args.num_neighbors
             logging.info('Analytical line inference')
             analytical_line.main([paths.radiance_working_path, 
                                   paths.loc_working_path, 
