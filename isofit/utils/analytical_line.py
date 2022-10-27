@@ -35,7 +35,7 @@ from isofit.inversion.inverse_simple import invert_algebraic, invert_analytical
 from isofit.core.geometry import Geometry
 from isofit.core.fileio import write_bil_chunk
 
-from atm_interpolation import atm_interpolation
+from isofit.core.atm_interpolation import atm_interpolation
 from collections import OrderedDict
 
 
