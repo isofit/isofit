@@ -46,7 +46,7 @@ from isofit.utils                    import remap
 from isofit.utils.atm_interpolation  import atm_interpolation
 
 
-def main(rawargs=None):
+def main(rawargs=None) -> None:
     """
     TODO: Description
     """
@@ -120,9 +120,10 @@ def main(rawargs=None):
     if 'emit pge input files' in list(output_metadata.keys()):
         del output_metadata['emit pge input files']
 
-    del envi.create_image(envi_header(analytical_state_file),     ext='', metadata=output_metadata, force=True)
-    del envi.create_image(envi_header(analytical_state_unc_file), ext='', metadata=output_metadata, force=True)
-    del atm, rdn
+    img = envi.create_image(envi_header(analytical_state_file),     ext='', metadata=output_metadata, force=True)
+    del img
+    img = envi.create_image(envi_header(analytical_state_unc_file), ext='', metadata=output_metadata, force=True)
+    del atm, rdn, img
 
     ray.init(
         ignore_reinit_error = config.implementation.ray_ignore_reinit_error,
@@ -192,7 +193,7 @@ class Worker(object):
         self.analytical_state_file = analytical_state_file
         self.analytical_state_unc_file = analytical_state_unc_file
 
-    def run_lines(self, startstop: tuple):
+    def run_lines(self, startstop: tuple) -> None:
         """
         TODO: Description
         """
