@@ -228,6 +228,8 @@ def atm_interpolation(reference_state_file: str,
     output_metadata['band names'] = band_names
     output_metadata['description'] = 'Interpolated atmospheric state'
     output_metadata['bands'] = len(band_names)
+    del output_metadata['fwhm']
+    del output_metadata['wavelenth']
 
     output_atm_img = envi.create_image(envi_header(output_atm_file), ext='',
                                        metadata=output_metadata, force=True)
