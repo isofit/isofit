@@ -44,7 +44,7 @@ class Isofit:
         logfile: file to write output logs to
     """
 
-    def __init__(self, config_file, row_column='', level='INFO', logfile=None):
+    def __init__(self, config_file, level='INFO', logfile=None):
 
         # Explicitly set the number of threads to be 1, so we more effectively
         # run in parallel

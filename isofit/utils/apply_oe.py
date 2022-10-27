@@ -15,6 +15,7 @@ from osgeo import gdal
 import numpy as np
 from sklearn import mixture
 import subprocess
+import sys
 from sys import platform
 from typing import List
 
@@ -142,7 +143,8 @@ def main(rawargs=None):
     else:
         args.copy_input_files = False
 
-    logging.basicConfig(format='%(levelname)s:%(asctime)s ||| %(message)s', level=args.logging_level, filename=args.log_file, datefmt='%Y-%m-%d,%H:%M:%S')
+    logging.basicConfig(format='%(levelname)s:%(asctime)s ||| %(message)s', level=args.logging_level,
+                        filename=args.log_file, datefmt='%Y-%m-%d,%H:%M:%S')
 
     rdn_dataset = gdal.Open(args.input_radiance, gdal.GA_ReadOnly)
     rdn_size = (rdn_dataset.RasterXSize, rdn_dataset.RasterYSize)
@@ -158,8 +160,6 @@ def main(rawargs=None):
             if not (input_size[0] == rdn_size[0] and input_size[1] == rdn_size[1]):
                 err_str = f'Input file: {infile_name} size is {input_size}, which does not match input_radiance size: {rdn_size}'
                 raise ValueError(err_str)
-
-
 
     lut_params = LUTConfig(args.lut_config_file)
     if args.emulator_base is not None:
@@ -192,11 +192,21 @@ def main(rawargs=None):
         dt = datetime.strptime(args.sensor[3:], '%Y%m%d')
     elif args.sensor == 'hyp':
         dt = datetime.strptime(paths.fid[10:17], '%Y%j')
-
+    else:
+        raise ValueError('Datetime object could not be obtained. Please check file name of input data.')
+        
     dayofyear = dt.timetuple().tm_yday
 
     h_m_s, day_increment, mean_path_km, mean_to_sensor_azimuth, mean_to_sensor_zenith, valid, \
     to_sensor_azimuth_lut_grid, to_sensor_zenith_lut_grid = get_metadata_from_obs(paths.obs_working_path, lut_params)
+
+    # overwrite the time in case original obs has an error in that band
+    if h_m_s[0] != dt.hour and h_m_s[0] >= 24:
+        h_m_s[0] = dt.hour
+        logging.info("UTC hour did not match start time minute. Adjusting to that value.")
+    if h_m_s[1] != dt.minute and h_m_s[1] >= 60:
+        h_m_s[1] = dt.minute
+        logging.info("UTC minute did not match start time minute. Adjusting to that value.")
 
     if day_increment:
         dayofyear += 1
@@ -534,8 +544,10 @@ class Pathnames():
             self.noise_path = join(self.isofit_path, 'data', 'avirisc_noise.txt')
         elif args.sensor == 'emit':
             self.noise_path = join(self.isofit_path, 'data', 'emit_noise.txt')
-            if args.channelized_uncertainty_path is None:
+            if self.input_channelized_uncertainty_path is None:
                 self.input_channelized_uncertainty_path = join(self.isofit_path, 'data', 'emit_osf_uncertainty.txt')
+            if self.input_model_discrepancy_path is None:
+                self.input_model_discrepancy_path = join(self.isofit_path, 'data', 'emit_model_discrepancy.mat')
         else:
             self.noise_path = None
             logging.info('no noise path found, proceeding without')
@@ -615,7 +627,7 @@ class LUTConfig:
         # point will be used.
 
         # Units of kilometers
-        self.elevation_spacing = 0.5
+        self.elevation_spacing = 0.25
         self.elevation_spacing_min = 0.2
 
         # Units of g / m2
@@ -623,7 +635,7 @@ class LUTConfig:
         self.h2o_spacing_min = 0.03
 
         # Special parameter to specify the minimum allowable water vapor value in g / m2
-        self.h2o_min = 0.2
+        self.h2o_min = 0.05
 
         # Set defaults, will override based on settings
         # Units of g / m2
@@ -646,14 +658,14 @@ class LUTConfig:
         self.aerosol_1_spacing_min = 0
 
         # Units of AOD
-        self.aerosol_2_spacing = 0.25
+        self.aerosol_2_spacing = 0.1
         self.aerosol_2_spacing_min = 0
 
         # Units of AOD
-        self.aerosol_0_range = [0.001, 0.5]
-        self.aerosol_1_range = [0.001, 0.5]
-        self.aerosol_2_range = [0.001, 0.5]
-        self.aot_550_range = [0.001, 0.5]
+        self.aerosol_0_range = [0.001, 1]
+        self.aerosol_1_range = [0.001, 1]
+        self.aerosol_2_range = [0.001, 1]
+        self.aot_550_range = [0.001, 1]
 
         self.aot_550_spacing = 0
         self.aot_550_spacing_min = 0
@@ -1058,8 +1070,8 @@ def get_metadata_from_loc(loc_file: str, lut_params: LUTConfig, trim_lines: int 
     min_elev = np.min(loc_data[2, valid]) / 1000.
     max_elev = np.max(loc_data[2, valid]) / 1000.
     if pressure_elevation:
-        min_elev = max(min_elev - 1, 0)
-        max_elev += 1
+        min_elev = max(min_elev - 2, 0)
+        max_elev += 2
     elevation_lut_grid = lut_params.get_grid(min_elev, max_elev, lut_params.elevation_spacing,
                                              lut_params.elevation_spacing_min)
 

@@ -20,6 +20,7 @@ from isofit.core.common import envi_header
 
 logger = logging.getLogger(__name__)
 
+
 def do_hypertrace(isofit_config, wavelength_file, reflectance_file,
                   rtm_template_file,
                   lutdir, outdir,
@@ -291,11 +292,11 @@ def do_hypertrace(isofit_config, wavelength_file, reflectance_file,
     fwd_state["AOT550"]["init"] = aod
     fwd_state["H2OSTR"]["init"] = h2o
 
-    # Also set the LUT grid to only target state. We don't want to interpolate
+    # Also set the LUT to a minimal grid including our target state. We don't want to interpolate
     # over the LUT for our forward simulations!
     fwd_lut = isofit_fwd["forward_model"]["radiative_transfer"]["lut_grid"]
-    fwd_lut["AOT550"] = [aod]
-    fwd_lut["H2OSTR"] = [h2o]
+    fwd_lut["AOT550"] = [0.9*aod, aod, 1.1*aod]
+    fwd_lut["H2OSTR"] = [0.9*h2o, h2o, 1.1*h2o]
     # Also have to create a one-off LUT directory for the forward run, to avoid
     # using an (incorrect) previously cached one.
     fwd_lutdir = outdir2 / "fwd_lut"
