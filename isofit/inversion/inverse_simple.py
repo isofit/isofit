@@ -173,7 +173,7 @@ def invert_algebraic(surface: Surface, RT: RadiativeTransfer, instrument: Instru
 
 
 def invert_analytical(fm: ForwardModel, winidx: np.array, meas: np.array, geom: Geometry, x_RT: np.array, num_iter:int = 1, 
-                      hash_table:OrderedDict = None, hash_size:int = None, diag_uncert:bool = True):
+                      hash_table:OrderedDict = None, hash_size:int = None, diag_uncert:bool = True, outside_ret_const:float=-0.01):
     """ Perform an analytical estimate of the conditional MAP estimate for
     a fixed atmosphere.  Based on the "Inner loop" from Susiluoto, 2022.
 
@@ -257,7 +257,10 @@ def invert_analytical(fm: ForwardModel, winidx: np.array, meas: np.array, geom: 
         # Calculate conditional prior mean to fill in
         #xa_cond, Sa_cond = conditional_gaussian(xa_full, Sa, outside_ret_windows, winidx, mu)
         #full_mu[outside_ret_windows] = xa_cond
-        full_mu[outside_ret_windows] = xa[outside_ret_windows]
+        if outside_ret_const is None:
+            full_mu[outside_ret_windows] = xa[outside_ret_windows]
+        else:
+            full_mu[outside_ret_windows] = outside_ret_const
 
         x[fm.idx_surface] = full_mu
         trajectory.append(x)
