@@ -1,5 +1,3 @@
-.. _installation:
-
 Installation
 ============
 
@@ -42,11 +40,12 @@ release and automatically resolve all the dependencies.
 
 The Ray_ package, which is a unified framework for scaling AI and Python applications, is currently not available for
 MacOS on conda-forge. Furthermore, the Ray conda package is maintained by the community, not the Ray team. While using
-a mamba or conda environment, please install Ray from PyPi using pip:
+a mamba or conda environment, please install Ray from PyPi using pip. Additionally, both the ndsplines library and the
+latest version of xxhash are not available on conda-forge, so that they need to be added to the pip command:
 
 .. code-block:: bash
 
-    $ pip install ray
+    $ pip install ray ndsplines xxhash --upgrade
 
 From PyPI (not recommended)
 ***************************
@@ -55,19 +54,20 @@ There is also a pip_ installer for ISOFIT. However, please note that ISOFIT depe
 may cause problems when installed with pip. Therefore, we strongly recommend to resolve the following dependencies
 before the pip installer is run:
 
-    * numpy>=1.20
+    * gdal>=2.0.0
     * matplotlib-base>=2.2.2
-    * scipy>=1.3.0
-    * scikit-learn>=0.19.1
-    * scikit-image >=0.17.0
-    * spectral>=0.19
-    * pytest>=3.5.1
+    * ndsplines>=0.1.2
+    * numpy>=1.20
+    * pandas>=0.24.0
     * pep8>=1.7.1
+    * pytest>=3.5.1
     * python-xxhash>=1.2.0
     * pyyaml>=5.3.2
     * ray>=1.2.0
-    * pandas>=0.24.0
-    * gdal>=2.0.0
+    * scikit-learn>=0.19.1
+    * scikit-image >=0.17.0
+    * scipy>=1.3.0
+    * spectral>=0.19
     * tensorflow>=2.0.1
 
 Then, the pip installer can be run by:
