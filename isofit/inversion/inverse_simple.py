@@ -16,20 +16,38 @@
 #
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
-#
 
+from typing import OrderedDict
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.optimize import minimize_scalar as min1d
 from scipy.optimize import minimize
 
-from isofit.core.common import emissive_radiance, eps
+from isofit.core.common import emissive_radiance, eps, conditional_gaussian
+from isofit.core.forward import ForwardModel
+from isofit.core.geometry import Geometry
+from isofit.core.instrument import Instrument
+from isofit.surface.surface import Surface
 from isofit.radiative_transfer.radiative_transfer import RadiativeTransfer
+from isofit.core.common import envi_header, svd_inv, svd_inv_sqrt
 
 
-def heuristic_atmosphere(RT: RadiativeTransfer, instrument, x_RT, x_instrument,  meas, geom):
+def heuristic_atmosphere(RT: RadiativeTransfer, instrument: Instrument, x_RT: np.array, x_instrument: np.array,  
+                         meas: np.array, geom: Geometry):
     """From a given radiance, estimate atmospheric state with band ratios.
-    Used to initialize gradient descent inversions."""
+    Used to initialize gradient descent inversions.
+
+    Args:
+        RT: radiative transfer model to use
+        instrument: instrument for noise characterization
+        x_RT: radiative transfer portion of the state vector
+        x_instrument: instrument portion of the state vector
+        meas: a one-D numpy vector of radiance in uW/nm/sr/cm2
+        geom: geometry object corresponding to given measurement
+
+    Returns:
+        x_new: updated estimate of x_RT
+    """
 
     # Identify the latest instrument wavelength calibration (possibly
     # state-dependent) and identify channel numbers for the band ratio.
@@ -100,10 +118,26 @@ def heuristic_atmosphere(RT: RadiativeTransfer, instrument, x_RT, x_instrument, 
     return x_new
 
 
-def invert_algebraic(surface, RT: RadiativeTransfer, instrument, x_surface, 
-        x_RT, x_instrument, meas, geom):
+def invert_algebraic(surface: Surface, RT: RadiativeTransfer, instrument: Instrument, x_surface: np.array, 
+                     x_RT: np.array, x_instrument: np.array, meas: np.array, geom: Geometry):
     """Inverts radiance algebraically using Lambertian assumptions to get a 
-        reflectance."""
+    reflectance.
+
+    Args:
+        surface: surface model
+        RT: radiative transfer model to use
+        instrument: instrument model 
+        x_surface: surface portion of the state vector
+        x_RT: radiative transfer portion of the state vector
+        x_instrument: instrument portion of the state vector
+        meas: a one-D numpy vector of radiance in uW/nm/sr/cm2
+        geom: geometry object corresponding to given measurement
+
+    Return:
+        rfl_est: estimate of the surface reflectance based on the given surface model and specified atmospheric state
+        Ls: estimate of the emitted surface leaving radiance 
+        coeffs: atmospheric parameters for the forward model 
+    """
 
     # Get atmospheric optical parameters (possibly at high
     # spectral resolution) and resample them if needed.
@@ -138,9 +172,119 @@ def invert_algebraic(surface, RT: RadiativeTransfer, instrument, x_surface,
     return rfl_est, Ls, coeffs
 
 
-def invert_simple(forward, meas, geom):
+def invert_analytical(fm: ForwardModel, winidx: np.array, meas: np.array, geom: Geometry, x_RT: np.array, num_iter:int = 1, 
+                      hash_table:OrderedDict = None, hash_size:int = None, diag_uncert:bool = True, outside_ret_const:float=-0.01):
+    """ Perform an analytical estimate of the conditional MAP estimate for
+    a fixed atmosphere.  Based on the "Inner loop" from Susiluoto, 2022.
+
+    Args:
+        fm: isofit forward model
+        winidx: indices of surface components of state vector (to be solved)
+        meas: a one-D numpy vector of radiance in uW/nm/sr/cm2
+        geom: geometry object corresponding to given measurement
+        x_RT: the radiative transfer state variables
+        num_iter: number of interations to run through
+        hash_table: a hash table to use locally
+        hash_size: max size of given hash table
+        diag_uncert: flag indicating whether to diagonalize the uncertainty
+
+    Returns:
+        x: MAP estimate of the mean
+        S: diagonal conditional posterior covariance estimate
+    """
+    from scipy.linalg.lapack import dpotrf, dpotri 
+    from scipy.linalg.blas import dsymv
+
+    #x = x0.copy()
+    #x_surface, x_RT, x_instrument = fm.unpack(x)
+
+    # Note, this will fail if x_instrument is populated
+    if len(fm.idx_instrument) > 0:
+        raise AttributeError('Invert analytical not currently set to handle instrument state variable indexing')
+
+    x = np.zeros(fm.nstate)
+    x[fm.idx_RT] = x_RT
+    x_alg = invert_algebraic(fm.surface, fm.RT, fm.instrument,\
+                             x[fm.idx_surface], x_RT, x[fm.idx_instrument], meas, geom)
+    x[fm.idx_surface] = x_alg[0]
+    trajectory = [x] 
+    outside_ret_windows = np.ones(len(fm.surface.idx_lamb),dtype=bool)
+    outside_ret_windows[winidx] = False
+    outside_ret_windows = np.where(outside_ret_windows)[0]
+
+    for n in range(num_iter):
+        x_surface, x_RT, x_instrument = fm.unpack(x)
+
+        Seps = fm.Seps(x, meas, geom)[winidx,:][:,winidx]
+
+        Sa = fm.Sa(x, geom)
+        Sa_surface = Sa[fm.surface.idx_lamb,:][:,fm.surface.idx_lamb]
+        Sa_surface = Sa_surface[winidx,:][:,winidx]
+        Sa_inv = svd_inv_sqrt(Sa_surface, hash_table, hash_size)[0]
+
+        xa_full = fm.xa(x, geom)
+        xa_surface = xa_full[fm.surface.idx_lamb]
+        xa = xa_surface[winidx]
+        xa_iv = xa_surface[outside_ret_windows]
+
+        L_atm = fm.RT.get_L_atm(x_RT, geom)[winidx]
+        L_tot = fm.calc_rdn(x, geom)[winidx]
+
+        L_surf = (L_tot - L_atm) / x_surface[winidx]# = Ldiag
+        L_surf[L_surf < 0] = 1e-9
+
+        # Match Jouni's convention
+        C = Seps# C = 'meas_Cov' = Seps
+        L = dpotrf(C, 1)[0]
+        P = dpotri(L, 1)[0]
+        P_rpr = Sa_inv
+        mu_rpr = xa
+        
+        priorprod = P_rpr @ mu_rpr
+
+        P_tilde = ((L_surf*P).T*L_surf).T
+        P_rcond = P_rpr + P_tilde
+
+        LI_rcond = dpotrf(P_rcond)[0] 
+        C_rcond = dpotri(LI_rcond)[0]
+
+        # Calculate AOE mean
+        mu = dsymv(1, C_rcond, L_surf*dsymv(1, P, meas[winidx] - L_atm) + priorprod)
+
+        full_mu = np.zeros(len(x_surface))
+        full_mu[winidx] = mu
+
+        # Calculate conditional prior mean to fill in
+        #xa_cond, Sa_cond = conditional_gaussian(xa_full, Sa, outside_ret_windows, winidx, mu)
+        #full_mu[outside_ret_windows] = xa_cond
+        if outside_ret_const is None:
+            full_mu[outside_ret_windows] = xa[outside_ret_windows]
+        else:
+            full_mu[outside_ret_windows] = outside_ret_const
+
+        x[fm.idx_surface] = full_mu
+        trajectory.append(x)
+
+    if diag_uncert:
+        full_unc = np.ones(len(x))
+        full_unc[winidx] = np.sqrt(np.diag(C_rcond))
+        return trajectory, full_unc
+    else:
+        return trajectory, C_rcond
+
+
+def invert_simple(forward: ForwardModel, meas: np.array, geom: Geometry):
     """Find an initial guess at the state vector. This currently uses
-    traditional (non-iterative, heuristic) atmospheric correction."""
+    traditional (non-iterative, heuristic) atmospheric correction.
+    
+    Args:
+        forward: isofit forward model
+        meas: a one-D numpy vector of radiance in uW/nm/sr/cm2
+        geom: geometry object corresponding to given measurement
+
+    Returns: 
+        x: estimate of the full statevector based on initial conditions, geometry, and a heuristic guess
+    """
 
     surface = forward.surface
     RT = forward.RT
