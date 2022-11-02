@@ -11,7 +11,7 @@ build:
     python: "mambaforge-4.10"
 
 conda:
-  environment: recipe/environment_isofit_docs.yml
+  environment: recipe/environment_isofit_basic.yml
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
