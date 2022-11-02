@@ -6,23 +6,24 @@ channels: &id1
 dependencies:
     - python>=3.7
     - pip
-    - numpy>=1.20.0
-    - protobuf~=3.19.0
-    - scipy>=1.3.0
-    - matplotlib>=2.2.2
-    - scikit-learn>=0.19.1
-    - scikit-image>=0.17.0
-    - spectral>=0.19
-    - pytest>=3.5.1
-    - pep8>=1.7.1
-    - pyyaml>=5.1.2
-    - pandas>=0.24
     - gdal>=2.0.0
+    - matplotlib>=2.2.2
+    - numpy>=1.20.0
+    - pandas>=0.24
+    - pep8>=1.7.1
+    - protobuf~=3.19.0
+    - pygrib
+    - pytest>=3.5.1
+    - pyyaml>=5.1.2
+    - scikit-image>=0.17.0
+    - scikit-learn>=0.19.1
+    - scipy>=1.3.0
+    - spectral>=0.19
     - tensorflow>=2.0.1
-    - isofit>=2.9.5
+    - utm
 
     - pip:
-      - xxhash>=1.2.0
-      - ray>=1.2.0
       - ndsplines>=0.1.2
+      - ray>=1.2.0
       - sphinx-autodoc-typehints>=1.19.4
+      - xxhash>=1.2.0
