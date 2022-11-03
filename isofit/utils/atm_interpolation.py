@@ -258,7 +258,7 @@ def atm_interpolation(
     output_metadata['bands']       = len(band_names)
 
     del output_metadata['fwhm']
-    del output_metadata['wavelenth']
+    del output_metadata['wavelength']
 
     output_atm_img = envi.create_image(envi_header(output_atm_file), ext='', metadata=output_metadata, force=True)
 
