@@ -6,7 +6,7 @@
 import argparse
 import os
 from os.path import join, exists
-from spectral import *
+from spectral.io import envi
 import logging
 import numpy as np
 import yaml
