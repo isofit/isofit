@@ -103,7 +103,7 @@ Note that the surface model is normalized with the Euclidean norm.  In the top-l
 
     
 Instrument Models
-----------------
+-----------------
 
 We recommend instrument models based on a three-channel parametric noise description.  These models predict noise-equivalent change in radiance as a function of :math:`L`, the radiance at sensor, with the relation :math:`L_{noisy} = a\sqrt{b+L}+c`.  They are stored as five-column ASCII text files with columns representing: wavelength; the a, b, and c coefficients; and the Root Mean Squared approximation error for the coefficient fitting, respectively.  An example is provided in the data/avirisng_noise.txt file.  We also recommend channelized uncertainty files representing the standard deviation of residuals due to forward model or wavelength calibration and response errors.  Finally, we recommend a 0-1% uncorrelated radiometric uncertainty term, depending on the confidence in the radiometric calibration of the instrument.  Certain extreme cases may require higher values. An example instrument configuration might be:
 
@@ -127,6 +127,7 @@ Atmosphere
 We highly recommend the MODTRAN 6.0 radiative transfer model over LibRadTran and 6SV options for full-spectrum (380-2500) imaging spectroscopy.  We recommend retrieving water vapor and aerosol optical depth in the VSWIR range, water vapor and ozone in the thermal IR.  For aerosol optical properties, we recommend the third aerosol type found the aerosol file data/aerosol_model.txt.  This can be selected by including the "AERFRAC_2" element in the state vector and lookup tables.  For a simplified configuration that does not include variable viewing geometry, consider something like:
 
 .. code-block:: JSON
+
    "radiative_transfer": {
             "lut_grid": {
                 "AERFRAC_2": [ 0.001,  0.1673, 0.3336,  0.5 ],
@@ -169,7 +170,7 @@ Note that all atmospheric parameters have extremely wide and uninformed prior di
 
 
 Inversion Methods
-----------------
+-----------------
 
 We recommend excluding deep water features at 1440 nm and 1880 nm from the inversion windows.  We recommend a multiple-start inversion with four gridpoints at low and high values of atmospheric aerosol and water vapor.  A typical inversion configuration might be:
 
