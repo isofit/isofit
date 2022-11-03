@@ -148,6 +148,7 @@ def main(rawargs=None):
 
     logging.basicConfig(format='%(levelname)s:%(asctime)s ||| %(message)s', level=args.logging_level,
                         filename=args.log_file, datefmt='%Y-%m-%d,%H:%M:%S')
+    logging.info(args)
 
     rdn_dataset = gdal.Open(args.input_radiance, gdal.GA_ReadOnly)
     rdn_size = (rdn_dataset.RasterXSize, rdn_dataset.RasterYSize)
@@ -190,7 +191,7 @@ def main(rawargs=None):
     elif args.sensor == 'emit':
         dt = datetime.strptime(paths.fid[:19], 'emit%Y%m%dt%H%M%S')
         global INVERSION_WINDOWS 
-        INVERSION_WINDOWS = [[380.0, 1325.0], [1450, 1780.0], [1970.0, 2500.0]]
+        INVERSION_WINDOWS = [[380.0, 1325.0], [1435, 1770.0], [1965.0, 2500.0]]
     elif args.sensor[:3] == 'NA-':
         dt = datetime.strptime(args.sensor[3:], '%Y%m%d')
     elif args.sensor == 'hyp':
