@@ -8,7 +8,6 @@ import os
 from os.path import join, exists
 from spectral.io import envi
 import logging
-from geoarray import GeoArray
 import numpy as np
 import yaml
 from collections import OrderedDict
@@ -47,11 +46,11 @@ def main(rawargs=None):
             raise ValueError('argument ' + err_str)
 
     # Check file sizes match
-    rdn_dataset = GeoArray(args.input_radiance)
+    rdn_dataset = envi.open(args.input_radiance)
     rdn_size = rdn_dataset.shape[:2]
 
     for infile_name in ['input_loc', 'input_obs']:
-        input_dataset = GeoArray(infiles[infile_name])
+        input_dataset = envi.open(infiles[infile_name])
         input_size = input_dataset.shape[:2]
         if not (input_size[0] == rdn_size[0] and input_size[1] == rdn_size[1]):
             err_str = f'Input file: {infile_name} size is {input_size}, ' \
