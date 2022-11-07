@@ -1,7 +1,3 @@
-submit PR to contributing section; modify docs on how to do profiling (cProfile, how to run, what to expect, how to read it)
-
-#%%
-
 Profiling
 =========
 
@@ -20,8 +16,27 @@ Outputs and Analysis
 
 Once a profiling data file is produced, there are a variety of ways to explore the results.
 
-.. image:: images/example_profiler.png
+.. image:: images/example_profile_0.png
 
+The above image uses [Snakeviz](https://jiffyclub.github.io/snakeviz/) to visualize the profiler results. This is the icicle view which shows the root at the top and all calls made by that function below it.
+
+Clicking on a block will set that block as the root. This allows you to explore what functions and modules are calling others.
+
+The time shown on each block is the cumulative time spent in that function. Children functions may have greater cumulative times than the parent, but that is because those functions were called elsewhere during the run.
+
+.. image:: images/example_profile_1.png
+
+
+The lower half of the visualizer includes the result values. There are six columns:
+
+- ncalls: The number of calls to this function
+- tottime: The total time spent in the given function (and excluding time made in calls to sub-functions)
+- percall: The quotient of `tottime` divided by `ncalls`
+- cumtime: The cumulative time spent in this and all subfunctions (from invocation till exit). This figure is accurate even for recursive functions.
+- percall: The quotient of `cumtime` divided by primitive calls
+- filename:lineno(function): Provides the respective data of each function
+
+Depending on what information you are seeking, these columns may be sorted high/low. This example uses the high sort of `tottime` to analyze what functions take the most total time over the run.
 
 Further Reading
 ---------------
