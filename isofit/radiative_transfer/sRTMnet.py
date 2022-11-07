@@ -197,10 +197,15 @@ class SimulatedModtranRT(TabularRT):
             inputs['transup'] = np.zeros(dims, dtype=float)
 
             # Stack the LUTs along the last dim so the interpolator is only needed to be called once per point lookup
-            stacked = np.concatenate(list(inputs.values()), axis=-1)
-
-            self.lut  = VectorInterpolator(self.lut_grids, stacked, self.lut_interp_types, self.interpolator_style)
-            self.luts = inputs.keys()
+            if self.stacked:
+                stacked   = np.concatenate(list(inputs.values()), axis=-1)
+                self.lut  = VectorInterpolator(self.lut_grids, stacked, self.lut_interp_types, self.interpolator_style[2:])
+                self.luts = inputs.keys()
+            else:
+                self.luts = {
+                    key: VectorInterpolator(self.lut_grids, data, self.lut_interp_types, self.interpolator_style[2:])
+                    for key, data in inputs.items()
+                }
         else:
             # TODO: Fix for the new single interpolator stategy
             logging.info('Prebuilt LUT interpolators found, loading from disk')
@@ -226,8 +231,14 @@ class SimulatedModtranRT(TabularRT):
         if key in self.cache:
             return self.cache[key]
         else:
-            data = np.split(self.lut(point), indices_or_sections=len(self.luts))
-            ret  = dict(zip(self.luts, data))
+            if self.stacked:
+                data = np.split(self.lut(point), indices_or_sections=len(self.luts))
+                ret  = dict(zip(self.luts, data))
+            else:
+                ret = {
+                    key: lut(point)
+                    for key, lut in self.luts.items()
+                }
 
             # If the cache is at its limit, delete the first key (FIFO)
             if self.cache_size > 0:

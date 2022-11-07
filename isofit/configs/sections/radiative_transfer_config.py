@@ -244,14 +244,16 @@ class RadiativeTransferConfig(BaseConfigSection):
         self.unknowns: RadiativeTransferUnknownsConfig = None
 
         self._interpolator_style_type = str
-        self.interpolator_style = 'nds-1'
-        """str: Style of interpolation. Options are rg for scipy RegularGridInterpolator or nds-k
-        for ndsplines with k degrees"""
+        self.interpolator_style = 's-rg'
+        """str: Style of interpolation. This argument is in the format [stacked]-[type][-k], eg:
+        - `s-rg`: Stacked RegularGrid
+        - `u-rg`: Unstacked RegularGrid
+        - `[u/s]-nds-k`: Un/Stacked NDSplines with K degrees"""
 
         self._cache_size_type = int
-        self.cache_size = 0
-        """int: Size of the cache to store interpolation lookups. Defaults to 0 which
-        disables caching"""
+        self.cache_size = 16
+        """int: Size of the cache to store interpolation lookups. Defaults to 16 which
+        provides the most significant gains. Setting higher may provide marginal gains."""
 
         self.set_config_options(sub_configdic)
 
@@ -297,15 +299,21 @@ class RadiativeTransferConfig(BaseConfigSection):
         for rte in self.radiative_transfer_engines:
             errors.extend(rte.check_config_validity())
 
-        if not (self.interpolator_style[:2] == 'rg' or self.interpolator_style[:3] == 'nds'):
-            errors.append(f'Interpolator style {self.interpolator_style} should start with rg or nds')
-        elif self.interpolator_style[:3] == 'nds':
-            degree_err = f'Invalid degree number - should be an integer, e.g. nds-3, got {self.interpolator_style}'
+        kinds   = ['rg', 'nds'] # Implemented kinds of interpolator functions
+        stacked = self.interpolator_style[0:1]
+        kind    = self.interpolator_style[2:5]
+        degrees = self.interpolator_style[6:]
+
+        if stacked not in ['s', 'u']:
+            errors.append(f'Interpolator style must start with either "s" or "u" for stacked or unstacked interpolation')
+        if kind not in kinds:
+            errors.append(f'Interpolator style {self.interpolator_style} must be one of: {kinds}')
+        if kind == 'nds':
+            err_msg = f'Invalid degree number. Should be an integer, e.g. nds-3, got {degrees!r} from {self.interpolator_style!r}[6:]'
             try:
-                degree = int(self.interpolator_style[4:])
-                if degree <= 0 or np.isfinite(degree) is False:
-                    errors.append(degree_err)
+                degree = int(degrees)
+                assert degree >= 0 and np.isfinite(degree)
             except:
-                errors.append(degree_err)
+                errors.append(err_msg)
 
         return errors
