@@ -209,6 +209,8 @@ class Worker(object):
         for r in range(start_line, stop_line):
             for c in range(output_state.shape[1]):
                 meas = rdn[r,c,:]
+                if np.all(meas < 0):
+                    continue
                 x_RT = rt_state[r,c,:]
                 geom = Geometry(obs = obs[r,c,:], loc=loc[r,c,:])
 
