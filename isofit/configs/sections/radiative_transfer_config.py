@@ -244,8 +244,8 @@ class RadiativeTransferConfig(BaseConfigSection):
         self.unknowns: RadiativeTransferUnknownsConfig = None
 
         self._interpolator_style_type = str
-        self.interpolator_style = 's-rg'
-        """str: Style of interpolation. This argument is in the format [stacked]-[type][-k], eg:
+        self.interpolator_style = 'rg'
+        """str: Style of interpolation. This argument is in the format [type][-k], eg:
         - `rg`: RegularGrid
         - `nds-k`: Un/Stacked NDSplines with K degrees"""
 
