@@ -67,13 +67,13 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         self._lut_names_type = list()
         self.lut_names = None
         """List: Names of the elements to run this radiative transfer element on.  Must be a subset
-        of the keys in radiative_transfer->lut_grid.  If not specified, uses all keys from 
+        of the keys in radiative_transfer->lut_grid.  If not specified, uses all keys from
         radiative_transfer-> lut_grid.  Auto-sorted (alphabetically) below."""
 
         self._statevector_names_type = list()
         self.statevector_names = None
         """List: Names of the statevector elements to use with this radiative transfer engine.  Must be a subset
-        of the keys in radiative_transfer->statevector.  If not specified, uses all keys from 
+        of the keys in radiative_transfer->statevector.  If not specified, uses all keys from
         radiative_transfer->statevector.  Auto-sorted (alphabetically) below."""
 
         # MODTRAN parameters
@@ -87,7 +87,7 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
 
         self._multipart_transmittance_type = bool
         self.multipart_transmittance = False
-        """str: Use True to specify triple-run diffuse & direct transmittance 
+        """str: Use True to specify triple-run diffuse & direct transmittance
            estimation.  Only implemented for MODTRAN."""
 
         # MODTRAN simulator
@@ -156,7 +156,7 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
 
         if self.statevector_names is not None:
             self.statevector_names.sort()
-        
+
         if self.interpolator_base_path is None and self.emulator_file is not None:
             self.interpolator_base_path = self.emulator_file + '_interpolator'
             logging.info('No interpolator base path set, and emulator used, so auto-setting interpolator path at: {}'.format(self.interpolator_base_path))
@@ -179,7 +179,7 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
 
         if self.multipart_transmittance and self.engine_name != 'modtran':
             errors.append('Multipart transmittance is supported for MODTRAN only')
-        
+
         if self.earth_sun_distance_file is None and self.engine_name == '6s':
             errors.append('6s requires earth_sun_distance_file to be specified')
 
@@ -228,7 +228,7 @@ class RadiativeTransferConfig(BaseConfigSection):
 
         self._topography_model_type = bool
         self.topography_model = False
-        """ 
+        """
         Flag to indicated whether to use atopographic-flux (topoflux)
         implementation of the forward model. Only currently functional
         with multipart MODTRAN
@@ -243,6 +243,16 @@ class RadiativeTransferConfig(BaseConfigSection):
         self._unknowns_type = RadiativeTransferUnknownsConfig
         self.unknowns: RadiativeTransferUnknownsConfig = None
 
+        self._interpolator_style_type = str
+        self.interpolator_style = 'nds-1'
+        """str: Style of interpolation. Options are rg for scipy RegularGridInterpolator or nds-k
+        for ndsplines with k degrees"""
+
+        self._cache_size_type = int
+        self.cache_size = 0
+        """int: Size of the cache to store interpolation lookups. Defaults to 0 which
+        disables caching"""
+
         self.set_config_options(sub_configdic)
 
         # sort lut_grid
@@ -254,11 +264,6 @@ class RadiativeTransferConfig(BaseConfigSection):
         # have a special (dynamic) load
         self._radiative_transfer_engines_type = list()
         self.radiative_transfer_engines = []
-
-        self._interpolator_style_type = str
-        self.interpolator_style = 'nds-1'
-        """str: Style of interpolation.  Options are rd for scipy RegularGridInterpolator or nds-k 
-        for ndsplines with k degrees"""
 
         self._set_rt_config_options(sub_configdic['radiative_transfer_engines'])
 
@@ -288,7 +293,7 @@ class RadiativeTransferConfig(BaseConfigSection):
                     errors.append('All self.forward_model.radiative_transfer.radiative_transfer_engines must ' \
                                    'have multipart_transmittance set as True if forward_model.topograph_model ' \
                                    'is set to True')
-        
+
         for rte in self.radiative_transfer_engines:
             errors.extend(rte.check_config_validity())
 

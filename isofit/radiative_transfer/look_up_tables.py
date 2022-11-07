@@ -64,7 +64,7 @@ class TabularRT:
 
         self.implementation_config: ImplementationConfig = full_config.implementation
         if engine_config.wavelength_file is not None:
-            wavelength_file = engine_config.wavelength_file 
+            wavelength_file = engine_config.wavelength_file
         else:
             wavelength_file = full_config.forward_model.instrument.wavelength_file
         self.wl, self.fwhm = common.load_wavelen(wavelength_file)
@@ -81,6 +81,10 @@ class TabularRT:
         self.implementation_mode = full_config.implementation.mode
 
         self.interpolator_style = full_config.forward_model.radiative_transfer.interpolator_style
+
+        # Prepare a cache for self._lookup_lut(), setting cache_size to 0 will disable
+        self.cache = {}
+        self.cache_size = full_config.forward_model.radiative_transfer.cache_size
 
         # We use a sorted dictionary here so that filenames for lookup
         # table (LUT) grid points are always constructed the same way, with

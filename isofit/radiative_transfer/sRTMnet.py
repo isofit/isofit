@@ -219,11 +219,22 @@ class SimulatedModtranRT(TabularRT):
 
     def _lookup_lut(self, point):
         """
+        Cache assumes Python >= 3.7 for deterministic dicts
         """
-        data = np.split(self.lut(point), indices_or_sections=len(self.luts))
-        ret  = {}
-        for i, key in enumerate(self.luts):
-            ret[key] = data[i]
+        # type(point) == numpy.ndarray which are unhashable, cast to str for caching
+        key = str(point)
+        if key in self.cache:
+            return self.cache[key]
+        else:
+            data = np.split(self.lut(point), indices_or_sections=len(self.luts))
+            ret  = dict(zip(self.luts, data))
+
+            # If the cache is at its limit, delete the first key (FIFO)
+            if self.cache_size > 0:
+                if len(self.cache) == self.cache_size:
+                    del self.cache[next(iter(self.cache))]
+
+                self.cache[key] = ret
 
         return ret
 
