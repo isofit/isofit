@@ -1,0 +1,127 @@
+{
+    "ISOFIT_base": "../../isofit",
+    "forward_model": {
+        "instrument": {
+            "integrations": 1,
+            "parametric_noise_file": "../../../../data/avirisng_noise.txt",
+            "unknowns": {
+                "uncorrelated_radiometric_uncertainty": 0.01
+            },
+            "wavelength_file": "../data/wavelengths.txt"
+        },
+        "radiative_transfer": {
+            "interpolator_style": "nds-1",
+            "lut_grid": {
+                "AOT550": [
+                    0.001,
+                    0.2505,
+                    0.5
+                ],
+                "H2OSTR": [
+                    1.04,
+                    1.2875
+                ],
+                "GNDALT": [
+                    0.001,
+                    0.5,
+                    1
+                ],
+                "OBSZEN": [
+                    160,
+                    170
+                ],
+                "TRUEAZ": [
+                    70,
+                    75
+                ]
+            },
+            "radiative_transfer_engines": {
+                "vswir": {
+                    "aerosol_model_file": "../../../../data/aerosol_model.txt",
+                    "aerosol_template_file": "../../../../data/aerosol_template.json",
+                    "earth_sun_distance_file": "../../../../data/earth_sun_distance.txt",
+                    "emulator_aux_file": "../../../../.idea/sRTMnet/sRTMnet_v100_aux.npz",
+                    "emulator_file": "../../../../.idea/sRTMnet/sRTMnet_v100",
+                    "engine_base_dir": "../../../../.idea/sRTMnet/6S/",
+                    "engine_name": "sRTMnet",
+                    "interpolator_base_path": "../lut_full/emulatordim_-2_slice_0_vi",
+                    "irradiance_file": "../../../20151026_SantaMonica/data/prism_optimized_irr.dat",
+                    "lut_names": [
+                        "H2OSTR",
+                        "AOT550",
+                        "GNDALT",
+                        "OBSZEN",
+                        "TRUEAZ"
+                    ],
+                    "lut_path": "../lut_full",
+                    "statevector_names": [
+                        "H2OSTR",
+                        "AOT550"
+                    ],
+                    "template_file": "ang20170323t202244_modtran_tpl.json"
+                }
+            },
+            "statevector": {
+                "AOT550": {
+                    "bounds": [
+                        0.001,
+                        0.5
+                    ],
+                    "init": 0.0509,
+                    "prior_mean": 0.0509,
+                    "prior_sigma": 10.0,
+                    "scale": 1
+                },
+                "H2OSTR": {
+                    "bounds": [
+                        1.04,
+                        1.2875
+                    ],
+                    "init": 1.287,
+                    "prior_mean": 1.287,
+                    "prior_sigma": 100.0,
+                    "scale": 1
+                }
+            },
+            "unknowns": {
+                "H2O_ABSCO": 0.0
+            }
+        },
+        "surface": {
+            "select_on_init": true,
+            "surface_category": "multicomponent_surface",
+            "surface_file": "../data/surface.mat"
+        }
+    },
+    "implementation": {
+        "debug_mode": true,
+        "inversion": {
+            "windows": [
+                [
+                    380.0,
+                    1340.0
+                ],
+                [
+                    1450,
+                    1800.0
+                ],
+                [
+                    1970.0,
+                    2500.0
+                ]
+            ]
+        },
+        "n_cores": 4,
+        "ray_temp_dir": "/tmp/ray"
+    },
+    "input": {
+        "loc_file": "../ang20170323t202244_loc_7000-7010",
+        "measured_radiance_file": "../ang20170323t202244_rdn_7000-7010",
+        "obs_file": "../ang20170323t202244_obs_7000-7010"
+    },
+    "output": {
+        "estimated_reflectance_file": "../output/ang20170323t202244_rfl",
+        "estimated_state_file": "../output/ang20170323t202244_state",
+        "posterior_uncertainty_file": "../output/ang20170323t202244_uncert"
+    }
+}
