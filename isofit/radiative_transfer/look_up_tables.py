@@ -81,7 +81,7 @@ class TabularRT:
         self.implementation_mode = full_config.implementation.mode
 
         self.interpolator_style = full_config.forward_model.radiative_transfer.interpolator_style
-        self.stacked = True if self.interpolator_style.startswith('s') else False
+        self.stacked = full_config.forward_model.radiative_transfer.stacked_interpolation
 
         # Prepare a cache for self._lookup_lut(), setting cache_size to 0 will disable
         self.cache = {}

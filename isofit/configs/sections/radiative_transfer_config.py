@@ -246,9 +246,14 @@ class RadiativeTransferConfig(BaseConfigSection):
         self._interpolator_style_type = str
         self.interpolator_style = 's-rg'
         """str: Style of interpolation. This argument is in the format [stacked]-[type][-k], eg:
-        - `s-rg`: Stacked RegularGrid
-        - `u-rg`: Unstacked RegularGrid
-        - `[u/s]-nds-k`: Un/Stacked NDSplines with K degrees"""
+        - `rg`: RegularGrid
+        - `nds-k`: Un/Stacked NDSplines with K degrees"""
+
+        self._stacked_interpolation_type = bool
+        self.stacked_interpolation = True
+        """bool: Whether to stack the data prior to creating the VectorInterpolator object.
+        Doing this will gives significant performance gains for RegularGrid but a performance
+        hit for NDSplines."""
 
         self._cache_size_type = int
         self.cache_size = 16
@@ -300,20 +305,16 @@ class RadiativeTransferConfig(BaseConfigSection):
             errors.extend(rte.check_config_validity())
 
         kinds   = ['rg', 'nds'] # Implemented kinds of interpolator functions
-        stacked = self.interpolator_style[0:1]
-        kind    = self.interpolator_style[2:5]
-        degrees = self.interpolator_style[6:]
+        kind    = self.interpolator_style[:3]
+        degrees = self.interpolator_style[4:]
 
-        if stacked not in ['s', 'u']:
-            errors.append(f'Interpolator style must start with either "s" or "u" for stacked or unstacked interpolation')
         if kind not in kinds:
             errors.append(f'Interpolator style {self.interpolator_style} must be one of: {kinds}')
         if kind == 'nds':
-            err_msg = f'Invalid degree number. Should be an integer, e.g. nds-3, got {degrees!r} from {self.interpolator_style!r}[6:]'
             try:
                 degree = int(degrees)
                 assert degree >= 0 and np.isfinite(degree)
             except:
-                errors.append(err_msg)
+                errors.append(f'Invalid degree number. Should be an integer, e.g. nds-3, got {degrees!r} from {self.interpolator_style!r}[4:]')
 
         return errors

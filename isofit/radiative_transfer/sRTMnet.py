@@ -199,11 +199,11 @@ class SimulatedModtranRT(TabularRT):
             # Stack the LUTs along the last dim so the interpolator is only needed to be called once per point lookup
             if self.stacked:
                 stacked   = np.concatenate(list(inputs.values()), axis=-1)
-                self.lut  = VectorInterpolator(self.lut_grids, stacked, self.lut_interp_types, self.interpolator_style[2:])
+                self.lut  = VectorInterpolator(self.lut_grids, stacked, self.lut_interp_types, self.interpolator_style)
                 self.luts = inputs.keys()
             else:
                 self.luts = {
-                    key: VectorInterpolator(self.lut_grids, data, self.lut_interp_types, self.interpolator_style[2:])
+                    key: VectorInterpolator(self.lut_grids, data, self.lut_interp_types, self.interpolator_style)
                     for key, data in inputs.items()
                 }
         else:
