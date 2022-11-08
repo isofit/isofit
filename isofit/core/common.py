@@ -40,6 +40,55 @@ eps = 1e-5
 ### Classes ###
 
 class VectorInterpolator:
+    """Multilinear interpolation for rectangular grids, which we
+    expect to be using. The arguments are the following:
+
+    gridtuples: a tuple of tuples of grid nodes
+
+    gridarrays: array with the data that are being interpolated. The
+    order is such that the first parameter moves the slowest, last
+    fastest.
+
+    """
+    def __init__(self, gridtuples, gridarrays, *args, **kwargs):
+        self.gt = [np.array(t) for t in gridtuples]
+        self.ga_orig = gridarrays
+        self.ga = self.ga_orig # View to the array that can be changed
+        self.bws = [t[1:] - t[:-1] for t in self.gt] # binwidth arrays for each dimension
+        self.maxbaseinds = np.array([len(t) - 1 for t in self.gt])
+
+    def __call__(self, points):
+        """
+        x:     The point being interpolated. If at the limit, the extremal
+               value in the grid is returned.
+        """
+        x = points
+
+        # Index of left side of bin, and don't go over (that's why it's t[:-1] instead of t)
+        inds0 = [np.searchsorted(t[:-1], x[i]) - 1 for i,t in enumerate(self.gt)]
+        deltas = np.array([(x[i] - self.gt[i][j])/self.bws[i][j] for i,j in enumerate(inds0)])
+        deltas1 = 1 - deltas
+
+        # Set the data in 'cube' to be the data that we want to
+        # interpolate, and always :
+        idx = [slice(max(min(self.maxbaseinds[j],i), 0), max(min(self.maxbaseinds[j]+2,i+2), 2)) for j,i in enumerate(inds0)]
+        cube = np.copy(self.ga[tuple(idx)], order='A')
+
+        for i, di in enumerate(deltas):
+            # Eliminate those indexes where we are outside grid range
+            if x[i] > self.gt[i][-1]:
+                cube = cube[1]
+            elif x[i] < self.gt[i][0]:
+                cube = cube[0]
+            # Otherwise eliminate index by linear interpolation
+            else:
+                cube[0] *= deltas1[i]
+                cube[1] *= di
+                cube[0] += cube[1]
+                cube = cube[0]
+        return cube
+
+class _VectorInterpolator:
     """ Linear look up table interpolator.  Support linear interpolation through radial space by expanding the look
         up tables with sin and cos dimensions.
 
