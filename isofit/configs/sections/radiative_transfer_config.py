@@ -253,11 +253,9 @@ class RadiativeTransferConfig(BaseConfigSection):
             mlg >> stacked rg > unstacked nds > stacked nds >> unstacked rg
         Caching provides significant gains for rg and nds, marginal for mlg"""
 
-        self._stacked_interpolation_type = bool
-        self.stacked_interpolation = False
-        """bool: Whether to stack the data prior to creating the VectorInterpolator object.
-        Doing this will gives significant performance gains for RegularGrid but a performance
-        hit for NDSplines."""
+        self._overwrite_type = bool
+        self.overwrite = False
+        """bool: Overwrite any existing interpolator pickles"""
 
         self._cache_size_type = int
         self.cache_size = 16

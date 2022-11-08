@@ -133,7 +133,7 @@ class SimulatedModtranRT(TabularRT):
 
         # First, check if we've already got the vector interpolators built on disk:
         prebuilt = np.all([os.path.isfile(x) for x in interpolator_disk_paths])
-        if not prebuilt:
+        if not prebuilt or self.overwrite:
             # Load the emulator
             logging.debug('Load emulator')
             emulator = keras.models.load_model(engine_config.emulator_file)
@@ -196,22 +196,21 @@ class SimulatedModtranRT(TabularRT):
 
             inputs['transup'] = np.zeros(dims, dtype=float)
 
-            # Stack the LUTs along the last dim so the interpolator is only needed to be called once per point lookup
-            if self.stacked:
-                stacked   = np.concatenate(list(inputs.values()), axis=-1)
-                self.lut  = VectorInterpolator(self.lut_grids, stacked, self.lut_interp_types, self.interpolator_style)
-                self.luts = inputs.keys()
-            else:
-                self.luts = {
-                    key: VectorInterpolator(self.lut_grids, data, self.lut_interp_types, self.interpolator_style)
-                    for key, data in inputs.items()
-                }
+            self.luts = {
+                key: VectorInterpolator(self.lut_grids, data, self.lut_interp_types, self.interpolator_style)
+                for key, data in inputs.items()
+            }
+
+            for i, key in enumerate(self.lut_quantities):
+                with open(interpolator_disk_paths[i], 'wb') as file:
+                    pickle.dump(self.luts[key], file, protocol=4)
         else:
-            # TODO: Fix for the new single interpolator stategy
             logging.info('Prebuilt LUT interpolators found, loading from disk')
-            for key_ind, key in enumerate(self.lut_quantities):
-                with open(interpolator_disk_paths[key_ind], 'rb') as fi:
-                    self.luts[key] = pickle.load(fi)
+
+            self.luts = {}
+            for i, key in enumerate(self.lut_quantities):
+                with open(interpolator_disk_paths[key_ind], 'rb') as file:
+                    self.luts[key] = pickle.load(file)
 
     def recursive_dict_search(self, indict, key):
         for k, v  in indict.items():
@@ -231,14 +230,10 @@ class SimulatedModtranRT(TabularRT):
         if key in self.cache:
             return self.cache[key]
         else:
-            if self.stacked:
-                data = np.split(self.lut(point), indices_or_sections=len(self.luts))
-                ret  = dict(zip(self.luts, data))
-            else:
-                ret = {
-                    key: lut(point)
-                    for key, lut in self.luts.items()
-                }
+            ret = {
+                key: lut(point)
+                for key, lut in self.luts.items()
+            }
 
             # If the cache is at its limit, delete the first key (FIFO)
             if self.cache_size > 0:
