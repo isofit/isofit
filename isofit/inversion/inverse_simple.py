@@ -25,7 +25,7 @@ from scipy.interpolate import interp1d
 from scipy.optimize import minimize_scalar as min1d
 from scipy.optimize import least_squares, minimize
 
-from isofit.core.common import emissive_radiance, eps, table_to_array
+from isofit.core.common import emissive_radiance, eps, get_refractive_index
 from isofit.core.forward import ForwardModel
 from isofit.core.geometry import Geometry
 from isofit.core.instrument import Instrument
@@ -428,40 +428,44 @@ def invert_liquid_water(rfl_meas: np.array,
     path_k = os.path.join(isofit_path, "data", "iop", "k_liquid_water_ice.xlsx")
 
     k_wi = pd.read_excel(io=path_k, sheet_name='Sheet1', engine='openpyxl')
-    wl_water, k_water = table_to_array(k_wi=k_wi, a=0, b=982, col_wvl="wvl_6", col_k="T = 20°C")
+    wl_water, k_water = get_refractive_index(k_wi=k_wi, a=0, b=982, col_wvl="wvl_6", col_k="T = 20°C")
     kw = np.interp(x=wl_sel, xp=wl_water, fp=k_water)
     abs_co_w = 4 * np.pi * kw / wl_sel
 
     rfl_meas_sel = rfl_meas[lw_feature_left:lw_feature_right + 1]
 
-    def err_obj(x, y):
-        """Function, which computes the vector of residuals between measured and modeled surface reflectance optimizing
-        for path length of surface liquid water based on the Beer-Lambert attenuation law.
-
-        Args:
-            x: state vector (liquid water path length, intercept, slope)
-            y: measurement (surface reflectance spectrum)
-
-        Returns:
-            resid: residual between modeled and measured surface reflectance
-        """
-
-        attenuation = np.exp(-x[0] * 1e7 * abs_co_w)
-        rho = (x[1] + x[2] * wl_sel) * attenuation
-        resid = rho - y
-        return resid
-
     x_opt = least_squares(
-        fun=err_obj,
+        fun=beer_lambert_model,
         x0=lw_init,
         jac='2-point',
         method='trf',
         bounds=(np.array([lw_bounds[ii][0] for ii in range(3)]),
                 np.array([lw_bounds[ii][1] for ii in range(3)])),
         max_nfev=15,
-        args=(rfl_meas_sel,)
+        args=(rfl_meas_sel, wl_sel, abs_co_w)
     )
 
     solution = x_opt.x
 
     return solution
+
+
+def beer_lambert_model(x, y, wl, alpha_lw):
+    """Function, which computes the vector of residuals between measured and modeled surface reflectance optimizing
+    for path length of surface liquid water based on the Beer-Lambert attenuation law.
+
+    Args:
+        x:        state vector (liquid water path length, intercept, slope)
+        y:        measurement (surface reflectance spectrum)
+        wl:       instrument wavelengths
+        alpha_lw: wavelength dependent absorption coefficients of liquid water
+
+    Returns:
+        resid: residual between modeled and measured surface reflectance
+    """
+
+    attenuation = np.exp(-x[0] * 1e7 * alpha_lw)
+    rho = (x[1] + x[2] * wl) * attenuation
+    resid = rho - y
+
+    return resid

@@ -354,7 +354,7 @@ def get_absorption(wl: np.array, absfile: str) -> (np.array, np.array):
     return water_abscf_intrp, ice_abscf_intrp
 
 
-def table_to_array(k_wi, a, b, col_wvl, col_k):
+def get_refractive_index(k_wi, a, b, col_wvl, col_k):
     """Convert refractive index table entries to numpy array.
 
     Args:
@@ -365,16 +365,19 @@ def table_to_array(k_wi, a, b, col_wvl, col_k):
         col_k:   k column in pandas table
 
     Returns:
-        arrays of wavelengths and imaginary parts of refractive index
+        wvl_arr: array of wavelengths
+        k_arr:   array of imaginary parts of refractive index
     """
 
     wvl_ = []
     k_ = []
+
     for ii in range(a, b):
         wvl = k_wi.at[ii, col_wvl]
         k = k_wi.at[ii, col_k]
         wvl_.append(wvl)
         k_.append(k)
+
     wvl_arr = np.asarray(wvl_)
     k_arr = np.asarray(k_)
 
