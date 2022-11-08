@@ -244,10 +244,14 @@ class RadiativeTransferConfig(BaseConfigSection):
         self.unknowns: RadiativeTransferUnknownsConfig = None
 
         self._interpolator_style_type = str
-        self.interpolator_style = 'rg'
+        self.interpolator_style = 'mlg'
         """str: Style of interpolation. This argument is in the format [type][-k], eg:
-        - `rg`: RegularGrid
-        - `nds-k`: Un/Stacked NDSplines with K degrees"""
+        - rg    = RegularGrid
+        - nds-k = NDSplines with K degrees
+        - mlg   = Multilinear Grid
+        Speed performance:
+            mlg >> stacked rg > unstacked nds > stacked nds >> unstacked rg
+        Caching provides significant gains for rg and nds, marginal for mlg"""
 
         self._stacked_interpolation_type = bool
         self.stacked_interpolation = False
@@ -304,7 +308,7 @@ class RadiativeTransferConfig(BaseConfigSection):
         for rte in self.radiative_transfer_engines:
             errors.extend(rte.check_config_validity())
 
-        kinds   = ['rg', 'nds'] # Implemented kinds of interpolator functions
+        kinds   = ['rg', 'nds', 'mlg'] # Implemented kinds of interpolator functions
         kind    = self.interpolator_style[:3]
         degrees = self.interpolator_style[4:]
 
