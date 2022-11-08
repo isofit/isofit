@@ -19,13 +19,10 @@
 #
 
 import numpy as np
-import os
-import pandas as pd
 from scipy.io import loadmat
 from scipy.linalg import block_diag, norm
-from scipy.optimize import least_squares
 
-from ..core.common import svd_inv, table_to_array
+from ..core.common import svd_inv
 from .surface import Surface
 from isofit.configs import Config
 
@@ -95,26 +92,6 @@ class MultiComponentSurface(Surface):
         self.init = [0.15 * (rmax-rmin)+rmin for v in self.wl]
         self.idx_lamb = np.arange(self.n_wl)
         self.n_state = len(self.statevec_names)
-
-        # params needed for liquid water fitting
-        self.lw_feature_left = np.argmin(abs(850 - self.wl))
-        self.lw_feature_right = np.argmin(abs(1100 - self.wl))
-        self.wl_sel = self.wl[self.lw_feature_left:self.lw_feature_right + 1]
-
-        # init and bounds for liquid water as well as for
-        # intercept and slope of the linear reflectance continuum
-        self.lw_init = [0.02, 0.3, 0.0002]
-        self.lw_bounds = [[0, 0.5], [0, 1.0], [-0.0004, 0.0004]]
-
-        # load imaginary part of liquid water refractive index
-        # and calculate wavelength dependent absorption coefficient
-        # __file__ should live at isofit/isofit/surface/
-        self.isofit_path = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        self.path_k = os.path.join(self.isofit_path, "data", "iop", "k_liquid_water_ice.xlsx")
-        self.k_wi = pd.read_excel(io=self.path_k, sheet_name='Sheet1', engine='openpyxl')
-        self.wl_water, self.k_water = table_to_array(k_wi=self.k_wi, a=0, b=982, col_wvl="wvl_6", col_k="T = 20°C")
-        self.kw = np.interp(x=self.wl_sel, xp=self.wl_water, fp=self.k_water)
-        self.abs_co_w = 4 * np.pi * self.kw / self.wl_sel
 
     def component(self, x, geom):
         """We pick a surface model component using the Mahalanobis distance.
@@ -204,34 +181,6 @@ class MultiComponentSurface(Surface):
             x_surface[i] = max(self.bounds[i][0]+0.001,
                                min(self.bounds[i][1]-0.001, r))
         return x_surface
-
-    def fit_liquid_water(self, rfl_meas):
-        """Given a reflectance estimate, fit a state vector including liquid water
-        based on a simple Beer-Lambert surface model."""
-
-        rfl_meas_sel = rfl_meas[self.lw_feature_left:self.lw_feature_right+1]
-
-        x_opt = least_squares(
-            fun=self.err_obj,
-            x0=self.lw_init,
-            jac='2-point',
-            method='trf',
-            bounds=(np.array([self.bounds[ii][0] for ii in range(3)]),
-                    np.array([self.bounds[ii][1] for ii in range(3)])),
-            max_nfev=15,
-            args=(rfl_meas_sel,)
-        )
-
-        return x_opt.x
-
-    def err_obj(self, x, y):
-        """Function, which computes the vector of residuals between measured and modeled surface reflectance optimizing
-        for path length of surface liquid water based on the Beer-Lambert attenuation law."""
-
-        attenuation = np.exp(-x[0] * 1e7 * self.abs_co_w)
-        rho = (x[1] + x[2] * self.wl_sel) * attenuation
-        resid = rho - y
-        return resid
 
     def calc_rfl(self, x_surface, geom):
         """Non-Lambertian reflectance."""
