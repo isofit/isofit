@@ -250,7 +250,7 @@ class RadiativeTransferConfig(BaseConfigSection):
         - `nds-k`: Un/Stacked NDSplines with K degrees"""
 
         self._stacked_interpolation_type = bool
-        self.stacked_interpolation = True
+        self.stacked_interpolation = False
         """bool: Whether to stack the data prior to creating the VectorInterpolator object.
         Doing this will gives significant performance gains for RegularGrid but a performance
         hit for NDSplines."""
