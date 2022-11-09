@@ -253,8 +253,8 @@ class RadiativeTransferConfig(BaseConfigSection):
             mlg >> stacked rg > unstacked nds > stacked nds >> unstacked rg
         Caching provides significant gains for rg and nds, marginal for mlg"""
 
-        self._overwrite_type = bool
-        self.overwrite = False
+        self._overwrite_interpolator_type = bool
+        self.overwrite_interpolator = False
         """bool: Overwrite any existing interpolator pickles"""
 
         self._cache_size_type = int

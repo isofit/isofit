@@ -83,7 +83,7 @@ class TabularRT:
         self.interpolator_style = full_config.forward_model.radiative_transfer.interpolator_style
 
         # Defaults False, where True will overwrite any existing interpolator pickles
-        self.overwrite = full_config.forward_model.radiative_transfer.overwrite
+        self.overwrite_interpolator = full_config.forward_model.radiative_transfer.overwrite_interpolator
 
         # Prepare a cache for self._lookup_lut(), setting cache_size to 0 will disable
         self.cache = {}

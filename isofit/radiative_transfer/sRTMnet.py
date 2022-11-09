@@ -133,7 +133,7 @@ class SimulatedModtranRT(TabularRT):
 
         # First, check if we've already got the vector interpolators built on disk:
         prebuilt = np.all([os.path.isfile(x) for x in interpolator_disk_paths])
-        if not prebuilt or self.overwrite:
+        if not prebuilt or self.overwrite_interpolator:
             # Load the emulator
             logging.debug('Load emulator')
             emulator = keras.models.load_model(engine_config.emulator_file)
