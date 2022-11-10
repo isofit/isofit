@@ -209,7 +209,7 @@ class SimulatedModtranRT(TabularRT):
 
             self.luts = {}
             for i, key in enumerate(self.lut_quantities):
-                with open(interpolator_disk_paths[key_ind], 'rb') as file:
+                with open(interpolator_disk_paths[i], 'rb') as file:
                     self.luts[key] = pickle.load(file)
 
     def recursive_dict_search(self, indict, key):
