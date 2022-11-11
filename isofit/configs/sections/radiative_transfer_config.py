@@ -67,13 +67,13 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         self._lut_names_type = list()
         self.lut_names = None
         """List: Names of the elements to run this radiative transfer element on.  Must be a subset
-        of the keys in radiative_transfer->lut_grid.  If not specified, uses all keys from 
+        of the keys in radiative_transfer->lut_grid.  If not specified, uses all keys from
         radiative_transfer-> lut_grid.  Auto-sorted (alphabetically) below."""
 
         self._statevector_names_type = list()
         self.statevector_names = None
         """List: Names of the statevector elements to use with this radiative transfer engine.  Must be a subset
-        of the keys in radiative_transfer->statevector.  If not specified, uses all keys from 
+        of the keys in radiative_transfer->statevector.  If not specified, uses all keys from
         radiative_transfer->statevector.  Auto-sorted (alphabetically) below."""
 
         # MODTRAN parameters
@@ -87,7 +87,7 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
 
         self._multipart_transmittance_type = bool
         self.multipart_transmittance = False
-        """str: Use True to specify triple-run diffuse & direct transmittance 
+        """str: Use True to specify triple-run diffuse & direct transmittance
            estimation.  Only implemented for MODTRAN."""
 
         # MODTRAN simulator
@@ -156,7 +156,7 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
 
         if self.statevector_names is not None:
             self.statevector_names.sort()
-        
+
         if self.interpolator_base_path is None and self.emulator_file is not None:
             self.interpolator_base_path = self.emulator_file + '_interpolator'
             logging.info('No interpolator base path set, and emulator used, so auto-setting interpolator path at: {}'.format(self.interpolator_base_path))
@@ -179,7 +179,7 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
 
         if self.multipart_transmittance and self.engine_name != 'modtran':
             errors.append('Multipart transmittance is supported for MODTRAN only')
-        
+
         if self.earth_sun_distance_file is None and self.engine_name == '6s':
             errors.append('6s requires earth_sun_distance_file to be specified')
 
@@ -228,7 +228,7 @@ class RadiativeTransferConfig(BaseConfigSection):
 
         self._topography_model_type = bool
         self.topography_model = False
-        """ 
+        """
         Flag to indicated whether to use atopographic-flux (topoflux)
         implementation of the forward model. Only currently functional
         with multipart MODTRAN
@@ -243,6 +243,25 @@ class RadiativeTransferConfig(BaseConfigSection):
         self._unknowns_type = RadiativeTransferUnknownsConfig
         self.unknowns: RadiativeTransferUnknownsConfig = None
 
+        self._interpolator_style_type = str
+        self.interpolator_style = 'mlg'
+        """str: Style of interpolation. This argument is in the format [type][-k], eg:
+        - rg    = RegularGrid
+        - nds-k = NDSplines with K degrees
+        - mlg   = Multilinear Grid
+        Speed performance:
+            mlg >> stacked rg > unstacked nds > stacked nds >> unstacked rg
+        Caching provides significant gains for rg and nds, marginal for mlg"""
+
+        self._overwrite_interpolator_type = bool
+        self.overwrite_interpolator = False
+        """bool: Overwrite any existing interpolator pickles"""
+
+        self._cache_size_type = int
+        self.cache_size = 16
+        """int: Size of the cache to store interpolation lookups. Defaults to 16 which
+        provides the most significant gains. Setting higher may provide marginal gains."""
+
         self.set_config_options(sub_configdic)
 
         # sort lut_grid
@@ -254,11 +273,6 @@ class RadiativeTransferConfig(BaseConfigSection):
         # have a special (dynamic) load
         self._radiative_transfer_engines_type = list()
         self.radiative_transfer_engines = []
-
-        self._interpolator_style_type = str
-        self.interpolator_style = 'nds-1'
-        """str: Style of interpolation.  Options are rd for scipy RegularGridInterpolator or nds-k 
-        for ndsplines with k degrees"""
 
         self._set_rt_config_options(sub_configdic['radiative_transfer_engines'])
 
@@ -288,19 +302,21 @@ class RadiativeTransferConfig(BaseConfigSection):
                     errors.append('All self.forward_model.radiative_transfer.radiative_transfer_engines must ' \
                                    'have multipart_transmittance set as True if forward_model.topograph_model ' \
                                    'is set to True')
-        
+
         for rte in self.radiative_transfer_engines:
             errors.extend(rte.check_config_validity())
 
-        if not (self.interpolator_style[:2] == 'rg' or self.interpolator_style[:3] == 'nds'):
-            errors.append(f'Interpolator style {self.interpolator_style} should start with rg or nds')
-        elif self.interpolator_style[:3] == 'nds':
-            degree_err = f'Invalid degree number - should be an integer, e.g. nds-3, got {self.interpolator_style}'
+        kinds   = ['rg', 'nds', 'mlg'] # Implemented kinds of interpolator functions
+        kind    = self.interpolator_style[:3]
+        degrees = self.interpolator_style[4:]
+
+        if kind not in kinds:
+            errors.append(f'Interpolator style {self.interpolator_style} must be one of: {kinds}')
+        if kind == 'nds':
             try:
-                degree = int(self.interpolator_style[4:])
-                if degree <= 0 or np.isfinite(degree) is False:
-                    errors.append(degree_err)
+                degree = int(degrees)
+                assert degree >= 0 and np.isfinite(degree)
             except:
-                errors.append(degree_err)
+                errors.append(f'Invalid degree number. Should be an integer, e.g. nds-3, got {degrees!r} from {self.interpolator_style!r}[4:]')
 
         return errors

@@ -20,13 +20,15 @@
 import os
 import logging
 import datetime
+from sys import platform
 import numpy as np
 from copy import deepcopy
 import yaml
 import pickle
+from collections import OrderedDict
 import ray
 
-from isofit.core.common import resample_spectrum, VectorInterpolator
+from isofit.core.common import resample_spectrum, load_wavelen, VectorInterpolator
 from .look_up_tables import TabularRT
 from isofit.configs import Config
 from isofit.configs.sections.radiative_transfer_config import RadiativeTransferEngineConfig
@@ -38,7 +40,7 @@ from scipy import interpolate
 
 
 @ray.remote
-def resample_single(ind, ind_emulator_output, emulator_wavelengths, wavelengths, fwhm): 
+def resample_single(ind, ind_emulator_output, emulator_wavelengths, wavelengths, fwhm):
     return ind, resample_spectrum(ind_emulator_output, emulator_wavelengths, wavelengths, fwhm)
 
 
@@ -52,7 +54,7 @@ class SimulatedModtranRT(TabularRT):
     Args:
         engine_config: the configuration for this particular engine
         full_config (Config): the global configuration
-    """   
+    """
 
     def __init__(self, engine_config: RadiativeTransferEngineConfig, full_config: Config):
 
@@ -66,7 +68,7 @@ class SimulatedModtranRT(TabularRT):
         self.treat_as_emissive = False
 
         # Load in the emulator aux - hold off on emulator till last
-        # second, as the model is large, and we don't want to load in 
+        # second, as the model is large, and we don't want to load in
         # parallel if possible
         emulator_aux = np.load(engine_config.emulator_aux_file)
 
@@ -131,8 +133,7 @@ class SimulatedModtranRT(TabularRT):
 
         # First, check if we've already got the vector interpolators built on disk:
         prebuilt = np.all([os.path.isfile(x) for x in interpolator_disk_paths])
-
-        if not prebuilt:
+        if not prebuilt or self.overwrite_interpolator:
             # Load the emulator
             logging.debug('Load emulator')
             emulator = keras.models.load_model(engine_config.emulator_file)
@@ -156,7 +157,7 @@ class SimulatedModtranRT(TabularRT):
 
                 finterp = interpolate.interp1d(simulator_wavelengths, emulator_inputs[:, band_range_i])
                 emulator_inputs_match_output[:, band_range_o] = finterp(emulator_wavelengths)
- 
+
             if 'response_scaler' in emulator_aux.keys():
                 response_scaler = emulator_aux['response_scaler']
             else:
@@ -166,58 +167,86 @@ class SimulatedModtranRT(TabularRT):
             emulator_outputs = emulator.predict(emulator_inputs) / response_scaler
             emulator_outputs = emulator_outputs + emulator_inputs_match_output
 
-            dims_aug = self.lut_dims + [self.n_chan]
-            for key_ind, key in enumerate(emulator_aux['rt_quantities']):
-                logging.debug(f'Prep {key}')
-                interpolator_inputs = np.zeros(dims_aug, dtype=float)
-                resample_jobs = []
-                for point_ind, point in enumerate(self.points):
-                    ind = [np.where(g == p)[0] for g, p in zip(self.lut_grids, point)]
-                    ind = tuple(ind)
-                    leo = emulator_outputs[point_ind, key_ind*n_emulator_chan: (key_ind+1)*n_emulator_chan]
-                    resample_jobs.append(resample_single.remote(ind, leo, emulator_wavelengths, self.wl, self.fwhm))
-                resample_results = ray.get(resample_jobs)
-                for ind, res in resample_results:
-                    interpolator_inputs[ind] = res
-                del resample_results
-                del resample_jobs
-
+            inputs = {}
+            dims   = self.lut_dims + [self.n_chan]
+            for ki, key in enumerate(emulator_aux['rt_quantities']):
+                # Transup is always appended after
                 if key == 'transup':
-                    interpolator_inputs[...] = 0
+                    continue
 
-                logging.debug(f'Building Interpolator for {key}')
-                self.luts[key] = VectorInterpolator(self.lut_grids, interpolator_inputs,
-                                                    self.lut_interp_types, self.interpolator_style)
+                data = np.zeros(dims, dtype=float)
 
-            self.luts['transup'] = VectorInterpolator(self.lut_grids, interpolator_inputs*0, self.lut_interp_types,
-                                                      self.interpolator_style)
-            
-            for key_ind, key in enumerate(self.lut_quantities):
-                with open(interpolator_disk_paths[key_ind], 'wb') as fi:
-                    pickle.dump(self.luts[key], fi, protocol=4)
+                jobs = []
+                for pi, point in enumerate(self.points):
+                    ind = tuple([np.where(g == p)[0] for g, p in zip(self.lut_grids, point)])
+                    leo = emulator_outputs[pi, ki*n_emulator_chan : (ki+1)*n_emulator_chan]
+                    jobs.append(
+                        resample_single.remote(ind, leo, emulator_wavelengths, self.wl, self.fwhm)
+                        # resample_single(ind, leo, emulator_wavelengths, self.wl, self.fwhm)
+                    )
 
+                results = ray.get(jobs)
+                # results = jobs
+                for ind, res in results:
+                    data[ind] = res
+
+                del jobs, results
+
+                inputs[key] = data
+
+            inputs['transup'] = np.zeros(dims, dtype=float)
+
+            self.luts = {
+                key: VectorInterpolator(self.lut_grids, data, self.lut_interp_types, self.interpolator_style)
+                for key, data in inputs.items()
+            }
+
+            for i, key in enumerate(self.lut_quantities):
+                with open(interpolator_disk_paths[i], 'wb') as file:
+                    pickle.dump(self.luts[key], file, protocol=4)
         else:
             logging.info('Prebuilt LUT interpolators found, loading from disk')
-            for key_ind, key in enumerate(self.lut_quantities):
-                with open(interpolator_disk_paths[key_ind], 'rb') as fi:
-                    self.luts[key] = pickle.load(fi)
-        
+
+            self.luts = {}
+            for i, key in enumerate(self.lut_quantities):
+                with open(interpolator_disk_paths[i], 'rb') as file:
+                    self.luts[key] = pickle.load(file)
+
     def recursive_dict_search(self, indict, key):
-        for k, v in indict.items():
+        for k, v  in indict.items():
             if k == key:
                 return v
             elif isinstance(v, dict):
-                found = self.recursive_dict_search(v, key) 
-                if found is not None: 
-                    return found 
+                found = self.recursive_dict_search(v, key)
+                if found is not None:
+                    return found
 
     def _lookup_lut(self, point):
-        ret = {}
-        for key, lut in self.luts.items():
-            ret[key] = np.array(lut(point)).ravel()
+        """
+        Cache assumes Python >= 3.7 for deterministic dicts
+        """
+        # type(point) == numpy.ndarray which are unhashable, cast to str for caching
+        key = str(point)
+        if key in self.cache:
+            return self.cache[key]
+        else:
+            ret = {
+                key: lut(point)
+                for key, lut in self.luts.items()
+            }
+
+            # If the cache is at its limit, delete the first key (FIFO)
+            if self.cache_size > 0:
+                if len(self.cache) == self.cache_size:
+                    del self.cache[next(iter(self.cache))]
+
+                self.cache[key] = ret
+
         return ret
 
     def get(self, x_RT, geom):
+        """
+        """
         point = np.zeros((self.n_point,))
         for point_ind, name in enumerate(self.lut_grid_config):
             if name in self.statevector_names:

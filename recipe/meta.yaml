@@ -1,5 +1,5 @@
 {% set name = "isofit" %}
-{% set version = "2.9.5" %}
+{% set version = "2.9.7.1" %}
 
 package:
   name: {{ name|lower }}
@@ -7,7 +7,7 @@ package:
 
 source:
   url: https://github.com/isofit/{{ name }}/archive/v{{ version }}.tar.gz
-  sha256: 558ba50f48b2e08badbba2eaba75e1531977502ad7f2c176f8153a0d7d436e7c 
+  sha256: 8ca1b6191bc3894df92f66831cf4a614a8844cc45e70370f8fd1069e55b57cdd 
 
 build:
   noarch: python
@@ -16,12 +16,13 @@ build:
 
 requirements:
   host:
-    - python >=3.5
+    - python >=3.7
     - pip
   run:
-    - python >=3.5
+    - python >=3.7
     - setuptools
     - numpy >=1.20
+    - protobuf ~=3.19.0
     - matplotlib >=2.2.2
     - scipy >=1.3.0
     - scikit-learn >=0.19.1
@@ -32,9 +33,10 @@ requirements:
     - python-xxhash >=1.2.0
     - pyyaml >=5.3.2
     - ray >= 1.2.0
-    - pandas >= 0.24.0
-    - gdal >= 2.0.0
-    - tensorflow >= 2.0.1
+    - pandas >=0.24.0
+    - gdal >=2.0.0
+    - ndsplines >=0.1.2
+    - tensorflow >=2.0.1
 
 test:
   imports:

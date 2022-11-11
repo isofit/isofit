@@ -19,7 +19,7 @@ import sys
 from sys import platform
 from typing import List
 
-from isofit.utils import segment, extractions, empirical_line
+from isofit.utils import segment, extractions, empirical_line, analytical_line
 from isofit.core import isofit, common
 from isofit.core.common import envi_header
 
@@ -123,6 +123,7 @@ def main(rawargs=None):
     parser.add_argument('--n_cores', type=int, default=1)
     parser.add_argument('--presolve', choices=[0,1], type=int, default=0)
     parser.add_argument('--empirical_line', choices=[0,1], type=int, default=0)
+    parser.add_argument('--analytical_line', choices=[0,1], type=int, default=0)
     parser.add_argument('--ray_temp_dir', type=str, default='/tmp/ray')
     parser.add_argument('--emulator_base', type=str, default=None)
     parser.add_argument('--segmentation_size', type=int, default=40)
@@ -132,6 +133,8 @@ def main(rawargs=None):
 
 
     args = parser.parse_args(rawargs)
+
+    use_superpixels = ((args.empirical_line == 1) or (args.analytical_line == 1))
 
     if args.sensor not in ['ang', 'avcl', 'neon', 'prism', 'emit', 'hyp']:
         if args.sensor[:3] != 'NA-':
@@ -145,6 +148,7 @@ def main(rawargs=None):
 
     logging.basicConfig(format='%(levelname)s:%(asctime)s ||| %(message)s', level=args.logging_level,
                         filename=args.log_file, datefmt='%Y-%m-%d,%H:%M:%S')
+    logging.info(args)
 
     rdn_dataset = gdal.Open(args.input_radiance, gdal.GA_ReadOnly)
     rdn_size = (rdn_dataset.RasterXSize, rdn_dataset.RasterYSize)
@@ -186,8 +190,8 @@ def main(rawargs=None):
         dt = datetime.strptime(paths.fid[3:], '%Y%m%dt%H%M%S')
     elif args.sensor == 'emit':
         dt = datetime.strptime(paths.fid[:19], 'emit%Y%m%dt%H%M%S')
-        global INVERSION_WINDOWS
-        INVERSION_WINDOWS = [[380.0, 1270.0], [1410, 1800.0], [1970.0, 2500.0]]
+        global INVERSION_WINDOWS 
+        INVERSION_WINDOWS = [[380.0, 1325.0], [1435, 1770.0], [1965.0, 2500.0]]
     elif args.sensor[:3] == 'NA-':
         dt = datetime.strptime(args.sensor[3:], '%Y%m%d')
     elif args.sensor == 'hyp':
@@ -275,7 +279,7 @@ def main(rawargs=None):
         uncorrelated_radiometric_uncertainty = UNCORRELATED_RADIOMETRIC_UNCERTAINTY
 
     # Superpixel segmentation
-    if args.empirical_line == 1:
+    if use_superpixels:
         if not exists(paths.lbl_working_path) or not exists(paths.radiance_working_path):
             logging.info('Segmenting...')
             segment(spectra=(paths.radiance_working_path, paths.lbl_working_path),
@@ -316,7 +320,7 @@ def main(rawargs=None):
                 paths                                = paths,
                 h2o_lut_grid                         = h2o_grid,
                 n_cores                              = args.n_cores,
-                use_emp_line                         = args.empirical_line == 1,
+                use_emp_line                         = use_superpixels,
                 surface_category                     = args.surface_category,
                 emulator_base                        = args.emulator_base,
                 uncorrelated_radiometric_uncertainty = uncorrelated_radiometric_uncertainty,
@@ -377,7 +381,7 @@ def main(rawargs=None):
             mean_latitude                        = mean_latitude,
             mean_longitude                       = mean_longitude,
             dt                                   = dt,
-            use_emp_line                         = args.empirical_line == 1,
+            use_emp_line                         = use_superpixels,
             n_cores                              = args.n_cores,
             surface_category                     = args.surface_category,
             emulator_base                        = args.emulator_base,
@@ -402,25 +406,40 @@ def main(rawargs=None):
                 os.system(cmd)
 
     if not exists(paths.rfl_working_path) or not exists(paths.uncert_working_path):
-        # Empirical line
-        logging.info('Empirical line inference')
-        # Determine the number of neighbors to use.  Provides backwards stability and works
-        # well with defaults, but is arbitrary
+
         if args.num_neighbors is None:
             nneighbors = int(round(3950 / 9 - 35/36 * args.segmentation_size))
         else:
             nneighbors = args.num_neighbors
-        empirical_line(reference_radiance_file=paths.rdn_subs_path,
-                       reference_reflectance_file=paths.rfl_subs_path,
-                       reference_uncertainty_file=paths.uncert_subs_path,
-                       reference_locations_file=paths.loc_subs_path,
-                       segmentation_file=paths.lbl_working_path,
-                       input_radiance_file=paths.radiance_working_path,
-                       input_locations_file=paths.loc_working_path,
-                       output_reflectance_file=paths.rfl_working_path,
-                       output_uncertainty_file=paths.uncert_working_path,
-                       isofit_config=paths.modtran_config_path,
-                       nneighbors=nneighbors)
+
+        if args.empirical_line == 1:
+            # Empirical line
+            logging.info('Empirical line inference')
+            # Determine the number of neighbors to use.  Provides backwards stability and works
+            # well with defaults, but is arbitrary
+            empirical_line(reference_radiance_file=paths.rdn_subs_path,
+                           reference_reflectance_file=paths.rfl_subs_path,
+                           reference_uncertainty_file=paths.uncert_subs_path,
+                           reference_locations_file=paths.loc_subs_path,
+                           segmentation_file=paths.lbl_working_path,
+                           input_radiance_file=paths.radiance_working_path,
+                           input_locations_file=paths.loc_working_path,
+                           output_reflectance_file=paths.rfl_working_path,
+                           output_uncertainty_file=paths.uncert_working_path,
+                           isofit_config=paths.modtran_config_path,
+                           nneighbors=nneighbors)
+        elif args.analytical_line == 1:
+            logging.info('Analytical line inference')
+            analytical_line.main([paths.radiance_working_path, 
+                                  paths.loc_working_path, 
+                                  paths.obs_working_path, 
+                                  args.working_directory, 
+                                  '--n_atm_neighbors', str(nneighbors),
+                                  '--smoothing_sigma', '2',
+                                  '--output_rfl_file', paths.rfl_working_path,
+                                  '--output_unc_file', paths.uncert_working_path,
+                                  '--loglevel', args.logging_level, 
+                                  '--logfile', args.log_file])
 
     logging.info('Done.')
 
