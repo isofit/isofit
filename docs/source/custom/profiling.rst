@@ -10,7 +10,6 @@ How to Use
 
   python -m cProfile [-o output_file] [-s sort_order] (-m module | myscript.py)
 
-
 Outputs and Analysis
 --------------------
 
@@ -26,7 +25,6 @@ The time shown on each block is the cumulative time spent in that function. Chil
 
 .. image:: images/example_profile_1.png
 
-
 The lower half of the visualizer includes the result values. There are six columns:
 
 - ncalls: The number of calls to this function
@@ -37,6 +35,19 @@ The lower half of the visualizer includes the result values. There are six colum
 - filename:lineno(function): Provides the respective data of each function
 
 Depending on what information you are seeking, these columns may be sorted high/low. This example uses the high sort of `tottime` to analyze what functions take the most total time over the run.
+
+ISOFIT Profiling Examples
+-------------------------
+
+ISOFIT comes with a few examples of generating profiling results found under `examples/profiling_cube`. This example is based on the `examples/image_cube/small_chunk`.
+
+`examples/profiling_cube` provides results for three different interpolation methods:
+
+- RegularGrid (rg)
+- NDSplines (nds)
+- Multilinear Grid (mlg)
+
+In terms of speed, mlg >> nds > rg. The example will run each interpolation method 5 times. The user may then compile the results for comparison.
 
 Further Reading
 ---------------

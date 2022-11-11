@@ -11,6 +11,7 @@
         },
         "radiative_transfer": {
             "interpolator_style": "nds-1",
+            "overwrite_interpolator": true,
             "lut_grid": {
                 "AOT550": [
                     0.001,

@@ -10,7 +10,7 @@
             "wavelength_file": "../data/wavelengths.txt"
         },
         "radiative_transfer": {
-            "interpolator_style": "rg",
+            "interpolator_style": "mlg",
             "overwrite_interpolator": true,
             "lut_grid": {
                 "AOT550": [
