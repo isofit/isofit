@@ -29,6 +29,7 @@ from isofit.configs.base_config import BaseConfigSection
 from isofit.core import common
 import yaml
 
+
 class Config(BaseConfigSection):
     """
     Handles the reading and formatting of configuration files.  Please note - there are many ways to do this, some
@@ -110,17 +111,20 @@ class Config(BaseConfigSection):
             logging.error(e)
 
         if len(errors) > 0:
-            raise AttributeError('Configuration error(s) found.  See log for details.')
+            raise AttributeError("Configuration error(s) found.  See log for details.")
 
-        logging.info('Configuration file checks complete, no errors found.')
+        logging.info("Configuration file checks complete, no errors found.")
 
     def check_inter_section_validity(self):
         return_errors = []
-        if self.implementation.mode == 'simulation' and self.input.reflectance_file is None:
-            return_errors.append('If implementation.mode is set to simulation, input.reflectance_file must be set')
+        if (
+            self.implementation.mode == "simulation"
+            and self.input.reflectance_file is None
+        ):
+            return_errors.append(
+                "If implementation.mode is set to simulation, input.reflectance_file must be set"
+            )
         return return_errors
-
-
 
 
 def get_config_differences(config_a: Config, config_b: Config) -> Dict:
@@ -153,13 +157,15 @@ def create_new_config(config_file: str) -> Config:
     Returns:
         Config object, having completed all necessary config checks
     """
-    #pdb.set_trace()
+    # pdb.set_trace()
     try:
-        with open(config_file, 'r') as f:
-            #pdb.set_trace()
+        with open(config_file, "r") as f:
+            # pdb.set_trace()
             config_dict = yaml.safe_load(f)
     except:
-        raise IOError('Unexpected configuration file time, only json and yaml supported')
+        raise IOError(
+            "Unexpected configuration file time, only json and yaml supported"
+        )
 
     configdir, f = os.path.split(os.path.abspath(config_file))
 

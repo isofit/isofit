@@ -32,17 +32,17 @@ def generate_noise(config):
     config = json_load_ascii(config, shell_replace=True)
     configdir, configfile = split(abspath(config))
 
-    infile = expand_path(configdir, config['input_radiance_file'])
-    outfile = expand_path(configdir, config['output_radiance_file'])
-    instrument = Instrument(config['instrument_model'])
+    infile = expand_path(configdir, config["input_radiance_file"])
+    outfile = expand_path(configdir, config["output_radiance_file"])
+    instrument = Instrument(config["instrument_model"])
     geom = Geometry()
 
-    if infile.endswith('txt'):
+    if infile.endswith("txt"):
         rdn, wl = load_spectrum(infile)
         Sy = instrument.Sy(rdn, geom)
         rdn_noise = rdn + np.random.multivariate_normal(np.zeros(rdn.shape), Sy)
-        with open(outfile, 'w') as fout:
+        with open(outfile, "w") as fout:
             for w, r in zip(wl, rdn_noise):
-                fout.write('%8.5f %8.5f' % (w, r))
+                fout.write("%8.5f %8.5f" % (w, r))
     else:
         raise ValueError("Image cubes not yet implemented.")

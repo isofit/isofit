@@ -28,60 +28,95 @@ class OutputConfig(BaseConfigSection):
     """
 
     def __init__(self, sub_configdic: dict = None):
-        self._estimated_state_file_header = ('statevector', '{State Parameter, Value}', '{}')
+        self._estimated_state_file_header = (
+            "statevector",
+            "{State Parameter, Value}",
+            "{}",
+        )
         self._estimated_state_file_type = str
         self.estimated_state_file = None
 
         self._estimated_reflectance_file_header = (
-            'wavelength', '{Wavelength (nm), Lambertian Reflectance}', '{0.0,1.0}')
+            "wavelength",
+            "{Wavelength (nm), Lambertian Reflectance}",
+            "{0.0,1.0}",
+        )
         self._estimated_reflectance_file_type = str
         self.estimated_reflectance_file = None
 
         self._estimated_emission_file_header = (
-            'wavelength', '{Wavelength (nm), Emitted Radiance (uW nm-1 cm-2 sr-1)}', '{}')
+            "wavelength",
+            "{Wavelength (nm), Emitted Radiance (uW nm-1 cm-2 sr-1)}",
+            "{}",
+        )
         self._estimated_emission_file_type = str
         self.estimated_emission_file = None
 
         self._modeled_radiance_file_header = (
-            'wavelength', '{Wavelength (nm), Modeled Radiance (uW nm-1 cm-2 sr-1)}', '{}')
+            "wavelength",
+            "{Wavelength (nm), Modeled Radiance (uW nm-1 cm-2 sr-1)}",
+            "{}",
+        )
         self._modeled_radiance_file_type = str
         self.modeled_radiance_file = None
 
         self._apparent_reflectance_file_header = (
-            'wavelength', '{Wavelength (nm), Apparent Surface Reflectance}', '{}')
+            "wavelength",
+            "{Wavelength (nm), Apparent Surface Reflectance}",
+            "{}",
+        )
         self._apparent_reflectance_file_type = str
         self.apparent_reflectance_file = None
 
         self._path_radiance_file_header = (
-            'wavelength', '{Wavelength (nm), Path Radiance (uW nm-1 cm-2 sr-1)}', '{}')
+            "wavelength",
+            "{Wavelength (nm), Path Radiance (uW nm-1 cm-2 sr-1)}",
+            "{}",
+        )
         self._path_radiance_file_type = str
         self.path_radiance_file = None
 
         self._simulated_measurement_file_header = (
-            'wavelength', '{Wavelength (nm), Simulated Radiance (uW nm-1 cm-2 sr-1)}', '{}')
+            "wavelength",
+            "{Wavelength (nm), Simulated Radiance (uW nm-1 cm-2 sr-1)}",
+            "{}",
+        )
         self._simulated_measurement_file_type = str
         self.simulated_measurement_file = None
 
         self._algebraic_inverse_file_header = (
-            'wavelength', '{Wavelength (nm), Apparent Surface Reflectance}', '{}')
+            "wavelength",
+            "{Wavelength (nm), Apparent Surface Reflectance}",
+            "{}",
+        )
         self._algebraic_inverse_file_type = str
         self.algebraic_inverse_file = None
 
         self._atmospheric_coefficients_file_header = (
-            'atm_coeffs', '{Wavelength (nm), Atmospheric Optical Parameters}', '{}')
+            "atm_coeffs",
+            "{Wavelength (nm), Atmospheric Optical Parameters}",
+            "{}",
+        )
         self._atmospheric_coefficients_file_type = str
         self.atmospheric_coefficients_file = None
 
         self._radiometry_correction_file_header = (
-            'wavelength', '{Wavelength (nm), Radiometric Correction Factors}', '{}')
+            "wavelength",
+            "{Wavelength (nm), Radiometric Correction Factors}",
+            "{}",
+        )
         self._radiometry_correction_file_type = str
         self.radiometry_correction_file = None
 
-        self._spectral_calibration_file_header = ('wavelength', '{}', '{}')
+        self._spectral_calibration_file_header = ("wavelength", "{}", "{}")
         self._spectral_calibration_file_type = str
         self.spectral_calibration_file = None
 
-        self._posterior_uncertainty_file_header = ('statevector', '{State Parameter, Value}', '{}')
+        self._posterior_uncertainty_file_header = (
+            "statevector",
+            "{State Parameter, Value}",
+            "{}",
+        )
         self._posterior_uncertainty_file_type = str
         self.posterior_uncertainty_file = None
 
@@ -110,7 +145,7 @@ class OutputConfig(BaseConfigSection):
     def get_output_files(self):
         names = self.get_all_output_file_names()
         elements = [getattr(self, name) for name in names]
-        headers = [getattr(self, '_{}_header'.format(name)) for name in names]
+        headers = [getattr(self, "_{}_header".format(name)) for name in names]
 
         valid = [x is not None for x in elements]
         elements = [elements[x] for x in range(len(elements)) if valid[x]]

@@ -33,12 +33,12 @@ class BaseConfigSection(object):
         return
 
     def set_config_options(self, configdict: dict = None) -> None:
-        """ Read dictionary and assign to attributes, leaning on _set_callable_attributes
+        """Read dictionary and assign to attributes, leaning on _set_callable_attributes
         Args:
             configdict: dictionary-style config for parsing
         """
         for key in self._get_nontype_attributes():
-            keytype = getattr(self, '_' + key + '_type')
+            keytype = getattr(self, "_" + key + "_type")
             if key in configdict:
                 if callable(keytype):
                     sub_config = keytype(configdict[key])
@@ -74,8 +74,11 @@ class BaseConfigSection(object):
                 continue
 
             # At this point, we have a type mismatch, add to error list
-            errors.append(message_type.format(key, self.__class__.__name__,
-                                              value, type(value), type_expected))
+            errors.append(
+                message_type.format(
+                    key, self.__class__.__name__, value, type(value), type_expected
+                )
+            )
 
         errors.extend(self._check_config_validity())
 
@@ -83,10 +86,12 @@ class BaseConfigSection(object):
         for key in self._get_nontype_attributes():
             value = getattr(self, key)
             try:
-                logging.debug('Configuration check of: {}'.format(key))
+                logging.debug("Configuration check of: {}".format(key))
                 errors.extend(value.check_config_validity())
             except AttributeError:
-                logging.debug('Configuration check: {} is not an object, skipping'.format(key))
+                logging.debug(
+                    "Configuration check: {} is not an object, skipping".format(key)
+                )
 
         return errors
 
@@ -95,7 +100,9 @@ class BaseConfigSection(object):
         for key in self._get_nontype_attributes():
             value = getattr(self, key)
             if type(value) is tuple:
-                value = list(value)  # Lists look nicer in config files and seem friendlier
+                value = list(
+                    value
+                )  # Lists look nicer in config files and seem friendlier
             config_options[key] = value
         return config_options
 
@@ -108,7 +115,7 @@ class BaseConfigSection(object):
     def _get_nontype_attributes(self) -> List[str]:
         keys = []
         for key in self.__dict__.keys():
-            if key[0] == '_':
+            if key[0] == "_":
                 continue
             keys.append(key)
         return keys
@@ -116,14 +123,14 @@ class BaseConfigSection(object):
     def _get_type_attributes(self) -> List[str]:
         keys = []
         for key in self.__dict__.keys():
-            if key[0] == '_' and key[-5:] == '_type':
+            if key[0] == "_" and key[-5:] == "_type":
                 keys.append(key)
         return keys
 
     def _get_hidden_attributes(self) -> List[str]:
         keys = []
         for key in self.__dict__.keys():
-            if key[0] == '_' and key[-5:] != '_type':
+            if key[0] == "_" and key[-5:] != "_type":
                 keys.append(key)
         return keys
 
@@ -138,7 +145,9 @@ class BaseConfigSection(object):
         element_names = self._get_nontype_attributes()
         valid = [x is not None for x in elements]
         elements = [elements[x] for x in range(len(elements)) if valid[x]]
-        element_names = [element_names[x] for x in range(len(element_names)) if valid[x]]
+        element_names = [
+            element_names[x] for x in range(len(element_names)) if valid[x]
+        ]
 
         order = np.argsort(element_names)
         elements = [elements[idx] for idx in order]
@@ -153,5 +162,3 @@ class BaseConfigSection(object):
     def get_single_element_by_name(self, name):
         elements, element_names = self.get_elements()
         return elements[element_names.index(name)]
-
-

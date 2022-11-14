@@ -27,15 +27,15 @@ from isofit.configs import Config
 
 
 class GlintSurface(ThermalSurface):
-    """A model of the surface based on a collection of multivariate 
-       Gaussians, extended with a surface glint term."""
+    """A model of the surface based on a collection of multivariate
+    Gaussians, extended with a surface glint term."""
 
     def __init__(self, full_config: Config):
 
         super().__init__(full_config)
 
         # TODO: Enforce this attribute in the config, not here (this is hidden)
-        self.statevec_names.extend(['GLINT'])
+        self.statevec_names.extend(["GLINT"])
         self.scale.extend([1.0])
         self.init.extend([0.005])
         self.bounds.extend([[0, 0.2]])
@@ -55,22 +55,24 @@ class GlintSurface(ThermalSurface):
         normalize the result for the calling function."""
 
         Cov = ThermalSurface.Sa(self, x_surface, geom)
-        f = s.array([[(10.0 * self.scale[self.glint_ind])**2]])
+        f = s.array([[(10.0 * self.scale[self.glint_ind]) ** 2]])
         Cov[self.glint_ind, self.glint_ind] = f
         return Cov
 
     def fit_params(self, rfl_meas, geom, *args):
-        """Given a reflectance estimate and one or more emissive parameters, 
-          fit a state vector."""
+        """Given a reflectance estimate and one or more emissive parameters,
+        fit a state vector."""
 
-        glint_band = s.argmin(abs(900-self.wl))
-        glint = s.mean(rfl_meas[(glint_band-2):glint_band+2])
-        water_band = s.argmin(abs(400-self.wl))
-        water = s.mean(rfl_meas[(water_band-2):water_band+2])
+        glint_band = s.argmin(abs(900 - self.wl))
+        glint = s.mean(rfl_meas[(glint_band - 2) : glint_band + 2])
+        water_band = s.argmin(abs(400 - self.wl))
+        water = s.mean(rfl_meas[(water_band - 2) : water_band + 2])
         if glint > 0.05 or water < glint:
             glint = 0
-        glint = max(self.bounds[self.glint_ind][0]+eps,
-                    min(self.bounds[self.glint_ind][1]-eps, glint))
+        glint = max(
+            self.bounds[self.glint_ind][0] + eps,
+            min(self.bounds[self.glint_ind][1] - eps, glint),
+        )
         lamb_est = rfl_meas - glint
         x = ThermalSurface.fit_params(self, lamb_est, geom)
         x[self.glint_ind] = glint
@@ -82,7 +84,7 @@ class GlintSurface(ThermalSurface):
         return self.calc_lamb(x_surface, geom) + x_surface[self.glint_ind]
 
     def drfl_dsurface(self, x_surface, geom):
-        """Partial derivative of reflectance with respect to state vector, 
+        """Partial derivative of reflectance with respect to state vector,
         calculated at x_surface."""
 
         drfl = self.dlamb_dsurface(x_surface, geom)
@@ -90,17 +92,19 @@ class GlintSurface(ThermalSurface):
         return drfl
 
     def dLs_dsurface(self, x_surface, geom):
-        """Partial derivative of surface emission with respect to state vector, 
-        calculated at x_surface.  We append a column of zeros to handle 
+        """Partial derivative of surface emission with respect to state vector,
+        calculated at x_surface.  We append a column of zeros to handle
         the extra glint parameter"""
 
         dLs_dsurface = super().dLs_dsurface(x_surface, geom)
-        dLs_dglint = s.zeros((dLs_dsurface.shape[0],1))
-        dLs_dsurface = s.hstack([dLs_dsurface, dLs_dglint]) 
+        dLs_dglint = s.zeros((dLs_dsurface.shape[0], 1))
+        dLs_dsurface = s.hstack([dLs_dsurface, dLs_dglint])
         return dLs_dsurface
 
     def summarize(self, x_surface, geom):
         """Summary of state vector."""
 
-        return ThermalSurface.summarize(self, x_surface, geom) + \
-            ' Glint: %5.3f' % x_surface[self.glint_ind]
+        return (
+            ThermalSurface.summarize(self, x_surface, geom)
+            + " Glint: %5.3f" % x_surface[self.glint_ind]
+        )

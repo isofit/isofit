@@ -158,9 +158,12 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
             self.statevector_names.sort()
 
         if self.interpolator_base_path is None and self.emulator_file is not None:
-            self.interpolator_base_path = self.emulator_file + '_interpolator'
-            logging.info('No interpolator base path set, and emulator used, so auto-setting interpolator path at: {}'.format(self.interpolator_base_path))
-
+            self.interpolator_base_path = self.emulator_file + "_interpolator"
+            logging.info(
+                "No interpolator base path set, and emulator used, so auto-setting interpolator path at: {}".format(
+                    self.interpolator_base_path
+                )
+            )
 
     def _check_config_validity(self) -> List[str]:
         errors = list()
@@ -168,37 +171,52 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         # Check that all input files exist
         for key in self._get_nontype_attributes():
             value = getattr(self, key)
-            if value is not None and key[-5:] == '_file' and key != 'emulator_file':
+            if value is not None and key[-5:] == "_file" and key != "emulator_file":
                 if os.path.isfile(value) is False:
-                    errors.append('Config value radiative_transfer->{}: {} not found'.format(key, value))
+                    errors.append(
+                        "Config value radiative_transfer->{}: {} not found".format(
+                            key, value
+                        )
+                    )
 
-        valid_rt_engines = ['modtran', 'libradtran', '6s', 'sRTMnet']
+        valid_rt_engines = ["modtran", "libradtran", "6s", "sRTMnet"]
         if self.engine_name not in valid_rt_engines:
-            errors.append('radiative_transfer->raditive_transfer_model: {} not in one of the available models: {}'.
-                          format(self.engine_name, valid_rt_engines))
+            errors.append(
+                "radiative_transfer->raditive_transfer_model: {} not in one of the available models: {}".format(
+                    self.engine_name, valid_rt_engines
+                )
+            )
 
-        if self.multipart_transmittance and self.engine_name != 'modtran':
-            errors.append('Multipart transmittance is supported for MODTRAN only')
+        if self.multipart_transmittance and self.engine_name != "modtran":
+            errors.append("Multipart transmittance is supported for MODTRAN only")
 
-        if self.earth_sun_distance_file is None and self.engine_name == '6s':
-            errors.append('6s requires earth_sun_distance_file to be specified')
+        if self.earth_sun_distance_file is None and self.engine_name == "6s":
+            errors.append("6s requires earth_sun_distance_file to be specified")
 
-        if self.irradiance_file is None and self.engine_name == '6s':
-            errors.append('6s requires irradiance_file to be specified')
+        if self.irradiance_file is None and self.engine_name == "6s":
+            errors.append("6s requires irradiance_file to be specified")
 
-        if self.engine_name == 'sRTMnet' and self.emulator_file is None:
-            errors.append('The sRTMnet requires an emulator_file to be specified.')
+        if self.engine_name == "sRTMnet" and self.emulator_file is None:
+            errors.append("The sRTMnet requires an emulator_file to be specified.")
 
-        if self.engine_name == 'sRTMnet' and self.emulator_aux_file is None:
-            errors.append('The sRTMnet requires an emulator_aux_file to be specified.')
+        if self.engine_name == "sRTMnet" and self.emulator_aux_file is None:
+            errors.append("The sRTMnet requires an emulator_aux_file to be specified.")
 
-        files = [self.earth_sun_distance_file, self.irradiance_file,
-                 self.obs_file, self.aerosol_model_file, self.aerosol_template_file]
+        files = [
+            self.earth_sun_distance_file,
+            self.irradiance_file,
+            self.obs_file,
+            self.aerosol_model_file,
+            self.aerosol_template_file,
+        ]
         for f in files:
             if f is not None:
                 if os.path.isfile(f) is False:
-                    errors.append('Radiative transfer engine file not found on system: {}'.
-                                  format(self.earth_sun_distance_file))
+                    errors.append(
+                        "Radiative transfer engine file not found on system: {}".format(
+                            self.earth_sun_distance_file
+                        )
+                    )
         return errors
 
 
@@ -244,7 +262,7 @@ class RadiativeTransferConfig(BaseConfigSection):
         self.unknowns: RadiativeTransferUnknownsConfig = None
 
         self._interpolator_style_type = str
-        self.interpolator_style = 'mlg'
+        self.interpolator_style = "mlg"
         """str: Style of interpolation. This argument is in the format [type][-k], eg:
         - rg    = RegularGrid
         - nds-k = NDSplines with K degrees
@@ -274,7 +292,7 @@ class RadiativeTransferConfig(BaseConfigSection):
         self._radiative_transfer_engines_type = list()
         self.radiative_transfer_engines = []
 
-        self._set_rt_config_options(sub_configdic['radiative_transfer_engines'])
+        self._set_rt_config_options(sub_configdic["radiative_transfer_engines"])
 
     def _set_rt_config_options(self, subconfig):
         if type(subconfig) is list:
@@ -291,32 +309,42 @@ class RadiativeTransferConfig(BaseConfigSection):
 
         for key, item in self.lut_grid.items():
             if len(item) < 2:
-                errors.append('lut_grid item {} has less than the required 2 elements'.format(key))
+                errors.append(
+                    "lut_grid item {} has less than the required 2 elements".format(key)
+                )
 
         if self.topography_model:
             for rtm in self.radiative_transfer_engines:
-                if rtm.engine_name != 'modtran':
-                    errors.append('All self.forward_model.radiative_transfer.radiative_transfer_engines must ' \
-                                  'be of type "modtran" if forward_model.topograph_model is set to True')
+                if rtm.engine_name != "modtran":
+                    errors.append(
+                        "All self.forward_model.radiative_transfer.radiative_transfer_engines must "
+                        'be of type "modtran" if forward_model.topograph_model is set to True'
+                    )
                 if rtm.multipart_transmittance is False:
-                    errors.append('All self.forward_model.radiative_transfer.radiative_transfer_engines must ' \
-                                   'have multipart_transmittance set as True if forward_model.topograph_model ' \
-                                   'is set to True')
+                    errors.append(
+                        "All self.forward_model.radiative_transfer.radiative_transfer_engines must "
+                        "have multipart_transmittance set as True if forward_model.topograph_model "
+                        "is set to True"
+                    )
 
         for rte in self.radiative_transfer_engines:
             errors.extend(rte.check_config_validity())
 
-        kinds   = ['rg', 'nds', 'mlg'] # Implemented kinds of interpolator functions
-        kind    = self.interpolator_style[:3]
+        kinds = ["rg", "nds", "mlg"]  # Implemented kinds of interpolator functions
+        kind = self.interpolator_style[:3]
         degrees = self.interpolator_style[4:]
 
         if kind not in kinds:
-            errors.append(f'Interpolator style {self.interpolator_style} must be one of: {kinds}')
-        if kind == 'nds':
+            errors.append(
+                f"Interpolator style {self.interpolator_style} must be one of: {kinds}"
+            )
+        if kind == "nds":
             try:
                 degree = int(degrees)
                 assert degree >= 0 and np.isfinite(degree)
             except:
-                errors.append(f'Invalid degree number. Should be an integer, e.g. nds-3, got {degrees!r} from {self.interpolator_style!r}[4:]')
+                errors.append(
+                    f"Invalid degree number. Should be an integer, e.g. nds-3, got {degrees!r} from {self.interpolator_style!r}[4:]"
+                )
 
         return errors

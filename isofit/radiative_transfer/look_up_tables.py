@@ -29,12 +29,15 @@ from typing import List
 
 from isofit.core import common
 from isofit.configs import Config
-from isofit.configs.sections.radiative_transfer_config import RadiativeTransferEngineConfig
+from isofit.configs.sections.radiative_transfer_config import (
+    RadiativeTransferEngineConfig,
+)
 from isofit.configs.sections.statevector_config import StateVectorElementConfig
 from isofit.configs.sections.implementation_config import ImplementationConfig
 
 
 ### Functions ###
+
 
 @ray.remote
 def spawn_rt(cmd, local_dir=None):
@@ -44,11 +47,13 @@ def spawn_rt(cmd, local_dir=None):
 
     # Add a very slight timing offset to prevent all subprocesses
     # starting simultaneously
-    time.sleep(float(np.random.random(1))*2)
+    time.sleep(float(np.random.random(1)) * 2)
 
     subprocess.call(cmd, shell=True, cwd=local_dir)
 
+
 ### Classes ###
+
 
 class FileExistsError(Exception):
     """FileExistsError with a message."""
@@ -60,7 +65,9 @@ class FileExistsError(Exception):
 class TabularRT:
     """A model of photon transport including the atmosphere."""
 
-    def __init__(self, engine_config: RadiativeTransferEngineConfig, full_config: Config):
+    def __init__(
+        self, engine_config: RadiativeTransferEngineConfig, full_config: Config
+    ):
 
         self.implementation_config: ImplementationConfig = full_config.implementation
         if engine_config.wavelength_file is not None:
@@ -69,8 +76,10 @@ class TabularRT:
             wavelength_file = full_config.forward_model.instrument.wavelength_file
         self.wl, self.fwhm = common.load_wavelen(wavelength_file)
         if engine_config.wavelength_range is not None:
-            valid_wl = np.logical_and(self.wl >= engine_config.wavelength_range[0],
-                                      self.wl <= engine_config.wavelength_range[1])
+            valid_wl = np.logical_and(
+                self.wl >= engine_config.wavelength_range[0],
+                self.wl <= engine_config.wavelength_range[1],
+            )
             self.wl = self.wl[valid_wl]
             self.fwhm = self.fwhm[valid_wl]
 
@@ -80,10 +89,14 @@ class TabularRT:
         self.configure_and_exit = full_config.implementation.rte_configure_and_exit
         self.implementation_mode = full_config.implementation.mode
 
-        self.interpolator_style = full_config.forward_model.radiative_transfer.interpolator_style
+        self.interpolator_style = (
+            full_config.forward_model.radiative_transfer.interpolator_style
+        )
 
         # Defaults False, where True will overwrite any existing interpolator pickles
-        self.overwrite_interpolator = full_config.forward_model.radiative_transfer.overwrite_interpolator
+        self.overwrite_interpolator = (
+            full_config.forward_model.radiative_transfer.overwrite_interpolator
+        )
 
         # Prepare a cache for self._lookup_lut(), setting cache_size to 0 will disable
         self.cache = {}
@@ -108,7 +121,9 @@ class TabularRT:
                 self.lut_grid_config[key] = value
 
         # selectively get statevector components that are in this particular RTE
-        full_sv_names = full_config.forward_model.radiative_transfer.statevector.get_element_names()
+        full_sv_names = (
+            full_config.forward_model.radiative_transfer.statevector.get_element_names()
+        )
         self.statevector_names = full_sv_names
 
         self.lut_dir = engine_config.lut_path
@@ -125,7 +140,8 @@ class TabularRT:
         self.prior_mean, self.prior_sigma = [], []
         for key in self.statevector_names:
             element: StateVectorElementConfig = full_config.forward_model.radiative_transfer.statevector.get_single_element_by_name(
-                key)
+                key
+            )
             self.bounds.append(element.bounds)
             self.scale.append(element.scale)
             self.init.append(element.init)
@@ -146,12 +162,14 @@ class TabularRT:
             # do some quick checks on the values
             # For forward (simulation) mode, 1-dimensional LUT grids are OK!
             if len(grid_values) == 1 and not self.implementation_mode == "simulation":
-                err = 'Only 1 value in LUT grid {}. '.format(key) +\
-                    '1-d LUT grids cannot be interpreted.'
+                err = (
+                    "Only 1 value in LUT grid {}. ".format(key)
+                    + "1-d LUT grids cannot be interpreted."
+                )
                 raise ValueError(err)
             if grid_values != sorted(grid_values):
-                logging.error('Lookup table grid needs ascending order')
-                raise ValueError('Lookup table grid needs ascending order')
+                logging.error("Lookup table grid needs ascending order")
+                raise ValueError("Lookup table grid needs ascending order")
 
             # Store the values
             self.lut_grids.append(grid_values)
@@ -161,11 +179,11 @@ class TabularRT:
             # Store in an indication of the type of value each key is
             # (normal - n, degree - d, radian - r)
             if key in self.angular_lut_keys_radians:
-                self.lut_interp_types.append('r')
+                self.lut_interp_types.append("r")
             elif key in self.angular_lut_keys_degrees:
-                self.lut_interp_types.append('d')
+                self.lut_interp_types.append("d")
             else:
-                self.lut_interp_types.append('n')
+                self.lut_interp_types.append("n")
 
         # Cast as array for faster reference later
         self.lut_interp_types = np.array(self.lut_interp_types)
@@ -227,13 +245,19 @@ class TabularRT:
                 os.mkdir(self.lut_dir)
 
             # Make the LUT calls (in parallel if specified)
-            results = ray.get([spawn_rt.remote(rebuild_cmd, self.lut_dir) for rebuild_cmd in rebuild_cmds])
+            results = ray.get(
+                [
+                    spawn_rt.remote(rebuild_cmd, self.lut_dir)
+                    for rebuild_cmd in rebuild_cmds
+                ]
+            )
 
     def get_lut_filenames(self):
         files = []
         for point in self.points:
-            outf = '_'.join(['%s-%6.4f' % (n, x)
-                             for n, x in zip(self.lut_names, point)])
+            outf = "_".join(
+                ["%s-%6.4f" % (n, x) for n, x in zip(self.lut_names, point)]
+            )
             files.append(outf)
         return files
 
@@ -241,6 +265,7 @@ class TabularRT:
         """Summary of state vector."""
 
         if len(x_RT) < 1:
-            return ''
-        return 'Atmosphere: '+' '.join(['%s: %5.3f' % (si, xi) for si, xi in
-                                        zip(self.statevector_names, x_RT)])
+            return ""
+        return "Atmosphere: " + " ".join(
+            ["%s: %5.3f" % (si, xi) for si, xi in zip(self.statevector_names, x_RT)]
+        )

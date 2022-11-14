@@ -23,7 +23,6 @@ import os
 
 
 class InputConfig(BaseConfigSection):
-
     def __init__(self, sub_configdic: dict = None):
         """
         Input file(s) configuration.
@@ -72,7 +71,7 @@ class InputConfig(BaseConfigSection):
         str: Input 'loc', or location, file.  Can be either a .mat, .txt, or ENVI formatted binary cube.
         Provides per-pixel lat, long, and elevation information.
         """
-                
+
         self._background_reflectance_file_type = str
         self.background_reflectance_file = None
         """
@@ -98,7 +97,9 @@ class InputConfig(BaseConfigSection):
             value = getattr(self, key)
             if value is not None:
                 if os.path.isfile(value) is False:
-                    errors.append('Config value Input->{}: {} not found'.format(key, value))
+                    errors.append(
+                        "Config value Input->{}: {} not found".format(key, value)
+                    )
 
         # TODO: check that the right combination of input files exists
 

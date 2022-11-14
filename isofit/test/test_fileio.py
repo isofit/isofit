@@ -8,4 +8,3 @@ def test_typemap():
 
 def test_max_frames_size():
     assert max_frames_size == 100
-

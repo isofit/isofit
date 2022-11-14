@@ -72,15 +72,21 @@ class InversionConfig(BaseConfigSection):
         errors = list()
 
         # TODO: add some checking to windows
-        if self.windows is None and self.mode != 'simulation':
-            errors.append('windows is a required parameters inside of inversion')
+        if self.windows is None and self.mode != "simulation":
+            errors.append("windows is a required parameters inside of inversion")
         else:
             for subset in self.windows:
                 if isinstance(subset, List) is False:
-                    errors.append('windows parameter must be a list of lists of wavelength ranges')
+                    errors.append(
+                        "windows parameter must be a list of lists of wavelength ranges"
+                    )
                 elif subset[0] > subset[1]:
-                    errors.append('In inversion window subset {}, wavelength ranges must be in order'.format(subset))
-        
+                    errors.append(
+                        "In inversion window subset {}, wavelength ranges must be in order".format(
+                            subset
+                        )
+                    )
+
         return errors
 
 
@@ -126,7 +132,7 @@ class LeastSquaresConfig(BaseConfigSection):
 
     def __init__(self, sub_configdic: dict = None):
         self._method_type = str
-        self.method = 'trf'
+        self.method = "trf"
         """str: Optimzation method to use. Default 'trf'."""
 
         self._max_nfev_type = int
@@ -150,7 +156,7 @@ class LeastSquaresConfig(BaseConfigSection):
         Default is None, which disables termination from this criteria."""
 
         self._tr_solver_type = str
-        self.tr_solver = 'lsmr'
+        self.tr_solver = "lsmr"
         """str: Method for solving trust-region subproblems, relevant only for ‘trf’ and ‘dogbox’ methods.
         Options are None, 'exact', or 'lsmr'"""
 
@@ -161,9 +167,9 @@ class LeastSquaresConfig(BaseConfigSection):
 
         # TODO: add flags for rile overright, and make sure files don't exist if not checked?
         if self.tr_solver is not None:
-            if self.tr_solver not in [None, 'exact', 'lsmr']:
-                errors.append('Least squares tr_solver must be in [None, \'exact\', \'lsmr\']')
+            if self.tr_solver not in [None, "exact", "lsmr"]:
+                errors.append(
+                    "Least squares tr_solver must be in [None, 'exact', 'lsmr']"
+                )
 
         return errors
-
-

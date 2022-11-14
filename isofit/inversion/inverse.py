@@ -39,8 +39,8 @@ error_code = -1
 
 ### Classes ###
 
-class Inversion:
 
+class Inversion:
     def __init__(self, full_config: Config, forward: ForwardModel):
         """Initialization specifies retrieval subwindows for calculating
         measurement cost distributions."""
@@ -63,8 +63,11 @@ class Inversion:
         # window indices never change throughout the life of the object.
         self.winidx = np.array((), dtype=int)  # indices of retrieval windows
         for lo, hi in self.windows:
-            idx = np.where(np.logical_and(self.fm.instrument.wl_init > lo,
-                                          self.fm.instrument.wl_init < hi))[0]
+            idx = np.where(
+                np.logical_and(
+                    self.fm.instrument.wl_init > lo, self.fm.instrument.wl_init < hi
+                )
+            )[0]
             self.winidx = np.concatenate((self.winidx, idx), axis=0)
         self.outside_ret_windows = np.ones(self.fm.n_meas, dtype=bool)
         self.outside_ret_windows[self.winidx] = False
@@ -79,33 +82,50 @@ class Inversion:
             # We're using the integration grid to preseed, not fix values.  So
             # Track the grid, but don't fix the integration grid points
             self.inds_fixed = []
-            self.inds_preseed = np.array([self.fm.statevec.index(k) for k in
-                               self.integration_grid.keys()])
-            self.inds_free = np.array([i for i in np.arange(self.fm.nstate, dtype=int) if
-                              not (i in self.inds_fixed)])
+            self.inds_preseed = np.array(
+                [self.fm.statevec.index(k) for k in self.integration_grid.keys()]
+            )
+            self.inds_free = np.array(
+                [
+                    i
+                    for i in np.arange(self.fm.nstate, dtype=int)
+                    if not (i in self.inds_fixed)
+                ]
+            )
 
         else:
             # We're using the integration grid to fix values.  So
             # Get set up to fix the integration grid points
-            self.inds_fixed = np.array([self.fm.statevec.index(k) for k in
-                               self.integration_grid.keys()])
-            self.inds_free = np.array([i for i in np.arange(self.fm.nstate, dtype=int) if
-                              not (i in self.inds_fixed)])
+            self.inds_fixed = np.array(
+                [self.fm.statevec.index(k) for k in self.integration_grid.keys()]
+            )
+            self.inds_free = np.array(
+                [
+                    i
+                    for i in np.arange(self.fm.nstate, dtype=int)
+                    if not (i in self.inds_fixed)
+                ]
+            )
             self.inds_preseed = []
 
         self.x_fixed = None
 
         # Set least squares params that come from the forward model
         self.least_squares_params = {
-            'method': 'trf',
-            'max_nfev': 20,
-            'bounds': (self.fm.bounds[0][self.inds_free],
-                       self.fm.bounds[1][self.inds_free]),
-            'x_scale': self.fm.scale[self.inds_free],
+            "method": "trf",
+            "max_nfev": 20,
+            "bounds": (
+                self.fm.bounds[0][self.inds_free],
+                self.fm.bounds[1][self.inds_free],
+            ),
+            "x_scale": self.fm.scale[self.inds_free],
         }
 
         # Update the rest from the config
-        for key, item in config.least_squares_params.get_config_options_as_dict().items():
+        for (
+            key,
+            item,
+        ) in config.least_squares_params.get_config_options_as_dict().items():
             self.least_squares_params[key] = item
 
     def full_statevector(self, x_free):
@@ -126,59 +146,74 @@ class Inversion:
 
         # If there aren't any fixed parameters, we just directly
         if self.x_fixed is None or self.grid_as_starting_points:
-            Sa_inv, Sa_inv_sqrt = svd_inv_sqrt(Sa, hashtable=self.hashtable, max_hash_size=self.max_table_size)
+            Sa_inv, Sa_inv_sqrt = svd_inv_sqrt(
+                Sa, hashtable=self.hashtable, max_hash_size=self.max_table_size
+            )
             return xa, Sa, Sa_inv, Sa_inv_sqrt
 
         else:
             # otherwise condition on fixed variables
-            #TODO: could make the below calculation without the svd_inv (using full initial inversion),
+            # TODO: could make the below calculation without the svd_inv (using full initial inversion),
             # which would be way cheaper
-            xa_free, Sa_free = conditional_gaussian(xa, Sa, self.inds_free,
-                                                    self.inds_fixed, self.x_fixed)
-            Sa_free_inv, Sa_free_inv_sqrt = svd_inv_sqrt(Sa_free, hashtable=self.hashtable,
-                                                         max_hash_size=self.max_table_size)
+            xa_free, Sa_free = conditional_gaussian(
+                xa, Sa, self.inds_free, self.inds_fixed, self.x_fixed
+            )
+            Sa_free_inv, Sa_free_inv_sqrt = svd_inv_sqrt(
+                Sa_free, hashtable=self.hashtable, max_hash_size=self.max_table_size
+            )
             return xa_free, Sa_free, Sa_free_inv, Sa_free_inv_sqrt
 
-
     def calc_prior(self, x, geom):
-        """Calculate prior distribution of radiance. This depends on the 
-        location in the state space. Return the inverse covariance and 
+        """Calculate prior distribution of radiance. This depends on the
+        location in the state space. Return the inverse covariance and
         its square root (for non-quadratic error residual calculation)."""
 
         xa = self.fm.xa(x, geom)
         Sa = self.fm.Sa(x, geom)
-        Sa_inv, Sa_inv_sqrt = svd_inv_sqrt(Sa, hashtable=self.hashtable, max_hash_size=self.max_table_size)
+        Sa_inv, Sa_inv_sqrt = svd_inv_sqrt(
+            Sa, hashtable=self.hashtable, max_hash_size=self.max_table_size
+        )
         return xa, Sa, Sa_inv, Sa_inv_sqrt
 
     def calc_posterior(self, x, geom, meas):
-        """Calculate posterior distribution of state vector. This depends 
+        """Calculate posterior distribution of state vector. This depends
         both on the location in the state space and the radiance (via noise)."""
 
         xa = self.fm.xa(x, geom)
         Sa = self.fm.Sa(x, geom)
-        Sa_inv = svd_inv(Sa, hashtable=self.hashtable, max_hash_size=self.max_table_size)
+        Sa_inv = svd_inv(
+            Sa, hashtable=self.hashtable, max_hash_size=self.max_table_size
+        )
         K = self.fm.K(x, geom)
         Seps = self.fm.Seps(x, meas, geom)
-        Seps_inv = svd_inv(Seps, hashtable=self.hashtable, max_hash_size=self.max_table_size)
+        Seps_inv = svd_inv(
+            Seps, hashtable=self.hashtable, max_hash_size=self.max_table_size
+        )
 
         # Gain matrix G reflects current state, so we use the state-dependent
         # Jacobian matrix K
-        S_hat = svd_inv(K.T.dot(Seps_inv).dot(
-            K) + Sa_inv, hashtable=self.hashtable, max_hash_size=self.max_table_size)
+        S_hat = svd_inv(
+            K.T.dot(Seps_inv).dot(K) + Sa_inv,
+            hashtable=self.hashtable,
+            max_hash_size=self.max_table_size,
+        )
         G = S_hat.dot(K.T).dot(Seps_inv)
 
         # N. Cressie [ASA 2018] suggests an alternate definition of S_hat for
         # more statistically-consistent posterior confidence estimation
         if self.state_indep_S_hat:
             Ka = self.fm.K(xa, geom)
-            S_hat = svd_inv(Ka.T.dot(Seps_inv).dot(Ka) + Sa_inv,
-                            hashtable=self.hashtable, max_hash_size=self.max_table_size)
+            S_hat = svd_inv(
+                Ka.T.dot(Seps_inv).dot(Ka) + Sa_inv,
+                hashtable=self.hashtable,
+                max_hash_size=self.max_table_size,
+            )
         return S_hat, K, G
 
     def calc_Seps(self, x, meas, geom):
         """Calculate (zero-mean) measurement distribution in radiance terms.
-        This depends on the location in the state space. This distribution is 
-        calculated over one or more subwindows of the spectrum. Return the 
+        This depends on the location in the state space. This distribution is
+        calculated over one or more subwindows of the spectrum. Return the
         inverse covariance and its square root."""
 
         Seps = self.fm.Seps(x, meas, geom)
@@ -186,8 +221,9 @@ class Inversion:
         Seps_win = np.zeros((wn, wn))
         for i in range(wn):
             Seps_win[i, :] = Seps[self.winidx[i], self.winidx]
-        return svd_inv_sqrt(Seps_win, hashtable=self.hashtable, max_hash_size=self.max_table_size)
-
+        return svd_inv_sqrt(
+            Seps_win, hashtable=self.hashtable, max_hash_size=self.max_table_size
+        )
 
     def jacobian(self, x_free, geom, Seps_inv_sqrt) -> np.ndarray:
         """Calculate measurement Jacobian and prior Jacobians with
@@ -217,8 +253,9 @@ class Inversion:
         meas_jac = Seps_inv_sqrt.dot(K)
 
         # jacobian of prior cost term with respect to state vector.
-        xa_free, Sa_free, Sa_free_inv, Sa_free_inv_sqrt = \
-            self.calc_conditional_prior(x_free, geom)
+        xa_free, Sa_free, Sa_free_inv, Sa_free_inv_sqrt = self.calc_conditional_prior(
+            x_free, geom
+        )
         prior_jac = Sa_free_inv_sqrt
 
         # The total cost vector (as presented to the solver) is the
@@ -261,8 +298,9 @@ class Inversion:
         meas_resid = (est_meas_window - meas_window).dot(Seps_inv_sqrt)
 
         # Prior cost term
-        xa_free, Sa_free, Sa_free_inv, Sa_free_inv_sqrt = \
-            self.calc_conditional_prior(x_free, geom)
+        xa_free, Sa_free, Sa_free_inv, Sa_free_inv_sqrt = self.calc_conditional_prior(
+            x_free, geom
+        )
         prior_resid = (x_free - xa_free).dot(Sa_free_inv_sqrt)
 
         # Total cost
@@ -283,7 +321,7 @@ class Inversion:
         costs, solutions = [], []
 
         # Simulations are easy - return the initial state vector
-        if self.mode == 'simulation':
+        if self.mode == "simulation":
             self.fm.surface.rfl = meas
             return np.array([self.fm.init.copy()])
 
@@ -303,7 +341,9 @@ class Inversion:
 
             # Update regions outside retrieval windows to match priors
             if self.config.priors_in_initial_guess:
-                prior_subset_idx = np.arange(len(x0))[self.fm.idx_surface][self.outside_ret_windows]
+                prior_subset_idx = np.arange(len(x0))[self.fm.idx_surface][
+                    self.outside_ret_windows
+                ]
                 x0[prior_subset_idx] = self.fm.surface.xa(x0, geom)[prior_subset_idx]
 
             trajectory.append(x0)
@@ -312,12 +352,14 @@ class Inversion:
 
             # Catch any state vector elements outside of bounds
             lower_bound_violation = x0 < self.fm.bounds[0][self.inds_free]
-            x0[lower_bound_violation] = \
+            x0[lower_bound_violation] = (
                 self.fm.bounds[0][self.inds_free][lower_bound_violation] + eps
+            )
 
             upper_bound_violation = x0 > self.fm.bounds[1][self.inds_free]
-            x0[upper_bound_violation] = \
+            x0[upper_bound_violation] = (
                 self.fm.bounds[1][self.inds_free][upper_bound_violation] - eps
+            )
             del lower_bound_violation, upper_bound_violation
 
             # Find the full state vector with bounds checked
@@ -352,8 +394,7 @@ class Inversion:
                 it = len(trajectory)
                 rs = float(np.sum(np.power(residual, 2)))
                 sm = self.fm.summarize(x, geom)
-                logging.debug('Iteration: %02i  Residual: %12.2f %s' %
-                              (it, rs, sm))
+                logging.debug("Iteration: %02i  Residual: %12.2f %s" % (it, rs, sm))
 
                 return np.real(residual)
 
@@ -365,13 +406,12 @@ class Inversion:
                 solutions.append(trajectory)
                 costs.append(np.sqrt(np.power(xopt.fun, 2).sum()))
             except scipy.linalg.LinAlgError:
-                logging.warning('Optimization failed to converge')
+                logging.warning("Optimization failed to converge")
                 solutions.append(trajectory)
                 costs.append(9e99)
 
         final_solution = np.array(solutions[np.argmin(costs)])
         return final_solution
-
 
     def forward_uncertainty(self, x, meas, geom):
         """

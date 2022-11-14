@@ -31,42 +31,58 @@ import pygrib
 
 from isofit.core.common import json_load_ascii
 
-class HRRR_to_MODTRAN_profiles():
-    '''
+
+class HRRR_to_MODTRAN_profiles:
+    """
     This class assumes that the MODTRAN config file has already been
     filled with the correct run data, including time, lat/lon, etc.
-    '''
+    """
+
     def __init__(self, config_filename):
 
         self.config = deepcopy(json_load_ascii(config_filename))
 
-        self.modtran_config_filenames = self.config['modtran_config_json_filenames']
-        self.output_modtran_config_filenames = self.config['output_modtran_config_filenames']
-        self.year_for_HRRR_profiles_in_modtran = self.config['year_for_HRRR_profiles_in_modtran']
-        self.HRRR_data_library_path = self.config['HRRR_data_library_path']
+        self.modtran_config_filenames = self.config["modtran_config_json_filenames"]
+        self.output_modtran_config_filenames = self.config[
+            "output_modtran_config_filenames"
+        ]
+        self.year_for_HRRR_profiles_in_modtran = self.config[
+            "year_for_HRRR_profiles_in_modtran"
+        ]
+        self.HRRR_data_library_path = self.config["HRRR_data_library_path"]
 
-        for modtran_config_filename, output_modtran_config_filename in \
-                zip(self.modtran_config_filenames, self.output_modtran_config_filenames):
-            
-            template = deepcopy(json_load_ascii(modtran_config_filename)['MODTRAN'])
-        
-            prof_altitude_dict, prof_pressure_dict, prof_temperature_dict, prof_H2O_dict = self.create_profiles(template)
+        for modtran_config_filename, output_modtran_config_filename in zip(
+            self.modtran_config_filenames, self.output_modtran_config_filenames
+        ):
 
-            template[0]['MODTRANINPUT']['ATMOSPHERE']['NLAYERS'] = len(prof_altitude_dict['PROFILE'])
-            template[0]['MODTRANINPUT']['ATMOSPHERE']['NPROF'] = 4
-            template[0]['MODTRANINPUT']['ATMOSPHERE']['PROFILES'] = [dict(prof_altitude_dict),
-                                                                dict(prof_pressure_dict),
-                                                                dict(prof_temperature_dict),
-                                                                dict(prof_H2O_dict)]
+            template = deepcopy(json_load_ascii(modtran_config_filename)["MODTRAN"])
+
+            (
+                prof_altitude_dict,
+                prof_pressure_dict,
+                prof_temperature_dict,
+                prof_H2O_dict,
+            ) = self.create_profiles(template)
+
+            template[0]["MODTRANINPUT"]["ATMOSPHERE"]["NLAYERS"] = len(
+                prof_altitude_dict["PROFILE"]
+            )
+            template[0]["MODTRANINPUT"]["ATMOSPHERE"]["NPROF"] = 4
+            template[0]["MODTRANINPUT"]["ATMOSPHERE"]["PROFILES"] = [
+                dict(prof_altitude_dict),
+                dict(prof_pressure_dict),
+                dict(prof_temperature_dict),
+                dict(prof_H2O_dict),
+            ]
 
             template_str = json.dumps({"MODTRAN": template})
-            with open(output_modtran_config_filename, 'w') as f:
+            with open(output_modtran_config_filename, "w") as f:
                 f.write(template_str)
 
         return
 
     def create_profiles(self, template):
-        '''
+        """
         Create MODTRAN profile strings from HRRR data. For example:
 
         print(self.prof_altitude)
@@ -78,27 +94,39 @@ class HRRR_to_MODTRAN_profiles():
         "UNITS": "UNT_KILOMETERS",
         "PROFILE": [1.224, 2.000, 3.000, 4.000, 5.000, 6.000, 7.000, 8.000, 9.000, 10.000, 11.000, 12.000, 13.000, 14.000, 15.000, 16.000, 17.000, 18.000, 19.000]
         }
-        '''
+        """
 
-        lat = template[0]['MODTRANINPUT']['GEOMETRY']['PARM1']
-        lon = template[0]['MODTRANINPUT']['GEOMETRY']['PARM2']
-        gmtime = template[0]['MODTRANINPUT']['GEOMETRY']['GMTIME']
-        iday = template[0]['MODTRANINPUT']['GEOMETRY']['IDAY']
-        h1alt_km = template[0]['MODTRANINPUT']['GEOMETRY']['H1ALT']
-        gndalt_km = template[0]['MODTRANINPUT']['SURFACE']['GNDALT']
+        lat = template[0]["MODTRANINPUT"]["GEOMETRY"]["PARM1"]
+        lon = template[0]["MODTRANINPUT"]["GEOMETRY"]["PARM2"]
+        gmtime = template[0]["MODTRANINPUT"]["GEOMETRY"]["GMTIME"]
+        iday = template[0]["MODTRANINPUT"]["GEOMETRY"]["IDAY"]
+        h1alt_km = template[0]["MODTRANINPUT"]["GEOMETRY"]["H1ALT"]
+        gndalt_km = template[0]["MODTRANINPUT"]["SURFACE"]["GNDALT"]
 
-        date_to_get = date(self.year_for_HRRR_profiles_in_modtran, 1, 1) + \
-                        timedelta(iday - 1)
-        grb_filename = download_HRRR(date_to_get, model = 'hrrr', field = 'prs', \
-                        hour = [int(gmtime)], fxx = [0], \
-                        OUTDIR = self.HRRR_data_library_path)
-        
+        date_to_get = date(self.year_for_HRRR_profiles_in_modtran, 1, 1) + timedelta(
+            iday - 1
+        )
+        grb_filename = download_HRRR(
+            date_to_get,
+            model="hrrr",
+            field="prs",
+            hour=[int(gmtime)],
+            fxx=[0],
+            OUTDIR=self.HRRR_data_library_path,
+        )
+
         # Read the HRRR file
-        grb_lat, grb_lon, grb_geo_pot_height_m, grb_temperature_K, grb_rh_perc, grb_pressure_levels_Pa = \
-            get_HRRR_data(grb_filename)
-        
+        (
+            grb_lat,
+            grb_lon,
+            grb_geo_pot_height_m,
+            grb_temperature_K,
+            grb_rh_perc,
+            grb_pressure_levels_Pa,
+        ) = get_HRRR_data(grb_filename)
+
         # Find nearest spatial pixel
-        r2 = (grb_lat - lat)**2 + (grb_lon - (-1*lon))**2
+        r2 = (grb_lat - lat) ** 2 + (grb_lon - (-1 * lon)) ** 2
         indx, indy = np.unravel_index(np.argmin(r2), r2.shape)
 
         # Grab the profile at the nearest spatial pixel
@@ -115,60 +143,84 @@ class HRRR_to_MODTRAN_profiles():
 
         # Interpolate to how MODTRAN seems to want them, following example
         # on p97 of MODTRAN 6 User's Manual
-        if gndalt_km < geo_pot_height_profile_km[0] or h1alt_km > geo_pot_height_profile_km[-1]:
+        if (
+            gndalt_km < geo_pot_height_profile_km[0]
+            or h1alt_km > geo_pot_height_profile_km[-1]
+        ):
             print("Cannot extrapolate from MODTRAN profiles!")
             raise ValueError
         n = np.floor(geo_pot_height_profile_km[-1]) - np.ceil(gndalt_km)
         mod_height_profile_km = [gndalt_km] + list(np.arange(n) + np.ceil(gndalt_km))
-        mod_temperature_profile_K = np.interp(mod_height_profile_km, geo_pot_height_profile_km, temperature_profile_K)
-        mod_rh_profile_perc = np.interp(mod_height_profile_km, geo_pot_height_profile_km, rh_profile_perc)
-        mod_pressure_profile_atm = np.interp(mod_height_profile_km, geo_pot_height_profile_km, pressure_profile_atm)
+        mod_temperature_profile_K = np.interp(
+            mod_height_profile_km, geo_pot_height_profile_km, temperature_profile_K
+        )
+        mod_rh_profile_perc = np.interp(
+            mod_height_profile_km, geo_pot_height_profile_km, rh_profile_perc
+        )
+        mod_pressure_profile_atm = np.interp(
+            mod_height_profile_km, geo_pot_height_profile_km, pressure_profile_atm
+        )
 
         # Get water vapor saturation density (p 95 of MODTRAN 6 User's Manual)
         tr = 273.15 / mod_temperature_profile_K
         rho_sat = tr * np.exp(18.9766 - (14.9595 + 2.43882 * tr) * tr)
 
         # Get water mixing ratio in ppmV (p 95 of MODTRAN 6 User's Manual)
-        mod_mixing_ratio_ppmV = rho_sat * 0.01*mod_rh_profile_perc / 18.01528 * 22413.83 / \
-                                mod_pressure_profile_atm / tr
+        mod_mixing_ratio_ppmV = (
+            rho_sat
+            * 0.01
+            * mod_rh_profile_perc
+            / 18.01528
+            * 22413.83
+            / mod_pressure_profile_atm
+            / tr
+        )
 
         prof_altitude_dict = {}
-        prof_altitude_dict['TYPE'] = 'PROF_ALTITUDE'
-        prof_altitude_dict['UNITS'] = 'UNT_KILOMETERS'
-        prof_altitude_dict['PROFILE'] = list(mod_height_profile_km)
+        prof_altitude_dict["TYPE"] = "PROF_ALTITUDE"
+        prof_altitude_dict["UNITS"] = "UNT_KILOMETERS"
+        prof_altitude_dict["PROFILE"] = list(mod_height_profile_km)
 
         prof_pressure_dict = {}
-        prof_pressure_dict['TYPE'] = 'PROF_PRESSURE'
-        prof_pressure_dict['UNITS'] = 'UNT_PMILLIBAR'
-        prof_pressure_dict['PROFILE'] = list(mod_pressure_profile_atm * 1013.25) # Convert atm millibar
+        prof_pressure_dict["TYPE"] = "PROF_PRESSURE"
+        prof_pressure_dict["UNITS"] = "UNT_PMILLIBAR"
+        prof_pressure_dict["PROFILE"] = list(
+            mod_pressure_profile_atm * 1013.25
+        )  # Convert atm millibar
 
         prof_temperature_dict = {}
-        prof_temperature_dict['TYPE'] = 'PROF_TEMPERATURE'
-        prof_temperature_dict['UNITS'] = 'UNT_TKELVIN'
-        prof_temperature_dict['PROFILE'] = list(mod_temperature_profile_K)
+        prof_temperature_dict["TYPE"] = "PROF_TEMPERATURE"
+        prof_temperature_dict["UNITS"] = "UNT_TKELVIN"
+        prof_temperature_dict["PROFILE"] = list(mod_temperature_profile_K)
 
         prof_H2O_dict = {}
-        prof_H2O_dict['TYPE'] = 'PROF_H2O'
-        prof_H2O_dict['UNITS'] = 'UNT_DPPMV'
-        prof_H2O_dict['PROFILE'] = list(mod_mixing_ratio_ppmV)
+        prof_H2O_dict["TYPE"] = "PROF_H2O"
+        prof_H2O_dict["UNITS"] = "UNT_DPPMV"
+        prof_H2O_dict["PROFILE"] = list(mod_mixing_ratio_ppmV)
 
-        return prof_altitude_dict, prof_pressure_dict, prof_temperature_dict, prof_H2O_dict
+        return (
+            prof_altitude_dict,
+            prof_pressure_dict,
+            prof_temperature_dict,
+            prof_H2O_dict,
+        )
 
 
 def reporthook(a, b, c):
-    '''
+    """
     Report download progress in megabytes
-    '''
+    """
     # ',' at the end of the line is important!
-    print("\r % 3.1f%% of %.2f MB\r" % (min(100, float(a * b) / c * 100), c/1000000.), end='')
+    print(
+        "\r % 3.1f%% of %.2f MB\r" % (min(100, float(a * b) / c * 100), c / 1000000.0),
+        end="",
+    )
 
-def download_HRRR(DATE,
-                  model='hrrr',
-                  field='sfc',
-                  hour=range(0, 24),
-                  fxx=range(0, 1),
-                  OUTDIR='./'):
-    '''
+
+def download_HRRR(
+    DATE, model="hrrr", field="sfc", hour=range(0, 24), fxx=range(0, 1), OUTDIR="./"
+):
+    """
     # Brian Blaylock
     # February 13, 2018
 
@@ -182,7 +234,7 @@ def download_HRRR(DATE,
     Please register before downloading from our HRRR archive:
     http://hrrr.chpc.utah.edu/hrrr_download_register.html
 
-    For info on the University of Utah HRRR archive and to see what dates are 
+    For info on the University of Utah HRRR archive and to see what dates are
     available, look here:
     http://hrrr.chpc.utah.edu/
 
@@ -203,7 +255,7 @@ def download_HRRR(DATE,
     Outcome:
         Downloads the desired HRRR file and renames with date info preceeding
         the original file name (i.e. 20170101_hrrr.t00z.wrfsfcf00.grib2)
-    '''
+    """
     # Make OUTDIR if path doesn't exist
     if not os.path.exists(OUTDIR):
         os.makedirs(OUTDIR)
@@ -216,24 +268,27 @@ def download_HRRR(DATE,
             #    [model].t[hh]z.wrf[field]f[xx].grib2
             #    i.e. hrrr.t00z.wrfsfcf00.grib2
             fname = "%s.t%02dz.wrf%sf%02d.grib2" % (model, h, field, f)
-            URL = "https://pando-rgw01.chpc.utah.edu/%s/%s/%s/%s" \
-                   % (model, field, DATE.strftime('%Y%m%d'), fname)
+            URL = "https://pando-rgw01.chpc.utah.edu/%s/%s/%s/%s" % (
+                model,
+                field,
+                DATE.strftime("%Y%m%d"),
+                fname,
+            )
 
             # 2) Rename file with date preceeding original filename
             #    i.e. 20170105_hrrr.t00z.wrfsfcf00.grib2
-            rename = "%s_%s" \
-                     % (DATE.strftime('%Y%m%d'), fname)
-            
-            filename = OUTDIR+rename
+            rename = "%s_%s" % (DATE.strftime("%Y%m%d"), fname)
+
+            filename = OUTDIR + rename
             if not os.path.exists(filename):
 
                 # 3) Download the file via https
-                # Check the file size, make it's big enough to exist.         
+                # Check the file size, make it's big enough to exist.
                 check_this = urllib.request.urlopen(URL)
-                file_size = int(check_this.info()['content-length'])
+                file_size = int(check_this.info()["content-length"])
                 if file_size > 10000:
                     print("Downloading:", URL)
-                    urllib.request.urlretrieve(URL, OUTDIR+rename, reporthook)
+                    urllib.request.urlretrieve(URL, OUTDIR + rename, reporthook)
                     print("\n")
                 else:
                     # URL returns an "Key does not exist" message
@@ -243,21 +298,27 @@ def download_HRRR(DATE,
                 time.sleep(5)
     return filename
 
+
 def get_HRRR_data(filename):
     grbs = pygrib.open(filename)
 
     msgs = [str(grb) for grb in grbs]
 
-    string = 'Geopotential Height:gpm'
-    temp = [msg for msg in msgs if msg.find(string) > -1 and msg.find('isobaricInhPa') > -1]
-    pressure_levels_Pa = s.array([int(s.split(' ')[3]) for s in temp])
+    string = "Geopotential Height:gpm"
+    temp = [
+        msg for msg in msgs if msg.find(string) > -1 and msg.find("isobaricInhPa") > -1
+    ]
+    pressure_levels_Pa = s.array([int(s.split(" ")[3]) for s in temp])
 
-    geo_pot_height_grbs = grbs.select(name = 'Geopotential Height', \
-                                      typeOfLevel='isobaricInhPa', level=lambda l: l > 0)
-    temperature_grbs = grbs.select(name = 'Temperature', \
-                                   typeOfLevel='isobaricInhPa', level=lambda l: l > 0)
-    rh_grbs = grbs.select(name = 'Relative humidity', \
-                          typeOfLevel='isobaricInhPa', level=lambda l: l > 0)
+    geo_pot_height_grbs = grbs.select(
+        name="Geopotential Height", typeOfLevel="isobaricInhPa", level=lambda l: l > 0
+    )
+    temperature_grbs = grbs.select(
+        name="Temperature", typeOfLevel="isobaricInhPa", level=lambda l: l > 0
+    )
+    rh_grbs = grbs.select(
+        name="Relative humidity", typeOfLevel="isobaricInhPa", level=lambda l: l > 0
+    )
 
     lat, lon = geo_pot_height_grbs[0].latlons()
 
@@ -267,14 +328,16 @@ def get_HRRR_data(filename):
 
     return lat, lon, geo_pot_height, temperature, rh, pressure_levels_Pa
 
+
 def main():
 
     parser = argparse.ArgumentParser(description="Create a surface model")
-    parser.add_argument('config', type=str, metavar='INPUT')
+    parser.add_argument("config", type=str, metavar="INPUT")
     args = parser.parse_args()
     h = HRRR_to_MODTRAN_profiles(args.config)
-    #config = json_load_ascii(args.config, shell_replace=True)
-    #configdir, configfile = split(abspath(args.config))
+    # config = json_load_ascii(args.config, shell_replace=True)
+    # configdir, configfile = split(abspath(args.config))
+
 
 if __name__ == "__main__":
     main()

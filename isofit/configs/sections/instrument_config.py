@@ -50,7 +50,7 @@ class InstrumentUnknowns(BaseConfigSection):
         for param in file_params:
             if param is not None:
                 if os.path.isfile(param) is False:
-                    errors.append('Instrument unknown file: {} not found'.format(param))
+                    errors.append("Instrument unknown file: {} not found".format(param))
 
         return errors
 
@@ -116,20 +116,30 @@ class InstrumentConfig(BaseConfigSection):
     def _check_config_validity(self) -> List[str]:
         errors = list()
 
-        noise_options = [self.SNR, self.parametric_noise_file,
-                         self.pushbroom_noise_file, self.nedt_noise_file]
+        noise_options = [
+            self.SNR,
+            self.parametric_noise_file,
+            self.pushbroom_noise_file,
+            self.nedt_noise_file,
+        ]
         used_noise_options = [x for x in noise_options if x is not None]
 
         if len(used_noise_options) == 0:
-            errors.append('Instrument noise not defined.')
+            errors.append("Instrument noise not defined.")
 
         if len(used_noise_options) > 1:
-            errors.append('Multiple instrument noise options selected - please choose only 1.')
+            errors.append(
+                "Multiple instrument noise options selected - please choose only 1."
+            )
 
-        file_params = [self.parametric_noise_file, self.pushbroom_noise_file, self.nedt_noise_file]
+        file_params = [
+            self.parametric_noise_file,
+            self.pushbroom_noise_file,
+            self.nedt_noise_file,
+        ]
         for param in file_params:
             if param is not None:
                 if os.path.isfile(param) is False:
-                    errors.append('Instrument config file: {} not found'.format(param))
+                    errors.append("Instrument config file: {} not found".format(param))
 
         return errors

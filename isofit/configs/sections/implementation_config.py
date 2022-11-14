@@ -24,14 +24,13 @@ import os
 
 
 class ImplementationConfig(BaseConfigSection):
-
     def __init__(self, sub_configdic: dict = None):
         """
         Input file(s) configuration.
         """
 
         self._mode_type = str
-        self.mode = 'inversion'
+        self.mode = "inversion"
         """
         str: Defines the operating mode for isofit. Current options are: inversion, inversion_mcmc, 
         and 'simulation'.
@@ -71,7 +70,7 @@ class ImplementationConfig(BaseConfigSection):
         """bool: Flag indicating whether radiative transfer engines should automatically rebuild."""
 
         self._ray_temp_dir_type = str
-        self.ray_temp_dir = '/tmp/ray'
+        self.ray_temp_dir = "/tmp/ray"
         """str: Overrides the standard ray temporary directory.  Useful for multiuser systems."""
 
         self._ray_ignore_reinit_error_type = bool
@@ -95,25 +94,33 @@ class ImplementationConfig(BaseConfigSection):
         """bool: A flag to run the code in debug mode, which circumvents ray.
         """
 
-
         self.set_config_options(sub_configdic)
 
     def _check_config_validity(self) -> List[str]:
         errors = list()
 
-        valid_implementation_modes = ['inversion', 'mcmc_inversion', 'simulation']
+        valid_implementation_modes = ["inversion", "mcmc_inversion", "simulation"]
         if self.mode not in valid_implementation_modes:
-            errors.append('Invalid implementation mode: {}.  Valid options are: {}'.
-                          format(self.mode, valid_implementation_modes))
+            errors.append(
+                "Invalid implementation mode: {}.  Valid options are: {}".format(
+                    self.mode, valid_implementation_modes
+                )
+            )
 
-        if self.mode != 'simulation' and self.inversion is None:
-            errors.append('If running outside of simulation mode, Inversion must be defined')
-        elif self.mode == 'simulation' and self.inversion is None:
-            #TODO: fix this
-            errors.append('Even in simulation mode, and inversion config must be defined, though'
-                          'it may be blank.')
+        if self.mode != "simulation" and self.inversion is None:
+            errors.append(
+                "If running outside of simulation mode, Inversion must be defined"
+            )
+        elif self.mode == "simulation" and self.inversion is None:
+            # TODO: fix this
+            errors.append(
+                "Even in simulation mode, and inversion config must be defined, though"
+                "it may be blank."
+            )
 
         if int(self.ip_head is not None) + int(self.redis_password is not None) == 1:
-            errors.append('If either ip_head or redis_password are specified, both must be specified')
+            errors.append(
+                "If either ip_head or redis_password are specified, both must be specified"
+            )
 
         return errors
