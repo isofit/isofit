@@ -22,7 +22,7 @@ Using Mamba_ (latest version recommended), ISOFIT can be installed by first crea
 In case you're using Mambaforge, you don't necessarily need to specify the conda-forge channel as it's set as the
 default (and only) channel.
 
-Alternatively, you can of course install ISOFIT in an already existing environment by simply running:
+Alternatively, you can install ISOFIT in an already existing environment by simply running:
 
 .. code-block:: bash
 
