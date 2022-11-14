@@ -8,7 +8,6 @@ ISOFIT can be installed from the conda-forge channel by using different types of
 recommended to use the Mambaforge version of the Miniforge_ minimal installer. It allows to install the conda package
 manager with some useful features pre-configured:
 
-- conda-forge is set as the default (and only) channel
 - support for Mamba_ in place of Conda, which is a reimplementation of the conda package manager in C++ that allows parallel downloading and much faster dependency solving
 - emphasis on supporting various CPU architectures (x86_64, ppc64le, and aarch64 including Apple M1)
 
@@ -17,39 +16,20 @@ Using Mamba_ (latest version recommended), ISOFIT can be installed by first crea
 
 .. code-block:: bash
 
-    $ mamba create -n isofit_env isofit
+    $ mamba create -n isofit_env -c conda-forge isofit
     $ mamba activate isofit_env
 
-You can also use the Mamba_ installer within Anaconda_ or Miniconda_ package managers. However, you have to either set
-the conda-forge channel as default prior to installing any packages or specifying the channel while installing the
-packages. Additionally, you'll have to install Mamba_ from conda-forge using the Conda_ command:
-
-.. code-block:: bash
-
-    $ conda config --add channels conda-forge
-    $ conda config --set channel_priority strict
-    $ conda install mamba
-    $ mamba create -n isofit_env isofit
-    $ mamba activate isofit_env
-
-or
-
-.. code-block:: bash
-
-    $ conda install -c conda-forge mamba
-    $ mamba create -n isofit_env
-    $ mamba activate isofit_env
-    $ mamba install -c conda-forge isofit
+In case you're using Mambaforge, you don't necessarily need to specify the conda-forge channel as it's set as the
+default (and only) channel.
 
 Alternatively, you can of course install ISOFIT in an already existing environment by simply running:
 
 .. code-block:: bash
 
-    $ mamba install isofit
+    $ mamba install -c conda-forge isofit
 
-Of course, you can also use the Conda_ installer from the Anaconda_ or Miniconda_ package managers. The installation
-procedure is equal to using Mamba_, but you should again make sure to set the conda-forge channel as default prior to
-installing any packages (see above).
+Of course, you can also use the Conda_ installer from the Anaconda_ or Miniconda_ package managers, which requires the
+same procedure as using Mamba_.
 
 Mamba_ or Conda_ are the preferred methods to install ISOFIT, as they will always install the most recent stable
 release and automatically resolve all the dependencies.
