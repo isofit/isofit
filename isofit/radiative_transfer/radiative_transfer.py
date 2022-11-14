@@ -18,18 +18,20 @@
 # Author: Jay E. Fahlen, jay.e.fahlen@jpl.nasa.gov
 #
 
-import numpy as np
 import logging
 
-from ..core.common import eps
-from ..radiative_transfer.modtran import ModtranRT
-from ..radiative_transfer.six_s import SixSRT
-from ..radiative_transfer.libradtran import LibRadTranRT
-from ..radiative_transfer.sRTMnet import SimulatedModtranRT
+import numpy as np
+
 from isofit.configs import Config
 from isofit.configs.sections.radiative_transfer_config import (
     RadiativeTransferEngineConfig,
 )
+
+from ..core.common import eps
+from ..radiative_transfer.libradtran import LibRadTranRT
+from ..radiative_transfer.modtran import ModtranRT
+from ..radiative_transfer.six_s import SixSRT
+from ..radiative_transfer.sRTMnet import SimulatedModtranRT
 
 
 class RadiativeTransfer:

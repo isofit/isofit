@@ -21,12 +21,11 @@
 import json
 import os
 
+from isofit.configs.configs import create_new_config
 from isofit.core.common import expand_all_paths
 from isofit.core.fileio import IO
-from isofit.inversion.inverse import Inversion
 from isofit.core.forward import ForwardModel
-
-from isofit.configs.configs import create_new_config
+from isofit.inversion.inverse import Inversion
 
 
 def test_libradtran():

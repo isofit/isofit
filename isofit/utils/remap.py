@@ -20,6 +20,7 @@
 
 import numpy as np
 from spectral.io import envi
+
 from isofit.core.common import envi_header
 
 

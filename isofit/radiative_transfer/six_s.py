@@ -17,18 +17,20 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-import os
 import logging
+import os
 from datetime import datetime
+
 import numpy as np
 
-from isofit.core.common import resample_spectrum, VectorInterpolator
-from .look_up_tables import TabularRT, FileExistsError
-from isofit.core.geometry import Geometry
 from isofit.configs import Config
 from isofit.configs.sections.radiative_transfer_config import (
     RadiativeTransferEngineConfig,
 )
+from isofit.core.common import VectorInterpolator, resample_spectrum
+from isofit.core.geometry import Geometry
+
+from .look_up_tables import FileExistsError, TabularRT
 
 eps = 1e-5  # used for finite difference derivative calculations
 

@@ -19,14 +19,14 @@
 #
 
 import argparse
-import numpy as np
 import json
+import os
+import time
+import urllib.request
 from copy import deepcopy
 from datetime import date, timedelta
-import urllib.request
-import time
-import os
 
+import numpy as np
 import pygrib
 
 from isofit.core.common import json_load_ascii

@@ -18,18 +18,18 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-from argparse import ArgumentError
-import os
 import json
-import xxhash
-import numpy as np
-import scipy.linalg
-from scipy.interpolate import RegularGridInterpolator
+import os
+from argparse import ArgumentError
+from collections import OrderedDict
 from os.path import expandvars
 from typing import List
-from collections import OrderedDict
-import ndsplines
 
+import ndsplines
+import numpy as np
+import scipy.linalg
+import xxhash
+from scipy.interpolate import RegularGridInterpolator
 
 ### Variables ###
 

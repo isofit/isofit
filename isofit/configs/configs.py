@@ -18,16 +18,18 @@
 # Author: Philip G. Brodrick, philip.brodrick@jpl.nasa.gov
 
 import logging
+import os
 from collections import OrderedDict
 from typing import Dict, List, Type
-import os
-from isofit.configs.sections.input_config import InputConfig
-from isofit.configs.sections.output_config import OutputConfig
+
+import yaml
+
+from isofit.configs.base_config import BaseConfigSection
 from isofit.configs.sections.forward_model_config import ForwardModelConfig
 from isofit.configs.sections.implementation_config import ImplementationConfig
-from isofit.configs.base_config import BaseConfigSection
+from isofit.configs.sections.input_config import InputConfig
+from isofit.configs.sections.output_config import OutputConfig
 from isofit.core import common
-import yaml
 
 
 class Config(BaseConfigSection):

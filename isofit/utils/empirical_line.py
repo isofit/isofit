@@ -18,20 +18,22 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-from scipy.linalg import inv
-from isofit.core.fileio import write_bil_chunk
-from isofit.core.instrument import Instrument
-from spectral.io import envi
-from scipy.spatial import KDTree
-import numpy as np
+import atexit
 import logging
 import time
+
 import matplotlib
+import numpy as np
 import pylab as plt
-from isofit.configs import configs
 import ray
-import atexit
+from scipy.linalg import inv
+from scipy.spatial import KDTree
+from spectral.io import envi
+
+from isofit.configs import configs
 from isofit.core.common import envi_header
+from isofit.core.fileio import write_bil_chunk
+from isofit.core.instrument import Instrument
 
 plt.switch_backend("Agg")
 

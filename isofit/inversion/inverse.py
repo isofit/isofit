@@ -18,19 +18,20 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-import time
 import logging
-import numpy as np
+import time
 from collections import OrderedDict
-from scipy.optimize import least_squares
+
+import numpy as np
 import scipy.linalg
+from scipy.optimize import least_squares
 
-from isofit.core.common import svd_inv, svd_inv_sqrt, eps, combos, conditional_gaussian
-from .inverse_simple import invert_simple
 from isofit.configs import Config
-from isofit.core.forward import ForwardModel
 from isofit.configs.sections.implementation_config import InversionConfig
+from isofit.core.common import combos, conditional_gaussian, eps, svd_inv, svd_inv_sqrt
+from isofit.core.forward import ForwardModel
 
+from .inverse_simple import invert_simple
 
 ### Variables ###
 

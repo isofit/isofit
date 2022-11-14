@@ -19,10 +19,10 @@
 #
 
 import sys
-import pep8
 from glob import glob
-from os.path import split, abspath
+from os.path import abspath, split
 
+import pep8
 
 testdir, fname = split(abspath(__file__))
 config_file = testdir + "/data/pep8_config.txt"

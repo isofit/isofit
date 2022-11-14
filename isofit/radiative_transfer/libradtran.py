@@ -17,19 +17,19 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-import os
 import logging
+import os
+
 import numpy as np
 from scipy.interpolate import interp1d
 
-from ..core.common import resample_spectrum, VectorInterpolator
-from .look_up_tables import TabularRT, FileExistsError
-
+from isofit.configs import Config
 from isofit.configs.sections.radiative_transfer_config import (
     RadiativeTransferEngineConfig,
 )
-from isofit.configs import Config
 
+from ..core.common import VectorInterpolator, resample_spectrum
+from .look_up_tables import FileExistsError, TabularRT
 
 ### Variables ###
 

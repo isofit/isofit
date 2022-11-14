@@ -18,12 +18,14 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
+import logging
+
 import numpy as np
 from scipy.interpolate import interp1d
 
-from ..core.common import load_spectrum, load_wavelen
 from isofit.configs import Config
-import logging
+
+from ..core.common import load_spectrum, load_wavelen
 
 
 class Surface:

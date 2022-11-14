@@ -4,35 +4,35 @@
 #
 
 import argparse
-import os
-from os.path import join, exists
-from spectral.io import envi
 import logging
-import numpy as np
-import yaml
+import os
 from collections import OrderedDict
 from datetime import datetime
+from os.path import exists, join
 from shutil import copyfile
 
-from isofit.utils.template_construction import (
-    LUTConfig,
-    Pathnames,
-    build_presolve_config,
-    calc_modtran_max_water,
-    define_surface_types,
-    copy_file_subset,
-    get_metadata_from_obs,
-    get_metadata_from_loc,
-    write_modtran_template,
-    get_grid,
-    build_main_config,
-    reassemble_cube,
-    build_surface_config,
-)
+import numpy as np
+import yaml
+from spectral.io import envi
 
 from isofit.core import isofit
 from isofit.core.common import envi_header
-from isofit.utils import segment, extractions, empirical_line, surface_model
+from isofit.utils import empirical_line, extractions, segment, surface_model
+from isofit.utils.template_construction import (
+    LUTConfig,
+    Pathnames,
+    build_main_config,
+    build_presolve_config,
+    build_surface_config,
+    calc_modtran_max_water,
+    copy_file_subset,
+    define_surface_types,
+    get_grid,
+    get_metadata_from_loc,
+    get_metadata_from_obs,
+    reassemble_cube,
+    write_modtran_template,
+)
 
 
 def main(rawargs=None):

@@ -18,14 +18,16 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-import scipy
-from spectral.io import envi
-import skimage
-from skimage.segmentation import slic
-import numpy as np
-import ray
 import atexit
 import logging
+
+import numpy as np
+import ray
+import scipy
+import skimage
+from skimage.segmentation import slic
+from spectral.io import envi
+
 from isofit.core.common import envi_header
 
 

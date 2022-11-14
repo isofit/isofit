@@ -18,13 +18,14 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
+import os
+
 import numpy as np
 import scipy
 from sklearn.cluster import KMeans
 from spectral.io import envi
-import os
 
-from isofit.core.common import expand_path, json_load_ascii, envi_header, svd_inv
+from isofit.core.common import envi_header, expand_path, json_load_ascii, svd_inv
 
 
 def next_diag_val(C: np.ndarray, starting_index, direction):

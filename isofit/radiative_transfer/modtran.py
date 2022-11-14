@@ -19,26 +19,26 @@
 #          Nimrod Carmon, nimrod.carmon@jpl.nasa.gov
 #
 
-from sys import platform
-import os
-import logging
-import re
 import json
+import logging
+import os
+import re
+import subprocess
 from copy import deepcopy
+from sys import platform
+
 import numpy as np
-import scipy.stats
 import scipy.interpolate
+import scipy.stats
 
-from ..radiative_transfer.look_up_tables import TabularRT, FileExistsError
-from ..core.common import json_load_ascii, recursive_replace
-
-from ..core.common import VectorInterpolator
+from isofit.configs import Config
 from isofit.configs.sections.radiative_transfer_config import (
     RadiativeTransferEngineConfig,
 )
-from isofit.configs import Config
 from isofit.core.geometry import Geometry
-import subprocess
+
+from ..core.common import VectorInterpolator, json_load_ascii, recursive_replace
+from ..radiative_transfer.look_up_tables import FileExistsError, TabularRT
 
 ### Variables ###
 

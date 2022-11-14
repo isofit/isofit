@@ -22,9 +22,10 @@ import numpy as np
 from scipy.io import loadmat
 from scipy.linalg import block_diag, norm
 
+from isofit.configs import Config
+
 from ..core.common import svd_inv
 from .surface import Surface
-from isofit.configs import Config
 
 
 class MultiComponentSurface(Surface):

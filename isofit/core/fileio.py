@@ -18,23 +18,24 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-import os
-import numpy as np
-import scipy.io
-import scipy.interpolate
-from spectral.io import envi
 import logging
+import os
 from collections import OrderedDict
-
-from .common import load_spectrum, eps, resample_spectrum
-from isofit.inversion.inverse_simple import invert_simple, invert_algebraic
-from isofit.inversion.inverse import Inversion
-from .geometry import Geometry
-from isofit.configs import Config
-from isofit.core.forward import ForwardModel
 from typing import List
-from isofit.core.common import envi_header
 
+import numpy as np
+import scipy.interpolate
+import scipy.io
+from spectral.io import envi
+
+from isofit.configs import Config
+from isofit.core.common import envi_header
+from isofit.core.forward import ForwardModel
+from isofit.inversion.inverse import Inversion
+from isofit.inversion.inverse_simple import invert_algebraic, invert_simple
+
+from .common import eps, load_spectrum, resample_spectrum
+from .geometry import Geometry
 
 ### Variables ###
 

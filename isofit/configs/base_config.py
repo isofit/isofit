@@ -17,10 +17,11 @@
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: Philip G. Brodrick, philip.brodrick@jpl.nasa.gov
 
+import logging
 from collections import OrderedDict
 from typing import Dict, List, Type
+
 import numpy as np
-import logging
 
 
 class BaseConfigSection(object):

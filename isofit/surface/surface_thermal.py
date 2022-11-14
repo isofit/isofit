@@ -21,9 +21,10 @@
 import numpy as np
 import scipy.linalg
 
+from isofit.configs import Config
+
 from ..core.common import emissive_radiance, eps
 from .surface_multicomp import MultiComponentSurface
-from isofit.configs import Config
 
 
 class ThermalSurface(MultiComponentSurface):

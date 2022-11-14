@@ -17,9 +17,10 @@
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: Philip G. Brodrick, philip.brodrick@jpl.nasa.gov
 
-from typing import Dict, List, Type
-from isofit.configs.base_config import BaseConfigSection
 import os
+from typing import Dict, List, Type
+
+from isofit.configs.base_config import BaseConfigSection
 
 
 class InputConfig(BaseConfigSection):

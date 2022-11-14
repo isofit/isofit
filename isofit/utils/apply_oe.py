@@ -4,24 +4,25 @@
 #
 
 import argparse
-import os
-from os.path import join, exists, split, abspath
-from shutil import copyfile
-from datetime import datetime
-from spectral.io import envi
-import logging
 import json
-from osgeo import gdal
-import numpy as np
-from sklearn import mixture
+import logging
+import os
 import subprocess
 import sys
+from datetime import datetime
+from os.path import abspath, exists, join, split
+from shutil import copyfile
 from sys import platform
 from typing import List
 
-from isofit.utils import segment, extractions, empirical_line, analytical_line
-from isofit.core import isofit, common
+import numpy as np
+from osgeo import gdal
+from sklearn import mixture
+from spectral.io import envi
+
+from isofit.core import common, isofit
 from isofit.core.common import envi_header
+from isofit.utils import analytical_line, empirical_line, extractions, segment
 
 EPS = 1e-6
 CHUNKSIZE = 256

@@ -19,13 +19,13 @@
 
 import argparse
 import logging
-import numpy as np
 import os
-import ray
 import time
-
 from collections import OrderedDict
 from glob import glob
+
+import numpy as np
+import ray
 from spectral.io import envi
 
 from isofit.configs import configs

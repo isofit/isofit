@@ -1,5 +1,6 @@
 import scipy as s
-from isofit.core.fileio import typemap, max_frames_size
+
+from isofit.core.fileio import max_frames_size, typemap
 
 
 def test_typemap():

@@ -20,19 +20,19 @@
 #          Adam Erickson, adam.m.erickson@nasa.gov
 #
 
-import os
 import logging
+import multiprocessing
+import os
 import time
 
-import multiprocessing
 import numpy as np
 import ray
 
+from isofit.configs import configs
+from isofit.core.fileio import IO
 from isofit.core.forward import ForwardModel
 from isofit.inversion.inverse import Inversion
 from isofit.inversion.inverse_mcmc import MCMCInversion
-from isofit.core.fileio import IO
-from isofit.configs import configs
 
 
 class Isofit:

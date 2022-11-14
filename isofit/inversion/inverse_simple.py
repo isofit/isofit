@@ -17,21 +17,26 @@
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 
-from typing import OrderedDict
-import numpy as np
 import os
+from typing import OrderedDict
+
+import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
-from scipy.optimize import minimize_scalar as min1d
 from scipy.optimize import least_squares, minimize
+from scipy.optimize import minimize_scalar as min1d
 
-from isofit.core.common import emissive_radiance, eps, get_refractive_index
+from isofit.core.common import (
+    emissive_radiance,
+    eps,
+    get_refractive_index,
+    svd_inv_sqrt,
+)
 from isofit.core.forward import ForwardModel
 from isofit.core.geometry import Geometry
 from isofit.core.instrument import Instrument
-from isofit.surface.surface import Surface
 from isofit.radiative_transfer.radiative_transfer import RadiativeTransfer
-from isofit.core.common import svd_inv_sqrt
+from isofit.surface.surface import Surface
 
 
 def heuristic_atmosphere(
@@ -218,12 +223,11 @@ def invert_analytical(
         x: MAP estimate of the mean
         S: diagonal conditional posterior covariance estimate
     """
-    from scipy.linalg.lapack import dpotrf, dpotri
     from scipy.linalg.blas import dsymv
+    from scipy.linalg.lapack import dpotrf, dpotri
 
     # x = x0.copy()
     # x_surface, x_RT, x_instrument = fm.unpack(x)
-
     # Note, this will fail if x_instrument is populated
     if len(fm.idx_instrument) > 0:
         raise AttributeError(

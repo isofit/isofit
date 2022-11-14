@@ -18,13 +18,14 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-from os.path import split, abspath
+from os.path import abspath, split
+
 import numpy as np
 import scipy
 from scipy.ndimage.filters import gaussian_filter1d
 from spectral.io import envi
 
-from isofit.core.common import expand_path, json_load_ascii, envi_header
+from isofit.core.common import envi_header, expand_path, json_load_ascii
 
 
 def instrument_model(config):

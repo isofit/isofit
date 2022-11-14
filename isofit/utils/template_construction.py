@@ -3,24 +3,24 @@
 # Authors: Philip G. Brodrick and Niklas Bohn
 #
 
+import argparse
+import json
 import logging
 import os
-import json
-import numpy as np
-import argparse
-from isofit.core.common import envi_header
-from shutil import copyfile
-from datetime import datetime
 import subprocess
-from sklearn import mixture
+from datetime import datetime
+from shutil import copyfile
 from sys import platform
-from spectral.io import envi
 from typing import List
-from osgeo import gdal
+
+import numpy as np
 import utm
+from osgeo import gdal
+from sklearn import mixture
+from spectral.io import envi
 
 from isofit.core import isofit
-from isofit.core.common import resample_spectrum
+from isofit.core.common import envi_header, resample_spectrum
 
 
 class Pathnames:

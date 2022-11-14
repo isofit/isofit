@@ -19,20 +19,21 @@
 #
 
 import logging
+
 import numpy as np
 from scipy.interpolate import interp1d, splev, splrep
-from scipy.signal import convolve
 from scipy.io import loadmat
+from scipy.signal import convolve
 
-from .common import (
-    eps,
-    spectral_response_function,
-    load_wavelen,
-    resample_spectrum,
-    emissive_radiance,
-)
 from isofit.configs import Config
 
+from .common import (
+    emissive_radiance,
+    eps,
+    load_wavelen,
+    resample_spectrum,
+    spectral_response_function,
+)
 
 ### Variables ###
 

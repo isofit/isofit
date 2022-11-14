@@ -19,15 +19,15 @@
 #
 import atexit
 import logging
+import time
+
 import matplotlib
 import numpy as np
 import pylab as plt
 import ray
-import time
-
 from scipy.linalg import inv
-from scipy.spatial import KDTree
 from scipy.ndimage import gaussian_filter
+from scipy.spatial import KDTree
 from spectral.io import envi
 
 from isofit.configs import configs

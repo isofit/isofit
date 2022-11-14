@@ -1,18 +1,20 @@
+from io import StringIO
+
 import numpy as np
+import scipy
+
 from isofit.core.common import (
-    eps,
     combos,
-    get_absorption,
+    eps,
     expand_path,
+    get_absorption,
     load_spectrum,
     load_wavelen,
-    spectral_response_function,
     recursive_replace,
+    spectral_response_function,
     svd_inv,
     svd_inv_sqrt,
 )
-from io import StringIO
-import scipy
 
 
 def test_eps():

@@ -20,10 +20,11 @@
 
 import scipy as s
 
+from isofit.configs import Config
+
 from ..core.common import eps
 from .surface_multicomp import MultiComponentSurface
 from .surface_thermal import ThermalSurface
-from isofit.configs import Config
 
 
 class GlintSurface(ThermalSurface):

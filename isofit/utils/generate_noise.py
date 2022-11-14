@@ -18,12 +18,13 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-from os.path import split, abspath
+from os.path import abspath, split
+
 import numpy as np
 
-from isofit.core.common import load_spectrum, expand_path, json_load_ascii
-from isofit.core.instrument import Instrument
+from isofit.core.common import expand_path, json_load_ascii, load_spectrum
 from isofit.core.geometry import Geometry
+from isofit.core.instrument import Instrument
 
 
 def generate_noise(config):

@@ -18,13 +18,15 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-import numpy as np
-from spectral.io import envi
-import ray
-import logging
 import atexit
-from isofit.core.fileio import write_bil_chunk
+import logging
+
+import numpy as np
+import ray
+from spectral.io import envi
+
 from isofit.core.common import envi_header
+from isofit.core.fileio import write_bil_chunk
 
 
 @ray.remote

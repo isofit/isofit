@@ -18,23 +18,23 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-import os
-import numpy as np
 import logging
-import ray
-from collections import OrderedDict
+import os
 import subprocess
 import time
+from collections import OrderedDict
 from typing import List
 
-from isofit.core import common
+import numpy as np
+import ray
+
 from isofit.configs import Config
+from isofit.configs.sections.implementation_config import ImplementationConfig
 from isofit.configs.sections.radiative_transfer_config import (
     RadiativeTransferEngineConfig,
 )
 from isofit.configs.sections.statevector_config import StateVectorElementConfig
-from isofit.configs.sections.implementation_config import ImplementationConfig
-
+from isofit.core import common
 
 ### Functions ###
 

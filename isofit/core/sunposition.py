@@ -26,8 +26,9 @@
 # SOFTWARE.
 #
 
-import numpy as np
 from datetime import datetime
+
+import numpy as np
 
 
 class _sp:

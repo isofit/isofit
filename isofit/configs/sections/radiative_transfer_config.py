@@ -17,13 +17,15 @@
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: Philip G. Brodrick, philip.brodrick@jpl.nasa.gov
 
-from typing import Dict, List, Type
-from isofit.configs.base_config import BaseConfigSection
-from isofit.configs.sections.statevector_config import StateVectorConfig
-import numpy as np
+import logging
 import os
 from collections import OrderedDict
-import logging
+from typing import Dict, List, Type
+
+import numpy as np
+
+from isofit.configs.base_config import BaseConfigSection
+from isofit.configs.sections.statevector_config import StateVectorConfig
 
 
 class RadiativeTransferEngineConfig(BaseConfigSection):

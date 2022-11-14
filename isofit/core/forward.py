@@ -18,26 +18,26 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-import numpy as np
 from copy import deepcopy
-from scipy.linalg import det, norm, pinv, sqrtm, inv, block_diag
 from importlib import import_module
+
+import numpy as np
 from scipy.interpolate import interp1d
 from scipy.io import loadmat
+from scipy.linalg import block_diag, det, inv, norm, pinv, sqrtm
 
-from .common import recursive_replace, eps
-from .instrument import Instrument
-from ..radiative_transfer.radiative_transfer import RadiativeTransfer
 from isofit.configs import Config
-
 from isofit.surface import (
-    Surface,
-    ThermalSurface,
-    MultiComponentSurface,
     GlintSurface,
     LUTSurface,
+    MultiComponentSurface,
+    Surface,
+    ThermalSurface,
 )
 
+from ..radiative_transfer.radiative_transfer import RadiativeTransfer
+from .common import eps, recursive_replace
+from .instrument import Instrument
 
 ### Classes ###
 

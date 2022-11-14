@@ -19,12 +19,13 @@
 #
 
 import numpy as np
-from scipy.linalg import block_diag, norm
 from scipy.io import loadmat
+from scipy.linalg import block_diag, norm
 
-from ..core.common import svd_inv, VectorInterpolator
-from .surface import Surface
 from isofit.configs import Config
+
+from ..core.common import VectorInterpolator, svd_inv
+from .surface import Surface
 
 
 class LUTSurface(Surface):
