@@ -1,10 +1,14 @@
 name: Upload Python Package
 
-on: [push]
+on:
+  release:
+    types: [created]
 
 jobs:
-  deploy:
+  main:
     runs-on: ubuntu-latest
+    container:
+      image: pgbrodrick/isofit
 
     steps:
     - uses: actions/checkout@v2
@@ -19,4 +23,4 @@ jobs:
         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
       run: |
         python setup.py sdist bdist_wheel
-        twine upload --repository testpypi dist/*
+        twine upload dist/*
