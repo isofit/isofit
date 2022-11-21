@@ -5,7 +5,7 @@ on:
     types: [created]
 
 jobs:
-  main:
+  deploy:
     runs-on: ubuntu-latest
     container:
       image: pgbrodrick/isofit
