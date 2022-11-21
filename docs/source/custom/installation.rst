@@ -9,31 +9,31 @@ New environment:
 
 .. code-block:: bash
 
-    $ mamba create -n isofit_env -c conda-forge isofit
-    $ mamba activate isofit_env
-    $ pip install ray ndsplines xxhash --upgrade
+    mamba create -n isofit_env -c conda-forge isofit
+    mamba activate isofit_env
+    pip install ray ndsplines xxhash --upgrade
 
 or 
 
 .. code-block:: bash
 
-    $ conda create -n isofit_env -c conda-forge isofit
-    $ conda activate isofit_env
-    $ pip install ray ndsplines xxhash --upgrade
+    conda create -n isofit_env -c conda-forge isofit
+    conda activate isofit_env
+    pip install ray ndsplines xxhash --upgrade
 
 Within an existing environment:
 
 .. code-block:: bash
 
-    $ mamba install -c conda-forge isofit
-    $ pip install ray ndsplines xxhash --upgrade
+    mamba install -c conda-forge isofit
+    pip install ray ndsplines xxhash --upgrade
 
 or
 
 .. code-block:: bash
 
-    $ conda install -c conda-forge isofit
-    $ pip install ray ndsplines xxhash --upgrade
+    conda install -c conda-forge isofit
+    pip install ray ndsplines xxhash --upgrade
 
 The additional pip installation is necessary as several packages are not available from conda-forge for all operating systems.
 
@@ -44,7 +44,7 @@ Not recommended, as package dependencies may not fully resolve.
 
 .. code-block:: bash
 
-    $ pip install isofit
+    pip install isofit
 
 
 Install from github
@@ -52,10 +52,10 @@ Install from github
 
 .. code-block:: bash
 
-    $ git clone https://github.com/isofit/isofit
-    $ mamba env create -f isofit/recipe/environment_isofit_basic.yml
-    $ mamba activate isofit_env
-    $ pip install -e ./isofit
+    git clone https://github.com/isofit/isofit
+    mamba env create -f isofit/recipe/environment_isofit_basic.yml
+    mamba activate isofit_env
+    pip install -e ./isofit
 
 
 
