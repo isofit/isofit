@@ -35,21 +35,21 @@ jobs:
         wget -nv https://zenodo.org/record/4096627/files/sRTMnet_v100.zip
         unzip sRTMnet_v100.zip && rm sRTMnet_v100.zip
 
-    # - name: Running Example - image_cube/small
-    #   run: |
-    #     export SIXS_DIR=$(readlink -f examples/6sv-2.1)
-    #     export EMULATOR_PATH=$(readlink -f examples/sRTMnet_v100/sRTMnet_v100)
-    #     cd examples/image_cube
-    #     echo "SIXS_DIR=$SIXS_DIR"
-    #     echo "EMULATOR_PATH=$EMULATOR_PATH"
-    #     bash run_small.sh
-    #
-    # - name: Running Example - image_cube/medium
-    #   run: |
-    #     export SIXS_DIR=$(readlink -f examples/6sv-2.1)
-    #     export EMULATOR_PATH=$(readlink -f examples/sRTMnet_v100/sRTMnet_v100)
-    #     cd examples/image_cube
-    #     bash run_medium.sh
+    - name: Running Example - image_cube/small
+      run: |
+        export SIXS_DIR=$(readlink -f examples/6sv-2.1)
+        export EMULATOR_PATH=$(readlink -f examples/sRTMnet_v100/sRTMnet_v100)
+        cd examples/image_cube
+        echo "SIXS_DIR=$SIXS_DIR"
+        echo "EMULATOR_PATH=$EMULATOR_PATH"
+        bash run_small.sh
+
+    - name: Running Example - image_cube/medium
+      run: |
+        export SIXS_DIR=$(readlink -f examples/6sv-2.1)
+        export EMULATOR_PATH=$(readlink -f examples/sRTMnet_v100/sRTMnet_v100)
+        cd examples/image_cube
+        bash run_medium.sh
 
     - name: Running Example - 20151026_SantaMonica
       run: |
