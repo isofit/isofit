@@ -26,7 +26,6 @@ jobs:
         # Necessary for compilation to work with recent GCC versions
         sed -i Makefile -e 's/FFLAGS.*/& -std=legacy/'
         make
-        export SIXS_DIR=$(readlink -f .)
 
     - name: Download sRTMnet
       run: |
@@ -35,25 +34,34 @@ jobs:
         cd sRTMnet_v100
         wget -nv https://zenodo.org/record/4096627/files/sRTMnet_v100.zip
         unzip sRTMnet_v100.zip && rm sRTMnet_v100.zip
-        export EMULATOR_PATH=$(readlink -f .)
 
     - name: Running Example - image_cube/small
       run: |
+        export SIXS_DIR=$(readlink -f examples/6sv-2.1)
+        export EMULATOR_PATH=$(readlink -f examples/sRTMnet_v100/sRTMnet_v100)
         cd examples/image_cube
+        echo "SIXS_DIR=$SIXS_DIR"
+        echo "EMULATOR_PATH=$EMULATOR_PATH"
         bash run_small.sh
 
     - name: Running Example - image_cube/medium
       run: |
+        export SIXS_DIR=$(readlink -f examples/6sv-2.1)
+        export EMULATOR_PATH=$(readlink -f examples/sRTMnet_v100/sRTMnet_v100)
         cd examples/image_cube
         bash run_medium.sh
 
     - name: Running Example - 20151026_SantaMonica
       run: |
+        export SIXS_DIR=$(readlink -f examples/6sv-2.1)
+        export EMULATOR_PATH=$(readlink -f examples/sRTMnet_v100/sRTMnet_v100)
         cd examples/20151026_SantaMonica
         bash run_examples.sh
 
     - name: Running Example - 20171108_Pasadena
       run: |
+        export SIXS_DIR=$(readlink -f examples/6sv-2.1)
+        export EMULATOR_PATH=$(readlink -f examples/sRTMnet_v100/sRTMnet_v100)
         cd examples/20171108_Pasadena
         bash run_example_libradtran.sh
         bash run_example_modtran.sh
@@ -61,5 +69,7 @@ jobs:
 
     - name: Running Example - 20190806_ThermalIR
       run: |
+        export SIXS_DIR=$(readlink -f examples/6sv-2.1)
+        export EMULATOR_PATH=$(readlink -f examples/sRTMnet_v100/sRTMnet_v100)
         cd examples/20190806_ThermalIR
         python run_example_modtran_one.py
