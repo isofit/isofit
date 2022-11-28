@@ -51,12 +51,12 @@ jobs:
         cd examples/image_cube
         bash run_medium.sh
 
-    - name: Running Example - 20151026_SantaMonica
-      run: |
-        export SIXS_DIR=$(readlink -f examples/6sv-2.1)
-        export EMULATOR_PATH=$(readlink -f examples/sRTMnet_v100/sRTMnet_v100)
-        cd examples/20151026_SantaMonica
-        bash run_examples.sh
+    # - name: Running Example - 20151026_SantaMonica
+    #   run: |
+    #     export SIXS_DIR=$(readlink -f examples/6sv-2.1)
+    #     export EMULATOR_PATH=$(readlink -f examples/sRTMnet_v100/sRTMnet_v100)
+    #     cd examples/20151026_SantaMonica
+    #     bash run_examples.sh
 
     - name: Running Example - 20171108_Pasadena
       run: |
