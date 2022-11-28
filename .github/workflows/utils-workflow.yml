@@ -3,7 +3,7 @@ name: Main Tests
 on: [push, pull_request]
 
 jobs:
-  main:
+  tests:
     runs-on: ubuntu-latest
     container:
       image: pgbrodrick/isofit
