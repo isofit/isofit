@@ -33,19 +33,17 @@ def main():
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('config_file')
     parser.add_argument('--level', default='INFO')
-    parser.add_argument('--row_column', default='')
     parser.add_argument('-v', '--version', action='version',
                         version='%(prog)s {version}'.format(version=__version__))
     args = parser.parse_args()
 
     config = args.config_file
     level = args.level
-    row_column = args.row_column
 
     logging.basicConfig(format='%(message)s', level=level)
 
-    isofit = Isofit(config_file=config, level=level, row_column=row_column)
-    
+    isofit = Isofit(config_file=config, level=level)
+
     return isofit.run()
 
 
