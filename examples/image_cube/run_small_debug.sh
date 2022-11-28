@@ -1,3 +1,4 @@
+#!/bin/bash
 
 # Download relevant datasets - unlike other examples, these datasets are too large to place in
 if test -f "test_data.zip"; then
