@@ -1,3 +1,6 @@
+# .git-blame-ignore-revs
 # Ignore the Black PR revisions (https://github.com/isofit/isofit/pull/311)
+# Applied Black
 2fbb6f46f3b9d651a04737942477c2c3eb58a2e0
+# Applied Isort
 5ff6189f4f5e1a1e74060ab91564a2ed78f5fef5
