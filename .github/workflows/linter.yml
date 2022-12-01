@@ -1,9 +1,15 @@
 name: Lint
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  lint:
+  black:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
