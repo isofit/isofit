@@ -1,3 +1,5 @@
+.. _contributing:
+
 Contributing
 ============
 
@@ -11,8 +13,8 @@ best support and contribute to this project.  Typical contributions may include:
 * Documentation improvements
 * Bug reports
 
-If you have ideas for new additions, that's great - please contact the maintainers 
-at the addresses given below, and we can coordinate efforts.  Our general policy 
+If you have ideas for new additions, that's great - please contact the maintainers
+at the addresses given below, and we can coordinate efforts.  Our general policy
 is to for the maintainers to delegate technical authority to individuals to make
 changes and additions to specific topics.
 
@@ -61,15 +63,15 @@ Our development strategy employs continuous integration and unit testing to vali
 A Note about Style
 ------------------
 
-The coding style should adhere to `PEP 8 (Style Guide for Python Code) <https://www.python.org/dev/peps/pep-0008/>`_ and
-`PEP 257 (Docstring Conventions): <https://www.python.org/dev/peps/pep-0257/>`_.
-
-We recommend using autopep8, which you can install and run like this:
+We use (Black)[https://github.com/psf/black] and (isort)[https://github.com/PyCQA/isort] to maintain style consistency.
+These are included via (pre-commit)[https://pre-commit.com] and should be installed once ISOFIT is installed. To do so, simply run:
 
 .. code::
 
-  pip install autopep8
-  autopep8 mycode.py
+  pre-commit install
+
+Every commit from here on will auto-apply the above packages. Additionally, upon a PR to the `master` branch, `Black` consistency will be checked.
+Any PRs failing this check will be rejected until corrected.
 
 Implement Your Changes and Create a Pull Request
 ------------------------------------------------
@@ -136,7 +138,7 @@ Major changes include:
 * New functionality, including examples, data, and algorithm changes, over which authority was not delegated in advance.
 * Official releases
 * Project policy updates
- 
+
 These are accepted through consensus of a quorum of maintainers.  **If you would like to include any new algorithms or examples, we highly recommend that they are supported by peer reviewed scientific research.**
 
 Release Steps (for Maintainers)
@@ -171,7 +173,7 @@ Commit changes to release branch:
 
   git add -A
   git commit -m “Prepares version 1.2.0 for release."
-  
+
 Merge release branch into master:
 
 .. code::
@@ -179,7 +181,7 @@ Merge release branch into master:
   git checkout master
   git merge --no-ff release-1.2.0
   git push origin master
-  
+
 Update the 'current-release' branch:
 
 .. code::
@@ -214,7 +216,7 @@ Create and upload Pypi distribution:
 
   python3 setup.py sdist bdist_wheel
   twine upload --repository-url https://upload.pypi.org/legacy/ dist/*
-  
+
 Lastly, update the `Roadmap <https://github.com/isofit/isofit/projects/4>`_ to note the current release changes.
 
 Contributors
@@ -246,6 +248,3 @@ Innovation Fund managed in conjunction with the Jet Propulsion Laboratory
 Office of the Chief Scientist and Technologist. The initial research took
 place at the Jet Propulsion Laboratory, California Institute of Technology,
 4800 Oak Grove Dr., Pasadena, CA 91109 USA.
-
-
-

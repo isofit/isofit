@@ -11,6 +11,7 @@ dependencies:
     - numpy>=1.20.0
     - pandas>=0.24
     - pep8>=1.7.1
+    - pre-commit
     - protobuf~=3.19.0
     - pygrib
     - pytest>=3.5.1
