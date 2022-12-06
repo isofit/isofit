@@ -74,6 +74,7 @@ jobs:
       run: |
         export SIXS_DIR=$(readlink -f examples/6sv-2.1)
         export EMULATOR_PATH=$(readlink -f examples/sRTMnet_v100/sRTMnet_v100)
+        export LIBRADTRAN_DIR=$(readlink -f examples/libRadtran-2.0.4)
         cd examples/20171108_Pasadena
         bash run_example_libradtran.sh
         bash run_example_modtran.sh
@@ -83,5 +84,6 @@ jobs:
       run: |
         export SIXS_DIR=$(readlink -f examples/6sv-2.1)
         export EMULATOR_PATH=$(readlink -f examples/sRTMnet_v100/sRTMnet_v100)
+        export LIBRADTRAN_DIR=$(readlink -f examples/libRadtran-2.0.4)
         cd examples/20190806_ThermalIR
         python run_example_modtran_one.py
