@@ -77,7 +77,8 @@ class LUTSurface(Surface):
         self.sigma = model_dict['sigma'][0]
         self.n_state = len(self.statevec_names)
         self.n_lut = len(self.lut_names)
-        self.idx_lamb = np.arange(self.n_state)
+        self.idx_lut = np.arange(self.n_state)
+        self.idx_lamb = np.empty(shape=0)
 
         # build the interpolator
         self.itp = VectorInterpolator(self.lut_grid, self.data, interp_types)
@@ -87,7 +88,8 @@ class LUTSurface(Surface):
         """Mean of prior distribution."""
         
         mu = np.zeros(self.n_state)
-        mu[self.idx_lamb] = self.mean.copy()
+        mu[self.idx_lut] = self.mean.copy()
+
         return mu
 
     def Sa(self, x_surface, geom):
@@ -96,21 +98,13 @@ class LUTSurface(Surface):
         variance = pow(self.sigma,2)
         Cov = np.diag(variance)
 
-        # If there are no other state vector elements, we're done.
-        if len(self.statevec_names) == len(self.idx_lamb):
-            return Cov
-
-        # Embed into a larger state vector covariance matrix
-        nprefix = self.idx_lamb[0]
-        nsuffix = len(self.statevec_names) - self.idx_lamb[-1] - 1
-        Cov_prefix = np.zeros((nprefix, nprefix))
-        Cov_suffix = np.zeros((nsuffix, nsuffix))
-        return block_diag(Cov_prefix, Cov, Cov_suffix)
+        return Cov
 
     def fit_params(self, rfl_meas, geom, *args):
         """Given a reflectance estimate, fit a state vector."""
 
         x_surface = self.mean.copy()
+
         return x_surface
 
     def calc_rfl(self, x_surface, geom):
@@ -123,15 +117,20 @@ class LUTSurface(Surface):
           LUT dimensions such as solar and view zenith."""
 
         point = np.zeros(self.n_lut)
+
         for v,name in zip(x_surface, self.statevec_names):
           point[self.lut_names.index(name)] = v
+
         if 'SOLZEN' in self.lut_names:
           solzen_ind = self.lut_names.index('SOLZEN')
           point[solzen_ind] = geom.solar_zenith
+
         if 'VIEWZEN' in self.lut_names:
           viewzen_ind = self.lut_names.index('VIEWZEN')
           point[viewzen_ind] = geom.observer_zenith
+
         lamb = self.itp(point)
+
         return lamb
 
     def drfl_dsurface(self, x_surface, geom):
@@ -149,17 +148,16 @@ class LUTSurface(Surface):
         eps = 1e-6
         base = self.calc_lamb(x_surface, geom)
         dlamb = []
+
         for xi in range(self.n_state):
            x_new = x_surface.copy()
            x_new[xi] = x_new[xi] + eps
            perturbed = self.calc_lamb(x_new, geom)
            dlamb.append((perturbed-base)/eps)
+
         dlamb = np.array(dlamb).T
-        nprefix = self.idx_lamb[0]
-        nsuffix = self.n_state - self.idx_lamb[-1] - 1
-        prefix = np.zeros((self.n_wl, nprefix))
-        suffix = np.zeros((self.n_wl, nsuffix))
-        return np.concatenate((prefix, dlamb, suffix), axis=1)
+
+        return dlamb
 
     def calc_Ls(self, x_surface, geom):
         """Emission of surface, as a radiance."""
@@ -171,15 +169,13 @@ class LUTSurface(Surface):
           state vector, calculated at x_surface."""
 
         dLs = np.zeros((self.n_wl, self.n_state), dtype=float)
-        nprefix = self.idx_lamb[0]
-        nsuffix = len(self.statevec_names) - self.idx_lamb[-1] - 1
-        prefix = np.zeros((self.n_wl, nprefix))
-        suffix = np.zeros((self.n_wl, nsuffix))
-        return np.concatenate((prefix, dLs, suffix), axis=1)
+
+        return dLs
 
     def summarize(self, x_surface, geom):
         """Summary of state vector."""
 
         if len(x_surface) < 1:
             return ''
+
         return 'Surface: '+' '.join([('%5.4f' % x) for x in x_surface])

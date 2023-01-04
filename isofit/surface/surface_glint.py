@@ -21,7 +21,6 @@
 import scipy as s
 
 from ..core.common import eps
-from .surface_multicomp import MultiComponentSurface
 from .surface_thermal import ThermalSurface
 from isofit.configs import Config
 
