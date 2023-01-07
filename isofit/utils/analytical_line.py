@@ -117,6 +117,10 @@ def main(rawargs=None) -> None:
     output_metadata                = rdn_ds.metadata
     output_metadata['interleave']  = 'bil'
     output_metadata['description'] = 'L2A Analytyical per-pixel surface retrieval'
+
+    outside_ret_windows = np.zeros(len(fm.surface.idx_lamb),dtype=int)
+    outside_ret_windows[iv.winidx] = 1
+    output_metadata['bbl'] = '{' + ','.join([str(x) for x in outside_ret_windows]) + '}'
     if 'emit pge input files' in list(output_metadata.keys()):
         del output_metadata['emit pge input files']
 
