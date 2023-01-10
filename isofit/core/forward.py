@@ -114,9 +114,12 @@ class ForwardModel:
 
         # Set up indices for references - MUST MATCH ORDER FROM ABOVE ASSIGNMENT
         self.idx_surface = np.arange(len(self.surface.statevec_names), dtype=int)
-        # Split surface state vector indices to cover cases where we retrieve additional surface parameters
-        self.idx_surf_ref = self.idx_surface[:len(self.surface.idx_lamb)]
-        self.idx_surf_params = self.idx_surface[len(self.surface.idx_lamb):]
+        # Sometimes, it's convenient to have the index of the entire surface
+        # as one variable, and sometimes you want the sub-components
+        # Split surface state vector indices to cover cases where we retrieve
+        # additional non-reflectance surface parameters
+        self.idx_surf_rfl = self.idx_surface[:len(self.surface.idx_lamb)]  # reflectance portion
+        self.idx_surf_nonrfl = self.idx_surface[len(self.surface.idx_lamb):]  # all non-reflectance surface parameters
         self.idx_RT = np.arange(len(self.RT.statevec_names), dtype=int) + len(self.idx_surface)
         self.idx_instrument = np.arange(
             len(self.instrument.statevec_names), dtype=int) + len(self.idx_surface) + len(self.idx_RT)
