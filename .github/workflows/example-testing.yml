@@ -26,18 +26,8 @@ jobs:
         # Necessary for compilation to work with recent GCC versions
         sed -i Makefile -e 's/FFLAGS.*/& -std=legacy/'
         make
-
-    - name: Download and install libradtran
-      run: |
-        cd examples/
-        wget -nv http://www.libradtran.org/download/history/libRadtran-2.0.3.tar.gz
-        tar -xf libRadtran-2.0.3.tar.gz
-        cd libRadtran-2.0.3
-        wget -nv http://www.meteo.physik.uni-muenchen.de/~libradtran/lib/exe/fetch.php?media=download:reptran_2017_all.tar.gz -O reptran-2017-all.tar.gz
-        tar -xf reptran-2017-all.tar.gz
-        PYTHON=$(which python2) ./configure --prefix=$(pwd)
-        # For some reason, uvspecfunction compilation fails...
-        make --ignore-errors
+        # Pass environment variable to following jobs
+        echo "SIXS_DIR=$(readlink -f .)" >> $GITHUB_ENV
 
     - name: Download sRTMnet
       run: |
@@ -46,44 +36,31 @@ jobs:
         cd sRTMnet_v100
         wget -nv https://zenodo.org/record/4096627/files/sRTMnet_v100.zip
         unzip sRTMnet_v100.zip && rm sRTMnet_v100.zip
+        # Pass environment variable to following jobs
+        echo "EMULATOR_PATH=$(readlink -f .)" >> $GITHUB_ENV
 
     # - name: Running Example - image_cube/small
     #   run: |
-    #     export SIXS_DIR=$(readlink -f examples/6sv-2.1)
-    #     export EMULATOR_PATH=$(readlink -f examples/sRTMnet_v100/sRTMnet_v100)
     #     cd examples/image_cube
-    #     echo "SIXS_DIR=$SIXS_DIR"
-    #     echo "EMULATOR_PATH=$EMULATOR_PATH"
     #     bash run_small.sh
     #
     # - name: Running Example - image_cube/medium
     #   run: |
-    #     export SIXS_DIR=$(readlink -f examples/6sv-2.1)
-    #     export EMULATOR_PATH=$(readlink -f examples/sRTMnet_v100/sRTMnet_v100)
     #     cd examples/image_cube
     #     bash run_medium.sh
 
-    # - name: Running Example - 20151026_SantaMonica
-    #   run: |
-    #     export SIXS_DIR=$(readlink -f examples/6sv-2.1)
-    #     export EMULATOR_PATH=$(readlink -f examples/sRTMnet_v100/sRTMnet_v100)
-    #     cd examples/20151026_SantaMonica
-    #     bash run_examples.sh
+    - name: Running Example - 20151026_SantaMonica
+      run: |
+        cd examples/20151026_SantaMonica
+        bash run_examples.sh
 
     - name: Running Example - 20171108_Pasadena
       run: |
-        export SIXS_DIR=$(readlink -f examples/6sv-2.1)
-        export EMULATOR_PATH=$(readlink -f examples/sRTMnet_v100/sRTMnet_v100)
-        export LIBRADTRAN_DIR=$(readlink -f examples/libRadtran-2.0.4)
         cd examples/20171108_Pasadena
-        bash run_example_libradtran.sh
         bash run_example_modtran.sh
         python run_topoflux_example.py
 
     - name: Running Example - 20190806_ThermalIR
       run: |
-        export SIXS_DIR=$(readlink -f examples/6sv-2.1)
-        export EMULATOR_PATH=$(readlink -f examples/sRTMnet_v100/sRTMnet_v100)
-        export LIBRADTRAN_DIR=$(readlink -f examples/libRadtran-2.0.4)
         cd examples/20190806_ThermalIR
         python run_example_modtran_one.py
