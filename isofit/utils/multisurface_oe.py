@@ -504,6 +504,7 @@ def main(rawargs=None):
                     output_uncertainty_file=paths.uncert_working_path,
                     isofit_config=paths.surface_config_paths["base"],
                     nneighbors=nneighbors,
+                    n_cores=multiprocessing.cpu_count() if not opt["n_cores"] else opt["n_cores"],
                     reference_class_file=stl_path
                 )
             elif opt["analytical_line"]:
@@ -514,7 +515,10 @@ def main(rawargs=None):
                         paths.loc_working_path,
                         paths.obs_working_path,
                         args.working_directory,
+                        "--isofit_config", paths.surface_config_paths["base"],
+                        "--segmentation_file", paths.lbl_working_path,
                         "--n_atm_neighbors", str(nneighbors),
+                        "--n_cores", multiprocessing.cpu_count() if not opt["n_cores"] else opt["n_cores"],
                         "--smoothing_sigma", "2",
                         "--output_rfl_file", paths.rfl_working_path,
                         "--output_unc_file", paths.uncert_working_path,

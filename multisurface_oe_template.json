@@ -8,8 +8,8 @@
         "n_pca": 5,
         "copy_input_files": false,
         "presolve_wv": false,
-        "empirical_line": true,
-        "analytical_line": false,
+        "empirical_line": false,
+        "analytical_line": true,
         "debug_mode": false,
         "ray_temp_dir": "/tmp/ray"
     },
