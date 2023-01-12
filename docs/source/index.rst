@@ -7,6 +7,7 @@
    custom/about.rst
    custom/installation.rst
    custom/best_practices.rst
+   custom/docker.rst
 
 .. toctree::
    :Caption: The Code
@@ -32,4 +33,3 @@
    :maxdepth: 2
 
    custom/code_of_conduct.rst
-
