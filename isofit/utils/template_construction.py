@@ -1178,7 +1178,7 @@ def copy_file_subset(matching_indices: np.array, pathnames: List):
         output_ds = envi.create_image(envi_header(outp), header, ext="", force=True)
         output_mm = output_ds.open_memmap(interleave="bip", writable=True)
         input_mm = input_ds.open_memmap(interleave="bip", writable=True)
-        output_mm[...] = input_mm[matching_indices[:, :, 0], ...].copy()
+        output_mm[...] = input_mm[matching_indices[:, 0, 0], ...].copy()
 
 
 def get_metadata_from_obs(obs_file: str, lut_params: LUTConfig, trim_lines: int = 5,
@@ -1391,7 +1391,7 @@ def reassemble_cube(matching_indices: np.array, paths: Pathnames):
     for _st, surface_type in enumerate(list(paths.surface_config_paths.keys())):
         if np.sum(matching_indices == _st) > 0:
             input_ds = envi.open(envi_header(paths.surface_subs_files[surface_type]["rfl"]))
-            output_mm[matching_indices == _st, ...] = input_ds.open_memmap(interleave="bip").copy()
+            output_mm[matching_indices == _st, ...] = input_ds.open_memmap(interleave="bip").copy()[:, 0, :]
 
     # TODO: only records reflectance uncertainties, could grab additional states (consistent between classes)
     logging.info(f"Reassemble {paths.uncert_subs_path}")
@@ -1410,5 +1410,5 @@ def reassemble_cube(matching_indices: np.array, paths: Pathnames):
     for _st, surface_type in enumerate(list(paths.surface_config_paths.keys())):
         if np.sum(matching_indices == _st) > 0:
             input_ds = envi.open(envi_header(paths.surface_subs_files[surface_type]["uncert"]))
-            output_mm[matching_indices == _st, ...] = input_ds.open_memmap(interleave="bip")[:, :, :int(
-                header["bands"])].copy()
+            output_mm[matching_indices == _st, ...] = input_ds.open_memmap(
+                interleave="bip")[:, :, :int(header["bands"])].copy()[:, 0, :]

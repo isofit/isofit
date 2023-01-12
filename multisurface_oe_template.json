@@ -1,6 +1,6 @@
 {
     "general_options": {
-        "sensor": "ang",
+        "sensor": "emit",
         "n_cores": null,
         "segmentation_size": 400,
         "num_neighbors": 15,
@@ -29,7 +29,7 @@
             "options": {
                 "multiple_restarts": false,
                 "multipart_transmittance": false,
-                 "topography_model": false,
+                "topography_model": false,
                 "eps": 0.02,
                 "uncorrelated_radiometric_uncertainty": 0.01,
                 "inversion_windows": [[380.0, 1325.0], [1435, 1770.0], [1965.0, 2500.0]],
