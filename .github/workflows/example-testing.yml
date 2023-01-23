@@ -38,16 +38,18 @@ jobs:
         unzip sRTMnet_v100.zip && rm sRTMnet_v100.zip
         # Pass environment variable to following jobs
         echo "EMULATOR_PATH=$(readlink -f .)" >> $GITHUB_ENV
+        # Disables MODTRAN
+        echo "MODTRAN_DIR=\"\"" >> $GITHUB_ENV
 
-    # - name: Running Example - image_cube/small
-    #   run: |
-    #     cd examples/image_cube
-    #     bash run_small.sh
-    #
-    # - name: Running Example - image_cube/medium
-    #   run: |
-    #     cd examples/image_cube
-    #     bash run_medium.sh
+    - name: Running Example - image_cube/small
+      run: |
+        cd examples/image_cube
+        bash run_small.sh
+
+    - name: Running Example - image_cube/medium
+      run: |
+        cd examples/image_cube
+        bash run_medium.sh
 
     - name: Running Example - 20151026_SantaMonica
       run: |
