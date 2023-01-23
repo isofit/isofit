@@ -49,7 +49,7 @@ tropopause_altitude_km = 17.
 class ModtranRT(TabularRT):
     """A model of photon transport including the atmosphere."""
 
-    def __init__(self, engine_config: RadiativeTransferEngineConfig, full_config: Config, 
+    def __init__(self, engine_config: RadiativeTransferEngineConfig, full_config: Config,
                  build_lut: bool = True):
         """."""
 
@@ -90,7 +90,7 @@ class ModtranRT(TabularRT):
             self.aer_absc = np.array(aer_absc)
             self.aer_extc = np.array(aer_extc)
             self.aer_asym = np.array(aer_asym)
-        
+
         # Determine whether we are using the three run or single run strategy
         self.multipart_transmittance = engine_config.multipart_transmittance
 
@@ -165,9 +165,9 @@ class ModtranRT(TabularRT):
              * transm  - diffuse and direct irradiance along the
                           sun-ground-sensor path
              * transup - transmission along the ground-sensor path only
-             
+
            If the "multipart transmittance" option is active, we will use
-           a combination of three MODTRAN runs to estimate the following 
+           a combination of three MODTRAN runs to estimate the following
            additional quantities:
              * t_down_dir - direct downwelling transmittance
              * t_down_dif - diffuse downwelling transmittance
@@ -216,10 +216,10 @@ class ModtranRT(TabularRT):
                 # Columns 1 and 2 can touch for large datasets.
                 # Since we don't care about the values, we overwrite the
                 # character to the left of column 1 with a space so that
-                # we can use simple space-separated parsing later and 
+                # we can use simple space-separated parsing later and
                 # preserve data indices.
                 line = line[:17]+' '+line[18:]
-                    
+
                 # parse data out of each line in the MODTRAN output
                 toks = re.findall(r"[\S]+", line.strip())
                 wl, wid = float(toks[0]), float(toks[8])  # nm
@@ -228,9 +228,9 @@ class ModtranRT(TabularRT):
                 rdnatm  = float(toks[4]) * 1e6  # uW/nm/sr/cm2
                 rhoatm  = rdnatm * np.pi / (solar_irr * coszen)
                 sphalb  = float(toks[23])
-                A_coeff = float(toks[21]) 
+                A_coeff = float(toks[21])
                 B_coeff = float(toks[22])
-                transm  = A_coeff + B_coeff 
+                transm  = A_coeff + B_coeff
                 transup = float(toks[24])
 
                 # Be careful with these! See note in function comments above
@@ -243,67 +243,67 @@ class ModtranRT(TabularRT):
                 # grnd_rflt already includes ground-to-sensor transmission
                 grnd_rflt = float(toks[16]) * 1e6  # ground reflected radiance (direct+diffuse+multiple scattering)
                 drct_rflt = float(toks[17]) * 1e6  # same as 16 but only on the sun->surface->sensor path (only direct)
-                path_rdn  = float(toks[14]) * 1e6 + float(toks[15]) * 1e6  # The sum of the (1) single scattering and (2) multiple scattering 
+                path_rdn  = float(toks[14]) * 1e6 + float(toks[15]) * 1e6  # The sum of the (1) single scattering and (2) multiple scattering
                 thermal_downwelling = grnd_rflt / wid # uW/nm/sr/cm2
 
                 if case[i] == 0:
 
-                     sols.append(solar_irr)      # solar irradiance 
-                     transms.append(transm)      # total transmittance 
-                     sphalbs.append(sphalb)      # spherical albedo 
-                     rhoatms.append(rhoatm)      # atmospheric reflectance 
-                     transups.append(transup)    # upwelling direct transmittance 
-                     transm_dirs.append(A_coeff) # total direct transmittance 
-                     transm_difs.append(B_coeff) # total diffuse transmittance 
-                     widths.append(wid)          # channel width in nm 
-                     lp_0.append(path_rdn)       # path radiance of zero surface reflectance 
+                     sols.append(solar_irr)      # solar irradiance
+                     transms.append(transm)      # total transmittance
+                     sphalbs.append(sphalb)      # spherical albedo
+                     rhoatms.append(rhoatm)      # atmospheric reflectance
+                     transups.append(transup)    # upwelling direct transmittance
+                     transm_dirs.append(A_coeff) # total direct transmittance
+                     transm_difs.append(B_coeff) # total diffuse transmittance
+                     widths.append(wid)          # channel width in nm
+                     lp_0.append(path_rdn)       # path radiance of zero surface reflectance
                      thermal_upwellings.append(thermal_upwelling)
                      thermal_downwellings.append(thermal_downwelling)
-                     wls.append(wl) #wavelengths in nm 
+                     wls.append(wl) #wavelengths in nm
 
                 elif case[i] == 1:
 
-                     grnd_rflts_1.append(grnd_rflt) #total ground reflected radiance 
-                     drct_rflts_1.append(drct_rflt) #direct path ground reflected radiance 
+                     grnd_rflts_1.append(grnd_rflt) #total ground reflected radiance
+                     drct_rflts_1.append(drct_rflt) #direct path ground reflected radiance
                      lp_1.append(path_rdn) #path radiance (sum of single and multiple scattering)
 
                 elif case[i] == 2:
 
-                     grnd_rflts_2.append(grnd_rflt) #total ground reflected radiance 
-                     drct_rflts_2.append(drct_rflt) #direct path ground reflected radiance 
+                     grnd_rflts_2.append(grnd_rflt) #total ground reflected radiance
+                     drct_rflts_2.append(drct_rflt) #direct path ground reflected radiance
                      lp_2.append(path_rdn) #path radiance (sum of single and multiple scattering)
 
-        if self.multipart_transmittance: 
-            ''' 
+        if self.multipart_transmittance:
+            '''
                 This implementation is following Gaunter et al. (2009) (DOI:10.1080/01431160802438555),
-                and modified by Nimrod Carmon. It is called the "2-albedo" method, referring to running 
-                modtran with 2 different surface albedos. The 3-albedo method is similar to this one with 
+                and modified by Nimrod Carmon. It is called the "2-albedo" method, referring to running
+                modtran with 2 different surface albedos. The 3-albedo method is similar to this one with
                 the single difference where the "path_radiance_no_surface" variable is taken from a
                 zero-surface-reflectance modtran run instead of being calculated from 2 modtran outputs.
                 There are a few argument as to why this approach is beneficial:
-                (1) for each grid point on the lookup table you sample modtran 2 or 3 times, i.e. you get 
-                2 or 3 "data points" for the atmospheric parameter of interest. This in theory allows us 
-                to use a lower band model resolution modtran run, which is much faster, while keeping 
+                (1) for each grid point on the lookup table you sample modtran 2 or 3 times, i.e. you get
+                2 or 3 "data points" for the atmospheric parameter of interest. This in theory allows us
+                to use a lower band model resolution modtran run, which is much faster, while keeping
                 high accuracy. Currently we have the 5 cm-1 band model resolution configured.
-                The second advantage is the possibility to use the decoupled transmittance products to exapnd 
+                The second advantage is the possibility to use the decoupled transmittance products to exapnd
                 the forward model and account for more physics e.g. shadows \ sky view \ adjacency \ terrain etc.
-                  
+
             '''
-            t_up_dirs = np.array(transups) 
-            direct_ground_reflected_1   = np.array(drct_rflts_1) 
-            total_ground_reflected_1    = np.array(grnd_rflts_1) 
-            direct_ground_reflected_2   = np.array(drct_rflts_2) 
-            total_ground_reflected_2    = np.array(grnd_rflts_2) 
-            path_radiance_1       = np.array(lp_1) 
-            path_radiance_2       = np.array(lp_2) 
+            t_up_dirs = np.array(transups)
+            direct_ground_reflected_1   = np.array(drct_rflts_1)
+            total_ground_reflected_1    = np.array(grnd_rflts_1)
+            direct_ground_reflected_2   = np.array(drct_rflts_2)
+            total_ground_reflected_2    = np.array(grnd_rflts_2)
+            path_radiance_1       = np.array(lp_1)
+            path_radiance_2       = np.array(lp_2)
             TOA_Irad   = np.array(sols) * coszen / np.pi
             rfl_1      = self.test_rfls[1]
             rfl_2      = self.test_rfls[2]
             mus        = coszen
-            
 
-            direct_flux_1 = direct_ground_reflected_1 * np.pi / rfl_1 / t_up_dirs 
-            global_flux_1 = total_ground_reflected_1 * np.pi / rfl_1 / t_up_dirs 
+
+            direct_flux_1 = direct_ground_reflected_1 * np.pi / rfl_1 / t_up_dirs
+            global_flux_1 = total_ground_reflected_1 * np.pi / rfl_1 / t_up_dirs
             diffuse_flux_1 = global_flux_1 - direct_flux_1 # diffuse flux
 
             global_flux_2 = total_ground_reflected_2 * np.pi / rfl_2 / t_up_dirs
@@ -314,24 +314,24 @@ class ModtranRT(TabularRT):
 
             # Diffuse upwelling transmittance
             t_up_difs =  np.pi * (path_radiance_1 - path_radiance_no_surface) / \
-                                 (rfl_1 * global_flux_1) 
+                                 (rfl_1 * global_flux_1)
 
             # Spherical Albedo
             sphalbs = (global_flux_1 - global_flux_2) / \
                       (rfl_1 * global_flux_1 - rfl_2 * global_flux_2)
             direct_flux_radiance = direct_flux_1/mus
 
-            global_flux_no_surface = global_flux_1*(1.-rfl_1 * sphalbs) 
+            global_flux_no_surface = global_flux_1*(1.-rfl_1 * sphalbs)
             diffuse_flux_no_surface = global_flux_no_surface - direct_flux_radiance * coszen
-            
+
             t_down_dirs = (direct_flux_radiance * coszen / widths / np.pi) / TOA_Irad
             t_down_difs = (diffuse_flux_no_surface / widths / np.pi) / TOA_Irad
-            
+
             # total transmittance
             transms = (t_down_dirs + t_down_difs) * (t_up_dirs + t_up_difs)
-            
+
         params = [np.array(i) for i in [wls, sols, rhoatms, transms, sphalbs, transups,
-                                        t_down_dirs, t_down_difs, t_up_dirs, t_up_difs, 
+                                        t_down_dirs, t_down_difs, t_up_dirs, t_up_difs,
                                         thermal_upwellings, thermal_downwellings]]
 
         return tuple(params)
@@ -361,8 +361,8 @@ class ModtranRT(TabularRT):
             raise AttributeError('GMTIME in MODTRAN driver overrides, but IPARM set to 12.  Check modtran template.')
         elif param[0]['MODTRANINPUT']['GEOMETRY']['IPARM'] == 11 and \
             set(['solar_azimuth','solaz','solar_zenith','solzen']).intersection(set(overrides.keys())):
-            raise AttributeError('Solar geometry (solar az/azimuth zen/zenith) is specified, but IPARM is set to 12.  Check MODTRAN template') 
-        
+            raise AttributeError('Solar geometry (solar az/azimuth zen/zenith) is specified, but IPARM is set to 12.  Check MODTRAN template')
+
         if set(['PARM1','PARM2']).intersection(set(overrides.keys())):
             raise AttributeError('PARM1 and PARM2 keys not supported as LUT dimensions.  Please use either solar_azimuth/solaz or solar_zenith/solzen')
 
@@ -380,11 +380,11 @@ class ModtranRT(TabularRT):
 
             elif key == 'FILTNM':
                 param[0]['MODTRANINPUT']['SPECTRAL']['FILTNM'] = val
-            
+
             # Geometry parameters we want to populate even if unassigned
             elif key in ['H1ALT', 'IDAY', 'TRUEAZ','OBSZEN', 'GMTIME' ]:
                 param[0]['MODTRANINPUT']['GEOMETRY'][key] = val
-            
+
             elif key == 'AIRT_DELTA_K':
                 # If there is no profile already provided ...
                 if param[0]['MODTRANINPUT']['ATMOSPHERE']['MODEL'] != "ATM_USER_ALT_PROFILE":
@@ -397,7 +397,7 @@ class ModtranRT(TabularRT):
 
                     # MODTRAN cannot accept a ground altitude above 6 km, so keep all layers after that
                     hi_altitudes = [6.0,7.0,8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0,16.0,17.0,18.0,19.0,
-                                    20.0,21.0,22.0,23.0,24.0,25.0,30.0,35.0,40.0,45.0,50.0,55.0,60.0,70.0,80.0,100.0] 
+                                    20.0,21.0,22.0,23.0,24.0,25.0,30.0,35.0,40.0,45.0,50.0,55.0,60.0,70.0,80.0,100.0]
 
                     altitudes = low_altitudes + hi_altitudes # Append lists, don't add altitudes!
 
@@ -413,7 +413,7 @@ class ModtranRT(TabularRT):
                     param[0]['MODTRANINPUT']['ATMOSPHERE']['NLAYERS'] = len(altitudes)
                     param[0]['MODTRANINPUT']['ATMOSPHERE']['PROFILES'] = [altitude_dict, delta_kelvin_dict]
 
-                
+
                 else: # A profile is already provided, assume that it includes PROF_ALTITUDE
                     nprof = param[0]['MODTRANINPUT']['ATMOSPHERE']['NPROF']
                     profile_types = []
@@ -430,7 +430,7 @@ class ModtranRT(TabularRT):
                         prof_temperature = np.array(param[0]['MODTRANINPUT']['ATMOSPHERE']['PROFILES'][ind_prof_temperature]['PROFILE'])
                         prof_temperature = np.where(prof_altitude <= tropopause_altitude_km, prof_temperature + val, prof_temperature)
                         param[0]['MODTRANINPUT']['ATMOSPHERE']['PROFILES'][ind_prof_temperature]['PROFILE'] = prof_temperature.tolist()
-                    
+
                     else:
                         # If a temperature profile does not exist, then use UNT_TDELTA_KELVIN
                         prof_unt_tdelta_kelvin = np.where(prof_altitude <= tropopause_altitude_km, val, 0.)
@@ -450,7 +450,7 @@ class ModtranRT(TabularRT):
 
             elif key in ['solar_zenith', 'solzen']:
                 param[0]['MODTRANINPUT']['GEOMETRY']['PARM2'] = abs(val)
-            
+
             #elif key in ['altitude_km']
 
             elif key in ['DISALB', 'NAME']:
@@ -480,14 +480,14 @@ class ModtranRT(TabularRT):
             lvl0['ABSC'] = [float(v) / total_extc550 for v in total_absc]
 
         if self.multipart_transmittance:
-            # Here we copy the original config and just change the surface reflectance 
+            # Here we copy the original config and just change the surface reflectance
             param[0]['MODTRANINPUT']['CASE'] = 0
             param[0]['MODTRANINPUT']['SURFACE']['SURREF']= self.test_rfls[0]
             param1 = deepcopy(param[0])
             param1['MODTRANINPUT']['CASE'] = 1
             param1['MODTRANINPUT']['SURFACE']['SURREF']= self.test_rfls[1]
             param.append(param1)
-            param2 = deepcopy(param[0]) 
+            param2 = deepcopy(param[0])
             param2['MODTRANINPUT']['CASE'] = 2
             param2['MODTRANINPUT']['SURFACE']['SURREF']= self.test_rfls[2]
             param.append(param2)
@@ -631,8 +631,7 @@ class ModtranRT(TabularRT):
         # If self.modtran_dir is not defined, raise an exception
         # This occurs e.g., when MODTRAN is not installed
         if not self.modtran_dir:
-            logging.error("MODTRAN directory not defined in config file.")
-            raise SystemExit("MODTRAN directory not defined in config file.")
+            logging.warning("MODTRAN directory not defined in config file, this may cause issues down the line.")
 
         # Generate the CLI path
         cmd = os.path.join(self.modtran_dir, 'bin', xdir[platform], 'mod6c_cons ' + infilename)

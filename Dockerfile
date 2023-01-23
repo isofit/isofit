@@ -31,7 +31,7 @@ RUN mkdir /sRTMnet_v100 &&\
 ENV EMULATOR_PATH /sRTMnet_v100/sRTMnet_v100
 
 # Some examples require this env var to be present but does not need to be installed
-ENV MODTRAN_DIR  
+ENV MODTRAN_DIR ""
 
 # Prebuild the virtual environments
 # Default environment is isofit. To activate the different one, use: docker run -e ENV_NAME=[env name]
