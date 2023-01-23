@@ -31,16 +31,25 @@ RUN mkdir /sRTMnet_v100 &&\
 ENV EMULATOR_PATH /sRTMnet_v100/sRTMnet_v100
 
 # Prebuild the virtual environments
-# To activate the test environment, use: docker run -e ENV_NAME=test
+# Default environment is isofit. To activate the different one, use: docker run -e ENV_NAME=[env name]
 RUN micromamba create -y -n isofit -c conda-forge python=3.10 && \
-    micromamba create -y -n test   -c conda-forge python=3.10
+    micromamba create -y -n test   -c conda-forge python=3.10 && \
+    micromamba create -y -n nodeps -c conda-forge python=3.10
 
-# Auto activate the isofit environment
-ENV ENV_NAME isofit
+# Auto activate environments
 ARG MAMBA_DOCKERFILE_ACTIVATE=1
 
-# Install ISOFIT
 COPY . /isofit
+
+# Setup the test environment
+ENV ENV_NAME test
+RUN micromamba install --name test --yes --file /isofit/recipe/environment_isofit_basic.yml &&\
+    micromamba install --name test --yes --channel conda-forge pip &&\
+    micromamba clean --all --yes &&\
+    pip install ray ndsplines xxhash --upgrade
+
+# Install ISOFIT
+ENV ENV_NAME isofit
 RUN micromamba install --name isofit --yes --file /isofit/recipe/environment_isofit_basic.yml &&\
     micromamba install --name isofit --yes --channel conda-forge pip &&\
     micromamba clean --all --yes &&\
