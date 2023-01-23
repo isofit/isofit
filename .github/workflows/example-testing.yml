@@ -37,7 +37,7 @@ jobs:
         wget -nv https://zenodo.org/record/4096627/files/sRTMnet_v100.zip
         unzip sRTMnet_v100.zip && rm sRTMnet_v100.zip
         # Pass environment variable to following jobs
-        echo "EMULATOR_PATH=$(readlink -f .)" >> $GITHUB_ENV
+        echo "EMULATOR_PATH=$(readlink -f ./sRTMnet_v100)" >> $GITHUB_ENV
         # Disables MODTRAN
         echo "MODTRAN_DIR=\"\"" >> $GITHUB_ENV
 
