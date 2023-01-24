@@ -18,10 +18,17 @@ import subprocess
 import sys
 from sys import platform
 from typing import List
+from warnings import warn
 
 from isofit.utils import segment, extractions, empirical_line, analytical_line
 from isofit.core import isofit, common
 from isofit.core.common import envi_header
+
+warn(
+    message=f'The module {__name__} is deprecated and will be removed with ISOFIT version 3.2.',
+    category=DeprecationWarning,
+    stacklevel=2
+)
 
 EPS = 1e-6
 CHUNKSIZE = 256
