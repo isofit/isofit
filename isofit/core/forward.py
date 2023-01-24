@@ -140,7 +140,6 @@ class ForwardModel:
         """Check if state vector is within bounds."""
 
         x_RT = x[self.idx_RT]
-        x_surface = x[self.idx_surface]
         bound_lwr = self.bounds[0]
         bound_upr = self.bounds[1]
         return any(x_RT >= (bound_upr[self.idx_RT] - eps*2.0)) or \
