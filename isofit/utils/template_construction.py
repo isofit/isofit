@@ -1175,10 +1175,11 @@ def copy_file_subset(matching_indices: np.array, pathnames: List):
         input_ds = envi.open(envi_header(inp), inp)
         header = input_ds.metadata.copy()
         header["lines"] = np.sum(matching_indices)
+        header["samples"] = 1
         output_ds = envi.create_image(envi_header(outp), header, ext="", force=True)
         output_mm = output_ds.open_memmap(interleave="bip", writable=True)
         input_mm = input_ds.open_memmap(interleave="bip", writable=True)
-        output_mm[...] = input_mm[matching_indices[:, 0, 0], ...].copy()
+        output_mm[:, 0, :] = input_mm[matching_indices[:, :, 0], ...].copy()
 
 
 def get_metadata_from_obs(obs_file: str, lut_params: LUTConfig, trim_lines: int = 5,
