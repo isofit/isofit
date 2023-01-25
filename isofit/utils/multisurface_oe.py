@@ -518,7 +518,7 @@ def main(rawargs=None):
                         "--isofit_config", paths.surface_config_paths["base"],
                         "--segmentation_file", paths.lbl_working_path,
                         "--n_atm_neighbors", str(nneighbors),
-                        "--n_cores", multiprocessing.cpu_count() if not opt["n_cores"] else opt["n_cores"],
+                        "--n_cores", str(multiprocessing.cpu_count()) if not opt["n_cores"] else str(opt["n_cores"]),
                         "--smoothing_sigma", "2",
                         "--output_rfl_file", paths.rfl_working_path,
                         "--output_unc_file", paths.uncert_working_path,
