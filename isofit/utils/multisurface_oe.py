@@ -141,6 +141,8 @@ def main(rawargs=None):
     try:
         chn, wl, fwhm = np.loadtxt(args.wavelength_path).T
         if len(chn) != rdn_dataset.shape[2]:
+            logging.warning("Number of channels in provided wavelength file does not match wavelengths in radiance "
+                            "cube. Adopting center wavelengths from ENVI header.")
             raise ValueError
     except ValueError:
         wl = np.array(rdn_dataset.metadata["wavelength"], dtype=float)
