@@ -22,7 +22,7 @@ def test_eps():
 
 
 def test_combos():
-    inds = np.array([[1, 2], [3, 4, 5]])
+    inds = np.array([[1, 2], [3, 4, 5]], dtype=object)
     result = np.array([[1, 3], [2, 3], [1, 4], [2, 4], [1, 5], [2, 5]])
     assert np.array_equal(combos(inds), result)
 

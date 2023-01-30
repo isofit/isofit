@@ -44,6 +44,7 @@ class Surface:
         self.init = np.array([])
         self.bvec = []
         self.bval = np.array([])
+        self.idx_lamb = np.empty(shape=0)
         self.emissive = False
 
         self.wl = None

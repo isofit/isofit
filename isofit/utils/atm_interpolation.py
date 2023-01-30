@@ -273,12 +273,11 @@ def atm_interpolation(
     output_metadata["lines"] = input_locations_img.metadata["lines"]
     output_metadata["samples"] = input_locations_img.metadata["samples"]
 
-    band_names = [
-        x for x in reference_state_img.metadata["band names"] if x[:4] != "RFL_"
-    ]
-    output_metadata["band names"] = band_names
-    output_metadata["description"] = "Interpolated atmospheric state"
-    output_metadata["bands"] = len(band_names)
+    band_names = [x for x in reference_state_img.metadata['band names'] if x[:4] != 'RFL_']
+    output_metadata['band names']  = band_names
+    output_metadata['description'] = 'Interpolated atmospheric state'
+    output_metadata['bands']       = len(band_names)
+    output_metadata['bbl']         = '{' + ','.join([str(1) for n in range(len(band_names))]) + '}'
 
     del output_metadata["fwhm"]
     del output_metadata["wavelength"]

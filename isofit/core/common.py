@@ -235,10 +235,10 @@ class VectorInterpolator:
         cube = np.copy(self.gridarrays[idx], order="A")
 
         for i, di in enumerate(deltas):
-            # Eliminate those indexes where we are outside grid range
-            if points[i] > self.gridtuples[i][-1]:
+            # Eliminate those indexes where we are outside grid range or exactly on the grid point
+            if points[i] >= self.gridtuples[i][-1]:
                 cube = cube[1]
-            elif points[i] < self.gridtuples[i][0]:
+            elif points[i] <= self.gridtuples[i][0]:
                 cube = cube[0]
             # Otherwise eliminate index by linear interpolation
             else:

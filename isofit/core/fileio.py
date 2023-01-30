@@ -282,7 +282,7 @@ class IO:
 
         self.config = config
 
-        self.bbl = "{}"
+        self.bbl = '{' + ','.join([str(1) for n in range(len(forward.instrument.wl_init))]) + '}'
         self.radiance_correction = None
         self.meas_wl = forward.instrument.wl_init
         self.meas_fwhm = forward.instrument.fwhm_init

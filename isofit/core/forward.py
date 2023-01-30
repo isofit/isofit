@@ -121,14 +121,15 @@ class ForwardModel:
 
         # Set up indices for references - MUST MATCH ORDER FROM ABOVE ASSIGNMENT
         self.idx_surface = np.arange(len(self.surface.statevec_names), dtype=int)
-        self.idx_RT = np.arange(len(self.RT.statevec_names), dtype=int) + len(
-            self.idx_surface
-        )
-        self.idx_instrument = (
-            np.arange(len(self.instrument.statevec_names), dtype=int)
-            + len(self.idx_surface)
-            + len(self.idx_RT)
-        )
+        # Sometimes, it's convenient to have the index of the entire surface
+        # as one variable, and sometimes you want the sub-components
+        # Split surface state vector indices to cover cases where we retrieve
+        # additional non-reflectance surface parameters
+        self.idx_surf_rfl = self.idx_surface[:len(self.surface.idx_lamb)]  # reflectance portion
+        self.idx_surf_nonrfl = self.idx_surface[len(self.surface.idx_lamb):]  # all non-reflectance surface parameters
+        self.idx_RT = np.arange(len(self.RT.statevec_names), dtype=int) + len(self.idx_surface)
+        self.idx_instrument = np.arange(
+            len(self.instrument.statevec_names), dtype=int) + len(self.idx_surface) + len(self.idx_RT)
 
         self.surface_b_inds = np.arange(len(self.surface.bvec), dtype=int)
         self.RT_b_inds = np.arange(len(self.RT.bvec), dtype=int) + len(
@@ -151,7 +152,6 @@ class ForwardModel:
         """Check if state vector is within bounds."""
 
         x_RT = x[self.idx_RT]
-        x_surface = x[self.idx_surface]
         bound_lwr = self.bounds[0]
         bound_upr = self.bounds[1]
         return any(x_RT >= (bound_upr[self.idx_RT] - eps * 2.0)) or any(
