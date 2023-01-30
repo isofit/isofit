@@ -107,7 +107,6 @@ class MCMCInversion(Inversion):
         # Sample from the posterior using Metropolis/Hastings MCMC
         samples, acpts, rejs, x = [], 0, 0, None
         for i in range(self.iterations):
-
             if i % self.restart_every == 0:
                 x, dens = initialize()
 

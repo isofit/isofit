@@ -66,7 +66,6 @@ class ForwardModel:
     against the prior."""
 
     def __init__(self, full_config: Config):
-
         # load in the full config (in case of inter-module dependencies) and
         # then designate the current config
         self.full_config = full_config
@@ -125,11 +124,20 @@ class ForwardModel:
         # as one variable, and sometimes you want the sub-components
         # Split surface state vector indices to cover cases where we retrieve
         # additional non-reflectance surface parameters
-        self.idx_surf_rfl = self.idx_surface[:len(self.surface.idx_lamb)]  # reflectance portion
-        self.idx_surf_nonrfl = self.idx_surface[len(self.surface.idx_lamb):]  # all non-reflectance surface parameters
-        self.idx_RT = np.arange(len(self.RT.statevec_names), dtype=int) + len(self.idx_surface)
-        self.idx_instrument = np.arange(
-            len(self.instrument.statevec_names), dtype=int) + len(self.idx_surface) + len(self.idx_RT)
+        self.idx_surf_rfl = self.idx_surface[
+            : len(self.surface.idx_lamb)
+        ]  # reflectance portion
+        self.idx_surf_nonrfl = self.idx_surface[
+            len(self.surface.idx_lamb) :
+        ]  # all non-reflectance surface parameters
+        self.idx_RT = np.arange(len(self.RT.statevec_names), dtype=int) + len(
+            self.idx_surface
+        )
+        self.idx_instrument = (
+            np.arange(len(self.instrument.statevec_names), dtype=int)
+            + len(self.idx_surface)
+            + len(self.idx_RT)
+        )
 
         self.surface_b_inds = np.arange(len(self.surface.bvec), dtype=int)
         self.RT_b_inds = np.arange(len(self.RT.bvec), dtype=int) + len(

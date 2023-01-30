@@ -29,7 +29,6 @@ from isofit.core.common import envi_header, expand_path, json_load_ascii, svd_in
 
 
 def next_diag_val(C: np.ndarray, starting_index, direction):
-
     if direction == 1:
         for i in range(starting_index, C.shape[0]):
             if np.isnan(C[i, i]) == False:
@@ -113,7 +112,6 @@ def surface_model(
 
     # each "source" (i.e. spectral library) is treated separately
     for si, source_config in enumerate(config["sources"]):
-
         # Determine source parameters
         for q in ["input_spectrum_files", "windows", "n_components", "windows"]:
             if q not in source_config:
@@ -150,7 +148,6 @@ def surface_model(
         # load spectra
         spectra, attributes = [], []
         for infile, attribute_file in zip(infiles, infiles_attributes):
-
             rfl = envi.open(envi_header(infile), infile)
             nl, nb, ns = [int(rfl.metadata[n]) for n in ("lines", "bands", "samples")]
             swl = np.array([float(f) for f in rfl.metadata["wavelength"]])
@@ -173,7 +170,6 @@ def surface_model(
 
             # Load attributes
             if attribute_file is not None:
-
                 attr = envi.open(envi_header(attribute_file), attribute_file)
                 nla, nba, nsa = [
                     int(attr.metadata[n]) for n in ("lines", "bands", "samples")
@@ -297,7 +293,6 @@ def surface_model(
                     continue
                 window_range = slice(window_idx[0], window_idx[-1] + 1)
                 if window["correlation"] == "EM-gauss":
-
                     interval_steps = int(
                         round(
                             window["smoothing_interval"]

@@ -92,7 +92,8 @@ def extract_chunk(
     cend_adjust = max(active_locs[1]) + 1
 
     logging.debug(
-        f"{lstart} area subset: {lstart_adjust}, {lend_adjust} :::: {cstart_adjust}, {cend_adjust}"
+        f"{lstart} area subset: {lstart_adjust}, {lend_adjust} :::: {cstart_adjust},"
+        f" {cend_adjust}"
     )
 
     chunk_lbl = np.array(labels[lstart_adjust:lend_adjust, cstart_adjust:cend_adjust])

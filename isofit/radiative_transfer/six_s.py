@@ -70,7 +70,6 @@ class SixSRT(TabularRT):
         fwhm_override=None,
         modtran_emulation=False,
     ):
-
         self.angular_lut_keys_degrees = [
             "OBSZEN",
             "TRUEAZ",
@@ -273,7 +272,6 @@ class SixSRT(TabularRT):
         return np.log(50.0) / (ext550 + 0.01159)
 
     def build_lut(self, rebuild=False):
-
         TabularRT.build_lut(self, rebuild)
 
         if self.modtran_emulation is False:

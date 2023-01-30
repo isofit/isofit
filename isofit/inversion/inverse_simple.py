@@ -85,7 +85,6 @@ def heuristic_atmosphere(
     # Band ratio retrieval of H2O.  Depending on the radiative transfer
     # model we are using, this state parameter could go by several names.
     for h2oname in ["H2OSTR", "h2o"]:
-
         if h2oname not in RT.statevec_names:
             continue
 
@@ -103,7 +102,6 @@ def heuristic_atmosphere(
         # atmospheric H2O content.  It assumes that defaults for all other
         # atmospheric parameters (such as aerosol, if it is there).
         for h2o in my_RT.lut_grids[ind_lut]:
-
             # Get Atmospheric terms at high spectral resolution
             x_RT_2 = x_RT.copy()
             x_RT_2[ind_sv] = h2o
@@ -231,7 +229,8 @@ def invert_analytical(
     # Note, this will fail if x_instrument is populated
     if len(fm.idx_instrument) > 0:
         raise AttributeError(
-            "Invert analytical not currently set to handle instrument state variable indexing"
+            "Invert analytical not currently set to handle instrument state variable"
+            " indexing"
         )
 
     x = np.zeros(fm.nstate)
@@ -374,7 +373,6 @@ def invert_simple(forward: ForwardModel, meas: np.array, geom: Geometry):
 
     # Find temperature of emissive surfaces
     if tir_present:
-
         # Estimate the total radiance at sensor, leaving out surface emission
         # Radiate transfer calculations could take place at high spectral resolution
         # so we upsample the surface reflectance

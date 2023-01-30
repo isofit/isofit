@@ -40,7 +40,6 @@ class Geometry:
         pushbroom_column=None,
         bg_rfl=None,
     ):
-
         # Set some benign defaults...
         self.earth_sun_file = None
         self.observer_zenith = 0

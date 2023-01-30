@@ -119,7 +119,6 @@ class Instrument:
         self.bval = np.zeros(self.n_chan + 2)
 
         if config.unknowns is not None:
-
             # First we take care of radiometric uncertainties, which add
             # in quadrature.  We sum their squared values.  Systematic
             # radiometric uncertainties account for differences in sampling
@@ -189,7 +188,8 @@ class Instrument:
             bad = nedl < minimum_noise
             if np.any(bad):
                 logging.debug(
-                    "SNR noise model found noise <= 0 - adjusting to slightly positive to avoid /0."
+                    "SNR noise model found noise <= 0 - adjusting to slightly positive"
+                    " to avoid /0."
                 )
             nedl[bad] = minimum_noise
             return np.diagflat(np.power(nedl, 2))
@@ -199,7 +199,8 @@ class Instrument:
             if np.any(noise_plus_meas <= 0):
                 noise_plus_meas[noise_plus_meas <= 0] = 1e-5
                 logging.debug(
-                    "Parametric noise model found noise <= 0 - adjusting to slightly positive to avoid /0."
+                    "Parametric noise model found noise <= 0 - adjusting to slightly"
+                    " positive to avoid /0."
                 )
             nedl = np.abs(
                 self.noise[:, 0] * np.sqrt(noise_plus_meas) + self.noise[:, 2]

@@ -162,9 +162,8 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         if self.interpolator_base_path is None and self.emulator_file is not None:
             self.interpolator_base_path = self.emulator_file + "_interpolator"
             logging.info(
-                "No interpolator base path set, and emulator used, so auto-setting interpolator path at: {}".format(
-                    self.interpolator_base_path
-                )
+                "No interpolator base path set, and emulator used, so auto-setting"
+                " interpolator path at: {}".format(self.interpolator_base_path)
             )
 
     def _check_config_validity(self) -> List[str]:
@@ -184,9 +183,8 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         valid_rt_engines = ["modtran", "libradtran", "6s", "sRTMnet"]
         if self.engine_name not in valid_rt_engines:
             errors.append(
-                "radiative_transfer->raditive_transfer_model: {} not in one of the available models: {}".format(
-                    self.engine_name, valid_rt_engines
-                )
+                "radiative_transfer->raditive_transfer_model: {} not in one of the"
+                " available models: {}".format(self.engine_name, valid_rt_engines)
             )
 
         if self.multipart_transmittance and self.engine_name != "modtran":
@@ -245,7 +243,6 @@ class RadiativeTransferConfig(BaseConfigSection):
     """
 
     def __init__(self, sub_configdic: dict = None):
-
         self._topography_model_type = bool
         self.topography_model = False
         """
@@ -319,14 +316,15 @@ class RadiativeTransferConfig(BaseConfigSection):
             for rtm in self.radiative_transfer_engines:
                 if rtm.engine_name != "modtran":
                     errors.append(
-                        "All self.forward_model.radiative_transfer.radiative_transfer_engines must "
-                        'be of type "modtran" if forward_model.topograph_model is set to True'
+                        "All self.forward_model.radiative_transfer.radiative_transfer_engines"
+                        ' must be of type "modtran" if forward_model.topograph_model is'
+                        " set to True"
                     )
                 if rtm.multipart_transmittance is False:
                     errors.append(
-                        "All self.forward_model.radiative_transfer.radiative_transfer_engines must "
-                        "have multipart_transmittance set as True if forward_model.topograph_model "
-                        "is set to True"
+                        "All self.forward_model.radiative_transfer.radiative_transfer_engines"
+                        " must have multipart_transmittance set as True if"
+                        " forward_model.topograph_model is set to True"
                     )
 
         for rte in self.radiative_transfer_engines:
@@ -346,7 +344,8 @@ class RadiativeTransferConfig(BaseConfigSection):
                 assert degree >= 0 and np.isfinite(degree)
             except:
                 errors.append(
-                    f"Invalid degree number. Should be an integer, e.g. nds-3, got {degrees!r} from {self.interpolator_style!r}[4:]"
+                    "Invalid degree number. Should be an integer, e.g. nds-3, got"
+                    f" {degrees!r} from {self.interpolator_style!r}[4:]"
                 )
 
         return errors

@@ -220,7 +220,6 @@ def _run_chunk(
     hash_table = {}
 
     for row in np.arange(start_line, stop_line):
-
         # Load inline input data
         input_radiance_mm = input_radiance_img.open_memmap(
             interleave="source", writable=False
@@ -242,7 +241,6 @@ def _run_chunk(
 
         nspectra, start = 0, time.time()
         for col in np.arange(n_input_samples):
-
             # Get radiance, pca coordinates, physical location for this datum
             my_rdn = input_radiance[col, :]
             my_pca = rdn_pca.transform(my_rdn[np.newaxis, :])
@@ -259,7 +257,6 @@ def _run_chunk(
             if hash_idx in hash_table:
                 gp_rhoatm, gp_sphalb, gp_transm, irr = hash_table[hash_idx]
             else:
-
                 # There is no GP for this segment, so we build one from
                 # the atmospheric coefficients from closest neighbors
                 dists, nn = tree.query(my_loc, nneighbors)
@@ -512,7 +509,8 @@ def interpolate_atmosphere(
 
     total_time = time.time() - start_time
     logging.info(
-        "Parallel empirical line inversions complete.  {} s total, {} spectra/s, {} spectra/s/core".format(
+        "Parallel empirical line inversions complete.  {} s total, {} spectra/s, {}"
+        " spectra/s/core".format(
             total_time,
             line_sections[-1] * n_input_samples / total_time,
             line_sections[-1] * n_input_samples / total_time / n_cores,

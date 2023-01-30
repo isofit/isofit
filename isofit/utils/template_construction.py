@@ -36,7 +36,6 @@ class Pathnames:
     """
 
     def __init__(self, opt: dict, gip: dict, args: argparse.Namespace, fid: str):
-
         # Names from inputs
         self.aerosol_climatology = gip["filepaths"]["aerosol_climatology_path"]
         self.input_radiance_file = args.input_radiance
@@ -435,7 +434,8 @@ def get_grid(minval: float, maxval: float, spacing: float, min_spacing: float):
         return None
     elif np.abs(grid[1] - grid[0]) < min_spacing:
         logging.debug(
-            f"Grid spacing is {grid[1] - grid[0]}, which is less than {min_spacing}.  No grid used"
+            f"Grid spacing is {grid[1] - grid[0]}, which is less than {min_spacing}. "
+            " No grid used"
         )
         return None
     else:
@@ -505,8 +505,8 @@ def get_angular_grid(
     else:
         if spacing >= 180:
             logging.warning(
-                f"Requested angle spacing is {spacing}, but obs angle divergence is > 180.  "
-                "Tighter  spacing recommended"
+                f"Requested angle spacing is {spacing}, but obs angle divergence is >"
+                " 180.  Tighter  spacing recommended"
             )
 
         # If we're greater than 180 degree spread, there's no universal answer. Try GMM.
@@ -1240,7 +1240,8 @@ def load_climatology(
                     break
 
     logging.info(
-        "Climatology Loaded.  Aerosol State Vector:\n{}\nAerosol LUT Grid:\n{}\nAerosol model path:{}".format(
+        "Climatology Loaded.  Aerosol State Vector:\n{}\nAerosol LUT Grid:\n{}\nAerosol"
+        " model path:{}".format(
             aerosol_state_vector, aerosol_lut_grid, aerosol_model_path
         )
     )
@@ -1308,7 +1309,6 @@ def define_surface_types(
     wl: np.array,
     fwhm: np.array,
 ):
-
     if np.all(wl < 10):
         wl = wl * 1000
         fwhm = fwhm * 1000

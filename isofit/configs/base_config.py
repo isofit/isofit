@@ -51,13 +51,12 @@ class BaseConfigSection(object):
     def check_config_validity(self) -> List[str]:
         errors = list()
         message_type = (
-            "Invalid type for config option {} in config section {}. The provided value {} is a {}, "
-            + "but the required value should be a {}."
+            "Invalid type for config option {} in config section {}. The provided value"
+            " {} is a {}, " + "but the required value should be a {}."
         )
 
         # First check typing
         for key in self._get_nontype_attributes():
-
             # get the actual parameter value
             value = getattr(self, key)
 

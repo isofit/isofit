@@ -62,7 +62,6 @@ class Config(BaseConfigSection):
     """
 
     def __init__(self, configdict) -> None:
-
         self._input_type = InputConfig
         self.input = InputConfig({})
         """InputConfig: Input config. Holds all input file information.
@@ -124,7 +123,8 @@ class Config(BaseConfigSection):
             and self.input.reflectance_file is None
         ):
             return_errors.append(
-                "If implementation.mode is set to simulation, input.reflectance_file must be set"
+                "If implementation.mode is set to simulation, input.reflectance_file"
+                " must be set"
             )
         return return_errors
 
@@ -143,9 +143,8 @@ def get_config_differences(config_a: Config, config_b: Config) -> Dict:
             value_b = section_b.get(option, None)
             if value_a != value_b:
                 logging.debug(
-                    "Configs have different values for option {} in section {}:  {} and {}".format(
-                        option, section, value_a, value_b
-                    )
+                    "Configs have different values for option {} in section {}:  {}"
+                    " and {}".format(option, section, value_a, value_b)
                 )
                 differing_items.setdefault(section, dict())[option] = (value_a, value_b)
     return differing_items

@@ -45,7 +45,6 @@ class Isofit:
     """
 
     def __init__(self, config_file, level="INFO", logfile=None):
-
         # Explicitly set the number of threads to be 1, so we more effectively
         # run in parallel
         os.environ["MKL_NUM_THREADS"] = "1"
@@ -192,8 +191,9 @@ class Isofit:
 
         total_time = time.time() - start_time
         logging.info(
-            f"Inversions complete.  {round(total_time,2)}s total, {round(n_iter/total_time,4)} spectra/s, "
-            f"{round(n_iter/total_time/n_workers,4)} spectra/s/core"
+            f"Inversions complete.  {round(total_time,2)}s total,"
+            f" {round(n_iter/total_time,4)} spectra/s,"
+            f" {round(n_iter/total_time/n_workers,4)} spectra/s/core"
         )
 
 
@@ -247,9 +247,7 @@ class Worker(object):
         self.completed_spectra = 0
 
     def run_set_of_spectra(self, indices: np.array):
-
         for index in range(0, indices.shape[0]):
-
             logging.debug("Read chunk of spectra")
             row, col = indices[index, 0], indices[index, 1]
 
@@ -289,12 +287,14 @@ class Worker(object):
                             2,
                         )
                         logging.info(
-                            f"Worker {self.worker_id} completed {self.completed_spectra}/"
-                            f"~{self.approximate_total_spectra}:: {percent}% complete"
+                            f"Worker {self.worker_id} completed"
+                            f" {self.completed_spectra}/~{self.approximate_total_spectra}::"
+                            f" {percent}% complete"
                         )
                     else:
                         logging.info(
-                            f"Worker at start location ({row},{col}) completed {index}/{indices.shape[0]}"
+                            f"Worker at start location ({row},{col}) completed"
+                            f" {index}/{indices.shape[0]}"
                         )
 
         self.io.flush_buffers()

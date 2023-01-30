@@ -36,7 +36,6 @@ from isofit.utils.template_construction import (
 
 
 def main(rawargs=None):
-
     parser = argparse.ArgumentParser(
         description="Apply ISOFIT to a block of data with mixed surface."
     )
@@ -60,7 +59,10 @@ def main(rawargs=None):
     # Check files exist
     for infile_name, infile in infiles.items():
         if os.path.isfile(infile) is False:
-            err_str = f"Input argument {infile_name} give as: {infile}.  File not found on system."
+            err_str = (
+                f"Input argument {infile_name} give as: {infile}.  File not found on"
+                " system."
+            )
             raise ValueError("argument " + err_str)
 
     # Check file sizes match
@@ -192,7 +194,8 @@ def main(rawargs=None):
         pass
     else:
         logging.info(
-            'No surface model defined. Build new one including each given "source" (i.e., spectral library).'
+            'No surface model defined. Build new one including each given "source"'
+            " (i.e., spectral library)."
         )
         build_surface_config(
             macro_config=surface_macro_config,
@@ -263,14 +266,15 @@ def main(rawargs=None):
             elevation_lut_grid[elevation_lut_grid < 0] = 0
             elevation_lut_grid = np.unique(elevation_lut_grid)
             logging.info(
-                "Scene contains target lut grid elements < 0 km, and uses 6s (via sRTMnet). 6s does not "
-                f"support targets below sea level in km units. Setting grid points {to_rem} to 0."
+                "Scene contains target lut grid elements < 0 km, and uses 6s (via"
+                " sRTMnet). 6s does not support targets below sea level in km units."
+                f" Setting grid points {to_rem} to 0."
             )
         if mean_elevation_km < 0:
             mean_elevation_km = 0
             logging.info(
-                "Scene contains a mean target elevation < 0. 6s does not support targets below sea level in "
-                "km units. Setting mean elevation to 0."
+                "Scene contains a mean target elevation < 0. 6s does not support"
+                " targets below sea level in km units. Setting mean elevation to 0."
             )
 
     # Need a 180 - here, as this is already in MODTRAN convention
@@ -287,7 +291,8 @@ def main(rawargs=None):
 
     if gip["filepaths"]["emulator_base"] is not None and mean_altitude_km > 99:
         logging.info(
-            "Adjusting altitude to 99 km for integration with 6S, because emulator is chosen."
+            "Adjusting altitude to 99 km for integration with 6S, because emulator is"
+            " chosen."
         )
         mean_altitude_km = 99
 
@@ -306,7 +311,8 @@ def main(rawargs=None):
         logging.info("Segmenting...")
         if not opt["segmentation_size"]:
             logging.info(
-                "Segmentation size not  given in config. Setting to default value of 400."
+                "Segmentation size not  given in config. Setting to default value of"
+                " 400."
             )
         segment(
             spectra=(paths.radiance_working_path, paths.lbl_working_path),
@@ -563,13 +569,15 @@ def main(rawargs=None):
         if not opt["num_neighbors"] and opt["segmentation_size"]:
             if opt["segmentation_size"] > 441:
                 logging.info(
-                    f"Segmentation size of {opt['segmentation_size']} too large (max. allowed size: 441). "
-                    f"Setting number of neighbors to minimum value of 10."
+                    f"Segmentation size of {opt['segmentation_size']} too large (max."
+                    " allowed size: 441). Setting number of neighbors to minimum value"
+                    " of 10."
                 )
                 nneighbors = 10
             else:
                 logging.info(
-                    "Number of neighbors not given in config. Calculating based on segmentation size."
+                    "Number of neighbors not given in config. Calculating based on"
+                    " segmentation size."
                 )
                 nneighbors = int(round(3950 / 9 - 35 / 36 * opt["segmentation_size"]))
         elif not opt["num_neighbors"] and not opt["segmentation_size"]:

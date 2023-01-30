@@ -46,7 +46,6 @@ class RadiativeTransfer:
     """
 
     def __init__(self, full_config: Config):
-
         # Maintain order when looping for indexing convenience
         config = full_config.forward_model.radiative_transfer
 
@@ -139,7 +138,6 @@ class RadiativeTransfer:
         L_up = Ls * r["transup"]
 
         if geom.bg_rfl is not None:
-
             # adjacency effects are counted
             I = (self.solar_irr * self.coszen) / np.pi
             bg = geom.bg_rfl
@@ -194,7 +192,6 @@ class RadiativeTransfer:
         return np.hstack(L_downs)
 
     def drdn_dRT(self, x_RT, x_surface, rfl, drfl_dsurface, Ls, dLs_dsurface, geom):
-
         # first the rdn at the current state vector
         rdn = self.calc_rdn(x_RT, rfl, Ls, geom)
 
@@ -210,7 +207,6 @@ class RadiativeTransfer:
         r = self.get_shared_rtm_quantities(x_RT, geom)
 
         if geom.bg_rfl is not None:
-
             # adjacency effects are counted
             I = (self.solar_irr * self.coszen) / np.pi
             bg = geom.bg_rfl
@@ -218,7 +214,6 @@ class RadiativeTransfer:
             drdn_drfl = I / (1.0 - r["sphalb"] * bg) * t_down * r["t_up_dir"]
 
         elif self.topography_model:
-
             # jac w.r.t. topoflux correct radiance
             I = (self.solar_irr) / np.pi
             t_dir_down = r["t_down_dir"]
@@ -253,7 +248,6 @@ class RadiativeTransfer:
         return K_RT, K_surface
 
     def drdn_dRTb(self, x_RT, rfl, Ls, geom):
-
         if len(self.bvec) == 0:
             Kb_RT = np.zeros((0, len(self.wl.shape)))
 

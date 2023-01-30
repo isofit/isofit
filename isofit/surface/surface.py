@@ -35,7 +35,6 @@ class Surface:
     """
 
     def __init__(self, full_config: Config):
-
         config = full_config.forward_model.surface
 
         self.statevec_names = []
@@ -54,7 +53,8 @@ class Surface:
             self.wl, self.fwhm = load_wavelen(config.wavelength_file)
         elif full_config.implementation.mode == "simulation":
             logging.info(
-                "No surface wavelength_file provided, getting wavelengths from input.reflectance_file"
+                "No surface wavelength_file provided, getting wavelengths from"
+                " input.reflectance_file"
             )
             _, self.wl = load_spectrum(full_config.input.reflectance_file)
 

@@ -364,7 +364,8 @@ class _sp:
     def heliocentric_position(jme):
         """Compute the Earth Heliocentric Longitude, Latitude, and Radius given the Julian Ephemeris Millennium.
 
-        Returns (L, B, R) where L = longitude in degrees, B = latitude in degrees, and R = radius in astronimical units."""
+        Returns (L, B, R) where L = longitude in degrees, B = latitude in degrees, and R = radius in astronimical units.
+        """
 
         return (
             _sp.heliocentric_longitude(jme),
@@ -1065,7 +1066,8 @@ class Sunposition:
         # Format output to CSV?
         if csv:
             print(
-                "{t}, {dt}, {lat}, {lon}, {elev}, {temp}, {p}, {az}, {zen}, {ra}, {dec}, {h}".format(
+                "{t}, {dt}, {lat}, {lon}, {elev}, {temp}, {p}, {az}, {zen}, {ra},"
+                " {dec}, {h}".format(
                     t=self.t,
                     dt=dt,
                     lat=lat,
@@ -1110,5 +1112,7 @@ class Sunposition:
         print("Implementation: Samuel Bear Powell, 2016")
         print("Algorithm:")
         print(
-            'Ibrahim Reda, Afshin Andreas, "Solar position algorithm for solar radiation applications", SolarEnergy, Volume 76, Issue 5, 2004, Pages 577-589, ISSN 0038-092X, doi:10.1016/j.solener.2003.12.003'
+            'Ibrahim Reda, Afshin Andreas, "Solar position algorithm for solar'
+            ' radiation applications", SolarEnergy, Volume 76, Issue 5, 2004, Pages'
+            " 577-589, ISSN 0038-092X, doi:10.1016/j.solener.2003.12.003"
         )

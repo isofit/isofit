@@ -118,16 +118,16 @@ class LUTSurface(Surface):
 
         point = np.zeros(self.n_lut)
 
-        for v,name in zip(x_surface, self.statevec_names):
-          point[self.lut_names.index(name)] = v
+        for v, name in zip(x_surface, self.statevec_names):
+            point[self.lut_names.index(name)] = v
 
-        if 'SOLZEN' in self.lut_names:
-          solzen_ind = self.lut_names.index('SOLZEN')
-          point[solzen_ind] = geom.solar_zenith
+        if "SOLZEN" in self.lut_names:
+            solzen_ind = self.lut_names.index("SOLZEN")
+            point[solzen_ind] = geom.solar_zenith
 
-        if 'VIEWZEN' in self.lut_names:
-          viewzen_ind = self.lut_names.index('VIEWZEN')
-          point[viewzen_ind] = geom.observer_zenith
+        if "VIEWZEN" in self.lut_names:
+            viewzen_ind = self.lut_names.index("VIEWZEN")
+            point[viewzen_ind] = geom.observer_zenith
 
         lamb = self.itp(point)
 
@@ -150,10 +150,10 @@ class LUTSurface(Surface):
         dlamb = []
 
         for xi in range(self.n_state):
-           x_new = x_surface.copy()
-           x_new[xi] = x_new[xi] + eps
-           perturbed = self.calc_lamb(x_new, geom)
-           dlamb.append((perturbed-base)/eps)
+            x_new = x_surface.copy()
+            x_new[xi] = x_new[xi] + eps
+            perturbed = self.calc_lamb(x_new, geom)
+            dlamb.append((perturbed - base) / eps)
 
         dlamb = np.array(dlamb).T
 
@@ -176,6 +176,6 @@ class LUTSurface(Surface):
         """Summary of state vector."""
 
         if len(x_surface) < 1:
-            return ''
+            return ""
 
-        return 'Surface: '+' '.join([('%5.4f' % x) for x in x_surface])
+        return "Surface: " + " ".join([("%5.4f" % x) for x in x_surface])

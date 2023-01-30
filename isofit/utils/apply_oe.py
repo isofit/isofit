@@ -166,13 +166,19 @@ def main(rawargs=None):
         [args.input_radiance, args.input_loc, args.input_obs],
     ):
         if os.path.isfile(infile) is False:
-            err_str = f"Input argument {infile_name} give as: {infile}.  File not found on system."
+            err_str = (
+                f"Input argument {infile_name} give as: {infile}.  File not found on"
+                " system."
+            )
             raise ValueError("argument " + err_str)
         if infile_name != "input_radiance":
             input_dataset = gdal.Open(infile, gdal.GA_ReadOnly)
             input_size = (input_dataset.RasterXSize, input_dataset.RasterYSize)
             if not (input_size[0] == rdn_size[0] and input_size[1] == rdn_size[1]):
-                err_str = f"Input file: {infile_name} size is {input_size}, which does not match input_radiance size: {rdn_size}"
+                err_str = (
+                    f"Input file: {infile_name} size is {input_size}, which does not"
+                    f" match input_radiance size: {rdn_size}"
+                )
                 raise ValueError(err_str)
 
     lut_params = LUTConfig(args.lut_config_file)
@@ -208,7 +214,8 @@ def main(rawargs=None):
         dt = datetime.strptime(paths.fid[10:17], "%Y%j")
     else:
         raise ValueError(
-            "Datetime object could not be obtained. Please check file name of input data."
+            "Datetime object could not be obtained. Please check file name of input"
+            " data."
         )
 
     dayofyear = dt.timetuple().tm_yday
@@ -284,14 +291,15 @@ def main(rawargs=None):
             elevation_lut_grid[elevation_lut_grid < 0] = 0
             elevation_lut_grid = np.unique(elevation_lut_grid)
             logging.info(
-                "Scene contains target lut grid elements < 0 km, and uses 6s (via sRTMnet).  6s does not "
-                f"support targets below sea level in km units.  Setting grid points {to_rem} to 0."
+                "Scene contains target lut grid elements < 0 km, and uses 6s (via"
+                " sRTMnet).  6s does not support targets below sea level in km units. "
+                f" Setting grid points {to_rem} to 0."
             )
         if mean_elevation_km < 0:
             mean_elevation_km = 0
             logging.info(
-                "Scene contains a mean target elevation < 0.  6s does not "
-                f"support targets below sea level in km units.  Setting mean elevation to 0."
+                f"Scene contains a mean target elevation < 0.  6s does not support"
+                f" targets below sea level in km units.  Setting mean elevation to 0."
             )
 
     # Need a 180 - here, as this is already in MODTRAN convention
@@ -308,7 +316,8 @@ def main(rawargs=None):
 
     if args.emulator_base is not None and mean_altitude_km > 99:
         logging.info(
-            "Adjusting altitude to 99 km for integration with 6S, because emulator is chosen."
+            "Adjusting altitude to 99 km for integration with 6S, because emulator is"
+            " chosen."
         )
         mean_altitude_km = 99
 
@@ -356,7 +365,6 @@ def main(rawargs=None):
                 )
 
     if args.presolve == 1:
-
         # write modtran presolve template
         write_modtran_template(
             atmosphere_type=args.atmosphere_type,
@@ -452,7 +460,6 @@ def main(rawargs=None):
         or not exists(paths.uncert_subs_path)
         or not exists(paths.rfl_subs_path)
     ):
-
         write_modtran_template(
             atmosphere_type=args.atmosphere_type,
             fid=paths.fid,
@@ -514,7 +521,6 @@ def main(rawargs=None):
                 os.system(cmd)
 
     if not exists(paths.rfl_working_path) or not exists(paths.uncert_working_path):
-
         if args.num_neighbors is None:
             nneighbors = int(round(3950 / 9 - 35 / 36 * args.segmentation_size))
         else:
@@ -573,7 +579,6 @@ class Pathnames:
     """
 
     def __init__(self, args: argparse.Namespace):
-
         # Determine FID based on sensor name
         if args.sensor == "ang":
             self.fid = split(args.input_radiance)[-1][:18]
@@ -905,7 +910,8 @@ class LUTConfig:
             return None
         elif np.abs(grid[1] - grid[0]) < min_spacing:
             logging.debug(
-                f"Grid spacing is {grid[1]-grid[0]}, which is less than {min_spacing}.  No grid used"
+                f"Grid spacing is {grid[1]-grid[0]}, which is less than {min_spacing}. "
+                " No grid used"
             )
             return None
         else:
@@ -981,8 +987,8 @@ class LUTConfig:
         else:
             if spacing >= 180:
                 logging.warning(
-                    f"Requested angle spacing is {spacing}, but obs angle divergence is > 180.  "
-                    "Tighter  spacing recommended"
+                    f"Requested angle spacing is {spacing}, but obs angle divergence is"
+                    " > 180.  Tighter  spacing recommended"
                 )
 
             # If we're greater than 180 degree spread, there's no universal answer. Try GMM.
@@ -1021,8 +1027,9 @@ class LUTConfig:
 
             if np.sum(ca_quadrants) < np.sum(quadrants):
                 logging.warning(
-                    f"GMM angles {central_angles} span {np.sum(ca_quadrants)} quadrants, "
-                    f"while data spans {np.sum(ca_quadrants)} quadrants"
+                    f"GMM angles {central_angles} span"
+                    f" {np.sum(ca_quadrants)} quadrants, while data spans"
+                    f" {np.sum(ca_quadrants)} quadrants"
                 )
 
             return central_angles
@@ -1135,7 +1142,8 @@ def load_climatology(
                     break
 
     logging.info(
-        "Climatology Loaded.  Aerosol State Vector:\n{}\nAerosol LUT Grid:\n{}\nAerosol model path:{}".format(
+        "Climatology Loaded.  Aerosol State Vector:\n{}\nAerosol LUT Grid:\n{}\nAerosol"
+        " model path:{}".format(
             aerosol_state_vector, aerosol_lut_grid, aerosol_model_path
         )
     )
@@ -1236,7 +1244,6 @@ def get_metadata_from_obs(
     time = np.zeros((obs_dataset.RasterYSize, obs_dataset.RasterXSize))
 
     for line in range(obs_dataset.RasterYSize):
-
         # Read line in
         obs_line = obs_dataset.ReadAsArray(0, line, obs_dataset.RasterXSize, 1)
 

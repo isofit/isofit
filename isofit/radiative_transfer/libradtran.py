@@ -44,7 +44,6 @@ class LibRadTranRT(TabularRT):
     def __init__(
         self, engine_config: RadiativeTransferEngineConfig, full_config: Config
     ):
-
         self.angular_lut_keys_degrees = [
             "OBSZEN",
             "TRUEAZ",
@@ -288,7 +287,6 @@ class LibRadTranRT(TabularRT):
         return np.log(50.0) / (ext550 + 0.01159)
 
     def build_lut(self, rebuild=False):
-
         TabularRT.build_lut(self, rebuild)
 
         librt_outputs = []

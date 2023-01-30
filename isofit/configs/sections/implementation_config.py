@@ -121,7 +121,8 @@ class ImplementationConfig(BaseConfigSection):
 
         if int(self.ip_head is not None) + int(self.redis_password is not None) == 1:
             errors.append(
-                "If either ip_head or redis_password are specified, both must be specified"
+                "If either ip_head or redis_password are specified, both must be"
+                " specified"
             )
 
         return errors

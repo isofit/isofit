@@ -64,7 +64,6 @@ class SimulatedModtranRT(TabularRT):
     def __init__(
         self, engine_config: RadiativeTransferEngineConfig, full_config: Config
     ):
-
         # Specify which of the potential MODTRAN LUT parameters are angular, which will be handled differently
         self.angular_lut_keys_degrees = [
             "OBSZEN",

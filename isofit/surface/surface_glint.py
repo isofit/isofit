@@ -31,7 +31,6 @@ class GlintSurface(ThermalSurface):
     Gaussians, extended with a surface glint term."""
 
     def __init__(self, full_config: Config):
-
         super().__init__(full_config)
 
         # TODO: Enforce this attribute in the config, not here (this is hidden)

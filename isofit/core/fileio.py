@@ -95,7 +95,6 @@ class SpectrumFile:
         self.n_bands = n_bands
 
         if self.fname.endswith(".txt"):
-
             # The .txt suffix implies a space-separated ASCII text file of
             # one or more data columns.  This is cheap to load and store, so
             # we do not defer read/write operations.
@@ -111,7 +110,6 @@ class SpectrumFile:
                 self.meta = {}
 
         elif self.fname.endswith(".mat"):
-
             # The .mat suffix implies a matlab-style file, i.e. a dictionary
             # of 2D arrays and other matlab-like objects. This is typically
             # only used for specific output products associated with single
@@ -123,7 +121,6 @@ class SpectrumFile:
                 raise IOError("MATLAB format in input block not supported")
 
         else:
-
             # Otherwise we assume it is an ENVI-format file, which is
             # basically just a binary data cube with a detached human-
             # readable ASCII header describing dimensions, interleave, and
@@ -133,7 +130,6 @@ class SpectrumFile:
             self.format = "ENVI"
 
             if not self.write:
-
                 # If we are an input file, the header must preexist.
                 if not os.path.exists(envi_header(self.fname)):
                     logging.error("Could not find %s" % (envi_header(self.fname)))
@@ -152,7 +148,6 @@ class SpectrumFile:
                     self.flag = -9999.0
 
             else:
-
                 # If we are an output file, we may have to build the header
                 # from scratch.  Hopefully the caller has supplied the
                 # necessary metadata details.
@@ -221,17 +216,14 @@ class SpectrumFile:
         flush_buffers is called."""
 
         if self.format == "ASCII":
-
             # Multicolumn output for ASCII products
             np.savetxt(self.fname, x, fmt="%10.6f")
 
         elif self.format == "MATLAB":
-
             # Dictionary output for MATLAB products
             scipy.io.savemat(self.fname, x)
 
         else:
-
             # Omit wavelength column for spectral products
             frame = self.get_frame(row)
             if x.ndim == 2:
@@ -282,7 +274,11 @@ class IO:
 
         self.config = config
 
-        self.bbl = '{' + ','.join([str(1) for n in range(len(forward.instrument.wl_init))]) + '}'
+        self.bbl = (
+            "{"
+            + ",".join([str(1) for n in range(len(forward.instrument.wl_init))])
+            + "}"
+        )
         self.radiance_correction = None
         self.meas_wl = forward.instrument.wl_init
         self.meas_fwhm = forward.instrument.fwhm_init

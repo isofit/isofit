@@ -83,9 +83,8 @@ class InversionConfig(BaseConfigSection):
                     )
                 elif subset[0] > subset[1]:
                     errors.append(
-                        "In inversion window subset {}, wavelength ranges must be in order".format(
-                            subset
-                        )
+                        "In inversion window subset {}, wavelength ranges must be in"
+                        " order".format(subset)
                     )
 
         return errors

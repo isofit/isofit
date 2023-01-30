@@ -31,7 +31,6 @@ class SurfaceConfig(BaseConfigSection):
     """
 
     def __init__(self, sub_configdic: dict = None):
-
         self._surface_file_type = str
         self.surface_file = None
 

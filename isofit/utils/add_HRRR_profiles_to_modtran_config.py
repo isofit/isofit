@@ -39,7 +39,6 @@ class HRRR_to_MODTRAN_profiles:
     """
 
     def __init__(self, config_filename):
-
         self.config = deepcopy(json_load_ascii(config_filename))
 
         self.modtran_config_filenames = self.config["modtran_config_json_filenames"]
@@ -54,7 +53,6 @@ class HRRR_to_MODTRAN_profiles:
         for modtran_config_filename, output_modtran_config_filename in zip(
             self.modtran_config_filenames, self.output_modtran_config_filenames
         ):
-
             template = deepcopy(json_load_ascii(modtran_config_filename)["MODTRAN"])
 
             (
@@ -281,7 +279,6 @@ def download_HRRR(
 
             filename = OUTDIR + rename
             if not os.path.exists(filename):
-
                 # 3) Download the file via https
                 # Check the file size, make it's big enough to exist.
                 check_this = urllib.request.urlopen(URL)
@@ -330,7 +327,6 @@ def get_HRRR_data(filename):
 
 
 def main():
-
     parser = argparse.ArgumentParser(description="Create a surface model")
     parser.add_argument("config", type=str, metavar="INPUT")
     args = parser.parse_args()

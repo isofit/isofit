@@ -68,7 +68,6 @@ class TabularRT:
     def __init__(
         self, engine_config: RadiativeTransferEngineConfig, full_config: Config
     ):
-
         self.implementation_config: ImplementationConfig = full_config.implementation
         if engine_config.wavelength_file is not None:
             wavelength_file = engine_config.wavelength_file
@@ -158,7 +157,6 @@ class TabularRT:
         self.lut_names = []
         self.lut_interp_types = []
         for key, grid_values in self.lut_grid_config.items():
-
             # do some quick checks on the values
             # For forward (simulation) mode, 1-dimensional LUT grids are OK!
             if len(grid_values) == 1 and not self.implementation_mode == "simulation":

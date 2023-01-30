@@ -223,7 +223,6 @@ def _run_chunk(
     hash_table = {}
 
     for row in np.arange(start_line, stop_line):
-
         # Load inline input data
         input_radiance_mm = input_radiance_img.open_memmap(
             interleave="bip", writable=False
@@ -241,7 +240,6 @@ def _run_chunk(
 
         nspectra, start = 0, time.time()
         for col in np.arange(n_input_samples):
-
             x = input_radiance[col, :]
             if np.all(np.isclose(x, nodata_value)):
                 output_reflectance_row[col, :] = nodata_value
@@ -595,7 +593,8 @@ def empirical_line(
 
     total_time = time.time() - start_time
     logging.info(
-        "Parallel empirical line inversions complete.  {} s total, {} spectra/s, {} spectra/s/core".format(
+        "Parallel empirical line inversions complete.  {} s total, {} spectra/s, {}"
+        " spectra/s/core".format(
             total_time,
             line_sections[-1] * n_input_samples / total_time,
             line_sections[-1] * n_input_samples / total_time / n_cores,

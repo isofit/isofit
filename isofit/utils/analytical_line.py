@@ -119,15 +119,15 @@ def main(rawargs=None) -> None:
     hash_table = OrderedDict()  # Deprecated in Python 3.7
     hash_size = 500  # Unused, hardcoded
 
-    output_metadata                = rdn_ds.metadata
-    output_metadata['interleave']  = 'bil'
-    output_metadata['description'] = 'L2A Analytyical per-pixel surface retrieval'
+    output_metadata = rdn_ds.metadata
+    output_metadata["interleave"] = "bil"
+    output_metadata["description"] = "L2A Analytyical per-pixel surface retrieval"
 
-    outside_ret_windows = np.zeros(len(fm.surface.idx_lamb),dtype=int)
+    outside_ret_windows = np.zeros(len(fm.surface.idx_lamb), dtype=int)
     outside_ret_windows[iv.winidx] = 1
-    output_metadata['bbl'] = '{' + ','.join([str(x) for x in outside_ret_windows]) + '}'
-    if 'emit pge input files' in list(output_metadata.keys()):
-        del output_metadata['emit pge input files']
+    output_metadata["bbl"] = "{" + ",".join([str(x) for x in outside_ret_windows]) + "}"
+    if "emit pge input files" in list(output_metadata.keys()):
+        del output_metadata["emit pge input files"]
 
     img = envi.create_image(
         envi_header(analytical_state_file), ext="", metadata=output_metadata, force=True

@@ -220,7 +220,6 @@ def segment(
     # value should work in all cases
     min_lines_per_chunk = 10
     for lstart in np.arange(0, nl - min_lines_per_chunk, nchunk):
-
         # Extend any chunk that falls within a small margin of the
         # end of the flightline
         lend = min(lstart + nchunk, nl)
