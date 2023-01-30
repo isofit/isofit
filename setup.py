@@ -58,7 +58,6 @@ setup(name='isofit',
                         'tensorflow>=2.0.1'],
       python_requires='>=3.8',
       platforms='any',
-
       classifiers=['Programming Language :: Python :: 3.8',
                    'Programming Language :: Python :: 3.9',
                    'Programming Language :: Python :: 3.10',
