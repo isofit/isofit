@@ -16,5 +16,5 @@ jq '.general_options.empirical_line=$newVal' --argjson newVal true configs/basic
 jq '.general_options.debug_mode=$newVal' --argjson newVal true configs/basic_config.json > tmp.$$.json && mv tmp.$$.json configs/basic_config.json
 jq '.processors.general_inversion_parameters.filepaths.emulator_base=env.EMULATOR_PATH' configs/basic_config.json >> tmp.$$.json && mv tmp.$$.json configs/basic_config.json
 
-# Medium test (1000x598 pixels, empirical line) - this should take ~45 minutes with n_cores = 4
+# Medium test with debugging (1000x598 pixels, empirical line) - this should take ~30 minutes with n_cores = 4
 python -m cProfile -o medium_profile.dat "${isofit_base_path}"/utils/multisurface_oe.py medium_chunk/${file_base}_rdn_7k-8k medium_chunk/${file_base}_loc_7k-8k medium_chunk/${file_base}_obs_7k-8k medium_chunk_test configs/basic_config.json
