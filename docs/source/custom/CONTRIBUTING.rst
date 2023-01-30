@@ -71,7 +71,9 @@ These are included via (pre-commit)[https://pre-commit.com] and should be instal
   pre-commit install
 
 Every commit from here on will auto-apply the above packages. Additionally, upon a PR to the `master` branch, `Black` consistency will be checked.
-Any PRs failing this check will be rejected until corrected.
+Any PRs failing this check will be rejected by the maintainers until it is passing.
+
+If you must apply Black manually, you must first `pip install black` and then run `black isofit` from the root of the repository.
 
 Implement Your Changes and Create a Pull Request
 ------------------------------------------------
