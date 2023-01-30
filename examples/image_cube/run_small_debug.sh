@@ -1,10 +1,11 @@
+#!/bin/bash
 
 # Download relevant datasets - unlike other examples, these datasets are too large to place in
-if test -f "test_data.zip"; then
+if test -f "test_data_rev.zip"; then
   echo "Test zip already present, skipping download"
 else
-  curl -O https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/test_data.zip
-  unzip test_data.zip
+  curl -O https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/test_data_rev.zip
+  unzip test_data_rev.zip
 fi
 
 n_cores=4

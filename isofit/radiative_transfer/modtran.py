@@ -631,8 +631,7 @@ class ModtranRT(TabularRT):
         # If self.modtran_dir is not defined, raise an exception
         # This occurs e.g., when MODTRAN is not installed
         if not self.modtran_dir:
-            logging.error("MODTRAN directory not defined in config file.")
-            raise SystemExit("MODTRAN directory not defined in config file.")
+            logging.warning("MODTRAN directory not defined in config file, this may cause issues down the line.")
 
         # Generate the CLI path
         cmd = os.path.join(self.modtran_dir, 'bin', xdir[platform], 'mod6c_cons ' + infilename)
