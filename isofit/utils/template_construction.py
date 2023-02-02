@@ -16,7 +16,6 @@ from sklearn import mixture
 from spectral.io import envi
 import subprocess
 from sys import platform
-from tqdm import tqdm
 from typing import List
 import utm
 
@@ -1124,7 +1123,7 @@ def define_surface_types(tsip: dict, rdnfile: str, obsfile: str, out_class_path:
 
     classes = np.zeros(rdn_ds.shape[:2])
 
-    for line in tqdm(range(classes.shape[0])):
+    for line in range(classes.shape[0]):
         for sample in range(classes.shape[1]):
             zen = np.cos(np.deg2rad(obs_ds[line, sample, 4]))
 
