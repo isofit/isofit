@@ -3,6 +3,13 @@ Profiling
 
 ISOFIT has been successfully profiled using the built-in Python module [cProfile](https://docs.python.org/3/library/profile.html).
 
+How to Use
+----------
+
+.. code::
+
+  python -m cProfile [-o output_file] [-s sort_order] (-m module | myscript.py)
+
 Outputs and Analysis
 --------------------
 

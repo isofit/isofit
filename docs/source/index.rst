@@ -33,12 +33,9 @@
    :maxdepth: 2
 
    custom/code_of_conduct.rst
-<<<<<<< HEAD
 
    .. toctree::
       :Caption: Profiling
       :maxdepth: 2
 
       custom/profiling.rst
-=======
->>>>>>> 4f9e386 (Working docker image for ISOFIT)
