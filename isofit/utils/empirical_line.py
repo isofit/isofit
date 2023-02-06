@@ -18,30 +18,47 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-from scipy.linalg import inv
-from isofit.core.fileio import write_bil_chunk
-from isofit.core.instrument import Instrument
-from spectral.io import envi
-from scipy.spatial import KDTree
-import numpy as np
+import atexit
 import logging
 import time
+
 import matplotlib
+import numpy as np
 import pylab as plt
-from isofit.configs import configs
 import ray
-import atexit
+from scipy.linalg import inv
+from scipy.spatial import KDTree
+from spectral.io import envi
+
+from isofit.configs import configs
 from isofit.core.common import envi_header
+from isofit.core.fileio import write_bil_chunk
+from isofit.core.instrument import Instrument
 
 plt.switch_backend("Agg")
 
 
 @ray.remote
-def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, reference_reflectance_file: str,
-               reference_uncertainty_file: str, reference_locations_file: str, input_radiance_file: str,
-               input_locations_file: str, segmentation_file: str, isofit_config: str, output_reflectance_file: str,
-               output_uncertainty_file: str, radiance_factors: np.array, nneighbors: int,
-               nodata_value: float, loglevel: str, logfile: str, reference_class_file) -> None:
+def _run_chunk(
+    start_line: int,
+    stop_line: int,
+    reference_radiance_file: str,
+    reference_reflectance_file: str,
+    reference_uncertainty_file: str,
+    reference_locations_file: str,
+    input_radiance_file: str,
+    input_locations_file: str,
+    segmentation_file: str,
+    isofit_config: str,
+    output_reflectance_file: str,
+    output_uncertainty_file: str,
+    radiance_factors: np.array,
+    nneighbors: int,
+    nodata_value: float,
+    loglevel: str,
+    logfile: str,
+    reference_class_file,
+) -> None:
     """
     Args:
         start_line: line to start empirical line run at
@@ -67,49 +84,95 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
 
     """
 
-    logging.basicConfig(format='%(levelname)s:%(asctime)s ||| %(message)s', level=loglevel, filename=logfile, datefmt='%Y-%m-%d,%H:%M:%S')
+    logging.basicConfig(
+        format="%(levelname)s:%(asctime)s ||| %(message)s",
+        level=loglevel,
+        filename=logfile,
+        datefmt="%Y-%m-%d,%H:%M:%S",
+    )
 
     # Load reference images
-    reference_radiance_img = envi.open(envi_header(reference_radiance_file), reference_radiance_file)
-    reference_reflectance_img = envi.open(envi_header(reference_reflectance_file), reference_reflectance_file)
-    reference_uncertainty_img = envi.open(envi_header(reference_uncertainty_file), reference_uncertainty_file)
-    reference_locations_img = envi.open(envi_header(reference_locations_file), reference_locations_file)
+    reference_radiance_img = envi.open(
+        envi_header(reference_radiance_file), reference_radiance_file
+    )
+    reference_reflectance_img = envi.open(
+        envi_header(reference_reflectance_file), reference_reflectance_file
+    )
+    reference_uncertainty_img = envi.open(
+        envi_header(reference_uncertainty_file), reference_uncertainty_file
+    )
+    reference_locations_img = envi.open(
+        envi_header(reference_locations_file), reference_locations_file
+    )
 
-    n_reference_lines, n_radiance_bands, n_reference_columns = [int(reference_radiance_img.metadata[n])
-                                                                for n in ('lines', 'bands', 'samples')]
-    n_reference_uncertainty_bands = int(reference_uncertainty_img.metadata['bands'])
+    n_reference_lines, n_radiance_bands, n_reference_columns = [
+        int(reference_radiance_img.metadata[n]) for n in ("lines", "bands", "samples")
+    ]
+    n_reference_uncertainty_bands = int(reference_uncertainty_img.metadata["bands"])
 
     # Load input images
-    input_radiance_img = envi.open(envi_header(input_radiance_file), input_radiance_file)
-    n_input_lines, n_input_bands, n_input_samples = [int(input_radiance_img.metadata[n])
-                                                     for n in ('lines', 'bands', 'samples')]
+    input_radiance_img = envi.open(
+        envi_header(input_radiance_file), input_radiance_file
+    )
+    n_input_lines, n_input_bands, n_input_samples = [
+        int(input_radiance_img.metadata[n]) for n in ("lines", "bands", "samples")
+    ]
 
-    input_locations_img = envi.open(envi_header(input_locations_file), input_locations_file)
-    n_location_bands = int(input_locations_img.metadata['bands'])
+    input_locations_img = envi.open(
+        envi_header(input_locations_file), input_locations_file
+    )
+    n_location_bands = int(input_locations_img.metadata["bands"])
 
     # Load output images
-    output_reflectance_img = envi.open(envi_header(output_reflectance_file), output_reflectance_file)
-    output_uncertainty_img = envi.open(envi_header(output_uncertainty_file), output_uncertainty_file)
-    n_output_reflectance_bands = int(output_reflectance_img.metadata['bands'])
-    n_output_uncertainty_bands = int(output_uncertainty_img.metadata['bands'])
+    output_reflectance_img = envi.open(
+        envi_header(output_reflectance_file), output_reflectance_file
+    )
+    output_uncertainty_img = envi.open(
+        envi_header(output_uncertainty_file), output_uncertainty_file
+    )
+    n_output_reflectance_bands = int(output_reflectance_img.metadata["bands"])
+    n_output_uncertainty_bands = int(output_uncertainty_img.metadata["bands"])
 
     # Load reference data
-    reference_locations_mm = reference_locations_img.open_memmap(interleave='bip', writable=False)
-    reference_locations = np.array(reference_locations_mm[:, :, :]).reshape((n_reference_lines, n_location_bands))
+    reference_locations_mm = reference_locations_img.open_memmap(
+        interleave="bip", writable=False
+    )
+    reference_locations = np.array(reference_locations_mm[:, :, :]).reshape(
+        (n_reference_lines, n_location_bands)
+    )
 
-    reference_radiance_mm = reference_radiance_img.open_memmap(interleave='bip', writable=False)
-    reference_radiance = np.array(reference_radiance_mm[:, :, :]).reshape((n_reference_lines, n_radiance_bands))
+    reference_radiance_mm = reference_radiance_img.open_memmap(
+        interleave="bip", writable=False
+    )
+    reference_radiance = np.array(reference_radiance_mm[:, :, :]).reshape(
+        (n_reference_lines, n_radiance_bands)
+    )
 
-    reference_reflectance_mm = reference_reflectance_img.open_memmap(interleave='bip', writable=False)
-    reference_reflectance = np.array(reference_reflectance_mm[:, :, :]).reshape((n_reference_lines, n_radiance_bands))
+    reference_reflectance_mm = reference_reflectance_img.open_memmap(
+        interleave="bip", writable=False
+    )
+    reference_reflectance = np.array(reference_reflectance_mm[:, :, :]).reshape(
+        (n_reference_lines, n_radiance_bands)
+    )
 
-    reference_uncertainty_mm = reference_uncertainty_img.open_memmap(interleave='bip', writable=False)
-    reference_uncertainty = np.array(reference_uncertainty_mm[:, :, :]).reshape((n_reference_lines,
-                                                                                 n_reference_uncertainty_bands))
-    reference_uncertainty = reference_uncertainty[:, :n_radiance_bands].reshape((n_reference_lines, n_radiance_bands))
+    reference_uncertainty_mm = reference_uncertainty_img.open_memmap(
+        interleave="bip", writable=False
+    )
+    reference_uncertainty = np.array(reference_uncertainty_mm[:, :, :]).reshape(
+        (n_reference_lines, n_reference_uncertainty_bands)
+    )
+    reference_uncertainty = reference_uncertainty[:, :n_radiance_bands].reshape(
+        (n_reference_lines, n_radiance_bands)
+    )
 
     if reference_class_file is not None:
-        reference_class = np.squeeze(np.array(envi.open(envi_header(reference_class_file), reference_class_file).open_memmap(interleave='bip')))
+        reference_class = np.squeeze(
+            np.array(
+                envi.open(
+                    envi_header(reference_class_file), reference_class_file
+                ).open_memmap(interleave="bip")
+            )
+        )
         un_reference_class = np.unique(reference_class)
         un_reference_class = un_reference_class[un_reference_class != -1]
         logging.info(f"Reference classes found: {un_reference_class}")
@@ -127,17 +190,18 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
     if isofit_config is not None:
         config = configs.create_new_config(isofit_config)
         instrument = Instrument(config)
-        logging.info('Loading instrument')
+        logging.info("Loading instrument")
 
         # Make sure the instrument is configured for single-pixel noise (no averaging)
         instrument.integrations = 1
     else:
         instrument = None
 
-
     # Load radiance factors
     if radiance_factors is None:
-        radiance_adjustment = np.ones(n_radiance_bands, )
+        radiance_adjustment = np.ones(
+            n_radiance_bands,
+        )
     else:
         radiance_adjustment = np.loadtxt(radiance_factors)
 
@@ -146,7 +210,10 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
     scaled_ref_loc = reference_locations * loc_scaling
     tree = KDTree(scaled_ref_loc)
     if reference_class is not None:
-        trees = [KDTree(scaled_ref_loc[reference_class == _c,:]) for _c in un_reference_class]
+        trees = [
+            KDTree(scaled_ref_loc[reference_class == _c, :])
+            for _c in un_reference_class
+        ]
     # Assume (heuristically) that, for distance purposes, 1 m vertically is
     # comparable to 10 m horizontally, and that there are 100 km per latitude
     # degree.  This is all approximate of course.  Elevation appears in the
@@ -156,15 +223,16 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
     hash_table = {}
 
     for row in np.arange(start_line, stop_line):
-
         # Load inline input data
         input_radiance_mm = input_radiance_img.open_memmap(
-            interleave='bip', writable=False)
+            interleave="bip", writable=False
+        )
         input_radiance = np.array(input_radiance_mm[row, :, :])
         input_radiance = input_radiance * radiance_adjustment
 
         input_locations_mm = input_locations_img.open_memmap(
-            interleave='bip', writable=False)
+            interleave="bip", writable=False
+        )
         input_locations = np.array(input_locations_mm[row, :, :])
 
         output_reflectance_row = np.zeros(input_radiance.shape) + nodata_value
@@ -172,7 +240,6 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
 
         nspectra, start = 0, time.time()
         for col in np.arange(n_input_samples):
-
             x = input_radiance[col, :]
             if np.all(np.isclose(x, nodata_value)):
                 output_reflectance_row[col, :] = nodata_value
@@ -185,7 +252,10 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
                 if hash_idx in hash_table:
                     bhat, bmarg, bcov = hash_table[hash_idx]
                 else:
-                    loc = reference_locations[np.array(hash_idx, dtype=int), :] * loc_scaling
+                    loc = (
+                        reference_locations[np.array(hash_idx, dtype=int), :]
+                        * loc_scaling
+                    )
             else:
                 loc = input_locations[col, :] * loc_scaling
 
@@ -200,10 +270,9 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
                     loc_class = int(reference_class[nn])
                     dists, nn = trees[loc_class].query(loc, nneighbors)
                     nn = nn[nn < np.sum(reference_class == loc_class)]
-                    xv = reference_radiance[reference_class == loc_class,:][nn, :]
-                    yv = reference_reflectance[reference_class == loc_class,:][nn, :]
-                    uv = reference_uncertainty[reference_class == loc_class,:][nn, :]
-
+                    xv = reference_radiance[reference_class == loc_class, :][nn, :]
+                    yv = reference_reflectance[reference_class == loc_class, :][nn, :]
+                    uv = reference_uncertainty[reference_class == loc_class, :][nn, :]
 
                 bhat = np.zeros((n_radiance_bands, 2))
                 bmarg = np.zeros((n_radiance_bands, 2))
@@ -212,9 +281,9 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
                 for i in np.arange(n_radiance_bands):
                     use = yv[:, i] > 0
                     n = sum(use)
-                    X = np.concatenate((np.ones((n, 1)), xv[use, i:i + 1]), axis=1)
+                    X = np.concatenate((np.ones((n, 1)), xv[use, i : i + 1]), axis=1)
                     W = np.diag(np.ones(n))  # /uv[use, i])
-                    y = yv[use, i:i + 1]
+                    y = yv[use, i : i + 1]
                     try:
                         bhat[i, :] = (inv(X.T @ W @ X) @ X.T @ W @ y).T
                         bcov[i, :, :] = inv(X.T @ W @ X)
@@ -227,27 +296,36 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
                 hash_table[hash_idx] = bhat, bmarg, bcov
 
             A = np.array((np.ones(n_radiance_bands), x))
-            output_reflectance_row[col, :] = (np.multiply(bhat.T, A).sum(axis=0))
+            output_reflectance_row[col, :] = np.multiply(bhat.T, A).sum(axis=0)
 
             # Calculate uncertainties.  Sy approximation rather than Seps for
             # speed, for now... but we do take into account instrument
             # radiometric uncertainties
             if instrument is None:
-                output_uncertainty_row[col, :] = np.sqrt(np.multiply(bmarg.T, A).sum(axis=0))
+                output_uncertainty_row[col, :] = np.sqrt(
+                    np.multiply(bmarg.T, A).sum(axis=0)
+                )
             else:
                 Sy = instrument.Sy(x, geom=None)
-                calunc = instrument.bval[:instrument.n_chan]
-                output_uncertainty_row[col, :] = np.sqrt(
-                    np.diag(Sy) + pow(calunc * x, 2)) * bhat[:, 1]
+                calunc = instrument.bval[: instrument.n_chan]
+                output_uncertainty_row[col, :] = (
+                    np.sqrt(np.diag(Sy) + pow(calunc * x, 2)) * bhat[:, 1]
+                )
             # if loglevel == 'DEBUG':
             #    plot_example(xv, yv, bhat)
 
             nspectra = nspectra + 1
 
         elapsed = float(time.time() - start)
-        logging.info('row {}/{}, ({}/{} local), {} spectra per second'.format(row, n_input_lines, int(row - start_line),
-                                                                              int(stop_line - start_line),
-                                                                              round(float(nspectra) / elapsed, 2)))
+        logging.info(
+            "row {}/{}, ({}/{} local), {} spectra per second".format(
+                row,
+                n_input_lines,
+                int(row - start_line),
+                int(stop_line - start_line),
+                round(float(nspectra) / elapsed, 2),
+            )
+        )
 
         del input_locations_mm
         del input_radiance_mm
@@ -259,42 +337,63 @@ def _run_chunk(start_line: int, stop_line: int, reference_radiance_file: str, re
         shp = output_uncertainty_row.shape
         output_uncertainty_row = output_uncertainty_row.reshape((1, shp[0], shp[1]))
 
-        write_bil_chunk(output_reflectance_row, output_reflectance_file, row,
-                         (n_input_lines, n_output_reflectance_bands, n_input_samples))
-        write_bil_chunk(output_uncertainty_row, output_uncertainty_file, row,
-                         (n_input_lines, n_output_uncertainty_bands, n_input_samples))
+        write_bil_chunk(
+            output_reflectance_row,
+            output_reflectance_file,
+            row,
+            (n_input_lines, n_output_reflectance_bands, n_input_samples),
+        )
+        write_bil_chunk(
+            output_uncertainty_row,
+            output_uncertainty_file,
+            row,
+            (n_input_lines, n_output_uncertainty_bands, n_input_samples),
+        )
 
 
 def _plot_example(xv, yv, b):
     """Plot for debugging purposes."""
 
-    matplotlib.rcParams['font.family'] = "serif"
-    matplotlib.rcParams['font.sans-serif'] = "Times"
+    matplotlib.rcParams["font.family"] = "serif"
+    matplotlib.rcParams["font.sans-serif"] = "Times"
     matplotlib.rcParams["legend.edgecolor"] = "None"
     matplotlib.rcParams["axes.spines.top"] = False
     matplotlib.rcParams["axes.spines.bottom"] = True
     matplotlib.rcParams["axes.spines.left"] = True
     matplotlib.rcParams["axes.spines.right"] = False
-    matplotlib.rcParams['axes.grid'] = True
-    matplotlib.rcParams['axes.grid.axis'] = 'both'
-    matplotlib.rcParams['axes.grid.which'] = 'major'
-    matplotlib.rcParams['legend.edgecolor'] = '1.0'
-    plt.plot(xv[:, 113], yv[:, 113], 'ko')
-    plt.plot(xv[:, 113], xv[:, 113] * b[113, 1] + b[113, 0], 'nneighbors')
+    matplotlib.rcParams["axes.grid"] = True
+    matplotlib.rcParams["axes.grid.axis"] = "both"
+    matplotlib.rcParams["axes.grid.which"] = "major"
+    matplotlib.rcParams["legend.edgecolor"] = "1.0"
+    plt.plot(xv[:, 113], yv[:, 113], "ko")
+    plt.plot(xv[:, 113], xv[:, 113] * b[113, 1] + b[113, 0], "nneighbors")
     # plt.plot(x[113], x[113]*b[113, 1] + b[113, 0], 'ro')
     plt.grid(True)
-    plt.xlabel('Radiance, $\mu{W }nm^{-1} sr^{-1} cm^{-2}$')
-    plt.ylabel('Reflectance')
+    plt.xlabel("Radiance, $\mu{W }nm^{-1} sr^{-1} cm^{-2}$")
+    plt.ylabel("Reflectance")
     plt.show(block=True)
-    plt.savefig('empirical_line.pdf')
+    plt.savefig("empirical_line.pdf")
 
 
-def empirical_line(reference_radiance_file: str, reference_reflectance_file: str, reference_uncertainty_file: str,
-                   reference_locations_file: str, segmentation_file: str, input_radiance_file: str,
-                   input_locations_file: str, output_reflectance_file: str, output_uncertainty_file: str,
-                   nneighbors: int = 400, nodata_value: float = -9999.0, level: str = 'INFO', logfile: str = None,
-                   radiance_factors: np.array = None, isofit_config: str = None, n_cores: int = -1, 
-                   reference_class_file: str = None) -> None:
+def empirical_line(
+    reference_radiance_file: str,
+    reference_reflectance_file: str,
+    reference_uncertainty_file: str,
+    reference_locations_file: str,
+    segmentation_file: str,
+    input_radiance_file: str,
+    input_locations_file: str,
+    output_reflectance_file: str,
+    output_uncertainty_file: str,
+    nneighbors: int = 400,
+    nodata_value: float = -9999.0,
+    level: str = "INFO",
+    logfile: str = None,
+    radiance_factors: np.array = None,
+    isofit_config: str = None,
+    n_cores: int = -1,
+    reference_class_file: str = None,
+) -> None:
     """
     Perform an empirical line interpolation for reflectance and uncertainty extrapolation
     Args:
@@ -322,60 +421,110 @@ def empirical_line(reference_radiance_file: str, reference_reflectance_file: str
 
     loglevel = level
 
-    logging.basicConfig(format='%(levelname)s:%(asctime)s ||| %(message)s', level=loglevel, filename=logfile, datefmt='%Y-%m-%d,%H:%M:%S')
+    logging.basicConfig(
+        format="%(levelname)s:%(asctime)s ||| %(message)s",
+        level=loglevel,
+        filename=logfile,
+        datefmt="%Y-%m-%d,%H:%M:%S",
+    )
 
     # Open input data to check that band formatting is correct
     # Load reference set radiance
-    reference_radiance_img = envi.open(envi_header(reference_radiance_file), reference_radiance_file)
-    n_reference_lines, n_radiance_bands, n_reference_columns = [int(reference_radiance_img.metadata[n])
-                                                                for n in ('lines', 'bands', 'samples')]
+    reference_radiance_img = envi.open(
+        envi_header(reference_radiance_file), reference_radiance_file
+    )
+    n_reference_lines, n_radiance_bands, n_reference_columns = [
+        int(reference_radiance_img.metadata[n]) for n in ("lines", "bands", "samples")
+    ]
     if n_reference_columns != 1:
         raise IndexError("Reference data should be a single-column list")
 
     # Load reference set reflectance
-    reference_reflectance_img = envi.open(envi_header(reference_reflectance_file), reference_reflectance_file)
-    nrefr, nbr, srefr = [int(reference_reflectance_img.metadata[n]) for n in ('lines', 'bands', 'samples')]
-    if nrefr != n_reference_lines or nbr != n_radiance_bands or srefr != n_reference_columns:
+    reference_reflectance_img = envi.open(
+        envi_header(reference_reflectance_file), reference_reflectance_file
+    )
+    nrefr, nbr, srefr = [
+        int(reference_reflectance_img.metadata[n])
+        for n in ("lines", "bands", "samples")
+    ]
+    if (
+        nrefr != n_reference_lines
+        or nbr != n_radiance_bands
+        or srefr != n_reference_columns
+    ):
         raise IndexError("Reference file dimension mismatch (reflectance)")
 
     # Load reference set uncertainty, assuming reflectance uncertainty is
     # recoreded in the first n_radiance_bands channels of data
-    reference_uncertainty_img = envi.open(envi_header(reference_uncertainty_file), reference_uncertainty_file)
-    nrefu, ns, srefu = [int(reference_uncertainty_img.metadata[n]) for n in ('lines', 'bands', 'samples')]
-    if nrefu != n_reference_lines or ns < n_radiance_bands or srefu != n_reference_columns:
+    reference_uncertainty_img = envi.open(
+        envi_header(reference_uncertainty_file), reference_uncertainty_file
+    )
+    nrefu, ns, srefu = [
+        int(reference_uncertainty_img.metadata[n])
+        for n in ("lines", "bands", "samples")
+    ]
+    if (
+        nrefu != n_reference_lines
+        or ns < n_radiance_bands
+        or srefu != n_reference_columns
+    ):
         raise IndexError("Reference file dimension mismatch (uncertainty)")
 
     # Load reference set locations
-    reference_locations_img = envi.open(envi_header(reference_locations_file), reference_locations_file)
-    nrefl, lb, ls = [int(reference_locations_img.metadata[n]) for n in ('lines', 'bands', 'samples')]
+    reference_locations_img = envi.open(
+        envi_header(reference_locations_file), reference_locations_file
+    )
+    nrefl, lb, ls = [
+        int(reference_locations_img.metadata[n]) for n in ("lines", "bands", "samples")
+    ]
     if nrefl != n_reference_lines or lb != 3:
         raise IndexError("Reference file dimension mismatch (locations)")
 
-    input_radiance_img = envi.open(envi_header(input_radiance_file), input_radiance_file)
-    n_input_lines, n_input_bands, n_input_samples = [int(input_radiance_img.metadata[n])
-                                                     for n in ('lines', 'bands', 'samples')]
+    input_radiance_img = envi.open(
+        envi_header(input_radiance_file), input_radiance_file
+    )
+    n_input_lines, n_input_bands, n_input_samples = [
+        int(input_radiance_img.metadata[n]) for n in ("lines", "bands", "samples")
+    ]
     if n_radiance_bands != n_input_bands:
-        msg = 'Number of channels mismatch: input (%i) vs. reference (%i)'
+        msg = "Number of channels mismatch: input (%i) vs. reference (%i)"
         raise IndexError(msg % (nbr, n_radiance_bands))
 
-    input_locations_img = envi.open(envi_header(input_locations_file), input_locations_file)
-    nll, nlb, nls = [int(input_locations_img.metadata[n])
-                     for n in ('lines', 'bands', 'samples')]
+    input_locations_img = envi.open(
+        envi_header(input_locations_file), input_locations_file
+    )
+    nll, nlb, nls = [
+        int(input_locations_img.metadata[n]) for n in ("lines", "bands", "samples")
+    ]
     if nll != n_input_lines or nlb != 3 or nls != n_input_samples:
-        raise IndexError('Input location dimension mismatch')
+        raise IndexError("Input location dimension mismatch")
 
     # Create output files
     output_metadata = input_radiance_img.metadata
-    output_metadata['interleave'] = 'bil'
-    output_reflectance_img = envi.create_image(envi_header(output_reflectance_file), ext='',
-                                               metadata=output_metadata, force=True)
+    output_metadata["interleave"] = "bil"
+    output_reflectance_img = envi.create_image(
+        envi_header(output_reflectance_file),
+        ext="",
+        metadata=output_metadata,
+        force=True,
+    )
 
-    output_uncertainty_img = envi.create_image(envi_header(output_uncertainty_file), ext='',
-                                               metadata=output_metadata, force=True)
+    output_uncertainty_img = envi.create_image(
+        envi_header(output_uncertainty_file),
+        ext="",
+        metadata=output_metadata,
+        force=True,
+    )
 
     # Now cleanup inputs and outputs, we'll write dynamically above
     del output_reflectance_img, output_uncertainty_img
-    del reference_reflectance_img, reference_uncertainty_img, reference_locations_img, input_radiance_img, input_locations_img
+    del (
+        reference_reflectance_img,
+        reference_uncertainty_img,
+        reference_locations_img,
+        input_radiance_img,
+        input_locations_img,
+    )
 
     # Initialize ray cluster
     start_time = time.time()
@@ -386,16 +535,21 @@ def empirical_line(reference_radiance_file: str, reference_reflectance_file: str
         iconfig = configs.Config({})
     if n_cores == -1:
         n_cores = iconfig.implementation.n_cores
-    rayargs = {'ignore_reinit_error': iconfig.implementation.ray_ignore_reinit_error,
-               'local_mode': n_cores == 1,
-               "address": iconfig.implementation.ip_head,
-               '_temp_dir': iconfig.implementation.ray_temp_dir,
-               'include_dashboard': iconfig.implementation.ray_include_dashboard,
-               "_redis_password": iconfig.implementation.redis_password}
+    rayargs = {
+        "ignore_reinit_error": iconfig.implementation.ray_ignore_reinit_error,
+        "local_mode": n_cores == 1,
+        "address": iconfig.implementation.ip_head,
+        "_temp_dir": iconfig.implementation.ray_temp_dir,
+        "include_dashboard": iconfig.implementation.ray_include_dashboard,
+        "_redis_password": iconfig.implementation.redis_password,
+    }
 
     # We can only set the num_cpus if running on a single-node
-    if iconfig.implementation.ip_head is None and iconfig.implementation.redis_password is None:
-        rayargs['num_cpus'] = n_cores
+    if (
+        iconfig.implementation.ip_head is None
+        and iconfig.implementation.redis_password is None
+    ):
+        rayargs["num_cpus"] = n_cores
 
     ray.init(**rayargs)
     atexit.register(ray.shutdown)
@@ -403,7 +557,7 @@ def empirical_line(reference_radiance_file: str, reference_reflectance_file: str
     n_ray_cores = ray.available_resources()["CPU"]
     n_cores = min(n_ray_cores, n_input_lines)
 
-    logging.info('Beginning empirical line inversions using {} cores'.format(n_cores))
+    logging.info("Beginning empirical line inversions using {} cores".format(n_cores))
 
     # Break data into sections
     line_sections = np.linspace(0, n_input_lines, num=int(n_cores + 1), dtype=int)
@@ -413,15 +567,36 @@ def empirical_line(reference_radiance_file: str, reference_reflectance_file: str
     # Run the pool (or run serially)
     results = []
     for l in range(len(line_sections) - 1):
-        args = (line_sections[l], line_sections[l + 1], reference_radiance_file, reference_reflectance_file,
-                reference_uncertainty_file, reference_locations_file, input_radiance_file,
-                input_locations_file, segmentation_file, isofit_config, output_reflectance_file,
-                output_uncertainty_file, radiance_factors, nneighbors, nodata_value, level, logfile, reference_class_file)
+        args = (
+            line_sections[l],
+            line_sections[l + 1],
+            reference_radiance_file,
+            reference_reflectance_file,
+            reference_uncertainty_file,
+            reference_locations_file,
+            input_radiance_file,
+            input_locations_file,
+            segmentation_file,
+            isofit_config,
+            output_reflectance_file,
+            output_uncertainty_file,
+            radiance_factors,
+            nneighbors,
+            nodata_value,
+            level,
+            logfile,
+            reference_class_file,
+        )
         results.append(_run_chunk.remote(*args))
 
     _ = ray.get(results)
 
     total_time = time.time() - start_time
-    logging.info('Parallel empirical line inversions complete.  {} s total, {} spectra/s, {} spectra/s/core'.format(
-        total_time, line_sections[-1] * n_input_samples / total_time,
-                    line_sections[-1] * n_input_samples / total_time / n_cores))
+    logging.info(
+        "Parallel empirical line inversions complete.  {} s total, {} spectra/s, {}"
+        " spectra/s/core".format(
+            total_time,
+            line_sections[-1] * n_input_samples / total_time,
+            line_sections[-1] * n_input_samples / total_time / n_cores,
+        )
+    )
