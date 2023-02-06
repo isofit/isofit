@@ -56,7 +56,7 @@ ENV ENV_NAME isofit
 RUN micromamba install --name isofit --yes --file /isofit/recipe/environment_isofit_basic.yml &&\
     micromamba install --name isofit --yes --channel conda-forge pip &&\
     micromamba clean --all --yes &&\
-    pip install ray ndsplines xxhash --upgrade &&\
+    pip install ray ndsplines xxhash tensorflow --upgrade &&\
     pip install --editable isofit
 
 # Run test examples at startup if not in -it mode
