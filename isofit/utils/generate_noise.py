@@ -18,12 +18,13 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-from os.path import split, abspath
+from os.path import abspath, split
+
 import numpy as np
 
-from isofit.core.common import load_spectrum, expand_path, json_load_ascii
-from isofit.core.instrument import Instrument
+from isofit.core.common import expand_path, json_load_ascii, load_spectrum
 from isofit.core.geometry import Geometry
+from isofit.core.instrument import Instrument
 
 
 def generate_noise(config):
@@ -32,17 +33,17 @@ def generate_noise(config):
     config = json_load_ascii(config, shell_replace=True)
     configdir, configfile = split(abspath(config))
 
-    infile = expand_path(configdir, config['input_radiance_file'])
-    outfile = expand_path(configdir, config['output_radiance_file'])
-    instrument = Instrument(config['instrument_model'])
+    infile = expand_path(configdir, config["input_radiance_file"])
+    outfile = expand_path(configdir, config["output_radiance_file"])
+    instrument = Instrument(config["instrument_model"])
     geom = Geometry()
 
-    if infile.endswith('txt'):
+    if infile.endswith("txt"):
         rdn, wl = load_spectrum(infile)
         Sy = instrument.Sy(rdn, geom)
         rdn_noise = rdn + np.random.multivariate_normal(np.zeros(rdn.shape), Sy)
-        with open(outfile, 'w') as fout:
+        with open(outfile, "w") as fout:
             for w, r in zip(wl, rdn_noise):
-                fout.write('%8.5f %8.5f' % (w, r))
+                fout.write("%8.5f %8.5f" % (w, r))
     else:
         raise ValueError("Image cubes not yet implemented.")

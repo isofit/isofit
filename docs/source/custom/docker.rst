@@ -18,15 +18,14 @@ How to Use
 
 Start by pulling the image:
 
-```bash
-$ docker pull isofit/isofit
-```
+.. code-block:: bash
+  docker pull isofit/isofit
 
 This image is default tagged as `isofit`. As such, to use it run:
 
-```bash
-$ docker run -it --rm isofit bash
-```
+.. code-block:: bash
+  $ docker run -it --rm isofit bash
+
 - `-it` - Run in `interactive` and `terminal` modes, which will build a container and place the user inside of it.
 - `--rm` - Removes the container once finished. If you intend to modify the container between sessions, remove this flag.
 - `isofit` - The `tag` name of the image. If you built your own ISOFIT image using a different tag, be sure to replace this string.
@@ -35,9 +34,9 @@ $ docker run -it --rm isofit bash
 After running the above command, you will placed inside the container as the root user. From here you may proceed to use ISOFIT as you need.
 
 You may need to attach volumes to the container at runtime in order to access files external to the container. For instance:
-```bash
-$ docker run -it -v /host/path:/container/path --rm isofit bash
-```
+
+.. code-block:: bash
+  docker run -it -v /host/path:/container/path --rm isofit bash
 
 This will provide `/host/path` available inside of the container as `/container/path`. As such, any changes made inside the container to this path or its contents will be reflected on the host.
 
@@ -47,12 +46,11 @@ Building the Image
 The ISOFIT container can be manually built by pulling the repository and running `docker build --tag [name] .` in the repository's root.
 For example, to build a specific branch of ISOFIT, the following may be performed:
 
-```bash
-$ git clone https://github.com/isofit/isofit.git
-$ cd isofit
-$ git checkout [branch]
-$ docker build --tag [branch] .
-```
+.. code-block:: bash
+  git clone https://github.com/isofit/isofit.git
+  cd isofit
+  git checkout [branch]
+  docker build --tag [branch] .
 
 This will build a container and tag it as [branch]. This tag can anything as it is local to your device.
 
