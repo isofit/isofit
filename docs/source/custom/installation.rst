@@ -13,7 +13,7 @@ New environment:
     mamba activate isofit_env
     pip install ray ndsplines xxhash --upgrade
 
-or 
+or
 
 .. code-block:: bash
 
@@ -238,3 +238,9 @@ Ray may have compatability issues with older machines with glibc < 2.14.
 .. _pip: https://pip.pypa.io
 .. _Python installation guide: http://docs.python-guide.org/en/latest/starting/installation/
 .. _Ray: https://docs.ray.io/en/latest/index.html
+
+
+Additional Installation Info for Developers
+========================================
+
+Be sure to read the :ref:`contributing` page as additional installation steps must be performed. 

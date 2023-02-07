@@ -17,10 +17,11 @@
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: Philip G. Brodrick, philip.brodrick@jpl.nasa.gov
 
+import os
 from typing import Dict, List, Type
+
 from isofit.configs.base_config import BaseConfigSection
 from isofit.configs.sections.statevector_config import StateVectorConfig
-import os
 
 
 class InstrumentUnknowns(BaseConfigSection):
@@ -50,7 +51,7 @@ class InstrumentUnknowns(BaseConfigSection):
         for param in file_params:
             if param is not None:
                 if os.path.isfile(param) is False:
-                    errors.append('Instrument unknown file: {} not found'.format(param))
+                    errors.append("Instrument unknown file: {} not found".format(param))
 
         return errors
 
@@ -61,7 +62,6 @@ class InstrumentConfig(BaseConfigSection):
     """
 
     def __init__(self, sub_configdic: dict = None):
-
         self._wavelength_file_type = str
         self.wavelength_file = None
 
@@ -116,20 +116,30 @@ class InstrumentConfig(BaseConfigSection):
     def _check_config_validity(self) -> List[str]:
         errors = list()
 
-        noise_options = [self.SNR, self.parametric_noise_file,
-                         self.pushbroom_noise_file, self.nedt_noise_file]
+        noise_options = [
+            self.SNR,
+            self.parametric_noise_file,
+            self.pushbroom_noise_file,
+            self.nedt_noise_file,
+        ]
         used_noise_options = [x for x in noise_options if x is not None]
 
         if len(used_noise_options) == 0:
-            errors.append('Instrument noise not defined.')
+            errors.append("Instrument noise not defined.")
 
         if len(used_noise_options) > 1:
-            errors.append('Multiple instrument noise options selected - please choose only 1.')
+            errors.append(
+                "Multiple instrument noise options selected - please choose only 1."
+            )
 
-        file_params = [self.parametric_noise_file, self.pushbroom_noise_file, self.nedt_noise_file]
+        file_params = [
+            self.parametric_noise_file,
+            self.pushbroom_noise_file,
+            self.nedt_noise_file,
+        ]
         for param in file_params:
             if param is not None:
                 if os.path.isfile(param) is False:
-                    errors.append('Instrument config file: {} not found'.format(param))
+                    errors.append("Instrument config file: {} not found".format(param))
 
         return errors

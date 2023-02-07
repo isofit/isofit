@@ -17,10 +17,12 @@
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: Philip G. Brodrick, philip.brodrick@jpl.nasa.gov
 
-from typing import Dict, List, Type
-from isofit.configs.base_config import BaseConfigSection
 import os
+from typing import Dict, List, Type
+
 import numpy as np
+
+from isofit.configs.base_config import BaseConfigSection
 
 
 class SurfaceConfig(BaseConfigSection):
@@ -29,7 +31,6 @@ class SurfaceConfig(BaseConfigSection):
     """
 
     def __init__(self, sub_configdic: dict = None):
-
         self._surface_file_type = str
         self.surface_file = None
 
@@ -46,7 +47,7 @@ class SurfaceConfig(BaseConfigSection):
         The state is preserved in the geometry object so that this object stays stateless"""
 
         self._selection_metric_type = str
-        self.selection_metric = 'Euclidean'
+        self.selection_metric = "Euclidean"
 
         # Surface Thermal
         self._emissivity_for_surface_T_init_type = float
@@ -54,28 +55,38 @@ class SurfaceConfig(BaseConfigSection):
         """ Initial Value recommended by Glynn Hulley."""
 
         self._surface_T_prior_sigma_degK_type = float
-        self.surface_T_prior_sigma_degK = 1.
+        self.surface_T_prior_sigma_degK = 1.0
 
         self.set_config_options(sub_configdic)
 
     def _check_config_validity(self) -> List[str]:
         errors = list()
 
-        valid_surface_categories = ['surface', 'multicomponent_surface',
-                                    'glint_surface', 'thermal_surface',
-                                    'lut_surface']
+        valid_surface_categories = [
+            "surface",
+            "multicomponent_surface",
+            "glint_surface",
+            "thermal_surface",
+            "lut_surface",
+        ]
         if self.surface_category is None:
-            errors.append('surface->surface_category must be specified')
+            errors.append("surface->surface_category must be specified")
         elif self.surface_category not in valid_surface_categories:
-            errors.append('surface->surface_category: {} not in valid surface categories: {}'.format(
-                self.surface_category, valid_surface_categories))
+            errors.append(
+                "surface->surface_category: {} not in valid surface categories: {}".format(
+                    self.surface_category, valid_surface_categories
+                )
+            )
 
         if self.surface_category is None:
-            errors.append('surface->surface_category must be specified')
+            errors.append("surface->surface_category must be specified")
 
-        valid_normalize_categories = ['Euclidean', 'RMS', 'None']
+        valid_normalize_categories = ["Euclidean", "RMS", "None"]
         if self.normalize not in valid_normalize_categories:
             errors.append(
-                'surface->normalize: {} not in valid normalize choices: {}'.format(self.normalize, valid_normalize_categories))
+                "surface->normalize: {} not in valid normalize choices: {}".format(
+                    self.normalize, valid_normalize_categories
+                )
+            )
 
         return errors

@@ -200,15 +200,19 @@ def main(rawargs=None):
     # overwrite the time in case original obs has an error in that band
     if h_m_s[0] != dt.hour and h_m_s[0] >= 24:
         h_m_s[0] = dt.hour
-        logging.info("UTC hour did not match start time minute. Adjusting to that value.")
+        logging.info(
+            "UTC hour did not match start time minute. Adjusting to that value."
+        )
     if h_m_s[1] != dt.minute and h_m_s[1] >= 60:
         h_m_s[1] = dt.minute
-        logging.info("UTC minute did not match start time minute. Adjusting to that value.")
+        logging.info(
+            "UTC minute did not match start time minute. Adjusting to that value."
+        )
 
     if day_increment:
         dayofyear += 1
 
-    gmtime = float(h_m_s[0] + h_m_s[1] / 60.)
+    gmtime = float(h_m_s[0] + h_m_s[1] / 60.0)
 
     mean_latitude, mean_longitude, mean_elevation_km, elevation_lut_grid = tc.get_metadata_from_loc(
         loc_file=paths.loc_working_path, gip=gip, tsip=tsip, lut_params=lut_params)
@@ -223,11 +227,16 @@ def main(rawargs=None):
 
         if mean_elevation_km < 0:
             mean_elevation_km = 0
-            logging.info("Scene contains a mean target elevation < 0. 6s does not support targets below sea level in "
-                         "km units. Setting mean elevation to 0.")
+            logging.info(
+                "Scene contains a mean target elevation < 0. 6s does not support"
+                " targets below sea level in km units. Setting mean elevation to 0."
+            )
 
     # Need a 180 - here, as this is already in MODTRAN convention
-    mean_altitude_km = mean_elevation_km + np.cos(np.deg2rad(180 - mean_to_sensor_zenith)) * mean_path_km
+    mean_altitude_km = (
+        mean_elevation_km
+        + np.cos(np.deg2rad(180 - mean_to_sensor_zenith)) * mean_path_km
+    )
 
     logging.info("Observation means:")
     logging.info(f"Path (km): {mean_path_km}")
@@ -243,8 +252,11 @@ def main(rawargs=None):
     if gip["filepaths"]["model_discrepancy_path"] is not None:
         uncorrelated_radiometric_uncertainty = 0
     else:
-        uncorrelated_radiometric_uncertainty = 0.01 if not gip["options"]["uncorrelated_radiometric_uncertainty"] \
+        uncorrelated_radiometric_uncertainty = (
+            0.01
+            if not gip["options"]["uncorrelated_radiometric_uncertainty"]
             else gip["options"]["uncorrelated_radiometric_uncertainty"]
+        )
 
     # Chunk scene => superpixel segmentation
     if use_superpixels:
@@ -306,7 +318,9 @@ def main(rawargs=None):
         )
 
         un_surface_type_labels = np.unique(surface_type_labels)
-        un_surface_type_labels = un_surface_type_labels[un_surface_type_labels != -1].astype(int)
+        un_surface_type_labels = un_surface_type_labels[
+            un_surface_type_labels != -1
+        ].astype(int)
 
         for ustl in un_surface_type_labels:
             logging.info(f"Found surface type: {available_surface_types[ustl]}")
@@ -347,7 +361,9 @@ def main(rawargs=None):
             max_water = 6
 
         # run H2O grid as necessary
-        if not exists(envi_header(paths.h2o_subs_path)) or not exists(paths.h2o_subs_path):
+        if not exists(envi_header(paths.h2o_subs_path)) or not exists(
+            paths.h2o_subs_path
+        ):
             # Write the presolve connfiguration file
             h2o_grid = np.linspace(0.01, max_water - 0.01, 10).round(2)
             logging.info(f"Pre-solve H2O grid: {h2o_grid}")

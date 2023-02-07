@@ -21,14 +21,15 @@
 import numpy as np
 import scipy.linalg
 
+from isofit.configs import Config
+
 from ..core.common import emissive_radiance, eps
 from .surface_multicomp import MultiComponentSurface
-from isofit.configs import Config
 
 
 class ThermalSurface(MultiComponentSurface):
-    """A model of the surface based on a Mixture of a hot Black Body and 
-        Multicomponent cold surfaces."""
+    """A model of the surface based on a Mixture of a hot Black Body and
+    Multicomponent cold surfaces."""
 
     def __init__(self, full_config: Config):
         """."""
@@ -39,8 +40,8 @@ class ThermalSurface(MultiComponentSurface):
 
         # TODO: Enforce this attribute in the config, not here (this is hidden)
         # Handle additional state vector elements
-        if 'SURF_TEMP_K' not in self.statevec_names:
-            self.statevec_names.extend(['SURF_TEMP_K'])
+        if "SURF_TEMP_K" not in self.statevec_names:
+            self.statevec_names.extend(["SURF_TEMP_K"])
             self.init.extend([300.0])  # This is overwritten below
             self.scale.extend([100.0])
             self.bounds.extend([[250.0, 400.0]])
@@ -48,8 +49,7 @@ class ThermalSurface(MultiComponentSurface):
         self.emissive = True
         self.n_state = len(self.init)
 
-        self.emissivity_for_surface_T_init = \
-                config.emissivity_for_surface_T_init
+        self.emissivity_for_surface_T_init = config.emissivity_for_surface_T_init
         self.surface_T_prior_sigma_degK = config.surface_T_prior_sigma_degK
 
     def xa(self, x_surface, geom):
@@ -65,8 +65,9 @@ class ThermalSurface(MultiComponentSurface):
         """Covariance of prior distribution, calculated at state x."""
 
         Cov = MultiComponentSurface.Sa(self, x_surface, geom)
-        Cov[self.surf_temp_ind, self.surf_temp_ind] = \
+        Cov[self.surf_temp_ind, self.surf_temp_ind] = (
             self.surface_T_prior_sigma_degK**2
+        )
 
         return Cov
 
@@ -80,12 +81,12 @@ class ThermalSurface(MultiComponentSurface):
 
     def calc_rfl(self, x_surface, geom):
         """Reflectance. This could be overriden to add (for example)
-            specular components"""
+        specular components"""
 
         return self.calc_lamb(x_surface, geom)
 
     def drfl_dsurface(self, x_surface, geom):
-        """Partial derivative of reflectance with respect to state vector, 
+        """Partial derivative of reflectance with respect to state vector,
         calculated at x_surface."""
 
         return self.dlamb_dsurface(x_surface, geom)
@@ -96,7 +97,7 @@ class ThermalSurface(MultiComponentSurface):
         return MultiComponentSurface.calc_lamb(self, x_surface, geom)
 
     def dlamb_dsurface(self, x_surface, geom):
-        """Partial derivative of Lambertian reflectance with respect to state 
+        """Partial derivative of Lambertian reflectance with respect to state
         vector, calculated at x_surface."""
 
         dlamb = MultiComponentSurface.dlamb_dsurface(self, x_surface, geom)
@@ -108,20 +109,20 @@ class ThermalSurface(MultiComponentSurface):
 
         T = x_surface[self.surf_temp_ind]
         rfl = self.calc_rfl(x_surface, geom)
-        rfl[rfl > 1.] = 1.
+        rfl[rfl > 1.0] = 1.0
         emissivity = 1 - rfl
         Ls, dLs_dT = emissive_radiance(emissivity, T, self.wl)
         return Ls
 
     def dLs_dsurface(self, x_surface, geom):
-        """Partial derivative of surface emission with respect to state vector, 
+        """Partial derivative of surface emission with respect to state vector,
         calculated at x_surface."""
 
         T = x_surface[self.surf_temp_ind]
         lambertian_rfl = self.calc_lamb(x_surface, geom)
         emissivity = 1 - lambertian_rfl
         Ls, dLs_dT = emissive_radiance(emissivity, T, self.wl)
-        dLs_drfl = np.diag(-1*Ls)
+        dLs_drfl = np.diag(-1 * Ls)
         dLs_dsurface = np.vstack([dLs_drfl, dLs_dT]).T
 
         return dLs_dsurface
@@ -130,5 +131,5 @@ class ThermalSurface(MultiComponentSurface):
         """Summary of state vector."""
 
         mcm = MultiComponentSurface.summarize(self, x_surface, geom)
-        msg = ' Kelvins: %5.1f ' % x_surface[self.surf_temp_ind]
-        return msg+mcm
+        msg = " Kelvins: %5.1f " % x_surface[self.surf_temp_ind]
+        return msg + mcm

@@ -20,6 +20,7 @@
 
 import logging
 from datetime import datetime
+
 import numpy as np
 
 from .sunposition import sunpos
@@ -27,11 +28,18 @@ from .sunposition import sunpos
 
 class Geometry:
     """The geometry of the observation, all we need to calculate sensor,
-      surface, and solar positions."""
+    surface, and solar positions."""
 
-    def __init__(self, obs=None, glt=None, loc=None, ds=None,
-                 esd=None, pushbroom_column=None, bg_rfl=None):
-
+    def __init__(
+        self,
+        obs=None,
+        glt=None,
+        loc=None,
+        ds=None,
+        esd=None,
+        pushbroom_column=None,
+        bg_rfl=None,
+    ):
         # Set some benign defaults...
         self.earth_sun_file = None
         self.observer_zenith = 0
@@ -66,8 +74,8 @@ class Geometry:
             self.OBSZEN = 180.0 - abs(obs[2])  # MODTRAN convention?
             self.RELAZ = obs[1] - obs[3] + 180.0
             self.TRUEAZ = obs[1]  # MODTRAN convention?
-            self.umu = np.cos(obs[2]/360.0*2.0*np.pi)  # Libradtran
-            self.cos_i = obs[8] # cosine of eSZA
+            self.umu = np.cos(obs[2] / 360.0 * 2.0 * np.pi)  # Libradtran
+            self.cos_i = obs[8]  # cosine of eSZA
 
         # The 'loc' object is a list-like object that optionally contains
         # latitude and longitude information about the surface being
@@ -80,19 +88,25 @@ class Geometry:
             if self.longitude < 0:
                 self.longitude = 360.0 - self.longitude
 
-            logging.debug('Geometry lat: %f lon: %f' %
-                          (self.latitude, self.longitude))
-            logging.debug('Geometry observer OBSZEN: %f RELAZ: %f GNDALT: %f' %
-                          (self.OBSZEN, self.RELAZ, self.surface_elevation_km))
-        
+            logging.debug("Geometry lat: %f lon: %f" % (self.latitude, self.longitude))
+            logging.debug(
+                "Geometry observer OBSZEN: %f RELAZ: %f GNDALT: %f"
+                % (self.OBSZEN, self.RELAZ, self.surface_elevation_km)
+            )
+
         if loc is not None and obs is not None:
-            self.H1ALT = self.surface_elevation_km + self.path_length*np.cos(np.deg2rad(self.observer_zenith))
-            self.observer_altitude_km = self.surface_elevation_km + self.path_length*np.cos(np.deg2rad(self.observer_zenith))
+            self.H1ALT = self.surface_elevation_km + self.path_length * np.cos(
+                np.deg2rad(self.observer_zenith)
+            )
+            self.observer_altitude_km = (
+                self.surface_elevation_km
+                + self.path_length * np.cos(np.deg2rad(self.observer_zenith))
+            )
 
         # The ds object is an optional date object, defining the time of
         # the observation.
         if ds is not None:
-            self.datetime = datetime.strptime(ds, '%Y%m%dt%H%M%S')
+            self.datetime = datetime.strptime(ds, "%Y%m%dt%H%M%S")
             self.day_of_year = self.datetime.timetuple().tm_yday
 
         # Finally, the earth sun distance is an array that maps the day of the
@@ -101,16 +115,19 @@ class Geometry:
             self.earth_sun_distance = esd.copy()
 
     def coszen(self):
-        """ Return the cosine of the solar zenith."""
+        """Return the cosine of the solar zenith."""
         self.dt = self.datetime
-        az, zen, ra, dec, h = sunpos(self.datetime, self.latitude,
-                                     self.longitudeE,
-                                     self.surface_elevation_km * 1000.0,
-                                     radians=True)
+        az, zen, ra, dec, h = sunpos(
+            self.datetime,
+            self.latitude,
+            self.longitudeE,
+            self.surface_elevation_km * 1000.0,
+            radians=True,
+        )
         return np.cos(zen)
 
     def sundist(self):
-        '''Return the mean-relative distance to the sun as defined by the
-        day of the year.  Note that we use zero-indexed table, offset by one 
-        from the actual cardenality, per Python conventions...'''
-        return float(self.earth_sun_distance[self.day_of_year-1, 1])
+        """Return the mean-relative distance to the sun as defined by the
+        day of the year.  Note that we use zero-indexed table, offset by one
+        from the actual cardenality, per Python conventions..."""
+        return float(self.earth_sun_distance[self.day_of_year - 1, 1])

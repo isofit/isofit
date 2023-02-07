@@ -19,33 +19,34 @@
 #
 
 import numpy as np
-from scipy.linalg import block_diag, norm
 from scipy.io import loadmat
+from scipy.linalg import block_diag, norm
 
-from ..core.common import svd_inv, VectorInterpolator
-from .surface import Surface
 from isofit.configs import Config
+
+from ..core.common import VectorInterpolator, svd_inv
+from .surface import Surface
 
 
 class LUTSurface(Surface):
     """A model of the surface based on an N-dimensional lookup table
-    indexed by one or more state vector elements.  We calculate the 
-    reflectance by multilinear interpolation.  This is good for 
-    surfaces like aquatic ecosystems or snow that can be 
-    described with just a few degrees of freedom. 
+    indexed by one or more state vector elements.  We calculate the
+    reflectance by multilinear interpolation.  This is good for
+    surfaces like aquatic ecosystems or snow that can be
+    described with just a few degrees of freedom.
 
     The lookup table must be precalculated based on the wavelengths
     of the instrument.  It is stored with other metadata in a matlab-
-    format file. For an n-dimensional lookup table, it contains the 
+    format file. For an n-dimensional lookup table, it contains the
     following fields:
       - grids: an object array containing n lists of gridpoints
       - data: an n+1 dimensional array containing the reflectances
          for each gridpoint
       - bounds: a list of n [min,max] tuples representing the bounds
          for all state vector elements
-      - statevec_names: an array of n strings representing state 
-         vector element names 
-      - mean: an array of n prior mean values, one for each state 
+      - statevec_names: an array of n strings representing state
+         vector element names
+      - mean: an array of n prior mean values, one for each state
          vector element
       - sigma: an array of n prior standard deviations, one for each
          state vector element
@@ -63,18 +64,18 @@ class LUTSurface(Surface):
 
         # Models are stored as dictionaries in .mat format
         model_dict = loadmat(config.surface_file)
-        self.lut_grid = [grid[0] for grid in model_dict['grids'][0]]
-        self.lut_names = [l.strip() for l in model_dict['lut_names']]
-        self.statevec_names = [sv.strip() for sv in model_dict['statevec_names']]
-        interp_types = np.array(['n' for n in self.lut_grid])
-        self.data = model_dict['data']
-        self.wl = model_dict['wl'][0]
+        self.lut_grid = [grid[0] for grid in model_dict["grids"][0]]
+        self.lut_names = [l.strip() for l in model_dict["lut_names"]]
+        self.statevec_names = [sv.strip() for sv in model_dict["statevec_names"]]
+        interp_types = np.array(["n" for n in self.lut_grid])
+        self.data = model_dict["data"]
+        self.wl = model_dict["wl"][0]
         self.n_wl = len(self.wl)
-        self.bounds = model_dict['bounds']
-        self.scale = model_dict['scale'][0]
-        self.init = model_dict['init'][0]
-        self.mean = model_dict['mean'][0]
-        self.sigma = model_dict['sigma'][0]
+        self.bounds = model_dict["bounds"]
+        self.scale = model_dict["scale"][0]
+        self.init = model_dict["init"][0]
+        self.mean = model_dict["mean"][0]
+        self.sigma = model_dict["sigma"][0]
         self.n_state = len(self.statevec_names)
         self.n_lut = len(self.lut_names)
         self.idx_lut = np.arange(self.n_state)
@@ -83,10 +84,9 @@ class LUTSurface(Surface):
         # build the interpolator
         self.itp = VectorInterpolator(self.lut_grid, self.data, interp_types)
 
-
     def xa(self, x_surface, geom):
         """Mean of prior distribution."""
-        
+
         mu = np.zeros(self.n_state)
         mu[self.idx_lut] = self.mean.copy()
 
@@ -95,7 +95,7 @@ class LUTSurface(Surface):
     def Sa(self, x_surface, geom):
         """Covariance of prior distribution, calculated at state x."""
 
-        variance = pow(self.sigma,2)
+        variance = pow(self.sigma, 2)
         Cov = np.diag(variance)
 
         return Cov
@@ -114,35 +114,35 @@ class LUTSurface(Surface):
 
     def calc_lamb(self, x_surface, geom):
         """Lambertian reflectance.  Be sure to incorporate BRDF-related
-          LUT dimensions such as solar and view zenith."""
+        LUT dimensions such as solar and view zenith."""
 
         point = np.zeros(self.n_lut)
 
-        for v,name in zip(x_surface, self.statevec_names):
-          point[self.lut_names.index(name)] = v
+        for v, name in zip(x_surface, self.statevec_names):
+            point[self.lut_names.index(name)] = v
 
-        if 'SOLZEN' in self.lut_names:
-          solzen_ind = self.lut_names.index('SOLZEN')
-          point[solzen_ind] = geom.solar_zenith
+        if "SOLZEN" in self.lut_names:
+            solzen_ind = self.lut_names.index("SOLZEN")
+            point[solzen_ind] = geom.solar_zenith
 
-        if 'VIEWZEN' in self.lut_names:
-          viewzen_ind = self.lut_names.index('VIEWZEN')
-          point[viewzen_ind] = geom.observer_zenith
+        if "VIEWZEN" in self.lut_names:
+            viewzen_ind = self.lut_names.index("VIEWZEN")
+            point[viewzen_ind] = geom.observer_zenith
 
         lamb = self.itp(point)
 
         return lamb
 
     def drfl_dsurface(self, x_surface, geom):
-        """Partial derivative of reflectance with respect to state vector, 
+        """Partial derivative of reflectance with respect to state vector,
         calculated at x_surface."""
 
         return self.dlamb_dsurface(x_surface, geom)
 
     def dlamb_dsurface(self, x_surface, geom):
-        """Partial derivative of Lambertian reflectance with respect to 
-        state vector, calculated at x_surface.  We calculate the 
-        reflectance with multilinear interpolation so the finite 
+        """Partial derivative of Lambertian reflectance with respect to
+        state vector, calculated at x_surface.  We calculate the
+        reflectance with multilinear interpolation so the finite
         difference derivative is exact."""
 
         eps = 1e-6
@@ -150,10 +150,10 @@ class LUTSurface(Surface):
         dlamb = []
 
         for xi in range(self.n_state):
-           x_new = x_surface.copy()
-           x_new[xi] = x_new[xi] + eps
-           perturbed = self.calc_lamb(x_new, geom)
-           dlamb.append((perturbed-base)/eps)
+            x_new = x_surface.copy()
+            x_new[xi] = x_new[xi] + eps
+            perturbed = self.calc_lamb(x_new, geom)
+            dlamb.append((perturbed - base) / eps)
 
         dlamb = np.array(dlamb).T
 
@@ -165,8 +165,8 @@ class LUTSurface(Surface):
         return np.zeros(self.n_wl, dtype=float)
 
     def dLs_dsurface(self, x_surface, geom):
-        """Partial derivative of surface emission with respect to 
-          state vector, calculated at x_surface."""
+        """Partial derivative of surface emission with respect to
+        state vector, calculated at x_surface."""
 
         dLs = np.zeros((self.n_wl, self.n_state), dtype=float)
 
@@ -176,6 +176,6 @@ class LUTSurface(Surface):
         """Summary of state vector."""
 
         if len(x_surface) < 1:
-            return ''
+            return ""
 
-        return 'Surface: '+' '.join([('%5.4f' % x) for x in x_surface])
+        return "Surface: " + " ".join([("%5.4f" % x) for x in x_surface])

@@ -19,22 +19,22 @@
 #
 
 import sys
-import pep8
 from glob import glob
-from os.path import split, abspath
+from os.path import abspath, split
 
+import pep8
 
 testdir, fname = split(abspath(__file__))
-config_file = testdir+'/data/pep8_config.txt'
-excludes = ['sunposition.py']
+config_file = testdir + "/data/pep8_config.txt"
+excludes = ["sunposition.py"]
 
 
 def test_pep8_conformance():
     """Test that we conform to PEP8."""
 
-    config_file = 'data/pep8_config.txt'
+    config_file = "data/pep8_config.txt"
     files = []
-    for fi in glob('../*.py'):
+    for fi in glob("../*.py"):
         files.append(fi)
 
     # After acceptance, this will be uncommented

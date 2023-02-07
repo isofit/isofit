@@ -18,6 +18,9 @@ import subprocess
 from sys import platform
 from typing import List
 import utm
+from osgeo import gdal
+from sklearn import mixture
+from spectral.io import envi
 
 from isofit.core import isofit
 from isofit.core.common import envi_header, resample_spectrum
@@ -36,7 +39,6 @@ class Pathnames:
     """
 
     def __init__(self, opt: dict, gip: dict, args: argparse.Namespace, fid: str):
-
         # Names from inputs
         self.aerosol_climatology = gip["filepaths"]["aerosol_climatology_path"]
         self.input_radiance_file = args.input_radiance
@@ -84,7 +86,9 @@ class Pathnames:
             self.loc_working_path = os.path.abspath(self.input_loc_file)
 
         if gip["filepaths"]["channelized_uncertainty_path"]:
-            self.input_channelized_uncertainty_path = gip["filepaths"]["channelized_uncertainty_path"]
+            self.input_channelized_uncertainty_path = gip["filepaths"][
+                "channelized_uncertainty_path"
+            ]
         else:
             self.input_channelized_uncertainty_path = os.getenv("ISOFIT_CHANNELIZED_UNCERTAINTY")
 
@@ -92,7 +96,9 @@ class Pathnames:
             os.path.join(self.data_directory, "channelized_uncertainty.txt"))
 
         if gip["filepaths"]["model_discrepancy_path"]:
-            self.input_model_discrepancy_path = gip["filepaths"]["model_discrepancy_path"]
+            self.input_model_discrepancy_path = gip["filepaths"][
+                "model_discrepancy_path"
+            ]
         else:
             self.input_model_discrepancy_path = None
 
@@ -157,7 +163,9 @@ class Pathnames:
         self.rdn_factors_path = None
 
         if gip["filepaths"]["rdn_factors_path"] is not None:
-            self.rdn_factors_path = os.path.abspath(gip["filepaths"]["rdn_factors_path"])
+            self.rdn_factors_path = os.path.abspath(
+                gip["filepaths"]["rdn_factors_path"]
+            )
 
         self.ray_temp_dir = "/tmp/ray" if not opt["ray_temp_dir"] else opt["ray_temp_dir"]
 
@@ -168,8 +176,15 @@ class Pathnames:
         Args:
             surface_types: list of optional surface types
         """
-        for dpath in [self.working_directory, self.lut_h2o_directory, self.lut_modtran_directory, self.config_directory,
-                      self.data_directory, self.input_data_directory, self.output_directory]:
+        for dpath in [
+            self.working_directory,
+            self.lut_h2o_directory,
+            self.lut_modtran_directory,
+            self.config_directory,
+            self.data_directory,
+            self.input_data_directory,
+            self.output_directory,
+        ]:
             if not os.path.exists(dpath):
                 os.mkdir(dpath)
 
@@ -182,12 +197,22 @@ class Pathnames:
         """
         Stage data files by copying into working directory.
         """
-        files_to_stage = [(self.input_radiance_file, self.radiance_working_path, True),
-                          (self.input_obs_file, self.obs_working_path, True),
-                          (self.input_loc_file, self.loc_working_path, True),
-                          (self.surface_path, self.surface_working_path, False),
-                          (self.input_channelized_uncertainty_path, self.channelized_uncertainty_working_path, False),
-                          (self.input_model_discrepancy_path, self.model_discrepancy_working_path, False)]
+        files_to_stage = [
+            (self.input_radiance_file, self.radiance_working_path, True),
+            (self.input_obs_file, self.obs_working_path, True),
+            (self.input_loc_file, self.loc_working_path, True),
+            (self.surface_path, self.surface_working_path, False),
+            (
+                self.input_channelized_uncertainty_path,
+                self.channelized_uncertainty_working_path,
+                False,
+            ),
+            (
+                self.input_model_discrepancy_path,
+                self.model_discrepancy_working_path,
+                False,
+            ),
+        ]
 
         for src, dst, hasheader in files_to_stage:
             if src is None:
@@ -219,7 +244,7 @@ class Pathnames:
 
 
 class LUTConfig:
-    """ A look up table class, containing default grid options.  All properties may be overridden with the optional
+    """A look up table class, containing default grid options.  All properties may be overridden with the optional
         input configuration file path
 
     Args:
@@ -243,8 +268,12 @@ class LUTConfig:
                 self.elevation_spacing = tsip["cloud"]["GNDALT"]["lut_spacing"]
                 self.elevation_spacing_min = tsip["cloud"]["GNDALT"]["lut_spacing_min"]
             except KeyError:
-                self.elevation_spacing = gip["radiative_transfer_parameters"]["GNDALT"]["lut_spacing"]
-                self.elevation_spacing_min = gip["radiative_transfer_parameters"]["GNDALT"]["lut_spacing_min"]
+                self.elevation_spacing = gip["radiative_transfer_parameters"]["GNDALT"][
+                    "lut_spacing"
+                ]
+                self.elevation_spacing_min = gip["radiative_transfer_parameters"][
+                    "GNDALT"
+                ]["lut_spacing_min"]
         else:
             logging.info("No spacing information for elevation LUT found in config file. "
                          "Setting spacing to 0.25 and minimum spacing to 0.2.")
@@ -324,8 +353,7 @@ class LUTConfig:
 
 
 class SerialEncoder(json.JSONEncoder):
-    """Encoder for json to help ensure json objects can be passed to the workflow manager.
-    """
+    """Encoder for json to help ensure json objects can be passed to the workflow manager."""
 
     def default(self, obj):
         if isinstance(obj, np.integer):
@@ -381,8 +409,12 @@ def get_angular_grid(angle_data_input: np.array, spacing: float, min_spacing: fl
     else:
         angle_data = angle_data_input.copy()
 
-    spatial_data = np.hstack([np.cos(np.deg2rad(angle_data)).reshape(-1, 1),
-                              np.sin(np.deg2rad(angle_data)).reshape(-1, 1)])
+    spatial_data = np.hstack(
+        [
+            np.cos(np.deg2rad(angle_data)).reshape(-1, 1),
+            np.sin(np.deg2rad(angle_data)).reshape(-1, 1),
+        ]
+    )
 
     # find which quadrants have data
     quadrants = np.zeros((2, 2))
@@ -411,7 +443,9 @@ def get_angular_grid(angle_data_input: np.array, spacing: float, min_spacing: fl
                 return angle_spread - 180
         else:
             # Otherwise, just space things out:
-            return get_grid(np.min(angle_data), np.max(angle_data), spacing, min_spacing)
+            return get_grid(
+                np.min(angle_data), np.max(angle_data), spacing, min_spacing
+            )
     else:
         if spacing >= 180:
             logging.warning(f"Requested angle spacing is {spacing}, but obs angle divergence is > 180.  "
@@ -459,14 +493,16 @@ def get_angular_grid(angle_data_input: np.array, spacing: float, min_spacing: fl
         return central_angles
 
 
-def build_surface_config(macro_config: dict, flight_id: str, output_path: str, wvl_file: str):
-    """ Write a surface config file, using the specified pathnames and all given info.
+def build_surface_config(
+    macro_config: dict, flight_id: str, output_path: str, wvl_file: str
+):
+    """Write a surface config file, using the specified pathnames and all given info.
 
-        Args:
-            macro_config: dictionary of macro options for surface model
-            flight_id: string of instrument specific flight identification number
-            output_path: output directory for surface config file
-            wvl_file: directory of instrument wavelength file
+    Args:
+        macro_config: dictionary of macro options for surface model
+        flight_id: string of instrument specific flight identification number
+        output_path: output directory for surface config file
+        wvl_file: directory of instrument wavelength file
     """
     if not macro_config["output_model_file"]:
         surface_path = os.path.abspath(os.path.join(output_path, "surface.mat"))
@@ -523,14 +559,13 @@ def build_presolve_config(opt: dict, gip: dict, paths: Pathnames, h2o_lut_grid: 
                 "scale": 0.01,
                 "init": np.percentile(h2o_lut_grid, 25),
                 "prior_sigma": 100.0,
-                "prior_mean": 1.5}
+                "prior_mean": 1.5,
+            }
         },
         "lut_grid": {
             "H2OSTR": [float(x) for x in h2o_lut_grid],
         },
-        "unknowns": {
-            "H2O_ABSCO": 0.0
-        }
+        "unknowns": {"H2O_ABSCO": 0.0},
     }
 
     if gip["filepaths"]["emulator_base"] is not None:
@@ -654,7 +689,7 @@ def build_main_config(opt: dict, gip: dict, tsip: dict, paths: Pathnames, lut_pa
                 "multipart_transmittance": gip["options"]["multipart_transmittance"],
                 "lut_path": paths.surface_lut_paths[surface_type],
                 "aerosol_template_file": paths.aerosol_tpl_path,
-                "template_file": paths.modtran_template_path
+                "template_file": paths.modtran_template_path,
             }
         },
         "statevector": {
@@ -967,7 +1002,7 @@ def load_climatology(config_path: str, latitude: float, longitude: float, acquis
             aerosol_state_vector["AERFRAC_{}".format(_a)] = {
                 "bounds": [float(alr[0]), float(alr[1])],
                 "scale": 1,
-                "init": float((alr[1] - alr[0]) / 10. + alr[0]),
+                "init": float((alr[1] - alr[0]) / 10.0 + alr[0]),
                 "prior_sigma": 10.0,
                 "prior_mean": float((alr[1] - alr[0]) / 10. + alr[0])
             }
@@ -983,7 +1018,7 @@ def load_climatology(config_path: str, latitude: float, longitude: float, acquis
         aerosol_state_vector["AOT550"] = {
             "bounds": [float(alr[0]), float(alr[1])],
             "scale": 1,
-            "init": float((alr[1] - alr[0]) / 10. + alr[0]),
+            "init": float((alr[1] - alr[0]) / 10.0 + alr[0]),
             "prior_sigma": 10.0,
             "prior_mean": float((alr[1] - alr[0]) / 10. + alr[0])
         }
@@ -1082,8 +1117,14 @@ def calc_modtran_max_water(paths: Pathnames) -> float:
     return max_water
 
 
-def define_surface_types(tsip: dict, rdnfile: str, obsfile: str, out_class_path: str, wl: np.array, fwhm: np.array):
-
+def define_surface_types(
+    tsip: dict,
+    rdnfile: str,
+    obsfile: str,
+    out_class_path: str,
+    wl: np.array,
+    fwhm: np.array,
+):
     if np.all(wl < 10):
         wl = wl * 1000
         fwhm = fwhm * 1000
@@ -1104,8 +1145,10 @@ def define_surface_types(tsip: dict, rdnfile: str, obsfile: str, out_class_path:
         b1000 = np.argmin(abs(wl - tsip["water"]["toa_threshold_wavelengths"][0]))
         b1380 = np.argmin(abs(wl - tsip["water"]["toa_threshold_wavelengths"][1]))
     except KeyError:
-        logging.info("No threshold wavelengths for water classification found in config file. "
-                     "Setting to 1000 and 1380 nm.")
+        logging.info(
+            "No threshold wavelengths for water classification found in config file. "
+            "Setting to 1000 and 1380 nm."
+        )
         b1000 = np.argmin(abs(wl - 1000))
         b1380 = np.argmin(abs(wl - 1380))
 
@@ -1115,8 +1158,10 @@ def define_surface_types(tsip: dict, rdnfile: str, obsfile: str, out_class_path:
         b1250 = np.argmin(abs(wl - tsip["cloud"]["toa_threshold_wavelengths"][1]))
         b1650 = np.argmin(abs(wl - tsip["cloud"]["toa_threshold_wavelengths"][2]))
     except KeyError:
-        logging.info("No threshold wavelengths for cloud classification found in config file. "
-                     "Setting to 450, 1250, and 1650 nm.")
+        logging.info(
+            "No threshold wavelengths for cloud classification found in config file. "
+            "Setting to 450, 1250, and 1650 nm."
+        )
         b450 = np.argmin(abs(wl - 450))
         b1250 = np.argmin(abs(wl - 1250))
         b1650 = np.argmin(abs(wl - 1650))
@@ -1181,9 +1226,14 @@ def copy_file_subset(matching_indices: np.array, pathnames: List):
         output_mm[:, 0, :] = input_mm[matching_indices[:, :, 0], ...].copy()
 
 
-def get_metadata_from_obs(obs_file: str, lut_params: LUTConfig, trim_lines: int = 5,
-                          max_flight_duration_h: int = 8, nodata_value: float = -9999):
-    """ Get metadata needed for complete runs from the observation file
+def get_metadata_from_obs(
+    obs_file: str,
+    lut_params: LUTConfig,
+    trim_lines: int = 5,
+    max_flight_duration_h: int = 8,
+    nodata_value: float = -9999,
+):
+    """Get metadata needed for complete runs from the observation file
     (bands: path length, to-sensor azimuth, to-sensor zenith, to-sun azimuth,
     to-sun zenith, phase, slope, aspect, cosine i, UTC time).
 
@@ -1221,9 +1271,11 @@ def get_metadata_from_obs(obs_file: str, lut_params: LUTConfig, trim_lines: int 
         obs_line = obs_dataset.ReadAsArray(0, line, obs_dataset.RasterXSize, 1)
 
         # Populate valid
-        valid[line, :] = np.logical_not(np.any(np.isclose(obs_line, nodata_value), axis=0))
+        valid[line, :] = np.logical_not(
+            np.any(np.isclose(obs_line, nodata_value), axis=0)
+        )
 
-        path_km[line, :] = obs_line[0, ...] / 1000.
+        path_km[line, :] = obs_line[0, ...] / 1000.0
         to_sensor_azimuth[line, :] = obs_line[1, ...]
         to_sensor_zenith[line, :] = obs_line[2, ...]
         time[line, :] = obs_line[9, ...]
@@ -1263,7 +1315,9 @@ def get_metadata_from_obs(obs_file: str, lut_params: LUTConfig, trim_lines: int 
         to_sensor_azimuth[valid], lut_params.to_sensor_azimuth_spacing, lut_params.to_sensor_azimuth_spacing_min)
 
     if to_sensor_azimuth_lut_grid is not None:
-        to_sensor_azimuth_lut_grid = np.sort(np.array([x % 360 for x in to_sensor_azimuth_lut_grid]))
+        to_sensor_azimuth_lut_grid = np.sort(
+            np.array([x % 360 for x in to_sensor_azimuth_lut_grid])
+        )
 
     del to_sensor_azimuth
     del to_sensor_zenith
@@ -1289,18 +1343,32 @@ def get_metadata_from_obs(obs_file: str, lut_params: LUTConfig, trim_lines: int 
     # Calculate hour, minute, second
     h_m_s = [np.floor(mean_time)]
     h_m_s.append(np.floor((mean_time - h_m_s[-1]) * 60))
-    h_m_s.append(np.floor((mean_time - h_m_s[-2] - h_m_s[-1] / 60.) * 3600))
+    h_m_s.append(np.floor((mean_time - h_m_s[-2] - h_m_s[-1] / 60.0) * 3600))
 
     if use_trim:
         valid = actual_valid
 
-    return h_m_s, increment_day, mean_path_km, mean_to_sensor_azimuth, mean_to_sensor_zenith, valid, \
-           to_sensor_azimuth_lut_grid, to_sensor_zenith_lut_grid
+    return (
+        h_m_s,
+        increment_day,
+        mean_path_km,
+        mean_to_sensor_azimuth,
+        mean_to_sensor_zenith,
+        valid,
+        to_sensor_azimuth_lut_grid,
+        to_sensor_zenith_lut_grid,
+    )
 
 
-def get_metadata_from_loc(loc_file: str, gip: dict, tsip: dict, lut_params: LUTConfig, trim_lines: int = 5,
-                          nodata_value: float = -9999) -> (float, float, float, np.array):
-    """ Get metadata needed for complete runs from the location file (bands long, lat, elev).
+def get_metadata_from_loc(
+    loc_file: str,
+    gip: dict,
+    tsip: dict,
+    lut_params: LUTConfig,
+    trim_lines: int = 5,
+    nodata_value: float = -9999,
+) -> (float, float, float, np.array):
+    """Get metadata needed for complete runs from the location file (bands long, lat, elev).
 
     Args:
         loc_file: file name to pull data from
@@ -1325,7 +1393,9 @@ def get_metadata_from_loc(loc_file: str, gip: dict, tsip: dict, lut_params: LUTC
 
     for line in range(loc_dataset.RasterYSize):
         # Read line in
-        loc_data[:, line:line+1, :] = loc_dataset.ReadAsArray(0, line, loc_dataset.RasterXSize, 1)
+        loc_data[:, line : line + 1, :] = loc_dataset.ReadAsArray(
+            0, line, loc_dataset.RasterXSize, 1
+        )
 
     valid = np.logical_not(np.any(loc_data == nodata_value, axis=0))
     use_trim = trim_lines != 0 and valid.shape[0] > trim_lines*2

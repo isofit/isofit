@@ -18,13 +18,14 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-from os.path import split, abspath
+from os.path import abspath, split
+
 import numpy as np
 import scipy
 from scipy.ndimage.filters import gaussian_filter1d
 from spectral.io import envi
 
-from isofit.core.common import expand_path, json_load_ascii, envi_header
+from isofit.core.common import envi_header, expand_path, json_load_ascii
 
 
 def instrument_model(config):
@@ -44,31 +45,37 @@ def instrument_model(config):
     config = json_load_ascii(config, shell_replace=True)
     configdir, configfile = split(abspath(config))
 
-    infile = expand_path(configdir, config['input_radiance_file'])
-    outfile = expand_path(configdir, config['output_model_file'])
-    flatfile = expand_path(configdir, config['output_flatfield_file'])
-    uniformity_thresh = float(config['uniformity_threshold'])
+    infile = expand_path(configdir, config["input_radiance_file"])
+    outfile = expand_path(configdir, config["output_model_file"])
+    flatfile = expand_path(configdir, config["output_flatfield_file"])
+    uniformity_thresh = float(config["uniformity_threshold"])
 
     infile_hdr = envi_header(infile)
     img = envi.open(infile_hdr, infile)
-    inmm = img.open_memmap(interleave='bil', writable=False)
+    inmm = img.open_memmap(interleave="bil", writable=False)
     X = np.array(inmm[:, :, :], dtype=np.float32)
     nr, nb, nc = X.shape
 
     FF, Xhoriz, Xhorizp, use_ff = _flat_field(X, uniformity_thresh)
     np.array(FF, dtype=np.float32).tofile(flatfile)
-    with open(envi_header(flatfile), 'w') as fout:
+    with open(envi_header(flatfile), "w") as fout:
         fout.write(hdr_template.format(lines=nb, samples=nc))
 
     C, Xvert, Xvertp, use_C = _column_covariances(X, uniformity_thresh)
-    cshape = (C.shape[0], C.shape[1]**2)
+    cshape = (C.shape[0], C.shape[1] ** 2)
     out = np.array(C, dtype=np.float32).reshape(cshape)
-    mdict = {'columns': out.shape[0], 'bands': out.shape[1],
-             'covariances': out, 'Xvert': Xvert, 'Xhoriz': Xhoriz,
-             'Xvertp': Xvertp, 'Xhorizp': Xhorizp, 'use_ff': use_ff,
-             'use_C': use_C}
+    mdict = {
+        "columns": out.shape[0],
+        "bands": out.shape[1],
+        "covariances": out,
+        "Xvert": Xvert,
+        "Xhoriz": Xhoriz,
+        "Xvertp": Xvertp,
+        "Xhorizp": Xhorizp,
+        "use_ff": use_ff,
+        "use_C": use_C,
+    }
     scipy.io.savemat(outfile, mdict)
-
 
 
 def _high_frequency_vert(X, sigma=4.0):
@@ -78,7 +85,7 @@ def _high_frequency_vert(X, sigma=4.0):
     Xvert = X.copy()
     for r in range(nr):
         for b in range(nb):
-            filt = gaussian_filter1d(Xvert[:, b, r], sigma, mode='nearest')
+            filt = gaussian_filter1d(Xvert[:, b, r], sigma, mode="nearest")
             Xvert[:, b, r] = X[:, b, r] - filt
     return Xvert
 
@@ -90,8 +97,7 @@ def _low_frequency_horiz(X, sigma=4.0):
     Xhoriz = X.copy()
     for l in range(nl):
         for b in range(nb):
-            Xhoriz[l, b, :] = gaussian_filter1d(
-                Xhoriz[l, b, :], sigma, mode='nearest')
+            Xhoriz[l, b, :] = gaussian_filter1d(Xhoriz[l, b, :], sigma, mode="nearest")
     return Xhoriz
 
 
@@ -109,8 +115,9 @@ def _flat_field(X, uniformity_thresh):
         dists = abs(xsub - mu)
         thresh = np.percentile(dists.flatten(), 90.0)
         use = dists < thresh
-        FF[b, :] = ((xsub*use).sum(axis=0)/use.sum(axis=0)) / \
-            ((X[:, b, :]*use).sum(axis=0)/use.sum(axis=0))
+        FF[b, :] = ((xsub * use).sum(axis=0) / use.sum(axis=0)) / (
+            (X[:, b, :] * use).sum(axis=0) / use.sum(axis=0)
+        )
         use_ff = np.logical_and(use_ff, use)
     return FF, Xhoriz, Xhorizp, np.array(use_ff)
 
