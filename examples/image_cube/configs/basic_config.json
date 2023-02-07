@@ -1,0 +1,214 @@
+{
+  "general_options": {
+    "sensor": "ang",
+    "n_cores": 4,
+    "segmentation_size": 400,
+    "num_neighbors": 15,
+    "chunksize": 256,
+    "n_pca": 5,
+    "copy_input_files": false,
+    "presolve_wv": true,
+    "empirical_line": false,
+    "analytical_line": false,
+    "debug_mode": true,
+    "ray_temp_dir": "/tmp/ray"
+  },
+  "processors": {
+    "general_inversion_parameters": {
+      "filepaths": {
+        "model_discrepancy_path": null,
+        "aerosol_climatology_path": null,
+        "channelized_uncertainty_path": null,
+        "surface_path": null,
+        "rdn_factors_path": null,
+        "modtran_path": null,
+        "lut_config_path": null,
+        "emulator_base": "/Users/bohn/Desktop/sRTMnet_v100/sRTMnet_v100"
+      },
+      "options": {
+        "multiple_restarts": false,
+        "multipart_transmittance": false,
+        "topography_model": false,
+        "eps": 0.02,
+        "uncorrelated_radiometric_uncertainty": 0.01,
+        "inversion_windows": [
+          [
+            380,
+            1325
+          ],
+          [
+            1435,
+            1770
+          ],
+          [
+            1965,
+            2500
+          ]
+        ],
+        "statevector_elements": [
+          "H2OSTR",
+          "AOT550",
+          "GNDALT"
+        ],
+        "surface_category": "multicomponent_surface"
+      },
+      "radiative_transfer_parameters": {
+        "spectral_DV": 5,
+        "spectral_FWHM": 5,
+        "spectral_BMNAME": "05_2013",
+        "atmosphere_type": "ATM_MIDLAT_SUMMER",
+        "H2OSTR": {
+          "lut_spacing": 0.25,
+          "lut_spacing_min": 0.03,
+          "default_range": [
+            0.05,
+            5
+          ],
+          "min": 0.05
+        },
+        "AOT550": {
+          "lut_spacing": 0,
+          "lut_spacing_min": 0,
+          "default_range": [
+            0.001,
+            1
+          ]
+        },
+        "GNDALT": {
+          "lut_spacing": 0.25,
+          "lut_spacing_min": 0.2,
+          "expand_range": 2
+        }
+      }
+    },
+    "presolve_inversion_parameters": {
+      "max_sample_points": 200
+    },
+    "type_specific_inversion_parameters": {
+      "cloud": {
+        "toa_threshold_wavelengths": [
+          450,
+          1250,
+          1650
+        ],
+        "toa_threshold_values": [
+          0.31,
+          0.51,
+          0.22
+        ],
+        "toa_threshold_comparisons": [
+          "gt",
+          "gt",
+          "gt"
+        ],
+        "statevector_elements": [
+          "GNDALT"
+        ],
+        "GNDALT": {
+          "lut_spacing": 0.25,
+          "lut_spacing_min": 0.2,
+          "expand_range": 2
+        }
+      },
+      "water": {
+        "toa_threshold_wavelengths": [
+          1000,
+          1380
+        ],
+        "toa_threshold_values": [
+          0.05,
+          0.1
+        ],
+        "toa_threshold_comparisons": [
+          "lt"
+        ],
+        "surface_category": "glint_surface"
+      }
+    }
+  },
+  "surface": {
+    "output_model_file": null,
+    "wavelength_file": "../../../20171108_Pasadena/remote/20170320_ang20170228_wavelength_fit.txt",
+    "normalize": "Euclidean",
+    "reference_windows": [
+      [
+        400,
+        1300
+      ],
+      [
+        1450,
+        1700
+      ],
+      [
+        2100,
+        2450
+      ]
+    ],
+    "sources": [
+      {
+        "input_spectrum_files": [
+          "surface_model_ucsb"
+        ],
+        "n_components": 8,
+        "windows": [
+          {
+            "interval": [
+              300,
+              400
+            ],
+            "regularizer": 0.0001,
+            "correlation": "EM"
+          },
+          {
+            "interval": [
+              400,
+              1300
+            ],
+            "regularizer": 1e-06,
+            "correlation": "EM"
+          },
+          {
+            "interval": [
+              1300,
+              1450
+            ],
+            "regularizer": 0.0001,
+            "correlation": "EM"
+          },
+          {
+            "interval": [
+              1450,
+              1700
+            ],
+            "regularizer": 1e-06,
+            "correlation": "EM"
+          },
+          {
+            "interval": [
+              1700,
+              2100
+            ],
+            "regularizer": 0.0001,
+            "correlation": "EM"
+          },
+          {
+            "interval": [
+              2100,
+              2450
+            ],
+            "regularizer": 1e-06,
+            "correlation": "EM"
+          },
+          {
+            "interval": [
+              2450,
+              2550
+            ],
+            "regularizer": 0.0001,
+            "correlation": "EM"
+          }
+        ]
+      }
+    ]
+  }
+}
