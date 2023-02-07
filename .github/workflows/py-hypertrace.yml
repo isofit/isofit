@@ -5,9 +5,13 @@ on: [push, pull_request]
 jobs:
   sRTMnet:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
     container:
-      image: pgbrodrick/isofit
-      options: --shm-size=2gb
+      image: jammont/isofit:latest
+      env:
+        ENV_NAME: test
 
     steps:
     - name: Checkout
@@ -15,32 +19,13 @@ jobs:
 
     - name: Install Isofit
       run: |
-        pip3 install --editable .
-
-    - name: Download and compile 6Sv
-      run: |
-        cd examples/py-hypertrace
-        wget -nv https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar
-        mkdir -p 6sv-2.1
-        tar -xf 6sv-2.1.tar --directory 6sv-2.1
-        cd 6sv-2.1
-        # Necessary for compilation to work with recent GCC versions
-        sed -i Makefile -e 's/FFLAGS.*/& -std=legacy/'
-        make
+        pip install --editable .
 
     - name: Download and extract hypertrace data
       run: |
         cd examples/py-hypertrace
-        wget -nv https://github.com/ashiklom/isofit/releases/download/hypertrace-data/hypertrace-data.tar.gz
+        curl -SLO https://github.com/ashiklom/isofit/releases/download/hypertrace-data/hypertrace-data.tar.gz
         tar -xf hypertrace-data.tar.gz
-
-    - name: Download sRTMnet
-      run: |
-        cd examples/py-hypertrace
-        mkdir sRTMnet_v100
-        cd sRTMnet_v100
-        wget -nv https://zenodo.org/record/4096627/files/sRTMnet_v100.zip
-        unzip sRTMnet_v100.zip && rm sRTMnet_v100.zip
 
     - name: Run Hypertrace
       run: |
