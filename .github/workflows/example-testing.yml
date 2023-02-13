@@ -9,6 +9,9 @@ on: [push, pull_request]
 jobs:
   examples:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
     container:
       image: jammont/isofit:latest
       env:

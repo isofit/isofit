@@ -5,6 +5,9 @@ on: [push, pull_request]
 jobs:
   sRTMnet:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
     container:
       image: jammont/isofit:latest
       env:
