@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        shell: bash -eil {0}
+        shell: bash -i {0}
     container:
       image: jammont/isofit:latest
       env:
