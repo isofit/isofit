@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        shell: source /usr/local/bin/_activate_current_env.sh && {0}
+        shell: bash -c "source /usr/local/bin/_activate_current_env.sh" && bash {0}
     container:
       image: jammont/isofit:latest
       env:
