@@ -9,9 +9,6 @@ on: [push, pull_request]
 jobs:
   examples:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -ieo pipefail {0}
     container:
       image: jammont/isofit:latest
       env:
@@ -23,6 +20,7 @@ jobs:
 
     - name: Install Isofit
       run: |
+        source /root/.bashrc
         pip install --editable .
 
     # - name: Running Example - image_cube/small
@@ -37,16 +35,19 @@ jobs:
 
     - name: Running Example - 20151026_SantaMonica
       run: |
+        source /root/.bashrc
         cd examples/20151026_SantaMonica
         bash run_examples.sh
 
     - name: Running Example - 20171108_Pasadena
       run: |
+        source /root/.bashrc
         cd examples/20171108_Pasadena
         bash run_example_modtran.sh
         python run_topoflux_example.py
 
     - name: Running Example - 20190806_ThermalIR
       run: |
+        source /root/.bashrc
         cd examples/20190806_ThermalIR
         python run_example_modtran_one.py

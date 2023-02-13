@@ -5,9 +5,6 @@ on: [push, pull_request]
 jobs:
   sRTMnet:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -i {0}
     container:
       image: jammont/isofit:latest
       env:
@@ -19,16 +16,19 @@ jobs:
 
     - name: Install Isofit
       run: |
+        source /root/.bashrc
         pip install --editable .
 
     - name: Download and extract hypertrace data
       run: |
+        source /root/.bashrc
         cd examples/py-hypertrace
         curl -SLO https://github.com/ashiklom/isofit/releases/download/hypertrace-data/hypertrace-data.tar.gz
         tar -xf hypertrace-data.tar.gz
 
     - name: Run Hypertrace
       run: |
+        source /root/.bashrc
         cd examples/py-hypertrace
         # Modify the workflow file for GitHub actions
         python workflow.py configs/example-srtmnet-ci.json
