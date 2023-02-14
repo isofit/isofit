@@ -70,7 +70,7 @@ These are included via (pre-commit)[https://pre-commit.com] and should be instal
 
   pre-commit install
 
-Every commit from here on will auto-apply the above packages. Additionally, upon a PR to the `master` branch, `Black` consistency will be checked.
+Every commit from here on will auto-apply the above packages. Additionally, upon a PR to the `dev` branch, `Black` consistency will be checked.
 Any PRs failing this check will be rejected by the maintainers until it is passing.
 
 If you must apply Black manually, you must first `pip install black` and then run `black isofit` from the root of the repository.
@@ -81,22 +81,22 @@ Implement Your Changes and Create a Pull Request
 At this point, you are ready to implement your changes!
 
 As you develop, you should make sure that your branch doesn't veer too far from
-ISOFIT's master branch.  To do this, switch back to your master branch and make
-sure it's up to date with ISOFIT's master branch:
+ISOFIT's dev branch.  To do this, switch back to your dev branch and make
+sure it's up to date with ISOFIT's dev branch:
 
 .. code::
 
   git remote add upstream https://github.com/isofit/isofit.git
-  git checkout master
-  git pull upstream master
+  git checkout dev
+  git pull upstream dev
 
 
-Then update your feature branch from your local copy of master, and push it!
+Then update your feature branch from your local copy of dev, and push it!
 
 .. code::
 
   git checkout 314-update-docs-libradtran
-  git rebase master
+  git rebase dev
   git push --set-upstream origin 314-update-docs-libradtran
 
 
@@ -114,7 +114,7 @@ Here's the suggested workflow:
 .. code::
 
   git checkout 314-update-docs-libradtran
-  git pull --rebase upstream master
+  git pull --rebase upstream dev
   git push --force-with-lease 314-update-docs-libradtran
 
 Project Decision Making
@@ -148,69 +148,36 @@ Release Steps (for Maintainers)
 
 Note, not all accepted PRs need to have a release.  Good reasons to not issue a release are that while the PR is stable, additional updates are expected, or multiple separate PRs are coming together.  However, if you accept a PR and choose not to make a release, update the `Roadmap <https://github.com/isofit/isofit/projects/4>`_ to indicate the current progress towards the next release.
 
-Get latest public repo:
+Get latest public repo, and checkout dev:
 
 .. code::
 
   git clone https://github.com/isofit/isofit.git
   cd isofit
-
-Create release branch and pull in changes from pull request:
-
-.. code::
-
-  git checkout -b release-1.2.0 master
-  git pull https://github.com/davidraythompson/isofit.git feature-branch  (NOTE: this is the pull request branch)
+  git checkout dev
 
 Update version number:
 
 .. code::
 
   vi isofit/__init__.py
-  vi recipe/meta.yaml
+  git commit -m 'updated version number'
+  git push origin dev
 
-Commit changes to release branch:
-
-.. code::
-
-  git add -A
-  git commit -m “Prepares version 1.2.0 for release."
-
-Merge release branch into master:
+Merge dev into main:
 
 .. code::
 
-  git checkout master
-  git merge --no-ff release-1.2.0
-  git push origin master
-
-Update the 'current-release' branch:
-
-.. code::
-
-  git checkout current-release
-  git merge master
-  git push origin current-release
-  git checkout master
+  git checkout main
+  git merge dev
+  git push origin main
 
 Create release tag and release archive:
 
 * Go to https://github.com/isofit/isofit/releases
 * Click "Draft a new release"
-* Enter tag version as "v1.2.0" (depending on latest version), and input release title and description
+* Enter tag version as "v3.8.0" (depending on latest version), and input release title and description
 * Click "Publish release"
-
-Update sha256 hash value for conda recipe:
-
-* Download latest tar.gz from https://github.com/isofit/isofit/releases/tag/v1.2.0
-* Run "openssl dgst -sha256 isofit-1.2.0.tar.gz"
-* Add sha256 hash value to reciples/meta.yaml and update master with the following:
-
-.. code::
-
-  git add -A
-  git commit -m "Adds sha256 hash value to conda-forge recipe"
-  git push origin master
 
 Create and upload Pypi distribution:
 
@@ -227,15 +194,17 @@ Contributors
 The github maintainers, responsible for handling pull requests, are:
 
 * David R. Thompson: david.r.thompson@jpl.nasa.gov
-* Winston Olson Duvall winston.olson-duvall@jpl.nasa.gov
 * Philip Brodrick philip.brodrick@jpl.nasa.gov
 
 Thanks to the following regular contributors:
 
+* Alexey Shiklomanov (NASA Goddard)
 * Jay Fahlen (NASA JPL)
-* Adam Erickson (NASA GSFC)
-* Shanti Rao (NASA JPL)
-* Terry Mullen (UMass)
+* Nimrod Carmon (NASA JPL)
+* Niklas Bohn (NASA JPL)
+* Regina Eckert (NASA JPL)
+* James Montgomery (NASA JPL)
+
 
 The ISOFIT codebase was made possible with support from various sources.
 The initial algorithm and code was developed by the NASA Earth Science
@@ -243,10 +212,12 @@ Division data analysis program “Utilization of Airborne Visible/Infrared
 Imaging Spectrometer Next Generation Data from an Airborne Campaign in
 India," program NNH16ZDA001N-AVRSNG, managed by Woody Turner.  Later
 research and maturation was provided by the Jet Propulsion Laboratory and
-California Institue of Technology President and Director’s Fund, and the
+California Institute of Technology President and Director’s Fund, and the
 Jet Propulsion Laboratory Research and Technology Development Program.
+The project is currently supported by the Open Source Tools, Frameworks, 
+and Libraries Program (NNH20ZDA001N), managed by Dr. Steven Crawford.
 Neural network radiative transfer is supported by the NASA Center
 Innovation Fund managed in conjunction with the Jet Propulsion Laboratory
 Office of the Chief Scientist and Technologist. The initial research took
 place at the Jet Propulsion Laboratory, California Institute of Technology,
-4800 Oak Grove Dr., Pasadena, CA 91109 USA.
+4800 Oak Grove Dr., Pasadena, CA 91109 USA. 
