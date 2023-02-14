@@ -212,7 +212,7 @@ Division data analysis program “Utilization of Airborne Visible/Infrared
 Imaging Spectrometer Next Generation Data from an Airborne Campaign in
 India," program NNH16ZDA001N-AVRSNG, managed by Woody Turner.  Later
 research and maturation was provided by the Jet Propulsion Laboratory and
-California Institue of Technology President and Director’s Fund, and the
+California Institute of Technology President and Director’s Fund, and the
 Jet Propulsion Laboratory Research and Technology Development Program.
 The project is currently supported by the Open Source Tools, Frameworks, 
 and Libraries Program (NNH20ZDA001N), managed by Dr. Steven Crawford.
