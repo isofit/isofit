@@ -13,7 +13,6 @@
 __pycache__
 
 # Ignore dynamic contents of example directories
-examples/**/*lut/*
 examples/**/data/*_vicarious_correction.txt
 examples/**/data/*_coastal_model.mat
 examples/**/output/*.txt
