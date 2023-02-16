@@ -14,6 +14,7 @@ from os.path import abspath, exists, join, split
 from shutil import copyfile
 from sys import platform
 from typing import List
+from warnings import warn
 
 import numpy as np
 from osgeo import gdal
@@ -23,6 +24,12 @@ from spectral.io import envi
 from isofit.core import common, isofit
 from isofit.core.common import envi_header
 from isofit.utils import analytical_line, empirical_line, extractions, segment
+
+warn(
+    message=f'The module {__name__} is deprecated and will be removed with ISOFIT version 3.2.',
+    category=DeprecationWarning,
+    stacklevel=2
+)
 
 EPS = 1e-6
 CHUNKSIZE = 256

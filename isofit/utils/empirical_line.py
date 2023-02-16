@@ -267,8 +267,9 @@ def _run_chunk(
                     uv = reference_uncertainty[nn, :]
                 else:
                     dists, nn = tree.query(loc, 1)
-                    loc_class = int(reference_class[nn])
-                    dists, nn = trees[loc_class].query(loc, nneighbors)
+                    loc_class = reference_class[nn]
+                    tree_class = np.where(np.unique(reference_class) == loc_class)[0][0]
+                    dists, nn = trees[tree_class].query(loc, nneighbors)
                     nn = nn[nn < np.sum(reference_class == loc_class)]
                     xv = reference_radiance[reference_class == loc_class, :][nn, :]
                     yv = reference_reflectance[reference_class == loc_class, :][nn, :]
@@ -557,7 +558,7 @@ def empirical_line(
     n_ray_cores = ray.available_resources()["CPU"]
     n_cores = min(n_ray_cores, n_input_lines)
 
-    logging.info("Beginning empirical line inversions using {} cores".format(n_cores))
+    logging.info('Beginning empirical line inversions using {} cores'.format(int(n_cores)))
 
     # Break data into sections
     line_sections = np.linspace(0, n_input_lines, num=int(n_cores + 1), dtype=int)

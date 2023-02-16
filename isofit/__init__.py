@@ -16,7 +16,7 @@
 #
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
-#         Adam Erickson, adam.m.erickson@nasa.gov
+#         Philip G Brodrick, philip.brodrick@jpl.nasa.gov
 #
 
 

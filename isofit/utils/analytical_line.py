@@ -44,18 +44,21 @@ def main(rawargs=None) -> None:
     TODO: Description
     """
     # TODO: Parser should be moved out of main and these be made parameters of the function
-    parser = argparse.ArgumentParser(description="Apply OE to a block of data.")
-    parser.add_argument("rdn_file", type=str)
-    parser.add_argument("loc_file", type=str)
-    parser.add_argument("obs_file", type=str)
-    parser.add_argument("isofit_dir", type=str)
-    parser.add_argument("--n_atm_neighbors", type=int, default=20)
-    parser.add_argument("--smoothing_sigma", type=int, default=2)
-    parser.add_argument("--output_rfl_file", type=str, default=None)
-    parser.add_argument("--output_unc_file", type=str, default=None)
-    parser.add_argument("--atm_file", type=str, default=None)
-    parser.add_argument("--loglevel", type=str, default="INFO")
-    parser.add_argument("--logfile", type=str, default=None)
+    parser = argparse.ArgumentParser(description='Apply OE to a block of data.')
+    parser.add_argument('rdn_file',            type=str                )
+    parser.add_argument('loc_file',            type=str                )
+    parser.add_argument('obs_file',            type=str                )
+    parser.add_argument('isofit_dir',          type=str                )
+    parser.add_argument('--isofit_config',     type=str, default=None  )
+    parser.add_argument('--segmentation_file', type=str, default=None  )
+    parser.add_argument('--n_atm_neighbors',   type=int, default=20    )
+    parser.add_argument('--n_cores',           type=int, default=-1    )
+    parser.add_argument('--smoothing_sigma',   type=int, default=2     )
+    parser.add_argument('--output_rfl_file',   type=str, default=None  )
+    parser.add_argument('--output_unc_file',   type=str, default=None  )
+    parser.add_argument('--atm_file',          type=str, default=None  )
+    parser.add_argument('--loglevel',          type=str, default='INFO')
+    parser.add_argument('--logfile',           type=str, default=None  )
     args = parser.parse_args(rawargs)
 
     logging.basicConfig(
@@ -65,16 +68,22 @@ def main(rawargs=None) -> None:
         datefmt="%Y-%m-%d,%H:%M:%S",
     )
 
-    file = glob(os.path.join(args.isofit_dir, "config", "") + "*_modtran.json")[0]
+    if args.isofit_config is None:
+        file = glob(os.path.join(args.isofit_dir, 'config', '') + '*_modtran.json')[0]
+    else:
+        file = args.isofit_config
+
     config = configs.create_new_config(file)
     config.forward_model.instrument.integrations = 1
 
     subs_state_file = config.output.estimated_state_file
-    subs_loc_file = config.input.loc_file
-    full_state_file = subs_state_file.replace(
-        "_subs_state", "_subs_state_mapped"
-    )  # Unused
-    lbl_file = subs_state_file.replace("_subs_state", "_lbl")
+    subs_loc_file   = config.input.loc_file
+    full_state_file = subs_state_file.replace('_subs_state', '_subs_state_mapped') # Unused
+
+    if args.segmentation_file is None:
+        lbl_file = subs_state_file.replace('_subs_state', '_lbl')
+    else:
+        lbl_file = args.segmentation_file
 
     if args.output_rfl_file is None:
         analytical_state_file = subs_state_file.replace(
@@ -149,19 +158,11 @@ def main(rawargs=None) -> None:
         _redis_password=config.implementation.redis_password,
     )
 
-    n_workers = 40  # Hardcoded
-    worker = ray.remote(Worker)
-    wargs = [
-        config,
-        ray.put(fm),
-        atm_file,
-        analytical_state_file,
-        analytical_state_unc_file,
-        args.rdn_file,
-        args.loc_file,
-        args.obs_file,
-        args.loglevel,
-        args.logfile,
+    n_workers = args.n_cores
+    worker    = ray.remote(Worker)
+    wargs     = [
+        config, ray.put(fm), atm_file, analytical_state_file, analytical_state_unc_file,
+        args.rdn_file, args.loc_file, args.obs_file, args.loglevel, args.logfile
     ]
     workers = ray.util.ActorPool([worker.remote(*wargs) for _ in range(n_workers)])
 
