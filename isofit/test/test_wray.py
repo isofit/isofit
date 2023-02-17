@@ -1,5 +1,7 @@
 from isofit.utils.wrapped_ray import wray as ray
 
+ray.init(debug=True)
+
 
 @ray.remote
 def decorator(a, b):
@@ -16,7 +18,8 @@ def test_decorators():
         9: (3, 3),
     }
     for ans, (a, b) in cases.items():
-        assert decorator.remote(a, b) == c
+        res = ray.get(decorator.remote(a, b))
+        assert res == ans, f"Failed {a}*{b}, got {res} expected {ans}"
 
     jobs = [decorator.remote(a, b) for a, b in cases.values()]
     assert ray.get(jobs) == list(cases.keys())
@@ -33,16 +36,14 @@ class Worker:
         return f"{self.name}{key}"
 
 
-def test_classes():
+def test_classes(name="test", n=4):
     """
     Tests wrapping class objects and how they're used in core.isofit.
     """
-    cases = {"abc": "def", "ghi": "jkl"}
-
+    name_id = ray.put(name)
     worker = ray.remote(Worker)
+    workers = ray.util.ActorPool([worker.remote(name_id) for _ in range(n)])
 
-    workers = ray.util.ActorPool([worker.remote() for _ in range(len(cases))])
+    results = workers.map_unordered(lambda a, b: a.some_func.remote(b), range(n))
 
-    results = workers.map_unordered(lambda a, b: a.some_func.remote(b), cases.values())
-
-    assert results == ["abcdef", "ghijkl"]
+    assert list(results) == [f"{name}{i}" for i in range(n)]
