@@ -34,8 +34,8 @@ from isofit.core.forward import ForwardModel
 from isofit.core.geometry import Geometry
 from isofit.inversion.inverse import Inversion
 from isofit.inversion.inverse_simple import invert_algebraic, invert_analytical
+from isofit.utils import remap
 from isofit.utils.atm_interpolation import atm_interpolation
-from isofit.utils.wrapped_ray import remap
 from isofit.utils.wrapped_ray import wray as ray
 
 
