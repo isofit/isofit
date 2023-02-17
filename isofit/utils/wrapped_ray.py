@@ -8,9 +8,12 @@ from isofit.utils.wrapped_ray import wray as ray
 Only the exact ISOFIT use cases of Ray are wrapped here. If new uses of Ray
 are implemented, those uses/functions will have to be wrapped here as well.
 """
+import logging
+
 import ray
 
 DEBUG = False
+Logger = logging.getLogger("isofit/utils/wrapped_ray.py")
 
 
 class Remote:
