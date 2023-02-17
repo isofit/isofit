@@ -25,7 +25,6 @@ import time
 import matplotlib
 import numpy as np
 import pylab as plt
-import ray
 from scipy.linalg import inv
 from scipy.spatial import KDTree
 from spectral.io import envi
@@ -34,6 +33,7 @@ from isofit.configs import configs
 from isofit.core.common import envi_header
 from isofit.core.fileio import write_bil_chunk
 from isofit.core.instrument import Instrument
+from isofit.utils.wrapped_ray import wray as ray
 
 plt.switch_backend("Agg")
 
@@ -537,6 +537,7 @@ def empirical_line(
     if n_cores == -1:
         n_cores = iconfig.implementation.n_cores
     rayargs = {
+        "debug": iconfig.implementation.debug_mode,
         "ignore_reinit_error": iconfig.implementation.ray_ignore_reinit_error,
         "local_mode": n_cores == 1,
         "address": iconfig.implementation.ip_head,
@@ -558,7 +559,9 @@ def empirical_line(
     n_ray_cores = ray.available_resources()["CPU"]
     n_cores = min(n_ray_cores, n_input_lines)
 
-    logging.info('Beginning empirical line inversions using {} cores'.format(int(n_cores)))
+    logging.info(
+        "Beginning empirical line inversions using {} cores".format(int(n_cores))
+    )
 
     # Break data into sections
     line_sections = np.linspace(0, n_input_lines, num=int(n_cores + 1), dtype=int)
