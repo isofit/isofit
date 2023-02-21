@@ -1,3 +1,7 @@
+# Notes:
+#   Bash shells do not use ~/.profile or ~/.bashrc so these shells need to be explicitely declared as shell: bash -el {0}
+#   https://github.com/marketplace/actions/setup-miniconda#important
+#
 name: Example Tests
 
 on: [push, pull_request]
@@ -5,8 +9,13 @@ on: [push, pull_request]
 jobs:
   examples:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
     container:
-      image: pgbrodrick/isofit
+      image: jammont/isofit:latest
+      env:
+        ENV_NAME: test
 
     steps:
     - name: Checkout
@@ -14,32 +23,8 @@ jobs:
 
     - name: Install Isofit
       run: |
-        pip3 install --editable .
-
-    - name: Download and compile 6Sv
-      run: |
-        cd examples/
-        wget -nv https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar
-        mkdir -p 6sv-2.1
-        tar -xf 6sv-2.1.tar --directory 6sv-2.1
-        cd 6sv-2.1
-        # Necessary for compilation to work with recent GCC versions
-        sed -i Makefile -e 's/FFLAGS.*/& -std=legacy/'
-        make
-        # Pass environment variable to following jobs
-        echo "SIXS_DIR=$(readlink -f .)" >> $GITHUB_ENV
-
-    - name: Download sRTMnet
-      run: |
-        cd examples/
-        mkdir sRTMnet_v100
-        cd sRTMnet_v100
-        wget -nv https://zenodo.org/record/4096627/files/sRTMnet_v100.zip
-        unzip sRTMnet_v100.zip && rm sRTMnet_v100.zip
-        # Pass environment variable to following jobs
-        echo "EMULATOR_PATH=$(readlink -f ./sRTMnet_v100)" >> $GITHUB_ENV
-        # Disables MODTRAN
-        echo "MODTRAN_DIR=\"\"" >> $GITHUB_ENV
+        source /root/.bashrc
+        pip install --editable .
 
     # - name: Running Example - image_cube/small
     #   run: |
@@ -53,16 +38,19 @@ jobs:
 
     - name: Running Example - 20151026_SantaMonica
       run: |
+        source /root/.bashrc
         cd examples/20151026_SantaMonica
         bash run_examples.sh
 
     - name: Running Example - 20171108_Pasadena
       run: |
+        source /root/.bashrc
         cd examples/20171108_Pasadena
         bash run_example_modtran.sh
         python run_topoflux_example.py
 
     - name: Running Example - 20190806_ThermalIR
       run: |
+        source /root/.bashrc
         cd examples/20190806_ThermalIR
         python run_example_modtran_one.py

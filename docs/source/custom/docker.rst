@@ -19,16 +19,16 @@ How to Use
 Start by pulling the image:
 
 .. code-block:: bash
-  docker pull isofit/isofit
+  docker pull jammont/isofit:latest
 
-This image is default tagged as `isofit`. As such, to use it run:
+This image is default tagged as `jammont/isofit`. As such, to use it run:
 
 .. code-block:: bash
-  $ docker run -it --rm isofit bash
+  $ docker run -it --rm jammont/isofit bash
 
 - `-it` - Run in `interactive` and `terminal` modes, which will build a container and place the user inside of it.
 - `--rm` - Removes the container once finished. If you intend to modify the container between sessions, remove this flag.
-- `isofit` - The `tag` name of the image. If you built your own ISOFIT image using a different tag, be sure to replace this string.
+- `jammont/isofit` - The `tag` name of the image. If you built your own ISOFIT image using a different tag, be sure to replace this string.
 - `bash` - The command to run for `-it`. Using `bash` here will invoke a bash instance for the user. If you wanted to launch a specific script without entering the container, you could replace this command eg. `python /some/path/to/a/script.py`
 
 After running the above command, you will placed inside the container as the root user. From here you may proceed to use ISOFIT as you need.
@@ -36,7 +36,7 @@ After running the above command, you will placed inside the container as the roo
 You may need to attach volumes to the container at runtime in order to access files external to the container. For instance:
 
 .. code-block:: bash
-  docker run -it -v /host/path:/container/path --rm isofit bash
+  docker run -it -v /host/path:/container/path --rm jammont/isofit bash
 
 This will provide `/host/path` available inside of the container as `/container/path`. As such, any changes made inside the container to this path or its contents will be reflected on the host.
 
