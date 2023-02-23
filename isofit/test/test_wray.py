@@ -1,4 +1,4 @@
-from isofit.utils.wrapped_ray import wray as ray
+from isofit.wrappers import ray
 
 ray.init(debug=True)
 
@@ -24,6 +24,8 @@ def test_decorators():
     jobs = [decorator.remote(a, b) for a, b in cases.values()]
     assert ray.get(jobs) == list(cases.keys())
 
+    return True
+
 
 class Worker:
     def __init__(self, name):
@@ -47,3 +49,5 @@ def test_classes(name="test", n=4):
     results = workers.map_unordered(lambda a, b: a.some_func.remote(b), range(n))
 
     assert list(results) == [f"{name}{i}" for i in range(n)]
+
+    return True

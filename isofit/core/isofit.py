@@ -32,7 +32,7 @@ from isofit.core.fileio import IO
 from isofit.core.forward import ForwardModel
 from isofit.inversion.inverse import Inversion
 from isofit.inversion.inverse_mcmc import MCMCInversion
-from isofit.utils.wrapped_ray import wray as ray
+from isofit.wrappers import ray
 
 
 class Isofit:

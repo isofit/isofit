@@ -28,7 +28,7 @@ from skimage.segmentation import slic
 from spectral.io import envi
 
 from isofit.core.common import envi_header
-from isofit.utils.wrapped_ray import wray as ray
+from isofit.wrappers import ray
 
 
 @ray.remote

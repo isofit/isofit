@@ -33,7 +33,7 @@ from isofit.configs import configs
 from isofit.core.common import envi_header
 from isofit.core.fileio import write_bil_chunk
 from isofit.core.instrument import Instrument
-from isofit.utils.wrapped_ray import wray as ray
+from isofit.wrappers import ray
 
 plt.switch_backend("Agg")
 

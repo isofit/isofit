@@ -26,7 +26,7 @@ from spectral.io import envi
 
 from isofit.core.common import envi_header
 from isofit.core.fileio import write_bil_chunk
-from isofit.utils.wrapped_ray import wray as ray
+from isofit.wrappers import ray
 
 
 @ray.remote

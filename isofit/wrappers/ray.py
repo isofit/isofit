@@ -3,7 +3,10 @@ Ray Wrapper module to circumvent the ray package while maintaining ray-like
 syntax in the code. Due to circular dependencies, this file must be imported
 directly by each submodule. To do so, use the following:
 ```
-from isofit.utils.wrapped_ray import wray as ray
+from isofit.utils.wrapped_ray import wray as  ray
+```
+```
+from .wrapped_ray import wray as  ray
 ```
 Only the exact ISOFIT use cases of Ray are wrapped here. If new uses of Ray
 are implemented, those uses/functions will have to be wrapped here as well.
@@ -12,8 +15,8 @@ import logging
 
 import ray
 
+Logger = logging.getLogger("isofit/wrappers/ray.py")
 DEBUG = False
-Logger = logging.getLogger("isofit/utils/wrapped_ray.py")
 
 
 class Remote:
@@ -53,16 +56,19 @@ class Ray:
         else:
             Logger.debug("Ray has been disabled for this run.")
 
-    def remote(self, obj):
+    @staticmethod
+    def remote(obj):
         return Remote(obj)
 
-    def get(self, jobs):
+    @staticmethod
+    def get(jobs):
         if hasattr(jobs, "__iter__"):
             return [job.get() for job in jobs]
         else:
             return jobs.get()
 
-    def put(self, obj):
+    @staticmethod
+    def put(obj):
         return obj
 
     class util:
@@ -79,6 +85,3 @@ class Ray:
 
             def map_unordered(self, func, iterable):
                 return [func(*pair).get() for pair in zip(self.actors, iterable)]
-
-
-wray = Ray()

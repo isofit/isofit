@@ -36,7 +36,7 @@ from isofit.inversion.inverse import Inversion
 from isofit.inversion.inverse_simple import invert_algebraic, invert_analytical
 from isofit.utils import remap
 from isofit.utils.atm_interpolation import atm_interpolation
-from isofit.utils.wrapped_ray import wray as ray
+from isofit.wrappers import ray
 
 
 def main(rawargs=None) -> None:

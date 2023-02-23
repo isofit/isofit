@@ -34,7 +34,7 @@ from isofit.configs.sections.radiative_transfer_config import (
 )
 from isofit.configs.sections.statevector_config import StateVectorElementConfig
 from isofit.core import common
-from isofit.utils.wrapped_ray import wray as ray
+from isofit.wrappers import ray
 
 ### Functions ###
 
