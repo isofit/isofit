@@ -1,15 +1,8 @@
 """
 Ray Wrapper module to circumvent the ray package while maintaining ray-like
-syntax in the code. Due to circular dependencies, this file must be imported
-directly by each submodule. To do so, use the following:
-```
-from isofit.utils.wrapped_ray import wray as  ray
-```
-```
-from .wrapped_ray import wray as  ray
-```
-Only the exact ISOFIT use cases of Ray are wrapped here. If new uses of Ray
-are implemented, those uses/functions will have to be wrapped here as well.
+syntax in the code. Only the exact ISOFIT use cases of Ray are wrapped here.
+If new uses of Ray are implemented, those uses/functions will have to be wrapped
+here as well.
 """
 import logging
 
