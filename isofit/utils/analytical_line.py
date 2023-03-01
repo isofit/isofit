@@ -19,6 +19,7 @@
 
 import argparse
 import logging
+import multiprocessing
 import os
 import time
 from collections import OrderedDict
@@ -159,6 +160,8 @@ def main(rawargs=None) -> None:
     )
 
     n_workers = args.n_cores
+    if n_workers == -1:
+        n_workers = multiprocessing.cpu_count()
     worker    = ray.remote(Worker)
     wargs     = [
         config, ray.put(fm), atm_file, analytical_state_file, analytical_state_unc_file,
