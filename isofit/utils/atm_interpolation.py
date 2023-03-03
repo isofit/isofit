@@ -29,6 +29,7 @@ from scipy.linalg import inv
 from scipy.ndimage import gaussian_filter
 from scipy.spatial import KDTree
 from spectral.io import envi
+from typing import List
 
 from isofit.configs import configs
 from isofit.core.common import envi_header
@@ -47,7 +48,7 @@ def _run_chunk(
     input_locations_file: str,
     segmentation_file: str,
     output_atm_file: str,
-    nneighbors: int,
+    nneighbors: List,
     nodata_value: float,
     loglevel: str,
     logfile: str,
@@ -139,6 +140,10 @@ def _run_chunk(
     # degree.  This is all approximate of course.  Elevation appears in the
     # Third element, and the first two are latitude/longitude coordinates
 
+    if len(nneighbors) == 1 and n_atm_bands != 1:
+        logging.debug('assuming neighbors applies to all atm bands')
+        nneighbors = [nneighbors[0] for n in range(n_atm_bands)]
+
     # Iterate through image
     hash_table = {}
     for row in np.arange(start_line, stop_line):
@@ -165,9 +170,14 @@ def _run_chunk(
                 bhat = hash_table[hash_idx]
 
             if bhat is None:
-                dists, nn = tree.query(x, nneighbors)
+                # Use the max number of neighbors...we'll zero out unwanted components below
+                dists, nn = tree.query(x, np.max(nneighbors))
                 xv = reference_locations[nn, :] * loc_scaling[np.newaxis, :]
                 yv = reference_state[nn, :]
+
+                # Zero out unwanted components
+                for _nneigh, nneigh in enumerate(nneighbors):
+                    reference_state[nneigh:, _nneigh] = 0
 
                 bhat = np.zeros((n_atm_bands, xv.shape[1]))
 
@@ -223,7 +233,7 @@ def atm_interpolation(
     segmentation_file: str,
     input_locations_file: str,
     output_atm_file: str,
-    nneighbors: int = 400,
+    nneighbors: List = [400],
     nodata_value: float = -9999.0,
     loglevel: str = "INFO",
     logfile: str = None,

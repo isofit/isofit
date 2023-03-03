@@ -51,7 +51,7 @@ def main(rawargs=None) -> None:
     parser.add_argument('isofit_dir',          type=str                )
     parser.add_argument('--isofit_config',     type=str, default=None  )
     parser.add_argument('--segmentation_file', type=str, default=None  )
-    parser.add_argument('--n_atm_neighbors',   type=int, default=20    )
+    parser.add_argument('--n_atm_neighbors',   type=int, nargs='+', default=20    )
     parser.add_argument('--n_cores',           type=int, default=-1    )
     parser.add_argument('--smoothing_sigma',   type=int, default=2     )
     parser.add_argument('--output_rfl_file',   type=str, default=None  )
