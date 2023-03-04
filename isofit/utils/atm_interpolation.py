@@ -147,77 +147,81 @@ def _run_chunk(
     # Iterate through image
     hash_table = {}
     for row in np.arange(start_line, stop_line):
-        # Load inline input data
-        input_locations_mm = input_locations_img.open_memmap(
-            interleave="bip", writable=False
-        )
-        input_locations = np.array(input_locations_mm[row, :, :])
-        output_atm_row = np.zeros((n_input_samples, len(atm_bands))) + nodata_value
-        nspectra, start = 0, time.time()
 
-        for col in np.arange(n_input_samples):
-            x = input_locations[col, :]
-
-            if np.isclose(x, nodata_value).all():
-                output_atm_row[col, :] = nodata_value
-                continue
-            else:
-                x *= loc_scaling
-
-            bhat = None
-            hash_idx = segmentation_img[row, col]
-            if hash_idx in hash_table:
-                bhat = hash_table[hash_idx]
-
-            if bhat is None:
-                # Use the max number of neighbors...we'll zero out unwanted components below
-                dists, nn = tree.query(x, np.max(nneighbors))
-                xv = reference_locations[nn, :] * loc_scaling[np.newaxis, :]
-                yv = reference_state[nn, :]
-
-                # Zero out unwanted components
-                for _nneigh, nneigh in enumerate(nneighbors):
-                    yv[nneigh:, _nneigh] = -10 # set to get filtered
-
-                bhat = np.zeros((n_atm_bands, xv.shape[1]))
-
-                for i in np.arange(n_atm_bands):
-                    use = yv[:, i] > -5
-                    n = sum(use)
-                    # only use lat/lon here, ignore Z
-                    X = np.concatenate((np.ones((n, 1)), xv[use, :-1]), axis=1)
-                    W = np.diag(np.ones(n))  # /uv[use, i])
-                    y = yv[use, i : i + 1]
-                    try:
-                        bhat[i, :] = (inv(X.T @ W @ X) @ X.T @ W @ y).T
-                    except:
-                        bhat[i, :] = 0
-
-                    # if i == 0:
-                    #    print(X, y, bhat)
-
-            if (segmentation_img is not None) and not (hash_idx in hash_table):
-                hash_table[hash_idx] = bhat
-
-            A = np.hstack((np.ones(1), x[:-1]))
-            output_atm_row[col, :] = (bhat.T * A[:, np.newaxis]).sum(axis=0)
-
-            nspectra = nspectra + 1
-
-        elapsed = float(time.time() - start)
-        logging.debug(
-            "row {}/{}, ({}/{} local), {} spectra per second".format(
-                row,
-                n_input_lines,
-                int(row - start_line),
-                int(stop_line - start_line),
-                round(float(nspectra) / elapsed, 2),
+        if not np.all(segmentation_img[row,:] == 0):
+            # Load inline input data
+            input_locations_mm = input_locations_img.open_memmap(
+                interleave="bip", writable=False
             )
-        )
+            input_locations = np.array(input_locations_mm[row, :, :])
+            output_atm_row = np.zeros((n_input_samples, len(atm_bands))) + nodata_value
+            nspectra, start = 0, time.time()
 
-        del input_locations_mm
+            for col in np.arange(n_input_samples):
+                x = input_locations[col, :]
 
-        output_atm_row = output_atm_row.transpose((1, 0))
+                if np.isclose(x, nodata_value).all():
+                    output_atm_row[col, :] = nodata_value
+                    continue
+                else:
+                    x *= loc_scaling
+
+                bhat = None
+                hash_idx = segmentation_img[row, col]
+                if hash_idx in hash_table:
+                    bhat = hash_table[hash_idx]
+
+                if bhat is None:
+                    # Use the max number of neighbors...we'll zero out unwanted components below
+                    dists, nn = tree.query(x, np.max(nneighbors))
+                    xv = reference_locations[nn, :] * loc_scaling[np.newaxis, :]
+                    yv = reference_state[nn, :]
+
+                    # Zero out unwanted components
+                    for _nneigh, nneigh in enumerate(nneighbors):
+                        yv[nneigh:, _nneigh] = -10 # set to get filtered
+
+                    bhat = np.zeros((n_atm_bands, xv.shape[1]))
+
+                    for i in np.arange(n_atm_bands):
+                        use = yv[:, i] > -5
+                        n = sum(use)
+                        # only use lat/lon here, ignore Z
+                        X = np.concatenate((np.ones((n, 1)), xv[use, :-1]), axis=1)
+                        W = np.diag(np.ones(n))  # /uv[use, i])
+                        y = yv[use, i : i + 1]
+                        try:
+                            bhat[i, :] = (inv(X.T @ W @ X) @ X.T @ W @ y).T
+                        except:
+                            bhat[i, :] = 0
+
+                        # if i == 0:
+                        #    print(X, y, bhat)
+
+                if (segmentation_img is not None) and not (hash_idx in hash_table):
+                    hash_table[hash_idx] = bhat
+
+                A = np.hstack((np.ones(1), x[:-1]))
+                output_atm_row[col, :] = (bhat.T * A[:, np.newaxis]).sum(axis=0)
+
+                nspectra = nspectra + 1
+
+            elapsed = float(time.time() - start)
+            logging.debug(
+                "row {}/{}, ({}/{} local), {} spectra per second".format(
+                    row,
+                    n_input_lines,
+                    int(row - start_line),
+                    int(stop_line - start_line),
+                    round(float(nspectra) / elapsed, 2),
+                )
+            )
+
+            del input_locations_mm
+
+            output_atm_row = output_atm_row.transpose((1, 0))
+        else:
+            output_atm_row = np.zeros((n_atm_bands, segmentation_img.shape[1])) - 9999
 
         write_bil_chunk(
             output_atm_row,
