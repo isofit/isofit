@@ -177,7 +177,7 @@ def _run_chunk(
 
                 # Zero out unwanted components
                 for _nneigh, nneigh in enumerate(nneighbors):
-                    reference_state[nneigh:, _nneigh] = 0
+                    yv[nneigh:, _nneigh] = -10 # set to get filtered
 
                 bhat = np.zeros((n_atm_bands, xv.shape[1]))
 
