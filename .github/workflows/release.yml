@@ -8,7 +8,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     container:
-      image: pgbrodrick/isofit
+      image: jammont/isofit:latest
 
     steps:
     - uses: actions/checkout@v2
