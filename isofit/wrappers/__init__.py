@@ -1,3 +1,3 @@
-from .ray import Ray
+from .ray_env import Ray
 
 ray = Ray()

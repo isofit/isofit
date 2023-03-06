@@ -5,11 +5,12 @@ If new uses of Ray are implemented, those uses/functions will have to be wrapped
 here as well.
 """
 import logging
+import os
 
 import ray
 
-Logger = logging.getLogger("isofit/wrappers/ray.py")
-DEBUG = False
+Logger = logging.getLogger("isofit/wrappers/ray")
+DEBUG = os.environ.get("ISOFIT_DEBUG")
 
 
 class Remote:
@@ -19,6 +20,10 @@ class Remote:
         self.kwargs = kwargs
 
     def __getattr__(self, key):
+        """
+        Returns a Remote object on the key being requested. This enables
+        ray.remote(Class).func.remote()
+        """
         return Remote(getattr(self.obj, key))
 
     def remote(self, *args, **kwargs):
@@ -36,18 +41,14 @@ class Ray:
         """
         __getattribute__ intercepts every attr lookup call
         """
-        if DEBUG or key == "init":
+        if DEBUG:
             return object.__getattribute__(self, key)
         else:
             return getattr(ray, key)
 
-    def init(self, *args, debug=False, **kwargs):
-        global DEBUG
-        DEBUG = debug
-        if not DEBUG:
-            ray.init(*args, **kwargs)
-        else:
-            Logger.debug("Ray has been disabled for this run.")
+    def init(self, *args, **kwargs):
+        """ """
+        Logger.debug("Ray has been disabled for this run")
 
     @staticmethod
     def remote(obj):

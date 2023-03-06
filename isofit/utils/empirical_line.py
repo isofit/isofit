@@ -537,7 +537,6 @@ def empirical_line(
     if n_cores == -1:
         n_cores = iconfig.implementation.n_cores
     rayargs = {
-        "debug": iconfig.implementation.debug_mode,
         "ignore_reinit_error": iconfig.implementation.ray_ignore_reinit_error,
         "local_mode": n_cores == 1,
         "address": iconfig.implementation.ip_head,

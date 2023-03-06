@@ -68,7 +68,6 @@ class Isofit:
 
         # Initialize ray for parallel execution
         rayargs = {
-            "debug": self.config.implementation.debug_mode,
             "address": self.config.implementation.ip_head,
             "_redis_password": self.config.implementation.redis_password,
             "_temp_dir": self.config.implementation.ray_temp_dir,
