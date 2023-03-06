@@ -3,6 +3,9 @@ Ray Wrapper module to circumvent the ray package while maintaining ray-like
 syntax in the code. Only the exact ISOFIT use cases of Ray are wrapped here.
 If new uses of Ray are implemented, those uses/functions will have to be wrapped
 here as well.
+
+This implementation uses the parameter `debug` in `ray.init` to set the debug
+flag. This allows for the setting to be done
 """
 import logging
 
@@ -17,6 +20,8 @@ class Remote:
         self.obj = obj
         self.args = args
         self.kwargs = kwargs
+
+        # Doesn't trigger initialization, may be needed if this isn't a DEBUG run
         self.ray = ray.remote(obj)
 
     def __getattribute__(self, key):
