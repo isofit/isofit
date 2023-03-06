@@ -50,6 +50,7 @@ def test_classes(name="test", n=4):
 
     results = workers.map_unordered(lambda a, b: a.some_func.remote(b), range(n))
 
-    assert list(results) == [f"{name}{i}" for i in range(n)]
+    # The wrapper module should return in order but because this is map_unordered it doesn't matter
+    assert all(item in results for item in [f"{name}{i}" for i in range(n)])
 
     return True
