@@ -47,7 +47,6 @@ class Ray:
             return getattr(ray, key)
 
     def init(self, *args, **kwargs):
-        """ """
         Logger.debug("Ray has been disabled for this run")
 
     @staticmethod

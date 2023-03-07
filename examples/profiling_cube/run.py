@@ -118,6 +118,12 @@ def run(config, workdir, files, output=None, n=1):
         if output:
             file = f'{output}/run_{i}.dat'
 
+        # Make sure these directories are clean
+        for file in os.listdir(f'{dir}/lut_h2o/*'):
+            os.remove(file)
+        for file in os.listdir(f'{dir}/output/*'):
+            os.remove(file)
+
         profile(
             args   = files + [workdir, config, '--logging_level', 'DEBUG'],
             output = file
