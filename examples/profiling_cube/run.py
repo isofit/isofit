@@ -79,6 +79,8 @@ def profile(args, output=None):
 
     Parameters
     ----------
+    args: list
+        Arguments to be passed to multisurface_oe:main()
     output: str, default=None
         Path to an output file
     """
@@ -108,6 +110,7 @@ def run(config, workdir, files, output=None, n=1):
     files: list
         Filepaths list for the rdn, loc, and obs files, in that order
     output: str, default=None
+        Directory to output profiling.dat files
     n: int, default=1
         Number of profiling runs to repeat
     """
@@ -119,9 +122,9 @@ def run(config, workdir, files, output=None, n=1):
             file = f'{output}/run_{i}.dat'
 
         # Make sure these directories are clean
-        for file in os.listdir(f'{dir}/lut_h2o/*'):
+        for file in glob(f'{workdir}/lut_h2o/*'):
             os.remove(file)
-        for file in os.listdir(f'{dir}/output/*'):
+        for file in glob(f'{workdir}/output/*'):
             os.remove(file)
 
         profile(

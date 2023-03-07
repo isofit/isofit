@@ -14,6 +14,8 @@ def test_decorators():
     """
     Tests decorator use cases of Ray
     """
+    assert decorator.__module__ == "isofit.wrappers.ray"
+
     cases = {
         1: (1, 1),
         4: (2, 2),
@@ -44,13 +46,14 @@ def test_classes(name="test", n=4):
     """
     Tests wrapping class objects and how they're used in core.isofit.
     """
+    assert "isofit.wrappers.ray" in str(ray)
+
     name_id = ray.put(name)
     worker = ray.remote(Worker)
     workers = ray.util.ActorPool([worker.remote(name_id) for _ in range(n)])
 
     results = workers.map_unordered(lambda a, b: a.some_func.remote(b), range(n))
 
-    # The wrapper module should return in order but because this is map_unordered it doesn't matter
-    assert all(item in results for item in [f"{name}{i}" for i in range(n)])
+    assert list(results) == [f"{name}{i}" for i in range(n)]
 
     return True

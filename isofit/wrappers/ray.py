@@ -36,45 +36,37 @@ class Remote:
         return f"<Remote({self.obj})>"
 
 
-class Ray:
-    def __getattribute__(self, key):
-        """
-        __getattribute__ intercepts every attr lookup call
-        """
-        if DEBUG:
-            return object.__getattribute__(self, key)
-        else:
-            return getattr(ray, key)
+def remote(obj):
+    return Remote(obj)
 
-    def init(self, *args, **kwargs):
-        Logger.debug("Ray has been disabled for this run")
 
-    @staticmethod
-    def remote(obj):
-        return Remote(obj)
+def init(self, *args, **kwargs):
+    Logger.debug("Ray has been disabled for this run")
 
-    @staticmethod
-    def get(jobs):
-        if hasattr(jobs, "__iter__"):
-            return [job.get() for job in jobs]
-        else:
-            return jobs.get()
 
-    @staticmethod
-    def put(obj):
-        return obj
+def get(jobs):
+    if hasattr(jobs, "__iter__"):
+        return [job.get() for job in jobs]
+    else:
+        return jobs.get()
 
-    class util:
-        def __getattr__(self, key):
+
+def put(obj):
+    return obj
+
+
+class util:
+    class ActorPool:
+        def __init__(self, actors):
             """
-            __getattr__ will check the class first then fallback to this if
-            self.key doesn't exist.
+            Emulates https://docs.ray.io/en/latest/_modules/ray/util/actor_pool.html
+
+            Parameters
+            ----------
+            actors: list
+                List of Remote objects to call
             """
-            return getattr(ray.util, key)
+            self.actors = [Remote(actor.get()) for actor in actors]
 
-        class ActorPool:
-            def __init__(self, actors):
-                self.actors = [Remote(actor.get()) for actor in actors]
-
-            def map_unordered(self, func, iterable):
-                return [func(*pair).get() for pair in zip(self.actors, iterable)]
+        def map_unordered(self, func, iterable):
+            return [func(*pair).get() for pair in zip(self.actors, iterable)]
