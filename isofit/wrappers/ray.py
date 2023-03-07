@@ -40,7 +40,7 @@ def remote(obj):
     return Remote(obj)
 
 
-def init(self, *args, **kwargs):
+def init(*args, **kwargs):
     Logger.debug("Ray has been disabled for this run")
 
 
