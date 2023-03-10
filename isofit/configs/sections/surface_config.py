@@ -57,6 +57,14 @@ class SurfaceConfig(BaseConfigSection):
         self._surface_T_prior_sigma_degK_type = float
         self.surface_T_prior_sigma_degK = 1.0
 
+        self._model_file_type = str
+        self.model_file = None
+        """ Model file for DCGM surface"""
+
+        self._model_aux_file_type = str
+        self.model_aux_file = None
+        """ Model auxiliary file for DCGM surface"""
+
         self.set_config_options(sub_configdic)
 
     def _check_config_validity(self) -> List[str]:
@@ -68,6 +76,7 @@ class SurfaceConfig(BaseConfigSection):
             "glint_surface",
             "thermal_surface",
             "lut_surface",
+            "dcgm_surface",
         ]
         if self.surface_category is None:
             errors.append("surface->surface_category must be specified")
@@ -88,5 +97,10 @@ class SurfaceConfig(BaseConfigSection):
                     self.normalize, valid_normalize_categories
                 )
             )
+        
+        if self.surface_category == "dcgm_surface" and self.model_file is None:
+            errors.append("dcgm surface requires model_file")
+        if self.surface_category == "dcgm_surface" and self.model_aux_file is None:
+            errors.append("dcgm surface requires model_aux_file")
 
         return errors

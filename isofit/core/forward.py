@@ -33,6 +33,7 @@ from isofit.surface import (
     MultiComponentSurface,
     Surface,
     ThermalSurface,
+    DCGMSurface,
 )
 
 from ..radiative_transfer.radiative_transfer import RadiativeTransfer
@@ -92,6 +93,8 @@ class ForwardModel:
             self.surface = ThermalSurface(self.full_config)
         elif self.config.surface.surface_category == "lut_surface":
             self.surface = LUTSurface(self.full_config)
+        elif self.config.surface.surface_category == "dcgm_surface":
+            self.surface = DCGMSurface(self.full_config)
         else:
             raise ValueError("Must specify a valid surface model")
             # No need to be more specific - should have been checked in config already
