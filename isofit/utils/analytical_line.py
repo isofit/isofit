@@ -71,7 +71,7 @@ def main(rawargs=None) -> None:
     )
 
     if args.isofit_config is None:
-        file = glob(os.path.join(args.isofit_dir, 'config', '') + '*_modtran.json')[0]
+        file = glob(os.path.join(args.isofit_dir, "config", "") + "*_modtran.json")[0]
     else:
         file = args.isofit_config
 
@@ -79,11 +79,13 @@ def main(rawargs=None) -> None:
     config.forward_model.instrument.integrations = 1
 
     subs_state_file = config.output.estimated_state_file
-    subs_loc_file   = config.input.loc_file
-    full_state_file = subs_state_file.replace('_subs_state', '_subs_state_mapped') # Unused
+    subs_loc_file = config.input.loc_file
+    full_state_file = subs_state_file.replace(
+        "_subs_state", "_subs_state_mapped"
+    )  # Unused
 
     if args.segmentation_file is None:
-        lbl_file = subs_state_file.replace('_subs_state', '_lbl')
+        lbl_file = subs_state_file.replace("_subs_state", "_lbl")
     else:
         lbl_file = args.segmentation_file
 

@@ -4,26 +4,34 @@
 #
 
 import argparse
-from collections import OrderedDict
-from datetime import datetime
 import logging
 import multiprocessing
-import numpy as np
 import os
+from collections import OrderedDict
+from datetime import datetime
 from os.path import exists, join
 from shutil import copyfile
-from spectral.io import envi
-import yaml
 
+import numpy as np
+import yaml
+from spectral.io import envi
+
+import isofit.utils.template_construction as tc
 from isofit.core import isofit
 from isofit.core.common import envi_header
-from isofit.utils import analytical_line, empirical_line, extractions, segment, surface_model
-import isofit.utils.template_construction as tc
+from isofit.utils import (
+    analytical_line,
+    empirical_line,
+    extractions,
+    segment,
+    surface_model,
+)
 
 
 def main(rawargs=None):
-
-    parser = argparse.ArgumentParser(description="Apply ISOFIT to a block of data with mixed surface.")
+    parser = argparse.ArgumentParser(
+        description="Apply ISOFIT to a block of data with mixed surface."
+    )
     parser.add_argument("input_radiance", type=str)
     parser.add_argument("input_loc", type=str)
     parser.add_argument("input_obs", type=str)
@@ -38,13 +46,16 @@ def main(rawargs=None):
         "input_radiance": args.input_radiance,
         "input_loc": args.input_loc,
         "input_obs": args.input_obs,
-        "config_file": args.config_file
+        "config_file": args.config_file,
     }
 
     # Check files exist
     for infile_name, infile in infiles.items():
         if os.path.isfile(infile) is False:
-            err_str = f"Input argument {infile_name} give as: {infile}.  File not found on system."
+            err_str = (
+                f"Input argument {infile_name} give as: {infile}.  File not found on"
+                " system."
+            )
             raise ValueError("argument " + err_str)
 
     # Check file sizes match
@@ -52,11 +63,15 @@ def main(rawargs=None):
     rdn_size = rdn_dataset.shape[:2]
 
     for infile_name in ["input_loc", "input_obs"]:
-        input_dataset = envi.open(envi_header(infiles[infile_name]), infiles[infile_name])
+        input_dataset = envi.open(
+            envi_header(infiles[infile_name]), infiles[infile_name]
+        )
         input_size = input_dataset.shape[:2]
         if not (input_size[0] == rdn_size[0] and input_size[1] == rdn_size[1]):
-            err_str = f"Input file: {infile_name} size is {input_size}, " \
-                      f"which does not match input_radiance size: {rdn_size}"
+            err_str = (
+                f"Input file: {infile_name} size is {input_size}, "
+                f"which does not match input_radiance size: {rdn_size}"
+            )
             raise ValueError(err_str)
 
     # load options from config file
@@ -68,14 +83,14 @@ def main(rawargs=None):
     tsip = config["processors"]["type_specific_inversion_parameters"]
     surface_macro_config = config["surface"]
 
-    use_superpixels = (opt["empirical_line"] or opt["analytical_line"])
+    use_superpixels = opt["empirical_line"] or opt["analytical_line"]
 
     # set up logger
     logging.basicConfig(
         format="%(levelname)s:%(asctime)s ||| %(message)s",
         level=args.logging_level,
         filename=args.log_file,
-        datefmt="%Y-%m-%d,%H:%M:%S"
+        datefmt="%Y-%m-%d,%H:%M:%S",
     )
     logging.info(args)
 
@@ -107,7 +122,11 @@ def main(rawargs=None):
         logging.info("Flightline ID: %s" % fid)
         # parse flightline ID (EMIT assumptions)
         dt = datetime.strptime(fid[:19], "emit%Y%m%dt%H%M%S")
-        gip["options"]["inversion_windows"] = [[380.0, 1270.0], [1410, 1800.0], [1970.0, 2500.0]]
+        gip["options"]["inversion_windows"] = [
+            [380.0, 1270.0],
+            [1410, 1800.0],
+            [1970.0, 2500.0],
+        ]
     elif opt["sensor"][:3] == "NA-":
         fid = os.path.splitext(os.path.basename(args.input_radiance))[0]
         logging.info("Flightline ID: %s" % fid)
@@ -119,9 +138,11 @@ def main(rawargs=None):
         # parse flightline ID (Hyperion assumptions)
         dt = datetime.strptime(fid[10:17], "%Y%j")
     else:
-        raise ValueError("Neither flight line ID nor datetime object could be obtained. "
-                         "Please provide valid sensor name in config file "
-                         "(choose from 'ang', 'avcl', 'prism', 'neon', 'emit', 'NA-*', 'hyp').")
+        raise ValueError(
+            "Neither flight line ID nor datetime object could be obtained. "
+            "Please provide valid sensor name in config file "
+            "(choose from 'ang', 'avcl', 'prism', 'neon', 'emit', 'NA-*', 'hyp')."
+        )
 
     # get path names
     paths = tc.Pathnames(opt=opt, gip=gip, args=args, fid=fid)
@@ -141,8 +162,11 @@ def main(rawargs=None):
     try:
         chn, wl, fwhm = np.loadtxt(args.wavelength_path).T
         if len(chn) != rdn_dataset.shape[2]:
-            logging.warning("Number of channels in provided wavelength file does not match wavelengths in radiance "
-                            "cube. Adopting center wavelengths from ENVI header.")
+            logging.warning(
+                "Number of channels in provided wavelength file does not match"
+                " wavelengths in radiance cube. Adopting center wavelengths from ENVI"
+                " header."
+            )
             raise ValueError
     except ValueError:
         wl = np.array(rdn_dataset.metadata["wavelength"], dtype=float)
@@ -155,11 +179,16 @@ def main(rawargs=None):
         wl = wl / 1000.0
         fwhm = fwhm / 1000.0
 
-    wl_data = np.concatenate([np.arange(len(wl))[:, np.newaxis], wl[:, np.newaxis], fwhm[:, np.newaxis]], axis=1)
+    wl_data = np.concatenate(
+        [np.arange(len(wl))[:, np.newaxis], wl[:, np.newaxis], fwhm[:, np.newaxis]],
+        axis=1,
+    )
     np.savetxt(paths.wavelength_path, wl_data, delimiter=" ")
 
     # get LUT parameters
-    lut_params = tc.LUTConfig(gip=gip, tsip=tsip, lut_config_file=gip["filepaths"]["lut_config_path"])
+    lut_params = tc.LUTConfig(
+        gip=gip, tsip=tsip, lut_config_file=gip["filepaths"]["lut_config_path"]
+    )
 
     if gip["filepaths"]["emulator_base"] is not None:
         lut_params.aot_550_range = lut_params.aerosol_2_range
@@ -171,21 +200,31 @@ def main(rawargs=None):
     if gip["filepaths"]["surface_path"]:
         pass
     else:
-        logging.info("No surface model defined. Build new one including each given 'source' (i.e., spectral library).")
+        logging.info(
+            "No surface model defined. Build new one including each given 'source'"
+            " (i.e., spectral library)."
+        )
         tc.build_surface_config(
             macro_config=surface_macro_config,
             flight_id=fid,
             output_path=paths.data_directory,
-            wvl_file=paths.wavelength_path
+            wvl_file=paths.wavelength_path,
         )
         config_path = os.path.join(paths.data_directory, fid + "_surface.json")
         # isofit file should live at isofit/isofit/core/isofit.py
         isofit_path = os.path.dirname(os.path.dirname(os.path.dirname(isofit.__file__)))
 
         for source in surface_macro_config["sources"]:
-            for file in [source["input_spectrum_files"][0], source["input_spectrum_files"][0] + ".hdr"]:
-                copyfile(os.path.abspath(os.path.join(isofit_path, "data", "reflectance", file)),
-                         os.path.abspath(os.path.join(paths.data_directory, file)))
+            for file in [
+                source["input_spectrum_files"][0],
+                source["input_spectrum_files"][0] + ".hdr",
+            ]:
+                copyfile(
+                    os.path.abspath(
+                        os.path.join(isofit_path, "data", "reflectance", file)
+                    ),
+                    os.path.abspath(os.path.join(paths.data_directory, file)),
+                )
 
         surface_model(config_path=config_path)
 
@@ -193,9 +232,16 @@ def main(rawargs=None):
 
     dayofyear = dt.timetuple().tm_yday
 
-    h_m_s, day_increment, mean_path_km, mean_to_sensor_azimuth, mean_to_sensor_zenith, valid, \
-    to_sensor_azimuth_lut_grid, to_sensor_zenith_lut_grid = tc.get_metadata_from_obs(
-        obs_file=paths.obs_working_path, lut_params=lut_params)
+    (
+        h_m_s,
+        day_increment,
+        mean_path_km,
+        mean_to_sensor_azimuth,
+        mean_to_sensor_zenith,
+        valid,
+        to_sensor_azimuth_lut_grid,
+        to_sensor_zenith_lut_grid,
+    ) = tc.get_metadata_from_obs(obs_file=paths.obs_working_path, lut_params=lut_params)
 
     # overwrite the time in case original obs has an error in that band
     if h_m_s[0] != dt.hour and h_m_s[0] >= 24:
@@ -214,16 +260,25 @@ def main(rawargs=None):
 
     gmtime = float(h_m_s[0] + h_m_s[1] / 60.0)
 
-    mean_latitude, mean_longitude, mean_elevation_km, elevation_lut_grid = tc.get_metadata_from_loc(
-        loc_file=paths.loc_working_path, gip=gip, tsip=tsip, lut_params=lut_params)
+    (
+        mean_latitude,
+        mean_longitude,
+        mean_elevation_km,
+        elevation_lut_grid,
+    ) = tc.get_metadata_from_loc(
+        loc_file=paths.loc_working_path, gip=gip, tsip=tsip, lut_params=lut_params
+    )
 
     if gip["filepaths"]["emulator_base"] is not None:
         if elevation_lut_grid is not None and np.any(elevation_lut_grid < 0):
             to_rem = elevation_lut_grid[elevation_lut_grid < 0].copy()
             elevation_lut_grid[elevation_lut_grid < 0] = 0
             elevation_lut_grid = np.unique(elevation_lut_grid)
-            logging.info("Scene contains target lut grid elements < 0 km, and uses 6s (via sRTMnet). 6s does not "
-                         f"support targets below sea level in km units. Setting grid points {to_rem} to 0.")
+            logging.info(
+                "Scene contains target lut grid elements < 0 km, and uses 6s (via"
+                " sRTMnet). 6s does not support targets below sea level in km units."
+                f" Setting grid points {to_rem} to 0."
+            )
 
         if mean_elevation_km < 0:
             mean_elevation_km = 0
@@ -245,7 +300,10 @@ def main(rawargs=None):
     logging.info(f"Altitude (km): {mean_altitude_km}")
 
     if gip["filepaths"]["emulator_base"] is not None and mean_altitude_km > 99:
-        logging.info("Adjusting altitude to 99 km for integration with 6S, because emulator is chosen.")
+        logging.info(
+            "Adjusting altitude to 99 km for integration with 6S, because emulator is"
+            " chosen."
+        )
         mean_altitude_km = 99
 
     # We will use the model discrepancy with covariance OR uncorrelated calibration error, but not both.
@@ -260,26 +318,37 @@ def main(rawargs=None):
 
     # Chunk scene => superpixel segmentation
     if use_superpixels:
-        if not exists(paths.lbl_working_path) or not exists(paths.radiance_working_path):
+        if not exists(paths.lbl_working_path) or not exists(
+            paths.radiance_working_path
+        ):
             logging.info("Segmenting...")
             if not opt["segmentation_size"]:
-                logging.info("Segmentation size not  given in config. Setting to default value of 400.")
+                logging.info(
+                    "Segmentation size not  given in config. Setting to default value"
+                    " of 400."
+                )
 
             segment(
                 spectra=(paths.radiance_working_path, paths.lbl_working_path),
                 nodata_value=-9999,
                 npca=5 if not opt["n_pca"] else opt["n_pca"],
-                segsize=400 if not opt["segmentation_size"] else opt["segmentation_size"],
+                segsize=400
+                if not opt["segmentation_size"]
+                else opt["segmentation_size"],
                 nchunk=256 if not opt["chunksize"] else opt["chunksize"],
-                n_cores=multiprocessing.cpu_count() if not opt["n_cores"] else opt["n_cores"],
+                n_cores=multiprocessing.cpu_count()
+                if not opt["n_cores"]
+                else opt["n_cores"],
                 loglevel=args.logging_level,
-                logfile=args.log_file
+                logfile=args.log_file,
             )
 
         # Extract input data per segment
-        for inp, outp in [(paths.radiance_working_path, paths.rdn_subs_path),
-                          (paths.obs_working_path, paths.obs_subs_path),
-                          (paths.loc_working_path, paths.loc_subs_path)]:
+        for inp, outp in [
+            (paths.radiance_working_path, paths.rdn_subs_path),
+            (paths.obs_working_path, paths.obs_subs_path),
+            (paths.loc_working_path, paths.loc_subs_path),
+        ]:
             if not exists(outp):
                 logging.info("Extracting " + outp)
                 extractions(
@@ -288,9 +357,11 @@ def main(rawargs=None):
                     output=outp,
                     chunksize=256 if not opt["chunksize"] else opt["chunksize"],
                     flag=-9999,
-                    n_cores=multiprocessing.cpu_count() if not opt["n_cores"] else opt["n_cores"],
+                    n_cores=multiprocessing.cpu_count()
+                    if not opt["n_cores"]
+                    else opt["n_cores"],
                     loglevel=args.logging_level,
-                    logfile=args.log_file
+                    logfile=args.log_file,
                 )
 
         rdnfile = paths.rdn_subs_path
@@ -305,7 +376,7 @@ def main(rawargs=None):
     detected_surface_types = []
 
     if len(tsip.items()) > 0:
-        logging.info('Classifying surface...')
+        logging.info("Classifying surface...")
         available_surface_types = ["base", "cloud", "water"]
 
         surface_type_labels = tc.define_surface_types(
@@ -314,7 +385,7 @@ def main(rawargs=None):
             obsfile=obsfile,
             out_class_path=paths.class_subs_path,
             wl=wl,
-            fwhm=fwhm
+            fwhm=fwhm,
         )
 
         un_surface_type_labels = np.unique(surface_type_labels)
@@ -326,15 +397,24 @@ def main(rawargs=None):
             logging.info(f"Found surface type: {available_surface_types[ustl]}")
             detected_surface_types.append(available_surface_types[ustl])
 
-        surface_types = envi.open(envi_header(paths.class_subs_path)).open_memmap(interleave="bip").copy()
+        surface_types = (
+            envi.open(envi_header(paths.class_subs_path))
+            .open_memmap(interleave="bip")
+            .copy()
+        )
 
         # Break up input files based on surface type
         for _st, surface_type in enumerate(available_surface_types):
             if surface_type in detected_surface_types:
                 paths.add_surface_subs_files(surface_type=surface_type)
-                tc.copy_file_subset(surface_types == _st, [(rdnfile, paths.surface_subs_files[surface_type]["rdn"]),
-                                                           (locfile, paths.surface_subs_files[surface_type]["loc"]),
-                                                           (obsfile, paths.surface_subs_files[surface_type]["obs"])])
+                tc.copy_file_subset(
+                    surface_types == _st,
+                    [
+                        (rdnfile, paths.surface_subs_files[surface_type]["rdn"]),
+                        (locfile, paths.surface_subs_files[surface_type]["loc"]),
+                        (obsfile, paths.surface_subs_files[surface_type]["obs"]),
+                    ],
+                )
     else:
         surface_type_labels = None
 
@@ -352,7 +432,7 @@ def main(rawargs=None):
             gmtime=gmtime,
             elevation_km=mean_elevation_km,
             output_file=paths.h2o_template_path,
-            ihaze_type="AER_NONE"
+            ihaze_type="AER_NONE",
         )
 
         if gip["filepaths"]["emulator_base"] is None:
@@ -374,18 +454,29 @@ def main(rawargs=None):
                 paths=paths,
                 h2o_lut_grid=h2o_grid,
                 use_superpixels=use_superpixels,
-                uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty
+                uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
             )
 
             # Run modtran retrieval
             logging.info("Run ISOFIT initial guess")
-            retrieval_h2o = isofit.Isofit(config_file=paths.h2o_config_path, level="INFO", logfile=args.log_file)
+            retrieval_h2o = isofit.Isofit(
+                config_file=paths.h2o_config_path, level="INFO", logfile=args.log_file
+            )
             retrieval_h2o.run()
             del retrieval_h2o
 
             # clean up unneeded storage
             if gip["filepaths"]["emulator_base"] is None:
-                for to_rm in ["*r_k", "*t_k", "*tp7", "*wrn", "*psc", "*plt", "*7sc", "*acd"]:
+                for to_rm in [
+                    "*r_k",
+                    "*t_k",
+                    "*tp7",
+                    "*wrn",
+                    "*psc",
+                    "*plt",
+                    "*7sc",
+                    "*acd",
+                ]:
                     cmd = "rm " + join(paths.lut_h2o_directory, to_rm)
                     logging.info(cmd)
                     os.system(cmd)
@@ -406,7 +497,7 @@ def main(rawargs=None):
         minval=lut_params.h2o_range[0],
         maxval=lut_params.h2o_range[1],
         spacing=lut_params.h2o_spacing,
-        min_spacing=lut_params.h2o_spacing_min
+        min_spacing=lut_params.h2o_spacing_min,
     )
 
     logging.info("Full (non-aerosol) LUTs:")
@@ -431,7 +522,7 @@ def main(rawargs=None):
             to_sensor_zenith=mean_to_sensor_zenith,
             gmtime=gmtime,
             elevation_km=mean_elevation_km,
-            output_file=paths.modtran_template_path
+            output_file=paths.modtran_template_path,
         )
 
         logging.info("Writing main configuration file.")
@@ -451,7 +542,7 @@ def main(rawargs=None):
                 dt=dt,
                 use_superpixels=use_superpixels,
                 uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
-                surface_type=st
+                surface_type=st,
             )
 
         # Run modtran retrieval
@@ -461,7 +552,7 @@ def main(rawargs=None):
                 retrieval_full = isofit.Isofit(
                     config_file=paths.surface_config_paths[st],
                     level="INFO",
-                    logfile=args.log_file
+                    logfile=args.log_file,
                 )
             else:
                 if os.path.isfile(paths.surface_subs_files[st]["rdn"]):
@@ -469,7 +560,7 @@ def main(rawargs=None):
                     retrieval_full = isofit.Isofit(
                         config_file=paths.surface_config_paths[st],
                         level="INFO",
-                        logfile=args.log_file
+                        logfile=args.log_file,
                     )
                 else:
                     continue
@@ -479,7 +570,16 @@ def main(rawargs=None):
 
         # clean up unneeded storage
         if gip["filepaths"]["emulator_base"] is None:
-            for to_rm in ["*r_k", "*t_k", "*tp7", "*wrn", "*psc", "*plt", "*7sc", "*acd"]:
+            for to_rm in [
+                "*r_k",
+                "*t_k",
+                "*tp7",
+                "*wrn",
+                "*psc",
+                "*plt",
+                "*7sc",
+                "*acd",
+            ]:
                 cmd = "rm " + join(paths.lut_modtran_directory, to_rm)
                 logging.info(cmd)
                 os.system(cmd)
@@ -494,15 +594,25 @@ def main(rawargs=None):
         if not exists(paths.rfl_working_path) or not exists(paths.uncert_working_path):
             if not opt["num_neighbors"] and opt["segmentation_size"]:
                 if opt["segmentation_size"] > 441:
-                    logging.info(f"Segmentation size of {opt['segmentation_size']} too large (max. allowed size: 441). "
-                                 f"Setting number of neighbors to minimum value of 10.")
+                    logging.info(
+                        f"Segmentation size of {opt['segmentation_size']} too large"
+                        " (max. allowed size: 441). Setting number of neighbors to"
+                        " minimum value of 10."
+                    )
                     nneighbors = 10
                 else:
-                    logging.info("Number of neighbors not given in config. Calculating based on segmentation size.")
-                    nneighbors = int(round(3950 / 9 - 35 / 36 * opt["segmentation_size"]))
+                    logging.info(
+                        "Number of neighbors not given in config. Calculating based on"
+                        " segmentation size."
+                    )
+                    nneighbors = int(
+                        round(3950 / 9 - 35 / 36 * opt["segmentation_size"])
+                    )
             elif not opt["num_neighbors"] and not opt["segmentation_size"]:
-                logging.info("Neither number of neighbors nor segmentation size given in config. "
-                             "Setting number of neighbors to minimum value of 10.")
+                logging.info(
+                    "Neither number of neighbors nor segmentation size given in config."
+                    " Setting number of neighbors to minimum value of 10."
+                )
                 nneighbors = 10
             else:
                 nneighbors = opt["num_neighbors"]
@@ -522,8 +632,10 @@ def main(rawargs=None):
                     output_uncertainty_file=paths.uncert_working_path,
                     isofit_config=paths.surface_config_paths["base"],
                     nneighbors=nneighbors,
-                    n_cores=multiprocessing.cpu_count() if not opt["n_cores"] else opt["n_cores"],
-                    reference_class_file=stl_path
+                    n_cores=multiprocessing.cpu_count()
+                    if not opt["n_cores"]
+                    else opt["n_cores"],
+                    reference_class_file=stl_path,
                 )
             elif opt["analytical_line"]:
                 logging.info("Analytical line inference")
@@ -533,15 +645,26 @@ def main(rawargs=None):
                         paths.loc_working_path,
                         paths.obs_working_path,
                         args.working_directory,
-                        "--isofit_config", paths.surface_config_paths["base"],
-                        "--segmentation_file", paths.lbl_working_path,
-                        "--n_atm_neighbors", str(nneighbors),
-                        "--n_cores", str(multiprocessing.cpu_count()) if not opt["n_cores"] else str(opt["n_cores"]),
-                        "--smoothing_sigma", "2",
-                        "--output_rfl_file", paths.rfl_working_path,
-                        "--output_unc_file", paths.uncert_working_path,
-                        "--loglevel", args.logging_level,
-                        "--logfile", args.log_file
+                        "--isofit_config",
+                        paths.surface_config_paths["base"],
+                        "--segmentation_file",
+                        paths.lbl_working_path,
+                        "--n_atm_neighbors",
+                        str(nneighbors),
+                        "--n_cores",
+                        str(multiprocessing.cpu_count())
+                        if not opt["n_cores"]
+                        else str(opt["n_cores"]),
+                        "--smoothing_sigma",
+                        "2",
+                        "--output_rfl_file",
+                        paths.rfl_working_path,
+                        "--output_unc_file",
+                        paths.uncert_working_path,
+                        "--loglevel",
+                        args.logging_level,
+                        "--logfile",
+                        args.log_file,
                     ]
                 )
 
