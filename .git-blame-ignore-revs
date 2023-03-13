@@ -1,0 +1,8 @@
+# .git-blame-ignore-revs
+# Ignore the Black PR revisions (https://github.com/isofit/isofit/pull/311)
+# Applied Black
+2fbb6f46f3b9d651a04737942477c2c3eb58a2e0 # First time
+6caba8d3d2e152989dae2772ae66cca04fc6b52c # Second, after other PRs were merged before Black was
+d41e28ad33c3d8c0005c90fde7418ed08166c582 # Some changes disappeared?
+# Applied Isort
+5ff6189f4f5e1a1e74060ab91564a2ed78f5fef5

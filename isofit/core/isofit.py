@@ -20,19 +20,19 @@
 #          Adam Erickson, adam.m.erickson@nasa.gov
 #
 
-import os
 import logging
+import multiprocessing
+import os
 import time
 
-import multiprocessing
 import numpy as np
 import ray
 
+from isofit.configs import configs
+from isofit.core.fileio import IO
 from isofit.core.forward import ForwardModel
 from isofit.inversion.inverse import Inversion
 from isofit.inversion.inverse_mcmc import MCMCInversion
-from isofit.core.fileio import IO
-from isofit.configs import configs
 
 
 class Isofit:
@@ -44,16 +44,19 @@ class Isofit:
         logfile: file to write output logs to
     """
 
-    def __init__(self, config_file, level='INFO', logfile=None):
-
+    def __init__(self, config_file, level="INFO", logfile=None):
         # Explicitly set the number of threads to be 1, so we more effectively
         # run in parallel
         os.environ["MKL_NUM_THREADS"] = "1"
         # Set logging level
         self.loglevel = level
         self.logfile = logfile
-        logging.basicConfig(format='%(levelname)s:%(asctime)s ||| %(message)s', level=self.loglevel,
-                            filename=self.logfile, datefmt='%Y-%m-%d,%H:%M:%S')
+        logging.basicConfig(
+            format="%(levelname)s:%(asctime)s ||| %(message)s",
+            level=self.loglevel,
+            filename=self.logfile,
+            datefmt="%Y-%m-%d,%H:%M:%S",
+        )
 
         self.rows = None
         self.cols = None
@@ -64,16 +67,21 @@ class Isofit:
         self.config.get_config_errors()
 
         # Initialize ray for parallel execution
-        rayargs = {'address': self.config.implementation.ip_head,
-                   '_redis_password': self.config.implementation.redis_password,
-                   '_temp_dir': self.config.implementation.ray_temp_dir,
-                   'ignore_reinit_error': self.config.implementation.ray_ignore_reinit_error,
-                   'include_dashboard': self.config.implementation.ray_include_dashboard,
-                   'local_mode': self.config.implementation.n_cores == 1}
+        rayargs = {
+            "address": self.config.implementation.ip_head,
+            "_redis_password": self.config.implementation.redis_password,
+            "_temp_dir": self.config.implementation.ray_temp_dir,
+            "ignore_reinit_error": self.config.implementation.ray_ignore_reinit_error,
+            "include_dashboard": self.config.implementation.ray_include_dashboard,
+            "local_mode": self.config.implementation.n_cores == 1,
+        }
 
         # We can only set the num_cpus if running on a single-node
-        if self.config.implementation.ip_head is None and self.config.implementation.redis_password is None:
-            rayargs['num_cpus'] = self.config.implementation.n_cores
+        if (
+            self.config.implementation.ip_head is None
+            and self.config.implementation.redis_password is None
+        ):
+            rayargs["num_cpus"] = self.config.implementation.n_cores
 
         if self.config.implementation.debug_mode is False:
             ray.init(**rayargs)
@@ -107,13 +115,12 @@ class Isofit:
         logging.info("Building first forward model, will generate any necessary LUTs")
         fm = ForwardModel(self.config)
         if row_column is not None:
-            ranges = row_column.split(',')
+            ranges = row_column.split(",")
             if len(ranges) == 1:
                 self.rows, self.cols = [int(ranges[0])], None
             if len(ranges) == 2:
                 row_start, row_end = ranges
-                self.rows, self.cols = range(
-                    int(row_start), int(row_end)), None
+                self.rows, self.cols = range(int(row_start), int(row_end)), None
             elif len(ranges) == 4:
                 row_start, row_end, col_start, col_end = ranges
                 self.rows = range(int(row_start), int(row_end) + 1)
@@ -124,7 +131,9 @@ class Isofit:
             self.cols = range(io.n_cols)
             del io
 
-        index_pairs = np.vstack([x.flatten(order='f') for x in np.meshgrid(self.rows, self.cols)]).T
+        index_pairs = np.vstack(
+            [x.flatten(order="f") for x in np.meshgrid(self.rows, self.cols)]
+        ).T
 
         n_iter = index_pairs.shape[0]
 
@@ -141,38 +150,63 @@ class Isofit:
 
         if self.workers is None and not self.config.implementation.debug_mode:
             remote_worker = ray.remote(Worker)
-            self.workers = ray.util.ActorPool([remote_worker.remote(self.config, fm_id, self.loglevel, self.logfile, n,
-                                                                    n_workers)
-                                               for n in range(n_workers)])
+            self.workers = ray.util.ActorPool(
+                [
+                    remote_worker.remote(
+                        self.config, fm_id, self.loglevel, self.logfile, n, n_workers
+                    )
+                    for n in range(n_workers)
+                ]
+            )
         elif self.config.implementation.debug_mode:
             self.workers = Worker(self.config, fm, self.loglevel, self.logfile, 0, 1)
 
         start_time = time.time()
-        n_tasks = min(n_workers * self.config.implementation.task_inflation_factor, n_iter)
+        n_tasks = min(
+            n_workers * self.config.implementation.task_inflation_factor, n_iter
+        )
 
-        logging.info(f'Beginning {n_iter} inversions in {n_tasks} chunks using {n_workers} cores')
+        logging.info(
+            f"Beginning {n_iter} inversions in {n_tasks} chunks using {n_workers} cores"
+        )
 
         if not self.config.implementation.debug_mode:
             # Divide up spectra to run into chunks
             index_sets = np.linspace(0, n_iter, num=n_tasks, dtype=int)
             if len(index_sets) == 1:
-                indices_to_run = [index_pairs[0:1,:]]
+                indices_to_run = [index_pairs[0:1, :]]
             else:
-                indices_to_run = [index_pairs[index_sets[l]:index_sets[l + 1], :]
-                                  for l in range(len(index_sets) - 1)]
+                indices_to_run = [
+                    index_pairs[index_sets[l] : index_sets[l + 1], :]
+                    for l in range(len(index_sets) - 1)
+                ]
 
-            res = list(self.workers.map_unordered(lambda a, b: a.run_set_of_spectra.remote(b), indices_to_run))
+            res = list(
+                self.workers.map_unordered(
+                    lambda a, b: a.run_set_of_spectra.remote(b), indices_to_run
+                )
+            )
         else:
             self.workers.run_set_of_spectra(index_pairs)
 
         total_time = time.time() - start_time
-        logging.info(f'Inversions complete.  {round(total_time,2)}s total, {round(n_iter/total_time,4)} spectra/s, '
-                     f'{round(n_iter/total_time/n_workers,4)} spectra/s/core')
+        logging.info(
+            f"Inversions complete.  {round(total_time,2)}s total,"
+            f" {round(n_iter/total_time,4)} spectra/s,"
+            f" {round(n_iter/total_time/n_workers,4)} spectra/s/core"
+        )
 
 
 class Worker(object):
-    def __init__(self, config: configs.Config, forward_model: ForwardModel, loglevel: str, logfile: str,
-                 worker_id: int = None, total_workers: int = None):
+    def __init__(
+        self,
+        config: configs.Config,
+        forward_model: ForwardModel,
+        loglevel: str,
+        logfile: str,
+        worker_id: int = None,
+        total_workers: int = None,
+    ):
         """
         Worker class to help run a subset of spectra.
 
@@ -184,34 +218,38 @@ class Worker(object):
             total_workers: the total number of workers running, for logging reference
         """
 
-        logging.basicConfig(format='%(levelname)s:%(asctime)s ||| %(message)s', level=loglevel, filename=logfile,
-                            datefmt='%Y-%m-%d,%H:%M:%S')
+        logging.basicConfig(
+            format="%(levelname)s:%(asctime)s ||| %(message)s",
+            level=loglevel,
+            filename=logfile,
+            datefmt="%Y-%m-%d,%H:%M:%S",
+        )
         self.config = config
         self.fm = forward_model
         # self.fm = ForwardModel(self.config)
 
-        if self.config.implementation.mode == 'mcmc_inversion':
+        if self.config.implementation.mode == "mcmc_inversion":
             self.iv = MCMCInversion(self.config, self.fm)
-        elif self.config.implementation.mode in ['inversion', 'simulation']:
+        elif self.config.implementation.mode in ["inversion", "simulation"]:
             self.iv = Inversion(self.config, self.fm)
         else:
             # This should never be reached due to configuration checking
-            raise AttributeError('Config implementation mode node valid')
+            raise AttributeError("Config implementation mode node valid")
 
         self.io = IO(self.config, self.fm)
 
         self.approximate_total_spectra = None
         if total_workers is not None:
-            self.approximate_total_spectra = self.io.n_cols * self.io.n_rows / total_workers
+            self.approximate_total_spectra = (
+                self.io.n_cols * self.io.n_rows / total_workers
+            )
         self.worker_id = worker_id
         self.completed_spectra = 0
 
     def run_set_of_spectra(self, indices: np.array):
-
         for index in range(0, indices.shape[0]):
-
             logging.debug("Read chunk of spectra")
-            row, col = indices[index,0], indices[index,1]
+            row, col = indices[index, 0], indices[index, 1]
 
             input_data = self.io.get_components_at_index(row, col)
 
@@ -238,11 +276,25 @@ class Worker(object):
                     logging.error(err)
 
                 if index % 100 == 0:
-                    if self.worker_id is not None and self.approximate_total_spectra is not None:
-                        percent = np.round(self.completed_spectra / self.approximate_total_spectra * 100,2)
-                        logging.info(f'Worker {self.worker_id} completed {self.completed_spectra}/'
-                                     f'~{self.approximate_total_spectra}:: {percent}% complete')
+                    if (
+                        self.worker_id is not None
+                        and self.approximate_total_spectra is not None
+                    ):
+                        percent = np.round(
+                            self.completed_spectra
+                            / self.approximate_total_spectra
+                            * 100,
+                            2,
+                        )
+                        logging.info(
+                            f"Worker {self.worker_id} completed"
+                            f" {self.completed_spectra}/~{self.approximate_total_spectra}::"
+                            f" {percent}% complete"
+                        )
                     else:
-                        logging.info(f'Worker at start location ({row},{col}) completed {index}/{indices.shape[0]}')
+                        logging.info(
+                            f"Worker at start location ({row},{col}) completed"
+                            f" {index}/{indices.shape[0]}"
+                        )
 
         self.io.flush_buffers()

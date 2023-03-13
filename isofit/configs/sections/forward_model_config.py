@@ -18,10 +18,11 @@
 # Author: Philip G. Brodrick, philip.brodrick@jpl.nasa.gov
 
 from typing import Dict, List, Type
+
 from isofit.configs.base_config import BaseConfigSection
 from isofit.configs.sections.instrument_config import InstrumentConfig
-from isofit.configs.sections.surface_config import SurfaceConfig
 from isofit.configs.sections.radiative_transfer_config import RadiativeTransferConfig
+from isofit.configs.sections.surface_config import SurfaceConfig
 
 
 class ForwardModelConfig(BaseConfigSection):
