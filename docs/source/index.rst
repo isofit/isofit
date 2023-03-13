@@ -33,3 +33,9 @@
    :maxdepth: 2
 
    custom/code_of_conduct.rst
+
+.. toctree::
+  :Caption: Profiling
+  :maxdepth: 2
+
+  custom/profiling.rst
