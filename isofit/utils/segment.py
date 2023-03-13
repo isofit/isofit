@@ -22,13 +22,13 @@ import atexit
 import logging
 
 import numpy as np
-import ray
 import scipy
 import skimage
 from skimage.segmentation import slic
 from spectral.io import envi
 
 from isofit.core.common import envi_header
+from isofit.wrappers import ray
 
 
 @ray.remote

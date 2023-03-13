@@ -25,7 +25,6 @@ from collections import OrderedDict
 from glob import glob
 
 import numpy as np
-import ray
 from spectral.io import envi
 
 from isofit.configs import configs
@@ -37,6 +36,7 @@ from isofit.inversion.inverse import Inversion
 from isofit.inversion.inverse_simple import invert_algebraic, invert_analytical
 from isofit.utils import remap
 from isofit.utils.atm_interpolation import atm_interpolation
+from isofit.wrappers import ray
 
 
 def main(rawargs=None) -> None:

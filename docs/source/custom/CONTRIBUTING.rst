@@ -60,6 +60,29 @@ Our development strategy employs continuous integration and unit testing to vali
   cd examples/20171108_Pasadena
   ./run_example_modtran.sh
 
+
+Debug
+-----
+
+ISOFIT uses (ray)[https://www.ray.io/] as the multiprocessing backend; however, this package can be unstable for some systems and difficult to develop with. As such, ISOFIT has a debug mode that can be activated via the `ISOFIT_DEBUG` environment variable.
+This is the only environment variable of ISOFIT and is strictly for enabling the DEBUG features of the code. The flag simply disables the ray package and instead uses an in-house wrapper module to emulate the functions of ray.
+This enables complete circumvention of ray while supporting ray-like syntax in the codebase.
+
+To enable, set the environment variable `ISOFIT_DEBUG` to any value before runtime. For example:
+
+.. code::
+
+  export ISOFIT_DEBUG=1  # Enable debug
+  python isofit.py ...
+  export ISOFIT_DEBUG="" # Disable debug
+
+Additionally, you may pass it as a temporary environment variable via:
+
+.. code::
+
+  ISOFIT_DEBUG=1 python isofit.py ...
+
+
 A Note about Style
 ------------------
 
@@ -214,10 +237,10 @@ India," program NNH16ZDA001N-AVRSNG, managed by Woody Turner.  Later
 research and maturation was provided by the Jet Propulsion Laboratory and
 California Institute of Technology President and Director’s Fund, and the
 Jet Propulsion Laboratory Research and Technology Development Program.
-The project is currently supported by the Open Source Tools, Frameworks, 
+The project is currently supported by the Open Source Tools, Frameworks,
 and Libraries Program (NNH20ZDA001N), managed by Dr. Steven Crawford.
 Neural network radiative transfer is supported by the NASA Center
 Innovation Fund managed in conjunction with the Jet Propulsion Laboratory
 Office of the Chief Scientist and Technologist. The initial research took
 place at the Jet Propulsion Laboratory, California Institute of Technology,
-4800 Oak Grove Dr., Pasadena, CA 91109 USA. 
+4800 Oak Grove Dr., Pasadena, CA 91109 USA.
