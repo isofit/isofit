@@ -42,7 +42,7 @@ UNCORRELATED_RADIOMETRIC_UNCERTAINTY = 0.01
 INVERSION_WINDOWS = [[380.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
 
 
-def main(rawargs=None):
+def main(rawargs=sys.argv):
     """This is a helper script to apply OE over a flightline using the MODTRAN radiative transfer engine.
 
     The goal is to run isofit in a fairly 'standard' way, accounting for the types of variation that might be

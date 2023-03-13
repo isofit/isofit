@@ -33,7 +33,7 @@ import logging
 import sys
 
 
-def run_isofit(rawargs=sys.argsv):
+def run_isofit(rawargs=sys.argv):
     """
     Executes isofit.py
     """
@@ -62,7 +62,7 @@ def run_isofit(rawargs=sys.argsv):
     return isofit.run()
 
 
-def run_sunposition(rawargs=sys.argsv):
+def run_sunposition(rawargs=sys.argv):
     """
     Solar position algorithm of Reda & Andreas (2003).
     """
