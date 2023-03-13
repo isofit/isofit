@@ -7,6 +7,7 @@ import argparse
 import logging
 import multiprocessing
 import os
+import sys
 from collections import OrderedDict
 from datetime import datetime
 from os.path import exists, join
@@ -28,7 +29,7 @@ from isofit.utils import (
 )
 
 
-def main(rawargs=None):
+def main(rawargs=sys.argv):
     parser = argparse.ArgumentParser(
         description="Apply ISOFIT to a block of data with mixed surface."
     )

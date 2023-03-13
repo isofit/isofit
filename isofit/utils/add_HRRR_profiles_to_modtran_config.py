@@ -326,10 +326,10 @@ def get_HRRR_data(filename):
     return lat, lon, geo_pot_height, temperature, rh, pressure_levels_Pa
 
 
-def main():
+def main(rawargs=sys.argv):
     parser = argparse.ArgumentParser(description="Create a surface model")
     parser.add_argument("config", type=str, metavar="INPUT")
-    args = parser.parse_args()
+    args = parser.parse_args(rawargs)
     h = HRRR_to_MODTRAN_profiles(args.config)
     # config = json_load_ascii(args.config, shell_replace=True)
     # configdir, configfile = split(abspath(args.config))

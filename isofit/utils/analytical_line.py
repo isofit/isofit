@@ -20,6 +20,7 @@
 import argparse
 import logging
 import os
+import sys
 import time
 from collections import OrderedDict
 from glob import glob
@@ -39,7 +40,7 @@ from isofit.utils import remap
 from isofit.utils.atm_interpolation import atm_interpolation
 
 
-def main(rawargs=None) -> None:
+def main(rawargs=sys.argv) -> None:
     """
     TODO: Description
     """
