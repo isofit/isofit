@@ -7,14 +7,18 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
     container:
       image: jammont/isofit:latest
 
     steps:
+    - name: Install dependencies
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v2
-    - name: Install dependencies
       run: |
+        source /root/.bashrc
         python -m pip install --upgrade pip
         pip install setuptools wheel twine
     - name: Build and publish
@@ -22,5 +26,6 @@ jobs:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
       run: |
+        source /root/.bashrc
         python setup.py sdist bdist_wheel
         twine upload dist/*
