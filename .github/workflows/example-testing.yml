@@ -59,4 +59,4 @@ jobs:
       run: |
         source /root/.bashrc
         cd examples/profiling_cube
-        ISOFIT_DEBUG=1 python run.py
+        ISOFIT_DEBUG=1 python run_profiling.py
