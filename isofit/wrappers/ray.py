@@ -3,6 +3,14 @@ Ray Wrapper module to circumvent the ray package while maintaining ray-like
 syntax in the code. Only the exact ISOFIT use cases of Ray are wrapped here.
 If new uses of Ray are implemented, those uses/functions will have to be wrapped
 here as well.
+
+To enable, set the environment variable `ISOFIT_DEBUG` to any value before
+runtime. For example:
+$ export ISOFIT_DEBUG=1
+$ python isofit.py ...
+
+Additionally, you may pass it as a temporary environment variable via:
+$ ISOFIT_DEBUG=1 python isofit.py ...
 """
 import logging
 import os
