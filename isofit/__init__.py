@@ -28,11 +28,13 @@ __version__ = "2.9.8"
 
 warnings_enabled = False
 
+import logging
 import os
 
+Logger = logging.getLogger("isofit")
+
 if os.environ.get("ISOFIT_DEBUG"):
-    print("Internal ray")
+    Logger.info("Using ISOFIT internal ray")
     from .wrappers import ray
 else:
-    print("External ray")
     import ray
