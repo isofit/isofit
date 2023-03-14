@@ -2,7 +2,7 @@ import os
 
 os.environ["ISOFIT_DEBUG"] = "1"
 
-from isofit.wrappers import ray
+from isofit import ray
 
 
 @ray.remote

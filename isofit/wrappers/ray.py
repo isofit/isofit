@@ -48,6 +48,7 @@ def __getattr__(key):
     """
     Reports any call to Ray that is not emulated
     """
+    print(f"__getattr__({key})")
     Logger.error(f"Unsupported operation: {key!r}")
     return lambda *a, **kw: None
 

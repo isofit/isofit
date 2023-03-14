@@ -27,6 +27,7 @@ from typing import List
 
 import numpy as np
 
+from isofit import ray
 from isofit.configs import Config
 from isofit.configs.sections.implementation_config import ImplementationConfig
 from isofit.configs.sections.radiative_transfer_config import (
@@ -34,7 +35,6 @@ from isofit.configs.sections.radiative_transfer_config import (
 )
 from isofit.configs.sections.statevector_config import StateVectorElementConfig
 from isofit.core import common
-from isofit.wrappers import ray
 
 ### Functions ###
 

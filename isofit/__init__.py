@@ -27,3 +27,12 @@ name = "isofit"
 __version__ = "2.9.8"
 
 warnings_enabled = False
+
+import os
+
+if os.environ.get("ISOFIT_DEBUG"):
+    print("Internal ray")
+    from .wrappers import ray
+else:
+    print("External ray")
+    import ray
