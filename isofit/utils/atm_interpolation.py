@@ -30,11 +30,11 @@ from scipy.spatial import KDTree
 from spectral.io import envi
 from typing import List
 
+from isofit import ray
 from isofit.configs import configs
 from isofit.core.common import envi_header
 from isofit.core.fileio import write_bil_chunk
 from isofit.core.instrument import Instrument
-from isofit.wrappers import ray
 
 plt.switch_backend("Agg")
 
