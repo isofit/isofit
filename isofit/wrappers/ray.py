@@ -44,6 +44,14 @@ class Remote:
         return f"<Remote({self.obj})>"
 
 
+def __getattr__(key):
+    """
+    Reports any call to Ray that is not emulated
+    """
+    Logger.error(f"Unsupported operation: {key!r}")
+    return lambda *a, **kw: None
+
+
 def remote(obj):
     return Remote(obj)
 
@@ -61,6 +69,10 @@ def get(jobs):
 
 def put(obj):
     return obj
+
+
+def shutdown(*args, **kwargs):
+    pass
 
 
 class util:
