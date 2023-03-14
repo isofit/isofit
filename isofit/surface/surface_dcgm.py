@@ -21,18 +21,17 @@
 
 
 import numpy as np
+import tensorflow as tf
+from scipy import interpolate
 from scipy.io import loadmat
 from scipy.linalg import block_diag, norm
-from scipy import interpolate
+from tensorflow import keras
 
 from isofit.configs import Config
+from isofit.core import common
 
 from ..core.common import svd_inv
 from .surface import Surface
-
-import tensorflow as tf
-from tensorflow import keras
-from isofit.core import common
 
 
 class DCGMSurface(Surface):
@@ -48,17 +47,19 @@ class DCGMSurface(Surface):
         config = full_config.forward_model.surface
 
         self.model = tf.keras.models.load_model(config.model_file)
-        aux = np.load(config.model_aux_file) 
+        aux = np.load(config.model_aux_file)
 
-        self.model_wl = aux['wavelengths']
+        self.model_wl = aux["wavelengths"]
 
         if wavelengths is not None:
             self.wl = wavelengths
         elif config.wavelength_file is not None:
             self.wl, fwhm = common.load_wavelen(config.wavelength_file)
         else:
-            self.wl, fwhm = common.load_wavelen(full_config.forward_model.instrument.wavelength_file)
-        
+            self.wl, fwhm = common.load_wavelen(
+                full_config.forward_model.instrument.wavelength_file
+            )
+
         self.n_wl = len(self.wl)
 
         # initialize an empty cache
@@ -75,8 +76,13 @@ class DCGMSurface(Surface):
         self.idx_lamb = np.arange(self.n_wl)
         self.n_state = len(self.statevec_names)
 
-
-    def interpolate(self, mean: np.array, covariance: np.array, in_wl: np.array=None, out_wl: np.array=None):
+    def interpolate(
+        self,
+        mean: np.array,
+        covariance: np.array,
+        in_wl: np.array = None,
+        out_wl: np.array = None,
+    ):
         """interpolate the mean and covariance
 
         Args:
@@ -95,12 +101,12 @@ class DCGMSurface(Surface):
             out_wl = self.wl
 
         # do resmampling
-        resampled_mean = interpolate.interp1d(in_wl, mean, kind = 'quadratic')(out_wl)
-        resampled_covariance = interpolate.interp1d(in_wl, covariance, kind = 'quadratic')f(out_wl)
+        resampled_mean = interpolate.interp1d(in_wl, mean, kind="quadratic")(out_wl)
+        resampled_covariance = interpolate.interp1d(
+            in_wl, covariance, kind="quadratic"
+        )(out_wl)
 
-        
         return resampled_mean, resampled_covariance
-
 
     def get_meancov(self, x_surface: np.array):
         """Get the mean and covariance from model, resample if necessary, and cache
@@ -115,26 +121,25 @@ class DCGMSurface(Surface):
         if x_surface in self.cache:
             surface_mean_resamp, surface_cov_resamp = self.cache
         else:
-            surface_mean_resamp, surface_cov_resamp = self.interpolate(surface_mean, surface_cov, self.model_wl, self.wl)
+            surface_mean_resamp, surface_cov_resamp = self.interpolate(
+                surface_mean, surface_cov, self.model_wl, self.wl
+            )
             del self.cache[next(iter(self.cache))]
             self.cache[x_surface] = (surface_mean_resamp, surface_cov_resamp)
 
         return surface_mean_resamp, surface_cov_resamp
 
-
     def xa(self, x_surface, geom):
-        """Mean of prior distribution, calculated at state x. """
+        """Mean of prior distribution, calculated at state x."""
 
         surface_mean, surface_cov = self.get_meancov(x_surface)
         return surface_mean
 
-
     def Sa(self, x_surface, geom):
-        """Covariance of prior distribution, calculated at state x. """
+        """Covariance of prior distribution, calculated at state x."""
 
         surface_mean, surface_cov = self.get_meancov(x_surface)
         return surface_cov
-
 
     def fit_params(self, rfl_meas, geom, *args):
         """Given a reflectance estimate, fit a state vector."""
