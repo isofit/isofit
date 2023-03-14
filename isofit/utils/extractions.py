@@ -22,11 +22,11 @@ import atexit
 import logging
 
 import numpy as np
-import ray
 from spectral.io import envi
 
 from isofit.core.common import envi_header
 from isofit.core.fileio import write_bil_chunk
+from isofit.wrappers import ray
 
 
 @ray.remote

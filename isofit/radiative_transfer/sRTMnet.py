@@ -26,7 +26,6 @@ from copy import deepcopy
 from sys import platform
 
 import numpy as np
-import ray
 import yaml
 from scipy import interpolate
 from tensorflow import keras
@@ -38,6 +37,7 @@ from isofit.configs.sections.radiative_transfer_config import (
 from isofit.core.common import VectorInterpolator, load_wavelen, resample_spectrum
 from isofit.core.sunposition import sunpos
 from isofit.radiative_transfer.six_s import SixSRT
+from isofit.wrappers import ray
 
 from .look_up_tables import TabularRT
 

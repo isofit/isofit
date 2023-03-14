@@ -26,7 +26,6 @@ from collections import OrderedDict
 from glob import glob
 
 import numpy as np
-import ray
 from spectral.io import envi
 
 from isofit.configs import configs
@@ -38,13 +37,13 @@ from isofit.inversion.inverse import Inversion
 from isofit.inversion.inverse_simple import invert_algebraic, invert_analytical
 from isofit.utils import remap
 from isofit.utils.atm_interpolation import atm_interpolation
+from isofit.wrappers import ray
 
 
 def main(rawargs=None) -> None:
     """
     TODO: Description
     """
-    # TODO: Parser should be moved out of main and these be made parameters of the function
     parser = argparse.ArgumentParser(description='Apply OE to a block of data.')
     parser.add_argument('rdn_file',            type=str                )
     parser.add_argument('loc_file',            type=str                )
@@ -71,7 +70,7 @@ def main(rawargs=None) -> None:
     )
 
     if args.isofit_config is None:
-        file = glob(os.path.join(args.isofit_dir, 'config', '') + '*_modtran.json')[0]
+        file = glob(os.path.join(args.isofit_dir, "config", "") + "*_modtran.json")[0]
     else:
         file = args.isofit_config
 
@@ -79,11 +78,13 @@ def main(rawargs=None) -> None:
     config.forward_model.instrument.integrations = 1
 
     subs_state_file = config.output.estimated_state_file
-    subs_loc_file   = config.input.loc_file
-    full_state_file = subs_state_file.replace('_subs_state', '_subs_state_mapped') # Unused
+    subs_loc_file = config.input.loc_file
+    full_state_file = subs_state_file.replace(
+        "_subs_state", "_subs_state_mapped"
+    )  # Unused
 
     if args.segmentation_file is None:
-        lbl_file = subs_state_file.replace('_subs_state', '_lbl')
+        lbl_file = subs_state_file.replace("_subs_state", "_lbl")
     else:
         lbl_file = args.segmentation_file
 
@@ -163,10 +164,18 @@ def main(rawargs=None) -> None:
     n_workers = args.n_cores
     if n_workers == -1:
         n_workers = multiprocessing.cpu_count()
-    worker    = ray.remote(Worker)
-    wargs     = [
-        config, ray.put(fm), atm_file, analytical_state_file, analytical_state_unc_file,
-        args.rdn_file, args.loc_file, args.obs_file, args.loglevel, args.logfile
+    worker = ray.remote(Worker)
+    wargs = [
+        config,
+        ray.put(fm),
+        atm_file,
+        analytical_state_file,
+        analytical_state_unc_file,
+        args.rdn_file,
+        args.loc_file,
+        args.obs_file,
+        args.loglevel,
+        args.logfile,
     ]
     workers = ray.util.ActorPool([worker.remote(*wargs) for _ in range(n_workers)])
 
