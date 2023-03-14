@@ -13,12 +13,10 @@ Additionally, you may pass it as a temporary environment variable via:
 $ ISOFIT_DEBUG=1 python isofit.py ...
 """
 import logging
-import os
 
 import ray
 
 Logger = logging.getLogger("isofit/wrappers/ray")
-DEBUG = os.environ.get("ISOFIT_DEBUG")
 
 
 class Remote:
