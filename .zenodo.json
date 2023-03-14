@@ -1,0 +1,89 @@
+{
+    "title": "ISOFIT - Imaging Spectrometer Optimal FITting",
+    "description": "ISOFIT contains a set of routines and utilities for fitting surface, atmosphere and instrument models to imaging spectrometer data.",
+    "license": "Apache-2.0",
+    "upload_type": "software",
+    "keywords": [
+        "ISOFIT",
+        "AVIRIS",
+        "EMIT",
+        "imaging spectroscopy",
+        "remote sensing",
+        "satellite",
+        "atmospheric correction"
+    ],
+    "creators": [
+        {
+            "name": "Brodrick, Philip",
+            "affiliation": "Jet Propulsion Laboratory, California Institute of Technology",
+            "orcid": "",
+            "type": "Researcher"
+        },
+        {
+            "name": "Thompson, David",
+            "affiliation": "Jet Propulsion Laboratory, California Institute of Technology",
+            "orcid": "",
+            "type": "Researcher"
+        }
+    ],
+    "contributors": [
+        {
+            "name": "Bohn, Niklas",
+            "affiliation": "Jet Propulsion Laboratory, California Institute of Technology",
+            "orcid": "0000-0003-4078-886X",
+            "type": "Researcher"
+        },
+        {
+            "name": "Carmon, Nimrod",
+            "affiliation": "Jet Propulsion Laboratory, California Institute of Technology",
+            "orcid": "",
+            "type": "Researcher"
+        },
+        {
+            "name": "Chlus, Adam",
+            "affiliation": "Jet Propulsion Laboratory, California Institute of Technology",
+            "orcid": "",
+            "type": "Researcher"
+        },
+        {
+            "name": "Eckert, Regina",
+            "affiliation": "Jet Propulsion Laboratory, California Institute of Technology",
+            "orcid": "",
+            "type": "Researcher"
+        },
+        {
+            "name": "Montgomery, James",
+            "affiliation": "Jet Propulsion Laboratory, California Institute of Technology",
+            "orcid": "",
+            "type": "Technologist"
+        }
+    ],
+    "related_identifiers": [
+        {
+            "scheme": "url",
+            "identifier": "https://github.com/isofit/isofit",
+            "relation": "isSupplementTo",
+            "resource_type": "software"
+        },
+        {
+            "scheme": "url",
+            "identifier": "https://isofit.readthedocs.io/en/latest/index.html",
+            "relation": "isDocumentedBy",
+            "resource_type": "publication-softwaredocumentation"
+        },
+        {
+            "scheme": "doi",
+            "identifier": "",
+            "relation": "isDocumentedBy",
+            "resource_type": "publication-article"
+        }
+    ]
+    ],
+    "grants": [
+        {
+            "code": "",
+            "funder": "",
+            "title": ""
+        }
+    ]
+}
