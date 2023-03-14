@@ -82,12 +82,17 @@ def surface_model(
     reference_windows = config["reference_windows"]
 
     # load wavelengths file, and change units to nm if needed
-    q = np.loadtxt(wavelength_file)
-    if q.shape[1] > 2:
-        q = q[:, 1:]
-    if q[0, 0] < 100:
-        q = q * 1000.0
-    wl = q[:, 0]
+    if os.path.splitext(wavelength_file)[-1] == '.hdr':
+        ds = envi.open(wavelength_file) 
+        wl = np.array([float(x) for x in ds.metadata['wavelength']])
+    else:
+        q = np.loadtxt(wavelength_file)
+        if q.shape[1] > 2:
+            q = q[:, 1:]
+        wl = q[:, 0]
+
+    if wl[0] < 100:
+        wl *= 1000.0
     nchan = len(wl)
 
     # build global reference windows
