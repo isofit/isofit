@@ -20,6 +20,7 @@
 import atexit
 import logging
 import time
+from typing import List
 
 import matplotlib
 import numpy as np
@@ -28,7 +29,6 @@ from scipy.linalg import inv
 from scipy.ndimage import gaussian_filter
 from scipy.spatial import KDTree
 from spectral.io import envi
-from typing import List
 
 from isofit import ray
 from isofit.configs import configs
@@ -356,7 +356,9 @@ def atm_interpolation(
 
     if len(gaussian_smoothing_sigma) == 1 and atm_img.shape[-1] != 1:
         logging.debug("assuming gaussian smoothing applies to all atm bands")
-        gaussian_smoothing_sigma = [gaussian_smoothing_sigma[0] for n in range(atm_img.shape[-1])]
+        gaussian_smoothing_sigma = [
+            gaussian_smoothing_sigma[0] for n in range(atm_img.shape[-1])
+        ]
 
     for n in range(atm_img.shape[-1]):
         if gaussian_smoothing_sigma[n] > 0:
@@ -374,6 +376,3 @@ def atm_interpolation(
 
     atm_img = atm_img.transpose((0, 2, 1))
     write_bil_chunk(atm_img, output_atm_file, 0, atm_img.shape)
-
-
-
