@@ -10,7 +10,7 @@ import pandas as pd
 from osgeo import gdal
 from spectral.io import envi
 import logging
-import ray
+from isofit import ray
 from typing import List
 import os
 import multiprocessing

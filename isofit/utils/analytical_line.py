@@ -26,9 +26,9 @@ from collections import OrderedDict
 from glob import glob
 
 import numpy as np
-import ray
 from spectral.io import envi
 
+from isofit import ray
 from isofit.configs import configs
 from isofit.core.common import envi_header, svd_inv, svd_inv_sqrt
 from isofit.core.fileio import write_bil_chunk

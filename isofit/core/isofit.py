@@ -26,9 +26,8 @@ import time
 
 import click
 import numpy as np
-import ray
 
-from isofit import cli
+from isofit import cli, ray
 from isofit.configs import configs
 from isofit.core.fileio import IO
 from isofit.core.forward import ForwardModel
@@ -84,8 +83,7 @@ class Isofit:
         ):
             rayargs["num_cpus"] = self.config.implementation.n_cores
 
-        if self.config.implementation.debug_mode is False:
-            ray.init(**rayargs)
+        ray.init(**rayargs)
 
         self.workers = None
 
@@ -146,21 +144,17 @@ class Isofit:
         # Max out the number of workers based on the number of tasks
         n_workers = min(n_workers, n_iter)
 
-        if not self.config.implementation.debug_mode:
-            fm_id = ray.put(fm)
+        fm_id = ray.put(fm)
 
-        if self.workers is None and not self.config.implementation.debug_mode:
-            remote_worker = ray.remote(Worker)
-            self.workers = ray.util.ActorPool(
-                [
-                    remote_worker.remote(
-                        self.config, fm_id, self.loglevel, self.logfile, n, n_workers
-                    )
-                    for n in range(n_workers)
-                ]
-            )
-        elif self.config.implementation.debug_mode:
-            self.workers = Worker(self.config, fm, self.loglevel, self.logfile, 0, 1)
+        remote_worker = ray.remote(Worker)
+        self.workers = ray.util.ActorPool(
+            [
+                remote_worker.remote(
+                    self.config, fm_id, self.loglevel, self.logfile, n, n_workers
+                )
+                for n in range(n_workers)
+            ]
+        )
 
         start_time = time.time()
         n_tasks = min(
@@ -171,24 +165,21 @@ class Isofit:
             f"Beginning {n_iter} inversions in {n_tasks} chunks using {n_workers} cores"
         )
 
-        if not self.config.implementation.debug_mode:
-            # Divide up spectra to run into chunks
-            index_sets = np.linspace(0, n_iter, num=n_tasks, dtype=int)
-            if len(index_sets) == 1:
-                indices_to_run = [index_pairs[0:1, :]]
-            else:
-                indices_to_run = [
-                    index_pairs[index_sets[l] : index_sets[l + 1], :]
-                    for l in range(len(index_sets) - 1)
-                ]
-
-            res = list(
-                self.workers.map_unordered(
-                    lambda a, b: a.run_set_of_spectra.remote(b), indices_to_run
-                )
-            )
+        # Divide up spectra to run into chunks
+        index_sets = np.linspace(0, n_iter, num=n_tasks, dtype=int)
+        if len(index_sets) == 1:
+            indices_to_run = [index_pairs[0:1, :]]
         else:
-            self.workers.run_set_of_spectra(index_pairs)
+            indices_to_run = [
+                index_pairs[index_sets[l] : index_sets[l + 1], :]
+                for l in range(len(index_sets) - 1)
+            ]
+
+        res = list(
+            self.workers.map_unordered(
+                lambda a, b: a.run_set_of_spectra.remote(b), indices_to_run
+            )
+        )
 
         total_time = time.time() - start_time
         logging.info(
