@@ -19,15 +19,16 @@
 #          Philip G Brodrick, philip.brodrick@jpl.nasa.gov
 #          Adam Erickson, adam.m.erickson@nasa.gov
 #
-
 import logging
 import multiprocessing
 import os
 import time
 
+import click
 import numpy as np
 import ray
 
+from isofit import cli
 from isofit.configs import configs
 from isofit.core.fileio import IO
 from isofit.core.forward import ForwardModel
@@ -298,3 +299,26 @@ class Worker(object):
                         )
 
         self.io.flush_buffers()
+
+
+@cli.command(name="run")
+@click.argument("config_file")
+@click.option(
+    "-l",
+    "--level",
+    help="Log level",
+    type=click.Choice(
+        ["DEBUG", "INFO", "WARNING", "ERROR", "EXCEPTION"], case_sensitive=True
+    ),
+    default="INFO",
+)
+def _cli(config_file, level):
+    """\
+    Executes ISOFIT core
+    """
+    click.echo(f"Running ISOFIT(config_file={config_file!r}, level={level})")
+
+    logging.basicConfig(format="%(message)s", level=level)
+    Isofit(config_file=config_file, level=level).run()
+
+    click.echo("Done")
