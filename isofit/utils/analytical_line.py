@@ -293,7 +293,7 @@ class Worker(object):
             )
 
 
-@cli.command
+@cli.command(name="analytical_line")
 @click.argument("rdn_file")
 @click.argument("loc_file")
 @click.argument("obs_file")
