@@ -141,6 +141,7 @@ def main(rawargs=None):
     parser.add_argument("--emulator_base", type=str, default=None)
     parser.add_argument("--segmentation_size", type=int, default=40)
     parser.add_argument("--num_neighbors", type=int, nargs="+", default=None)
+    parser.add_argument("--atm_sigma", type=int, nargs="+", default=2)
     parser.add_argument("--pressure_elevation", action="store_true", default=None)
     parser.add_argument("--debug", action="store_true")
 
@@ -573,8 +574,6 @@ def main(rawargs=None):
                 paths.loc_working_path,
                 paths.obs_working_path,
                 args.working_directory,
-                "--smoothing_sigma",
-                "2",
                 "--output_rfl_file",
                 paths.rfl_working_path,
                 "--output_unc_file",
@@ -586,6 +585,8 @@ def main(rawargs=None):
                 "--n_atm_neighbors",
             ]
             analytical_line_args.extend([str(x) for x in nneighbors])
+            analytical_line_args.append("--smoothing_sigma")
+            analytical_line_args.extend([str(x) for x in args.atm_sigma])
 
             analytical_line.main(analytical_line_args)
 

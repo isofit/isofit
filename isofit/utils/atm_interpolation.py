@@ -241,7 +241,7 @@ def atm_interpolation(
     loglevel: str = "INFO",
     logfile: str = None,
     n_cores: int = -1,
-    gaussian_smoothing_sigma=2,
+    gaussian_smoothing_sigma=[2],
 ) -> None:
     """
     Perform an empirical line interpolation for reflectance and uncertainty extrapolation
@@ -354,19 +354,26 @@ def atm_interpolation(
         envi.open(envi_header(output_atm_file)).open_memmap(interleave="bip").copy()
     )
 
-    if gaussian_smoothing_sigma > 0:
-        for n in range(atm_img.shape[-1]):
+    if len(gaussian_smoothing_sigma) == 1 and atm_img.shape[-1] != 1:
+        logging.debug("assuming gaussian smoothing applies to all atm bands")
+        gaussian_smoothing_sigma = [gaussian_smoothing_sigma[0] for n in range(atm_img.shape[-1])]
+
+    for n in range(atm_img.shape[-1]):
+        if gaussian_smoothing_sigma[n] > 0:
             null = atm_img[..., n] == -9999
             V = atm_img[..., n]
             V[null] = 0
-            VV = gaussian_filter(V, sigma=gaussian_smoothing_sigma)
+            VV = gaussian_filter(V, sigma=gaussian_smoothing_sigma[n])
 
             W = 0 * atm_img[..., n] + 1
             W[null] = 0
-            WW = gaussian_filter(W, sigma=gaussian_smoothing_sigma)
+            WW = gaussian_filter(W, sigma=gaussian_smoothing_sigma[n])
 
             smoothed = VV / WW
             atm_img[..., n] = smoothed
 
-        atm_img = atm_img.transpose((0, 2, 1))
-        write_bil_chunk(atm_img, output_atm_file, 0, atm_img.shape)
+    atm_img = atm_img.transpose((0, 2, 1))
+    write_bil_chunk(atm_img, output_atm_file, 0, atm_img.shape)
+
+
+
