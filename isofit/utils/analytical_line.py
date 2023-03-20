@@ -30,7 +30,7 @@ from spectral.io import envi
 
 from isofit import ray
 from isofit.configs import configs
-from isofit.core.common import envi_header, svd_inv, svd_inv_sqrt, load_spectrum
+from isofit.core.common import envi_header, load_spectrum, svd_inv, svd_inv_sqrt
 from isofit.core.fileio import write_bil_chunk
 from isofit.core.forward import ForwardModel
 from isofit.core.geometry import Geometry
@@ -44,22 +44,22 @@ def main(rawargs=None) -> None:
     """
     TODO: Description
     """
-    parser = argparse.ArgumentParser(description='Apply OE to a block of data.')
-    parser.add_argument('rdn_file',            type=str                )
-    parser.add_argument('loc_file',            type=str                )
-    parser.add_argument('obs_file',            type=str                )
-    parser.add_argument('isofit_dir',          type=str                )
-    parser.add_argument('--isofit_config',     type=str, default=None  )
-    parser.add_argument('--segmentation_file', type=str, default=None  )
-    parser.add_argument('--n_atm_neighbors',   type=int, nargs='+', default=20    )
-    parser.add_argument('--n_cores',           type=int, default=-1    )
-    parser.add_argument('--smoothing_sigma',   type=int, nargs='+', default=2     )
-    parser.add_argument('--output_rfl_file',   type=str, default=None  )
-    parser.add_argument('--output_unc_file',   type=str, default=None  )
-    parser.add_argument('--atm_file',          type=str, default=None  )
-    parser.add_argument('--rdn_factors_path',  type=str, default=None  )
-    parser.add_argument('--loglevel',          type=str, default='INFO')
-    parser.add_argument('--logfile',           type=str, default=None  )
+    parser = argparse.ArgumentParser(description="Apply OE to a block of data.")
+    parser.add_argument("rdn_file", type=str)
+    parser.add_argument("loc_file", type=str)
+    parser.add_argument("obs_file", type=str)
+    parser.add_argument("isofit_dir", type=str)
+    parser.add_argument("--isofit_config", type=str, default=None)
+    parser.add_argument("--segmentation_file", type=str, default=None)
+    parser.add_argument("--n_atm_neighbors", type=int, nargs="+", default=20)
+    parser.add_argument("--n_cores", type=int, default=-1)
+    parser.add_argument("--smoothing_sigma", type=int, nargs="+", default=2)
+    parser.add_argument("--output_rfl_file", type=str, default=None)
+    parser.add_argument("--output_unc_file", type=str, default=None)
+    parser.add_argument("--atm_file", type=str, default=None)
+    parser.add_argument("--rdn_factors_path", type=str, default=None)
+    parser.add_argument("--loglevel", type=str, default="INFO")
+    parser.add_argument("--logfile", type=str, default=None)
     args = parser.parse_args(rawargs)
 
     logging.basicConfig(
@@ -240,7 +240,9 @@ class Worker(object):
         self.analytical_state_unc_file = analytical_state_unc_file
 
         if config.input.radiometry_correction_file is not None:
-            self.radiance_correction, wl = load_spectrum(config.input.radiometry_correction_file)
+            self.radiance_correction, wl = load_spectrum(
+                config.input.radiometry_correction_file
+            )
         else:
             self.radiance_correction = None
 
