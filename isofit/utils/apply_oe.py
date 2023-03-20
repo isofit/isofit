@@ -39,7 +39,7 @@ CHUNKSIZE = 256
 
 UNCORRELATED_RADIOMETRIC_UNCERTAINTY = 0.01
 
-INVERSION_WINDOWS = [[380.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
+INVERSION_WINDOWS = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
 
 
 def main(rawargs=None):
@@ -148,7 +148,7 @@ def main(rawargs=None):
 
     use_superpixels = (args.empirical_line == 1) or (args.analytical_line == 1)
 
-    if args.sensor not in ["ang", "avcl", "neon", "prism", "emit", "hyp"]:
+    if args.sensor not in ["ang", "avcl", "neon", "prism", "emit", "hyp", "prisma"]:
         if args.sensor[:3] != "NA-":
             raise ValueError(
                 'argument sensor: invalid choice: "NA-test" (choose from '
@@ -221,6 +221,8 @@ def main(rawargs=None):
         dt = datetime.strptime(paths.fid, "NIS01_%Y%m%d_%H%M%S")
     elif args.sensor == "prism":
         dt = datetime.strptime(paths.fid[3:], "%Y%m%dt%H%M%S")
+    elif args.sensor == "prisma":
+        dt = datetime.strptime(paths.fid, "%Y%m%d%H%M%S")
     elif args.sensor == "emit":
         dt = datetime.strptime(paths.fid[:19], "emit%Y%m%dt%H%M%S")
         global INVERSION_WINDOWS
@@ -598,6 +600,9 @@ class Pathnames:
             logging.info("Flightline ID: %s" % self.fid)
         elif args.sensor == "prism":
             self.fid = split(args.input_radiance)[-1][:18]
+            logging.info("Flightline ID: %s" % self.fid)
+        elif args.sensor == "prisma":
+            self.fid = args.input_radiance.split("/")[-1].split("_")[4]
             logging.info("Flightline ID: %s" % self.fid)
         elif args.sensor == "avcl":
             self.fid = split(args.input_radiance)[-1][:16]

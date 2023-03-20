@@ -24,12 +24,12 @@ import time
 import matplotlib
 import numpy as np
 import pylab as plt
-import ray
 from scipy.linalg import inv
 from scipy.ndimage import gaussian_filter
 from scipy.spatial import KDTree
 from spectral.io import envi
 
+from isofit import ray
 from isofit.configs import configs
 from isofit.core.common import envi_header
 from isofit.core.fileio import write_bil_chunk

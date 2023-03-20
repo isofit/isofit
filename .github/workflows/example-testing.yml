@@ -54,3 +54,9 @@ jobs:
         source /root/.bashrc
         cd examples/20190806_ThermalIR
         python run_example_modtran_one.py
+
+    - name: Running Example - profiling_cube/small
+      run: |
+        source /root/.bashrc
+        cd examples/profiling_cube
+        ISOFIT_DEBUG=1 python run_profiling.py

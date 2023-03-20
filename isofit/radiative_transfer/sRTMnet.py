@@ -26,11 +26,11 @@ from copy import deepcopy
 from sys import platform
 
 import numpy as np
-import ray
 import yaml
 from scipy import interpolate
 from tensorflow import keras
 
+from isofit import ray
 from isofit.configs import Config
 from isofit.configs.sections.radiative_transfer_config import (
     RadiativeTransferEngineConfig,

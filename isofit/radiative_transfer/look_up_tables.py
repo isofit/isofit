@@ -26,8 +26,8 @@ from collections import OrderedDict
 from typing import List
 
 import numpy as np
-import ray
 
+from isofit import ray
 from isofit.configs import Config
 from isofit.configs.sections.implementation_config import ImplementationConfig
 from isofit.configs.sections.radiative_transfer_config import (
