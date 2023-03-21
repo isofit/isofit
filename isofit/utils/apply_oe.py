@@ -743,9 +743,7 @@ class Pathnames:
                 os.path.dirname(os.path.dirname(isofit.__file__))
             )
 
-        if args.sensor == "ang":
-            self.noise_path = join(self.isofit_path, "data", "avirisng_noise.txt")
-        elif args.sensor == "avcl":
+        if args.sensor == "avcl":
             self.noise_path = join(self.isofit_path, "data", "avirisc_noise.txt")
         elif args.sensor == "emit":
             self.noise_path = join(self.isofit_path, "data", "emit_noise.txt")
@@ -1820,7 +1818,7 @@ def build_main_config(
             "parametric_noise_file"
         ] = paths.noise_path
     else:
-        isofit_config_modtran["forward_model"]["instrument"]["SNR"] = 1000
+        isofit_config_modtran["forward_model"]["instrument"]["SNR"] = 500
 
     if paths.rdn_factors_path:
         isofit_config_modtran["input"][
