@@ -56,9 +56,9 @@ def cli(ctx, version):
 
 # Import all of the files that define a _cli command to register them
 import isofit.core.isofit
+import isofit.utils.add_HRRR_profiles_to_modtran_config
 import isofit.utils.analytical_line
 import isofit.utils.solar_position
 
-# import isofit.utils.add_HRRR_profiles_to_modtran_config
 # import isofit.utils.apply_oe
 # import isofit.utils.multisurface_oe
