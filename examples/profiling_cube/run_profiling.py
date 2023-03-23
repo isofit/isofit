@@ -15,6 +15,7 @@ import zipfile
 from glob      import glob
 from importlib import reload
 from io        import BytesIO
+from types     import SimpleNamespace
 
 import isofit
 
@@ -128,7 +129,14 @@ def run(config, workdir, files, output=None, n=1):
             os.remove(file)
 
         profile(
-            args   = files + [workdir, config, '--logging_level', 'DEBUG'],
+            args = SimpleNamespace(
+                input_radiance    = files[0],
+                input_loc         = files[1],
+                input_obs         = files[2],
+                working_directory = workdir,
+                config_file       = config,
+                logging_level     = 'DEBUG'
+            ),
             output = file
         )
 
