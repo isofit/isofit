@@ -121,11 +121,6 @@ def apply_oe(**args):
                 '"ang", "avcl", "neon", "prism", "emit", "NA-*")'
             )
 
-    if args.copy_input_files == 1:
-        args.copy_input_files = True
-    else:
-        args.copy_input_files = False
-
     logging.basicConfig(
         format="%(levelname)s:%(asctime)s ||| %(message)s",
         level=args.logging_level,
@@ -1906,33 +1901,33 @@ def write_modtran_template(
 
 
 @cli.command(name="apply_oe")
-@click.argument("input_radiance", type=str)
-@click.argument("input_loc", type=str)
-@click.argument("input_obs", type=str)
-@click.argument("working_directory", type=str)
-@click.argument("sensor", type=str)
-@click.option("--copy_input_files", type=int, is_flag=True, default=False)
-@click.option("--modtran_path", type=str)
-@click.option("--wavelength_path", type=str)
-@click.option("--surface_category", type=str, default="multicomponent_surface")
-@click.option("--aerosol_climatology_path", type=str)
-@click.option("--rdn_factors_path", type=str)
-@click.option("--surface_path", type=str)
-@click.option("--atmosphere_type", type=str, default="ATM_MIDLAT_SUMMER")
-@click.option("--channelized_uncertainty_path", type=str)
-@click.option("--model_discrepancy_path", type=str)
-@click.option("--lut_config_file", type=str)
+@click.argument("input_radiance")
+@click.argument("input_loc")
+@click.argument("input_obs")
+@click.argument("working_directory")
+@click.argument("sensor")
+@click.option("--copy_input_files", is_flag=True, default=False)
+@click.option("--modtran_path")
+@click.option("--wavelength_path")
+@click.option("--surface_category", default="multicomponent_surface")
+@click.option("--aerosol_climatology_path")
+@click.option("--rdn_factors_path")
+@click.option("--surface_path")
+@click.option("--atmosphere_type", default="ATM_MIDLAT_SUMMER")
+@click.option("--channelized_uncertainty_path")
+@click.option("--model_discrepancy_path")
+@click.option("--lut_config_file")
 @click.option("--multiple_restarts", is_flag=True, default=False)
-@click.option("--logging_level", type=str, default="INFO")
-@click.option("--log_file", type=str)
+@click.option("--logging_level", default="INFO")
+@click.option("--log_file")
 @click.option("--n_cores", type=int, default=1)
-@click.option("--presolve", type=int, is_flag=True, default=False)
-@click.option("--empirical_line", type=int, is_flag=True, default=False)
-@click.option("--analytical_line", type=int, is_flag=True, default=False)
-@click.option("--ray_temp_dir", type=str, default="/tmp/ray")
-@click.option("--emulator_base", type=str)
-@click.option("--segmentation_size", type=int, default=40)
-@click.option("--num_neighbors", type=int)
+@click.option("--presolve", is_flag=True, default=False)
+@click.option("--empirical_line", is_flag=True, default=False)
+@click.option("--analytical_line", is_flag=True, default=False)
+@click.option("--ray_temp_dir", default="/tmp/ray")
+@click.option("--emulator_base")
+@click.option("--segmentation_size", default=40)
+@click.option("--num_neighbors")
 @click.option("--pressure_elevation", is_flag=True)
 @click.option(
     "--debug-args",

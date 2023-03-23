@@ -3,21 +3,21 @@
 # Authors: Philip G. Brodrick and Niklas Bohn
 #
 
-import argparse
 import logging
 import multiprocessing
 import os
-import sys
 from collections import OrderedDict
 from datetime import datetime
 from os.path import exists, join
 from shutil import copyfile
 
+import click
 import numpy as np
 import yaml
 from spectral.io import envi
 
 import isofit.utils.template_construction as tc
+from isofit import cli
 from isofit.core import isofit
 from isofit.core.common import envi_header
 from isofit.utils import (
@@ -29,20 +29,10 @@ from isofit.utils import (
 )
 
 
-def main(rawargs=sys.argv):
-    parser = argparse.ArgumentParser(
-        description="Apply ISOFIT to a block of data with mixed surface."
-    )
-    parser.add_argument("input_radiance", type=str)
-    parser.add_argument("input_loc", type=str)
-    parser.add_argument("input_obs", type=str)
-    parser.add_argument("working_directory", type=str)
-    parser.add_argument("config_file", type=str)
-    parser.add_argument("--wavelength_path", type=str)
-    parser.add_argument("--log_file", type=str, default=None)
-    parser.add_argument("--logging_level", type=str, default="INFO")
-    args = parser.parse_args(rawargs)
-
+def multisurface_oe(**args):
+    """
+    TODO
+    """
     infiles = {
         "input_radiance": args.input_radiance,
         "input_loc": args.input_loc,
@@ -672,5 +662,27 @@ def main(rawargs=sys.argv):
     logging.info("Done.")
 
 
-if __name__ == "__main__":
-    main()
+@cli.command(name="multisurface_oe")
+@click.argument("input_radiance")
+@click.argument("input_loc")
+@click.argument("input_obs")
+@click.argument("working_directory")
+@click.argument("config_file")
+@click.option("--wavelength_path")
+@click.option("--log_file")
+@click.option("--logging_level", default="INFO")
+@click.option("--pressure_elevation", is_flag=True)
+@click.option("--debug-args", is_flag=True)
+def _cli(debug_args, **kwargs):
+    """\
+    Apply ISOFIT to a block of data with mixed surface
+    """
+    click.echo("Running multisurface_oe")
+    if debug_args:
+        click.echo("Arguments to be passed:")
+        for key, value in kwargs.items():
+            click.echo(f"  {key} = {value!r}")
+    else:
+        multisurface_oe(**kwargs)
+
+    click.echo("Done")
