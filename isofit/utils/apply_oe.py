@@ -16,11 +16,13 @@ from sys import platform
 from typing import List
 from warnings import warn
 
+import click
 import numpy as np
 from osgeo import gdal
 from sklearn import mixture
 from spectral.io import envi
 
+from isofit import cli
 from isofit.core import common, isofit
 from isofit.core.common import envi_header
 from isofit.utils import analytical_line, empirical_line, extractions, segment
@@ -42,7 +44,7 @@ UNCORRELATED_RADIOMETRIC_UNCERTAINTY = 0.01
 INVERSION_WINDOWS = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
 
 
-def main(rawargs=sys.argv):
+def apply_oe(**args):
     """This is a helper script to apply OE over a flightline using the MODTRAN radiative transfer engine.
 
     The goal is to run isofit in a fairly 'standard' way, accounting for the types of variation that might be
@@ -110,42 +112,6 @@ def main(rawargs=sys.argv):
     Returns:
 
     """
-    # Parse arguments
-    parser = argparse.ArgumentParser(description="Apply OE to a block of data.")
-    parser.add_argument("input_radiance", type=str)
-    parser.add_argument("input_loc", type=str)
-    parser.add_argument("input_obs", type=str)
-    parser.add_argument("working_directory", type=str)
-    parser.add_argument("sensor", type=str)
-    parser.add_argument("--copy_input_files", type=int, choices=[0, 1], default=0)
-    parser.add_argument("--modtran_path", type=str)
-    parser.add_argument("--wavelength_path", type=str)
-    parser.add_argument(
-        "--surface_category", type=str, default="multicomponent_surface"
-    )
-    parser.add_argument("--aerosol_climatology_path", type=str, default=None)
-    parser.add_argument("--rdn_factors_path", type=str)
-    parser.add_argument("--surface_path", type=str)
-    parser.add_argument("--atmosphere_type", type=str, default="ATM_MIDLAT_SUMMER")
-    parser.add_argument("--channelized_uncertainty_path", type=str)
-    parser.add_argument("--model_discrepancy_path", type=str)
-    parser.add_argument("--lut_config_file", type=str)
-    parser.add_argument("--multiple_restarts", action="store_true")
-    parser.add_argument("--logging_level", type=str, default="INFO")
-    parser.add_argument("--log_file", type=str, default=None)
-    parser.add_argument("--n_cores", type=int, default=1)
-    parser.add_argument("--presolve", choices=[0, 1], type=int, default=0)
-    parser.add_argument("--empirical_line", choices=[0, 1], type=int, default=0)
-    parser.add_argument("--analytical_line", choices=[0, 1], type=int, default=0)
-    parser.add_argument("--ray_temp_dir", type=str, default="/tmp/ray")
-    parser.add_argument("--emulator_base", type=str, default=None)
-    parser.add_argument("--segmentation_size", type=int, default=40)
-    parser.add_argument("--num_neighbors", type=int, default=None)
-    parser.add_argument("--pressure_elevation", action="store_true", default=None)
-    parser.add_argument("--debug", action="store_true")
-
-    args = parser.parse_args(rawargs)
-
     use_superpixels = (args.empirical_line == 1) or (args.analytical_line == 1)
 
     if args.sensor not in ["ang", "avcl", "neon", "prism", "emit", "hyp", "prisma"]:
@@ -1939,5 +1905,50 @@ def write_modtran_template(
         )
 
 
-if __name__ == "__main__":
-    main()
+@cli.command(name="apply_oe")
+@click.argument("input_radiance", type=str)
+@click.argument("input_loc", type=str)
+@click.argument("input_obs", type=str)
+@click.argument("working_directory", type=str)
+@click.argument("sensor", type=str)
+@click.option("--copy_input_files", type=int, is_flag=True, default=False)
+@click.option("--modtran_path", type=str)
+@click.option("--wavelength_path", type=str)
+@click.option("--surface_category", type=str, default="multicomponent_surface")
+@click.option("--aerosol_climatology_path", type=str)
+@click.option("--rdn_factors_path", type=str)
+@click.option("--surface_path", type=str)
+@click.option("--atmosphere_type", type=str, default="ATM_MIDLAT_SUMMER")
+@click.option("--channelized_uncertainty_path", type=str)
+@click.option("--model_discrepancy_path", type=str)
+@click.option("--lut_config_file", type=str)
+@click.option("--multiple_restarts", is_flag=True, default=False)
+@click.option("--logging_level", type=str, default="INFO")
+@click.option("--log_file", type=str)
+@click.option("--n_cores", type=int, default=1)
+@click.option("--presolve", type=int, is_flag=True, default=False)
+@click.option("--empirical_line", type=int, is_flag=True, default=False)
+@click.option("--analytical_line", type=int, is_flag=True, default=False)
+@click.option("--ray_temp_dir", type=str, default="/tmp/ray")
+@click.option("--emulator_base", type=str)
+@click.option("--segmentation_size", type=int, default=40)
+@click.option("--num_neighbors", type=int)
+@click.option("--pressure_elevation", is_flag=True)
+@click.option(
+    "--debug-args",
+    help="Prints the arguments list without executing the command",
+    is_flag=True,
+)
+def _cli(debug_args, **kwargs):
+    """\
+    Apply OE to a block of data
+    """
+    click.echo("Running analytical line")
+    if debug_args:
+        click.echo("Arguments to be passed:")
+        for key, value in kwargs.items():
+            click.echo(f"  {key} = {value!r}")
+    else:
+        apply_oe(**kwargs)
+
+    click.echo("Done")

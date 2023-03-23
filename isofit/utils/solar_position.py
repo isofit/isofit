@@ -15,7 +15,6 @@ def solar_position(
     dt=0.0,
     radians=False,
     csv=False,
-    print=print,
 ):
     """
     Solar position algorithm of Reda & Andreas (2003).
@@ -42,8 +41,6 @@ def solar_position(
         Output in radians instead of degrees
     csv : bool, default=False
         Comma separated values (time,dt,lat,lon,elev,temp,pressure,az,zen,RA,dec,H)
-    print : function, default=print
-        Allows replacing the print function with some other such as click.echo
     """
     if cite:
         print("Implementation: Samuel Bear Powell, 2016")
@@ -164,6 +161,6 @@ def _cli(**kwargs):
     """
     click.echo(f"Running the solar position algorithm")
 
-    solar_position(**kwargs, print=click.echo)
+    solar_position(**kwargs)
 
     click.echo("Done")

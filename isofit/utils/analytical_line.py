@@ -310,7 +310,7 @@ class Worker(object):
 @click.option("--logfile", help="TODO", type=str, default=None)
 def _cli(**kwargs):
     """\
-    Apply OE to a block of data
+    Executes the analytical line algorithm
     """
     click.echo("Running analytical line")
 
