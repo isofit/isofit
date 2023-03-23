@@ -130,12 +130,15 @@ def run(config, workdir, files, output=None, n=1):
 
         profile(
             args = SimpleNamespace(
-                input_radiance    = files[0],
-                input_loc         = files[1],
-                input_obs         = files[2],
-                working_directory = workdir,
-                config_file       = config,
-                logging_level     = 'DEBUG'
+                input_radiance     = files[0],
+                input_loc          = files[1],
+                input_obs          = files[2],
+                working_directory  = workdir,
+                config_file        = config,
+                wavelength_path    = None,
+                log_file           = None,
+                logging_level      = 'DEBUG',
+                pressure_elevation = None
             ),
             output = file
         )
