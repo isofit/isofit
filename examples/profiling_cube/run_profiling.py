@@ -18,7 +18,7 @@ from io        import BytesIO
 
 import isofit
 
-from isofit.utils.multisurface_oe import main as multi_oe
+from isofit.utils.multisurface_oe import multisurface_oe
 
 
 logging.basicConfig(format='%(levelname)s | %(message)s', level=logging.DEBUG)
@@ -89,7 +89,7 @@ def profile(args, output=None):
 
     # Make sure the module is a fresh instance between runs
     reload(isofit.utils.multisurface_oe)
-    multi_oe(args)
+    multisurface_oe(args)
 
     profiler.disable()
 
