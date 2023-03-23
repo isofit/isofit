@@ -52,10 +52,10 @@ def cli(ctx, version, path):
     """
     if ctx.invoked_subcommand is None:
         if version:
-            click.echo(f"ISOFIT version = {__version__}")
+            click.echo(__version__)
 
         if path:
-            click.echo(f"ISOFIT path = {__path__[0]}")
+            click.echo(__path__[0])
 
 
 # Import all of the files that define a _cli command to register them
