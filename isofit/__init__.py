@@ -44,14 +44,18 @@ import click
 
 @click.group(invoke_without_command=True)
 @click.pass_context
-@click.option("-v", "--version", is_flag=True)
-def cli(ctx, version):
+@click.option("-v", "--version", help="Print the current version", is_flag=True)
+@click.option("-p", "--path", help="Print the installation path", is_flag=True)
+def cli(ctx, version, path):
     """\
     This houses the subcommands of ISOFIT
     """
     if ctx.invoked_subcommand is None:
         if version:
             click.echo(f"ISOFIT version = {__version__}")
+
+        if path:
+            click.echo(f"ISOFIT path = {__path__[0]}")
 
 
 # Import all of the files that define a _cli command to register them

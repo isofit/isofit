@@ -10,6 +10,7 @@ from collections import OrderedDict
 from datetime import datetime
 from os.path import exists, join
 from shutil import copyfile
+from types import SimpleNamespace
 
 import click
 import numpy as np
@@ -29,7 +30,7 @@ from isofit.utils import (
 )
 
 
-def multisurface_oe(**args):
+def multisurface_oe(args):
     """
     TODO
     """
@@ -683,6 +684,7 @@ def _cli(debug_args, **kwargs):
         for key, value in kwargs.items():
             click.echo(f"  {key} = {value!r}")
     else:
-        multisurface_oe(**kwargs)
+        # SimpleNamespace converts a dict into dot-notational
+        multisurface_oe(SimpleNamespace(**kwargs))
 
     click.echo("Done")

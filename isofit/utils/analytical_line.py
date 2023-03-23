@@ -16,6 +16,7 @@
 #
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: Philip G. Brodrick, philip.brodrick@jpl.nasa.gov
+
 import logging
 import os
 import sys

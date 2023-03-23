@@ -3,7 +3,6 @@
 # Authors: David R Thompson and Philip G. Brodrick
 #
 
-import argparse
 import json
 import logging
 import os
@@ -13,6 +12,7 @@ from datetime import datetime
 from os.path import abspath, exists, join, split
 from shutil import copyfile
 from sys import platform
+from types import SimpleNamespace
 from typing import List
 from warnings import warn
 
@@ -44,7 +44,7 @@ UNCORRELATED_RADIOMETRIC_UNCERTAINTY = 0.01
 INVERSION_WINDOWS = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
 
 
-def apply_oe(**args):
+def apply_oe(args):
     """This is a helper script to apply OE over a flightline using the MODTRAN radiative transfer engine.
 
     The goal is to run isofit in a fairly 'standard' way, accounting for the types of variation that might be
@@ -551,7 +551,7 @@ class Pathnames:
         args: an argparse Namespace object with all inputs
     """
 
-    def __init__(self, args: argparse.Namespace):
+    def __init__(self, args):
         # Determine FID based on sensor name
         if args.sensor == "ang":
             self.fid = split(args.input_radiance)[-1][:18]
@@ -1944,6 +1944,7 @@ def _cli(debug_args, **kwargs):
         for key, value in kwargs.items():
             click.echo(f"  {key} = {value!r}")
     else:
-        apply_oe(**kwargs)
+        # SimpleNamespace converts a dict into dot-notational
+        apply_oe(SimpleNamespace(**kwargs))
 
     click.echo("Done")
