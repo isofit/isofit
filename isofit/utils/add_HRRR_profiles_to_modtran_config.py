@@ -29,7 +29,6 @@ import click
 import numpy as np
 import pygrib
 
-from isofit import cli
 from isofit.core.common import json_load_ascii
 
 
@@ -327,7 +326,7 @@ def get_HRRR_data(filename):
     return lat, lon, geo_pot_height, temperature, rh, pressure_levels_Pa
 
 
-@cli.command(name="HRRR_to_modtran")
+@click.command(name="HRRR_to_modtran")
 @click.argument("config_file")
 def _cli(**kwargs):
     """\
@@ -338,3 +337,11 @@ def _cli(**kwargs):
     HRRR_to_MODTRAN_profiles(**kwargs)
 
     click.echo("Done")
+
+
+if __name__ == "__main__":
+    _cli()
+else:
+    from isofit import cli
+
+    cli.add_command(_cli)

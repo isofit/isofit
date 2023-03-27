@@ -27,7 +27,7 @@ import time
 import click
 import numpy as np
 
-from isofit import cli, ray
+from isofit import ray
 from isofit.configs import configs
 from isofit.core.fileio import IO
 from isofit.core.forward import ForwardModel
@@ -292,7 +292,7 @@ class Worker(object):
         self.io.flush_buffers()
 
 
-@cli.command(name="run")
+@click.command(name="run")
 @click.argument("config_file")
 @click.option(
     "-l",
@@ -313,3 +313,11 @@ def _cli(config_file, level):
     Isofit(config_file=config_file, level=level).run()
 
     click.echo("Done")
+
+
+if __name__ == "__main__":
+    _cli()
+else:
+    from isofit import cli
+
+    cli.add_command(_cli)

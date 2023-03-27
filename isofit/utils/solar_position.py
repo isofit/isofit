@@ -1,6 +1,5 @@
 import click
 
-from isofit import cli
 from isofit.core import sunposition
 
 
@@ -95,7 +94,7 @@ def solar_position(
         print(f"RA, dec, H = {ra} {dr}, {dec} {dr}, {h} {dr}")
 
 
-@cli.command(name="sun")
+@click.command(name="sun")
 @click.option(
     "-c",
     "--cite",
@@ -164,3 +163,11 @@ def _cli(**kwargs):
     solar_position(**kwargs)
 
     click.echo("Done")
+
+
+if __name__ == "__main__":
+    _cli()
+else:
+    from isofit import cli
+
+    cli.add_command(_cli)

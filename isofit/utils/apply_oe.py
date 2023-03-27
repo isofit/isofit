@@ -22,7 +22,6 @@ from osgeo import gdal
 from sklearn import mixture
 from spectral.io import envi
 
-from isofit import cli
 from isofit.core import common, isofit
 from isofit.core.common import envi_header
 from isofit.utils import analytical_line, empirical_line, extractions, segment
@@ -1900,7 +1899,7 @@ def write_modtran_template(
         )
 
 
-@cli.command(name="apply_oe")
+@click.command(name="apply_oe")
 @click.argument("input_radiance")
 @click.argument("input_loc")
 @click.argument("input_obs")
@@ -1948,3 +1947,11 @@ def _cli(debug_args, **kwargs):
         apply_oe(SimpleNamespace(**kwargs))
 
     click.echo("Done")
+
+
+if __name__ == "__main__":
+    _cli()
+else:
+    from isofit import cli
+
+    cli.add_command(_cli)

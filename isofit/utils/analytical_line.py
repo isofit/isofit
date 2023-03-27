@@ -28,7 +28,7 @@ import click
 import numpy as np
 from spectral.io import envi
 
-from isofit import cli, ray
+from isofit import ray
 from isofit.configs import configs
 from isofit.core.common import envi_header, svd_inv, svd_inv_sqrt
 from isofit.core.fileio import write_bil_chunk
@@ -294,7 +294,7 @@ class Worker(object):
             )
 
 
-@cli.command(name="analytical_line")
+@click.command(name="analytical_line")
 @click.argument("rdn_file")
 @click.argument("loc_file")
 @click.argument("obs_file")
@@ -321,4 +321,8 @@ def _cli(**kwargs):
 
 
 if __name__ == "__main__":
-    analytical_line()
+    _cli()
+else:
+    from isofit import cli
+
+    cli.add_command(_cli)

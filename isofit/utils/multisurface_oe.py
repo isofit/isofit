@@ -18,7 +18,6 @@ import yaml
 from spectral.io import envi
 
 import isofit.utils.template_construction as tc
-from isofit import cli
 from isofit.core import isofit
 from isofit.core.common import envi_header
 from isofit.utils import (
@@ -663,7 +662,7 @@ def multisurface_oe(args):
     logging.info("Done.")
 
 
-@cli.command(name="multisurface_oe")
+@click.command(name="multisurface_oe")
 @click.argument("input_radiance")
 @click.argument("input_loc")
 @click.argument("input_obs")
@@ -688,3 +687,11 @@ def _cli(debug_args, **kwargs):
         multisurface_oe(SimpleNamespace(**kwargs))
 
     click.echo("Done")
+
+
+if __name__ == "__main__":
+    _cli()
+else:
+    from isofit import cli
+
+    cli.add_command(_cli)
