@@ -19,6 +19,7 @@
 
 import argparse
 import logging
+import multiprocessing
 import os
 import time
 from collections import OrderedDict
@@ -29,7 +30,7 @@ from spectral.io import envi
 
 from isofit import ray
 from isofit.configs import configs
-from isofit.core.common import envi_header, svd_inv, svd_inv_sqrt
+from isofit.core.common import envi_header, load_spectrum, svd_inv, svd_inv_sqrt
 from isofit.core.fileio import write_bil_chunk
 from isofit.core.forward import ForwardModel
 from isofit.core.geometry import Geometry
@@ -43,7 +44,6 @@ def main(rawargs=None) -> None:
     """
     TODO: Description
     """
-    # TODO: Parser should be moved out of main and these be made parameters of the function
     parser = argparse.ArgumentParser(description="Apply OE to a block of data.")
     parser.add_argument("rdn_file", type=str)
     parser.add_argument("loc_file", type=str)
@@ -51,12 +51,13 @@ def main(rawargs=None) -> None:
     parser.add_argument("isofit_dir", type=str)
     parser.add_argument("--isofit_config", type=str, default=None)
     parser.add_argument("--segmentation_file", type=str, default=None)
-    parser.add_argument("--n_atm_neighbors", type=int, default=20)
+    parser.add_argument("--n_atm_neighbors", type=int, nargs="+", default=20)
     parser.add_argument("--n_cores", type=int, default=-1)
-    parser.add_argument("--smoothing_sigma", type=int, default=2)
+    parser.add_argument("--smoothing_sigma", type=int, nargs="+", default=2)
     parser.add_argument("--output_rfl_file", type=str, default=None)
     parser.add_argument("--output_unc_file", type=str, default=None)
     parser.add_argument("--atm_file", type=str, default=None)
+    parser.add_argument("--rdn_factors_path", type=str, default=None)
     parser.add_argument("--loglevel", type=str, default="INFO")
     parser.add_argument("--logfile", type=str, default=None)
     args = parser.parse_args(rawargs)
@@ -161,6 +162,8 @@ def main(rawargs=None) -> None:
     )
 
     n_workers = args.n_cores
+    if n_workers == -1:
+        n_workers = multiprocessing.cpu_count()
     worker = ray.remote(Worker)
     wargs = [
         config,
@@ -236,6 +239,13 @@ class Worker(object):
         self.analytical_state_file = analytical_state_file
         self.analytical_state_unc_file = analytical_state_unc_file
 
+        if config.input.radiometry_correction_file is not None:
+            self.radiance_correction, wl = load_spectrum(
+                config.input.radiometry_correction_file
+            )
+        else:
+            self.radiance_correction = None
+
     def run_lines(self, startstop: tuple) -> None:
         """
         TODO: Description
@@ -258,6 +268,8 @@ class Worker(object):
         for r in range(start_line, stop_line):
             for c in range(output_state.shape[1]):
                 meas = rdn[r, c, :]
+                if self.radiance_correction is not None:
+                    meas *= self.radiance_correction
                 if np.all(meas < 0):
                     continue
                 x_RT = rt_state[r, c, :]

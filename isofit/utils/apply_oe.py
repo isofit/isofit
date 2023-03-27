@@ -140,7 +140,8 @@ def main(rawargs=None):
     parser.add_argument("--ray_temp_dir", type=str, default="/tmp/ray")
     parser.add_argument("--emulator_base", type=str, default=None)
     parser.add_argument("--segmentation_size", type=int, default=40)
-    parser.add_argument("--num_neighbors", type=int, default=None)
+    parser.add_argument("--num_neighbors", type=int, nargs="+", default=None)
+    parser.add_argument("--atm_sigma", type=int, nargs="+", default=2)
     parser.add_argument("--pressure_elevation", action="store_true", default=None)
     parser.add_argument("--debug", action="store_true")
 
@@ -153,6 +154,16 @@ def main(rawargs=None):
             raise ValueError(
                 'argument sensor: invalid choice: "NA-test" (choose from '
                 '"ang", "avcl", "neon", "prism", "emit", "NA-*")'
+            )
+
+    if args.num_neighbors is not None and len(args.num_neighbors) > 1:
+        if args.analytical_line != 1:
+            raise ValueError(
+                "If num_neighbors has multiple elements, --analytical_line must equal 1"
+            )
+        if args.empirical_line == 1:
+            raise ValueError(
+                "If num_neighbors has multiple elements, only --analytical_line is valid"
             )
 
     if args.copy_input_files == 1:
@@ -534,7 +545,7 @@ def main(rawargs=None):
 
     if not exists(paths.rfl_working_path) or not exists(paths.uncert_working_path):
         if args.num_neighbors is None:
-            nneighbors = int(round(3950 / 9 - 35 / 36 * args.segmentation_size))
+            nneighbors = [int(round(3950 / 9 - 35 / 36 * args.segmentation_size))]
         else:
             nneighbors = args.num_neighbors
 
@@ -554,30 +565,30 @@ def main(rawargs=None):
                 output_reflectance_file=paths.rfl_working_path,
                 output_uncertainty_file=paths.uncert_working_path,
                 isofit_config=paths.modtran_config_path,
-                nneighbors=nneighbors,
+                nneighbors=nneighbors[0],
             )
         elif args.analytical_line == 1:
             logging.info("Analytical line inference")
-            analytical_line.main(
-                [
-                    paths.radiance_working_path,
-                    paths.loc_working_path,
-                    paths.obs_working_path,
-                    args.working_directory,
-                    "--n_atm_neighbors",
-                    str(nneighbors),
-                    "--smoothing_sigma",
-                    "2",
-                    "--output_rfl_file",
-                    paths.rfl_working_path,
-                    "--output_unc_file",
-                    paths.uncert_working_path,
-                    "--loglevel",
-                    args.logging_level,
-                    "--logfile",
-                    args.log_file,
-                ]
-            )
+            analytical_line_args = [
+                paths.radiance_working_path,
+                paths.loc_working_path,
+                paths.obs_working_path,
+                args.working_directory,
+                "--output_rfl_file",
+                paths.rfl_working_path,
+                "--output_unc_file",
+                paths.uncert_working_path,
+                "--loglevel",
+                args.logging_level,
+                "--logfile",
+                args.log_file,
+                "--n_atm_neighbors",
+            ]
+            analytical_line_args.extend([str(x) for x in nneighbors])
+            analytical_line_args.append("--smoothing_sigma")
+            analytical_line_args.extend([str(x) for x in args.atm_sigma])
+
+            analytical_line.main(analytical_line_args)
 
     logging.info("Done.")
 
