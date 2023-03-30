@@ -24,7 +24,7 @@ from scipy.linalg import block_diag, norm
 
 from isofit.configs import Config
 
-from ..core.common import svd_inv
+from ..core.common import svd_inv, svd_inv_sqrt
 from .surface import Surface
 
 
@@ -150,16 +150,18 @@ class MultiComponentSurface(Surface):
         mu[self.idx_lamb] = lamb_mu
         return mu
 
-    def Sa(self, x_surface, geom):
+    def Sa(self, x_surface, geom, unnormalize=True):
         """Covariance of prior distribution, calculated at state x. We find
         the covariance in a normalized space (normalizing by z) and then un-
         normalize the result for the calling function."""
 
-        lamb = self.calc_lamb(x_surface, geom)
-        lamb_ref = lamb[self.idx_ref]
         ci = self.component(x_surface, geom)
         Cov = self.components[ci][1]
-        Cov = Cov * (self.norm(lamb_ref) ** 2)
+
+        if unnormalize:
+            lamb = self.calc_lamb(x_surface, geom)
+            lamb_ref = lamb[self.idx_ref]
+            Cov = Cov * (self.norm(lamb_ref) ** 2)
 
         # If there are no other state vector elements, we're done.
         if len(self.statevec_names) == len(self.idx_lamb):
@@ -171,6 +173,25 @@ class MultiComponentSurface(Surface):
         Cov_prefix = np.zeros((nprefix, nprefix))
         Cov_suffix = np.zeros((nsuffix, nsuffix))
         return block_diag(Cov_prefix, Cov, Cov_suffix)
+
+    def Sa_inv_sqrt(self, Sa, x_surface, geom, hashtable, max_hash_size):
+        """Inverse covariance and its square root of prior distribution, calculated at state x. We find
+        the inverse covariance in a normalized space (normalizing by z) and then un-
+        normalize the result for the calling function."""
+
+        Cov = self.Sa(x_surface=x_surface, geom=geom, unnormalize=False)
+        Sa[: self.n_state, : self.n_state] = Cov
+        Cov_inv, Cov_inv_sqrt = svd_inv_sqrt(
+            C=Sa, hashtable=hashtable, max_hash_size=max_hash_size
+        )
+
+        # unnormalize
+        lamb = self.calc_lamb(x_surface, geom)
+        lamb_ref = lamb[self.idx_ref]
+        Cov_inv = Cov_inv * (1 / (self.norm(lamb_ref) ** 2))
+        Cov_inv_sqrt = Cov_inv_sqrt * np.sqrt((1 / (self.norm(lamb_ref) ** 2)))
+
+        return Cov_inv, Cov_inv_sqrt
 
     def fit_params(self, rfl_meas, geom, *args):
         """Given a reflectance estimate, fit a state vector."""

@@ -145,11 +145,16 @@ class Inversion:
         xa = self.fm.xa(x, geom)
         Sa = self.fm.Sa(x, geom)
 
-        # If there aren't any fixed parameters, we just directly
+        # If there aren't any fixed parameters, we just directly invert
         if self.x_fixed is None or self.grid_as_starting_points:
-            Sa_inv, Sa_inv_sqrt = svd_inv_sqrt(
-                Sa, hashtable=self.hashtable, max_hash_size=self.max_table_size
+            Sa_inv, Sa_inv_sqrt = self.fm.surface.Sa_inv_sqrt(
+                Sa=Sa,
+                x_surface=x[self.fm.idx_surface],
+                geom=geom,
+                hashtable=self.hashtable,
+                max_hash_size=self.max_table_size,
             )
+
             return xa, Sa, Sa_inv, Sa_inv_sqrt
 
         else:

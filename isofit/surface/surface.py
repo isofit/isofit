@@ -78,6 +78,11 @@ class Surface:
 
         return np.zeros((0, 0), dtype=float)
 
+    def Sa_inv_sqrt(self, Sa, x_surface, geom, hashtable, max_hash_size):
+        """Inverse covariance and its square root of prior state vector distribution calculated at state x."""
+
+        return np.zeros((0, 0), dtype=float), np.zeros((0, 0), dtype=float)
+
     def fit_params(self, rfl_meas, geom, *args):
         """Given a directional reflectance estimate and one or more emissive
         parameters, fit a state vector."""
