@@ -61,10 +61,10 @@ class ThermalSurface(MultiComponentSurface):
         mu[self.surf_temp_ind] = self.init[self.surf_temp_ind]
         return mu
 
-    def Sa(self, x_surface, geom):
+    def Sa(self, x_surface, geom, unnormalize=True):
         """Covariance of prior distribution, calculated at state x."""
 
-        Cov = MultiComponentSurface.Sa(self, x_surface, geom)
+        Cov = MultiComponentSurface.Sa(self, x_surface, geom, unnormalize)
         Cov[self.surf_temp_ind, self.surf_temp_ind] = (
             self.surface_T_prior_sigma_degK**2
         )

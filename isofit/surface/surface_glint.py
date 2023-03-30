@@ -48,12 +48,12 @@ class GlintSurface(ThermalSurface):
         mu[self.glint_ind] = self.init[self.glint_ind]
         return mu
 
-    def Sa(self, x_surface, geom):
+    def Sa(self, x_surface, geom, unnormalize=True):
         """Covariance of prior distribution, calculated at state x.  We find
         the covariance in a normalized space (normalizing by z) and then un-
         normalize the result for the calling function."""
 
-        Cov = ThermalSurface.Sa(self, x_surface, geom)
+        Cov = ThermalSurface.Sa(self, x_surface, geom, unnormalize)
         f = s.array([[(10.0 * self.scale[self.glint_ind]) ** 2]])
         Cov[self.glint_ind, self.glint_ind] = f
         return Cov
