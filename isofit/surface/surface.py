@@ -73,7 +73,7 @@ class Surface:
 
         return np.array(self.init)
 
-    def Sa(self, x_surface, geom):
+    def Sa(self, x_surface, geom, unnormalize):
         """Covariance of prior state vector distribution calculated at state x."""
 
         return np.zeros((0, 0), dtype=float)
