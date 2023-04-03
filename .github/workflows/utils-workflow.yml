@@ -5,8 +5,13 @@ on: [push, pull_request]
 jobs:
   tests:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
     container:
-      image: pgbrodrick/isofit
+      image: jammont/isofit:latest
+      env:
+        ENV_NAME: test
 
     steps:
     - name: Checkout
@@ -14,19 +19,22 @@ jobs:
 
     - name: Install Isofit
       run: |
-        pip3 install --editable .
+        source /root/.bashrc
+        pip install --editable .
 
     - name: Check Utils
       run: |
-        python3 -c 'from isofit.utils import apply_oe'
-        python3 -c 'from isofit.utils import empirical_line'
-        python3 -c 'from isofit.utils import extractions'
-        python3 -c 'from isofit.utils import instrument_model'
-        python3 -c 'from isofit.utils import path'
-        python3 -c 'from isofit.utils import remap'
-        python3 -c 'from isofit.utils import segment'
-        python3 -c 'from isofit.utils import surface_model'
+        source /root/.bashrc
+        python -c 'from isofit.utils import apply_oe'
+        python -c 'from isofit.utils import empirical_line'
+        python -c 'from isofit.utils import extractions'
+        python -c 'from isofit.utils import instrument_model'
+        python -c 'from isofit.utils import path'
+        python -c 'from isofit.utils import remap'
+        python -c 'from isofit.utils import segment'
+        python -c 'from isofit.utils import surface_model'
 
     - name: Run Test
       run: |
+        source /root/.bashrc
         pytest

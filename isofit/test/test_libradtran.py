@@ -21,12 +21,11 @@
 import json
 import os
 
+from isofit.configs.configs import create_new_config
 from isofit.core.common import expand_all_paths
 from isofit.core.fileio import IO
-from isofit.inversion.inverse import Inversion
 from isofit.core.forward import ForwardModel
-
-from isofit.configs.configs import create_new_config
+from isofit.inversion.inverse import Inversion
 
 
 def test_libradtran():
@@ -50,8 +49,8 @@ def run_forward():
 
     # Configure the surface/atmosphere/instrument model
     testdir, fname = os.path.split(os.path.abspath(__file__))
-    datadir = os.path.join(testdir, 'data')
-    config = create_new_config(os.path.join(datadir, 'config_forward.json'))
+    datadir = os.path.join(testdir, "data")
+    config = create_new_config(os.path.join(datadir, "config_forward.json"))
     fm = ForwardModel(config)
     iv = Inversion(config, fm)
     io = IO(config, fm)
@@ -73,8 +72,8 @@ def run_inverse():
 
     # Configure the surface/atmosphere/instrument model
     testdir, fname = os.path.split(os.path.abspath(__file__))
-    datadir = os.path.join(testdir, 'data')
-    config = create_new_config(os.path.join(datadir, 'config_forward.json'))
+    datadir = os.path.join(testdir, "data")
+    config = create_new_config(os.path.join(datadir, "config_forward.json"))
     fm = ForwardModel(config)
     iv = Inversion(config, fm)
     io = IO(config, fm)

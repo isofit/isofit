@@ -20,6 +20,7 @@
 
 import numpy as np
 from spectral.io import envi
+
 from isofit.core.common import envi_header
 
 
@@ -33,37 +34,38 @@ def remap(inputfile, labels, outputfile, flag, chunksize):
 
     ref_img = envi.open(envi_header(ref_file), ref_file)
     ref_meta = ref_img.metadata
-    ref_mm = ref_img.open_memmap(interleave='source', writable=False)
+    ref_mm = ref_img.open_memmap(interleave="source", writable=False)
     ref = np.array(ref_mm[:, :])
 
     lbl_img = envi.open(envi_header(lbl_file), lbl_file)
     lbl_meta = lbl_img.metadata
     labels = lbl_img.read_band(0)
 
-    nl = int(lbl_meta['lines'])
-    ns = int(lbl_meta['samples'])
-    nb = int(ref_meta['bands'])
+    nl = int(lbl_meta["lines"])
+    ns = int(lbl_meta["samples"])
+    nb = int(ref_meta["bands"])
 
     out_meta = dict([(k, v) for k, v in ref_meta.items()])
 
     out_meta["samples"] = ns
     out_meta["bands"] = nb
     out_meta["lines"] = nl
-    out_meta['data type'] = ref_meta['data type']
+    out_meta["data type"] = ref_meta["data type"]
     out_meta["interleave"] = "bil"
 
-    out_img = envi.create_image(envi_header(out_file),  metadata=out_meta,
-                                ext='', force=True)
-    out_mm = out_img.open_memmap(interleave='source', writable=True)
+    out_img = envi.create_image(
+        envi_header(out_file), metadata=out_meta, ext="", force=True
+    )
+    out_mm = out_img.open_memmap(interleave="source", writable=True)
 
     # Iterate through image "chunks," restoring as we go
     for lstart in np.arange(0, nl, nchunk):
         print(lstart)
         del out_mm
-        out_mm = out_img.open_memmap(interleave='source', writable=True)
+        out_mm = out_img.open_memmap(interleave="source", writable=True)
 
         # Which labels will we extract? ignore zero index
-        lend = min(lstart+nchunk, nl)
+        lend = min(lstart + nchunk, nl)
 
         lbl = labels[lstart:lend, :]
         out = flag * np.ones((lbl.shape[0], nb, lbl.shape[1]))

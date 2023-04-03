@@ -22,14 +22,14 @@ import numpy as np
 import scipy.linalg
 import scipy.stats
 
-from isofit.core.common import eps
-from .inverse import Inversion
 from isofit.configs import Config
+from isofit.core.common import eps
 from isofit.core.forward import ForwardModel
+
+from .inverse import Inversion
 
 
 class MCMCInversion(Inversion):
-
     def __init__(self, full_config: Config, forward: ForwardModel):
         """Initialize and apply defaults."""
 
@@ -48,12 +48,12 @@ class MCMCInversion(Inversion):
 
         U, V, D = scipy.linalg.svd(cov)
         use = np.where(V > 0)[0]
-        Cinv = (D[use, :].T).dot(np.diag(1.0/V[use])).dot(U[:, use].T)
+        Cinv = (D[use, :].T).dot(np.diag(1.0 / V[use])).dot(U[:, use].T)
         logCdet = np.sum(np.log(2.0 * np.pi * V[use]))
 
         # Multivariate Gaussian PDF
         lead = -0.5 * logCdet
-        dist = (x-mean)[:, np.newaxis]
+        dist = (x - mean)[:, np.newaxis]
         diverg = -0.5 * (dist.T).dot(Cinv).dot(dist)
         return lead + diverg
 
@@ -73,13 +73,12 @@ class MCMCInversion(Inversion):
         Seps = self.fm.Seps(x, rdn_meas, geom)
         Seps_win = np.array([Seps[i, self.winidx] for i in self.winidx])
         rdn_est = self.fm.calc_rdn(x, geom, rfl=None, Ls=None)
-        pm = self.stable_mvnpdf(rdn_est[self.winidx], Seps_win,
-                                rdn_meas[self.winidx])
-        return pa+pm
+        pm = self.stable_mvnpdf(rdn_est[self.winidx], Seps_win, rdn_meas[self.winidx])
+        return pa + pm
 
     def invert(self, rdn_meas, geom):
         """Inverts a meaurement. Returns an array of state vector samples.
-           Similar to Inversion.invert() but returns a list of samples."""
+        Similar to Inversion.invert() but returns a list of samples."""
 
         # We will truncate non-surface parameters to their bounds, but leave
         # Surface reflectance unconstrained so it can dip slightly below zero
@@ -99,36 +98,40 @@ class MCMCInversion(Inversion):
         def initialize():
             x = scipy.stats.multivariate_normal(mean=x_MAP, cov=S_hat).rvs()
             too_low = x < bounds[0]
-            x[too_low] = bounds[0][too_low]+eps
+            x[too_low] = bounds[0][too_low] + eps
             too_high = x > bounds[1]
-            x[too_high] = bounds[1][too_high]-eps
+            x[too_high] = bounds[1][too_high] - eps
             dens = self.log_density(x, rdn_meas, geom, bounds)
             return x, dens
 
         # Sample from the posterior using Metropolis/Hastings MCMC
         samples, acpts, rejs, x = [], 0, 0, None
         for i in range(self.iterations):
-
             if i % self.restart_every == 0:
                 x, dens = initialize()
 
             xp = x + proposal.rvs()
-            dens_new = self.log_density(xp, rdn_meas,  geom, bounds=bounds)
+            dens_new = self.log_density(xp, rdn_meas, geom, bounds=bounds)
 
             # Test vs. the Metropolis / Hastings criterion
-            if np.isfinite(dens_new) and\
-                    np.log(np.random.rand()) <= min((dens_new - dens, 0.0)):
+            if np.isfinite(dens_new) and np.log(np.random.rand()) <= min(
+                (dens_new - dens, 0.0)
+            ):
                 x = xp
                 dens = dens_new
                 acpts = acpts + 1
                 if self.verbose:
-                    print('%8.5e %8.5e ACCEPT! rate %4.2f' %
-                          (dens, dens_new, np.mean(acpts/(acpts+rejs))))
+                    print(
+                        "%8.5e %8.5e ACCEPT! rate %4.2f"
+                        % (dens, dens_new, np.mean(acpts / (acpts + rejs)))
+                    )
             else:
                 rejs = rejs + 1
                 if self.verbose:
-                    print('%8.5e %8.5e REJECT  rate %4.2f' %
-                          (dens, dens_new, np.mean(acpts/(acpts+rejs))))
+                    print(
+                        "%8.5e %8.5e REJECT  rate %4.2f"
+                        % (dens, dens_new, np.mean(acpts / (acpts + rejs)))
+                    )
 
             # Make sure we have not wandered off the map
             if not np.isfinite(dens_new):

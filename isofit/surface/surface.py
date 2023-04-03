@@ -18,12 +18,14 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
+import logging
+
 import numpy as np
 from scipy.interpolate import interp1d
 
-from ..core.common import load_spectrum, load_wavelen
 from isofit.configs import Config
-import logging
+
+from ..core.common import load_spectrum, load_wavelen
 
 
 class Surface:
@@ -33,7 +35,6 @@ class Surface:
     """
 
     def __init__(self, full_config: Config):
-
         config = full_config.forward_model.surface
 
         self.statevec_names = []
@@ -50,8 +51,11 @@ class Surface:
 
         if config.wavelength_file is not None:
             self.wl, self.fwhm = load_wavelen(config.wavelength_file)
-        elif full_config.implementation.mode == 'simulation':
-            logging.info('No surface wavelength_file provided, getting wavelengths from input.reflectance_file')
+        elif full_config.implementation.mode == "simulation":
+            logging.info(
+                "No surface wavelength_file provided, getting wavelengths from"
+                " input.reflectance_file"
+            )
             _, self.wl = load_spectrum(full_config.input.reflectance_file)
 
         if self.wl is not None:
@@ -60,8 +64,8 @@ class Surface:
     def resample_reflectance(self):
         """Make sure model wavelengths align with the wavelength file."""
 
-        if hasattr(self, 'rwl'):
-            p = interp1d(self.rwl, self.rfl, fill_value='extrapolate')
+        if hasattr(self, "rwl"):
+            p = interp1d(self.rwl, self.rfl, fill_value="extrapolate")
             self.rfl = p(self.wl)
 
     def xa(self, x_surface, geom):
@@ -75,7 +79,7 @@ class Surface:
         return np.zeros((0, 0), dtype=float)
 
     def fit_params(self, rfl_meas, geom, *args):
-        """Given a directional reflectance estimate and one or more emissive 
+        """Given a directional reflectance estimate and one or more emissive
         parameters, fit a state vector."""
 
         return np.array([])
@@ -92,14 +96,14 @@ class Surface:
         return self.rfl
 
     def drfl_dsurface(self, x_surface, geom):
-        """Partial derivative of reflectance with respect to state vector, 
-        calculated at x_surface. In the case that there are no free 
+        """Partial derivative of reflectance with respect to state vector,
+        calculated at x_surface. In the case that there are no free
         paramters our convention is to return the vector of zeros."""
 
         return np.zeros((self.n_wl, 1))
 
     def drfl_dsurfaceb(self, x_surface, geom):
-        """Partial derivative of reflectance with respect to unmodeled 
+        """Partial derivative of reflectance with respect to unmodeled
         variables, calculated at x_surface. In the case that there are no
         free paramters our convention is to return the vector of zeros."""
 
@@ -111,7 +115,7 @@ class Surface:
         return np.zeros((self.n_wl,))
 
     def dLs_dsurface(self, x_surface, geom):
-        """Partial derivative of surface emission with respect to state vector, 
+        """Partial derivative of surface emission with respect to state vector,
         calculated at x_surface. In the case that there are no free paramters
         our convention is to return the vector of zeros."""
 
@@ -120,4 +124,4 @@ class Surface:
     def summarize(self, x_surface, geom):
         """Summary of state vector."""
 
-        return ''
+        return ""

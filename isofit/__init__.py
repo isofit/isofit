@@ -16,15 +16,25 @@
 #
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
-#         Adam Erickson, adam.m.erickson@nasa.gov
+#         Philip G Brodrick, philip.brodrick@jpl.nasa.gov
 #
 
 
 ### Variables ###
 
-name = 'isofit'
+name = "isofit"
 
-__version__ = '2.9.8'
+__version__ = "2.9.8"
 
 warnings_enabled = False
 
+import logging
+import os
+
+Logger = logging.getLogger("isofit")
+
+if os.environ.get("ISOFIT_DEBUG"):
+    Logger.info("Using ISOFIT internal ray")
+    from .wrappers import ray
+else:
+    import ray

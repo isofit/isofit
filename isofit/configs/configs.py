@@ -18,16 +18,19 @@
 # Author: Philip G. Brodrick, philip.brodrick@jpl.nasa.gov
 
 import logging
+import os
 from collections import OrderedDict
 from typing import Dict, List, Type
-import os
-from isofit.configs.sections.input_config import InputConfig
-from isofit.configs.sections.output_config import OutputConfig
+
+import yaml
+
+from isofit.configs.base_config import BaseConfigSection
 from isofit.configs.sections.forward_model_config import ForwardModelConfig
 from isofit.configs.sections.implementation_config import ImplementationConfig
-from isofit.configs.base_config import BaseConfigSection
+from isofit.configs.sections.input_config import InputConfig
+from isofit.configs.sections.output_config import OutputConfig
 from isofit.core import common
-import yaml
+
 
 class Config(BaseConfigSection):
     """
@@ -59,7 +62,6 @@ class Config(BaseConfigSection):
     """
 
     def __init__(self, configdict) -> None:
-
         self._input_type = InputConfig
         self.input = InputConfig({})
         """InputConfig: Input config. Holds all input file information.
@@ -110,17 +112,21 @@ class Config(BaseConfigSection):
             logging.error(e)
 
         if len(errors) > 0:
-            raise AttributeError('Configuration error(s) found.  See log for details.')
+            raise AttributeError("Configuration error(s) found.  See log for details.")
 
-        logging.info('Configuration file checks complete, no errors found.')
+        logging.info("Configuration file checks complete, no errors found.")
 
     def check_inter_section_validity(self):
         return_errors = []
-        if self.implementation.mode == 'simulation' and self.input.reflectance_file is None:
-            return_errors.append('If implementation.mode is set to simulation, input.reflectance_file must be set')
+        if (
+            self.implementation.mode == "simulation"
+            and self.input.reflectance_file is None
+        ):
+            return_errors.append(
+                "If implementation.mode is set to simulation, input.reflectance_file"
+                " must be set"
+            )
         return return_errors
-
-
 
 
 def get_config_differences(config_a: Config, config_b: Config) -> Dict:
@@ -137,9 +143,8 @@ def get_config_differences(config_a: Config, config_b: Config) -> Dict:
             value_b = section_b.get(option, None)
             if value_a != value_b:
                 logging.debug(
-                    "Configs have different values for option {} in section {}:  {} and {}".format(
-                        option, section, value_a, value_b
-                    )
+                    "Configs have different values for option {} in section {}:  {}"
+                    " and {}".format(option, section, value_a, value_b)
                 )
                 differing_items.setdefault(section, dict())[option] = (value_a, value_b)
     return differing_items
@@ -153,13 +158,15 @@ def create_new_config(config_file: str) -> Config:
     Returns:
         Config object, having completed all necessary config checks
     """
-    #pdb.set_trace()
+    # pdb.set_trace()
     try:
-        with open(config_file, 'r') as f:
-            #pdb.set_trace()
+        with open(config_file, "r") as f:
+            # pdb.set_trace()
             config_dict = yaml.safe_load(f)
     except:
-        raise IOError('Unexpected configuration file time, only json and yaml supported')
+        raise IOError(
+            "Unexpected configuration file time, only json and yaml supported"
+        )
 
     configdir, f = os.path.split(os.path.abspath(config_file))
 
