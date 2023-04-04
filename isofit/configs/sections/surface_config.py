@@ -97,7 +97,7 @@ class SurfaceConfig(BaseConfigSection):
                     self.normalize, valid_normalize_categories
                 )
             )
-        
+
         if self.surface_category == "dcgm_surface" and self.model_file is None:
             errors.append("dcgm surface requires model_file")
         if self.surface_category == "dcgm_surface" and self.model_aux_file is None:
