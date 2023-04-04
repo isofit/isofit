@@ -169,47 +169,15 @@ These are accepted through consensus of a quorum of maintainers.  **If you would
 Release Steps (for Maintainers)
 -------------------------------
 
-Note, not all accepted PRs need to have a release.  Good reasons to not issue a release are that while the PR is stable, additional updates are expected, or multiple separate PRs are coming together.  However, if you accept a PR and choose not to make a release, update the `Roadmap <https://github.com/isofit/isofit/projects/4>`_ to indicate the current progress towards the next release.
+Releases should trigger a new PyPi upload, and subsequently a fresh upload to conda-forge.  Therefore,
+the revised steps for versioning are:
 
-Get latest public repo, and checkout dev:
-
-.. code::
-
-  git clone https://github.com/isofit/isofit.git
-  cd isofit
-  git checkout dev
-
-Update version number:
-
-.. code::
-
-  vi isofit/__init__.py
-  git commit -m 'updated version number'
-  git push origin dev
-
-Merge dev into main:
-
-.. code::
-
-  git checkout main
-  git merge dev
-  git push origin main
-
-Create release tag and release archive:
-
+* Trigger a PR from dev to main
+* Accept the PR
 * Go to https://github.com/isofit/isofit/releases
 * Click "Draft a new release"
 * Enter tag version as "v3.8.0" (depending on latest version), and input release title and description
 * Click "Publish release"
-
-Create and upload Pypi distribution:
-
-.. code::
-
-  python3 setup.py sdist bdist_wheel
-  twine upload --repository-url https://upload.pypi.org/legacy/ dist/*
-
-Lastly, update the `Roadmap <https://github.com/isofit/isofit/projects/4>`_ to note the current release changes.
 
 Contributors
 ------------

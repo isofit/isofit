@@ -140,7 +140,8 @@ def main(rawargs=None):
     parser.add_argument("--ray_temp_dir", type=str, default="/tmp/ray")
     parser.add_argument("--emulator_base", type=str, default=None)
     parser.add_argument("--segmentation_size", type=int, default=40)
-    parser.add_argument("--num_neighbors", type=int, nargs='+', default=None)
+    parser.add_argument("--num_neighbors", type=int, nargs="+", default=None)
+    parser.add_argument("--atm_sigma", type=int, nargs="+", default=2)
     parser.add_argument("--pressure_elevation", action="store_true", default=None)
     parser.add_argument("--debug", action="store_true")
 
@@ -157,10 +158,13 @@ def main(rawargs=None):
 
     if args.num_neighbors is not None and len(args.num_neighbors) > 1:
         if args.analytical_line != 1:
-            raise ValueError('If num_neighbors has multiple elements, --analytical_line must equal 1')
+            raise ValueError(
+                "If num_neighbors has multiple elements, --analytical_line must equal 1"
+            )
         if args.empirical_line == 1:
-            raise ValueError('If num_neighbors has multiple elements, only --analytical_line is valid')
-        
+            raise ValueError(
+                "If num_neighbors has multiple elements, only --analytical_line is valid"
+            )
 
     if args.copy_input_files == 1:
         args.copy_input_files = True
@@ -566,19 +570,27 @@ def main(rawargs=None):
         elif args.analytical_line == 1:
             logging.info("Analytical line inference")
             analytical_line_args = [
-                    paths.radiance_working_path,
-                    paths.loc_working_path,
-                    paths.obs_working_path,
-                    args.working_directory,
-                    "--smoothing_sigma","2",
-                    "--output_rfl_file", paths.rfl_working_path,
-                    "--output_unc_file", paths.uncert_working_path,
-                    "--loglevel", args.logging_level,
-                    "--logfile", args.log_file,
-                    "--rdn_factors_path", args.rdn_factors_path,
-                    "--n_atm_neighbors",
-                ]
+                paths.radiance_working_path,
+                paths.loc_working_path,
+                paths.obs_working_path,
+                args.working_directory,
+                "--smoothing_sigma",
+                "2",
+                "--output_rfl_file",
+                paths.rfl_working_path,
+                "--output_unc_file",
+                paths.uncert_working_path,
+                "--loglevel",
+                args.logging_level,
+                "--logfile",
+                args.log_file,
+                "--rdn_factors_path",
+                args.rdn_factors_path,
+                "--n_atm_neighbors",
+            ]
             analytical_line_args.extend([str(x) for x in nneighbors])
+            analytical_line_args.append("--smoothing_sigma")
+            analytical_line_args.extend([str(x) for x in args.atm_sigma])
 
             analytical_line.main(analytical_line_args)
 
@@ -746,9 +758,7 @@ class Pathnames:
                 os.path.dirname(os.path.dirname(isofit.__file__))
             )
 
-        if args.sensor == "ang":
-            self.noise_path = join(self.isofit_path, "data", "avirisng_noise.txt")
-        elif args.sensor == "avcl":
+        if args.sensor == "avcl":
             self.noise_path = join(self.isofit_path, "data", "avirisc_noise.txt")
         elif args.sensor == "emit":
             self.noise_path = join(self.isofit_path, "data", "emit_noise.txt")
@@ -1823,7 +1833,7 @@ def build_main_config(
             "parametric_noise_file"
         ] = paths.noise_path
     else:
-        isofit_config_modtran["forward_model"]["instrument"]["SNR"] = 1000
+        isofit_config_modtran["forward_model"]["instrument"]["SNR"] = 500
 
     if paths.rdn_factors_path:
         isofit_config_modtran["input"][
