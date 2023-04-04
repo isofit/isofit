@@ -10,7 +10,12 @@ and various statistical descriptions of surface, instrument, and atmosphere. It 
 in text format, or imaging spectrometer data cubes.
 
 * Please check the documentation_ for installation and usage instructions and in depth information.
-* There are two main branches, `one for activate development <https://github.com/isofit/isofit/tree/dev>`__, and `one in-line with our current release <https://github.com/isofit/isofit/tree/main>`__.  Branches master and current-release are deprecated and will soon be removed.
+
+* There are two main branches:
+
+ * `dev <https://github.com/isofit/isofit/tree/dev>`__ (for activate development)
+ * `main <https://github.com/isofit/isofit/tree/main>`__ (in-line with the current release)
+
 * Information on how to **cite the ISOFIT Python package** can be found in the
   `CITATION <https://github.com/unbohn/isofit_build_workflow/blob/master/CITATION>`__ file.
 
