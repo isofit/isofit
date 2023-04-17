@@ -3,13 +3,14 @@ name: Test Upload Python Package
 on: push
 
 jobs:
-  deploy:
+  build-n-publish:
+    name: Build and publish Test Upload Python Package
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash -el {0}
-      container:
-        image: jammont/isofit:latest
+    container:
+      image: jammont/isofit:latest
 
     steps:
       - uses: actions/checkout@v3
