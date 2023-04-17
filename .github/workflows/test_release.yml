@@ -3,8 +3,7 @@ name: Test Upload Python Package
 on: push
 
 jobs:
-  build-n-publish:
-    name: Build and publish Test Upload Python Package
+  deploy:
     runs-on: ubuntu-latest
     defaults:
       run:
