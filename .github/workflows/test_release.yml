@@ -1,6 +1,6 @@
 name: Test Upload Python Package
 
-on: pull
+on: push
 
 jobs:
   build-n-publish:
