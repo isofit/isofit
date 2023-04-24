@@ -21,10 +21,9 @@
 
 
 ### Variables ###
+import importlib.metadata
 
-name = "isofit"
-
-__version__ = "2.9.8"
+__version__ = importlib.metadata.version(__package__ or __name__)
 
 warnings_enabled = False
 

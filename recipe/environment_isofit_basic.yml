@@ -6,6 +6,7 @@ channels: &id1
 dependencies:
     - python>=3.8
     - pip
+    - click-option-group
     - gdal>=2.0.0
     - matplotlib>=2.2.2
     - numpy>=1.20.0
