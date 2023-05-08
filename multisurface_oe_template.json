@@ -90,9 +90,8 @@
         "wavelength_file": null,
         "normalize": "Euclidean",
         "reference_windows": [[400, 1300], [1450, 1700], [2100, 2450]],
-        "sources":
-            [
-                {
+        "sources": [
+            {
                     "input_spectrum_files":
                         [
                             "surface_model_ucsb"
@@ -178,7 +177,7 @@
                             "regularizer": 1e-4,
                             "correlation": "decorrelated"
                         }
-                                ]
+                    ]
                 }
             ]
     }

@@ -1,0 +1,658 @@
+.children:
+
+  general_options:
+    .desc: TODO
+    .required: True
+    .children:
+      sensor:
+        .desc: TODO
+        .type: str
+        .required: True
+        .checks:
+          - check_sensor_name
+      n_cores:
+        .desc: TODO
+        .type: int
+        .required: False
+        .default: 1
+      segmentation_size:
+        .desc: TODO
+        .type: int
+        .required: False
+        .default: 40
+      num_neighbors:
+        .desc: TODO
+        .type: int
+        .required: False
+        .default: 15
+      chunksize:
+        .desc: TODO
+        .type: int
+        .required: False
+        .default: 256
+      n_pca:
+        .desc: TODO
+        .type: int
+        .required: False
+        .default: 5
+      copy_input_files:
+        .desc: TODO
+        .type: bool
+        .required: False
+        .default: False
+      presolve_wv:
+        .desc: TODO
+        .type: bool
+        .required: False
+        .default: True
+      empirical_line:
+        .desc: TODO
+        .type: bool
+        .required: False
+        .default: False
+      analytical_line:
+        .desc: TODO
+        .type: bool
+        .required: False
+        .default: True
+      debug_mode:
+        .desc: TODO
+        .type: bool
+        .required: False
+        .default: False
+      ray_temp_dir:
+        .desc: TODO
+        .type: str
+        .required: False
+        .default: "/tmp/ray"
+        .checks:
+          - isdir
+  processors:
+    .desc: TODO
+    .required: True
+    .children:
+      general_inversion_parameters:
+        .desc: TODO
+        .required: True
+        .children:
+          filepaths:
+            .desc: TODO
+            .required: True
+            .children:
+              model_discrepancy_path:
+                .desc: TODO
+                .type: str
+                .required: False
+              aerosol_climatology_path:
+                .desc: TODO
+                .type: str
+                .required: False
+              channelized_uncertainty_path:
+                .desc: TODO
+                .type: str
+                .required: False
+              surface_path:
+                .desc: TODO
+                .type: str
+                .required: False
+              rdn_factors_path:
+                .desc: TODO
+                .type: str
+                .required: False
+              modtran_path:
+                .desc: TODO
+                .type: str
+                .required: False
+              lut_config_path:
+                .desc: TODO
+                .type: str
+                .required: False
+              emulator_base:
+                .desc: TODO
+                .type: str
+                .required: true
+          options:
+            .desc: TODO
+            .required: True
+            .children:
+              multiple_restarts:
+                .desc: TODO
+                .type: bool
+                .required: False
+                .default: False
+              multipart_transmittance:
+                .desc: TODO
+                .type: bool
+                .required: False
+                .default: False
+              topography_model:
+                .desc: TODO
+                .type: bool
+                .required: False
+                .default: False
+              eps:
+                .desc: TODO
+                .type: float
+                .required: False
+                .default: 0.02
+              uncorrelated_radiometric_uncertainty:
+                .desc: TODO
+                .type: float
+                .required: False
+                .default: 0.01
+              inversion_windows:
+                .desc: TODO
+                .type: list
+                .required: False
+                .default:
+                  - - 380
+                    - 1325
+                  - - 1435
+                    - 1770
+                  - - 1965
+                    - 2500
+              statevector_elements:
+                .desc: TODO
+                .type: list
+                .required: False
+                .default:
+                  - H2OSTR
+                  - AOT550
+                  - GNDALT
+              surface_category:
+                .desc: TODO
+                .type: str
+                .required: False
+                .default: multicomponent_surface
+          radiative_transfer_parameters:
+            .desc: TODO
+            .required: True
+            .children:
+              spectral_DV:
+                .desc: TODO
+                .type: int
+                .required: False
+                .default: 5
+              spectral_FWHM:
+                .desc: TODO
+                .type: int
+                .required: False
+                .default: 5
+              spectral_BMNAME:
+                .desc: TODO
+                .type: str
+                .required: False
+                .default: '05_2013'
+              atmosphere_type: ATM_MIDLAT_SUMMER
+                .desc: TODO
+                .type: str
+                .required: False
+                .default: ATM_MIDLAT_SUMMER
+              H2OSTR:
+                .desc: TODO
+                .required: True
+                .children:
+                  lut_spacing:
+                    .desc: TODO
+                    .type: float
+                    .required: False
+                    .default: 0.25
+                  lut_spacing_min:
+                    .desc: TODO
+                    .type: float
+                    .required: False
+                    .default: 0.03
+                  default_range:
+                    .desc: TODO
+                    .type: list
+                    .required: False
+                    .default:
+                      - 0.05
+                      - 5
+                  min:
+                    .desc: TODO
+                    .type: float
+                    .required: False
+                    .default: 0.05
+              AOT550:
+                .desc: TODO
+                .required: True
+                .children:
+                  lut_spacing:
+                    .desc: TODO
+                    .type: float
+                    .required: False
+                    .default: 0.0
+                  lut_spacing_min:
+                    .desc: TODO
+                    .type: float
+                    .required: False
+                    .default: 0.0
+                  default_range:
+                    .desc: TODO
+                    .type: list
+                    .required: False
+                    .default:
+                      - 0.001
+                      - 1
+              GNDALT:
+                .desc: TODO
+                .required: True
+                .children:
+                  lut_spacing:
+                    .desc: TODO
+                    .type: float
+                    .required: False
+                    .default: 0.25
+                  lut_spacing_min:
+                    .desc: TODO
+                    .type: float
+                    .required: False
+                    .default: 0.2
+                  expand_range:
+                    .desc: TODO
+                    .type: float
+                    .required: False
+                    .default: 2
+      presolve_inversion_parameters:
+        .desc: TODO
+        .required: True
+        .children:
+          max_sample_points:
+            .desc: TODO
+            .type: int
+            .required: False
+            .default: 200
+      type_specific_inversion_parameters:
+        .desc: TODO
+        .required: True
+        .children:
+          cloud:
+            .desc: TODO
+            .required: False
+            .children:
+              toa_threshold_wavelengths:
+                .desc: TODO
+                .type: list
+                .required: False
+                .default:
+                  - 450
+                  - 1250
+                  - 1650
+              toa_threshold_values:
+                .desc: TODO
+                .type: list
+                .required: False
+                .default:
+                  - 0.31
+                  - 0.51
+                  - 0.22
+              toa_threshold_comparisons:
+                .desc: TODO
+                .type: list
+                .required: False
+                .default:
+                  - gt
+                  - gt
+                  - gt
+              statevector_elements:
+                .desc: TODO
+                .type: list
+                .required: False
+                .default:
+                  - GNDALT
+              GNDALT:
+                .desc: TODO
+                .required: False
+                .children:
+                  lut_spacing:
+                    .desc: TODO
+                    .type: float
+                    .required: False
+                    .default: 0.25
+                  lut_spacing_min:
+                    .desc: TODO
+                    .type: float
+                    .required: False
+                    .default: 0.2
+                  expand_range:
+                    .desc: TODO
+                    .type: int
+                    .required: False
+                    .default: 2
+          water:
+            .desc: TODO
+            .required: False
+            .children:
+              toa_threshold_wavelengths:
+                .desc: TODO
+                .type: list
+                .required: False
+                .default:
+                  - 1000
+                  - 1380
+              toa_threshold_values:
+                .desc: TODO
+                .type: list
+                .required: False
+                .default:
+                  - 0.05
+                  - 0.1
+              toa_threshold_comparisons:
+                .desc: TODO
+                .type: list
+                .required: False
+                .default:
+                  - lt
+              surface_category:
+                .desc: TODO
+                .type: str
+                .required: False
+                .default: glint_surface
+  surface:
+    .desc: TODO
+    .required: True
+    .children:
+      output_model_file:
+        .desc: TODO
+        .type: str
+        .required: False
+      wavelength_file:
+        .desc: TODO
+        .type: str
+        .required: False
+      normalize:
+        .desc: TODO
+        .type: str
+        .required: False
+        .default: Euclidean
+      reference_windows:
+        .desc: TODO
+        .type: list
+        .required: False
+        .default:
+          - - 400
+            - 1300
+          - - 1450
+            - 1700
+          - - 2100
+            - 2450
+      sources:
+        .desc: TODO
+        .type: list
+        .required: False
+        .default:
+        - input_spectrum_files:
+            .desc: TODO
+            .type: list
+            .required: False
+            .default:
+              - surface_model_ucsb
+          n_components:
+            .desc: TODO
+            .type: int
+            .required: False
+            .default: 8
+          windows:
+            .desc: TODO
+            .type: list
+            .required: False
+            .default:
+              - interval:
+                  .desc: TODO
+                  .type: list
+                  .required: False
+                  .default:
+                    - 300
+                    - 400
+                regularizer:
+                  .desc: TODO
+                  .type: float
+                  .required: False
+                  .default: 0.0001
+                correlation:
+                  .desc: TODO
+                  .type: str
+                  .required: False
+                  .default: EM
+              - interval:
+                  .desc: TODO
+                  .type: list
+                  .required: False
+                  .default:
+                    - 400
+                    - 1300
+                regularizer:
+                  .desc: TODO
+                  .type: float
+                  .required: False
+                  .default: 1.0e-06
+                correlation:
+                  .desc: TODO
+                  .type: str
+                  .required: False
+                  .default: EM
+              - interval:
+                  .desc: TODO
+                  .type: list
+                  .required: False
+                  .default:
+                    - 1300
+                    - 1450
+                regularizer:
+                  .desc: TODO
+                  .type: float
+                  .required: False
+                  .default: 0.0001
+                correlation:
+                  .desc: TODO
+                  .type: str
+                  .required: False
+                  .default: EM
+              - interval:
+                  .desc: TODO
+                  .type: list
+                  .required: False
+                  .default:
+                    - 1450
+                    - 1700
+                regularizer:
+                  .desc: TODO
+                  .type: float
+                  .required: False
+                  .default: 1.0e-06
+                correlation:
+                  .desc: TODO
+                  .type: str
+                  .required: False
+                  .default: EM
+              - interval:
+                  .desc: TODO
+                  .type: list
+                  .required: False
+                  .default:
+                    - 1700
+                    - 2100
+                regularizer:
+                  .desc: TODO
+                  .type: float
+                  .required: False
+                  .default: 0.0001
+                correlation:
+                  .desc: TODO
+                  .type: str
+                  .required: False
+                  .default: EM
+              - interval:
+                  .desc: TODO
+                  .type: list
+                  .required: False
+                  .default:
+                    - 2100
+                    - 2450
+                regularizer:
+                  .desc: TODO
+                  .type: float
+                  .required: False
+                  .default: 1.0e-06
+                correlation:
+                  .desc: TODO
+                  .type: str
+                  .required: False
+                  .default: EM
+              - interval:
+                  .desc: TODO
+                  .type: list
+                  .required: False
+                  .default:
+                    - 2450
+                    - 2550
+                regularizer:
+                  .desc: TODO
+                  .type: float
+                  .required: False
+                  .default: 0.0001
+                correlation:
+                  .desc: TODO
+                  .type: str
+                  .required: False
+                  .default: EM
+        - input_spectrum_files:
+            .desc: TODO
+            .type: list
+            .required: False
+            .default:
+              - ocean_spectra_rev2
+          n_components:
+            .desc: TODO
+            .type: int
+            .required: False
+            .default: 8
+          windows:
+            .desc: TODO
+            .type: list
+            .required: true
+            .children:
+              interval:
+              regularizer:
+              correlation:
+            .default:
+              - interval:
+                  .desc: TODO
+                  .type: list
+                  .required: False
+                  .default:
+                    - 300
+                    - 400
+                regularizer:
+                  .desc: TODO
+                  .type: float
+                  .required: False
+                  .default: 0.0001
+                correlation:
+                  .desc: TODO
+                  .type: str
+                  .required: False
+                  .default: decorrelated
+              - interval:
+                  .desc: TODO
+                  .type: list
+                  .required: False
+                  .default:
+                    - 400
+                    - 1300
+                regularizer:
+                  .desc: TODO
+                  .type: float
+                  .required: False
+                  .default: 1.0e-06
+                correlation:
+                  .desc: TODO
+                  .type: str
+                  .required: False
+                  .default: EM
+              - interval:
+                  .desc: TODO
+                  .type: list
+                  .required: False
+                  .default:
+                    - 1300
+                    - 1450
+                regularizer:
+                  .desc: TODO
+                  .type: float
+                  .required: False
+                  .default: 0.0001
+                correlation:
+                  .desc: TODO
+                  .type: str
+                  .required: False
+                  .default: decorrelated
+              - interval:
+                  .desc: TODO
+                  .type: list
+                  .required: False
+                  .default:
+                    - 1450
+                    - 1700
+                regularizer:
+                  .desc: TODO
+                  .type: float
+                  .required: False
+                  .default: 1.0e-06
+                correlation:
+                  .desc: TODO
+                  .type: str
+                  .required: False
+                  .default: decorrelated
+              - interval:
+                  .desc: TODO
+                  .type: list
+                  .required: False
+                  .default:
+                    - 1700
+                    - 2100
+                regularizer:
+                  .desc: TODO
+                  .type: float
+                  .required: False
+                  .default: 0.0001
+                correlation:
+                  .desc: TODO
+                  .type: str
+                  .required: False
+                  .default: decorrelated
+              - interval:
+                  .desc: TODO
+                  .type: list
+                  .required: False
+                  .default:
+                    - 2100
+                    - 2450
+                regularizer:
+                  .desc: TODO
+                  .type: float
+                  .required: False
+                  .default: 1.0e-06
+                correlation:
+                  .desc: TODO
+                  .type: str
+                  .required: False
+                  .default: decorrelated
+              - interval:
+                  .desc: TODO
+                  .type: list
+                  .required: False
+                  .default:
+                    - 2450
+                    - 2550
+                regularizer:
+                  .desc: TODO
+                  .type: float
+                  .required: False
+                  .default: 0.0001
+                correlation:
+                  .desc: TODO
+                  .type: str
+                  .required: False
+                  .default: decorrelated
