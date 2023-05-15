@@ -92,7 +92,7 @@ class LUTSurface(Surface):
 
         return mu
 
-    def Sa(self, x_surface, geom):
+    def Sa(self, x_surface, geom, unnormalize=True):
         """Covariance of prior distribution, calculated at state x."""
 
         variance = pow(self.sigma, 2)

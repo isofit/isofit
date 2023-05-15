@@ -164,8 +164,12 @@ class Inversion:
             xa_free, Sa_free = conditional_gaussian(
                 xa, Sa, self.inds_free, self.inds_fixed, self.x_fixed
             )
-            Sa_free_inv, Sa_free_inv_sqrt = svd_inv_sqrt(
-                Sa_free, hashtable=self.hashtable, max_hash_size=self.max_table_size
+            Sa_free_inv, Sa_free_inv_sqrt = self.fm.surface.svd_inv_sqrt(
+                Sa=Sa_free,
+                x_surface=x[self.fm.idx_surface],
+                geom=geom,
+                hashtable=self.hashtable,
+                max_hash_size=self.max_table_size,
             )
             return xa_free, Sa_free, Sa_free_inv, Sa_free_inv_sqrt
 
@@ -176,8 +180,12 @@ class Inversion:
 
         xa = self.fm.xa(x, geom)
         Sa = self.fm.Sa(x, geom)
-        Sa_inv, Sa_inv_sqrt = svd_inv_sqrt(
-            Sa, hashtable=self.hashtable, max_hash_size=self.max_table_size
+        Sa_inv, Sa_inv_sqrt = self.fm.surface.svd_inv_sqrt(
+            Sa=Sa,
+            x_surface=x[self.fm.idx_surface],
+            geom=geom,
+            hashtable=self.hashtable,
+            max_hash_size=self.max_table_size,
         )
         return xa, Sa, Sa_inv, Sa_inv_sqrt
 
@@ -187,8 +195,12 @@ class Inversion:
 
         xa = self.fm.xa(x, geom)
         Sa = self.fm.Sa(x, geom)
-        Sa_inv = svd_inv(
-            Sa, hashtable=self.hashtable, max_hash_size=self.max_table_size
+        Sa_inv, _ = self.fm.surface.svd_inv_sqrt(
+            Sa=Sa,
+            x_surface=x[self.fm.idx_surface],
+            geom=geom,
+            hashtable=self.hashtable,
+            max_hash_size=self.max_table_size,
         )
         K = self.fm.K(x, geom)
         Seps = self.fm.Seps(x, meas, geom)

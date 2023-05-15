@@ -30,13 +30,12 @@ from spectral.io import envi
 
 from isofit import ray
 from isofit.configs import configs
-from isofit.core.common import envi_header, load_spectrum, svd_inv, svd_inv_sqrt
+from isofit.core.common import envi_header, load_spectrum
 from isofit.core.fileio import write_bil_chunk
 from isofit.core.forward import ForwardModel
 from isofit.core.geometry import Geometry
 from isofit.inversion.inverse import Inversion
-from isofit.inversion.inverse_simple import invert_algebraic, invert_analytical
-from isofit.utils import remap
+from isofit.inversion.inverse_simple import invert_analytical
 from isofit.utils.atm_interpolation import atm_interpolation
 
 
