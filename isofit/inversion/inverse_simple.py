@@ -259,7 +259,7 @@ def invert_analytical(
         Sa = fm.Sa(x, geom)
         Sa_surface = Sa[fm.surface.idx_lamb, :][:, fm.surface.idx_lamb]
         Sa_surface = Sa_surface[winidx, :][:, winidx]
-        Sa_inv = fm.surface.svd_inv_sqrt(
+        Sa_inv = fm.surface.Sa_inv_sqrt(
             Sa=Sa_surface,
             x_surface=x_surface,
             geom=geom,

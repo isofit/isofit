@@ -164,7 +164,7 @@ class Inversion:
             xa_free, Sa_free = conditional_gaussian(
                 xa, Sa, self.inds_free, self.inds_fixed, self.x_fixed
             )
-            Sa_free_inv, Sa_free_inv_sqrt = self.fm.surface.svd_inv_sqrt(
+            Sa_free_inv, Sa_free_inv_sqrt = self.fm.surface.Sa_inv_sqrt(
                 Sa=Sa_free,
                 x_surface=x[self.fm.idx_surface],
                 geom=geom,
@@ -180,7 +180,7 @@ class Inversion:
 
         xa = self.fm.xa(x, geom)
         Sa = self.fm.Sa(x, geom)
-        Sa_inv, Sa_inv_sqrt = self.fm.surface.svd_inv_sqrt(
+        Sa_inv, Sa_inv_sqrt = self.fm.surface.Sa_inv_sqrt(
             Sa=Sa,
             x_surface=x[self.fm.idx_surface],
             geom=geom,
@@ -195,7 +195,7 @@ class Inversion:
 
         xa = self.fm.xa(x, geom)
         Sa = self.fm.Sa(x, geom)
-        Sa_inv, _ = self.fm.surface.svd_inv_sqrt(
+        Sa_inv, _ = self.fm.surface.Sa_inv_sqrt(
             Sa=Sa,
             x_surface=x[self.fm.idx_surface],
             geom=geom,
