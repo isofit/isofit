@@ -71,6 +71,23 @@ class ThermalSurface(MultiComponentSurface):
 
         return Cov
 
+    def Sa_inv_sqrt(self, Sa, x_surface, geom, hashtable, max_hash_size):
+        """Inverse covariance and its square root of prior distribution, calculated at state x. We find
+        the inverse covariance in a normalized space (normalizing by z) and then un-
+        normalize the result for the calling function."""
+
+        Cov_inv, Cov_inv_sqrt = MultiComponentSurface.Sa_inv_sqrt(
+            self, Sa, x_surface, geom, hashtable, max_hash_size
+        )
+        Cov_inv[self.surf_temp_ind, self.surf_temp_ind] = 1 / (
+            self.surface_T_prior_sigma_degK**2
+        )
+        Cov_inv_sqrt[self.surf_temp_ind, self.surf_temp_ind] = np.sqrt(
+            1 / (self.surface_T_prior_sigma_degK**2)
+        )
+
+        return Cov_inv, Cov_inv_sqrt
+
     def fit_params(self, rfl_meas, geom, *args):
         """Given a reflectance estimate, find the surface reflectance"""
 

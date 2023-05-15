@@ -22,7 +22,7 @@ import scipy as s
 
 from isofit.configs import Config
 
-from ..core.common import eps
+from ..core.common import eps, svd_inv_sqrt
 from .surface_thermal import ThermalSurface
 
 
@@ -57,6 +57,20 @@ class GlintSurface(ThermalSurface):
         f = s.array([[(10.0 * self.scale[self.glint_ind]) ** 2]])
         Cov[self.glint_ind, self.glint_ind] = f
         return Cov
+
+    def Sa_inv_sqrt(self, Sa, x_surface, geom, hashtable, max_hash_size):
+        """Inverse covariance and its square root of prior distribution, calculated at state x. We find
+        the inverse covariance in a normalized space (normalizing by z) and then un-
+        normalize the result for the calling function."""
+
+        Cov_inv, Cov_inv_sqrt = ThermalSurface.Sa_inv_sqrt(
+            self, Sa, x_surface, geom, hashtable, max_hash_size
+        )
+        f = s.array([[(10.0 * self.scale[self.glint_ind]) ** 2]])
+        Cov_inv[self.glint_ind, self.glint_ind] = 1 / f
+        Cov_inv_sqrt[self.glint_ind, self.glint_ind] = np.sqrt(1 / f)
+
+        return Cov_inv, Cov_inv_sqrt
 
     def fit_params(self, rfl_meas, geom, *args):
         """Given a reflectance estimate and one or more emissive parameters,
