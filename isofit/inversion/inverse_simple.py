@@ -263,7 +263,7 @@ def invert_analytical(
             Sa=Sa_surface,
             x_surface=x_surface,
             geom=geom,
-            hash_table=hash_table,
+            hashtable=hash_table,
             max_hash_size=hash_size,
         )[0]
 
