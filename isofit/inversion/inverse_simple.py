@@ -265,6 +265,7 @@ def invert_analytical(
             geom=geom,
             hashtable=hash_table,
             max_hash_size=hash_size,
+            winidx=winidx,
         )[0]
 
         xa_full = fm.xa(x, geom)

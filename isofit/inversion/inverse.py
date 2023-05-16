@@ -195,13 +195,14 @@ class Inversion:
 
         xa = self.fm.xa(x, geom)
         Sa = self.fm.Sa(x, geom)
-        Sa_inv, _ = self.fm.surface.Sa_inv_sqrt(
+        Sa_inv = self.fm.surface.Sa_inv_sqrt(
             Sa=Sa,
             x_surface=x[self.fm.idx_surface],
             geom=geom,
             hashtable=self.hashtable,
             max_hash_size=self.max_table_size,
-        )
+        )[0]
+
         K = self.fm.K(x, geom)
         Seps = self.fm.Seps(x, meas, geom)
         Seps_inv = svd_inv(
