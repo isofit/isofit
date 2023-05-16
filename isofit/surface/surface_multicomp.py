@@ -181,7 +181,7 @@ class MultiComponentSurface(Surface):
 
         Cov = self.Sa(x_surface=x_surface, geom=geom, unnormalize=False)
 
-        if winidx:
+        if winidx is not None:
             Sa[: self.n_state, : self.n_state] = Cov[winidx, :][:, winidx]
         else:
             Sa[: self.n_state, : self.n_state] = Cov
