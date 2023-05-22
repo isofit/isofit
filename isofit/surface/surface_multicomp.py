@@ -174,7 +174,9 @@ class MultiComponentSurface(Surface):
         Cov_suffix = np.zeros((nsuffix, nsuffix))
         return block_diag(Cov_prefix, Cov, Cov_suffix)
 
-    def Sa_inv_sqrt(self, Sa, x_surface, geom, hashtable, max_hash_size, winidx=None):
+    def Sa_inv_sqrt(
+        self, Sa, x_surface, geom, hashtable=None, max_hash_size=None, winidx=None
+    ):
         """Inverse covariance and its square root of prior distribution, calculated at state x. We find
         the inverse covariance in a normalized space (normalizing by z) and then un-
         normalize the result for the calling function."""
