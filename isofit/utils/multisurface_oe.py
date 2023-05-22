@@ -671,7 +671,9 @@ def multisurface_oe(args):
 @click.option("--wavelength_path")
 @click.option("--log_file")
 @click.option("--logging_level", default="INFO")
-@click.option("--pressure_elevation", is_flag=True)
+@click.option(
+    "--pressure_elevation", type=int, default=0
+)  # ("--pressure_elevation", is_flag=True)
 @click.option("--debug-args", is_flag=True)
 def _cli(debug_args, **kwargs):
     """\

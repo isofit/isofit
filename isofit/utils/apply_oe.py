@@ -389,7 +389,6 @@ def apply_oe(args):
                 surface_category=args.surface_category,
                 emulator_base=args.emulator_base,
                 uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
-                debug=args.debug,
             )
 
             # Run modtran retrieval
@@ -480,7 +479,6 @@ def apply_oe(args):
             multiple_restarts=args.multiple_restarts,
             segmentation_size=args.segmentation_size,
             pressure_elevation=args.pressure_elevation,
-            debug=args.debug,
         )
 
         # Run modtran retrieval
@@ -1918,7 +1916,9 @@ def write_modtran_template(
 @click.argument("input_obs")
 @click.argument("working_directory")
 @click.argument("sensor")
-@click.option("--copy_input_files", is_flag=True, default=False)
+@click.option(
+    "--copy_input_files", type=int, default=0
+)  # ("--copy_input_files", is_flag=True, default=False)
 @click.option("--modtran_path")
 @click.option("--wavelength_path")
 @click.option("--surface_category", default="multicomponent_surface")
@@ -1933,14 +1933,22 @@ def write_modtran_template(
 @click.option("--logging_level", default="INFO")
 @click.option("--log_file")
 @click.option("--n_cores", type=int, default=1)
-@click.option("--presolve", is_flag=True, default=False)
-@click.option("--empirical_line", is_flag=True, default=False)
+@click.option(
+    "--presolve", type=int, default=0
+)  # ("--presolve", is_flag=True, default=False)
+@click.option(
+    "--empirical_line", type=int, default=0
+)  # ("--empirical_line", is_flag=True, default=False)
 @click.option("--analytical_line", is_flag=True, default=False)
-@click.option("--ray_temp_dir", default="/tmp/ray")
+@click.option(
+    "--ray_temp_dir", type=int, default=0
+)  # ("--ray_temp_dir", default="/tmp/ray")
 @click.option("--emulator_base")
 @click.option("--segmentation_size", default=40)
 @click.option("--num_neighbors")
-@click.option("--pressure_elevation", is_flag=True)
+@click.option(
+    "--pressure_elevation", type=int, default=0
+)  # ("--pressure_elevation", is_flag=True)
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",
