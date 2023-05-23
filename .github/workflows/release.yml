@@ -27,5 +27,5 @@ jobs:
         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
       run: |
         source /root/.bashrc
-        python -m build --wheel
+        python -m build --sdist --wheel
         twine upload dist/*
