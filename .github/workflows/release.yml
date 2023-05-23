@@ -20,12 +20,12 @@ jobs:
       run: |
         source /root/.bashrc
         python -m pip install --upgrade pip
-        pip install setuptools wheel twine
+        pip install build setuptools twine wheel
     - name: Build and publish
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
       run: |
         source /root/.bashrc
-        python setup.cfg sdist bdist_wheel
+        python -m build --wheel
         twine upload dist/*
