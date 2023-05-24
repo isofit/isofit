@@ -1916,9 +1916,7 @@ def write_modtran_template(
 @click.argument("input_obs")
 @click.argument("working_directory")
 @click.argument("sensor")
-@click.option(
-    "--copy_input_files", type=int, default=0
-)  # ("--copy_input_files", is_flag=True, default=False)
+@click.option("--copy_input_files", is_flag=False, flag_value=True, default=False)
 @click.option("--modtran_path")
 @click.option("--wavelength_path")
 @click.option("--surface_category", default="multicomponent_surface")
@@ -1929,26 +1927,18 @@ def write_modtran_template(
 @click.option("--channelized_uncertainty_path")
 @click.option("--model_discrepancy_path")
 @click.option("--lut_config_file")
-@click.option("--multiple_restarts", is_flag=True, default=False)
+@click.option("--multiple_restarts", is_flag=False, flag_value=True, default=False)
 @click.option("--logging_level", default="INFO")
 @click.option("--log_file")
 @click.option("--n_cores", type=int, default=1)
-@click.option(
-    "--presolve", type=int, default=0
-)  # ("--presolve", is_flag=True, default=False)
-@click.option(
-    "--empirical_line", type=int, default=0
-)  # ("--empirical_line", is_flag=True, default=False)
-@click.option("--analytical_line", is_flag=True, default=False)
-@click.option(
-    "--ray_temp_dir", type=int, default=0
-)  # ("--ray_temp_dir", default="/tmp/ray")
+@click.option("--presolve", is_flag=False, flag_value=True, default=False)
+@click.option("--empirical_line", is_flag=False, flag_value=True, default=False)
+@click.option("--analytical_line", is_flag=False, flag_value=True, default=False)
+@click.option("--ray_temp_dir", default="/tmp/ray")
 @click.option("--emulator_base")
 @click.option("--segmentation_size", default=40)
 @click.option("--num_neighbors")
-@click.option(
-    "--pressure_elevation", type=int, default=0
-)  # ("--pressure_elevation", is_flag=True)
+@click.option("--pressure_elevation", is_flag=False, flag_value=True, default=False)
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",
