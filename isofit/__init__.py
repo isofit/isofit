@@ -57,6 +57,15 @@ def cli(ctx, version, path):
             click.echo(__path__[0])
 
 
+# If mlky is installed, add it to the CLI
+try:
+    from mlky import CLI as mli
+
+    mli.set_defaults(generate={"input": "/path/to/isofit/definitions.yml"})
+    cli.add_command(mli.group)
+except:
+    pass
+
 # Import all of the files that define a _cli command to register them
 import isofit.core.isofit
 import isofit.utils.add_HRRR_profiles_to_modtran_config
