@@ -572,7 +572,7 @@ class Pathnames:
             self.fid = split(args.input_radiance)[-1][:18]
             logging.info("Flightline ID: %s" % self.fid)
         elif args.sensor == "prisma":
-            self.fid = args.input_radiance.split("/")[-1].split("_")[4]
+            self.fid = args.input_radiance.split("/")[-1].split("_")[1]
             logging.info("Flightline ID: %s" % self.fid)
         elif args.sensor == "avcl":
             self.fid = split(args.input_radiance)[-1][:16]
