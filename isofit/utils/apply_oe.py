@@ -1939,10 +1939,10 @@ def write_modtran_template(
 @click.option(
     "--empirical_line", type=int, default=0
 )  # ("--empirical_line", is_flag=True, default=False)
-@click.option("--analytical_line", is_flag=True, default=False)
 @click.option(
-    "--ray_temp_dir", type=int, default=0
-)  # ("--ray_temp_dir", default="/tmp/ray")
+    "--analytical_line", type=int, default=0
+)  # ("--analytical_line", is_flag=True, default=False)
+@click.option("--ray_temp_dir", default="/tmp/ray")
 @click.option("--emulator_base")
 @click.option("--segmentation_size", default=40)
 @click.option("--num_neighbors")
