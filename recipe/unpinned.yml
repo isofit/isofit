@@ -1,0 +1,32 @@
+name: isofit
+
+channels: &id1
+  - http://conda.anaconda.org/conda-forge
+
+dependencies:
+  - python>=3.8
+  - pip
+  - click
+  - gdal
+  - matplotlib
+  - numpy
+  - pandas
+  - pep8
+  - pre-commit
+  - protobuf
+  - pygrib
+  - pytest
+  - pyyaml
+  - scikit-image
+  - scikit-learn
+  - scipy
+  - spectral
+  - tensorflow
+  - utm
+
+  - pip:
+    - ndsplines>=0.1.2
+    # - ray>=1.2.0
+    - sphinx-autodoc-typehints>=1.19.4
+    - xxhash>=1.2.0
+    # - tensorflow>2.0.1

@@ -55,3 +55,33 @@ For example, to build a specific branch of ISOFIT, the following may be performe
 This will build a container and tag it as [branch]. This tag can anything as it is local to your device.
 
 Once the container is built, refer to the `How to Use` section for next steps.
+
+Usage Examples
+--------------
+
+The ISOFIT Docker image is intended to be used in an interactive mode due to the vast use cases of ISOFIT. The most common and basic use-case is to simply pull the image and use the default installed ISOFIT:
+
+.. code-block:: bash
+  1. (host)$ docker pull jammont/isofit:latest
+  2. (host)$ docker run -it --rm jammont/isofit bash
+  3. (container)$ cd /isofit/examples/image_cube
+  4. (container)$ ./run_small.sh
+
+The above simply pulls the latest ISOFIT image, creates a container, and runs the small image_cube example.
+
+This is a simple use-case to demonstrate the examples of ISOFIT, but this isn't useful for actually using ISOFIT. To 
+
+
+
+# Development
+
+- Run in interactive mode
+  `docker run -it jammont/isofit bash`
+
+- Use your local installation
+  `-v /Users/jamesmo/projects/isofit:/isofit`
+
+# Known Issues
+
+- Shared memory is too small for Ray. Add command:
+  `--shm-size=9.83gb`

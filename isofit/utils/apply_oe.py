@@ -1393,7 +1393,6 @@ def build_presolve_config(
     emulator_base: str = None,
     uncorrelated_radiometric_uncertainty: float = 0.0,
     segmentation_size: int = 400,
-    debug: bool = False,
 ) -> None:
     """Write an isofit config file for a presolve, with limited info.
 
@@ -1406,7 +1405,6 @@ def build_presolve_config(
         emulator_base: the basename of the emulator, if used
         uncorrelated_radiometric_uncertainty: uncorrelated radiometric uncertainty parameter for isofit
         segmentation_size: image segmentation size if empirical line is used
-        debug: flag to enable debug_mode in the config.implementation
     """
 
     # Determine number of spectra included in each retrieval.  If we are
@@ -1499,7 +1497,6 @@ def build_presolve_config(
             "ray_temp_dir": paths.ray_temp_dir,
             "inversion": {"windows": INVERSION_WINDOWS},
             "n_cores": n_cores,
-            "debug_mode": debug,
         },
     }
 
@@ -1561,7 +1558,6 @@ def build_main_config(
     multiple_restarts: bool = False,
     segmentation_size=400,
     pressure_elevation: bool = False,
-    debug: bool = False,
 ) -> None:
     """Write an isofit config file for the main solve, using the specified pathnames and all given info
 
@@ -1719,7 +1715,6 @@ def build_main_config(
             "ray_temp_dir": paths.ray_temp_dir,
             "inversion": {"windows": INVERSION_WINDOWS},
             "n_cores": n_cores,
-            "debug_mode": debug,
         },
     }
 
@@ -1941,7 +1936,7 @@ def write_modtran_template(
 )  # ("--empirical_line", is_flag=True, default=False)
 @click.option("--analytical_line", is_flag=True, default=False)
 @click.option(
-    "--ray_temp_dir", type=int, default=0
+    "--ray_temp_dir", default="/tmp/ray"
 )  # ("--ray_temp_dir", default="/tmp/ray")
 @click.option("--emulator_base")
 @click.option("--segmentation_size", default=40)
