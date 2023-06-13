@@ -18,8 +18,8 @@
 # Author: Philip G. Brodrick, philip.brodrick@jpl.nasa.gov
 
 import argparse
+import atexit
 import logging
-import multiprocessing
 import os
 import threading
 import time
@@ -27,6 +27,7 @@ from collections import OrderedDict
 from glob import glob
 
 import numpy as np
+import ray
 from osgeo import gdal
 from spectral.io import envi
 
@@ -41,14 +42,17 @@ from isofit.inversion.inverse_simple import invert_liquid_water
 
 def main(rawargs=None) -> None:
     """
-    TODO: Description
+    Calculate Equivalent Water Thickness (EWT) / Canopy Water Content (CWC) for a set of reflectance data, based on Beer Lambert Absorption of liquid water.
     """
-    # TODO: Parser should be moved out of main and these be made parameters of the function
-    parser = argparse.ArgumentParser(description="Apply OE to a block of data.")
-    parser.add_argument("isofit_dir", type=str)
-    parser.add_argument("--output_cwc_file", type=str, default=None)
+    parser = argparse.ArgumentParser(
+        description="Calculate EWT/CWC for a block of data."
+    )
+    parser.add_argument("reflectance_file", type=str)
+    parser.add_argument("output_cwc_file", type=str, default=None)
     parser.add_argument("--loglevel", type=str, default="INFO")
     parser.add_argument("--logfile", type=str, default=None)
+    parser.add_argument("--n_cores", type=str, default=None)
+    parser.add_argument("--ray_tmp_dir", type=str, default=None)
     args = parser.parse_args(rawargs)
 
     logging.basicConfig(
@@ -58,28 +62,13 @@ def main(rawargs=None) -> None:
         datefmt="%Y-%m-%d,%H:%M:%S",
     )
 
-    logging.info(
-        f'Isofit config file: {os.path.join(args.isofit_dir, "config", "") + "*_modtran.json"}'
-    )
-    file = glob(os.path.join(args.isofit_dir, "config", "") + "*_modtran.json")[0]
-    config = configs.create_new_config(file)
-    config.forward_model.instrument.integrations = 1
-
-    subs_state_file = config.output.estimated_state_file
-    rfl_file = config.output.estimated_state_file.replace("_subs_state", "_rfl")
-
-    if args.output_cwc_file is None:
-        output_cwc_file = subs_state_file.replace("_subs_state", "_cwc")
-    else:
-        output_cwc_file = args.output_cwc_file
-
-    if os.path.isfile(output_cwc_file):
-        dat = gdal.Open(output_cwc_file).ReadAsArray()
+    if os.path.isfile(args.output_cwc_file):
+        dat = gdal.Open(args.output_cwc_file).ReadAsArray()
         if not np.all(dat == -9999):
             logging.info("Existing CWC file found, terminating")
             exit()
 
-    rfl_ds = envi.open(envi_header(rfl_file))
+    rfl_ds = envi.open(envi_header(args.reflectance_file))
     rfl = rfl_ds.open_memmap(interleave="bip")
     rfls = rfl.shape
     wl = np.array([float(x) for x in rfl_ds.metadata["wavelength"]])
@@ -100,18 +89,25 @@ def main(rawargs=None) -> None:
         del output_metadata["emit pge input files"]
 
     img = envi.create_image(
-        envi_header(output_cwc_file), ext="", metadata=output_metadata, force=True
+        envi_header(args.output_cwc_file), ext="", metadata=output_metadata, force=True
     )
     del img, rfl_ds
     logging.info("init cwc created")
 
-    # ray.init(
-    #    ignore_reinit_error = config.implementation.ray_ignore_reinit_error,
-    #    address             = config.implementation.ip_head,
-    #    _temp_dir           = config.implementation.ray_temp_dir,
-    #    include_dashboard   = config.implementation.ray_include_dashboard,
-    #    _redis_password     = config.implementation.redis_password
-    # )
+    # Initialize ray cluster
+    start_time = time.time()
+    n_cores = args.n_cores
+    if args.n_cores == -1:
+        n_cores = args.n_cores
+    rayargs = {
+        "ignore_reinit_error": True,
+        "local_mode": args.n_cores == 1,
+        "_temp_dir": args.ray_temp_dir,
+        "num_cpus": n_cores,
+    }
+
+    ray.init(**rayargs)
+    atexit.register(ray.shutdown)
 
     n_workers = 40  # Hardcoded
     line_breaks = np.linspace(0, rfls[0], n_workers, dtype=int)
@@ -121,24 +117,19 @@ def main(rawargs=None) -> None:
 
     start_time = time.time()
     logging.info("Beginning parallel CWC inversions")
-    pool = multiprocessing.Pool(processes=40)
     result_list = [
-        pool.apply_async(
-            run_lines,
-            (
-                rfl_file,
-                output_cwc_file,
-                wl,
-                abs_co_w,
-                line_breaks[n],
-                args.loglevel,
-                args.logfile,
-            ),
+        run_lines.remote(
+            args.reflectance_file,
+            args.output_cwc_file,
+            wl,
+            abs_co_w,
+            line_breaks[n],
+            args.loglevel,
+            args.logfile,
         )
         for n in range(len(line_breaks))
     ]
-    pool.close()
-    pool.join()
+    results = [ray.get(result) for result in result_list]
 
     total_time = time.time() - start_time
     logging.info(
@@ -148,7 +139,7 @@ def main(rawargs=None) -> None:
     )
 
 
-# @ray.remote
+@ray.remote
 def run_lines(
     rfl_file: str,
     output_cwc_file: str,
@@ -159,7 +150,7 @@ def run_lines(
     logfile=None,
 ) -> None:
     """
-    Run a set of CWC spectra.
+    Run a set of spectra for EWT/CWC.
 
     Args:
         rfl_file: input reflectance file location
