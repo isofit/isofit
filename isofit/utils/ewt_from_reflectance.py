@@ -197,7 +197,7 @@ def _cli(debug_args, **kwargs):
     """\
     Calculate Equivalent Water Thickness (EWT) / Canopy Water Content (CWC) for a set of reflectance data, based on Beer Lambert Absorption of liquid water.
     """
-    click.echo("Running analytical line")
+    click.echo("Running EWT from Reflectance")
     if debug_args:
         click.echo("Arguments to be passed:")
         for key, value in kwargs.items():
