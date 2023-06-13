@@ -183,7 +183,7 @@ def run_lines(
 
 @click.command(name="ewt")
 @click.argument("reflectance_file")
-@click.option("--output_cwc_file")
+@click.argument("output_cwc_file", required=False)
 @click.option("--loglevel", default="INFO")
 @click.option("--logfile")
 @click.option("--n_cores")
