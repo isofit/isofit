@@ -25,7 +25,9 @@ import threading
 import time
 from collections import OrderedDict
 from glob import glob
+from types import SimpleNamespace
 
+import click
 import numpy as np
 import ray
 from osgeo import gdal
@@ -40,21 +42,10 @@ from isofit.inversion.inverse import Inversion
 from isofit.inversion.inverse_simple import invert_liquid_water
 
 
-def main(rawargs=None) -> None:
+def main(args: SimpleNamespace) -> None:
     """
     Calculate Equivalent Water Thickness (EWT) / Canopy Water Content (CWC) for a set of reflectance data, based on Beer Lambert Absorption of liquid water.
     """
-    parser = argparse.ArgumentParser(
-        description="Calculate EWT/CWC for a block of data."
-    )
-    parser.add_argument("reflectance_file", type=str)
-    parser.add_argument("output_cwc_file", type=str, default=None)
-    parser.add_argument("--loglevel", type=str, default="INFO")
-    parser.add_argument("--logfile", type=str, default=None)
-    parser.add_argument("--n_cores", type=str, default=None)
-    parser.add_argument("--ray_tmp_dir", type=str, default=None)
-    args = parser.parse_args(rawargs)
-
     logging.basicConfig(
         format="%(levelname)s:%(asctime)s ||| %(message)s",
         level=args.loglevel,
@@ -189,6 +180,37 @@ def run_lines(
             (rfl.shape[0], rfl.shape[1], output_cwc.shape[2]),
         )
 
+@click.command(name="ewt")
+@click.argument("reflectance_file")
+@click.option("--output_cwc_file")
+@click.option("--loglevel", default="INFO")
+@click.option("--logfile")
+@click.option("--n_cores")
+@click.option("--ray_tmp_dir")
+@click.option(
+    "--debug-args",
+    help="Prints the arguments list without executing the command",
+    is_flag=True,
+)
+def _cli(debug_args, **kwargs):
+    """\
+    Calculate Equivalent Water Thickness (EWT) / Canopy Water Content (CWC) for a set of reflectance data, based on Beer Lambert Absorption of liquid water.
+    """
+    click.echo("Running analytical line")
+    if debug_args:
+        click.echo("Arguments to be passed:")
+        for key, value in kwargs.items():
+            click.echo(f"  {key} = {value!r}")
+    else:
+        # SimpleNamespace converts a dict into dot-notational for backwards compatability with argparse
+        main(SimpleNamespace(**kwargs))
+
+    click.echo("Done")
+
 
 if __name__ == "__main__":
-    main()
+    _cli()
+else:
+    from isofit import cli
+
+    cli.add_command(_cli)
