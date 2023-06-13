@@ -180,6 +180,7 @@ def run_lines(
             (rfl.shape[0], rfl.shape[1], output_cwc.shape[2]),
         )
 
+
 @click.command(name="ewt")
 @click.argument("reflectance_file")
 @click.option("--output_cwc_file")
