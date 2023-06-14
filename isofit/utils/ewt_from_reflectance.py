@@ -17,14 +17,10 @@
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: Philip G. Brodrick, philip.brodrick@jpl.nasa.gov
 
-import argparse
 import atexit
 import logging
 import os
-import threading
 import time
-from collections import OrderedDict
-from glob import glob
 from types import SimpleNamespace
 
 import click
@@ -33,18 +29,15 @@ import ray
 from osgeo import gdal
 from spectral.io import envi
 
-from isofit.configs import configs
-from isofit.core.common import envi_header, svd_inv, svd_inv_sqrt
+from isofit.core.common import envi_header
 from isofit.core.fileio import write_bil_chunk
-from isofit.core.forward import ForwardModel
-from isofit.core.geometry import Geometry
-from isofit.inversion.inverse import Inversion
 from isofit.inversion.inverse_simple import invert_liquid_water
 
 
 def main(args: SimpleNamespace) -> None:
     """
-    Calculate Equivalent Water Thickness (EWT) / Canopy Water Content (CWC) for a set of reflectance data, based on Beer Lambert Absorption of liquid water.
+    Calculate Equivalent Water Thickness (EWT) / Canopy Water Content (CWC) for a set of reflectance data, based on
+    Beer Lambert Absorption of liquid water.
     """
     logging.basicConfig(
         format="%(levelname)s:%(asctime)s ||| %(message)s",
@@ -66,7 +59,6 @@ def main(args: SimpleNamespace) -> None:
 
     logging.info("init inversion")
     res_0, abs_co_w = invert_liquid_water(rfl[0, 0, :].copy(), wl, return_abs_co=True)
-    res_1 = invert_liquid_water(rfl[0, 0, :].copy(), wl, abs_co_w=abs_co_w)
 
     logging.info("init inversion complete")
 
@@ -93,7 +85,7 @@ def main(args: SimpleNamespace) -> None:
     rayargs = {
         "ignore_reinit_error": True,
         "local_mode": args.n_cores == 1,
-        "_temp_dir": args.ray_temp_dir,
+        "_temp_dir": args.ray_tmp_dir,
         "num_cpus": n_cores,
     }
 
@@ -167,9 +159,7 @@ def run_lines(
             meas = rfl[r, c, :]
             if np.all(meas < 0):
                 continue
-            output_cwc[r - start_line, c, 0] = invert_liquid_water(
-                meas, wl, abs_co_w=abs_co_w
-            )[0]
+            output_cwc[r - start_line, c, 0] = invert_liquid_water(meas, wl)[0]
 
         logging.info(f"CWC writing line {r}")
 
@@ -186,7 +176,7 @@ def run_lines(
 @click.argument("output_cwc_file", required=False)
 @click.option("--loglevel", default="INFO")
 @click.option("--logfile")
-@click.option("--n_cores")
+@click.option("--n_cores", type=int, default=1)
 @click.option("--ray_tmp_dir")
 @click.option(
     "--debug-args",
