@@ -64,6 +64,7 @@ class DCGMSurface(Surface):
 
         # initialize an empty cache
         self.cache = {}
+        self.max_cache_size = 10
 
         self.select_on_init = config.select_on_init
 
@@ -117,15 +118,20 @@ class DCGMSurface(Surface):
         Returns:
             surface_mean, surface_cov: mean and covariance of the estimated surface
         """
-        surface_mean, surface_cov = self.model.predict(x_surface)
-        if x_surface in self.cache:
-            surface_mean_resamp, surface_cov_resamp = self.cache
+        
+        hash_idx = tuple(x_surface)
+        if hash_idx in self.cache:
+            surface_mean_resamp, surface_cov_resamp = self.cache[hash_idx]
         else:
+            surface_mean, surface_cov = self.model.predict(x_surface[np.newaxis,:])
+            surface_mean = np.squeeze(surface_mean)
+            surface_cov = np.squeeze(surface_cov)
             surface_mean_resamp, surface_cov_resamp = self.interpolate(
                 surface_mean, surface_cov, self.model_wl, self.wl
             )
-            del self.cache[next(iter(self.cache))]
-            self.cache[x_surface] = (surface_mean_resamp, surface_cov_resamp)
+            if len(self.cache) > self.max_cache_size:
+                del self.cache[next(iter(self.cache))]
+            self.cache[hash_idx] = (surface_mean_resamp, surface_cov_resamp)
 
         return surface_mean_resamp, surface_cov_resamp
 
@@ -199,6 +205,4 @@ class DCGMSurface(Surface):
     def summarize(self, x_surface, geom):
         """Summary of state vector."""
 
-        if len(x_surface) < 1:
-            return ""
-        return "Component: %i" % self.component(x_surface, geom)
+        return "" 

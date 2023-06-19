@@ -344,7 +344,8 @@ class Inversion:
                 prior_subset_idx = np.arange(len(x0))[self.fm.idx_surf_rfl][
                     self.outside_ret_windows
                 ]
-                x0[prior_subset_idx] = self.fm.surface.xa(x0, geom)[prior_subset_idx]
+                x0_surface = x0[self.fm.idx_surf_rfl]
+                x0[prior_subset_idx] = self.fm.surface.xa(x0_surface, geom)[prior_subset_idx]
 
             trajectory.append(x0)
 
