@@ -297,7 +297,7 @@ def surface_model(
                 if len(window_idx) == 0:
                     continue
                 window_range = slice(window_idx[0], window_idx[-1] + 1)
-                
+
                 if window["correlation"] == "GP":
                     for i in window_idx:
                         # Alternatively, we can use a band diagonal form,
@@ -333,15 +333,28 @@ def surface_model(
                 # Look for the "feather_forward" or "feather_backward" options
                 if window["correlation"] in ["EM", "decorrelated"]:
                     if "feather_backward" in list(window.keys()):
-                        print(P[window_idx[0]-1,window_idx[0]])
-                        P[window_idx[0]-1,window_idx[0]] += window["feather_backward"]
-                        P[window_idx[0],window_idx[0]-1] += window["feather_backward"]
+                        print(P[window_idx[0] - 1, window_idx[0]])
+                        P[window_idx[0] - 1, window_idx[0]] += window[
+                            "feather_backward"
+                        ]
+                        P[window_idx[0], window_idx[0] - 1] += window[
+                            "feather_backward"
+                        ]
                     if "feather_forward" in list(window.keys()):
-                        print('!!!!!',P[(window_idx[-1]-2):(window_idx[-1]+2),\
-                                        (window_idx[-1]-2):(window_idx[-1]+2)])
-                        P[window_idx[-1]+1,window_idx[-1]] += window["feather_forward"]
-                        P[window_idx[-1],window_idx[-1]+1] += window["feather_forward"]
-                        print(P[window_idx[-1],window_idx[-1]+1])
+                        print(
+                            "!!!!!",
+                            P[
+                                (window_idx[-1] - 2) : (window_idx[-1] + 2),
+                                (window_idx[-1] - 2) : (window_idx[-1] + 2),
+                            ],
+                        )
+                        P[window_idx[-1] + 1, window_idx[-1]] += window[
+                            "feather_forward"
+                        ]
+                        P[window_idx[-1], window_idx[-1] + 1] += window[
+                            "feather_forward"
+                        ]
+                        print(P[window_idx[-1], window_idx[-1] + 1])
             C = inv(P)
 
             # Normalize the component spectrum if desired
