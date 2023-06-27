@@ -118,12 +118,12 @@ class DCGMSurface(Surface):
         Returns:
             surface_mean, surface_cov: mean and covariance of the estimated surface
         """
-        
+
         hash_idx = tuple(x_surface)
         if hash_idx in self.cache:
             surface_mean_resamp, surface_cov_resamp = self.cache[hash_idx]
         else:
-            surface_mean, surface_cov = self.model.predict(x_surface[np.newaxis,:])
+            surface_mean, surface_cov = self.model.predict(x_surface[np.newaxis, :])
             surface_mean = np.squeeze(surface_mean)
             surface_cov = np.squeeze(surface_cov)
             surface_mean_resamp, surface_cov_resamp = self.interpolate(
@@ -205,4 +205,4 @@ class DCGMSurface(Surface):
     def summarize(self, x_surface, geom):
         """Summary of state vector."""
 
-        return "" 
+        return ""

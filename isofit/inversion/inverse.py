@@ -345,7 +345,9 @@ class Inversion:
                     self.outside_ret_windows
                 ]
                 x0_surface = x0[self.fm.idx_surf_rfl]
-                x0[prior_subset_idx] = self.fm.surface.xa(x0_surface, geom)[prior_subset_idx]
+                x0[prior_subset_idx] = self.fm.surface.xa(x0_surface, geom)[
+                    prior_subset_idx
+                ]
 
             trajectory.append(x0)
 
