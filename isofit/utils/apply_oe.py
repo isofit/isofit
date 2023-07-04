@@ -506,6 +506,9 @@ def apply_oe(args):
                 os.system(cmd)
 
     if not exists(paths.rfl_working_path) or not exists(paths.uncert_working_path):
+
+        # Determine the number of neighbors to use.  Provides backwards stability and works
+        # well with defaults, but is arbitrary
         if args.num_neighbors is None:
             nneighbors = [int(round(3950 / 9 - 35 / 36 * args.segmentation_size))]
         else:
@@ -514,8 +517,6 @@ def apply_oe(args):
         if args.empirical_line == 1:
             # Empirical line
             logging.info("Empirical line inference")
-            # Determine the number of neighbors to use.  Provides backwards stability and works
-            # well with defaults, but is arbitrary
             empirical_line(
                 reference_radiance_file=paths.rdn_subs_path,
                 reference_reflectance_file=paths.rfl_subs_path,
@@ -531,26 +532,16 @@ def apply_oe(args):
             )
         elif args.analytical_line == 1:
             logging.info("Analytical line inference")
-            analytical_line_args = [
-                paths.radiance_working_path,
-                paths.loc_working_path,
-                paths.obs_working_path,
-                args.working_directory,
-                "--output_rfl_file",
-                paths.rfl_working_path,
-                "--output_unc_file",
-                paths.uncert_working_path,
-                "--loglevel",
-                args.logging_level,
-                "--logfile",
-                args.log_file,
-                "--n_atm_neighbors",
-            ]
-            analytical_line_args.extend([str(x) for x in nneighbors])
-            analytical_line_args.append("--smoothing_sigma")
-            analytical_line_args.extend([str(x) for x in args.atm_sigma])
-
-            analytical_line.main(analytical_line_args)
+            analytical_line(paths.radiance_working_path,
+                            paths.loc_working_path,
+                            paths.obs_working_path,
+                            args.working_directory,
+                            output_rfl_file=paths.rfl_working_path,
+                            output_unc_file=paths.uncert_working_path,
+                            loglevel=args.logging_level,
+                            logfile=args.log_file,
+                            n_atm_neighbors=[str(x) for x in nneighbors],
+                            smoothing_sigma=[str(x) for x in args.atm_sigma])
 
     logging.info("Done.")
 
