@@ -540,8 +540,8 @@ def apply_oe(args):
                             output_unc_file=paths.uncert_working_path,
                             loglevel=args.logging_level,
                             logfile=args.log_file,
-                            n_atm_neighbors=[str(x) for x in nneighbors],
-                            smoothing_sigma=[str(x) for x in args.atm_sigma])
+                            n_atm_neighbors=nneighbors,
+                            smoothing_sigma=args.atm_sigma)
 
     logging.info("Done.")
 
