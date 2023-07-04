@@ -1944,7 +1944,7 @@ def write_modtran_template(
 @click.option("--num_neighbors")
 # ("--pressure_elevation", is_flag=True)
 @click.option("--atm_sigma", type=float, multiple=True, default=2)
-@click.option("--pressure_elevation", is_flat=True, default=False)
+@click.option("--pressure_elevation", is_flag=True, default=False)
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",
