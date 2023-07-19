@@ -1,7 +1,6 @@
 FROM rayproject/ray:2.4.0-py310-aarch64
 
 USER root
-# sudo apt-get update && sudo apt-get install --no-install-recommends -y gfortran
 RUN apt-get update &&\
     apt-get install --no-install-recommends -y \
       gfortran \
@@ -13,13 +12,14 @@ WORKDIR /home/ray
 
 # Copy and install ISOFIT
 COPY --chown=ray:users . isofit/
-RUN conda create --name isofit --clone base &&\
-    conda install --name base --solver=classic conda-libmamba-solver nb_conda_kernels jupyter jupyterthemes &&\
+RUN conda config --prepend channels conda-forge &&\
+    conda create --name isofit --clone base &&\
+    conda install --name base --solver=classic conda-libmamba-solver nb_conda_kernels jupyterlab &&\
     conda env update --name isofit --solver=libmamba --file isofit/recipe/unpinned.yml &&\
-    conda install --name isofit ipykernel &&\
+    conda install --name isofit --solver=libmamba ipykernel &&\
     anaconda3/envs/isofit/bin/pip install --no-deps -e isofit &&\
     echo "conda activate isofit" >> ~/.bashrc
-    echo "LD_PRELOAD=/usr/lib/aarch64-linux-gnu/libgomp.so.1:$LD_PRELOAD" >> ~/.bashrc
+ENV LD_PRELOAD="/usr/lib/aarch64-linux-gnu/libgomp.so.1:$LD_PRELOAD"
 
 # Install 6S
 RUN mkdir 6sv-2.1 &&\
@@ -42,8 +42,8 @@ ENV EMULATOR_PATH="/home/ray/sRTMnet_v100/sRTMnet_v100"
 # Some ISOFIT examples require this env var to be present but does not need to be installed
 ENV MODTRAN_DIR=""
 
-# Start a Jupyter server
+# Start the Jupyterlab server
 EXPOSE 8888
-CMD jupyter notebook --ip 0.0.0.0 --no-browser --allow-root
+CMD jupyter-lab --ip 0.0.0.0 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password=''
 
 # FROM alpine:3.14 AS build
