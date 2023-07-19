@@ -447,17 +447,19 @@ def invert_liquid_water(
     r_shoulder: float = 1100,
     lw_init: tuple = (0.02, 0.3, 0.0002),
     lw_bounds: tuple = ([0, 0.5], [0, 1.0], [-0.0004, 0.0004]),
+    return_abs_co: bool = False,
 ):
     """Given a reflectance estimate, fit a state vector including liquid water path length
     based on a simple Beer-Lambert surface model.
 
     Args:
-        rfl_meas:   surface reflectance spectrum
-        wl:         instrument wavelengths, must be same size as rfl_meas
-        l_shoulder: wavelength of left absorption feature shoulder
-        r_shoulder: wavelength of right absorption feature shoulder
-        lw_init:    initial guess for liquid water path length, intercept, and slope
-        lw_bounds:  lower and upper bounds for liquid water path length, intercept, and slope
+        rfl_meas:      surface reflectance spectrum
+        wl:            instrument wavelengths, must be same size as rfl_meas
+        l_shoulder:    wavelength of left absorption feature shoulder
+        r_shoulder:    wavelength of right absorption feature shoulder
+        lw_init:       initial guess for liquid water path length, intercept, and slope
+        lw_bounds:     lower and upper bounds for liquid water path length, intercept, and slope
+        return_abs_co: if True, returns absorption coefficients of liquid water
 
     Returns:
         solution: estimated liquid water path length, intercept, and slope based on a given surface reflectance
@@ -497,7 +499,10 @@ def invert_liquid_water(
 
     solution = x_opt.x
 
-    return solution
+    if return_abs_co:
+        return solution, abs_co_w
+    else:
+        return solution
 
 
 def beer_lambert_model(x, y, wl, alpha_lw):

@@ -23,9 +23,9 @@ dependencies:
     - spectral>=0.19
     - utm
 
-    - pip:
-      - ndsplines>=0.1.2
-      - ray>=1.2.0
-      - sphinx-autodoc-typehints>=1.19.4
-      - xxhash>=1.2.0
-      - tensorflow>2.0.1
+  - pip:
+    - ndsplines>=0.1.2
+    - ray>=1.2.0
+    - sphinx-autodoc-typehints>=1.19.4
+    - xxhash>=1.2.0
+    - tensorflow
