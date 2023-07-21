@@ -506,7 +506,6 @@ def apply_oe(args):
                 os.system(cmd)
 
     if not exists(paths.rfl_working_path) or not exists(paths.uncert_working_path):
-
         # Determine the number of neighbors to use.  Provides backwards stability and works
         # well with defaults, but is arbitrary
         if args.num_neighbors is None:
@@ -532,16 +531,18 @@ def apply_oe(args):
             )
         elif args.analytical_line == 1:
             logging.info("Analytical line inference")
-            analytical_line(paths.radiance_working_path,
-                            paths.loc_working_path,
-                            paths.obs_working_path,
-                            args.working_directory,
-                            output_rfl_file=paths.rfl_working_path,
-                            output_unc_file=paths.uncert_working_path,
-                            loglevel=args.logging_level,
-                            logfile=args.log_file,
-                            n_atm_neighbors=nneighbors,
-                            smoothing_sigma=args.atm_sigma)
+            analytical_line(
+                paths.radiance_working_path,
+                paths.loc_working_path,
+                paths.obs_working_path,
+                args.working_directory,
+                output_rfl_file=paths.rfl_working_path,
+                output_unc_file=paths.uncert_working_path,
+                loglevel=args.logging_level,
+                logfile=args.log_file,
+                n_atm_neighbors=nneighbors,
+                smoothing_sigma=args.atm_sigma,
+            )
 
     logging.info("Done.")
 
@@ -1908,7 +1909,7 @@ def write_modtran_template(
 @click.argument("working_directory")
 @click.argument("sensor")
 # ("--copy_input_files", is_flag=True, default=False)
-@click.option("--copy_input_files", type=int, default=0)  
+@click.option("--copy_input_files", type=int, default=0)
 @click.option("--modtran_path")
 @click.option("--wavelength_path")
 @click.option("--surface_category", default="multicomponent_surface")
@@ -1924,9 +1925,9 @@ def write_modtran_template(
 @click.option("--log_file")
 @click.option("--n_cores", type=int, default=1)
 # ("--presolve", is_flag=True, default=False)
-@click.option("--presolve", type=int, default=0)  
+@click.option("--presolve", type=int, default=0)
 # ("--empirical_line", is_flag=True, default=False)
-@click.option("--empirical_line", type=int, default=0) 
+@click.option("--empirical_line", type=int, default=0)
 # ("--analytical_line", is_flag=True, default=False)
 @click.option("--analytical_line", type=int, default=0)
 @click.option("--ray_temp_dir", default="/tmp/ray")
