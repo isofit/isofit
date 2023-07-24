@@ -20,7 +20,6 @@
 import logging
 import multiprocessing
 import os
-import sys
 import time
 from collections import OrderedDict
 from glob import glob
@@ -31,13 +30,12 @@ from spectral.io import envi
 
 from isofit import ray
 from isofit.configs import configs
-from isofit.core.common import envi_header, load_spectrum, svd_inv, svd_inv_sqrt
+from isofit.core.common import envi_header, load_spectrum
 from isofit.core.fileio import write_bil_chunk
 from isofit.core.forward import ForwardModel
 from isofit.core.geometry import Geometry
 from isofit.inversion.inverse import Inversion
-from isofit.inversion.inverse_simple import invert_algebraic, invert_analytical
-from isofit.utils import remap
+from isofit.inversion.inverse_simple import invert_analytical
 from isofit.utils.atm_interpolation import atm_interpolation
 
 
@@ -77,9 +75,6 @@ def analytical_line(
 
     subs_state_file = config.output.estimated_state_file
     subs_loc_file = config.input.loc_file
-    full_state_file = subs_state_file.replace(
-        "_subs_state", "_subs_state_mapped"
-    )  # Unused
 
     if segmentation_file is None:
         lbl_file = subs_state_file.replace("_subs_state", "_lbl")
@@ -122,8 +117,6 @@ def analytical_line(
     rdn_ds = envi.open(envi_header(rdn_file))
     rdn = rdn_ds.open_memmap(interleave="bip")
     rdns = rdn.shape
-    loc = envi.open(envi_header(loc_file)).open_memmap(interleave="bip")
-    obs = envi.open(envi_header(obs_file)).open_memmap(interleave="bip")
     atm = envi.open(envi_header(atm_file)).open_memmap(interleave="bip")
 
     hash_table = OrderedDict()  # Deprecated in Python 3.7
@@ -205,6 +198,8 @@ class Worker(object):
         obs_file: str,
         loglevel: str,
         logfile: str,
+        subs_state_file: str = None,
+        lbl_file: str = None,
     ):
         """
         Worker class to help run a subset of spectra.
@@ -236,6 +231,12 @@ class Worker(object):
         self.obs_file = obs_file
         self.analytical_state_file = analytical_state_file
         self.analytical_state_unc_file = analytical_state_unc_file
+        if subs_state_file is not None and lbl_file is not None:
+            self.subs_state_file = subs_state_file
+            self.lbl_file = lbl_file
+        else:
+            self.subs_state_file = None
+            self.lbl_file = None
 
         if config.input.radiometry_correction_file is not None:
             self.radiance_correction, wl = load_spectrum(
