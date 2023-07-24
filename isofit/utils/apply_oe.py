@@ -508,7 +508,7 @@ def apply_oe(args):
     if not exists(paths.rfl_working_path) or not exists(paths.uncert_working_path):
         # Determine the number of neighbors to use.  Provides backwards stability and works
         # well with defaults, but is arbitrary
-        if args.num_neighbors is None:
+        if not args.num_neighbors:
             nneighbors = [int(round(3950 / 9 - 35 / 36 * args.segmentation_size))]
         else:
             nneighbors = args.num_neighbors
