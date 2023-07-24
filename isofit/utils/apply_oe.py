@@ -1908,7 +1908,6 @@ def write_modtran_template(
 @click.argument("input_obs")
 @click.argument("working_directory")
 @click.argument("sensor")
-# ("--copy_input_files", is_flag=True, default=False)
 @click.option("--copy_input_files", type=int, default=0)
 @click.option("--modtran_path")
 @click.option("--wavelength_path")
