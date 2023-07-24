@@ -48,6 +48,7 @@ class Isofit:
         # Explicitly set the number of threads to be 1, so we more effectively
         # run in parallel
         os.environ["MKL_NUM_THREADS"] = "1"
+        os.environ["OMP_NUM_THREADS"] = "1"
         # Set logging level
         self.loglevel = level
         self.logfile = logfile
