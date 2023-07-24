@@ -1930,7 +1930,7 @@ def write_modtran_template(
 @click.option("--ray_temp_dir", default="/tmp/ray")
 @click.option("--emulator_base")
 @click.option("--segmentation_size", default=40)
-@click.option("--num_neighbors", "-nn", multiple=True)
+@click.option("--num_neighbors", "-nn", type=int, multiple=True)
 @click.option("--atm_sigma", "-as", type=float, multiple=True, default=[2])
 @click.option("--pressure_elevation", is_flag=True, default=False)
 @click.option(
