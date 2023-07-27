@@ -5,6 +5,7 @@ import io
 import json
 import os
 import pathlib
+import shutil
 import zipfile
 
 import pytest
@@ -17,9 +18,6 @@ from isofit.utils import surface_model
 # Environment variables
 EMULATOR_PATH = os.environ.get("EMULATOR_PATH", "")
 CORES = os.cpu_count()
-
-# CLI invoker for tests
-Runner = CliRunner()
 
 
 @pytest.fixture(scope="session")
@@ -70,7 +68,7 @@ def surface(cube_example):
     return str(cube_example / "surface.mat")
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture()
 def files(cube_example):
     """
     Common data files to be used by multiple tests. The return is a list in the
@@ -83,11 +81,15 @@ def files(cube_example):
 
     As of 07/24/2023 these are from the medium cube example.
     """
+    # Flush the output dir if it already exists from a previous test case
+    output = cube_example / "output"
+    shutil.rmtree(output, ignore_errors=True)
+
     return [
         str(cube_example / "medium_chunk/ang20170323t202244_rdn_7k-8k"),
         str(cube_example / "medium_chunk/ang20170323t202244_loc_7k-8k"),
         str(cube_example / "medium_chunk/ang20170323t202244_obs_7k-8k"),
-        str(cube_example / "output"),
+        str(output),
     ]
 
 
@@ -102,7 +104,8 @@ def test_apply_oe(files, args, surface):
     """
     Executes the isofit apply_oe cli command for various test cases
     """
-    result = Runner.invoke(
+    runner = CliRunner()
+    result = runner.invoke(
         cli, ["apply_oe"] + files + args + ["--surface_path", surface]
     )
 
