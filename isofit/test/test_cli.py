@@ -47,22 +47,18 @@ def surface(cube_example):
         conf = json.load(f)
 
     # Update the json file with proper paths relative to the given system
+    # fmt: off
     conf["output_model_file"] = str(cube_example / "surface.mat")
     conf["wavelength_file"] = str(
-        (
-            path
-            / "../../examples/20171108_Pasadena/remote/20170320_ang20170228_wavelength_fit.txt"
-        ).resolve()
+        (path/"../../examples/20171108_Pasadena/remote/20170320_ang20170228_wavelength_fit.txt").resolve()
     )
     conf["wavelength_file"] = str(
-        (
-            path
-            / "../../examples/20171108_Pasadena/remote/20170320_ang20170228_wavelength_fit.txt"
-        ).resolve()
+        (path/ "../../examples/20171108_Pasadena/remote/20170320_ang20170228_wavelength_fit.txt").resolve()
     )
     conf["sources"][0]["input_spectrum_files"][0] = str(
         (path / "../../data/reflectance/surface_model_ucsb").resolve()
     )
+    # fmt: on
 
     with open(cube_example / "surface.json", "w") as f:
         json.dump(conf, f)
@@ -95,57 +91,13 @@ def files(cube_example):
     ]
 
 
-@pytest.mark.parametrize(
-    "args",
-    [
-        [
-            "ang",
-            "--presolve",
-            1,
-            "--emulator_base",
-            EMULATOR_PATH,
-            "--n_cores",
-            CORES,
-            "--analytical_line",
-            1,
-            "-nn",
-            10,
-            "-nn",
-            50,
-        ],
-        [
-            "ang",
-            "--presolve",
-            1,
-            "--emulator_base",
-            EMULATOR_PATH,
-            "--n_cores",
-            CORES,
-            "--analytical_line",
-            1,
-            "-nn",
-            10,
-            "-nn",
-            50,
-            "-nn",
-            10,
-            "--pressure_elevation",
-        ],
-        [
-            "ang",
-            "--presolve",
-            1,
-            "--emulator_base",
-            EMULATOR_PATH,
-            "--n_cores",
-            CORES,
-            "--empirical_line",
-            1,
-            "--surface_category",
-            "glint_surface",
-        ],
-    ],
-)
+# fmt: off
+@pytest.mark.parametrize("args", [
+    ["ang", "--presolve", 1, "--emulator_base", EMULATOR_PATH, "--n_cores", CORES, "--analytical_line", 1, "-nn", 10, "-nn", 50,],
+    ["ang", "--presolve", 1, "--emulator_base", EMULATOR_PATH, "--n_cores", CORES, "--analytical_line", 1, "-nn", 10, "-nn", 50, "-nn", 10, "--pressure_elevation",],
+    ["ang", "--presolve", 1, "--emulator_base", EMULATOR_PATH, "--n_cores", CORES, "--empirical_line", 1, "--surface_category", "glint_surface",],
+])
+# fmt: on
 def test_apply_oe(files, args, surface):
     """
     Executes the isofit apply_oe cli command for various test cases
