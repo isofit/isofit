@@ -15,7 +15,7 @@ COPY --chown=ray:users . isofit/
 RUN conda config --prepend channels conda-forge &&\
     conda create --name isofit --clone base &&\
     conda install --name base --solver=classic conda-libmamba-solver nb_conda_kernels jupyterlab &&\
-    conda env update --name isofit --solver=libmamba --file isofit/recipe/unpinned.yml &&\
+    conda env update --name isofit --solver=libmamba --file isofit/recipe/environment_isofit_basic.yml &&\
     conda install --name isofit --solver=libmamba ipykernel &&\
     anaconda3/envs/isofit/bin/pip install --no-deps -e isofit &&\
     echo "conda activate isofit" >> ~/.bashrc
@@ -41,6 +41,9 @@ ENV EMULATOR_PATH="/home/ray/sRTMnet_v100/sRTMnet_v100"
 
 # Some ISOFIT examples require this env var to be present but does not need to be installed
 ENV MODTRAN_DIR=""
+
+# Explicitly set the shell to bash so the Jupyter server defaults to it
+ENV SHELL=/bin/bash
 
 # Start the Jupyterlab server
 EXPOSE 8888
