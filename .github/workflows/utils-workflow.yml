@@ -53,6 +53,11 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
 
+    - name: Install Isofit
+      run: |
+        source /root/.bashrc
+        pip install --editable .
+
     - name: Run Test
       run: |
         source /root/.bashrc
