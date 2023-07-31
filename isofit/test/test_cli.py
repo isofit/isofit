@@ -40,32 +40,20 @@ def surface(cube_example):
     """
     Generates the surface.mat file
     """
+    # Find the local installation path to find config and data files
     path = pathlib.Path(__file__).parent
-    with open(path / "data/surface.json") as f:
-        conf = json.load(f)
+    outp = str(cube_example / "surface.mat")
 
-    # Update the json file with proper paths relative to the given system
+    # Generate the surface.mat using the image_cube example config
     # fmt: off
-    conf["output_model_file"] = str(cube_example / "surface.mat")
-    conf["wavelength_file"] = str(
-        (path/"../../examples/20171108_Pasadena/remote/20170320_ang20170228_wavelength_fit.txt").resolve()
-    )
-    conf["wavelength_file"] = str(
-        (path/ "../../examples/20171108_Pasadena/remote/20170320_ang20170228_wavelength_fit.txt").resolve()
-    )
-    conf["sources"][0]["input_spectrum_files"][0] = str(
-        (path / "../../data/reflectance/surface_model_ucsb").resolve()
+    surface_model(
+        config_path     = str((path/"../../examples/20171108_Pasadena/configs/ang20171108t184227_surface.json").resolve()),
+        wavelength_path = str((path/"../../examples/20171108_Pasadena/remote/20170320_ang20170228_wavelength_fit.txt").resolve()),
+        output_path     = outp
     )
     # fmt: on
-
-    with open(cube_example / "surface.json", "w") as f:
-        json.dump(conf, f)
-
-    # Generate the surface.mat
-    surface_model(cube_example / "surface.json")
-
     # Return the path to the mat file
-    return str(cube_example / "surface.mat")
+    return outp
 
 
 @pytest.fixture()
