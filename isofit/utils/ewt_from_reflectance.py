@@ -117,7 +117,7 @@ def main(args: SimpleNamespace) -> None:
         )
         for n in range(len(line_breaks))
     ]
-    results = [ray.get(result) for result in result_list]
+    [ray.get(result) for result in result_list]
 
     total_time = time.time() - start_time
     logging.info(
@@ -127,8 +127,9 @@ def main(args: SimpleNamespace) -> None:
     )
 
     if args.plot_map:
+        ewt = envi.open(args.output_cwc_file + ".hdr")
         plt.figure()
-        plt.imshow(results[:, :] * 10, vmin=0, vmax=args.ewt_limit * 10, cmap="jet")
+        plt.imshow(ewt[:, :] * 10, vmin=0, vmax=args.ewt_limit * 10, cmap="jet")
         plt.colorbar()
         plt.grid()
         ax = plt.gca()
