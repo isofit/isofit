@@ -19,6 +19,7 @@
 
 import atexit
 import logging
+import multiprocessing
 import os
 import time
 from types import SimpleNamespace
@@ -78,10 +79,14 @@ def main(args: SimpleNamespace) -> None:
     logging.info("init cwc created")
 
     # Initialize ray cluster
-    start_time = time.time()
-    n_cores = args.n_cores
+
     if args.n_cores == -1:
+        n_cores = multiprocessing.cpu_count()
+        n_workers = multiprocessing.cpu_count()
+    else:
         n_cores = args.n_cores
+        n_workers = args.n_cores
+
     rayargs = {
         "ignore_reinit_error": True,
         "local_mode": args.n_cores == 1,
@@ -92,7 +97,6 @@ def main(args: SimpleNamespace) -> None:
     ray.init(**rayargs)
     atexit.register(ray.shutdown)
 
-    n_workers = 40  # Hardcoded
     line_breaks = np.linspace(0, rfls[0], n_workers, dtype=int)
     line_breaks = [
         (line_breaks[n], line_breaks[n + 1]) for n in range(len(line_breaks) - 1)
@@ -127,7 +131,6 @@ def run_lines(
     rfl_file: str,
     output_cwc_file: str,
     wl: np.array,
-    abs_co_w: np.array,
     startstop: tuple,
     loglevel: str = "INFO",
     logfile=None,
@@ -139,6 +142,7 @@ def run_lines(
         rfl_file: input reflectance file location
         output_cwc_file: output cwc file location
         wl: wavelengths
+        startstop: indices of image start and stop line to process
         loglevel: output logging level
         logfile: output logging file
     """
@@ -176,7 +180,7 @@ def run_lines(
 @click.argument("output_cwc_file", required=False)
 @click.option("--loglevel", default="INFO")
 @click.option("--logfile")
-@click.option("--n_cores", type=int, default=1)
+@click.option("--n_cores", type=int, default=-1)
 @click.option("--ray_tmp_dir")
 @click.option(
     "--debug-args",
@@ -185,7 +189,8 @@ def run_lines(
 )
 def _cli(debug_args, **kwargs):
     """\
-    Calculate Equivalent Water Thickness (EWT) / Canopy Water Content (CWC) for a set of reflectance data, based on Beer Lambert Absorption of liquid water.
+    Calculate Equivalent Water Thickness (EWT) / Canopy Water Content (CWC) for a set of reflectance data, based on Beer
+    Lambert Absorption of liquid water.
     """
     click.echo("Running EWT from Reflectance")
     if debug_args:
