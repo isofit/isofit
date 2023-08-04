@@ -106,13 +106,13 @@ def main(args: SimpleNamespace) -> None:
     logging.info("Beginning parallel CWC inversions")
     result_list = [
         run_lines.remote(
-            args.reflectance_file,
-            args.output_cwc_file,
-            wl,
-            abs_co_w,
-            line_breaks[n],
-            args.loglevel,
-            args.logfile,
+            rfl_file=args.reflectance_file,
+            output_cwc_file=args.output_cwc_file,
+            wl=wl,
+            startstop=line_breaks[n],
+            loglevel=args.loglevel,
+            logfile=args.logfile,
+            ewt_detection_limit=args.ewt_limit,
         )
         for n in range(len(line_breaks))
     ]
@@ -134,17 +134,19 @@ def run_lines(
     startstop: tuple,
     loglevel: str = "INFO",
     logfile=None,
+    ewt_detection_limit: float = 0.5,
 ) -> None:
     """
     Run a set of spectra for EWT/CWC.
 
     Args:
-        rfl_file: input reflectance file location
-        output_cwc_file: output cwc file location
-        wl: wavelengths
-        startstop: indices of image start and stop line to process
-        loglevel: output logging level
-        logfile: output logging file
+        rfl_file:            input reflectance file location
+        output_cwc_file:     output cwc file location
+        wl:                  wavelengths
+        startstop:           indices of image start and stop line to process
+        loglevel:            output logging level
+        logfile:             output logging file
+        ewt_detection_limit: upper detection limit for ewt
     """
 
     logging.basicConfig(
@@ -163,7 +165,9 @@ def run_lines(
             meas = rfl[r, c, :]
             if np.all(meas < 0):
                 continue
-            output_cwc[r - start_line, c, 0] = invert_liquid_water(meas, wl)[0]
+            output_cwc[r - start_line, c, 0] = invert_liquid_water(
+                rfl_meas=meas, wl=wl, ewt_detection_limit=ewt_detection_limit
+            )[0]
 
         logging.info(f"CWC writing line {r}")
 
@@ -182,6 +186,7 @@ def run_lines(
 @click.option("--logfile")
 @click.option("--n_cores", type=int, default=-1)
 @click.option("--ray_tmp_dir")
+@click.option("--ewt_limit", type=float, default=0.5)
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",
