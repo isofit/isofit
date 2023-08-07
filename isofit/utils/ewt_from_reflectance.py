@@ -19,6 +19,7 @@
 
 import atexit
 import logging
+import multiprocessing
 import os
 import time
 from types import SimpleNamespace
@@ -26,6 +27,7 @@ from types import SimpleNamespace
 import click
 import numpy as np
 import ray
+from matplotlib import pyplot as plt
 from osgeo import gdal
 from spectral.io import envi
 
@@ -78,10 +80,14 @@ def main(args: SimpleNamespace) -> None:
     logging.info("init cwc created")
 
     # Initialize ray cluster
-    start_time = time.time()
-    n_cores = args.n_cores
+
     if args.n_cores == -1:
+        n_cores = multiprocessing.cpu_count()
+        n_workers = multiprocessing.cpu_count()
+    else:
         n_cores = args.n_cores
+        n_workers = args.n_cores
+
     rayargs = {
         "ignore_reinit_error": True,
         "local_mode": args.n_cores == 1,
@@ -92,7 +98,6 @@ def main(args: SimpleNamespace) -> None:
     ray.init(**rayargs)
     atexit.register(ray.shutdown)
 
-    n_workers = 40  # Hardcoded
     line_breaks = np.linspace(0, rfls[0], n_workers, dtype=int)
     line_breaks = [
         (line_breaks[n], line_breaks[n + 1]) for n in range(len(line_breaks) - 1)
@@ -102,17 +107,17 @@ def main(args: SimpleNamespace) -> None:
     logging.info("Beginning parallel CWC inversions")
     result_list = [
         run_lines.remote(
-            args.reflectance_file,
-            args.output_cwc_file,
-            wl,
-            abs_co_w,
-            line_breaks[n],
-            args.loglevel,
-            args.logfile,
+            rfl_file=args.reflectance_file,
+            output_cwc_file=args.output_cwc_file,
+            wl=wl,
+            startstop=line_breaks[n],
+            loglevel=args.loglevel,
+            logfile=args.logfile,
+            ewt_detection_limit=args.ewt_limit,
         )
         for n in range(len(line_breaks))
     ]
-    results = [ray.get(result) for result in result_list]
+    [ray.get(result) for result in result_list]
 
     total_time = time.time() - start_time
     logging.info(
@@ -121,26 +126,47 @@ def main(args: SimpleNamespace) -> None:
         f"{round(rfls[0]*rfls[1]/total_time/n_workers,4)} spectra/s/core"
     )
 
+    if args.plot_map:
+        ewt = envi.open(args.output_cwc_file + ".hdr")
+        plt.figure()
+        plt.imshow(ewt[:, :] * 10, vmin=0, vmax=args.ewt_limit * 10, cmap="jet")
+        plt.colorbar()
+        plt.grid()
+        ax = plt.gca()
+        ax.xaxis.set_tick_params(labelbottom=False)
+        ax.yaxis.set_tick_params(labelleft=False)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.spines["left"].set_visible(False)
+        ax.spines["bottom"].set_visible(False)
+        plt.title("Equivalent Water Thickness\n(EWT) [mm]", size=15)
+        plt.savefig(
+            args.output_cwc_file + ".png", dpi=600, bbox_inches="tight", pad_inches=0
+        )
+        plt.close()
+
 
 @ray.remote
 def run_lines(
     rfl_file: str,
     output_cwc_file: str,
     wl: np.array,
-    abs_co_w: np.array,
     startstop: tuple,
     loglevel: str = "INFO",
     logfile=None,
+    ewt_detection_limit: float = 0.5,
 ) -> None:
     """
     Run a set of spectra for EWT/CWC.
 
     Args:
-        rfl_file: input reflectance file location
-        output_cwc_file: output cwc file location
-        wl: wavelengths
-        loglevel: output logging level
-        logfile: output logging file
+        rfl_file:            input reflectance file location
+        output_cwc_file:     output cwc file location
+        wl:                  wavelengths
+        startstop:           indices of image start and stop line to process
+        loglevel:            output logging level
+        logfile:             output logging file
+        ewt_detection_limit: upper detection limit for ewt
     """
 
     logging.basicConfig(
@@ -159,7 +185,9 @@ def run_lines(
             meas = rfl[r, c, :]
             if np.all(meas < 0):
                 continue
-            output_cwc[r - start_line, c, 0] = invert_liquid_water(meas, wl)[0]
+            output_cwc[r - start_line, c, 0] = invert_liquid_water(
+                rfl_meas=meas, wl=wl, ewt_detection_limit=ewt_detection_limit
+            )[0]
 
         logging.info(f"CWC writing line {r}")
 
@@ -176,8 +204,10 @@ def run_lines(
 @click.argument("output_cwc_file", required=False)
 @click.option("--loglevel", default="INFO")
 @click.option("--logfile")
-@click.option("--n_cores", type=int, default=1)
+@click.option("--n_cores", type=int, default=-1)
 @click.option("--ray_tmp_dir")
+@click.option("--ewt_limit", type=float, default=0.5)
+@click.option("--plot_map", is_flag=True, default=False)
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",
@@ -185,7 +215,8 @@ def run_lines(
 )
 def _cli(debug_args, **kwargs):
     """\
-    Calculate Equivalent Water Thickness (EWT) / Canopy Water Content (CWC) for a set of reflectance data, based on Beer Lambert Absorption of liquid water.
+    Calculate Equivalent Water Thickness (EWT) / Canopy Water Content (CWC) for a set of reflectance data, based on Beer
+    Lambert Absorption of liquid water.
     """
     click.echo("Running EWT from Reflectance")
     if debug_args:
