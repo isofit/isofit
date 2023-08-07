@@ -1941,7 +1941,6 @@ def _cli(debug_args, **kwargs):
     """\
     Apply OE to a block of data
     """
-    click.echo("Running analytical line")
     if debug_args:
         click.echo("Arguments to be passed:")
         for key, value in kwargs.items():
