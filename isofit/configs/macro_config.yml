@@ -1,6 +1,6 @@
 full:
   general_options:
-    sensor: emit
+    sensor: ang
     n_cores:
     segmentation_size: 40
     num_neighbors: 15
@@ -15,7 +15,7 @@ full:
   processors:
     general_inversion_parameters:
       filepaths:
-        emulator_base: /Users/bohn/Desktop/sRTMnet_v100/sRTMnet_v100
+        emulator_base: ${$EMULATOR_PATH}
       options:
         multiple_restarts: false
         multipart_transmittance: false

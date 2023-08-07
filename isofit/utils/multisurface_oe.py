@@ -7,13 +7,12 @@ import argparse
 import logging
 import multiprocessing
 import os
-from collections import OrderedDict
 from datetime import datetime
 from os.path import exists, join
 from shutil import copyfile
 
 import numpy as np
-import yaml
+from mlky import Config
 from spectral.io import envi
 
 import isofit.utils.template_construction as tc
@@ -74,9 +73,19 @@ def main(rawargs=None):
             )
             raise ValueError(err_str)
 
-    # load options from config file
-    with open(args.config_file, "r") as f:
-        config = OrderedDict(yaml.safe_load(f))
+    # load and check config file
+    isofit_path = os.path.dirname(os.path.dirname(os.path.dirname(isofit.__file__)))
+    config = Config(
+        input=args.config_file,
+        inherit="full",
+        defs=os.path.abspath(
+            os.path.join(
+                isofit_path, "isofit", "configs", "macro_config_definitions.yml"
+            )
+        ),
+        _validate=True,
+        _raise=True,
+    )
 
     opt = config["general_options"]
     gip = config["processors"]["general_inversion_parameters"]
@@ -211,8 +220,6 @@ def main(rawargs=None):
             wvl_file=paths.wavelength_path,
         )
         config_path = os.path.join(paths.data_directory, fid + "_surface.json")
-        # isofit file should live at isofit/isofit/core/isofit.py
-        isofit_path = os.path.dirname(os.path.dirname(os.path.dirname(isofit.__file__)))
 
         for source in surface_macro_config["sources"]:
             for file in [

@@ -183,7 +183,7 @@
                 .type: str
                 .required: False
                 .default: '05_2013'
-              atmosphere_type: ATM_MIDLAT_SUMMER
+              atmosphere_type:
                 .desc: TODO
                 .type: str
                 .required: False
