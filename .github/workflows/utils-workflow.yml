@@ -20,8 +20,8 @@ jobs:
     - name: Install Isofit
       run: |
         source /root/.bashrc
-        pip install --editable .
         pip install mlky
+        pip install --editable .
 
     - name: Check Utils
       run: |

@@ -24,8 +24,8 @@ jobs:
     - name: Install Isofit
       run: |
         source /root/.bashrc
-        pip install --editable .
         pip install mlky
+        pip install --editable .
 
     # - name: Running Example - image_cube/small
     #   run: |

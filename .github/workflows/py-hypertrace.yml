@@ -20,6 +20,7 @@ jobs:
     - name: Install Isofit
       run: |
         source /root/.bashrc
+        pip install mlky
         pip install --editable .
 
     - name: Download and extract hypertrace data
