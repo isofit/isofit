@@ -168,7 +168,7 @@ if __name__ == '__main__':
         sys.exit(1)
     dir = f'{args.size}_chunk'
 
-    config = f'{dir}/configs/{args.method}.json'
+    config = f'{dir}/configs/{args.method}.yml'
     if not os.path.isfile(config):
         Logger.error(f'Missing config file {config}')
         sys.exit(2)
