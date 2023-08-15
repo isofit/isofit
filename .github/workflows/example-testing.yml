@@ -25,6 +25,7 @@ jobs:
       run: |
         source /root/.bashrc
         pip install --editable .
+        pip install mlky
 
     # - name: Running Example - image_cube/small
     #   run: |

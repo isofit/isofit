@@ -21,6 +21,7 @@ jobs:
       run: |
         source /root/.bashrc
         pip install --editable .
+        pip install mlky
 
     - name: Check Utils
       run: |
