@@ -18,13 +18,6 @@ full:
   processors:
     general_inversion_parameters:
       filepaths:
-        model_discrepancy_path:
-        aerosol_climatology_path:
-        channelized_uncertainty_path:
-        surface_path:
-        rdn_factors_path:
-        modtran_path:
-        lut_config_path:
         emulator_base: "/sRTMnet_v100/sRTMnet_v100"
       options:
         multiple_restarts: false
@@ -57,15 +50,15 @@ full:
           - 5
           min: 0.05
         AOT550:
-          lut_spacing: 0
-          lut_spacing_min: 0
+          lut_spacing: 0.0
+          lut_spacing_min: 0.0
           default_range:
           - 0.001
           - 1
         GNDALT:
           lut_spacing: 0.25
           lut_spacing_min: 0.2
-          expand_range: 2
+          expand_range: 2.0
     presolve_inversion_parameters:
       max_sample_points: 200
     type_specific_inversion_parameters:
@@ -99,7 +92,7 @@ full:
         - lt
         surface_category: glint_surface
   surface:
-    output_model_file:
+    output_model_file: ""
     wavelength_file: "../../../20171108_Pasadena/remote/20170320_ang20170228_wavelength_fit.txt"
     normalize: Euclidean
     reference_windows:
