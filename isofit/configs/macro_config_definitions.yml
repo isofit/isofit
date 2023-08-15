@@ -65,8 +65,6 @@
         .type: str
         .required: False
         .default: "/tmp/ray"
-        .checks:
-          - isdir
   processors:
     .desc: TODO
     .required: True
@@ -83,30 +81,37 @@
                 .desc: TODO
                 .type: str
                 .required: False
+                .default: null
               aerosol_climatology_path:
                 .desc: TODO
                 .type: str
                 .required: False
+                .default: null
               channelized_uncertainty_path:
                 .desc: TODO
                 .type: str
                 .required: False
+                .default: null
               surface_path:
                 .desc: TODO
                 .type: str
                 .required: False
+                .default: null
               rdn_factors_path:
                 .desc: TODO
                 .type: str
                 .required: False
+                .default: null
               modtran_path:
                 .desc: TODO
                 .type: str
                 .required: False
+                .default: null
               lut_config_path:
                 .desc: TODO
                 .type: str
                 .required: False
+                .default: null
               emulator_base:
                 .desc: TODO
                 .type: str
@@ -532,10 +537,6 @@
             .desc: TODO
             .type: list
             .required: true
-            .children:
-              interval:
-              regularizer:
-              correlation:
             .default:
               - interval:
                   .desc: TODO

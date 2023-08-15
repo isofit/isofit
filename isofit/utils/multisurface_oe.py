@@ -214,7 +214,7 @@ def main(rawargs=None):
             " (i.e., spectral library)."
         )
         tc.build_surface_config(
-            macro_config=surface_macro_config,
+            macro_config=args.config_file,
             flight_id=fid,
             output_path=paths.data_directory,
             wvl_file=paths.wavelength_path,

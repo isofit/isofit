@@ -16,6 +16,7 @@ from typing import List
 
 import numpy as np
 import utm
+import yaml
 from osgeo import gdal
 from sklearn import mixture
 from spectral.io import envi
@@ -623,31 +624,39 @@ def get_angular_grid(
 
 
 def build_surface_config(
-    macro_config: dict, flight_id: str, output_path: str, wvl_file: str
+    macro_config: str, flight_id: str, output_path: str, wvl_file: str
 ):
     """Write a surface config file, using the specified pathnames and all given info.
 
     Args:
-        macro_config: dictionary of macro options for surface model
+        macro_config: path to dictionary of macro options for surface model
         flight_id: string of instrument specific flight identification number
         output_path: output directory for surface config file
         wvl_file: directory of instrument wavelength file
     """
-    if not macro_config["output_model_file"]:
+
+    # load YAML data from file
+    with open(macro_config, "r") as yaml_file:
+        macro_config_yml = yaml.safe_load(yaml_file)
+
+    surface_config_yml = macro_config_yml["full"]["surface"]
+
+    if not surface_config_yml["output_model_file"]:
         surface_path = os.path.abspath(os.path.join(output_path, "surface.mat"))
-        macro_config["output_model_file"] = surface_path
+        surface_config_yml["output_model_file"] = surface_path
 
-    if not macro_config["wavelength_file"]:
-        macro_config["wavelength_file"] = wvl_file
+    if not surface_config_yml["wavelength_file"]:
+        surface_config_yml["wavelength_file"] = wvl_file
 
-    surface_config = macro_config
+    # convert YAML data to JSON-compatible format
+    surface_config_json = json.dumps(
+        surface_config_yml, cls=SerialEncoder, indent=4, sort_keys=True
+    )
 
     output_config_name = os.path.join(output_path, flight_id + "_surface.json")
 
     with open(output_config_name, "w") as fout:
-        fout.write(
-            json.dumps(surface_config, cls=SerialEncoder, indent=4, sort_keys=True)
-        )
+        fout.write(surface_config_json)
 
 
 def build_presolve_config(
@@ -1297,6 +1306,7 @@ def load_climatology(
 
     logging.info("Loading Climatology")
     # If a configuration path has been provided, use it to get relevant info
+
     if config_path is not None:
         month = acquisition_datetime.timetuple().tm_mon
         year = acquisition_datetime.timetuple().tm_year

@@ -38,3 +38,6 @@ if os.environ.get("ISOFIT_DEBUG"):
     from .wrappers import ray
 else:
     import ray
+
+Logger.info("Register config check functions")
+from .configs import macro_config_check_functions
