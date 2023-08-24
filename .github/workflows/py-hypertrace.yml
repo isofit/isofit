@@ -27,7 +27,7 @@ jobs:
     - name: Download and extract hypertrace data
       run: |
         cd examples/py-hypertrace
-        curl -SLO https://github.com/ashiklom/isofit/releases/download/hypertrace-data/hypertrace-data.tar.gz
+        wget https://github.com/ashiklom/isofit/releases/download/hypertrace-data/hypertrace-data.tar.gz
         tar -xf hypertrace-data.tar.gz
 
     - name: Run Hypertrace
