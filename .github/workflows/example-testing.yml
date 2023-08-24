@@ -30,7 +30,7 @@ jobs:
 
     - name: 20151026_SantaMonica
       run: |
-        cd examples/20151026_SantaMonicas
+        cd examples/20151026_SantaMonica
         bash run_examples.sh
 
     - name: 20171108_Pasadena
