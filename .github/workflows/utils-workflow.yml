@@ -7,24 +7,24 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        shell: bash -el {0}
+        shell: bash -l {0}
     container:
-      image: jammont/isofit:latest
-      env:
-        ENV_NAME: test
+      image: jammont/isofit:amd64
 
     steps:
     - name: Checkout
       uses: actions/checkout@v2
 
+    - name: Enable ISOFIT Environment
+      run: |
+        echo PATH=/home/ray/anaconda3/envs/isofit/bin/:$PATH >> $GITHUB_ENV
+
     - name: Install Isofit
       run: |
-        source /root/.bashrc
-        pip install --editable .
+        pip install --no-deps .
 
     - name: Check Utils
       run: |
-        source /root/.bashrc
         python -c 'from isofit.utils import apply_oe'
         python -c 'from isofit.utils import empirical_line'
         python -c 'from isofit.utils import extractions'
@@ -36,29 +36,28 @@ jobs:
 
     - name: Run Test
       run: |
-        source /root/.bashrc
         pytest -k "not cli"
 
   comprehensive:
     runs-on: ubuntu-latest
     defaults:
       run:
-        shell: bash -el {0}
+        shell: bash -l {0}
     container:
-      image: jammont/isofit:latest
-      env:
-        ENV_NAME: test
+      image: jammont/isofit:amd64
 
     steps:
     - name: Checkout
       uses: actions/checkout@v2
 
+    - name: Enable ISOFIT Environment
+      run: |
+        echo PATH=/home/ray/anaconda3/envs/isofit/bin/:$PATH >> $GITHUB_ENV
+
     - name: Install Isofit
       run: |
-        source /root/.bashrc
-        pip install --editable .
+        pip install --no-deps .
 
     - name: Run Test
       run: |
-        source /root/.bashrc
         pytest

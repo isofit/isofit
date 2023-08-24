@@ -11,52 +11,39 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        shell: bash -el {0}
+        shell: bash -l {0}
     container:
-      image: jammont/isofit:latest
-      env:
-        ENV_NAME: test
+      image: jammont/isofit:amd64
 
     steps:
     - name: Checkout
       uses: actions/checkout@v2
 
+    - name: Enable ISOFIT Environment
+      run: |
+        echo PATH=/home/ray/anaconda3/envs/isofit/bin/:$PATH >> $GITHUB_ENV
+
     - name: Install Isofit
       run: |
-        source /root/.bashrc
-        pip install --editable .
+        pip install --no-deps .
 
-    # - name: Running Example - image_cube/small
-    #   run: |
-    #     cd examples/image_cube
-    #     bash run_small.sh
-    #
-    # - name: Running Example - image_cube/medium
-    #   run: |
-    #     cd examples/image_cube
-    #     bash run_medium.sh
-
-    - name: Running Example - 20151026_SantaMonica
+    - name: 20151026_SantaMonica
       run: |
-        source /root/.bashrc
-        cd examples/20151026_SantaMonica
+        cd examples/20151026_SantaMonicas
         bash run_examples.sh
 
-    - name: Running Example - 20171108_Pasadena
+    - name: 20171108_Pasadena
       run: |
-        source /root/.bashrc
         cd examples/20171108_Pasadena
         bash run_example_modtran.sh
         python run_topoflux_example.py
 
-    - name: Running Example - 20190806_ThermalIR
+    - name: 20190806_ThermalIR
       run: |
-        source /root/.bashrc
         cd examples/20190806_ThermalIR
         python run_example_modtran_one.py
 
-    - name: Running Example - profiling_cube/small
+    - name: profiling_cube/small
       run: |
-        source /root/.bashrc
         cd examples/profiling_cube
         ISOFIT_DEBUG=1 python run_profiling.py
