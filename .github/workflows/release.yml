@@ -12,6 +12,7 @@ jobs:
         shell: bash -l {0}
     container:
       image: jammont/isofit:amd64
+      options: --user root
 
     steps:
     - name: Enable ISOFIT Environment
