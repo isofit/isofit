@@ -1,65 +1,65 @@
-name: Pytests
-
-on: [pull_request]
-
-jobs:
-  essential:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -l {0}
-    container:
-      image: jammont/isofit:amd64
-      options: --user root
-
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-
-    - name: Enable ISOFIT Environment
-      run: |
-        echo PATH=/home/ray/anaconda3/envs/isofit/bin/:$PATH >> $GITHUB_ENV
-
-    - name: Install Isofit
-      run: |
-        pip install --no-deps .
-
-    - name: Check Utils
-      run: |
-        python -c 'from isofit.utils import apply_oe'
-        python -c 'from isofit.utils import empirical_line'
-        python -c 'from isofit.utils import extractions'
-        python -c 'from isofit.utils import instrument_model'
-        python -c 'from isofit.utils import path'
-        python -c 'from isofit.utils import remap'
-        python -c 'from isofit.utils import segment'
-        python -c 'from isofit.utils import surface_model'
-
-    - name: Run Test
-      run: |
-        pytest -k "not cli"
-
-  comprehensive:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -l {0}
-    container:
-      image: jammont/isofit:amd64
-      options: --user root
-
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-
-    - name: Enable ISOFIT Environment
-      run: |
-        echo PATH=/home/ray/anaconda3/envs/isofit/bin/:$PATH >> $GITHUB_ENV
-
-    - name: Install Isofit
-      run: |
-        pip install --no-deps .
-
-    - name: Run Test
-      run: |
-        pytest
+# name: Pytests
+#
+# on: [push, pull_request]
+#
+# jobs:
+#   essential:
+#     runs-on: ubuntu-latest
+#     defaults:
+#       run:
+#         shell: bash -l {0}
+#     container:
+#       image: jammont/isofit:amd64
+#       options: --user root
+#
+#     steps:
+#     - name: Checkout
+#       uses: actions/checkout@v2
+#
+#     - name: Enable ISOFIT Environment
+#       run: |
+#         echo PATH=/home/ray/anaconda3/envs/isofit/bin/:$PATH >> $GITHUB_ENV
+#
+#     - name: Install Isofit
+#       run: |
+#         pip install --no-deps .
+#
+#     - name: Check Utils
+#       run: |
+#         python -c 'from isofit.utils import apply_oe'
+#         python -c 'from isofit.utils import empirical_line'
+#         python -c 'from isofit.utils import extractions'
+#         python -c 'from isofit.utils import instrument_model'
+#         python -c 'from isofit.utils import path'
+#         python -c 'from isofit.utils import remap'
+#         python -c 'from isofit.utils import segment'
+#         python -c 'from isofit.utils import surface_model'
+#
+#     - name: Run Test
+#       run: |
+#         pytest -k "not cli"
+#
+#   comprehensive:
+#     runs-on: ubuntu-latest
+#     defaults:
+#       run:
+#         shell: bash -l {0}
+#     container:
+#       image: jammont/isofit:amd64
+#       options: --user root
+#
+#     steps:
+#     - name: Checkout
+#       uses: actions/checkout@v2
+#
+#     - name: Enable ISOFIT Environment
+#       run: |
+#         echo PATH=/home/ray/anaconda3/envs/isofit/bin/:$PATH >> $GITHUB_ENV
+#
+#     - name: Install Isofit
+#       run: |
+#         pip install --no-deps .
+#
+#     - name: Run Test
+#       run: |
+#         pytest

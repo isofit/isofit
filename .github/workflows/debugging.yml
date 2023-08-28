@@ -15,5 +15,7 @@ jobs:
     steps:
     - name: Debugging
       run: |
-        du --max-depth=1 -h /__w/
         df -h
+        ls /
+        du --max-depth=1 -h /
+        du --max-depth=1 -h /__w
