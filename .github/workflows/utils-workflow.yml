@@ -13,6 +13,11 @@ jobs:
       options: --user root
 
     steps:
+    - name: Clean docker and print disk space
+      run: |
+        sudo docker system prune --all
+        df -h
+
     - name: Checkout
       uses: actions/checkout@v2
 

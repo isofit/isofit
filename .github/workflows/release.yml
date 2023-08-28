@@ -15,6 +15,10 @@ jobs:
       options: --user root
 
     steps:
+    - name: Clean docker and print disk space
+      run: |
+        sudo docker system prune --all
+        df -h
     - name: Enable ISOFIT Environment
       run: |
         echo PATH=/home/ray/anaconda3/envs/isofit/bin/:$PATH >> $GITHUB_ENV
