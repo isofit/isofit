@@ -1,0 +1,19 @@
+name: Debugging
+
+on: [push, pull_request]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    # defaults:
+    #   run:
+    #     shell: bash -l {0}
+    # container:
+    #   image: jammont/isofit:amd64
+    #   options: --user root
+
+    steps:
+    - name: Debugging
+      run: |
+        du --max-depth=1 -h /__w/
+        df -h

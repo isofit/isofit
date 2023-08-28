@@ -2,12 +2,12 @@
 #   Bash shells do not use ~/.profile or ~/.bashrc so these shells need to be explicitely declared as shell: bash -el {0}
 #   https://github.com/marketplace/actions/setup-miniconda#important
 #
-name: Example Tests
+name: Examples
 
-on: [push, pull_request]
+on: [pull_request]
 
 jobs:
-  examples:
+  tests:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -19,7 +19,7 @@ jobs:
     steps:
     - name: Debugging
       run: |
-        du --max-depth=1 -h /dev/root/
+        du --max-depth=1 -h /__w/
         df -h
 
     - name: Checkout
