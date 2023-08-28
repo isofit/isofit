@@ -1,52 +1,52 @@
-# # Notes:
-# #   Bash shells do not use ~/.profile or ~/.bashrc so these shells need to be explicitely declared as shell: bash -el {0}
-# #   https://github.com/marketplace/actions/setup-miniconda#important
-# #
-# name: Examples
+# Notes:
+#   Bash shells do not use ~/.profile or ~/.bashrc so these shells need to be explicitely declared as shell: bash -el {0}
+#   https://github.com/marketplace/actions/setup-miniconda#important
 #
-# on: [push, pull_request]
-#
-# jobs:
-#   tests:
-#     runs-on: ubuntu-latest
-#     defaults:
-#       run:
-#         shell: bash -l {0}
-#     container:
-#       image: jammont/isofit:amd64
-#       options: --user root
-#
-#     steps:
-#     - name: Debugging
-#       run: |
-#         du --max-depth=1 -h /__w/
-#         df -h
-#
-#     - name: Checkout
-#       uses: actions/checkout@v2
-#
-#     - name: Install Isofit
-#       run: |
-#         echo PATH=/home/ray/anaconda3/envs/isofit/bin/:$PATH >> $GITHUB_ENV
-#         pip install --no-deps --editable .
-#
-#     - name: 20151026_SantaMonica
-#       run: |
-#         cd examples/20151026_SantaMonica
-#         bash run_examples.sh
-#
-#     - name: 20171108_Pasadena
-#       run: |
-#         cd examples/20171108_Pasadena
-#         bash run_example_modtran.sh
-#         python run_topoflux_example.py
-#
-#     - name: 20190806_ThermalIR
-#       run: |
-#         cd examples/20190806_ThermalIR
-#         python run_example_modtran_one.py
-#
-#     - name: profiling_cube/small
-#       run: |
-#         cd examples/profiling_cube
-#         ISOFIT_DEBUG=1 python run_profiling.py
+name: Examples
+
+on: [push, pull_request]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+    container:
+      image: jammont/isofit:amd64
+      options: --user root
+
+    steps:
+    - name: Debugging
+      run: |
+        du --max-depth=1 -h /__w/
+        df -h
+
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Install Isofit
+      run: |
+        echo PATH=/home/ray/anaconda3/envs/isofit/bin/:$PATH >> $GITHUB_ENV
+        pip install --no-deps --editable .
+
+    - name: 20151026_SantaMonica
+      run: |
+        cd examples/20151026_SantaMonica
+        bash run_examples.sh
+
+    - name: 20171108_Pasadena
+      run: |
+        cd examples/20171108_Pasadena
+        bash run_example_modtran.sh
+        python run_topoflux_example.py
+
+    - name: 20190806_ThermalIR
+      run: |
+        cd examples/20190806_ThermalIR
+        python run_example_modtran_one.py
+
+    - name: profiling_cube/small
+      run: |
+        cd examples/profiling_cube
+        ISOFIT_DEBUG=1 python run_profiling.py
