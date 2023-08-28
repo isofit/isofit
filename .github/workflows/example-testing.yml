@@ -17,21 +17,18 @@ jobs:
       options: --user root
 
     steps:
-    - name: Clean docker and print disk space
+    - name: Debugging
       run: |
-        sudo docker system prune --all
+        du --max-depth=1 -h /dev/root/
         df -h
-      
+
     - name: Checkout
       uses: actions/checkout@v2
 
-    - name: Enable ISOFIT Environment
-      run: |
-        echo PATH=/home/ray/anaconda3/envs/isofit/bin/:$PATH >> $GITHUB_ENV
-
     - name: Install Isofit
       run: |
-        pip install --no-deps .
+        echo PATH=/home/ray/anaconda3/envs/isofit/bin/:$PATH >> $GITHUB_ENV
+        pip install --no-deps --editable .
 
     - name: 20151026_SantaMonica
       run: |
