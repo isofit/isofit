@@ -15,4 +15,4 @@ jobs:
     steps:
     - name: Debugging
       run: |
-        du ${GITHUB_WORKSPACE} -h -d 1
+        df -h
