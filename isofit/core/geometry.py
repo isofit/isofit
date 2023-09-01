@@ -33,11 +33,11 @@ class Geometry:
     def __init__(
         self,
         obs=None,
-        glt=None,
+        # glt=None,
         loc=None,
-        ds=None,
+        # ds=None,
         esd=None,
-        pushbroom_column=None,
+        # pushbroom_column=None,
         bg_rfl=None,
     ):
         # Set some benign defaults...
@@ -46,19 +46,22 @@ class Geometry:
         self.observer_azimuth = 0
         self.observer_altitude_km = None
         self.surface_elevation_km = None
-        self.datetime = None
-        self.day_of_year = None
-        self.latitude = None
-        self.longitude = None
-        self.longitudeE = None
-        self.gmtime = None
+        # self.datetime = None
+        # self.day_of_year = None
+        # self.latitude = None
+        # self.longitude = None # Westing
+        # TERM self.longitudeE = None
+        # self.gmtime = None
         self.earth_sun_distance = None
-        self.OBSZEN = 180.0
-        self.RELAZ = 0.0
-        self.TRUEAZ = 0.0
-        self.H1ALT = None
-        self.umu = 1.0
-        self.pushbroom_column = pushbroom_column
+        self.earth_sun_distance_reference = np.loadtxt(
+            engine_config.earth_sun_distance_file
+        )
+        # REN self.OBSZEN = 180.0
+        # TERM self.RELAZ = 0.0
+        # TERM self.TRUEAZ = 0.0
+        # REN self.H1ALT = None
+        # TERM self.umu = 1.0
+        # TERM self.pushbroom_column = pushbroom_column
         self.bg_rfl = bg_rfl
         self.cos_i = None
 
@@ -103,31 +106,32 @@ class Geometry:
                 + self.path_length_km * np.cos(np.deg2rad(self.observer_zenith))
             )
 
-        # The ds object is an optional date object, defining the time of
-        # the observation.
-        if ds is not None:
-            self.datetime = datetime.strptime(ds, "%Y%m%dt%H%M%S")
-            self.day_of_year = self.datetime.timetuple().tm_yday
+        ## The ds object is an optional date object, defining the time of
+        ## the observation.
+        # if ds is not None:
+        #    self.datetime = datetime.strptime(ds, "%Y%m%dt%H%M%S")
+        #    self.day_of_year = self.datetime.timetuple().tm_yday
 
         # Finally, the earth sun distance is an array that maps the day of the
         # year (zero-indexed!) onto the mean-relative distance to the sun.
-        if esd is not None:
-            self.earth_sun_distance = esd.copy()
+        # if esd is not None:
+        #    self.earth_sun_distance = esd.copy()
 
-    def coszen(self):
-        """Return the cosine of the solar zenith."""
-        self.dt = self.datetime
-        az, zen, ra, dec, h = sunpos(
-            self.datetime,
-            self.latitude,
-            self.longitudeE,
-            self.surface_elevation_km * 1000.0,
-            radians=True,
-        )
-        return np.cos(zen)
 
-    def sundist(self):
-        """Return the mean-relative distance to the sun as defined by the
-        day of the year.  Note that we use zero-indexed table, offset by one
-        from the actual cardenality, per Python conventions..."""
-        return float(self.earth_sun_distance[self.day_of_year - 1, 1])
+# def coszen(self):
+#     """Return the cosine of the solar zenith."""
+#     self.dt = self.datetime
+#     az, zen, ra, dec, h = sunpos(
+#         self.datetime,
+#         self.latitude,
+#         self.longitudeE,
+#         self.surface_elevation_km * 1000.0,
+#         radians=True,
+#     )
+#     return np.cos(zen)
+
+# def sundist(self):
+#     """Return the mean-relative distance to the sun as defined by the
+#     day of the year.  Note that we use zero-indexed table, offset by one
+#     from the actual cardenality, per Python conventions..."""
+#     return float(self.earth_sun_distance[self.day_of_year - 1, 1])

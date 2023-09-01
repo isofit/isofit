@@ -66,6 +66,10 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         self.template_file = None
         """str: A template file to be used as the base-configuration for the given radiative transfer engine."""
 
+        self._emission_mode_type = bool
+        self.emission_mode = False
+        """bool: Run the simulation in emission mode"""
+
         self._lut_names_type = list()
         self.lut_names = None
         """List: Names of the elements to run this radiative transfer element on.  Must be a subset
