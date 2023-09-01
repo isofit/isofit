@@ -1413,10 +1413,19 @@ def build_presolve_config(
     else:
         engine_name = "sRTMnet"
 
+    if surface_category == "glint_surface":
+        glint_model = True
+        multipart_transmittance = True
+    else:
+        glint_model = False
+        multipart_transmittance = False
+
     radiative_transfer_config = {
+        "glint_model": glint_model,
         "radiative_transfer_engines": {
             "vswir": {
                 "engine_name": engine_name,
+                "multipart_transmittance": multipart_transmittance,
                 "lut_path": paths.lut_h2o_directory,
                 "template_file": paths.h2o_template_path,
                 "lut_names": ["H2OSTR"],
@@ -1587,10 +1596,20 @@ def build_main_config(
         engine_name = "modtran"
     else:
         engine_name = "sRTMnet"
+
+    if surface_category == "glint_surface":
+        glint_model = True
+        multipart_transmittance = True
+    else:
+        glint_model = False
+        multipart_transmittance = False
+
     radiative_transfer_config = {
+        "glint_model": glint_model,
         "radiative_transfer_engines": {
             "vswir": {
                 "engine_name": engine_name,
+                "multipart_transmittance": multipart_transmittance,
                 "lut_path": paths.lut_modtran_directory,
                 "aerosol_template_file": paths.aerosol_tpl_path,
                 "template_file": paths.modtran_template_path,
