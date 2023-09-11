@@ -46,6 +46,10 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         self.engine_base_dir = None
         """str: base directory of the given radiative transfer engine on user's OS."""
 
+        self._engine_lut_file_type = str
+        self.engine_lut_file = None
+        """str: File containing the prebuilt LUT file (hdf5)."""
+
         self._wavelength_file_type = str
         self.wavelength_file = None
         """str: Optional path to wavelength file for high-res atmospheric calculations"""
@@ -69,6 +73,13 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         self._emission_mode_type = bool
         self.emission_mode = False
         """bool: Run the simulation in emission mode"""
+
+        self._topography_model_type = bool
+        self.topography_model = False
+        """
+        Flag to indicated whether to use a topographic-flux (topoflux)
+        implementation of the forward model. 
+        """
 
         self._lut_names_type = list()
         self.lut_names = None
@@ -247,13 +258,6 @@ class RadiativeTransferConfig(BaseConfigSection):
     """
 
     def __init__(self, sub_configdic: dict = None):
-        self._topography_model_type = bool
-        self.topography_model = False
-        """
-        Flag to indicated whether to use atopographic-flux (topoflux)
-        implementation of the forward model. Only currently functional
-        with multipart MODTRAN
-        """
 
         self._statevector_type = StateVectorConfig
         self.statevector: StateVectorConfig = StateVectorConfig({})

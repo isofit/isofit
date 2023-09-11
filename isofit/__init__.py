@@ -57,6 +57,12 @@ def cli(ctx, version, path):
             click.echo(__path__[0])
 
 
+def get_isofit_path() -> str:
+    """Get location of isofit installation"""
+    isofit_path = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    return isofit_path
+
+
 # Import all of the files that define a _cli command to register them
 import isofit.core.isofit
 import isofit.utils.add_HRRR_profiles_to_modtran_config

@@ -19,9 +19,12 @@
 #
 
 import logging
+import os
 from datetime import datetime
 
 import numpy as np
+
+from isofit import get_isofit_path
 
 from .sunposition import sunpos
 
@@ -53,9 +56,11 @@ class Geometry:
         # TERM self.longitudeE = None
         # self.gmtime = None
         self.earth_sun_distance = None
-        self.earth_sun_distance_reference = np.loadtxt(
-            engine_config.earth_sun_distance_file
+
+        self.earth_sun_distance_path = os.path.join(
+            get_isofit_path(), "data", "earth_sun_distance.txt"
         )
+        self.earth_sun_distance_reference = np.loadtxt(self.earth_sun_distance_path)
         # REN self.OBSZEN = 180.0
         # TERM self.RELAZ = 0.0
         # TERM self.TRUEAZ = 0.0
@@ -74,33 +79,27 @@ class Geometry:
             self.observer_zenith = obs[2]  # 0 to 90 from zenith
             self.solar_azimuth = obs[3]  # 0 to 360 clockwise from N
             self.solar_zenith = obs[4]  # 0 to 90 from zenith
-            self.OBSZEN = 180.0 - abs(obs[2])  # MODTRAN convention?
-            self.RELAZ = obs[1] - obs[3] + 180.0
-            self.TRUEAZ = obs[1]  # MODTRAN convention?
-            self.umu = np.cos(obs[2] / 360.0 * 2.0 * np.pi)  # Libradtran
+            # self.OBSZEN = 180.0 - abs(self.observer_zenith)  # MODTRAN convention?
+            # self.RELAZ = self.observer_azimuth - self.solar_azimuth + 180.0
+            # self.TRUEAZ = self.observer_azimuth  # MODTRAN convention?
+            # self.umu = np.cos(self.observer_zenith / 360.0 * 2.0 * np.pi)  # Libradtran
             self.cos_i = obs[8]  # cosine of eSZA
+            self.relative_azimuth = self.observer_azimuth - self.solar_azimuth + 180.0
 
         # The 'loc' object is a list-like object that optionally contains
         # latitude and longitude information about the surface being
         # observed.
         if loc is not None:
             self.surface_elevation_km = loc[2] / 1000.0
-            self.latitude = loc[1]
-            self.longitude = loc[0]
-            self.longitudeE = -loc[0]
+            self.latitude = loc[1]  # Northing
+            self.longitude = loc[0]  # Westing
             if self.longitude < 0:
                 self.longitude = 360.0 - self.longitude
 
-            logging.debug("Geometry lat: %f lon: %f" % (self.latitude, self.longitude))
-            logging.debug(
-                "Geometry observer OBSZEN: %f RELAZ: %f GNDALT: %f"
-                % (self.OBSZEN, self.RELAZ, self.surface_elevation_km)
-            )
-
         if loc is not None and obs is not None:
-            self.H1ALT = self.surface_elevation_km + self.path_length_km * np.cos(
-                np.deg2rad(self.observer_zenith)
-            )
+            # self.H1ALT = self.surface_elevation_km + self.path_length_km * np.cos(
+            #    np.deg2rad(self.observer_zenith)
+            # )
             self.observer_altitude_km = (
                 self.surface_elevation_km
                 + self.path_length_km * np.cos(np.deg2rad(self.observer_zenith))
@@ -116,6 +115,18 @@ class Geometry:
         # year (zero-indexed!) onto the mean-relative distance to the sun.
         # if esd is not None:
         #    self.earth_sun_distance = esd.copy()
+
+    def get_esd_factor(self, date_time: datetime):
+        """Get distance ratio from sun based on time of year, relative to day 1
+        Args:
+            date_time: datetime to search
+
+        Returns:
+            float: ratio of earth sun distnace based on datetime.
+        """
+
+        day_of_year = date_time.timetuple().tm_yday
+        return float(self.earth_sun_distance[day_of_year - 1, 1])
 
 
 # def coszen(self):

@@ -901,7 +901,7 @@ class ModtranRT(TabularRT):
                 ix = self.statevector_names.index(name)
                 point[point_ind] = x_RT[ix]
             elif name == "OBSZEN":
-                point[point_ind] = geom.OBSZEN
+                point[point_ind] = 180.0 - abs(geom.observer_zenith)
             elif name == "GNDALT":
                 point[point_ind] = geom.surface_elevation_km
             elif name == "H1ALT":
