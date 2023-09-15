@@ -32,6 +32,8 @@ import os
 
 Logger = logging.getLogger("isofit")
 
+root = os.path.dirname(os.path.abspath(__file__))
+
 if os.environ.get("ISOFIT_DEBUG"):
     Logger.info("Using ISOFIT internal ray")
     from .wrappers import ray
