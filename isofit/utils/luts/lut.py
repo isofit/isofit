@@ -10,7 +10,7 @@ import numpy as np
 Logger = logging.getLogger(__file__)
 
 
-def writeHDF5(file: str, group="data", **data) -> str:
+def writeHDF5(file: str, group: str = "data", **data) -> str:
     """
     Simply writes data from a dictionary into an HDF5 file.
 
@@ -43,7 +43,7 @@ def writeHDF5(file: str, group="data", **data) -> str:
     return file
 
 
-def readHDF5(file, group="data", subset=None) -> dict:
+def readHDF5(file: str, group: str = "data", subset: list = None) -> dict:
     """
     Simply reads data from an HDF5
 
