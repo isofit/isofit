@@ -7,6 +7,7 @@ import re
 
 import numpy as np
 import pandas as pd
+import xarray as xr
 
 from isofit import ray
 from isofit.utils.luts.channel_read import load_chn_single
@@ -346,12 +347,18 @@ def parseChannelXarray(*args, **kwargs):
     ds = ds.set_index(index="wl")
     ds = ds.rename(index="wl")
 
-    ds.attrs = ps
+    for key, val in ps.items():
+        ds[key] = val
 
     return ds
 
 
-ds = parseChannelXarray(
-    "/Users/jamesmo/projects/isofit/examples/20171108_Pasadena/lut_multi/AOT550-0.1000_H2OSTR-1.5000.chn"
-)
-ds
+def parseChannelsXarray(files):
+    """
+    Combines multiple LUT Datasets together
+    """
+    data = []
+    for file in files:
+        data.append(parseChannelXarray(file))
+
+    return xr.concat(data, dim="lut")
