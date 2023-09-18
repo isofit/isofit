@@ -19,10 +19,14 @@
 # Author: Niklas Bohn, urs.n.bohn@jpl.nasa.gov
 #
 
+import logging
 import os
+import subprocess
+import time
 from collections import OrderedDict
 
 import numpy as np
+import ray
 
 from isofit.configs import Config
 from isofit.configs.sections.implementation_config import ImplementationConfig
@@ -287,3 +291,43 @@ class RadiativeTransferEngine:
 
     def read_simulation_results(self, point: np.array):
         raise AssertionError("Must populate simulation call")
+
+    def run_simulations(command_list: list, n_processes: int = 1) -> None:
+        """
+        Run a list of commands in parallel
+
+        Parameters
+        ----------
+        command_list: list
+            List of commands to run
+        n_processes: int, defaults=1
+            Number of processes to run in parallel
+        """
+
+        # Make the LUT calls (in parallel if specified)
+        results = ray.get(
+            [spawn_rt.remote(rebuild_cmd, lut_dir) for rebuild_cmd in command_list]
+        )
+
+
+@ray.remote
+def spawn_rt(
+    command: str,
+    local_dir: str,
+    simulation_output_base: str,
+    lut_output_file: str,
+    max_buffer_time: float = 2.0,
+):
+    """Run a CLI command."""
+
+    logging.debug(command)
+
+    # Add a very slight timing offset to prevent all subprocesses
+    # starting simultaneously
+    time.sleep(float(np.random.random(1)) * max_buffer_time)
+
+    # Step 1: Run the simulation
+    subprocess.call(command, shell=True, cwd=local_dir)
+
+    # Step 2: Read the simulation
+    sim_results = read_simulation_results(simulation_output_base)
