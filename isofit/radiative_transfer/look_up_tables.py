@@ -103,7 +103,7 @@ class TabularRT:
 
         # We use a sorted dictionary here so that filenames for lookup
         # table (LUT) grid points are always constructed the same way, with
-        # consistent dimesion ordering). Every state vector element has
+        # consistent dimension ordering). Every state vector element has
         # a lookup table dimension, but some lookup table dimensions
         # (like geometry parameters) may not be in the state vector.
         # TODO: enforce a requirement that makes all SV elements be inside the LUT
