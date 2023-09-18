@@ -19,6 +19,7 @@
 # Author: Niklas Bohn, urs.n.bohn@jpl.nasa.gov
 #
 
+import os
 from collections import OrderedDict
 
 import numpy as np
@@ -31,6 +32,7 @@ from isofit.configs.sections.radiative_transfer_config import (
 from isofit.configs.sections.statevector_config import StateVectorElementConfig
 from isofit.core import common
 from isofit.core.geometry import Geometry
+from isofit.utils.luts import readHDF5
 
 
 class RadiativeTransferEngine:
@@ -61,6 +63,11 @@ class RadiativeTransferEngine:
         self.x_RT_lut_indices = None
 
         self.prebuilt_lut_file = engine_config.engine_lut_file
+        # Read prebuilt LUT from HDF5 if existing
+        if os.path.isfile(self.prebuilt_lut_file):
+            self.lut = readHDF5(file=self.prebuilt_lut_file)
+        else:
+            self.lut = None
 
         # Enable special modes - argument: get from HDF5
         self.multipart_transmittance = engine_config.multipart_transmittance
@@ -83,8 +90,7 @@ class RadiativeTransferEngine:
                 "t_up_dif",
             ]
 
-        self.solar_irr = None  # TODO - get from HDF5
-
+        # Get instrument wavelengths and FWHM
         if engine_config.wavelength_file is not None:
             wavelength_file = engine_config.wavelength_file
         else:
@@ -117,24 +123,36 @@ class RadiativeTransferEngine:
         self.cache = {}
         self.cache_size = full_config.forward_model.radiative_transfer.cache_size
 
-        # We use a sorted dictionary here so that filenames for lookup
-        # table (LUT) grid points are always constructed the same way (with
-        # consistent dimension ordering). Every state vector element has
-        # a lookup table dimension, but some lookup table dimensions
-        # (like geometry parameters) may not be in the state vector.
-        full_lut_grid = full_config.forward_model.radiative_transfer.lut_grid
+        # If prebuilt LUT is available, read a few important LUT parameters and functions
+        if self.lut:
+            # TODO: ensure consistency with group keys in LUT file
+            self.solar_irr = self.lut["MISCELLANEOUS"]["sols"]
+            # We use a sorted dictionary here so that filenames for lookup
+            # table (LUT) grid points are always constructed the same way (with
+            # consistent dimension ordering). Every state vector element has
+            # a lookup table dimension, but some lookup table dimensions
+            # (like geometry parameters) may not be in the state vector.
+            # TODO: ensure consistency with group keys in LUT file
+            full_lut_grid = self.lut["sample_space"]
+        else:
+            self.solar_irr = None
+            full_lut_grid = full_config.forward_model.radiative_transfer.lut_grid
 
-        # selectively get lut components that are in this particular RTE
+        # Selectively get lut components that are in this particular RTE
         self.lut_grid_config = OrderedDict()
 
         for key, value in full_lut_grid.items():
             if key in self.lut_names:
                 self.lut_grid_config[key] = value
 
-        # selectively get statevector components that are in this particular RTE
+        # Selectively get statevector components that are in this particular RTE
         self.statevector_names = (
             full_config.forward_model.radiative_transfer.statevector.get_element_names()
         )
+
+        # If not prebuilt LUT is provided, set up directory for freshly created LUTs
+        if not self.lut:
+            self.lut_dir = engine_config.lut_path
 
         self.n_point = len(self.lut_grid_config)
         self.n_state = len(self.statevector_names)
@@ -169,7 +187,7 @@ class RadiativeTransferEngine:
         self.lut_interp_types = []
 
         for key, grid_values in self.lut_grid_config.items():
-            # do some quick checks on the values
+            # Do some quick checks on the values
             # For forward (simulation) mode, 1-dimensional LUT grids are OK!
             if len(grid_values) == 1 and not self.implementation_mode == "simulation":
                 err = (
@@ -238,7 +256,7 @@ class RadiativeTransferEngine:
         )
         return filename
 
-    # TODO - change this name
+    # TODO: change this name
     def get(self, x_RT: np.array, geom: Geometry):
         """Retrieve point from LUT interpolator
         Args:
