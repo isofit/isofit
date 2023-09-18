@@ -66,7 +66,7 @@ class Geometry:
         # AVIRIS-NG format.  It arrives to our initializer in the form of
         # a list-like object...
         if obs is not None:
-            self.path_length = obs[0]
+            self.path_length_km = obs[0] / 1000
             self.observer_azimuth = obs[1]  # 0 to 360 clockwise from N
             self.observer_zenith = obs[2]  # 0 to 90 from zenith
             self.solar_azimuth = obs[3]  # 0 to 360 clockwise from N
@@ -95,12 +95,12 @@ class Geometry:
             )
 
         if loc is not None and obs is not None:
-            self.H1ALT = self.surface_elevation_km + self.path_length * np.cos(
+            self.H1ALT = self.surface_elevation_km + self.path_length_km * np.cos(
                 np.deg2rad(self.observer_zenith)
             )
             self.observer_altitude_km = (
                 self.surface_elevation_km
-                + self.path_length * np.cos(np.deg2rad(self.observer_zenith))
+                + self.path_length_km * np.cos(np.deg2rad(self.observer_zenith))
             )
 
         # The ds object is an optional date object, defining the time of
