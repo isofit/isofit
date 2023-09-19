@@ -78,7 +78,14 @@ class RadiativeTransferEngine:
         self.topography_model = engine_config.topography_model
 
         # TBD
-        self.lut_names = ["rhoatm", "transm", "sphalb", "transup"]
+        self.lut_names = [
+            "rhoatm",
+            "transm_down_dir",
+            "transm_down_dif",
+            "transm_up_dir",
+            "transm_up_dif",
+            "sphalb",
+        ]
         if self.emission_mode:
             self.lut_names = [
                 "thermal_upwelling",
@@ -87,12 +94,6 @@ class RadiativeTransferEngine:
 
         if self.multipart_transmittance:
             self.test_rfls = [0, 0.1, 0.5]
-            self.lut_names = self.lut_names + [
-                "t_down_dir",
-                "t_down_dif",
-                "t_up_dir",
-                "t_up_dif",
-            ]
 
         # Get instrument wavelengths and FWHM
         if engine_config.wavelength_file is not None:
