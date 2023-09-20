@@ -284,7 +284,7 @@ class RadiativeTransfer:
                     i = self.statevec_names.index("H2OSTR")
                     x_RT_perturb = x_RT.copy()
                     x_RT_perturb[i] = x_RT[i] * perturb
-                    rdne = self.calc_rdn(x_RT_perturb, rfl, Ls, geom)
+                    rdne = self.calc_rdn(x_RT_perturb, x_surface, rfl, Ls, geom)
                     Kb_RT.append((rdne - rdn) / eps)
 
         Kb_RT = np.array(Kb_RT).T

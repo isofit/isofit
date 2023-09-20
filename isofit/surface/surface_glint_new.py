@@ -37,7 +37,7 @@ class GlintSurface(ThermalSurface):
         self.statevec_names.extend(["SUN_GLINT", "SKY_GLINT"])
         self.scale.extend([1.0, 1.0])
         self.init.extend([0.02, 1 / np.pi])
-        self.bounds.extend([[0, 1], [0, 1]])
+        self.bounds.extend([[-1, 10], [0, 10]])  # Gege (2021), WASI user manual
         self.n_state = self.n_state + 2
         self.glint_ind = len(self.statevec_names) - 2
 
@@ -61,7 +61,7 @@ class GlintSurface(ThermalSurface):
     def fit_params(self, rfl_meas, geom, *args):
         """Given a reflectance estimate and one or more emissive parameters,
         fit a state vector."""
-
+        # first guess suggestion: E_dd => see below, E_ds => ~0.01
         glint_band = np.argmin(abs(900 - self.wl))
         glint = np.mean(rfl_meas[(glint_band - 2) : glint_band + 2])
         glint = max(
@@ -70,7 +70,8 @@ class GlintSurface(ThermalSurface):
         )
         lamb_est = rfl_meas - glint
         x = ThermalSurface.fit_params(self, lamb_est, geom)
-        x[self.glint_ind :] = 0.5 * glint
+        x[self.glint_ind] = glint
+        x[self.glint_ind + 1] = 0.01
         return x
 
     def calc_rfl(self, x_surface, geom):
