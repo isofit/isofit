@@ -111,8 +111,6 @@ class RadiativeTransfer:
         # These should all be the same so just grab one
         self.coszen = [RT.coszen for RT in self.rt_engines][0]
 
-        self.topography_model = config.topography_model
-
     def xa(self):
         """Pull the priors from each of the individual RTs."""
         return self.prior_mean
@@ -141,7 +139,7 @@ class RadiativeTransfer:
             # adjacency effects are counted
             I = (self.solar_irr * self.coszen) / np.pi
             bg = geom.bg_rfl
-            t_down = r["t_down_dif"] + r["t_down_dir"]
+            t_down = r["transm_down_dif"] + r["transm_down_dir"]
 
             ret = (
                 L_atm
@@ -152,13 +150,13 @@ class RadiativeTransfer:
 
         if self.topography_model:
             I = (self.solar_irr) / np.pi
-            t_dir_down = r["t_down_dir"]
-            t_dif_down = r["t_down_dif"]
+            t_dir_down = r["transm_down_dir"]
+            t_dif_down = r["transm_down_dif"]
             if geom.cos_i is None:
                 cos_i = self.coszen
             else:
                 cos_i = geom.cos_i
-            t_total_up = r["t_up_dif"] + r["t_up_dir"]
+            t_total_up = r["transm_up_dif"] + r["transm_up_dir"]
             t_total_down = t_dir_down + t_dif_down
             s_alb = r["sphalb"]
             # topographic flux (topoflux) effect corrected
@@ -210,19 +208,19 @@ class RadiativeTransfer:
             # adjacency effects are counted
             I = (self.solar_irr * self.coszen) / np.pi
             bg = geom.bg_rfl
-            t_down = r["t_down_dif"] + r["t_down_dir"]
+            t_down = r["transm_down_dif"] + r["transm_down_dir"]
             drdn_drfl = I / (1.0 - r["sphalb"] * bg) * t_down * r["t_up_dir"]
 
         elif self.topography_model:
             # jac w.r.t. topoflux correct radiance
             I = (self.solar_irr) / np.pi
-            t_dir_down = r["t_down_dir"]
-            t_dif_down = r["t_down_dif"]
+            t_dir_down = r["transm_down_dir"]
+            t_dif_down = r["transm_down_dif"]
             if geom.cos_i is None:
                 cos_i = self.coszen
             else:
                 cos_i = geom.cos_i
-            t_total_up = r["t_up_dif"] + r["t_up_dir"]
+            t_total_up = r["transm_up_dif"] + r["transm_up_dir"]
             t_total_down = t_dir_down + t_dif_down
             s_alb = r["sphalb"]
 
