@@ -164,28 +164,6 @@ class RadiativeTransferEngine:
 
         self.luts = {}
 
-        # We establish scaling, bounds, and initial guesses for each free parameter
-        # of the state vector. The free state vector elements are optimized during the
-        # inversion, and must have associated dimensions in the LUT grid.
-        self.bounds, self.scale, self.init = [], [], []
-        self.prior_mean, self.prior_sigma = [], []
-
-        for key in self.statevector_names:
-            element: StateVectorElementConfig = full_config.forward_model.radiative_transfer.statevector.get_single_element_by_name(
-                key
-            )
-            self.bounds.append(element.bounds)
-            self.scale.append(element.scale)
-            self.init.append(element.init)
-            self.prior_sigma.append(element.prior_sigma)
-            self.prior_mean.append(element.prior_mean)
-
-        self.bounds = np.array(self.bounds)
-        self.scale = np.array(self.scale)
-        self.init = np.array(self.init)
-        self.prior_mean = np.array(self.prior_mean)
-        self.prior_sigma = np.array(self.prior_sigma)
-
         self.lut_dims = []
         self.lut_grids = []
         self.lut_names = []
@@ -223,11 +201,11 @@ class RadiativeTransferEngine:
         # "points" contains all combinations of grid points
         # We will have one filename prefix per point
         self.points = common.combos(self.lut_grids)
-        self.files = []
+        self.output_file_basenames = []
 
         for point in self.points:
             outf = self.point_to_filename(point)
-            self.files.append(outf)
+            self.output_file_basenames.append(outf)
 
         # Initialize a 1 value hash dict
         self.last_point_looked_up = np.zeros(self.n_point)
