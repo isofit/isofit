@@ -266,6 +266,7 @@ class SixSRT(TabularRT):
         }
         return results
 
+    # ToDo: remove since not used at all
     def ext550_to_vis(self, ext550):
         """."""
 

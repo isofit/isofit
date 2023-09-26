@@ -986,10 +986,6 @@ class ModtranRT(TabularRT):
         so this function is a placeholder for future upgrades."""
         return 0
 
-    def wl2flt(self, wls, fwhms, outfile):
-        """Helper function to generate Gaussian distributions around the
-        center wavelengths."""
-
     def wl2flt(self, wavelengths: np.array, fwhms: np.array, outfile: str) -> None:
         """Helper function to generate Gaussian distributions around the
         center wavelengths.
