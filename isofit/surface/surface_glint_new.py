@@ -54,7 +54,7 @@ class GlintSurface(ThermalSurface):
         normalize the result for the calling function."""
 
         Cov = ThermalSurface.Sa(self, x_surface, geom)
-        f = np.array([[(10.0 * self.scale[self.glint_ind :]) ** 2]])
+        f = np.array([[(1000000 * np.array(self.scale[self.glint_ind :])) ** 2]])
         Cov[self.glint_ind :, self.glint_ind :] = f
         return Cov
 
@@ -77,7 +77,7 @@ class GlintSurface(ThermalSurface):
     def calc_rfl(self, x_surface, geom):
         """Reflectance (includes specular glint)."""
 
-        return self.calc_lamb(x_surface, geom) + x_surface[self.glint_ind :]
+        return self.calc_lamb(x_surface, geom) + x_surface[self.glint_ind]
 
     def drfl_dsurface(self, x_surface, geom):
         """Partial derivative of reflectance with respect to state vector,
@@ -93,14 +93,13 @@ class GlintSurface(ThermalSurface):
         the extra glint parameter"""
 
         dLs_dsurface = super().dLs_dsurface(x_surface, geom)
-        dLs_dglint = np.zeros((dLs_dsurface.shape[0], 1))
+        dLs_dglint = np.zeros((dLs_dsurface.shape[0], 2))
         dLs_dsurface = np.hstack([dLs_dsurface, dLs_dglint])
         return dLs_dsurface
 
     def summarize(self, x_surface, geom):
         """Summary of state vector."""
 
-        return (
-            ThermalSurface.summarize(self, x_surface, geom)
-            + " Sun Glint: %5.3f, Sky Glint: %5.3f" % x_surface[self.glint_ind :]
-        )
+        return ThermalSurface.summarize(
+            self, x_surface, geom
+        ) + " Sun Glint: %5.3f, Sky Glint: %5.3f" % (x_surface[-2], x_surface[-1])
