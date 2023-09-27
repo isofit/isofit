@@ -591,16 +591,23 @@ class ModtranRT(TabularRT):
             lvl0["ABSC"] = [float(v) / total_extc550 for v in total_absc]
 
         if self.multipart_transmittance:
+            const_rfl = np.array(np.array(self.test_rfls) * 100, dtype=int)
             # Here we copy the original config and just change the surface reflectance
             param[0]["MODTRANINPUT"]["CASE"] = 0
-            param[0]["MODTRANINPUT"]["SURFACE"]["SURREF"] = self.test_rfls[0]
+            param[0]["MODTRANINPUT"]["SURFACE"]["SURFP"][
+                "CSALB"
+            ] = f"LAMB_CONST_{const_rfl[0]}_PCT"
             param1 = deepcopy(param[0])
             param1["MODTRANINPUT"]["CASE"] = 1
-            param1["MODTRANINPUT"]["SURFACE"]["SURREF"] = self.test_rfls[1]
+            param1["MODTRANINPUT"]["SURFACE"]["SURFP"][
+                "CSALB"
+            ] = f"LAMB_CONST_{const_rfl[1]}_PCT"
             param.append(param1)
             param2 = deepcopy(param[0])
             param2["MODTRANINPUT"]["CASE"] = 2
-            param2["MODTRANINPUT"]["SURFACE"]["SURREF"] = self.test_rfls[2]
+            param2["MODTRANINPUT"]["SURFACE"]["SURFP"][
+                "CSALB"
+            ] = f"LAMB_CONST_{const_rfl[2]}_PCT"
             param.append(param2)
 
         return json.dumps({"MODTRAN": param}), param
