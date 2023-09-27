@@ -135,30 +135,30 @@ class RadiativeTransfer:
     def calc_rdn(self, x_RT, rfl, Ls, geom):
         r = self.get_shared_rtm_quantities(x_RT, geom)
         L_atm = self.get_L_atm(x_RT, geom)
-        L_up = Ls * r["transup"]
+        L_up = Ls * (r["transm_up_dir"] + r["transm_up_dif"])
 
         if geom.bg_rfl is not None:
             # adjacency effects are counted
             I = (self.solar_irr * self.coszen) / np.pi
             bg = geom.bg_rfl
-            t_down = r["t_down_dif"] + r["t_down_dir"]
+            t_down = r["transm_down_dif"] + r["transm_down_dir"]
 
             ret = (
                 L_atm
-                + I / (1.0 - r["sphalb"] * bg) * bg * t_down * r["t_up_dif"]
-                + I / (1.0 - r["sphalb"] * bg) * rfl * t_down * r["t_up_dir"]
+                + I / (1.0 - r["sphalb"] * bg) * bg * t_down * r["transm_up_dif"]
+                + I / (1.0 - r["sphalb"] * bg) * rfl * t_down * r["transm_up_dir"]
                 + L_up
             )
 
         elif self.topography_model:
-            I = (self.solar_irr) / np.pi
-            t_dir_down = r["t_down_dir"]
-            t_dif_down = r["t_down_dif"]
+            I = self.solar_irr / np.pi
+            t_dir_down = r["transm_down_dir"]
+            t_dif_down = r["transm_down_dif"]
             if geom.cos_i is None:
                 cos_i = self.coszen
             else:
                 cos_i = geom.cos_i
-            t_total_up = r["t_up_dif"] + r["t_up_dir"]
+            t_total_up = r["transm_up_dif"] + r["transm_up_dir"]
             s_alb = r["sphalb"]
             # topographic flux (topoflux) effect corrected
             ret = (
@@ -221,7 +221,11 @@ class RadiativeTransfer:
                 L_downs.append(rdn)
             else:
                 r = RT.get(x_RT, geom)
-                rdn = (self.solar_irr * self.coszen) / np.pi * r["t_down_dif"]
+                rdn = (
+                    (self.solar_irr * self.coszen)
+                    / np.pi
+                    * (r["transm_down_dir"] + r["transm_down_dif"])
+                )
                 L_downs.append(rdn)
         return np.hstack(L_downs)
 
@@ -244,19 +248,19 @@ class RadiativeTransfer:
             # adjacency effects are counted
             I = (self.solar_irr * self.coszen) / np.pi
             bg = geom.bg_rfl
-            t_down = r["t_down_dif"] + r["t_down_dir"]
-            drdn_drfl = I / (1.0 - r["sphalb"] * bg) * t_down * r["t_up_dir"]
+            t_down = r["transm_down_dif"] + r["transm_down_dir"]
+            drdn_drfl = I / (1.0 - r["sphalb"] * bg) * t_down * r["transm_up_dir"]
 
         elif self.topography_model:
             # jac w.r.t. topoflux correct radiance
             I = self.solar_irr / np.pi
-            t_dir_down = r["t_down_dir"]
-            t_dif_down = r["t_down_dif"]
+            t_dir_down = r["transm_down_dir"]
+            t_dif_down = r["transm_down_dif"]
             if geom.cos_i is None:
                 cos_i = self.coszen
             else:
                 cos_i = geom.cos_i
-            t_total_up = r["t_up_dif"] + r["t_up_dir"]
+            t_total_up = r["transm_up_dif"] + r["transm_up_dir"]
             s_alb = r["sphalb"]
 
             a = t_total_up * (I * cos_i * t_dir_down + I * self.coszen * t_dif_down)
@@ -272,7 +276,7 @@ class RadiativeTransfer:
 
             drdn_drfl = L_down_transmitted * drho_scaled_for_multiscattering_drfl
 
-        drdn_dLs = r["transup"]
+        drdn_dLs = r["transm_up_dir"] + r["transm_up_dif"]
         K_surface = (
             drdn_drfl[:, np.newaxis] * drfl_dsurface
             + drdn_dLs[:, np.newaxis] * dLs_dsurface
