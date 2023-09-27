@@ -266,12 +266,6 @@ class SixSRT(TabularRT):
         }
         return results
 
-    # ToDo: remove since not used at all
-    def ext550_to_vis(self, ext550):
-        """."""
-
-        return np.log(50.0) / (ext550 + 0.01159)
-
     def build_lut(self, rebuild=False):
         TabularRT.build_lut(self, rebuild)
 
@@ -341,14 +335,3 @@ class SixSRT(TabularRT):
                 point[point_ind] = min(self.lut_grid_config[name])
 
         return self._lookup_lut(point)
-
-    def get_L_atm(self, x_RT, geom):
-        r = self.get(x_RT, geom)
-        rho = r["rhoatm"]
-        rdn = rho / np.pi * (self.solar_irr * self.coszen)
-        return rdn
-
-    def get_L_down_transmitted(self, x_RT, geom):
-        r = self.get(x_RT, geom)
-        rdn = (self.solar_irr * self.coszen) / np.pi * r["transm"]
-        return rdn

@@ -126,7 +126,6 @@ class RadiativeTransfer:
         """Return only the set of RTM quantities (transup, sphalb, etc.) that are contained
         in all RT engines.
         """
-
         ret = []
         for RT in self.rt_engines:
             ret.append(RT.get(x_RT, geom))
@@ -187,7 +186,7 @@ class RadiativeTransfer:
             geom: local geometry conditions for lookup
 
         Returns:
-            the interpolated modeled atmospheric reflectance
+            interpolated modeled atmospheric reflectance
         """
         L_atms = []
         for RT in self.rt_engines:
@@ -212,7 +211,7 @@ class RadiativeTransfer:
             geom: local geometry conditions for lookup
 
         Returns:
-            The interpolated totel downward atmospheric transmittance
+            interpolated total downward atmospheric transmittance
         """
         L_downs = []
         for RT in self.rt_engines:
@@ -318,7 +317,6 @@ class RadiativeTransfer:
         stack their internal arrays in the same order. Keep only
         those quantities that are common to all RT engines.
         """
-
         # Get the intersection of the sets of keys from each of the rtm_quantities_from_RT_engines
         shared_rtm_keys = set(rtm_quantities_from_RT_engines[0].keys())
         if len(rtm_quantities_from_RT_engines) > 1:
@@ -341,16 +339,16 @@ def ext550_to_vis(ext550):
 
 
 def three_albedo_method(
-    transups,
-    drct_rflts_1,
-    grnd_rflts_1,
-    grnd_rflts_2,
-    lp_1,
-    lp_2,
-    sols,
-    coszen,
-    test_rfls,
-    widths,
+    transups: list,
+    drct_rflts_1: list,
+    grnd_rflts_1: list,
+    grnd_rflts_2: list,
+    lp_1: list,
+    lp_2: list,
+    sols: list,
+    coszen: float,
+    test_rfls: list,
+    widths: list,
 ):
     """This implementation follows Guanter et al. (2009) (DOI:10.1080/01431160802438555),
     with modifications by Nimrod Carmon. It is called the "2-albedo" method, referring to running
@@ -362,8 +360,28 @@ def three_albedo_method(
     2 or 3 "data points" for the atmospheric parameter of interest. This in theory allows us
     to use a lower band model resolution for the MODTRAN run, which is much faster, while keeping
     high accuracy. (2) we use the decoupled transmittance products to expand
-    the forward model and account for more physics, currently topography and glint."""
+    the forward model and account for more physics, currently topography and glint.
 
+    Args:
+        transups:     upwelling direct transmittance
+        drct_rflts_1: direct path ground reflected radiance for reflectance case 1
+        grnd_rflts_1: total ground reflected radiance for reflectance case 1
+        grnd_rflts_2: total ground reflected radiance for reflectance case 2
+        lp_1:         path radiance (sum of single and multiple scattering) for reflectance case 1
+        lp_2:         path radiance (sum of single and multiple scattering) for reflectance case 2
+        sols:         solar irradiance
+        coszen:       cosine of solar zenith angle
+        test_rfls:    list of three reflectance values
+        widths:       fwhm of radiative transfer simulations
+
+    Returns:
+        transms:      total transmittance (downwelling * upwelling)
+        t_down_dirs:  downwelling direct transmittance
+        t_down_difs:  downwelling diffuse transmittance
+        t_up_dirs:    upwelling direct transmittance
+        t_up_difs:    upwelling diffuse transmittance
+        sphalbs:      atmospheric spherical albedo
+    """
     t_up_dirs = np.array(transups)
     direct_ground_reflected_1 = np.array(drct_rflts_1)
     total_ground_reflected_1 = np.array(grnd_rflts_1)
@@ -399,8 +417,8 @@ def three_albedo_method(
     global_flux_no_surface = global_flux_1 * (1.0 - rfl_1 * sphalbs)
     diffuse_flux_no_surface = global_flux_no_surface - direct_flux_radiance * coszen
 
-    t_down_dirs = (direct_flux_radiance * coszen / widths / np.pi) / TOA_Irad
-    t_down_difs = (diffuse_flux_no_surface / widths / np.pi) / TOA_Irad
+    t_down_dirs = (direct_flux_radiance * coszen / np.array(widths) / np.pi) / TOA_Irad
+    t_down_difs = (diffuse_flux_no_surface / np.array(widths) / np.pi) / TOA_Irad
 
     # total transmittance
     transms = (t_down_dirs + t_down_difs) * (t_up_dirs + t_up_difs)
