@@ -15,10 +15,10 @@
 #  limitations under the License.
 #
 # ISOFIT: Imaging Spectrometer Optimal FITting
-# Author: Jay E. Fahlen, jay.e.fahlen@jpl.nasa.gov
+# Authors: Philip G. Brodrick, philip.brodrick@jpl.nasa.gov
+#          Niklas Bohn, urs.n.bohn@jpl.nasa.gov
+#          Jay E. Fahlen, jay.e.fahlen@jpl.nasa.gov
 #
-
-import logging
 
 import numpy as np
 
@@ -151,7 +151,7 @@ class RadiativeTransfer:
                 + L_up
             )
 
-        if self.topography_model:
+        elif self.topography_model:
             I = (self.solar_irr) / np.pi
             t_dir_down = r["t_down_dir"]
             t_dif_down = r["t_down_dif"]
@@ -160,7 +160,6 @@ class RadiativeTransfer:
             else:
                 cos_i = geom.cos_i
             t_total_up = r["t_up_dif"] + r["t_up_dir"]
-            t_total_down = t_dir_down + t_dif_down
             s_alb = r["sphalb"]
             # topographic flux (topoflux) effect corrected
             ret = (
@@ -227,102 +226,7 @@ class RadiativeTransfer:
                 L_downs.append(rdn)
         return np.hstack(L_downs)
 
-    def get_L_up(self, x_RT, geom):
-        """Thermal emission from the ground is provided by the thermal model,
-        so this function is a placeholder for future upgrades."""
-        return 0
-
-    def ext550_to_vis(self, ext550):
-        return np.log(50.0) / (ext550 + 0.01159)
-
-    """
-    def three_albedo_method(self, transups, drct_rflts_1, drct_rflts_2, grnd_rflts_1, grnd_rflts_2, lp_1, lp_2):
-        
-        This implementation follows Guanter et al. (2009) (DOI:10.1080/01431160802438555),
-        with modifications by Nimrod Carmon. It is called the "2-albedo" method, referring to running
-        MODTRAN with 2 different surface albedos. The 3-albedo method is similar to this one with
-        the single difference where the "path_radiance_no_surface" variable is taken from a
-        zero-surface-reflectance MODTRAN run instead of being calculated from 2 MODTRAN outputs.
-        There are a few argument as to why this approach is beneficial:
-        (1) for each grid point on the lookup table you sample MODTRAN 2 or 3 times, i.e., you get
-        2 or 3 "data points" for the atmospheric parameter of interest. This in theory allows us
-        to use a lower band model resolution for the MODTRAN run, which is much faster, while keeping
-        high accuracy. (2) we use the decoupled transmittance products to exapnd
-        the forward model and account for more physics, currently topography and glint
-        
-        t_up_dirs = np.array(transups)
-        direct_ground_reflected_1 = np.array(drct_rflts_1)
-        total_ground_reflected_1 = np.array(grnd_rflts_1)
-        total_ground_reflected_2 = np.array(grnd_rflts_2)
-        path_radiance_1 = np.array(lp_1)
-        path_radiance_2 = np.array(lp_2)
-        TOA_Irad = np.array(sols) * coszen / np.pi
-        rfl_1 = self.test_rfls[1]
-        rfl_2 = self.test_rfls[2]
-        mus = coszen
-
-        direct_flux_1 = direct_ground_reflected_1 * np.pi / rfl_1 / t_up_dirs
-        global_flux_1 = total_ground_reflected_1 * np.pi / rfl_1 / t_up_dirs
-        diffuse_flux_1 = global_flux_1 - direct_flux_1  # diffuse flux
-
-        global_flux_2 = total_ground_reflected_2 * np.pi / rfl_2 / t_up_dirs
-
-        path_radiance_no_surface = (
-                                           rfl_2 * path_radiance_1 * global_flux_2
-                                           - rfl_1 * path_radiance_2 * global_flux_1
-                                   ) / (rfl_2 * global_flux_2 - rfl_1 * global_flux_1)
-
-        # Diffuse upwelling transmittance
-        t_up_difs = (
-                np.pi
-                * (path_radiance_1 - path_radiance_no_surface)
-                / (rfl_1 * global_flux_1)
-        )
-
-        # Spherical Albedo
-        sphalbs = (global_flux_1 - global_flux_2) / (
-                rfl_1 * global_flux_1 - rfl_2 * global_flux_2
-        )
-        direct_flux_radiance = direct_flux_1 / mus
-
-        global_flux_no_surface = global_flux_1 * (1.0 - rfl_1 * sphalbs)
-        diffuse_flux_no_surface = (
-                global_flux_no_surface - direct_flux_radiance * coszen
-        )
-
-        global_flux_no_surface = global_flux_1 * (1.0 - rfl_1 * sphalbs)
-        diffuse_flux_no_surface = (
-                global_flux_no_surface - direct_flux_radiance * coszen
-        )
-
-        t_down_dirs = (direct_flux_radiance * coszen / widths / np.pi) / TOA_Irad
-        t_down_difs = (diffuse_flux_no_surface / widths / np.pi) / TOA_Irad
-
-        # total transmittance
-        transms = (t_down_dirs + t_down_difs) * (t_up_dirs + t_up_difs)
-
-    params = [
-        np.array(i)
-        for i in [
-            wls,
-            sols,
-            rhoatms,
-            transms,
-            sphalbs,
-            transups,
-            t_down_dirs,
-            t_down_difs,
-            t_up_dirs,
-            t_up_difs,
-            thermal_upwellings,
-            thermal_downwellings,
-        ]
-    ]
-
-    return tuple(params)
-    """
-
-    def drdn_dRT(self, x_RT, x_surface, rfl, drfl_dsurface, Ls, dLs_dsurface, geom):
+    def drdn_dRT(self, x_RT, rfl, drfl_dsurface, Ls, dLs_dsurface, geom):
         # first the rdn at the current state vector
         rdn = self.calc_rdn(x_RT, rfl, Ls, geom)
 
@@ -346,7 +250,7 @@ class RadiativeTransfer:
 
         elif self.topography_model:
             # jac w.r.t. topoflux correct radiance
-            I = (self.solar_irr) / np.pi
+            I = self.solar_irr / np.pi
             t_dir_down = r["t_down_dir"]
             t_dif_down = r["t_down_dif"]
             if geom.cos_i is None:
@@ -354,7 +258,6 @@ class RadiativeTransfer:
             else:
                 cos_i = geom.cos_i
             t_total_up = r["t_up_dif"] + r["t_up_dir"]
-            t_total_down = t_dir_down + t_dif_down
             s_alb = r["sphalb"]
 
             a = t_total_up * (I * cos_i * t_dir_down + I * self.coszen * t_dif_down)
@@ -431,3 +334,75 @@ class RadiativeTransfer:
             rtm_quantities_concatenated_over_RT_bands[key] = np.hstack(temp)
 
         return rtm_quantities_concatenated_over_RT_bands
+
+
+def ext550_to_vis(ext550):
+    return np.log(50.0) / (ext550 + 0.01159)
+
+
+def three_albedo_method(
+    transups,
+    drct_rflts_1,
+    grnd_rflts_1,
+    grnd_rflts_2,
+    lp_1,
+    lp_2,
+    sols,
+    coszen,
+    test_rfls,
+    widths,
+):
+    """This implementation follows Guanter et al. (2009) (DOI:10.1080/01431160802438555),
+    with modifications by Nimrod Carmon. It is called the "2-albedo" method, referring to running
+    MODTRAN with 2 different surface albedos. The 3-albedo method is similar to this one with
+    the single difference where the "path_radiance_no_surface" variable is taken from a
+    zero-surface-reflectance MODTRAN run instead of being calculated from 2 MODTRAN outputs.
+    There are a few argument as to why this approach is beneficial:
+    (1) for each grid point on the lookup table you sample MODTRAN 2 or 3 times, i.e., you get
+    2 or 3 "data points" for the atmospheric parameter of interest. This in theory allows us
+    to use a lower band model resolution for the MODTRAN run, which is much faster, while keeping
+    high accuracy. (2) we use the decoupled transmittance products to expand
+    the forward model and account for more physics, currently topography and glint."""
+
+    t_up_dirs = np.array(transups)
+    direct_ground_reflected_1 = np.array(drct_rflts_1)
+    total_ground_reflected_1 = np.array(grnd_rflts_1)
+    total_ground_reflected_2 = np.array(grnd_rflts_2)
+    path_radiance_1 = np.array(lp_1)
+    path_radiance_2 = np.array(lp_2)
+    TOA_Irad = np.array(sols) * coszen / np.pi
+    rfl_1 = test_rfls[1]
+    rfl_2 = test_rfls[2]
+    mus = coszen
+
+    direct_flux_1 = direct_ground_reflected_1 * np.pi / rfl_1 / t_up_dirs
+    global_flux_1 = total_ground_reflected_1 * np.pi / rfl_1 / t_up_dirs
+
+    global_flux_2 = total_ground_reflected_2 * np.pi / rfl_2 / t_up_dirs
+
+    path_radiance_no_surface = (
+        rfl_2 * path_radiance_1 * global_flux_2
+        - rfl_1 * path_radiance_2 * global_flux_1
+    ) / (rfl_2 * global_flux_2 - rfl_1 * global_flux_1)
+
+    # Diffuse upwelling transmittance
+    t_up_difs = (
+        np.pi * (path_radiance_1 - path_radiance_no_surface) / (rfl_1 * global_flux_1)
+    )
+
+    # Spherical Albedo
+    sphalbs = (global_flux_1 - global_flux_2) / (
+        rfl_1 * global_flux_1 - rfl_2 * global_flux_2
+    )
+    direct_flux_radiance = direct_flux_1 / mus
+
+    global_flux_no_surface = global_flux_1 * (1.0 - rfl_1 * sphalbs)
+    diffuse_flux_no_surface = global_flux_no_surface - direct_flux_radiance * coszen
+
+    t_down_dirs = (direct_flux_radiance * coszen / widths / np.pi) / TOA_Irad
+    t_down_difs = (diffuse_flux_no_surface / widths / np.pi) / TOA_Irad
+
+    # total transmittance
+    transms = (t_down_dirs + t_down_difs) * (t_up_dirs + t_up_difs)
+
+    return transms, t_down_dirs, t_down_difs, t_up_dirs, t_up_difs, sphalbs
