@@ -39,7 +39,7 @@ from isofit.core.geometry import Geometry
 
 from ..core.common import VectorInterpolator, json_load_ascii, recursive_replace
 from ..radiative_transfer.look_up_tables import FileExistsError, TabularRT
-from ..radiative_transfer.radiative_transfer import three_albedo_method
+from ..radiative_transfer.radiative_transfer import two_albedo_method
 
 ### Variables ###
 
@@ -248,7 +248,7 @@ class ModtranRT(TabularRT):
                 line = line[:17] + " " + line[18:]
 
                 # parse data out of each line in the MODTRAN output
-                toks = re.findall(r"[\S]+", line.strip())
+                toks = re.findall(r"\S+", line.strip())
                 wl, wid = float(toks[0]), float(toks[8])  # nm
                 solar_irr = float(toks[18]) * 1e6 * np.pi / wid / coszen  # uW/nm/sr/cm2
                 rdnatm = float(toks[4]) * 1e6  # uW/nm/sr/cm2
@@ -319,7 +319,7 @@ class ModtranRT(TabularRT):
                 t_up_dirs,
                 t_up_difs,
                 sphalbs,
-            ) = three_albedo_method(
+            ) = two_albedo_method(
                 transups=transups,
                 drct_rflts_1=drct_rflts_1,
                 grnd_rflts_1=grnd_rflts_1,
