@@ -53,6 +53,7 @@ class RadiativeTransferEngine:
 
         self.emission_mode = engine_config.emission_mode
         self.engine_base_dir = engine_config.engine_base_dir
+
         self.angular_lut_keys_degrees = [
             "observer_azimuth",
             "observer_zenith",
@@ -67,8 +68,9 @@ class RadiativeTransferEngine:
         self.x_RT_lut_indices = None
 
         self.prebuilt_lut_file = engine_config.engine_lut_file
+
         # Read prebuilt LUT from HDF5 if existing
-        if os.path.isfile(self.prebuilt_lut_file):
+        if self.prebuilt_lut_file and os.path.isfile(self.prebuilt_lut_file):
             self.lut = readHDF5(file=self.prebuilt_lut_file)
         else:
             self.lut = None
@@ -78,7 +80,7 @@ class RadiativeTransferEngine:
         self.topography_model = engine_config.topography_model
 
         # TBD
-        self.lut_names = [
+        self.lut_products_nomenclature = [
             "rhoatm",
             "transm_down_dir",
             "transm_down_dif",
@@ -87,10 +89,10 @@ class RadiativeTransferEngine:
             "sphalb",
         ]
         if self.emission_mode:
-            self.lut_names = [
+            self.lut_products_nomenclature = [
                 "thermal_upwelling",
                 "thermal_downwelling",
-            ] + self.lut_names
+            ] + self.lut_products_nomenclature
 
         if self.multipart_transmittance:
             # ToDo: check if we're running the 2- or 3-albedo method
@@ -139,16 +141,32 @@ class RadiativeTransferEngine:
             # a lookup table dimension, but some lookup table dimensions
             # (like geometry parameters) may not be in the state vector.
             # TODO: ensure consistency with group keys in LUT file
-            full_lut_grid = self.lut["sample_space"]
+            self.lut_dimensions = self.lut["Dimensions"]
+            self.lut_sample_space = self.lut["SampleSpace"]
+            for output in self.lut["Products"]:
+                try:
+                    assert output in self.lut_products_nomenclature
+                except AssertionError:
+                    raise AssertionError(
+                        f"LUT output name {output} does not match nomenclature."
+                    )
+            self.lut_products = self.lut["Products"]
         else:
             self.solar_irr = None
-            full_lut_grid = full_config.forward_model.radiative_transfer.lut_grid
+            self.full_lut_grid = full_config.forward_model.radiative_transfer.lut_grid
+            self.lut_products = self.lut_products_nomenclature
+            if engine_config.lut_names is not None:
+                self.lut_dimensions = engine_config.lut_names
+            else:
+                self.lut_dimensions = (
+                    full_config.forward_model.radiative_transfer.lut_grid.keys()
+                )
 
         # Selectively get lut components that are in this particular RTE
         self.lut_grid_config = OrderedDict()
 
-        for key, value in full_lut_grid.items():
-            if key in self.lut_names:
+        for key, value in self.full_lut_grid.items():
+            if key in self.lut_dimensions:
                 self.lut_grid_config[key] = value
 
         # Selectively get statevector components that are in this particular RTE
@@ -234,10 +252,11 @@ class RadiativeTransferEngine:
         self.last_point_looked_up = np.zeros(self.n_point)
         self.last_point_lookup_values = np.zeros(self.n_point)
 
-        self.interpolator_disk_paths = [
-            engine_config.interpolator_base_path + "_" + rtq + ".pkl"
-            for rtq in self.lut_names
-        ]
+        if engine_config.interpolator_base_path:
+            self.interpolator_disk_paths = [
+                engine_config.interpolator_base_path + "_" + rtq + ".pkl"
+                for rtq in self.lut_names
+            ]
 
     def make_simulation_call(self, point: np.array, template_only: bool = False):
         """Write template(s) and run simulation.
