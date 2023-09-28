@@ -2,7 +2,6 @@
 Much of this code is inspired by Nimrod Carmon's research 9/2023
 """
 import os
-import re
 from glob import glob
 
 import numpy as np
@@ -16,7 +15,7 @@ from isofit.utils.luts import modutils
 @pytest.fixture(scope="session")
 def pasadena():
     """
-    Loads the .chn files from the Pasadena example
+    Loads the .chn files from the Pasadena example.
     """
     files = glob(f"{isofit.root}/../examples/20171108_Pasadena/lut_multi/*.chn")
     chans = modutils.load_chns(files, True)
@@ -29,7 +28,7 @@ def pasadena():
 def test_combined(file, group, data, request):
     """
     Tests the write and read functions together to ensure recursive
-    compatibility
+    compatibility.
 
     Parameters
     ----------

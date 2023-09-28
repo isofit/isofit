@@ -39,7 +39,6 @@ from isofit.core.geometry import Geometry
 
 from ..core.common import VectorInterpolator, json_load_ascii, recursive_replace
 from ..radiative_transfer.look_up_tables import FileExistsError, TabularRT
-from ..radiative_transfer.radiative_transfer import two_albedo_method
 
 ### Variables ###
 
@@ -319,16 +318,14 @@ class ModtranRT(TabularRT):
                 t_up_dirs,
                 t_up_difs,
                 sphalbs,
-            ) = two_albedo_method(
+            ) = self.two_albedo_method(
                 transups=transups,
                 drct_rflts_1=drct_rflts_1,
                 grnd_rflts_1=grnd_rflts_1,
                 grnd_rflts_2=grnd_rflts_2,
                 lp_1=lp_1,
                 lp_2=lp_2,
-                sols=sols,
                 coszen=coszen,
-                test_rfls=self.test_rfls,
                 widths=widths,
             )
 
