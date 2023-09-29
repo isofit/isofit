@@ -28,6 +28,7 @@ from collections import OrderedDict
 import numpy as np
 import ray
 
+from isofit import get_isofit_path
 from isofit.configs import Config
 from isofit.configs.sections.radiative_transfer_config import (
     RadiativeTransferEngineConfig,
@@ -69,6 +70,8 @@ class RadiativeTransferEngine:
         ]
         self.angular_lut_keys_radians = []
 
+        self.lut_dir = engine_config.lut_path
+
         self.geometry_lut_indices = None
         self.geometry_lut_names = None
         self.x_RT_lut_indices = None
@@ -84,20 +87,22 @@ class RadiativeTransferEngine:
         self.multipart_transmittance = engine_config.multipart_transmittance
         self.topography_model = engine_config.topography_model
 
-        # TBD
-        self.lut_names = [
+        self.earth_sun_distance_path = os.path.join(
+            get_isofit_path(), "data", "earth_sun_distance.txt"
+        )
+        self.earth_sun_distance_reference = np.loadtxt(self.earth_sun_distance_path)
+
+        # This is only for checking the validity of the read in sim names
+        self.possible_lut_output_names = [
             "rhoatm",
             "transm_down_dir",
             "transm_down_dif",
             "transm_up_dir",
             "transm_up_dif",
             "sphalb",
+            "thermal_upwelling",
+            "thermal_downwelling",
         ]
-        if self.emission_mode:
-            self.lut_names = [
-                "thermal_upwelling",
-                "thermal_downwelling",
-            ] + self.lut_names
 
         if self.multipart_transmittance:
             self.test_rfls = [0, 0.1, 0.5]
@@ -138,12 +143,17 @@ class RadiativeTransferEngine:
             self.solar_irr = None
             full_lut_grid = lut_grid
 
-        # Selectively get lut components that are in this particular RTE
+        # Set up LUT grid
         self.lut_grid_config = OrderedDict()
+        if engine_config.lut_names is not None:
+            lut_names = engine_config.lut_names
+        else:
+            lut_names = full_lut_grid.keys()
 
         for key, value in full_lut_grid.items():
-            if key in self.lut_names:
+            if key in lut_names:
                 self.lut_grid_config[key] = value
+        del lut_names
 
         self.n_point = len(self.lut_grid_config)
 
