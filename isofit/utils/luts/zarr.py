@@ -1,19 +1,3 @@
-"""
-Parallel write IO for Zarr stores
-
-## Example on how to use
-# Provided by RTE
-file = 'isofit/utils/luts/.idea/MODTRAN/test1.zarr'
-points, wl = simData()
-
-# Steps to take to initialize
-ds = initialize('isofit/utils/luts/.idea/MODTRAN/test1.zarr', wl, points)
-points = extractPoints(ds)
-
-# Update values in place, supports parallel writes
-point = 2
-updatePoint(file, point, gen()) # gen() is just a data generation function
-"""
 import dask.array
 import xarray as xr
 
@@ -63,21 +47,6 @@ def initialize(file, wl, points, chunks=25):
     return ds
 
 
-def extractPoints(ds):
-    """
-    Retrieves the points from an xarray.Dataset object
-    """
-    a, b = ds.point.coords.values()
-    return np.vstack([a.values, b.values]).T
-
-
-def pointIndex(points, point):
-    """
-    Retrieves the row index for a 2d array "point"
-    """
-    return np.where(np.all(points == point, axis=1))[0][0]
-
-
 def updatePoint(file, point, data):
     """
     Updates a zarr store in place given a point index
@@ -99,11 +68,28 @@ def updatePoint(file, point, data):
     ds.to_zarr(file, region={"point": slice(point, point + 1)})
 
 
-def loadZarr(file):
-    """ """
+def load(file):
+    """
+    Loads a zarr store
+    """
     ds = xr.open_zarr(file)
 
     # Retrieve the point coordinates and convert them back to a point MultiIndex
     points = list(ds.drop_dims("wl").coords)
 
     return ds.set_index(point=points)
+
+
+def example():
+    from isofit.utils.luts import zarr as lut
+
+    # First the RTE initializes the lut.nc file using the wavelengths array and points dict
+    lut.initialize(file, wl, points)
+
+    # Each runSim will parse its outputs then call updatePoint; done in parallel, must be parallel-write-safe
+    lut.updatePoint(file, 0, data)
+
+    # Use our custom loader
+    ds = lut.load(file)
+
+    return ds
