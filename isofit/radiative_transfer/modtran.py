@@ -274,72 +274,23 @@ class ModtranRT(RadiativeTransferEngine):
                     )  # path radiance (sum of single and multiple scattering)
 
         if self.multipart_transmittance:
-            """
-            This implementation is following Gaunter et al. (2009) (DOI:10.1080/01431160802438555),
-            and modified by Nimrod Carmon. It is called the "2-albedo" method, referring to running
-            modtran with 2 different surface albedos. The 3-albedo method is similar to this one with
-            the single difference where the "path_radiance_no_surface" variable is taken from a
-            zero-surface-reflectance modtran run instead of being calculated from 2 modtran outputs.
-            There are a few argument as to why this approach is beneficial:
-            (1) for each grid point on the lookup table you sample modtran 2 or 3 times, i.e. you get
-            2 or 3 "data points" for the atmospheric parameter of interest. This in theory allows us
-            to use a lower band model resolution modtran run, which is much faster, while keeping
-            high accuracy. Currently we have the 5 cm-1 band model resolution configured.
-            The second advantage is the possibility to use the decoupled transmittance products to exapnd
-            the forward model and account for more physics e.g. shadows \ sky view \ adjacency \ terrain etc.
-
-            """
-            t_up_dirs = np.array(transups)
-            direct_ground_reflected_1 = np.array(drct_rflts_1)
-            total_ground_reflected_1 = np.array(grnd_rflts_1)
-            direct_ground_reflected_2 = np.array(drct_rflts_2)
-            total_ground_reflected_2 = np.array(grnd_rflts_2)
-            path_radiance_1 = np.array(lp_1)
-            path_radiance_2 = np.array(lp_2)
-            TOA_Irad = np.array(sols) * coszen / np.pi
-            rfl_1 = self.test_rfls[1]
-            rfl_2 = self.test_rfls[2]
-            mus = coszen
-
-            direct_flux_1 = direct_ground_reflected_1 * np.pi / rfl_1 / t_up_dirs
-            global_flux_1 = total_ground_reflected_1 * np.pi / rfl_1 / t_up_dirs
-            diffuse_flux_1 = global_flux_1 - direct_flux_1  # diffuse flux
-
-            global_flux_2 = total_ground_reflected_2 * np.pi / rfl_2 / t_up_dirs
-
-            path_radiance_no_surface = (
-                rfl_2 * path_radiance_1 * global_flux_2
-                - rfl_1 * path_radiance_2 * global_flux_1
-            ) / (rfl_2 * global_flux_2 - rfl_1 * global_flux_1)
-
-            # Diffuse upwelling transmittance
-            t_up_difs = (
-                np.pi
-                * (path_radiance_1 - path_radiance_no_surface)
-                / (rfl_1 * global_flux_1)
+            (
+                transms,
+                t_down_dirs,
+                t_down_difs,
+                t_up_dirs,
+                t_up_difs,
+                sphalbs,
+            ) = self.two_albedo_method(
+                transups=transups,
+                drct_rflts_1=drct_rflts_1,
+                grnd_rflts_1=grnd_rflts_1,
+                grnd_rflts_2=grnd_rflts_2,
+                lp_1=lp_1,
+                lp_2=lp_2,
+                coszen=coszen,
+                widths=widths,
             )
-
-            # Spherical Albedo
-            sphalbs = (global_flux_1 - global_flux_2) / (
-                rfl_1 * global_flux_1 - rfl_2 * global_flux_2
-            )
-            direct_flux_radiance = direct_flux_1 / mus
-
-            global_flux_no_surface = global_flux_1 * (1.0 - rfl_1 * sphalbs)
-            diffuse_flux_no_surface = (
-                global_flux_no_surface - direct_flux_radiance * coszen
-            )
-
-            global_flux_no_surface = global_flux_1 * (1.0 - rfl_1 * sphalbs)
-            diffuse_flux_no_surface = (
-                global_flux_no_surface - direct_flux_radiance * coszen
-            )
-
-            t_down_dirs = (direct_flux_radiance * coszen / widths / np.pi) / TOA_Irad
-            t_down_difs = (diffuse_flux_no_surface / widths / np.pi) / TOA_Irad
-
-            # total transmittance
-            transms = (t_down_dirs + t_down_difs) * (t_up_dirs + t_up_difs)
 
         params = [
             np.array(i)
@@ -360,11 +311,6 @@ class ModtranRT(RadiativeTransferEngine):
         ]
 
         return tuple(params)
-
-    def ext550_to_vis(self, ext550):
-        """."""
-
-        return np.log(50.0) / (ext550 + 0.01159)
 
     def modtran_driver(self, overrides):
         """Write a MODTRAN 6.0 input file."""
@@ -389,15 +335,18 @@ class ModtranRT(RadiativeTransferEngine):
                 "GMTIME in MODTRAN driver overrides, but IPARM set to 12.  Check"
                 " modtran template."
             )
-        elif param[0]["MODTRANINPUT"]["GEOMETRY"]["IPARM"] == 11 and set(
-            ["solar_azimuth", "solaz", "solar_zenith", "solzen"]
-        ).intersection(set(overrides.keys())):
+        elif param[0]["MODTRANINPUT"]["GEOMETRY"]["IPARM"] == 11 and {
+            "solar_azimuth",
+            "solaz",
+            "solar_zenith",
+            "solzen",
+        }.intersection(set(overrides.keys())):
             raise AttributeError(
                 "Solar geometry (solar az/azimuth zen/zenith) is specified, but IPARM"
                 " is set to 12.  Check MODTRAN template"
             )
 
-        if set(["PARM1", "PARM2"]).intersection(set(overrides.keys())):
+        if {"PARM1", "PARM2"}.intersection(set(overrides.keys())):
             raise AttributeError(
                 "PARM1 and PARM2 keys not supported as LUT dimensions.  Please use"
                 " either solar_azimuth/solaz or solar_zenith/solzen"
@@ -602,16 +551,23 @@ class ModtranRT(RadiativeTransferEngine):
             lvl0["ABSC"] = [float(v) / total_extc550 for v in total_absc]
 
         if self.multipart_transmittance:
+            const_rfl = np.array(np.array(self.test_rfls) * 100, dtype=int)
             # Here we copy the original config and just change the surface reflectance
             param[0]["MODTRANINPUT"]["CASE"] = 0
-            param[0]["MODTRANINPUT"]["SURFACE"]["SURREF"] = self.test_rfls[0]
+            param[0]["MODTRANINPUT"]["SURFACE"]["SURFP"][
+                "CSALB"
+            ] = f"LAMB_CONST_{const_rfl[0]}_PCT"
             param1 = deepcopy(param[0])
             param1["MODTRANINPUT"]["CASE"] = 1
-            param1["MODTRANINPUT"]["SURFACE"]["SURREF"] = self.test_rfls[1]
+            param1["MODTRANINPUT"]["SURFACE"]["SURFP"][
+                "CSALB"
+            ] = f"LAMB_CONST_{const_rfl[1]}_PCT"
             param.append(param1)
             param2 = deepcopy(param[0])
             param2["MODTRANINPUT"]["CASE"] = 2
-            param2["MODTRANINPUT"]["SURFACE"]["SURREF"] = self.test_rfls[2]
+            param2["MODTRANINPUT"]["SURFACE"]["SURFP"][
+                "CSALB"
+            ] = f"LAMB_CONST_{const_rfl[2]}_PCT"
             param.append(param2)
 
         return json.dumps({"MODTRAN": param}), param

@@ -15,10 +15,10 @@
 #  limitations under the License.
 #
 # ISOFIT: Imaging Spectrometer Optimal FITting
-# Author: Jay E. Fahlen, jay.e.fahlen@jpl.nasa.gov
+# Authors: Philip G. Brodrick, philip.brodrick@jpl.nasa.gov
+#          Niklas Bohn, urs.n.bohn@jpl.nasa.gov
+#          Jay E. Fahlen, jay.e.fahlen@jpl.nasa.gov
 #
-
-import logging
 
 import numpy as np
 
@@ -26,6 +26,7 @@ from isofit.configs import Config
 from isofit.configs.sections.radiative_transfer_config import (
     RadiativeTransferEngineConfig,
 )
+from isofit.core.geometry import Geometry
 
 from ..core.common import eps
 from ..radiative_transfer.libradtran import LibRadTranRT
@@ -123,7 +124,6 @@ class RadiativeTransfer:
         """Return only the set of RTM quantities (transup, sphalb, etc.) that are contained
         in all RT engines.
         """
-
         ret = []
         for RT in self.rt_engines:
             ret.append(RT.get(x_RT, geom))
@@ -133,7 +133,7 @@ class RadiativeTransfer:
     def calc_rdn(self, x_RT, rfl, Ls, geom):
         r = self.get_shared_rtm_quantities(x_RT, geom)
         L_atm = self.get_L_atm(x_RT, geom)
-        L_up = Ls * r["transup"]
+        L_up = Ls * (r["transm_up_dir"] + r["transm_up_dif"])
 
         if geom.bg_rfl is not None:
             # adjacency effects are counted
@@ -143,13 +143,13 @@ class RadiativeTransfer:
 
             ret = (
                 L_atm
-                + I / (1.0 - r["sphalb"] * bg) * bg * t_down * r["t_up_dif"]
-                + I / (1.0 - r["sphalb"] * bg) * rfl * t_down * r["t_up_dir"]
+                + I / (1.0 - r["sphalb"] * bg) * bg * t_down * r["transm_up_dif"]
+                + I / (1.0 - r["sphalb"] * bg) * rfl * t_down * r["transm_up_dir"]
                 + L_up
             )
 
-        if self.topography_model:
-            I = (self.solar_irr) / np.pi
+        elif self.topography_model:
+            I = self.solar_irr / np.pi
             t_dir_down = r["transm_down_dir"]
             t_dif_down = r["transm_down_dif"]
             if geom.cos_i is None:
@@ -177,19 +177,58 @@ class RadiativeTransfer:
 
         return ret
 
-    def get_L_atm(self, x_RT, geom):
+    def get_L_atm(self, x_RT: np.array, geom: Geometry) -> np.array:
+        """Get the interpolated modeled atmospheric reflectance (aka path radiance).
+
+        Args:
+            x_RT: radiative-transfer portion of the statevector
+            geom: local geometry conditions for lookup
+
+        Returns:
+            interpolated modeled atmospheric reflectance
+        """
         L_atms = []
         for RT in self.rt_engines:
-            L_atms.append(RT.get_L_atm(x_RT, geom))
+            if RT.treat_as_emissive:
+                r = RT.get(x_RT, geom)
+                rdn = r["thermal_upwelling"]
+                L_atms.append(rdn)
+            else:
+                r = RT.get(x_RT, geom)
+                rho = r["rhoatm"]
+                rdn = rho / np.pi * (self.solar_irr * self.coszen)
+                L_atms.append(rdn)
         return np.hstack(L_atms)
 
-    def get_L_down_transmitted(self, x_RT, geom):
+    def get_L_down_transmitted(self, x_RT: np.array, geom: Geometry) -> np.array:
+        """Get the interpolated total downward atmospheric transmittance.
+        Thermal_downwelling already includes the transmission factor. Also
+        assume there is no multiple scattering for TIR.
+
+        Args:
+            x_RT: radiative-transfer portion of the statevector
+            geom: local geometry conditions for lookup
+
+        Returns:
+            interpolated total downward atmospheric transmittance
+        """
         L_downs = []
         for RT in self.rt_engines:
-            L_downs.append(RT.get_L_down_transmitted(x_RT, geom))
+            if RT.treat_as_emissive:
+                r = RT.get(x_RT, geom)
+                rdn = r["thermal_downwelling"]
+                L_downs.append(rdn)
+            else:
+                r = RT.get(x_RT, geom)
+                rdn = (
+                    (self.solar_irr * self.coszen)
+                    / np.pi
+                    * (r["transm_down_dir"] + r["transm_down_dif"])
+                )
+                L_downs.append(rdn)
         return np.hstack(L_downs)
 
-    def drdn_dRT(self, x_RT, x_surface, rfl, drfl_dsurface, Ls, dLs_dsurface, geom):
+    def drdn_dRT(self, x_RT, rfl, drfl_dsurface, Ls, dLs_dsurface, geom):
         # first the rdn at the current state vector
         rdn = self.calc_rdn(x_RT, rfl, Ls, geom)
 
@@ -209,11 +248,11 @@ class RadiativeTransfer:
             I = (self.solar_irr * self.coszen) / np.pi
             bg = geom.bg_rfl
             t_down = r["transm_down_dif"] + r["transm_down_dir"]
-            drdn_drfl = I / (1.0 - r["sphalb"] * bg) * t_down * r["t_up_dir"]
+            drdn_drfl = I / (1.0 - r["sphalb"] * bg) * t_down * r["transm_up_dir"]
 
         elif self.topography_model:
             # jac w.r.t. topoflux correct radiance
-            I = (self.solar_irr) / np.pi
+            I = self.solar_irr / np.pi
             t_dir_down = r["transm_down_dir"]
             t_dif_down = r["transm_down_dif"]
             if geom.cos_i is None:
@@ -237,7 +276,7 @@ class RadiativeTransfer:
 
             drdn_drfl = L_down_transmitted * drho_scaled_for_multiscattering_drfl
 
-        drdn_dLs = r["transup"]
+        drdn_dLs = r["transm_up_dir"] + r["transm_up_dif"]
         K_surface = (
             drdn_drfl[:, np.newaxis] * drfl_dsurface
             + drdn_dLs[:, np.newaxis] * dLs_dsurface
@@ -282,7 +321,6 @@ class RadiativeTransfer:
         stack their internal arrays in the same order. Keep only
         those quantities that are common to all RT engines.
         """
-
         # Get the intersection of the sets of keys from each of the rtm_quantities_from_RT_engines
         shared_rtm_keys = set(rtm_quantities_from_RT_engines[0].keys())
         if len(rtm_quantities_from_RT_engines) > 1:
@@ -298,3 +336,12 @@ class RadiativeTransfer:
             rtm_quantities_concatenated_over_RT_bands[key] = np.hstack(temp)
 
         return rtm_quantities_concatenated_over_RT_bands
+
+
+def ext550_to_vis(ext550):
+    """VIS is defined as a function of the surface aerosol extinction coefficient
+    at 550 nm in km-1, EXT550, by the formula VIS[km] = ln(50) / (EXT550 + 0.01159),
+    where 0.01159 is the surface Rayleigh scattering coefficient at 550 nm in km-1
+    (see MODTRAN6 manual, p. 50).
+    """
+    return np.log(50.0) / (ext550 + 0.01159)
