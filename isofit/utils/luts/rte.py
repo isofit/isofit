@@ -5,6 +5,7 @@ from glob import glob
 from pathlib import Path
 
 import ray
+import xarray as xr
 
 from isofit.utils.luts import modutils
 
@@ -97,11 +98,3 @@ class MODTRAN(RTE):
 
     def reader(self, file, **kwargs):
         return modutils.parseChannelXarray(file, **kwargs)
-
-
-#%%
-
-files = glob("examples/20171108_Pasadena/lut_multi/*.chn")
-rt = MODTRAN(output="isofit/utils/luts/.idea")
-
-ds = rt.runSims(files)
