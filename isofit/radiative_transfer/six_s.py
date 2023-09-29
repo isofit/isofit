@@ -19,6 +19,7 @@
 
 import logging
 import os
+import subprocess
 from datetime import datetime
 
 import numpy as np
@@ -29,6 +30,7 @@ from isofit.configs.sections.radiative_transfer_config import (
 )
 from isofit.core.common import VectorInterpolator, resample_spectrum
 from isofit.core.geometry import Geometry
+from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
 
 from .look_up_tables import FileExistsError, TabularRT
 
@@ -57,34 +59,30 @@ sixs_template = """0 (User defined)
 """
 
 
-class SixSRT(TabularRT):
+class SixSRT(RadiativeTransferEngine):
     """A model of photon transport including the atmosphere."""
 
     def __init__(
         self,
         engine_config: RadiativeTransferEngineConfig,
-        full_config: Config,
-        build_lut=True,
+        interpolator_style: str,
+        instrument_wavelength_file: str = None,
+        overwrite_interpolator: bool = False,
+        cache_size: int = 16,
+        lut_grid: dict = None,
         build_lut_only=False,
         wavelength_override=None,
         fwhm_override=None,
         modtran_emulation=False,
     ):
-        self.angular_lut_keys_degrees = [
-            "OBSZEN",
-            "TRUEAZ",
-            "viewzen",
-            "viewaz",
-            "solzen",
-            "solaz",
-        ]
-        self.angular_lut_keys_radians = []
-        self.modtran_emulation = modtran_emulation
-
-        super().__init__(engine_config, full_config)
-
-        self.treat_as_emissive = False
-        self.lut_quantities = ["rhoatm", "transm", "sphalb", "transup"]
+        super().__init__(
+            engine_config,
+            interpolator_style,
+            instrument_wavelength_file,
+            overwrite_interpolator,
+            cache_size,
+            lut_grid,
+        )
 
         if wavelength_override is not None:
             self.wl = wavelength_override
@@ -96,72 +94,56 @@ class SixSRT(TabularRT):
         if fwhm_override is not None:
             self.fwhm = fwhm_override
 
-        self.sixs_dir = self.find_basedir(engine_config)
+        self.modtran_emulation = modtran_emulation
+        self.engine_config = engine_config
+
         self.sixs_grid_init = np.arange(self.wl[0], self.wl[-1] + 2.5, 2.5)
         self.sixs_ngrid_init = len(self.sixs_grid_init)
-        self.params = {
+
+        self.esd = np.loadtxt(engine_config.earth_sun_distance_file)
+        dt = datetime(2000, self.params["month"], self.params["day"])
+        self.day_of_year = dt.timetuple().tm_yday
+        self.irr_factor = self.esd[self.day_of_year - 1, 1]
+
+        irr = np.loadtxt(engine_config.irradiance_file, comments="#")
+        iwl, irr = irr.T
+        irr = irr / 10.0  # convert, uW/nm/cm2
+        irr = irr / self.irr_factor**2  # consider solar distance
+        self.solar_irr = resample_spectrum(irr, iwl, self.wl, self.fwhm)
+
+    def rebuild_cmd(self, point) -> str:
+        """Build the simulation command file.
+
+        Args:
+            point (np.array): conditions to alter in simulation
+
+        Returns:
+            str: execution command
+        """
+        filename_base = self.point_to_filename(point)
+
+        vals = {
             "aermodel": 1,
             "AOT550": 0.01,
             "H2OSTR": 0,
             "O3": 0.30,
-            "day": engine_config.day,
-            "month": engine_config.month,
-            "elev": engine_config.elev,
-            "alt": min(engine_config.alt, 99),
+            "day": self.engine_config.day,
+            "month": self.engine_config.month,
+            "elev": self.engine_config.elev,
+            "alt": min(self.engine_config.alt, 99),
             "atm_file": None,
             "abscf_data_directory": None,
             "wlinf": self.sixs_grid_init[0] / 1000.0,  # convert to nm
             "wlsup": self.sixs_grid_init[-1] / 1000.0,
         }
 
-        if engine_config.obs_file is not None:
-            # A special case where we load the observation geometry
-            # from a custom-crafted text file
-            g = Geometry(obs=engine_config.obs_file)
-            self.params["solzen"] = g.solar_zenith
-            self.params["solaz"] = g.solar_azimuth
-            self.params["viewzen"] = g.observer_zenith
-            self.params["viewaz"] = g.observer_azimuth
-        else:
-            # We have to get geometry from somewhere, so we presume it is
-            # in the configuration file.
-            self.params["solzen"] = engine_config.solzen
-            self.params["viewzen"] = engine_config.viewzen
-            self.params["solaz"] = engine_config.solaz
-            self.params["viewaz"] = engine_config.viewaz
+        # We have to get geometry from somewhere, so we presume it is
+        # in the configuration file.
+        vals["solzen"] = self.engine_config.solzen
+        vals["viewzen"] = self.engine_config.viewzen
+        vals["solaz"] = self.engine_config.solaz
+        vals["viewaz"] = self.engine_config.viewaz
 
-        if build_lut_only is False:
-            self.esd = np.loadtxt(engine_config.earth_sun_distance_file)
-            dt = datetime(2000, self.params["month"], self.params["day"])
-            self.day_of_year = dt.timetuple().tm_yday
-            self.irr_factor = self.esd[self.day_of_year - 1, 1]
-
-            irr = np.loadtxt(engine_config.irradiance_file, comments="#")
-            iwl, irr = irr.T
-            irr = irr / 10.0  # convert, uW/nm/cm2
-            irr = irr / self.irr_factor**2  # consider solar distance
-            self.solar_irr = resample_spectrum(irr, iwl, self.wl, self.fwhm)
-
-        if build_lut:
-            self.build_lut()
-
-    def find_basedir(self, config: RadiativeTransferEngineConfig):
-        """Seek out a sixs base directory."""
-
-        if config.engine_base_dir is not None:
-            return config.engine_base_dir
-
-        try:
-            return os.getenv("SIXS_DIR")
-        except KeyError:
-            logging.error("I could not find the SIXS base directory")
-            raise KeyError("I could not find the SIXS base directory")
-
-    def rebuild_cmd(self, point, fn):
-        """."""
-
-        # start with defaults
-        vals = self.params.copy()
         for n, v in zip(self.lut_names, point):
             vals[n] = v
 
@@ -185,20 +167,16 @@ class SixSRT(TabularRT):
             vals["elev"] = vals["elev"] * -1
 
         # Check rebuild conditions: LUT is missing or from a different config
-        scriptfilename = "LUT_" + fn + ".sh"
+        scriptfilename = "LUT_" + filename_base + ".sh"
         scriptfilepath = os.path.join(self.lut_dir, scriptfilename)
-        infilename = "LUT_" + fn + ".inp"
+        infilename = "LUT_" + filename_base + ".inp"
         infilepath = os.path.join(self.lut_dir, infilename)
-        outfilename = fn
+        outfilename = filename_base
         outfilepath = os.path.join(self.lut_dir, outfilename)
         if os.path.exists(outfilepath) and os.path.exists(infilepath):
             raise FileExistsError("Files exist")
 
-        if self.sixs_dir is None:
-            logging.error("Specify a SixS installation")
-            raise KeyError("Specify a SixS installation")
-
-        sixspath = self.sixs_dir + "/sixsV2.1"
+        sixspath = self.engine_base_dir + "/sixsV2.1"
 
         # write config files
         sixs_config_str = sixs_template.format(**vals)
@@ -213,13 +191,22 @@ class SixSRT(TabularRT):
 
         return "bash " + scriptfilepath
 
-    def load_rt(self, fn, resample=True):
+    def make_simulation_call(self, point: np.array, template_only: bool = False):
+        cmd = self.rebuild_cmd(point)
+        if template_only is False:
+            subprocess.call(cmd, shell=True)
+
+    def read_simulation_results(self, point):
         """Load the results of a SixS run."""
 
-        with open(os.path.join(self.lut_dir, fn), "r") as l:
+        filename_base = self.point_to_filename(point)
+
+        with open(os.path.join(self.lut_dir, filename_base), "r") as l:
             lines = l.readlines()
 
-        with open(os.path.join(self.lut_dir, "LUT_" + fn + ".inp"), "r") as l:
+        with open(
+            os.path.join(self.lut_dir, "LUT_" + filename_base + ".inp"), "r"
+        ) as l:
             inlines = l.readlines()
             solzen = float(inlines[1].strip().split()[0])
         self.coszen = np.cos(solzen / 360 * 2.0 * np.pi)
@@ -250,13 +237,6 @@ class SixSRT(TabularRT):
             transms[i] = float(scau) * float(scad) * float(gt)
             rhoatms[i] = float(rhoa)
 
-        if resample:
-            solzens = resample_spectrum(solzens, self.grid, self.wl, self.fwhm)
-            rhoatms = resample_spectrum(rhoatms, self.grid, self.wl, self.fwhm)
-            transms = resample_spectrum(transms, self.grid, self.wl, self.fwhm)
-            sphalbs = resample_spectrum(sphalbs, self.grid, self.wl, self.fwhm)
-            transups = resample_spectrum(transups, self.grid, self.wl, self.fwhm)
-
         results = {
             "solzen": solzens,
             "rhoatm": rhoatms,
@@ -265,73 +245,3 @@ class SixSRT(TabularRT):
             "transup": transups,
         }
         return results
-
-    def build_lut(self, rebuild=False):
-        TabularRT.build_lut(self, rebuild)
-
-        if self.modtran_emulation is False:
-            sixs_outputs = []
-            for point, fn in zip(self.points, self.files):
-                sixs_outputs.append(
-                    self.load_rt(fn, resample=self.resample_wavelengths)
-                )
-
-            self.cache = {}
-            dims_aug = self.lut_dims + [self.n_chan]
-            for key in self.lut_quantities:
-                temp = np.zeros(dims_aug, dtype=float)
-                for sixs_output, point in zip(sixs_outputs, self.points):
-                    ind = [np.where(g == p)[0] for g, p in zip(self.lut_grids, point)]
-                    ind = tuple(ind)
-                    temp[ind] = sixs_output[key]
-
-                self.luts[key] = VectorInterpolator(
-                    self.lut_grids, temp, self.lut_interp_types, self.interpolator_style
-                )
-        else:
-            one_file = self.load_rt(self.files[0], resample=False)
-
-    def _lookup_lut(self, point):
-        ret = {}
-        for key, lut in self.luts.items():
-            ret[key] = np.array(lut(point)).ravel()
-        return ret
-
-    def get(self, x_RT: np.array, geom: Geometry):
-        """Get interpolated six-s results at a particular location
-
-        Args:
-            x_RT: radiative-transfer portion of the statevector
-            geom: local geometry conditions for lookup
-
-        Returns:
-            interpolated modtran result
-
-        """
-        point = np.zeros((self.n_point,))
-        for point_ind, name in enumerate(self.lut_grid_config):
-            if name in self.statevector_names:
-                ix = self.statevector_names.index(name)
-                point[point_ind] = x_RT[ix]
-            elif name == "elev":
-                point[point_ind] = geom.surface_elevation_km
-            elif name == "alt":
-                point[point_ind] = min(geom.observer_altitude_km, 99)
-            elif name == "viewzen":
-                point[point_ind] = geom.observer_zenith
-            elif name == "viewaz":
-                point[point_ind] = geom.observer_azimuth
-            elif name == "solaz":
-                point[point_ind] = geom.solar_azimuth
-            elif name == "solzen":
-                point[point_ind] = geom.solar_zenith
-            elif name == "phi":
-                point[point_ind] = geom.phi
-            elif name == "umu":
-                point[point_ind] = geom.umu
-            else:
-                # If a variable is defined in the lookup table but not
-                # specified elsewhere, we will default to the minimum
-                point[point_ind] = min(self.lut_grid_config[name])
-
-        return self._lookup_lut(point)

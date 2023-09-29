@@ -28,8 +28,8 @@ from collections import OrderedDict
 import numpy as np
 import ray
 
+from isofit import get_isofit_path
 from isofit.configs import Config
-from isofit.configs.sections.implementation_config import ImplementationConfig
 from isofit.configs.sections.radiative_transfer_config import (
     RadiativeTransferEngineConfig,
 )
@@ -43,17 +43,24 @@ class RadiativeTransferEngine:
     def __init__(
         self,
         engine_config: RadiativeTransferEngineConfig,
-        full_config: Config,
+        interpolator_style: str,
+        instrument_wavelength_file: str = None,
+        overwrite_interpolator: bool = False,
+        cache_size: int = 16,
+        lut_grid: dict = None,
     ):
         self.engine_config = engine_config
-        self.full_config = full_config
-        self.implementation_config: ImplementationConfig = (
-            self.full_config.implementation
-        )
+        self.interpolator_style = interpolator_style
+        self.overwrite_interpolator = overwrite_interpolator
+        self.cache_size = cache_size
+
+        if os.path.isfile(self.prebuilt_lut_file) is False and lut_grid is None:
+            raise AttributeError(
+                "Must provide either a prebuilt LUT file or a LUT grid"
+            )
 
         self.emission_mode = engine_config.emission_mode
         self.engine_base_dir = engine_config.engine_base_dir
-
         self.angular_lut_keys_degrees = [
             "observer_azimuth",
             "observer_zenith",
@@ -62,6 +69,8 @@ class RadiativeTransferEngine:
             "relative_azimuth",
         ]
         self.angular_lut_keys_radians = []
+
+        self.lut_dir = engine_config.lut_path
 
         self.geometry_lut_indices = None
         self.geometry_lut_names = None
@@ -79,20 +88,22 @@ class RadiativeTransferEngine:
         self.multipart_transmittance = engine_config.multipart_transmittance
         self.topography_model = engine_config.topography_model
 
-        # TBD
-        self.lut_products_nomenclature = [
+        self.earth_sun_distance_path = os.path.join(
+            get_isofit_path(), "data", "earth_sun_distance.txt"
+        )
+        self.earth_sun_distance_reference = np.loadtxt(self.earth_sun_distance_path)
+
+        # This is only for checking the validity of the read in sim names
+        self.possible_lut_output_names = [
             "rhoatm",
             "transm_down_dir",
             "transm_down_dif",
             "transm_up_dir",
             "transm_up_dif",
             "sphalb",
+            "thermal_upwelling",
+            "thermal_downwelling",
         ]
-        if self.emission_mode:
-            self.lut_products_nomenclature = [
-                "thermal_upwelling",
-                "thermal_downwelling",
-            ] + self.lut_products_nomenclature
 
         if self.multipart_transmittance:
             # ToDo: check if we're running the 2- or 3-albedo method
@@ -102,7 +113,7 @@ class RadiativeTransferEngine:
         if engine_config.wavelength_file is not None:
             wavelength_file = engine_config.wavelength_file
         else:
-            wavelength_file = full_config.forward_model.instrument.wavelength_file
+            wavelength_file = instrument_wavelength_file
 
         self.wl, self.fwhm = common.load_wavelen(wavelength_file)
 
@@ -116,20 +127,8 @@ class RadiativeTransferEngine:
 
         self.n_chan = len(self.wl)
 
-        self.implementation_mode = full_config.implementation.mode
-
-        self.interpolator_style = (
-            full_config.forward_model.radiative_transfer.interpolator_style
-        )
-
-        # Defaults False, where True will overwrite any existing interpolator pickles
-        self.overwrite_interpolator = (
-            full_config.forward_model.radiative_transfer.overwrite_interpolator
-        )
-
         # Prepare a cache for self._lookup_lut(), setting cache_size to 0 will disable
         self.cache = {}
-        self.cache_size = full_config.forward_model.radiative_transfer.cache_size
 
         # If prebuilt LUT is available, read a few important LUT parameters and functions
         if self.lut:
@@ -141,69 +140,26 @@ class RadiativeTransferEngine:
             # a lookup table dimension, but some lookup table dimensions
             # (like geometry parameters) may not be in the state vector.
             # TODO: ensure consistency with group keys in LUT file
-            self.lut_dimensions = self.lut["Dimensions"]
-            self.lut_sample_space = self.lut["SampleSpace"]
-            for output in self.lut["Products"]:
-                try:
-                    assert output in self.lut_products_nomenclature
-                except AssertionError:
-                    raise AssertionError(
-                        f"LUT output name {output} does not match nomenclature."
-                    )
-            self.lut_products = self.lut["Products"]
+            full_lut_grid = self.lut["sample_space"]
         else:
             self.solar_irr = None
-            self.full_lut_grid = full_config.forward_model.radiative_transfer.lut_grid
-            self.lut_products = self.lut_products_nomenclature
-            if engine_config.lut_names is not None:
-                self.lut_dimensions = engine_config.lut_names
-            else:
-                self.lut_dimensions = (
-                    full_config.forward_model.radiative_transfer.lut_grid.keys()
-                )
+            full_lut_grid = lut_grid
 
-        # Selectively get lut components that are in this particular RTE
+        # Set up LUT grid
         self.lut_grid_config = OrderedDict()
+        if engine_config.lut_names is not None:
+            lut_names = engine_config.lut_names
+        else:
+            lut_names = full_lut_grid.keys()
 
-        for key, value in self.full_lut_grid.items():
-            if key in self.lut_dimensions:
+        for key, value in full_lut_grid.items():
+            if key in lut_names:
                 self.lut_grid_config[key] = value
-
-        # Selectively get statevector components that are in this particular RTE
-        self.statevector_names = (
-            full_config.forward_model.radiative_transfer.statevector.get_element_names()
-        )
-
-        # If not prebuilt LUT is provided, set up directory for freshly created LUTs
-        if not self.lut:
-            self.lut_dir = engine_config.lut_path
+        del lut_names
 
         self.n_point = len(self.lut_grid_config)
-        self.n_state = len(self.statevector_names)
 
         self.luts = {}
-
-        # We establish scaling, bounds, and initial guesses for each free parameter
-        # of the state vector. The free state vector elements are optimized during the
-        # inversion, and must have associated dimensions in the LUT grid.
-        self.bounds, self.scale, self.init = [], [], []
-        self.prior_mean, self.prior_sigma = [], []
-
-        for key in self.statevector_names:
-            element: StateVectorElementConfig = full_config.forward_model.radiative_transfer.statevector.get_single_element_by_name(
-                key
-            )
-            self.bounds.append(element.bounds)
-            self.scale.append(element.scale)
-            self.init.append(element.init)
-            self.prior_sigma.append(element.prior_sigma)
-            self.prior_mean.append(element.prior_mean)
-
-        self.bounds = np.array(self.bounds)
-        self.scale = np.array(self.scale)
-        self.init = np.array(self.init)
-        self.prior_mean = np.array(self.prior_mean)
-        self.prior_sigma = np.array(self.prior_sigma)
 
         self.lut_dims = []
         self.lut_grids = []
@@ -211,14 +167,7 @@ class RadiativeTransferEngine:
         self.lut_interp_types = []
 
         for key, grid_values in self.lut_grid_config.items():
-            # Do some quick checks on the values
-            # For forward (simulation) mode, 1-dimensional LUT grids are OK!
-            if len(grid_values) == 1 and not self.implementation_mode == "simulation":
-                err = (
-                    "Only 1 value in LUT grid {}. ".format(key)
-                    + "1-d LUT grids cannot be interpreted."
-                )
-                raise ValueError(err)
+            # TODO: make sure 1-d grids can be handled
             if grid_values != sorted(grid_values):
                 raise ValueError("Lookup table grid needs ascending order")
 
@@ -239,24 +188,14 @@ class RadiativeTransferEngine:
         # Cast as array for faster reference later
         self.lut_interp_types = np.array(self.lut_interp_types)
 
-        # "points" contains all combinations of grid points
-        # We will have one filename prefix per point
-        self.points = common.combos(self.lut_grids)
-        self.files = []
-
-        for point in self.points:
-            outf = self.point_to_filename(point)
-            self.files.append(outf)
-
         # Initialize a 1 value hash dict
         self.last_point_looked_up = np.zeros(self.n_point)
         self.last_point_lookup_values = np.zeros(self.n_point)
 
-        if engine_config.interpolator_base_path:
-            self.interpolator_disk_paths = [
-                engine_config.interpolator_base_path + "_" + rtq + ".pkl"
-                for rtq in self.lut_names
-            ]
+        self.interpolator_disk_paths = [
+            engine_config.interpolator_base_path + "_" + rtq + ".pkl"
+            for rtq in self.lut_names
+        ]
 
     def make_simulation_call(self, point: np.array, template_only: bool = False):
         """Write template(s) and run simulation.
@@ -264,6 +203,14 @@ class RadiativeTransferEngine:
         Args:
             point (np.array): conditions to alter in simulation
             template_only (bool): only write template file and then stop
+        """
+        raise AssertionError("Must populate simulation call")
+
+    def read_simulation_results(self, point: np.array):
+        """Read simulation results to standard form.
+
+        Args:
+            point (np.array): conditions to alter in simulation
         """
         raise AssertionError("Must populate simulation call")
 
@@ -310,24 +257,27 @@ class RadiativeTransferEngine:
             self.last_point_lookup_values = ret
             return ret
 
-    def read_simulation_results(self, point: np.array):
-        raise AssertionError("Must populate simulation call")
-
-    def run_simulations(self, command_list: list, n_processes: int = 1) -> None:
+    def run_simulations(self) -> None:
         """
-        Run a list of commands in parallel
+        Run all simulations for the LUT grid.
 
-        Parameters
-        ----------
-        command_list: list
-            List of commands to run
-        n_processes: int, defaults=1
-            Number of processes to run in parallel
         """
+
+        # "points" contains all combinations of grid points
+        # We will have one filename prefix per point
+        points = common.combos(self.lut_grids)
 
         # Make the LUT calls (in parallel if specified)
         results = ray.get(
-            [spawn_rt.remote(rebuild_cmd, self.lut_dir) for rebuild_cmd in command_list]
+            [
+                stream_simulation.remote(
+                    point,
+                    self.make_simulation_call,
+                    self.read_simulation_results,
+                    self.prebuilt_lut_file,
+                )
+                for point in points
+            ]
         )
 
     def two_albedo_method(
@@ -422,23 +372,30 @@ class RadiativeTransferEngine:
 
 
 @ray.remote
-def spawn_rt(
-    command: str,
-    local_dir: str,
-    simulation_output_base: str,
-    lut_output_file: str,
-    max_buffer_time: float = 2.0,
+def stream_simulation(
+    point: np.array,
+    simmulation_call: function,
+    reader: function,
+    save_file: str,
+    max_buffer_time: float = 0.5,
 ):
-    """Run a CLI command."""
+    """Run a simulation for a single point and stream the results to a saved lut file.
 
-    logging.debug(command)
+    Args:
+        point (np.array): conditions to alter in simulation
+        simmulation_call (function): function to run the simulation
+        reader (function): function to read the results of the simulation
+        save_file (str): netcdf file to save results to
+        max_buffer_time (float, optional): _description_. Defaults to 0.5.
+    """
+
+    logging.debug("Running simulation for point: %s" % point)
 
     # Add a very slight timing offset to prevent all subprocesses
     # starting simultaneously
     time.sleep(float(np.random.random(1)) * max_buffer_time)
 
-    # Step 1: Run the simulation
-    subprocess.call(command, shell=True, cwd=local_dir)
-
-    # Step 2: Read the simulation
-    sim_results = read_simulation_results(simulation_output_base)
+    simmulation_call(point)
+    res = reader(point)
+    # TODO: access this from new netcdf lut helper
+    append_to_lut(point, res, save_file)

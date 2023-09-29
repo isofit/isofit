@@ -28,6 +28,9 @@ def writeHDF5(file: str, group: str = "data", **data) -> str:
     -------
     file: str
         Returns the file string path if successful
+
+
+    TODO: Update to write a chunk of data (1 sim) at a time
     """
     with h5py.File(file, "a") as h5:
         if group in h5:
@@ -87,3 +90,49 @@ def readHDF5(file: str, group: str = "data", subset: list = None) -> dict:
             data[key] = value
 
     return data
+
+
+def verify(file):
+    """
+    Verifies a LUT NetCDF file is valid as per ISOFIT specifications
+
+    Parameters
+    ----------
+    file: str
+        Path to a luts.nc file
+
+    Returns
+    bool
+        True is the file is valid, False if not. Logger.error messages will be
+        provided
+    """
+    ...
+
+
+def runSims(*strings):
+    """
+    Executes a list of simulation calls in parallel.
+
+    Parameters
+    ----------
+    *strings
+        List of sim strings to execute
+
+    Returns
+    -------
+    list
+        A list of the returns from the simulations
+
+    Notes
+    -----
+    Phil to implement this function further
+    """
+
+    def process(command):
+        """ """
+        subprocess.run(command, shell=True, check=True)
+
+    func = ray.put(process)
+    jobs = [func.remote(cmd) for cmd in strings]
+
+    return ray.get(jobs)
