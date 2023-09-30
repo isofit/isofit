@@ -31,15 +31,13 @@ import numpy as np
 import scipy.interpolate
 import scipy.stats
 
-from isofit.configs import Config
 from isofit.configs.sections.radiative_transfer_config import (
     RadiativeTransferEngineConfig,
 )
-from isofit.core.geometry import Geometry
 from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
 
-from ..core.common import VectorInterpolator, json_load_ascii, recursive_replace
-from ..radiative_transfer.look_up_tables import FileExistsError, TabularRT
+from ..core.common import json_load_ascii, recursive_replace
+from ..radiative_transfer.look_up_tables import FileExistsError
 
 ### Variables ###
 

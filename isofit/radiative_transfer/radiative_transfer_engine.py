@@ -21,7 +21,6 @@
 
 import logging
 import os
-import subprocess
 import time
 from collections import OrderedDict
 
@@ -29,11 +28,9 @@ import numpy as np
 import ray
 
 from isofit import get_isofit_path
-from isofit.configs import Config
 from isofit.configs.sections.radiative_transfer_config import (
     RadiativeTransferEngineConfig,
 )
-from isofit.configs.sections.statevector_config import StateVectorElementConfig
 from isofit.core import common
 from isofit.core.geometry import Geometry
 from isofit.utils.luts import readHDF5
