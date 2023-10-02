@@ -23,6 +23,7 @@ import logging
 import os
 import time
 from collections import OrderedDict
+from typing import Callable
 
 import numpy as np
 import ray
@@ -33,7 +34,7 @@ from isofit.configs.sections.radiative_transfer_config import (
 )
 from isofit.core import common
 from isofit.core.geometry import Geometry
-from isofit.utils.luts import readHDF5
+from isofit.luts import zarr as luts
 
 
 class RadiativeTransferEngine:
@@ -77,7 +78,7 @@ class RadiativeTransferEngine:
 
         # Read prebuilt LUT from HDF5 if existing
         if self.prebuilt_lut_file and os.path.isfile(self.prebuilt_lut_file):
-            self.lut = readHDF5(file=self.prebuilt_lut_file)
+            self.lut = luts.initialize(file=self.prebuilt_lut_file)
         else:
             self.lut = None
 
@@ -371,8 +372,8 @@ class RadiativeTransferEngine:
 @ray.remote
 def stream_simulation(
     point: np.array,
-    simmulation_call: function,
-    reader: function,
+    simmulation_call: Callable,
+    reader: Callable,
     save_file: str,
     max_buffer_time: float = 0.5,
 ):
@@ -395,4 +396,4 @@ def stream_simulation(
     simmulation_call(point)
     res = reader(point)
     # TODO: access this from new netcdf lut helper
-    append_to_lut(point, res, save_file)
+    luts.updatePoint(point, res, save_file)
