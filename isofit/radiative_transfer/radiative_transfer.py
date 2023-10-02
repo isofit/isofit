@@ -112,8 +112,6 @@ class RadiativeTransfer:
         # These should all be the same so just grab one
         self.coszen = [RT.coszen for RT in self.rt_engines][0]
 
-        self.topography_model = config.topography_model
-
     def xa(self):
         """Pull the priors from each of the individual RTs."""
         return self.prior_mean
@@ -159,6 +157,7 @@ class RadiativeTransfer:
             else:
                 cos_i = geom.cos_i
             t_total_up = r["transm_up_dif"] + r["transm_up_dir"]
+            t_total_down = t_dir_down + t_dif_down
             s_alb = r["sphalb"]
             # topographic flux (topoflux) effect corrected
             ret = (
@@ -261,6 +260,7 @@ class RadiativeTransfer:
             else:
                 cos_i = geom.cos_i
             t_total_up = r["transm_up_dif"] + r["transm_up_dir"]
+            t_total_down = t_dir_down + t_dif_down
             s_alb = r["sphalb"]
 
             a = t_total_up * (I * cos_i * t_dir_down + I * self.coszen * t_dif_down)
