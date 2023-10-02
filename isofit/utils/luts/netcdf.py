@@ -32,16 +32,15 @@ def initialize(file, wl, points):
         {pointName: np.array(pointValues)}
     """
     with Dataset(file, "w", format="NETCDF4", clobber=True) as ds:
-        # Initialize the wavelength and point dimensions
+        # Initialize the dimensions and set the wavelength values
+        ds.createDimension("point", size=len(list(points.items())[0][1]))
         ds.createDimension("wl", size=wls)
-        ds.createDimension("point", size=list(points.items())[0][1].size)
-
-        # Save wavelength values to variable
         ds.createVariable("wl", np.float64, dimensions=["wl"])
         ds["wl"][:] = wl
 
         # Insert the point values as variables
         for key, values in points.items():
+            ds.createDimension(key, size=len(values))
             ds.createVariable(key, np.float64, dimensions=["point"])
             ds[key][:] = values
 
