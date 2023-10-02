@@ -31,14 +31,13 @@ import numpy as np
 import scipy.interpolate
 import scipy.stats
 
-from isofit.configs import Config
 from isofit.configs.sections.radiative_transfer_config import (
     RadiativeTransferEngineConfig,
 )
-from isofit.core.geometry import Geometry
+from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
 
-from ..core.common import VectorInterpolator, json_load_ascii, recursive_replace
-from ..radiative_transfer.look_up_tables import FileExistsError, TabularRT
+from ..core.common import json_load_ascii, recursive_replace
+from ..radiative_transfer.look_up_tables import FileExistsError
 
 ### Variables ###
 
@@ -48,37 +47,30 @@ tropopause_altitude_km = 17.0
 ### Classes ###
 
 
-class ModtranRT(TabularRT):
+class ModtranRT(RadiativeTransferEngine):
     """A model of photon transport including the atmosphere."""
 
     def __init__(
         self,
         engine_config: RadiativeTransferEngineConfig,
-        full_config: Config,
+        interpolator_style: str,
+        instrument_wavelength_file: str = None,
+        overwrite_interpolator: bool = False,
+        cache_size: int = 16,
+        lut_grid: dict = None,
         build_lut: bool = True,
     ):
         """."""
 
-        # Specify which of the potential MODTRAN LUT parameters are angular, which will be handled differently
-        self.angular_lut_keys_degrees = [
-            "OBSZEN",
-            "TRUEAZ",
-            "viewzen",
-            "viewaz",
-            "solzen",
-            "solaz",
-        ]
-        self.angular_lut_keys_radians = []
+        super().__init__(
+            engine_config,
+            interpolator_style,
+            instrument_wavelength_file,
+            overwrite_interpolator,
+            cache_size,
+            lut_grid,
+        )
 
-        super().__init__(engine_config, full_config)
-
-        # Flag to determine if MODTRAN should operate with reflectivity = 1
-        # (enabling thermal_upwelling and thermal_downwelling to be determined - see comments below)
-        self.treat_as_emissive = False
-        if self.wl[0] > 2600:
-            self.treat_as_emissive = True
-
-        self.modtran_dir = self.find_basedir(engine_config)
         flt_name = "wavelengths_{}_{}_{}.flt".format(
             engine_config.engine_name, self.wl[0], self.wl[-1]
         )
@@ -111,51 +103,16 @@ class ModtranRT(TabularRT):
         # Determine whether we are using the three run or single run strategy
         self.multipart_transmittance = engine_config.multipart_transmittance
 
-        # Idenfity the physical quantities we will calculate
-        self.modtran_lut_names = ["rhoatm", "transm", "sphalb", "transup"]
-
-        # Special emissive terms
-        if self.treat_as_emissive:
-            self.modtran_lut_names = [
-                "thermal_upwelling",
-                "thermal_downwelling",
-            ] + self.modtran_lut_names
-
-        # If excercising the multipart transmittance option we will run with
-        # three reflectance values
-        if self.multipart_transmittance:
-            self.test_rfls = [0, 0.1, 0.5]
-            self.modtran_lut_names = self.modtran_lut_names + [
-                "t_down_dir",
-                "t_down_dif",
-                "t_up_dir",
-                "t_up_dif",
-            ]
-
         self.last_point_looked_up = np.zeros(self.n_point)
         self.last_point_lookup_values = np.zeros(self.n_point)
 
-        # Build the lookup table
-        if build_lut:
-            self.build_lut()
-
-    def find_basedir(self, config):
-        """Seek out a modtran base directory."""
-
-        if config.engine_base_dir is not None:
-            return config.engine_base_dir
-
-        try:
-            return os.getenv("MODTRAN_DIR")
-        except KeyError:
-            logging.error("I could not find the MODTRAN base directory")
-            raise KeyError("I could not find the MODTRAN base directory")
-
-    def load_tp6(self, infile):
+    def load_tp6(self, point):
         """Load a '.tp6' file. This contains the solar geometry. We
         Return cosine of mean solar zenith."""
 
-        with open(infile, "r") as f:
+        filename_base = self.point_to_filename(point)
+        tp6_file = os.path.join(self.lut_dir, filename_base + ".tp6")
+        with open(tp6_file, "r") as f:
             ts, te = -1, -1  # start and end indices
             lines = []
             while len(lines) == 0 or len(lines[-1]) > 0:
@@ -171,12 +128,12 @@ class ModtranRT(TabularRT):
                     te = i
                     break
             if ts < 0:
-                logging.error("%s is missing solar geometry" % infile)
-                raise ValueError("%s is missing solar geometry" % infile)
+                logging.error("%s is missing solar geometry" % tp6_file)
+                raise ValueError("%s is missing solar geometry" % tp6_file)
         szen = np.array([float(lines[i].split()[3]) for i in range(ts, te)]).mean()
         return szen
 
-    def load_chn(self, infile, coszen):
+    def load_chn(self, point):
         """Load a '.chn' output file and parse critical coefficient vectors.
 
            These are:
@@ -217,7 +174,11 @@ class ModtranRT(TabularRT):
 
         We parse them one wavelength at a time."""
 
-        with open(infile) as f:
+        filename_base = self.point_to_filename(point)
+        chn_file = os.path.join(self.lut_dir, filename_base + ".chn")
+        coszen = self.get_coszen(point)
+
+        with open(chn_file) as f:
             sols, transms, sphalbs, wls, rhoatms, transups = [], [], [], [], [], []
             t_down_dirs, t_down_difs, t_up_dirs, t_up_difs = [], [], [], []
             grnd_rflts_1, drct_rflts_1, grnd_rflts_2, drct_rflts_2 = [], [], [], []
@@ -311,72 +272,23 @@ class ModtranRT(TabularRT):
                     )  # path radiance (sum of single and multiple scattering)
 
         if self.multipart_transmittance:
-            """
-            This implementation is following Gaunter et al. (2009) (DOI:10.1080/01431160802438555),
-            and modified by Nimrod Carmon. It is called the "2-albedo" method, referring to running
-            modtran with 2 different surface albedos. The 3-albedo method is similar to this one with
-            the single difference where the "path_radiance_no_surface" variable is taken from a
-            zero-surface-reflectance modtran run instead of being calculated from 2 modtran outputs.
-            There are a few argument as to why this approach is beneficial:
-            (1) for each grid point on the lookup table you sample modtran 2 or 3 times, i.e. you get
-            2 or 3 "data points" for the atmospheric parameter of interest. This in theory allows us
-            to use a lower band model resolution modtran run, which is much faster, while keeping
-            high accuracy. Currently we have the 5 cm-1 band model resolution configured.
-            The second advantage is the possibility to use the decoupled transmittance products to exapnd
-            the forward model and account for more physics e.g. shadows \ sky view \ adjacency \ terrain etc.
-
-            """
-            t_up_dirs = np.array(transups)
-            direct_ground_reflected_1 = np.array(drct_rflts_1)
-            total_ground_reflected_1 = np.array(grnd_rflts_1)
-            direct_ground_reflected_2 = np.array(drct_rflts_2)
-            total_ground_reflected_2 = np.array(grnd_rflts_2)
-            path_radiance_1 = np.array(lp_1)
-            path_radiance_2 = np.array(lp_2)
-            TOA_Irad = np.array(sols) * coszen / np.pi
-            rfl_1 = self.test_rfls[1]
-            rfl_2 = self.test_rfls[2]
-            mus = coszen
-
-            direct_flux_1 = direct_ground_reflected_1 * np.pi / rfl_1 / t_up_dirs
-            global_flux_1 = total_ground_reflected_1 * np.pi / rfl_1 / t_up_dirs
-            diffuse_flux_1 = global_flux_1 - direct_flux_1  # diffuse flux
-
-            global_flux_2 = total_ground_reflected_2 * np.pi / rfl_2 / t_up_dirs
-
-            path_radiance_no_surface = (
-                rfl_2 * path_radiance_1 * global_flux_2
-                - rfl_1 * path_radiance_2 * global_flux_1
-            ) / (rfl_2 * global_flux_2 - rfl_1 * global_flux_1)
-
-            # Diffuse upwelling transmittance
-            t_up_difs = (
-                np.pi
-                * (path_radiance_1 - path_radiance_no_surface)
-                / (rfl_1 * global_flux_1)
+            (
+                transms,
+                t_down_dirs,
+                t_down_difs,
+                t_up_dirs,
+                t_up_difs,
+                sphalbs,
+            ) = self.two_albedo_method(
+                transups=transups,
+                drct_rflts_1=drct_rflts_1,
+                grnd_rflts_1=grnd_rflts_1,
+                grnd_rflts_2=grnd_rflts_2,
+                lp_1=lp_1,
+                lp_2=lp_2,
+                coszen=coszen,
+                widths=widths,
             )
-
-            # Spherical Albedo
-            sphalbs = (global_flux_1 - global_flux_2) / (
-                rfl_1 * global_flux_1 - rfl_2 * global_flux_2
-            )
-            direct_flux_radiance = direct_flux_1 / mus
-
-            global_flux_no_surface = global_flux_1 * (1.0 - rfl_1 * sphalbs)
-            diffuse_flux_no_surface = (
-                global_flux_no_surface - direct_flux_radiance * coszen
-            )
-
-            global_flux_no_surface = global_flux_1 * (1.0 - rfl_1 * sphalbs)
-            diffuse_flux_no_surface = (
-                global_flux_no_surface - direct_flux_radiance * coszen
-            )
-
-            t_down_dirs = (direct_flux_radiance * coszen / widths / np.pi) / TOA_Irad
-            t_down_difs = (diffuse_flux_no_surface / widths / np.pi) / TOA_Irad
-
-            # total transmittance
-            transms = (t_down_dirs + t_down_difs) * (t_up_dirs + t_up_difs)
 
         params = [
             np.array(i)
@@ -397,11 +309,6 @@ class ModtranRT(TabularRT):
         ]
 
         return tuple(params)
-
-    def ext550_to_vis(self, ext550):
-        """."""
-
-        return np.log(50.0) / (ext550 + 0.01159)
 
     def modtran_driver(self, overrides):
         """Write a MODTRAN 6.0 input file."""
@@ -426,15 +333,18 @@ class ModtranRT(TabularRT):
                 "GMTIME in MODTRAN driver overrides, but IPARM set to 12.  Check"
                 " modtran template."
             )
-        elif param[0]["MODTRANINPUT"]["GEOMETRY"]["IPARM"] == 11 and set(
-            ["solar_azimuth", "solaz", "solar_zenith", "solzen"]
-        ).intersection(set(overrides.keys())):
+        elif param[0]["MODTRANINPUT"]["GEOMETRY"]["IPARM"] == 11 and {
+            "solar_azimuth",
+            "solaz",
+            "solar_zenith",
+            "solzen",
+        }.intersection(set(overrides.keys())):
             raise AttributeError(
                 "Solar geometry (solar az/azimuth zen/zenith) is specified, but IPARM"
                 " is set to 12.  Check MODTRAN template"
             )
 
-        if set(["PARM1", "PARM2"]).intersection(set(overrides.keys())):
+        if {"PARM1", "PARM2"}.intersection(set(overrides.keys())):
             raise AttributeError(
                 "PARM1 and PARM2 keys not supported as LUT dimensions.  Please use"
                 " either solar_azimuth/solaz or solar_zenith/solzen"
@@ -639,151 +549,77 @@ class ModtranRT(TabularRT):
             lvl0["ABSC"] = [float(v) / total_extc550 for v in total_absc]
 
         if self.multipart_transmittance:
+            const_rfl = np.array(np.array(self.test_rfls) * 100, dtype=int)
             # Here we copy the original config and just change the surface reflectance
             param[0]["MODTRANINPUT"]["CASE"] = 0
-            param[0]["MODTRANINPUT"]["SURFACE"]["SURREF"] = self.test_rfls[0]
+            param[0]["MODTRANINPUT"]["SURFACE"]["SURFP"][
+                "CSALB"
+            ] = f"LAMB_CONST_{const_rfl[0]}_PCT"
             param1 = deepcopy(param[0])
             param1["MODTRANINPUT"]["CASE"] = 1
-            param1["MODTRANINPUT"]["SURFACE"]["SURREF"] = self.test_rfls[1]
+            param1["MODTRANINPUT"]["SURFACE"]["SURFP"][
+                "CSALB"
+            ] = f"LAMB_CONST_{const_rfl[1]}_PCT"
             param.append(param1)
             param2 = deepcopy(param[0])
             param2["MODTRANINPUT"]["CASE"] = 2
-            param2["MODTRANINPUT"]["SURFACE"]["SURREF"] = self.test_rfls[2]
+            param2["MODTRANINPUT"]["SURFACE"]["SURFP"][
+                "CSALB"
+            ] = f"LAMB_CONST_{const_rfl[2]}_PCT"
             param.append(param2)
 
         return json.dumps({"MODTRAN": param}), param
 
-    def build_lut(self, rebuild=False):
-        """Each LUT is associated with a source directory.
+    def check_modtran_water_upperbound(self) -> float:
+        """Check to see what the max water vapor values is at the first point in the LUT
 
-        We build a lookup table by:
-              (1) defining the LUT dimensions, state vector names, and the grid
-                  of values;
-              (2) running modtran if needed, with each MODTRAN run defining a
-                  different point in the LUT; and
-              (3) loading the LUTs, one per key atmospheric coefficient vector,
-                  into memory as VectorInterpolator objects.
+        Returns:
+            float: max water vapor value, or None if test fails
         """
+        point = np.array([x[-1] for x in self.lut_grids])
 
-        # Regenerate MODTRAN input wavelength file
-        if not os.path.exists(self.filtpath):
-            self.wl2flt(self.wl, self.fwhm, self.filtpath)
+        # Set the H2OSTR value as arbitrarily high - 50 g/cm2 in this case
+        point[self.lut_names.index("H2OSTR")] = 50
 
-        # Check that the H2OSTR value, if present, is not too high.
-        # MODTRAN caps the value at 5x profile specified value or 100% RH, as
-        # defined in PDF-page 52 of the MODTRAN user guide.
-        if "H2OSTR" in self.lut_names:
-            if (
-                "H2OOPT" in self.template[0]["MODTRANINPUT"]["ATMOSPHERE"].keys()
-                and self.template[0]["MODTRANINPUT"]["ATMOSPHERE"]["H2OOPT"] == "+"
-            ):
-                logging.info(
-                    "H2OOPT found in MODTRAN template - ignoring H2O upper bound"
-                )
-            else:
-                # Only do this check if we don't have a LUT provided:
-                need_to_rebuild = np.any(
-                    [
-                        not self.required_results_exist(x)
-                        for x in self.get_lut_filenames()
-                    ]
-                )
-                if need_to_rebuild:
-                    # Define a realistic point, based on lut grid
-                    point = np.array([x[-1] for x in self.lut_grids])
+        filebase = os.path.join(self.lut_dir, "H2O_bound_test")
+        cmd = self.rebuild_cmd(point, filebase)
 
-                    # Set the H2OSTR value as arbitrarily high - 50 g/cm2 in this case
-                    point[self.lut_names.index("H2OSTR")] = 50
+        # Run MODTRAN for up to 10 seconds - this should be plenty of time
+        if os.path.isdir(self.lut_dir) is False:
+            os.mkdir(self.lut_dir)
+        try:
+            subprocess.call(cmd, shell=True, timeout=10, cwd=self.lut_dir)
+        except:
+            pass
 
-                    filebase = os.path.join(
-                        os.path.dirname(self.files[-1]), "H2O_bound_test"
-                    )
-                    cmd = self.rebuild_cmd(point, filebase)
+        max_water = None
+        with open(
+            os.path.join(self.lut_dir, filebase + ".tp6"), errors="ignore"
+        ) as tp6file:
+            for count, line in enumerate(tp6file):
+                if "The water column is being set to the maximum" in line:
+                    max_water = line.split(",")[1].strip()
+                    max_water = float(max_water.split(" ")[0])
+                    break
 
-                    # Run MODTRAN for up to 10 seconds - this should be plenty of time
-                    if os.path.isdir(self.lut_dir) is False:
-                        os.mkdir(self.lut_dir)
-                    try:
-                        subprocess.call(cmd, shell=True, timeout=10, cwd=self.lut_dir)
-                    except:
-                        pass
+        return max_water
 
-                    max_water = None
-                    with open(
-                        os.path.join(self.lut_dir, filebase + ".tp6"), errors="ignore"
-                    ) as tp6file:
-                        for count, line in enumerate(tp6file):
-                            if "The water column is being set to the maximum" in line:
-                                max_water = line.split(",")[1].strip()
-                                max_water = float(max_water.split(" ")[0])
-                                break
-
-                    if max_water is None:
-                        logging.error(
-                            "Could not find MODTRAN H2O upper bound in file {}".format(
-                                filebase + ".tp6"
-                            )
-                        )
-                        raise KeyError("Could not find MODTRAN H2O upper bound")
-
-                    if (
-                        np.max(self.lut_grids[self.lut_names.index("H2OSTR")])
-                        > max_water
-                    ):
-                        logging.error(
-                            "MODTRAN max H2OSTR with current profile is {}, while H2O"
-                            " lut_grid is {}.  Either adjust MODTRAN profile or"
-                            " lut_grid.  To over-ride MODTRANs maximum allowable value,"
-                            ' set H2OOPT to "+"'.format(
-                                max_water,
-                                self.lut_grids[self.lut_names.index("H2OSTR")],
-                            )
-                        )
-                        raise KeyError(
-                            "MODTRAN H2O lut grid is invalid - see logs for details."
-                        )
-
-        TabularRT.build_lut(self, rebuild)
-
-        mod_outputs = []
-        for point, fn in zip(self.points, self.files):
-            mod_outputs.append(self.load_rt(fn))
-
-        self.wl = mod_outputs[0]["wl"]
-        self.solar_irr = mod_outputs[0]["sol"]
-        np.save("solar_irr.npy", self.solar_irr)
-        self.coszen = np.cos(mod_outputs[0]["solzen"] * np.pi / 180.0)
-
-        dims_aug = self.lut_dims + [self.n_chan]
-        for key in self.modtran_lut_names:
-            temp = np.zeros(dims_aug, dtype=float)
-            for mod_output, point in zip(mod_outputs, self.points):
-                ind = [np.where(g == p)[0] for g, p in zip(self.lut_grids, point)]
-                ind = tuple(ind)
-                temp[ind] = mod_output[key]
-
-            self.luts[key] = VectorInterpolator(
-                self.lut_grids, temp, self.lut_interp_types, self.interpolator_style
-            )
-
-    def rebuild_cmd(self, point, fn):
+    def rebuild_cmd(self, point):
         """."""
 
-        if not fn:
-            logging.error("Function is not defined.")
-            raise SystemExit("Function is not defined.")
+        filename_base = self.point_to_filename(point)
 
         vals = dict([(n, v) for n, v in zip(self.lut_names, point)])
         vals["DISALB"] = True
-        vals["NAME"] = fn
+        vals["NAME"] = filename_base
         vals["FILTNM"] = os.path.normpath(self.filtpath)
         modtran_config_str, modtran_config = self.modtran_driver(dict(vals))
 
         # Check rebuild conditions: LUT is missing or from a different config
-        infilename = "LUT_" + fn + ".json"
-        infilepath = os.path.join(self.lut_dir, "LUT_" + fn + ".json")
+        infilename = "LUT_" + filename_base + ".json"
+        infilepath = os.path.join(self.lut_dir, "LUT_" + filename_base + ".json")
 
-        if not self.required_results_exist(fn):
+        if not self.required_results_exist(filename_base):
             rebuild = True
         else:
             # We compare the two configuration files, ignoring names and
@@ -808,24 +644,18 @@ class ModtranRT(TabularRT):
         # Specify location of the proper MODTRAN 6.0 binary for this OS
         xdir = {"linux": "linux", "darwin": "macos", "windows": "windows"}
 
-        # If self.modtran_dir is not defined, raise an exception
-        # This occurs e.g., when MODTRAN is not installed
-        if not self.modtran_dir:
-            logging.warning(
-                "MODTRAN directory not defined in config file, this may cause issues"
-                " down the line."
-            )
-
         # Generate the CLI path
         cmd = os.path.join(
-            self.modtran_dir, "bin", xdir[platform], "mod6c_cons " + infilename
+            self.engine_base_dir, "bin", xdir[platform], "mod6c_cons " + infilename
         )
         return cmd
 
-    def required_results_exist(self, fn):
-        infilename = os.path.join(self.lut_dir, "LUT_" + fn + ".json")
-        outchnname = os.path.join(self.lut_dir, fn + ".chn")
-        outtp6name = os.path.join(self.lut_dir, fn + ".tp6")
+    def required_results_exist(self, point):
+
+        filename_base = self.point_to_filename(point)
+        infilename = os.path.join(self.lut_dir, "LUT_" + filename_base + ".json")
+        outchnname = os.path.join(self.lut_dir, filename_base + ".chn")
+        outtp6name = os.path.join(self.lut_dir, filename_base + ".tp6")
 
         if (
             os.path.isfile(infilename)
@@ -836,14 +666,15 @@ class ModtranRT(TabularRT):
         else:
             return False
 
-    def load_rt(self, fn):
+    def load_rt(self, point):
         """."""
 
-        tp6file = os.path.join(self.lut_dir, fn + ".tp6")
+        file_basename = self.point_to_filename(point)
+        tp6file = os.path.join(self.lut_dir, file_basename + ".tp6")
         solzen = self.load_tp6(tp6file)
         coszen = np.cos(solzen * np.pi / 180.0)
 
-        chnfile = os.path.join(self.lut_dir, fn + ".chn")
+        chnfile = os.path.join(self.lut_dir, file_basename + ".chn")
         params = self.load_chn(chnfile, coszen)
 
         # Be careful with the two thermal values! They can only be used in
@@ -871,124 +702,6 @@ class ModtranRT(TabularRT):
         results_dict["solzen"] = solzen
         results_dict["coszen"] = coszen
         return results_dict
-
-    def _lookup_lut(self, point):
-        if np.all(np.equal(point, self.last_point_looked_up)):
-            return self.last_point_lookup_values
-        else:
-            ret = {}
-            for key, lut in self.luts.items():
-                ret[key] = np.array(lut(point)).ravel()
-
-            self.last_point_looked_up = point
-            self.last_point_lookup_values = ret
-            return ret
-
-    def get(self, x_RT: np.array, geom: Geometry) -> dict:
-        """Get interpolated MODTRAN results at a particular location
-
-        Args:
-            x_RT: radiative-transfer portion of the statevector
-            geom: local geometry conditions for lookup
-
-        Returns:
-            interpolated modtran result
-
-        """
-        point = np.zeros((self.n_point,))
-        for point_ind, name in enumerate(self.lut_grid_config):
-            if name in self.statevector_names:
-                ix = self.statevector_names.index(name)
-                point[point_ind] = x_RT[ix]
-            elif name == "OBSZEN":
-                point[point_ind] = 180.0 - abs(geom.observer_zenith)
-            elif name == "GNDALT":
-                point[point_ind] = geom.surface_elevation_km
-            elif name == "H1ALT":
-                point[point_ind] = geom.observer_altitude_km
-            elif name == "viewzen":
-                point[point_ind] = geom.observer_zenith
-            elif name == "viewaz":
-                point[point_ind] = geom.observer_azimuth
-            elif name == "solaz":
-                point[point_ind] = geom.solar_azimuth
-            elif name == "solzen":
-                point[point_ind] = geom.solar_zenith
-            elif name == "TRUEAZ":
-                point[point_ind] = geom.TRUEAZ
-            elif name == "phi":
-                point[point_ind] = geom.phi
-            elif name == "umu":
-                point[point_ind] = geom.umu
-            else:
-                # If a variable is defined in the lookup table but not
-                # specified elsewhere, we will default to the minimum
-                point[point_ind] = min(self.lut_grid_config[name])
-
-        return self._lookup_lut(point)
-
-    def get_L_atm(self, x_RT: np.array, geom: Geometry) -> np.array:
-        """Get the interpolated MODTRAN modeled atmospheric reflectance (aka path radiance).
-
-        Args:
-            x_RT: radiative-transfer portion of the statevector
-            geom: local geometry conditions for lookup
-
-        Returns:
-            the interpolated MODTRAN modeled atmospheric reflectance
-
-        """
-        if self.treat_as_emissive:
-            return self._get_L_atm_tir(x_RT, geom)
-        else:
-            return self._get_L_atm_vswir(x_RT, geom)
-
-    def _get_L_atm_vswir(self, x_RT: np.array, geom: Geometry) -> np.array:
-        r = self.get(x_RT, geom)
-        rho = r["rhoatm"]
-        rdn = rho / np.pi * (self.solar_irr * self.coszen)
-        return rdn
-
-    def _get_L_atm_tir(self, x_RT: np.array, geom: Geometry) -> np.array:
-        r = self.get(x_RT, geom)
-        return r["thermal_upwelling"]
-
-    def get_L_down_transmitted(self, x_RT: np.array, geom: Geometry) -> np.array:
-        """Get the interpolated MODTRAN downward atmospheric transmittance.
-
-        Args:
-            x_RT: radiative-transfer portion of the statevector
-            geom: local geometry conditions for lookup
-
-        Returns:
-            The interpolated MODTRAN downward atmospheric transmittance
-        """
-
-        if self.treat_as_emissive:
-            return self._get_L_down_transmitted_tir(x_RT, geom)
-        else:
-            return self._get_L_down_transmitted_vswir(x_RT, geom)
-
-    def _get_L_down_transmitted_vswir(self, x_RT, geom):
-        r = self.get(x_RT, geom)
-        rdn = (self.solar_irr * self.coszen) / np.pi * r["transm"]
-        return rdn
-
-    def _get_L_down_transmitted_tir(self, x_RT, geom):
-        """thermal_downwelling already includes the transmission factor. Also
-        assume there is no multiple scattering for TIR.
-        """
-        r = self.get(x_RT, geom)
-        return r["thermal_downwelling"]
-
-    def get_L_up(self, x_RT, geom):
-        """Thermal emission from the ground is provided by the thermal model,
-        so this function is a placeholder for future upgrades."""
-        return 0
-
-    def wl2flt(self, wls, fwhms, outfile):
-        """Helper function to generate Gaussian distributions around the
-        center wavelengths."""
 
     def wl2flt(self, wavelengths: np.array, fwhms: np.array, outfile: str) -> None:
         """Helper function to generate Gaussian distributions around the
