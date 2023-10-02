@@ -29,6 +29,7 @@ import numpy as np
 import ray
 
 from isofit import get_isofit_path
+from isofit.configs import Config
 from isofit.configs.sections.radiative_transfer_config import (
     RadiativeTransferEngineConfig,
 )
@@ -46,11 +47,16 @@ class RadiativeTransferEngine:
         overwrite_interpolator: bool = False,
         cache_size: int = 16,
         lut_grid: dict = None,
+        prebuilt_lut_file: str = "",
     ):
+
         self.engine_config = engine_config
+
         self.interpolator_style = interpolator_style
         self.overwrite_interpolator = overwrite_interpolator
         self.cache_size = cache_size
+        self.prebuilt_lut_file = prebuilt_lut_file
+        self.instrument_wavelength_file = instrument_wavelength_file
 
         if os.path.isfile(self.prebuilt_lut_file) is False and lut_grid is None:
             raise AttributeError(
@@ -87,7 +93,7 @@ class RadiativeTransferEngine:
         self.topography_model = engine_config.topography_model
 
         self.earth_sun_distance_path = os.path.join(
-            get_isofit_path(), "data", "earth_sun_distance.txt"
+            get_isofit_path(), "isofit", "data", "earth_sun_distance.txt"
         )
         self.earth_sun_distance_reference = np.loadtxt(self.earth_sun_distance_path)
 
@@ -111,8 +117,9 @@ class RadiativeTransferEngine:
         if engine_config.wavelength_file is not None:
             wavelength_file = engine_config.wavelength_file
         else:
-            wavelength_file = instrument_wavelength_file
+            wavelength_file = self.instrument_wavelength_file
 
+        print(wavelength_file)
         self.wl, self.fwhm = common.load_wavelen(wavelength_file)
 
         if engine_config.wavelength_range is not None:
