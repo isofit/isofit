@@ -74,7 +74,9 @@ class RadiativeTransferEngine:
             self.lut = luts.initialize(
                 file=lut_file, wl=self.wl, fwhm=self.fwhm, points=lut_grid
             )
-            self.solar_irr = None
+            # TODO: These are definitely wrong, what should they initialize to?
+            self.solar_irr = [None]
+            self.coszen = [None]
 
         # Save parameters to instance
         self.lut_file = lut_file

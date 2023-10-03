@@ -132,7 +132,6 @@ class RadiativeTransfer:
         self.bvec = config.unknowns.get_element_names()
         self.bval = np.array([x for x in config.unknowns.get_elements()[0]])
 
-        print([RT.solar_irr for RT in self.rt_engines])
         self.solar_irr = np.concatenate([RT.solar_irr for RT in self.rt_engines])
         # These should all be the same so just grab one
         self.coszen = [RT.coszen for RT in self.rt_engines][0]
