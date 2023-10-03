@@ -53,7 +53,7 @@ class RadiativeTransferEngine:
     ):
         # Verify either the LUT file exists or a LUT grid is provided
         self.lut_path = lut_path
-        exists = os.path.isfile(lut_path)
+        exists = os.path.exists(lut_path)
         if not exists and lut_grid is None:
             raise AttributeError(
                 "Must provide either a prebuilt LUT file or a LUT grid"
@@ -61,17 +61,17 @@ class RadiativeTransferEngine:
 
         # Extract from LUT file if available, otherwise initialize it
         if exists:
-            Logger.info(f"Prebuilt LUT found, using values from this file: {lut_path}")
+            Logger.info(f"Prebuilt LUT provided")
+            Logger.debug(f"Reading from store: {lut_path}")
             self.lut = luts.load(lut_path)
             self.wl = self.lut.wl.data
             self.fwhm = self.lut.fwhm.data
 
             lut_grid = luts.extractGrid(self.lut)
         else:
-            Logger.info(
-                f"No LUT store found, beginning initialization and simulations to: {lut_path}"
-            )
-            Logger.debug(f"Using wavelength_file: {wavelength_file}")
+            Logger.info(f"No LUT store found, beginning initialization and simulations")
+            Logger.debug(f"Writing store to: {lut_path}")
+            Logger.debug(f"Using wavelength file: {wavelength_file}")
             self.wl, self.fwhm = common.load_wavelen(wavelength_file)
             self.lut = luts.initialize(
                 file=lut_path, wl=self.wl, fwhm=self.fwhm, points=lut_grid
@@ -79,9 +79,9 @@ class RadiativeTransferEngine:
             # Populate the newly created LUT file
             self.run_simulations()
 
-            # TODO: These are definitely wrong, what should they initialize to?
-            self.solar_irr = [None]
-            self.coszen = [None]
+        # TODO: These are definitely wrong, what should they initialize to?
+        self.solar_irr = [None]
+        self.coszen = [None]
 
         # Save parameters to instance
         self.engine_config = engine_config
@@ -172,7 +172,7 @@ class RadiativeTransferEngine:
 
         for key, grid_values in self.lut_grid.items():
             # TODO: make sure 1-d grids can be handled
-            if grid_values != sorted(grid_values):
+            if not np.all(grid_values == sorted(grid_values)):
                 raise ValueError("Lookup table grid needs ascending order")
 
             # Store the values
