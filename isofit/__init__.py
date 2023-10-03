@@ -32,7 +32,7 @@ import os
 
 Logger = logging.getLogger("isofit")
 
-root = os.path.dirname(os.path.abspath(__file__))
+root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 if os.environ.get("ISOFIT_DEBUG"):
     Logger.info("Using ISOFIT internal ray")
@@ -57,12 +57,6 @@ def cli(ctx, version, path):
 
         if path:
             click.echo(__path__[0])
-
-
-def get_isofit_path() -> str:
-    """Get location of isofit installation"""
-    isofit_path = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    return isofit_path
 
 
 # Import all of the files that define a _cli command to register them

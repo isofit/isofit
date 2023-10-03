@@ -28,7 +28,7 @@ from typing import Callable
 import numpy as np
 import ray
 
-from isofit import get_isofit_path
+import isofit
 from isofit.configs import Config
 from isofit.configs.sections.radiative_transfer_config import (
     RadiativeTransferEngineConfig,
@@ -108,7 +108,7 @@ class RadiativeTransferEngine:
         self.topography_model = engine_config.topography_model
 
         self.earth_sun_distance_path = os.path.join(
-            get_isofit_path(), "isofit", "data", "earth_sun_distance.txt"
+            isofit.root, "data", "earth_sun_distance.txt"
         )
         self.earth_sun_distance_reference = np.loadtxt(self.earth_sun_distance_path)
 

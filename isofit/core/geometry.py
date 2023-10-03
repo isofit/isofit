@@ -24,7 +24,7 @@ from datetime import datetime
 
 import numpy as np
 
-from isofit import get_isofit_path
+import isofit
 
 from .sunposition import sunpos
 
@@ -50,7 +50,7 @@ class Geometry:
 
         self.earth_sun_file = None
         self.earth_sun_distance_path = os.path.join(
-            get_isofit_path(), "data", "earth_sun_distance.txt"
+            isofit.root, "data", "earth_sun_distance.txt"
         )
         self.earth_sun_distance_reference = np.loadtxt(self.earth_sun_distance_path)
 

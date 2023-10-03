@@ -414,7 +414,6 @@ class IO:
         # will be 'None'. The Geometry object will use reasonable defaults.
         geom = Geometry(
             obs=data["obs_file"],
-            glt=data["glt_file"],
             loc=data["loc_file"],
             bg_rfl=data["background_reflectance_file"],
         )
