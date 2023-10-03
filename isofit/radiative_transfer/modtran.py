@@ -716,3 +716,18 @@ class ModtranRT(RadiativeTransferEngine):
 
                 for w, v, wn in zip(ws, vs, wns):
                     fout.write(" %9.4f %9.7f %9.2f\n" % (w, v, wn))
+
+
+# Temporary dummy replacement to simulate modtran simulations so the rest of the pipeline development isn't blocked
+from isofit.luts import zarr as luts
+
+
+class ModtranRTDummy(ModtranRT):
+    def make_simulation_call(self, *_, **__):
+        ...
+
+    def read_simulation_results(self, *_, **__):
+        return {key: np.random.rand(len(self.wl)) for key in luts.KEYS}
+
+
+ModtranRT = ModtranRTDummy

@@ -3,17 +3,15 @@ import numpy as np
 import xarray as xr
 
 # Required keys to be in the lut file
-REQD = [
-    "solar_irr",
+KEYS = [
     "rhoatm",
-    "transm",
+    "transm_down_dir",
+    "transm_down_dif",
+    "transm_up_dir",
+    "transm_up_dif",
     "sphalb",
     "thermal_upwelling",
     "thermal_downwelling",
-    "t_up_dirs",
-    "t_up_difs",
-    "t_down_dirs",
-    "t_down_difs",
 ]
 
 
@@ -43,7 +41,7 @@ def initialize(file, wl, fwhm, points, chunks=25):
     ds.to_zarr(file, mode="w", compute=True)
 
     # Add in lazy data for each required key
-    for key in REQD:
+    for key in KEYS:
         ds[key] = (("wl", "point"), filler)
 
     # Initialize these variables in the zarr store

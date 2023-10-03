@@ -52,6 +52,7 @@ class RadiativeTransferEngine:
         cache_size: int = 16,
     ):
         # Verify either the LUT file exists or a LUT grid is provided
+        self.lut_path = lut_path
         exists = os.path.isfile(lut_path)
         if not exists and lut_grid is None:
             raise AttributeError(
@@ -60,26 +61,29 @@ class RadiativeTransferEngine:
 
         # Extract from LUT file if available, otherwise initialize it
         if exists:
-            Logger.debug(f"Prebuilt LUT found, using values from this file: {lut_path}")
+            Logger.info(f"Prebuilt LUT found, using values from this file: {lut_path}")
             self.lut = luts.load(lut_path)
             self.wl = self.lut.wl.data
             self.fwhm = self.lut.fwhm.data
-            self.solar_irr = self.lut.solar_irr.data
+
             lut_grid = luts.extractGrid(self.lut)
         else:
-            Logger.debug(
-                f"No LUT found, initializing LUT store and using wavelength_file: {wavelength_file}"
+            Logger.info(
+                f"No LUT store found, beginning initialization and simulations to: {lut_path}"
             )
+            Logger.debug(f"Using wavelength_file: {wavelength_file}")
             self.wl, self.fwhm = common.load_wavelen(wavelength_file)
             self.lut = luts.initialize(
                 file=lut_path, wl=self.wl, fwhm=self.fwhm, points=lut_grid
             )
+            # Populate the newly created LUT file
+            self.run_simulations()
+
             # TODO: These are definitely wrong, what should they initialize to?
             self.solar_irr = [None]
             self.coszen = [None]
 
         # Save parameters to instance
-        self.lut_path = lut_path
         self.engine_config = engine_config
 
         self.interpolator_style = interpolator_style
@@ -157,27 +161,16 @@ class RadiativeTransferEngine:
         #     full_lut_grid = lut_grid
 
         # Set up LUT grid
-        self.lut_grid_config = OrderedDict()
-        if engine_config.lut_names is not None:
-            lut_names = engine_config.lut_names
-        else:
-            lut_names = lut_grid.keys()
+        lut_names = engine_config.lut_names or lut_grid.keys()
+        self.lut_grid = {key: lut_grid[key] for key in lut_names if key in lut_grid}
 
-        for key, value in lut_grid.items():
-            if key in lut_names:
-                self.lut_grid_config[key] = value
-        del lut_names
-
-        self.n_point = len(self.lut_grid_config)
-
-        self.luts = {}
-
+        self.n_point = len(self.lut_grid)
         self.lut_dims = []
         self.lut_grids = []
         self.lut_names = []
         self.lut_interp_types = []
 
-        for key, grid_values in self.lut_grid_config.items():
+        for key, grid_values in self.lut_grid.items():
             # TODO: make sure 1-d grids can be handled
             if grid_values != sorted(grid_values):
                 raise ValueError("Lookup table grid needs ascending order")
@@ -207,6 +200,15 @@ class RadiativeTransferEngine:
             engine_config.interpolator_base_path + "_" + rtq + ".pkl"
             for rtq in self.lut_names
         ]
+
+    def build_interpolators(self):
+        """
+        Creates interpolators using LUTs
+        """
+        self.luts = {}
+        for key in luts.KEYS:
+            self.luts[key] = VectorInterpolator()
+        ...
 
     def make_simulation_call(self, point: np.array, template_only: bool = False):
         """Write template(s) and run simulation.
@@ -276,6 +278,8 @@ class RadiativeTransferEngine:
         # "points" contains all combinations of grid points
         # We will have one filename prefix per point
         points = self.lut.point.data
+
+        Logger.info(f"Executing {len(points)} simulations")
 
         # Make the LUT calls (in parallel if specified)
         results = ray.get(
