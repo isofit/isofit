@@ -44,7 +44,7 @@ class RadiativeTransferEngine:
     def __init__(
         self,
         engine_config: RadiativeTransferEngineConfig,
-        lut_file: str,
+        lut_path: str,
         lut_grid: dict = None,
         wavelength_file: str = None,
         interpolator_style: str = "mlg",
@@ -52,7 +52,7 @@ class RadiativeTransferEngine:
         cache_size: int = 16,
     ):
         # Verify either the LUT file exists or a LUT grid is provided
-        exists = os.path.isfile(lut_file)
+        exists = os.path.isfile(lut_path)
         if not exists and lut_grid is None:
             raise AttributeError(
                 "Must provide either a prebuilt LUT file or a LUT grid"
@@ -60,8 +60,8 @@ class RadiativeTransferEngine:
 
         # Extract from LUT file if available, otherwise initialize it
         if exists:
-            Logger.debug(f"Prebuilt LUT found, using values from this file: {lut_file}")
-            self.lut = luts.load(lut_file)
+            Logger.debug(f"Prebuilt LUT found, using values from this file: {lut_path}")
+            self.lut = luts.load(lut_path)
             self.wl = self.lut.wl.data
             self.fwhm = self.lut.fwhm.data
             self.solar_irr = self.lut.solar_irr.data
@@ -72,14 +72,14 @@ class RadiativeTransferEngine:
             )
             self.wl, self.fwhm = common.load_wavelen(wavelength_file)
             self.lut = luts.initialize(
-                file=lut_file, wl=self.wl, fwhm=self.fwhm, points=lut_grid
+                file=lut_path, wl=self.wl, fwhm=self.fwhm, points=lut_grid
             )
             # TODO: These are definitely wrong, what should they initialize to?
             self.solar_irr = [None]
             self.coszen = [None]
 
         # Save parameters to instance
-        self.lut_file = lut_file
+        self.lut_path = lut_path
         self.engine_config = engine_config
 
         self.interpolator_style = interpolator_style
@@ -285,7 +285,7 @@ class RadiativeTransferEngine:
                     point,
                     self.make_simulation_call,
                     self.read_simulation_results,
-                    self.lut_file,
+                    self.lut_path,
                 )
                 for point in points
             ]

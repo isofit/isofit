@@ -43,6 +43,23 @@ RTE = {
 }
 
 
+def confPriority(key, configs, none=False):
+    """
+    Selects a key from a config if the value for that key is not None
+    Prioritizes returning the first value found in the configs list
+
+    TODO: ISOFIT configs are annoying and will create keys to NoneTypes
+    Should use mlky to handle key discovery at runtime instead of like this
+    """
+    value = None
+    for config in configs:
+        if hasattr(config, key):
+            value = getattr(config, key)
+            if value is not None:
+                break
+    return value
+
+
 class RadiativeTransfer:
     """This class controls the radiative transfer component of the forward
     model. An ordered dictionary is maintained of individual RTMs (MODTRAN,
@@ -55,12 +72,11 @@ class RadiativeTransfer:
     """
 
     def __init__(self, full_config: Config):
-        config = SimpleNamespace(
-            fm=full_config.forward_model.radiative_transfer,
-            it=full_config.forward_model.instrument,
-        )
-        self.lut_grid = config.fm.lut_grid
-        self.statevec_names = config.fm.statevector.get_element_names()
+        config = full_config.forward_model.radiative_transfer
+        confIT = full_config.forward_model.instrument
+
+        self.lut_grid = config.lut_grid
+        self.statevec_names = config.statevector.get_element_names()
 
         # Keys to retrieve from 3 sections to use the preferred
         keys = [
@@ -68,40 +84,26 @@ class RadiativeTransfer:
             "overwrite_interpolator",
             "cache_size",
             "lut_grid",
-            "lut_file",
+            "lut_path",
             "wavelength_file",
         ]
-        get = (
-            lambda key: getattr(config.rt, key)
-            if hasattr(config.rt, key)
-            else getattr(config.it, key)
-            if hasattr(config.it, key)
-            else getattr(config.fm, key)
-            if hasattr(config.fm, key)
-            else None
-        )
-        # Prioritize keys from forward_model.radiative_transfer.radiative_transfer_engines[i]
-        #               before forward_model.instrument
-        #               before forward_model.radiative_transfer
-        #                 else None
 
         self.rt_engines = []
-        for idx in range(len(config.fm.radiative_transfer_engines)):
-            config.rt = config.fm.radiative_transfer_engines[idx]
-            if config.rt.engine_name not in RTE:
+        for idx in range(len(config.radiative_transfer_engines)):
+            confRT = config.radiative_transfer_engines[idx]
+            if confRT.engine_name not in RTE:
                 raise AttributeError(
-                    f"Invalid radiative transfer engine choice. Got: {config.rt.engine_name}; Must be one of: {RTE}"
+                    f"Invalid radiative transfer engine choice. Got: {confRT.engine_name}; Must be one of: {RTE}"
                 )
 
             # Generate the params for this RTE
-            params = {key: get(key) for key in keys} | {"engine_config": config.rt}
+            params = {
+                key: confPriority(key, [confRT, confIT, config]) for key in keys
+            } | {"engine_config": confRT}
 
             # Select the right RTE and initialize it
-            rte = RTE[config.rt.engine_name](**params)
+            rte = RTE[confRT.engine_name](**params)
             self.rt_engines.append(rte)
-
-        # Reset to the FM config
-        config = config.fm
 
         # The rest of the code relies on sorted order of the individual RT engines which cannot
         # be guaranteed by the dict JSON or YAML input
