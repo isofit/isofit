@@ -1,4 +1,5 @@
 import dask.array
+import numpy as np
 import xarray as xr
 
 # Required keys to be in the lut file
@@ -16,7 +17,7 @@ REQD = [
 ]
 
 
-def initialize(file, wl, points, chunks=25):
+def initialize(file, wl, fwhm, points, chunks=25):
     """
     Initializes a zarr store for ISOFIT LUTs
 
@@ -28,12 +29,16 @@ def initialize(file, wl, points, chunks=25):
         {point name: [point values], ...}
     """
     # Filler lazy data, takes no memory, just informs the shape of each key
-    filler = dask.array.zeros((len(wl), points[list(points)[0]].size), chunks=chunks)
+    size = np.array(list(points.values())).shape[1]
+    filler = dask.array.zeros((len(wl), size), chunks=chunks)
 
     # Initial dataset object to initialize the zarr with
     ds = xr.Dataset(
         coords={"wl": wl} | {key: ("point", value) for key, value in points.items()}
     )
+    # fwhm saved as a variable on the wl dim
+    ds["fwhm"] = ("wl", fwhm)
+
     # Write creation mode, save the coordinates
     ds.to_zarr(file, mode="w", compute=True)
 
@@ -78,6 +83,18 @@ def load(file):
     points = list(ds.drop_dims("wl").coords)
 
     return ds.set_index(point=points)
+
+
+def extractGrid(ds):
+    """
+    Extracts the LUT grid from a Dataset
+    """
+    grid = {}
+    for dim, vals in ds.coords.items():
+        if dim in ["wl", "point"]:
+            continue
+        grid[dim] = vals.data
+    return grid
 
 
 def example():

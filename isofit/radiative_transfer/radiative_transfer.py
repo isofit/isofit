@@ -68,6 +68,8 @@ class RadiativeTransfer:
             "overwrite_interpolator",
             "cache_size",
             "lut_grid",
+            "lut_file",
+            "wavelength_file",
         ]
         get = (
             lambda key: getattr(config.rt, key)
@@ -92,13 +94,9 @@ class RadiativeTransfer:
                 )
 
             # Generate the params for this RTE
-            params = {key: get(key) for key in keys} | {
-                "engine_config": config.rt,
-                "instrument_wavelength_file": config.it.wavelength_file,
-            }
+            params = {key: get(key) for key in keys} | {"engine_config": config.rt}
 
             # Select the right RTE and initialize it
-            # return params
             rte = RTE[config.rt.engine_name](**params)
             self.rt_engines.append(rte)
 
@@ -134,6 +132,7 @@ class RadiativeTransfer:
         self.bvec = config.unknowns.get_element_names()
         self.bval = np.array([x for x in config.unknowns.get_elements()[0]])
 
+        print([RT.solar_irr for RT in self.rt_engines])
         self.solar_irr = np.concatenate([RT.solar_irr for RT in self.rt_engines])
         # These should all be the same so just grab one
         self.coszen = [RT.coszen for RT in self.rt_engines][0]

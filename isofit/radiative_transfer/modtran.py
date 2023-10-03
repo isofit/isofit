@@ -50,26 +50,10 @@ tropopause_altitude_km = 17.0
 class ModtranRT(RadiativeTransferEngine):
     """A model of photon transport including the atmosphere."""
 
-    def __init__(
-        self,
-        engine_config: RadiativeTransferEngineConfig,
-        interpolator_style: str,
-        instrument_wavelength_file: str = None,
-        overwrite_interpolator: bool = False,
-        cache_size: int = 16,
-        lut_grid: dict = None,
-        build_lut: bool = True,
-    ):
+    def __init__(self, engine_config: RadiativeTransferEngineConfig, **kwargs):
         """."""
 
-        super().__init__(
-            engine_config,
-            interpolator_style,
-            instrument_wavelength_file,
-            overwrite_interpolator,
-            cache_size,
-            lut_grid,
-        )
+        super().__init__(engine_config, **kwargs)
 
         flt_name = "wavelengths_{}_{}_{}.flt".format(
             engine_config.engine_name, self.wl[0], self.wl[-1]

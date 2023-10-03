@@ -37,31 +37,52 @@ from isofit.core import common
 from isofit.core.geometry import Geometry
 from isofit.luts import zarr as luts
 
+Logger = logging.getLogger(__file__)
+
 
 class RadiativeTransferEngine:
     def __init__(
         self,
         engine_config: RadiativeTransferEngineConfig,
-        interpolator_style: str,
-        instrument_wavelength_file: str = None,
+        lut_file: str,
+        lut_grid: dict = None,
+        wavelength_file: str = None,
+        interpolator_style: str = "mlg",
         overwrite_interpolator: bool = False,
         cache_size: int = 16,
-        lut_grid: dict = None,
-        prebuilt_lut_file: str = "",
     ):
+        # Verify either the LUT file exists or a LUT grid is provided
+        exists = os.path.isfile(lut_file)
+        if not exists and lut_grid is None:
+            raise AttributeError(
+                "Must provide either a prebuilt LUT file or a LUT grid"
+            )
 
+        # Extract from LUT file if available, otherwise initialize it
+        if exists:
+            Logger.debug(f"Prebuilt LUT found, using values from this file: {lut_file}")
+            self.lut = luts.load(lut_file)
+            self.wl = self.lut.wl.data
+            self.fwhm = self.lut.fwhm.data
+            self.solar_irr = self.lut.solar_irr.data
+            lut_grid = luts.extractGrid(self.lut)
+        else:
+            Logger.debug(
+                f"No LUT found, initializing LUT store and using wavelength_file: {wavelength_file}"
+            )
+            self.wl, self.fwhm = common.load_wavelen(wavelength_file)
+            self.lut = luts.initialize(
+                file=lut_file, wl=self.wl, fwhm=self.fwhm, points=lut_grid
+            )
+            self.solar_irr = None
+
+        # Save parameters to instance
+        self.lut_file = lut_file
         self.engine_config = engine_config
 
         self.interpolator_style = interpolator_style
         self.overwrite_interpolator = overwrite_interpolator
         self.cache_size = cache_size
-        self.prebuilt_lut_file = prebuilt_lut_file
-        self.instrument_wavelength_file = instrument_wavelength_file
-
-        if os.path.isfile(self.prebuilt_lut_file) is False and lut_grid is None:
-            raise AttributeError(
-                "Must provide either a prebuilt LUT file or a LUT grid"
-            )
 
         self.emission_mode = engine_config.emission_mode
         self.engine_base_dir = engine_config.engine_base_dir
@@ -79,14 +100,6 @@ class RadiativeTransferEngine:
         self.geometry_lut_indices = None
         self.geometry_lut_names = None
         self.x_RT_lut_indices = None
-
-        self.prebuilt_lut_file = engine_config.engine_lut_file
-
-        # Read prebuilt LUT from HDF5 if existing
-        if self.prebuilt_lut_file and os.path.isfile(self.prebuilt_lut_file):
-            self.lut = luts.initialize(file=self.prebuilt_lut_file)
-        else:
-            self.lut = None
 
         # Enable special modes - argument: get from HDF5
         self.multipart_transmittance = engine_config.multipart_transmittance
@@ -113,15 +126,6 @@ class RadiativeTransferEngine:
             # ToDo: check if we're running the 2- or 3-albedo method
             self.test_rfls = [0.1, 0.5]
 
-        # Get instrument wavelengths and FWHM
-        if engine_config.wavelength_file is not None:
-            wavelength_file = engine_config.wavelength_file
-        else:
-            wavelength_file = self.instrument_wavelength_file
-
-        print(wavelength_file)
-        self.wl, self.fwhm = common.load_wavelen(wavelength_file)
-
         if engine_config.wavelength_range is not None:
             valid_wl = np.logical_and(
                 self.wl >= engine_config.wavelength_range[0],
@@ -135,29 +139,29 @@ class RadiativeTransferEngine:
         # Prepare a cache for self._lookup_lut(), setting cache_size to 0 will disable
         self.cache = {}
 
-        # If prebuilt LUT is available, read a few important LUT parameters and functions
-        if self.lut:
-            # TODO: ensure consistency with group keys in LUT file
-            self.solar_irr = self.lut["MISCELLANEOUS"]["sols"]
-            # We use a sorted dictionary here so that filenames for lookup
-            # table (LUT) grid points are always constructed the same way (with
-            # consistent dimension ordering). Every state vector element has
-            # a lookup table dimension, but some lookup table dimensions
-            # (like geometry parameters) may not be in the state vector.
-            # TODO: ensure consistency with group keys in LUT file
-            full_lut_grid = self.lut["sample_space"]
-        else:
-            self.solar_irr = None
-            full_lut_grid = lut_grid
+        #
+        # if self.lut:
+        #     # TODO: ensure consistency with group keys in LUT file
+        #     self.solar_irr = self.lut["MISCELLANEOUS"]["sols"]
+        #     # We use a sorted dictionary here so that filenames for lookup
+        #     # table (LUT) grid points are always constructed the same way (with
+        #     # consistent dimension ordering). Every state vector element has
+        #     # a lookup table dimension, but some lookup table dimensions
+        #     # (like geometry parameters) may not be in the state vector.
+        #     # TODO: ensure consistency with group keys in LUT file
+        #     full_lut_grid = self.lut["sample_space"]
+        # else:
+        #     self.solar_irr = None
+        #     full_lut_grid = lut_grid
 
         # Set up LUT grid
         self.lut_grid_config = OrderedDict()
         if engine_config.lut_names is not None:
             lut_names = engine_config.lut_names
         else:
-            lut_names = full_lut_grid.keys()
+            lut_names = lut_grid.keys()
 
-        for key, value in full_lut_grid.items():
+        for key, value in lut_grid.items():
             if key in lut_names:
                 self.lut_grid_config[key] = value
         del lut_names
@@ -279,7 +283,7 @@ class RadiativeTransferEngine:
                     point,
                     self.make_simulation_call,
                     self.read_simulation_results,
-                    self.prebuilt_lut_file,
+                    self.lut_file,
                 )
                 for point in points
             ]
