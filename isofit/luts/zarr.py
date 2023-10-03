@@ -52,6 +52,19 @@ def initialize(file, wl, fwhm, points, chunks=25):
     return ds
 
 
+def getPointIndex(ds, point):
+    """
+    Converts a point tuple into the index matching the point in the LUT store
+    """
+    points = np.array([np.array(point) for point in ds.point.data])
+    match = np.all(points == point, axis=1)
+    idx = np.where(match)
+    if idx:
+        idx = idx[0][0]
+    else:
+        Logger.error(f"Point {point!r} not found in points array: {points}")
+
+
 def updatePoint(file, point, data):
     """
     Updates a zarr store in place given a point index
@@ -59,17 +72,18 @@ def updatePoint(file, point, data):
     Parameters
     ----------
     file: str
-    # point: np.array
-    #     2D point array
-    point: int
-        The point index to write to
+    point: int or tuple
+        The point index to write to or a tuple of the point values to discover
+        the index with
     data: dict
         Keys to save
     """
+    if isinstance(point, tuple):
+        point = getPointIndex(ds, point)
+
     ds = xr.Dataset({key: ("wl", value) for key, value in data.items()})
     ds = ds.expand_dims("point").transpose()
 
-    # i = pointIndex(point)
     ds.to_zarr(file, region={"point": slice(point, point + 1)})
 
 

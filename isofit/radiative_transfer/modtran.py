@@ -39,6 +39,8 @@ from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransfe
 from ..core.common import json_load_ascii, recursive_replace
 from ..radiative_transfer.look_up_tables import FileExistsError
 
+Logger = logging.getLogger(__file__)
+
 ### Variables ###
 
 eps = 1e-5  # used for finite difference derivative calculations

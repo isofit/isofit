@@ -99,8 +99,8 @@ class RadiativeTransferEngine:
 
         self.lut_dir = engine_config.lut_path
 
-        self.geometry_lut_indices = None
-        self.geometry_lut_names = None
+        self.geometry_lut_indices = list(range(len(lut_grid)))
+        self.geometry_lut_names = lut_grid.keys()
         self.x_RT_lut_indices = None
 
         # Enable special modes - argument: get from HDF5
@@ -273,10 +273,9 @@ class RadiativeTransferEngine:
         Run all simulations for the LUT grid.
 
         """
-
         # "points" contains all combinations of grid points
         # We will have one filename prefix per point
-        points = common.combos(self.lut_grids)
+        points = self.lut.point.data
 
         # Make the LUT calls (in parallel if specified)
         results = ray.get(
@@ -385,28 +384,30 @@ class RadiativeTransferEngine:
 @ray.remote
 def stream_simulation(
     point: np.array,
-    simmulation_call: Callable,
+    simmer: Callable,
     reader: Callable,
-    save_file: str,
+    output: str,
     max_buffer_time: float = 0.5,
 ):
     """Run a simulation for a single point and stream the results to a saved lut file.
 
     Args:
         point (np.array): conditions to alter in simulation
-        simmulation_call (function): function to run the simulation
+        simmer (function): function to run the simulation
         reader (function): function to read the results of the simulation
-        save_file (str): netcdf file to save results to
+        output (str): LUT store to save results to
         max_buffer_time (float, optional): _description_. Defaults to 0.5.
     """
+    Logger.debug(f"Simulating(point={point})")
 
-    logging.debug("Running simulation for point: %s" % point)
+    # Slight delay to prevent all subprocesses from starting simultaneously
+    time.sleep(np.random.rand() * max_buffer_time)
 
-    # Add a very slight timing offset to prevent all subprocesses
-    # starting simultaneously
-    time.sleep(float(np.random.random(1)) * max_buffer_time)
+    # Execute the simulation
+    simmer(point)
 
-    simmulation_call(point)
-    res = reader(point)
-    # TODO: access this from new netcdf lut helper
-    luts.updatePoint(point, res, save_file)
+    # Read the simulation results
+    data = reader(point)
+
+    # Save the results to our LUT format
+    luts.updatePoint(output, point, data)
