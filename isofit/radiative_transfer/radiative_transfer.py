@@ -19,6 +19,7 @@
 #          Niklas Bohn, urs.n.bohn@jpl.nasa.gov
 #          Jay E. Fahlen, jay.e.fahlen@jpl.nasa.gov
 #
+from types import SimpleNamespace
 
 import numpy as np
 
@@ -34,6 +35,13 @@ from ..radiative_transfer.modtran import ModtranRT
 from ..radiative_transfer.six_s import SixSRT
 from ..radiative_transfer.sRTMnet import SimulatedModtranRT
 
+RTE = {
+    "modtran": ModtranRT,
+    "libradtran": LibRadTranRT,
+    "6s": SixSRT,
+    "sRTMnet": SimulatedModtranRT,
+}
+
 
 class RadiativeTransfer:
     """This class controls the radiative transfer component of the forward
@@ -47,37 +55,55 @@ class RadiativeTransfer:
     """
 
     def __init__(self, full_config: Config):
-        # Maintain order when looping for indexing convenience
-        config = full_config.forward_model.radiative_transfer
+        config = SimpleNamespace(
+            fm=full_config.forward_model.radiative_transfer,
+            it=full_config.forward_model.instrument,
+        )
+        self.lut_grid = config.fm.lut_grid
+        self.statevec_names = config.fm.statevector.get_element_names()
 
-        self.statevec_names = config.statevector.get_element_names()
-        self.lut_grid = config.lut_grid
+        # Keys to retrieve from 3 sections to use the preferred
+        keys = [
+            "interpolator_style",
+            "overwrite_interpolator",
+            "cache_size",
+            "lut_grid",
+        ]
+        get = (
+            lambda key: getattr(config.rt, key)
+            if hasattr(config.rt, key)
+            else getattr(config.it, key)
+            if hasattr(config.it, key)
+            else getattr(config.fm, key)
+            if hasattr(config.fm, key)
+            else None
+        )
+        # Prioritize keys from forward_model.radiative_transfer.radiative_transfer_engines[i]
+        #               before forward_model.instrument
+        #               before forward_model.radiative_transfer
+        #                 else None
 
-        # TODO: rework this so that we instead initialize an interpolator, that calls
-        # RTEs as necessary based on LUT grid or other parameters..which may happen higher up
         self.rt_engines = []
-        for idx in range(len(config.radiative_transfer_engines)):
-            rte_config: RadiativeTransferEngineConfig = (
-                config.radiative_transfer_engines[idx]
-            )
-
-            if rte_config.engine_name == "modtran":
-                rte = ModtranRT(rte_config, full_config)
-            elif rte_config.engine_name == "libradtran":
-                rte = LibRadTranRT(rte_config, full_config)
-            elif rte_config.engine_name == "6s":
-                rte = SixSRT(rte_config, full_config)
-            elif rte_config.engine_name == "sRTMnet":
-                rte = SimulatedModtranRT(rte_config, full_config)
-            else:
-                # Should never get here, checked in config
+        for idx in range(len(config.fm.radiative_transfer_engines)):
+            config.rt = config.fm.radiative_transfer_engines[idx]
+            if config.rt.engine_name not in RTE:
                 raise AttributeError(
-                    "Invalid radiative transfer engine name: {}".format(
-                        rte_config.engine_name
-                    )
+                    f"Invalid radiative transfer engine choice. Got: {config.rt.engine_name}; Must be one of: {RTE}"
                 )
 
+            # Generate the params for this RTE
+            params = {key: get(key) for key in keys} | {
+                "engine_config": config.rt,
+                "instrument_wavelength_file": config.it.wavelength_file,
+            }
+
+            # Select the right RTE and initialize it
+            # return params
+            rte = RTE[config.rt.engine_name](**params)
             self.rt_engines.append(rte)
+
+        # Reset to the FM config
+        config = config.fm
 
         # The rest of the code relies on sorted order of the individual RT engines which cannot
         # be guaranteed by the dict JSON or YAML input
