@@ -70,15 +70,15 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         self.template_file = None
         """str: A template file to be used as the base-configuration for the given radiative transfer engine."""
 
-        self._emission_mode_type = bool
-        self.emission_mode = False
+        self._treat_as_emissive_type = bool
+        self.treat_as_emissive = False
         """bool: Run the simulation in emission mode"""
 
         self._topography_model_type = bool
         self.topography_model = False
         """
         Flag to indicated whether to use a topographic-flux (topoflux)
-        implementation of the forward model. 
+        implementation of the forward model.
         """
 
         self._lut_names_type = list()

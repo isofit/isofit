@@ -86,7 +86,7 @@ class RadiativeTransferEngine:
         self.overwrite_interpolator = overwrite_interpolator
         self.cache_size = cache_size
 
-        self.emission_mode = engine_config.emission_mode
+        self.treat_as_emissive = engine_config.treat_as_emissive
         self.engine_base_dir = engine_config.engine_base_dir
         self.angular_lut_keys_degrees = [
             "observer_azimuth",
