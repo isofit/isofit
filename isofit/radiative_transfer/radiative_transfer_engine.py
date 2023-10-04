@@ -203,12 +203,18 @@ class RadiativeTransferEngine:
 
     def build_interpolators(self):
         """
-        Creates interpolators using LUTs
+        Builds the interpolators using the LUT store
         """
-        self.luts = {}
-        for key in luts.KEYS:
-            self.luts[key] = VectorInterpolator()
-        ...
+        grid = np.array([*self.lut.point.data])
+        self.luts = {
+            key: VectorInterpolator(
+                grid_input=grid,
+                data_input=self.lut[key].load().data.T,
+                lut_interp_types=self.lut_interp_types,
+                version=self.interpolator_style,
+            )
+            for key in luts.KEYS
+        }
 
     def make_simulation_call(self, point: np.array, template_only: bool = False):
         """Write template(s) and run simulation.
