@@ -1,6 +1,10 @@
+import logging
+
 import dask.array
 import numpy as np
 import xarray as xr
+
+Logger = logging.getLogger(__file__)
 
 # Required keys to be in the lut file
 KEYS = [
@@ -47,7 +51,7 @@ def initialize(file, wl, fwhm, points, chunks=25):
     # Initialize these variables in the zarr store
     ds.to_zarr(file, mode="a", compute=False)
 
-    return ds
+    return ds.set_index(point=list(points.keys()))
 
 
 def getPointIndex(ds, point):
@@ -58,31 +62,27 @@ def getPointIndex(ds, point):
     match = np.all(points == point, axis=1)
     idx = np.where(match)
     if idx:
-        idx = idx[0][0]
+        return idx[0][0]
     else:
         Logger.error(f"Point {point!r} not found in points array: {points}")
 
 
-def updatePoint(file, point, data):
+def updatePointByIndex(file, index, data):
     """
     Updates a zarr store in place given a point index
 
     Parameters
     ----------
     file: str
-    point: int or tuple
-        The point index to write to or a tuple of the point values to discover
-        the index with
+    index: int
+        The point index to write to
     data: dict
         Keys to save
     """
-    if isinstance(point, tuple):
-        point = getPointIndex(ds, point)
-
     ds = xr.Dataset({key: ("wl", value) for key, value in data.items()})
     ds = ds.expand_dims("point").transpose()
 
-    ds.to_zarr(file, region={"point": slice(point, point + 1)})
+    ds.to_zarr(file, region={"point": slice(index, index + 1)})
 
 
 def load(file):

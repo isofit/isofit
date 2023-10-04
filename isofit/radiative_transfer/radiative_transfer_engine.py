@@ -315,6 +315,7 @@ class RadiativeTransferEngine:
             [
                 stream_simulation.remote(
                     point,
+                    luts.getPointIndex(self.lut, point),
                     self.make_simulation_call,
                     self.read_simulation_results,
                     self.lut_path,
@@ -422,6 +423,7 @@ class RadiativeTransferEngine:
 @ray.remote
 def stream_simulation(
     point: np.array,
+    index: int,
     simmer: Callable,
     reader: Callable,
     output: str,
@@ -431,6 +433,7 @@ def stream_simulation(
 
     Args:
         point (np.array): conditions to alter in simulation
+        index (int): Index of the point in the LUT file
         simmer (function): function to run the simulation
         reader (function): function to read the results of the simulation
         output (str): LUT store to save results to
@@ -448,4 +451,4 @@ def stream_simulation(
     data = reader(point)
 
     # Save the results to our LUT format
-    luts.updatePoint(output, point, data)
+    luts.updatePointByIndex(output, index, data)
