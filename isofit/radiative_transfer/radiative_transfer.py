@@ -105,6 +105,9 @@ class RadiativeTransfer:
             rte = RTE[confRT.engine_name](**params)
             self.rt_engines.append(rte)
 
+        # If any engine is true, self is true
+        self.topography_model = any([rte.topography_model for rte in self.rt_engines])
+
         # The rest of the code relies on sorted order of the individual RT engines which cannot
         # be guaranteed by the dict JSON or YAML input
         self.rt_engines.sort(key=lambda x: x.wl[0])

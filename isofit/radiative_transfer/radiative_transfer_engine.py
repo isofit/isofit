@@ -80,8 +80,8 @@ class RadiativeTransferEngine:
             self.run_simulations()
 
         # TODO: These are definitely wrong, what should they initialize to?
-        self.solar_irr = [None]
-        self.coszen = [None]
+        self.solar_irr = [1]
+        self.coszen = [1]
 
         # Save parameters to instance
         self.engine_config = engine_config
@@ -276,7 +276,16 @@ class RadiativeTransferEngine:
         point == x_RT
         Combines the get and _lookup_lut into one function (why have two?)
         """
-        return {key: self.luts[key](point) for key in self.luts}
+        data = {key: self.luts[key](point) for key in self.luts}
+        # TODO: These are clearly wrong. This temporarily alleviates issues with functions on the physics side expecting certain keys to exist
+        # I just creatively chose the values. Please either fix these or the functions themselves.
+        # Known issues in:
+        # - isofit.inversion.invert_simple
+        data["transdown"] = data["transm_down_dir"] + data["transm_down_dif"]
+        data["transup"] = data["transm_up_dir"] + data["transm_up_dif"]
+        data["transm"] = data["transdown"] * data["transup"]
+
+        return data
 
     def _lookup_lut(self, point):
         if np.all(np.equal(point, self.last_point_looked_up)):
@@ -403,6 +412,11 @@ class RadiativeTransferEngine:
         transms = (t_down_dirs + t_down_difs) * (t_up_dirs + t_up_difs)
 
         return transms, t_down_dirs, t_down_difs, t_up_dirs, t_up_difs, sphalbs
+
+    def summarize(self, x_RT, *_):
+        """ """
+        pairs = zip(self.lut_grid.keys(), x_RT)
+        return " ".join([f"{name}={val:5.3f}" for name, val in pairs])
 
 
 @ray.remote
