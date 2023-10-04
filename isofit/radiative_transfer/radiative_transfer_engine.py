@@ -201,20 +201,23 @@ class RadiativeTransferEngine:
             for rtq in self.lut_names
         ]
 
+        # Attach interpolators
+        self.build_interpolators()
+        # TODO: Optional load from file
+
     def build_interpolators(self):
         """
         Builds the interpolators using the LUT store
         """
         grid = np.array([*self.lut.point.data])
-        self.luts = {
-            key: VectorInterpolator(
+        self.luts = {}
+        for key in luts.KEYS:
+            self.luts[key] = common.VectorInterpolator(
                 grid_input=grid,
                 data_input=self.lut[key].load().data.T,
                 lut_interp_types=self.lut_interp_types,
                 version=self.interpolator_style,
             )
-            for key in luts.KEYS
-        }
 
     def make_simulation_call(self, point: np.array, template_only: bool = False):
         """Write template(s) and run simulation.
@@ -248,7 +251,8 @@ class RadiativeTransferEngine:
         return filename
 
     # TODO: change this name
-    def get(self, x_RT: np.array, geom: Geometry):
+    # REVIEW: This function seems to be inspired by sRTMnet.get() but is super broken
+    def _get(self, x_RT: np.array, geom: Geometry):
         """Retrieve point from LUT interpolator
         Args:
             x_RT: radiative-transfer portion of the statevector
@@ -258,11 +262,21 @@ class RadiativeTransferEngine:
             interpolated RTE result
         """
         point = np.zeros((self.n_point,))
+        print(point, x_RT, self.x_RT_lut_indices, self.geometry_lut_indices)
         point[self.x_RT_lut_indices] = x_RT
         point[self.geometry_lut_indices] = np.array(
             [getattr(geom, key) for key in self.geometry_lut_names]
         )
         return self._lookup_lut(point)
+
+    def get(self, point, *_):
+        """
+        Temporarily circumventing the geom obj and passing x_RT as the point to
+        interpolate
+        point == x_RT
+        Combines the get and _lookup_lut into one function (why have two?)
+        """
+        return {key: self.luts[key](point) for key in self.luts}
 
     def _lookup_lut(self, point):
         if np.all(np.equal(point, self.last_point_looked_up)):

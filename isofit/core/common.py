@@ -198,12 +198,12 @@ class VectorInterpolator:
 
         return res
 
-    def _multilinear_grid(self, points):
+    def _multilinear_grid(self, point):
         """
         Jouni's implementation
 
         Args:
-            points: The point being interpolated. If at the limit, the extremal value in
+            point: The point being interpolated. If at the limit, the extremal value in
                     the grid is returned.
 
         Returns:
@@ -211,12 +211,11 @@ class VectorInterpolator:
         """
         # Index of left side of bin, and don't go over (that's why it's t[:-1] instead of t)
         inds = [
-            np.searchsorted(t[:-1], points[i]) - 1
-            for i, t in enumerate(self.gridtuples)
+            np.searchsorted(t[:-1], point[i]) - 1 for i, t in enumerate(self.gridtuples)
         ]
         deltas = np.array(
             [
-                (points[i] - self.gridtuples[i][j]) / self.binwidth[i][j]
+                (point[i] - self.gridtuples[i][j]) / self.binwidth[i][j]
                 for i, j in enumerate(inds)
             ]
         )
@@ -236,9 +235,9 @@ class VectorInterpolator:
 
         for i, di in enumerate(deltas):
             # Eliminate those indexes where we are outside grid range or exactly on the grid point
-            if points[i] >= self.gridtuples[i][-1]:
+            if point[i] >= self.gridtuples[i][-1]:
                 cube = cube[1]
-            elif points[i] <= self.gridtuples[i][0]:
+            elif point[i] <= self.gridtuples[i][0]:
                 cube = cube[0]
             # Otherwise eliminate index by linear interpolation
             else:
