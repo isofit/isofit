@@ -59,29 +59,27 @@ class RadiativeTransferEngine:
                 "Must provide either a prebuilt LUT file or a LUT grid"
             )
 
-        # Extract from LUT file if available, otherwise initialize it
-        if exists:
-            Logger.info(f"Prebuilt LUT provided")
-            Logger.debug(f"Reading from store: {lut_path}")
-            self.lut = luts.load(lut_path)
-            self.wl = self.lut.wl.data
-            self.fwhm = self.lut.fwhm.data
+        # This is only for checking the validity of the read in sim names
+        self.possible_lut_output_names = [
+            "rhoatm",
+            "transm_down_dir",
+            "transm_down_dif",
+            "transm_up_dir",
+            "transm_up_dif",
+            "sphalb",
+            "thermal_upwelling",
+            "thermal_downwelling",
+        ]
 
-            lut_grid = luts.extractGrid(self.lut)
-        else:
-            Logger.info(f"No LUT store found, beginning initialization and simulations")
-            Logger.debug(f"Writing store to: {lut_path}")
-            Logger.debug(f"Using wavelength file: {wavelength_file}")
-            self.wl, self.fwhm = common.load_wavelen(wavelength_file)
-            self.lut = luts.initialize(
-                file=lut_path, wl=self.wl, fwhm=self.fwhm, points=lut_grid
-            )
-            # Populate the newly created LUT file
-            self.run_simulations()
-
-        # TODO: These are definitely wrong, what should they initialize to?
-        self.solar_irr = [1]
-        self.coszen = [1]
+        self.geometry_input_names = [
+            "observer_azimuth",
+            "observer_zenith",
+            "solar_azimuth",
+            "solar_zenith",
+            "relative_azimuth",
+            "observer_altitude_km",
+            "surface_elevation_km",
+        ]
 
         # Save parameters to instance
         self.engine_config = engine_config
@@ -100,33 +98,11 @@ class RadiativeTransferEngine:
             "relative_azimuth",
         ]
         self.angular_lut_keys_radians = []
-
         self.lut_dir = engine_config.lut_path
-
-        self.geometry_lut_indices = list(range(len(lut_grid)))
-        self.geometry_lut_names = lut_grid.keys()
-        self.x_RT_lut_indices = None
 
         # Enable special modes - argument: get from HDF5
         self.multipart_transmittance = engine_config.multipart_transmittance
         self.topography_model = engine_config.topography_model
-
-        self.earth_sun_distance_path = os.path.join(
-            isofit.root, "data", "earth_sun_distance.txt"
-        )
-        self.earth_sun_distance_reference = np.loadtxt(self.earth_sun_distance_path)
-
-        # This is only for checking the validity of the read in sim names
-        self.possible_lut_output_names = [
-            "rhoatm",
-            "transm_down_dir",
-            "transm_down_dif",
-            "transm_up_dir",
-            "transm_up_dif",
-            "sphalb",
-            "thermal_upwelling",
-            "thermal_downwelling",
-        ]
 
         if self.multipart_transmittance:
             # ToDo: check if we're running the 2- or 3-albedo method
@@ -142,76 +118,88 @@ class RadiativeTransferEngine:
 
         self.n_chan = len(self.wl)
 
+        # Extract from LUT file if available, otherwise initialize it
+        if exists:
+            Logger.info(f"Prebuilt LUT provided")
+            Logger.debug(f"Reading from store: {lut_path}")
+            self.lut = luts.load(lut_path, lut_grid)
+            self.wl = self.lut.wl.data
+            self.fwhm = self.lut.fwhm.data
+
+            self.points, self.lut_names = luts.extractGrid(self.lut)
+        else:
+            Logger.info(f"No LUT store found, beginning initialization and simulations")
+            Logger.debug(f"Writing store to: {lut_path}")
+            Logger.debug(f"Using wavelength file: {wavelength_file}")
+
+            self.lut_names = engine_config.lut_names or lut_grid.keys()
+            self.lut_grid = {
+                key: lut_grid[key] for key in self.lut_names if key in lut_grid
+            }
+
+            self.wl, self.fwhm = common.load_wavelen(wavelength_file)
+            self.lut = luts.initialize(
+                file=lut_path,
+                all_keys=self.possible_lut_output_names,
+                wl=self.wl,
+                fwhm=self.fwhm,
+                points=lut_grid,
+            )
+            # Populate the newly created LUT file
+            self.run_simulations()
+            self.points = common.combos(
+                self.lut_grid
+            )  # 2d numpy array.  rows = points, columns = lut_names
+
+        # This is a bad variable name - change (it's the number of input dimensions of the lut (p) not the number of samples)
+        self.n_point = len(self.lut_names)
+
+        # Attach interpolators
+        self.build_interpolators()
+
+        # TODO: These are definitely wrong, what should they initialize to?
+        self.solar_irr = [1]
+        self.coszen = [1]  # TODO: get from call
+
+        # Hidden assumption: geometry keys come first, then come RTE keys
+        self.geometry_lut_indices = np.array(
+            [self.geometry_input_names.index(key) for key in self.lut_names]
+        )
+        self.x_RT_lut_indices = np.array(
+            [x for x in range(self.n_point) if x not in self.geometry_lut_indices]
+        )
+
         # Prepare a cache for self._lookup_lut(), setting cache_size to 0 will disable
         self.cache = {}
+        # Initialize a 1 value hash dict
+        self.last_point_looked_up = np.zeros(self.n_point)
+        self.last_point_lookup_values = np.zeros(self.n_point)
 
-        #
-        # if self.lut:
-        #     # TODO: ensure consistency with group keys in LUT file
-        #     self.solar_irr = self.lut["MISCELLANEOUS"]["sols"]
-        #     # We use a sorted dictionary here so that filenames for lookup
-        #     # table (LUT) grid points are always constructed the same way (with
-        #     # consistent dimension ordering). Every state vector element has
-        #     # a lookup table dimension, but some lookup table dimensions
-        #     # (like geometry parameters) may not be in the state vector.
-        #     # TODO: ensure consistency with group keys in LUT file
-        #     full_lut_grid = self.lut["sample_space"]
-        # else:
-        #     self.solar_irr = None
-        #     full_lut_grid = lut_grid
+        self.earth_sun_distance_path = os.path.join(
+            isofit.root, "data", "earth_sun_distance.txt"
+        )
+        self.earth_sun_distance_reference = np.loadtxt(self.earth_sun_distance_path)
 
-        # Set up LUT grid
-        lut_names = engine_config.lut_names or lut_grid.keys()
-        self.lut_grid = {key: lut_grid[key] for key in lut_names if key in lut_grid}
+    def get_lut_interp_types(self):
 
-        self.n_point = len(self.lut_grid)
-        self.lut_dims = []
-        self.lut_grids = []
-        self.lut_names = []
         self.lut_interp_types = []
-
-        for key, grid_values in self.lut_grid.items():
-            # TODO: make sure 1-d grids can be handled
-            if not np.all(grid_values == sorted(grid_values)):
-                raise ValueError("Lookup table grid needs ascending order")
-
-            # Store the values
-            self.lut_grids.append(grid_values)
-            self.lut_dims.append(len(grid_values))
-            self.lut_names.append(key)
-
-            # Store in an indication of the type of value each key is
-            # (normal - n, degree - d, radian - r)
+        for key in self.lut_names:
             if key in self.angular_lut_keys_radians:
                 self.lut_interp_types.append("r")
             elif key in self.angular_lut_keys_degrees:
                 self.lut_interp_types.append("d")
             else:
                 self.lut_interp_types.append("n")
-
-        # Cast as array for faster reference later
         self.lut_interp_types = np.array(self.lut_interp_types)
-
-        # Initialize a 1 value hash dict
-        self.last_point_looked_up = np.zeros(self.n_point)
-        self.last_point_lookup_values = np.zeros(self.n_point)
-
-        self.interpolator_disk_paths = [
-            engine_config.interpolator_base_path + "_" + rtq + ".pkl"
-            for rtq in self.lut_names
-        ]
-
-        # Attach interpolators
-        self.build_interpolators()
-        # TODO: Optional load from file
 
     def build_interpolators(self):
         """
         Builds the interpolators using the LUT store
         """
+        # TODO: load from disk if available and skip below
         grid = np.array([*self.lut.point.data])
         self.luts = {}
-        for key in luts.KEYS:
+        for key in self.possible_lut_output_names:
             self.luts[key] = common.VectorInterpolator(
                 grid_input=grid,
                 data_input=self.lut[key].load().data.T,
@@ -250,6 +238,21 @@ class RadiativeTransferEngine:
         )
         return filename
 
+    def get_coszen(self, point: np.array) -> float:
+        """Get solar zenith cosine from point
+
+        Args:
+            point (np.array): conditions to alter in simulation
+
+        Returns:
+            float: cosine of solar zenith angle at the given point
+        """
+        if "solar_zenith" in self.lut_names:
+            return [np.cos(np.deg2rad(point[self.lut_names.index("solar_zenith")]))]
+        else:
+            return [0.2]
+            # TODO: raise AttributeError("Havent implemented this yet....should have a default read from template")
+
     # TODO: change this name
     # REVIEW: This function seems to be inspired by sRTMnet.get() but is super broken
     def _get(self, x_RT: np.array, geom: Geometry):
@@ -265,7 +268,7 @@ class RadiativeTransferEngine:
         print(point, x_RT, self.x_RT_lut_indices, self.geometry_lut_indices)
         point[self.x_RT_lut_indices] = x_RT
         point[self.geometry_lut_indices] = np.array(
-            [getattr(geom, key) for key in self.geometry_lut_names]
+            [getattr(geom, key) for key in self.lut_names]
         )
         return self._lookup_lut(point)
 

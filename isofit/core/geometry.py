@@ -43,6 +43,8 @@ class Geometry:
         # Set some benign defaults...
         self.observer_zenith = None
         self.observer_azimuth = None
+        self.solar_zenith = None
+        self.solar_azimuth = None
         self.observer_altitude_km = None
         self.surface_elevation_km = None
         self.earth_sun_distance = None

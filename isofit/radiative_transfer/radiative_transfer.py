@@ -138,8 +138,6 @@ class RadiativeTransfer:
         self.bval = np.array([x for x in config.unknowns.get_elements()[0]])
 
         self.solar_irr = np.concatenate([RT.solar_irr for RT in self.rt_engines])
-        # These should all be the same so just grab one
-        self.coszen = [RT.coszen for RT in self.rt_engines][0]
 
     def xa(self):
         """Pull the priors from each of the individual RTs."""
@@ -257,9 +255,11 @@ class RadiativeTransfer:
                 L_downs.append(rdn)
         return np.hstack(L_downs)
 
-    def drdn_dRT(self, x_RT, rfl, drfl_dsurface, Ls, dLs_dsurface, geom):
+    def drdn_dRT(self, x_RT, rfl, drfl_dsurface, Ls, dLs_dsurface, geom: Geometry):
         # first the rdn at the current state vector
         rdn = self.calc_rdn(x_RT, rfl, Ls, geom)
+
+        coszen = np.cos(np.deg2rad(geom.solar_zenith))
 
         # perturb each element of the RT state vector (finite difference)
         K_RT = []
@@ -274,7 +274,7 @@ class RadiativeTransfer:
 
         if geom.bg_rfl is not None:
             # adjacency effects are counted
-            I = (self.solar_irr * self.coszen) / np.pi
+            I = (self.solar_irr * coszen) / np.pi
             bg = geom.bg_rfl
             t_down = r["transm_down_dif"] + r["transm_down_dir"]
             drdn_drfl = I / (1.0 - r["sphalb"] * bg) * t_down * r["transm_up_dir"]
@@ -292,7 +292,7 @@ class RadiativeTransfer:
             t_total_down = t_dir_down + t_dif_down
             s_alb = r["sphalb"]
 
-            a = t_total_up * (I * cos_i * t_dir_down + I * self.coszen * t_dif_down)
+            a = t_total_up * (I * cos_i * t_dir_down + I * coszen * t_dif_down)
             drdn_drfl = a / (1 - s_alb * rfl) ** 2
         else:
             L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)

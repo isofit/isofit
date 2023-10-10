@@ -6,20 +6,8 @@ import xarray as xr
 
 Logger = logging.getLogger(__file__)
 
-# Required keys to be in the lut file
-KEYS = [
-    "rhoatm",
-    "transm_down_dir",
-    "transm_down_dif",
-    "transm_up_dir",
-    "transm_up_dif",
-    "sphalb",
-    "thermal_upwelling",
-    "thermal_downwelling",
-]
 
-
-def initialize(file, wl, fwhm, points, chunks=25):
+def initialize(file, all_keys, wl, fwhm, points, chunks=25):
     """
     Initializes a zarr store for ISOFIT LUTs
 
@@ -45,7 +33,7 @@ def initialize(file, wl, fwhm, points, chunks=25):
     ds.to_zarr(file, mode="w", compute=True)
 
     # Add in lazy data for each required key
-    for key in KEYS:
+    for key in all_keys:
         ds[key] = (("wl", "point"), filler)
 
     # Initialize these variables in the zarr store
@@ -85,7 +73,7 @@ def updatePointByIndex(file, index, data):
     ds.to_zarr(file, region={"point": slice(index, index + 1)})
 
 
-def load(file):
+def load(file, lut_grid: dict = None):
     """
     Loads a zarr store
     """
@@ -94,7 +82,11 @@ def load(file):
     # Retrieve the point coordinates and convert them back to a point MultiIndex
     points = list(ds.drop_dims("wl").coords)
 
-    return ds.set_index(point=points)
+    # load the 2d grid of points
+
+    # return converted dictionary of lut_grid itself, along with list of point names and array of points
+
+    return (ds.set_index(point=points),)
 
 
 def extractGrid(ds):
