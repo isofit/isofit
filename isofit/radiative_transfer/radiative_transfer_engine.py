@@ -22,7 +22,6 @@
 import logging
 import os
 import time
-from collections import OrderedDict
 from typing import Callable
 
 import numpy as np
@@ -41,6 +40,54 @@ Logger = logging.getLogger(__file__)
 
 
 class RadiativeTransferEngine:
+    # This is only for checking the validity of the read in sim names
+    possible_lut_output_names = [
+        "rhoatm",
+        "transm_down_dir",
+        "transm_down_dif",
+        "transm_up_dir",
+        "transm_up_dif",
+        "sphalb",
+        "thermal_upwelling",
+        "thermal_downwelling",
+    ]
+    # These are retrieved from the geom object
+    geometry_input_names = [
+        "observer_azimuth",
+        "observer_zenith",
+        "solar_azimuth",
+        "solar_zenith",
+        "relative_azimuth",
+        "observer_altitude_km",
+        "surface_elevation_km",
+    ]
+    # ...
+    angular_lut_keys_degrees = [
+        "observer_azimuth",
+        "observer_zenith",
+        "solar_azimuth",
+        "solar_zenith",
+        "relative_azimuth",
+    ]
+    angular_lut_keys_radians = []
+
+    # Informs the VectorInterpolator the units for a given key
+    angular_lut_keys = {
+        # Degrees
+        "observer_azimuth": "d",
+        "observer_zenith": "d",
+        "solar_azimuth": "d",
+        "solar_zenith": "d",
+        "relative_azimuth": "d",
+        # Radians
+        #   "key": "r",
+        # All other keys default to "n" = Not angular
+    }
+
+    earth_sun_distance_path = os.path.join(
+        isofit.root, "data", "earth_sun_distance.txt"
+    )
+
     def __init__(
         self,
         engine_config: RadiativeTransferEngineConfig,
@@ -59,28 +106,6 @@ class RadiativeTransferEngine:
                 "Must provide either a prebuilt LUT file or a LUT grid"
             )
 
-        # This is only for checking the validity of the read in sim names
-        self.possible_lut_output_names = [
-            "rhoatm",
-            "transm_down_dir",
-            "transm_down_dif",
-            "transm_up_dir",
-            "transm_up_dif",
-            "sphalb",
-            "thermal_upwelling",
-            "thermal_downwelling",
-        ]
-
-        self.geometry_input_names = [
-            "observer_azimuth",
-            "observer_zenith",
-            "solar_azimuth",
-            "solar_zenith",
-            "relative_azimuth",
-            "observer_altitude_km",
-            "surface_elevation_km",
-        ]
-
         # Save parameters to instance
         self.engine_config = engine_config
 
@@ -90,14 +115,7 @@ class RadiativeTransferEngine:
 
         self.treat_as_emissive = engine_config.treat_as_emissive
         self.engine_base_dir = engine_config.engine_base_dir
-        self.angular_lut_keys_degrees = [
-            "observer_azimuth",
-            "observer_zenith",
-            "solar_azimuth",
-            "solar_zenith",
-            "relative_azimuth",
-        ]
-        self.angular_lut_keys_radians = []
+
         self.lut_dir = engine_config.lut_path
 
         # Enable special modes - argument: get from HDF5
@@ -107,16 +125,6 @@ class RadiativeTransferEngine:
         if self.multipart_transmittance:
             # ToDo: check if we're running the 2- or 3-albedo method
             self.test_rfls = [0.1, 0.5]
-
-        if engine_config.wavelength_range is not None:
-            valid_wl = np.logical_and(
-                self.wl >= engine_config.wavelength_range[0],
-                self.wl <= engine_config.wavelength_range[1],
-            )
-            self.wl = self.wl[valid_wl]
-            self.fwhm = self.fwhm[valid_wl]
-
-        self.n_chan = len(self.wl)
 
         # Extract from LUT file if available, otherwise initialize it
         if exists:
@@ -137,6 +145,10 @@ class RadiativeTransferEngine:
                 key: lut_grid[key] for key in self.lut_names if key in lut_grid
             }
 
+            self.points = common.combos(
+                self.lut_grid.values()
+            )  # 2d numpy array.  rows = points, columns = lut_names
+
             self.wl, self.fwhm = common.load_wavelen(wavelength_file)
             self.lut = luts.initialize(
                 file=lut_path,
@@ -147,9 +159,17 @@ class RadiativeTransferEngine:
             )
             # Populate the newly created LUT file
             self.run_simulations()
-            self.points = common.combos(
-                self.lut_grid
-            )  # 2d numpy array.  rows = points, columns = lut_names
+
+        # Limit the wavelength per the config
+        if engine_config.wavelength_range is not None:
+            valid_wl = np.logical_and(
+                self.wl >= engine_config.wavelength_range[0],
+                self.wl <= engine_config.wavelength_range[1],
+            )
+            self.wl = self.wl[valid_wl]
+            self.fwhm = self.fwhm[valid_wl]
+
+        self.n_chan = len(self.wl)
 
         # This is a bad variable name - change (it's the number of input dimensions of the lut (p) not the number of samples)
         self.n_point = len(self.lut_names)
@@ -175,12 +195,11 @@ class RadiativeTransferEngine:
         self.last_point_looked_up = np.zeros(self.n_point)
         self.last_point_lookup_values = np.zeros(self.n_point)
 
-        self.earth_sun_distance_path = os.path.join(
-            isofit.root, "data", "earth_sun_distance.txt"
-        )
         self.earth_sun_distance_reference = np.loadtxt(self.earth_sun_distance_path)
 
-    def get_lut_interp_types(self):
+    @property
+    def lut_interp_types(self):
+        return np.array([self.angular_lut_keys.get(key, "n") for key in self.lut_names])
 
         self.lut_interp_types = []
         for key in self.lut_names:
@@ -265,7 +284,6 @@ class RadiativeTransferEngine:
             interpolated RTE result
         """
         point = np.zeros((self.n_point,))
-        print(point, x_RT, self.x_RT_lut_indices, self.geometry_lut_indices)
         point[self.x_RT_lut_indices] = x_RT
         point[self.geometry_lut_indices] = np.array(
             [getattr(geom, key) for key in self.lut_names]
@@ -309,9 +327,9 @@ class RadiativeTransferEngine:
         """
         # "points" contains all combinations of grid points
         # We will have one filename prefix per point
-        points = self.lut.point.data
+        # points = self.lut.point.data
 
-        Logger.info(f"Executing {len(points)} simulations")
+        Logger.info(f"Executing {len(self.points)} simulations")
 
         # Make the LUT calls (in parallel if specified)
         results = ray.get(
@@ -323,7 +341,7 @@ class RadiativeTransferEngine:
                     self.read_simulation_results,
                     self.lut_path,
                 )
-                for point in points
+                for point in self.points
             ]
         )
 

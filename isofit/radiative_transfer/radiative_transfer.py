@@ -35,6 +35,7 @@ from ..radiative_transfer.modtran import ModtranRT
 from ..radiative_transfer.six_s import SixSRT
 from ..radiative_transfer.sRTMnet import SimulatedModtranRT
 
+# Match config string options to modules
 RTE = {
     "modtran": ModtranRT,
     "libradtran": LibRadTranRT,
@@ -71,6 +72,17 @@ class RadiativeTransfer:
     TIR. This class maintains the master list of statevectors.
     """
 
+    # Keys to retrieve from 3 sections to use the preferred
+    # Prioritizes retrieving from radiative_transfer_engines first, then instrument, then radiative_transfer
+    _keys = [
+        "interpolator_style",
+        "overwrite_interpolator",
+        "cache_size",
+        "lut_grid",
+        "lut_path",
+        "wavelength_file",
+    ]
+
     def __init__(self, full_config: Config):
         config = full_config.forward_model.radiative_transfer
         confIT = full_config.forward_model.instrument
@@ -78,19 +90,10 @@ class RadiativeTransfer:
         self.lut_grid = config.lut_grid
         self.statevec_names = config.statevector.get_element_names()
 
-        # Keys to retrieve from 3 sections to use the preferred
-        keys = [
-            "interpolator_style",
-            "overwrite_interpolator",
-            "cache_size",
-            "lut_grid",
-            "lut_path",
-            "wavelength_file",
-        ]
-
         self.rt_engines = []
         for idx in range(len(config.radiative_transfer_engines)):
             confRT = config.radiative_transfer_engines[idx]
+
             if confRT.engine_name not in RTE:
                 raise AttributeError(
                     f"Invalid radiative transfer engine choice. Got: {confRT.engine_name}; Must be one of: {RTE}"
@@ -98,7 +101,7 @@ class RadiativeTransfer:
 
             # Generate the params for this RTE
             params = {
-                key: confPriority(key, [confRT, confIT, config]) for key in keys
+                key: confPriority(key, [confRT, confIT, config]) for key in self._keys
             } | {"engine_config": confRT}
 
             # Select the right RTE and initialize it

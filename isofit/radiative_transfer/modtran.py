@@ -92,12 +92,10 @@ class ModtranRT(RadiativeTransferEngine):
         self.last_point_looked_up = np.zeros(self.n_point)
         self.last_point_lookup_values = np.zeros(self.n_point)
 
-    def load_tp6(self, point):
+    def load_tp6(self, tp6_file):
         """Load a '.tp6' file. This contains the solar geometry. We
         Return cosine of mean solar zenith."""
 
-        filename_base = self.point_to_filename(point)
-        tp6_file = os.path.join(self.lut_dir, filename_base + ".tp6")
         with open(tp6_file, "r") as f:
             ts, te = -1, -1  # start and end indices
             lines = []
@@ -119,7 +117,7 @@ class ModtranRT(RadiativeTransferEngine):
         szen = np.array([float(lines[i].split()[3]) for i in range(ts, te)]).mean()
         return szen
 
-    def load_chn(self, point):
+    def load_chn(self, chnfile, coszen):
         """Load a '.chn' output file and parse critical coefficient vectors.
 
            These are:
@@ -159,12 +157,7 @@ class ModtranRT(RadiativeTransferEngine):
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         We parse them one wavelength at a time."""
-
-        filename_base = self.point_to_filename(point)
-        chn_file = os.path.join(self.lut_dir, filename_base + ".chn")
-        coszen = self.get_coszen(point)
-
-        with open(chn_file) as f:
+        with open(chnfile) as f:
             sols, transms, sphalbs, wls, rhoatms, transups = [], [], [], [], [], []
             t_down_dirs, t_down_difs, t_up_dirs, t_up_difs = [], [], [], []
             grnd_rflts_1, drct_rflts_1, grnd_rflts_2, drct_rflts_2 = [], [], [], []
@@ -719,15 +712,17 @@ class ModtranRT(RadiativeTransferEngine):
 
 
 # Temporary dummy replacement to simulate modtran simulations so the rest of the pipeline development isn't blocked
-from isofit.luts import zarr as luts
-
-
+# from isofit.luts import zarr as luts
+#
+#
 class ModtranRTDummy(ModtranRT):
-    def make_simulation_call(self, *_, **__):
-        ...
+    def make_simulation_call(self, point):
+        return self.load_rt(point)
 
     def read_simulation_results(self, *_, **__):
-        return {key: np.random.rand(len(self.wl)) for key in luts.KEYS}
+        return {
+            key: np.random.rand(len(self.wl)) for key in self.possible_lut_output_names
+        }
 
 
 ModtranRT = ModtranRTDummy
