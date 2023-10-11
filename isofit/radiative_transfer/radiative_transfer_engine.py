@@ -116,7 +116,7 @@ class RadiativeTransferEngine:
         self.treat_as_emissive = engine_config.treat_as_emissive
         self.engine_base_dir = engine_config.engine_base_dir
 
-        self.lut_dir = engine_config.lut_path
+        self.lut_dir = engine_config.sim_dir
 
         # Enable special modes - argument: get from HDF5
         self.multipart_transmittance = engine_config.multipart_transmittance

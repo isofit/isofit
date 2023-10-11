@@ -66,6 +66,10 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         self.lut_path = None
         """str: The path to the look up table directory used by the radiative transfer engine."""
 
+        self._sim_dir_type = str
+        self.sim_dir = None
+        """str: Path to the simulation outputs for the radiative transfer engine."""
+
         self._template_file_type = str
         self.template_file = None
         """str: A template file to be used as the base-configuration for the given radiative transfer engine."""
