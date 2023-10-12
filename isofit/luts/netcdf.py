@@ -1,3 +1,6 @@
+"""
+"""
+import dask.array
 import xarray as xr
 from netCDF4 import Dataset
 
@@ -46,29 +49,53 @@ def initialize(file, keys, wl, fwhm, lut_grid, chunks=25):
     for key in keys:
         ds[key] = (("wl", "point"), filler)
 
-    # Append filled data
-    ns = ds.unstack()
-    ns.to_netcdf(file, mode="w", compute=False)
+    # Must write unstacked
+    ds.unstack().to_netcdf(file, mode="w", compute=False)
 
     return ds
 
 
-def updatePoint(file, dims, point, data):
+def updatePoint(file, lut_names, point, data):
     """
-    Updates a point in a LUT NetCDF.
+    Updates a point in a LUT NetCDF
 
     Parameters
     ----------
-    dims: list
+    lut_names: list
         List of str (lut_names)
     point: tuple
         Point values
+    data: dict
+        Input data to write in the form:
+            `{key: np.array(shape=(len(wl), len(points)))}`
     """
-    with Dataset(file, "a", parallel=False) as nc:
+    with Dataset(file, "a") as nc:
+        # Retrieves the index for a point value
         index = lambda key, val: np.argwhere(nc[key][:] == val)[0][0]
-        index = [slice(None)] + [index(*item) for item in zip(dims, point)]
+
+        # Assume all keys will have the same dimensions in the same order, so just use the first key
+        key = list(data.keys())[0]
+
+        # This nc[key].dimensions is proper order, nc.dimensions may be out of order
+        dims = nc[key].dimensions
+        inds = [-1] * len(dims)
+        for i, dim in enumerate(dims):
+            if dim == "wl":
+                # Wavelength uses all values
+                inds[i] = slice(None)
+            elif dim in lut_names:
+                # Retrieve the index of this point value
+                inds[i] = index(dim, point[lut_names.index(dim)])
+            else:
+                # Default to using the first index if key not in the lut_names
+                # This should only happen if you were updating an existing LUT with fewer point dimensions than exists
+                inds[i] = 0
+
+        print(f"Writing to point {point!r}, resolved indices: {inds!r}")
+
+        # Now insert the values at this point
         for key, values in data.items():
-            nc[key][index] = values
+            nc[key][inds] = values
 
 
 def load(file):

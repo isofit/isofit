@@ -34,7 +34,7 @@ from isofit.configs.sections.radiative_transfer_config import (
 )
 from isofit.core import common
 from isofit.core.geometry import Geometry
-from isofit.luts import zarr as luts
+from isofit.luts import netcdf as luts
 
 Logger = logging.getLogger(__file__)
 
@@ -153,10 +153,10 @@ class RadiativeTransferEngine:
             self.wl, self.fwhm = common.load_wavelen(wavelength_file)
             self.lut = luts.initialize(
                 file=lut_path,
-                all_keys=self.possible_lut_output_names,
+                keys=self.possible_lut_output_names,
                 wl=self.wl,
                 fwhm=self.fwhm,
-                points=lut_grid,
+                lut_grid=lut_grid,
             )
             # Populate the newly created LUT file
             self.run_simulations()
@@ -337,7 +337,7 @@ class RadiativeTransferEngine:
             [
                 stream_simulation.remote(
                     point,
-                    # luts.getPointIndex(self.lut, point),
+                    self.lut_names,
                     self.make_simulation_call,
                     self.read_simulation_results,
                     self.lut_path,
@@ -445,7 +445,7 @@ class RadiativeTransferEngine:
 @ray.remote
 def stream_simulation(
     point: np.array,
-    # index: int,
+    lut_names: list,
     simmer: Callable,
     reader: Callable,
     output: str,
@@ -455,7 +455,7 @@ def stream_simulation(
 
     Args:
         point (np.array): conditions to alter in simulation
-        index (int): Index of the point in the LUT file
+        lut_names (list): Dimension names aka lut_names
         simmer (function): function to run the simulation
         reader (function): function to read the results of the simulation
         output (str): LUT store to save results to
@@ -473,4 +473,4 @@ def stream_simulation(
     data = reader(point)
 
     # Save the results to our LUT format
-    # luts.updatePointByIndex(output, index, data)
+    luts.updatePoint(output, lut_names, point, data)
