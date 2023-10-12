@@ -184,7 +184,11 @@ class RadiativeTransferEngine:
 
         # Hidden assumption: geometry keys come first, then come RTE keys
         self.geometry_lut_indices = np.array(
-            [self.geometry_input_names.index(key) for key in self.lut_names]
+            [
+                self.geometry_input_names.index(key)
+                for key in self.lut_names
+                if key in self.geometry_input_names
+            ]
         )
         self.x_RT_lut_indices = np.array(
             [x for x in range(self.n_point) if x not in self.geometry_lut_indices]
