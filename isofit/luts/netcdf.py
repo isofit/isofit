@@ -1,31 +1,13 @@
+import xarray as xr
 from netCDF4 import Dataset
 
-try:
-    # Xarray is not an ISOFIT required package
-    import xarray as xr
-except:
-    xr = None
 
-
-# Required keys to be in the lut file
-REQD = [
-    "solar_irr",
-    "rhoatm",
-    "transm",
-    "sphalb",
-    "thermal_upwelling",
-    "thermal_downwelling",
-    "t_up_dirs",
-    "t_up_difs",
-    "t_down_dirs",
-    "t_down_difs",
-]
-
-
-def initialize(file, wl, points):
+def initialize(file, keys, wl, points):
     """
     file: str
         File to write the NetCDF to
+    keys: list
+        Keys to fill
     wl: np.array
         Wavelength array
     points: dict
@@ -45,19 +27,48 @@ def initialize(file, wl, points):
             ds[key][:] = values
 
         # And finally initialize the required LUT variables
-        for key in REQD:
+        for key in keys:
             ds.createVariable(key, np.float64, dimensions=["wl", "point"])
 
 
-def updatePoint(file, point, data, parallel=False):
+def initialize(file, keys, wl, fwhm, lut_grid, chunks=25):
     """
-    Updates one point of a NetCDF file
+    Initializes a LUT NetCDF using Xarray
+    """
+    # Initialize with all lut point names as dimensions
+    ds = xr.Dataset({"fwhm": ("wl", fwhm)}, coords={"wl": wl} | lut_grid)
 
-    Experimental
+    # Stack them together to get the common.combos, creates dim "point" = [(v1, v2, ), ...]
+    ds = ds.stack(point=lut_grid)
+
+    # Easy fill these keys using the stacked (point) form
+    filler = dask.array.full((len(wl), ds.point.size), np.nan, chunks=chunks)
+    for key in keys:
+        ds[key] = (("wl", "point"), filler)
+
+    # Append filled data
+    ns = ds.unstack()
+    ns.to_netcdf(file, mode="w", compute=False)
+
+    return ds
+
+
+def updatePoint(file, dims, point, data):
     """
-    with Dataset(file, "a", format="NETCDF4", parallel=parallel) as ds:
+    Updates a point in a LUT NetCDF.
+
+    Parameters
+    ----------
+    dims: list
+        List of str (lut_names)
+    point: tuple
+        Point values
+    """
+    with Dataset(file, "a", parallel=False) as nc:
+        index = lambda key, val: np.argwhere(nc[key][:] == val)[0][0]
+        index = [slice(None)] + [index(*item) for item in zip(dims, point)]
         for key, values in data.items():
-            ds[key][:, point] = values
+            nc[key][index] = values
 
 
 def load(file):
