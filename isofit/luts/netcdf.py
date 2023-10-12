@@ -1,37 +1,37 @@
 """
 """
 import dask.array
+import numpy as np
 import xarray as xr
 from netCDF4 import Dataset
 
-
-def initialize(file, keys, wl, points):
-    """
-    file: str
-        File to write the NetCDF to
-    keys: list
-        Keys to fill
-    wl: np.array
-        Wavelength array
-    points: dict
-        {pointName: np.array(pointValues)}
-    """
-    with Dataset(file, "w", format="NETCDF4", clobber=True) as ds:
-        # Initialize the dimensions and set the wavelength values
-        ds.createDimension("point", size=len(list(points.items())[0][1]))
-        ds.createDimension("wl", size=wls)
-        ds.createVariable("wl", np.float64, dimensions=["wl"])
-        ds["wl"][:] = wl
-
-        # Insert the point values as variables
-        for key, values in points.items():
-            ds.createDimension(key, size=len(values))
-            ds.createVariable(key, np.float64, dimensions=["point"])
-            ds[key][:] = values
-
-        # And finally initialize the required LUT variables
-        for key in keys:
-            ds.createVariable(key, np.float64, dimensions=["wl", "point"])
+# def initialize(file, keys, wl, points):
+#     """
+#     file: str
+#         File to write the NetCDF to
+#     keys: list
+#         Keys to fill
+#     wl: np.array
+#         Wavelength array
+#     points: dict
+#         {pointName: np.array(pointValues)}
+#     """
+#     with Dataset(file, "w", format="NETCDF4", clobber=True) as ds:
+#         # Initialize the dimensions and set the wavelength values
+#         ds.createDimension("point", size=len(list(points.items())[0][1]))
+#         ds.createDimension("wl", size=wls)
+#         ds.createVariable("wl", np.float64, dimensions=["wl"])
+#         ds["wl"][:] = wl
+#
+#         # Insert the point values as variables
+#         for key, values in points.items():
+#             ds.createDimension(key, size=len(values))
+#             ds.createVariable(key, np.float64, dimensions=["point"])
+#             ds[key][:] = values
+#
+#         # And finally initialize the required LUT variables
+#         for key in keys:
+#             ds.createVariable(key, np.float64, dimensions=["wl", "point"])
 
 
 def initialize(file, keys, wl, fwhm, lut_grid, chunks=25):
@@ -93,8 +93,18 @@ def updatePoint(file, lut_names, point, data):
 
         print(f"Writing to point {point!r}, resolved indices: {inds!r}")
 
+        skips = ["wl", "solar_irr"]
+
         # Now insert the values at this point
         for key, values in data.items():
+            if key not in nc.variables:
+                print(f"Key doesn't exist in LUT file, skipping: {key}")
+                continue
+            elif key in skips:
+                print(f"This key should not be updated by sims, skipping: {key}")
+                continue
+
+            print(f"UPDATING: {key!r}, {len(inds)}, dims = {nc[key].dimensions}")
             nc[key][inds] = values
 
 
