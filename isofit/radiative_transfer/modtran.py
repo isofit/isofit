@@ -189,9 +189,11 @@ class ModtranRT(RadiativeTransferEngine):
                 # parse data out of each line in the MODTRAN output
                 toks = re.findall(r"[\S]+", line.strip())
                 wl, wid = float(toks[0]), float(toks[8])  # nm
-                solar_irr = float(toks[18]) * 1e6 * np.pi / wid / coszen  # uW/nm/sr/cm2
+                self.solar_irr = (
+                    float(toks[18]) * 1e6 * np.pi / wid / coszen
+                )  # uW/nm/sr/cm2
                 rdnatm = float(toks[4]) * 1e6  # uW/nm/sr/cm2
-                rhoatm = rdnatm * np.pi / (solar_irr * coszen)
+                rhoatm = rdnatm * np.pi / (self.solar_irr * coszen)
                 sphalb = float(toks[23])
                 A_coeff = float(toks[21])
                 B_coeff = float(toks[22])
@@ -219,7 +221,7 @@ class ModtranRT(RadiativeTransferEngine):
                 thermal_downwelling = grnd_rflt / wid  # uW/nm/sr/cm2
 
                 if case[i] == 0:
-                    sols.append(solar_irr)  # solar irradiance
+                    sols.append(self.solar_irr)  # solar irradiance
                     transms.append(transm)  # total transmittance
                     sphalbs.append(sphalb)  # spherical albedo
                     rhoatms.append(rhoatm)  # atmospheric reflectance
@@ -667,10 +669,10 @@ class ModtranRT(RadiativeTransferEngine):
             "transm",
             "sphalb",
             "transup",
-            "t_down_dir",
-            "t_down_dif",
-            "t_up_dir",
-            "t_up_dif",
+            "transm_down_dir",
+            "transm_down_dif",
+            "transm_up_dir",
+            "transm_up_dif",
         ]
 
         # Don't include the thermal terms in VSWIR runs to avoid incorrect usage
@@ -711,18 +713,311 @@ class ModtranRT(RadiativeTransferEngine):
                     fout.write(" %9.4f %9.7f %9.2f\n" % (w, v, wn))
 
 
-# Temporary dummy replacement to simulate modtran simulations so the rest of the pipeline development isn't blocked
-# from isofit.luts import zarr as luts
-#
-#
-class ModtranRTDummy(ModtranRT):
-    def make_simulation_call(self, point):
-        return self.load_rt(point)
+# Version 2.0 of ModtranRT that reimplements the loader functions in an easier to understand format
 
-    def read_simulation_results(self, *_, **__):
+
+class ModtranRTv2(ModtranRT):
+    @staticmethod
+    def parseTokens(tokens: list, coszen: float) -> dict:
+        """
+        Processes tokens returned by parseLine()
+
+        Parameters
+        ----------
+        tokens: list
+            List of floats returned by parseLine()
+        coszen: float
+            cos(zenith(filename))
+
+        Returns
+        -------
+        dict
+            Dictionary of calculated values using the tokens list
+        """
+        irr = tokens[18] * 1e6 * np.pi / tokens[8] / coszen  # uW/nm/sr/cm2
+
+        # fmt: off
         return {
-            key: np.random.rand(len(self.wl)) for key in self.possible_lut_output_names
+            'solar_irr'          : irr,       # Solar irradiance
+            'wl'                 : tokens[0], # Wavelength
+            'rhoatm'             : tokens[4] * 1e6 * np.pi / (irr * coszen), # uW/nm/sr/cm2
+            'width'              : tokens[8],
+            'thermal_upwelling'  : (tokens[11] + tokens[12]) / tokens[8] * 1e6, # uW/nm/sr/cm2
+            'thermal_downwelling': tokens[16] * 1e6 / tokens[8],
+            'path_rdn'           : tokens[14] * 1e6 + tokens[15] * 1e6, # The sum of the (1) single scattering and (2) multiple scattering
+            'grnd_rflt'          : tokens[16] * 1e6,        # ground reflected radiance (direct+diffuse+multiple scattering)
+            'drct_rflt'          : tokens[17] * 1e6,        # same as 16 but only on the sun->surface->sensor path (only direct)
+            'transm'             : tokens[21] + tokens[22], # Total (direct+diffuse) transmittance
+            'sphalb'             : tokens[23], #
+            'transup'            : tokens[24], #
         }
+        # fmt: on
+
+    @staticmethod
+    def parseLine(line: str) -> list:
+        """
+        Parses a single line of a .chn file into a list of token values
+
+        Parameters
+        ----------
+        line: str
+            Singular data line of a MODTRAN .chn file
+
+        Returns
+        -------
+        list
+            List of floats parsed from the line
+        """
+        # Fixes issues in large datasets where irrelevant columns touch which breaks parseTokens()
+        line = line[:17] + " " + line[18:]
+
+        return [float(match) for match in re.findall(r"(\d\S*)", line)]
+
+    @staticmethod
+    def two_albedo_method(
+        p0: dict,
+        p1: dict,
+        p2: dict,
+        coszen: float,
+        rfl1: float = 0.1,
+        rfl2: float = 0.5,
+    ) -> dict:
+        """
+        Calculates split transmittance values from a multipart file using the
+        two-albedo method. See notes for further detail
+
+        Parameters
+        ----------
+        p0: dict
+            Part 0 of the channel file
+        p1: dict
+            Part 1 of the channel file
+        p2: dict
+            Part 2 of the channel file
+        coszen: float
+            ...
+        rfl1: float, defaults=0.1
+            Reflectance scaler 1
+        rfl2: float, defaults=0.5
+            Reflectance scaler 2
+
+        Returns
+        -------
+        data: dict
+            Relevant information
+
+        Notes
+        -----
+        This implementation follows Guanter et al. (2009)
+        (DOI:10.1080/01431160802438555), modified by Nimrod Carmon. It is called
+        the "2-albedo" method, referring to running MODTRAN with 2 different
+        surface albedos. Alternatively, one could also run the 3-albedo method,
+        which is similar to this one with the single difference where the
+        "path_radiance_no_surface" variable is taken from a
+        zero-surface-reflectance MODTRAN run instead of being calculated from
+        2 MODTRAN outputs.
+
+        There are a few argument as to why the 2- or 3-albedo methods are
+        beneficial:
+            (1) For each grid point on the lookup table you sample MODTRAN 2 or
+                3 times, i.e., you get 2 or 3 "data points" for the atmospheric
+                parameter of interest. This in theory allows us to use a lower
+                band model resolution for the MODTRAN run, which is much faster,
+                while keeping high accuracy.
+            (2) We use the decoupled transmittance products to expand
+                the forward model and account for more physics, currently
+                topography and glint.
+        """
+        # Extract relevant columns
+        widths = p0["width"]
+        t_up_dirs = p0["transup"]
+        toa_irad = p0["solar_irr"] * coszen / np.pi
+
+        # Calculate some fluxes
+        directRflt1 = p1["drct_rflt"]
+        groundRflt1 = p1["grnd_rflt"]
+
+        directFlux1 = directRflt1 * np.pi / rfl1 / t_up_dirs
+        globalFlux1 = groundRflt1 * np.pi / rfl1 / t_up_dirs
+
+        # diffuseFlux = globalFlux1 - directFlux1 # Unused
+
+        globalFlux2 = p2["grnd_rflt"] * np.pi / rfl2 / t_up_dirs
+
+        # Path radiances
+        rdn1 = p1["path_rdn"]
+        rdn2 = p2["path_rdn"]
+
+        # Path Radiance No Surface = prns
+        val1 = rfl1 * globalFlux1  # TODO: Needs a better name
+        val2 = rfl2 * globalFlux2  # TODO: Needs a better name
+        prns = ((val2 * rdn1) - (val1 * rdn2)) / (val2 - val1)
+
+        # Diffuse upwelling transmittance
+        t_up_difs = np.pi * (rdn1 - prns) / (rfl1 * globalFlux1)
+
+        # Spherical Albedo
+        sphalbs = (globalFlux1 - globalFlux2) / (val1 - val2)
+        dFluxRN = directFlux1 / coszen  # Direct Flux Radiance
+
+        globalFluxNS = globalFlux1 * (1 - rfl1 * sphalbs)  # Global Flux No Surface
+        diffusFluxNS = globalFluxNS - dFluxRN * coszen  # Diffused Flux No Surface
+
+        t_down_dirs = dFluxRN * coszen / widths / np.pi / toa_irad
+        t_down_difs = diffusFluxNS / widths / np.pi / toa_irad
+
+        transms = (t_down_dirs + t_down_difs) * (t_up_dirs + t_up_difs)
+
+        # Return some keys from the first part plus the new calculated keys
+        pass_forward = [
+            "wl",
+            "solar_irr",
+            "rhoatm",
+            "sphalb",
+            "thermal_upwelling",
+            "thermal_downwelling",
+        ]
+        data = {
+            "transm_up_dir": t_up_dirs,
+            "transm_up_dif": t_up_difs,
+            "transm_down_dir": t_down_dirs,
+            "transm_down_dif": t_down_difs,
+            "sphalb": sphalbs,
+        }
+        for key in pass_forward:
+            data[key] = p0[key]
+
+        return data
+
+    def load_chn(self, file: str, coszen: float, header: int = 5) -> dict:
+        """
+        Parses a MODTRAN channel file and extracts relevant data
+
+        Parameters
+        ----------
+        file: str
+            Path to a .chn file
+        coszen: float
+            ...
+        header: int, defaults=5
+            Number of lines to skip for the header
+
+        Returns
+        -------
+        chn: dict
+            Channel data
+        """
+        with open(file, "r") as f:
+            lines = f.readlines()
+
+        data = [lines[header:]]
+
+        # Checks if this is a multipart file, separate if so
+        n = int(len(lines) / 3)
+        if lines[1] == lines[n + 1]:
+            if not self.multipart_transmittance:
+                Logger.warning(
+                    f"This file was detected to be a multipart transmittance but engine_config.multipart_transmittance is set to False: {file}"
+                )
+            else:
+                # Parse the input into three parts
+                # fmt: off
+                data = [
+                    lines[   :n  ][header:],
+                    lines[  n:n*2][header:],
+                    lines[n*2:   ][header:]
+                ]
+                # fmt: on
+        elif self.multipart_transmittance:
+            Logger.warning(
+                f"This file was detected to be a single transmittance but engine_config.multipart_transmittance is set to True: {file}"
+            )
+
+        parts = []
+        for part, lines in enumerate(data):
+            parsed = [self.parseTokens(self.parseLine(line), coszen) for line in lines]
+
+            # Convert from: [{k1: v11, k2: v21}, {k1: v12, k2: v22}]
+            #           to: {k1: [v11, v22], k2: [v21, v22]} - as numpy arrays
+            combined = {}
+            for i, parse in enumerate(parsed):
+                for key, value in parse.items():
+                    values = combined.setdefault(key, np.full(len(parsed), np.nan))
+                    values[i] = value
+
+            parts.append(combined)
+
+        # Single transmittance files will be the first dict in the list, otherwise multiparts use two_albedo_method
+        chn = parts[0]
+        if len(parts) > 1:
+            Logger.debug("Using two albedo method")
+            chn = self.two_albedo_method(*parts, coszen, *self.test_rfls)
+
+        return chn
+
+    @staticmethod
+    def load_tp6(file):
+        """
+        Parses relevant information from a tp6 file. Specifically, seeking a
+        table in the unstructured text and extracting a column from it.
+
+        Parameters
+        ----------
+        tp6: str
+            tp6 file path
+        """
+        with open(file, "r") as tp6:
+            lines = tp6.readlines()
+
+        if not lines:
+            raise ValueError(f"tp6 file is empty: {file}")
+
+        for i, line in enumerate(lines):
+            # Table found
+            if "SINGLE SCATTER SOLAR" in line:
+                i += 5  # Skip header
+                break
+
+        # Start at the table
+        solzen = []
+        for line in lines[i:]:
+            split = line.split()
+
+            # End of table
+            if not split:
+                break
+
+            # Retrieve solar zenith
+            solzen.append(float(split[3]))
+
+        if not solzen:
+            raise ValueError(f"No solar zenith found in tp6 file: {file}")
+
+        return np.mean(solzen)
+
+    def read_simulation_results(self, point):
+        """
+        For a given point, parses the tp6 and chn file and returns the data
+        """
+        file = os.path.join(self.sim_path, self.point_to_filename(point))
+
+        solzen = self.load_tp6(f"{file}.tp6")
+        coszen = np.cos(solzen * np.pi / 180.0)
+        params = self.load_chn(f"{file}.chn", coszen)
+
+        # Remove thermal terms in VSWIR runs to avoid incorrect usage
+        if self.treat_as_emissive is False:
+            for key in ["thermal_upwelling", "thermal_downwelling"]:
+                if key in params:
+                    del params[key]
+
+        params["solzen"] = solzen
+        params["coszen"] = coszen
+
+        return params
+
+    def make_simulation_call(self, point):
+        ...
 
 
-ModtranRT = ModtranRTDummy
+ModtranRT = ModtranRTv2
