@@ -211,13 +211,15 @@ class RadiativeTransferEngine:
     def build_interpolators(self):
         """
         Builds the interpolators using the LUT store
+
+        TODO: optional load from/write to disk
         """
-        # TODO: load from disk if available and skip below
-        grid = np.array([*self.lut.point.data])
         self.luts = {}
+
+        # Create the unique
         for key in self.possible_lut_output_names:
             self.luts[key] = common.VectorInterpolator(
-                grid_input=grid,
+                grid_input=self.lut_grid.values(),
                 data_input=self.lut[key].load().data.T,
                 lut_interp_types=self.lut_interp_types,
                 version=self.interpolator_style,

@@ -115,7 +115,7 @@ def extractPoints(ds: xr.Dataset) -> (np.array, np.array):
     """
     Extracts the points and point name arrays
     """
-    points = np.array([np.array(point) for point in ds.point.data])
+    points = np.array([*ds.point.data])
     names = np.array([name for name in ds.point.coords])[1:]
 
     return (points, names)
