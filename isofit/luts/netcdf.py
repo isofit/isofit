@@ -12,30 +12,54 @@ Logger = logging.getLogger(__file__)
 
 def initialize(
     file: str,
-    keys: list,
     wl: np.array,
-    fwhm: np.array,
     lut_grid: dict,
-    chunks: int = 25,
+    chunks: int = 25,  # REVIEW: Good default? Can we calculate it? TODO: Config option?
+    consts: list = [],
+    onedim: list = [],
+    alldim: list = [],
 ) -> xr.Dataset:
     """
     Initializes a LUT NetCDF using Xarray
+
+    Parameters
+    ----------
+    consts: list, defaults=[]
+        Keys to fill, these are along  no dimensions, ie. ()
+    onedim: list, defaults=[]
+        Keys to fill, these are along one dimensions, ie. (wl, )
+    alldim: list, defaults=[]
+        Keys to fill, these are along all dimensions, ie. (wl, point)
     """
     # Initialize with all lut point names as dimensions
-    ds = xr.Dataset({"fwhm": ("wl", fwhm)}, coords={"wl": wl} | lut_grid)
+    ds = xr.Dataset(coords={"wl": wl} | lut_grid)
 
-    # Stack them together to get the common.combos, creates dim "point" = [(v1, v2, ), ...]
-    ds = ds.stack(point=lut_grid)
+    # Insert constants
+    filler = np.nan
+    for key in consts:
+        if isinstance(key, tuple):
+            key, filler = key
+        ds[key] = filler
 
-    # Easy fill these keys using the stacked (point) form
-    filler = dask.array.full((len(wl), ds.point.size), np.nan, chunks=chunks)
-    for key in keys:
-        ds[key] = (("wl", "point"), filler)
+    # Insert single dimension keys along wl
+    filler = dask.array.full((len(wl),), np.nan, chunks=chunks)
+    for key in onedim:
+        if isinstance(key, tuple):
+            key, filler = key
+        ds[key] = ("wl", filler)
+
+    # Insert point dimensional keys
+    filler = dask.array.full(tuple(ds.dims.values()), np.nan, chunks=chunks)
+    for key in alldim:
+        if isinstance(key, tuple):
+            key, filler = key
+        ds[key] = (ds.coords, filler)
 
     # Must write unstacked
-    ds.unstack().to_netcdf(file, mode="w", compute=False)
+    ds.to_netcdf(file, mode="w", compute=False)
 
-    return ds
+    # Stack to get the common.combos, creates dim "point" = [(v1, v2, ), ...]
+    return ds.stack(point=lut_grid)
 
 
 def updatePoint(file: str, lut_names: list, point: tuple, data: dict) -> None:
@@ -91,15 +115,21 @@ def updatePoint(file: str, lut_names: list, point: tuple, data: dict) -> None:
                     + f"Expected: {nc[key][:]}\n"
                     + f"Received: {values}"
                 )
-
-            # Not on the point dimension
-            # REVIEW: parallel safe to clobber?
-            elif len(nc[key].dimensions) == 1:
-                nc[key][:] = values
-
             else:
-                # Not a special case, save as-is
-                nc[key][inds] = values
+                var = nc[key]
+                dim = len(var.dimensions)
+
+                # Not on the point dimension
+                # REVIEW: parallel safe to clobber?
+                if dim == 1:
+                    nc[key][:] = values
+
+                elif dim == 0:
+                    nc[key].assignValue(values)
+
+                else:
+                    # Not a special case, save as-is
+                    nc[key][inds] = values
 
 
 def load(file: str, lut_names: list = []) -> xr.Dataset:

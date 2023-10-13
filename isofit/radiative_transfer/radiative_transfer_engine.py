@@ -40,18 +40,26 @@ Logger = logging.getLogger(__file__)
 
 
 class RadiativeTransferEngine:
-    # This is only for checking the validity of the read in sim names
-    possible_lut_output_names = [
-        "solar_irr",
+    ## LUT Keys --
+    # Constants, not along any dimension
+    consts = ["coszen", "solzen"]
+
+    # Along the wavelength dimension only
+    onedim = ["solar_irr"]
+
+    # Keys along all dimensions, ie. wl and point
+    alldim = [
         "rhoatm",
-        "transm_down_dir",
-        "transm_down_dif",
-        "transm_up_dir",
-        "transm_up_dif",
         "sphalb",
+        "transm_up_dif",
+        "transm_up_dir",
+        "transm_down_dif",
+        "transm_down_dir",
         "thermal_upwelling",
         "thermal_downwelling",
     ]
+    ## End LUT keys --
+
     # These are retrieved from the geom object
     geometry_input_names = [
         "observer_azimuth",
@@ -155,11 +163,13 @@ class RadiativeTransferEngine:
             self.wl, self.fwhm = common.load_wavelen(wavelength_file)
             self.lut = luts.initialize(
                 file=lut_path,
-                keys=self.possible_lut_output_names,
                 wl=self.wl,
-                fwhm=self.fwhm,
                 lut_grid=lut_grid,
+                consts=self.consts,
+                onedim=self.onedim + [("fwhm", self.fwhm)],
+                alldim=self.alldim,
             )
+
             # Populate the newly created LUT file
             self.run_simulations()
 
@@ -217,7 +227,7 @@ class RadiativeTransferEngine:
         self.luts = {}
 
         # Create the unique
-        for key in self.possible_lut_output_names:
+        for key in self.alldim:
             self.luts[key] = common.VectorInterpolator(
                 grid_input=self.lut_grid.values(),
                 data_input=self.lut[key].load().data.T,
