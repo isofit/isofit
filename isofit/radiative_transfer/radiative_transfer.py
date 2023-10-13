@@ -160,6 +160,16 @@ class RadiativeTransfer:
 
         return self.pack_arrays(ret)
 
+    @property
+    def coszen(self):
+        """
+        Backwards compatibility until Geometry takes over this param
+        Return some child RTE coszen
+        """
+        for child in self.rt_engines:
+            if "coszen" in child.lut:
+                return child.lut.coszen.data
+
     def calc_rdn(self, x_RT, rfl, Ls, geom):
         r = self.get_shared_rtm_quantities(x_RT, geom)
         L_atm = self.get_L_atm(x_RT, geom)
@@ -262,8 +272,6 @@ class RadiativeTransfer:
         # first the rdn at the current state vector
         rdn = self.calc_rdn(x_RT, rfl, Ls, geom)
 
-        coszen = np.cos(np.deg2rad(geom.solar_zenith))
-
         # perturb each element of the RT state vector (finite difference)
         K_RT = []
         x_RTs_perturb = x_RT + np.eye(len(x_RT)) * eps
@@ -277,7 +285,7 @@ class RadiativeTransfer:
 
         if geom.bg_rfl is not None:
             # adjacency effects are counted
-            I = (self.solar_irr * coszen) / np.pi
+            I = (self.solar_irr * self.coszen) / np.pi
             bg = geom.bg_rfl
             t_down = r["transm_down_dif"] + r["transm_down_dir"]
             drdn_drfl = I / (1.0 - r["sphalb"] * bg) * t_down * r["transm_up_dir"]
@@ -295,7 +303,7 @@ class RadiativeTransfer:
             t_total_down = t_dir_down + t_dif_down
             s_alb = r["sphalb"]
 
-            a = t_total_up * (I * cos_i * t_dir_down + I * coszen * t_dif_down)
+            a = t_total_up * (I * cos_i * t_dir_down + I * self.coszen * t_dif_down)
             drdn_drfl = a / (1 - s_alb * rfl) ** 2
         else:
             L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)

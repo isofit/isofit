@@ -100,6 +100,11 @@ def updatePoint(file: str, lut_names: list, point: tuple, data: dict) -> None:
             else:
                 # Default to using the first index if key not in the lut_names
                 # This should only happen if you were updating an existing LUT with fewer point dimensions than exists
+                # REVIEW: Should we support this edge case? If we do, ought to add a `defaults={dim: index}` to control
+                # what the default index for dims are
+                Logger.warning(
+                    f"Defaulting to index 0 for dimension {dim!r} because it is not in the lut_names: {lut_names}"
+                )
                 inds[i] = 0
 
         Logger.debug(f"Writing to point {point!r}, resolved indices: {inds!r}")
@@ -119,17 +124,16 @@ def updatePoint(file: str, lut_names: list, point: tuple, data: dict) -> None:
                 var = nc[key]
                 dim = len(var.dimensions)
 
-                # Not on the point dimension
                 # REVIEW: parallel safe to clobber?
-                if dim == 1:
-                    nc[key][:] = values
-
-                elif dim == 0:
-                    nc[key].assignValue(values)
-
+                if dim == 0:
+                    # Constant/scalar value
+                    var.assignValue(values)
+                elif dim == 1:
+                    # Not on the point dimension
+                    var[:] = values
                 else:
                     # Not a special case, save as-is
-                    nc[key][inds] = values
+                    var[inds] = values
 
 
 def load(file: str, lut_names: list = []) -> xr.Dataset:

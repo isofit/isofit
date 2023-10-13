@@ -126,7 +126,7 @@ class RadiativeTransferEngine:
         self.engine_base_dir = engine_config.engine_base_dir
 
         self.lut_dir = engine_config.sim_path  # Backwards compatibility
-        self.sim_path = engine_config.sim_path  # New way
+        self.sim_path = engine_config.sim_path  # REVIEW: New way
 
         # Enable special modes - argument: get from HDF5
         self.multipart_transmittance = engine_config.multipart_transmittance
