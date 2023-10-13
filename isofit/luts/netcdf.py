@@ -49,15 +49,19 @@ def updatePoint(file: str, lut_names: list, point: tuple, data: dict) -> None:
     point: tuple
         Point values
     data: dict
-        Input data to write in the form:
-            `{key: np.array(shape=(len(wl), len(points)))}`
+        Input data to write. Aside from the following special keys, all keys in
+        the dict should have the shape (len(wl), len(points)). Special keys:
+               wl - This is set at lut initialization, will assert np.isclose
+                    the existing lut[wl] against data[wl]
+        solar_irr - Not along the point dimension, presently clobbers with
+                    every new input
     """
     with Dataset(file, "a") as nc:
         # Retrieves the index for a point value
         index = lambda key, val: np.argwhere(nc[key][:] == val)[0][0]
 
-        # Assume all keys will have the same dimensions in the same order, so just use the first key
-        key = list(data.keys())[0]
+        # Assume all keys will have the same dimensions in the same order, so just use a random key
+        key, _ = max(nc.variables.items(), key=lambda pair: len(pair[1].dimensions))
 
         # nc[key].dimensions is ordered, nc.dimensions may be out of order
         dims = nc[key].dimensions
@@ -109,7 +113,7 @@ def load(file: str, lut_names: list = []) -> xr.Dataset:
 
 def extractPoints(ds: xr.Dataset) -> (np.array, np.array):
     """
-    Extracts the points array and tuple of point names
+    Extracts the points and point name arrays
     """
     points = np.array([np.array(point) for point in ds.point.data])
     names = np.array([name for name in ds.point.coords])[1:]
