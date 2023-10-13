@@ -1099,6 +1099,9 @@ class ModtranRTv2(ModtranRT):
         if self.treat_as_emissive is False:
             for key in ["thermal_upwelling", "thermal_downwelling"]:
                 if key in params:
+                    Logger.debug(
+                        f"Deleting key because treat_as_emissive is False: {key}"
+                    )
                     del params[key]
 
         params["solzen"] = solzen

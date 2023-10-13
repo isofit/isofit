@@ -1,40 +1,23 @@
 """
 """
+import logging
+
 import dask.array
 import numpy as np
 import xarray as xr
 from netCDF4 import Dataset
 
-# def initialize(file, keys, wl, points):
-#     """
-#     file: str
-#         File to write the NetCDF to
-#     keys: list
-#         Keys to fill
-#     wl: np.array
-#         Wavelength array
-#     points: dict
-#         {pointName: np.array(pointValues)}
-#     """
-#     with Dataset(file, "w", format="NETCDF4", clobber=True) as ds:
-#         # Initialize the dimensions and set the wavelength values
-#         ds.createDimension("point", size=len(list(points.items())[0][1]))
-#         ds.createDimension("wl", size=wls)
-#         ds.createVariable("wl", np.float64, dimensions=["wl"])
-#         ds["wl"][:] = wl
-#
-#         # Insert the point values as variables
-#         for key, values in points.items():
-#             ds.createDimension(key, size=len(values))
-#             ds.createVariable(key, np.float64, dimensions=["point"])
-#             ds[key][:] = values
-#
-#         # And finally initialize the required LUT variables
-#         for key in keys:
-#             ds.createVariable(key, np.float64, dimensions=["wl", "point"])
+Logger = logging.getLogger(__file__)
 
 
-def initialize(file, keys, wl, fwhm, lut_grid, chunks=25):
+def initialize(
+    file: str,
+    keys: list,
+    wl: np.array,
+    fwhm: np.array,
+    lut_grid: dict,
+    chunks: int = 25,
+) -> xr.Dataset:
     """
     Initializes a LUT NetCDF using Xarray
     """
@@ -55,7 +38,7 @@ def initialize(file, keys, wl, fwhm, lut_grid, chunks=25):
     return ds
 
 
-def updatePoint(file, lut_names, point, data):
+def updatePoint(file: str, lut_names: list, point: tuple, data: dict) -> None:
     """
     Updates a point in a LUT NetCDF
 
@@ -76,7 +59,7 @@ def updatePoint(file, lut_names, point, data):
         # Assume all keys will have the same dimensions in the same order, so just use the first key
         key = list(data.keys())[0]
 
-        # This nc[key].dimensions is proper order, nc.dimensions may be out of order
+        # nc[key].dimensions is ordered, nc.dimensions may be out of order
         dims = nc[key].dimensions
         inds = [-1] * len(dims)
         for i, dim in enumerate(dims):
@@ -91,46 +74,56 @@ def updatePoint(file, lut_names, point, data):
                 # This should only happen if you were updating an existing LUT with fewer point dimensions than exists
                 inds[i] = 0
 
-        print(f"Writing to point {point!r}, resolved indices: {inds!r}")
-
-        skips = ["wl", "solar_irr"]
+        Logger.debug(f"Writing to point {point!r}, resolved indices: {inds!r}")
 
         # Now insert the values at this point
         for key, values in data.items():
             if key not in nc.variables:
-                print(f"Key doesn't exist in LUT file, skipping: {key}")
-                continue
-            elif key in skips:
-                print(f"This key should not be updated by sims, skipping: {key}")
-                continue
+                Logger.error(f"Key doesn't exist in LUT file, skipping: {key}")
 
-            print(f"UPDATING: {key!r}, {len(inds)}, dims = {nc[key].dimensions}")
-            nc[key][inds] = values
+            elif key == "wl":
+                assert np.isclose(nc[key][:], values).all(), (
+                    f"Input data wavelengths do not match existing wavelengths for file: {file}\n"
+                    + f"Expected: {nc[key][:]}\n"
+                    + f"Received: {values}"
+                )
+
+            # Not on the point dimension
+            # REVIEW: parallel safe to clobber?
+            elif len(nc[key].dimensions) == 1:
+                nc[key][:] = values
+
+            else:
+                # Not a special case, save as-is
+                nc[key][inds] = values
 
 
-def load(file):
+def load(file: str, lut_names: list = []) -> xr.Dataset:
     """
     Loads a LUT NetCDF
     """
-    if xr:
-        ds = xr.open_dataset(file, mode="r", lock=False)
-
-        # TODO: fix hardcoded point names
-        return ds.set_index(point=["AOT550", "H2OSTR"])
-    else:
-        return Dataset(file, mode="r")
+    ds = xr.open_dataset(file, mode="r", lock=False)
+    dims = lut_names or ds.drop_dims("wl").coords
+    return ds.stack(point=dims)
 
 
-def example():
-    from isofit.utils.luts import netcdf as lut
+def extractPoints(ds: xr.Dataset) -> (np.array, np.array):
+    """
+    Extracts the points array and tuple of point names
+    """
+    points = np.array([np.array(point) for point in ds.point.data])
+    names = np.array([name for name in ds.point.coords])[1:]
 
-    # First the RTE initializes the lut.nc file using the wavelengths array and points dict
-    lut.initialize(file, wl, points)
+    return (points, names)
 
-    # Each runSim will parse its outputs then call updatePoint; done in parallel, must be parallel-write-safe
-    lut.updatePoint(file, 0, data, parallel=True)
 
-    # Use our custom loader
-    ds = lut.load(file)
-
-    return ds
+def extractGrid(ds: xr.Dataset) -> dict:
+    """
+    Extracts the LUT grid from a Dataset
+    """
+    grid = {}
+    for dim, vals in ds.coords.items():
+        if dim in {"wl", "point"}:
+            continue
+        grid[dim] = vals.data
+    return grid

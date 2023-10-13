@@ -42,6 +42,7 @@ Logger = logging.getLogger(__file__)
 class RadiativeTransferEngine:
     # This is only for checking the validity of the read in sim names
     possible_lut_output_names = [
+        "solar_irr",
         "rhoatm",
         "transm_down_dir",
         "transm_down_dif",
@@ -135,7 +136,7 @@ class RadiativeTransferEngine:
             self.wl = self.lut.wl.data
             self.fwhm = self.lut.fwhm.data
 
-            self.points, self.lut_names = luts.extractGrid(self.lut)
+            self.points, self.lut_names = luts.extractPoints(self.lut)
         else:
             Logger.info(f"No LUT store found, beginning initialization and simulations")
             Logger.debug(f"Writing store to: {lut_path}")
@@ -205,16 +206,6 @@ class RadiativeTransferEngine:
     @property
     def lut_interp_types(self):
         return np.array([self.angular_lut_keys.get(key, "n") for key in self.lut_names])
-
-        self.lut_interp_types = []
-        for key in self.lut_names:
-            if key in self.angular_lut_keys_radians:
-                self.lut_interp_types.append("r")
-            elif key in self.angular_lut_keys_degrees:
-                self.lut_interp_types.append("d")
-            else:
-                self.lut_interp_types.append("n")
-        self.lut_interp_types = np.array(self.lut_interp_types)
 
     def build_interpolators(self):
         """
@@ -332,7 +323,6 @@ class RadiativeTransferEngine:
         """
         # "points" contains all combinations of grid points
         # We will have one filename prefix per point
-        # points = self.lut.point.data
 
         Logger.info(f"Executing {len(self.points)} simulations")
 
@@ -349,6 +339,9 @@ class RadiativeTransferEngine:
                 for point in self.points
             ]
         )
+
+        # Reload the LUT now that it's populated
+        self.lut = luts.load(self.lut_path, self.lut_names)
 
     def summarize(self, x_RT, *_):
         """ """
