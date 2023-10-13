@@ -137,6 +137,7 @@ class RadiativeTransferEngine:
             self.fwhm = self.lut.fwhm.data
 
             self.points, self.lut_names = luts.extractPoints(self.lut)
+            self.lut_grid = lut_grid or luts.extractGrid(self.lut)
         else:
             Logger.info(f"No LUT store found, beginning initialization and simulations")
             Logger.debug(f"Writing store to: {lut_path}")
