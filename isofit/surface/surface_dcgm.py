@@ -69,7 +69,7 @@ class DCGMSurface(Surface):
         self.select_on_init = config.select_on_init
 
         # Variables retrieved: each channel maps to a reflectance model parameter
-        rmin, rmax = 0, 2.0
+        rmin, rmax = -0.01, 2.0
         self.statevec_names = ["RFL_%04i" % int(w) for w in self.wl]
         self.bounds = [[rmin, rmax] for w in self.wl]
         self.scale = [1.0 for w in self.wl]
