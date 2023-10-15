@@ -191,7 +191,7 @@ class RadiativeTransferEngine:
         self.build_interpolators()
 
         # TODO: These are definitely wrong, what should they initialize to?
-        self.solar_irr = [1]
+        self.solar_irr = self.lut.solar_irr.data
         self.coszen = [1]  # TODO: get from call
 
         # Hidden assumption: geometry keys come first, then come RTE keys
@@ -226,10 +226,13 @@ class RadiativeTransferEngine:
         """
         self.luts = {}
 
+        lgl = []
+        for key, item in self.lut_grid.items():
+            lgl.append(item)
         # Create the unique
         for key in self.alldim:
             self.luts[key] = common.VectorInterpolator(
-                grid_input=self.lut_grid.values(),
+                grid_input=lgl,
                 data_input=self.lut[key].load().data.T,
                 lut_interp_types=self.lut_interp_types,
                 version=self.interpolator_style,
@@ -283,7 +286,7 @@ class RadiativeTransferEngine:
 
     # TODO: change this name
     # REVIEW: This function seems to be inspired by sRTMnet.get() but is super broken
-    def _get(self, x_RT: np.array, geom: Geometry):
+    def get(self, x_RT: np.array, geom: Geometry):
         """Retrieve point from LUT interpolator
         Args:
             x_RT: radiative-transfer portion of the statevector
@@ -294,12 +297,14 @@ class RadiativeTransferEngine:
         """
         point = np.zeros((self.n_point,))
         point[self.x_RT_lut_indices] = x_RT
-        point[self.geometry_lut_indices] = np.array(
-            [getattr(geom, key) for key in self.lut_names]
-        )
+        geom_keys = [key for key in self.lut_names if key in self.geometry_input_names]
+        if len(geom_keys) > 0:
+            point[self.geometry_lut_indices] = np.array(
+                [getattr(geom, key) for key in geom_keys]
+            )
         return self._lookup_lut(point)
 
-    def get(self, point, *_):
+    def _get(self, point, *_):
         """
         Temporarily circumventing the geom obj and passing x_RT as the point to
         interpolate

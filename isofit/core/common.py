@@ -60,6 +60,8 @@ class VectorInterpolator:
         lut_interp_types: List[str],
         version="nds-1",
     ):
+        ndshape = tuple([len(x) for x in grid_input]) + (data_input.shape[-1],)
+        data = data_input.reshape(ndshape)
         if version[:3] in ["rg", "nds"]:
             self.method = 1
 
@@ -68,7 +70,7 @@ class VectorInterpolator:
 
             # Lists and arrays are mutable, so copy first
             grid = grid_input.copy()
-            data = data_input.copy()
+            # data = data_input.copy()
 
             # Check if we are using a single grid point. If so, store the grid input.
             if np.prod(list(map(len, grid))) == 1:
@@ -158,7 +160,7 @@ class VectorInterpolator:
             self.method = 2
 
             self.gridtuples = [np.array(t) for t in grid_input]
-            self.gridarrays = data_input
+            self.gridarrays = data
             self.binwidth = [
                 t[1:] - t[:-1] for t in self.gridtuples
             ]  # binwidth arrays for each dimension
