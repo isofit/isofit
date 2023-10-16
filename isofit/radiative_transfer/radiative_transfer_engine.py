@@ -282,8 +282,7 @@ class RadiativeTransferEngine:
             # TODO: raise AttributeError("Havent implemented this yet....should have a default read from template")
 
     # TODO: change this name
-    # REVIEW: This function seems to be inspired by sRTMnet.get() but is super broken
-    def _get(self, x_RT: np.array, geom: Geometry):
+    def get(self, x_RT: np.array, geom: Geometry):
         """Retrieve point from LUT interpolator
         Args:
             x_RT: radiative-transfer portion of the statevector
@@ -294,28 +293,12 @@ class RadiativeTransferEngine:
         """
         point = np.zeros((self.n_point,))
         point[self.x_RT_lut_indices] = x_RT
-        point[self.geometry_lut_indices] = np.array(
-            [getattr(geom, key) for key in self.lut_names]
-        )
+        geom_keys = [key for key in self.lut_names if key in self.geometry_input_names]
+        if len(geom_keys) > 0:
+            point[self.geometry_lut_indices] = np.array(
+                [getattr(geom, key) for key in geom_keys]
+            )
         return self._lookup_lut(point)
-
-    def get(self, point, *_):
-        """
-        Temporarily circumventing the geom obj and passing x_RT as the point to
-        interpolate
-        point == x_RT
-        Combines the get and _lookup_lut into one function (why have two?)
-        """
-        data = {key: self.luts[key](point) for key in self.luts}
-        # TODO: These are clearly wrong. This temporarily alleviates issues with functions on the physics side expecting certain keys to exist
-        # I just creatively chose the values. Please either fix these or the functions themselves.
-        # Known issues in:
-        # - isofit.inversion.invert_simple
-        data["transdown"] = data["transm_down_dir"] + data["transm_down_dif"]
-        data["transup"] = data["transm_up_dir"] + data["transm_up_dif"]
-        data["transm"] = data["transdown"] * data["transup"]
-
-        return data
 
     def _lookup_lut(self, point):
         if np.all(np.equal(point, self.last_point_looked_up)):
