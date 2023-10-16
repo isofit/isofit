@@ -647,7 +647,7 @@ class ModtranRT(RadiativeTransferEngine):
         else:
             return False
 
-    def load_rt(self, point):
+    def read_simulation_results(self, point):
         """."""
 
         file_basename = self.point_to_filename(point)
@@ -664,7 +664,7 @@ class ModtranRT(RadiativeTransferEngine):
         # Don't add these to the VSWIR functions!
         names = [
             "wl",
-            "sol",
+            "solar_irr",
             "rhoatm",
             "transm",
             "sphalb",
@@ -763,8 +763,8 @@ class ModtranRT(RadiativeTransferEngine):
         path_radiance_2 = np.array(lp_2)
         # ToDo: get coszen from LUT and assign as attribute to self
         TOA_Irad = np.array(self.solar_irr) * coszen / np.pi
-        rfl_1 = self.test_rfls[1]
-        rfl_2 = self.test_rfls[2]
+        rfl_1 = self.test_rfls[0]
+        rfl_2 = self.test_rfls[1]
 
         direct_flux_1 = direct_ground_reflected_1 * np.pi / rfl_1 / t_up_dirs
         global_flux_1 = total_ground_reflected_1 * np.pi / rfl_1 / t_up_dirs
@@ -801,6 +801,9 @@ class ModtranRT(RadiativeTransferEngine):
         transms = (t_down_dirs + t_down_difs) * (t_up_dirs + t_up_difs)
 
         return transms, t_down_dirs, t_down_difs, t_up_dirs, t_up_difs, sphalbs
+
+    def make_simulation_call(self, point):
+        ...
 
 
 # Version 2.0 of ModtranRT that reimplements the loader functions in an easier to understand format
@@ -921,7 +924,10 @@ class ModtranRTv2(ModtranRT):
         # Extract relevant columns
         widths = p0["width"]
         t_up_dirs = p0["transup"]
-        toa_irad = p0["solar_irr"] * coszen / np.pi
+
+        # REVIEW: two_albedo_method-v1 used a single solar_irr value, but now we have an array of values
+        # The last value in the new array is the same as the old v1, so for backwards compatibility setting that here
+        toa_irad = p0["solar_irr"][-1] * coszen / np.pi
 
         # Calculate some fluxes
         directRflt1 = p1["drct_rflt"]
@@ -961,18 +967,17 @@ class ModtranRTv2(ModtranRT):
         # Return some keys from the first part plus the new calculated keys
         pass_forward = [
             "wl",
-            "solar_irr",
             "rhoatm",
-            "sphalb",
+            "solar_irr",
             "thermal_upwelling",
             "thermal_downwelling",
         ]
         data = {
+            "sphalb": sphalbs,
             "transm_up_dir": t_up_dirs,
             "transm_up_dif": t_up_difs,
             "transm_down_dir": t_down_dirs,
             "transm_down_dif": t_down_difs,
-            "sphalb": sphalbs,
         }
         for key in pass_forward:
             data[key] = p0[key]
