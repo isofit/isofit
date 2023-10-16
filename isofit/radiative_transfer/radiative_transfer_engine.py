@@ -51,10 +51,10 @@ class RadiativeTransferEngine:
     alldim = [
         "rhoatm",
         "sphalb",
-        "transm_up_dif",
-        "transm_up_dir",
-        "transm_down_dif",
         "transm_down_dir",
+        "transm_down_dif",
+        "transm_up_dir",
+        "transm_up_dif",
         "thermal_upwelling",
         "thermal_downwelling",
     ]

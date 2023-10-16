@@ -124,25 +124,17 @@ class ModtranRT(RadiativeTransferEngine):
              * wl      - wavelength vector
              * sol_irr - solar irradiance
              * sphalb  - spherical sky albedo at surface
-             * transm  - diffuse and direct irradiance along the
+             * transm  - diffuse and direct transmission along the
                           sun-ground-sensor path
              * transup - transmission along the ground-sensor path only
 
            If the "multipart transmittance" option is active, we will use
-           a combination of three MODTRAN runs to estimate the following
+           a combination of two MODTRAN runs to estimate the following
            additional quantities:
              * t_down_dir - direct downwelling transmittance
              * t_down_dif - diffuse downwelling transmittance
              * t_up_dir   - direct upwelling transmittance
              * t_up_dif   - diffuse upwelling transmittance
-
-        If the "multipart transmittance" option is active, we will use
-        a combination of three MODTRAN runs to estimate the following
-        additional quantities:
-          * t_down_dir - direct downwelling transmittance
-          * t_down_dif - diffuse downwelling transmittance
-          * t_up_dir   - direct upwelling transmittance
-          * t_up_dif   - diffuse upwelling transmittance
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
          Be careful with these! They are to be used only by the
@@ -270,6 +262,11 @@ class ModtranRT(RadiativeTransferEngine):
                 coszen=coszen,
                 widths=widths,
             )
+        else:
+            # if classic singlepart transmittance is used, store total transmittances in diffuse transmittance objects
+            # ToDo: remove in future versions and enforce the use of multipart transmittance
+            t_down_difs = transms
+            t_up_difs = transups
 
         params = [
             np.array(i)
@@ -277,9 +274,7 @@ class ModtranRT(RadiativeTransferEngine):
                 wls,
                 sols,
                 rhoatms,
-                transms,
                 sphalbs,
-                transups,
                 t_down_dirs,
                 t_down_difs,
                 t_up_dirs,
@@ -666,9 +661,7 @@ class ModtranRT(RadiativeTransferEngine):
             "wl",
             "solar_irr",
             "rhoatm",
-            "transm",
             "sphalb",
-            "transup",
             "transm_down_dir",
             "transm_down_dif",
             "transm_up_dir",
@@ -748,7 +741,6 @@ class ModtranRT(RadiativeTransferEngine):
             widths:       fwhm of radiative transfer simulations
 
         Returns:
-            transms:      total transmittance (downwelling * upwelling)
             t_down_dirs:  downwelling direct transmittance
             t_down_difs:  downwelling diffuse transmittance
             t_up_dirs:    upwelling direct transmittance
@@ -797,10 +789,7 @@ class ModtranRT(RadiativeTransferEngine):
         ) / TOA_Irad
         t_down_difs = (diffuse_flux_no_surface / np.array(widths) / np.pi) / TOA_Irad
 
-        # total transmittance
-        transms = (t_down_dirs + t_down_difs) * (t_up_dirs + t_up_difs)
-
-        return transms, t_down_dirs, t_down_difs, t_up_dirs, t_up_difs, sphalbs
+        return t_down_dirs, t_down_difs, t_up_dirs, t_up_difs, sphalbs
 
     def make_simulation_call(self, point):
         ...
@@ -840,9 +829,9 @@ class ModtranRTv2(ModtranRT):
             'path_rdn'           : tokens[14] * 1e6 + tokens[15] * 1e6, # The sum of the (1) single scattering and (2) multiple scattering
             'grnd_rflt'          : tokens[16] * 1e6,        # ground reflected radiance (direct+diffuse+multiple scattering)
             'drct_rflt'          : tokens[17] * 1e6,        # same as 16 but only on the sun->surface->sensor path (only direct)
-            'transm'             : tokens[21] + tokens[22], # Total (direct+diffuse) transmittance
+            'transm_down_dif'    : tokens[21] + tokens[22], # Total (direct+diffuse) transmittance
             'sphalb'             : tokens[23], #
-            'transup'            : tokens[24], #
+            'transm_up_dif'      : tokens[24], #
         }
         # fmt: on
 
@@ -962,8 +951,6 @@ class ModtranRTv2(ModtranRT):
         t_down_dirs = dFluxRN * coszen / widths / np.pi / toa_irad
         t_down_difs = diffusFluxNS / widths / np.pi / toa_irad
 
-        transms = (t_down_dirs + t_down_difs) * (t_up_dirs + t_up_difs)
-
         # Return some keys from the first part plus the new calculated keys
         pass_forward = [
             "wl",
@@ -974,10 +961,10 @@ class ModtranRTv2(ModtranRT):
         ]
         data = {
             "sphalb": sphalbs,
-            "transm_up_dir": t_up_dirs,
-            "transm_up_dif": t_up_difs,
             "transm_down_dir": t_down_dirs,
             "transm_down_dif": t_down_difs,
+            "transm_up_dir": t_up_dirs,
+            "transm_up_dif": t_up_difs
         }
         for key in pass_forward:
             data[key] = p0[key]
