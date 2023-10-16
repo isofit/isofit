@@ -59,7 +59,7 @@ def initialize(
     ds.to_netcdf(file, mode="w", compute=False)
 
     # Stack to get the common.combos, creates dim "point" = [(v1, v2, ), ...]
-    return ds.stack(point=lut_grid)
+    return ds.stack(point=lut_grid).transpose("point", "wl")
 
 
 def updatePoint(file: str, lut_names: list, point: tuple, data: dict) -> None:
@@ -142,7 +142,7 @@ def load(file: str, lut_names: list = []) -> xr.Dataset:
     """
     ds = xr.open_dataset(file, mode="r", lock=False)
     dims = lut_names or ds.drop_dims("wl").coords
-    return ds.stack(point=dims)
+    return ds.stack(point=dims).transpose("point", "wl")
 
 
 def extractPoints(ds: xr.Dataset) -> (np.array, np.array):
