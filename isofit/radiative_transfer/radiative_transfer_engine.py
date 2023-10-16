@@ -100,7 +100,7 @@ class RadiativeTransferEngine:
     def __init__(
         self,
         engine_config: RadiativeTransferEngineConfig,
-        lut_path: str,
+        lut_path: str = None,
         lut_grid: dict = None,
         wavelength_file: str = None,
         interpolator_style: str = "mlg",
@@ -108,8 +108,8 @@ class RadiativeTransferEngine:
         cache_size: int = 16,
     ):
         # Verify either the LUT file exists or a LUT grid is provided
-        self.lut_path = lut_path
-        exists = os.path.exists(lut_path)
+        self.lut_path = lut_path = str(lut_path)
+        exists = os.path.isfile(lut_path)
         if not exists and lut_grid is None:
             raise AttributeError(
                 "Must provide either a prebuilt LUT file or a LUT grid"
@@ -230,7 +230,7 @@ class RadiativeTransferEngine:
         for key in self.alldim:
             self.luts[key] = common.VectorInterpolator(
                 grid_input=self.lut_grid.values(),
-                data_input=self.lut[key].load().data.T,
+                data_input=self.lut[key].load().data,
                 lut_interp_types=self.lut_interp_types,
                 version=self.interpolator_style,
             )
