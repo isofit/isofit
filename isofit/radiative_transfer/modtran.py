@@ -252,7 +252,6 @@ class ModtranRT(RadiativeTransferEngine):
                         path_rdn
                     )  # path radiance (sum of single and multiple scattering)
 
-        print("mtp: ", self.multipart_transmittance)
         if self.multipart_transmittance:
             (
                 transms,
@@ -800,9 +799,6 @@ class ModtranRT(RadiativeTransferEngine):
 
         # total transmittance
         transms = (t_down_dirs + t_down_difs) * (t_up_dirs + t_up_difs)
-
-        print("transup", transups[0])
-        print("t_down_difs", t_down_difs[0])
 
         return transms, t_down_dirs, t_down_difs, t_up_dirs, t_up_difs, sphalbs
 
