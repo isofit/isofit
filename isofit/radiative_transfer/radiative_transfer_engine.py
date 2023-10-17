@@ -22,6 +22,7 @@
 import logging
 import os
 import time
+from types import SimpleNamespace
 from typing import Callable
 
 import numpy as np
@@ -105,8 +106,18 @@ class RadiativeTransferEngine:
         wavelength_file: str = None,
         interpolator_style: str = "mlg",
         overwrite_interpolator: bool = False,
-        cache_size: int = 16,
+        **kwargs,
     ):
+        for key in kwargs:
+            Logger.error(
+                f"This configuration key is being deprecated, please remove it from your config: {key!r}"
+            )
+
+        if lut_path is None:
+            Logger.error(
+                "The lut_path must be a valid path at this time. Either it exists as a valid LUT or a LUT will be generated to that path"
+            )
+
         # Verify either the LUT file exists or a LUT grid is provided
         self.lut_path = lut_path = str(lut_path)
         exists = os.path.isfile(lut_path)
@@ -120,7 +131,6 @@ class RadiativeTransferEngine:
 
         self.interpolator_style = interpolator_style
         self.overwrite_interpolator = overwrite_interpolator
-        self.cache_size = cache_size
 
         self.treat_as_emissive = engine_config.treat_as_emissive
         self.engine_base_dir = engine_config.engine_base_dir
@@ -131,6 +141,9 @@ class RadiativeTransferEngine:
         # Enable special modes - argument: get from HDF5
         self.multipart_transmittance = engine_config.multipart_transmittance
         self.topography_model = engine_config.topography_model
+
+        # REVIEW: This is statically set and doesn't seem to change anywhere, should this just be on the class definition?
+        self.earth_sun_distance_reference = np.loadtxt(self.earth_sun_distance_path)
 
         if self.multipart_transmittance:
             # ToDo: check if we're running the 2- or 3-albedo method
@@ -190,25 +203,37 @@ class RadiativeTransferEngine:
         # Attach interpolators
         self.build_interpolators()
 
+        # Simple 1-item cache for rte.interpolate()
+        self.cached = SimpleNamespace(point=np.zeros(self.n_point))
+
+        ## Determine which indices of a given point come from, either the geom obj or x_RT
+        self.indices = SimpleNamespace()
         # Hidden assumption: geometry keys come first, then come RTE keys
-        self.geometry_lut_indices = np.array(
-            [
-                self.geometry_input_names.index(key)
-                for key in self.lut_names
-                if key in self.geometry_input_names
-            ]
-        )
-        self.x_RT_lut_indices = np.array(
-            [x for x in range(self.n_point) if x not in self.geometry_lut_indices]
+        self.indices.geom = {
+            self.geometry_input_names.index(key): key
+            for key in self.lut_names
+            if key in self.geometry_input_names
+        }
+        self.indices.x_RT = list(set(range(self.n_point)) - set(self.indices.geom))
+
+    def __getstate__(self):
+        """
+        Defines how to pickle this object
+        """
+        return dict(
+            engine_config=self.engine_config,
+            lut_path=self.lut_path,
+            lut_grid=None,  # will just load from the lut file
+            wavelength_file=None,  # will just load from the lut file
+            interpolator_style=self.interpolator_style,
+            overwrite_interpolator=self.overwrite_interpolator,
         )
 
-        # Prepare a cache for self._lookup_lut(), setting cache_size to 0 will disable
-        self.cache = {}
-        # Initialize a 1 value hash dict
-        self.last_point_looked_up = np.zeros(self.n_point)
-        self.last_point_lookup_values = np.zeros(self.n_point)
-
-        self.earth_sun_distance_reference = np.loadtxt(self.earth_sun_distance_path)
+    def __setstate__(self, state):
+        """
+        Recover from pickling
+        """
+        self.__init__(**state)
 
     def __getattr__(self, key):
         """
@@ -221,14 +246,13 @@ class RadiativeTransferEngine:
         ds = self.__dict__.get("lut", {})
         if key in ds:
             return ds[key].load().data
-        return super().__getattr__(key)  # Fallback to default
 
     def __getitem__(self, key):
         """
         Enables key indexing, just a pass through to getattr
             rte[key] == rte.key
         """
-        return getattr(self, key)
+        return ds[key].load().data
 
     @property
     def lut_interp_types(self):
@@ -306,35 +330,48 @@ class RadiativeTransferEngine:
             # TODO: raise AttributeError("Havent implemented this yet....should have a default read from template")
 
     # TODO: change this name
-    def get(self, x_RT: np.array, geom: Geometry):
-        """Retrieve point from LUT interpolator
-        Args:
-            x_RT: radiative-transfer portion of the statevector
-            geom: local geometry conditions for lookup
-
-        Returns:
-            interpolated RTE result
+    def get(self, x_RT: np.array, geom: Geometry) -> dict:
         """
-        point = np.zeros((self.n_point,))
-        point[self.x_RT_lut_indices] = x_RT
-        geom_keys = [key for key in self.lut_names if key in self.geometry_input_names]
-        if len(geom_keys) > 0:
-            point[self.geometry_lut_indices] = np.array(
-                [getattr(geom, key) for key in geom_keys]
+        Retrieves the interpolation values for a given point
+
+        Parameters
+        ----------
+        x_RT: np.array
+            Radiative-transfer portion of the statevector
+        geom: Geometry
+            Local geometry conditions for lookup
+
+        Returns
+        -------
+        self.interpolate(point): dict
+            ...
+        """
+        point = np.zeros(self.n_point)
+
+        point[self.indices.x_RT] = x_RT
+
+        if self.indices.geom:
+            point[self.indices.geom] = np.array(
+                [getattr(geom, key) for key in self.indices.x_RT]
             )
-        return self._lookup_lut(point)
 
-    def _lookup_lut(self, point):
-        if np.all(np.equal(point, self.last_point_looked_up)):
-            return self.last_point_lookup_values
-        else:
-            ret = {}
-            for key, lut in self.luts.items():
-                ret[key] = np.array(lut(point)).ravel()
+        return self.interpolate(point)
 
-            self.last_point_looked_up = point
-            self.last_point_lookup_values = ret
-            return ret
+    def interpolate(self, point: np.array) -> dict:
+        """
+        Compiles the results of the interpolators for a given point
+        """
+        if (point == self.cached.point).all():
+            return self.cached.value
+
+        # Run the interpolators
+        value = {key: lut(point) for key, lut in self.luts.items()}
+
+        # Update the cache
+        self.cached.point = point
+        self.cached.value = value
+
+        return value
 
     def run_simulations(self) -> None:
         """
@@ -364,8 +401,10 @@ class RadiativeTransferEngine:
         self.lut = luts.load(self.lut_path, self.lut_names)
 
     def summarize(self, x_RT, *_):
-        """ """
-        pairs = zip(self.lut_grid.keys(), x_RT)
+        """
+        Pretty prints lut_name=value, ...
+        """
+        pairs = zip(self.lut_names, x_RT)
         return " ".join([f"{name}={val:5.3f}" for name, val in pairs])
 
     # ToDo: we need to think about the best place for the two albedo method (here, radiative_transfer.py, utils, etc.)

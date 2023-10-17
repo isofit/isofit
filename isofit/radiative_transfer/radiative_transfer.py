@@ -77,7 +77,6 @@ class RadiativeTransfer:
     _keys = [
         "interpolator_style",
         "overwrite_interpolator",
-        "cache_size",
         "lut_grid",
         "lut_path",
         "wavelength_file",
