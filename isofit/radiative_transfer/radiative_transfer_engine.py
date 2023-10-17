@@ -242,14 +242,19 @@ class RadiativeTransferEngine:
         """
         self.luts = {}
 
-        # Convert from 2d (point, wl) array to 1d [len(dim) for dim in lut]
-        grid = luts.unstackShape(self.lut, self.lut_names)
+        # Convert from 2d (point, wl) to Nd (*luts, wl)
+        ds = self.lut.unstack("point")
+
+        # Make sure its in expected order, wl at the end
+        ds = ds.transpose(*self.lut_names, "wl")
+
+        grid = [ds[key].data for key in self.lut_names]
 
         # Create the unique
         for key in self.alldim:
             self.luts[key] = common.VectorInterpolator(
                 grid_input=grid,
-                data_input=self[key],
+                data_input=ds[key].load(),
                 lut_interp_types=self.lut_interp_types,
                 version=self.interpolator_style,
             )
@@ -366,12 +371,12 @@ class RadiativeTransferEngine:
     # ToDo: we need to think about the best place for the two albedo method (here, radiative_transfer.py, utils, etc.)
     @staticmethod
     def two_albedo_method(
-            p0: dict,
-            p1: dict,
-            p2: dict,
-            coszen: float,
-            rfl1: float = 0.1,
-            rfl2: float = 0.5,
+        p0: dict,
+        p1: dict,
+        p2: dict,
+        coszen: float,
+        rfl1: float = 0.1,
+        rfl2: float = 0.5,
     ) -> dict:
         """
         Calculates split transmittance values from a multipart file using the
@@ -421,7 +426,9 @@ class RadiativeTransferEngine:
         """
         # Extract relevant columns
         widths = p0["width"]
-        t_up_dirs = p0["transup"]
+        t_up_dirs = p0[
+            "transm_down_dif"
+        ]  # REVIEW: was [transm], then that was renamed to [transm_down_dif], but that doesn't match the variable name, commit: https://github.com/isofit/isofit/pull/383/commits/78e5a9abd5b4bd6f8bd55fe362e75ff5e8e89f22
 
         # REVIEW: two_albedo_method-v1 used a single solar_irr value, but now we have an array of values
         # The last value in the new array is the same as the old v1, so for backwards compatibility setting that here

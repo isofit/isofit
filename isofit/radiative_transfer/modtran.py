@@ -252,7 +252,7 @@ class ModtranRT(RadiativeTransferEngine):
                 t_up_dirs,
                 t_up_difs,
                 sphalbs,
-            ) = self.two_albedo_method(
+            ) = self.two_albedo_methodv1(
                 transups=transups,
                 drct_rflts_1=drct_rflts_1,
                 grnd_rflts_1=grnd_rflts_1,
@@ -705,7 +705,7 @@ class ModtranRT(RadiativeTransferEngine):
                 for w, v, wn in zip(ws, vs, wns):
                     fout.write(" %9.4f %9.7f %9.2f\n" % (w, v, wn))
 
-    def two_albedo_method(
+    def two_albedo_methodv1(
         self,
         transups: list,
         drct_rflts_1: list,
