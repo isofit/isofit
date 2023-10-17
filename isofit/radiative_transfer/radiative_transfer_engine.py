@@ -466,8 +466,8 @@ class RadiativeTransferEngine:
         # Extract relevant columns
         widths = p0["width"]
         t_up_dirs = p0[
-            "transm_down_dif"
-        ]  # REVIEW: was [transm], then that was renamed to [transm_down_dif], but that doesn't match the variable name, commit: https://github.com/isofit/isofit/pull/383/commits/78e5a9abd5b4bd6f8bd55fe362e75ff5e8e89f22
+            "transm_up_dif"
+        ]  # REVIEW: was [transup], then that was renamed to [transm_up_dif], but that doesn't match the variable name, commit: https://github.com/isofit/isofit/pull/383/commits/78e5a9abd5b4bd6f8bd55fe362e75ff5e8e89f22
 
         # REVIEW: two_albedo_method-v1 used a single solar_irr value, but now we have an array of values
         # The last value in the new array is the same as the old v1, so for backwards compatibility setting that here
