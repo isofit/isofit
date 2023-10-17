@@ -190,10 +190,6 @@ class RadiativeTransferEngine:
         # Attach interpolators
         self.build_interpolators()
 
-        # TODO: These are definitely wrong, what should they initialize to?
-        self.solar_irr = [1]
-        self.coszen = [1]  # TODO: get from call
-
         # Hidden assumption: geometry keys come first, then come RTE keys
         self.geometry_lut_indices = np.array(
             [
@@ -214,6 +210,26 @@ class RadiativeTransferEngine:
 
         self.earth_sun_distance_reference = np.loadtxt(self.earth_sun_distance_path)
 
+    def __getattr__(self, key):
+        """
+        Enables attribute calls to pass through to the LUT dataset, eg.
+        rte.solar_irr == rte.lut[solar_irr].load().data
+
+        This only happens if hasattr(rte, key) == False
+        """
+        # May not be initialized
+        ds = self.__dict__.get("lut", {})
+        if key in ds:
+            return ds[key].load().data
+        return super().__getattr__(key)  # Fallback to default
+
+    def __getitem__(self, key):
+        """
+        Enables key indexing, just a pass through to getattr
+            rte[key] == rte.key
+        """
+        return getattr(self, key)
+
     @property
     def lut_interp_types(self):
         return np.array([self.angular_lut_keys.get(key, "n") for key in self.lut_names])
@@ -226,11 +242,14 @@ class RadiativeTransferEngine:
         """
         self.luts = {}
 
+        # Convert from 2d (point, wl) array to 1d [len(dim) for dim in lut]
+        grid = luts.unstackShape(self.lut, self.lut_names)
+
         # Create the unique
         for key in self.alldim:
             self.luts[key] = common.VectorInterpolator(
-                grid_input=self.lut_grid.values(),
-                data_input=self.lut[key].load().data,
+                grid_input=grid,
+                data_input=self[key],
                 lut_interp_types=self.lut_interp_types,
                 version=self.interpolator_style,
             )

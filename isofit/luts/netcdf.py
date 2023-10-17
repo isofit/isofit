@@ -165,3 +165,38 @@ def extractGrid(ds: xr.Dataset) -> dict:
             continue
         grid[dim] = vals.data
     return grid
+
+
+def ndShape(ds, lut_names=[]):
+    """
+    Converts a Dataset with a stacked dimension ("point") to its unstacked
+    n-dimensional form and retrieves the size of each dimension in the order
+    specified.
+
+    This is a utility function for isofit.core.common.VectorInterpolator which
+    optimizes on regular grids using n-d shapes, whereas ISOFIT is moving
+    towards not assuming LUTs to be regular grids
+
+    Parameters
+    ----------
+    ds: xr.Dataset
+        RTE.lut, LUT netCDF
+
+    Returns
+    -------
+    grid: list
+        List of integers for the size of each LUT dimension, with the last dim
+        being the wavelengths dim
+    """
+    ndim = ds.unstack("point")  # Convert from 2d to Nd
+
+    # If lut_names not provided, use the names in the dataset
+    dims = list(lut_names or set(ndim.coords) - {"wl"})
+
+    # Order of dims to collect, wl goes last
+    dims.append("wl")
+
+    # eg. [2, 2, 425]
+    grid = [len(ndim[key]) for key in dims]
+
+    return grid
