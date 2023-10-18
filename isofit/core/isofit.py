@@ -113,7 +113,7 @@ class Isofit:
         """
 
         logging.info("Building first forward model, will generate any necessary LUTs")
-        fm = ForwardModel(self.config)
+        self.fm = fm = ForwardModel(self.config)
         if row_column is not None:
             ranges = row_column.split(",")
             if len(ranges) == 1:
@@ -260,13 +260,12 @@ class Worker(object):
                 try:
                     self.io.write_spectrum(row, col, states, self.fm, self.iv)
                 except ValueError as err:
-                    logging.info(
+                    logging.exception(
                         f"""
-                        Encountered the following ValueError in (row,col) ({row},{col}).
-                        Results for this pixel will be all zeros.
-                        """
+                    Encountered the following ValueError in (row,col) ({row},{col}).
+                    Results for this pixel will be all zeros.
+                    """
                     )
-                    logging.error(err)
 
                 if index % 100 == 0:
                     if (

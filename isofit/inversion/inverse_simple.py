@@ -106,7 +106,9 @@ def heuristic_atmosphere(
             x_RT_2[ind_sv] = h2o
             rhi = RT.get_shared_rtm_quantities(x_RT_2, geom)
             rhoatm = instrument.sample(x_instrument, RT.wl, rhi["rhoatm"])
-            transm = instrument.sample(x_instrument, RT.wl, rhi["transm_down_dif"])
+            transm = instrument.sample(
+                x_instrument, RT.wl, rhi["transm_down_dif"]
+            )  # REVIEW: This was changed from transm as we're deprecating the key
             sphalb = instrument.sample(x_instrument, RT.wl, rhi["sphalb"])
             solar_irr = instrument.sample(x_instrument, RT.wl, RT.solar_irr)
 
@@ -162,10 +164,12 @@ def invert_algebraic(
     rhi = RT.get_shared_rtm_quantities(x_RT, geom)
     wl, fwhm = instrument.calibration(x_instrument)
     rhoatm = instrument.sample(x_instrument, RT.wl, rhi["rhoatm"])
-    transm = instrument.sample(x_instrument, RT.wl, rhi["transm_down_dif"])
+    transm = instrument.sample(
+        x_instrument, RT.wl, rhi["transm_down_dif"]
+    )  # REVIEW: Changed from transm
     solar_irr = instrument.sample(x_instrument, RT.wl, RT.solar_irr)
     sphalb = instrument.sample(x_instrument, RT.wl, rhi["sphalb"])
-    transup = instrument.sample(x_instrument, RT.wl, rhi["transm_up_dir"])
+    transup = instrument.sample(x_instrument, RT.wl, rhi["transm_up_dir"])  # REVIEW: Changed from transup
     coszen = RT.coszen
 
     # Prevent NaNs

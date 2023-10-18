@@ -251,7 +251,7 @@ class ModtranRT(RadiativeTransferEngine):
                 t_up_dirs,
                 t_up_difs,
                 sphalbs,
-            ) = self.two_albedo_method_old(
+            ) = self.two_albedo_methodv1(
                 transups=transups,
                 drct_rflts_1=drct_rflts_1,
                 grnd_rflts_1=grnd_rflts_1,
@@ -801,25 +801,28 @@ class ModtranRTv2(ModtranRT):
 
         data = [lines[header:]]
 
-        # Checks if this is a multipart file, separate if so
-        n = int(len(lines) / 3)
-        if lines[1] == lines[n + 1]:
-            if not self.multipart_transmittance:
-                Logger.warning(
-                    f"This file was detected to be a multipart transmittance but engine_config.multipart_transmittance is set to False: {file}"
-                )
-            else:
-                # Parse the input into three parts
-                # fmt: off
-                data = [
-                    lines[   :n  ][header:],
-                    lines[  n:n*2][header:],
-                    lines[n*2:   ][header:]
-                ]
-                # fmt: on
-        elif self.multipart_transmittance:
+        # Determine if this is a multipart transmittance file, break if so
+        L = len(lines)
+        for N in range(2, 4):  # Currently support 1, 2, and 3 part transmittance files
+            # Length of each part
+            n = int(L / N)
+
+            # Check if the first line of the next part is the same
+            if lines[1] == lines[n + 1]:
+                Logger.debug(f"Channel file discovered to be {N} parts: {file}")
+
+                # Parse the lines into N many parts
+                data = []
+                for i in range(N):
+                    j = i + 1
+                    data.append(lines[n * i : n * j][header:])
+
+                # No need to check other N sizes
+                break
+        else:
             Logger.warning(
-                f"This file was detected to be a single transmittance but engine_config.multipart_transmittance is set to True: {file}"
+                "Channel file detected to be a single transmittance, support for this will be dropped in a future version."
+                + " Please start using 2 or 3 multipart transmittance files."
             )
 
         parts = []
