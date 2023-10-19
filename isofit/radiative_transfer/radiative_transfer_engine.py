@@ -59,6 +59,8 @@ class RadiativeTransferEngine:
         "thermal_upwelling",
         "thermal_downwelling",
     ]
+    # These keys are filled with zeros instead of NaNs
+    zeros = ["transm_down_dir", "transm_up_dif"]
     ## End LUT keys --
 
     # These are retrieved from the geom object
@@ -179,6 +181,7 @@ class RadiativeTransferEngine:
                 consts=self.consts,
                 onedim=self.onedim + [("fwhm", self.fwhm)],
                 alldim=self.alldim,
+                zeros=self.zeros,
             )
 
             # Populate the newly created LUT file
@@ -408,12 +411,12 @@ class RadiativeTransferEngine:
     # ToDo: we need to think about the best place for the two albedo method (here, radiative_transfer.py, utils, etc.)
     @staticmethod
     def two_albedo_method(
-            case0: dict,
-            case1: dict,
-            case2: dict,
-            coszen: float,
-            rfl1: float = 0.1,
-            rfl2: float = 0.5,
+        case0: dict,
+        case1: dict,
+        case2: dict,
+        coszen: float,
+        rfl1: float = 0.1,
+        rfl2: float = 0.5,
     ) -> dict:
         """
         Calculates split transmittance values from a multipart file using the
@@ -464,11 +467,11 @@ class RadiativeTransferEngine:
         # Instrument channel widths
         widths = case0["width"]
         # Direct upward transmittance
-        # REVIEW: was [transup], then renamed to [transm_up_dif], 
-        # now re-renamed to [transm_up_dir] 
+        # REVIEW: was [transup], then renamed to [transm_up_dif],
+        # now re-renamed to [transm_up_dir]
         # since it only includes direct upward transmittance
         t_up_dir = case0["transm_up_dir"]
-        
+
         # REVIEW: two_albedo_method-v1 used a single solar_irr value, but now we have an array of values
         # The last value in the new array is the same as the old v1, so for backwards compatibility setting that here
         # Top-of-atmosphere solar irradiance as a function of sun zenith angle

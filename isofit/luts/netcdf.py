@@ -18,6 +18,7 @@ def initialize(
     consts: list = [],
     onedim: list = [],
     alldim: list = [],
+    zeros: list = [],
 ) -> xr.Dataset:
     """
     Initializes a LUT NetCDF using Xarray
@@ -30,6 +31,8 @@ def initialize(
         Keys to fill, these are along one dimensions, ie. (wl, )
     alldim: list, defaults=[]
         Keys to fill, these are along all dimensions, ie. (wl, point)
+    zeros: list, defaults=[]
+        List of keys to default to zeros as the fill value instead of NaNs
     """
     # Initialize with all lut point names as dimensions
     ds = xr.Dataset(coords={"wl": wl} | lut_grid)
@@ -48,12 +51,21 @@ def initialize(
             key, filler = key
         ds[key] = ("wl", filler)
 
-    # Insert point dimensional keys
-    filler = dask.array.full(tuple(ds.dims.values()), np.nan, chunks=chunks)
+    ## Insert point dimensional keys
+    # Filler arrays
+    dims = tuple(ds.dims.values())
+    nans = dask.array.full(dims, np.nan, chunks=chunks)
+    zero = np.zeros(dims)
+
     for key in alldim:
         if isinstance(key, tuple):
             key, filler = key
-        ds[key] = (ds.coords, filler)
+            ds[key] = (ds.coords, filler)
+        else:
+            if key in zeros:
+                ds[key] = (ds.coords, zero)
+            else:
+                ds[key] = (ds.coords, nans)
 
     # Must write unstacked
     ds.to_netcdf(file, mode="w", compute=False)
