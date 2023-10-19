@@ -2,7 +2,6 @@
 """
 import logging
 
-import dask.array
 import numpy as np
 import xarray as xr
 from netCDF4 import Dataset
@@ -45,16 +44,17 @@ def initialize(
         ds[key] = filler
 
     # Insert single dimension keys along wl
-    filler = dask.array.full((len(wl),), np.nan, chunks=chunks)
+    fill = np.full((len(wl),), np.nan)
     for key in onedim:
         if isinstance(key, tuple):
-            key, filler = key
-        ds[key] = ("wl", filler)
+            key, fill = key
+        ds[key] = ("wl", fill)
 
     ## Insert point dimensional keys
     # Filler arrays
     dims = tuple(ds.dims.values())
-    nans = dask.array.full(dims, np.nan, chunks=chunks)
+    nans = np.full(dims, np.nan)
+    nans = np.full(dims, np.nan)
     zero = np.zeros(dims)
 
     for key in alldim:
