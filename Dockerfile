@@ -1,68 +1,52 @@
-FROM mambaorg/micromamba:latest
+FROM rayproject/ray:2.4.0-py310-aarch64
+
 USER root
-
-WORKDIR /
-
 RUN apt-get update &&\
     apt-get install --no-install-recommends -y \
-      build-essential \
-      ca-certificates \
-      curl            \
-      git             \
-      gfortran        \
+      gfortran \
+      make \
       unzip
 
+USER ray
+WORKDIR /home/ray
+
+# Copy and install ISOFIT
+COPY --chown=ray:users . isofit/
+RUN conda config --prepend channels conda-forge &&\
+    conda create --name isofit --clone base &&\
+    conda install --name base --solver=classic conda-libmamba-solver nb_conda_kernels jupyterlab &&\
+    conda env update --name isofit --solver=libmamba --file isofit/recipe/environment_isofit_basic.yml &&\
+    conda install --name isofit --solver=libmamba ipykernel &&\
+    anaconda3/envs/isofit/bin/pip install --no-deps -e isofit &&\
+    echo "conda activate isofit" >> ~/.bashrc
+ENV LD_PRELOAD="/usr/lib/aarch64-linux-gnu/libgomp.so.1:$LD_PRELOAD"
+
 # Install 6S
-RUN mkdir /6sv-2.1 &&\
-    cd /6sv-2.1 &&\
-    curl -SLO https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar &&\
+RUN mkdir 6sv-2.1 &&\
+    cd 6sv-2.1 &&\
+    wget https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar &&\
     tar -xf 6sv-2.1.tar &&\
     rm 6sv-2.1.tar &&\
     sed -i Makefile -e 's/FFLAGS.*/& -std=legacy/' &&\
     make
-ENV SIXS_DIR /6sv-2.1
+ENV SIXS_DIR="/home/ray/6sv-2.1"
 
 # Install sRTMnet
-RUN mkdir /sRTMnet_v100 &&\
-    cd /sRTMnet_v100 &&\
-    curl -SLO https://zenodo.org/record/4096627/files/sRTMnet_v100.zip &&\
+RUN mkdir sRTMnet_v100 &&\
+    cd sRTMnet_v100 &&\
+    wget https://zenodo.org/record/4096627/files/sRTMnet_v100.zip &&\
     unzip sRTMnet_v100.zip &&\
     rm sRTMnet_v100.zip
-ENV EMULATOR_PATH /sRTMnet_v100/sRTMnet_v100
+ENV EMULATOR_PATH="/home/ray/sRTMnet_v100/sRTMnet_v100"
 
-# Some examples require this env var to be present but does not need to be installed
-ENV MODTRAN_DIR ""
+# Some ISOFIT examples require this env var to be present but does not need to be installed
+ENV MODTRAN_DIR=""
 
-# Prebuild the virtual environments
-# Default environment is isofit. To activate the different one, use: docker run -e ENV_NAME=[env name]
-RUN micromamba create -y -n isofit -c conda-forge python=3.10 &&\
-    micromamba create -y -n test   -c conda-forge python=3.10 &&\
-    micromamba create -y -n nodeps -c conda-forge python=3.10
+# Explicitly set the shell to bash so the Jupyter server defaults to it
+ENV SHELL=/bin/bash
 
-# Auto activate environments
-ARG MAMBA_DOCKERFILE_ACTIVATE=1
+# Start the Jupyterlab server
+EXPOSE 8888
+CMD jupyter-lab --ip 0.0.0.0 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password=''
 
-COPY . /isofit
-
-# Setup the test environment
-ENV ENV_NAME test
-RUN micromamba install --name test --yes --file /isofit/recipe/environment_isofit_basic.yml &&\
-    micromamba install --name test --yes --channel conda-forge pip &&\
-    micromamba clean --all --yes &&\
-    pip install ray ndsplines xxhash tensorflow --upgrade
-
-# Install ISOFIT
-ENV ENV_NAME isofit
-RUN micromamba install --name isofit --yes --file /isofit/recipe/environment_isofit_basic.yml &&\
-    micromamba install --name isofit --yes --channel conda-forge pip &&\
-    micromamba clean --all --yes &&\
-    pip install ray ndsplines xxhash tensorflow --upgrade &&\
-    pip install --editable isofit
-
-# Run test examples at startup if not in -it mode
-CMD echo "Example: image_cube" &&\
-    cd /isofit/examples/image_cube/ && bash run_example_cube.sh &&\
-    echo "Example: 20151026_SantaMonica" &&\
-    cd /isofit/examples/20151026_SantaMonica/ && bash run_examples.sh &&\
-    echo "Example: 20171108_Pasadena" &&\
-    cd /isofit/examples/20171108_Pasadena/ && bash run_example_modtran.sh
+# FROM alpine:3.14 AS build -- https://docs.docker.com/build/building/multi-stage/

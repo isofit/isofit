@@ -1,9 +1,9 @@
-name: Main Tests
+name: Pytests
 
 on: [push, pull_request]
 
 jobs:
-  tests:
+  essential:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -33,6 +33,30 @@ jobs:
         python -c 'from isofit.utils import remap'
         python -c 'from isofit.utils import segment'
         python -c 'from isofit.utils import surface_model'
+
+    - name: Run Test
+      run: |
+        source /root/.bashrc
+        pytest -k "not cli"
+
+  comprehensive:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
+    container:
+      image: jammont/isofit:latest
+      env:
+        ENV_NAME: test
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Install Isofit
+      run: |
+        source /root/.bashrc
+        pip install --editable .
 
     - name: Run Test
       run: |
