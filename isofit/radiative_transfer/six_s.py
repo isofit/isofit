@@ -178,7 +178,9 @@ class SixSRT(RadiativeTransferEngine):
             f.write(data)
 
         with open(bash, "w") as f:
-            f.writelines(["#!/usr/bin/bash", f"{sixS} < {file} > {luts}", "cd $cwd"])
+            f.write("#!/usr/bin/bash\n")
+            f.write(f"{sixS} < {file} > {luts}\n")
+            f.write("cd $cwd\n")
 
         return f"bash {bash}"
 
