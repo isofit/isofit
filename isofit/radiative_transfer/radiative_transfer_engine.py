@@ -108,6 +108,8 @@ class RadiativeTransferEngine:
         wavelength_file: str = None,
         interpolator_style: str = "mlg",
         overwrite_interpolator: bool = False,
+        wl: np.array = [],  # Wavelength override
+        fwhm: np.array = [],  # fwhm override
         **kwargs,
     ):
         for key in kwargs:
@@ -174,6 +176,13 @@ class RadiativeTransferEngine:
             )  # 2d numpy array.  rows = points, columns = lut_names
 
             self.wl, self.fwhm = common.load_wavelen(wavelength_file)
+
+            # If provided as a parameter, override the default
+            if len(wl):
+                self.wl = wl
+            if len(fwhm):
+                self.fwhm = fwhm
+
             self.lut = luts.initialize(
                 file=lut_path,
                 wl=self.wl,

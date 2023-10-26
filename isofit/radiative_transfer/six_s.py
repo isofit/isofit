@@ -31,6 +31,8 @@ from isofit.configs.sections.radiative_transfer_config import (
 from isofit.core.common import resample_spectrum
 from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
 
+Logger = logging.getLogger(__file__)
+
 eps = 1e-5  # used for finite difference derivative calculations
 
 SIXS_TEMPLATE = """\
@@ -63,33 +65,19 @@ class SixSRT(RadiativeTransferEngine):
     def __init__(
         self,
         engine_config: RadiativeTransferEngineConfig,
-        wavelength_override=None,
-        fwhm_override=None,
         modtran_emulation=False,
         **kwargs,
     ):
         super().__init__(engine_config, **kwargs)
-
-        # REVIEW: Should this update self.lut.wl?
-        if wavelength_override is not None:
-            self.wl = wavelength_override
-            self.n_chan = len(self.wl)
-            # self.resample_wavelengths = False # REVIEW: Unused variable?
-        # else:
-        # self.resample_wavelengths = True
-
-        # REVIEW: Should this update self.lut.wl?
-        if fwhm_override is not None:
-            self.fwhm = fwhm_override
 
         self.engine_config = engine_config
         self.modtran_emulation = modtran_emulation
 
         self.sixs_grid_init = np.arange(self.wl[0], self.wl[-1] + 2.5, 2.5)
 
-        self.esd = np.loadtxt(self.earth_sun_distance_file)
+        self.esd = np.loadtxt(self.earth_sun_distance_path)
 
-        dt = datetime(2000, self.params["month"], self.params["day"])
+        dt = datetime(2000, engine_config.month, engine_config.day)
         self.day_of_year = dt.timetuple().tm_yday
         self.irr_factor = self.esd[self.day_of_year - 1, 1]
 
@@ -115,9 +103,10 @@ class SixSRT(RadiativeTransferEngine):
         bash = os.path.join(self.sim_path, f"LUT_{name}.sh")  # Script path
         sixS = os.path.join(self.engine_base_dir, "sixsV2.1")  # 6S Emulator path
 
+        # REVIEW: Is this necessary?
         # Verify at least one file is missing
-        if os.path.exists(file) and os.path.exists(luts):
-            raise AttributeError(f"Files already exist: {file}, {luts}")
+        # if os.path.exists(file) and os.path.exists(luts):
+        #     raise AttributeError(f"Files already exist: {file}, {luts}")
 
         ## Prepare template values
 
@@ -146,7 +135,7 @@ class SixSRT(RadiativeTransferEngine):
 
         # Add the point with its names
         for key, val in zip(self.lut_names, point):
-            val[key] = val
+            vals[key] = val
 
         ## Special cases
 
@@ -174,12 +163,12 @@ class SixSRT(RadiativeTransferEngine):
 
         # Write sim files
         with open(luts, "w") as f:
-            data = SIXS_TEMPLATE.format(**vals)
-            f.write(data)
+            template = SIXS_TEMPLATE.format(**vals)
+            f.write(template)
 
         with open(bash, "w") as f:
             f.write("#!/usr/bin/bash\n")
-            f.write(f"{sixS} < {file} > {luts}\n")
+            f.write(f"{sixS} < {luts} > {file}\n")
             f.write("cd $cwd\n")
 
         return f"bash {bash}"
