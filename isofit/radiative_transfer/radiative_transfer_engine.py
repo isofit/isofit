@@ -107,6 +107,7 @@ class RadiativeTransferEngine:
         lut_grid: dict = None,
         wavelength_file: str = None,
         interpolator_style: str = "mlg",
+        build_interpolators: bool = True,
         overwrite_interpolator: bool = False,
         wl: np.array = [],  # Wavelength override
         fwhm: np.array = [],  # fwhm override
@@ -122,6 +123,10 @@ class RadiativeTransferEngine:
                 "The lut_path must be a valid path at this time. Either it exists as a valid LUT or a LUT will be generated to that path"
             )
 
+        # Keys of the engine_config are available via self unless overridden
+        # eg. engine_config.lut_names == self.lut_names
+        self.engine_config = engine_config
+
         # Verify either the LUT file exists or a LUT grid is provided
         self.lut_path = lut_path = str(lut_path)
         exists = os.path.isfile(lut_path)
@@ -131,17 +136,12 @@ class RadiativeTransferEngine:
             )
 
         # Save parameters to instance
-        self.engine_config = engine_config
-
         self.interpolator_style = interpolator_style
         self.overwrite_interpolator = overwrite_interpolator
 
         self.treat_as_emissive = engine_config.treat_as_emissive
         self.engine_base_dir = engine_config.engine_base_dir
-
-        # ToDo: discuss how to handle sim_path and lut_path, perhaps even using temp dirs for simulation?
-        self.lut_dir = engine_config.sim_path  # Backwards compatibility
-        self.sim_path = engine_config.sim_path  # REVIEW: New way
+        self.sim_path = engine_config.sim_path
 
         # Enable special modes - argument: get from HDF5
         self.multipart_transmittance = engine_config.multipart_transmittance
@@ -196,22 +196,18 @@ class RadiativeTransferEngine:
             # Populate the newly created LUT file
             self.run_simulations()
 
-        # Limit the wavelength per the config
+        # Limit the wavelength per the config ;REVIEW: needs testing
         if engine_config.wavelength_range is not None:
-            valid_wl = np.logical_and(
-                self.wl >= engine_config.wavelength_range[0],
-                self.wl <= engine_config.wavelength_range[1],
-            )
-            self.wl = self.wl[valid_wl]
-            self.fwhm = self.fwhm[valid_wl]
+            self.lut = self.lut.sel(wl=slice(*engine_config.wavelength_range))
 
         self.n_chan = len(self.wl)
 
-        # This is a bad variable name - change (it's the number of input dimensions of the lut (p) not the number of samples)
+        # TODO: This is a bad variable name - change (it's the number of input dimensions of the lut (p) not the number of samples)
         self.n_point = len(self.lut_names)
 
         # Attach interpolators
-        self.build_interpolators()
+        if build_interpolators:
+            self.build_interpolators()
 
         # Simple 1-item cache for rte.interpolate()
         self.cached = SimpleNamespace(point=np.zeros(self.n_point))
@@ -236,7 +232,7 @@ class RadiativeTransferEngine:
             lut_grid=None,  # will just load from the lut file
             wavelength_file=None,  # will just load from the lut file
             interpolator_style=self.interpolator_style,
-            overwrite_interpolator=self.overwrite_interpolator,
+            overwrite_interpolator=False,
         )
 
     def __setstate__(self, state):
@@ -256,6 +252,10 @@ class RadiativeTransferEngine:
         ds = self.__dict__.get("lut", {})
         if key in ds:
             return ds[key].load().data
+
+        # REVIEW: test test test
+        # elif key in self.engine_config:
+        #     return self.engine_config[key]
 
     def __getitem__(self, key):
         """
@@ -293,22 +293,35 @@ class RadiativeTransferEngine:
                 version=self.interpolator_style,
             )
 
-    def make_simulation_call(self, point: np.array, template_only: bool = False):
-        """Write template(s) and run simulation.
+    def preSim(self):
+        """
+        This is an optional function that can be defined by a subclass RTE to be called
+        directly before runSim() is distributed
+        """
+        ...
+
+    def makeSim(self, point: np.array, template_only: bool = False):
+        """
+        Prepares and executes a radiative transfer engine's simulations
 
         Args:
             point (np.array): conditions to alter in simulation
             template_only (bool): only write template file and then stop
         """
-        raise AssertionError("Must populate simulation call")
+        raise NotImplemented(
+            "This method must be defined by the subclass RTE, (TODO) see ISOFIT documentation for more information"
+        )
 
-    def read_simulation_results(self, point: np.array):
-        """Read simulation results to standard form.
+    def readSim(self, point: np.array):
+        """
+        Reads simulation results to standard form
 
         Args:
             point (np.array): conditions to alter in simulation
         """
-        raise AssertionError("Must populate simulation call")
+        raise NotImplemented(
+            "This method must be defined by the subclass RTE, (TODO) see ISOFIT documentation for more information"
+        )
 
     def point_to_filename(self, point: np.array) -> str:
         """Change a point to a base filename
@@ -391,6 +404,9 @@ class RadiativeTransferEngine:
         # "points" contains all combinations of grid points
         # We will have one filename prefix per point
 
+        Logger.info(f"Running any pre-sim functions")
+        self.preSim()
+
         Logger.info(f"Executing {len(self.points)} simulations")
 
         # Make the LUT calls (in parallel if specified)
@@ -399,8 +415,8 @@ class RadiativeTransferEngine:
                 stream_simulation.remote(
                     point,
                     self.lut_names,
-                    self.make_simulation_call,
-                    self.read_simulation_results,
+                    self.makeSim,
+                    self.readSim,
                     self.lut_path,
                 )
                 for point in self.points

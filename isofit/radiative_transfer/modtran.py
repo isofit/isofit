@@ -708,7 +708,7 @@ class ModtranRT(RadiativeTransferEngine):
                 for w, v, wn in zip(ws, vs, wns):
                     fout.write(" %9.4f %9.7f %9.2f\n" % (w, v, wn))
 
-    def make_simulation_call(self, point):
+    def makeSim(self, point):
         ...
 
 
@@ -887,7 +887,7 @@ class ModtranRTv2(ModtranRT):
 
         return np.mean(solzen)
 
-    def read_simulation_results(self, point):
+    def readSim(self, point):
         """
         For a given point, parses the tp6 and chn file and returns the data
         """
@@ -911,7 +911,7 @@ class ModtranRTv2(ModtranRT):
 
         return params
 
-    def make_simulation_call(self, point):
+    def makeSim(self, point):
         filename_base = self.point_to_filename(point)
 
         vals = dict([(n, v) for n, v in zip(self.lut_names, point)])

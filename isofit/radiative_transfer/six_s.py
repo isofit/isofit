@@ -173,12 +173,13 @@ class SixSRT(RadiativeTransferEngine):
 
         return f"bash {bash}"
 
-    def make_simulation_call(self, point: np.array, template_only: bool = False):
+    def makeSim(self, point: np.array, template_only: bool = False):
+        """ """
         cmd = self.rebuild_cmd(point)
         if template_only is False:
             subprocess.call(cmd, shell=True)
 
-    def read_simulation_results(self, point):
+    def readSim(self, point):
         """
         Parses a 6S output simulation file for a given point
 
