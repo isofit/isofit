@@ -103,7 +103,7 @@ class RadiativeTransferEngine:
     def __init__(
         self,
         engine_config: RadiativeTransferEngineConfig,
-        lut_path: str = None,
+        lut_path: str = "",
         lut_grid: dict = None,
         wavelength_file: str = None,
         interpolator_style: str = "mlg",
@@ -127,8 +127,9 @@ class RadiativeTransferEngine:
         # eg. engine_config.lut_names == self.lut_names
         self.engine_config = engine_config
 
+        # TODO: mlky should do all this verification stuff
         # Verify either the LUT file exists or a LUT grid is provided
-        self.lut_path = lut_path = str(lut_path)
+        self.lut_path = lut_path = str(lut_path) or engine_config.lut_path
         exists = os.path.isfile(lut_path)
         if not exists and lut_grid is None:
             raise AttributeError(
@@ -184,9 +185,9 @@ class RadiativeTransferEngine:
                 self.fwhm = fwhm
 
             self.lut = luts.initialize(
-                file=lut_path,
+                file=self.lut_path,
                 wl=self.wl,
-                lut_grid=lut_grid,
+                lut_grid=self.lut_grid,
                 consts=self.consts,
                 onedim=self.onedim + [("fwhm", self.fwhm)],
                 alldim=self.alldim,
@@ -205,22 +206,24 @@ class RadiativeTransferEngine:
         # TODO: This is a bad variable name - change (it's the number of input dimensions of the lut (p) not the number of samples)
         self.n_point = len(self.lut_names)
 
+        # Simple 1-item cache for rte.interpolate()
+        self.cached = SimpleNamespace(point=np.zeros(self.n_point))
+
         # Attach interpolators
         if build_interpolators:
             self.build_interpolators()
 
-        # Simple 1-item cache for rte.interpolate()
-        self.cached = SimpleNamespace(point=np.zeros(self.n_point))
+            # For each point index, determine if that point derives from Geometry or x_RT
+            self.indices = SimpleNamespace()
 
-        ## Determine which indices of a given point come from, either the geom obj or x_RT
-        self.indices = SimpleNamespace()
-        # Hidden assumption: geometry keys come first, then come RTE keys
-        self.indices.geom = {
-            self.geometry_input_names.index(key): key
-            for key in self.lut_names
-            if key in self.geometry_input_names
-        }
-        self.indices.x_RT = list(set(range(self.n_point)) - set(self.indices.geom))
+            # Hidden assumption: geometry keys come first, then come RTE keys
+            self.indices.geom = {
+                self.geometry_input_names.index(key): key
+                for key in self.lut_names
+                if key in self.geometry_input_names
+            }
+            # If it wasn't a geom key, it's x_RT
+            self.indices.x_RT = list(set(range(self.n_point)) - set(self.indices.geom))
 
     def __getstate__(self):
         """

@@ -346,3 +346,201 @@ class SimulatedModtranRT(TabularRT):
         r = self.get(x_RT, geom)
         rdn = (self.solar_irr * self.coszen) / np.pi * r["transm"]
         return rdn
+
+
+#%%
+from types import SimpleNamespace
+
+
+class SimulatedModtranRTv2(SimulatedModtranRT):
+    lut_quantities = {
+        "rhoatm",
+        "transm_down_dif",  # REVIEW: Formerly transm
+        "sphalb",
+        "transm_up_dir",  # REVIEW: Formerly transup
+    }
+
+    def __init__(
+        self,
+        engine_config: RadiativeTransferEngineConfig,
+        **kwargs,
+    ):
+        super().__init__(engine_config, **kwargs)
+
+    @staticmethod
+    def build_sixs_config(engine_config):
+        """
+        Builds a configuration object for a 6S simulation
+        """
+        if not os.path.exists(config.template_file):
+            raise FileNotFoundError(
+                f"MODTRAN template file does not exist: {config.template_file}"
+            )
+
+        # First create a copy of the starting config
+        config = deepcopy(engine_config)
+
+        # Populate the 6S parameter values from a modtran template file
+        with open(config.template_file, "r") as file:
+            data = yaml.safe_load(file)["MODTRAN"][0]["MODTRANINPUT"]
+
+        # Do a quickk conversion to put things in solar azimuth/zenith terms for 6s
+        dt = (
+            datetime.datetime(2000, 1, 1)
+            + datetime.timedelta(days=data["GEOMETRY"]["IDAY"] - 1)
+            + datetime.timedelta(hours=data["GEOMETRY"]["GMTIME"])
+        )
+
+        solar_azimuth, solar_zenith, ra, dec, h = sunpos(
+            dt,
+            data["GEOMETRY"]["PARM1"],
+            -data["GEOMETRY"]["PARM2"],
+            data["SURFACE"]["GNDALT"] * 1000.0,
+        )
+
+        # Tweak parameter values for sRTMnet
+        config.aerosol_model_file = None
+        config.aerosol_template_file = None
+        config.emulator_file = None
+        config.day = dt.day
+        config.month = dt.month
+        config.elev = data["SURFACE"]["GNDALT"]
+        config.alt = data["GEOMETRY"]["H1ALT"]
+        config.solzen = solar_zenith
+        config.solaz = solar_azimuth
+        config.viewzen = 180 - data["GEOMETRY"]["OBSZEN"]
+        config.viewaz = data["GEOMETRY"]["TRUEAZ"]
+        config.wlinf = 0.35
+        config.wlsup = 2.5
+
+        # Save 6S to a different lut file
+        config.lut_path += "6S"
+
+        return config
+
+    def preSim(self):
+        """
+        sRTMnet leverages 6S to simulate results which is best done before sRTMnet begins
+        simulations itself
+        """
+        # Create a copy of the engine_config and populate it with 6S parameters
+        config = build_sixs_config(self.engine_config)
+
+        # Emulator Aux
+        aux = np.load(config.emulator_aux_file)
+
+        # Verify expected keys exist
+        missing = self.lut_quantities - et(aux["rt_quantities"].tolist())
+        if missing:
+            raise AttributeError(
+                f"Emulator Aux rt_quantities does not contain the following required keys: {missing}"
+            )
+
+        # Emulator keys (sRTMnet)
+        emu = SimpleNamespace()
+        emu.wl = aux["emulator_wavelengths"]
+        emu.n_chan = len(emu.wl)
+        emu.n_keys = len(aux["rt_quantities"])
+
+        # Simulator keys (6S)
+        sim = SimpleNamespace()
+        sim.wl = np.arange(350, 2500 + 2.5, 2.5)
+        sim.n_chan = len(sim.wl)
+
+        # Build the 6S simulations
+        sixS = SixSRT(
+            conf,
+            wl=sim.wl,
+            fwhm=np.full(sim.wl.size, 2.0),
+            modtran_emulation=True,
+            build_interpolators=False,
+        )
+
+        self.solar_irr = sixS.solar_irr
+        self.coszen = sixS.coszen
+        self.esd = sixS.esd
+
+        emu.irr = emu.aux["solar_irr"]
+        irr_ref = sixS.esd[200, 1]  # Irradiance factor
+        irr_cur = sixS.esd[sixS.day - 1, 1]  # Factor for current date
+
+        # Convert our irr to date 0 then back to current date
+        self.solar_irr = resample_spectrum(
+            emu.irr * irr_ref**2 / irr_cur**2, self.wl, self.fwhm
+        )
+
+        Logger.info("Loading 6S results")
+        data = []
+        for point in rte.points:
+            load = sixS.readSim(point)
+
+            # TODO: Update sRTMnet_v100_aux.npz[rt_quantities] to deprecate this key
+            load["transm"] = load["transm_down_dif"]
+
+            load = np.hstack([load[key] for key in aux["rt_quantities"]])
+            data.append(load)
+
+        data = np.vstack(data)
+
+        # emulator_inputs_match_output
+        Logger.info("Interpolating 6S results")
+        #                 Shape:   # of points, n_chan * aux[rt_quantities]
+        interpolated = np.zeros((data.shape[0], emu.n_chan * emu.n_keys))
+        for i in range(emu.n_keys):
+            inp_mask = slice(i * sim.n_chan, (i + 1) * sim.n_chan)
+            out_mask = slice(i * emu.n_chan, (i + 1) * emu.n_chan)
+
+            interp = interpolate.interp1d(sim.wl, data[:, inp_mask])
+            interpolated[:, out_mask] = interp(emu.wl)
+
+        response_scaler = aux.get("response_scaler", 100.0)
+
+        Logger.info("Predicting with emulator")
+        predict = emulator.predict(data) / response_scaler
+        predict += interpolated
+
+        file = f"{ec.sim_path}/sRTMnet.predicts.npz"
+        Logger.info(f"Saving intermediary prediction results to: {file}")
+        np.savez(file, predict)
+
+    def makeSim(self, point):
+        """ """
+        return
+        # TODO: Convert this to be a point-wise independent process
+
+        inputs = {}
+        dims = self.lut_dims + [self.n_chan]
+        for ki, key in enumerate(emulator_aux["rt_quantities"]):
+            # Transup is always appended after
+            if key == "transup":
+                continue
+
+            data = np.zeros(dims, dtype=float)
+
+            jobs = []
+            for pi, point in enumerate(self.points):
+                ind = tuple(
+                    [np.where(g == p)[0] for g, p in zip(self.lut_grids, point)]
+                )
+                leo = emulator_outputs[
+                    pi, ki * n_emulator_chan : (ki + 1) * n_emulator_chan
+                ]
+                jobs.append(
+                    resample_single.remote(
+                        ind, leo, emulator_wavelengths, self.wl, self.fwhm
+                    )
+                    # resample_single(ind, leo, emulator_wavelengths, self.wl, self.fwhm)
+                )
+
+            results = ray.get(jobs)
+            # results = jobs
+            for ind, res in results:
+                data[ind] = res
+
+            del jobs, results
+
+            inputs[key] = data
+
+        inputs["transup"] = np.zeros(dims, dtype=float)
+
+        return inputs
