@@ -245,71 +245,124 @@ def invert_analytical(
         meas,
         geom,
     )
-    x[fm.idx_surface] = x_alg[0]
-    trajectory = [x]
-    outside_ret_windows = np.ones(len(fm.surface.idx_lamb), dtype=bool)
+
+    if fm.RT.glint_model:
+        x_surf = fm.surface.fit_params(x_alg[0], geom)
+        x[fm.idx_surface] = x_surf
+    else:
+        x[fm.idx_surface] = x_alg[0]
+
+    trajectory = []
+    outside_ret_windows = np.ones(len(fm.idx_surface), dtype=bool)
     outside_ret_windows[winidx] = False
     outside_ret_windows = np.where(outside_ret_windows)[0]
 
-    for n in range(num_iter):
-        x_surface, x_RT, x_instrument = fm.unpack(x)
+    x_surface, x_RT, x_instrument = fm.unpack(x)
 
-        Seps = fm.Seps(x, meas, geom)[winidx, :][:, winidx]
+    Seps = fm.Seps(x, meas, geom)[winidx, :][:, winidx]
 
-        Sa = fm.Sa(x, geom)
-        Sa_surface = Sa[fm.surface.idx_lamb, :][:, fm.surface.idx_lamb]
-        Sa_surface = Sa_surface[winidx, :][:, winidx]
-        Sa_inv = svd_inv_sqrt(Sa_surface, hash_table, hash_size)[0]
+    Sigma = np.zeros((248, 248))
+    Sa = fm.Sa(x, geom)
+    Sa_surface = Sa[fm.idx_surface, :][:, fm.idx_surface]
+    Sa_surface = Sa_surface[winidx, :][:, winidx]
+    Sigma[:246, :246] = Sa_surface
+    f = np.diag([1000000**2, 1000000**2])
+    Sigma[-2:, -2:] = f
+    Sa_inv = svd_inv_sqrt(Sigma, hash_table, hash_size)[0]
 
-        xa_full = fm.xa(x, geom)
-        xa_surface = xa_full[fm.surface.idx_lamb]
-        xa = xa_surface[winidx]
-        xa_iv = xa_surface[outside_ret_windows]
+    xa_full = fm.xa(x, geom)
+    xa_surface = xa_full[fm.idx_surface]
+    xa = xa_surface[winidx]
+    xa = np.append(xa, [0.02, 1 / np.pi])
 
-        L_atm = fm.RT.get_L_atm(x_RT, geom)[winidx]
-        L_tot = fm.calc_rdn(x, geom)[winidx]
+    prprod = Sa_inv @ xa
 
-        L_surf = (L_tot - L_atm) / x_surface[winidx]  # = Ldiag
-        L_surf[L_surf < 0] = 1e-9
+    if fm.RT.glint_model:
+        r = fm.RT.get_L_atm(x_RT, geom)[winidx]  # path radiance
+        rtm_quant = fm.RT.get_shared_rtm_quantities(x_RT, geom)
+        t_down_dir = rtm_quant["t_down_dir"][winidx]
+        t_down_dif = rtm_quant["t_down_dif"][winidx]
+        t_down_total = t_down_dir + t_down_dif
+        t_up_total = rtm_quant["transup"][winidx]
+        u = (fm.RT.solar_irr * fm.RT.coszen) / np.pi
+        t1 = u * t_down_total * t_up_total
+        s = rtm_quant["sphalb"][winidx]
+        g_dir = 0.02 * (t_down_dir / t_down_total)
+        g_dif = 0.02 * (t_down_dif / t_down_total)
 
-        # Match Jouni's convention
-        C = Seps  # C = 'meas_Cov' = Seps
-        L = dpotrf(C, 1)[0]
-        P = dpotri(L, 1)[0]
-        P_rpr = Sa_inv
-        mu_rpr = xa
+        nl = len(r)
+        H = np.zeros((nl, nl + 2))
+        np.fill_diagonal(H, 1)
+        H[:, -2] = g_dir
+        H[:, -1] = g_dif
 
-        priorprod = P_rpr @ mu_rpr
+        GIv = 1 / np.diag(Seps)
 
-        P_tilde = ((L_surf * P).T * L_surf).T
-        P_rcond = P_rpr + P_tilde
+        xk = x.copy()
+        trajectory.append(xk)
 
-        LI_rcond = dpotrf(P_rcond)[0]
-        C_rcond = dpotri(LI_rcond)[0]
+        for n in range(num_iter):
+            Dv = t1 / (1 - s * (xk[:nl] + xk[-2] * g_dir + xk[-1] * g_dif))
+            L = Dv.reshape((-1, 1)) * H
+            M = GIv.reshape((-1, 1)) * L
+            S = L.T @ M
+            C_rcond = np.linalg.inv(Sa_inv + S)
+            z = meas - r
+            xk = C_rcond @ (M.T @ z + prprod)
+            trajectory.append(xk)
+            # test
 
-        # Calculate AOE mean
-        mu = dsymv(1, C_rcond, L_surf * dsymv(1, P, meas[winidx] - L_atm) + priorprod)
-
-        full_mu = np.zeros(len(x_surface))
-        full_mu[winidx] = mu
-
-        # Calculate conditional prior mean to fill in
-        # xa_cond, Sa_cond = conditional_gaussian(xa_full, Sa, outside_ret_windows, winidx, mu)
-        # full_mu[outside_ret_windows] = xa_cond
-        if outside_ret_const is None:
-            full_mu[outside_ret_windows] = xa[outside_ret_windows]
-        else:
-            full_mu[outside_ret_windows] = outside_ret_const
-
-        x[fm.idx_surface] = full_mu
-        trajectory.append(x)
-
-    if diag_uncert:
-        full_unc = np.ones(len(x))
-        full_unc[winidx] = np.sqrt(np.diag(C_rcond))
-        return trajectory, full_unc
     else:
-        return trajectory, C_rcond
+        for n in range(num_iter):
+
+            # xa_iv = xa_surface[outside_ret_windows]
+
+            L_atm = fm.RT.get_L_atm(x_RT, geom)[winidx]
+            L_tot = fm.calc_rdn(x, geom)[winidx]
+
+            L_surf = (L_tot - L_atm) / x_surface[winidx]  # = Ldiag
+            L_surf[L_surf < 0] = 1e-9
+
+            # Match Jouni's convention
+            C = Seps  # C = 'meas_Cov' = Seps
+            L = dpotrf(C, 1)[0]
+            P = dpotri(L, 1)[0]
+            P_rpr = Sa_inv
+            mu_rpr = xa
+
+            priorprod = P_rpr @ mu_rpr
+
+            P_tilde = ((L_surf * P).T * L_surf).T
+            P_rcond = P_rpr + P_tilde
+
+            LI_rcond = dpotrf(P_rcond)[0]
+            C_rcond = dpotri(LI_rcond)[0]
+
+            # Calculate AOE mean
+            mu = dsymv(
+                1, C_rcond, L_surf * dsymv(1, P, meas[winidx] - L_atm) + priorprod
+            )
+
+            full_mu = np.zeros(len(x_surface))
+            full_mu[winidx] = mu
+
+            # Calculate conditional prior mean to fill in
+            # xa_cond, Sa_cond = conditional_gaussian(xa_full, Sa, outside_ret_windows, winidx, mu)
+            # full_mu[outside_ret_windows] = xa_cond
+            if outside_ret_const is None:
+                full_mu[outside_ret_windows] = xa[outside_ret_windows]
+            else:
+                full_mu[outside_ret_windows] = outside_ret_const
+
+            x[fm.idx_surface] = full_mu
+            trajectory.append(x)
+
+    # if diag_uncert:
+    # full_unc = np.ones(len(x))
+    # full_unc[winidx] = np.sqrt(np.diag(C_rcond))
+    # return trajectory, full_unc
+    # else:
+    return trajectory, C_rcond
 
 
 def invert_simple(forward: ForwardModel, meas: np.array, geom: Geometry):
