@@ -182,7 +182,7 @@ def apply_oe(args):
     if args.sensor == "ang":
         # parse flightline ID (AVIRIS-NG assumptions)
         dt = datetime.strptime(paths.fid[3:], "%Y%m%dt%H%M%S")
-    if args.sensor == "av3":
+    elif args.sensor == "av3":
         dt = datetime.strptime(paths.fid[3:], "%Y%m%dt%H%M%S")
     elif args.sensor == "avcl":
         # parse flightline ID (AVIRIS-CL assumptions)
