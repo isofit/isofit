@@ -46,7 +46,7 @@ class RadiativeTransferEngine:
     consts = ["coszen", "solzen"]
 
     # Along the wavelength dimension only
-    onedim = ["solar_irr"]
+    onedim = ["fwhm", "solar_irr"]
 
     # Keys along all dimensions, ie. wl and point
     alldim = [
@@ -148,6 +148,8 @@ class RadiativeTransferEngine:
         self.multipart_transmittance = engine_config.multipart_transmittance
         self.topography_model = engine_config.topography_model
 
+        self.wavelength_file = wavelength_file
+
         # ToDo: move setting of multipart rfl values to config
         if self.multipart_transmittance:
             self.test_rfls = [0.1, 0.5]
@@ -161,8 +163,19 @@ class RadiativeTransferEngine:
             self.points, self.lut_names = luts.extractPoints(self.lut)
         else:
             Logger.info(f"No LUT store found, beginning initialization and simulations")
-            Logger.debug(f"Writing store to: {lut_path}")
-            Logger.debug(f"Using wavelength file: {wavelength_file}")
+            Logger.debug(f"Writing store to: {self.lut_path}")
+
+            # If the parameters aren't provided, use the wavelengths file
+            _wl, _fwhm = wl, fwhm
+            if [] in (wl, fwhm):
+                Logger.debug(
+                    f"WL or FWHM were not provided, using wavelength file: {self.wavelength_file}"
+                )
+                _wl, _fwhm = common.load_wavelen(self.wavelength_file)
+                if any(wl):
+                    _wl = wl
+                if any(fwhm):
+                    _fwhm = fwhm
 
             self.lut_names = engine_config.lut_names or lut_grid.keys()
             self.lut_grid = {
@@ -173,13 +186,7 @@ class RadiativeTransferEngine:
                 self.lut_grid.values()
             )  # 2d numpy array.  rows = points, columns = lut_names
 
-            # If provided as a parameter, override the default
-            _wl, _fwhm = common.load_wavelen(wavelength_file)
-            if len(wl):
-                _wl = wl
-            if len(fwhm):
-                _fwhm = fwhm
-
+            Logger.info(f"Initializing LUT file")
             self.lut = luts.initialize(
                 file=self.lut_path,
                 wl=_wl,
@@ -190,8 +197,8 @@ class RadiativeTransferEngine:
                 zeros=self.zeros,
             )
 
-            # Populate the newly created LUT file
-            self.run_simulations()
+            # Create and populate a LUT file
+            self.runSimulations()
 
         # Limit the wavelength per the config, does not affect data on disk
         if engine_config.wavelength_range is not None:
@@ -421,18 +428,17 @@ class RadiativeTransferEngine:
 
         return value
 
-    def run_simulations(self) -> None:
+    def runSimulations(self) -> None:
         """
         Run all simulations for the LUT grid.
 
         """
-        # "points" contains all combinations of grid points
-        # We will have one filename prefix per point
-
         Logger.info(f"Running any pre-sim functions")
         pre = self.preSim()
 
         if pre:
+            for key in pre:
+                print(f"{key}: {pre[key].size}")
             Logger.info("Saving pre-sim data")
             luts.updatePoint(file=self.lut_path, data=pre)
 

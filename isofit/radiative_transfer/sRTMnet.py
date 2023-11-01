@@ -39,7 +39,7 @@ from isofit.radiative_transfer.six_s import SixSRT
 Logger = logging.getLogger(__file__)
 
 
-class SimulatedModtranRTv2(RadiativeTransferEngine):
+class SimulatedModtranRT(RadiativeTransferEngine):
     """
     A hybrid surrogate-model and emulator of MODTRAN-like results.  A description of
     the model can be found in:
@@ -61,62 +61,9 @@ class SimulatedModtranRTv2(RadiativeTransferEngine):
         engine_config: RadiativeTransferEngineConfig,
         **kwargs,
     ):
-        self.predict_path = os.path.join(
-            self.engine_config.sim_path, "sRTMnet.predicts.nc"
-        )
+        self.predict_path = os.path.join(engine_config.sim_path, "sRTMnet.predicts.nc")
 
         super().__init__(engine_config, **kwargs)
-
-    @staticmethod
-    def build_sixs_config(engine_config):
-        """
-        Builds a configuration object for a 6S simulation
-        """
-        if not os.path.exists(config.template_file):
-            raise FileNotFoundError(
-                f"MODTRAN template file does not exist: {config.template_file}"
-            )
-
-        # First create a copy of the starting config
-        config = deepcopy(engine_config)
-
-        # Populate the 6S parameter values from a modtran template file
-        with open(config.template_file, "r") as file:
-            data = yaml.safe_load(file)["MODTRAN"][0]["MODTRANINPUT"]
-
-        # Do a quickk conversion to put things in solar azimuth/zenith terms for 6s
-        dt = (
-            datetime.datetime(2000, 1, 1)
-            + datetime.timedelta(days=data["GEOMETRY"]["IDAY"] - 1)
-            + datetime.timedelta(hours=data["GEOMETRY"]["GMTIME"])
-        )
-
-        solar_azimuth, solar_zenith, ra, dec, h = sunpos(
-            dt,
-            data["GEOMETRY"]["PARM1"],
-            -data["GEOMETRY"]["PARM2"],
-            data["SURFACE"]["GNDALT"] * 1000.0,
-        )
-
-        # Tweak parameter values for sRTMnet
-        config.aerosol_model_file = None
-        config.aerosol_template_file = None
-        config.emulator_file = None
-        config.day = dt.day
-        config.month = dt.month
-        config.elev = data["SURFACE"]["GNDALT"]
-        config.alt = data["GEOMETRY"]["H1ALT"]
-        config.solzen = solar_zenith
-        config.solaz = solar_azimuth
-        config.viewzen = 180 - data["GEOMETRY"]["OBSZEN"]
-        config.viewaz = data["GEOMETRY"]["TRUEAZ"]
-        config.wlinf = 0.35
-        config.wlsup = 2.5
-
-        # Save 6S to a different lut file
-        config.lut_path += "6S"
-
-        return config
 
     def preSim(self):
         """
@@ -130,6 +77,7 @@ class SimulatedModtranRTv2(RadiativeTransferEngine):
         # Emulator Aux
         aux = np.load(config.emulator_aux_file)
 
+        # TODO: Re-enable when sRTMnet_v100_aux is updated
         # Verify expected keys exist
         # missing = self.lut_quantities - set(aux["rt_quantities"].tolist())
         # if missing:
@@ -148,11 +96,10 @@ class SimulatedModtranRTv2(RadiativeTransferEngine):
         Logger.info("Building simulator and executing (6S)")
         sim = SixSRT(
             config,
-            wl=sim_wl,
-            fwhm=sim_fwhm,
+            wl=self.sim_wl,
+            fwhm=self.sim_fwhm,
             lut_path=config.lut_path,
-            lut_grid=lut_grid,
-            wavelength_file=self.wavelength_file,
+            lut_grid=self.lut_grid,
             modtran_emulation=True,
             build_interpolators=False,
         )
@@ -162,7 +109,7 @@ class SimulatedModtranRTv2(RadiativeTransferEngine):
         ## Prepare the sim results for the emulator
         # Create the resampled input data for the emulator
         resample = sim.lut[["point"]].copy()
-        resample["wl"] = emu_wl
+        resample["wl"] = self.emu_wl
 
         # FIXME: Temporarily add transm until sRTMnet's aux file is updated
         sim.lut["transm"] = sim.lut["transm_down_dir"]
@@ -171,7 +118,7 @@ class SimulatedModtranRTv2(RadiativeTransferEngine):
         Logger.info("Interpolating simulator quantities to emulator size")
         for key in aux["rt_quantities"]:
             interpolate = interp1d(sim.wl, sim[key])
-            resample[key] = (("point", "wl"), interpolate(emu_wl))
+            resample[key] = (("point", "wl"), interpolate(self.emu_wl))
 
         # Stack the quantities together along a new dimension named `quantity`
         resample = resample.to_array("quantity").stack(stack=["wl", "quantity"])
@@ -204,7 +151,8 @@ class SimulatedModtranRTv2(RadiativeTransferEngine):
         # Insert these into the LUT file
         return {
             "coszen": sim["coszen"],
-            "solar_irr": resample_spectrum(solar_irr, self.emu_wl, sim.wl, sim.fwhm),
+            "solzen": sim["solzen"],
+            "solar_irr": resample_spectrum(sol_irr, self.emu_wl, self.wl, self.fwhm),
         }
 
     def makeSim(self, point):
@@ -218,9 +166,11 @@ class SimulatedModtranRTv2(RadiativeTransferEngine):
         """
         Resamples the predicts produced by preSim to be saved in self.lut_path
         """
-        data = luts.load(self.predict_path).sel(point=point).load()
+        print(f"READING POINT: {point}")
+        # REVIEW: Likely should chunk along the point dim to improve this
+        data = luts.load(self.predict_path).sel(point=tuple(point)).load()
         return {
-            key: resample_spectrum(values.data, self.emu_wl, self.sim_wl, self.sim_fwhm)
+            key: resample_spectrum(values.data, self.emu_wl, self.wl, self.fwhm)
             for key, values in data.items()
         }
 
@@ -234,6 +184,57 @@ class SimulatedModtranRTv2(RadiativeTransferEngine):
         r = self.get(x_RT, geom)
         rdn = (self.solar_irr * self.coszen) / np.pi * r["transm"]
         return rdn
+
+
+def build_sixs_config(engine_config):
+    """
+    Builds a configuration object for a 6S simulation using a MODTRAN template
+    """
+    if not os.path.exists(engine_config.template_file):
+        raise FileNotFoundError(
+            f"MODTRAN template file does not exist: {engine_config.template_file}"
+        )
+
+    # First create a copy of the starting config
+    config = deepcopy(engine_config)
+
+    # Populate the 6S parameter values from a modtran template file
+    with open(config.template_file, "r") as file:
+        data = yaml.safe_load(file)["MODTRAN"][0]["MODTRANINPUT"]
+
+    # Do a quickk conversion to put things in solar azimuth/zenith terms for 6s
+    dt = (
+        datetime.datetime(2000, 1, 1)
+        + datetime.timedelta(days=data["GEOMETRY"]["IDAY"] - 1)
+        + datetime.timedelta(hours=data["GEOMETRY"]["GMTIME"])
+    )
+
+    solar_azimuth, solar_zenith, ra, dec, h = sunpos(
+        dt,
+        data["GEOMETRY"]["PARM1"],
+        -data["GEOMETRY"]["PARM2"],
+        data["SURFACE"]["GNDALT"] * 1000.0,
+    )
+
+    # Tweak parameter values for sRTMnet
+    config.aerosol_model_file = None
+    config.aerosol_template_file = None
+    config.emulator_file = None
+    config.day = dt.day
+    config.month = dt.month
+    config.elev = data["SURFACE"]["GNDALT"]
+    config.alt = data["GEOMETRY"]["H1ALT"]
+    config.solzen = solar_zenith
+    config.solaz = solar_azimuth
+    config.viewzen = 180 - data["GEOMETRY"]["OBSZEN"]
+    config.viewaz = data["GEOMETRY"]["TRUEAZ"]
+    config.wlinf = 0.35
+    config.wlsup = 2.5
+
+    # Save 6S to a different lut file
+    config.lut_path += ".6S"
+
+    return config
 
 
 def recursive_dict_search(indict, key):
