@@ -1,16 +1,14 @@
 """
 """
 import logging
+import os
 
 import numpy as np
 import xarray as xr
 from netCDF4 import Dataset
 
-# import os
-
-
-# This may alleviate race/lock conditions with file opening in updatePoint()
-# os.environ['HDF5_USE_FILE_LOCKING'] = 'FALSE'
+# This resolves race/lock conditions with file opening in updatePoint()
+os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
 
 Logger = logging.getLogger(__file__)
 

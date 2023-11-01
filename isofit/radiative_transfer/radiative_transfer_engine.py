@@ -157,11 +157,8 @@ class RadiativeTransferEngine:
             Logger.info(f"Prebuilt LUT provided")
             Logger.debug(f"Reading from store: {lut_path}")
             self.lut = luts.load(lut_path, lut_grid)
-            self.wl = self["wl"]
-            self.fwhm = self["fwhm"]
-
-            self.points, self.lut_names = luts.extractPoints(self.lut)
             self.lut_grid = lut_grid or luts.extractGrid(self.lut)
+            self.points, self.lut_names = luts.extractPoints(self.lut)
         else:
             Logger.info(f"No LUT store found, beginning initialization and simulations")
             Logger.debug(f"Writing store to: {lut_path}")
@@ -176,20 +173,19 @@ class RadiativeTransferEngine:
                 self.lut_grid.values()
             )  # 2d numpy array.  rows = points, columns = lut_names
 
-            self.wl, self.fwhm = common.load_wavelen(wavelength_file)
-
             # If provided as a parameter, override the default
+            _wl, _fwhm = common.load_wavelen(wavelength_file)
             if len(wl):
-                self.wl = wl
+                _wl = wl
             if len(fwhm):
-                self.fwhm = fwhm
+                _fwhm = fwhm
 
             self.lut = luts.initialize(
                 file=self.lut_path,
-                wl=self.wl,
+                wl=_wl,
                 lut_grid=self.lut_grid,
                 consts=self.consts,
-                onedim=self.onedim + [("fwhm", self.fwhm)],
+                onedim=self.onedim + [("fwhm", _fwhm)],
                 alldim=self.alldim,
                 zeros=self.zeros,
             )
@@ -197,9 +193,17 @@ class RadiativeTransferEngine:
             # Populate the newly created LUT file
             self.run_simulations()
 
-        # Limit the wavelength per the config ;REVIEW: needs testing
+        # Limit the wavelength per the config, does not affect data on disk
         if engine_config.wavelength_range is not None:
+            Logger.info(
+                f"Limiting wavelengths to range: {engine_config.wavelength_range}"
+            )
+            original = self.wl.size
             self.lut = self.lut.sel(wl=slice(*engine_config.wavelength_range))
+            selected = self.wl.size
+            Logger.info(
+                f"This reduced the wavelength samples from {original} to {selected}"
+            )
 
         self.n_chan = len(self.wl)
 
@@ -271,6 +275,14 @@ class RadiativeTransferEngine:
     @property
     def lut_interp_types(self):
         return np.array([self.angular_lut_keys.get(key, "n") for key in self.lut_names])
+
+    @property
+    def wl(self):
+        return self["wl"]
+
+    @property
+    def fwhm(self):
+        return self["fwhm"]
 
     def build_interpolators(self):
         """

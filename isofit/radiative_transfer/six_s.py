@@ -145,8 +145,8 @@ class SixSRT(RadiativeTransferEngine):
             elif line.startswith("*        trans  down   up"):
                 start = end
 
-        # Cast to numpy
-        data = {k: np.array(v) for k, v in data.items()}
+        # Cast to numpy and trim excess
+        data = {k: np.array(v)[: self.wl.size] for k, v in data.items()}
 
         # Add extras
         data["solzen"] = solzen
@@ -161,10 +161,10 @@ class SixSRT(RadiativeTransferEngine):
         """
         Update solar_irr after simulations
         """
-        esd = np.loadtxt(self.earth_sun_distance_path)
+        self.esd = np.loadtxt(self.earth_sun_distance_path)
         dt = datetime(2000, self.engine_config.month, self.engine_config.day)
         self.day_of_year = dt.timetuple().tm_yday
-        self.irr_factor = esd[self.day_of_year - 1, 1]
+        self.irr_factor = self.esd[self.day_of_year - 1, 1]
 
         irr = np.loadtxt(self.engine_config.irradiance_file, comments="#")
         iwl, irr = irr.T
