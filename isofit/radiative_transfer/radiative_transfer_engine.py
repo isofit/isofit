@@ -312,7 +312,8 @@ class RadiativeTransferEngine:
     def preSim(self):
         """
         This is an optional function that can be defined by a subclass RTE to be called
-        directly before runSim() is distributed
+        directly before runSim() is executed. A subclass may return a dict containing
+        any single or non-dimensional variables to be saved to the LUT file
         """
         ...
 
@@ -343,7 +344,7 @@ class RadiativeTransferEngine:
         """
         This is an optional function that can be defined by a subclass RTE to be called
         directly after runSim() is finished. A subclass may return a dict containing
-        any single-dimensional
+        any single or non-dimensional variables to be saved to the LUT file
         """
         ...
 
@@ -429,7 +430,11 @@ class RadiativeTransferEngine:
         # We will have one filename prefix per point
 
         Logger.info(f"Running any pre-sim functions")
-        self.preSim()
+        pre = self.preSim()
+
+        if pre:
+            Logger.info("Saving pre-sim data")
+            luts.updatePoint(file=self.lut_path, data=pre)
 
         # Make the LUT calls (in parallel if specified)
         results = ray.get(
@@ -446,11 +451,11 @@ class RadiativeTransferEngine:
         )
 
         Logger.info(f"Running any post-sim functions")
-        data = self.postSim()
+        post = self.postSim()
 
-        if data:
+        if post:
             Logger.info("Saving post-sim data")
-            luts.updatePoint(file=self.lut_path, data=data)
+            luts.updatePoint(file=self.lut_path, data=post)
 
         # Reload the LUT now that it's populated
         self.lut = luts.load(self.lut_path, self.lut_names)
