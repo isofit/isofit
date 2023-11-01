@@ -6,6 +6,12 @@ import numpy as np
 import xarray as xr
 from netCDF4 import Dataset
 
+# import os
+
+
+# This may alleviate race/lock conditions with file opening in updatePoint()
+# os.environ['HDF5_USE_FILE_LOCKING'] = 'FALSE'
+
 Logger = logging.getLogger(__file__)
 
 
@@ -54,7 +60,6 @@ def initialize(
     # Filler arrays
     dims = tuple(ds.dims.values())
     nans = np.full(dims, np.nan)
-    nans = np.full(dims, np.nan)
     zero = np.zeros(dims)
 
     for key in alldim:
@@ -68,13 +73,15 @@ def initialize(
                 ds[key] = (ds.coords, nans)
 
     # Must write unstacked
-    ds.to_netcdf(file, mode="w", compute=False)
+    ds.to_netcdf(file, mode="w", compute=False, engine="netcdf4")
 
     # Stack to get the common.combos, creates dim "point" = [(v1, v2, ), ...]
     return ds.stack(point=lut_grid).transpose("point", "wl")
 
 
-def updatePoint(file: str, lut_names: list, point: tuple, data: dict) -> None:
+def updatePoint(
+    file: str, lut_names: list = [], point: tuple = (), data: dict = {}
+) -> None:
     """
     Updates a point in a LUT NetCDF
 
@@ -114,7 +121,8 @@ def updatePoint(file: str, lut_names: list, point: tuple, data: dict) -> None:
                 # This should only happen if you were updating an existing LUT with fewer point dimensions than exists
                 # REVIEW: Should we support this edge case? If we do, ought to add a `defaults={dim: index}` to control
                 # what the default index for dims are
-                Logger.warning(
+                # REVIEW: rte.postSim() may call this with lut_names=[], causing this to be hit each time
+                Logger.debug(
                     f"Defaulting to index 0 for dimension {dim!r} because it is not in the lut_names: {lut_names}"
                 )
                 inds[i] = 0
@@ -151,8 +159,9 @@ def updatePoint(file: str, lut_names: list, point: tuple, data: dict) -> None:
 def load(file: str, lut_names: list = []) -> xr.Dataset:
     """
     Loads a LUT NetCDF
+    Assumes to be a regular grid at this time (auto creates the point dim)
     """
-    ds = xr.open_dataset(file, mode="r", lock=False)
+    ds = xr.open_mfdataset([file], mode="r", lock=False)
     dims = lut_names or ds.drop_dims("wl").coords
     return ds.stack(point=dims).transpose("point", "wl")
 
@@ -177,3 +186,22 @@ def extractGrid(ds: xr.Dataset) -> dict:
             continue
         grid[dim] = vals.data
     return grid
+
+
+def saveDataset(file: str, ds: xr.Dataset) -> None:
+    """
+    Handles saving an xarray.Dataset to a NetCDF file for ISOFIT. Will detect if the
+    point dim needs to be unstacked before saving (regular grids) or not (irregular)
+
+    Parameters
+    ----------
+    file: str
+        Path to save the `ds` object to. This will be a NetCDF, recommended extension
+        is `.nc`
+    ds: xarray.Dataset
+        Data object to save
+    """
+    if "MultiIndex" in str(ds.indexes["point"]):
+        ds = ds.unstack("point")
+
+    ds.to_netcdf(file)

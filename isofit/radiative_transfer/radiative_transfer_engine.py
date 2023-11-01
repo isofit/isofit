@@ -157,8 +157,8 @@ class RadiativeTransferEngine:
             Logger.info(f"Prebuilt LUT provided")
             Logger.debug(f"Reading from store: {lut_path}")
             self.lut = luts.load(lut_path, lut_grid)
-            self.wl = self.lut.wl.data
-            self.fwhm = self.lut.fwhm.data
+            self.wl = self["wl"]
+            self.fwhm = self["fwhm"]
 
             self.points, self.lut_names = luts.extractPoints(self.lut)
             self.lut_grid = lut_grid or luts.extractGrid(self.lut)
@@ -225,45 +225,46 @@ class RadiativeTransferEngine:
             # If it wasn't a geom key, it's x_RT
             self.indices.x_RT = list(set(range(self.n_point)) - set(self.indices.geom))
 
-    def __getstate__(self):
-        """
-        Defines how to pickle this object
-        """
-        return dict(
-            engine_config=self.engine_config,
-            lut_path=self.lut_path,
-            lut_grid=None,  # will just load from the lut file
-            wavelength_file=None,  # will just load from the lut file
-            interpolator_style=self.interpolator_style,
-            overwrite_interpolator=False,
-        )
-
-    def __setstate__(self, state):
-        """
-        Recover from pickling
-        """
-        self.__init__(**state)
-
-    def __getattr__(self, key):
-        """
-        Enables attribute calls to pass through to the LUT dataset, eg.
-        rte.solar_irr == rte.lut[solar_irr].load().data
-
-        This only happens if hasattr(rte, key) == False
-        """
-        # May not be initialized
-        ds = self.__dict__.get("lut", {})
-        if key in ds:
-            return ds[key].load().data
-
-        # REVIEW: test test test
-        # elif key in self.engine_config:
-        #     return self.engine_config[key]
+    # def __getstate__(self):
+    #     """
+    #     Defines how to pickle this object
+    #     """
+    #
+    #     return dict(
+    #         engine_config=self.engine_config,
+    #         lut_path=self.lut_path,
+    #         lut_grid=None,  # will just load from the lut file
+    #         wavelength_file=None,  # will just load from the lut file
+    #         interpolator_style=self.interpolator_style,
+    #         overwrite_interpolator=False,
+    #     )
+    #
+    # def __setstate__(self, state):
+    #     """
+    #     Recover from pickling
+    #     """
+    #     self.__init__(**state)
+    #
+    # def __getattr__(self, key):
+    #     """
+    #     Enables attribute calls to pass through to the LUT dataset, eg.
+    #     rte.solar_irr == rte.lut[solar_irr].load().data
+    #
+    #     This only happens if hasattr(rte, key) == False
+    #     """
+    #     # May not be initialized
+    #     ds = self.__dict__.get("lut", {})
+    #     if key in ds:
+    #         return ds[key].load().data
+    #
+    #     # REVIEW: test test test
+    #     # elif key in self.engine_config:
+    #     #     return self.engine_config[key]
 
     def __getitem__(self, key):
         """
-        Enables key indexing, just a pass through to getattr
-            rte[key] == rte.key
+        Enables key indexing for easier access to the numpy object store in
+        self.lut[key]
         """
         return self.lut[key].load().data
 
@@ -635,7 +636,7 @@ class RadiativeTransferEngine:
         path_radiance_1 = np.array(lp_1)
         path_radiance_2 = np.array(lp_2)
         # ToDo: get coszen from LUT and assign as attribute to self
-        TOA_Irad = np.array(self.solar_irr) * coszen / np.pi
+        TOA_Irad = np.array(self["solar_irr"]) * coszen / np.pi
         rfl_1 = self.test_rfls[0]
         rfl_2 = self.test_rfls[1]
 
