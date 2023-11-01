@@ -68,110 +68,10 @@ class SixSRT(RadiativeTransferEngine):
         modtran_emulation=False,
         **kwargs,
     ):
-        super().__init__(engine_config, **kwargs)
-
         self.engine_config = engine_config
         self.modtran_emulation = modtran_emulation
 
-        self.sixs_grid_init = np.arange(self.wl[0], self.wl[-1] + 2.5, 2.5)
-
-        self.esd = np.loadtxt(self.earth_sun_distance_path)
-
-        dt = datetime(2000, engine_config.month, engine_config.day)
-        self.day_of_year = dt.timetuple().tm_yday
-        self.irr_factor = self.esd[self.day_of_year - 1, 1]
-
-        irr = np.loadtxt(engine_config.irradiance_file, comments="#")
-        iwl, irr = irr.T
-        irr = irr / 10.0  # convert, uW/nm/cm2
-        irr = irr / self.irr_factor**2  # consider solar distance
-        self.solar_irr = resample_spectrum(irr, iwl, self.wl, self.fwhm)
-
-    def rebuild_cmd(self, point) -> str:
-        """Build the simulation command file.
-
-        Args:
-            point (np.array): conditions to alter in simulation
-
-        Returns:
-            str: execution command
-        """
-        # Collect files of interest for this point
-        name = self.point_to_filename(point)
-        file = os.path.join(self.sim_path, name)  # Output path
-        luts = os.path.join(self.sim_path, f"LUT_{name}.inp")  # Input path
-        bash = os.path.join(self.sim_path, f"LUT_{name}.sh")  # Script path
-        sixS = os.path.join(self.engine_base_dir, "sixsV2.1")  # 6S Emulator path
-
-        # REVIEW: Is this necessary?
-        # Verify at least one file is missing
-        # if os.path.exists(file) and os.path.exists(luts):
-        #     raise AttributeError(f"Files already exist: {file}, {luts}")
-
-        ## Prepare template values
-
-        vals = {
-            "aermodel": 1,
-            "AOT550": 0.01,
-            "H2OSTR": 0,
-            "O3": 0.30,
-            "day": self.engine_config.day,
-            "month": self.engine_config.month,
-            "elev": self.engine_config.elev,
-            "alt": min(self.engine_config.alt, 99),
-            "atm_file": None,
-            "abscf_data_directory": None,
-            "wlinf": self.sixs_grid_init[0] / 1000.0,  # convert to nm
-            "wlsup": self.sixs_grid_init[-1] / 1000.0,
-        }
-
-        # Assume geometry values are provided by the config
-        vals |= {
-            "solzen": self.engine_config.solzen,
-            "viewzen": self.engine_config.viewzen,
-            "solaz": self.engine_config.solaz,
-            "viewaz": self.engine_config.viewaz,
-        }
-
-        # Add the point with its names
-        for key, val in zip(self.lut_names, point):
-            vals[key] = val
-
-        ## Special cases
-
-        if "H2OSTR" in self.lut_names:
-            vals["h2o_mm"] = vals["H2OSTR"] * 10.0
-
-        if "GNDALT" in vals:
-            vals["elev"] = vals["GNDALT"]
-
-        if "elev" in vals:
-            vals["elev"] = vals["elev"] * -1
-
-        if "H1ALT" in vals:
-            vals["alt"] = min(vals["H1ALT"], 99)
-
-        if "TRUEAZ" in vals:
-            vals["viewaz"] = vals["TRUEAZ"]
-
-        if "OBSZEN" in vals:
-            vals["viewzen"] = 180 - vals["OBSZEN"]
-
-        if self.modtran_emulation:
-            if "AERFRAC_2" in vals:
-                vals["AOT550"] = vals["AERFRAC_2"]
-
-        # Write sim files
-        with open(luts, "w") as f:
-            template = SIXS_TEMPLATE.format(**vals)
-            f.write(template)
-
-        with open(bash, "w") as f:
-            f.write("#!/usr/bin/bash\n")
-            f.write(f"{sixS} < {luts} > {file}\n")
-            f.write("cd $cwd\n")
-
-        return f"bash {bash}"
+        super().__init__(engine_config, **kwargs)
 
     def makeSim(self, point: np.array, template_only: bool = False):
         """ """
@@ -256,3 +156,105 @@ class SixSRT(RadiativeTransferEngine):
         self.grid = data.pop("grid")
 
         return data
+
+    def postSim(self):
+        """
+        Update solar_irr after simulations
+        """
+        dt = datetime(2000, self.engine_config.month, self.engine_config.day)
+        self.day_of_year = dt.timetuple().tm_yday
+        self.irr_factor = self.esd[self.day_of_year - 1, 1]
+
+        irr = np.loadtxt(self.engine_config.irradiance_file, comments="#")
+        iwl, irr = irr.T
+        irr = irr / 10.0  # convert, uW/nm/cm2
+        irr = irr / self.irr_factor**2  # consider solar distance
+        self.solar_irr = resample_spectrum(irr, iwl, self.wl, self.fwhm)
+
+        return {"solar_irr": self.solar_irr}
+
+    def rebuild_cmd(self, point) -> str:
+        """Build the simulation command file.
+
+        Args:
+            point (np.array): conditions to alter in simulation
+
+        Returns:
+            str: execution command
+        """
+        # Collect files of interest for this point
+        name = self.point_to_filename(point)
+        file = os.path.join(self.sim_path, name)  # Output path
+        luts = os.path.join(self.sim_path, f"LUT_{name}.inp")  # Input path
+        bash = os.path.join(self.sim_path, f"LUT_{name}.sh")  # Script path
+        sixS = os.path.join(self.engine_base_dir, "sixsV2.1")  # 6S Emulator path
+
+        # REVIEW: Is this necessary?
+        # Verify at least one file is missing
+        # if os.path.exists(file) and os.path.exists(luts):
+        #     raise AttributeError(f"Files already exist: {file}, {luts}")
+
+        ## Prepare template values
+
+        vals = {
+            "aermodel": 1,
+            "AOT550": 0.01,
+            "H2OSTR": 0,
+            "O3": 0.30,
+            "day": self.engine_config.day,
+            "month": self.engine_config.month,
+            "elev": self.engine_config.elev,
+            "alt": min(self.engine_config.alt, 99),
+            "atm_file": None,
+            "abscf_data_directory": None,
+            "wlinf": self.wl[0] / 1000.0,  # convert to nm
+            "wlsup": self.wl[-1] / 1000.0,
+        }
+
+        # Assume geometry values are provided by the config
+        vals |= {
+            "solzen": self.engine_config.solzen,
+            "viewzen": self.engine_config.viewzen,
+            "solaz": self.engine_config.solaz,
+            "viewaz": self.engine_config.viewaz,
+        }
+
+        # Add the point with its names
+        for key, val in zip(self.lut_names, point):
+            vals[key] = val
+
+        ## Special cases
+
+        if "H2OSTR" in self.lut_names:
+            vals["h2o_mm"] = vals["H2OSTR"] * 10.0
+
+        if "GNDALT" in vals:
+            vals["elev"] = vals["GNDALT"]
+
+        if "elev" in vals:
+            vals["elev"] = vals["elev"] * -1
+
+        if "H1ALT" in vals:
+            vals["alt"] = min(vals["H1ALT"], 99)
+
+        if "TRUEAZ" in vals:
+            vals["viewaz"] = vals["TRUEAZ"]
+
+        if "OBSZEN" in vals:
+            vals["viewzen"] = 180 - vals["OBSZEN"]
+
+        if self.modtran_emulation:
+            if "AERFRAC_2" in vals:
+                vals["AOT550"] = vals["AERFRAC_2"]
+
+        # Write sim files
+        with open(luts, "w") as f:
+            template = SIXS_TEMPLATE.format(**vals)
+            f.write(template)
+
+        with open(bash, "w") as f:
+            f.write("#!/usr/bin/bash\n")
+            f.write(f"{sixS} < {luts} > {file}\n")
+            f.write("cd $cwd\n")
+
+        return f"bash {bash}"

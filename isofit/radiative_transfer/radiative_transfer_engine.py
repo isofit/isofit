@@ -265,7 +265,7 @@ class RadiativeTransferEngine:
         Enables key indexing, just a pass through to getattr
             rte[key] == rte.key
         """
-        return ds[key].load().data
+        return self.lut[key].load().data
 
     @property
     def lut_interp_types(self):
@@ -325,6 +325,14 @@ class RadiativeTransferEngine:
         raise NotImplemented(
             "This method must be defined by the subclass RTE, (TODO) see ISOFIT documentation for more information"
         )
+
+    def postSim(self):
+        """
+        This is an optional function that can be defined by a subclass RTE to be called
+        directly after runSim() is finished. A subclass may return a dict containing
+        any single-dimensional
+        """
+        ...
 
     def point_to_filename(self, point: np.array) -> str:
         """Change a point to a base filename
@@ -410,12 +418,10 @@ class RadiativeTransferEngine:
         Logger.info(f"Running any pre-sim functions")
         self.preSim()
 
-        Logger.info(f"Executing {len(self.points)} simulations")
-
         # Make the LUT calls (in parallel if specified)
         results = ray.get(
             [
-                stream_simulation.remote(
+                streamSimulation.remote(
                     point,
                     self.lut_names,
                     self.makeSim,
@@ -425,6 +431,13 @@ class RadiativeTransferEngine:
                 for point in self.points
             ]
         )
+
+        Logger.info(f"Running any post-sim functions")
+        data = self.postSim()
+
+        if data:
+            Logger.info("Saving post-sim data")
+            luts.updatePoint(file=self.lut_path, data=data)
 
         # Reload the LUT now that it's populated
         self.lut = luts.load(self.lut_path, self.lut_names)
@@ -661,7 +674,7 @@ class RadiativeTransferEngine:
 
 
 @ray.remote
-def stream_simulation(
+def streamSimulation(
     point: np.array,
     lut_names: list,
     simmer: Callable,
