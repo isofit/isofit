@@ -113,7 +113,16 @@ def apply_oe(args):
     """
     use_superpixels = (args.empirical_line == 1) or (args.analytical_line == 1)
 
-    if args.sensor not in ["ang", "avcl", "neon", "prism", "emit", "hyp", "prisma", "av3"]:
+    if args.sensor not in [
+        "ang",
+        "avcl",
+        "neon",
+        "prism",
+        "emit",
+        "hyp",
+        "prisma",
+        "av3",
+    ]:
         if args.sensor[:3] != "NA-":
             raise ValueError(
                 'argument sensor: invalid choice: "NA-test" (choose from '
