@@ -261,21 +261,26 @@ def invert_analytical(
 
     Seps = fm.Seps(x, meas, geom)[winidx, :][:, winidx]
 
-    Sigma = np.zeros((248, 248))
     Sa = fm.Sa(x, geom)
     Sa_surface = Sa[fm.idx_surface, :][:, fm.idx_surface]
     Sa_surface = Sa_surface[winidx, :][:, winidx]
-    Sigma[:246, :246] = Sa_surface
-    f = np.diag([1000000**2, 1000000**2])
-    Sigma[-2:, -2:] = f
-    Sa_inv = svd_inv_sqrt(Sigma, hash_table, hash_size)[0]
+
+    if fm.RT.glint_model:
+        Sigma = np.zeros((248, 248))
+        Sigma[:246, :246] = Sa_surface
+        f = np.diag([1000000**2, 1000000**2])
+        Sigma[-2:, -2:] = f
+        Sa_inv = svd_inv_sqrt(Sigma, hash_table, hash_size)[0]
+    else:
+        Sa_inv = svd_inv_sqrt(Sa_surface, hash_table, hash_size)[0]
 
     xa_full = fm.xa(x, geom)
     xa_surface = xa_full[fm.idx_surface]
     xa = xa_surface[winidx]
-    xa = np.append(xa, [0.02, 1 / np.pi])
 
-    prprod = Sa_inv @ xa
+    if fm.RT.glint_model:
+        xa = np.append(xa, [0.02, 1 / np.pi])
+        prprod = Sa_inv @ xa
 
     if fm.RT.glint_model:
         # obtain needed RT vectors
@@ -311,12 +316,8 @@ def invert_analytical(
             z = meas - r
             xk = C_rcond @ (M.T @ z + prprod)
             trajectory.append(xk)
-
     else:
         for n in range(num_iter):
-
-            # xa_iv = xa_surface[outside_ret_windows]
-
             L_atm = fm.RT.get_L_atm(x_RT, geom)[winidx]
             L_tot = fm.calc_rdn(x, geom)[winidx]
 
@@ -357,12 +358,12 @@ def invert_analytical(
             x[fm.idx_surface] = full_mu
             trajectory.append(x)
 
-    # if diag_uncert:
-    # full_unc = np.ones(len(x))
-    # full_unc[winidx] = np.sqrt(np.diag(C_rcond))
-    # return trajectory, full_unc
-    # else:
-    return trajectory, C_rcond
+    if diag_uncert:
+        full_unc = np.ones(len(x))
+        full_unc[winidx] = np.sqrt(np.diag(C_rcond))
+        return trajectory, full_unc
+    else:
+        return trajectory, C_rcond
 
 
 def invert_simple(forward: ForwardModel, meas: np.array, geom: Geometry):
