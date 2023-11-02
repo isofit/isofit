@@ -246,6 +246,22 @@ class RadiativeTransfer:
 
             a = t_total_up * (I * cos_i * t_dir_down + I * self.coszen * t_dif_down)
             drdn_drfl = a / (1 - s_alb * rfl) ** 2
+
+        elif self.glint_model:
+            L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)
+
+            E_dd = (self.solar_irr * self.coszen) / np.pi * r["t_down_dir"]
+            E_ds = (self.solar_irr * self.coszen) / np.pi * r["t_down_dif"]
+            E_d = E_dd + E_ds
+            L_sky = x_surface[-2] * E_dd + x_surface[-1] * E_ds
+
+            glint = 0.02 * (L_sky / E_d)
+
+            drho_scaled_for_multiscattering_drfl = (
+                1.0 / (1 - r["sphalb"] * (rfl + glint)) ** 2
+            )
+            drdn_drfl = L_down_transmitted * drho_scaled_for_multiscattering_drfl
+
         else:
             L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)
 

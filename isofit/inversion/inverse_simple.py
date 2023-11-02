@@ -278,17 +278,18 @@ def invert_analytical(
     prprod = Sa_inv @ xa
 
     if fm.RT.glint_model:
+        # obtain needed RT vectors
         r = fm.RT.get_L_atm(x_RT, geom)[winidx]  # path radiance
+        t1 = fm.RT.get_L_down_transmitted(x_RT, geom)[
+            winidx
+        ]  # total transmittance (down * up, direct + diffuse)
         rtm_quant = fm.RT.get_shared_rtm_quantities(x_RT, geom)
-        t_down_dir = rtm_quant["t_down_dir"][winidx]
-        t_down_dif = rtm_quant["t_down_dif"][winidx]
-        t_down_total = t_down_dir + t_down_dif
-        t_up_total = rtm_quant["transup"][winidx]
-        u = (fm.RT.solar_irr * fm.RT.coszen) / np.pi
-        t1 = u * t_down_total * t_up_total
-        s = rtm_quant["sphalb"][winidx]
-        g_dir = 0.02 * (t_down_dir / t_down_total)
-        g_dif = 0.02 * (t_down_dif / t_down_total)
+        t_down_dir = rtm_quant["t_down_dir"][winidx]  # downward direct transmittance
+        t_down_dif = rtm_quant["t_down_dif"][winidx]  # downward diffuse transmittance
+        t_down_total = t_down_dir + t_down_dif  # downward total transmittance
+        s = rtm_quant["sphalb"][winidx]  # spherical albedo
+        g_dir = 0.02 * (t_down_dir / t_down_total)  # direct sky transmittance
+        g_dif = 0.02 * (t_down_dif / t_down_total)  # diffuse sky transmittance
 
         nl = len(r)
         H = np.zeros((nl, nl + 2))
@@ -298,7 +299,7 @@ def invert_analytical(
 
         GIv = 1 / np.diag(Seps)
 
-        xk = x.copy()
+        xk = x[fm.idx_surface].copy()
         trajectory.append(xk)
 
         for n in range(num_iter):
@@ -310,7 +311,6 @@ def invert_analytical(
             z = meas - r
             xk = C_rcond @ (M.T @ z + prprod)
             trajectory.append(xk)
-            # test
 
     else:
         for n in range(num_iter):
