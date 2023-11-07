@@ -22,6 +22,7 @@ jobs:
 
     - name: Install Isofit
       run: |
+        pip install xarray dask netCDF4
         pip install --no-deps --force-reinstall --editable .
 
     - name: Check Utils
@@ -58,7 +59,8 @@ jobs:
 
     - name: Install Isofit
       run: |
-        pip install --no-deps .
+        pip install xarray dask netCDF4
+        pip install --no-deps --force-reinstall --editable .
 
     - name: Run Test
       run: |
