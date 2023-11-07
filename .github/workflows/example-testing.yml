@@ -38,7 +38,7 @@ jobs:
     - name: 20171108_Pasadena
       run: |
         cd examples/20171108_Pasadena
-        bash run_example_modtran.sh
+        python run_example_modtran.py
         python run_topoflux_example.py
 
     # TODO: Temporarily disabled until examples are working locally
