@@ -164,7 +164,6 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         """
         Resamples the predicts produced by preSim to be saved in self.lut_path
         """
-        print(f"READING POINT: {point}")
         # REVIEW: Likely should chunk along the point dim to improve this
         data = luts.load(self.predict_path).sel(point=tuple(point)).load()
         return {
