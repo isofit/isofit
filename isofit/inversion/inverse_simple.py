@@ -169,7 +169,9 @@ def invert_algebraic(
     )  # REVIEW: Changed from transm
     solar_irr = instrument.sample(x_instrument, RT.wl, RT.solar_irr)
     sphalb = instrument.sample(x_instrument, RT.wl, rhi["sphalb"])
-    transup = instrument.sample(x_instrument, RT.wl, rhi["transm_up_dir"])  # REVIEW: Changed from transup
+    transup = instrument.sample(
+        x_instrument, RT.wl, rhi["transm_up_dir"]
+    )  # REVIEW: Changed from transup
     coszen = RT.coszen
 
     # Prevent NaNs
