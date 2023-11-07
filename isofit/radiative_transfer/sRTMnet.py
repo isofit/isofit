@@ -21,6 +21,7 @@ import datetime
 import logging
 import os
 from copy import deepcopy
+from pathlib import Path
 
 import numpy as np
 import yaml
@@ -51,19 +52,12 @@ class SimulatedModtranRT(RadiativeTransferEngine):
 
     lut_quantities = {
         "rhoatm",
-        "transm_down_dif",  # REVIEW: Formerly transm
         "sphalb",
-        "transm_up_dir",  # REVIEW: Formerly transup
+        "transm_down_difs",
+        "transm_down_dif",  # NOTE: Formerly transm
+        "transm_up_difs",
+        "transm_up_dir",  # NOTE: Formerly transup
     }
-
-    def __init__(
-        self,
-        engine_config: RadiativeTransferEngineConfig,
-        **kwargs,
-    ):
-        self.predict_path = os.path.join(engine_config.sim_path, "sRTMnet.predicts.nc")
-
-        super().__init__(engine_config, **kwargs)
 
     def preSim(self):
         """
@@ -88,7 +82,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         # Emulator keys (sRTMnet)
         self.emu_wl = aux["emulator_wavelengths"]
 
-        # Simulation wavelengths overrides, REVIEW: hardcoded?
+        # Simulation wavelengths overrides, always fixed size
         self.sim_wl = np.arange(350, 2500 + 2.5, 2.5)
         self.sim_fwhm = np.full(self.sim_wl.size, 2.0)
 
@@ -103,8 +97,9 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             modtran_emulation=True,
             build_interpolators=False,
         )
-
+        # Extract useful information from the sim
         self.esd = sim.esd
+        self.sim_lut_path = config.lut_path
 
         ## Prepare the sim results for the emulator
         # Create the resampled input data for the emulator
@@ -139,6 +134,9 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         # Unstack back to a dataset and save
         predicts = predicts.unstack("stack").to_dataset("quantity")
 
+        self.predict_path = os.path.join(
+            self.engine_config.sim_path, "sRTMnet.predicts.nc"
+        )
         Logger.info(f"Saving intermediary prediction results to: {self.predict_path}")
         luts.saveDataset(self.predict_path, predicts)
 
@@ -231,8 +229,10 @@ def build_sixs_config(engine_config):
     config.wlinf = 0.35
     config.wlsup = 2.5
 
-    # Save 6S to a different lut file
-    config.lut_path += ".6S"
+    # Save 6S to a different lut file, prepend 6S to the sRTMnet lut_path
+    # REVIEW: Should this write to sim_path instead? I think so
+    path = Path(config.lut_path)
+    config.lut_path = path.parent / f"6S.{path.name}"
 
     return config
 

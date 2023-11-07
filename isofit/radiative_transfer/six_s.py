@@ -68,13 +68,28 @@ class SixSRT(RadiativeTransferEngine):
         modtran_emulation=False,
         **kwargs,
     ):
-        self.engine_config = engine_config
         self.modtran_emulation = modtran_emulation
 
         super().__init__(engine_config, **kwargs)
 
+        # Post initialization
+        self.esd = np.loadtxt(self.earth_sun_distance_path)
+        dt = datetime(2000, self.engine_config.month, self.engine_config.day)
+        self.day_of_year = dt.timetuple().tm_yday
+        self.irr_factor = self.esd[self.day_of_year - 1, 1]
+
     def makeSim(self, point: np.array, template_only: bool = False):
         """ """
+        # Retrieve the files to process
+        name = self.point_to_filename(point)
+        outp = os.path.join(self.sim_path, name)
+        inpt = os.path.join(self.sim_path, f"LUT_{name}.inp")
+
+        # Only execute when either the 6S input (ext.inp) or output (no extension) files are missing
+        if os.path.exists(outp) and os.path.exists(inpt):
+            Logger.warning(f"6S sim files already exist: {outp}, {inpt}")
+            return
+
         cmd = self.rebuild_cmd(point)
         if template_only is False:
             subprocess.call(cmd, shell=True)
@@ -161,11 +176,6 @@ class SixSRT(RadiativeTransferEngine):
         """
         Update solar_irr after simulations
         """
-        self.esd = np.loadtxt(self.earth_sun_distance_path)
-        dt = datetime(2000, self.engine_config.month, self.engine_config.day)
-        self.day_of_year = dt.timetuple().tm_yday
-        self.irr_factor = self.esd[self.day_of_year - 1, 1]
-
         irr = np.loadtxt(self.engine_config.irradiance_file, comments="#")
         iwl, irr = irr.T
         irr = irr / 10.0  # convert, uW/nm/cm2
@@ -185,18 +195,12 @@ class SixSRT(RadiativeTransferEngine):
         """
         # Collect files of interest for this point
         name = self.point_to_filename(point)
-        file = os.path.join(self.sim_path, name)  # Output path
-        luts = os.path.join(self.sim_path, f"LUT_{name}.inp")  # Input path
+        outp = os.path.join(self.sim_path, name)  # Output path
+        inpt = os.path.join(self.sim_path, f"LUT_{name}.inp")  # Input path
         bash = os.path.join(self.sim_path, f"LUT_{name}.sh")  # Script path
         sixS = os.path.join(self.engine_base_dir, "sixsV2.1")  # 6S Emulator path
 
-        # REVIEW: Is this necessary?
-        # Verify at least one file is missing
-        # if os.path.exists(file) and os.path.exists(luts):
-        #     raise AttributeError(f"Files already exist: {file}, {luts}")
-
-        ## Prepare template values
-
+        # Prepare template values
         vals = {
             "aermodel": 1,
             "AOT550": 0.01,
@@ -249,13 +253,13 @@ class SixSRT(RadiativeTransferEngine):
                 vals["AOT550"] = vals["AERFRAC_2"]
 
         # Write sim files
-        with open(luts, "w") as f:
+        with open(inpt, "w") as f:
             template = SIXS_TEMPLATE.format(**vals)
             f.write(template)
 
         with open(bash, "w") as f:
             f.write("#!/usr/bin/bash\n")
-            f.write(f"{sixS} < {luts} > {file}\n")
+            f.write(f"{sixS} < {inpt} > {outp}\n")
             f.write("cd $cwd\n")
 
         return f"bash {bash}"
