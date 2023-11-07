@@ -41,8 +41,12 @@ class Geometry:
         bg_rfl=None,
     ):
         # Set some benign defaults...
-        self.observer_zenith = None
-        self.observer_azimuth = None
+        self.observer_zenith = (
+            0  # REVIEW: pytest/test_geometry asserts 0, change to None?
+        )
+        self.observer_azimuth = (
+            0  # REVIEW: pytest/test_geometry asserts 0, change to None?
+        )
         self.solar_zenith = None
         self.solar_azimuth = None
         self.observer_altitude_km = None
@@ -71,13 +75,14 @@ class Geometry:
             # self.OBSZEN = 180.0 - abs(self.observer_zenith)  # MODTRAN convention?
             # self.RELAZ = self.observer_azimuth - self.solar_azimuth + 180.0
             # self.TRUEAZ = self.observer_azimuth  # MODTRAN convention?
-            # self.umu = np.cos(self.observer_zenith / 360.0 * 2.0 * np.pi)  # Libradtran
             self.cos_i = obs[8]  # cosine of eSZA
             self.relative_azimuth = self.observer_azimuth - self.solar_azimuth + 180.0
 
         # The 'loc' object is a list-like object that optionally contains
         # latitude and longitude information about the surface being
         # observed.
+        self.latitude = None
+        self.longitude = None
         if loc is not None:
             self.surface_elevation_km = loc[2] / 1000.0
             self.latitude = loc[1]  # Northing

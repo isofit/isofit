@@ -60,7 +60,8 @@ class RadiativeTransferEngine:
         "thermal_downwelling",
     ]
     # These keys are filled with zeros instead of NaNs
-    zeros = ["transm_down_dir", "transm_up_dif"]
+    zeros = ["transm_down_dir", "transm_down_dif", "transm_up_dir", "transm_up_dif"]
+
     ## End LUT keys --
 
     # These are retrieved from the geom object

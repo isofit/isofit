@@ -40,7 +40,7 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
 
         self._engine_name_type = str
         self.engine_name = None
-        """str: Name of radiative transfer engine to use - options ['modtran', 'libradtran', '6s']."""
+        """str: Name of radiative transfer engine to use - options ['modtran', '6s', 'sRTMnet']."""
 
         self._engine_base_dir_type = str
         self.engine_base_dir = None
@@ -199,7 +199,7 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
                         )
                     )
 
-        valid_rt_engines = ["modtran", "libradtran", "6s", "sRTMnet"]
+        valid_rt_engines = ["modtran", "6s", "sRTMnet"]
         if self.engine_name not in valid_rt_engines:
             errors.append(
                 "radiative_transfer->raditive_transfer_model: {} not in one of the"

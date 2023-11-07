@@ -31,7 +31,7 @@ from isofit.radiative_transfer.modtran import ModtranRT
 def pasadena_config():
     """Get config file from the Pasadena example."""
     config_file = (
-        f"{isofit.root}/../examples/20171108_Pasadena/configs/ang20171108t184227_beckmanlawn-multimodtran"
+        f"{isofit.root}/examples/20171108_Pasadena/configs/ang20171108t184227_beckmanlawn-multimodtran"
         f"-topoflux.json"
     )
 
@@ -64,7 +64,7 @@ def test_combined(config_file, request):
 
     # First, we don't provide a prebuilt LUT and run simulations based on a given LUT grid
     print("Run radiative transfer simulations.")
-    rt_engine.run_simulations()
+    rt_engine.runSimulations()
     del rt_engine
 
     # Second, we use the just built LUT file and initialize the engine class again
