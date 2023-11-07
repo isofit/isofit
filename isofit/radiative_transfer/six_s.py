@@ -72,11 +72,9 @@ class SixSRT(RadiativeTransferEngine):
 
         super().__init__(engine_config, **kwargs)
 
-        # Post initialization
-        self.esd = np.loadtxt(self.earth_sun_distance_path)
-        dt = datetime(2000, self.engine_config.month, self.engine_config.day)
-        self.day_of_year = dt.timetuple().tm_yday
-        self.irr_factor = self.esd[self.day_of_year - 1, 1]
+        # If the LUT file already exists, still need to calc this post init
+        if not hasattr(self, "esd"):
+            self.load_esd()
 
     def makeSim(self, point: np.array, template_only: bool = False):
         """ """
@@ -176,13 +174,15 @@ class SixSRT(RadiativeTransferEngine):
         """
         Update solar_irr after simulations
         """
+        self.load_esd()
+
         irr = np.loadtxt(self.engine_config.irradiance_file, comments="#")
         iwl, irr = irr.T
         irr = irr / 10.0  # convert, uW/nm/cm2
         irr = irr / self.irr_factor**2  # consider solar distance
-        self.solar_irr = resample_spectrum(irr, iwl, self.wl, self.fwhm)
+        solar_irr = resample_spectrum(irr, iwl, self.wl, self.fwhm)
 
-        return {"solar_irr": self.solar_irr}
+        return {"solar_irr": solar_irr}
 
     def rebuild_cmd(self, point) -> str:
         """Build the simulation command file.
@@ -263,3 +263,12 @@ class SixSRT(RadiativeTransferEngine):
             f.write("cd $cwd\n")
 
         return f"bash {bash}"
+
+    def load_esd(self):
+        """
+        Loads the earth-sun distance file
+        """
+        self.esd = np.loadtxt(self.earth_sun_distance_path)
+        dt = datetime(2000, self.engine_config.month, self.engine_config.day)
+        self.day_of_year = dt.timetuple().tm_yday
+        self.irr_factor = self.esd[self.day_of_year - 1, 1]

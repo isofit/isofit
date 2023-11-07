@@ -101,6 +101,9 @@ class RadiativeTransferEngine:
         isofit.root, "data", "earth_sun_distance.txt"
     )
 
+    # These properties enable easy access to the lut data
+    solar_irr = property(lambda self: self["solar_irr"])
+
     def __init__(
         self,
         engine_config: RadiativeTransferEngineConfig,
@@ -255,6 +258,11 @@ class RadiativeTransferEngine:
     @property
     def fwhm(self):
         return self["fwhm"]
+
+    def reload_lut(self):
+        """
+        Reloads self.lut and
+        """
 
     def build_interpolators(self):
         """
