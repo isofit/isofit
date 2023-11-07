@@ -64,7 +64,7 @@
           "multipart_transmittance": true,
           "wavelength_range":[370,2505],
           "sim_path": "../lut_multi/",
-          "lut_path": "../lut/ang20171108t184227_uncert_v2p11_BeckmanLawn.nc",
+          "lut_path": "../lut/ang20171108t184227_uncert_v2p11_BeckmanLawn-multimodtran-topoflux.nc",
           "template_file": "ang20171108t184227_multimodtran.json",
           "lut_names": ["H2OSTR", "AOT550" ]
         }
