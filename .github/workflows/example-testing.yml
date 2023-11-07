@@ -28,7 +28,7 @@ jobs:
     - name: Install Isofit
       run: |
         echo PATH=/home/ray/anaconda3/envs/isofit/bin/:$PATH >> $GITHUB_ENV
-        pip install --no-deps --editable .
+        pip install --no-deps --force-reinstall --editable .
 
     - name: 20151026_SantaMonica
       run: |

@@ -102,6 +102,9 @@ class RadiativeTransferEngine:
     )
 
     # These properties enable easy access to the lut data
+    wl = property(lambda self: self["wl"])
+    fwhm = property(lambda self: self["fwhm"])
+    coszen = property(lambda self: self["coszen"])
     solar_irr = property(lambda self: self["solar_irr"])
 
     def __init__(
@@ -250,14 +253,6 @@ class RadiativeTransferEngine:
     @property
     def lut_interp_types(self):
         return np.array([self.angular_lut_keys.get(key, "n") for key in self.lut_names])
-
-    @property
-    def wl(self):
-        return self["wl"]
-
-    @property
-    def fwhm(self):
-        return self["fwhm"]
 
     def reload_lut(self):
         """
