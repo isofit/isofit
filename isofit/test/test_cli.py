@@ -12,7 +12,7 @@ import pytest
 import requests
 from click.testing import CliRunner
 
-from isofit import cli
+from isofit import cli, root
 from isofit.utils import surface_model
 
 # Environment variables
@@ -40,15 +40,14 @@ def surface(cube_example):
     """
     Generates the surface.mat file
     """
-    # Find the local installation path to find config and data files
-    path = pathlib.Path(__file__).parent
     outp = str(cube_example / "surface.mat")
 
     # Generate the surface.mat using the image_cube example config
     # fmt: off
+    isofit = pathlib.Path(root)
     surface_model(
-        config_path     = str((path/"../../examples/20171108_Pasadena/configs/ang20171108t184227_surface.json").resolve()),
-        wavelength_path = str((path/"../../examples/20171108_Pasadena/remote/20170320_ang20170228_wavelength_fit.txt").resolve()),
+        config_path     = str(isofit / "examples/20171108_Pasadena/configs/ang20171108t184227_surface.json"),
+        wavelength_path = str(isofit / "examples/20171108_Pasadena/remote/20170320_ang20170228_wavelength_fit.txt"),
         output_path     = outp
     )
     # fmt: on
