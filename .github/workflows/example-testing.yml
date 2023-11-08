@@ -2,61 +2,51 @@
 #   Bash shells do not use ~/.profile or ~/.bashrc so these shells need to be explicitely declared as shell: bash -el {0}
 #   https://github.com/marketplace/actions/setup-miniconda#important
 #
-name: Example Tests
+name: Examples
 
 on: [push, pull_request]
 
 jobs:
-  examples:
+  tests:
     runs-on: ubuntu-latest
     defaults:
       run:
-        shell: bash -el {0}
+        shell: bash -l {0}
     container:
-      image: jammont/isofit:latest
-      env:
-        ENV_NAME: test
+      image: jammont/isofit:amd64
+      options: --user root
 
     steps:
+    - name: Debugging
+      run: |
+        du --max-depth=1 -h /__w/
+        df -h
+
     - name: Checkout
       uses: actions/checkout@v2
 
     - name: Install Isofit
       run: |
-        source /root/.bashrc
-        pip install --editable .
+        echo PATH=/home/ray/anaconda3/envs/isofit/bin/:$PATH >> $GITHUB_ENV
+        pip install --no-deps --editable .
 
-    # - name: Running Example - image_cube/small
-    #   run: |
-    #     cd examples/image_cube
-    #     bash run_small.sh
-    #
-    # - name: Running Example - image_cube/medium
-    #   run: |
-    #     cd examples/image_cube
-    #     bash run_medium.sh
-
-    - name: Running Example - 20151026_SantaMonica
+    - name: 20151026_SantaMonica
       run: |
-        source /root/.bashrc
         cd examples/20151026_SantaMonica
         bash run_examples.sh
 
-    - name: Running Example - 20171108_Pasadena
+    - name: 20171108_Pasadena
       run: |
-        source /root/.bashrc
         cd examples/20171108_Pasadena
         bash run_example_modtran.sh
         python run_topoflux_example.py
 
-    - name: Running Example - 20190806_ThermalIR
+    - name: 20190806_ThermalIR
       run: |
-        source /root/.bashrc
         cd examples/20190806_ThermalIR
         python run_example_modtran_one.py
 
-    - name: Running Example - profiling_cube/small
+    - name: profiling_cube/small
       run: |
-        source /root/.bashrc
         cd examples/profiling_cube
         ISOFIT_DEBUG=1 python run_profiling.py
