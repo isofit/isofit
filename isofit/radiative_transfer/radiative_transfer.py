@@ -180,7 +180,8 @@ class RadiativeTransfer:
             E_d = E_dd + E_ds
             L_sky = x_surface[-2] * E_dd + x_surface[-1] * E_ds
 
-            glint = 0.02 * (L_sky / E_d)
+            rho_ls = 0.02  # fresnel reflectance factor (approx. 0.02 for nadir view)
+            glint = rho_ls * (L_sky / E_d)
 
             ret = (
                 L_atm
@@ -255,7 +256,8 @@ class RadiativeTransfer:
             E_d = E_dd + E_ds
             L_sky = x_surface[-2] * E_dd + x_surface[-1] * E_ds
 
-            glint = 0.02 * (L_sky / E_d)
+            rho_ls = 0.02  # fresnel reflectance factor (approx. 0.02 for nadir view)
+            glint = rho_ls * (L_sky / E_d)
 
             drho_scaled_for_multiscattering_drfl = (
                 1.0 / (1 - r["sphalb"] * (rfl + glint)) ** 2

@@ -266,10 +266,16 @@ def invert_analytical(
     Sa_surface = Sa_surface[winidx, :][:, winidx]
 
     if fm.RT.glint_model:
-        Sigma = np.zeros((248, 248))
-        Sigma[:246, :246] = Sa_surface
-        f = np.diag([1000000**2, 1000000**2])
-        Sigma[-2:, -2:] = f
+        # exclude the surface temperature from the prior covariance
+        Sigma = np.zeros(
+            (
+                len(meas) + len(fm.surface.f[0, 0, :]),
+                len(meas) + len(fm.surface.f[0, 0, :]),
+            )
+        )
+        Sigma[: len(meas), : len(meas)] = Sa_surface
+        f = np.diag(fm.surface.f[0, 0, :])
+        Sigma[len(meas) :, len(meas) :] = f
         Sa_inv = svd_inv_sqrt(Sigma, hash_table, hash_size)[0]
     else:
         Sa_inv = svd_inv_sqrt(Sa_surface, hash_table, hash_size)[0]
@@ -279,10 +285,8 @@ def invert_analytical(
     xa = xa_surface[winidx]
 
     if fm.RT.glint_model:
-        xa = np.append(xa, [0.02, 1 / np.pi])
+        xa = np.append(xa, fm.surface.init[fm.surface.glint_ind :])
         prprod = Sa_inv @ xa
-
-    if fm.RT.glint_model:
         # obtain needed RT vectors
         r = fm.RT.get_L_atm(x_RT, geom)[winidx]  # path radiance
         t1 = fm.RT.get_L_down_transmitted(x_RT, geom)[
@@ -293,8 +297,9 @@ def invert_analytical(
         t_down_dif = rtm_quant["t_down_dif"][winidx]  # downward diffuse transmittance
         t_down_total = t_down_dir + t_down_dif  # downward total transmittance
         s = rtm_quant["sphalb"][winidx]  # spherical albedo
-        g_dir = 0.02 * (t_down_dir / t_down_total)  # direct sky transmittance
-        g_dif = 0.02 * (t_down_dif / t_down_total)  # diffuse sky transmittance
+        rho_ls = 0.02  # fresnel reflectance factor (approx. 0.02 for nadir view)
+        g_dir = rho_ls * (t_down_dir / t_down_total)  # direct sky transmittance
+        g_dif = rho_ls * (t_down_dif / t_down_total)  # diffuse sky transmittance
 
         nl = len(r)
         H = np.zeros((nl, nl + 2))

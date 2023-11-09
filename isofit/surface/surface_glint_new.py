@@ -40,6 +40,7 @@ class GlintSurface(ThermalSurface):
         self.bounds.extend([[-1, 10], [0, 10]])  # Gege (2021), WASI user manual
         self.n_state = self.n_state + 2
         self.glint_ind = len(self.statevec_names) - 2
+        self.f = np.array([[(1000000 * np.array(self.scale[self.glint_ind :])) ** 2]])
 
     def xa(self, x_surface, geom):
         """Mean of prior distribution, calculated at state x."""
@@ -54,8 +55,7 @@ class GlintSurface(ThermalSurface):
         normalize the result for the calling function."""
 
         Cov = ThermalSurface.Sa(self, x_surface, geom)
-        f = np.array([[(1000000 * np.array(self.scale[self.glint_ind :])) ** 2]])
-        Cov[self.glint_ind :, self.glint_ind :] = f
+        Cov[self.glint_ind :, self.glint_ind :] = self.f
         return Cov
 
     def fit_params(self, rfl_meas, geom, *args):
