@@ -28,7 +28,8 @@ from scipy.linalg import block_diag, det, inv, norm, pinv, sqrtm
 
 from isofit.configs import Config
 from isofit.surface import (
-    GlintSurface,
+    AdditiveGlintSurface,
+    GlintModelSurface,
     LUTSurface,
     MultiComponentSurface,
     Surface,
@@ -86,8 +87,10 @@ class ForwardModel:
             self.surface = Surface(self.full_config)
         elif self.config.surface.surface_category == "multicomponent_surface":
             self.surface = MultiComponentSurface(self.full_config)
-        elif self.config.surface.surface_category == "glint_surface":
-            self.surface = GlintSurface(self.full_config)
+        elif self.config.surface.surface_category == "additive_glint_surface":
+            self.surface = AdditiveGlintSurface(self.full_config)
+        elif self.config.surface.surface_category == "glint_model_surface":
+            self.surface = GlintModelSurface(self.full_config)
         elif self.config.surface.surface_category == "thermal_surface":
             self.surface = ThermalSurface(self.full_config)
         elif self.config.surface.surface_category == "lut_surface":

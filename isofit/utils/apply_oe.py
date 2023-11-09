@@ -1413,7 +1413,7 @@ def build_presolve_config(
     else:
         engine_name = "sRTMnet"
 
-    if surface_category == "glint_surface":
+    if surface_category == "glint_model_surface":
         glint_model = True
         multipart_transmittance = True
     else:
@@ -1597,7 +1597,7 @@ def build_main_config(
     else:
         engine_name = "sRTMnet"
 
-    if surface_category == "glint_surface":
+    if surface_category == "glint_model_surface":
         glint_model = True
         multipart_transmittance = True
     else:
