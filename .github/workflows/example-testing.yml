@@ -17,18 +17,16 @@ jobs:
       options: --user root
 
     steps:
-    - name: Debugging
-      run: |
-        du --max-depth=1 -h /__w/
-        df -h
-
     - name: Checkout
       uses: actions/checkout@v2
 
-    - name: Install Isofit
+    - name: Enable ISOFIT Environment
       run: |
         echo PATH=/home/ray/anaconda3/envs/isofit/bin/:$PATH >> $GITHUB_ENV
-        pip install --no-deps --editable .
+
+    - name: Install Isofit
+      run: |
+        pip install --no-deps --force-reinstall --editable .
 
     - name: 20151026_SantaMonica
       run: |
