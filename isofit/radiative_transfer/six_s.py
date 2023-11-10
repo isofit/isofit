@@ -104,12 +104,12 @@ class SixSRT(RadiativeTransferEngine):
         """
         name = self.point_to_filename(point)
         file = os.path.join(self.sim_path, name)
-        luts = os.path.join(self.sim_path, f"LUT_{name}.inp")
+        inpt = os.path.join(self.sim_path, f"LUT_{name}.inp")
 
         with open(file, "r") as f:
             lines = f.readlines()
 
-        with open(luts, "r") as f:
+        with open(inpt, "r") as f:
             solzen = float(f.readlines()[1].strip().split()[0])
         coszen = np.cos(solzen / 360 * 2.0 * np.pi)
 
@@ -122,10 +122,15 @@ class SixSRT(RadiativeTransferEngine):
         for end, line in enumerate(lines):
             if start is not None:
                 # Find all ints/floats for this line
-                tokens = re.findall(r"(\d+\.?\d+)", line.replace("******", "0.0"))
+                tokens = re.findall(r"NaN|\d+\.?\d+", line.replace("******", "0.0"))
 
                 # End of table
                 if len(tokens) != 11:
+                    total = len(data["grid"])
+                    if total != self.wl.size:
+                        Logger.error(
+                            f"The following file parsed shorter than expected ({self.wl.size}), got ({total}): {file}"
+                        )
                     break
 
                 (  # Split the tokens
