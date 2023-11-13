@@ -127,7 +127,7 @@ class SixSRT(RadiativeTransferEngine):
                 # End of table
                 if len(tokens) != 11:
                     total = len(data["grid"])
-                    if total != self.wl.size:
+                    if total < self.wl.size:
                         Logger.error(
                             f"The following file parsed shorter than expected ({self.wl.size}), got ({total}): {file}"
                         )
