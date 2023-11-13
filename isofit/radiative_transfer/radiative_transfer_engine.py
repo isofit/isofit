@@ -174,7 +174,7 @@ class RadiativeTransferEngine:
 
             # If the parameters aren't provided, use the wavelengths file
             _wl, _fwhm = wl, fwhm
-            if [] in (wl, fwhm):
+            if not all([len(wl), len(fwhm)]):
                 Logger.debug(
                     f"WL or FWHM were not provided, using wavelength file: {self.wavelength_file}"
                 )
