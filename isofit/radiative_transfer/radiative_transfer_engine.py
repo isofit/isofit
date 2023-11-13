@@ -180,8 +180,14 @@ class RadiativeTransferEngine:
                 )
                 _wl, _fwhm = common.load_wavelen(self.wavelength_file)
                 if any(wl):
+                    Logger.debug(
+                        f"Override WL provided, using instead (size: {len(wl)})"
+                    )
                     _wl = wl
                 if any(fwhm):
+                    Logger.debug(
+                        f"Override FWHM provided, using instead (size: {len(fwhm)})"
+                    )
                     _fwhm = fwhm
 
             self.lut_names = engine_config.lut_names or lut_grid.keys()
