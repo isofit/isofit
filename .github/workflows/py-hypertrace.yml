@@ -7,31 +7,31 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        shell: bash -el {0}
+        shell: bash -l {0}
     container:
-      image: jammont/isofit:latest
-      env:
-        ENV_NAME: test
+      image: jammont/isofit:amd64
+      options: --user root
 
     steps:
     - name: Checkout
       uses: actions/checkout@v2
 
+    - name: Enable ISOFIT Environment
+      run: |
+        echo PATH=/home/ray/anaconda3/envs/isofit/bin/:$PATH >> $GITHUB_ENV
+
     - name: Install Isofit
       run: |
-        source /root/.bashrc
-        pip install --editable .
+        pip install --no-deps --force-reinstall --editable .
 
     - name: Download and extract hypertrace data
       run: |
-        source /root/.bashrc
         cd examples/py-hypertrace
-        curl -SLO https://github.com/ashiklom/isofit/releases/download/hypertrace-data/hypertrace-data.tar.gz
+        wget https://github.com/ashiklom/isofit/releases/download/hypertrace-data/hypertrace-data.tar.gz
         tar -xf hypertrace-data.tar.gz
 
     - name: Run Hypertrace
       run: |
-        source /root/.bashrc
         cd examples/py-hypertrace
         # Modify the workflow file for GitHub actions
         python workflow.py configs/example-srtmnet-ci.json
