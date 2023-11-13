@@ -39,11 +39,12 @@
           "TRUEAZ": 0
         },
         "SURFACE": {
-          "SURFTYPE": "REFL_CONSTANT",
-          "SURREF": 0,
+          "SURFTYPE": "REFL_LAMBER_MODEL",
           "GNDALT": 0.35,
           "NSURF": 1,
-          "SALBFL": ""
+          "SURFP": {
+            "CSALB": "LAMB_CONST_0_PCT"
+          }
         },
         "SPECTRAL": {
           "V1": 350.0,
