@@ -593,20 +593,20 @@ class ModtranRT(RadiativeTransferEngine):
         # Set the H2OSTR value as arbitrarily high - 50 g/cm2 in this case
         point[self.lut_names.index("H2OSTR")] = 50
 
-        filebase = os.path.join(self.lut_dir, "H2O_bound_test")
+        filebase = os.path.join(self.sim_path, "H2O_bound_test")
         cmd = self.rebuild_cmd(point, filebase)
 
         # Run MODTRAN for up to 10 seconds - this should be plenty of time
-        if os.path.isdir(self.lut_dir) is False:
-            os.mkdir(self.lut_dir)
+        if os.path.isdir(self.sim_path) is False:
+            os.mkdir(self.sim_path)
         try:
-            subprocess.call(cmd, shell=True, timeout=10, cwd=self.lut_dir)
+            subprocess.call(cmd, shell=True, timeout=10, cwd=self.sim_path)
         except:
             pass
 
         max_water = None
         with open(
-            os.path.join(self.lut_dir, filebase + ".tp6"), errors="ignore"
+            os.path.join(self.sim_path, filebase + ".tp6"), errors="ignore"
         ) as tp6file:
             for count, line in enumerate(tp6file):
                 if "The water column is being set to the maximum" in line:
@@ -629,7 +629,7 @@ class ModtranRT(RadiativeTransferEngine):
 
         # Check rebuild conditions: LUT is missing or from a different config
         infilename = "LUT_" + filename_base + ".json"
-        infilepath = os.path.join(self.lut_dir, "LUT_" + filename_base + ".json")
+        infilepath = os.path.join(self.sim_path, "LUT_" + filename_base + ".json")
 
         if not self.required_results_exist(filename_base):
             rebuild = True
@@ -662,12 +662,10 @@ class ModtranRT(RadiativeTransferEngine):
         )
         return cmd
 
-    def required_results_exist(self, point):
-
-        filename_base = self.point_to_filename(point)
-        infilename = os.path.join(self.lut_dir, "LUT_" + filename_base + ".json")
-        outchnname = os.path.join(self.lut_dir, filename_base + ".chn")
-        outtp6name = os.path.join(self.lut_dir, filename_base + ".tp6")
+    def required_results_exist(self, filename_base):
+        infilename = os.path.join(self.sim_path, "LUT_" + filename_base + ".json")
+        outchnname = os.path.join(self.sim_path, filename_base + ".chn")
+        outtp6name = os.path.join(self.sim_path, filename_base + ".tp6")
 
         if (
             os.path.isfile(infilename)
