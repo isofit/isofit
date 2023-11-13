@@ -411,12 +411,11 @@ class RadiativeTransferEngine:
         pre = self.preSim()
 
         if pre:
-            for key in pre:
-                print(f"{key}: {pre[key].size}")
             Logger.info("Saving pre-sim data")
             luts.updatePoint(file=self.lut_path, data=pre)
 
         # Make the LUT calls (in parallel if specified)
+        Logger.info("Executing parallel simulations")
         results = ray.get(
             [
                 streamSimulation.remote(
