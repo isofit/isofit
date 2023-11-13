@@ -76,6 +76,17 @@ class SixSRT(RadiativeTransferEngine):
         if not hasattr(self, "esd"):
             self.load_esd()
 
+    def preSim(self):
+        """
+        Check that 6S is installed
+        """
+        sixS = os.path.join(self.engine_base_dir, "sixsV2.1")  # 6S Emulator path
+
+        if not os.path.exists(sixS):
+            Logger.error(
+                f"6S path not valid, downstream simulations will be broken: {sixS}"
+            )
+
     def makeSim(self, point: np.array, template_only: bool = False):
         """ """
         # Retrieve the files to process

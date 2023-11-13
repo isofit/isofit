@@ -615,4 +615,6 @@ def streamSimulation(
     data = reader(point)
 
     # Save the results to our LUT format
-    luts.updatePoint(output, lut_names, point, data)
+    if data:
+        Logger.debug(f"Updating data point {point} for keys: {data.keys()}")
+        luts.updatePoint(output, lut_names, point, data)
