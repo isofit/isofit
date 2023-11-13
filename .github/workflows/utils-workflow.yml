@@ -22,7 +22,7 @@ jobs:
 
     - name: Install Isofit
       run: |
-        pip install --no-deps .
+        pip install --no-deps --force-reinstall --editable .
 
     - name: Check Utils
       run: |
@@ -58,7 +58,7 @@ jobs:
 
     - name: Install Isofit
       run: |
-        pip install --no-deps .
+        pip install --no-deps --force-reinstall --editable .
 
     - name: Run Test
       run: |
