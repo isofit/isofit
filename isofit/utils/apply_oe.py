@@ -121,12 +121,12 @@ def apply_oe(args):
         "emit",
         "hyp",
         "prisma",
-        "enmap",
+        "av3",
     ]:
         if args.sensor[:3] != "NA-":
             raise ValueError(
                 'argument sensor: invalid choice: "NA-test" (choose from '
-                '"ang", "avcl", "neon", "prism", "emit", "hyp", "prisma", "enmap", "NA-*")'
+                '"ang", "avcl", "neon", "prism", "emit", "av3", "NA-*")'
             )
 
     if args.num_neighbors is not None and len(args.num_neighbors) > 1:
@@ -191,6 +191,8 @@ def apply_oe(args):
     if args.sensor == "ang":
         # parse flightline ID (AVIRIS-NG assumptions)
         dt = datetime.strptime(paths.fid[3:], "%Y%m%dt%H%M%S")
+    elif args.sensor == "av3":
+        dt = datetime.strptime(paths.fid[3:], "%Y%m%dt%H%M%S")
     elif args.sensor == "avcl":
         # parse flightline ID (AVIRIS-CL assumptions)
         dt = datetime.strptime("20{}t000000".format(paths.fid[1:7]), "%Y%m%dt%H%M%S")
@@ -199,8 +201,6 @@ def apply_oe(args):
     elif args.sensor == "prism":
         dt = datetime.strptime(paths.fid[3:], "%Y%m%dt%H%M%S")
     elif args.sensor == "prisma":
-        dt = datetime.strptime(paths.fid, "%Y%m%d%H%M%S")
-    elif args.sensor == "enmap":
         dt = datetime.strptime(paths.fid, "%Y%m%d%H%M%S")
     elif args.sensor == "emit":
         dt = datetime.strptime(paths.fid[:19], "emit%Y%m%dt%H%M%S")
@@ -574,10 +574,10 @@ class Pathnames:
         elif args.sensor == "prism":
             self.fid = split(args.input_radiance)[-1][:18]
             logging.info("Flightline ID: %s" % self.fid)
-        elif args.sensor == "prisma":
-            self.fid = args.input_radiance.split("/")[-1].split("_")[1]
+        elif args.sensor == "av3":
+            self.fid = split(args.input_radiance)[-1][:18]
             logging.info("Flightline ID: %s" % self.fid)
-        elif args.sensor == "enmap":
+        elif args.sensor == "prisma":
             self.fid = args.input_radiance.split("/")[-1].split("_")[1]
             logging.info("Flightline ID: %s" % self.fid)
         elif args.sensor == "avcl":
@@ -733,6 +733,13 @@ class Pathnames:
             if self.input_model_discrepancy_path is None:
                 self.input_model_discrepancy_path = join(
                     self.isofit_path, "data", "emit_model_discrepancy.mat"
+                )
+        elif args.sensor == "av3":
+            self.noise_path = None
+            logging.info("no noise path found, proceeding without")
+            if self.input_channelized_uncertainty_path is None:
+                self.input_channelized_uncertainty_path = join(
+                    self.isofit_path, "data", "av3_osf_uncertainty.txt"
                 )
         else:
             self.noise_path = None
