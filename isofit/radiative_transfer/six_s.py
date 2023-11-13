@@ -163,6 +163,10 @@ class SixSRT(RadiativeTransferEngine):
             elif line.startswith("*        trans  down   up"):
                 start = end
 
+        if start is None:
+            Logger.error(f"Failed to parse any data for point: {point}")
+            return {}
+
         # Cast to numpy and trim excess
         data = {k: np.array(v)[: self.wl.size] for k, v in data.items()}
 
