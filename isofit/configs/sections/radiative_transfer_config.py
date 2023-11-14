@@ -264,11 +264,10 @@ class RadiativeTransferConfig(BaseConfigSection):
         self.interpolator_style = "mlg"
         """str: Style of interpolation. This argument is in the format [type][-k], eg:
         - rg    = RegularGrid
-        - nds-k = NDSplines with K degrees
         - mlg   = Multilinear Grid
         Speed performance:
-            mlg >> stacked rg > unstacked nds > stacked nds >> unstacked rg
-        Caching provides significant gains for rg and nds, marginal for mlg"""
+            mlg >> stacked rg > unstacked rg
+        Caching provides significant gains for rg, marginal for mlg"""
 
         self._overwrite_interpolator_type = bool
         self.overwrite_interpolator = False
