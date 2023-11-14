@@ -16,7 +16,7 @@ dependencies:
   - protobuf>3.19.0
   - pygrib
   - pytest>=3.5.1
-  - python-xxhash <3
+  - python-xxhash<3
   - pyyaml>=5.1.2
   - ray-default
   - scikit-image>=0.17.0
