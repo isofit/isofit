@@ -389,11 +389,8 @@ class RadiativeTransferEngine:
         point = np.zeros(self.n_point)
 
         point[self.indices.x_RT] = x_RT
-
-        if self.indices.geom:
-            point[self.indices.geom] = np.array(
-                [getattr(geom, key) for key in self.indices.x_RT]
-            )
+        for i, key in self.indices.geoms.items():
+            point[i] = getattr(geom, key)
 
         return self.interpolate(point)
 
