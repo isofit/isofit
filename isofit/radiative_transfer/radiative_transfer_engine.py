@@ -73,17 +73,6 @@ class RadiativeTransferEngine:
         "relative_azimuth",
         "observer_altitude_km",
         "surface_elevation_km",
-    ] + [  # TODO: These are the old v2.10 keys, please update apply_oe to use the new keys above
-        "OBSZEN",
-        "GNDALT",
-        "H1ALT",
-        "viewzen",
-        "viewaz",
-        "solaz",
-        "solzen",
-        "TRUEAZ",
-        "phi",
-        "umu",
     ]
     # ...
     angular_lut_keys_degrees = [
@@ -253,7 +242,7 @@ class RadiativeTransferEngine:
 
             # Hidden assumption: geometry keys come first, then come RTE keys
             self.geometry_input_names = set(self.geometry_input_names) - set(
-                engine_config.statevec_names
+                engine_config.statevector_names
             )
             self.indices.geom = {
                 i: key

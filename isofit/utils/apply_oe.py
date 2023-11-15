@@ -1661,11 +1661,11 @@ def build_main_config(
         ] = elevation_lut_grid.tolist()
     if to_sensor_azimuth_lut_grid is not None:
         radiative_transfer_config["lut_grid"][
-            "TRUEAZ"
+            "observer_azimuth"
         ] = to_sensor_azimuth_lut_grid.tolist()
     if to_sensor_zenith_lut_grid is not None:
         radiative_transfer_config["lut_grid"][
-            "OBSZEN"
+            "observer_zenith"
         ] = to_sensor_zenith_lut_grid.tolist()  # modtran convension
 
     # add aerosol elements from climatology
