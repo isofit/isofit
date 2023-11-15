@@ -619,8 +619,11 @@ def streamSimulation(
         for attempt in range(1, 11):
             try:
                 luts.updatePoint(output, lut_names, point, data)
+                break
             except Exception as e:
                 Logger.error(f"Attempt {attempt} failed to insert {point}, error: {e}")
-                time.sleep(1)
+                time.sleep(np.random.rand() * 2)
+        else:
+            raise RuntimeError(f"Critical failure, could not insert point: {point}")
     else:
         Logger.warning(f"No data was returned for point {point}")
