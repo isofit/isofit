@@ -253,8 +253,8 @@ class RadiativeTransferEngine:
 
             # Hidden assumption: geometry keys come first, then come RTE keys
             self.indices.geom = {
-                self.geometry_input_names.index(key): key
-                for key in self.lut_names
+                i: key
+                for i, key in enumerate(self.lut_names)
                 if key in self.geometry_input_names
             }
             # If it wasn't a geom key, it's x_RT
