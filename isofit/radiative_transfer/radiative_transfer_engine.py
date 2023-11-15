@@ -252,6 +252,9 @@ class RadiativeTransferEngine:
             self.indices = SimpleNamespace()
 
             # Hidden assumption: geometry keys come first, then come RTE keys
+            self.geometry_input_names = set(self.geometry_input_names) - set(
+                engine_config.statevec_names
+            )
             self.indices.geom = {
                 i: key
                 for i, key in enumerate(self.lut_names)
@@ -389,7 +392,7 @@ class RadiativeTransferEngine:
         point = np.zeros(self.n_point)
 
         point[self.indices.x_RT] = x_RT
-        for i, key in self.indices.geoms.items():
+        for i, key in self.indices.geom.items():
             point[i] = getattr(geom, key)
 
         return self.interpolate(point)
