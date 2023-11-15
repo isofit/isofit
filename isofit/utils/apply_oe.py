@@ -1615,7 +1615,7 @@ def build_main_config(
         }
 
     if pressure_elevation:
-        radiative_transfer_config["statevector"]["GNDALT"] = {
+        radiative_transfer_config["statevector"]["surface_elevation_km"] = {
             "bounds": [elevation_lut_grid[0], elevation_lut_grid[-1]],
             "scale": 100,
             "init": (elevation_lut_grid[1] + elevation_lut_grid[-1]) / 2.0,
@@ -1656,7 +1656,9 @@ def build_main_config(
     if h2o_lut_grid is not None:
         radiative_transfer_config["lut_grid"]["H2OSTR"] = h2o_lut_grid.tolist()
     if elevation_lut_grid is not None:
-        radiative_transfer_config["lut_grid"]["GNDALT"] = elevation_lut_grid.tolist()
+        radiative_transfer_config["lut_grid"][
+            "surface_elevation_km"
+        ] = elevation_lut_grid.tolist()
     if to_sensor_azimuth_lut_grid is not None:
         radiative_transfer_config["lut_grid"][
             "TRUEAZ"

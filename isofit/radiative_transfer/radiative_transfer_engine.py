@@ -73,6 +73,17 @@ class RadiativeTransferEngine:
         "relative_azimuth",
         "observer_altitude_km",
         "surface_elevation_km",
+    ] + [  # TODO: These are the old v2.10 keys, please update apply_oe to use the new keys above
+        "OBSZEN",
+        "GNDALT",
+        "H1ALT",
+        "viewzen",
+        "viewaz",
+        "solaz",
+        "solzen",
+        "TRUEAZ",
+        "phi",
+        "umu",
     ]
     # ...
     angular_lut_keys_degrees = [
@@ -621,7 +632,9 @@ def streamSimulation(
                 luts.updatePoint(output, lut_names, point, data)
                 break
             except Exception as e:
-                Logger.error(f"Attempt {attempt} failed to insert {point}, error: {e}")
+                Logger.error(
+                    f"Attempt {attempt} failed to insert point({point}), error: {e}"
+                )
                 time.sleep(np.random.rand() * 2)
         else:
             raise RuntimeError(f"Critical failure, could not insert point: {point}")
