@@ -231,7 +231,7 @@ class RadiativeTransferEngine:
         self.n_point = len(self.lut_names)
 
         # Simple 1-item cache for rte.interpolate()
-        self.cached = SimpleNamespace(point=np.zeros(self.n_point))
+        self.cached = SimpleNamespace(point=np.array([]))
 
         # Attach interpolators
         if build_interpolators:
@@ -390,7 +390,7 @@ class RadiativeTransferEngine:
         """
         Compiles the results of the interpolators for a given point
         """
-        if (point == self.cached.point).all():
+        if self.cached.point.size and (point == self.cached.point).all():
             return self.cached.value
 
         # Run the interpolators
@@ -616,6 +616,11 @@ def streamSimulation(
     # Save the results to our LUT format
     if data:
         Logger.debug(f"Updating data point {point} for keys: {data.keys()}")
-        luts.updatePoint(output, lut_names, point, data)
+        for attempt in range(1, 11):
+            try:
+                luts.updatePoint(output, lut_names, point, data)
+            except Exception as e:
+                Logger.error(f"Attempt {attempt} failed to insert {point}, error: {e}")
+                time.sleep(1)
     else:
         Logger.warning(f"No data was returned for point {point}")
