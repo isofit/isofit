@@ -271,7 +271,7 @@ class Worker(object):
                     meas *= self.radiance_correction
                 if np.all(meas < 0):
                     continue
-                x_RT = rt_state[r, c, :]
+                x_RT = rt_state[r, c, self.fm.idx_RT-len(self.fm.surface.idx_lamb)]
                 geom = Geometry(obs=obs[r, c, :], loc=loc[r, c, :])
 
                 states, unc = invert_analytical(
