@@ -137,11 +137,6 @@ class SixSRT(RadiativeTransferEngine):
 
                 # End of table
                 if len(tokens) != 11:
-                    total = len(data["grid"])
-                    if total < self.wl.size:
-                        Logger.error(
-                            f"The following file parsed shorter than expected ({self.wl.size}), got ({total}): {file}"
-                        )
                     break
 
                 (  # Split the tokens
@@ -159,7 +154,7 @@ class SixSRT(RadiativeTransferEngine):
                 ) = tokens
 
                 # Preprocess the tokens and prepare to save them to LUT
-                transm = float(scau) * float(scad) * float(gt)
+                # transm = float(scau) * float(scad) * float(gt)
 
                 append("grid", float(w))
                 append("sphalb", float(salb))
@@ -177,6 +172,12 @@ class SixSRT(RadiativeTransferEngine):
         if start is None:
             Logger.error(f"Failed to parse any data for point: {point}")
             return {}
+
+        total = len(data["grid"])
+        if total < self.wl.size:
+            Logger.error(
+                f"The following file parsed shorter than expected ({self.wl.size}), got ({total}): {file}"
+            )
 
         # Cast to numpy and trim excess
         data = {k: np.array(v)[: self.wl.size] for k, v in data.items()}
