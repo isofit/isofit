@@ -136,7 +136,7 @@ def apply_oe(args):
         args.copy_input_files = False
 
     logging.basicConfig(
-        format="%(levelname)s:%(asctime)s | %(name)s | %(filename)s:%(funcName)s() | %(message)s",
+        format="%(levelname)s:%(asctime)s || %(filename)s:%(funcName)s() | %(message)s",
         level=args.logging_level,
         filename=args.log_file,
         datefmt="%Y-%m-%d,%H:%M:%S",

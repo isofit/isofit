@@ -77,6 +77,25 @@ def initialize(
     return ds.stack(point=lut_grid).transpose("point", "wl")
 
 
+# TODO: Temporary locking lut files for updatePoint until a new solution is found
+import fcntl
+import hashlib
+
+
+class SystemMutex:
+    def __init__(self, name):
+        self.name = name
+
+    def __enter__(self):
+        lock_id = hashlib.md5(self.name.encode("utf8")).hexdigest()
+        self.fp = open(f"/tmp/.lock-{lock_id}.lck", "wb")
+        fcntl.flock(self.fp.fileno(), fcntl.LOCK_EX)
+
+    def __exit__(self, _type, value, tb):
+        fcntl.flock(self.fp.fileno(), fcntl.LOCK_UN)
+        self.fp.close()
+
+
 def updatePoint(
     file: str, lut_names: list = [], point: tuple = (), data: dict = {}
 ) -> None:
@@ -97,61 +116,62 @@ def updatePoint(
         solar_irr - Not along the point dimension, presently clobbers with
                     every new input
     """
-    with Dataset(file, "a") as nc:
-        # Retrieves the index for a point value
-        index = lambda key, val: np.argwhere(nc[key][:] == val)[0][0]
+    with SystemMutex("lock"):
+        with Dataset(file, "a") as nc:
+            # Retrieves the index for a point value
+            index = lambda key, val: np.argwhere(nc[key][:] == val)[0][0]
 
-        # Assume all keys will have the same dimensions in the same order, so just use a random key
-        key, _ = max(nc.variables.items(), key=lambda pair: len(pair[1].dimensions))
+            # Assume all keys will have the same dimensions in the same order, so just use a random key
+            key, _ = max(nc.variables.items(), key=lambda pair: len(pair[1].dimensions))
 
-        # nc[key].dimensions is ordered, nc.dimensions may be out of order
-        dims = nc[key].dimensions
-        inds = [-1] * len(dims)
-        for i, dim in enumerate(dims):
-            if dim == "wl":
-                # Wavelength uses all values
-                inds[i] = slice(None)
-            elif dim in lut_names:
-                # Retrieve the index of this point value
-                inds[i] = index(dim, point[lut_names.index(dim)])
-            else:
-                # Default to using the first index if key not in the lut_names
-                # This should only happen if you were updating an existing LUT with fewer point dimensions than exists
-                # REVIEW: Should we support this edge case? If we do, ought to add a `defaults={dim: index}` to control
-                # what the default index for dims are
-                # REVIEW: rte.postSim() may call this with lut_names=[], causing this to be hit each time
-                Logger.debug(
-                    f"Defaulting to index 0 for dimension {dim!r} because it is not in the lut_names: {lut_names}"
-                )
-                inds[i] = 0
-
-        Logger.debug(f"Writing to point {point!r}, resolved indices: {inds!r}")
-
-        # Now insert the values at this point
-        for key, values in data.items():
-            if key not in nc.variables:
-                Logger.error(f"Key doesn't exist in LUT file, skipping: {key}")
-
-            elif key == "wl":
-                assert np.isclose(nc[key][:], values).all(), (
-                    f"Input data wavelengths do not match existing wavelengths for file: {file}\n"
-                    + f"Expected: {nc[key][:]}\n"
-                    + f"Received: {values}"
-                )
-            else:
-                var = nc[key]
-                dim = len(var.dimensions)
-
-                # REVIEW: parallel safe to clobber?
-                if dim == 0:
-                    # Constant/scalar value
-                    var.assignValue(values)
-                elif dim == 1:
-                    # Not on the point dimension
-                    var[:] = values
+            # nc[key].dimensions is ordered, nc.dimensions may be out of order
+            dims = nc[key].dimensions
+            inds = [-1] * len(dims)
+            for i, dim in enumerate(dims):
+                if dim == "wl":
+                    # Wavelength uses all values
+                    inds[i] = slice(None)
+                elif dim in lut_names:
+                    # Retrieve the index of this point value
+                    inds[i] = index(dim, point[lut_names.index(dim)])
                 else:
-                    # Not a special case, save as-is
-                    var[inds] = values
+                    # Default to using the first index if key not in the lut_names
+                    # This should only happen if you were updating an existing LUT with fewer point dimensions than exists
+                    # REVIEW: Should we support this edge case? If we do, ought to add a `defaults={dim: index}` to control
+                    # what the default index for dims are
+                    # REVIEW: rte.postSim() may call this with lut_names=[], causing this to be hit each time
+                    Logger.debug(
+                        f"Defaulting to index 0 for dimension {dim!r} because it is not in the lut_names: {lut_names}"
+                    )
+                    inds[i] = 0
+
+            Logger.debug(f"Writing to point {point!r}, resolved indices: {inds!r}")
+
+            # Now insert the values at this point
+            for key, values in data.items():
+                if key not in nc.variables:
+                    Logger.error(f"Key doesn't exist in LUT file, skipping: {key}")
+
+                elif key == "wl":
+                    assert np.isclose(nc[key][:], values).all(), (
+                        f"Input data wavelengths do not match existing wavelengths for file: {file}\n"
+                        + f"Expected: {nc[key][:]}\n"
+                        + f"Received: {values}"
+                    )
+                else:
+                    var = nc[key]
+                    dim = len(var.dimensions)
+
+                    # REVIEW: parallel safe to clobber?
+                    if dim == 0:
+                        # Constant/scalar value
+                        var.assignValue(values)
+                    elif dim == 1:
+                        # Not on the point dimension
+                        var[:] = values
+                    else:
+                        # Not a special case, save as-is
+                        var[inds] = values
 
 
 def load(file: str, lut_names: list = []) -> xr.Dataset:
