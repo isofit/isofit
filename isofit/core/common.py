@@ -25,7 +25,6 @@ from collections import OrderedDict
 from os.path import expandvars
 from typing import List
 
-import ndsplines
 import numpy as np
 import scipy.linalg
 import xxhash
@@ -49,8 +48,7 @@ class VectorInterpolator:
         data_input: n dimensional array of radiative transfer engine outputs (each dimension size corresponds to the
                     given grid_input list length, with the last dimensions equal to the number of sensor channels)
         lut_interp_types: a list indicating if each dimension is in radiance (r), degrees (r), or normal (n) units.
-        version: version to use: 'rg' for scipy RegularGridInterpolator, 'nds-k' for ndsplines, where k is the
-                 degrees.
+        version: version to use: 'rg' for scipy RegularGridInterpolator, 'mlg' for multilinear grid interpolator
     """
 
     def __init__(
@@ -60,7 +58,7 @@ class VectorInterpolator:
         lut_interp_types: List[str],
         version="nds-1",
     ):
-        if version[:3] in ["rg", "nds"]:
+        if version[:3] == "rg":
             self.method = 1
 
             self.lut_interp_types = lut_interp_types
@@ -145,13 +143,6 @@ class VectorInterpolator:
                 self.itp = RegularGridInterpolator(
                     grid_aug, data, bounds_error=False, fill_value=None
                 )
-
-            # NDSplines
-            elif version[:3] == "nds":
-                degrees = int(version[4:])
-                grid_aug = grid + [np.arange(data.shape[-1]).tolist()]
-                grid_arr = np.stack(np.meshgrid(*grid_aug, indexing="ij"), axis=-1)
-                self.itp = ndsplines.make_interp_spline(grid_arr, data, degrees=degrees)
 
         # Multilinear Grid
         elif version == "mlg":
