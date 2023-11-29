@@ -50,6 +50,8 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         retrievals. Remote Sensing of Environment, 261:112476, 2021.doi: 10.1016/j.rse.2021.112476.
     """
 
+    _disable_makeSim = True
+
     lut_quantities = {
         "rhoatm",
         "sphalb",
@@ -116,12 +118,12 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             resample[key] = (("point", "wl"), interpolate(self.emu_wl))
 
         # Stack the quantities together along a new dimension named `quantity`
-        resample = resample.to_array("quantity").stack(stack=["wl", "quantity"])
+        resample = resample.to_array("quantity").stack(stack=["quantity", "wl"])
 
         ## Reduce from 3D to 2D by stacking along the wavelength dim for each quantity
         # Convert to DataArray to stack the variables along a new `quantity` dimension
         data = sim.lut[aux["rt_quantities"]]
-        data = data.to_array("quantity").stack(stack=["wl", "quantity"])
+        data = data.to_array("quantity").stack(stack=["quantity", "wl"])
 
         scaler = aux.get("response_scaler", 100.0)
 

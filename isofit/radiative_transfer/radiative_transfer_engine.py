@@ -41,6 +41,9 @@ Logger = logging.getLogger(__file__)
 
 
 class RadiativeTransferEngine:
+    # Allows engines to outright disable the parallelized sims if they do nothing
+    _disable_makeSim = False
+
     ## LUT Keys --
     # Constants, not along any dimension
     consts = ["coszen", "solzen"]
@@ -415,19 +418,22 @@ class RadiativeTransferEngine:
             luts.updatePoint(file=self.lut_path, data=pre)
 
         # Make the LUT calls (in parallel if specified)
-        Logger.info("Executing parallel simulations")
-        results = ray.get(
-            [
-                streamSimulation.remote(
-                    point,
-                    self.lut_names,
-                    self.makeSim,
-                    self.readSim,
-                    self.lut_path,
-                )
-                for point in self.points
-            ]
-        )
+        if not self._disable_makeSim:
+            Logger.info("Executing parallel simulations")
+            results = ray.get(
+                [
+                    streamSimulation.remote(
+                        point,
+                        self.lut_names,
+                        self.makeSim,
+                        self.readSim,
+                        self.lut_path,
+                    )
+                    for point in self.points
+                ]
+            )
+        else:
+            Logger.debug("makeSim is disabled for this engine")
 
         Logger.info(f"Running any post-sim functions")
         post = self.postSim()
