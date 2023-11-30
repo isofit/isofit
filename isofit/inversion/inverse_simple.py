@@ -365,7 +365,11 @@ def invert_analytical(
 
     if diag_uncert:
         full_unc = np.ones(len(x))
-        full_unc[winidx] = np.sqrt(np.diag(C_rcond))
+        if fm.RT.glint_model:
+            C_rcond_idx = np.concatenate((winidx, fm.idx_surface[-2:]), axis=0)
+            full_unc[C_rcond_idx] = np.sqrt(np.diag(C_rcond))
+        else:
+            full_unc[winidx] = np.sqrt(np.diag(C_rcond))
         return trajectory, full_unc
     else:
         return trajectory, C_rcond
