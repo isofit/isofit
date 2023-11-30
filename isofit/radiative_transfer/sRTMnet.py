@@ -50,8 +50,6 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         retrievals. Remote Sensing of Environment, 261:112476, 2021.doi: 10.1016/j.rse.2021.112476.
     """
 
-    _disable_makeSim = True
-
     lut_quantities = {
         "rhoatm",
         "sphalb",
