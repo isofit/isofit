@@ -107,7 +107,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         resample["wl"] = self.emu_wl
 
         # FIXME: Temporarily add transm until sRTMnet's aux file is updated
-        sim.lut["transm"] = sim.lut["transm_down_dir"]
+        sim.lut["transm"] = sim.lut["transm_down_dif"]
 
         # Interpolate the sim results from its wavelengths to the emulator wavelengths
         Logger.info("Interpolating simulator quantities to emulator size")
@@ -128,7 +128,8 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         # Now predict, scale, and add the interpolations
         Logger.info("Loading and predicting with emulator")
         emulator = keras.models.load_model(self.engine_config.emulator_file)
-        predicts = emulator.predict(data) / scaler
+        predicts = emulator.predict(data)
+        predicts /= scaler
         predicts += resample
 
         # Unstack back to a dataset and save
