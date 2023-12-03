@@ -268,7 +268,7 @@ class Worker(object):
             for c in range(output_state.shape[1]):
                 meas = rdn[r, c, :]
                 if self.radiance_correction is not None:
-                    meas *= self.radiance_correction
+                    meas = meas * self.radiance_correction
                 if np.all(meas < 0):
                     continue
                 x_RT = rt_state[r, c, :]
