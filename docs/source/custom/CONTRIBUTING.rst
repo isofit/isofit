@@ -172,6 +172,7 @@ Release Steps (for Maintainers)
 Releases should trigger a new PyPi upload, and subsequently a fresh upload to conda-forge.  Therefore,
 the revised steps for versioning are:
 
+* Submit version number change to setup.cfg in dev
 * Trigger a PR from dev to main
 * Accept the PR
 * Go to https://github.com/isofit/isofit/releases
