@@ -41,10 +41,9 @@ ISOFIT Profiling Examples
 
 ISOFIT comes with a few examples of generating profiling results found under `examples/profiling_cube`. This example is based on the `examples/image_cube/small_chunk`.
 
-`examples/profiling_cube` provides results for three different interpolation methods:
+`examples/profiling_cube` provides results for two different interpolation methods:
 
 - RegularGrid (rg)
-- NDSplines (nds)
 - Multilinear Grid (mlg)
 
 In terms of speed, mlg >> nds > rg. The example will run each interpolation method 5 times. The user may then compile the results for comparison.

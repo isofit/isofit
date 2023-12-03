@@ -18,7 +18,6 @@
 # Author: Jay E Fahlen, jay.e.fahlen@jpl.nasa.gov
 #
 
-import argparse
 import json
 import os
 import time
@@ -26,6 +25,7 @@ import urllib.request
 from copy import deepcopy
 from datetime import date, timedelta
 
+import click
 import numpy as np
 import pygrib
 
@@ -38,8 +38,8 @@ class HRRR_to_MODTRAN_profiles:
     filled with the correct run data, including time, lat/lon, etc.
     """
 
-    def __init__(self, config_filename):
-        self.config = deepcopy(json_load_ascii(config_filename))
+    def __init__(self, config_file):
+        self.config = deepcopy(json_load_ascii(config_file))
 
         self.modtran_config_filenames = self.config["modtran_config_json_filenames"]
         self.output_modtran_config_filenames = self.config[
@@ -326,14 +326,22 @@ def get_HRRR_data(filename):
     return lat, lon, geo_pot_height, temperature, rh, pressure_levels_Pa
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Create a surface model")
-    parser.add_argument("config", type=str, metavar="INPUT")
-    args = parser.parse_args()
-    h = HRRR_to_MODTRAN_profiles(args.config)
-    # config = json_load_ascii(args.config, shell_replace=True)
-    # configdir, configfile = split(abspath(args.config))
+@click.command(name="HRRR_to_modtran")
+@click.argument("config_file")
+def _cli(**kwargs):
+    """\
+    Adds HRRR profiles to MODTRAN
+    """
+    click.echo("Running adding HRRR profiles to MODTRAN")
+
+    HRRR_to_MODTRAN_profiles(**kwargs)
+
+    click.echo("Done")
 
 
 if __name__ == "__main__":
-    main()
+    _cli()
+else:
+    from isofit import cli
+
+    cli.add_command(_cli)
