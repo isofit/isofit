@@ -144,7 +144,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         # Convert our irradiance to date 0 then back to current date
         sol_irr = aux["solar_irr"]
         irr_ref = sim.esd[200, 1]  # Irradiance factor
-        irr_cur = sim.esd[config.day - 1, 1]  # Factor for current date
+        irr_cur = sim.esd[sim.day_of_year - 1, 1]  # Factor for current date
         sol_irr = sol_irr * irr_ref**2 / irr_cur**2
 
         # Insert these into the LUT file
