@@ -39,3 +39,6 @@ docs/html/_sources/
 
 # Ignore local testing directories
 local/
+
+# Additional external libraries
+6sv-2.1/
