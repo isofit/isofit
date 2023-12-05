@@ -42,3 +42,6 @@ local/
 
 # Additional external libraries
 6sv-2.1/
+
+# Data dependencies
+sRTMnet_v100/
