@@ -18,6 +18,9 @@ at the addresses given below, and we can coordinate efforts.  Our general policy
 is to for the maintainers to delegate technical authority to individuals to make
 changes and additions to specific topics.
 
+.. contents:: Table of Contents
+    :depth: 2
+
 
 Getting Started
 ---------------
@@ -43,6 +46,30 @@ example, if you are working on issue #314 you would run:
 .. code::
 
   git checkout -b 314-update-docs-libradtran
+
+
+Developer Environment
+---------------------
+
+ISOFIT has a number of dependencies that complicate setting up a developer
+environment. Ultimately the goal is to develop within a Python virtual
+environment with a compliant set of dependencies. While ISOFIT is a Python
+library with mostly pure-Python dependencies, some dependencies in turn require
+non-Python libraries. On Ubuntu, these dependencies can often be satisfied by
+``$ apt`` or ``$ apt-get``, and on MacOS the `Homebrew <https://brew.sh/>`_
+package manager is a common choice.
+
+Generally, the steps outlined in `setup-devenv.sh <setup-devenv.sh>`_ can be
+followed to create a virtual environment, but there are just too many variables
+to confidently provide a per-platform script to set up a developer environment.
+A good course of action is to follow that script, address any ``$ pip`` errors,
+and try to run some tests. GDAL in particular may install successfully but
+fail when running tests.
+
+The CI system can provide some guidance as well, but note that this system
+runs in isolation, so the exact commands are not necessarily appropriate to
+execute in your environment.
+
 
 Unit Tests
 ----------
