@@ -71,14 +71,14 @@ runs in isolation, so the exact commands are not necessarily appropriate to
 execute in your environment.
 
 
-Unit Tests
-----------
+Testing
+-------
 
-Unit tests are implemented in the tests/ subdirectory, and use the pytest library.  You can run the tests from the base directory simply by running:
-
-.. code::
-
-  pytest
+Tests live in `isofit/tests/ <isofit/tests/>`_, and are executed using
+``pytest``. Some tests require specific environment variables to be set, so
+the `run-tests.sh <run-tests.sh>`_ script can be used to invoke ``pytest`` with
+the appropriate environment variables. It is a drop-in replacement for the
+``$ pytest`` executable, so users can add flags as they wish.
 
 Our development strategy employs continuous integration and unit testing to validate all changes.  We appreciate your writing additional tests for new modifications or features.  In the interest of validating your code, please also be sure to run realistic examples like this:
 
