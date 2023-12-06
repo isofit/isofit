@@ -6,7 +6,8 @@ from unittest import mock
 import pytest
 from click.testing import CliRunner
 
-from isofit.core.isofit import Isofit, _cli
+from isofit import __main__
+from isofit.core.isofit import Isofit
 from isofit.utils import surface_model
 
 
@@ -27,7 +28,7 @@ def test_santa_monica(args, monkeypatch):
     surface_model("configs/prm20151026t173213_surface_coastal.json")
 
     runner = CliRunner()
-    result = runner.invoke(_cli, args, catch_exceptions=False)
+    result = runner.invoke(__main__, ["run"] + list(args), catch_exceptions=False)
 
     assert result.exit_code == 0
 
