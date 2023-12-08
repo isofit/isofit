@@ -160,7 +160,7 @@ if __name__ == '__main__':
                                             default = 'small',
                                             help    = 'Size of chunk to run'
     )
-    parser.add_argument('-m', '--method',   choices = ['mlg', 'rg', 'nds'],
+    parser.add_argument('-m', '--method',   choices = ['mlg', 'rg'],
                                             default = 'mlg',
                                             help    = 'Interpolation style to choose from'
     )
