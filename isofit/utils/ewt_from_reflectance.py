@@ -26,11 +26,11 @@ from types import SimpleNamespace
 
 import click
 import numpy as np
-import ray
 from matplotlib import pyplot as plt
 from osgeo import gdal
 from spectral.io import envi
 
+from isofit import ray
 from isofit.core.common import envi_header
 from isofit.core.fileio import write_bil_chunk
 from isofit.inversion.inverse_simple import invert_liquid_water
