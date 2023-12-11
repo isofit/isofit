@@ -49,7 +49,9 @@ def spawn_rt(cmd, local_dir=None):
     # starting simultaneously
     time.sleep(float(np.random.random(1)) * 2)
 
-    subprocess.call(cmd, shell=True, cwd=local_dir)
+    exit_code = subprocess.call(cmd, shell=True, cwd=local_dir)
+    if exit_code != 0:
+        raise subprocess.SubprocessError(cmd)
 
 
 ### Classes ###
