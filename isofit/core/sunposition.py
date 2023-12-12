@@ -36,17 +36,32 @@ class _sp:
 
     @staticmethod
     def calendar_time(dt):
-        """."""
+        """A tuple representing a timestamp.
 
-        try:
-            x = dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, dt.microsecond
-            return x
-        except AttributeError:
-            try:
-                # will raise OSError if dt is not acceptable
-                return _sp.calendar_time(datetime.utcfromtimestamp(dt))
-            except BaseException:
-                raise TypeError("dt must be datetime object or POSIX timestamp")
+        Parameters
+        ----------
+        dt : datetime.datetime or float
+            A Python datetime object, or a Unix timestamp. Unix timestamp is
+
+        Returns
+        -------
+        tuple
+            ``(year, month, ady, hour, minute, second, microsecond)``. All
+            integers except ``microsecond``, which is a ``float``.
+        """
+
+        if not isinstance(dt, datetime):
+            dt = datetime.utcfromtimestamp(dt)
+
+        return (
+            dt.year,
+            dt.month,
+            dt.day,
+            dt.hour,
+            dt.minute,
+            dt.second,
+            dt.microsecond,
+        )
 
     @staticmethod
     def julian_day(dt):
