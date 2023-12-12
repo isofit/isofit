@@ -637,8 +637,8 @@ class _sp:
         return dp, e
 
     @staticmethod
-    def abberation_correction(R):
-        """Calculate the abberation correction (delta_tau, in degrees) given the Earth Heliocentric Radius (in AU)."""
+    def aberration_correction(R):
+        """Calculate the aberration correction (delta_tau, in degrees) given the Earth Heliocentric Radius (in AU)."""
 
         return -20.4898 / (3600 * R)
 
@@ -649,7 +649,7 @@ class _sp:
         L, B, R = helio_pos
         theta = L + 180  # geocentric latitude
         beta = -B
-        ll = theta + delta_psi + _sp.abberation_correction(R)
+        ll = theta + delta_psi + _sp.aberration_correction(R)
         return ll, beta
 
     @staticmethod
