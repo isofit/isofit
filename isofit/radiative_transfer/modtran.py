@@ -37,7 +37,6 @@ from isofit.configs.sections.radiative_transfer_config import (
 from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
 
 from ..core.common import json_load_ascii, recursive_replace
-from ..radiative_transfer.look_up_tables import FileExistsError
 
 Logger = logging.getLogger(__file__)
 
@@ -47,6 +46,13 @@ eps = 1e-5  # used for finite difference derivative calculations
 tropopause_altitude_km = 17.0
 
 ### Classes ###
+
+
+class FileExistsError(Exception):
+    """FileExistsError with a message."""
+
+    def __init__(self, message):
+        super(FileExistsError, self).__init__(message)
 
 
 class ModtranRT(RadiativeTransferEngine):
