@@ -35,7 +35,7 @@ from isofit.configs.sections.radiative_transfer_config import (
 )
 from isofit.core import common
 from isofit.core.geometry import Geometry
-from isofit.utils import luts
+from isofit.radiative_transfer import luts
 
 Logger = logging.getLogger(__file__)
 
