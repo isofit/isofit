@@ -88,7 +88,16 @@ class SixSRT(RadiativeTransferEngine):
             )
 
     def makeSim(self, point: np.array, template_only: bool = False):
-        """ """
+        """
+        Perform 6S simulations
+
+        Parameters
+        ----------
+        point: np.array
+            Point to process
+        template_only: bool, default=False
+            Only write the simulation template then exit. If False, subprocess call 6S
+        """
         # Retrieve the files to process
         name = self.point_to_filename(point)
         outp = os.path.join(self.sim_path, name)
@@ -103,9 +112,14 @@ class SixSRT(RadiativeTransferEngine):
         if template_only is False:
             subprocess.call(cmd, shell=True)
 
-    def readSim(self, point):
+    def readSim(self, point: np.array):
         """
         Parses a 6S output simulation file for a given point
+
+        Parameters
+        ----------
+        point: np.array
+            Point to process
 
         Returns
         -------
@@ -115,81 +129,8 @@ class SixSRT(RadiativeTransferEngine):
         """
         name = self.point_to_filename(point)
         file = os.path.join(self.sim_path, name)
-        inpt = os.path.join(self.sim_path, f"LUT_{name}.inp")
 
-        with open(file, "r") as f:
-            lines = f.readlines()
-
-        with open(inpt, "r") as f:
-            solzen = float(f.readlines()[1].strip().split()[0])
-        coszen = np.cos(solzen / 360 * 2.0 * np.pi)
-
-        # `data` stores the return values, `append` will append to existing keys and creates them if they don't
-        # Easy append to keys whether they exist or not
-        data = {}
-        append = lambda key, val: data.setdefault(key, []).append(val)
-
-        start = None
-        for end, line in enumerate(lines):
-            if start is not None:
-                # Find all ints/floats for this line
-                tokens = re.findall(r"NaN|\d+\.?\d+", line.replace("******", "0.0"))
-
-                # End of table
-                if len(tokens) != 11:
-                    break
-
-                (  # Split the tokens
-                    w,
-                    gt,
-                    scad,
-                    scau,
-                    salb,
-                    rhoa,
-                    swl,
-                    step,
-                    sbor,
-                    dsol,
-                    toar,
-                ) = tokens
-
-                # Preprocess the tokens and prepare to save them to LUT
-                # transm = float(scau) * float(scad) * float(gt)
-
-                append("grid", float(w))
-                append("sphalb", float(salb))
-                append("rhoatm", float(rhoa))
-                append("transm_down_dif", float(scau) * float(scad) * float(gt))
-                # REVIEW: How should these be populated?
-                # append("transm_down_dir", None)
-                # append("transm_up_dir", None)
-                # append("transm_up_dif", None)
-
-            # Found beginning of table
-            elif line.startswith("*        trans  down   up"):
-                start = end
-
-        if start is None:
-            Logger.error(f"Failed to parse any data for point: {point}")
-            return {}
-
-        total = len(data["grid"])
-        if total < self.wl.size:
-            Logger.error(
-                f"The following file parsed shorter than expected ({self.wl.size}), got ({total}): {file}"
-            )
-
-        # Cast to numpy and trim excess
-        data = {k: np.array(v)[: self.wl.size] for k, v in data.items()}
-
-        # Add extras
-        data["solzen"] = solzen
-        data["coszen"] = coszen
-
-        # Remove before saving to LUT file since this doesn't go in there
-        self.grid = data.pop("grid")
-
-        return data
+        return self.parse_file(file, self.wl.size)
 
     def postSim(self):
         """
@@ -295,3 +236,111 @@ class SixSRT(RadiativeTransferEngine):
         dt = datetime(2000, self.engine_config.month, self.engine_config.day)
         self.day_of_year = dt.timetuple().tm_yday
         self.irr_factor = self.esd[self.day_of_year - 1, 1]
+
+    @staticmethod
+    def parse_file(file, wl_size=0) -> dict:
+        """
+        Parses a 6S sim file
+
+        Parameters
+        ----------
+        file: str
+            Path to simulation file to parse
+        wl_size: int, default=0
+            Size of the wavelengths dim, will trim data to this size. If zero, does no
+            trimming
+
+        Returns
+        -------
+        data: dict
+            Simulated data results. These keys correspond with the expected keys
+            of ISOFIT's LUT files
+
+        Examples
+        --------
+        >>> from isofit.radiative_transfer.six_s import SixSRT
+        >>> SixSRT.parse_file('isofit/examples/20151026_SantaMonica/lut/AOT550-0.0000_H2OSTR-0.5000', wl_size=2)
+        {'sphalb': array([0.3116, 0.3057, 0.2999]),
+         'rhoatm': array([0.2009, 0.1963, 0.1916]),
+         'transm_down_dif': array([0.53211358, 0.53993346, 0.54736113]),
+         'solzen': 55.21,
+         'coszen': 0.5705702414191993}
+        """
+        path, name = os.path.split(file)
+        inpt = os.path.join(path, f"LUT_{name}.inp")
+
+        with open(file, "r") as f:
+            lines = f.readlines()
+
+        with open(inpt, "r") as f:
+            solzen = float(f.readlines()[1].strip().split()[0])
+        coszen = np.cos(solzen / 360 * 2.0 * np.pi)
+
+        # `data` stores the return values, `append` will append to existing keys and creates them if they don't
+        # Easy append to keys whether they exist or not
+        data = {}
+        append = lambda key, val: data.setdefault(key, []).append(val)
+
+        start = None
+        for end, line in enumerate(lines):
+            if start is not None:
+                # Find all ints/floats for this line
+                tokens = re.findall(r"NaN|\d+\.?\d+", line.replace("******", "0.0"))
+
+                # End of table
+                if len(tokens) != 11:
+                    break
+
+                (  # Split the tokens
+                    w,
+                    gt,
+                    scad,
+                    scau,
+                    salb,
+                    rhoa,
+                    swl,
+                    step,
+                    sbor,
+                    dsol,
+                    toar,
+                ) = tokens
+
+                # Preprocess the tokens and prepare to save them to LUT
+                # transm = float(scau) * float(scad) * float(gt)
+
+                append("grid", float(w))
+                append("sphalb", float(salb))
+                append("rhoatm", float(rhoa))
+                append("transm_down_dif", float(scau) * float(scad) * float(gt))
+                # REVIEW: How should these be populated?
+                # append("transm_down_dir", None)
+                # append("transm_up_dir", None)
+                # append("transm_up_dif", None)
+
+            # Found beginning of table
+            elif line.startswith("*        trans  down   up"):
+                start = end
+
+        if start is None:
+            Logger.error(f"Failed to parse any data for point: {point}")
+            return {}
+
+        total = len(data["grid"])
+        if total < wl_size:
+            Logger.error(
+                f"The following file parsed shorter than expected ({wl_size}), got ({total}): {file}"
+            )
+
+        # Cast to numpy and trim excess
+        data = {k: np.array(v) for k, v in data.items()}
+        if wl_size > 0:
+            data = {k: v[:wl_size] for k, v in data.items()}
+
+        # Add extras
+        data["solzen"] = solzen
+        data["coszen"] = coszen
+
+        # Remove before saving to LUT file since this doesn't go in there
+        data.pop("grid")
+
+        return data
