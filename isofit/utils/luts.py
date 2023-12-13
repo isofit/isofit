@@ -1,4 +1,6 @@
 """
+This is the netCDF4 implementation for handling ISOFIT LUT files. For previous
+implementations and research, please see https://github.com/isofit/isofit/tree/897062a3dcc64d5292d0d2efe7272db0809a6085/isofit/luts
 """
 import logging
 import os
@@ -11,6 +13,23 @@ from netCDF4 import Dataset
 os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
 
 Logger = logging.getLogger(__file__)
+
+# TODO: Temporary locking lut files for updatePoint until a new solution is found
+class SystemMutex:
+    import fcntl
+    import hashlib
+
+    def __init__(self, name):
+        self.name = name
+
+    def __enter__(self):
+        lock_id = hashlib.md5(self.name.encode("utf8")).hexdigest()
+        self.fp = open(f"/tmp/.lock-{lock_id}.lck", "wb")
+        fcntl.flock(self.fp.fileno(), fcntl.LOCK_EX)
+
+    def __exit__(self, _type, value, tb):
+        fcntl.flock(self.fp.fileno(), fcntl.LOCK_UN)
+        self.fp.close()
 
 
 def initialize(
@@ -75,25 +94,6 @@ def initialize(
 
     # Stack to get the common.combos, creates dim "point" = [(v1, v2, ), ...]
     return ds.stack(point=lut_grid).transpose("point", "wl")
-
-
-# TODO: Temporary locking lut files for updatePoint until a new solution is found
-import fcntl
-import hashlib
-
-
-class SystemMutex:
-    def __init__(self, name):
-        self.name = name
-
-    def __enter__(self):
-        lock_id = hashlib.md5(self.name.encode("utf8")).hexdigest()
-        self.fp = open(f"/tmp/.lock-{lock_id}.lck", "wb")
-        fcntl.flock(self.fp.fileno(), fcntl.LOCK_EX)
-
-    def __exit__(self, _type, value, tb):
-        fcntl.flock(self.fp.fileno(), fcntl.LOCK_UN)
-        self.fp.close()
 
 
 def updatePoint(
