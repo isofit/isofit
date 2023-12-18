@@ -195,7 +195,7 @@ class SixSRT(RadiativeTransferEngine):
         if "H2OSTR" in vals:
             vals["h2o_mm"] = vals["H2OSTR"] * 10.0
 
-        if "elev" in vals:
+        if "surface_elev_km" in vals:
             vals["elev"] = vals["surface_elev_km"] * -1
 
         if "observer_altitude_km" in vals:
