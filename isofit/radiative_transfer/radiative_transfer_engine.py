@@ -415,6 +415,7 @@ class RadiativeTransferEngine:
 
         if pre:
             Logger.info("Saving pre-sim data")
+            Logger.debug(f"pre-sim data contains keys: {pre.keys()}")
             luts.updatePoint(file=self.lut_path, data=pre)
 
         # Make the LUT calls (in parallel if specified)
@@ -440,6 +441,7 @@ class RadiativeTransferEngine:
 
         if post:
             Logger.info("Saving post-sim data")
+            Logger.debug(f"post-sim data contains keys: {post.keys()}")
             luts.updatePoint(file=self.lut_path, data=post)
 
         # Reload the LUT now that it's populated
