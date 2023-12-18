@@ -259,7 +259,7 @@ class SixSRT(RadiativeTransferEngine):
         Examples
         --------
         >>> from isofit.radiative_transfer.six_s import SixSRT
-        >>> SixSRT.parse_file('isofit/examples/20151026_SantaMonica/lut/AOT550-0.0000_H2OSTR-0.5000', wl_size=2)
+        >>> SixSRT.parse_file('isofit/examples/20151026_SantaMonica/lut/AOT550-0.0000_H2OSTR-0.5000', wl_size=3)
         {'sphalb': array([0.3116, 0.3057, 0.2999]),
          'rhoatm': array([0.2009, 0.1963, 0.1916]),
          'transm_down_dif': array([0.53211358, 0.53993346, 0.54736113]),
