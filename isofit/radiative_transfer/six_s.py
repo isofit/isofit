@@ -195,22 +195,18 @@ class SixSRT(RadiativeTransferEngine):
         if "H2OSTR" in vals:
             vals["h2o_mm"] = vals["H2OSTR"] * 10.0
 
-        # REVIEW: Should this be surface_elevation_km?
-        if "GNDALT" in vals:
-            vals["elev"] = vals["GNDALT"]
-
         if "elev" in vals:
-            vals["elev"] = vals["elev"] * -1
+            vals["elev"] = vals["surface_elev_km"] * -1
 
-        if "H1ALT" in vals:
-            vals["alt"] = min(vals["H1ALT"], 99)
+        if "observer_altitude_km" in vals:
+            vals["alt"] = min(vals["observer_altitude_km"], 99)
 
-        if "TRUEAZ" in vals:
-            vals["viewaz"] = vals["TRUEAZ"]
+        if "observer_azimuth" in vals:
+            vals["viewaz"] = vals["observer_azimuth"]
 
         # REVIEW: Should this be observer_zenith?
-        if "OBSZEN" in vals:
-            vals["viewzen"] = 180 - vals["OBSZEN"]
+        if "observer_zenith" in vals:
+            vals["viewzen"] = 180 - vals["observer_zenith"]
 
         if self.modtran_emulation:
             if "AERFRAC_2" in vals:
