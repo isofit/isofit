@@ -287,7 +287,16 @@ class ModtranRT(RadiativeTransferEngine):
     def makeSim(self, point):
         filename_base = self.point_to_filename(point)
 
-        vals = dict([(n, v) for n, v in zip(self.lut_names, point)])
+        # Translate ISOFIT generic lut names to MODTRAN-specific names
+        translation = {
+            "surface_elevation_km": "GNDALT",
+            "observer_altitude_km": "H1ALT",
+            "observer_azimuth": "TRUEAZ",
+            "observer_zenith": "OBSZEN",
+        }
+        names = [translation.get(key, key) for key in self.lut_names]
+
+        vals = dict([(n, v) for n, v in zip(names, point)])
         vals["DISALB"] = True
         vals["NAME"] = filename_base
         vals["FILTNM"] = os.path.normpath(self.filtpath)
@@ -600,7 +609,7 @@ class ModtranRT(RadiativeTransferEngine):
         point[self.lut_names.index("H2OSTR")] = 50
 
         filebase = os.path.join(self.sim_path, "H2O_bound_test")
-        cmd = self.rebuild_cmd(point, filebase)
+        cmd = self.makeSim(point)
 
         # Run MODTRAN for up to 10 seconds - this should be plenty of time
         if os.path.isdir(self.sim_path) is False:
@@ -621,52 +630,6 @@ class ModtranRT(RadiativeTransferEngine):
                     break
 
         return max_water
-
-    def rebuild_cmd(self, point):
-        """."""
-
-        filename_base = self.point_to_filename(point)
-
-        vals = dict([(n, v) for n, v in zip(self.lut_names, point)])
-        vals["DISALB"] = True
-        vals["NAME"] = filename_base
-        vals["FILTNM"] = os.path.normpath(self.filtpath)
-        modtran_config_str, modtran_config = self.modtran_driver(dict(vals))
-
-        # Check rebuild conditions: LUT is missing or from a different config
-        infilename = "LUT_" + filename_base + ".json"
-        infilepath = os.path.join(self.sim_path, "LUT_" + filename_base + ".json")
-
-        if not self.required_results_exist(filename_base):
-            rebuild = True
-        else:
-            # We compare the two configuration files, ignoring names and
-            # wavelength paths which tend to be non-portable
-            with open(infilepath, "r") as fin:
-                current_config = json.load(fin)["MODTRAN"]
-                current_config[0]["MODTRANINPUT"]["NAME"] = ""
-                modtran_config[0]["MODTRANINPUT"]["NAME"] = ""
-                current_config[0]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
-                modtran_config[0]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
-                current_str = json.dumps(current_config)
-                modtran_str = json.dumps(modtran_config)
-                rebuild = modtran_str.strip() != current_str.strip()
-
-        if not rebuild:
-            raise FileExistsError("File exists")
-
-        # write_config_file
-        with open(infilepath, "w") as f:
-            f.write(modtran_config_str)
-
-        # Specify location of the proper MODTRAN 6.0 binary for this OS
-        xdir = {"linux": "linux", "darwin": "macos", "windows": "windows"}
-
-        # Generate the CLI path
-        cmd = os.path.join(
-            self.engine_base_dir, "bin", xdir[platform], "mod6c_cons " + infilename
-        )
-        return cmd
 
     def required_results_exist(self, filename_base):
         infilename = os.path.join(self.sim_path, "LUT_" + filename_base + ".json")
