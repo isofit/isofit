@@ -43,7 +43,7 @@ SIXS_TEMPLATE = """\
 {aermodel}
 0
 {AOT550}
-{elev:.2f} (target level)
+-{elev:.2f} (target level)
 -{alt:.2f} (sensor level)
 -{H2OSTR}, -{O3}
 {AOT550}
@@ -196,7 +196,7 @@ class SixSRT(RadiativeTransferEngine):
             vals["h2o_mm"] = vals["H2OSTR"] * 10.0
 
         if "surface_elev_km" in vals:
-            vals["elev"] = vals["surface_elev_km"] * -1
+            vals["elev"] = vals["surface_elev_km"]
 
         if "observer_altitude_km" in vals:
             vals["alt"] = min(vals["observer_altitude_km"], 99)
@@ -255,7 +255,7 @@ class SixSRT(RadiativeTransferEngine):
         Examples
         --------
         >>> from isofit.radiative_transfer.six_s import SixSRT
-        >>> SixSRT.parse_file('isofit/examples/20151026_SantaMonica/lut/AOT550-0.0000_H2OSTR-0.5000', wl_size=3)
+        >>> SixSRT.parse_file('isofit/examples/20151026_SantaMonica/lut/AOT550-0.0000_H2OSTR-0.5000', wl_size=2)
         {'sphalb': array([0.3116, 0.3057, 0.2999]),
          'rhoatm': array([0.2009, 0.1963, 0.1916]),
          'transm_down_dif': array([0.53211358, 0.53993346, 0.54736113]),
