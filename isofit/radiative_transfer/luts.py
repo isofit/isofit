@@ -15,10 +15,11 @@ os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
 Logger = logging.getLogger(__file__)
 
 # TODO: Temporary locking lut files for updatePoint until a new solution is found
-class SystemMutex:
-    import fcntl
-    import hashlib
+import fcntl
+import hashlib
 
+
+class SystemMutex:
     def __init__(self, name):
         self.name = name
 
