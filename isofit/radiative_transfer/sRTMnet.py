@@ -106,13 +106,10 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         resample = sim.lut[["point"]].copy()
         resample["wl"] = self.emu_wl
 
-        # Select only the quantities of interest from the simulator
-        sim.lut = sim.lut[aux["rt_quantities"]]
-
         # In some atmospheres the values get down to basically 0, which 6S can’t quite handle and will resolve to NaN instead of 0
         # Safe to replace here
-        if sim.lut.isnull().any():
-            Logger.debug("Predicts detected to have NaNs, replacing with 0s")
+        if sim.lut[aux["rt_quantities"]].isnull().any():
+            Logger.debug("Simulator detected to have NaNs, replacing with 0s")
             sim.lut = sim.lut.fillna(0)
 
         # Interpolate the sim results from its wavelengths to the emulator wavelengths
@@ -126,6 +123,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
 
         ## Reduce from 3D to 2D by stacking along the wavelength dim for each quantity
         # Convert to DataArray to stack the variables along a new `quantity` dimension
+        data = sim.lut[aux["rt_quantities"]]
         data = sim.lut.to_array("quantity").stack(stack=["quantity", "wl"])
 
         scaler = aux.get("response_scaler", 100.0)
