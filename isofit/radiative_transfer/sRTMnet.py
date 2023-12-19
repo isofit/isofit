@@ -124,7 +124,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         ## Reduce from 3D to 2D by stacking along the wavelength dim for each quantity
         # Convert to DataArray to stack the variables along a new `quantity` dimension
         data = sim.lut[aux["rt_quantities"]]
-        data = sim.lut.to_array("quantity").stack(stack=["quantity", "wl"])
+        data = data.to_array("quantity").stack(stack=["quantity", "wl"])
 
         scaler = aux.get("response_scaler", 100.0)
 
