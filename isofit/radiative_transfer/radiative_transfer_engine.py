@@ -245,7 +245,7 @@ class RadiativeTransferEngine:
 
             # Hidden assumption: geometry keys come first, then come RTE keys
             self.geometry_input_names = set(self.geometry_input_names) - set(
-                engine_config.statevector_names
+                engine_config.statevector_names or self.lut_names
             )
             self.indices.geom = {
                 i: key
