@@ -284,8 +284,11 @@ class ModtranRT(RadiativeTransferEngine):
 
         return params
 
-    def makeSim(self, point):
-        filename_base = self.point_to_filename(point)
+    def makeSim(self, point, file=None):
+        """
+        Prepares the command to execute MODTRAN
+        """
+        filename_base = file or self.point_to_filename(point)
 
         # Translate ISOFIT generic lut names to MODTRAN-specific names
         translation = {
@@ -609,7 +612,7 @@ class ModtranRT(RadiativeTransferEngine):
         point[self.lut_names.index("H2OSTR")] = 50
 
         filebase = os.path.join(self.sim_path, "H2O_bound_test")
-        cmd = self.makeSim(point)
+        cmd = self.makeSim(point, filebase)
 
         # Run MODTRAN for up to 10 seconds - this should be plenty of time
         if os.path.isdir(self.sim_path) is False:
