@@ -263,30 +263,14 @@ def invert_analytical(
 
     Sa = fm.Sa(x, geom)
     Sa_surface = Sa[fm.idx_surface, :][:, fm.idx_surface]
-    Sa_surface = Sa_surface[winidx, :][:, winidx]
 
-    if fm.RT.glint_model:
-        # exclude the surface temperature from the prior covariance
-        Sigma = np.zeros(
-            (
-                len(meas) + len(fm.surface.f[0, 0, :]),
-                len(meas) + len(fm.surface.f[0, 0, :]),
-            )
-        )
-        Sigma[: len(meas), : len(meas)] = Sa_surface
-        f = np.diag(fm.surface.f[0, 0, :])
-        Sigma[len(meas) :, len(meas) :] = f
-        Sa_inv = svd_inv_sqrt(Sigma, hash_table, hash_size)[0]
-    else:
-        Sa_inv = svd_inv_sqrt(Sa_surface, hash_table, hash_size)[0]
+    Sa_inv = svd_inv_sqrt(Sa_surface, hash_table, hash_size)[0]
 
     xa_full = fm.xa(x, geom)
     xa_surface = xa_full[fm.idx_surface]
-    xa = xa_surface[winidx]
 
     if fm.RT.glint_model:
-        xa = np.append(xa, fm.surface.init[fm.surface.glint_ind :])
-        prprod = Sa_inv @ xa
+        prprod = Sa_inv @ xa_surface
         # obtain needed RT vectors
         r = fm.RT.get_L_atm(x_RT, geom)[winidx]  # path radiance
         t1 = fm.RT.get_L_down_transmitted(x_RT, geom)[
@@ -334,7 +318,7 @@ def invert_analytical(
             L = dpotrf(C, 1)[0]
             P = dpotri(L, 1)[0]
             P_rpr = Sa_inv
-            mu_rpr = xa
+            mu_rpr = xa_surface
 
             priorprod = P_rpr @ mu_rpr
 
@@ -356,7 +340,7 @@ def invert_analytical(
             # xa_cond, Sa_cond = conditional_gaussian(xa_full, Sa, outside_ret_windows, winidx, mu)
             # full_mu[outside_ret_windows] = xa_cond
             if outside_ret_const is None:
-                full_mu[outside_ret_windows] = xa[outside_ret_windows]
+                full_mu[outside_ret_windows] = xa_surface[outside_ret_windows]
             else:
                 full_mu[outside_ret_windows] = outside_ret_const
 

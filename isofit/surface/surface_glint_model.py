@@ -23,12 +23,12 @@ import numpy as np
 from isofit.configs import Config
 
 from ..core.common import eps
-from .surface_thermal import ThermalSurface
+from .surface_multicomp import MultiComponentSurface
 
 
-class GlintModelSurface(ThermalSurface):
+class GlintModelSurface(MultiComponentSurface):
     """A model of the surface based on a collection of multivariate
-    Gaussians, extended with a surface glint term."""
+    Gaussians, extended with two surface glint terms (sun + sky glint)."""
 
     def __init__(self, full_config: Config):
         super().__init__(full_config)
@@ -45,7 +45,7 @@ class GlintModelSurface(ThermalSurface):
     def xa(self, x_surface, geom):
         """Mean of prior distribution, calculated at state x."""
 
-        mu = ThermalSurface.xa(self, x_surface, geom)
+        mu = MultiComponentSurface.xa(self, x_surface, geom)
         mu[self.glint_ind :] = self.init[self.glint_ind :]
         return mu
 
@@ -54,7 +54,7 @@ class GlintModelSurface(ThermalSurface):
         the covariance in a normalized space (normalizing by z) and then un-
         normalize the result for the calling function."""
 
-        Cov = ThermalSurface.Sa(self, x_surface, geom)
+        Cov = MultiComponentSurface.Sa(self, x_surface, geom)
         Cov[self.glint_ind :, self.glint_ind :] = self.f
         return Cov
 
@@ -69,7 +69,7 @@ class GlintModelSurface(ThermalSurface):
             min(self.bounds[self.glint_ind][1] - eps, glint),
         )
         lamb_est = rfl_meas - glint
-        x = ThermalSurface.fit_params(self, lamb_est, geom)
+        x = MultiComponentSurface.fit_params(self, lamb_est, geom)
         x[self.glint_ind] = glint
         x[self.glint_ind + 1] = 0.01
         return x
@@ -89,17 +89,15 @@ class GlintModelSurface(ThermalSurface):
 
     def dLs_dsurface(self, x_surface, geom):
         """Partial derivative of surface emission with respect to state vector,
-        calculated at x_surface.  We append a column of zeros to handle
+        calculated at x_surface.  We append two columns of zeros to handle
         the extra glint parameter"""
 
         dLs_dsurface = super().dLs_dsurface(x_surface, geom)
-        dLs_dglint = np.zeros((dLs_dsurface.shape[0], 2))
-        dLs_dsurface = np.hstack([dLs_dsurface, dLs_dglint])
         return dLs_dsurface
 
     def summarize(self, x_surface, geom):
         """Summary of state vector."""
 
-        return ThermalSurface.summarize(
+        return MultiComponentSurface.summarize(
             self, x_surface, geom
         ) + " Sun Glint: %5.3f, Sky Glint: %5.3f" % (x_surface[-2], x_surface[-1])
