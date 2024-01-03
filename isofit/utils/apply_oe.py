@@ -522,7 +522,7 @@ def apply_oe(args):
         if not args.num_neighbors:
             nneighbors = [int(round(3950 / 9 - 35 / 36 * args.segmentation_size))]
         else:
-            nneighbors = [args.num_neighbors]
+            nneighbors = [n for n in args.num_neighbors]
 
         if args.empirical_line == 1:
             # Empirical line

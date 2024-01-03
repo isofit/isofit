@@ -306,7 +306,8 @@ class Worker(object):
                     self.hash_table,
                     self.hash_size,
                 )
-                output_state[r - start_line, c, :] = states[-1][:]
+
+                output_state[r - start_line, c, :] = states[-1][self.fm.idx_surface]
 
                 output_state_unc[r - start_line, c, :] = unc[self.fm.idx_surface]
 
