@@ -7,7 +7,6 @@ import json
 import logging
 import os
 import subprocess
-import sys
 from datetime import datetime
 from os.path import abspath, exists, join, split
 from shutil import copyfile
@@ -22,7 +21,7 @@ from osgeo import gdal
 from sklearn import mixture
 from spectral.io import envi
 
-from isofit.core import common, isofit
+from isofit.core import isofit
 from isofit.core.common import envi_header
 from isofit.utils import analytical_line, empirical_line, extractions, segment
 
@@ -211,11 +210,13 @@ def apply_oe(args):
         h_m_s,
         day_increment,
         mean_path_km,
-        mean_to_sensor_azimuth,
         mean_to_sensor_zenith,
+        mean_to_sun_zenith,
+        mean_relative_azimuth,
         valid,
-        to_sensor_azimuth_lut_grid,
         to_sensor_zenith_lut_grid,
+        to_sun_zenith_lut_grid,
+        relative_azimuth_lut_grid
     ) = get_metadata_from_obs(paths.obs_working_path, lut_params)
 
     # overwrite the time in case original obs has an error in that band
@@ -232,8 +233,6 @@ def apply_oe(args):
 
     if day_increment:
         dayofyear += 1
-
-    gmtime = float(h_m_s[0] + h_m_s[1] / 60.0)
 
     # get radiance file, wavelengths
     if args.wavelength_path:
@@ -297,8 +296,9 @@ def apply_oe(args):
 
     logging.info("Observation means:")
     logging.info(f"Path (km): {mean_path_km}")
-    logging.info(f"To-sensor Zenith (deg): {mean_to_sensor_zenith}")
-    logging.info(f"To-sensor Azimuth (deg): {mean_to_sensor_azimuth}")
+    logging.info(f"To-sensor zenith (deg): {mean_to_sensor_zenith}")
+    logging.info(f"To-sun zenith (deg): {mean_to_sun_zenith}")
+    logging.info(f"Relative to-sun azimuth (deg): {mean_relative_azimuth}")
     logging.info(f"Altitude (km): {mean_altitude_km}")
 
     if args.emulator_base is not None and mean_altitude_km > 99:
@@ -358,11 +358,9 @@ def apply_oe(args):
             fid=paths.fid,
             altitude_km=mean_altitude_km,
             dayofyear=dayofyear,
-            latitude=mean_latitude,
-            longitude=mean_longitude,
-            to_sensor_azimuth=mean_to_sensor_azimuth,
+            to_sun_zenith=mean_to_sun_zenith,
             to_sensor_zenith=mean_to_sensor_zenith,
-            gmtime=gmtime,
+            relative_azimuth=mean_relative_azimuth,
             elevation_km=mean_elevation_km,
             output_file=paths.h2o_template_path,
             ihaze_type="AER_NONE",
@@ -436,8 +434,9 @@ def apply_oe(args):
 
     logging.info("Full (non-aerosol) LUTs:")
     logging.info(f"Elevation: {elevation_lut_grid}")
-    logging.info(f"To-sensor azimuth: {to_sensor_azimuth_lut_grid}")
     logging.info(f"To-sensor zenith: {to_sensor_zenith_lut_grid}")
+    logging.info(f"To-sun zenith: {to_sun_zenith_lut_grid}")
+    logging.info(f"Relative to-sun azimuth: {relative_azimuth_lut_grid}")
     logging.info(f"H2O Vapor: {h2o_lut_grid}")
 
     logging.info(paths.state_subs_path)
@@ -451,11 +450,9 @@ def apply_oe(args):
             fid=paths.fid,
             altitude_km=mean_altitude_km,
             dayofyear=dayofyear,
-            latitude=mean_latitude,
-            longitude=mean_longitude,
-            to_sensor_azimuth=mean_to_sensor_azimuth,
+            to_sun_zenith=mean_to_sun_zenith,
             to_sensor_zenith=mean_to_sensor_zenith,
-            gmtime=gmtime,
+            relative_azimuth=mean_relative_azimuth,
             elevation_km=mean_elevation_km,
             output_file=paths.modtran_template_path,
         )
@@ -466,8 +463,9 @@ def apply_oe(args):
             lut_params=lut_params,
             h2o_lut_grid=h2o_lut_grid,
             elevation_lut_grid=elevation_lut_grid,
-            to_sensor_azimuth_lut_grid=to_sensor_azimuth_lut_grid,
             to_sensor_zenith_lut_grid=to_sensor_zenith_lut_grid,
+            to_sun_zenith_lut_grid=to_sun_zenith_lut_grid,
+            relative_azimuth_lut_grid=relative_azimuth_lut_grid,
             mean_latitude=mean_latitude,
             mean_longitude=mean_longitude,
             dt=dt,
@@ -835,12 +833,16 @@ class LUTConfig:
         self.h2o_range = [0.05, 5]
 
         # Units of degrees
-        self.to_sensor_azimuth_spacing = 60
-        self.to_sensor_azimuth_spacing_min = 60
-
-        # Units of degrees
         self.to_sensor_zenith_spacing = 10
         self.to_sensor_zenith_spacing_min = 2
+
+        # Units of degrees
+        self.to_sun_zenith_spacing = 10
+        self.to_sun_zenith_spacing_min = 2
+
+        # Units of degrees
+        self.relative_azimuth_spacing = 60
+        self.relative_azimuth_spacing_min = 60
 
         # Units of AOD
         self.aerosol_0_spacing = 0
@@ -1193,23 +1195,27 @@ def get_metadata_from_obs(
     to-sun zenith, phase, slope, aspect, cosine i, UTC time).
 
     Args:
-        obs_file: file name to pull data from
-        lut_params: parameters to use to define lut grid
-        trim_lines: number of lines to ignore at beginning and end of file (good if lines contain values that are
-                    erroneous but not nodata
+        obs_file:              file name to pull data from
+        lut_params:            parameters to use to define lut grid
+        trim_lines:            number of lines to ignore at beginning and end of file (good if lines contain values
+                               that are erroneous but not nodata
         max_flight_duration_h: maximum length of the current acquisition, used to check if we've lapped a UTC day
-        nodata_value: value to ignore from location file
+        nodata_value:          value to ignore from location file
 
     :Returns:
         tuple containing:
             h_m_s - list of the mean-time hour, minute, and second within the line
             increment_day - indicator of whether the UTC day has been changed since the beginning of the line time
             mean_path_km - mean distance between sensor and ground in km for good data
-            mean_to_sensor_azimuth - mean to-sensor-azimuth for good data
-            mean_to_sensor_zenith_rad - mean to-sensor-zenith in radians for good data
+            mean_to_sensor_azimuth - mean to-sensor azimuth for good data
+            mean_to_sensor_zenith - mean to-sensor zenith for good data
+            mean_to_sun_zenith - mean to-sun zenith for good data
+            mean_relative_azimuth - mean relative to-sun azimuth for good data
             valid - boolean array indicating which pixels were NOT nodata
-            to_sensor_azimuth_lut_grid - the to-sensor azimuth angle look up table for good data
-            to_sensor_zenith_lut_grid - the to-sensor zenith look up table for good data
+            to_sensor_azimuth_lut_grid - the to-sensor azimuth look up table grid for good data
+            to_sensor_zenith_lut_grid - the to-sensor zenith look up table grid for good data
+            to_sun_zenith_lut_grid - the to-sun zenith look up table grid for good data
+            relative_azimuth_lut_grid - the relative to-sun azimuth look up table grid for good data
     """
     obs_dataset = gdal.Open(obs_file, gdal.GA_ReadOnly)
 
@@ -1219,6 +1225,8 @@ def get_metadata_from_obs(
     path_km = np.zeros((obs_dataset.RasterYSize, obs_dataset.RasterXSize))
     to_sensor_azimuth = np.zeros((obs_dataset.RasterYSize, obs_dataset.RasterXSize))
     to_sensor_zenith = np.zeros((obs_dataset.RasterYSize, obs_dataset.RasterXSize))
+    to_sun_azimuth = np.zeros((obs_dataset.RasterYSize, obs_dataset.RasterXSize))
+    to_sun_zenith = np.zeros((obs_dataset.RasterYSize, obs_dataset.RasterXSize))
     time = np.zeros((obs_dataset.RasterYSize, obs_dataset.RasterXSize))
 
     for line in range(obs_dataset.RasterYSize):
@@ -1233,7 +1241,14 @@ def get_metadata_from_obs(
         path_km[line, :] = obs_line[0, ...] / 1000.0
         to_sensor_azimuth[line, :] = obs_line[1, ...]
         to_sensor_zenith[line, :] = obs_line[2, ...]
+        to_sun_azimuth[line, :] = obs_line[3, ...]
+        to_sun_zenith[line, :] = obs_line[4, ...]
         time[line, :] = obs_line[9, ...]
+
+    # calculate relative to-sun azimuth
+    delta_phi = to_sun_azimuth - to_sensor_azimuth
+    delta_phi = delta_phi % 360
+    relative_azimuth = np.abs(delta_phi - 180)
 
     use_trim = trim_lines != 0 and valid.shape[0] > trim_lines * 2
     if use_trim:
@@ -1244,12 +1259,9 @@ def get_metadata_from_obs(
     mean_path_km = np.mean(path_km[valid])
     del path_km
 
-    mean_to_sensor_azimuth = (
-        lut_params.get_angular_grid(to_sensor_azimuth[valid], -1, 0) % 360
-    )
-    mean_to_sensor_zenith = 180 - lut_params.get_angular_grid(
-        to_sensor_zenith[valid], -1, 0
-    )
+    mean_to_sensor_zenith = 180 - lut_params.get_angular_grid(to_sensor_zenith[valid], -1, 0)
+    mean_to_sun_zenith = lut_params.get_angular_grid(to_sun_zenith[valid], -1, 0)
+    mean_relative_azimuth = (lut_params.get_angular_grid(relative_azimuth[valid], -1, 0) % 360)
 
     # geom_margin = EPS * 2.0
     to_sensor_zenith_lut_grid = lut_params.get_angular_grid(
@@ -1260,18 +1272,29 @@ def get_metadata_from_obs(
     if to_sensor_zenith_lut_grid is not None:
         to_sensor_zenith_lut_grid = np.sort(180 - to_sensor_zenith_lut_grid)
 
-    to_sensor_azimuth_lut_grid = lut_params.get_angular_grid(
-        to_sensor_azimuth[valid],
-        lut_params.to_sensor_azimuth_spacing,
-        lut_params.to_sensor_azimuth_spacing_min,
+    to_sun_zenith_lut_grid = lut_params.get_angular_grid(
+        to_sun_zenith[valid],
+        lut_params.to_sun_zenith_spacing,
+        lut_params.to_sun_zenith_spacing_min,
     )
-    if to_sensor_azimuth_lut_grid is not None:
-        to_sensor_azimuth_lut_grid = np.sort(
-            np.array([x % 360 for x in to_sensor_azimuth_lut_grid])
+    if to_sun_zenith_lut_grid is not None:
+        to_sun_zenith_lut_grid = np.sort(to_sun_zenith_lut_grid)
+
+    relative_azimuth_lut_grid = lut_params.get_angular_grid(
+        relative_azimuth[valid],
+        lut_params.relative_azimuth_spacing,
+        lut_params.relative_azimuth_spacing_min,
+    )
+    if relative_azimuth_lut_grid is not None:
+        relative_azimuth_lut_grid = np.sort(
+            np.array([x % 360 for x in relative_azimuth_lut_grid])
         )
 
     del to_sensor_azimuth
     del to_sensor_zenith
+    del to_sun_azimuth
+    del to_sun_zenith
+    del relative_azimuth
 
     # Make time calculations
     mean_time = np.mean(time[valid])
@@ -1302,11 +1325,13 @@ def get_metadata_from_obs(
         h_m_s,
         increment_day,
         mean_path_km,
-        mean_to_sensor_azimuth,
         mean_to_sensor_zenith,
+        mean_to_sun_zenith,
+        mean_relative_azimuth,
         valid,
-        to_sensor_azimuth_lut_grid,
         to_sensor_zenith_lut_grid,
+        to_sun_zenith_lut_grid,
+        relative_azimuth_lut_grid
     )
 
 
@@ -1342,7 +1367,7 @@ def get_metadata_from_loc(
     )
     for line in range(loc_dataset.RasterYSize):
         # Read line in
-        loc_data[:, line : line + 1, :] = loc_dataset.ReadAsArray(
+        loc_data[:, line: line + 1, :] = loc_dataset.ReadAsArray(
             0, line, loc_dataset.RasterXSize, 1
         )
 
@@ -1541,8 +1566,9 @@ def build_main_config(
     lut_params: LUTConfig,
     h2o_lut_grid: np.array = None,
     elevation_lut_grid: np.array = None,
-    to_sensor_azimuth_lut_grid: np.array = None,
     to_sensor_zenith_lut_grid: np.array = None,
+    to_sun_zenith_lut_grid: np.array = None,
+    relative_azimuth_lut_grid: np.array = None,
     mean_latitude: float = None,
     mean_longitude: float = None,
     dt: datetime = None,
@@ -1559,22 +1585,28 @@ def build_main_config(
     """Write an isofit config file for the main solve, using the specified pathnames and all given info
 
     Args:
-        paths: object containing references to all relevant file locations
-        lut_params: configuration parameters for the lut grid
-        h2o_lut_grid: the water vapor look up table grid isofit should use for this solve
-        elevation_lut_grid: the ground elevation look up table grid isofit should use for this solve
-        to_sensor_azimuth_lut_grid: the to-sensor azimuth angle look up table grid isofit should use for this solve
-        to_sensor_zenith_lut_grid: the to-sensor zenith angle look up table grid isofit should use for this solve
-        mean_latitude: the latitude isofit should use for this solve
-        mean_longitude: the longitude isofit should use for this solve
-        dt: the datetime object corresponding to this flightline to use for this solve
-        use_emp_line: flag whether or not to set up for the empirical line estimation
-        n_cores: the number of cores to use during processing
-        surface_category: type of surface to use
-        emulator_base: the basename of the emulator, if used
+        paths:                                object containing references to all relevant file locations
+        lut_params:                           configuration parameters for the lut grid
+        h2o_lut_grid:                         the water vapor look up table grid isofit should use for this solve
+        elevation_lut_grid:                   the ground elevation look up table grid isofit should use for this solve
+        to_sensor_zenith_lut_grid:            the to-sensor zenith angle look up table grid isofit should use for this
+                                              solve
+        to_sun_zenith_lut_grid:               the to-sun zenith angle look up table grid isofit should use for this
+                                              solve
+        relative_azimuth_lut_grid:            the relative to-sun azimuth angle look up table grid isofit should use for
+                                              this solve
+        mean_latitude:                        the latitude isofit should use for this solve
+        mean_longitude:                       the longitude isofit should use for this solve
+        dt:                                   the datetime object corresponding to this flightline to use for this solve
+        use_emp_line:                         flag whether or not to set up for the empirical line estimation
+        n_cores:                              the number of cores to use during processing
+        surface_category:                     type of surface to use
+        emulator_base:                        the basename of the emulator, if used
         uncorrelated_radiometric_uncertainty: uncorrelated radiometric uncertainty parameter for isofit
-        segmentation_size: image segmentation size if empirical line is used
-        pressure_elevation: if true, retrieve pressure elevation
+        multiple_restarts:                    if true, use multiple restarts
+        segmentation_size:                    image segmentation size if empirical line is used
+        pressure_elevation:                   if true, retrieve pressure elevation
+        debug:                                if true, run ISOFIT in debug mode
     """
 
     # Determine number of spectra included in each retrieval.  If we are
@@ -1659,14 +1691,18 @@ def build_main_config(
         radiative_transfer_config["lut_grid"][
             "surface_elevation_km"
         ] = elevation_lut_grid.tolist()
-    if to_sensor_azimuth_lut_grid is not None:
-        radiative_transfer_config["lut_grid"][
-            "observer_azimuth"
-        ] = to_sensor_azimuth_lut_grid.tolist()
     if to_sensor_zenith_lut_grid is not None:
         radiative_transfer_config["lut_grid"][
             "observer_zenith"
-        ] = to_sensor_zenith_lut_grid.tolist()  # modtran convension
+        ] = to_sensor_zenith_lut_grid.tolist()  # modtran convention
+    if to_sun_zenith_lut_grid is not None:
+        radiative_transfer_config["lut_grid"][
+            "solar_zenith"
+        ] = to_sun_zenith_lut_grid.tolist()
+    if relative_azimuth_lut_grid is not None:
+        radiative_transfer_config["lut_grid"][
+            "relative_azimuth"
+        ] = relative_azimuth_lut_grid.tolist()
 
     # add aerosol elements from climatology
     aerosol_state_vector, aerosol_lut_grid, aerosol_model_path = load_climatology(
@@ -1750,7 +1786,6 @@ def build_main_config(
         ] = paths.state_working_path
 
     if multiple_restarts:
-        eps = 1e-2
         grid = {}
         if h2o_lut_grid is not None:
             h2o_delta = float(h2o_lut_grid[-1]) - float(h2o_lut_grid[0])
@@ -1808,11 +1843,9 @@ def write_modtran_template(
     fid: str,
     altitude_km: float,
     dayofyear: int,
-    latitude: float,
-    longitude: float,
-    to_sensor_azimuth: float,
+    to_sun_zenith: float,
     to_sensor_zenith: float,
-    gmtime: float,
+    relative_azimuth: float,
     elevation_km: float,
     output_file: str,
     ihaze_type: str = "AER_RURAL",
@@ -1820,18 +1853,16 @@ def write_modtran_template(
     """Write a MODTRAN template file for use by isofit look up tables
 
     Args:
-        atmosphere_type: label for the type of atmospheric profile to use in modtran
-        fid: flight line id (name)
-        altitude_km: altitude of the sensor in km
-        dayofyear: the current day of the given year
-        latitude: acquisition latitude
-        longitude: acquisition longitude
-        to_sensor_azimuth: azimuth view angle to the sensor, in degrees (AVIRIS convention)
-        to_sensor_zenith: azimuth view angle to the sensor, in degrees (MODTRAN convention: 180 - AVIRIS convention)
-        gmtime: greenwich mean time
-        elevation_km: elevation of the land surface in km
-        output_file: location to write the modtran template file to
-
+        atmosphere_type:  label for the type of atmospheric profile to use in modtran
+        fid:              flight line id (name)
+        altitude_km:      altitude of the sensor in km
+        dayofyear:        the current day of the given year
+        to_sun_zenith:    final altitude solar zenith angle (0→180°)
+        to_sensor_zenith: sensor/observer zenith angle, in degrees (MODTRAN convention: 180 - AVIRIS convention)
+        relative_azimuth: final altitude relative solar azimuth (0→360°)
+        elevation_km:     elevation of the land surface in km
+        output_file:      location to write the modtran template file to
+        ihaze_type:       type of extinction and default meteorological range for the boundary-layer aerosol model
     """
     # make modtran configuration
     h2o_template = {
@@ -1870,12 +1901,10 @@ def write_modtran_template(
                         "ITYPE": 3,
                         "H1ALT": altitude_km,
                         "IDAY": dayofyear,
-                        "IPARM": 11,
-                        "PARM1": latitude,
-                        "PARM2": longitude,
-                        "TRUEAZ": to_sensor_azimuth,
+                        "IPARM": 12,
+                        "PARM1": relative_azimuth,
+                        "PARM2": to_sun_zenith,
                         "OBSZEN": to_sensor_zenith,
-                        "GMTIME": gmtime,
                     },
                     "SURFACE": {
                         "SURFTYPE": "REFL_LAMBER_MODEL",
