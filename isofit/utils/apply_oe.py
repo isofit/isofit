@@ -850,7 +850,7 @@ class LUTConfig:
 
         # Units of degrees
         self.relative_azimuth_spacing = 60
-        self.relative_azimuth_spacing_min = 60
+        self.relative_azimuth_spacing_min = 25
 
         # Units of AOD
         self.aerosol_0_spacing = 0
