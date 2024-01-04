@@ -210,6 +210,7 @@ def apply_oe(args):
         h_m_s,
         day_increment,
         mean_path_km,
+        mean_to_sensor_azimuth,
         mean_to_sensor_zenith,
         mean_to_sun_zenith,
         mean_relative_azimuth,
@@ -233,6 +234,8 @@ def apply_oe(args):
 
     if day_increment:
         dayofyear += 1
+
+    gmtime = float(h_m_s[0] + h_m_s[1] / 60.0)
 
     # get radiance file, wavelengths
     if args.wavelength_path:
@@ -296,6 +299,7 @@ def apply_oe(args):
 
     logging.info("Observation means:")
     logging.info(f"Path (km): {mean_path_km}")
+    logging.info(f"To-sensor azimuth (deg): {mean_to_sensor_azimuth}")
     logging.info(f"To-sensor zenith (deg): {mean_to_sensor_zenith}")
     logging.info(f"To-sun zenith (deg): {mean_to_sun_zenith}")
     logging.info(f"Relative to-sun azimuth (deg): {mean_relative_azimuth}")
@@ -359,8 +363,10 @@ def apply_oe(args):
             altitude_km=mean_altitude_km,
             dayofyear=dayofyear,
             to_sun_zenith=mean_to_sun_zenith,
+            to_sensor_azimuth=mean_to_sensor_azimuth,
             to_sensor_zenith=mean_to_sensor_zenith,
             relative_azimuth=mean_relative_azimuth,
+            gmtime=gmtime,
             elevation_km=mean_elevation_km,
             output_file=paths.h2o_template_path,
             ihaze_type="AER_NONE",
@@ -451,8 +457,10 @@ def apply_oe(args):
             altitude_km=mean_altitude_km,
             dayofyear=dayofyear,
             to_sun_zenith=mean_to_sun_zenith,
+            to_sensor_azimuth=mean_to_sensor_azimuth,
             to_sensor_zenith=mean_to_sensor_zenith,
             relative_azimuth=mean_relative_azimuth,
+            gmtime=gmtime,
             elevation_km=mean_elevation_km,
             output_file=paths.modtran_template_path,
         )
@@ -1212,7 +1220,6 @@ def get_metadata_from_obs(
             mean_to_sun_zenith - mean to-sun zenith for good data
             mean_relative_azimuth - mean relative to-sun azimuth for good data
             valid - boolean array indicating which pixels were NOT nodata
-            to_sensor_azimuth_lut_grid - the to-sensor azimuth look up table grid for good data
             to_sensor_zenith_lut_grid - the to-sensor zenith look up table grid for good data
             to_sun_zenith_lut_grid - the to-sun zenith look up table grid for good data
             relative_azimuth_lut_grid - the relative to-sun azimuth look up table grid for good data
@@ -1259,6 +1266,7 @@ def get_metadata_from_obs(
     mean_path_km = np.mean(path_km[valid])
     del path_km
 
+    mean_to_sensor_azimuth = (lut_params.get_angular_grid(to_sensor_azimuth[valid], -1, 0) % 360)
     mean_to_sensor_zenith = 180 - lut_params.get_angular_grid(to_sensor_zenith[valid], -1, 0)
     mean_to_sun_zenith = lut_params.get_angular_grid(to_sun_zenith[valid], -1, 0)
     mean_relative_azimuth = (lut_params.get_angular_grid(relative_azimuth[valid], -1, 0) % 360)
@@ -1325,6 +1333,7 @@ def get_metadata_from_obs(
         h_m_s,
         increment_day,
         mean_path_km,
+        mean_to_sensor_azimuth,
         mean_to_sensor_zenith,
         mean_to_sun_zenith,
         mean_relative_azimuth,
@@ -1844,8 +1853,10 @@ def write_modtran_template(
     altitude_km: float,
     dayofyear: int,
     to_sun_zenith: float,
+    to_sensor_azimuth: float,
     to_sensor_zenith: float,
     relative_azimuth: float,
+    gmtime: float,
     elevation_km: float,
     output_file: str,
     ihaze_type: str = "AER_RURAL",
@@ -1853,16 +1864,18 @@ def write_modtran_template(
     """Write a MODTRAN template file for use by isofit look up tables
 
     Args:
-        atmosphere_type:  label for the type of atmospheric profile to use in modtran
-        fid:              flight line id (name)
-        altitude_km:      altitude of the sensor in km
-        dayofyear:        the current day of the given year
-        to_sun_zenith:    final altitude solar zenith angle (0→180°)
-        to_sensor_zenith: sensor/observer zenith angle, in degrees (MODTRAN convention: 180 - AVIRIS convention)
-        relative_azimuth: final altitude relative solar azimuth (0→360°)
-        elevation_km:     elevation of the land surface in km
-        output_file:      location to write the modtran template file to
-        ihaze_type:       type of extinction and default meteorological range for the boundary-layer aerosol model
+        atmosphere_type:   label for the type of atmospheric profile to use in modtran
+        fid:               flight line id (name)
+        altitude_km:       altitude of the sensor in km
+        dayofyear:         the current day of the given year
+        to_sun_zenith:     final altitude solar zenith angle (0→180°)
+        to_sensor_azimuth: azimuth view angle to the sensor, in degrees (AVIRIS convention)
+        to_sensor_zenith:  sensor/observer zenith angle, in degrees (MODTRAN convention: 180 - AVIRIS convention)
+        relative_azimuth:  final altitude relative solar azimuth (0→360°)
+        gmtime:            greenwich mean time
+        elevation_km:      elevation of the land surface in km
+        output_file:       location to write the modtran template file to
+        ihaze_type:        type of extinction and default meteorological range for the boundary-layer aerosol model
     """
     # make modtran configuration
     h2o_template = {
@@ -1904,7 +1917,9 @@ def write_modtran_template(
                         "IPARM": 12,
                         "PARM1": relative_azimuth,
                         "PARM2": to_sun_zenith,
+                        "TRUEAZ": to_sensor_azimuth,
                         "OBSZEN": to_sensor_zenith,
+                        "GMTIME": gmtime,
                     },
                     "SURFACE": {
                         "SURFTYPE": "REFL_LAMBER_MODEL",
