@@ -1670,14 +1670,13 @@ def get_metadata_from_loc(
         valid[:trim_lines, :] = False
         valid[-trim_lines:, :] = False
 
-    if "Easting (m)" and "Northing (m)" in loc_dataset.GetMetadata().values():
-        loc_hdr = envi.open(loc_file + ".hdr")
-        zone = [int(s) for s in loc_hdr.metadata["description"].split() if s.isdigit()][
-            0
-        ]
+    if "Easting (m)" and "Northing (m)" in loc_dataset.metadata["band names"]:
+        zone = [
+            int(s) for s in loc_dataset.metadata["description"].split() if s.isdigit()
+        ][0]
         hemisphere = [
             s
-            for s in loc_hdr.metadata["description"].split()
+            for s in loc_dataset.metadata["description"].split()
             if s in ["North", "South"]
         ][0]
 
