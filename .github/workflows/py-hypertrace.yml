@@ -22,6 +22,7 @@ jobs:
 
     - name: Install Isofit
       run: |
+        pip install xarray dask netCDF4
         pip install --no-deps --force-reinstall --editable .
 
     - name: Download and extract hypertrace data
