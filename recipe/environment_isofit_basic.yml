@@ -7,7 +7,6 @@ dependencies:
   - python>=3.8
   - pip
   - click
-  - gdal>=2.0.0
   - matplotlib>=2.2.2
   - numpy>=1.20.0
   - pandas>=0.24
