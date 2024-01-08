@@ -295,7 +295,7 @@ class RadiativeTransfer:
             Kb_RT = np.zeros((1, len(self.wl)))
         else:
             # first the radiance at the current state vector
-            rdn = self.calc_rdn(x_RT, rfl, Ls, geom)
+            rdn = self.calc_rdn(x_RT, x_surface, rfl, Ls, geom)
 
             # unknown parameters modeled as random variables per
             # Rodgers et al (2000) K_b matrix.  We calculate these derivatives
