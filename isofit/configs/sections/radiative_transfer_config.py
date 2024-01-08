@@ -91,6 +91,10 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         of the keys in radiative_transfer->lut_grid.  If not specified, uses all keys from
         radiative_transfer-> lut_grid.  Auto-sorted (alphabetically) below."""
 
+        self._lut_subset_type = dict()
+        self.lut_subset = {}
+        """Dict: Subsets a LUT file"""
+
         self._statevector_names_type = list()
         self.statevector_names = None
         """List: Names of the statevector elements to use with this radiative transfer engine.  Must be a subset
