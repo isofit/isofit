@@ -236,6 +236,10 @@ class ModtranRT(RadiativeTransferEngine):
         )
         self.template = json_load_ascii(self.engine_config.template_file)["MODTRAN"]
 
+        # Regenerate MODTRAN input wavelength file
+        if not os.path.exists(self.filtpath):
+            self.wl2flt(self.wl, self.fwhm, self.filtpath)
+
         # Insert aerosol templates, if specified
         if self.engine_config.aerosol_model_file is not None:
             self.template[0]["MODTRANINPUT"]["AEROSOLS"] = json_load_ascii(
