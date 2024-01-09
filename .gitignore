@@ -32,6 +32,7 @@ dist/*.whl
 .pytest_cache/
 isofit/test/output/*.txt
 tests/output/*.txt
+logs/
 
 # Ignore documentation files
 docs/_build/
