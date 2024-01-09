@@ -26,6 +26,7 @@ from typing import List
 import numpy as np
 import scipy.interpolate
 import scipy.io
+import xarray as xr
 from spectral.io import envi
 
 from isofit.configs import Config
@@ -119,6 +120,17 @@ class SpectrumFile:
             if not self.write:
                 logging.error("Unsupported MATLAB file in input block")
                 raise IOError("MATLAB format in input block not supported")
+
+        elif self.fname.endswith(".nc"):
+            logging.debug(f"Inferred MATLAB file format for {self.fname}")
+            self.format = "NETCDF"
+
+            if not self.write:
+                self.data = xr.open_dataset(self.fname)
+                self.meta = self.data.attrs
+                self.n_rows = self.data.downtrack.size
+                self.n_cols = self.data.crosstrack.size
+                self.n_bands = self.data.bands.size
 
         else:
             # Otherwise we assume it is an ENVI-format file, which is
@@ -237,6 +249,8 @@ class SpectrumFile:
 
         if self.format == "ASCII":
             return self.data
+        elif self.format == "NETCDF":
+            return self.data.radiance.sel(downtrack=row, crosstrack=col).data
         else:
             frame = self.get_frame(row)
             return frame[col]
