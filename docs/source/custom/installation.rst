@@ -1,6 +1,9 @@
 Installation
 ============
 
+.. contents:: Table of Contents
+    :depth: 2
+
 Install from conda-forge
 ************************
 Recommended approach!
