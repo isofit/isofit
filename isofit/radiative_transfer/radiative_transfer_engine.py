@@ -167,8 +167,10 @@ class RadiativeTransferEngine:
         # Extract from LUT file if available, otherwise initialize it
         if exists:
             Logger.info(f"Prebuilt LUT provided")
-            Logger.debug(f"Reading from store: {lut_path}")
-            self.lut = luts.load(lut_path, lut_grid)
+            Logger.debug(
+                f"Reading from store: {lut_path}, subset={engine_config.lut_subset}"
+            )
+            self.lut = luts.load(lut_path, lut_grid, subset=engine_config.lut_subset)
             self.lut_grid = lut_grid or luts.extractGrid(self.lut)
             self.points, self.lut_names = luts.extractPoints(self.lut)
         else:

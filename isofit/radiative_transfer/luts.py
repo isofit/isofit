@@ -175,13 +175,62 @@ def updatePoint(
                         var[inds] = values
 
 
-def load(file: str, lut_names: list = []) -> xr.Dataset:
+def sel(ds, dim, lt=None, lte=None, gt=None, gte=None):
+    """
+    Subselects an xarray Dataset object using .sel
+
+    Parameters
+    ----------
+    ds: xarray.Dataset
+        LUT dataset
+    dim: str
+        Dimension to work on
+    lt: float
+        Select along this dim coordinates that are valued less than this
+    lte: float
+        Select along this dim coordinates that are valued less than or equal to this
+    gt: float
+        Select along this dim coordinates that are valued greater than this
+    gte: float
+        Select along this dim coordinates that are valued greater than or equal to this
+
+    Returns
+    -------
+    ds: xarray.Dataset
+        Subsetted dataset
+    """
+    if lt is not None:
+        ds = ds.sel({dim: ds[dim] < lt})
+    if lte is not None:
+        ds = ds.sel({dim: ds[dim] <= lte})
+    if gt is not None:
+        ds = ds.sel({dim: gt < ds[dim]})
+    if gte is not None:
+        ds = ds.sel({dim: gte <= ds[dim]})
+    return ds
+
+
+def load(file: str, lut_names: list = [], subset: dict = {}) -> xr.Dataset:
     """
     Loads a LUT NetCDF
     Assumes to be a regular grid at this time (auto creates the point dim)
     """
     ds = xr.open_mfdataset([file], mode="r", lock=False)
-    dims = lut_names or ds.drop_dims("wl").coords
+
+    for dim, sub in subset.items():
+        if isinstance(sub, list):
+            lower, upper = sub
+            ds = ds.sel({dim: (lower < ds[dim]) & (ds[dim] < upper)})
+        elif isinstance(sub, float):
+            ds = ds.sel({dim: sub})
+        elif isinstance(sub, dict):
+            ds = sel(ds, dim, **sub)
+        elif isinstance(sub, int):
+            ds = ds.isel({dim: sub})
+        elif isinstance(sub, str):
+            ds = getattr(ds, sub)(dim)
+
+    dims = lut_names or ds.drop_dims("wl").dims
     return ds.stack(point=dims).transpose("point", "wl")
 
 
