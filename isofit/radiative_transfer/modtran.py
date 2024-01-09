@@ -31,9 +31,6 @@ import numpy as np
 import scipy.interpolate
 import scipy.stats
 
-from isofit.configs.sections.radiative_transfer_config import (
-    RadiativeTransferEngineConfig,
-)
 from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
 
 from ..core.common import json_load_ascii, recursive_replace
@@ -284,7 +281,7 @@ class ModtranRT(RadiativeTransferEngine):
 
         return params
 
-    def makeSim(self, point, file=None):
+    def makeSim(self, point, file=None, timeout=None):
         """
         Prepares the command to execute MODTRAN
         """
@@ -338,7 +335,10 @@ class ModtranRT(RadiativeTransferEngine):
         cmd = os.path.join(
             self.engine_base_dir, "bin", xdir[platform], "mod6c_cons " + infilename
         )
-        return cmd
+
+        call = subprocess.run(cmd, shell=True, timeout=timeout, cwd=self.sim_path, capture_output=True)
+        if call.stdout:
+            Logger.error(call.stdout.decode())
 
     def modtran_driver(self, overrides):
         """Write a MODTRAN 6.0 input file."""
@@ -612,15 +612,7 @@ class ModtranRT(RadiativeTransferEngine):
         point[self.lut_names.index("H2OSTR")] = 50
 
         filebase = os.path.join(self.sim_path, "H2O_bound_test")
-        cmd = self.makeSim(point, filebase)
-
-        # Run MODTRAN for up to 10 seconds - this should be plenty of time
-        if os.path.isdir(self.sim_path) is False:
-            os.mkdir(self.sim_path)
-        try:
-            subprocess.call(cmd, shell=True, timeout=10, cwd=self.sim_path)
-        except:
-            pass
+        self.makeSim(point, filebase)
 
         max_water = None
         with open(

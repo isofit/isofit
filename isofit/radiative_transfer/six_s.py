@@ -110,7 +110,9 @@ class SixSRT(RadiativeTransferEngine):
 
         cmd = self.rebuild_cmd(point)
         if template_only is False:
-            subprocess.call(cmd, shell=True)
+            call = subprocess.run(cmd, shell=True, capture_output=True)
+            if call.stdout:
+                Logger.error(call.stdout.decode())
 
     def readSim(self, point: np.array):
         """
