@@ -16,7 +16,6 @@ from typing import List
 
 import numpy as np
 import utm
-from osgeo import gdal
 from sklearn import mixture
 from spectral.io import envi
 
@@ -1544,32 +1543,16 @@ def get_metadata_from_obs(
             to_sensor_azimuth_lut_grid - the to-sensor azimuth angle look up table for good data
             to_sensor_zenith_lut_grid - the to-sensor zenith look up table for good data
     """
-    obs_dataset = gdal.Open(obs_file, gdal.GA_ReadOnly)
+    obs_dataset = envi.open(envi_header(obs_file), obs_file)
+    obs = obs_dataset.open_memmap(interleave="bip", writable=False)
+    valid = np.logical_not(np.any(np.isclose(obs, nodata_value), axis=2))
 
-    # Initialize values to populate
-    valid = np.zeros((obs_dataset.RasterYSize, obs_dataset.RasterXSize), dtype=bool)
-
-    path_km = np.zeros((obs_dataset.RasterYSize, obs_dataset.RasterXSize))
-    to_sensor_azimuth = np.zeros((obs_dataset.RasterYSize, obs_dataset.RasterXSize))
-    to_sensor_zenith = np.zeros((obs_dataset.RasterYSize, obs_dataset.RasterXSize))
-    time = np.zeros((obs_dataset.RasterYSize, obs_dataset.RasterXSize))
-
-    for line in range(obs_dataset.RasterYSize):
-        # Read line in
-        obs_line = obs_dataset.ReadAsArray(0, line, obs_dataset.RasterXSize, 1)
-
-        # Populate valid
-        valid[line, :] = np.logical_not(
-            np.any(np.isclose(obs_line, nodata_value), axis=0)
-        )
-
-        path_km[line, :] = obs_line[0, ...] / 1000.0
-        to_sensor_azimuth[line, :] = obs_line[1, ...]
-        to_sensor_zenith[line, :] = obs_line[2, ...]
-        time[line, :] = obs_line[9, ...]
+    path_km = obs[:, :, 0] / 1000.0
+    to_sensor_azimuth = obs[:, :, 1]
+    to_sensor_zenith = obs[:, :, 2]
+    time = obs[:, :, 9]
 
     use_trim = trim_lines != 0 and valid.shape[0] > trim_lines * 2
-
     if use_trim:
         actual_valid = valid.copy()
         valid[:trim_lines, :] = False
@@ -1677,33 +1660,23 @@ def get_metadata_from_loc(
             elevation_lut_grid - the elevation look up table, based on globals and values from location file
     """
 
-    loc_dataset = gdal.Open(loc_file, gdal.GA_ReadOnly)
-
-    loc_data = np.zeros(
-        (loc_dataset.RasterCount, loc_dataset.RasterYSize, loc_dataset.RasterXSize)
-    )
-
-    for line in range(loc_dataset.RasterYSize):
-        # Read line in
-        loc_data[:, line : line + 1, :] = loc_dataset.ReadAsArray(
-            0, line, loc_dataset.RasterXSize, 1
-        )
-
+    loc_dataset = envi.open(envi_header(loc_file), loc_file)
+    loc_data = np.zeros((loc_dataset.shape[0], loc_dataset.shape[1]))
     valid = np.logical_not(np.any(loc_data == nodata_value, axis=0))
+
     use_trim = trim_lines != 0 and valid.shape[0] > trim_lines * 2
 
     if use_trim:
         valid[:trim_lines, :] = False
         valid[-trim_lines:, :] = False
 
-    if "Easting (m)" and "Northing (m)" in loc_dataset.GetMetadata().values():
-        loc_hdr = envi.open(loc_file + ".hdr")
-        zone = [int(s) for s in loc_hdr.metadata["description"].split() if s.isdigit()][
-            0
-        ]
+    if "Easting (m)" and "Northing (m)" in loc_dataset.metadata["band names"]:
+        zone = [
+            int(s) for s in loc_dataset.metadata["description"].split() if s.isdigit()
+        ][0]
         hemisphere = [
             s
-            for s in loc_hdr.metadata["description"].split()
+            for s in loc_dataset.metadata["description"].split()
             if s in ["North", "South"]
         ][0]
 

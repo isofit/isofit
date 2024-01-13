@@ -25,7 +25,6 @@ from collections import OrderedDict
 from os.path import expandvars
 from typing import List
 
-import ndsplines
 import numpy as np
 import scipy.linalg
 import xxhash
@@ -49,8 +48,7 @@ class VectorInterpolator:
         data_input: n dimensional array of radiative transfer engine outputs (each dimension size corresponds to the
                     given grid_input list length, with the last dimensions equal to the number of sensor channels)
         lut_interp_types: a list indicating if each dimension is in radiance (r), degrees (r), or normal (n) units.
-        version: version to use: 'rg' for scipy RegularGridInterpolator, 'nds-k' for ndsplines, where k is the
-                 degrees.
+        version: version to use: 'rg' for scipy RegularGridInterpolator, 'mlg' for multilinear grid interpolator
     """
 
     def __init__(
@@ -60,105 +58,98 @@ class VectorInterpolator:
         lut_interp_types: List[str],
         version="nds-1",
     ):
-        if version[:3] in ["rg", "nds"]:
-            self.method = 1
+        self.method = 1
 
-            self.lut_interp_types = lut_interp_types
-            self.single_point_data = None
+        self.lut_interp_types = lut_interp_types
+        self.single_point_data = None
 
-            # Lists and arrays are mutable, so copy first
-            grid = grid_input.copy()
-            data = data_input.copy()
+        # Lists and arrays are mutable, so copy first
+        grid = grid_input.copy()
+        data = data_input.copy()
 
-            # Check if we are using a single grid point. If so, store the grid input.
-            if np.prod(list(map(len, grid))) == 1:
-                self.single_point_data = data
+        # Check if we are using a single grid point. If so, store the grid input.
+        if np.prod(list(map(len, grid))) == 1:
+            self.single_point_data = data
 
-            # expand grid dimensionality as needed
-            [radian_locations] = np.where(self.lut_interp_types == "r")
-            [degree_locations] = np.where(self.lut_interp_types == "d")
-            angle_locations = np.hstack([radian_locations, degree_locations])
-            angle_types = np.hstack(
-                [
-                    self.lut_interp_types[radian_locations],
-                    self.lut_interp_types[degree_locations],
-                ]
+        # expand grid dimensionality as needed
+        [radian_locations] = np.where(self.lut_interp_types == "r")
+        [degree_locations] = np.where(self.lut_interp_types == "d")
+        angle_locations = np.hstack([radian_locations, degree_locations])
+        angle_types = np.hstack(
+            [
+                self.lut_interp_types[radian_locations],
+                self.lut_interp_types[degree_locations],
+            ]
+        )
+        for _angle_loc in range(len(angle_locations)):
+            angle_loc = angle_locations[_angle_loc]
+
+            # get original grid at given location
+            original_grid_subset = np.array(grid[angle_loc])
+
+            # convert for angular coordinates
+            if angle_types[_angle_loc] == "r":
+                grid_subset_cosin = np.cos(original_grid_subset)
+                grid_subset_sin = np.sin(original_grid_subset)
+
+            elif angle_types[_angle_loc] == "d":
+                grid_subset_cosin = np.cos(np.deg2rad(original_grid_subset))
+                grid_subset_sin = np.sin(np.deg2rad(original_grid_subset))
+
+            # handle the fact that the grid may no longer be in order
+            grid_subset_cosin_order = np.argsort(grid_subset_cosin)
+            grid_subset_sin_order = np.argsort(grid_subset_sin)
+
+            # convert current grid location, and add a second
+            grid[angle_loc] = grid_subset_cosin[grid_subset_cosin_order].tolist()
+            grid.insert(angle_loc + 1, grid_subset_sin[grid_subset_sin_order].tolist())
+
+            # now copy the data to be interpolated through the extra dimension,
+            # at the specific angle_loc axes.  We'll use broadcast_to to do
+            # this, but we need to do it on the last dimension.  So start by
+            # temporarily moving the target axes there, then broadcasting
+            data = np.swapaxes(data, -1, angle_loc)
+            data_dim = list(np.shape(data))
+            data_dim.append(data_dim[-1])
+            data = data[..., np.newaxis] * np.ones(data_dim)
+
+            # Now we need to actually copy the data between the first two axes,
+            # as broadcast_to doesn't do this
+            for ind in range(data.shape[-1]):
+                data[..., ind] = data[..., :, ind]
+
+            # Now re-order the cosin dimension
+            data = data[..., grid_subset_cosin_order, :]
+            # Now re-order the sin dimension
+            data = data[..., grid_subset_sin_order]
+
+            # now re-arrange the axes so they're in the right order again,
+            dst_axes = np.arange(len(data.shape) - 2).tolist()
+            dst_axes.insert(angle_loc, len(data.shape) - 2)
+            dst_axes.insert(angle_loc + 1, len(data.shape) - 1)
+            dst_axes.remove(angle_loc)
+            dst_axes.append(angle_loc)
+            data = np.ascontiguousarray(np.transpose(data, axes=dst_axes))
+
+            # update the rest of the angle locations
+            angle_locations += 1
+
+        self.n = data.shape[-1]
+
+        # RegularGrid
+        if version == "rg":
+            grid_aug = grid + [np.arange(data.shape[-1])]
+            self.itp = RegularGridInterpolator(
+                grid_aug, data, bounds_error=False, fill_value=None
             )
-            for _angle_loc in range(len(angle_locations)):
-                angle_loc = angle_locations[_angle_loc]
-
-                # get original grid at given location
-                original_grid_subset = np.array(grid[angle_loc])
-
-                # convert for angular coordinates
-                if angle_types[_angle_loc] == "r":
-                    grid_subset_cosin = np.cos(original_grid_subset)
-                    grid_subset_sin = np.sin(original_grid_subset)
-
-                elif angle_types[_angle_loc] == "d":
-                    grid_subset_cosin = np.cos(np.deg2rad(original_grid_subset))
-                    grid_subset_sin = np.sin(np.deg2rad(original_grid_subset))
-
-                # handle the fact that the grid may no longer be in order
-                grid_subset_cosin_order = np.argsort(grid_subset_cosin)
-                grid_subset_sin_order = np.argsort(grid_subset_sin)
-
-                # convert current grid location, and add a second
-                grid[angle_loc] = grid_subset_cosin[grid_subset_cosin_order]
-                grid.insert(angle_loc + 1, grid_subset_sin[grid_subset_sin_order])
-
-                # now copy the data to be interpolated through the extra dimension,
-                # at the specific angle_loc axes.  We'll use broadcast_to to do
-                # this, but we need to do it on the last dimension.  So start by
-                # temporarily moving the target axes there, then broadcasting
-                data = np.swapaxes(data, -1, angle_loc)
-                data_dim = list(np.shape(data))
-                data_dim.append(data_dim[-1])
-                data = data[..., np.newaxis] * np.ones(data_dim)
-
-                # Now we need to actually copy the data between the first two axes,
-                # as broadcast_to doesn't do this
-                for ind in range(data.shape[-1]):
-                    data[..., ind] = data[..., :, ind]
-
-                # Now re-order the cosin dimension
-                data = data[..., grid_subset_cosin_order, :]
-                # Now re-order the sin dimension
-                data = data[..., grid_subset_sin_order]
-
-                # now re-arrange the axes so they're in the right order again,
-                dst_axes = np.arange(len(data.shape) - 2).tolist()
-                dst_axes.insert(angle_loc, len(data.shape) - 2)
-                dst_axes.insert(angle_loc + 1, len(data.shape) - 1)
-                dst_axes.remove(angle_loc)
-                dst_axes.append(angle_loc)
-                data = np.ascontiguousarray(np.transpose(data, axes=dst_axes))
-
-                # update the rest of the angle locations
-                angle_locations += 1
-
-            self.n = data.shape[-1]
-
-            # RegularGrid
-            if version == "rg":
-                grid_aug = grid + [np.arange(data.shape[-1])]
-                self.itp = RegularGridInterpolator(
-                    grid_aug, data, bounds_error=False, fill_value=None
-                )
-
-            # NDSplines
-            elif version[:3] == "nds":
-                degrees = int(version[4:])
-                grid_aug = grid + [np.arange(data.shape[-1]).tolist()]
-                grid_arr = np.stack(np.meshgrid(*grid_aug, indexing="ij"), axis=-1)
-                self.itp = ndsplines.make_interp_spline(grid_arr, data, degrees=degrees)
+            self.method = 1
 
         # Multilinear Grid
         elif version == "mlg":
             self.method = 2
 
-            self.gridtuples = [np.array(t) for t in grid_input]
-            self.gridarrays = data_input
+            self.gridtuples = [np.array(t) for t in grid]
+            self.gridarrays = data
             self.binwidth = [
                 t[1:] - t[:-1] for t in self.gridtuples
             ]  # binwidth arrays for each dimension
@@ -209,14 +200,27 @@ class VectorInterpolator:
         Returns:
             cube: np.ndarray
         """
+        x = np.zeros((len(points) + np.sum(self.lut_interp_types != "n")))
+        offset_count = 0
+        for i in range(len(points)):
+            if self.lut_interp_types[i] == "n":
+                x[i + offset_count] = points[i]
+            elif self.lut_interp_types[i] == "r":
+                x[i + offset_count] = np.cos(points[i])
+                x[i + 1 + offset_count] = np.sin(points[i])
+                offset_count += 1
+            elif self.lut_interp_types[i] == "d":
+                x[i + offset_count] = np.cos(np.deg2rad(points[i]))
+                x[i + 1 + offset_count] = np.sin(np.deg2rad(points[i]))
+                offset_count += 1
+
         # Index of left side of bin, and don't go over (that's why it's t[:-1] instead of t)
         inds = [
-            np.searchsorted(t[:-1], points[i]) - 1
-            for i, t in enumerate(self.gridtuples)
+            np.searchsorted(t[:-1], x[i]) - 1 for i, t in enumerate(self.gridtuples)
         ]
         deltas = np.array(
             [
-                (points[i] - self.gridtuples[i][j]) / self.binwidth[i][j]
+                (x[i] - self.gridtuples[i][j]) / self.binwidth[i][j]
                 for i, j in enumerate(inds)
             ]
         )
@@ -236,9 +240,9 @@ class VectorInterpolator:
 
         for i, di in enumerate(deltas):
             # Eliminate those indexes where we are outside grid range or exactly on the grid point
-            if points[i] >= self.gridtuples[i][-1]:
+            if x[i] >= self.gridtuples[i][-1]:
                 cube = cube[1]
-            elif points[i] <= self.gridtuples[i][0]:
+            elif x[i] <= self.gridtuples[i][0]:
                 cube = cube[0]
             # Otherwise eliminate index by linear interpolation
             else:

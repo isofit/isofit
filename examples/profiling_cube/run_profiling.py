@@ -15,10 +15,11 @@ import zipfile
 from glob      import glob
 from importlib import reload
 from io        import BytesIO
+from types     import SimpleNamespace
 
 import isofit
 
-from isofit.utils.multisurface_oe import main as multi_oe
+from isofit.utils.multisurface_oe import multisurface_oe
 
 
 logging.basicConfig(format='%(levelname)s | %(message)s', level=logging.DEBUG)
@@ -89,7 +90,7 @@ def profile(args, output=None):
 
     # Make sure the module is a fresh instance between runs
     reload(isofit.utils.multisurface_oe)
-    multi_oe(args)
+    multisurface_oe(args)
 
     profiler.disable()
 
@@ -128,7 +129,17 @@ def run(config, workdir, files, output=None, n=1):
             os.remove(file)
 
         profile(
-            args   = files + [workdir, config, '--logging_level', 'DEBUG'],
+            args = SimpleNamespace(
+                input_radiance     = files[0],
+                input_loc          = files[1],
+                input_obs          = files[2],
+                working_directory  = workdir,
+                config_file        = config,
+                wavelength_path    = None,
+                log_file           = None,
+                logging_level      = 'DEBUG',
+                pressure_elevation = None
+            ),
             output = file
         )
 
@@ -149,7 +160,7 @@ if __name__ == '__main__':
                                             default = 'small',
                                             help    = 'Size of chunk to run'
     )
-    parser.add_argument('-m', '--method',   choices = ['mlg', 'rg', 'nds'],
+    parser.add_argument('-m', '--method',   choices = ['mlg', 'rg'],
                                             default = 'mlg',
                                             help    = 'Interpolation style to choose from'
     )

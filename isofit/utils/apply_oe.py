@@ -3,7 +3,6 @@
 # Authors: David R Thompson and Philip G. Brodrick
 #
 
-import argparse
 import json
 import logging
 import os
@@ -13,11 +12,12 @@ from datetime import datetime
 from os.path import abspath, exists, join, split
 from shutil import copyfile
 from sys import platform
+from types import SimpleNamespace
 from typing import List
 from warnings import warn
 
+import click
 import numpy as np
-from osgeo import gdal
 from sklearn import mixture
 from spectral.io import envi
 
@@ -42,7 +42,7 @@ UNCORRELATED_RADIOMETRIC_UNCERTAINTY = 0.01
 INVERSION_WINDOWS = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
 
 
-def main(rawargs=None):
+def apply_oe(args):
     """This is a helper script to apply OE over a flightline using the MODTRAN radiative transfer engine.
 
     The goal is to run isofit in a fairly 'standard' way, accounting for the types of variation that might be
@@ -110,50 +110,22 @@ def main(rawargs=None):
     Returns:
 
     """
-    # Parse arguments
-    parser = argparse.ArgumentParser(description="Apply OE to a block of data.")
-    parser.add_argument("input_radiance", type=str)
-    parser.add_argument("input_loc", type=str)
-    parser.add_argument("input_obs", type=str)
-    parser.add_argument("working_directory", type=str)
-    parser.add_argument("sensor", type=str)
-    parser.add_argument("--copy_input_files", type=int, choices=[0, 1], default=0)
-    parser.add_argument("--modtran_path", type=str)
-    parser.add_argument("--wavelength_path", type=str)
-    parser.add_argument(
-        "--surface_category", type=str, default="multicomponent_surface"
-    )
-    parser.add_argument("--aerosol_climatology_path", type=str, default=None)
-    parser.add_argument("--rdn_factors_path", type=str)
-    parser.add_argument("--surface_path", type=str)
-    parser.add_argument("--atmosphere_type", type=str, default="ATM_MIDLAT_SUMMER")
-    parser.add_argument("--channelized_uncertainty_path", type=str)
-    parser.add_argument("--model_discrepancy_path", type=str)
-    parser.add_argument("--lut_config_file", type=str)
-    parser.add_argument("--multiple_restarts", action="store_true")
-    parser.add_argument("--logging_level", type=str, default="INFO")
-    parser.add_argument("--log_file", type=str, default=None)
-    parser.add_argument("--n_cores", type=int, default=1)
-    parser.add_argument("--presolve", choices=[0, 1], type=int, default=0)
-    parser.add_argument("--empirical_line", choices=[0, 1], type=int, default=0)
-    parser.add_argument("--analytical_line", choices=[0, 1], type=int, default=0)
-    parser.add_argument("--ray_temp_dir", type=str, default="/tmp/ray")
-    parser.add_argument("--emulator_base", type=str, default=None)
-    parser.add_argument("--segmentation_size", type=int, default=40)
-    parser.add_argument("--num_neighbors", type=int, nargs="+", default=None)
-    parser.add_argument("--atm_sigma", type=int, nargs="+", default=2)
-    parser.add_argument("--pressure_elevation", action="store_true", default=None)
-    parser.add_argument("--debug", action="store_true")
-
-    args = parser.parse_args(rawargs)
-
     use_superpixels = (args.empirical_line == 1) or (args.analytical_line == 1)
 
-    if args.sensor not in ["ang", "avcl", "neon", "prism", "emit", "hyp", "prisma"]:
+    if args.sensor not in [
+        "ang",
+        "avcl",
+        "neon",
+        "prism",
+        "emit",
+        "hyp",
+        "prisma",
+        "av3",
+    ]:
         if args.sensor[:3] != "NA-":
             raise ValueError(
                 'argument sensor: invalid choice: "NA-test" (choose from '
-                '"ang", "avcl", "neon", "prism", "emit", "NA-*")'
+                '"ang", "avcl", "neon", "prism", "emit", "av3", "NA-*")'
             )
 
     if args.num_neighbors is not None and len(args.num_neighbors) > 1:
@@ -179,8 +151,8 @@ def main(rawargs=None):
     )
     logging.info(args)
 
-    rdn_dataset = gdal.Open(args.input_radiance, gdal.GA_ReadOnly)
-    rdn_size = (rdn_dataset.RasterXSize, rdn_dataset.RasterYSize)
+    rdn_dataset = envi.open(envi_header(args.input_radiance))
+    rdn_size = (rdn_dataset.shape[0], rdn_dataset.shape[1])
     del rdn_dataset
     for infile_name, infile in zip(
         ["input_radiance", "input_loc", "input_obs"],
@@ -193,8 +165,8 @@ def main(rawargs=None):
             )
             raise ValueError("argument " + err_str)
         if infile_name != "input_radiance":
-            input_dataset = gdal.Open(infile, gdal.GA_ReadOnly)
-            input_size = (input_dataset.RasterXSize, input_dataset.RasterYSize)
+            input_dataset = envi.open(envi_header(infile), infile)
+            input_size = (input_dataset.shape[0], input_dataset.shape[1])
             if not (input_size[0] == rdn_size[0] and input_size[1] == rdn_size[1]):
                 err_str = (
                     f"Input file: {infile_name} size is {input_size}, which does not"
@@ -217,6 +189,8 @@ def main(rawargs=None):
     # We'll adjust for line length and UTC day overrun later
     if args.sensor == "ang":
         # parse flightline ID (AVIRIS-NG assumptions)
+        dt = datetime.strptime(paths.fid[3:], "%Y%m%dt%H%M%S")
+    elif args.sensor == "av3":
         dt = datetime.strptime(paths.fid[3:], "%Y%m%dt%H%M%S")
     elif args.sensor == "avcl":
         # parse flightline ID (AVIRIS-CL assumptions)
@@ -313,6 +287,11 @@ def main(rawargs=None):
             to_rem = elevation_lut_grid[elevation_lut_grid < 0].copy()
             elevation_lut_grid[elevation_lut_grid < 0] = 0
             elevation_lut_grid = np.unique(elevation_lut_grid)
+            if len(elevation_lut_grid) == 1:
+                elevation_lut_grid = None
+                mean_elevation_km = elevation_lut_grid[
+                    0
+                ]  # should be 0, but just in case
             logging.info(
                 "Scene contains target lut grid elements < 0 km, and uses 6s (via"
                 " sRTMnet).  6s does not support targets below sea level in km units. "
@@ -425,7 +404,6 @@ def main(rawargs=None):
                 surface_category=args.surface_category,
                 emulator_base=args.emulator_base,
                 uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
-                debug=args.debug,
             )
 
             # Run modtran retrieval
@@ -516,7 +494,6 @@ def main(rawargs=None):
             multiple_restarts=args.multiple_restarts,
             segmentation_size=args.segmentation_size,
             pressure_elevation=args.pressure_elevation,
-            debug=args.debug,
         )
 
         # Run modtran retrieval
@@ -544,7 +521,9 @@ def main(rawargs=None):
                 os.system(cmd)
 
     if not exists(paths.rfl_working_path) or not exists(paths.uncert_working_path):
-        if args.num_neighbors is None:
+        # Determine the number of neighbors to use.  Provides backwards stability and works
+        # well with defaults, but is arbitrary
+        if not args.num_neighbors:
             nneighbors = [int(round(3950 / 9 - 35 / 36 * args.segmentation_size))]
         else:
             nneighbors = args.num_neighbors
@@ -552,8 +531,6 @@ def main(rawargs=None):
         if args.empirical_line == 1:
             # Empirical line
             logging.info("Empirical line inference")
-            # Determine the number of neighbors to use.  Provides backwards stability and works
-            # well with defaults, but is arbitrary
             empirical_line(
                 reference_radiance_file=paths.rdn_subs_path,
                 reference_reflectance_file=paths.rfl_subs_path,
@@ -569,26 +546,18 @@ def main(rawargs=None):
             )
         elif args.analytical_line == 1:
             logging.info("Analytical line inference")
-            analytical_line_args = [
+            analytical_line(
                 paths.radiance_working_path,
                 paths.loc_working_path,
                 paths.obs_working_path,
                 args.working_directory,
-                "--output_rfl_file",
-                paths.rfl_working_path,
-                "--output_unc_file",
-                paths.uncert_working_path,
-                "--loglevel",
-                args.logging_level,
-                "--logfile",
-                args.log_file,
-                "--n_atm_neighbors",
-            ]
-            analytical_line_args.extend([str(x) for x in nneighbors])
-            analytical_line_args.append("--smoothing_sigma")
-            analytical_line_args.extend([str(x) for x in args.atm_sigma])
-
-            analytical_line.main(analytical_line_args)
+                output_rfl_file=paths.rfl_working_path,
+                output_unc_file=paths.uncert_working_path,
+                loglevel=args.logging_level,
+                logfile=args.log_file,
+                n_atm_neighbors=nneighbors,
+                smoothing_sigma=args.atm_sigma,
+            )
 
     logging.info("Done.")
 
@@ -601,7 +570,7 @@ class Pathnames:
         args: an argparse Namespace object with all inputs
     """
 
-    def __init__(self, args: argparse.Namespace):
+    def __init__(self, args):
         # Determine FID based on sensor name
         if args.sensor == "ang":
             self.fid = split(args.input_radiance)[-1][:18]
@@ -609,8 +578,11 @@ class Pathnames:
         elif args.sensor == "prism":
             self.fid = split(args.input_radiance)[-1][:18]
             logging.info("Flightline ID: %s" % self.fid)
+        elif args.sensor == "av3":
+            self.fid = split(args.input_radiance)[-1][:18]
+            logging.info("Flightline ID: %s" % self.fid)
         elif args.sensor == "prisma":
-            self.fid = args.input_radiance.split("/")[-1].split("_")[4]
+            self.fid = args.input_radiance.split("/")[-1].split("_")[1]
             logging.info("Flightline ID: %s" % self.fid)
         elif args.sensor == "avcl":
             self.fid = split(args.input_radiance)[-1][:16]
@@ -765,6 +737,13 @@ class Pathnames:
             if self.input_model_discrepancy_path is None:
                 self.input_model_discrepancy_path = join(
                     self.isofit_path, "data", "emit_model_discrepancy.mat"
+                )
+        elif args.sensor == "av3":
+            self.noise_path = None
+            logging.info("no noise path found, proceeding without")
+            if self.input_channelized_uncertainty_path is None:
+                self.input_channelized_uncertainty_path = join(
+                    self.isofit_path, "data", "av3_osf_uncertainty.txt"
                 )
         else:
             self.noise_path = None
@@ -1257,29 +1236,14 @@ def get_metadata_from_obs(
             to_sensor_azimuth_lut_grid - the to-sensor azimuth angle look up table for good data
             to_sensor_zenith_lut_grid - the to-sensor zenith look up table for good data
     """
-    obs_dataset = gdal.Open(obs_file, gdal.GA_ReadOnly)
+    obs_dataset = envi.open(envi_header(obs_file), obs_file)
+    obs = obs_dataset.open_memmap(interleave="bip", writable=False)
+    valid = np.logical_not(np.any(np.isclose(obs, nodata_value), axis=2))
 
-    # Initialize values to populate
-    valid = np.zeros((obs_dataset.RasterYSize, obs_dataset.RasterXSize), dtype=bool)
-
-    path_km = np.zeros((obs_dataset.RasterYSize, obs_dataset.RasterXSize))
-    to_sensor_azimuth = np.zeros((obs_dataset.RasterYSize, obs_dataset.RasterXSize))
-    to_sensor_zenith = np.zeros((obs_dataset.RasterYSize, obs_dataset.RasterXSize))
-    time = np.zeros((obs_dataset.RasterYSize, obs_dataset.RasterXSize))
-
-    for line in range(obs_dataset.RasterYSize):
-        # Read line in
-        obs_line = obs_dataset.ReadAsArray(0, line, obs_dataset.RasterXSize, 1)
-
-        # Populate valid
-        valid[line, :] = np.logical_not(
-            np.any(np.isclose(obs_line, nodata_value), axis=0)
-        )
-
-        path_km[line, :] = obs_line[0, ...] / 1000.0
-        to_sensor_azimuth[line, :] = obs_line[1, ...]
-        to_sensor_zenith[line, :] = obs_line[2, ...]
-        time[line, :] = obs_line[9, ...]
+    path_km = obs[:, :, 0] / 1000.0
+    to_sensor_azimuth = obs[:, :, 1]
+    to_sensor_zenith = obs[:, :, 2]
+    time = obs[:, :, 9]
 
     use_trim = trim_lines != 0 and valid.shape[0] > trim_lines * 2
     if use_trim:
@@ -1381,18 +1345,12 @@ def get_metadata_from_loc(
             elevation_lut_grid - the elevation look up table, based on globals and values from location file
     """
 
-    loc_dataset = gdal.Open(loc_file, gdal.GA_ReadOnly)
-
+    loc_dataset = envi.open(envi_header(loc_file), loc_file)
     loc_data = np.zeros(
-        (loc_dataset.RasterCount, loc_dataset.RasterYSize, loc_dataset.RasterXSize)
+        (loc_dataset.shape[2], loc_dataset.shape[0], loc_dataset.shape[1])
     )
-    for line in range(loc_dataset.RasterYSize):
-        # Read line in
-        loc_data[:, line : line + 1, :] = loc_dataset.ReadAsArray(
-            0, line, loc_dataset.RasterXSize, 1
-        )
-
     valid = np.logical_not(np.any(loc_data == nodata_value, axis=0))
+
     use_trim = trim_lines != 0 and valid.shape[0] > trim_lines * 2
     if use_trim:
         valid[:trim_lines, :] = False
@@ -1948,5 +1906,59 @@ def write_modtran_template(
         )
 
 
+@click.command(name="apply_oe")
+@click.argument("input_radiance")
+@click.argument("input_loc")
+@click.argument("input_obs")
+@click.argument("working_directory")
+@click.argument("sensor")
+@click.option("--copy_input_files", type=int, default=0)
+@click.option("--modtran_path")
+@click.option("--wavelength_path")
+@click.option("--surface_category", default="multicomponent_surface")
+@click.option("--aerosol_climatology_path")
+@click.option("--rdn_factors_path")
+@click.option("--surface_path")
+@click.option("--atmosphere_type", default="ATM_MIDLAT_SUMMER")
+@click.option("--channelized_uncertainty_path")
+@click.option("--model_discrepancy_path")
+@click.option("--lut_config_file")
+@click.option("--multiple_restarts", is_flag=True, default=False)
+@click.option("--logging_level", default="INFO")
+@click.option("--log_file")
+@click.option("--n_cores", type=int, default=1)
+@click.option("--presolve", type=int, default=0)
+@click.option("--empirical_line", type=int, default=0)
+@click.option("--analytical_line", type=int, default=0)
+@click.option("--ray_temp_dir", default="/tmp/ray")
+@click.option("--emulator_base")
+@click.option("--segmentation_size", default=40)
+@click.option("--num_neighbors", "-nn", type=int, multiple=True)
+@click.option("--atm_sigma", "-as", type=float, multiple=True, default=[2])
+@click.option("--pressure_elevation", is_flag=True, default=False)
+@click.option(
+    "--debug-args",
+    help="Prints the arguments list without executing the command",
+    is_flag=True,
+)
+def _cli(debug_args, **kwargs):
+    """\
+    Apply OE to a block of data
+    """
+    if debug_args:
+        click.echo("Arguments to be passed:")
+        for key, value in kwargs.items():
+            click.echo(f"  {key} = {value!r}")
+    else:
+        # SimpleNamespace converts a dict into dot-notational
+        apply_oe(SimpleNamespace(**kwargs))
+
+    click.echo("Done")
+
+
 if __name__ == "__main__":
-    main()
+    _cli()
+else:
+    from isofit import cli
+
+    cli.add_command(_cli)

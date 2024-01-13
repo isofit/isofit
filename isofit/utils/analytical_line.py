@@ -17,7 +17,6 @@
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: Philip G. Brodrick, philip.brodrick@jpl.nasa.gov
 
-import argparse
 import logging
 import multiprocessing
 import os
@@ -25,107 +24,99 @@ import time
 from collections import OrderedDict
 from glob import glob
 
+import click
 import numpy as np
 from spectral.io import envi
 
 from isofit import ray
 from isofit.configs import configs
-from isofit.core.common import envi_header, load_spectrum, svd_inv, svd_inv_sqrt
+from isofit.core.common import envi_header, load_spectrum
 from isofit.core.fileio import write_bil_chunk
 from isofit.core.forward import ForwardModel
 from isofit.core.geometry import Geometry
 from isofit.inversion.inverse import Inversion
-from isofit.inversion.inverse_simple import invert_algebraic, invert_analytical
-from isofit.utils import remap
+from isofit.inversion.inverse_simple import invert_analytical
 from isofit.utils.atm_interpolation import atm_interpolation
 
 
-def main(rawargs=None) -> None:
+def analytical_line(
+    rdn_file: str,
+    loc_file: str,
+    obs_file: str,
+    isofit_dir: str,
+    isofit_config: str = None,
+    segmentation_file: str = None,
+    n_atm_neighbors: int = 20,
+    n_cores: int = -1,
+    smoothing_sigma: int = 2,
+    output_rfl_file: str = None,
+    output_unc_file: str = None,
+    atm_file: str = None,
+    loglevel: str = "INFO",
+    logfile: str = None,
+) -> None:
     """
     TODO: Description
     """
-    parser = argparse.ArgumentParser(description="Apply OE to a block of data.")
-    parser.add_argument("rdn_file", type=str)
-    parser.add_argument("loc_file", type=str)
-    parser.add_argument("obs_file", type=str)
-    parser.add_argument("isofit_dir", type=str)
-    parser.add_argument("--isofit_config", type=str, default=None)
-    parser.add_argument("--segmentation_file", type=str, default=None)
-    parser.add_argument("--n_atm_neighbors", type=int, nargs="+", default=20)
-    parser.add_argument("--n_cores", type=int, default=-1)
-    parser.add_argument("--smoothing_sigma", type=int, nargs="+", default=2)
-    parser.add_argument("--output_rfl_file", type=str, default=None)
-    parser.add_argument("--output_unc_file", type=str, default=None)
-    parser.add_argument("--atm_file", type=str, default=None)
-    parser.add_argument("--rdn_factors_path", type=str, default=None)
-    parser.add_argument("--loglevel", type=str, default="INFO")
-    parser.add_argument("--logfile", type=str, default=None)
-    args = parser.parse_args(rawargs)
-
     logging.basicConfig(
         format="%(levelname)s:%(asctime)s ||| %(message)s",
-        level=args.loglevel,
-        filename=args.logfile,
+        level=loglevel,
+        filename=logfile,
         datefmt="%Y-%m-%d,%H:%M:%S",
     )
 
-    if args.isofit_config is None:
-        file = glob(os.path.join(args.isofit_dir, "config", "") + "*_modtran.json")[0]
+    if isofit_config is None:
+        file = glob(os.path.join(isofit_dir, "config", "") + "*_modtran.json")[0]
     else:
-        file = args.isofit_config
+        file = isofit_config
 
     config = configs.create_new_config(file)
     config.forward_model.instrument.integrations = 1
 
     subs_state_file = config.output.estimated_state_file
     subs_loc_file = config.input.loc_file
-    full_state_file = subs_state_file.replace(
-        "_subs_state", "_subs_state_mapped"
-    )  # Unused
 
-    if args.segmentation_file is None:
+    if segmentation_file is None:
         lbl_file = subs_state_file.replace("_subs_state", "_lbl")
     else:
-        lbl_file = args.segmentation_file
+        lbl_file = segmentation_file
 
-    if args.output_rfl_file is None:
+    if output_rfl_file is None:
         analytical_state_file = subs_state_file.replace(
             "_subs_state", "_state_analytical"
         )
     else:
-        analytical_state_file = args.output_rfl_file
+        analytical_state_file = output_rfl_file
 
-    if args.output_unc_file is None:
+    if output_unc_file is None:
         analytical_state_unc_file = subs_state_file.replace(
             "_subs_state", "_state_analytical_uncert"
         )
     else:
-        analytical_state_unc_file = args.output_unc_file
+        analytical_state_unc_file = output_unc_file
 
-    if args.atm_file is None:
+    if atm_file is None:
         atm_file = subs_state_file.replace("_subs_state", "_atm_interp")
     else:
-        atm_file = args.atm_file
+        atm_file = atm_file
 
     if os.path.isfile(atm_file) is False:
         atm_interpolation(
             subs_state_file,
             subs_loc_file,
             lbl_file,
-            args.loc_file,
+            loc_file,
             atm_file,
-            nneighbors=args.n_atm_neighbors,
-            gaussian_smoothing_sigma=args.smoothing_sigma,
+            nneighbors=n_atm_neighbors,
+            gaussian_smoothing_sigma=smoothing_sigma,
         )
 
     fm = ForwardModel(config)
     iv = Inversion(config, fm)
 
-    rdn_ds = envi.open(envi_header(args.rdn_file))
+    rdn_ds = envi.open(envi_header(rdn_file))
     rdn = rdn_ds.open_memmap(interleave="bip")
     rdns = rdn.shape
-    loc = envi.open(envi_header(args.loc_file)).open_memmap(interleave="bip")
-    obs = envi.open(envi_header(args.obs_file)).open_memmap(interleave="bip")
     atm = envi.open(envi_header(atm_file)).open_memmap(interleave="bip")
 
     hash_table = OrderedDict()  # Deprecated in Python 3.7
@@ -161,7 +152,7 @@ def main(rawargs=None) -> None:
         _redis_password=config.implementation.redis_password,
     )
 
-    n_workers = args.n_cores
+    n_workers = n_cores
     if n_workers == -1:
         n_workers = multiprocessing.cpu_count()
     worker = ray.remote(Worker)
@@ -171,11 +162,11 @@ def main(rawargs=None) -> None:
         atm_file,
         analytical_state_file,
         analytical_state_unc_file,
-        args.rdn_file,
-        args.loc_file,
-        args.obs_file,
-        args.loglevel,
-        args.logfile,
+        rdn_file,
+        loc_file,
+        obs_file,
+        loglevel,
+        logfile,
     ]
     workers = ray.util.ActorPool([worker.remote(*wargs) for _ in range(n_workers)])
 
@@ -207,6 +198,8 @@ class Worker(object):
         obs_file: str,
         loglevel: str,
         logfile: str,
+        subs_state_file: str = None,
+        lbl_file: str = None,
     ):
         """
         Worker class to help run a subset of spectra.
@@ -238,6 +231,12 @@ class Worker(object):
         self.obs_file = obs_file
         self.analytical_state_file = analytical_state_file
         self.analytical_state_unc_file = analytical_state_unc_file
+        if subs_state_file is not None and lbl_file is not None:
+            self.subs_state_file = subs_state_file
+            self.lbl_file = lbl_file
+        else:
+            self.subs_state_file = None
+            self.lbl_file = None
 
         if config.input.radiometry_correction_file is not None:
             self.radiance_correction, wl = load_spectrum(
@@ -308,5 +307,35 @@ class Worker(object):
             )
 
 
+@click.command(name="analytical_line")
+@click.argument("rdn_file")
+@click.argument("loc_file")
+@click.argument("obs_file")
+@click.argument("isofit_dir")
+@click.option("--isofit_config", type=str, default=None)
+@click.option("--segmentation_file", help="TODO", type=str, default=None)
+@click.option("--n_atm_neighbors", help="TODO", type=int, default=20)
+@click.option("--n_cores", help="TODO", type=int, default=-1)
+@click.option("--smoothing_sigma", help="TODO", type=int, default=2)
+@click.option("--output_rfl_file", help="TODO", type=str, default=None)
+@click.option("--output_unc_file", help="TODO", type=str, default=None)
+@click.option("--atm_file", help="TODO", type=str, default=None)
+@click.option("--loglevel", help="TODO", type=str, default="INFO")
+@click.option("--logfile", help="TODO", type=str, default=None)
+def _cli(**kwargs):
+    """\
+    Executes the analytical line algorithm
+    """
+    click.echo("Running analytical line")
+
+    analytical_line(**kwargs)
+
+    click.echo("Done")
+
+
 if __name__ == "__main__":
-    main()
+    _cli()
+else:
+    from isofit import cli
+
+    cli.add_command(_cli)
