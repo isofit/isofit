@@ -1346,7 +1346,7 @@ def get_metadata_from_loc(
     """
 
     loc_dataset = envi.open(envi_header(loc_file), loc_file)
-    loc_data = loc_dataset.open_memmap(interleave="bip", writable=False)
+    loc_data = loc_dataset.open_memmap(interleave="bsq", writable=False)
     valid = np.logical_not(np.any(loc_data == nodata_value, axis=0))
 
     use_trim = trim_lines != 0 and valid.shape[0] > trim_lines * 2
