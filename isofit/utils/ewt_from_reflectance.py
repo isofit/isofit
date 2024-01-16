@@ -26,11 +26,10 @@ from types import SimpleNamespace
 
 import click
 import numpy as np
-import ray
 from matplotlib import pyplot as plt
-from osgeo import gdal
 from spectral.io import envi
 
+from isofit import ray
 from isofit.core.common import envi_header
 from isofit.core.fileio import write_bil_chunk
 from isofit.inversion.inverse_simple import invert_liquid_water
@@ -49,7 +48,11 @@ def main(args: SimpleNamespace) -> None:
     )
 
     if os.path.isfile(args.output_cwc_file):
-        dat = gdal.Open(args.output_cwc_file).ReadAsArray()
+        dat = (
+            envi.open(envi_header(args.output_cwc_file))
+            .open_memmap(interleave="bip")
+            .copy()
+        )
         if not np.all(dat == -9999):
             logging.info("Existing CWC file found, terminating")
             exit()
