@@ -17,7 +17,6 @@ from warnings import warn
 
 import click
 import numpy as np
-from osgeo import gdal
 from sklearn import mixture
 from spectral.io import envi
 
@@ -112,11 +111,20 @@ def apply_oe(args):
     """
     use_superpixels = (args.empirical_line == 1) or (args.analytical_line == 1)
 
-    if args.sensor not in ["ang", "avcl", "neon", "prism", "emit", "hyp", "prisma"]:
+    if args.sensor not in [
+        "ang",
+        "avcl",
+        "neon",
+        "prism",
+        "emit",
+        "hyp",
+        "prisma",
+        "av3",
+    ]:
         if args.sensor[:3] != "NA-":
             raise ValueError(
                 'argument sensor: invalid choice: "NA-test" (choose from '
-                '"ang", "avcl", "neon", "prism", "emit", "NA-*")'
+                '"ang", "avcl", "neon", "prism", "emit", "av3", "NA-*")'
             )
 
     if args.num_neighbors is not None and len(args.num_neighbors) > 1:
@@ -142,8 +150,8 @@ def apply_oe(args):
     )
     logging.info(args)
 
-    rdn_dataset = gdal.Open(args.input_radiance, gdal.GA_ReadOnly)
-    rdn_size = (rdn_dataset.RasterXSize, rdn_dataset.RasterYSize)
+    rdn_dataset = envi.open(envi_header(args.input_radiance))
+    rdn_size = (rdn_dataset.shape[0], rdn_dataset.shape[1])
     del rdn_dataset
     for infile_name, infile in zip(
         ["input_radiance", "input_loc", "input_obs"],
@@ -156,8 +164,8 @@ def apply_oe(args):
             )
             raise ValueError("argument " + err_str)
         if infile_name != "input_radiance":
-            input_dataset = gdal.Open(infile, gdal.GA_ReadOnly)
-            input_size = (input_dataset.RasterXSize, input_dataset.RasterYSize)
+            input_dataset = envi.open(envi_header(infile), infile)
+            input_size = (input_dataset.shape[0], input_dataset.shape[1])
             if not (input_size[0] == rdn_size[0] and input_size[1] == rdn_size[1]):
                 err_str = (
                     f"Input file: {infile_name} size is {input_size}, which does not"
@@ -180,6 +188,8 @@ def apply_oe(args):
     # We'll adjust for line length and UTC day overrun later
     if args.sensor == "ang":
         # parse flightline ID (AVIRIS-NG assumptions)
+        dt = datetime.strptime(paths.fid[3:], "%Y%m%dt%H%M%S")
+    elif args.sensor == "av3":
         dt = datetime.strptime(paths.fid[3:], "%Y%m%dt%H%M%S")
     elif args.sensor == "avcl":
         # parse flightline ID (AVIRIS-CL assumptions)
@@ -217,7 +227,7 @@ def apply_oe(args):
         valid,
         to_sensor_zenith_lut_grid,
         to_sun_zenith_lut_grid,
-        relative_azimuth_lut_grid
+        relative_azimuth_lut_grid,
     ) = get_metadata_from_obs(paths.obs_working_path, lut_params)
 
     # overwrite the time in case original obs has an error in that band
@@ -279,6 +289,11 @@ def apply_oe(args):
             to_rem = elevation_lut_grid[elevation_lut_grid < 0].copy()
             elevation_lut_grid[elevation_lut_grid < 0] = 0
             elevation_lut_grid = np.unique(elevation_lut_grid)
+            if len(elevation_lut_grid) == 1:
+                elevation_lut_grid = None
+                mean_elevation_km = elevation_lut_grid[
+                    0
+                ]  # should be 0, but just in case
             logging.info(
                 "Scene contains target lut grid elements < 0 km, and uses 6s (via"
                 " sRTMnet).  6s does not support targets below sea level in km units. "
@@ -569,8 +584,11 @@ class Pathnames:
         elif args.sensor == "prism":
             self.fid = split(args.input_radiance)[-1][:18]
             logging.info("Flightline ID: %s" % self.fid)
+        elif args.sensor == "av3":
+            self.fid = split(args.input_radiance)[-1][:18]
+            logging.info("Flightline ID: %s" % self.fid)
         elif args.sensor == "prisma":
-            self.fid = args.input_radiance.split("/")[-1].split("_")[4]
+            self.fid = args.input_radiance.split("/")[-1].split("_")[1]
             logging.info("Flightline ID: %s" % self.fid)
         elif args.sensor == "avcl":
             self.fid = split(args.input_radiance)[-1][:16]
@@ -725,6 +743,13 @@ class Pathnames:
             if self.input_model_discrepancy_path is None:
                 self.input_model_discrepancy_path = join(
                     self.isofit_path, "data", "emit_model_discrepancy.mat"
+                )
+        elif args.sensor == "av3":
+            self.noise_path = None
+            logging.info("no noise path found, proceeding without")
+            if self.input_channelized_uncertainty_path is None:
+                self.input_channelized_uncertainty_path = join(
+                    self.isofit_path, "data", "av3_osf_uncertainty.txt"
                 )
         else:
             self.noise_path = None
@@ -1224,33 +1249,14 @@ def get_metadata_from_obs(
             to_sun_zenith_lut_grid - the to-sun zenith look up table grid for good data
             relative_azimuth_lut_grid - the relative to-sun azimuth look up table grid for good data
     """
-    obs_dataset = gdal.Open(obs_file, gdal.GA_ReadOnly)
+    obs_dataset = envi.open(envi_header(obs_file), obs_file)
+    obs = obs_dataset.open_memmap(interleave="bip", writable=False)
+    valid = np.logical_not(np.any(np.isclose(obs, nodata_value), axis=2))
 
-    # Initialize values to populate
-    valid = np.zeros((obs_dataset.RasterYSize, obs_dataset.RasterXSize), dtype=bool)
-
-    path_km = np.zeros((obs_dataset.RasterYSize, obs_dataset.RasterXSize))
-    to_sensor_azimuth = np.zeros((obs_dataset.RasterYSize, obs_dataset.RasterXSize))
-    to_sensor_zenith = np.zeros((obs_dataset.RasterYSize, obs_dataset.RasterXSize))
-    to_sun_azimuth = np.zeros((obs_dataset.RasterYSize, obs_dataset.RasterXSize))
-    to_sun_zenith = np.zeros((obs_dataset.RasterYSize, obs_dataset.RasterXSize))
-    time = np.zeros((obs_dataset.RasterYSize, obs_dataset.RasterXSize))
-
-    for line in range(obs_dataset.RasterYSize):
-        # Read line in
-        obs_line = obs_dataset.ReadAsArray(0, line, obs_dataset.RasterXSize, 1)
-
-        # Populate valid
-        valid[line, :] = np.logical_not(
-            np.any(np.isclose(obs_line, nodata_value), axis=0)
-        )
-
-        path_km[line, :] = obs_line[0, ...] / 1000.0
-        to_sensor_azimuth[line, :] = obs_line[1, ...]
-        to_sensor_zenith[line, :] = obs_line[2, ...]
-        to_sun_azimuth[line, :] = obs_line[3, ...]
-        to_sun_zenith[line, :] = obs_line[4, ...]
-        time[line, :] = obs_line[9, ...]
+    path_km = obs[:, :, 0] / 1000.0
+    to_sensor_azimuth = obs[:, :, 1]
+    to_sensor_zenith = obs[:, :, 2]
+    time = obs[:, :, 9]
 
     # calculate relative to-sun azimuth
     delta_phi = to_sun_azimuth - to_sensor_azimuth
@@ -1266,10 +1272,16 @@ def get_metadata_from_obs(
     mean_path_km = np.mean(path_km[valid])
     del path_km
 
-    mean_to_sensor_azimuth = (lut_params.get_angular_grid(to_sensor_azimuth[valid], -1, 0) % 360)
-    mean_to_sensor_zenith = 180 - lut_params.get_angular_grid(to_sensor_zenith[valid], -1, 0)
+    mean_to_sensor_azimuth = (
+        lut_params.get_angular_grid(to_sensor_azimuth[valid], -1, 0) % 360
+    )
+    mean_to_sensor_zenith = 180 - lut_params.get_angular_grid(
+        to_sensor_zenith[valid], -1, 0
+    )
     mean_to_sun_zenith = lut_params.get_angular_grid(to_sun_zenith[valid], -1, 0)
-    mean_relative_azimuth = (lut_params.get_angular_grid(relative_azimuth[valid], -1, 0) % 360)
+    mean_relative_azimuth = (
+        lut_params.get_angular_grid(relative_azimuth[valid], -1, 0) % 360
+    )
 
     # geom_margin = EPS * 2.0
     to_sensor_zenith_lut_grid = lut_params.get_angular_grid(
@@ -1340,7 +1352,7 @@ def get_metadata_from_obs(
         valid,
         to_sensor_zenith_lut_grid,
         to_sun_zenith_lut_grid,
-        relative_azimuth_lut_grid
+        relative_azimuth_lut_grid,
     )
 
 
@@ -1369,18 +1381,10 @@ def get_metadata_from_loc(
             elevation_lut_grid - the elevation look up table, based on globals and values from location file
     """
 
-    loc_dataset = gdal.Open(loc_file, gdal.GA_ReadOnly)
-
-    loc_data = np.zeros(
-        (loc_dataset.RasterCount, loc_dataset.RasterYSize, loc_dataset.RasterXSize)
-    )
-    for line in range(loc_dataset.RasterYSize):
-        # Read line in
-        loc_data[:, line: line + 1, :] = loc_dataset.ReadAsArray(
-            0, line, loc_dataset.RasterXSize, 1
-        )
-
+    loc_dataset = envi.open(envi_header(loc_file), loc_file)
+    loc_data = loc_dataset.open_memmap(interleave="bsq", writable=False)
     valid = np.logical_not(np.any(loc_data == nodata_value, axis=0))
+
     use_trim = trim_lines != 0 and valid.shape[0] > trim_lines * 2
     if use_trim:
         valid[:trim_lines, :] = False

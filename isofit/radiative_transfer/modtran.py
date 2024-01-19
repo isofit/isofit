@@ -340,7 +340,9 @@ class ModtranRT(RadiativeTransferEngine):
             self.engine_base_dir, "bin", xdir[platform], "mod6c_cons " + infilename
         )
 
-        call = subprocess.run(cmd, shell=True, timeout=timeout, cwd=self.sim_path, capture_output=True)
+        call = subprocess.run(
+            cmd, shell=True, timeout=timeout, cwd=self.sim_path, capture_output=True
+        )
         if call.stdout:
             Logger.error(call.stdout.decode())
 
@@ -582,7 +584,7 @@ class ModtranRT(RadiativeTransferEngine):
             lvl0["EXTC"] = [float(v) / total_extc550 for v in total_extc]
             lvl0["ABSC"] = [float(v) / total_extc550 for v in total_absc]
 
-        if self.engine_config.multipart_transmittance:
+        if self.multipart_transmittance:
             const_rfl = np.array(np.array(self.test_rfls) * 100, dtype=int)
             # Here we copy the original config and just change the surface reflectance
             param[0]["MODTRANINPUT"]["CASE"] = 0
