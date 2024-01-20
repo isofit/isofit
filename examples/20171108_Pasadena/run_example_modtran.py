@@ -11,10 +11,11 @@ ModtranRT.makeSim = lambda *_: ...
 surface_model("configs/ang20171108t184227_surface.json")
 
 # Run retrievals
-model = Isofit("configs/ang20171108t173546_darklot.json")
+model = Isofit("configs/ang20171108t173546_darklot_uni_lut.json")
+#model = Isofit("configs/ang20171108t173546_darklot.json")
 model.run()
 del model
-
+'''
 model = Isofit("configs/ang20171108t173546_horse.json")
 model.run()
 del model
@@ -38,3 +39,4 @@ del model
 model = Isofit("configs/ang20171108t184227_beckmanlawn-undersmoothed.json")
 model.run()
 del model
+'''

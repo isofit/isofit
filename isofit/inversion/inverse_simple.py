@@ -104,21 +104,25 @@ def heuristic_atmosphere(
             # Get Atmospheric terms at high spectral resolution
             x_RT_2 = x_RT.copy()
             x_RT_2[ind_sv] = h2o
-            rhi = RT.get_shared_rtm_quantities(x_RT_2, geom)
-            rhoatm = instrument.sample(x_instrument, RT.wl, rhi["rhoatm"])
-            transm = instrument.sample(
-                x_instrument, RT.wl, rhi["transm_down_dif"]
-            )  # REVIEW: This was changed from transm as we're deprecating the key
-            sphalb = instrument.sample(x_instrument, RT.wl, rhi["sphalb"])
-            solar_irr = instrument.sample(x_instrument, RT.wl, RT.solar_irr)
+            #import pdb; pdb.set_trace()
 
-            # Assume no surface emission.  "Correct" the at-sensor radiance
-            # using this presumed amount of water vapor, and measure the
-            # resulting residual (as measured from linear interpolation across
-            # the absorption feature)
-            rho = meas * np.pi / (solar_irr * RT.coszen)
-            r = 1.0 / (transm / (rho - rhoatm) + sphalb)
-            ratios.append((r[b945] * 2.0) / (r[b1040] + r[b865]))
+            rhi = RT.get_shared_rtm_quantities(x_RT_2, geom)
+
+            inst_rsmp = lambda x: instrument.sample(x_instrument, RT.wl, x)
+
+            path_radiance = inst_rsmp(rhi['path_radiance'])
+            direct_flux = inst_rsmp(rhi['direct_flux'])
+            diffuse_flux = inst_rsmp(rhi['diffuse_flux'])
+            sphalb_num = inst_rsmp(rhi['sphalb_num'])
+            sphalb_denom = inst_rsmp(rhi['sphalb_denom'])
+
+
+            rho = (meas - path_radiance) / (direct_flux + \
+                diffuse_flux + meas * (sphalb_num / sphalb_denom) - \
+                    path_radiance * (sphalb_num / sphalb_denom))
+
+
+            ratios.append((rho[b945] * 2.0) / (rho[b1040] + rho[b865]))
             h2os.append(h2o)
 
         # Finally, interpolate to determine the actual water vapor level that
@@ -158,41 +162,36 @@ def invert_algebraic(
         Ls: estimate of the emitted surface leaving radiance
         coeffs: atmospheric parameters for the forward model
     """
-
+    
     # Get atmospheric optical parameters (possibly at high
     # spectral resolution) and resample them if needed.
     rhi = RT.get_shared_rtm_quantities(x_RT, geom)
     wl, fwhm = instrument.calibration(x_instrument)
-    rhoatm = instrument.sample(x_instrument, RT.wl, rhi["rhoatm"])
-    transm = instrument.sample(
-        x_instrument, RT.wl, rhi["transm_down_dif"]
-    )  # REVIEW: Changed from transm
-    solar_irr = instrument.sample(x_instrument, RT.wl, RT.solar_irr)
-    sphalb = instrument.sample(x_instrument, RT.wl, rhi["sphalb"])
-    transup = instrument.sample(
-        x_instrument, RT.wl, rhi["transm_up_dir"]
-    )  # REVIEW: Changed from transup
-    coszen = RT.coszen
 
-    # Prevent NaNs
-    transm[transm == 0] = 1e-5
+
+
 
     # Calculate the initial emission and subtract from the measurement.
     # Surface and measured wavelengths may differ.
     Ls = surface.calc_Ls(x_surface, geom)
-    Ls_meas = interp1d(surface.wl, Ls, fill_value="extrapolate")(wl)
-    rdn_solrfl = meas - (transup * Ls_meas)
 
-    # Now solve for the reflectance at measured wavelengths,
-    # and back-translate to surface wavelengths
-    rho = rdn_solrfl * np.pi / (solar_irr * coszen)
-    rfl = 1.0 / (transm / (rho - rhoatm) + sphalb)
-    rfl[rfl > 1.0] = 1.0
-    rfl_est = interp1d(wl, rfl, fill_value="extrapolate")(surface.wl)
+    inst_rsmp = lambda x: instrument.sample(x_instrument, RT.wl, x)
+
+    path_radiance = inst_rsmp(rhi['path_radiance'])
+    direct_flux = inst_rsmp(rhi['direct_flux'])
+    diffuse_flux = inst_rsmp(rhi['diffuse_flux'])
+    sphalb_num = inst_rsmp(rhi['sphalb_num'])
+    sphalb_denom = inst_rsmp(rhi['sphalb_denom'])
+
+
+    rfl_est = (meas - path_radiance) / (direct_flux + \
+        diffuse_flux + meas * (sphalb_num / sphalb_denom) - \
+            path_radiance * (sphalb_num / sphalb_denom))
 
     # Some downstream code will benefit from our precalculated
     # atmospheric optical parameters
-    coeffs = rhoatm, sphalb, transm, solar_irr, coszen, transup
+
+    coeffs = path_radiance, direct_flux, diffuse_flux, sphalb_num, sphalb_denom
     return rfl_est, Ls, coeffs
 
 

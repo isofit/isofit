@@ -137,8 +137,12 @@ class RadiativeTransfer:
         self.bvec = config.unknowns.get_element_names()
         self.bval = np.array([x for x in config.unknowns.get_elements()[0]])
 
-        self.solar_irr = np.concatenate([RT.solar_irr for RT in self.rt_engines])
-
+        # Using the universal LUT with fluxes we don't need solar irradiance anymore!
+        try:
+            self.solar_irr = np.concatenate([RT.solar_irr for RT in self.rt_engines])
+        except:
+            pass
+        
     def xa(self):
         """Pull the priors from each of the individual RTs."""
         return self.prior_mean
@@ -167,7 +171,25 @@ class RadiativeTransfer:
             if "coszen" in child.lut:
                 return child.lut.coszen.data
 
+
     def calc_rdn(self, x_RT, rfl, Ls, geom):
+        
+        rhi = self.get_shared_rtm_quantities(x_RT, geom)
+        #inst_rsmp = lambda x: instrument.sample(x_instrument, RT.wl, x)
+        # I'm keeping this here if upsample is required
+        inst_rsmp = lambda x: x
+
+        path_radiance = inst_rsmp(rhi['path_radiance'])
+        direct_flux = inst_rsmp(rhi['direct_flux'])
+        diffuse_flux = inst_rsmp(rhi['diffuse_flux'])
+        sphalb_num = inst_rsmp(rhi['sphalb_num'])
+        sphalb_denom = inst_rsmp(rhi['sphalb_denom'])
+
+        ret = path_radiance + (direct_flux+diffuse_flux) * rfl * 1/(1 - sphalb_num/sphalb_denom * rfl)
+        #import pdb; pdb.set_trace()
+        return ret
+
+    def calc_rdn_old(self, x_RT, rfl, Ls, geom):
         r = self.get_shared_rtm_quantities(x_RT, geom)
         L_atm = self.get_L_atm(x_RT, geom)
         L_up = Ls * (r["transm_up_dir"] + r["transm_up_dif"])
@@ -265,7 +287,40 @@ class RadiativeTransfer:
                 L_downs.append(rdn)
         return np.hstack(L_downs)
 
+
     def drdn_dRT(self, x_RT, rfl, drfl_dsurface, Ls, dLs_dsurface, geom: Geometry):
+        # first the rdn at the current state vector
+        rdn = self.calc_rdn(x_RT, rfl, Ls, geom)
+
+        # perturb each element of the RT state vector (finite difference)
+        K_RT = []
+        x_RTs_perturb = x_RT + np.eye(len(x_RT)) * eps
+        for x_RT_perturb in list(x_RTs_perturb):
+            rdne = self.calc_rdn(x_RT_perturb, rfl, Ls, geom)
+            K_RT.append((rdne - rdn) / eps)
+        K_RT = np.array(K_RT).T
+
+        # Get K_surface
+        #inst_rsmp = lambda x: instrument.sample(x_instrument, RT.wl, x)
+        # I'm keeping this here if upsample is required
+        inst_rsmp = lambda x: x
+
+        rhi = self.get_shared_rtm_quantities(x_RT, geom)
+
+        #path_radiance = inst_rsmp(rhi['path_radiance']) # this is not affecting rfl
+        direct_flux = inst_rsmp(rhi['direct_flux'])
+        diffuse_flux = inst_rsmp(rhi['diffuse_flux'])
+        sphalb_num = inst_rsmp(rhi['sphalb_num'])
+        sphalb_denom = inst_rsmp(rhi['sphalb_denom'])
+        # now we need to get drdn/dsurface
+        numerator = (direct_flux + diffuse_flux) * (1 + rfl * (sphalb_num / sphalb_denom))
+        denominator = (1 - rfl * (sphalb_num / sphalb_denom))**2
+        K_surface =  numerator / denominator
+        #import pdb; pdb.set_trace()
+        return K_RT, K_surface
+
+
+    def drdn_dRT_old(self, x_RT, rfl, drfl_dsurface, Ls, dLs_dsurface, geom: Geometry):
         # first the rdn at the current state vector
         rdn = self.calc_rdn(x_RT, rfl, Ls, geom)
 

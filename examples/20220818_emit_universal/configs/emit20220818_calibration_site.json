@@ -1,0 +1,77 @@
+{
+  "ISOFIT_BASE": "../../..",
+
+  "input": {
+    "measured_radiance_file": "../remote/emit20220818t205752_o23014_s000_l1b_rdn_b0106_v01_crop",
+    "loc_file": "../remote/emit20220818t205752_o23014_s000_l1b_loc_b0106_v01_crop",
+    "obs_file": "../remote/emit20220818t205752_o23014_s000_l1b_obs_b0106_v01_crop"
+  },
+
+  "output": {
+    "estimated_reflectance_file": "../output/emit20220818t205752_crop_rfl",
+    "estimated_state_file": "../output/emit20220818t205752_crop_state",
+    "posterior_uncertainty_file":  "../output/emit20220818t205752_crop_uncert"
+  },
+
+  "forward_model":{
+
+    "instrument": {
+      "wavelength_file": "../remote/emit_285_wvs_space.txt",
+      "parametric_noise_file": "../../../data/emit_noise.txt",
+      "integrations":1,
+      "unknowns": {
+        "uncorrelated_radiometric_uncertainty": 0.01
+      }
+    },
+
+    "surface": {
+      "surface_category": "multicomponent_surface",
+      "surface_file": "../remote/surface_model.mat"
+    },
+
+    "radiative_transfer": {
+      "statevector": {
+        "H2OSTR": {
+          "bounds": [2.2, 2.4],
+          "scale": 0.01,
+          "prior_mean": 2.3,
+          "prior_sigma":0.5,
+          "init": 2.3
+        },
+        "AOT550": {
+          "bounds": [0.05, 0.11],
+          "scale": 0.01,
+          "prior_mean": 0.05,
+          "prior_sigma":0.1,
+          "init": 0.1
+        }
+      },
+      "lut_grid": {
+        "H2OSTR": [2.2, 2.4],
+        "AOT550": [0.05, 0.1],
+        "surface_elevation_km": [0.2, 0.3],
+        "solar_zenith": [30, 32.5]
+      },
+      
+      "unknowns": {
+        "H2O_ABSCO": 0.01
+      },
+      "radiative_transfer_engines": {
+        "vswir": {
+          "engine_name": "modtran",
+          "wavelength_range":[370,2505],
+          "sim_path": "../lut/",
+          "lut_path": "../lut/Universal.hdf5",
+          "template_file": "ang20171108t184227_modtran.json",
+          "lut_names": ["H2OSTR", "AOT550"]
+        }
+      }
+    }
+  },
+
+  "implementation": {
+    "inversion": {
+      "windows": [[380.0, 1300.0], [1450, 1780.0], [1950.0, 2450.0]]
+    }
+  }
+}

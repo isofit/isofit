@@ -4,11 +4,11 @@ implementations and research, please see https://github.com/isofit/isofit/tree/8
 """
 import logging
 import os
-
+import pandas as pd
 import numpy as np
 import xarray as xr
 from netCDF4 import Dataset
-
+import h5py
 # This resolves race/lock conditions with file opening in updatePoint()
 os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
 
@@ -18,7 +18,7 @@ Logger = logging.getLogger(__file__)
 import fcntl
 import hashlib
 
-
+import pdb
 class SystemMutex:
     def __init__(self, name):
         self.name = name
@@ -212,27 +212,139 @@ def sel(ds, dim, lt=None, lte=None, gt=None, gte=None):
 
 def load(file: str, lut_names: list = [], subset: dict = {}) -> xr.Dataset:
     """
-    Loads a LUT NetCDF
-    Assumes to be a regular grid at this time (auto creates the point dim)
+    Loads a LUT NetCDF or HDF5 file based on the file extension.
+    Assumes to be a regular grid at this time (auto creates the point dim).
     """
-    ds = xr.open_mfdataset([file], mode="r", lock=False)
 
-    for dim, sub in subset.items():
-        if isinstance(sub, list):
-            lower, upper = sub
-            ds = ds.sel({dim: (lower < ds[dim]) & (ds[dim] < upper)})
-        elif isinstance(sub, float):
-            ds = ds.sel({dim: sub})
-        elif isinstance(sub, dict):
-            ds = sel(ds, dim, **sub)
-        elif isinstance(sub, int):
-            ds = ds.isel({dim: sub})
-        elif isinstance(sub, str):
-            ds = getattr(ds, sub)(dim)
+    if file.endswith(".nc"):
+        # Load NetCDF file
+        ds = xr.open_mfdataset([file], mode="r", lock=False)
+    
 
-    dims = lut_names or ds.drop_dims("wl").dims
-    return ds.stack(point=dims).transpose("point", "wl")
+        for dim, sub in subset.items():
+            if isinstance(sub, list):
+                lower, upper = sub
+                ds = ds.sel({dim: (lower < ds[dim]) & (ds[dim] < upper)})
+            elif isinstance(sub, float):
+                ds = ds.sel({dim: sub})
+            elif isinstance(sub, dict):
+                ds = sel(ds, dim, **sub)
+            elif isinstance(sub, int):
+                ds = ds.isel({dim: sub})
+            elif isinstance(sub, str):
+                ds = getattr(ds, sub)(dim)
 
+        dims = lut_names or ds.drop_dims("wl").dims
+        ds_out = ds.stack(point=dims).transpose("point", "wl")
+        #pdb.set_trace()
+        return ds_out
+    
+    elif file.endswith(".hdf5"):
+        h5 = h5py.File(file, "r")
+
+        # Initialize an empty stack to keep track of groups
+        stack = [(h5, "")]
+
+        # Loop until the stack is empty
+        while stack:
+            group, indent = stack.pop()
+            
+            # Print the current group's name
+            print(f"{indent}Group: {group.name}")
+            
+            # Add subgroups to the stack
+            for name, item in group.items():
+                if isinstance(item, h5py.Group):
+                    stack.append((item, indent + "  "))
+            
+            # Print datasets in the current group
+            for name, item in group.items():
+                if isinstance(item, h5py.Dataset):
+                    print(f"{indent}  Dataset: {name}")
+        
+        
+
+        wl = h5['MISCELLANEOUS']['Wavelengths'][:]
+
+        data = h5['sample_space']['sample space'][:]
+        names = h5['sample_space'].attrs['Dimensions']
+
+        for i, name in enumerate(names):
+            if name=='SZA':
+                names[i] = 'solar_zenith'
+            if name=='GNDALT':
+                names[i] = 'surface_elevation_km'
+        #pdb.set_trace()
+        cnfg_names = [a for a in lut_names.keys()]
+        lut_file_names = names.tolist()
+        #pdb.set_trace()
+        bad_idxs = []
+        for lut_dim in lut_names.items():
+            # Need to be carful with cases that the lut_grid from the config is not aligned with the lut file
+            # let's find unique values for each column
+            idx_in_file = lut_file_names.index(lut_dim[0])
+            unique_values = np.unique(data[:, idx_in_file])
+
+            # lower boundry
+            asked_point = lut_dim[1][0]
+            # Sort the unique values for proper comparison
+            unique_values.sort()
+            # Check if asked_point is in unique_values
+            if asked_point in unique_values:
+                low_point = asked_point
+            else:
+                # Find values less than asked_point
+                lower_values = unique_values[unique_values < asked_point]
+
+                if lower_values.size > 0:
+                    # Choose the maximum of lower values, which is the nearest below asked_point
+                    low_point = lower_values.max()
+                else:
+                    # If no lower value exists, choose the minimum of the higher values
+                    low_point = unique_values[unique_values > asked_point].min()
+            #pdb.set_trace()
+            # Upper Boundry
+            asked_upper_point = lut_dim[1][1]  # The upper boundary you're asking for
+
+            # Check if asked_upper_point is in unique_values
+            if asked_upper_point in unique_values:
+                upper_point = asked_upper_point
+            else:
+                # Find values greater than asked_upper_point
+                higher_values = unique_values[unique_values > asked_upper_point]
+
+                if higher_values.size > 0:
+                    # Choose the minimum of higher values, which is the nearest above asked_upper_point
+                    upper_point = higher_values.min()
+                else:
+                    # If no higher value exists, choose the maximum of the lower values
+                    upper_point = unique_values[unique_values < asked_upper_point].max()
+
+            binary = (data[:,idx_in_file] >= low_point) * (data[:,idx_in_file] <= upper_point)
+            idx = np.argwhere(binary==0).flatten()
+            bad_idxs.extend(idx)
+        
+        # Remove duplicates from bad_idxs
+        unique_bad_idxs = set(bad_idxs)
+
+        # Create a set of all indices
+        all_idxs = set(range(len(data)))
+
+        # Subtract the set of bad indices from the set of all indices
+        good_idxs = list(all_idxs - unique_bad_idxs)
+
+        data = data[good_idxs]
+
+        
+        idx = pd.MultiIndex.from_arrays(data.T, names=names)
+        ds = xr.Dataset(coords={'wl': wl, 'point': idx})
+
+        data = h5['mod_output']['modtran output'][:][good_idxs]
+        for i, quantity in enumerate(h5['mod_output'].attrs['Products']):
+            ds[quantity] = (('point', 'wl'), data[:, i, :])
+    #ds
+    return ds
+    #pdb.set_trace()
 
 def extractPoints(ds: xr.Dataset) -> (np.array, np.array):
     """
@@ -248,6 +360,7 @@ def extractGrid(ds: xr.Dataset) -> dict:
     """
     Extracts the LUT grid from a Dataset
     """
+    import pdb; pdb.set_trace()
     grid = {}
     for dim, vals in ds.coords.items():
         if dim in {"wl", "point"}:

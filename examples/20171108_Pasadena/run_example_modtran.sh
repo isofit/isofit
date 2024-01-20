@@ -5,9 +5,9 @@ python3 -c "from isofit.utils import surface_model; surface_model('configs/ang20
 
 # Run experiments
 isofit run --level DEBUG configs/ang20171108t173546_darklot.json
-isofit run --level DEBUG configs/ang20171108t173546_horse.json
-isofit run --level DEBUG configs/ang20171108t184227_astrored.json
-isofit run --level DEBUG configs/ang20171108t184227_astrogreen.json
-isofit run --level DEBUG configs/ang20171108t184227_beckmanlawn.json
-isofit run --level DEBUG configs/ang20171108t184227_beckmanlawn-oversmoothed.json
-isofit run --level DEBUG configs/ang20171108t184227_beckmanlawn-undersmoothed.json
+#isofit run --level DEBUG configs/ang20171108t173546_horse.json
+#isofit run --level DEBUG configs/ang20171108t184227_astrored.json
+#isofit run --level DEBUG configs/ang20171108t184227_astrogreen.json
+#isofit run --level DEBUG configs/ang20171108t184227_beckmanlawn.json
+#isofit run --level DEBUG configs/ang20171108t184227_beckmanlawn-oversmoothed.json
+#isofit run --level DEBUG configs/ang20171108t184227_beckmanlawn-undersmoothed.json
