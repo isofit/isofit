@@ -18,7 +18,6 @@ Logger = logging.getLogger(__file__)
 import fcntl
 import hashlib
 
-import pdb
 class SystemMutex:
     def __init__(self, name):
         self.name = name

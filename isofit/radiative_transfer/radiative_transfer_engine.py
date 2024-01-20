@@ -41,8 +41,6 @@ from isofit.radiative_transfer import luts
 import xarray as xr
 Logger = logging.getLogger(__file__)
 
-import pdb
-
 
 
 class RadiativeTransferEngine:
@@ -191,44 +189,30 @@ class RadiativeTransferEngine:
                 f"Reading from store: {lut_path}, subset={engine_config.lut_subset}"
             )
 
-
-            #pdb.set_trace()
-            # if using a universal grid that is much wider than the given image to process
-            # we have to crop or subset when reading in the data.. 
-            # I'm not sure if the functionality for this exists or not RN
-            #pdb.set_trace()
+            # Note: I'm using lut_grid from the config as min\max to subset!
             self.lut = luts.load(lut_path, lut_grid, subset=engine_config.lut_subset)
             # set up resample object
             
             if os.path.exists(self.wavelength_file):
                 
                 wl, fwhm = common.load_wavelen(self.wavelength_file)
+                # initialize resampling class
                 rsmp = common.resample(self.lut.wl.data, wl, fwhm)
+                
                 if not len(wl) == len(self.lut.wl):
-                    #pdb.set_trace()
                     conv = xr.Dataset(coords={'wl': wl, 'point': self.lut.point})
 
                     for quantity in self.lut:
                         print('resampling '+quantity)
-                        # Prepare the data for parallel processing
+                        # TODO: make the list comp run in parallel
                         data_to_process = self.lut[quantity].data
-                        # Function to apply the resampling to each element
-
-                        #pdb.set_trace()
-                        # TODO: first, subset the LUT so not processing so much stuff
-                        # Then in the resample class make it run in parallel over the cpus on the whatever node it's running on
-                        
+ 
                         add_to_ds = np.array([rsmp(x) for x in data_to_process])
-                        #pdb.set_trace()
+
                         conv[quantity] = (('wl', 'point'), add_to_ds.T)
-                        #conv[quantity] = (('wl', 'point'), common.resample_spectrum(self.lut[quantity].data.T, self.lut.wl.data, wl, fwhm))
 
             self.lut = conv
 
-            # self.lut_convolved ..
-            # if instrument specs are different than the LUT, then convolve!
-
-            #pdb.set_trace()
             self.lut_grid = lut_grid or luts.extractGrid(self.lut)
             self.points, self.lut_names = luts.extractPoints(self.lut)
 
@@ -304,6 +288,10 @@ class RadiativeTransferEngine:
             # For each point index, determine if that point derives from Geometry or x_RT
             self.indices = SimpleNamespace()
 
+            # flagging here - the commented logic was used and resulted with a problem
+            # where self.indices.x_RT held not only x_RT indices but also geometry.
+            # I solved it by replacing the commented by line 314 and now it works!
+
             # Hidden assumption: geometry keys come first, then come RTE keys
             #self.geometry_input_names = set(self.geometry_input_names) - set(
             #    engine_config.statevector_names or self.lut_names
@@ -313,9 +301,8 @@ class RadiativeTransferEngine:
                 i: key
                 for i, key in enumerate(self.lut_names)
                 if key in self.geometry_input_names
-            } # here alread there's no zenith and elevation
-            # If it wasn't a geom key, it's x_RT
-            #pdb.set_trace()
+            } 
+
             self.indices.x_RT = list(set(range(self.n_point)) - set(self.indices.geom))
 
     def __getitem__(self, key):
@@ -350,8 +337,6 @@ class RadiativeTransferEngine:
 
         grid = [ds[key].data for key in self.lut_names]
 
-        # Create the unique
-        # looks like there's no convolution happening here!
         for key in self.alldim:
             self.luts[key] = common.VectorInterpolator(
                 grid_input=grid,
@@ -446,7 +431,6 @@ class RadiativeTransferEngine:
             ...
         """
         point = np.zeros(self.n_point)
-        #import pdb; pdb.set_trace()
         point[self.indices.x_RT] = x_RT
         for i, key in self.indices.geom.items():
             point[i] = getattr(geom, key)

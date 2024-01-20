@@ -104,7 +104,6 @@ def heuristic_atmosphere(
             # Get Atmospheric terms at high spectral resolution
             x_RT_2 = x_RT.copy()
             x_RT_2[ind_sv] = h2o
-            #import pdb; pdb.set_trace()
 
             rhi = RT.get_shared_rtm_quantities(x_RT_2, geom)
 

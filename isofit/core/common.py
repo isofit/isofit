@@ -259,21 +259,22 @@ class VectorInterpolator:
             return self._multilinear_grid(*args, **kwargs)
 
 class resample():
+    """ Resampling class where you can initialize and then use. It has a saftey logic against non finite
+    elements in the data to interpoloate. 
+
+    Args:
+        wvs_a: High resolution data's spectral grid
+        wvs_b: Instrument's resolution spectra grid
+        fwhm_b: Instrument's FWHM
+    """
     def __init__(self, wvs_a, wvs_b, fwhm_b):
         self.wvs_a = wvs_a
         self.wvs_b = wvs_b
         self.fwhm_b = fwhm_b
-        #pdb.set_trace()
         self.get_transform_matrix()
 
     
     def get_transform_matrix(self):
-        # the transformatrix is applied on an asd spectrum (2000) to transform to avng (425)
-        # so it would be y = Ax, A is the transform matrix, x is the 2000 by 1 spectrum
-        # So A is 425 by 2000, becasue (425x2000) time (2000x1) = (425x1) which is what we want
-        # So each row in A, of length 2000, represents the sensitivity of every avng channel
-        # We assume gaussianity, so those are just gaussians.
-        
         base_wl = np.array(self.wvs_a)
         self.base_wl = base_wl
         target_wl = np.array(self.wvs_b)
@@ -321,11 +322,8 @@ class resample():
         """Resample a spectrum to a new wavelength / FWHM.
         I assume Gaussian SRFs"""
 
-        #resampled = np.zeros((wl2.shape[0], 1))
-        #for i in range(x.shape[1]):
         resampled = np.array(self.srf(wl, wl2[idx], fwhm2[idx]/2.35482))
-            #resampled[:, i] = np.array([self.srf(wl, wi, fwhmi/2.35482)
-             #   for wi, fwhmi in zip(wl2, fwhm2)]).reshape((len(wl2)))
+
 
         return resampled
         
@@ -689,7 +687,7 @@ def resample_spectrum(
             for wi, fwhmi in zip(wl2, fwhm2)
         ]
     )
-    import pdb; pdb.set_trace()
+    # flagging here that there might be a problem if x is 2d
     if fill is False:
         return np.dot(H, x[:, np.newaxis]).ravel()
         return
