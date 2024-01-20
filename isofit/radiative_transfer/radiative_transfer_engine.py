@@ -116,7 +116,9 @@ class RadiativeTransferEngine:
         isofit.root, "data", "earth_sun_distance.txt"
     )
 
-    # These properties enable easy access to the lut data
+    # These properties (wl, fwhm, coszen, solar_irr) provide streamlined access to respective data elements in the 'lut' xarray dataset. 
+    # They utilize the '__getitem__' method for dictionary-like retrieval from 'self.lut', enhancing the ease and efficiency of data manipulation.
+
     wl = property(lambda self: self["wl"])
     fwhm = property(lambda self: self["fwhm"])
     coszen = property(lambda self: self["coszen"])
@@ -194,6 +196,8 @@ class RadiativeTransferEngine:
             # set up resample object
             
             if os.path.exists(self.wavelength_file):
+                # If this file doesn't exist it will load the monochromatic LUT to the interpolator
+                # This is useful for calibration. See instrument.sample.
                 
                 wl, fwhm = common.load_wavelen(self.wavelength_file)
                 # initialize resampling class
