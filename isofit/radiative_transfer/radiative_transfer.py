@@ -324,10 +324,15 @@ class RadiativeTransfer:
     def drdn_dRTb(self, x_RT, rfl, Ls, geom):
         if len(self.bvec) == 0:
             Kb_RT = np.zeros((0, len(self.wl.shape)))
-
+        # currently, the K_b matrix only covers forward model derivatives due to H2O_ABSCO unknowns,
+        # so that subsequent errors might occur when water vapor is not part of the state
+        # vector (which is very unlikely though). the following statement captures this case,
+        # but might need to be modified as soon as we add more unknowns
+        # ToDo: might require modification in case more unknowns are added
+        elif len(self.bvec) > 0 and "H2OSTR" not in self.statevec_names:
+            Kb_RT = np.zeros((1, len(self.wl)))
         else:
             # first the radiance at the current state vector
-            r = self.get_shared_rtm_quantities(x_RT, geom)
             rdn = self.calc_rdn(x_RT, rfl, Ls, geom)
 
             # unknown parameters modeled as random variables per

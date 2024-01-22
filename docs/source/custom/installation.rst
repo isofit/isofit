@@ -11,7 +11,6 @@ New environment:
 
     mamba create -n isofit_env -c conda-forge isofit
     mamba activate isofit_env
-    pip install ray ndsplines xxhash --upgrade
 
 or
 
@@ -19,23 +18,18 @@ or
 
     conda create -n isofit_env -c conda-forge isofit
     conda activate isofit_env
-    pip install ray ndsplines xxhash --upgrade
 
 Within an existing environment:
 
 .. code-block:: bash
 
     mamba install -c conda-forge isofit
-    pip install ray ndsplines xxhash --upgrade
 
 or
 
 .. code-block:: bash
 
     conda install -c conda-forge isofit
-    pip install ray ndsplines xxhash --upgrade
-
-The additional pip installation is necessary as several packages are not available from conda-forge for all operating systems.
 
 
 Install from pip
