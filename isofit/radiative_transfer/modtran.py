@@ -231,7 +231,7 @@ class ModtranRT(RadiativeTransferEngine):
         Post-initialized, pre-simulation setup
         """
         self.filtpath = os.path.join(
-            os.path.dirname(self.sim_path),
+            self.sim_path,
             f"wavelengths_{self.engine_config.engine_name}_{self.wl[0]}_{self.wl[-1]}.flt",
         )
         self.template = json_load_ascii(self.engine_config.template_file)["MODTRAN"]
