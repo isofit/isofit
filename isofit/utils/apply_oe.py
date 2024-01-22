@@ -1256,6 +1256,8 @@ def get_metadata_from_obs(
     path_km = obs[:, :, 0] / 1000.0
     to_sensor_azimuth = obs[:, :, 1]
     to_sensor_zenith = obs[:, :, 2]
+    to_sun_azimuth = obs[:, :, 3]
+    to_sun_zenith = obs[:, :, 4]
     time = obs[:, :, 9]
 
     # calculate relative to-sun azimuth
