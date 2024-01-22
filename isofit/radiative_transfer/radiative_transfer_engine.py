@@ -159,6 +159,18 @@ class RadiativeTransferEngine:
         self.topography_model = engine_config.topography_model
 
         self.wavelength_file = wavelength_file
+        _wl, _fwhm = [], []
+        if os.path.exists(wavelength_file):
+            Logger.info(f"Loading from wavelength_file: {wavelength_file}")
+            _wl, _fwhm = common.load_wavelen(wavelength_file)
+
+        # Override
+        if any(wl):
+            _wl = wl
+            Logger.debug(f"Override WL provided, using instead (size: {len(wl)})")
+        if any(wl):
+            _fwhm = fwhm
+            Logger.debug(f"Override WL provided, using instead (size: {len(fwhm)})")
 
         # ToDo: move setting of multipart rfl values to config
         if self.multipart_transmittance:
@@ -177,23 +189,12 @@ class RadiativeTransferEngine:
             Logger.info(f"No LUT store found, beginning initialization and simulations")
             Logger.debug(f"Writing store to: {self.lut_path}")
 
-            # If the parameters aren't provided, use the wavelengths file
-            _wl, _fwhm = wl, fwhm
-            if len(wl) == 0 or len(fwhm) == 0:
-                Logger.debug(
-                    f"WL or FWHM were not provided, using wavelength file: {self.wavelength_file}"
-                )
-                _wl, _fwhm = common.load_wavelen(self.wavelength_file)
-                if any(wl):
-                    Logger.debug(
-                        f"Override WL provided, using instead (size: {len(wl)})"
-                    )
-                    _wl = wl
-                if any(fwhm):
-                    Logger.debug(
-                        f"Override FWHM provided, using instead (size: {len(fwhm)})"
-                    )
-                    _fwhm = fwhm
+            if not any(_wl):
+                Logger.error("Wavelengths not provided")
+                raise AttributeError("Wavelengths not provided")
+            if not any(_fwhm):
+                Logger.error("Wavelengths not provided")
+                raise AttributeError("Wavelengths not provided")
 
             self.lut_names = engine_config.lut_names or lut_grid.keys()
             self.lut_grid = {
