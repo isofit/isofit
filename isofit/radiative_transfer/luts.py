@@ -214,19 +214,124 @@ def load(file: str, lut_names: list = [], subset: dict = {}) -> xr.Dataset:
     """
     Loads a LUT NetCDF
     Assumes to be a regular grid at this time (auto creates the point dim)
+
+    Parameters
+    ----------
+    file: str
+        LUT file to load
+    lut_names: list, default=[]
+        Dimensions to stack together to create a `point` dimension
+    subset: dict, default={}
+        Subset each dimension with a given strategy, see examples for more information
+
+    Examples
+    --------
+    >>> # Create a test file for the examples to load
+    >>> file = 'subsetting_example.nc'
+    >>> lut_dims = {
+    ...     'AOT550': [0.001, 0.1009, 0.2008, 0.3007, 0.4006, 0.5005, 0.6004, 0.7003, 0.8002, 0.9001, 1.],
+    ...     'H2OSTR': [0.2231, 0.4637, 0.7042, 0.9447, 1.1853, 1.4258, 1.6664, 1.9069, 2.1474, 2.388, 2.6285, 2.869, 3.1096, 3.3501],
+    ...     'observer_zenith': [170.1099, 172.7845],
+    ...     'surface_elevation_km': [0., 0.2361, 0.4721, 0.7082, 0.9442, 1.1803, 1.4164, 1.6524, 1.8885, 2.1245, 2.3606, 2.5966, 2.8327, 3.0688, 3.3048, 3.5409, 3.7769, 4.013],
+    ...     'wl': range(285)
+    ... }
+    >>> ds = xr.Dataset(coords=lut_dims)
+    >>> ds.to_netcdf(file)
+
+    >>> # Subset: Exact values along the dimension
+    >>> subset = {
+    ...     'H2OSTR': [1.1853, 2.869]
+    ... }
+    >>> load(file, [], subset).dims
+
+    Frozen({'wl': 285, 'point': 792})
+    >>> load(file, [], subset).unstack().dims
+    Frozen({'AOT550': 11, 'H2OSTR': 2, 'observer_zenith': 2, 'surface_elevation_km': 18, 'wl': 285})
+
+    >>> # Subset: 1.1853 < H2OSTR < 2.869
+    >>> subset = {
+    ...     'H2OSTR': {
+    ...         'gt': 1.1853,
+    ...         'lt': 2.869
+    ...     }
+    ... }
+    >>> load(file, [], subset).dims
+    Frozen({'wl': 285, 'point': 2376})
+    >>> load(file, [], subset).unstack().dims
+    Frozen({'AOT550': 11, 'H2OSTR': 6, 'observer_zenith': 2, 'surface_elevation_km': 18, 'wl': 285})
+
+    >>> # Subset: 1.1853 <= H2OSTR <= 2.869
+    >>> subset = {
+    ...     'H2OSTR': {
+    ...         'gte': 1.1853,
+    ...         'lte': 2.869
+    ...     }
+    ... }
+    >>> load(file, [], subset).dims
+    Frozen({'wl': 285, 'point': 3168})
+    >>> load(file, [], subset).unstack().dims
+    Frozen({'AOT550': 11, 'H2OSTR': 8, 'observer_zenith': 2, 'surface_elevation_km': 18, 'wl': 285})
+
+    >>> # Subset: Exact value, squeeze dimension
+    >>> subset = {
+    ...     'H2OSTR': 2.869
+    ... }
+    >>> load(file, [], subset).dims
+    Frozen({'wl': 285, 'point': 396})
+    >>> load(file, [], subset).unstack().dims
+    Frozen({'AOT550': 11, 'observer_zenith': 2, 'surface_elevation_km': 18, 'wl': 285})
+
+    >>> # Subset: Using mean, squeeze dimension
+    >>> subset = {
+    ...     'H2OSTR': 'mean'
+    ... }
+    >>> load(file, [], subset).dims
+    Frozen({'wl': 285, 'point': 396})
+
+    >>> # Subset: Using max, squeeze dimension
+    >>> subset = {
+    ...     'H2OSTR': 'max'
+    ... }
+    >>> load(file, [], subset).dims
+    Frozen({'wl': 285, 'point': 396})
+    >>> load(file, [], subset).unstack().dims
+    Frozen({'AOT550': 11, 'observer_zenith': 2, 'surface_elevation_km': 18, 'wl': 285})
+
+    >>> # Multiple subsets
+    >>> subset = {
+    ...     'H2OSTR': {
+    ...         'gte': 1.1853,
+    ...         'lte': 2.869
+    ...     },
+    ...     'AOT550': [0.2008, 0.4006, 0.6004]
+    ... }
+    >>> load(file, [], subset).dims
+    Frozen({'wl': 285, 'point': 864})
+    >>> load(file, [], subset).unstack().dims
+    Frozen({'AOT550': 3, 'H2OSTR': 8, 'observer_zenith': 2, 'surface_elevation_km': 18, 'wl': 285})
+
+    >>> # Multiple subsets
+    >>> subset = {
+    ...     'H2OSTR': {
+    ...         'gte': 1.1853,
+    ...         'lte': 2.869
+    ...     },
+    ...     'AOT550': [0.2008, 0.4006, 0.6004],
+    ...     'observer_zenith': 172.7845,
+    ...     'surface_elevation_km': 'mean'
+    ... }
+    >>> load(file, [], subset).dims
+    Frozen({'wl': 285, 'point': 24})
+    >>> load(file, [], subset).unstack().dims
+    Frozen({'AOT550': 3, 'H2OSTR': 8, 'wl': 285})
     """
     ds = xr.open_mfdataset([file], mode="r", lock=False)
 
     for dim, sub in subset.items():
-        if isinstance(sub, list):
-            lower, upper = sub
-            ds = ds.sel({dim: (lower < ds[dim]) & (ds[dim] < upper)})
-        elif isinstance(sub, float):
+        if isinstance(sub, (float, int, list)):
             ds = ds.sel({dim: sub})
         elif isinstance(sub, dict):
             ds = sel(ds, dim, **sub)
-        elif isinstance(sub, int):
-            ds = ds.isel({dim: sub})
         elif isinstance(sub, str):
             ds = getattr(ds, sub)(dim)
 
