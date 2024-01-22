@@ -10,7 +10,7 @@
     "presolve_wv": true,
     "empirical_line": false,
     "analytical_line": false,
-    "debug_mode": true,
+    "debug_mode": false,
     "ray_temp_dir": "/tmp/ray"
   },
   "processors": {
