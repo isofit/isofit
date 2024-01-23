@@ -121,13 +121,7 @@ class RadiativeTransferEngine:
         overwrite_interpolator: bool = False,
         wl: np.array = [],  # Wavelength override
         fwhm: np.array = [],  # fwhm override
-        **kwargs,
     ):
-        for key in kwargs:
-            Logger.error(
-                f"This configuration key is being deprecated, please remove it from your config: {key!r}"
-            )
-
         if lut_path is None:
             Logger.error(
                 "The lut_path must be a valid path at this time. Either it exists as a valid LUT or a LUT will be generated to that path"
@@ -182,7 +176,7 @@ class RadiativeTransferEngine:
             Logger.debug(
                 f"Reading from store: {lut_path}, subset={engine_config.lut_subset}"
             )
-            self.lut = luts.load(lut_path, lut_grid, subset=engine_config.lut_subset)
+            self.lut = luts.load(lut_path, subset=engine_config.lut_names)
             self.lut_grid = lut_grid or luts.extractGrid(self.lut)
             self.points, self.lut_names = luts.extractPoints(self.lut)
         else:
@@ -196,14 +190,7 @@ class RadiativeTransferEngine:
                 Logger.error("Wavelengths not provided")
                 raise AttributeError("Wavelengths not provided")
 
-            self.lut_names = engine_config.lut_names or lut_grid.keys()
-            self.lut_grid = {
-                key: lut_grid[key] for key in self.lut_names if key in lut_grid
-            }
-
-            self.points = common.combos(
-                self.lut_grid.values()
-            )  # 2d numpy array.  rows = points, columns = lut_names
+            self.lut_grid = lut_grid
 
             Logger.info(f"Initializing LUT file")
             self.lut = luts.initialize(
@@ -216,19 +203,21 @@ class RadiativeTransferEngine:
                 zeros=self.zeros,
             )
 
+            # Retrieve points and names from the now existing lut dataset
+            self.points, self.lut_names = luts.extractPoints(self.lut)
+
             # Create and populate a LUT file
             self.runSimulations()
 
         # Limit the wavelength per the config, does not affect data on disk
         if engine_config.wavelength_range is not None:
             Logger.info(
-                f"Limiting wavelengths to range: {engine_config.wavelength_range}"
+                f"Subsetting wavelengths to range: {engine_config.wavelength_range}"
             )
-            original = self.wl.size
-            self.lut = self.lut.sel(wl=slice(*engine_config.wavelength_range))
-            selected = self.wl.size
-            Logger.info(
-                f"This reduced the wavelength samples from {original} to {selected}"
+            self.lut = luts.subset(
+                self.lut,
+                "wl",
+                dict(zip(["gte", "lte"], engine_config.wavelength_range)),
             )
 
         self.n_chan = len(self.wl)

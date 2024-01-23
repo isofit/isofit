@@ -85,15 +85,11 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         implementation of the forward model.
         """
 
-        self._lut_names_type = list()
+        self._lut_names_type = dict()
         self.lut_names = None
         """List: Names of the elements to run this radiative transfer element on.  Must be a subset
         of the keys in radiative_transfer->lut_grid.  If not specified, uses all keys from
         radiative_transfer-> lut_grid.  Auto-sorted (alphabetically) below."""
-
-        self._lut_subset_type = dict()
-        self.lut_subset = {}
-        """Dict: Subsets a LUT file"""
 
         self._statevector_names_type = list()
         self.statevector_names = None
