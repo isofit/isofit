@@ -152,19 +152,15 @@ class RadiativeTransferEngine:
         self.multipart_transmittance = engine_config.multipart_transmittance
         self.topography_model = engine_config.topography_model
 
-        self.wavelength_file = wavelength_file
-        _wl, _fwhm = [], []
-        if os.path.exists(wavelength_file):
-            Logger.info(f"Loading from wavelength_file: {wavelength_file}")
-            _wl, _fwhm = common.load_wavelen(wavelength_file)
-
-        # Override
-        if any(wl):
-            _wl = wl
-            Logger.debug(f"Override WL provided, using instead (size: {len(wl)})")
-        if any(wl):
-            _fwhm = fwhm
-            Logger.debug(f"Override WL provided, using instead (size: {len(fwhm)})")
+        # Specify wavelengths and fwhm to be used for either resampling an existing LUT or building a new instance
+        if not any(wl) or not any(fwhm):
+            self.wavelength_file = wavelength_file
+            if os.path.exists(wavelength_file):
+                Logger.info(f"Loading from wavelength_file: {wavelength_file}")
+                try:
+                    wl, fwhm = common.load_wavelen(wavelength_file)
+                except:
+                    pass
 
         # ToDo: move setting of multipart rfl values to config
         if self.multipart_transmittance:
@@ -181,6 +177,15 @@ class RadiativeTransferEngine:
             self.points, self.lut_names = luts.extractPoints(self.lut)
         else:
             Logger.info(f"No LUT store found, beginning initialization and simulations")
+            # Check if both wavelengths and fwhm are provided for building the LUT
+            if not any(wl) or not any(fwhm):
+                Logger.error(
+                    "No wavelength information found, please provide either as file or input argument"
+                )
+                raise AttributeError(
+                    "No wavelength information found, please provide either as file or input argument"
+                )
+
             Logger.debug(f"Writing store to: {self.lut_path}")
 
             if not any(_wl):
@@ -195,10 +200,10 @@ class RadiativeTransferEngine:
             Logger.info(f"Initializing LUT file")
             self.lut = luts.initialize(
                 file=self.lut_path,
-                wl=_wl,
+                wl=wl,
                 lut_grid=self.lut_grid,
                 consts=self.consts,
-                onedim=self.onedim + [("fwhm", _fwhm)],
+                onedim=self.onedim + [("fwhm", fwhm)],
                 alldim=self.alldim,
                 zeros=self.zeros,
             )
