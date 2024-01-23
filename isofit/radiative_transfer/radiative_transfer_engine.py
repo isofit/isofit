@@ -187,14 +187,6 @@ class RadiativeTransferEngine:
                 )
 
             Logger.debug(f"Writing store to: {self.lut_path}")
-
-            if not any(_wl):
-                Logger.error("Wavelengths not provided")
-                raise AttributeError("Wavelengths not provided")
-            if not any(_fwhm):
-                Logger.error("Wavelengths not provided")
-                raise AttributeError("Wavelengths not provided")
-
             self.lut_grid = lut_grid
 
             Logger.info(f"Initializing LUT file")
