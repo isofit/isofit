@@ -210,7 +210,7 @@ def sel(ds, dim, lt=None, lte=None, gt=None, gte=None):
     return ds
 
 
-def subset(ds: xr.Dataset, dim: str, strat) -> xr.Dataset:
+def sub(ds: xr.Dataset, dim: str, strat) -> xr.Dataset:
     """
     Subsets a dataset object along a specific dimension in a few supported ways.
 
@@ -395,7 +395,7 @@ def load(file: str, subset: dict = {}) -> xr.Dataset:
 
     # Apply subsetting strategies
     for dim, strat in subset.items():
-        ds = subset(ds, dim, strat)
+        ds = sub(ds, dim, strat)
 
     dims = set(ds.coords) - {"wl"}
     return ds.stack(point=dims).transpose("point", "wl")
