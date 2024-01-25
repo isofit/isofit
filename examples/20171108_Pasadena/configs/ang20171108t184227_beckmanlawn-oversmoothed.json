@@ -65,7 +65,7 @@
           "sim_path": "../lut/",
           "lut_path": "../lut/ang20171108t184227_post_v2p11_BeckmanLawn-oversmoothed.nc",
           "template_file": "ang20171108t184227_modtran.json",
-          "lut_names": ["H2OSTR", "AOT550"]
+          "lut_subset": {"H2OSTR": [1.5, 2.0], "AOT550": [0.01, 0.1]}
         }
       }
     }
