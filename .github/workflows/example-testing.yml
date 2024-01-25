@@ -28,6 +28,7 @@ jobs:
       run: |
         # conda env update --name isofit --solver=libmamba --file recipe/environment_isofit_basic.yml
         pip install dask netCDF4
+      # Pinning xarray to <2024.1.1 for now to avoid 'TypeError: expected string or bytes-like object'
         pip install 'xarray<2024.1.1' --force-reinstall
         pip install --no-deps --force-reinstall --editable .
 

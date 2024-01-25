@@ -22,7 +22,9 @@ jobs:
 
     - name: Install Isofit
       run: |
-        pip install xarray dask netCDF4
+        pip install dask netCDF4
+      # Pinning xarray to <2024.1.1 for now to avoid 'TypeError: expected string or bytes-like object'
+        pip install 'xarray<2024.1.1' --force-reinstall
         pip install --no-deps --force-reinstall --editable .
 
     - name: Check Utils
