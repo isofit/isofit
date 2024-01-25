@@ -302,7 +302,9 @@ def do_hypertrace(isofit_config, wavelength_file, reflectance_file,
                  ["radiative_transfer"]
                  ["radiative_transfer_engines"]
                  ["vswir"])
-    fwd_vswir["lut_path"] = str(fwd_lutdir)
+    fwd_vswir["sim_path"] = str(fwd_lutdir)
+    fwd_vswir["lut_path"] = str(fwd_lutdir) + "/fwd_lut.nc"
+    fwd_vswir["lut_subset"] = {"H2OSTR": fwd_lut["H2OSTR"], "AOT550": fwd_lut["AOT550"]}
     fwd_vswir["interpolator_base_path"] = str(fwd_lutdir)
 
     if radfile.exists() and not overwrite:

@@ -71,6 +71,11 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         # Emulator Aux
         aux = np.load(config.emulator_aux_file)
 
+        # TODO: Disable when sRTMnet_v100_aux is updated
+        aux_rt_quantities = np.where(
+            aux["rt_quantities"] == "transm", "transm_down_dif", aux["rt_quantities"]
+        )
+
         # TODO: Re-enable when sRTMnet_v100_aux is updated
         # Verify expected keys exist
         # missing = self.lut_quantities - set(aux["rt_quantities"].tolist())
@@ -108,13 +113,13 @@ class SimulatedModtranRT(RadiativeTransferEngine):
 
         # In some atmospheres the values get down to basically 0, which 6S can’t quite handle and will resolve to NaN instead of 0
         # Safe to replace here
-        if sim.lut[aux["rt_quantities"]].isnull().any():
+        if sim.lut[aux_rt_quantities].isnull().any():
             Logger.debug("Simulator detected to have NaNs, replacing with 0s")
             sim.lut = sim.lut.fillna(0)
 
         # Interpolate the sim results from its wavelengths to the emulator wavelengths
         Logger.info("Interpolating simulator quantities to emulator size")
-        for key in aux["rt_quantities"]:
+        for key in aux_rt_quantities:
             interpolate = interp1d(sim.wl, sim[key])
             resample[key] = (("point", "wl"), interpolate(self.emu_wl))
 
@@ -123,7 +128,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
 
         ## Reduce from 3D to 2D by stacking along the wavelength dim for each quantity
         # Convert to DataArray to stack the variables along a new `quantity` dimension
-        data = sim.lut[aux["rt_quantities"]]
+        data = sim.lut[aux_rt_quantities]
         data = data.to_array("quantity").stack(stack=["quantity", "wl"])
 
         scaler = aux.get("response_scaler", 100.0)
@@ -169,7 +174,9 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         Resamples the predicts produced by preSim to be saved in self.lut_path
         """
         # REVIEW: Likely should chunk along the point dim to improve this
-        data = luts.load(self.predict_path).sel(point=tuple(point)).load()
+        data = (
+            luts.load(self.predict_path, self.lut_subset).sel(point=tuple(point)).load()
+        )
         return {
             key: resample_spectrum(values.data, self.emu_wl, self.wl, self.fwhm)
             for key, values in data.items()
