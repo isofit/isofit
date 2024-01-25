@@ -276,9 +276,11 @@ def load(file: str, lut_names: list = [], subset: dict = {}) -> xr.Dataset:
         #pdb.set_trace()
         cnfg_names = [a for a in lut_names.keys()]
         lut_file_names = names.tolist()
-        #pdb.set_trace()
+        
         bad_idxs = []
         for lut_dim in lut_names.items():
+            print(lut_dim[0])
+            #import pdb; pdb.set_trace()
             # Need to be carful with cases that the lut_grid from the config is not aligned with the lut file
             # let's find unique values for each column
             idx_in_file = lut_file_names.index(lut_dim[0])

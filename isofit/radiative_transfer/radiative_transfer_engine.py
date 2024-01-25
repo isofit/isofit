@@ -205,13 +205,17 @@ class RadiativeTransferEngine:
                 
                 if not len(wl) == len(self.lut.wl):
                     conv = xr.Dataset(coords={'wl': wl, 'point': self.lut.point})
-
+                    n_samples = self.lut.dims['point']
+                    print('***********' + 'loading ' + str(n_samples) + ' samples into interpolator')
                     for quantity in self.lut:
                         print('resampling '+quantity)
                         # TODO: make the list comp run in parallel
                         data_to_process = self.lut[quantity].data
- 
-                        add_to_ds = np.array([rsmp(x) for x in data_to_process])
+                        run_in_parallel = True
+                        if run_in_parallel is not True:
+                            add_to_ds = np.array([rsmp(x) for x in data_to_process])
+                        else:
+                            add_to_ds = rsmp.process_data(data_to_process, n_samples)
 
                         conv[quantity] = (('wl', 'point'), add_to_ds.T)
 
@@ -297,10 +301,15 @@ class RadiativeTransferEngine:
             # I solved it by replacing the commented by line 314 and now it works!
 
             # Hidden assumption: geometry keys come first, then come RTE keys
-            #self.geometry_input_names = set(self.geometry_input_names) - set(
-            #    engine_config.statevector_names or self.lut_names
-            #)
-            self.geomtry_input_names = set(self.geometry_input_names)
+            self.geometry_input_names = set(self.geometry_input_names) - set(
+                engine_config.lut_names or self.lut_names
+            )
+            #import pdb; pdb.set_trace()
+            # a lut dim could be both a free parameter and a geometry parameter, such as surface elevation.
+            # self.geometry_input_names are just the names of whatever is a geometry parameter, defined in this script above
+            # self.lut_names is just the names that are in the lut file
+
+            #self.geomtry_input_names = set(self.geometry_input_names)
             self.indices.geom = {
                 i: key
                 for i, key in enumerate(self.lut_names)

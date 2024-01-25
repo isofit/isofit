@@ -30,7 +30,9 @@ import numpy as np
 import scipy.linalg
 import xxhash
 from scipy.interpolate import RegularGridInterpolator
-
+from multiprocessing import Pool
+import multiprocessing as mp
+import ray
 ### Variables ###
 
 # small value used in finite difference derivatives
@@ -258,6 +260,10 @@ class VectorInterpolator:
         elif self.method == 2:
             return self._multilinear_grid(*args, **kwargs)
 
+
+
+
+
 class resample():
     """ Resampling class where you can initialize and then use. It has a saftey logic against non finite
     elements in the data to interpoloate. 
@@ -285,6 +291,60 @@ class resample():
         ww = np.array([doTheResample(W) for W in range(len(target_wl))])
         self.transform_matrix = ww
     
+
+    def process_data(self, ys, n_samples, num_processes=4):
+        """
+        Process data in parallel.
+        Args:
+            ys: The data to be processed.
+            n_samples: The number of samples expected in ys.
+            num_processes: The number of parallel processes to use.
+        Returns:
+            Processed data.
+        """
+        num_processes = mp.cpu_count()
+        # Check dimensions and align correctly
+        ys = self._reshape_data(ys, n_samples)
+
+        # Initialize Ray
+        if not ray.is_initialized():
+            ray.init()
+
+        # Dispatch tasks
+        result_ids = [self.process_single_sample.remote(self, ys[i, :]) for i in range(ys.shape[0])]
+
+        # Collect results
+        results = ray.get(result_ids)
+
+        return np.array(results)
+
+    @ray.remote
+    def process_single_sample(self, y):
+        """
+        Process a single sample. This method will be called in parallel.
+        Args:
+            y: A single sample from ys.
+        Returns:
+            The processed sample.
+        """
+        # Processing logic for a single sample
+        # For example, this could be a call to self.__call__(y) or other processing
+        return self.__call__(y)  # or other processing logic
+
+
+    def _reshape_data(self, ys, n_samples):
+        """
+        Reshape data to the correct dimensions for convolution.
+        """
+        counter = 0
+        max_attempts = 5
+        while ys.shape[0] != n_samples:
+            if counter >= max_attempts:
+                raise ValueError("Unable to reshape data to the correct dimensions for convolution")
+            ys = ys.T
+            counter += 1
+        return ys
+
     def __call__(self, y):
         # Convert input to 2D array and transpose if necessary
         spectrum = np.atleast_2d(y)
