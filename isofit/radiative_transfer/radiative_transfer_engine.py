@@ -194,7 +194,15 @@ class RadiativeTransferEngine:
             # Note: I'm using lut_grid from the config as min\max to subset!
             self.lut = luts.load(lut_path, lut_grid, subset=engine_config.lut_subset)
             # set up resample object
-            
+            #import pdb; pdb.set_trace()
+            #tuples_array = self.lut['point'].values
+
+            # Convert the array of tuples to a 2D NumPy array
+            #points_2d_array = np.array([list(tup) for tup in tuples_array])
+            #[a for a in self.lut['point'].coords.keys() if a != 'point']
+            #np.argwhere(np.all(points_2d_array[:] == [0.05, 1, 4, 30], axis=1))
+
+
             if os.path.exists(self.wavelength_file):
                 # If this file doesn't exist it will load the monochromatic LUT to the interpolator
                 # This is useful for calibration. See instrument.sample.
@@ -220,9 +228,16 @@ class RadiativeTransferEngine:
                         conv[quantity] = (('wl', 'point'), add_to_ds.T)
 
             self.lut = conv
-
-            self.lut_grid = lut_grid or luts.extractGrid(self.lut)
+            #import pdb; pdb.set_trace()
+            #self.lut_grid = lut_grid or luts.extractGrid(self.lut)
+            self.lut_grid = luts.extractGrid(self.lut)
             self.points, self.lut_names = luts.extractPoints(self.lut)
+
+            # Step 1: Sort self.lut_names and get the sorted indices
+            sorted_indices = np.argsort(self.lut_names)
+            self.lut_names = self.lut_names[sorted_indices]
+            self.points = self.points[:, sorted_indices]
+  
 
         else:
             Logger.info(f"No LUT store found, beginning initialization and simulations")
@@ -341,7 +356,7 @@ class RadiativeTransferEngine:
         TODO: optional load from/write to disk
         """
         self.luts = {}
-
+        #import pdb; pdb.set_trace()
         # Convert from 2d (point, wl) to Nd (*luts, wl)
         ds = self.lut.unstack("point")
 

@@ -25,6 +25,8 @@ import pandas as pd
 from scipy.interpolate import interp1d
 from scipy.optimize import least_squares, minimize
 from scipy.optimize import minimize_scalar as min1d
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 
 from isofit.core.common import (
     emissive_radiance,
@@ -100,6 +102,44 @@ def heuristic_atmosphere(
         # calculating the band ratio that we would see if this were the
         # atmospheric H2O content.  It assumes that defaults for all other
         # atmospheric parameters (such as aerosol, if it is there).
+
+
+
+        '''plt.figure()
+
+        # Assuming my_RT.lut_grid[h2oname] contains your h2o values
+        h2o_values = np.array(my_RT.lut_grid[h2oname])
+
+        # Normalize h2o values to [0, 1] for colormap
+        norm = plt.Normalize(h2o_values.min(), h2o_values.max())
+        cmap = cm.jet  # Choose the colormap
+
+        inst_rsmp = lambda x: instrument.sample(x_instrument, RT.wl, x)
+
+        for h2o in h2o_values:
+            # Get Atmospheric terms at high spectral resolution
+            x_RT_2 = x_RT.copy()
+            x_RT_2[ind_sv] = h2o
+
+            rhi = RT.get_shared_rtm_quantities(x_RT_2, geom)
+            direct_flux = inst_rsmp(rhi['direct_flux'])
+
+            # Map h2o value to color
+            color = cmap(norm(h2o))
+
+            plt.plot(my_RT.wl, direct_flux, label=str(h2o), color=color)
+
+        # Adding a colorbar
+        sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+        sm.set_array([])
+        plt.colorbar(sm, label='H2O Value')
+
+        plt.legend()
+        plt.grid()
+        plt.savefig('img.jpg')
+
+        import pdb; pdb.set_trace()'''
+
         for h2o in my_RT.lut_grid[h2oname]:
             # Get Atmospheric terms at high spectral resolution
             x_RT_2 = x_RT.copy()

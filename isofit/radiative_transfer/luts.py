@@ -361,12 +361,13 @@ def extractGrid(ds: xr.Dataset) -> dict:
     """
     Extracts the LUT grid from a Dataset
     """
-    import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
+
     grid = {}
     for dim, vals in ds.coords.items():
         if dim in {"wl", "point"}:
             continue
-        grid[dim] = vals.data
+        grid[dim] = np.unique(vals.data)
     return grid
 
 
