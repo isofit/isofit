@@ -167,11 +167,12 @@ class RadiativeTransferEngine:
             self.test_rfls = [0.1, 0.5]
 
         # Extract from LUT file if available, otherwise initialize it
-        self.lut_subset = engine_config.lut_subset
         if exists:
             Logger.info(f"Prebuilt LUT provided")
-            Logger.debug(f"Reading from store: {lut_path}, subset={self.lut_subset}")
-            self.lut = luts.load(lut_path, subset=self.lut_subset)
+            Logger.debug(
+                f"Reading from store: {lut_path}, subset={engine_config.lut_names}"
+            )
+            self.lut = luts.load(lut_path, subset=engine_config.lut_names)
             self.lut_grid = lut_grid or luts.extractGrid(self.lut)
             self.points, self.lut_names = luts.extractPoints(self.lut)
         else:
@@ -433,7 +434,7 @@ class RadiativeTransferEngine:
             luts.updatePoint(file=self.lut_path, data=post)
 
         # Reload the LUT now that it's populated
-        self.lut = luts.load(self.lut_path, self.lut_subset)
+        self.lut = luts.load(self.lut_path)
 
     def summarize(self, x_RT, *_):
         """
