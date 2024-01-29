@@ -65,7 +65,7 @@
           "sim_path": "../lut_multi/",
           "lut_path": "../lut_multi/ang20171108t184227_uncert_v2p11_BeckmanLawn.nc",
           "template_file": "ang20171108t184227_multimodtran.json",
-          "lut_subset": {"H2OSTR": [1.5, 2.0], "AOT550": [0.01, 0.1]}
+          "lut_names": {"H2OSTR": null, "AOT550": null}
         }
       }
     }
