@@ -18,7 +18,7 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-import scipy as s
+import numpy as np
 
 from isofit.configs import Config
 
@@ -54,7 +54,7 @@ class GlintSurface(ThermalSurface):
         normalize the result for the calling function."""
 
         Cov = ThermalSurface.Sa(self, x_surface, geom)
-        f = s.array([[(10.0 * self.scale[self.glint_ind]) ** 2]])
+        f = np.array([[(10.0 * self.scale[self.glint_ind]) ** 2]])
         Cov[self.glint_ind, self.glint_ind] = f
         return Cov
 
@@ -62,10 +62,10 @@ class GlintSurface(ThermalSurface):
         """Given a reflectance estimate and one or more emissive parameters,
         fit a state vector."""
 
-        glint_band = s.argmin(abs(900 - self.wl))
-        glint = s.mean(rfl_meas[(glint_band - 2) : glint_band + 2])
-        water_band = s.argmin(abs(400 - self.wl))
-        water = s.mean(rfl_meas[(water_band - 2) : water_band + 2])
+        glint_band = np.argmin(abs(900 - self.wl))
+        glint = np.mean(rfl_meas[(glint_band - 2) : glint_band + 2])
+        water_band = np.argmin(abs(400 - self.wl))
+        water = np.mean(rfl_meas[(water_band - 2) : water_band + 2])
         if glint > 0.05 or water < glint:
             glint = 0
         glint = max(
@@ -96,8 +96,8 @@ class GlintSurface(ThermalSurface):
         the extra glint parameter"""
 
         dLs_dsurface = super().dLs_dsurface(x_surface, geom)
-        dLs_dglint = s.zeros((dLs_dsurface.shape[0], 1))
-        dLs_dsurface = s.hstack([dLs_dsurface, dLs_dglint])
+        dLs_dglint = np.zeros((dLs_dsurface.shape[0], 1))
+        dLs_dsurface = np.hstack([dLs_dsurface, dLs_dglint])
         return dLs_dsurface
 
     def summarize(self, x_surface, geom):
