@@ -175,7 +175,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         """
         # REVIEW: Likely should chunk along the point dim to improve this
         data = (
-            luts.load(self.predict_path, self.lut_subset).sel(point=tuple(point)).load()
+            luts.load(self.predict_path).sel(point=tuple(point)).load()
         )
         return {
             key: resample_spectrum(values.data, self.emu_wl, self.wl, self.fwhm)

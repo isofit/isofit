@@ -245,7 +245,7 @@ def sub(ds: xr.Dataset, dim: str, strat) -> xr.Dataset:
         return sel(ds, dim, **strat)
 
 
-def load(file: str, subset: dict = {}) -> xr.Dataset:
+def load(file: str, subset: dict = None) -> xr.Dataset:
     """
     Loads a LUT NetCDF
     Assumes to be a regular grid at this time (auto creates the point dim)
@@ -382,20 +382,21 @@ def load(file: str, subset: dict = {}) -> xr.Dataset:
     ds = xr.open_mfdataset([file], mode="r", lock=False)
 
     # The subset dict must contain all coordinate keys in the lut file
-    missing = set(ds.coords) - ({"wl"} | set(subset))
-    if missing:
-        print(
-            "The following keys are in the LUT file but not specified how to be handled by the config:"
-        )
-        for key in missing:
-            print(f"- {key}")
-        raise AttributeError(
-            f"Subset dictionary is missing keys that are present in the LUT file: {missing}"
-        )
+    if subset:
+        missing = set(ds.coords) - ({"wl"} | set(subset))
+        if missing:
+            print(
+                "The following keys are in the LUT file but not specified how to be handled by the config:"
+            )
+            for key in missing:
+                print(f"- {key}")
+            raise AttributeError(
+                f"Subset dictionary is missing keys that are present in the LUT file: {missing}"
+            )
 
-    # Apply subsetting strategies
-    for dim, strat in subset.items():
-        ds = sub(ds, dim, strat)
+        # Apply subsetting strategies
+        for dim, strat in subset.items():
+            ds = sub(ds, dim, strat)
 
     dims = set(ds.coords) - {"wl"}
     return ds.stack(point=dims).transpose("point", "wl")
