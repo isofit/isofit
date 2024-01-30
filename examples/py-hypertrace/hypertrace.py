@@ -240,7 +240,9 @@ def do_hypertrace(isofit_config, wavelength_file, reflectance_file,
         else:
             raise ValueError(f"Invalid atmospheric rtm {atmospheric_rtm}")
 
-        vswir_conf["lut_path"] = str(lutdir2)
+        vswir_conf["sim_path"] = str(lutdir2)
+        vswir_conf["lut_path"] = str(lutdir2) + "/inv_lut.nc"
+        vswir_conf["lut_names"] = {"H2OSTR": None, "AOT550": None}
         vswir_conf["template_file"] = str(lrtfile)
 
     outdir2 = outdir / lrttag / noisetag / priortag / atmtag / caltag
@@ -460,6 +462,7 @@ def do_inverse(isofit_inv: dict,
                            output_reflectance_file=str(est_refl_file),
                            output_uncertainty_file=str(post_unc_file),
                            isofit_config=str(invfile))
+
 
 def mkabs(path):
     """Make a path absolute."""
