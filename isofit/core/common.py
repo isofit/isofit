@@ -108,6 +108,7 @@ class VectorInterpolator:
             # at the specific angle_loc axes.  We'll use broadcast_to to do
             # this, but we need to do it on the last dimension.  So start by
             # temporarily moving the target axes there, then broadcasting
+            data = np.array(data)
             data = np.swapaxes(data, -1, angle_loc)
             data_dim = list(np.shape(data))
             data_dim.append(data_dim[-1])

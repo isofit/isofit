@@ -1460,7 +1460,7 @@ def build_presolve_config(
                 "lut_path": paths.lut_h2o_directory + "/lut.nc",
                 "sim_path": paths.lut_h2o_directory,
                 "template_file": paths.h2o_template_path,
-                "lut_names": ["H2OSTR"],
+                "lut_names": {"H2OSTR": None},
                 "statevector_names": ["H2OSTR"],
             }
         },
@@ -1740,7 +1740,10 @@ def build_main_config(
     ] = list(radiative_transfer_config["statevector"].keys())
     radiative_transfer_config["radiative_transfer_engines"]["vswir"][
         "lut_names"
-    ] = list(radiative_transfer_config["lut_grid"].keys())
+    ] = None
+
+    #for key in radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"].keys():
+        #radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"][key] = None
 
     # make isofit configuration
     isofit_config_modtran = {
