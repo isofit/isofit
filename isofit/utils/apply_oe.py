@@ -1742,9 +1742,6 @@ def build_main_config(
         "lut_names"
     ] = None
 
-    #for key in radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"].keys():
-        #radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"][key] = None
-
     # make isofit configuration
     isofit_config_modtran = {
         "ISOFIT_base": paths.isofit_path,
