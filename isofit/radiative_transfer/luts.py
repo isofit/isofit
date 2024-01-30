@@ -175,7 +175,7 @@ def updatePoint(
                         var[inds] = values
 
 
-def sel(ds, dim, lt=None, lte=None, gt=None, gte=None):
+def sel(ds, dim, lt=None, lte=None, gt=None, gte=None, encompass=True):
     """
     Subselects an xarray Dataset object using .sel
 
@@ -185,28 +185,42 @@ def sel(ds, dim, lt=None, lte=None, gt=None, gte=None):
         LUT dataset
     dim: str
         Dimension to work on
-    lt: float
+    lt: float, default=None
         Select along this dim coordinates that are valued less than this
-    lte: float
+    lte: float, default=None
         Select along this dim coordinates that are valued less than or equal to this
-    gt: float
+    gt: float, default=None
         Select along this dim coordinates that are valued greater than this
-    gte: float
+    gte: float, default=None
         Select along this dim coordinates that are valued greater than or equal to this
+    encompass: bool, default=True
+        Change the values of gte/lte such that these values are encompassed using the
+        previous/next valid grid point
 
     Returns
     -------
     ds: xarray.Dataset
         Subsetted dataset
     """
+    # Retrieve the previous/next values such that gte and lte are encompassed
+    if encompass:
+        if gte is not None:
+            gte = ds[dim].where(ds[dim] < gte).dropna(dim)[-1]
+        if lte is not None:
+            lte = ds[dim].where(ds[dim] > lte).dropna(dim)[0]
+
     if lt is not None:
         ds = ds.sel({dim: ds[dim] < lt})
+
     if lte is not None:
         ds = ds.sel({dim: ds[dim] <= lte})
+
     if gt is not None:
         ds = ds.sel({dim: gt < ds[dim]})
+
     if gte is not None:
         ds = ds.sel({dim: gte <= ds[dim]})
+
     return ds
 
 
@@ -238,9 +252,8 @@ def sub(ds: xr.Dataset, dim: str, strat) -> xr.Dataset:
         return ds  # Take dimension as-is
 
     elif isinstance(strat, dict):
-        func = strat.get("function")
-        if func == "example on how to implement a custom subsetting function":
-            return useThatFunc(ds, dim, **strat)
+        if "interp" in strat:
+            return ds.interp({dim: strat["interp"]})
 
         return sel(ds, dim, **strat)
 
@@ -282,12 +295,26 @@ def load(file: str, subset: dict = None) -> xr.Dataset:
     ...     'AOT550': None,
     ...     'H2OSTR': [1.1853, 2.869],
     ...     'observer_zenith': None,
-    ...     'surface_elevation_km': None
+    ...     'surface_elevation_km': None,
     ... }
     >>> load(file, subset).dims
     Frozen({'wl': 285, 'point': 792})
     >>> load(file, subset).unstack().dims
     Frozen({'AOT550': 11, 'H2OSTR': 2, 'observer_zenith': 2, 'surface_elevation_km': 18, 'wl': 285})
+
+    >>> # Interpolate H2OSTR to 1.5
+    >>> subset = {
+    ...     'AOT550': None,
+    ...     'H2OSTR': {
+    ...         'interp': 1.5
+    ...     },
+    ...     'observer_zenith': None,
+    ...     'surface_elevation_km': None,
+    ... }
+    >>> load(file, subset).dims
+    Frozen({'wl': 285, 'point': 396})
+    >>> load(file, subset).unstack().dims
+    Frozen({'AOT550': 11, 'observer_zenith': 2, 'surface_elevation_km': 18, 'wl': 285})
 
     >>> # Subset: 1.1853 < H2OSTR < 2.869
     >>> subset = {
@@ -297,19 +324,35 @@ def load(file: str, subset: dict = None) -> xr.Dataset:
     ...         'lt': 2.869
     ...     },
     ...     'observer_zenith': None,
-    ...     'surface_elevation_km': None
+    ...     'surface_elevation_km': None,
     ... }
     >>> load(file, subset).dims
     Frozen({'wl': 285, 'point': 2376})
     >>> load(file, subset).unstack().dims
     Frozen({'AOT550': 11, 'H2OSTR': 6, 'observer_zenith': 2, 'surface_elevation_km': 18, 'wl': 285})
 
-    >>> # Subset: 1.1853 <= H2OSTR <= 2.869
+    >>> # Subset: 1.1853 <= H2OSTR <= 2.869, encompassed
     >>> subset = {
     ...     'AOT550': None,
     ...     'H2OSTR': {
     ...         'gte': 1.1853,
     ...         'lte': 2.869
+    ...     },
+    ...     'observer_zenith': None,
+    ...     'surface_elevation_km': None
+    ... }
+    >>> load(file, subset).dims
+    Frozen({'wl': 285, 'point': 3960})
+    >>> load(file, subset).unstack().dims
+    Frozen({'AOT550': 11, 'H2OSTR': 10, 'observer_zenith': 2, 'surface_elevation_km': 18, 'wl': 285})
+
+    >>> # Subset: 1.1853 <= H2OSTR <= 2.869, not encompassed
+    >>> subset = {
+    ...     'AOT550': None,
+    ...     'H2OSTR': {
+    ...         'gte': 1.1853,
+    ...         'lte': 2.869,
+    ...         'encompass': False
     ...     },
     ...     'observer_zenith': None,
     ...     'surface_elevation_km': None
@@ -340,6 +383,8 @@ def load(file: str, subset: dict = None) -> xr.Dataset:
     ... }
     >>> load(file, subset).dims
     Frozen({'wl': 285, 'point': 396})
+    >>> load(file, subset).unstack().dims
+    Frozen({'AOT550': 11, 'observer_zenith': 2, 'surface_elevation_km': 18, 'wl': 285})
 
     >>> # Subset: Using max, squeeze dimension
     >>> subset = {
@@ -364,9 +409,9 @@ def load(file: str, subset: dict = None) -> xr.Dataset:
     ...     'surface_elevation_km': None
     ... }
     >>> load(file, subset).dims
-    Frozen({'wl': 285, 'point': 864})
+    Frozen({'wl': 285, 'point': 1080})
     >>> load(file, subset).unstack().dims
-    Frozen({'AOT550': 3, 'H2OSTR': 8, 'observer_zenith': 2, 'surface_elevation_km': 18, 'wl': 285})
+    Frozen({'AOT550': 3, 'H2OSTR': 10, 'observer_zenith': 2, 'surface_elevation_km': 18, 'wl': 285})
 
     >>> # Multiple subsets
     >>> subset = {
@@ -379,9 +424,9 @@ def load(file: str, subset: dict = None) -> xr.Dataset:
     ...     'surface_elevation_km': 'mean'
     ... }
     >>> load(file, subset).dims
-    Frozen({'wl': 285, 'point': 24})
+    Frozen({'wl': 285, 'point': 30})
     >>> load(file, subset).unstack().dims
-    Frozen({'AOT550': 3, 'H2OSTR': 8, 'wl': 285})
+    Frozen({'AOT550': 3, 'H2OSTR': 10, 'wl': 285})
     """
     ds = xr.open_mfdataset([file], mode="r", lock=False)
 
