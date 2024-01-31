@@ -1694,9 +1694,9 @@ def build_main_config(
     radiative_transfer_config["radiative_transfer_engines"]["vswir"][
         "statevector_names"
     ] = list(radiative_transfer_config["statevector"].keys())
-    radiative_transfer_config["radiative_transfer_engines"]["vswir"][
-        "lut_names"
-    ] = list(radiative_transfer_config["lut_grid"].keys())
+    radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"] = (
+        list(radiative_transfer_config["lut_grid"].keys())
+    )
 
     # make isofit configuration
     isofit_config_modtran = {

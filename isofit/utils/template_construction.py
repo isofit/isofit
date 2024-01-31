@@ -959,9 +959,9 @@ def build_main_config(
     radiative_transfer_config["radiative_transfer_engines"]["vswir"][
         "statevector_names"
     ] = list(radiative_transfer_config["statevector"].keys())
-    radiative_transfer_config["radiative_transfer_engines"]["vswir"][
-        "lut_names"
-    ] = list(radiative_transfer_config["lut_grid"].keys())
+    radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"] = (
+        list(radiative_transfer_config["lut_grid"].keys())
+    )
 
     if surface_type == "water":
         surface_category = tsip["water"]["surface_category"]
@@ -1015,24 +1015,24 @@ def build_main_config(
                 "estimated_reflectance_file"
             ] = paths.rfl_subs_path
         else:
-            isofit_config_modtran["input"][
-                "measured_radiance_file"
-            ] = paths.surface_subs_files[surface_type]["rdn"]
+            isofit_config_modtran["input"]["measured_radiance_file"] = (
+                paths.surface_subs_files[surface_type]["rdn"]
+            )
             isofit_config_modtran["input"]["loc_file"] = paths.surface_subs_files[
                 surface_type
             ]["loc"]
             isofit_config_modtran["input"]["obs_file"] = paths.surface_subs_files[
                 surface_type
             ]["obs"]
-            isofit_config_modtran["output"][
-                "estimated_state_file"
-            ] = paths.surface_subs_files[surface_type]["state"]
-            isofit_config_modtran["output"][
-                "posterior_uncertainty_file"
-            ] = paths.surface_subs_files[surface_type]["uncert"]
-            isofit_config_modtran["output"][
-                "estimated_reflectance_file"
-            ] = paths.surface_subs_files[surface_type]["rfl"]
+            isofit_config_modtran["output"]["estimated_state_file"] = (
+                paths.surface_subs_files[surface_type]["state"]
+            )
+            isofit_config_modtran["output"]["posterior_uncertainty_file"] = (
+                paths.surface_subs_files[surface_type]["uncert"]
+            )
+            isofit_config_modtran["output"]["estimated_reflectance_file"] = (
+                paths.surface_subs_files[surface_type]["rfl"]
+            )
     else:
         isofit_config_modtran["input"][
             "measured_radiance_file"

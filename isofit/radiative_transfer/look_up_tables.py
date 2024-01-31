@@ -138,8 +138,10 @@ class TabularRT:
         self.bounds, self.scale, self.init = [], [], []
         self.prior_mean, self.prior_sigma = [], []
         for key in self.statevector_names:
-            element: StateVectorElementConfig = full_config.forward_model.radiative_transfer.statevector.get_single_element_by_name(
-                key
+            element: StateVectorElementConfig = (
+                full_config.forward_model.radiative_transfer.statevector.get_single_element_by_name(
+                    key
+                )
             )
             self.bounds.append(element.bounds)
             self.scale.append(element.scale)
