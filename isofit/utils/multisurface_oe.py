@@ -323,13 +323,15 @@ def multisurface_oe(args):
                 spectra=(paths.radiance_working_path, paths.lbl_working_path),
                 nodata_value=-9999,
                 npca=5 if not opt["n_pca"] else opt["n_pca"],
-                segsize=400
-                if not opt["segmentation_size"]
-                else opt["segmentation_size"],
+                segsize=(
+                    400 if not opt["segmentation_size"] else opt["segmentation_size"]
+                ),
                 nchunk=256 if not opt["chunksize"] else opt["chunksize"],
-                n_cores=multiprocessing.cpu_count()
-                if not opt["n_cores"]
-                else opt["n_cores"],
+                n_cores=(
+                    multiprocessing.cpu_count()
+                    if not opt["n_cores"]
+                    else opt["n_cores"]
+                ),
                 loglevel=args.logging_level,
                 logfile=args.log_file,
             )
@@ -348,9 +350,11 @@ def multisurface_oe(args):
                     output=outp,
                     chunksize=256 if not opt["chunksize"] else opt["chunksize"],
                     flag=-9999,
-                    n_cores=multiprocessing.cpu_count()
-                    if not opt["n_cores"]
-                    else opt["n_cores"],
+                    n_cores=(
+                        multiprocessing.cpu_count()
+                        if not opt["n_cores"]
+                        else opt["n_cores"]
+                    ),
                     loglevel=args.logging_level,
                     logfile=args.log_file,
                 )
@@ -623,9 +627,11 @@ def multisurface_oe(args):
                     output_uncertainty_file=paths.uncert_working_path,
                     isofit_config=paths.surface_config_paths["base"],
                     nneighbors=nneighbors,
-                    n_cores=multiprocessing.cpu_count()
-                    if not opt["n_cores"]
-                    else opt["n_cores"],
+                    n_cores=(
+                        multiprocessing.cpu_count()
+                        if not opt["n_cores"]
+                        else opt["n_cores"]
+                    ),
                     reference_class_file=stl_path,
                 )
             elif opt["analytical_line"]:
@@ -643,9 +649,11 @@ def multisurface_oe(args):
                         "--n_atm_neighbors",
                         str(nneighbors),
                         "--n_cores",
-                        str(multiprocessing.cpu_count())
-                        if not opt["n_cores"]
-                        else str(opt["n_cores"]),
+                        (
+                            str(multiprocessing.cpu_count())
+                            if not opt["n_cores"]
+                            else str(opt["n_cores"])
+                        ),
                         "--smoothing_sigma",
                         "2",
                         "--output_rfl_file",

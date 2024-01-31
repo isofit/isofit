@@ -760,9 +760,9 @@ def build_presolve_config(
         "implementation": {
             "ray_temp_dir": paths.ray_temp_dir,
             "inversion": {"windows": gip["options"]["inversion_windows"]},
-            "n_cores": multiprocessing.cpu_count()
-            if not opt["n_cores"]
-            else opt["n_cores"],
+            "n_cores": (
+                multiprocessing.cpu_count() if not opt["n_cores"] else opt["n_cores"]
+            ),
             "debug_mode": opt["debug_mode"],
         },
     }
@@ -991,9 +991,9 @@ def build_main_config(
         "implementation": {
             "ray_temp_dir": paths.ray_temp_dir,
             "inversion": {"windows": gip["options"]["inversion_windows"]},
-            "n_cores": multiprocessing.cpu_count()
-            if not opt["n_cores"]
-            else opt["n_cores"],
+            "n_cores": (
+                multiprocessing.cpu_count() if not opt["n_cores"] else opt["n_cores"]
+            ),
             "debug_mode": opt["debug_mode"],
         },
     }

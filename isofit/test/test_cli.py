@@ -1,6 +1,7 @@
 """
 These tests are to ensure any changes to the CLI will be backwards compatible.
 """
+
 import io
 import json
 import os
