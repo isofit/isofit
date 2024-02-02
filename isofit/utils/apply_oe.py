@@ -75,6 +75,21 @@ INVERSION_WINDOWS = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
     help="Prints the arguments list without executing the command",
     is_flag=True,
 )
+def _cli(debug_args, **kwargs):
+    """\
+    Apply OE to a block of data
+    """
+    if debug_args:
+        click.echo("Arguments to be passed:")
+        for key, value in kwargs.items():
+            click.echo(f"  {key} = {value!r}")
+    else:
+        # SimpleNamespace converts a dict into dot-notational
+        apply_oe(SimpleNamespace(**kwargs))
+
+    click.echo("Done")
+
+
 def apply_oe(args):
     """This is a helper script to apply OE over a flightline using the MODTRAN radiative transfer engine.
 
@@ -571,21 +586,6 @@ def apply_oe(args):
             )
 
     logging.info("Done.")
-
-
-def _cli(debug_args, **kwargs):
-    """\
-    Apply OE to a block of data
-    """
-    if debug_args:
-        click.echo("Arguments to be passed:")
-        for key, value in kwargs.items():
-            click.echo(f"  {key} = {value!r}")
-    else:
-        # SimpleNamespace converts a dict into dot-notational
-        apply_oe(SimpleNamespace(**kwargs))
-
-    click.echo("Done")
 
 
 if __name__ == "__main__":
