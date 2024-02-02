@@ -104,7 +104,7 @@ class Isofit:
         row_column: The user can specify
             * a single number, in which case it is interpreted as a row
             * a comma-separated pair, in which case it is interpreted as a
-              row/column tuple (i.e. a single spectrum)
+              start row and end row, and will process those rows
             * a comma-separated quartet, in which case it is interpreted as
               a row, column range in the order (line_start, line_end, sample_start,
               sample_end) all values are inclusive.
@@ -125,6 +125,7 @@ class Isofit:
                 row_start, row_end, col_start, col_end = ranges
                 self.rows = range(int(row_start), int(row_end) + 1)
                 self.cols = range(int(col_start), int(col_end) + 1)
+
         else:
             io = IO(self.config, fm)
             self.rows = range(io.n_rows)

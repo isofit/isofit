@@ -410,6 +410,7 @@ class IO:
                 meas = meas.copy()
             if data["radiometry_correction_file"] is not None:
                 meas *= data["radiometry_correction_file"]
+                meas[meas < 0] = 0
 
         self.current_input_data.meas = meas
 

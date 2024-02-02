@@ -399,6 +399,7 @@ class RadiativeTransfer:
                     Kb_RT.append((rdne - rdn) / eps)
 
         Kb_RT = np.array(Kb_RT).T
+        #Kb_RT[~np.isfinite(Kb_RT)] = 0
         return Kb_RT
 
     def summarize(self, x_RT, geom):

@@ -347,23 +347,24 @@ class resample():
 
     def __call__(self, y):
         # Convert input to 2D array and transpose if necessary
+
+        # Convert input to 2D array
         spectrum = np.atleast_2d(y)
-        if spectrum.shape[0] == 1:
-            spectrum = spectrum.T
+
+        # Check if transpose is necessary
+        transpose_needed = spectrum.shape[0] == 1
 
         # Initialize an output array
         resampled_spectrum = np.zeros(self.transform_matrix.shape[0])
 
-        # Apply SRF only to non-NaN parts of the spectrum
-        for i in range(self.transform_matrix.shape[0]):
-            # Get the current row of the transform matrix
-            transform_row = self.transform_matrix[i, :]
+        # Identify valid (non-NaN, non-inf, non--inf) elements in the spectrum
+        valid_indices = np.isfinite(spectrum[0]) if transpose_needed else np.isfinite(spectrum[:, 0])
 
-            # Identify valid (non-NaN, non-inf, non--inf) elements in the spectrum
-            valid_indices = np.where(np.isfinite(spectrum))[0]
+        # Optimize the loop with vectorized operations
+        if transpose_needed:
+            spectrum = spectrum.T
 
-            # Perform convolution using only the valid elements
-            resampled_spectrum[i] = np.dot(transform_row[valid_indices], spectrum[valid_indices])
+        resampled_spectrum = np.dot(self.transform_matrix[:, valid_indices], spectrum[valid_indices])
 
         return np.squeeze(resampled_spectrum)
 

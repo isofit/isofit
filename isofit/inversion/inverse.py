@@ -222,6 +222,13 @@ class Inversion:
         Seps_win = np.zeros((wn, wn))
         for i in range(wn):
             Seps_win[i, :] = Seps[self.winidx[i], self.winidx]
+        if np.any(np.isnan(Seps_win)):
+            logging.warning("Seps has non finite values, will crash")
+            import pdb; pdb.set_trace()
+            x_surface, x_RT, x_instrument = self.fm.unpack(x)
+            rfl = self.fm.surface.calc_rfl(x_surface, geom)
+            Ls = self.fm.surface.calc_Ls(x_surface, geom)
+            drdn_dRTb = self.fm.RT.drdn_dRTb(x_RT, rfl, Ls, geom)
         return svd_inv_sqrt(
             Seps_win, hashtable=self.hashtable, max_hash_size=self.max_table_size
         )

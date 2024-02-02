@@ -182,52 +182,81 @@ class RadiativeTransferEngine:
 
         # Extract from LUT file if available, otherwise initialize it
         if exists:
-            
-            self.universal_lut = True
+            pickle_flag = True
+            if pickle_flag is False:
+                self.universal_lut = True
 
 
-            Logger.info(f"Prebuilt LUT provided")
-            Logger.debug(
-                f"Reading from store: {lut_path}, subset={engine_config.lut_subset}"
-            )
+                Logger.info(f"Prebuilt LUT provided")
+                Logger.debug(
+                    f"Reading from store: {lut_path}, subset={engine_config.lut_subset}"
+                )
 
-            # Note: I'm using lut_grid from the config as min\max to subset!
-            self.lut = luts.load(lut_path, lut_grid, subset=engine_config.lut_subset)
-            # set up resample object
+                # Note: I'm using lut_grid from the config as min\max to subset!
+                self.lut = luts.load(lut_path, lut_grid, subset=engine_config.lut_subset)
+                # set up resample object
+                #import pdb; pdb.set_trace()
+                #tuples_array = self.lut['point'].values
+
+                # Convert the array of tuples to a 2D NumPy array
+                #points_2d_array = np.array([list(tup) for tup in tuples_array])
+                #[a for a in self.lut['point'].coords.keys() if a != 'point']
+                #np.argwhere(np.all(points_2d_array[:] == [0.05, 1, 4, 30], axis=1))
+
+
+                if os.path.exists(self.wavelength_file):
+                    # If this file doesn't exist it will load the monochromatic LUT to the interpolator
+                    # This is useful for calibration. See instrument.sample.
+                    
+                    wl, fwhm = common.load_wavelen(self.wavelength_file)
+                    # initialize resampling class
+                    rsmp = common.resample(self.lut.wl.data, wl, fwhm)
+                    
+                    if not len(wl) == len(self.lut.wl):
+                        conv = xr.Dataset(coords={'wl': wl, 'point': self.lut.point})
+                        n_samples = self.lut.dims['point']
+                        print('***********' + 'loading ' + str(n_samples) + ' samples into interpolator')
+                        for quantity in self.lut:
+                            print('resampling '+quantity)
+                            # TODO: make the list comp run in parallel
+                            data_to_process = self.lut[quantity].data
+                            #import pdb; pdb.set_trace()
+                            run_in_parallel = True
+                            if run_in_parallel is not True:
+                                add_to_ds = np.array([rsmp(x) for x in data_to_process])
+                            else:
+                                add_to_ds = rsmp.process_data(data_to_process, n_samples)
+
+                            conv[quantity] = (('wl', 'point'), add_to_ds.T)
+                            # Assuming add_to_ds is your numpy array with shape (11043, 285)
+                            # Check if any value in each row is NaN
+                            rows_any_nans = np.isnan(add_to_ds).any(axis=1)
+
+                            # Find indices of rows that contain any NaNs
+                            rows_any_nans_indices = np.where(rows_any_nans)[0]
+
+                            print("Indices of rows that contain any NaNs:", rows_any_nans_indices)
+            else:
+                # load the pickled lut
+                import pickle
+                with open('/scratch/carmon/isofit/examples/20240130_recalibration/lut/new_conv_lut.pkl', 'rb') as file:
+                    conv = pickle.load(file)
             #import pdb; pdb.set_trace()
-            #tuples_array = self.lut['point'].values
-
-            # Convert the array of tuples to a 2D NumPy array
-            #points_2d_array = np.array([list(tup) for tup in tuples_array])
-            #[a for a in self.lut['point'].coords.keys() if a != 'point']
-            #np.argwhere(np.all(points_2d_array[:] == [0.05, 1, 4, 30], axis=1))
-
-
-            if os.path.exists(self.wavelength_file):
-                # If this file doesn't exist it will load the monochromatic LUT to the interpolator
-                # This is useful for calibration. See instrument.sample.
-                
-                wl, fwhm = common.load_wavelen(self.wavelength_file)
-                # initialize resampling class
-                rsmp = common.resample(self.lut.wl.data, wl, fwhm)
-                
-                if not len(wl) == len(self.lut.wl):
-                    conv = xr.Dataset(coords={'wl': wl, 'point': self.lut.point})
-                    n_samples = self.lut.dims['point']
-                    print('***********' + 'loading ' + str(n_samples) + ' samples into interpolator')
-                    for quantity in self.lut:
-                        print('resampling '+quantity)
-                        # TODO: make the list comp run in parallel
-                        data_to_process = self.lut[quantity].data
-                        run_in_parallel = True
-                        if run_in_parallel is not True:
-                            add_to_ds = np.array([rsmp(x) for x in data_to_process])
-                        else:
-                            add_to_ds = rsmp.process_data(data_to_process, n_samples)
-
-                        conv[quantity] = (('wl', 'point'), add_to_ds.T)
-
             self.lut = conv
+            # Initialize a flag to track finiteness
+            all_finite = True
+
+            # Check each data variable in the dataset
+            for var_name, data_array in conv.data_vars.items():
+                if not np.isfinite(data_array).all():
+                    all_finite = False
+                    print(f"Non-finite values found in variable '{var_name}'")
+
+            # Check if all values in all data variables are finite
+            if all_finite:
+                print("All values in the dataset are finite.")
+            else:
+                print("There are non-finite values in the dataset.")
             #import pdb; pdb.set_trace()
             #self.lut_grid = lut_grid or luts.extractGrid(self.lut)
             self.lut_grid = luts.extractGrid(self.lut)
