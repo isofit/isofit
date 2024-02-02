@@ -703,7 +703,8 @@ def build_presolve_config(
     uncorrelated_radiometric_uncertainty: float = 0.0,
     segmentation_size: int = 400,
     debug: bool = False,
-    lut_path: str = None,
+    inversion_windows=[[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]],
+    prebuilt_lut_path: str = None,
 ) -> None:
     """Write an isofit config file for a presolve, with limited info.
 
@@ -732,8 +733,10 @@ def build_presolve_config(
     else:
         engine_name = "sRTMnet"
 
-    if lut_path is None:
-        lut_path = join(paths.lut_h2o_directory + "lut.nc")
+    if prebuilt_lut_path is None:
+        lut_path = join(paths.lut_h2o_directory, "lut.nc")
+    else:
+        lut_path = prebuilt_lut_path
 
     radiative_transfer_config = {
         "radiative_transfer_engines": {
@@ -742,7 +745,7 @@ def build_presolve_config(
                 "lut_path": lut_path,
                 "sim_path": paths.lut_h2o_directory,
                 "template_file": paths.h2o_template_path,
-                "lut_names": ["H2OSTR"],
+                "lut_names": {"H2OSTR": get_lut_subset(h2o_lut_grid)},
                 "statevector_names": ["H2OSTR"],
             }
         },
@@ -812,7 +815,7 @@ def build_presolve_config(
         },
         "implementation": {
             "ray_temp_dir": paths.ray_temp_dir,
-            "inversion": {"windows": INVERSION_WINDOWS},
+            "inversion": {"windows": inversion_windows},
             "n_cores": n_cores,
             "debug_mode": debug,
         },
@@ -879,7 +882,7 @@ def build_main_config(
     pressure_elevation: bool = False,
     debug: bool = False,
     inversion_windows=[[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]],
-    lut_path: str = None,
+    prebuilt_lut_path: str = None,
 ) -> None:
     """Write an isofit config file for the main solve, using the specified pathnames and all given info
 
@@ -915,6 +918,11 @@ def build_main_config(
     else:
         spectra_per_inversion = 1
 
+    if prebuilt_lut_path is None:
+        lut_path = join(paths.lut_h2o_directory, "lut.nc")
+    else:
+        lut_path = prebuilt_lut_path
+
     if emulator_base is None:
         engine_name = "modtran"
     else:
@@ -924,7 +932,7 @@ def build_main_config(
             "vswir": {
                 "engine_name": engine_name,
                 "sim_path": paths.lut_modtran_directory,
-                "lut_path": paths.lut_modtran_directory + "/lut.nc",
+                "lut_path": lut_path,
                 "aerosol_template_file": paths.aerosol_tpl_path,
                 "template_file": paths.modtran_template_path,
                 # lut_names - populated below
@@ -984,24 +992,45 @@ def build_main_config(
             "engine_base_dir"
         ] = paths.modtran_path
 
-    if h2o_lut_grid is not None:
-        radiative_transfer_config["lut_grid"]["H2OSTR"] = h2o_lut_grid.tolist()
-    if elevation_lut_grid is not None:
-        radiative_transfer_config["lut_grid"][
+    if prebuilt_lut_path is None:
+        if h2o_lut_grid is not None:
+            radiative_transfer_config["lut_grid"]["H2OSTR"] = h2o_lut_grid.tolist()
+        if elevation_lut_grid is not None:
+            radiative_transfer_config["lut_grid"][
+                "surface_elevation_km"
+            ] = elevation_lut_grid.tolist()
+        if to_sensor_zenith_lut_grid is not None:
+            radiative_transfer_config["lut_grid"][
+                "observer_zenith"
+            ] = to_sensor_zenith_lut_grid.tolist()  # modtran convention
+        if to_sun_zenith_lut_grid is not None:
+            radiative_transfer_config["lut_grid"][
+                "solar_zenith"
+            ] = to_sun_zenith_lut_grid.tolist()
+        if relative_azimuth_lut_grid is not None:
+            radiative_transfer_config["lut_grid"][
+                "relative_azimuth"
+            ] = relative_azimuth_lut_grid.tolist()
+
+    radiative_transfer_config["radiative_transfer_engines"]["vswir"][
+        "lut_names"
+    ] = list(radiative_transfer_config["lut_grid"].keys())
+    if prebuilt_lut_path is not None:
+        radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"][
+            "H2OSTR"
+        ] = get_lut_subset(h2o_lut_grid)
+        radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"][
             "surface_elevation_km"
-        ] = elevation_lut_grid.tolist()
-    if to_sensor_zenith_lut_grid is not None:
-        radiative_transfer_config["lut_grid"][
+        ] = get_lut_subset(elevation_lut_grid)
+        radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"][
             "observer_zenith"
-        ] = to_sensor_zenith_lut_grid.tolist()  # modtran convention
-    if to_sun_zenith_lut_grid is not None:
-        radiative_transfer_config["lut_grid"][
+        ] = get_lut_subset(to_sensor_zenith_lut_grid)
+        radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"][
             "solar_zenith"
-        ] = to_sun_zenith_lut_grid.tolist()
-    if relative_azimuth_lut_grid is not None:
-        radiative_transfer_config["lut_grid"][
+        ] = get_lut_subset(to_sun_zenith_lut_grid)
+        radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"][
             "relative_azimuth"
-        ] = relative_azimuth_lut_grid.tolist()
+        ] = get_lut_subset(relative_azimuth_lut_grid)
 
     # add aerosol elements from climatology
     aerosol_state_vector, aerosol_lut_grid, aerosol_model_path = load_climatology(
@@ -1022,9 +1051,6 @@ def build_main_config(
     radiative_transfer_config["radiative_transfer_engines"]["vswir"][
         "statevector_names"
     ] = list(radiative_transfer_config["statevector"].keys())
-    radiative_transfer_config["radiative_transfer_engines"]["vswir"][
-        "lut_names"
-    ] = list(radiative_transfer_config["lut_grid"].keys())
 
     # make isofit configuration
     isofit_config_modtran = {
@@ -1135,6 +1161,21 @@ def build_main_config(
                 isofit_config_modtran, cls=SerialEncoder, indent=4, sort_keys=True
             )
         )
+
+
+def get_lut_subset(vals):
+    """Populate lut_names for the appropriate style of subsetting
+
+    Args:
+        vals: the values to use for subsetting
+    """
+
+    if vals is not None and len(vals) == 1:
+        return {"interp": vals[0]}
+    elif vals is not None and len(vals) > 1:
+        return {"gte": vals[0], "lte": vals[-1]}
+    else:
+        return None
 
 
 def write_modtran_template(
