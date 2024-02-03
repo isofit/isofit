@@ -1723,22 +1723,20 @@ def get_metadata_from_obs(
 
 def get_metadata_from_loc(
     loc_file: str,
-    gip: dict,
-    tsip: dict,
     lut_params: LUTConfig,
     trim_lines: int = 5,
     nodata_value: float = -9999,
+    pressure_elevation: bool = False,
 ) -> (float, float, float, np.array):
     """Get metadata needed for complete runs from the location file (bands long, lat, elev).
 
     Args:
         loc_file: file name to pull data from
-        gip: dictionary of general inversion parameters
-        tsip: dictionary of type specific inversion parameters
         lut_params: parameters to use to define lut grid
         trim_lines: number of lines to ignore at beginning and end of file (good if lines contain values that are
                     erroneous but not nodata
         nodata_value: value to ignore from location file
+        pressure_elevation: retrieve pressure elevation (requires expanded ranges)
 
     :Returns:
         tuple containing:
@@ -1753,51 +1751,25 @@ def get_metadata_from_loc(
     valid = np.logical_not(np.any(loc_data == nodata_value, axis=0))
 
     use_trim = trim_lines != 0 and valid.shape[0] > trim_lines * 2
-
     if use_trim:
         valid[:trim_lines, :] = False
         valid[-trim_lines:, :] = False
 
-    if "Easting (m)" and "Northing (m)" in loc_dataset.metadata["band names"]:
-        zone = [
-            int(s) for s in loc_dataset.metadata["description"].split() if s.isdigit()
-        ][0]
-        hemisphere = [
-            s
-            for s in loc_dataset.metadata["description"].split()
-            if s in ["North", "South"]
-        ][0]
-
-        lat, lon = utm.to_latlon(
-            easting=loc_data[0, valid].flatten(),
-            northing=loc_data[1, valid].flatten(),
-            zone_number=zone,
-            northern=hemisphere == "North",
-        )
-    else:
-        lat = loc_data[1, valid].flatten()
-        lon = loc_data[0, valid].flatten()
-
-    # Grab sensor position and orientation information
-    mean_latitude = get_angular_grid(lat, -1, 0)
-    mean_longitude = get_angular_grid(-1 * lon, -1, 0)
+    # Grab zensor position and orientation information
+    mean_latitude = lut_params.get_angular_grid(loc_data[1, valid].flatten(), -1, 0)
+    mean_longitude = lut_params.get_angular_grid(
+        -1 * loc_data[0, valid].flatten(), -1, 0
+    )
 
     mean_elevation_km = np.mean(loc_data[2, valid]) / 1000.0
 
     # make elevation grid
     min_elev = np.min(loc_data[2, valid]) / 1000.0
     max_elev = np.max(loc_data[2, valid]) / 1000.0
-
-    if "GNDALT" in gip["options"]["statevector_elements"] or "cloud" in tsip.keys():
-        try:
-            exp_range = tsip["cloud"]["GNDALT"]["expand_range"]
-        except KeyError:
-            exp_range = gip["radiative_transfer_parameters"]["GNDALT"]["expand_range"]
-
-        min_elev = max(min_elev - exp_range, 0)
-        max_elev += exp_range
-
-    elevation_lut_grid = get_grid(
+    if pressure_elevation:
+        min_elev = max(min_elev - 2, 0)
+        max_elev += 2
+    elevation_lut_grid = lut_params.get_grid(
         min_elev,
         max_elev,
         lut_params.elevation_spacing,
