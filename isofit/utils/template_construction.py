@@ -1647,15 +1647,15 @@ def get_metadata_from_obs(
     if to_sensor_zenith_lut_grid is not None:
         to_sensor_zenith_lut_grid = np.sort(180 - to_sensor_zenith_lut_grid)
 
-    to_sensor_azimuth_lut_grid = get_angular_grid(
+    relative_azimuth_lut_grid = get_angular_grid(
         to_sensor_azimuth[valid],
-        lut_params.to_sensor_azimuth_spacing,
-        lut_params.to_sensor_azimuth_spacing_min,
+        lut_params.relative_azimuth_spacing,
+        lut_params.relative_azimuth_spacing_min,
     )
 
-    if to_sensor_azimuth_lut_grid is not None:
-        to_sensor_azimuth_lut_grid = np.sort(
-            np.array([x % 360 for x in to_sensor_azimuth_lut_grid])
+    if relative_azimuth_lut_grid is not None:
+        relative_azimuth_lut_grid = np.sort(
+            np.array([x % 360 for x in relative_azimuth_lut_grid])
         )
 
     del to_sensor_azimuth
@@ -1694,7 +1694,7 @@ def get_metadata_from_obs(
         mean_to_sensor_azimuth,
         mean_to_sensor_zenith,
         valid,
-        to_sensor_azimuth_lut_grid,
+        relative_azimuth_lut_grid,
         to_sensor_zenith_lut_grid,
     )
 
