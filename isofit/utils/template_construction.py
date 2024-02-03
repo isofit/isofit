@@ -1585,29 +1585,32 @@ def get_metadata_from_obs(
     trim_lines: int = 5,
     max_flight_duration_h: int = 8,
     nodata_value: float = -9999,
-):
+) -> (List, bool, float, float, float, np.array, List, List):
     """Get metadata needed for complete runs from the observation file
     (bands: path length, to-sensor azimuth, to-sensor zenith, to-sun azimuth,
     to-sun zenith, phase, slope, aspect, cosine i, UTC time).
 
     Args:
-        obs_file: file name to pull data from
-        lut_params: parameters to use to define lut grid
-        trim_lines: number of lines to ignore at beginning and end of file (good if lines contain values that are
-                    erroneous but not nodata
-        max_flight_duration_h: maximum length of the current acquisition, used to check if we"ve lapped a UTC day
-        nodata_value: value to ignore from location file
+        obs_file:              file name to pull data from
+        lut_params:            parameters to use to define lut grid
+        trim_lines:            number of lines to ignore at beginning and end of file (good if lines contain values
+                               that are erroneous but not nodata
+        max_flight_duration_h: maximum length of the current acquisition, used to check if we've lapped a UTC day
+        nodata_value:          value to ignore from location file
 
     :Returns:
         tuple containing:
             h_m_s - list of the mean-time hour, minute, and second within the line
             increment_day - indicator of whether the UTC day has been changed since the beginning of the line time
             mean_path_km - mean distance between sensor and ground in km for good data
-            mean_to_sensor_azimuth - mean to-sensor-azimuth for good data
-            mean_to_sensor_zenith_rad - mean to-sensor-zenith in radians for good data
+            mean_to_sensor_azimuth - mean to-sensor azimuth for good data
+            mean_to_sensor_zenith - mean to-sensor zenith for good data
+            mean_to_sun_zenith - mean to-sun zenith for good data
+            mean_relative_azimuth - mean relative to-sun azimuth for good data
             valid - boolean array indicating which pixels were NOT nodata
-            to_sensor_azimuth_lut_grid - the to-sensor azimuth angle look up table for good data
-            to_sensor_zenith_lut_grid - the to-sensor zenith look up table for good data
+            to_sensor_zenith_lut_grid - the to-sensor zenith look up table grid for good data
+            to_sun_zenith_lut_grid - the to-sun zenith look up table grid for good data
+            relative_azimuth_lut_grid - the relative to-sun azimuth look up table grid for good data
     """
     obs_dataset = envi.open(envi_header(obs_file), obs_file)
     obs = obs_dataset.open_memmap(interleave="bip", writable=False)
@@ -1616,7 +1619,14 @@ def get_metadata_from_obs(
     path_km = obs[:, :, 0] / 1000.0
     to_sensor_azimuth = obs[:, :, 1]
     to_sensor_zenith = obs[:, :, 2]
+    to_sun_azimuth = obs[:, :, 3]
+    to_sun_zenith = obs[:, :, 4]
     time = obs[:, :, 9]
+
+    # calculate relative to-sun azimuth
+    delta_phi = to_sun_azimuth - to_sensor_azimuth
+    delta_phi = delta_phi % 360
+    relative_azimuth = np.abs(delta_phi - 180)
 
     use_trim = trim_lines != 0 and valid.shape[0] > trim_lines * 2
     if use_trim:
@@ -1628,31 +1638,38 @@ def get_metadata_from_obs(
     del path_km
 
     mean_to_sensor_azimuth = (
-        get_angular_grid(
-            angle_data_input=to_sensor_azimuth[valid], spacing=-1, min_spacing=0
-        )
-        % 360
+        lut_params.get_angular_grid(to_sensor_azimuth[valid], -1, 0) % 360
+    )
+    mean_to_sensor_zenith = 180 - lut_params.get_angular_grid(
+        to_sensor_zenith[valid], -1, 0
+    )
+    mean_to_sun_zenith = lut_params.get_angular_grid(to_sun_zenith[valid], -1, 0)
+    mean_relative_azimuth = (
+        lut_params.get_angular_grid(relative_azimuth[valid], -1, 0) % 360
     )
 
-    mean_to_sensor_zenith = 180 - get_angular_grid(
-        angle_data_input=to_sensor_zenith[valid], spacing=-1, min_spacing=0
+    # geom_margin = EPS * 2.0
+    to_sensor_zenith_lut_grid = lut_params.get_angular_grid(
+        to_sensor_zenith[valid],
+        lut_params.to_sensor_zenith_spacing,
+        lut_params.to_sensor_zenith_spacing_min,
     )
-
-    to_sensor_zenith_lut_grid = get_angular_grid(
-        angle_data_input=to_sensor_zenith[valid],
-        spacing=lut_params.to_sensor_zenith_spacing,
-        min_spacing=lut_params.to_sensor_zenith_spacing_min,
-    )
-
     if to_sensor_zenith_lut_grid is not None:
         to_sensor_zenith_lut_grid = np.sort(180 - to_sensor_zenith_lut_grid)
 
-    relative_azimuth_lut_grid = get_angular_grid(
-        to_sensor_azimuth[valid],
+    to_sun_zenith_lut_grid = lut_params.get_angular_grid(
+        to_sun_zenith[valid],
+        lut_params.to_sun_zenith_spacing,
+        lut_params.to_sun_zenith_spacing_min,
+    )
+    if to_sun_zenith_lut_grid is not None:
+        to_sun_zenith_lut_grid = np.sort(to_sun_zenith_lut_grid)
+
+    relative_azimuth_lut_grid = lut_params.get_angular_grid(
+        relative_azimuth[valid],
         lut_params.relative_azimuth_spacing,
         lut_params.relative_azimuth_spacing_min,
     )
-
     if relative_azimuth_lut_grid is not None:
         relative_azimuth_lut_grid = np.sort(
             np.array([x % 360 for x in relative_azimuth_lut_grid])
@@ -1660,6 +1677,9 @@ def get_metadata_from_obs(
 
     del to_sensor_azimuth
     del to_sensor_zenith
+    del to_sun_azimuth
+    del to_sun_zenith
+    del relative_azimuth
 
     # Make time calculations
     mean_time = np.mean(time[valid])
@@ -1667,7 +1687,6 @@ def get_metadata_from_obs(
     max_time = np.max(time[valid])
 
     increment_day = False
-
     # UTC day crossover corner case
     if max_time > 24 - max_flight_duration_h and min_time < max_flight_duration_h:
         time[np.logical_and(time < max_flight_duration_h, valid)] += 24
@@ -1693,9 +1712,12 @@ def get_metadata_from_obs(
         mean_path_km,
         mean_to_sensor_azimuth,
         mean_to_sensor_zenith,
+        mean_to_sun_zenith,
+        mean_relative_azimuth,
         valid,
-        relative_azimuth_lut_grid,
         to_sensor_zenith_lut_grid,
+        to_sun_zenith_lut_grid,
+        relative_azimuth_lut_grid,
     )
 
 
