@@ -205,9 +205,11 @@ def sel(ds, dim, lt=None, lte=None, gt=None, gte=None, encompass=True):
     # Retrieve the previous/next values such that gte and lte are encompassed
     if encompass:
         if gte is not None:
-            gte = ds[dim].where(ds[dim] < gte).dropna(dim)[-1]
+            loc_subset = ds[dim].where(ds[dim] < gte).dropna(dim)
+            gte = loc_subset[-1] if len(loc_subset) > 0 else ds[dim].min()
         if lte is not None:
-            lte = ds[dim].where(ds[dim] > lte).dropna(dim)[0]
+            loc_subset = ds[dim].where(ds[dim] > lte).dropna(dim)
+            lte = loc_subset[0] if len(loc_subset) > 0 else ds[dim].max()
 
     if lt is not None:
         ds = ds.sel({dim: ds[dim] < lt})
@@ -428,7 +430,8 @@ def load(file: str, subset: dict = None) -> xr.Dataset:
     >>> load(file, subset).unstack().dims
     Frozen({'AOT550': 3, 'H2OSTR': 10, 'wl': 285})
     """
-    ds = xr.open_mfdataset([file], mode="r", lock=False)
+    #ds = xr.open_mfdataset([file], mode="r", lock=False)
+    ds = xr.open_dataset(file, mode="r", lock=False)
 
     # Special case that doesn't require defining the entire grid subsetting strategy
     if subset is None:

@@ -957,9 +957,9 @@ def build_main_config(
         radiative_transfer_config["statevector"]["surface_elevation_km"] = {
             "bounds": [elevation_lut_grid[0], elevation_lut_grid[-1]],
             "scale": 100,
-            "init": (elevation_lut_grid[1] + elevation_lut_grid[-1]) / 2.0,
+            "init": (elevation_lut_grid[0] + elevation_lut_grid[-1]) / 2.0,
             "prior_sigma": 1000.0,
-            "prior_mean": (elevation_lut_grid[1] + elevation_lut_grid[-1]) / 2.0,
+            "prior_mean": (elevation_lut_grid[0] + elevation_lut_grid[-1]) / 2.0,
         }
 
     if emulator_base is not None:
@@ -1012,9 +1012,11 @@ def build_main_config(
                 "relative_azimuth"
             ] = relative_azimuth_lut_grid.tolist()
 
-    radiative_transfer_config["radiative_transfer_engines"]["vswir"][
-        "lut_names"
-    ] = list(radiative_transfer_config["lut_grid"].keys())
+    rtc_ln = {}
+    for key in radiative_transfer_config["lut_grid"].keys():
+        rtc_ln[key] = None
+    radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"] = rtc_ln
+
     if prebuilt_lut_path is not None:
         radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"][
             "H2OSTR"
