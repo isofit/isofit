@@ -379,7 +379,7 @@ class SixSRT(RadiativeTransferEngine):
 
             # Add extras
             data["solzen"] = sza
-            data["coszen"] = sza
+            data["coszen"] = coszen
         else:
             path, name = os.path.split(file)
 
