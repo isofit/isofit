@@ -215,12 +215,8 @@ def build_sixs_config(engine_config):
         + datetime.timedelta(hours=data["GEOMETRY"]["GMTIME"])
     )
 
-    solar_azimuth, solar_zenith, ra, dec, h = sunpos(
-        dt,
-        data["GEOMETRY"]["PARM1"],
-        -data["GEOMETRY"]["PARM2"],
-        data["SURFACE"]["GNDALT"] * 1000.0,
-    )
+    solar_azimuth = data["GEOMETRY"]["PARM1"]
+    solar_zenith = data["GEOMETRY"]["PARM2"]
 
     # Tweak parameter values for sRTMnet
     config.aerosol_model_file = None
