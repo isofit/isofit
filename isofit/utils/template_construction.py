@@ -15,6 +15,7 @@ from shutil import copyfile
 from sys import platform
 from typing import List
 
+import netCDF4 as nc
 import numpy as np
 import utm
 from sklearn import mixture
@@ -365,7 +366,6 @@ class LUTConfig:
             self.aot_550_spacing = self.aerosol_2_spacing
             self.aot_550_spacing_min = self.aerosol_2_spacing_min
             self.aerosol_2_spacing = 0
-
 
     def get_grid(
         self, minval: float, maxval: float, spacing: float, min_spacing: float
@@ -923,7 +923,7 @@ def build_main_config(
     if prebuilt_lut_path is None:
         lut_path = join(paths.lut_h2o_directory, "lut.nc")
     else:
-        lut_path = prebuilt_lut_path
+        lut_path = abspath(prebuilt_lut_path)
 
     if emulator_base is None:
         engine_name = "modtran"
@@ -1030,13 +1030,16 @@ def build_main_config(
 
         radiative_transfer_config["lut_grid"].update(aerosol_lut_grid)
 
-
     rtc_ln = {}
     for key in radiative_transfer_config["lut_grid"].keys():
         rtc_ln[key] = None
-    radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"] = rtc_ln
+    radiative_transfer_config["radiative_transfer_engines"]["vswir"][
+        "lut_names"
+    ] = rtc_ln
 
     if prebuilt_lut_path is not None:
+        ncds = nc.Dataset(prebuilt_lut_path, "r")
+
         radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"][
             "H2OSTR"
         ] = get_lut_subset(h2o_lut_grid)
@@ -1053,6 +1056,16 @@ def build_main_config(
             "relative_azimuth"
         ] = get_lut_subset(relative_azimuth_lut_grid)
 
+        for key, item in radiative_transfer_config["radiative_transfer_engines"][
+            "vswir"
+        ]["lut_names"].items():
+            if key not in ncds.variables:
+                logging.warning(
+                    f"Key {key} not found in prebuilt LUT, removing it from LUT.  Spacing would have been: {item}"
+                )
+                del radiative_transfer_config["radiative_transfer_engines"]["vswir"][
+                    "lut_names"
+                ][key]
 
     # MODTRAN should know about our whole LUT grid and all of our statevectors, so copy them in
     radiative_transfer_config["radiative_transfer_engines"]["vswir"][
