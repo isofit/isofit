@@ -66,7 +66,7 @@ class Pathnames:
         self.input_obs_file = args.input_obs
         self.working_directory = abspath(args.working_directory)
 
-        self.lut_modtran_directory = abspath(join(self.working_directory, "lut_full/"))
+        self.full_lut_directory = abspath(join(self.working_directory, "lut_full/"))
 
         if args.surface_path:
             self.surface_path = args.surface_path
@@ -167,8 +167,8 @@ class Pathnames:
             join(self.config_directory, self.fid + "_h2o_tpl.json")
         )
 
-        self.modtran_config_path = abspath(
-            join(self.config_directory, self.fid + "_modtran.json")
+        self.isofit_full_config_path = abspath(
+            join(self.config_directory, self.fid + "_isofit.json")
         )
         self.h2o_config_path = abspath(
             join(self.config_directory, self.fid + "_h2o.json")
@@ -238,7 +238,7 @@ class Pathnames:
         for dpath in [
             self.working_directory,
             self.lut_h2o_directory,
-            self.lut_modtran_directory,
+            self.full_lut_directory,
             self.config_directory,
             self.data_directory,
             self.input_data_directory,
@@ -933,7 +933,7 @@ def build_main_config(
         "radiative_transfer_engines": {
             "vswir": {
                 "engine_name": engine_name,
-                "sim_path": paths.lut_modtran_directory,
+                "sim_path": paths.full_lut_directory,
                 "lut_path": lut_path,
                 "aerosol_template_file": paths.aerosol_tpl_path,
                 "template_file": paths.modtran_template_path,
@@ -975,7 +975,7 @@ def build_main_config(
             "interpolator_base_path"
         ] = abspath(
             os.path.join(
-                paths.lut_modtran_directory,
+                paths.full_lut_directory,
                 os.path.basename(os.path.splitext(emulator_base)[0]) + "_vi",
             )
         )
@@ -1175,7 +1175,7 @@ def build_main_config(
         ] = paths.rdn_factors_path
 
     # write modtran_template
-    with open(paths.modtran_config_path, "w") as fout:
+    with open(paths.isofit_full_config_path, "w") as fout:
         fout.write(
             json.dumps(
                 isofit_config_modtran, cls=SerialEncoder, indent=4, sort_keys=True
