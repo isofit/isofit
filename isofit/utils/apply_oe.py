@@ -526,7 +526,7 @@ def apply_oe(args):
             multiple_restarts=args.multiple_restarts,
             segmentation_size=args.segmentation_size,
             pressure_elevation=args.pressure_elevation,
-            prebuilt_lut=args.prebuilt_lut,
+            prebuilt_lut_path=args.prebuilt_lut,
         )
 
         # Run modtran retrieval
