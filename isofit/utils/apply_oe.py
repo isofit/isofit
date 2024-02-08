@@ -515,12 +515,6 @@ def apply_oe(args):
             to_sensor_zenith_lut_grid = to_sensor_zenith_lut_grid if to_sensor_zenith_lut_grid is not None else [mean_to_sensor_zenith],
             to_sun_zenith_lut_grid = to_sun_zenith_lut_grid if to_sun_zenith_lut_grid is not None else [mean_to_sun_zenith],
             relative_azimuth_lut_grid = relative_azimuth_lut_grid if relative_azimuth_lut_grid is not None else [mean_relative_azimuth],
-            elevation_lut_grid=elevation_lut_grid or [mean_altitude_km],
-            to_sensor_zenith_lut_grid=to_sensor_zenith_lut_grid
-            or [mean_to_sensor_zenith],
-            to_sun_zenith_lut_grid=to_sun_zenith_lut_grid or [mean_to_sun_zenith],
-            relative_azimuth_lut_grid=relative_azimuth_lut_grid
-            or [mean_relative_azimuth],
             mean_latitude=mean_latitude,
             mean_longitude=mean_longitude,
             dt=dt,
