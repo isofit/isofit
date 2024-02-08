@@ -1056,16 +1056,15 @@ def build_main_config(
             "relative_azimuth"
         ] = get_lut_subset(relative_azimuth_lut_grid)
 
-        for key, item in radiative_transfer_config["radiative_transfer_engines"][
-            "vswir"
-        ]["lut_names"].items():
+        rm_keys = []
+        for key, item in radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"].items():
             if key not in ncds.variables:
                 logging.warning(
                     f"Key {key} not found in prebuilt LUT, removing it from LUT.  Spacing would have been: {item}"
                 )
-                del radiative_transfer_config["radiative_transfer_engines"]["vswir"][
-                    "lut_names"
-                ][key]
+                rm_keys = []
+        for key in rm_keys: 
+            del radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"][key]
 
     # MODTRAN should know about our whole LUT grid and all of our statevectors, so copy them in
     radiative_transfer_config["radiative_transfer_engines"]["vswir"][
