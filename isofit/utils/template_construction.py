@@ -364,6 +364,8 @@ class LUTConfig:
             self.aot_550_range = self.aerosol_2_range
             self.aot_550_spacing = self.aerosol_2_spacing
             self.aot_550_spacing_min = self.aerosol_2_spacing_min
+            self.aerosol_2_spacing = 0
+
 
     def get_grid(
         self, minval: float, maxval: float, spacing: float, min_spacing: float
@@ -992,6 +994,20 @@ def build_main_config(
             "engine_base_dir"
         ] = paths.modtran_path
 
+    # add aerosol elements from climatology
+    aerosol_state_vector, aerosol_lut_grid, aerosol_model_path = load_climatology(
+        paths.aerosol_climatology,
+        mean_latitude,
+        mean_longitude,
+        dt,
+        paths.isofit_path,
+        lut_params=lut_params,
+    )
+    radiative_transfer_config["statevector"].update(aerosol_state_vector)
+    radiative_transfer_config["radiative_transfer_engines"]["vswir"][
+        "aerosol_model_file"
+    ] = aerosol_model_path
+
     if prebuilt_lut_path is None:
         if h2o_lut_grid is not None:
             radiative_transfer_config["lut_grid"]["H2OSTR"] = h2o_lut_grid.tolist()
@@ -1011,6 +1027,9 @@ def build_main_config(
             radiative_transfer_config["lut_grid"][
                 "relative_azimuth"
             ] = relative_azimuth_lut_grid.tolist()
+
+        radiative_transfer_config["lut_grid"].update(aerosol_lut_grid)
+
 
     rtc_ln = {}
     for key in radiative_transfer_config["lut_grid"].keys():
@@ -1034,20 +1053,6 @@ def build_main_config(
             "relative_azimuth"
         ] = get_lut_subset(relative_azimuth_lut_grid)
 
-    # add aerosol elements from climatology
-    aerosol_state_vector, aerosol_lut_grid, aerosol_model_path = load_climatology(
-        paths.aerosol_climatology,
-        mean_latitude,
-        mean_longitude,
-        dt,
-        paths.isofit_path,
-        lut_params=lut_params,
-    )
-    radiative_transfer_config["statevector"].update(aerosol_state_vector)
-    radiative_transfer_config["lut_grid"].update(aerosol_lut_grid)
-    radiative_transfer_config["radiative_transfer_engines"]["vswir"][
-        "aerosol_model_file"
-    ] = aerosol_model_path
 
     # MODTRAN should know about our whole LUT grid and all of our statevectors, so copy them in
     radiative_transfer_config["radiative_transfer_engines"]["vswir"][
