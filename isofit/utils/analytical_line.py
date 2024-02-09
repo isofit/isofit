@@ -66,7 +66,7 @@ def analytical_line(
     )
 
     if isofit_config is None:
-        file = glob(os.path.join(isofit_dir, "config", "") + "*_modtran.json")[0]
+        file = glob(os.path.join(isofit_dir, "config", "") + "*_isofit.json")[0]
     else:
         file = isofit_config
 
