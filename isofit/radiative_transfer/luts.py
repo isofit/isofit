@@ -262,7 +262,7 @@ def sub(ds: xr.Dataset, dim: str, strat) -> xr.Dataset:
         return ds
 
 
-def load(file: str, subset: dict = None) -> xr.Dataset:
+def load(file: str, subset: dict = None, dask=True) -> xr.Dataset:
     """
     Loads a LUT NetCDF
     Assumes to be a regular grid at this time (auto creates the point dim)
@@ -275,6 +275,9 @@ def load(file: str, subset: dict = None) -> xr.Dataset:
         Subset each dimension with a given strategy. Each dimension in the LUT file
         must be specified.
         See examples for more information
+    dask: bool, default=True
+        Use Dask on the backend of Xarray to lazy load the dataset. This enables
+        out-of-core subsetting
 
     Examples
     --------
@@ -428,7 +431,10 @@ def load(file: str, subset: dict = None) -> xr.Dataset:
     >>> load(file, subset).unstack().dims
     Frozen({'AOT550': 3, 'H2OSTR': 10, 'wl': 285})
     """
-    ds = xr.open_mfdataset([file], mode="r", lock=False)
+    if dask:
+        ds = xr.open_mfdataset([file], mode="r", lock=False)
+    else:
+        ds = xr.open_dataset(file, mode="r", lock=False)
 
     # Special case that doesn't require defining the entire grid subsetting strategy
     if subset is None:
@@ -458,7 +464,17 @@ def load(file: str, subset: dict = None) -> xr.Dataset:
         )
 
     dims = ds.drop_dims("wl").dims
-    return ds.stack(point=dims).transpose("point", "wl")
+
+    # Create the point dimension
+    ds = ds.stack(point=dims).transpose("point", "wl")
+
+    for name, nans in ds.isnull().any().items():
+        if nans:
+            Logger.warning(
+                f"Detected NaNs in the following LUT variable and may cause issues: {name}"
+            )
+
+    return ds
 
 
 def extractPoints(ds: xr.Dataset) -> (np.array, np.array):
