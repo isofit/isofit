@@ -1066,7 +1066,7 @@ def build_main_config(
                 logging.warning(
                     f"Key {key} not found in prebuilt LUT, removing it from LUT.  Spacing would have been: {item}"
                 )
-                rm_keys = []
+                rm_keys.append(key)
         for key in rm_keys: 
             del radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"][key]
 
