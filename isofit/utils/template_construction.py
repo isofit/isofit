@@ -1055,6 +1055,10 @@ def build_main_config(
         radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"][
             "relative_azimuth"
         ] = get_lut_subset(relative_azimuth_lut_grid)
+        for key in aerosol_lut_grid.keys():
+            radiative_transfer_config["radiative_transfer_engines"]["vswir"][
+                "lut_names"
+            ][key] = get_lut_subset(aerosol_lut_grid[key])
 
         rm_keys = []
         for key, item in radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"].items():
