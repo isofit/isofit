@@ -115,7 +115,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
 
         # Interpolate the sim results from its wavelengths to the emulator wavelengths
         Logger.info("Interpolating simulator quantities to emulator size")
-        resample = sixs.interp({"wl": aux["emulator_wavelengths"]})
+        resample = sim.lut.interp({"wl": aux["emulator_wavelengths"]})
 
         # Stack the quantities together along a new dimension named `quantity`
         resample = resample.to_array("quantity").stack(stack=["quantity", "wl"])
