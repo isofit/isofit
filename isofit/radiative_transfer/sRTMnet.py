@@ -116,15 +116,15 @@ class SimulatedModtranRT(RadiativeTransferEngine):
 
         # Interpolate the sim results from its wavelengths to the emulator wavelengths
         Logger.info("Interpolating simulator quantities to emulator size")
-        resample = sim.lut.interp({"wl": aux["emulator_wavelengths"]})
+        sixs = sim.lut[aux_rt_quantities]
+        resample = sixs.interp({"wl": aux["emulator_wavelengths"]})
 
         # Stack the quantities together along a new dimension named `quantity`
         resample = resample.to_array("quantity").stack(stack=["quantity", "wl"])
 
         ## Reduce from 3D to 2D by stacking along the wavelength dim for each quantity
         # Convert to DataArray to stack the variables along a new `quantity` dimension
-        data = sim.lut[aux_rt_quantities]
-        data = data.to_array("quantity").stack(stack=["quantity", "wl"])
+        data = sixs.to_array("quantity").stack(stack=["quantity", "wl"])
 
         scaler = aux.get("response_scaler", 100.0)
 
