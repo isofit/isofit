@@ -107,10 +107,6 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         self.sim_lut_path = config.lut_path
 
         ## Prepare the sim results for the emulator
-        # Create the resampled input data for the emulator
-        resample = sim.lut[["point"]].copy()
-        resample["wl"] = self.emu_wl
-
         # In some atmospheres the values get down to basically 0, which 6S can’t quite handle and will resolve to NaN instead of 0
         # Safe to replace here
         if sim.lut[aux_rt_quantities].isnull().any():
@@ -119,9 +115,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
 
         # Interpolate the sim results from its wavelengths to the emulator wavelengths
         Logger.info("Interpolating simulator quantities to emulator size")
-        for key in aux_rt_quantities:
-            interpolate = interp1d(sim.wl, sim[key])
-            resample[key] = (("point", "wl"), interpolate(self.emu_wl))
+        resample = sixs.interp({"wl": aux["emulator_wavelengths"]})
 
         # Stack the quantities together along a new dimension named `quantity`
         resample = resample.to_array("quantity").stack(stack=["quantity", "wl"])
