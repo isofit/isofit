@@ -1738,9 +1738,7 @@ def build_main_config(
     radiative_transfer_config["radiative_transfer_engines"]["vswir"][
         "statevector_names"
     ] = list(radiative_transfer_config["statevector"].keys())
-    radiative_transfer_config["radiative_transfer_engines"]["vswir"][
-        "lut_names"
-    ] = None
+    radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"] = None
 
     # make isofit configuration
     isofit_config_modtran = {
@@ -1991,7 +1989,8 @@ def write_modtran_template(
     help="Prints the arguments list without executing the command",
     is_flag=True,
 )
-def _cli(debug_args, **kwargs):
+@click.option("--profile")
+def _cli(debug_args, profile, **kwargs):
     """\
     Apply OE to a block of data
     """
@@ -2000,8 +1999,21 @@ def _cli(debug_args, **kwargs):
         for key, value in kwargs.items():
             click.echo(f"  {key} = {value!r}")
     else:
+        if profile:
+            import cProfile
+            import pstats
+
+            profiler = cProfile.Profile()
+            profiler.enable()
+
         # SimpleNamespace converts a dict into dot-notational
         apply_oe(SimpleNamespace(**kwargs))
+
+        if profile:
+            profiler.disable()
+            if output:
+                stats = pstats.Stats(profiler)
+                stats.dump_stats(profile)
 
     click.echo("Done")
 
