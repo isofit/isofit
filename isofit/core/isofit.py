@@ -29,6 +29,7 @@ import numpy as np
 
 from isofit import ray
 from isofit.configs import configs
+from isofit.core.common import ray_initiate
 from isofit.core.fileio import IO
 from isofit.core.forward import ForwardModel
 from isofit.inversion.inverse import Inversion
@@ -75,6 +76,8 @@ class Isofit:
             "ignore_reinit_error": self.config.implementation.ray_ignore_reinit_error,
             "include_dashboard": self.config.implementation.ray_include_dashboard,
             "local_mode": self.config.implementation.n_cores == 1,
+            "_memory": int(180/40*1024*1024*1024),
+            "runtime_env": {"env_vars": {"MKL_NUM_THREADS": "1", "OMP_NUM_THREADS": "1", "TF_WARNINGS": "none"}},
         }
 
         # We can only set the num_cpus if running on a single-node
@@ -84,14 +87,16 @@ class Isofit:
         ):
             rayargs["num_cpus"] = self.config.implementation.n_cores
 
-        ray.init(**rayargs)
+        ray_initiate(rayargs)
 
         self.workers = None
 
     def __del__(self):
         try:
             ray.shutdown()
+            self.workers = None
         except:
+            logging.error('Isofit Object Deletion unsuccessful')
             return
 
     def run(self, row_column=None):
@@ -283,11 +288,10 @@ class Worker(object):
                             f" {self.completed_spectra}/~{self.approximate_total_spectra}::"
                             f" {percent}% complete"
                         )
-                    else:
-                        logging.info(
-                            f"Worker at start location ({row},{col}) completed"
-                            f" {index}/{indices.shape[0]}"
-                        )
+        logging.info(
+            f"Worker at start location ({row},{col}) completed"
+            f" {index}/{indices.shape[0]}"
+        )
 
         self.io.flush_buffers()
 

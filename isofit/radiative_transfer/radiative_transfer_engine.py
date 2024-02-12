@@ -224,6 +224,7 @@ class RadiativeTransferEngine:
 
         # Simple 1-item cache for rte.interpolate()
         self.cached = SimpleNamespace(point=np.array([]))
+        Logger.debug(f"LUTs fully loaded")
 
         # Attach interpolators
         if build_interpolators:
@@ -243,6 +244,7 @@ class RadiativeTransferEngine:
             }
             # If it wasn't a geom key, it's x_RT
             self.indices.x_RT = list(set(range(self.n_point)) - set(self.indices.geom))
+            Logger.debug(f"Interpolators built")
 
     def __getitem__(self, key):
         """

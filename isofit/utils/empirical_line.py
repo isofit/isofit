@@ -31,7 +31,7 @@ from spectral.io import envi
 
 from isofit import ray
 from isofit.configs import configs
-from isofit.core.common import envi_header
+from isofit.core.common import envi_header, ray_initiate
 from isofit.core.fileio import write_bil_chunk
 from isofit.core.instrument import Instrument
 
@@ -552,7 +552,7 @@ def empirical_line(
     ):
         rayargs["num_cpus"] = n_cores
 
-    ray.init(**rayargs)
+    ray_initiate(rayargs)
     atexit.register(ray.shutdown)
 
     n_ray_cores = ray.available_resources()["CPU"]

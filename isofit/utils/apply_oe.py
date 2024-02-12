@@ -18,7 +18,7 @@ from spectral.io import envi
 
 import isofit.utils.template_construction as tmpl
 from isofit.core import isofit
-from isofit.core.common import envi_header
+from isofit.core.common import envi_header, ray_start, ray_terminate
 from isofit.utils import analytical_line, empirical_line, extractions, segment
 
 warn(
@@ -60,6 +60,8 @@ INVERSION_WINDOWS = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
 @click.option("--logging_level", default="INFO")
 @click.option("--log_file")
 @click.option("--n_cores", type=int, default=1)
+@click.option("--num_cpus", type=int, default=1)
+@click.option("--memory_gb", type=int, default=-1)
 @click.option("--presolve", is_flag=True, default=False)
 @click.option("--empirical_line", is_flag=True, default=False)
 @click.option("--analytical_line", is_flag=True, default=False)
@@ -160,6 +162,7 @@ def apply_oe(args):
 
     """
     use_superpixels = args.empirical_line or args.analytical_line
+    ray_start(args.n_cores, args.num_cpus, args.memory_gb*1024**3)
 
     if args.sensor not in SUPPORTED_SENSORS:
         if args.sensor[:3] != "NA-":
@@ -512,17 +515,13 @@ def apply_oe(args):
             lut_params=lut_params,
             h2o_lut_grid=h2o_lut_grid,
             elevation_lut_grid=elevation_lut_grid
-            if elevation_lut_grid is not None
-            else [mean_altitude_km],
+            if elevation_lut_grid is not None else [mean_altitude_km],
             to_sensor_zenith_lut_grid=to_sensor_zenith_lut_grid
-            if to_sensor_zenith_lut_grid is not None
-            else [mean_to_sensor_zenith],
+            if to_sensor_zenith_lut_grid is not None else [mean_to_sensor_zenith],
             to_sun_zenith_lut_grid=to_sun_zenith_lut_grid
-            if to_sun_zenith_lut_grid is not None
-            else [mean_to_sun_zenith],
+            if to_sun_zenith_lut_grid is not None else [mean_to_sun_zenith],
             relative_azimuth_lut_grid=relative_azimuth_lut_grid
-            if relative_azimuth_lut_grid is not None
-            else [mean_relative_azimuth],
+            if relative_azimuth_lut_grid is not None else [mean_relative_azimuth],
             mean_latitude=mean_latitude,
             mean_longitude=mean_longitude,
             dt=dt,
@@ -575,6 +574,7 @@ def apply_oe(args):
                 output_uncertainty_file=paths.uncert_working_path,
                 isofit_config=paths.isofit_full_config_path,
                 nneighbors=nneighbors[0],
+                n_cores=args.n_cores,
             )
         elif args.analytical_line:
             logging.info("Analytical line inference")
@@ -588,10 +588,12 @@ def apply_oe(args):
                 loglevel=args.logging_level,
                 logfile=args.log_file,
                 n_atm_neighbors=nneighbors,
+                n_cores=args.n_cores,
                 smoothing_sigma=args.atm_sigma,
             )
 
     logging.info("Done.")
+    ray_terminate()
 
 
 if __name__ == "__main__":

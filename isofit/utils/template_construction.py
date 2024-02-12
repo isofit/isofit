@@ -1011,19 +1011,19 @@ def build_main_config(
     if prebuilt_lut_path is None:
         if h2o_lut_grid is not None:
             radiative_transfer_config["lut_grid"]["H2OSTR"] = h2o_lut_grid.tolist()
-        if elevation_lut_grid is not None:
+        if elevation_lut_grid is not None and len(elevation_lut_grid) > 1:
             radiative_transfer_config["lut_grid"][
                 "surface_elevation_km"
             ] = elevation_lut_grid.tolist()
-        if to_sensor_zenith_lut_grid is not None:
+        if to_sensor_zenith_lut_grid is not None and len(to_sensor_zenith_lut_grid) > 1:
             radiative_transfer_config["lut_grid"][
                 "observer_zenith"
             ] = to_sensor_zenith_lut_grid.tolist()  # modtran convention
-        if to_sun_zenith_lut_grid is not None:
+        if to_sun_zenith_lut_grid is not None and len(to_sun_zenith_lut_grid) > 1:
             radiative_transfer_config["lut_grid"][
                 "solar_zenith"
             ] = to_sun_zenith_lut_grid.tolist()
-        if relative_azimuth_lut_grid is not None:
+        if relative_azimuth_lut_grid is not None and len(relative_azimuth_lut_grid) > 1:
             radiative_transfer_config["lut_grid"][
                 "relative_azimuth"
             ] = relative_azimuth_lut_grid.tolist()

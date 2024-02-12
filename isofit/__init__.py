@@ -65,5 +65,4 @@ import isofit.utils.add_HRRR_profiles_to_modtran_config
 import isofit.utils.analytical_line
 import isofit.utils.apply_oe
 import isofit.utils.ewt_from_reflectance
-import isofit.utils.multisurface_oe
 import isofit.utils.solar_position
