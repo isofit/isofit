@@ -761,7 +761,7 @@ def envi_header(inputpath):
 
 
 
-def ray_start(num_cores, num_cpus=2, memory_b=180000000000):
+def ray_start(num_cores, num_cpus=2, memory_b=-1):
     import subprocess
 
     base_args = ['ray', 'start', '--head','--num-cpus',str(int(num_cores/num_cpus)), '--include-dashboard', '0']
