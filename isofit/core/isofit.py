@@ -76,8 +76,6 @@ class Isofit:
             "ignore_reinit_error": self.config.implementation.ray_ignore_reinit_error,
             "include_dashboard": self.config.implementation.ray_include_dashboard,
             "local_mode": self.config.implementation.n_cores == 1,
-            "_memory": int(180/40*1024*1024*1024),
-            "runtime_env": {"env_vars": {"MKL_NUM_THREADS": "1", "OMP_NUM_THREADS": "1", "TF_WARNINGS": "none"}},
         }
 
         # We can only set the num_cpus if running on a single-node
