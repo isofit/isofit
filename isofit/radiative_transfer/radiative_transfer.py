@@ -112,6 +112,7 @@ class RadiativeTransfer:
         self.coszen = [RT.coszen for RT in self.rt_engines][0]
 
         self.topography_model = config.topography_model
+        self.glint_model = config.glint_model
 
     def xa(self):
         """Pull the priors from each of the individual RTs."""
@@ -132,7 +133,7 @@ class RadiativeTransfer:
 
         return self.pack_arrays(ret)
 
-    def calc_rdn(self, x_RT, rfl, Ls, geom):
+    def calc_rdn(self, x_RT, x_surface, rfl, Ls, geom):
         r = self.get_shared_rtm_quantities(x_RT, geom)
         L_atm = self.get_L_atm(x_RT, geom)
         L_up = Ls * r["transup"]
@@ -150,8 +151,8 @@ class RadiativeTransfer:
                 + L_up
             )
 
-        if self.topography_model:
-            I = (self.solar_irr) / np.pi
+        elif self.topography_model:
+            I = self.solar_irr / np.pi
             t_dir_down = r["t_down_dir"]
             t_dif_down = r["t_down_dif"]
             if geom.cos_i is None:
@@ -159,7 +160,6 @@ class RadiativeTransfer:
             else:
                 cos_i = geom.cos_i
             t_total_up = r["t_up_dif"] + r["t_up_dir"]
-            t_total_down = t_dir_down + t_dif_down
             s_alb = r["sphalb"]
             # topographic flux (topoflux) effect corrected
             ret = (
@@ -170,6 +170,25 @@ class RadiativeTransfer:
                 )
                 * rfl
                 * t_total_up
+            )
+
+        elif self.glint_model:
+            L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)
+
+            E_dd = (self.solar_irr * self.coszen) / np.pi * r["t_down_dir"]
+            E_ds = (self.solar_irr * self.coszen) / np.pi * r["t_down_dif"]
+            E_d = E_dd + E_ds
+            L_sky = x_surface[-2] * E_dd + x_surface[-1] * E_ds
+
+            rho_ls = 0.02  # fresnel reflectance factor (approx. 0.02 for nadir view)
+            glint = rho_ls * (L_sky / E_d)
+
+            ret = (
+                L_atm
+                + L_down_transmitted
+                * (rfl + glint)
+                / (1.0 - r["sphalb"] * (rfl + glint))
+                + L_up
             )
 
         else:
@@ -193,13 +212,13 @@ class RadiativeTransfer:
 
     def drdn_dRT(self, x_RT, x_surface, rfl, drfl_dsurface, Ls, dLs_dsurface, geom):
         # first the rdn at the current state vector
-        rdn = self.calc_rdn(x_RT, rfl, Ls, geom)
+        rdn = self.calc_rdn(x_RT, x_surface, rfl, Ls, geom)
 
         # perturb each element of the RT state vector (finite difference)
         K_RT = []
         x_RTs_perturb = x_RT + np.eye(len(x_RT)) * eps
         for x_RT_perturb in list(x_RTs_perturb):
-            rdne = self.calc_rdn(x_RT_perturb, rfl, Ls, geom)
+            rdne = self.calc_rdn(x_RT_perturb, x_surface, rfl, Ls, geom)
             K_RT.append((rdne - rdn) / eps)
         K_RT = np.array(K_RT).T
 
@@ -228,6 +247,23 @@ class RadiativeTransfer:
 
             a = t_total_up * (I * cos_i * t_dir_down + I * self.coszen * t_dif_down)
             drdn_drfl = a / (1 - s_alb * rfl) ** 2
+
+        elif self.glint_model:
+            L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)
+
+            E_dd = (self.solar_irr * self.coszen) / np.pi * r["t_down_dir"]
+            E_ds = (self.solar_irr * self.coszen) / np.pi * r["t_down_dif"]
+            E_d = E_dd + E_ds
+            L_sky = x_surface[-2] * E_dd + x_surface[-1] * E_ds
+
+            rho_ls = 0.02  # fresnel reflectance factor (approx. 0.02 for nadir view)
+            glint = rho_ls * (L_sky / E_d)
+
+            drho_scaled_for_multiscattering_drfl = (
+                1.0 / (1 - r["sphalb"] * (rfl + glint)) ** 2
+            )
+            drdn_drfl = L_down_transmitted * drho_scaled_for_multiscattering_drfl
+
         else:
             L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)
 
@@ -247,7 +283,7 @@ class RadiativeTransfer:
 
         return K_RT, K_surface
 
-    def drdn_dRTb(self, x_RT, rfl, Ls, geom):
+    def drdn_dRTb(self, x_RT, x_surface, rfl, Ls, geom):
         if len(self.bvec) == 0:
             Kb_RT = np.zeros((0, len(self.wl.shape)))
         # currently, the K_b matrix only covers forward model derivatives due to H2O_ABSCO unknowns,
@@ -259,7 +295,7 @@ class RadiativeTransfer:
             Kb_RT = np.zeros((1, len(self.wl)))
         else:
             # first the radiance at the current state vector
-            rdn = self.calc_rdn(x_RT, rfl, Ls, geom)
+            rdn = self.calc_rdn(x_RT, x_surface, rfl, Ls, geom)
 
             # unknown parameters modeled as random variables per
             # Rodgers et al (2000) K_b matrix.  We calculate these derivatives
@@ -271,7 +307,7 @@ class RadiativeTransfer:
                     i = self.statevec_names.index("H2OSTR")
                     x_RT_perturb = x_RT.copy()
                     x_RT_perturb[i] = x_RT[i] * perturb
-                    rdne = self.calc_rdn(x_RT_perturb, rfl, Ls, geom)
+                    rdne = self.calc_rdn(x_RT_perturb, x_surface, rfl, Ls, geom)
                     Kb_RT.append((rdne - rdn) / eps)
 
         Kb_RT = np.array(Kb_RT).T

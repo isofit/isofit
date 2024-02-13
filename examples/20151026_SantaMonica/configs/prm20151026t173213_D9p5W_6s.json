@@ -26,7 +26,7 @@
     },
 
     "surface": {
-      "surface_category": "glint_surface",
+      "surface_category": "additive_glint_surface",
       "surface_file": "../data/prm20151028_surface_coastal_model.mat"
     },
  

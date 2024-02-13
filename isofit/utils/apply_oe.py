@@ -114,18 +114,19 @@ def apply_oe(args):
 
     if args.sensor not in [
         "ang",
+        "av3",
         "avcl",
+        "emit",
+        "enmap",
+        "hyp",
         "neon",
         "prism",
-        "emit",
-        "hyp",
         "prisma",
-        "av3",
     ]:
         if args.sensor[:3] != "NA-":
             raise ValueError(
                 'argument sensor: invalid choice: "NA-test" (choose from '
-                '"ang", "avcl", "neon", "prism", "emit", "av3", "NA-*")'
+                '"ang", "av3", "avcl", "emit", "enmap", "hyp", "neon", "prism", "prisma", "NA-*")'
             )
 
     if args.num_neighbors is not None and len(args.num_neighbors) > 1:
@@ -191,24 +192,33 @@ def apply_oe(args):
         # parse flightline ID (AVIRIS-NG assumptions)
         dt = datetime.strptime(paths.fid[3:], "%Y%m%dt%H%M%S")
     elif args.sensor == "av3":
+        # parse flightline ID (AVIRIS-3 assumptions)
         dt = datetime.strptime(paths.fid[3:], "%Y%m%dt%H%M%S")
     elif args.sensor == "avcl":
-        # parse flightline ID (AVIRIS-CL assumptions)
+        # parse flightline ID (AVIRIS-Classic assumptions)
         dt = datetime.strptime("20{}t000000".format(paths.fid[1:7]), "%Y%m%dt%H%M%S")
-    elif args.sensor == "neon":
-        dt = datetime.strptime(paths.fid, "NIS01_%Y%m%d_%H%M%S")
-    elif args.sensor == "prism":
-        dt = datetime.strptime(paths.fid[3:], "%Y%m%dt%H%M%S")
-    elif args.sensor == "prisma":
-        dt = datetime.strptime(paths.fid, "%Y%m%d%H%M%S")
     elif args.sensor == "emit":
+        # parse flightline ID (EMIT assumptions)
         dt = datetime.strptime(paths.fid[:19], "emit%Y%m%dt%H%M%S")
         global INVERSION_WINDOWS
         INVERSION_WINDOWS = [[380.0, 1325.0], [1435, 1770.0], [1965.0, 2500.0]]
+    elif args.sensor == "enmap":
+        # parse flightline ID (EnMAP assumptions)
+        dt = datetime.strptime(paths.fid[:15], "%Y%m%dt%H%M%S")
+    elif args.sensor == "hyp":
+        # parse flightline ID (Hyperion assumptions)
+        dt = datetime.strptime(paths.fid[10:17], "%Y%j")
+    elif args.sensor == "neon":
+        # parse flightline ID (NEON assumptions)
+        dt = datetime.strptime(paths.fid, "NIS01_%Y%m%d_%H%M%S")
+    elif args.sensor == "prism":
+        # parse flightline ID (PRISM assumptions)
+        dt = datetime.strptime(paths.fid[3:], "%Y%m%dt%H%M%S")
+    elif args.sensor == "prisma":
+        # parse flightline ID (PRISMA assumptions)
+        dt = datetime.strptime(paths.fid, "%Y%m%d%H%M%S")
     elif args.sensor[:3] == "NA-":
         dt = datetime.strptime(args.sensor[3:], "%Y%m%d")
-    elif args.sensor == "hyp":
-        dt = datetime.strptime(paths.fid[10:17], "%Y%j")
     else:
         raise ValueError(
             "Datetime object could not be obtained. Please check file name of input"
@@ -526,7 +536,7 @@ def apply_oe(args):
         if not args.num_neighbors:
             nneighbors = [int(round(3950 / 9 - 35 / 36 * args.segmentation_size))]
         else:
-            nneighbors = args.num_neighbors
+            nneighbors = [n for n in args.num_neighbors]
 
         if args.empirical_line == 1:
             # Empirical line
@@ -574,27 +584,26 @@ class Pathnames:
         # Determine FID based on sensor name
         if args.sensor == "ang":
             self.fid = split(args.input_radiance)[-1][:18]
-            logging.info("Flightline ID: %s" % self.fid)
-        elif args.sensor == "prism":
-            self.fid = split(args.input_radiance)[-1][:18]
-            logging.info("Flightline ID: %s" % self.fid)
         elif args.sensor == "av3":
             self.fid = split(args.input_radiance)[-1][:18]
-            logging.info("Flightline ID: %s" % self.fid)
-        elif args.sensor == "prisma":
-            self.fid = args.input_radiance.split("/")[-1].split("_")[1]
-            logging.info("Flightline ID: %s" % self.fid)
         elif args.sensor == "avcl":
             self.fid = split(args.input_radiance)[-1][:16]
-            logging.info("Flightline ID: %s" % self.fid)
-        elif args.sensor == "neon":
-            self.fid = split(args.input_radiance)[-1][:21]
         elif args.sensor == "emit":
             self.fid = split(args.input_radiance)[-1][:19]
-        elif args.sensor[:3] == "NA-":
-            self.fid = os.path.splitext(os.path.basename(args.input_radiance))[0]
+        elif args.sensor == "enmap":
+            self.fid = args.input_radiance.split("/")[-1].split("_")[5]
         elif args.sensor == "hyp":
             self.fid = split(args.input_radiance)[-1][:22]
+        elif args.sensor == "neon":
+            self.fid = split(args.input_radiance)[-1][:21]
+        elif args.sensor == "prism":
+            self.fid = split(args.input_radiance)[-1][:18]
+        elif args.sensor == "prisma":
+            self.fid = args.input_radiance.split("/")[-1].split("_")[1]
+        elif args.sensor[:3] == "NA-":
+            self.fid = os.path.splitext(os.path.basename(args.input_radiance))[0]
+
+        logging.info("Flightline ID: %s" % self.fid)
 
         # Names from inputs
         self.aerosol_climatology = args.aerosol_climatology_path
@@ -1415,10 +1424,19 @@ def build_presolve_config(
     else:
         engine_name = "sRTMnet"
 
+    if surface_category == "glint_model_surface":
+        glint_model = True
+        multipart_transmittance = True
+    else:
+        glint_model = False
+        multipart_transmittance = False
+
     radiative_transfer_config = {
+        "glint_model": glint_model,
         "radiative_transfer_engines": {
             "vswir": {
                 "engine_name": engine_name,
+                "multipart_transmittance": multipart_transmittance,
                 "lut_path": paths.lut_h2o_directory,
                 "template_file": paths.h2o_template_path,
                 "lut_names": ["H2OSTR"],
@@ -1589,10 +1607,20 @@ def build_main_config(
         engine_name = "modtran"
     else:
         engine_name = "sRTMnet"
+
+    if surface_category == "glint_model_surface":
+        glint_model = True
+        multipart_transmittance = True
+    else:
+        glint_model = False
+        multipart_transmittance = False
+
     radiative_transfer_config = {
+        "glint_model": glint_model,
         "radiative_transfer_engines": {
             "vswir": {
                 "engine_name": engine_name,
+                "multipart_transmittance": multipart_transmittance,
                 "lut_path": paths.lut_modtran_directory,
                 "aerosol_template_file": paths.aerosol_tpl_path,
                 "template_file": paths.modtran_template_path,

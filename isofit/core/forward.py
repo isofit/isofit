@@ -28,7 +28,8 @@ from scipy.linalg import block_diag, det, inv, norm, pinv, sqrtm
 
 from isofit.configs import Config
 from isofit.surface import (
-    GlintSurface,
+    AdditiveGlintSurface,
+    GlintModelSurface,
     LUTSurface,
     MultiComponentSurface,
     Surface,
@@ -86,8 +87,15 @@ class ForwardModel:
             self.surface = Surface(self.full_config)
         elif self.config.surface.surface_category == "multicomponent_surface":
             self.surface = MultiComponentSurface(self.full_config)
-        elif self.config.surface.surface_category == "glint_surface":
-            self.surface = GlintSurface(self.full_config)
+        elif self.config.surface.surface_category == "additive_glint_surface":
+            self.surface = AdditiveGlintSurface(self.full_config)
+        elif self.config.surface.surface_category == "glint_model_surface":
+            self.surface = GlintModelSurface(self.full_config)
+            self.full_glint = (
+                self.config.surface.full_glint
+                if "full_glint" in self.config.surface.keys()
+                else False
+            )
         elif self.config.surface.surface_category == "thermal_surface":
             self.surface = ThermalSurface(self.full_config)
         elif self.config.surface.surface_category == "lut_surface":
@@ -211,7 +219,7 @@ class ForwardModel:
 
         rfl_hi = self.upsample(self.surface.wl, rfl)
         Ls_hi = self.upsample(self.surface.wl, Ls)
-        return self.RT.calc_rdn(x_RT, rfl_hi, Ls_hi, geom)
+        return self.RT.calc_rdn(x_RT, x_surface, rfl_hi, Ls_hi, geom)
 
     def calc_meas(self, x, geom, rfl=None, Ls=None):
         """Calculate the model observation at instrument wavelengths."""
@@ -311,7 +319,7 @@ class ForwardModel:
         Ls_hi = self.upsample(self.surface.wl, Ls)
         rdn_hi = self.calc_rdn(x, geom, rfl=rfl, Ls=Ls)
 
-        drdn_dRTb = self.RT.drdn_dRTb(x_RT, rfl_hi, Ls_hi, geom)
+        drdn_dRTb = self.RT.drdn_dRTb(x_RT, x_surface, rfl_hi, Ls_hi, geom)
         dmeas_dRTb = self.instrument.sample(x_instrument, self.RT.wl, drdn_dRTb.T).T
         dmeas_dinstrumentb = self.instrument.dmeas_dinstrumentb(
             x_instrument, self.RT.wl, rdn_hi
