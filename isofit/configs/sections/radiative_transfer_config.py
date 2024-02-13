@@ -34,6 +34,7 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
     """
 
     def __init__(self, sub_configdic: dict = None, name: str = None):
+        super().__init__()
         self._name_type = str
         self.name = name
         """str: Name of config - optional, and not currently used."""
@@ -226,6 +227,7 @@ class RadiativeTransferUnknownsConfig(BaseConfigSection):
     """
 
     def __init__(self, sub_configdic: dict = None):
+        super().__init__()
         self._H2O_ABSCO_type = float
         self.H2O_ABSCO = None
 
@@ -243,11 +245,20 @@ class RadiativeTransferConfig(BaseConfigSection):
     """
 
     def __init__(self, sub_configdic: dict = None):
+        super().__init__()
         self._topography_model_type = bool
         self.topography_model = False
         """
-        Flag to indicated whether to use atopographic-flux (topoflux)
+        Flag to indicate whether to use topographic-flux (topoflux)
         implementation of the forward model. Only currently functional
+        with multipart MODTRAN
+        """
+
+        self._glint_model_type = bool
+        self.glint_model = False
+        """
+        Flag to indicate whether to use the sun and sky glint model from
+        Gege (2012, 2014) in the forward model. Only currently functional
         with multipart MODTRAN
         """
 

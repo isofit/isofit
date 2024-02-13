@@ -46,9 +46,9 @@ def analytical_line(
     isofit_dir: str,
     isofit_config: str = None,
     segmentation_file: str = None,
-    n_atm_neighbors: int = 20,
+    n_atm_neighbors: list = None,
     n_cores: int = -1,
-    smoothing_sigma: int = 2,
+    smoothing_sigma: list = None,
     output_rfl_file: str = None,
     output_unc_file: str = None,
     atm_file: str = None,
@@ -58,6 +58,11 @@ def analytical_line(
     """
     TODO: Description
     """
+    if n_atm_neighbors is None:
+        n_atm_neighbors = [20]
+    if smoothing_sigma is None:
+        smoothing_sigma = [2]
+
     logging.basicConfig(
         format="%(levelname)s:%(asctime)s ||| %(message)s",
         level=loglevel,
@@ -76,59 +81,70 @@ def analytical_line(
     subs_state_file = config.output.estimated_state_file
     subs_loc_file = config.input.loc_file
 
-    if segmentation_file is None:
+    if (
+        segmentation_file is None
+        or config.forward_model.surface.surface_category == "glint_model_surface"
+    ):
         lbl_file = subs_state_file.replace("_subs_state", "_lbl")
     else:
         lbl_file = segmentation_file
 
-    if output_rfl_file is None:
+    if (
+        output_rfl_file is None
+        or config.forward_model.surface.surface_category == "glint_model_surface"
+    ):
         analytical_state_file = subs_state_file.replace(
             "_subs_state", "_state_analytical"
         )
     else:
         analytical_state_file = output_rfl_file
 
-    if output_unc_file is None:
+    if (
+        output_unc_file is None
+        or config.forward_model.surface.surface_category == "glint_model_surface"
+    ):
         analytical_state_unc_file = subs_state_file.replace(
             "_subs_state", "_state_analytical_uncert"
         )
     else:
         analytical_state_unc_file = output_unc_file
 
-    if atm_file is None:
+    if (
+        atm_file is None
+        or config.forward_model.surface.surface_category == "glint_model_surface"
+    ):
         atm_file = subs_state_file.replace("_subs_state", "_atm_interp")
     else:
         atm_file = atm_file
 
+    fm = ForwardModel(config)
+    iv = Inversion(config, fm)
+
     if os.path.isfile(atm_file) is False:
         atm_interpolation(
-            subs_state_file,
-            subs_loc_file,
-            lbl_file,
-            loc_file,
-            atm_file,
+            reference_state_file=subs_state_file,
+            reference_locations_file=subs_loc_file,
+            input_locations_file=loc_file,
+            segmentation_file=lbl_file,
+            output_atm_file=atm_file,
+            atm_band_names=fm.RT.statevec_names,
             nneighbors=n_atm_neighbors,
             gaussian_smoothing_sigma=smoothing_sigma,
         )
 
-    fm = ForwardModel(config)
-    iv = Inversion(config, fm)
-
     rdn_ds = envi.open(envi_header(rdn_file))
     rdn = rdn_ds.open_memmap(interleave="bip")
     rdns = rdn.shape
-    atm = envi.open(envi_header(atm_file)).open_memmap(interleave="bip")
-
-    hash_table = OrderedDict()  # Deprecated in Python 3.7
-    hash_size = 500  # Unused, hardcoded
 
     output_metadata = rdn_ds.metadata
     output_metadata["interleave"] = "bil"
     output_metadata["description"] = "L2A Analytyical per-pixel surface retrieval"
+    output_metadata["bands"] = str(len(fm.idx_surface))
 
     outside_ret_windows = np.zeros(len(fm.surface.idx_lamb), dtype=int)
     outside_ret_windows[iv.winidx] = 1
     output_metadata["bbl"] = "{" + ",".join([str(x) for x in outside_ret_windows]) + "}"
+
     if "emit pge input files" in list(output_metadata.keys()):
         del output_metadata["emit pge input files"]
 
@@ -136,13 +152,14 @@ def analytical_line(
         envi_header(analytical_state_file), ext="", metadata=output_metadata, force=True
     )
     del img
+
     img = envi.create_image(
         envi_header(analytical_state_unc_file),
         ext="",
         metadata=output_metadata,
         force=True,
     )
-    del atm, rdn, img
+    del rdn, img
 
     ray.init(
         ignore_reinit_error=config.implementation.ray_ignore_reinit_error,
@@ -153,8 +170,10 @@ def analytical_line(
     )
 
     n_workers = n_cores
+
     if n_workers == -1:
         n_workers = multiprocessing.cpu_count()
+
     worker = ray.remote(Worker)
     wargs = [
         config,
@@ -205,13 +224,10 @@ class Worker(object):
         Worker class to help run a subset of spectra.
 
         Args:
-            forward_model: isofit forward_model
+            fm: isofit forward_model
             loglevel: output logging level
             logfile: output logging file
-            worker_id: worker ID for logging reference
-            total_workers: the total number of workers running, for logging reference
         """
-
         logging.basicConfig(
             format="%(levelname)s:%(asctime)s ||| %(message)s",
             level=loglevel,
@@ -258,10 +274,16 @@ class Worker(object):
 
         start_line, stop_line = startstop
         output_state = (
-            np.zeros((stop_line - start_line, rt_state.shape[1], rdn.shape[2])) - 9999
+            np.zeros(
+                (stop_line - start_line, rt_state.shape[1], len(self.fm.idx_surface))
+            )
+            - 9999
         )
         output_state_unc = (
-            np.zeros((stop_line - start_line, rt_state.shape[1], rdn.shape[2])) - 9999
+            np.zeros(
+                (stop_line - start_line, rt_state.shape[1], len(self.fm.idx_surface))
+            )
+            - 9999
         )
 
         for r in range(start_line, stop_line):
@@ -271,7 +293,7 @@ class Worker(object):
                     meas *= self.radiance_correction
                 if np.all(meas < 0):
                     continue
-                x_RT = rt_state[r, c, :]
+                x_RT = rt_state[r, c, self.fm.idx_RT - len(self.fm.idx_surface)]
                 geom = Geometry(obs=obs[r, c, :], loc=loc[r, c, :])
 
                 states, unc = invert_analytical(
@@ -284,12 +306,10 @@ class Worker(object):
                     self.hash_table,
                     self.hash_size,
                 )
-                output_state[r - start_line, c, :] = states[-1][
-                    self.iv.fm.surface.idx_lamb
-                ]
-                output_state_unc[r - start_line, c, :] = unc[
-                    self.iv.fm.surface.idx_lamb
-                ]
+
+                output_state[r - start_line, c, :] = states[-1][self.fm.idx_surface]
+
+                output_state_unc[r - start_line, c, :] = unc[self.fm.idx_surface]
 
             logging.info(f"Analytical line writing line {r}")
 
@@ -297,13 +317,13 @@ class Worker(object):
                 output_state[r - start_line, ...].T,
                 self.analytical_state_file,
                 r,
-                (rdn.shape[0], rdn.shape[1], rdn.shape[2]),
+                (rdn.shape[0], rdn.shape[1], len(self.fm.idx_surface)),
             )
             write_bil_chunk(
                 output_state_unc[r - start_line, ...].T,
                 self.analytical_state_unc_file,
                 r,
-                (rdn.shape[0], rdn.shape[1], rdn.shape[2]),
+                (rdn.shape[0], rdn.shape[1], len(self.fm.idx_surface)),
             )
 
 
