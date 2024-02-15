@@ -80,7 +80,7 @@
                 "toa_threshold_wavelengths": [1000, 1380],
                 "toa_threshold_values": [0.05, 0.1],
                 "toa_threshold_comparisons": ["lt"],
-                "surface_category":  "glint_surface"
+                "surface_category":  "glint_model_surface"
             }
         }
     },
