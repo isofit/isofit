@@ -34,7 +34,7 @@ EPS = 1e-6
 CHUNKSIZE = 256
 
 UNCORRELATED_RADIOMETRIC_UNCERTAINTY = 0.01
-SUPPORTED_SENSORS = ["ang", "avcl", "neon", "prism", "emit", "hyp", "prisma", "av3"]
+SUPPORTED_SENSORS = ["ang", "avcl", "neon", "prism", "emit", "enmap", "hyp", "prisma", "av3"]
 RTM_CLEANUP_LIST = ["*r_k", "*t_k", "*tp7", "*wrn", "*psc", "*plt", "*7sc", "*acd"]
 INVERSION_WINDOWS = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
 
@@ -226,24 +226,33 @@ def apply_oe(args):
         # parse flightline ID (AVIRIS-NG assumptions)
         dt = datetime.strptime(paths.fid[3:], "%Y%m%dt%H%M%S")
     elif args.sensor == "av3":
+        # parse flightline ID (AVIRIS-3 assumptions)
         dt = datetime.strptime(paths.fid[3:], "%Y%m%dt%H%M%S")
     elif args.sensor == "avcl":
-        # parse flightline ID (AVIRIS-CL assumptions)
+        # parse flightline ID (AVIRIS-Classic assumptions)
         dt = datetime.strptime("20{}t000000".format(paths.fid[1:7]), "%Y%m%dt%H%M%S")
-    elif args.sensor == "neon":
-        dt = datetime.strptime(paths.fid, "NIS01_%Y%m%d_%H%M%S")
-    elif args.sensor == "prism":
-        dt = datetime.strptime(paths.fid[3:], "%Y%m%dt%H%M%S")
-    elif args.sensor == "prisma":
-        dt = datetime.strptime(paths.fid, "%Y%m%d%H%M%S")
     elif args.sensor == "emit":
+        # parse flightline ID (EMIT assumptions)
         dt = datetime.strptime(paths.fid[:19], "emit%Y%m%dt%H%M%S")
         global INVERSION_WINDOWS
         INVERSION_WINDOWS = [[380.0, 1325.0], [1435, 1770.0], [1965.0, 2500.0]]
+    elif args.sensor == "enmap":
+        # parse flightline ID (EnMAP assumptions)
+        dt = datetime.strptime(paths.fid[:15], "%Y%m%dt%H%M%S")
+    elif args.sensor == "hyp":
+        # parse flightline ID (Hyperion assumptions)
+        dt = datetime.strptime(paths.fid[10:17], "%Y%j")
+    elif args.sensor == "neon":
+        # parse flightline ID (NEON assumptions)
+        dt = datetime.strptime(paths.fid, "NIS01_%Y%m%d_%H%M%S")
+    elif args.sensor == "prism":
+        # parse flightline ID (PRISM assumptions)
+        dt = datetime.strptime(paths.fid[3:], "%Y%m%dt%H%M%S")
+    elif args.sensor == "prisma":
+        # parse flightline ID (PRISMA assumptions)
+        dt = datetime.strptime(paths.fid, "%Y%m%d%H%M%S")
     elif args.sensor[:3] == "NA-":
         dt = datetime.strptime(args.sensor[3:], "%Y%m%d")
-    elif args.sensor == "hyp":
-        dt = datetime.strptime(paths.fid[10:17], "%Y%j")
     else:
         raise ValueError(
             "Datetime object could not be obtained. Please check file name of input"
@@ -557,7 +566,7 @@ def apply_oe(args):
         if not args.num_neighbors:
             nneighbors = [int(round(3950 / 9 - 35 / 36 * args.segmentation_size))]
         else:
-            nneighbors = args.num_neighbors
+            nneighbors = [n for n in args.num_neighbors]
 
         if args.empirical_line:
             # Empirical line

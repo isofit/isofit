@@ -37,27 +37,26 @@ class Pathnames:
         # Determine FID based on sensor name
         if args.sensor == "ang":
             self.fid = split(args.input_radiance)[-1][:18]
-            logging.info("Flightline ID: %s" % self.fid)
-        elif args.sensor == "prism":
-            self.fid = split(args.input_radiance)[-1][:18]
-            logging.info("Flightline ID: %s" % self.fid)
         elif args.sensor == "av3":
             self.fid = split(args.input_radiance)[-1][:18]
-            logging.info("Flightline ID: %s" % self.fid)
-        elif args.sensor == "prisma":
-            self.fid = args.input_radiance.split("/")[-1].split("_")[1]
-            logging.info("Flightline ID: %s" % self.fid)
         elif args.sensor == "avcl":
             self.fid = split(args.input_radiance)[-1][:16]
-            logging.info("Flightline ID: %s" % self.fid)
-        elif args.sensor == "neon":
-            self.fid = split(args.input_radiance)[-1][:21]
         elif args.sensor == "emit":
             self.fid = split(args.input_radiance)[-1][:19]
-        elif args.sensor[:3] == "NA-":
-            self.fid = os.path.splitext(os.path.basename(args.input_radiance))[0]
+        elif args.sensor == "enmap":
+            self.fid = split(args.input_radiance)[-1].split("_")[5]
         elif args.sensor == "hyp":
             self.fid = split(args.input_radiance)[-1][:22]
+        elif args.sensor == "neon":
+            self.fid = split(args.input_radiance)[-1][:21]
+        elif args.sensor == "prism":
+            self.fid = split(args.input_radiance)[-1][:18]
+        elif args.sensor == "prisma":
+            self.fid = args.input_radiance.split("/")[-1].split("_")[1]
+        elif args.sensor[:3] == "NA-":
+            self.fid = os.path.splitext(os.path.basename(args.input_radiance))[0]
+
+        logging.info("Flightline ID: %s" % self.fid)
 
         # Names from inputs
         self.aerosol_climatology = args.aerosol_climatology_path
