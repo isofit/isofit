@@ -25,7 +25,7 @@ import numpy as np
 from spectral.io import envi
 
 from isofit import ray
-from isofit.core.common import envi_header
+from isofit.core.common import envi_header, ray_initiate
 from isofit.core.fileio import write_bil_chunk
 
 
@@ -175,7 +175,7 @@ def extractions(
     if ray_ip_head is None and ray_redis_password is None:
         rayargs["num_cpus"] = n_cores
 
-    ray.init(**rayargs)
+    ray_initiate(rayargs)
     atexit.register(ray.shutdown)
 
     labelid = ray.put(labels)
@@ -214,3 +214,4 @@ def extractions(
         type = "float64"
 
     write_bil_chunk(out, out_file, 0, out.shape, dtype=type)
+    ray.shutdown()
