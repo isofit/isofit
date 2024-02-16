@@ -760,44 +760,52 @@ def envi_header(inputpath):
         return inputpath + ".hdr"
 
 
-
 def ray_start(num_cores, num_cpus=2, memory_b=-1):
     import subprocess
 
-    base_args = ['ray', 'start', '--head','--num-cpus',str(int(num_cores/num_cpus)), '--include-dashboard', '0']
+    base_args = [
+        "ray",
+        "start",
+        "--head",
+        "--num-cpus",
+        str(int(num_cores / num_cpus)),
+        "--include-dashboard",
+        "0",
+    ]
     if memory_b != -1:
-        base_args.append('--memory')
-        base_args.append(str(int(memory_b/num_cpus)))
-        
+        base_args.append("--memory")
+        base_args.append(str(int(memory_b / num_cpus)))
 
     head_args = base_args.copy()
-    head_args.append('--head')
-    result = subprocess.run(head_args,capture_output=True)
-    stdout = str(result.stdout,encoding='utf-8')
+    head_args.append("--head")
+    result = subprocess.run(head_args, capture_output=True)
+    stdout = str(result.stdout, encoding="utf-8")
 
     if num_cpus > 1:
-        key="--address="
+        key = "--address="
         start_loc = stdout.find(key) + len(key) + 1
-        end_loc = stdout.find('\'',start_loc)
+        end_loc = stdout.find("'", start_loc)
 
         address = stdout[start_loc:end_loc]
-        base_args.append('--address')
+        base_args.append("--address")
         base_args.append(address)
 
-        result = subprocess.run(base_args,capture_output=True)
+        result = subprocess.run(base_args, capture_output=True)
 
 
 def ray_terminate():
     import subprocess
-    subprocess.call('ray stop',shell=True)
+
+    subprocess.call("ray stop", shell=True)
 
 
 def ray_initiate(raydict, num_cpus=1):
-    
+
     import ray
-    initialized=False
+
+    initialized = False
     try:
-        initialized=ray.is_initialized()
+        initialized = ray.is_initialized()
     except:
         pass
 
@@ -807,14 +815,6 @@ def ray_initiate(raydict, num_cpus=1):
     try:
         ray.init(**raydict)
     except:
-        if 'num_cpus' in raydict.keys():
-            del raydict['num_cpus']
+        if "num_cpus" in raydict.keys():
+            del raydict["num_cpus"]
         ray.init(**raydict)
-
-
-
-
-
-
-
-

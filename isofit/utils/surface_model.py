@@ -333,19 +333,19 @@ def surface_model(
                 # Look for the "feather_forward" or "feather_backward" options
                 if window["correlation"] in ["EM", "decorrelated"]:
                     if "feather_backward" in list(window.keys()):
-                        P[window_idx[0] - 1, window_idx[0]] -= 1.0 / window[
-                            "feather_backward"
-                        ]
-                        P[window_idx[0], window_idx[0] - 1] -= 1.0 / window[
-                            "feather_backward"
-                        ]
+                        P[window_idx[0] - 1, window_idx[0]] -= (
+                            1.0 / window["feather_backward"]
+                        )
+                        P[window_idx[0], window_idx[0] - 1] -= (
+                            1.0 / window["feather_backward"]
+                        )
                     if "feather_forward" in list(window.keys()):
-                        P[window_idx[-1] + 1, window_idx[-1]] -= 1.0 / window[
-                            "feather_forward"
-                        ]
-                        P[window_idx[-1], window_idx[-1] + 1] -= 1.0 / window[
-                            "feather_forward"
-                        ]
+                        P[window_idx[-1] + 1, window_idx[-1]] -= (
+                            1.0 / window["feather_forward"]
+                        )
+                        P[window_idx[-1], window_idx[-1] + 1] -= (
+                            1.0 / window["feather_forward"]
+                        )
             C = inv(P)
 
             # Normalize the component spectrum if desired

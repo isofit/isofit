@@ -163,12 +163,12 @@ def analytical_line(
     del rdn, img
 
     ray_dict = {
-         "ignore_reinit_error": config.implementation.ray_ignore_reinit_error,
-         "address": config.implementation.ip_head,
-         "_temp_dir": config.implementation.ray_temp_dir,
-         "include_dashboard": config.implementation.ray_include_dashboard,
-         "_redis_password": config.implementation.redis_password,
-         "num_cpus": n_cores,
+        "ignore_reinit_error": config.implementation.ray_ignore_reinit_error,
+        "address": config.implementation.ip_head,
+        "_temp_dir": config.implementation.ray_temp_dir,
+        "include_dashboard": config.implementation.ray_include_dashboard,
+        "_redis_password": config.implementation.redis_password,
+        "num_cpus": n_cores,
     }
 
     ray_initiate(ray_dict)
@@ -194,7 +194,9 @@ def analytical_line(
     ]
     workers = ray.util.ActorPool([worker.remote(*wargs) for _ in range(n_workers)])
 
-    line_breaks = np.linspace(0, rdns[0], n_workers * config.implementation.task_inflation_factor, dtype=int)
+    line_breaks = np.linspace(
+        0, rdns[0], n_workers * config.implementation.task_inflation_factor, dtype=int
+    )
     line_breaks = [
         (line_breaks[n], line_breaks[n + 1]) for n in range(len(line_breaks) - 1)
     ]
