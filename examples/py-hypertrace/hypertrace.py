@@ -94,8 +94,7 @@ def do_hypertrace(isofit_config, wavelength_file, reflectance_file,
       respectively (0 = directly overhead, 90 = horizon). These are in degrees
       off nadir. Default = 0 for both. (Note that off-nadir angles make
       LibRadtran run _much_ more slowly, so be prepared if you need to generate
-      those LUTs). (Note: For `modtran` and `modtran_simulator`, `solar_zenith`
-      is calculated from the `gmtime` and location, so this parameter is ignored.)
+      those LUTs).
 
       solar_azimuth, observer_azimuth: Solar and observer azimuth angles,
       respectively, in degrees. Observer azimuth is the sensor _position_ (so
@@ -103,8 +102,7 @@ def do_hypertrace(isofit_config, wavelength_file, reflectance_file,
       counterclockwise; i.e., 0 = Sensor in N, looking S; 90 = Sensor in W,
       looking E (this follows the LibRadtran convention). Default = 0 for both.
       Note: For `modtran` and `modtran_simulator`, `observer_azimuth` is used as
-      `to_sensor_azimuth`; i.e., the *relative* azimuth of the sensor. The true
-      solar azimuth is calculated from lat/lon and time, so `solar_azimuth` is ignored.
+      `to_sensor_azimuth`; i.e., the *relative* azimuth of the sensor.
 
       observer_altitude_km: Sensor altitude in km. Must be less than 100. Default = 99.9.
       (`modtran` and `modtran_simulator` only)
@@ -114,7 +112,6 @@ def do_hypertrace(isofit_config, wavelength_file, reflectance_file,
 
       latitude, longitude: Decimal degree coordinates of observation. Default =
       34.15, -118.14 (Pasadena, CA).
-      (`modtran` and `modtran_simulator` only)
 
       localtime: Local time, in decimal hours (0-24). Default = 10.0
       (`modtran` and `modtran_simulator` only)
@@ -218,10 +215,10 @@ def do_hypertrace(isofit_config, wavelength_file, reflectance_file,
                 "fid": "hypertrace",
                 "altitude_km": observer_altitude_km,
                 "dayofyear": dayofyear,
-                "latitude": latitude,
-                "longitude": longitude,
+                "to_sun_zenith": solar_zenith,
                 "to_sensor_azimuth": observer_azimuth,
                 "to_sensor_zenith": 180 - observer_zenith,
+                "relative_azimuth": solar_azimuth,
                 "gmtime": localtime,
                 "elevation_km": elevation_km,
                 "output_file": lrtfile,
@@ -243,7 +240,9 @@ def do_hypertrace(isofit_config, wavelength_file, reflectance_file,
         else:
             raise ValueError(f"Invalid atmospheric rtm {atmospheric_rtm}")
 
-        vswir_conf["lut_path"] = str(lutdir2)
+        vswir_conf["sim_path"] = str(lutdir2)
+        vswir_conf["lut_path"] = str(lutdir2) + "/inv_lut.nc"
+        vswir_conf["lut_names"] = {"H2OSTR": None, "AOT550": None}
         vswir_conf["template_file"] = str(lrtfile)
 
     outdir2 = outdir / lrttag / noisetag / priortag / atmtag / caltag
@@ -305,7 +304,9 @@ def do_hypertrace(isofit_config, wavelength_file, reflectance_file,
                  ["radiative_transfer"]
                  ["radiative_transfer_engines"]
                  ["vswir"])
-    fwd_vswir["lut_path"] = str(fwd_lutdir)
+    fwd_vswir["sim_path"] = str(fwd_lutdir)
+    fwd_vswir["lut_path"] = str(fwd_lutdir) + "/fwd_lut.nc"
+    fwd_vswir["lut_names"] = {"H2OSTR": None, "AOT550": None}
     fwd_vswir["interpolator_base_path"] = str(fwd_lutdir)
 
     if radfile.exists() and not overwrite:
@@ -461,6 +462,7 @@ def do_inverse(isofit_inv: dict,
                            output_reflectance_file=str(est_refl_file),
                            output_uncertainty_file=str(post_unc_file),
                            isofit_config=str(invfile))
+
 
 def mkabs(path):
     """Make a path absolute."""

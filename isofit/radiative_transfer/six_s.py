@@ -19,33 +19,35 @@
 
 import logging
 import os
+import re
+import subprocess
 from datetime import datetime
 
 import numpy as np
 
-from isofit.configs import Config
 from isofit.configs.sections.radiative_transfer_config import (
     RadiativeTransferEngineConfig,
 )
-from isofit.core.common import VectorInterpolator, resample_spectrum
-from isofit.core.geometry import Geometry
+from isofit.core.common import resample_spectrum
+from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
 
-from .look_up_tables import FileExistsError, TabularRT
+Logger = logging.getLogger(__file__)
 
 eps = 1e-5  # used for finite difference derivative calculations
 
-sixs_template = """0 (User defined)
+SIXS_TEMPLATE = """\
+0 (User defined)
 {solzen} {solaz} {viewzen} {viewaz} {month} {day}
 8  (User defined H2O, O3)
 {H2OSTR}, {O3}
 {aermodel}
 0
 {AOT550}
-{elev:.2f} (target level)
+-{elev:.2f} (target level)
 -{alt:.2f} (sensor level)
 -{H2OSTR}, -{O3}
 {AOT550}
--2 
+-2
 {wlinf}
 {wlsup}
 0 Homogeneous surface
@@ -57,297 +59,404 @@ sixs_template = """0 (User defined)
 """
 
 
-class SixSRT(TabularRT):
+class SixSRT(RadiativeTransferEngine):
     """A model of photon transport including the atmosphere."""
 
     def __init__(
         self,
         engine_config: RadiativeTransferEngineConfig,
-        full_config: Config,
-        build_lut=True,
-        build_lut_only=False,
-        wavelength_override=None,
-        fwhm_override=None,
         modtran_emulation=False,
+        **kwargs,
     ):
-        self.angular_lut_keys_degrees = [
-            "OBSZEN",
-            "TRUEAZ",
-            "viewzen",
-            "viewaz",
-            "solzen",
-            "solaz",
-        ]
-        self.angular_lut_keys_radians = []
         self.modtran_emulation = modtran_emulation
 
-        super().__init__(engine_config, full_config)
+        super().__init__(engine_config, **kwargs)
 
-        self.treat_as_emissive = False
-        self.lut_quantities = ["rhoatm", "transm", "sphalb", "transup"]
+        # If the LUT file already exists, still need to calc this post init
+        if not hasattr(self, "esd"):
+            self.load_esd()
 
-        if wavelength_override is not None:
-            self.wl = wavelength_override
-            self.n_chan = len(self.wl)
-            self.resample_wavelengths = False
+    def preSim(self):
+        """
+        Check that 6S is installed
+        """
+        sixS = os.path.join(self.engine_base_dir, "sixsV2.1")  # 6S Emulator path
+
+        if not os.path.exists(sixS):
+            Logger.error(
+                f"6S path not valid, downstream simulations will be broken: {sixS}"
+            )
+
+    def makeSim(self, point: np.array, template_only: bool = False):
+        """
+        Perform 6S simulations
+
+        Parameters
+        ----------
+        point: np.array
+            Point to process
+        template_only: bool, default=False
+            Only write the simulation template then exit. If False, subprocess call 6S
+        """
+        # Retrieve the files to process
+        name = self.point_to_filename(point)
+
+        if self.multipart_transmittance:
+            outp = os.path.join(self.sim_path, name, name)
+            inpt = os.path.join(self.sim_path, name, f"LUT_{name}_{self.wl[0]}.inp")
         else:
-            self.resample_wavelengths = True
+            outp = os.path.join(self.sim_path, name)
+            inpt = os.path.join(self.sim_path, f"LUT_{name}.inp")
 
-        if fwhm_override is not None:
-            self.fwhm = fwhm_override
+        # Only execute when either the 6S input (ext.inp) or output (no extension) files are missing
+        if os.path.exists(outp) and os.path.exists(inpt):
+            Logger.warning(f"6S sim files already exist: {outp}, {inpt}")
+            return
 
-        self.sixs_dir = self.find_basedir(engine_config)
-        self.sixs_grid_init = np.arange(self.wl[0], self.wl[-1] + 2.5, 2.5)
-        self.sixs_ngrid_init = len(self.sixs_grid_init)
-        self.params = {
+        if self.multipart_transmittance:
+            io_dir = os.path.join(self.sim_path, name)
+            os.mkdir(io_dir)
+            # in multipart transmittance mode, we need to run 6s for ech wavelength separately
+            for wl in self.wl:
+                cmd = self.rebuild_cmd(point=point, wlinf=wl, wlsup=wl)
+                if template_only is False:
+                    call = subprocess.run(cmd, shell=True, capture_output=True)
+                    if call.stdout:
+                        Logger.error(call.stdout.decode())
+        else:
+            cmd = self.rebuild_cmd(point, wlinf=self.wl[0], wlsup=self.wl[-1])
+            if template_only is False:
+                call = subprocess.run(cmd, shell=True, capture_output=True)
+                if call.stdout:
+                    Logger.error(call.stdout.decode())
+
+    def readSim(self, point: np.array):
+        """
+        Parses a 6S output simulation file for a given point
+
+        Parameters
+        ----------
+        point: np.array
+            Point to process
+
+        Returns
+        -------
+        data: dict
+            Simulated data results. These keys correspond with the expected keys
+            of ISOFIT's LUT files
+        """
+        name = self.point_to_filename(point)
+        file = os.path.join(self.sim_path, name)
+
+        return self.parse_file(file=file, wl=self.wl, wl_size=self.wl.size)
+
+    def postSim(self):
+        """
+        Update solar_irr after simulations
+        """
+        self.load_esd()
+
+        irr = np.loadtxt(self.engine_config.irradiance_file, comments="#")
+        iwl, irr = irr.T
+        irr = irr / 10.0  # convert, uW/nm/cm2
+        irr = irr / self.irr_factor**2  # consider solar distance
+        solar_irr = resample_spectrum(irr, iwl, self.wl, self.fwhm)
+
+        return {"solar_irr": solar_irr}
+
+    def rebuild_cmd(self, point, wlinf, wlsup) -> str:
+        """Build the simulation command file.
+
+        Args:
+            point (np.array): conditions to alter in simulation
+            wlinf (float):    shortest wavelength to run simulation for
+            wlsup: (float):   longest wavelength to run simulation for
+
+        Returns:
+            str: execution command
+        """
+        # Collect files of interest for this point
+        sixS = os.path.join(self.engine_base_dir, "sixsV2.1")  # 6S Emulator path
+        name = self.point_to_filename(point)
+
+        if self.multipart_transmittance:
+            outp = os.path.join(self.sim_path, name, f"{name}_{wlinf}")  # Output path
+            inpt = os.path.join(self.sim_path, name, f"LUT_{name}_{wlinf}.inp")  # Input path
+            bash = os.path.join(self.sim_path, name, f"LUT_{name}_{wlinf}.sh")  # Script path
+        else:
+            outp = os.path.join(self.sim_path, name)  # Output path
+            inpt = os.path.join(self.sim_path, f"LUT_{name}.inp")  # Input path
+            bash = os.path.join(self.sim_path, f"LUT_{name}.sh")  # Script path
+
+        # Prepare template values
+        vals = {
             "aermodel": 1,
             "AOT550": 0.01,
             "H2OSTR": 0,
             "O3": 0.30,
-            "day": engine_config.day,
-            "month": engine_config.month,
-            "elev": engine_config.elev,
-            "alt": min(engine_config.alt, 99),
+            "day": self.engine_config.day,
+            "month": self.engine_config.month,
+            "elev": self.engine_config.elev,
+            "alt": min(self.engine_config.alt, 99),
             "atm_file": None,
             "abscf_data_directory": None,
-            "wlinf": self.sixs_grid_init[0] / 1000.0,  # convert to nm
-            "wlsup": self.sixs_grid_init[-1] / 1000.0,
+            "wlinf": wlinf / 1000.0,  # convert to nm
+            "wlsup": wlsup / 1000.0,
         }
 
-        if engine_config.obs_file is not None:
-            # A special case where we load the observation geometry
-            # from a custom-crafted text file
-            g = Geometry(obs=engine_config.obs_file)
-            self.params["solzen"] = g.solar_zenith
-            self.params["solaz"] = g.solar_azimuth
-            self.params["viewzen"] = g.observer_zenith
-            self.params["viewaz"] = g.observer_azimuth
-        else:
-            # We have to get geometry from somewhere, so we presume it is
-            # in the configuration file.
-            self.params["solzen"] = engine_config.solzen
-            self.params["viewzen"] = engine_config.viewzen
-            self.params["solaz"] = engine_config.solaz
-            self.params["viewaz"] = engine_config.viewaz
+        # Assume geometry values are provided by the config
+        vals |= {
+            "solzen": self.engine_config.solzen,
+            "viewzen": self.engine_config.viewzen,
+            "solaz": self.engine_config.solaz,
+            "viewaz": self.engine_config.viewaz,
+        }
 
-        if build_lut_only is False:
-            self.esd = np.loadtxt(engine_config.earth_sun_distance_file)
-            dt = datetime(2000, self.params["month"], self.params["day"])
-            self.day_of_year = dt.timetuple().tm_yday
-            self.irr_factor = self.esd[self.day_of_year - 1, 1]
+        # Add the point with its names
+        for key, val in zip(self.lut_names, point):
+            vals[key] = val
 
-            irr = np.loadtxt(engine_config.irradiance_file, comments="#")
-            iwl, irr = irr.T
-            irr = irr / 10.0  # convert, uW/nm/cm2
-            irr = irr / self.irr_factor**2  # consider solar distance
-            self.solar_irr = resample_spectrum(irr, iwl, self.wl, self.fwhm)
+        # Special cases
 
-        if build_lut:
-            self.build_lut()
-
-    def find_basedir(self, config: RadiativeTransferEngineConfig):
-        """Seek out a sixs base directory."""
-
-        if config.engine_base_dir is not None:
-            return config.engine_base_dir
-
-        try:
-            return os.getenv("SIXS_DIR")
-        except KeyError:
-            logging.error("I could not find the SIXS base directory")
-            raise KeyError("I could not find the SIXS base directory")
-
-    def rebuild_cmd(self, point, fn):
-        """."""
-
-        # start with defaults
-        vals = self.params.copy()
-        for n, v in zip(self.lut_names, point):
-            vals[n] = v
-
-        # Translate a couple of special cases
-        if "H2OSTR" in self.lut_names:
+        if "H2OSTR" in vals:
             vals["h2o_mm"] = vals["H2OSTR"] * 10.0
-        if "GNDALT" in vals:
-            vals["elev"] = vals["GNDALT"]
-        if "H1ALT" in vals:
-            vals["alt"] = min(vals["H1ALT"], 99)
-        if "TRUEAZ" in vals:
-            vals["viewaz"] = vals["TRUEAZ"]
-        if "OBSZEN" in vals:
-            vals["viewzen"] = 180 - vals["OBSZEN"]
+
+        if "surface_elevation_km" in vals:
+            vals["elev"] = vals["surface_elevation_km"]
+
+        if "observer_altitude_km" in vals:
+            vals["alt"] = min(vals["observer_altitude_km"], 99)
+
+        if "observer_azimuth" in vals:
+            vals["viewaz"] = vals["observer_azimuth"]
+
+        if "observer_zenith" in vals:
+            vals["viewzen"] = 180 - vals["observer_zenith"]
 
         if self.modtran_emulation:
             if "AERFRAC_2" in vals:
                 vals["AOT550"] = vals["AERFRAC_2"]
 
-        if "elev" in vals:
-            vals["elev"] = vals["elev"] * -1
+        # Write sim files
+        with open(inpt, "w") as f:
+            template = SIXS_TEMPLATE.format(**vals)
+            f.write(template)
 
-        # Check rebuild conditions: LUT is missing or from a different config
-        scriptfilename = "LUT_" + fn + ".sh"
-        scriptfilepath = os.path.join(self.lut_dir, scriptfilename)
-        infilename = "LUT_" + fn + ".inp"
-        infilepath = os.path.join(self.lut_dir, infilename)
-        outfilename = fn
-        outfilepath = os.path.join(self.lut_dir, outfilename)
-        if os.path.exists(outfilepath) and os.path.exists(infilepath):
-            raise FileExistsError("Files exist")
-
-        if self.sixs_dir is None:
-            logging.error("Specify a SixS installation")
-            raise KeyError("Specify a SixS installation")
-
-        sixspath = self.sixs_dir + "/sixsV2.1"
-
-        # write config files
-        sixs_config_str = sixs_template.format(**vals)
-        with open(infilepath, "w") as f:
-            f.write(sixs_config_str)
-
-        # Write runscript file
-        with open(scriptfilepath, "w") as f:
+        with open(bash, "w") as f:
             f.write("#!/usr/bin/bash\n")
-            f.write("%s < %s > %s\n" % (sixspath, infilepath, outfilepath))
+            f.write(f"{sixS} < {inpt} > {outp}\n")
             f.write("cd $cwd\n")
 
-        return "bash " + scriptfilepath
+        return f"bash {bash}"
 
-    def load_rt(self, fn, resample=True):
-        """Load the results of a SixS run."""
-
-        with open(os.path.join(self.lut_dir, fn), "r") as l:
-            lines = l.readlines()
-
-        with open(os.path.join(self.lut_dir, "LUT_" + fn + ".inp"), "r") as l:
-            inlines = l.readlines()
-            solzen = float(inlines[1].strip().split()[0])
-        self.coszen = np.cos(solzen / 360 * 2.0 * np.pi)
-
-        # Strip header
-        for i, ln in enumerate(lines):
-            if ln.startswith("*        trans  down   up"):
-                lines = lines[(i + 1) : (i + 1 + self.sixs_ngrid_init)]
-                break
-
-        solzens = np.zeros(len(lines))
-        sphalbs = np.zeros(len(lines))
-        transups = np.zeros(len(lines))
-        transms = np.zeros(len(lines))
-        rhoatms = np.zeros(len(lines))
-        self.grid = np.zeros(len(lines))
-
-        for i, ln in enumerate(lines):
-            ln = ln.replace("******", "0.0").strip()
-            ln = ln.replace("*", " ").strip()
-
-            w, gt, scad, scau, salb, rhoa, swl, step, sbor, dsol, toar = ln.split()
-
-            self.grid[i] = float(w) * 1000.0  # convert to nm
-            solzens[i] = float(solzen)
-            sphalbs[i] = float(salb)
-            transups[i] = 0.0  # float(scau)
-            transms[i] = float(scau) * float(scad) * float(gt)
-            rhoatms[i] = float(rhoa)
-
-        if resample:
-            solzens = resample_spectrum(solzens, self.grid, self.wl, self.fwhm)
-            rhoatms = resample_spectrum(rhoatms, self.grid, self.wl, self.fwhm)
-            transms = resample_spectrum(transms, self.grid, self.wl, self.fwhm)
-            sphalbs = resample_spectrum(sphalbs, self.grid, self.wl, self.fwhm)
-            transups = resample_spectrum(transups, self.grid, self.wl, self.fwhm)
-
-        results = {
-            "solzen": solzens,
-            "rhoatm": rhoatms,
-            "transm": transms,
-            "sphalb": sphalbs,
-            "transup": transups,
-        }
-        return results
-
-    def ext550_to_vis(self, ext550):
-        """."""
-
-        return np.log(50.0) / (ext550 + 0.01159)
-
-    def build_lut(self, rebuild=False):
-        TabularRT.build_lut(self, rebuild)
-
-        if self.modtran_emulation is False:
-            sixs_outputs = []
-            for point, fn in zip(self.points, self.files):
-                sixs_outputs.append(
-                    self.load_rt(fn, resample=self.resample_wavelengths)
-                )
-
-            self.cache = {}
-            dims_aug = self.lut_dims + [self.n_chan]
-            for key in self.lut_quantities:
-                temp = np.zeros(dims_aug, dtype=float)
-                for sixs_output, point in zip(sixs_outputs, self.points):
-                    ind = [np.where(g == p)[0] for g, p in zip(self.lut_grids, point)]
-                    ind = tuple(ind)
-                    temp[ind] = sixs_output[key]
-
-                self.luts[key] = VectorInterpolator(
-                    self.lut_grids, temp, self.lut_interp_types, self.interpolator_style
-                )
-        else:
-            one_file = self.load_rt(self.files[0], resample=False)
-
-    def _lookup_lut(self, point):
-        ret = {}
-        for key, lut in self.luts.items():
-            ret[key] = np.array(lut(point)).ravel()
-        return ret
-
-    def get(self, x_RT: np.array, geom: Geometry):
-        """Get interpolated six-s results at a particular location
-
-        Args:
-            x_RT: radiative-transfer portion of the statevector
-            geom: local geometry conditions for lookup
-
-        Returns:
-            interpolated modtran result
-
+    def load_esd(self):
         """
-        point = np.zeros((self.n_point,))
-        for point_ind, name in enumerate(self.lut_grid_config):
-            if name in self.statevector_names:
-                ix = self.statevector_names.index(name)
-                point[point_ind] = x_RT[ix]
-            elif name == "elev":
-                point[point_ind] = geom.surface_elevation_km
-            elif name == "alt":
-                point[point_ind] = min(geom.observer_altitude_km, 99)
-            elif name == "viewzen":
-                point[point_ind] = geom.observer_zenith
-            elif name == "viewaz":
-                point[point_ind] = geom.observer_azimuth
-            elif name == "solaz":
-                point[point_ind] = geom.solar_azimuth
-            elif name == "solzen":
-                point[point_ind] = geom.solar_zenith
-            elif name == "phi":
-                point[point_ind] = geom.phi
-            elif name == "umu":
-                point[point_ind] = geom.umu
-            else:
-                # If a variable is defined in the lookup table but not
-                # specified elsewhere, we will default to the minimum
-                point[point_ind] = min(self.lut_grid_config[name])
+        Loads the earth-sun distance file
+        """
+        self.esd = np.loadtxt(self.earth_sun_distance_path)
+        dt = datetime(2000, self.engine_config.month, self.engine_config.day)
+        self.day_of_year = dt.timetuple().tm_yday
+        self.irr_factor = self.esd[self.day_of_year - 1, 1]
 
-        return self._lookup_lut(point)
+    @staticmethod
+    def parse_file(file, wl, wl_size=0) -> dict:
+        """
+        Parses a 6S sim file
 
-    def get_L_atm(self, x_RT, geom):
-        r = self.get(x_RT, geom)
-        rho = r["rhoatm"]
-        rdn = rho / np.pi * (self.solar_irr * self.coszen)
-        return rdn
+        Parameters
+        ----------
+        file: str
+            Path to simulation file to parse
+        wl: np.array
+            Simulation wavelengths
+        wl_size: int, default=0
+            Size of the wavelengths dim, will trim data to this size. If zero, does no
+            trimming
 
-    def get_L_down_transmitted(self, x_RT, geom):
-        r = self.get(x_RT, geom)
-        rdn = (self.solar_irr * self.coszen) / np.pi * r["transm"]
-        return rdn
+        Returns
+        -------
+        data: dict
+            Simulated data results. These keys correspond with the expected keys
+            of ISOFIT's LUT files
+
+        Examples
+        --------
+        >>> from isofit.radiative_transfer.six_s import SixSRT
+        >>> SixSRT.parse_file('isofit/examples/20151026_SantaMonica/lut/AOT550-0.0000_H2OSTR-0.5000', wl_size=3)
+        {'sphalb': array([0.3116, 0.3057, 0.2999]),
+         'rhoatm': array([0.2009, 0.1963, 0.1916]),
+         'transm_down_dif': array([0.53211358, 0.53993346, 0.54736113]),
+         'solzen': 55.21,
+         'coszen': 0.5705702414191993}
+        """
+        path, name = os.path.split(file)
+
+        # multipart transmittance mode
+        if os.path.isdir(file):
+            # in multipart transmittance mode, we need to read 6s results for ech wavelength separately
+            # extractions from the 6s output file include TOA solar irradiance,
+            # as well as direct and diffuse incoming flux at the surface
+            sza = None
+            I = np.zeros(len(wl))
+            Edir = np.zeros(len(wl))
+            Edif = np.zeros(len(wl))
+            rhoatm = np.zeros(len(wl))
+            sphalb = np.zeros(len(wl))
+            gt = np.zeros(len(wl))
+            scat = np.zeros(len(wl))
+
+            for ind, sim in enumerate(wl):
+                file_dir = os.path.join(file, f"{name}_{sim}")
+
+                with open(file_dir, "r") as f:
+                    lines = f.readlines()
+
+                values = {}
+                current = 0
+
+                extractors = {
+                    "solar zenith angle": (current, 4, "solar_zenith_angle", float),
+                    "swl": (3, 6, "TOA_solar_irradiance", float),
+                    "direct solar irr.": (1, 1, "direct_solar_irradiance", float),
+                    "atm. diffuse irr.": (1, 2, "diffuse_solar_irradiance", float),
+                    "atm. intrin. ref.": (1, 1, "path_reflectance", float),
+                    "spherical albedo": (0, 6, "spherical_albedo", float),
+                    "global gas. trans.": (0, 6, "upward_gas_transmittance", float),
+                    "total  sca.": (0, 6, "upward_scattering_transmittance", float)
+                }
+
+                for index in range(len(lines)):
+                    current_line = lines[index]
+
+                    for label, details in extractors.items():
+                        if label.lower() in current_line.lower():
+                            # See if the data is in the current line (as specified above)
+                            if details[0] == current:
+                                extracting_line = current_line
+                            # Otherwise, work out which line to use and get it
+                            else:
+                                extracting_line = lines[index + details[0]]
+
+                            funct = details[3]
+                            items = extracting_line.split()
+                            a = details[1]
+                            data_for_func = items[a]
+                            values[details[2]] = funct(data_for_func)
+
+                sza = values["solar_zenith_angle"]
+                I[ind] = values["TOA_solar_irradiance"]
+                Edir[ind] = values["direct_solar_irradiance"]
+                Edif[ind] = values["diffuse_solar_irradiance"]
+                rhoatm[ind] = values["path_reflectance"]
+                sphalb[ind] = values["spherical_albedo"]
+                gt[ind] = values["upward_gas_transmittance"]
+                scat[ind] = values["upward_scattering_transmittance"]
+
+            # some very little algebra to get needed atmospheric functions
+            coszen = np.cos(np.deg2rad(sza))
+            t_dir_down = Edir / I / coszen
+            t_dif_down = Edif / I / coszen
+            t_up_total = gt * scat
+
+            data = {
+                "transm_down_dir": t_dir_down,
+                "transm_down_dif": t_dif_down,
+                "transm_up_dir": t_up_total,
+                "rhoatm": rhoatm,
+                "sphalb": sphalb
+            }
+
+            total = len(wl)
+            if total < wl_size:
+                Logger.error(
+                    f"The following file parsed shorter than expected ({wl_size}), got ({total}): {file}"
+                )
+
+            # Cast to numpy and trim excess
+            data = {k: np.array(v) for k, v in data.items()}
+            if wl_size > 0:
+                data = {k: v[:wl_size] for k, v in data.items()}
+
+            # Add extras
+            data["solzen"] = sza
+            data["coszen"] = coszen
+        else:
+            path, name = os.path.split(file)
+
+            inpt = os.path.join(path, f"LUT_{name}.inp")
+
+            with open(file, "r") as f:
+                lines = f.readlines()
+
+            with open(inpt, "r") as f:
+                solzen = float(f.readlines()[1].strip().split()[0])
+            coszen = np.cos(solzen / 360 * 2.0 * np.pi)
+
+            # `data` stores the return values, `append` will append to existing keys and creates them if they don't
+            # Easy append to keys whether they exist or not
+            data = {}
+            append = lambda key, val: data.setdefault(key, []).append(val)
+
+            start = None
+            for end, line in enumerate(lines):
+                if start is not None:
+                    # Find all ints/floats for this line
+                    tokens = re.findall(r"NaN|\d+\.?\d+", line.replace("******", "0.0"))
+
+                    # End of table
+                    if len(tokens) != 11:
+                        break
+
+                    (  # Split the tokens
+                        w,
+                        gt,
+                        scad,
+                        scau,
+                        salb,
+                        rhoa,
+                        swl,
+                        step,
+                        sbor,
+                        dsol,
+                        toar,
+                    ) = tokens
+
+                    # Preprocess the tokens and prepare to save them to LUT
+                    # transm = float(scau) * float(scad) * float(gt)
+
+                    append("grid", float(w))
+                    append("sphalb", float(salb))
+                    append("rhoatm", float(rhoa))
+                    append("transm_down_dif", float(scau) * float(scad) * float(gt))
+                    # REVIEW: How should these be populated?
+                    # append("transm_down_dir", None)
+                    # append("transm_up_dir", None)
+                    # append("transm_up_dif", None)
+
+                # Found beginning of table
+                elif line.startswith("*        trans  down   up"):
+                    start = end
+
+            if start is None:
+                Logger.error(f"Failed to parse any data for point: {point}")
+                return {}
+
+            total = len(data["grid"])
+            if total < wl_size:
+                Logger.error(
+                    f"The following file parsed shorter than expected ({wl_size}), got ({total}): {file}"
+                )
+
+            # Cast to numpy and trim excess
+            data = {k: np.array(v) for k, v in data.items()}
+            if wl_size > 0:
+                data = {k: v[:wl_size] for k, v in data.items()}
+
+            # Add extras
+            data["solzen"] = solzen
+            data["coszen"] = coszen
+
+            # Remove before saving to LUT file since this doesn't go in there
+            data.pop("grid")
+
+        return data

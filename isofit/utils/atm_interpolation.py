@@ -30,7 +30,7 @@ from scipy.spatial import KDTree
 from spectral.io import envi
 
 from isofit import ray
-from isofit.core.common import envi_header
+from isofit.core.common import envi_header, ray_initiate
 from isofit.core.fileio import write_bil_chunk
 from isofit.core.forward import ForwardModel
 
@@ -298,8 +298,7 @@ def atm_interpolation(
 
     # Initialize ray cluster
     start_time = time.time()
-    ray.init(ignore_reinit_error=True, local_mode=n_cores == 1)
-
+    ray_initiate({'ignore_reinit_error': True, 'local_mode': n_cores ==1})
     atexit.register(ray.shutdown)
 
     n_ray_cores = int(ray.available_resources()["CPU"])
@@ -325,11 +324,11 @@ def atm_interpolation(
         loglevel,
         logfile,
     )
-    results = [
+    jobs = [
         _run_chunk.remote(line_sections[l], line_sections[l + 1], *args)
         for l in range(len(line_sections) - 1)
     ]
-    _ = ray.get(results)
+    _ = [ray.get(jid) for jid in jobs] 
 
     total_time = time.time() - start_time
     logging.info(
@@ -367,3 +366,4 @@ def atm_interpolation(
 
     atm_img = atm_img.transpose((0, 2, 1))
     write_bil_chunk(atm_img, output_atm_file, 0, atm_img.shape)
+    ray.shutdown()

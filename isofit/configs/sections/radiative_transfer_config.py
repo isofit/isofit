@@ -41,11 +41,15 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
 
         self._engine_name_type = str
         self.engine_name = None
-        """str: Name of radiative transfer engine to use - options ['modtran', 'libradtran', '6s']."""
+        """str: Name of radiative transfer engine to use - options ['modtran', '6s', 'sRTMnet']."""
 
         self._engine_base_dir_type = str
         self.engine_base_dir = None
         """str: base directory of the given radiative transfer engine on user's OS."""
+
+        self._engine_lut_file_type = str
+        self.engine_lut_file = None
+        """str: File containing the prebuilt LUT file (hdf5)."""
 
         self._wavelength_file_type = str
         self.wavelength_file = None
@@ -63,13 +67,28 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         self.lut_path = None
         """str: The path to the look up table directory used by the radiative transfer engine."""
 
+        self._sim_path_type = str
+        self.sim_path = None
+        """str: Path to the simulation outputs for the radiative transfer engine."""
+
         self._template_file_type = str
         self.template_file = None
         """str: A template file to be used as the base-configuration for the given radiative transfer engine."""
 
-        self._lut_names_type = list()
+        self._treat_as_emissive_type = bool
+        self.treat_as_emissive = False
+        """bool: Run the simulation in emission mode"""
+
+        self._topography_model_type = bool
+        self.topography_model = False
+        """
+        Flag to indicated whether to use a topographic-flux (topoflux)
+        implementation of the forward model.
+        """
+
+        self._lut_names_type = dict()
         self.lut_names = None
-        """List: Names of the elements to run this radiative transfer element on.  Must be a subset
+        """Dictionary: Names of the elements to run this radiative transfer element on.  Must be a subset
         of the keys in radiative_transfer->lut_grid.  If not specified, uses all keys from
         radiative_transfer-> lut_grid.  Auto-sorted (alphabetically) below."""
 
@@ -155,7 +174,9 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         self.set_config_options(sub_configdic)
 
         if self.lut_names is not None:
-            self.lut_names.sort()
+            keys = list(self.lut_names.keys())
+            keys.sort()
+            self.lut_names = {i: self.lut_names[i] for i in keys}
 
         if self.statevector_names is not None:
             self.statevector_names.sort()
@@ -181,7 +202,7 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
                         )
                     )
 
-        valid_rt_engines = ["modtran", "libradtran", "6s", "sRTMnet"]
+        valid_rt_engines = ["modtran", "6s", "sRTMnet"]
         if self.engine_name not in valid_rt_engines:
             errors.append(
                 "radiative_transfer->raditive_transfer_model: {} not in one of the"
@@ -245,23 +266,6 @@ class RadiativeTransferConfig(BaseConfigSection):
     """
 
     def __init__(self, sub_configdic: dict = None):
-        super().__init__()
-        self._topography_model_type = bool
-        self.topography_model = False
-        """
-        Flag to indicate whether to use topographic-flux (topoflux)
-        implementation of the forward model. Only currently functional
-        with multipart MODTRAN
-        """
-
-        self._glint_model_type = bool
-        self.glint_model = False
-        """
-        Flag to indicate whether to use the sun and sky glint model from
-        Gege (2012, 2014) in the forward model. Only currently functional
-        with multipart MODTRAN
-        """
-
         self._statevector_type = StateVectorConfig
         self.statevector: StateVectorConfig = StateVectorConfig({})
 

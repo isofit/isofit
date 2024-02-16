@@ -29,6 +29,7 @@ import numpy as np
 
 from isofit import ray
 from isofit.configs import configs
+from isofit.core.common import ray_initiate
 from isofit.core.fileio import IO
 from isofit.core.forward import ForwardModel
 from isofit.inversion.inverse import Inversion
@@ -84,14 +85,16 @@ class Isofit:
         ):
             rayargs["num_cpus"] = self.config.implementation.n_cores
 
-        ray.init(**rayargs)
+        ray_initiate(rayargs)
 
         self.workers = None
 
     def __del__(self):
         try:
             ray.shutdown()
+            self.workers = None
         except:
+            logging.error('Isofit Object Deletion unsuccessful')
             return
 
     def run(self, row_column=None):
@@ -113,7 +116,7 @@ class Isofit:
         """
 
         logging.info("Building first forward model, will generate any necessary LUTs")
-        fm = ForwardModel(self.config)
+        self.fm = fm = ForwardModel(self.config)
         if row_column is not None:
             ranges = row_column.split(",")
             if len(ranges) == 1:
@@ -260,13 +263,12 @@ class Worker(object):
                 try:
                     self.io.write_spectrum(row, col, states, self.fm, self.iv)
                 except ValueError as err:
-                    logging.info(
+                    logging.exception(
                         f"""
-                        Encountered the following ValueError in (row,col) ({row},{col}).
-                        Results for this pixel will be all zeros.
-                        """
+                    Encountered the following ValueError in (row,col) ({row},{col}).
+                    Results for this pixel will be all zeros.
+                    """
                     )
-                    logging.error(err)
 
                 if index % 100 == 0:
                     if (
@@ -284,11 +286,10 @@ class Worker(object):
                             f" {self.completed_spectra}/~{self.approximate_total_spectra}::"
                             f" {percent}% complete"
                         )
-                    else:
-                        logging.info(
-                            f"Worker at start location ({row},{col}) completed"
-                            f" {index}/{indices.shape[0]}"
-                        )
+        logging.info(
+            f"Worker at start location ({row},{col}) completed"
+            f" {index}/{indices.shape[0]}"
+        )
 
         self.io.flush_buffers()
 

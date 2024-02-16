@@ -93,7 +93,6 @@ def heuristic_atmosphere(
             continue
 
         # find the index in the lookup table associated with water vapor
-        ind_lut = my_RT.lut_names.index(h2oname)
         ind_sv = RT.statevec_names.index(h2oname)
         h2os, ratios = [], []
 
@@ -101,13 +100,15 @@ def heuristic_atmosphere(
         # calculating the band ratio that we would see if this were the
         # atmospheric H2O content.  It assumes that defaults for all other
         # atmospheric parameters (such as aerosol, if it is there).
-        for h2o in my_RT.lut_grids[ind_lut]:
+        for h2o in my_RT.lut_grid[h2oname]:
             # Get Atmospheric terms at high spectral resolution
             x_RT_2 = x_RT.copy()
             x_RT_2[ind_sv] = h2o
             rhi = RT.get_shared_rtm_quantities(x_RT_2, geom)
             rhoatm = instrument.sample(x_instrument, RT.wl, rhi["rhoatm"])
-            transm = instrument.sample(x_instrument, RT.wl, rhi["transm"])
+            transm = instrument.sample(
+                x_instrument, RT.wl, rhi["transm_down_dif"]
+            )  # REVIEW: This was changed from transm as we're deprecating the key
             sphalb = instrument.sample(x_instrument, RT.wl, rhi["sphalb"])
             solar_irr = instrument.sample(x_instrument, RT.wl, RT.solar_irr)
 
@@ -163,10 +164,14 @@ def invert_algebraic(
     rhi = RT.get_shared_rtm_quantities(x_RT, geom)
     wl, fwhm = instrument.calibration(x_instrument)
     rhoatm = instrument.sample(x_instrument, RT.wl, rhi["rhoatm"])
-    transm = instrument.sample(x_instrument, RT.wl, rhi["transm"])
+    transm = instrument.sample(
+        x_instrument, RT.wl, rhi["transm_down_dif"]
+    )  # REVIEW: Changed from transm
     solar_irr = instrument.sample(x_instrument, RT.wl, RT.solar_irr)
     sphalb = instrument.sample(x_instrument, RT.wl, rhi["sphalb"])
-    transup = instrument.sample(x_instrument, RT.wl, rhi["transup"])
+    transup = instrument.sample(
+        x_instrument, RT.wl, rhi["transm_up_dir"]
+    )  # REVIEW: Changed from transup
     coszen = RT.coszen
 
     # Prevent NaNs
@@ -477,8 +482,8 @@ def invert_simple(forward: ForwardModel, meas: np.array, geom: Geometry):
     x[forward.idx_surface] = x_surface
 
     # If available, get initial guess of surface elevation from location file.
-    if geom.surface_elevation_km and "GNDALT" in RT.statevec_names:
-        ind_sv = forward.idx_RT[RT.statevec_names.index("GNDALT")]
+    if geom.surface_elevation_km and "surface_elevation_km" in RT.statevec_names:
+        ind_sv = forward.idx_RT[RT.statevec_names.index("surface_elevation_km")]
         if geom.surface_elevation_km < 0.0:
             x[ind_sv] = 0.0
         else:
