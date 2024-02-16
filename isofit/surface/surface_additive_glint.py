@@ -26,7 +26,7 @@ from ..core.common import eps
 from .surface_thermal import ThermalSurface
 
 
-class GlintSurface(ThermalSurface):
+class AdditiveGlintSurface(ThermalSurface):
     """A model of the surface based on a collection of multivariate
     Gaussians, extended with a surface glint term."""
 

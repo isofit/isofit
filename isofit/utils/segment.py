@@ -28,7 +28,7 @@ from skimage.segmentation import slic
 from spectral.io import envi
 
 from isofit import ray
-from isofit.core.common import envi_header
+from isofit.core.common import envi_header, ray_initiate
 
 
 @ray.remote
@@ -208,7 +208,7 @@ def segment(
     if ray_ip_head is None and ray_redis_password is None:
         rayargs["num_cpus"] = n_cores
 
-    ray.init(**rayargs)
+    ray_initiate(rayargs)
     atexit.register(ray.shutdown)
 
     # Iterate through image "chunks," segmenting as we go
@@ -271,3 +271,4 @@ def segment(
     lbl_mm = lbl_img.open_memmap(interleave="source", writable=True)
     lbl_mm[:, :] = np.array(all_labels, dtype=np.float32).reshape((nl, 1, ns))
     del lbl_mm
+    ray.shutdown()

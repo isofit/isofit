@@ -28,7 +28,7 @@
     },
 
     "surface": {
-      "surface_category": "glint_surface",
+      "surface_category": "additive_glint_surface",
       "select_on_init":true,
       "selection_metric":"Euclidean",
       "surface_file": "../input/ecostress_surface_model.mat"

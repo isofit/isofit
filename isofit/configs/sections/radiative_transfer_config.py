@@ -34,6 +34,7 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
     """
 
     def __init__(self, sub_configdic: dict = None, name: str = None):
+        super().__init__()
         self._name_type = str
         self.name = name
         """str: Name of config - optional, and not currently used."""
@@ -247,6 +248,7 @@ class RadiativeTransferUnknownsConfig(BaseConfigSection):
     """
 
     def __init__(self, sub_configdic: dict = None):
+        super().__init__()
         self._H2O_ABSCO_type = float
         self.H2O_ABSCO = None
 

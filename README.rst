@@ -2,6 +2,11 @@
 ISOFIT - Imaging Spectrometer Optimal FITting
 =============================================
 
+Welcome to ISOFIT 3x.  This is a major update to the ISOFIT codebase, and is not backwards compatible with ISOFIT 2.x.
+To view the previous version of isofit, please see `dev_2x <https://github.com/isofit/isofit/tree/dev_2x>`__. Updates
+and performance enhancements are still underway, but testing and feedback are encouraged!
+
+
 ISOFIT contains a set of routines and utilities for fitting surface, atmosphere and instrument models to imaging
 spectrometer data. It is written primarily in Python, with JSON format configuration files and some dependencies on
 widely-available numerical and scientific libraries such as scipy, numpy, and scikit-learn. It is designed for maximum

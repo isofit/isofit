@@ -22,7 +22,6 @@ import logging
 import time
 from typing import List
 
-import matplotlib
 import numpy as np
 import pylab as plt
 from scipy.linalg import inv
@@ -31,10 +30,9 @@ from scipy.spatial import KDTree
 from spectral.io import envi
 
 from isofit import ray
-from isofit.configs import configs
-from isofit.core.common import envi_header
+from isofit.core.common import envi_header, ray_initiate
 from isofit.core.fileio import write_bil_chunk
-from isofit.core.instrument import Instrument
+from isofit.core.forward import ForwardModel
 
 plt.switch_backend("Agg")
 
@@ -48,31 +46,26 @@ def _run_chunk(
     input_locations_file: str,
     segmentation_file: str,
     output_atm_file: str,
-    nneighbors: List,
+    atm_band_names: list,
+    nneighbors: list,
     nodata_value: float,
     loglevel: str,
     logfile: str,
 ) -> None:
     """
     Args:
-        start_line: line to start empirical line run at
-        stop_line:  line to stop empirical line run at
-        reference_radiance_file: source file for radiance (interpolation built from this)
-        reference_reflectance_file:  source file for reflectance (interpolation built from this)
-        reference_uncertainty_file:  source file for uncertainty (interpolation built from this)
-        reference_locations_file:  source file for file locations (lon, lat, elev), (interpolation built from this)
-        input_radiance_file: input radiance file (interpolate over this)
-        input_locations_file: input location file (interpolate over this)
-        segmentation_file: input file noting the per-pixel segmentation used
-        isofit_config: path to isofit configuration JSON file
-        output_reflectance_file: location to write output reflectance to
-        output_uncertainty_file: location to write output uncertainty to
-        radiance_factors: radiance adjustment factors
-        nneighbors: number of neighbors to use for interpolation
-        nodata_value: nodata value of input and output
-        loglevel: logging level
-        logfile: logging file
-
+        start_line:               line to start empirical line run at
+        stop_line:                line to stop empirical line run at
+        reference_state_file:     source file for retrieved superpixel state
+        reference_locations_file: source file for file locations (lon, lat, elev), (interpolation built from this)
+        input_locations_file:     input location file (interpolate over this)
+        segmentation_file:        input file noting the per-pixel segmentation used
+        output_atm_file:          output file for interpolated and smoothed per pixel atmospheric state
+        atm_band_names:           names of atmospheric state parameters
+        nneighbors:               number of neighbors to use for interpolation
+        nodata_value:             nodata value of input and output
+        loglevel:                 logging level
+        logfile:                  logging file
     Returns:
         None
     """
@@ -103,8 +96,6 @@ def _run_chunk(
     n_input_samples = input_locations_img.shape[1]
     n_input_lines = input_locations_img.shape[0]
 
-    # Load output images
-
     # Load reference data
     reference_locations_mm = reference_locations_img.open_memmap(
         interleave="bip", writable=False
@@ -114,7 +105,9 @@ def _run_chunk(
     )
 
     atm_bands = np.where(
-        np.array([x[:4] != "RFL_" for x in reference_state_img.metadata["band names"]])
+        np.array(
+            [x in atm_band_names for x in reference_state_img.metadata["band names"]]
+        )
     )[0]
     n_atm_bands = len(atm_bands)
     reference_state_mm = reference_state_img.open_memmap(
@@ -233,40 +226,40 @@ def _run_chunk(
 def atm_interpolation(
     reference_state_file: str,
     reference_locations_file: str,
-    segmentation_file: str,
     input_locations_file: str,
+    segmentation_file: str,
     output_atm_file: str,
-    nneighbors: List = [400],
+    atm_band_names: list,
+    nneighbors: list = None,
     nodata_value: float = -9999.0,
     loglevel: str = "INFO",
     logfile: str = None,
     n_cores: int = -1,
-    gaussian_smoothing_sigma=[2],
+    gaussian_smoothing_sigma: list = None,
 ) -> None:
     """
-    Perform an empirical line interpolation for reflectance and uncertainty extrapolation
+    Perform an empirical line interpolation and gaussian smoothing to atmospheric parameters.
     Args:
-        reference_radiance_file: source file for radiance (interpolation built from this)
-        reference_reflectance_file:  source file for reflectance (interpolation built from this)
-        reference_uncertainty_file:  source file for uncertainty (interpolation built from this)
-        reference_locations_file:  source file for file locations (lon, lat, elev), (interpolation built from this)
-        segmentation_file: input file noting the per-pixel segmentation used
-        input_radiance_file: input radiance file (interpolate over this)
-        input_locations_file: input location file (interpolate over this)
-        output_reflectance_file: location to write output reflectance to
-        output_uncertainty_file: location to write output uncertainty to
-
-        nneighbors: number of neighbors to use for interpolation
-        nodata_value: nodata value of input and output
-        loglevel: logging level
-        logfile: logging file
-        radiance_factors: radiance adjustment factors
-        isofit_config: path to isofit configuration JSON file
-        n_cores: number of cores to run on
-        reference_class_file: optional source file for sub-type-classifications, in order: [base, cloud, water]
+        reference_state_file:     source file for retrieved superpixel state
+        reference_locations_file: source file for file locations (lon, lat, elev), (interpolation built from this)
+        input_locations_file:     input location file (interpolate over this)
+        segmentation_file:        input file noting the per-pixel segmentation used
+        output_atm_file:          output file for interpolated and smoothed per pixel atmospheric state
+        atm_band_names:           names of atmospheric state parameters
+        nneighbors:               number of neighbors to use for interpolation
+        nodata_value:             nodata value of input and output
+        loglevel:                 logging level
+        logfile:                  logging file
+        n_cores:                  number of cores to run on
+        gaussian_smoothing_sigma: sigma value to apply to gaussian smoothing of atmospheric parameters
     Returns:
         None
     """
+    if nneighbors is None:
+        nneighbors = [400]
+    if gaussian_smoothing_sigma is None:
+        gaussian_smoothing_sigma = [2]
+
     logging.basicConfig(
         format="%(levelname)s:%(asctime)s ||| %(message)s",
         level=loglevel,
@@ -286,14 +279,11 @@ def atm_interpolation(
     output_metadata["lines"] = input_locations_img.metadata["lines"]
     output_metadata["samples"] = input_locations_img.metadata["samples"]
 
-    band_names = [
-        x for x in reference_state_img.metadata["band names"] if x[:4] != "RFL_"
-    ]
-    output_metadata["band names"] = band_names
+    output_metadata["band names"] = atm_band_names
     output_metadata["description"] = "Interpolated atmospheric state"
-    output_metadata["bands"] = len(band_names)
+    output_metadata["bands"] = len(atm_band_names)
     output_metadata["bbl"] = (
-        "{" + ",".join([str(1) for n in range(len(band_names))]) + "}"
+        "{" + ",".join([str(1) for n in range(len(atm_band_names))]) + "}"
     )
 
     del output_metadata["fwhm"]
@@ -308,8 +298,7 @@ def atm_interpolation(
 
     # Initialize ray cluster
     start_time = time.time()
-    ray.init(ignore_reinit_error=True, local_mode=n_cores == 1)
-
+    ray_initiate({'ignore_reinit_error': True, 'local_mode': n_cores ==1})
     atexit.register(ray.shutdown)
 
     n_ray_cores = int(ray.available_resources()["CPU"])
@@ -329,16 +318,17 @@ def atm_interpolation(
         input_locations_file,
         segmentation_file,
         output_atm_file,
+        atm_band_names,
         nneighbors,
         nodata_value,
         loglevel,
         logfile,
     )
-    results = [
+    jobs = [
         _run_chunk.remote(line_sections[l], line_sections[l + 1], *args)
         for l in range(len(line_sections) - 1)
     ]
-    _ = ray.get(results)
+    _ = [ray.get(jid) for jid in jobs] 
 
     total_time = time.time() - start_time
     logging.info(
@@ -376,3 +366,4 @@ def atm_interpolation(
 
     atm_img = atm_img.transpose((0, 2, 1))
     write_bil_chunk(atm_img, output_atm_file, 0, atm_img.shape)
+    ray.shutdown()

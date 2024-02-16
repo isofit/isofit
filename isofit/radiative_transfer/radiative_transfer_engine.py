@@ -27,9 +27,9 @@ from typing import Callable
 
 import numpy as np
 import ray
+import xarray as xr
 
 import isofit
-from isofit.configs import Config
 from isofit.configs.sections.radiative_transfer_config import (
     RadiativeTransferEngineConfig,
 )
@@ -175,6 +175,14 @@ class RadiativeTransferEngine:
             self.lut = luts.load(lut_path, subset=engine_config.lut_names)
             self.lut_grid = lut_grid or luts.extractGrid(self.lut)
             self.points, self.lut_names = luts.extractPoints(self.lut)
+
+            # if necessary, resample prebuilt LUT to desired instrument spectral response
+            if not all(wl == self.wl):
+                conv = xr.Dataset(coords={'wl': wl, 'point': self.lut.point})
+                for quantity in self.lut:
+                    conv[quantity] = (('wl', 'point'),
+                                      common.resample_spectrum(self.lut[quantity].data, self.wl, wl, fwhm))
+                self.lut = conv
         else:
             Logger.info(f"No LUT store found, beginning initialization and simulations")
             # Check if both wavelengths and fwhm are provided for building the LUT
@@ -224,6 +232,7 @@ class RadiativeTransferEngine:
 
         # Simple 1-item cache for rte.interpolate()
         self.cached = SimpleNamespace(point=np.array([]))
+        Logger.debug(f"LUTs fully loaded")
 
         # Attach interpolators
         if build_interpolators:
@@ -243,6 +252,7 @@ class RadiativeTransferEngine:
             }
             # If it wasn't a geom key, it's x_RT
             self.indices.x_RT = list(set(range(self.n_point)) - set(self.indices.geom))
+            Logger.debug(f"Interpolators built")
 
     def __getitem__(self, key):
         """
