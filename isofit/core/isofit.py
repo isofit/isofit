@@ -94,7 +94,7 @@ class Isofit:
             ray.shutdown()
             self.workers = None
         except:
-            logging.error('Isofit Object Deletion unsuccessful')
+            logging.error("Isofit Object Deletion unsuccessful")
             return
 
     def run(self, row_column=None):

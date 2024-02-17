@@ -24,13 +24,11 @@ from types import SimpleNamespace
 import numpy as np
 
 from isofit.configs import Config
-from isofit.configs.sections.radiative_transfer_config import (
-    RadiativeTransferEngineConfig,
-)
 from isofit.core.geometry import Geometry
 
 from ..core.common import eps
 from ..radiative_transfer.modtran import ModtranRT
+from ..radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
 from ..radiative_transfer.six_s import SixSRT
 from ..radiative_transfer.sRTMnet import SimulatedModtranRT
 
@@ -39,6 +37,7 @@ RTE = {
     "modtran": ModtranRT,
     "6s": SixSRT,
     "sRTMnet": SimulatedModtranRT,
+    "KernelFlowsGP": RadiativeTransferEngine,
 }
 
 
@@ -107,6 +106,7 @@ class RadiativeTransfer:
 
         # If any engine is true, self is true
         self.topography_model = any([rte.topography_model for rte in self.rt_engines])
+        self.glint_model = any([rte.glint_model for rte in self.rt_engines])
 
         # The rest of the code relies on sorted order of the individual RT engines which cannot
         # be guaranteed by the dict JSON or YAML input
@@ -167,7 +167,7 @@ class RadiativeTransfer:
             if "coszen" in child.lut:
                 return child.lut.coszen.data
 
-    def calc_rdn(self, x_RT, rfl, Ls, geom):
+    def calc_rdn(self, x_RT, x_surface, rfl, Ls, geom):
         r = self.get_shared_rtm_quantities(x_RT, geom)
         L_atm = self.get_L_atm(x_RT, geom)
         L_up = Ls * (r["transm_up_dir"] + r["transm_up_dif"])
@@ -251,8 +251,9 @@ class RadiativeTransfer:
                 L_atms.append(rdn)
             else:
                 r = RT.get(x_RT, geom)
-                rho = r["rhoatm"]
-                rdn = rho / np.pi * (self.solar_irr * self.coszen)
+                rdn = r["rhoatm"]
+                if RT.engine_config.engine_name != "KernelFlowsGP":
+                    rdn = rdn / np.pi * (self.solar_irr * self.coszen)
                 L_atms.append(rdn)
         return np.hstack(L_atms)
 
@@ -276,15 +277,15 @@ class RadiativeTransfer:
                 L_downs.append(rdn)
             else:
                 r = RT.get(x_RT, geom)
-                rdn = (
-                    (self.solar_irr * self.coszen)
-                    / np.pi
-                    * (r["transm_down_dir"] + r["transm_down_dif"])
-                )
+                rdn = r["transm_down_dir"] + r["transm_down_dif"]
+                if RT.engine_config.engine_name != "KernelFlowsGP":
+                    rdn = (self.solar_irr * self.coszen) / np.pi * rdn
                 L_downs.append(rdn)
         return np.hstack(L_downs)
 
-    def drdn_dRT(self, x_RT, rfl, drfl_dsurface, Ls, dLs_dsurface, geom: Geometry):
+    def drdn_dRT(
+        self, x_RT, x_surface, rfl, drfl_dsurface, Ls, dLs_dsurface, geom: Geometry
+    ):
         # first the rdn at the current state vector
         rdn = self.calc_rdn(x_RT, x_surface, rfl, Ls, geom)
 

@@ -3,10 +3,8 @@
 # Authors: Philip G. Brodrick and Niklas Bohn
 #
 
-import argparse
 import json
 import logging
-import multiprocessing
 import os
 import subprocess
 from datetime import datetime
@@ -17,7 +15,6 @@ from typing import List
 
 import netCDF4 as nc
 import numpy as np
-import utm
 from sklearn import mixture
 from spectral.io import envi
 
@@ -1060,14 +1057,18 @@ def build_main_config(
             ][key] = get_lut_subset(aerosol_lut_grid[key])
 
         rm_keys = []
-        for key, item in radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"].items():
+        for key, item in radiative_transfer_config["radiative_transfer_engines"][
+            "vswir"
+        ]["lut_names"].items():
             if key not in ncds.variables:
                 logging.warning(
                     f"Key {key} not found in prebuilt LUT, removing it from LUT.  Spacing would have been: {item}"
                 )
                 rm_keys.append(key)
-        for key in rm_keys: 
-            del radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"][key]
+        for key in rm_keys:
+            del radiative_transfer_config["radiative_transfer_engines"]["vswir"][
+                "lut_names"
+            ][key]
 
     # MODTRAN should know about our whole LUT grid and all of our statevectors, so copy them in
     radiative_transfer_config["radiative_transfer_engines"]["vswir"][
@@ -1497,7 +1498,7 @@ def define_surface_types(
         fwhm = fwhm * 1000
 
     irr_file = os.path.join(
-        os.path.dirname(isofit.__file__), "..", "..", "data", "kurudz_0.1nm.dat"
+        os.path.dirname(isofit.__file__), "..", "..", "data", "kurucz_0.1nm.dat"
     )
     irr_wl, irr = np.loadtxt(irr_file, comments="#").T
     irr = irr / 10  # convert to uW cm-2 sr-1 nm-1

@@ -22,6 +22,7 @@
 import logging
 import os
 import time
+from itertools import product
 from types import SimpleNamespace
 from typing import Callable
 
@@ -151,6 +152,7 @@ class RadiativeTransferEngine:
         # Enable special modes - argument: get from HDF5
         self.multipart_transmittance = engine_config.multipart_transmittance
         self.topography_model = engine_config.topography_model
+        self.glint_model = engine_config.glint_model
 
         # Specify wavelengths and fwhm to be used for either resampling an existing LUT or building a new instance
         if not any(wl) or not any(fwhm):
@@ -178,11 +180,63 @@ class RadiativeTransferEngine:
 
             # if necessary, resample prebuilt LUT to desired instrument spectral response
             if not all(wl == self.wl):
-                conv = xr.Dataset(coords={'wl': wl, 'point': self.lut.point})
+                conv = xr.Dataset(coords={"wl": wl, "point": self.lut.point})
                 for quantity in self.lut:
-                    conv[quantity] = (('wl', 'point'),
-                                      common.resample_spectrum(self.lut[quantity].data, self.wl, wl, fwhm))
+                    conv[quantity] = (
+                        ("wl", "point"),
+                        common.resample_spectrum(
+                            self.lut[quantity].data, self.wl, wl, fwhm
+                        ),
+                    )
                 self.lut = conv
+        elif engine_config.engine_name == "KernelFlowsGP":
+            Logger.info(f"Emulating LUT using Kernel Flows GP")
+
+            self.lut_grid = lut_grid
+            self.lut_names = []
+            if "AOT550" in lut_grid.keys():
+                self.lut_names.append("AOT550")
+                self.aot_points = lut_grid["AOT550"]
+            else:
+                Logger.info(f"No grid points for AOT provided")
+                self.aot_points = None
+
+            if "H2OSTR" in lut_grid.keys():
+                self.lut_names.append("H2OSTR")
+                self.wv_points = lut_grid["H2OSTR"]
+            else:
+                Logger.info(f"No grid points for water vapor provided")
+                self.wv_points = None
+
+            if "surface_elevation_km" in lut_grid.keys():
+                self.lut_names.append("surface_elevation_km")
+                self.gndalt_points = lut_grid["surface_elevation_km"]
+            else:
+                Logger.info(f"No grid points for surface elevation provided")
+                self.gndalt_points = None
+
+            if "solar_zenith" in lut_grid.keys():
+                self.lut_names.append("solar_zenith")
+                self.sza_points = lut_grid["solar_zenith"]
+            else:
+                Logger.info(f"No grid points for solar zenith angle provided")
+                self.sza_points = None
+
+            self.points = np.array(
+                list(
+                    product(
+                        self.aot_points,
+                        self.wv_points,
+                        self.gndalt_points,
+                        self.sza_points,
+                    )
+                )
+            )
+
+            from .kernel_flows import KernelFlowsRT
+
+            E = KernelFlowsRT(engine_config, wl, fwhm)
+            self.lut = E.predict(self.points)
         else:
             Logger.info(f"No LUT store found, beginning initialization and simulations")
             # Check if both wavelengths and fwhm are provided for building the LUT
@@ -259,7 +313,10 @@ class RadiativeTransferEngine:
         Enables key indexing for easier access to the numpy object store in
         self.lut[key]
         """
-        return self.lut[key].load().data
+        if self.engine_config.engine_name == "KernelFlowsGP":
+            return self.lut[key]
+        else:
+            return self.lut[key].load().data
 
     @property
     def lut_interp_types(self):
@@ -278,22 +335,45 @@ class RadiativeTransferEngine:
         """
         self.luts = {}
 
-        # Convert from 2d (point, wl) to Nd (*luts, wl)
-        ds = self.lut.unstack("point")
+        if self.engine_config.engine_name == "KernelFlowsGP":
+            # Create the unique
+            grid = [
+                self.aot_points,
+                self.wv_points,
+                self.gndalt_points,
+                self.sza_points,
+            ]
+            for key in self.alldim:
+                data = self.lut[key].reshape(
+                    len(self.aot_points),
+                    len(self.wv_points),
+                    len(self.gndalt_points),
+                    len(self.sza_points),
+                    len(self.lut["wl"]),
+                )
+                self.luts[key] = common.VectorInterpolator(
+                    grid_input=grid,
+                    data_input=data,
+                    lut_interp_types=self.lut_interp_types,
+                    version=self.interpolator_style,
+                )
+        else:
+            # Convert from 2d (point, wl) to Nd (*luts, wl)
+            ds = self.lut.unstack("point")
 
-        # Make sure its in expected order, wl at the end
-        ds = ds.transpose(*self.lut_names, "wl")
+            # Make sure its in expected order, wl at the end
+            ds = ds.transpose(*self.lut_names, "wl")
 
-        grid = [ds[key].data for key in self.lut_names]
+            grid = [ds[key].data for key in self.lut_names]
 
-        # Create the unique
-        for key in self.alldim:
-            self.luts[key] = common.VectorInterpolator(
-                grid_input=grid,
-                data_input=ds[key].load(),
-                lut_interp_types=self.lut_interp_types,
-                version=self.interpolator_style,
-            )
+            # Create the unique
+            for key in self.alldim:
+                self.luts[key] = common.VectorInterpolator(
+                    grid_input=grid,
+                    data_input=ds[key].load(),
+                    lut_interp_types=self.lut_interp_types,
+                    version=self.interpolator_style,
+                )
 
     def preSim(self):
         """
