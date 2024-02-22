@@ -465,7 +465,7 @@ def apply_oe(args):
                 surface_category=args.surface_category,
                 emulator_base=args.emulator_base,
                 uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
-                prebuilt_lut=args.prebuilt_lut,
+                prebuilt_lut_path=args.prebuilt_lut,
             )
 
             # Run modtran retrieval
