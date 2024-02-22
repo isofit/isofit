@@ -92,10 +92,14 @@ def test_apply_oe(files, args, surface):
     """
     Executes the isofit apply_oe cli command for various test cases
     """
+
+    arguments = ["apply_oe", *files, *args, "--surface_path", surface]
+
+    # Passing non-string arguments to click is not allowed.
+    arguments = [str(i) for i in arguments]
+
     runner = CliRunner()
-    result = runner.invoke(
-        cli, ["apply_oe"] + files + args + ["--surface_path", surface]
-    )
+    result = runner.invoke(cli, arguments)
 
     if result.exception:
         print(f"Test case hit an exception: {result.exception}")
