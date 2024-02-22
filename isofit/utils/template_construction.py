@@ -1060,14 +1060,18 @@ def build_main_config(
             ][key] = get_lut_subset(aerosol_lut_grid[key])
 
         rm_keys = []
-        for key, item in radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"].items():
+        for key, item in radiative_transfer_config["radiative_transfer_engines"][
+            "vswir"
+        ]["lut_names"].items():
             if key not in ncds.variables:
                 logging.warning(
                     f"Key {key} not found in prebuilt LUT, removing it from LUT.  Spacing would have been: {item}"
                 )
                 rm_keys.append(key)
-        for key in rm_keys: 
-            del radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"][key]
+        for key in rm_keys:
+            del radiative_transfer_config["radiative_transfer_engines"]["vswir"][
+                "lut_names"
+            ][key]
 
     # MODTRAN should know about our whole LUT grid and all of our statevectors, so copy them in
     radiative_transfer_config["radiative_transfer_engines"]["vswir"][

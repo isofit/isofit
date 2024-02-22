@@ -181,8 +181,12 @@ class SixSRT(RadiativeTransferEngine):
 
         if self.multipart_transmittance:
             outp = os.path.join(self.sim_path, name, f"{name}_{wlinf}")  # Output path
-            inpt = os.path.join(self.sim_path, name, f"LUT_{name}_{wlinf}.inp")  # Input path
-            bash = os.path.join(self.sim_path, name, f"LUT_{name}_{wlinf}.sh")  # Script path
+            inpt = os.path.join(
+                self.sim_path, name, f"LUT_{name}_{wlinf}.inp"
+            )  # Input path
+            bash = os.path.join(
+                self.sim_path, name, f"LUT_{name}_{wlinf}.sh"
+            )  # Script path
         else:
             outp = os.path.join(self.sim_path, name)  # Output path
             inpt = os.path.join(self.sim_path, f"LUT_{name}.inp")  # Input path
@@ -322,7 +326,7 @@ class SixSRT(RadiativeTransferEngine):
                     "atm. intrin. ref.": (1, 1, "path_reflectance", float),
                     "spherical albedo": (0, 6, "spherical_albedo", float),
                     "global gas. trans.": (0, 6, "upward_gas_transmittance", float),
-                    "total  sca.": (0, 6, "upward_scattering_transmittance", float)
+                    "total  sca.": (0, 6, "upward_scattering_transmittance", float),
                 }
 
                 for index in range(len(lines)):
@@ -363,7 +367,7 @@ class SixSRT(RadiativeTransferEngine):
                 "transm_down_dif": t_dif_down,
                 "transm_up_dir": t_up_total,
                 "rhoatm": rhoatm,
-                "sphalb": sphalb
+                "sphalb": sphalb,
             }
 
             total = len(wl)
