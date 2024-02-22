@@ -102,7 +102,7 @@ def test_apply_oe(files, args, surface):
     result = runner.invoke(cli, arguments)
 
     if result.exception:
-        print(f"Test case hit an exception: {result.exception}")
         print(f"Output for this test case:\n{result.output}")
+        raise result.exception
 
     assert result.exit_code == 0
