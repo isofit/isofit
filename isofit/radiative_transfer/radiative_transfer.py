@@ -99,7 +99,8 @@ class RadiativeTransfer:
             # Generate the params for this RTE
             params = {
                 key: confPriority(key, [confRT, confIT, config]) for key in self._keys
-            } | {"engine_config": confRT}
+            }
+            params["engine_config"] = confRT
 
             # Select the right RTE and initialize it
             rte = RTE[confRT.engine_name](**params)
