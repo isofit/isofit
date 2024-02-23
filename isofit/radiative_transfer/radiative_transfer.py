@@ -140,6 +140,9 @@ class RadiativeTransfer:
 
         self.solar_irr = np.concatenate([RT.solar_irr for RT in self.rt_engines])
 
+        # TODO: Is code for this missing? We have if statements that rely on this
+        self.glint_model = False
+
     def xa(self):
         """Pull the priors from each of the individual RTs."""
         return self.prior_mean
