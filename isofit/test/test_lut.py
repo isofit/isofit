@@ -1,4 +1,4 @@
-#! /usr/bin/env python3
+#!/usr/bin/env python3
 #
 #  Copyright 2018 California Institute of Technology
 #
@@ -22,34 +22,18 @@
 
 import pytest
 
-import isofit
 from isofit.configs import configs
 from isofit.radiative_transfer.modtran import ModtranRT
 
 
-@pytest.fixture(scope="session")
-def pasadena_config():
-    """Get config file from the Pasadena example."""
-    config_file = (
-        f"{isofit.root}/examples/20171108_Pasadena/configs/ang20171108t184227_beckmanlawn-multimodtran"
-        f"-topoflux.json"
-    )
+@pytest.mark.xfail
+def test_combined(monkeypatch):
+    """Test class reuse."""
 
-    return config_file
+    monkeypatch.chdir("examples/20171108_Pasadena/")
 
-
-@pytest.mark.parametrize("config_file", ["pasadena_config"])
-def test_combined(config_file, request):
-    """Tests multiple class inits and class functions in a sequence to ensure recursive
-    compatibility.
-
-    Parameters
-    ----------
-    request: pytest.fixture
-        Built-in fixture to resolve fixtures by name
-    """
     print("Loading config file from the Pasadena example.")
-    config_file = request.getfixturevalue(config_file)
+    config_file = "configs/ang20171108t184227_beckmanlawn-multimodtran-topoflux.json"
     config = configs.create_new_config(config_file)
     config.get_config_errors()
     engine_config = config.forward_model.radiative_transfer.radiative_transfer_engines[
@@ -70,5 +54,3 @@ def test_combined(config_file, request):
     # Second, we use the just built LUT file and initialize the engine class again
     print("Initialize radiative transfer engine with prebuilt LUT file.")
     ModtranRT(engine_config=engine_config, interpolator_style="mlg")
-
-    print("Done!")

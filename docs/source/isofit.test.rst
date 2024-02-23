@@ -20,5 +20,6 @@ isofit.test
    isofit.test.test_instrument
    isofit.test.test_inverse
    isofit.test.test_libradtran
+   isofit.test.test_lut
    isofit.test.test_pep8
    isofit.test.test_sunposition
