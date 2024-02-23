@@ -2,11 +2,14 @@ import click
 import dask.array as da
 import numpy as np
 import xarray as xr
-from tensorflow import keras
 
 
 def predict(emulator, sixs, resample, scaler, output):
     """ """
+
+    # Delay expensive import
+    from tensorflow import keras
+
     data = sixs.to_array("quantity").stack(stack=["quantity", "wl"])
 
     # Now predict, scale, and add the interpolations
