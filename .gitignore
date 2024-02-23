@@ -21,7 +21,7 @@ examples/**/remote/*prm20151026t173213_data*.mat
 examples/**/remote/*prm20151026t173213_mdl*.txt
 examples/**/remote/*prm20151026t173213_post*.txt
 examples/**/remote/*prm20151026t173213_rfl*.txt
-examples/**/remote/*.mat
+examples/**/*.mat
 examples/**/images/*.png
 
 # Ignore test, build and distribution files
