@@ -46,7 +46,7 @@ python3 --version
 python3 -m pip install setuptools wheel --upgrade
 
 # Install ISOFIT.
-python3 -m pip install -e ".[dev]"
+python3 -m pip install -e ".[dev,test]"
 
 # Install commit hooks.
 python3 -m pre_commit install
