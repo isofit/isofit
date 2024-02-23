@@ -13,6 +13,7 @@ isofit.test
    :maxdepth: 4
 
    isofit.test.test_common
+   isofit.test.test_examples
    isofit.test.test_fileio
    isofit.test.test_forward
    isofit.test.test_geometry
