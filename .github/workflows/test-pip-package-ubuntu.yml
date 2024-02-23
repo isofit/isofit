@@ -64,18 +64,34 @@ jobs:
           # Install 'isofit'
           python3 -m pip install ".[test]"
 
-      - name: Download and build 6S
-        if: ${{ matrix.pytest-flags == '' }}
+      - name: Cache 6S
+        id: cache-6s-v21
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-6s-v21
+        with:
+          path: 6sv-2.1/
+          key: ${{ env.cache-name }}
+
+      - name: Cache sRTMnet
+        id: cache-sRTMnet-v100
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-sRTMnet-v100
+        with:
+          path: sRTMnet_v100/
+          key: ${{ env.cache-name }}
+
+      - name: Download and build 6S v2.1
+        if: ${{ steps.cache-6S-v21.outputs.cache-hit != true }}
         shell: bash
         run: |
-          # Could cache this: https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows
           ./download-and-build-6s.sh
 
-      - name: Install ISOFIT data dependencies
-        if: ${{ matrix.pytest-flags == '' }}
+      - name: Install sRTMnet
+        if: ${{ steps.cache-sRTMnet-v100.outputs.cache-hit != true }}
         shell: bash
         run: |
-          # Could cache this: https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows
           ./download-and-unpack-sRTMnet.sh
 
       - name: Execute tests
