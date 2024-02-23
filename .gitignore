@@ -46,3 +46,4 @@ local/
 
 # Data dependencies
 sRTMnet_v100/
+hypertrace-data/
