@@ -103,10 +103,6 @@ def test_apply_oe(files, args, surface):
     arguments = [str(i) for i in arguments]
 
     runner = CliRunner()
-    result = runner.invoke(cli, arguments)
-
-    if result.exception:
-        print(f"Output for this test case:\n{result.output}")
-        raise result.exception
+    result = runner.invoke(cli, arguments, catch_exceptions=False)
 
     assert result.exit_code == 0

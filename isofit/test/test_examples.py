@@ -27,7 +27,7 @@ def test_santa_monica(args, monkeypatch):
     surface_model("configs/prm20151026t173213_surface_coastal.json")
 
     runner = CliRunner()
-    result = runner.invoke(_cli, args)
+    result = runner.invoke(_cli, args, catch_exceptions=False)
 
     assert result.exit_code == 0
 
@@ -52,7 +52,7 @@ def test_pasadena_modtran(args, monkeypatch):
     surface_model("configs/ang20171108t184227_surface.json")
 
     runner = CliRunner()
-    result = runner.invoke(_cli, args)
+    result = runner.invoke(_cli, args, catch_exceptions=False)
 
     assert result.exit_code == 0
 
