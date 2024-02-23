@@ -77,7 +77,7 @@ def initialize(
 
     ## Insert point dimensional keys
     # Filler arrays
-    dims = tuple(ds.dims.values())
+    dims = tuple(ds.sizes.values())
     nans = np.full(dims, np.nan)
     zero = np.zeros(dims)
 
