@@ -76,7 +76,7 @@ Testing
 
 Tests live in `isofit/tests/ <isofit/tests/>`_, and are executed using
 ``pytest``. Some tests require specific environment variables to be set, so
-the `run-tests.sh <run-tests.sh>`_ script can be used to invoke ``pytest`` with
+the `run-tests.sh <scripts/run-tests.sh>`_ script can be used to invoke ``pytest`` with
 the appropriate environment variables. It is a drop-in replacement for the
 ``$ pytest`` executable, so users can add flags as they wish.
 
