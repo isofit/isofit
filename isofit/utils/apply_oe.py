@@ -21,15 +21,6 @@ from isofit.core import isofit
 from isofit.core.common import envi_header, ray_start, ray_terminate
 from isofit.utils import analytical_line, empirical_line, extractions, segment
 
-warn(
-    message=(
-        f"The module {__name__} is deprecated and will be removed with ISOFIT version"
-        " 3.2."
-    ),
-    category=DeprecationWarning,
-    stacklevel=2,
-)
-
 EPS = 1e-6
 CHUNKSIZE = 256
 
@@ -185,6 +176,16 @@ def apply_oe(args):
     Returns:
 
     """
+
+    warn(
+        message=(
+            f"The module {__name__} is deprecated and will be removed with ISOFIT version"
+            " 3.2."
+        ),
+        category=DeprecationWarning,
+        stacklevel=2,
+    )
+
     use_superpixels = args.empirical_line or args.analytical_line
 
     if not os.environ.get("ISOFIT_DEBUG"):
