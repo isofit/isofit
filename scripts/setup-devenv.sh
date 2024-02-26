@@ -19,6 +19,10 @@ set -o nounset
 VENV_PATH="venv"
 
 
+# Path to directory containing this script.
+SCRIPT_DIR=$(dirname "${0}")
+
+
 # Do not attempt to modify an existing virtual environment. We do not know what
 # it contains.
 if [ -d "${VENV_PATH}" ]; then
@@ -46,11 +50,11 @@ python3 --version
 python3 -m pip install setuptools wheel --upgrade
 
 # Install ISOFIT.
-python3 -m pip install -e ".[dev]"
+python3 -m pip install -e ".[dev,test]"
 
 # Install commit hooks.
 python3 -m pre_commit install
 
 # Download and unpack additional dependencies.
-./download-and-unpack-sRTMnet.sh
-./download-and-build-6s.sh
+"./${SCRIPT_DIR}/download-and-unpack-sRTMnet.sh"
+"./${SCRIPT_DIR}/download-and-build-6s.sh"

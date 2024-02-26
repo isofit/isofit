@@ -298,7 +298,7 @@ def atm_interpolation(
 
     # Initialize ray cluster
     start_time = time.time()
-    ray_initiate({'ignore_reinit_error': True, 'local_mode': n_cores ==1})
+    ray_initiate({"ignore_reinit_error": True, "local_mode": n_cores == 1})
     atexit.register(ray.shutdown)
 
     n_ray_cores = int(ray.available_resources()["CPU"])
@@ -328,7 +328,7 @@ def atm_interpolation(
         _run_chunk.remote(line_sections[l], line_sections[l + 1], *args)
         for l in range(len(line_sections) - 1)
     ]
-    _ = [ray.get(jid) for jid in jobs] 
+    _ = [ray.get(jid) for jid in jobs]
 
     total_time = time.time() - start_time
     logging.info(

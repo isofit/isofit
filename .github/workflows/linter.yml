@@ -18,3 +18,4 @@ jobs:
       - uses: psf/black@stable
         with:
           src: "./isofit"
+          version: "24.2.0"

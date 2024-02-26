@@ -34,9 +34,20 @@ EPS = 1e-6
 CHUNKSIZE = 256
 
 UNCORRELATED_RADIOMETRIC_UNCERTAINTY = 0.01
-SUPPORTED_SENSORS = ["ang", "avcl", "neon", "prism", "emit", "enmap", "hyp", "prisma", "av3"]
+SUPPORTED_SENSORS = [
+    "ang",
+    "avcl",
+    "neon",
+    "prism",
+    "emit",
+    "enmap",
+    "hyp",
+    "prisma",
+    "av3",
+]
 RTM_CLEANUP_LIST = ["*r_k", "*t_k", "*tp7", "*wrn", "*psc", "*plt", "*7sc", "*acd"]
 INVERSION_WINDOWS = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
+
 
 # Input arguments
 @click.command(name="apply_oe")
@@ -162,7 +173,7 @@ def apply_oe(args):
 
     """
     use_superpixels = args.empirical_line or args.analytical_line
-    ray_start(args.n_cores, args.num_cpus, args.memory_gb*1024**3)
+    ray_start(args.n_cores, args.num_cpus, args.memory_gb * 1024**3)
 
     if args.sensor not in SUPPORTED_SENSORS:
         if args.sensor[:3] != "NA-":
@@ -454,7 +465,7 @@ def apply_oe(args):
                 surface_category=args.surface_category,
                 emulator_base=args.emulator_base,
                 uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
-                prebuilt_lut=args.prebuilt_lut,
+                prebuilt_lut_path=args.prebuilt_lut,
             )
 
             # Run modtran retrieval
@@ -523,14 +534,26 @@ def apply_oe(args):
             paths=paths,
             lut_params=lut_params,
             h2o_lut_grid=h2o_lut_grid,
-            elevation_lut_grid=elevation_lut_grid
-            if elevation_lut_grid is not None else [mean_altitude_km],
-            to_sensor_zenith_lut_grid=to_sensor_zenith_lut_grid
-            if to_sensor_zenith_lut_grid is not None else [mean_to_sensor_zenith],
-            to_sun_zenith_lut_grid=to_sun_zenith_lut_grid
-            if to_sun_zenith_lut_grid is not None else [mean_to_sun_zenith],
-            relative_azimuth_lut_grid=relative_azimuth_lut_grid
-            if relative_azimuth_lut_grid is not None else [mean_relative_azimuth],
+            elevation_lut_grid=(
+                elevation_lut_grid
+                if elevation_lut_grid is not None
+                else [mean_altitude_km]
+            ),
+            to_sensor_zenith_lut_grid=(
+                to_sensor_zenith_lut_grid
+                if to_sensor_zenith_lut_grid is not None
+                else [mean_to_sensor_zenith]
+            ),
+            to_sun_zenith_lut_grid=(
+                to_sun_zenith_lut_grid
+                if to_sun_zenith_lut_grid is not None
+                else [mean_to_sun_zenith]
+            ),
+            relative_azimuth_lut_grid=(
+                relative_azimuth_lut_grid
+                if relative_azimuth_lut_grid is not None
+                else [mean_relative_azimuth]
+            ),
             mean_latitude=mean_latitude,
             mean_longitude=mean_longitude,
             dt=dt,
