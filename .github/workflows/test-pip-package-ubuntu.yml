@@ -95,21 +95,21 @@ jobs:
         if: ${{ steps.cache-6S-v21.outputs.cache-hit != true }}
         shell: bash
         run: |
-          ./download-and-build-6s.sh
+          ./scripts/download-and-build-6s.sh
 
       - name: Install sRTMnet
         if: ${{ steps.cache-sRTMnet-v100.outputs.cache-hit != true }}
         shell: bash
         run: |
-          ./download-and-unpack-sRTMnet.sh
+          ./scripts/download-and-unpack-sRTMnet.sh
 
       - name: Download and unpack Hypertrace data
         if: ${{ steps.cache-hypertrace-data.outputs.cache-hit != true }}
         shell: bash
         run: |
-          ./download-and-unpack-hypertrace-data.sh
+          ./scripts/download-and-unpack-hypertrace-data.sh
 
       - name: Execute tests
         shell: bash
         run: |
-          ./run-tests.sh ${{ matrix.pytest-flags }}
+          ./scripts/run-tests.sh ${{ matrix.pytest-flags }}
