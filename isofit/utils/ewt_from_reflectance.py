@@ -70,9 +70,9 @@ def main(args: SimpleNamespace) -> None:
     output_metadata = rfl_ds.metadata
     output_metadata["interleave"] = "bil"
     output_metadata["bands"] = "1"
-    output_metadata[
-        "description"
-    ] = "L2A Canopy Water Content / Equivalent Water Thickness"
+    output_metadata["description"] = (
+        "L2A Canopy Water Content / Equivalent Water Thickness"
+    )
     if "emit pge input files" in list(output_metadata.keys()):
         del output_metadata["emit pge input files"]
 

@@ -2,6 +2,7 @@
 This is the netCDF4 implementation for handling ISOFIT LUT files. For previous
 implementations and research, please see https://github.com/isofit/isofit/tree/897062a3dcc64d5292d0d2efe7272db0809a6085/isofit/luts
 """
+
 import logging
 import os
 
@@ -58,7 +59,7 @@ def initialize(
         List of keys to default to zeros as the fill value instead of NaNs
     """
     # Initialize with all lut point names as dimensions
-    ds = xr.Dataset(coords={"wl": wl} | lut_grid)
+    ds = xr.Dataset(coords={"wl": wl, **lut_grid})
 
     # Insert constants
     filler = np.nan
@@ -76,7 +77,7 @@ def initialize(
 
     ## Insert point dimensional keys
     # Filler arrays
-    dims = tuple(ds.dims.values())
+    dims = tuple(ds.sizes.values())
     nans = np.full(dims, np.nan)
     zero = np.zeros(dims)
 

@@ -326,7 +326,7 @@ class ModtranRT(RadiativeTransferEngine):
                 rebuild = modtran_str.strip() != current_str.strip()
 
         if not rebuild:
-            raise FileExistsError("File exists")
+            raise FileExistsError(f"File exists: {filename_base=}")
 
         # write_config_file
         with open(infilepath, "w") as f:

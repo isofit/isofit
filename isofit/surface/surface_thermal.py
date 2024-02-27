@@ -65,9 +65,7 @@ class ThermalSurface(MultiComponentSurface):
         """Covariance of prior distribution, calculated at state x."""
 
         Cov = MultiComponentSurface.Sa(self, x_surface, geom)
-        Cov[self.surf_temp_ind, self.surf_temp_ind] = (
-            self.surface_T_prior_sigma_degK**2
-        )
+        Cov[self.surf_temp_ind, self.surf_temp_ind] = self.surface_T_prior_sigma_degK**2
 
         return Cov
 

@@ -27,7 +27,6 @@ import dask.array as da
 import numpy as np
 import yaml
 from scipy.interpolate import interp1d
-from tensorflow import keras
 
 from isofit.configs.sections.radiative_transfer_config import (
     RadiativeTransferEngineConfig,
@@ -65,6 +64,10 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         sRTMnet leverages 6S to simulate results which is best done before sRTMnet begins
         simulations itself
         """
+
+        # Delay expensive import
+        from tensorflow import keras
+
         Logger.info("Creating a simulator configuration")
         # Create a copy of the engine_config and populate it with 6S parameters
         config = build_sixs_config(self.engine_config)
