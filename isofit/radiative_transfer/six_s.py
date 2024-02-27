@@ -209,12 +209,12 @@ class SixSRT(RadiativeTransferEngine):
         }
 
         # Assume geometry values are provided by the config
-        vals |= {
-            "solzen": self.engine_config.solzen,
-            "viewzen": self.engine_config.viewzen,
-            "solaz": self.engine_config.solaz,
-            "viewaz": self.engine_config.viewaz,
-        }
+        vals.update(
+            solzen=self.engine_config.solzen,
+            viewzen=self.engine_config.viewzen,
+            solaz=self.engine_config.solaz,
+            viewaz=self.engine_config.viewaz,
+        )
 
         # Add the point with its names
         for key, val in zip(self.lut_names, point):

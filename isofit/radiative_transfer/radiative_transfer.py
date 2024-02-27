@@ -99,7 +99,8 @@ class RadiativeTransfer:
             # Generate the params for this RTE
             params = {
                 key: confPriority(key, [confRT, confIT, config]) for key in self._keys
-            } | {"engine_config": confRT}
+            }
+            params["engine_config"] = confRT
 
             # Select the right RTE and initialize it
             rte = RTE[confRT.engine_name](**params)
@@ -138,6 +139,9 @@ class RadiativeTransfer:
         self.bval = np.array([x for x in config.unknowns.get_elements()[0]])
 
         self.solar_irr = np.concatenate([RT.solar_irr for RT in self.rt_engines])
+
+        # TODO: Is code for this missing? We have if statements that rely on this
+        self.glint_model = False
 
     def xa(self):
         """Pull the priors from each of the individual RTs."""
@@ -286,13 +290,13 @@ class RadiativeTransfer:
 
     def drdn_dRT(self, x_RT, rfl, drfl_dsurface, Ls, dLs_dsurface, geom: Geometry):
         # first the rdn at the current state vector
-        rdn = self.calc_rdn(x_RT, x_surface, rfl, Ls, geom)
+        rdn = self.calc_rdn(x_RT, rfl, Ls, geom)
 
         # perturb each element of the RT state vector (finite difference)
         K_RT = []
         x_RTs_perturb = x_RT + np.eye(len(x_RT)) * eps
         for x_RT_perturb in list(x_RTs_perturb):
-            rdne = self.calc_rdn(x_RT_perturb, x_surface, rfl, Ls, geom)
+            rdne = self.calc_rdn(x_RT_perturb, rfl, Ls, geom)
             K_RT.append((rdne - rdn) / eps)
         K_RT = np.array(K_RT).T
 
@@ -369,7 +373,7 @@ class RadiativeTransfer:
             Kb_RT = np.zeros((1, len(self.wl)))
         else:
             # first the radiance at the current state vector
-            rdn = self.calc_rdn(x_RT, x_surface, rfl, Ls, geom)
+            rdn = self.calc_rdn(x_RT, rfl, Ls, geom)
 
             # unknown parameters modeled as random variables per
             # Rodgers et al (2000) K_b matrix.  We calculate these derivatives
@@ -381,7 +385,7 @@ class RadiativeTransfer:
                     i = self.statevec_names.index("H2OSTR")
                     x_RT_perturb = x_RT.copy()
                     x_RT_perturb[i] = x_RT[i] * perturb
-                    rdne = self.calc_rdn(x_RT_perturb, x_surface, rfl, Ls, geom)
+                    rdne = self.calc_rdn(x_RT_perturb, rfl, Ls, geom)
                     Kb_RT.append((rdne - rdn) / eps)
 
         Kb_RT = np.array(Kb_RT).T

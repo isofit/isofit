@@ -11,6 +11,6 @@ repos:
     -   id: isort
         args: ["--profile", "black", "--multi-line", "3"]
 -   repo: https://github.com/psf/black
-    rev: 22.10.0
+    rev: 24.2.0
     hooks:
     -   id: black

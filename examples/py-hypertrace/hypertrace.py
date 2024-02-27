@@ -15,7 +15,7 @@ from scipy.interpolate import interp1d
 
 from isofit.core.isofit import Isofit
 from isofit.utils import empirical_line, segment, extractions
-from isofit.utils.apply_oe import write_modtran_template
+from isofit.utils.template_construction import write_modtran_template
 from isofit.core.common import envi_header
 
 logger = logging.getLogger(__name__)
