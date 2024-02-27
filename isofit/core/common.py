@@ -25,7 +25,6 @@ from collections import OrderedDict
 from os.path import expandvars
 from typing import List
 
-import ndsplines
 import numpy as np
 import scipy.linalg
 import xxhash
@@ -146,14 +145,7 @@ class VectorInterpolator:
                 grid_aug, data, bounds_error=False, fill_value=None
             )
             self.method = 1
-
-            # NDSplines
-            elif version[:3] == "nds":
-                degrees = int(version[4:])
-                grid_aug = grid + [np.arange(data.shape[-1]).tolist()]
-                grid_arr = np.stack(np.meshgrid(*grid_aug, indexing="ij"), axis=-1)
-                self.itp = ndsplines.make_interp_spline(grid_arr, data, degrees=degrees)
-
+            
         # Multilinear Grid
         elif version == "mlg":
             self.method = 2
