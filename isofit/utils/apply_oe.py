@@ -186,7 +186,9 @@ def apply_oe(args):
 
     """
     use_superpixels = args.empirical_line or args.analytical_line
-    ray_start(args.n_cores, args.num_cpus, args.memory_gb * 1024**3)
+
+    if not os.environ.get("ISOFIT_DEBUG"):
+        ray_start(args.n_cores, args.num_cpus, args.memory_gb * 1024**3)
 
     if args.sensor not in SUPPORTED_SENSORS:
         if args.sensor[:3] != "NA-":
