@@ -1,13 +1,15 @@
 #!/bin/bash
 
 
-# This script serves as a reference for how to set up a developer environment.
-# Some packages, like GDAL, must be installed prior to running this script.
-# On Ubuntu these packages are likely installed via '$ apt' or '$ apt-get',
-# and on MacOS Homebrew is a common choice. Developers should read through
-# this script, and the other scripts it invokes, and determine if it is
-# appropriate to execute for their environment. At a high-level the steps
-# should be matched, but the specific commands may need to be modified.
+# This script sets up, and refreshes, a development environment. Users must
+# create a virtual environment, and then point this script to it like:
+#
+#     $ python3.11 -m venv venv
+#     $ ./scripts/setup-devenv.sh venv
+#
+# Note that different developers may use different versions of Python. Some
+# environments may require installing additional non-Python dependencies using
+# an appropriate package manage.
 
 
 set -x
@@ -16,22 +18,19 @@ set -o pipefail
 set -o nounset
 
 
-VENV_PATH="venv"
-
-
-# Path to directory containing this script.
+# Path to directory containing this script. Needed to determine the location of
+# other scripts required for setup.
 SCRIPT_DIR=$(dirname "${0}")
 
 
-# Do not attempt to modify an existing virtual environment. We do not know what
-# it contains.
-if [ -d "${VENV_PATH}" ]; then
-  echo "Virtual environment already exists: ${VENV_PATH}"
-  exit 0
+# Parse arguments.
+if [ $# -eq 1 ]; then
+  VENV_PATH="$1"
+else
+  echo "Usage: ${SCRIPT_DIR}/$(basename "$0") path/to/venv"
+  exit 1
 fi
 
-# Create virtual environment.
-python3 -m venv "${VENV_PATH}"
 
 # The version of Python inside of the virtual environment is isolated, and can
 # be used to install packages inside of the environment without activating it.

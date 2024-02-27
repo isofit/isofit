@@ -51,24 +51,20 @@ example, if you are working on issue #314 you would run:
 Developer Environment
 ---------------------
 
-ISOFIT has a number of dependencies that complicate setting up a developer
-environment. Ultimately the goal is to develop within a Python virtual
-environment with a compliant set of dependencies. While ISOFIT is a Python
-library with mostly pure-Python dependencies, some dependencies in turn require
-non-Python libraries. On Ubuntu, these dependencies can often be satisfied by
-``$ apt`` or ``$ apt-get``, and on MacOS the `Homebrew <https://brew.sh/>`_
-package manager is a common choice.
+Generally, the process for creating a Python virtual environment for development
+is:
 
-Generally, the steps outlined in `setup-devenv.sh <setup-devenv.sh>`_ can be
-followed to create a virtual environment, but there are just too many variables
-to confidently provide a per-platform script to set up a developer environment.
-A good course of action is to follow that script, address any ``$ pip`` errors,
-and try to run some tests. GDAL in particular may install successfully but
-fail when running tests.
+.. code-block:: console
 
-The CI system can provide some guidance as well, but note that this system
-runs in isolation, so the exact commands are not necessarily appropriate to
-execute in your environment.
+    $ python3 -m venv venv
+    $ ./scripts/setup-devenv.sh venv
+
+however, developers on some platforms may need to install additional non-Python
+dependencies using an appropriate package manager for their system.
+
+``setup-devenv.sh`` should be run periodically to refresh a development
+environment to pick up new dependencies, updates to the ``isofit`` build
+process, etc.
 
 
 Testing
