@@ -328,20 +328,11 @@ def get_HRRR_data(filename):
 
 @click.command(name="HRRR_to_modtran")
 @click.argument("config_file")
-def _cli(**kwargs):
-    """\
-    Adds HRRR profiles to MODTRAN
-    """
+def cli_HRRR_to_modtran(**kwargs):
+    """Add HRRR profiles to MODTRAN"""
+
     click.echo("Running adding HRRR profiles to MODTRAN")
 
     HRRR_to_MODTRAN_profiles(**kwargs)
 
     click.echo("Done")
-
-
-if __name__ == "__main__":
-    _cli()
-else:
-    from isofit import cli
-
-    cli.add_command(_cli)

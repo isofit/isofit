@@ -26,7 +26,7 @@ def predict(emulator, sixs, resample, scaler, output):
     predicts.to_netcdf(output)
 
 
-@click.command(name="6S to sRTMnet")
+@click.command(name="6S_to_sRTMnet")
 @click.argument("sixs")  # , help="6S input LUT netCDF")
 @click.argument("emulator")  # , help="Path to sRTMnet emulator")
 @click.option("-a", "--aux", help="Emulator aux file")
@@ -39,7 +39,7 @@ def predict(emulator, sixs, resample, scaler, output):
 @click.option(
     "-p", "--predicts", help="Output sRTMnet predicts", default="sRTMnet.predicts.nc"
 )
-def cli(sixs, emulator, aux, output, predicts):
+def cli_6s_to_srtmnet(sixs, emulator, aux, output, predicts):
     """\
     Converts 6S LUT outputs to sRTMnet input
     """
@@ -68,7 +68,3 @@ def cli(sixs, emulator, aux, output, predicts):
     predict(emulator, sixs, resample, scaler, predicts)
 
     print("Done")
-
-
-if __name__ == "__main__":
-    cli()

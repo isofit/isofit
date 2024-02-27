@@ -9,7 +9,6 @@ import subprocess
 from datetime import datetime
 from os.path import exists, join
 from types import SimpleNamespace
-from typing import List
 from warnings import warn
 
 import click
@@ -80,10 +79,9 @@ INVERSION_WINDOWS = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
     is_flag=True,
 )
 @click.option("--profile")
-def _cli(debug_args, profile, **kwargs):
-    """\
-    Apply OE to a block of data
-    """
+def cli_apply_oe(debug_args, profile, **kwargs):
+    """Apply OE to a block of data"""
+
     if debug_args:
         click.echo("Arguments to be passed:")
         for key, value in kwargs.items():
@@ -642,11 +640,3 @@ def apply_oe(args):
 
     logging.info("Done.")
     ray_terminate()
-
-
-if __name__ == "__main__":
-    _cli()
-else:
-    from isofit import cli
-
-    cli.add_command(_cli)

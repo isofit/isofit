@@ -154,20 +154,13 @@ def solar_position(
     help="Comma separated values (time,dt,lat,lon,elev,temp,pressure,az,zen,RA,dec,H)",
     is_flag=True,
 )
-def _cli(**kwargs):
-    """\
-    Executes the Solar position algorithm of Reda & Andreas (2003)
+def cli_sun(**kwargs):
+    """Execute the Solar position algorithm
+
+    Reda & Andreas (2003)
     """
     click.echo(f"Running the solar position algorithm")
 
     solar_position(**kwargs)
 
     click.echo("Done")
-
-
-if __name__ == "__main__":
-    _cli()
-else:
-    from isofit import cli
-
-    cli.add_command(_cli)

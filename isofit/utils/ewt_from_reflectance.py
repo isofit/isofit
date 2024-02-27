@@ -216,10 +216,11 @@ def run_lines(
     help="Prints the arguments list without executing the command",
     is_flag=True,
 )
-def _cli(debug_args, **kwargs):
-    """\
-    Calculate Equivalent Water Thickness (EWT) / Canopy Water Content (CWC) for a set of reflectance data, based on Beer
-    Lambert Absorption of liquid water.
+def cli_ewt(debug_args, **kwargs):
+    """Calculate EWT and CWC
+
+    Calculate Equivalent Water Thickness (EWT) / Canopy Water Content (CWC) for
+    a set of reflectance data, based on Beer Lambert Absorption of liquid water.
     """
     click.echo("Running EWT from Reflectance")
     if debug_args:
@@ -231,11 +232,3 @@ def _cli(debug_args, **kwargs):
         main(SimpleNamespace(**kwargs))
 
     click.echo("Done")
-
-
-if __name__ == "__main__":
-    _cli()
-else:
-    from isofit import cli
-
-    cli.add_command(_cli)
