@@ -237,6 +237,7 @@ class TabularRT:
             raise SystemExit
         elif len(rebuild_cmds) > 0 and self.auto_rebuild:
             logging.info("Rebuilding radiative transfer look up table")
+            logging.info(f"{len(rebuild_cmds)} commands to build")
 
             # check to make sure lut directory is there, create if not
             if os.path.isdir(self.lut_dir) is False:

@@ -27,6 +27,7 @@ import subprocess
 from copy import deepcopy
 from sys import platform
 
+import time
 import numpy as np
 import scipy.interpolate
 import scipy.stats
@@ -638,8 +639,9 @@ class ModtranRT(TabularRT):
             lvl0["NARSPC"] = len(self.aer_wl)
             lvl0["VARSPC"] = [float(v) for v in self.aer_wl]
             lvl0["ASYM"] = [float(v) for v in total_asym]
-            lvl0["EXTC"] = [float(v) / total_extc550 for v in total_extc]
+            lvl0["EXTC"] = [float(v) / total_extc550 for v in total_extc] 
             lvl0["ABSC"] = [float(v) / total_extc550 for v in total_absc]
+            #***Need to round this to a specific number of decimels when writing to make sure subsequent re-runs are exactly the same
 
         if self.multipart_transmittance:
             const_rfl = np.array(np.array(self.test_rfls) * 100, dtype=int)
@@ -752,12 +754,35 @@ class ModtranRT(TabularRT):
                         raise KeyError(
                             "MODTRAN H2O lut grid is invalid - see logs for details."
                         )
-
-        TabularRT.build_lut(self, rebuild)
-
-        mod_outputs = []
-        for point, fn in zip(self.points, self.files):
-            mod_outputs.append(self.load_rt(fn))
+                        
+        done = False
+        prev_file_not_found = ''
+        n_rerun = 0
+        while not done:
+            #Build the LUT
+            TabularRT.build_lut(self, rebuild)
+            
+            try:
+                #Try to load in all the files
+                mod_outputs = []
+                for point, fn in zip(self.points, self.files):
+                    mod_outputs.append(self.load_rt(fn))
+                logging.info("All LUT files loaded, proceeding")
+                done = True
+            except FileNotFoundError as e:
+                time.sleep(np.random.randint(1, 10) / 10.)
+                #Extract filename that doesn't exist
+                file_not_found = e.split('/')[-1]
+                logging.info(f"File not found: {file_not_found}")
+                n_rerun += 1
+                if prev_file_not_found == file_not_found:
+                    logging.info("Repeated file not found; stopping")
+                    raise FileNotFoundError(e)
+                    # Throw error
+                if n_rerun >= 10:
+                    logging.info(f"{n_rerun} reruns; stopping")
+                    raise FileNotFoundError(e)
+                    # Throw error
 
         self.wl = mod_outputs[0]["wl"]
         self.solar_irr = mod_outputs[0]["sol"]
@@ -804,11 +829,40 @@ class ModtranRT(TabularRT):
                 modtran_config[0]["MODTRANINPUT"]["NAME"] = ""
                 current_config[0]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
                 modtran_config[0]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
+                if self.multipart_transmittance:
+                    current_config[1]["MODTRANINPUT"]["NAME"] = ""
+                    modtran_config[1]["MODTRANINPUT"]["NAME"] = ""
+                    current_config[1]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
+                    modtran_config[1]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
+                    current_config[2]["MODTRANINPUT"]["NAME"] = ""
+                    modtran_config[2]["MODTRANINPUT"]["NAME"] = ""
+                    current_config[2]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
+                    modtran_config[2]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
+                    #Hacky fix to decimel places not matching
+                    modtran_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
+                    modtran_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = ""
+                    modtran_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
+                    modtran_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = ""
+                    modtran_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
+                    modtran_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = "" 
+                    
+                    current_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
+                    current_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = ""
+                    current_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
+                    current_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = ""
+                    current_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
+                    current_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = ""
+                    
                 current_str = json.dumps(current_config)
                 modtran_str = json.dumps(modtran_config)
                 rebuild = modtran_str.strip() != current_str.strip()
+                
 
+        if rebuild:
+            logging.info(f"Rebuilding {infilename}")
+            
         if not rebuild:
+            logging.info(f"File exists {infilename}")
             raise FileExistsError("File exists")
 
         # write_config_file
