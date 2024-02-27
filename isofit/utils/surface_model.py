@@ -67,18 +67,29 @@ def surface_model(
     configdir, _ = os.path.split(os.path.abspath(config_path))
     config = json_load_ascii(config_path, shell_replace=True)
 
-    # Determine top level parameters
-    for q in ["output_model_file", "sources", "normalize", "wavelength_file"]:
-        if q not in config:
-            raise ValueError("Missing parameter: %s" % q)
-    if wavelength_path is not None:
+    if wavelength_path:
         wavelength_file = wavelength_path
     else:
+        if "wavelength_file" not in config:
+            raise ValueError(
+                "Missing config parameter 'wavelength_file', set via surface_model(wavelength_path=...)"
+            )
         wavelength_file = expand_path(configdir, config["wavelength_file"])
-    if output_path is not None:
+
+    if output_path:
         outfile = output_path
     else:
+        if "output_model_file" not in config:
+            raise ValueError(
+                "Missing config parameter 'output_model_file', set via surface_model(output_path=...)"
+            )
         outfile = expand_path(configdir, config["output_model_file"])
+
+    # Determine top level parameters
+    for q in ["sources", "normalize"]:
+        if q not in config:
+            raise ValueError("Missing parameter: %s" % q)
+
     normalize = config["normalize"]
     reference_windows = config["reference_windows"]
 
