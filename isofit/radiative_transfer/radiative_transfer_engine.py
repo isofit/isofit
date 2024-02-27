@@ -26,7 +26,6 @@ from types import SimpleNamespace
 from typing import Callable
 
 import numpy as np
-import ray
 import xarray as xr
 
 import isofit
@@ -294,7 +293,7 @@ class RadiativeTransferEngine:
         for key in self.alldim:
             self.luts[key] = common.VectorInterpolator(
                 grid_input=grid,
-                data_input=ds[key].load(),
+                data_input=ds[key].load().data,
                 lut_interp_types=self.lut_interp_types,
                 version=self.interpolator_style,
             )
@@ -424,7 +423,7 @@ class RadiativeTransferEngine:
         # Make the LUT calls (in parallel if specified)
         if not self._disable_makeSim:
             Logger.info("Executing parallel simulations")
-            results = ray.get(
+            results = isofit.ray.get(
                 [
                     streamSimulation.remote(
                         point,
@@ -594,7 +593,7 @@ class RadiativeTransferEngine:
         return data
 
 
-@ray.remote
+@isofit.ray.remote
 def streamSimulation(
     point: np.array,
     lut_names: list,
