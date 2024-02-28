@@ -23,6 +23,7 @@ import os
 from copy import deepcopy
 from pathlib import Path
 
+import dask.array as da
 import numpy as np
 import yaml
 from scipy.interpolate import interp1d
@@ -110,10 +111,6 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         self.sim_lut_path = config.lut_path
 
         ## Prepare the sim results for the emulator
-        # Create the resampled input data for the emulator
-        resample = sim.lut[["point"]].copy()
-        resample["wl"] = self.emu_wl
-
         # In some atmospheres the values get down to basically 0, which 6S can’t quite handle and will resolve to NaN instead of 0
         # Safe to replace here
         if sim.lut[aux_rt_quantities].isnull().any():
@@ -122,24 +119,22 @@ class SimulatedModtranRT(RadiativeTransferEngine):
 
         # Interpolate the sim results from its wavelengths to the emulator wavelengths
         Logger.info("Interpolating simulator quantities to emulator size")
-        for key in aux_rt_quantities:
-            interpolate = interp1d(sim.wl, sim[key])
-            resample[key] = (("point", "wl"), interpolate(self.emu_wl))
+        sixs = sim.lut[aux_rt_quantities]
+        resample = sixs.interp({"wl": aux["emulator_wavelengths"]})
 
         # Stack the quantities together along a new dimension named `quantity`
         resample = resample.to_array("quantity").stack(stack=["quantity", "wl"])
 
         ## Reduce from 3D to 2D by stacking along the wavelength dim for each quantity
         # Convert to DataArray to stack the variables along a new `quantity` dimension
-        data = sim.lut[aux_rt_quantities]
-        data = data.to_array("quantity").stack(stack=["quantity", "wl"])
+        data = sixs.to_array("quantity").stack(stack=["quantity", "wl"])
 
         scaler = aux.get("response_scaler", 100.0)
 
         # Now predict, scale, and add the interpolations
         Logger.info("Loading and predicting with emulator")
         emulator = keras.models.load_model(self.engine_config.emulator_file)
-        predicts = emulator.predict(data)
+        predicts = da.from_array(emulator.predict(data))
         predicts /= scaler
         predicts += resample
 

@@ -88,7 +88,8 @@ INVERSION_WINDOWS = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
     help="Prints the arguments list without executing the command",
     is_flag=True,
 )
-def _cli(debug_args, **kwargs):
+@click.option("--profile")
+def _cli(debug_args, profile, **kwargs):
     """\
     Apply OE to a block of data
     """
@@ -97,8 +98,20 @@ def _cli(debug_args, **kwargs):
         for key, value in kwargs.items():
             click.echo(f"  {key} = {value!r}")
     else:
+        if profile:
+            import cProfile
+            import pstats
+
+            profiler = cProfile.Profile()
+            profiler.enable()
+
         # SimpleNamespace converts a dict into dot-notational
         apply_oe(SimpleNamespace(**kwargs))
+
+        if profile:
+            profiler.disable()
+            stats = pstats.Stats(profiler)
+            stats.dump_stats(profile)
 
     click.echo("Done")
 
@@ -173,7 +186,9 @@ def apply_oe(args):
 
     """
     use_superpixels = args.empirical_line or args.analytical_line
-    ray_start(args.n_cores, args.num_cpus, args.memory_gb * 1024**3)
+
+    if not os.environ.get("ISOFIT_DEBUG"):
+        ray_start(args.n_cores, args.num_cpus, args.memory_gb * 1024**3)
 
     if args.sensor not in SUPPORTED_SENSORS:
         if args.sensor[:3] != "NA-":
