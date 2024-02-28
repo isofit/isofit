@@ -350,20 +350,11 @@ class Worker(object):
 @click.option("--atm_file", help="TODO", type=str, default=None)
 @click.option("--loglevel", help="TODO", type=str, default="INFO")
 @click.option("--logfile", help="TODO", type=str, default=None)
-def _cli(**kwargs):
-    """\
-    Executes the analytical line algorithm
-    """
+def cli_analytical_line(**kwargs):
+    """Execute the analytical line algorithm"""
+
     click.echo("Running analytical line")
 
     analytical_line(**kwargs)
 
     click.echo("Done")
-
-
-if __name__ == "__main__":
-    _cli()
-else:
-    from isofit import cli
-
-    cli.add_command(_cli)

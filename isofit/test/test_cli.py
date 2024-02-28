@@ -13,7 +13,8 @@ import pytest
 import requests
 from click.testing import CliRunner
 
-from isofit import cli, root
+from isofit import root
+from isofit.__main__ import cli
 from isofit.utils import surface_model
 
 # Mark the entire file as containing slow tests

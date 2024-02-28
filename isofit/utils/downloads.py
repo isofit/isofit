@@ -127,8 +127,8 @@ def unzip(file, path=None, rename=None, overwrite=False, cleanup=True):
 # Main command
 
 
-@click.group(invoke_without_command=True)
-def download():
+@click.group("download", invoke_without_command=True)
+def cli_download():
     """\
     Download extra ISOFIT files that do not come with the default installation
     """
@@ -146,7 +146,7 @@ tag = click.option(
 # Subcommands
 
 
-@download.command(name="data")
+@cli_download.command(name="data")
 @output(help="Root directory to download data files to, ie. [path]/data")
 @tag
 def data(output, tag):
@@ -166,7 +166,7 @@ def data(output, tag):
     click.echo(f"Done, now available at: {avail}")
 
 
-@download.command(name="examples")
+@cli_download.command(name="examples")
 @output(help="Root directory to download ISOFIT examples to, ie. [path]/examples")
 @tag
 def examples(output, tag):
@@ -184,11 +184,3 @@ def examples(output, tag):
     avail = unzip(zipfile, path=output, rename="examples")
 
     click.echo(f"Done, now available at: {avail}")
-
-
-if __name__ == "__main__":
-    download()
-else:
-    from isofit import cli
-
-    cli.add_command(download)

@@ -9,7 +9,6 @@ import subprocess
 from datetime import datetime
 from os.path import exists, join
 from types import SimpleNamespace
-from typing import List
 from warnings import warn
 
 import click
@@ -20,15 +19,6 @@ import isofit.utils.template_construction as tmpl
 from isofit.core import isofit
 from isofit.core.common import envi_header, ray_start, ray_terminate
 from isofit.utils import analytical_line, empirical_line, extractions, segment
-
-warn(
-    message=(
-        f"The module {__name__} is deprecated and will be removed with ISOFIT version"
-        " 3.2."
-    ),
-    category=DeprecationWarning,
-    stacklevel=2,
-)
 
 EPS = 1e-6
 CHUNKSIZE = 256
@@ -89,10 +79,9 @@ INVERSION_WINDOWS = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
     is_flag=True,
 )
 @click.option("--profile")
-def _cli(debug_args, profile, **kwargs):
-    """\
-    Apply OE to a block of data
-    """
+def cli_apply_oe(debug_args, profile, **kwargs):
+    """Apply OE to a block of data"""
+
     if debug_args:
         click.echo("Arguments to be passed:")
         for key, value in kwargs.items():
@@ -185,6 +174,16 @@ def apply_oe(args):
     Returns:
 
     """
+
+    warn(
+        message=(
+            f"The module {__name__} is deprecated and will be removed with ISOFIT version"
+            " 3.2."
+        ),
+        category=DeprecationWarning,
+        stacklevel=2,
+    )
+
     use_superpixels = args.empirical_line or args.analytical_line
 
     if not os.environ.get("ISOFIT_DEBUG"):
@@ -641,11 +640,3 @@ def apply_oe(args):
 
     logging.info("Done.")
     ray_terminate()
-
-
-if __name__ == "__main__":
-    _cli()
-else:
-    from isofit import cli
-
-    cli.add_command(_cli)

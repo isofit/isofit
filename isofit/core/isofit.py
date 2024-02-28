@@ -305,21 +305,12 @@ class Worker(object):
     ),
     default="INFO",
 )
-def _cli(config_file, level):
-    """\
-    Executes ISOFIT core
-    """
+def cli_run(config_file, level):
+    """Execute ISOFIT core"""
+
     click.echo(f"Running ISOFIT(config_file={config_file!r}, level={level})")
 
     logging.basicConfig(format="%(message)s", level=level)
     Isofit(config_file=config_file, level=level).run()
 
     click.echo("Done")
-
-
-if __name__ == "__main__":
-    _cli()
-else:
-    from isofit import cli
-
-    cli.add_command(_cli)
