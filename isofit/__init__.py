@@ -66,4 +66,3 @@ import isofit.utils.analytical_line
 import isofit.utils.apply_oe
 import isofit.utils.downloads
 import isofit.utils.ewt_from_reflectance
-import isofit.utils.solar_position
