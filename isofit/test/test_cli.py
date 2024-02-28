@@ -15,6 +15,9 @@ from click.testing import CliRunner
 from isofit import cli
 from isofit.utils import surface_model
 
+# Mark the entire file as containing slow tests
+pytestmark = pytest.mark.slow
+
 # Environment variables
 EMULATOR_PATH = os.environ.get("EMULATOR_PATH", "")
 CORES = os.cpu_count()
