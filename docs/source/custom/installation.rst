@@ -84,7 +84,15 @@ Install from github
     mamba activate isofit_env
     pip install -e ./isofit
 
+Downloading Extra Files
+-----------------------
 
+Once ISOFIT is installed, the CLI provides an easy way to download additional files that may be useful.
+These can be acquired via the `isofit download` command, and the current list of downloads we support is available via `isofit download --help`.
+
+> **_NOTE:_**  The default location for downloading extra files will be the `isofit.root` path, which is the installation path of the package.
+This path may not be writeable. In these cases, use the `--output [path]` flag to control where the downloads will occur.
+If the output path is different than the default, many of the provided configuration files may not work.
 
 Setting environment variables
 =============================
@@ -270,4 +278,4 @@ Ray may have compatability issues with older machines with glibc < 2.14.
 Additional Installation Info for Developers
 ========================================
 
-Be sure to read the :ref:`contributing` page as additional installation steps must be performed. 
+Be sure to read the :ref:`contributing` page as additional installation steps must be performed.
