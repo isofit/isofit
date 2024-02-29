@@ -40,7 +40,7 @@ def test_subcommand_registration(executable):
         assert cmd in stdout_txt
 
     # Check to make sure the right number of subcommands are registered
-    assert subcommand_count == 8
+    assert subcommand_count == 10
 
 
 def test_version():
