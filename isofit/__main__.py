@@ -9,8 +9,10 @@ from isofit.utils.analytical_line import cli_analytical_line
 from isofit.utils.apply_oe import cli_apply_oe
 from isofit.utils.convert_6s_to_srtmnet import cli_6s_to_srtmnet
 from isofit.utils.downloads import cli_download
+from isofit.utils.empirical_line import cli_empirical_line
 from isofit.utils.ewt_from_reflectance import cli_ewt
 from isofit.utils.solar_position import cli_sun
+from isofit.utils.surface_model import cli_surface_model
 
 
 @click.group(invoke_without_command=True)
@@ -39,6 +41,8 @@ cli.add_command(cli_apply_oe)
 cli.add_command(cli_sun)
 cli.add_command(cli_download)
 cli.add_command(cli_6s_to_srtmnet)
+cli.add_command(cli_surface_model)
+cli.add_command(cli_empirical_line)
 
 
 if __name__ == "__main__":

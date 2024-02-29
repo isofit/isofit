@@ -19,7 +19,9 @@
 #
 
 import os
+from types import SimpleNamespace
 
+import click
 import numpy as np
 import scipy
 from scipy.linalg import inv
@@ -390,3 +392,23 @@ def surface_model(
     model["attribute_covs"] = np.array(model["attribute_covs"])
 
     scipy.io.savemat(outfile, model)
+
+
+# Input arguments
+@click.command(name="surface_model")
+@click.argument("config_path", type=str)
+@click.argument("--wavelength_path", type=str)
+@click.argument("--output_path", type=str)
+@click.argument("--seed", default=13, type=int)
+def cli_surface_model(**kwargs):
+    """Build a new surface model to a block of data"""
+
+    # SimpleNamespace converts a dict into dot-notational
+    surface_model(SimpleNamespace(**kwargs))
+    click.echo("Done")
+
+
+if __name__ == "__main__":
+    raise NotImplementedError(
+        "surface_model.py cannot be called this way.  Run as:\n isofit surface_model [CONFIG_PATH]"
+    )

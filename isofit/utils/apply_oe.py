@@ -640,3 +640,9 @@ def apply_oe(args):
 
     logging.info("Done.")
     ray_terminate()
+
+
+if __name__ == "__main__":
+    raise NotImplementedError(
+        "apply_oe.py can no longer be called this way.  Run as:\n isofit apply_oe [ARGS]"
+    )

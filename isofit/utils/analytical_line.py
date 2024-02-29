@@ -358,3 +358,9 @@ def cli_analytical_line(**kwargs):
     analytical_line(**kwargs)
 
     click.echo("Done")
+
+
+if __name__ == "__main__":
+    raise NotImplementedError(
+        "analytical_line.py can no longer be called this way.  Run as:\n isofit analytical_line [ARGS]"
+    )
