@@ -85,6 +85,7 @@ def files(cube_example):
 
 
 # fmt: off
+@pytest.mark.slow
 @pytest.mark.parametrize("args", [
     ["ang", "--presolve", 1, "--emulator_base", EMULATOR_PATH, "--n_cores", CORES, "--analytical_line", 1, "-nn", 10, "-nn", 50,],
     ["ang", "--presolve", 1, "--emulator_base", EMULATOR_PATH, "--n_cores", CORES, "--analytical_line", 1, "-nn", 10, "-nn", 50, "-nn", 10, "--pressure_elevation",],
