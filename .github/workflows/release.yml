@@ -13,11 +13,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Enable ISOFIT Environment
-        shell: bash
-        run: |
-          echo PATH=/home/ray/anaconda3/envs/isofit/bin/:$PATH >> $GITHUB_ENV
-
       - name: Install dependencies
         shell: bash
         run: |
