@@ -400,7 +400,7 @@ def surface_model(
 @click.argument("--wavelength_path", type=str)
 @click.argument("--output_path", type=str)
 @click.argument("--seed", default=13, type=int)
-def cli_surface_model(debug_args, profile, **kwargs):
+def cli_surface_model(**kwargs):
     """Build a new surface model to a block of data"""
 
     # SimpleNamespace converts a dict into dot-notational
