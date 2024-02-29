@@ -5,7 +5,6 @@ These tests are to ensure any changes to the CLI will be backwards compatible.
 import io
 import json
 import os
-import pathlib
 import shutil
 import zipfile
 
@@ -13,7 +12,6 @@ import pytest
 import requests
 from click.testing import CliRunner
 
-from isofit import root
 from isofit.__main__ import cli
 from isofit.utils import surface_model
 
@@ -50,11 +48,10 @@ def surface(cube_example):
 
     # Generate the surface.mat using the image_cube example config
     # fmt: off
-    isofit = pathlib.Path(root)
     surface_model(
-        config_path     = str(isofit / "examples/20171108_Pasadena/configs/ang20171108t184227_surface.json"),
-        wavelength_path = str(isofit / "examples/20171108_Pasadena/remote/20170320_ang20170228_wavelength_fit.txt"),
-        output_path     = outp
+        config_path="examples/20171108_Pasadena/configs/ang20171108t184227_surface.json",
+        wavelength_path="examples/20171108_Pasadena/remote/20170320_ang20170228_wavelength_fit.txt",
+        output_path=outp
     )
     # fmt: on
     # Return the path to the mat file
