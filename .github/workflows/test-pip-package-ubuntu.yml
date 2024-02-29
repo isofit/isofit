@@ -1,0 +1,106 @@
+# Test a package built and installed by pip.
+#
+# Test ISOFIT on a variety of versions of Python. This test suite is likely
+# sufficient for broadly testing the 'pip' package, with the assumption that
+# users are able to get all dependencies installed. Any further testing should
+# be for a specific environment, and be very targeted.
+#
+# For example, testing Ubuntu 22.04 package ecosystem should likely be done by
+# building a deb for ISOFIT, and testing against the Python packages provided by
+# the apt package repo. It may also be possible to test this environment with a
+# mix of upstream packages and a non-isolated virtual environment built with the
+# '--system-site-packages' flag.
+#
+# Readers looking at this file for the purposes of installing ISOFIT on their
+# system should be aware that these tests run in an isolated manner. Be aware
+# that both 'pip' and 'apt/apt-get' can both be used to install Python
+# packages, but pip installing something with Ubuntu's system Python will
+# conflict with packages installed via 'apt/apt-get', and produce an environment
+# that is difficult to unwind.
+
+
+name: Test 'pip' Package
+
+on:
+  push:
+    branches: ["dev_2x", "main"]
+  pull_request:
+    branches: ["dev_2x", "main"]
+
+jobs:
+
+  test:
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Python 3.12 cannot be tested until Ray provides support:
+        #   https://github.com/ray-project/ray/issues/40211
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        pytest-flags: ["-m unmarked", "-m slow"]
+
+    steps:
+
+      - uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install ISOFIT and most software dependencies
+        shell: bash
+        run: |
+
+          # Python packaging dependencies. The presence of 'wheel' triggers
+          # a lot of new Python packaging machinery that will eventually
+          # become the default.
+          python3 -m pip install pip setuptools wheel --upgrade
+          python3 --version
+          python3 -m pip show pip setuptools wheel
+
+          # Install 'isofit'
+          python3 -m pip install ".[test]"
+
+      - name: Cache 6S
+        id: cache-6s-v21
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-6s-v21
+        with:
+          path: 6sv-2.1/
+          key: ${{ env.cache-name }}
+
+      - name: Cache sRTMnet
+        id: cache-sRTMnet-v100
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-sRTMnet-v100
+        with:
+          path: sRTMnet_v100/
+          key: ${{ env.cache-name }}
+
+      - name: Download and build 6S v2.1
+        if: ${{ steps.cache-6S-v21.outputs.cache-hit != true }}
+        shell: bash
+        run: |
+          ./scripts/download-and-build-6s.sh
+
+      - name: Install sRTMnet
+        if: ${{ steps.cache-sRTMnet-v100.outputs.cache-hit != true }}
+        shell: bash
+        run: |
+          ./scripts/download-and-unpack-sRTMnet.sh
+
+      - name: Download and unpack Hypertrace data
+        if: ${{ steps.cache-hypertrace-data.outputs.cache-hit != true }}
+        shell: bash
+        run: |
+          ./scripts/download-and-unpack-hypertrace-data.sh
+
+      - name: Execute tests
+        shell: bash
+        run: |
+          ./scripts/run-tests.sh ${{ matrix.pytest-flags }}
