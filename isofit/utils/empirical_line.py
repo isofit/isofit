@@ -24,9 +24,7 @@ import time
 from types import SimpleNamespace
 
 import click
-import matplotlib
 import numpy as np
-import pylab as plt
 from scipy.linalg import inv
 from scipy.spatial import KDTree
 from spectral.io import envi
@@ -36,8 +34,6 @@ from isofit.configs import configs
 from isofit.core.common import envi_header, ray_initiate
 from isofit.core.fileio import write_bil_chunk
 from isofit.core.instrument import Instrument
-
-plt.switch_backend("Agg")
 
 
 @ray.remote
@@ -314,8 +310,6 @@ def _run_chunk(
                 output_uncertainty_row[col, :] = (
                     np.sqrt(np.diag(Sy) + pow(calunc * x, 2)) * bhat[:, 1]
                 )
-            # if loglevel == 'DEBUG':
-            #    plot_example(xv, yv, bhat)
 
             nspectra = nspectra + 1
 
@@ -352,30 +346,6 @@ def _run_chunk(
             row,
             (n_input_lines, n_output_uncertainty_bands, n_input_samples),
         )
-
-
-def _plot_example(xv, yv, b):
-    """Plot for debugging purposes."""
-
-    matplotlib.rcParams["font.family"] = "serif"
-    matplotlib.rcParams["font.sans-serif"] = "Times"
-    matplotlib.rcParams["legend.edgecolor"] = "None"
-    matplotlib.rcParams["axes.spines.top"] = False
-    matplotlib.rcParams["axes.spines.bottom"] = True
-    matplotlib.rcParams["axes.spines.left"] = True
-    matplotlib.rcParams["axes.spines.right"] = False
-    matplotlib.rcParams["axes.grid"] = True
-    matplotlib.rcParams["axes.grid.axis"] = "both"
-    matplotlib.rcParams["axes.grid.which"] = "major"
-    matplotlib.rcParams["legend.edgecolor"] = "1.0"
-    plt.plot(xv[:, 113], yv[:, 113], "ko")
-    plt.plot(xv[:, 113], xv[:, 113] * b[113, 1] + b[113, 0], "nneighbors")
-    # plt.plot(x[113], x[113]*b[113, 1] + b[113, 0], 'ro')
-    plt.grid(True)
-    plt.xlabel("Radiance, $\mu{W }nm^{-1} sr^{-1} cm^{-2}$")
-    plt.ylabel("Reflectance")
-    plt.show(block=True)
-    plt.savefig("empirical_line.pdf")
 
 
 def empirical_line(

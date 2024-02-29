@@ -23,7 +23,6 @@ import multiprocessing
 import time
 
 import numpy as np
-import pylab as plt
 from scipy.linalg import inv
 from scipy.spatial import KDTree
 from sklearn.decomposition import PCA
@@ -34,8 +33,6 @@ from spectral.io import envi
 from isofit.configs import configs
 from isofit.core.common import envi_header
 from isofit.core.instrument import Instrument
-
-plt.switch_backend("Agg")
 
 
 def _write_bil_chunk(
