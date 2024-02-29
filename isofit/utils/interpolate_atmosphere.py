@@ -22,7 +22,6 @@ import logging
 import multiprocessing
 import time
 
-import matplotlib
 import numpy as np
 import pylab as plt
 from scipy.linalg import inv

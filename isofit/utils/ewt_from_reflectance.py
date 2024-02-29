@@ -26,7 +26,6 @@ from types import SimpleNamespace
 
 import click
 import numpy as np
-from matplotlib import pyplot as plt
 from spectral.io import envi
 
 from isofit import ray
