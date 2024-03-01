@@ -87,9 +87,9 @@ def files(cube_example):
 
 # fmt: off
 @pytest.mark.parametrize("args", [
-    ["ang", "--presolve", "--emulator_base", EMULATOR_PATH, "--n_cores", CORES, "--memory_gb", 12, "--analytical_line", "-nn", 10, "-nn", 50,],
-    ["ang", "--presolve", "--emulator_base", EMULATOR_PATH, "--n_cores", CORES, "--memory_gb", 12, "--analytical_line", "-nn", 10, "-nn", 50, "-nn", 10, "--pressure_elevation",],
-    ["ang", "--presolve", "--emulator_base", EMULATOR_PATH, "--n_cores", CORES, "--memory_gb", 12, "--empirical_line", "--surface_category", "additive_glint_surface",],
+    ["ang", "--presolve", "--emulator_base", EMULATOR_PATH, "--n_cores", CORES, "--analytical_line", "-nn", 10, "-nn", 50,],
+    ["ang", "--presolve", "--emulator_base", EMULATOR_PATH, "--n_cores", CORES, "--analytical_line", "-nn", 10, "-nn", 50, "-nn", 10, "--pressure_elevation",],
+    ["ang", "--presolve", "--emulator_base", EMULATOR_PATH, "--n_cores", CORES, "--empirical_line", "--surface_category", "additive_glint_surface",],
 ])
 # fmt: on
 def test_apply_oe(files, args, surface):
