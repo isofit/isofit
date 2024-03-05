@@ -431,17 +431,10 @@ class RadiativeTransferEngine:
             readSim = ray.put(self.readSim)
             lut_path = ray.put(self.lut_path)
             jobs = [
-                streamSimulation.remote(
-                    point, lut_names, makeSim, readSim, lut_path, i  # ids[i]
-                )
-                for i, point in enumerate(self.points)
+                streamSimulation.remote(point, lut_names, makeSim, readSim, lut_path)
+                for point in self.points
             ]
-            # Delete job references as soon as they finish
             ray.get(jobs)
-            # while jobs:
-            #     [done], jobs = ray.wait(jobs)
-            #     result = ray.get(done)
-            #     del result, done
         else:
             Logger.debug("makeSim is disabled for this engine")
 
@@ -600,9 +593,6 @@ class RadiativeTransferEngine:
         return data
 
 
-from datetime import datetime as dt
-
-
 @ray.remote
 def streamSimulation(
     point: np.array,
@@ -610,7 +600,6 @@ def streamSimulation(
     simmer: Callable,
     reader: Callable,
     output: str,
-    i=-1,
     max_buffer_time: float = 0.5,
 ):
     """Run a simulation for a single point and stream the results to a saved lut file.
@@ -637,9 +626,6 @@ def streamSimulation(
     # Save the results to our LUT format
     if data:
         Logger.debug(f"Updating data point {point} for keys: {data.keys()}")
-        now = dt.now()
-        # print(f"{i: 4} Starting: {now}")
-        luts.updatePoint(output, list(lut_names), point, data, i)
-        # print(f"{i: 4} Finished: {now}, {dt.now() - now}")
+        luts.updatePoint(output, list(lut_names), point, data)
     else:
         Logger.warning(f"No data was returned for point {point}")

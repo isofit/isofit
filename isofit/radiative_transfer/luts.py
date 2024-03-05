@@ -98,11 +98,8 @@ def initialize(
     return ds.stack(point=lut_grid).transpose("point", "wl")
 
 
-from datetime import datetime as dt
-
-
 def updatePoint(
-    file: str, lut_names: list = [], point: tuple = (), data: dict = {}, id=-1
+    file: str, lut_names: list = [], point: tuple = (), data: dict = {}
 ) -> None:
     """
     Updates a point in a LUT NetCDF
@@ -122,8 +119,6 @@ def updatePoint(
                     every new input
     """
     with SystemMutex("lock"):
-        # now = dt.now()
-        # print(f"{id: 4} Opening: {now}")
         with Dataset(file, "a") as nc:
             # Retrieves the index for a point value
             index = lambda key, val: np.argwhere(nc[key][:] == val)[0][0]
@@ -179,7 +174,6 @@ def updatePoint(
                     else:
                         # Not a special case, save as-is
                         var[inds] = values
-    # print(f"{id: 4} Release: {dt.now() - now}")
 
 
 def sel(ds, dim, lt=None, lte=None, gt=None, gte=None, encompass=True):
