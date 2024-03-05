@@ -437,10 +437,11 @@ class RadiativeTransferEngine:
                 for i, point in enumerate(self.points)
             ]
             # Delete job references as soon as they finish
-            while jobs:
-                [done], jobs = ray.wait(jobs)
-                result = ray.get(done)
-                del result, done
+            ray.get(jobs)
+            # while jobs:
+            #     [done], jobs = ray.wait(jobs)
+            #     result = ray.get(done)
+            #     del result, done
         else:
             Logger.debug("makeSim is disabled for this engine")
 
