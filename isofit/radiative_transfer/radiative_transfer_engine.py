@@ -632,7 +632,6 @@ def streamSimulation(
     # Save the results to our LUT format
     if data:
         Logger.debug(f"Updating data point {point} for keys: {data.keys()}")
-        now = dt.now()
         luts.updatePoint(output, list(lut_names), point, data)
     else:
         Logger.warning(f"No data was returned for point {point}")
