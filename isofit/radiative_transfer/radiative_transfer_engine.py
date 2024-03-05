@@ -599,6 +599,9 @@ class RadiativeTransferEngine:
         return data
 
 
+from datetime import datetime as dt
+
+
 @ray.remote
 def streamSimulation(
     point: np.array,
@@ -606,6 +609,7 @@ def streamSimulation(
     simmer: Callable,
     reader: Callable,
     output: str,
+    i=-1,
     max_buffer_time: float = 0.5,
 ):
     """Run a simulation for a single point and stream the results to a saved lut file.
@@ -632,6 +636,9 @@ def streamSimulation(
     # Save the results to our LUT format
     if data:
         Logger.debug(f"Updating data point {point} for keys: {data.keys()}")
-        luts.updatePoint(output, list(lut_names), point, data)
+        now = dt.now()
+        print(f"{i: 4} Starting: {now}")
+        luts.updatePoint(output, list(lut_names), point, data, i)
+        print(f"{i: 4} Finished: {now}, {dt.now() - now}")
     else:
         Logger.warning(f"No data was returned for point {point}")
