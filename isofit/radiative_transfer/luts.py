@@ -121,9 +121,9 @@ def updatePoint(
         solar_irr - Not along the point dimension, presently clobbers with
                     every new input
     """
-    now = dt.now()
-    print(f"{id: 4} Opening: {now}")
     with SystemMutex("lock"):
+        now = dt.now()
+        print(f"{id: 4} Opening: {now}")
         with Dataset(file, "a") as nc:
             # Retrieves the index for a point value
             index = lambda key, val: np.argwhere(nc[key][:] == val)[0][0]
