@@ -12,7 +12,6 @@ dependencies:
   - netCDF4
   - numpy>=1.20.0
   - pandas>=0.24
-  - pep8>=1.7.1
   - pre-commit
   - pygrib
   - pytest>=3.5.1

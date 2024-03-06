@@ -59,7 +59,7 @@ def initialize(
         List of keys to default to zeros as the fill value instead of NaNs
     """
     # Initialize with all lut point names as dimensions
-    ds = xr.Dataset(coords={"wl": wl} | lut_grid)
+    ds = xr.Dataset(coords={"wl": wl, **lut_grid})
 
     # Insert constants
     filler = np.nan
@@ -77,7 +77,7 @@ def initialize(
 
     ## Insert point dimensional keys
     # Filler arrays
-    dims = tuple(ds.dims.values())
+    dims = tuple(ds.sizes.values())
     nans = np.full(dims, np.nan)
     zero = np.zeros(dims)
 

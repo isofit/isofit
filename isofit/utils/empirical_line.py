@@ -21,7 +21,9 @@
 import atexit
 import logging
 import time
+from types import SimpleNamespace
 
+import click
 import matplotlib
 import numpy as np
 import pylab as plt
@@ -603,3 +605,29 @@ def empirical_line(
             line_sections[-1] * n_input_samples / total_time / n_cores,
         )
     )
+
+
+@click.command(name="empirical_line")
+@click.argument("reference_radiance_file", type=str)
+@click.argument("reference_reflectance_file", type=str)
+@click.argument("reference_uncertainty_file", type=str)
+@click.argument("reference_locations_file", type=str)
+@click.argument("segmentation_file", type=str)
+@click.argument("input_radiance_file", type=str)
+@click.argument("input_locations_file", type=str)
+@click.argument("output_reflectance_file", type=str)
+@click.argument("output_uncertainty_file", type=str)
+@click.option("--nneighbors", default=400, type=int, help="Number of neighbors")
+@click.option("--nodata_value", default=-9999.0, type=float, help="Nodata value")
+@click.option("--level", default="INFO", type=str, help="Logging level")
+@click.option("--logfile", default=None, type=str, help="Log file path")
+@click.option("--radiance_factors", default=None, type=str, help="Radiance factors")
+@click.option("--isofit_config", default=None, type=str, help="Isofit config")
+@click.option("--n_cores", default=-1, type=int, help="Number of cores")
+@click.option(
+    "--reference_class_file", default=None, type=str, help="Reference class file"
+)
+def cli_empirical_line(**kwargs):
+    """Run empirical line"""
+    empirical_line(SimpleNamespace(**kwargs))
+    click.echo("Done")

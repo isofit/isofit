@@ -5,7 +5,6 @@ These tests are to ensure any changes to the CLI will be backwards compatible.
 import io
 import json
 import os
-import pathlib
 import shutil
 import zipfile
 
@@ -13,8 +12,12 @@ import pytest
 import requests
 from click.testing import CliRunner
 
-from isofit import cli, root
+from isofit.__main__ import cli
 from isofit.utils import surface_model
+
+# Mark the entire file as containing slow tests
+pytestmark = pytest.mark.slow
+
 
 # Environment variables
 EMULATOR_PATH = os.environ.get("EMULATOR_PATH", "")
@@ -45,11 +48,10 @@ def surface(cube_example):
 
     # Generate the surface.mat using the image_cube example config
     # fmt: off
-    isofit = pathlib.Path(root)
     surface_model(
-        config_path     = str(isofit / "examples/20171108_Pasadena/configs/ang20171108t184227_surface.json"),
-        wavelength_path = str(isofit / "examples/20171108_Pasadena/remote/20170320_ang20170228_wavelength_fit.txt"),
-        output_path     = outp
+        config_path="examples/20171108_Pasadena/configs/ang20171108t184227_surface.json",
+        wavelength_path="examples/20171108_Pasadena/remote/20170320_ang20170228_wavelength_fit.txt",
+        output_path=outp
     )
     # fmt: on
     # Return the path to the mat file
@@ -82,23 +84,24 @@ def files(cube_example):
 
 
 # fmt: off
+@pytest.mark.slow
 @pytest.mark.parametrize("args", [
-    ["ang", "--presolve", 1, "--emulator_base", EMULATOR_PATH, "--n_cores", CORES, "--analytical_line", 1, "-nn", 10, "-nn", 50,],
-    ["ang", "--presolve", 1, "--emulator_base", EMULATOR_PATH, "--n_cores", CORES, "--analytical_line", 1, "-nn", 10, "-nn", 50, "-nn", 10, "--pressure_elevation",],
-    ["ang", "--presolve", 1, "--emulator_base", EMULATOR_PATH, "--n_cores", CORES, "--empirical_line", 1, "--surface_category", "additive_glint_surface",],
+    ["ang", "--presolve", "--emulator_base", EMULATOR_PATH, "--n_cores", CORES, "--analytical_line", "-nn", 10, "-nn", 50,],
+    ["ang", "--presolve", "--emulator_base", EMULATOR_PATH, "--n_cores", CORES, "--analytical_line", "-nn", 10, "-nn", 50, "-nn", 10, "--pressure_elevation",],
+    ["ang", "--presolve", "--emulator_base", EMULATOR_PATH, "--n_cores", CORES, "--empirical_line", "--surface_category", "additive_glint_surface",],
 ])
 # fmt: on
 def test_apply_oe(files, args, surface):
     """
     Executes the isofit apply_oe cli command for various test cases
     """
-    runner = CliRunner()
-    result = runner.invoke(
-        cli, ["apply_oe"] + files + args + ["--surface_path", surface]
-    )
 
-    if result.exception:
-        print(f"Test case hit an exception: {result.exception}")
-        print(f"Output for this test case:\n{result.output}")
+    arguments = ["apply_oe", *files, *args, "--surface_path", surface]
+
+    # Passing non-string arguments to click is not allowed.
+    arguments = [str(i) for i in arguments]
+
+    runner = CliRunner()
+    result = runner.invoke(cli, arguments, catch_exceptions=False)
 
     assert result.exit_code == 0

@@ -917,7 +917,7 @@ def build_main_config(
         spectra_per_inversion = 1
 
     if prebuilt_lut_path is None:
-        lut_path = join(paths.lut_h2o_directory, "lut.nc")
+        lut_path = join(paths.full_lut_directory, "lut.nc")
     else:
         lut_path = abspath(prebuilt_lut_path)
 

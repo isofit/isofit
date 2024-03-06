@@ -39,30 +39,3 @@ if os.environ.get("ISOFIT_DEBUG"):
     from .wrappers import ray
 else:
     import ray
-
-import click
-
-
-@click.group(invoke_without_command=True)
-@click.pass_context
-@click.option("-v", "--version", help="Print the current version", is_flag=True)
-@click.option("-p", "--path", help="Print the installation path", is_flag=True)
-def cli(ctx, version, path):
-    """\
-    This houses the subcommands of ISOFIT
-    """
-    if ctx.invoked_subcommand is None:
-        if version:
-            click.echo(__version__)
-
-        if path:
-            click.echo(__path__[0])
-
-
-# Import all of the files that define a _cli command to register them
-import isofit.core.isofit
-import isofit.utils.add_HRRR_profiles_to_modtran_config
-import isofit.utils.analytical_line
-import isofit.utils.apply_oe
-import isofit.utils.ewt_from_reflectance
-import isofit.utils.solar_position

@@ -1,0 +1,144 @@
+# Test ISOFIT installed via a local repository checkout and '$PYTHONPATH'.
+
+name: Test '$PYTHONPATH' installation
+
+on:
+  push:
+    branches: ["dev", "main"]
+  pull_request:
+    branches: ["dev", "main"]
+
+jobs:
+
+  test:
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Python 3.12 cannot be tested until Ray provides support:
+        #   https://github.com/ray-project/ray/issues/40211
+        # This tests some very basic and long-lived Python behavior, so it is
+        # likely sufficient to test only on a single Python version to avoid
+        # GitHub worker contention.
+        python-version: ["3.11"]
+        pytest-flags: ["-m unmarked", "-m slow", "-m examples", "-m hypertrace"]
+
+    steps:
+
+      - uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install ISOFIT and most software dependencies
+        shell: bash
+        run: |
+
+          # WARNING: Do NOT 'export PYTHONPATH=...'. Environment variables seem
+          #          to be shared across all jobs, so this would break the
+          #          the 'isofit' install for some other jobs. Unclear exactly
+          #          which, but presumably any job running after this one.
+
+          # Python packaging dependencies. The presence of 'wheel' triggers
+          # a lot of new Python packaging machinery that will eventually
+          # become the default.
+          python3 -m pip install pip setuptools wheel --upgrade
+          python3 --version
+          python3 -m pip show pip setuptools wheel
+
+          # Install 'isofit' and dependencies. Be sure to uninstall this version
+          # of 'isofit' to ensure we are testing against '$PYTHONPATH'.
+          python3 -m pip install ".[test]"
+          
+          # Uninstall 'isofit', leaving its dependencies.
+          python3 -m pip uninstall --yes isofit
+          
+          # Move 'isofit' into a new directory to ensure it is not just
+          # inherently available.
+          mkdir isolation/
+          mv isofit/ isolation/
+          
+          # Check to see if 'isofit' is still installed. It should not be.
+          # Note that this job is implicitly configured with 'set -e', which
+          # means that any command exiting with a non-zero exit code will cause
+          # the script to halt. The easiest way to see if 'isofit' is still
+          # available is to attempt to import it, however, that rightfully
+          # causes Python to exit with a non-zero exit code. It is possible to
+          # use a heredoc to wrap this import in a 'try/except', print a status,
+          # and have Python exit with a 0 exit code, but all of the options are
+          # painful.
+          #
+          # Instead, disable 'set -e' by calling 'set +e', but be sure to
+          # re-enable by calling 'set -e' again as soon as possible!!
+          set +e
+          ISOFIT_INSTALLED_PATH=$(
+            python3 -c "import isofit; print(isofit.__file__)" 2> /dev/null)
+          ISOFIT_INSTALLED_EXIT_CODE=$?
+          set -e
+          if [ "${ISOFIT_INSTALLED_EXIT_CODE}" -ne 1 ]; then
+              exit 1
+          fi
+          
+          # Again, do NOT 'export PYTHONPATH=...' here. See note at top of
+          # section.
+
+      - name: Cache 6S
+        id: cache-6s-v21
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-6s-v21
+        with:
+          path: 6sv-2.1/
+          key: ${{ env.cache-name }}
+
+      - name: Cache sRTMnet
+        id: cache-sRTMnet-v100
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-sRTMnet-v100
+        with:
+          path: sRTMnet_v100/
+          key: ${{ env.cache-name }}
+
+      - name: Cache Hypertrace Data
+        id: cache-hypertrace-data
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-hypertrace-data
+        with:
+          path: hypertrace-data/
+          key: ${{ env.cache-name }}
+
+      - name: Download and build 6S v2.1
+        if: ${{ steps.cache-6S-v21.outputs.cache-hit != true }}
+        shell: bash
+        run: |
+          ./scripts/download-and-build-6s.sh
+
+      - name: Install sRTMnet
+        if: ${{ steps.cache-sRTMnet-v100.outputs.cache-hit != true }}
+        shell: bash
+        run: |
+          ./scripts/download-and-unpack-sRTMnet.sh
+
+      - name: Download and unpack Hypertrace data
+        if: ${{ steps.cache-hypertrace-data.outputs.cache-hit != true }}
+        shell: bash
+        run: |
+          ./scripts/download-and-unpack-hypertrace-data.sh
+
+      - name: Execute tests
+        shell: bash
+        run: |
+
+          # Again, do NOT 'export PYTHONPATH=...'
+          # We define 'testpaths' in 'pytest.ini', however that path is no
+          # longer valid. In this case 'pytest' searches for tests by default,
+          # but we know where they are, so explicitly point to the new location.
+          PYTHONPATH="isolation/:${PYTHONPATH}" ./scripts/run-tests.sh \
+            isolation/isofit/tests/ \
+            ${{ matrix.pytest-flags }}

@@ -9,7 +9,6 @@ import subprocess
 from datetime import datetime
 from os.path import exists, join
 from types import SimpleNamespace
-from typing import List
 from warnings import warn
 
 import click
@@ -20,15 +19,6 @@ import isofit.utils.template_construction as tmpl
 from isofit.core import isofit
 from isofit.core.common import envi_header, ray_start, ray_terminate
 from isofit.utils import analytical_line, empirical_line, extractions, segment
-
-warn(
-    message=(
-        f"The module {__name__} is deprecated and will be removed with ISOFIT version"
-        " 3.2."
-    ),
-    category=DeprecationWarning,
-    stacklevel=2,
-)
 
 EPS = 1e-6
 CHUNKSIZE = 256
@@ -88,17 +78,29 @@ INVERSION_WINDOWS = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
     help="Prints the arguments list without executing the command",
     is_flag=True,
 )
-def _cli(debug_args, **kwargs):
-    """\
-    Apply OE to a block of data
-    """
+@click.option("--profile")
+def cli_apply_oe(debug_args, profile, **kwargs):
+    """Apply OE to a block of data"""
+
     if debug_args:
         click.echo("Arguments to be passed:")
         for key, value in kwargs.items():
             click.echo(f"  {key} = {value!r}")
     else:
+        if profile:
+            import cProfile
+            import pstats
+
+            profiler = cProfile.Profile()
+            profiler.enable()
+
         # SimpleNamespace converts a dict into dot-notational
         apply_oe(SimpleNamespace(**kwargs))
+
+        if profile:
+            profiler.disable()
+            stats = pstats.Stats(profiler)
+            stats.dump_stats(profile)
 
     click.echo("Done")
 
@@ -172,8 +174,20 @@ def apply_oe(args):
     Returns:
 
     """
+
+    warn(
+        message=(
+            f"The module {__name__} is deprecated and will be removed with ISOFIT version"
+            " 3.2."
+        ),
+        category=DeprecationWarning,
+        stacklevel=2,
+    )
+
     use_superpixels = args.empirical_line or args.analytical_line
-    ray_start(args.n_cores, args.num_cpus, args.memory_gb * 1024**3)
+
+    if not os.environ.get("ISOFIT_DEBUG"):
+        ray_start(args.n_cores, args.num_cpus, args.memory_gb * 1024**3)
 
     if args.sensor not in SUPPORTED_SENSORS:
         if args.sensor[:3] != "NA-":
@@ -465,7 +479,7 @@ def apply_oe(args):
                 surface_category=args.surface_category,
                 emulator_base=args.emulator_base,
                 uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
-                prebuilt_lut=args.prebuilt_lut,
+                prebuilt_lut_path=args.prebuilt_lut,
             )
 
             # Run modtran retrieval
@@ -629,8 +643,6 @@ def apply_oe(args):
 
 
 if __name__ == "__main__":
-    _cli()
-else:
-    from isofit import cli
-
-    cli.add_command(_cli)
+    raise NotImplementedError(
+        "apply_oe.py can no longer be called this way.  Run as:\n isofit apply_oe [ARGS]"
+    )

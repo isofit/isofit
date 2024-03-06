@@ -70,9 +70,9 @@ def main(args: SimpleNamespace) -> None:
     output_metadata = rfl_ds.metadata
     output_metadata["interleave"] = "bil"
     output_metadata["bands"] = "1"
-    output_metadata[
-        "description"
-    ] = "L2A Canopy Water Content / Equivalent Water Thickness"
+    output_metadata["description"] = (
+        "L2A Canopy Water Content / Equivalent Water Thickness"
+    )
     if "emit pge input files" in list(output_metadata.keys()):
         del output_metadata["emit pge input files"]
 
@@ -216,10 +216,11 @@ def run_lines(
     help="Prints the arguments list without executing the command",
     is_flag=True,
 )
-def _cli(debug_args, **kwargs):
-    """\
-    Calculate Equivalent Water Thickness (EWT) / Canopy Water Content (CWC) for a set of reflectance data, based on Beer
-    Lambert Absorption of liquid water.
+def cli_ewt(debug_args, **kwargs):
+    """Calculate EWT and CWC
+
+    Calculate Equivalent Water Thickness (EWT) / Canopy Water Content (CWC) for
+    a set of reflectance data, based on Beer Lambert Absorption of liquid water.
     """
     click.echo("Running EWT from Reflectance")
     if debug_args:
@@ -234,8 +235,6 @@ def _cli(debug_args, **kwargs):
 
 
 if __name__ == "__main__":
-    _cli()
-else:
-    from isofit import cli
-
-    cli.add_command(_cli)
+    raise NotImplementedError(
+        "ewt_from_reflectance.py can no longer be called this way.  Run as:\n isofit ewt_from_reflectance [ARGS]"
+    )
