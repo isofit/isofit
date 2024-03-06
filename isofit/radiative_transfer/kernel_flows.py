@@ -19,7 +19,6 @@
 #
 
 import logging
-import os
 
 import h5py
 import numpy as np
@@ -27,8 +26,7 @@ import numpy as np
 from isofit.configs.sections.radiative_transfer_config import (
     RadiativeTransferEngineConfig,
 )
-from isofit.core import isofit
-from isofit.core.common import resample_spectrum, spectral_response_function
+from isofit.core.common import spectral_response_function
 
 Logger = logging.getLogger(__file__)
 
