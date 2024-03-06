@@ -118,7 +118,7 @@ def heuristic_atmosphere(
             # the absorption feature)
             # ToDo: grab the per pixel sza from Geometry object
             if my_RT.engine_config.engine_name == "KernelFlowsGP":
-                rho = meas * np.pi / (solar_irr * np.cos(np.deg2rad(geom.solar_zenith)))
+                rho = meas
             else:
                 rho = meas * np.pi / (solar_irr * RT.coszen)
 
