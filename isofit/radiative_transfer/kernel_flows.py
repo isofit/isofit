@@ -121,7 +121,7 @@ class KernelFlowsRT(object):
         MP = self.srf_matrix @ G["Yproj"]["vectors"][:, :].T
         H = MP * G["Yproj"]["values"][:]
         srfmean = self.srf_matrix @ G["Ymean"]
-        return ZY_pred @ H.T + srfmean
+        return (ZY_pred @ H.T) * G["Ystd"] + srfmean
 
     def predict_M(self, M, Z_te):
         Z_tr = M["Z"][:, :].T  # training inputs
