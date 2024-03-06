@@ -63,17 +63,6 @@ class KernelFlowsRT(object):
                 for wi, fwhmi in zip(self.wl, self.fwhm)
             ]
         )
-
-        # load solar irradiance
-        # ToDo: obtain solar irradiance from emulator file itself
-        irr_file = os.path.join(
-            os.path.dirname(isofit.__file__), "..", "..", "data", "kurucz_0.1nm.dat"
-        )
-        irr_wl, irr = np.loadtxt(irr_file, comments="#").T
-        irr = irr / 10  # convert to uW cm-2 sr-1 nm-1
-        irr_resamp = resample_spectrum(irr, irr_wl, self.wl, self.fwhm)
-        self.irr_resamp = np.array(irr_resamp, dtype=np.float32)
-
         self.ga = list()
 
     def predict(self, points):
@@ -93,7 +82,7 @@ class KernelFlowsRT(object):
             "transm_up_dif": np.zeros(self.ga[0].shape),
             "thermal_upwelling": np.zeros(self.ga[0].shape),
             "thermal_downwelling": np.zeros(self.ga[0].shape),
-            "solar_irr": self.irr_resamp,
+            "solar_irr": np.zeros(self.ga[0].shape),
             "wl": self.wl,
         }
         return combined
