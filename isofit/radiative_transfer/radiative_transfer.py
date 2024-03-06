@@ -291,13 +291,13 @@ class RadiativeTransfer:
         self, x_RT, x_surface, rfl, drfl_dsurface, Ls, dLs_dsurface, geom: Geometry
     ):
         # first the rdn at the current state vector
-        rdn = self.calc_rdn(x_RT, rfl, Ls, geom)
+        rdn = self.calc_rdn(x_RT, x_surface, rfl, Ls, geom)
 
         # perturb each element of the RT state vector (finite difference)
         K_RT = []
         x_RTs_perturb = x_RT + np.eye(len(x_RT)) * eps
         for x_RT_perturb in list(x_RTs_perturb):
-            rdne = self.calc_rdn(x_RT_perturb, rfl, Ls, geom)
+            rdne = self.calc_rdn(x_RT_perturb, x_surface, rfl, Ls, geom)
             K_RT.append((rdne - rdn) / eps)
         K_RT = np.array(K_RT).T
 
@@ -374,7 +374,7 @@ class RadiativeTransfer:
             Kb_RT = np.zeros((1, len(self.wl)))
         else:
             # first the radiance at the current state vector
-            rdn = self.calc_rdn(x_RT, rfl, Ls, geom)
+            rdn = self.calc_rdn(x_RT, x_surface, rfl, Ls, geom)
 
             # unknown parameters modeled as random variables per
             # Rodgers et al (2000) K_b matrix.  We calculate these derivatives
@@ -386,7 +386,7 @@ class RadiativeTransfer:
                     i = self.statevec_names.index("H2OSTR")
                     x_RT_perturb = x_RT.copy()
                     x_RT_perturb[i] = x_RT[i] * perturb
-                    rdne = self.calc_rdn(x_RT_perturb, rfl, Ls, geom)
+                    rdne = self.calc_rdn(x_RT_perturb, x_surface, rfl, Ls, geom)
                     Kb_RT.append((rdne - rdn) / eps)
 
         Kb_RT = np.array(Kb_RT).T
