@@ -140,5 +140,5 @@ jobs:
           # longer valid. In this case 'pytest' searches for tests by default,
           # but we know where they are, so explicitly point to the new location.
           PYTHONPATH="isolation/:${PYTHONPATH}" ./scripts/run-tests.sh \
-            isolation/isofit/tests/ \
+            isolation/isofit/test/ \
             ${{ matrix.pytest-flags }}
