@@ -22,6 +22,11 @@ if "PYTHONPATH" in os.environ:
             IS_INSTALLED_VIA_PYTHONPATH = True
             break
 
+_NO_EXECUTABLE_MARKER = pytest.mark.skipif(
+    IS_INSTALLED_VIA_PYTHONPATH,
+    reason="'$ isofit' executable not available when installed via '$PYTHONPATH'",
+)
+
 
 # fmt: off
 @pytest.mark.parametrize("executable", [
@@ -31,7 +36,7 @@ if "PYTHONPATH" in os.environ:
 
     # The '$ isofit' executable is not available when installed via
     # '$PYTHONPATH', so sometimes this test is skipped.
-    pytest.param(["isofit"], marks=pytest.mark.skipif(IS_INSTALLED_VIA_PYTHONPATH)),
+    pytest.param(["isofit"], marks=_NO_EXECUTABLE_MARKER),
 
 ])
 # fmt: on
