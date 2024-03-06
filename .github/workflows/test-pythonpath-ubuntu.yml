@@ -38,6 +38,11 @@ jobs:
         shell: bash
         run: |
 
+          # WARNING: Do NOT 'export PYTHONPATH=...'. Environment variables seem
+          #          to be shared across all jobs, so this would break the
+          #          the 'isofit' install for some other jobs. Unclear exactly
+          #          which, but presumably any job running after this one.
+
           # Python packaging dependencies. The presence of 'wheel' triggers
           # a lot of new Python packaging machinery that will eventually
           # become the default.
@@ -78,9 +83,8 @@ jobs:
               exit 1
           fi
           
-          # Install 'isofit' via '$PYTHONPATH', and ensure it can be imported.
-          export PYTHONPATH="isolation/:${PYTHONPATH}"
-          python3 -c "import isofit; print(isofit.__file__)"
+          # Again, do NOT 'export PYTHONPATH=...' here. See note at top of
+          # section.
 
       - name: Cache 6S
         id: cache-6s-v21
@@ -130,4 +134,11 @@ jobs:
       - name: Execute tests
         shell: bash
         run: |
-          ./scripts/run-tests.sh ${{ matrix.pytest-flags }}
+
+          # Again, do NOT 'export PYTHONPATH=...'
+          # We define 'testpaths' in 'pytest.ini', however that path is no
+          # longer valid. In this case 'pytest' searches for tests by default,
+          # but we know where they are, so explicitly point to the new location.
+          PYTHONPATH="isolation/:${PYTHONPATH}" ./scripts/run-tests.sh \
+            isolation/isofit/tests/ \
+            ${{ matrix.pytest-flags }}

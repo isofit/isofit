@@ -1,7 +1,9 @@
 """High-level tests to ensure the CLI is constructed properly."""
 
+import os
 import subprocess as sp
 import sys
+from pathlib import Path
 
 import pytest
 from click.testing import CliRunner
@@ -9,11 +11,28 @@ from click.testing import CliRunner
 import isofit
 from isofit import __main__
 
+# Determine if 'isofit' is installed via '$PYTHONPATH'. To do this, check to see
+# if '$PYTHONPATH' is set, and search for 'isofit' at each location.
+ISOFIT_ABSPATH = Path(isofit.__file__).parent.absolute()
+IS_INSTALLED_VIA_PYTHONPATH = False
+if "PYTHONPATH" in os.environ:
+    for p in os.environ["PYTHONPATH"].split(os.pathsep):
+        potential_isofit_path = Path(p).absolute() / isofit.__name__
+        if potential_isofit_path == ISOFIT_ABSPATH:
+            IS_INSTALLED_VIA_PYTHONPATH = True
+            break
+
 
 # fmt: off
 @pytest.mark.parametrize("executable", [
-    ["isofit"],
+
+    # No matter the installation this works: $ python -m isofit
     [sys.executable, "-m", "isofit"],
+
+    # The '$ isofit' executable is not available when installed via
+    # '$PYTHONPATH', so sometimes this test is skipped.
+    pytest.param(["isofit"], marks=pytest.mark.skipif(IS_INSTALLED_VIA_PYTHONPATH)),
+
 ])
 # fmt: on
 def test_subcommand_registration(executable):

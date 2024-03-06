@@ -64,6 +64,9 @@ jobs:
           # Install 'isofit'
           python3 -m pip install ".[test]"
 
+          # Ensure ISOFIT has been installed
+          python3 -c "import isofit; print(isofit.__file__)"
+
       - name: Cache 6S
         id: cache-6s-v21
         uses: actions/cache@v3
