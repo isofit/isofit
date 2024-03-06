@@ -44,8 +44,15 @@ class KernelFlowsRT(object):
     """
 
     def __init__(self, engine_config: RadiativeTransferEngineConfig, wl, fwhm):
+        # defining some input transformations
+        self.input_transfs = [
+            np.identity,
+            np.log,
+            lambda x: np.cos(np.deg2rad(x)),
+            lambda x: np.cos(np.deg2rad(90 - x)),
+            lambda x: np.log(180 - x),
+        ]
         # read VSWIREmulator struct from jld2 file
-        self.input_transfs = [np.identity, np.log, np.cos]
         self.f = h5py.File(engine_config.emulator_file, "r")
         # ga components of size (npar1, npar2, ...nparn, nbands). only outputs necessary.
         self.wl = wl

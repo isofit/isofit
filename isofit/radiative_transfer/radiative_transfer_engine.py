@@ -194,19 +194,13 @@ class RadiativeTransferEngine:
 
             self.lut_grid = lut_grid
             self.lut_names = []
+
             if "AOT550" in lut_grid.keys():
                 self.lut_names.append("AOT550")
                 self.aot_points = lut_grid["AOT550"]
             else:
                 Logger.info(f"No grid points for AOT provided")
                 self.aot_points = None
-
-            if "H2OSTR" in lut_grid.keys():
-                self.lut_names.append("H2OSTR")
-                self.wv_points = lut_grid["H2OSTR"]
-            else:
-                Logger.info(f"No grid points for water vapor provided")
-                self.wv_points = None
 
             if "surface_elevation_km" in lut_grid.keys():
                 self.lut_names.append("surface_elevation_km")
@@ -215,6 +209,20 @@ class RadiativeTransferEngine:
                 Logger.info(f"No grid points for surface elevation provided")
                 self.gndalt_points = None
 
+            if "H2OSTR" in lut_grid.keys():
+                self.lut_names.append("H2OSTR")
+                self.wv_points = lut_grid["H2OSTR"]
+            else:
+                Logger.info(f"No grid points for water vapor provided")
+                self.wv_points = None
+
+            if "relative_azimuth" in lut_grid.keys():
+                self.lut_names.append("relative_azimuth")
+                self.raa_points = lut_grid["relative_azimuth"]
+            else:
+                Logger.info(f"No grid points for relative_azimuth angle provided")
+                self.raa_points = None
+
             if "solar_zenith" in lut_grid.keys():
                 self.lut_names.append("solar_zenith")
                 self.sza_points = lut_grid["solar_zenith"]
@@ -222,13 +230,22 @@ class RadiativeTransferEngine:
                 Logger.info(f"No grid points for solar zenith angle provided")
                 self.sza_points = None
 
+            if "observer_zenith" in lut_grid.keys():
+                self.lut_names.append("observer_zenith")
+                self.vza_points = lut_grid["observer_zenith"]
+            else:
+                Logger.info(f"No grid points for observer_zenith angle provided")
+                self.vza_points = None
+
             self.points = np.array(
                 list(
                     product(
                         self.aot_points,
-                        self.wv_points,
                         self.gndalt_points,
+                        self.wv_points,
+                        self.raa_points,
                         self.sza_points,
+                        self.vza_points,
                     )
                 )
             )
@@ -334,16 +351,20 @@ class RadiativeTransferEngine:
             # Create the unique
             grid = [
                 self.aot_points,
-                self.wv_points,
                 self.gndalt_points,
+                self.wv_points,
+                self.raa_points,
                 self.sza_points,
+                self.vza_points,
             ]
             for key in self.alldim:
                 data = self.lut[key].reshape(
                     len(self.aot_points),
-                    len(self.wv_points),
                     len(self.gndalt_points),
+                    len(self.wv_points),
+                    len(self.raa_points),
                     len(self.sza_points),
+                    len(self.vza_points),
                     len(self.lut["wl"]),
                 )
                 self.luts[key] = common.VectorInterpolator(
