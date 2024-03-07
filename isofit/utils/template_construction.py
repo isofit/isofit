@@ -728,6 +728,8 @@ def build_presolve_config(
 
     if emulator_base is None:
         engine_name = "modtran"
+    elif emulator_base.endswith(".jld2"):
+        engine_name = "KernelFlowsGP"
     else:
         engine_name = "sRTMnet"
 
@@ -923,8 +925,11 @@ def build_main_config(
 
     if emulator_base is None:
         engine_name = "modtran"
+    elif emulator_base.endswith(".jld2"):
+        engine_name = "KernelFlowsGP"
     else:
         engine_name = "sRTMnet"
+
     radiative_transfer_config = {
         "radiative_transfer_engines": {
             "vswir": {
@@ -1006,23 +1011,58 @@ def build_main_config(
 
     if prebuilt_lut_path is None:
         if h2o_lut_grid is not None:
-            radiative_transfer_config["lut_grid"]["H2OSTR"] = h2o_lut_grid.tolist()
-        if elevation_lut_grid is not None and len(elevation_lut_grid) > 1:
-            radiative_transfer_config["lut_grid"][
-                "surface_elevation_km"
-            ] = elevation_lut_grid.tolist()
-        if to_sensor_zenith_lut_grid is not None and len(to_sensor_zenith_lut_grid) > 1:
-            radiative_transfer_config["lut_grid"][
-                "observer_zenith"
-            ] = to_sensor_zenith_lut_grid.tolist()  # modtran convention
-        if to_sun_zenith_lut_grid is not None and len(to_sun_zenith_lut_grid) > 1:
-            radiative_transfer_config["lut_grid"][
-                "solar_zenith"
-            ] = to_sun_zenith_lut_grid.tolist()
-        if relative_azimuth_lut_grid is not None and len(relative_azimuth_lut_grid) > 1:
-            radiative_transfer_config["lut_grid"][
-                "relative_azimuth"
-            ] = relative_azimuth_lut_grid.tolist()
+            if len(h2o_lut_grid) > 1:
+                radiative_transfer_config["lut_grid"]["H2OSTR"] = h2o_lut_grid.tolist()
+            elif len(h2o_lut_grid) == 1:
+                radiative_transfer_config["lut_grid"]["H2OSTR"] = [
+                    h2o_lut_grid[0] * 0.99,
+                    h2o_lut_grid[0],
+                    h2o_lut_grid[0] * 1.01,
+                ]
+        if elevation_lut_grid is not None:
+            if len(elevation_lut_grid) > 1:
+                radiative_transfer_config["lut_grid"][
+                    "surface_elevation_km"
+                ] = elevation_lut_grid.tolist()
+            elif len(elevation_lut_grid) == 1:
+                radiative_transfer_config["lut_grid"]["surface_elevation_km"] = [
+                    elevation_lut_grid[0] * 0.99,
+                    elevation_lut_grid[0],
+                    elevation_lut_grid[0] * 1.01,
+                ]
+        if to_sensor_zenith_lut_grid is not None:
+            if len(to_sensor_zenith_lut_grid) > 1:
+                radiative_transfer_config["lut_grid"][
+                    "observer_zenith"
+                ] = to_sensor_zenith_lut_grid.tolist()
+            elif len(to_sensor_zenith_lut_grid) == 1:
+                radiative_transfer_config["lut_grid"]["observer_zenith"] = [
+                    to_sensor_zenith_lut_grid[0] * 0.99,
+                    to_sensor_zenith_lut_grid[0],
+                    to_sensor_zenith_lut_grid[0] * 1.01,
+                ]
+        if to_sun_zenith_lut_grid is not None:
+            if len(to_sun_zenith_lut_grid) > 1:
+                radiative_transfer_config["lut_grid"][
+                    "solar_zenith"
+                ] = to_sun_zenith_lut_grid.tolist()
+            elif len(to_sun_zenith_lut_grid) == 1:
+                radiative_transfer_config["lut_grid"]["solar_zenith"] = [
+                    to_sun_zenith_lut_grid[0] * 0.99,
+                    to_sun_zenith_lut_grid[0],
+                    to_sun_zenith_lut_grid[0] * 1.01,
+                ]
+        if relative_azimuth_lut_grid is not None:
+            if len(relative_azimuth_lut_grid) > 1:
+                radiative_transfer_config["lut_grid"][
+                    "relative_azimuth"
+                ] = relative_azimuth_lut_grid.tolist()
+            elif len(relative_azimuth_lut_grid) == 1:
+                radiative_transfer_config["lut_grid"]["relative_azimuth"] = [
+                    relative_azimuth_lut_grid[0] * 0.99,
+                    relative_azimuth_lut_grid[0],
+                    relative_azimuth_lut_grid[0] * 1.01,
+                ]
 
         radiative_transfer_config["lut_grid"].update(aerosol_lut_grid)
 
