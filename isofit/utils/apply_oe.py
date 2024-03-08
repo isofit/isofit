@@ -392,11 +392,12 @@ def apply_oe(args):
     logging.info(f"Altitude (km): {mean_altitude_km}")
 
     if args.emulator_base is not None and mean_altitude_km > 99:
-        logging.info(
-            "Adjusting altitude to 99 km for integration with 6S, because emulator is"
-            " chosen."
-        )
-        mean_altitude_km = 99
+        if not args.emulator_base.endswith(".jld2"):
+            logging.info(
+                "Adjusting altitude to 99 km for integration with 6S, because emulator is"
+                " chosen."
+            )
+            mean_altitude_km = 99
 
     # We will use the model discrepancy with covariance OR uncorrelated
     # Calibration error, but not both.
