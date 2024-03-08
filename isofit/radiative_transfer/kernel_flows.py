@@ -80,7 +80,7 @@ class KernelFlowsRT(object):
             "transm_up_dif": np.zeros(self.ga[0].shape),
             "thermal_upwelling": np.zeros(self.ga[0].shape),
             "thermal_downwelling": np.zeros(self.ga[0].shape),
-            "solar_irr": np.zeros(self.ga[0].shape),
+            "solar_irr": np.zeros(self.wl[0].shape),
             "wl": self.wl,
         }
         return combined
