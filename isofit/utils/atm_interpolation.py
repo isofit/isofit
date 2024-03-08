@@ -23,7 +23,6 @@ import time
 from typing import List
 
 import numpy as np
-import pylab as plt
 from scipy.linalg import inv
 from scipy.ndimage import gaussian_filter
 from scipy.spatial import KDTree
@@ -33,8 +32,6 @@ from isofit import ray
 from isofit.core.common import envi_header, ray_initiate
 from isofit.core.fileio import write_bil_chunk
 from isofit.core.forward import ForwardModel
-
-plt.switch_backend("Agg")
 
 
 @ray.remote
