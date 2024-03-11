@@ -772,17 +772,21 @@ class ModtranRT(TabularRT):
             except FileNotFoundError as e:
                 time.sleep(np.random.randint(1, 10) / 10.)
                 #Extract filename that doesn't exist
-                file_not_found = e.split('/')[-1]
+                file_not_found = e.filename
                 logging.info(f"File not found: {file_not_found}")
                 n_rerun += 1
+                if not self.auto_rebuild:
+                    logging.info('rte_auto_rebuild disabled; stopping')
+                    raise e
                 if prev_file_not_found == file_not_found:
                     logging.info("Repeated file not found; stopping")
-                    raise FileNotFoundError(e)
+                    raise e
                     # Throw error
                 if n_rerun >= 10:
                     logging.info(f"{n_rerun} reruns; stopping")
-                    raise FileNotFoundError(e)
+                    raise enumerate
                     # Throw error
+                prev_file_not_found = file_not_found
 
         self.wl = mod_outputs[0]["wl"]
         self.solar_irr = mod_outputs[0]["sol"]
@@ -908,7 +912,11 @@ class ModtranRT(TabularRT):
         coszen = np.cos(solzen * np.pi / 180.0)
 
         chnfile = os.path.join(self.lut_dir, fn + ".chn")
-        params = self.load_chn(chnfile, coszen)
+        try:
+            params = self.load_chn(chnfile, coszen)
+        except ValueError as e:
+            logging.info(f"Error upon load for {chnfile}",flush=True)
+            raise e
 
         # Be careful with the two thermal values! They can only be used in
         # the modtran_tir functions as they require the modtran reflectivity
