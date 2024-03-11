@@ -179,7 +179,6 @@ def analytical_line(
     if n_workers == -1:
         n_workers = multiprocessing.cpu_count()
 
-    worker = ray.remote(Worker)
     wargs = [
         config,
         ray.put(fm),
@@ -192,7 +191,7 @@ def analytical_line(
         loglevel,
         logfile,
     ]
-    workers = ray.util.ActorPool([worker.remote(*wargs) for _ in range(n_workers)])
+    workers = ray.util.ActorPool([Worker.remote(*wargs) for _ in range(n_workers)])
 
     line_breaks = np.linspace(
         0, rdns[0], n_workers * config.implementation.task_inflation_factor, dtype=int
@@ -212,6 +211,7 @@ def analytical_line(
     ray.shutdown()
 
 
+@ray.remote(num_cpus=1)
 class Worker(object):
     def __init__(
         self,
