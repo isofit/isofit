@@ -263,16 +263,11 @@ class RadiativeTransferEngine:
         Enables key indexing for easier access to the numpy object store in
         self.lut[key]
         """
-        return self.lut[key].data
+        return self.lut[key].load().data
 
     @property
     def lut_interp_types(self):
         return np.array([self.angular_lut_keys.get(key, "n") for key in self.lut_names])
-
-    def reload_lut(self):
-        """
-        Reloads self.lut and
-        """
 
     def build_interpolators(self):
         """
@@ -294,7 +289,7 @@ class RadiativeTransferEngine:
         for key in self.alldim:
             self.luts[key] = common.VectorInterpolator(
                 grid_input=grid,
-                data_input=ds[key].data,
+                data_input=ds[key].load().data,
                 lut_interp_types=self.lut_interp_types,
                 version=self.interpolator_style,
             )
@@ -447,8 +442,7 @@ class RadiativeTransferEngine:
             luts.updatePoint(file=self.lut_path, data=post)
 
         # Reload the LUT now that it's populated
-        self.lut = luts.load(self.lut_path).load()
-        self.lut.close()
+        self.lut = luts.load(self.lut_path)
 
     def summarize(self, x_RT, *_):
         """
