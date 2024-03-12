@@ -45,12 +45,13 @@ else:
 
 def shutdown_ray():
     try:
-        ray.shutdown()
+        ray.shutdown(_exiting_interpreter=True)
     except:
         pass
 
 
 # Auto call ray.shutdown when the python interpreter exits
+# ray itself also implements this, but there's no harm in calling it twice
 atexit.register(shutdown_ray)
 signal.signal(signal.SIGINT, shutdown_ray)  # ctrl+C
 signal.signal(signal.SIGTERM, shutdown_ray)  # kill
