@@ -17,7 +17,6 @@
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: Philip G. Brodrick, philip.brodrick@jpl.nasa.gov
 
-import atexit
 import logging
 import multiprocessing
 import os
@@ -99,7 +98,6 @@ def main(args: SimpleNamespace) -> None:
     }
 
     ray.init(**rayargs)
-    atexit.register(ray.shutdown)
 
     line_breaks = np.linspace(0, rfls[0], n_workers, dtype=int)
     line_breaks = [

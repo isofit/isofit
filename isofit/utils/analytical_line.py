@@ -17,7 +17,6 @@
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: Philip G. Brodrick, philip.brodrick@jpl.nasa.gov
 
-import atexit
 import logging
 import multiprocessing
 import os
@@ -172,7 +171,6 @@ def analytical_line(
     }
 
     ray_initiate(ray_dict)
-    atexit.register(ray.shutdown)
 
     n_workers = n_cores
 
@@ -208,7 +206,6 @@ def analytical_line(
         f"{round(rdns[0]*rdns[1]/total_time,4)} spectra/s, "
         f"{round(rdns[0]*rdns[1]/total_time/n_workers,4)} spectra/s/core"
     )
-    ray.shutdown()
 
 
 @ray.remote(num_cpus=1)

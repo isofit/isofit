@@ -18,7 +18,6 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-import atexit
 import logging
 import time
 from types import SimpleNamespace
@@ -555,7 +554,6 @@ def empirical_line(
         rayargs["num_cpus"] = n_cores
 
     ray_initiate(rayargs)
-    atexit.register(ray.shutdown)
 
     n_ray_cores = ray.available_resources()["CPU"]
     n_cores = min(n_ray_cores, n_input_lines)

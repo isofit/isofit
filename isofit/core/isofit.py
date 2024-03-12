@@ -43,10 +43,9 @@ class Isofit:
         config_file: isofit configuration file in JSON or YAML format
         level: logging level (ERROR, WARNING, INFO, DEBUG)
         logfile: file to write output logs to
-        autoshutdown: Enables calling ray.shutdown() on object deletion
     """
 
-    def __init__(self, config_file, level="INFO", logfile=None, autoshutdown=True):
+    def __init__(self, config_file, level="INFO", logfile=None):
         # Explicitly set the number of threads to be 1, so we more effectively
         # run in parallel
         os.environ["MKL_NUM_THREADS"] = "1"
@@ -86,19 +85,9 @@ class Isofit:
         ):
             rayargs["num_cpus"] = self.config.implementation.n_cores
 
-        self.autoshutdown = autoshutdown
         ray_initiate(rayargs)
 
         self.workers = None
-
-    def __del__(self):
-        if self.autoshutdown:
-            try:
-                ray.shutdown()
-                self.workers = None
-            except:
-                logging.error("Isofit Object Deletion unsuccessful")
-                return
 
     def run(self, row_column=None):
         """

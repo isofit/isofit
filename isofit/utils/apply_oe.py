@@ -488,7 +488,6 @@ def apply_oe(args):
                 paths.h2o_config_path,
                 level="INFO",
                 logfile=args.log_file,
-                autoshutdown=False,
             )
             retrieval_h2o.run()
             del retrieval_h2o

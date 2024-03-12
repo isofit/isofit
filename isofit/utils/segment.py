@@ -18,7 +18,6 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-import atexit
 import logging
 
 import numpy as np
@@ -209,7 +208,6 @@ def segment(
         rayargs["num_cpus"] = n_cores
 
     ray_initiate(rayargs)
-    atexit.register(ray.shutdown)
 
     # Iterate through image "chunks," segmenting as we go
     all_labels = np.zeros((nl, ns), dtype=np.int64)
@@ -254,7 +252,6 @@ def segment(
                 next_label += 1
             all_labels[lstart:lend, ...] = ordered_chunk_labels
     del rreturn
-    ray.shutdown()
 
     # Final file I/O
     logging.debug("Writing output")
@@ -271,4 +268,3 @@ def segment(
     lbl_mm = lbl_img.open_memmap(interleave="source", writable=True)
     lbl_mm[:, :] = np.array(all_labels, dtype=np.float32).reshape((nl, 1, ns))
     del lbl_mm
-    ray.shutdown()
