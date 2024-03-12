@@ -178,16 +178,19 @@ def analytical_line(
         n_workers = multiprocessing.cpu_count()
 
     wargs = [
-        config,
-        ray.put(fm),
-        atm_file,
-        analytical_state_file,
-        analytical_state_unc_file,
-        rdn_file,
-        loc_file,
-        obs_file,
-        loglevel,
-        logfile,
+        ray.put(obj)
+        for obj in (
+            config,
+            fm,
+            atm_file,
+            analytical_state_file,
+            analytical_state_unc_file,
+            rdn_file,
+            loc_file,
+            obs_file,
+            loglevel,
+            logfile,
+        )
     ]
     workers = ray.util.ActorPool([Worker.remote(*wargs) for _ in range(n_workers)])
 
