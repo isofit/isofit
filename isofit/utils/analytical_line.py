@@ -17,7 +17,6 @@
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: Philip G. Brodrick, philip.brodrick@jpl.nasa.gov
 
-import atexit
 import logging
 import multiprocessing
 import os
@@ -172,27 +171,28 @@ def analytical_line(
     }
 
     ray_initiate(ray_dict)
-    atexit.register(ray.shutdown)
 
     n_workers = n_cores
 
     if n_workers == -1:
         n_workers = multiprocessing.cpu_count()
 
-    worker = ray.remote(Worker)
     wargs = [
-        config,
-        ray.put(fm),
-        atm_file,
-        analytical_state_file,
-        analytical_state_unc_file,
-        rdn_file,
-        loc_file,
-        obs_file,
-        loglevel,
-        logfile,
+        ray.put(obj)
+        for obj in (
+            config,
+            fm,
+            atm_file,
+            analytical_state_file,
+            analytical_state_unc_file,
+            rdn_file,
+            loc_file,
+            obs_file,
+            loglevel,
+            logfile,
+        )
     ]
-    workers = ray.util.ActorPool([worker.remote(*wargs) for _ in range(n_workers)])
+    workers = ray.util.ActorPool([Worker.remote(*wargs) for _ in range(n_workers)])
 
     line_breaks = np.linspace(
         0, rdns[0], n_workers * config.implementation.task_inflation_factor, dtype=int
@@ -209,9 +209,9 @@ def analytical_line(
         f"{round(rdns[0]*rdns[1]/total_time,4)} spectra/s, "
         f"{round(rdns[0]*rdns[1]/total_time/n_workers,4)} spectra/s/core"
     )
-    ray.shutdown()
 
 
+@ray.remote(num_cpus=1)
 class Worker(object):
     def __init__(
         self,

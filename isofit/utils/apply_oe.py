@@ -485,7 +485,9 @@ def apply_oe(args):
             # Run modtran retrieval
             logging.info("Run ISOFIT initial guess")
             retrieval_h2o = isofit.Isofit(
-                paths.h2o_config_path, level="INFO", logfile=args.log_file
+                paths.h2o_config_path,
+                level="INFO",
+                logfile=args.log_file,
             )
             retrieval_h2o.run()
             del retrieval_h2o

@@ -18,7 +18,6 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-import atexit
 import logging
 
 import numpy as np
@@ -176,7 +175,6 @@ def extractions(
         rayargs["num_cpus"] = n_cores
 
     ray_initiate(rayargs)
-    atexit.register(ray.shutdown)
 
     labelid = ray.put(labels)
     jobs = []
@@ -197,7 +195,6 @@ def extractions(
         if ret is not None:
             out[idx, :, 0] = ret
     del rreturn
-    ray.shutdown()
 
     meta["lines"] = str(nout)
     meta["bands"] = str(nb)
@@ -214,4 +211,3 @@ def extractions(
         type = "float64"
 
     write_bil_chunk(out, out_file, 0, out.shape, dtype=type)
-    ray.shutdown()

@@ -89,14 +89,6 @@ class Isofit:
 
         self.workers = None
 
-    def __del__(self):
-        try:
-            ray.shutdown()
-            self.workers = None
-        except:
-            logging.error("Isofit Object Deletion unsuccessful")
-            return
-
     def run(self, row_column=None):
         """
         Iterate over spectra, reading and writing through the IO
@@ -148,16 +140,12 @@ class Isofit:
         # Max out the number of workers based on the number of tasks
         n_workers = min(n_workers, n_iter)
 
-        fm_id = ray.put(fm)
-
-        remote_worker = ray.remote(Worker)
+        params = [
+            ray.put(obj)
+            for obj in [self.config, fm, self.loglevel, self.logfile, n_workers]
+        ]
         self.workers = ray.util.ActorPool(
-            [
-                remote_worker.remote(
-                    self.config, fm_id, self.loglevel, self.logfile, n, n_workers
-                )
-                for n in range(n_workers)
-            ]
+            [Worker.remote(*params, n) for n in range(n_workers)]
         )
 
         start_time = time.time()
@@ -193,6 +181,7 @@ class Isofit:
         )
 
 
+@ray.remote(num_cpus=1)
 class Worker(object):
     def __init__(
         self,
@@ -200,8 +189,8 @@ class Worker(object):
         forward_model: ForwardModel,
         loglevel: str,
         logfile: str,
-        worker_id: int = None,
         total_workers: int = None,
+        worker_id: int = None,
     ):
         """
         Worker class to help run a subset of spectra.

@@ -29,6 +29,7 @@ import numpy as np
 import xarray as xr
 
 import isofit
+from isofit import ray
 from isofit.configs.sections.radiative_transfer_config import (
     RadiativeTransferEngineConfig,
 )
@@ -268,11 +269,6 @@ class RadiativeTransferEngine:
     def lut_interp_types(self):
         return np.array([self.angular_lut_keys.get(key, "n") for key in self.lut_names])
 
-    def reload_lut(self):
-        """
-        Reloads self.lut and
-        """
-
     def build_interpolators(self):
         """
         Builds the interpolators using the LUT store
@@ -423,18 +419,17 @@ class RadiativeTransferEngine:
         # Make the LUT calls (in parallel if specified)
         if not self._disable_makeSim:
             Logger.info("Executing parallel simulations")
-            results = isofit.ray.get(
-                [
-                    streamSimulation.remote(
-                        point,
-                        self.lut_names,
-                        self.makeSim,
-                        self.readSim,
-                        self.lut_path,
-                    )
-                    for point in self.points
-                ]
-            )
+
+            # Place into shared memory space to avoid spilling
+            lut_names = ray.put(self.lut_names)
+            makeSim = ray.put(self.makeSim)
+            readSim = ray.put(self.readSim)
+            lut_path = ray.put(self.lut_path)
+            jobs = [
+                streamSimulation.remote(point, lut_names, makeSim, readSim, lut_path)
+                for point in self.points
+            ]
+            ray.get(jobs)
         else:
             Logger.debug("makeSim is disabled for this engine")
 
@@ -593,7 +588,7 @@ class RadiativeTransferEngine:
         return data
 
 
-@isofit.ray.remote
+@ray.remote
 def streamSimulation(
     point: np.array,
     lut_names: list,
