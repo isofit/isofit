@@ -34,6 +34,7 @@ SUPPORTED_SENSORS = [
     "hyp",
     "prisma",
     "av3",
+    "gao",
 ]
 RTM_CLEANUP_LIST = ["*r_k", "*t_k", "*tp7", "*wrn", "*psc", "*plt", "*7sc", "*acd"]
 INVERSION_WINDOWS = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
@@ -276,6 +277,9 @@ def apply_oe(args):
     elif args.sensor == "prisma":
         # parse flightline ID (PRISMA assumptions)
         dt = datetime.strptime(paths.fid, "%Y%m%d%H%M%S")
+    elif args.sensor == "gao":
+        # parse flightline ID (GAO/CAO assumptions)
+        dt = datetime.strptime(paths.fid[3:-5], '%Y%m%dt%H%M%S')
     elif args.sensor[:3] == "NA-":
         dt = datetime.strptime(args.sensor[3:], "%Y%m%d")
     else:
