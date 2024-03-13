@@ -22,6 +22,7 @@ import os
 
 import numpy as np
 import scipy
+from scipy.linalg import inv
 from sklearn.cluster import KMeans
 from spectral.io import envi
 
@@ -288,7 +289,6 @@ def surface_model(
                         C[window_range, :] = 0
                         C[:, window_range] = 0
                     C[window_range, window_range] = cdiag
-
                 window_idx = np.where(
                     np.logical_and(
                         wl >= window["interval"][0], wl < window["interval"][1]
@@ -297,138 +297,8 @@ def surface_model(
                 if len(window_idx) == 0:
                     continue
                 window_range = slice(window_idx[0], window_idx[-1] + 1)
-                if window["correlation"] == "EM-gauss":
-                    interval_steps = int(
-                        round(
-                            window["smoothing_interval"]
-                            / (
-                                (wl[window_idx[-1]] - wl[window_idx[1]])
-                                / len(window_idx)
-                            )
-                        )
-                    )
-                    mu = 0
-                    if "sigma" in window.keys():
-                        sigma = window["sigma"]
-                    else:
-                        sigma = 1
-                    gaussian_reg = np.exp(
-                        -(
-                            (np.linspace(-1, 1, interval_steps * 2) - mu) ** 2
-                            / (2.0 * sigma**2)
-                        )
-                    )
-                    x, y = np.meshgrid(
-                        np.linspace(-1, 1, interval_steps * 2),
-                        np.linspace(-1, 1, interval_steps * 2),
-                    )
-                    d = np.sqrt(x * x + y * y)
-                    gaussian_reg_2d = np.exp(-((d - mu) ** 2 / (2.0 * sigma**2)))
 
-                    outer_left = max(0, window_idx[0] - interval_steps)
-                    inner_left = window_idx[0]
-
-                    outer_right = min(C.shape[1], interval_steps + window_idx[-1])
-                    inner_right = window_idx[-1]
-
-                    if window_idx[0] - interval_steps < 0:
-                        bottom_gauss_idx = interval_steps - window_idx[0]
-                    else:
-                        bottom_gauss_idx = 0
-                    if window_idx[-1] + interval_steps >= len(wl):
-                        top_gauss_idx = len(wl) - (window_idx[-1] + interval_steps)
-                    else:
-                        top_gauss_idx = len(gaussian_reg)
-
-                    # Outer edges
-                    C[outer_left:inner_left, window_range] = np.maximum(
-                        C[outer_left:inner_left, window_range],
-                        C[inner_left, window_range][np.newaxis, :]
-                        * gaussian_reg[bottom_gauss_idx:interval_steps, np.newaxis],
-                    )
-                    C[window_range, outer_left:inner_left] = np.maximum(
-                        C[window_range, outer_left:inner_left],
-                        C[window_range, inner_left][:, np.newaxis]
-                        * gaussian_reg[np.newaxis, bottom_gauss_idx:interval_steps],
-                    )
-
-                    C[inner_right:outer_right, window_range] = np.maximum(
-                        C[inner_right:outer_right, window_range],
-                        C[inner_right, window_range][np.newaxis, :]
-                        * gaussian_reg[interval_steps:top_gauss_idx, np.newaxis],
-                    )
-                    C[window_range, inner_right:outer_right] = np.maximum(
-                        C[window_range, inner_right:outer_right],
-                        C[window_range, inner_right][:, np.newaxis]
-                        * gaussian_reg[np.newaxis, interval_steps:top_gauss_idx],
-                    )
-
-                    # Outer corners
-                    C[outer_left:inner_left, outer_left:inner_left] = np.maximum(
-                        C[outer_left:inner_left, outer_left:inner_left],
-                        gaussian_reg_2d[
-                            bottom_gauss_idx:interval_steps,
-                            bottom_gauss_idx:interval_steps,
-                        ]
-                        * C[inner_left, inner_left],
-                    )
-                    C[outer_left:inner_left, inner_right:outer_right] = np.maximum(
-                        C[outer_left:inner_left, inner_right:outer_right],
-                        gaussian_reg_2d[
-                            bottom_gauss_idx:interval_steps,
-                            interval_steps:top_gauss_idx,
-                        ]
-                        * C[inner_left, inner_right],
-                    )
-
-                    C[inner_right:outer_right, outer_left:inner_left] = np.maximum(
-                        C[inner_right:outer_right, outer_left:inner_left],
-                        gaussian_reg_2d[
-                            interval_steps:top_gauss_idx,
-                            bottom_gauss_idx:interval_steps,
-                        ]
-                        * C[inner_right, inner_left],
-                    )
-                    C[inner_right:outer_right, inner_right:outer_right] = np.maximum(
-                        C[inner_right:outer_right, inner_right:outer_right],
-                        gaussian_reg_2d[
-                            interval_steps:top_gauss_idx, interval_steps:top_gauss_idx
-                        ]
-                        * C[inner_right, inner_right],
-                    )
-
-                    # Handle diagonals
-                    outer_left_m1 = max(outer_left - 1, 0)
-                    lower_C_diag = C[outer_left_m1, outer_left_m1]
-                    if np.isnan(lower_C_diag) == False:
-                        f = scipy.interpolate.interp1d(
-                            [outer_left_m1, inner_left],
-                            [lower_C_diag, C[inner_left, inner_left]],
-                        )
-                        C[
-                            range(outer_left, inner_left), range(outer_left, inner_left)
-                        ] = f(np.arange(outer_left, inner_left))
-                        C[
-                            range(outer_left, inner_left), range(outer_left, inner_left)
-                        ] = C[outer_left_m1, outer_left_m1]
-
-                    outer_right_p1 = min(outer_right + 1, C.shape[1] - 1)
-                    upper_C_diag = C[outer_right_p1, outer_right_p1]
-                    if np.isnan(upper_C_diag) == False:
-                        f = scipy.interpolate.interp1d(
-                            [inner_right, outer_right_p1],
-                            [C[inner_right, inner_right], upper_C_diag],
-                        )
-                        C[
-                            range(inner_right, outer_right),
-                            range(inner_right, outer_right),
-                        ] = f(np.arange(inner_right, outer_right))
-                        C[
-                            range(inner_right, outer_right),
-                            range(inner_right, outer_right),
-                        ] = C[outer_right_p1, outer_right_p1]
-
-                elif window["correlation"] == "GP":
+                if window["correlation"] == "GP":
                     for i in window_idx:
                         # Alternatively, we can use a band diagonal form,
                         # a Gaussian process that promotes local smoothness.
@@ -441,13 +311,42 @@ def surface_model(
                         C[i, i] = C[i, i] + float(window["regularizer"])
 
                 elif window["correlation"] in ["decorrelated", "EM"]:
-                    # alread handled
+                    # already handled
                     continue
 
                 else:
                     raise ValueError(
                         "I do not recognize the method " + window["correlation"]
                     )
+
+            # Now do any cross-block feathering by augmenting the precision matrix
+            P = inv(C)
+            for window in windows:
+                window_idx = np.where(
+                    np.logical_and(
+                        wl >= window["interval"][0], wl < window["interval"][1]
+                    )
+                )[0]
+                if len(window_idx) == 0:
+                    continue
+
+                # Look for the "feather_forward" or "feather_backward" options
+                if window["correlation"] in ["EM", "decorrelated"]:
+                    if "feather_backward" in list(window.keys()):
+                        P[window_idx[0] - 1, window_idx[0]] -= 1.0 / window[
+                            "feather_backward"
+                        ]
+                        P[window_idx[0], window_idx[0] - 1] -= 1.0 / window[
+                            "feather_backward"
+                        ]
+                    if "feather_forward" in list(window.keys()):
+                        P[window_idx[-1] + 1, window_idx[-1]] -= 1.0 / window[
+                            "feather_forward"
+                        ]
+                        P[window_idx[-1], window_idx[-1] + 1] -= 1.0 / window[
+                            "feather_forward"
+                        ]
+            C = inv(P)
 
             # Normalize the component spectrum if desired
             if normalize == "Euclidean":
