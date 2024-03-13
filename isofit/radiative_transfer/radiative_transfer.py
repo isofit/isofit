@@ -180,7 +180,7 @@ class RadiativeTransfer:
             E_d = E_dd + E_ds
             L_sky = x_surface[-2] * E_dd + x_surface[-1] * E_ds
 
-            rho_ls = 0.02  # fresnel reflectance factor (approx. 0.02 for nadir view)
+            rho_ls = self.fresnel_rf(geom.observer_zenith)
             glint = rho_ls * (L_sky / E_d)
 
             ret = (
@@ -256,7 +256,7 @@ class RadiativeTransfer:
             E_d = E_dd + E_ds
             L_sky = x_surface[-2] * E_dd + x_surface[-1] * E_ds
 
-            rho_ls = 0.02  # fresnel reflectance factor (approx. 0.02 for nadir view)
+            rho_ls = self.fresnel_rf(geom.observer_zenith)
             glint = rho_ls * (L_sky / E_d)
 
             drho_scaled_for_multiscattering_drfl = (
@@ -286,10 +286,15 @@ class RadiativeTransfer:
     def drdn_dRTb(self, x_RT, x_surface, rfl, Ls, geom):
         if len(self.bvec) == 0:
             Kb_RT = np.zeros((0, len(self.wl.shape)))
-
+        # currently, the K_b matrix only covers forward model derivatives due to H2O_ABSCO unknowns,
+        # so that subsequent errors might occur when water vapor is not part of the state
+        # vector (which is very unlikely though). the following statement captures this case,
+        # but might need to be modified as soon as we add more unknowns
+        # ToDo: might require modification in case more unknowns are added
+        elif len(self.bvec) > 0 and "H2OSTR" not in self.statevec_names:
+            Kb_RT = np.zeros((1, len(self.wl)))
         else:
             # first the radiance at the current state vector
-            r = self.get_shared_rtm_quantities(x_RT, geom)
             rdn = self.calc_rdn(x_RT, x_surface, rfl, Ls, geom)
 
             # unknown parameters modeled as random variables per
@@ -307,6 +312,28 @@ class RadiativeTransfer:
 
         Kb_RT = np.array(Kb_RT).T
         return Kb_RT
+
+    @staticmethod
+    def fresnel_rf(vza):
+        """Calculates reflectance factor of sky radiance based on the
+        Fresnel equation for unpolarized light as a function of view zenith angle (vza).
+        """
+        if vza > 0.0:
+            n_w = 1.33  # refractive index of water
+            theta = np.deg2rad(vza)
+
+            # calculate angle of refraction using Snell′s law
+            theta_i = np.arcsin(np.sin(theta) / n_w)
+
+            # reflectance factor of sky radiance based on the Fresnel equation for unpolarized light
+            rho_s = 0.5 * np.abs(
+                np.sin(theta - theta_i) ** 2 / np.sin(theta + theta_i) ** 2
+                + np.tan(theta - theta_i) ** 2 / np.tan(theta + theta_i) ** 2
+            )
+        else:
+            rho_s = 0.02  # the reflectance factor converges to 0.02 for view angles equal to 0.0°
+
+        return rho_s
 
     def summarize(self, x_RT, geom):
         ret = []

@@ -14,8 +14,6 @@ $ ISOFIT_DEBUG=1 python isofit.py ...
 """
 import logging
 
-import ray
-
 Logger = logging.getLogger("isofit/wrappers/ray")
 
 

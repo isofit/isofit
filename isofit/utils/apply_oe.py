@@ -18,7 +18,6 @@ from warnings import warn
 
 import click
 import numpy as np
-from osgeo import gdal
 from sklearn import mixture
 from spectral.io import envi
 
@@ -115,18 +114,19 @@ def apply_oe(args):
 
     if args.sensor not in [
         "ang",
+        "av3",
         "avcl",
+        "emit",
+        "enmap",
+        "hyp",
         "neon",
         "prism",
-        "emit",
-        "hyp",
         "prisma",
-        "av3",
     ]:
         if args.sensor[:3] != "NA-":
             raise ValueError(
                 'argument sensor: invalid choice: "NA-test" (choose from '
-                '"ang", "avcl", "neon", "prism", "emit", "av3", "NA-*")'
+                '"ang", "av3", "avcl", "emit", "enmap", "hyp", "neon", "prism", "prisma", "NA-*")'
             )
 
     if args.num_neighbors is not None and len(args.num_neighbors) > 1:
@@ -152,8 +152,8 @@ def apply_oe(args):
     )
     logging.info(args)
 
-    rdn_dataset = gdal.Open(args.input_radiance, gdal.GA_ReadOnly)
-    rdn_size = (rdn_dataset.RasterXSize, rdn_dataset.RasterYSize)
+    rdn_dataset = envi.open(envi_header(args.input_radiance))
+    rdn_size = (rdn_dataset.shape[0], rdn_dataset.shape[1])
     del rdn_dataset
     for infile_name, infile in zip(
         ["input_radiance", "input_loc", "input_obs"],
@@ -166,8 +166,8 @@ def apply_oe(args):
             )
             raise ValueError("argument " + err_str)
         if infile_name != "input_radiance":
-            input_dataset = gdal.Open(infile, gdal.GA_ReadOnly)
-            input_size = (input_dataset.RasterXSize, input_dataset.RasterYSize)
+            input_dataset = envi.open(envi_header(infile), infile)
+            input_size = (input_dataset.shape[0], input_dataset.shape[1])
             if not (input_size[0] == rdn_size[0] and input_size[1] == rdn_size[1]):
                 err_str = (
                     f"Input file: {infile_name} size is {input_size}, which does not"
@@ -192,24 +192,33 @@ def apply_oe(args):
         # parse flightline ID (AVIRIS-NG assumptions)
         dt = datetime.strptime(paths.fid[3:], "%Y%m%dt%H%M%S")
     elif args.sensor == "av3":
+        # parse flightline ID (AVIRIS-3 assumptions)
         dt = datetime.strptime(paths.fid[3:], "%Y%m%dt%H%M%S")
     elif args.sensor == "avcl":
-        # parse flightline ID (AVIRIS-CL assumptions)
+        # parse flightline ID (AVIRIS-Classic assumptions)
         dt = datetime.strptime("20{}t000000".format(paths.fid[1:7]), "%Y%m%dt%H%M%S")
-    elif args.sensor == "neon":
-        dt = datetime.strptime(paths.fid, "NIS01_%Y%m%d_%H%M%S")
-    elif args.sensor == "prism":
-        dt = datetime.strptime(paths.fid[3:], "%Y%m%dt%H%M%S")
-    elif args.sensor == "prisma":
-        dt = datetime.strptime(paths.fid, "%Y%m%d%H%M%S")
     elif args.sensor == "emit":
+        # parse flightline ID (EMIT assumptions)
         dt = datetime.strptime(paths.fid[:19], "emit%Y%m%dt%H%M%S")
         global INVERSION_WINDOWS
         INVERSION_WINDOWS = [[380.0, 1325.0], [1435, 1770.0], [1965.0, 2500.0]]
+    elif args.sensor == "enmap":
+        # parse flightline ID (EnMAP assumptions)
+        dt = datetime.strptime(paths.fid[:15], "%Y%m%dt%H%M%S")
+    elif args.sensor == "hyp":
+        # parse flightline ID (Hyperion assumptions)
+        dt = datetime.strptime(paths.fid[10:17], "%Y%j")
+    elif args.sensor == "neon":
+        # parse flightline ID (NEON assumptions)
+        dt = datetime.strptime(paths.fid, "NIS01_%Y%m%d_%H%M%S")
+    elif args.sensor == "prism":
+        # parse flightline ID (PRISM assumptions)
+        dt = datetime.strptime(paths.fid[3:], "%Y%m%dt%H%M%S")
+    elif args.sensor == "prisma":
+        # parse flightline ID (PRISMA assumptions)
+        dt = datetime.strptime(paths.fid, "%Y%m%d%H%M%S")
     elif args.sensor[:3] == "NA-":
         dt = datetime.strptime(args.sensor[3:], "%Y%m%d")
-    elif args.sensor == "hyp":
-        dt = datetime.strptime(paths.fid[10:17], "%Y%j")
     else:
         raise ValueError(
             "Datetime object could not be obtained. Please check file name of input"
@@ -288,6 +297,11 @@ def apply_oe(args):
             to_rem = elevation_lut_grid[elevation_lut_grid < 0].copy()
             elevation_lut_grid[elevation_lut_grid < 0] = 0
             elevation_lut_grid = np.unique(elevation_lut_grid)
+            if len(elevation_lut_grid) == 1:
+                elevation_lut_grid = None
+                mean_elevation_km = elevation_lut_grid[
+                    0
+                ]  # should be 0, but just in case
             logging.info(
                 "Scene contains target lut grid elements < 0 km, and uses 6s (via"
                 " sRTMnet).  6s does not support targets below sea level in km units. "
@@ -522,7 +536,7 @@ def apply_oe(args):
         if not args.num_neighbors:
             nneighbors = [int(round(3950 / 9 - 35 / 36 * args.segmentation_size))]
         else:
-            nneighbors = [args.num_neighbors]
+            nneighbors = [n for n in args.num_neighbors]
 
         if args.empirical_line == 1:
             # Empirical line
@@ -570,27 +584,26 @@ class Pathnames:
         # Determine FID based on sensor name
         if args.sensor == "ang":
             self.fid = split(args.input_radiance)[-1][:18]
-            logging.info("Flightline ID: %s" % self.fid)
-        elif args.sensor == "prism":
-            self.fid = split(args.input_radiance)[-1][:18]
-            logging.info("Flightline ID: %s" % self.fid)
         elif args.sensor == "av3":
             self.fid = split(args.input_radiance)[-1][:18]
-            logging.info("Flightline ID: %s" % self.fid)
-        elif args.sensor == "prisma":
-            self.fid = args.input_radiance.split("/")[-1].split("_")[1]
-            logging.info("Flightline ID: %s" % self.fid)
         elif args.sensor == "avcl":
             self.fid = split(args.input_radiance)[-1][:16]
-            logging.info("Flightline ID: %s" % self.fid)
-        elif args.sensor == "neon":
-            self.fid = split(args.input_radiance)[-1][:21]
         elif args.sensor == "emit":
             self.fid = split(args.input_radiance)[-1][:19]
-        elif args.sensor[:3] == "NA-":
-            self.fid = os.path.splitext(os.path.basename(args.input_radiance))[0]
+        elif args.sensor == "enmap":
+            self.fid = args.input_radiance.split("/")[-1].split("_")[5]
         elif args.sensor == "hyp":
             self.fid = split(args.input_radiance)[-1][:22]
+        elif args.sensor == "neon":
+            self.fid = split(args.input_radiance)[-1][:21]
+        elif args.sensor == "prism":
+            self.fid = split(args.input_radiance)[-1][:18]
+        elif args.sensor == "prisma":
+            self.fid = args.input_radiance.split("/")[-1].split("_")[1]
+        elif args.sensor[:3] == "NA-":
+            self.fid = os.path.splitext(os.path.basename(args.input_radiance))[0]
+
+        logging.info("Flightline ID: %s" % self.fid)
 
         # Names from inputs
         self.aerosol_climatology = args.aerosol_climatology_path
@@ -1234,29 +1247,14 @@ def get_metadata_from_obs(
             to_sensor_azimuth_lut_grid - the to-sensor azimuth angle look up table for good data
             to_sensor_zenith_lut_grid - the to-sensor zenith look up table for good data
     """
-    obs_dataset = gdal.Open(obs_file, gdal.GA_ReadOnly)
+    obs_dataset = envi.open(envi_header(obs_file), obs_file)
+    obs = obs_dataset.open_memmap(interleave="bip", writable=False)
+    valid = np.logical_not(np.any(np.isclose(obs, nodata_value), axis=2))
 
-    # Initialize values to populate
-    valid = np.zeros((obs_dataset.RasterYSize, obs_dataset.RasterXSize), dtype=bool)
-
-    path_km = np.zeros((obs_dataset.RasterYSize, obs_dataset.RasterXSize))
-    to_sensor_azimuth = np.zeros((obs_dataset.RasterYSize, obs_dataset.RasterXSize))
-    to_sensor_zenith = np.zeros((obs_dataset.RasterYSize, obs_dataset.RasterXSize))
-    time = np.zeros((obs_dataset.RasterYSize, obs_dataset.RasterXSize))
-
-    for line in range(obs_dataset.RasterYSize):
-        # Read line in
-        obs_line = obs_dataset.ReadAsArray(0, line, obs_dataset.RasterXSize, 1)
-
-        # Populate valid
-        valid[line, :] = np.logical_not(
-            np.any(np.isclose(obs_line, nodata_value), axis=0)
-        )
-
-        path_km[line, :] = obs_line[0, ...] / 1000.0
-        to_sensor_azimuth[line, :] = obs_line[1, ...]
-        to_sensor_zenith[line, :] = obs_line[2, ...]
-        time[line, :] = obs_line[9, ...]
+    path_km = obs[:, :, 0] / 1000.0
+    to_sensor_azimuth = obs[:, :, 1]
+    to_sensor_zenith = obs[:, :, 2]
+    time = obs[:, :, 9]
 
     use_trim = trim_lines != 0 and valid.shape[0] > trim_lines * 2
     if use_trim:
@@ -1358,18 +1356,10 @@ def get_metadata_from_loc(
             elevation_lut_grid - the elevation look up table, based on globals and values from location file
     """
 
-    loc_dataset = gdal.Open(loc_file, gdal.GA_ReadOnly)
-
-    loc_data = np.zeros(
-        (loc_dataset.RasterCount, loc_dataset.RasterYSize, loc_dataset.RasterXSize)
-    )
-    for line in range(loc_dataset.RasterYSize):
-        # Read line in
-        loc_data[:, line : line + 1, :] = loc_dataset.ReadAsArray(
-            0, line, loc_dataset.RasterXSize, 1
-        )
-
+    loc_dataset = envi.open(envi_header(loc_file), loc_file)
+    loc_data = loc_dataset.open_memmap(interleave="bsq", writable=False)
     valid = np.logical_not(np.any(loc_data == nodata_value, axis=0))
+
     use_trim = trim_lines != 0 and valid.shape[0] > trim_lines * 2
     if use_trim:
         valid[:trim_lines, :] = False

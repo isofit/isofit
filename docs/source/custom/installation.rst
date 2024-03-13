@@ -1,6 +1,9 @@
 Installation
 ============
 
+.. contents:: Table of Contents
+    :depth: 2
+
 Install from conda-forge
 ************************
 Recommended approach!
@@ -11,7 +14,6 @@ New environment:
 
     mamba create -n isofit_env -c conda-forge isofit
     mamba activate isofit_env
-    pip install ray ndsplines xxhash --upgrade
 
 or
 
@@ -19,32 +21,57 @@ or
 
     conda create -n isofit_env -c conda-forge isofit
     conda activate isofit_env
-    pip install ray ndsplines xxhash --upgrade
 
 Within an existing environment:
 
 .. code-block:: bash
 
     mamba install -c conda-forge isofit
-    pip install ray ndsplines xxhash --upgrade
 
 or
 
 .. code-block:: bash
 
     conda install -c conda-forge isofit
-    pip install ray ndsplines xxhash --upgrade
-
-The additional pip installation is necessary as several packages are not available from conda-forge for all operating systems.
 
 
-Install from pip
-****************
-Not recommended, as package dependencies may not fully resolve.
+Install with ``pip``
+********************
+
+.. note::
+
+    The commands below use ``$ pip``, however ``$ python -m pip`` or is often a
+    safer choice. It is possible for the ``$ pip`` executable to point to a
+    different version of Python than the ``$ python`` executable. Using
+    ``$ python -m pip`` at least ensures that the package is installed against
+    the Python interpreter in use. The issue is further compounded on systems
+    that also have ``$ python3`` and ``$ pip3`` executables, or executables for
+    specific versions of Python like ``$ python3.11`` and ``$ pip3.11``.
+
+ISOFIT can be installed from the `Python Package Index <https://pypi.org/project/isofit/>`_
+with:
 
 .. code-block:: bash
 
-    pip install isofit
+    $ pip install isofit
+
+In order to support a wide variety of environments, ISOFIT does not overly
+constrain its dependencies, however this means that in some cases ``pip`` can
+take a very long time to resolve ISOFIT's dependency tree. Some users may need
+to provide constraints for specific packages, or install ISOFIT last. In
+particular, ``tensorflow`` can be troublesome. Users might have success with:
+
+.. code-block:: bash
+
+    $ pip install numpy tensorflow
+    $ pip install isofit
+
+``pip`` also supports installing from a remote git repository – this installs
+against the ``main`` branch:
+
+.. code-block:: bash
+
+    $ pip install "git+https://github.com/isofit/isofit.git@main"
 
 
 Install from github

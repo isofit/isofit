@@ -12,7 +12,8 @@ WORKDIR /home/ray
 
 # Copy and install ISOFIT
 COPY --chown=ray:users . isofit/
-RUN conda config --prepend channels conda-forge &&\
+RUN conda update conda &&\
+    conda config --prepend channels conda-forge &&\
     conda create --name isofit --clone base &&\
     conda install --name base --solver=classic conda-libmamba-solver nb_conda_kernels jupyterlab &&\
     conda env update --name isofit --solver=libmamba --file isofit/recipe/environment_isofit_basic.yml &&\

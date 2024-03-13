@@ -7,13 +7,13 @@ Author: Philip G. Brodrick, philip.brodrick@jpl.nasa.gov
 import argparse
 import numpy as np
 import pandas as pd
-from osgeo import gdal
 from spectral.io import envi
 import logging
 from isofit import ray
 from typing import List
 import os
 import multiprocessing
+from isofit.core.common import envi_header
 
 GLT_NODATA_VALUE=-9999
 CRITERIA_NODATA_VALUE = -9999
@@ -54,8 +54,8 @@ def main():
     logging.info('Starting apply_glt, arguments given as: {}'.format(args))
 
     # Open the GLT dataset
-    glt_dataset = gdal.Open(args.glt_file, gdal.GA_ReadOnly)
-    glt = envi.open(args.glt_file + '.hdr').open_memmap(writeable=False, interleave='bip')
+    glt_dataset = envi.open(envi_header(args.glt_file))
+    glt = glt_dataset.open_memmap(writeable=False, interleave='bip')
 
     if args.mosaic:
         rawspace_files = np.squeeze(np.array(pd.read_csv(args.rawspace_file, header=None)))
@@ -63,24 +63,29 @@ def main():
         rawspace_files = [args.rawspace_file]
 
     for _ind in range(len(rawspace_files)):
-        first_file_dataset = gdal.Open(rawspace_files[_ind], gdal.GA_ReadOnly)
-        if first_file_dataset is not None:
+        first_file = envi_header(rawspace_files[_ind])
+        if os.path.isfile(first_file):
             break
+    first_file_dataset = envi.open(first_file)
 
     if args.band_numbers == -1:
-        output_bands = np.arange(first_file_dataset.RasterCount)
+        output_bands = np.arange(int(first_file_dataset.metadata['bands']))
     else:
         output_bands = np.array(args.band_numbers)
 
-    # Build output dataset
-    driver = gdal.GetDriverByName('ENVI')
-    driver.Register()
+    outmeta = first_file_dataset.metadata.copy()
+    outmeta["lines"] = glt_dataset.metadata["lines"]
+    outmeta["samples"] = glt_dataset.metadata["samples"]
+    outmeta["map info"] = glt_dataset.metadata["map info"]
+    outmeta["coordinate system string"] = glt_dataset.metadata["coordinate system string"]
+    if "band names" in first_file_dataset.metadata.keys():
+        outmeta["band names"] = [first_file_dataset.metadata["band names"][i] for i in output_bands]
+    if "wavelength" in first_file_dataset.metadata.keys():
+        outmeta["wavelength"] = [first_file_dataset.metadata["wavelength"][i] for i in output_bands]
+    if "fwhm" in first_file_dataset.metadata.keys():
+        outmeta["fwhm"] = [first_file_dataset.metadata["fwhm"][i] for i in output_bands]
 
-    # TODO: careful about output datatypes / format
-    outDataset = driver.Create(args.output_filename, glt.shape[1], glt.shape[0],
-                               len(output_bands), gdal.GDT_Float32, options=['INTERLEAVE=BIL'])
-    outDataset.SetProjection(glt_dataset.GetProjection())
-    outDataset.SetGeoTransform(glt_dataset.GetGeoTransform())
+    outDataset = envi.create_image(args.output_filename, outmeta, ext='', force=True)
     del outDataset
 
     if args.n_cores == -1:

@@ -305,6 +305,11 @@ def invert_analytical(
             z = meas - r
             xk = C_rcond @ (M.T @ z + prprod)
             trajectory.append(xk)
+
+        if fm.full_glint:
+            trajectory.append(trajectory[-1][-2] * g_dir)
+            trajectory.append(trajectory[-1][-1] * g_dif)
+
     else:
         for n in range(num_iter):
             L_atm = fm.RT.get_L_atm(x_RT, geom)[winidx]
@@ -317,8 +322,8 @@ def invert_analytical(
             C = Seps  # C = 'meas_Cov' = Seps
             L = dpotrf(C, 1)[0]
             P = dpotri(L, 1)[0]
-            P_rpr = Sa_inv
-            mu_rpr = xa_surface
+            P_rpr = Sa_inv[winidx, :][:, winidx]
+            mu_rpr = xa_surface[winidx]
 
             priorprod = P_rpr @ mu_rpr
 
