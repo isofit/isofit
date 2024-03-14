@@ -281,7 +281,7 @@ def invert_analytical(
         t_down_dif = rtm_quant["t_down_dif"][winidx]  # downward diffuse transmittance
         t_down_total = t_down_dir + t_down_dif  # downward total transmittance
         s = rtm_quant["sphalb"][winidx]  # spherical albedo
-        rho_ls = 0.02  # fresnel reflectance factor (approx. 0.02 for nadir view)
+        rho_ls = fm.RT.fresnel_rf(geom.observer_zenith)
         g_dir = rho_ls * (t_down_dir / t_down_total)  # direct sky transmittance
         g_dif = rho_ls * (t_down_dif / t_down_total)  # diffuse sky transmittance
 
