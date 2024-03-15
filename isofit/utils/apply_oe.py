@@ -279,7 +279,7 @@ def apply_oe(args):
         dt = datetime.strptime(paths.fid, "%Y%m%d%H%M%S")
     elif args.sensor == "gao":
         # parse flightline ID (GAO/CAO assumptions)
-        dt = datetime.strptime(paths.fid[3:-5], '%Y%m%dt%H%M%S')
+        dt = datetime.strptime(paths.fid[3:-5], "%Y%m%dt%H%M%S")
     elif args.sensor[:3] == "NA-":
         dt = datetime.strptime(args.sensor[3:], "%Y%m%d")
     else:
