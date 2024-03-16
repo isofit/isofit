@@ -231,9 +231,9 @@ def apply_oe(args):
         h_m_s,
         day_increment,
         mean_path_km,
-        mean_to_sensor_azimuth,
         mean_to_sensor_zenith,
         mean_to_sun_zenith,
+        mean_to_sun_azimuth,
         mean_relative_azimuth,
         valid,
         to_sensor_zenith_lut_grid,
@@ -325,9 +325,9 @@ def apply_oe(args):
 
     logging.info("Observation means:")
     logging.info(f"Path (km): {mean_path_km}")
-    logging.info(f"To-sensor azimuth (deg): {mean_to_sensor_azimuth}")
     logging.info(f"To-sensor zenith (deg): {mean_to_sensor_zenith}")
     logging.info(f"To-sun zenith (deg): {mean_to_sun_zenith}")
+    logging.info(f"To-sun azimuth (deg): {mean_to_sun_azimuth}")
     logging.info(f"Relative to-sun azimuth (deg): {mean_relative_azimuth}")
     logging.info(f"Altitude (km): {mean_altitude_km}")
 
@@ -388,9 +388,9 @@ def apply_oe(args):
             fid=paths.fid,
             altitude_km=mean_altitude_km,
             dayofyear=dayofyear,
-            to_sun_zenith=mean_to_sun_zenith,
-            to_sensor_azimuth=mean_to_sensor_azimuth,
             to_sensor_zenith=mean_to_sensor_zenith,
+            to_sun_zenith=mean_to_sun_zenith,
+            to_sun_azimuth=mean_to_sun_azimuth,
             relative_azimuth=mean_relative_azimuth,
             gmtime=gmtime,
             elevation_km=mean_elevation_km,
@@ -482,9 +482,9 @@ def apply_oe(args):
             fid=paths.fid,
             altitude_km=mean_altitude_km,
             dayofyear=dayofyear,
-            to_sun_zenith=mean_to_sun_zenith,
-            to_sensor_azimuth=mean_to_sensor_azimuth,
             to_sensor_zenith=mean_to_sensor_zenith,
+            to_sun_zenith=mean_to_sun_zenith,
+            to_sun_azimuth=mean_to_sun_azimuth,
             relative_azimuth=mean_relative_azimuth,
             gmtime=gmtime,
             elevation_km=mean_elevation_km,
@@ -1300,13 +1300,13 @@ def get_metadata_from_obs(
     mean_path_km = np.mean(path_km[valid])
     del path_km
 
-    mean_to_sensor_azimuth = (
-        lut_params.get_angular_grid(to_sensor_azimuth[valid], -1, 0) % 360
-    )
     mean_to_sensor_zenith = 180 - lut_params.get_angular_grid(
         to_sensor_zenith[valid], -1, 0
     )
     mean_to_sun_zenith = lut_params.get_angular_grid(to_sun_zenith[valid], -1, 0)
+    mean_to_sun_azimuth = (
+        lut_params.get_angular_grid(to_sun_azimuth[valid], -1, 0) % 360
+    )
     mean_relative_azimuth = (
         lut_params.get_angular_grid(relative_azimuth[valid], -1, 0) % 360
     )
@@ -1373,9 +1373,9 @@ def get_metadata_from_obs(
         h_m_s,
         increment_day,
         mean_path_km,
-        mean_to_sensor_azimuth,
         mean_to_sensor_zenith,
         mean_to_sun_zenith,
+        mean_to_sun_azimuth,
         mean_relative_azimuth,
         valid,
         to_sensor_zenith_lut_grid,
@@ -1902,9 +1902,9 @@ def write_modtran_template(
     fid: str,
     altitude_km: float,
     dayofyear: int,
-    to_sun_zenith: float,
-    to_sensor_azimuth: float,
     to_sensor_zenith: float,
+    to_sun_zenith: float,
+    to_sun_azimuth: float,
     relative_azimuth: float,
     gmtime: float,
     elevation_km: float,
@@ -1919,7 +1919,7 @@ def write_modtran_template(
         altitude_km:       altitude of the sensor in km
         dayofyear:         the current day of the given year
         to_sun_zenith:     final altitude solar zenith angle (0→180°)
-        to_sensor_azimuth: azimuth view angle to the sensor, in degrees (AVIRIS convention)
+        to_sun_azimuth:    solar azimuth angle to the sensor, in degrees (AVIRIS convention)
         to_sensor_zenith:  sensor/observer zenith angle, in degrees (MODTRAN convention: 180 - AVIRIS convention)
         relative_azimuth:  final altitude relative solar azimuth (0→360°)
         gmtime:            greenwich mean time
@@ -1967,7 +1967,7 @@ def write_modtran_template(
                         "IPARM": 12,
                         "PARM1": relative_azimuth,
                         "PARM2": to_sun_zenith,
-                        "TRUEAZ": to_sensor_azimuth,
+                        "TRUEAZ": to_sun_azimuth,
                         "OBSZEN": to_sensor_zenith,
                         "GMTIME": gmtime,
                     },

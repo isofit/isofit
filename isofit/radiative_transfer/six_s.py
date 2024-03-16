@@ -77,6 +77,9 @@ class SixSRT(TabularRT):
             "viewaz",
             "solzen",
             "solaz",
+            "observer_zenith",
+            "solar_zenith",
+            "relative_azimuth",
         ]
         self.angular_lut_keys_radians = []
         self.modtran_emulation = modtran_emulation
