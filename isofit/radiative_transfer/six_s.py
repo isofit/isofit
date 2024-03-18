@@ -260,7 +260,7 @@ class SixSRT(RadiativeTransferEngine):
         try:
             self.esd = np.loadtxt(self.earth_sun_distance_path)
         except FileNotFoundError:
-            print(
+            Logger.info(
                 "Earth-sun-distance file not found on system. "
                 "Proceeding without might cause some inaccuracies down the line."
             )
