@@ -134,6 +134,7 @@ jobs:
       - name: Download needed data files
         shell: bash
         run: |
+          ls -l
           python3 __main__.py download data -o isolation/ -t workflows/v1.0.0
           python3 __main__.py download examples -o isolation/ -t workflows/v1.0.0
 
