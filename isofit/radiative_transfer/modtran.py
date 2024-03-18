@@ -68,6 +68,9 @@ class ModtranRT(TabularRT):
             "viewaz",
             "solzen",
             "solaz",
+            "observer_zenith",
+            "solar_zenith",
+            "relative_azimuth",
         ]
         self.angular_lut_keys_radians = []
 
@@ -597,18 +600,14 @@ class ModtranRT(TabularRT):
             elif key in ["GNDALT"]:
                 param[0]["MODTRANINPUT"]["SURFACE"][key] = val
 
-            elif key in ["solar_azimuth", "solaz"]:
-                if "TRUEAZ" not in param[0]["MODTRANINPUT"]["GEOMETRY"]:
-                    raise AttributeError(
-                        "Cannot have solar azimuth in LUT without specifying TRUEAZ. "
-                        " Use RELAZ instead."
-                    )
-                param[0]["MODTRANINPUT"]["GEOMETRY"]["PARM1"] = (
-                    param[0]["MODTRANINPUT"]["GEOMETRY"]["TRUEAZ"] - val + 180
-                )
+            elif key in ["observer_zenith", "obszen"]:
+                param[0]["MODTRANINPUT"]["GEOMETRY"]["OBSZEN"] = val
 
             elif key in ["solar_zenith", "solzen"]:
                 param[0]["MODTRANINPUT"]["GEOMETRY"]["PARM2"] = abs(val)
+
+            elif key in ["relative_azimuth", "relaz"]:
+                param[0]["MODTRANINPUT"]["GEOMETRY"]["PARM1"] = val
 
             # elif key in ['altitude_km']
 
