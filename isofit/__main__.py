@@ -18,8 +18,16 @@ from isofit.utils.surface_model import cli_surface_model
 @click.group(invoke_without_command=True)
 @click.pass_context
 @click.option("-v", "--version", help="Print the current version", is_flag=True)
-@click.option("-p", "--path", help="Print the installation path", is_flag=True)
-def cli(ctx, version, path):
+@click.option("-i", "--install_path", help="Print the installation path", is_flag=True)
+@click.option("-b", "--base_path", help="Override the ISOFIT base-env path")
+@click.option("-e", "--environment", help="Override path to an env.toml file")
+@click.option("-d", "--data", help="Override path to data directory")
+@click.option("-t", "--examples", help="Override path to examples directory")
+@click.option("-em", "--srtmnet", help="Override path to sRTMnet installation")
+@click.option("-6s", "--sixs", help="Override path to SixS installation")
+@click.option("-mt", "--modtran", help="Override path to MODTRAN installation")
+@click.option("-s", "--save_env", is_flag=True, default=True)
+def cli(ctx, version, install_path, base_path, environment, save_env, **overrides):
     """\
     This houses the subcommands of ISOFIT
     """
@@ -27,8 +35,22 @@ def cli(ctx, version, path):
         if version:
             click.echo(isofit.__version__)
 
-        if path:
+        if install_path:
             click.echo(__path__[0])
+
+    else:
+        from isofit.core import env
+
+        if base_path:
+            env.updateBase(base_path)
+        env.loadEnv(env=environment)
+
+        for key, value in overrides.items():
+            if value:
+                env.setEnv(key, value)
+
+        if save_env:
+            env.dumpEnv(env=environment)
 
 
 # Subcommands live closer to the code and algorithms they are related to.
