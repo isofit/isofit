@@ -257,7 +257,16 @@ class SixSRT(RadiativeTransferEngine):
         """
         Loads the earth-sun distance file
         """
-        self.esd = np.loadtxt(self.earth_sun_distance_path)
+        try:
+            self.esd = np.loadtxt(self.earth_sun_distance_path)
+        except FileNotFoundError:
+            print(
+                "Earth-sun-distance file not found on system. "
+                "Proceeding without might cause some inaccuracies down the line."
+            )
+            self.esd = np.ones((366, 2))
+            self.esd[:, 0] = np.arange(1, 367, 1)
+
         dt = datetime(2000, self.engine_config.month, self.engine_config.day)
         self.day_of_year = dt.timetuple().tm_yday
         self.irr_factor = self.esd[self.day_of_year - 1, 1]
