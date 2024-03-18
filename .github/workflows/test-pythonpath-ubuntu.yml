@@ -131,6 +131,12 @@ jobs:
         run: |
           ./scripts/download-and-unpack-hypertrace-data.sh
 
+      - name: Download needed data files
+        shell: bash
+        run: |
+          isofit download data -o isolation/ -t workflows/v1.0.0
+          isofit download examples -o isolation/ -t workflows/v1.0.0
+
       - name: Execute tests
         shell: bash
         run: |
