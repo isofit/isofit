@@ -133,7 +133,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
 
         # Now predict, scale, and add the interpolations
         Logger.info("Loading and predicting with emulator")
-        emulator = keras.layers.TFSMLayer(self.engine_config.emulator_file)
+        emulator = keras.models.load_model(self.engine_config.emulator_file)
         predicts = da.from_array(emulator.predict(data))
         predicts /= scaler
         predicts += resample
