@@ -843,19 +843,23 @@ class ModtranRT(TabularRT):
                     current_config[2]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
                     modtran_config[2]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
                     #Hacky fix to decimel places not matching
-                    modtran_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
-                    modtran_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = ""
-                    modtran_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
-                    modtran_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = ""
-                    modtran_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
-                    modtran_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = "" 
-                    
-                    current_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
-                    current_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = ""
-                    current_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
-                    current_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = ""
-                    current_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
-                    current_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = ""
+                    try:
+                        modtran_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
+                        modtran_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = ""
+                        modtran_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
+                        modtran_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = ""
+                        modtran_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
+                        modtran_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = "" 
+                        
+                        current_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
+                        current_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = ""
+                        current_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
+                        current_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = ""
+                        current_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
+                        current_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = ""
+                    except KeyError:
+                        pass
+                
                     
                 current_str = json.dumps(current_config)
                 modtran_str = json.dumps(modtran_config)
