@@ -134,8 +134,8 @@ jobs:
       - name: Download needed data files
         shell: bash
         run: |
-          python3 -m isofit download data -o isolation/ -t workflows/v1.0.0
-          python3 -m isofit download examples -o isolation/ -t workflows/v1.0.0
+          python3 isolation/isofit/isofit/__main__.py download data -o isolation/ -t workflows/v1.0.0
+          python3 isolation/isofit/isofit/__main__.py download examples -o isolation/ -t workflows/v1.0.0
 
       - name: Execute tests
         shell: bash
