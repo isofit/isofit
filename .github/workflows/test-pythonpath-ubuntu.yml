@@ -57,10 +57,12 @@ jobs:
           # Uninstall 'isofit', leaving its dependencies.
           python3 -m pip uninstall --yes isofit
           
-          # Move 'isofit' into a new directory to ensure it is not just
+          # Move 'isofit' and its data directories into a new directory to ensure it is not just
           # inherently available.
           mkdir isolation/
           mv isofit/ isolation/
+          mv examples/ isolation/
+          mv data/ isolation/
           
           # Check to see if 'isofit' is still installed. It should not be.
           # Note that this job is implicitly configured with 'set -e', which
@@ -130,13 +132,6 @@ jobs:
         shell: bash
         run: |
           ./scripts/download-and-unpack-hypertrace-data.sh
-
-      - name: Download needed data files
-        shell: bash
-        run: |
-          ls -l
-          python3 __main__.py download data -o isolation/ -t workflows/v1.0.0
-          python3 __main__.py download examples -o isolation/ -t workflows/v1.0.0
 
       - name: Execute tests
         shell: bash
