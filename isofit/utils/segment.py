@@ -30,7 +30,7 @@ from isofit import ray
 from isofit.core.common import envi_header, ray_initiate
 
 
-@ray.remote
+@ray.remote(num_cpus=1)
 def segment_chunk(
     lstart, lend, in_file, nodata_value, npca, segsize, logfile=None, loglevel="INFO"
 ):
