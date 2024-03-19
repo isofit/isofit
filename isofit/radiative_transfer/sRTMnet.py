@@ -66,10 +66,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         """
 
         # Delay expensive import
-        if os.environ["TF_USE_LEGACY_KERAS"] == "1":
-            import tf_keras as keras
-        else:
-            from tensorflow import keras
+        from tensorflow import keras
 
         Logger.info("Creating a simulator configuration")
         # Create a copy of the engine_config and populate it with 6S parameters
