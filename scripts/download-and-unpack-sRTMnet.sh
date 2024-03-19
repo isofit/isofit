@@ -43,7 +43,7 @@ wget \
  (
 
    cd "${SRTMNET_DIR}"
-   unzip "${SRTMNET_DIR}"
+   unzip -o "${SRTMNET_DIR}"
 
    # Remove MacOS specific files that the original author erroneously included
    # in the archive.
