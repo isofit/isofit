@@ -1,138 +1,87 @@
-"""
-Constructs and stores environment options for ISOFIT
-"""
-
-import logging
-from copy import copy
 from pathlib import Path
+from typing import Optional
 
 import toml
 
-Logger = logging.getLogger(__file__)
-
-BASE = Path.home() / ".isofit"
-DATA = {
-    "env": BASE / "env.toml",
-    "data": BASE / "data",
-    "examples": BASE / "examples",
-    "srtmnet": BASE / "sRTMnet",
-    "sixs": BASE / "sixs",
-    "modtran": BASE / "modtran",
-}
+HOME: Path = Path.home()
+TOML: Path = HOME / ".isofit/isofit.toml"
+KEYS: list[str] = ["data", "examples", "srtmnet", "sixs", "modtran"]
+DATA: dict[str, str] = {key: str(HOME / f".isofit/{key}") for key in KEYS}
 
 
-def __getattr__(key):
+def __getattr__(key: str) -> Optional[str]:
     """
-    Retrieves a key from DATA if it exists, otherwise raises an exception
-    """
-    if key in DATA:
-        return DATA[key]
-
-
-def setEnv(key, value):
-    """ """
-    if key in DATA:
-        DATA[key] = Path(value).absolute()
-    elif key == "base":
-        updateBase(value)
-    else:
-        Logger.error(f"Key is not a valid option: {key}")
-
-
-def updateBase(value):
-    """ """
-    global BASE
-
-    new = Path(value)
-
-    # Update the value if it was the default
-    # If this value is already different, do not change
-    for key, value in DATA.items():
-        if value == BASE / value.name:
-            DATA[key] = new / value.name
-
-    # Update the base
-    BASE = new
-
-
-def keys():
-    """
-    Passthrough
-    """
-    return DATA.keys()
-
-
-def items():
-    """
-    Passthrough
-    """
-    return DATA.items()
-
-
-def dump():
-    """ """
-    # TOML doesn't support PosixPath, cast back to str
-    data = copy(DATA)
-    for key, val in data.items():
-        if isinstance(val, Path):
-            data[key] = str(val)
-
-    return data
-
-
-def mkdir(path=None):
-    """ """
-    path = Path(path)
-    if not (base := path.parent).exists():
-        base.mkdir(parents=True, exist_ok=True)
-
-
-def loadEnv(base=None, env=None):
-    """
-    Loads an environment file
+    Retrieves a value from DATA if the key doesn't exist on the module already.
 
     Parameters
     ----------
-    base: str
-        Override the base directory
-    env: str
-        Override the environment file path
+    key : str
+        The key to retrieve the value for.
+
+    Returns
+    -------
+    str or None
+        The value associated with the key if it exists in DATA, otherwise None.
     """
-    base = Path(base or BASE)
-    if not (env := env or DATA["env"]):
-        env = base / "env.toml"
-
-    load = DATA
-    if Path(env).exists():
-        load.update(toml.load(env))
-    else:
-        env = "defaults"
-
-    for key in keys():
-        val = Path(load.get(key))
-        setEnv(key, val)
-
-    Logger.debug(f"Loaded env from: {env}")
+    return DATA.get(key)
 
 
-def dumpEnv(base=None, env=None):
+def changePath(key: str, value: str) -> None:
     """
-    Dumps to an environment file
+    Change the path associated with the specified key in the DATA dictionary.
 
     Parameters
     ----------
-    base: str
-        Override the base directory
-    env: str
-        Override the environment file path
+    key : str
+        The key whose path needs to be changed.
+    value : str or Path
+        The new path to associate with the key.
     """
-    base = Path(base or BASE)
-    if not (env := env or DATA["env"]):
-        env = base / "env.toml"
+    DATA[key] = str(Path(value).absolute())
 
-    # Make sure the parent directories exist
-    mkdir(env)
-    with open(env, "w") as file:
-        toml.dump(dump(), file)
 
-    Logger.debug(f"Writing env to: {env}")
+def loadEnv(env: Optional[str] = None) -> None:
+    """
+    Load environment variables from a TOML file.
+
+    Parameters
+    ----------
+    env : str or Path, optional
+        The path to the TOML file containing environment variables. If None, the default TOML file path is used.
+        If provided, sets the global TOML for the remainder of the session.
+    """
+    global TOML
+    if env:
+        TOML = Path(env)
+
+    if TOML.exists():
+        DATA.update(toml.load(TOML))
+        print(f"Loaded env from: {TOML}")
+    else:
+        print(f"Env does not exist, falling back to defaults: {TOML}")
+
+
+def saveEnv(env: Optional[str] = None, mkdir: bool = True) -> None:
+    """
+    Save DATA variables to the TOML file.
+
+    Parameters
+    ----------
+    env : str or Path, optional
+        The path to save the environment variables to. If None, the default TOML file path is used.
+        If provided, sets the global TOML for the remainder of the session.
+    mkdir : bool, optional
+        Whether to create directories in the path if they do not exist. Default is True.
+    """
+    global TOML
+    if env:
+        TOML = Path(env)
+
+    if mkdir:
+        TOML.parent.mkdir(parents=True, exist_ok=True)
+
+    try:
+        with open(TOML, "w") as file:
+            toml.dump(DATA, file)
+    except Exception as e:
+        print(f"Failed to dump env to file: {TOML}")
