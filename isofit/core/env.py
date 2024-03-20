@@ -1,12 +1,12 @@
 import logging
 from configparser import ConfigParser
 from pathlib import Path
-from typing import Optional
+from typing import Iterable, List, Optional, Tuple
 
 Logger = logging.getLogger(__file__)
 
 INI: Path = Path.home() / ".isofit/isofit.ini"
-KEYS: list[str] = ["data", "examples", "srtmnet", "sixs", "modtran"]
+KEYS: List[str] = ["data", "examples", "srtmnet", "sixs", "modtran"]
 CONFIG: ConfigParser = ConfigParser()
 SECTION: str = "DEFAULT"
 
@@ -30,6 +30,32 @@ def __getattr__(key: str) -> Optional[str]:
         The value associated with the key if it exists in DATA, otherwise None.
     """
     return CONFIG[SECTION].get(key)
+
+
+def mkdir(path: str, isdir: bool = False) -> None:
+    """
+    Create a directory at the given path.
+
+    Parameters
+    ----------
+    path : str
+        The path where the directory should be created.
+    isdir : bool, optional
+        Flag indicating if the provided path points to a directory.
+        If False, the directory will be created at the parent of the provided path.
+        Defaults to False.
+    """
+    path = Path(path)
+    if not isdir:
+        path = path.parent
+    path.mkdir(parents=True, exist_ok=True)
+
+
+def items() -> Iterable[Tuple[str, str]]:
+    """
+    Passthrough to the items() function on the working section of the config.
+    """
+    return CONFIG[SECTION].items()
 
 
 def changeSection(section: str) -> None:
@@ -85,7 +111,7 @@ def load(ini: Optional[str] = None, section: Optional[str] = None) -> None:
         Logger.info(f"ini does not exist, falling back to defaults: {INI}")
 
 
-def save(ini: Optional[str] = None, mkdir: bool = True) -> None:
+def save(ini: Optional[str] = None) -> None:
     """
     Save CONFIG variables to the INI (ini) file.
 
@@ -94,15 +120,12 @@ def save(ini: Optional[str] = None, mkdir: bool = True) -> None:
     ini : str or Path, optional
         The path to save the config variables to. If None, the default INI file path is used.
         If provided, sets the global INI for the remainder of the session.
-    mkdir : bool, optional
-        Whether to create directories in the path if they do not exist. Default is True.
     """
     global INI
     if ini:
         INI = Path(ini)
 
-    if mkdir:
-        INI.parent.mkdir(parents=True, exist_ok=True)
+    mkdir(INI)
 
     try:
         with open(INI, "w") as file:

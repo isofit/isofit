@@ -25,7 +25,9 @@ from isofit.utils.surface_model import cli_surface_model
 @click.option("-em", "--srtmnet", help="Override path to sRTMnet installation")
 @click.option("-6s", "--sixs", help="Override path to SixS installation")
 @click.option("-mt", "--modtran", help="Override path to MODTRAN installation")
-@click.option("--save/--no-save", " /-S", is_flag=True, default=True)
+@click.option(
+    "--save/--no-save", " /-S", is_flag=True, default=True, help="Save the ini file"
+)
 def cli(ctx, version, ini, section, save, **overrides):
     """\
     This houses the subcommands of ISOFIT
@@ -36,14 +38,14 @@ def cli(ctx, version, ini, section, save, **overrides):
     else:
         from isofit.core import env
 
-        env.loadConf(ini, section)
+        env.load(ini, section)
 
         for key, value in overrides.items():
             if value:
                 env.changePath(key, value)
 
         if save:
-            env.dumpConf(ini)
+            env.save(ini)
 
 
 # Subcommands live closer to the code and algorithms they are related to.
