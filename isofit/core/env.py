@@ -17,7 +17,7 @@ for key in KEYS:
 
 def __getattr__(key: str) -> Optional[str]:
     """
-    Retrieves a value from DATA if the key doesn't exist on the module already.
+    Retrieves a value from CONFIG[SECTION] if the key doesn't exist on the module already.
 
     Parameters
     ----------
@@ -27,7 +27,7 @@ def __getattr__(key: str) -> Optional[str]:
     Returns
     -------
     str or None
-        The value associated with the key if it exists in DATA, otherwise None.
+        The value associated with the key if it exists in CONFIG[SECTION], otherwise None.
     """
     return CONFIG[SECTION].get(key)
 
@@ -73,7 +73,7 @@ def changeSection(section: str) -> None:
 
 def changePath(key: str, value: str) -> None:
     """
-    Change the path associated with the specified key in the DATA dictionary.
+    Change the path associated with the specified key in the CONFIG[SECTION].
 
     Parameters
     ----------
