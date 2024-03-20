@@ -258,7 +258,7 @@ def download_examples(output=None, tag="latest"):
 @cli_download.command(name="examples")
 @output(help="Root directory to download ISOFIT examples to, ie. [path]/examples")
 @tag
-def cli_data(**kwargs):
+def cli_examples(**kwargs):
     """\
     Downloads the ISOFIT examples from the repository https://github.com/isofit/isofit-tutorials.
 
