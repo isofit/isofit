@@ -21,7 +21,7 @@ def test_changePath():
 
 @patch("builtins.open", new_callable=mock_open)
 def test_loadEnv_file_exists(mock_open):
-    path = "/abc.toml"
+    path = "/abc.ini"
     data = {f"/abc/{key}" for key in env.KEYS}
 
     with patch("pathlib.Path.exists", return_value=True), patch.object(
