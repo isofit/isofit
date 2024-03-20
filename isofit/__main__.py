@@ -26,7 +26,7 @@ from isofit.utils.surface_model import cli_surface_model
 @click.option("-6s", "--sixs", help="Override path to SixS installation")
 @click.option("-mt", "--modtran", help="Override path to MODTRAN installation")
 @click.option("--save/--no-save", " /-S", is_flag=True, default=True)
-def cli(ctx, version, install_path, ini, section, save, **overrides):
+def cli(ctx, version, ini, section, save, **overrides):
     """\
     This houses the subcommands of ISOFIT
     """
