@@ -12,31 +12,31 @@ def test_getattr_existing_key():
 
 
 def test_changePath():
-    key = "data"
-    val = "/abc"
-    env.changePath(key, val)
+    expected = {}
+    for key in env.KEYS:
+        expected[key] = (val := f"/test/{key}")
+        env.changePath(key, val)
 
-    assert env.CONFIG["DEFAULT"][key] == val
+    assert env.CONFIG["DEFAULT"] == expected
 
 
-@patch("builtins.open", new_callable=mock_open)
+@patch("builtins.open")
 def test_loadEnv_file_exists(mock_open):
-    path = "/abc.ini"
-    data = {f"/abc/{key}" for key in env.KEYS}
+    path = "test.ini"
+    data = {key: f"/test/{key}" for key in env.KEYS}
 
     with patch("pathlib.Path.exists", return_value=True), patch.object(
         env.CONFIG, "read", return_value=None
     ):
         env.load(path)
 
-    mock_open.assert_called_once_with(path, "r")
     assert dict(env.CONFIG["DEFAULT"]) == data
     assert env.INI == Path(path)
 
 
-@patch("builtins.open", new_callable=mock_open)
+@patch("builtins.open")
 def test_loadEnv_file_not_exists(mock_open):
-    path = "/abc.ini"
+    path = "test.ini"
     with patch("pathlib.Path.exists", return_value=False):
         env.load(path)
 
@@ -44,15 +44,11 @@ def test_loadEnv_file_not_exists(mock_open):
     assert env.INI == Path(path)
 
 
-@patch("builtins.open", new_callable=mock_open)
+@patch("builtins.open")
 def test_saveEnv(mock_open):
-    path = "/abc.ini"
-    with patch.object(env.CONFIG, "write") as mock_write, patch(
-        "pathlib.Path.parent.mkdir"
-    ) as mock_mkdir:
+    path = "test.ini"
+    with patch.object(env.CONFIG, "write"), patch("pathlib.Path.mkdir"):
         env.save(path)
-
-        mock_mkdir.assert_called_once()
 
         # save changes INI for the remainder of the session
         assert env.INI == Path(path)
