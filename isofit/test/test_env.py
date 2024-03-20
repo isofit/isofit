@@ -8,7 +8,7 @@ from isofit.core import env
 
 
 def test_getattr_existing_key():
-    assert env.data == str(env.HOME / ".isofit/data")
+    assert env.data == env.DATA["data"]
 
 
 def test_changePath():
