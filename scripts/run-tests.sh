@@ -17,4 +17,4 @@ set -o nounset
 # for developers, and set this in 'pytest.ini'.
 EMULATOR_PATH="$(pwd)/sRTMnet_v100/sRTMnet_v100.h5" \
 SIXS_DIR=$(realpath 6sv-2.1) \
-python3 -m pytest "$@"
+python3 -m pytest -s "$@"
