@@ -3,12 +3,13 @@ These tests are to ensure any changes to the CLI will be backwards compatible.
 """
 
 import io
-import json
 import os
 import shutil
 import zipfile
+from time import sleep
 
 import pytest
+import ray
 import requests
 from click.testing import CliRunner
 
@@ -86,7 +87,7 @@ def files(cube_example):
 # fmt: off
 @pytest.mark.slow
 @pytest.mark.parametrize("args", [
-    # ["ang", "--presolve", "--emulator_base", EMULATOR_PATH, "--n_cores", CORES, "--analytical_line", "-nn", 10, "-nn", 50,],
+    ["ang", "--presolve", "--emulator_base", EMULATOR_PATH, "--n_cores", CORES, "--analytical_line", "-nn", 10, "-nn", 50,],
     ["ang", "--presolve", "--emulator_base", EMULATOR_PATH, "--n_cores", CORES, "--analytical_line", "-nn", 10, "-nn", 50, "-nn", 10, "--pressure_elevation",],
     ["ang", "--presolve", "--emulator_base", EMULATOR_PATH, "--n_cores", CORES, "--empirical_line", "--surface_category", "additive_glint_surface",],
 ])
@@ -95,6 +96,8 @@ def test_apply_oe(files, args, surface):
     """
     Executes the isofit apply_oe cli command for various test cases
     """
+    ray.shutdown()
+    sleep(120)
 
     arguments = ["apply_oe", *files, *args, "--surface_path", surface]
 
