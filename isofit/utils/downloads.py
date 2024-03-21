@@ -8,11 +8,12 @@ import os
 import urllib.request
 from email.message import EmailMessage
 from functools import partial
+from pathlib import Path
 from zipfile import ZipFile
 
 import click
 
-import isofit
+from isofit.core import env
 
 
 def release_metadata(org, repo, tag="latest"):
@@ -124,6 +125,39 @@ def unzip(file, path=None, rename=None, overwrite=False, cleanup=True):
     return outp
 
 
+def prepare_output(output, default):
+    """
+    Prepares the output path by ensuring the parents exist and itself doesn't presently exist.
+
+    Parameters
+    ----------
+    output: str | None
+        Path to download to
+    default: str
+        Default path defined by the ini file
+    """
+    if not output:
+        output = default
+
+    output = Path(output)
+
+    click.echo(f"Output as: {output}")
+
+    if output.exists():
+        click.echo(
+            f"Path already exists, please remove it if you would like to redownload"
+        )
+        return
+
+    try:
+        output.parent.mkdir(parents=True, exist_ok=True)
+    except Exception as e:
+        click.echo(f"Failed to create output directory: {e}")
+        return
+
+    return output
+
+
 # Main command
 
 
@@ -137,7 +171,7 @@ def cli_download():
 
 # Shared click options
 
-output = partial(click.option, "-o", "--output", default=isofit.root, show_default=True)
+output = partial(click.option, "-o", "--output")
 tag = click.option(
     "-t", "--tag", default=f"latest", help="Release tag to pull", show_default=True
 )
@@ -146,22 +180,77 @@ tag = click.option(
 # Subcommands
 
 
-@cli_download.command(name="data")
-@output(help="Root directory to download data files to, ie. [path]/data")
-@tag
-def data(output, tag):
-    """\
+def download_data(output=None, tag="latest"):
+    """
     Downloads the extra ISOFIT data files from the repository https://github.com/isofit/isofit-data.
+
+    Parameters
+    ----------
+    output: str | None
+        Path to output as. If None, defaults to the ini path.
+    tag: str
+        Release tag to pull from the github.
     """
     click.echo(f"Downloading ISOFIT data")
+
+    output = prepare_output(output, env.data)
+    if not output:
+        return
 
     metadata = release_metadata("isofit", "isofit-data", tag)
 
     click.echo(f"Pulling release {metadata['tag_name']}")
-    zipfile = download_file(metadata["zipball_url"], f"{output}/isofit-data.zip")
+    zipfile = download_file(metadata["zipball_url"], output.parent / "isofit-data.zip")
 
     click.echo(f"Unzipping {zipfile}")
-    avail = unzip(zipfile, path=output, rename="data")
+    avail = unzip(zipfile, path=output.parent, rename=output.name)
+
+    click.echo(f"Done, now available at: {avail}")
+
+
+@cli_download.command(name="data")
+@output(help="Root directory to download data files to, ie. [path]/data")
+@tag
+def cli_data(**kwargs):
+    """\
+    Downloads the extra ISOFIT data files from the repository https://github.com/isofit/isofit-data.
+
+    Run `isofit download paths` to see default path locations.
+    There are two ways to specify output directory:
+        - `isofit --data /path/data download data`: Override the ini file. This will save the provided path for future reference.
+        - `isofit download data --output /path/data`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
+    It is recommended to use the first style so the download path is remembered in the future.
+    """
+    download_data(**kwargs)
+
+
+def download_examples(output=None, tag="latest"):
+    """
+    Downloads the ISOFIT examples from the repository https://github.com/isofit/isofit-tutorials.
+
+    Parameters
+    ----------
+    output: str | None
+        Path to output as. If None, defaults to the ini path.
+    tag: str
+        Release tag to pull from the github.
+    """
+
+    click.echo(f"Downloading ISOFIT examples")
+
+    output = prepare_output(output, env.examples)
+    if not output:
+        return
+
+    metadata = release_metadata("isofit", "isofit-tutorials", tag)
+
+    click.echo(f"Pulling release {metadata['tag_name']}")
+    zipfile = download_file(
+        metadata["zipball_url"], output.parent / "isofit-tutorials.zip"
+    )
+
+    click.echo(f"Unzipping {zipfile}")
+    avail = unzip(zipfile, path=output.parent, rename=output.name)
 
     click.echo(f"Done, now available at: {avail}")
 
@@ -169,18 +258,47 @@ def data(output, tag):
 @cli_download.command(name="examples")
 @output(help="Root directory to download ISOFIT examples to, ie. [path]/examples")
 @tag
-def examples(output, tag):
+def cli_examples(**kwargs):
     """\
     Downloads the ISOFIT examples from the repository https://github.com/isofit/isofit-tutorials.
+
+    Run `isofit download paths` to see default path locations.
+    There are two ways to specify output directory:
+        - `isofit --examples /path/examples download examples`: Override the ini file. This will save the provided path for future reference.
+        - `isofit download examples --output /path/examples`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
+    It is recommended to use the first style so the download path is remembered in the future.
     """
-    click.echo(f"Downloading ISOFIT examples")
+    download_examples(**kwargs)
 
-    metadata = release_metadata("isofit", "isofit-tutorials", tag)
 
-    click.echo(f"Pulling release {metadata['tag_name']}")
-    zipfile = download_file(metadata["zipball_url"], f"{output}/isofit-tutorials.zip")
+@cli_download.command(name="all")
+def download_all():
+    """\
+    Downloads all ISOFIT extra dependencies to the locations specified in the isofit.ini file using latest tags.
+    """
+    download_data(env.data, tag="latest")
+    download_examples(env.examples, tag="latest")
 
-    click.echo(f"Unzipping {zipfile}")
-    avail = unzip(zipfile, path=output, rename="examples")
 
-    click.echo(f"Done, now available at: {avail}")
+@cli_download.command(name="paths")
+def preview_paths():
+    """\
+    Preview download path locations. Paths can be changed from the default by using the overrides on the `isofit` command. See more via `isofit --help`
+
+    \b
+    Example:
+    Change the default `data` and `examples` paths
+    $ isofit --data /path/to/data --examples /different/path/examples download paths
+        Download paths will default to:
+        - data = /path/to/data
+        - examples = /different/path/examples
+    \b
+    These will be saved and may be reviewed:
+    $ isofit download paths
+        Download paths will default to:
+        - data = /path/to/data
+        - examples = /different/path/examples
+    """
+    click.echo("Download paths will default to:")
+    for key, path in env.items():
+        click.echo(f"- {key} = {path}")
