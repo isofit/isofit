@@ -61,7 +61,7 @@ class Geometry:
         try:
             self.earth_sun_distance_reference = np.loadtxt(self.earth_sun_distance_path)
         except FileNotFoundError:
-            print(
+            logging.warning(
                 "Earth-sun-distance file not found on system. "
                 "Proceeding without might cause some inaccuracies down the line."
             )
