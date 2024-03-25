@@ -19,6 +19,7 @@
 #
 
 import logging
+import multiprocessing
 import time
 from types import SimpleNamespace
 
@@ -525,7 +526,7 @@ def empirical_line(
 
     ray_initiate(rayargs)
 
-    n_ray_cores = ray.available_resources()["CPU"]
+    n_ray_cores = multiprocessing.cpu_count()
     n_cores = min(n_ray_cores, n_input_lines)
 
     logging.info(

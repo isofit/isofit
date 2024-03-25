@@ -45,7 +45,7 @@ else:
 
 def shutdown_ray():
     try:
-        ray.shutdown(_exiting_interpreter=True)
+        ray.shutdown()
     except:
         pass
 

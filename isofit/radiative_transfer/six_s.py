@@ -156,7 +156,14 @@ class SixSRT(RadiativeTransferEngine):
         """
         self.load_esd()
 
-        irr = np.loadtxt(self.engine_config.irradiance_file, comments="#")
+        try:
+            irr = np.loadtxt(self.engine_config.irradiance_file, comments="#")
+        except FileNotFoundError:
+            raise FileNotFoundError(
+                "Solar irradiance file not found on system. "
+                "Make sure to add the examples folder to ISOFIT's root directory before proceeding."
+            )
+
         iwl, irr = irr.T
         irr = irr / 10.0  # convert, uW/nm/cm2
         irr = irr / self.irr_factor**2  # consider solar distance
@@ -257,7 +264,16 @@ class SixSRT(RadiativeTransferEngine):
         """
         Loads the earth-sun distance file
         """
-        self.esd = np.loadtxt(self.earth_sun_distance_path)
+        try:
+            self.esd = np.loadtxt(self.earth_sun_distance_path)
+        except FileNotFoundError:
+            Logger.info(
+                "Earth-sun-distance file not found on system. "
+                "Proceeding without might cause some inaccuracies down the line."
+            )
+            self.esd = np.ones((366, 2))
+            self.esd[:, 0] = np.arange(1, 367, 1)
+
         dt = datetime(2000, self.engine_config.month, self.engine_config.day)
         self.day_of_year = dt.timetuple().tm_yday
         self.irr_factor = self.esd[self.day_of_year - 1, 1]

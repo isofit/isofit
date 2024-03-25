@@ -58,7 +58,15 @@ class Geometry:
         self.earth_sun_distance_path = os.path.join(
             isofit.root, "data", "earth_sun_distance.txt"
         )
-        self.earth_sun_distance_reference = np.loadtxt(self.earth_sun_distance_path)
+        try:
+            self.earth_sun_distance_reference = np.loadtxt(self.earth_sun_distance_path)
+        except FileNotFoundError:
+            logging.warning(
+                "Earth-sun-distance file not found on system. "
+                "Proceeding without might cause some inaccuracies down the line."
+            )
+            self.earth_sun_distance_reference = np.ones((366, 2))
+            self.earth_sun_distance_reference[:, 0] = np.arange(1, 367, 1)
 
         self.bg_rfl = bg_rfl
         self.cos_i = None

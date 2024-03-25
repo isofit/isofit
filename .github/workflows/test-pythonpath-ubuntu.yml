@@ -57,10 +57,12 @@ jobs:
           # Uninstall 'isofit', leaving its dependencies.
           python3 -m pip uninstall --yes isofit
           
-          # Move 'isofit' into a new directory to ensure it is not just
+          # Move 'isofit' and copy its data directories into a new directory to ensure it is not just
           # inherently available.
           mkdir isolation/
           mv isofit/ isolation/
+          cp -r examples isolation/
+          cp -r data isolation/
           
           # Check to see if 'isofit' is still installed. It should not be.
           # Note that this job is implicitly configured with 'set -e', which
