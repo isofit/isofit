@@ -30,7 +30,7 @@ from spectral.io import envi
 
 from isofit import ray
 from isofit.configs import configs
-from isofit.core.common import envi_header, load_spectrum, ray_initiate
+from isofit.core.common import envi_header, load_spectrum
 from isofit.core.fileio import write_bil_chunk
 from isofit.core.forward import ForwardModel
 from isofit.core.geometry import Geometry
@@ -170,7 +170,7 @@ def analytical_line(
         "num_cpus": n_cores,
     }
 
-    ray_initiate(ray_dict)
+    ray.init(**ray_dict)
 
     n_workers = n_cores
 

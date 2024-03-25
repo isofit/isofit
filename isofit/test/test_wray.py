@@ -1,7 +1,7 @@
 from isofit.wrappers import ray
 
 
-@ray.remote
+@ray.remote(num_cpus=1)
 def decorator(a, b):
     return a * b
 

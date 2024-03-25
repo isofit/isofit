@@ -13,11 +13,12 @@ from warnings import warn
 
 import click
 import numpy as np
+import ray
 from spectral.io import envi
 
 import isofit.utils.template_construction as tmpl
 from isofit.core import isofit
-from isofit.core.common import envi_header, ray_start, ray_terminate
+from isofit.core.common import envi_header
 from isofit.utils import analytical_line, empirical_line, extractions, segment
 
 EPS = 1e-6
@@ -188,7 +189,14 @@ def apply_oe(args):
     use_superpixels = args.empirical_line or args.analytical_line
 
     if not os.environ.get("ISOFIT_DEBUG"):
-        ray_start(args.n_cores, args.num_cpus, args.memory_gb * 1024**3)
+        ray.init(
+            **{
+                "num_cpus": args.n_cores,
+                "_temp_dir": args.ray_temp_dir,
+                "include_dashboard": False,
+                "local_mode": args.n_cores == 1,
+            }
+        )
 
     if args.sensor not in SUPPORTED_SENSORS:
         if args.sensor[:3] != "NA-":
@@ -645,7 +653,7 @@ def apply_oe(args):
             )
 
     logging.info("Done.")
-    ray_terminate()
+    ray.shutdown()
 
 
 if __name__ == "__main__":
