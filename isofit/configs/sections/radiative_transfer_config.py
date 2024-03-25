@@ -86,6 +86,11 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         implementation of the forward model.
         """
 
+        self._rt_mode = str
+        self.rt_mode = None
+        """str: Radiative transfer mode of LUT simulations. 
+        'transm' for transmittances, 'rdn' for reflected radiance."""
+
         self._glint_model_type = bool
         self.glint_model = False
         """
