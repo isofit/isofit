@@ -47,6 +47,10 @@ authors:
   - given-names: Kevin Wurster
     affiliation: >-
       Planet Corporate Activities
+  - given-names: Nicholas Vaughn
+    affiliation: >-
+      Arizona State University
+    orcid: 'https://orcid.org/0000-0003-0428-2909'
 
 identifiers:
   - type: doi
