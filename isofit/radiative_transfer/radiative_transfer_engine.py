@@ -149,6 +149,16 @@ class RadiativeTransferEngine:
         self.sim_path = engine_config.sim_path
 
         # Enable special modes - argument: get from HDF5
+        self.rt_mode = (
+            engine_config.rt_mode if engine_config.rt_mode is not None else "transm"
+        )
+        if self.rt_mode not in ["transm", "rdn"]:
+            Logger.error(
+                "Unknown RT mode provided in config file. Please use either 'transm' or 'rdn'."
+            )
+            raise ValueError(
+                "Unknown RT mode provided in config file. Please use either 'transm' or 'rdn'."
+            )
         self.multipart_transmittance = engine_config.multipart_transmittance
         self.topography_model = engine_config.topography_model
 
@@ -175,6 +185,14 @@ class RadiativeTransferEngine:
             self.lut = luts.load(lut_path, subset=engine_config.lut_names)
             self.lut_grid = lut_grid or luts.extractGrid(self.lut)
             self.points, self.lut_names = luts.extractPoints(self.lut)
+            self.rt_mode = self.lut.attrs.get("RT_mode", "transm")
+            if self.rt_mode not in ["transm", "rdn"]:
+                Logger.error(
+                    "Unknown RT mode provided in LUT file. Please use either 'transm' or 'rdn'."
+                )
+                raise ValueError(
+                    "Unknown RT mode provided in LUT file. Please use either 'transm' or 'rdn'."
+                )
 
             # if necessary, resample prebuilt LUT to desired instrument spectral response
             if not all(wl == self.wl):
@@ -206,6 +224,7 @@ class RadiativeTransferEngine:
                 file=self.lut_path,
                 wl=wl,
                 lut_grid=self.lut_grid,
+                attrs={"RT_mode": self.rt_mode},
                 consts=self.consts,
                 onedim=self.onedim + [("fwhm", fwhm)],
                 alldim=self.alldim,

@@ -38,6 +38,7 @@ def initialize(
     file: str,
     wl: np.array,
     lut_grid: dict,
+    attrs: dict,
     chunks: int = 25,  # REVIEW: Good default? Can we calculate it? TODO: Config option?
     consts: list = [],
     onedim: list = [],
@@ -49,8 +50,10 @@ def initialize(
 
     Parameters
     ----------
+    attrs: dict, defaults={}
+        Dict of dataset attributes, ie. {"RT_mode": "transm"}
     consts: list, defaults=[]
-        Keys to fill, these are along  no dimensions, ie. ()
+        Keys to fill, these are constants along no dimensions, ie. ()
     onedim: list, defaults=[]
         Keys to fill, these are along one dimensions, ie. (wl, )
     alldim: list, defaults=[]
@@ -59,7 +62,7 @@ def initialize(
         List of keys to default to zeros as the fill value instead of NaNs
     """
     # Initialize with all lut point names as dimensions
-    ds = xr.Dataset(coords={"wl": wl, **lut_grid})
+    ds = xr.Dataset(coords={"wl": wl, **lut_grid}, attrs=attrs)
 
     # Insert constants
     filler = np.nan
