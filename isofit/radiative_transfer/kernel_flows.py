@@ -50,6 +50,9 @@ class KernelFlowsRT(object):
             lambda x: np.cos(np.deg2rad(90 - x)),
             lambda x: np.log(180 - x),
         ]
+        self.output_transfs = [
+            lambda x: np.exp(x),
+        ]
         # read VSWIREmulator struct from jld2 file
         self.f = h5py.File(engine_config.emulator_file, "r")
         # ga components of size (npar1, npar2, ...nparn, nbands). only outputs necessary.
@@ -71,11 +74,17 @@ class KernelFlowsRT(object):
             )
             self.ga.append(MVM)
 
+        # back-transform some quantities from log space
+        # ToDo: this might not always be needed,
+        #  so we need an if-statement at some point
+        ga_1 = self.output_transfs[0](self.ga[1][:, :])
+        ga_2 = self.output_transfs[0](self.ga[2][:, :])
+
         combined = {
             "rhoatm": self.ga[0],
             "sphalb": self.ga[3],
-            "transm_down_dir": self.ga[1],
-            "transm_down_dif": self.ga[2],
+            "transm_down_dir": ga_1,
+            "transm_down_dif": ga_2,
             "transm_up_dir": np.zeros(self.ga[0].shape),
             "transm_up_dif": np.zeros(self.ga[0].shape),
             "thermal_upwelling": np.zeros(self.ga[0].shape),
