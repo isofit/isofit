@@ -51,7 +51,7 @@ class KernelFlowsRT(object):
             lambda x: np.log(180 - x),
         ]
         self.output_transfs = [
-            lambda x: np.exp(x),
+            lambda x: np.exp(x) - 0.1,
         ]
         # read VSWIREmulator struct from jld2 file
         self.f = h5py.File(engine_config.emulator_file, "r")
