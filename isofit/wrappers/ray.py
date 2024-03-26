@@ -50,7 +50,7 @@ def __getattr__(key):
     return lambda *a, **kw: None
 
 
-def remote(obj):
+def remote(obj, *args, **kwargs):
     return Remote(obj)
 
 
