@@ -3,12 +3,13 @@ These tests are to ensure any changes to the CLI will be backwards compatible.
 """
 
 import io
-import json
 import os
 import shutil
 import zipfile
+from time import sleep
 
 import pytest
+import ray
 import requests
 from click.testing import CliRunner
 
@@ -95,6 +96,8 @@ def test_apply_oe(files, args, surface):
     """
     Executes the isofit apply_oe cli command for various test cases
     """
+    ray.shutdown()
+    sleep(120)
 
     arguments = ["apply_oe", *files, *args, "--surface_path", surface]
 

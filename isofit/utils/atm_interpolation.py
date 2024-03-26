@@ -17,13 +17,11 @@
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: Philip G. Brodrick, philip.brodrick@jpl.nasa.gov
 #
-import atexit
 import logging
 import time
 from typing import List
 
 import numpy as np
-import pylab as plt
 from scipy.linalg import inv
 from scipy.ndimage import gaussian_filter
 from scipy.spatial import KDTree
@@ -33,8 +31,6 @@ from isofit import ray
 from isofit.core.common import envi_header, ray_initiate
 from isofit.core.fileio import write_bil_chunk
 from isofit.core.forward import ForwardModel
-
-plt.switch_backend("Agg")
 
 
 @ray.remote
@@ -299,7 +295,6 @@ def atm_interpolation(
     # Initialize ray cluster
     start_time = time.time()
     ray_initiate({"ignore_reinit_error": True, "local_mode": n_cores == 1})
-    atexit.register(ray.shutdown)
 
     n_ray_cores = int(ray.available_resources()["CPU"])
     n_cores = min(n_ray_cores, n_input_lines)
@@ -366,4 +361,3 @@ def atm_interpolation(
 
     atm_img = atm_img.transpose((0, 2, 1))
     write_bil_chunk(atm_img, output_atm_file, 0, atm_img.shape)
-    ray.shutdown()

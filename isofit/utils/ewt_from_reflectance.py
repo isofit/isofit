@@ -17,7 +17,6 @@
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: Philip G. Brodrick, philip.brodrick@jpl.nasa.gov
 
-import atexit
 import logging
 import multiprocessing
 import os
@@ -26,7 +25,6 @@ from types import SimpleNamespace
 
 import click
 import numpy as np
-from matplotlib import pyplot as plt
 from spectral.io import envi
 
 from isofit import ray
@@ -99,7 +97,6 @@ def main(args: SimpleNamespace) -> None:
     }
 
     ray.init(**rayargs)
-    atexit.register(ray.shutdown)
 
     line_breaks = np.linspace(0, rfls[0], n_workers, dtype=int)
     line_breaks = [
@@ -128,25 +125,6 @@ def main(args: SimpleNamespace) -> None:
         f"{round(rfls[0]*rfls[1]/total_time,4)} spectra/s, "
         f"{round(rfls[0]*rfls[1]/total_time/n_workers,4)} spectra/s/core"
     )
-
-    if args.plot_map:
-        ewt = envi.open(args.output_cwc_file + ".hdr")
-        plt.figure()
-        plt.imshow(ewt[:, :] * 10, vmin=0, vmax=args.ewt_limit * 10, cmap="jet")
-        plt.colorbar()
-        plt.grid()
-        ax = plt.gca()
-        ax.xaxis.set_tick_params(labelbottom=False)
-        ax.yaxis.set_tick_params(labelleft=False)
-        ax.set_xticks([])
-        ax.set_yticks([])
-        ax.spines["left"].set_visible(False)
-        ax.spines["bottom"].set_visible(False)
-        plt.title("Equivalent Water Thickness\n(EWT) [mm]", size=15)
-        plt.savefig(
-            args.output_cwc_file + ".png", dpi=600, bbox_inches="tight", pad_inches=0
-        )
-        plt.close()
 
 
 @ray.remote
@@ -210,7 +188,6 @@ def run_lines(
 @click.option("--n_cores", type=int, default=-1)
 @click.option("--ray_tmp_dir")
 @click.option("--ewt_limit", type=float, default=0.5)
-@click.option("--plot_map", is_flag=True, default=False)
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",

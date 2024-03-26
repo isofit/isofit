@@ -50,6 +50,8 @@ class Pathnames:
             self.fid = split(args.input_radiance)[-1][:18]
         elif args.sensor == "prisma":
             self.fid = args.input_radiance.split("/")[-1].split("_")[1]
+        elif args.sensor == "gao":
+            self.fid = split(args.input_radiance)[-1][:23]
         elif args.sensor[:3] == "NA-":
             self.fid = os.path.splitext(os.path.basename(args.input_radiance))[0]
 

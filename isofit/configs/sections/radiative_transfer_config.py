@@ -231,6 +231,12 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         if self.engine_name == "sRTMnet" and self.emulator_aux_file is None:
             errors.append("The sRTMnet requires an emulator_aux_file to be specified.")
 
+        if self.engine_name == "sRTMnet" and self.emulator_file is not None:
+            if os.path.splitext(self.emulator_file)[1] != ".h5":
+                errors.append(
+                    "sRTMnet now requires the emulator_file to be of type .h5.  Please download an updated version from:\n https://zenodo.org/records/10831425"
+                )
+
         files = [
             self.earth_sun_distance_file,
             self.irradiance_file,

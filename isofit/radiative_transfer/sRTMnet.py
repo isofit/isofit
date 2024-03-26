@@ -24,6 +24,7 @@ from copy import deepcopy
 from pathlib import Path
 
 import dask.array as da
+import h5py
 import numpy as np
 import yaml
 from scipy.interpolate import interp1d
@@ -38,6 +39,37 @@ from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransfe
 from isofit.radiative_transfer.six_s import SixSRT
 
 Logger = logging.getLogger(__file__)
+
+
+class tfLikeModel:
+    def __init__(self, input_file):
+        self.weights = []
+        self.biases = []
+        self.input_file = input_file
+        self.model = h5py.File(input_file, "r")
+
+        weights = []
+        biases = []
+        for _n, n in enumerate(self.model["model_weights"].keys()):
+            if "dense" in n:
+                weights.append(np.array(self.model["model_weights"][n][n]["kernel:0"]))
+                biases.append(np.array(self.model["model_weights"][n][n]["bias:0"]))
+
+        self.weights = weights
+        self.biases = biases
+        self.input_file = input_file
+
+    def leaky_re_lu(self, x, alpha=0.4):
+        return np.maximum(alpha * x, x)
+
+    def predict(self, x):
+        xi = x.copy()
+        for i, (M, b) in enumerate(zip(self.weights, self.biases)):
+            yi = np.dot(xi, M) + b
+            # apply leaky_relu unless we're at the output layer
+            if i < len(self.weights) - 1:
+                xi = self.leaky_re_lu(yi)
+        return yi
 
 
 class SimulatedModtranRT(RadiativeTransferEngine):
@@ -64,9 +96,6 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         sRTMnet leverages 6S to simulate results which is best done before sRTMnet begins
         simulations itself
         """
-
-        # Delay expensive import
-        from tensorflow import keras
 
         Logger.info("Creating a simulator configuration")
         # Create a copy of the engine_config and populate it with 6S parameters
@@ -133,7 +162,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
 
         # Now predict, scale, and add the interpolations
         Logger.info("Loading and predicting with emulator")
-        emulator = keras.models.load_model(self.engine_config.emulator_file)
+        emulator = tfLikeModel(self.engine_config.emulator_file)
         predicts = da.from_array(emulator.predict(data))
         predicts /= scaler
         predicts += resample
