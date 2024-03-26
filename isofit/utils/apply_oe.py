@@ -479,6 +479,10 @@ def apply_oe(args):
             tmpl.build_presolve_config(
                 paths=paths,
                 h2o_lut_grid=h2o_grid,
+                mean_surface_elevation=mean_elevation_km,
+                mean_relative_azimuth=mean_relative_azimuth,
+                mean_to_sun_zenith=mean_to_sun_zenith,
+                mean_to_sensor_zenith=mean_to_sensor_zenith,
                 n_cores=args.n_cores,
                 use_emp_line=use_superpixels,
                 surface_category=args.surface_category,
