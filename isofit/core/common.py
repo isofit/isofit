@@ -796,6 +796,9 @@ def ray_start(num_cores, num_cpus=2, memory_b=-1):
 def ray_terminate():
     import subprocess
 
+    import ray
+
+    ray.shutdown()
     subprocess.call("ray stop", shell=True)
 
 
