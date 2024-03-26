@@ -50,8 +50,11 @@ def __getattr__(key):
     return lambda *a, **kw: None
 
 
-def remote(obj, *args, **kwargs):
-    return Remote(obj)
+def remote(*args, **kwargs):
+    def wrap(obj):
+        return Remote(obj)
+
+    return wrap
 
 
 def init(*args, **kwargs):

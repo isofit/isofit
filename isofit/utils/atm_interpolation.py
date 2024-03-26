@@ -18,6 +18,7 @@
 # Author: Philip G. Brodrick, philip.brodrick@jpl.nasa.gov
 #
 import logging
+import multiprocessing
 import time
 from typing import List
 
@@ -296,7 +297,7 @@ def atm_interpolation(
     start_time = time.time()
     ray.init(**{"ignore_reinit_error": True, "local_mode": n_cores == 1})
 
-    n_ray_cores = int(ray.available_resources()["CPU"])
+    n_ray_cores = multiprocessing.cpu_count()
     n_cores = min(n_ray_cores, n_input_lines)
 
     logging.info(f"Beginning atmospheric interpolation {n_cores} cores")
