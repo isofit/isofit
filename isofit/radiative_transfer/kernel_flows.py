@@ -150,25 +150,19 @@ class KernelFlowsRT(object):
         nzycols = len(MVM.keys()) - 1  # take out GPGeometry from list of GPs
         ZY_pred = np.zeros((nte, nzycols))
 
-        logging.info(f"num parallel nzycols: {len(range(nzycols))}")
-
+        logging.info(f"Parallel KF application across {len(range(nzycols))} nzycols")
         ZY_pred_calls = []
         for i in range(nzycols):
             M = MVM["M" + str(i + 1)]
             G = MVM["G"]  # shorthand
-
-            # Z = reduce_points(
-            #    points, G["Xproj" + str(i + 1)], G["Xmean"], G["Xstd"]
-            # )
-            # ZY_pred[:, i] = predict_M(M, points, G["Xproj" + str(i + 1)], G["Xmean"], G["Xstd"])
-            M_Z = np.array(M["Z"])
-            M_lambda = np.array(M["lambda"])
-            M_theta = np.array(M["theta"])
-            M_h = np.array(M["h"])
-            G_Xproj_vectors = np.array(G["Xproj" + str(i + 1)]["vectors"])
-            G_Xproj_values = np.array(G["Xproj" + str(i + 1)]["values"])
-            G_Xmean = np.array(G["Xmean"])
-            G_Xstd = np.array(G["Xstd"])
+            M_Z = ray.put(np.array(M["Z"]))
+            M_lambda = ray.put(np.array(M["lambda"]))
+            M_theta = ray.put(np.array(M["theta"]))
+            M_h = ray.put(np.array(M["h"]))
+            G_Xproj_vectors = ray.put(np.array(G["Xproj" + str(i + 1)]["vectors"]))
+            G_Xproj_values = ray.put(np.array(G["Xproj" + str(i + 1)]["values"]))
+            G_Xmean = ray.put(np.array(G["Xmean"]))
+            G_Xstd = ray.put(np.array(G["Xstd"]))
             points_ray = ray.put(points)
 
             ZY_pred_calls.append(
@@ -187,7 +181,20 @@ class KernelFlowsRT(object):
         ZY_out = ray.get(ZY_pred_calls)
         for i in range(len(ZY_out)):
             ZY_pred[:, i] = ZY_out[i]
-        del ZY_out
+
+        # Do some cleanup
+        del (
+            ZY_out,
+            M_Z,
+            M_lambda,
+            M_theta,
+            M_h,
+            G_Xproj_vectors,
+            G_Xproj_values,
+            G_Xmean,
+            G_Xstd,
+            points_ray,
+        )
 
         # H is same as in recover() in dimension_reduction.jl
         MP = self.srf_matrix @ G["Yproj"]["vectors"][:, :].T
