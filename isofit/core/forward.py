@@ -104,6 +104,15 @@ class ForwardModel:
             raise ValueError("Must specify a valid surface model")
             # No need to be more specific - should have been checked in config already
 
+        # check if wavelength grid provided by surface model matches instrument wavelengths
+        if self.surface.n_wl != len(self.RT.wl) or not all(
+            self.surface.wl == self.RT.wl
+        ):
+            raise ValueError(
+                "Number of channels or center wavelengths provided in surface model file do not match"
+                " wavelengths in radiance cube. Please rebuild your surface model."
+            )
+
         # Build combined vectors from surface, RT, and instrument
         bounds, scale, init, statevec, bvec, bval = ([] for i in range(6))
         for obj_with_statevec in [self.surface, self.RT, self.instrument]:
