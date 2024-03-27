@@ -6,6 +6,11 @@ def decorator(a, b):
     return a * b
 
 
+@ray.remote()
+def decorator_nocpu(a, b):
+    return a * b
+
+
 def test_decorators():
     """
     Tests decorator use cases of Ray
@@ -22,6 +27,9 @@ def test_decorators():
         assert res == ans, f"Failed {a}*{b}, got {res} expected {ans}"
 
     jobs = [decorator.remote(a, b) for a, b in cases.values()]
+    assert ray.get(jobs) == list(cases.keys())
+
+    jobs = [decorator_nocpu.remote(a, b) for a, b in cases.values()]
     assert ray.get(jobs) == list(cases.keys())
 
 
