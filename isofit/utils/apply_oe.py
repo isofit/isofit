@@ -396,11 +396,12 @@ def apply_oe(args):
     logging.info(f"Altitude (km): {mean_altitude_km}")
 
     if args.emulator_base is not None and mean_altitude_km > 99:
-        logging.info(
-            "Adjusting altitude to 99 km for integration with 6S, because emulator is"
-            " chosen."
-        )
-        mean_altitude_km = 99
+        if not args.emulator_base.endswith(".jld2"):
+            logging.info(
+                "Adjusting altitude to 99 km for integration with 6S, because emulator is"
+                " chosen."
+            )
+            mean_altitude_km = 99
 
     # We will use the model discrepancy with covariance OR uncorrelated
     # Calibration error, but not both.
@@ -478,6 +479,10 @@ def apply_oe(args):
             tmpl.build_presolve_config(
                 paths=paths,
                 h2o_lut_grid=h2o_grid,
+                mean_surface_elevation=mean_elevation_km,
+                mean_relative_azimuth=mean_relative_azimuth,
+                mean_to_sun_zenith=mean_to_sun_zenith,
+                mean_to_sensor_zenith=mean_to_sensor_zenith,
                 n_cores=args.n_cores,
                 use_emp_line=use_superpixels,
                 surface_category=args.surface_category,

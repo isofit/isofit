@@ -3,10 +3,8 @@
 # Authors: Philip G. Brodrick and Niklas Bohn
 #
 
-import argparse
 import json
 import logging
-import multiprocessing
 import os
 import subprocess
 from datetime import datetime
@@ -17,7 +15,6 @@ from typing import List
 
 import netCDF4 as nc
 import numpy as np
-import utm
 from sklearn import mixture
 from spectral.io import envi
 
@@ -699,6 +696,10 @@ def build_surface_config(
 def build_presolve_config(
     paths: Pathnames,
     h2o_lut_grid: np.array,
+    mean_surface_elevation: float,
+    mean_relative_azimuth: float,
+    mean_to_sun_zenith: float,
+    mean_to_sensor_zenith: float,
     n_cores: int = -1,
     use_emp_line: bool = False,
     surface_category="multicomponent_surface",
@@ -714,6 +715,10 @@ def build_presolve_config(
     Args:
         paths: object containing references to all relevant file locations
         h2o_lut_grid: the water vapor look up table grid isofit should use for this solve
+        mean_surface_elevation: mean surface elevation
+        mean_relative_azimuth: mean relative azimuth angle
+        mean_to_sun_zenith: mean to-sun zenith angle
+        mean_to_sensor_zenith: mean so-sensor zenith angle
         n_cores: number of cores to use in processing
         use_emp_line: flag whether or not to set up for the empirical line estimation
         surface_category: type of surface to use
@@ -733,6 +738,8 @@ def build_presolve_config(
 
     if emulator_base is None:
         engine_name = "modtran"
+    elif emulator_base.endswith(".jld2"):
+        engine_name = "KernelFlowsGP"
     else:
         engine_name = "sRTMnet"
 
@@ -740,6 +747,28 @@ def build_presolve_config(
         lut_path = join(paths.lut_h2o_directory, "lut.nc")
     else:
         lut_path = prebuilt_lut_path
+
+    # set up specific presolve LUT grid
+    if engine_name == "KernelFlowsGP":
+        lut_grid = {
+            "H2OSTR": [float(x) for x in h2o_lut_grid],
+            "AOT550": [0.01 * 0.99, 0.01 * 1.01],
+            "surface_elevation_km": [
+                mean_surface_elevation * 0.99,
+                mean_surface_elevation * 1.01,
+            ],
+            "relative_azimuth": [
+                mean_relative_azimuth * 0.99,
+                mean_relative_azimuth * 1.01,
+            ],
+            "solar_zenith": [mean_to_sun_zenith * 0.99, mean_to_sun_zenith * 1.01],
+            "observer_zenith": [
+                mean_to_sensor_zenith * 0.99,
+                mean_to_sensor_zenith * 1.01,
+            ],
+        }
+    else:
+        lut_grid = {"H2OSTR": [float(x) for x in h2o_lut_grid]}
 
     radiative_transfer_config = {
         "radiative_transfer_engines": {
@@ -761,9 +790,7 @@ def build_presolve_config(
                 "prior_mean": 1.5,
             }
         },
-        "lut_grid": {
-            "H2OSTR": [float(x) for x in h2o_lut_grid],
-        },
+        "lut_grid": lut_grid,
         "unknowns": {"H2O_ABSCO": 0.0},
     }
 
@@ -928,8 +955,11 @@ def build_main_config(
 
     if emulator_base is None:
         engine_name = "modtran"
+    elif emulator_base.endswith(".jld2"):
+        engine_name = "KernelFlowsGP"
     else:
         engine_name = "sRTMnet"
+
     radiative_transfer_config = {
         "radiative_transfer_engines": {
             "vswir": {
@@ -1011,23 +1041,58 @@ def build_main_config(
 
     if prebuilt_lut_path is None:
         if h2o_lut_grid is not None:
-            radiative_transfer_config["lut_grid"]["H2OSTR"] = h2o_lut_grid.tolist()
-        if elevation_lut_grid is not None and len(elevation_lut_grid) > 1:
-            radiative_transfer_config["lut_grid"][
-                "surface_elevation_km"
-            ] = elevation_lut_grid.tolist()
-        if to_sensor_zenith_lut_grid is not None and len(to_sensor_zenith_lut_grid) > 1:
-            radiative_transfer_config["lut_grid"][
-                "observer_zenith"
-            ] = to_sensor_zenith_lut_grid.tolist()  # modtran convention
-        if to_sun_zenith_lut_grid is not None and len(to_sun_zenith_lut_grid) > 1:
-            radiative_transfer_config["lut_grid"][
-                "solar_zenith"
-            ] = to_sun_zenith_lut_grid.tolist()
-        if relative_azimuth_lut_grid is not None and len(relative_azimuth_lut_grid) > 1:
-            radiative_transfer_config["lut_grid"][
-                "relative_azimuth"
-            ] = relative_azimuth_lut_grid.tolist()
+            if len(h2o_lut_grid) > 1:
+                radiative_transfer_config["lut_grid"]["H2OSTR"] = h2o_lut_grid.tolist()
+            elif len(h2o_lut_grid) == 1:
+                radiative_transfer_config["lut_grid"]["H2OSTR"] = [
+                    h2o_lut_grid[0] * 0.99,
+                    h2o_lut_grid[0],
+                    h2o_lut_grid[0] * 1.01,
+                ]
+        if elevation_lut_grid is not None:
+            if len(elevation_lut_grid) > 1:
+                radiative_transfer_config["lut_grid"][
+                    "surface_elevation_km"
+                ] = elevation_lut_grid.tolist()
+            elif len(elevation_lut_grid) == 1:
+                radiative_transfer_config["lut_grid"]["surface_elevation_km"] = [
+                    elevation_lut_grid[0] * 0.99,
+                    elevation_lut_grid[0],
+                    elevation_lut_grid[0] * 1.01,
+                ]
+        if to_sensor_zenith_lut_grid is not None:
+            if len(to_sensor_zenith_lut_grid) > 1:
+                radiative_transfer_config["lut_grid"][
+                    "observer_zenith"
+                ] = to_sensor_zenith_lut_grid.tolist()
+            elif len(to_sensor_zenith_lut_grid) == 1:
+                radiative_transfer_config["lut_grid"]["observer_zenith"] = [
+                    to_sensor_zenith_lut_grid[0] * 0.99,
+                    to_sensor_zenith_lut_grid[0],
+                    to_sensor_zenith_lut_grid[0] * 1.01,
+                ]
+        if to_sun_zenith_lut_grid is not None:
+            if len(to_sun_zenith_lut_grid) > 1:
+                radiative_transfer_config["lut_grid"][
+                    "solar_zenith"
+                ] = to_sun_zenith_lut_grid.tolist()
+            elif len(to_sun_zenith_lut_grid) == 1:
+                radiative_transfer_config["lut_grid"]["solar_zenith"] = [
+                    to_sun_zenith_lut_grid[0] * 0.99,
+                    to_sun_zenith_lut_grid[0],
+                    to_sun_zenith_lut_grid[0] * 1.01,
+                ]
+        if relative_azimuth_lut_grid is not None:
+            if len(relative_azimuth_lut_grid) > 1:
+                radiative_transfer_config["lut_grid"][
+                    "relative_azimuth"
+                ] = relative_azimuth_lut_grid.tolist()
+            elif len(relative_azimuth_lut_grid) == 1:
+                radiative_transfer_config["lut_grid"]["relative_azimuth"] = [
+                    relative_azimuth_lut_grid[0] * 0.99,
+                    relative_azimuth_lut_grid[0],
+                    relative_azimuth_lut_grid[0] * 1.01,
+                ]
 
         radiative_transfer_config["lut_grid"].update(aerosol_lut_grid)
 
@@ -1503,7 +1568,7 @@ def define_surface_types(
         fwhm = fwhm * 1000
 
     irr_file = os.path.join(
-        os.path.dirname(isofit.__file__), "..", "..", "data", "kurudz_0.1nm.dat"
+        os.path.dirname(isofit.__file__), "..", "..", "data", "kurucz_0.1nm.dat"
     )
     irr_wl, irr = np.loadtxt(irr_file, comments="#").T
     irr = irr / 10  # convert to uW cm-2 sr-1 nm-1
