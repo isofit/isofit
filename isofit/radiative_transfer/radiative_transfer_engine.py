@@ -412,9 +412,11 @@ class RadiativeTransferEngine:
         pre = self.preSim()
 
         if pre:
-            Logger.info("Saving pre-sim data")
+            Logger.info("Saving pre-sim data to index zero of all dimensions except wl")
             Logger.debug(f"pre-sim data contains keys: {pre.keys()}")
-            luts.updatePoint(file=self.lut_path, data=pre)
+
+            point = {key: 0 for key in self.lut_names}
+            luts.updatePoint(self.lut, point, data=pre)
 
         # Make the LUT calls (in parallel if specified)
         if not self._disable_makeSim:
@@ -430,6 +432,20 @@ class RadiativeTransferEngine:
                 for point in self.points
             ]
             ray.get(jobs)
+
+            # Update the lut as point simulations stream in
+            while jobs:
+                [done], jobs = ray.wait(jobs, num_returns=1)
+
+                # Retrieve the return of the finished job
+                ret = ray.get(done)
+
+                # If a simulation fails then it will return None
+                if ret:
+                    point, data = ret
+
+                    point = dict(zip(lut_names, point))
+                    luts.updatePoint(self.lut, point, data)
         else:
             Logger.debug("makeSim is disabled for this engine")
 
@@ -437,9 +453,16 @@ class RadiativeTransferEngine:
         post = self.postSim()
 
         if post:
-            Logger.info("Saving post-sim data")
+            Logger.info(
+                "Saving post-sim data to index zero of all dimensions except wl"
+            )
             Logger.debug(f"post-sim data contains keys: {post.keys()}")
-            luts.updatePoint(file=self.lut_path, data=post)
+
+            point = {key: 0 for key in self.lut_names}
+            luts.updatePoint(self.lut, point, data=post)
+
+        # Save the LUT file to disk
+        luts.saveDataset(self.lut_path, self.lut)
 
         # Reload the LUT now that it's populated
         self.lut = luts.load(self.lut_path)
@@ -621,6 +644,7 @@ def streamSimulation(
     # Save the results to our LUT format
     if data:
         Logger.debug(f"Updating data point {point} for keys: {data.keys()}")
-        luts.updatePoint(output, list(lut_names), point, data)
+
+        return point, data
     else:
         Logger.warning(f"No data was returned for point {point}")
