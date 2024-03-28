@@ -113,7 +113,7 @@ class ForwardModel:
                 " wavelengths in radiance cube. Please rebuild your surface model."
             )
         if not all(self.surface.wl == self.RT.wl):
-            logging.warning(
+            Logger.warning(
                 "Center wavelengths provided in surface model file do not match"
                 " wavelengths in radiance cube. Please consider rebuilding your"
                 " surface model for optimal performance."
