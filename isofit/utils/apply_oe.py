@@ -188,15 +188,12 @@ def apply_oe(args):
 
     use_superpixels = args.empirical_line or args.analytical_line
 
-    if not os.environ.get("ISOFIT_DEBUG"):
-        ray.init(
-            **{
-                "num_cpus": args.n_cores,
-                "_temp_dir": args.ray_temp_dir,
-                "include_dashboard": False,
-                "local_mode": args.n_cores == 1,
-            }
-        )
+    ray.init(
+        num_cpus=args.n_cores,
+        _temp_dir=args.ray_temp_dir,
+        include_dashboard=False,
+        local_mode=args.n_cores == 1,
+    )
 
     if args.sensor not in SUPPORTED_SENSORS:
         if args.sensor[:3] != "NA-":
