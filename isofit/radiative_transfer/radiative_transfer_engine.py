@@ -545,6 +545,7 @@ class RadiativeTransferEngine:
                 for point in self.points
             ]
             ray.get(jobs)
+            del lut_names, makeSim, readSim, lut_path
         else:
             Logger.debug("makeSim is disabled for this engine")
 
