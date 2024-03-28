@@ -322,12 +322,20 @@ def apply_oe(args):
 
     gmtime = float(h_m_s[0] + h_m_s[1] / 60.0)
 
-    # get radiance file, wavelengths
-    if args.wavelength_path:
+    # get radiance file, wavelengths, fwhm
+    radiance_dataset = envi.open(envi_header(paths.radiance_working_path))
+    wl_ds = np.array([float(w) for w in radiance_dataset.metadata["wavelength"]])
+    try:
         chn, wl, fwhm = np.loadtxt(args.wavelength_path).T
-    else:
-        radiance_dataset = envi.open(envi_header(paths.radiance_working_path))
-        wl = np.array([float(w) for w in radiance_dataset.metadata["wavelength"]])
+        if len(chn) != len(wl_ds) or not all(wl == wl_ds):
+            logging.warning(
+                "Number of channels or center wavelengths provided in wavelength file do not match"
+                " wavelengths in radiance cube. Adopting center wavelengths from ENVI"
+                " header."
+            )
+            raise ValueError
+    except ValueError or FileNotFoundError:
+        wl = wl_ds
         if "fwhm" in radiance_dataset.metadata:
             fwhm = np.array([float(f) for f in radiance_dataset.metadata["fwhm"]])
         elif "FWHM" in radiance_dataset.metadata:
@@ -335,8 +343,8 @@ def apply_oe(args):
         else:
             fwhm = np.ones(wl.shape) * (wl[1] - wl[0])
 
-        # Close out radiance dataset to avoid potential confusion
-        del radiance_dataset
+    # Close out radiance dataset to avoid potential confusion
+    del radiance_dataset
 
     # Convert to microns if needed
     if wl[0] > 100:
