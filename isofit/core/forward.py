@@ -18,13 +18,13 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
+import logging
 from copy import deepcopy
-from importlib import import_module
 
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.io import loadmat
-from scipy.linalg import block_diag, det, inv, norm, pinv, sqrtm
+from scipy.linalg import block_diag
 
 from isofit.configs import Config
 from isofit.surface import (
@@ -37,8 +37,10 @@ from isofit.surface import (
 )
 
 from ..radiative_transfer.radiative_transfer import RadiativeTransfer
-from .common import eps, recursive_replace
+from .common import eps
 from .instrument import Instrument
+
+Logger = logging.getLogger(__file__)
 
 ### Classes ###
 
@@ -105,12 +107,16 @@ class ForwardModel:
             # No need to be more specific - should have been checked in config already
 
         # check if wavelength grid provided by surface model matches instrument wavelengths
-        if self.surface.n_wl != len(self.RT.wl) or not all(
-            self.surface.wl == self.RT.wl
-        ):
+        if self.surface.n_wl != len(self.RT.wl):
             raise ValueError(
-                "Number of channels or center wavelengths provided in surface model file do not match"
+                "Number of channels provided in surface model file does not match"
                 " wavelengths in radiance cube. Please rebuild your surface model."
+            )
+        if not all(self.surface.wl == self.RT.wl):
+            logging.warning(
+                "Center wavelengths provided in surface model file do not match"
+                " wavelengths in radiance cube. Please consider rebuilding your"
+                " surface model for optimal performance."
             )
 
         # Build combined vectors from surface, RT, and instrument
