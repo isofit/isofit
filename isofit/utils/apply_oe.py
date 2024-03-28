@@ -246,21 +246,22 @@ def apply_oe(args):
     paths.stage_files()
     logging.info("...file/directory setup complete")
 
-    # Based on the sensor type, get appropriate year/month/day info fro intial condition.
+    # Based on the sensor type, get appropriate year/month/day info from initial condition.
     # We'll adjust for line length and UTC day overrun later
+    global INVERSION_WINDOWS
     if args.sensor == "ang":
         # parse flightline ID (AVIRIS-NG assumptions)
         dt = datetime.strptime(paths.fid[3:], "%Y%m%dt%H%M%S")
     elif args.sensor == "av3":
         # parse flightline ID (AVIRIS-3 assumptions)
         dt = datetime.strptime(paths.fid[3:], "%Y%m%dt%H%M%S")
+        INVERSION_WINDOWS = [[380.0, 1350.0], [1435, 1800.0], [1970.0, 2500.0]]
     elif args.sensor == "avcl":
         # parse flightline ID (AVIRIS-Classic assumptions)
         dt = datetime.strptime("20{}t000000".format(paths.fid[1:7]), "%Y%m%dt%H%M%S")
     elif args.sensor == "emit":
         # parse flightline ID (EMIT assumptions)
         dt = datetime.strptime(paths.fid[:19], "emit%Y%m%dt%H%M%S")
-        global INVERSION_WINDOWS
         INVERSION_WINDOWS = [[380.0, 1325.0], [1435, 1770.0], [1965.0, 2500.0]]
     elif args.sensor == "enmap":
         # parse flightline ID (EnMAP assumptions)
