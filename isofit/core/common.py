@@ -791,30 +791,3 @@ def ray_start(num_cores, num_cpus=2, memory_b=-1):
         base_args.append(address)
 
         result = subprocess.run(base_args, capture_output=True)
-
-
-def ray_terminate():
-    import subprocess
-
-    subprocess.call("ray stop", shell=True)
-
-
-def ray_initiate(raydict, num_cpus=1):
-
-    import ray
-
-    initialized = False
-    try:
-        initialized = ray.is_initialized()
-    except:
-        pass
-
-    if initialized:
-        return
-
-    try:
-        ray.init(**raydict)
-    except:
-        if "num_cpus" in raydict.keys():
-            del raydict["num_cpus"]
-        ray.init(**raydict)

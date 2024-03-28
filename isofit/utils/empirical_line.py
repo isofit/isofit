@@ -31,12 +31,12 @@ from spectral.io import envi
 
 from isofit import ray
 from isofit.configs import configs
-from isofit.core.common import envi_header, ray_initiate
+from isofit.core.common import envi_header
 from isofit.core.fileio import write_bil_chunk
 from isofit.core.instrument import Instrument
 
 
-@ray.remote
+@ray.remote(num_cpus=1)
 def _run_chunk(
     start_line: int,
     stop_line: int,
@@ -524,7 +524,7 @@ def empirical_line(
     ):
         rayargs["num_cpus"] = n_cores
 
-    ray_initiate(rayargs)
+    ray.init(**rayargs)
 
     n_ray_cores = multiprocessing.cpu_count()
     n_cores = min(n_ray_cores, n_input_lines)

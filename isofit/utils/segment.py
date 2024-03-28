@@ -27,10 +27,10 @@ from skimage.segmentation import slic
 from spectral.io import envi
 
 from isofit import ray
-from isofit.core.common import envi_header, ray_initiate
+from isofit.core.common import envi_header
 
 
-@ray.remote
+@ray.remote(num_cpus=1)
 def segment_chunk(
     lstart, lend, in_file, nodata_value, npca, segsize, logfile=None, loglevel="INFO"
 ):
@@ -207,7 +207,7 @@ def segment(
     if ray_ip_head is None and ray_redis_password is None:
         rayargs["num_cpus"] = n_cores
 
-    ray_initiate(rayargs)
+    ray.init(**rayargs)
 
     # Iterate through image "chunks," segmenting as we go
     all_labels = np.zeros((nl, ns), dtype=np.int64)

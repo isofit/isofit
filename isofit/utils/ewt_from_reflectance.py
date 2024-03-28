@@ -127,7 +127,7 @@ def main(args: SimpleNamespace) -> None:
     )
 
 
-@ray.remote
+@ray.remote(num_cpus=1)
 def run_lines(
     rfl_file: str,
     output_cwc_file: str,

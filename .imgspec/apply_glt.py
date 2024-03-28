@@ -132,7 +132,7 @@ def _write_bil_chunk(dat: np.array, outfile: str, line: int, shape: tuple, dtype
     outfile.close()
 
 
-@ray.remote
+@ray.remote(num_cpus=1)
 def apply_mosaic_glt_line(glt_filename: str, output_filename: str, rawspace_files: List, output_bands: np.array,
                           line_index: int, args: List):
     """
