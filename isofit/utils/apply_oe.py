@@ -13,12 +13,13 @@ from warnings import warn
 
 import click
 import numpy as np
+import ray
 from scipy.io import loadmat
 from spectral.io import envi
 
 import isofit.utils.template_construction as tmpl
 from isofit.core import isofit
-from isofit.core.common import envi_header, ray_start, ray_terminate
+from isofit.core.common import envi_header
 from isofit.utils import analytical_line, empirical_line, extractions, segment
 
 EPS = 1e-6
@@ -188,8 +189,12 @@ def apply_oe(args):
 
     use_superpixels = args.empirical_line or args.analytical_line
 
-    if not os.environ.get("ISOFIT_DEBUG"):
-        ray_start(args.n_cores, args.num_cpus, args.memory_gb * 1024**3)
+    ray.init(
+        num_cpus=args.n_cores,
+        _temp_dir=args.ray_temp_dir,
+        include_dashboard=False,
+        local_mode=args.n_cores == 1,
+    )
 
     if args.sensor not in SUPPORTED_SENSORS:
         if args.sensor[:3] != "NA-":
@@ -247,21 +252,22 @@ def apply_oe(args):
     paths.stage_files()
     logging.info("...file/directory setup complete")
 
-    # Based on the sensor type, get appropriate year/month/day info fro intial condition.
+    # Based on the sensor type, get appropriate year/month/day info from initial condition.
     # We'll adjust for line length and UTC day overrun later
+    global INVERSION_WINDOWS
     if args.sensor == "ang":
         # parse flightline ID (AVIRIS-NG assumptions)
         dt = datetime.strptime(paths.fid[3:], "%Y%m%dt%H%M%S")
     elif args.sensor == "av3":
         # parse flightline ID (AVIRIS-3 assumptions)
         dt = datetime.strptime(paths.fid[3:], "%Y%m%dt%H%M%S")
+        INVERSION_WINDOWS = [[380.0, 1350.0], [1435, 1800.0], [1970.0, 2500.0]]
     elif args.sensor == "avcl":
         # parse flightline ID (AVIRIS-Classic assumptions)
         dt = datetime.strptime("20{}t000000".format(paths.fid[1:7]), "%Y%m%dt%H%M%S")
     elif args.sensor == "emit":
         # parse flightline ID (EMIT assumptions)
         dt = datetime.strptime(paths.fid[:19], "emit%Y%m%dt%H%M%S")
-        global INVERSION_WINDOWS
         INVERSION_WINDOWS = [[380.0, 1325.0], [1435, 1770.0], [1965.0, 2500.0]]
     elif args.sensor == "enmap":
         # parse flightline ID (EnMAP assumptions)
@@ -671,7 +677,7 @@ def apply_oe(args):
             )
 
     logging.info("Done.")
-    ray_terminate()
+    ray.shutdown()
 
 
 if __name__ == "__main__":
