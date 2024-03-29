@@ -35,7 +35,7 @@ All images contained in any (sub-)directory of this repository are licensed unde
 `here <https://creativecommons.org/publicdomain/zero/1.0/legalcode.txt>`__.
 
 Major ISOFIT 3x features
-----------------------
+------------------------
 
 * new handling of look-up-tables (LUTs), including the option to provide custom prebuilt LUTs
 * click command line utilities, including download of external data and example files
@@ -44,7 +44,7 @@ Major ISOFIT 3x features
 * numpy implementation of the sRTMnet emulator (removes tensorflow dependency)
 
 Basic features
-----------------
+--------------
 
 * utilities for fitting surface, atmosphere and instrument models to imaging spectrometer data
 * a selection of radiative transfer models (RTMs) incl. MODTRAN and 6S
