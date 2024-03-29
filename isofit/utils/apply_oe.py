@@ -334,7 +334,7 @@ def apply_oe(args):
     if args.wavelength_path:
         if os.path.isfile(args.wavelength_path):
             chn, wl, fwhm = np.loadtxt(args.wavelength_path).T
-            if len(chn) != len(wl_ds) or not np.isclose(wl, wl_ds, atol=0.01):
+            if len(chn) != len(wl_ds) or not np.all(np.isclose(wl, wl_ds, atol=0.01)):
                 raise ValueError(
                     "Number of channels or center wavelengths provided in wavelength file do not match"
                     " wavelengths in radiance cube. Please adjust your wavelength file."
@@ -365,7 +365,7 @@ def apply_oe(args):
                 "Number of channels provided in surface model file does not match"
                 " wavelengths in radiance cube. Please rebuild your surface model."
             )
-        if not np.isclose(wl_surface, wl, atol=0.01):
+        if not np.all(np.isclose(wl_surface, wl, atol=0.01)):
             logging.warning(
                 "Center wavelengths provided in surface model file do not match"
                 " wavelengths in radiance cube. Please consider rebuilding your"

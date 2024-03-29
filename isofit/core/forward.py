@@ -112,7 +112,7 @@ class ForwardModel:
                 "Number of channels provided in surface model file does not match"
                 " wavelengths in radiance cube. Please rebuild your surface model."
             )
-        if not all(self.surface.wl == self.RT.wl):
+        if not np.all(np.isclose(self.surface.wl, self.RT.wl, atol=0.01)):
             Logger.warning(
                 "Center wavelengths provided in surface model file do not match"
                 " wavelengths in radiance cube. Please consider rebuilding your"
