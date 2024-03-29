@@ -19,7 +19,9 @@
 #
 
 import os
+from types import SimpleNamespace
 
+import click
 import numpy as np
 import scipy
 from scipy.linalg import inv
@@ -67,18 +69,29 @@ def surface_model(
     configdir, _ = os.path.split(os.path.abspath(config_path))
     config = json_load_ascii(config_path, shell_replace=True)
 
-    # Determine top level parameters
-    for q in ["output_model_file", "sources", "normalize", "wavelength_file"]:
-        if q not in config:
-            raise ValueError("Missing parameter: %s" % q)
-    if wavelength_path is not None:
+    if wavelength_path:
         wavelength_file = wavelength_path
     else:
+        if "wavelength_file" not in config:
+            raise ValueError(
+                "Missing config parameter 'wavelength_file', set via surface_model(wavelength_path=...)"
+            )
         wavelength_file = expand_path(configdir, config["wavelength_file"])
-    if output_path is not None:
+
+    if output_path:
         outfile = output_path
     else:
+        if "output_model_file" not in config:
+            raise ValueError(
+                "Missing config parameter 'output_model_file', set via surface_model(output_path=...)"
+            )
         outfile = expand_path(configdir, config["output_model_file"])
+
+    # Determine top level parameters
+    for q in ["sources", "normalize"]:
+        if q not in config:
+            raise ValueError("Missing parameter: %s" % q)
+
     normalize = config["normalize"]
     reference_windows = config["reference_windows"]
 
@@ -333,19 +346,19 @@ def surface_model(
                 # Look for the "feather_forward" or "feather_backward" options
                 if window["correlation"] in ["EM", "decorrelated"]:
                     if "feather_backward" in list(window.keys()):
-                        P[window_idx[0] - 1, window_idx[0]] -= 1.0 / window[
-                            "feather_backward"
-                        ]
-                        P[window_idx[0], window_idx[0] - 1] -= 1.0 / window[
-                            "feather_backward"
-                        ]
+                        P[window_idx[0] - 1, window_idx[0]] -= (
+                            1.0 / window["feather_backward"]
+                        )
+                        P[window_idx[0], window_idx[0] - 1] -= (
+                            1.0 / window["feather_backward"]
+                        )
                     if "feather_forward" in list(window.keys()):
-                        P[window_idx[-1] + 1, window_idx[-1]] -= 1.0 / window[
-                            "feather_forward"
-                        ]
-                        P[window_idx[-1], window_idx[-1] + 1] -= 1.0 / window[
-                            "feather_forward"
-                        ]
+                        P[window_idx[-1] + 1, window_idx[-1]] -= (
+                            1.0 / window["feather_forward"]
+                        )
+                        P[window_idx[-1], window_idx[-1] + 1] -= (
+                            1.0 / window["feather_forward"]
+                        )
             C = inv(P)
 
             # Normalize the component spectrum if desired
@@ -379,3 +392,23 @@ def surface_model(
     model["attribute_covs"] = np.array(model["attribute_covs"])
 
     scipy.io.savemat(outfile, model)
+
+
+# Input arguments
+@click.command(name="surface_model")
+@click.argument("config_path", type=str)
+@click.argument("--wavelength_path", type=str)
+@click.argument("--output_path", type=str)
+@click.argument("--seed", default=13, type=int)
+def cli_surface_model(**kwargs):
+    """Build a new surface model to a block of data"""
+
+    # SimpleNamespace converts a dict into dot-notational
+    surface_model(SimpleNamespace(**kwargs))
+    click.echo("Done")
+
+
+if __name__ == "__main__":
+    raise NotImplementedError(
+        "surface_model.py cannot be called this way.  Run as:\n isofit surface_model [CONFIG_PATH]"
+    )

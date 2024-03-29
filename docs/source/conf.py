@@ -66,7 +66,7 @@ html_theme = 'sphinx_rtd_theme'
 html_static_path = []
 
 # make sure things will work with readthedocs
-autodoc_mock_imports = ["ray","tensorflow","osgeo"]
+autodoc_mock_imports = ["ray", "osgeo"]
 master_doc = 'index'
 
 autodoc_member_order = 'bysource'

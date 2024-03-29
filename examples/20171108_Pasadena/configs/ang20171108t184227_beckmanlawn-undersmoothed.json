@@ -22,11 +22,11 @@
       "parametric_noise_file": "../../../data/avirisng_noise.txt",
       "integrations":294,
       "unknowns": {
-        "channelized_radiometric_uncertainty_file": 
+        "channelized_radiometric_uncertainty_file":
           "../../../data/avirisng_systematic_error.txt",
         "uncorrelated_radiometric_uncertainty": 0.0
       }
-    },   
+    },
 
     "surface": {
       "surface_category": "multicomponent_surface",
@@ -61,9 +61,10 @@
         "vswir": {
           "engine_name": "modtran",
           "wavelength_range":[370,2505],
-          "lut_path": "../lut/",
+          "sim_path": "../lut/",
+          "lut_path": "../lut/ang20171108t184227_post_v2p11_BeckmanLawn-undersmoothed.nc",
           "template_file": "ang20171108t184227_modtran.json",
-          "lut_names": ["H2OSTR", "AOT550"]
+          "lut_names": {"H2OSTR": null, "AOT550": null}
         }
       }
     }

@@ -26,6 +26,7 @@ from typing import List
 import numpy as np
 import scipy.interpolate
 import scipy.io
+import xarray as xr
 from spectral.io import envi
 
 from isofit.configs import Config
@@ -120,6 +121,77 @@ class SpectrumFile:
                 logging.error("Unsupported MATLAB file in input block")
                 raise IOError("MATLAB format in input block not supported")
 
+        elif self.fname.endswith(".nc"):
+            logging.debug(f"Inferred MATLAB file format for {self.fname}")
+            self.format = "NETCDF"
+
+            if not self.write:
+                self.dataset = xr.open_dataset(self.fname)
+                self.data = self.dataset.radiance
+                self.meta = self.data.attrs
+                self.n_rows = self.data.downtrack.size
+                self.n_cols = self.data.crosstrack.size
+                self.n_bands = self.data.bands.size
+
+            else:
+                # EMIT-specific metadata
+                meta = {
+                    "ncei_template_version": "NCEI_NetCDF_Swath_Template_v2.0",
+                    "summary": "The Earth Surface Mineral Dust Source Investigation (EMIT) is an Earth Ventures-Instrument (EVI-4) Mission that maps the surface mineralogy of arid dust source regions via imaging spectroscopy in the visible and short-wave infrared (VSWIR). Installed on the International Space Station (ISS), the EMIT instrument is a Dyson imaging spectrometer that uses contiguous spectroscopic measurements from 410 to 2450 nm to resolve absoprtion features of iron oxides, clays, sulfates, carbonates, and other dust-forming minerals. During its one-year mission, EMIT will observe the sunlit Earth's dust source regions that occur within +/-52° latitude and produce maps of the source regions that can be used to improve forecasts of the role of mineral dust in the radiative forcing (warming or cooling) of the atmosphere.\\n\\nThis file contains L2A estimated surface reflectances and geolocation data. Reflectance estimates are created using an Optimal Estimation technique - see ATBD for details. Reflectance values are reported as fractions (relative to 1).",
+                    "keywords": "Imaging Spectroscopy, minerals, EMIT, dust, radiative forcing",
+                    "Conventions": "CF-1.63",
+                    "sensor": "EMIT (Earth Surface Mineral Dust Source Investigation)",
+                    "instrument": "EMIT",
+                    "platform": "ISS",
+                    "institution": "NASA Jet Propulsion Laboratory/California Institute of Technology",
+                    "license": "",
+                    "naming_authority": "",
+                    "date_created": str(dtt.now()),
+                    "keywords_vocabulary": "NASA Global Change Master Directory (GCMD) Science Keywords",
+                    "stdname_vocabulary": "NetCDF Climate and Forecast (CF) Metadata Convention",
+                    "creator_name": "ISOFIT",
+                    "creator_url": "",
+                    "project": "Earth Surface Mineral Dust Source Investigation",
+                    "project_url": "https://emit.jpl.nasa.gov/",
+                    "publisher_name": "",
+                    "publisher_url": "",
+                    "publisher_email": "",
+                    "identifier_product_doi_authority": "https://doi.org",
+                    "flight_line": "",
+                    "time_coverage_start": "",
+                    "time_coverage_end": "",
+                    "software_build_version": "",
+                    "software_delivery_version": "",
+                    "product_version": "",
+                    "history": "ISOFIT generated",
+                    "crosstrack_orientation": "",
+                    "easternmost_longitude": None,
+                    "northernmost_latitude": None,
+                    "westernmost_longitude": None,
+                    "southernmost_latitude": None,
+                    "spatialResolution": None,
+                    "spatial_ref": "",
+                    "geotransform": [],
+                    "day_night_flag": "",
+                    "title": "EMIT L2A Estimated Surface Reflectance",
+                }
+                self.n_rows = n_rows
+                self.n_cols = n_cols
+                self.n_bands = n_bands
+                self.dataset = xr.Dataset(
+                    {
+                        "reflectance": (
+                            ("downtrack", "crosstrack", "bands"),
+                            np.zeros((n_rows, n_cols, n_bands)),
+                        )
+                    }
+                )
+                self.dataset.attrs = meta
+
+                self.data = self.dataset.reflectance
+
+                # Initialize the file
+                self.dataset.to_netcdf(self.fname)
         else:
             # Otherwise we assume it is an ENVI-format file, which is
             # basically just a binary data cube with a detached human-
@@ -223,6 +295,9 @@ class SpectrumFile:
             # Dictionary output for MATLAB products
             scipy.io.savemat(self.fname, x)
 
+        elif self.format == "NETCDF":
+            self.data[row, col][:] = x
+
         else:
             # Omit wavelength column for spectral products
             frame = self.get_frame(row)
@@ -237,6 +312,8 @@ class SpectrumFile:
 
         if self.format == "ASCII":
             return self.data
+        elif self.format == "NETCDF":
+            return self.data.sel(downtrack=row, crosstrack=col).data
         else:
             frame = self.get_frame(row)
             return frame[col]
@@ -253,6 +330,9 @@ class SpectrumFile:
             del self.file
             self.file = envi.open(envi_header(self.fname), self.fname)
             self.open_map_with_retries()
+
+        elif self.format == "NETCDF":
+            self.dataset.to_netcdf(self.fname)
 
 
 class InputData:
@@ -414,7 +494,6 @@ class IO:
         # will be 'None'. The Geometry object will use reasonable defaults.
         geom = Geometry(
             obs=data["obs_file"],
-            glt=data["glt_file"],
             loc=data["loc_file"],
             bg_rfl=data["background_reflectance_file"],
         )

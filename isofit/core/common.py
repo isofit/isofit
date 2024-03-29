@@ -108,6 +108,7 @@ class VectorInterpolator:
             # at the specific angle_loc axes.  We'll use broadcast_to to do
             # this, but we need to do it on the last dimension.  So start by
             # temporarily moving the target axes there, then broadcasting
+            data = np.array(data)
             data = np.swapaxes(data, -1, angle_loc)
             data_dim = list(np.shape(data))
             data_dim.append(data_dim[-1])
@@ -194,7 +195,7 @@ class VectorInterpolator:
         Jouni's implementation
 
         Args:
-            points: The point being interpolated. If at the limit, the extremal value in
+            point: The point being interpolated. If at the limit, the extremal value in
                     the grid is returned.
 
         Returns:
@@ -757,3 +758,36 @@ def envi_header(inputpath):
         return inputpath
     else:
         return inputpath + ".hdr"
+
+
+def ray_start(num_cores, num_cpus=2, memory_b=-1):
+    import subprocess
+
+    base_args = [
+        "ray",
+        "start",
+        "--head",
+        "--num-cpus",
+        str(int(num_cores / num_cpus)),
+        "--include-dashboard",
+        "0",
+    ]
+    if memory_b != -1:
+        base_args.append("--memory")
+        base_args.append(str(int(memory_b / num_cpus)))
+
+    head_args = base_args.copy()
+    head_args.append("--head")
+    result = subprocess.run(head_args, capture_output=True)
+    stdout = str(result.stdout, encoding="utf-8")
+
+    if num_cpus > 1:
+        key = "--address="
+        start_loc = stdout.find(key) + len(key) + 1
+        end_loc = stdout.find("'", start_loc)
+
+        address = stdout[start_loc:end_loc]
+        base_args.append("--address")
+        base_args.append(address)
+
+        result = subprocess.run(base_args, capture_output=True)

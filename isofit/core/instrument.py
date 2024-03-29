@@ -209,10 +209,7 @@ class Instrument:
             return np.diagflat(np.power(nedl, 2))
 
         elif self.model_type == "pushbroom":
-            if geom.pushbroom_column is None:
-                C = np.squeeze(self.covs.mean(axis=0))
-            else:
-                C = self.covs[geom.pushbroom_column, :, :]
+            C = np.squeeze(self.covs.mean(axis=0))
             return C / np.sqrt(self.integrations)
 
         elif self.model_type == "NEDT":

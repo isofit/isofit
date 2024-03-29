@@ -18,7 +18,6 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-import atexit
 import logging
 
 import numpy as np
@@ -31,7 +30,7 @@ from isofit import ray
 from isofit.core.common import envi_header
 
 
-@ray.remote
+@ray.remote(num_cpus=1)
 def segment_chunk(
     lstart, lend, in_file, nodata_value, npca, segsize, logfile=None, loglevel="INFO"
 ):
@@ -209,7 +208,6 @@ def segment(
         rayargs["num_cpus"] = n_cores
 
     ray.init(**rayargs)
-    atexit.register(ray.shutdown)
 
     # Iterate through image "chunks," segmenting as we go
     all_labels = np.zeros((nl, ns), dtype=np.int64)
@@ -254,7 +252,6 @@ def segment(
                 next_label += 1
             all_labels[lstart:lend, ...] = ordered_chunk_labels
     del rreturn
-    ray.shutdown()
 
     # Final file I/O
     logging.debug("Writing output")

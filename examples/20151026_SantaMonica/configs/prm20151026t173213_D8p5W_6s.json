@@ -30,8 +30,8 @@
       "surface_file": "../data/prm20151028_surface_coastal_model.mat"
     },
 
-    "radiative_transfer": 
-    { 
+    "radiative_transfer":
+    {
       "statevector": {
         "H2OSTR": {
           "bounds": [0.5, 1.0],
@@ -51,7 +51,7 @@
       "unknowns": {
         "H2O_ABSCO": 0.01
       },
-      "lut_grid": { 
+      "lut_grid": {
         "H2OSTR": [0.5,0.7,1.0],
         "AOT550": [0.0,0.05,0.1]
       },
@@ -69,8 +69,9 @@
           "viewzen": 1.08,
           "month": 10,
           "day": 26,
-          "lut_path": "../lut/",
-          "lut_names": ["H2OSTR", "AOT550"]
+          "sim_path": "../lut/",
+          "lut_path": "../lut/D8p5W_6s.nc",
+          "lut_names": {"H2OSTR": null, "AOT550": null}
         }
       }
     }

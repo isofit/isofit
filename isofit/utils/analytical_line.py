@@ -71,7 +71,7 @@ def analytical_line(
     )
 
     if isofit_config is None:
-        file = glob(os.path.join(isofit_dir, "config", "") + "*_modtran.json")[0]
+        file = glob(os.path.join(isofit_dir, "config", "") + "*_isofit.json")[0]
     else:
         file = isofit_config
 
@@ -161,35 +161,42 @@ def analytical_line(
     )
     del rdn, img
 
-    ray.init(
-        ignore_reinit_error=config.implementation.ray_ignore_reinit_error,
-        address=config.implementation.ip_head,
-        _temp_dir=config.implementation.ray_temp_dir,
-        include_dashboard=config.implementation.ray_include_dashboard,
-        _redis_password=config.implementation.redis_password,
-    )
+    ray_dict = {
+        "ignore_reinit_error": config.implementation.ray_ignore_reinit_error,
+        "address": config.implementation.ip_head,
+        "_temp_dir": config.implementation.ray_temp_dir,
+        "include_dashboard": config.implementation.ray_include_dashboard,
+        "_redis_password": config.implementation.redis_password,
+        "num_cpus": n_cores,
+    }
+
+    ray.init(**ray_dict)
 
     n_workers = n_cores
 
     if n_workers == -1:
         n_workers = multiprocessing.cpu_count()
 
-    worker = ray.remote(Worker)
     wargs = [
-        config,
-        ray.put(fm),
-        atm_file,
-        analytical_state_file,
-        analytical_state_unc_file,
-        rdn_file,
-        loc_file,
-        obs_file,
-        loglevel,
-        logfile,
+        ray.put(obj)
+        for obj in (
+            config,
+            fm,
+            atm_file,
+            analytical_state_file,
+            analytical_state_unc_file,
+            rdn_file,
+            loc_file,
+            obs_file,
+            loglevel,
+            logfile,
+        )
     ]
-    workers = ray.util.ActorPool([worker.remote(*wargs) for _ in range(n_workers)])
+    workers = ray.util.ActorPool([Worker.remote(*wargs) for _ in range(n_workers)])
 
-    line_breaks = np.linspace(0, rdns[0], n_workers * 3, dtype=int)
+    line_breaks = np.linspace(
+        0, rdns[0], n_workers * config.implementation.task_inflation_factor, dtype=int
+    )
     line_breaks = [
         (line_breaks[n], line_breaks[n + 1]) for n in range(len(line_breaks) - 1)
     ]
@@ -204,6 +211,7 @@ def analytical_line(
     )
 
 
+@ray.remote(num_cpus=1)
 class Worker(object):
     def __init__(
         self,
@@ -342,10 +350,9 @@ class Worker(object):
 @click.option("--atm_file", help="TODO", type=str, default=None)
 @click.option("--loglevel", help="TODO", type=str, default="INFO")
 @click.option("--logfile", help="TODO", type=str, default=None)
-def _cli(**kwargs):
-    """\
-    Executes the analytical line algorithm
-    """
+def cli_analytical_line(**kwargs):
+    """Execute the analytical line algorithm"""
+
     click.echo("Running analytical line")
 
     analytical_line(**kwargs)
@@ -354,8 +361,6 @@ def _cli(**kwargs):
 
 
 if __name__ == "__main__":
-    _cli()
-else:
-    from isofit import cli
-
-    cli.add_command(_cli)
+    raise NotImplementedError(
+        "analytical_line.py can no longer be called this way.  Run as:\n isofit analytical_line [ARGS]"
+    )
