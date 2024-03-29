@@ -14,6 +14,7 @@ $ ISOFIT_DEBUG=1 python isofit.py ...
 """
 
 import logging
+from types import FunctionType
 
 Logger = logging.getLogger("isofit/wrappers/ray")
 
@@ -50,8 +51,13 @@ def __getattr__(key):
     return lambda *a, **kw: None
 
 
-def remote(obj):
-    return Remote(obj)
+def remote(*args, **kwargs):
+    def wrap(obj):
+        return Remote(obj)
+
+    if len(args) == 1 and isinstance(args[0], (FunctionType, object)):
+        return wrap(*args)
+    return wrap
 
 
 def init(*args, **kwargs):
