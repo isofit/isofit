@@ -325,14 +325,14 @@ def apply_oe(args):
     # get radiance file, wavelengths, fwhm
     radiance_dataset = envi.open(envi_header(paths.radiance_working_path))
     wl_ds = np.array([float(w) for w in radiance_dataset.metadata["wavelength"]])
-    try:
+    if os.path.isfile(args.wavelength_path):
         chn, wl, fwhm = np.loadtxt(args.wavelength_path).T
         if len(chn) != len(wl_ds) or not np.isclose(wl, wl_ds, atol=0.01):
             raise ValueError(
                 "Number of channels or center wavelengths provided in wavelength file do not match"
                 " wavelengths in radiance cube. Please adjust your wavelength file."
             )
-    except FileNotFoundError:
+    else:
         logging.info(
             "No wavelength file provided. Obtaining wavelength grid from ENVI header of radiance cube."
         )
