@@ -3,10 +3,8 @@
 # Authors: Philip G. Brodrick and Niklas Bohn
 #
 
-import argparse
 import json
 import logging
-import multiprocessing
 import os
 import subprocess
 from datetime import datetime
@@ -17,7 +15,6 @@ from typing import List
 
 import netCDF4 as nc
 import numpy as np
-import utm
 from sklearn import mixture
 from spectral.io import envi
 
@@ -1503,7 +1500,7 @@ def define_surface_types(
         fwhm = fwhm * 1000
 
     irr_file = os.path.join(
-        os.path.dirname(isofit.__file__), "..", "..", "data", "kurudz_0.1nm.dat"
+        os.path.dirname(isofit.__file__), "..", "..", "data", "kurucz_0.1nm.dat"
     )
     irr_wl, irr = np.loadtxt(irr_file, comments="#").T
     irr = irr / 10  # convert to uW cm-2 sr-1 nm-1
