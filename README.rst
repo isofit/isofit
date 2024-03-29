@@ -38,6 +38,8 @@ Major ISOFIT 3x features
 ------------------------
 
 * new handling of look-up-tables (LUTs), including the option to provide custom prebuilt LUTs
+* centralized radiative transfer physics for more flexible development and experimentation
+* test coverage for major functionality
 * click command line utilities, including download of external data and example files
 * a more flexible isofit.ini file used to discover various paths such as tests, data, and examples
 * instructions for dev environment setup and a collection of setup scripts
