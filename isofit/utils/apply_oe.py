@@ -295,6 +295,10 @@ def apply_oe(args):
         paths.loc_working_path, lut_params, pressure_elevation=args.pressure_elevation
     )
 
+    if lut_params.flag_ocean_elevation:
+        elevation_lut_grid = None
+        mean_elevation_km = 0.0
+
     if args.emulator_base is not None:
         if elevation_lut_grid is not None and np.any(elevation_lut_grid < 0):
             to_rem = elevation_lut_grid[elevation_lut_grid < 0].copy()
@@ -925,6 +929,7 @@ class LUTConfig:
         self.aot_550_spacing_min = 0
         
         self.rte_auto_rebuild = True
+        self.flag_ocean_elevation = False
 
         # overwrite anything that comes in from the config file
         if lut_config_file is not None:
