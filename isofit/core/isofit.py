@@ -29,7 +29,6 @@ import numpy as np
 
 from isofit import ray
 from isofit.configs import configs
-from isofit.core.common import ray_initiate
 from isofit.core.fileio import IO
 from isofit.core.forward import ForwardModel
 from isofit.inversion.inverse import Inversion
@@ -85,7 +84,7 @@ class Isofit:
         ):
             rayargs["num_cpus"] = self.config.implementation.n_cores
 
-        ray_initiate(rayargs)
+        ray.init(**rayargs)
 
         self.workers = None
 

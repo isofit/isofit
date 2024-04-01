@@ -703,7 +703,7 @@ class RadiativeTransferEngine:
         return data
 
 
-@ray.remote
+@ray.remote(num_cpus=1)
 def streamSimulation(
     point: np.array,
     lut_names: list,
