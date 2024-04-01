@@ -24,11 +24,11 @@ import numpy as np
 from spectral.io import envi
 
 from isofit import ray
-from isofit.core.common import envi_header, ray_initiate
+from isofit.core.common import envi_header
 from isofit.core.fileio import write_bil_chunk
 
 
-@ray.remote
+@ray.remote(num_cpus=1)
 def extract_chunk(
     lstart: int,
     lend: int,
@@ -174,7 +174,7 @@ def extractions(
     if ray_ip_head is None and ray_redis_password is None:
         rayargs["num_cpus"] = n_cores
 
-    ray_initiate(rayargs)
+    ray.init(**rayargs)
 
     labelid = ray.put(labels)
     jobs = []

@@ -1,8 +1,13 @@
 from isofit.wrappers import ray
 
 
-@ray.remote
+@ray.remote(num_cpus=1)
 def decorator(a, b):
+    return a * b
+
+
+@ray.remote()
+def decorator_nocpu(a, b):
     return a * b
 
 
@@ -24,6 +29,9 @@ def test_decorators():
     jobs = [decorator.remote(a, b) for a, b in cases.values()]
     assert ray.get(jobs) == list(cases.keys())
 
+    jobs = [decorator_nocpu.remote(a, b) for a, b in cases.values()]
+    assert ray.get(jobs) == list(cases.keys())
+
 
 class Worker:
     def __init__(self, name):
@@ -43,7 +51,7 @@ def test_classes(name="test", n=4):
     assert "isofit.wrappers.ray" in str(ray)
 
     name_id = ray.put(name)
-    worker = ray.remote(Worker)
+    worker = ray.remote()(Worker)
     workers = ray.util.ActorPool([worker.remote(name_id) for _ in range(n)])
 
     results = workers.map_unordered(lambda a, b: a.some_func.remote(b), range(n))
