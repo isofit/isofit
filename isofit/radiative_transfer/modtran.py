@@ -597,8 +597,8 @@ class ModtranRT(TabularRT):
                         param[0]["MODTRANINPUT"]["ATMOSPHERE"]["NPROF"] = nprof + 1
 
             # Surface parameters we want to populate even if unassigned
-            elif key in ["GNDALT"]:
-                param[0]["MODTRANINPUT"]["SURFACE"][key] = val
+            elif key in ["surface_elevation_km","GNDALT"]:
+                param[0]["MODTRANINPUT"]["SURFACE"]["GNDALT"] = val
 
             elif key in ["observer_zenith", "obszen"]:
                 param[0]["MODTRANINPUT"]["GEOMETRY"]["OBSZEN"] = val
@@ -715,8 +715,10 @@ class ModtranRT(TabularRT):
                     if os.path.isdir(self.lut_dir) is False:
                         os.mkdir(self.lut_dir)
                     try:
-                        subprocess.call(cmd, shell=True, timeout=10, cwd=self.lut_dir)
-                    except:
+                        subprocess.call(cmd, shell=True, timeout=20, cwd=self.lut_dir)
+                    except Exception as e:
+                        logging.info("Error occurred running H2O_bound_test:")
+                        logging.info(str(e))
                         pass
 
                     max_water = None
@@ -782,8 +784,8 @@ class ModtranRT(TabularRT):
                     raise e
                     # Throw error
                 if n_rerun >= 10:
-                    logging.info(f"{n_rerun} reruns; stopping")
-                    raise enumerate
+                    logging.info(f"{n_rerun} reruns without all files loading; stopping")
+                    raise e
                     # Throw error
                 prev_file_not_found = file_not_found
 
