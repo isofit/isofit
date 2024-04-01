@@ -18,6 +18,7 @@
 # Author: Philip G. Brodrick, philip.brodrick@jpl.nasa.gov
 #
 import logging
+import multiprocessing
 import time
 from typing import List
 
@@ -28,12 +29,12 @@ from scipy.spatial import KDTree
 from spectral.io import envi
 
 from isofit import ray
-from isofit.core.common import envi_header, ray_initiate
+from isofit.core.common import envi_header
 from isofit.core.fileio import write_bil_chunk
 from isofit.core.forward import ForwardModel
 
 
-@ray.remote
+@ray.remote(num_cpus=1)
 def _run_chunk(
     start_line: int,
     stop_line: int,
@@ -294,9 +295,9 @@ def atm_interpolation(
 
     # Initialize ray cluster
     start_time = time.time()
-    ray_initiate({"ignore_reinit_error": True, "local_mode": n_cores == 1})
+    ray.init(**{"ignore_reinit_error": True, "local_mode": n_cores == 1})
 
-    n_ray_cores = int(ray.available_resources()["CPU"])
+    n_ray_cores = multiprocessing.cpu_count()
     n_cores = min(n_ray_cores, n_input_lines)
 
     logging.info(f"Beginning atmospheric interpolation {n_cores} cores")

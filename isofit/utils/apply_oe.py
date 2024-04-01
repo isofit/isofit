@@ -13,11 +13,13 @@ from warnings import warn
 
 import click
 import numpy as np
+import ray
+from scipy.io import loadmat
 from spectral.io import envi
 
 import isofit.utils.template_construction as tmpl
 from isofit.core import isofit
-from isofit.core.common import envi_header, ray_start, ray_terminate
+from isofit.core.common import envi_header
 from isofit.utils import analytical_line, empirical_line, extractions, segment
 
 EPS = 1e-6
@@ -187,8 +189,12 @@ def apply_oe(args):
 
     use_superpixels = args.empirical_line or args.analytical_line
 
-    if not os.environ.get("ISOFIT_DEBUG"):
-        ray_start(args.n_cores, args.num_cpus, args.memory_gb * 1024**3)
+    ray.init(
+        num_cpus=args.n_cores,
+        _temp_dir=args.ray_temp_dir,
+        include_dashboard=False,
+        local_mode=args.n_cores == 1,
+    )
 
     if args.sensor not in SUPPORTED_SENSORS:
         if args.sensor[:3] != "NA-":
@@ -246,21 +252,22 @@ def apply_oe(args):
     paths.stage_files()
     logging.info("...file/directory setup complete")
 
-    # Based on the sensor type, get appropriate year/month/day info fro intial condition.
+    # Based on the sensor type, get appropriate year/month/day info from initial condition.
     # We'll adjust for line length and UTC day overrun later
+    global INVERSION_WINDOWS
     if args.sensor == "ang":
         # parse flightline ID (AVIRIS-NG assumptions)
         dt = datetime.strptime(paths.fid[3:], "%Y%m%dt%H%M%S")
     elif args.sensor == "av3":
         # parse flightline ID (AVIRIS-3 assumptions)
         dt = datetime.strptime(paths.fid[3:], "%Y%m%dt%H%M%S")
+        INVERSION_WINDOWS = [[380.0, 1350.0], [1435, 1800.0], [1970.0, 2500.0]]
     elif args.sensor == "avcl":
         # parse flightline ID (AVIRIS-Classic assumptions)
         dt = datetime.strptime("20{}t000000".format(paths.fid[1:7]), "%Y%m%dt%H%M%S")
     elif args.sensor == "emit":
         # parse flightline ID (EMIT assumptions)
         dt = datetime.strptime(paths.fid[:19], "emit%Y%m%dt%H%M%S")
-        global INVERSION_WINDOWS
         INVERSION_WINDOWS = [[380.0, 1325.0], [1435, 1770.0], [1965.0, 2500.0]]
     elif args.sensor == "enmap":
         # parse flightline ID (EnMAP assumptions)
@@ -321,12 +328,24 @@ def apply_oe(args):
 
     gmtime = float(h_m_s[0] + h_m_s[1] / 60.0)
 
-    # get radiance file, wavelengths
+    # get radiance file, wavelengths, fwhm
+    radiance_dataset = envi.open(envi_header(paths.radiance_working_path))
+    wl_ds = np.array([float(w) for w in radiance_dataset.metadata["wavelength"]])
     if args.wavelength_path:
-        chn, wl, fwhm = np.loadtxt(args.wavelength_path).T
+        if os.path.isfile(args.wavelength_path):
+            chn, wl, fwhm = np.loadtxt(args.wavelength_path).T
+            if len(chn) != len(wl_ds) or not np.all(np.isclose(wl, wl_ds, atol=0.01)):
+                raise ValueError(
+                    "Number of channels or center wavelengths provided in wavelength file do not match"
+                    " wavelengths in radiance cube. Please adjust your wavelength file."
+                )
+        else:
+            pass
     else:
-        radiance_dataset = envi.open(envi_header(paths.radiance_working_path))
-        wl = np.array([float(w) for w in radiance_dataset.metadata["wavelength"]])
+        logging.info(
+            "No wavelength file provided. Obtaining wavelength grid from ENVI header of radiance cube."
+        )
+        wl = wl_ds
         if "fwhm" in radiance_dataset.metadata:
             fwhm = np.array([float(f) for f in radiance_dataset.metadata["fwhm"]])
         elif "FWHM" in radiance_dataset.metadata:
@@ -334,8 +353,24 @@ def apply_oe(args):
         else:
             fwhm = np.ones(wl.shape) * (wl[1] - wl[0])
 
-        # Close out radiance dataset to avoid potential confusion
-        del radiance_dataset
+    # Close out radiance dataset to avoid potential confusion
+    del radiance_dataset
+
+    # check wavelength grid of surface file
+    if paths.surface_path:
+        model_dict = loadmat(paths.surface_path)
+        wl_surface = model_dict["wl"][0]
+        if len(wl_surface) != len(wl):
+            raise ValueError(
+                "Number of channels provided in surface model file does not match"
+                " wavelengths in radiance cube. Please rebuild your surface model."
+            )
+        if not np.all(np.isclose(wl_surface, wl, atol=0.01)):
+            logging.warning(
+                "Center wavelengths provided in surface model file do not match"
+                " wavelengths in radiance cube. Please consider rebuilding your"
+                " surface model for optimal performance."
+            )
 
     # Convert to microns if needed
     if wl[0] > 100:
@@ -645,7 +680,7 @@ def apply_oe(args):
             )
 
     logging.info("Done.")
-    ray_terminate()
+    ray.shutdown()
 
 
 if __name__ == "__main__":
