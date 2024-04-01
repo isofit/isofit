@@ -562,7 +562,7 @@ def apply_oe(args):
             elevation_lut_grid=(
                 elevation_lut_grid
                 if elevation_lut_grid is not None
-                else [mean_altitude_km]
+                else [mean_elevation_km]
             ),
             to_sensor_zenith_lut_grid=(
                 to_sensor_zenith_lut_grid
