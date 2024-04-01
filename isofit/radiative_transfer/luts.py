@@ -13,86 +13,153 @@ from netCDF4 import Dataset
 Logger = logging.getLogger(__file__)
 
 
-def initialize(
-    file: str,
-    wl: np.array,
-    lut_grid: dict,
-    chunks: int = 25,  # REVIEW: Good default? Can we calculate it? TODO: Config option?
-    consts: list = [],
-    onedim: list = [],
-    alldim: list = [],
-    zeros: list = [],
-) -> xr.Dataset:
-    """
-    Initializes a LUT NetCDF using Xarray
+class LUT:
+    # Constants, not along any dimension
+    consts = [
+        "coszen",
+        "solzen",
+    ]
 
-    Parameters
-    ----------
-    consts: list, defaults=[]
-        Keys to fill, these are along  no dimensions, ie. ()
-    onedim: list, defaults=[]
-        Keys to fill, these are along one dimensions, ie. (wl, )
-    alldim: list, defaults=[]
-        Keys to fill, these are along all dimensions, ie. (wl, point)
-    zeros: list, defaults=[]
-        List of keys to default to zeros as the fill value instead of NaNs
-    """
-    # Initialize with all lut point names as dimensions
-    ds = xr.Dataset(coords={"wl": wl, **lut_grid})
+    # Along the wavelength dimension only
+    onedim = [
+        "fwhm",
+        "solar_irr",
+    ]
 
-    # Insert constants
-    filler = np.nan
-    for key in consts:
-        if isinstance(key, tuple):
-            key, filler = key
-        ds[key] = filler
+    # Keys along all dimensions, ie. wl and point
+    alldim = [
+        "rhoatm",
+        "sphalb",
+        "transm_down_dir",
+        "transm_down_dif",
+        "transm_up_dir",
+        "transm_up_dif",
+        "thermal_upwelling",
+        "thermal_downwelling",
+    ]
+    # These keys are filled with zeros instead of NaNs
+    zeros = [
+        "transm_down_dir",
+        "transm_down_dif",
+        "transm_up_dir",
+        "transm_up_dif",
+    ]
 
-    # Insert single dimension keys along wl
-    fill = np.full((len(wl),), np.nan)
-    for key in onedim:
-        if isinstance(key, tuple):
-            key, fill = key
-        ds[key] = ("wl", fill)
+    def __init__(self, file, wl, grid, consts=[], onedim=[], alldim=[], zeros=[]):
+        """ """
+        self.file = file
+        self.wl = wl
+        self.grid = grid
+        self.grid_values = np.vstack(list(grid.values()))
 
-    ## Insert point dimensional keys
-    # Filler arrays
-    dims = tuple(ds.sizes.values())
-    nans = np.full(dims, np.nan)
-    zero = np.zeros(dims)
+        self.ds = None
+        self.hold = []
+        self.tmps = []
 
-    for key in alldim:
-        if isinstance(key, tuple):
-            key, filler = key
-            ds[key] = (ds.coords, filler)
-        else:
-            if key in zeros:
-                ds[key] = (ds.coords, zero)
-            else:
-                ds[key] = (ds.coords, nans)
+        if consts:
+            self.consts += consts
+        if onedim:
+            self.onedim += onedim
+        if alldim:
+            self.alldim += alldim
+        if zeros:
+            self.zeros += zeros
 
-    # Must write unstacked
-    ds.to_netcdf(file, mode="w", compute=False, engine="netcdf4")
+        self.initialize()
 
-    # Stack to get the common.combos, creates dim "point" = [(v1, v2, ), ...]
-    return ds.stack(point=lut_grid).transpose("point", "wl")
+    def initialize(self):
+        """ """
+        # Initialize with all lut point names as dimensions
+        ds = xr.Dataset(coords={"wl": self.wl, **self.grid})
 
+        # Insert constants
+        for key in self.consts:
+            fill = np.nan
+            if isinstance(key, tuple):
+                key, filler = key
+            elif key in self.zeros:
+                fill = 0
 
-def updatePoint(ds, point, data):
-    """
-    Updates a point in a LUT Dataset.
+            ds[key] = fill
 
-    Parameters
-    ----------
-    ds: xr.Dataset
-        The working LUT Dataset.
-    point: dict
-        Dictionary of point dimensions to coordinate value to update on.
-    data: dict
-        Input data to write at a point.
-    """
-    point = ds.loc[point]
-    for key, value in data.items():
-        point[key][:] = value
+        # Insert single dimension keys along wl
+        nans = np.full(ds.wl.size, np.nan)
+        zero = np.zeros(ds.wl.size)
+
+        for key in self.onedim:
+            fill = nans
+            if isinstance(key, tuple):
+                key, fill = key
+            elif key in self.zeros:
+                fill = zero
+
+            ds[key] = ("wl", fill)
+
+        ## Insert point dimensional keys
+        # Filler arrays
+        dims = tuple(ds.sizes.values())
+        nans = np.full(dims, np.nan)
+        zero = np.zeros(dims)
+
+        for key in self.alldim:
+            fill = nans
+            if isinstance(key, tuple):
+                key, fill = key
+            elif key in self.zeros:
+                fill = zero
+            ds[key] = (ds.coords, fill)
+
+        # Must write unstacked
+        ds.to_netcdf(self.file, mode="w", compute=False, engine="netcdf4")
+
+    def pointIndices(self, point):
+        """ """
+        return np.where(np.isin(self.grid_values, point))[1]
+
+    def appendPoint(self, point, data):
+        """ """
+        self.hold.append((point, data))
+
+    def flush(self):
+        """ """
+        with Dataset(self.file, "a") as ds:
+            for point, data in self.hold:
+                for key, vals in data.items():
+                    if key in self.consts:
+                        ds[key].assignValue(vals)
+                    elif key in self.onedim:
+                        ds[key][:] = vals
+                    elif key in self.alldim:
+                        index = [slice(None)] + list(self.pointIndices(point))
+                        ds[key][index] = vals
+                    else:
+                        print(
+                            f"Attempted to assign a key that is not recognized, skipping: {key}"
+                        )
+
+        self.hold = []
+
+    def open(self, chunks=True, **kwargs):
+        """ """
+        if chunks is True:
+            chunks = {"wl": self.wl.size}
+            for dim in self.dims:
+                chunks[dim] = 1
+
+        if isinstance(chunks, dict):
+            kwargs["chunks"] = chunks
+
+        self.ds = load(self.file, **kwargs)
+        return self.ds
+
+    def __getattr__(self, key):
+        """
+        Passthrough to operate on the Dataset object if not defined by this class already.
+        """
+        return getattr(self.ds, key)
+
+    def __repr__(self):
+        return f"LUT(wl={self.wl.size}, grid={self.sizes})"
 
 
 def sel(ds, dim, lt=None, lte=None, gt=None, gte=None, encompass=True):
@@ -184,7 +251,9 @@ def sub(ds: xr.Dataset, dim: str, strat) -> xr.Dataset:
         return ds
 
 
-def load(file: str, subset: dict = None, dask=True) -> xr.Dataset:
+def load(
+    file: str, subset: dict = None, dask=True, mode="r", lock=False, **kwargs
+) -> xr.Dataset:
     """
     Loads a LUT NetCDF
     Assumes to be a regular grid at this time (auto creates the point dim)
@@ -354,9 +423,9 @@ def load(file: str, subset: dict = None, dask=True) -> xr.Dataset:
     Frozen({'AOT550': 3, 'H2OSTR': 10, 'wl': 285})
     """
     if dask:
-        ds = xr.open_mfdataset([file], mode="r", lock=False)
+        ds = xr.open_mfdataset([file], mode=mode, lock=lock, **kwargs)
     else:
-        ds = xr.open_dataset(file, mode="r", lock=False)
+        ds = xr.open_dataset(file, mode=mode, lock=lock, **kwargs)
 
     # Special case that doesn't require defining the entire grid subsetting strategy
     if subset is None:
