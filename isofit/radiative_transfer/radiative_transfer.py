@@ -255,8 +255,9 @@ class RadiativeTransfer:
                 L_atms.append(rdn)
             else:
                 r = RT.get(x_RT, geom)
-                rho = r["rhoatm"]
-                rdn = rho / np.pi * (self.solar_irr * self.coszen)
+                rdn = r["rhoatm"]
+                if RT.rt_mode == "transm":
+                    rdn = (self.solar_irr * self.coszen) / np.pi * rdn
                 L_atms.append(rdn)
         return np.hstack(L_atms)
 
@@ -280,11 +281,9 @@ class RadiativeTransfer:
                 L_downs.append(rdn)
             else:
                 r = RT.get(x_RT, geom)
-                rdn = (
-                    (self.solar_irr * self.coszen)
-                    / np.pi
-                    * (r["transm_down_dir"] + r["transm_down_dif"])
-                )
+                rdn = r["transm_down_dir"] + r["transm_down_dif"]
+                if RT.rt_mode == "transm":
+                    rdn = (self.solar_irr * self.coszen) / np.pi * rdn
                 L_downs.append(rdn)
         return np.hstack(L_downs)
 
