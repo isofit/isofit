@@ -252,8 +252,8 @@ class RadiativeTransfer:
             else:
                 r = RT.get(x_RT, geom)
                 rdn = r["rhoatm"]
-                if RT.engine_config.engine_name != "KernelFlowsGP":
-                    rdn = rdn / np.pi * (self.solar_irr * self.coszen)
+                if RT.rt_mode == "transm":
+                    rdn = (self.solar_irr * self.coszen) / np.pi * rdn
                 L_atms.append(rdn)
         return np.hstack(L_atms)
 
@@ -278,7 +278,7 @@ class RadiativeTransfer:
             else:
                 r = RT.get(x_RT, geom)
                 rdn = r["transm_down_dir"] + r["transm_down_dif"]
-                if RT.engine_config.engine_name != "KernelFlowsGP":
+                if RT.rt_mode == "transm":
                     rdn = (self.solar_irr * self.coszen) / np.pi * rdn
                 L_downs.append(rdn)
         return np.hstack(L_downs)

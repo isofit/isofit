@@ -117,7 +117,7 @@ def heuristic_atmosphere(
             # resulting residual (as measured from linear interpolation across
             # the absorption feature)
             # ToDo: grab the per pixel sza from Geometry object
-            if my_RT.engine_config.engine_name == "KernelFlowsGP":
+            if my_RT.rt_mode == "rdn":
                 rho = meas
             else:
                 rho = meas * np.pi / (solar_irr * RT.coszen)
@@ -205,7 +205,7 @@ def invert_algebraic(
 
     # Now solve for the reflectance at measured wavelengths,
     # and back-translate to surface wavelengths
-    if my_RT.engine_config.engine_name == "KernelFlowsGP":
+    if my_RT.rt_mode == "rdn":
         rho = rdn_solrfl
     else:
         rho = rdn_solrfl * np.pi / (solar_irr * coszen)
