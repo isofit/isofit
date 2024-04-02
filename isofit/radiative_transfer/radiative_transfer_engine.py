@@ -22,7 +22,6 @@
 import logging
 import os
 import time
-from itertools import product
 from types import SimpleNamespace
 from typing import Callable
 
@@ -192,81 +191,48 @@ class RadiativeTransferEngine:
         elif engine_config.engine_name == "KernelFlowsGP":
             Logger.info(f"Emulating LUT using Kernel Flows GP")
 
+            self.lut_names = [
+                "AOT550",
+                "surface_elevation_km",
+                "H2OSTR",
+                "relative_azimuth",
+                "solar_zenith",
+                "observer_zenith",
+            ]
+
+            self.default_lut_grid = {
+                "AOT550": [0.001, 0.2, 0.4, 0.6, 0.8, 1.0],
+                "surface_elevation_km": [0.0, 1.5, 3.0, 4.5, 6.0],
+                "H2OSTR": [0.05, 0.75, 1.5, 2.25, 3.0, 3.75, 4.5],
+                "relative_azimuth": [0.0, 30.0, 60.0, 90.0, 120.0, 150.0, 180.0],
+                "solar_zenith": [0.0, 15.0, 30.0, 45.0, 60.0, 75.0],
+                "observer_zenith": [0.0, 10.0, 20.0, 30.0, 40.0],
+            }
+
             self.lut_grid = lut_grid
-            self.lut_names = []
+            self.lut_points = []
 
-            if "AOT550" in lut_grid.keys():
-                self.lut_names.append("AOT550")
-                self.aot_points = lut_grid["AOT550"]
-            else:
-                self.aot_points = [0.001, 0.2, 0.4, 0.6, 0.8, 1.0]
-                Logger.info(
-                    f"No grid points for AOT provided. "
-                    f"Assigning default LUT grid: {self.aot_points}."
-                )
-
-            if "surface_elevation_km" in lut_grid.keys():
-                self.lut_names.append("surface_elevation_km")
-                self.gndalt_points = lut_grid["surface_elevation_km"]
-            else:
-                self.gndalt_points = [0.0, 1.5, 3.0, 4.5, 6.0]
-                Logger.info(
-                    f"No grid points for surface elevation provided. "
-                    f"Assigning default LUT grid: {self.gndalt_points}."
-                )
-
-            if "H2OSTR" in lut_grid.keys():
-                self.lut_names.append("H2OSTR")
-                self.wv_points = lut_grid["H2OSTR"]
-            else:
-                self.wv_points = [0.05, 0.75, 1.5, 2.25, 3.0, 3.75, 4.5]
-                Logger.info(
-                    f"No grid points for water vapor provided. "
-                    f"Assigning default LUT grid: {self.wv_points}."
-                )
-
-            if "relative_azimuth" in lut_grid.keys():
-                self.lut_names.append("relative_azimuth")
-                self.raa_points = lut_grid["relative_azimuth"]
-            else:
-                self.raa_points = [0.0, 30.0, 60.0, 90.0, 120.0, 150.0, 180.0]
-                Logger.info(
-                    f"No grid points for relative_azimuth angle provided. "
-                    f"Assigning default LUT grid: {self.raa_points}."
-                )
-
-            if "solar_zenith" in lut_grid.keys():
-                self.lut_names.append("solar_zenith")
-                self.sza_points = lut_grid["solar_zenith"]
-            else:
-                self.sza_points = [0.0, 15.0, 30.0, 45.0, 60.0, 75.0]
-                Logger.info(
-                    f"No grid points for solar zenith angle provided. "
-                    f"Assigning default LUT grid: {self.sza_points}."
-                )
-
-            if "observer_zenith" in lut_grid.keys():
-                self.lut_names.append("observer_zenith")
-                self.vza_points = lut_grid["observer_zenith"]
-            else:
-                self.vza_points = [0.0, 10.0, 20.0, 30.0, 40.0]
-                Logger.info(
-                    f"No grid points for observer_zenith angle provided. "
-                    f"Assigning default LUT grid: {self.vza_points}."
-                )
-
-            self.points = np.array(
-                list(
-                    product(
-                        self.aot_points,
-                        self.gndalt_points,
-                        self.wv_points,
-                        self.raa_points,
-                        self.sza_points,
-                        self.vza_points,
+            for ii, key in enumerate(self.lut_names):
+                if key in lut_grid.keys():
+                    if len(lut_grid[key]) > 1:
+                        self.lut_points.append(lut_grid[key])
+                    elif len(lut_grid[key]) == 1:
+                        self.lut_points.append(
+                            [
+                                lut_grid[key][0] * 0.99,
+                                lut_grid[key][0],
+                                lut_grid[key][0] * 1.01,
+                            ]
+                        )
+                try:
+                    len(self.lut_points[ii])
+                except IndexError:
+                    Logger.warning(
+                        f"No grid points for {key} provided. Assigning default LUT grid."
                     )
-                )
-            )
+                    self.lut_points.append(self.default_lut_grid[key])
+
+            self.points = common.combos(self.lut_points)
 
             from .kernel_flows import KernelFlowsRT
 
