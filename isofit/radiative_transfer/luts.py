@@ -14,7 +14,9 @@ from netCDF4 import Dataset
 Logger = logging.getLogger(__file__)
 
 
-class Create:
+# Statically store expected keys of the LUT file
+class Keys:
+
     # Constants, not along any dimension
     consts = [
         "coszen",
@@ -45,6 +47,9 @@ class Create:
         "transm_up_dir",
         "transm_up_dif",
     ]
+
+
+class Create:
 
     def __init__(
         self,
@@ -86,14 +91,10 @@ class Create:
 
         self.sizes = {key: len(val) for key, val in grid.items()}
 
-        if consts:
-            self.consts += consts
-        if onedim:
-            self.onedim += onedim
-        if alldim:
-            self.alldim += alldim
-        if zeros:
-            self.zeros += zeros
+        self.consts = Keys.consts + consts
+        self.onedim = Keys.onedim + onedim
+        self.alldim = Keys.alldim + alldim
+        self.zeros = Keys.zeros + zeros
 
         # Save ds for backwards compatibility (to work with extractGrid, extractPoints)
         self.ds = self.initialize()

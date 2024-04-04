@@ -259,7 +259,7 @@ class RadiativeTransferEngine:
         grid = [ds[key].data for key in self.lut_names]
 
         # Create the unique
-        for key in self.lut.alldim:
+        for key in luts.Keys.alldim:
             self.luts[key] = common.VectorInterpolator(
                 grid_input=grid,
                 data_input=ds[key].load().data,
