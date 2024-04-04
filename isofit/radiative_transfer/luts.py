@@ -55,6 +55,7 @@ class Create:
         onedim: List[str] = [],
         alldim: List[str] = [],
         zeros: List[str] = [],
+        reduce: bool = True,
     ):
         """
         Prepare a LUT netCDF
@@ -75,6 +76,8 @@ class Create:
             List of multi-dimensional data. Appends to the current Create.alldim list.
         zeros : List[str], optional, default=[]
             List of zero values. Appends to the current Create.zeros list.
+        reduce : bool, default=True
+            Reduces the initialized Dataset by dropping the variables to reduce overall memory usage
         """
         self.file = file
         self.wl = wl
@@ -92,7 +95,12 @@ class Create:
         if zeros:
             self.zeros += zeros
 
-        self.initialize()
+        # Save ds for backwards compatibility (to work with extractGrid, extractPoints)
+        self.ds = self.initialize()
+
+        # Remove variables to reduce memory footprint
+        if reduce:
+            self.ds = self.ds.drop_vars(self.ds)
 
     def initialize(self) -> None:
         """
@@ -144,11 +152,7 @@ class Create:
         ds.to_netcdf(self.file, mode="w", compute=False, engine="netcdf4")
 
         # Create the point dimension
-        ds = ds.stack(point=self.grid).transpose("point", "wl")
-
-        # Save to obj for backwards compatibility (to work with extractGrid, extractPoints)
-        self.point = ds.point
-        self.coords = ds.coords
+        return ds.stack(point=self.grid).transpose("point", "wl")
 
     def pointIndices(self, point: np.ndarray) -> List[int]:
         """
