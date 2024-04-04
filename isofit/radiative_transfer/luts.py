@@ -66,7 +66,7 @@ class Create:
         wl : np.ndarray
             The wavelength array.
         grid : dict
-            The LUT grid.
+            The LUT grid, formatted as {str: np.ndarray}.
         consts : List[str], optional, default=[]
             List of constant values. Appends to the current Create.consts list.
         onedim : List[str], optional, default=[]
@@ -81,6 +81,8 @@ class Create:
         self.grid = grid
         self.hold = []
 
+        self.sizes = {key: val.size for key, val in grid.items()}
+
         if consts:
             self.consts += consts
         if onedim:
@@ -90,7 +92,7 @@ class Create:
         if zeros:
             self.zeros += zeros
 
-        self.ds = self.initialize()
+        self.initialize()
 
     def initialize(self) -> None:
         """
@@ -101,7 +103,7 @@ class Create:
             keys: List[str],
             nans: Union[np.ndarray, float],
             zero: Union[np.ndarray, float],
-            dims: Union[str, List[str]],
+            dims: Union[List[str], str],
         ) -> None:
             """
             Fill keys of the file with the specified shape.
@@ -142,7 +144,11 @@ class Create:
         ds.to_netcdf(self.file, mode="w", compute=False, engine="netcdf4")
 
         # Create the point dimension
-        return ds.stack(point=self.grid).transpose("point", "wl")
+        ds.stack(point=self.grid).transpose("point", "wl")
+
+        # Save to obj for backwards compatibility (to work with extractGrid, extractPoints)
+        self.point = ds.point
+        self.coords = ds.coords
 
     def pointIndices(self, point: np.ndarray) -> List[int]:
         """
@@ -209,23 +215,6 @@ class Create:
         self.queuePoint(point, data)
         self.flush()
 
-    def __getattr__(self, key: str) -> Any:
-        """
-        If an attribute is not found in the current object, this method is called to
-        retrieve it from the underlying 'ds' attribute.
-
-        Parameters
-        ----------
-        key : str
-            The name of the attribute to retrieve.
-
-        Returns
-        -------
-        Any
-            The value of the attribute retrieved from the 'ds' attribute.
-        """
-        return getattr(self.ds, key)
-
     def __getitem__(self, key: str) -> Any:
         """
         Passthrough to __getitem__ on the underlying 'ds' attribute.
@@ -243,7 +232,7 @@ class Create:
         return self.ds[key]
 
     def __repr__(self) -> str:
-        return f"LUT(wl={self.wl.size}, grid={self.grid})"
+        return f"LUT(wl={self.wl.size}, grid={self.sizes})"
 
 
 def sel(ds, dim, lt=None, lte=None, gt=None, gte=None, encompass=True):
