@@ -66,7 +66,7 @@ class Create:
         wl : np.ndarray
             The wavelength array.
         grid : dict
-            The LUT grid, formatted as {str: np.ndarray}.
+            The LUT grid, formatted as {str: Iterable}.
         consts : List[str], optional, default=[]
             List of constant values. Appends to the current Create.consts list.
         onedim : List[str], optional, default=[]
@@ -81,7 +81,7 @@ class Create:
         self.grid = grid
         self.hold = []
 
-        self.sizes = {key: val.size for key, val in grid.items()}
+        self.sizes = {key: len(val) for key, val in grid.items()}
 
         if consts:
             self.consts += consts
