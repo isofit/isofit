@@ -226,6 +226,22 @@ class Create:
         """
         return getattr(self.ds, key)
 
+    def __getitem__(self, key: str) -> Any:
+        """
+        Passthrough to __getitem__ on the underlying 'ds' attribute.
+
+        Parameters
+        ----------
+        key : str
+            The name of the item to retrieve.
+
+        Returns
+        -------
+        Any
+            The value of the item retrieved from the 'ds' attribute.
+        """
+        return self.ds[key]
+
     def __repr__(self) -> str:
         return f"LUT(wl={self.wl.size}, grid={self.grid})"
 
