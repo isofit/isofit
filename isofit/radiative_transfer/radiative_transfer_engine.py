@@ -177,8 +177,6 @@ class RadiativeTransferEngine:
 
             Logger.debug(f"Writing store to: {self.lut_path}")
             self.lut_grid = lut_grid
-            self.lut_names = list(lut_grid)
-            self.points = common.combos(lut_grid.values())
 
             Logger.info(f"Initializing LUT file")
             self.lut = luts.Create(
@@ -187,6 +185,9 @@ class RadiativeTransferEngine:
                 grid=self.lut_grid,
                 onedim=[("fwhm", fwhm)],
             )
+
+            # Retrieve points and names from the now existing lut dataset
+            self.points, self.lut_names = luts.extractPoints(self.lut)
 
             # Create and populate a LUT file
             self.runSimulations()

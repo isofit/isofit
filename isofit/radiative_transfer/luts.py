@@ -5,7 +5,7 @@ implementations and research, please see https://github.com/isofit/isofit/tree/8
 
 import logging
 import os
-from typing import List, Union
+from typing import Any, List, Union
 
 import numpy as np
 import xarray as xr
@@ -90,7 +90,7 @@ class Create:
         if zeros:
             self.zeros += zeros
 
-        self.initialize()
+        self.ds = self.initialize()
 
     def initialize(self) -> None:
         """
@@ -140,6 +140,9 @@ class Create:
         fill(self.alldim, np.full(shape, np.nan), np.zeros(shape), ds.coords)
 
         ds.to_netcdf(self.file, mode="w", compute=False, engine="netcdf4")
+
+        # Create the point dimension
+        return ds.stack(point=lut_grid).transpose("point", "wl")
 
     def pointIndices(self, point: np.ndarray) -> List[int]:
         """
@@ -205,6 +208,23 @@ class Create:
         """
         self.queuePoint(point, data)
         self.flush()
+
+    def __getattr__(self, key: str) -> Any:
+        """
+        If an attribute is not found in the current object, this method is called to
+        retrieve it from the underlying 'ds' attribute.
+
+        Parameters
+        ----------
+        key : str
+            The name of the attribute to retrieve.
+
+        Returns
+        -------
+        Any
+            The value of the attribute retrieved from the 'ds' attribute.
+        """
+        return getattr(self.ds, key)
 
     def __repr__(self) -> str:
         return f"LUT(wl={self.wl.size}, grid={self.grid})"
