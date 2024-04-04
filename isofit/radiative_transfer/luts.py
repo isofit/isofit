@@ -144,7 +144,7 @@ class Create:
         ds.to_netcdf(self.file, mode="w", compute=False, engine="netcdf4")
 
         # Create the point dimension
-        ds.stack(point=self.grid).transpose("point", "wl")
+        ds = ds.stack(point=self.grid).transpose("point", "wl")
 
         # Save to obj for backwards compatibility (to work with extractGrid, extractPoints)
         self.point = ds.point
