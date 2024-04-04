@@ -179,7 +179,7 @@ class RadiativeTransferEngine:
             self.lut_grid = lut_grid
 
             Logger.info(f"Initializing LUT file")
-            self.lut = luts.LUT(
+            self.lut = luts.Create(
                 file=self.lut_path,
                 wl=wl,
                 lut_grid=self.lut_grid,
@@ -390,7 +390,7 @@ class RadiativeTransferEngine:
             Logger.debug(f"pre-sim data contains keys: {pre.keys()}")
 
             point = {key: 0 for key in self.lut_names}
-            self.lut.appendPoint(point, data=pre)
+            self.lut.writePoint(point, data=pre)
 
         # Make the LUT calls (in parallel if specified)
         if not self._disable_makeSim:
@@ -407,7 +407,7 @@ class RadiativeTransferEngine:
             ]
             ray.get(jobs)
 
-            # Track the completed jobs every 10%
+            # Report a percentage complete every 10% and flush to disk at those intervals
             report = common.Track(
                 jobs,
                 step=10,
@@ -425,11 +425,16 @@ class RadiativeTransferEngine:
 
                 # If a simulation fails then it will return None
                 if ret:
-                    self.lut.appendPoint(*ret)
+                    self.lut.queuePoint(*ret)
 
                 if report(len(jobs)):
                     Logger.info("Flushing netCDF to disk")
                     self.lut.flush()
+
+            # Shouldn't be hit but just in case
+            if self.lut.hold:
+                Logger.warning("Not all points were flushed, doing so now")
+                self.lut.flush()
         else:
             Logger.debug("makeSim is disabled for this engine")
 
@@ -443,10 +448,7 @@ class RadiativeTransferEngine:
             Logger.debug(f"post-sim data contains keys: {post.keys()}")
 
             point = {key: 0 for key in self.lut_names}
-            self.lut.appendPoint(point, data=post)
-
-        # Save the LUT file to disk
-        luts.saveDataset(self.lut_path, self.lut)
+            self.lut.writePoint(point, data=post)
 
         # Reload the LUT now that it's populated
         self.lut = luts.load(self.lut_path)

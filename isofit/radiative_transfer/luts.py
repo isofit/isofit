@@ -5,6 +5,7 @@ implementations and research, please see https://github.com/isofit/isofit/tree/8
 
 import logging
 import os
+from typing import List, Union
 
 import numpy as np
 import xarray as xr
@@ -13,7 +14,7 @@ from netCDF4 import Dataset
 Logger = logging.getLogger(__file__)
 
 
-class LUT:
+class Create:
     # Constants, not along any dimension
     consts = [
         "coszen",
@@ -45,16 +46,40 @@ class LUT:
         "transm_up_dif",
     ]
 
-    def __init__(self, file, wl, grid, consts=[], onedim=[], alldim=[], zeros=[]):
-        """ """
+    def __init__(
+        self,
+        file: str,
+        wl: np.ndarray,
+        grid: dict,
+        consts: List[str] = [],
+        onedim: List[str] = [],
+        alldim: List[str] = [],
+        zeros: List[str] = [],
+    ):
+        """
+        Prepare a LUT netCDF
+
+        Parameters
+        ----------
+        file : str
+            NetCDF filepath for the LUT.
+        wl : np.ndarray
+            The wavelength array.
+        grid : dict
+            The LUT grid.
+        consts : List[str], optional, default=[]
+            List of constant values. Appends to the current Create.consts list.
+        onedim : List[str], optional, default=[]
+            List of one-dimensional data. Appends to the current Create.onedim list.
+        alldim : List[str], optional, default=[]
+            List of multi-dimensional data. Appends to the current Create.alldim list.
+        zeros : List[str], optional, default=[]
+            List of zero values. Appends to the current Create.zeros list.
+        """
         self.file = file
         self.wl = wl
         self.grid = grid
-        self.grid_values = np.vstack(list(grid.values()))
-
-        self.ds = None
         self.hold = []
-        self.tmps = []
 
         if consts:
             self.consts += consts
@@ -67,61 +92,89 @@ class LUT:
 
         self.initialize()
 
-    def initialize(self):
-        """ """
-        # Initialize with all lut point names as dimensions
+    def initialize(self) -> None:
+        """
+        Initializes the LUT netCDF by prepopulating it with filler values.
+        """
+
+        def fill(
+            keys: List[str],
+            nans: Union[np.ndarray, float],
+            zero: Union[np.ndarray, float],
+            dims: Union[str, List[str]],
+        ) -> None:
+            """
+            Fill keys of the file with the specified shape.
+
+            Parameters
+            ----------
+            keys : List[str]
+                Keys to instantiate.
+            nans : Union[np.ndarray, float]
+                Shape of the NaN filler.
+            nans : Union[np.ndarray, float]
+                Shape of the zero filler.
+            dims : Union[str, List[str]]
+                Dimensions for the keys.
+            """
+            for key in keys:
+                fill = nans
+                if isinstance(key, tuple):
+                    key, fill = key
+                elif key in self.zeros:
+                    fill = zero
+
+                if dims:
+                    fill = (dims, fill)
+
+                ds[key] = fill
+
         ds = xr.Dataset(coords={"wl": self.wl, **self.grid})
 
-        # Insert constants
-        for key in self.consts:
-            fill = np.nan
-            if isinstance(key, tuple):
-                key, filler = key
-            elif key in self.zeros:
-                fill = 0
+        fill(self.consts, np.nan, 0.0, "")
 
-            ds[key] = fill
+        shape = ds.wl.size
+        fill(self.onedim, np.full(shape, np.nan), np.zeros(shape), "wl")
 
-        # Insert single dimension keys along wl
-        nans = np.full(ds.wl.size, np.nan)
-        zero = np.zeros(ds.wl.size)
+        shape = tuple(ds.sizes.values())
+        fill(self.alldim, np.full(shape, np.nan), np.zeros(shape), ds.coords)
 
-        for key in self.onedim:
-            fill = nans
-            if isinstance(key, tuple):
-                key, fill = key
-            elif key in self.zeros:
-                fill = zero
-
-            ds[key] = ("wl", fill)
-
-        ## Insert point dimensional keys
-        # Filler arrays
-        dims = tuple(ds.sizes.values())
-        nans = np.full(dims, np.nan)
-        zero = np.zeros(dims)
-
-        for key in self.alldim:
-            fill = nans
-            if isinstance(key, tuple):
-                key, fill = key
-            elif key in self.zeros:
-                fill = zero
-            ds[key] = (ds.coords, fill)
-
-        # Must write unstacked
         ds.to_netcdf(self.file, mode="w", compute=False, engine="netcdf4")
 
-    def pointIndices(self, point):
-        """ """
-        return np.where(np.isin(self.grid_values, point))[1]
+    def pointIndices(self, point: np.ndarray) -> List[int]:
+        """
+        Get the indices of the point in the grid.
 
-    def appendPoint(self, point, data):
-        """ """
+        Parameters
+        ----------
+        point : np.ndarray
+            The coordinates of the point in the grid.
+
+        Returns
+        -------
+        List[int]
+            Mapped point values to index positions.
+        """
+        return [np.where(grid[dim] == val)[0][0] for dim, val in zip(grid, point)]
+
+    def queuePoint(self, point: np.ndarray, data: dict) -> None:
+        """
+        Queues a point and its data to the internal hold list which is used by the
+        flush function to write these points to disk.
+
+        Parameters
+        ----------
+        point : np.ndarray
+            The coordinates of the point in the grid.
+        data : dict
+            Data for this point to write.
+        """
         self.hold.append((point, data))
 
-    def flush(self):
-        """ """
+    def flush(self) -> None:
+        """
+        Flushes the (point, data) pairs held in the hold list to the LUT netCDF.
+        """
         with Dataset(self.file, "a") as ds:
             for point, data in self.hold:
                 for key, vals in data.items():
@@ -133,33 +186,28 @@ class LUT:
                         index = [slice(None)] + list(self.pointIndices(point))
                         ds[key][index] = vals
                     else:
-                        print(
+                        Logger.warning(
                             f"Attempted to assign a key that is not recognized, skipping: {key}"
                         )
 
         self.hold = []
 
-    def open(self, chunks=True, **kwargs):
-        """ """
-        if chunks is True:
-            chunks = {"wl": self.wl.size}
-            for dim in self.dims:
-                chunks[dim] = 1
-
-        if isinstance(chunks, dict):
-            kwargs["chunks"] = chunks
-
-        self.ds = load(self.file, **kwargs)
-        return self.ds
-
-    def __getattr__(self, key):
+    def writePoint(self, point: np.ndarray, data: dict) -> None:
         """
-        Passthrough to operate on the Dataset object if not defined by this class already.
-        """
-        return getattr(self.ds, key)
+        Queues a point and immediately flushes to disk.
 
-    def __repr__(self):
-        return f"LUT(wl={self.wl.size}, grid={self.sizes})"
+        Parameters
+        ----------
+        point : np.ndarray
+            The coordinates of the point in the grid.
+        data : dict
+            Data for this point to write.
+        """
+        self.queuePoint(point, data)
+        self.flush()
+
+    def __repr__(self) -> str:
+        return f"LUT(wl={self.wl.size}, grid={self.grid})"
 
 
 def sel(ds, dim, lt=None, lte=None, gt=None, gte=None, encompass=True):
