@@ -182,7 +182,7 @@ class RadiativeTransferEngine:
             self.lut = luts.Create(
                 file=self.lut_path,
                 wl=wl,
-                lut_grid=self.lut_grid,
+                grid=self.lut_grid,
                 onedim=[("fwhm", fwhm)],
             )
 
