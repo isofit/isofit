@@ -142,7 +142,7 @@ class Create:
         ds.to_netcdf(self.file, mode="w", compute=False, engine="netcdf4")
 
         # Create the point dimension
-        return ds.stack(point=lut_grid).transpose("point", "wl")
+        return ds.stack(point=self.grid).transpose("point", "wl")
 
     def pointIndices(self, point: np.ndarray) -> List[int]:
         """
