@@ -168,7 +168,9 @@ class Create:
         List[int]
             Mapped point values to index positions.
         """
-        return [np.where(grid[dim] == val)[0][0] for dim, val in zip(grid, point)]
+        return [
+            np.where(self.grid[dim] == val)[0][0] for dim, val in zip(self.grid, point)
+        ]
 
     def queuePoint(self, point: np.ndarray, data: dict) -> None:
         """
