@@ -23,7 +23,7 @@ import isofit
 from isofit.utils import surface_model
 from isofit.utils.apply_oe import (
     apply_oe,
-    _cli
+    cli_apply_oe
 )
 
 
