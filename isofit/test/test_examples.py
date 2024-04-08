@@ -51,7 +51,7 @@ def test_pasadena_modtran(args, monkeypatch):
     surface_model("configs/ang20171108t184227_surface.json")
 
     runner = CliRunner()
-    result = runner.invoke(_cli, args, catch_exceptions=False)
+    result = runner.invoke(__main__, ["run"] + list(args), catch_exceptions=False)
 
     assert result.exit_code == 0
 

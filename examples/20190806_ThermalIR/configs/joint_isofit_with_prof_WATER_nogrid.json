@@ -74,14 +74,14 @@
           "template_file": "./vswir_mod_config_WATER.json",
           "aerosol_template_file": "../../../data/aerosol_template.json",
           "aerosol_model_file": "../../../data/aerosol_twopart_model.txt",
-          "lut_names": ["H2OSTR", "AERFRAC_1"]
+          "lut_names": {"H2OSTR": null, "AERFRAC_1": null}
         },
         "tir": {
           "engine_name": "modtran",
           "lut_path": "../lut/",
           "wavelength_range": [7501, 12100],
           "template_file": "./tir_mod_config_WATER.json",
-          "lut_names": ["H2OSTR", "O3STR"]
+          "lut_names": {"H2OSTR": null, "O3STR": null}
         }
       }
     }
