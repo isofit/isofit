@@ -76,6 +76,10 @@ def download(size):
         Logger.error('Not all input files are found')
         return
 
+    Logger.debug('Data files:')
+    for file in files:
+        Logger.debug(f'- {file}')
+
     return files
 
 def profile(args, output=None):
