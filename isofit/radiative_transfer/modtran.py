@@ -329,6 +329,7 @@ class ModtranRT(RadiativeTransferEngine):
             Logger.warning(
                 f"File already exists and not set to rebuild, skipping execution: {filename_base}"
             )
+            return
 
         # write_config_file
         with open(infilepath, "w") as f:
