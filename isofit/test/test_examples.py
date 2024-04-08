@@ -12,7 +12,6 @@ from isofit.utils import surface_model
 
 
 # fmt: off
-@pytest.mark.xfail
 @pytest.mark.examples
 @pytest.mark.parametrize("args", [
     ("--level", "DEBUG", "configs/prm20151026t173213_D8W_6s.json"),
@@ -34,7 +33,6 @@ def test_santa_monica(args, monkeypatch):
 
 
 # fmt: off
-@pytest.mark.xfail
 @pytest.mark.examples
 @pytest.mark.parametrize("args", [
     ("--level", "DEBUG", "configs/ang20171108t173546_darklot.json"),
@@ -70,7 +68,6 @@ def test_pasadena_topoflux(monkeypatch):
     model.run()
 
 
-@pytest.mark.xfail
 @pytest.mark.examples
 def test_modtran_one(monkeypatch):
     """Run MODTRAN example dataset."""
@@ -82,7 +79,6 @@ def test_modtran_one(monkeypatch):
     model.run()
 
 
-@pytest.mark.xfail
 @pytest.mark.examples
 def test_profiling_cube_small(monkeypatch):
     """Run profiling datasets."""
