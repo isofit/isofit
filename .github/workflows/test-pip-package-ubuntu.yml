@@ -62,7 +62,7 @@ jobs:
           python3 -m pip show pip setuptools wheel
 
           # Install 'isofit'
-          python3 -m pip install ".[test]"
+          python3 -m pip install --editable ".[test]"
 
           # Ensure ISOFIT has been installed
           python3 -c "import isofit; print(isofit.__file__)"
@@ -111,11 +111,6 @@ jobs:
         shell: bash
         run: |
           ./scripts/download-and-unpack-hypertrace-data.sh
-
-      - name: debugging
-        shell: bash
-        run: |
-          pwd && ls -lah
 
       - name: Execute tests
         shell: bash
