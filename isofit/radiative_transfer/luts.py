@@ -40,6 +40,7 @@ class Keys:
         "thermal_upwelling",
         "thermal_downwelling",
     ]
+
     # These keys are filled with zeros instead of NaNs
     zeros = [
         "transm_down_dir",
