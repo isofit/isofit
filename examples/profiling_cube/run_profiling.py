@@ -160,7 +160,7 @@ def run(config, workdir, files, output=None, n=1):
     n: int, default=1
         Number of profiling runs to repeat
     """
-    surface_file = f'{workdir}/data/surface.mat'
+    surface_file = f'{workdir}/surface.mat'
     if not os.path.exists(surface_file):
         file = Path('../20171108_Pasadena/configs/ang20171108t184227_surface.json').absolute()
         Logger.info(f'Creating surface.mat using config: {file} => {surface_file}')
