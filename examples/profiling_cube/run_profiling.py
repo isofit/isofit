@@ -15,6 +15,7 @@ import zipfile
 from glob      import glob
 from importlib import reload
 from io        import BytesIO
+from pathlib   import Path
 from types     import SimpleNamespace
 
 import click
@@ -30,8 +31,6 @@ from isofit.utils.apply_oe import (
 logging.basicConfig(format='%(levelname)s | %(message)s', level=logging.DEBUG)
 
 Logger    = logging.getLogger('isofit/examples/profiling_cube')
-ISOFIT    = '/'.join(isofit.__file__.split('/')[:-2])
-EX_DIR    = 'examples/profiling_cube'
 FILE_BASE = 'ang20170323t202244'
 URLS      = {
     'small' : 'https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/small_chunk.zip',
@@ -159,8 +158,9 @@ def run(config, workdir, files, output=None, n=1):
     """
     surface_file = f'{workdir}/data/surface.mat'
     if not os.path.exists(surface_file):
-        Logger.info('Creating surface.mat')
-        surface_model(f'{ISOFIT}/examples/20171108_Pasadena/configs/ang20171108t184227_surface.json', output_path=surface_file)
+        file = Path('../20171108_Pasadena/configs/ang20171108t184227_surface.json').absolute()
+        Logger.info(f'Creating surface.mat using config: {file} => {surface_file}')
+        surface_model(file, output_path=surface_file)
 
     outp = None
     for i in range(1, n+1):
