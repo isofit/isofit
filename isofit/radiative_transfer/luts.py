@@ -61,7 +61,7 @@ class Create:
         onedim: List[str] = [],
         alldim: List[str] = [],
         zeros: List[str] = [],
-        reduce: bool = True,
+        reduce: bool = ["fwhm"],
     ):
         """
         Prepare a LUT netCDF
@@ -82,8 +82,9 @@ class Create:
             List of multi-dimensional data. Appends to the current Create.alldim list.
         zeros : List[str], optional, default=[]
             List of zero values. Appends to the current Create.zeros list.
-        reduce : bool, default=True
-            Reduces the initialized Dataset by dropping the variables to reduce overall memory usage
+        reduce : bool or list, optional, default=['fwhm']
+            Reduces the initialized Dataset by dropping the variables to reduce overall memory usage.
+            If True, drops all variables. If list, drop everything but these.
         """
         self.file = file
         self.wl = wl
@@ -102,7 +103,14 @@ class Create:
 
         # Remove variables to reduce memory footprint
         if reduce:
-            self.ds = self.ds.drop_vars(self.ds)
+            # Drop all variables
+            drop = set(self.ds)
+
+            # Remove these from the drop list
+            if isinstance(reduce, list):
+                drop -= set(reduce)
+
+            self.ds = self.ds.drop_vars(drop)
 
     def initialize(self) -> None:
         """
