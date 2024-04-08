@@ -128,7 +128,7 @@ def createArgs(files, workdir, config):
     """
     cmd = click.Command(...)
     ctx = click.Context(cmd)
-    params = _cli.get_params(ctx)
+    params = cli_apply_oe.get_params(ctx)
 
     params = {param.name: param.default for param in params}
     params.update(
