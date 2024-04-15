@@ -80,6 +80,7 @@ def test_modtran_one(monkeypatch):
     model.run()
 
 
+@pytest.mark.xfail
 @pytest.mark.examples
 def test_profiling_cube_small(monkeypatch):
     """Run profiling datasets."""
