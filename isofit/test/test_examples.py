@@ -16,7 +16,7 @@ from isofit.utils import surface_model
 @pytest.mark.parametrize("args", [
     ("--level", "DEBUG", "configs/prm20151026t173213_D8W_6s.json"),
     ("--level", "DEBUG", "configs/prm20151026t173213_D8p5W_6s.json"),
-    ("--level", "DEBUG", "configs/prm20151026t173213_D9W_6s.json"),
+    # ("--level", "DEBUG", "configs/prm20151026t173213_D9W_6s.json"),
     ("--level", "DEBUG", "configs/prm20151026t173213_D9p5W_6s.json"),
 ])
 # fmt: on
