@@ -47,7 +47,7 @@
                         "statevector_names": ["H2OSTR", "AOT550"],
                         "lut_names": {"AOT550": null, "H2OSTR": null},
                         "lut_path": "./luts/lut.nc",
-                        "sim_path": "./luts/sRTMnet",
+                        "sim_path": "./luts/sRTMnet"
                     }
                 }
             }
