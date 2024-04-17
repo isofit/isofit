@@ -333,22 +333,16 @@ class RadiativeTransferEngine:
 
         if self.engine_config.engine_name == "KernelFlowsGP":
             # Create the unique
-            grid = [
-                self.aot_points,
-                self.gndalt_points,
-                self.wv_points,
-                self.raa_points,
-                self.sza_points,
-                self.vza_points,
-            ]
+            grid = self.lut_points
+
             for key in self.alldim:
                 data = self.lut[key].reshape(
-                    len(self.aot_points),
-                    len(self.gndalt_points),
-                    len(self.wv_points),
-                    len(self.raa_points),
-                    len(self.sza_points),
-                    len(self.vza_points),
+                    len(grid[0]),
+                    len(grid[1]),
+                    len(grid[2]),
+                    len(grid[3]),
+                    len(grid[4]),
+                    len(grid[5]),
                     len(self.lut["wl"]),
                 )
                 self.luts[key] = common.VectorInterpolator(
