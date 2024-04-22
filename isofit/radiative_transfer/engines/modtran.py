@@ -31,9 +31,8 @@ import numpy as np
 import scipy.interpolate
 import scipy.stats
 
+from isofit.core.common import json_load_ascii, recursive_replace
 from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
-
-from ..core.common import json_load_ascii, recursive_replace
 
 Logger = logging.getLogger(__file__)
 
