@@ -15,6 +15,7 @@ import zipfile
 from glob      import glob
 from importlib import reload
 from io        import BytesIO
+from pathlib   import Path
 from types     import SimpleNamespace
 
 import click
@@ -23,15 +24,13 @@ import isofit
 from isofit.utils import surface_model
 from isofit.utils.apply_oe import (
     apply_oe,
-    _cli
+    cli_apply_oe
 )
 
 
 logging.basicConfig(format='%(levelname)s | %(message)s', level=logging.DEBUG)
 
 Logger    = logging.getLogger('isofit/examples/profiling_cube')
-ISOFIT    = '/'.join(isofit.__file__.split('/')[:-2])
-EX_DIR    = 'examples/profiling_cube'
 FILE_BASE = 'ang20170323t202244'
 URLS      = {
     'small' : 'https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/small_chunk.zip',
@@ -76,6 +75,10 @@ def download(size):
     if len(files) != 3:
         Logger.error('Not all input files are found')
         return
+
+    Logger.debug('Data files:')
+    for file in files:
+        Logger.debug(f'- {file}')
 
     return files
 
@@ -125,7 +128,7 @@ def createArgs(files, workdir, config):
     """
     cmd = click.Command(...)
     ctx = click.Context(cmd)
-    params = _cli.get_params(ctx)
+    params = cli_apply_oe.get_params(ctx)
 
     params = {param.name: param.default for param in params}
     params.update(
@@ -157,10 +160,11 @@ def run(config, workdir, files, output=None, n=1):
     n: int, default=1
         Number of profiling runs to repeat
     """
-    surface_file = f'{workdir}/data/surface.mat'
+    surface_file = f'{workdir}/surface.mat'
     if not os.path.exists(surface_file):
-        Logger.info('Creating surface.mat')
-        surface_model(f'{ISOFIT}/examples/20171108_Pasadena/configs/ang20171108t184227_surface.json', output_path=surface_file)
+        file = Path('../20171108_Pasadena/configs/ang20171108t184227_surface.json').absolute()
+        Logger.info(f'Creating surface.mat using config: {file} => {surface_file}')
+        surface_model(file, output_path=surface_file)
 
     outp = None
     for i in range(1, n+1):

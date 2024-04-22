@@ -19,7 +19,6 @@ _NEWPATH = sys.path.copy()
 _NEWPATH.insert(0, ".")
 
 
-@pytest.mark.xfail
 @mock.patch("sys.path", new=_NEWPATH)
 def test_hypertrace(monkeypatch):
     monkeypatch.chdir("examples/py-hypertrace")
