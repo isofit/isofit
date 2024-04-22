@@ -1924,3 +1924,29 @@ def reassemble_cube(matching_indices: np.array, paths: Pathnames):
             output_mm[matching_indices == _st, ...] = input_ds.open_memmap(
                 interleave="bip"
             )[:, :, : int(header["bands"])].copy()[:, 0, :]
+
+
+def constrain_grid_kf(grid, emulator_file: str, emulator_key, style="modify"):
+    """Check an input grid with a KF emulator file and modify it to fit within
+    the bounds of the emulator
+
+    Args:
+        grid (_type_): _description_
+        emulator_file (str): _description_
+        emulator_key (_type_): _description_
+        style (str, optional): _description_. Defaults to "modify".
+    """
+    import h5py
+
+    grid = np.array(grid)
+
+    kf = h5py.File(emulator_file, "r")
+    lb = np.array(kf["minx"])
+    ub = np.array(kf["maxx"])
+
+    if style == "modify":
+        grid[grid < lb] = lb
+        grid[grid > ub] = ub
+        grid = np.unique(grid)
+    elif style == "trim":
+        grid = grid[np.logical_and(grid >= lb, grid <= ub)]

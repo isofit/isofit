@@ -27,9 +27,27 @@ from isofit import ray
 from isofit.configs.sections.radiative_transfer_config import (
     RadiativeTransferEngineConfig,
 )
-from isofit.core.common import spectral_response_function
+from isofit.core.common import combos, spectral_response_function
+from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
 
 Logger = logging.getLogger(__file__)
+
+# This is a tempoary key mapping until we align the KF and Isofit key names
+# and get KF to store the key names in the jld2 file
+KEYMAPPING = {
+    1: {"name": "AERFRAC2", "default": [0.001, 0.2, 0.4, 0.6, 0.8, 1.0]},
+    2: {"name": "H2OSTR", "default": [0.05, 0.75, 1.5, 2.25, 3.0, 3.75, 4.5]},
+    3: {"name": "surface_elevation_km", "default": [0.0, 1.5, 3.0, 4.5, 6.0]},
+    4: {"name": "observer_altitude_km", "default": [0.5, 1, 2, 5, 10, 20, 100]},
+    5: {"name": "solar_zenith", "default": [0.0, 15.0, 30.0, 45.0, 60.0, 75.0]},
+    6: {"name": "observer_zenith", "default": [0.0, 10.0, 20.0, 30.0, 40.0]},
+    7: {
+        "name": "relative_azimuth",
+        "default": [0.0, 30.0, 60.0, 90.0, 120.0, 150.0, 180.0],
+    },
+    8: {"name": "solar_azimuth", "default": [1, 91, 181, 271]},
+    9: {"name": "observer_azimuth", "default": [1, 91, 181, 271]},
+}
 
 
 @ray.remote(num_cpus=1)
@@ -76,7 +94,7 @@ def reduce_points(points, Xproj_vectors, Xproj_values, Xmu, Xsigma):
     return Z @ H
 
 
-class KernelFlowsRT(object):
+class KernelFlowsRT(RadiativeTransferEngine):
     """
     Radiative transfer emulation based on KernelFlows.jl and VSWIREmulator.jl. A description of
     the model can be found in:
@@ -86,7 +104,10 @@ class KernelFlowsRT(object):
         and cross validation (2024). Submitted to Atmospheric Measurement Techniques.
     """
 
-    def __init__(self, engine_config: RadiativeTransferEngineConfig, wl, fwhm):
+    def __init__(self, engine_config: RadiativeTransferEngineConfig, **kwargs):
+
+        super().__init__(engine_config, **kwargs)
+
         # defining some input transformations
         self.input_transfs = [
             np.identity,
@@ -100,18 +121,120 @@ class KernelFlowsRT(object):
         ]
         # read VSWIREmulator struct from jld2 file
         self.f = h5py.File(engine_config.emulator_file, "r")
+
         # ga components of size (npar1, npar2, ...nparn, nbands). only outputs necessary.
-        self.wl = wl
-        self.fwhm = fwhm
+        self.points_bound_min = np.array(self.f["xmin"])
+        self.points_bound_max = np.array(self.f["xmax"])
+        self.emulator_wl = np.array(self.f["wls"])
         self.srf_matrix = np.array(
             [
-                spectral_response_function(np.array(self.f["wls"]), wi, fwhmi / 2.355)
+                spectral_response_function(self.emulator_wl, wi, fwhmi / 2.355)
                 for wi, fwhmi in zip(self.wl, self.fwhm)
             ]
         )
         self.ga = list()
 
+        emulator_names = [
+            KEYMAPPING[i] for i in np.array(self.f["inputdims"]).astype(int)
+        ]
+
+        # KF requires an exact specification of keys.  Possible failure modes include:
+        # KF has keys not in lut_grid
+        # lut_grid has keys not in KF - for this one, we should insert something.  Ideally, a
+        # mean from the config file, but for now just put a grid of reasonable values.  Set these
+        # values as -1 for later lookup
+        try:
+            self.point_inds_to_emulator_inds = [
+                list(self.lut_grid.keys()).index(i) if i in self.lut_grid else -1
+                for i in emulator_names
+            ]
+        except:
+            outstr = "The provided emulator is missing lut keys: {[i for i in emulator_names if i not in self.lut_grid.keys()]}"
+            raise ValueError(outstr)
+
+        self.default_lut_grid = {
+            "AOT550": [0.001, 0.2, 0.4, 0.6, 0.8, 1.0],
+            "surface_elevation_km": [0.0, 1.5, 3.0, 4.5, 6.0],
+            "H2OSTR": [0.05, 0.75, 1.5, 2.25, 3.0, 3.75, 4.5],
+            "relative_azimuth": [0.0, 30.0, 60.0, 90.0, 120.0, 150.0, 180.0],
+            "solar_zenith": [0.0, 15.0, 30.0, 45.0, 60.0, 75.0],
+            "observer_zenith": [0.0, 10.0, 20.0, 30.0, 40.0],
+        }
+
+        self.lut_points = []
+
+        for ii, key in enumerate(self.lut_names):
+            if key in self.lut_grid.keys():
+                if len(self.lut_grid[key]) > 1:
+                    self.lut_points.append(self.lut_grid[key])
+                elif len(self.lut_grid[key]) == 1:
+                    self.lut_points.append(
+                        [
+                            self.lut_grid[key][0] * 0.99,
+                            self.lut_grid[key][0],
+                            self.lut_grid[key][0] * 1.01,
+                        ]
+                    )
+            try:
+                len(self.lut_points[ii])
+            except IndexError:
+                Logger.warning(
+                    f"No grid points for {key} provided. Assigning default LUT grid."
+                )
+                self.lut_points.append(self.default_lut_grid[key])
+
+        self.points = combos(self.lut_points)
+
+    def lut_grid_converter(self, lut_grid):
+        """Update the lut grid from the config to what KF expects
+
+        Args:
+            lut_grid (_type_): _description_
+        """
+
+    def makeSim(self, point: np.array, template_only: bool = False):
+        # Kernel Flows doesn't need to make the simulation, as it can execute
+        # directly
+        pass
+
+    def readSim(self, point):
+        if np.any(point < self.points_bound_min) or np.any(
+            point > self.points_bound_max
+        ):
+            outstr = f"Input points are out of bounds xmin: {self.points_bound_min}, xmax: {self.points_bound_max}"
+            raise ValueError(outstr)
+
+        nMVMs = len(self.f.keys()) - 6
+        for i in range(1, 1 + nMVMs):
+            MVM = self.predict_single_MVM(
+                self.f["MVM" + str(i)], point, self.f["input_transfs"][i - 1, :]
+            )
+            self.ga.append(MVM)
+        ga_1 = self.output_transfs[0](self.ga[1][:, :])
+        ga_2 = self.output_transfs[0](self.ga[2][:, :])
+
+        combined = {
+            "rhoatm": self.ga[0],
+            "sphalb": self.ga[3],
+            "transm_down_dir": ga_1,
+            "transm_down_dif": ga_2,
+            "transm_up_dir": np.zeros(self.ga[0].shape),
+            "transm_up_dif": np.zeros(self.ga[0].shape),
+            "thermal_upwelling": np.zeros(self.ga[0].shape),
+            "thermal_downwelling": np.zeros(self.ga[0].shape),
+            "solar_irr": np.zeros(self.wl.shape),
+            "wl": self.wl,
+        }
+        return combined
+
     def predict(self, points):
+
+        if np.any(points < self.points_bound_min) or np.any(
+            points > self.points_bound_max
+        ):
+            outstr = f"Input points are out of bounds xmin: {self.points_bound_min}, xmax: {self.points_bound_max}"
+            raise ValueError(outstr)
+
         nMVMs = len(self.f.keys()) - 6
         for i in range(1, 1 + nMVMs):
             MVM = self.predict_single_MVM(

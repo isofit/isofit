@@ -135,6 +135,13 @@ class RadiativeTransferEngine:
         # TODO: mlky should do all this verification stuff
         # Verify either the LUT file exists or a LUT grid is provided
         self.lut_path = lut_path = str(lut_path) or engine_config.lut_path
+        print("lut_path", self.lut_path)
+        print("lut_grid", lut_grid)
+        try:
+            print("self.lut_grid", self.lut_grid)
+        except:
+            print("self.lut_grid: None")
+        print("lut_grid is none", lut_grid is None)
         exists = os.path.isfile(lut_path)
         if not exists and lut_grid is None:
             raise AttributeError(
@@ -189,89 +196,12 @@ class RadiativeTransferEngine:
                         ),
                     )
                 self.lut = conv
-        elif engine_config.engine_name == "KernelFlowsGP":
-            Logger.info(f"Emulating LUT using Kernel Flows GP")
+        # elif engine_config.engine_name == "KernelFlowsGP":
+        #    Logger.info(f"Emulating LUT using Kernel Flows GP")
+        #    self.lut_grid = lut_grid
 
-            self.lut_grid = lut_grid
-            self.lut_names = []
+        #    #self.lut = self.predict(self.points)
 
-            if "AOT550" in lut_grid.keys():
-                self.lut_names.append("AOT550")
-                self.aot_points = lut_grid["AOT550"]
-            else:
-                self.aot_points = [0.001, 0.2, 0.4, 0.6, 0.8, 1.0]
-                Logger.info(
-                    f"No grid points for AOT provided. "
-                    f"Assigning default LUT grid: {self.aot_points}."
-                )
-
-            if "surface_elevation_km" in lut_grid.keys():
-                self.lut_names.append("surface_elevation_km")
-                self.gndalt_points = lut_grid["surface_elevation_km"]
-            else:
-                self.gndalt_points = [0.0, 1.5, 3.0, 4.5, 6.0]
-                Logger.info(
-                    f"No grid points for surface elevation provided. "
-                    f"Assigning default LUT grid: {self.gndalt_points}."
-                )
-
-            if "H2OSTR" in lut_grid.keys():
-                self.lut_names.append("H2OSTR")
-                self.wv_points = lut_grid["H2OSTR"]
-            else:
-                self.wv_points = [0.05, 0.75, 1.5, 2.25, 3.0, 3.75, 4.5]
-                Logger.info(
-                    f"No grid points for water vapor provided. "
-                    f"Assigning default LUT grid: {self.wv_points}."
-                )
-
-            if "relative_azimuth" in lut_grid.keys():
-                self.lut_names.append("relative_azimuth")
-                self.raa_points = lut_grid["relative_azimuth"]
-            else:
-                self.raa_points = [0.0, 30.0, 60.0, 90.0, 120.0, 150.0, 180.0]
-                Logger.info(
-                    f"No grid points for relative_azimuth angle provided. "
-                    f"Assigning default LUT grid: {self.raa_points}."
-                )
-
-            if "solar_zenith" in lut_grid.keys():
-                self.lut_names.append("solar_zenith")
-                self.sza_points = lut_grid["solar_zenith"]
-            else:
-                self.sza_points = [0.0, 15.0, 30.0, 45.0, 60.0, 75.0]
-                Logger.info(
-                    f"No grid points for solar zenith angle provided. "
-                    f"Assigning default LUT grid: {self.sza_points}."
-                )
-
-            if "observer_zenith" in lut_grid.keys():
-                self.lut_names.append("observer_zenith")
-                self.vza_points = lut_grid["observer_zenith"]
-            else:
-                self.vza_points = [0.0, 10.0, 20.0, 30.0, 40.0]
-                Logger.info(
-                    f"No grid points for observer_zenith angle provided. "
-                    f"Assigning default LUT grid: {self.vza_points}."
-                )
-
-            self.points = np.array(
-                list(
-                    product(
-                        self.aot_points,
-                        self.gndalt_points,
-                        self.wv_points,
-                        self.raa_points,
-                        self.sza_points,
-                        self.vza_points,
-                    )
-                )
-            )
-
-            from .kernel_flows import KernelFlowsRT
-
-            E = KernelFlowsRT(engine_config, wl, fwhm)
-            self.lut = E.predict(self.points)
         else:
             Logger.info(f"No LUT store found, beginning initialization and simulations")
             # Check if both wavelengths and fwhm are provided for building the LUT
@@ -733,6 +663,7 @@ def streamSimulation(
 
     # Read the simulation results
     data = reader(point)
+    print(data)
 
     # Save the results to our LUT format
     if data:
