@@ -27,6 +27,7 @@ from isofit.configs import Config
 from isofit.core.geometry import Geometry
 
 from ..core.common import eps
+from ..radiative_transfer.kernel_flows import KernelFlowsRT
 from ..radiative_transfer.modtran import ModtranRT
 from ..radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
 from ..radiative_transfer.six_s import SixSRT
@@ -37,7 +38,7 @@ RTE = {
     "modtran": ModtranRT,
     "6s": SixSRT,
     "sRTMnet": SimulatedModtranRT,
-    "KernelFlowsGP": RadiativeTransferEngine,
+    "KernelFlowsGP": KernelFlowsRT,
 }
 
 
@@ -89,11 +90,6 @@ class RadiativeTransfer:
         self.rt_engines = []
         for idx in range(len(config.radiative_transfer_engines)):
             confRT = config.radiative_transfer_engines[idx]
-
-            if confRT.engine_name not in RTE:
-                raise AttributeError(
-                    f"Invalid radiative transfer engine choice. Got: {confRT.engine_name}; Must be one of: {RTE}"
-                )
 
             # Generate the params for this RTE
             params = {

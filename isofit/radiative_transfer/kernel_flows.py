@@ -22,6 +22,7 @@ import logging
 
 import h5py
 import numpy as np
+import yaml
 
 from isofit import ray
 from isofit.configs.sections.radiative_transfer_config import (
@@ -35,22 +36,29 @@ Logger = logging.getLogger(__file__)
 # This is a tempoary key mapping until we align the KF and Isofit key names
 # and get KF to store the key names in the jld2 file
 KEYMAPPING = {
-    1: {"name": "AERFRAC2", "default": [0.001, 0.2, 0.4, 0.6, 0.8, 1.0]},
-    2: {"name": "H2OSTR", "default": [0.05, 0.75, 1.5, 2.25, 3.0, 3.75, 4.5]},
-    3: {"name": "surface_elevation_km", "default": [0.0, 1.5, 3.0, 4.5, 6.0]},
-    4: {"name": "observer_altitude_km", "default": [0.5, 1, 2, 5, 10, 20, 100]},
-    5: {"name": "solar_zenith", "default": [0.0, 15.0, 30.0, 45.0, 60.0, 75.0]},
-    6: {"name": "observer_zenith", "default": [0.0, 10.0, 20.0, 30.0, 40.0]},
+    1: {
+        "name": "AERFRAC2",
+        "default_grid": [0.08, 0.2, 0.4, 0.6, 0.8, 1.0],
+        "default": 0.08,
+    },
+    2: {
+        "name": "H2OSTR",
+        "default_grid": [0.05, 0.75, 1.5, 2.25, 3.0, 3.75, 4.5],
+        "default": 0.05,
+    },
+    3: {"name": "surface_elevation_km", "default_grid": [0.0, 1.5, 3.0, 4.5, 6.0]},
+    4: {"name": "observer_altitude_km", "default_grid": [0.5, 1, 2, 5, 10, 20, 100]},
+    5: {"name": "solar_zenith", "default_grid": [0.0, 15.0, 30.0, 45.0, 60.0, 75.0]},
+    6: {"name": "observer_zenith", "default_grid": [0.0, 10.0, 20.0, 30.0, 40.0]},
     7: {
         "name": "relative_azimuth",
-        "default": [0.0, 30.0, 60.0, 90.0, 120.0, 150.0, 180.0],
+        "default_grid": [0.0, 30.0, 60.0, 90.0, 120.0, 150.0, 180.0],
     },
-    8: {"name": "solar_azimuth", "default": [1, 91, 181, 271]},
-    9: {"name": "observer_azimuth", "default": [1, 91, 181, 271]},
+    8: {"name": "solar_azimuth", "default_grid": [1, 91, 181, 271]},
+    9: {"name": "observer_azimuth", "default_grid": [1, 91, 181, 271]},
 }
 
 
-@ray.remote(num_cpus=1)
 def predict_M(
     M_Z,
     M_lambda,
@@ -106,7 +114,61 @@ class KernelFlowsRT(RadiativeTransferEngine):
 
     def __init__(self, engine_config: RadiativeTransferEngineConfig, **kwargs):
 
-        super().__init__(engine_config, **kwargs)
+        # read VSWIREmulator struct from jld2 file into a dictionary
+        self.f = self.h5_to_dict(h5py.File(engine_config.emulator_file, "r"))
+
+        self.emulator_wl = self.f["wls"]
+        self.emulator_internal_idx = self.f["inputdims"].astype(int)
+        self.emulator_names = [
+            KEYMAPPING[i]["name"] for i in self.emulator_internal_idx
+        ]
+        self.points_bound_min = self.f["xmin"]
+        self.points_bound_max = self.f["xmax"]
+
+        with open(engine_config.template_file, "r") as tpl_f:
+            template = yaml.safe_load(tpl_f)
+        try:
+            # global KEYMAPPING
+            KEYMAPPING[3]["default"] = template["MODTRAN"][0]["MODTRANINPUT"][
+                "SURFACE"
+            ]["GNDALT"]
+        except:
+            logging.info("No surface_elevation_km default in template")
+
+        try:
+            KEYMAPPING[4]["default"] = template["MODTRAN"][0]["MODTRANINPUT"][
+                "GEOMETRY"
+            ]["H1ALT"]
+        except:
+            logging.info("No observer_altitude_km default in template")
+
+        try:
+            KEYMAPPING[5]["default"] = template["MODTRAN"][0]["MODTRANINPUT"][
+                "GEOMETRY"
+            ]["PARM2"]
+        except:
+            logging.info("No solar_zenith default in template")
+
+        try:
+            KEYMAPPING[6]["default"] = template["MODTRAN"][0]["MODTRANINPUT"][
+                "GEOMETRY"
+            ]["OBSZEN"]
+        except:
+            logging.info("No observer_zenith default in template")
+
+        try:
+            KEYMAPPING[7]["default"] = template["MODTRAN"][0]["MODTRANINPUT"][
+                "GEOMETRY"
+            ]["TRUEAZ"]
+        except:
+            logging.info("No relative_azimuth default in template")
+
+        try:
+            KEYMAPPING[8]["default"] = template["MODTRAN"][0]["MODTRANINPUT"][
+                "GEOMETRY"
+            ]["PARM1"]
+        except:
+            logging.info("No solar_azimuth default in template")
 
         # defining some input transformations
         self.input_transfs = [
@@ -119,13 +181,38 @@ class KernelFlowsRT(RadiativeTransferEngine):
         self.output_transfs = [
             lambda x: np.exp(x) - 0.1,
         ]
-        # read VSWIREmulator struct from jld2 file
-        self.f = h5py.File(engine_config.emulator_file, "r")
 
-        # ga components of size (npar1, npar2, ...nparn, nbands). only outputs necessary.
-        self.points_bound_min = np.array(self.f["xmin"])
-        self.points_bound_max = np.array(self.f["xmax"])
-        self.emulator_wl = np.array(self.f["wls"])
+        # Run super now....we need the lut_grid to go on
+        super().__init__(engine_config, **kwargs)
+        self.assign_bounds()
+
+    def assign_bounds(self):
+        try:
+            lut_grid_keynames = [x for x in self.lut_grid.keys()]
+            self.point_inds_to_emulator_inds = [
+                lut_grid_keynames.index(i) if i in lut_grid_keynames else -1
+                for i in self.emulator_names
+            ]
+            logging.info(f"lut_grid_keynames: {lut_grid_keynames}")
+            logging.info(f"emulator_names: {self.emulator_names}")
+            logging.info(
+                f"point_inds_to_emulator_inds: {self.point_inds_to_emulator_inds}"
+            )
+        except:
+            outstr = "The provided emulator is missing lut keys: {[i for i in emulator_names if i not in self.lut_grid.keys()]}"
+            raise ValueError(outstr)
+
+    def h5_to_dict(self, file):
+        outdict = {}
+        for key, val in file.items():
+            if type(val) == h5py._hl.dataset.Dataset:
+                outdict[key] = np.array(val)
+            else:
+                outdict[key] = self.h5_to_dict(val)
+        return outdict
+
+    def preSim(self):
+        logging.info(f"KF Presim")
         self.srf_matrix = np.array(
             [
                 spectral_response_function(self.emulator_wl, wi, fwhmi / 2.355)
@@ -134,74 +221,77 @@ class KernelFlowsRT(RadiativeTransferEngine):
         )
         self.ga = list()
 
-        emulator_names = [
-            KEYMAPPING[i] for i in np.array(self.f["inputdims"]).astype(int)
-        ]
-
         # KF requires an exact specification of keys.  Possible failure modes include:
         # KF has keys not in lut_grid
         # lut_grid has keys not in KF - for this one, we should insert something.  Ideally, a
         # mean from the config file, but for now just put a grid of reasonable values.  Set these
         # values as -1 for later lookup
-        try:
-            self.point_inds_to_emulator_inds = [
-                list(self.lut_grid.keys()).index(i) if i in self.lut_grid else -1
-                for i in emulator_names
-            ]
-        except:
-            outstr = "The provided emulator is missing lut keys: {[i for i in emulator_names if i not in self.lut_grid.keys()]}"
-            raise ValueError(outstr)
 
-        self.default_lut_grid = {
-            "AOT550": [0.001, 0.2, 0.4, 0.6, 0.8, 1.0],
-            "surface_elevation_km": [0.0, 1.5, 3.0, 4.5, 6.0],
-            "H2OSTR": [0.05, 0.75, 1.5, 2.25, 3.0, 3.75, 4.5],
-            "relative_azimuth": [0.0, 30.0, 60.0, 90.0, 120.0, 150.0, 180.0],
-            "solar_zenith": [0.0, 15.0, 30.0, 45.0, 60.0, 75.0],
-            "observer_zenith": [0.0, 10.0, 20.0, 30.0, 40.0],
-        }
+        # self.default_lut_grid = {
+        #     "AOT550": [0.001, 0.2, 0.4, 0.6, 0.8, 1.0],
+        #     "surface_elevation_km": [0.0, 1.5, 3.0, 4.5, 6.0],
+        #     "H2OSTR": [0.05, 0.75, 1.5, 2.25, 3.0, 3.75, 4.5],
+        #     "relative_azimuth": [0.0, 30.0, 60.0, 90.0, 120.0, 150.0, 180.0],
+        #     "solar_zenith": [0.0, 15.0, 30.0, 45.0, 60.0, 75.0],
+        #     "observer_zenith": [0.0, 10.0, 20.0, 30.0, 40.0],
+        # }
+        default_lut_grid = {}
+        default_lut_val = {}
+        for key in self.emulator_internal_idx:
+            logging.info(KEYMAPPING[key])
+            default_lut_grid[KEYMAPPING[key]["name"]] = KEYMAPPING[key]["default_grid"]
+            default_lut_val[KEYMAPPING[key]["name"]] = KEYMAPPING[key]["default"]
 
+        logging.info(f"Default lut grid: {default_lut_grid}")
+        logging.info(f"Default lut val: {default_lut_val}")
         self.lut_points = []
 
-        for ii, key in enumerate(self.lut_names):
+        for ii, key in enumerate(self.emulator_names):
+            logging.info(f"Checking key {key}")
+            logging.info(f"lut_grid keys: {self.lut_grid.keys()}")
             if key in self.lut_grid.keys():
                 if len(self.lut_grid[key]) > 1:
                     self.lut_points.append(self.lut_grid[key])
                 elif len(self.lut_grid[key]) == 1:
-                    self.lut_points.append(
-                        [
-                            self.lut_grid[key][0] * 0.99,
-                            self.lut_grid[key][0],
-                            self.lut_grid[key][0] * 1.01,
-                        ]
+                    prevpoint = self.lut_grid[key][0]
+                    adjustment = [
+                        self.lut_grid[key][0] * 0.99,
+                        self.lut_grid[key][0],
+                        self.lut_grid[key][0] * 1.01,
+                    ]
+                    self.lut_points.append(adjustment)
+                    self.lut_grid[key] = adjustment
+                    logging.info(
+                        f"adjusting lut grid {key} from {prevpoint} to {adjustment}"
                     )
-            try:
-                len(self.lut_points[ii])
-            except IndexError:
-                Logger.warning(
-                    f"No grid points for {key} provided. Assigning default LUT grid."
-                )
-                self.lut_points.append(self.default_lut_grid[key])
+            else:
+                adjustment = [
+                    default_lut_val[key] * 0.999,
+                    default_lut_val[key],
+                    default_lut_val[key] * 1.001,
+                ]
+                self.lut_points.append(adjustment)
+                self.lut_grid[key] = adjustment
+                logging.info(f"No grid point for {key}, using template: {adjustment}")
 
         self.points = combos(self.lut_points)
-
-    def lut_grid_converter(self, lut_grid):
-        """Update the lut grid from the config to what KF expects
-
-        Args:
-            lut_grid (_type_): _description_
-        """
+        self.assign_bounds()
+        return False
 
     def makeSim(self, point: np.array, template_only: bool = False):
         # Kernel Flows doesn't need to make the simulation, as it can execute
         # directly
         pass
 
-    def readSim(self, point):
+    def readSim(self, in_point):
+        # shuffle point based on emulator dims
+        # point = in_point[self.point_inds_to_emulator_inds]
+        point = in_point
+
         if np.any(point < self.points_bound_min) or np.any(
             point > self.points_bound_max
         ):
-            outstr = f"Input points are out of bounds xmin: {self.points_bound_min}, xmax: {self.points_bound_max}"
+            outstr = f"Input point is out of bounds. \n keys: {self.emulator_names} \n point: {point} \n xmin: {self.points_bound_min} \n xmax: {self.points_bound_max} \n oob_low: {point < self.points_bound_min} \n oob_high: {point > self.points_bound_max}"
             raise ValueError(outstr)
 
         nMVMs = len(self.f.keys()) - 6
@@ -264,6 +354,8 @@ class KernelFlowsRT(RadiativeTransferEngine):
 
     def predict_single_MVM(self, MVM, points, transfs):
         points = np.copy(points)  # don't overwrite inputs
+        if len(points.shape) == 1:
+            points = points.reshape(1, -1)
         for i, j in enumerate(transfs):
             if j == 1:
                 continue
@@ -275,7 +367,7 @@ class KernelFlowsRT(RadiativeTransferEngine):
 
         logging.info(f"Parallel KF application across {len(range(nzycols))} nzycols")
 
-        ZY_pred_calls = []
+        ZY_out = []
         for i in range(nzycols):
             M = MVM["M" + str(i + 1)]
             G = MVM["G"]  # shorthand
@@ -288,8 +380,8 @@ class KernelFlowsRT(RadiativeTransferEngine):
             G_Xmean = np.array(G["Xmean"])
             G_Xstd = np.array(G["Xstd"])
 
-            ZY_pred_calls.append(
-                predict_M.remote(
+            ZY_out.append(
+                predict_M(
                     M_Z,
                     M_lambda,
                     M_theta,
@@ -301,7 +393,6 @@ class KernelFlowsRT(RadiativeTransferEngine):
                     G_Xstd,
                 )
             )
-        ZY_out = ray.get(ZY_pred_calls)
         for i in range(len(ZY_out)):
             ZY_pred[:, i] = ZY_out[i]
         del ZY_out

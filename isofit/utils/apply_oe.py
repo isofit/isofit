@@ -473,7 +473,7 @@ def apply_oe(args):
             paths.h2o_subs_path
         ):
             # Write the presolve connfiguration file
-            h2o_grid = np.linspace(0.01, max_water - 0.01, 10).round(2)
+            h2o_grid = np.linspace(0.06, max_water - 0.01, 10).round(2)
             logging.info(f"Pre-solve H2O grid: {h2o_grid}")
             logging.info("Writing H2O pre-solve configuration file.")
             tmpl.build_presolve_config(
@@ -510,6 +510,7 @@ def apply_oe(args):
         else:
             logging.info("Existing h2o-presolve solutions found, using those.")
 
+        exit()
         h2o = envi.open(envi_header(paths.h2o_subs_path))
         h2o_est = h2o.read_band(-1)[:].flatten()
 

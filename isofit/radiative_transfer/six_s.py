@@ -458,7 +458,7 @@ class SixSRT(RadiativeTransferEngine):
                     start = end
 
             if start is None:
-                Logger.error(f"Failed to parse any data for point: {point}")
+                Logger.error(f"Failed to parse any data for file: {file}")
                 return {}
 
             total = len(data["grid"])

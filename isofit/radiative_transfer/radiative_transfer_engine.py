@@ -78,15 +78,6 @@ class RadiativeTransferEngine:
         "observer_altitude_km",
         "surface_elevation_km",
     ]
-    # ...
-    angular_lut_keys_degrees = [
-        "observer_azimuth",
-        "observer_zenith",
-        "solar_azimuth",
-        "solar_zenith",
-        "relative_azimuth",
-    ]
-    angular_lut_keys_radians = []
 
     # Informs the VectorInterpolator the units for a given key
     angular_lut_keys = {
@@ -106,8 +97,8 @@ class RadiativeTransferEngine:
     )
 
     # These properties enable easy access to the lut data
-    wl = property(lambda self: self["wl"])
-    fwhm = property(lambda self: self["fwhm"])
+    wl = property(lambda self: np.array(self["wl"]))
+    fwhm = property(lambda self: np.array(self["fwhm"]))
     coszen = property(lambda self: self["coszen"])
     solar_irr = property(lambda self: self["solar_irr"])
 
@@ -135,13 +126,13 @@ class RadiativeTransferEngine:
         # TODO: mlky should do all this verification stuff
         # Verify either the LUT file exists or a LUT grid is provided
         self.lut_path = lut_path = str(lut_path) or engine_config.lut_path
-        print("lut_path", self.lut_path)
-        print("lut_grid", lut_grid)
+        logging.info(f"lut_path {self.lut_path}")
+        logging.info(f"lut_grid {lut_grid}")
         try:
-            print("self.lut_grid", self.lut_grid)
+            logging.info(f"self.lut_grid {self.lut_grid}")
         except:
-            print("self.lut_grid: None")
-        print("lut_grid is none", lut_grid is None)
+            logging.info("self.lut_grid: None")
+        logging.info(f"lut_grid is none {lut_grid is None}")
         exists = os.path.isfile(lut_path)
         if not exists and lut_grid is None:
             raise AttributeError(
@@ -295,49 +286,49 @@ class RadiativeTransferEngine:
         """
         self.luts = {}
 
-        if self.engine_config.engine_name == "KernelFlowsGP":
-            # Create the unique
-            grid = [
-                self.aot_points,
-                self.gndalt_points,
-                self.wv_points,
-                self.raa_points,
-                self.sza_points,
-                self.vza_points,
-            ]
-            for key in self.alldim:
-                data = self.lut[key].reshape(
-                    len(self.aot_points),
-                    len(self.gndalt_points),
-                    len(self.wv_points),
-                    len(self.raa_points),
-                    len(self.sza_points),
-                    len(self.vza_points),
-                    len(self.lut["wl"]),
-                )
-                self.luts[key] = common.VectorInterpolator(
-                    grid_input=grid,
-                    data_input=data,
-                    lut_interp_types=self.lut_interp_types,
-                    version=self.interpolator_style,
-                )
-        else:
-            # Convert from 2d (point, wl) to Nd (*luts, wl)
-            ds = self.lut.unstack("point")
+        # if self.engine_config.engine_name == "KernelFlowsGP":
+        #    # Create the unique
+        #    grid = [
+        #        self.aot_points,
+        #        self.gndalt_points,
+        #        self.wv_points,
+        #        self.raa_points,
+        #        self.sza_points,
+        #        self.vza_points,
+        #    ]
+        #    for key in self.alldim:
+        #        data = self.lut[key].reshape(
+        #            len(self.aot_points),
+        #            len(self.gndalt_points),
+        #            len(self.wv_points),
+        #            len(self.raa_points),
+        #            len(self.sza_points),
+        #            len(self.vza_points),
+        #            len(self.lut["wl"]),
+        #        )
+        #        self.luts[key] = common.VectorInterpolator(
+        #            grid_input=grid,
+        #            data_input=data,
+        #            lut_interp_types=self.lut_interp_types,
+        #            version=self.interpolator_style,
+        #        )
+        # else:
+        # Convert from 2d (point, wl) to Nd (*luts, wl)
+        ds = self.lut.unstack("point")
 
-            # Make sure its in expected order, wl at the end
-            ds = ds.transpose(*self.lut_names, "wl")
+        # Make sure its in expected order, wl at the end
+        ds = ds.transpose(*self.lut_names, "wl")
 
-            grid = [ds[key].data for key in self.lut_names]
+        grid = [ds[key].data for key in self.lut_names]
 
-            # Create the unique
-            for key in self.alldim:
-                self.luts[key] = common.VectorInterpolator(
-                    grid_input=grid,
-                    data_input=ds[key].load(),
-                    lut_interp_types=self.lut_interp_types,
-                    version=self.interpolator_style,
-                )
+        # Create the unique
+        for key in self.alldim:
+            self.luts[key] = common.VectorInterpolator(
+                grid_input=grid,
+                data_input=ds[key].load(),
+                lut_interp_types=self.lut_interp_types,
+                version=self.interpolator_style,
+            )
 
     def preSim(self):
         """
@@ -663,7 +654,6 @@ def streamSimulation(
 
     # Read the simulation results
     data = reader(point)
-    print(data)
 
     # Save the results to our LUT format
     if data:
