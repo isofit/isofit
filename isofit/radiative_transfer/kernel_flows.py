@@ -265,11 +265,7 @@ class KernelFlowsRT(RadiativeTransferEngine):
                         f"adjusting lut grid {key} from {prevpoint} to {adjustment}"
                     )
             else:
-                adjustment = [
-                    default_lut_val[key] * 0.999,
-                    default_lut_val[key],
-                    default_lut_val[key] * 1.001,
-                ]
+                adjustment = [default_lut_val[key]]
                 self.lut_points.append(adjustment)
                 self.lut_grid[key] = adjustment
                 logging.info(f"No grid point for {key}, using template: {adjustment}")
