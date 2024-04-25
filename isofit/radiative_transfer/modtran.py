@@ -386,7 +386,7 @@ class ModtranRT(RadiativeTransferEngine):
         }.intersection(set(overrides.keys())):
             raise AttributeError(
                 "Solar geometry (solar az/azimuth zen/zenith) is specified, but IPARM"
-                " is set to 12.  Check MODTRAN template"
+                " is set to 11.  Check MODTRAN template"
             )
 
         if {"PARM1", "PARM2"}.intersection(set(overrides.keys())):
