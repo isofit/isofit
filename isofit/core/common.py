@@ -58,7 +58,12 @@ class VectorInterpolator:
         lut_interp_types: List[str],
         version="nds-1",
     ):
-        self.method = 1
+        # Determine if this a singular unique value, if so just return that directly
+        val = data_input[(0,) * data_input.ndim]
+        if np.isnan(val) and np.isnan(data_input).all() or np.all(data_input == val):
+            self.method = -1
+            self.value = val
+            return
 
         self.lut_interp_types = lut_interp_types
         self.single_point_data = None
@@ -259,7 +264,9 @@ class VectorInterpolator:
         Passes args to the appropriate interpolation method defined by the version at
         object init.
         """
-        if self.method == 1:
+        if self.method == -1:
+            return self.value
+        elif self.method == 1:
             return self._interpolate(*args, **kwargs)
         elif self.method == 2:
             return self._multilinear_grid(*args, **kwargs)
