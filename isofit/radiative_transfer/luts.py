@@ -135,15 +135,7 @@ def updatePoint(
                     inds[i] = slice(None)
                 elif dim in lut_names:
                     # Retrieve the index of this point value
-                    try:
-                        inds[i] = index(dim, point[lut_names.index(dim)])
-                    except:
-                        logging.error(f"Failed on dim {dim}.")
-                        logging.error(f"Failed on point: {point[lut_names.index(dim)]}")
-                        # logging.error(f"Failed nc: {nc[key][:]}")
-                        logging.error(
-                            f"Failed nc where: {np.where(nc[key][:] == point[lut_names.index(dim)])}"
-                        )
+                    inds[i] = index(dim, point[lut_names.index(dim)])
                 else:
                     # Default to using the first index if key not in the lut_names
                     # This should only happen if you were updating an existing LUT with fewer point dimensions than exists
