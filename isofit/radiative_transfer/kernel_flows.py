@@ -89,7 +89,7 @@ def bounds_check(
         if key in grid.keys():
             oob_l = np.array(grid[key]) < points_bound_min[_key]
             oob_h = np.array(grid[key]) > points_bound_max[_key]
-            if not modify and np.sum(oob_h) > 0 or np.sum(oob_l) > 0:
+            if not modify and (np.sum(oob_h) > 0 or np.sum(oob_l) > 0):
                 grid_errors.append(
                     f"LUT grid {key} has out of bounds values.  \n values: {grid[key]} \n RTM min: {points_bound_min[_key]} , RTM max: {points_bound_max[_key]}"
                 )
@@ -101,7 +101,7 @@ def bounds_check(
                 logging.info(
                     f"LUT grid {key} has out of bounds values.  Adjusting from {prev_points} to {points}."
                 )
-            if modify and np.sum(oob_l) < 0:
+            if modify and np.sum(oob_l) > 0:
                 points = np.array(grid[key])
                 prev_points = points.copy()
                 points[oob_l] = points_bound_min[_key]

@@ -346,10 +346,10 @@ class LUTConfig:
         self.aerosol_2_spacing_min = 0
 
         # Units of AOD
-        self.aerosol_0_range = [0.06, 1]
-        self.aerosol_1_range = [0.06, 1]
-        self.aerosol_2_range = [0.06, 1]
-        self.aot_550_range = [0.06, 1]
+        self.aerosol_0_range = [0.01, 1]
+        self.aerosol_1_range = [0.01, 1]
+        self.aerosol_2_range = [0.01, 1]
+        self.aot_550_range = [0.01, 1]
 
         self.aot_550_spacing = 0
         self.aot_550_spacing_min = 0
@@ -697,10 +697,6 @@ def build_surface_config(
 def build_presolve_config(
     paths: Pathnames,
     h2o_lut_grid: np.array,
-    mean_surface_elevation: float,
-    mean_relative_azimuth: float,
-    mean_to_sun_zenith: float,
-    mean_to_sensor_zenith: float,
     n_cores: int = -1,
     use_emp_line: bool = False,
     surface_category="multicomponent_surface",
@@ -716,10 +712,6 @@ def build_presolve_config(
     Args:
         paths: object containing references to all relevant file locations
         h2o_lut_grid: the water vapor look up table grid isofit should use for this solve
-        mean_surface_elevation: mean surface elevation
-        mean_relative_azimuth: mean relative azimuth angle
-        mean_to_sun_zenith: mean to-sun zenith angle
-        mean_to_sensor_zenith: mean so-sensor zenith angle
         n_cores: number of cores to use in processing
         use_emp_line: flag whether or not to set up for the empirical line estimation
         surface_category: type of surface to use
@@ -751,6 +743,9 @@ def build_presolve_config(
 
     # set up specific presolve LUT grid
     lut_grid = {"H2OSTR": [float(x) for x in h2o_lut_grid]}
+    from isofit.radiative_transfer.kernel_flows import bounds_check
+
+    bounds_check(lut_grid, emulator_base, modify=True)
 
     radiative_transfer_config = {
         "radiative_transfer_engines": {
@@ -765,9 +760,12 @@ def build_presolve_config(
         },
         "statevector": {
             "H2OSTR": {
-                "bounds": [float(np.min(h2o_lut_grid)), float(np.max(h2o_lut_grid))],
+                "bounds": [
+                    float(np.min(lut_grid["H2OSTR"])),
+                    float(np.max(lut_grid["H2OSTR"])),
+                ],
                 "scale": 0.01,
-                "init": np.percentile(h2o_lut_grid, 25),
+                "init": np.percentile(lut_grid["H2OSTR"], 25),
                 "prior_sigma": 100.0,
                 "prior_mean": 1.5,
             }

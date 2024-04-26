@@ -509,16 +509,12 @@ def apply_oe(args):
             paths.h2o_subs_path
         ):
             # Write the presolve connfiguration file
-            h2o_grid = np.linspace(0.06, max_water - 0.01, 10).round(2)
+            h2o_grid = np.linspace(0.01, max_water - 0.01, 10).round(2)
             logging.info(f"Pre-solve H2O grid: {h2o_grid}")
             logging.info("Writing H2O pre-solve configuration file.")
             tmpl.build_presolve_config(
                 paths=paths,
                 h2o_lut_grid=h2o_grid,
-                mean_surface_elevation=mean_elevation_km,
-                mean_relative_azimuth=mean_relative_azimuth,
-                mean_to_sun_zenith=mean_to_sun_zenith,
-                mean_to_sensor_zenith=mean_to_sensor_zenith,
                 n_cores=args.n_cores,
                 use_emp_line=use_superpixels,
                 surface_category=args.surface_category,
