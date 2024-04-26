@@ -743,9 +743,10 @@ def build_presolve_config(
 
     # set up specific presolve LUT grid
     lut_grid = {"H2OSTR": [float(x) for x in h2o_lut_grid]}
-    from isofit.radiative_transfer.kernel_flows import bounds_check
+    if emulator_base is not None and os.path.splitext(emulator_base)[1] == ".jld2":
+        from isofit.radiative_transfer.kernel_flows import bounds_check
 
-    bounds_check(lut_grid, emulator_base, modify=True)
+        bounds_check(lut_grid, emulator_base, modify=True)
 
     radiative_transfer_config = {
         "radiative_transfer_engines": {
