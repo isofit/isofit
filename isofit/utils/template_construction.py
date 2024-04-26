@@ -346,10 +346,10 @@ class LUTConfig:
         self.aerosol_2_spacing_min = 0
 
         # Units of AOD
-        self.aerosol_0_range = [0.01, 1]
-        self.aerosol_1_range = [0.01, 1]
-        self.aerosol_2_range = [0.01, 1]
-        self.aot_550_range = [0.01, 1]
+        self.aerosol_0_range = [0.001, 1]
+        self.aerosol_1_range = [0.001, 1]
+        self.aerosol_2_range = [0.001, 1]
+        self.aot_550_range = [0.001, 1]
 
         self.aot_550_spacing = 0
         self.aot_550_spacing_min = 0
