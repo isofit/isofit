@@ -13,6 +13,7 @@ from shutil import copyfile
 from sys import platform
 from typing import List
 
+import h5py
 import netCDF4 as nc
 import numpy as np
 from sklearn import mixture
@@ -345,10 +346,10 @@ class LUTConfig:
         self.aerosol_2_spacing_min = 0
 
         # Units of AOD
-        self.aerosol_0_range = [0.001, 1]
-        self.aerosol_1_range = [0.001, 1]
-        self.aerosol_2_range = [0.001, 1]
-        self.aot_550_range = [0.001, 1]
+        self.aerosol_0_range = [0.06, 1]
+        self.aerosol_1_range = [0.06, 1]
+        self.aerosol_2_range = [0.06, 1]
+        self.aot_550_range = [0.06, 1]
 
         self.aot_550_spacing = 0
         self.aot_550_spacing_min = 0
@@ -359,7 +360,7 @@ class LUTConfig:
                 if key in self.__dict__:
                     setattr(self, key, lut_config[key])
 
-        if emulator:
+        if emulator and os.path.splitext(emulator)[1] != ".jld2":
             self.aot_550_range = self.aerosol_2_range
             self.aot_550_spacing = self.aerosol_2_spacing
             self.aot_550_spacing_min = self.aerosol_2_spacing_min
@@ -958,24 +959,6 @@ def build_main_config(
         "unknowns": {"H2O_ABSCO": 0.0},
     }
 
-    if h2o_lut_grid is not None:
-        radiative_transfer_config["statevector"]["H2OSTR"] = {
-            "bounds": [h2o_lut_grid[0], h2o_lut_grid[-1]],
-            "scale": 1,
-            "init": (h2o_lut_grid[1] + h2o_lut_grid[-1]) / 2.0,
-            "prior_sigma": 100.0,
-            "prior_mean": (h2o_lut_grid[1] + h2o_lut_grid[-1]) / 2.0,
-        }
-
-    if pressure_elevation:
-        radiative_transfer_config["statevector"]["surface_elevation_km"] = {
-            "bounds": [elevation_lut_grid[0], elevation_lut_grid[-1]],
-            "scale": 100,
-            "init": (elevation_lut_grid[0] + elevation_lut_grid[-1]) / 2.0,
-            "prior_sigma": 1000.0,
-            "prior_mean": (elevation_lut_grid[0] + elevation_lut_grid[-1]) / 2.0,
-        }
-
     if emulator_base is not None:
         radiative_transfer_config["radiative_transfer_engines"]["vswir"][
             "emulator_file"
@@ -1015,7 +998,6 @@ def build_main_config(
         paths.isofit_path,
         lut_params=lut_params,
     )
-    radiative_transfer_config["statevector"].update(aerosol_state_vector)
     radiative_transfer_config["radiative_transfer_engines"]["vswir"][
         "aerosol_model_file"
     ] = aerosol_model_path
@@ -1039,7 +1021,6 @@ def build_main_config(
             radiative_transfer_config["lut_grid"][
                 "relative_azimuth"
             ] = relative_azimuth_lut_grid.tolist()
-
         radiative_transfer_config["lut_grid"].update(aerosol_lut_grid)
 
     rtc_ln = {}
@@ -1048,6 +1029,18 @@ def build_main_config(
     radiative_transfer_config["radiative_transfer_engines"]["vswir"][
         "lut_names"
     ] = rtc_ln
+
+    if emulator_base is not None and os.path.splitext(emulator_base)[1] == ".jld2":
+        from isofit.radiative_transfer.kernel_flows import bounds_check
+
+        bounds_check(radiative_transfer_config["lut_grid"], emulator_base, modify=True)
+        # modify so we set the statevector appropriately
+        if "H2OSTR" in radiative_transfer_config["lut_grid"]:
+            h2o_lut_grid = np.array(radiative_transfer_config["lut_grid"]["H2OSTR"])
+        if "surface_elevation_km" in radiative_transfer_config["lut_grid"]:
+            elevation_lut_grid = np.array(
+                radiative_transfer_config["lut_grid"]["surface_elevation_km"]
+            )
 
     if prebuilt_lut_path is not None:
         ncds = nc.Dataset(prebuilt_lut_path, "r")
@@ -1085,6 +1078,27 @@ def build_main_config(
             del radiative_transfer_config["radiative_transfer_engines"]["vswir"][
                 "lut_names"
             ][key]
+
+    # Now do statevector
+    # Now do statevector
+    if h2o_lut_grid is not None:
+        radiative_transfer_config["statevector"]["H2OSTR"] = {
+            "bounds": [h2o_lut_grid[0], h2o_lut_grid[-1]],
+            "scale": 1,
+            "init": (h2o_lut_grid[1] + h2o_lut_grid[-1]) / 2.0,
+            "prior_sigma": 100.0,
+            "prior_mean": (h2o_lut_grid[1] + h2o_lut_grid[-1]) / 2.0,
+        }
+
+    if pressure_elevation:
+        radiative_transfer_config["statevector"]["surface_elevation_km"] = {
+            "bounds": [elevation_lut_grid[0], elevation_lut_grid[-1]],
+            "scale": 100,
+            "init": (elevation_lut_grid[0] + elevation_lut_grid[-1]) / 2.0,
+            "prior_sigma": 1000.0,
+            "prior_mean": (elevation_lut_grid[0] + elevation_lut_grid[-1]) / 2.0,
+        }
+    radiative_transfer_config["statevector"].update(aerosol_state_vector)
 
     # MODTRAN should know about our whole LUT grid and all of our statevectors, so copy them in
     radiative_transfer_config["radiative_transfer_engines"]["vswir"][

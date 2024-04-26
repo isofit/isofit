@@ -187,11 +187,6 @@ class RadiativeTransferEngine:
                         ),
                     )
                 self.lut = conv
-        # elif engine_config.engine_name == "KernelFlowsGP":
-        #    Logger.info(f"Emulating LUT using Kernel Flows GP")
-        #    self.lut_grid = lut_grid
-
-        #    #self.lut = self.predict(self.points)
 
         else:
             Logger.info(f"No LUT store found, beginning initialization and simulations")
@@ -269,10 +264,7 @@ class RadiativeTransferEngine:
         Enables key indexing for easier access to the numpy object store in
         self.lut[key]
         """
-        if self.engine_config.engine_name == "KernelFlowsGP":
-            return self.lut[key]
-        else:
-            return self.lut[key].load().data
+        return self.lut[key].data
 
     @property
     def lut_interp_types(self):
@@ -325,7 +317,7 @@ class RadiativeTransferEngine:
         for key in self.alldim:
             self.luts[key] = common.VectorInterpolator(
                 grid_input=grid,
-                data_input=ds[key].load(),
+                data_input=ds[key].load().data,
                 lut_interp_types=self.lut_interp_types,
                 version=self.interpolator_style,
             )

@@ -161,6 +161,9 @@ def analytical_line(
     )
     del rdn, img
 
+    if n_cores == -1:
+        n_cores = multiprocessing.cpu_count()
+
     ray_dict = {
         "ignore_reinit_error": config.implementation.ray_ignore_reinit_error,
         "address": config.implementation.ip_head,
@@ -171,11 +174,7 @@ def analytical_line(
     }
 
     ray_initiate(ray_dict)
-
     n_workers = n_cores
-
-    if n_workers == -1:
-        n_workers = multiprocessing.cpu_count()
 
     wargs = [
         ray.put(obj)

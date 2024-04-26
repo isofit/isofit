@@ -12,6 +12,7 @@ from types import SimpleNamespace
 from warnings import warn
 
 import click
+import h5py
 import numpy as np
 from spectral.io import envi
 
@@ -510,7 +511,6 @@ def apply_oe(args):
         else:
             logging.info("Existing h2o-presolve solutions found, using those.")
 
-        exit()
         h2o = envi.open(envi_header(paths.h2o_subs_path))
         h2o_est = h2o.read_band(-1)[:].flatten()
 

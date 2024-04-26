@@ -37,9 +37,9 @@ Logger = logging.getLogger(__file__)
 # and get KF to store the key names in the jld2 file
 KEYMAPPING = {
     1: {
-        "name": "AERFRAC2",
-        "default_grid": [0.08, 0.2, 0.4, 0.6, 0.8, 1.0],
-        "default": 0.08,
+        "name": "AERFRAC_2",
+        "default_grid": [0.06, 0.2, 0.4, 0.6, 0.8, 1.0],
+        "default": 0.06,
     },
     2: {
         "name": "H2OSTR",
@@ -57,6 +57,62 @@ KEYMAPPING = {
     8: {"name": "solar_azimuth", "default_grid": [1, 91, 181, 271]},
     9: {"name": "observer_azimuth", "default_grid": [1, 91, 181, 271]},
 }
+
+
+def bounds_check(
+    grid: dict,
+    emulator_file: str = None,
+    emulator: h5py.File = None,
+    modify: bool = False,
+):
+    """Check if the grid points are within the bounds of the emulator
+
+    Args:
+        grid (dict): Dictionary of grid points
+        emulator_file (str, optional): Path to the emulator file. Defaults to None.
+        emulator (h5py.File, optional): Emulator file. Defaults to None.
+        modify (bool, optional): If True, adjust the grid points to be within the bounds of the emulator. Defaults to False.
+
+    Raises:
+        ValueError: If grid points are out of bounds and modify == False
+    """
+    if emulator_file:
+        emulator = h5py.File(emulator_file, "r")
+        points_bound_min = emulator["xmin"][:]
+        points_bound_max = emulator["xmax"][:]
+        from isofit.radiative_transfer.kernel_flows import KEYMAPPING
+
+        emulator_names = [KEYMAPPING[i]["name"] for i in emulator["inputdims"]]
+
+    grid_errors = []
+    for _key, key in enumerate(emulator_names):
+        if key in grid.keys():
+            oob_l = np.array(grid[key]) < points_bound_min[_key]
+            oob_h = np.array(grid[key]) > points_bound_max[_key]
+            if not modify and np.sum(oob_h) > 0 or np.sum(oob_l) > 0:
+                grid_errors.append(
+                    f"LUT grid {key} has out of bounds values.  \n values: {grid[key]} \n RTM min: {points_bound_min[_key]} , RTM max: {points_bound_max[_key]}"
+                )
+            if modify and np.sum(oob_h) > 0:
+                points = np.array(grid[key])
+                prev_points = points.copy()
+                points[oob_h] = points_bound_max[_key]
+                grid[key] = np.unique(points).tolist()
+                logging.info(
+                    f"LUT grid {key} has out of bounds values.  Adjusting from {prev_points} to {points}."
+                )
+            if modify and np.sum(oob_l) < 0:
+                points = np.array(grid[key])
+                prev_points = points.copy()
+                points[oob_l] = points_bound_min[_key]
+                grid[key] = np.unique(points).tolist()
+                logging.info(
+                    f"LUT grid {key} has out of bounds values.  Adjusting from {prev_points} to {points}."
+                )
+
+    if len(grid_errors) > 0:
+        grid_errors = "\n".join(grid_errors)
+        raise ValueError(grid_errors)
 
 
 def predict_M(
@@ -189,14 +245,28 @@ class KernelFlowsRT(RadiativeTransferEngine):
     def assign_bounds(self):
         try:
             lut_grid_keynames = [x for x in self.lut_grid.keys()]
-            self.point_inds_to_emulator_inds = [
-                lut_grid_keynames.index(i) if i in lut_grid_keynames else -1
-                for i in self.emulator_names
-            ]
+            self.point_inds_to_emulator_inds = np.array(
+                [
+                    lut_grid_keynames.index(i)
+                    for i in self.emulator_names
+                    if i in lut_grid_keynames
+                ]
+            )
+            self.emulator_inds_to_point_inds = np.array(
+                [
+                    self.emulator_names.index(i)
+                    for i in lut_grid_keynames
+                    if i in self.emulator_names
+                ]
+            )
+
             logging.info(f"lut_grid_keynames: {lut_grid_keynames}")
             logging.info(f"emulator_names: {self.emulator_names}")
             logging.info(
                 f"point_inds_to_emulator_inds: {self.point_inds_to_emulator_inds}"
+            )
+            logging.info(
+                f"emulator_inds_to_point_inds: {self.emulator_inds_to_point_inds}"
             )
         except:
             outstr = "The provided emulator is missing lut keys: {[i for i in emulator_names if i not in self.lut_grid.keys()]}"
@@ -221,20 +291,6 @@ class KernelFlowsRT(RadiativeTransferEngine):
         )
         self.ga = list()
 
-        # KF requires an exact specification of keys.  Possible failure modes include:
-        # KF has keys not in lut_grid
-        # lut_grid has keys not in KF - for this one, we should insert something.  Ideally, a
-        # mean from the config file, but for now just put a grid of reasonable values.  Set these
-        # values as -1 for later lookup
-
-        # self.default_lut_grid = {
-        #     "AOT550": [0.001, 0.2, 0.4, 0.6, 0.8, 1.0],
-        #     "surface_elevation_km": [0.0, 1.5, 3.0, 4.5, 6.0],
-        #     "H2OSTR": [0.05, 0.75, 1.5, 2.25, 3.0, 3.75, 4.5],
-        #     "relative_azimuth": [0.0, 30.0, 60.0, 90.0, 120.0, 150.0, 180.0],
-        #     "solar_zenith": [0.0, 15.0, 30.0, 45.0, 60.0, 75.0],
-        #     "observer_zenith": [0.0, 10.0, 20.0, 30.0, 40.0],
-        # }
         default_lut_grid = {}
         default_lut_val = {}
         for key in self.emulator_internal_idx:
@@ -244,33 +300,21 @@ class KernelFlowsRT(RadiativeTransferEngine):
 
         logging.info(f"Default lut grid: {default_lut_grid}")
         logging.info(f"Default lut val: {default_lut_val}")
-        self.lut_points = []
 
+        self.default_fills = np.zeros(len(self.emulator_names))
         for ii, key in enumerate(self.emulator_names):
             logging.info(f"Checking key {key}")
             logging.info(f"lut_grid keys: {self.lut_grid.keys()}")
             if key in self.lut_grid.keys():
-                if len(self.lut_grid[key]) > 1:
-                    self.lut_points.append(self.lut_grid[key])
-                elif len(self.lut_grid[key]) == 1:
-                    prevpoint = self.lut_grid[key][0]
-                    adjustment = [
-                        self.lut_grid[key][0] * 0.99,
-                        self.lut_grid[key][0],
-                        self.lut_grid[key][0] * 1.01,
-                    ]
-                    self.lut_points.append(adjustment)
-                    self.lut_grid[key] = adjustment
-                    logging.info(
-                        f"adjusting lut grid {key} from {prevpoint} to {adjustment}"
-                    )
+                self.default_fills[ii] = np.nan
             else:
-                adjustment = [default_lut_val[key]]
-                self.lut_points.append(adjustment)
-                self.lut_grid[key] = adjustment
-                logging.info(f"No grid point for {key}, using template: {adjustment}")
+                self.default_fills[ii] = default_lut_val[key]
+                logging.info(
+                    f"No grid point for {key}, using template: {self.default_fills[ii]}"
+                )
+        logging.info(f"Emulator Names: {self.emulator_names}")
+        logging.info(f"Default Fills:  {self.default_fills}")
 
-        self.points = combos(self.lut_points)
         self.assign_bounds()
         return False
 
@@ -280,14 +324,24 @@ class KernelFlowsRT(RadiativeTransferEngine):
         pass
 
     def readSim(self, in_point):
-        # shuffle point based on emulator dims
-        # point = in_point[self.point_inds_to_emulator_inds]
-        point = in_point
+        """Since KF doesn't need to run simulations, readSim is where we actually do the work
+
+        Args:
+            in_point (np.array): Input point - organized based on lut_grid, not emulator
+
+        Returns:
+            dict: Dictionary of output values
+        """
+
+        np.set_printoptions(suppress=True)
+        point = self.default_fills.copy()
+        point[self.emulator_inds_to_point_inds] = in_point
 
         if np.any(point < self.points_bound_min) or np.any(
             point > self.points_bound_max
         ):
-            outstr = f"Input point is out of bounds. \n keys: {self.emulator_names} \n point: {point} \n xmin: {self.points_bound_min} \n xmax: {self.points_bound_max} \n oob_low: {point < self.points_bound_min} \n oob_high: {point > self.points_bound_max}"
+            fm_l = lambda x: np.round(x, 4)
+            outstr = f"Input point is out of bounds. \n keys: {self.emulator_names} \n point: {fm_l(point)} \n xmin: {fm_l(self.points_bound_min)} \n xmax: {fm_l(self.points_bound_max)} \n oob_low: {point < self.points_bound_min} \n oob_high: {point > self.points_bound_max}"
             raise ValueError(outstr)
 
         nMVMs = len(self.f.keys()) - 6
