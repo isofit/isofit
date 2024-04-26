@@ -103,13 +103,12 @@ class RadiativeTransferEngine:
         # TODO: mlky should do all this verification stuff
         # Verify either the LUT file exists or a LUT grid is provided
         self.lut_path = lut_path = str(lut_path) or engine_config.lut_path
-        logging.info(f"lut_path {self.lut_path}")
-        logging.info(f"lut_grid {lut_grid}")
+        logging.debug(f"lut_grid {lut_grid}")
         try:
-            logging.info(f"self.lut_grid {self.lut_grid}")
+            logging.debug(f"self.lut_grid {self.lut_grid}")
         except:
-            logging.info("self.lut_grid: None")
-        logging.info(f"lut_grid is none {lut_grid is None}")
+            logging.debug("self.lut_grid: None")
+        logging.debug(f"lut_grid is none {lut_grid is None}")
         exists = os.path.isfile(lut_path)
         if not exists and lut_grid is None:
             raise AttributeError(
@@ -251,34 +250,6 @@ class RadiativeTransferEngine:
         """
         self.luts = {}
 
-        # if self.engine_config.engine_name == "KernelFlowsGP":
-        #    # Create the unique
-        #    grid = [
-        #        self.aot_points,
-        #        self.gndalt_points,
-        #        self.wv_points,
-        #        self.raa_points,
-        #        self.sza_points,
-        #        self.vza_points,
-        #    ]
-        #    for key in self.alldim:
-        #        data = self.lut[key].reshape(
-        #            len(self.aot_points),
-        #            len(self.gndalt_points),
-        #            len(self.wv_points),
-        #            len(self.raa_points),
-        #            len(self.sza_points),
-        #            len(self.vza_points),
-        #            len(self.lut["wl"]),
-        #        )
-        #        self.luts[key] = common.VectorInterpolator(
-        #            grid_input=grid,
-        #            data_input=data,
-        #            lut_interp_types=self.lut_interp_types,
-        #            version=self.interpolator_style,
-        #        )
-        # else:
-        # Convert from 2d (point, wl) to Nd (*luts, wl)
         ds = self.lut.unstack("point")
 
         # Make sure its in expected order, wl at the end
