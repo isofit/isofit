@@ -298,9 +298,6 @@ class KernelFlowsRT(RadiativeTransferEngine):
             default_lut_grid[KEYMAPPING[key]["name"]] = KEYMAPPING[key]["default_grid"]
             default_lut_val[KEYMAPPING[key]["name"]] = KEYMAPPING[key]["default"]
 
-        logging.info(f"Default lut grid: {default_lut_grid}")
-        logging.info(f"Default lut val: {default_lut_val}")
-
         self.default_fills = np.zeros(len(self.emulator_names))
         for ii, key in enumerate(self.emulator_names):
             logging.info(f"Checking key {key}")
@@ -312,8 +309,6 @@ class KernelFlowsRT(RadiativeTransferEngine):
                 logging.info(
                     f"No grid point for {key}, using template: {self.default_fills[ii]}"
                 )
-        logging.info(f"Emulator Names: {self.emulator_names}")
-        logging.info(f"Default Fills:  {self.default_fills}")
 
         self.assign_bounds()
         return False

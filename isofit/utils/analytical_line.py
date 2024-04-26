@@ -130,6 +130,7 @@ def analytical_line(
             atm_band_names=fm.RT.statevec_names,
             nneighbors=n_atm_neighbors,
             gaussian_smoothing_sigma=smoothing_sigma,
+            n_cores=n_cores,
         )
 
     rdn_ds = envi.open(envi_header(rdn_file))
