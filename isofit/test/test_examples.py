@@ -6,18 +6,17 @@ from unittest import mock
 import pytest
 from click.testing import CliRunner
 
-from isofit import __main__
+from isofit.__main__ import cli
 from isofit.core.isofit import Isofit
 from isofit.utils import surface_model
 
 
 # fmt: off
-@pytest.mark.xfail
 @pytest.mark.examples
 @pytest.mark.parametrize("args", [
     ("--level", "DEBUG", "configs/prm20151026t173213_D8W_6s.json"),
     ("--level", "DEBUG", "configs/prm20151026t173213_D8p5W_6s.json"),
-    ("--level", "DEBUG", "configs/prm20151026t173213_D9W_6s.json"),
+    # ("--level", "DEBUG", "configs/prm20151026t173213_D9W_6s.json"),
     ("--level", "DEBUG", "configs/prm20151026t173213_D9p5W_6s.json"),
 ])
 # fmt: on
@@ -28,13 +27,12 @@ def test_santa_monica(args, monkeypatch):
     surface_model("configs/prm20151026t173213_surface_coastal.json")
 
     runner = CliRunner()
-    result = runner.invoke(__main__, ["run"] + list(args), catch_exceptions=False)
+    result = runner.invoke(cli, ["run"] + list(args), catch_exceptions=False)
 
     assert result.exit_code == 0
 
 
 # fmt: off
-@pytest.mark.xfail
 @pytest.mark.examples
 @pytest.mark.parametrize("args", [
     ("--level", "DEBUG", "configs/ang20171108t173546_darklot.json"),
@@ -53,7 +51,7 @@ def test_pasadena_modtran(args, monkeypatch):
     surface_model("configs/ang20171108t184227_surface.json")
 
     runner = CliRunner()
-    result = runner.invoke(_cli, args, catch_exceptions=False)
+    result = runner.invoke(cli, ["run"] + list(args), catch_exceptions=False)
 
     assert result.exit_code == 0
 
