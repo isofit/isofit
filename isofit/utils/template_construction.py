@@ -1079,7 +1079,6 @@ def build_main_config(
             ][key]
 
     # Now do statevector
-    # Now do statevector
     if h2o_lut_grid is not None:
         radiative_transfer_config["statevector"]["H2OSTR"] = {
             "bounds": [h2o_lut_grid[0], h2o_lut_grid[-1]],

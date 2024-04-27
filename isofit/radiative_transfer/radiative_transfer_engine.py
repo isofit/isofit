@@ -22,7 +22,6 @@
 import logging
 import os
 import time
-from itertools import product
 from types import SimpleNamespace
 from typing import Callable
 
