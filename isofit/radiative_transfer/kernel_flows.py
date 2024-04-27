@@ -15,8 +15,8 @@
 #
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: Niklas Bohn, urs.n.bohn@jpl.nasa.gov
+#         Philip Brodrick, philip.brodrick@jpl.nasa.gov
 #         Jouni Susiluoto, jouni.i.susiluoto@jpl.nasa.gov
-#
 
 import logging
 
@@ -24,7 +24,6 @@ import h5py
 import numpy as np
 import yaml
 
-from isofit import ray
 from isofit.configs.sections.radiative_transfer_config import (
     RadiativeTransferEngineConfig,
 )
@@ -36,26 +35,15 @@ Logger = logging.getLogger(__file__)
 # This is a tempoary key mapping until we align the KF and Isofit key names
 # and get KF to store the key names in the jld2 file
 KEYMAPPING = {
-    1: {
-        "name": "AERFRAC_2",
-        "default_grid": [0.06, 0.2, 0.4, 0.6, 0.8, 1.0],
-        "default": 0.06,
-    },
-    2: {
-        "name": "H2OSTR",
-        "default_grid": [0.05, 0.75, 1.5, 2.25, 3.0, 3.75, 4.5],
-        "default": 0.05,
-    },
-    3: {"name": "surface_elevation_km", "default_grid": [0.0, 1.5, 3.0, 4.5, 6.0]},
-    4: {"name": "observer_altitude_km", "default_grid": [0.5, 1, 2, 5, 10, 20, 100]},
-    5: {"name": "solar_zenith", "default_grid": [0.0, 15.0, 30.0, 45.0, 60.0, 75.0]},
-    6: {"name": "observer_zenith", "default_grid": [0.0, 10.0, 20.0, 30.0, 40.0]},
-    7: {
-        "name": "relative_azimuth",
-        "default_grid": [0.0, 30.0, 60.0, 90.0, 120.0, 150.0, 180.0],
-    },
-    8: {"name": "solar_azimuth", "default_grid": [1, 91, 181, 271]},
-    9: {"name": "observer_azimuth", "default_grid": [1, 91, 181, 271]},
+    1: {"name": "AERFRAC_2", "default": 0.06},
+    2: {"name": "H2OSTR", "default": 0.05},
+    3: {"name": "surface_elevation_km"},
+    4: {"name": "observer_altitude_km"},
+    5: {"name": "solar_zenith"},
+    6: {"name": "observer_zenith"},
+    7: {"name": "relative_azimuth"},
+    8: {"name": "solar_azimuth"},
+    9: {"name": "observer_azimuth"},
 }
 
 
@@ -291,11 +279,9 @@ class KernelFlowsRT(RadiativeTransferEngine):
         )
         self.ga = list()
 
-        default_lut_grid = {}
         default_lut_val = {}
         for key in self.emulator_internal_idx:
             logging.info(KEYMAPPING[key])
-            default_lut_grid[KEYMAPPING[key]["name"]] = KEYMAPPING[key]["default_grid"]
             default_lut_val[KEYMAPPING[key]["name"]] = KEYMAPPING[key]["default"]
 
         self.default_fills = np.zeros(len(self.emulator_names))
