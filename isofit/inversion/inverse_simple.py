@@ -80,7 +80,7 @@ def heuristic_atmosphere(
             my_RT = rte
             break
     if not my_RT:
-        raise ValueError("No suiutable RT object for initialization")
+        raise ValueError("No suitable RT object for initialization")
 
     # Band ratio retrieval of H2O.  Depending on the radiative transfer
     # model we are using, this state parameter could go by several names.
@@ -177,7 +177,6 @@ def invert_algebraic(
     transup = instrument.sample(
         x_instrument, RT.wl, rhi["transm_up_dir"]
     )  # REVIEW: Changed from transup
-    coszen = RT.coszen
 
     # Figure out which RT object we are using
     # TODO: this is currently very specific to vswir-tir 2-mode, eventually generalize
@@ -188,6 +187,12 @@ def invert_algebraic(
             break
     if not my_RT:
         raise ValueError("No suitable RT object for initialization")
+
+    # ToDo: grab the per pixel sza from Geometry object
+    if my_RT.engine_config.engine_name == "KernelFlowsGP":
+        coszen = np.cos(np.deg2rad(geom.solar_zenith))
+    else:
+        coszen = RT.coszen
 
     # Prevent NaNs
     transm[transm == 0] = 1e-5

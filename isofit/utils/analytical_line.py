@@ -130,6 +130,7 @@ def analytical_line(
             atm_band_names=fm.RT.statevec_names,
             nneighbors=n_atm_neighbors,
             gaussian_smoothing_sigma=smoothing_sigma,
+            n_cores=n_cores,
         )
 
     rdn_ds = envi.open(envi_header(rdn_file))
@@ -161,6 +162,9 @@ def analytical_line(
     )
     del rdn, img
 
+    if n_cores == -1:
+        n_cores = multiprocessing.cpu_count()
+
     ray_dict = {
         "ignore_reinit_error": config.implementation.ray_ignore_reinit_error,
         "address": config.implementation.ip_head,
@@ -169,13 +173,9 @@ def analytical_line(
         "_redis_password": config.implementation.redis_password,
         "num_cpus": n_cores,
     }
-
     ray.init(**ray_dict)
 
     n_workers = n_cores
-
-    if n_workers == -1:
-        n_workers = multiprocessing.cpu_count()
 
     wargs = [
         ray.put(obj)

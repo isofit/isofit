@@ -86,6 +86,13 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         implementation of the forward model.
         """
 
+        self._glint_model_type = bool
+        self.glint_model = False
+        """
+        Flag to indicate whether to use the sun and sky glint model from Gege (2012, 2014) in the forward model. 
+        Only currently functional with multipart MODTRAN.
+        """
+
         self._rt_mode_type = str
         self.rt_mode = None
         """str: Radiative transfer mode of LUT simulations. 
@@ -207,7 +214,7 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
                         )
                     )
 
-        valid_rt_engines = ["modtran", "6s", "sRTMnet"]
+        valid_rt_engines = ["modtran", "6s", "sRTMnet", "KernelFlowsGP"]
         if self.engine_name not in valid_rt_engines:
             errors.append(
                 "radiative_transfer->raditive_transfer_model: {} not in one of the"

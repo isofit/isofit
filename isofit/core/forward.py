@@ -230,7 +230,7 @@ class ForwardModel:
 
         rfl_hi = self.upsample(self.surface.wl, rfl)
         Ls_hi = self.upsample(self.surface.wl, Ls)
-        return self.RT.calc_rdn(x_RT, rfl_hi, Ls_hi, geom)
+        return self.RT.calc_rdn(x_RT, x_surface, rfl_hi, Ls_hi, geom)
 
     def calc_meas(self, x, geom, rfl=None, Ls=None):
         """Calculate the model observation at instrument wavelengths."""
@@ -293,7 +293,7 @@ class ForwardModel:
 
         # Derivatives of RTM radiance
         drdn_dRT, drdn_dsurface = self.RT.drdn_dRT(
-            x_RT, rfl_hi, drfl_dsurface_hi, Ls_hi, dLs_dsurface_hi, geom
+            x_RT, x_surface, rfl_hi, drfl_dsurface_hi, Ls_hi, dLs_dsurface_hi, geom
         )
 
         # Derivatives of measurement, avoiding recalculation of rfl, Ls
