@@ -107,7 +107,7 @@ def heuristic_atmosphere(
             rhi = RT.get_shared_rtm_quantities(x_RT_2, geom)
             rhoatm = instrument.sample(x_instrument, RT.wl, rhi["rhoatm"])
             transm = instrument.sample(
-                x_instrument, RT.wl, rhi["transm_down_dif"]
+                x_instrument, RT.wl, rhi["transm_down_dir"] + rhi["transm_down_dif"]
             )  # REVIEW: This was changed from transm as we're deprecating the key
             sphalb = instrument.sample(x_instrument, RT.wl, rhi["sphalb"])
             solar_irr = instrument.sample(x_instrument, RT.wl, RT.solar_irr)
