@@ -5,178 +5,250 @@ implementations and research, please see https://github.com/isofit/isofit/tree/8
 
 import logging
 import os
+from typing import Any, List, Union
 
 import numpy as np
 import xarray as xr
 from netCDF4 import Dataset
 
-# This resolves race/lock conditions with file opening in updatePoint()
-os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
-
 Logger = logging.getLogger(__file__)
 
-# TODO: Temporary locking lut files for updatePoint until a new solution is found
-import fcntl
-import hashlib
+
+# Statically store expected keys of the LUT file
+class Keys:
+
+    # Constants, not along any dimension
+    consts = [
+        "coszen",
+        "solzen",
+    ]
+
+    # Along the wavelength dimension only
+    onedim = [
+        "fwhm",
+        "solar_irr",
+    ]
+
+    # Keys along all dimensions, ie. wl and point
+    alldim = [
+        "rhoatm",
+        "sphalb",
+        "transm_down_dir",
+        "transm_down_dif",
+        "transm_up_dir",
+        "transm_up_dif",
+        "thermal_upwelling",
+        "thermal_downwelling",
+    ]
+
+    # These keys are filled with zeros instead of NaNs
+    zeros = [
+        "transm_down_dir",
+        "transm_down_dif",
+        "transm_up_dir",
+        "transm_up_dif",
+    ]
 
 
-class SystemMutex:
-    def __init__(self, name):
-        self.name = name
+class Create:
 
-    def __enter__(self):
-        lock_id = hashlib.md5(self.name.encode("utf8")).hexdigest()
-        self.fp = open(f"/tmp/.lock-{lock_id}.lck", "wb")
-        fcntl.flock(self.fp.fileno(), fcntl.LOCK_EX)
+    def __init__(
+        self,
+        file: str,
+        wl: np.ndarray,
+        grid: dict,
+        consts: List[str] = [],
+        onedim: List[str] = [],
+        alldim: List[str] = [],
+        zeros: List[str] = [],
+        reduce: bool = ["fwhm"],
+    ):
+        """
+        Prepare a LUT netCDF
 
-    def __exit__(self, _type, value, tb):
-        fcntl.flock(self.fp.fileno(), fcntl.LOCK_UN)
-        self.fp.close()
+        Parameters
+        ----------
+        file : str
+            NetCDF filepath for the LUT.
+        wl : np.ndarray
+            The wavelength array.
+        grid : dict
+            The LUT grid, formatted as {str: Iterable}.
+        consts : List[str], optional, default=[]
+            List of constant values. Appends to the current Create.consts list.
+        onedim : List[str], optional, default=[]
+            List of one-dimensional data. Appends to the current Create.onedim list.
+        alldim : List[str], optional, default=[]
+            List of multi-dimensional data. Appends to the current Create.alldim list.
+        zeros : List[str], optional, default=[]
+            List of zero values. Appends to the current Create.zeros list.
+        reduce : bool or list, optional, default=['fwhm']
+            Reduces the initialized Dataset by dropping the variables to reduce overall memory usage.
+            If True, drops all variables. If list, drop everything but these.
+        """
+        self.file = file
+        self.wl = wl
+        self.grid = grid
+        self.hold = []
 
+        self.sizes = {key: len(val) for key, val in grid.items()}
 
-def initialize(
-    file: str,
-    wl: np.array,
-    lut_grid: dict,
-    attrs: dict,
-    chunks: int = 25,  # REVIEW: Good default? Can we calculate it? TODO: Config option?
-    consts: list = [],
-    onedim: list = [],
-    alldim: list = [],
-    zeros: list = [],
-) -> xr.Dataset:
-    """
-    Initializes a LUT NetCDF using Xarray
+        self.consts = Keys.consts + consts
+        self.onedim = Keys.onedim + onedim
+        self.alldim = Keys.alldim + alldim
+        self.zeros = Keys.zeros + zeros
 
-    Parameters
-    ----------
-    attrs: dict, defaults={}
-        Dict of dataset attributes, ie. {"RT_mode": "transm"}
-    consts: list, defaults=[]
-        Keys to fill, these are constants along no dimensions, ie. ()
-    onedim: list, defaults=[]
-        Keys to fill, these are along one dimensions, ie. (wl, )
-    alldim: list, defaults=[]
-        Keys to fill, these are along all dimensions, ie. (wl, point)
-    zeros: list, defaults=[]
-        List of keys to default to zeros as the fill value instead of NaNs
-    """
-    # Initialize with all lut point names as dimensions
-    ds = xr.Dataset(coords={"wl": wl, **lut_grid}, attrs=attrs)
+        # Save ds for backwards compatibility (to work with extractGrid, extractPoints)
+        self.ds = self.initialize()
 
-    # Insert constants
-    filler = np.nan
-    for key in consts:
-        if isinstance(key, tuple):
-            key, filler = key
-        ds[key] = filler
+        # Remove variables to reduce memory footprint
+        if reduce:
+            # Drop all variables
+            drop = set(self.ds)
 
-    # Insert single dimension keys along wl
-    fill = np.full((len(wl),), np.nan)
-    for key in onedim:
-        if isinstance(key, tuple):
-            key, fill = key
-        ds[key] = ("wl", fill)
+            # Remove these from the drop list
+            if isinstance(reduce, list):
+                drop -= set(reduce)
 
-    ## Insert point dimensional keys
-    # Filler arrays
-    dims = tuple(ds.sizes.values())
-    nans = np.full(dims, np.nan)
-    zero = np.zeros(dims)
+            self.ds = self.ds.drop_vars(drop)
 
-    for key in alldim:
-        if isinstance(key, tuple):
-            key, filler = key
-            ds[key] = (ds.coords, filler)
-        else:
-            if key in zeros:
-                ds[key] = (ds.coords, zero)
-            else:
-                ds[key] = (ds.coords, nans)
+    def initialize(self) -> None:
+        """
+        Initializes the LUT netCDF by prepopulating it with filler values.
+        """
 
-    # Must write unstacked
-    ds.to_netcdf(file, mode="w", compute=False, engine="netcdf4")
+        def fill(
+            keys: List[str],
+            nans: Union[np.ndarray, float],
+            zero: Union[np.ndarray, float],
+            dims: Union[List[str], str],
+        ) -> None:
+            """
+            Fill keys of the file with the specified shape.
 
-    # Stack to get the common.combos, creates dim "point" = [(v1, v2, ), ...]
-    return ds.stack(point=lut_grid).transpose("point", "wl")
+            Parameters
+            ----------
+            keys : List[str]
+                Keys to instantiate.
+            nans : Union[np.ndarray, float]
+                Shape of the NaN filler.
+            nans : Union[np.ndarray, float]
+                Shape of the zero filler.
+            dims : Union[str, List[str]]
+                Dimensions for the keys.
+            """
+            for key in keys:
+                fill = nans
+                if isinstance(key, tuple):
+                    key, fill = key
+                elif key in self.zeros:
+                    fill = zero
 
+                if dims:
+                    fill = (dims, fill)
 
-def updatePoint(
-    file: str, lut_names: list = [], point: tuple = (), data: dict = {}
-) -> None:
-    """
-    Updates a point in a LUT NetCDF
+                ds[key] = fill
 
-    Parameters
-    ----------
-    lut_names: list
-        List of str (lut_names)
-    point: tuple
-        Point values
-    data: dict
-        Input data to write. Aside from the following special keys, all keys in
-        the dict should have the shape (len(wl), len(points)). Special keys:
-               wl - This is set at lut initialization, will assert np.isclose
-                    the existing lut[wl] against data[wl]
-        solar_irr - Not along the point dimension, presently clobbers with
-                    every new input
-    """
-    with SystemMutex("lock"):
-        with Dataset(file, "a") as nc:
-            # Retrieves the index for a point value
-            index = lambda key, val: np.argwhere(nc[key][:] == val)[0][0]
+        ds = xr.Dataset(coords={"wl": self.wl, **self.grid})
 
-            # Assume all keys will have the same dimensions in the same order, so just use a random key
-            key, _ = max(nc.variables.items(), key=lambda pair: len(pair[1].dimensions))
+        fill(self.consts, np.nan, 0.0, "")
 
-            # nc[key].dimensions is ordered, nc.dimensions may be out of order
-            dims = nc[key].dimensions
-            inds = [-1] * len(dims)
-            for i, dim in enumerate(dims):
-                if dim == "wl":
-                    # Wavelength uses all values
-                    inds[i] = slice(None)
-                elif dim in lut_names:
-                    # Retrieve the index of this point value
-                    inds[i] = index(dim, point[lut_names.index(dim)])
-                else:
-                    # Default to using the first index if key not in the lut_names
-                    # This should only happen if you were updating an existing LUT with fewer point dimensions than exists
-                    # REVIEW: Should we support this edge case? If we do, ought to add a `defaults={dim: index}` to control
-                    # what the default index for dims are
-                    # REVIEW: rte.postSim() may call this with lut_names=[], causing this to be hit each time
-                    Logger.debug(
-                        f"Defaulting to index 0 for dimension {dim!r} because it is not in the lut_names: {lut_names}"
-                    )
-                    inds[i] = 0
+        shape = ds.wl.size
+        fill(self.onedim, np.full(shape, np.nan), np.zeros(shape), "wl")
 
-            Logger.debug(f"Writing to point {point!r}, resolved indices: {inds!r}")
+        shape = tuple(ds.sizes.values())
+        fill(self.alldim, np.full(shape, np.nan), np.zeros(shape), ds.coords)
 
-            # Now insert the values at this point
-            for key, values in data.items():
-                if key not in nc.variables:
-                    Logger.error(f"Key doesn't exist in LUT file, skipping: {key}")
+        ds.to_netcdf(self.file, mode="w", compute=False, engine="netcdf4")
 
-                elif key == "wl":
-                    assert np.isclose(nc[key][:], values).all(), (
-                        f"Input data wavelengths do not match existing wavelengths for file: {file}\n"
-                        + f"Expected: {nc[key][:]}\n"
-                        + f"Received: {values}"
-                    )
-                else:
-                    var = nc[key]
-                    dim = len(var.dimensions)
+        # Create the point dimension
+        return ds.stack(point=self.grid).transpose("point", "wl")
 
-                    # REVIEW: parallel safe to clobber?
-                    if dim == 0:
-                        # Constant/scalar value
-                        var.assignValue(values)
-                    elif dim == 1:
-                        # Not on the point dimension
-                        var[:] = values
+    def pointIndices(self, point: np.ndarray) -> List[int]:
+        """
+        Get the indices of the point in the grid.
+
+        Parameters
+        ----------
+        point : np.ndarray
+            The coordinates of the point in the grid.
+
+        Returns
+        -------
+        List[int]
+            Mapped point values to index positions.
+        """
+        return [
+            np.where(self.grid[dim] == val)[0][0] for dim, val in zip(self.grid, point)
+        ]
+
+    def queuePoint(self, point: np.ndarray, data: dict) -> None:
+        """
+        Queues a point and its data to the internal hold list which is used by the
+        flush function to write these points to disk.
+
+        Parameters
+        ----------
+        point : np.ndarray
+            The coordinates of the point in the grid.
+        data : dict
+            Data for this point to write.
+        """
+        self.hold.append((point, data))
+
+    def flush(self) -> None:
+        """
+        Flushes the (point, data) pairs held in the hold list to the LUT netCDF.
+        """
+        with Dataset(self.file, "a") as ds:
+            for point, data in self.hold:
+                for key, vals in data.items():
+                    if key in self.consts:
+                        ds[key].assignValue(vals)
+                    elif key in self.onedim:
+                        ds[key][:] = vals
+                    elif key in self.alldim:
+                        index = [slice(None)] + list(self.pointIndices(point))
+                        ds[key][index] = vals
                     else:
-                        # Not a special case, save as-is
-                        var[inds] = values
+                        Logger.warning(
+                            f"Attempted to assign a key that is not recognized, skipping: {key}"
+                        )
+
+        self.hold = []
+
+    def writePoint(self, point: np.ndarray, data: dict) -> None:
+        """
+        Queues a point and immediately flushes to disk.
+
+        Parameters
+        ----------
+        point : np.ndarray
+            The coordinates of the point in the grid.
+        data : dict
+            Data for this point to write.
+        """
+        self.queuePoint(point, data)
+        self.flush()
+
+    def __getitem__(self, key: str) -> Any:
+        """
+        Passthrough to __getitem__ on the underlying 'ds' attribute.
+
+        Parameters
+        ----------
+        key : str
+            The name of the item to retrieve.
+
+        Returns
+        -------
+        Any
+            The value of the item retrieved from the 'ds' attribute.
+        """
+        return self.ds[key]
+
+    def __repr__(self) -> str:
+        return f"LUT(wl={self.wl.size}, grid={self.sizes})"
 
 
 def sel(ds, dim, lt=None, lte=None, gt=None, gte=None, encompass=True):
@@ -268,7 +340,9 @@ def sub(ds: xr.Dataset, dim: str, strat) -> xr.Dataset:
         return ds
 
 
-def load(file: str, subset: dict = None, dask=True) -> xr.Dataset:
+def load(
+    file: str, subset: dict = None, dask=True, mode="r", lock=False, **kwargs
+) -> xr.Dataset:
     """
     Loads a LUT NetCDF
     Assumes to be a regular grid at this time (auto creates the point dim)
@@ -438,9 +512,9 @@ def load(file: str, subset: dict = None, dask=True) -> xr.Dataset:
     Frozen({'AOT550': 3, 'H2OSTR': 10, 'wl': 285})
     """
     if dask:
-        ds = xr.open_mfdataset([file], mode="r", lock=False)
+        ds = xr.open_mfdataset([file], mode=mode, lock=lock, **kwargs)
     else:
-        ds = xr.open_dataset(file, mode="r", lock=False)
+        ds = xr.open_dataset(file, mode=mode, lock=lock, **kwargs)
 
     # Special case that doesn't require defining the entire grid subsetting strategy
     if subset is None:

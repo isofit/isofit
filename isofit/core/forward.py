@@ -106,17 +106,13 @@ class ForwardModel:
             raise ValueError("Must specify a valid surface model")
             # No need to be more specific - should have been checked in config already
 
-        # check if wavelength grid provided by surface model matches instrument wavelengths
-        if self.surface.n_wl != len(self.RT.wl):
-            raise ValueError(
-                "Number of channels provided in surface model file does not match"
-                " wavelengths in radiance cube. Please rebuild your surface model."
-            )
-        if not np.all(np.isclose(self.surface.wl, self.RT.wl, atol=0.01)):
+        if self.surface.n_wl != len(self.RT.wl) or not np.all(
+            np.isclose(self.surface.wl, self.RT.wl, atol=0.01)
+        ):
             Logger.warning(
-                "Center wavelengths provided in surface model file do not match"
-                " wavelengths in radiance cube. Please consider rebuilding your"
-                " surface model for optimal performance."
+                "Surface and RTM wavelengths differ - if running at higher RTM"
+                " spectral resolution or with variable wavelength position, this"
+                " is expected.  Otherwise, consider checking the surface model."
             )
 
         # Build combined vectors from surface, RT, and instrument

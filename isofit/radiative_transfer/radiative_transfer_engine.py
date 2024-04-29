@@ -44,29 +44,6 @@ class RadiativeTransferEngine:
     # Allows engines to outright disable the parallelized sims if they do nothing
     _disable_makeSim = False
 
-    ## LUT Keys --
-    # Constants, not along any dimension
-    consts = ["coszen", "solzen"]
-
-    # Along the wavelength dimension only
-    onedim = ["fwhm", "solar_irr"]
-
-    # Keys along all dimensions, ie. wl and point
-    alldim = [
-        "rhoatm",
-        "sphalb",
-        "transm_down_dir",
-        "transm_down_dif",
-        "transm_up_dir",
-        "transm_up_dif",
-        "thermal_upwelling",
-        "thermal_downwelling",
-    ]
-    # These keys are filled with zeros instead of NaNs
-    zeros = ["transm_down_dir", "transm_down_dif", "transm_up_dir", "transm_up_dif"]
-
-    ## End LUT keys --
-
     # These are retrieved from the geom object
     geometry_input_names = [
         "observer_azimuth",
@@ -218,21 +195,16 @@ class RadiativeTransferEngine:
 
             Logger.debug(f"Writing store to: {self.lut_path}")
             self.lut_grid = lut_grid
+            self.lut_names = list(lut_grid)
+            self.points = common.combos(lut_grid.values())
 
             Logger.info(f"Initializing LUT file")
-            self.lut = luts.initialize(
+            self.lut = luts.Create(
                 file=self.lut_path,
                 wl=wl,
-                lut_grid=self.lut_grid,
-                attrs={"RT_mode": self.rt_mode},
-                consts=self.consts,
-                onedim=self.onedim + [("fwhm", fwhm)],
-                alldim=self.alldim,
-                zeros=self.zeros,
+                grid=self.lut_grid,
+                onedim=[("fwhm", fwhm)],
             )
-
-            # Retrieve points and names from the now existing lut dataset
-            self.points, self.lut_names = luts.extractPoints(self.lut)
 
             # Create and populate a LUT file
             self.runSimulations()
@@ -305,7 +277,7 @@ class RadiativeTransferEngine:
         grid = [ds[key].data for key in self.lut_names]
 
         # Create the unique
-        for key in self.alldim:
+        for key in luts.Keys.alldim:
             self.luts[key] = common.VectorInterpolator(
                 grid_input=grid,
                 data_input=ds[key].load().data,
@@ -431,9 +403,11 @@ class RadiativeTransferEngine:
         pre = self.preSim()
 
         if pre:
-            Logger.info("Saving pre-sim data")
+            Logger.info("Saving pre-sim data to index zero of all dimensions except wl")
             Logger.debug(f"pre-sim data contains keys: {pre.keys()}")
-            luts.updatePoint(file=self.lut_path, data=pre)
+
+            point = {key: 0 for key in self.lut_names}
+            self.lut.writePoint(point, data=pre)
 
         # Make the LUT calls (in parallel if specified)
         if not self._disable_makeSim:
@@ -449,6 +423,35 @@ class RadiativeTransferEngine:
                 for point in self.points
             ]
             ray.get(jobs)
+
+            # Report a percentage complete every 10% and flush to disk at those intervals
+            report = common.Track(
+                jobs,
+                step=10,
+                reverse=True,
+                print=Logger.info,
+                message="simulations complete",
+            )
+
+            # Update the lut as point simulations stream in
+            while jobs:
+                [done], jobs = ray.wait(jobs, num_returns=1)
+
+                # Retrieve the return of the finished job
+                ret = ray.get(done)
+
+                # If a simulation fails then it will return None
+                if ret:
+                    self.lut.queuePoint(*ret)
+
+                if report(len(jobs)):
+                    Logger.info("Flushing netCDF to disk")
+                    self.lut.flush()
+
+            # Shouldn't be hit but just in case
+            if self.lut.hold:
+                Logger.warning("Not all points were flushed, doing so now")
+                self.lut.flush()
         else:
             Logger.debug("makeSim is disabled for this engine")
 
@@ -456,9 +459,13 @@ class RadiativeTransferEngine:
         post = self.postSim()
 
         if post:
-            Logger.info("Saving post-sim data")
+            Logger.info(
+                "Saving post-sim data to index zero of all dimensions except wl"
+            )
             Logger.debug(f"post-sim data contains keys: {post.keys()}")
-            luts.updatePoint(file=self.lut_path, data=post)
+
+            point = {key: 0 for key in self.lut_names}
+            self.lut.writePoint(point, data=post)
 
         # Reload the LUT now that it's populated
         self.lut = luts.load(self.lut_path)
@@ -640,6 +647,7 @@ def streamSimulation(
     # Save the results to our LUT format
     if data:
         Logger.debug(f"Updating data point {point} for keys: {data.keys()}")
-        luts.updatePoint(output, list(lut_names), point, data)
+
+        return point, data
     else:
         Logger.warning(f"No data was returned for point {point}")

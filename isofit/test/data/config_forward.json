@@ -22,7 +22,7 @@
           "engine_name": "libradtran",
           "lut_path": "lut_libradtran/",
           "template_file": "libradtran.inp",
-          "lut_names": ["H2OSTR", "AOT550"],
+          "lut_names": {"H2OSTR": null, "AOT550": null},
           "statevector_names": ["H2OSTR", "AOT550"]
         }
       },

@@ -101,7 +101,7 @@ Note that the surface model is normalized with the Euclidean norm.  In the top-l
       "selection_metric":"Euclidean"
     },
 
-    
+
 Instrument Models
 -----------------
 
@@ -139,7 +139,7 @@ We highly recommend the MODTRAN 6.0 radiative transfer model over LibRadTran and
                     "aerosol_template_file": "path_to_isofit/data/aerosol_template.json",
                     "engine_base_dir": "path_to_MODTRAN6.0.0/",
                     "engine_name": "modtran",
-                    "lut_names": [  "H2OSTR", "AERFRAC_2" ],
+                    "lut_names": { "H2OSTR": null, "AERFRAC_2": null },
                     "lut_path": "./lut_directory/",
                     "statevector_names": [ "H2OSTR",  "AERFRAC_2"],
                     "template_file": "path_to_modtran_6_template.json"
@@ -203,6 +203,3 @@ We recommend excluding deep water features at 1440 nm and 1880 nm from the inver
             ]
         ]
     },
-
-
-

@@ -289,6 +289,12 @@ class ModtranRT(RadiativeTransferEngine):
         """
         Prepares the command to execute MODTRAN
         """
+        if self.engine_base_dir is None:
+            Logger.error(
+                "No MODTRAN installation provided, please set config key `engine_base_dir`"
+            )
+            return
+
         filename_base = file or self.point_to_filename(point)
 
         # Translate ISOFIT generic lut names to MODTRAN-specific names
@@ -326,7 +332,10 @@ class ModtranRT(RadiativeTransferEngine):
                 rebuild = modtran_str.strip() != current_str.strip()
 
         if not rebuild:
-            raise FileExistsError(f"File exists: {filename_base=}")
+            Logger.warning(
+                f"File already exists and not set to rebuild, skipping execution: {filename_base}"
+            )
+            return
 
         # write_config_file
         with open(infilepath, "w") as f:
@@ -377,7 +386,7 @@ class ModtranRT(RadiativeTransferEngine):
         }.intersection(set(overrides.keys())):
             raise AttributeError(
                 "Solar geometry (solar az/azimuth zen/zenith) is specified, but IPARM"
-                " is set to 12.  Check MODTRAN template"
+                " is set to 11.  Check MODTRAN template"
             )
 
         if {"PARM1", "PARM2"}.intersection(set(overrides.keys())):
