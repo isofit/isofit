@@ -228,6 +228,10 @@ class KernelFlowsRT(RadiativeTransferEngine):
 
         # Run super now....we need the lut_grid to go on
         super().__init__(engine_config, **kwargs)
+
+        # override default radiative transfer simulation mode
+        # as KernelFlowsGP always runs in radiance space
+        self.rt_mode = "rdn"
         self.assign_bounds()
 
     def assign_bounds(self):
