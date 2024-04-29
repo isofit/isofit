@@ -402,8 +402,6 @@ class RadiativeTransferEngine:
                 streamSimulation.remote(point, lut_names, makeSim, readSim, lut_path)
                 for point in self.points
             ]
-            ray.get(jobs)
-            del lut_names, makeSim, readSim, lut_path
 
             # Report a percentage complete every 10% and flush to disk at those intervals
             report = common.Track(
@@ -428,6 +426,7 @@ class RadiativeTransferEngine:
                 if report(len(jobs)):
                     Logger.info("Flushing netCDF to disk")
                     self.lut.flush()
+            del lut_names, makeSim, readSim, lut_path
 
             # Shouldn't be hit but just in case
             if self.lut.hold:
