@@ -235,7 +235,7 @@ class RadiativeTransferEngine:
         Enables key indexing for easier access to the numpy object store in
         self.lut[key]
         """
-        return self.lut[key].data
+        return self.lut[key].load().data
 
     @property
     def lut_interp_types(self):
