@@ -54,15 +54,6 @@ class RadiativeTransferEngine:
         "observer_altitude_km",
         "surface_elevation_km",
     ]
-    # ...
-    angular_lut_keys_degrees = [
-        "observer_azimuth",
-        "observer_zenith",
-        "solar_azimuth",
-        "solar_zenith",
-        "relative_azimuth",
-    ]
-    angular_lut_keys_radians = []
 
     # Informs the VectorInterpolator the units for a given key
     angular_lut_keys = {
@@ -82,8 +73,8 @@ class RadiativeTransferEngine:
     )
 
     # These properties enable easy access to the lut data
-    wl = property(lambda self: self["wl"])
-    fwhm = property(lambda self: self["fwhm"])
+    wl = property(lambda self: np.array(self["wl"]))
+    fwhm = property(lambda self: np.array(self["fwhm"]))
     coszen = property(lambda self: self["coszen"])
     solar_irr = property(lambda self: self["solar_irr"])
 
@@ -111,6 +102,12 @@ class RadiativeTransferEngine:
         # TODO: mlky should do all this verification stuff
         # Verify either the LUT file exists or a LUT grid is provided
         self.lut_path = lut_path = str(lut_path) or engine_config.lut_path
+        logging.debug(f"lut_grid {lut_grid}")
+        try:
+            logging.debug(f"self.lut_grid {self.lut_grid}")
+        except:
+            logging.debug("self.lut_grid: None")
+        logging.debug(f"lut_grid is none {lut_grid is None}")
         exists = os.path.isfile(lut_path)
         if not exists and lut_grid is None:
             raise AttributeError(
@@ -128,6 +125,7 @@ class RadiativeTransferEngine:
         # Enable special modes - argument: get from HDF5
         self.multipart_transmittance = engine_config.multipart_transmittance
         self.topography_model = engine_config.topography_model
+        self.glint_model = engine_config.glint_model
 
         # Specify wavelengths and fwhm to be used for either resampling an existing LUT or building a new instance
         if not any(wl) or not any(fwhm):
@@ -164,6 +162,7 @@ class RadiativeTransferEngine:
                         ),
                     )
                 self.lut = conv
+
         else:
             Logger.info(f"No LUT store found, beginning initialization and simulations")
             # Check if both wavelengths and fwhm are provided for building the LUT
@@ -250,7 +249,6 @@ class RadiativeTransferEngine:
         """
         self.luts = {}
 
-        # Convert from 2d (point, wl) to Nd (*luts, wl)
         ds = self.lut.unstack("point")
 
         # Make sure its in expected order, wl at the end
@@ -404,7 +402,6 @@ class RadiativeTransferEngine:
                 streamSimulation.remote(point, lut_names, makeSim, readSim, lut_path)
                 for point in self.points
             ]
-            ray.get(jobs)
 
             # Report a percentage complete every 10% and flush to disk at those intervals
             report = common.Track(
@@ -429,6 +426,7 @@ class RadiativeTransferEngine:
                 if report(len(jobs)):
                     Logger.info("Flushing netCDF to disk")
                     self.lut.flush()
+            del lut_names, makeSim, readSim, lut_path
 
             # Shouldn't be hit but just in case
             if self.lut.hold:
