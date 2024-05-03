@@ -398,8 +398,18 @@ class RadiativeTransferEngine:
             makeSim = ray.put(self.makeSim)
             readSim = ray.put(self.readSim)
             lut_path = ray.put(self.lut_path)
+            buffer_time = 0
+            if self.engine_config.name == "modtran":
+                buffer_time = 0.5
             jobs = [
-                streamSimulation.remote(point, lut_names, makeSim, readSim, lut_path)
+                streamSimulation.remote(
+                    point,
+                    lut_names,
+                    makeSim,
+                    readSim,
+                    lut_path,
+                    max_buffer_time=buffer_time,
+                )
                 for point in self.points
             ]
 
