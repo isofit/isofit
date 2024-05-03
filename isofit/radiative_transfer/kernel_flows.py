@@ -399,8 +399,6 @@ class KernelFlowsRT(RadiativeTransferEngine):
         nzycols = len(MVM.keys()) - 1  # take out GPGeometry from list of GPs
         ZY_pred = np.zeros((nte, nzycols))
 
-        logging.info(f"Parallel KF application across {len(range(nzycols))} nzycols")
-
         ZY_out = []
         for i in range(nzycols):
             M = MVM["M" + str(i + 1)]
