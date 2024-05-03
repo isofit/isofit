@@ -221,6 +221,13 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
                 " available models: {}".format(self.engine_name, valid_rt_engines)
             )
 
+        valid_rt_modes = ["transm", "rdn"]
+        if self.rt_mode not in valid_rt_modes:
+            errors.append(
+                "radiative_transfer->raditive_transfer_mode: {} not in one of the"
+                " available modes: {}".format(self.rt_mode, valid_rt_modes)
+            )
+
         if self.multipart_transmittance and self.engine_name != "modtran":
             errors.append("Multipart transmittance is supported for MODTRAN only")
 
