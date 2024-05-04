@@ -184,7 +184,7 @@ class RadiativeTransferEngine:
                 file=self.lut_path,
                 wl=wl,
                 grid=self.lut_grid,
-                onedim=[("fwhm", fwhm)],
+                onedim={"fwhm": fwhm, "wl": wl},
             )
 
             # Create and populate a LUT file

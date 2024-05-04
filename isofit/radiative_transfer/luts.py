@@ -57,9 +57,9 @@ class Create:
         file: str,
         wl: np.ndarray,
         grid: dict,
-        consts: List[str] = [],
-        onedim: List[str] = [],
-        alldim: List[str] = [],
+        consts: dict = {},
+        onedim: dict = {},
+        alldim: dict = {},
         zeros: List[str] = [],
         reduce: bool = ["fwhm"],
     ):
@@ -74,12 +74,12 @@ class Create:
             The wavelength array.
         grid : dict
             The LUT grid, formatted as {str: Iterable}.
-        consts : List[str], optional, default=[]
-            List of constant values. Appends to the current Create.consts list.
-        onedim : List[str], optional, default=[]
-            List of one-dimensional data. Appends to the current Create.onedim list.
-        alldim : List[str], optional, default=[]
-            List of multi-dimensional data. Appends to the current Create.alldim list.
+        consts : dict, optional, default={}
+            Dictionary of constant values. Appends/replaces current Create.consts list.
+        onedim : dict, optional, default={}
+            Dictionary of one-dimensional data. Appends/replaces to the current Create.onedim list.
+        alldim : dict, optional, default={}
+            Dictionary of multi-dimensional data. Appends/replaces to the current Create.alldim list.
         zeros : List[str], optional, default=[]
             List of zero values. Appends to the current Create.zeros list.
         reduce : bool or list, optional, default=['fwhm']
@@ -93,10 +93,25 @@ class Create:
 
         self.sizes = {key: len(val) for key, val in grid.items()}
 
-        self.consts = Keys.consts + consts
-        self.onedim = Keys.onedim + onedim
-        self.alldim = Keys.alldim + alldim
+        def override(base, addition):
+            out = {}
+            for key in base:
+                if key in addition.keys():
+                    out[key] = addition[key]
+                else:
+                    if key in self.zeros:
+                        out[key] = 0
+                    else:
+                        out[key] = np.nan
+            for key in addition:
+                if key not in out.keys():
+                    out[key] = addition[key]
+            return out
+
         self.zeros = Keys.zeros + zeros
+        self.consts = override(Keys.consts, consts)
+        self.onedim = override(Keys.onedim, onedim)
+        self.alldim = override(Keys.alldim, alldim)
 
         # Save ds for backwards compatibility (to work with extractGrid, extractPoints)
         self.ds = self.initialize()
@@ -117,50 +132,43 @@ class Create:
         Initializes the LUT netCDF by prepopulating it with filler values.
         """
 
-        def fill(
-            keys: List[str],
-            nans: Union[np.ndarray, float],
-            zero: Union[np.ndarray, float],
-            dims: Union[List[str], str],
-        ) -> None:
-            """
-            Fill keys of the file with the specified shape.
+        nc_ds = Dataset(self.file, "w", format="NETCDF4")
+        chunks = []
+        for key, val in self.grid.items():
+            nc_ds.createDimension(key, len(val))
+            chunks.append(1)
+        nc_ds.createDimension("wl", len(self.wl))
+        chunks.insert(0, len(self.wl))
 
-            Parameters
-            ----------
-            keys : List[str]
-                Keys to instantiate.
-            nans : Union[np.ndarray, float]
-                Shape of the NaN filler.
-            nans : Union[np.ndarray, float]
-                Shape of the zero filler.
-            dims : Union[str, List[str]]
-                Dimensions for the keys.
-            """
-            for key in keys:
-                fill = nans
-                if isinstance(key, tuple):
-                    key, fill = key
-                elif key in self.zeros:
-                    fill = zero
+        # Constants
+        for key, fill in self.consts.items():
+            nc_var = nc_ds.createVariable(key, "f8", fill_value=np.nan)
+            nc_var = np.nan
 
-                if dims:
-                    fill = (dims, fill)
+        # One dimensional arrays
+        for key, fill in self.onedim.items():
+            nc_var = nc_ds.createVariable(key, "f8", ("wl",), fill_value=np.nan)
+            nc_var[:] = fill
 
-                ds[key] = fill
+        # Multi dimensional arrays
+        for key, fill in self.alldim.items():
+            nc_var = nc_ds.createVariable(
+                key,
+                "f8",
+                ("wl",) + tuple(self.grid.keys()),
+                chunksizes=chunks,
+                fill_value=np.nan,
+            )
+            nc_var[:] = fill
 
-        ds = xr.Dataset(coords={"wl": self.wl, **self.grid})
+        for key, fill in self.grid.items():
+            nc_var = nc_ds.createVariable(key, "f8", (key,), fill_value=np.nan)
+            nc_var[:] = fill
 
-        fill(self.consts, np.nan, 0.0, "")
-
-        shape = ds.wl.size
-        fill(self.onedim, np.full(shape, np.nan), np.zeros(shape), "wl")
-
-        shape = tuple(ds.sizes.values())
-        fill(self.alldim, np.full(shape, np.nan), np.zeros(shape), ds.coords)
-
-        ds.to_netcdf(self.file, mode="w", compute=False, engine="netcdf4")
-
+        nc_ds.sync()
+        nc_ds.close()
+        del nc_ds
+        ds = xr.open_dataset(self.file, mode="r")
         # Create the point dimension
         return ds.stack(point=self.grid).transpose("point", "wl")
 
