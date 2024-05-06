@@ -3,6 +3,7 @@ This is the netCDF4 implementation for handling ISOFIT LUT files. For previous
 implementations and research, please see https://github.com/isofit/isofit/tree/897062a3dcc64d5292d0d2efe7272db0809a6085/isofit/luts
 """
 
+import gc
 import logging
 import os
 from typing import Any, List, Union
@@ -172,6 +173,7 @@ class Create:
         nc_ds.sync()
         nc_ds.close()
         del nc_ds
+        gc.collect()
         ds = xr.open_dataset(self.file, mode="r")
         # Create the point dimension
         return ds.stack(point=self.grid).transpose("point", "wl")
@@ -212,21 +214,23 @@ class Create:
         """
         Flushes the (point, data) pairs held in the hold list to the LUT netCDF.
         """
-        with Dataset(self.file, "a") as ds:
-            for point, data in self.hold:
-                for key, vals in data.items():
-                    if key in self.consts:
-                        ds[key].assignValue(vals)
-                    elif key in self.onedim:
-                        ds[key][:] = vals
-                    elif key in self.alldim:
-                        index = [slice(None)] + list(self.pointIndices(point))
-                        ds[key][index] = vals
-                    else:
-                        Logger.warning(
-                            f"Attempted to assign a key that is not recognized, skipping: {key}"
-                        )
-
+        ds = Dataset(self.file, "a")
+        for point, data in self.hold:
+            for key, vals in data.items():
+                if key in self.consts:
+                    ds[key].assignValue(vals)
+                elif key in self.onedim:
+                    ds[key][:] = vals
+                elif key in self.alldim:
+                    index = [slice(None)] + list(self.pointIndices(point))
+                    ds[key][index] = vals
+                else:
+                    Logger.warning(
+                        f"Attempted to assign a key that is not recognized, skipping: {key}"
+                    )
+        ds.sync()
+        ds.close()
+        gc.collect()
         self.hold = []
 
     def writePoint(self, point: np.ndarray, data: dict) -> None:
