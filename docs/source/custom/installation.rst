@@ -157,15 +157,29 @@ it is likely you will need to specify a legacy compiling configuration by changi
 
 2. Configure your environment by pointing the SIXS_DIR variable to point to your installation directory.
 
-3. Download the `pre-trained sRTMnet neural network <https://zenodo.org/record/4096627>`_, and (for the example below)
-point the environment variable EMULATOR_PATH to the base unzipped path.
+3. Download the `pre-trained sRTMnet neural network hdf5 file <https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/sRTMnet_v100.h5>`_,
+the sRTMnet auxiliary file that is included in a `Zenodo-hosted zip file <https://zenodo.org/record/4096627/files/sRTMnet_v100.zip>`_, and (for the example below)
+point the environment variable EMULATOR_PATH to the sRTMnet hdf5 file.
 
-4. Run the following code
+4. Run one of the following examples:
 
 .. code::
 
+    # Small example pixel-by-pixel
     cd examples/image_cube/
-    sh ./run_example_cube.sh
+    sh run_small.sh
+
+.. code::
+
+    # Medium example with empirical line solution
+    cd examples/image_cube/
+    sh run_medium_empirical_line.sh
+
+.. code::
+
+    # Medium example with analytical line solution
+    cd examples/image_cube/
+    sh run_medium_analytical_line.sh
 
 
 
