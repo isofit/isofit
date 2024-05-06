@@ -183,14 +183,14 @@ class Create:
         unknowns = set()
         with Dataset(self.file, "a") as ds:
             for point, data in self.hold:
-                pointIndex = [slice(None)] + list(self.pointIndices(point))
                 for key, vals in data.items():
                     if key in self.consts:
                         ds[key].assignValue(vals)
                     elif key in self.onedim:
                         ds[key][:] = vals
                     elif key in self.alldim:
-                        ds[key][pointIndex] = vals
+                        index = [slice(None)] + list(self.pointIndices(point))
+                        ds[key][index] = vals
                     else:
                         unknowns.update([key])
             ds.sync()
