@@ -226,6 +226,7 @@ class Create:
                     )
         ds.sync()
         ds.close()
+        del ds
         gc.collect()
         self.hold = []
 
