@@ -44,6 +44,10 @@ class RadiativeTransferEngine:
     # Allows engines to outright disable the parallelized sims if they do nothing
     _disable_makeSim = False
 
+    # Sleep a random amount of time up to max this value at the start of each streamSimulation
+    # Can be set per custom engine
+    max_buffer_time = 0
+
     # These are retrieved from the geom object
     geometry_input_names = [
         "observer_azimuth",
@@ -73,8 +77,6 @@ class RadiativeTransferEngine:
     )
 
     # These properties enable easy access to the lut data
-    wl = property(lambda self: np.array(self["wl"]))
-    fwhm = property(lambda self: np.array(self["fwhm"]))
     coszen = property(lambda self: self["coszen"])
     solar_irr = property(lambda self: self["solar_irr"])
 
@@ -140,6 +142,10 @@ class RadiativeTransferEngine:
                 except:
                     pass
 
+        # Set for downstream engines may use
+        self.wl = wl
+        self.fwhm = fwhm
+
         # ToDo: move setting of multipart rfl values to config
         if self.multipart_transmittance:
             self.test_rfls = [0.1, 0.5]
@@ -164,13 +170,13 @@ class RadiativeTransferEngine:
                 )
 
             # if necessary, resample prebuilt LUT to desired instrument spectral response
-            if not all(wl == self.wl):
+            if not all(wl == self.lut.wl):
                 conv = xr.Dataset(coords={"wl": wl, "point": self.lut.point})
                 for quantity in self.lut:
                     conv[quantity] = (
                         ("wl", "point"),
                         common.resample_spectrum(
-                            self.lut[quantity].data, self.wl, wl, fwhm
+                            self.lut[quantity].data, self.lut.wl, wl, fwhm
                         ),
                     )
                 self.lut = conv
@@ -197,7 +203,7 @@ class RadiativeTransferEngine:
                 wl=wl,
                 grid=self.lut_grid,
                 attrs={"RT_mode": self.rt_mode},
-                onedim={"fwhm": fwhm, "wl": wl},
+                onedim={"fwhm": fwhm},
             )
 
             # Create and populate a LUT file
@@ -411,9 +417,8 @@ class RadiativeTransferEngine:
             makeSim = ray.put(self.makeSim)
             readSim = ray.put(self.readSim)
             lut_path = ray.put(self.lut_path)
-            buffer_time = 0
-            if self.engine_config.name == "modtran":
-                buffer_time = 0.5
+            buffer_time = ray.put(self.max_buffer_time)
+
             jobs = [
                 streamSimulation.remote(
                     point,
@@ -449,7 +454,8 @@ class RadiativeTransferEngine:
                 if report(len(jobs)):
                     Logger.info("Flushing netCDF to disk")
                     self.lut.flush()
-            del lut_names, makeSim, readSim, lut_path
+
+            del lut_names, makeSim, readSim, lut_path, buffer_time
 
             # Shouldn't be hit but just in case
             if self.lut.hold:

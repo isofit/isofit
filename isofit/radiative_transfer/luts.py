@@ -15,40 +15,32 @@ from netCDF4 import Dataset
 Logger = logging.getLogger(__file__)
 
 
-# Statically store expected keys of the LUT file
+# Statically store expected keys of the LUT file and their fill values
 class Keys:
 
     # Constants, not along any dimension
-    consts = [
-        "coszen",
-        "solzen",
-    ]
+    consts = {
+        "coszen": np.nan,
+        "solzen": np.nan,
+    }
 
     # Along the wavelength dimension only
-    onedim = [
-        "fwhm",
-        "solar_irr",
-    ]
+    onedim = {
+        "fwhm": np.nan,
+        "solar_irr": np.nan,
+    }
 
     # Keys along all dimensions, ie. wl and point
-    alldim = [
-        "rhoatm",
-        "sphalb",
-        "transm_down_dir",
-        "transm_down_dif",
-        "transm_up_dir",
-        "transm_up_dif",
-        "thermal_upwelling",
-        "thermal_downwelling",
-    ]
-
-    # These keys are filled with zeros instead of NaNs
-    zeros = [
-        "transm_down_dir",
-        "transm_down_dif",
-        "transm_up_dir",
-        "transm_up_dif",
-    ]
+    alldim = {
+        "rhoatm": np.nan,
+        "sphalb": np.nan,
+        "transm_down_dir": 0,
+        "transm_down_dif": 0,
+        "transm_up_dir": 0,
+        "transm_up_dif": 0,
+        "thermal_upwelling": np.nan,
+        "thermal_downwelling": np.nan,
+    }
 
 
 class Create:
@@ -98,85 +90,59 @@ class Create:
         self.sizes = {key: len(val) for key, val in grid.items()}
         self.attrs = attrs
 
-        def override(base, addition):
-            out = {}
-            for key in base:
-                if key in addition.keys():
-                    out[key] = addition[key]
-                else:
-                    if key in self.zeros:
-                        out[key] = 0
-                    else:
-                        out[key] = np.nan
-            for key in addition:
-                if key not in out.keys():
-                    out[key] = addition[key]
-            return out
-
-        self.zeros = Keys.zeros + zeros
-        self.consts = override(Keys.consts, consts)
-        self.onedim = override(Keys.onedim, onedim)
-        self.alldim = override(Keys.alldim, alldim)
+        self.consts = {**Keys.consts, **consts}
+        self.onedim = {**Keys.onedim, **onedim}
+        self.alldim = {**Keys.alldim, **alldim}
 
         # Save ds for backwards compatibility (to work with extractGrid, extractPoints)
-        self.ds = self.initialize()
-
-        # Remove variables to reduce memory footprint
-        if reduce:
-            # Drop all variables
-            drop = set(self.ds)
-
-            # Remove these from the drop list
-            if isinstance(reduce, list):
-                drop -= set(reduce)
-
-            self.ds = self.ds.drop_vars(drop)
+        self.initialize()
 
     def initialize(self) -> None:
         """
         Initializes the LUT netCDF by prepopulating it with filler values.
         """
 
-        nc_ds = Dataset(self.file, "w", format="NETCDF4")
-        chunks = []
-        for key, val in self.grid.items():
-            nc_ds.createDimension(key, len(val))
-            chunks.append(1)
-        nc_ds.createDimension("wl", len(self.wl))
-        chunks.insert(0, len(self.wl))
-
-        # Constants
-        for key, fill in self.consts.items():
-            nc_var = nc_ds.createVariable(key, "f8", fill_value=np.nan)
-            nc_var = np.nan
-
-        # One dimensional arrays
-        for key, fill in self.onedim.items():
-            nc_var = nc_ds.createVariable(key, "f8", ("wl",), fill_value=np.nan)
-            nc_var[:] = fill
-
-        # Multi dimensional arrays
-        for key, fill in self.alldim.items():
-            nc_var = nc_ds.createVariable(
-                key,
-                "f8",
-                ("wl",) + tuple(self.grid.keys()),
-                chunksizes=chunks,
-                fill_value=np.nan,
+        def createVariable(key, vals, dims=(), fill_value=np.nan, chunksizes=None):
+            """
+            Reusable createVariable for the Dataset object
+            """
+            var = ds.createVariable(
+                varname=key,
+                datatype="f8",
+                dimensions=dims,
+                fill_value=fill_value,
+                chunksizes=chunksizes,
             )
-            nc_var[:] = fill
+            var[:] = vals
 
-        for key, fill in self.grid.items():
-            nc_var = nc_ds.createVariable(key, "f8", (key,), fill_value=np.nan)
-            nc_var[:] = fill
+        with Dataset(self.file, "w", format="NETCDF4") as ds:
+            # Dimensions
+            ds.createDimension("wl", len(self.wl))
+            createVariable("wl", self.wl, ("wl",))
 
-        nc_ds.sync()
-        nc_ds.close()
-        del nc_ds
+            chunks = [len(self.wl)]
+            for key, vals in self.grid.items():
+                ds.createDimension(key, len(vals))
+                createVariable(key, vals, (key,))
+                chunks.append(1)
+
+            # Constants
+            dims = ()
+            for key, vals in self.consts.items():
+                createVariable(key, vals, dims)
+
+            # One dimensional arrays
+            dims = ("wl",)
+            for key, vals in self.onedim.items():
+                createVariable(key, vals, dims)
+
+            # Multi dimensional arrays
+            dims += tuple(self.grid)
+            for key, vals in self.alldim.items():
+                createVariable(key, vals, dims, chunksizes=chunks)
+
+            ds.sync()
         gc.collect()
-        ds = xr.open_dataset(self.file, mode="r")
-        # Create the point dimension
-        return ds.stack(point=self.grid).transpose("point", "wl")
 
     def pointIndices(self, point: np.ndarray) -> List[int]:
         """
@@ -214,25 +180,29 @@ class Create:
         """
         Flushes the (point, data) pairs held in the hold list to the LUT netCDF.
         """
-        ds = Dataset(self.file, "a")
-        for point, data in self.hold:
-            for key, vals in data.items():
-                if key in self.consts:
-                    ds[key].assignValue(vals)
-                elif key in self.onedim:
-                    ds[key][:] = vals
-                elif key in self.alldim:
-                    index = [slice(None)] + list(self.pointIndices(point))
-                    ds[key][index] = vals
-                else:
-                    Logger.warning(
-                        f"Attempted to assign a key that is not recognized, skipping: {key}"
-                    )
-        ds.sync()
-        ds.close()
-        del ds
-        gc.collect()
+        unknowns = set()
+        with Dataset(self.file, "a") as ds:
+            for point, data in self.hold:
+                pointIndex = [slice(None)] + list(self.pointIndices(point))
+                for key, vals in data.items():
+                    if key in self.consts:
+                        ds[key].assignValue(vals)
+                    elif key in self.onedim:
+                        ds[key][:] = vals
+                    elif key in self.alldim:
+                        ds[key][pointIndex] = vals
+                    else:
+                        unknowns.update([key])
+            ds.sync()
+
         self.hold = []
+        gc.collect()
+
+        # Reduce the number of warnings produced per flush
+        for key in unknowns:
+            Logger.warning(
+                f"Attempted to assign a key that is not recognized, skipping: {key}"
+            )
 
     def writePoint(self, point: np.ndarray, data: dict) -> None:
         """
