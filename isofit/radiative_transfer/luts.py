@@ -57,6 +57,7 @@ class Create:
         file: str,
         wl: np.ndarray,
         grid: dict,
+        attrs: dict,
         consts: List[str] = [],
         onedim: List[str] = [],
         alldim: List[str] = [],
@@ -74,6 +75,8 @@ class Create:
             The wavelength array.
         grid : dict
             The LUT grid, formatted as {str: Iterable}.
+        attrs: dict, defaults={}
+            Dict of dataset attributes, ie. {"RT_mode": "transm"}
         consts : List[str], optional, default=[]
             List of constant values. Appends to the current Create.consts list.
         onedim : List[str], optional, default=[]
@@ -93,6 +96,7 @@ class Create:
 
         self.sizes = {key: len(val) for key, val in grid.items()}
 
+        self.attrs = attrs
         self.consts = Keys.consts + consts
         self.onedim = Keys.onedim + onedim
         self.alldim = Keys.alldim + alldim
@@ -149,7 +153,7 @@ class Create:
 
                 ds[key] = fill
 
-        ds = xr.Dataset(coords={"wl": self.wl, **self.grid})
+        ds = xr.Dataset(coords={"wl": self.wl, **self.grid}, attrs=self.attrs)
 
         fill(self.consts, np.nan, 0.0, "")
 

@@ -107,7 +107,7 @@ def heuristic_atmosphere(
             rhi = RT.get_shared_rtm_quantities(x_RT_2, geom)
             rhoatm = instrument.sample(x_instrument, RT.wl, rhi["rhoatm"])
             transm = instrument.sample(
-                x_instrument, RT.wl, rhi["transm_down_dif"]
+                x_instrument, RT.wl, rhi["transm_down_dir"] + rhi["transm_down_dif"]
             )  # REVIEW: This was changed from transm as we're deprecating the key
             sphalb = instrument.sample(x_instrument, RT.wl, rhi["sphalb"])
             solar_irr = instrument.sample(x_instrument, RT.wl, RT.solar_irr)
@@ -117,7 +117,7 @@ def heuristic_atmosphere(
             # resulting residual (as measured from linear interpolation across
             # the absorption feature)
             # ToDo: grab the per pixel sza from Geometry object
-            if my_RT.engine_config.engine_name == "KernelFlowsGP":
+            if my_RT.rt_mode == "rdn":
                 rho = meas
             else:
                 rho = meas * np.pi / (solar_irr * RT.coszen)
@@ -194,6 +194,16 @@ def invert_algebraic(
     else:
         coszen = RT.coszen
 
+    # Figure out which RT object we are using
+    # TODO: this is currently very specific to vswir-tir 2-mode, eventually generalize
+    my_RT = None
+    for rte in RT.rt_engines:
+        if rte.treat_as_emissive is False:
+            my_RT = rte
+            break
+    if not my_RT:
+        raise ValueError("No suitable RT object for initialization")
+
     # Prevent NaNs
     transm[transm == 0] = 1e-5
 
@@ -205,7 +215,7 @@ def invert_algebraic(
 
     # Now solve for the reflectance at measured wavelengths,
     # and back-translate to surface wavelengths
-    if my_RT.engine_config.engine_name == "KernelFlowsGP":
+    if my_RT.rt_mode == "rdn":
         rho = rdn_solrfl
     else:
         rho = rdn_solrfl * np.pi / (solar_irr * coszen)
