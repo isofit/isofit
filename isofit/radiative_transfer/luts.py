@@ -50,7 +50,7 @@ class Create:
         file: str,
         wl: np.ndarray,
         grid: dict,
-        attrs: dict,
+        attrs: dict = {},
         consts: dict = {},
         onedim: dict = {},
         alldim: dict = {},
