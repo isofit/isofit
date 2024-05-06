@@ -199,7 +199,9 @@ def apply_oe(args):
 
     if args.sensor not in SUPPORTED_SENSORS:
         if args.sensor[:3] != "NA-":
-            errstr = f'Argument error: sensor must be one of {SUPPORTED_SENSORS} or "NA-*"'
+            errstr = (
+                f'Argument error: sensor must be one of {SUPPORTED_SENSORS} or "NA-*"'
+            )
             raise ValueError(errstr)
 
     if args.num_neighbors is not None and len(args.num_neighbors) > 1:
