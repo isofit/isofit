@@ -55,6 +55,8 @@ class FileExistsError(Exception):
 class ModtranRT(RadiativeTransferEngine):
     """A model of photon transport including the atmosphere."""
 
+    max_buffer_time = 0.5
+
     @staticmethod
     def parseTokens(tokens: list, coszen: float) -> dict:
         """
