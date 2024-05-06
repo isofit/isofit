@@ -141,6 +141,10 @@ class Create:
             for key, vals in self.alldim.items():
                 createVariable(key, vals, dims, chunksizes=chunks)
 
+            # Add custom attributes onto the Dataset
+            for key, value in self.attrs.items():
+                ds.setncattr(key, value)
+
             ds.sync()
         gc.collect()
 
