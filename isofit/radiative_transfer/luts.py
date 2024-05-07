@@ -17,7 +17,6 @@ Logger = logging.getLogger(__file__)
 
 # Statically store expected keys of the LUT file and their fill values
 class Keys:
-
     # Constants, not along any dimension
     consts = {
         "coszen": np.nan,
@@ -44,7 +43,6 @@ class Keys:
 
 
 class Create:
-
     def __init__(
         self,
         file: str,
@@ -144,7 +142,6 @@ class Create:
             # Add custom attributes onto the Dataset
             for key, value in self.attrs.items():
                 ds.setncattr(key, value)
-
 
             ds.sync()
         gc.collect()
