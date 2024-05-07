@@ -8,6 +8,7 @@ import os
 import subprocess
 from datetime import datetime
 from os.path import exists, join
+from shutil import copyfile
 from types import SimpleNamespace
 from warnings import warn
 
@@ -21,7 +22,13 @@ from spectral.io import envi
 import isofit.utils.template_construction as tmpl
 from isofit.core import isofit
 from isofit.core.common import envi_header
-from isofit.utils import analytical_line, empirical_line, extractions, segment
+from isofit.utils import (
+    analytical_line,
+    empirical_line,
+    extractions,
+    segment,
+    surface_model,
+)
 
 EPS = 1e-6
 CHUNKSIZE = 256
@@ -252,6 +259,37 @@ def apply_oe(args):
     paths.make_directories()
     paths.stage_files()
     logging.info("...file/directory setup complete")
+
+    # get surface model, rebuild if needed
+    if args.surface_path:
+        pass
+    else:
+        logging.info(
+            "No surface model defined. Build new one using default 'sources'"
+            " (i.e., spectral library)."
+        )
+        tmpl.build_surface_config(
+            macro_config=args.config_file,
+            flight_id=paths.fid,
+            output_path=paths.data_directory,
+            wvl_file=paths.wavelength_path,
+        )
+        config_path = os.path.join(paths.data_directory, paths.fid + "_surface.json")
+        isofit_path = os.path.dirname(os.path.dirname(os.path.dirname(isofit.__file__)))
+
+        for source in surface_macro_config["sources"]:
+            for file in [
+                source["input_spectrum_files"][0],
+                source["input_spectrum_files"][0] + ".hdr",
+            ]:
+                copyfile(
+                    os.path.abspath(
+                        os.path.join(isofit_path, "data", "reflectance", file)
+                    ),
+                    os.path.abspath(os.path.join(paths.data_directory, file)),
+                )
+
+        surface_model(config_path=config_path)
 
     # Based on the sensor type, get appropriate year/month/day info from initial condition.
     # We'll adjust for line length and UTC day overrun later
