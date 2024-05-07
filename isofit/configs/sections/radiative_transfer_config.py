@@ -93,6 +93,11 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         Only currently functional with multipart MODTRAN.
         """
 
+        self._rt_mode_type = str
+        self.rt_mode = None
+        """str: Radiative transfer mode of LUT simulations. 
+        'transm' for transmittances, 'rdn' for reflected radiance."""
+
         self._lut_names_type = dict()
         self.lut_names = None
         """Dictionary: Names of the elements to run this radiative transfer element on.  Must be a subset
@@ -214,6 +219,13 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
             errors.append(
                 "radiative_transfer->raditive_transfer_model: {} not in one of the"
                 " available models: {}".format(self.engine_name, valid_rt_engines)
+            )
+
+        valid_rt_modes = ["transm", "rdn"]
+        if self.rt_mode not in valid_rt_modes:
+            errors.append(
+                "radiative_transfer->raditive_transfer_mode: {} not in one of the"
+                " available modes: {}".format(self.rt_mode, valid_rt_modes)
             )
 
         if self.multipart_transmittance and self.engine_name != "modtran":

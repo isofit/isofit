@@ -50,6 +50,7 @@ class Create:
         file: str,
         wl: np.ndarray,
         grid: dict,
+        attrs: dict = {},
         consts: dict = {},
         onedim: dict = {},
         alldim: dict = {},
@@ -67,6 +68,8 @@ class Create:
             The wavelength array.
         grid : dict
             The LUT grid, formatted as {str: Iterable}.
+        attrs: dict, defaults={}
+            Dict of dataset attributes, ie. {"RT_mode": "transm"}
         consts : dict, optional, default={}
             Dictionary of constant values. Appends/replaces current Create.consts list.
         onedim : dict, optional, default={}
@@ -85,6 +88,7 @@ class Create:
         self.hold = []
 
         self.sizes = {key: len(val) for key, val in grid.items()}
+        self.attrs = attrs
 
         self.consts = {**Keys.consts, **consts}
         self.onedim = {**Keys.onedim, **onedim}
@@ -136,6 +140,11 @@ class Create:
             dims += tuple(self.grid)
             for key, vals in self.alldim.items():
                 createVariable(key, vals, dims, chunksizes=chunks)
+
+            # Add custom attributes onto the Dataset
+            for key, value in self.attrs.items():
+                ds.setncattr(key, value)
+
 
             ds.sync()
         gc.collect()
