@@ -3,6 +3,7 @@ This is the netCDF4 implementation for handling ISOFIT LUT files. For previous
 implementations and research, please see https://github.com/isofit/isofit/tree/897062a3dcc64d5292d0d2efe7272db0809a6085/isofit/luts
 """
 
+import gc
 import logging
 import os
 from typing import Any, List, Union
@@ -14,53 +15,43 @@ from netCDF4 import Dataset
 Logger = logging.getLogger(__file__)
 
 
-# Statically store expected keys of the LUT file
+# Statically store expected keys of the LUT file and their fill values
 class Keys:
-
     # Constants, not along any dimension
-    consts = [
-        "coszen",
-        "solzen",
-    ]
+    consts = {
+        "coszen": np.nan,
+        "solzen": np.nan,
+    }
 
     # Along the wavelength dimension only
-    onedim = [
-        "fwhm",
-        "solar_irr",
-    ]
+    onedim = {
+        "fwhm": np.nan,
+        "solar_irr": np.nan,
+    }
 
     # Keys along all dimensions, ie. wl and point
-    alldim = [
-        "rhoatm",
-        "sphalb",
-        "transm_down_dir",
-        "transm_down_dif",
-        "transm_up_dir",
-        "transm_up_dif",
-        "thermal_upwelling",
-        "thermal_downwelling",
-    ]
-
-    # These keys are filled with zeros instead of NaNs
-    zeros = [
-        "transm_down_dir",
-        "transm_down_dif",
-        "transm_up_dir",
-        "transm_up_dif",
-    ]
+    alldim = {
+        "rhoatm": np.nan,
+        "sphalb": np.nan,
+        "transm_down_dir": 0,
+        "transm_down_dif": 0,
+        "transm_up_dir": 0,
+        "transm_up_dif": 0,
+        "thermal_upwelling": np.nan,
+        "thermal_downwelling": np.nan,
+    }
 
 
 class Create:
-
     def __init__(
         self,
         file: str,
         wl: np.ndarray,
         grid: dict,
-        attrs: dict,
-        consts: List[str] = [],
-        onedim: List[str] = [],
-        alldim: List[str] = [],
+        attrs: dict = {},
+        consts: dict = {},
+        onedim: dict = {},
+        alldim: dict = {},
         zeros: List[str] = [],
         reduce: bool = ["fwhm"],
     ):
@@ -77,12 +68,12 @@ class Create:
             The LUT grid, formatted as {str: Iterable}.
         attrs: dict, defaults={}
             Dict of dataset attributes, ie. {"RT_mode": "transm"}
-        consts : List[str], optional, default=[]
-            List of constant values. Appends to the current Create.consts list.
-        onedim : List[str], optional, default=[]
-            List of one-dimensional data. Appends to the current Create.onedim list.
-        alldim : List[str], optional, default=[]
-            List of multi-dimensional data. Appends to the current Create.alldim list.
+        consts : dict, optional, default={}
+            Dictionary of constant values. Appends/replaces current Create.consts list.
+        onedim : dict, optional, default={}
+            Dictionary of one-dimensional data. Appends/replaces to the current Create.onedim list.
+        alldim : dict, optional, default={}
+            Dictionary of multi-dimensional data. Appends/replaces to the current Create.alldim list.
         zeros : List[str], optional, default=[]
             List of zero values. Appends to the current Create.zeros list.
         reduce : bool or list, optional, default=['fwhm']
@@ -95,78 +86,65 @@ class Create:
         self.hold = []
 
         self.sizes = {key: len(val) for key, val in grid.items()}
-
         self.attrs = attrs
-        self.consts = Keys.consts + consts
-        self.onedim = Keys.onedim + onedim
-        self.alldim = Keys.alldim + alldim
-        self.zeros = Keys.zeros + zeros
+
+        self.consts = {**Keys.consts, **consts}
+        self.onedim = {**Keys.onedim, **onedim}
+        self.alldim = {**Keys.alldim, **alldim}
 
         # Save ds for backwards compatibility (to work with extractGrid, extractPoints)
-        self.ds = self.initialize()
-
-        # Remove variables to reduce memory footprint
-        if reduce:
-            # Drop all variables
-            drop = set(self.ds)
-
-            # Remove these from the drop list
-            if isinstance(reduce, list):
-                drop -= set(reduce)
-
-            self.ds = self.ds.drop_vars(drop)
+        self.initialize()
 
     def initialize(self) -> None:
         """
         Initializes the LUT netCDF by prepopulating it with filler values.
         """
 
-        def fill(
-            keys: List[str],
-            nans: Union[np.ndarray, float],
-            zero: Union[np.ndarray, float],
-            dims: Union[List[str], str],
-        ) -> None:
+        def createVariable(key, vals, dims=(), fill_value=np.nan, chunksizes=None):
             """
-            Fill keys of the file with the specified shape.
-
-            Parameters
-            ----------
-            keys : List[str]
-                Keys to instantiate.
-            nans : Union[np.ndarray, float]
-                Shape of the NaN filler.
-            nans : Union[np.ndarray, float]
-                Shape of the zero filler.
-            dims : Union[str, List[str]]
-                Dimensions for the keys.
+            Reusable createVariable for the Dataset object
             """
-            for key in keys:
-                fill = nans
-                if isinstance(key, tuple):
-                    key, fill = key
-                elif key in self.zeros:
-                    fill = zero
+            var = ds.createVariable(
+                varname=key,
+                datatype="f8",
+                dimensions=dims,
+                fill_value=fill_value,
+                chunksizes=chunksizes,
+            )
+            var[:] = vals
 
-                if dims:
-                    fill = (dims, fill)
+        with Dataset(self.file, "w", format="NETCDF4") as ds:
+            # Dimensions
+            ds.createDimension("wl", len(self.wl))
+            createVariable("wl", self.wl, ("wl",))
 
-                ds[key] = fill
+            chunks = [len(self.wl)]
+            for key, vals in self.grid.items():
+                ds.createDimension(key, len(vals))
+                createVariable(key, vals, (key,))
+                chunks.append(1)
 
-        ds = xr.Dataset(coords={"wl": self.wl, **self.grid}, attrs=self.attrs)
+            # Constants
+            dims = ()
+            for key, vals in self.consts.items():
+                createVariable(key, vals, dims)
 
-        fill(self.consts, np.nan, 0.0, "")
+            # One dimensional arrays
+            dims = ("wl",)
+            for key, vals in self.onedim.items():
+                createVariable(key, vals, dims)
 
-        shape = ds.wl.size
-        fill(self.onedim, np.full(shape, np.nan), np.zeros(shape), "wl")
+            # Multi dimensional arrays
+            dims += tuple(self.grid)
+            for key, vals in self.alldim.items():
+                createVariable(key, vals, dims, chunksizes=chunks)
 
-        shape = tuple(ds.sizes.values())
-        fill(self.alldim, np.full(shape, np.nan), np.zeros(shape), ds.coords)
+            # Add custom attributes onto the Dataset
+            for key, value in self.attrs.items():
+                ds.setncattr(key, value)
 
-        ds.to_netcdf(self.file, mode="w", compute=False, engine="netcdf4")
-
-        # Create the point dimension
-        return ds.stack(point=self.grid).transpose("point", "wl")
+            ds.sync()
+        gc.collect()
 
     def pointIndices(self, point: np.ndarray) -> List[int]:
         """
@@ -204,6 +182,7 @@ class Create:
         """
         Flushes the (point, data) pairs held in the hold list to the LUT netCDF.
         """
+        unknowns = set()
         with Dataset(self.file, "a") as ds:
             for point, data in self.hold:
                 for key, vals in data.items():
@@ -215,11 +194,17 @@ class Create:
                         index = [slice(None)] + list(self.pointIndices(point))
                         ds[key][index] = vals
                     else:
-                        Logger.warning(
-                            f"Attempted to assign a key that is not recognized, skipping: {key}"
-                        )
+                        unknowns.update([key])
+            ds.sync()
 
         self.hold = []
+        gc.collect()
+
+        # Reduce the number of warnings produced per flush
+        for key in unknowns:
+            Logger.warning(
+                f"Attempted to assign a key that is not recognized, skipping: {key}"
+            )
 
     def writePoint(self, point: np.ndarray, data: dict) -> None:
         """
