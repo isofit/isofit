@@ -260,36 +260,6 @@ def apply_oe(args):
     paths.stage_files()
     logging.info("...file/directory setup complete")
 
-    # get surface model, rebuild if needed
-    if args.surface_path:
-        pass
-    else:
-        logging.info(
-            "No surface model defined. Build new one using default 'sources'"
-            " (i.e., spectral library)."
-        )
-        sources = tmpl.build_surface_config(
-            flight_id=paths.fid,
-            output_path=paths.data_directory,
-            wvl_file=paths.wavelength_path,
-        )
-        config_path = os.path.join(paths.data_directory, paths.fid + "_surface.json")
-        isofit_path = os.path.dirname(os.path.dirname(os.path.dirname(isofit.__file__)))
-
-        for source in sources:
-            for file in [
-                source["input_spectrum_files"][0],
-                source["input_spectrum_files"][0] + ".hdr",
-            ]:
-                copyfile(
-                    os.path.abspath(
-                        os.path.join(isofit_path, "data", "reflectance", file)
-                    ),
-                    os.path.abspath(os.path.join(paths.data_directory, file)),
-                )
-
-        surface_model(config_path=config_path)
-
     # Based on the sensor type, get appropriate year/month/day info from initial condition.
     # We'll adjust for line length and UTC day overrun later
     global INVERSION_WINDOWS
@@ -422,6 +392,36 @@ def apply_oe(args):
         axis=1,
     )
     np.savetxt(paths.wavelength_path, wl_data, delimiter=" ")
+
+    # rebuild surface model if needed
+    if args.surface_path:
+        pass
+    else:
+        logging.info(
+            "No surface model defined. Build new one using default 'sources'"
+            " (i.e., spectral library)."
+        )
+        sources = tmpl.build_surface_config(
+            flight_id=paths.fid,
+            output_path=paths.data_directory,
+            wvl_file=paths.wavelength_path,
+        )
+        config_path = os.path.join(paths.data_directory, paths.fid + "_surface.json")
+        isofit_path = os.path.dirname(os.path.dirname(os.path.dirname(isofit.__file__)))
+
+        for source in sources:
+            for file in [
+                source["input_spectrum_files"][0],
+                source["input_spectrum_files"][0] + ".hdr",
+            ]:
+                copyfile(
+                    os.path.abspath(
+                        os.path.join(isofit_path, "data", "reflectance", file)
+                    ),
+                    os.path.abspath(os.path.join(paths.data_directory, file)),
+                )
+
+        surface_model(config_path=config_path)
 
     (
         mean_latitude,
