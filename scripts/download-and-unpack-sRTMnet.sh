@@ -10,10 +10,10 @@ set -o pipefail
 set -o nounset
 
 
-SRTMNET_DIR="sRTMnet_v100"
-SRTMNET_PATH="${SRTMNET_DIR}/sRTMnet_v100.h5"
-SRTMNET_MODEL_FILENAME="sRTMnet_v100.h5"
-SRTMNET_AUX_FILENAME="sRTMnet_v100_aux.npz"
+SRTMNET_DIR="sRTMnet_v120"
+SRTMNET_PATH="${SRTMNET_DIR}/sRTMnet_v120.h5"
+SRTMNET_MODEL_FILENAME="sRTMnet_v120.h5"
+SRTMNET_AUX_FILENAME="sRTMnet_v120_aux.npz"
 
 # If the desired sRTM net file already exists just assume it is correct and do
 # nothing.

@@ -104,12 +104,12 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         # Emulator Aux
         aux = np.load(config.emulator_aux_file)
 
-        # TODO: Disable when sRTMnet_v100_aux is updated
+        # TODO: Disable when sRTMnet_v120_aux is updated
         aux_rt_quantities = np.where(
             aux["rt_quantities"] == "transm", "transm_down_dif", aux["rt_quantities"]
         )
 
-        # TODO: Re-enable when sRTMnet_v100_aux is updated
+        # TODO: Re-enable when sRTMnet_v120_aux is updated
         # Verify expected keys exist
         # missing = self.lut_quantities - set(aux["rt_quantities"].tolist())
         # if missing:
