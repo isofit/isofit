@@ -268,8 +268,7 @@ def apply_oe(args):
             "No surface model defined. Build new one using default 'sources'"
             " (i.e., spectral library)."
         )
-        tmpl.build_surface_config(
-            macro_config=args.config_file,
+        sources = tmpl.build_surface_config(
             flight_id=paths.fid,
             output_path=paths.data_directory,
             wvl_file=paths.wavelength_path,
@@ -277,7 +276,7 @@ def apply_oe(args):
         config_path = os.path.join(paths.data_directory, paths.fid + "_surface.json")
         isofit_path = os.path.dirname(os.path.dirname(os.path.dirname(isofit.__file__)))
 
-        for source in surface_macro_config["sources"]:
+        for source in sources:
             for file in [
                 source["input_spectrum_files"][0],
                 source["input_spectrum_files"][0] + ".hdr",
