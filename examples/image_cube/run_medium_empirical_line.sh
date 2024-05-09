@@ -11,4 +11,4 @@ fi
 file_base=ang20170323t202244
 
 # Medium test (1000x598 pixels, empirical line) - this should take 5-10 minutes with n_cores = 4
-isofit apply_oe medium_chunk/${file_base}_rdn_7k-8k medium_chunk/${file_base}_loc_7k-8k medium_chunk/${file_base}_obs_7k-8k medium_chunk/L2A_reflectance ang --surface_path surface.mat --n_cores 4 --presolve --empirical_line --emulator_base ${EMULATOR_PATH} --segmentation_size 400 --pressure_elevation
+isofit apply_oe medium_chunk/${file_base}_rdn_7k-8k medium_chunk/${file_base}_loc_7k-8k medium_chunk/${file_base}_obs_7k-8k medium_chunk/L2A_reflectance ang --n_cores 4 --presolve --empirical_line --emulator_base ${EMULATOR_PATH} --segmentation_size 400 --pressure_elevation
