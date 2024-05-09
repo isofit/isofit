@@ -157,10 +157,10 @@ it is likely you will need to specify a legacy compiling configuration by changi
 
 2. Configure your environment by pointing the SIXS_DIR variable to point to your installation directory.
 
-3. Download the `pre-trained sRTMnet neural network hdf5 file <https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/sRTMnet_v100.h5>`_,
-the sRTMnet auxiliary file that is included in a `Zenodo-hosted zip file <https://zenodo.org/record/4096627/files/sRTMnet_v100.zip>`_, and (for the example below)
-point the environment variable EMULATOR_PATH to the sRTMnet hdf5 file. It's important that you store the .aux file
-obtained from the zip archive in the same directory as the hdf5 file. Remaining contents of the zip are not needed.
+3. Download the `pre-trained sRTMnet neural network <https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/sRTMnet_v100.h5>`_,
+as well as some `auxiliary data <https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/sRTMnet_v100_aux.npz>`_.
+This will give you an hdf5 and an aux file. It is important that you store both in the same directory.
+Finally, point the environment variable EMULATOR_PATH to the hdf5 file.
 
 4. Run one of the following examples:
 
