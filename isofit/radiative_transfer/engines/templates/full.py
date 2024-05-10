@@ -18,8 +18,11 @@ class CustomRT(RadiativeTransferEngine):
     This contains all of the possible pieces that can be defined.
     """
 
-    self._disable_makeSim = False  # Default in RadiativeTransferEngine
     # Disabling will also disable calls to readSim, leaving only preSim and postSim to be executed
+    _disable_makeSim = False  # Default in RadiativeTransferEngine
+
+    # Sleep a random amount of time up to max this value at the start of each streamSimulation
+    max_buffer_time = 0  # Default in RadiativeTransferEngine
 
     def __init__(self, engine_config: RadiativeTransferEngineConfig, **kwargs):
         """
