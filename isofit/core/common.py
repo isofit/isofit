@@ -624,6 +624,13 @@ def resample_spectrum(
         np.array: interpolated radiance vector
 
     """
+    # check if x is vector or matrix
+    if len(x.shape) > 1:
+        x_raw = x.copy()
+        x_raw = x_raw.transpose()
+    else:
+        x_raw = x.copy()
+        x_raw = x_raw.reshape((len(x), 1))
 
     H = np.array(
         [
@@ -631,10 +638,14 @@ def resample_spectrum(
             for wi, fwhmi in zip(wl2, fwhm2)
         ]
     )
+
     if fill is False:
-        return np.dot(H, x[:, np.newaxis]).ravel()
+        if len(x.shape) > 1:
+            return np.dot(H, x_raw).transpose()
+        else:
+            return np.dot(H, x_raw).ravel()
     else:
-        xnew = np.dot(H, x[:, np.newaxis]).ravel()
+        xnew = np.dot(H, x_raw).ravel()
         good = np.isfinite(xnew)
         for i, xi in enumerate(xnew):
             if not good[i]:

@@ -171,17 +171,16 @@ class RadiativeTransferEngine:
 
             # if necessary, resample prebuilt LUT to desired instrument spectral response
             if not len(wl) == len(self.lut.wl) or all(wl == self.lut.wl):
-                conv = xr.Dataset(coords={"wl": wl, "point": self.lut.points})
+                conv = xr.Dataset(coords={"point": self.lut.point, "wl": wl})
                 for quantity in self.lut:
                     if quantity in luts.Keys.alldim.keys():
                         conv[quantity] = (
-                            ("wl", "point"),
+                            ("point", "wl"),
                             common.resample_spectrum(
                                 self.lut[quantity].data, self.lut.wl, wl, fwhm
                             ),
                         )
-                    else:
-                        conv[quantity] = self.lut[quantity].data
+
                 self.lut = conv
 
         else:
