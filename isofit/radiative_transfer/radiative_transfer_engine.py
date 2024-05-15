@@ -177,7 +177,10 @@ class RadiativeTransferEngine:
 
             # if necessary, resample prebuilt LUT to desired instrument spectral response
             if not len(wl) == len(self.lut.wl) or all(wl == self.lut.wl):
-                conv = xr.Dataset(coords={"point": self.lut.point, "wl": wl})
+                conv = xr.Dataset(
+                    coords={"point": self.lut.point, "wl": wl},
+                    attrs={"RT_mode": self.rt_mode},
+                )
                 for quantity in self.lut:
                     if quantity in luts.Keys.alldim.keys():
                         conv[quantity] = (
