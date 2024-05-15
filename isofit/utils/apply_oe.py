@@ -523,7 +523,7 @@ def apply_oe(args):
                 emulator_base=args.emulator_base,
                 uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
                 prebuilt_lut_path=args.prebuilt_lut,
-                inversion_windows= INVERSION_WINDOWS
+                inversion_windows=INVERSION_WINDOWS,
             )
 
             # Run modtran retrieval
@@ -626,7 +626,7 @@ def apply_oe(args):
             segmentation_size=args.segmentation_size,
             pressure_elevation=args.pressure_elevation,
             prebuilt_lut_path=args.prebuilt_lut,
-            inversion_windows= INVERSION_WINDOWS
+            inversion_windows=INVERSION_WINDOWS,
         )
 
         # Run modtran retrieval
