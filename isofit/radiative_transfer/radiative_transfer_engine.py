@@ -159,6 +159,12 @@ class RadiativeTransferEngine:
             self.lut = luts.load(lut_path, subset=engine_config.lut_names)
             self.lut_grid = lut_grid or luts.extractGrid(self.lut)
             self.points, self.lut_names = luts.extractPoints(self.lut)
+
+            # remove 'point' if added to lut_names after subsetting
+            if "point" in self.lut_names:
+                remove = np.where(self.lut_names == "point")
+                self.lut_names = np.delete(self.lut_names, remove)
+
             # Enable special modes - argument: get from prebuilt LUT netCDF if available
             self.rt_mode = self.lut.attrs.get("RT_mode", "transm")
             if self.rt_mode not in ["transm", "rdn"]:
@@ -180,6 +186,17 @@ class RadiativeTransferEngine:
                                 self.lut[quantity].data, self.lut.wl, wl, fwhm
                             ),
                         )
+                    if quantity == "solar_irr":
+                        conv[quantity] = (
+                            "wl",
+                            common.resample_spectrum(
+                                self.lut[quantity].data, self.lut.wl, wl, fwhm
+                            ),
+                        )
+                    if quantity == "fwhm":
+                        conv[quantity] = ("wl", fwhm)
+                    if quantity in luts.Keys.consts.keys():
+                        conv[quantity] = self.lut[quantity].data
 
                 self.lut = conv
 
