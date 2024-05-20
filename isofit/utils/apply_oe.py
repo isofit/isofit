@@ -14,19 +14,12 @@ from warnings import warn
 import click
 import numpy as np
 import ray
-from scipy.io import loadmat
 from spectral.io import envi
 
 import isofit.utils.template_construction as tmpl
 from isofit.core import isofit
-from isofit.core.common import envi_header, expand_path, json_load_ascii
-from isofit.utils import (
-    analytical_line,
-    empirical_line,
-    extractions,
-    segment,
-    surface_model,
-)
+from isofit.core.common import envi_header
+from isofit.utils import analytical_line, empirical_line, extractions, segment
 
 EPS = 1e-6
 CHUNKSIZE = 256
@@ -374,39 +367,10 @@ def apply_oe(args):
     )
     np.savetxt(paths.wavelength_path, wl_data, delimiter=" ")
 
-    # rebuild surface model if needed
-    if os.path.isfile(args.surface_path):
-        if args.surface_path.endswith(".mat"):
-            # check wavelength grid of surface model if provided
-            model_dict = loadmat(args.surface_path)
-            wl_surface = model_dict["wl"][0]
-            if len(wl_surface) != len(wl):
-                raise ValueError(
-                    "Number of channels provided in surface model file does not match"
-                    " wavelengths in radiance cube. Please rebuild your surface model."
-                )
-            if not np.all(np.isclose(wl_surface, wl, atol=0.01)):
-                logging.warning(
-                    "Center wavelengths provided in surface model file do not match"
-                    " wavelengths in radiance cube. Please consider rebuilding your"
-                    " surface model for optimal performance."
-                )
-        elif args.surface_path.endswith(".json"):
-            logging.info(
-                "No surface model provided. Build new one using given config file."
-            )
-            surface_model(config_path=args.surface_path)
-            configdir, _ = os.path.split(os.path.abspath(args.surface_path))
-            config = json_load_ascii(args.surface_path, shell_replace=True)
-            paths.surface_path = expand_path(configdir, config["output_model_file"])
-        else:
-            raise FileNotFoundError(
-                "Unrecognized format of surface file. Please provide either a .mat model or a .json config dict."
-            )
-    else:
-        raise FileNotFoundError(
-            "No surface file found. Please provide either a .mat model or a .json config dict."
-        )
+    # check and rebuild surface model if needed
+    paths.surface_path = tmpl.check_surface_model(
+        surface_path=args.surface_path, wl=wl, paths=paths
+    )
 
     (
         mean_latitude,

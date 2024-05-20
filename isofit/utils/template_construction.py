@@ -13,14 +13,20 @@ from shutil import copyfile
 from sys import platform
 from typing import List
 
-import h5py
 import netCDF4 as nc
 import numpy as np
+from scipy.io import loadmat
 from sklearn import mixture
 from spectral.io import envi
 
 from isofit.core import isofit
-from isofit.core.common import envi_header, resample_spectrum
+from isofit.core.common import (
+    envi_header,
+    expand_path,
+    json_load_ascii,
+    resample_spectrum,
+)
+from isofit.utils import surface_model
 
 
 class Pathnames:
@@ -659,6 +665,50 @@ def get_angular_grid(
             )
 
         return central_angles
+
+
+def check_surface_model(surface_path: str, wl: np.array, paths: Pathnames) -> str:
+    """
+    Checks and rebuilds surface model if needed.
+
+    Args:
+        surface_path: path to surface model or config dict
+        wl: instrument center wavelengths
+        paths: object containing references to all relevant file locations
+    """
+    if os.path.isfile(surface_path):
+        if surface_path.endswith(".mat"):
+            # check wavelength grid of surface model if provided
+            model_dict = loadmat(surface_path)
+            wl_surface = model_dict["wl"][0]
+            if len(wl_surface) != len(wl):
+                raise ValueError(
+                    "Number of channels provided in surface model file does not match"
+                    " wavelengths in radiance cube. Please rebuild your surface model."
+                )
+            if not np.all(np.isclose(wl_surface, wl, atol=0.01)):
+                logging.warning(
+                    "Center wavelengths provided in surface model file do not match"
+                    " wavelengths in radiance cube. Please consider rebuilding your"
+                    " surface model for optimal performance."
+                )
+            return surface_path
+        elif surface_path.endswith(".json"):
+            logging.info(
+                "No surface model provided. Build new one using given config file."
+            )
+            surface_model(config_path=surface_path)
+            configdir, _ = os.path.split(os.path.abspath(surface_path))
+            config = json_load_ascii(surface_path, shell_replace=True)
+            return expand_path(configdir, config["output_model_file"])
+        else:
+            raise FileNotFoundError(
+                "Unrecognized format of surface file. Please provide either a .mat model or a .json config dict."
+            )
+    else:
+        raise FileNotFoundError(
+            "No surface file found. Please provide either a .mat model or a .json config dict."
+        )
 
 
 def build_presolve_config(
