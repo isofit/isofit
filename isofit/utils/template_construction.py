@@ -67,12 +67,7 @@ class Pathnames:
 
         self.full_lut_directory = abspath(join(self.working_directory, "lut_full/"))
 
-        if args.surface_path:
-            self.surface_path = args.surface_path
-        else:
-            self.surface_path = os.getenv("ISOFIT_SURFACE_MODEL")
-        if self.surface_path is None:
-            logging.info("No surface model defined")
+        self.surface_path = args.surface_path
 
         # set up some sub-directories
         self.lut_h2o_directory = abspath(join(self.working_directory, "lut_h2o/"))

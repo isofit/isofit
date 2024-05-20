@@ -19,7 +19,7 @@ from spectral.io import envi
 
 import isofit.utils.template_construction as tmpl
 from isofit.core import isofit
-from isofit.core.common import envi_header
+from isofit.core.common import envi_header, expand_path, json_load_ascii
 from isofit.utils import (
     analytical_line,
     empirical_line,
@@ -396,6 +396,9 @@ def apply_oe(args):
                 "No surface model provided. Build new one using given config file."
             )
             surface_model(config_path=args.surface_path)
+            configdir, _ = os.path.split(os.path.abspath(args.surface_path))
+            config = json_load_ascii(args.surface_path, shell_replace=True)
+            paths.surface_path = expand_path(configdir, config["output_model_file"])
         else:
             raise FileNotFoundError(
                 "Unrecognized format of surface file. Please provide either a .mat model or a .json config dict."
