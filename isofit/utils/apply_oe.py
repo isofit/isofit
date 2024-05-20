@@ -361,22 +361,6 @@ def apply_oe(args):
     # Close out radiance dataset to avoid potential confusion
     del radiance_dataset
 
-    # check wavelength grid of surface model if provided
-    if args.surface_path.endswith(".mat"):
-        model_dict = loadmat(args.surface_path)
-        wl_surface = model_dict["wl"][0]
-        if len(wl_surface) != len(wl):
-            raise ValueError(
-                "Number of channels provided in surface model file does not match"
-                " wavelengths in radiance cube. Please rebuild your surface model."
-            )
-        if not np.all(np.isclose(wl_surface, wl, atol=0.01)):
-            logging.warning(
-                "Center wavelengths provided in surface model file do not match"
-                " wavelengths in radiance cube. Please consider rebuilding your"
-                " surface model for optimal performance."
-            )
-
     # Convert to microns if needed
     if wl[0] > 100:
         logging.info("Wavelength units of nm inferred...converting to microns")
@@ -393,7 +377,20 @@ def apply_oe(args):
     # rebuild surface model if needed
     if os.path.isfile(args.surfac_path):
         if args.surface_path.endswith(".mat"):
-            pass
+            # check wavelength grid of surface model if provided
+            model_dict = loadmat(args.surface_path)
+            wl_surface = model_dict["wl"][0]
+            if len(wl_surface) != len(wl):
+                raise ValueError(
+                    "Number of channels provided in surface model file does not match"
+                    " wavelengths in radiance cube. Please rebuild your surface model."
+                )
+            if not np.all(np.isclose(wl_surface, wl, atol=0.01)):
+                logging.warning(
+                    "Center wavelengths provided in surface model file do not match"
+                    " wavelengths in radiance cube. Please consider rebuilding your"
+                    " surface model for optimal performance."
+                )
         elif args.surface_path.endswith(".json"):
             logging.info(
                 "No surface model provided. Build new one using given config file."
