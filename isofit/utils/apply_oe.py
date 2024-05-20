@@ -57,13 +57,13 @@ INVERSION_WINDOWS = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
 @click.argument("input_obs")
 @click.argument("working_directory")
 @click.argument("sensor")
+@click.argument("surface_path")
 @click.option("--copy_input_files", is_flag=True, default=False)
 @click.option("--modtran_path")
 @click.option("--wavelength_path")
 @click.option("--surface_category", default="multicomponent_surface")
 @click.option("--aerosol_climatology_path")
 @click.option("--rdn_factors_path")
-@click.option("--surface_path")
 @click.option("--atmosphere_type", default="ATM_MIDLAT_SUMMER")
 @click.option("--channelized_uncertainty_path")
 @click.option("--model_discrepancy_path")
@@ -133,6 +133,8 @@ def apply_oe(args):
         working_directory (str): directory to stage multiple outputs, will contain subdirectories
         sensor (str): the sensor used for acquisition, will be used to set noise and datetime settings.  choices are:
             [ang, avcl, neon, prism]
+        surface_path (str): Path to surface model or json dict of surface model configuration.
+            Alternately set with ISOFIT_SURFACE_MODEL environment variable.
         copy_input_files (Optional, int): flag to choose to copy input_radiance, input_loc, and input_obs locally into
             the working_directory.  0 for no, 1 for yes.  Default 0
         modtran_path (Optional, str): Location of MODTRAN utility, alternately set with MODTRAN_DIR environment variable
@@ -142,8 +144,6 @@ def apply_oe(args):
         aerosol_climatology_path (Optional, str): Specific aerosol climatology information to use in MODTRAN,
             default None
         rdn_factors_path (Optional, str): Specify a radiometric correction factor, if desired. default None
-        surface_path (Optional, str): Path to surface model - required if surface is multicomponent_surface (default
-            above).  Alternately set with ISOFIT_SURFACE_MODEL environment variable. default None
         channelized_uncertainty_path (Optional, str): path to a channelized uncertainty file.  default None
         lut_config_file (Optional, str): Path to a look up table configuration file, which will override defaults
             chocies. default None
