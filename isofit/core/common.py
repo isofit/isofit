@@ -641,7 +641,8 @@ def resample_spectrum(
 
     if fill is False:
         if len(x.shape) > 1:
-            return np.dot(H, x_raw).transpose()
+            return np.array([np.nansum(H * y[np.newaxis, :], axis=1) for y in x])
+            # return np.dot(H, x_raw).transpose()
         else:
             return np.dot(H, x_raw).ravel()
     else:
