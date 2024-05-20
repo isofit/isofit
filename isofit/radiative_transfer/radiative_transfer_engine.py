@@ -184,16 +184,20 @@ class RadiativeTransferEngine:
                 conv = xr.apply_ufunc(
                     common.resample_spectrum,
                     self.lut[keys],
-                    kwargs={"wl": self.lut.wl, "wl2": outWL, "fwhm2": outWL},
+                    kwargs={"wl": self.lut.wl, "wl2": wl, "fwhm2": fwhm},
                     input_core_dims=[["wl"]],  # Only operate on keys with this dim
                     exclude_dims=set(["wl"]),  # Allows changing the wl size
                     output_core_dims=[["wl"]],  # Adds wl to the expected output dims
                     keep_attrs="override",
                     # on_missing_core_dim = 'copy' # Newer versions of xarray support this
                 )
+
                 # If not on newer versions
                 for key in list(self.lut.drop_dims("wl")):
                     conv[key] = self.lut[key]
+
+                # Override the fwhm
+                conv["fwhm"] = ("wl", fwhm)
 
                 # Exchange the lut with the resampled version
                 self.lut = conv
