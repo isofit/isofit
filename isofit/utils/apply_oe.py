@@ -8,12 +8,10 @@ import os
 import subprocess
 from datetime import datetime
 from os.path import exists, join
-from shutil import copyfile
 from types import SimpleNamespace
 from warnings import warn
 
 import click
-import h5py
 import numpy as np
 import ray
 from scipy.io import loadmat
@@ -134,7 +132,6 @@ def apply_oe(args):
         sensor (str): the sensor used for acquisition, will be used to set noise and datetime settings.  choices are:
             [ang, avcl, neon, prism]
         surface_path (str): Path to surface model or json dict of surface model configuration.
-            Alternately set with ISOFIT_SURFACE_MODEL environment variable.
         copy_input_files (Optional, int): flag to choose to copy input_radiance, input_loc, and input_obs locally into
             the working_directory.  0 for no, 1 for yes.  Default 0
         modtran_path (Optional, str): Location of MODTRAN utility, alternately set with MODTRAN_DIR environment variable
@@ -364,9 +361,9 @@ def apply_oe(args):
     # Close out radiance dataset to avoid potential confusion
     del radiance_dataset
 
-    # check wavelength grid of surface file
-    if paths.surface_path:
-        model_dict = loadmat(paths.surface_path)
+    # check wavelength grid of surface model if provided
+    if args.surface_path.endswith(".mat"):
+        model_dict = loadmat(args.surface_path)
         wl_surface = model_dict["wl"][0]
         if len(wl_surface) != len(wl):
             raise ValueError(
@@ -394,34 +391,22 @@ def apply_oe(args):
     np.savetxt(paths.wavelength_path, wl_data, delimiter=" ")
 
     # rebuild surface model if needed
-    if args.surface_path:
-        pass
+    if os.path.isfile(args.surfac_path):
+        if args.surface_path.endswith(".mat"):
+            pass
+        elif args.surface_path.endswith(".json"):
+            logging.info(
+                "No surface model provided. Build new one using given config file."
+            )
+            surface_model(config_path=args.surface_path)
+        else:
+            raise FileNotFoundError(
+                "Unrecognized format of surface file. Please provide either a .mat model or a .json config dict."
+            )
     else:
-        logging.info(
-            "No surface model defined. Build new one using default 'sources'"
-            " (i.e., spectral library)."
+        raise FileNotFoundError(
+            "No surface file found. Please provide either a .mat model or a .json config dict."
         )
-        sources = tmpl.build_surface_config(
-            flight_id=paths.fid,
-            output_path=paths.data_directory,
-            wvl_file=paths.wavelength_path,
-        )
-        config_path = os.path.join(paths.data_directory, paths.fid + "_surface.json")
-        isofit_path = os.path.dirname(os.path.dirname(os.path.dirname(isofit.__file__)))
-
-        for source in sources:
-            for file in [
-                source["input_spectrum_files"][0],
-                source["input_spectrum_files"][0] + ".hdr",
-            ]:
-                copyfile(
-                    os.path.abspath(
-                        os.path.join(isofit_path, "data", "reflectance", file)
-                    ),
-                    os.path.abspath(os.path.join(paths.data_directory, file)),
-                )
-
-        surface_model(config_path=config_path)
 
     (
         mean_latitude,
