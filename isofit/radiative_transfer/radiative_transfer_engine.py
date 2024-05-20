@@ -186,9 +186,7 @@ class RadiativeTransferEngine:
                     self.lut[keys],
                     kwargs={"wl": self.lut.wl, "wl2": outWL, "fwhm2": outWL},
                     input_core_dims=[["wl"]],  # Only operate on keys with this dim
-                    exclude_dims={
-                        "wl",
-                    },  # Allows changing the wl size
+                    exclude_dims=set(["wl"]),  # Allows changing the wl size
                     output_core_dims=[["wl"]],  # Adds wl to the expected output dims
                     keep_attrs="override",
                     # on_missing_core_dim = 'copy' # Newer versions of xarray support this
