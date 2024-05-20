@@ -176,15 +176,6 @@ def apply_oe(args):
 
     """
 
-    warn(
-        message=(
-            f"The module {__name__} is deprecated and will be removed with ISOFIT version"
-            " 3.2."
-        ),
-        category=DeprecationWarning,
-        stacklevel=2,
-    )
-
     use_superpixels = args.empirical_line or args.analytical_line
 
     ray.init(
