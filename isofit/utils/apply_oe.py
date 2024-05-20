@@ -55,7 +55,7 @@ INVERSION_WINDOWS = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
 @click.argument("input_obs")
 @click.argument("working_directory")
 @click.argument("sensor")
-@click.argument("surface_path")
+@click.option("--surface_path", "-sp", required=True, type=str)
 @click.option("--copy_input_files", is_flag=True, default=False)
 @click.option("--modtran_path")
 @click.option("--wavelength_path")
@@ -131,7 +131,7 @@ def apply_oe(args):
         working_directory (str): directory to stage multiple outputs, will contain subdirectories
         sensor (str): the sensor used for acquisition, will be used to set noise and datetime settings.  choices are:
             [ang, avcl, neon, prism]
-        surface_path (str): Path to surface model or json dict of surface model configuration.
+        surface_path (Required, str): Path to surface model or json dict of surface model configuration.
         copy_input_files (Optional, int): flag to choose to copy input_radiance, input_loc, and input_obs locally into
             the working_directory.  0 for no, 1 for yes.  Default 0
         modtran_path (Optional, str): Location of MODTRAN utility, alternately set with MODTRAN_DIR environment variable
