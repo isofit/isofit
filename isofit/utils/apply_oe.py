@@ -375,7 +375,7 @@ def apply_oe(args):
     np.savetxt(paths.wavelength_path, wl_data, delimiter=" ")
 
     # rebuild surface model if needed
-    if os.path.isfile(args.surfac_path):
+    if os.path.isfile(args.surface_path):
         if args.surface_path.endswith(".mat"):
             # check wavelength grid of surface model if provided
             model_dict = loadmat(args.surface_path)
