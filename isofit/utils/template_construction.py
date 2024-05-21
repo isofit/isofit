@@ -13,14 +13,20 @@ from shutil import copyfile
 from sys import platform
 from typing import List
 
-import h5py
 import netCDF4 as nc
 import numpy as np
+from scipy.io import loadmat
 from sklearn import mixture
 from spectral.io import envi
 
 from isofit.core import isofit
-from isofit.core.common import envi_header, resample_spectrum
+from isofit.core.common import (
+    envi_header,
+    expand_path,
+    json_load_ascii,
+    resample_spectrum,
+)
+from isofit.utils import surface_model
 
 
 class Pathnames:
@@ -67,12 +73,7 @@ class Pathnames:
 
         self.full_lut_directory = abspath(join(self.working_directory, "lut_full/"))
 
-        if args.surface_path:
-            self.surface_path = args.surface_path
-        else:
-            self.surface_path = os.getenv("ISOFIT_SURFACE_MODEL")
-        if self.surface_path is None:
-            logging.info("No surface model defined")
+        self.surface_path = args.surface_path
 
         # set up some sub-directories
         self.lut_h2o_directory = abspath(join(self.working_directory, "lut_h2o/"))
@@ -666,31 +667,47 @@ def get_angular_grid(
         return central_angles
 
 
-def build_surface_config(
-    macro_config: dict, flight_id: str, output_path: str, wvl_file: str
-):
-    """Write a surface config file, using the specified pathnames and all given info.
+def check_surface_model(surface_path: str, wl: np.array, paths: Pathnames) -> str:
+    """
+    Checks and rebuilds surface model if needed.
 
     Args:
-        macro_config: dictionary of macro options for surface model
-        flight_id: string of instrument specific flight identification number
-        output_path: output directory for surface config file
-        wvl_file: directory of instrument wavelength file
+        surface_path: path to surface model or config dict
+        wl: instrument center wavelengths
+        paths: object containing references to all relevant file locations
     """
-    if not macro_config["output_model_file"]:
-        surface_path = os.path.abspath(os.path.join(output_path, "surface.mat"))
-        macro_config["output_model_file"] = surface_path
-
-    if not macro_config["wavelength_file"]:
-        macro_config["wavelength_file"] = wvl_file
-
-    surface_config = macro_config
-
-    output_config_name = os.path.join(output_path, flight_id + "_surface.json")
-
-    with open(output_config_name, "w") as fout:
-        fout.write(
-            json.dumps(surface_config, cls=SerialEncoder, indent=4, sort_keys=True)
+    if os.path.isfile(surface_path):
+        if surface_path.endswith(".mat"):
+            # check wavelength grid of surface model if provided
+            model_dict = loadmat(surface_path)
+            wl_surface = model_dict["wl"][0]
+            if len(wl_surface) != len(wl):
+                raise ValueError(
+                    "Number of channels provided in surface model file does not match"
+                    " wavelengths in radiance cube. Please rebuild your surface model."
+                )
+            if not np.all(np.isclose(wl_surface, wl, atol=0.01)):
+                logging.warning(
+                    "Center wavelengths provided in surface model file do not match"
+                    " wavelengths in radiance cube. Please consider rebuilding your"
+                    " surface model for optimal performance."
+                )
+            return surface_path
+        elif surface_path.endswith(".json"):
+            logging.info(
+                "No surface model provided. Build new one using given config file."
+            )
+            surface_model(config_path=surface_path)
+            configdir, _ = os.path.split(os.path.abspath(surface_path))
+            config = json_load_ascii(surface_path, shell_replace=True)
+            return expand_path(configdir, config["output_model_file"])
+        else:
+            raise FileNotFoundError(
+                "Unrecognized format of surface file. Please provide either a .mat model or a .json config dict."
+            )
+    else:
+        raise FileNotFoundError(
+            "No surface file found. Please provide either a .mat model or a .json config dict."
         )
 
 
