@@ -632,9 +632,9 @@ def resample_spectrum(
     )
     H[np.isnan(H)] = 0
 
-    shape = len(x.shape)
+    dims = len(x.shape)
     if fill:
-        if shape > 1:
+        if dims > 1:
             raise Exception("resample_spectrum(fill=True) only works with vectors")
 
         x = x.reshape(-1, 1)
@@ -650,7 +650,7 @@ def resample_spectrum(
         x[np.isnan(x)] = 0
 
         # Matrix
-        if shape > 1:
+        if dims > 1:
             return np.dot(H, x.T).T
 
         # Vector

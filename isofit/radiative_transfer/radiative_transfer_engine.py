@@ -178,7 +178,9 @@ class RadiativeTransferEngine:
             # If necessary, resample prebuilt LUT to desired instrument spectral response
             if not len(wl) == len(self.lut.wl) or not all(wl == self.lut.wl):
                 # Discover variables along the wl dim
-                keys = {key for key, data in self.lut.items() if "wl" in data.dims}
+                keys = {key for key in self.lut if "wl" in self.lut[key].dims} - {
+                    "fwhm",
+                }
 
                 # Apply resampling to these keys
                 conv = xr.apply_ufunc(
@@ -192,7 +194,7 @@ class RadiativeTransferEngine:
                     # on_missing_core_dim = 'copy' # Newer versions of xarray support this
                 )
 
-                # If not on newer versions
+                # If not on newer versions, add keys not on the wl dim
                 for key in list(self.lut.drop_dims("wl")):
                     conv[key] = self.lut[key]
 
