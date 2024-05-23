@@ -491,14 +491,41 @@ def apply_oe(args):
             h2o_grid = np.linspace(0.01, max_water - 0.01, 10).round(2)
             logging.info(f"Pre-solve H2O grid: {h2o_grid}")
             logging.info("Writing H2O pre-solve configuration file.")
-            tmpl.build_presolve_config(
+            tmpl.build_main_config(
                 paths=paths,
-                h2o_lut_grid=h2o_grid,
-                n_cores=args.n_cores,
+                lut_params=lut_params,
+                h2o_lut_grid=h2o_lut_grid,
+                elevation_lut_grid=(
+                    elevation_lut_grid
+                    if elevation_lut_grid is not None
+                    else [mean_elevation_km]
+                ),
+                to_sensor_zenith_lut_grid=(
+                    to_sensor_zenith_lut_grid
+                    if to_sensor_zenith_lut_grid is not None
+                    else [mean_to_sensor_zenith]
+                ),
+                to_sun_zenith_lut_grid=(
+                    to_sun_zenith_lut_grid
+                    if to_sun_zenith_lut_grid is not None
+                    else [mean_to_sun_zenith]
+                ),
+                relative_azimuth_lut_grid=(
+                    relative_azimuth_lut_grid
+                    if relative_azimuth_lut_grid is not None
+                    else [mean_relative_azimuth]
+                ),
+                mean_latitude=mean_latitude,
+                mean_longitude=mean_longitude,
+                dt=dt,
                 use_emp_line=use_superpixels,
+                n_cores=args.n_cores,
                 surface_category=args.surface_category,
                 emulator_base=args.emulator_base,
                 uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
+                multiple_restarts=args.multiple_restarts,
+                segmentation_size=args.segmentation_size,
+                pressure_elevation=args.pressure_elevation,
                 prebuilt_lut_path=args.prebuilt_lut,
                 inversion_windows=INVERSION_WINDOWS,
             )

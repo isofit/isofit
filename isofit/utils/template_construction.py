@@ -911,6 +911,7 @@ def build_main_config(
     debug: bool = False,
     inversion_windows=[[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]],
     prebuilt_lut_path: str = None,
+    presolve: bool = False,
 ) -> None:
     """Write an isofit config file for the main solve, using the specified pathnames and all given info
 
@@ -937,6 +938,9 @@ def build_main_config(
         segmentation_size:                    image segmentation size if empirical line is used
         pressure_elevation:                   if true, retrieve pressure elevation
         debug:                                if true, run ISOFIT in debug mode
+        inversion_windows:                    the inversion windows to use for this solve
+        prebuilt_lut_path:                    the path to a prebuilt netCDF lut file to use
+        presolve:                             if true, set this up as a presolve (H2O only)
     """
 
     # Determine number of spectra included in each retrieval.  If we are
@@ -1120,6 +1124,25 @@ def build_main_config(
         "statevector_names"
     ] = list(radiative_transfer_config["statevector"].keys())
 
+    # if this is the presolve, clear out everything but H2O
+    if presolve:
+        sv_keys = radiative_transfer_config["statevector"].keys()
+        for key in list(sv_keys.keys()):
+            if key != "H2OSTR":
+                del radiative_transfer_config["statevector"][key]
+        lut_keys = radiative_transfer_config["lut_grid"].keys()
+        for key in list(lut_keys.keys()):
+            if key != "H2OSTR":
+                del radiative_transfer_config["lut_grid"][key]
+        lut_name_keys = radiative_transfer_config["radiative_transfer_engines"][
+            "vswir"
+        ]["lut_names"].keys()
+        for key in list(lut_name_keys.keys()):
+            if key != "H2OSTR":
+                del radiative_transfer_config["radiative_transfer_engines"]["vswir"][
+                    "lut_names"
+                ][key]
+
     # make isofit configuration
     isofit_config_modtran = {
         "ISOFIT_base": paths.isofit_path,
@@ -1222,8 +1245,12 @@ def build_main_config(
             "radiometry_correction_file"
         ] = paths.rdn_factors_path
 
-    # write modtran_template
-    with open(paths.isofit_full_config_path, "w") as fout:
+    if presolve:
+        outpath = paths.h2o_config_path
+    else:
+        outpath = paths.isofit_full_config_path
+
+    with open(outpath, "w") as fout:
         fout.write(
             json.dumps(
                 isofit_config_modtran, cls=SerialEncoder, indent=4, sort_keys=True
