@@ -494,7 +494,7 @@ def apply_oe(args):
             tmpl.build_main_config(
                 paths=paths,
                 lut_params=lut_params,
-                h2o_lut_grid=h2o_lut_grid,
+                h2o_lut_grid=h2o_grid,
                 elevation_lut_grid=(
                     elevation_lut_grid
                     if elevation_lut_grid is not None
