@@ -1127,17 +1127,17 @@ def build_main_config(
     # if this is the presolve, clear out everything but H2O
     if presolve:
         sv_keys = radiative_transfer_config["statevector"].keys()
-        for key in list(sv_keys.keys()):
+        for key in list(sv_keys):
             if key != "H2OSTR":
                 del radiative_transfer_config["statevector"][key]
         lut_keys = radiative_transfer_config["lut_grid"].keys()
-        for key in list(lut_keys.keys()):
+        for key in list(lut_keys):
             if key != "H2OSTR":
                 del radiative_transfer_config["lut_grid"][key]
         lut_name_keys = radiative_transfer_config["radiative_transfer_engines"][
             "vswir"
         ]["lut_names"].keys()
-        for key in list(lut_name_keys.keys()):
+        for key in list(lut_name_keys):
             if key != "H2OSTR":
                 del radiative_transfer_config["radiative_transfer_engines"]["vswir"][
                     "lut_names"
