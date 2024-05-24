@@ -528,6 +528,7 @@ def apply_oe(args):
                 pressure_elevation=args.pressure_elevation,
                 prebuilt_lut_path=args.prebuilt_lut,
                 inversion_windows=INVERSION_WINDOWS,
+                presolve=True,
             )
 
             # Run modtran retrieval
