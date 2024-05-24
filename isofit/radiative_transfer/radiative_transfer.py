@@ -136,9 +136,6 @@ class RadiativeTransfer:
 
         self.solar_irr = np.concatenate([RT.solar_irr for RT in self.rt_engines])
 
-        # TODO: Is code for this missing? We have if statements that rely on this
-        self.glint_model = False
-
     def xa(self):
         """Pull the priors from each of the individual RTs."""
         return self.prior_mean
@@ -210,13 +207,14 @@ class RadiativeTransfer:
         elif self.glint_model:
             L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)
 
-            E_dd = (self.solar_irr * self.coszen) / np.pi * r["t_down_dir"]
-            E_ds = (self.solar_irr * self.coszen) / np.pi * r["t_down_dif"]
-            E_d = E_dd + E_ds
-            L_sky = x_surface[-2] * E_dd + x_surface[-1] * E_ds
+            t_down_dir = r["t_down_dir"]  # downward direct transmittance
+            t_down_dif = r["t_down_dif"]  # downward diffuse transmittance
+            t_down_total = t_down_dir + t_down_dif  # downward total transmittance
+
+            L_sky = x_surface[-2] * t_down_dir + x_surface[-1] * t_down_dif
 
             rho_ls = 0.02  # fresnel reflectance factor (approx. 0.02 for nadir view)
-            glint = rho_ls * (L_sky / E_d)
+            glint = rho_ls * (L_sky / t_down_total)
 
             ret = (
                 L_atm
@@ -326,13 +324,14 @@ class RadiativeTransfer:
         elif self.glint_model:
             L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)
 
-            E_dd = (self.solar_irr * self.coszen) / np.pi * r["t_down_dir"]
-            E_ds = (self.solar_irr * self.coszen) / np.pi * r["t_down_dif"]
-            E_d = E_dd + E_ds
-            L_sky = x_surface[-2] * E_dd + x_surface[-1] * E_ds
+            t_down_dir = r["t_down_dir"]  # downward direct transmittance
+            t_down_dif = r["t_down_dif"]  # downward diffuse transmittance
+            t_down_total = t_down_dir + t_down_dif  # downward total transmittance
+
+            L_sky = x_surface[-2] * t_down_dir + x_surface[-1] * t_down_dif
 
             rho_ls = 0.02  # fresnel reflectance factor (approx. 0.02 for nadir view)
-            glint = rho_ls * (L_sky / E_d)
+            glint = rho_ls * (L_sky / t_down_total)
 
             drho_scaled_for_multiscattering_drfl = (
                 1.0 / (1 - r["sphalb"] * (rfl + glint)) ** 2
