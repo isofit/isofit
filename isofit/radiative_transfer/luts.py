@@ -500,10 +500,15 @@ def load(
     >>> load(file, subset).unstack().dims
     Frozen({'AOT550': 3, 'H2OSTR': 10, 'wl': 285})
     """
+    ds = Dataset(file, mode="r")
+    chunks = {k: 1 for k in ds.dimensions.keys()}
+    chunks["wl"] = len(ds.dimensions["wl"])
+    ds.close()
+    del ds
     if dask:
-        ds = xr.open_mfdataset([file], mode=mode, lock=lock, **kwargs)
+        ds = xr.open_mfdataset([file], mode=mode, lock=lock, **kwargs, chunks=chunks)
     else:
-        ds = xr.open_dataset(file, mode=mode, lock=lock, **kwargs)
+        ds = xr.open_dataset(file, mode=mode, lock=lock, **kwargs, chunks=chunks)
 
     # Special case that doesn't require defining the entire grid subsetting strategy
     if subset is None:
@@ -524,6 +529,7 @@ def load(
 
         # Apply subsetting strategies
         for dim, strat in subset.items():
+            logging.debug(f"Subsetting {dim}")
             ds = sub(ds, dim, strat)
 
     else:
@@ -546,14 +552,13 @@ def load(
     return ds
 
 
-def extractPoints(ds: xr.Dataset) -> (np.array, np.array):
+def extractPoints(ds: xr.Dataset) -> np.array:
     """
     Extracts the points and point name arrays
     """
     points = np.array([*ds.point.data])
     names = np.array([name for name in ds.point.coords])[1:]
-
-    return (points, names)
+    return points
 
 
 def extractGrid(ds: xr.Dataset) -> dict:
@@ -564,7 +569,8 @@ def extractGrid(ds: xr.Dataset) -> dict:
     for dim, vals in ds.coords.items():
         if dim in {"wl", "point"}:
             continue
-        grid[dim] = vals.data
+        if len(vals.data.shape) > 0 and vals.data.shape[0] > 1:
+            grid[dim] = vals.data
     return grid
 
 

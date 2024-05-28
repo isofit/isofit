@@ -1081,9 +1081,12 @@ def build_main_config(
             "relative_azimuth"
         ] = get_lut_subset(relative_azimuth_lut_grid)
         for key in aerosol_lut_grid.keys():
+            ss = get_lut_subset(aerosol_lut_grid[key])
+            if presolve:
+                ss = {"interp": 0.05}
             radiative_transfer_config["radiative_transfer_engines"]["vswir"][
                 "lut_names"
-            ][key] = get_lut_subset(aerosol_lut_grid[key])
+            ][key] = ss
 
         rm_keys = []
         for key, item in radiative_transfer_config["radiative_transfer_engines"][
@@ -1130,7 +1133,9 @@ def build_main_config(
         for key in list(sv_keys):
             if key != "H2OSTR":
                 del radiative_transfer_config["statevector"][key]
-        lut_keys = radiative_transfer_config["lut_grid"].keys()
+        radiative_transfer_config["radiative_transfer_engines"]["vswir"][
+            "statevector_names"
+        ] = ["H2OSTR"]
 
     # make isofit configuration
     isofit_config_modtran = {

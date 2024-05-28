@@ -158,7 +158,9 @@ class RadiativeTransferEngine:
             )
             self.lut = luts.load(lut_path, subset=engine_config.lut_names)
             self.lut_grid = lut_grid or luts.extractGrid(self.lut)
-            self.points, self.lut_names = luts.extractPoints(self.lut)
+            self.points = luts.extractPoints(self.lut)
+            self.lut_names = list(self.lut_grid.keys())
+            logging.info(f"LUT grid loaded from file: {self.lut_grid}")
 
             # remove 'point' if added to lut_names after subsetting
             if "point" in self.lut_names:
