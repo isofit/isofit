@@ -330,7 +330,7 @@ def sub(ds: xr.Dataset, dim: str, strat) -> xr.Dataset:
 
 
 def load(
-    file: str, subset: dict = None, dask=True, mode="r", lock=False, **kwargs
+    file: str, subset: dict = None, dask=True, mode="r", lock=False, load=True, **kwargs
 ) -> xr.Dataset:
     """
     Loads a LUT NetCDF
@@ -347,6 +347,9 @@ def load(
     dask: bool, default=True
         Use Dask on the backend of Xarray to lazy load the dataset. This enables
         out-of-core subsetting
+    load: bool, default=True
+        Calls ds.load() at the end to cast from Dask arrays back into numpy arrays held
+        in memory
 
     Examples
     --------
@@ -542,6 +545,10 @@ def load(
             Logger.warning(
                 f"Detected NaNs in the following LUT variable and may cause issues: {name}"
             )
+
+    if load:
+        Logger.info("Loading LUT into memory")
+        ds.load()
 
     return ds
 
