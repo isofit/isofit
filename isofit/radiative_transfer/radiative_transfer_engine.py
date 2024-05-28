@@ -157,6 +157,7 @@ class RadiativeTransferEngine:
                 f"Reading from store: {lut_path}, subset={engine_config.lut_names}"
             )
             self.lut = luts.load(lut_path, subset=engine_config.lut_names)
+            self.lut.load()
             self.lut_grid = lut_grid or luts.extractGrid(self.lut)
             self.points = luts.extractPoints(self.lut)
             self.lut_names = list(self.lut_grid.keys())
@@ -308,6 +309,7 @@ class RadiativeTransferEngine:
                 lut_interp_types=self.lut_interp_types,
                 version=self.interpolator_style,
             )
+        del self.lut
 
     def preSim(self):
         """
@@ -503,6 +505,7 @@ class RadiativeTransferEngine:
 
         # Reload the LUT now that it's populated
         self.lut = luts.load(self.lut_path)
+        self.lut.load()
 
     def summarize(self, x_RT, *_):
         """
