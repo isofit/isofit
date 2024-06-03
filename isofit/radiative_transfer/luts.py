@@ -110,6 +110,8 @@ class Create:
                 dimensions=dims,
                 fill_value=fill_value,
                 chunksizes=chunksizes,
+                zlib=True,
+                complevel=1,
             )
             var[:] = vals
 
