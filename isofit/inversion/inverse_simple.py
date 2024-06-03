@@ -316,8 +316,12 @@ def invert_analytical(
             winidx
         ]  # total transmittance (down * up, direct + diffuse)
         rtm_quant = fm.RT.get_shared_rtm_quantities(x_RT, geom)
-        t_down_dir = rtm_quant["t_down_dir"][winidx]  # downward direct transmittance
-        t_down_dif = rtm_quant["t_down_dif"][winidx]  # downward diffuse transmittance
+        t_down_dir = rtm_quant["transm_down_dir"][
+            winidx
+        ]  # downward direct transmittance
+        t_down_dif = rtm_quant["transm_down_dif"][
+            winidx
+        ]  # downward diffuse transmittance
         t_down_total = t_down_dir + t_down_dif  # downward total transmittance
         s = rtm_quant["sphalb"][winidx]  # spherical albedo
         rho_ls = 0.02  # fresnel reflectance factor (approx. 0.02 for nadir view)

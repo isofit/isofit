@@ -207,8 +207,8 @@ class RadiativeTransfer:
         elif self.glint_model:
             L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)
 
-            t_down_dir = r["t_down_dir"]  # downward direct transmittance
-            t_down_dif = r["t_down_dif"]  # downward diffuse transmittance
+            t_down_dir = r["transm_down_dir"]  # downward direct transmittance
+            t_down_dif = r["transm_down_dif"]  # downward diffuse transmittance
             t_down_total = t_down_dir + t_down_dif  # downward total transmittance
 
             L_sky = x_surface[-2] * t_down_dir + x_surface[-1] * t_down_dif
@@ -324,8 +324,8 @@ class RadiativeTransfer:
         elif self.glint_model:
             L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)
 
-            t_down_dir = r["t_down_dir"]  # downward direct transmittance
-            t_down_dif = r["t_down_dif"]  # downward diffuse transmittance
+            t_down_dir = r["transm_down_dir"]  # downward direct transmittance
+            t_down_dif = r["transm_down_dif"]  # downward diffuse transmittance
             t_down_total = t_down_dir + t_down_dif  # downward total transmittance
 
             L_sky = x_surface[-2] * t_down_dir + x_surface[-1] * t_down_dif
