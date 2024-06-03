@@ -773,11 +773,11 @@ def build_presolve_config(
         bounds_check(lut_grid, emulator_base, modify=True)
 
     radiative_transfer_config = {
-        "glint_model": glint_model,
         "radiative_transfer_engines": {
             "vswir": {
                 "engine_name": engine_name,
                 "multipart_transmittance": multipart_transmittance,
+                "glint_model": glint_model,
                 "lut_path": lut_path,
                 "sim_path": paths.lut_h2o_directory,
                 "template_file": paths.h2o_template_path,
@@ -975,11 +975,11 @@ def build_main_config(
         multipart_transmittance = False
 
     radiative_transfer_config = {
-        "glint_model": glint_model,
         "radiative_transfer_engines": {
             "vswir": {
                 "engine_name": engine_name,
                 "multipart_transmittance": multipart_transmittance,
+                "glint_model": glint_model,
                 "sim_path": paths.full_lut_directory,
                 "lut_path": lut_path,
                 "aerosol_template_file": paths.aerosol_tpl_path,
