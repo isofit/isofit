@@ -27,10 +27,8 @@ __version__ = importlib.metadata.version(__package__ or __name__)
 
 warnings_enabled = False
 
-import atexit
 import logging
 import os
-import signal
 
 Logger = logging.getLogger("isofit")
 
@@ -41,20 +39,3 @@ if os.environ.get("ISOFIT_DEBUG"):
     from .wrappers import ray
 else:
     import ray
-
-
-def shutdown_ray():
-    try:
-        ray.shutdown()
-    except:
-        pass
-
-
-# Auto call ray.shutdown when the python interpreter exits
-# ray itself also implements this, but there's no harm in calling it twice
-atexit.register(shutdown_ray)
-try:
-    signal.signal(signal.SIGINT, shutdown_ray)  # ctrl
-    signal.signal(signal.SIGTERM, shutdown_ray)  # kill
-except:
-    pass
