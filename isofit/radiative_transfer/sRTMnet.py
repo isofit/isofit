@@ -242,7 +242,9 @@ def build_sixs_config(engine_config):
         + datetime.timedelta(hours=data["GEOMETRY"]["GMTIME"])
     )
 
-    solar_azimuth = data["GEOMETRY"]["PARM1"]
+    relative_azimuth = data["GEOMETRY"]["PARM1"]
+    observer_azimuth = data["GEOMETRY"]["TRUEAZ"]
+    solar_azimuth = observer_azimuth - relative_azimuth + 180
     solar_zenith = data["GEOMETRY"]["PARM2"]
 
     # Tweak parameter values for sRTMnet
@@ -256,7 +258,7 @@ def build_sixs_config(engine_config):
     config.solzen = solar_zenith
     config.solaz = solar_azimuth
     config.viewzen = 180 - data["GEOMETRY"]["OBSZEN"]
-    config.viewaz = data["GEOMETRY"]["TRUEAZ"]
+    config.viewaz = observer_azimuth
     config.wlinf = 0.35
     config.wlsup = 2.5
 
