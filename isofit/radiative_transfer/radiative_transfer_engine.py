@@ -178,35 +178,34 @@ class RadiativeTransferEngine:
                     "Unknown RT mode provided in LUT file. Please use either 'transm' or 'rdn'."
                 )
 
-            # if necessary, resample prebuilt LUT to desired instrument spectral response
-            if not len(wl) == len(self.lut.wl) or all(wl == self.lut.wl):
-                Logger.info(f"Resampling LUT to instrument spectral response.")
-                conv = xr.Dataset(
-                    coords={"point": self.lut.point, "wl": wl},
-                    attrs={"RT_mode": self.rt_mode},
+            # If necessary, resample prebuilt LUT to desired instrument spectral response
+            if not len(wl) == len(self.lut.wl) or not all(wl == self.lut.wl):
+                # Discover variables along the wl dim
+                keys = {key for key in self.lut if "wl" in self.lut[key].dims} - {
+                    "fwhm",
+                }
+
+                # Apply resampling to these keys
+                conv = xr.apply_ufunc(
+                    common.resample_spectrum,
+                    self.lut[keys],
+                    kwargs={"wl": self.lut.wl, "wl2": wl, "fwhm2": fwhm},
+                    input_core_dims=[["wl"]],  # Only operate on keys with this dim
+                    exclude_dims=set(["wl"]),  # Allows changing the wl size
+                    output_core_dims=[["wl"]],  # Adds wl to the expected output dims
+                    keep_attrs="override",
+                    # on_missing_core_dim = 'copy' # Newer versions of xarray support this
                 )
-                for quantity in self.lut:
-                    if quantity in luts.Keys.alldim.keys():
-                        conv[quantity] = (
-                            ("point", "wl"),
-                            common.resample_spectrum(
-                                self.lut[quantity].data, self.lut.wl, wl, fwhm
-                            ),
-                        )
-                    if quantity == "solar_irr":
-                        conv[quantity] = (
-                            "wl",
-                            common.resample_spectrum(
-                                self.lut[quantity].data, self.lut.wl, wl, fwhm
-                            ),
-                        )
-                    if quantity == "fwhm":
-                        conv[quantity] = ("wl", fwhm)
-                    if quantity in luts.Keys.consts.keys():
-                        conv[quantity] = self.lut[quantity].data
 
+                # If not on newer versions, add keys not on the wl dim
+                for key in list(self.lut.drop_dims("wl")):
+                    conv[key] = self.lut[key]
+
+                # Override the fwhm
+                conv["fwhm"] = ("wl", fwhm)
+
+                # Exchange the lut with the resampled version
                 self.lut = conv
-
         else:
             Logger.info(f"No LUT store found, beginning initialization and simulations")
             # Check if both wavelengths and fwhm are provided for building the LUT
