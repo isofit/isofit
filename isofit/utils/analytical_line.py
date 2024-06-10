@@ -279,6 +279,12 @@ class Worker(object):
         rt_state = envi.open(envi_header(self.RT_state_file)).open_memmap(
             interleave="bip"
         )
+        if self.subs_state_file is not None:
+            subs_state = envi.open(envi_header(self.subs_state_file)).open_memmap(
+                interleave="bip"
+            )
+        if self.lbl_file is not None:
+            lbl = envi.open(envi_header(self.lbl_file)).open_memmap(interleave="bil")
 
         start_line, stop_line = startstop
         output_state = (
@@ -303,6 +309,12 @@ class Worker(object):
                     continue
                 x_RT = rt_state[r, c, self.fm.idx_RT - len(self.fm.idx_surface)]
                 geom = Geometry(obs=obs[r, c, :], loc=loc[r, c, :])
+                if self.subs_state_file is not None and self.lbl_file is not None:
+                    reference_location = lbl[r, c, 0]
+                    background_rho = subs_state[
+                        reference_location, c, self.fm.idx_surface
+                    ]
+                    geom.bg_rfl = background_rho
 
                 states, unc = invert_analytical(
                     self.iv.fm,
