@@ -308,7 +308,6 @@ class RadiativeTransferEngine:
                 lut_interp_types=self.lut_interp_types,
                 version=self.interpolator_style,
             )
-        del self.lut
 
     def preSim(self):
         """
