@@ -951,7 +951,10 @@ def build_main_config(
         spectra_per_inversion = 1
 
     if prebuilt_lut_path is None:
-        lut_path = join(paths.full_lut_directory, "lut.nc")
+        if presolve:
+            lut_path = join(paths.lut_h2o_directory, "lut.nc")
+        else:
+            lut_path = join(paths.full_lut_directory, "lut.nc")
     else:
         lut_path = abspath(prebuilt_lut_path)
 
@@ -966,10 +969,10 @@ def build_main_config(
         "radiative_transfer_engines": {
             "vswir": {
                 "engine_name": engine_name,
-                "sim_path": paths.full_lut_directory,
+                "sim_path": paths.lut_h2o_directory if presolve else paths.full_lut_directory,
                 "lut_path": lut_path,
                 "aerosol_template_file": paths.aerosol_tpl_path,
-                "template_file": paths.modtran_template_path,
+                "template_file": paths.h2o_template_path if presolve else paths.modtran_template_path,
                 # lut_names - populated below
                 # statevector_names - populated below
             }
@@ -1133,6 +1136,8 @@ def build_main_config(
         for key in list(sv_keys):
             if key != "H2OSTR":
                 del radiative_transfer_config["statevector"][key]
+                del radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"][key]
+                del radiative_transfer_config["lut_grid"][key]
         radiative_transfer_config["radiative_transfer_engines"]["vswir"][
             "statevector_names"
         ] = ["H2OSTR"]
@@ -1194,6 +1199,10 @@ def build_main_config(
         isofit_config_modtran["output"][
             "estimated_state_file"
         ] = paths.state_working_path
+
+    # if presolve, use only a subset and spetial outputs:
+    if presolve:
+        isofit_config_modtran["output"] = {"estimated_state_file": paths.h2o_subs_path}
 
     if multiple_restarts:
         grid = {}
