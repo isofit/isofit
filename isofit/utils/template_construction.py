@@ -1692,9 +1692,8 @@ def get_metadata_from_obs(
     time = obs[:, :, 9]
 
     # calculate relative to-sun azimuth
-    delta_phi = to_sun_azimuth - to_sensor_azimuth
-    delta_phi = delta_phi % 360
-    relative_azimuth = np.abs(delta_phi - 180)
+    delta_phi = np.abs(to_sun_azimuth - to_sensor_azimuth)
+    relative_azimuth = np.minimum(delta_phi, 360 - delta_phi)
 
     use_trim = trim_lines != 0 and valid.shape[0] > trim_lines * 2
     if use_trim:
