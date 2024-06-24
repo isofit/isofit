@@ -244,7 +244,11 @@ def build_sixs_config(engine_config):
 
     relative_azimuth = data["GEOMETRY"]["PARM1"]
     observer_azimuth = data["GEOMETRY"]["TRUEAZ"]
-    solar_azimuth = observer_azimuth - relative_azimuth + 180
+    # RT simulations commonly only depend on the relative azimuth,
+    # so we don't care if we do OBSZEN + or - RELAZ.
+    # In addition, sRTMnet was only trained on RELAZ = 0°,
+    # so providing different values here would have no implications.
+    solar_azimuth = observer_azimuth + relative_azimuth
     solar_zenith = data["GEOMETRY"]["PARM2"]
 
     # Tweak parameter values for sRTMnet
