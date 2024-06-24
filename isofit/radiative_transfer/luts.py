@@ -332,7 +332,7 @@ def sub(ds: xr.Dataset, dim: str, strat) -> xr.Dataset:
 
 
 def load(
-    file: str, subset: dict = None, dask=True, mode="r", lock=False, **kwargs
+    file: str, subset: dict = None, dask=False, mode="r", lock=False, load=True, **kwargs
 ) -> xr.Dataset:
     """
     Loads a LUT NetCDF
@@ -349,6 +349,9 @@ def load(
     dask: bool, default=True
         Use Dask on the backend of Xarray to lazy load the dataset. This enables
         out-of-core subsetting
+    load: bool, default=True
+        Calls ds.load() at the end to cast from Dask arrays back into numpy arrays held
+        in memory
 
     Examples
     --------
@@ -502,9 +505,15 @@ def load(
     >>> load(file, subset).unstack().dims
     Frozen({'AOT550': 3, 'H2OSTR': 10, 'wl': 285})
     """
+    ds = Dataset(file, mode="r")
+    chunks = {k: 1 for k in ds.dimensions.keys()}
+    chunks["wl"] = len(ds.dimensions["wl"])
+    ds.close()
+    del ds
     if dask:
-        ds = xr.open_mfdataset([file], mode=mode, lock=lock, **kwargs)
+        ds = xr.open_mfdataset([file], mode=mode, lock=lock, **kwargs, chunks=chunks)
     else:
+        #ds = xr.open_dataset(file, mode=mode, lock=lock, **kwargs, chunks=chunks)
         ds = xr.open_dataset(file, mode=mode, lock=lock, **kwargs)
 
     # Special case that doesn't require defining the entire grid subsetting strategy
@@ -526,6 +535,7 @@ def load(
 
         # Apply subsetting strategies
         for dim, strat in subset.items():
+            logging.debug(f"Subsetting {dim}")
             ds = sub(ds, dim, strat)
 
     else:
@@ -545,17 +555,20 @@ def load(
                 f"Detected NaNs in the following LUT variable and may cause issues: {name}"
             )
 
+    if load:
+        Logger.info("Loading LUT into memory")
+        ds.load()
+
     return ds
 
 
-def extractPoints(ds: xr.Dataset) -> (np.array, np.array):
+def extractPoints(ds: xr.Dataset) -> np.array:
     """
     Extracts the points and point name arrays
     """
     points = np.array([*ds.point.data])
     names = np.array([name for name in ds.point.coords])[1:]
-
-    return (points, names)
+    return points
 
 
 def extractGrid(ds: xr.Dataset) -> dict:
@@ -566,7 +579,8 @@ def extractGrid(ds: xr.Dataset) -> dict:
     for dim, vals in ds.coords.items():
         if dim in {"wl", "point"}:
             continue
-        grid[dim] = vals.data
+        if len(vals.data.shape) > 0 and vals.data.shape[0] > 1:
+            grid[dim] = vals.data
     return grid
 
 

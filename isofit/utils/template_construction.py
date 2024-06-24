@@ -911,6 +911,7 @@ def build_main_config(
     debug: bool = False,
     inversion_windows=[[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]],
     prebuilt_lut_path: str = None,
+    presolve: bool = False,
 ) -> None:
     """Write an isofit config file for the main solve, using the specified pathnames and all given info
 
@@ -937,6 +938,9 @@ def build_main_config(
         segmentation_size:                    image segmentation size if empirical line is used
         pressure_elevation:                   if true, retrieve pressure elevation
         debug:                                if true, run ISOFIT in debug mode
+        inversion_windows:                    the inversion windows to use for this solve
+        prebuilt_lut_path:                    the path to a prebuilt netCDF lut file to use
+        presolve:                             if true, set this up as a presolve (H2O only)
     """
 
     # Determine number of spectra included in each retrieval.  If we are
@@ -947,7 +951,10 @@ def build_main_config(
         spectra_per_inversion = 1
 
     if prebuilt_lut_path is None:
-        lut_path = join(paths.full_lut_directory, "lut.nc")
+        if presolve:
+            lut_path = join(paths.lut_h2o_directory, "lut.nc")
+        else:
+            lut_path = join(paths.full_lut_directory, "lut.nc")
     else:
         lut_path = abspath(prebuilt_lut_path)
 
@@ -962,10 +969,10 @@ def build_main_config(
         "radiative_transfer_engines": {
             "vswir": {
                 "engine_name": engine_name,
-                "sim_path": paths.full_lut_directory,
+                "sim_path": paths.lut_h2o_directory if presolve else paths.full_lut_directory,
                 "lut_path": lut_path,
                 "aerosol_template_file": paths.aerosol_tpl_path,
-                "template_file": paths.modtran_template_path,
+                "template_file": paths.h2o_template_path if presolve else paths.modtran_template_path,
                 # lut_names - populated below
                 # statevector_names - populated below
             }
@@ -1077,9 +1084,12 @@ def build_main_config(
             "relative_azimuth"
         ] = get_lut_subset(relative_azimuth_lut_grid)
         for key in aerosol_lut_grid.keys():
+            ss = get_lut_subset(aerosol_lut_grid[key])
+            if presolve:
+                ss = {"interp": 0.05}
             radiative_transfer_config["radiative_transfer_engines"]["vswir"][
                 "lut_names"
-            ][key] = get_lut_subset(aerosol_lut_grid[key])
+            ][key] = ss
 
         rm_keys = []
         for key, item in radiative_transfer_config["radiative_transfer_engines"][
@@ -1119,6 +1129,18 @@ def build_main_config(
     radiative_transfer_config["radiative_transfer_engines"]["vswir"][
         "statevector_names"
     ] = list(radiative_transfer_config["statevector"].keys())
+
+    # if this is the presolve, clear out everything but H2O
+    if presolve:
+        sv_keys = radiative_transfer_config["statevector"].keys()
+        for key in list(sv_keys):
+            if key != "H2OSTR":
+                del radiative_transfer_config["statevector"][key]
+                del radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"][key]
+                del radiative_transfer_config["lut_grid"][key]
+        radiative_transfer_config["radiative_transfer_engines"]["vswir"][
+            "statevector_names"
+        ] = ["H2OSTR"]
 
     # make isofit configuration
     isofit_config_modtran = {
@@ -1178,6 +1200,10 @@ def build_main_config(
             "estimated_state_file"
         ] = paths.state_working_path
 
+    # if presolve, use only a subset and spetial outputs:
+    if presolve:
+        isofit_config_modtran["output"] = {"estimated_state_file": paths.h2o_subs_path}
+
     if multiple_restarts:
         grid = {}
         if h2o_lut_grid is not None:
@@ -1222,8 +1248,12 @@ def build_main_config(
             "radiometry_correction_file"
         ] = paths.rdn_factors_path
 
-    # write modtran_template
-    with open(paths.isofit_full_config_path, "w") as fout:
+    if presolve:
+        outpath = paths.h2o_config_path
+    else:
+        outpath = paths.isofit_full_config_path
+
+    with open(outpath, "w") as fout:
         fout.write(
             json.dumps(
                 isofit_config_modtran, cls=SerialEncoder, indent=4, sort_keys=True
