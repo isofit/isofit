@@ -1251,9 +1251,9 @@ def write_modtran_template(
     fid: str,
     altitude_km: float,
     dayofyear: int,
-    to_sun_zenith: float,
     to_sensor_azimuth: float,
     to_sensor_zenith: float,
+    to_sun_zenith: float,
     relative_azimuth: float,
     gmtime: float,
     elevation_km: float,
@@ -1267,9 +1267,9 @@ def write_modtran_template(
         fid:               flight line id (name)
         altitude_km:       altitude of the sensor in km
         dayofyear:         the current day of the given year
-        to_sun_zenith:     final altitude solar zenith angle (0→180°)
         to_sensor_azimuth: azimuth view angle to the sensor, in degrees (AVIRIS convention)
         to_sensor_zenith:  sensor/observer zenith angle, in degrees (MODTRAN convention: 180 - AVIRIS convention)
+        to_sun_zenith:     final altitude solar zenith angle (0→180°)
         relative_azimuth:  final altitude relative solar azimuth (0→360°)
         gmtime:            greenwich mean time
         elevation_km:      elevation of the land surface in km
@@ -1673,6 +1673,7 @@ def get_metadata_from_obs(
             mean_path_km - mean distance between sensor and ground in km for good data
             mean_to_sensor_azimuth - mean to-sensor azimuth for good data
             mean_to_sensor_zenith - mean to-sensor zenith for good data
+            mean_to_sun_azimuth - mean to-sun-azimuth for good data
             mean_to_sun_zenith - mean to-sun zenith for good data
             mean_relative_azimuth - mean relative to-sun azimuth for good data
             valid - boolean array indicating which pixels were NOT nodata
@@ -1706,6 +1707,9 @@ def get_metadata_from_obs(
 
     mean_to_sensor_azimuth = (
         lut_params.get_angular_grid(to_sensor_azimuth[valid], -1, 0) % 360
+    )
+    mean_to_sun_azimuth = (
+        lut_params.get_angular_grid(to_sun_azimuth[valid], -1, 0) % 360
     )
     mean_to_sensor_zenith = 180 - lut_params.get_angular_grid(
         to_sensor_zenith[valid], -1, 0
@@ -1779,6 +1783,7 @@ def get_metadata_from_obs(
         mean_path_km,
         mean_to_sensor_azimuth,
         mean_to_sensor_zenith,
+        mean_to_sun_azimuth,
         mean_to_sun_zenith,
         mean_relative_azimuth,
         valid,
