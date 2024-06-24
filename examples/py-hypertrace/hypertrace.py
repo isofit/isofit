@@ -218,8 +218,7 @@ def do_hypertrace(isofit_config, wavelength_file, reflectance_file,
                 "to_sun_zenith": solar_zenith,
                 "to_sensor_azimuth": observer_azimuth,
                 "to_sensor_zenith": 180 - observer_zenith,
-                "relative_azimuth": np.minimum(np.abs(solar_azimuth - observer_azimuth),
-                                               360 - np.abs(solar_azimuth - observer_azimuth)),
+                "relative_azimuth": solar_azimuth,
                 "gmtime": localtime,
                 "elevation_km": elevation_km,
                 "output_file": lrtfile,
@@ -259,8 +258,7 @@ def do_hypertrace(isofit_config, wavelength_file, reflectance_file,
         solar_azimuth,     # Degrees 0-360; 0 = Sun in S; 90 = Sun in W.
         solar_zenith,      # Same units as observer zenith
         180.0 - abs(observer_zenith),  # MODTRAN OBSZEN -- t
-        np.minimum(np.abs(solar_azimuth - observer_azimuth),
-                   360 - np.abs(solar_azimuth - observer_azimuth)),  # MODTRAN relative azimuth
+        observer_azimuth - solar_azimuth + 180.0, # MODTRAN relative azimuth
         observer_azimuth,   # MODTRAN azimuth
         np.cos(observer_zenith * np.pi / 180.0)  # Libradtran cos obsever zenith
     ]
