@@ -208,16 +208,17 @@ Contributors
 The github maintainers, responsible for handling pull requests, are:
 
 * David R. Thompson: david.r.thompson@jpl.nasa.gov
-* Philip Brodrick philip.brodrick@jpl.nasa.gov
+* Philip G. Brodrick philip.brodrick@jpl.nasa.gov
+* Niklas Bohn urs.n.bohn@jpl.nasa.gov
 
 Thanks to the following regular contributors:
 
 * Alexey Shiklomanov (NASA Goddard)
-* Jay Fahlen (NASA JPL)
-* Nimrod Carmon (NASA JPL)
-* Niklas Bohn (NASA JPL)
-* Regina Eckert (NASA JPL)
 * James Montgomery (NASA JPL)
+* Jay Fahlen (NASA JPL)
+* Kevin Wurster (Planet)
+* Nimrod Carmon (NASA JPL)
+* Regina Eckert (NASA JPL)
 
 
 The ISOFIT codebase was made possible with support from various sources.

@@ -110,6 +110,8 @@ class Create:
                 dimensions=dims,
                 fill_value=fill_value,
                 chunksizes=chunksizes,
+                zlib=True,
+                complevel=1,
             )
             var[:] = vals
 
@@ -330,7 +332,7 @@ def sub(ds: xr.Dataset, dim: str, strat) -> xr.Dataset:
 
 
 def load(
-    file: str, subset: dict = None, dask=True, mode="r", lock=False, **kwargs
+    file: str, subset: dict = None, dask=False, mode="r", lock=False, **kwargs
 ) -> xr.Dataset:
     """
     Loads a LUT NetCDF

@@ -547,25 +547,22 @@ class ModtranRT(RadiativeTransferEngine):
                         param[0]["MODTRANINPUT"]["ATMOSPHERE"]["NPROF"] = nprof + 1
 
             # Surface parameters we want to populate even if unassigned
-            elif key in ["GNDALT"]:
-                param[0]["MODTRANINPUT"]["SURFACE"][key] = val
+            elif key in ["surface_elevation_km", "GNDALT"]:
+                param[0]["MODTRANINPUT"]["SURFACE"]["GNDALT"] = val
 
-            elif key in ["solar_azimuth", "solaz"]:
-                if "TRUEAZ" not in param[0]["MODTRANINPUT"]["GEOMETRY"]:
-                    raise AttributeError(
-                        "Cannot have solar azimuth in LUT without specifying TRUEAZ. "
-                        " Use RELAZ instead."
-                    )
-                param[0]["MODTRANINPUT"]["GEOMETRY"]["PARM1"] = (
-                    param[0]["MODTRANINPUT"]["GEOMETRY"]["TRUEAZ"] - val + 180
-                )
+            # Make sure that view geometry gets populated if not assigned previously
+            elif key in ["observer_azimuth", "trueaz"]:
+                param[0]["MODTRANINPUT"]["GEOMETRY"]["TRUEAZ"] = val
 
-            elif key in ["solar_zenith", "solzen"]:
-                param[0]["MODTRANINPUT"]["GEOMETRY"]["PARM2"] = abs(val)
+            elif key in ["observer_zenith", "obszen"]:
+                param[0]["MODTRANINPUT"]["GEOMETRY"]["OBSZEN"] = val
 
-            # elif key in ['altitude_km']
+            # Populate solar geometry
+            elif key in ["solar_zenith", "solzen", "SOLZEN"]:
+                param[0]["MODTRANINPUT"]["GEOMETRY"]["PARM2"] = val
 
-            # elif key in ['altitude_km']
+            elif key in ["relative_azimuth", "relaz", "RELAZ"]:
+                param[0]["MODTRANINPUT"]["GEOMETRY"]["PARM1"] = val
 
             elif key in ["DISALB", "NAME"]:
                 recursive_replace(param, key, val)
