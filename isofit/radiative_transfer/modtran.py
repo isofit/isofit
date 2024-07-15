@@ -722,14 +722,29 @@ class ModtranRT(TabularRT):
                         pass
 
                     max_water = None
-                    with open(
-                        os.path.join(self.lut_dir, filebase + ".tp6"), errors="ignore"
-                    ) as tp6file:
-                        for count, line in enumerate(tp6file):
-                            if "The water column is being set to the maximum" in line:
-                                max_water = line.split(",")[1].strip()
-                                max_water = float(max_water.split(" ")[0])
-                                break
+                    try:
+                        with open(
+                            os.path.join(self.lut_dir, filebase + ".tp6"), errors="ignore"
+                        ) as tp6file:
+                            for count, line in enumerate(tp6file):
+                                if "The water column is being set to the maximum" in line:
+                                    max_water = line.split(",")[1].strip()
+                                    max_water = float(max_water.split(" ")[0])
+                                    break
+                    except FileNotFoundError as e:
+                        logging.info("H2O_bound_test.tp6 not found, pausing and then rerunning")
+                        time.sleep(np.random.randint(100, 1000)/10.)
+                        subprocess.call(cmd, shell=True, timeout=20, cwd=self.lut_dir)
+                        with open(
+                            os.path.join(self.lut_dir, filebase + ".tp6"), errors="ignore"
+                        ) as tp6file:
+                            for count, line in enumerate(tp6file):
+                                if "The water column is being set to the maximum" in line:
+                                    max_water = line.split(",")[1].strip()
+                                    max_water = float(max_water.split(" ")[0])
+                                    break
+
+
 
                     if max_water is None:
                         logging.error(
