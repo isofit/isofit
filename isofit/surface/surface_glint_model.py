@@ -68,10 +68,11 @@ class GlintModelSurface(MultiComponentSurface):
             self.bounds[self.glint_ind][0] + eps,
             min(self.bounds[self.glint_ind][1] - eps, glint),
         )
+        #*** Glint bounds defaults are what?
         lamb_est = rfl_meas - glint
-        x = MultiComponentSurface.fit_params(self, lamb_est, geom)
+        x = MultiComponentSurface.fit_params(self, lamb_est, geom) #Bounds reflectance
         x[self.glint_ind] = glint
-        x[self.glint_ind + 1] = 0.01
+        x[self.glint_ind + 1] = 0.01 #*** Sun glint set to static number
         return x
 
     def calc_rfl(self, x_surface, geom):
