@@ -17,13 +17,12 @@
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: Philip G. Brodrick, philip.brodrick@jpl.nasa.gov
 #
-import atexit
 import logging
+import multiprocessing
 import time
 from typing import List
 
 import numpy as np
-import pylab as plt
 from scipy.linalg import inv
 from scipy.ndimage import gaussian_filter
 from scipy.spatial import KDTree
@@ -34,10 +33,8 @@ from isofit.core.common import envi_header
 from isofit.core.fileio import write_bil_chunk
 from isofit.core.forward import ForwardModel
 
-plt.switch_backend("Agg")
 
-
-@ray.remote
+@ray.remote(num_cpus=1)
 def _run_chunk(
     start_line: int,
     stop_line: int,
@@ -259,6 +256,8 @@ def atm_interpolation(
         nneighbors = [400]
     if gaussian_smoothing_sigma is None:
         gaussian_smoothing_sigma = [2]
+    if n_cores == -1:
+        n_cores = multiprocessing.cpu_count()
 
     logging.basicConfig(
         format="%(levelname)s:%(asctime)s ||| %(message)s",
@@ -298,12 +297,11 @@ def atm_interpolation(
 
     # Initialize ray cluster
     start_time = time.time()
-    ray.init(ignore_reinit_error=True, local_mode=n_cores == 1)
+    ray.init(
+        **{"ignore_reinit_error": True, "local_mode": n_cores == 1, "num_cpus": n_cores}
+    )
 
-    atexit.register(ray.shutdown)
-
-    n_ray_cores = int(ray.available_resources()["CPU"])
-    n_cores = min(n_ray_cores, n_input_lines)
+    n_cores = min(n_cores, n_input_lines)
 
     logging.info(f"Beginning atmospheric interpolation {n_cores} cores")
 
@@ -325,11 +323,11 @@ def atm_interpolation(
         loglevel,
         logfile,
     )
-    results = [
+    jobs = [
         _run_chunk.remote(line_sections[l], line_sections[l + 1], *args)
         for l in range(len(line_sections) - 1)
     ]
-    _ = ray.get(results)
+    _ = [ray.get(jid) for jid in jobs]
 
     total_time = time.time() - start_time
     logging.info(

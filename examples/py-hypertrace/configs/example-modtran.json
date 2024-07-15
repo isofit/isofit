@@ -39,7 +39,7 @@
                     "vswir": {
                         "engine_name": "modtran",
                         "engine_base_dir": "/dev/null",
-                        "lut_names": ["H2OSTR", "AOT550"],
+                        "lut_names": {"H2OSTR": null, "AOT550": null},
                         "statevector_names": ["H2OSTR", "AOT550"]
                     }
                 }

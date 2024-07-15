@@ -1,0 +1,58 @@
+cff-version: 1.2.0
+title: isofit
+message: >-
+  If you use this software for research we would appreciate
+  appropriate citation. This may be prepared using the
+  bibliographic metadata contained in our DOI, accessible
+  through the DOI system and at
+  https://doi.org/10.5281/zenodo.4614337. 
+
+  If you use ISOFIT in your research or production, we ask that 
+  you cite the precursor publication:
+  Thompson, David R., Natraj, Vijay, Green, Robert O., Helmlinger, 
+  Mark C., Gao, Bo-Cai, & Eastwood, Michael L. (2018). 
+  Optimal estimation for imaging spectrometer atmospheric correction. 
+  Remote Sensing of Environment 216, 355-373.
+type: software
+authors:
+  - given-names: Philip G Brodrick
+    affiliation: >-
+      Jet Propulsion Laboratory, California Institute of
+      Technology
+    orcid: 'https://orcid.org/0000-0001-9497-7661'
+  - given-names: David R Thompson
+    affiliation: >-
+      Jet Propulsion Laboratory, California Institute of
+      Technology
+    orcid: 'https://orcid.org/0000-0003-1100-7550'
+  - given-names: Niklas Bohn
+    affiliation: >-
+      Jet Propulsion Laboratory, California Institute of
+      Technology
+    orcid: 'https://orcid.org/0000-0003-4078-886X'
+  - given-names: Nimrod Carmon
+    affiliation: >-
+      Jet Propulsion Laboratory, California Institute of
+      Technology
+    orcid: 'https://orcid.org/0000-0002-9211-2290'
+  - given-names: Regina Eckert
+    affiliation: >-
+      Jet Propulsion Laboratory, California Institute of
+      Technology
+    orcid: 'https://orcid.org/0000-0003-4571-7040'
+  - given-names: James Montgomery
+    affiliation: >-
+      Jet Propulsion Laboratory, California Institute of
+      Technology
+  - given-names: Kevin Wurster
+    affiliation: >-
+      Planet Corporate Activities
+  - given-names: Nicholas Vaughn
+    affiliation: >-
+      Arizona State University
+    orcid: 'https://orcid.org/0000-0003-0428-2909'
+
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.4614337
+license: Apache-2.0

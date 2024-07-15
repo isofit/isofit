@@ -15,18 +15,22 @@ import zipfile
 from glob      import glob
 from importlib import reload
 from io        import BytesIO
+from pathlib   import Path
 from types     import SimpleNamespace
 
-import isofit
+import click
 
-from isofit.utils.multisurface_oe import multisurface_oe
+import isofit
+from isofit.utils import surface_model
+from isofit.utils.apply_oe import (
+    apply_oe,
+    cli_apply_oe
+)
 
 
 logging.basicConfig(format='%(levelname)s | %(message)s', level=logging.DEBUG)
 
 Logger    = logging.getLogger('isofit/examples/profiling_cube')
-ISOFIT    = '/'.join(isofit.__file__.split('/')[:-2])
-EX_DIR    = 'examples/profiling_cube'
 FILE_BASE = 'ang20170323t202244'
 URLS      = {
     'small' : 'https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/small_chunk.zip',
@@ -72,16 +76,20 @@ def download(size):
         Logger.error('Not all input files are found')
         return
 
+    Logger.debug('Data files:')
+    for file in files:
+        Logger.debug(f'- {file}')
+
     return files
 
 def profile(args, output=None):
     """
-    Profiles calling the multisurface_oe:main().
+    Profiles calling the apply_oe:main().
 
     Parameters
     ----------
     args: list
-        Arguments to be passed to multisurface_oe:main()
+        Arguments to be passed to apply_oe:main()
     output: str, default=None
         Path to an output file
     """
@@ -89,25 +97,62 @@ def profile(args, output=None):
     profiler.enable()
 
     # Make sure the module is a fresh instance between runs
-    reload(isofit.utils.multisurface_oe)
-    multisurface_oe(args)
+    reload(isofit.utils.apply_oe)
+    apply_oe(args)
 
     profiler.disable()
 
     if output:
+        Logger.info(f'Saving profile restults to {output}')
         stats = pstats.Stats(profiler)
         stats.dump_stats(output)
 
-def run(config, workdir, files, output=None, n=1):
+def createArgs(files, workdir, config):
     """
-    Performs N many runs of multisurface_oe.
+    Reads the parameters list of apply_oe, accepts the default values, then updates
+    the required parameters.
 
     Parameters
     ----------
     config: str
-        Parameter for multisurface_oe
+        Parameter for apply_oe
     workdir: str
-        Parameter for multisurface_oe
+        Parameter for apply_oe
+    files: list
+        Filepaths list for the rdn, loc, and obs files, in that order
+
+    Returns
+    -------
+    params: SimpleNamespace
+        Arguments for apply_oe
+    """
+    cmd = click.Command(...)
+    ctx = click.Context(cmd)
+    params = cli_apply_oe.get_params(ctx)
+
+    params = {param.name: param.default for param in params}
+    params.update(
+        input_radiance     = files[0],
+        input_loc          = files[1],
+        input_obs          = files[2],
+        working_directory  = workdir,
+        config_file        = config,
+        emulator_base      = os.environ.get('EMULATOR_PATH'),
+        sensor             = 'ang',
+        logging_level      = 'DEBUG',
+    )
+    return SimpleNamespace(**params)
+
+def run(config, workdir, files, output=None, n=1):
+    """
+    Performs N many runs of apply_oe.
+
+    Parameters
+    ----------
+    config: str
+        Parameter for apply_oe
+    workdir: str
+        Parameter for apply_oe
     files: list
         Filepaths list for the rdn, loc, and obs files, in that order
     output: str, default=None
@@ -115,33 +160,29 @@ def run(config, workdir, files, output=None, n=1):
     n: int, default=1
         Number of profiling runs to repeat
     """
-    file = None
+    surface_file = f'{workdir}/surface.mat'
+    if not os.path.exists(surface_file):
+        file = Path('../20171108_Pasadena/configs/ang20171108t184227_surface.json').absolute()
+        Logger.info(f'Creating surface.mat using config: {file} => {surface_file}')
+        surface_model(file, output_path=surface_file)
+
+    outp = None
     for i in range(1, n+1):
         Logger.info(f'Starting run {i}/{n}')
 
         if output:
-            file = f'{output}/run_{i}.dat'
+            outp = f'{output}/run_{i}.dat'
 
         # Make sure these directories are clean
         for file in glob(f'{workdir}/lut_h2o/*'):
             os.remove(file)
+        for file in glob(f'{workdir}/lut_full/*'):
+            os.remove(file)
         for file in glob(f'{workdir}/output/*'):
             os.remove(file)
 
-        profile(
-            args = SimpleNamespace(
-                input_radiance     = files[0],
-                input_loc          = files[1],
-                input_obs          = files[2],
-                working_directory  = workdir,
-                config_file        = config,
-                wavelength_path    = None,
-                log_file           = None,
-                logging_level      = 'DEBUG',
-                pressure_elevation = None
-            ),
-            output = file
-        )
+        args = createArgs(files, workdir, config)
+        profile(args=args, output=outp)
 
 
 if __name__ == '__main__':
@@ -183,7 +224,6 @@ if __name__ == '__main__':
     if not os.path.isfile(config):
         Logger.error(f'Missing config file {config}')
         sys.exit(2)
-
 
     # Attempt to create the output directory if it does not exist
     output = args.output

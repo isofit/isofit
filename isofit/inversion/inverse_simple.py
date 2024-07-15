@@ -80,7 +80,7 @@ def heuristic_atmosphere(
             my_RT = rte
             break
     if not my_RT:
-        raise ValueError("No suiutable RT object for initialization")
+        raise ValueError("No suitable RT object for initialization")
 
     # Band ratio retrieval of H2O.  Depending on the radiative transfer
     # model we are using, this state parameter could go by several names.
@@ -93,7 +93,6 @@ def heuristic_atmosphere(
             continue
 
         # find the index in the lookup table associated with water vapor
-        ind_lut = my_RT.lut_names.index(h2oname)
         ind_sv = RT.statevec_names.index(h2oname)
         h2os, ratios = [], []
 
@@ -101,13 +100,15 @@ def heuristic_atmosphere(
         # calculating the band ratio that we would see if this were the
         # atmospheric H2O content.  It assumes that defaults for all other
         # atmospheric parameters (such as aerosol, if it is there).
-        for h2o in my_RT.lut_grids[ind_lut]:
+        for h2o in my_RT.lut_grid[h2oname]:
             # Get Atmospheric terms at high spectral resolution
             x_RT_2 = x_RT.copy()
             x_RT_2[ind_sv] = h2o
             rhi = RT.get_shared_rtm_quantities(x_RT_2, geom)
             rhoatm = instrument.sample(x_instrument, RT.wl, rhi["rhoatm"])
-            transm = instrument.sample(x_instrument, RT.wl, rhi["transm"])
+            transm = instrument.sample(
+                x_instrument, RT.wl, rhi["transm_down_dir"] + rhi["transm_down_dif"]
+            )  # REVIEW: This was changed from transm as we're deprecating the key
             sphalb = instrument.sample(x_instrument, RT.wl, rhi["sphalb"])
             solar_irr = instrument.sample(x_instrument, RT.wl, RT.solar_irr)
 
@@ -115,7 +116,12 @@ def heuristic_atmosphere(
             # using this presumed amount of water vapor, and measure the
             # resulting residual (as measured from linear interpolation across
             # the absorption feature)
-            rho = meas * np.pi / (solar_irr * RT.coszen)
+            # ToDo: grab the per pixel sza from Geometry object
+            if my_RT.rt_mode == "rdn":
+                rho = meas
+            else:
+                rho = meas * np.pi / (solar_irr * RT.coszen)
+
             r = 1.0 / (transm / (rho - rhoatm) + sphalb)
             ratios.append((r[b945] * 2.0) / (r[b1040] + r[b865]))
             h2os.append(h2o)
@@ -163,11 +169,40 @@ def invert_algebraic(
     rhi = RT.get_shared_rtm_quantities(x_RT, geom)
     wl, fwhm = instrument.calibration(x_instrument)
     rhoatm = instrument.sample(x_instrument, RT.wl, rhi["rhoatm"])
-    transm = instrument.sample(x_instrument, RT.wl, rhi["transm"])
+    transm = instrument.sample(
+        x_instrument, RT.wl, rhi["transm_down_dir"] + rhi["transm_down_dif"]
+    )  # REVIEW: Changed from transm
     solar_irr = instrument.sample(x_instrument, RT.wl, RT.solar_irr)
     sphalb = instrument.sample(x_instrument, RT.wl, rhi["sphalb"])
-    transup = instrument.sample(x_instrument, RT.wl, rhi["transup"])
-    coszen = RT.coszen
+    transup = instrument.sample(
+        x_instrument, RT.wl, rhi["transm_up_dir"]
+    )  # REVIEW: Changed from transup
+
+    # Figure out which RT object we are using
+    # TODO: this is currently very specific to vswir-tir 2-mode, eventually generalize
+    my_RT = None
+    for rte in RT.rt_engines:
+        if rte.treat_as_emissive is False:
+            my_RT = rte
+            break
+    if not my_RT:
+        raise ValueError("No suitable RT object for initialization")
+
+    # ToDo: grab the per pixel sza from Geometry object
+    if my_RT.engine_config.engine_name == "KernelFlowsGP":
+        coszen = np.cos(np.deg2rad(geom.solar_zenith))
+    else:
+        coszen = RT.coszen
+
+    # Figure out which RT object we are using
+    # TODO: this is currently very specific to vswir-tir 2-mode, eventually generalize
+    my_RT = None
+    for rte in RT.rt_engines:
+        if rte.treat_as_emissive is False:
+            my_RT = rte
+            break
+    if not my_RT:
+        raise ValueError("No suitable RT object for initialization")
 
     # Prevent NaNs
     transm[transm == 0] = 1e-5
@@ -180,7 +215,11 @@ def invert_algebraic(
 
     # Now solve for the reflectance at measured wavelengths,
     # and back-translate to surface wavelengths
-    rho = rdn_solrfl * np.pi / (solar_irr * coszen)
+    if my_RT.rt_mode == "rdn":
+        rho = rdn_solrfl
+    else:
+        rho = rdn_solrfl * np.pi / (solar_irr * coszen)
+
     rfl = 1.0 / (transm / (rho - rhoatm) + sphalb)
     rfl[rfl > 1.0] = 1.0
     rfl_est = interp1d(wl, rfl, fill_value="extrapolate")(surface.wl)
@@ -245,13 +284,13 @@ def invert_analytical(
         meas,
         geom,
     )
-    #x_alg contains [rfl_est, Ls_est, coeffs]
+    # x_alg contains [rfl_est, Ls_est, coeffs]
 
     if fm.RT.glint_model:
         x_surf = fm.surface.fit_params(x_alg[0], geom) 
         x[fm.idx_surface] = x_surf
-        #Initial guess for reflectance and glint parameters based on the algebraic inversion
-        #Glint initialization comes from band 900 nm +/- 2 bands
+        # Initial guess for reflectance and glint parameters based on the algebraic inversion
+        # Glint initialization comes from band 900 nm +/- 2 bands
     else:
         x[fm.idx_surface] = x_alg[0]
 
@@ -270,11 +309,13 @@ def invert_analytical(
     xa_surface = xa_full[fm.idx_surface]
 
     if fm.RT.glint_model:
-        winglintidx = np.concatenate((winidx, fm.idx_surface[-2:]), axis=0) #Include glint indices
+        winglintidx = np.concatenate(
+            (winidx, fm.idx_surface[-2:]), axis=0
+        )  # Include glint indices
         outside_ret_windows = np.ones(len(fm.idx_surface), dtype=bool)
         outside_ret_windows[winglintidx] = False
-        outside_ret_windows = np.where(outside_ret_windows)[0] 
-        
+        outside_ret_windows = np.where(outside_ret_windows)[0]
+
         prprod = Sa_inv[winglintidx, :][:, winglintidx] @ xa_surface[winglintidx]
         # obtain needed RT vectors
         r = fm.RT.get_L_atm(x_RT, geom)[winidx]  # path radiance
@@ -282,8 +323,12 @@ def invert_analytical(
             winidx
         ]  # total transmittance (down * up, direct + diffuse)
         rtm_quant = fm.RT.get_shared_rtm_quantities(x_RT, geom)
-        t_down_dir = rtm_quant["t_down_dir"][winidx]  # downward direct transmittance
-        t_down_dif = rtm_quant["t_down_dif"][winidx]  # downward diffuse transmittance
+        t_down_dir = rtm_quant["transm_down_dir"][
+            winidx
+        ]  # downward direct transmittance
+        t_down_dif = rtm_quant["transm_down_dif"][
+            winidx
+        ]  # downward diffuse transmittance
         t_down_total = t_down_dir + t_down_dif  # downward total transmittance
         s = rtm_quant["sphalb"][winidx]  # spherical albedo
         rho_ls = fm.RT.fresnel_rf(geom.observer_zenith)
@@ -311,7 +356,8 @@ def invert_analytical(
             C_rcond = np.linalg.inv(Sa_inv[winglintidx, :][:, winglintidx] + S)
             z = meas[winidx] - r
             xk = C_rcond @ (M.T @ z + prprod)
-            #Save trajectory step:
+
+            # Save trajectory step:
             full_xk[winglintidx] = xk
             if outside_ret_const is None:
                 full_xk[outside_ret_windows] = xa_surface[outside_ret_windows]
@@ -327,8 +373,8 @@ def invert_analytical(
     else:
         outside_ret_windows = np.ones(len(fm.idx_surface), dtype=bool)
         outside_ret_windows[winidx] = False
-        outside_ret_windows = np.where(outside_ret_windows)[0] 
-        #Outside_ret_windows in this case any x_surface parameters that are not reflectances
+        outside_ret_windows = np.where(outside_ret_windows)[0]
+        # Outside_ret_windows in this case any x_surface parameters that are not reflectances
         for n in range(num_iter):
             L_atm = fm.RT.get_L_atm(x_RT, geom)[winidx]
             L_tot = fm.calc_rdn(x, geom)[winidx]
@@ -373,7 +419,7 @@ def invert_analytical(
     if diag_uncert:
         full_unc = np.ones(len(x))
         if fm.RT.glint_model:
-            #C_rcond_idx = np.concatenate((winidx, fm.idx_surface[-2:]), axis=0)
+            # C_rcond_idx = np.concatenate((winidx, fm.idx_surface[-2:]), axis=0)
             full_unc[winglintidx] = np.sqrt(np.diag(C_rcond))
         else:
             full_unc[winidx] = np.sqrt(np.diag(C_rcond))
@@ -495,8 +541,8 @@ def invert_simple(forward: ForwardModel, meas: np.array, geom: Geometry):
     x[forward.idx_surface] = x_surface
 
     # If available, get initial guess of surface elevation from location file.
-    if geom.surface_elevation_km and "GNDALT" in RT.statevec_names:
-        ind_sv = forward.idx_RT[RT.statevec_names.index("GNDALT")]
+    if geom.surface_elevation_km and "surface_elevation_km" in RT.statevec_names:
+        ind_sv = forward.idx_RT[RT.statevec_names.index("surface_elevation_km")]
         if geom.surface_elevation_km < 0.0:
             x[ind_sv] = 0.0
         else:

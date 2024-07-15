@@ -22,7 +22,7 @@
       "parametric_noise_file": "../../../data/avirisng_noise.txt",
       "integrations":294,
       "unknowns": {
-        "channelized_radiometric_uncertainty_file": 
+        "channelized_radiometric_uncertainty_file":
           "../../../data/avirisng_systematic_error.txt",
         "uncorrelated_radiometric_uncertainty": 0.01
       }
@@ -63,9 +63,10 @@
           "engine_name": "modtran",
           "multipart_transmittance": true,
           "wavelength_range":[370,2505],
-          "lut_path": "../lut_multi/",
+          "sim_path": "../lut_multi/",
+          "lut_path": "../lut/ang20171108t184227_uncert_v2p11_BeckmanLawn-multimodtran-topoflux.nc",
           "template_file": "ang20171108t184227_multimodtran.json",
-          "lut_names": ["H2OSTR", "AOT550" ]
+          "lut_names": {"H2OSTR": null, "AOT550": null}
         }
       }
     }

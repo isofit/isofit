@@ -58,7 +58,12 @@ class VectorInterpolator:
         lut_interp_types: List[str],
         version="nds-1",
     ):
-        self.method = 1
+        # Determine if this a singular unique value, if so just return that directly
+        val = data_input[(0,) * data_input.ndim]
+        if np.isnan(val) and np.isnan(data_input).all() or np.all(data_input == val):
+            self.method = -1
+            self.value = val
+            return
 
         self.lut_interp_types = lut_interp_types
         self.single_point_data = None
@@ -108,6 +113,7 @@ class VectorInterpolator:
             # at the specific angle_loc axes.  We'll use broadcast_to to do
             # this, but we need to do it on the last dimension.  So start by
             # temporarily moving the target axes there, then broadcasting
+            data = np.array(data)
             data = np.swapaxes(data, -1, angle_loc)
             data_dim = list(np.shape(data))
             data_dim.append(data_dim[-1])
@@ -194,7 +200,7 @@ class VectorInterpolator:
         Jouni's implementation
 
         Args:
-            points: The point being interpolated. If at the limit, the extremal value in
+            point: The point being interpolated. If at the limit, the extremal value in
                     the grid is returned.
 
         Returns:
@@ -258,7 +264,9 @@ class VectorInterpolator:
         Passes args to the appropriate interpolation method defined by the version at
         object init.
         """
-        if self.method == 1:
+        if self.method == -1:
+            return self.value
+        elif self.method == 1:
             return self._interpolate(*args, **kwargs)
         elif self.method == 2:
             return self._multilinear_grid(*args, **kwargs)
@@ -616,6 +624,13 @@ def resample_spectrum(
         np.array: interpolated radiance vector
 
     """
+    # check if x is vector or matrix
+    if len(x.shape) > 1:
+        x_raw = x.copy()
+        x_raw = x_raw.transpose()
+    else:
+        x_raw = x.copy()
+        x_raw = x_raw.reshape((len(x), 1))
 
     H = np.array(
         [
@@ -623,10 +638,17 @@ def resample_spectrum(
             for wi, fwhmi in zip(wl2, fwhm2)
         ]
     )
+
+    # replace any NaNs in the LUT before resampling
+    x_raw[np.isnan(x_raw)] = 0.0
+
     if fill is False:
-        return np.dot(H, x[:, np.newaxis]).ravel()
+        if len(x.shape) > 1:
+            return np.dot(H, x_raw).transpose()
+        else:
+            return np.dot(H, x_raw).ravel()
     else:
-        xnew = np.dot(H, x[:, np.newaxis]).ravel()
+        xnew = np.dot(H, x_raw).ravel()
         good = np.isfinite(xnew)
         for i, xi in enumerate(xnew):
             if not good[i]:
@@ -757,3 +779,106 @@ def envi_header(inputpath):
         return inputpath
     else:
         return inputpath + ".hdr"
+
+
+def ray_start(num_cores, num_cpus=2, memory_b=-1):
+    import subprocess
+
+    base_args = [
+        "ray",
+        "start",
+        "--head",
+        "--num-cpus",
+        str(int(num_cores / num_cpus)),
+        "--include-dashboard",
+        "0",
+    ]
+    if memory_b != -1:
+        base_args.append("--memory")
+        base_args.append(str(int(memory_b / num_cpus)))
+
+    head_args = base_args.copy()
+    head_args.append("--head")
+    result = subprocess.run(head_args, capture_output=True)
+    stdout = str(result.stdout, encoding="utf-8")
+
+    if num_cpus > 1:
+        key = "--address="
+        start_loc = stdout.find(key) + len(key) + 1
+        end_loc = stdout.find("'", start_loc)
+
+        address = stdout[start_loc:end_loc]
+        base_args.append("--address")
+        base_args.append(address)
+
+        result = subprocess.run(base_args, capture_output=True)
+
+
+from datetime import datetime as dtt
+
+
+class Track:
+    """
+    Tracks and reports the percentage complete for some arbitrary sized iterable.
+
+    Borrowed from mlky
+    """
+
+    def __init__(self, total, step=5, print=print, reverse=False, message="complete"):
+        """
+        Parameters
+        ----------
+        total: int, iterable
+            Total items in iterable. If iterable, will call len() on it
+        step: float, default=0.05
+            Percentage step size to use for reporting, eg. 0.05 is every 5%
+        print: func, default=print
+            Print function to use, eg. logging.info
+        reverse: bool, default=False
+            Reverse the count such that 0 is 100%
+        message: str, default="complete"
+            Message to be included in the output
+        """
+        if hasattr(total, "__iter__"):
+            total = len(total)
+
+        self.step = step
+        self.total = total
+        self.print = print
+        self.start = dtt.now()
+        self.percent = step
+        self.reverse = reverse
+        self.message = message
+
+    def __call__(self, count):
+        """
+        Parameters
+        ----------
+        count: int, iterable
+            The current count of items finished. If iterable, will call len() on it
+
+        Returns
+        -------
+        bool
+            True if a percentage step was just crossed, False otherwise
+        """
+        if hasattr(count, "__iter__"):
+            count = len(count)
+
+        current = count / self.total
+        if self.reverse:
+            current = 1 - current
+        current *= 100
+
+        if current >= self.percent:
+            elap = dtt.now() - self.start
+            rate = elap / self.total
+            esti = 100 / self.percent * elap - elap
+
+            self.print(
+                f"{current:6.2f}% {self.message} (elapsed: {elap}, rate: {rate}, eta: {esti})"
+            )
+            self.percent += self.step
+
+            return True
+        return False

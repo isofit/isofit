@@ -58,14 +58,7 @@ with:
 In order to support a wide variety of environments, ISOFIT does not overly
 constrain its dependencies, however this means that in some cases ``pip`` can
 take a very long time to resolve ISOFIT's dependency tree. Some users may need
-to provide constraints for specific packages, or install ISOFIT last. In
-particular, ``tensorflow`` can be troublesome. Users might have success with:
-
-.. code-block:: bash
-
-    $ pip install numpy tensorflow
-    $ pip install isofit
-
+to provide constraints for specific packages, or install ISOFIT last.
 ``pip`` also supports installing from a remote git repository – this installs
 against the ``main`` branch:
 
@@ -84,7 +77,15 @@ Install from github
     mamba activate isofit_env
     pip install -e ./isofit
 
+Downloading Extra Files
+-----------------------
 
+Once ISOFIT is installed, the CLI provides an easy way to download additional files that may be useful.
+These can be acquired via the `isofit download` command, and the current list of downloads we support is available via `isofit download --help`.
+
+> **_NOTE:_**  The default location for downloading extra files will be the `isofit.root` path, which is the installation path of the package.
+This path may not be writeable. In these cases, use the `--output [path]` flag to control where the downloads will occur.
+If the output path is different than the default, many of the provided configuration files may not work.
 
 Setting environment variables
 =============================
@@ -156,15 +157,30 @@ it is likely you will need to specify a legacy compiling configuration by changi
 
 2. Configure your environment by pointing the SIXS_DIR variable to point to your installation directory.
 
-3. Download the `pre-trained sRTMnet neural network <https://zenodo.org/record/4096627>`_, and (for the example below)
-point the environment variable EMULATOR_PATH to the base unzipped path.
+3. Download the `pre-trained sRTMnet neural network <https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/sRTMnet_v120.h5>`_,
+as well as some `auxiliary data <https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/sRTMnet_v120_aux.npz>`_.
+This will give you an hdf5 and an aux file. It is important that you store both in the same directory.
+Finally, point the environment variable EMULATOR_PATH to the hdf5 file.
 
-4. Run the following code
+4. Run one of the following examples:
 
 .. code::
 
+    # Small example pixel-by-pixel
     cd examples/image_cube/
-    sh ./run_example_cube.sh
+    sh run_small.sh
+
+.. code::
+
+    # Medium example with empirical line solution
+    cd examples/image_cube/
+    sh run_medium_empirical_line.sh
+
+.. code::
+
+    # Medium example with analytical line solution
+    cd examples/image_cube/
+    sh run_medium_analytical_line.sh
 
 
 
@@ -270,4 +286,4 @@ Ray may have compatability issues with older machines with glibc < 2.14.
 Additional Installation Info for Developers
 ========================================
 
-Be sure to read the :ref:`contributing` page as additional installation steps must be performed. 
+Be sure to read the :ref:`contributing` page as additional installation steps must be performed.
