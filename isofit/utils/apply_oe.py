@@ -291,6 +291,7 @@ def apply_oe(args):
         h_m_s,
         day_increment,
         mean_path_km,
+        mean_to_sensor_azimuth,
         mean_to_sensor_zenith,
         mean_to_sun_azimuth,
         mean_to_sun_zenith,
@@ -375,7 +376,8 @@ def apply_oe(args):
 
     if lut_params.flag_ocean_elevation:
         elevation_lut_grid = None
-        mean_elevation_km = 0.0
+        mean_elevation_km = 0.0001 #KF emulator
+        #mean_elevation_km = 0.0 #MODTRAN
 
     if args.emulator_base is not None:
         if elevation_lut_grid is not None and np.any(elevation_lut_grid < 0):
