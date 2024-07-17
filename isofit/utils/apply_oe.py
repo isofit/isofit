@@ -8,6 +8,7 @@ import os
 import subprocess
 from datetime import datetime
 from os.path import exists, join
+from shutil import copyfile
 from types import SimpleNamespace
 
 import click
@@ -364,6 +365,10 @@ def apply_oe(args):
     paths.surface_path = tmpl.check_surface_model(
         surface_path=args.surface_path, wl=wl, paths=paths
     )
+
+    # re-stage surface model if needed
+    if paths.surface_path != args.surface_path:
+        copyfile(paths.surface_path, paths.surface_working_path)
 
     (
         mean_latitude,
