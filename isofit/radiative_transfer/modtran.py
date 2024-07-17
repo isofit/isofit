@@ -268,9 +268,31 @@ class ModtranRT(RadiativeTransferEngine):
         """
         For a given point, parses the tp6 and chn file and returns the data
         """
-        file = os.path.join(self.sim_path, self.point_to_filename(point))
+        file = os.path.join(self.sim_path, self.point_to_filename(point)) 
+        try:
+            solzen = self.load_tp6(f"{file}.tp6")
+        except FileNotFoundError as e:
+            # Rerun the point until it is done
+            done = False
+            n_rerun = 0
+            while not done:
+                #Pause for a second
+                time.sleep(np.random.randint(1, 10) / 10.)
+                #Extract filename that doesn't exist
+                logging.info(f"File not found: {e.filename}")
+                if n_rerun >= 10:
+                    logging.info(f"{n_rerun} reruns; stopping")
+                    raise FileNotFoundError(e)
+                    # Throw error
+                self.makeSim(point) #Rerun
+                #Try to load
+                try:
+                    solzen = self.load_tp6(f"{file}.tp6")
+                    done=True
+                except FileNotFoundError:
+                    pass
+                n_rerun += 1
 
-        solzen = self.load_tp6(f"{file}.tp6")
         coszen = np.cos(solzen * np.pi / 180.0)
         params = self.load_chn(f"{file}.chn", coszen)
 
@@ -330,6 +352,28 @@ class ModtranRT(RadiativeTransferEngine):
                 modtran_config[0]["MODTRANINPUT"]["NAME"] = ""
                 current_config[0]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
                 modtran_config[0]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
+                if self.multipart_transmittance:
+                    current_config[1]["MODTRANINPUT"]["NAME"] = ""
+                    modtran_config[1]["MODTRANINPUT"]["NAME"] = ""
+                    current_config[1]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
+                    modtran_config[1]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
+                    current_config[2]["MODTRANINPUT"]["NAME"] = ""
+                    modtran_config[2]["MODTRANINPUT"]["NAME"] = ""
+                    current_config[2]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
+                    modtran_config[2]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
+                    #Hacky fix to decimel places not matching
+                    modtran_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
+                    modtran_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = ""
+                    modtran_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
+                    modtran_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = ""
+                    modtran_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
+                    modtran_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = "" 
+                    current_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
+                    current_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = ""
+                    current_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
+                    current_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = ""
+                    current_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
+                    current_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = ""
                 current_str = json.dumps(current_config)
                 modtran_str = json.dumps(modtran_config)
                 rebuild = modtran_str.strip() != current_str.strip()
