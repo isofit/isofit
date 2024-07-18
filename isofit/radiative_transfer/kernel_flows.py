@@ -203,16 +203,16 @@ class KernelFlowsRT(RadiativeTransferEngine):
         try:
             KEYMAPPING[7]["default"] = template["MODTRAN"][0]["MODTRANINPUT"][
                 "GEOMETRY"
-            ]["TRUEAZ"]
+            ]["PARM1"]
         except:
             logging.info("No relative_azimuth default in template")
 
         try:
-            KEYMAPPING[8]["default"] = template["MODTRAN"][0]["MODTRANINPUT"][
+            KEYMAPPING[9]["default"] = template["MODTRAN"][0]["MODTRANINPUT"][
                 "GEOMETRY"
-            ]["PARM1"]
+            ]["TRUEAZ"]
         except:
-            logging.info("No solar_azimuth default in template")
+            logging.info("No observer_azimuth default in template")
 
         # defining some input transformations
         self.input_transfs = [
