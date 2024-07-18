@@ -217,7 +217,7 @@ class SixSRT(RadiativeTransferEngine):
 
         # Assume geometry values are provided by the config
         vals.update(
-            solzen=41.45,
+            solzen=self.engine_config.solzen,
             viewzen=self.engine_config.viewzen,
             solaz=self.engine_config.solaz,
             viewaz=self.engine_config.viewaz,
