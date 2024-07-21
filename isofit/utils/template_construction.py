@@ -911,6 +911,7 @@ def build_main_config(
     debug: bool = False,
     inversion_windows=[[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]],
     prebuilt_lut_path: str = None,
+    presolve: bool = False,
 ) -> None:
     """Write an isofit config file for the main solve, using the specified pathnames and all given info
 
@@ -937,6 +938,9 @@ def build_main_config(
         segmentation_size:                    image segmentation size if empirical line is used
         pressure_elevation:                   if true, retrieve pressure elevation
         debug:                                if true, run ISOFIT in debug mode
+        inversion_windows:                    the inversion windows to use for this solve
+        prebuilt_lut_path:                    the path to a prebuilt netCDF lut file to use
+        presolve:                             if true, set this up as a presolve (H2O only)
     """
 
     # Determine number of spectra included in each retrieval.  If we are
@@ -947,7 +951,10 @@ def build_main_config(
         spectra_per_inversion = 1
 
     if prebuilt_lut_path is None:
-        lut_path = join(paths.full_lut_directory, "lut.nc")
+        if presolve:
+            lut_path = join(paths.lut_h2o_directory, "lut.nc")
+        else:
+            lut_path = join(paths.full_lut_directory, "lut.nc")
     else:
         lut_path = abspath(prebuilt_lut_path)
 
@@ -962,10 +969,14 @@ def build_main_config(
         "radiative_transfer_engines": {
             "vswir": {
                 "engine_name": engine_name,
-                "sim_path": paths.full_lut_directory,
+                "sim_path": (
+                    paths.lut_h2o_directory if presolve else paths.full_lut_directory
+                ),
                 "lut_path": lut_path,
                 "aerosol_template_file": paths.aerosol_tpl_path,
-                "template_file": paths.modtran_template_path,
+                "template_file": (
+                    paths.h2o_template_path if presolve else paths.modtran_template_path
+                ),
                 # lut_names - populated below
                 # statevector_names - populated below
             }
@@ -1077,9 +1088,12 @@ def build_main_config(
             "relative_azimuth"
         ] = get_lut_subset(relative_azimuth_lut_grid)
         for key in aerosol_lut_grid.keys():
+            ss = get_lut_subset(aerosol_lut_grid[key])
+            if presolve:
+                ss = {"interp": 0.05}
             radiative_transfer_config["radiative_transfer_engines"]["vswir"][
                 "lut_names"
-            ][key] = get_lut_subset(aerosol_lut_grid[key])
+            ][key] = ss
 
         rm_keys = []
         for key, item in radiative_transfer_config["radiative_transfer_engines"][
@@ -1119,6 +1133,20 @@ def build_main_config(
     radiative_transfer_config["radiative_transfer_engines"]["vswir"][
         "statevector_names"
     ] = list(radiative_transfer_config["statevector"].keys())
+
+    # if this is the presolve, clear out everything but H2O
+    if presolve:
+        sv_keys = radiative_transfer_config["statevector"].keys()
+        for key in list(sv_keys):
+            if key != "H2OSTR":
+                del radiative_transfer_config["statevector"][key]
+                del radiative_transfer_config["radiative_transfer_engines"]["vswir"][
+                    "lut_names"
+                ][key]
+                del radiative_transfer_config["lut_grid"][key]
+        radiative_transfer_config["radiative_transfer_engines"]["vswir"][
+            "statevector_names"
+        ] = ["H2OSTR"]
 
     # make isofit configuration
     isofit_config_modtran = {
@@ -1178,6 +1206,10 @@ def build_main_config(
             "estimated_state_file"
         ] = paths.state_working_path
 
+    # if presolve, use only a subset and spetial outputs:
+    if presolve:
+        isofit_config_modtran["output"] = {"estimated_state_file": paths.h2o_subs_path}
+
     if multiple_restarts:
         grid = {}
         if h2o_lut_grid is not None:
@@ -1222,8 +1254,12 @@ def build_main_config(
             "radiometry_correction_file"
         ] = paths.rdn_factors_path
 
-    # write modtran_template
-    with open(paths.isofit_full_config_path, "w") as fout:
+    if presolve:
+        outpath = paths.h2o_config_path
+    else:
+        outpath = paths.isofit_full_config_path
+
+    with open(outpath, "w") as fout:
         fout.write(
             json.dumps(
                 isofit_config_modtran, cls=SerialEncoder, indent=4, sort_keys=True
@@ -1251,9 +1287,9 @@ def write_modtran_template(
     fid: str,
     altitude_km: float,
     dayofyear: int,
+    to_sun_zenith: float,
     to_sensor_azimuth: float,
     to_sensor_zenith: float,
-    to_sun_zenith: float,
     relative_azimuth: float,
     gmtime: float,
     elevation_km: float,
@@ -1267,9 +1303,9 @@ def write_modtran_template(
         fid:               flight line id (name)
         altitude_km:       altitude of the sensor in km
         dayofyear:         the current day of the given year
+        to_sun_zenith:     final altitude solar zenith angle (0→180°)
         to_sensor_azimuth: azimuth view angle to the sensor, in degrees (AVIRIS convention)
         to_sensor_zenith:  sensor/observer zenith angle, in degrees (MODTRAN convention: 180 - AVIRIS convention)
-        to_sun_zenith:     final altitude solar zenith angle (0→180°)
         relative_azimuth:  final altitude relative solar azimuth (0→360°)
         gmtime:            greenwich mean time
         elevation_km:      elevation of the land surface in km
@@ -1673,7 +1709,6 @@ def get_metadata_from_obs(
             mean_path_km - mean distance between sensor and ground in km for good data
             mean_to_sensor_azimuth - mean to-sensor azimuth for good data
             mean_to_sensor_zenith - mean to-sensor zenith for good data
-            mean_to_sun_azimuth - mean to-sun-azimuth for good data
             mean_to_sun_zenith - mean to-sun zenith for good data
             mean_relative_azimuth - mean relative to-sun azimuth for good data
             valid - boolean array indicating which pixels were NOT nodata
@@ -1693,8 +1728,9 @@ def get_metadata_from_obs(
     time = obs[:, :, 9]
 
     # calculate relative to-sun azimuth
-    delta_phi = np.abs(to_sun_azimuth - to_sensor_azimuth)
-    relative_azimuth = np.minimum(delta_phi, 360 - delta_phi)
+    delta_phi = to_sun_azimuth - to_sensor_azimuth
+    delta_phi = delta_phi % 360
+    relative_azimuth = np.abs(delta_phi - 180)
 
     use_trim = trim_lines != 0 and valid.shape[0] > trim_lines * 2
     if use_trim:
@@ -1707,9 +1743,6 @@ def get_metadata_from_obs(
 
     mean_to_sensor_azimuth = (
         lut_params.get_angular_grid(to_sensor_azimuth[valid], -1, 0) % 360
-    )
-    mean_to_sun_azimuth = (
-        lut_params.get_angular_grid(to_sun_azimuth[valid], -1, 0) % 360
     )
     mean_to_sensor_zenith = 180 - lut_params.get_angular_grid(
         to_sensor_zenith[valid], -1, 0
@@ -1783,7 +1816,6 @@ def get_metadata_from_obs(
         mean_path_km,
         mean_to_sensor_azimuth,
         mean_to_sensor_zenith,
-        mean_to_sun_azimuth,
         mean_to_sun_zenith,
         mean_relative_azimuth,
         valid,
