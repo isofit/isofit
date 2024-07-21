@@ -573,8 +573,6 @@ class RadiativeTransferEngine:
         # since it only includes direct upward transmittance
         t_up_dir = case0["transm_up_dir"]
 
-        # REVIEW: two_albedo_method-v1 used a single solar_irr value, but now we have an array of values
-        # The last value in the new array is the same as the old v1, so for backwards compatibility setting that here
         # Top-of-atmosphere solar irradiance as a function of sun zenith angle
         E0 = case0["solar_irr"] * coszen / np.pi
 
