@@ -20,6 +20,7 @@
 
 import json
 import os
+import sys
 import time
 import urllib.request
 from copy import deepcopy
@@ -27,9 +28,16 @@ from datetime import date, timedelta
 
 import click
 import numpy as np
-import pygrib
 
 from isofit.core.common import json_load_ascii
+
+try:
+    import pygrib
+except:
+    raise ImportError(
+        "Missing dependency pygrib. Please install: https://jswhit.github.io/pygrib/installing.html"
+    )
+    sys.exit()
 
 
 class HRRR_to_MODTRAN_profiles:
