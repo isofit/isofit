@@ -291,23 +291,12 @@ def invert_analytical(
     else:
         x[fm.idx_surface] = x_alg[0]
 
-    trajectory = []
+    trajectory = [x]
     outside_ret_windows = np.ones(len(fm.idx_surface), dtype=bool)
     outside_ret_windows[winidx] = False
     outside_ret_windows = np.where(outside_ret_windows)[0]
 
-    x_surface, x_RT, x_instrument = fm.unpack(x)
-
-    Seps = fm.Seps(x, meas, geom)[winidx, :][:, winidx]
-
-    Sa = fm.Sa(x, geom)
-    Sa_surface = Sa[fm.idx_surface, :][:, fm.idx_surface]
-
-    Sa_inv = svd_inv_sqrt(Sa_surface, hash_table, hash_size)[0]
-
-    xa_full = fm.xa(x, geom)
-    xa_surface = xa_full[fm.idx_surface]
-
+    # Special glint stuff
     if fm.RT.glint_model:
         prprod = Sa_inv @ xa_surface
         # obtain needed RT vectors
@@ -324,19 +313,30 @@ def invert_analytical(
         g_dir = rho_ls * (t_down_dir / t_down_total)  # direct sky transmittance
         g_dif = rho_ls * (t_down_dif / t_down_total)  # diffuse sky transmittance
 
-        nl = len(r)
-        H = np.zeros((nl, nl + 2))
+        H = np.zeros((len(r), len(r) + 2))
         np.fill_diagonal(H, 1)
         H[:, -2] = g_dir
         H[:, -1] = g_dif
 
-        GIv = 1 / np.diag(Seps)
+    for n in range(num_iter):
+        x_surface, x_RT, x_instrument = fm.unpack(x)
 
-        xk = x[fm.idx_surface].copy()
-        trajectory.append(xk)
+        Seps = fm.Seps(x, meas, geom)[winidx, :][:, winidx]
 
-        for n in range(num_iter):
-            Dv = t1 / (1 - s * (xk[:nl] + xk[-2] * g_dir + xk[-1] * g_dif))
+        Sa = fm.Sa(x, geom)
+        Sa_surface = Sa[fm.idx_surface, :][:, fm.idx_surface]
+        Sa_surface = Sa_surface[winidx, :][:, winidx]
+        Sa_inv = svd_inv_sqrt(Sa_surface, hash_table, hash_size)[0]
+
+        xa_full = fm.xa(x, geom)
+        xa_surface = xa_full[fm.idx_surface]
+        xa = xa_surface[winidx]
+
+        if fm.RT.glint_model:
+            GIv = 1 / np.diag(Seps)
+            xk = x[fm.idx_surface].copy()
+            trajectory.append(xk)
+            Dv = t1 / (1 - s * (xk[: len(r)] + xk[-2] * g_dir + xk[-1] * g_dif))
             L = Dv.reshape((-1, 1)) * H
             M = GIv.reshape((-1, 1)) * L
             S = L.T @ M
@@ -349,8 +349,8 @@ def invert_analytical(
             trajectory.append(trajectory[-1][-2] * g_dir)
             trajectory.append(trajectory[-1][-1] * g_dif)
 
-    else:
-        for n in range(num_iter):
+        else:
+
             L_atm = fm.RT.get_L_atm(x_RT, geom)[winidx]
             L_tot = fm.calc_rdn(x, geom)[winidx]
 
@@ -361,8 +361,8 @@ def invert_analytical(
             C = Seps  # C = 'meas_Cov' = Seps
             L = dpotrf(C, 1)[0]
             P = dpotri(L, 1)[0]
-            P_rpr = Sa_inv[winidx, :][:, winidx]
-            mu_rpr = xa_surface[winidx]
+            P_rpr = Sa_inv
+            mu_rpr = xa
 
             priorprod = P_rpr @ mu_rpr
 
@@ -384,7 +384,7 @@ def invert_analytical(
             # xa_cond, Sa_cond = conditional_gaussian(xa_full, Sa, outside_ret_windows, winidx, mu)
             # full_mu[outside_ret_windows] = xa_cond
             if outside_ret_const is None:
-                full_mu[outside_ret_windows] = xa_surface[outside_ret_windows]
+                full_mu[outside_ret_windows] = xa[outside_ret_windows]
             else:
                 full_mu[outside_ret_windows] = outside_ret_const
 
