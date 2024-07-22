@@ -370,8 +370,8 @@ class LUTConfig:
     def get_grid_with_data(
         self, data_input: np.array, spacing: float, min_spacing: float
     ):
-        min_val = np.minimum(data_input)
-        max_val = np.maximum(data_input)
+        min_val = np.min(data_input)
+        max_val = np.max(data_input)
         return get_grid(min_val, max_val, spacing, min_spacing)
 
     def get_grid(
