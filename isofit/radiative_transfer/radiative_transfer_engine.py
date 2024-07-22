@@ -59,19 +59,6 @@ class RadiativeTransferEngine:
         "surface_elevation_km",
     ]
 
-    # Informs the VectorInterpolator the units for a given key
-    angular_lut_keys = {
-        # Degrees
-        "observer_azimuth": "d",
-        "observer_zenith": "d",
-        "solar_azimuth": "d",
-        "solar_zenith": "d",
-        "relative_azimuth": "d",
-        # Radians
-        #   "key": "r",
-        # All other keys default to "n" = Not angular
-    }
-
     earth_sun_distance_path = os.path.join(
         isofit.root, "data", "earth_sun_distance.txt"
     )
@@ -279,10 +266,6 @@ class RadiativeTransferEngine:
         """
         return self.lut[key].load().data
 
-    @property
-    def lut_interp_types(self):
-        return np.array([self.angular_lut_keys.get(key, "n") for key in self.lut_names])
-
     def build_interpolators(self):
         """
         Builds the interpolators using the LUT store
@@ -303,7 +286,6 @@ class RadiativeTransferEngine:
             self.luts[key] = common.VectorInterpolator(
                 grid_input=grid,
                 data_input=ds[key].load().data,
-                lut_interp_types=self.lut_interp_types,
                 version=self.interpolator_style,
             )
 
