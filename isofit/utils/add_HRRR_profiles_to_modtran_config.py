@@ -20,6 +20,7 @@
 
 import json
 import os
+import sys
 import time
 import urllib.request
 from copy import deepcopy
@@ -27,9 +28,13 @@ from datetime import date, timedelta
 
 import click
 import numpy as np
-import pygrib
 
 from isofit.core.common import json_load_ascii
+
+try:
+    import pygrib
+except:
+    pygrib = None
 
 
 class HRRR_to_MODTRAN_profiles:
@@ -297,6 +302,11 @@ def download_HRRR(
 
 
 def get_HRRR_data(filename):
+    if pygrib is None:
+        raise ImportError(
+            "Missing dependency pygrib. Please install: https://jswhit.github.io/pygrib/installing.html"
+        )
+
     grbs = pygrib.open(filename)
 
     msgs = [str(grb) for grb in grbs]
@@ -329,6 +339,11 @@ def get_HRRR_data(filename):
 @click.command(name="HRRR_to_modtran")
 @click.argument("config_file")
 def cli_HRRR_to_modtran(**kwargs):
+    if pygrib is None:
+        raise ImportError(
+            "Missing dependency pygrib. Please install: https://jswhit.github.io/pygrib/installing.html"
+        )
+
     """Add HRRR profiles to MODTRAN"""
 
     click.echo("Running adding HRRR profiles to MODTRAN")
