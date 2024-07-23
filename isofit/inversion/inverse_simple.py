@@ -345,9 +345,9 @@ def invert_analytical(
             xk = C_rcond @ (M.T @ z + prprod)
             trajectory.append(xk)
 
-        if fm.full_glint:
-            trajectory.append(trajectory[-1][-2] * g_dir)
-            trajectory.append(trajectory[-1][-1] * g_dif)
+            if fm.full_glint:
+                trajectory.append(trajectory[-1][-2] * g_dir)
+                trajectory.append(trajectory[-1][-1] * g_dif)
 
         else:
 
