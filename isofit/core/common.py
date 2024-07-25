@@ -624,37 +624,39 @@ def resample_spectrum(
         np.array: interpolated radiance vector
 
     """
-    # check if x is vector or matrix
-    if len(x.shape) > 1:
-        x_raw = x.copy()
-        x_raw = x_raw.transpose()
-    else:
-        x_raw = x.copy()
-        x_raw = x_raw.reshape((len(x), 1))
-
     H = np.array(
         [
             spectral_response_function(wl, wi, fwhmi / 2.355)
             for wi, fwhmi in zip(wl2, fwhm2)
         ]
     )
+    H[np.isnan(H)] = 0
 
-    # replace any NaNs in the LUT before resampling
-    x_raw[np.isnan(x_raw)] = 0.0
+    dims = len(x.shape)
+    if fill:
+        if dims > 1:
+            raise Exception("resample_spectrum(fill=True) only works with vectors")
 
-    if fill is False:
-        if len(x.shape) > 1:
-            return np.dot(H, x_raw).transpose()
-        else:
-            return np.dot(H, x_raw).ravel()
-    else:
-        xnew = np.dot(H, x_raw).ravel()
+        x = x.reshape(-1, 1)
+        xnew = np.dot(H, x).ravel()
         good = np.isfinite(xnew)
         for i, xi in enumerate(xnew):
             if not good[i]:
                 nearest_good_ind = np.argmin(abs(wl2[good] - wl2[i]))
                 xnew[i] = xnew[nearest_good_ind]
         return xnew
+    else:
+        # Replace NaNs with zeros
+        x[np.isnan(x)] = 0
+
+        # Matrix
+        if dims > 1:
+            return np.dot(H, x.T).T
+
+        # Vector
+        else:
+            x = x.reshape(-1, 1)
+            return np.dot(H, x).ravel()
 
 
 def load_spectrum(spectrum_file: str) -> (np.array, np.array):
