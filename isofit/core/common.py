@@ -124,58 +124,6 @@ class VectorInterpolator:
 
     def _multilinear_grid(self, points):
         """
-        Jouni's implementation
-
-        Args:
-            point: The point being interpolated. If at the limit, the extremal value in
-                    the grid is returned.
-
-        Returns:
-            cube: np.ndarray
-        """
-        x = points
-
-        # Index of left side of bin, and don't go over (that's why it's t[:-1] instead of t)
-        inds = [
-            np.searchsorted(t[:-1], x[i]) - 1 for i, t in enumerate(self.gridtuples)
-        ]
-        deltas = np.array(
-            [
-                (x[i] - self.gridtuples[i][j]) / self.binwidth[i][j]
-                for i, j in enumerate(inds)
-            ]
-        )
-        diff = 1 - deltas
-
-        # Set the 'cube' data to be our interpolation data
-        idx = tuple(
-            [
-                slice(
-                    max(min(self.maxbaseinds[j], i), 0),
-                    max(min(self.maxbaseinds[j] + 2, i + 2), 2),
-                )
-                for j, i in enumerate(inds)
-            ]
-        )
-        cube = np.copy(self.gridarrays[idx], order="A")
-
-        for i, di in enumerate(deltas):
-            # Eliminate those indexes where we are outside grid range or exactly on the grid point
-            if x[i] >= self.gridtuples[i][-1]:
-                cube = cube[1]
-            elif x[i] <= self.gridtuples[i][0]:
-                cube = cube[0]
-            # Otherwise eliminate index by linear interpolation
-            else:
-                cube[0] *= diff[i]
-                cube[1] *= di
-                cube[0] += cube[1]
-                cube = cube[0]
-
-        return cube
-
-    def _cached(self, points):
-        """
         Cached version of Jouni's implementation
 
         Args:
@@ -233,10 +181,7 @@ class VectorInterpolator:
         elif self.method == 1:
             return self._interpolate(*args, **kwargs)
         elif self.method == 2:
-            old = self._multilinear_grid(*args, **kwargs)
-            new = self._cached(*args, **kwargs)
-            assert np.isclose(old, new).all()
-            return new
+            return self._multilinear_grid(*args, **kwargs)
 
 
 def load_wavelen(wavelength_file: str):
