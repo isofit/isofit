@@ -85,6 +85,12 @@ class VectorInterpolator:
         # Multilinear Grid
         elif version == "mlg":
             self.method = 2
+            self.cache = {
+                "points": np.full(len(grid), np.nan),
+                "deltas": np.full(len(grid), np.nan),
+                "diff": np.full(len(grid), np.nan),
+                "idx": [...] * len(grid),
+            }
 
             self.gridtuples = [np.array(t) for t in grid]
             self.gridarrays = data
@@ -168,6 +174,55 @@ class VectorInterpolator:
 
         return cube
 
+    def _cached(self, points):
+        """
+        Cached version of Jouni's implementation
+
+        Args:
+            points: The point being interpolated. If at the limit, the extremal value in
+                    the grid is returned.
+
+        Returns:
+            cube: np.ndarray
+        """
+        # Retrieve which indices to update
+        cached = np.where(points == self.cache["points"])[0]
+        update = set(range(points.size)) - set(cached)
+
+        # Update the cached point
+        self.cache["points"] = points
+
+        # Update indices that are different from the last point
+        for i in update:
+            j = np.searchsorted(self.gridtuples[i][:-1], points[i]) - 1
+            self.cache["deltas"][i] = (
+                points[i] - self.gridtuples[i][j]
+            ) / self.binwidth[i][j]
+            self.cache["diff"][i] = 1 - self.cache["deltas"][i]
+
+            # Eliminate indices where it is outside the grid range or on a grid point
+            if points[i] >= self.gridtuples[i][-1]:
+                self.cache["idx"][i] = max(min(self.maxbaseinds[i] + 2, j + 2), 2) - 1
+            elif points[i] <= self.gridtuples[i][0]:
+                self.cache["idx"][i] = max(min(self.maxbaseinds[i], j), 0)
+            else:
+                self.cache["idx"][i] = slice(
+                    max(min(self.maxbaseinds[i], j), 0),
+                    max(min(self.maxbaseinds[i] + 2, j + 2), 2),
+                )
+
+        cube = np.copy(self.gridarrays[tuple(self.cache["idx"])], order="A")
+
+        # Only linear interpolate sliced dimensions
+        for i, idx in enumerate(self.cache["idx"]):
+            if isinstance(idx, slice):
+                cube[0] *= self.cache["diff"][i]
+                cube[1] *= self.cache["deltas"][i]
+                cube[0] += cube[1]
+                cube = cube[0]
+
+        return cube
+
     def __call__(self, *args, **kwargs):
         """
         Passes args to the appropriate interpolation method defined by the version at
@@ -178,7 +233,10 @@ class VectorInterpolator:
         elif self.method == 1:
             return self._interpolate(*args, **kwargs)
         elif self.method == 2:
-            return self._multilinear_grid(*args, **kwargs)
+            old = self._multilinear_grid(*args, **kwargs)
+            new = self._cached(*args, **kwargs)
+            assert np.isclose(old, new).all()
+            return new
 
 
 def load_wavelen(wavelength_file: str):
