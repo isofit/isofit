@@ -86,9 +86,9 @@ class VectorInterpolator:
         elif version == "mlg":
             self.method = 2
             self.cache = {
-                "points": np.full(len(grid), np.nan),
-                "deltas": np.full(len(grid), np.nan),
-                "diff": np.full(len(grid), np.nan),
+                "points": [np.nan] * len(grid),
+                "deltas": [np.nan] * len(grid),
+                "diff": [np.nan] * len(grid),
                 "idx": [...] * len(grid),
             }
 
