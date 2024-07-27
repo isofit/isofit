@@ -194,16 +194,6 @@ def invert_algebraic(
     else:
         coszen = RT.coszen
 
-    # Figure out which RT object we are using
-    # TODO: this is currently very specific to vswir-tir 2-mode, eventually generalize
-    my_RT = None
-    for rte in RT.rt_engines:
-        if rte.treat_as_emissive is False:
-            my_RT = rte
-            break
-    if not my_RT:
-        raise ValueError("No suitable RT object for initialization")
-
     # Prevent NaNs
     transm[transm == 0] = 1e-5
 
