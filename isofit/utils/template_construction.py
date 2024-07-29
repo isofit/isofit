@@ -1482,7 +1482,7 @@ def get_metadata_from_obs(
     mean_to_sun_azimuth = np.mean(to_sun_azimuth[valid]) % 360
     mean_to_sensor_zenith = 180 - np.mean(to_sensor_zenith[valid])
     mean_to_sun_zenith = np.mean(to_sun_zenith[valid])
-    mean_relative_azimuth = np.mean(relative_azimuth[valid]) % 360
+    mean_relative_azimuth = np.mean(relative_azimuth[valid])
 
     # geom_margin = EPS * 2.0
     to_sensor_zenith_lut_grid = lut_params.get_grid_with_data(
