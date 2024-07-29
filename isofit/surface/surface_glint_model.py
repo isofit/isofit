@@ -61,18 +61,26 @@ class GlintModelSurface(MultiComponentSurface):
     def fit_params(self, rfl_meas, geom, *args):
         """Given a reflectance estimate and one or more emissive parameters,
         fit a state vector."""
-        # first guess suggestion: E_dd => see below, E_ds => ~0.01
+        # Estimate reflectance, assuming all signal around 900 nm == glint
         glint_band = np.argmin(abs(900 - self.wl))
-        glint = np.mean(rfl_meas[(glint_band - 2) : glint_band + 2])
-        glint = max(
-            self.bounds[self.glint_ind][0] + eps,
-            min(self.bounds[self.glint_ind][1] - eps, glint),
+        glint_est = np.mean(rfl_meas[(glint_band - 2) : glint_band + 2])
+        bounds_glint_est = [0,0.2] #Stealing the bounds for this from additive_glint_model
+        glint_est = max(
+            bounds_glint_est[0] + eps,
+            min(bounds_glint_est[1] - eps, glint_est),
         )
-        #*** Glint bounds defaults are what?
-        lamb_est = rfl_meas - glint 
+        lamb_est = rfl_meas - glint_est 
         x = MultiComponentSurface.fit_params(self, lamb_est, geom) #Bounds reflectance
-        x[self.glint_ind] = glint #Implicitly assumes 
-        x[self.glint_ind + 1] = 0.01 #*** Sky glint set to static number
+
+        #Get estimate for g_dd and g_dsf parameters, given signal at 900 nm
+        g_dsf_est = 0.01 #Set to a static number; don't need to apply bounds because static
+        g_dd_est = (glint_est/0.02) - g_dsf_est #Use nadir fresnel coeffs (0.02) and assumed 900 nm transmission of 1
+        g_dd_est = max(
+            self.bounds[self.glint_ind][0] + eps,
+            min(self.bounds[self.glint_ind][1] - eps, g_dd_est),
+        )
+        x[self.glint_ind] = g_dd_est #SUN_GLINT g_dd
+        x[self.glint_ind + 1] = g_dsf_est #SKY_GLINT g_dsf
         return x
 
     def calc_rfl(self, x_surface, geom):
