@@ -40,7 +40,7 @@ class GlintModelSurface(MultiComponentSurface):
         self.bounds.extend([[-1, 10], [0, 10]])  # Gege (2021), WASI user manual
         self.n_state = self.n_state + 2
         self.glint_ind = len(self.statevec_names) - 2
-        self.f = np.array([[(1000000 * np.array(self.scale[self.glint_ind :])) ** 2]])
+        self.f = np.array([[(1000000 * np.array(self.scale[self.glint_ind :])) ** 2]]) #***What is this??
 
     def xa(self, x_surface, geom):
         """Mean of prior distribution, calculated at state x."""
@@ -69,16 +69,17 @@ class GlintModelSurface(MultiComponentSurface):
             min(self.bounds[self.glint_ind][1] - eps, glint),
         )
         #*** Glint bounds defaults are what?
-        lamb_est = rfl_meas - glint
+        lamb_est = rfl_meas - glint 
         x = MultiComponentSurface.fit_params(self, lamb_est, geom) #Bounds reflectance
-        x[self.glint_ind] = glint
-        x[self.glint_ind + 1] = 0.01 #*** Sun glint set to static number
+        x[self.glint_ind] = glint #Implicitly assumes 
+        x[self.glint_ind + 1] = 0.01 #*** Sky glint set to static number
         return x
 
     def calc_rfl(self, x_surface, geom):
         """Reflectance (includes specular glint)."""
+        
 
-        return self.calc_lamb(x_surface, geom) + x_surface[self.glint_ind]
+        return self.calc_lamb(x_surface, geom) #Return surface reflectance only; glint added in later
 
     def drfl_dsurface(self, x_surface, geom):
         """Partial derivative of reflectance with respect to state vector,
