@@ -396,6 +396,7 @@ class RadiativeTransfer:
         """Calculates reflectance factor of sky radiance based on the
         Fresnel equation for unpolarized light as a function of view zenith angle (vza).
         """
+        vza = 180 - vza #Undo the MODTRAN convention for observer_zenith angle, loaded in Geometry
         if vza > 0.0:
             n_w = 1.33  # refractive index of water
             theta = np.deg2rad(vza)
@@ -405,8 +406,8 @@ class RadiativeTransfer:
 
             # reflectance factor of sky radiance based on the Fresnel equation for unpolarized light
             rho_s = 0.5 * np.abs(
-                np.sin(theta - theta_i) ** 2 / np.sin(theta + theta_i) ** 2
-                + np.tan(theta - theta_i) ** 2 / np.tan(theta + theta_i) ** 2
+                ((np.sin(theta - theta_i) ** 2) / (np.sin(theta + theta_i) ** 2))
+                + ((np.tan(theta - theta_i) ** 2) / (np.tan(theta + theta_i) ** 2))
             )
         else:
             rho_s = 0.02  # the reflectance factor converges to 0.02 for view angles equal to 0.0°
