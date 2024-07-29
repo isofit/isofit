@@ -342,6 +342,21 @@ class RadiativeTransfer:
             )
             drdn_drfl = t_total_up * L_down_transmitted * drho_scaled_for_multiscattering_drfl
 
+            # Basic formulation (below) does not include the derivative of the radiance w.r.t. other surface states, not just the reflectance
+            # There's probably a better fix for that overall, just trying to fix it for glint for now
+            drdn_dgdd = (self.solar_irr * self.coszen / np.pi) * t_total_up * t_down_dir * drho_scaled_for_multiscattering_drfl
+            drdn_dgdsf = (self.solar_irr * self.coszen / np.pi) * t_total_up * t_down_dif * drho_scaled_for_multiscattering_drfl
+
+            drdn_dLs = r["transm_up_dir"] + r["transm_up_dif"]
+            K_surface = (
+                drdn_drfl[:, np.newaxis] * drfl_dsurface
+                + drdn_dLs[:, np.newaxis] * dLs_dsurface
+            )
+            K_surface[:,-2] = drdn_dgdd
+            K_surface[:,-1] = drdn_dgdsf
+
+            return K_RT, K_surface
+
         else:
             L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)
 
@@ -352,7 +367,7 @@ class RadiativeTransfer:
             drho_scaled_for_multiscattering_drfl = 1.0 / (1 - r["sphalb"] * rfl) ** 2
 
             drdn_drfl = L_down_transmitted * drho_scaled_for_multiscattering_drfl
-
+ 
         drdn_dLs = r["transm_up_dir"] + r["transm_up_dif"]
         K_surface = (
             drdn_drfl[:, np.newaxis] * drfl_dsurface

@@ -86,7 +86,6 @@ class GlintModelSurface(MultiComponentSurface):
     def calc_rfl(self, x_surface, geom):
         """Reflectance (includes specular glint)."""
         
-
         return self.calc_lamb(x_surface, geom) #Return surface reflectance only; glint added in later
 
     def drfl_dsurface(self, x_surface, geom):
@@ -94,7 +93,7 @@ class GlintModelSurface(MultiComponentSurface):
         calculated at x_surface."""
 
         drfl = self.dlamb_dsurface(x_surface, geom)
-        drfl[:, self.glint_ind :] = 1
+        drfl[:, self.glint_ind :] = 0
         return drfl
 
     def dLs_dsurface(self, x_surface, geom):
