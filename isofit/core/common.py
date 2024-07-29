@@ -85,6 +85,12 @@ class VectorInterpolator:
         # Multilinear Grid
         elif version == "mlg":
             self.method = 2
+            self.cache = {
+                "points": [np.nan] * len(grid),
+                "deltas": [np.nan] * len(grid),
+                "diff": [np.nan] * len(grid),
+                "idx": [...] * len(grid),
+            }
 
             self.gridtuples = [np.array(t) for t in grid]
             self.gridarrays = data
@@ -118,51 +124,48 @@ class VectorInterpolator:
 
     def _multilinear_grid(self, points):
         """
-        Jouni's implementation
+        Cached version of Jouni's implementation
 
         Args:
-            point: The point being interpolated. If at the limit, the extremal value in
+            points: The point being interpolated. If at the limit, the extremal value in
                     the grid is returned.
 
         Returns:
             cube: np.ndarray
         """
-        x = points
+        # Retrieve which indices to update
+        cached = np.where(points == self.cache["points"])[0]
+        update = set(range(points.size)) - set(cached)
 
-        # Index of left side of bin, and don't go over (that's why it's t[:-1] instead of t)
-        inds = [
-            np.searchsorted(t[:-1], x[i]) - 1 for i, t in enumerate(self.gridtuples)
-        ]
-        deltas = np.array(
-            [
-                (x[i] - self.gridtuples[i][j]) / self.binwidth[i][j]
-                for i, j in enumerate(inds)
-            ]
-        )
-        diff = 1 - deltas
+        # Update the cached point
+        self.cache["points"] = points
 
-        # Set the 'cube' data to be our interpolation data
-        idx = tuple(
-            [
-                slice(
-                    max(min(self.maxbaseinds[j], i), 0),
-                    max(min(self.maxbaseinds[j] + 2, i + 2), 2),
-                )
-                for j, i in enumerate(inds)
-            ]
-        )
-        cube = np.copy(self.gridarrays[idx], order="A")
+        # Update indices that are different from the last point
+        for i in update:
+            j = np.searchsorted(self.gridtuples[i][:-1], points[i]) - 1
+            self.cache["deltas"][i] = (
+                points[i] - self.gridtuples[i][j]
+            ) / self.binwidth[i][j]
+            self.cache["diff"][i] = 1 - self.cache["deltas"][i]
 
-        for i, di in enumerate(deltas):
-            # Eliminate those indexes where we are outside grid range or exactly on the grid point
-            if x[i] >= self.gridtuples[i][-1]:
-                cube = cube[1]
-            elif x[i] <= self.gridtuples[i][0]:
-                cube = cube[0]
-            # Otherwise eliminate index by linear interpolation
+            # Eliminate indices where it is outside the grid range or on a grid point
+            if points[i] >= self.gridtuples[i][-1]:
+                self.cache["idx"][i] = max(min(self.maxbaseinds[i] + 2, j + 2), 2) - 1
+            elif points[i] <= self.gridtuples[i][0]:
+                self.cache["idx"][i] = max(min(self.maxbaseinds[i], j), 0)
             else:
-                cube[0] *= diff[i]
-                cube[1] *= di
+                self.cache["idx"][i] = slice(
+                    max(min(self.maxbaseinds[i], j), 0),
+                    max(min(self.maxbaseinds[i] + 2, j + 2), 2),
+                )
+
+        cube = np.copy(self.gridarrays[tuple(self.cache["idx"])], order="A")
+
+        # Only linear interpolate sliced dimensions
+        for i, idx in enumerate(self.cache["idx"]):
+            if isinstance(idx, slice):
+                cube[0] *= self.cache["diff"][i]
+                cube[1] *= self.cache["deltas"][i]
                 cube[0] += cube[1]
                 cube = cube[0]
 
