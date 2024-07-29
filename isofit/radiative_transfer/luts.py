@@ -110,8 +110,6 @@ class Create:
                 dimensions=dims,
                 fill_value=fill_value,
                 chunksizes=chunksizes,
-                zlib=True,
-                complevel=1,
             )
             var[:] = vals
 
@@ -242,6 +240,72 @@ class Create:
         return f"LUT(wl={self.wl.size}, grid={self.sizes})"
 
 
+def findSlice(dim, val):
+    """
+    Creates a slice for selecting along a dimension such that a value is encompassed by
+    the slice.
+
+    Parameters
+    ----------
+    dim: array
+        Dimension array
+    val: float, int
+        Value to be encompassed
+
+    Returns
+    -------
+    slice
+        Index slice to encompass the value
+    """
+    # Increasing is 1, decreasing is -1 for the searchsorted
+    orientation = 1
+    if dim[0] > dim[-1]:
+        orientation = -1
+
+    # Subselect the two points encompassing this interp point
+    b = np.searchsorted(dim * orientation, val * orientation)
+    a = b - 1
+
+    return slice(a, b + 1)
+
+
+def optimizedInterp(ds, strat):
+    """
+    Optimizes the interpolation step by subselecting along dimensions first then
+    interpolating
+
+    Parameters
+    ----------
+    strat: dict
+        Interpolation stategies to perform in the form of {dim: interpolate_values}
+
+    Returns
+    -------
+    xr.Dataset
+        Interpolated dataset
+    """
+    for key, val in strat.items():
+        dim = ds[key]
+
+        if isinstance(val, list):
+            a = findSlice(dim, val[0])
+            b = findSlice(dim, val[-1])
+
+            # Find the correct order
+            if a.start < b.start:
+                sel = slice(a.start, b.stop)
+            else:
+                sel = slice(b.start, a.stop)
+        else:
+            sel = findSlice(dim, val)
+
+        Logger.debug(f"- Subselecting {key}[{sel.start}:{sel.stop}]")
+        ds = ds.isel({key: sel})
+
+    Logger.debug("Calling .interp(assume_sorted=True)")
+    return ds.interp(**strat, assume_sorted=True)
+
+
 def sel(ds, dim, lt=None, lte=None, gt=None, gte=None, encompass=True):
     """
     Subselects an xarray Dataset object using .sel
@@ -332,7 +396,7 @@ def sub(ds: xr.Dataset, dim: str, strat) -> xr.Dataset:
 
 
 def load(
-    file: str, subset: dict = None, dask=False, mode="r", lock=False, **kwargs
+    file: str, subset: dict = None, dask=True, mode="r", lock=False, load=True, **kwargs
 ) -> xr.Dataset:
     """
     Loads a LUT NetCDF
@@ -349,6 +413,9 @@ def load(
     dask: bool, default=True
         Use Dask on the backend of Xarray to lazy load the dataset. This enables
         out-of-core subsetting
+    load: bool, default=True
+        Calls ds.load() at the end to cast from Dask arrays back into numpy arrays held
+        in memory
 
     Examples
     --------
@@ -503,8 +570,10 @@ def load(
     Frozen({'AOT550': 3, 'H2OSTR': 10, 'wl': 285})
     """
     if dask:
+        Logger.debug("Using Dask to load")
         ds = xr.open_mfdataset([file], mode=mode, lock=lock, **kwargs)
     else:
+        Logger.debug("Using Xarray to load")
         ds = xr.open_dataset(file, mode=mode, lock=lock, **kwargs)
 
     # Special case that doesn't require defining the entire grid subsetting strategy
@@ -512,6 +581,8 @@ def load(
         Logger.debug("Subset was None, using entire file")
 
     elif isinstance(subset, dict):
+        Logger.debug(f"Subsetting with: {subset}")
+
         # The subset dict must contain all coordinate keys in the lut file
         missing = set(ds.coords) - ({"wl"} | set(subset))
         if missing:
@@ -524,10 +595,22 @@ def load(
                 f"Subset dictionary is missing keys that are present in the LUT file: {missing}"
             )
 
+        # Interpolation strategies will be done last for optimization purposes
+        interp = {}
+
         # Apply subsetting strategies
         for dim, strat in subset.items():
-            ds = sub(ds, dim, strat)
+            if isinstance(strat, dict) and "interp" in strat:
+                interp[dim] = strat["interp"]
+            else:
+                Logger.debug(f"Subsetting {dim} with {strat}")
+                ds = sub(ds, dim, strat)
 
+        if interp:
+            Logger.debug("Interpolating")
+            ds = optimizedInterp(ds, interp)
+
+        Logger.debug("Subsetting finished")
     else:
         Logger.error("The subsetting strategy must be a dictionary")
         raise AttributeError(
@@ -539,6 +622,11 @@ def load(
     # Create the point dimension
     ds = ds.stack(point=dims).transpose("point", "wl")
 
+    if load:
+        Logger.info("Loading LUT into memory")
+        ds.load()
+
+    Logger.debug("Attempting to detect NaNs")
     for name, nans in ds.isnull().any().items():
         if nans:
             Logger.warning(
@@ -548,14 +636,29 @@ def load(
     return ds
 
 
-def extractPoints(ds: xr.Dataset) -> (np.array, np.array):
+def extractPoints(ds: xr.Dataset, names: bool = False) -> np.array:
     """
     Extracts the points and point name arrays
+
+    Parameters
+    ----------
+    ds: xr.Dataset
+        LUT Dataset object
+    names: bool, default=False
+        Return the names of the point coords as well
+
+    Returns
+    -------
+    points or (points, names)
+        Extracted points, plus names if requested
     """
     points = np.array([*ds.point.data])
-    names = np.array([name for name in ds.point.coords])[1:]
 
-    return (points, names)
+    if names:
+        names = np.array([name for name in ds.point.coords])[1:]
+        return (points, names)
+
+    return points
 
 
 def extractGrid(ds: xr.Dataset) -> dict:
@@ -566,7 +669,8 @@ def extractGrid(ds: xr.Dataset) -> dict:
     for dim, vals in ds.coords.items():
         if dim in {"wl", "point"}:
             continue
-        grid[dim] = vals.data
+        if len(vals.data.shape) > 0 and vals.data.shape[0] > 1:
+            grid[dim] = vals.data
     return grid
 
 
