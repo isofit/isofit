@@ -210,6 +210,7 @@ class RadiativeTransfer:
             t_down_dir = r["transm_down_dir"]  # downward direct transmittance
             t_down_dif = r["transm_down_dif"]  # downward diffuse transmittance
             t_down_total = t_down_dir + t_down_dif  # downward total transmittance
+            t_total_up = r["transm_up_dif"] + r["transm_up_dir"] # total upward transmittance
 
             L_sky = x_surface[-2] * t_down_dir + x_surface[-1] * t_down_dif
 
@@ -220,9 +221,7 @@ class RadiativeTransfer:
 
             ret = (
                 L_atm
-                + L_down_transmitted
-                * (rfl + glint)
-                / (1.0 - r["sphalb"] * (rfl + glint))
+                + t_total_up * L_down_transmitted * (rfl + glint) / (1.0 - r["sphalb"] * (rfl + glint))
                 + L_up
             )
 
@@ -329,6 +328,7 @@ class RadiativeTransfer:
             t_down_dir = r["transm_down_dir"]  # downward direct transmittance
             t_down_dif = r["transm_down_dif"]  # downward diffuse transmittance
             t_down_total = t_down_dir + t_down_dif  # downward total transmittance
+            t_total_up = r["transm_up_dif"] + r["transm_up_dir"] # total upward transmittance
 
             L_sky = x_surface[-2] * t_down_dir + x_surface[-1] * t_down_dif
 
@@ -340,7 +340,7 @@ class RadiativeTransfer:
             drho_scaled_for_multiscattering_drfl = (
                 1.0 / (1 - r["sphalb"] * (rfl + glint)) ** 2
             )
-            drdn_drfl = L_down_transmitted * drho_scaled_for_multiscattering_drfl
+            drdn_drfl = t_total_up * L_down_transmitted * drho_scaled_for_multiscattering_drfl
 
         else:
             L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)
