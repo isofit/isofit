@@ -77,16 +77,13 @@ class Geometry:
         if obs is not None:
             self.path_length_km = obs[0] / 1000
             self.observer_azimuth = obs[1]  # 0 to 360 clockwise from N
-            self.observer_zenith = 180 - obs[2]  # 0 to 90 from zenith
+            self.observer_zenith = obs[2]  # 0 to 90 from zenith
             self.solar_azimuth = obs[3]  # 0 to 360 clockwise from N
             self.solar_zenith = obs[4]  # 0 to 90 from zenith
-            # self.OBSZEN = 180.0 - abs(self.observer_zenith)  # MODTRAN convention?
-            # self.TRUEAZ = self.observer_azimuth  # MODTRAN convention?
             self.cos_i = obs[8]  # cosine of eSZA
             # calculate relative to-sun azimuth
             delta_phi = np.abs(self.solar_azimuth - self.observer_azimuth)
-            self.relative_azimuth = np.minimum(delta_phi, 360 - delta_phi)
-            # self.RELAZ = np.minimum(delta_phi, 360 - delta_phi)
+            self.relative_azimuth = np.minimum(delta_phi, 360 - delta_phi)  # 0 to 180
 
         # The 'loc' object is a list-like object that optionally contains
         # latitude and longitude information about the surface being

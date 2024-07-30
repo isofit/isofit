@@ -801,7 +801,7 @@ def build_main_config(
         if to_sensor_zenith_lut_grid is not None and len(to_sensor_zenith_lut_grid) > 1:
             radiative_transfer_config["lut_grid"][
                 "observer_zenith"
-            ] = to_sensor_zenith_lut_grid.tolist()  # modtran convention
+            ] = to_sensor_zenith_lut_grid.tolist()
         if to_sun_zenith_lut_grid is not None and len(to_sun_zenith_lut_grid) > 1:
             radiative_transfer_config["lut_grid"][
                 "solar_zenith"
@@ -995,7 +995,7 @@ def build_main_config(
             "radiometry_correction_file"
         ] = paths.rdn_factors_path
 
-    # write modtran_template
+    # write main config file
     with open(paths.isofit_full_config_path, "w") as fout:
         fout.write(
             json.dumps(
@@ -1040,8 +1040,8 @@ def write_modtran_template(
         fid:               flight line id (name)
         altitude_km:       altitude of the sensor in km
         dayofyear:         the current day of the given year
-        to_sensor_azimuth: azimuth view angle to the sensor, in degrees (AVIRIS convention)
-        to_sensor_zenith:  sensor/observer zenith angle, in degrees (MODTRAN convention: 180 - AVIRIS convention)
+        to_sensor_azimuth: azimuth view angle to the sensor, in degrees
+        to_sensor_zenith:  sensor/observer zenith angle, in degrees
         to_sun_zenith:     final altitude solar zenith angle (0→180°)
         relative_azimuth:  final altitude relative solar azimuth (0→360°)
         gmtime:            greenwich mean time
@@ -1090,7 +1090,7 @@ def write_modtran_template(
                         "PARM1": relative_azimuth,
                         "PARM2": to_sun_zenith,
                         "TRUEAZ": to_sensor_azimuth,
-                        "OBSZEN": to_sensor_zenith,
+                        "OBSZEN": 180 - to_sensor_zenith,  # MODTRAN convention
                         "GMTIME": gmtime,
                     },
                     "SURFACE": {
@@ -1480,7 +1480,7 @@ def get_metadata_from_obs(
 
     mean_to_sensor_azimuth = np.mean(to_sensor_azimuth[valid]) % 360
     mean_to_sun_azimuth = np.mean(to_sun_azimuth[valid]) % 360
-    mean_to_sensor_zenith = 180 - np.mean(to_sensor_zenith[valid])
+    mean_to_sensor_zenith = np.mean(to_sensor_zenith[valid])
     mean_to_sun_zenith = np.mean(to_sun_zenith[valid])
     mean_relative_azimuth = np.mean(relative_azimuth[valid])
 
@@ -1491,7 +1491,7 @@ def get_metadata_from_obs(
         lut_params.to_sensor_zenith_spacing_min,
     )
     if to_sensor_zenith_lut_grid is not None:
-        to_sensor_zenith_lut_grid = np.sort(180 - to_sensor_zenith_lut_grid)
+        to_sensor_zenith_lut_grid = np.sort(to_sensor_zenith_lut_grid)
 
     to_sun_zenith_lut_grid = lut_params.get_grid_with_data(
         to_sun_zenith[valid],

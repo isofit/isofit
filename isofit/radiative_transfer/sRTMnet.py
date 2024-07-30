@@ -245,8 +245,8 @@ def build_sixs_config(engine_config):
     relative_azimuth = data["GEOMETRY"]["PARM1"]
     observer_azimuth = data["GEOMETRY"]["TRUEAZ"]
     # RT simulations commonly only depend on the relative azimuth,
-    # so we don't care if we do OBSZEN + or - RELAZ.
-    # In addition, sRTMnet was only trained on RELAZ = 0°,
+    # so we don't care if we do view azimuth + or - relative azimuth.
+    # In addition, sRTMnet was only trained on relative azimuth = 0°,
     # so providing different values here would have no implications.
     solar_azimuth = observer_azimuth + relative_azimuth
     solar_zenith = data["GEOMETRY"]["PARM2"]
@@ -261,6 +261,8 @@ def build_sixs_config(engine_config):
     config.alt = data["GEOMETRY"]["H1ALT"]
     config.solzen = solar_zenith
     config.solaz = solar_azimuth
+    # the MODTRAN config provides the view zenith in MODTRAN convention,
+    # so substract from 180 here as 6s follows the ANG OBS file convention
     config.viewzen = 180 - data["GEOMETRY"]["OBSZEN"]
     config.viewaz = observer_azimuth
     config.wlinf = 0.35

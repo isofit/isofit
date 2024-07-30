@@ -242,7 +242,7 @@ class SixSRT(RadiativeTransferEngine):
             vals["viewaz"] = vals["observer_azimuth"]
 
         if "observer_zenith" in vals:
-            vals["viewzen"] = 180 - vals["observer_zenith"]
+            vals["viewzen"] = vals["observer_zenith"]
 
         if self.modtran_emulation:
             if "AERFRAC_2" in vals:
