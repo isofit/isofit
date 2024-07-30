@@ -40,7 +40,7 @@ class GlintModelSurface(MultiComponentSurface):
         self.bounds.extend([[-1, 10], [0, 10]])  # Gege (2021), WASI user manual
         self.n_state = self.n_state + 2
         self.glint_ind = len(self.statevec_names) - 2
-        self.f = np.array([[(1000000 * np.array(self.scale[self.glint_ind :])) ** 2]]) #***What is this??
+        self.f = np.array([[(1000000 * np.array(self.scale[self.glint_ind :])) ** 2]]) #Prior covariance, *very* high...
 
     def xa(self, x_surface, geom):
         """Mean of prior distribution, calculated at state x."""
@@ -55,14 +55,16 @@ class GlintModelSurface(MultiComponentSurface):
         normalize the result for the calling function."""
 
         Cov = MultiComponentSurface.Sa(self, x_surface, geom)
-        Cov[self.glint_ind :, self.glint_ind :] = self.f
+        Cov[self.glint_ind :, self.glint_ind :] = self.f # Old version
+        # Possible new version? Unclear if this should be a fully correlated block or a diagonal
+        # Cov[self.glint_ind :, self.glint_ind :] = np.eye(2)*self.f
         return Cov
 
     def fit_params(self, rfl_meas, geom, *args):
         """Given a reflectance estimate and one or more emissive parameters,
         fit a state vector."""
-        # Estimate reflectance, assuming all signal around 900 nm == glint
-        glint_band = np.argmin(abs(900 - self.wl))
+        # Estimate reflectance, assuming all signal around 1020 nm == glint
+        glint_band = np.argmin(abs(1020 - self.wl))
         glint_est = np.mean(rfl_meas[(glint_band - 2) : glint_band + 2])
         bounds_glint_est = [0,0.2] #Stealing the bounds for this from additive_glint_model
         glint_est = max(
@@ -74,7 +76,9 @@ class GlintModelSurface(MultiComponentSurface):
 
         #Get estimate for g_dd and g_dsf parameters, given signal at 900 nm
         g_dsf_est = 0.01 #Set to a static number; don't need to apply bounds because static
-        g_dd_est = (glint_est/0.02) - g_dsf_est #Use nadir fresnel coeffs (0.02) and assumed 900 nm transmission of 1
+        #Use nadir fresnel coeffs (0.02) and t_down_dir = 0.83, t_down_diff = 0.14 for initialization
+        #Transmission values taken from MODTRAN sim with AERFRAC_2 = 0.5, H2OSTR = 0.5
+        g_dd_est = ((glint_est*0.97/0.02) - 0.14*g_dsf_est)/0.83 
         g_dd_est = max(
             self.bounds[self.glint_ind][0] + eps,
             min(self.bounds[self.glint_ind][1] - eps, g_dd_est),
