@@ -29,7 +29,6 @@ from isofit.core.geometry import Geometry
 from ..core.common import eps
 from ..radiative_transfer.kernel_flows import KernelFlowsRT
 from ..radiative_transfer.modtran import ModtranRT
-from ..radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
 from ..radiative_transfer.six_s import SixSRT
 from ..radiative_transfer.sRTMnet import SimulatedModtranRT
 
@@ -42,7 +41,7 @@ RTE = {
 }
 
 
-def confPriority(key, configs, none=False):
+def confPriority(key, configs):
     """
     Selects a key from a config if the value for that key is not None
     Prioritizes returning the first value found in the configs list
