@@ -67,7 +67,6 @@ class LUTSurface(Surface):
         self.lut_grid = [grid[0] for grid in model_dict["grids"][0]]
         self.lut_names = [l.strip() for l in model_dict["lut_names"]]
         self.statevec_names = [sv.strip() for sv in model_dict["statevec_names"]]
-        interp_types = np.array(["n" for n in self.lut_grid])
         self.data = model_dict["data"]
         self.wl = model_dict["wl"][0]
         self.n_wl = len(self.wl)
@@ -82,7 +81,7 @@ class LUTSurface(Surface):
         self.idx_lamb = np.empty(shape=0)
 
         # build the interpolator
-        self.itp = VectorInterpolator(self.lut_grid, self.data, interp_types)
+        self.itp = VectorInterpolator(self.lut_grid, self.data)
 
     def xa(self, x_surface, geom):
         """Mean of prior distribution."""
