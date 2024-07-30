@@ -3,6 +3,7 @@ This is the netCDF4 implementation for handling ISOFIT LUT files. For previous
 implementations and research, please see https://github.com/isofit/isofit/tree/897062a3dcc64d5292d0d2efe7272db0809a6085/isofit/luts
 """
 
+import gc
 import logging
 import os
 from typing import Any, List, Union
@@ -14,52 +15,43 @@ from netCDF4 import Dataset
 Logger = logging.getLogger(__file__)
 
 
-# Statically store expected keys of the LUT file
+# Statically store expected keys of the LUT file and their fill values
 class Keys:
-
     # Constants, not along any dimension
-    consts = [
-        "coszen",
-        "solzen",
-    ]
+    consts = {
+        "coszen": np.nan,
+        "solzen": np.nan,
+    }
 
     # Along the wavelength dimension only
-    onedim = [
-        "fwhm",
-        "solar_irr",
-    ]
+    onedim = {
+        "fwhm": np.nan,
+        "solar_irr": np.nan,
+    }
 
     # Keys along all dimensions, ie. wl and point
-    alldim = [
-        "rhoatm",
-        "sphalb",
-        "transm_down_dir",
-        "transm_down_dif",
-        "transm_up_dir",
-        "transm_up_dif",
-        "thermal_upwelling",
-        "thermal_downwelling",
-    ]
-
-    # These keys are filled with zeros instead of NaNs
-    zeros = [
-        "transm_down_dir",
-        "transm_down_dif",
-        "transm_up_dir",
-        "transm_up_dif",
-    ]
+    alldim = {
+        "rhoatm": np.nan,
+        "sphalb": np.nan,
+        "transm_down_dir": 0,
+        "transm_down_dif": 0,
+        "transm_up_dir": 0,
+        "transm_up_dif": 0,
+        "thermal_upwelling": np.nan,
+        "thermal_downwelling": np.nan,
+    }
 
 
 class Create:
-
     def __init__(
         self,
         file: str,
         wl: np.ndarray,
         grid: dict,
-        consts: List[str] = [],
-        onedim: List[str] = [],
-        alldim: List[str] = [],
+        attrs: dict = {},
+        consts: dict = {},
+        onedim: dict = {},
+        alldim: dict = {},
         zeros: List[str] = [],
         reduce: bool = ["fwhm"],
     ):
@@ -74,12 +66,14 @@ class Create:
             The wavelength array.
         grid : dict
             The LUT grid, formatted as {str: Iterable}.
-        consts : List[str], optional, default=[]
-            List of constant values. Appends to the current Create.consts list.
-        onedim : List[str], optional, default=[]
-            List of one-dimensional data. Appends to the current Create.onedim list.
-        alldim : List[str], optional, default=[]
-            List of multi-dimensional data. Appends to the current Create.alldim list.
+        attrs: dict, defaults={}
+            Dict of dataset attributes, ie. {"RT_mode": "transm"}
+        consts : dict, optional, default={}
+            Dictionary of constant values. Appends/replaces current Create.consts list.
+        onedim : dict, optional, default={}
+            Dictionary of one-dimensional data. Appends/replaces to the current Create.onedim list.
+        alldim : dict, optional, default={}
+            Dictionary of multi-dimensional data. Appends/replaces to the current Create.alldim list.
         zeros : List[str], optional, default=[]
             List of zero values. Appends to the current Create.zeros list.
         reduce : bool or list, optional, default=['fwhm']
@@ -92,77 +86,65 @@ class Create:
         self.hold = []
 
         self.sizes = {key: len(val) for key, val in grid.items()}
+        self.attrs = attrs
 
-        self.consts = Keys.consts + consts
-        self.onedim = Keys.onedim + onedim
-        self.alldim = Keys.alldim + alldim
-        self.zeros = Keys.zeros + zeros
+        self.consts = {**Keys.consts, **consts}
+        self.onedim = {**Keys.onedim, **onedim}
+        self.alldim = {**Keys.alldim, **alldim}
 
         # Save ds for backwards compatibility (to work with extractGrid, extractPoints)
-        self.ds = self.initialize()
-
-        # Remove variables to reduce memory footprint
-        if reduce:
-            # Drop all variables
-            drop = set(self.ds)
-
-            # Remove these from the drop list
-            if isinstance(reduce, list):
-                drop -= set(reduce)
-
-            self.ds = self.ds.drop_vars(drop)
+        self.initialize()
 
     def initialize(self) -> None:
         """
         Initializes the LUT netCDF by prepopulating it with filler values.
         """
 
-        def fill(
-            keys: List[str],
-            nans: Union[np.ndarray, float],
-            zero: Union[np.ndarray, float],
-            dims: Union[List[str], str],
-        ) -> None:
+        def createVariable(key, vals, dims=(), fill_value=np.nan, chunksizes=None):
             """
-            Fill keys of the file with the specified shape.
-
-            Parameters
-            ----------
-            keys : List[str]
-                Keys to instantiate.
-            nans : Union[np.ndarray, float]
-                Shape of the NaN filler.
-            nans : Union[np.ndarray, float]
-                Shape of the zero filler.
-            dims : Union[str, List[str]]
-                Dimensions for the keys.
+            Reusable createVariable for the Dataset object
             """
-            for key in keys:
-                fill = nans
-                if isinstance(key, tuple):
-                    key, fill = key
-                elif key in self.zeros:
-                    fill = zero
+            var = ds.createVariable(
+                varname=key,
+                datatype="f8",
+                dimensions=dims,
+                fill_value=fill_value,
+                chunksizes=chunksizes,
+            )
+            var[:] = vals
 
-                if dims:
-                    fill = (dims, fill)
+        with Dataset(self.file, "w", format="NETCDF4") as ds:
+            # Dimensions
+            ds.createDimension("wl", len(self.wl))
+            createVariable("wl", self.wl, ("wl",))
 
-                ds[key] = fill
+            chunks = [len(self.wl)]
+            for key, vals in self.grid.items():
+                ds.createDimension(key, len(vals))
+                createVariable(key, vals, (key,))
+                chunks.append(1)
 
-        ds = xr.Dataset(coords={"wl": self.wl, **self.grid})
+            # Constants
+            dims = ()
+            for key, vals in self.consts.items():
+                createVariable(key, vals, dims)
 
-        fill(self.consts, np.nan, 0.0, "")
+            # One dimensional arrays
+            dims = ("wl",)
+            for key, vals in self.onedim.items():
+                createVariable(key, vals, dims)
 
-        shape = ds.wl.size
-        fill(self.onedim, np.full(shape, np.nan), np.zeros(shape), "wl")
+            # Multi dimensional arrays
+            dims += tuple(self.grid)
+            for key, vals in self.alldim.items():
+                createVariable(key, vals, dims, chunksizes=chunks)
 
-        shape = tuple(ds.sizes.values())
-        fill(self.alldim, np.full(shape, np.nan), np.zeros(shape), ds.coords)
+            # Add custom attributes onto the Dataset
+            for key, value in self.attrs.items():
+                ds.setncattr(key, value)
 
-        ds.to_netcdf(self.file, mode="w", compute=False, engine="netcdf4")
-
-        # Create the point dimension
-        return ds.stack(point=self.grid).transpose("point", "wl")
+            ds.sync()
+        gc.collect()
 
     def pointIndices(self, point: np.ndarray) -> List[int]:
         """
@@ -200,6 +182,7 @@ class Create:
         """
         Flushes the (point, data) pairs held in the hold list to the LUT netCDF.
         """
+        unknowns = set()
         with Dataset(self.file, "a") as ds:
             for point, data in self.hold:
                 for key, vals in data.items():
@@ -211,11 +194,17 @@ class Create:
                         index = [slice(None)] + list(self.pointIndices(point))
                         ds[key][index] = vals
                     else:
-                        Logger.warning(
-                            f"Attempted to assign a key that is not recognized, skipping: {key}"
-                        )
+                        unknowns.update([key])
+            ds.sync()
 
         self.hold = []
+        gc.collect()
+
+        # Reduce the number of warnings produced per flush
+        for key in unknowns:
+            Logger.warning(
+                f"Attempted to assign a key that is not recognized, skipping: {key}"
+            )
 
     def writePoint(self, point: np.ndarray, data: dict) -> None:
         """
@@ -249,6 +238,72 @@ class Create:
 
     def __repr__(self) -> str:
         return f"LUT(wl={self.wl.size}, grid={self.sizes})"
+
+
+def findSlice(dim, val):
+    """
+    Creates a slice for selecting along a dimension such that a value is encompassed by
+    the slice.
+
+    Parameters
+    ----------
+    dim: array
+        Dimension array
+    val: float, int
+        Value to be encompassed
+
+    Returns
+    -------
+    slice
+        Index slice to encompass the value
+    """
+    # Increasing is 1, decreasing is -1 for the searchsorted
+    orientation = 1
+    if dim[0] > dim[-1]:
+        orientation = -1
+
+    # Subselect the two points encompassing this interp point
+    b = np.searchsorted(dim * orientation, val * orientation)
+    a = b - 1
+
+    return slice(a, b + 1)
+
+
+def optimizedInterp(ds, strat):
+    """
+    Optimizes the interpolation step by subselecting along dimensions first then
+    interpolating
+
+    Parameters
+    ----------
+    strat: dict
+        Interpolation stategies to perform in the form of {dim: interpolate_values}
+
+    Returns
+    -------
+    xr.Dataset
+        Interpolated dataset
+    """
+    for key, val in strat.items():
+        dim = ds[key]
+
+        if isinstance(val, list):
+            a = findSlice(dim, val[0])
+            b = findSlice(dim, val[-1])
+
+            # Find the correct order
+            if a.start < b.start:
+                sel = slice(a.start, b.stop)
+            else:
+                sel = slice(b.start, a.stop)
+        else:
+            sel = findSlice(dim, val)
+
+        Logger.debug(f"- Subselecting {key}[{sel.start}:{sel.stop}]")
+        ds = ds.isel({key: sel})
+
+    Logger.debug("Calling .interp(assume_sorted=True)")
+    return ds.interp(**strat, assume_sorted=True)
 
 
 def sel(ds, dim, lt=None, lte=None, gt=None, gte=None, encompass=True):
@@ -341,7 +396,7 @@ def sub(ds: xr.Dataset, dim: str, strat) -> xr.Dataset:
 
 
 def load(
-    file: str, subset: dict = None, dask=True, mode="r", lock=False, **kwargs
+    file: str, subset: dict = None, dask=True, mode="r", lock=False, load=True, **kwargs
 ) -> xr.Dataset:
     """
     Loads a LUT NetCDF
@@ -358,6 +413,9 @@ def load(
     dask: bool, default=True
         Use Dask on the backend of Xarray to lazy load the dataset. This enables
         out-of-core subsetting
+    load: bool, default=True
+        Calls ds.load() at the end to cast from Dask arrays back into numpy arrays held
+        in memory
 
     Examples
     --------
@@ -366,7 +424,7 @@ def load(
     >>> lut_dims = {
     ...     'AOT550': [0.001, 0.1009, 0.2008, 0.3007, 0.4006, 0.5005, 0.6004, 0.7003, 0.8002, 0.9001, 1.],
     ...     'H2OSTR': [0.2231, 0.4637, 0.7042, 0.9447, 1.1853, 1.4258, 1.6664, 1.9069, 2.1474, 2.388, 2.6285, 2.869, 3.1096, 3.3501],
-    ...     'observer_zenith': [170.1099, 172.7845],
+    ...     'observer_zenith': [7.2155, 9.8900],
     ...     'surface_elevation_km': [0., 0.2361, 0.4721, 0.7082, 0.9442, 1.1803, 1.4164, 1.6524, 1.8885, 2.1245, 2.3606, 2.5966, 2.8327, 3.0688, 3.3048, 3.5409, 3.7769, 4.013],
     ...     'wl': range(285)
     ... }
@@ -503,7 +561,7 @@ def load(
     ...         'gte': 1.1853,
     ...         'lte': 2.869
     ...     },
-    ...     'observer_zenith': 172.7845,
+    ...     'observer_zenith': 7.2155,
     ...     'surface_elevation_km': 'mean'
     ... }
     >>> load(file, subset).dims
@@ -512,8 +570,10 @@ def load(
     Frozen({'AOT550': 3, 'H2OSTR': 10, 'wl': 285})
     """
     if dask:
+        Logger.debug("Using Dask to load")
         ds = xr.open_mfdataset([file], mode=mode, lock=lock, **kwargs)
     else:
+        Logger.debug("Using Xarray to load")
         ds = xr.open_dataset(file, mode=mode, lock=lock, **kwargs)
 
     # Special case that doesn't require defining the entire grid subsetting strategy
@@ -521,6 +581,8 @@ def load(
         Logger.debug("Subset was None, using entire file")
 
     elif isinstance(subset, dict):
+        Logger.debug(f"Subsetting with: {subset}")
+
         # The subset dict must contain all coordinate keys in the lut file
         missing = set(ds.coords) - ({"wl"} | set(subset))
         if missing:
@@ -533,10 +595,22 @@ def load(
                 f"Subset dictionary is missing keys that are present in the LUT file: {missing}"
             )
 
+        # Interpolation strategies will be done last for optimization purposes
+        interp = {}
+
         # Apply subsetting strategies
         for dim, strat in subset.items():
-            ds = sub(ds, dim, strat)
+            if isinstance(strat, dict) and "interp" in strat:
+                interp[dim] = strat["interp"]
+            else:
+                Logger.debug(f"Subsetting {dim} with {strat}")
+                ds = sub(ds, dim, strat)
 
+        if interp:
+            Logger.debug("Interpolating")
+            ds = optimizedInterp(ds, interp)
+
+        Logger.debug("Subsetting finished")
     else:
         Logger.error("The subsetting strategy must be a dictionary")
         raise AttributeError(
@@ -548,6 +622,11 @@ def load(
     # Create the point dimension
     ds = ds.stack(point=dims).transpose("point", "wl")
 
+    if load:
+        Logger.info("Loading LUT into memory")
+        ds.load()
+
+    Logger.debug("Attempting to detect NaNs")
     for name, nans in ds.isnull().any().items():
         if nans:
             Logger.warning(
@@ -557,14 +636,29 @@ def load(
     return ds
 
 
-def extractPoints(ds: xr.Dataset) -> (np.array, np.array):
+def extractPoints(ds: xr.Dataset, names: bool = False) -> np.array:
     """
     Extracts the points and point name arrays
+
+    Parameters
+    ----------
+    ds: xr.Dataset
+        LUT Dataset object
+    names: bool, default=False
+        Return the names of the point coords as well
+
+    Returns
+    -------
+    points or (points, names)
+        Extracted points, plus names if requested
     """
     points = np.array([*ds.point.data])
-    names = np.array([name for name in ds.point.coords])[1:]
 
-    return (points, names)
+    if names:
+        names = np.array([name for name in ds.point.coords])[1:]
+        return (points, names)
+
+    return points
 
 
 def extractGrid(ds: xr.Dataset) -> dict:
@@ -575,7 +669,8 @@ def extractGrid(ds: xr.Dataset) -> dict:
     for dim, vals in ds.coords.items():
         if dim in {"wl", "point"}:
             continue
-        grid[dim] = vals.data
+        if len(vals.data.shape) > 0 and vals.data.shape[0] > 1:
+            grid[dim] = vals.data
     return grid
 
 

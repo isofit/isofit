@@ -242,7 +242,13 @@ class SixSRT(RadiativeTransferEngine):
             vals["viewaz"] = vals["observer_azimuth"]
 
         if "observer_zenith" in vals:
-            vals["viewzen"] = 180 - vals["observer_zenith"]
+            vals["viewzen"] = vals["observer_zenith"]
+
+        if "relative_azimuth" in vals:
+            vals["solaz"] = np.minimum(
+                vals["viewaz"] + vals["relative_azimuth"],
+                vals["viewaz"] - vals["relative_azimuth"],
+            )
 
         if self.modtran_emulation:
             if "AERFRAC_2" in vals:
@@ -458,7 +464,7 @@ class SixSRT(RadiativeTransferEngine):
                     start = end
 
             if start is None:
-                Logger.error(f"Failed to parse any data for point: {point}")
+                Logger.error(f"Failed to parse any data for file: {file}")
                 return {}
 
             total = len(data["grid"])

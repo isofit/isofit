@@ -9,11 +9,10 @@ dependencies:
   - click
   - dask
   - h5py
-  - netCDF4
-  - numpy>=1.20.0
+  - netCDF4<1.7.1
+  - numpy>=1.20.0,<2.0.0
   - pandas>=0.24
   - pre-commit
-  - pygrib
   - pytest>=3.5.1
   - python-xxhash<3
   - pyyaml>=5.1.2

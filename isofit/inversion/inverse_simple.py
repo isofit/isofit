@@ -80,7 +80,7 @@ def heuristic_atmosphere(
             my_RT = rte
             break
     if not my_RT:
-        raise ValueError("No suiutable RT object for initialization")
+        raise ValueError("No suitable RT object for initialization")
 
     # Band ratio retrieval of H2O.  Depending on the radiative transfer
     # model we are using, this state parameter could go by several names.
@@ -107,7 +107,7 @@ def heuristic_atmosphere(
             rhi = RT.get_shared_rtm_quantities(x_RT_2, geom)
             rhoatm = instrument.sample(x_instrument, RT.wl, rhi["rhoatm"])
             transm = instrument.sample(
-                x_instrument, RT.wl, rhi["transm_down_dif"]
+                x_instrument, RT.wl, rhi["transm_down_dir"] + rhi["transm_down_dif"]
             )  # REVIEW: This was changed from transm as we're deprecating the key
             sphalb = instrument.sample(x_instrument, RT.wl, rhi["sphalb"])
             solar_irr = instrument.sample(x_instrument, RT.wl, RT.solar_irr)
@@ -116,7 +116,12 @@ def heuristic_atmosphere(
             # using this presumed amount of water vapor, and measure the
             # resulting residual (as measured from linear interpolation across
             # the absorption feature)
-            rho = meas * np.pi / (solar_irr * RT.coszen)
+            # ToDo: grab the per pixel sza from Geometry object
+            if my_RT.rt_mode == "rdn":
+                rho = meas
+            else:
+                rho = meas * np.pi / (solar_irr * RT.coszen)
+
             r = 1.0 / (transm / (rho - rhoatm) + sphalb)
             ratios.append((r[b945] * 2.0) / (r[b1040] + r[b865]))
             h2os.append(h2o)
@@ -165,14 +170,39 @@ def invert_algebraic(
     wl, fwhm = instrument.calibration(x_instrument)
     rhoatm = instrument.sample(x_instrument, RT.wl, rhi["rhoatm"])
     transm = instrument.sample(
-        x_instrument, RT.wl, rhi["transm_down_dif"]
+        x_instrument, RT.wl, rhi["transm_down_dir"] + rhi["transm_down_dif"]
     )  # REVIEW: Changed from transm
     solar_irr = instrument.sample(x_instrument, RT.wl, RT.solar_irr)
     sphalb = instrument.sample(x_instrument, RT.wl, rhi["sphalb"])
     transup = instrument.sample(
         x_instrument, RT.wl, rhi["transm_up_dir"]
     )  # REVIEW: Changed from transup
-    coszen = RT.coszen
+
+    # Figure out which RT object we are using
+    # TODO: this is currently very specific to vswir-tir 2-mode, eventually generalize
+    my_RT = None
+    for rte in RT.rt_engines:
+        if rte.treat_as_emissive is False:
+            my_RT = rte
+            break
+    if not my_RT:
+        raise ValueError("No suitable RT object for initialization")
+
+    # ToDo: grab the per pixel sza from Geometry object
+    if my_RT.engine_config.engine_name == "KernelFlowsGP":
+        coszen = np.cos(np.deg2rad(geom.solar_zenith))
+    else:
+        coszen = RT.coszen
+
+    # Figure out which RT object we are using
+    # TODO: this is currently very specific to vswir-tir 2-mode, eventually generalize
+    my_RT = None
+    for rte in RT.rt_engines:
+        if rte.treat_as_emissive is False:
+            my_RT = rte
+            break
+    if not my_RT:
+        raise ValueError("No suitable RT object for initialization")
 
     # Prevent NaNs
     transm[transm == 0] = 1e-5
@@ -185,7 +215,11 @@ def invert_algebraic(
 
     # Now solve for the reflectance at measured wavelengths,
     # and back-translate to surface wavelengths
-    rho = rdn_solrfl * np.pi / (solar_irr * coszen)
+    if my_RT.rt_mode == "rdn":
+        rho = rdn_solrfl
+    else:
+        rho = rdn_solrfl * np.pi / (solar_irr * coszen)
+
     rfl = 1.0 / (transm / (rho - rhoatm) + sphalb)
     rfl[rfl > 1.0] = 1.0
     rfl_est = interp1d(wl, rfl, fill_value="extrapolate")(surface.wl)

@@ -62,7 +62,7 @@ jobs:
           python3 -m pip show pip setuptools wheel
 
           # Install 'isofit'
-          python3 -m pip install ".[test]"
+          python3 -m pip install --editable ".[test]"
 
           # Ensure ISOFIT has been installed
           python3 -c "import isofit; print(isofit.__file__)"
@@ -76,14 +76,26 @@ jobs:
           path: 6sv-2.1/
           key: ${{ env.cache-name }}
 
+      - name: Download and build 6S v2.1
+        if: ${{ steps.cache-6S-v21.outputs.cache-hit != true }}
+        shell: bash
+        run: |
+          ./scripts/download-and-build-6s.sh
+
       - name: Cache sRTMnet
-        id: cache-sRTMnet-v100
+        id: cache-sRTMnet-v120
         uses: actions/cache@v3
         env:
-          cache-name: cache-sRTMnet-v100
+          cache-name: cache-sRTMnet-v120
         with:
-          path: sRTMnet_v100/
+          path: sRTMnet_v120/
           key: ${{ env.cache-name }}
+
+      - name: Install sRTMnet
+        if: ${{ steps.cache-sRTMnet-v120.outputs.cache-hit != true }}
+        shell: bash
+        run: |
+          ./scripts/download-and-unpack-sRTMnet.sh
 
       - name: Cache Hypertrace Data
         id: cache-hypertrace-data
@@ -93,18 +105,6 @@ jobs:
         with:
           path: hypertrace-data/
           key: ${{ env.cache-name }}
-
-      - name: Download and build 6S v2.1
-        if: ${{ steps.cache-6S-v21.outputs.cache-hit != true }}
-        shell: bash
-        run: |
-          ./scripts/download-and-build-6s.sh
-
-      - name: Install sRTMnet
-        if: ${{ steps.cache-sRTMnet-v100.outputs.cache-hit != true }}
-        shell: bash
-        run: |
-          ./scripts/download-and-unpack-sRTMnet.sh
 
       - name: Download and unpack Hypertrace data
         if: ${{ steps.cache-hypertrace-data.outputs.cache-hit != true }}

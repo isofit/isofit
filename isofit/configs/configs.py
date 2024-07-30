@@ -158,7 +158,7 @@ def create_new_config(config_file: str) -> Config:
     Returns:
         Config object, having completed all necessary config checks
     """
-    # pdb.set_trace()
+    logging.info(f"Loading config file: {config_file}")
     try:
         with open(config_file, "r") as f:
             # pdb.set_trace()

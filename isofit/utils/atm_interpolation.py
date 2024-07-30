@@ -256,6 +256,8 @@ def atm_interpolation(
         nneighbors = [400]
     if gaussian_smoothing_sigma is None:
         gaussian_smoothing_sigma = [2]
+    if n_cores == -1:
+        n_cores = multiprocessing.cpu_count()
 
     logging.basicConfig(
         format="%(levelname)s:%(asctime)s ||| %(message)s",
@@ -295,10 +297,11 @@ def atm_interpolation(
 
     # Initialize ray cluster
     start_time = time.time()
-    ray.init(**{"ignore_reinit_error": True, "local_mode": n_cores == 1})
+    ray.init(
+        **{"ignore_reinit_error": True, "local_mode": n_cores == 1, "num_cpus": n_cores}
+    )
 
-    n_ray_cores = multiprocessing.cpu_count()
-    n_cores = min(n_ray_cores, n_input_lines)
+    n_cores = min(n_cores, n_input_lines)
 
     logging.info(f"Beginning atmospheric interpolation {n_cores} cores")
 

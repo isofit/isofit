@@ -24,12 +24,10 @@ from types import SimpleNamespace
 import numpy as np
 
 from isofit.configs import Config
-from isofit.configs.sections.radiative_transfer_config import (
-    RadiativeTransferEngineConfig,
-)
 from isofit.core.geometry import Geometry
 
 from ..core.common import eps
+from ..radiative_transfer.kernel_flows import KernelFlowsRT
 from ..radiative_transfer.modtran import ModtranRT
 from ..radiative_transfer.six_s import SixSRT
 from ..radiative_transfer.sRTMnet import SimulatedModtranRT
@@ -39,10 +37,11 @@ RTE = {
     "modtran": ModtranRT,
     "6s": SixSRT,
     "sRTMnet": SimulatedModtranRT,
+    "KernelFlowsGP": KernelFlowsRT,
 }
 
 
-def confPriority(key, configs, none=False):
+def confPriority(key, configs):
     """
     Selects a key from a config if the value for that key is not None
     Prioritizes returning the first value found in the configs list
@@ -91,11 +90,6 @@ class RadiativeTransfer:
         for idx in range(len(config.radiative_transfer_engines)):
             confRT = config.radiative_transfer_engines[idx]
 
-            if confRT.engine_name not in RTE:
-                raise AttributeError(
-                    f"Invalid radiative transfer engine choice. Got: {confRT.engine_name}; Must be one of: {RTE}"
-                )
-
             # Generate the params for this RTE
             params = {
                 key: confPriority(key, [confRT, confIT, config]) for key in self._keys
@@ -108,6 +102,7 @@ class RadiativeTransfer:
 
         # If any engine is true, self is true
         self.topography_model = any([rte.topography_model for rte in self.rt_engines])
+        self.glint_model = any([rte.glint_model for rte in self.rt_engines])
 
         # The rest of the code relies on sorted order of the individual RT engines which cannot
         # be guaranteed by the dict JSON or YAML input
@@ -171,7 +166,7 @@ class RadiativeTransfer:
             if "coszen" in child.lut:
                 return child.lut.coszen.data
 
-    def calc_rdn(self, x_RT, rfl, Ls, geom):
+    def calc_rdn(self, x_RT, x_surface, rfl, Ls, geom):
         r = self.get_shared_rtm_quantities(x_RT, geom)
         L_atm = self.get_L_atm(x_RT, geom)
         L_up = Ls * (r["transm_up_dir"] + r["transm_up_dif"])
@@ -255,8 +250,9 @@ class RadiativeTransfer:
                 L_atms.append(rdn)
             else:
                 r = RT.get(x_RT, geom)
-                rho = r["rhoatm"]
-                rdn = rho / np.pi * (self.solar_irr * self.coszen)
+                rdn = r["rhoatm"]
+                if RT.rt_mode == "transm":
+                    rdn = (self.solar_irr * self.coszen) / np.pi * rdn
                 L_atms.append(rdn)
         return np.hstack(L_atms)
 
@@ -280,23 +276,23 @@ class RadiativeTransfer:
                 L_downs.append(rdn)
             else:
                 r = RT.get(x_RT, geom)
-                rdn = (
-                    (self.solar_irr * self.coszen)
-                    / np.pi
-                    * (r["transm_down_dir"] + r["transm_down_dif"])
-                )
+                rdn = r["transm_down_dir"] + r["transm_down_dif"]
+                if RT.rt_mode == "transm":
+                    rdn = (self.solar_irr * self.coszen) / np.pi * rdn
                 L_downs.append(rdn)
         return np.hstack(L_downs)
 
-    def drdn_dRT(self, x_RT, rfl, drfl_dsurface, Ls, dLs_dsurface, geom: Geometry):
+    def drdn_dRT(
+        self, x_RT, x_surface, rfl, drfl_dsurface, Ls, dLs_dsurface, geom: Geometry
+    ):
         # first the rdn at the current state vector
-        rdn = self.calc_rdn(x_RT, rfl, Ls, geom)
+        rdn = self.calc_rdn(x_RT, x_surface, rfl, Ls, geom)
 
         # perturb each element of the RT state vector (finite difference)
         K_RT = []
         x_RTs_perturb = x_RT + np.eye(len(x_RT)) * eps
         for x_RT_perturb in list(x_RTs_perturb):
-            rdne = self.calc_rdn(x_RT_perturb, rfl, Ls, geom)
+            rdne = self.calc_rdn(x_RT_perturb, x_surface, rfl, Ls, geom)
             K_RT.append((rdne - rdn) / eps)
         K_RT = np.array(K_RT).T
 
@@ -373,7 +369,7 @@ class RadiativeTransfer:
             Kb_RT = np.zeros((1, len(self.wl)))
         else:
             # first the radiance at the current state vector
-            rdn = self.calc_rdn(x_RT, rfl, Ls, geom)
+            rdn = self.calc_rdn(x_RT, x_surface, rfl, Ls, geom)
 
             # unknown parameters modeled as random variables per
             # Rodgers et al (2000) K_b matrix.  We calculate these derivatives
@@ -385,7 +381,7 @@ class RadiativeTransfer:
                     i = self.statevec_names.index("H2OSTR")
                     x_RT_perturb = x_RT.copy()
                     x_RT_perturb[i] = x_RT[i] * perturb
-                    rdne = self.calc_rdn(x_RT_perturb, rfl, Ls, geom)
+                    rdne = self.calc_rdn(x_RT_perturb, x_surface, rfl, Ls, geom)
                     Kb_RT.append((rdne - rdn) / eps)
 
         Kb_RT = np.array(Kb_RT).T

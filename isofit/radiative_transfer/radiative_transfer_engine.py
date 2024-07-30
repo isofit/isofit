@@ -44,6 +44,10 @@ class RadiativeTransferEngine:
     # Allows engines to outright disable the parallelized sims if they do nothing
     _disable_makeSim = False
 
+    # Sleep a random amount of time up to max this value at the start of each streamSimulation
+    # Can be set per custom engine
+    max_buffer_time = 0
+
     # These are retrieved from the geom object
     geometry_input_names = [
         "observer_azimuth",
@@ -54,36 +58,12 @@ class RadiativeTransferEngine:
         "observer_altitude_km",
         "surface_elevation_km",
     ]
-    # ...
-    angular_lut_keys_degrees = [
-        "observer_azimuth",
-        "observer_zenith",
-        "solar_azimuth",
-        "solar_zenith",
-        "relative_azimuth",
-    ]
-    angular_lut_keys_radians = []
-
-    # Informs the VectorInterpolator the units for a given key
-    angular_lut_keys = {
-        # Degrees
-        "observer_azimuth": "d",
-        "observer_zenith": "d",
-        "solar_azimuth": "d",
-        "solar_zenith": "d",
-        "relative_azimuth": "d",
-        # Radians
-        #   "key": "r",
-        # All other keys default to "n" = Not angular
-    }
 
     earth_sun_distance_path = os.path.join(
         isofit.root, "data", "earth_sun_distance.txt"
     )
 
     # These properties enable easy access to the lut data
-    wl = property(lambda self: self["wl"])
-    fwhm = property(lambda self: self["fwhm"])
     coszen = property(lambda self: self["coszen"])
     solar_irr = property(lambda self: self["solar_irr"])
 
@@ -111,6 +91,12 @@ class RadiativeTransferEngine:
         # TODO: mlky should do all this verification stuff
         # Verify either the LUT file exists or a LUT grid is provided
         self.lut_path = lut_path = str(lut_path) or engine_config.lut_path
+        logging.debug(f"lut_grid {lut_grid}")
+        try:
+            logging.debug(f"self.lut_grid {self.lut_grid}")
+        except:
+            logging.debug("self.lut_grid: None")
+        logging.debug(f"lut_grid is none {lut_grid is None}")
         exists = os.path.isfile(lut_path)
         if not exists and lut_grid is None:
             raise AttributeError(
@@ -125,9 +111,13 @@ class RadiativeTransferEngine:
         self.engine_base_dir = engine_config.engine_base_dir
         self.sim_path = engine_config.sim_path
 
-        # Enable special modes - argument: get from HDF5
+        # Enable special modes
+        self.rt_mode = (
+            engine_config.rt_mode if engine_config.rt_mode is not None else "transm"
+        )
         self.multipart_transmittance = engine_config.multipart_transmittance
         self.topography_model = engine_config.topography_model
+        self.glint_model = engine_config.glint_model
 
         # Specify wavelengths and fwhm to be used for either resampling an existing LUT or building a new instance
         if not any(wl) or not any(fwhm):
@@ -138,6 +128,10 @@ class RadiativeTransferEngine:
                     wl, fwhm = common.load_wavelen(wavelength_file)
                 except:
                     pass
+
+        # Set for downstream engines may use
+        self.wl = wl
+        self.fwhm = fwhm
 
         # ToDo: move setting of multipart rfl values to config
         if self.multipart_transmittance:
@@ -151,18 +145,52 @@ class RadiativeTransferEngine:
             )
             self.lut = luts.load(lut_path, subset=engine_config.lut_names)
             self.lut_grid = lut_grid or luts.extractGrid(self.lut)
-            self.points, self.lut_names = luts.extractPoints(self.lut)
+            self.points = luts.extractPoints(self.lut)
+            self.lut_names = list(self.lut_grid.keys())
+            Logger.info(f"LUT grid loaded from file: {self.lut_grid}")
 
-            # if necessary, resample prebuilt LUT to desired instrument spectral response
-            if not all(wl == self.wl):
-                conv = xr.Dataset(coords={"wl": wl, "point": self.lut.point})
-                for quantity in self.lut:
-                    conv[quantity] = (
-                        ("wl", "point"),
-                        common.resample_spectrum(
-                            self.lut[quantity].data, self.wl, wl, fwhm
-                        ),
-                    )
+            # remove 'point' if added to lut_names after subsetting
+            if "point" in self.lut_names:
+                remove = np.where(self.lut_names == "point")
+                self.lut_names = np.delete(self.lut_names, remove)
+
+            # Enable special modes - argument: get from prebuilt LUT netCDF if available
+            self.rt_mode = self.lut.attrs.get("RT_mode", "transm")
+            if self.rt_mode not in ["transm", "rdn"]:
+                Logger.error(
+                    "Unknown RT mode provided in LUT file. Please use either 'transm' or 'rdn'."
+                )
+                raise ValueError(
+                    "Unknown RT mode provided in LUT file. Please use either 'transm' or 'rdn'."
+                )
+
+            # If necessary, resample prebuilt LUT to desired instrument spectral response
+            if not len(wl) == len(self.lut.wl) or not all(wl == self.lut.wl):
+                # Discover variables along the wl dim
+                keys = {key for key in self.lut if "wl" in self.lut[key].dims} - {
+                    "fwhm",
+                }
+
+                # Apply resampling to these keys
+                conv = xr.apply_ufunc(
+                    common.resample_spectrum,
+                    self.lut[keys],
+                    kwargs={"wl": self.lut.wl, "wl2": wl, "fwhm2": fwhm},
+                    input_core_dims=[["wl"]],  # Only operate on keys with this dim
+                    exclude_dims=set(["wl"]),  # Allows changing the wl size
+                    output_core_dims=[["wl"]],  # Adds wl to the expected output dims
+                    keep_attrs="override",
+                    # on_missing_core_dim = 'copy' # Newer versions of xarray support this
+                )
+
+                # If not on newer versions, add keys not on the wl dim
+                for key in list(self.lut.drop_dims("wl")):
+                    conv[key] = self.lut[key]
+
+                # Override the fwhm
+                conv["fwhm"] = ("wl", fwhm)
+
+                # Exchange the lut with the resampled version
                 self.lut = conv
         else:
             Logger.info(f"No LUT store found, beginning initialization and simulations")
@@ -185,7 +213,8 @@ class RadiativeTransferEngine:
                 file=self.lut_path,
                 wl=wl,
                 grid=self.lut_grid,
-                onedim=[("fwhm", fwhm)],
+                attrs={"RT_mode": self.rt_mode},
+                onedim={"fwhm": fwhm},
             )
 
             # Create and populate a LUT file
@@ -238,10 +267,6 @@ class RadiativeTransferEngine:
         """
         return self.lut[key].load().data
 
-    @property
-    def lut_interp_types(self):
-        return np.array([self.angular_lut_keys.get(key, "n") for key in self.lut_names])
-
     def build_interpolators(self):
         """
         Builds the interpolators using the LUT store
@@ -250,7 +275,6 @@ class RadiativeTransferEngine:
         """
         self.luts = {}
 
-        # Convert from 2d (point, wl) to Nd (*luts, wl)
         ds = self.lut.unstack("point")
 
         # Make sure its in expected order, wl at the end
@@ -263,7 +287,6 @@ class RadiativeTransferEngine:
             self.luts[key] = common.VectorInterpolator(
                 grid_input=grid,
                 data_input=ds[key].load().data,
-                lut_interp_types=self.lut_interp_types,
                 version=self.interpolator_style,
             )
 
@@ -400,11 +423,19 @@ class RadiativeTransferEngine:
             makeSim = ray.put(self.makeSim)
             readSim = ray.put(self.readSim)
             lut_path = ray.put(self.lut_path)
+            buffer_time = ray.put(self.max_buffer_time)
+
             jobs = [
-                streamSimulation.remote(point, lut_names, makeSim, readSim, lut_path)
+                streamSimulation.remote(
+                    point,
+                    lut_names,
+                    makeSim,
+                    readSim,
+                    lut_path,
+                    max_buffer_time=buffer_time,
+                )
                 for point in self.points
             ]
-            ray.get(jobs)
 
             # Report a percentage complete every 10% and flush to disk at those intervals
             report = common.Track(
@@ -429,6 +460,8 @@ class RadiativeTransferEngine:
                 if report(len(jobs)):
                     Logger.info("Flushing netCDF to disk")
                     self.lut.flush()
+
+            del lut_names, makeSim, readSim, lut_path, buffer_time
 
             # Shouldn't be hit but just in case
             if self.lut.hold:

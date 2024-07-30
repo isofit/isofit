@@ -155,10 +155,9 @@ def test_interpolators():
             30,
         )
     )
-    lut_interp_types = np.array(["n", "d", "d", "n"])
 
-    v_orig = VectorInterpolator(grid_input, data_input, lut_interp_types, version="rg")
-    v_new = VectorInterpolator(grid_input, data_input, lut_interp_types, version="mlg")
+    v_orig = VectorInterpolator(grid_input, data_input, version="rg")
+    v_new = VectorInterpolator(grid_input, data_input, version="mlg")
 
     input_test = np.random.random((100, len(grid_input)))
     for _n in range(len(grid_input)):

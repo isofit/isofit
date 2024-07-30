@@ -29,7 +29,7 @@ hypertrace_job-*.*out
 
 # sRTM files
 6sV-2.1/*
-sRTMnet_v100/*
+sRTMnet_v120/*
 
 # Hidden files
 *._*
