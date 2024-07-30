@@ -244,6 +244,12 @@ class SixSRT(RadiativeTransferEngine):
         if "observer_zenith" in vals:
             vals["viewzen"] = vals["observer_zenith"]
 
+        if "relative_azimuth" in vals:
+            vals["solaz"] = np.minimum(
+                vals["viewaz"] + vals["relative_azimuth"],
+                vals["viewaz"] - vals["relative_azimuth"],
+            )
+
         if self.modtran_emulation:
             if "AERFRAC_2" in vals:
                 vals["AOT550"] = vals["AERFRAC_2"]
