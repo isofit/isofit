@@ -611,7 +611,7 @@ class RadiativeTransferEngine:
         Lp0 = ((Lsurf2 * Lp1) - (Lsurf1 * Lp2)) / (Lsurf2 - Lsurf1)
 
         # Diffuse upward transmittance
-        t_up_dif = np.pi * (Lp1 - Lp0) / (rfl1 * E_down1)
+        t_up_dif = np.pi * (Lp1 - Lp0) / Lsurf1
 
         # Spherical albedo
         salb = (E_down1 - E_down2) / (Lsurf1 - Lsurf2)
