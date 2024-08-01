@@ -36,7 +36,7 @@ class GlintModelSurface(MultiComponentSurface):
         # TODO: Enforce this attribute in the config, not here (this is hidden)
         self.statevec_names.extend(["SUN_GLINT", "SKY_GLINT"])
         self.scale.extend([1.0, 1.0])
-        self.init.extend([0.02, 1 / np.pi])
+        self.init.extend([0.02, 1 / np.pi]) # Numbers from Marcel Koenig; used for prior mean
         self.bounds.extend([[-1, 10], [0, 10]])  # Gege (2021), WASI user manual
         self.n_state = self.n_state + 2
         self.glint_ind = len(self.statevec_names) - 2
@@ -55,9 +55,9 @@ class GlintModelSurface(MultiComponentSurface):
         normalize the result for the calling function."""
 
         Cov = MultiComponentSurface.Sa(self, x_surface, geom)
-        Cov[self.glint_ind :, self.glint_ind :] = self.f # Old version
+        # Cov[self.glint_ind :, self.glint_ind :] = self.f # Old version, fully correlated
         # Possible new version? Unclear if this should be a fully correlated block or a diagonal
-        # Cov[self.glint_ind :, self.glint_ind :] = np.eye(2)*self.f
+        Cov[self.glint_ind :, self.glint_ind :] = np.eye(2)*self.f
         return Cov
 
     def fit_params(self, rfl_meas, geom, *args):
