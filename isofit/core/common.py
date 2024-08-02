@@ -86,8 +86,12 @@ class VectorInterpolator:
         elif version == "mlg":
             self.method = 2
 
+            # None to disable, 0 for unlimited, negatives == 1
             self.cache_size = 500
-            self.cache = {i: {} for i in range(len(grid))}
+
+            # Global variable makes it non-shared mem in ray
+            global Cache
+            Cache = {i: {} for i in range(len(grid))}
 
             self.gridtuples = [np.array(t) for t in grid]
             self.gridarrays = data
@@ -150,17 +154,21 @@ class VectorInterpolator:
         """
         deltas = [None] * points.size
         idxs = [None] * points.size
+
         for i, point in enumerate(points):
-            cache = self.cache[i]
-            data = cache.get(point)
+            if self.cache_size is not None:
+                cache = Cache[i]
+                data = cache.get(point)
 
-            if data is None:
-                # Simple FIFO
-                if self.cache_size and len(cache) >= self.cache_size:
-                    cache.pop(list(cache)[0])
+                if data is None:
+                    # Simple FIFO
+                    if self.cache_size and len(cache) >= self.cache_size:
+                        cache.pop(list(cache)[0])
 
+                    data = self._lookup(i, point)
+                    cache[point] = data
+            else:
                 data = self._lookup(i, point)
-                cache[point] = data
 
             deltas[i], idxs[i] = data
 
