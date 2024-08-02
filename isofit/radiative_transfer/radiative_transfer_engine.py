@@ -135,8 +135,7 @@ class RadiativeTransferEngine:
 
         # ToDo: move setting of multipart rfl values to config
         if self.multipart_transmittance:
-            self.test_rfls = [0, 0.1, 0.5]
-            # self.test_rfls = [0.1,0.5]
+            self.test_rfls = [0.1, 0.5]
 
         # Extract from LUT file if available, otherwise initialize it
         if exists:
@@ -500,7 +499,6 @@ class RadiativeTransferEngine:
         case1: dict,
         case2: dict,
         coszen: float,
-        rfl0: float = 0,
         rfl1: float = 0.1,
         rfl2: float = 0.5,
     ) -> dict:
@@ -518,8 +516,6 @@ class RadiativeTransferEngine:
             MODTRAN output for surface reflectance = rfl2 (case 2 of the channel file)
         coszen: float
             ...
-        rfl0: float, defaults=0
-            Surface reflectance  for case 0 of the MODTRAN output
         rfl1: float, defaults=0.1
             Surface reflectance  for case 1 of the MODTRAN output
         rfl2: float, defaults=0.5
