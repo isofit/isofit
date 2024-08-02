@@ -209,7 +209,9 @@ class RadiativeTransfer:
             t_down_dir = r["transm_down_dir"]  # downward direct transmittance
             t_down_dif = r["transm_down_dif"]  # downward diffuse transmittance
             t_down_total = t_down_dir + t_down_dif  # downward total transmittance
-            t_total_up = r["transm_up_dif"] + r["transm_up_dir"] # total upward transmittance
+            t_total_up = (
+                r["transm_up_dif"] + r["transm_up_dir"]
+            )  # total upward transmittance
 
             L_sky = x_surface[-2] * t_down_dir + x_surface[-1] * t_down_dif
 
@@ -220,7 +222,10 @@ class RadiativeTransfer:
 
             ret = (
                 L_atm
-                + t_total_up * L_down_transmitted * (rfl + glint) / (1.0 - r["sphalb"] * (rfl + glint))
+                + t_total_up
+                * L_down_transmitted
+                * (rfl + glint)
+                / (1.0 - r["sphalb"] * (rfl + glint))
                 + L_up
             )
 
@@ -327,7 +332,9 @@ class RadiativeTransfer:
             t_down_dir = r["transm_down_dir"]  # downward direct transmittance
             t_down_dif = r["transm_down_dif"]  # downward diffuse transmittance
             t_down_total = t_down_dir + t_down_dif  # downward total transmittance
-            t_total_up = r["transm_up_dif"] + r["transm_up_dir"] # total upward transmittance
+            t_total_up = (
+                r["transm_up_dif"] + r["transm_up_dir"]
+            )  # total upward transmittance
 
             L_sky = x_surface[-2] * t_down_dir + x_surface[-1] * t_down_dif
 
@@ -339,20 +346,32 @@ class RadiativeTransfer:
             drho_scaled_for_multiscattering_drfl = (
                 1.0 / (1 - r["sphalb"] * (rfl + glint)) ** 2
             )
-            drdn_drfl = t_total_up * L_down_transmitted * drho_scaled_for_multiscattering_drfl
+            drdn_drfl = (
+                t_total_up * L_down_transmitted * drho_scaled_for_multiscattering_drfl
+            )
 
             # Basic formulation (below) does not include the derivative of the radiance w.r.t. other surface states, not just the reflectance
             # There's probably a better fix for that overall, just trying to fix it for glint for now
-            drdn_dgdd = (self.solar_irr * self.coszen / np.pi) * t_total_up * t_down_dir * drho_scaled_for_multiscattering_drfl
-            drdn_dgdsf = (self.solar_irr * self.coszen / np.pi) * t_total_up * t_down_dif * drho_scaled_for_multiscattering_drfl
+            drdn_dgdd = (
+                (self.solar_irr * self.coszen / np.pi)
+                * t_total_up
+                * t_down_dir
+                * drho_scaled_for_multiscattering_drfl
+            )
+            drdn_dgdsf = (
+                (self.solar_irr * self.coszen / np.pi)
+                * t_total_up
+                * t_down_dif
+                * drho_scaled_for_multiscattering_drfl
+            )
 
             drdn_dLs = r["transm_up_dir"] + r["transm_up_dif"]
             K_surface = (
                 drdn_drfl[:, np.newaxis] * drfl_dsurface
                 + drdn_dLs[:, np.newaxis] * dLs_dsurface
             )
-            K_surface[:,-2] = drdn_dgdd
-            K_surface[:,-1] = drdn_dgdsf
+            K_surface[:, -2] = drdn_dgdd
+            K_surface[:, -1] = drdn_dgdsf
 
             return K_RT, K_surface
 
@@ -366,7 +385,7 @@ class RadiativeTransfer:
             drho_scaled_for_multiscattering_drfl = 1.0 / (1 - r["sphalb"] * rfl) ** 2
 
             drdn_drfl = L_down_transmitted * drho_scaled_for_multiscattering_drfl
- 
+
         drdn_dLs = r["transm_up_dir"] + r["transm_up_dif"]
         K_surface = (
             drdn_drfl[:, np.newaxis] * drfl_dsurface
@@ -410,7 +429,9 @@ class RadiativeTransfer:
         """Calculates reflectance factor of sky radiance based on the
         Fresnel equation for unpolarized light as a function of view zenith angle (vza).
         """
-        vza = 180 - vza #Undo the MODTRAN convention for observer_zenith angle, loaded in Geometry
+        vza = (
+            180 - vza
+        )  # Undo the MODTRAN convention for observer_zenith angle, loaded in Geometry
         if vza > 0.0:
             n_w = 1.33  # refractive index of water
             theta = np.deg2rad(vza)

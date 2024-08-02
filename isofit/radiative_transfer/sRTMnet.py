@@ -90,7 +90,6 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         "transm_up_dir",  # NOTE: Formerly transup
     }
 
-
     def preSim(self):
         """
         sRTMnet leverages 6S to simulate results which is best done before sRTMnet begins

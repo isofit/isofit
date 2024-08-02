@@ -277,7 +277,7 @@ def invert_analytical(
     # x_alg contains [rfl_est, Ls_est, coeffs]
 
     if fm.RT.glint_model:
-        x_surf = fm.surface.fit_params(x_alg[0], geom) 
+        x_surf = fm.surface.fit_params(x_alg[0], geom)
         x[fm.idx_surface] = x_surf
         # Initial guess for reflectance and glint parameters based on the algebraic inversion
         # Glint initialization comes from band 900 nm +/- 2 bands

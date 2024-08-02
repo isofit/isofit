@@ -24,10 +24,10 @@ import logging
 import os
 import re
 import subprocess
+import time
 from copy import deepcopy
 from sys import platform
 
-import time
 import numpy as np
 import scipy.interpolate
 import scipy.stats
@@ -268,7 +268,7 @@ class ModtranRT(RadiativeTransferEngine):
         """
         For a given point, parses the tp6 and chn file and returns the data
         """
-        file = os.path.join(self.sim_path, self.point_to_filename(point)) 
+        file = os.path.join(self.sim_path, self.point_to_filename(point))
         try:
             solzen = self.load_tp6(f"{file}.tp6")
         except FileNotFoundError as e:
@@ -276,19 +276,19 @@ class ModtranRT(RadiativeTransferEngine):
             done = False
             n_rerun = 0
             while not done:
-                #Pause for a second
-                time.sleep(np.random.randint(1, 10) / 10.)
-                #Extract filename that doesn't exist
+                # Pause for a second
+                time.sleep(np.random.randint(1, 10) / 10.0)
+                # Extract filename that doesn't exist
                 logging.info(f"File not found: {e.filename}")
                 if n_rerun >= 10:
                     logging.info(f"{n_rerun} reruns; stopping")
                     raise FileNotFoundError(e)
                     # Throw error
-                self.makeSim(point) #Rerun
-                #Try to load
+                self.makeSim(point)  # Rerun
+                # Try to load
                 try:
                     solzen = self.load_tp6(f"{file}.tp6")
-                    done=True
+                    done = True
                 except FileNotFoundError:
                     pass
                 n_rerun += 1
@@ -361,19 +361,43 @@ class ModtranRT(RadiativeTransferEngine):
                     modtran_config[2]["MODTRANINPUT"]["NAME"] = ""
                     current_config[2]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
                     modtran_config[2]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
-                    #Hacky fix to decimel places not matching
-                    modtran_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
-                    modtran_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = ""
-                    modtran_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
-                    modtran_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = ""
-                    modtran_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
-                    modtran_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = "" 
-                    current_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
-                    current_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = ""
-                    current_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
-                    current_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = ""
-                    current_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
-                    current_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = ""
+                    # Hacky fix to decimel places not matching
+                    modtran_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0][
+                        "EXTC"
+                    ] = ""
+                    modtran_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0][
+                        "ABSC"
+                    ] = ""
+                    modtran_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0][
+                        "EXTC"
+                    ] = ""
+                    modtran_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0][
+                        "ABSC"
+                    ] = ""
+                    modtran_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0][
+                        "EXTC"
+                    ] = ""
+                    modtran_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0][
+                        "ABSC"
+                    ] = ""
+                    current_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0][
+                        "EXTC"
+                    ] = ""
+                    current_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0][
+                        "ABSC"
+                    ] = ""
+                    current_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0][
+                        "EXTC"
+                    ] = ""
+                    current_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0][
+                        "ABSC"
+                    ] = ""
+                    current_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0][
+                        "EXTC"
+                    ] = ""
+                    current_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0][
+                        "ABSC"
+                    ] = ""
                 current_str = json.dumps(current_config)
                 modtran_str = json.dumps(modtran_config)
                 rebuild = modtran_str.strip() != current_str.strip()
@@ -635,9 +659,9 @@ class ModtranRT(RadiativeTransferEngine):
             lvl0["NARSPC"] = len(self.aer_wl)
             lvl0["VARSPC"] = [float(v) for v in self.aer_wl]
             lvl0["ASYM"] = [float(v) for v in total_asym]
-            lvl0["EXTC"] = [float(v) / total_extc550 for v in total_extc] 
+            lvl0["EXTC"] = [float(v) / total_extc550 for v in total_extc]
             lvl0["ABSC"] = [float(v) / total_extc550 for v in total_absc]
-            #***Need to round this to a specific number of decimels when writing to make sure subsequent re-runs are exactly the same
+            # ***Need to round this to a specific number of decimels when writing to make sure subsequent re-runs are exactly the same
 
         if self.multipart_transmittance:
             const_rfl = np.array(np.array(self.test_rfls) * 100, dtype=int)
@@ -685,241 +709,236 @@ class ModtranRT(RadiativeTransferEngine):
                     max_water = float(max_water.split(" ")[0])
                     break
 
-#         # Regenerate MODTRAN input wavelength file
-#         if not os.path.exists(self.filtpath):
-#             self.wl2flt(self.wl, self.fwhm, self.filtpath)
+        #         # Regenerate MODTRAN input wavelength file
+        #         if not os.path.exists(self.filtpath):
+        #             self.wl2flt(self.wl, self.fwhm, self.filtpath)
 
-#         # Check that the H2OSTR value, if present, is not too high.
-#         # MODTRAN caps the value at 5x profile specified value or 100% RH, as
-#         # defined in PDF-page 52 of the MODTRAN user guide.
-#         if "H2OSTR" in self.lut_names:
-#             if (
-#                 "H2OOPT" in self.template[0]["MODTRANINPUT"]["ATMOSPHERE"].keys()
-#                 and self.template[0]["MODTRANINPUT"]["ATMOSPHERE"]["H2OOPT"] == "+"
-#             ):
-#                 logging.info(
-#                     "H2OOPT found in MODTRAN template - ignoring H2O upper bound"
-#                 )
-#             else:
-#                 # Only do this check if we don't have a LUT provided:
-#                 need_to_rebuild = np.any(
-#                     [
-#                         not self.required_results_exist(x)
-#                         for x in self.get_lut_filenames()
-#                     ]
-#                 )
-#                 if need_to_rebuild:
-#                     # Define a realistic point, based on lut grid
-#                     point = np.array([x[-1] for x in self.lut_grids])
+        #         # Check that the H2OSTR value, if present, is not too high.
+        #         # MODTRAN caps the value at 5x profile specified value or 100% RH, as
+        #         # defined in PDF-page 52 of the MODTRAN user guide.
+        #         if "H2OSTR" in self.lut_names:
+        #             if (
+        #                 "H2OOPT" in self.template[0]["MODTRANINPUT"]["ATMOSPHERE"].keys()
+        #                 and self.template[0]["MODTRANINPUT"]["ATMOSPHERE"]["H2OOPT"] == "+"
+        #             ):
+        #                 logging.info(
+        #                     "H2OOPT found in MODTRAN template - ignoring H2O upper bound"
+        #                 )
+        #             else:
+        #                 # Only do this check if we don't have a LUT provided:
+        #                 need_to_rebuild = np.any(
+        #                     [
+        #                         not self.required_results_exist(x)
+        #                         for x in self.get_lut_filenames()
+        #                     ]
+        #                 )
+        #                 if need_to_rebuild:
+        #                     # Define a realistic point, based on lut grid
+        #                     point = np.array([x[-1] for x in self.lut_grids])
 
-#                     # Set the H2OSTR value as arbitrarily high - 50 g/cm2 in this case
-#                     point[self.lut_names.index("H2OSTR")] = 50
+        #                     # Set the H2OSTR value as arbitrarily high - 50 g/cm2 in this case
+        #                     point[self.lut_names.index("H2OSTR")] = 50
 
-#                     filebase = os.path.join(
-#                         os.path.dirname(self.files[-1]), "H2O_bound_test"
-#                     )
-#                     cmd = self.rebuild_cmd(point, filebase)
+        #                     filebase = os.path.join(
+        #                         os.path.dirname(self.files[-1]), "H2O_bound_test"
+        #                     )
+        #                     cmd = self.rebuild_cmd(point, filebase)
 
-#                     # Run MODTRAN for up to 10 seconds - this should be plenty of time
-#                     if os.path.isdir(self.lut_dir) is False:
-#                         os.mkdir(self.lut_dir)
-#                     try:
-#                         subprocess.call(cmd, shell=True, timeout=20, cwd=self.lut_dir)
-#                     except Exception as e:
-#                         logging.info("Error occurred running H2O_bound_test:")
-#                         logging.info(str(e))
-#                         pass
+        #                     # Run MODTRAN for up to 10 seconds - this should be plenty of time
+        #                     if os.path.isdir(self.lut_dir) is False:
+        #                         os.mkdir(self.lut_dir)
+        #                     try:
+        #                         subprocess.call(cmd, shell=True, timeout=20, cwd=self.lut_dir)
+        #                     except Exception as e:
+        #                         logging.info("Error occurred running H2O_bound_test:")
+        #                         logging.info(str(e))
+        #                         pass
 
-#                     max_water = None
-#                     try:
-#                         with open(
-#                             os.path.join(self.lut_dir, filebase + ".tp6"), errors="ignore"
-#                         ) as tp6file:
-#                             for count, line in enumerate(tp6file):
-#                                 if "The water column is being set to the maximum" in line:
-#                                     max_water = line.split(",")[1].strip()
-#                                     max_water = float(max_water.split(" ")[0])
-#                                     break
-#                     except FileNotFoundError as e:
-#                         logging.info("H2O_bound_test.tp6 not found, pausing and then rerunning")
-#                         time.sleep(np.random.randint(100, 1000)/10.)
-#                         subprocess.call(cmd, shell=True, timeout=20, cwd=self.lut_dir)
-#                         with open(
-#                             os.path.join(self.lut_dir, filebase + ".tp6"), errors="ignore"
-#                         ) as tp6file:
-#                             for count, line in enumerate(tp6file):
-#                                 if "The water column is being set to the maximum" in line:
-#                                     max_water = line.split(",")[1].strip()
-#                                     max_water = float(max_water.split(" ")[0])
-#                                     break
+        #                     max_water = None
+        #                     try:
+        #                         with open(
+        #                             os.path.join(self.lut_dir, filebase + ".tp6"), errors="ignore"
+        #                         ) as tp6file:
+        #                             for count, line in enumerate(tp6file):
+        #                                 if "The water column is being set to the maximum" in line:
+        #                                     max_water = line.split(",")[1].strip()
+        #                                     max_water = float(max_water.split(" ")[0])
+        #                                     break
+        #                     except FileNotFoundError as e:
+        #                         logging.info("H2O_bound_test.tp6 not found, pausing and then rerunning")
+        #                         time.sleep(np.random.randint(100, 1000)/10.)
+        #                         subprocess.call(cmd, shell=True, timeout=20, cwd=self.lut_dir)
+        #                         with open(
+        #                             os.path.join(self.lut_dir, filebase + ".tp6"), errors="ignore"
+        #                         ) as tp6file:
+        #                             for count, line in enumerate(tp6file):
+        #                                 if "The water column is being set to the maximum" in line:
+        #                                     max_water = line.split(",")[1].strip()
+        #                                     max_water = float(max_water.split(" ")[0])
+        #                                     break
 
+        #                     if max_water is None:
+        #                         logging.error(
+        #                             "Could not find MODTRAN H2O upper bound in file {}".format(
+        #                                 filebase + ".tp6"
+        #                             )
+        #                         )
+        #                         raise KeyError("Could not find MODTRAN H2O upper bound")
 
+        #                     if (
+        #                         np.max(self.lut_grids[self.lut_names.index("H2OSTR")])
+        #                         > max_water
+        #                     ):
+        #                         logging.error(
+        #                             "MODTRAN max H2OSTR with current profile is {}, while H2O"
+        #                             " lut_grid is {}.  Either adjust MODTRAN profile or"
+        #                             " lut_grid.  To over-ride MODTRANs maximum allowable value,"
+        #                             ' set H2OOPT to "+"'.format(
+        #                                 max_water,
+        #                                 self.lut_grids[self.lut_names.index("H2OSTR")],
+        #                             )
+        #                         )
+        #                         raise KeyError(
+        #                             "MODTRAN H2O lut grid is invalid - see logs for details."
+        #                         )
 
-#                     if max_water is None:
-#                         logging.error(
-#                             "Could not find MODTRAN H2O upper bound in file {}".format(
-#                                 filebase + ".tp6"
-#                             )
-#                         )
-#                         raise KeyError("Could not find MODTRAN H2O upper bound")
+        #         done = False
+        #         prev_file_not_found = ''
+        #         n_rerun = 0
+        #         while not done:
+        #             #Build the LUT
+        #             TabularRT.build_lut(self, rebuild)
 
-#                     if (
-#                         np.max(self.lut_grids[self.lut_names.index("H2OSTR")])
-#                         > max_water
-#                     ):
-#                         logging.error(
-#                             "MODTRAN max H2OSTR with current profile is {}, while H2O"
-#                             " lut_grid is {}.  Either adjust MODTRAN profile or"
-#                             " lut_grid.  To over-ride MODTRANs maximum allowable value,"
-#                             ' set H2OOPT to "+"'.format(
-#                                 max_water,
-#                                 self.lut_grids[self.lut_names.index("H2OSTR")],
-#                             )
-#                         )
-#                         raise KeyError(
-#                             "MODTRAN H2O lut grid is invalid - see logs for details."
-#                         )
-                        
-#         done = False
-#         prev_file_not_found = ''
-#         n_rerun = 0
-#         while not done:
-#             #Build the LUT
-#             TabularRT.build_lut(self, rebuild)
-            
-#             try:
-#                 #Try to load in all the files
-#                 mod_outputs = []
-#                 for point, fn in zip(self.points, self.files):
-#                     mod_outputs.append(self.load_rt(fn))
-#                 logging.info("All LUT files loaded, proceeding")
-#                 done = True
-#             except FileNotFoundError as e:
-#                 time.sleep(np.random.randint(1, 10) / 10.)
-#                 #Extract filename that doesn't exist
-#                 file_not_found = e.filename
-#                 logging.info(f"File not found: {file_not_found}")
-#                 n_rerun += 1
-#                 if not self.auto_rebuild:
-#                     logging.info('rte_auto_rebuild disabled; stopping')
-#                     raise e
-#                 if prev_file_not_found == file_not_found:
-#                     logging.info("Repeated file not found; stopping")
-#                     raise e
-#                     # Throw error
-#                 if n_rerun >= 10:
-#                     logging.info(f"{n_rerun} reruns without all files loading; stopping")
-#                     raise e
-#                     # Throw error
-#                 prev_file_not_found = file_not_found
+        #             try:
+        #                 #Try to load in all the files
+        #                 mod_outputs = []
+        #                 for point, fn in zip(self.points, self.files):
+        #                     mod_outputs.append(self.load_rt(fn))
+        #                 logging.info("All LUT files loaded, proceeding")
+        #                 done = True
+        #             except FileNotFoundError as e:
+        #                 time.sleep(np.random.randint(1, 10) / 10.)
+        #                 #Extract filename that doesn't exist
+        #                 file_not_found = e.filename
+        #                 logging.info(f"File not found: {file_not_found}")
+        #                 n_rerun += 1
+        #                 if not self.auto_rebuild:
+        #                     logging.info('rte_auto_rebuild disabled; stopping')
+        #                     raise e
+        #                 if prev_file_not_found == file_not_found:
+        #                     logging.info("Repeated file not found; stopping")
+        #                     raise e
+        #                     # Throw error
+        #                 if n_rerun >= 10:
+        #                     logging.info(f"{n_rerun} reruns without all files loading; stopping")
+        #                     raise e
+        #                     # Throw error
+        #                 prev_file_not_found = file_not_found
 
-#         self.wl = mod_outputs[0]["wl"]
-#         self.solar_irr = mod_outputs[0]["sol"]
-#         np.save("solar_irr.npy", self.solar_irr)
-#         self.coszen = np.cos(mod_outputs[0]["solzen"] * np.pi / 180.0)
+        #         self.wl = mod_outputs[0]["wl"]
+        #         self.solar_irr = mod_outputs[0]["sol"]
+        #         np.save("solar_irr.npy", self.solar_irr)
+        #         self.coszen = np.cos(mod_outputs[0]["solzen"] * np.pi / 180.0)
 
-#         dims_aug = self.lut_dims + [self.n_chan]
-#         for key in self.modtran_lut_names:
-#             temp = np.zeros(dims_aug, dtype=float)
-#             for mod_output, point in zip(mod_outputs, self.points):
-#                 ind = [np.where(g == p)[0] for g, p in zip(self.lut_grids, point)]
-#                 ind = tuple(ind)
-#                 temp[ind] = mod_output[key]
+        #         dims_aug = self.lut_dims + [self.n_chan]
+        #         for key in self.modtran_lut_names:
+        #             temp = np.zeros(dims_aug, dtype=float)
+        #             for mod_output, point in zip(mod_outputs, self.points):
+        #                 ind = [np.where(g == p)[0] for g, p in zip(self.lut_grids, point)]
+        #                 ind = tuple(ind)
+        #                 temp[ind] = mod_output[key]
 
-#             self.luts[key] = VectorInterpolator(
-#                 self.lut_grids, temp, self.lut_interp_types, self.interpolator_style
-#             )
+        #             self.luts[key] = VectorInterpolator(
+        #                 self.lut_grids, temp, self.lut_interp_types, self.interpolator_style
+        #             )
 
-#     def rebuild_cmd(self, point, fn):
-#         """."""
+        #     def rebuild_cmd(self, point, fn):
+        #         """."""
 
-#         if not fn:
-#             logging.error("Function is not defined.")
-#             raise SystemExit("Function is not defined.")
+        #         if not fn:
+        #             logging.error("Function is not defined.")
+        #             raise SystemExit("Function is not defined.")
 
-#         vals = dict([(n, v) for n, v in zip(self.lut_names, point)])
-#         vals["DISALB"] = True
-#         vals["NAME"] = fn
-#         vals["FILTNM"] = os.path.normpath(self.filtpath)
-#         modtran_config_str, modtran_config = self.modtran_driver(dict(vals))
+        #         vals = dict([(n, v) for n, v in zip(self.lut_names, point)])
+        #         vals["DISALB"] = True
+        #         vals["NAME"] = fn
+        #         vals["FILTNM"] = os.path.normpath(self.filtpath)
+        #         modtran_config_str, modtran_config = self.modtran_driver(dict(vals))
 
-#         # Check rebuild conditions: LUT is missing or from a different config
-#         infilename = "LUT_" + fn + ".json"
-#         infilepath = os.path.join(self.lut_dir, "LUT_" + fn + ".json")
+        #         # Check rebuild conditions: LUT is missing or from a different config
+        #         infilename = "LUT_" + fn + ".json"
+        #         infilepath = os.path.join(self.lut_dir, "LUT_" + fn + ".json")
 
-#         if not self.required_results_exist(fn):
-#             rebuild = True
-#         else:
-#             # We compare the two configuration files, ignoring names and
-#             # wavelength paths which tend to be non-portable
-#             with open(infilepath, "r") as fin:
-#                 current_config = json.load(fin)["MODTRAN"]
-#                 current_config[0]["MODTRANINPUT"]["NAME"] = ""
-#                 modtran_config[0]["MODTRANINPUT"]["NAME"] = ""
-#                 current_config[0]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
-#                 modtran_config[0]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
-#                 if self.multipart_transmittance:
-#                     current_config[1]["MODTRANINPUT"]["NAME"] = ""
-#                     modtran_config[1]["MODTRANINPUT"]["NAME"] = ""
-#                     current_config[1]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
-#                     modtran_config[1]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
-#                     current_config[2]["MODTRANINPUT"]["NAME"] = ""
-#                     modtran_config[2]["MODTRANINPUT"]["NAME"] = ""
-#                     current_config[2]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
-#                     modtran_config[2]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
-#                     #Hacky fix to decimel places not matching
-#                     try:
-#                         modtran_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
-#                         modtran_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = ""
-#                         modtran_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
-#                         modtran_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = ""
-#                         modtran_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
-#                         modtran_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = "" 
-                        
-#                         current_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
-#                         current_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = ""
-#                         current_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
-#                         current_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = ""
-#                         current_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
-#                         current_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = ""
-#                     except KeyError:
-#                         pass
-                
-                    
-#                 current_str = json.dumps(current_config)
-#                 modtran_str = json.dumps(modtran_config)
-#                 rebuild = modtran_str.strip() != current_str.strip()
-                
+        #         if not self.required_results_exist(fn):
+        #             rebuild = True
+        #         else:
+        #             # We compare the two configuration files, ignoring names and
+        #             # wavelength paths which tend to be non-portable
+        #             with open(infilepath, "r") as fin:
+        #                 current_config = json.load(fin)["MODTRAN"]
+        #                 current_config[0]["MODTRANINPUT"]["NAME"] = ""
+        #                 modtran_config[0]["MODTRANINPUT"]["NAME"] = ""
+        #                 current_config[0]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
+        #                 modtran_config[0]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
+        #                 if self.multipart_transmittance:
+        #                     current_config[1]["MODTRANINPUT"]["NAME"] = ""
+        #                     modtran_config[1]["MODTRANINPUT"]["NAME"] = ""
+        #                     current_config[1]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
+        #                     modtran_config[1]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
+        #                     current_config[2]["MODTRANINPUT"]["NAME"] = ""
+        #                     modtran_config[2]["MODTRANINPUT"]["NAME"] = ""
+        #                     current_config[2]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
+        #                     modtran_config[2]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
+        #                     #Hacky fix to decimel places not matching
+        #                     try:
+        #                         modtran_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
+        #                         modtran_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = ""
+        #                         modtran_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
+        #                         modtran_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = ""
+        #                         modtran_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
+        #                         modtran_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = ""
 
-#         if rebuild:
-#             logging.info(f"Rebuilding {infilename}")
-            
-#         if not rebuild:
-#             logging.info(f"File exists {infilename}")
-#             raise FileExistsError("File exists")
+        #                         current_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
+        #                         current_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = ""
+        #                         current_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
+        #                         current_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = ""
+        #                         current_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["EXTC"] = ""
+        #                         current_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0]["ABSC"] = ""
+        #                     except KeyError:
+        #                         pass
 
-#         # write_config_file
-#         with open(infilepath, "w") as f:
-#             f.write(modtran_config_str)
+        #                 current_str = json.dumps(current_config)
+        #                 modtran_str = json.dumps(modtran_config)
+        #                 rebuild = modtran_str.strip() != current_str.strip()
 
-#         # Specify location of the proper MODTRAN 6.0 binary for this OS
-#         xdir = {"linux": "linux", "darwin": "macos", "windows": "windows"}
+        #         if rebuild:
+        #             logging.info(f"Rebuilding {infilename}")
 
-#         # If self.modtran_dir is not defined, raise an exception
-#         # This occurs e.g., when MODTRAN is not installed
-#         if not self.modtran_dir:
-#             logging.warning(
-#                 "MODTRAN directory not defined in config file, this may cause issues"
-#                 " down the line."
-#             )
+        #         if not rebuild:
+        #             logging.info(f"File exists {infilename}")
+        #             raise FileExistsError("File exists")
 
-#         # Generate the CLI path
-#         cmd = os.path.join(
-#             self.modtran_dir, "bin", xdir[platform], "mod6c_cons " + infilename
-#         )
-#         return cmd
+        #         # write_config_file
+        #         with open(infilepath, "w") as f:
+        #             f.write(modtran_config_str)
+
+        #         # Specify location of the proper MODTRAN 6.0 binary for this OS
+        #         xdir = {"linux": "linux", "darwin": "macos", "windows": "windows"}
+
+        #         # If self.modtran_dir is not defined, raise an exception
+        #         # This occurs e.g., when MODTRAN is not installed
+        #         if not self.modtran_dir:
+        #             logging.warning(
+        #                 "MODTRAN directory not defined in config file, this may cause issues"
+        #                 " down the line."
+        #             )
+
+        #         # Generate the CLI path
+        #         cmd = os.path.join(
+        #             self.modtran_dir, "bin", xdir[platform], "mod6c_cons " + infilename
+        #         )
+        #         return cmd
         return max_water
-
 
     def required_results_exist(self, filename_base):
         infilename = os.path.join(self.sim_path, "LUT_" + filename_base + ".json")
