@@ -8,6 +8,7 @@ import os
 import subprocess
 from datetime import datetime
 from os.path import exists, join
+from shutil import copyfile
 from types import SimpleNamespace
 
 import click
@@ -365,6 +366,10 @@ def apply_oe(args):
         surface_path=args.surface_path, wl=wl, paths=paths
     )
 
+    # re-stage surface model if needed
+    if paths.surface_path != args.surface_path:
+        copyfile(paths.surface_path, paths.surface_working_path)
+
     (
         mean_latitude,
         mean_longitude,
@@ -401,10 +406,8 @@ def apply_oe(args):
                 f" targets below sea level in km units.  Setting mean elevation to 0."
             )
 
-    # Need a 180 - here, as this is already in MODTRAN convention
     mean_altitude_km = (
-        mean_elevation_km
-        + np.cos(np.deg2rad(180 - mean_to_sensor_zenith)) * mean_path_km
+        mean_elevation_km + np.cos(np.deg2rad(mean_to_sensor_zenith)) * mean_path_km
     )
 
     logging.info("Observation means:")
@@ -612,7 +615,7 @@ def apply_oe(args):
             inversion_windows=INVERSION_WINDOWS,
         )
 
-        # Run modtran retrieval
+        # Run retrieval
         logging.info("Running ISOFIT with full LUT")
         retrieval_full = isofit.Isofit(
             paths.isofit_full_config_path, level="INFO", logfile=args.log_file

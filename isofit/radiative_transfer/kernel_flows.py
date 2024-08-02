@@ -50,7 +50,6 @@ KEYMAPPING = {
 def bounds_check(
     grid: dict,
     emulator_file: str = None,
-    emulator: h5py.File = None,
     modify: bool = False,
 ):
     """Check if the grid points are within the bounds of the emulator
@@ -194,6 +193,7 @@ class KernelFlowsRT(RadiativeTransferEngine):
             logging.info("No solar_zenith default in template")
 
         try:
+            # the KF emulator follows the MODTRAN convention for the view zenith
             KEYMAPPING[6]["default"] = template["MODTRAN"][0]["MODTRANINPUT"][
                 "GEOMETRY"
             ]["OBSZEN"]
@@ -203,16 +203,16 @@ class KernelFlowsRT(RadiativeTransferEngine):
         try:
             KEYMAPPING[7]["default"] = template["MODTRAN"][0]["MODTRANINPUT"][
                 "GEOMETRY"
-            ]["TRUEAZ"]
+            ]["PARM1"]
         except:
             logging.info("No relative_azimuth default in template")
 
         try:
-            KEYMAPPING[8]["default"] = template["MODTRAN"][0]["MODTRANINPUT"][
+            KEYMAPPING[9]["default"] = template["MODTRAN"][0]["MODTRANINPUT"][
                 "GEOMETRY"
-            ]["PARM1"]
+            ]["TRUEAZ"]
         except:
-            logging.info("No solar_azimuth default in template")
+            logging.info("No observer_azimuth default in template")
 
         # defining some input transformations
         self.input_transfs = [
@@ -322,6 +322,12 @@ class KernelFlowsRT(RadiativeTransferEngine):
         np.set_printoptions(suppress=True)
         point = self.default_fills.copy()
         point[self.emulator_inds_to_point_inds] = in_point
+
+        # observer zenith in LUT grid comes in ANG OBS file convention.
+        # convert to MODTRAN convention as KF emulator is trained on that
+        point[self.emulator_names.index("observer_zenith")] = (
+            180 - point[self.emulator_names.index("observer_zenith")]
+        )
 
         if np.any(point < self.points_bound_min) or np.any(
             point > self.points_bound_max
