@@ -77,9 +77,7 @@ class Geometry:
         if obs is not None:
             self.path_length_km = obs[0] / 1000
             self.observer_azimuth = obs[1]  # 0 to 360 clockwise from N
-            self.observer_zenith = (
-                180 - obs[2]
-            )  # 0 to 90 from zenith #MODTRAN convention
+            self.observer_zenith = obs[2]  # 0 to 90 from zenith
             self.solar_azimuth = obs[3]  # 0 to 360 clockwise from N
             self.solar_zenith = obs[4]  # 0 to 90 from zenith
             self.cos_i = obs[8]  # cosine of eSZA
