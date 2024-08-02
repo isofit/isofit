@@ -59,8 +59,7 @@ class GlintModelSurface(MultiComponentSurface):
         normalize the result for the calling function."""
 
         Cov = MultiComponentSurface.Sa(self, x_surface, geom)
-        # Cov[self.glint_ind :, self.glint_ind :] = self.f # Old version, fully correlated
-        # Possible new version? Unclear if this should be a fully correlated block or a diagonal
+        # Unclear if this should be a fully correlated block or a diagonal
         Cov[self.glint_ind :, self.glint_ind :] = np.eye(2) * self.f
         return Cov
 
