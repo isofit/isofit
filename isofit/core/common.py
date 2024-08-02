@@ -38,6 +38,9 @@ eps = 1e-5
 
 ### Classes ###
 
+# Global variable makes it non-shared mem in ray
+Cache = {}
+
 
 class VectorInterpolator:
     """Linear look up table interpolator.  Support linear interpolation through radial space by expanding the look
@@ -88,10 +91,6 @@ class VectorInterpolator:
 
             # None to disable, 0 for unlimited, negatives == 1
             self.cache_size = 500
-
-            # Global variable makes it non-shared mem in ray
-            global Cache
-            Cache = {i: {} for i in range(len(grid))}
 
             self.gridtuples = [np.array(t) for t in grid]
             self.gridarrays = data
@@ -157,7 +156,7 @@ class VectorInterpolator:
 
         for i, point in enumerate(points):
             if self.cache_size is not None:
-                cache = Cache[i]
+                cache = Cache.setdefault(i, {})
                 data = cache.get(point)
 
                 if data is None:
