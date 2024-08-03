@@ -139,9 +139,6 @@ class RadiativeTransfer:
 
         self.solar_irr = np.concatenate([RT.solar_irr for RT in self.rt_engines])
 
-        # flux coupling terms
-        self.E_coupled = []
-
     def xa(self):
         """Pull the priors from each of the individual RTs."""
         return self.prior_mean
@@ -289,17 +286,17 @@ class RadiativeTransfer:
                 L_atms.append(L_atm)
         return np.hstack(L_atms)
 
-    def get_E_down(self, x_RT: np.array, geom: Geometry) -> np.array:
-        """Get the interpolated direct and diffuse downward fluxes on the sun-to-surface path.
-        Thermal_downwelling already includes the transmission factor.
-        Also assume there is no multiple scattering for TIR.
+    def get_L_down_transmitted(self, x_RT: np.array, geom: Geometry) -> np.array:
+        """Get the interpolated total downward atmospheric transmittance.
+        Thermal_downwelling already includes the transmission factor. Also
+        assume there is no multiple scattering for TIR.
 
         Args:
             x_RT: radiative-transfer portion of the statevector
             geom: local geometry conditions for lookup
 
         Returns:
-            interpolated direct and diffuse downward fluxes on the sun-to-surface path
+            interpolated total downward atmospheric transmittance
         """
         L_downs = []
         for RT in self.rt_engines:
