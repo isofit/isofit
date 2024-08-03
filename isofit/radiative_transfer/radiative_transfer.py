@@ -319,96 +319,60 @@ class RadiativeTransfer:
         K_RT = np.array(K_RT).T
 
         # Get K_surface
+        # local solar zenith angle as a function of surface slope and aspect
+        cos_i = geom.cos_i if geom.cos_i is not None else self.coszen
+
+        # get needed rt quantities from LUT
         r = self.get_shared_rtm_quantities(x_RT, geom)
 
-        if geom.bg_rfl is not None:
-            # adjacency effects are counted
-            I = (self.solar_irr * self.coszen) / np.pi
-            bg = geom.bg_rfl
-            t_down = r["transm_down_dif"] + r["transm_down_dir"]
-            drdn_drfl = I / (1.0 - r["sphalb"] * bg) * t_down * r["transm_up_dir"]
+        # atmospheric spherical albedo
+        s_alb = r["sphalb"]
 
-        elif self.topography_model:
-            # jac w.r.t. topoflux correct radiance
-            I = self.solar_irr / np.pi
-            t_dir_down = r["transm_down_dir"]
-            t_dif_down = r["transm_down_dif"]
-            if geom.cos_i is None:
-                cos_i = self.coszen
-            else:
-                cos_i = geom.cos_i
-            t_total_up = r["transm_up_dif"] + r["transm_up_dir"]
-            t_total_down = t_dir_down + t_dif_down
-            s_alb = r["sphalb"]
+        # direct and diffuse downward fluxes on the sun-to-surface path
+        # note: currently, E_down_dir comes scaled by the TOA solar zenith angle,
+        # thus, unscaling and rescaling by local solar zenith angle required
+        # to account for surface slope and aspect
+        E_down_dir, E_down_dif = self.get_E_down(x_RT, geom)
+        E_down_dir = E_down_dir / self.coszen * cos_i
 
-            a = t_total_up * (I * cos_i * t_dir_down + I * self.coszen * t_dif_down)
-            drdn_drfl = a / (1 - s_alb * rfl) ** 2
+        # including glint for water surfaces
+        if self.glint_model:
+            E_down_tot = E_down_dir + E_down_dif
+            L_sky = x_surface[-2] * E_down_dir + x_surface[-1] * E_down_dif
 
-        elif self.glint_model:
-            L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)
-
-            t_down_dir = r["transm_down_dir"]  # downward direct transmittance
-            t_down_dif = r["transm_down_dif"]  # downward diffuse transmittance
-            t_down_total = t_down_dir + t_down_dif  # downward total transmittance
-            t_total_up = (
-                r["transm_up_dif"] + r["transm_up_dir"]
-            )  # total upward transmittance
-
-            L_sky = x_surface[-2] * t_down_dir + x_surface[-1] * t_down_dif
-
-            rho_ls = self.fresnel_rf(
-                geom.observer_zenith
-            )  # fresnel reflectance factor (approx. 0.02 for nadir view)
-            glint = rho_ls * (L_sky / t_down_total)
-
-            drho_scaled_for_multiscattering_drfl = (
-                1.0 / (1 - r["sphalb"] * (rfl + glint)) ** 2
-            )
-            drdn_drfl = (
-                t_total_up * L_down_transmitted * drho_scaled_for_multiscattering_drfl
-            )
-
-            # Basic formulation (below) does not include the derivative of the radiance w.r.t. other surface states, not just the reflectance
-            # There's probably a better fix for that overall, just trying to fix it for glint for now
-            drdn_dgdd = (
-                (self.solar_irr * self.coszen / np.pi)
-                * t_total_up
-                * t_down_dir
-                * drho_scaled_for_multiscattering_drfl
-            )
-            drdn_dgdsf = (
-                (self.solar_irr * self.coszen / np.pi)
-                * t_total_up
-                * t_down_dif
-                * drho_scaled_for_multiscattering_drfl
-            )
-
-            drdn_dLs = r["transm_up_dir"] + r["transm_up_dif"]
-            K_surface = (
-                drdn_drfl[:, np.newaxis] * drfl_dsurface
-                + drdn_dLs[:, np.newaxis] * dLs_dsurface
-            )
-            K_surface[:, -2] = drdn_dgdd
-            K_surface[:, -1] = drdn_dgdsf
-
-            return K_RT, K_surface
-
+            rho_ls = 0.02  # fresnel reflectance factor (approx. 0.02 for nadir view)
+            glint = rho_ls * (L_sky / E_down_tot)
         else:
-            L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)
+            glint = np.zeros(rfl.shape)
 
-            # The reflected downwelling light is:
-            # L_down_transmitted * rfl / (1.0 - r['sphalb'] * rfl), or
-            # L_down_transmitted * rho_scaled_for_multiscattering
-            # This term is the derivative of rho_scaled_for_multiscattering
-            drho_scaled_for_multiscattering_drfl = 1.0 / (1 - r["sphalb"] * rfl) ** 2
+        # adjacency effects
+        bg = geom.bg_rfl if geom.bg_rfl is not None else rfl + glint
 
-            drdn_drfl = L_down_transmitted * drho_scaled_for_multiscattering_drfl
+        # K surface reflectance
+        drdn_drfl = (E_down_dir + E_down_dif) / (1.0 - s_alb * bg) * r["transm_up_dir"]
 
         drdn_dLs = r["transm_up_dir"] + r["transm_up_dif"]
+
         K_surface = (
             drdn_drfl[:, np.newaxis] * drfl_dsurface
             + drdn_dLs[:, np.newaxis] * dLs_dsurface
         )
+
+        if self.glint_model:
+            # K glint
+            drdn_dgdd = (
+                E_down_dir
+                * (r["transm_up_dir"] + r["transm_up_dif"])
+                / (1.0 - s_alb * bg)
+            )
+            drdn_dgdsf = (
+                E_down_dif
+                * (r["transm_up_dir"] + r["transm_up_dif"])
+                / (1.0 - s_alb * bg)
+            )
+
+            K_surface[:, -2] = drdn_dgdd
+            K_surface[:, -1] = drdn_dgdsf
 
         return K_RT, K_surface
 
