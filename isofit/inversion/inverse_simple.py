@@ -300,7 +300,7 @@ def invert_analytical(
 
     if fm.RT.glint_model:
         winglintidx = np.concatenate(
-            (winidx, fm.idx_surface[-2:]), axis=0
+            (winidx, fm.idx_surf_nonrfl), axis=0
         )  # Include glint indices
         outside_ret_windows = np.ones(len(fm.idx_surface), dtype=bool)
         outside_ret_windows[winglintidx] = False
