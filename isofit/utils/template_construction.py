@@ -201,13 +201,6 @@ class Pathnames:
                 self.input_model_discrepancy_path = join(
                     self.isofit_path, "data", "emit_model_discrepancy.mat"
                 )
-        elif args.sensor == "av3":
-            self.noise_path = None
-            logging.info("no noise path found, proceeding without")
-            if self.input_channelized_uncertainty_path is None:
-                self.input_channelized_uncertainty_path = join(
-                    self.isofit_path, "data", "av3_osf_uncertainty.txt"
-                )
         else:
             self.noise_path = None
             logging.info("no noise path found, proceeding without")
