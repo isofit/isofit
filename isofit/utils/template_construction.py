@@ -348,6 +348,8 @@ class LUTConfig:
         self.aot_550_spacing = 0
         self.aot_550_spacing_min = 0
 
+        self.flag_ocean_elevation = False
+
         # overwrite anything that comes in from the config file
         if lut_config_file is not None:
             for key in lut_config:
@@ -519,6 +521,13 @@ def build_presolve_config(
     else:
         engine_name = "sRTMnet"
 
+    if surface_category == "glint_model_surface":
+        glint_model = True
+        multipart_transmittance = True
+    else:
+        glint_model = False
+        multipart_transmittance = False
+
     if prebuilt_lut_path is None:
         lut_path = join(paths.lut_h2o_directory, "lut.nc")
     else:
@@ -526,7 +535,7 @@ def build_presolve_config(
 
     # set up specific presolve LUT grid
     lut_grid = {"H2OSTR": [float(x) for x in h2o_lut_grid]}
-    if emulator_base is not None and os.path.splitext(emulator_base)[1] == ".jld2":
+    if engine_name == "KernelFlowsGP":
         from isofit.radiative_transfer.kernel_flows import bounds_check
 
         bounds_check(lut_grid, emulator_base, modify=True)
@@ -535,6 +544,8 @@ def build_presolve_config(
         "radiative_transfer_engines": {
             "vswir": {
                 "engine_name": engine_name,
+                "multipart_transmittance": multipart_transmittance,
+                "glint_model": glint_model,
                 "lut_path": lut_path,
                 "sim_path": paths.lut_h2o_directory,
                 "template_file": paths.h2o_template_path,
@@ -724,10 +735,19 @@ def build_main_config(
     else:
         engine_name = "sRTMnet"
 
+    if surface_category == "glint_model_surface":
+        glint_model = True
+        multipart_transmittance = True
+    else:
+        glint_model = False
+        multipart_transmittance = False
+
     radiative_transfer_config = {
         "radiative_transfer_engines": {
             "vswir": {
                 "engine_name": engine_name,
+                "multipart_transmittance": multipart_transmittance,
+                "glint_model": glint_model,
                 "sim_path": paths.full_lut_directory,
                 "lut_path": lut_path,
                 "aerosol_template_file": paths.aerosol_tpl_path,
@@ -1499,6 +1519,7 @@ def get_metadata_from_obs(
         lut_params.relative_azimuth_spacing,
         lut_params.relative_azimuth_spacing_min,
     )
+
     if relative_azimuth_lut_grid is not None:
         relative_azimuth_lut_grid = np.sort(
             np.array([x % 360 for x in relative_azimuth_lut_grid])

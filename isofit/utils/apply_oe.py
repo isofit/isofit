@@ -379,6 +379,11 @@ def apply_oe(args):
         paths.loc_working_path, lut_params, pressure_elevation=args.pressure_elevation
     )
 
+    if lut_params.flag_ocean_elevation:
+        elevation_lut_grid = None
+        # mean_elevation_km = 0.0001 #KF emulator
+        mean_elevation_km = 0.0  # MODTRAN
+
     if args.emulator_base is not None:
         if elevation_lut_grid is not None and np.any(elevation_lut_grid < 0):
             to_rem = elevation_lut_grid[elevation_lut_grid < 0].copy()
@@ -409,7 +414,7 @@ def apply_oe(args):
     logging.info(f"Path (km): {mean_path_km}")
     logging.info(f"To-sensor azimuth (deg): {mean_to_sensor_azimuth}")
     logging.info(f"To-sensor zenith (deg): {mean_to_sensor_zenith}")
-    logging.info(f"To-sun azimuth (deg): {mean_to_sun_zenith}")
+    logging.info(f"To-sun azimuth (deg): {mean_to_sun_azimuth}")
     logging.info(f"To-sun zenith (deg): {mean_to_sun_zenith}")
     logging.info(f"Relative to-sun azimuth (deg): {mean_relative_azimuth}")
     logging.info(f"Altitude (km): {mean_altitude_km}")

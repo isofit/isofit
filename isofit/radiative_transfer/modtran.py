@@ -24,6 +24,7 @@ import logging
 import os
 import re
 import subprocess
+import time
 from copy import deepcopy
 from sys import platform
 
@@ -74,7 +75,7 @@ class ModtranRT(RadiativeTransferEngine):
         dict
             Dictionary of calculated values using the tokens list
         """
-        irr = tokens[18] * 1e6 * np.pi / tokens[8] / coszen  # uW/nm/sr/cm2
+        irr = tokens[18] * 1e6 * np.pi / tokens[8] / coszen  # uW/nm/cm2
 
         # fmt: off
         # If classic singlepart transmittance is used,
@@ -86,7 +87,7 @@ class ModtranRT(RadiativeTransferEngine):
         return {
             'solar_irr'          : irr,       # Solar irradiance
             'wl'                 : tokens[0], # Wavelength
-            'rhoatm'             : tokens[4] * 1e6 * np.pi / (irr * coszen), # uW/nm/sr/cm2
+            'rhoatm'             : tokens[4] * 1e6 * np.pi / (irr * coszen), # unitless
             'width'              : tokens[8],
             'thermal_upwelling'  : (tokens[11] + tokens[12]) / tokens[8] * 1e6, # uW/nm/sr/cm2
             'thermal_downwelling': tokens[16] * 1e6 / tokens[8],
@@ -268,8 +269,30 @@ class ModtranRT(RadiativeTransferEngine):
         For a given point, parses the tp6 and chn file and returns the data
         """
         file = os.path.join(self.sim_path, self.point_to_filename(point))
+        try:
+            solzen = self.load_tp6(f"{file}.tp6")
+        except FileNotFoundError as e:
+            # Rerun the point until it is done
+            done = False
+            n_rerun = 0
+            while not done:
+                # Pause for a second
+                time.sleep(np.random.randint(1, 10) / 10.0)
+                # Extract filename that doesn't exist
+                logging.info(f"File not found: {e.filename}")
+                if n_rerun >= 10:
+                    logging.info(f"{n_rerun} reruns; stopping")
+                    raise FileNotFoundError(e)
+                    # Throw error
+                self.makeSim(point)  # Rerun
+                # Try to load
+                try:
+                    solzen = self.load_tp6(f"{file}.tp6")
+                    done = True
+                except FileNotFoundError:
+                    pass
+                n_rerun += 1
 
-        solzen = self.load_tp6(f"{file}.tp6")
         coszen = np.cos(solzen * np.pi / 180.0)
         params = self.load_chn(f"{file}.chn", coszen)
 
@@ -329,6 +352,52 @@ class ModtranRT(RadiativeTransferEngine):
                 modtran_config[0]["MODTRANINPUT"]["NAME"] = ""
                 current_config[0]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
                 modtran_config[0]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
+                if self.multipart_transmittance:
+                    current_config[1]["MODTRANINPUT"]["NAME"] = ""
+                    modtran_config[1]["MODTRANINPUT"]["NAME"] = ""
+                    current_config[1]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
+                    modtran_config[1]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
+                    current_config[2]["MODTRANINPUT"]["NAME"] = ""
+                    modtran_config[2]["MODTRANINPUT"]["NAME"] = ""
+                    current_config[2]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
+                    modtran_config[2]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
+                    # Hacky fix to decimel places not matching
+                    modtran_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0][
+                        "EXTC"
+                    ] = ""
+                    modtran_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0][
+                        "ABSC"
+                    ] = ""
+                    modtran_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0][
+                        "EXTC"
+                    ] = ""
+                    modtran_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0][
+                        "ABSC"
+                    ] = ""
+                    modtran_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0][
+                        "EXTC"
+                    ] = ""
+                    modtran_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0][
+                        "ABSC"
+                    ] = ""
+                    current_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0][
+                        "EXTC"
+                    ] = ""
+                    current_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0][
+                        "ABSC"
+                    ] = ""
+                    current_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0][
+                        "EXTC"
+                    ] = ""
+                    current_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0][
+                        "ABSC"
+                    ] = ""
+                    current_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0][
+                        "EXTC"
+                    ] = ""
+                    current_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0][
+                        "ABSC"
+                    ] = ""
                 current_str = json.dumps(current_config)
                 modtran_str = json.dumps(modtran_config)
                 rebuild = modtran_str.strip() != current_str.strip()
@@ -547,6 +616,7 @@ class ModtranRT(RadiativeTransferEngine):
                         param[0]["MODTRANINPUT"]["ATMOSPHERE"]["NPROF"] = nprof + 1
 
             # Surface parameters we want to populate even if unassigned
+
             elif key in ["surface_elevation_km", "GNDALT"]:
                 param[0]["MODTRANINPUT"]["SURFACE"]["GNDALT"] = val
 
@@ -591,6 +661,7 @@ class ModtranRT(RadiativeTransferEngine):
             lvl0["ASYM"] = [float(v) for v in total_asym]
             lvl0["EXTC"] = [float(v) / total_extc550 for v in total_extc]
             lvl0["ABSC"] = [float(v) / total_extc550 for v in total_absc]
+            # ***Need to round this to a specific number of decimels when writing to make sure subsequent re-runs are exactly the same
 
         if self.multipart_transmittance:
             const_rfl = np.array(np.array(self.test_rfls) * 100, dtype=int)
