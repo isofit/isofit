@@ -409,7 +409,6 @@ def invert_analytical(
     if diag_uncert:
         full_unc = np.ones(len(x))
         if fm.RT.glint_model:
-            # C_rcond_idx = np.concatenate((winidx, fm.idx_surface[-2:]), axis=0)
             full_unc[winglintidx] = np.sqrt(np.diag(C_rcond))
         else:
             full_unc[winidx] = np.sqrt(np.diag(C_rcond))
