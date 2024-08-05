@@ -157,9 +157,10 @@ class VectorInterpolator:
         for i, point in enumerate(points):
             if self.cache_size is not None:
                 cache = Cache.setdefault(i, {})
-                data = cache.get(point)
 
-                if data is None:
+                if point in cache:
+                    data = cache.get(point)
+                else:
                     # Simple FIFO
                     if self.cache_size and len(cache) >= self.cache_size:
                         cache.pop(list(cache)[0])
