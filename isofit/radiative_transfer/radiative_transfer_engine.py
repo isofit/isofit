@@ -59,19 +59,6 @@ class RadiativeTransferEngine:
         "surface_elevation_km",
     ]
 
-    # Informs the VectorInterpolator the units for a given key
-    angular_lut_keys = {
-        # Degrees
-        "observer_azimuth": "d",
-        "observer_zenith": "d",
-        "solar_azimuth": "d",
-        "solar_zenith": "d",
-        "relative_azimuth": "d",
-        # Radians
-        #   "key": "r",
-        # All other keys default to "n" = Not angular
-    }
-
     earth_sun_distance_path = os.path.join(
         isofit.root, "data", "earth_sun_distance.txt"
     )
@@ -158,7 +145,15 @@ class RadiativeTransferEngine:
             )
             self.lut = luts.load(lut_path, subset=engine_config.lut_names)
             self.lut_grid = lut_grid or luts.extractGrid(self.lut)
-            self.points, self.lut_names = luts.extractPoints(self.lut)
+            self.points = luts.extractPoints(self.lut)
+            self.lut_names = list(self.lut_grid.keys())
+            Logger.info(f"LUT grid loaded from file: {self.lut_grid}")
+
+            # remove 'point' if added to lut_names after subsetting
+            if "point" in self.lut_names:
+                remove = np.where(self.lut_names == "point")
+                self.lut_names = np.delete(self.lut_names, remove)
+
             # Enable special modes - argument: get from prebuilt LUT netCDF if available
             self.rt_mode = self.lut.attrs.get("RT_mode", "transm")
             if self.rt_mode not in ["transm", "rdn"]:
@@ -169,18 +164,34 @@ class RadiativeTransferEngine:
                     "Unknown RT mode provided in LUT file. Please use either 'transm' or 'rdn'."
                 )
 
-            # if necessary, resample prebuilt LUT to desired instrument spectral response
-            if not all(wl == self.lut.wl):
-                conv = xr.Dataset(coords={"wl": wl, "point": self.lut.point})
-                for quantity in self.lut:
-                    conv[quantity] = (
-                        ("wl", "point"),
-                        common.resample_spectrum(
-                            self.lut[quantity].data, self.lut.wl, wl, fwhm
-                        ),
-                    )
-                self.lut = conv
+            # If necessary, resample prebuilt LUT to desired instrument spectral response
+            if not len(wl) == len(self.lut.wl) or not all(wl == self.lut.wl):
+                # Discover variables along the wl dim
+                keys = {key for key in self.lut if "wl" in self.lut[key].dims} - {
+                    "fwhm",
+                }
 
+                # Apply resampling to these keys
+                conv = xr.apply_ufunc(
+                    common.resample_spectrum,
+                    self.lut[keys],
+                    kwargs={"wl": self.lut.wl, "wl2": wl, "fwhm2": fwhm},
+                    input_core_dims=[["wl"]],  # Only operate on keys with this dim
+                    exclude_dims=set(["wl"]),  # Allows changing the wl size
+                    output_core_dims=[["wl"]],  # Adds wl to the expected output dims
+                    keep_attrs="override",
+                    # on_missing_core_dim = 'copy' # Newer versions of xarray support this
+                )
+
+                # If not on newer versions, add keys not on the wl dim
+                for key in list(self.lut.drop_dims("wl")):
+                    conv[key] = self.lut[key]
+
+                # Override the fwhm
+                conv["fwhm"] = ("wl", fwhm)
+
+                # Exchange the lut with the resampled version
+                self.lut = conv
         else:
             Logger.info(f"No LUT store found, beginning initialization and simulations")
             # Check if both wavelengths and fwhm are provided for building the LUT
@@ -256,10 +267,6 @@ class RadiativeTransferEngine:
         """
         return self.lut[key].load().data
 
-    @property
-    def lut_interp_types(self):
-        return np.array([self.angular_lut_keys.get(key, "n") for key in self.lut_names])
-
     def build_interpolators(self):
         """
         Builds the interpolators using the LUT store
@@ -280,7 +287,6 @@ class RadiativeTransferEngine:
             self.luts[key] = common.VectorInterpolator(
                 grid_input=grid,
                 data_input=ds[key].load().data,
-                lut_interp_types=self.lut_interp_types,
                 version=self.interpolator_style,
             )
 

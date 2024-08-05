@@ -240,6 +240,72 @@ class Create:
         return f"LUT(wl={self.wl.size}, grid={self.sizes})"
 
 
+def findSlice(dim, val):
+    """
+    Creates a slice for selecting along a dimension such that a value is encompassed by
+    the slice.
+
+    Parameters
+    ----------
+    dim: array
+        Dimension array
+    val: float, int
+        Value to be encompassed
+
+    Returns
+    -------
+    slice
+        Index slice to encompass the value
+    """
+    # Increasing is 1, decreasing is -1 for the searchsorted
+    orientation = 1
+    if dim[0] > dim[-1]:
+        orientation = -1
+
+    # Subselect the two points encompassing this interp point
+    b = np.searchsorted(dim * orientation, val * orientation)
+    a = b - 1
+
+    return slice(a, b + 1)
+
+
+def optimizedInterp(ds, strat):
+    """
+    Optimizes the interpolation step by subselecting along dimensions first then
+    interpolating
+
+    Parameters
+    ----------
+    strat: dict
+        Interpolation stategies to perform in the form of {dim: interpolate_values}
+
+    Returns
+    -------
+    xr.Dataset
+        Interpolated dataset
+    """
+    for key, val in strat.items():
+        dim = ds[key]
+
+        if isinstance(val, list):
+            a = findSlice(dim, val[0])
+            b = findSlice(dim, val[-1])
+
+            # Find the correct order
+            if a.start < b.start:
+                sel = slice(a.start, b.stop)
+            else:
+                sel = slice(b.start, a.stop)
+        else:
+            sel = findSlice(dim, val)
+
+        Logger.debug(f"- Subselecting {key}[{sel.start}:{sel.stop}]")
+        ds = ds.isel({key: sel})
+
+    Logger.debug("Calling .interp(assume_sorted=True)")
+    return ds.interp(**strat, assume_sorted=True)
+
+
 def sel(ds, dim, lt=None, lte=None, gt=None, gte=None, encompass=True):
     """
     Subselects an xarray Dataset object using .sel
@@ -330,7 +396,7 @@ def sub(ds: xr.Dataset, dim: str, strat) -> xr.Dataset:
 
 
 def load(
-    file: str, subset: dict = None, dask=True, mode="r", lock=False, **kwargs
+    file: str, subset: dict = None, dask=True, mode="r", lock=False, load=True, **kwargs
 ) -> xr.Dataset:
     """
     Loads a LUT NetCDF
@@ -347,6 +413,9 @@ def load(
     dask: bool, default=True
         Use Dask on the backend of Xarray to lazy load the dataset. This enables
         out-of-core subsetting
+    load: bool, default=True
+        Calls ds.load() at the end to cast from Dask arrays back into numpy arrays held
+        in memory
 
     Examples
     --------
@@ -355,7 +424,7 @@ def load(
     >>> lut_dims = {
     ...     'AOT550': [0.001, 0.1009, 0.2008, 0.3007, 0.4006, 0.5005, 0.6004, 0.7003, 0.8002, 0.9001, 1.],
     ...     'H2OSTR': [0.2231, 0.4637, 0.7042, 0.9447, 1.1853, 1.4258, 1.6664, 1.9069, 2.1474, 2.388, 2.6285, 2.869, 3.1096, 3.3501],
-    ...     'observer_zenith': [170.1099, 172.7845],
+    ...     'observer_zenith': [7.2155, 9.8900],
     ...     'surface_elevation_km': [0., 0.2361, 0.4721, 0.7082, 0.9442, 1.1803, 1.4164, 1.6524, 1.8885, 2.1245, 2.3606, 2.5966, 2.8327, 3.0688, 3.3048, 3.5409, 3.7769, 4.013],
     ...     'wl': range(285)
     ... }
@@ -492,7 +561,7 @@ def load(
     ...         'gte': 1.1853,
     ...         'lte': 2.869
     ...     },
-    ...     'observer_zenith': 172.7845,
+    ...     'observer_zenith': 7.2155,
     ...     'surface_elevation_km': 'mean'
     ... }
     >>> load(file, subset).dims
@@ -501,8 +570,10 @@ def load(
     Frozen({'AOT550': 3, 'H2OSTR': 10, 'wl': 285})
     """
     if dask:
+        Logger.debug("Using Dask to load")
         ds = xr.open_mfdataset([file], mode=mode, lock=lock, **kwargs)
     else:
+        Logger.debug("Using Xarray to load")
         ds = xr.open_dataset(file, mode=mode, lock=lock, **kwargs)
 
     # Special case that doesn't require defining the entire grid subsetting strategy
@@ -510,6 +581,8 @@ def load(
         Logger.debug("Subset was None, using entire file")
 
     elif isinstance(subset, dict):
+        Logger.debug(f"Subsetting with: {subset}")
+
         # The subset dict must contain all coordinate keys in the lut file
         missing = set(ds.coords) - ({"wl"} | set(subset))
         if missing:
@@ -522,10 +595,22 @@ def load(
                 f"Subset dictionary (engine.lut_names) is missing keys that are present in the LUT dimensions {set(ds.coords)}: {missing=}"
             )
 
+        # Interpolation strategies will be done last for optimization purposes
+        interp = {}
+
         # Apply subsetting strategies
         for dim, strat in subset.items():
-            ds = sub(ds, dim, strat)
+            if isinstance(strat, dict) and "interp" in strat:
+                interp[dim] = strat["interp"]
+            else:
+                Logger.debug(f"Subsetting {dim} with {strat}")
+                ds = sub(ds, dim, strat)
 
+        if interp:
+            Logger.debug("Interpolating")
+            ds = optimizedInterp(ds, interp)
+
+        Logger.debug("Subsetting finished")
     else:
         Logger.error("The subsetting strategy must be a dictionary")
         raise AttributeError(
@@ -537,6 +622,11 @@ def load(
     # Create the point dimension
     ds = ds.stack(point=dims).transpose("point", "wl")
 
+    if load:
+        Logger.info("Loading LUT into memory")
+        ds.load()
+
+    Logger.debug("Attempting to detect NaNs")
     for name, nans in ds.isnull().any().items():
         if nans:
             Logger.warning(
@@ -546,14 +636,29 @@ def load(
     return ds
 
 
-def extractPoints(ds: xr.Dataset) -> (np.array, np.array):
+def extractPoints(ds: xr.Dataset, names: bool = False) -> np.array:
     """
     Extracts the points and point name arrays
+
+    Parameters
+    ----------
+    ds: xr.Dataset
+        LUT Dataset object
+    names: bool, default=False
+        Return the names of the point coords as well
+
+    Returns
+    -------
+    points or (points, names)
+        Extracted points, plus names if requested
     """
     points = np.array([*ds.point.data])
-    names = np.array([name for name in ds.point.coords])[1:]
 
-    return (points, names)
+    if names:
+        names = np.array([name for name in ds.point.coords])[1:]
+        return (points, names)
+
+    return points
 
 
 def extractGrid(ds: xr.Dataset) -> dict:
@@ -564,7 +669,8 @@ def extractGrid(ds: xr.Dataset) -> dict:
     for dim, vals in ds.coords.items():
         if dim in {"wl", "point"}:
             continue
-        grid[dim] = vals.data
+        if len(vals.data.shape) > 0 and vals.data.shape[0] > 1:
+            grid[dim] = vals.data
     return grid
 
 

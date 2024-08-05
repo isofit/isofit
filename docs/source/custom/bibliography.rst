@@ -38,6 +38,8 @@ D\. R. Thompson, N. Bohn, P. G. Brodrick, N. Carmon, M. L. Eastwood, R. Eckert, 
 
 R\. Eckert, S. Mauceri, D. R. Thompson, J. Fahlen, P. G. Brodrick. `Spatially constrained atmosphere and surface retrieval for imaging spectroscopy <https://doi.org/10.1016/j.rse.2023.113902>`__. *Remote Sensing of Environment*, 2024.  DOI:10.1016/j.rse.2023.113902. 
 
+J.\ E. Fahlen,  Brodrick, P.G., Thompson, D.R., Herman, R.L., Hulley, G., Cawse-Nicholson, K., Green, R.O., Green, J.J., Hook, S.J. and Miller, C.E., 2021. `Joint VSWIR-TIR retrievals of earth's surface and atmosphere. <https://doi.org/10.1016/j.rse.2021.112727>`__ Remote Sensing of Environment, 267, p.112727.  DOI: 10.1016/j.rse.2021.112727
+
 Applications
 ------------
 
@@ -77,3 +79,11 @@ K\. Cawse-Nicholson, A.M. Raiho, D.R. Thompson, G.C. Hulley, C.E. Miller, K.R. M
 B\. Poulter, B. Currey, L. Calle, A. N. Shiklomanov, C. H. Amara, J. Brookshire, P. Campbell, A. Chlus, K. Cawse-Nicholson, F. Huemmrich, C. E Miller, K. Miner, Z. Pierrat, A. M. Raiho, David Schimel, S. Serbin, W. K. Smith, N. Stavros, J. Stutz, P. Townsend, D. R. Thompson and Z. Zhang (2023). `Simulating global dynamic surface reflectances for imaging spectroscopy spaceborne missions - LPJ-PROSAIL <https://doi.org/10.1029/2022JG006935>`__ Journal of Geophysical Research: Biogeosciences, 2023.  DOI:10.1029/2022JG006935.
 
 D.\  R. Thompson, R. O. Green, C. Bradley, P. G. Brodrick, E. Ben Dor, M. Bennett, M. Bernas, N. Carmon, K. D. Chadwick, R. N. Clark, R. W. Coleman, E. Cox, E. Diaz, M. L. Eastwood, R. Eckert, B. Ehlmann, P. Ginoux, M. G. Ageitos, K. Grant, L. Guanter, D. Heller Pearlshtien, M. Helmlinger, H. Herzog, T. Hoefen, Y. Huang, A. Keebler, O. Kalashnikova, D. Keymeulen, R Kokaly, M. Klose, L. Li, S Lundeen, N. Mahowald, J. Meyer, E. Middleton, R. L. Miller, P. Mouroulis, B. Oaidaa , V. Obiso, F. Ochoa, W. Olson-Duvall, G. S. Okin, T. H. Painter, C. Garcia-Pando, V. Realmuto, L. Shaw, P. Sullivan, E. Thingvold, A. K. Thorpe, G. Swayze, S. Vannan, C. Villarreal , H. R. Pollock, C. Ung, D. W. Wilson, S. Zandbergen. `On-orbit Calibration and Performance of the EMIT Imaging Spectrometer. <https://doi.org/10.1016/j.rse.2023.113986>`__ Remote Sensing of Environment, 2024.  DOI:10.1016/j.rse.2023.113986 
+
+S.\ Daniel, and C. Small. `Which vegetation index? Benchmarking multispectral metrics to hyperspectral mixture models in diverse cropland. <https://doi.org/10.3390/rs15040971>`__ Remote Sensing, 2023.  DOI:10.3390/rs15040971
+
+A.\ M. Raiho, Cawse‐Nicholson, K., Chlus, A., Dozier, J., Gierach, M., Miner, K., Schneider, F., Schimel, D., Serbin, S., Shiklomanov, A.N. and Thompson, D.R., 2023. `Exploring mission design for imaging spectroscopy retrievals for land and aquatic ecosystems. <https://doi.org/10.1029/2022JG006833>`__ Journal of Geophysical Research: Biogeosciences, 128(4), p.e2022JG006833. DOI:10.1029/2022JG006833
+
+D.\ Zilber, D., Thompson, D.R., Katzfuss, M., Natraj, V., Hobbs, J. and Braverman, A., `Spatial surface reflectance retrievals for visible/shortwave infrared remote sensing via Gaussian process priors. <https://doi.org/10.3390/rs14092183>`__ Remote Sensing, 14(9), p.2183.  DOI:10.3390/rs14092183
+
+J.\ P. Harringmeyer, Ghosh, N., Weiser, M.W., Thompson, D.R., Simard, M., Lohrenz, S.E. and Fichot, C.G., 2024. `A hyperspectral view of the nearshore Mississippi River Delta: Characterizing suspended particles in coastal wetlands using imaging spectroscopy.<https://doi.org/10.1016/j.rse.2023.113943>`___ Remote Sensing of Environment, 301, p.113943. DOI: 10.1016/j.rse.2023.113943

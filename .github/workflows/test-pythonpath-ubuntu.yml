@@ -98,12 +98,12 @@ jobs:
           key: ${{ env.cache-name }}
 
       - name: Cache sRTMnet
-        id: cache-sRTMnet-v100
+        id: cache-sRTMnet-v120
         uses: actions/cache@v3
         env:
-          cache-name: cache-sRTMnet-v100
+          cache-name: cache-sRTMnet-v120
         with:
-          path: sRTMnet_v100/
+          path: sRTMnet_v120/
           key: ${{ env.cache-name }}
 
       - name: Cache Hypertrace Data
@@ -122,7 +122,7 @@ jobs:
           ./scripts/download-and-build-6s.sh
 
       - name: Install sRTMnet
-        if: ${{ steps.cache-sRTMnet-v100.outputs.cache-hit != true }}
+        if: ${{ steps.cache-sRTMnet-v120.outputs.cache-hit != true }}
         shell: bash
         run: |
           ./scripts/download-and-unpack-sRTMnet.sh

@@ -104,12 +104,12 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         # Emulator Aux
         aux = np.load(config.emulator_aux_file)
 
-        # TODO: Disable when sRTMnet_v100_aux is updated
+        # TODO: Disable when sRTMnet_v120_aux is updated
         aux_rt_quantities = np.where(
             aux["rt_quantities"] == "transm", "transm_down_dif", aux["rt_quantities"]
         )
 
-        # TODO: Re-enable when sRTMnet_v100_aux is updated
+        # TODO: Re-enable when sRTMnet_v120_aux is updated
         # Verify expected keys exist
         # missing = self.lut_quantities - set(aux["rt_quantities"].tolist())
         # if missing:
@@ -242,7 +242,15 @@ def build_sixs_config(engine_config):
         + datetime.timedelta(hours=data["GEOMETRY"]["GMTIME"])
     )
 
-    solar_azimuth = data["GEOMETRY"]["PARM1"]
+    relative_azimuth = data["GEOMETRY"]["PARM1"]
+    observer_azimuth = data["GEOMETRY"]["TRUEAZ"]
+    # RT simulations commonly only depend on the relative azimuth,
+    # so we don't care if we do view azimuth + or - relative azimuth.
+    # In addition, sRTMnet was only trained on relative azimuth = 0°,
+    # so providing different values here would have no implications.
+    solar_azimuth = np.minimum(
+        observer_azimuth + relative_azimuth, observer_azimuth - relative_azimuth
+    )
     solar_zenith = data["GEOMETRY"]["PARM2"]
 
     # Tweak parameter values for sRTMnet
@@ -255,8 +263,10 @@ def build_sixs_config(engine_config):
     config.alt = data["GEOMETRY"]["H1ALT"]
     config.solzen = solar_zenith
     config.solaz = solar_azimuth
+    # the MODTRAN config provides the view zenith in MODTRAN convention,
+    # so substract from 180 here as 6s follows the ANG OBS file convention
     config.viewzen = 180 - data["GEOMETRY"]["OBSZEN"]
-    config.viewaz = data["GEOMETRY"]["TRUEAZ"]
+    config.viewaz = observer_azimuth
     config.wlinf = 0.35
     config.wlsup = 2.5
 

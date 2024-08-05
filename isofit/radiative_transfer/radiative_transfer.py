@@ -30,7 +30,7 @@ from ..core.common import eps
 from .engines import Engines
 
 
-def confPriority(key, configs, none=False):
+def confPriority(key, configs):
     """
     Selects a key from a config if the value for that key is not None
     Prioritizes returning the first value found in the configs list

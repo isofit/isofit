@@ -8,14 +8,12 @@ import os
 import subprocess
 from datetime import datetime
 from os.path import exists, join
+from shutil import copyfile
 from types import SimpleNamespace
-from warnings import warn
 
 import click
-import h5py
 import numpy as np
 import ray
-from scipy.io import loadmat
 from spectral.io import envi
 
 import isofit.utils.template_construction as tmpl
@@ -50,13 +48,13 @@ INVERSION_WINDOWS = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
 @click.argument("input_obs")
 @click.argument("working_directory")
 @click.argument("sensor")
+@click.option("--surface_path", "-sp", required=True, type=str)
 @click.option("--copy_input_files", is_flag=True, default=False)
 @click.option("--modtran_path")
 @click.option("--wavelength_path")
 @click.option("--surface_category", default="multicomponent_surface")
 @click.option("--aerosol_climatology_path")
 @click.option("--rdn_factors_path")
-@click.option("--surface_path")
 @click.option("--atmosphere_type", default="ATM_MIDLAT_SUMMER")
 @click.option("--channelized_uncertainty_path")
 @click.option("--model_discrepancy_path")
@@ -126,6 +124,7 @@ def apply_oe(args):
         working_directory (str): directory to stage multiple outputs, will contain subdirectories
         sensor (str): the sensor used for acquisition, will be used to set noise and datetime settings.  choices are:
             [ang, avcl, neon, prism]
+        surface_path (Required, str): Path to surface model or json dict of surface model configuration.
         copy_input_files (Optional, int): flag to choose to copy input_radiance, input_loc, and input_obs locally into
             the working_directory.  0 for no, 1 for yes.  Default 0
         modtran_path (Optional, str): Location of MODTRAN utility, alternately set with MODTRAN_DIR environment variable
@@ -135,8 +134,6 @@ def apply_oe(args):
         aerosol_climatology_path (Optional, str): Specific aerosol climatology information to use in MODTRAN,
             default None
         rdn_factors_path (Optional, str): Specify a radiometric correction factor, if desired. default None
-        surface_path (Optional, str): Path to surface model - required if surface is multicomponent_surface (default
-            above).  Alternately set with ISOFIT_SURFACE_MODEL environment variable. default None
         channelized_uncertainty_path (Optional, str): path to a channelized uncertainty file.  default None
         lut_config_file (Optional, str): Path to a look up table configuration file, which will override defaults
             chocies. default None
@@ -178,15 +175,6 @@ def apply_oe(args):
     Returns:
 
     """
-
-    warn(
-        message=(
-            f"The module {__name__} is deprecated and will be removed with ISOFIT version"
-            " 3.2."
-        ),
-        category=DeprecationWarning,
-        stacklevel=2,
-    )
 
     use_superpixels = args.empirical_line or args.analytical_line
 
@@ -306,6 +294,7 @@ def apply_oe(args):
         mean_path_km,
         mean_to_sensor_azimuth,
         mean_to_sensor_zenith,
+        mean_to_sun_azimuth,
         mean_to_sun_zenith,
         mean_relative_azimuth,
         valid,
@@ -359,22 +348,6 @@ def apply_oe(args):
     # Close out radiance dataset to avoid potential confusion
     del radiance_dataset
 
-    # check wavelength grid of surface file
-    if paths.surface_path:
-        model_dict = loadmat(paths.surface_path)
-        wl_surface = model_dict["wl"][0]
-        if len(wl_surface) != len(wl):
-            raise ValueError(
-                "Number of channels provided in surface model file does not match"
-                " wavelengths in radiance cube. Please rebuild your surface model."
-            )
-        if not np.all(np.isclose(wl_surface, wl, atol=0.01)):
-            logging.warning(
-                "Center wavelengths provided in surface model file do not match"
-                " wavelengths in radiance cube. Please consider rebuilding your"
-                " surface model for optimal performance."
-            )
-
     # Convert to microns if needed
     if wl[0] > 100:
         logging.info("Wavelength units of nm inferred...converting to microns")
@@ -387,6 +360,15 @@ def apply_oe(args):
         axis=1,
     )
     np.savetxt(paths.wavelength_path, wl_data, delimiter=" ")
+
+    # check and rebuild surface model if needed
+    paths.surface_path = tmpl.check_surface_model(
+        surface_path=args.surface_path, wl=wl, paths=paths
+    )
+
+    # re-stage surface model if needed
+    if paths.surface_path != args.surface_path:
+        copyfile(paths.surface_path, paths.surface_working_path)
 
     (
         mean_latitude,
@@ -419,16 +401,15 @@ def apply_oe(args):
                 f" targets below sea level in km units.  Setting mean elevation to 0."
             )
 
-    # Need a 180 - here, as this is already in MODTRAN convention
     mean_altitude_km = (
-        mean_elevation_km
-        + np.cos(np.deg2rad(180 - mean_to_sensor_zenith)) * mean_path_km
+        mean_elevation_km + np.cos(np.deg2rad(mean_to_sensor_zenith)) * mean_path_km
     )
 
     logging.info("Observation means:")
     logging.info(f"Path (km): {mean_path_km}")
     logging.info(f"To-sensor azimuth (deg): {mean_to_sensor_azimuth}")
     logging.info(f"To-sensor zenith (deg): {mean_to_sensor_zenith}")
+    logging.info(f"To-sun azimuth (deg): {mean_to_sun_zenith}")
     logging.info(f"To-sun zenith (deg): {mean_to_sun_zenith}")
     logging.info(f"Relative to-sun azimuth (deg): {mean_relative_azimuth}")
     logging.info(f"Altitude (km): {mean_altitude_km}")
@@ -491,9 +472,9 @@ def apply_oe(args):
             fid=paths.fid,
             altitude_km=mean_altitude_km,
             dayofyear=dayofyear,
-            to_sun_zenith=mean_to_sun_zenith,
             to_sensor_azimuth=mean_to_sensor_azimuth,
             to_sensor_zenith=mean_to_sensor_zenith,
+            to_sun_zenith=mean_to_sun_zenith,
             relative_azimuth=mean_relative_azimuth,
             gmtime=gmtime,
             elevation_km=mean_elevation_km,
@@ -523,6 +504,7 @@ def apply_oe(args):
                 emulator_base=args.emulator_base,
                 uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
                 prebuilt_lut_path=args.prebuilt_lut,
+                inversion_windows=INVERSION_WINDOWS,
             )
 
             # Run modtran retrieval
@@ -579,9 +561,9 @@ def apply_oe(args):
             fid=paths.fid,
             altitude_km=mean_altitude_km,
             dayofyear=dayofyear,
-            to_sun_zenith=mean_to_sun_zenith,
             to_sensor_azimuth=mean_to_sensor_azimuth,
             to_sensor_zenith=mean_to_sensor_zenith,
+            to_sun_zenith=mean_to_sun_zenith,
             relative_azimuth=mean_relative_azimuth,
             gmtime=gmtime,
             elevation_km=mean_elevation_km,
@@ -625,9 +607,10 @@ def apply_oe(args):
             segmentation_size=args.segmentation_size,
             pressure_elevation=args.pressure_elevation,
             prebuilt_lut_path=args.prebuilt_lut,
+            inversion_windows=INVERSION_WINDOWS,
         )
 
-        # Run modtran retrieval
+        # Run retrieval
         logging.info("Running ISOFIT with full LUT")
         retrieval_full = isofit.Isofit(
             paths.isofit_full_config_path, level="INFO", logfile=args.log_file
