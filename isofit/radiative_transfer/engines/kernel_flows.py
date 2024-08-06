@@ -70,6 +70,10 @@ def bounds_check(
 
         emulator_names = [KEYMAPPING[i]["name"] for i in emulator["inputdims"]]
 
+    # convert observer zenith grid to MODTRAN convetion.
+    if "observer_zenith" in grid.keys():
+        grid["observer_zenith"] = [180 - x for x in grid["observer_zenith"]]
+
     grid_errors = []
     for _key, key in enumerate(emulator_names):
         if key in grid.keys():
@@ -99,6 +103,10 @@ def bounds_check(
     if len(grid_errors) > 0:
         grid_errors = "\n".join(grid_errors)
         raise ValueError(grid_errors)
+
+    # back-convert observer zenith grid to MODTRAN convetion.
+    if "observer_zenith" in grid.keys():
+        grid["observer_zenith"] = [180 - x for x in grid["observer_zenith"]]
 
 
 def predict_M(
