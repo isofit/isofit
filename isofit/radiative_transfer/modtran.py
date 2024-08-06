@@ -346,61 +346,38 @@ class ModtranRT(RadiativeTransferEngine):
         else:
             # We compare the two configuration files, ignoring names and
             # wavelength paths which tend to be non-portable
-            with open(infilepath, "r") as fin:
-                current_config = json.load(fin)["MODTRAN"]
-                current_config[0]["MODTRANINPUT"]["NAME"] = ""
-                modtran_config[0]["MODTRANINPUT"]["NAME"] = ""
-                current_config[0]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
-                modtran_config[0]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
-                if self.multipart_transmittance:
-                    current_config[1]["MODTRANINPUT"]["NAME"] = ""
-                    modtran_config[1]["MODTRANINPUT"]["NAME"] = ""
-                    current_config[1]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
-                    modtran_config[1]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
-                    current_config[2]["MODTRANINPUT"]["NAME"] = ""
-                    modtran_config[2]["MODTRANINPUT"]["NAME"] = ""
-                    current_config[2]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
-                    modtran_config[2]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
+
+            with open(infilepath, "r") as f:
+                current_config = json.load(f)["MODTRAN"]
+
+            parts = 1  # Number of parts to the config
+            reset = (
+                [  # Tuples to a config option, ie. config[part]['MODTRANINPUT'][*keys]
+                    ("NAME",),
+                    ("SPECTRAL", "FILTNM"),
+                ]
+            )
+            if self.multipart_transmittance:
+                parts += 2
+                reset += [
                     # Hacky fix to decimel places not matching
-                    modtran_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0][
-                        "EXTC"
-                    ] = ""
-                    modtran_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0][
-                        "ABSC"
-                    ] = ""
-                    modtran_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0][
-                        "EXTC"
-                    ] = ""
-                    modtran_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0][
-                        "ABSC"
-                    ] = ""
-                    modtran_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0][
-                        "EXTC"
-                    ] = ""
-                    modtran_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0][
-                        "ABSC"
-                    ] = ""
-                    current_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0][
-                        "EXTC"
-                    ] = ""
-                    current_config[0]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0][
-                        "ABSC"
-                    ] = ""
-                    current_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0][
-                        "EXTC"
-                    ] = ""
-                    current_config[1]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0][
-                        "ABSC"
-                    ] = ""
-                    current_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0][
-                        "EXTC"
-                    ] = ""
-                    current_config[2]["MODTRANINPUT"]["AEROSOLS"]["IREGSPC"][0][
-                        "ABSC"
-                    ] = ""
-                current_str = json.dumps(current_config)
-                modtran_str = json.dumps(modtran_config)
-                rebuild = modtran_str.strip() != current_str.strip()
+                    ("AEROSOLS", "IREGSPC", 0, "EXTC"),
+                    ("AEROSOLS", "IREGSPC", 0, "ABSC"),
+                ]
+
+            # Reset the keys to an empty string
+            for config in (modtran_config, current_config):
+                for i in range(parts):
+                    sub = config[i]["MODTRANINPUT"]
+                    for keys in reset:
+                        opt = sub
+                        for key in keys[:-1]:
+                            opt = opt[key]
+                        opt[keys[-1]] = ""
+
+            current_str = json.dumps(current_config)
+            modtran_str = json.dumps(modtran_config)
+            rebuild = modtran_str.strip() != current_str.strip()
 
         if not rebuild:
             Logger.warning(
