@@ -67,7 +67,6 @@ def bounds_check(
         emulator = h5py.File(emulator_file, "r")
         points_bound_min = emulator["xmin"][:]
         points_bound_max = emulator["xmax"][:]
-        from isofit.radiative_transfer.kernel_flows import KEYMAPPING
 
         emulator_names = [KEYMAPPING[i]["name"] for i in emulator["inputdims"]]
 
