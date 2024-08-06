@@ -350,13 +350,13 @@ class ModtranRT(RadiativeTransferEngine):
             with open(infilepath, "r") as f:
                 current_config = json.load(f)["MODTRAN"]
 
-            parts = 1  # Number of parts to the config
-            reset = (
-                [  # Tuples to a config option, ie. config[part]['MODTRANINPUT'][*keys]
-                    ("NAME",),
-                    ("SPECTRAL", "FILTNM"),
-                ]
-            )
+            # Number of parts to the config
+            parts = 1
+            reset = [
+                # Tuples to a config option, ie. config[part]['MODTRANINPUT'][*keys]
+                ("NAME",),
+                ("SPECTRAL", "FILTNM"),
+            ]
             if self.multipart_transmittance:
                 parts += 2
                 reset += [
