@@ -592,7 +592,7 @@ def load(
             for key in missing:
                 Logger.error(f"- {key}")
             raise AttributeError(
-                f"Subset dictionary is missing keys that are present in the LUT file: {missing}"
+                f"Subset dictionary (engine.lut_names) is missing keys that are present in the LUT dimensions {set(ds.coords)}: {missing=}"
             )
 
         # Interpolation strategies will be done last for optimization purposes
