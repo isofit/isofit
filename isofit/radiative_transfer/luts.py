@@ -333,25 +333,38 @@ def sel(ds, dim, lt=None, lte=None, gt=None, gte=None, encompass=True):
     ds: xarray.Dataset
         Subsetted dataset
     """
-    # Retrieve the previous/next values such that gte and lte are encompassed
-    if encompass:
-        if gte is not None:
-            loc_subset = ds[dim].where(ds[dim] < gte).dropna(dim)
-            gte = loc_subset[-1] if len(loc_subset) > 0 else ds[dim].min()
-        if lte is not None:
-            loc_subset = ds[dim].where(ds[dim] > lte).dropna(dim)
-            lte = loc_subset[0] if len(loc_subset) > 0 else ds[dim].max()
+    assert None in (
+        lt,
+        lte,
+    ), f"Subsetting `lt` and `lte` are mutually exclusive, please only set one for dim {dim}"
+    assert None in (
+        gt,
+        gte,
+    ), f"Subsetting `gt` and `gte` are mutually exclusive, please only set one for dim {dim}"
+
+    # Which index in a where to select -- if the dim is in reverse order, this needs to swap
+    g, l = -1, 0
+    if ds[dim][0] > ds[dim][-1]:
+        g, l = 0, -1
 
     if lt is not None:
         ds = ds.sel({dim: ds[dim] < lt})
 
-    if lte is not None:
+    elif lte is not None:
+        if encompass:
+            where = ds[dim].where(ds[dim] > lte).dropna(dim)
+            lte = where[l] if where.size else ds[dim].max()
+
         ds = ds.sel({dim: ds[dim] <= lte})
 
     if gt is not None:
         ds = ds.sel({dim: gt < ds[dim]})
 
-    if gte is not None:
+    elif gte is not None:
+        if encompass:
+            where = ds[dim].where(ds[dim] < gte).dropna(dim)
+            gte = where[g] if where.size else ds[dim].min()
+
         ds = ds.sel({dim: gte <= ds[dim]})
 
     return ds
