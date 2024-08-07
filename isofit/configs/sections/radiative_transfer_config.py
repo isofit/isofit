@@ -40,11 +40,11 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         """str: Name of config - optional, and not currently used."""
 
         self._engine_name_type = str
-        self.engine_name = None
+        self.engine_name = "modtran"
         """str: Name of radiative transfer engine to use - options ['modtran', '6s', 'sRTMnet']."""
 
         self._engine_base_dir_type = str
-        self.engine_base_dir = None
+        self.engine_base_dir = "/home/ubuntu/modtran_installation/MODTRAN6.0/"
         """str: base directory of the given radiative transfer engine on user's OS."""
 
         self._engine_lut_file_type = str

@@ -392,19 +392,20 @@ def surface_model(
     model["attribute_covs"] = np.array(model["attribute_covs"])
 
     scipy.io.savemat(outfile, model)
+    print("All Done")
 
 
 # Input arguments
 @click.command(name="surface_model")
 @click.argument("config_path", type=str)
-@click.argument("--wavelength_path", type=str)
-@click.argument("--output_path", type=str)
-@click.argument("--seed", default=13, type=int)
+@click.option("--wavelength_path", type=str)
+@click.option("--output_path", type=str)
+@click.option("--seed", default=13, type=int)
 def cli_surface_model(**kwargs):
     """Build a new surface model to a block of data"""
 
     # SimpleNamespace converts a dict into dot-notational
-    surface_model(SimpleNamespace(**kwargs))
+    surface_model(**kwargs)
     click.echo("Done")
 
 
