@@ -71,9 +71,9 @@ def get(jobs):
         return jobs.get()
 
 
-def wait(jobs, **kwargs):
+def wait(jobs, num_returns=1, **kwargs):
     if hasattr(jobs, "__iter__"):
-        return jobs.pop(), jobs
+        return jobs[:num_returns], jobs
     else:
         return jobs
 
