@@ -396,7 +396,13 @@ def sub(ds: xr.Dataset, dim: str, strat) -> xr.Dataset:
 
 
 def load(
-    file: str, subset: dict = None, dask=True, mode="r", lock=False, load=True, **kwargs
+    file: str,
+    subset: dict = None,
+    dask=False,
+    mode="r",
+    lock=False,
+    load=True,
+    **kwargs,
 ) -> xr.Dataset:
     """
     Loads a LUT NetCDF
