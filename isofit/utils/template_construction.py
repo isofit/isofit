@@ -59,6 +59,8 @@ class Pathnames:
             self.fid = args.input_radiance.split("/")[-1].split("_")[1]
         elif args.sensor == "gao":
             self.fid = split(args.input_radiance)[-1][:23]
+        elif args.sensor =="oci":
+            self.fid = split(args.input_radiance)[-1][:24]
         elif args.sensor[:3] == "NA-":
             self.fid = os.path.splitext(os.path.basename(args.input_radiance))[0]
 
@@ -200,11 +202,12 @@ class Pathnames:
             # quit()
 
         self.earth_sun_distance_path = str(env.path("data", "earth_sun_distance.txt"))
-        self.irradiance_file = str(
-            env.path(
-                "examples", "20151026_SantaMonica", "data", "prism_optimized_irr.dat"
-            )
-        )
+
+        irr_path = ["examples", "20151026_SantaMonica", "data", "prism_optimized_irr.dat"]
+        if args.sensor == "oci":
+            irr_path = ["data", "oci", "oci_f0_tsis.txt"]
+
+        self.irradiance_file = str(env.path(*irr_path))
 
         self.aerosol_tpl_path = str(env.path("data", "aerosol_template.json"))
         self.rdn_factors_path = None
@@ -553,7 +556,7 @@ def build_presolve_config(
     if emulator_base is not None:
         radiative_transfer_config["radiative_transfer_engines"]["vswir"][
             "emulator_file"
-        ] = abspath(emulator_base)
+        ] = abspath(emulator_base) + ".h5"
         radiative_transfer_config["radiative_transfer_engines"]["vswir"][
             "emulator_aux_file"
         ] = abspath(os.path.splitext(emulator_base)[0] + "_aux.npz")
@@ -744,7 +747,7 @@ def build_main_config(
     if emulator_base is not None:
         radiative_transfer_config["radiative_transfer_engines"]["vswir"][
             "emulator_file"
-        ] = abspath(emulator_base)
+        ] = abspath(emulator_base) + ".h5"
         radiative_transfer_config["radiative_transfer_engines"]["vswir"][
             "emulator_aux_file"
         ] = abspath(os.path.splitext(emulator_base)[0] + "_aux.npz")
