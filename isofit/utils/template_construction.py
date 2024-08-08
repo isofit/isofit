@@ -59,6 +59,8 @@ class Pathnames:
             self.fid = args.input_radiance.split("/")[-1].split("_")[1]
         elif args.sensor == "gao":
             self.fid = split(args.input_radiance)[-1][:23]
+        elif args.sensor =="oci":
+            self.fid = split(args.input_radiance)[-1][:24]
         elif args.sensor[:3] == "NA-":
             self.fid = os.path.splitext(os.path.basename(args.input_radiance))[0]
 
@@ -209,15 +211,26 @@ class Pathnames:
         self.earth_sun_distance_path = abspath(
             join(self.isofit_path, "data", "earth_sun_distance.txt")
         )
-        self.irradiance_file = abspath(
-            join(
-                self.isofit_path,
-                "examples",
-                "20151026_SantaMonica",
-                "data",
-                "prism_optimized_irr.dat",
+
+        # Adding OCI irradiance file 04/03
+        if args.sensor == "oci":
+            self.irradiance_file = abspath(
+                join(
+                    self.isofit_path,
+                    "data",
+                    "oci_f0_tsis.txt"
+                )
             )
-        )
+        else:
+            self.irradiance_file = abspath(
+                join(
+                    self.isofit_path,
+                    "examples",
+                    "20151026_SantaMonica",
+                    "data",
+                    "prism_optimized_irr.dat",
+                )
+            )
 
         self.aerosol_tpl_path = join(self.isofit_path, "data", "aerosol_template.json")
         self.rdn_factors_path = None
@@ -561,7 +574,7 @@ def build_presolve_config(
     if emulator_base is not None:
         radiative_transfer_config["radiative_transfer_engines"]["vswir"][
             "emulator_file"
-        ] = abspath(emulator_base)
+        ] = abspath(emulator_base) + ".h5"
         radiative_transfer_config["radiative_transfer_engines"]["vswir"][
             "emulator_aux_file"
         ] = abspath(os.path.splitext(emulator_base)[0] + "_aux.npz")
@@ -744,7 +757,7 @@ def build_main_config(
     if emulator_base is not None:
         radiative_transfer_config["radiative_transfer_engines"]["vswir"][
             "emulator_file"
-        ] = abspath(emulator_base)
+        ] = abspath(emulator_base) + ".h5"
         radiative_transfer_config["radiative_transfer_engines"]["vswir"][
             "emulator_aux_file"
         ] = abspath(os.path.splitext(emulator_base)[0] + "_aux.npz")
