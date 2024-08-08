@@ -73,9 +73,9 @@ def get(jobs):
 
 def wait(jobs, **kwargs):
     if hasattr(jobs, "__iter__"):
-        return jobs.pop().get(), jobs
+        return jobs.pop(), jobs
     else:
-        return jobs.get()
+        return jobs
 
 
 def put(obj):
