@@ -315,7 +315,7 @@ class ModtranRT(RadiativeTransferEngine):
 
         # Translate to the MODTRAN OBSZEN convention
         if vals["OBSZEN"]<90:
-            vals["OBSZEN"] = 180-vals["OBSZEN"]
+            vals["OBSZEN"] = 180-abs(vals["OBSZEN"])
             
         # Check rebuild conditions: LUT is missing or from a different config
         infilename = "LUT_" + filename_base + ".json"
