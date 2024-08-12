@@ -414,7 +414,7 @@ def apply_oe(args):
     logging.info(f"Path (km): {mean_path_km}")
     logging.info(f"To-sensor azimuth (deg): {mean_to_sensor_azimuth}")
     logging.info(f"To-sensor zenith (deg): {mean_to_sensor_zenith}")
-    logging.info(f"To-sun azimuth (deg): {mean_to_sun_zenith}")
+    logging.info(f"To-sun azimuth (deg): {mean_to_sun_azimuth}")
     logging.info(f"To-sun zenith (deg): {mean_to_sun_zenith}")
     logging.info(f"Relative to-sun azimuth (deg): {mean_relative_azimuth}")
     logging.info(f"Altitude (km): {mean_altitude_km}")
