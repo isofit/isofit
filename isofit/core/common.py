@@ -192,6 +192,9 @@ class VectorInterpolator:
         Passes args to the appropriate interpolation method defined by the version at
         object init.
         """
+        if "id" not in Cache:
+            Cache["id"] = np.random.rand()
+
         if self.method == -1:
             return self.value
         elif self.method == 1:
