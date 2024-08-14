@@ -279,6 +279,10 @@ class Worker(object):
             f" {index}/{indices.shape[0]}"
         )
 
+        from isofit.core.common import Cache
+
+        logging.info(f"Cache stats for worker {self.worker_id}: {Cache['stats']}")
+
         self.io.flush_buffers()
 
 
