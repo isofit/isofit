@@ -354,6 +354,7 @@ def sel(ds, dim, lt=None, lte=None, gt=None, gte=None, encompass=True):
         if encompass:
             where = ds[dim].where(ds[dim] > lte).dropna(dim)
             lte = where[l] if where.size else ds[dim].max()
+            Logger.debug(f"Encompass changed lte value to {lte}")
 
         ds = ds.sel({dim: ds[dim] <= lte})
 
@@ -364,6 +365,7 @@ def sel(ds, dim, lt=None, lte=None, gt=None, gte=None, encompass=True):
         if encompass:
             where = ds[dim].where(ds[dim] < gte).dropna(dim)
             gte = where[g] if where.size else ds[dim].min()
+            Logger.debug(f"Encompass changed gte value to {gte}")
 
         ds = ds.sel({dim: gte <= ds[dim]})
 
@@ -409,7 +411,13 @@ def sub(ds: xr.Dataset, dim: str, strat) -> xr.Dataset:
 
 
 def load(
-    file: str, subset: dict = None, dask=True, mode="r", lock=False, load=True, **kwargs
+    file: str,
+    subset: dict = None,
+    dask=False,
+    mode="r",
+    lock=False,
+    load=True,
+    **kwargs,
 ) -> xr.Dataset:
     """
     Loads a LUT NetCDF
