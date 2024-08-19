@@ -160,7 +160,7 @@ class VectorInterpolator:
                 stats = Cache["stats"].setdefault(i, {"hit": 0, "miss": 0})
 
                 if point in cache:
-                    data = cache.get(point)
+                    data = cache[point]
                     stats["hit"] += 1
                 else:
                     # Simple FIFO
