@@ -199,10 +199,10 @@ class RadiativeTransfer:
         # including glint for water surfaces
         if self.glint_model:
             E_down_tot = E_down_dir + E_down_dif
-            L_sky = x_surface[-2] * E_down_dir + x_surface[-1] * E_down_dif
+            E_sky = x_surface[-2] * E_down_dir + x_surface[-1] * E_down_dif
 
             rho_ls = 0.02  # fresnel reflectance factor (approx. 0.02 for nadir view)
-            glint = rho_ls * (L_sky / E_down_tot)
+            glint = rho_ls * (E_sky / E_down_tot)
         else:
             glint = np.zeros(rfl.shape)
 
