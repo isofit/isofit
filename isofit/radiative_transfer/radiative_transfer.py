@@ -198,25 +198,30 @@ class RadiativeTransfer:
 
         # including glint for water surfaces
         if self.glint_model:
-            E_down_tot = E_down_dir + E_down_dif
-            E_sky = x_surface[-2] * E_down_dir + x_surface[-1] * E_down_dif
-
             rho_ls = 0.02  # fresnel reflectance factor (approx. 0.02 for nadir view)
-            glint = rho_ls * (E_sky / E_down_tot)
+            sun_glint = rho_ls * (
+                x_surface[-2] * E_down_dir / (E_down_dir + E_down_dif)
+            )
+            sky_glint = rho_ls * (
+                x_surface[-1] * E_down_dif / (E_down_dir + E_down_dif)
+            )
         else:
-            glint = np.zeros(rfl.shape)
+            sun_glint = np.zeros(rfl.shape)
+            sky_glint = np.zeros(rfl.shape)
 
         # adjacency effects
-        bg = geom.bg_rfl if geom.bg_rfl is not None else rfl + glint
-
-        # direct and diffuse upward transmittance on the surface-to_sensor path, accounting for adjacency effects
-        T_up_dir = (rfl + glint) * t_dir_up
-        T_up_dif = bg * t_dif_up
+        bg = geom.bg_rfl if geom.bg_rfl is not None else rfl
 
         # at-sensor radiance model, including topography, adjacency effects, and glint
         ret = (
             L_atm
-            + ((E_down_dir + E_down_dif) * (T_up_dir + T_up_dif)) / (1.0 - s_alb * bg)
+            + (
+                E_down_dir * t_dir_up * (rfl + sun_glint)
+                + E_down_dif * t_dir_up * (rfl + sky_glint)
+                + E_down_dir * t_dif_up * bg
+                + E_down_dif * t_dif_up * bg
+            )
+            / (1.0 - s_alb * bg)
             + L_up
         )
 
