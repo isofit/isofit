@@ -19,6 +19,7 @@
 #
 
 import logging
+import types
 
 import numpy as np
 from spectral.io import envi
@@ -35,6 +36,7 @@ def extract_chunk(
     in_file: str,
     labels: np.array,
     flag: float,
+    reducer: types.FunctionType,
     logfile=None,
     loglevel="INFO",
 ):
@@ -95,7 +97,9 @@ def extract_chunk(
         f" {cend_adjust}"
     )
 
+    # (Segsize x Samples) array of SLIC labels
     chunk_lbl = np.array(labels[lstart_adjust:lend_adjust, cstart_adjust:cend_adjust])
+    # (Segsize x Sample x Bands) array of meas or class
     chunk_inp = np.array(
         img_mm[lstart_adjust:lend_adjust, cstart_adjust:cend_adjust, :]
     )
@@ -106,9 +110,8 @@ def extract_chunk(
     for _lab, lab in enumerate(active):
         out_data[_lab, :] = 0
         locs = np.where(chunk_lbl == lab)
-        for row, col in zip(locs[0], locs[1]):
-            out_data[_lab, :] += np.squeeze(chunk_inp[row, col, :])
-        out_data[_lab, :] /= float(len(locs[0]))
+        vals = chunk_inp[locs[0], locs[1], :]
+        out_data[_lab, :] = reducer(chunk_inp[locs[0], locs[1], :].astype(np.float64))
 
     unique_labels = np.unique(labels)
     unique_labels = unique_labels[unique_labels >= 1]
@@ -129,6 +132,7 @@ def extractions(
     output,
     chunksize,
     flag,
+    reducer: types.FunctionType,
     n_cores: int = 1,
     ray_address: str = None,
     ray_redis_password: str = None,
@@ -182,7 +186,14 @@ def extractions(
         lend = min(lstart + nchunk, nl)
         jobs.append(
             extract_chunk.remote(
-                lstart, lend, in_file, labelid, flag, logfile=logfile, loglevel=loglevel
+                lstart,
+                lend,
+                in_file,
+                labelid,
+                flag,
+                reducer,
+                logfile=logfile,
+                loglevel=loglevel,
             )
         )
 

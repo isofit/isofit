@@ -27,14 +27,6 @@ from scipy.io import loadmat
 from scipy.linalg import block_diag
 
 from isofit.configs import Config
-from isofit.surface import (
-    AdditiveGlintSurface,
-    GlintModelSurface,
-    LUTSurface,
-    MultiComponentSurface,
-    Surface,
-    ThermalSurface,
-)
 
 from ..radiative_transfer.radiative_transfer import RadiativeTransfer
 from .common import eps
@@ -81,30 +73,30 @@ class ForwardModel:
         # Build the radiative transfer model
         self.RT = RadiativeTransfer(self.full_config)
 
-        # Build the surface model - this is a bit ugly with the conditionals, but the surface config should already be
-        # forced to have appropriate properties, so at least safe
-        # TODO: make surface a class with inheritance to make this cleaner
-        self.surface = None
-        if self.config.surface.surface_category == "surface":
-            self.surface = Surface(self.full_config)
-        elif self.config.surface.surface_category == "multicomponent_surface":
-            self.surface = MultiComponentSurface(self.full_config)
-        elif self.config.surface.surface_category == "additive_glint_surface":
-            self.surface = AdditiveGlintSurface(self.full_config)
-        elif self.config.surface.surface_category == "glint_model_surface":
-            self.surface = GlintModelSurface(self.full_config)
-            self.full_glint = (
-                self.config.surface.full_glint
-                if "full_glint" in self.config.surface.keys()
-                else False
-            )
-        elif self.config.surface.surface_category == "thermal_surface":
-            self.surface = ThermalSurface(self.full_config)
-        elif self.config.surface.surface_category == "lut_surface":
-            self.surface = LUTSurface(self.full_config)
+        # DEFINE BASE SURFACE
+        self.surface = Surface(self.full_config)
+
+        # Load model discrepancy correction
+        if self.config.model_discrepancy_file is not None:
+            D = loadmat(self.config.model_discrepancy_file)
+            self.model_discrepancy = D["cov"]
         else:
-            raise ValueError("Must specify a valid surface model")
-            # No need to be more specific - should have been checked in config already
+            self.model_discrepancy = None
+
+    def construct_state_vector(self):
+        """I broke this out as a separate function call because it
+        has to be generated sepecifically for a potentially varying
+        surface model. This is called after the forward model is
+        initialized in isofit.run and after the surface model is
+        finalized on a per-pixel basis
+
+        The question is: is it bad to be doing this operation for each
+        pixel? There are aspects of this that aren't varying across
+        surfaces (instrument and RT model). I left the stacking
+        unchanged so I kept everything together. One change could be to
+        generate the RT + instrument state then only add the surface
+        state to finalize.
+        """
 
         if self.surface.n_wl != len(self.RT.wl) or not np.all(
             np.isclose(self.surface.wl, self.RT.wl, atol=0.01)
@@ -126,6 +118,7 @@ class ForwardModel:
             bvec.extend([deepcopy(x) for x in obj_with_statevec.bvec])
             bval.extend([deepcopy(x) for x in obj_with_statevec.bval])
 
+        # Persist to class object
         self.bounds = tuple(np.array(bounds).T)
         self.scale = np.array(scale)
         self.init = np.array(init)
@@ -137,43 +130,47 @@ class ForwardModel:
         self.bval = np.array(bval)
         self.Sb = np.diagflat(np.power(self.bval, 2))
 
-        # Set up indices for references - MUST MATCH ORDER FROM ABOVE ASSIGNMENT
+        """Set up state vector indices - 
+        MUST MATCH ORDER FROM ABOVE ASSIGNMENT"""
         self.idx_surface = np.arange(len(self.surface.statevec_names), dtype=int)
-        # Sometimes, it's convenient to have the index of the entire surface
-        # as one variable, and sometimes you want the sub-components
-        # Split surface state vector indices to cover cases where we retrieve
-        # additional non-reflectance surface parameters
-        self.idx_surf_rfl = self.idx_surface[
-            : len(self.surface.idx_lamb)
-        ]  # reflectance portion
-        self.idx_surf_nonrfl = self.idx_surface[
-            len(self.surface.idx_lamb) :
-        ]  # all non-reflectance surface parameters
+
+        # surface reflectance portion
+        self.idx_surf_rfl = self.idx_surface[: len(self.surface.idx_lamb)]
+
+        # non-reflectance surface parameters
+        self.idx_surf_nonrfl = self.idx_surface[len(self.surface.idx_lamb) :]
+
+        # radiative transfer portion
         self.idx_RT = np.arange(len(self.RT.statevec_names), dtype=int) + len(
             self.idx_surface
         )
+
+        # instrument portion
         self.idx_instrument = (
             np.arange(len(self.instrument.statevec_names), dtype=int)
             + len(self.idx_surface)
             + len(self.idx_RT)
         )
 
+        # What is bvec?
         self.surface_b_inds = np.arange(len(self.surface.bvec), dtype=int)
+
         self.RT_b_inds = np.arange(len(self.RT.bvec), dtype=int) + len(
             self.surface_b_inds
         )
+
         self.instrument_b_inds = (
             np.arange(len(self.instrument.bvec), dtype=int)
             + len(self.surface_b_inds)
             + len(self.RT_b_inds)
         )
 
-        # Load model discrepancy correction
-        if self.config.model_discrepancy_file is not None:
-            D = loadmat(self.config.model_discrepancy_file)
-            self.model_discrepancy = D["cov"]
-        else:
-            self.model_discrepancy = None
+    def get_surface_state(self, row, col):
+        """Needs to retrieve appropriate statevec and save it as a
+        class var Questions:
+            1. Are all rfl state statevec elements the same?"""
+
+        self.surface = self.surface.pixel_surface(row, col)
 
     def out_of_bounds(self, x):
         """Check if state vector is within bounds."""
@@ -181,6 +178,7 @@ class ForwardModel:
         x_RT = x[self.idx_RT]
         bound_lwr = self.bounds[0]
         bound_upr = self.bounds[1]
+
         return any(x_RT >= (bound_upr[self.idx_RT] - eps * 2.0)) or any(
             x_RT <= (bound_lwr[self.idx_RT] + eps * 2.0)
         )

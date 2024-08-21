@@ -212,16 +212,6 @@ class Worker(object):
         self.fm = forward_model
         # self.fm = ForwardModel(self.config)
 
-        if self.config.implementation.mode == "mcmc_inversion":
-            self.iv = MCMCInversion(self.config, self.fm)
-        elif self.config.implementation.mode in ["inversion", "simulation"]:
-            self.iv = Inversion(self.config, self.fm)
-        else:
-            # This should never be reached due to configuration checking
-            raise AttributeError("Config implementation mode node valid")
-
-        self.io = IO(self.config, self.fm)
-
         self.approximate_total_spectra = None
         if total_workers is not None:
             self.approximate_total_spectra = (
@@ -235,7 +225,37 @@ class Worker(object):
             logging.debug("Read chunk of spectra")
             row, col = indices[index, 0], indices[index, 1]
 
+            # Get input data
             input_data = self.io.get_components_at_index(row, col)
+
+            """
+            This is one way to do this. It effectively means that we
+            are giving each pixel (spectra) its own statevector and surface
+            model. The other way to input the classified surfaces into
+            the workflow would be to add an interative step into apply_oe.
+            That would mean however at its simplest, 
+            that there would have to be n-separate config files and
+            n-number of h2o/rfl files for each surface class that would
+            have to be stitched together.
+
+            The advantage of the way I did it here is that no image
+            stitching is necessary.
+            """
+            # Set up row-col specific state vector in the forward model
+            self.fm.get_surface_state(row, col)
+            self.fm.construct_state_vector()
+
+            # Update inversion method
+            if self.config.implementation.mode == "mcmc_inversion":
+                self.iv = MCMCInversion(self.config, self.fm)
+            elif self.config.implementation.mode in ["inversion", "simulation"]:
+                self.iv = Inversion(self.config, self.fm)
+            else:
+                # This should never be reached due to configuration checking
+                raise AttributeError("Config implementation mode node valid")
+
+            # Initialize ouput class
+            self.io = IO(self.config, self.fm)
 
             self.completed_spectra += 1
             if input_data is not None:

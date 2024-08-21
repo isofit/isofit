@@ -26,6 +26,7 @@ from isofit.core.common import (
     json_load_ascii,
     resample_spectrum,
 )
+from isofit.surface import Surfaces
 from isofit.utils import surface_model
 
 
@@ -64,6 +65,8 @@ class Pathnames:
 
         logging.info("Flightline ID: %s" % self.fid)
 
+        # Surface classification here so it doesn't get lost
+        self.surface_class_file = vars(args).get("surface_class", None)
         # Names from inputs
         self.aerosol_climatology = args.aerosol_climatology_path
         self.input_radiance_file = args.input_radiance
@@ -141,6 +144,10 @@ class Pathnames:
         )
         self.loc_subs_path = abspath(
             join(self.input_data_directory, self.fid + "_subs_loc")
+        )
+        # Note that this is changed to reflect the possible classification file
+        self.subs_class_path = abspath(
+            join(self.input_data_directory, self.fid + "_subs_class")
         )
         self.rfl_subs_path = abspath(
             join(self.output_directory, self.fid + "_subs_rfl")
@@ -600,11 +607,7 @@ def build_presolve_config(
                     "uncorrelated_radiometric_uncertainty": uncorrelated_radiometric_uncertainty
                 },
             },
-            "surface": {
-                "surface_category": surface_category,
-                "surface_file": paths.surface_working_path,
-                "select_on_init": True,
-            },
+            "surface": make_surface_config(paths, surface_category),
             "radiative_transfer": radiative_transfer_config,
         },
         "implementation": {
@@ -899,11 +902,7 @@ def build_main_config(
                     "uncorrelated_radiometric_uncertainty": uncorrelated_radiometric_uncertainty
                 },
             },
-            "surface": {
-                "surface_file": paths.surface_working_path,
-                "surface_category": surface_category,
-                "select_on_init": True,
-            },
+            "surface": make_surface_config(paths, surface_category),
             "radiative_transfer": radiative_transfer_config,
         },
         "implementation": {
@@ -1658,3 +1657,44 @@ def reassemble_cube(matching_indices: np.array, paths: Pathnames):
             output_mm[matching_indices == _st, ...] = input_ds.open_memmap(
                 interleave="bip"
             )[:, :, : int(header["bands"])].copy()[:, 0, :]
+
+
+def make_surface_config(paths: Pathnames, surface_category="multicomponent_surface"):
+
+    # Check to see if a classification file is being propogated
+    if paths.surface_class_file:
+        surface_class_ds = envi.open(envi_header(paths.surface_class_file))
+
+        # Get the class mapping
+        class_mapping = surface_class_ds.metadata["mapping"]
+
+        # mapping name to surface name - terrible way to do this
+        # because it is contingent on the name in the "mapping" field
+        surface_models = {}
+        for i, name in enumerate(class_mapping):
+            if name == "water":
+                surface_category = "glint_model_surface"
+            elif name == "land":
+                surface_category = "multicomponent_surface"
+            elif name == "cloud":
+                surface_category = "multicomponent_surface"
+            else:
+                surface_category = "multicomponent_surface"
+
+            surface_models[i] = {
+                "surface_file": paths.surface_path,
+                "surface_category": surface_category,
+                "select_on_init": True,
+                "surface_class_file": (vars(paths).get("subs_class_path", None)),
+            }
+    else:
+        surface_models = {
+            0: {
+                "surface_file": paths.surface_path,
+                "surface_category": surface_category,
+                "select_on_init": True,
+                "surface_class_file": (vars(paths).get("subs_class_path", None)),
+            }
+        }
+
+    return surface_models

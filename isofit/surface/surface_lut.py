@@ -25,10 +25,9 @@ from scipy.linalg import block_diag, norm
 from isofit.configs import Config
 
 from ..core.common import VectorInterpolator, svd_inv
-from .surface import Surface
 
 
-class LUTSurface(Surface):
+class LUTSurface:
     """A model of the surface based on an N-dimensional lookup table
     indexed by one or more state vector elements.  We calculate the
     reflectance by multilinear interpolation.  This is good for
@@ -57,8 +56,6 @@ class LUTSurface(Surface):
 
     def __init__(self, full_config: Config):
         """."""
-
-        super().__init__(full_config)
 
         config = full_config.forward_model.surface
 

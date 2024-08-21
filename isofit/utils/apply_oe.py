@@ -19,7 +19,7 @@ from spectral.io import envi
 import isofit.utils.template_construction as tmpl
 from isofit.core import isofit
 from isofit.core.common import envi_header
-from isofit.utils import analytical_line, empirical_line, extractions, segment
+from isofit.utils import analytical_line, empirical_line, extractions, reducers, segment
 
 EPS = 1e-6
 CHUNKSIZE = 256
@@ -460,6 +460,23 @@ def apply_oe(args):
                     output=outp,
                     chunksize=CHUNKSIZE,
                     flag=-9999,
+                    reducer=reducers.band_mean,
+                    n_cores=args.n_cores,
+                    loglevel=args.logging_level,
+                    logfile=args.log_file,
+                )
+
+        # Extract superpixels class
+        if paths.surface_class_file:
+            if not exists(paths.subs_class_path):
+                logging.info("Extracting " + paths.subs_class_path)
+                extractions(
+                    inputfile=paths.surface_class_file,
+                    labels=paths.lbl_working_path,
+                    output=paths.subs_class_path,
+                    chunksize=CHUNKSIZE,
+                    flag=-9999,
+                    reducer=reducers.class_priority,
                     n_cores=args.n_cores,
                     loglevel=args.logging_level,
                     logfile=args.log_file,
