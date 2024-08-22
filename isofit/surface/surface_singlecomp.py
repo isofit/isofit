@@ -37,13 +37,6 @@ class SingleComponentSurface:
     in the same format as the multi-component
     """
 
-    model_dict = loadmat(
-        "/Users/bgreenbe/Projects/MultiSurface/Examples/EMIT/emit_single_component_surface.mat"
-    )
-    model_dict = loadmat(
-        "/Users/bgreenbe/Projects/MultiSurface/Examples/EMIT/emit_surface.mat"
-    )
-
     def __init__(self, full_config: Config):
         config = full_config.forward_model.surface
 

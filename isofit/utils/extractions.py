@@ -110,7 +110,6 @@ def extract_chunk(
     for _lab, lab in enumerate(active):
         out_data[_lab, :] = 0
         locs = np.where(chunk_lbl == lab)
-        vals = chunk_inp[locs[0], locs[1], :]
         out_data[_lab, :] = reducer(chunk_inp[locs[0], locs[1], :].astype(np.float64))
 
     unique_labels = np.unique(labels)

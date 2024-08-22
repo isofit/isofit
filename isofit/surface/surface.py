@@ -33,10 +33,9 @@ class Surface:
     """A wrapper for the specific surface models"""
 
     def __init__(self, full_config: Config):
+        self.full_config = full_config
+
         config = full_config.forward_model.surface
-
-        config = make_surface_config(paths)
-
         self.surfaces = config
         for i, surf_dict in config.items():
             self.surfaces[i]["surface_model"] = Surfaces[surf_dict["surface_category"]]
@@ -76,10 +75,12 @@ class Surface:
 
         return matches[np.where(matches)][0]
 
-    def pixel_surface(self, row, col):
+    def call_rowcol_surface(self, row, col):
         # Easy case, no classification is propogated through
         if len(self.surfaces) == 1 or not self.surfaces[0]["surface_class_file"]:
-            return self.surfaces[0]["surface_model"]
+            return self.surfaces[0]["surface_model"](self.full_config)
 
         elif len(self.surfaces) > 1:
-            return self.surfaces[self.match_class(groups, row, col)]["surface_model"]
+            return self.surfaces[self.match_class(groups, row, col)]["surface_model"](
+                self.full_config
+            )
