@@ -165,7 +165,7 @@ class ForwardModel:
             + len(self.RT_b_inds)
         )
 
-    def get_surface_state(self, row, col):
+    def get_pixel_surface(self, row, col):
         """Needs to retrieve appropriate statevec and save it as a
         class var Questions:
             1. Are all rfl state statevec elements the same?"""

@@ -242,7 +242,7 @@ class Worker(object):
             stitching is necessary.
             """
             # Set up row-col specific state vector in the forward model
-            self.fm.get_surface_state(row, col)
+            self.fm.get_pixel_surface(row, col)
             self.fm.construct_state_vector()
 
             # Update inversion method

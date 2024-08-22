@@ -35,29 +35,51 @@ class Surface:
     def __init__(self, full_config: Config):
         config = full_config.forward_model.surface
 
-        surfaces = make_surface_config(paths)
+        config = make_surface_config(paths)
 
         self.surfaces = config
         for i, surf_dict in config.items():
-            self.surfaces[i] = {}
             self.surfaces[i]["surface_model"] = Surfaces[surf_dict["surface_category"]]
+        # surfaces = config
+        for i, surf_dict in config.items():
+            config[i]["surface_model"] = Surfaces[surf_dict["surface_category"]]
 
-        # Is there a way to not have to open this every operation?
-        if self.surfaces[0]["surface_class_file"]:
+        # Set up pixel groups in the init to only read file once
+        if config[0]["surface_class_file"]:
             classes = envi.open(
-                envi_header(surfaces[0]["surface_class_file"])
+                envi_header(config[0]["surface_class_file"])
             ).open_memmap(interleave="bip")
 
-            for c in config.keys():
-                test = np.argwhere(classes == c)
-                break
+            self.groups = []
+            for c in self.surfaces.keys():
+                self.groups.append(np.argwhere(classes == c).astype(int).tolist())
+
+    def match_class(self, row, col):
+        matches = np.zeros((len(self.groups))).astype(int)
+        for i, group in enumerate(self.groups):
+            if [row, col, 0] in group:
+                matches[i] = 1
+            else:
+                matches[i] = 0
+
+        if len(matches[np.where(matches)]) > 1:
+            raise ValueError(
+                "Pixel did not match any class. \
+                             Something is wrong"
+            )
+
+        elif len(matches[np.where(matches)]) > 1:
+            raise ValueError(
+                "Pixel matches too many classes. \
+                             Something is wrong"
+            )
+
+        return matches[np.where(matches)][0]
 
     def pixel_surface(self, row, col):
         # Easy case, no classification is propogated through
         if len(self.surfaces) == 1 or not self.surfaces[0]["surface_class_file"]:
-            return self.surfaces[0]["surface_mode"]
+            return self.surfaces[0]["surface_model"]
 
         elif len(self.surfaces) > 1:
-            class_file = envi.open(envi_header(self.surfaces[0]["surface_class_file"]))
-
-        single_surface = {0: surfaces[0]}
+            return self.surfaces[self.match_class(groups, row, col)]["surface_model"]
