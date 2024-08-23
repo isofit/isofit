@@ -386,7 +386,11 @@ class LUTConfig:
 
         # if we want to ensure there is no minimum spacing, override the spacing
         # value to set the number of grid points to at least 2
-        if self.no_min_lut_spacing and num_gridpoints == 1:
+        if (
+            self.no_min_lut_spacing
+            and num_gridpoints == 1
+            and np.isclose(maxval, minval) is False
+        ):
             num_gridpoints = 2
 
         grid = np.linspace(minval, maxval, num_gridpoints)
