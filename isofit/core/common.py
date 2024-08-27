@@ -90,7 +90,7 @@ class VectorInterpolator:
             self.method = 2
 
             # None to disable, 0 for unlimited, negatives == 1
-            self.cache_size = 500
+            self.cache_size = 1
 
             self.gridtuples = [np.array(t) for t in grid]
             self.gridarrays = data
@@ -192,9 +192,6 @@ class VectorInterpolator:
         Passes args to the appropriate interpolation method defined by the version at
         object init.
         """
-        if "id" not in Cache["stats"]:
-            Cache["stats"]["id"] = np.random.rand()
-
         if self.method == -1:
             return self.value
         elif self.method == 1:
