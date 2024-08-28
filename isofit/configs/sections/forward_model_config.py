@@ -31,29 +31,29 @@ class ForwardModelConfig(BaseConfigSection):
     """
 
     def __init__(self, sub_configdic: dict = None):
+        """
+        Instrument: instrument config section.
+        """
         self._instrument_type = InstrumentConfig
         self.instrument: InstrumentConfig = None
-        """
-        Instrument: instrument config section. 
-        """
 
+        """
+        Surface: surface config section. 
+        """
         self._surface_type = SurfaceConfig
         self.surface: SurfaceConfig = None
-        """
-        Instrument: instrument config section. 
-        """
 
-        self._radiative_transfer_type = RadiativeTransferConfig
-        self.radiative_transfer: RadiativeTransferConfig = None
         """
         RadiativeTransfer: radiative transfer config section.
         """
+        self._radiative_transfer_type = RadiativeTransferConfig
+        self.radiative_transfer: RadiativeTransferConfig = None
 
-        self._model_discrepancy_file_type = str
-        self.model_discrepancy_file = None
         """
         Points to an numpy-format covariance matrix. 
         """
+        self._model_discrepancy_file_type = str
+        self.model_discrepancy_file = None
 
         self.set_config_options(sub_configdic)
 

@@ -19,7 +19,6 @@
 #
 
 import logging
-from copy import deepcopy
 
 import numpy as np
 from scipy.interpolate import interp1d
@@ -27,14 +26,14 @@ from scipy.io import loadmat
 from scipy.linalg import block_diag
 
 from isofit.configs import Config
+from isofit.surface.surface_wrapper import SurfaceWrapper
 
 from ..radiative_transfer.radiative_transfer import RadiativeTransfer
 from .common import eps
 from .instrument import Instrument
+from .state import StateVector
 
 Logger = logging.getLogger(__file__)
-
-### Classes ###
 
 
 class ForwardModel:
@@ -60,7 +59,7 @@ class ForwardModel:
     noise for the purpose of weighting the measurement information
     against the prior."""
 
-    def __init__(self, full_config: Config):
+    def __init__(self, full_config: Config, subs: bool = True):
         # load in the full config (in case of inter-module dependencies) and
         # then designate the current config
         self.full_config = full_config
@@ -73,8 +72,23 @@ class ForwardModel:
         # Build the radiative transfer model
         self.RT = RadiativeTransfer(self.full_config)
 
-        # DEFINE BASE SURFACE
-        self.surface = Surface(self.full_config)
+        # Define flexible surface wrapper
+        self.surfaces = SurfaceWrapper(self.full_config, subs)
+
+        """This is one way to do this. Initialize the states for each
+        of the present surface classes. Propogate as a dict. I chose
+        to leave this out to the surface model because the states
+        include components from instrument + RT + surface"""
+        self.states = {}
+        for cover, surface_dict in self.surfaces.surf_lookup.items():
+            self.states[cover] = StateVector(
+                self.instrument, self.RT, surface_dict["surface_model"]
+            )
+
+        # For the analytical line, the forward model also needs to carry
+        # The full idx_surface and shared idx_lamb across the different
+        # state vectors
+        self.construct_full_state()
 
         # Load model discrepancy correction
         if self.config.model_discrepancy_file is not None:
@@ -83,104 +97,25 @@ class ForwardModel:
         else:
             self.model_discrepancy = None
 
-    def construct_state_vector(self):
-        """I broke this out as a separate function call because it
-        has to be generated sepecifically for a potentially varying
-        surface model. This is called after the forward model is
-        initialized in isofit.run and after the surface model is
-        finalized on a per-pixel basis
-
-        The question is: is it bad to be doing this operation for each
-        pixel? There are aspects of this that aren't varying across
-        surfaces (instrument and RT model). I left the stacking
-        unchanged so I kept everything together. One change could be to
-        generate the RT + instrument state then only add the surface
-        state to finalize.
-        """
-
-        if self.surface.n_wl != len(self.RT.wl) or not np.all(
-            np.isclose(self.surface.wl, self.RT.wl, atol=0.01)
-        ):
-            Logger.warning(
-                "Surface and RTM wavelengths differ - if running at higher RTM"
-                " spectral resolution or with variable wavelength position, this"
-                " is expected.  Otherwise, consider checking the surface model."
-            )
-
-        # Build combined vectors from surface, RT, and instrument
-        bounds, scale, init, statevec, bvec, bval = ([] for i in range(6))
-        for obj_with_statevec in [self.surface, self.RT, self.instrument]:
-            bounds.extend([deepcopy(x) for x in obj_with_statevec.bounds])
-            scale.extend([deepcopy(x) for x in obj_with_statevec.scale])
-            init.extend([deepcopy(x) for x in obj_with_statevec.init])
-            statevec.extend([deepcopy(x) for x in obj_with_statevec.statevec_names])
-
-            bvec.extend([deepcopy(x) for x in obj_with_statevec.bvec])
-            bval.extend([deepcopy(x) for x in obj_with_statevec.bval])
-
-        # Persist to class object
-        self.bounds = tuple(np.array(bounds).T)
-        self.scale = np.array(scale)
-        self.init = np.array(init)
-        self.statevec = statevec
-        self.nstate = len(self.statevec)
-
-        self.bvec = np.array(bvec)
-        self.nbvec = len(self.bvec)
-        self.bval = np.array(bval)
-        self.Sb = np.diagflat(np.power(self.bval, 2))
-
-        """Set up state vector indices - 
-        MUST MATCH ORDER FROM ABOVE ASSIGNMENT"""
-        self.idx_surface = np.arange(len(self.surface.statevec_names), dtype=int)
-
-        # surface reflectance portion
-        self.idx_surf_rfl = self.idx_surface[: len(self.surface.idx_lamb)]
-
-        # non-reflectance surface parameters
-        self.idx_surf_nonrfl = self.idx_surface[len(self.surface.idx_lamb) :]
-
-        # radiative transfer portion
-        self.idx_RT = np.arange(len(self.RT.statevec_names), dtype=int) + len(
-            self.idx_surface
-        )
-
-        # instrument portion
-        self.idx_instrument = (
-            np.arange(len(self.instrument.statevec_names), dtype=int)
-            + len(self.idx_surface)
-            + len(self.idx_RT)
-        )
-
-        # What is bvec?
-        self.surface_b_inds = np.arange(len(self.surface.bvec), dtype=int)
-
-        self.RT_b_inds = np.arange(len(self.RT.bvec), dtype=int) + len(
-            self.surface_b_inds
-        )
-
-        self.instrument_b_inds = (
-            np.arange(len(self.instrument.bvec), dtype=int)
-            + len(self.surface_b_inds)
-            + len(self.RT_b_inds)
-        )
-
-    def get_pixel_surface(self, row, col):
+    def get_surface_and_state(self, row, col):
         """Needs to retrieve appropriate statevec and save it as a
-        class var Questions:
-            1. Are all rfl state statevec elements the same?"""
+        class var"""
 
-        self.surface = self.surface.pixel_surface(row, col)
+        i, surface = self.surfaces.retrieve_pixel_surface_class(row, col)
+        state = self.states[i]
+
+        # Need to check if this return statement isn't needed
+        return surface, state, i
 
     def out_of_bounds(self, x):
         """Check if state vector is within bounds."""
 
-        x_RT = x[self.idx_RT]
-        bound_lwr = self.bounds[0]
-        bound_upr = self.bounds[1]
+        x_RT = x[self.state.idx_RT]
+        bound_lwr = self.state.bounds[0]
+        bound_upr = self.state.bounds[1]
 
-        return any(x_RT >= (bound_upr[self.idx_RT] - eps * 2.0)) or any(
-            x_RT <= (bound_lwr[self.idx_RT] + eps * 2.0)
+        return any(x_RT >= (bound_upr[self.state.idx_RT] - eps * 2.0)) or any(
+            x_RT <= (bound_lwr[self.state.idx_RT] + eps * 2.0)
         )
 
     def xa(self, x, geom):
@@ -192,7 +127,7 @@ class ForwardModel:
         this is so we can calculate the local prior.
         """
 
-        x_surface = x[self.idx_surface]
+        x_surface = x[self.state.idx_surface]
         xa_surface = self.surface.xa(x_surface, geom)
         xa_RT = self.RT.xa()
         xa_instrument = self.instrument.xa()
@@ -207,7 +142,7 @@ class ForwardModel:
         is so we can calculate the local prior.
         """
 
-        x_surface = x[self.idx_surface]
+        x_surface = x[self.state.idx_surface]
         Sa_surface = self.surface.Sa(x_surface, geom)[:, :]
         Sa_RT = self.RT.Sa()[:, :]
         Sa_instrument = self.instrument.Sa()[:, :]
@@ -240,17 +175,17 @@ class ForwardModel:
     def calc_Ls(self, x, geom):
         """Calculate the surface emission."""
 
-        return self.surface.calc_Ls(x[self.idx_surface], geom)
+        return self.surface.calc_Ls(x[self.state.idx_surface], geom)
 
     def calc_rfl(self, x, geom):
         """Calculate the surface reflectance."""
 
-        return self.surface.calc_rfl(x[self.idx_surface], geom)
+        return self.surface.calc_rfl(x[self.state.idx_surface], geom)
 
     def calc_lamb(self, x, geom):
         """Calculate the Lambertian surface reflectance."""
 
-        return self.surface.calc_lamb(x[self.idx_surface], geom)
+        return self.surface.calc_lamb(x[self.state.idx_surface], geom)
 
     def Seps(self, x, meas, geom):
         """Calculate the total uncertainty of the observation, including
@@ -267,7 +202,7 @@ class ForwardModel:
         Kb = self.Kb(x, geom)
         Sy = self.instrument.Sy(meas, geom)
 
-        return Sy + Kb.dot(self.Sb).dot(Kb.T) + Gamma
+        return Sy + Kb.dot(self.state.Sb).dot(Kb.T) + Gamma
 
     def K(self, x, geom):
         """Derivative of observation with respect to state vector. This is
@@ -305,10 +240,10 @@ class ForwardModel:
         )
 
         # Put it all together
-        K = np.zeros((self.n_meas, self.nstate), dtype=float)
-        K[:, self.idx_surface] = dmeas_dsurface
-        K[:, self.idx_RT] = dmeas_dRT
-        K[:, self.idx_instrument] = dmeas_dinstrument
+        K = np.zeros((self.n_meas, self.state.nstate), dtype=float)
+        K[:, self.state.idx_surface] = dmeas_dsurface
+        K[:, self.state.idx_RT] = dmeas_dRT
+        K[:, self.state.idx_instrument] = dmeas_dinstrument
         return K
 
     def Kb(self, x, geom):
@@ -335,9 +270,9 @@ class ForwardModel:
         )
 
         # Put it together
-        Kb = np.zeros((self.n_meas, self.nbvec), dtype=float)
-        Kb[:, self.RT_b_inds] = dmeas_dRTb
-        Kb[:, self.instrument_b_inds] = dmeas_dinstrumentb
+        Kb = np.zeros((self.n_meas, self.state.nbvec), dtype=float)
+        Kb[:, self.state.RT_b_inds] = dmeas_dRTb
+        Kb[:, self.state.instrument_b_inds] = dmeas_dinstrumentb
         return Kb
 
     def summarize(self, x, geom):
@@ -355,7 +290,7 @@ class ForwardModel:
     def calibration(self, x):
         """Calculate measured wavelengths and fwhm."""
 
-        x_inst = x[self.idx_instrument]
+        x_inst = x[self.state.idx_instrument]
         return self.instrument.calibration(x_inst)
 
     def upsample(self, wl, q):
@@ -379,7 +314,65 @@ class ForwardModel:
     def unpack(self, x):
         """Unpack the state vector in appropriate index ordering."""
 
-        x_surface = x[self.idx_surface]
-        x_RT = x[self.idx_RT]
-        x_instrument = x[self.idx_instrument]
+        x_surface = x[self.state.idx_surface]
+        x_RT = x[self.state.idx_RT]
+        x_instrument = x[self.state.idx_instrument]
         return x_surface, x_RT, x_instrument
+
+    def construct_full_state(self):
+        """
+        Looks at all the model-states present in the image and collapses
+        them into a single image-universal statevector. Returns both
+        the names and indexes of the image-wide statevector.
+
+        Returns:
+            self.full_statevec: [m] list of the combined
+                           rfl, surf_non_rfl, RT and instrument state names
+            self.full_idx_surface: [n] np.array of the combined
+                           rfl, surf_non_rfl state indexes
+            self.full_idx_surf_rfl: [n] np.array of the combined
+                           rfl state indexes
+            self.full_idx_surf_nonrfl: [n] np.array of the combined
+                           surf_non_rfl state indexes
+            self.full_idx_RT: [n] np.array of the combined
+                           RT state indexes
+            self.full_idx_instrument: [n] np.array of the combined
+                           instrument state indexes
+        """
+        rfl_states = []
+        nonrfl_states = []
+        RT_states = []
+        instrument_states = []
+
+        # Iterate through the different states to find overlapping state names
+        for i, state in self.states.items():
+            rfl_states += [state.statevec[i] for i in state.idx_surf_rfl]
+            nonrfl_states += [state.statevec[i] for i in state.idx_surf_nonrfl]
+            RT_states += [state.statevec[i] for i in state.idx_RT]
+            instrument_states += [state.statevec[i] for i in state.idx_instrument]
+
+        # Find unique state elements and collapse - ALPHABETICAL
+        rfl_states = sorted(list(set(rfl_states)))
+        nonrfl_states = sorted(list(set(nonrfl_states)))
+        RT_states = sorted(list(set(RT_states)))
+        instrument_states = sorted(list(set(instrument_states)))
+
+        # Rejoin in the same order as the original statevector object
+        self.full_statevec = rfl_states + nonrfl_states + RT_states + instrument_states
+
+        # Set up full idx arrays
+        self.full_idx_surface = np.arange(0, len(rfl_states) + len(nonrfl_states))
+
+        start = 0
+        self.full_idx_surf_rfl = np.arange(start, len(rfl_states))
+
+        start += len(rfl_states)
+        self.full_idx_surf_nonrfl = np.arange(start, start + len(nonrfl_states))
+
+        start += len(nonrfl_states)
+        self.full_idx_RT = np.arange(start, start + len(RT_states))
+
+        start += len(RT_states)
+        self.full_idx_instrument = np.arange(start, start + len(instrument_states))
+
+        return

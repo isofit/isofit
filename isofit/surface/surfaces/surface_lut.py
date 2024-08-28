@@ -23,8 +23,7 @@ from scipy.io import loadmat
 from scipy.linalg import block_diag, norm
 
 from isofit.configs import Config
-
-from ..core.common import VectorInterpolator, svd_inv
+from isofit.core.common import VectorInterpolator, svd_inv
 
 
 class LUTSurface:
@@ -54,13 +53,15 @@ class LUTSurface:
 
     """
 
-    def __init__(self, full_config: Config):
+    def __init__(self, config: dict, params: dict):
         """."""
 
-        config = full_config.forward_model.surface
+        if exists(config.get("surface_file", "")):
+            model_dict = loadmat(config["surface_file"])
+        else:
+            raise FileNotFoundError("No surface .mat file exists")
 
         # Models are stored as dictionaries in .mat format
-        model_dict = loadmat(config.surface_file)
         self.lut_grid = [grid[0] for grid in model_dict["grids"][0]]
         self.lut_names = [l.strip() for l in model_dict["lut_names"]]
         self.statevec_names = [sv.strip() for sv in model_dict["statevec_names"]]

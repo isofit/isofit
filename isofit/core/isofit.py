@@ -31,8 +31,7 @@ from isofit import ray
 from isofit.configs import configs
 from isofit.core.fileio import IO
 from isofit.core.forward import ForwardModel
-from isofit.inversion.inverse import Inversion
-from isofit.inversion.inverse_mcmc import MCMCInversion
+from isofit.inversion.inversion_wrapper import InversionWrapper
 
 
 class Isofit:
@@ -64,6 +63,7 @@ class Isofit:
         self.config = None
 
         # Load configuration file
+        # This is doing something
         self.config = configs.create_new_config(config_file)
         self.config.get_config_errors()
 
@@ -107,7 +107,9 @@ class Isofit:
         """
 
         logging.info("Building first forward model, will generate any necessary LUTs")
+        # Initialize the forward model with n surfaces and states
         self.fm = fm = ForwardModel(self.config)
+
         if row_column is not None:
             ranges = row_column.split(",")
             if len(ranges) == 1:
@@ -210,7 +212,13 @@ class Worker(object):
         )
         self.config = config
         self.fm = forward_model
-        # self.fm = ForwardModel(self.config)
+
+        # Initialize ouput class
+        self.io = IO(self.config, self.fm)
+
+        # Two part initialization to avoid circular class ref
+        self.ivs = InversionWrapper(self.config, self.fm)
+        self.ivs.iv_lookup = self.ivs.construct_inversions(self.fm)
 
         self.approximate_total_spectra = None
         if total_workers is not None:
@@ -229,33 +237,18 @@ class Worker(object):
             input_data = self.io.get_components_at_index(row, col)
 
             """
-            This is one way to do this. It effectively means that we
-            are giving each pixel (spectra) its own statevector and surface
-            model. The other way to input the classified surfaces into
-            the workflow would be to add an interative step into apply_oe.
-            That would mean however at its simplest, 
-            that there would have to be n-separate config files and
-            n-number of h2o/rfl files for each surface class that would
-            have to be stitched together.
+            This may end up being redundant. The self.invs.inversions is a
+            dict that has the secific statevector within it. I'm a little fuzzy
+            on if this fucntion below will mess things up across workers.
+            In effect, I'm defining the surface and state twice. Once in setting
+            up the inversion wrapper, and once below."""
 
-            The advantage of the way I did it here is that no image
-            stitching is necessary.
-            """
-            # Set up row-col specific state vector in the forward model
-            self.fm.call_rowcol_surface(row, col)
-            self.fm.construct_state_vector()
+            (self.fm.surface, self.fm.state, pixel_class) = (
+                self.fm.get_surface_and_state(row, col)
+            )
 
-            # Update inversion method
-            if self.config.implementation.mode == "mcmc_inversion":
-                self.iv = MCMCInversion(self.config, self.fm)
-            elif self.config.implementation.mode in ["inversion", "simulation"]:
-                self.iv = Inversion(self.config, self.fm)
-            else:
-                # This should never be reached due to configuration checking
-                raise AttributeError("Config implementation mode node valid")
-
-            # Initialize ouput class
-            self.io = IO(self.config, self.fm)
+            # finalize the inversion to use
+            self.iv = self.ivs.iv_lookup[pixel_class]
 
             self.completed_spectra += 1
             if input_data is not None:

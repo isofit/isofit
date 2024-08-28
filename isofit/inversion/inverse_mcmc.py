@@ -83,8 +83,10 @@ class MCMCInversion(Inversion):
         # We will truncate non-surface parameters to their bounds, but leave
         # Surface reflectance unconstrained so it can dip slightly below zero
         # in a channel without invalidating the whole vector
-        bounds = np.array([self.fm.bounds[0].copy(), self.fm.bounds[1].copy()])
-        bounds[:, self.fm.idx_surface] = np.array([[-np.inf], [np.inf]])
+        bounds = np.array(
+            [self.fm.state.bounds[0].copy(), self.fm.state.bounds[1].copy()]
+        )
+        bounds[:, self.fm.state.idx_surface] = np.array([[-np.inf], [np.inf]])
 
         # Initialize to conjugate gradient solution
         x_MAP = Inversion.invert(self, rdn_meas, geom)[-1]

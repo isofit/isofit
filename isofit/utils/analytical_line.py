@@ -30,12 +30,14 @@ from spectral.io import envi
 
 from isofit import ray
 from isofit.configs import configs
-from isofit.core.common import envi_header, load_spectrum
+from isofit.core.common import envi_header, load_spectrum, match_statevector
 from isofit.core.fileio import write_bil_chunk
 from isofit.core.forward import ForwardModel
 from isofit.core.geometry import Geometry
-from isofit.inversion.inverse import Inversion
 from isofit.inversion.inverse_simple import invert_analytical
+
+# from isofit.inversion.inversions.inverse import Inversion
+from isofit.inversion.inversion_wrapper import InversionWrapper
 from isofit.utils.atm_interpolation import atm_interpolation
 
 
@@ -80,18 +82,26 @@ def analytical_line(
 
     subs_state_file = config.output.estimated_state_file
     subs_loc_file = config.input.loc_file
+    subs_class_file = config.forward_model.surface.surface_class_file
 
+    """Why does the glint model surface have to be explicitely stated? 
+    Shouldn't this be handled the same regardless of surface? 
+    If it is important for a reason I'm not aware of, we should handle 
+    it outside of this. If glint -> segmentation_file=None always.
+    I'm leaving the lines in, but commented out for now."""
     if (
-        segmentation_file is None
-        or config.forward_model.surface.surface_category == "glint_model_surface"
+        segmentation_file
+        is None
+        # or config.forward_model.surface.surface_category == "glint_model_surface"
     ):
         lbl_file = subs_state_file.replace("_subs_state", "_lbl")
     else:
         lbl_file = segmentation_file
 
     if (
-        output_rfl_file is None
-        or config.forward_model.surface.surface_category == "glint_model_surface"
+        output_rfl_file
+        is None
+        # or config.forward_model.surface.surface_category == "glint_model_surface"
     ):
         analytical_state_file = subs_state_file.replace(
             "_subs_state", "_state_analytical"
@@ -100,8 +110,9 @@ def analytical_line(
         analytical_state_file = output_rfl_file
 
     if (
-        output_unc_file is None
-        or config.forward_model.surface.surface_category == "glint_model_surface"
+        output_unc_file
+        is None
+        # or config.forward_model.surface.surface_category == "glint_model_surface"
     ):
         analytical_state_unc_file = subs_state_file.replace(
             "_subs_state", "_state_analytical_uncert"
@@ -110,17 +121,20 @@ def analytical_line(
         analytical_state_unc_file = output_unc_file
 
     if (
-        atm_file is None
-        or config.forward_model.surface.surface_category == "glint_model_surface"
+        atm_file
+        is None
+        # or config.forward_model.surface.surface_category == "glint_model_surface"
     ):
         atm_file = subs_state_file.replace("_subs_state", "_atm_interp")
     else:
         atm_file = atm_file
 
-    fm = ForwardModel(config)
-    iv = Inversion(config, fm)
+    fm = ForwardModel(config, subs=False)
+    ivs = InversionWrapper(config, fm)
+    ivs.iv_lookup = ivs.construct_inversions(fm)
 
     if os.path.isfile(atm_file) is False:
+        # This should match the necesary state elements based on the name
         atm_interpolation(
             reference_state_file=subs_state_file,
             reference_locations_file=subs_loc_file,
@@ -137,14 +151,22 @@ def analytical_line(
     rdn = rdn_ds.open_memmap(interleave="bip")
     rdns = rdn.shape
 
+    """If there are surface states, should they be broken out as separate file,
+    or included into the surface retrieval? First pass, include them in the
+    surface retrieval"""
     output_metadata = rdn_ds.metadata
     output_metadata["interleave"] = "bil"
     output_metadata["description"] = "L2A Analytyical per-pixel surface retrieval"
-    output_metadata["bands"] = str(len(fm.idx_surface))
+    output_metadata["bands"] = f"{len(fm.full_idx_surface)}"
 
-    outside_ret_windows = np.zeros(len(fm.surface.idx_lamb), dtype=int)
-    outside_ret_windows[iv.winidx] = 1
-    output_metadata["bbl"] = "{" + ",".join([str(x) for x in outside_ret_windows]) + "}"
+    # Get return windows
+    outside_ret_windows = np.zeros(len(fm.full_idx_surf_rfl), dtype=int)
+
+    # Need a way to get the window index, which should be constant with a
+    # constant instrument
+    outside_ret_windows[ivs.winidx] = 1
+    # output_metadata["bbl"] = "{" + ",".join([str(x) for x in outside_ret_windows]) + "}"
+    output_metadata["bbl"] = "{" + ",".join([f"{x}" for x in outside_ret_windows]) + "}"
 
     if "emit pge input files" in list(output_metadata.keys()):
         del output_metadata["emit pge input files"]
@@ -182,6 +204,7 @@ def analytical_line(
         for obj in (
             config,
             fm,
+            ivs,
             atm_file,
             analytical_state_file,
             analytical_state_unc_file,
@@ -217,6 +240,7 @@ class Worker(object):
         self,
         config: configs.Config,
         fm: ForwardModel,
+        ivs: InversionWrapper,
         RT_state_file: str,
         analytical_state_file: str,
         analytical_state_unc_file: str,
@@ -243,8 +267,10 @@ class Worker(object):
             datefmt="%Y-%m-%d,%H:%M:%S",
         )
         self.config = config
+
+        # Handle multi-surface
         self.fm = fm
-        self.iv = Inversion(self.config, self.fm)
+        self.ivs = ivs
 
         self.completed_spectra = 0
         self.hash_table = OrderedDict()
@@ -283,29 +309,45 @@ class Worker(object):
         start_line, stop_line = startstop
         output_state = (
             np.zeros(
-                (stop_line - start_line, rt_state.shape[1], len(self.fm.idx_surface))
+                (
+                    stop_line - start_line,
+                    rt_state.shape[1],
+                    len(self.fm.full_idx_surface),
+                )
             )
             - 9999
         )
         output_state_unc = (
             np.zeros(
-                (stop_line - start_line, rt_state.shape[1], len(self.fm.idx_surface))
+                (
+                    stop_line - start_line,
+                    rt_state.shape[1],
+                    len(self.fm.full_idx_surface),
+                )
             )
             - 9999
         )
 
         for r in range(start_line, stop_line):
             for c in range(output_state.shape[1]):
+                (self.fm.surface, self.fm.state, pixel_class) = (
+                    self.fm.get_surface_and_state(r, c)
+                )
+                self.iv = self.ivs.iv_lookup[pixel_class]
+
                 meas = rdn[r, c, :]
                 if self.radiance_correction is not None:
                     meas *= self.radiance_correction
                 if np.all(meas < 0):
                     continue
-                x_RT = rt_state[r, c, self.fm.idx_RT - len(self.fm.idx_surface)]
+
+                x_RT = rt_state[
+                    r, c, self.fm.full_idx_RT - len(self.fm.full_idx_surface)
+                ]
                 geom = Geometry(obs=obs[r, c, :], loc=loc[r, c, :])
 
                 states, unc = invert_analytical(
-                    self.iv.fm,
+                    self.fm,
                     self.iv.winidx,
                     meas,
                     geom,
@@ -315,9 +357,22 @@ class Worker(object):
                     self.hash_size,
                 )
 
-                output_state[r - start_line, c, :] = states[-1][self.fm.idx_surface]
+                # Match pixel-specific to general statevector
+                state_est = states[-1]
+                full_state_est = match_statevector(
+                    state_est, self.fm.full_statevec, self.fm.state.statevec
+                )
 
-                output_state_unc[r - start_line, c, :] = unc[self.fm.idx_surface]
+                output_state[r - start_line, c, :] = full_state_est[
+                    self.fm.state.idx_surface
+                ]
+
+                full_unc = match_statevector(
+                    unc, self.fm.full_statevec, self.fm.state.statevec
+                )
+                output_state_unc[r - start_line, c, :] = full_unc[
+                    self.fm.state.idx_surface
+                ]
 
             logging.info(f"Analytical line writing line {r}")
 
@@ -325,7 +380,7 @@ class Worker(object):
                 output_state[r - start_line, ...].T,
                 self.analytical_state_file,
                 r,
-                (rdn.shape[0], rdn.shape[1], len(self.fm.idx_surface)),
+                (rdn.shape[0], rdn.shape[1], len(self.fm.state.idx_surface)),
             )
             write_bil_chunk(
                 output_state_unc[r - start_line, ...].T,

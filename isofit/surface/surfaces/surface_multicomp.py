@@ -26,8 +26,10 @@ from scipy.linalg import block_diag, norm
 from isofit.configs import Config
 from isofit.core.common import svd_inv
 
+from .surface_base import BaseSurface
 
-class MultiComponentSurface:
+
+class MultiComponentSurface(BaseSurface):
     """A model of the surface based on a collection of multivariate
     Gaussians, with one or more equiprobable components and full
     covariance matrices.
@@ -37,12 +39,12 @@ class MultiComponentSurface:
     Multivariate Gaussian surface model.
     """
 
-    def __init__(self, full_config: Config):
-        config = full_config.forward_model.surface
+    def __init__(self, config: dict, params: dict):
+        super().__init__(config)
 
         # Check to see if .mat surface file exists
-        if exists(vars(config).get("surface_file", "")):
-            model_dict = loadmat(config.surface_file)
+        if exists(config.get("surface_file", "")):
+            model_dict = loadmat(config["surface_file"])
         else:
             raise FileNotFoundError("No surface .mat file exists")
 
@@ -62,8 +64,9 @@ class MultiComponentSurface:
         else:
             raise ValueError("Unrecognized Normalization: %s\n" % self.normalize)
 
-        self.selection_metric = config.selection_metric
-        self.select_on_init = config.select_on_init
+        # Place holder until I work out how to pass these in as kwargs
+        self.selection_metric = params.get("selection_metric", "Euclidean")
+        self.select_on_init = params.get("select_on_init", True)
 
         # Reference values are used for normalizing the reflectances.
         # in the VSWIR regime, reflectances are normalized so that the model

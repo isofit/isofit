@@ -3,6 +3,9 @@
 #  Copyright 2018 California Institute of Technology
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
+# For the analytical line, the forward model also needs to carry
+# The full idx_surface and shared idx_lamb across the different
+# state vectors
 #  you may not use this file except in compliance with the License.
 #  You may obtain a copy of the License at
 #
@@ -30,7 +33,7 @@ import xarray as xr
 from spectral.io import envi
 
 from isofit.configs import Config
-from isofit.core.common import envi_header
+from isofit.core.common import envi_header, match_statevector
 from isofit.core.forward import ForwardModel
 from isofit.inversion.inverse import Inversion
 from isofit.inversion.inverse_simple import invert_algebraic, invert_simple
@@ -366,7 +369,11 @@ class IO:
         self.reads = 0
         self.n_rows = 1
         self.n_cols = 1
-        self.n_sv = len(forward.statevec)
+
+        # Use the pre-defined full statevec
+        self.full_statevec = forward.full_statevec
+
+        self.n_sv = len(self.full_statevec)
         self.n_chan = len(forward.instrument.wl_init)
         self.flush_rate = config.implementation.io_buffer_size
 
@@ -378,7 +385,7 @@ class IO:
 
         # Names of either the wavelength or statevector outputs
         wl_names = [("Channel %i" % i) for i in range(self.n_chan)]
-        sv_names = forward.statevec.copy()
+        sv_names = self.full_statevec.copy()
 
         self.input_datasets, self.output_datasets, self.map_info = {}, {}, "{}"
 
@@ -594,7 +601,10 @@ class IO:
 
             ############ Start with all of the 'independent' calculations
             if "estimated_state_file" in self.output_datasets:
-                to_write["estimated_state_file"] = state_est
+                # state_est transformed to reflect io.full_statevec
+                to_write["estimated_state_file"] = match_statevector(
+                    state_est, self.full_statevec, fm.state.statevec
+                )
 
             if "path_radiance_file" in self.output_datasets:
                 path_est = fm.calc_meas(
@@ -614,10 +624,12 @@ class IO:
 
             if "posterior_uncertainty_file" in self.output_datasets:
                 S_hat, K, G = iv.calc_posterior(state_est, geom, meas)
-                to_write["posterior_uncertainty_file"] = np.sqrt(np.diag(S_hat))
+                # psterior uncertainty transformed to reflect io.full_statevec
+                to_write["posterior_uncertainty_file"] = match_statevector(
+                    np.sqrt(np.diag(S_hat)), self.full_statevec, fm.state.statevec
+                )
 
             ############ Now proceed to the calcs where they may be some overlap
-
             if any(
                 item in ["estimated_emission_file", "apparent_reflectance_file"]
                 for item in self.output_datasets
@@ -735,11 +747,11 @@ class IO:
             flush_immediately: IO argument telling us to immediately write to disk, ignoring config settings
             input_data: optionally overwride self.current_input_data
         """
-
         if input_data is None:
             to_write = self.build_output(states, self.current_input_data, fm, iv)
         else:
             to_write = self.build_output(states, input_data, fm, iv)
+
         self.write_datasets(
             row, col, to_write, states, flush_immediately=flush_immediately
         )

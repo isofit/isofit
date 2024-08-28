@@ -32,64 +32,35 @@ from isofit.core.common import combos, conditional_gaussian, eps, svd_inv, svd_i
 from isofit.core.forward import ForwardModel
 
 from .inverse_simple import invert_simple
+from .inversion_wrapper import InversionWrapper
 
 ### Variables ###
 
 error_code = -1
 
 
-### Classes ###
-
-
-class Inversion:
+class Inversion(InversionWrapper):
     def __init__(self, full_config: Config, forward: ForwardModel):
-        """Initialization specifies retrieval subwindows for calculating
-        measurement cost distributions."""
-
-        config: InversionConfig = full_config.implementation.inversion
-        self.config = config
+        """I'm not 100% if this is the best way to do this inheritance.
+        Good question for James. Mostly it strikes me weird that I have
+        to pass the full_config into the more general Inversion class.
+        There must be a correct way to do this where I don't."""
+        InversionWrapper.__init__(self, full_config, forward)
 
         self.lasttime = time.time()
         self.fm = forward
-        self.hashtable = OrderedDict()  # Hash table for caching inverse matrices
-        self.max_table_size = full_config.implementation.max_hash_table_size
-        self.state_indep_S_hat = False
-
-        self.windows = config.windows  # Retrieval windows
-        self.mode = full_config.implementation.mode
-        self.state_indep_S_hat = config.cressie_map_confidence
-
-        # We calculate the instrument channel indices associated with the
-        # retrieval windows using the initial instrument calibration.  These
-        # window indices never change throughout the life of the object.
-        self.winidx = np.array((), dtype=int)  # indices of retrieval windows
-        for lo, hi in self.windows:
-            idx = np.where(
-                np.logical_and(
-                    self.fm.instrument.wl_init > lo, self.fm.instrument.wl_init < hi
-                )
-            )[0]
-            self.winidx = np.concatenate((self.winidx, idx), axis=0)
-        self.outside_ret_windows = np.ones(self.fm.n_meas, dtype=bool)
-        self.outside_ret_windows[self.winidx] = False
-
-        self.counts = 0
-        self.inversions = 0
-
-        self.integration_grid = OrderedDict(config.integration_grid)
-        self.grid_as_starting_points = config.inversion_grid_as_preseed
 
         if self.grid_as_starting_points:
             # We're using the integration grid to preseed, not fix values.  So
             # Track the grid, but don't fix the integration grid points
             self.inds_fixed = []
             self.inds_preseed = np.array(
-                [self.fm.statevec.index(k) for k in self.integration_grid.keys()]
+                [self.fm.state.statevec.index(k) for k in self.integration_grid.keys()]
             )
             self.inds_free = np.array(
                 [
                     i
-                    for i in np.arange(self.fm.nstate, dtype=int)
+                    for i in np.arange(self.fm.state.nstate, dtype=int)
                     if not (i in self.inds_fixed)
                 ]
             )
@@ -98,12 +69,12 @@ class Inversion:
             # We're using the integration grid to fix values.  So
             # Get set up to fix the integration grid points
             self.inds_fixed = np.array(
-                [self.fm.statevec.index(k) for k in self.integration_grid.keys()]
+                [self.fm.state.statevec.index(k) for k in self.integration_grid.keys()]
             )
             self.inds_free = np.array(
                 [
                     i
-                    for i in np.arange(self.fm.nstate, dtype=int)
+                    for i in np.arange(self.fm.state.nstate, dtype=int)
                     if not (i in self.inds_fixed)
                 ]
             )
@@ -116,21 +87,21 @@ class Inversion:
             "method": "trf",
             "max_nfev": 20,
             "bounds": (
-                self.fm.bounds[0][self.inds_free],
-                self.fm.bounds[1][self.inds_free],
+                self.fm.state.bounds[0][self.inds_free],
+                self.fm.state.bounds[1][self.inds_free],
             ),
-            "x_scale": self.fm.scale[self.inds_free],
+            "x_scale": self.fm.state.scale[self.inds_free],
         }
 
         # Update the rest from the config
         for (
             key,
             item,
-        ) in config.least_squares_params.get_config_options_as_dict().items():
+        ) in self.config.least_squares_params.get_config_options_as_dict().items():
             self.least_squares_params[key] = item
 
     def full_statevector(self, x_free):
-        x = np.zeros(self.fm.nstate)
+        x = np.zeros(self.fm.state.nstate)
         if self.x_fixed is not None:
             x[self.inds_fixed] = self.x_fixed
         x[self.inds_free] = x_free
@@ -341,7 +312,7 @@ class Inversion:
 
             # Update regions outside retrieval windows to match priors
             if self.config.priors_in_initial_guess:
-                prior_subset_idx = np.arange(len(x0))[self.fm.idx_surf_rfl][
+                prior_subset_idx = np.arange(len(x0))[self.fm.state.idx_surf_rfl][
                     self.outside_ret_windows
                 ]
                 x0[prior_subset_idx] = self.fm.surface.xa(x0, geom)[prior_subset_idx]
@@ -351,14 +322,14 @@ class Inversion:
             x0 = x0[self.inds_free]
 
             # Catch any state vector elements outside of bounds
-            lower_bound_violation = x0 < self.fm.bounds[0][self.inds_free]
+            lower_bound_violation = x0 < self.fm.state.bounds[0][self.inds_free]
             x0[lower_bound_violation] = (
-                self.fm.bounds[0][self.inds_free][lower_bound_violation] + eps
+                self.fm.state.bounds[0][self.inds_free][lower_bound_violation] + eps
             )
 
-            upper_bound_violation = x0 > self.fm.bounds[1][self.inds_free]
+            upper_bound_violation = x0 > self.fm.state.bounds[1][self.inds_free]
             x0[upper_bound_violation] = (
-                self.fm.bounds[1][self.inds_free][upper_bound_violation] - eps
+                self.fm.state.bounds[1][self.inds_free][upper_bound_violation] - eps
             )
             del lower_bound_violation, upper_bound_violation
 
@@ -372,8 +343,8 @@ class Inversion:
                 x0[self.inds_preseed] = combo
 
             # Record initializaation state
-            geom.x_surf_init = x[self.fm.idx_surface]
-            geom.x_RT_init = x[self.fm.idx_RT]
+            geom.x_surf_init = x[self.fm.state.idx_surface]
+            geom.x_RT_init = x[self.fm.state.idx_RT]
 
             # Seps is the covariance of "observation noise" including both
             # measurement noise from the instrument as well as variability due to

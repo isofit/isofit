@@ -27,8 +27,10 @@ from scipy.io import loadmat
 from isofit.configs import Config
 from isofit.core.common import load_spectrum, load_wavelen, svd_inv
 
+from .surface_base import BaseSurface
 
-class SingleComponentSurface:
+
+class SingleComponentSurface(BaseSurface):
     """A model of the surface.
     This isn't built out at all. Could re-tool to produce a single
     component surface prior.
@@ -37,8 +39,8 @@ class SingleComponentSurface:
     in the same format as the multi-component
     """
 
-    def __init__(self, full_config: Config):
-        config = full_config.forward_model.surface
+    def __init__(self, config: dict, params: dict):
+        super().__init__(config)
 
         # Check to see if .mat surface file exists
         if exists(vars(config).get("surface_file", "")):

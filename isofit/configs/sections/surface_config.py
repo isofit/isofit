@@ -27,35 +27,40 @@ from isofit.configs.base_config import BaseConfigSection
 
 class SurfaceConfig(BaseConfigSection):
     """
-    Instrument configuration.
+    Surface configuration.
     """
 
     def __init__(self, sub_configdic: dict = None):
-        self._surface_file_type = str
-        self.surface_file = None
+        # # Multicomponent Surface
+        # self._select_on_init_type = bool
+        # self.select_on_init = True
+        # """bool: This field, if present and set to true, forces us to use
+        # any initialization state and never change. The state is preserved
+        # in the geometry object so that this object stays stateless"""
 
-        self._surface_category_type = str
-        self.surface_category = None
+        # # Move this stuff into the surface model
+        # self._selection_metric_type = str
+        # self.selection_metric = "Euclidean"
 
-        self._wavelength_file_type = str
-        self.wavelength_file = None
+        # # Surface Thermal - Move this into the surface model
+        # self._emissivity_for_surface_T_init_type = float
+        # self.emissivity_for_surface_T_init = 0.98
+        # """ Initial Value recommended by Glynn Hulley."""
 
-        # Multicomponent Surface
-        self._select_on_init_type = bool
-        self.select_on_init = True
-        """bool: This field, if present and set to true, forces us to use any initialization state and never change. 
-        The state is preserved in the geometry object so that this object stays stateless"""
+        # self._surface_T_prior_sigma_degK_type = float
+        # self.surface_T_prior_sigma_degK = 1.0
 
-        self._selection_metric_type = str
-        self.selection_metric = "Euclidean"
+        self._sub_surface_class_file_type = str
+        self.sub_surface_class_file = None
 
-        # Surface Thermal
-        self._emissivity_for_surface_T_init_type = float
-        self.emissivity_for_surface_T_init = 0.98
-        """ Initial Value recommended by Glynn Hulley."""
+        self._surface_class_file_type = str
+        self.surface_class_file = None
 
-        self._surface_T_prior_sigma_degK_type = float
-        self.surface_T_prior_sigma_degK = 1.0
+        self._Surfaces_type = dict
+        self.Surfaces = None
+
+        self._surface_params_type = dict
+        self.surface_params = None
 
         self.set_config_options(sub_configdic)
 

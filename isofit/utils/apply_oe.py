@@ -544,7 +544,12 @@ def apply_oe(args):
             logging.info("Existing h2o-presolve solutions found, using those.")
 
         h2o = envi.open(envi_header(paths.h2o_subs_path))
-        h2o_est = h2o.read_band(-1)[:].flatten()
+
+        # Find the band that is H2O
+        h2o_band = [
+            i for i, name in enumerate(h2o.metadata["band names"]) if name == "H2OSTR"
+        ][0]
+        h2o_est = h2o.read_band(h2o_band)[:].flatten()
 
         p05 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 2)
         p95 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 98)

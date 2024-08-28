@@ -22,8 +22,8 @@ import numpy as np
 import scipy.linalg
 
 from isofit.configs import Config
+from isofit.core.common import emissive_radiance, eps
 
-from ..core.common import emissive_radiance, eps
 from .surface_multicomp import MultiComponentSurface
 
 
@@ -31,12 +31,9 @@ class ThermalSurface(MultiComponentSurface):
     """A model of the surface based on a Mixture of a hot Black Body and
     Multicomponent cold surfaces."""
 
-    def __init__(self, full_config: Config):
+    def __init__(self, config: dict, params: dict):
         """."""
-
-        config = full_config.forward_model.surface
-
-        super().__init__(full_config)
+        super().__init__(config, params)
 
         # TODO: Enforce this attribute in the config, not here (this is hidden)
         # Handle additional state vector elements
@@ -49,8 +46,11 @@ class ThermalSurface(MultiComponentSurface):
         self.emissive = True
         self.n_state = len(self.init)
 
-        self.emissivity_for_surface_T_init = config.emissivity_for_surface_T_init
-        self.surface_T_prior_sigma_degK = config.surface_T_prior_sigma_degK
+        # Initial Value recommended by Glynn Hulley.
+        self.emissivity_for_surface_T_init = params.get(
+            "emissivity_for_surface_T_init", 0.98
+        )
+        self.surface_T_prior_sigma_degK = params.get("surface_T_prior_sigma_degK", 1.0)
 
     def xa(self, x_surface, geom):
         """Mean of prior distribution, calculated at state x.  We find

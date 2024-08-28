@@ -26,7 +26,6 @@ from isofit.core.common import (
     json_load_ascii,
     resample_spectrum,
 )
-from isofit.surface import Surfaces
 from isofit.utils import surface_model
 
 
@@ -1661,6 +1660,16 @@ def reassemble_cube(matching_indices: np.array, paths: Pathnames):
 
 def make_surface_config(paths: Pathnames, surface_category="multicomponent_surface"):
 
+    # Initialize config dict
+    surface_config_dict = {
+        "surface_class_file": (vars(paths).get("surface_class_file", None)),
+        "sub_surface_class_file": (vars(paths).get("subs_class_path", None)),
+        "Surfaces": {},
+        "surface_params": {
+            "select_on_init": True,
+            "selection_metric": "Euclidean",
+        },
+    }
     # Check to see if a classification file is being propogated
     if paths.surface_class_file:
         surface_class_ds = envi.open(envi_header(paths.surface_class_file))
@@ -1670,10 +1679,9 @@ def make_surface_config(paths: Pathnames, surface_category="multicomponent_surfa
 
         # mapping name to surface name - terrible way to do this
         # because it is contingent on the name in the "mapping" field
-        surface_models = {}
         for i, name in enumerate(class_mapping):
             if name == "water":
-                surface_category = "glint_model_surface"
+                surface_category = "multicomponent_surface"
             elif name == "land":
                 surface_category = "multicomponent_surface"
             elif name == "cloud":
@@ -1681,20 +1689,16 @@ def make_surface_config(paths: Pathnames, surface_category="multicomponent_surfa
             else:
                 surface_category = "multicomponent_surface"
 
-            surface_models[i] = {
+            surface_config_dict["Surfaces"][str(i)] = {
                 "surface_file": paths.surface_path,
                 "surface_category": surface_category,
-                "select_on_init": True,
-                "surface_class_file": (vars(paths).get("subs_class_path", None)),
             }
     else:
-        surface_models = {
-            0: {
+        surface_config_dict["Surfaces"] = {
+            "0": {
                 "surface_file": paths.surface_path,
                 "surface_category": surface_category,
-                "select_on_init": True,
-                "surface_class_file": (vars(paths).get("subs_class_path", None)),
             }
         }
 
-    return surface_models
+    return surface_config_dict
