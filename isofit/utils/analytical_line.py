@@ -380,13 +380,13 @@ class Worker(object):
                 output_state[r - start_line, ...].T,
                 self.analytical_state_file,
                 r,
-                (rdn.shape[0], rdn.shape[1], len(self.fm.state.idx_surface)),
+                (rdn.shape[0], rdn.shape[1], len(self.fm.full_idx_surface)),
             )
             write_bil_chunk(
                 output_state_unc[r - start_line, ...].T,
                 self.analytical_state_unc_file,
                 r,
-                (rdn.shape[0], rdn.shape[1], len(self.fm.idx_surface)),
+                (rdn.shape[0], rdn.shape[1], len(self.fm.full_idx_surface)),
             )
 
 
