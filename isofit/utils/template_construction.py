@@ -3,6 +3,7 @@
 # Authors: Philip G. Brodrick and Niklas Bohn
 #
 
+import glob
 import json
 import logging
 import os
@@ -66,6 +67,7 @@ class Pathnames:
 
         # Surface classification here so it doesn't get lost
         self.surface_class_file = vars(args).get("surface_class", None)
+
         # Names from inputs
         self.aerosol_climatology = args.aerosol_climatology_path
         self.input_radiance_file = args.input_radiance
@@ -75,7 +77,8 @@ class Pathnames:
 
         self.full_lut_directory = abspath(join(self.working_directory, "lut_full/"))
 
-        self.surface_path = args.surface_path
+        self.surface_path = vars(args).get("surface_path", None)
+        self.surface_path_dir = vars(args).get("surface_path_dir", None)
 
         # set up some sub-directories
         self.lut_h2o_directory = abspath(join(self.working_directory, "lut_h2o/"))
@@ -144,10 +147,12 @@ class Pathnames:
         self.loc_subs_path = abspath(
             join(self.input_data_directory, self.fid + "_subs_loc")
         )
-        # Note that this is changed to reflect the possible classification file
+
+        # only if there is a surface_class file
         self.subs_class_path = abspath(
             join(self.input_data_directory, self.fid + "_subs_class")
         )
+
         self.rfl_subs_path = abspath(
             join(self.output_directory, self.fid + "_subs_rfl")
         )
@@ -442,6 +447,13 @@ def get_grid(minval: float, maxval: float, spacing: float, min_spacing: float):
 def check_surface_model(surface_path: str, wl: np.array, paths: Pathnames) -> str:
     """
     Checks and rebuilds surface model if needed.
+
+    TODO - Could be extended to allow for both dir and file surface_path
+           inputs. The dir inputs could accomdate complex surfaces where
+           different surface priors might be useful. This extension
+           would be relatively easy. Wrap this in a check for surface_path
+           vs. surface_path_dir. Each file in the dir can undergo the
+           same check coded here.
 
     Args:
         surface_path: path to surface model or config dict
@@ -1659,9 +1671,28 @@ def reassemble_cube(matching_indices: np.array, paths: Pathnames):
 
 
 def make_surface_config(paths: Pathnames, surface_category="multicomponent_surface"):
+    """
+    Makes the surface config for a multi-class or single-class surface.
+    It's currently a little akward in that there is no true "base" class
+    for the multi-surface. This means that in the cases where there is only
+    a single class surface, to use descriptive config keys, I would have to
+    use a "base" descriptor. I'm not sure how to code in a base surface path.
+
+    This only becomes relevant if I change from pixel value surfaces config keys
+    to descriptive (e.g. water, cloud vs. '0', '1') surfaces config keys.
+
+    Args:
+        paths: Pathnames object with all key values passed from apply_oe
+        surface_category: Base surface category
+
+    Returns:
+        surface_config_dict: Dictionary with all surface parameters and file
+                             locations.
+    """
 
     # Initialize config dict
     surface_config_dict = {
+        "multi_surface_flat": False,
         "surface_class_file": (vars(paths).get("surface_class_file", None)),
         "sub_surface_class_file": (vars(paths).get("subs_class_path", None)),
         "Surfaces": {},
@@ -1672,29 +1703,66 @@ def make_surface_config(paths: Pathnames, surface_category="multicomponent_surfa
     }
     # Check to see if a classification file is being propogated
     if paths.surface_class_file:
+        surface_config_dict["multi_surface_flag"] = True
+
         surface_class_ds = envi.open(envi_header(paths.surface_class_file))
 
         # Get the class mapping
         class_mapping = surface_class_ds.metadata["mapping"]
 
         # mapping name to surface name - terrible way to do this
-        # because it is contingent on the name in the "mapping" field
-        for i, name in enumerate(class_mapping):
-            if name == "water":
-                surface_category = "multicomponent_surface"
-            elif name == "land":
-                surface_category = "multicomponent_surface"
-            elif name == "cloud":
-                surface_category = "multicomponent_surface"
-            else:
-                surface_category = "multicomponent_surface"
+        # Could house this in a standalone file and call it in
+        surface_mapping = {
+            "water": "multi_component_surface",
+            "land": "multi_component_surface",
+            "cloud": "multi_component_surface",
+        }
 
+        # Iterate through all classes present in class image
+        for i, name in enumerate(class_mapping):
+            surface_category = surface_mapping.get(name, "single_component_surface")
+
+            # If surface_path given, use for all surfaces
+            if paths.surface_path:
+                surface_path = paths.surface_path
+
+            # If only directory is given. Find surfaces for each class
+            elif paths.surface_path_dir:
+                regex = f"*_{name}_*.mat"
+                matched_paths = glob.glob(os.path.join(paths.surface_path_dir, regex))
+
+                # Rigid and errors if no surface file for class
+                if not len(matched_paths):
+                    logging.exception(
+                        "No surface path or surface path or surface \
+                        path directory found in surface_path_dir"
+                    )
+                    raise FileNotFoundError
+                surface_path = matched_paths[0]
+
+            # Handles case if no dir or file is given
+            else:
+                logging.exception(
+                    "No surface path or surface path or surface \
+                    path directory given"
+                )
+                raise FileNotFoundError
+
+            # Set up "Surfaces" component of surface config
+            # Eventually want the str(i) to be the class name: name
+            # surface_config_dict["Surfaces"][name] = {
             surface_config_dict["Surfaces"][str(i)] = {
-                "surface_file": paths.surface_path,
+                "surface_file": surface_path,
                 "surface_category": surface_category,
             }
     else:
+
+        if not paths.surface_path:
+            logging.exception("No surface prior path found.")
+            raise FileNotFoundError
+
         surface_config_dict["Surfaces"] = {
+            # "base": {
             "0": {
                 "surface_file": paths.surface_path,
                 "surface_category": surface_category,

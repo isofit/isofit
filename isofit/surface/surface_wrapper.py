@@ -36,21 +36,23 @@ class SurfaceWrapper:
     def __init__(self, full_config: Config, subs: bool = True):
         # Save the full config to the surface object
         # Is it running in subs-mode
-        if subs:
-            self.class_file = full_config.forward_model.surface.sub_surface_class_file
-        else:
-            self.class_file = full_config.forward_model.surface.surface_class_file
+        surface_config = full_config.forward_model.surface
 
-        self.surface_params = full_config.forward_model.surface.surface_params
-        self.surf_lookup = full_config.forward_model.surface.Surfaces
+        self.surface_params = surface_config.surface_params
+        self.surf_lookup = surface_config.Surfaces
         for i, surf_dict in self.surf_lookup.items():
             surf_category = surf_dict["surface_category"]
             self.surf_lookup[i]["surface_model"] = Surfaces[surf_category](
                 surf_dict, self.surface_params
             )
 
-        # Set up pixel groups in the init to only read file once
-        if self.class_file:
+        # Check if this run is a multi-surface run. If so, index the pixels
+        if surface_config.multi_surface_flag:
+            if subs:
+                self.class_file = surface_config.sub_surface_class_file
+            else:
+                self.class_file = surface_config.surface_class_file
+
             classes = envi.open(envi_header(self.class_file)).open_memmap(
                 interleave="bip"
             )
@@ -59,6 +61,8 @@ class SurfaceWrapper:
             for c in self.surf_lookup.keys():
                 pixel_list = np.argwhere(classes == int(c)).astype(int).tolist()
                 self.class_groups.append(pixel_list)
+
+            del classes
 
     def match_class(self, row, col):
         matches = np.zeros((len(self.class_groups))).astype(int)
@@ -69,16 +73,18 @@ class SurfaceWrapper:
                 matches[i] = 0
 
         if len(matches[np.where(matches)]) < 1:
-            raise ValueError(
+            logging.exception(
                 "Pixel did not match any class. \
                              Something is wrong"
             )
+            raise ValueError
 
         elif len(matches[np.where(matches)]) > 1:
-            raise ValueError(
+            logging.exception(
                 "Pixel matches too many classes. \
                              Something is wrong"
             )
+            raise ValueError
 
         return matches[np.where(matches)][0]
 

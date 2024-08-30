@@ -50,6 +50,9 @@ class SurfaceConfig(BaseConfigSection):
         # self._surface_T_prior_sigma_degK_type = float
         # self.surface_T_prior_sigma_degK = 1.0
 
+        self._multi_surface_flag_type = bool
+        self.multi_surface_flag = None
+
         self._sub_surface_class_file_type = str
         self.sub_surface_class_file = None
 
