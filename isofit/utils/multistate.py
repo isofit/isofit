@@ -25,6 +25,10 @@ from scipy.interpolate import interp1d
 from spectral.io import envi
 
 from isofit.configs import Config
+from isofit.core.instrument import Instrument
+from isofit.core.state import StateVector
+from isofit.radiative_transfer.radiative_transfer import RadiativeTransfer
+from isofit.surface.surfaces import Surfaces
 
 from ..core.common import envi_header, load_spectrum, load_wavelen
 
@@ -77,7 +81,7 @@ def match_class(class_groups, row, col):
     return str(matches[np.where(matches)][0])
 
 
-def construct_full_state(self):
+def construct_full_state(full_config):
     """
     Looks at all the model-states present in the config and collapses
     them into a single image-universal statevector. Returns both
@@ -102,8 +106,16 @@ def construct_full_state(self):
     RT_states = []
     instrument_states = []
 
+    instrument = Instrument(full_config)
+    RT = RadiativeTransfer(full_config)
+
+    surface_config = full_config.forward_model.surface
+    params = surface_config.surface_params
+
     # Iterate through the different states to find overlapping state names
-    for i, state in self.states.items():
+    for i, surface in full_config.forward_model.surface.Surfaces.items():
+        surface = Surfaces[surface["surface_category"]](surface, params)
+        state = StateVector(instrument, RT, surface)
         rfl_states += [state.statevec[i] for i in state.idx_surf_rfl]
         nonrfl_states += [state.statevec[i] for i in state.idx_surf_nonrfl]
         RT_states += [state.statevec[i] for i in state.idx_RT]
@@ -116,21 +128,28 @@ def construct_full_state(self):
     instrument_states = sorted(list(set(instrument_states)))
 
     # Rejoin in the same order as the original statevector object
-    self.full_statevec = rfl_states + nonrfl_states + RT_states + instrument_states
+    full_statevec = rfl_states + nonrfl_states + RT_states + instrument_states
 
     # Set up full idx arrays
-    self.full_idx_surface = np.arange(0, len(rfl_states) + len(nonrfl_states))
+    full_idx_surface = np.arange(0, len(rfl_states) + len(nonrfl_states))
 
     start = 0
-    self.full_idx_surf_rfl = np.arange(start, len(rfl_states))
+    full_idx_surf_rfl = np.arange(start, len(rfl_states))
 
     start += len(rfl_states)
-    self.full_idx_surf_nonrfl = np.arange(start, start + len(nonrfl_states))
+    full_idx_surf_nonrfl = np.arange(start, start + len(nonrfl_states))
 
     start += len(nonrfl_states)
-    self.full_idx_RT = np.arange(start, start + len(RT_states))
+    full_idx_RT = np.arange(start, start + len(RT_states))
 
     start += len(RT_states)
-    self.full_idx_instrument = np.arange(start, start + len(instrument_states))
+    full_idx_instrument = np.arange(start, start + len(instrument_states))
 
-    return
+    return (
+        full_statevec,
+        full_idx_surface,
+        full_idx_surf_rfl,
+        full_idx_surf_nonrfl,
+        full_idx_RT,
+        full_idx_instrument,
+    )

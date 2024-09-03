@@ -34,8 +34,6 @@ class Surface:
 
     def __init__(self, full_config: Config, subs: bool = True):
         # Save the full config to the surface object
-        self.surface_config = full_config.forward_model.surface
-
         self.statevec_names = []
         self.bounds = np.array([])
         self.scale = np.array([])

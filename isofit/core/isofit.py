@@ -74,9 +74,6 @@ class Isofit:
         else:
             self.state_pixel_index = [None]
 
-        # Get the full statevec
-        full_statevec = construct_full_statevec(self.config)
-
         # Initialize ray for parallel execution
         rayargs = {
             "address": self.config.implementation.ip_head,
@@ -120,6 +117,19 @@ class Isofit:
         # Initialize the forward model with n surfaces and states
         self.fm = fm = ForwardModel(self.config)
         # Could also pre-initialize the surface, state and inv
+
+        """
+        Get the full statevec. I don't like how this is done
+        Should be set up so that it can be pulled right out of the config
+        """
+        (
+            self.fm.full_statevec,
+            self.fm.full_idx_surface,
+            self.fm.full_idx_surf_rfl,
+            self.fm.full_idx_surf_nonrfl,
+            self.fm.full_idx_RT,
+            self.fm.full_idx_instrument,
+        ) = construct_full_statevec(self.config)
 
         if row_column is not None:
             ranges = row_column.split(",")

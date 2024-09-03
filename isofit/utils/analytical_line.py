@@ -82,6 +82,12 @@ def analytical_line(
     subs_loc_file = config.input.loc_file
     subs_class_file = config.forward_model.surface.surface_class_file
 
+    # Set up the multi-state pixel map
+    if config.forward.surface.multi_surface_flag:
+        state_pixel_index = index_image_by_class(config.forward.surface)
+    else:
+        state_pixel_index = [None]
+
     """Why does the glint model surface have to be explicitely stated? 
     Shouldn't this be handled the same regardless of surface? 
     If it is important for a reason I'm not aware of, we should handle 
@@ -128,9 +134,6 @@ def analytical_line(
         atm_file = atm_file
 
     fm = ForwardModel(config, subs=False)
-    # ivs = InversionWrapper(config, fm)
-    ivs = None
-    ivs.iv_lookup = ivs.construct_inversions(fm)
 
     if os.path.isfile(atm_file) is False:
         # This should match the necesary state elements based on the name
@@ -203,7 +206,7 @@ def analytical_line(
         for obj in (
             config,
             fm,
-            ivs,
+            state_pixel_index,
             atm_file,
             analytical_state_file,
             analytical_state_unc_file,
@@ -239,7 +242,7 @@ class Worker(object):
         self,
         config: configs.Config,
         fm: ForwardModel,
-        iv: Inversion,
+        state_pixel_index: dict,
         RT_state_file: str,
         analytical_state_file: str,
         analytical_state_unc_file: str,
@@ -268,8 +271,9 @@ class Worker(object):
         self.config = config
 
         # Handle multi-surface
+        self.state_pixel_index = state_pixel_index
+
         self.fm = fm
-        self.ivs = ivs
 
         self.completed_spectra = 0
         self.hash_table = OrderedDict()
