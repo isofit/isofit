@@ -25,11 +25,10 @@ from scipy.linalg import block_diag, norm
 
 from isofit.configs import Config
 from isofit.core.common import svd_inv
+from isofit.surface.surface import Surface
 
-from .surface_base import BaseSurface
 
-
-class MultiComponentSurface(BaseSurface):
+class MultiComponentSurface(Surface):
     """A model of the surface based on a collection of multivariate
     Gaussians, with one or more equiprobable components and full
     covariance matrices.

@@ -7,7 +7,7 @@ from isofit.configs.sections.implementation_config import InversionConfig
 from isofit.core.forward import ForwardModel
 
 
-class InversionWrapper:
+class Inversion:
     def __init__(self, full_config: Config, forward: ForwardModel):
         """Initialization for inversion including:
         retrieval subwindows for calculating measurement cost distributions.
@@ -39,7 +39,7 @@ class InversionWrapper:
             )[0]
             self.winidx = np.concatenate((self.winidx, idx), axis=0)
 
-        self.outside_ret_windows = np.ones(forward.n_meas, dtype=bool)
+        self.outside_ret_windows = np.ones(forward.instrument.n_chan, dtype=bool)
         self.outside_ret_windows[self.winidx] = False
 
         self.counts = 0
@@ -48,23 +48,10 @@ class InversionWrapper:
         self.integration_grid = OrderedDict(config.integration_grid)
         self.grid_as_starting_points = config.inversion_grid_as_preseed
 
-    def construct_inversions(self, forward: ForwardModel):
+    def construct_inverse(self, forward: ForwardModel):
         # This can't be imported on init. Introduces circular package error
         from isofit.inversion import Inversions
 
         iv = Inversions.get(self.full_config.implementation.mode, None)
-        if not iv:
-            # This should never be reached due to configuration checking
-            raise AttributeError("Config implementation mode node valid")
 
-        inversions = {}
-        # For each statevector, generate new inversion class
-        for i, state in forward.states.items():
-            forward.state = state
-            inversions[i] = iv(self.full_config, forward)
-            del forward.state
-
-        return inversions
-
-
-# 1. Initialize a generic Inversion with a few key parameters
+        return iv(self.full_config, forward)

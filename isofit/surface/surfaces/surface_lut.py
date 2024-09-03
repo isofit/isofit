@@ -24,9 +24,10 @@ from scipy.linalg import block_diag, norm
 
 from isofit.configs import Config
 from isofit.core.common import VectorInterpolator, svd_inv
+from isofit.surface.surface import Surface
 
 
-class LUTSurface:
+class LUTSurface(Surface):
     """A model of the surface based on an N-dimensional lookup table
     indexed by one or more state vector elements.  We calculate the
     reflectance by multilinear interpolation.  This is good for
@@ -54,7 +55,7 @@ class LUTSurface:
     """
 
     def __init__(self, config: dict, params: dict):
-        """."""
+        super().__init__(config)
 
         if exists(config.get("surface_file", "")):
             model_dict = loadmat(config["surface_file"])

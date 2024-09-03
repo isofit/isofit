@@ -35,9 +35,7 @@ from isofit.core.fileio import write_bil_chunk
 from isofit.core.forward import ForwardModel
 from isofit.core.geometry import Geometry
 from isofit.inversion.inverse_simple import invert_analytical
-
-# from isofit.inversion.inversions.inverse import Inversion
-from isofit.inversion.inversion_wrapper import InversionWrapper
+from isofit.inversion.inversion import Inversion
 from isofit.utils.atm_interpolation import atm_interpolation
 
 
@@ -130,7 +128,8 @@ def analytical_line(
         atm_file = atm_file
 
     fm = ForwardModel(config, subs=False)
-    ivs = InversionWrapper(config, fm)
+    # ivs = InversionWrapper(config, fm)
+    ivs = None
     ivs.iv_lookup = ivs.construct_inversions(fm)
 
     if os.path.isfile(atm_file) is False:
@@ -240,7 +239,7 @@ class Worker(object):
         self,
         config: configs.Config,
         fm: ForwardModel,
-        ivs: InversionWrapper,
+        iv: Inversion,
         RT_state_file: str,
         analytical_state_file: str,
         analytical_state_unc_file: str,

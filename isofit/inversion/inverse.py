@@ -32,20 +32,20 @@ from isofit.core.common import combos, conditional_gaussian, eps, svd_inv, svd_i
 from isofit.core.forward import ForwardModel
 
 from .inverse_simple import invert_simple
-from .inversion_wrapper import InversionWrapper
+from .inversion import Inversion
 
 ### Variables ###
 
 error_code = -1
 
 
-class Inversion(InversionWrapper):
+class Inverse(Inversion):
     def __init__(self, full_config: Config, forward: ForwardModel):
         """I'm not 100% if this is the best way to do this inheritance.
         Good question for James. Mostly it strikes me weird that I have
         to pass the full_config into the more general Inversion class.
         There must be a correct way to do this where I don't."""
-        InversionWrapper.__init__(self, full_config, forward)
+        Inverse.__init__(self, full_config, forward)
 
         self.lasttime = time.time()
         self.fm = forward

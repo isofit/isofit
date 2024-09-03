@@ -31,7 +31,8 @@ from isofit import ray
 from isofit.configs import configs
 from isofit.core.fileio import IO
 from isofit.core.forward import ForwardModel
-from isofit.inversion.inversion_wrapper import InversionWrapper
+from isofit.inversion.inversion import Inversion
+from isofit.utils.multistate import match_class
 
 
 class Isofit:
@@ -66,6 +67,15 @@ class Isofit:
         # This is doing something
         self.config = configs.create_new_config(config_file)
         self.config.get_config_errors()
+
+        # Set up the multi-state pixel map
+        if self.config.forward.surface.multi_surface_flag:
+            self.state_pixel_index = index_image_by_class(self.config.forward.surface)
+        else:
+            self.state_pixel_index = [None]
+
+        # Get the full statevec
+        full_statevec = construct_full_statevec(self.config)
 
         # Initialize ray for parallel execution
         rayargs = {
@@ -109,6 +119,7 @@ class Isofit:
         logging.info("Building first forward model, will generate any necessary LUTs")
         # Initialize the forward model with n surfaces and states
         self.fm = fm = ForwardModel(self.config)
+        # Could also pre-initialize the surface, state and inv
 
         if row_column is not None:
             ranges = row_column.split(",")
@@ -143,7 +154,14 @@ class Isofit:
 
         params = [
             ray.put(obj)
-            for obj in [self.config, fm, self.loglevel, self.logfile, n_workers]
+            for obj in [
+                self.config,
+                fm,
+                self.loglevel,
+                self.logfile,
+                self.state_pixel_index,
+                n_workers,
+            ]
         ]
         self.workers = ray.util.ActorPool(
             [Worker.remote(*params, n) for n in range(n_workers)]
@@ -190,6 +208,7 @@ class Worker(object):
         forward_model: ForwardModel,
         loglevel: str,
         logfile: str,
+        state_pixel_index: dict,
         total_workers: int = None,
         worker_id: int = None,
     ):
@@ -216,9 +235,12 @@ class Worker(object):
         # Initialize ouput class
         self.io = IO(self.config, self.fm)
 
-        # Two part initialization to avoid circular class ref
-        self.ivs = InversionWrapper(self.config, self.fm)
-        self.ivs.iv_lookup = self.ivs.construct_inversions(self.fm)
+        # Initialize pixel-class mapping
+        self.state_pixel_index = state_pixel_index
+
+        # Initiazlise inversion
+        self.iv = Inversion(self.config, self.fm)
+        # self.ivs.iv_lookup = self.ivs.construct_inversions(self.fm)
 
         self.approximate_total_spectra = None
         if total_workers is not None:
@@ -235,20 +257,14 @@ class Worker(object):
 
             # Get input data
             input_data = self.io.get_components_at_index(row, col)
-
-            """
-            This may end up being redundant. The self.invs.inversions is a
-            dict that has the secific statevector within it. I'm a little fuzzy
-            on if this fucntion below will mess things up across workers.
-            In effect, I'm defining the surface and state twice. Once in setting
-            up the inversion wrapper, and once below."""
-
-            (self.fm.surface, self.fm.state, pixel_class) = (
-                self.fm.get_surface_and_state(row, col)
-            )
-
-            # finalize the inversion to use
-            self.iv = self.ivs.iv_lookup[pixel_class]
+            # Get pixel class
+            pixel_class = match_class(self.state_pixel_index, row, col)
+            # Get surface
+            self.fm.surface = self.fm.construct_surface(pixel_class)
+            # Get state
+            self.fm.state = self.fm.construct_state()
+            # Get inversion
+            self.iv = self.iv.construct_inverse(self.fm)
 
             self.completed_spectra += 1
             if input_data is not None:

@@ -56,6 +56,7 @@ class StateVectorElementConfig(BaseConfigSection):
 class StateVectorConfig(BaseConfigSection):
     """
     State vector configuration.
+
     """
 
     def __init__(self, sub_configdic: dict = None):
@@ -85,6 +86,9 @@ class StateVectorConfig(BaseConfigSection):
 
         self._AIRT_DELTA_K_type = StateVectorElementConfig
         self.AIRT_DELTA_K: StateVectorElementConfig = None
+
+        self._TEMP_SURFACE_type = StateVectorElementConfig
+        self.TEMP_SURFACE: StateVectorElementConfig = None
 
         assert len(self.get_all_elements()) == len(self._get_nontype_attributes())
 

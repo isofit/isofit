@@ -1692,7 +1692,7 @@ def make_surface_config(paths: Pathnames, surface_category="multicomponent_surfa
 
     # Initialize config dict
     surface_config_dict = {
-        "multi_surface_flat": False,
+        "multi_surface_flag": False,
         "surface_class_file": (vars(paths).get("surface_class_file", None)),
         "sub_surface_class_file": (vars(paths).get("subs_class_path", None)),
         "Surfaces": {},
@@ -1700,7 +1700,9 @@ def make_surface_config(paths: Pathnames, surface_category="multicomponent_surfa
             "select_on_init": True,
             "selection_metric": "Euclidean",
         },
+        "statevector": {},
     }
+
     # Check to see if a classification file is being propogated
     if paths.surface_class_file:
         surface_config_dict["multi_surface_flag"] = True
@@ -1768,5 +1770,27 @@ def make_surface_config(paths: Pathnames, surface_category="multicomponent_surfa
                 "surface_category": surface_category,
             }
         }
+
+    # TODO: This type of functionality could be added to move all
+    # statevector set up into the configs
+
+    # Iterate through the surface config and construct the added
+    # statevector elements
+    # for i, surface_paths in surface_config_dict["surfaces"].items():
+    #     # Get the name, bounds, scale, etc of the statevector elements
+    #     surface_statevector = get_surface_statevector()
+    #
+    #     # Temp setting so it only places one additional element in there
+    #     if not int(i):
+    #         surface_config_dict["statevector"]["TEMP_SURFACE"] = {
+    #             "bounds": [
+    #                 float(np.min(lut_grid["H2OSTR"])),
+    #                 float(np.max(lut_grid["H2OSTR"])),
+    #             ],
+    #             "scale": 0.01,
+    #             "init": np.percentile(lut_grid["H2OSTR"], 25),
+    #             "prior_sigma": 100.0,
+    #             "prior_mean": 1.5,
+    #         }
 
     return surface_config_dict

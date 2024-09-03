@@ -23,6 +23,7 @@ from typing import Dict, List, Type
 import numpy as np
 
 from isofit.configs.base_config import BaseConfigSection
+from isofit.configs.sections.statevector_config import StateVectorConfig
 
 
 class SurfaceConfig(BaseConfigSection):
@@ -31,24 +32,8 @@ class SurfaceConfig(BaseConfigSection):
     """
 
     def __init__(self, sub_configdic: dict = None):
-        # # Multicomponent Surface
-        # self._select_on_init_type = bool
-        # self.select_on_init = True
-        # """bool: This field, if present and set to true, forces us to use
-        # any initialization state and never change. The state is preserved
-        # in the geometry object so that this object stays stateless"""
-
-        # # Move this stuff into the surface model
-        # self._selection_metric_type = str
-        # self.selection_metric = "Euclidean"
-
-        # # Surface Thermal - Move this into the surface model
-        # self._emissivity_for_surface_T_init_type = float
-        # self.emissivity_for_surface_T_init = 0.98
-        # """ Initial Value recommended by Glynn Hulley."""
-
-        # self._surface_T_prior_sigma_degK_type = float
-        # self.surface_T_prior_sigma_degK = 1.0
+        self._statevector_type = StateVectorConfig
+        self.statevector: StateVectorConfig = StateVectorConfig({})
 
         self._multi_surface_flag_type = bool
         self.multi_surface_flag = None

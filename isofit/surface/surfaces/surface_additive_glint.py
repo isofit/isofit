@@ -22,6 +22,7 @@ import numpy as np
 
 from isofit.configs import Config
 from isofit.core.common import eps
+from isofit.surface.surface import Surface
 
 from .surface_thermal import ThermalSurface
 
