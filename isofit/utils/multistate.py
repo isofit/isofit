@@ -33,7 +33,7 @@ from isofit.surface.surfaces import Surfaces
 from ..core.common import envi_header, load_spectrum, load_wavelen
 
 
-def index_image_by_class(surface_config):
+def index_image_by_class(surface_config, subs=True):
     if subs:
         class_file = surface_config.sub_surface_class_file
     else:
@@ -42,7 +42,7 @@ def index_image_by_class(surface_config):
     classes = envi.open(envi_header(class_file)).open_memmap(interleave="bip")
 
     class_groups = []
-    for c in self.surf_lookup.keys():
+    for c in surface_config.Surfaces.keys():
         pixel_list = np.argwhere(classes == int(c)).astype(int).tolist()
         class_groups.append(pixel_list)
 
@@ -116,6 +116,7 @@ def construct_full_state(full_config):
     for i, surface in full_config.forward_model.surface.Surfaces.items():
         surface = Surfaces[surface["surface_category"]](surface, params)
         state = StateVector(instrument, RT, surface)
+
         rfl_states += [state.statevec[i] for i in state.idx_surf_rfl]
         nonrfl_states += [state.statevec[i] for i in state.idx_surf_nonrfl]
         RT_states += [state.statevec[i] for i in state.idx_RT]

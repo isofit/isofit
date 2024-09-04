@@ -45,7 +45,7 @@ class Inverse(Inversion):
         Good question for James. Mostly it strikes me weird that I have
         to pass the full_config into the more general Inversion class.
         There must be a correct way to do this where I don't."""
-        Inverse.__init__(self, full_config, forward)
+        Inversion.__init__(self, full_config, forward)
 
         self.lasttime = time.time()
         self.fm = forward

@@ -37,6 +37,11 @@ from isofit.core.geometry import Geometry
 from isofit.inversion.inverse_simple import invert_analytical
 from isofit.inversion.inversion import Inversion
 from isofit.utils.atm_interpolation import atm_interpolation
+from isofit.utils.multistate import (
+    construct_full_state,
+    index_image_by_class,
+    match_class,
+)
 
 
 def analytical_line(
@@ -83,10 +88,12 @@ def analytical_line(
     subs_class_file = config.forward_model.surface.surface_class_file
 
     # Set up the multi-state pixel map
-    if config.forward.surface.multi_surface_flag:
-        state_pixel_index = index_image_by_class(config.forward.surface)
+    if config.forward_model.surface.multi_surface_flag:
+        state_pixel_index = index_image_by_class(
+            config.forward_model.surface, subs=False
+        )
     else:
-        state_pixel_index = [None]
+        state_pixel_index = []
 
     """Why does the glint model surface have to be explicitely stated? 
     Shouldn't this be handled the same regardless of surface? 
@@ -134,6 +141,17 @@ def analytical_line(
         atm_file = atm_file
 
     fm = ForwardModel(config, subs=False)
+    (
+        fm.full_statevec,
+        fm.full_idx_surface,
+        fm.full_idx_surf_rfl,
+        fm.full_idx_surf_nonrfl,
+        fm.full_idx_RT,
+        fm.full_idx_instrument,
+    ) = construct_full_state(config)
+
+    # Initialize inversion
+    iv = Inversion(config, fm)
 
     if os.path.isfile(atm_file) is False:
         # This should match the necesary state elements based on the name
@@ -166,7 +184,7 @@ def analytical_line(
 
     # Need a way to get the window index, which should be constant with a
     # constant instrument
-    outside_ret_windows[ivs.winidx] = 1
+    outside_ret_windows[iv.winidx] = 1
     # output_metadata["bbl"] = "{" + ",".join([str(x) for x in outside_ret_windows]) + "}"
     output_metadata["bbl"] = "{" + ",".join([f"{x}" for x in outside_ret_windows]) + "}"
 
@@ -206,6 +224,7 @@ def analytical_line(
         for obj in (
             config,
             fm,
+            iv,
             state_pixel_index,
             atm_file,
             analytical_state_file,
@@ -242,6 +261,7 @@ class Worker(object):
         self,
         config: configs.Config,
         fm: ForwardModel,
+        iv: Inversion,
         state_pixel_index: dict,
         RT_state_file: str,
         analytical_state_file: str,
@@ -270,10 +290,9 @@ class Worker(object):
         )
         self.config = config
 
-        # Handle multi-surface
         self.state_pixel_index = state_pixel_index
-
         self.fm = fm
+        self.iv = iv
 
         self.completed_spectra = 0
         self.hash_table = OrderedDict()
@@ -333,10 +352,13 @@ class Worker(object):
 
         for r in range(start_line, stop_line):
             for c in range(output_state.shape[1]):
-                (self.fm.surface, self.fm.state, pixel_class) = (
-                    self.fm.get_surface_and_state(r, c)
-                )
-                self.iv = self.ivs.iv_lookup[pixel_class]
+                pixel_class = match_class(self.state_pixel_index, r, c)
+                # Get surface
+                self.fm.construct_surface(pixel_class)
+                # Get state
+                self.fm.construct_state()
+                # Get inversion
+                self.iv = self.iv.construct_inverse(self.fm)
 
                 meas = rdn[r, c, :]
                 if self.radiance_correction is not None:

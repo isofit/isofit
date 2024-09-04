@@ -1715,9 +1715,9 @@ def make_surface_config(paths: Pathnames, surface_category="multicomponent_surfa
         # mapping name to surface name - terrible way to do this
         # Could house this in a standalone file and call it in
         surface_mapping = {
-            "water": "multi_component_surface",
-            "land": "multi_component_surface",
-            "cloud": "multi_component_surface",
+            "water": "multicomponent_surface",
+            "land": "multicomponent_surface",
+            "cloud": "multicomponent_surface",
         }
 
         # Iterate through all classes present in class image

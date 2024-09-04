@@ -72,9 +72,6 @@ class ForwardModel:
         # Build the radiative transfer model
         self.RT = RadiativeTransfer(self.full_config)
 
-        # Define surface, shouldn't do that in init
-        # self.surface = Surface(self.full_config)
-
         # Load model discrepancy correction
         if self.config.model_discrepancy_file is not None:
             D = loadmat(self.config.model_discrepancy_file)
@@ -87,12 +84,14 @@ class ForwardModel:
 
     def construct_surface(self, i):
         self.surface_params = self.config.surface.surface_params
-        surf_category = surf_dict[i]["surface_category"]
+        surf_category = self.config.surface.Surfaces[i]["surface_category"]
 
-        return Surfaces[surf_category](surf_dict, self.surface_params)
+        self.surface = Surfaces[surf_category](
+            self.config.surface.Surfaces[i], self.surface_params
+        )
 
     def construct_state(self):
-        self.state = StateVector(self.intrument, self.RT, self.surface)
+        self.state = StateVector(self.instrument, self.RT, self.surface)
 
     def out_of_bounds(self, x):
         """Check if state vector is within bounds."""

@@ -32,7 +32,11 @@ from isofit.configs import configs
 from isofit.core.fileio import IO
 from isofit.core.forward import ForwardModel
 from isofit.inversion.inversion import Inversion
-from isofit.utils.multistate import match_class
+from isofit.utils.multistate import (
+    construct_full_state,
+    index_image_by_class,
+    match_class,
+)
 
 
 class Isofit:
@@ -69,8 +73,10 @@ class Isofit:
         self.config.get_config_errors()
 
         # Set up the multi-state pixel map
-        if self.config.forward.surface.multi_surface_flag:
-            self.state_pixel_index = index_image_by_class(self.config.forward.surface)
+        if self.config.forward_model.surface.multi_surface_flag:
+            self.state_pixel_index = index_image_by_class(
+                self.config.forward_model.surface
+            )
         else:
             self.state_pixel_index = [None]
 
@@ -129,7 +135,7 @@ class Isofit:
             self.fm.full_idx_surf_nonrfl,
             self.fm.full_idx_RT,
             self.fm.full_idx_instrument,
-        ) = construct_full_statevec(self.config)
+        ) = construct_full_state(self.config)
 
         if row_column is not None:
             ranges = row_column.split(",")
@@ -270,9 +276,9 @@ class Worker(object):
             # Get pixel class
             pixel_class = match_class(self.state_pixel_index, row, col)
             # Get surface
-            self.fm.surface = self.fm.construct_surface(pixel_class)
+            self.fm.construct_surface(pixel_class)
             # Get state
-            self.fm.state = self.fm.construct_state()
+            self.fm.construct_state()
             # Get inversion
             self.iv = self.iv.construct_inverse(self.fm)
 
