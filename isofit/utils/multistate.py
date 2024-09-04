@@ -17,7 +17,6 @@
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
-
 import logging
 
 import numpy as np
@@ -35,6 +34,23 @@ from ..core.common import envi_header, load_spectrum, load_wavelen
 
 
 def index_image_by_class(surface_config, subs=True):
+    """
+    Indexes an image by a provided surface class file.
+    Could extend it to be indexed by an atomspheric classification
+    file as well if you want to vary both surface and atmospheric
+    state.
+
+    Args:
+        surface_config: (Config object) The surface component of the
+                        main config.
+        subs: (optional) (bool) that tells function which classification
+              file to use.
+
+    Returns:
+        class_groups: (dict) where keys are the pixel classification (index)
+                      and values are tuples of rows and columns for each
+                      group.
+    """
     if subs:
         class_file = surface_config.sub_surface_class_file
     else:
@@ -53,6 +69,19 @@ def index_image_by_class(surface_config, subs=True):
 
 
 def cache_forward_models(config):
+    """
+    Used to speed up processing. Rather than initializing the surfaces
+    and states on a per-pixel basis, this function allows the program
+    to cache the states present in the image.
+
+    Args:
+        config: (Config object) The full isofit config object.
+
+    Returns
+        fm_cache: (dict) cached lookup table with forward models by
+                  pixel state classification.
+
+    """
     fm_cache = {}
     for i, surface in config.forward_model.surface.Surfaces.items():
         fm = ForwardModel(config)
@@ -65,6 +94,17 @@ def cache_forward_models(config):
 
 
 def match_class(class_groups, row, col):
+    """
+    Pass this function the row column pair and it will return the
+    key from class_groups for which that row-col belongs.
+
+    Args:
+
+        class_groups: (dict) Keys are the pixel groups. Values are tuples
+                      of rows and column that belong in the respective groups.
+        row: (int) row of queried pixel
+        col: (int) col of queried pixel
+    """
     # If there is no class index, return base
     if not len(class_groups):
         return "0"

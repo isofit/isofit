@@ -79,9 +79,9 @@ class Isofit:
                 self.config.forward_model.surface
             )
         else:
-            self.state_pixel_index = [None]
+            self.state_pixel_index = []
 
-        # Construct the full statevector (all multistates)
+        # Construct and cache the full statevector (all multistates)
         self.full_statevector, *_ = construct_full_state(self.config)
 
         # Cache the forward models. Comment if not using caching

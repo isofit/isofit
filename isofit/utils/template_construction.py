@@ -1722,7 +1722,7 @@ def make_surface_config(paths: Pathnames, surface_category="multicomponent_surfa
 
         # Iterate through all classes present in class image
         for i, name in enumerate(class_mapping):
-            surface_category = surface_mapping.get(name, "single_component_surface")
+            surface_category = surface_mapping.get(name, "multicomponent_surface")
 
             # If surface_path given, use for all surfaces
             if paths.surface_path:
@@ -1754,6 +1754,7 @@ def make_surface_config(paths: Pathnames, surface_category="multicomponent_surfa
             # Eventually want the str(i) to be the class name: name
             # surface_config_dict["Surfaces"][name] = {
             surface_config_dict["Surfaces"][str(i)] = {
+                "surface_type": name,
                 "surface_file": surface_path,
                 "surface_category": surface_category,
             }
