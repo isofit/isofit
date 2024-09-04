@@ -83,6 +83,9 @@ def match_class(class_groups, row, col):
 
 def construct_full_state(full_config):
     """
+    Get the full statevec. I don't like how this is done.
+    Should be set up so that it can be pulled right out of the config
+
     Looks at all the model-states present in the config and collapses
     them into a single image-universal statevector. Returns both
     the names and indexes of the image-wide statevector.
@@ -146,11 +149,12 @@ def construct_full_state(full_config):
     start += len(RT_states)
     full_idx_instrument = np.arange(start, start + len(instrument_states))
 
-    return (
-        full_statevec,
-        full_idx_surface,
-        full_idx_surf_rfl,
-        full_idx_surf_nonrfl,
-        full_idx_RT,
-        full_idx_instrument,
-    )
+    return full_statevec
+    # return {
+    #     'full_statevec': full_statevec,
+    #     'full_idx_surface': full_idx_surface,
+    #     'full_idx_surf_rfl': full_idx_surf_rfl,
+    #     'full_idx_surf_nonrfl': full_idx_surf_nonrfl,
+    #     'full_idx_RT': full_idx_RT,
+    #     'full_idx_instrument': full_idx_instrument,
+    # }

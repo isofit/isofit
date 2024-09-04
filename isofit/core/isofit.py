@@ -80,6 +80,12 @@ class Isofit:
         else:
             self.state_pixel_index = [None]
 
+        # Construct the full statevector (all multistates)
+        self.full_statevector = construct_full_state(self.config)
+
+        # Cache the forward models. Comment if not using caching
+        self.cache_forward_models()
+
         # Initialize ray for parallel execution
         rayargs = {
             "address": self.config.implementation.ip_head,
@@ -101,6 +107,15 @@ class Isofit:
 
         self.workers = None
 
+    def cache_forward_models(self):
+        self.fm_cache = {}
+        for i, surface in self.config.forward_model.surface.Surfaces.items():
+            fm = ForwardModel(self.config)
+            fm.construct_surface(i)
+            fm.construct_state()
+
+            self.fm_cache[i] = fm
+
     def run(self, row_column=None):
         """
         Iterate over spectra, reading and writing through the IO
@@ -120,22 +135,10 @@ class Isofit:
         """
 
         logging.info("Building first forward model, will generate any necessary LUTs")
-        # Initialize the forward model with n surfaces and states
-        self.fm = fm = ForwardModel(self.config)
-        # Could also pre-initialize the surface, state and inv
 
-        """
-        Get the full statevec. I don't like how this is done
-        Should be set up so that it can be pulled right out of the config
-        """
-        (
-            self.fm.full_statevec,
-            self.fm.full_idx_surface,
-            self.fm.full_idx_surf_rfl,
-            self.fm.full_idx_surf_nonrfl,
-            self.fm.full_idx_RT,
-            self.fm.full_idx_instrument,
-        ) = construct_full_state(self.config)
+        # Commented out to reflect the cached forward model
+        # Initialize the forward model with n surfaces and states
+        # self.fm = fm = ForwardModel(self.config)
 
         if row_column is not None:
             ranges = row_column.split(",")
@@ -149,7 +152,7 @@ class Isofit:
                 self.rows = range(int(row_start), int(row_end) + 1)
                 self.cols = range(int(col_start), int(col_end) + 1)
         else:
-            io = IO(self.config, fm)
+            io = IO(self.config, self.full_statevector)
             self.rows = range(io.n_rows)
             self.cols = range(io.n_cols)
             del io
@@ -172,7 +175,8 @@ class Isofit:
             ray.put(obj)
             for obj in [
                 self.config,
-                fm,
+                self.fm_cache,
+                self.full_statevector,
                 self.loglevel,
                 self.logfile,
                 self.state_pixel_index,
@@ -221,7 +225,9 @@ class Worker(object):
     def __init__(
         self,
         config: configs.Config,
-        forward_model: ForwardModel,
+        # forward_model: ForwardModel,
+        fm_cache: dict,
+        full_statevector: np.array,
         loglevel: str,
         logfile: str,
         state_pixel_index: dict,
@@ -246,16 +252,14 @@ class Worker(object):
             datefmt="%Y-%m-%d,%H:%M:%S",
         )
         self.config = config
-        self.fm = forward_model
-
-        # Initialize ouput class
-        self.io = IO(self.config, self.fm)
-
-        # Initialize pixel-class mapping
+        # self.fm = forward_model
+        self.fm_cache = fm_cache
         self.state_pixel_index = state_pixel_index
 
-        # Initiazlise inversion
-        self.iv = Inversion(self.config, self.fm)
+        self.io = IO(self.config, full_statevector)
+
+        # Initialize inversion
+        # self.iv = Inversion(self.config, self.fm)
         # self.ivs.iv_lookup = self.ivs.construct_inversions(self.fm)
 
         self.approximate_total_spectra = None
@@ -275,11 +279,18 @@ class Worker(object):
             input_data = self.io.get_components_at_index(row, col)
             # Get pixel class
             pixel_class = match_class(self.state_pixel_index, row, col)
+
+            # Select the cached fm
+            self.fm = self.fm_cache[pixel_class]
+
+            # Commented out to test caching
             # Get surface
-            self.fm.construct_surface(pixel_class)
-            # Get state
-            self.fm.construct_state()
+            # self.fm.construct_surface(pixel_class)
+            # # Get state
+            # self.fm.construct_state()
+
             # Get inversion
+            self.iv = Inversion(self.config, self.fm)
             self.iv = self.iv.construct_inverse(self.fm)
 
             self.completed_spectra += 1
