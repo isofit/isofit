@@ -25,6 +25,7 @@ from scipy.interpolate import interp1d
 from spectral.io import envi
 
 from isofit.configs import Config
+from isofit.core.forward import ForwardModel
 from isofit.core.instrument import Instrument
 from isofit.core.state import StateVector
 from isofit.radiative_transfer.radiative_transfer import RadiativeTransfer
@@ -49,6 +50,18 @@ def index_image_by_class(surface_config, subs=True):
     del classes
 
     return class_groups
+
+
+def cache_forward_models(config):
+    fm_cache = {}
+    for i, surface in config.forward_model.surface.Surfaces.items():
+        fm = ForwardModel(config)
+        fm.construct_surface(i)
+        fm.construct_state()
+
+        fm_cache[i] = fm
+
+    return fm_cache
 
 
 def match_class(class_groups, row, col):
@@ -149,12 +162,4 @@ def construct_full_state(full_config):
     start += len(RT_states)
     full_idx_instrument = np.arange(start, start + len(instrument_states))
 
-    return full_statevec
-    # return {
-    #     'full_statevec': full_statevec,
-    #     'full_idx_surface': full_idx_surface,
-    #     'full_idx_surf_rfl': full_idx_surf_rfl,
-    #     'full_idx_surf_nonrfl': full_idx_surf_nonrfl,
-    #     'full_idx_RT': full_idx_RT,
-    #     'full_idx_instrument': full_idx_instrument,
-    # }
+    return full_statevec, full_idx_surface, full_idx_surf_rfl, full_idx_RT

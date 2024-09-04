@@ -33,6 +33,7 @@ from isofit.core.fileio import IO
 from isofit.core.forward import ForwardModel
 from isofit.inversion.inversion import Inversion
 from isofit.utils.multistate import (
+    cache_forward_models,
     construct_full_state,
     index_image_by_class,
     match_class,
@@ -81,10 +82,10 @@ class Isofit:
             self.state_pixel_index = [None]
 
         # Construct the full statevector (all multistates)
-        self.full_statevector = construct_full_state(self.config)
+        self.full_statevector, *_ = construct_full_state(self.config)
 
         # Cache the forward models. Comment if not using caching
-        self.cache_forward_models()
+        self.fm_cache = cache_forward_models(self.config)
 
         # Initialize ray for parallel execution
         rayargs = {
@@ -106,15 +107,6 @@ class Isofit:
         ray.init(**rayargs)
 
         self.workers = None
-
-    def cache_forward_models(self):
-        self.fm_cache = {}
-        for i, surface in self.config.forward_model.surface.Surfaces.items():
-            fm = ForwardModel(self.config)
-            fm.construct_surface(i)
-            fm.construct_state()
-
-            self.fm_cache[i] = fm
 
     def run(self, row_column=None):
         """
