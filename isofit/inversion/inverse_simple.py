@@ -287,9 +287,9 @@ def invert_analytical(
 
     if fm.RT.glint_model:
         x_surf = fm.surface.fit_params(x_alg[0], geom)
-        x[fm.state.idx_surface] = x_surf
+        x[fm.state.idx_surf_rfl] = x_surf
     else:
-        x[fm.state.idx_surface] = x_alg[0]
+        x[fm.state.idx_surf_rfl] = x_alg[0]
 
     trajectory = []
     outside_ret_windows = np.ones(len(fm.state.idx_surface), dtype=bool)

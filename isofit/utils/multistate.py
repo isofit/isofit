@@ -131,7 +131,7 @@ def match_class(class_groups, row, col):
         )
         raise ValueError
 
-    return str(matches[np.where(matches)][0])
+    return str(np.argwhere(matches)[0][0])
 
 
 def construct_full_state(full_config):

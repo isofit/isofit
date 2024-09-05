@@ -275,7 +275,10 @@ class Worker(object):
             # Select the cached fm
             self.fm = self.fm_cache[pixel_class]
 
-            # Commented out to test caching
+            logging.debug(f"Pixel class: {pixel_class}")
+            logging.debug(f"Surface: {self.fm.surface}")
+
+            # Commented out  caching
             # Get surface
             # self.fm.construct_surface(pixel_class)
             # # Get state

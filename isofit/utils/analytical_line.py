@@ -175,7 +175,10 @@ class Worker(object):
                     continue
 
                 x_RT = self.rt_state[
-                    r, c, self.full_idx_RT - len(self.full_idx_surface)
+                    # r, c, self.full_idx_RT - len(self.full_idx_surface)
+                    r,
+                    c,
+                    self.fm.state.idx_RT - len(self.fm.state.idx_surface),
                 ]
                 geom = Geometry(obs=self.obs[r, c, :], loc=self.loc[r, c, :])
 
@@ -197,15 +200,13 @@ class Worker(object):
                 )
 
                 output_state[r - start_line, c, :] = full_state_est[
-                    self.fm.state.idx_surface
+                    self.full_idx_surface
                 ]
 
                 full_unc = match_statevector(
                     unc, self.full_statevector, self.fm.state.statevec
                 )
-                output_state_unc[r - start_line, c, :] = full_unc[
-                    self.fm.state.idx_surface
-                ]
+                output_state_unc[r - start_line, c, :] = full_unc[self.full_idx_surface]
 
             logging.info(f"Analytical line writing line {r}")
 

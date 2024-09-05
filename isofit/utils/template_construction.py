@@ -1716,7 +1716,7 @@ def make_surface_config(paths: Pathnames, surface_category="multicomponent_surfa
         # Could house this in a standalone file and call it in
         surface_mapping = {
             "water": "multicomponent_surface",
-            "land": "multicomponent_surface",
+            "land": "test_surface",
             "cloud": "multicomponent_surface",
         }
 

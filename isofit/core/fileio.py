@@ -666,6 +666,7 @@ class IO:
                 )
 
             if "estimated_reflectance_file" in self.output_datasets:
+
                 to_write["estimated_reflectance_file"] = np.column_stack(
                     (self.meas_wl, lamb_est)
                 )
