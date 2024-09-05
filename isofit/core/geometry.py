@@ -25,8 +25,12 @@ from datetime import datetime
 import numpy as np
 
 import isofit
+from isofit import ray
 
 from .sunposition import sunpos
+
+# Cache for loading the ESD file
+ESD = None
 
 
 class Geometry:
@@ -54,19 +58,27 @@ class Geometry:
         self.earth_sun_distance = None
         self.esd_factor = None
 
-        self.earth_sun_file = None
+        self.earth_sun_file = None  # Unused?
         self.earth_sun_distance_path = os.path.join(
             isofit.root, "data", "earth_sun_distance.txt"
         )
-        try:
-            self.earth_sun_distance_reference = np.loadtxt(self.earth_sun_distance_path)
-        except FileNotFoundError:
-            logging.warning(
-                "Earth-sun-distance file not found on system. "
-                "Proceeding without might cause some inaccuracies down the line."
-            )
-            self.earth_sun_distance_reference = np.ones((366, 2))
-            self.earth_sun_distance_reference[:, 0] = np.arange(1, 367, 1)
+
+        global ESD
+        if ESD is None:
+            try:
+                ESD = np.loadtxt(self.earth_sun_distance_path)
+                logging.debug(
+                    f"Succesfully loaded ESD from {self.earth_sun_distance_path}"
+                )
+            except FileNotFoundError:
+                logging.warning(
+                    "Earth-sun-distance file not found on system. "
+                    "Proceeding without might cause some inaccuracies down the line."
+                )
+                ESD = np.ones((366, 2))
+                ESD[:, 0] = np.arange(1, 367, 1)
+
+        self.earth_sun_distance_reference = ESD
 
         self.bg_rfl = bg_rfl
         self.cos_i = None
