@@ -1,0 +1,101 @@
+{
+  "ISOFIT_BASE": "../../..",
+
+  "input": {
+    "measured_radiance_file": "../remote/ang20171108t184829_rdn_v2p11_darklot.txt",
+    "reference_reflectance_file": "../insitu/DarkTarget_Trial1.txt"
+  },
+
+  "output": {
+    "estimated_reflectance_file": "../output/ang20171108t184829_rfl_v2p11_darklot.txt",
+    "algebraic_inverse_file": "../output/ang20171108t184829_alg_v2p11_darklot.txt",
+    "modeled_radiance_file":  "../output/ang20171108t184829_mdl_v2p11_darklot.txt",
+    "data_dump_file":         "../output/ang20171108t184829_data_v2p11_darklot.mat",
+    "posterior_errors_file":  "../output/ang20171108t184829_post_v2p11_darklot.mat",
+    "plot_directory": "../images/"
+  },
+
+  "forward_model":{
+
+    "instrument": {
+      "wavelength_file": "../data/20170320_ang20170228_wavelength_fit.txt",
+      "parametric_noise_file": "../../../data/avirisng_noise.txt",
+      "integrations":10,
+      "unknowns": {
+        "channelized_radiometric_uncertainty_file":
+          "../../../data/avirisng_systematic_error.txt",
+        "uncorrelated_radiometric_uncertainty": 0.01
+      }
+    },
+    "surface": {
+        "Surfaces": {
+            "0": {
+                "surface_category": "multicomponent_surface",
+                "surface_file": "../data/ang20170228_surface_model.mat",
+                "surface_type": "base"
+            },
+            "1": {
+                "surface_category": "test_surface",
+                "surface_file": "../data/ang20170228_surface_model.mat",
+                "surface_type": "test"
+            }
+        },
+        "multi_surface_flag": true,
+        "statevector": {},
+        "surface_params": {
+            "select_on_init": true,
+            "selection_metric": "Euclidean"
+        }
+    },
+    "radiative_transfer": {
+      "statevector": {
+        "H2OSTR": {
+          "bounds": [1.5, 2.0],
+          "scale": 0.01,
+          "prior_mean": 1.75,
+          "prior_sigma":0.5,
+          "init": 1.75
+        },
+        "AOT550": {
+          "bounds": [0.01, 0.1],
+          "scale": 0.01,
+          "prior_mean": 0.05,
+          "prior_sigma":0.2,
+          "init": 0.05
+        }
+      },
+      "lut_grid": {
+        "H2OSTR": [1.5, 2.0],
+        "AOT550": [0.01, 0.1]
+      },
+      "unknowns": {
+        "H2O_ABSCO": 0.01
+      },
+      "radiative_transfer_engines": {
+        "vswir": {
+          "irradiance_file": "../data/prism_optimized_irr.dat",
+          "earth_sun_distance_file": "../../../data/earth_sun_distance.txt",
+          "engine_base_dir": "${SIXS_DIR}",
+          "engine_name": "6s",
+          "solzen": 55.21,
+          "solaz": 141.70,
+          "elev": 0.0,
+          "alt": 20.0,
+          "viewaz": 202.89063,
+          "viewzen": 1.08,
+          "month": 10,
+          "day": 26,
+          "sim_path": "../lut/",
+          "lut_path": "../lut/D8W_6s.nc",
+          "lut_names": {"H2OSTR": null, "AOT550": null}
+        }
+      }
+    }
+  },
+
+  "implementation": {
+    "inversion": {
+      "windows": [[380.0, 1300.0], [1450, 1780.0], [1950.0, 2450.0]]
+    }
+  }
+}

@@ -115,7 +115,7 @@ class Isofit:
         Attempts to avoid reading the entire file into memory, or hitting
         the physical disk too often.
 
-        row_column: The user can specify
+        row_column: TGhe user can specify
             * a single number, in which case it is interpreted as a row
             * a comma-separated pair, in which case it is interpreted as a
               row/column tuple (i.e. a single spectrum)
@@ -222,7 +222,7 @@ class Worker(object):
         full_statevector: np.array,
         loglevel: str,
         logfile: str,
-        state_pixel_index: dict,
+        state_pixel_index: list,
         total_workers: int = None,
         worker_id: int = None,
     ):

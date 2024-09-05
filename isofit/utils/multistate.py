@@ -24,13 +24,12 @@ from scipy.interpolate import interp1d
 from spectral.io import envi
 
 from isofit.configs import Config
+from isofit.core.common import envi_header, load_spectrum, load_wavelen
 from isofit.core.forward import ForwardModel
 from isofit.core.instrument import Instrument
 from isofit.core.state import StateVector
 from isofit.radiative_transfer.radiative_transfer import RadiativeTransfer
 from isofit.surface.surfaces import Surfaces
-
-from ..core.common import envi_header, load_spectrum, load_wavelen
 
 
 def index_image_by_class(surface_config, subs=True):

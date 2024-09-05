@@ -57,7 +57,7 @@ class Worker(object):
         config: configs.Config,
         # fm: ForwardModel,
         fm_cache: dict,
-        state_pixel_index: dict,
+        state_pixel_index: list,
         full_statevector: list,
         full_idx_surface: np.array,
         full_idx_RT: np.array,

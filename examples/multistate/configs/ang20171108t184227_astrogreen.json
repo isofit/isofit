@@ -1,0 +1,78 @@
+{
+  "ISOFIT_BASE": "../../..",
+
+  "input": {
+    "measured_radiance_file": "../remote/ang20171108t184227_rdn_v2p11_AstroGreenBaseball.txt",
+    "reference_reflectance_file": "../insitu/AstroGreenBaseball.txt"
+  },
+
+  "output": {
+    "estimated_reflectance_file": "../output/ang20171108t184227_rfl_v2p11_AstroGreenBaseball.txt",
+    "algebraic_inverse_file": "../output/ang20171108t184227_alg_v2p11_AstroGreenBaseball.txt",
+    "modeled_radiance_file":  "../output/ang20171108t184227_mdl_v2p11_AstroGreenBaseball.txt",
+    "data_dump_file":         "../output/ang20171108t184227_data_v2p11_AstroGreenBaseball.mat",
+    "posterior_errors_file":  "../output/ang20171108t184227_post_v2p11_AstroGreenBaseball.mat",
+    "plot_directory": "../images/"
+  },
+
+  "forward_model":{
+
+    "instrument": {
+      "wavelength_file": "../remote/20170320_ang20170228_wavelength_fit.txt",
+      "parametric_noise_file": "../../../data/avirisng_noise.txt",
+      "integrations":240,
+      "unknowns": {
+        "channelized_radiometric_uncertainty_file":
+          "../../../data/avirisng_systematic_error.txt",
+        "uncorrelated_radiometric_uncertainty": 0.01
+      }
+    },
+
+    "surface": {
+      "surface_category": "multicomponent_surface",
+      "surface_file": "../remote/ang20170228_surface_model.mat"
+    },
+
+    "radiative_transfer": {
+      "statevector": {
+        "H2OSTR": {
+          "bounds": [1.5, 2.0],
+          "scale": 0.01,
+          "prior_mean": 1.75,
+          "prior_sigma":0.5,
+          "init": 1.75
+        },
+        "AOT550": {
+          "bounds": [0.01, 0.1],
+          "scale": 0.01,
+          "prior_mean": 0.05,
+          "prior_sigma":0.2,
+          "init": 0.05
+        }
+      },
+      "lut_grid": {
+        "H2OSTR": [1.5, 2.0],
+        "AOT550": [0.01, 0.1]
+      },
+      "unknowns": {
+        "H2O_ABSCO": 0.01
+      },
+      "radiative_transfer_engines": {
+        "vswir": {
+          "engine_name": "modtran",
+          "wavelength_range":[370,2505],
+          "sim_path": "../lut/",
+          "lut_path": "../lut/ang20171108t184227_post_v2p11_AstroGreenBaseball.nc",
+          "template_file": "ang20171108t184227_modtran.json",
+          "lut_names": {"H2OSTR": null, "AOT550": null}
+        }
+      }
+    }
+  },
+
+  "implementation": {
+    "inversion": {
+      "windows": [[380.0,1300.0],[1450,1780.0],[1950.0,2450.0]]
+    }
+  }
+}
