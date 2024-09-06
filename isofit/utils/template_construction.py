@@ -734,8 +734,8 @@ def build_main_config(
                 "lut_path": lut_path,
                 "aerosol_template_file": paths.aerosol_tpl_path,
                 "template_file": paths.modtran_template_path,
-                "topography_model": False,
-                "multipart_transmittance": False,
+                "topography_model": True,
+                "multipart_transmittance": True,
                 # lut_names - populated below
                 # statevector_names - populated below
             }
