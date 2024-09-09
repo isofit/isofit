@@ -285,6 +285,7 @@ def invert_analytical(
         geom,
     )
 
+    # Why is this is hardcoded for glint surface?
     if fm.RT.glint_model:
         x_surf = fm.surface.fit_params(x_alg[0], geom)
         x[fm.state.idx_surf_rfl] = x_surf

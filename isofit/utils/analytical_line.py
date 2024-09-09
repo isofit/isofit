@@ -174,6 +174,7 @@ class Worker(object):
                 if np.all(meas < 0):
                     continue
 
+                # Atmospheric state elements
                 x_RT = self.rt_state[
                     # r, c, self.full_idx_RT - len(self.full_idx_surface)
                     r,
