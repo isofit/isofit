@@ -39,6 +39,11 @@ class Keys:
         "transm_up_dif": 0,
         "thermal_upwelling": np.nan,
         "thermal_downwelling": np.nan,
+        # add keys for the flux coupling terms
+        "bi-direct": 0,
+        "hemi-direct": 0,
+        "direct-hemi": 0,
+        "bi-hemi": 0,
     }
 
 
