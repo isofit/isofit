@@ -758,6 +758,7 @@ class IO:
     def load_esd(file):
         try:
             esd = np.loadtxt(file)
+            logging.debug(f"Loaded ESD from file: {file}")
         except FileNotFoundError:
             logging.warning(
                 "Earth-sun-distance file not found on system. "

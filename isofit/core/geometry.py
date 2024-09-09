@@ -54,6 +54,13 @@ class Geometry:
         self.surface_elevation_km = None
         self.earth_sun_distance = None
         self.esd_factor = None
+
+        if esd is None:
+            logging.warning(
+                "Earth sun distance not provided. Proceeding without might cause some inaccuracies down the line"
+            )
+            esd = np.ones((366, 2))
+            esd[:, 0] = np.arange(1, 367, 1)
         self.earth_sun_distance_reference = esd
 
         self.bg_rfl = bg_rfl
