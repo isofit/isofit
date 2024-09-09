@@ -318,6 +318,9 @@ class ModtranRT(RadiativeTransferEngine):
             
         modtran_config_str, modtran_config = self.modtran_driver(dict(vals))
 
+        # Translate to the MODTRAN OBSZEN convention
+        if vals["OBSZEN"] < 90:
+            vals["OBSZEN"] = 180 - abs(vals["OBSZEN"])
 
         # Check rebuild conditions: LUT is missing or from a different config
         infilename = "LUT_" + filename_base + ".json"
