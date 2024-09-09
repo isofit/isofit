@@ -25,7 +25,6 @@ from datetime import datetime
 import numpy as np
 
 import isofit
-from isofit import ray
 
 from .sunposition import sunpos
 
