@@ -193,14 +193,18 @@ class ForwardModel:
         so we upsample surface terms.
         """
         x_surface, x_RT, x_instrument = self.unpack(x)
+
         if rfl is None:
-            rfl = self.surface.calc_rfl(x_surface, geom)
+            E_down_dir, E_down_dif = self.RT.get_E_down(x_RT, geom)
+            rfl = self.surface.calc_rfl(x_surface, E_down_dir, E_down_dif, geom)
         if Ls is None:
             Ls = self.surface.calc_Ls(x_surface, geom)
 
-        rfl_hi = self.upsample(self.surface.wl, rfl)
+        rfl_dir_hi = self.upsample(self.surface.wl, rfl[0])
+        rfl_dif_hi = self.upsample(self.surface.wl, rfl[1])
         Ls_hi = self.upsample(self.surface.wl, Ls)
-        return self.RT.calc_rdn(x_RT, x_surface, rfl_hi, Ls_hi, geom)
+
+        return self.RT.calc_rdn(x_RT, rfl_dir_hi, rfl_dif_hi, Ls_hi, geom)
 
     def calc_meas(self, x, geom, rfl=None, Ls=None):
         """Calculate the model observation at instrument wavelengths."""

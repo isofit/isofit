@@ -98,12 +98,17 @@ class GlintModelSurface(MultiComponentSurface):
         x[self.glint_ind + 1] = g_dsf_est  # SKY_GLINT g_dsf
         return x
 
-    def calc_rfl(self, x_surface, geom):
-        """Reflectance (includes specular glint)."""
+    def calc_rfl(self, x_surface, E_down_dir, E_down_dif, geom):
+        """Direct and diffuse Reflectance (includes sun and sky glint)."""
 
-        return self.calc_lamb(
-            x_surface, geom
-        )  # Return surface reflectance only; glint added in later
+        rho_ls = 0.02  # fresnel reflectance factor (approx. 0.02 for nadir view)
+        sun_glint = rho_ls * (x_surface[-2] * E_down_dir / (E_down_dir + E_down_dif))
+        sky_glint = rho_ls * (x_surface[-1] * E_down_dif / (E_down_dir + E_down_dif))
+
+        rfl_dir = self.calc_lamb(x_surface, geom) + sun_glint
+        rfl_dif = self.calc_lamb(x_surface, geom) + sky_glint
+
+        return rfl_dir, rfl_dif
 
     def drfl_dsurface(self, x_surface, geom):
         """Partial derivative of reflectance with respect to state vector,

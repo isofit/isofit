@@ -167,7 +167,7 @@ class RadiativeTransfer:
             if "coszen" in child.lut:
                 return child.lut.coszen.data
 
-    def calc_rdn(self, x_RT, x_surface, rfl, Ls, geom):
+    def calc_rdn(self, x_RT, rfl_dir, rfl_dif, Ls, geom):
         """
         Physics-based forward model to calculate at-sensor radiance.
         Includes topography, background reflectance, and glint.
@@ -184,44 +184,38 @@ class RadiativeTransfer:
         # atmospheric spherical albedo
         s_alb = r["sphalb"]
 
-        # direct and diffuse downward fluxes on the sun-to-surface path
-        # note: currently, E_down_dir comes scaled by the TOA solar zenith angle,
-        # thus, unscaling and rescaling by local solar zenith angle required
-        # to account for surface slope and aspect
-        E_down_dir, E_down_dif = self.get_E_down(x_RT, geom)
-        E_down_dir = E_down_dir / self.coszen * cos_i
+        # flux coupling terms
+        E_coupled = []
+        for key in self.rt_engines[0].coupling_terms:
+            E_coupled.append(
+                self.solar_irr * self.coszen / np.pi * r[key]
+                if self.rt_engines[0].rt_mode == "transm"
+                else r[key]
+            )
 
-        # upward direct, diffuse, and thermal transmittance
-        t_dir_up = r["transm_up_dir"]
-        t_dif_up = r["transm_up_dif"]
+        # unscaling and rescaling downward direct flux terms by local solar zenith angle (see above)
+        for ind in [0, 2]:
+            E_coupled[ind] = E_coupled[ind] / self.coszen * cos_i
+
+        # thermal transmittance
         L_up = Ls * (r["transm_up_dir"] + r["transm_up_dif"])
 
-        # including glint for water surfaces
-        if self.glint_model:
-            rho_ls = 0.02  # fresnel reflectance factor (approx. 0.02 for nadir view)
-            sun_glint = rho_ls * (
-                x_surface[-2] * E_down_dir / (E_down_dir + E_down_dif)
-            )
-            sky_glint = rho_ls * (
-                x_surface[-1] * E_down_dif / (E_down_dir + E_down_dif)
-            )
-        else:
-            sun_glint = np.zeros(rfl.shape)
-            sky_glint = np.zeros(rfl.shape)
-
         # adjacency effects
-        bg = geom.bg_rfl if geom.bg_rfl is not None else rfl
+        # ToDo: we need to think about if we want to obtain the background reflectance from the Geometry object
+        #  or from the surface model, i.e., the same way as we do with the target pixel reflectance
+        bg_dir = geom.bg_rfl if geom.bg_rfl is not None else rfl_dir
+        bg_dif = geom.bg_rfl if geom.bg_rfl is not None else rfl_dif
 
         # at-sensor radiance model, including topography, adjacency effects, and glint
         ret = (
             L_atm
             + (
-                E_down_dir * t_dir_up * (rfl + sun_glint)
-                + E_down_dif * t_dir_up * (rfl + sky_glint)
-                + E_down_dir * t_dif_up * bg
-                + E_down_dif * t_dif_up * bg
+                E_coupled[0] * rfl_dir  # bidirectional flux
+                + E_coupled[1] * rfl_dif  # hemispherical-directional flux
+                + E_coupled[2] * bg_dir  # directional-hemispherical flux
+                + E_coupled[3] * bg_dif  # bi-hemispherical flux
             )
-            / (1.0 - s_alb * bg)
+            / (1.0 - s_alb * bg_dif)
             + L_up
         )
 
