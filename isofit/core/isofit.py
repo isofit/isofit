@@ -84,9 +84,6 @@ class Isofit:
         # Construct and cache the full statevector (all multistates)
         self.full_statevector, *_ = construct_full_state(self.config)
 
-        # Cache the forward models. Comment if not using caching
-        self.fm_cache = cache_forward_models(self.config)
-
         # Initialize ray for parallel execution
         rayargs = {
             "address": self.config.implementation.ip_head,
@@ -132,6 +129,8 @@ class Isofit:
         # Initialize the forward model with n surfaces and states
         # self.fm = fm = ForwardModel(self.config)
 
+        # Get the rows and columns that isofit will run
+        # Only part of the file
         if row_column is not None:
             ranges = row_column.split(",")
             if len(ranges) == 1:
@@ -143,18 +142,20 @@ class Isofit:
                 row_start, row_end, col_start, col_end = ranges
                 self.rows = range(int(row_start), int(row_end) + 1)
                 self.cols = range(int(col_start), int(col_end) + 1)
+        # All of the file
         else:
             io = IO(self.config, self.full_statevector)
             self.rows = range(io.n_rows)
             self.cols = range(io.n_cols)
             del io
 
+        # Form the row-column pairs
         index_pairs = np.vstack(
             [x.flatten(order="f") for x in np.meshgrid(self.rows, self.cols)]
         ).T
 
+        # Handle the number of workers - Should this be handled in this for loop?
         n_iter = index_pairs.shape[0]
-
         if self.config.implementation.n_cores is None:
             n_workers = multiprocessing.cpu_count()
         else:
@@ -163,46 +164,73 @@ class Isofit:
         # Max out the number of workers based on the number of tasks
         n_workers = min(n_workers, n_iter)
 
-        params = [
-            ray.put(obj)
-            for obj in [
-                self.config,
-                self.fm_cache,
-                self.full_statevector,
-                self.loglevel,
-                self.logfile,
-                self.state_pixel_index,
-                n_workers,
-            ]
-        ]
-        self.workers = ray.util.ActorPool(
-            [Worker.remote(*params, n) for n in range(n_workers)]
-        )
+        # Split into class if pixel classes are being propogated
+        if len(self.state_pixel_index):
+            index_pairs_class = []
+            for class_row_col in self.state_pixel_index:
+                if not len(class_row_col):
+                    continue
 
-        start_time = time.time()
-        n_tasks = min(
-            n_workers * self.config.implementation.task_inflation_factor, n_iter
-        )
+                class_row_col = np.array(class_row_col)
+                index_pairs_class.append(index_pairs[class_row_col[:, 0]])
 
-        logging.info(
-            f"Beginning {n_iter} inversions in {n_tasks} chunks using {n_workers} cores"
-        )
+            index_pairs = index_pairs_class
 
-        # Divide up spectra to run into chunks
-        index_sets = np.linspace(0, n_iter, num=n_tasks, dtype=int)
-        if len(index_sets) == 1:
-            indices_to_run = [index_pairs[0:1, :]]
         else:
-            indices_to_run = [
-                index_pairs[index_sets[l] : index_sets[l + 1], :]
-                for l in range(len(index_sets) - 1)
-            ]
+            index_pairs = [index_pairs]
 
-        res = list(
-            self.workers.map_unordered(
-                lambda a, b: a.run_set_of_spectra.remote(b), indices_to_run
+        """
+        Another pair of eyes on the mutiprocessing would be great here.
+        There may easily be a better way to do this.
+        """
+        # Loop through index pairs and run workers
+        for i, index_pair in enumerate(index_pairs):
+
+            # Construct full fm
+            self.fm = fm = ForwardModel(self.config)
+            self.fm.construct_surface(str(i))
+            self.fm.construct_state()
+
+            params = [
+                ray.put(obj)
+                for obj in [
+                    self.config,
+                    self.fm,
+                    self.full_statevector,
+                    self.loglevel,
+                    self.logfile,
+                    self.state_pixel_index,
+                    n_workers,
+                ]
+            ]
+            self.workers = ray.util.ActorPool(
+                [Worker.remote(*params, n) for n in range(n_workers)]
             )
-        )
+
+            start_time = time.time()
+            n_tasks = min(
+                n_workers * self.config.implementation.task_inflation_factor, n_iter
+            )
+
+            logging.info(
+                f"Beginning {n_iter} inversions in {n_tasks} chunks using {n_workers} cores"
+            )
+
+            # Divide up spectra to run into chunks
+            index_sets = np.linspace(0, n_iter, num=n_tasks, dtype=int)
+            if len(index_sets) == 1:
+                indices_to_run = [index_pair[0:1, :]]
+            else:
+                indices_to_run = [
+                    index_pair[index_sets[l] : index_sets[l + 1], :]
+                    for l in range(len(index_sets) - 1)
+                ]
+
+            res = list(
+                self.workers.map_unordered(
+                    lambda a, b: a.run_set_of_spectra.remote(b), indices_to_run
+                )
+            )
 
         total_time = time.time() - start_time
         logging.info(
@@ -217,8 +245,7 @@ class Worker(object):
     def __init__(
         self,
         config: configs.Config,
-        # forward_model: ForwardModel,
-        fm_cache: dict,
+        forward_model: ForwardModel,
         full_statevector: np.array,
         loglevel: str,
         logfile: str,
@@ -244,8 +271,7 @@ class Worker(object):
             datefmt="%Y-%m-%d,%H:%M:%S",
         )
         self.config = config
-        # self.fm = forward_model
-        self.fm_cache = fm_cache
+        self.fm = forward_model
         self.state_pixel_index = state_pixel_index
 
         self.io = IO(self.config, full_statevector)
@@ -272,17 +298,8 @@ class Worker(object):
             # Get pixel class
             pixel_class = match_class(self.state_pixel_index, row, col)
 
-            # Select the cached fm
-            self.fm = self.fm_cache[pixel_class]
-
             logging.debug(f"Pixel class: {pixel_class}")
             logging.debug(f"Surface: {self.fm.surface}")
-
-            # Commented out  caching
-            # Get surface
-            # self.fm.construct_surface(pixel_class)
-            # # Get state
-            # self.fm.construct_state()
 
             # Get inversion
             self.iv = Inversion(self.config, self.fm)

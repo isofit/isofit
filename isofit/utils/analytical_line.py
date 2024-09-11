@@ -351,8 +351,6 @@ def analytical_line(
         else []
     )
 
-    # Cache forward models
-    fm_cache = cache_forward_models(config)
     # fm = ForwardModel(config, subs=False)
 
     (
@@ -416,8 +414,7 @@ def analytical_line(
         ray.put(obj)
         for obj in (
             config,
-            # fm,
-            fm_cache,
+            fm,
             state_pixel_index,
             full_statevector,
             full_idx_surface,

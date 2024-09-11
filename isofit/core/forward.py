@@ -79,9 +79,6 @@ class ForwardModel:
         else:
             self.model_discrepancy = None
 
-    def construct_RT(self, i):
-        pass
-
     def construct_surface(self, i):
         self.surface_params = self.config.surface.surface_params
         surf_category = self.config.surface.Surfaces[i]["surface_category"]
