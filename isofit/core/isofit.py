@@ -125,46 +125,44 @@ class Isofit:
 
         logging.info("Building first forward model, will generate any necessary LUTs")
 
-        # Commented out to reflect the cached forward model
-        # Initialize the forward model with n surfaces and states
-        # self.fm = fm = ForwardModel(self.config)
+        # Get the number of workers from config
+        if self.config.implementation.n_cores is None:
+            n_workers = multiprocessing.cpu_count()
+        else:
+            n_workers = self.config.implementation.n_cores
 
         # Get the rows and columns that isofit will run
-        # Only part of the file
+        # If running only part of the file
         if row_column is not None:
             ranges = row_column.split(",")
             if len(ranges) == 1:
                 self.rows, self.cols = [int(ranges[0])], None
             if len(ranges) == 2:
                 row_start, row_end = ranges
-                self.rows, self.cols = range(int(row_start), int(row_end)), None
+                self.rows = range(int(row_start), int(row_end))
+                self.cols = None
             elif len(ranges) == 4:
                 row_start, row_end, col_start, col_end = ranges
                 self.rows = range(int(row_start), int(row_end) + 1)
                 self.cols = range(int(col_start), int(col_end) + 1)
-        # All of the file
+
+        # Else running all of the file
         else:
             io = IO(self.config, self.full_statevector)
             self.rows = range(io.n_rows)
             self.cols = range(io.n_cols)
             del io
 
-        # Form the row-column pairs
+        # Form the row-column pairs (pixels to run)
         index_pairs = np.vstack(
             [x.flatten(order="f") for x in np.meshgrid(self.rows, self.cols)]
         ).T
 
-        # Handle the number of workers - Should this be handled in this for loop?
-        n_iter = index_pairs.shape[0]
-        if self.config.implementation.n_cores is None:
-            n_workers = multiprocessing.cpu_count()
-        else:
-            n_workers = self.config.implementation.n_cores
-
-        # Max out the number of workers based on the number of tasks
-        n_workers = min(n_workers, n_iter)
+        # Save this for logging
+        total_samples = index_pairs.shape[0]
 
         # Split into class if pixel classes are being propogated
+        # If this is a multistate run
         if len(self.state_pixel_index):
             index_pairs_class = []
             for class_row_col in self.state_pixel_index:
@@ -176,21 +174,55 @@ class Isofit:
 
             index_pairs = index_pairs_class
 
+        # Else it's not a multistate run
         else:
             index_pairs = [index_pairs]
 
+        # Some logging that might be nice
+        if len(index_pairs):
+            logging.info("Multi-state inversion started.")
+        else:
+            logging.info("Single-state inversion started.")
+
         """
         Another pair of eyes on the mutiprocessing would be great here.
-        There may easily be a better way to do this.
+        There may easily be a better way to do this. Mostly setting 
+        worker number on the samples within the loop rather than
+        across the entire scene.
         """
         # Loop through index pairs and run workers
+        class_loop_start_time = time.time()
         for i, index_pair in enumerate(index_pairs):
+
+            # Max out number of workers based on number of tasks
+            n_iter = index_pair.shape[0]
+            n_workers = min(n_workers, n_iter)
+
+            # The number of tasks to be initialized
+            n_tasks = min(
+                (n_workers * self.config.implementation.task_inflation_factor), n_iter
+            )
+
+            # Get indices to pass to each worker
+            index_sets = np.linspace(0, n_iter, num=n_tasks, dtype=int)
+            if len(index_sets) == 1:
+                indices_to_run = [index_pair[0:1, :]]
+            else:
+                indices_to_run = [
+                    index_pair[index_sets[l] : index_sets[l + 1], :]
+                    for l in range(len(index_sets) - 1)
+                ]
 
             # Construct full fm
             self.fm = fm = ForwardModel(self.config)
+            # Have to split these out to update the surface dynamically
             self.fm.construct_surface(str(i))
             self.fm.construct_state()
 
+            logging.debug(f"Pixel class: {str(i)}")
+            logging.debug(f"Surface: {self.fm.surface}")
+
+            # Put worker args into Ray object
             params = [
                 ray.put(obj)
                 for obj in [
@@ -203,41 +235,38 @@ class Isofit:
                     n_workers,
                 ]
             ]
+            # Initialize Ray actor pool (Worker class)
             self.workers = ray.util.ActorPool(
                 [Worker.remote(*params, n) for n in range(n_workers)]
             )
 
             start_time = time.time()
-            n_tasks = min(
-                n_workers * self.config.implementation.task_inflation_factor, n_iter
-            )
-
             logging.info(
-                f"Beginning {n_iter} inversions in {n_tasks} chunks using {n_workers} cores"
+                f"Beginning {n_iter} inversions in {n_tasks} chunks"
+                f"using {n_workers} cores"
             )
 
-            # Divide up spectra to run into chunks
-            index_sets = np.linspace(0, n_iter, num=n_tasks, dtype=int)
-            if len(index_sets) == 1:
-                indices_to_run = [index_pair[0:1, :]]
-            else:
-                indices_to_run = [
-                    index_pair[index_sets[l] : index_sets[l + 1], :]
-                    for l in range(len(index_sets) - 1)
-                ]
-
+            # Kick off actor pool
             res = list(
                 self.workers.map_unordered(
                     lambda a, b: a.run_set_of_spectra.remote(b), indices_to_run
                 )
             )
 
-        total_time = time.time() - start_time
-        logging.info(
-            f"Inversions complete.  {round(total_time,2)}s total,"
-            f" {round(n_iter/total_time,4)} spectra/s,"
-            f" {round(n_iter/total_time/n_workers,4)} spectra/s/core"
-        )
+            total_time = time.time() - start_time
+            logging.info(
+                f"Inversions complete.  {round(total_time,2)}s total,"
+                f" {round(n_iter/total_time,4)} spectra/s,"
+                f" {round(n_iter/total_time/n_workers,4)} spectra/s/core"
+            )
+
+        if len(index_pairs):
+            class_loop_total_time = time.time() - class_loop_start_time
+            logging.info(
+                f"All Inversions complete. {round(class_loop_total_time,2)}s total,"
+                f" {round(total_samples/class_loop_total_time,4)} spectra/s,"
+                f" {round(total_samples/class_loop_total_time/n_workers,4)} spectra/s/core"
+            )
 
 
 @ray.remote(num_cpus=1)
@@ -295,11 +324,6 @@ class Worker(object):
 
             # Get input data
             input_data = self.io.get_components_at_index(row, col)
-            # Get pixel class
-            pixel_class = match_class(self.state_pixel_index, row, col)
-
-            logging.debug(f"Pixel class: {pixel_class}")
-            logging.debug(f"Surface: {self.fm.surface}")
 
             # Get inversion
             self.iv = Inversion(self.config, self.fm)
