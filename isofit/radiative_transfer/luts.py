@@ -6,12 +6,14 @@ implementations and research, please see https://github.com/isofit/isofit/tree/8
 import gc
 import logging
 import os
+from pathlib import Path
 from typing import Any, List, Union
 
 import numpy as np
 import xarray as xr
 from netCDF4 import Dataset
 
+__file__ = "..."
 Logger = logging.getLogger(__file__)
 
 
@@ -415,13 +417,60 @@ def sub(ds: xr.Dataset, dim: str, strat) -> xr.Dataset:
         return ds
 
 
+def decouple(ds, inplace=True):
+    """
+    Calculates decoupled terms on the input Dataset
+
+    Parameters
+    ----------
+    ds: xr.Dataset
+        Dataset to process on
+    inplace: bool, default=True
+        Insert the decoupled terms in-place to the original Dataset. If False, copy the
+        Dataset first
+
+    Returns
+    -------
+    ds: xr.Dataset
+        Dataset with decoupled terms
+    """
+    terms = {
+        "bi-direct": ("transm_down_dir", "transm_up_dir"),
+        "hemi-direct": ("transm_down_dif", "transm_up_dir"),
+        "direct-hemi": ("transm_down_dir", "transm_up_dif"),
+        "bi-hemi": ("transm_down_dif", "transm_up_dif"),
+    }
+
+    # Detect if decoupling needs to occur first
+    data = ds.get(list(terms))
+    calc = False
+    if data is None:
+        # Not all keys exist
+        calc = "missing"
+    else:
+        # If any key is empty
+        if not bool(data.any().to_array().all()):
+            calc = "empty"
+
+    if calc:
+        Logger.debug(f"A decoupled term is {calc}, calculating")
+        if not inplace:
+            ds = ds.copy()
+
+        for term, (key1, key2) in terms.items():
+            ds[term] = ds[key1] * ds[key2]
+
+    return ds
+
+
 def load(
     file: str,
     subset: dict = None,
-    dask=False,
-    mode="r",
-    lock=False,
-    load=True,
+    dask: bool = False,
+    mode: str = "a",
+    lock: bool = False,
+    load: bool = True,
+    decoupling: str = "after",
     **kwargs,
 ) -> xr.Dataset:
     """
@@ -436,12 +485,28 @@ def load(
         Subset each dimension with a given strategy. Each dimension in the LUT file
         must be specified.
         See examples for more information
-    dask: bool, default=True
+    dask: bool, default=False
         Use Dask on the backend of Xarray to lazy load the dataset. This enables
         out-of-core subsetting
+    mode: str, default="a"
+        File mode to open with, must be set to append="a" for decoupled terms to be
+        saved back
+    lock: bool, default=False
+        Set a lock on the input file
     load: bool, default=True
         Calls ds.load() at the end to cast from Dask arrays back into numpy arrays held
         in memory
+    decoupling: string, default="after"
+        Calculates decoupling terms, if needed. This may be set one of four ways:
+            "before"
+                Calculate before subsetting
+            "before-save"
+                Before + save the decoupled terms to the original input file
+            "after"
+                Calculate after subsetting
+            "after-save"
+                After + save to a new file (the original input file with the extension
+                changed to ".decoupled-subset.nc")
 
     Examples
     --------
@@ -595,12 +660,32 @@ def load(
     >>> load(file, subset).unstack().dims
     Frozen({'AOT550': 3, 'H2OSTR': 10, 'wl': 285})
     """
+    valid = ("before", "before-save", "after", "after-save")
+    if decoupling not in valid:
+        raise AttributeError("Decoupling must be set to either 'before' or 'after'")
+
     if dask:
-        Logger.debug("Using Dask to load")
+        Logger.debug(f"Using Dask to load: {file}")
         ds = xr.open_mfdataset([file], mode=mode, lock=lock, **kwargs)
     else:
-        Logger.debug("Using Xarray to load")
+        Logger.debug(f"Using Xarray to load: {file}")
         ds = xr.open_dataset(file, mode=mode, lock=lock, **kwargs)
+
+    # Calculate decoupling before subsetting
+    if "before" in decoupling:
+        decouple(ds)
+
+        # Save back to the original file, only the the decoupled terms
+        if all(
+            [
+                "save" in decoupling,
+                dask is False,  # Only works with xarray loader
+                mode == "a",  # Original input must have been opened in append
+            ]
+        ):
+            Logger.debug(f"Saving decoupled terms back to the original input file")
+            terms = ["bi-direct", "hemi-direct", "direct-hemi", "bi-hemi"]
+            ds[terms].to_netcdf(file, mode="a")
 
     # Special case that doesn't require defining the entire grid subsetting strategy
     if subset is None:
@@ -636,12 +721,26 @@ def load(
             Logger.debug("Interpolating")
             ds = optimizedInterp(ds, interp)
 
+        # Save this subsetting strategy to the attributes for future reference
+        ds.attrs["subset"] = str(subset)
+
         Logger.debug("Subsetting finished")
     else:
         Logger.error("The subsetting strategy must be a dictionary")
         raise AttributeError(
             f"Bad subsetting strategy, expected either a dict or a NoneType: {subset}"
         )
+
+    # Calculate decoupling after subsetting
+    if "after" in decoupling:
+        decouple(ds)
+
+        if "save" in decoupling:
+            Logger.debug(f"Saving subset with decoupling to {file}")
+
+            # Have to save to a different/new file after subsetting
+            file = Path(file).with_suffix(".decoupled-subset.nc")
+            ds.to_netcdf(file)
 
     dims = ds.drop_dims("wl").dims
 
