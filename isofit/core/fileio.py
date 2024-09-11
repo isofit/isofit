@@ -40,8 +40,8 @@ from isofit.core.common import (
 )
 from isofit.core.forward import ForwardModel
 from isofit.core.geometry import Geometry
-from isofit.inversion.inverse import Inversion
 from isofit.inversion.inverse_simple import invert_algebraic, invert_simple
+from isofit.inversion.inversion import Inversion
 
 ### Variables ###
 

@@ -39,8 +39,8 @@ from isofit.core.common import (
 from isofit.core.fileio import write_bil_chunk
 from isofit.core.forward import ForwardModel
 from isofit.core.geometry import Geometry
+from isofit.inversion import Inversions
 from isofit.inversion.inverse_simple import invert_analytical
-from isofit.inversion.inversion import Inversion
 from isofit.utils.atm_interpolation import atm_interpolation
 from isofit.utils.multistate import (
     cache_forward_models,
@@ -165,8 +165,16 @@ class Worker(object):
                 self.fm = self.fm_cache[pixel_class]
 
                 # Construct inversion
-                self.iv = Inversion(self.config, self.fm)
-                self.iv = self.iv.construct_inverse(self.fm)
+
+                iv = Inversions.get(self.config.implementation.mode, None)
+                if not iv:
+                    logging.exception(
+                        "Inversion implementation: "
+                        f"{self.config.implementation.mode}, "
+                        "did not match options"
+                    )
+                    raise KeyError
+                self.iv = iv(self.config, self.fm)
 
                 meas = self.rdn[r, c, :]
                 if self.radiance_correction is not None:
