@@ -658,8 +658,7 @@ def load(
     >>> load(file, subset).unstack().dims
     Frozen({'AOT550': 3, 'H2OSTR': 10, 'wl': 285})
     """
-    valid = ("before", "before-save", "after", "after-save")
-    if decoupling not in valid:
+    if decoupling not in ("before", "before-save", "after", "after-save"):
         raise AttributeError("Decoupling must be set to either 'before' or 'after'")
 
     if dask:
