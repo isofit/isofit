@@ -446,10 +446,9 @@ def decouple(ds, inplace=True):
     if data is None:
         # Not all keys exist
         calc = "missing"
-    else:
+    elif not bool(data.any().to_array().all()):
         # If any key is empty
-        if not bool(data.any().to_array().all()):
-            calc = "empty"
+        calc = "empty"
 
     if calc:
         Logger.debug(f"A decoupled term is {calc}, calculating")
