@@ -164,32 +164,6 @@ class RadiativeTransferEngine:
                     "Unknown RT mode provided in LUT file. Please use either 'transm' or 'rdn'."
                 )
 
-            # If not provided by the LUT, calculate flux coupling terms before resampling
-            self.coupling_terms = [
-                key
-                for key in self.lut
-                if key in ["bi-direct", "hemi-direct", "direct-hemi", "bi-hemi"]
-            ]
-            if (
-                len(self.coupling_terms) < 4
-                or any([self.lut[key] for key in self.coupling_terms]) == 0
-            ):
-                Logger.info(
-                    "LUT does not provide full suite of coupling terms. Calculate them now before resampling."
-                )
-                self.lut["bi-direct"] = (
-                    self.lut["transm_down_dir"] * self.lut["transm_up_dir"]
-                )
-                self.lut["hemi-direct"] = (
-                    self.lut["transm_down_dif"] * self.lut["transm_up_dir"]
-                )
-                self.lut["direct-hemi"] = (
-                    self.lut["transm_down_dir"] * self.lut["transm_up_dif"]
-                )
-                self.lut["bi-hemi"] = (
-                    self.lut["transm_down_dif"] * self.lut["transm_up_dif"]
-                )
-
             # If necessary, resample prebuilt LUT to desired instrument spectral response
             if not len(wl) == len(self.lut.wl) or not all(wl == self.lut.wl):
                 # Discover variables along the wl dim
