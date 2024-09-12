@@ -30,8 +30,8 @@ class GlintModelSurface(MultiComponentSurface):
     """A model of the surface based on a collection of multivariate
     Gaussians, extended with two surface glint terms (sun + sky glint)."""
 
-    def __init__(self, config: dict, params: dict):
-        super().__init__(config, params)
+    def __init__(self, full_config: dict, params: dict):
+        super().__init__(full_config, params)
 
         # TODO: Enforce this attribute in the config, not here (this is hidden)
         self.statevec_names.extend(["SUN_GLINT", "SKY_GLINT"])

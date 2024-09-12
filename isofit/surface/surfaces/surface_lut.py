@@ -54,11 +54,11 @@ class LUTSurface(Surface):
 
     """
 
-    def __init__(self, config: dict, params: dict):
-        super().__init__(config)
+    def __init__(self, full_config: dict, params: dict):
+        super().__init__(full_config)
 
-        if exists(config.get("surface_file", "")):
-            model_dict = loadmat(config["surface_file"])
+        if exists(full_config.get("surface_file", "")):
+            model_dict = loadmat(full_config["surface_file"])
         else:
             raise FileNotFoundError("No surface .mat file exists")
 

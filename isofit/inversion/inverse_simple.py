@@ -36,7 +36,7 @@ from isofit.core.forward import ForwardModel
 from isofit.core.geometry import Geometry
 from isofit.core.instrument import Instrument
 from isofit.radiative_transfer.radiative_transfer import RadiativeTransfer
-from isofit.surface.surfaces.surface_base import BaseSurface
+from isofit.surface.surface import Surface
 
 
 def heuristic_atmosphere(
@@ -136,7 +136,7 @@ def heuristic_atmosphere(
 
 
 def invert_algebraic(
-    surface: BaseSurface,
+    surface: Surface,
     RT: RadiativeTransfer,
     instrument: Instrument,
     x_surface: np.array,

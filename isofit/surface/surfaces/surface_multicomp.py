@@ -63,7 +63,6 @@ class MultiComponentSurface(Surface):
         else:
             raise ValueError("Unrecognized Normalization: %s\n" % self.normalize)
 
-        # Place holder until I work out how to pass these in as kwargs
         self.selection_metric = params.get("selection_metric", "Euclidean")
         self.select_on_init = params.get("select_on_init", True)
 

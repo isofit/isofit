@@ -31,9 +31,9 @@ class ThermalSurface(MultiComponentSurface):
     """A model of the surface based on a Mixture of a hot Black Body and
     Multicomponent cold surfaces."""
 
-    def __init__(self, config: dict, params: dict):
+    def __init__(self, full_config: dict, params: dict):
         """."""
-        super().__init__(config, params)
+        super().__init__(full_config, params)
 
         # TODO: Enforce this attribute in the config, not here (this is hidden)
         # Handle additional state vector elements

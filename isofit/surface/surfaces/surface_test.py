@@ -32,9 +32,9 @@ class TestSurface(MultiComponentSurface):
         super().__init__(config, params)
 
         self.statevec_names.extend(["GARBAGE"])
-        self.scale.extend([1.0])
-        self.init.extend([0.02])
-        self.bounds.extend([[-1, 10]])  # Gege (2021), WASI user manual
+        self.scale.extend([100])
+        self.init.extend([999])
+        self.bounds.extend([[998, 1000]])  # Gege (2021), WASI user manual
         self.n_state = self.n_state + 1
         self.test_ind = len(self.statevec_names) - 1
         self.f = np.array([[(1000000 * np.array(self.scale[self.test_ind :])) ** 2]])
@@ -74,7 +74,6 @@ class TestSurface(MultiComponentSurface):
         calculated at x_surface."""
 
         drfl = self.dlamb_dsurface(x_surface, geom)
-        drfl[:, self.test_ind :] = 1
         return drfl
 
     def dLs_dsurface(self, x_surface, geom):
