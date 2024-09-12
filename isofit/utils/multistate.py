@@ -50,7 +50,8 @@ def index_image_by_class(surface_config, subs=True):
                       and values are tuples of rows and columns for each
                       group.
     """
-    if subs:
+
+    if vars(surface_config).get("sub_surface_class_file"):
         class_file = surface_config.sub_surface_class_file
     else:
         class_file = surface_config.surface_class_file

@@ -149,9 +149,12 @@ class Pathnames:
         )
 
         # only if there is a surface_class file
-        self.subs_class_path = abspath(
-            join(self.input_data_directory, self.fid + "_subs_class")
-        )
+        if args.empirical_line or args.analytical_line:
+            self.subs_class_path = abspath(
+                join(self.input_data_directory, self.fid + "_subs_class")
+            )
+        else:
+            self.subs_class_path = None
 
         self.rfl_subs_path = abspath(
             join(self.output_directory, self.fid + "_subs_rfl")
@@ -1693,18 +1696,20 @@ def make_surface_config(paths: Pathnames, surface_category="multicomponent_surfa
     # Initialize config dict
     surface_config_dict = {
         "multi_surface_flag": False,
-        "surface_class_file": (vars(paths).get("surface_class_file", None)),
-        "sub_surface_class_file": (vars(paths).get("subs_class_path", None)),
         "Surfaces": {},
         "surface_params": {
             "select_on_init": True,
             "selection_metric": "Euclidean",
         },
-        "statevector": {},
     }
 
     # Check to see if a classification file is being propogated
     if paths.surface_class_file:
+        surface_config_dict["surface_class_file"] = paths.surface_class_file
+
+        if vars(paths).get("subs_class_path", None):
+            surface_config_dict["sub_surface_class_file"] = paths.subs_class_path
+
         surface_config_dict["multi_surface_flag"] = True
 
         surface_class_ds = envi.open(envi_header(paths.surface_class_file))
