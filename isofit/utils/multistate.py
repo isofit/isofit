@@ -159,33 +159,31 @@ def construct_full_state(full_config):
     """
     rfl_states = []
     nonrfl_states = []
-    RT_states = []
-    instrument_states = []
 
+    # Not sure if there are ever instrument statevec elements?
     instrument = Instrument(full_config)
-    RT = RadiativeTransfer(full_config)
+    instrument_states = instrument.statevec_names
 
+    # This is how it would be nice to pull every statevector element
+    rt_config = full_config.forward_model.radiative_transfer
+    rt_states = rt_config.radiative_transfer_engines[0].statevector_names
+
+    # Without changing where the nonrfl surface elements are defined
     surface_config = full_config.forward_model.surface
     params = surface_config.surface_params
 
-    # Iterate through the different states to find overlapping state names
+    # Iterate through the different surfaces to find overlapping state names
     for i, surface in full_config.forward_model.surface.Surfaces.items():
         surface = Surfaces[surface["surface_category"]](surface, params)
-        state = StateVector(instrument, RT, surface)
-
-        rfl_states += [state.statevec[i] for i in state.idx_surf_rfl]
-        nonrfl_states += [state.statevec[i] for i in state.idx_surf_nonrfl]
-        RT_states += [state.statevec[i] for i in state.idx_RT]
-        instrument_states += [state.statevec[i] for i in state.idx_instrument]
+        rfl_states += surface.statevec_names[: len(surface.idx_lamb)]
+        nonrfl_states += surface.statevec_names[len(surface.idx_lamb) :]
 
     # Find unique state elements and collapse - ALPHABETICAL
     rfl_states = sorted(list(set(rfl_states)))
     nonrfl_states = sorted(list(set(nonrfl_states)))
-    RT_states = sorted(list(set(RT_states)))
-    instrument_states = sorted(list(set(instrument_states)))
 
     # Rejoin in the same order as the original statevector object
-    full_statevec = rfl_states + nonrfl_states + RT_states + instrument_states
+    full_statevec = rfl_states + nonrfl_states + rt_states + instrument_states
 
     # Set up full idx arrays
     full_idx_surface = np.arange(0, len(rfl_states) + len(nonrfl_states))
@@ -197,9 +195,9 @@ def construct_full_state(full_config):
     full_idx_surf_nonrfl = np.arange(start, start + len(nonrfl_states))
 
     start += len(nonrfl_states)
-    full_idx_RT = np.arange(start, start + len(RT_states))
+    full_idx_rt = np.arange(start, start + len(rt_states))
 
-    start += len(RT_states)
+    start += len(rt_states)
     full_idx_instrument = np.arange(start, start + len(instrument_states))
 
-    return full_statevec, full_idx_surface, full_idx_surf_rfl, full_idx_RT
+    return full_statevec, full_idx_surface, full_idx_surf_rfl, full_idx_rt
