@@ -148,28 +148,30 @@ class Pathnames:
             join(self.input_data_directory, self.fid + "_subs_loc")
         )
 
-        # only if there is a surface_class file
+        # Needs some handling if the segmentation will occur
         if args.empirical_line or args.analytical_line:
             self.subs_class_path = abspath(
                 join(self.input_data_directory, self.fid + "_subs_class")
             )
+            subs_str = "_subs"
         else:
             self.subs_class_path = None
+            subs_str = ""
 
         self.rfl_subs_path = abspath(
-            join(self.output_directory, self.fid + "_subs_rfl")
+            join(self.output_directory, self.fid + f"{subs_str}" + "_rfl")
         )
         self.atm_coeff_path = abspath(
-            join(self.output_directory, self.fid + "_subs_atm")
+            join(self.output_directory, self.fid + f"{subs_str}" + "_atm")
         )
         self.state_subs_path = abspath(
-            join(self.output_directory, self.fid + "_subs_state")
+            join(self.output_directory, self.fid + f"{subs_str}" + "_state")
         )
         self.uncert_subs_path = abspath(
-            join(self.output_directory, self.fid + "_subs_uncert")
+            join(self.output_directory, self.fid + f"{subs_str}" + "_uncert")
         )
         self.h2o_subs_path = abspath(
-            join(self.output_directory, self.fid + "_subs_h2o")
+            join(self.output_directory, self.fid + f"{subs_str}" + "_h2o")
         )
 
         self.wavelength_path = abspath(join(self.data_directory, "wavelengths.txt"))

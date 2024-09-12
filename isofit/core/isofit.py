@@ -231,7 +231,6 @@ class Isofit:
                     self.full_statevector,
                     self.loglevel,
                     self.logfile,
-                    self.state_pixel_index,
                     n_workers,
                 ]
             ]
@@ -278,7 +277,6 @@ class Worker(object):
         full_statevector: np.array,
         loglevel: str,
         logfile: str,
-        state_pixel_index: list,
         total_workers: int = None,
         worker_id: int = None,
     ):
@@ -301,7 +299,6 @@ class Worker(object):
         )
         self.config = config
         self.fm = forward_model
-        self.state_pixel_index = state_pixel_index
 
         self.io = IO(self.config, full_statevector)
 
