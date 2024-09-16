@@ -416,22 +416,22 @@ def sub(ds: xr.Dataset, dim: str, strat) -> xr.Dataset:
         return ds
 
 
-def decouple(ds, inplace=True):
+def couple(ds, inplace=True):
     """
-    Calculates decoupled terms on the input Dataset
+    Calculates coupled terms on the input Dataset
 
     Parameters
     ----------
     ds: xr.Dataset
         Dataset to process on
     inplace: bool, default=True
-        Insert the decoupled terms in-place to the original Dataset. If False, copy the
+        Insert the coupled terms in-place to the original Dataset. If False, copy the
         Dataset first
 
     Returns
     -------
     ds: xr.Dataset
-        Dataset with decoupled terms
+        Dataset with coupled terms
     """
     terms = {
         "bi-direct": ("transm_down_dir", "transm_up_dir"),
@@ -440,7 +440,7 @@ def decouple(ds, inplace=True):
         "bi-hemi": ("transm_down_dif", "transm_up_dif"),
     }
 
-    # Detect if decoupling needs to occur first
+    # Detect if coupling needs to occur first
     data = ds.get(list(terms))
     calc = False
     if data is None:
@@ -451,7 +451,7 @@ def decouple(ds, inplace=True):
         calc = "empty"
 
     if calc:
-        Logger.debug(f"A decoupled term is {calc}, calculating")
+        Logger.debug(f"A coupled term is {calc}, calculating")
         if not inplace:
             ds = ds.copy()
 
@@ -468,7 +468,7 @@ def load(
     mode: str = "a",
     lock: bool = False,
     load: bool = True,
-    decoupling: str = "after",
+    coupling: str = "after",
     **kwargs,
 ) -> xr.Dataset:
     """
@@ -487,24 +487,24 @@ def load(
         Use Dask on the backend of Xarray to lazy load the dataset. This enables
         out-of-core subsetting
     mode: str, default="a"
-        File mode to open with, must be set to append="a" for decoupled terms to be
+        File mode to open with, must be set to append="a" for coupled terms to be
         saved back
     lock: bool, default=False
         Set a lock on the input file
     load: bool, default=True
         Calls ds.load() at the end to cast from Dask arrays back into numpy arrays held
         in memory
-    decoupling: string, default="after"
-        Calculates decoupling terms, if needed. This may be set one of four ways:
+    coupling: string, default="after"
+        Calculates coupling terms, if needed. This may be set one of four ways:
             "before"
                 Calculate before subsetting
             "before-save"
-                Before + save the decoupled terms to the original input file
+                Before + save the coupled terms to the original input file
             "after"
                 Calculate after subsetting
             "after-save"
                 After + save to a new file (the original input file with the extension
-                changed to ".decoupled-subset.nc")
+                changed to ".coupled-subset.nc")
 
     Examples
     --------
@@ -658,8 +658,8 @@ def load(
     >>> load(file, subset).unstack().dims
     Frozen({'AOT550': 3, 'H2OSTR': 10, 'wl': 285})
     """
-    if decoupling not in ("before", "before-save", "after", "after-save"):
-        raise AttributeError("Decoupling must be set to either 'before' or 'after'")
+    if coupling not in ("before", "before-save", "after", "after-save"):
+        raise AttributeError("Coupling must be set to either 'before' or 'after'")
 
     if dask:
         Logger.debug(f"Using Dask to load: {file}")
@@ -668,19 +668,19 @@ def load(
         Logger.debug(f"Using Xarray to load: {file}")
         ds = xr.open_dataset(file, mode=mode, lock=lock, **kwargs)
 
-    # Calculate decoupling before subsetting
-    if "before" in decoupling:
-        decouple(ds)
+    # Calculate coupling before subsetting
+    if "before" in coupling:
+        couple(ds)
 
-        # Save back to the original file, only the the decoupled terms
+        # Save back to the original file, only the the coupled terms
         if all(
             [
-                "save" in decoupling,
+                "save" in coupling,
                 dask is False,  # Only works with xarray loader
                 mode == "a",  # Original input must have been opened in append
             ]
         ):
-            Logger.debug(f"Saving decoupled terms back to the original input file")
+            Logger.debug(f"Saving coupled terms back to the original input file")
             terms = ["bi-direct", "hemi-direct", "direct-hemi", "bi-hemi"]
             ds[terms].to_netcdf(file, mode="a")
 
@@ -728,15 +728,15 @@ def load(
             f"Bad subsetting strategy, expected either a dict or a NoneType: {subset}"
         )
 
-    # Calculate decoupling after subsetting
-    if "after" in decoupling:
-        decouple(ds)
+    # Calculate coupling after subsetting
+    if "after" in coupling:
+        couple(ds)
 
-        if "save" in decoupling:
-            Logger.debug(f"Saving subset with decoupling to {file}")
+        if "save" in coupling:
+            Logger.debug(f"Saving subset with coupling to {file}")
 
             # Have to save to a different/new file after subsetting
-            file = Path(file).with_suffix(".decoupled-subset.nc")
+            file = Path(file).with_suffix(".coupled-subset.nc")
             ds.to_netcdf(file)
 
     dims = ds.drop_dims("wl").dims
