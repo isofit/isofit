@@ -320,7 +320,7 @@ class Worker(object):
                 output_state_unc[r - start_line, c, :] = unc[self.fm.idx_surface]
 
             state = output_state[r - start_line, ...]
-            state[state < 0] = 0
+            state[(state < 0) & (state != -9999)] = 0
 
             logging.info(f"Analytical line writing line {r}")
 
