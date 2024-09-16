@@ -26,8 +26,10 @@ import time
 
 # Explicitly set the number of threads to be 1, so we more effectively run in parallel
 # Must be executed before importing numpy, otherwise doesn't work
-os.environ["MKL_NUM_THREADS"] = "1"
-os.environ["OMP_NUM_THREADS"] = "1"
+# Set ISOFIT_NO_ENV in the environment to disable setting these variables automatically
+if not os.environ.get("ISOFIT_NO_ENV"):
+    os.environ["MKL_NUM_THREADS"] = "1"
+    os.environ["OMP_NUM_THREADS"] = "1"
 
 import click
 import numpy as np
