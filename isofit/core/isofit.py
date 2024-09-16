@@ -32,12 +32,7 @@ from isofit.configs import configs
 from isofit.core.fileio import IO
 from isofit.core.forward import ForwardModel
 from isofit.inversion import Inversions
-from isofit.utils.multistate import (
-    cache_forward_models,
-    construct_full_state,
-    index_image_by_class,
-    match_class,
-)
+from isofit.utils.multistate import construct_full_state, index_image_by_class
 
 
 class Isofit:
@@ -69,7 +64,6 @@ class Isofit:
         self.config = None
 
         # Load configuration file
-        # This is doing something
         self.config = configs.create_new_config(config_file)
         self.config.get_config_errors()
 
@@ -188,13 +182,14 @@ class Isofit:
         Another pair of eyes on the mutiprocessing would be great here.
         There may easily be a better way to do this. Mostly setting 
         worker number on the samples within the loop rather than
-        across the entire scene.
+        across the entire scene. It seems like we are losing
+        some performance.
         """
         # Loop through index pairs and run workers
         class_loop_start_time = time.time()
         for i, index_pair in enumerate(index_pairs):
 
-            # Max out number of workers based on number of tasks
+            # Don't want more workers than tasks
             n_iter = index_pair.shape[0]
             n_workers = min(n_workers, n_iter)
 

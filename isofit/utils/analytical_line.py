@@ -36,18 +36,13 @@ from isofit.core.common import (
     load_wavelen,
     match_statevector,
 )
-from isofit.core.fileio import write_bil_chunk
+from isofit.core.fileio import write_bil_chunk, write_bil_spectra
 from isofit.core.forward import ForwardModel
 from isofit.core.geometry import Geometry
 from isofit.inversion import Inversions
 from isofit.inversion.inverse_simple import invert_analytical
 from isofit.utils.atm_interpolation import atm_interpolation
-from isofit.utils.multistate import (
-    cache_forward_models,
-    construct_full_state,
-    index_image_by_class,
-    match_class,
-)
+from isofit.utils.multistate import construct_full_state, index_image_by_class_and_sub
 
 
 def construct_outputs(
@@ -169,14 +164,8 @@ def analytical_line(
         else (subs_state_file.replace("_subs_state", "_atm_interp"))
     )
 
-    # Set up the multi-state pixel map
-    state_pixel_index = (
-        index_image_by_class(config.forward_model.surface, subs=False)
-        if config.forward_model.surface.multi_surface_flag
-        else []
-    )
-
-    # fm = ForwardModel(config, subs=False)
+    # Set up the multi-state pixel map by sub
+    pixel_index = index_image_by_class_and_sub(config, lbl_file)
 
     (
         full_statevector,
@@ -197,7 +186,6 @@ def analytical_line(
             input_locations_file=loc_file,
             segmentation_file=lbl_file,
             output_atm_file=atm_file,
-            # atm_band_names=fm.RT.statevec_names,
             atm_band_names=[full_statevector[i] for i in full_idx_RT],
             nneighbors=n_atm_neighbors,
             gaussian_smoothing_sigma=smoothing_sigma,
@@ -213,6 +201,26 @@ def analytical_line(
         analytical_state_file,
         analytical_state_unc_file,
     )
+
+    # Form the row-column pairs (pixels to run)
+    index_pairs = np.vstack(
+        [x.flatten(order="f") for x in np.meshgrid(range(rdns[0]), range(rdns[1]))]
+    ).T
+
+    if len(pixel_index):
+        index_pairs_class = []
+        for class_row_col in pixel_index:
+            if not len(class_row_col):
+                continue
+
+            class_row_col = np.delete(np.array(class_row_col), -1, axis=1)
+            index_pairs_class.append(class_row_col)
+
+        index_pairs = index_pairs_class
+
+    # Else it's not a multistate run
+    else:
+        index_pairs = [index_pairs]
 
     # Divide into chunks to processes for each worker
     line_breaks = np.linspace(
@@ -234,31 +242,57 @@ def analytical_line(
     }
     ray.init(**ray_dict)
 
-    # Initialize workers
-    wargs = [
-        ray.put(obj)
-        for obj in (
-            config,
-            fm,
-            state_pixel_index,
-            full_statevector,
-            full_idx_surface,
-            full_idx_RT,
-            atm_file,
-            analytical_state_file,
-            analytical_state_unc_file,
-            rdn_file,
-            loc_file,
-            obs_file,
-            loglevel,
-            logfile,
-        )
-    ]
-    workers = ray.util.ActorPool([Worker.remote(*wargs) for _ in range(n_cores)])
+    """
+    The looping over classes is very similar to isofit.run
+    """
+    for i, index_pair in enumerate(index_pairs):
+        # Don't want more workers than tasks
+        n_iter = index_pair.shape[0]
+        n_workers = min(n_cores, n_iter)
 
-    # run workers
-    start_time = time.time()
-    res = list(workers.map_unordered(lambda a, b: a.run_lines.remote(b), line_breaks))
+        n_tasks = min((n_workers * config.implementation.task_inflation_factor), n_iter)
+
+        # Get indices to pass to each worker
+        index_sets = np.linspace(0, n_iter, num=n_tasks, dtype=int)
+        if len(index_sets) == 1:
+            indices_to_run = [index_pair[0:1, :]]
+        else:
+            indices_to_run = [
+                index_pair[index_sets[l] : index_sets[l + 1], :]
+                for l in range(len(index_sets) - 1)
+            ]
+
+        fm = ForwardModel(config)
+        # Need to match this with the superpixel
+        fm.construct_surface(f"{i}")
+        fm.construct_state()
+
+        # Initialize workers
+        wargs = [
+            ray.put(obj)
+            for obj in (
+                config,
+                fm,
+                full_statevector,
+                full_idx_surface,
+                full_idx_RT,
+                atm_file,
+                analytical_state_file,
+                analytical_state_unc_file,
+                rdn_file,
+                loc_file,
+                obs_file,
+                loglevel,
+                logfile,
+            )
+        ]
+        workers = ray.util.ActorPool([Worker.remote(*wargs) for _ in range(n_workers)])
+
+        # run workers
+        start_time = time.time()
+        res = list(
+            workers.map_unordered(lambda a, b: a.run_pixels.remote(b), indices_to_run)
+        )
     total_time = time.time() - start_time
     print(total_time)
 
@@ -274,9 +308,7 @@ class Worker(object):
     def __init__(
         self,
         config: configs.Config,
-        # fm: ForwardModel,
-        fm_cache: dict,
-        state_pixel_index: list,
+        fm: ForwardModel,
         full_statevector: list,
         full_idx_surface: np.array,
         full_idx_RT: np.array,
@@ -307,11 +339,12 @@ class Worker(object):
         )
         self.config = config
 
-        self.fm_cache = fm_cache
-        self.state_pixel_index = state_pixel_index
+        self.fm = fm
         self.full_statevector = full_statevector
         self.full_idx_surface = full_idx_surface
         self.full_idx_RT = full_idx_RT
+
+        self.winidx = retrieve_winidx(self.config)
 
         self.completed_spectra = 0
         self.hash_table = OrderedDict()
@@ -348,6 +381,73 @@ class Worker(object):
             interleave="bip"
         )
 
+    def run_pixels(self, indices):
+        for index in range(0, indices.shape[0]):
+            r, c = indices[index, 0], indices[index, 1]
+
+            meas = self.rdn[r, c, :]
+            if self.radiance_correction is not None:
+                meas *= self.radiance_correction
+            if np.all(meas < 0):
+                continue
+
+            # Atmospheric state elements
+            x_RT = self.rt_state[
+                # r, c, self.full_idx_RT - len(self.full_idx_surface)
+                r,
+                c,
+                self.fm.state.idx_RT - len(self.fm.state.idx_surface),
+            ]
+            geom = Geometry(obs=self.obs[r, c, :], loc=self.loc[r, c, :])
+
+            """
+            Exactly what state elements are passed into invert_analytic
+            might change with Niklas' upadtes. It also might vary
+            depending on what the other surface elements are. Are the
+            linear assumptions valid for other states?
+            """
+            states, unc = invert_analytical(
+                self.fm,
+                self.winidx,
+                meas,
+                geom,
+                x_RT,
+                1,
+                self.hash_table,
+                self.hash_size,
+            )
+
+            # Match pixel-specific to general statevector
+            state_est = states[-1]
+            full_state_est = match_statevector(
+                state_est, self.full_statevector, self.fm.state.statevec
+            )
+            full_state_est = full_state_est[self.full_idx_surface]
+            # full_state_est = np.expand_dims(full_state_est, axis=(0, 1))
+
+            full_unc = match_statevector(
+                unc, self.full_statevector, self.fm.state.statevec
+            )
+            full_unc = full_unc[self.full_idx_surface]
+            # full_unc = np.expand_dims(full_unc, axis=(0, 1))
+
+            write_bil_spectra(
+                full_state_est,
+                self.analytical_state_file,
+                r,
+                c,
+                len(self.full_idx_surface),
+                self.rdn.shape[1],
+            )
+            write_bil_spectra(
+                full_unc,
+                self.analytical_state_unc_file,
+                r,
+                c,
+                len(self.full_idx_surface),
+                self.rdn.shape[1],
+            )
+
     def run_lines(self, startstop: tuple) -> None:
         """
         TODO: Description
@@ -378,12 +478,6 @@ class Worker(object):
         for r in range(start_line, stop_line):
             for c in range(output_state.shape[1]):
                 # class of pixel
-                pixel_class = match_class(self.state_pixel_index, r, c)
-
-                # get cached fm
-                self.fm = self.fm_cache[pixel_class]
-
-                # Construct inversion
 
                 iv = Inversions.get(self.config.implementation.mode, None)
                 if not iv:
