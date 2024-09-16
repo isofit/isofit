@@ -321,10 +321,13 @@ class Worker(object):
 
                 output_state_unc[r - start_line, c, :] = unc[self.fm.idx_surface]
 
+            state = output_state[r - start_line, ...]
+            state[(state < 0) & (state != -9999) & (state != -0.01)] = 0
+
             logging.info(f"Analytical line writing line {r}")
 
             write_bil_chunk(
-                output_state[r - start_line, ...].T,
+                state.T,
                 self.analytical_state_file,
                 r,
                 (rdn.shape[0], rdn.shape[1], len(self.fm.idx_surface)),
