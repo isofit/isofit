@@ -1,5 +1,13 @@
 """ISOFIT command line interface."""
 
+import os
+
+# Explicitly set the number of threads to be 1, so we more effectively run in parallel
+# Must be executed before importing numpy, otherwise doesn't work
+# Setting in the CLI ensures this works for any script
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["OMP_NUM_THREADS"] = "1"
+
 import click
 
 import isofit
