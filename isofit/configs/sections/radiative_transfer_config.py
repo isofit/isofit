@@ -89,13 +89,13 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         self._glint_model_type = bool
         self.glint_model = False
         """
-        Flag to indicate whether to use the sun and sky glint model from Gege (2012, 2014) in the forward model. 
+        Flag to indicate whether to use the sun and sky glint model from Gege (2012, 2014) in the forward model.
         Only currently functional with multipart MODTRAN.
         """
 
         self._rt_mode_type = str
         self.rt_mode = None
-        """str: Radiative transfer mode of LUT simulations. 
+        """str: Radiative transfer mode of LUT simulations.
         'transm' for transmittances, 'rdn' for reflected radiance."""
 
         self._lut_names_type = dict()
@@ -109,6 +109,12 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         """List: Names of the statevector elements to use with this radiative transfer engine.  Must be a subset
         of the keys in radiative_transfer->statevector.  If not specified, uses all keys from
         radiative_transfer->statevector.  Auto-sorted (alphabetically) below."""
+
+        # MODTRAN and 6S
+        self._rte_configure_and_exit_type = bool
+        self.rte_configure_and_exit = False
+        """bool: Indicates that code should terminate as soon as all radiative transfer engine configuration files are
+        written (without running them)"""
 
         # MODTRAN parameters
         self._aerosol_template_file_type = str

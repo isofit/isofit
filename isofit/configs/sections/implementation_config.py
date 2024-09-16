@@ -61,11 +61,6 @@ class ImplementationConfig(BaseConfigSection):
         self.ray_include_dashboard = False
         """str: Ray - parameter.  Boolean to include dashboard."""
 
-        self._rte_configure_and_exit_type = bool
-        self.rte_configure_and_exit = False
-        """bool: Indicates that code should terminate as soon as all radiative transfer engine configuration files are
-        written (without running them)"""
-
         self._ray_temp_dir_type = str
         self.ray_temp_dir = "/tmp/ray"
         """str: Overrides the standard ray temporary directory.  Useful for multiuser systems."""

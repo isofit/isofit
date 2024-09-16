@@ -320,6 +320,9 @@ class ModtranRT(RadiativeTransferEngine):
         with open(infilepath, "w") as f:
             f.write(modtran_config_str)
 
+        if self.engine_config.rte_configure_and_exit:
+            return
+
         # Specify location of the proper MODTRAN 6.0 binary for this OS
         xdir = {"linux": "linux", "darwin": "macos", "windows": "windows"}
 
