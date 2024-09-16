@@ -39,3 +39,28 @@ if os.environ.get("ISOFIT_DEBUG"):
     from .wrappers import ray
 else:
     import ray
+
+from threadpoolctl import threadpool_info
+
+
+def checkNumThreads():
+    """
+    Checks the num_threads setting in the environment and raises a strong warning if it
+    is not set to 1 .
+    """
+    error = False
+    if info := threadpool_info():
+        if info[0]["num_threads"] > 1:
+            error = "greater than"
+    else:
+        error = "not set to"
+
+    if error:
+        Logger.warning(
+            f"""
+******************************************************************************************
+! Number of threads is {error} 1, this may greatly impact performance
+! Please set this the environment variables 'MKL_NUM_THREADS' and 'OMP_NUM_THREADS' to '1'
+******************************************************************************************\
+"""
+        )
