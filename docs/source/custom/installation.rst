@@ -151,10 +151,10 @@ The following environment variables are actively used within ISOFIT:
 - `MKL_NUM_THREADS` and `OMP_NUM_THREADS` - These control the threading of various packages within ISOFIT. It is
 important to set these to "1" to ensure ISOFIT performs to its fullest capabilities. By default, ISOFIT will insert
 these into the environment if they are not set and/or not set correctly.
-- `ISOFIT_NO_ENV` - This will disable automatically setting the MKL and OMP environment variables. This is recommended
+- `ISOFIT_NO_SET_THREADS` - This will disable automatically setting the MKL and OMP environment variables. This is recommended
 only for advanced users that know what they are doing and can mitigate the consequences.
 - `ISOFIT_DEBUG` - This will disable the `ray` package across ISOFIT to force single-core execution. Primarily used as
-a debugging tool by developers and is not recommended for use. 
+a debugging tool by developers and is not recommended for use.
 
 
 Quick Start with sRTMnet (Recommended for new users)
