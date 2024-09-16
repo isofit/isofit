@@ -23,7 +23,7 @@
 import pytest
 
 from isofit.configs import configs
-from isofit.radiative_transfer.modtran import ModtranRT
+from isofit.radiative_transfer.engines import ModtranRT
 
 
 @pytest.mark.xfail

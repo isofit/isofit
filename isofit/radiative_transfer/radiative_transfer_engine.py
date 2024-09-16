@@ -424,6 +424,7 @@ class RadiativeTransferEngine:
             readSim = ray.put(self.readSim)
             lut_path = ray.put(self.lut_path)
             buffer_time = ray.put(self.max_buffer_time)
+            rte_configure_and_exit = ray.put(self.engine_config.rte_configure_and_exit)
 
             jobs = [
                 streamSimulation.remote(
@@ -433,6 +434,7 @@ class RadiativeTransferEngine:
                     readSim,
                     lut_path,
                     max_buffer_time=buffer_time,
+                    rte_configure_and_exit=self.engine_config.rte_configure_and_exit,
                 )
                 for point in self.points
             ]
@@ -637,6 +639,7 @@ def streamSimulation(
     reader: Callable,
     output: str,
     max_buffer_time: float = 0.5,
+    rte_configure_and_exit: bool = False,
 ):
     """Run a simulation for a single point and stream the results to a saved lut file.
 
@@ -647,6 +650,7 @@ def streamSimulation(
         reader (function): function to read the results of the simulation
         output (str): LUT store to save results to
         max_buffer_time (float, optional): _description_. Defaults to 0.5.
+        rte_configure_and_exit (bool, optional): exit early if not executing simulations
     """
     Logger.debug(f"Simulating(point={point})")
 
@@ -655,6 +659,10 @@ def streamSimulation(
 
     # Execute the simulation
     simmer(point)
+
+    # No data will be produced, just configuration files
+    if rte_configure_and_exit:
+        return
 
     # Read the simulation results
     data = reader(point)
