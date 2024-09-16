@@ -56,11 +56,11 @@ def checkNumThreads():
         error = "not set to"
 
     if error:
-        Logger.warning("*" * 92)
-        Logger.warning(
-            f"* Number of threads is {error} 1, this may greatly impact performance                 *"
+        logging.warning(
+            f"""
+******************************************************************************************
+! Number of threads is {error} 1, this may greatly impact performance
+! Please set this the environment variables 'MKL_NUM_THREADS' and 'OMP_NUM_THREADS' to '1'
+******************************************************************************************\
+"""
         )
-        Logger.warning(
-            "* Please set this the environment variables 'MKL_NUM_THREADS' and 'OMP_NUM_THREADS' to '1' *"
-        )
-        Logger.warning("*" * 92)
