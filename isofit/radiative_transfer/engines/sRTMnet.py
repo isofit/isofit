@@ -135,6 +135,10 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             modtran_emulation=True,
             build_interpolators=False,
         )
+
+        if self.engine_config.rte_configure_and_exit:
+            return
+
         # Extract useful information from the sim
         self.esd = sim.esd
         self.sim_lut_path = config.lut_path
