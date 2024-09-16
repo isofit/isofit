@@ -304,33 +304,13 @@ class ModtranRT(RadiativeTransferEngine):
         vals["DISALB"] = True
         vals["NAME"] = filename_base
         vals["FILTNM"] = os.path.normpath(self.filtpath)
-
-        # Translate to the MODTRAN OBSZEN convention, assumes we are downlooking
-        if vals["OBSZEN"] < 90:
-            vals["OBSZEN"] = 180 - abs(vals["OBSZEN"])
-
         modtran_config_str, modtran_config = self.modtran_driver(dict(vals))
 
         # Check rebuild conditions: LUT is missing or from a different config
         infilename = "LUT_" + filename_base + ".json"
         infilepath = os.path.join(self.sim_path, "LUT_" + filename_base + ".json")
 
-        if not self.required_results_exist(filename_base):
-            rebuild = True
-        else:
-            # We compare the two configuration files, ignoring names and
-            # wavelength paths which tend to be non-portable
-            with open(infilepath, "r") as fin:
-                current_config = json.load(fin)["MODTRAN"]
-                current_config[0]["MODTRANINPUT"]["NAME"] = ""
-                modtran_config[0]["MODTRANINPUT"]["NAME"] = ""
-                current_config[0]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
-                modtran_config[0]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
-                current_str = json.dumps(current_config)
-                modtran_str = json.dumps(modtran_config)
-                rebuild = modtran_str.strip() != current_str.strip()
-
-        if not rebuild:
+        if self.required_results_exist(filename_base):
             Logger.warning(
                 f"File already exists and not set to rebuild, skipping execution: {filename_base}"
             )
