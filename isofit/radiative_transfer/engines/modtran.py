@@ -44,13 +44,6 @@ tropopause_altitude_km = 17.0
 ### Classes ###
 
 
-class FileExistsError(Exception):
-    """FileExistsError with a message."""
-
-    def __init__(self, message):
-        super(FileExistsError, self).__init__(message)
-
-
 class ModtranRT(RadiativeTransferEngine):
     """A model of photon transport including the atmosphere."""
 
