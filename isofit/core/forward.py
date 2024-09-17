@@ -370,10 +370,9 @@ class ForwardModel:
 
         if not close or interp:
             if q.ndim > 1:
-                for qi in q:
-                    p = interp1d(wl, qi, fill_value="extrapolate")
-                    q2.append(p(self.RT.wl))
-                return np.array(q2)
+                return np.array(
+                    [interp1d(wl, qi, fill_value="extrapolate")(self.RT.wl) for qi in q]
+                )
             else:
                 p = interp1d(wl, q, fill_value="extrapolate")
                 return p(self.RT.wl)
