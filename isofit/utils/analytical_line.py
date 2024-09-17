@@ -475,6 +475,8 @@ class Worker(object):
             - 9999
         )
 
+        esd = IO.load_esd(IO.earth_sun_distance_path)
+
         for r in range(start_line, stop_line):
             for c in range(output_state.shape[1]):
                 # class of pixel
@@ -495,14 +497,8 @@ class Worker(object):
                 if np.all(meas < 0):
                     continue
 
-                # Atmospheric state elements
-                x_RT = self.rt_state[
-                    # r, c, self.full_idx_RT - len(self.full_idx_surface)
-                    r,
-                    c,
-                    self.fm.state.idx_RT - len(self.fm.state.idx_surface),
-                ]
-                geom = Geometry(obs=self.obs[r, c, :], loc=self.loc[r, c, :])
+                x_RT = rt_state[r, c, self.fm.idx_RT - len(self.fm.idx_surface)]
+                geom = Geometry(obs=obs[r, c, :], loc=loc[r, c, :], esd=esd)
 
                 states, unc = invert_analytical(
                     self.fm,

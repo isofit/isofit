@@ -29,6 +29,7 @@ import scipy.io
 import xarray as xr
 from spectral.io import envi
 
+import isofit
 from isofit.configs import Config
 from isofit.core.common import (
     envi_header,
@@ -351,11 +352,14 @@ class InputData:
 
 
 class IO:
-    """..."""
-
     def __init__(self, config: Config, full_statevec: np.array):
         """Initialization specifies retrieval subwindows for calculating
         measurement cost distributions."""
+
+        # Default ESD path
+        earth_sun_distance_path = os.path.join(
+            isofit.root, "data", "earth_sun_distance.txt"
+        )
 
         self.config = config
         wl_init, fwhm_init = load_wavelen(
@@ -445,6 +449,9 @@ class IO:
             filename = self.config.input.radiometry_correction_file
             self.radiance_correction, wl = load_spectrum(filename)
 
+        # Load the earth sun distance data
+        self.esd = self.load_esd(self.earth_sun_distance_path)
+
     def get_components_at_index(self, row: int, col: int) -> InputData:
         """
         Load data from input files at the specified (row, col) index.
@@ -503,6 +510,7 @@ class IO:
         geom = Geometry(
             obs=data["obs_file"],
             loc=data["loc_file"],
+            esd=self.esd,
             bg_rfl=data["background_reflectance_file"],
         )
 
@@ -757,6 +765,21 @@ class IO:
         self.write_datasets(
             row, col, to_write, states, flush_immediately=flush_immediately
         )
+
+    @staticmethod
+    def load_esd(file):
+        try:
+            esd = np.loadtxt(file)
+            logging.debug(f"Loaded ESD from file: {file}")
+        except FileNotFoundError:
+            logging.warning(
+                "Earth-sun-distance file not found on system. "
+                "Proceeding without might cause some inaccuracies down the line."
+            )
+            esd = np.ones((366, 2))
+            esd[:, 0] = np.arange(1, 367, 1)
+
+        return esd
 
 
 def write_bil_chunk(
