@@ -37,7 +37,7 @@ class TestSurface(MultiComponentSurface):
         self.bounds.extend([[998, 1000]])  # Gege (2021), WASI user manual
         self.n_state = self.n_state + 1
         self.test_ind = len(self.statevec_names) - 1
-        self.f = np.array([[(1000000 * np.array(self.scale[self.test_ind :])) ** 2]])
+        self.f = np.array([[1]])
 
     def xa(self, x_surface, geom):
         """Mean of prior distribution, calculated at state x."""
@@ -65,9 +65,9 @@ class TestSurface(MultiComponentSurface):
         return x
 
     def calc_rfl(self, x_surface, geom):
-        """Reflectance (includes specular glint)."""
+        """Reflectance"""
 
-        return self.calc_lamb(x_surface, geom) + x_surface[self.test_ind]
+        return self.calc_lamb(x_surface, geom)
 
     def drfl_dsurface(self, x_surface, geom):
         """Partial derivative of reflectance with respect to state vector,

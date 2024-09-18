@@ -36,7 +36,7 @@ from isofit.core.common import (
     load_wavelen,
     match_statevector,
 )
-from isofit.core.fileio import write_bil_chunk, write_bil_spectra
+from isofit.core.fileio import IO, write_bil_chunk, write_bil_spectra
 from isofit.core.forward import ForwardModel
 from isofit.core.geometry import Geometry
 from isofit.inversion import Inversions
@@ -382,6 +382,9 @@ class Worker(object):
         )
 
     def run_pixels(self, indices):
+
+        esd = IO.load_esd(IO.earth_sun_distance_path)
+
         for index in range(0, indices.shape[0]):
             r, c = indices[index, 0], indices[index, 1]
 
@@ -398,7 +401,7 @@ class Worker(object):
                 c,
                 self.fm.state.idx_RT - len(self.fm.state.idx_surface),
             ]
-            geom = Geometry(obs=self.obs[r, c, :], loc=self.loc[r, c, :])
+            geom = Geometry(obs=self.obs[r, c, :], loc=self.loc[r, c, :], esd=esd)
 
             """
             Exactly what state elements are passed into invert_analytic

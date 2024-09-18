@@ -352,6 +352,13 @@ class InputData:
 
 
 class IO:
+    """..."""
+
+    # Default ESD path
+    earth_sun_distance_path = os.path.join(
+        isofit.root, "data", "earth_sun_distance.txt"
+    )
+
     def __init__(self, config: Config, full_statevec: np.array):
         """Initialization specifies retrieval subwindows for calculating
         measurement cost distributions."""
