@@ -89,13 +89,13 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         self._glint_model_type = bool
         self.glint_model = False
         """
-        Flag to indicate whether to use the sun and sky glint model from Gege (2012, 2014) in the forward model. 
+        Flag to indicate whether to use the sun and sky glint model from Gege (2012, 2014) in the forward model.
         Only currently functional with multipart MODTRAN.
         """
 
         self._rt_mode_type = str
         self.rt_mode = None
-        """str: Radiative transfer mode of LUT simulations. 
+        """str: Radiative transfer mode of LUT simulations.
         'transm' for transmittances, 'rdn' for reflected radiance."""
 
         self._lut_names_type = dict()
@@ -350,6 +350,8 @@ class RadiativeTransferConfig(BaseConfigSection):
                 errors.append(
                     "lut_grid item {} has less than the required 2 elements".format(key)
                 )
+            if np.unique(item).size < len(item):
+                errors.append(f"Detected duplicate values in lut_grid item {key}")
 
         if self.topography_model:
             for rtm in self.radiative_transfer_engines:
