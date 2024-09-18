@@ -71,15 +71,6 @@ def get(jobs):
         return jobs.get()
 
 
-def wait(jobs, num_returns=1, **kwargs):
-    if hasattr(jobs, "__iter__"):
-        if num_returns + 1 < len(jobs):
-            return jobs[:num_returns], jobs[num_returns:]
-        return jobs[:num_returns], []
-    else:
-        return jobs
-
-
 def put(obj):
     return obj
 

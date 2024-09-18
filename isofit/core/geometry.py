@@ -38,7 +38,6 @@ class Geometry:
         obs: np.array = None,
         loc: np.array = None,
         dt: datetime = None,
-        esd: np.array = None,
         bg_rfl=None,
     ):
         # Set some benign defaults...
@@ -55,13 +54,19 @@ class Geometry:
         self.earth_sun_distance = None
         self.esd_factor = None
 
-        if esd is None:
+        self.earth_sun_file = None
+        self.earth_sun_distance_path = os.path.join(
+            isofit.root, "data", "earth_sun_distance.txt"
+        )
+        try:
+            self.earth_sun_distance_reference = np.loadtxt(self.earth_sun_distance_path)
+        except FileNotFoundError:
             logging.warning(
-                "Earth sun distance not provided. Proceeding without might cause some inaccuracies down the line"
+                "Earth-sun-distance file not found on system. "
+                "Proceeding without might cause some inaccuracies down the line."
             )
-            esd = np.ones((366, 2))
-            esd[:, 0] = np.arange(1, 367, 1)
-        self.earth_sun_distance_reference = esd
+            self.earth_sun_distance_reference = np.ones((366, 2))
+            self.earth_sun_distance_reference[:, 0] = np.arange(1, 367, 1)
 
         self.bg_rfl = bg_rfl
         self.cos_i = None

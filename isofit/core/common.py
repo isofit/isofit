@@ -38,9 +38,6 @@ eps = 1e-5
 
 ### Classes ###
 
-# Global variable makes it non-shared mem in ray
-Cache = {"stats": {}}
-
 
 class VectorInterpolator:
     """Linear look up table interpolator.  Support linear interpolation through radial space by expanding the look
@@ -88,9 +85,12 @@ class VectorInterpolator:
         # Multilinear Grid
         elif version == "mlg":
             self.method = 2
-
-            # None to disable, 0 for unlimited, negatives == 1
-            self.cache_size = 1
+            self.cache = {
+                "points": [np.nan] * len(grid),
+                "deltas": [np.nan] * len(grid),
+                "diff": [np.nan] * len(grid),
+                "idx": [...] * len(grid),
+            }
 
             self.gridtuples = [np.array(t) for t in grid]
             self.gridarrays = data
@@ -122,24 +122,6 @@ class VectorInterpolator:
 
         return res
 
-    def _lookup(self, i, point):
-        """
-        Calculates the slicing for the cube in _multilinear_grid
-        """
-        j = np.searchsorted(self.gridtuples[i][:-1], point) - 1
-
-        # Bounds functions
-        lower = lambda: max(min(self.maxbaseinds[i], j), 0)
-        upper = lambda: max(min(self.maxbaseinds[i] + 2, j + 2), 2)
-
-        if point >= self.gridtuples[i][-1]:
-            return None, upper() - 1
-        elif point <= self.gridtuples[i][0]:
-            return None, lower()
-        else:
-            delta = (point - self.gridtuples[i][j]) / self.binwidth[i][j]
-            return delta, slice(lower(), upper())
-
     def _multilinear_grid(self, points):
         """
         Cached version of Jouni's implementation
@@ -151,37 +133,39 @@ class VectorInterpolator:
         Returns:
             cube: np.ndarray
         """
-        deltas = [None] * points.size
-        idxs = [None] * points.size
+        # Retrieve which indices to update
+        cached = np.where(points == self.cache["points"])[0]
+        update = set(range(points.size)) - set(cached)
 
-        for i, point in enumerate(points):
-            if self.cache_size is not None:
-                cache = Cache.setdefault(i, {})
-                stats = Cache["stats"].setdefault(i, {"hit": 0, "miss": 0})
+        # Update the cached point
+        self.cache["points"] = points
 
-                if point in cache:
-                    data = cache[point]
-                    stats["hit"] += 1
-                else:
-                    # Simple FIFO
-                    if self.cache_size and len(cache) >= self.cache_size:
-                        cache.pop(list(cache)[0])
+        # Update indices that are different from the last point
+        for i in update:
+            j = np.searchsorted(self.gridtuples[i][:-1], points[i]) - 1
+            self.cache["deltas"][i] = (
+                points[i] - self.gridtuples[i][j]
+            ) / self.binwidth[i][j]
+            self.cache["diff"][i] = 1 - self.cache["deltas"][i]
 
-                    data = self._lookup(i, point)
-                    cache[point] = data
-                    stats["miss"] += 1
+            # Eliminate indices where it is outside the grid range or on a grid point
+            if points[i] >= self.gridtuples[i][-1]:
+                self.cache["idx"][i] = max(min(self.maxbaseinds[i] + 2, j + 2), 2) - 1
+            elif points[i] <= self.gridtuples[i][0]:
+                self.cache["idx"][i] = max(min(self.maxbaseinds[i], j), 0)
             else:
-                data = self._lookup(i, point)
+                self.cache["idx"][i] = slice(
+                    max(min(self.maxbaseinds[i], j), 0),
+                    max(min(self.maxbaseinds[i] + 2, j + 2), 2),
+                )
 
-            deltas[i], idxs[i] = data
-
-        cube = np.copy(self.gridarrays[tuple(idxs)], order="A")
+        cube = np.copy(self.gridarrays[tuple(self.cache["idx"])], order="A")
 
         # Only linear interpolate sliced dimensions
-        for i, idx in enumerate(idxs):
+        for i, idx in enumerate(self.cache["idx"]):
             if isinstance(idx, slice):
-                cube[0] *= 1 - deltas[i]
-                cube[1] *= deltas[i]
+                cube[0] *= self.cache["diff"][i]
+                cube[1] *= self.cache["deltas"][i]
                 cube[0] += cube[1]
                 cube = cube[0]
 
