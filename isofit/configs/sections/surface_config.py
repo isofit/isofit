@@ -40,10 +40,13 @@ class SurfaceConfig(BaseConfigSection):
         self._wavelength_file_type = str
         self.wavelength_file = None
 
+        self._bounds_type = list
+        self.bounds = [0, 2]
+
         # Multicomponent Surface
         self._select_on_init_type = bool
         self.select_on_init = True
-        """bool: This field, if present and set to true, forces us to use any initialization state and never change. 
+        """bool: This field, if present and set to true, forces us to use any initialization state and never change.
         The state is preserved in the geometry object so that this object stays stateless"""
 
         self._selection_metric_type = str
@@ -88,5 +91,11 @@ class SurfaceConfig(BaseConfigSection):
                     self.normalize, valid_normalize_categories
                 )
             )
+
+        if not isinstance(self.bounds, list) or len(self.bounds) != 2:
+            errors.append("Surface bounds must be a list of two elements")
+        elif self.bounds[1] == self.bounds[0]:
+            errors.append("Surface bounds must be different values")
+        self.bounds = sorted(self.bounds)
 
         return errors
