@@ -329,10 +329,10 @@ def apply_oe(args):
     if args.wavelength_path:
         if os.path.isfile(args.wavelength_path):
             chn, wl, fwhm = np.loadtxt(args.wavelength_path).T
-            if len(chn) != len(wl_ds) or not np.all(np.isclose(wl, wl_ds, atol=0.01)):
+            if len(chn) != len(wl_ds):# or not np.all(np.isclose(wl, wl_ds, atol=0.01)):
                 raise ValueError(
-                    "Number of channels or center wavelengths provided in wavelength file do not match"
-                    " wavelengths in radiance cube. Please adjust your wavelength file."
+                    "Number of channels provided in wavelength file does not match"
+                    " the number of values in radiance cube. Please adjust your wavelength file."
                 )
         else:
             pass
