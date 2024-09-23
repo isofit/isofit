@@ -96,7 +96,7 @@ class RadiativeTransfer:
 
             # Make sure
             if (expected := len(config.statevector)) != (got := rte.indices.x_RT):
-                error = f"Mismatch between the number of elements for the config statevector and the lut_grid: {expected=}, {got=}"
+                error = f"Mismatch between the number of elements for the config statevector and the LUT.indices.x_RT: {expected=}, {got=}"
                 Logger.error(error)
                 raise AttributeError(error)
 
