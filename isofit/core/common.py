@@ -20,8 +20,6 @@
 
 import json
 import os
-from argparse import ArgumentError
-from collections import OrderedDict
 from os.path import expandvars
 from typing import List
 
@@ -100,7 +98,7 @@ class VectorInterpolator:
             self.maxbaseinds = np.array([len(t) - 1 for t in self.gridtuples])
 
         else:
-            raise ArgumentError(None, f"Unknown interpolator version: {version!r}")
+            raise AttributeError(f"Unknown interpolator version: {version!r}")
 
     def _interpolate(self, points):
         """
@@ -260,7 +258,7 @@ def emissive_radiance(
     return uW_per_cm2_sr_nm, dRdn_dT
 
 
-def svd_inv(C: np.array, hashtable: OrderedDict = None, max_hash_size: int = None):
+def svd_inv(C: np.array, hashtable: dict = None, max_hash_size: int = None):
     """Matrix inversion, based on decomposition.  Built to be stable, and positive.
 
     Args:
@@ -277,7 +275,7 @@ def svd_inv(C: np.array, hashtable: OrderedDict = None, max_hash_size: int = Non
 
 
 def svd_inv_sqrt(
-    C: np.array, hashtable: OrderedDict = None, max_hash_size: int = None
+    C: np.array, hashtable: dict = None, max_hash_size: int = None
 ) -> (np.array, np.array):
     """Matrix inversion, based on decomposition.  Built to be stable, and positive.
 

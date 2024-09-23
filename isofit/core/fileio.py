@@ -21,7 +21,6 @@ from __future__ import annotations
 
 import logging
 import os
-from collections import OrderedDict
 from typing import List
 
 import numpy as np
@@ -83,7 +82,7 @@ class SpectrumFile:
     ):
         """."""
 
-        self.frames = OrderedDict()
+        self.frames = {}
         self.write = write
         self.fname = os.path.abspath(fname)
         self.wl = wavelengths
@@ -325,7 +324,7 @@ class SpectrumFile:
                 for row, frame in self.frames.items():
                     valid = np.logical_not(np.isnan(frame[:, 0]))
                     self.memmap[row, valid, :] = frame[valid, :]
-            self.frames = OrderedDict()
+            self.frames = {}
             del self.file
             self.file = envi.open(envi_header(self.fname), self.fname)
             self.open_map_with_retries()
