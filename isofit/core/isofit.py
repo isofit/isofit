@@ -155,17 +155,15 @@ class Isofit:
         # Save this for logging
         total_samples = index_pairs.shape[0]
 
-        # Split into class if pixel classes are being propogated
-        # If this is a multistate run
+        # If multistate, split into class
         if len(self.state_pixel_index):
             index_pairs_class = []
             for class_row_col in self.state_pixel_index:
+
                 if not len(class_row_col):
                     continue
 
-                class_row_col = np.array(class_row_col)
-                index_pairs_class.append(index_pairs[class_row_col[:, 0]])
-
+                index_pairs_class.append(np.delete(np.array(class_row_col), 2, axis=1))
             index_pairs = index_pairs_class
 
         # Else it's not a multistate run
