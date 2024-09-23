@@ -246,9 +246,9 @@ class Worker(object):
         self.fm = fm
         self.iv = Inversion(self.config, self.fm)
 
-        self.bounds = self.fm.config.surface.bounds
+        self.rfl_bounds = np.min(fm.bounds, axis=0)[0], np.max(fm.bounds, axis=0)[1]
         logging.debug(
-            f"Reflectance output will be bounded to the surface bounds: {self.bounds}"
+            f"Reflectance output will be bounded to the surface bounds: {self.rfl_bounds}"
         )
 
         self.completed_spectra = 0
@@ -329,8 +329,8 @@ class Worker(object):
             state = output_state[r - start_line, ...]
             mask = np.logical_and.reduce(
                 [
-                    state < self.bounds[0],
-                    state > self.bounds[1],
+                    state < self.rfl_bounds[0],
+                    state > self.rfl_bounds[1],
                     state != -9999,
                     state != -0.01,
                 ]
