@@ -17,7 +17,6 @@
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
-from __future__ import annotations
 
 import logging
 from copy import deepcopy
@@ -74,8 +73,7 @@ class ForwardModel:
         # Build the radiative transfer model
         self.RT = RadiativeTransfer(self.full_config)
 
-        # Build the surface model - this is a bit ugly with the conditionals, but the surface config should already be
-        # forced to have appropriate properties, so at least safe
+        # Build the surface model
         self.surface = Surface(full_config)
 
         if self.surface.n_wl != len(self.RT.wl) or not np.all(

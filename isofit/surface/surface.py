@@ -23,9 +23,7 @@ import logging
 import numpy as np
 from scipy.interpolate import interp1d
 
-from isofit.configs import Config
-
-from ..core.common import load_spectrum, load_wavelen
+from isofit.core.common import load_spectrum, load_wavelen
 
 
 class Surface:

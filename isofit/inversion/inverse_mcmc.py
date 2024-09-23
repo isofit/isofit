@@ -22,11 +22,8 @@ import numpy as np
 import scipy.linalg
 import scipy.stats
 
-from isofit.configs import Config
 from isofit.core.common import eps
-from isofit.core.forward import ForwardModel
-
-from .inverse import Inversion
+from isofit.inversion.inverse import Inversion
 
 
 class MCMCInversion(Inversion):

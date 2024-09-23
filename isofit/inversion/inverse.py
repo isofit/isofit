@@ -20,18 +20,13 @@
 
 import logging
 import time
-from collections import OrderedDict
 
 import numpy as np
 import scipy.linalg
 from scipy.optimize import least_squares
 
-from isofit.configs import Config
-from isofit.configs.sections.implementation_config import InversionConfig
 from isofit.core.common import combos, conditional_gaussian, eps, svd_inv, svd_inv_sqrt
-from isofit.core.forward import ForwardModel
-
-from .inverse_simple import invert_simple
+from isofit.inversion.inverse_simple import invert_simple
 
 ### Variables ###
 
@@ -51,7 +46,7 @@ class Inversion:
 
         self.lasttime = time.time()
         self.fm = forward
-        self.hashtable = OrderedDict()  # Hash table for caching inverse matrices
+        self.hashtable = {}  # Hash table for caching inverse matrices
         self.max_table_size = full_config.implementation.max_hash_table_size
         self.state_indep_S_hat = False
 
@@ -76,7 +71,7 @@ class Inversion:
         self.counts = 0
         self.inversions = 0
 
-        self.integration_grid = OrderedDict(config.integration_grid)
+        self.integration_grid = dict(config.integration_grid)
         self.grid_as_starting_points = config.inversion_grid_as_preseed
 
         if self.grid_as_starting_points:

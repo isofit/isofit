@@ -18,7 +18,7 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #         Philip G Brodrick, philip.brodrick@jpl.nasa.gov
 #
-
+from __future__ import annotations  # Forces all annotations to be strings
 
 ### Variables ###
 import importlib.metadata
@@ -36,7 +36,7 @@ root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 if os.environ.get("ISOFIT_DEBUG"):
     Logger.info("Using ISOFIT internal ray")
-    from .wrappers import ray
+    from .utils import ray_wrapper as ray
 else:
     import ray
 

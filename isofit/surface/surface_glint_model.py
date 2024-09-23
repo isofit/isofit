@@ -20,10 +20,8 @@
 
 import numpy as np
 
-from isofit.configs import Config
-
-from ..core.common import eps
-from .surface_multicomp import MultiComponentSurface
+from isofit.core.common import eps
+from isofit.surface.surface_multicomp import MultiComponentSurface
 
 
 class GlintModelSurface(MultiComponentSurface):

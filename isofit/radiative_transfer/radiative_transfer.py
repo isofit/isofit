@@ -23,11 +23,8 @@ from types import SimpleNamespace
 
 import numpy as np
 
-from isofit.configs import Config
-from isofit.core.geometry import Geometry
-
-from ..core.common import eps
-from .engines import Engines
+from isofit.core.common import eps
+from isofit.radiative_transfer.engines import Engines
 
 
 def confPriority(key, configs):

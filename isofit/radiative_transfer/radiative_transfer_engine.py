@@ -30,11 +30,7 @@ import xarray as xr
 
 import isofit
 from isofit import ray
-from isofit.configs.sections.radiative_transfer_config import (
-    RadiativeTransferEngineConfig,
-)
 from isofit.core import common
-from isofit.core.geometry import Geometry
 from isofit.radiative_transfer import luts
 
 Logger = logging.getLogger(__file__)

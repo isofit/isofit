@@ -20,10 +20,8 @@
 
 import numpy as np
 
-from isofit.configs import Config
-
-from ..core.common import eps
-from .surface_thermal import ThermalSurface
+from isofit.core.common import eps
+from isofit.surface.surface_thermal import ThermalSurface
 
 
 class AdditiveGlintSurface(ThermalSurface):

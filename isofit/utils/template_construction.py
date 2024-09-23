@@ -16,7 +16,6 @@ from typing import List
 import netCDF4 as nc
 import numpy as np
 from scipy.io import loadmat
-from sklearn import mixture
 from spectral.io import envi
 
 from isofit.core import isofit
