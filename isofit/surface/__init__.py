@@ -1,4 +1,4 @@
-from .surface import Surface
+from .surface import Surface as BaseSurface
 from .surface_additive_glint import AdditiveGlintSurface
 from .surface_glint_model import GlintModelSurface
 from .surface_lut import LUTSurface
@@ -10,7 +10,7 @@ def Surface(config):
     category = config.forward_model.surface.surface_category
 
     if category == "surface":
-        surface = Surface(full_config)
+        surface = BaseSurface(full_config)
 
     elif category == "multicomponent_surface":
         surface = MultiComponentSurface(full_config)

@@ -26,11 +26,10 @@ from scipy.interpolate import interp1d
 from scipy.io import loadmat
 from scipy.linalg import block_diag
 
+from isofit.core.common import eps
+from isofit.core.instrument import Instrument
+from isofit.radiative_transfer.radiative_transfer import RadiativeTransfer
 from isofit.surface import Surface
-
-from ..radiative_transfer.radiative_transfer import RadiativeTransfer
-from .common import eps
-from .instrument import Instrument
 
 Logger = logging.getLogger(__file__)
 

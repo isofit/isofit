@@ -25,7 +25,7 @@ from scipy.interpolate import interp1d, splev, splrep
 from scipy.io import loadmat
 from scipy.signal import convolve
 
-from .common import (
+from isofit.core.common import (
     emissive_radiance,
     eps,
     load_wavelen,

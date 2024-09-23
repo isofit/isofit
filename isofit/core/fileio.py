@@ -23,17 +23,14 @@ import os
 from typing import List
 
 import numpy as np
-import scipy.interpolate
 import scipy.io
 import xarray as xr
 from spectral.io import envi
 
 import isofit
-from isofit.core.common import envi_header
+from isofit.core.common import envi_header, eps, load_spectrum, resample_spectrum
+from isofit.core.geometry import Geometry
 from isofit.inversion.inverse_simple import invert_algebraic
-
-from .common import eps, load_spectrum, resample_spectrum
-from .geometry import Geometry
 
 ### Variables ###
 
