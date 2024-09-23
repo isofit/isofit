@@ -278,21 +278,21 @@ class ForwardModel:
 
     def upsample(self, wl, q):
         """Linear interpolation to RT wavelengths."""
+        # Only interpolate if these aren't close
+        close = len(wl) == len(self.RT.wl) and np.allclose(wl, self.RT.wl)
 
-        # In some cases, these differ only by a tiny amount,
-        # so no need to waste time interpolating
-        if (len(wl) == len(self.RT.wl)) and np.allclose(wl, self.RT.wl):
-            return q
+        # or if any dimension is the wrong size
+        interp = (np.array(q.shape) == len(self.RT.wl)).all()
 
-        if q.ndim > 1:
-            q2 = []
-            for qi in q:
-                p = interp1d(wl, qi, fill_value="extrapolate")
-                q2.append(p(self.RT.wl))
-            return np.array(q2)
-        else:
-            p = interp1d(wl, q, fill_value="extrapolate")
-            return p(self.RT.wl)
+        if not close or interp:
+            if q.ndim > 1:
+                return np.array(
+                    [interp1d(wl, qi, fill_value="extrapolate")(self.RT.wl) for qi in q]
+                )
+            else:
+                p = interp1d(wl, q, fill_value="extrapolate")
+                return p(self.RT.wl)
+        return q
 
     def unpack(self, x):
         """Unpack the state vector in appropriate index ordering."""
