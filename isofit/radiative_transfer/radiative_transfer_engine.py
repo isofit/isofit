@@ -208,6 +208,20 @@ class RadiativeTransferEngine:
             self.lut_names = list(lut_grid)
             self.points = common.combos(lut_grid.values())
 
+            # Verify no duplicates exist else downstream functions will fail
+            duplicates = False
+            for dim, vals in lut_grid.items():
+                if np.unique(vals).size < len(vals):
+                    duplicates = True
+                    Logger.error(
+                        f"Duplicates values were detected in the lut_grid for {dim}: {vals}"
+                    )
+
+            if duplicates:
+                raise AttributeError(
+                    "Input lut_grid detected to have duplicates, please correct them before continuing"
+                )
+
             Logger.info(f"Initializing LUT file")
             self.lut = luts.Create(
                 file=self.lut_path,

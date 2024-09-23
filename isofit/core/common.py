@@ -57,7 +57,7 @@ class VectorInterpolator:
         self,
         grid_input: List[List[float]],
         data_input: np.array,
-        version="nds-1",
+        version="mlg",
     ):
         # Determine if this a singular unique value, if so just return that directly
         val = data_input[(0,) * data_input.ndim]
@@ -104,7 +104,7 @@ class VectorInterpolator:
 
     def _interpolate(self, points):
         """
-        Supports styles 'rg' and 'nds-k'
+        Supports style 'rg'
         """
         # If we only have one point, we can't do any interpolation, so just
         # return the original data.

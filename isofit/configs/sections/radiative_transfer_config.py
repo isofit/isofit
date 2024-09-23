@@ -356,6 +356,8 @@ class RadiativeTransferConfig(BaseConfigSection):
                 errors.append(
                     "lut_grid item {} has less than the required 2 elements".format(key)
                 )
+            if np.unique(item).size < len(item):
+                errors.append(f"Detected duplicate values in lut_grid item {key}")
 
         if self.topography_model:
             for rtm in self.radiative_transfer_engines:

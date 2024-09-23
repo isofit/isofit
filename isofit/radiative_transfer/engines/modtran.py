@@ -44,13 +44,6 @@ tropopause_altitude_km = 17.0
 ### Classes ###
 
 
-class FileExistsError(Exception):
-    """FileExistsError with a message."""
-
-    def __init__(self, message):
-        super(FileExistsError, self).__init__(message)
-
-
 class ModtranRT(RadiativeTransferEngine):
     """A model of photon transport including the atmosphere."""
 
@@ -323,9 +316,7 @@ class ModtranRT(RadiativeTransferEngine):
         infilepath = os.path.join(self.sim_path, "LUT_" + filename_base + ".json")
 
         if self.required_results_exist(filename_base):
-            Logger.warning(
-                f"File already exists and not set to rebuild, skipping execution: {filename_base}"
-            )
+            Logger.warning(f"File already exists, skipping execution: {filename_base}")
             return
 
         if self.engine_config.rte_configure_and_exit:
