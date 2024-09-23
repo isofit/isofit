@@ -94,6 +94,12 @@ class RadiativeTransfer:
             rte = Engines[confRT.engine_name](**params)
             self.rt_engines.append(rte)
 
+            # Make sure
+            if (expected := len(config.statevector)) != (got := rte.indices.x_RT):
+                error = f"Mismatch between the number of elements for the config statevector and the lut_grid: {expected=}, {got=}"
+                Logger.error(error)
+                raise AttributeError(error)
+
         # If any engine is true, self is true
         self.topography_model = any([rte.topography_model for rte in self.rt_engines])
         self.glint_model = any([rte.glint_model for rte in self.rt_engines])
