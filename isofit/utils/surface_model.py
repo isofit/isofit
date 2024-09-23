@@ -396,10 +396,10 @@ def surface_model(
 
 # Input arguments
 @click.command(name="surface_model")
-@click.argument("config_path", type=str)
-@click.argument("--wavelength_path", type=str)
-@click.argument("--output_path", type=str)
-@click.argument("--seed", default=13, type=int)
+@click.argument("config_path")
+@click.argument("wavelength_path")
+@click.argument("output_path")
+@click.option("--seed", default=13, type=int, help="Seed for reproducibility")
 def cli_surface_model(**kwargs):
     """Build a new surface model to a block of data"""
 
