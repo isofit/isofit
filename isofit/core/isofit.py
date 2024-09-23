@@ -215,16 +215,7 @@ class Worker(object):
         )
         self.config = config
         self.fm = forward_model
-        # self.fm = ForwardModel(self.config)
-
-        if self.config.implementation.mode == "mcmc_inversion":
-            self.iv = MCMCInversion(self.config, self.fm)
-        elif self.config.implementation.mode in ["inversion", "simulation"]:
-            self.iv = Inversion(self.config, self.fm)
-        else:
-            # This should never be reached due to configuration checking
-            raise AttributeError("Config implementation mode node valid")
-
+        self.iv = Inversion(self.config, self.fm)
         self.io = IO(self.config, self.fm)
 
         self.approximate_total_spectra = None
