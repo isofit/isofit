@@ -11,5 +11,4 @@ Surfaces = {
     "glint_model_surface": GlintModelSurface,
     "thermal_surface": ThermalSurface,
     "lut_surface": LUTSurface,
-    "test_surface": TestSurface,
 }

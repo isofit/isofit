@@ -1716,8 +1716,7 @@ def make_surface_config(paths: Pathnames, surface_category="multicomponent_surfa
         # mapping name to surface name - terrible way to do this
         # Could house this in a standalone file and call it in
         surface_mapping = {
-            "water": "multicomponent_surface",
-            # "land": "test_surface",
+            "water": "glint_model_surface",
             "land": "multicomponent_surface",
             "cloud": "multicomponent_surface",
         }
@@ -1730,7 +1729,7 @@ def make_surface_config(paths: Pathnames, surface_category="multicomponent_surfa
             if paths.surface_path:
                 surface_path = paths.surface_path
 
-            # If only directory is given. Find surfaces for each class
+            # If only directory is given. Find surfaces for each class.
             elif paths.surface_path_dir:
                 regex = f"*_{name}_*.mat"
                 matched_paths = glob.glob(os.path.join(paths.surface_path_dir, regex))
@@ -1754,8 +1753,6 @@ def make_surface_config(paths: Pathnames, surface_category="multicomponent_surfa
                 raise FileNotFoundError
 
             # Set up "Surfaces" component of surface config
-            # Eventually want the str(i) to be the class name: name
-            # surface_config_dict["Surfaces"][name] = {
             surface_config_dict["Surfaces"][str(i)] = {
                 "surface_type": name,
                 "surface_file": surface_path,
@@ -1768,65 +1765,10 @@ def make_surface_config(paths: Pathnames, surface_category="multicomponent_surfa
             raise FileNotFoundError
 
         surface_config_dict["Surfaces"] = {
-            # "base": {
             "0": {
                 "surface_file": paths.surface_path,
                 "surface_category": surface_category,
             }
         }
-
-    """
-    Could move the statevector init into the config (like RT).
-    The LUTsurface makes it difficult however. Could open .mat
-    but then you flood config with all rfl params.
-    """
-    # Construct the statevector config
-    # for surface in surface_config_dict["Surfaces"].items():
-    #     if surface["surface_category"] == "multicomponent_surface":
-    #         continue
-
-    #     elif surface["surface_category"] == "additive_glint":
-    #         scale, init = 1., 0.005
-    #         surface_config["Statevector"]["GLINT"]] = {
-    #             "bounds": [0, 0.2],
-    #             "scale": [scale].,
-    #             "init": [init],
-    #             "prior_sigma": [(10.0 * scale) ** 2],
-    #             "prior_mean": [init]
-    #         }
-
-    #     elif surface["surface_category"] == "glint_model_surface":
-    #         scale, init = 1., 0.02
-    #         surface_config["Statevector"]["SUN_GLINT"]] = {
-    #             "bounds": [-1, 10],
-    #             "scale": [scale].,
-    #             "init": [init],
-    #             "prior_sigma": [(1000000 * scale) ** 2],
-    #             "prior_mean": [init]
-    #         }
-
-    #         scale, init = 1., 1 / np.pi
-    #         surface_config["Statevector"]["SKY_GLINT"]] = {
-    #             "bounds": [0, 10],
-    #             "scale": [scale].,
-    #             "init": [init],
-    #             "prior_sigma": [(1000000 * scale) ** 2],
-    #             "prior_mean": [init]
-    #         }
-
-    #     elif surface["surface_category"] == "thermal_surface":
-    #         scale, init = 100., 300.
-    #         surface_config["Statevector"]["SKY_GLINT"]] = {
-    #             "bounds": [250.0, 400.0],
-    #             "scale": [scale].,
-    #             "init": [init],
-    #             "prior_sigma": [surface_config_dict["surface_params"].get(
-    #                 "surface_T_prior_sigma_degK", 1.0
-    #             )],
-    #             "prior_mean": [init]
-    #         }
-
-    #     elif surface["surface_category"] == "lut_surface":
-    #     elif surface["surface_category"] == "test_surface":
 
     return surface_config_dict

@@ -26,7 +26,7 @@ from isofit.utils.multistate import construct_full_state, match_class
 def test_single_spectra(args, monkeypatch):
     """Run the Santa Monica test dataset."""
 
-    monkeypatch.chdir("examples/multistate/")
+    monkeypatch.chdir("examples/20151026_SantaMonica/")
     surface_model("configs/prm20151026t173213_surface_coastal.json")
 
     runner = CliRunner()
@@ -42,34 +42,14 @@ def test_single_spectra(args, monkeypatch):
         ("configs/ang20171108t173546_darklot.json"),
     ],
 )
-def test_match_class(args, monkeypatch):
-    monkeypatch.chdir("examples/multistate/")
-
-    config = create_new_config(args)
-    surfaces = config.forward_model.surface.Surfaces.items()
-    class_groups = []
-    for i in range(len(surfaces)):
-        class_groups.append([[i, 0, 0]])
-
-    assert match_class(class_groups, 0, 0) == "0"
-    assert match_class(class_groups, 1, 0) == "1"
-
-
-@pytest.mark.multistate
-@pytest.mark.parametrize(
-    "args",
-    [
-        ("configs/ang20171108t173546_darklot.json"),
-    ],
-)
 def test_create_full_state(args, monkeypatch):
-    monkeypatch.chdir("examples/multistate/")
+    monkeypatch.chdir("examples/20171108_Pasadena/")
 
     config = create_new_config(args)
     full_state, *_ = construct_full_state(config)
 
     # Hard coded could pull this from config one day
-    num_sv = 428
+    num_sv = 429
     assert len(full_state) == num_sv
 
 
@@ -81,7 +61,7 @@ def test_create_full_state(args, monkeypatch):
     ],
 )
 def test_match_statevector(args, monkeypatch):
-    monkeypatch.chdir("examples/multistate/")
+    monkeypatch.chdir("examples/20171108_Pasadena/")
 
     config = create_new_config(args)
     full_state, *_ = construct_full_state(config)

@@ -31,7 +31,6 @@
             }
         },
         "multi_surface_flag": false,
-        "statevector": {},
         "surface_params": {
             "select_on_init": true,
             "selection_metric": "Euclidean"

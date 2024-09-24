@@ -27,12 +27,20 @@
         "uncorrelated_radiometric_uncertainty": 0.01
       }
     },
-
     "surface": {
-      "surface_category": "multicomponent_surface",
-      "surface_file": "../remote/ang20170228_surface_model.mat"
+        "Surfaces": {
+            "0": {
+                "surface_category": "multicomponent_surface",
+                "surface_file": "../data/ang20170228_surface_model.mat",
+                "surface_type": "base"
+            }
+        },
+        "multi_surface_flag": false,
+        "surface_params": {
+            "select_on_init": true,
+            "selection_metric": "Euclidean"
+        }
     },
-
     "radiative_transfer": {
       "statevector": {
         "H2OSTR": {

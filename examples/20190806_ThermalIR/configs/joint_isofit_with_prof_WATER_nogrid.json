@@ -26,14 +26,20 @@
         "channelized_radiometric_uncertainty_file": "../../../data/joint_avirisc_223_hytes_channelized_uncertainty.txt"
       }
     },
-
     "surface": {
-      "surface_category": "additive_glint_surface",
-      "select_on_init":true,
-      "selection_metric":"Euclidean",
-      "surface_file": "../input/ecostress_surface_model.mat"
+        "Surfaces": {
+            "0": {
+                "surface_category": "additive_glint_surface",
+                "surface_file": "../input/ecostress_surface_model.mat",
+                "surface_type": "base"
+            }
+        },
+        "multi_surface_flag": false,
+        "surface_params": {
+            "select_on_init": true,
+            "selection_metric": "Euclidean"
+        }
     },
-
     "radiative_transfer": {
       "statevector": {
         "H2OSTR": {
