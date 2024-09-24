@@ -18,6 +18,7 @@
 # Author: Philip G. Brodrick, philip.brodrick@jpl.nasa.gov
 # Author: Niklas Bohn, urs.n.bohn@jpl.nasa.gov
 #
+from __future__ import annotations
 
 import logging
 import os

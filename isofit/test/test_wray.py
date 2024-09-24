@@ -1,4 +1,4 @@
-from isofit.wrappers import ray
+from isofit.utils import ray_wrapper as ray
 
 
 @ray.remote(num_cpus=1)
@@ -15,7 +15,7 @@ def test_decorators():
     """
     Tests decorator use cases of Ray
     """
-    assert decorator.__module__ == "isofit.wrappers.ray"
+    assert decorator.__module__ == "isofit.utils.ray_wrapper"
 
     cases = {
         1: (1, 1),
@@ -48,7 +48,7 @@ def test_classes(name="test", n=4):
     """
     Tests wrapping class objects and how they're used in core.isofit.
     """
-    assert "isofit.wrappers.ray" in str(ray)
+    assert "isofit.utils.ray_wrapper" in str(ray)
 
     name_id = ray.put(name)
     worker = ray.remote()(Worker)

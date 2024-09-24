@@ -19,6 +19,8 @@
 #          Niklas Bohn, urs.n.bohn@jpl.nasa.gov
 #          Jay E. Fahlen, jay.e.fahlen@jpl.nasa.gov
 #
+from __future__ import annotations
+
 from types import SimpleNamespace
 
 import numpy as np

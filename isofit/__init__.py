@@ -18,8 +18,6 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #         Philip G Brodrick, philip.brodrick@jpl.nasa.gov
 #
-from __future__ import annotations  # Forces all annotations to be strings
-
 ### Variables ###
 import importlib.metadata
 
