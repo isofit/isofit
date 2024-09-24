@@ -31,6 +31,7 @@ from spectral.io import envi
 
 import isofit
 from isofit.core.common import envi_header, eps, load_spectrum, resample_spectrum
+from isofit.data import env
 from isofit.core.geometry import Geometry
 from isofit.inversion.inverse_simple import invert_algebraic
 
@@ -345,9 +346,7 @@ class IO:
     """..."""
 
     # Default ESD path
-    earth_sun_distance_path = os.path.join(
-        isofit.root, "data", "earth_sun_distance.txt"
-    )
+    earth_sun_distance_path = env.data / "earth_sun_distance.txt"
 
     def __init__(self, config: Config, forward: ForwardModel):
         """Initialization specifies retrieval subwindows for calculating

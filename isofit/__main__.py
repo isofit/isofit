@@ -12,12 +12,15 @@ if not os.environ.get("ISOFIT_NO_SET_THREADS"):
 import click
 
 import isofit
+
+# CLI imports
 from isofit.core.isofit import cli_run
+from isofit.data import env
+from isofit.data.download import cli_download
 from isofit.utils.add_HRRR_profiles_to_modtran_config import cli_HRRR_to_modtran
 from isofit.utils.analytical_line import cli_analytical_line
 from isofit.utils.apply_oe import cli_apply_oe
 from isofit.utils.convert_6s_to_srtmnet import cli_6s_to_srtmnet
-from isofit.utils.downloads import cli_download
 from isofit.utils.empirical_line import cli_empirical_line
 from isofit.utils.ewt_from_reflectance import cli_ewt
 from isofit.utils.solar_position import cli_sun
@@ -31,9 +34,9 @@ from isofit.utils.surface_model import cli_surface_model
 @click.option("-s", "--section", help="Switches which section of the ini to use")
 @click.option("-d", "--data", help="Override path to data directory")
 @click.option("-e", "--examples", help="Override path to examples directory")
-@click.option("-em", "--srtmnet", help="Override path to sRTMnet installation")
-@click.option("-6s", "--sixs", help="Override path to SixS installation")
-@click.option("-mt", "--modtran", help="Override path to MODTRAN installation")
+# @click.option("-em", "--srtmnet", help="Override path to sRTMnet installation")
+# @click.option("-6s", "--sixs", help="Override path to SixS installation")
+# @click.option("-mt", "--modtran", help="Override path to MODTRAN installation")
 @click.option(
     "--save/--no-save", " /-S", is_flag=True, default=True, help="Save the ini file"
 )
@@ -45,8 +48,6 @@ def cli(ctx, version, ini, section, save, **overrides):
         if version:
             click.echo(isofit.__version__)
     else:
-        from isofit.core import env
-
         env.load(ini, section)
 
         for key, value in overrides.items():
@@ -55,6 +56,23 @@ def cli(ctx, version, ini, section, save, **overrides):
 
         if save:
             env.save(ini)
+
+
+@cli.command()
+def verify_install():
+    """\
+    Verifies the installation of ISOFIT and its various dependencies
+    """
+    download = False
+    for path in env.dirs:
+        if not path.exists():
+            download = True
+            click.echo(f"Path does not exist and may be needed: {path}")
+
+    if download:
+        click.echo(
+            "Please refer to the ISOFIT download command to retrieve any additional files you may need: ..."
+        )
 
 
 # Subcommands live closer to the code and algorithms they are related to.

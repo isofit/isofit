@@ -269,7 +269,7 @@ class SixSRT(RadiativeTransferEngine):
         """
         Loads the earth-sun distance file
         """
-        self.esd = IO.load_esd(IO.earth_sun_distance_path)
+        self.esd = IO.load_esd()
 
         dt = datetime(2000, self.engine_config.month, self.engine_config.day)
         self.day_of_year = dt.timetuple().tm_yday
