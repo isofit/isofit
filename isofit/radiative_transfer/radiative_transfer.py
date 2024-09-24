@@ -94,9 +94,11 @@ class RadiativeTransfer:
             rte = Engines[confRT.engine_name](**params)
             self.rt_engines.append(rte)
 
-            # Make sure
-            if (expected := len(config.statevector)) != (got := rte.indices.x_RT):
-                error = f"Mismatch between the number of elements for the config statevector and the LUT.indices.x_RT: {expected=}, {got=}"
+            # Make sure the length of the config statevectores match the engine's assumed statevectors
+            if (expected := len(config.statevector.get_element_names())) != (
+                got := len(rte.indices.x_RT)
+            ):
+                error = f"Mismatch between the number of elements for the config statevector and LUT.indices.x_RT: {expected=}, {got=}"
                 Logger.error(error)
                 raise AttributeError(error)
 
