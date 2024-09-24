@@ -213,6 +213,7 @@ class RadiativeTransferEngine:
 
             # Verify no duplicates exist else downstream functions will fail
             duplicates = False
+
             for dim, vals in lut_grid.items():
                 if np.unique(vals).size < len(vals):
                     duplicates = True
