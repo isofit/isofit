@@ -21,6 +21,7 @@ import logging
 import multiprocessing
 import os
 import time
+from collections import OrderedDict
 from glob import glob
 
 import click
@@ -246,7 +247,7 @@ class Worker(object):
         self.iv = Inversion(self.config, self.fm)
 
         self.completed_spectra = 0
-        self.hash_table = {}
+        self.hash_table = OrderedDict()
         self.hash_size = 500
         self.RT_state_file = RT_state_file
         self.rdn_file = rdn_file
