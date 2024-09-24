@@ -304,16 +304,24 @@ class RadiativeTransfer:
         return np.hstack(L_downs)
 
     def drdn_dRT(
-        self, x_RT, x_surface, rfl, drfl_dsurface, Ls, dLs_dsurface, geom: Geometry
+        self,
+        x_RT,
+        x_surface,
+        rfl_dir,
+        rfl_dif,
+        drfl_dsurface,
+        Ls,
+        dLs_dsurface,
+        geom: Geometry,
     ):
         # first the rdn at the current state vector
-        rdn = self.calc_rdn(x_RT, x_surface, rfl, Ls, geom)
+        rdn = self.calc_rdn(x_RT, rfl_dir, rfl_dif, Ls, geom)
 
         # perturb each element of the RT state vector (finite difference)
         K_RT = []
         x_RTs_perturb = x_RT + np.eye(len(x_RT)) * eps
         for x_RT_perturb in list(x_RTs_perturb):
-            rdne = self.calc_rdn(x_RT_perturb, x_surface, rfl, Ls, geom)
+            rdne = self.calc_rdn(x_RT_perturb, rfl_dir, rfl_dif, Ls, geom)
             K_RT.append((rdne - rdn) / eps)
         K_RT = np.array(K_RT).T
 
@@ -342,10 +350,10 @@ class RadiativeTransfer:
             rho_ls = 0.02  # fresnel reflectance factor (approx. 0.02 for nadir view)
             glint = rho_ls * (L_sky / E_down_tot)
         else:
-            glint = np.zeros(rfl.shape)
+            glint = np.zeros(rfl_dir.shape)
 
         # adjacency effects
-        bg = geom.bg_rfl if geom.bg_rfl is not None else rfl + glint
+        bg = geom.bg_rfl if geom.bg_rfl is not None else rfl_dir + glint
 
         # K surface reflectance
         drdn_drfl = (E_down_dir + E_down_dif) / (1.0 - s_alb * bg) * r["transm_up_dir"]
@@ -375,7 +383,7 @@ class RadiativeTransfer:
 
         return K_RT, K_surface
 
-    def drdn_dRTb(self, x_RT, x_surface, rfl, Ls, geom):
+    def drdn_dRTb(self, x_RT, rfl_dir, rfl_dif, Ls, geom):
         if len(self.bvec) == 0:
             Kb_RT = np.zeros((0, len(self.wl.shape)))
         # currently, the K_b matrix only covers forward model derivatives due to H2O_ABSCO unknowns,
@@ -387,7 +395,7 @@ class RadiativeTransfer:
             Kb_RT = np.zeros((1, len(self.wl)))
         else:
             # first the radiance at the current state vector
-            rdn = self.calc_rdn(x_RT, x_surface, rfl, Ls, geom)
+            rdn = self.calc_rdn(x_RT, rfl_dir, rfl_dif, Ls, geom)
 
             # unknown parameters modeled as random variables per
             # Rodgers et al (2000) K_b matrix.  We calculate these derivatives
@@ -399,7 +407,7 @@ class RadiativeTransfer:
                     i = self.statevec_names.index("H2OSTR")
                     x_RT_perturb = x_RT.copy()
                     x_RT_perturb[i] = x_RT[i] * perturb
-                    rdne = self.calc_rdn(x_RT_perturb, x_surface, rfl, Ls, geom)
+                    rdne = self.calc_rdn(x_RT_perturb, rfl_dir, rfl_dif, Ls, geom)
                     Kb_RT.append((rdne - rdn) / eps)
 
         Kb_RT = np.array(Kb_RT).T
