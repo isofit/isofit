@@ -215,7 +215,7 @@ class RadiativeTransfer:
             / (1.0 - s_alb * bg_dif)
             + L_up
         )
-        test
+
         return ret
 
     def get_L_atm(self, x_RT: np.array, geom: Geometry) -> np.array:
