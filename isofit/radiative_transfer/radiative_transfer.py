@@ -139,6 +139,9 @@ class RadiativeTransfer:
 
         self.solar_irr = np.concatenate([RT.solar_irr for RT in self.rt_engines])
 
+        # flux coupling terms
+        self.E_coupled = []
+
     def xa(self):
         """Pull the priors from each of the individual RTs."""
         return self.prior_mean
@@ -185,13 +188,15 @@ class RadiativeTransfer:
         s_alb = r["sphalb"]
 
         # flux coupling terms
-        self.E_coupled = []
-        for key in self.rt_engines[0].coupling_terms:
-            self.E_coupled.append(
-                self.solar_irr * self.coszen / np.pi * r[key]
-                if self.rt_engines[0].rt_mode == "transm"
-                else r[key]
-            )
+        if any([r[key] == 0 for key in self.rt_engines[0].coupling_terms]):
+            self.E_coupled = [r["transm_down_dir"], r["transm_down_dif"], 0, 0]
+        else:
+            for key in self.rt_engines[0].coupling_terms:
+                self.E_coupled.append(
+                    self.solar_irr * self.coszen / np.pi * r[key]
+                    if self.rt_engines[0].rt_mode == "transm"
+                    else r[key]
+                )
 
         # unscaling and rescaling downward direct flux terms by local solar zenith angle (see above)
         for ind in [0, 2]:
