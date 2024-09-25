@@ -273,7 +273,14 @@ class ForwardModel:
 
         # Derivatives of RTM radiance
         drdn_dRT, drdn_dsurface = self.RT.drdn_dRT(
-            x_RT, x_surface, rfl_hi, drfl_dsurface_hi, Ls_hi, dLs_dsurface_hi, geom
+            x_RT,
+            x_surface,
+            rfl_dir_hi,
+            rfl_dif_hi,
+            drfl_dsurface_hi,
+            Ls_hi,
+            dLs_dsurface_hi,
+            geom,
         )
 
         # Derivatives of measurement, avoiding recalculation of rfl, Ls
@@ -281,7 +288,7 @@ class ForwardModel:
             x_instrument, self.RT.wl, drdn_dsurface.T
         ).T
         dmeas_dRT = self.instrument.sample(x_instrument, self.RT.wl, drdn_dRT.T).T
-        rdn_hi = self.calc_rdn(x, geom, rfl=(rfl_dir_hi, rfl_dif_hi), Ls=Ls)
+        rdn_hi = self.calc_rdn(x, geom, rfl_dir_hi, rfl_dif_hi, Ls=Ls)
         dmeas_dinstrument = self.instrument.dmeas_dinstrument(
             x_instrument, self.RT.wl, rdn_hi
         )

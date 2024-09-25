@@ -185,9 +185,9 @@ class RadiativeTransfer:
         s_alb = r["sphalb"]
 
         # flux coupling terms
-        E_coupled = []
+        self.E_coupled = []
         for key in self.rt_engines[0].coupling_terms:
-            E_coupled.append(
+            self.E_coupled.append(
                 self.solar_irr * self.coszen / np.pi * r[key]
                 if self.rt_engines[0].rt_mode == "transm"
                 else r[key]
@@ -195,7 +195,7 @@ class RadiativeTransfer:
 
         # unscaling and rescaling downward direct flux terms by local solar zenith angle (see above)
         for ind in [0, 2]:
-            E_coupled[ind] = E_coupled[ind] / self.coszen * cos_i
+            self.E_coupled[ind] = self.E_coupled[ind] / self.coszen * cos_i
 
         # thermal transmittance
         L_up = Ls * (r["transm_up_dir"] + r["transm_up_dif"])
@@ -210,10 +210,10 @@ class RadiativeTransfer:
         ret = (
             L_atm
             + (
-                E_coupled[0] * rfl_dir  # bidirectional flux
-                + E_coupled[1] * rfl_dif  # hemispherical-directional flux
-                + E_coupled[2] * bg_dir  # directional-hemispherical flux
-                + E_coupled[3] * bg_dif  # bi-hemispherical flux
+                self.E_coupled[0] * rfl_dir  # bidirectional flux
+                + self.E_coupled[1] * rfl_dif  # hemispherical-directional flux
+                + self.E_coupled[2] * bg_dir  # directional-hemispherical flux
+                + self.E_coupled[3] * bg_dif  # bi-hemispherical flux
             )
             / (1.0 - s_alb * bg_dif)
             + L_up
