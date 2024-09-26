@@ -122,8 +122,8 @@ def construct_full_state(full_config):
     params = surface_config.surface_params
 
     # Iterate through the different surfaces to find overlapping state names
-    for i, surface in full_config.forward_model.surface.Surfaces.items():
-        surface = Surfaces[surface["surface_category"]](surface, params)
+    for i, surface_config in full_config.forward_model.surface.Surfaces.items():
+        surface = Surfaces[surface_config["surface_category"]](surface_config, params)
         rfl_states += surface.statevec_names[: len(surface.idx_lamb)]
         nonrfl_states += surface.statevec_names[len(surface.idx_lamb) :]
 

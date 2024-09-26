@@ -31,7 +31,7 @@
         "Surfaces": {
             "0": {
                 "surface_category": "multicomponent_surface",
-                "surface_file": "../data/ang20170228_surface_model.mat",
+                "surface_file": "../remote/ang20170228_surface_model.mat",
                 "surface_type": "base"
             }
         },

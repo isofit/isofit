@@ -39,14 +39,14 @@ error_code = -1
 
 
 class Inversion:
-    def __init__(self, full_config: Config, forward: ForwardModel):
+    def __init__(self, full_config: Config, fm: ForwardModel):
         self.full_config = full_config
         config: InversionConfig = full_config.implementation.inversion
         self.config = config
 
         # Propogate forward
         self.lasttime = time.time()
-        self.fm = forward
+        self.fm = fm
 
         # Moved from inverse.py - Things that aren't contingent on statevec
         self.hashtable = OrderedDict()  # Hash table for caching inverse matrices
@@ -64,12 +64,12 @@ class Inversion:
         for lo, hi in self.windows:
             idx = np.where(
                 np.logical_and(
-                    forward.instrument.wl_init > lo, forward.instrument.wl_init < hi
+                    self.fm.instrument.wl_init > lo, self.fm.instrument.wl_init < hi
                 )
             )[0]
             self.winidx = np.concatenate((self.winidx, idx), axis=0)
 
-        self.outside_ret_windows = np.ones(forward.instrument.n_chan, dtype=bool)
+        self.outside_ret_windows = np.ones(fm.instrument.n_chan, dtype=bool)
         self.outside_ret_windows[self.winidx] = False
 
         self.counts = 0
