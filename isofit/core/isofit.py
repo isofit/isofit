@@ -212,10 +212,7 @@ class Isofit:
                 ]
 
             # Construct full fm
-            self.fm = fm = ForwardModel(self.config)
-            # Have to split these out to update the surface dynamically
-            self.fm.construct_surface(str(i))
-            self.fm.construct_state()
+            self.fm = fm = ForwardModel(self.config, str(i))
 
             logging.debug(f"Pixel class: {str(i)}")
             logging.debug(f"Surface: {self.fm.surface}")

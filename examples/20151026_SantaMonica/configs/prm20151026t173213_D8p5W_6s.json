@@ -79,13 +79,12 @@
           "day": 26,
           "sim_path": "../lut/",
           "lut_path": "../lut/D8p5W_6s.nc",
-          "lut_names": {"H2OSTR": null, "AOT550": null}
+          "lut_names": {"H2OSTR": null, "AOT550": null},
+          "statevector_names": ["H2OSTR", "AOT550"]
         }
       }
     }
   },
-
-
   "implementation": {
     "inversion": {
       "integration_grid": {"GLINT": [0, 0.001, 0.002]},

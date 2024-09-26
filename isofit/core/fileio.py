@@ -569,7 +569,12 @@ class IO:
             self.flush_buffers()
 
     def build_output(
-        self, states: List, input_data: InputData, fm: ForwardModel, iv: Inversion
+        self,
+        states: List,
+        input_data: InputData,
+        fm: ForwardModel,
+        iv: Inversion,
+        fill_value=-9999.0,
     ):
         """
         Build the output to be written to disk as a dictionary
@@ -585,9 +590,9 @@ class IO:
 
         if len(states) == 0:
             # Write a bad data flag
-            atm_bad = np.zeros(len(fm.instrument.n_chan) * 5) * -9999.0
-            state_bad = np.zeros(len(fm.statevec)) * -9999.0
-            data_bad = np.zeros(fm.instrument.n_chan) * -9999.0
+            atm_bad = np.zeros(len(fm.instrument.n_chan) * 5) + fill_value
+            state_bad = np.zeros(len(fm.statevec)) + fill_value
+            data_bad = np.zeros(fm.instrument.n_chan) + fill_value
             to_write = {
                 "estimated_state_file": state_bad,
                 "estimated_reflectance_file": data_bad,
@@ -619,7 +624,7 @@ class IO:
             if "estimated_state_file" in self.output_datasets:
                 # state_est transformed to reflect io.full_statevec
                 to_write["estimated_state_file"] = match_statevector(
-                    state_est, self.full_statevec, fm.state.statevec
+                    state_est, self.full_statevec, fm.statevec
                 )
 
             if "path_radiance_file" in self.output_datasets:
@@ -642,7 +647,7 @@ class IO:
                 S_hat, K, G = iv.calc_posterior(state_est, geom, meas)
                 # psterior uncertainty transformed to reflect io.full_statevec
                 to_write["posterior_uncertainty_file"] = match_statevector(
-                    np.sqrt(np.diag(S_hat)), self.full_statevec, fm.state.statevec
+                    np.sqrt(np.diag(S_hat)), self.full_statevec, fm.statevec
                 )
 
             ############ Now proceed to the calcs where they may be some overlap

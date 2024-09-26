@@ -266,21 +266,21 @@ def invert_analytical(
     # x = x0.copy()
     # x_surface, x_RT, x_instrument = fm.unpack(x)
     # Note, this will fail if x_instrument is populated
-    if len(fm.state.idx_instrument) > 0:
+    if len(fm.idx_instrument) > 0:
         raise AttributeError(
             "Invert analytical not currently set to handle instrument state variable"
             " indexing"
         )
 
-    x = np.zeros(fm.state.nstate)
-    x[fm.state.idx_RT] = x_RT
+    x = np.zeros(fm.nstate)
+    x[fm.idx_RT] = x_RT
     x_alg = invert_algebraic(
         fm.surface,
         fm.RT,
         fm.instrument,
-        x[fm.state.idx_surface],
+        x[fm.idx_surface],
         x_RT,
-        x[fm.state.idx_instrument],
+        x[fm.idx_instrument],
         meas,
         geom,
     )
@@ -288,12 +288,12 @@ def invert_analytical(
     # Why is this is hardcoded for glint surface?
     if fm.RT.glint_model:
         x_surf = fm.surface.fit_params(x_alg[0], geom)
-        x[fm.state.idx_surf_rfl] = x_surf
+        x[fm.idx_surf_rfl] = x_surf
     else:
-        x[fm.state.idx_surf_rfl] = x_alg[0]
+        x[fm.idx_surf_rfl] = x_alg[0]
 
     trajectory = []
-    outside_ret_windows = np.ones(len(fm.state.idx_surface), dtype=bool)
+    outside_ret_windows = np.ones(len(fm.idx_surface), dtype=bool)
     outside_ret_windows[winidx] = False
     outside_ret_windows = np.where(outside_ret_windows)[0]
 
@@ -302,12 +302,12 @@ def invert_analytical(
     Seps = fm.Seps(x, meas, geom)[winidx, :][:, winidx]
 
     Sa = fm.Sa(x, geom)
-    Sa_surface = Sa[fm.state.idx_surface, :][:, fm.state.idx_surface]
+    Sa_surface = Sa[fm.idx_surface, :][:, fm.idx_surface]
 
     Sa_inv = svd_inv_sqrt(Sa_surface, hash_table, hash_size)[0]
 
     xa_full = fm.xa(x, geom)
-    xa_surface = xa_full[fm.state.idx_surface]
+    xa_surface = xa_full[fm.idx_surface]
 
     if fm.RT.glint_model:
         prprod = Sa_inv @ xa_surface
@@ -333,7 +333,7 @@ def invert_analytical(
 
         GIv = 1 / np.diag(Seps)
 
-        xk = x[fm.state.idx_surface].copy()
+        xk = x[fm.idx_surface].copy()
         trajectory.append(xk)
 
         for n in range(num_iter):
@@ -389,13 +389,13 @@ def invert_analytical(
             else:
                 full_mu[outside_ret_windows] = outside_ret_const
 
-            x[fm.state.idx_surface] = full_mu
+            x[fm.idx_surface] = full_mu
             trajectory.append(x)
 
     if diag_uncert:
         full_unc = np.ones(len(x))
         if fm.RT.glint_model:
-            C_rcond_idx = np.concatenate((winidx, fm.state.idx_surface[-2:]), axis=0)
+            C_rcond_idx = np.concatenate((winidx, fm.idx_surface[-2:]), axis=0)
             full_unc[C_rcond_idx] = np.sqrt(np.diag(C_rcond))
         else:
             full_unc[winidx] = np.sqrt(np.diag(C_rcond))
@@ -404,12 +404,12 @@ def invert_analytical(
         return trajectory, C_rcond
 
 
-def invert_simple(forward: ForwardModel, meas: np.array, geom: Geometry):
+def invert_simple(fm: ForwardModel, meas: np.array, geom: Geometry):
     """Find an initial guess at the state vector. This currently uses
     traditional (non-iterative, heuristic) atmospheric correction.
 
     Args:
-        forward: isofit forward model
+        fm: isofit forward model
         meas: a one-D numpy vector of radiance in uW/nm/sr/cm2
         geom: geometry object corresponding to given measurement
 
@@ -417,31 +417,31 @@ def invert_simple(forward: ForwardModel, meas: np.array, geom: Geometry):
         x: estimate of the full statevector based on initial conditions, geometry, and a heuristic guess
     """
 
-    surface = forward.surface
-    RT = forward.RT
-    instrument = forward.instrument
+    surface = fm.surface
+    RT = fm.RT
+    instrument = fm.instrument
 
     vswir_present = False
-    if any(forward.surface.wl < 2600):
+    if any(fm.surface.wl < 2600):
         vswir_present = True
 
     tir_present = False
-    if any(forward.surface.wl > 2600):
+    if any(fm.surface.wl > 2600):
         tir_present = True
 
     # First step is to get the atmosphere. We start from the initial state
     # and estimate atmospheric terms using traditional heuristics.
-    x = forward.state.init.copy()
-    x_surface, x_RT, x_instrument = forward.unpack(x)
+    x = fm.init.copy()
+    x_surface, x_RT, x_instrument = fm.unpack(x)
 
     if vswir_present:
-        x[forward.state.idx_RT] = heuristic_atmosphere(
+        x[fm.idx_RT] = heuristic_atmosphere(
             RT, instrument, x_RT, x_instrument, meas, geom
         )
 
     # Now, with atmosphere fixed, we can invert the radiance algebraically
     # via Lambertian approximations to get reflectance
-    x_surface, x_RT, x_instrument = forward.unpack(x)
+    x_surface, x_RT, x_instrument = fm.unpack(x)
     rfl_est, Ls_est, coeffs = invert_algebraic(
         surface, RT, instrument, x_surface, x_RT, x_instrument, meas, geom
     )
@@ -450,25 +450,25 @@ def invert_simple(forward: ForwardModel, meas: np.array, geom: Geometry):
     # Multicomponent surfaces. Finds the cluster nearest the VSWIR heuristic
     # inversion and uses it for the TIR suface initialization.
     if tir_present:
-        tir_idx = np.where(forward.surface.wl > 3000)[0]
+        tir_idx = np.where(fm.surface.wl > 3000)[0]
 
         if vswir_present:
             x_surface_temp = x_surface.copy()
             x_surface_temp[: len(rfl_est)] = rfl_est
-            mu = forward.surface.xa(x_surface_temp, geom)
+            mu = fm.surface.xa(x_surface_temp, geom)
             rfl_est[tir_idx] = mu[tir_idx]
         else:
-            rfl_est = 0.03 * np.ones(len(forward.surface.wl))
+            rfl_est = 0.03 * np.ones(len(fm.surface.wl))
 
     # Now we have an estimated reflectance. Fit the surface parameters.
-    x_surface[forward.state.idx_surface] = forward.surface.fit_params(rfl_est, geom)
+    x_surface[fm.idx_surface] = fm.surface.fit_params(rfl_est, geom)
 
     # Find temperature of emissive surfaces
     if tir_present:
         # Estimate the total radiance at sensor, leaving out surface emission
         # Radiate transfer calculations could take place at high spectral resolution
         # so we upsample the surface reflectance
-        rfl_hi = forward.upsample(forward.surface.wl, rfl_est)
+        rfl_hi = fm.upsample(fm.surface.wl, rfl_est)
         rhoatm, sphalb, transm, solar_irr, coszen, transup = coeffs
 
         L_atm = RT.get_L_atm(x_RT, geom)
@@ -491,9 +491,9 @@ def invert_simple(forward: ForwardModel, meas: np.array, geom: Geometry):
         # Error function for nonlinear temperature fit
         def err(z):
             T = z
-            emissivity = forward.surface.emissivity_for_surface_T_init
+            emissivity = fm.surface.emissivity_for_surface_T_init
             Ls_est, d = emissive_radiance(
-                emissivity, T, forward.surface.wl[clearest_indices]
+                emissivity, T, fm.surface.wl[clearest_indices]
             )
             resid = (
                 transup[clearest_indices] * Ls_est
@@ -503,22 +503,22 @@ def invert_simple(forward: ForwardModel, meas: np.array, geom: Geometry):
             return sum(resid**2)
 
         # Fit temperature, set bounds,  and set the initial values
-        idx_T = forward.surface.surf_temp_ind
-        Tinit = np.array([forward.surface.init[idx_T]])
+        idx_T = fm.surface.surf_temp_ind
+        Tinit = np.array([fm.surface.init[idx_T]])
         Tbest = minimize(err, Tinit).x
         T = max(
-            forward.surface.bounds[idx_T][0] + eps,
-            min(Tbest, forward.surface.bounds[idx_T][1] - eps),
+            fm.surface.bounds[idx_T][0] + eps,
+            min(Tbest, fm.surface.bounds[idx_T][1] - eps),
         )
         x_surface[idx_T] = Tbest
-        forward.surface.init[idx_T] = T
+        fm.surface.init[idx_T] = T
 
     # Update the full state vector
-    x[forward.state.idx_surface] = x_surface
+    x[fm.idx_surface] = x_surface
 
     # If available, get initial guess of surface elevation from location file.
     if geom.surface_elevation_km and "surface_elevation_km" in RT.statevec_names:
-        ind_sv = forward.state.idx_RT[RT.statevec_names.index("surface_elevation_km")]
+        ind_sv = fm.idx_RT[RT.statevec_names.index("surface_elevation_km")]
         if geom.surface_elevation_km < 0.0:
             x[ind_sv] = 0.0
         else:
@@ -526,8 +526,8 @@ def invert_simple(forward: ForwardModel, meas: np.array, geom: Geometry):
 
     # We record these initial values in the geometry object - the only
     # "stateful" part of the retrieval
-    geom.x_surf_init = x[forward.state.idx_surface]
-    geom.x_RT_init = x[forward.state.idx_RT]
+    geom.x_surf_init = x[fm.idx_surface]
+    geom.x_RT_init = x[fm.idx_RT]
 
     return x
 

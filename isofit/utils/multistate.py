@@ -27,7 +27,6 @@ from isofit.configs import Config
 from isofit.core.common import envi_header, load_spectrum, load_wavelen
 from isofit.core.forward import ForwardModel
 from isofit.core.instrument import Instrument
-from isofit.core.state import StateVector
 from isofit.radiative_transfer.radiative_transfer import RadiativeTransfer
 from isofit.surface.surfaces import Surfaces
 
@@ -105,7 +104,18 @@ def construct_full_state(full_config):
 
     # Pull the rt names from the config. Seems to be most commonly present.
     rt_config = full_config.forward_model.radiative_transfer
-    rt_states = sorted(rt_config.radiative_transfer_engines[0].statevector_names)
+
+    """
+    This method of retrieving the rt states is giving me issues between
+    legacy configs and current configs. What is the most stable place
+    to pull the statevector name list?.
+    statevector_names not always present.
+    is lut_names always present? Is always a dict?
+
+    most stable is to iterate across statevector config, 
+    but I have to match out the _type -> bad
+    """
+    rt_states = sorted(rt_config.radiative_transfer_engines[0].lut_names.keys())
 
     # Without changing where the nonrfl surface elements are defined
     surface_config = full_config.forward_model.surface

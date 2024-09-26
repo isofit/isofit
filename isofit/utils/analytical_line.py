@@ -262,10 +262,8 @@ def analytical_line(
                 for l in range(len(index_sets) - 1)
             ]
 
-        fm = ForwardModel(config)
-        # Need to match this with the superpixel
-        fm.construct_surface(f"{i}")
-        fm.construct_state()
+        # FM to match with the superpixel
+        fm = ForwardModel(config, f"{i}")
 
         # Initialize workers
         wargs = [
@@ -399,7 +397,7 @@ class Worker(object):
                 # r, c, self.full_idx_RT - len(self.full_idx_surface)
                 r,
                 c,
-                self.fm.state.idx_RT - len(self.fm.state.idx_surface),
+                self.fm.idx_RT - len(self.fm.idx_surface),
             ]
             geom = Geometry(obs=self.obs[r, c, :], loc=self.loc[r, c, :], esd=esd)
 
@@ -423,14 +421,12 @@ class Worker(object):
             # Match pixel-specific to general statevector
             state_est = states[-1]
             full_state_est = match_statevector(
-                state_est, self.full_statevector, self.fm.state.statevec
+                state_est, self.full_statevector, self.fm.statevec
             )
             full_state_est = full_state_est[self.full_idx_surface]
             # full_state_est = np.expand_dims(full_state_est, axis=(0, 1))
 
-            full_unc = match_statevector(
-                unc, self.full_statevector, self.fm.state.statevec
-            )
+            full_unc = match_statevector(unc, self.full_statevector, self.fm.statevec)
             full_unc = full_unc[self.full_idx_surface]
             # full_unc = np.expand_dims(full_unc, axis=(0, 1))
 
@@ -517,7 +513,7 @@ class Worker(object):
                 # Match pixel-specific to general statevector
                 state_est = states[-1]
                 full_state_est = match_statevector(
-                    state_est, self.full_statevector, self.fm.state.statevec
+                    state_est, self.full_statevector, self.fm.statevec
                 )
 
                 output_state[r - start_line, c, :] = full_state_est[
@@ -525,7 +521,7 @@ class Worker(object):
                 ]
 
                 full_unc = match_statevector(
-                    unc, self.full_statevector, self.fm.state.statevec
+                    unc, self.full_statevector, self.fm.statevec
                 )
                 output_state_unc[r - start_line, c, :] = full_unc[self.full_idx_surface]
 

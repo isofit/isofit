@@ -77,7 +77,8 @@
           "day": 26,
           "sim_path": "../lut/",
           "lut_path": "../lut/D8W_6s.nc",
-          "lut_names": {"H2OSTR": null, "AOT550": null}
+          "lut_names": {"H2OSTR": null, "AOT550": null},
+          "statevector_names": ["H2OSTR", "AOT550"]
         }
       }
     }

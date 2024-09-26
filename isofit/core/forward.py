@@ -19,6 +19,7 @@
 #
 
 import logging
+from copy import deepcopy
 
 import numpy as np
 from scipy.interpolate import interp1d
@@ -31,7 +32,6 @@ from ..radiative_transfer.radiative_transfer import RadiativeTransfer
 from ..surface.surfaces import Surfaces
 from .common import eps
 from .instrument import Instrument
-from .state import StateVector
 
 Logger = logging.getLogger(__file__)
 
@@ -59,11 +59,9 @@ class ForwardModel:
     noise for the purpose of weighting the measurement information
     against the prior."""
 
-    def __init__(self, full_config: Config, subs: bool = True):
-        # load in the full config (in case of inter-module dependencies) and
-        # then designate the current config
+    def __init__(self, full_config: Config, surface_i: str = "0"):
+        # load in the full config (in case of inter-module dependencies)
         self.full_config = full_config
-        self.config = full_config.forward_model
 
         # Build the instrument model
         self.instrument = Instrument(self.full_config)
@@ -72,37 +70,101 @@ class ForwardModel:
         # Build the radiative transfer model
         self.RT = RadiativeTransfer(self.full_config)
 
+        # Build the surface model
+        fm_config = full_config.forward_model
+        surface_params = fm_config.surface.surface_params
+        surf_category = fm_config.surface.Surfaces[surface_i]["surface_category"]
+        # This will have to change to James' method
+        self.surface = Surfaces[surf_category](
+            fm_config.surface.Surfaces[surface_i], surface_params
+        )
+
+        if self.surface.n_wl != len(self.RT.wl) or not np.all(
+            np.isclose(self.surface.wl, self.RT.wl, atol=0.01)
+        ):
+            Logger.warning(
+                "Surface and RTM wavelengths differ - if running at higher RTM"
+                " spectral resolution or with variable wavelength position, this"
+                " is expected.  Otherwise, consider checking the surface model."
+            )
+
+        # Build combined state-vectors from surface, RT, and instrument
+        bounds, scale, init, statevec, bvec, bval = ([] for i in range(6))
+        for obj_with_statevec in [self.surface, self.RT, self.instrument]:
+            bounds.extend([deepcopy(x) for x in obj_with_statevec.bounds])
+            scale.extend([deepcopy(x) for x in obj_with_statevec.scale])
+            init.extend([deepcopy(x) for x in obj_with_statevec.init])
+            statevec.extend([deepcopy(x) for x in obj_with_statevec.statevec_names])
+
+            bvec.extend([deepcopy(x) for x in obj_with_statevec.bvec])
+            bval.extend([deepcopy(x) for x in obj_with_statevec.bval])
+
+        # Persist to class object
+        self.bounds = tuple(np.array(bounds).T)
+        self.scale = np.array(scale)
+        self.init = np.array(init)
+        self.statevec = statevec
+        self.nstate = len(self.statevec)
+
+        self.bvec = np.array(bvec)
+        self.nbvec = len(self.bvec)
+        self.bval = np.array(bval)
+        self.Sb = np.diagflat(np.power(self.bval, 2))
+
+        """Set up state vector indices - 
+        MUST MATCH ORDER FROM ABOVE ASSIGNMENT"""
+        self.idx_surface = np.arange(len(self.surface.statevec_names), dtype=int)
+
+        # surface reflectance portion
+        self.idx_surf_rfl = self.idx_surface[: len(self.surface.idx_lamb)]
+
+        # non-reflectance surface parameters
+        self.idx_surf_nonrfl = self.idx_surface[len(self.surface.idx_lamb) :]
+
+        # radiative transfer portion
+        self.idx_RT = np.arange(len(self.RT.statevec_names), dtype=int) + len(
+            self.idx_surface
+        )
+
+        # instrument portion
+        self.idx_instrument = (
+            np.arange(len(self.instrument.statevec_names), dtype=int)
+            + len(self.idx_surface)
+            + len(self.idx_RT)
+        )
+
+        self.surface_b_inds = np.arange(len(self.surface.bvec), dtype=int)
+
+        self.RT_b_inds = np.arange(len(self.RT.bvec), dtype=int) + len(
+            self.surface_b_inds
+        )
+
+        self.instrument_b_inds = (
+            np.arange(len(self.instrument.bvec), dtype=int)
+            + len(self.surface_b_inds)
+            + len(self.RT_b_inds)
+        )
+
         # Load model discrepancy correction
-        if self.config.model_discrepancy_file is not None:
-            D = loadmat(self.config.model_discrepancy_file)
+        if fm_config.model_discrepancy_file is not None:
+            D = loadmat(fm_config.model_discrepancy_file)
             self.model_discrepancy = D["cov"]
         else:
             self.model_discrepancy = None
 
-    def construct_surface(self, i):
-        self.surface_params = self.config.surface.surface_params
-        surf_category = self.config.surface.Surfaces[i]["surface_category"]
-
-        self.surface = Surfaces[surf_category](
-            self.config.surface.Surfaces[i], self.surface_params
-        )
-
-    def construct_state(self):
-        self.state = StateVector(self.instrument, self.RT, self.surface)
-
     def out_of_bounds(self, x):
         """Check if state vector is within bounds."""
 
-        x_RT = x[self.state.idx_RT]
-        bound_lwr = self.state.bounds[0]
-        bound_upr = self.state.bounds[1]
+        x_RT = x[self.idx_RT]
+        bound_lwr = self.bounds[0]
+        bound_upr = self.bounds[1]
 
-        return any(x_RT >= (bound_upr[self.state.idx_RT] - eps * 2.0)) or any(
-            x_RT <= (bound_lwr[self.state.idx_RT] + eps * 2.0)
+        return any(x_RT >= (bound_upr[self.idx_RT] - eps * 2.0)) or any(
+            x_RT <= (bound_lwr[self.idx_RT] + eps * 2.0)
         )
 
     def xa(self, x, geom):
-        """Calculate the prior mean of the state vector (the concatenation
+        """Calculate the prior meself.an of the state vector (the concatenation
         of state vectors for the surface, Radiative Transfer model, and
         instrument).
 
@@ -110,7 +172,7 @@ class ForwardModel:
         this is so we can calculate the local prior.
         """
 
-        x_surface = x[self.state.idx_surface]
+        x_surface = x[self.idx_surface]
         xa_surface = self.surface.xa(x_surface, geom)
         xa_RT = self.RT.xa()
         xa_instrument = self.instrument.xa()
@@ -125,7 +187,7 @@ class ForwardModel:
         is so we can calculate the local prior.
         """
 
-        x_surface = x[self.state.idx_surface]
+        x_surface = x[self.idx_surface]
         Sa_surface = self.surface.Sa(x_surface, geom)[:, :]
         Sa_RT = self.RT.Sa()[:, :]
         Sa_instrument = self.instrument.Sa()[:, :]
@@ -158,17 +220,17 @@ class ForwardModel:
     def calc_Ls(self, x, geom):
         """Calculate the surface emission."""
 
-        return self.surface.calc_Ls(x[self.state.idx_surface], geom)
+        return self.surface.calc_Ls(x[self.idx_surface], geom)
 
     def calc_rfl(self, x, geom):
         """Calculate the surface reflectance."""
 
-        return self.surface.calc_rfl(x[self.state.idx_surface], geom)
+        return self.surface.calc_rfl(x[self.idx_surface], geom)
 
     def calc_lamb(self, x, geom):
         """Calculate the Lambertian surface reflectance."""
 
-        return self.surface.calc_lamb(x[self.state.idx_surface], geom)
+        return self.surface.calc_lamb(x[self.idx_surface], geom)
 
     def Seps(self, x, meas, geom):
         """Calculate the total uncertainty of the observation, including
@@ -185,7 +247,7 @@ class ForwardModel:
         Kb = self.Kb(x, geom)
         Sy = self.instrument.Sy(meas, geom)
 
-        return Sy + Kb.dot(self.state.Sb).dot(Kb.T) + Gamma
+        return Sy + Kb.dot(self.Sb).dot(Kb.T) + Gamma
 
     def K(self, x, geom):
         """Derivative of observation with respect to state vector. This is
@@ -223,10 +285,10 @@ class ForwardModel:
         )
 
         # Put it all together
-        K = np.zeros((self.n_meas, self.state.nstate), dtype=float)
-        K[:, self.state.idx_surface] = dmeas_dsurface
-        K[:, self.state.idx_RT] = dmeas_dRT
-        K[:, self.state.idx_instrument] = dmeas_dinstrument
+        K = np.zeros((self.n_meas, self.nstate), dtype=float)
+        K[:, self.idx_surface] = dmeas_dsurface
+        K[:, self.idx_RT] = dmeas_dRT
+        K[:, self.idx_instrument] = dmeas_dinstrument
         return K
 
     def Kb(self, x, geom):
@@ -253,9 +315,9 @@ class ForwardModel:
         )
 
         # Put it together
-        Kb = np.zeros((self.n_meas, self.state.nbvec), dtype=float)
-        Kb[:, self.state.RT_b_inds] = dmeas_dRTb
-        Kb[:, self.state.instrument_b_inds] = dmeas_dinstrumentb
+        Kb = np.zeros((self.n_meas, self.nbvec), dtype=float)
+        Kb[:, self.RT_b_inds] = dmeas_dRTb
+        Kb[:, self.instrument_b_inds] = dmeas_dinstrumentb
         return Kb
 
     def summarize(self, x, geom):
@@ -273,7 +335,7 @@ class ForwardModel:
     def calibration(self, x):
         """Calculate measured wavelengths and fwhm."""
 
-        x_inst = x[self.state.idx_instrument]
+        x_inst = x[self.idx_instrument]
         return self.instrument.calibration(x_inst)
 
     def upsample(self, wl, q):
@@ -297,7 +359,7 @@ class ForwardModel:
     def unpack(self, x):
         """Unpack the state vector in appropriate index ordering."""
 
-        x_surface = x[self.state.idx_surface]
-        x_RT = x[self.state.idx_RT]
-        x_instrument = x[self.state.idx_instrument]
+        x_surface = x[self.idx_surface]
+        x_RT = x[self.idx_RT]
+        x_instrument = x[self.idx_instrument]
         return x_surface, x_RT, x_instrument
