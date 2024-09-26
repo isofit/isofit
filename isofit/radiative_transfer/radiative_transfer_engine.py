@@ -254,12 +254,12 @@ class RadiativeTransferEngine:
         self.cached = SimpleNamespace(point=np.array([]))
         Logger.debug(f"LUTs fully loaded")
 
+        # For each point index, determine if that point derives from Geometry or x_RT
+        self.indices = SimpleNamespace(geom={}, x_RT=[])
+
         # Attach interpolators
         if build_interpolators:
             self.build_interpolators()
-
-            # For each point index, determine if that point derives from Geometry or x_RT
-            self.indices = SimpleNamespace()
 
             # Hidden assumption: geometry keys come first, then come RTE keys
             self.geometry_input_names = set(self.geometry_input_names) - set(
