@@ -32,9 +32,6 @@ class SurfaceConfig(BaseConfigSection):
     """
 
     def __init__(self, sub_configdic: dict = None):
-        self._statevector_type = StateVectorConfig
-        self.statevector: StateVectorConfig = StateVectorConfig({})
-
         self._multi_surface_flag_type = bool
         self.multi_surface_flag = None
 
