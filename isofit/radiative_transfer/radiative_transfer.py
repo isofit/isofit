@@ -175,8 +175,15 @@ class RadiativeTransfer:
         Physics-based forward model to calculate at-sensor radiance.
         Includes topography, background reflectance, and glint.
         """
+        # ToDo: get TOA solar zenith angle from geometry object or from self?
+        coszen = (
+            np.cos(np.deg2rad(geom.solar_zenith))
+            if np.isnan(self.coszen)
+            else self.coszen
+        )
+
         # local solar zenith angle as a function of surface slope and aspect
-        cos_i = geom.cos_i if geom.cos_i is not None else self.coszen
+        cos_i = geom.cos_i if geom.cos_i is not None else coszen
 
         # get needed rt quantities from LUT
         r = self.get_shared_rtm_quantities(x_RT, geom)
@@ -193,14 +200,14 @@ class RadiativeTransfer:
         else:
             for key in self.rt_engines[0].coupling_terms:
                 self.E_coupled.append(
-                    self.solar_irr * self.coszen / np.pi * r[key]
+                    self.solar_irr * coszen / np.pi * r[key]
                     if self.rt_engines[0].rt_mode == "transm"
                     else r[key]
                 )
 
         # unscaling and rescaling downward direct flux terms by local solar zenith angle (see above)
         for ind in [0, 2]:
-            self.E_coupled[ind] = self.E_coupled[ind] / self.coszen * cos_i
+            self.E_coupled[ind] = self.E_coupled[ind] / coszen * cos_i
 
         # thermal transmittance
         L_up = Ls * (r["transm_up_dir"] + r["transm_up_dif"])
