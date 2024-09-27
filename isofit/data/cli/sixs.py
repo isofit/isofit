@@ -23,7 +23,16 @@ URL = "https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.t
 
 
 def untar(file, output):
-    """ """
+    """
+    Untars a .tar file. Removes the tar file after extracting
+
+    Parameters
+    ----------
+    file : str
+        .tar file to extract
+    output : str
+        Path to output to
+    """
     with tarfile.TarFile(file) as tar:
         tar.extractall(path=output)
 
@@ -31,7 +40,14 @@ def untar(file, output):
 
 
 def build(directory):
-    """ """
+    """
+    Builds a 6S directory
+
+    Parameters
+    ----------
+    directory : str
+        Directory with an unbuilt 6S
+    """
     # Update the makefile with recommended flags
     file = directory / "Makefile"
     with open(file, "r") as f:
