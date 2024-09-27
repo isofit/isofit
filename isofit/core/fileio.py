@@ -363,11 +363,6 @@ class IO:
         """Initialization specifies retrieval subwindows for calculating
         measurement cost distributions."""
 
-        # Default ESD path
-        earth_sun_distance_path = os.path.join(
-            isofit.root, "data", "earth_sun_distance.txt"
-        )
-
         self.config = config
         wl_init, fwhm_init = load_wavelen(
             self.config.forward_model.instrument.wavelength_file
