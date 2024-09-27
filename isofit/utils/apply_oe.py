@@ -36,6 +36,7 @@ SUPPORTED_SENSORS = [
     "prisma",
     "av3",
     "gao",
+    "tanager"
 ]
 RTM_CLEANUP_LIST = ["*r_k", "*t_k", "*tp7", "*wrn", "*psc", "*plt", "*7sc", "*acd"]
 INVERSION_WINDOWS = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
@@ -278,6 +279,8 @@ def apply_oe(args):
     elif args.sensor == "gao":
         # parse flightline ID (GAO/CAO assumptions)
         dt = datetime.strptime(paths.fid[3:-5], "%Y%m%dt%H%M%S")
+    elif args.sensor == "tanager":
+        dt = datetime.strptime(paths.fid[:15], "%Y%m%d_%H%M%S")
     elif args.sensor[:3] == "NA-":
         dt = datetime.strptime(args.sensor[3:], "%Y%m%d")
     else:
@@ -326,10 +329,10 @@ def apply_oe(args):
     if args.wavelength_path:
         if os.path.isfile(args.wavelength_path):
             chn, wl, fwhm = np.loadtxt(args.wavelength_path).T
-            if len(chn) != len(wl_ds) or not np.all(np.isclose(wl, wl_ds, atol=0.01)):
+            if len(chn) != len(wl_ds):# or not np.all(np.isclose(wl, wl_ds, atol=0.01)):
                 raise ValueError(
-                    "Number of channels or center wavelengths provided in wavelength file do not match"
-                    " wavelengths in radiance cube. Please adjust your wavelength file."
+                    "Number of channels provided in wavelength file does not match"
+                    " the number of values in radiance cube. Please adjust your wavelength file."
                 )
         else:
             pass

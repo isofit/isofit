@@ -174,9 +174,13 @@ def invert_algebraic(
     )  # REVIEW: Changed from transm
     solar_irr = instrument.sample(x_instrument, RT.wl, RT.solar_irr)
     sphalb = instrument.sample(x_instrument, RT.wl, rhi["sphalb"])
-    transup = instrument.sample(
-        x_instrument, RT.wl, rhi["transm_up_dir"]
-    )  # REVIEW: Changed from transup
+
+    if len(rhi["transm_up_dir"])>1:
+        transup = instrument.sample(
+            x_instrument, RT.wl, rhi["transm_up_dir"]
+        )  # REVIEW: Changed from transup
+    else:
+        transup = 0
 
     # Figure out which RT object we are using
     # TODO: this is currently very specific to vswir-tir 2-mode, eventually generalize
