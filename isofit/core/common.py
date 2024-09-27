@@ -574,17 +574,21 @@ def resample_spectrum(
                 xnew[i] = xnew[nearest_good_ind]
         return xnew
     else:
+
         # Replace NaNs with zeros
-        x[np.isnan(x)] = 0
+        y = x.copy()
+        y.setflags(write=True)
+        y[np.isnan(y)] = 0
 
         # Matrix
         if dims > 1:
-            return np.dot(H, x.T).T
+            return np.dot(H, y.T).T
 
         # Vector
         else:
-            x = x.reshape(-1, 1)
-            return np.dot(H, x).ravel()
+            #y2 = np.reshape(y,(len(y), 1))
+            res = H@y
+            return res.ravel()
 
 
 def load_spectrum(spectrum_file: str) -> (np.array, np.array):
