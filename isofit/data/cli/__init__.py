@@ -4,6 +4,7 @@ from isofit.data.download import cli_download
 
 from .data import download as download_data
 from .examples import download as download_examples
+from .sixs import download as download_sixs
 from .srtmnet import download as download_srtmnet
 
 
@@ -14,4 +15,5 @@ def download_all():
     """
     download_data(env.data)
     download_examples(env.examples)
+    download_sixs(env.srtmnet)
     download_srtmnet(env.srtmnet)
