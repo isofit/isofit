@@ -4,6 +4,7 @@ Downloads the ISOFIT examples from the repository https://github.com/isofit/isof
 
 import click
 
+from isofit.data import env
 from isofit.data.download import (
     cli_download,
     download_file,
@@ -26,7 +27,6 @@ def download(output=None, tag="latest"):
     tag: str
         Release tag to pull from the github.
     """
-
     click.echo(f"Downloading ISOFIT examples")
 
     output = prepare_output(output, env.examples)
@@ -53,6 +53,7 @@ def cli_examples(**kwargs):
     """\
     Downloads the ISOFIT examples from the repository https://github.com/isofit/isofit-tutorials.
 
+    \b
     Run `isofit download paths` to see default path locations.
     There are two ways to specify output directory:
         - `isofit --examples /path/examples download examples`: Override the ini file. This will save the provided path for future reference.

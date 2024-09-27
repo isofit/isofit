@@ -24,11 +24,11 @@ def release_metadata(org, repo, tag="latest"):
 
     Parameters
     ----------
-    org: str
+    org : str
         GitHub organization name
-    repo: str
+    repo : str
         GitHub repository name
-    tag: str
+    tag : str
         Release tag to pull
 
     Returns
@@ -47,25 +47,25 @@ def release_metadata(org, repo, tag="latest"):
 
 def download_file(url, dstname=None, overwrite=True):
     """
-    Download a file.
-
-    Credit to Kevin Wurster https://github.com/isofit/isofit/pull/448#issuecomment-1966747551
+    Stream downloads a file
 
     Parameters
     ----------
-    url: str
+    url : str
         URL to download
-    dstname: str
+    dstname : str
         Destination file name
-    overwrite: bool, default=True
+    overwrite : bool, default=True
         Overwrite the destination file if it already exists
 
     Returns
     -------
-    outfile: str
+    outfile : str
         Output downloaded filepath
     """
     response = urllib.request.urlopen(url)
+
+    total = int(response.info()["Content-Length"])
 
     # Using Python's 'email' module for this is certainly odd, but due to an
     # upcoming deprecation, this is actually the officially recommended way
@@ -73,13 +73,16 @@ def download_file(url, dstname=None, overwrite=True):
     msg = EmailMessage()
     msg["Content-Disposition"] = response.headers["Content-Disposition"]
 
-    outfile = dstname or msg["Content-Disposition"].params["filename"]
-    if os.path.exists(outfile) and not overwrite:
+    outfile = Path(dstname or msg["Content-Disposition"].params["filename"])
+    if outfile.exists() and not overwrite:
         raise FileExistsError(outfile)
 
     with open(outfile, "wb") as f:
-        while chunk := response.read(io.DEFAULT_BUFFER_SIZE):
-            f.write(chunk)
+        with click.progressbar(length=total, label="Downloading file") as bar:
+            while chunk := response.read(io.DEFAULT_BUFFER_SIZE):
+                f.write(chunk)
+                # bar.update(outfile.stat().st_size)
+                bar.update(io.DEFAULT_BUFFER_SIZE)
 
     return outfile
 
@@ -90,18 +93,18 @@ def unzip(file, path=None, rename=None, overwrite=False, cleanup=True):
 
     Parameters
     ----------
-    path: str, default=None
+    path : str, default=None
         Path to extract the zipfile to. Defaults to the directory the zip is found in
-    rename: str, default=None
+    rename : str, default=None
         Renames the extracted data to this
-    overwrite: bool, default=False
+    overwrite : bool, default=False
         Overwrites the path destination with the zip contents if enabled
-    cleanup: bool, default=True
+    cleanup : bool, default=True
         Removes the zip file after completion
 
     Returns
     -------
-    outp: str
+    outp : str
         The extracted output path
     """
     path = path or os.path.dirname(file)
@@ -125,16 +128,18 @@ def unzip(file, path=None, rename=None, overwrite=False, cleanup=True):
     return outp
 
 
-def prepare_output(output, default):
+def prepare_output(output, default, isdir=False):
     """
     Prepares the output path by ensuring the parents exist and itself doesn't presently exist.
 
     Parameters
     ----------
-    output: str | None
+    output : str | None
         Path to download to
-    default: str
+    default : str
         Default path defined by the ini file
+    isdir : bool, default=False
+        This is supposed to be a directory
     """
     if not output:
         output = default
@@ -150,7 +155,10 @@ def prepare_output(output, default):
         return
 
     try:
-        output.parent.mkdir(parents=True, exist_ok=True)
+        if isdir:
+            output.mkdir(parents=True, exist_ok=True)
+        else:
+            output.parent.mkdir(parents=True, exist_ok=True)
     except Exception as e:
         click.echo(f"Failed to create output directory: {e}")
         return

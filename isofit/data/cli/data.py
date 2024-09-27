@@ -4,6 +4,7 @@ Downloads the extra ISOFIT data files from the repository https://github.com/iso
 
 import click
 
+from isofit.data import env
 from isofit.data.download import (
     cli_download,
     download_file,
@@ -50,6 +51,7 @@ def cli_data(**kwargs):
     """\
     Downloads the extra ISOFIT data files from the repository https://github.com/isofit/isofit-data.
 
+    \b
     Run `isofit download paths` to see default path locations.
     There are two ways to specify output directory:
         - `isofit --data /path/data download data`: Override the ini file. This will save the provided path for future reference.

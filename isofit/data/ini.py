@@ -11,15 +11,17 @@ Logger = logging.getLogger(__file__)
 
 
 class Ini:
-    ini: Path = Path.home() / ".isofit/isofit.ini"
-    dirs: List[str] = ["data", "examples"]  # , "srtmnet", "sixs", "modtran"]
+    base: Path = Path.home() / ".isofit/"
+    dirs: List[str] = ["data", "examples", "srtmnet", "sixs", "modtran"]
     config: ConfigParser = ConfigParser()
     section: str = "DEFAULT"
 
     def __init__(self):
+        self.ini = self.base / "isofit.ini"
+
         # Initialize ConfigParser with default values
         for key in self.dirs:
-            self.config[self.section][key] = str(Path.home() / f".isofit/{key}")
+            self.changePath(key, self.base / key)
 
     def __getattr__(self, key: str) -> Optional[str]:
         """
