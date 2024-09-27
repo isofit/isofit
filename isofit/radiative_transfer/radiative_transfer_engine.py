@@ -115,6 +115,7 @@ class RadiativeTransferEngine:
         self.rt_mode = (
             engine_config.rt_mode if engine_config.rt_mode is not None else "transm"
         )
+        self.coupling_terms = ["bi-direct", "hemi-direct", "direct-hemi", "bi-hemi"]
         self.multipart_transmittance = engine_config.multipart_transmittance
         self.topography_model = engine_config.topography_model
         self.glint_model = engine_config.glint_model
@@ -135,7 +136,7 @@ class RadiativeTransferEngine:
 
         # ToDo: move setting of multipart rfl values to config
         if self.multipart_transmittance:
-            self.test_rfls = [0.1, 0.5]
+            self.test_rfls = [0.0, 0.1, 0.5]
 
         # Extract from LUT file if available, otherwise initialize it
         if exists:
@@ -210,6 +211,7 @@ class RadiativeTransferEngine:
 
             # Verify no duplicates exist else downstream functions will fail
             duplicates = False
+
             for dim, vals in lut_grid.items():
                 if np.unique(vals).size < len(vals):
                     duplicates = True
@@ -572,10 +574,8 @@ class RadiativeTransferEngine:
         # since it only includes direct upward transmittance
         t_up_dir = case0["transm_up_dir"]
 
-        # REVIEW: two_albedo_method-v1 used a single solar_irr value, but now we have an array of values
-        # The last value in the new array is the same as the old v1, so for backwards compatibility setting that here
         # Top-of-atmosphere solar irradiance as a function of sun zenith angle
-        E0 = case0["solar_irr"][-1] * coszen / np.pi
+        E0 = case0["solar_irr"] * coszen / np.pi
 
         # Direct ground reflected radiance at sensor for case 1 (sun->surface->sensor)
         # This includes direct down and direct up transmittance
