@@ -15,6 +15,7 @@ __pycache__
 # Ignore dynamic contents of example directories
 examples/**/data/*_vicarious_correction.txt
 examples/**/data/*_coastal_model.mat
+examples/**/lut/*.nc
 examples/**/output/*.txt
 examples/**/output/*.mat
 examples/**/remote/*prm20151026t173213_data*.mat

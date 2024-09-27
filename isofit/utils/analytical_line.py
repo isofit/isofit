@@ -36,54 +36,217 @@ from isofit.core.common import (
     load_wavelen,
     match_statevector,
 )
-from isofit.core.fileio import IO, write_bil_chunk, write_bil_spectra
+from isofit.core.fileio import IO
 from isofit.core.forward import ForwardModel
 from isofit.core.geometry import Geometry
-from isofit.inversion import Inversions
 from isofit.inversion.inverse_simple import invert_analytical
 from isofit.utils.atm_interpolation import atm_interpolation
 from isofit.utils.multistate import construct_full_state, index_image_by_class_and_sub
 
 
-def construct_outputs(
-    rdn_file,
-    full_idx_surface,
-    full_idx_surf_rfl,
-    winidx,
-    analytical_state_file,
-    analytical_state_unc_file,
-):
+class OutputFile:
+    def __init__(self, fname, flush_rate=100, fmt="ENVI"):
+        self.frames = OrderedDict()
+        self.format = fmt
+        self.fname = fname
+        self.writes = 0
+        self.flush_rate = flush_rate
 
-    rdn_ds = envi.open(envi_header(rdn_file))
-    rdns = rdn_ds.open_memmap(interleave="bip").shape
-    output_metadata = rdn_ds.metadata
-    output_metadata["interleave"] = "bil"
-    output_metadata["description"] = "L2A Analytyical per-pixel surface retrieval"
-    output_metadata["bands"] = f"{len(full_idx_surface)}"
-    del rdn_ds
+    def open_files(self):
+        """
+        Only applicable to the envi files currently
+        """
+        self.file = envi.open(envi_header(self.fname))
 
-    outside_ret_windows = np.zeros(len(full_idx_surf_rfl), dtype=int)
-    outside_ret_windows[winidx] = 1
+        self.memmap = None
+        for attempt in range(10):
+            self.memmap = self.file.open_memmap(interleave="bip", writable=True)
+            if self.memmap is not None:
+                return
+        raise IOError("could not open memmap for " + self.fname)
 
-    output_metadata["bbl"] = "{" + ",".join([f"{x}" for x in outside_ret_windows]) + "}"
+    def flush_buffers(self):
+        """Write to file, and refresh the memory map object."""
 
-    if "emit pge input files" in list(output_metadata.keys()):
-        del output_metadata["emit pge input files"]
+        if self.format == "ENVI":
+            for row, frame in self.frames.items():
+                # valid = np.logical_not(np.isnan(frame[:, 0]))
+                valid = np.logical_not(frame[:, :] == 0)
+                self.memmap[row, valid] = frame[valid]
 
-    img = envi.create_image(
-        envi_header(analytical_state_file), ext="", metadata=output_metadata, force=True
-    )
-    del img
+            self.frames = OrderedDict()
+            del self.file
 
-    img = envi.create_image(
-        envi_header(analytical_state_unc_file),
-        ext="",
-        metadata=output_metadata,
-        force=True,
-    )
-    del img
+            self.open_files()
 
-    return rdns
+        elif self.format == "NETCDF":
+            self.dataset.to_netcdf(self.fname)
+
+    def write_spectra_buffers(self, row, col, x, flush_immediately=False):
+        if self.format == "NETCDF":
+            self.data[row, col][:] = x
+
+        else:
+            # Get frame
+            if row not in self.frames:
+                d = self.memmap[row, :, :]
+                self.frames[row] = d.copy()
+            # frame = self.frames[row]
+
+            # Omit wavelength column for spectral products
+            if x.ndim == 2:
+                x = x[:, -1]
+
+            # Set frame
+            self.frames[row][col, :] = x
+
+        # Check to flush buffers
+        self.writes += 1
+        if self.writes >= self.flush_rate or flush_immediately:
+            self.flush_buffers()
+            self.writes = 0
+
+    def write_spectra(self, row, col, x, flush_immediately=False):
+        if self.format == "NETCDF":
+            self.data[row, col][:] = x
+
+        else:
+            self.memmap[row, col, :] = x
+
+
+@ray.remote(num_cpus=1)
+class Worker(object):
+    def __init__(
+        self,
+        config: configs.Config,
+        fm: ForwardModel,
+        full_statevector: list,
+        full_idx_surface: np.array,
+        full_idx_RT: np.array,
+        full_idx_surf_rfl: np.array,
+        input_files: dict,
+        output_files: dict,
+        loglevel: str,
+        logfile: str,
+        subs_state_file: str = None,
+    ):
+        """
+        Worker class to help run a subset of spectra.
+
+        Args:
+            fm: isofit forward_model
+            loglevel: output logging level
+            logfile: output logging file
+        """
+        logging.basicConfig(
+            format="%(levelname)s:%(asctime)s ||| %(message)s",
+            level=loglevel,
+            filename=logfile,
+            datefmt="%Y-%m-%d,%H:%M:%S",
+        )
+        self.config = config
+
+        self.esd = IO.load_esd(IO.earth_sun_distance_path)
+
+        self.fm = fm
+        self.full_statevector = full_statevector
+        self.full_idx_surface = full_idx_surface
+        self.full_idx_RT = full_idx_RT
+        self.full_idx_surf_rfl = full_idx_surf_rfl
+
+        self.winidx = retrieve_winidx(self.config)
+
+        self.rfl_bounds = (np.min(fm.bounds, axis=0)[0], np.max(fm.bounds, axis=0)[1])
+
+        logging.debug(
+            "Reflectance output will be bounded to the surface"
+            f"bounds: {self.rfl_bounds}"
+        )
+
+        self.completed_spectra = 0
+        self.hash_table = OrderedDict()
+        self.hash_size = 500
+
+        self.rdn_file = input_files["rdn_file"]
+        self.loc_file = input_files["loc_file"]
+        self.obs_file = input_files["obs_file"]
+        self.RT_state_file = input_files["atm_file"]
+
+        self.rfl_output = output_files["rfl_output"]
+        self.rfl_unc_output = output_files["rfl_unc_output"]
+
+        if config.input.radiometry_correction_file is not None:
+            self.radiance_correction, wl = load_spectrum(
+                config.input.radiometry_correction_file
+            )
+        else:
+            self.radiance_correction = None
+
+        # Open files at the worker level
+        self.rdn = envi.open(envi_header(self.rdn_file)).open_memmap(interleave="bip")
+
+        self.loc = envi.open(envi_header(self.loc_file)).open_memmap(interleave="bip")
+
+        self.obs = envi.open(envi_header(self.obs_file)).open_memmap(interleave="bip")
+
+        self.rt_state = envi.open(envi_header(self.RT_state_file)).open_memmap(
+            interleave="bip"
+        )
+
+        # Open output memmaps at worker level
+        self.rfl_output.open_files()
+        self.rfl_unc_output.open_files()
+
+    def run_pixels(self, indices):
+        for index in range(0, indices.shape[0]):
+            r, c = indices[index, 0], indices[index, 1]
+
+            # Only use the surf rfl portion
+            meas = self.rdn[r, c, self.full_idx_surf_rfl]
+
+            if self.radiance_correction is not None:
+                meas *= self.radiance_correction
+
+            if np.all(meas < 0):
+                continue
+
+            # Atmospheric state elements
+            x_RT = self.rt_state[r, c, self.fm.idx_RT - len(self.fm.idx_surface)]
+            geom = Geometry(obs=self.obs[r, c, :], loc=self.loc[r, c, :], esd=self.esd)
+
+            """
+            Exactly what state elements are passed into invert_analytic
+            might change with Niklas' upadtes. It also might vary
+            depending on what the other surface elements are. Are the
+            linear assumptions valid for other states?
+            """
+            states, unc = invert_analytical(
+                self.fm,
+                self.winidx,
+                meas,
+                geom,
+                x_RT,
+                1,
+                self.hash_table,
+                self.hash_size,
+            )
+
+            # Match pixel-specific to general statevector
+            state_est = states[-1]
+            full_state_est = match_statevector(
+                state_est, self.full_statevector, self.fm.statevec
+            )
+
+            # For now only use the rfl
+            rfl_state_est = full_state_est[self.full_idx_surf_rfl]
+
+            full_unc = match_statevector(unc, self.full_statevector, self.fm.statevec)
+
+            # For now only use the rfl
+            rfl_unc_est = full_unc[self.full_idx_surf_rfl]
+
+            self.rfl_output.write_spectra(r, c, rfl_state_est)
+            self.rfl_unc_output.write_spectra(r, c, rfl_unc_est)
 
 
 def retrieve_winidx(config):
@@ -96,6 +259,46 @@ def retrieve_winidx(config):
         winidx = np.concatenate((winidx, idx), axis=0)
 
     return winidx
+
+
+def construct_output(output_metadata, outpath, buffer_size=100, **kwargs):
+    """
+    Construct 4 outputs: rfl and rfl_unc and state and state_unc
+    """
+    for key, value in kwargs.items():
+        output_metadata[key] = value
+
+    if "emit pge input files" in list(output_metadata.keys()):
+        del output_metadata["emit pge input files"]
+
+    out_file = envi.create_image(
+        envi_header(outpath), ext="", metadata=output_metadata, force=True
+    )
+    del out_file
+
+    output_file = OutputFile(outpath, flush_rate=buffer_size, fmt="ENVI")
+
+    return output_file
+
+
+def group_pixels_by_class(rdns, pixel_index):
+    # Form the row-column pairs (pixels to run)
+    index_pairs = np.vstack(
+        [x.flatten(order="f") for x in np.meshgrid(range(rdns[0]), range(rdns[1]))]
+    ).T
+
+    if not len(pixel_index):
+        return [index_pairs]
+
+    index_pairs_class = []
+    for class_row_col in pixel_index:
+        if not len(class_row_col):
+            continue
+
+        class_row_col = np.delete(np.array(class_row_col), -1, axis=1)
+        index_pairs_class.append(class_row_col)
+
+    return index_pairs_class
 
 
 def analytical_line(
@@ -140,7 +343,6 @@ def analytical_line(
     # Set up input file paths
     subs_state_file = config.output.estimated_state_file
     subs_loc_file = config.input.loc_file
-    subs_class_file = config.forward_model.surface.surface_class_file
 
     # Rename files
     lbl_file = (
@@ -148,12 +350,12 @@ def analytical_line(
         if segmentation_file
         else (subs_state_file.replace("_subs_state", "_lbl"))
     )
-    analytical_state_file = (
+    analytical_state_path = (
         output_rfl_file
         if output_rfl_file
         else (subs_state_file.replace("_subs_state", "_state_analytical"))
     )
-    analytical_state_unc_file = (
+    analytical_state_unc_path = (
         output_unc_file
         if output_unc_file
         else (subs_state_file.replace("_subs_state", "_state_analytical_uncert"))
@@ -174,8 +376,7 @@ def analytical_line(
         full_idx_RT,
     ) = construct_full_state(config)
 
-    # Find the winidx
-    winidx = retrieve_winidx(config)
+    full_idx_surf_non_rfl = full_idx_surface[full_idx_surf_rfl.max() + 1 :]
 
     # Perform the atmospheric interpolation
     if os.path.isfile(atm_file) is False:
@@ -192,44 +393,59 @@ def analytical_line(
             n_cores=n_cores,
         )
 
-    # Construct output
-    rdns = construct_outputs(
-        rdn_file,
-        full_idx_surface,
-        full_idx_surf_rfl,
-        winidx,
-        analytical_state_file,
-        analytical_state_unc_file,
+    # Get output shape
+    rdn_ds = envi.open(envi_header(rdn_file))
+    rdns = rdn_ds.shape
+    output_metadata = rdn_ds.metadata
+    del rdn_ds
+
+    # Find the winidx
+    winidx = retrieve_winidx(config)
+
+    # Get string representation of bad band list
+    outside_ret_windows = np.zeros(len(full_idx_surf_rfl), dtype=int)
+    outside_ret_windows[winidx] = 1
+    bbl = "{" + ",".join([f"{x}" for x in outside_ret_windows]) + "}"
+
+    # Construct surf rfl output
+    rfl_output = construct_output(
+        output_metadata,
+        analytical_state_path,
+        bbl=bbl,
+        interleave="bil",
+        bands=f"{len(full_idx_surf_rfl)}",
+        band_names=[("Channel %i" % i) for i in range(len(full_idx_surf_rfl))],
+        wavelength_unts="Nanometers",
+        description=("L2A Analytyical per-pixel surface retrieval"),
     )
 
-    # Form the row-column pairs (pixels to run)
-    index_pairs = np.vstack(
-        [x.flatten(order="f") for x in np.meshgrid(range(rdns[0]), range(rdns[1]))]
-    ).T
-
-    if len(pixel_index):
-        index_pairs_class = []
-        for class_row_col in pixel_index:
-            if not len(class_row_col):
-                continue
-
-            class_row_col = np.delete(np.array(class_row_col), -1, axis=1)
-            index_pairs_class.append(class_row_col)
-
-        index_pairs = index_pairs_class
-
-    # Else it's not a multistate run
-    else:
-        index_pairs = [index_pairs]
-
-    # Divide into chunks to processes for each worker
-    line_breaks = np.linspace(
-        0, rdns[0], (n_cores * config.implementation.task_inflation_factor), dtype=int
+    # Construct surf rfl uncertainty output
+    rfl_unc_output = construct_output(
+        output_metadata,
+        analytical_state_unc_path,
+        bbl=bbl,
+        interleave="bil",
+        bands=f"{len(full_idx_surf_rfl)}",
+        band_names=[full_statevector[i] for i in full_idx_surf_rfl],
+        wavelength_unts="Nanometers",
+        description=("L2A Analytyical per-pixel surface retrieval uncertainty"),
     )
 
-    line_breaks = [
-        (line_breaks[n], line_breaks[n + 1]) for n in range(len(line_breaks) - 1)
-    ]
+    # Groups pixels by fm class
+    index_pairs = group_pixels_by_class(rdns, pixel_index)
+
+    # Set up input files
+    input_files = {
+        "rdn_file": rdn_file,
+        "loc_file": loc_file,
+        "obs_file": obs_file,
+        "atm_file": atm_file,
+    }
+
+    output_files = {
+        "rfl_output": rfl_output,
+        "rfl_unc_output": rfl_unc_output,
+    }
 
     # Ray initialization
     ray_dict = {
@@ -258,8 +474,8 @@ def analytical_line(
             indices_to_run = [index_pair[0:1, :]]
         else:
             indices_to_run = [
-                index_pair[index_sets[l] : index_sets[l + 1], :]
-                for l in range(len(index_sets) - 1)
+                index_pair[index_sets[idx] : index_sets[idx + 1], :]
+                for idx in range(len(index_sets) - 1)
             ]
 
         # FM to match with the superpixel
@@ -274,12 +490,9 @@ def analytical_line(
                 full_statevector,
                 full_idx_surface,
                 full_idx_RT,
-                atm_file,
-                analytical_state_file,
-                analytical_state_unc_file,
-                rdn_file,
-                loc_file,
-                obs_file,
+                full_idx_surf_rfl,
+                input_files,
+                output_files,
                 loglevel,
                 logfile,
             )
@@ -299,262 +512,6 @@ def analytical_line(
         f"{round(rdns[0]*rdns[1]/total_time,4)} spectra/s, "
         f"{round(rdns[0]*rdns[1]/total_time/n_cores, 4)} spectra/s/core"
     )
-
-
-@ray.remote(num_cpus=1)
-class Worker(object):
-    def __init__(
-        self,
-        config: configs.Config,
-        fm: ForwardModel,
-        full_statevector: list,
-        full_idx_surface: np.array,
-        full_idx_RT: np.array,
-        RT_state_file: str,
-        analytical_state_file: str,
-        analytical_state_unc_file: str,
-        rdn_file: str,
-        loc_file: str,
-        obs_file: str,
-        loglevel: str,
-        logfile: str,
-        subs_state_file: str = None,
-        lbl_file: str = None,
-    ):
-        """
-        Worker class to help run a subset of spectra.
-
-        Args:
-            fm: isofit forward_model
-            loglevel: output logging level
-            logfile: output logging file
-        """
-        logging.basicConfig(
-            format="%(levelname)s:%(asctime)s ||| %(message)s",
-            level=loglevel,
-            filename=logfile,
-            datefmt="%Y-%m-%d,%H:%M:%S",
-        )
-        self.config = config
-
-        self.fm = fm
-        self.full_statevector = full_statevector
-        self.full_idx_surface = full_idx_surface
-        self.full_idx_RT = full_idx_RT
-
-        self.winidx = retrieve_winidx(self.config)
-
-        self.rfl_bounds = np.min(fm.bounds, axis=0)[0], np.max(fm.bounds, axis=0)[1]
-        logging.debug(
-            f"Reflectance output will be bounded to the surface bounds: {self.rfl_bounds}"
-        )
-
-        self.completed_spectra = 0
-        self.hash_table = OrderedDict()
-        self.hash_size = 500
-        self.RT_state_file = RT_state_file
-        self.rdn_file = rdn_file
-        self.loc_file = loc_file
-        self.obs_file = obs_file
-        self.analytical_state_file = analytical_state_file
-        self.analytical_state_unc_file = analytical_state_unc_file
-
-        if subs_state_file is not None and lbl_file is not None:
-            self.subs_state_file = subs_state_file
-            self.lbl_file = lbl_file
-        else:
-            self.subs_state_file = None
-            self.lbl_file = None
-
-        if config.input.radiometry_correction_file is not None:
-            self.radiance_correction, wl = load_spectrum(
-                config.input.radiometry_correction_file
-            )
-        else:
-            self.radiance_correction = None
-
-        # Open files at the worker level
-        self.rdn = envi.open(envi_header(self.rdn_file)).open_memmap(interleave="bip")
-
-        self.loc = envi.open(envi_header(self.loc_file)).open_memmap(interleave="bip")
-
-        self.obs = envi.open(envi_header(self.obs_file)).open_memmap(interleave="bip")
-
-        self.rt_state = envi.open(envi_header(self.RT_state_file)).open_memmap(
-            interleave="bip"
-        )
-
-    def run_pixels(self, indices):
-
-        esd = IO.load_esd(IO.earth_sun_distance_path)
-
-        for index in range(0, indices.shape[0]):
-            r, c = indices[index, 0], indices[index, 1]
-
-            meas = self.rdn[r, c, :]
-            if self.radiance_correction is not None:
-                meas *= self.radiance_correction
-            if np.all(meas < 0):
-                continue
-
-            # Atmospheric state elements
-            x_RT = self.rt_state[
-                # r, c, self.full_idx_RT - len(self.full_idx_surface)
-                r,
-                c,
-                self.fm.idx_RT - len(self.fm.idx_surface),
-            ]
-            geom = Geometry(obs=self.obs[r, c, :], loc=self.loc[r, c, :], esd=esd)
-
-            """
-            Exactly what state elements are passed into invert_analytic
-            might change with Niklas' upadtes. It also might vary
-            depending on what the other surface elements are. Are the
-            linear assumptions valid for other states?
-            """
-            states, unc = invert_analytical(
-                self.fm,
-                self.winidx,
-                meas,
-                geom,
-                x_RT,
-                1,
-                self.hash_table,
-                self.hash_size,
-            )
-
-            # Match pixel-specific to general statevector
-            state_est = states[-1]
-            full_state_est = match_statevector(
-                state_est, self.full_statevector, self.fm.statevec
-            )
-            full_state_est = full_state_est[self.full_idx_surface]
-            # full_state_est = np.expand_dims(full_state_est, axis=(0, 1))
-
-            full_unc = match_statevector(unc, self.full_statevector, self.fm.statevec)
-            full_unc = full_unc[self.full_idx_surface]
-            # full_unc = np.expand_dims(full_unc, axis=(0, 1))
-
-            write_bil_spectra(
-                full_state_est,
-                self.analytical_state_file,
-                r,
-                c,
-                len(self.full_idx_surface),
-                self.rdn.shape[1],
-            )
-            write_bil_spectra(
-                full_unc,
-                self.analytical_state_unc_file,
-                r,
-                c,
-                len(self.full_idx_surface),
-                self.rdn.shape[1],
-            )
-
-    def run_lines(self, startstop: tuple) -> None:
-        """
-        TODO: Description
-        """
-        start_line, stop_line = startstop
-        output_state = (
-            np.zeros(
-                (
-                    stop_line - start_line,
-                    self.rt_state.shape[1],
-                    len(self.full_idx_surface),
-                )
-            )
-            - 9999
-        )
-
-        output_state_unc = (
-            np.zeros(
-                (
-                    stop_line - start_line,
-                    self.rt_state.shape[1],
-                    len(self.full_idx_surface),
-                )
-            )
-            - 9999
-        )
-
-        esd = IO.load_esd(IO.earth_sun_distance_path)
-
-        for r in range(start_line, stop_line):
-            for c in range(output_state.shape[1]):
-                # class of pixel
-
-                iv = Inversions.get(self.config.implementation.mode, None)
-                if not iv:
-                    logging.exception(
-                        "Inversion implementation: "
-                        f"{self.config.implementation.mode}, "
-                        "did not match options"
-                    )
-                    raise KeyError
-                self.iv = iv(self.config, self.fm)
-
-                meas = self.rdn[r, c, :]
-                if self.radiance_correction is not None:
-                    meas *= self.radiance_correction
-                if np.all(meas < 0):
-                    continue
-
-                x_RT = rt_state[r, c, self.fm.idx_RT - len(self.fm.idx_surface)]
-                geom = Geometry(obs=obs[r, c, :], loc=loc[r, c, :], esd=esd)
-
-                states, unc = invert_analytical(
-                    self.fm,
-                    self.iv.winidx,
-                    meas,
-                    geom,
-                    x_RT,
-                    1,
-                    self.hash_table,
-                    self.hash_size,
-                )
-
-                # Match pixel-specific to general statevector
-                state_est = states[-1]
-                full_state_est = match_statevector(
-                    state_est, self.full_statevector, self.fm.statevec
-                )
-
-                output_state[r - start_line, c, :] = full_state_est[
-                    self.full_idx_surface
-                ]
-
-                full_unc = match_statevector(
-                    unc, self.full_statevector, self.fm.statevec
-                )
-                output_state_unc[r - start_line, c, :] = full_unc[self.full_idx_surface]
-
-            state = output_state[r - start_line, ...]
-            mask = np.logical_and.reduce(
-                [
-                    state < self.rfl_bounds[0],
-                    state > self.rfl_bounds[1],
-                    state != -9999,
-                    state != -0.01,
-                ]
-            )
-            state[mask] = 0
-
-            logging.info(f"Analytical line writing line {r}")
-
-            write_bil_chunk(
-                state.T,
-                self.analytical_state_file,
-                r,
-                (self.rdn.shape[0], self.rdn.shape[1], len(self.full_idx_surface)),
-            )
-            write_bil_chunk(
-                output_state_unc[r - start_line, ...].T,
-                self.analytical_state_unc_file,
-                r,
-                (self.rdn.shape[0], self.rdn.shape[1], len(self.full_idx_surface)),
-            )
 
 
 @click.command(name="analytical_line")
@@ -584,5 +541,6 @@ def cli_analytical_line(**kwargs):
 
 if __name__ == "__main__":
     raise NotImplementedError(
-        "analytical_line.py can no longer be called this way.  Run as:\n isofit analytical_line [ARGS]"
+        "analytical_line.py can no longer be called this way. "
+        "Run as:\n isofit analytical_line [ARGS]"
     )
