@@ -27,18 +27,7 @@ from isofit.configs import Config
 from isofit.core.geometry import Geometry
 
 from ..core.common import eps
-from ..radiative_transfer.kernel_flows import KernelFlowsRT
-from ..radiative_transfer.modtran import ModtranRT
-from ..radiative_transfer.six_s import SixSRT
-from ..radiative_transfer.sRTMnet import SimulatedModtranRT
-
-# Match config string options to modules
-RTE = {
-    "modtran": ModtranRT,
-    "6s": SixSRT,
-    "sRTMnet": SimulatedModtranRT,
-    "KernelFlowsGP": KernelFlowsRT,
-}
+from .engines import Engines
 
 
 def confPriority(key, configs):
@@ -90,6 +79,11 @@ class RadiativeTransfer:
         for idx in range(len(config.radiative_transfer_engines)):
             confRT = config.radiative_transfer_engines[idx]
 
+            if confRT.engine_name not in Engines:
+                raise AttributeError(
+                    f"Invalid radiative transfer engine choice. Got: {confRT.engine_name}; Must be one of: {RTE}"
+                )
+
             # Generate the params for this RTE
             params = {
                 key: confPriority(key, [confRT, confIT, config]) for key in self._keys
@@ -97,8 +91,16 @@ class RadiativeTransfer:
             params["engine_config"] = confRT
 
             # Select the right RTE and initialize it
-            rte = RTE[confRT.engine_name](**params)
+            rte = Engines[confRT.engine_name](**params)
             self.rt_engines.append(rte)
+
+            # Make sure the length of the config statevectores match the engine's assumed statevectors
+            if (expected := len(config.statevector.get_element_names())) != (
+                got := len(rte.indices.x_RT)
+            ):
+                error = f"Mismatch between the number of elements for the config statevector and LUT.indices.x_RT: {expected=}, {got=}"
+                Logger.error(error)
+                raise AttributeError(error)
 
         # If any engine is true, self is true
         self.topography_model = any([rte.topography_model for rte in self.rt_engines])

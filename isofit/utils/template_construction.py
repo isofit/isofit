@@ -201,13 +201,6 @@ class Pathnames:
                 self.input_model_discrepancy_path = join(
                     self.isofit_path, "data", "emit_model_discrepancy.mat"
                 )
-        elif args.sensor == "av3":
-            self.noise_path = None
-            logging.info("no noise path found, proceeding without")
-            if self.input_channelized_uncertainty_path is None:
-                self.input_channelized_uncertainty_path = join(
-                    self.isofit_path, "data", "av3_osf_uncertainty.txt"
-                )
         else:
             self.noise_path = None
             logging.info("no noise path found, proceeding without")
@@ -540,8 +533,8 @@ def build_presolve_config(
 
     # set up specific presolve LUT grid
     lut_grid = {"H2OSTR": [float(x) for x in h2o_lut_grid]}
-    if engine_name == "KernelFlowsGP":
-        from isofit.radiative_transfer.kernel_flows import bounds_check
+    if emulator_base is not None and os.path.splitext(emulator_base)[1] == ".jld2":
+        from isofit.radiative_transfer.engines.kernel_flows import bounds_check
 
         bounds_check(lut_grid, emulator_base, modify=True)
 
@@ -838,7 +831,7 @@ def build_main_config(
     ] = rtc_ln
 
     if emulator_base is not None and os.path.splitext(emulator_base)[1] == ".jld2":
-        from isofit.radiative_transfer.kernel_flows import bounds_check
+        from isofit.radiative_transfer.engines.kernel_flows import bounds_check
 
         bounds_check(radiative_transfer_config["lut_grid"], emulator_base, modify=True)
         # modify so we set the statevector appropriately

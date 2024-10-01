@@ -88,7 +88,7 @@ class SixSRT(RadiativeTransferEngine):
                 f"6S path not valid, downstream simulations will be broken: {sixS}"
             )
 
-    def makeSim(self, point: np.array, template_only: bool = False):
+    def makeSim(self, point: np.array):
         """
         Perform 6S simulations
 
@@ -96,8 +96,6 @@ class SixSRT(RadiativeTransferEngine):
         ----------
         point: np.array
             Point to process
-        template_only: bool, default=False
-            Only write the simulation template then exit. If False, subprocess call 6S
         """
         # Retrieve the files to process
         name = self.point_to_filename(point)
@@ -120,13 +118,15 @@ class SixSRT(RadiativeTransferEngine):
             # in multipart transmittance mode, we need to run 6s for ech wavelength separately
             for wl in self.wl:
                 cmd = self.rebuild_cmd(point=point, wlinf=wl, wlsup=wl)
-                if template_only is False:
+
+                if not self.engine_config.rte_configure_and_exit:
                     call = subprocess.run(cmd, shell=True, capture_output=True)
                     if call.stdout:
                         Logger.error(call.stdout.decode())
         else:
             cmd = self.rebuild_cmd(point, wlinf=self.wl[0], wlsup=self.wl[-1])
-            if template_only is False:
+
+            if not self.engine_config.rte_configure_and_exit:
                 call = subprocess.run(cmd, shell=True, capture_output=True)
                 if call.stdout:
                     Logger.error(call.stdout.decode())
@@ -308,7 +308,7 @@ class SixSRT(RadiativeTransferEngine):
 
         Examples
         --------
-        >>> from isofit.radiative_transfer.six_s import SixSRT
+        >>> from isofit.radiative_transfer.engines import SixSRT
         >>> SixSRT.parse_file('isofit/examples/20151026_SantaMonica/lut/AOT550-0.0000_H2OSTR-0.5000', wl_size=3)
         {'sphalb': array([0.3116, 0.3057, 0.2999]),
          'rhoatm': array([0.2009, 0.1963, 0.1916]),

@@ -32,9 +32,8 @@ import numpy as np
 import scipy.interpolate
 import scipy.stats
 
+from isofit.core.common import json_load_ascii, recursive_replace
 from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
-
-from ..core.common import json_load_ascii, recursive_replace
 
 Logger = logging.getLogger(__file__)
 
@@ -44,13 +43,6 @@ eps = 1e-5  # used for finite difference derivative calculations
 tropopause_altitude_km = 17.0
 
 ### Classes ###
-
-
-class FileExistsError(Exception):
-    """FileExistsError with a message."""
-
-    def __init__(self, message):
-        super(FileExistsError, self).__init__(message)
 
 
 class ModtranRT(RadiativeTransferEngine):
@@ -269,30 +261,8 @@ class ModtranRT(RadiativeTransferEngine):
         For a given point, parses the tp6 and chn file and returns the data
         """
         file = os.path.join(self.sim_path, self.point_to_filename(point))
-        try:
-            solzen = self.load_tp6(f"{file}.tp6")
-        except FileNotFoundError as e:
-            # Rerun the point until it is done
-            done = False
-            n_rerun = 0
-            while not done:
-                # Pause for a second
-                time.sleep(np.random.randint(1, 10) / 10.0)
-                # Extract filename that doesn't exist
-                logging.info(f"File not found: {e.filename}")
-                if n_rerun >= 10:
-                    logging.info(f"{n_rerun} reruns; stopping")
-                    raise FileNotFoundError(e)
-                    # Throw error
-                self.makeSim(point)  # Rerun
-                # Try to load
-                try:
-                    solzen = self.load_tp6(f"{file}.tp6")
-                    done = True
-                except FileNotFoundError:
-                    pass
-                n_rerun += 1
 
+        solzen = self.load_tp6(f"{file}.tp6")
         coszen = np.cos(solzen * np.pi / 180.0)
         params = self.load_chn(f"{file}.chn", coszen)
 
@@ -335,54 +305,22 @@ class ModtranRT(RadiativeTransferEngine):
         vals["DISALB"] = True
         vals["NAME"] = filename_base
         vals["FILTNM"] = os.path.normpath(self.filtpath)
+
+        # Translate to the MODTRAN OBSZEN convention, assumes we are downlooking
+        if vals["OBSZEN"] < 90:
+            vals["OBSZEN"] = 180 - abs(vals["OBSZEN"])
+
         modtran_config_str, modtran_config = self.modtran_driver(dict(vals))
 
         # Check rebuild conditions: LUT is missing or from a different config
         infilename = "LUT_" + filename_base + ".json"
         infilepath = os.path.join(self.sim_path, "LUT_" + filename_base + ".json")
 
-        if not self.required_results_exist(filename_base):
-            rebuild = True
-        else:
-            # We compare the two configuration files, ignoring names and
-            # wavelength paths which tend to be non-portable
+        if self.required_results_exist(filename_base):
+            Logger.warning(f"File already exists, skipping execution: {filename_base}")
+            return
 
-            with open(infilepath, "r") as f:
-                current_config = json.load(f)["MODTRAN"]
-
-            # Number of parts to the config
-            parts = 1
-            reset = [
-                # Tuples to a config option, ie. config[part]['MODTRANINPUT'][*keys]
-                ("NAME",),
-                ("SPECTRAL", "FILTNM"),
-            ]
-            if self.multipart_transmittance:
-                parts += 2
-                reset += [
-                    # Hacky fix to decimel places not matching
-                    ("AEROSOLS", "IREGSPC", 0, "EXTC"),
-                    ("AEROSOLS", "IREGSPC", 0, "ABSC"),
-                ]
-
-            # Reset the keys to an empty string
-            for config in (modtran_config, current_config):
-                for i in range(parts):
-                    sub = config[i]["MODTRANINPUT"]
-                    for keys in reset:
-                        opt = sub
-                        for key in keys[:-1]:
-                            opt = opt[key]
-                        opt[keys[-1]] = ""
-
-            current_str = json.dumps(current_config)
-            modtran_str = json.dumps(modtran_config)
-            rebuild = modtran_str.strip() != current_str.strip()
-
-        if not rebuild:
-            Logger.warning(
-                f"File already exists and not set to rebuild, skipping execution: {filename_base}"
-            )
+        if self.engine_config.rte_configure_and_exit:
             return
 
         # write_config_file
@@ -593,7 +531,6 @@ class ModtranRT(RadiativeTransferEngine):
                         param[0]["MODTRANINPUT"]["ATMOSPHERE"]["NPROF"] = nprof + 1
 
             # Surface parameters we want to populate even if unassigned
-
             elif key in ["surface_elevation_km", "GNDALT"]:
                 param[0]["MODTRANINPUT"]["SURFACE"]["GNDALT"] = val
 
@@ -638,7 +575,6 @@ class ModtranRT(RadiativeTransferEngine):
             lvl0["ASYM"] = [float(v) for v in total_asym]
             lvl0["EXTC"] = [float(v) / total_extc550 for v in total_extc]
             lvl0["ABSC"] = [float(v) / total_extc550 for v in total_absc]
-            # ***Need to round this to a specific number of decimels when writing to make sure subsequent re-runs are exactly the same
 
         if self.multipart_transmittance:
             const_rfl = np.array(np.array(self.test_rfls) * 100, dtype=int)

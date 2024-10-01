@@ -24,10 +24,16 @@ import multiprocessing
 import os
 import time
 
+# Explicitly set the number of threads to be 1, so we more effectively run in parallel
+# Must be executed before importing numpy, otherwise doesn't work
+if not os.environ.get("ISOFIT_NO_SET_THREADS"):
+    os.environ["MKL_NUM_THREADS"] = "1"
+    os.environ["OMP_NUM_THREADS"] = "1"
+
 import click
 import numpy as np
 
-from isofit import ray
+from isofit import checkNumThreads, ray
 from isofit.configs import configs
 from isofit.core.fileio import IO
 from isofit.core.forward import ForwardModel
@@ -45,10 +51,9 @@ class Isofit:
     """
 
     def __init__(self, config_file, level="INFO", logfile=None):
-        # Explicitly set the number of threads to be 1, so we more effectively
-        # run in parallel
-        os.environ["MKL_NUM_THREADS"] = "1"
-        os.environ["OMP_NUM_THREADS"] = "1"
+        # Check the MKL/OMP env vars and raise a warning if not set properly
+        checkNumThreads()
+
         # Set logging level
         self.loglevel = level
         self.logfile = logfile
