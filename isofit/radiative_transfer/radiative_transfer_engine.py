@@ -396,13 +396,14 @@ class RadiativeTransferEngine:
             point[i] = getattr(geom, key)
 
         # do another final check if values of observer zenith in provided LUT are given in MODTRAN convention
-        if any(self.lut_grid["observer_zenith"] > 90.0):
-            ind = [
-                i
-                for i in self.indices.geom
-                if self.indices.geom[i] == "observer_zenith"
-            ][0]
-            point[ind] = 180.0 - point[ind]
+        if "observer_zenith" in self.lut_grid.keys():
+            if any(self.lut_grid["observer_zenith"] > 90.0):
+                ind = [
+                    i
+                    for i in self.indices.geom
+                    if self.indices.geom[i] == "observer_zenith"
+                ][0]
+                point[ind] = 180.0 - point[ind]
 
         return self.interpolate(point)
 
