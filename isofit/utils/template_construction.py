@@ -355,8 +355,6 @@ class LUTConfig:
         self.aot_550_spacing = 0
         self.aot_550_spacing_min = 0
 
-        self.flag_ocean_elevation = False
-
         # overwrite anything that comes in from the config file
         if lut_config_file is not None:
             for key in lut_config:
