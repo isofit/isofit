@@ -90,7 +90,7 @@ def download_file(url, dstname=None, overwrite=True):
 
     # The bar doesn't close correctly, echo empty to fix the terminal
     if bar:
-        click.echo()
+        print()
 
     return outfile
 
@@ -178,12 +178,10 @@ def prepare_output(output, default, isdir=False):
 
     output = Path(output)
 
-    click.echo(f"Output as: {output}")
+    print(f"Output as: {output}")
 
     if output.exists():
-        click.echo(
-            f"Path already exists, please remove it if you would like to redownload"
-        )
+        print(f"Path already exists, please remove it if you would like to redownload")
         return
 
     try:
@@ -192,13 +190,13 @@ def prepare_output(output, default, isdir=False):
         else:
             output.parent.mkdir(parents=True, exist_ok=True)
     except Exception as e:
-        click.echo(f"Failed to create output directory: {e}")
+        print(f"Failed to create output directory: {e}")
         return
 
     return output
 
 
-# Main command
+# Main commands
 
 
 @click.group("download", invoke_without_command=True)
@@ -209,13 +207,24 @@ def cli_download():
     pass
 
 
+@click.group("validate", invoke_without_command=True)
+def cli_validate():
+    """\
+    Validate extra ISOFIT files and installations
+    """
+    pass
+
+
 # Shared click options
 
-cli_opts = SimpleNamespace(
+cli = SimpleNamespace(
+    download=cli_download,
     output=partial(click.option, "-o", "--output"),
     tag=click.option(
         "-t", "--tag", default=f"latest", help="Release tag to pull", show_default=True
     ),
+    validate=cli_validate,
+    path=partial(click.option, "-p", "--path"),
 )
 
 # Subcommands
@@ -240,6 +249,6 @@ def preview_paths():
         - data = /path/to/data
         - examples = /different/path/examples
     """
-    click.echo("Download paths will default to:")
+    print("Download paths will default to:")
     for key, path in env.items():
-        click.echo(f"- {key} = {path}")
+        print(f"- {key} = {path}")

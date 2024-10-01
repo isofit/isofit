@@ -3,12 +3,13 @@ Downloads sRTMnet from https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/
 """
 
 import re
+from pathlib import Path
 
 import click
 import requests
 
 from isofit.data import env
-from isofit.data.download import cli_download, cli_opts, download_file, prepare_output
+from isofit.data.download import cli, download_file, prepare_output
 
 URL = "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/"
 
@@ -26,7 +27,7 @@ def getVersion(version="latest"):
     elif version in versions:
         return version
     else:
-        click.echo(
+        print(
             f"Error: Requested version {version!r} does not exist, must be one of: {versions}"
         )
 
@@ -45,27 +46,27 @@ def download(output=None, version="latest"):
     if (version := getVersion(version)) is None:
         return
 
-    click.echo(f"Downloading sRTMnet[{version}]")
+    print(f"Downloading sRTMnet[{version}]")
 
     output = prepare_output(output, env.srtmnet, isdir=True)
     if not output:
         return
 
-    click.echo(f"Pulling version {version}")
+    print(f"Pulling version {version}")
 
-    click.echo("Retrieving model.h5")
+    print("Retrieving model.h5")
     file = f"sRTMnet_{version}.h5"
     download_file(f"{URL}/{file}", output / file)
 
-    click.echo("Retrieving aux.npz")
+    print("Retrieving aux.npz")
     file = f"sRTMnet_{version}_aux.npz"
     download_file(f"{URL}/{file}", output / file)
 
-    click.echo(f"Done, now available at: {output}")
+    print(f"Done, now available at: {output}")
 
 
-@cli_download.command(name="sRTMnet")
-@cli_opts.output(help="Root directory to download sRTMnet to, ie. [path]/sRTMnet")
+@cli.download.command(name="sRTMnet")
+@cli.output(help="Root directory to download sRTMnet to, ie. [path]/sRTMnet")
 @click.option(
     "-v",
     "--version",
@@ -73,7 +74,7 @@ def download(output=None, version="latest"):
     help="Model version to download",
     show_default=True,
 )
-def cli_examples(**kwargs):
+def download_cli(**kwargs):
     """\
     Downloads sRTMnet from https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/. Only HDF5 versions are supported at this time.
 
@@ -85,3 +86,49 @@ def cli_examples(**kwargs):
     It is recommended to use the first style so the download path is remembered in the future.
     """
     download(**kwargs)
+
+
+def validate(path=None):
+    """
+    Validates an sRTMnet installation
+
+    Parameters
+    ----------
+    path : str, default=None
+        Path to verify. If None, defaults to the ini path
+
+    Returns
+    -------
+    bool
+        True if valid, False otherwise
+    """
+    if path is None:
+        path = env.srtmnet
+
+    print(f"Verifying path for sRTMnet: {path}")
+
+    if not (path := Path(path)).exists():
+        print(
+            "Error: sRTMnet path does not exist, please download it via `isofit download sRTMnet`"
+        )
+        return False
+
+    if not list(path.glob("*.h5")):
+        print("Error: sRTMnet model not found, please download it")
+        return False
+
+    if not list(path.glob("*_aux.npz")):
+        print("Error: sRTMnet aux file not found, please download it")
+        return False
+
+    print("Path is valid")
+    return True
+
+
+@cli.validate.command(name="sRTMnet")
+@cli.path(help="Path to sRTMnet installation")
+def validate_cli(**kwargs):
+    """\
+    Validates an sRTMnet installation
+    """
+    validate(**kwargs)

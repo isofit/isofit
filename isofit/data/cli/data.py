@@ -2,12 +2,11 @@
 Downloads the extra ISOFIT data files from the repository https://github.com/isofit/isofit-data
 """
 
-import click
+from pathlib import Path
 
 from isofit.data import env
 from isofit.data.download import (
-    cli_download,
-    cli_opts,
+    cli,
     download_file,
     prepare_output,
     release_metadata,
@@ -26,7 +25,7 @@ def download(output=None, tag="latest"):
     tag: str
         Release tag to pull from the github.
     """
-    click.echo(f"Downloading ISOFIT data")
+    print(f"Downloading ISOFIT data")
 
     output = prepare_output(output, env.data)
     if not output:
@@ -34,19 +33,19 @@ def download(output=None, tag="latest"):
 
     metadata = release_metadata("isofit", "isofit-data", tag)
 
-    click.echo(f"Pulling release {metadata['tag_name']}")
+    print(f"Pulling release {metadata['tag_name']}")
     zipfile = download_file(metadata["zipball_url"], output.parent / "isofit-data.zip")
 
-    click.echo(f"Unzipping {zipfile}")
+    print(f"Unzipping {zipfile}")
     avail = unzip(zipfile, path=output.parent, rename=output.name)
 
-    click.echo(f"Done, now available at: {avail}")
+    print(f"Done, now available at: {avail}")
 
 
-@cli_download.command(name="data")
-@cli_opts.output(help="Root directory to download data files to, ie. [path]/data")
-@cli_opts.tag
-def cli_data(**kwargs):
+@cli.download.command(name="data")
+@cli.output(help="Root directory to download data files to, ie. [path]/data")
+@cli.tag
+def download_cli(**kwargs):
     """\
     Downloads the extra ISOFIT data files from the repository https://github.com/isofit/isofit-data.
 
@@ -58,3 +57,54 @@ def cli_data(**kwargs):
     It is recommended to use the first style so the download path is remembered in the future.
     """
     download(**kwargs)
+
+
+def validate(path=None):
+    """
+    Validates an ISOFIT data installation
+
+    Parameters
+    ----------
+    path : str, default=None
+        Path to verify. If None, defaults to the ini path
+
+    Returns
+    -------
+    bool
+        True if valid, False otherwise
+    """
+    if path is None:
+        path = env.data
+
+    print(f"Verifying path for ISOFIT data: {path}")
+
+    if not (path := Path(path)).exists():
+        print(
+            "Error: Path does not exist, please download it via `isofit download data`"
+        )
+        return False
+
+    # Just validate some key files
+    check = [
+        "earth_sun_distance.txt",
+        "emit_model_discrepancy.mat",
+        "testrfl.dat",
+    ]
+    files = list(path.glob("*"))
+    if not all([path / file in files for file in check]):
+        print(
+            "Error: ISOFIT data do not appear to be installed correctly, please ensure it is"
+        )
+        return False
+
+    print("Path is valid")
+    return True
+
+
+@cli.validate.command(name="data")
+@cli.path(help="Path to an ISOFIT data installation")
+def validate_cli(**kwargs):
+    """\
+    Validates an ISOFIT data installation
+    """
+    validate(**kwargs)

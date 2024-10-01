@@ -2,12 +2,11 @@
 Downloads the ISOFIT examples from the repository https://github.com/isofit/isofit-tutorials
 """
 
-import click
+from pathlib import Path
 
 from isofit.data import env
 from isofit.data.download import (
-    cli_download,
-    cli_opts,
+    cli,
     download_file,
     prepare_output,
     release_metadata,
@@ -26,7 +25,7 @@ def download(output=None, tag="latest"):
     tag: str
         Release tag to pull from the github.
     """
-    click.echo(f"Downloading ISOFIT examples")
+    print(f"Downloading ISOFIT examples")
 
     output = prepare_output(output, env.examples)
     if not output:
@@ -34,23 +33,21 @@ def download(output=None, tag="latest"):
 
     metadata = release_metadata("isofit", "isofit-tutorials", tag)
 
-    click.echo(f"Pulling release {metadata['tag_name']}")
+    print(f"Pulling release {metadata['tag_name']}")
     zipfile = download_file(
         metadata["zipball_url"], output.parent / "isofit-tutorials.zip"
     )
 
-    click.echo(f"Unzipping {zipfile}")
+    print(f"Unzipping {zipfile}")
     avail = unzip(zipfile, path=output.parent, rename=output.name)
 
-    click.echo(f"Done, now available at: {avail}")
+    print(f"Done, now available at: {avail}")
 
 
-@cli_download.command(name="examples")
-@cli_opts.output(
-    help="Root directory to download ISOFIT examples to, ie. [path]/examples"
-)
-@cli_opts.tag
-def cli_examples(**kwargs):
+@cli.download.command(name="examples")
+@cli.output(help="Root directory to download ISOFIT examples to, ie. [path]/examples")
+@cli.tag
+def download_cli(**kwargs):
     """\
     Downloads the ISOFIT examples from the repository https://github.com/isofit/isofit-tutorials.
 
@@ -62,3 +59,57 @@ def cli_examples(**kwargs):
     It is recommended to use the first style so the download path is remembered in the future.
     """
     download(**kwargs)
+
+
+def validate(path=None):
+    """
+    Validates an ISOFIT examples installation
+
+    Parameters
+    ----------
+    path : str, default=None
+        Path to verify. If None, defaults to the ini path
+
+    Returns
+    -------
+    bool
+        True if valid, False otherwise
+    """
+    if path is None:
+        path = env.examples
+
+    print(f"Verifying path for ISOFIT examples: {path}")
+
+    if not (path := Path(path)).exists():
+        print(
+            "Error: Path does not exist, please download it via `isofit download examples`"
+        )
+        return False
+
+    expected = [
+        "20151026_SantaMonica",
+        "20171108_Pasadena",
+        "20190806_ThermalIR",
+        "LICENSE",
+        "README.md",
+        "image_cube",
+        "profiling_cube",
+        "py-hypertrace",
+    ]
+    if not list(path.glob("*")) != expected:
+        print(
+            "Error: ISOFIT examples do not appear to be installed correctly, please ensure it is"
+        )
+        return False
+
+    print("Path is valid")
+    return True
+
+
+@cli.validate.command(name="examples")
+@cli.path(help="Path to an ISOFIT examples installation")
+def validate_cli(**kwargs):
+    """\
+    Validates an ISOFIT examples installation
+    """
+    validate(**kwargs)

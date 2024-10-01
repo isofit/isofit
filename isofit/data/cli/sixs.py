@@ -3,20 +3,11 @@ Downloads 6S from https://github.com/ashiklom/isofit/releases/download/6sv-mirro
 """
 
 import os
-import re
 import subprocess
-
-import click
-import requests
+from pathlib import Path
 
 from isofit.data import env
-from isofit.data.download import (
-    cli_download,
-    cli_opts,
-    download_file,
-    prepare_output,
-    untar,
-)
+from isofit.data.download import cli, download_file, prepare_output, untar
 
 URL = "https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar"
 
@@ -57,7 +48,7 @@ def download(output=None):
     version: str
         Release tag to pull from the github.
     """
-    click.echo(f"Downloading 6S")
+    print(f"Downloading 6S")
 
     output = prepare_output(output, env.sixs)
     if not output:
@@ -67,15 +58,15 @@ def download(output=None):
 
     untar(file, output)
 
-    click.echo("Building via make")
+    print("Building via make")
     build(output)
 
-    click.echo(f"Done, now available at: {output}")
+    print(f"Done, now available at: {output}")
 
 
-@cli_download.command(name="sixs")
-@cli_opts.output(help="Root directory to download sixs to, ie. [path]/sixs")
-def cli_examples(**kwargs):
+@cli.download.command(name="sixs")
+@cli.output(help="Root directory to download sixs to, ie. [path]/sixs")
+def download_cli(**kwargs):
     """\
     Downloads 6S from https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar. Only HDF5 versions are supported at this time.
 
@@ -87,3 +78,45 @@ def cli_examples(**kwargs):
     It is recommended to use the first style so the download path is remembered in the future.
     """
     download(**kwargs)
+
+
+def validate(path=None):
+    """
+    Validates a 6S installation
+
+    Parameters
+    ----------
+    path : str, default=None
+        Path to verify. If None, defaults to the ini path
+
+    Returns
+    -------
+    bool
+        True if valid, False otherwise
+    """
+    if path is None:
+        path = env.sixs
+
+    print(f"Verifying path for 6S: {path}")
+
+    if not (path := Path(path)).exists():
+        print("Error: Path does not exist, please download it via `isofit download 6S`")
+        return False
+
+    if not (path / f"sixsV2.1").exists():
+        print(
+            "Error: 6S does not appear to be installed correctly, please ensure it is"
+        )
+        return False
+
+    print("Path is valid")
+    return True
+
+
+@cli.validate.command(name="sixs")
+@cli.path(help="Path to 6S installation")
+def validate_cli(**kwargs):
+    """\
+    Validates a 6S installation
+    """
+    validate(**kwargs)

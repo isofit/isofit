@@ -1,25 +1,36 @@
 import click
 
-from isofit.data.download import cli_download
-
-from .data import download as data
-from .examples import download as examples
-from .hypertrace import download as hypertrace
-from .sixs import download as sixs
-from .srtmnet import download as srtmnet
+from isofit.data.cli import data, examples, hypertrace, sixs, srtmnet
+from isofit.data.download import cli
 
 
-@cli_download.command(name="all")
+@cli.download.command(name="all")
 def download_all():
     """\
     Downloads all ISOFIT extra dependencies to the locations specified in the isofit.ini file using latest tags and versions.
     """
-    funcs = [data, hypertrace, examples, sixs, srtmnet]
+    modules = [data, hypertrace, examples, sixs, srtmnet]
     pad = "=" * 16
 
-    for i, func in enumerate(funcs):
-        click.echo(f"{pad} Beginning download {i+1} of {len(funcs)} {pad}")
-        func()
+    for i, module in enumerate(modules):
+        click.echo(f"{pad} Beginning download {i+1} of {len(modules)} {pad}")
+        module.download()
         click.echo()
 
     click.echo("Finished all downloads")
+
+
+@cli.validate.command(name="all")
+def validate_all():
+    """\
+    Validates all ISOFIT extra dependencies at the locations specified in the isofit.ini file.
+    """
+    modules = [data, hypertrace, examples, sixs, srtmnet]
+    pad = "=" * 16
+
+    for i, module in enumerate(modules):
+        click.echo(f"{pad} Validating {i+1} of {len(modules)} {pad}")
+        module.validate()
+        click.echo()
+
+    click.echo("Finished all validations")

@@ -16,7 +16,7 @@ import isofit
 # CLI imports
 from isofit.core.isofit import cli_run
 from isofit.data import env
-from isofit.data.download import cli_download
+from isofit.data.download import cli as dli
 from isofit.utils.add_HRRR_profiles_to_modtran_config import cli_HRRR_to_modtran
 from isofit.utils.analytical_line import cli_analytical_line
 from isofit.utils.apply_oe import cli_apply_oe
@@ -46,7 +46,7 @@ def cli(ctx, version, ini, section, save, **overrides):
     """
     if ctx.invoked_subcommand is None:
         if version:
-            click.echo(isofit.__version__)
+            print(isofit.__version__)
     else:
         env.load(ini, section)
 
@@ -65,12 +65,12 @@ def verify_install():
     """
     download = False
     for path in env.dirs:
-        if not path.exists():
+        if not Path(path).exists():
             download = True
-            click.echo(f"Path does not exist and may be needed: {path}")
+            print(f"Path does not exist and may be needed: {path}")
 
     if download:
-        click.echo(
+        print(
             "Please refer to the ISOFIT download command to retrieve any additional files you may need: ..."
         )
 
@@ -83,7 +83,8 @@ cli.add_command(cli_analytical_line)
 cli.add_command(cli_ewt)
 cli.add_command(cli_apply_oe)
 cli.add_command(cli_sun)
-cli.add_command(cli_download)
+cli.add_command(dli.download)
+cli.add_command(dli.validate)
 cli.add_command(cli_6s_to_srtmnet)
 cli.add_command(cli_surface_model)
 cli.add_command(cli_empirical_line)
