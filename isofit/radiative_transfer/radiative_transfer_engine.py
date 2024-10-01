@@ -381,6 +381,15 @@ class RadiativeTransferEngine:
         for i, key in self.indices.geom.items():
             point[i] = getattr(geom, key)
 
+        # do another final check if values of observer zenith in provided LUT are given in MODTRAN convention
+        if any(self.lut_grid["observer_zenith"] > 90.0):
+            ind = [
+                i
+                for i in self.indices.geom
+                if self.indices.geom[i] == "observer_zenith"
+            ][0]
+            point[ind] = 180.0 - point[ind]
+
         return self.interpolate(point)
 
     def interpolate(self, point: np.array) -> dict:
