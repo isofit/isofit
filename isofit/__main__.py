@@ -58,23 +58,6 @@ def cli(ctx, version, ini, section, save, **overrides):
             env.save(ini)
 
 
-@cli.command()
-def verify_install():
-    """\
-    Verifies the installation of ISOFIT and its various dependencies
-    """
-    download = False
-    for path in env.dirs:
-        if not Path(path).exists():
-            download = True
-            print(f"Path does not exist and may be needed: {path}")
-
-    if download:
-        print(
-            "Please refer to the ISOFIT download command to retrieve any additional files you may need: ..."
-        )
-
-
 # Subcommands live closer to the code and algorithms they are related to.
 # Import and register each manually.
 cli.add_command(cli_run)
