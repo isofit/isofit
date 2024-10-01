@@ -4,6 +4,7 @@ from isofit.data.download import cli_download
 
 from .data import download as data
 from .examples import download as examples
+from .hypertrace import download as hypertrace
 from .sixs import download as sixs
 from .srtmnet import download as srtmnet
 
@@ -13,7 +14,7 @@ def download_all():
     """\
     Downloads all ISOFIT extra dependencies to the locations specified in the isofit.ini file using latest tags and versions.
     """
-    funcs = [data, examples, sixs, srtmnet]
+    funcs = [data, hypertrace, examples, sixs, srtmnet]
     pad = "=" * 16
 
     for i, func in enumerate(funcs):

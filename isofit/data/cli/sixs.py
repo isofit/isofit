@@ -5,32 +5,20 @@ Downloads 6S from https://github.com/ashiklom/isofit/releases/download/6sv-mirro
 import os
 import re
 import subprocess
-import tarfile
 
 import click
 import requests
 
 from isofit.data import env
-from isofit.data.download import cli_download, cli_opts, download_file, prepare_output
+from isofit.data.download import (
+    cli_download,
+    cli_opts,
+    download_file,
+    prepare_output,
+    untar,
+)
 
 URL = "https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar"
-
-
-def untar(file, output):
-    """
-    Untars a .tar file. Removes the tar file after extracting
-
-    Parameters
-    ----------
-    file : str
-        .tar file to extract
-    output : str
-        Path to output to
-    """
-    with tarfile.TarFile(file) as tar:
-        tar.extractall(path=output)
-
-    os.remove(file)
 
 
 def build(directory):

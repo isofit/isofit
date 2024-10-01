@@ -5,6 +5,7 @@ Implements the `isofit download` subcommands
 import io
 import json
 import os
+import tarfile
 import urllib.request
 from email.message import EmailMessage
 from functools import partial
@@ -133,6 +134,30 @@ def unzip(file, path=None, rename=None, overwrite=False, cleanup=True):
         os.remove(file)
 
     return outp
+
+
+def untar(file, output):
+    """
+    Untars a .tar file. Removes the tar file after extracting
+
+    Parameters
+    ----------
+    file : str
+        .tar file to extract
+    output : str
+        Path to output to
+
+    Returns
+    -------
+    output : str
+        The extracted output path
+    """
+    with tarfile.open(file) as tar:
+        tar.extractall(path=output)
+
+    os.remove(file)
+
+    return output
 
 
 def prepare_output(output, default, isdir=False):
