@@ -11,13 +11,7 @@ import click
 import requests
 
 from isofit.data import env
-from isofit.data.download import (
-    cli_download,
-    download_file,
-    output,
-    prepare_output,
-    unzip,
-)
+from isofit.data.download import cli_download, cli_opts, download_file, prepare_output
 
 URL = "https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar"
 
@@ -92,7 +86,7 @@ def download(output=None):
 
 
 @cli_download.command(name="sixs")
-@output(help="Root directory to download sixs to, ie. [path]/sixs")
+@cli_opts.output(help="Root directory to download sixs to, ie. [path]/sixs")
 def cli_examples(**kwargs):
     """\
     Downloads 6S from https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar. Only HDF5 versions are supported at this time.

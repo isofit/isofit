@@ -2,10 +2,10 @@ import click
 
 from isofit.data.download import cli_download
 
-from .data import download as download_data
-from .examples import download as download_examples
-from .sixs import download as download_sixs
-from .srtmnet import download as download_srtmnet
+from .data import download as data
+from .examples import download as examples
+from .sixs import download as sixs
+from .srtmnet import download as srtmnet
 
 
 @cli_download.command(name="all")
@@ -13,7 +13,12 @@ def download_all():
     """\
     Downloads all ISOFIT extra dependencies to the locations specified in the isofit.ini file using latest tags and versions.
     """
-    download_data(env.data)
-    download_examples(env.examples)
-    download_sixs(env.srtmnet)
-    download_srtmnet(env.srtmnet)
+    funcs = [data, examples, sixs, srtmnet]
+    pad = "=" * 16
+
+    for i, func in enumerate(funcs):
+        click.echo(f"{pad} Beginning download {i+1} of {len(funcs)} {pad}")
+        func()
+        click.echo()
+
+    click.echo("Finished all downloads")

@@ -7,11 +7,10 @@ import click
 from isofit.data import env
 from isofit.data.download import (
     cli_download,
+    cli_opts,
     download_file,
-    output,
     prepare_output,
     release_metadata,
-    tag,
     unzip,
 )
 
@@ -47,8 +46,10 @@ def download(output=None, tag="latest"):
 
 
 @cli_download.command(name="examples")
-@output(help="Root directory to download ISOFIT examples to, ie. [path]/examples")
-@tag
+@cli_opts.output(
+    help="Root directory to download ISOFIT examples to, ie. [path]/examples"
+)
+@cli_opts.tag
 def cli_examples(**kwargs):
     """\
     Downloads the ISOFIT examples from the repository https://github.com/isofit/isofit-tutorials.

@@ -7,11 +7,10 @@ import click
 from isofit.data import env
 from isofit.data.download import (
     cli_download,
+    cli_opts,
     download_file,
-    output,
     prepare_output,
     release_metadata,
-    tag,
     unzip,
 )
 
@@ -45,8 +44,8 @@ def download(output=None, tag="latest"):
 
 
 @cli_download.command(name="data")
-@output(help="Root directory to download data files to, ie. [path]/data")
-@tag
+@cli_opts.output(help="Root directory to download data files to, ie. [path]/data")
+@cli_opts.tag
 def cli_data(**kwargs):
     """\
     Downloads the extra ISOFIT data files from the repository https://github.com/isofit/isofit-data.

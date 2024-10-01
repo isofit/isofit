@@ -435,7 +435,7 @@ class IO:
             self.radiance_correction, wl = load_spectrum(filename)
 
         # Load the earth sun distance data
-        self.earth_sun_distance_path = env.data / "earth_sun_distance.txt"
+        self.earth_sun_distance_path = os.path.join(env.data, "earth_sun_distance.txt")
         self.esd = self.load_esd(self.earth_sun_distance_path)
 
     def get_components_at_index(self, row: int, col: int) -> InputData:

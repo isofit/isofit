@@ -8,7 +8,7 @@ import click
 import requests
 
 from isofit.data import env
-from isofit.data.download import cli_download, download_file, output, prepare_output
+from isofit.data.download import cli_download, cli_opts, download_file, prepare_output
 
 URL = "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/"
 
@@ -53,11 +53,11 @@ def download(output=None, version="latest"):
 
     click.echo(f"Pulling version {version}")
 
-    click.echo("Download model.h5")
+    click.echo("Retrieving model.h5")
     file = f"sRTMnet_{version}.h5"
     download_file(f"{URL}/{file}", output / file)
 
-    click.echo("Download aux.npz")
+    click.echo("Retrieving aux.npz")
     file = f"sRTMnet_{version}_aux.npz"
     download_file(f"{URL}/{file}", output / file)
 
@@ -65,7 +65,7 @@ def download(output=None, version="latest"):
 
 
 @cli_download.command(name="sRTMnet")
-@output(help="Root directory to download sRTMnet to, ie. [path]/sRTMnet")
+@cli_opts.output(help="Root directory to download sRTMnet to, ie. [path]/sRTMnet")
 @click.option(
     "-v",
     "--version",

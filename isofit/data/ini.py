@@ -106,7 +106,7 @@ class Ini:
         if self.ini.exists():
             self.config.read(self.ini)
 
-            # Retrieve the absolute path and cast to Path
+            # Retrieve the absolute path
             for key in self.dirs:
                 self.changePath(key, self[key])
 

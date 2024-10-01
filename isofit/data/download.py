@@ -9,6 +9,7 @@ import urllib.request
 from email.message import EmailMessage
 from functools import partial
 from pathlib import Path
+from types import SimpleNamespace
 from zipfile import ZipFile
 
 import click
@@ -65,7 +66,9 @@ def download_file(url, dstname=None, overwrite=True):
     """
     response = urllib.request.urlopen(url)
 
-    total = int(response.info()["Content-Length"])
+    bar = None
+    if total := response.info()["Content-Length"]:
+        bar = click.progressbar(length=int(total), label="Downloading file")
 
     # Using Python's 'email' module for this is certainly odd, but due to an
     # upcoming deprecation, this is actually the officially recommended way
@@ -78,11 +81,15 @@ def download_file(url, dstname=None, overwrite=True):
         raise FileExistsError(outfile)
 
     with open(outfile, "wb") as f:
-        with click.progressbar(length=total, label="Downloading file") as bar:
-            while chunk := response.read(io.DEFAULT_BUFFER_SIZE):
-                f.write(chunk)
-                # bar.update(outfile.stat().st_size)
+        while chunk := response.read(io.DEFAULT_BUFFER_SIZE):
+            f.write(chunk)
+            # bar.update(outfile.stat().st_size)
+            if bar:
                 bar.update(io.DEFAULT_BUFFER_SIZE)
+
+    # The bar doesn't close correctly, echo empty to fix the terminal
+    if bar:
+        click.echo()
 
     return outfile
 
@@ -179,11 +186,12 @@ def cli_download():
 
 # Shared click options
 
-output = partial(click.option, "-o", "--output")
-tag = click.option(
-    "-t", "--tag", default=f"latest", help="Release tag to pull", show_default=True
+cli_opts = SimpleNamespace(
+    output=partial(click.option, "-o", "--output"),
+    tag=click.option(
+        "-t", "--tag", default=f"latest", help="Release tag to pull", show_default=True
+    ),
 )
-
 
 # Subcommands
 
