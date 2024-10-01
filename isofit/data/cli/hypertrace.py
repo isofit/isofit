@@ -77,8 +77,9 @@ def validate(path=None):
         )
         return False
 
-    subdirs = ["noise", "other", "priors", "reflectance wavelengths"]
-    if not list((path / f"hypertrace-data").glob("*")) != subdirs:
+    check = ["noise", "other", "priors"]
+    files = list(path.glob("hypertrace-data/*"))
+    if not all([path / f"hypertrace-data/{file}" in files for file in check]):
         print(
             "Error: Hypertrace does not appear to be installed correctly, please ensure it is"
         )
