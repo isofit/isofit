@@ -23,6 +23,8 @@ class Ini:
         for key in self.dirs:
             self.changePath(key, self.base / key)
 
+        self.load()
+
     def __getattr__(self, key: str) -> Optional[str]:
         """
         Retrieves a value from CONFIG[SECTION] if the key doesn't exist on the module already.
@@ -54,6 +56,12 @@ class Ini:
             The value associated with the key if it exists in CONFIG[SECTION], otherwise None.
         """
         return getattr(self, key)
+
+    def __iter__(self) -> Iterable:
+        return iter(self.config[self.section])
+
+    def keys(self) -> Iterable[str]:
+        return iter(self.config[self.section])
 
     def items(self) -> Iterable[Tuple[str, str]]:
         """
@@ -134,3 +142,12 @@ class Ini:
                 self.config.write(file)
         except:
             Logger.exception(f"Failed to dump ini to file: {self.ini}")
+
+    @staticmethod
+    def validate(keys: List) -> bool:
+        """
+        Validates known products. This function is defined by isofit.data.cli.__init__.py
+        """
+        raise NotImplemented(
+            "ISOFIT failed to attach the validation function to this object"
+        )

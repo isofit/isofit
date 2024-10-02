@@ -345,6 +345,10 @@ class InputData:
 class IO:
     """..."""
 
+    earth_sun_distance_path = property(
+        lambda self: os.path.join(env.data, "earth_sun_distance.txt")
+    )
+
     def __init__(self, config: Config, forward: ForwardModel):
         """Initialization specifies retrieval subwindows for calculating
         measurement cost distributions."""
@@ -435,7 +439,6 @@ class IO:
             self.radiance_correction, wl = load_spectrum(filename)
 
         # Load the earth sun distance data
-        self.earth_sun_distance_path = os.path.join(env.data, "earth_sun_distance.txt")
         self.esd = self.load_esd(self.earth_sun_distance_path)
 
     def get_components_at_index(self, row: int, col: int) -> InputData:

@@ -16,6 +16,7 @@ import isofit
 # CLI imports
 from isofit.core.isofit import cli_run
 from isofit.data import env
+from isofit.data.buildExamples import cli_build
 from isofit.data.download import cli as dli
 from isofit.utils.add_HRRR_profiles_to_modtran_config import cli_HRRR_to_modtran
 from isofit.utils.analytical_line import cli_analytical_line
@@ -68,6 +69,7 @@ cli.add_command(cli_apply_oe)
 cli.add_command(cli_sun)
 cli.add_command(dli.download)
 cli.add_command(dli.validate)
+cli.add_command(cli_build)
 cli.add_command(cli_6s_to_srtmnet)
 cli.add_command(cli_surface_model)
 cli.add_command(cli_empirical_line)

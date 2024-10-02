@@ -1,5 +1,6 @@
 import click
 
+from isofit.data import env
 from isofit.data.cli import data, examples, hypertrace, sixs, srtmnet
 from isofit.data.download import cli
 
@@ -34,3 +35,22 @@ def validate_all():
         click.echo()
 
     click.echo("Finished all validations")
+
+
+def env_validate(keys):
+    """
+    Utility function for the `env` object to quickly validate specific dependencies
+    """
+    all_valid = True
+    for key in keys:
+        module = globals().get(key)
+        if module is None:
+            print(f"Product not found: {key}")
+            all_valid = False
+
+        all_valid &= module.validate()
+
+    return all_valid
+
+
+env.validate = env_validate
