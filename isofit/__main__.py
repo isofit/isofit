@@ -59,6 +59,20 @@ def cli(ctx, version, ini, base, section, save, **overrides):
     if (any(overrides.values()) and save) or not os.path.exists(env.ini):
         env.save(ini)
 
+    current = os.environ.get("SIXS_DIR")
+    if not current:
+        os.environ["SIXS_DIR"] = env.sixs
+    elif (current := os.path.abspath(current)) != env.sixs:
+        print(
+            "WARNING: The environment variable $SIXS_DIR does not match the ISOFIT ini"
+        )
+        print(f"ENV: {current}")
+        print(f"INI: {env.sixs}")
+        print(
+            "This may cause issues, please either set the env to the ini, or override the ini to the env using:"
+        )
+        print("  isofit --sixs $SIXS_DIR ...")
+
     if ctx.invoked_subcommand is None:
         if version:
             print(isofit.__version__)

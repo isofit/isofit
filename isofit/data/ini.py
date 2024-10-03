@@ -106,7 +106,7 @@ class Ini:
         value : str or Path
             The new path to associate with the key.
         """
-        self.config[self.section][key] = str(Path(value).absolute())
+        self.config[self.section][key] = str(Path(value).resolve())
 
     def load(self, ini: Optional[str] = None, section: Optional[str] = None) -> None:
         """
