@@ -35,8 +35,8 @@ from isofit.configs.sections.radiative_transfer_config import (
 from isofit.core.common import resample_spectrum
 from isofit.core.sunposition import sunpos
 from isofit.radiative_transfer import luts
+from isofit.radiative_transfer.engines import SixSRT
 from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
-from isofit.radiative_transfer.six_s import SixSRT
 
 Logger = logging.getLogger(__file__)
 
@@ -135,6 +135,10 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             modtran_emulation=True,
             build_interpolators=False,
         )
+
+        if self.engine_config.rte_configure_and_exit:
+            return
+
         # Extract useful information from the sim
         self.esd = sim.esd
         self.sim_lut_path = config.lut_path
