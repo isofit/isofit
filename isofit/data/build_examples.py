@@ -159,16 +159,19 @@ def makeScripts(example: Path, path: Path):
     createScript(example / f"{path.name}.py", Pyth, args)
 
 
-def build(example):
+def build(example, validate=True):
     """
     Builds an example directory
     """
     print(f"Building example: {example.name}")
 
-    print(f"Checking the required extra files are available: {example.requires}")
-    # if not env.validate(example.requires):
-    #     print('One or more of the above required extra downloads is missing, please correct and try again')
-    #     return
+    if validate:
+        print(f"Checking the required extra files are available: {example.requires}")
+        if not env.validate(example.requires):
+            print(
+                "One or more of the above required extra downloads is missing, please correct and try again"
+            )
+            return
 
     example.path = Path(env.examples) / example.name
 
@@ -196,17 +199,24 @@ def build(example):
     default="all",
     show_default=True,
 )
-def cli_build(example):
+@click.option(
+    "-nv",
+    "--no-validate",
+    is_flag=True,
+    help="Disables validating extra installs and proceeds building examples regardless",
+)
+def cli_build(example, no_validate):
     """\
     Builds the ISOFIT examples
     """
     if env.validate(["examples"]):
         if example == "all":
             print("Building all examples")
-            for name, example in Examples.items():
-                build(example)
+            for i, (name, example) in enumerate(Examples.items()):
+                print("=" * 16 + f" Example {i+1} of {len(Examples)} " + "=" * 16)
+                build(example, validate=not no_validate)
         else:
-            build(Examples[example])
+            build(Examples[example], validate=not no_validate)
     else:
         print(
             f"ISOFIT Examples are not installed correctly, please verify before building"

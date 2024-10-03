@@ -16,7 +16,7 @@ import isofit
 # CLI imports
 from isofit.core.isofit import cli_run
 from isofit.data import env
-from isofit.data.buildExamples import cli_build
+from isofit.data.build_examples import cli_build
 from isofit.data.download import cli as dli
 from isofit.utils.add_HRRR_profiles_to_modtran_config import cli_HRRR_to_modtran
 from isofit.utils.analytical_line import cli_analytical_line
@@ -32,6 +32,7 @@ from isofit.utils.surface_model import cli_surface_model
 @click.pass_context
 @click.option("-v", "--version", help="Print the current version", is_flag=True)
 @click.option("-i", "--ini", help="Override path to an isofit.ini file")
+@click.option("-b", "--base", help="Override the base directory for all products")
 @click.option("-s", "--section", help="Switches which section of the ini to use")
 @click.option("-d", "--data", help="Override path to data directory")
 @click.option("-e", "--examples", help="Override path to examples directory")
@@ -41,22 +42,26 @@ from isofit.utils.surface_model import cli_surface_model
 @click.option(
     "--save/--no-save", " /-S", is_flag=True, default=True, help="Save the ini file"
 )
-def cli(ctx, version, ini, section, save, **overrides):
+def cli(ctx, version, ini, base, section, save, **overrides):
     """\
     This houses the subcommands of ISOFIT
     """
+    env.load(ini, section)
+
+    if base:
+        env.changeBase(base)
+
+    for key, value in overrides.items():
+        if value:
+            env.changePath(key, value)
+
+    # Only save if an override was given or the ini doesn't exist
+    if (any(overrides.values()) and save) or not os.path.exists(env.ini):
+        env.save(ini)
+
     if ctx.invoked_subcommand is None:
         if version:
             print(isofit.__version__)
-    else:
-        env.load(ini, section)
-
-        for key, value in overrides.items():
-            if value:
-                env.changePath(key, value)
-
-        if save:
-            env.save(ini)
 
 
 # Subcommands live closer to the code and algorithms they are related to.

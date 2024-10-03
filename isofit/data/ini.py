@@ -69,6 +69,21 @@ class Ini:
         """
         return self.config[self.section].items()
 
+    def changeBase(self, base: str) -> None:
+        """
+        Changes the base path for each directory.
+
+        Parameters
+        ----------
+        base : str
+            Path to base directory to set
+        """
+        self.base = Path(base)
+
+        # Re-initialize
+        for key in self.dirs:
+            self.changePath(key, self.base / key)
+
     def changeSection(self, section: str) -> None:
         """
         Changes the working section of the config.
@@ -140,6 +155,7 @@ class Ini:
         try:
             with open(self.ini, "w") as file:
                 self.config.write(file)
+            print(f"Wrote to file: {self.ini}")
         except:
             Logger.exception(f"Failed to dump ini to file: {self.ini}")
 
