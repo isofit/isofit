@@ -486,7 +486,7 @@ class IO:
 
         ## Check for any bad data flags
         for source in self.input_datasets:
-            if np.all(abs(data[source] - self.input_datasets[source].flag) < eps):
+            if np.allclose(data[source], self.input_datasets[source].flag):
                 return None
 
         # We build the geometry object for this spectrum.  For files not

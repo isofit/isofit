@@ -246,6 +246,11 @@ class Worker(object):
         self.fm = fm
         self.iv = Inversion(self.config, self.fm)
 
+        self.rfl_bounds = np.min(fm.bounds, axis=0)[0], np.max(fm.bounds, axis=0)[1]
+        logging.debug(
+            f"Reflectance output will be bounded to the surface bounds: {self.rfl_bounds}"
+        )
+
         self.completed_spectra = 0
         self.hash_table = OrderedDict()
         self.hash_size = 500
@@ -319,10 +324,21 @@ class Worker(object):
 
                 output_state_unc[r - start_line, c, :] = unc[self.fm.idx_surface]
 
+            state = output_state[r - start_line, ...]
+            mask = np.logical_and.reduce(
+                [
+                    state < self.rfl_bounds[0],
+                    state > self.rfl_bounds[1],
+                    state != -9999,
+                    state != -0.01,
+                ]
+            )
+            state[mask] = 0
+
             logging.info(f"Analytical line writing line {r}")
 
             write_bil_chunk(
-                output_state[r - start_line, ...].T,
+                state.T,
                 self.analytical_state_file,
                 r,
                 (rdn.shape[0], rdn.shape[1], len(self.fm.idx_surface)),
