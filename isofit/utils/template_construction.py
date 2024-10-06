@@ -61,6 +61,8 @@ class Pathnames:
             self.fid = split(args.input_radiance)[-1][:23]
         elif args.sensor == "asovnir":
             self.fid = split(args.input_radiance)[-1][:22]
+        elif args.sensor == "asoswir":
+            self.fid = split(args.input_radiance)[-1][:22]
         elif args.sensor[:3] == "NA-":
             self.fid = os.path.splitext(os.path.basename(args.input_radiance))[0]
 
@@ -542,7 +544,15 @@ def build_presolve_config(
                 "template_file": paths.h2o_template_path,
                 "lut_names": {"H2OSTR": get_lut_subset(h2o_lut_grid)},
                 "statevector_names": ["H2OSTR"],
-            }
+            },
+            "swir": {
+                "engine_name": engine_name,
+                "lut_path": lut_path,
+                "sim_path": paths.lut_h2o_directory,
+                "template_file": paths.h2o_template_path,
+                "lut_names": {"H2OSTR": get_lut_subset(h2o_lut_grid)},
+                "statevector_names": ["H2OSTR"],
+            },
         },
         "statevector": {
             "H2OSTR": {
@@ -561,31 +571,31 @@ def build_presolve_config(
     }
 
     if emulator_base is not None:
-        radiative_transfer_config["radiative_transfer_engines"]["vnir"][
+        radiative_transfer_config["radiative_transfer_engines"]["swir"][
             "emulator_file"
         ] = abspath(emulator_base)
-        radiative_transfer_config["radiative_transfer_engines"]["vnir"][
+        radiative_transfer_config["radiative_transfer_engines"]["swir"][
             "emulator_aux_file"
         ] = abspath(os.path.splitext(emulator_base)[0] + "_aux.npz")
-        radiative_transfer_config["radiative_transfer_engines"]["vnir"][
+        radiative_transfer_config["radiative_transfer_engines"]["swir"][
             "interpolator_base_path"
         ] = abspath(
             os.path.join(
                 paths.lut_h2o_directory, os.path.basename(emulator_base) + "_vi"
             )
         )
-        radiative_transfer_config["radiative_transfer_engines"]["vnir"][
+        radiative_transfer_config["radiative_transfer_engines"]["swir"][
             "earth_sun_distance_file"
         ] = paths.earth_sun_distance_path
-        radiative_transfer_config["radiative_transfer_engines"]["vnir"][
+        radiative_transfer_config["radiative_transfer_engines"]["swir"][
             "irradiance_file"
         ] = paths.irradiance_file
-        radiative_transfer_config["radiative_transfer_engines"]["vnir"][
+        radiative_transfer_config["radiative_transfer_engines"]["swir"][
             "engine_base_dir"
         ] = paths.sixs_path
 
     else:
-        radiative_transfer_config["radiative_transfer_engines"]["vnir"][
+        radiative_transfer_config["radiative_transfer_engines"]["swir"][
             "engine_base_dir"
         ] = paths.modtran_path
 
@@ -632,7 +642,7 @@ def build_presolve_config(
             "parametric_noise_file"
         ] = paths.noise_path
     else:
-        isofit_config_h2o["forward_model"]["instrument"]["SNR"] = 1000
+        isofit_config_h2o["forward_model"]["instrument"]["SNR"] = 500
 
     if paths.rdn_factors_path:
         isofit_config_h2o["input"][
@@ -738,7 +748,18 @@ def build_main_config(
                 "multipart_transmittance": True,
                 # lut_names - populated below
                 # statevector_names - populated below
-            }
+            },
+            "swir": {
+                "engine_name": engine_name,
+                "sim_path": paths.full_lut_directory,
+                "lut_path": lut_path,
+                "aerosol_template_file": paths.aerosol_tpl_path,
+                "template_file": paths.modtran_template_path,
+                "topography_model": True,
+                "multipart_transmittance": True,
+                # "lut_names": {"H2OSTR": get_lut_subset(h2o_lut_grid)},
+                # "statevector_names": ["H2OSTR"],
+            },
         },
         "statevector": {},
         "lut_grid": {},
@@ -746,13 +767,13 @@ def build_main_config(
     }
 
     if emulator_base is not None:
-        radiative_transfer_config["radiative_transfer_engines"]["vnir"][
+        radiative_transfer_config["radiative_transfer_engines"]["swir"][
             "emulator_file"
         ] = abspath(emulator_base)
-        radiative_transfer_config["radiative_transfer_engines"]["vnir"][
+        radiative_transfer_config["radiative_transfer_engines"]["swir"][
             "emulator_aux_file"
         ] = abspath(os.path.splitext(emulator_base)[0] + "_aux.npz")
-        radiative_transfer_config["radiative_transfer_engines"]["vnir"][
+        radiative_transfer_config["radiative_transfer_engines"]["swir"][
             "interpolator_base_path"
         ] = abspath(
             os.path.join(
@@ -760,18 +781,18 @@ def build_main_config(
                 os.path.basename(os.path.splitext(emulator_base)[0]) + "_vi",
             )
         )
-        radiative_transfer_config["radiative_transfer_engines"]["vnir"][
+        radiative_transfer_config["radiative_transfer_engines"]["swir"][
             "earth_sun_distance_file"
         ] = paths.earth_sun_distance_path
-        radiative_transfer_config["radiative_transfer_engines"]["vnir"][
+        radiative_transfer_config["radiative_transfer_engines"]["swir"][
             "irradiance_file"
         ] = paths.irradiance_file
-        radiative_transfer_config["radiative_transfer_engines"]["vnir"][
+        radiative_transfer_config["radiative_transfer_engines"]["swir"][
             "engine_base_dir"
         ] = paths.sixs_path
 
     else:
-        radiative_transfer_config["radiative_transfer_engines"]["vnir"][
+        radiative_transfer_config["radiative_transfer_engines"]["swir"][
             "engine_base_dir"
         ] = paths.modtran_path
 
@@ -784,7 +805,7 @@ def build_main_config(
         paths.isofit_path,
         lut_params=lut_params,
     )
-    radiative_transfer_config["radiative_transfer_engines"]["vnir"][
+    radiative_transfer_config["radiative_transfer_engines"]["swir"][
         "aerosol_model_file"
     ] = aerosol_model_path
 
@@ -812,7 +833,7 @@ def build_main_config(
     rtc_ln = {}
     for key in radiative_transfer_config["lut_grid"].keys():
         rtc_ln[key] = None
-    radiative_transfer_config["radiative_transfer_engines"]["vnir"][
+    radiative_transfer_config["radiative_transfer_engines"]["swir"][
         "lut_names"
     ] = rtc_ln
 
@@ -831,29 +852,29 @@ def build_main_config(
     if prebuilt_lut_path is not None:
         ncds = nc.Dataset(prebuilt_lut_path, "r")
 
-        radiative_transfer_config["radiative_transfer_engines"]["vnir"]["lut_names"][
+        radiative_transfer_config["radiative_transfer_engines"]["swir"]["lut_names"][
             "H2OSTR"
         ] = get_lut_subset(h2o_lut_grid)
-        radiative_transfer_config["radiative_transfer_engines"]["vnir"]["lut_names"][
+        radiative_transfer_config["radiative_transfer_engines"]["swir"]["lut_names"][
             "surface_elevation_km"
         ] = get_lut_subset(elevation_lut_grid)
-        radiative_transfer_config["radiative_transfer_engines"]["vnir"]["lut_names"][
+        radiative_transfer_config["radiative_transfer_engines"]["swir"]["lut_names"][
             "observer_zenith"
         ] = get_lut_subset(to_sensor_zenith_lut_grid)
-        radiative_transfer_config["radiative_transfer_engines"]["vnir"]["lut_names"][
+        radiative_transfer_config["radiative_transfer_engines"]["swir"]["lut_names"][
             "solar_zenith"
         ] = get_lut_subset(to_sun_zenith_lut_grid)
-        radiative_transfer_config["radiative_transfer_engines"]["vnir"]["lut_names"][
+        radiative_transfer_config["radiative_transfer_engines"]["swir"]["lut_names"][
             "relative_azimuth"
         ] = get_lut_subset(relative_azimuth_lut_grid)
         for key in aerosol_lut_grid.keys():
-            radiative_transfer_config["radiative_transfer_engines"]["vnir"][
+            radiative_transfer_config["radiative_transfer_engines"]["swir"][
                 "lut_names"
             ][key] = get_lut_subset(aerosol_lut_grid[key])
 
         rm_keys = []
         for key, item in radiative_transfer_config["radiative_transfer_engines"][
-            "vnir"
+            "swir"
         ]["lut_names"].items():
             if key not in ncds.variables:
                 logging.warning(
@@ -861,7 +882,7 @@ def build_main_config(
                 )
                 rm_keys.append(key)
         for key in rm_keys:
-            del radiative_transfer_config["radiative_transfer_engines"]["vnir"][
+            del radiative_transfer_config["radiative_transfer_engines"]["swir"][
                 "lut_names"
             ][key]
 
@@ -886,7 +907,7 @@ def build_main_config(
     radiative_transfer_config["statevector"].update(aerosol_state_vector)
 
     # MODTRAN should know about our whole LUT grid and all of our statevectors, so copy them in
-    radiative_transfer_config["radiative_transfer_engines"]["vnir"][
+    radiative_transfer_config["radiative_transfer_engines"]["swir"][
         "statevector_names"
     ] = list(radiative_transfer_config["statevector"].keys())
 
