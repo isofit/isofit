@@ -46,6 +46,11 @@ def cli(ctx, version, ini, base, section, save, **overrides):
     """\
     This houses the subcommands of ISOFIT
     """
+    if ctx.invoked_subcommand is None:
+        if version:
+            print(isofit.__version__)
+            return
+
     env.load(ini, section)
 
     if base:
@@ -58,10 +63,6 @@ def cli(ctx, version, ini, base, section, save, **overrides):
     # Only save if an override was given or the ini doesn't exist
     if (any(overrides.values()) and save) or not os.path.exists(env.ini):
         env.save(ini)
-
-    if ctx.invoked_subcommand is None:
-        if version:
-            print(isofit.__version__)
 
 
 # Subcommands live closer to the code and algorithms they are related to.
