@@ -1,7 +1,7 @@
 import click
 
 from isofit.data import env
-from isofit.data.cli import data, examples, hypertrace, sixs, srtmnet
+from isofit.data.cli import data, examples, sixs, srtmnet
 from isofit.data.download import cli
 
 

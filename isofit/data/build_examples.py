@@ -16,7 +16,6 @@ Examples = {
     "Pasadena": sns(name="20171108_Pasadena", requires=["data", "modtran"]),
     "ThermalIR": sns(name="20190806_ThermalIR", requires=["data", "modtran"]),
     "ImageCube": sns(name="image_cube", requires=["sixs", "srtmnet"]),
-    "Hypertrace": sns(name="py-hypertrace", requires=["hypertrace", "sixs", "srtmnet"]),
 }
 
 Bash = sns(
