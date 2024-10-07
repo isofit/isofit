@@ -1,5 +1,5 @@
-from .inverse import Inversion as ClassicInversion
-from .inverse_mcmc import MCMCInversion
+from isofit.inversion.inverse import Inversion as ClassicInversion
+from isofit.inversion.inverse_mcmc import MCMCInversion
 
 
 def Inversion(config, fm):
