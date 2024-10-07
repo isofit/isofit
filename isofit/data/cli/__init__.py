@@ -1,7 +1,7 @@
 import click
 
 from isofit.data import env
-from isofit.data.cli import data, examples, sixs, srtmnet
+from isofit.data.cli import data, examples, modtran, sixs, srtmnet
 from isofit.data.download import cli
 
 
@@ -10,7 +10,7 @@ def download_all():
     """\
     Downloads all ISOFIT extra dependencies to the locations specified in the isofit.ini file using latest tags and versions.
     """
-    modules = [data, hypertrace, examples, sixs, srtmnet]
+    modules = [data, examples, sixs, srtmnet]
     pad = "=" * 16
 
     for i, module in enumerate(modules):
@@ -26,7 +26,7 @@ def validate_all():
     """\
     Validates all ISOFIT extra dependencies at the locations specified in the isofit.ini file.
     """
-    modules = [data, hypertrace, examples, sixs, srtmnet]
+    modules = [data, examples, sixs, srtmnet]
     pad = "=" * 16
 
     for i, module in enumerate(modules):
@@ -47,8 +47,8 @@ def env_validate(keys):
         if module is None:
             print(f"Product not found: {key}")
             all_valid = False
-
-        all_valid &= module.validate()
+        else:
+            all_valid &= module.validate()
 
     return all_valid
 
