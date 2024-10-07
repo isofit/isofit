@@ -38,7 +38,7 @@ def match_class(class_groups, row, col):
 
     Args:
 
-        class_groups: (dict) Keys are the pixel groups. Values are tuples
+        class_groups: (list) of pixel groups. Values are tuples
                       of rows and column that belong in the respective groups.
         row: (int) row of queried pixel
         col: (int) col of queried pixel
@@ -50,7 +50,7 @@ def match_class(class_groups, row, col):
     # else match
     matches = np.zeros((len(class_groups))).astype(int)
     for i, group in enumerate(class_groups):
-        if [row, col, 0] in group:
+        if len(group[(group[:, 0] == row) & (group[:, 1] == col)]):
             matches[i] = 1
         else:
             matches[i] = 0
@@ -69,7 +69,7 @@ def match_class(class_groups, row, col):
         )
         raise ValueError
 
-    return str(np.argwhere(matches)[0][0])
+    return np.argwhere(matches)[0][0]
 
 
 def construct_full_state(full_config):
@@ -115,7 +115,12 @@ def construct_full_state(full_config):
     most stable is to iterate across statevector config, 
     but I have to match out the _type -> bad
     """
-    rt_states = sorted(rt_config.radiative_transfer_engines[0].lut_names.keys())
+
+    rt_states = vars(rt_config.radiative_transfer_engines[0]).get(
+        "statevector_names", []
+    )
+    if not len(rt_states):
+        rt_states = sorted(rt_config.radiative_transfer_engines[0].lut_names.keys())
 
     # Without changing where the nonrfl surface elements are defined
     surface_config = full_config.forward_model.surface
