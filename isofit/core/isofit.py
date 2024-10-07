@@ -207,8 +207,19 @@ class Isofit:
                     for l in range(len(index_sets) - 1)
                 ]
 
-            # Construct full fm
-            self.fm = fm = ForwardModel(self.config, str(i))
+            # Retrieve class string descriptor
+            if self.config.forward_model.surface.multi_surface_flag:
+                # Match the iter to class name
+                surface_class_str = [
+                    c
+                    for c in self.config.forward_model.surface.Surfaces.keys()
+                    if self.config.forward_model.surface.Surfaces[c]["surface_int"] == i
+                ][0]
+            else:
+                # Otherwise pass base class
+                surface_class_str = "base"
+
+            self.fm = fm = ForwardModel(self.config, class_str)
 
             logging.debug(f"Pixel class: {str(i)}")
             logging.debug(f"Surface: {self.fm.surface}")

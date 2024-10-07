@@ -41,8 +41,8 @@ from isofit.core.common import (
 )
 from isofit.core.forward import ForwardModel
 from isofit.core.geometry import Geometry
+from isofit.inversion.inverse import Inversion
 from isofit.inversion.inverse_simple import invert_algebraic, invert_simple
-from isofit.inversion.inversion import Inversion
 
 ### Variables ###
 
@@ -807,46 +807,4 @@ def write_bil_chunk(
     outfile = open(outfile, "rb+")
     outfile.seek(line * shape[1] * shape[2] * np.dtype(dtype).itemsize)
     outfile.write(dat.astype(dtype).tobytes())
-    outfile.close()
-
-
-def write_bil_spectra(
-    dat: np.array,
-    outfile: str,
-    r: int,
-    c: int,
-    bands: int,
-    columns: int,
-    dtype: str = np.float32,
-) -> None:
-    """
-    Need to test this that it gives the same answer as the BIL line.
-    BIP would be so much easier for writing by spectra.
-
-    Write a entry of data to a binary, BIL formatted data cube.
-    Args:
-        dat: data to write
-        outfile: output file to write to
-        row:
-        col:
-        bands:
-        shape: shape of the output file
-        dtype: output data type
-
-    Returns:
-        None
-    """
-    outfile = open(outfile, "rb+")
-
-    # Go to row
-    row_position = r * columns * bands * np.dtype(dtype).itemsize
-
-    # Constant column position
-    column_position = c * np.dtype(dtype).itemsize
-    for b, v in enumerate(dat):
-        band_position = b * columns * np.dtype(dtype).itemsize
-
-        # It would be more efficient to move the pointer from band to band
-        outfile.seek((row_position + band_position + column_position))
-        outfile.write(v.astype(dtype).tobytes())
     outfile.close()

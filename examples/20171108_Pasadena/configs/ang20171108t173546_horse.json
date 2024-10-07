@@ -28,18 +28,8 @@
       }
     },
     "surface": {
-        "Surfaces": {
-            "0": {
-                "surface_category": "multicomponent_surface",
-                "surface_file": "../remote/ang20170228_surface_model.mat",
-                "surface_type": "base"
-            }
-        },
-        "multi_surface_flag": false,
-        "surface_params": {
-            "select_on_init": true,
-            "selection_metric": "Euclidean"
-        }
+        "surface_category": "multicomponent_surface",
+        "surface_file": "../remote/ang20170228_surface_model.mat"
     },
     "radiative_transfer": {
       "statevector": {

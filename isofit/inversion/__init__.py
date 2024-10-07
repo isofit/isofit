@@ -1,5 +1,5 @@
+from .inverse import Inversion
 from .inverse_mcmc import MCMCInversion
-from .inversion import Inversion
 
 Inversions = {
     "mcmc_inversion": MCMCInversion,

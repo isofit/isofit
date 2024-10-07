@@ -31,47 +31,6 @@ from isofit.radiative_transfer.radiative_transfer import RadiativeTransfer
 from isofit.surface.surfaces import Surfaces
 
 
-def match_class(class_groups, row, col):
-    """
-    Pass this function the row column pair and it will return the
-    key from class_groups for which that row-col belongs.
-
-    Args:
-
-        class_groups: (list) of pixel groups. Values are tuples
-                      of rows and column that belong in the respective groups.
-        row: (int) row of queried pixel
-        col: (int) col of queried pixel
-    """
-    # If there is no class index, return base
-    if not len(class_groups):
-        return "0"
-
-    # else match
-    matches = np.zeros((len(class_groups))).astype(int)
-    for i, group in enumerate(class_groups):
-        if len(group[(group[:, 0] == row) & (group[:, 1] == col)]):
-            matches[i] = 1
-        else:
-            matches[i] = 0
-
-    if len(matches[np.where(matches)]) < 1:
-        logging.exception(
-            "Pixel did not match any class. \
-                         Something is wrong"
-        )
-        raise ValueError
-
-    elif len(matches[np.where(matches)]) > 1:
-        logging.exception(
-            "Pixel matches too many classes. \
-                         Something is wrong"
-        )
-        raise ValueError
-
-    return np.argwhere(matches)[0][0]
-
-
 def construct_full_state(full_config):
     """
     Get the full statevec. I don't like how this is done.
@@ -184,8 +143,12 @@ def index_image_by_class(surface_config, subs=True):
     classes = envi.open(envi_header(class_file)).open_memmap(interleave="bip")
 
     class_groups = []
-    for c in surface_config.Surfaces.keys():
-        pixel_list = np.argwhere(classes == int(c)).astype(int).tolist()
+    for c, surface_sub_config in surface_config.Surfaces.keys():
+        pixel_list = (
+            np.argwhere(classes == surface_sub_config["surface_int"])
+            .astype(int)
+            .tolist()
+        )
         class_groups.append(pixel_list)
 
     del classes

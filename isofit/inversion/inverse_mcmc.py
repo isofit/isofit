@@ -26,7 +26,7 @@ from isofit.configs import Config
 from isofit.core.common import eps
 from isofit.core.forward import ForwardModel
 
-from .inversion import Inversion
+from .inverse import Inversion
 
 
 class MCMCInversion(Inversion):

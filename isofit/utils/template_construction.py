@@ -1719,6 +1719,7 @@ def make_surface_config(paths: Pathnames, surface_category="multicomponent_surfa
             "water": "glint_model_surface",
             "land": "multicomponent_surface",
             "cloud": "multicomponent_surface",
+            "base": "multicomponent_surface",
         }
 
         # Iterate through all classes present in class image
@@ -1753,22 +1754,17 @@ def make_surface_config(paths: Pathnames, surface_category="multicomponent_surfa
                 raise FileNotFoundError
 
             # Set up "Surfaces" component of surface config
-            surface_config_dict["Surfaces"][str(i)] = {
-                "surface_type": name,
+            surface_config_dict["Surfaces"][name] = {
+                "surface_int": i,
                 "surface_file": surface_path,
                 "surface_category": surface_category,
             }
     else:
-
         if not paths.surface_path:
             logging.exception("No surface prior path found.")
             raise FileNotFoundError
 
-        surface_config_dict["Surfaces"] = {
-            "0": {
-                "surface_file": paths.surface_path,
-                "surface_category": surface_category,
-            }
-        }
+        surface_config_dict["surface_file"] = paths.surface_path
+        surface_config_dict["surface_category"] = surface_category
 
     return surface_config_dict

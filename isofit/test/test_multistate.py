@@ -13,7 +13,7 @@ from isofit.core.common import match_statevector
 from isofit.core.forward import ForwardModel
 from isofit.core.isofit import Isofit
 from isofit.utils import surface_model
-from isofit.utils.multistate import construct_full_state, match_class
+from isofit.utils.multistate import construct_full_state
 
 
 @pytest.mark.multistate

@@ -29,15 +29,15 @@
     },
     "surface": {
         "Surfaces": {
-            "0": {
+            "base": {
                 "surface_category": "multicomponent_surface",
                 "surface_file": "../remote/ang20170228_surface_model.mat",
-                "surface_type": "base"
+                "surface_int": 0
             },
-            "1": {
+            "water": {
                 "surface_category": "glint_model_surface",
                 "surface_file": "../remote/ang20170228_surface_model.mat",
-                "surface_type": "test"
+                "surface_int": 1
             }
         },
         "multi_surface_flag": true,

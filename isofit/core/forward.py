@@ -59,7 +59,7 @@ class ForwardModel:
     noise for the purpose of weighting the measurement information
     against the prior."""
 
-    def __init__(self, full_config: Config, surface_i: str = "0"):
+    def __init__(self, full_config: Config, surface_class_str: str = "base"):
         # load in the full config (in case of inter-module dependencies)
         self.full_config = full_config
 
@@ -76,8 +76,10 @@ class ForwardModel:
 
         # Check if multi-surface config else use single surface config
         if fm_config.surface.multi_surface_flag:
-            surf_category = fm_config.surface.Surfaces[surface_i]["surface_category"]
-            surface_file = fm_config.surface.Surfaces[surface_i]["surface_file"]
+            surf_category = fm_config.surface.Surfaces[surface_class_str][
+                "surface_category"
+            ]
+            surface_file = fm_config.surface.Surfaces[surface_class_str]["surface_file"]
         else:
             surf_category = fm_config.surface.surface_category
             surface_file = fm_config.surface.surface_file

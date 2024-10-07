@@ -25,18 +25,8 @@
       "integrations":25
     },
     "surface": {
-        "Surfaces": {
-            "0": {
-                "surface_category": "additive_glint_surface",
-                "surface_file": "../data/prm20151028_surface_coastal_model.mat",
-                "surface_type": "glint"
-            }
-        },
-        "multi_surface_flag": false,
-        "surface_params": {
-            "select_on_init": true,
-            "selection_metric": "Euclidean"
-        }
+        "surface_category": "additive_glint_surface",
+        "surface_file": "../data/prm20151028_surface_coastal_model.mat"
     },
     "radiative_transfer":
     {

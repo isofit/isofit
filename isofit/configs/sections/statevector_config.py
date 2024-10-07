@@ -87,9 +87,6 @@ class StateVectorConfig(BaseConfigSection):
         self._AIRT_DELTA_K_type = StateVectorElementConfig
         self.AIRT_DELTA_K: StateVectorElementConfig = None
 
-        self._TEMP_SURFACE_type = StateVectorElementConfig
-        self.TEMP_SURFACE: StateVectorElementConfig = None
-
         assert len(self.get_all_elements()) == len(self._get_nontype_attributes())
 
         self._set_statevector_config_options(sub_configdic)
