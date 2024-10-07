@@ -116,10 +116,8 @@ def construct_full_state(full_config):
     but I have to match out the _type -> bad
     """
 
-    rt_states = vars(rt_config.radiative_transfer_engines[0]).get(
-        "statevector_names", []
-    )
-    if not len(rt_states):
+    rt_states = vars(rt_config.radiative_transfer_engines[0])["statevector_names"]
+    if not rt_states:
         rt_states = sorted(rt_config.radiative_transfer_engines[0].lut_names.keys())
 
     # Without changing where the nonrfl surface elements are defined
