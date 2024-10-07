@@ -642,7 +642,7 @@ def build_presolve_config(
             "parametric_noise_file"
         ] = paths.noise_path
     else:
-        isofit_config_h2o["forward_model"]["instrument"]["SNR"] = 500
+        isofit_config_h2o["forward_model"]["instrument"]["SNR"] = 1000
 
     if paths.rdn_factors_path:
         isofit_config_h2o["input"][
