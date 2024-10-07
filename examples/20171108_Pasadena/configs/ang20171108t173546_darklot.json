@@ -40,7 +40,7 @@
                 "surface_type": "test"
             }
         },
-        "multi_surface_flag": false,
+        "multi_surface_flag": true,
         "surface_params": {
             "select_on_init": true,
             "selection_metric": "Euclidean"

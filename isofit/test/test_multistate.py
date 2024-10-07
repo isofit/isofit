@@ -20,10 +20,29 @@ from isofit.utils.multistate import construct_full_state, match_class
 @pytest.mark.parametrize(
     "args",
     [
+        ("--level", "DEBUG", "configs/ang20171108t173546_darklot.json"),
+    ],
+)
+def test_single_spectra_multi(args, monkeypatch):
+    """Run the Santa Monica test dataset."""
+
+    monkeypatch.chdir("examples/20171108_Pasadena/")
+    surface_model("configs/ang20171108t184227_surface.json")
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["run"] + list(args), catch_exceptions=False)
+
+    assert result.exit_code == 0
+
+
+@pytest.mark.multistate
+@pytest.mark.parametrize(
+    "args",
+    [
         ("--level", "DEBUG", "configs/prm20151026t173213_D8W_6s.json"),
     ],
 )
-def test_single_spectra(args, monkeypatch):
+def test_single_spectra_single(args, monkeypatch):
     """Run the Santa Monica test dataset."""
 
     monkeypatch.chdir("examples/20151026_SantaMonica/")

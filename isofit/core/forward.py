@@ -73,11 +73,21 @@ class ForwardModel:
         # Build the surface model
         fm_config = full_config.forward_model
         surface_params = fm_config.surface.surface_params
-        surf_category = fm_config.surface.Surfaces[surface_i]["surface_category"]
+
+        # Check if multi-surface config else use single surface config
+        if fm_config.surface.multi_surface_flag:
+            surf_category = fm_config.surface.Surfaces[surface_i]["surface_category"]
+            surface_file = fm_config.surface.Surfaces[surface_i]["surface_file"]
+        else:
+            surf_category = fm_config.surface.surface_category
+            surface_file = fm_config.surface.surface_file
+
+        # Handle error if there is no surface file
+        if not surface_file:
+            raise FileNotFoundError("No surface .mat file exists")
+
         # This will have to change to James' method
-        self.surface = Surfaces[surf_category](
-            fm_config.surface.Surfaces[surface_i], surface_params
-        )
+        self.surface = Surfaces[surf_category](surface_file, surface_params)
 
         if self.surface.n_wl != len(self.RT.wl) or not np.all(
             np.isclose(self.surface.wl, self.RT.wl, atol=0.01)

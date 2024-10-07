@@ -72,8 +72,11 @@ class Isofit:
         self.config = configs.create_new_config(config_file)
         self.config.get_config_errors()
 
-        # Set up the multi-state pixel map
-        if self.config.forward_model.surface.multi_surface_flag:
+        # Set up the multi-state pixel map if this is a multi-surface run
+        if (self.config.forward_model.surface.multi_surface_flag) and (
+            self.config.forward_model.surface.sub_surface_class_file
+            or self.config.forward_model.surface.surface_class_file
+        ):
             self.state_pixel_index = index_image_by_class(
                 self.config.forward_model.surface
             )
@@ -171,7 +174,7 @@ class Isofit:
                 index_pairs_class.append(np.delete(np.array(class_row_col), 2, axis=1))
             index_pairs = index_pairs_class
 
-        # Else it's not a multistate run
+        # Else it's not a multistate run. Run through all index pairs
         else:
             index_pairs = [index_pairs]
 
@@ -181,13 +184,6 @@ class Isofit:
         else:
             logging.info("Single-state inversion started.")
 
-        """
-        Another pair of eyes on the mutiprocessing would be great here.
-        There may easily be a better way to do this. Mostly setting 
-        worker number on the samples within the loop rather than
-        across the entire scene. It seems like we are losing
-        some performance.
-        """
         # Loop through index pairs and run workers
         class_loop_start_time = time.time()
         for i, index_pair in enumerate(index_pairs):

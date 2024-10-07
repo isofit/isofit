@@ -22,6 +22,7 @@ import logging
 
 import numpy as np
 from scipy.interpolate import interp1d
+from scipy.io import loadmat
 
 from isofit.configs import Config
 from isofit.core.common import envi_header, load_spectrum, load_wavelen
@@ -30,9 +31,8 @@ from isofit.core.common import envi_header, load_spectrum, load_wavelen
 class Surface:
     """A wrapper for the specific surface models"""
 
-    def __init__(self, surface_config: Config):
-        # Save the full config to the surface object
-        self.surface_config = surface_config
+    def __init__(self, surface_file: Config):
+        self.model_dict = loadmat(surface_file)
 
         self.statevec_names = []
         self.bounds = np.array([])
@@ -43,16 +43,7 @@ class Surface:
         self.idx_lamb = np.empty(shape=0)
         self.emissive = False
 
-        """
-        the surface wl are all defined in the specific surface.
-        The check that was happening here didn't do anything.
-        Configs don't contain the wavelength file. It would use the rfl
-        file, then get overwritten by the specific surface that doesn't
-        have the same check.
-
-        It's also benefitial for the surface to not have to know the
-        entire config.
-        """
+        # These are overwritten by specific surface model
         self.wl = None
         self.fwhm = None
 

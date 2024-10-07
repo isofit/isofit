@@ -105,28 +105,30 @@ def construct_full_state(full_config):
     # Pull the rt names from the config. Seems to be most commonly present.
     rt_config = full_config.forward_model.radiative_transfer
 
-    """
-    This method of retrieving the rt states is giving me issues between
-    legacy configs and current configs. What is the most stable place
-    to pull the statevector name list?.
-    statevector_names not always present.
-    is lut_names always present? Is always a dict?
-
-    most stable is to iterate across statevector config, 
-    but I have to match out the _type -> bad
-    """
-
     rt_states = vars(rt_config.radiative_transfer_engines[0])["statevector_names"]
     if not rt_states:
         rt_states = sorted(rt_config.radiative_transfer_engines[0].lut_names.keys())
 
     # Without changing where the nonrfl surface elements are defined
     surface_config = full_config.forward_model.surface
-    params = surface_config.surface_params
+    params = vars(surface_config).get("surface_params", {})
 
-    # Iterate through the different surfaces to find overlapping state names
-    for i, surface_config in full_config.forward_model.surface.Surfaces.items():
-        surface = Surfaces[surface_config["surface_category"]](surface_config, params)
+    # Check for config type
+    if vars(surface_config).get("multi_surface_flag", False):
+        # Iterate through the different surfaces to find overlapping state names
+        for i, surface_sub_config in surface_config.Surfaces.items():
+            surface_category = surface_sub_config["surface_category"]
+            surface_file = surface_sub_config["surface_file"]
+
+            surface = Surfaces[surface_category](surface_file, params)
+            rfl_states += surface.statevec_names[: len(surface.idx_lamb)]
+            nonrfl_states += surface.statevec_names[len(surface.idx_lamb) :]
+
+    else:
+        surface_category = surface_config.surface_category
+        surface_file = surface_config.surface_file
+
+        surface = Surfaces[surface_category](surface_file, params)
         rfl_states += surface.statevec_names[: len(surface.idx_lamb)]
         nonrfl_states += surface.statevec_names[len(surface.idx_lamb) :]
 

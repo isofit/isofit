@@ -35,17 +35,23 @@ class SurfaceConfig(BaseConfigSection):
         self._multi_surface_flag_type = bool
         self.multi_surface_flag = None
 
-        self._sub_surface_class_file_type = str
-        self.sub_surface_class_file = None
+        self._surface_category_type = str
+        self.surface_category = None
+
+        self._surface_file_type = str
+        self.surface_file = None
 
         self._surface_class_file_type = str
         self.surface_class_file = None
 
+        self._sub_surface_class_file_type = str
+        self.sub_surface_class_file = None
+
         self._Surfaces_type = dict
-        self.Surfaces = None
+        self.Surfaces = {}
 
         self._surface_params_type = dict
-        self.surface_params = None
+        self.surface_params = {}
 
         self.set_config_options(sub_configdic)
 
@@ -59,17 +65,15 @@ class SurfaceConfig(BaseConfigSection):
             "thermal_surface",
             "lut_surface",
         ]
-        if self.surface_category is None:
+        if (self.surface_category is None) and (self.Surfaces is None):
             errors.append("surface->surface_category must be specified")
+
         elif self.surface_category not in valid_surface_categories:
             errors.append(
                 "surface->surface_category: {} not in valid surface categories: {}".format(
                     self.surface_category, valid_surface_categories
                 )
             )
-
-        if self.surface_category is None:
-            errors.append("surface->surface_category must be specified")
 
         valid_normalize_categories = ["Euclidean", "RMS", "None"]
         if self.normalize not in valid_normalize_categories:
