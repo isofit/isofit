@@ -29,7 +29,7 @@ from scipy.linalg import block_diag
 from isofit.configs import Config
 
 from ..radiative_transfer.radiative_transfer import RadiativeTransfer
-from ..surface.surfaces import Surfaces
+from ..surface import Surfaces
 from .common import eps
 from .instrument import Instrument
 

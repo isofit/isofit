@@ -28,7 +28,7 @@ from isofit.core.common import envi_header, load_spectrum, load_wavelen
 from isofit.core.forward import ForwardModel
 from isofit.core.instrument import Instrument
 from isofit.radiative_transfer.radiative_transfer import RadiativeTransfer
-from isofit.surface.surfaces import Surfaces
+from isofit.surface import Surfaces
 
 
 def construct_full_state(full_config):
@@ -116,7 +116,7 @@ def construct_full_state(full_config):
     return full_statevec, full_idx_surface, full_idx_surf_rfl, full_idx_rt
 
 
-def index_image_by_class(surface_config, subs=True):
+def index_image_by_class(surface_config):
     """
     Indexes an image by a provided surface class file.
     Could extend it to be indexed by an atomspheric classification
@@ -130,26 +130,26 @@ def index_image_by_class(surface_config, subs=True):
               file to use.
 
     Returns:
-        class_groups: (dict) where keys are the pixel classification (index)
+        class_groups: (dict) where keys are the pixel classification (name)
                       and values are tuples of rows and columns for each
                       group.
     """
 
-    if vars(surface_config).get("sub_surface_class_file") and subs:
+    if vars(surface_config).get("sub_surface_class_file"):
         class_file = surface_config.sub_surface_class_file
     else:
         class_file = surface_config.surface_class_file
 
     classes = envi.open(envi_header(class_file)).open_memmap(interleave="bip")
 
-    class_groups = []
-    for c, surface_sub_config in surface_config.Surfaces.keys():
+    class_groups = {}
+    for c, surface_sub_config in surface_config.Surfaces.items():
         pixel_list = (
             np.argwhere(classes == surface_sub_config["surface_int"])
             .astype(int)
             .tolist()
         )
-        class_groups.append(pixel_list)
+        class_groups[c] = pixel_list
 
     del classes
 
@@ -179,18 +179,17 @@ def index_image_by_class_and_sub(config, lbl_file):
     im = ds.load()
     if config.forward_model.surface.multi_surface_flag:
         sub_pixel_index = index_image_by_class(config.forward_model.surface)
-        pixel_index = []
-        for class_subs in sub_pixel_index:
+        pixel_index = {}
+        for surface_class_str, class_subs in sub_pixel_index.items():
             if not len(class_subs):
-                pixel_index.append([])
                 continue
 
             class_pixel_index = []
             for i in class_subs:
                 class_pixel_index += np.argwhere(im == i).tolist()
 
-            pixel_index.append(class_pixel_index)
+            pixel_index[surface_class_str] = class_pixel_index
     else:
-        pixel_index = []
+        pixel_index = {}
 
     return pixel_index

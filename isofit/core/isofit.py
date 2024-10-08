@@ -81,7 +81,7 @@ class Isofit:
                 self.config.forward_model.surface
             )
         else:
-            self.state_pixel_index = []
+            self.state_pixel_index = {}
 
         # Construct and cache the full statevector (all multistates)
         self.full_statevector, *_ = construct_full_state(self.config)
@@ -165,18 +165,18 @@ class Isofit:
 
         # If multistate, split into class
         if len(self.state_pixel_index):
-            index_pairs_class = []
-            for class_row_col in self.state_pixel_index:
-
+            index_pairs = {}
+            for surface_class_str, class_row_col in self.state_pixel_index.items():
                 if not len(class_row_col):
                     continue
 
-                index_pairs_class.append(np.delete(np.array(class_row_col), 2, axis=1))
-            index_pairs = index_pairs_class
+                index_pairs[surface_class_str] = np.delete(
+                    np.array(class_row_col), 2, axis=1
+                )
 
         # Else it's not a multistate run. Run through all index pairs
         else:
-            index_pairs = [index_pairs]
+            index_pairs = {"base": index_pairs}
 
         # Some logging that might be nice
         if len(index_pairs):
@@ -186,7 +186,7 @@ class Isofit:
 
         # Loop through index pairs and run workers
         class_loop_start_time = time.time()
-        for i, index_pair in enumerate(index_pairs):
+        for surface_class_str, index_pair in index_pairs.items():
 
             # Don't want more workers than tasks
             n_iter = index_pair.shape[0]
@@ -207,21 +207,9 @@ class Isofit:
                     for l in range(len(index_sets) - 1)
                 ]
 
-            # Retrieve class string descriptor
-            if self.config.forward_model.surface.multi_surface_flag:
-                # Match the iter to class name
-                surface_class_str = [
-                    c
-                    for c in self.config.forward_model.surface.Surfaces.keys()
-                    if self.config.forward_model.surface.Surfaces[c]["surface_int"] == i
-                ][0]
-            else:
-                # Otherwise pass base class
-                surface_class_str = "base"
+            self.fm = fm = ForwardModel(self.config, surface_class_str)
 
-            self.fm = fm = ForwardModel(self.config, class_str)
-
-            logging.debug(f"Pixel class: {str(i)}")
+            logging.debug(f"Pixel class: {surface_class_str}")
             logging.debug(f"Surface: {self.fm.surface}")
 
             # Put worker args into Ray object

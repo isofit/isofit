@@ -49,13 +49,13 @@ class Worker(object):
     def __init__(
         self,
         config: configs.Config,
-        pixel_index: list,
+        pixel_index: dict,
         full_statevector: list,
         full_idx_surface: np.array,
         full_idx_RT: np.array,
         full_idx_surf_rfl: np.array,
-        input_files: dict,
         output_files: dict,
+        output_shape: tuple,
         loglevel: str,
         logfile: str,
         subs_state_file: str = None,
@@ -86,17 +86,13 @@ class Worker(object):
 
         self.winidx = retrieve_winidx(self.config)
 
+        self.output_shape = output_shape
+        self.rfl_output = output_files["rfl_output"]
+        self.unc_output = output_files["unc_output"]
+
         self.completed_spectra = 0
         self.hash_table = OrderedDict()
         self.hash_size = 500
-
-        self.rdn_file = input_files["rdn_file"]
-        self.loc_file = input_files["loc_file"]
-        self.obs_file = input_files["obs_file"]
-        self.RT_state_file = input_files["atm_file"]
-
-        self.rfl_output = output_files["rfl_output"]
-        self.unc_output = output_files["unc_output"]
 
         if config.input.radiometry_correction_file is not None:
             self.radiance_correction, wl = load_spectrum(
@@ -105,31 +101,24 @@ class Worker(object):
         else:
             self.radiance_correction = None
 
-        # Open files at the worker level
-        self.rdn = envi.open(envi_header(self.rdn_file)).open_memmap(interleave="bip")
-        self.rdns = self.rdn.shape
-
-        self.loc = envi.open(envi_header(self.loc_file)).open_memmap(interleave="bip")
-
-        self.obs = envi.open(envi_header(self.obs_file)).open_memmap(interleave="bip")
-
-        self.rt_state = envi.open(envi_header(self.RT_state_file)).open_memmap(
-            interleave="bip"
-        )
-
-    def run_chunks(self, startstop: tuple, fill_value: float = -9999.0) -> None:
+    def run_chunks(self, input_arguments: tuple, fill_value: float = -9999.0) -> None:
         """
         TODO: Description
         """
-        # Unpack argument
-        start_line, stop_line = startstop
+        # Unpack arguments
+        start_line, stop_line, input_chunk = input_arguments
+
+        rdn = input_chunk["rdn_file"]
+        loc = input_chunk["loc_file"]
+        obs = input_chunk["obs_file"]
+        rt_state = input_chunk["rt_state"]
 
         # Set up outputs
         output_state = (
             np.zeros(
                 (
                     stop_line - start_line,
-                    self.rt_state.shape[1],
+                    rt_state.shape[1],
                     len(self.full_idx_surface),
                 )
             )
@@ -139,7 +128,7 @@ class Worker(object):
             np.zeros(
                 (
                     stop_line - start_line,
-                    self.rt_state.shape[1],
+                    rt_state.shape[1],
                     len(self.full_idx_surface),
                 )
             )
@@ -148,14 +137,13 @@ class Worker(object):
 
         # Index chunk
         state_indexes = group_pixels_by_class(
-            start_line, stop_line, self.rdns[1], self.pixel_index
+            start_line, stop_line, rdn.shape[1], self.pixel_index
         )
-        for class_i, class_idx_pairs in enumerate(state_indexes):
-            fm = ForwardModel(self.config, f"{class_i}")
+        for surface_class_str, class_idx_pairs in state_indexes.items():
+            fm = ForwardModel(self.config, surface_class_str)
 
-            # Find bounds from the fm
             for r, c in class_idx_pairs:
-                meas = self.rdn[r, c, :]
+                meas = rdn[r - start_line, c, :]
 
                 if self.radiance_correction is not None:
                     meas *= self.radiance_correction
@@ -163,11 +151,13 @@ class Worker(object):
                 if np.all(meas < 0):
                     continue
 
-                x_RT = self.rt_state[
-                    r, c, self.full_idx_RT - len(self.full_idx_surface)
+                x_RT = rt_state[
+                    r - start_line, c, self.full_idx_RT - len(self.full_idx_surface)
                 ]
                 geom = Geometry(
-                    obs=self.obs[r, c, :], loc=self.loc[r, c, :], esd=self.esd
+                    obs=obs[r - start_line, c, :],
+                    loc=loc[r - start_line, c, :],
+                    esd=self.esd,
                 )
 
                 states, unc = invert_analytical(
@@ -198,8 +188,9 @@ class Worker(object):
         output_state = output_state[..., self.full_idx_surface]
 
         rfl_bounds = (np.min(fm.bounds, axis=0)[0], np.max(fm.bounds, axis=0)[1])
+
         logging.debug(
-            "Reflectance output will be bounded to the surface" f"bounds: {rfl_bounds}"
+            "Reflectance output will be bounded to the surface " f"bounds: {rfl_bounds}"
         )
 
         mask = np.logical_and.reduce(
@@ -214,20 +205,21 @@ class Worker(object):
 
         # Output surface rfl
         save_output_state = np.swapaxes(output_state, 1, 2)
+        save_output_state_unc = np.swapaxes(output_state_unc, 1, 2)
+
         write_bil_chunk(
             save_output_state,
             self.rfl_output,
             start_line,
-            (self.rdn.shape[0], self.rdn.shape[1], len(self.full_idx_surface)),
+            (self.output_shape[0], self.output_shape[1], len(self.full_idx_surface)),
         )
 
         # Save surface state uncertainty
-        save_output_state_unc = np.swapaxes(output_state_unc, 1, 2)
         write_bil_chunk(
-            save_output_state_unc.T,
+            save_output_state_unc,
             self.unc_output,
             start_line,
-            (self.rdn.shape[0], self.rdn.shape[1], len(self.full_idx_surface)),
+            (self.output_shape[0], self.output_shape[1], len(self.full_idx_surface)),
         )
 
 
@@ -272,15 +264,15 @@ def group_pixels_by_class(start_line, stop_line, n_cols, pixel_index):
     if not len(pixel_index):
         return [index_pairs]
 
-    index_pairs_class = []
-    for i, class_row_col in enumerate(pixel_index):
+    index_pairs_class = {}
+    for surface_class_str, class_row_col in pixel_index.items():
         if not len(class_row_col):
             continue
 
         class_row_col = np.delete(np.array(class_row_col), -1, axis=1)
         class_row_col = class_row_col[class_row_col[:, 0] < stop_line]
         class_row_col = class_row_col[class_row_col[:, 0] >= start_line]
-        index_pairs_class.append(class_row_col)
+        index_pairs_class[surface_class_str] = class_row_col
 
     return index_pairs_class
 
@@ -354,10 +346,11 @@ def analytical_line(
     pixel_index = index_image_by_class_and_sub(config, lbl_file)
 
     # Initialize fm (if no lut, will create here)
-    for i, indexes in enumerate(pixel_index):
+    for surface_class_str, indexes in pixel_index.items():
         if not len(indexes):
             continue
-        fm = ForwardModel(config, f"{i}")
+
+        fm = ForwardModel(config, surface_class_str)
 
     (
         full_statevector,
@@ -401,32 +394,30 @@ def analytical_line(
         analytical_rfl_path,
         bbl=bbl,
         interleave="bil",
-        bands=f"{len(full_idx_surf_rfl)}",
-        band_names=[("Channel %i" % i) for i in range(len(full_idx_surf_rfl))],
+        bands=f"{len(full_idx_surface)}",
+        band_names=[full_statevector[i] for i in range(len(full_idx_surface))],
         wavelength_unts="Nanometers",
         description=("L2A Analytyical per-pixel surface retrieval"),
     )
 
     # Construct surf rfl uncertainty output
-    bbl = "{" + ",".join([f"{x}" for x in outside_ret_windows])
+    bbl = "{" + ",".join([f"{x}" for x in outside_ret_windows]) + "}"
     unc_output = construct_output(
         output_metadata,
         analytical_state_unc_path,
         bbl=bbl,
         interleave="bil",
         bands=f"{len(full_idx_surface)}",
-        band_names=[full_statevector[i] for i in full_idx_surf_rfl],
+        band_names=[full_statevector[i] for i in range(len(full_idx_surface))],
         wavelength_unts="Nanometers",
         description=("L2A Analytyical per-pixel surface retrieval uncertainty"),
     )
 
-    # Set up input files
-    input_files = {
-        "rdn_file": rdn_file,
-        "loc_file": loc_file,
-        "obs_file": obs_file,
-        "atm_file": atm_file,
-    }
+    # Open files at the worker level
+    rdn = envi.open(envi_header(rdn_file)).open_memmap(interleave="bip")
+    loc = envi.open(envi_header(loc_file)).open_memmap(interleave="bip")
+    obs = envi.open(envi_header(obs_file)).open_memmap(interleave="bip")
+    rt_state = envi.open(envi_header(atm_file)).open_memmap(interleave="bip")
 
     # Set up the output files
     output_files = {
@@ -460,8 +451,8 @@ def analytical_line(
             full_idx_surface,
             full_idx_RT,
             full_idx_surf_rfl,
-            input_files,
             output_files,
+            rdn.shape,
             loglevel,
             logfile,
         )
@@ -469,14 +460,32 @@ def analytical_line(
     workers = ray.util.ActorPool([Worker.remote(*wargs) for _ in range(n_workers)])
 
     n_iter = min(rdns[0], n_workers * config.implementation.task_inflation_factor)
+
     line_breaks = np.linspace(0, rdns[0], n_iter, dtype=int)
     line_breaks = [
         (line_breaks[n], line_breaks[n + 1]) for n in range(len(line_breaks) - 1)
     ]
 
+    # Set up actor input arguments
+    input_arguments = [
+        (
+            start,
+            stop,
+            {
+                "rdn_file": rdn[start:stop, ...],
+                "loc_file": loc[start:stop, ...],
+                "obs_file": obs[start:stop, ...],
+                "rt_state": rt_state[start:stop, ...],
+            },
+        )
+        for start, stop in line_breaks
+    ]
+
     # run workers
     start_time = time.time()
-    res = list(workers.map_unordered(lambda a, b: a.run_chunks.remote(b), line_breaks))
+    res = list(
+        workers.map_unordered(lambda a, b: a.run_chunks.remote(b), input_arguments)
+    )
     total_time = time.time() - start_time
     print(total_time)
 
