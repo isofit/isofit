@@ -287,9 +287,16 @@ class LUTConfig:
 
     Args:
         lut_config_file: configuration file to override default values
+        emulator: emulator used - will modify required points appropriately
+        no_min_lut_spacing: span all LUT dimensions with at least 2 points
     """
 
-    def __init__(self, lut_config_file: str = None, emulator: bool = False):
+    def __init__(
+        self,
+        lut_config_file: str = None,
+        emulator: str = None,
+        no_min_lut_spacing: bool = False,
+    ):
         if lut_config_file is not None:
             with open(lut_config_file, "r") as f:
                 lut_config = json.load(f)
@@ -348,13 +355,15 @@ class LUTConfig:
         self.aot_550_spacing = 0
         self.aot_550_spacing_min = 0
 
+        self.no_min_lut_spacing = no_min_lut_spacing
+
         # overwrite anything that comes in from the config file
         if lut_config_file is not None:
             for key in lut_config:
                 if key in self.__dict__:
                     setattr(self, key, lut_config[key])
 
-        if emulator and os.path.splitext(emulator)[1] != ".jld2":
+        if emulator is not None and os.path.splitext(emulator)[1] != ".jld2":
             self.aot_550_range = self.aerosol_2_range
             self.aot_550_spacing = self.aerosol_2_spacing
             self.aot_550_spacing_min = self.aerosol_2_spacing_min
@@ -365,7 +374,7 @@ class LUTConfig:
     ):
         min_val = np.min(data_input)
         max_val = np.max(data_input)
-        return get_grid(min_val, max_val, spacing, min_spacing)
+        return self.get_grid(min_val, max_val, spacing, min_spacing)
 
     def get_grid(
         self, minval: float, maxval: float, spacing: float, min_spacing: float
@@ -374,6 +383,15 @@ class LUTConfig:
             logging.debug("Grid spacing set at 0, using no grid.")
             return None
         num_gridpoints = int(np.ceil((maxval - minval) / spacing)) + 1
+
+        # if we want to ensure there is no minimum spacing, override the spacing
+        # value to set the number of grid points to at least 2
+        if (
+            self.no_min_lut_spacing
+            and num_gridpoints == 1
+            and np.isclose(maxval, minval) is False
+        ):
+            num_gridpoints = 2
 
         grid = np.linspace(minval, maxval, num_gridpoints)
 
@@ -384,7 +402,9 @@ class LUTConfig:
                 f"Grid spacing is 0, which is less than {min_spacing}.  No grid used"
             )
             return None
-        elif np.abs(grid[1] - grid[0]) < min_spacing:
+        elif (
+            np.abs(grid[1] - grid[0]) < min_spacing and self.no_min_lut_spacing is False
+        ):
             logging.debug(
                 f"Grid spacing is {grid[1]-grid[0]}, which is less than {min_spacing}. "
                 " No grid used"
@@ -404,33 +424,6 @@ class SerialEncoder(json.JSONEncoder):
             return float(obj)
         else:
             return super(SerialEncoder, self).default(obj)
-
-
-def get_grid(minval: float, maxval: float, spacing: float, min_spacing: float):
-    if spacing == 0:
-        logging.debug("Grid spacing set at 0, using no grid.")
-        return None
-
-    num_gridpoints = int(np.ceil((maxval - minval) / spacing)) + 1
-
-    grid = np.linspace(minval, maxval, num_gridpoints)
-
-    if min_spacing > 0.0001:
-        grid = np.round(grid, 4)
-
-    if len(grid) == 1:
-        logging.debug(
-            f"Grid spacing is 0, which is less than {min_spacing}.  No grid used"
-        )
-        return None
-    elif np.abs(grid[1] - grid[0]) < min_spacing:
-        logging.debug(
-            f"Grid spacing is {grid[1] - grid[0]}, which is less than {min_spacing}. "
-            " No grid used"
-        )
-        return None
-    else:
-        return grid
 
 
 def check_surface_model(surface_path: str, wl: np.array, paths: Pathnames) -> str:
@@ -1161,7 +1154,7 @@ def load_climatology(
     ]
 
     for _a, alr in enumerate(aerosol_lut_ranges):
-        aerosol_lut = get_grid(
+        aerosol_lut = lut_params.get_grid(
             alr[0], alr[1], aerosol_lut_spacing[_a], aerosol_lut_spacing_mins[_a]
         )
 
@@ -1176,7 +1169,7 @@ def load_climatology(
 
             aerosol_lut_grid["AERFRAC_{}".format(_a)] = aerosol_lut.tolist()
 
-    aot_550_lut = get_grid(
+    aot_550_lut = lut_params.get_grid(
         lut_params.aot_550_range[0],
         lut_params.aot_550_range[1],
         lut_params.aot_550_spacing,
