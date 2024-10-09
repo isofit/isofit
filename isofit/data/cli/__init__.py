@@ -37,7 +37,7 @@ def validate_all():
     click.echo("Finished all validations")
 
 
-def env_validate(keys):
+def env_validate(keys, **kwargs):
     """
     Utility function for the `env` object to quickly validate specific dependencies
     """
@@ -48,7 +48,7 @@ def env_validate(keys):
             print(f"Product not found: {key}")
             all_valid = False
         else:
-            all_valid &= module.validate()
+            all_valid &= module.validate(**kwargs)
 
     return all_valid
 

@@ -77,7 +77,7 @@ def download_cli(**kwargs):
     download(**kwargs)
 
 
-def validate(path=None, size="both"):
+def validate(path=None, size="both", **_):
     """
     Validates an ISOFIT image cube data installation
 
@@ -87,6 +87,9 @@ def validate(path=None, size="both"):
         Path to verify. If None, defaults to the ini path
     size : "both" | "small" | "medium"
         Which chunk size to validate
+    **_ : dict
+        Ignores unused params that may be used by other validate functions. This is to
+        maintain compatibility with env.validate
 
     Returns
     -------

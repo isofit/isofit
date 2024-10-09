@@ -80,7 +80,7 @@ def download_cli(**kwargs):
     download(**kwargs)
 
 
-def validate(path=None):
+def validate(path=None, **_):
     """
     Validates a 6S installation
 
@@ -88,6 +88,9 @@ def validate(path=None):
     ----------
     path : str, default=None
         Path to verify. If None, defaults to the ini path
+    **_ : dict
+        Ignores unused params that may be used by other validate functions. This is to
+        maintain compatibility with env.validate
 
     Returns
     -------

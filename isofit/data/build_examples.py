@@ -11,18 +11,15 @@ import click
 
 from isofit.data import env
 
-Examples = {
-    "SantaMonica": sns(name="20151026_SantaMonica", requires=["data", "sixs"]),
-    "Pasadena": sns(name="20171108_Pasadena", requires=["data", "modtran"]),
-    "ThermalIR": sns(name="20190806_ThermalIR", requires=["data", "modtran"]),
-    "ImageCube": sns(name="image_cube", requires=["sixs", "srtmnet"]),
-}
-
 Bash = sns(
     template="""\
 #!/bin/bash
 
 # This is a generated example script to illustrate how to execute this example via the command line
+
+# These are important to set before executing
+export MKL_NUM_THREADS=1
+export OMP_NUM_THREADS=1
 
 # Build a surface model first
 echo 'Building surface model: {surface_name}'
@@ -40,6 +37,11 @@ isofit run --level DEBUG {config}\
 Pyth = sns(
     template="""\
 #!/usr/bin/env python
+
+import os
+
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["OMP_NUM_THREADS"] = "1"
 
 from isofit.core.isofit import Isofit
 from isofit.utils import surface_model
@@ -59,10 +61,189 @@ del model\
 """,
 )
 
+OEScript = sns(
+    template="""\
+#!/bin/bash
+
+# This is a generated example script to illustrate how to execute this example via the command line
+
+# These are important to set before executing
+export MKL_NUM_THREADS=1
+export OMP_NUM_THREADS=1
+
+isofit apply_oe \\
+  {args}\
+"""
+)
+
+
+class Example:
+    def __init__(self, name, requires, validate={}):
+        """
+        Parameters
+        ----------
+        path : pathlib.Path
+            Path to the working example
+        """
+        self.name = name
+        self.requires = requires
+        self.validate_flags = validate
+
+    def validate(self):
+        """
+        Passthrough method to validate required ISOFIT downloads
+        """
+        print(f"Checking the required extra files are available: {self.requires}")
+        return env.validate(self.requires, **self.validate_flags)
+
+    def setPath(self, path):
+        self.path = Path(env.examples) / self.name
+
+        if not self.path.exists():
+            print("Error: Example directory not found")
+            return False
+
+    def build(self):
+        raise NotImplementedError("Example constructor class must define this function")
+
+    def makeConfigs(self):
+        """
+        Creates configs based off the template files from an example directory
+        """
+        print(f"Generating configs")
+        templates = list((self.path / "templates").glob("*"))
+
+        if not templates:
+            print(
+                "Template files not found for this example, please verify the installation"
+            )
+            return False
+
+        configs = self.path / "configs"
+        configs.mkdir(parents=True, exist_ok=True)
+        for template in templates:
+            print(f"Creating {template.name}")
+
+            if template.is_dir():
+                output = configs / template.name
+                output.mkdir(parents=True, exist_ok=True)
+
+                for tmpl in template.glob("*"):
+                    updateTemplate(tmpl, output)
+            else:
+                updateTemplate(template, configs)
+
+
+class Isofit(Example):
+    """
+    Template for building scripts that directly call the Isofit object
+    """
+
+    def build(self):
+        """
+        Makes a formatted bash script
+
+        Parameters
+        ----------
+        example : pathlib.Path
+            Path to the example root
+        path : pathlib.Path
+            Path to the subset of scripts to generate scripts for
+        """
+        if self.makeConfigs() is False:
+            return
+
+        for path in (self.path / "configs").glob("*"):
+            if path.is_dir():
+                print(f"Generating scripts for: {path.name}")
+                self.makeScripts(path)
+
+    def makeScripts(self, path):
+        configs = list(path.glob("*"))
+        surface = next(self.path.glob("configs/*surface*.json"))
+
+        bash, pyth = [], []
+        cmds = []
+        for i, config in enumerate(configs):
+            fmt = {
+                "i": i + 1,
+                "total": len(configs),
+                "name": config.name,
+                "config": config,
+            }
+            cmds.append(fmt)
+            bash.append(Bash.command.format(**fmt))
+            pyth.append(Pyth.command.format(**fmt))
+
+        # Shared arguments for both scripts
+        args = {"surface_name": surface.name, "surface": surface}
+
+        # Write bash script
+        args["commands"] = "\n\n".join(bash)
+        file = self.path / f"{path.name}.sh"
+        tmpl = Bash.template.format(**args)
+        createScript(file, tmpl)
+
+        # Write python script
+        args["commands"] = "\n\n".join(pyth)
+        file = self.path / f"{path.name}.py"
+        tmpl = Pyth.template.format(**args)
+        createScript(file, tmpl)
+
+
+class ApplyOE(Example):
+    """
+    Template for building scripts that use apply_oe
+    """
+
+    def build(self):
+        self.makeApplyOE(self.path)
+
+    def makeApplyOE(self, path):
+        """
+        Creates apply_oe scripts using 'args' template files
+        """
+        tmpl = path / "templates"
+        surf = next(tmpl.glob("surface.json"))
+
+        updateTemplate(surf, path / "configs")
+
+        for arg in tmpl.glob("*.args.json"):
+            args = updateTemplate(arg)
+            args = " \\\n  ".join(args)
+            name = arg.name.split(".")[0]
+
+            file = path / f"{name}.sh"
+            tmpl = OEScript.template.format(args=args)
+
+            createScript(file, tmpl)
+
+
+Examples = {
+    "SantaMonica": Isofit(name="20151026_SantaMonica", requires=["data", "sixs"]),
+    "Pasadena": Isofit(name="20171108_Pasadena", requires=["data", "modtran"]),
+    "ThermalIR": Isofit(name="20190806_ThermalIR", requires=["data", "modtran"]),
+    "ImageCube-small": ApplyOE(
+        name="image_cube/small",
+        requires=["sixs", "srtmnet"],
+        validate={"size": "small"},
+    ),
+    "ImageCube-medium": ApplyOE(
+        name="image_cube/medium",
+        requires=["sixs", "srtmnet"],
+        validate={"size": "medium"},
+    ),
+}
+
 
 def update(obj, **flags):
     """
-    Recursively updates string values with .format
+    Recursively updates string values with .format. This operation occurs in-place.
+
+    Parameters
+    ----------
+    obj : dict | list
+        Object to iterate over each child value and attempt to format
     """
 
     def iterate(obj):
@@ -81,113 +262,78 @@ def update(obj, **flags):
             update(value, **flags)
 
 
-def updateTemplate(template, output):
-    with open(template, "r") as file:
-        config = json.load(file)
-
-    update(config, **env)
-
-    with open(output / template.name, "w") as file:
-        json.dump(config, file, indent=4)
-
-
-def makeConfigs(example: Path):
+def updateTemplate(template: str, output: str = None):
     """
-    Creates configs based off the template files from an example directory
-    """
-    templates = list((example.path / "templates").glob("*"))
-
-    if not templates:
-        print(
-            "Template files not found for this example, please verify the installation"
-        )
-        return False
-
-    configs = example.path / "configs"
-    configs.mkdir(parents=True, exist_ok=True)
-    for template in templates:
-        print(f"Creating {template.name}")
-
-        if template.is_dir():
-            output = configs / template.name
-            output.mkdir(parents=True, exist_ok=True)
-
-            for tmpl in template.glob("*"):
-                updateTemplate(tmpl, output)
-        else:
-            updateTemplate(template, configs)
-
-
-def createScript(script, template, args):
-    print(f"Creating {script}")
-    with open(script, "w") as file:
-        file.write(template.template.format(**args))
-
-    os.chmod(script, 0o744)
-
-
-def makeScripts(example: Path, path: Path):
-    """
-    Makes a formatted bash script
+    Updates a given template and writes it out to another file
 
     Parameters
     ----------
-    example : pathlib.Path
-        Path to the example root
-    path : pathlib.Path
-        Path to the subset of scripts to generate scripts for
+    template : str
+        Path to template file to load and update
+    output : str, default=None
+        Path to write the updated template to
+
+    Returns
+    -------
+    config : dict
+        The updated template dictionary
     """
-    configs = list(path.glob("*"))
-    surface = next(example.glob("configs/*surface*.json"))
+    with open(template, "r") as file:
+        config = json.load(file)
 
-    bash, pyth = [], []
-    for i, config in enumerate(configs):
-        fmt = {"i": i + 1, "total": len(configs), "name": config.name, "config": config}
-        bash.append(Bash.command.format(**fmt))
-        pyth.append(Pyth.command.format(**fmt))
+    update(config, **env, cores=os.cpu_count())
 
-    # Shared arguments for both scripts
-    args = {"surface_name": surface.name, "surface": surface}
+    if output:
+        with open(output / template.name, "w") as file:
+            json.dump(config, file, indent=4)
 
-    # Write bash script
-    args["commands"] = "\n\n".join(bash)
-    createScript(example / f"{path.name}.sh", Bash, args)
+    return config
 
-    # Write python script
-    args["commands"] = "\n\n".join(pyth)
-    createScript(example / f"{path.name}.py", Pyth, args)
+
+def createScript(script: str, template: dict):
+    """
+    Creates an executable script file for a given template and arguments
+
+    Parameters
+    ----------
+    script : str
+        Path to write the script to
+    template : dict
+        Template being used (eg. Bash or Pyth)
+    """
+    print(f"Creating {script}")
+    with open(script, "w") as file:
+        file.write(template)
+
+    os.chmod(script, 0o744)
 
 
 def build(example, validate=True):
     """
     Builds an example directory
+
+    Parameters
+    ----------
+    example : pathlib.Path
+        Path to the example root
+    validate : bool, default=True
+        Validates the required extra downloads for each example. Disabling this will
+        allow examples to build but does not guarantee they will work
     """
     print(f"Building example: {example.name}")
 
     if validate:
-        print(f"Checking the required extra files are available: {example.requires}")
-        if not env.validate(example.requires):
+        if not example.validate():
             print(
-                "One or more of the above required extra downloads is missing, please correct and try again"
+                "One or more of the above required extra downloads is not valid, please correct and try again"
             )
             return
 
-    example.path = Path(env.examples) / example.name
-
-    if not example.path.exists():
-        print("Error: Example directory not found")
+    if example.setPath(env.examples) is False:
         return
 
     print(f"Building example for this system: {example.path}")
-
-    print(f"Generating configs")
-    if makeConfigs(example) is False:
-        return
-
-    for path in (example.path / "configs").glob("*"):
-        if path.is_dir():
-            print(f"Generating scripts for: {path.name}")
-            makeScripts(example.path, path)
+    example.build()
 
 
 @click.command(name="build")
