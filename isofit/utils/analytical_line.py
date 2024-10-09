@@ -262,7 +262,7 @@ def group_pixels_by_class(start_line, stop_line, n_cols, pixel_index):
     ).T
 
     if not len(pixel_index):
-        return [index_pairs]
+        return {"base": index_pairs}
 
     index_pairs_class = {}
     for surface_class_str, class_row_col in pixel_index.items():
