@@ -68,6 +68,7 @@ class SixSRT(RadiativeTransferEngine):
         modtran_emulation=False,
         **kwargs,
     ):
+
         self.modtran_emulation = modtran_emulation
 
         super().__init__(engine_config, **kwargs)

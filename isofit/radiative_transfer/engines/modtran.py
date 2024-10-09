@@ -24,6 +24,7 @@ import logging
 import os
 import re
 import subprocess
+import time
 from copy import deepcopy
 from sys import platform
 
@@ -66,7 +67,7 @@ class ModtranRT(RadiativeTransferEngine):
         dict
             Dictionary of calculated values using the tokens list
         """
-        irr = tokens[18] * 1e6 * np.pi / tokens[8] / coszen  # uW/nm/sr/cm2
+        irr = tokens[18] * 1e6 * np.pi / tokens[8] / coszen  # uW/nm/cm2
 
         # fmt: off
         # If classic singlepart transmittance is used,
@@ -78,7 +79,7 @@ class ModtranRT(RadiativeTransferEngine):
         return {
             'solar_irr'          : irr,       # Solar irradiance
             'wl'                 : tokens[0], # Wavelength
-            'rhoatm'             : tokens[4] * 1e6 * np.pi / (irr * coszen), # uW/nm/sr/cm2
+            'rhoatm'             : tokens[4] * 1e6 * np.pi / (irr * coszen), # unitless
             'width'              : tokens[8],
             'thermal_upwelling'  : (tokens[11] + tokens[12]) / tokens[8] * 1e6, # uW/nm/sr/cm2
             'thermal_downwelling': tokens[16] * 1e6 / tokens[8],
