@@ -28,6 +28,7 @@ import numpy as np
 
 from isofit.core.common import resample_spectrum
 from isofit.core.fileio import IO
+from isofit.data import env
 from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
 
 Logger = logging.getLogger(__file__)
