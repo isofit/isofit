@@ -38,7 +38,7 @@ from isofit.configs import configs
 from isofit.core.fileio import IO
 from isofit.core.forward import ForwardModel
 from isofit.inversion import Inversions
-from isofit.utils.multistate import construct_full_state, index_image_by_class
+from isofit.utils.multistate import construct_full_state, index_spectra_by_surface
 
 
 class Isofit:
@@ -71,17 +71,6 @@ class Isofit:
         # Load configuration file
         self.config = configs.create_new_config(config_file)
         self.config.get_config_errors()
-
-        # Set up the multi-state pixel map if this is a multi-surface run
-        if (self.config.forward_model.surface.multi_surface_flag) and (
-            self.config.forward_model.surface.sub_surface_class_file
-            or self.config.forward_model.surface.surface_class_file
-        ):
-            self.state_pixel_index = index_image_by_class(
-                self.config.forward_model.surface
-            )
-        else:
-            self.state_pixel_index = {}
 
         # Construct and cache the full statevector (all multistates)
         self.full_statevector, *_ = construct_full_state(self.config)
@@ -163,23 +152,19 @@ class Isofit:
         # Save this for logging
         total_samples = index_pairs.shape[0]
 
-        # If multistate, split into class
-        if len(self.state_pixel_index):
-            index_pairs = {}
-            for surface_class_str, class_row_col in self.state_pixel_index.items():
-                if not len(class_row_col):
-                    continue
-
-                index_pairs[surface_class_str] = np.delete(
-                    np.array(class_row_col), 2, axis=1
-                )
-
-        # Else it's not a multistate run. Run through all index pairs
+        # If multistate, split into class. Flag is messy because of examples
+        if (self.config.forward_model.surface.multi_surface_flag) and (
+            self.config.forward_model.surface.sub_surface_class_file
+            or self.config.forward_model.surface.surface_class_file
+        ):
+            index_pairs = index_spectra_by_surface(
+                self.config.forward_model.surface, index_pairs
+            )
         else:
-            index_pairs = {"base": index_pairs}
+            index_pairs = {"Base": index_pairs}
 
         # Some logging that might be nice
-        if len(index_pairs):
+        if len(index_pairs.keys()) > 1:
             logging.info("Multi-state inversion started.")
         else:
             logging.info("Single-state inversion started.")
@@ -187,7 +172,6 @@ class Isofit:
         # Loop through index pairs and run workers
         class_loop_start_time = time.time()
         for surface_class_str, index_pair in index_pairs.items():
-
             # Don't want more workers than tasks
             n_iter = index_pair.shape[0]
             n_workers = min(n_workers, n_iter)

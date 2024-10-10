@@ -59,7 +59,7 @@ class ForwardModel:
     noise for the purpose of weighting the measurement information
     against the prior."""
 
-    def __init__(self, full_config: Config, surface_class_str: str = "base"):
+    def __init__(self, full_config: Config, surface_class_str: str = None):
         # load in the full config (in case of inter-module dependencies)
         self.full_config = full_config
 

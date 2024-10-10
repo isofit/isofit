@@ -41,7 +41,10 @@ from isofit.core.forward import ForwardModel
 from isofit.core.geometry import Geometry
 from isofit.inversion.inverse_simple import invert_analytical
 from isofit.utils.atm_interpolation import atm_interpolation
-from isofit.utils.multistate import construct_full_state, index_image_by_class_and_sub
+from isofit.utils.multistate import (
+    construct_full_state,
+    index_spectra_by_surface_and_sub,
+)
 
 
 @ray.remote(num_cpus=1)
@@ -136,13 +139,13 @@ class Worker(object):
         )
 
         # Index chunk
-        state_indexes = group_pixels_by_class(
+        state_indexes = chunk_surface_spectra(
             start_line, stop_line, rdn.shape[1], self.pixel_index
         )
         for surface_class_str, class_idx_pairs in state_indexes.items():
             fm = ForwardModel(self.config, surface_class_str)
 
-            for r, c in class_idx_pairs:
+            for r, c, *_ in class_idx_pairs:
                 meas = rdn[r - start_line, c, :]
 
                 if self.radiance_correction is not None:
@@ -182,7 +185,9 @@ class Worker(object):
                 full_unc_est = match_statevector(
                     unc, self.full_statevector, fm.statevec
                 )
-                output_state_unc[r - start_line, c, :] = unc[self.full_idx_surface]
+                output_state_unc[r - start_line, c, :] = full_unc_est[
+                    self.full_idx_surface
+                ]
 
         # Only apply rfl check. Bounds vary between glint and rfl terms
         output_state = output_state[..., self.full_idx_surface]
@@ -190,7 +195,7 @@ class Worker(object):
         rfl_bounds = (np.min(fm.bounds, axis=0)[0], np.max(fm.bounds, axis=0)[1])
 
         logging.debug(
-            "Reflectance output will be bounded to the surface " f"bounds: {rfl_bounds}"
+            f"Reflectance output will be bounded to the surface bounds: {rfl_bounds}"
         )
 
         mask = np.logical_and.reduce(
@@ -252,7 +257,7 @@ def construct_output(output_metadata, outpath, buffer_size=100, **kwargs):
     return outpath
 
 
-def group_pixels_by_class(start_line, stop_line, n_cols, pixel_index):
+def chunk_surface_spectra(start_line, stop_line, n_cols, pixel_index):
     # Form the row-column pairs (pixels to run)
     index_pairs = np.vstack(
         [
@@ -264,17 +269,16 @@ def group_pixels_by_class(start_line, stop_line, n_cols, pixel_index):
     if not len(pixel_index):
         return {"base": index_pairs}
 
-    index_pairs_class = {}
-    for surface_class_str, class_row_col in pixel_index.items():
-        if not len(class_row_col):
+    class_spectra = {}
+    for key, spectra in pixel_index.items():
+        if not len(spectra):
             continue
 
-        class_row_col = np.delete(np.array(class_row_col), -1, axis=1)
-        class_row_col = class_row_col[class_row_col[:, 0] < stop_line]
-        class_row_col = class_row_col[class_row_col[:, 0] >= start_line]
-        index_pairs_class[surface_class_str] = class_row_col
+        spectra = np.array(spectra)
+        spectra = spectra[(spectra[:, 0] >= start_line) & (spectra[:, 0] < stop_line)]
+        class_spectra[key] = spectra.tolist()
 
-    return index_pairs_class
+    return class_spectra
 
 
 def analytical_line(
@@ -343,14 +347,15 @@ def analytical_line(
     )
 
     # Set up the multi-state pixel map by sub
-    pixel_index = index_image_by_class_and_sub(config, lbl_file)
+    pixel_index = index_spectra_by_surface_and_sub(config, lbl_file)
 
     # Initialize fm (if no lut, will create here)
-    for surface_class_str, indexes in pixel_index.items():
-        if not len(indexes):
-            continue
-
-        fm = ForwardModel(config, surface_class_str)
+    if config.forward_model.surface.multi_surface_flag:
+        for surface_class_str in config.forward_model.surface.Surfaces.keys():
+            fm = ForwardModel(config, surface_class_str)
+    else:
+        fm = ForwardModel(config)
+    del fm
 
     (
         full_statevector,

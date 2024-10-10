@@ -116,7 +116,7 @@ def construct_full_state(full_config):
     return full_statevec, full_idx_surface, full_idx_surf_rfl, full_idx_rt
 
 
-def index_image_by_class(surface_config):
+def index_spectra_by_surface(surface_config, index_pairs):
     """
     Indexes an image by a provided surface class file.
     Could extend it to be indexed by an atomspheric classification
@@ -126,37 +126,46 @@ def index_image_by_class(surface_config):
     Args:
         surface_config: (Config object) The surface component of the
                         main config.
-        subs: (optional) (bool) that tells function which classification
-              file to use.
 
     Returns:
         class_groups: (dict) where keys are the pixel classification (name)
                       and values are tuples of rows and columns for each
-                      group.
+                      group. Will be empty ({}) if not multi_surface.
     """
 
+    # Check if this is a multisurface run
     if vars(surface_config).get("sub_surface_class_file"):
         class_file = surface_config.sub_surface_class_file
     else:
         class_file = surface_config.surface_class_file
 
-    classes = envi.open(envi_header(class_file)).open_memmap(interleave="bip")
+    classes = np.squeeze(
+        envi.open(envi_header(class_file)).open_memmap(interleave="bip"), axis=-1
+    )
 
     class_groups = {}
     for c, surface_sub_config in surface_config.Surfaces.items():
-        pixel_list = (
-            np.argwhere(classes == surface_sub_config["surface_int"])
-            .astype(int)
-            .tolist()
-        )
-        class_groups[c] = pixel_list
+        break
+        surface_pixel_list = np.argwhere(
+            classes == surface_sub_config["surface_int"]
+        ).astype(int)
+
+        if not len(surface_pixel_list):
+            continue
+
+        # Find intersection between index_pairs and pixel_list
+        in_surface_index = (index_pairs[:, None] == surface_pixel_list).all(-1).any(1)
+
+        surface_index_pairs = index_pairs[in_surface_index, ...]
+
+        class_groups[c] = surface_index_pairs
 
     del classes
 
     return class_groups
 
 
-def index_image_by_class_and_sub(config, lbl_file):
+def index_spectra_by_surface_and_sub(config, lbl_file):
     """
     Indexes an image by surface class file and lbl_file.
     This is needed for the analytical line where each pixel needs to
@@ -175,21 +184,33 @@ def index_image_by_class_and_sub(config, lbl_file):
                      index of list matches the class key. Empty list
                      returned if there is no multistate.
     """
-    ds = envi.open(envi_header(lbl_file))
-    im = ds.load()
-    if config.forward_model.surface.multi_surface_flag:
-        sub_pixel_index = index_image_by_class(config.forward_model.surface)
+    lbl = envi.open(envi_header(lbl_file)).open_memmap(interleave="bip")
+
+    lbl_shape = (range(lbl.shape[0]), range(lbl.shape[1]))
+
+    index_pairs = np.vstack([x.flatten(order="f") for x in np.meshgrid(*lbl_shape)]).T
+
+    if (config.forward_model.surface.multi_surface_flag) and (
+        config.forward_model.surface.sub_surface_class_file
+        or config.forward_model.surface.surface_class_file
+    ):
+        sub_pixel_index = index_spectra_by_surface(
+            config.forward_model.surface, index_pairs
+        )
+
         pixel_index = {}
+        class_groups = {}
         for surface_class_str, class_subs in sub_pixel_index.items():
             if not len(class_subs):
                 continue
 
             class_pixel_index = []
             for i in class_subs:
-                class_pixel_index += np.argwhere(im == i).tolist()
+                class_pixel_index += np.argwhere(lbl == i).tolist()
 
-            pixel_index[surface_class_str] = class_pixel_index
+            class_groups[surface_class_str] = class_pixel_index
+
+        return class_groups
+
     else:
-        pixel_index = {}
-
-    return pixel_index
+        return {"Base": index_pairs}
