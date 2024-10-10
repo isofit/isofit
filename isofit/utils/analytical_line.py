@@ -104,12 +104,12 @@ class Worker(object):
         else:
             self.radiance_correction = None
 
-    def run_chunks(self, input_arguments: tuple, fill_value: float = -9999.0) -> None:
+    def run_chunks(self, input_arg: tuple, fill_value: float = -9999.0) -> None:
         """
         TODO: Description
         """
         # Unpack arguments
-        start_line, stop_line, input_chunk = input_arguments
+        start_line, stop_line, input_chunk = input_arg
 
         rdn = input_chunk["rdn_file"]
         loc = input_chunk["loc_file"]
@@ -142,6 +142,7 @@ class Worker(object):
         state_indexes = chunk_surface_spectra(
             start_line, stop_line, rdn.shape[1], self.pixel_index
         )
+
         for surface_class_str, class_idx_pairs in state_indexes.items():
             fm = ForwardModel(self.config, surface_class_str)
 
@@ -209,11 +210,8 @@ class Worker(object):
         output_state[mask] = 0
 
         # Output surface rfl
-        save_output_state = np.swapaxes(output_state, 1, 2)
-        save_output_state_unc = np.swapaxes(output_state_unc, 1, 2)
-
         write_bil_chunk(
-            save_output_state,
+            np.swapaxes(output_state, 1, 2),
             self.rfl_output,
             start_line,
             (self.output_shape[0], self.output_shape[1], len(self.full_idx_surface)),
@@ -221,7 +219,7 @@ class Worker(object):
 
         # Save surface state uncertainty
         write_bil_chunk(
-            save_output_state_unc,
+            np.swapaxes(output_state_unc, 1, 2),
             self.unc_output,
             start_line,
             (self.output_shape[0], self.output_shape[1], len(self.full_idx_surface)),
@@ -271,11 +269,12 @@ def chunk_surface_spectra(start_line, stop_line, n_cols, pixel_index):
 
     class_spectra = {}
     for key, spectra in pixel_index.items():
-        if not len(spectra):
-            continue
 
         spectra = np.array(spectra)
         spectra = spectra[(spectra[:, 0] >= start_line) & (spectra[:, 0] < stop_line)]
+        if not len(spectra):
+            continue
+
         class_spectra[key] = spectra.tolist()
 
     return class_spectra
@@ -441,9 +440,6 @@ def analytical_line(
     }
     ray.init(**ray_dict)
 
-    """
-    The looping over classes is very similar to isofit.run
-    """
     n_workers = n_cores
 
     # Initialize workers

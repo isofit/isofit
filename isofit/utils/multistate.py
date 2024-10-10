@@ -145,7 +145,6 @@ def index_spectra_by_surface(surface_config, index_pairs):
 
     class_groups = {}
     for c, surface_sub_config in surface_config.Surfaces.items():
-        break
         surface_pixel_list = np.argwhere(
             classes == surface_sub_config["surface_int"]
         ).astype(int)
@@ -184,10 +183,9 @@ def index_spectra_by_surface_and_sub(config, lbl_file):
                      index of list matches the class key. Empty list
                      returned if there is no multistate.
     """
+    # Get all index pairs in image
     lbl = envi.open(envi_header(lbl_file)).open_memmap(interleave="bip")
-
     lbl_shape = (range(lbl.shape[0]), range(lbl.shape[1]))
-
     index_pairs = np.vstack([x.flatten(order="f") for x in np.meshgrid(*lbl_shape)]).T
 
     if (config.forward_model.surface.multi_surface_flag) and (
