@@ -17,13 +17,12 @@
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
+from __future__ import annotations
 
 import numpy as np
 
-from isofit.configs import Config
-
-from ..core.common import eps
-from .surface_multicomp import MultiComponentSurface
+from isofit.core.common import eps
+from isofit.surface.surface_multicomp import MultiComponentSurface
 
 
 class GlintModelSurface(MultiComponentSurface):
@@ -41,6 +40,10 @@ class GlintModelSurface(MultiComponentSurface):
         self.n_state = self.n_state + 2
         self.glint_ind = len(self.statevec_names) - 2
         self.f = np.array([[(1000000 * np.array(self.scale[self.glint_ind :])) ** 2]])
+
+        self.full_glint = False
+        if "full_glint" in (full := full_config.forward_model.surface.keys()):
+            self.full_glint = full
 
     def xa(self, x_surface, geom):
         """Mean of prior distribution, calculated at state x."""

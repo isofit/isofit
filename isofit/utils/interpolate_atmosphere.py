@@ -23,7 +23,6 @@ import multiprocessing
 import time
 
 import numpy as np
-from scipy.linalg import inv
 from scipy.spatial import KDTree
 from sklearn.decomposition import PCA
 from sklearn.gaussian_process import GaussianProcessRegressor

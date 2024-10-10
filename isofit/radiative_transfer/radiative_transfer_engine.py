@@ -18,6 +18,7 @@
 # Author: Philip G. Brodrick, philip.brodrick@jpl.nasa.gov
 # Author: Niklas Bohn, urs.n.bohn@jpl.nasa.gov
 #
+from __future__ import annotations
 
 import logging
 import os
@@ -30,11 +31,7 @@ import xarray as xr
 
 import isofit
 from isofit import ray
-from isofit.configs.sections.radiative_transfer_config import (
-    RadiativeTransferEngineConfig,
-)
 from isofit.core import common
-from isofit.core.geometry import Geometry
 from isofit.radiative_transfer import luts
 
 Logger = logging.getLogger(__file__)
