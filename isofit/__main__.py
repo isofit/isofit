@@ -36,6 +36,7 @@ from isofit.utils.surface_model import cli_surface_model
 @click.option("-s", "--section", help="Switches which section of the ini to use")
 @click.option("-d", "--data", help="Override path to data directory")
 @click.option("-e", "--examples", help="Override path to examples directory")
+@click.option("-c", "--imagecube", help="Override path to imagecube data directory")
 @click.option("-em", "--srtmnet", help="Override path to sRTMnet installation")
 @click.option("-6s", "--sixs", help="Override path to SixS installation")
 # @click.option("-mt", "--modtran", help="Override path to MODTRAN installation")
