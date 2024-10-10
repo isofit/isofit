@@ -31,8 +31,8 @@ from spectral.io import envi
 
 import isofit
 from isofit.core.common import envi_header, eps, load_spectrum, resample_spectrum
-from isofit.data import env
 from isofit.core.geometry import Geometry
+from isofit.data import env
 from isofit.inversion.inverse_simple import invert_algebraic
 
 ### Variables ###
@@ -435,7 +435,7 @@ class IO:
             self.radiance_correction, wl = load_spectrum(filename)
 
         # Load the earth sun distance data
-        self.esd = self.load_esd(self.earth_sun_distance_path)
+        self.esd = self.load_esd()
 
     def get_components_at_index(self, row: int, col: int) -> InputData:
         """
@@ -746,7 +746,24 @@ class IO:
         )
 
     @staticmethod
-    def load_esd(file):
+    def load_esd(file=None):
+        """
+        Loads an earth_sun_distance file. Defaults to the
+        [env.data]/earth_sun_distance.txt if not provided
+
+        Parameters
+        ----------
+        file : str, default=None
+            ESD file to load
+
+        Returns
+        -------
+        np.array
+            Loaded ESD. If the file fails to load, creates a default
+        """
+        if file is None:
+            file = os.path.join(env.data, "earth_sun_distance.txt")
+
         try:
             esd = np.loadtxt(file)
             logging.debug(f"Loaded ESD from file: {file}")
