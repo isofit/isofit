@@ -406,7 +406,7 @@ def cli_surface_model(**kwargs):
     """Build a new surface model to a block of data"""
 
     # SimpleNamespace converts a dict into dot-notational
-    surface_model(SimpleNamespace(**kwargs))
+    surface_model(**kwargs)
     click.echo("Done")
 
 

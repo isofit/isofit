@@ -28,6 +28,7 @@ import numpy as np
 
 from isofit.core.common import resample_spectrum
 from isofit.core.fileio import IO
+from isofit.data import env
 from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
 
 Logger = logging.getLogger(__file__)
@@ -67,6 +68,21 @@ class SixSRT(RadiativeTransferEngine):
         modtran_emulation=False,
         **kwargs,
     ):
+        current = os.environ.get("SIXS_DIR")
+        if not current:
+            Logger.debug(f"Setting SIXS_DIR={env.sixs}")
+            os.environ["SIXS_DIR"] = env.sixs
+        elif (current := os.path.abspath(current)) != env.sixs:
+            Logger.error(
+                "WARNING: The environment variable $SIXS_DIR does not match the ISOFIT ini"
+            )
+            Logger.error(f"ENV: {current}")
+            Logger.error(f"INI: {env.sixs}")
+            Logger.error(
+                "This may cause issues, please either set the env to the ini, or override the ini to the env using:"
+            )
+            Logger.error("  isofit --sixs $SIXS_DIR ...")
+
         self.modtran_emulation = modtran_emulation
 
         super().__init__(engine_config, **kwargs)
@@ -269,7 +285,7 @@ class SixSRT(RadiativeTransferEngine):
         """
         Loads the earth-sun distance file
         """
-        self.esd = IO.load_esd(IO.earth_sun_distance_path)
+        self.esd = IO.load_esd()
 
         dt = datetime(2000, self.engine_config.month, self.engine_config.day)
         self.day_of_year = dt.timetuple().tm_yday
