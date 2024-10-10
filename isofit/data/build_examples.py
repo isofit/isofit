@@ -82,8 +82,12 @@ class Example:
         """
         Parameters
         ----------
-        path : pathlib.Path
-            Path to the working example
+        name : str
+            Name of the directory of the example in the examples directory
+        requires : list
+            Required downloads to validate
+        validate : dict, default={}
+            Additional kew-word arguments to pass to the env.validate() function
         """
         self.name = name
         self.requires = requires
@@ -97,6 +101,19 @@ class Example:
         return env.validate(self.requires, **self.validate_flags)
 
     def setPath(self, path):
+        """
+        Sets the working path for the example
+
+        Parameters
+        ----------
+        path : pathlib.Path
+            Base path to the directory in which the example is located
+
+        Returns
+        -------
+        None | False
+            Returns False if the example directory is not found
+        """
         self.path = Path(env.examples) / self.name
 
         if not self.path.exists():
@@ -134,7 +151,7 @@ class Example:
                 updateTemplate(template, configs)
 
 
-class Isofit(Example):
+class IsofitExample(Example):
     """
     Template for building scripts that directly call the Isofit object
     """
@@ -191,7 +208,7 @@ class Isofit(Example):
         createScript(file, tmpl)
 
 
-class ApplyOE(Example):
+class ApplyOEExample(Example):
     """
     Template for building scripts that use apply_oe
     """
@@ -220,15 +237,17 @@ class ApplyOE(Example):
 
 
 Examples = {
-    "SantaMonica": Isofit(name="20151026_SantaMonica", requires=["data", "sixs"]),
-    "Pasadena": Isofit(name="20171108_Pasadena", requires=["data", "modtran"]),
-    "ThermalIR": Isofit(name="20190806_ThermalIR", requires=["data", "modtran"]),
-    "ImageCube-small": ApplyOE(
+    "SantaMonica": IsofitExample(
+        name="20151026_SantaMonica", requires=["data", "sixs"]
+    ),
+    "Pasadena": IsofitExample(name="20171108_Pasadena", requires=["data", "modtran"]),
+    "ThermalIR": IsofitExample(name="20190806_ThermalIR", requires=["data", "modtran"]),
+    "ImageCube-small": ApplyOEExample(
         name="image_cube/small",
         requires=["sixs", "srtmnet"],
         validate={"size": "small"},
     ),
-    "ImageCube-medium": ApplyOE(
+    "ImageCube-medium": ApplyOEExample(
         name="image_cube/medium",
         requires=["sixs", "srtmnet"],
         validate={"size": "medium"},

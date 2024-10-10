@@ -345,10 +345,6 @@ class InputData:
 class IO:
     """..."""
 
-    earth_sun_distance_path = property(
-        lambda self: os.path.join(env.data, "earth_sun_distance.txt")
-    )
-
     def __init__(self, config: Config, forward: ForwardModel):
         """Initialization specifies retrieval subwindows for calculating
         measurement cost distributions."""

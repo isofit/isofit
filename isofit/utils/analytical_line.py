@@ -34,6 +34,7 @@ from isofit.core.common import envi_header, load_spectrum
 from isofit.core.fileio import IO, write_bil_chunk
 from isofit.core.forward import ForwardModel
 from isofit.core.geometry import Geometry
+from isofit.data import env
 from isofit.inversion.inverse import Inversion
 from isofit.inversion.inverse_simple import invert_analytical
 from isofit.utils.atm_interpolation import atm_interpolation
@@ -299,7 +300,7 @@ class Worker(object):
             - 9999
         )
 
-        esd = IO.load_esd(IO.earth_sun_distance_path())
+        esd = IO.load_esd(os.path.join(env.data, "earth_sun_distance.txt"))
 
         for r in range(start_line, stop_line):
             for c in range(output_state.shape[1]):
