@@ -27,12 +27,25 @@
         "uncorrelated_radiometric_uncertainty": 0.01
       }
     },
-
     "surface": {
-      "surface_category": "multicomponent_surface",
-      "surface_file": "../remote/ang20170228_surface_model.mat"
+        "Surfaces": {
+            "base": {
+                "surface_category": "multicomponent_surface",
+                "surface_file": "../remote/ang20170228_surface_model.mat",
+                "surface_int": 0
+            },
+            "water": {
+                "surface_category": "glint_model_surface",
+                "surface_file": "../remote/ang20170228_surface_model.mat",
+                "surface_int": 1
+            }
+        },
+        "multi_surface_flag": true,
+        "surface_params": {
+            "select_on_init": true,
+            "selection_metric": "Euclidean"
+        }
     },
-
     "radiative_transfer": {
       "statevector": {
         "H2OSTR": {

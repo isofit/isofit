@@ -24,12 +24,10 @@
       "SNR": 500,
       "integrations":25
     },
-
     "surface": {
-      "surface_category": "additive_glint_surface",
-      "surface_file": "../data/prm20151028_surface_coastal_model.mat"
+        "surface_category": "additive_glint_surface",
+        "surface_file": "../data/prm20151028_surface_coastal_model.mat"
     },
-
     "radiative_transfer":
     {
       "statevector": {
@@ -76,8 +74,6 @@
       }
     }
   },
-
-
   "implementation": {
     "inversion": {
       "integration_grid": {"GLINT": [0, 0.001, 0.002]},

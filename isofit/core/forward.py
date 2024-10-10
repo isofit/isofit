@@ -27,22 +27,13 @@ from scipy.io import loadmat
 from scipy.linalg import block_diag
 
 from isofit.configs import Config
-from isofit.surface import (
-    AdditiveGlintSurface,
-    GlintModelSurface,
-    LUTSurface,
-    MultiComponentSurface,
-    Surface,
-    ThermalSurface,
-)
 
 from ..radiative_transfer.radiative_transfer import RadiativeTransfer
+from ..surface import Surfaces
 from .common import eps
 from .instrument import Instrument
 
 Logger = logging.getLogger(__file__)
-
-### Classes ###
 
 
 class ForwardModel:
@@ -68,11 +59,9 @@ class ForwardModel:
     noise for the purpose of weighting the measurement information
     against the prior."""
 
-    def __init__(self, full_config: Config):
-        # load in the full config (in case of inter-module dependencies) and
-        # then designate the current config
+    def __init__(self, full_config: Config, surface_class_str: str = "base"):
+        # load in the full config (in case of inter-module dependencies)
         self.full_config = full_config
-        self.config = full_config.forward_model
 
         # Build the instrument model
         self.instrument = Instrument(self.full_config)
@@ -81,30 +70,26 @@ class ForwardModel:
         # Build the radiative transfer model
         self.RT = RadiativeTransfer(self.full_config)
 
-        # Build the surface model - this is a bit ugly with the conditionals, but the surface config should already be
-        # forced to have appropriate properties, so at least safe
-        # TODO: make surface a class with inheritance to make this cleaner
-        self.surface = None
-        if self.config.surface.surface_category == "surface":
-            self.surface = Surface(self.full_config)
-        elif self.config.surface.surface_category == "multicomponent_surface":
-            self.surface = MultiComponentSurface(self.full_config)
-        elif self.config.surface.surface_category == "additive_glint_surface":
-            self.surface = AdditiveGlintSurface(self.full_config)
-        elif self.config.surface.surface_category == "glint_model_surface":
-            self.surface = GlintModelSurface(self.full_config)
-            self.full_glint = (
-                self.config.surface.full_glint
-                if "full_glint" in self.config.surface.keys()
-                else False
-            )
-        elif self.config.surface.surface_category == "thermal_surface":
-            self.surface = ThermalSurface(self.full_config)
-        elif self.config.surface.surface_category == "lut_surface":
-            self.surface = LUTSurface(self.full_config)
+        # Build the surface model
+        fm_config = full_config.forward_model
+        surface_params = fm_config.surface.surface_params
+
+        # Check if multi-surface config else use single surface config
+        if fm_config.surface.multi_surface_flag:
+            surf_category = fm_config.surface.Surfaces[surface_class_str][
+                "surface_category"
+            ]
+            surface_file = fm_config.surface.Surfaces[surface_class_str]["surface_file"]
         else:
-            raise ValueError("Must specify a valid surface model")
-            # No need to be more specific - should have been checked in config already
+            surf_category = fm_config.surface.surface_category
+            surface_file = fm_config.surface.surface_file
+
+        # Handle error if there is no surface file
+        if not surface_file:
+            raise FileNotFoundError("No surface .mat file exists")
+
+        # This will have to change to James' method
+        self.surface = Surfaces[surf_category](surface_file, surface_params)
 
         if self.surface.n_wl != len(self.RT.wl) or not np.all(
             np.isclose(self.surface.wl, self.RT.wl, atol=0.01)
@@ -115,7 +100,7 @@ class ForwardModel:
                 " is expected.  Otherwise, consider checking the surface model."
             )
 
-        # Build combined vectors from surface, RT, and instrument
+        # Build combined state-vectors from surface, RT, and instrument
         bounds, scale, init, statevec, bvec, bval = ([] for i in range(6))
         for obj_with_statevec in [self.surface, self.RT, self.instrument]:
             bounds.extend([deepcopy(x) for x in obj_with_statevec.bounds])
@@ -126,6 +111,7 @@ class ForwardModel:
             bvec.extend([deepcopy(x) for x in obj_with_statevec.bvec])
             bval.extend([deepcopy(x) for x in obj_with_statevec.bval])
 
+        # Persist to class object
         self.bounds = tuple(np.array(bounds).T)
         self.scale = np.array(scale)
         self.init = np.array(init)
@@ -137,21 +123,22 @@ class ForwardModel:
         self.bval = np.array(bval)
         self.Sb = np.diagflat(np.power(self.bval, 2))
 
-        # Set up indices for references - MUST MATCH ORDER FROM ABOVE ASSIGNMENT
+        """Set up state vector indices - 
+        MUST MATCH ORDER FROM ABOVE ASSIGNMENT"""
         self.idx_surface = np.arange(len(self.surface.statevec_names), dtype=int)
-        # Sometimes, it's convenient to have the index of the entire surface
-        # as one variable, and sometimes you want the sub-components
-        # Split surface state vector indices to cover cases where we retrieve
-        # additional non-reflectance surface parameters
-        self.idx_surf_rfl = self.idx_surface[
-            : len(self.surface.idx_lamb)
-        ]  # reflectance portion
-        self.idx_surf_nonrfl = self.idx_surface[
-            len(self.surface.idx_lamb) :
-        ]  # all non-reflectance surface parameters
+
+        # surface reflectance portion
+        self.idx_surf_rfl = self.idx_surface[: len(self.surface.idx_lamb)]
+
+        # non-reflectance surface parameters
+        self.idx_surf_nonrfl = self.idx_surface[len(self.surface.idx_lamb) :]
+
+        # radiative transfer portion
         self.idx_RT = np.arange(len(self.RT.statevec_names), dtype=int) + len(
             self.idx_surface
         )
+
+        # instrument portion
         self.idx_instrument = (
             np.arange(len(self.instrument.statevec_names), dtype=int)
             + len(self.idx_surface)
@@ -159,9 +146,11 @@ class ForwardModel:
         )
 
         self.surface_b_inds = np.arange(len(self.surface.bvec), dtype=int)
+
         self.RT_b_inds = np.arange(len(self.RT.bvec), dtype=int) + len(
             self.surface_b_inds
         )
+
         self.instrument_b_inds = (
             np.arange(len(self.instrument.bvec), dtype=int)
             + len(self.surface_b_inds)
@@ -169,8 +158,8 @@ class ForwardModel:
         )
 
         # Load model discrepancy correction
-        if self.config.model_discrepancy_file is not None:
-            D = loadmat(self.config.model_discrepancy_file)
+        if fm_config.model_discrepancy_file is not None:
+            D = loadmat(fm_config.model_discrepancy_file)
             self.model_discrepancy = D["cov"]
         else:
             self.model_discrepancy = None
@@ -181,12 +170,13 @@ class ForwardModel:
         x_RT = x[self.idx_RT]
         bound_lwr = self.bounds[0]
         bound_upr = self.bounds[1]
+
         return any(x_RT >= (bound_upr[self.idx_RT] - eps * 2.0)) or any(
             x_RT <= (bound_lwr[self.idx_RT] + eps * 2.0)
         )
 
     def xa(self, x, geom):
-        """Calculate the prior mean of the state vector (the concatenation
+        """Calculate the prior meself.an of the state vector (the concatenation
         of state vectors for the surface, Radiative Transfer model, and
         instrument).
 

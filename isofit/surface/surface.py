@@ -22,20 +22,17 @@ import logging
 
 import numpy as np
 from scipy.interpolate import interp1d
+from scipy.io import loadmat
 
 from isofit.configs import Config
-
-from ..core.common import load_spectrum, load_wavelen
+from isofit.core.common import envi_header, load_spectrum, load_wavelen
 
 
 class Surface:
-    """A model of the surface.
+    """A wrapper for the specific surface models"""
 
-    Surface models are stored as MATLAB '.mat' format files.
-    """
-
-    def __init__(self, full_config: Config):
-        config = full_config.forward_model.surface
+    def __init__(self, surface_file: Config):
+        self.model_dict = loadmat(surface_file)
 
         self.statevec_names = []
         self.bounds = np.array([])
@@ -46,20 +43,9 @@ class Surface:
         self.idx_lamb = np.empty(shape=0)
         self.emissive = False
 
+        # These are overwritten by specific surface model
         self.wl = None
         self.fwhm = None
-
-        if config.wavelength_file is not None:
-            self.wl, self.fwhm = load_wavelen(config.wavelength_file)
-        elif full_config.implementation.mode == "simulation":
-            logging.info(
-                "No surface wavelength_file provided, getting wavelengths from"
-                " input.reflectance_file"
-            )
-            _, self.wl = load_spectrum(full_config.input.reflectance_file)
-
-        if self.wl is not None:
-            self.n_wl = len(self.wl)
 
     def resample_reflectance(self):
         """Make sure model wavelengths align with the wavelength file."""

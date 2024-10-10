@@ -17,15 +17,14 @@
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
+from os.path import exists
 
 import numpy as np
-from scipy.io import loadmat
 from scipy.linalg import block_diag, norm
 
 from isofit.configs import Config
-
-from ..core.common import svd_inv
-from .surface import Surface
+from isofit.core.common import svd_inv
+from isofit.surface.surface import Surface
 
 
 class MultiComponentSurface(Surface):
@@ -38,23 +37,17 @@ class MultiComponentSurface(Surface):
     Multivariate Gaussian surface model.
     """
 
-    def __init__(self, full_config: Config):
-        """."""
+    def __init__(self, surface_file: str, params: dict):
+        super().__init__(surface_file)
 
-        super().__init__(full_config)
+        self.components = list(zip(self.model_dict["means"], self.model_dict["covs"]))
 
-        config = full_config.forward_model.surface
-
-        # Models are stored as dictionaries in .mat format
-        # TODO: enforce surface_file existence in the case of multicomponent_surface
-        model_dict = loadmat(config.surface_file)
-        self.components = list(zip(model_dict["means"], model_dict["covs"]))
         self.n_comp = len(self.components)
-        self.wl = model_dict["wl"][0]
+        self.wl = self.model_dict["wl"][0]
         self.n_wl = len(self.wl)
 
         # Set up normalization method
-        self.normalize = model_dict["normalize"]
+        self.normalize = self.model_dict["normalize"]
         if self.normalize == "Euclidean":
             self.norm = lambda r: norm(r)
         elif self.normalize == "RMS":
@@ -64,13 +57,13 @@ class MultiComponentSurface(Surface):
         else:
             raise ValueError("Unrecognized Normalization: %s\n" % self.normalize)
 
-        self.selection_metric = config.selection_metric
-        self.select_on_init = config.select_on_init
+        self.selection_metric = params.get("selection_metric", "Euclidean")
+        self.select_on_init = params.get("select_on_init", True)
 
         # Reference values are used for normalizing the reflectances.
         # in the VSWIR regime, reflectances are normalized so that the model
         # is agnostic to absolute magnitude.
-        self.refwl = np.squeeze(model_dict["refwl"])
+        self.refwl = np.squeeze(self.model_dict["refwl"])
         self.idx_ref = [np.argmin(abs(self.wl - w)) for w in np.squeeze(self.refwl)]
         self.idx_ref = np.array(self.idx_ref)
 
@@ -225,6 +218,7 @@ class MultiComponentSurface(Surface):
         nsuffix = len(self.statevec_names) - self.idx_lamb[-1] - 1
         prefix = np.zeros((self.n_wl, nprefix))
         suffix = np.zeros((self.n_wl, nsuffix))
+
         return np.concatenate((prefix, dLs, suffix), axis=1)
 
     def summarize(self, x_surface, geom):

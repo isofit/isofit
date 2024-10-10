@@ -31,13 +31,18 @@ from spectral.io import envi
 
 import isofit
 from isofit.configs import Config
-from isofit.core.common import envi_header
+from isofit.core.common import (
+    envi_header,
+    eps,
+    load_spectrum,
+    load_wavelen,
+    match_statevector,
+    resample_spectrum,
+)
 from isofit.core.forward import ForwardModel
+from isofit.core.geometry import Geometry
 from isofit.inversion.inverse import Inversion
 from isofit.inversion.inverse_simple import invert_algebraic, invert_simple
-
-from .common import eps, load_spectrum, resample_spectrum
-from .geometry import Geometry
 
 ### Variables ###
 
@@ -123,7 +128,7 @@ class SpectrumFile:
                 raise IOError("MATLAB format in input block not supported")
 
         elif self.fname.endswith(".nc"):
-            logging.debug(f"Inferred MATLAB file format for {self.fname}")
+            logging.debug(f"Inferred NETCDF file format for {self.fname}")
             self.format = "NETCDF"
 
             if not self.write:
@@ -354,26 +359,29 @@ class IO:
         isofit.root, "data", "earth_sun_distance.txt"
     )
 
-    def __init__(self, config: Config, forward: ForwardModel):
+    def __init__(self, config: Config, full_statevec: np.array):
         """Initialization specifies retrieval subwindows for calculating
         measurement cost distributions."""
 
         self.config = config
-
-        self.bbl = (
-            "{"
-            + ",".join([str(1) for n in range(len(forward.instrument.wl_init))])
-            + "}"
+        wl_init, fwhm_init = load_wavelen(
+            self.config.forward_model.instrument.wavelength_file
         )
+
+        self.bbl = "{" + ",".join([str(1) for n in range(len(wl_init))]) + "}"
         self.radiance_correction = None
-        self.meas_wl = forward.instrument.wl_init
-        self.meas_fwhm = forward.instrument.fwhm_init
+        self.meas_wl = wl_init
+        self.meas_fwhm = fwhm_init
         self.writes = 0
         self.reads = 0
         self.n_rows = 1
         self.n_cols = 1
-        self.n_sv = len(forward.statevec)
-        self.n_chan = len(forward.instrument.wl_init)
+
+        # Use the pre-defined full statevec
+        self.full_statevec = full_statevec
+
+        self.n_sv = len(self.full_statevec)
+        self.n_chan = len(wl_init)
         self.flush_rate = config.implementation.io_buffer_size
 
         self.simulation_mode = config.implementation.mode == "simulation"
@@ -384,7 +392,7 @@ class IO:
 
         # Names of either the wavelength or statevector outputs
         wl_names = [("Channel %i" % i) for i in range(self.n_chan)]
-        sv_names = forward.statevec.copy()
+        sv_names = self.full_statevec.copy()
 
         self.input_datasets, self.output_datasets, self.map_info = {}, {}, "{}"
 
@@ -556,7 +564,12 @@ class IO:
             self.flush_buffers()
 
     def build_output(
-        self, states: List, input_data: InputData, fm: ForwardModel, iv: Inversion
+        self,
+        states: List,
+        input_data: InputData,
+        fm: ForwardModel,
+        iv: Inversion,
+        fill_value=-9999.0,
     ):
         """
         Build the output to be written to disk as a dictionary
@@ -572,9 +585,9 @@ class IO:
 
         if len(states) == 0:
             # Write a bad data flag
-            atm_bad = np.zeros(len(fm.instrument.n_chan) * 5) * -9999.0
-            state_bad = np.zeros(len(fm.statevec)) * -9999.0
-            data_bad = np.zeros(fm.instrument.n_chan) * -9999.0
+            atm_bad = np.zeros(len(fm.instrument.n_chan) * 5) + fill_value
+            state_bad = np.zeros(len(fm.statevec)) + fill_value
+            data_bad = np.zeros(fm.instrument.n_chan) + fill_value
             to_write = {
                 "estimated_state_file": state_bad,
                 "estimated_reflectance_file": data_bad,
@@ -604,7 +617,10 @@ class IO:
 
             ############ Start with all of the 'independent' calculations
             if "estimated_state_file" in self.output_datasets:
-                to_write["estimated_state_file"] = state_est
+                # state_est transformed to reflect io.full_statevec
+                to_write["estimated_state_file"] = match_statevector(
+                    state_est, self.full_statevec, fm.statevec
+                )
 
             if "path_radiance_file" in self.output_datasets:
                 path_est = fm.calc_meas(
@@ -624,10 +640,12 @@ class IO:
 
             if "posterior_uncertainty_file" in self.output_datasets:
                 S_hat, K, G = iv.calc_posterior(state_est, geom, meas)
-                to_write["posterior_uncertainty_file"] = np.sqrt(np.diag(S_hat))
+                # psterior uncertainty transformed to reflect io.full_statevec
+                to_write["posterior_uncertainty_file"] = match_statevector(
+                    np.sqrt(np.diag(S_hat)), self.full_statevec, fm.statevec
+                )
 
             ############ Now proceed to the calcs where they may be some overlap
-
             if any(
                 item in ["estimated_emission_file", "apparent_reflectance_file"]
                 for item in self.output_datasets
@@ -668,6 +686,7 @@ class IO:
                 )
 
             if "estimated_reflectance_file" in self.output_datasets:
+
                 to_write["estimated_reflectance_file"] = np.column_stack(
                     (self.meas_wl, lamb_est)
                 )
@@ -745,11 +764,11 @@ class IO:
             flush_immediately: IO argument telling us to immediately write to disk, ignoring config settings
             input_data: optionally overwride self.current_input_data
         """
-
         if input_data is None:
             to_write = self.build_output(states, self.current_input_data, fm, iv)
         else:
             to_write = self.build_output(states, input_data, fm, iv)
+
         self.write_datasets(
             row, col, to_write, states, flush_immediately=flush_immediately
         )
