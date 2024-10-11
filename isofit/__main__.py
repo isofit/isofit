@@ -61,9 +61,7 @@ def cli(ctx, version, ini, base, section, save, **overrides):
         if value:
             env.changePath(key, value)
 
-    # Only save if an override was given or the ini doesn't exist
-    if (any(overrides.values()) and save) or not os.path.exists(env.ini):
-        env.save(ini)
+    env.save(diff_only=save)
 
 
 # Subcommands live closer to the code and algorithms they are related to.

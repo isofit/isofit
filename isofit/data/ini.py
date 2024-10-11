@@ -95,6 +95,9 @@ class Ini:
         """
         self.section = section
 
+        if section not in self.config:
+            self.config[section] = {}
+
     def changePath(self, key: str, value: str) -> None:
         """
         Change the path associated with the specified key in the CONFIG[SECTION].
@@ -124,7 +127,7 @@ class Ini:
             self.ini = Path(ini)
 
         if section:
-            changeSection(section)
+            self.changeSection(section)
 
         if self.ini.exists():
             self.config.read(self.ini)
@@ -137,7 +140,7 @@ class Ini:
         else:
             Logger.info(f"ini does not exist, falling back to defaults: {self.ini}")
 
-    def save(self, ini: Optional[str] = None) -> None:
+    def save(self, ini: Optional[str] = None, diff_only: bool = True) -> None:
         """
         Save CONFIG variables to the INI (ini) file.
 
@@ -146,18 +149,33 @@ class Ini:
         ini : str or Path, optional
             The path to save the config variables to. If None, the default INI file path is used.
             If provided, sets the global INI for the remainder of the session.
+        diff_only : bool, default=True
+            Only save if there is a difference between the currently existing ini file and the config in memory.
+            If False, will save regardless, possibly overwriting an existing file
         """
         if ini:
             self.ini = Path(ini)
 
         self.ini.parent.mkdir(parents=True, exist_ok=True)
 
-        try:
-            with open(self.ini, "w") as file:
-                self.config.write(file)
-            print(f"Wrote to file: {self.ini}")
-        except:
-            Logger.exception(f"Failed to dump ini to file: {self.ini}")
+        save = True
+        if diff_only:
+            if self.ini.exists():
+                save = False
+
+                current = ConfigParser()
+                current.read(self.ini)
+
+                if current != self.config:
+                    save = True
+
+        if save:
+            try:
+                with open(self.ini, "w") as file:
+                    self.config.write(file)
+                print(f"Wrote to file: {self.ini}")
+            except:
+                Logger.exception(f"Failed to dump ini to file: {self.ini}")
 
     @staticmethod
     def validate(keys: List) -> bool:
