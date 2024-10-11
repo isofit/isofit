@@ -24,6 +24,8 @@ from datetime import datetime
 
 import numpy as np
 
+import isofit
+
 
 class Geometry:
     """The geometry of the observation, all we need to calculate sensor,
