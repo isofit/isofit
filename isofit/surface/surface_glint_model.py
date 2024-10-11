@@ -29,8 +29,8 @@ class GlintModelSurface(MultiComponentSurface):
     """A model of the surface based on a collection of multivariate
     Gaussians, extended with two surface glint terms (sun + sky glint)."""
 
-    def __init__(self, full_config: dict, params: dict):
-        super().__init__(full_config, params)
+    def __init__(self, full_config: dict):
+        super().__init__(full_config)
 
         # TODO: Enforce this attribute in the config, not here (this is hidden)
         self.statevec_names.extend(["SUN_GLINT", "SKY_GLINT"])
@@ -40,10 +40,7 @@ class GlintModelSurface(MultiComponentSurface):
         self.n_state = self.n_state + 2
         self.glint_ind = len(self.statevec_names) - 2
         self.f = np.array([[(1000000 * np.array(self.scale[self.glint_ind :])) ** 2]])
-
-        self.full_glint = False
-        if "full_glint" in (full := full_config.forward_model.surface.keys()):
-            self.full_glint = full
+        self.full_glint = full_config.forward_model.surface.full_glint
 
     def xa(self, x_surface, geom):
         """Mean of prior distribution, calculated at state x."""

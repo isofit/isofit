@@ -38,7 +38,11 @@ from isofit.configs import configs
 from isofit.core.fileio import IO
 from isofit.core.forward import ForwardModel
 from isofit.inversion import Inversion
-from isofit.utils.multistate import construct_full_state, index_spectra_by_surface
+from isofit.utils.multistate import (
+    construct_full_state,
+    index_spectra_by_surface,
+    update_config_for_surface,
+)
 
 
 class Isofit:
@@ -153,15 +157,9 @@ class Isofit:
         total_samples = index_pairs.shape[0]
 
         # If multistate, split into class. Flag is messy because of examples
-        if (self.config.forward_model.surface.multi_surface_flag) and (
-            self.config.forward_model.surface.sub_surface_class_file
-            or self.config.forward_model.surface.surface_class_file
-        ):
-            index_pairs = index_spectra_by_surface(
-                self.config.forward_model.surface, index_pairs
-            )
-        else:
-            index_pairs = {"Base": index_pairs}
+        index_pairs = index_spectra_by_surface(
+            self.config.forward_model.surface, index_pairs
+        )
 
         # Some logging that might be nice
         if len(index_pairs.keys()) > 1:
@@ -191,7 +189,12 @@ class Isofit:
                     for l in range(len(index_sets) - 1)
                 ]
 
-            self.fm = fm = ForwardModel(self.config, surface_class_str)
+            # If multistate, update config to reflect surface
+            if self.config.forward_model.surface.multi_surface_flag:
+                self.config = update_config_for_surface(self.config, surface_class_str)
+
+            # Set forward model
+            self.fm = fm = ForwardModel(self.config)
 
             logging.debug(f"Pixel class: {surface_class_str}")
             logging.debug(f"Surface: {self.fm.surface}")

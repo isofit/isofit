@@ -31,8 +31,8 @@ from isofit.core.common import load_spectrum, load_wavelen
 class Surface:
     """A wrapper for the specific surface models"""
 
-    def __init__(self, surface_file: Config):
-        self.model_dict = loadmat(surface_file)
+    def __init__(self, full_config):
+        self.model_dict = loadmat(full_config.forward_model.surface.surface_file)
 
         self.statevec_names = []
         self.bounds = np.array([])

@@ -16,44 +16,31 @@ def Surface(config):
         The full_config to determine the surface category from and to pass along to the
         Surface model's initialization
 
+    surface_class_str: str
+        Name of the surface category to initialize
+
     Returns
     -------
     Surface Model
     """
-    surface_params = full_config.forward_model.surface.surface_params
-
-    # Check if multi-surface config else use single surface config
-    if config.forward_model.surface.multi_surface_flag:
-        category = fm_config.surface.Surfaces[surface_class_str]["surface_category"]
-        surface_file = config.forward_model.surface.Surfaces[surface_class_str][
-            "surface_file"
-        ]
-    else:
-        category = config.forward_model.surface.surface_category
-        surface_file = config.forward_model.surface.surface_file
-
-    # Handle error if there is no surface file
-    if not surface_file:
-        raise FileNotFoundError("No surface .mat file exists")
     category = config.forward_model.surface.surface_category
-
     if category == "surface":
-        return BaseSurface(surface_file, surface_params)
+        return BaseSurface(config)
 
     elif category == "multicomponent_surface":
-        return MultiComponentSurface(surface_file, surface_params)
+        return MultiComponentSurface(config)
 
     elif category == "additive_glint_surface":
-        return AdditiveGlintSurface(surface_file, surface_params)
+        return AdditiveGlintSurface(config)
 
     elif category == "glint_model_surface":
-        return GlintModelSurface(surface_file, surface_params)
+        return GlintModelSurface(config)
 
     elif category == "thermal_surface":
-        return ThermalSurface(surface_file, surface_params)
+        return ThermalSurface(config)
 
     elif category == "lut_surface":
-        return LUTSurface(surface_file, surface_params)
+        return LUTSurface(config)
 
     else:
         # No need to be more specific - should have been checked in config already

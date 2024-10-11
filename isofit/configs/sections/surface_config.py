@@ -33,7 +33,7 @@ class SurfaceConfig(BaseConfigSection):
 
     def __init__(self, sub_configdic: dict = None):
         self._multi_surface_flag_type = bool
-        self.multi_surface_flag = None
+        self.multi_surface_flag = False
 
         self._surface_category_type = str
         self.surface_category = None
@@ -50,8 +50,20 @@ class SurfaceConfig(BaseConfigSection):
         self._Surfaces_type = dict
         self.Surfaces = {}
 
-        self._surface_params_type = dict
-        self.surface_params = {}
+        self._selection_metric_type = str
+        self.selection_metric = "Euclidean"
+
+        self._select_on_init_type = bool
+        self.select_on_init = True
+
+        self._full_glint_type = bool
+        self.full_glint = False
+
+        self._emissivity_for_surface_T_init_type = float
+        self.emissivity_for_surface_T_init = 0.98
+
+        self._surface_T_prior_sigma_degK_type = float
+        self.surface_T_prior_sigma_degK = 1.0
 
         self.set_config_options(sub_configdic)
 

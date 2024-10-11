@@ -44,6 +44,7 @@ from isofit.utils.atm_interpolation import atm_interpolation
 from isofit.utils.multistate import (
     construct_full_state,
     index_spectra_by_surface_and_sub,
+    update_config_for_surface,
 )
 
 
@@ -144,7 +145,8 @@ class Worker(object):
         )
 
         for surface_class_str, class_idx_pairs in state_indexes.items():
-            fm = ForwardModel(self.config, surface_class_str)
+            self.config = update_config_for_surface(self.config, surface_class_str)
+            fm = ForwardModel(self.config)
 
             for r, c, *_ in class_idx_pairs:
                 meas = rdn[r - start_line, c, :]
@@ -351,7 +353,8 @@ def analytical_line(
     # Initialize fm (if no lut, will create here)
     if config.forward_model.surface.multi_surface_flag:
         for surface_class_str in config.forward_model.surface.Surfaces.keys():
-            fm = ForwardModel(config, surface_class_str)
+            config = update_config_for_surface(config, surface_class_str)
+            fm = ForwardModel(config)
     else:
         fm = ForwardModel(config)
     del fm

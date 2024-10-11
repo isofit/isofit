@@ -1683,16 +1683,11 @@ def make_surface_config(paths: Pathnames, surface_category="multicomponent_surfa
     # Initialize config dict
     surface_config_dict = {
         "multi_surface_flag": False,
-        "Surfaces": {},
-        "Statevector": {},
-        "surface_params": {
-            "select_on_init": True,
-            "selection_metric": "Euclidean",
-        },
     }
 
     # Check to see if a classification file is being propogated
     if paths.surface_class_file:
+        surface_config_dict["Surfaces"] = {}
         surface_config_dict["surface_class_file"] = paths.surface_class_file
 
         if vars(paths).get("subs_class_path", None):
@@ -1711,7 +1706,7 @@ def make_surface_config(paths: Pathnames, surface_category="multicomponent_surfa
             "water": "glint_model_surface",
             "land": "multicomponent_surface",
             "cloud": "multicomponent_surface",
-            "base": "multicomponent_surface",
+            "all": "multicomponent_surface",
         }
 
         # Iterate through all classes present in class image

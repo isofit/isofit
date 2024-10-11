@@ -17,18 +17,17 @@
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
+from __future__ import annotations
+
 import logging
 
 import numpy as np
 from scipy.interpolate import interp1d
 from spectral.io import envi
 
-from isofit.configs import Config
-from isofit.core.common import envi_header, load_spectrum, load_wavelen
-from isofit.core.forward import ForwardModel
+from isofit.core.common import envi_header
 from isofit.core.instrument import Instrument
-from isofit.radiative_transfer.radiative_transfer import RadiativeTransfer
-from isofit.surface import Surfaces
+from isofit.surface import Surface
 
 
 def construct_full_state(full_config):
@@ -76,18 +75,13 @@ def construct_full_state(full_config):
     if vars(surface_config).get("multi_surface_flag", False):
         # Iterate through the different surfaces to find overlapping state names
         for i, surface_sub_config in surface_config.Surfaces.items():
-            surface_category = surface_sub_config["surface_category"]
-            surface_file = surface_sub_config["surface_file"]
-
-            surface = Surfaces[surface_category](surface_file, params)
+            full_config = update_config_for_surface(full_config, i)
+            surface = Surface(full_config)
             rfl_states += surface.statevec_names[: len(surface.idx_lamb)]
             nonrfl_states += surface.statevec_names[len(surface.idx_lamb) :]
 
     else:
-        surface_category = surface_config.surface_category
-        surface_file = surface_config.surface_file
-
-        surface = Surfaces[surface_category](surface_file, params)
+        surface = Surface(full_config)
         rfl_states += surface.statevec_names[: len(surface.idx_lamb)]
         nonrfl_states += surface.statevec_names[len(surface.idx_lamb) :]
 
@@ -130,10 +124,16 @@ def index_spectra_by_surface(surface_config, index_pairs):
     Returns:
         class_groups: (dict) where keys are the pixel classification (name)
                       and values are tuples of rows and columns for each
-                      group. Will be empty ({}) if not multi_surface.
+                      group.
     """
 
     # Check if this is a multisurface run
+    if (
+        not surface_config.sub_surface_class_file
+        and not surface_config.surface_class_file
+    ):
+        return {"all": index_pairs}
+
     if vars(surface_config).get("sub_surface_class_file"):
         class_file = surface_config.sub_surface_class_file
     else:
@@ -188,27 +188,38 @@ def index_spectra_by_surface_and_sub(config, lbl_file):
     lbl_shape = (range(lbl.shape[0]), range(lbl.shape[1]))
     index_pairs = np.vstack([x.flatten(order="f") for x in np.meshgrid(*lbl_shape)]).T
 
-    if (config.forward_model.surface.multi_surface_flag) and (
-        config.forward_model.surface.sub_surface_class_file
-        or config.forward_model.surface.surface_class_file
-    ):
-        sub_pixel_index = index_spectra_by_surface(
-            config.forward_model.surface, index_pairs
-        )
+    sub_pixel_index = index_spectra_by_surface(
+        config.forward_model.surface, index_pairs
+    )
 
-        pixel_index = {}
-        class_groups = {}
-        for surface_class_str, class_subs in sub_pixel_index.items():
-            if not len(class_subs):
-                continue
+    pixel_index = {}
+    class_groups = {}
+    for surface_class_str, class_subs in sub_pixel_index.items():
+        if not len(class_subs):
+            continue
 
-            class_pixel_index = []
-            for i in class_subs:
-                class_pixel_index += np.argwhere(lbl == i).tolist()
+        class_pixel_index = []
+        for i in class_subs:
+            class_pixel_index += np.argwhere(lbl == i).tolist()
 
-            class_groups[surface_class_str] = class_pixel_index
+        class_groups[surface_class_str] = class_pixel_index
 
-        return class_groups
+    return class_groups
 
-    else:
-        return {"Base": index_pairs}
+
+def update_config_for_surface(config, surface_class_str):
+    isurface = config.forward_model.surface.Surfaces.get(surface_class_str)
+
+    if not isurface:
+        raise KeyError("Multi-surface flag used, but no multi-surface config")
+
+    surface_category = isurface.get("surface_category")
+    surface_file = isurface.get("surface_file")
+
+    if (not surface_category) or (not surface_file):
+        raise KeyError("Failed to parse multi-surface config")
+
+    config.forward_model.surface.surface_category = surface_category
+    config.forward_model.surface.surface_file = surface_file
+
+    return config

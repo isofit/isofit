@@ -58,7 +58,7 @@ class ForwardModel:
     noise for the purpose of weighting the measurement information
     against the prior."""
 
-    def __init__(self, full_config: Config, surface_class_str: str = None):
+    def __init__(self, full_config: Config):
         # load in the full config (in case of inter-module dependencies)
         self.full_config = full_config
 
@@ -139,8 +139,8 @@ class ForwardModel:
         )
 
         # Load model discrepancy correction
-        if fm_config.model_discrepancy_file is not None:
-            D = loadmat(fm_config.model_discrepancy_file)
+        if full_config.forward_model.model_discrepancy_file is not None:
+            D = loadmat(full_config.forward_model.model_discrepancy_file)
             self.model_discrepancy = D["cov"]
         else:
             self.model_discrepancy = None

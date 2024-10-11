@@ -29,9 +29,9 @@ class ThermalSurface(MultiComponentSurface):
     """A model of the surface based on a Mixture of a hot Black Body and
     Multicomponent cold surfaces."""
 
-    def __init__(self, surface_file: str, params: dict):
+    def __init__(self, full_config: dict):
         """."""
-        super().__init__(surface_file, params)
+        super().__init__(full_config)
 
         # TODO: Enforce this attribute in the config, not here (this is hidden)
         # Handle additional state vector elements
@@ -45,10 +45,12 @@ class ThermalSurface(MultiComponentSurface):
         self.n_state = len(self.init)
 
         # Initial Value recommended by Glynn Hulley.
-        self.emissivity_for_surface_T_init = params.get(
-            "emissivity_for_surface_T_init", 0.98
+        self.emissivity_for_surface_T_init = (
+            full_config.forward_model.surface.emissivity_for_surface_T_init
         )
-        self.surface_T_prior_sigma_degK = params.get("surface_T_prior_sigma_degK", 1.0)
+        self.surface_T_prior_sigma_degK = (
+            full_config.forward_model.surface.surface_T_prior_sigma_degK
+        )
 
     def xa(self, x_surface, geom):
         """Mean of prior distribution, calculated at state x.  We find

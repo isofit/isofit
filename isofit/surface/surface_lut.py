@@ -53,8 +53,8 @@ class LUTSurface(Surface):
 
     """
 
-    def __init__(self, surface_file: str, params: dict):
-        super().__init__(surface_file)
+    def __init__(self, full_config: dict):
+        super().__init__(full_config)
 
         # Models are stored as dictionaries in .mat format
         self.lut_grid = [grid[0] for grid in self.model_dict["grids"][0]]

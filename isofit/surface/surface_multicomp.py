@@ -36,8 +36,8 @@ class MultiComponentSurface(Surface):
     Multivariate Gaussian surface model.
     """
 
-    def __init__(self, surface_file: str, params: dict):
-        super().__init__(surface_file)
+    def __init__(self, full_config: dict):
+        super().__init__(full_config)
 
         self.components = list(zip(self.model_dict["means"], self.model_dict["covs"]))
 
@@ -56,8 +56,8 @@ class MultiComponentSurface(Surface):
         else:
             raise ValueError("Unrecognized Normalization: %s\n" % self.normalize)
 
-        self.selection_metric = params.get("selection_metric", "Euclidean")
-        self.select_on_init = params.get("select_on_init", True)
+        self.selection_metric = full_config.forward_model.surface.selection_metric
+        self.select_on_init = full_config.forward_model.surface.select_on_init
 
         # Reference values are used for normalizing the reflectances.
         # in the VSWIR regime, reflectances are normalized so that the model
