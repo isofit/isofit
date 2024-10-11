@@ -17,6 +17,7 @@
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
+from __future__ import annotations
 
 import logging
 from copy import deepcopy
@@ -26,12 +27,10 @@ from scipy.interpolate import interp1d
 from scipy.io import loadmat
 from scipy.linalg import block_diag
 
-from isofit.configs import Config
-
-from ..radiative_transfer.radiative_transfer import RadiativeTransfer
-from ..surface import Surfaces
-from .common import eps
-from .instrument import Instrument
+from isofit.core.common import eps
+from isofit.core.instrument import Instrument
+from isofit.radiative_transfer.radiative_transfer import RadiativeTransfer
+from isofit.surface import Surface
 
 Logger = logging.getLogger(__file__)
 
@@ -71,25 +70,7 @@ class ForwardModel:
         self.RT = RadiativeTransfer(self.full_config)
 
         # Build the surface model
-        fm_config = full_config.forward_model
-        surface_params = fm_config.surface.surface_params
-
-        # Check if multi-surface config else use single surface config
-        if fm_config.surface.multi_surface_flag:
-            surf_category = fm_config.surface.Surfaces[surface_class_str][
-                "surface_category"
-            ]
-            surface_file = fm_config.surface.Surfaces[surface_class_str]["surface_file"]
-        else:
-            surf_category = fm_config.surface.surface_category
-            surface_file = fm_config.surface.surface_file
-
-        # Handle error if there is no surface file
-        if not surface_file:
-            raise FileNotFoundError("No surface .mat file exists")
-
-        # This will have to change to James' method
-        self.surface = Surfaces[surf_category](surface_file, surface_params)
+        self.surface = Surface(full_config)
 
         if self.surface.n_wl != len(self.RT.wl) or not np.all(
             np.isclose(self.surface.wl, self.RT.wl, atol=0.01)

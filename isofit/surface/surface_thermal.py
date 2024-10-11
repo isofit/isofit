@@ -17,14 +17,12 @@
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
+from __future__ import annotations
 
 import numpy as np
-import scipy.linalg
 
-from isofit.configs import Config
 from isofit.core.common import emissive_radiance, eps
-
-from .surface_multicomp import MultiComponentSurface
+from isofit.surface.surface_multicomp import MultiComponentSurface
 
 
 class ThermalSurface(MultiComponentSurface):

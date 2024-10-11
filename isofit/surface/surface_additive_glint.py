@@ -17,14 +17,12 @@
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
+from __future__ import annotations
 
 import numpy as np
 
-from isofit.configs import Config
 from isofit.core.common import eps
-from isofit.surface.surface import Surface
-
-from .surface_thermal import ThermalSurface
+from isofit.surface.surface_thermal import ThermalSurface
 
 
 class AdditiveGlintSurface(ThermalSurface):

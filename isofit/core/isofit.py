@@ -37,7 +37,7 @@ from isofit import checkNumThreads, ray
 from isofit.configs import configs
 from isofit.core.fileio import IO
 from isofit.core.forward import ForwardModel
-from isofit.inversion import Inversions
+from isofit.inversion import Inversion
 from isofit.utils.multistate import construct_full_state, index_spectra_by_surface
 
 
@@ -273,7 +273,6 @@ class Worker(object):
         )
         self.config = config
         self.fm = forward_model
-
         self.io = IO(self.config, full_statevector)
 
         self.approximate_total_spectra = None
@@ -293,15 +292,7 @@ class Worker(object):
             input_data = self.io.get_components_at_index(row, col)
 
             # Get inversion
-            iv = Inversions.get(self.config.implementation.mode, None)
-            if not iv:
-                logging.exception(
-                    "Inversion implementation: "
-                    f"{self.config.implementation.mode}, "
-                    "did not match options"
-                )
-                raise KeyError
-            self.iv = iv(self.config, self.fm)
+            self.iv = Inversion(self.config, self.fm)
 
             self.completed_spectra += 1
             if input_data is not None:

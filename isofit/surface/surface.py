@@ -17,6 +17,7 @@
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
+from __future__ import annotations
 
 import logging
 
@@ -24,8 +25,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 from scipy.io import loadmat
 
-from isofit.configs import Config
-from isofit.core.common import envi_header, load_spectrum, load_wavelen
+from isofit.core.common import load_spectrum, load_wavelen
 
 
 class Surface:

@@ -17,13 +17,12 @@
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
+from __future__ import annotations
 
 import numpy as np
 from scipy.io import loadmat
-from scipy.linalg import block_diag, norm
 
-from isofit.configs import Config
-from isofit.core.common import VectorInterpolator, svd_inv
+from isofit.core.common import VectorInterpolator
 from isofit.surface.surface import Surface
 
 

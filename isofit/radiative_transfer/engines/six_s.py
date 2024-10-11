@@ -16,6 +16,7 @@
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
+from __future__ import annotations
 
 import logging
 import os
@@ -25,10 +26,8 @@ from datetime import datetime
 
 import numpy as np
 
-from isofit.configs.sections.radiative_transfer_config import (
-    RadiativeTransferEngineConfig,
-)
 from isofit.core.common import resample_spectrum
+from isofit.core.fileio import IO
 from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
 
 Logger = logging.getLogger(__file__)
@@ -270,15 +269,7 @@ class SixSRT(RadiativeTransferEngine):
         """
         Loads the earth-sun distance file
         """
-        try:
-            self.esd = np.loadtxt(self.earth_sun_distance_path)
-        except FileNotFoundError:
-            Logger.info(
-                "Earth-sun-distance file not found on system. "
-                "Proceeding without might cause some inaccuracies down the line."
-            )
-            self.esd = np.ones((366, 2))
-            self.esd[:, 0] = np.arange(1, 367, 1)
+        self.esd = IO.load_esd(IO.earth_sun_distance_path)
 
         dt = datetime(2000, self.engine_config.month, self.engine_config.day)
         self.day_of_year = dt.timetuple().tm_yday

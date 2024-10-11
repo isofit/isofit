@@ -17,6 +17,7 @@
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
+from __future__ import annotations
 
 import logging
 import os
@@ -24,7 +25,6 @@ from collections import OrderedDict
 from typing import List
 
 import numpy as np
-import scipy.interpolate
 import scipy.io
 import xarray as xr
 from spectral.io import envi
@@ -39,10 +39,8 @@ from isofit.core.common import (
     match_statevector,
     resample_spectrum,
 )
-from isofit.core.forward import ForwardModel
 from isofit.core.geometry import Geometry
-from isofit.inversion.inverse import Inversion
-from isofit.inversion.inverse_simple import invert_algebraic, invert_simple
+from isofit.inversion.inverse_simple import invert_algebraic
 
 ### Variables ###
 
