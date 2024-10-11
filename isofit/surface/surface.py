@@ -32,7 +32,8 @@ class Surface:
     """A wrapper for the specific surface models"""
 
     def __init__(self, full_config):
-        self.model_dict = loadmat(full_config.forward_model.surface.surface_file)
+        config = full_config.forward_model.surface
+        self.model_dict = loadmat(config.surface_file)
 
         self.statevec_names = []
         self.bounds = np.array([])
@@ -46,6 +47,23 @@ class Surface:
         # These are overwritten by specific surface model
         self.wl = None
         self.fwhm = None
+        self.n_wl = None
+
+        if config.wavelength_file is not None:
+            self.wl, self.fwhm = load_wavelen(config.wavelength_file)
+
+        elif "wl" in self.model_dict:
+            self.wl = self.model_dict["wl"][0]
+
+        elif full_config.implementation.mode == "simulation":
+            logging.info(
+                "No surface wavelength_file provided, getting wavelengths from"
+                " input.reflectance_file"
+            )
+            _, self.wl = load_spectrum(full_config.input.reflectance_file)
+
+        if self.wl is not None:
+            self.n_wl = len(self.wl)
 
     def resample_reflectance(self):
         """Make sure model wavelengths align with the wavelength file."""

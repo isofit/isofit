@@ -65,6 +65,9 @@ class SurfaceConfig(BaseConfigSection):
         self._surface_T_prior_sigma_degK_type = float
         self.surface_T_prior_sigma_degK = 1.0
 
+        self._wavelength_file_type = str
+        self.wavelength_file = None
+
         self.set_config_options(sub_configdic)
 
     def _check_config_validity(self) -> List[str]:
