@@ -16,6 +16,7 @@
 #
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
+from __future__ import annotations
 
 import os
 from typing import OrderedDict
@@ -32,11 +33,6 @@ from isofit.core.common import (
     get_refractive_index,
     svd_inv_sqrt,
 )
-from isofit.core.forward import ForwardModel
-from isofit.core.geometry import Geometry
-from isofit.core.instrument import Instrument
-from isofit.radiative_transfer.radiative_transfer import RadiativeTransfer
-from isofit.surface.surface import Surface
 
 
 def heuristic_atmosphere(

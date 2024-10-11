@@ -17,16 +17,14 @@
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
+from __future__ import annotations
 
 import numpy as np
 import scipy.linalg
 import scipy.stats
 
-from isofit.configs import Config
 from isofit.core.common import eps
-from isofit.core.forward import ForwardModel
-
-from .inverse import Inversion
+from isofit.inversion.inverse import Inversion
 
 
 class MCMCInversion(Inversion):

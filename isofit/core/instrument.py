@@ -17,6 +17,7 @@
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
+from __future__ import annotations
 
 import logging
 
@@ -25,9 +26,7 @@ from scipy.interpolate import interp1d, splev, splrep
 from scipy.io import loadmat
 from scipy.signal import convolve
 
-from isofit.configs import Config
-
-from .common import (
+from isofit.core.common import (
     emissive_radiance,
     eps,
     load_wavelen,

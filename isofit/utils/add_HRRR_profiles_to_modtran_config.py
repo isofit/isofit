@@ -20,7 +20,6 @@
 
 import json
 import os
-import sys
 import time
 import urllib.request
 from copy import deepcopy
