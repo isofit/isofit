@@ -572,7 +572,7 @@ class RadiativeTransferEngine:
         # REVIEW: two_albedo_method-v1 used a single solar_irr value, but now we have an array of values
         # The last value in the new array is the same as the old v1, so for backwards compatibility setting that here
         # Top-of-atmosphere solar irradiance as a function of sun zenith angle
-        E0 = case0["solar_irr"][-1] * coszen / np.pi
+        E0 = case0["solar_irr"] * coszen / np.pi
 
         # Direct ground reflected radiance at sensor for case 1 (sun->surface->sensor)
         # This includes direct down and direct up transmittance
