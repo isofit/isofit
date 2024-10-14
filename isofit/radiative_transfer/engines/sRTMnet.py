@@ -16,6 +16,7 @@
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: Philip G Brodrick, philip.brodrick@jpl.nasa.gov
 #
+from __future__ import annotations
 
 import datetime
 import logging
@@ -29,11 +30,7 @@ import numpy as np
 import yaml
 from scipy.interpolate import interp1d
 
-from isofit.configs.sections.radiative_transfer_config import (
-    RadiativeTransferEngineConfig,
-)
 from isofit.core.common import resample_spectrum
-from isofit.core.sunposition import sunpos
 from isofit.radiative_transfer import luts
 from isofit.radiative_transfer.engines import SixSRT
 from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine

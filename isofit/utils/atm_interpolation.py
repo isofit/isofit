@@ -20,7 +20,6 @@
 import logging
 import multiprocessing
 import time
-from typing import List
 
 import numpy as np
 from scipy.linalg import inv
@@ -31,7 +30,6 @@ from spectral.io import envi
 from isofit import ray
 from isofit.core.common import envi_header
 from isofit.core.fileio import write_bil_chunk
-from isofit.core.forward import ForwardModel
 
 
 @ray.remote(num_cpus=1)

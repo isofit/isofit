@@ -17,6 +17,7 @@
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
+from __future__ import annotations
 
 import logging
 import time
@@ -26,12 +27,8 @@ import numpy as np
 import scipy.linalg
 from scipy.optimize import least_squares
 
-from isofit.configs import Config
-from isofit.configs.sections.implementation_config import InversionConfig
 from isofit.core.common import combos, conditional_gaussian, eps, svd_inv, svd_inv_sqrt
-from isofit.core.forward import ForwardModel
-
-from .inverse_simple import invert_simple
+from isofit.inversion.inverse_simple import invert_simple
 
 ### Variables ###
 

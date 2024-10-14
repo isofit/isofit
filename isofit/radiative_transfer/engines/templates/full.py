@@ -7,9 +7,8 @@ Be sure to edit engines/__init__.py to import your custom engine and set its nam
     Engines['CustomRT'] = CustomRT
 """
 
-from isofit.configs.sections.radiative_transfer_config import (
-    RadiativeTransferEngineConfig,
-)
+from __future__ import annotations
+
 from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
 
 
