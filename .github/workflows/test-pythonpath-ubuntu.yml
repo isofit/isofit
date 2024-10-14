@@ -32,6 +32,9 @@ jobs:
 
       - uses: actions/checkout@v3
 
+      - name: Print concurrency group
+        run: echo '${{ github.workflow }}-${{ github.ref }}'
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v3
         with:
