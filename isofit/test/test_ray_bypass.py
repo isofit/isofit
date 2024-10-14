@@ -1,4 +1,13 @@
-from isofit.utils import ray_wrapper as ray
+import os
+import sys
+
+os.environ["ISOFIT_DEBUG"] = "1"
+
+# Force reload these modules
+del sys.modules["isofit"]
+del sys.modules["isofit.debug"]
+
+from isofit import ray
 
 
 @ray.remote(num_cpus=1)
@@ -44,15 +53,15 @@ class Worker:
         return f"{self.name}{key}"
 
 
-def test_classes(name="test", n=4):
+def test_classes(name="test", w=4, n=10):
     """
     Tests wrapping class objects and how they're used in core.isofit.
     """
-    assert "isofit.utils.ray_wrapper" in str(ray)
+    assert "isofit.debug.ray_bypass" in str(ray)
 
     name_id = ray.put(name)
     worker = ray.remote()(Worker)
-    workers = ray.util.ActorPool([worker.remote(name_id) for _ in range(n)])
+    workers = ray.util.ActorPool([worker.remote(name_id) for _ in range(w)])
 
     results = workers.map_unordered(lambda a, b: a.some_func.remote(b), range(n))
 

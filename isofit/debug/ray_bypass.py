@@ -46,7 +46,6 @@ def __getattr__(key):
     """
     Reports any call to Ray that is not emulated
     """
-    print(f"__getattr__({key})")
     Logger.error(f"Unsupported operation: {key!r}")
     return lambda *a, **kw: None
 
@@ -99,7 +98,8 @@ class util:
             actors: list
                 List of Remote objects to call
             """
-            self.actors = [Remote(actor.get()) for actor in actors]
+            # Only need one actor function
+            self.actors = Remote(actors[0].get())
 
         def map_unordered(self, func, iterable):
-            return [func(*pair).get() for pair in zip(self.actors, iterable)]
+            return [func(self.actors, item).get() for item in iterable]
