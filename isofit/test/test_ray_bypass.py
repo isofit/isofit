@@ -24,7 +24,7 @@ def test_decorators():
     """
     Tests decorator use cases of Ray
     """
-    assert decorator.__module__ == "isofit.utils.ray_wrapper"
+    assert decorator.__module__ == "isofit.debug.ray_bypass"
 
     cases = {
         1: (1, 1),
