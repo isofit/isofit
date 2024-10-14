@@ -1,22 +1,22 @@
 """
-Ray Wrapper module to circumvent the ray package while maintaining ray-like
-syntax in the code. Only the exact ISOFIT use cases of Ray are wrapped here.
-If new uses of Ray are implemented, those uses/functions will have to be wrapped
-here as well.
+This module circumvents the ray package while maintaining ray-like syntax in the code.
+Only the exact ISOFIT use cases of Ray are implemented here. If new uses of Ray are
+implemented, those uses/functions will have to be defined here as well.
 
-To enable, set the environment variable `ISOFIT_DEBUG` to any value before
-runtime. For example:
+To enable, set the environment variable `ISOFIT_DEBUG` to "1". For example:
+
 $ export ISOFIT_DEBUG=1
-$ python isofit.py ...
+$ python isofit ...
 
 Additionally, you may pass it as a temporary environment variable via:
-$ ISOFIT_DEBUG=1 python isofit.py ...
+
+$ ISOFIT_DEBUG=1 python isofit ...
 """
 
 import logging
 from types import FunctionType
 
-Logger = logging.getLogger("isofit/wrappers/ray")
+Logger = logging.getLogger(__file__)
 
 
 class Remote:
