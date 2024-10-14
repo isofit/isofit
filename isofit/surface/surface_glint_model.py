@@ -46,7 +46,7 @@ class GlintModelSurface(MultiComponentSurface):
         )  # Prior covariance, *very* high...
 
         self.full_glint = False
-        if "full_glint" in (full := full_config.forward_model.surface.keys()):
+        if "full_glint" in (full := full_config.forward_model.surface.__dict__.keys()):
             self.full_glint = full
 
     def xa(self, x_surface, geom):
