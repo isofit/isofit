@@ -1,13 +1,4 @@
-import os
-import sys
-
-os.environ["ISOFIT_DEBUG"] = "1"
-
-# Force reload these modules
-del sys.modules["isofit"]
-del sys.modules["isofit.debug"]
-
-from isofit import ray
+from isofit.debug import ray_bypass as ray
 
 
 @ray.remote(num_cpus=1)
