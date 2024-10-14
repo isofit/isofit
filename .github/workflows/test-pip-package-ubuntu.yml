@@ -76,6 +76,7 @@ jobs:
 
       - name: Cached Extras
         id: cache-extras
+        uses: actions/cache@v3
         env:
           cache-name: cache-extras
         with:
