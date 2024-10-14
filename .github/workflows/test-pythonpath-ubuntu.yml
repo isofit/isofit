@@ -75,6 +75,7 @@ jobs:
         shell: bash
         run: |
           isofit -b extras download all
+          isofit build
 
       - name: Isolate ISOFIT
         shell: bash

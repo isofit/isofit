@@ -6,7 +6,7 @@ from unittest import mock
 import pytest
 from click.testing import CliRunner
 
-from isofit.__main__ import cli
+from isofit.__main__ import cli, env
 from isofit.core.isofit import Isofit
 from isofit.utils import surface_model
 
@@ -23,7 +23,7 @@ from isofit.utils import surface_model
 def test_santa_monica(args, monkeypatch):
     """Run the Santa Monica test dataset."""
 
-    monkeypatch.chdir("examples/20151026_SantaMonica/")
+    monkeypatch.chdir("{env.examples}/20151026_SantaMonica/")
     surface_model("configs/prm20151026t173213_surface_coastal.json")
 
     runner = CliRunner()
@@ -47,7 +47,7 @@ def test_santa_monica(args, monkeypatch):
 def test_pasadena_modtran(args, monkeypatch):
     """Run Pasadena example dataset."""
 
-    monkeypatch.chdir("examples/20171108_Pasadena/")
+    monkeypatch.chdir("{env.examples}/20171108_Pasadena/")
     surface_model("configs/ang20171108t184227_surface.json")
 
     runner = CliRunner()
@@ -63,7 +63,7 @@ def test_pasadena_modtran(args, monkeypatch):
 def test_pasadena_topoflux(monkeypatch):
     """Run Pasadena topoflux example dataset."""
 
-    monkeypatch.chdir("examples/20171108_Pasadena/")
+    monkeypatch.chdir("{env.examples}/20171108_Pasadena/")
     surface_model("configs/ang20171108t184227_surface.json")
 
     model = Isofit("configs/ang20171108t184227_beckmanlawn-multimodtran-topoflux.json")
@@ -75,7 +75,7 @@ def test_pasadena_topoflux(monkeypatch):
 def test_modtran_one(monkeypatch):
     """Run MODTRAN example dataset."""
 
-    monkeypatch.chdir("examples/20190806_ThermalIR/")
+    monkeypatch.chdir("{env.examples}/20190806_ThermalIR/")
     surface_model("configs/surface.json")
 
     model = Isofit("configs/joint_isofit_with_prof_WATER_nogrid.json", level="DEBUG")
@@ -87,7 +87,7 @@ def test_modtran_one(monkeypatch):
 def test_profiling_cube_small(monkeypatch):
     """Run profiling datasets."""
 
-    monkeypatch.chdir("examples/profiling_cube/")
+    monkeypatch.chdir("{env.examples}/profiling_cube/")
 
     environ = os.environ.copy()
     environ["ISOFIT_DEBUG"] = "1"

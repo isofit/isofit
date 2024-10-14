@@ -13,7 +13,7 @@ import ray
 import requests
 from click.testing import CliRunner
 
-from isofit.__main__ import cli
+from isofit.__main__ import cli, env
 from isofit.utils import surface_model
 
 # Mark the entire file as containing slow tests
@@ -26,21 +26,6 @@ CORES = os.cpu_count()
 
 
 @pytest.fixture(scope="session")
-def cube_example(tmp_path_factory):
-    """
-    Downloads the medium cube example's data
-    """
-    url = "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/test_data_rev.zip"
-    path = tmp_path_factory.mktemp("cube_example")
-
-    r = requests.get(url)
-    z = zipfile.ZipFile(io.BytesIO(r.content))
-    z.extractall(path)
-
-    return path
-
-
-@pytest.fixture(scope="session")
 def surface(cube_example):
     """
     Generates the surface.mat file
@@ -50,8 +35,8 @@ def surface(cube_example):
     # Generate the surface.mat using the image_cube example config
     # fmt: off
     surface_model(
-        config_path="examples/20171108_Pasadena/configs/ang20171108t184227_surface.json",
-        wavelength_path="examples/20171108_Pasadena/remote/20170320_ang20170228_wavelength_fit.txt",
+        config_path=f"{env.examples}/20171108_Pasadena/configs/ang20171108t184227_surface.json",
+        wavelength_path=f"{env.examples}/20171108_Pasadena/remote/20170320_ang20170228_wavelength_fit.txt",
         output_path=outp
     )
     # fmt: on
@@ -60,7 +45,7 @@ def surface(cube_example):
 
 
 @pytest.fixture()
-def files(cube_example):
+def files():
     """
     Common data files to be used by multiple tests. The return is a list in the
     order: [
@@ -73,13 +58,14 @@ def files(cube_example):
     As of 07/24/2023 these are from the medium cube example.
     """
     # Flush the output dir if it already exists from a previous test case
+    cube_example = Path(env.imagecube) / "medium"
     output = cube_example / "output"
     shutil.rmtree(output, ignore_errors=True)
 
     return [
-        str(cube_example / "medium_chunk/ang20170323t202244_rdn_7k-8k"),
-        str(cube_example / "medium_chunk/ang20170323t202244_loc_7k-8k"),
-        str(cube_example / "medium_chunk/ang20170323t202244_obs_7k-8k"),
+        str(cube_example / "ang20170323t202244_rdn_7k-8k"),
+        str(cube_example / "ang20170323t202244_loc_7k-8k"),
+        str(cube_example / "ang20170323t202244_obs_7k-8k"),
         str(output),
     ]
 
