@@ -29,7 +29,6 @@ from typing import Callable
 import numpy as np
 import xarray as xr
 
-import isofit
 from isofit import ray
 from isofit.core import common
 from isofit.radiative_transfer import luts
@@ -55,10 +54,6 @@ class RadiativeTransferEngine:
         "observer_altitude_km",
         "surface_elevation_km",
     ]
-
-    earth_sun_distance_path = os.path.join(
-        isofit.root, "data", "earth_sun_distance.txt"
-    )
 
     # These properties enable easy access to the lut data
     coszen = property(lambda self: self["coszen"])

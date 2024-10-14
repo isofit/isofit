@@ -81,7 +81,8 @@ class Worker(object):
         self.config = config
         self.pixel_index = pixel_index
 
-        self.esd = IO.load_esd(IO.earth_sun_distance_path)
+        # Will fail if env.data isn't set up
+        self.esd = IO.load_esd()
 
         self.full_statevector = full_statevector
         self.full_idx_surface = full_idx_surface
