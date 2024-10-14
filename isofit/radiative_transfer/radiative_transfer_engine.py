@@ -270,6 +270,17 @@ class RadiativeTransferEngine:
                 for i, key in enumerate(self.lut_names)
                 if key in self.geometry_input_names
             }
+
+            # check if values of observer zenith in LUT are given in MODTRAN convention
+            self.indices.convert_observer_zenith = None
+            if "observer_zenith" in self.lut_grid.keys():
+                if any(np.array(self.lut_grid["observer_zenith"]) > 90.0):
+                    self.indices.convert_observer_zenith = [
+                        i
+                        for i in self.indices.geom
+                        if self.indices.geom[i] == "observer_zenith"
+                    ][0]
+
             # If it wasn't a geom key, it's x_RT
             self.indices.x_RT = list(set(range(self.n_point)) - set(self.indices.geom))
             Logger.debug(f"Interpolators built")
@@ -395,15 +406,11 @@ class RadiativeTransferEngine:
         for i, key in self.indices.geom.items():
             point[i] = getattr(geom, key)
 
-        # do another final check if values of observer zenith in provided LUT are given in MODTRAN convention
-        if "observer_zenith" in self.lut_grid.keys():
-            if any(np.array(self.lut_grid["observer_zenith"]) > 90.0):
-                ind = [
-                    i
-                    for i in self.indices.geom
-                    if self.indices.geom[i] == "observer_zenith"
-                ][0]
-                point[ind] = 180.0 - point[ind]
+        # convert observer zenith to MODTRAN convention if needed
+        if self.indices.convert_observer_zenith:
+            point[self.indices.convert_observer_zenith] = (
+                180.0 - point[self.indices.convert_observer_zenith]
+            )
 
         return self.interpolate(point)
 
