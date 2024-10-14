@@ -300,7 +300,7 @@ class Worker(object):
             - 9999
         )
 
-        esd = IO.load_esd(IO.earth_sun_distance_path)
+        esd = IO.load_esd()
 
         for r in range(start_line, stop_line):
             for c in range(output_state.shape[1]):
