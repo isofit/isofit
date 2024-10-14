@@ -29,7 +29,7 @@ class ThermalSurface(MultiComponentSurface):
     """A model of the surface based on a Mixture of a hot Black Body and
     Multicomponent cold surfaces."""
 
-    def __init__(self, full_config: dict):
+    def __init__(self, full_config):
         """."""
         super().__init__(full_config)
 

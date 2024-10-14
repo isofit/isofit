@@ -127,7 +127,9 @@ def index_spectra_by_surface(surface_config, index_pairs):
                       group.
     """
 
-    # Check if this is a multisurface run
+    # Check if the class files exist. Defaults to run all pixels.
+    # This accomodates examples where we test the multi-surface,
+    # but there is no classification rile
     if (
         not surface_config.sub_surface_class_file
         and not surface_config.surface_class_file

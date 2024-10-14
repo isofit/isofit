@@ -36,7 +36,7 @@ class MultiComponentSurface(Surface):
     Multivariate Gaussian surface model.
     """
 
-    def __init__(self, full_config: dict):
+    def __init__(self, full_config):
         super().__init__(full_config)
 
         self.components = list(zip(self.model_dict["means"], self.model_dict["covs"]))

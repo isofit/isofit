@@ -145,7 +145,10 @@ class Worker(object):
         )
 
         for surface_class_str, class_idx_pairs in state_indexes.items():
-            self.config = update_config_for_surface(self.config, surface_class_str)
+
+            if self.config.forward_model.surface.multi_surface_flag:
+                self.config = update_config_for_surface(self.config, surface_class_str)
+
             fm = ForwardModel(self.config)
 
             for r, c, *_ in class_idx_pairs:

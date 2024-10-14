@@ -34,7 +34,7 @@ root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 if os.environ.get("ISOFIT_DEBUG"):
     Logger.info("Using ISOFIT internal ray")
-    from .utils import ray_wrapper as ray
+    from .wrappers import ray_wrapper as ray
 else:
     import ray
 

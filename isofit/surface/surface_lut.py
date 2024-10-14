@@ -53,7 +53,7 @@ class LUTSurface(Surface):
 
     """
 
-    def __init__(self, full_config: dict):
+    def __init__(self, full_config):
         super().__init__(full_config)
 
         # Models are stored as dictionaries in .mat format

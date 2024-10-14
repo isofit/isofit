@@ -29,7 +29,7 @@ class GlintModelSurface(MultiComponentSurface):
     """A model of the surface based on a collection of multivariate
     Gaussians, extended with two surface glint terms (sun + sky glint)."""
 
-    def __init__(self, full_config: dict):
+    def __init__(self, full_config):
         super().__init__(full_config)
 
         # TODO: Enforce this attribute in the config, not here (this is hidden)
