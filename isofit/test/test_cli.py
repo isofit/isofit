@@ -77,9 +77,9 @@ def files(cwd):
 # fmt: off
 @pytest.mark.slow
 @pytest.mark.parametrize("args", [
-    ["ang", "--presolve", "--n_cores", CORES, "--analytical_line", "-nn", 10, "-nn", 50,],
-    ["ang", "--presolve", "--n_cores", CORES, "--analytical_line", "-nn", 10, "-nn", 50, "-nn", 10, "--pressure_elevation",],
-    ["ang", "--presolve", "--n_cores", CORES, "--empirical_line", "--surface_category", "additive_glint_surface",],
+    ["ang", "--presolve", "--emulator_base", "[placeholder]", "--n_cores", CORES, "--analytical_line", "-nn", 10, "-nn", 50,],
+    ["ang", "--presolve", "--emulator_base", "[placeholder]", "--n_cores", CORES, "--analytical_line", "-nn", 10, "-nn", 50, "-nn", 10, "--pressure_elevation",],
+    ["ang", "--presolve", "--emulator_base", "[placeholder]", "--n_cores", CORES, "--empirical_line", "--surface_category", "additive_glint_surface",],
 ])
 # fmt: on
 def test_apply_oe(files, args, surface):
@@ -89,6 +89,7 @@ def test_apply_oe(files, args, surface):
     ray.shutdown()
     sleep(120)
 
+    args[3] = env.srtmnet
     arguments = ["apply_oe", *files, *args, "--surface_path", surface]
 
     # Passing non-string arguments to click is not allowed.
