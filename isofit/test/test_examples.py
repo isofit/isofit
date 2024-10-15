@@ -66,11 +66,6 @@ def test_pasadena_topoflux(monkeypatch):
     monkeypatch.chdir(f"{env.examples}/20171108_Pasadena/")
     surface_model("configs/ang20171108t184227_surface.json")
 
-    with open(
-        "configs/topoflux/ang20171108t184227_beckmanlawn-multimodtran-topoflux.json",
-        "r",
-    ) as f:
-        print(f.read())
     model = Isofit(
         "configs/topoflux/ang20171108t184227_beckmanlawn-multimodtran-topoflux.json"
     )
