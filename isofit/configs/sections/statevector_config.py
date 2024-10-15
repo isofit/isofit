@@ -56,6 +56,7 @@ class StateVectorElementConfig(BaseConfigSection):
 class StateVectorConfig(BaseConfigSection):
     """
     State vector configuration.
+
     """
 
     def __init__(self, sub_configdic: dict = None):

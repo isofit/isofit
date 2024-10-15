@@ -34,8 +34,6 @@ from isofit.surface import Surface
 
 Logger = logging.getLogger(__file__)
 
-### Classes ###
-
 
 class ForwardModel:
     """ForwardModel contains all the information about how to calculate
@@ -61,10 +59,8 @@ class ForwardModel:
     against the prior."""
 
     def __init__(self, full_config: Config):
-        # load in the full config (in case of inter-module dependencies) and
-        # then designate the current config
+        # load in the full config (in case of inter-module dependencies)
         self.full_config = full_config
-        self.config = full_config.forward_model
 
         # Build the instrument model
         self.instrument = Instrument(self.full_config)
@@ -85,7 +81,7 @@ class ForwardModel:
                 " is expected.  Otherwise, consider checking the surface model."
             )
 
-        # Build combined vectors from surface, RT, and instrument
+        # Build combined state-vectors from surface, RT, and instrument
         bounds, scale, init, statevec, bvec, bval = ([] for i in range(6))
         for obj_with_statevec in [self.surface, self.RT, self.instrument]:
             bounds.extend([deepcopy(x) for x in obj_with_statevec.bounds])
@@ -96,6 +92,7 @@ class ForwardModel:
             bvec.extend([deepcopy(x) for x in obj_with_statevec.bvec])
             bval.extend([deepcopy(x) for x in obj_with_statevec.bval])
 
+        # Persist to class object
         self.bounds = tuple(np.array(bounds).T)
         self.scale = np.array(scale)
         self.init = np.array(init)
@@ -107,21 +104,22 @@ class ForwardModel:
         self.bval = np.array(bval)
         self.Sb = np.diagflat(np.power(self.bval, 2))
 
-        # Set up indices for references - MUST MATCH ORDER FROM ABOVE ASSIGNMENT
+        """Set up state vector indices - 
+        MUST MATCH ORDER FROM ABOVE ASSIGNMENT"""
         self.idx_surface = np.arange(len(self.surface.statevec_names), dtype=int)
-        # Sometimes, it's convenient to have the index of the entire surface
-        # as one variable, and sometimes you want the sub-components
-        # Split surface state vector indices to cover cases where we retrieve
-        # additional non-reflectance surface parameters
-        self.idx_surf_rfl = self.idx_surface[
-            : len(self.surface.idx_lamb)
-        ]  # reflectance portion
-        self.idx_surf_nonrfl = self.idx_surface[
-            len(self.surface.idx_lamb) :
-        ]  # all non-reflectance surface parameters
+
+        # surface reflectance portion
+        self.idx_surf_rfl = self.idx_surface[: len(self.surface.idx_lamb)]
+
+        # non-reflectance surface parameters
+        self.idx_surf_nonrfl = self.idx_surface[len(self.surface.idx_lamb) :]
+
+        # radiative transfer portion
         self.idx_RT = np.arange(len(self.RT.statevec_names), dtype=int) + len(
             self.idx_surface
         )
+
+        # instrument portion
         self.idx_instrument = (
             np.arange(len(self.instrument.statevec_names), dtype=int)
             + len(self.idx_surface)
@@ -129,9 +127,11 @@ class ForwardModel:
         )
 
         self.surface_b_inds = np.arange(len(self.surface.bvec), dtype=int)
+
         self.RT_b_inds = np.arange(len(self.RT.bvec), dtype=int) + len(
             self.surface_b_inds
         )
+
         self.instrument_b_inds = (
             np.arange(len(self.instrument.bvec), dtype=int)
             + len(self.surface_b_inds)
@@ -139,8 +139,8 @@ class ForwardModel:
         )
 
         # Load model discrepancy correction
-        if self.config.model_discrepancy_file is not None:
-            D = loadmat(self.config.model_discrepancy_file)
+        if full_config.forward_model.model_discrepancy_file is not None:
+            D = loadmat(full_config.forward_model.model_discrepancy_file)
             self.model_discrepancy = D["cov"]
         else:
             self.model_discrepancy = None
@@ -151,12 +151,13 @@ class ForwardModel:
         x_RT = x[self.idx_RT]
         bound_lwr = self.bounds[0]
         bound_upr = self.bounds[1]
+
         return any(x_RT >= (bound_upr[self.idx_RT] - eps * 2.0)) or any(
             x_RT <= (bound_lwr[self.idx_RT] + eps * 2.0)
         )
 
     def xa(self, x, geom):
-        """Calculate the prior mean of the state vector (the concatenation
+        """Calculate the prior meself.an of the state vector (the concatenation
         of state vectors for the surface, Radiative Transfer model, and
         instrument).
 

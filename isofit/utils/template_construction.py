@@ -3,6 +3,7 @@
 # Authors: Philip G. Brodrick and Niklas Bohn
 #
 
+import glob
 import json
 import logging
 import os
@@ -63,6 +64,9 @@ class Pathnames:
 
         logging.info("Flightline ID: %s" % self.fid)
 
+        # Surface classification here so it doesn't get lost
+        self.surface_class_file = vars(args).get("surface_class", None)
+
         # Names from inputs
         self.aerosol_climatology = args.aerosol_climatology_path
         self.input_radiance_file = args.input_radiance
@@ -72,7 +76,8 @@ class Pathnames:
 
         self.full_lut_directory = abspath(join(self.working_directory, "lut_full/"))
 
-        self.surface_path = args.surface_path
+        self.surface_path = vars(args).get("surface_path", None)
+        self.surface_path_dir = vars(args).get("surface_path_dir", None)
 
         # set up some sub-directories
         self.lut_h2o_directory = abspath(join(self.working_directory, "lut_h2o/"))
@@ -141,20 +146,31 @@ class Pathnames:
         self.loc_subs_path = abspath(
             join(self.input_data_directory, self.fid + "_subs_loc")
         )
+
+        # Needs some handling if the segmentation will occur
+        if args.empirical_line or args.analytical_line:
+            self.subs_class_path = abspath(
+                join(self.input_data_directory, self.fid + "_subs_class")
+            )
+            subs_str = "_subs"
+        else:
+            self.subs_class_path = None
+            subs_str = ""
+
         self.rfl_subs_path = abspath(
-            join(self.output_directory, self.fid + "_subs_rfl")
+            join(self.output_directory, self.fid + f"{subs_str}" + "_rfl")
         )
         self.atm_coeff_path = abspath(
-            join(self.output_directory, self.fid + "_subs_atm")
+            join(self.output_directory, self.fid + f"{subs_str}" + "_atm")
         )
         self.state_subs_path = abspath(
-            join(self.output_directory, self.fid + "_subs_state")
+            join(self.output_directory, self.fid + f"{subs_str}" + "_state")
         )
         self.uncert_subs_path = abspath(
-            join(self.output_directory, self.fid + "_subs_uncert")
+            join(self.output_directory, self.fid + f"{subs_str}" + "_uncert")
         )
         self.h2o_subs_path = abspath(
-            join(self.output_directory, self.fid + "_subs_h2o")
+            join(self.output_directory, self.fid + f"{subs_str}" + "_h2o")
         )
 
         self.wavelength_path = abspath(join(self.data_directory, "wavelengths.txt"))
@@ -429,6 +445,13 @@ def check_surface_model(surface_path: str, wl: np.array, paths: Pathnames) -> st
     """
     Checks and rebuilds surface model if needed.
 
+    TODO - Could be extended to allow for both dir and file surface_path
+           inputs. The dir inputs could accomdate complex surfaces where
+           different surface priors might be useful. This extension
+           would be relatively easy. Wrap this in a check for surface_path
+           vs. surface_path_dir. Each file in the dir can undergo the
+           same check coded here.
+
     Args:
         surface_path: path to surface model or config dict
         wl: instrument center wavelengths
@@ -601,11 +624,7 @@ def build_presolve_config(
                     "uncorrelated_radiometric_uncertainty": uncorrelated_radiometric_uncertainty
                 },
             },
-            "surface": {
-                "surface_category": surface_category,
-                "surface_file": paths.surface_working_path,
-                "select_on_init": True,
-            },
+            "surface": make_surface_config(paths, surface_category),
             "radiative_transfer": radiative_transfer_config,
         },
         "implementation": {
@@ -916,11 +935,7 @@ def build_main_config(
                     "uncorrelated_radiometric_uncertainty": uncorrelated_radiometric_uncertainty
                 },
             },
-            "surface": {
-                "surface_file": paths.surface_working_path,
-                "surface_category": surface_category,
-                "select_on_init": True,
-            },
+            "surface": make_surface_config(paths, surface_category),
             "radiative_transfer": radiative_transfer_config,
         },
         "implementation": {
@@ -1676,3 +1691,93 @@ def reassemble_cube(matching_indices: np.array, paths: Pathnames):
             output_mm[matching_indices == _st, ...] = input_ds.open_memmap(
                 interleave="bip"
             )[:, :, : int(header["bands"])].copy()[:, 0, :]
+
+
+def make_surface_config(paths: Pathnames, surface_category="multicomponent_surface"):
+    """
+    Constructs the surface component of the config
+
+    Args:
+        paths: Pathnames object with all key values passed from apply_oe
+        surface_category: Base surface category
+
+    Returns:
+        surface_config_dict: Dictionary with all surface parameters and file
+                             locations.
+    """
+
+    # Initialize config dict
+    surface_config_dict = {
+        "multi_surface_flag": False,
+    }
+
+    # Check to see if a classification file is being propogated
+    if paths.surface_class_file:
+        surface_config_dict["Surfaces"] = {}
+        surface_config_dict["surface_class_file"] = paths.surface_class_file
+
+        if vars(paths).get("subs_class_path", None):
+            surface_config_dict["sub_surface_class_file"] = paths.subs_class_path
+
+        surface_config_dict["multi_surface_flag"] = True
+
+        surface_class_ds = envi.open(envi_header(paths.surface_class_file))
+
+        # Get the class mapping
+        class_mapping = surface_class_ds.metadata["mapping"]
+
+        # mapping name to surface name - terrible way to do this
+        # Could house this in a standalone file and call it in
+        surface_mapping = {
+            "water": "glint_model_surface",
+            "land": "multicomponent_surface",
+            "cloud": "multicomponent_surface",
+            "all": "multicomponent_surface",
+        }
+
+        # Iterate through all classes present in class image
+        for i, name in enumerate(class_mapping):
+            surface_category = surface_mapping.get(name, "multicomponent_surface")
+
+            # If surface_path given, use for all surfaces
+            if paths.surface_path:
+                surface_path = paths.surface_path
+
+            # If only directory is given. Find surfaces for each class.
+            elif paths.surface_path_dir:
+                regex = f"*_{name}_*.mat"
+                matched_paths = glob.glob(os.path.join(paths.surface_path_dir, regex))
+
+                # Rigid and errors if no surface file for class
+                if not len(matched_paths):
+                    logging.exception(
+                        "No surface path or surface path or surface \
+                        path directory found in surface_path_dir"
+                    )
+                    raise FileNotFoundError
+
+                surface_path = matched_paths[0]
+
+            # Handles case if no dir or file is given
+            else:
+                logging.exception(
+                    "No surface path or surface path or surface \
+                    path directory given"
+                )
+                raise FileNotFoundError
+
+            # Set up "Surfaces" component of surface config
+            surface_config_dict["Surfaces"][name] = {
+                "surface_int": i,
+                "surface_file": surface_path,
+                "surface_category": surface_category,
+            }
+    else:
+        if not paths.surface_path:
+            logging.exception("No surface prior path found.")
+            raise FileNotFoundError
+
+        surface_config_dict["surface_file"] = paths.surface_path
+        surface_config_dict["surface_category"] = surface_category
+
+    return surface_config_dict
