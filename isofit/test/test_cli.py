@@ -2,15 +2,13 @@
 These tests are to ensure any changes to the CLI will be backwards compatible.
 """
 
-import io
 import os
 import shutil
-import zipfile
+from pathlib import Path
 from time import sleep
 
 import pytest
 import ray
-import requests
 from click.testing import CliRunner
 
 from isofit.__main__ import cli, env
