@@ -89,7 +89,7 @@ def test_apply_oe(files, args, surface):
     ray.shutdown()
     sleep(120)
 
-    args[3] = env.srtmnet
+    args[3] = os.path.join(env.srtmnet, "sRTMnet_v120.h5")
     arguments = ["apply_oe", *files, *args, "--surface_path", surface]
 
     # Passing non-string arguments to click is not allowed.
