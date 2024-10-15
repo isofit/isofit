@@ -511,6 +511,13 @@ def build_presolve_config(
     else:
         engine_name = "sRTMnet"
 
+    if surface_category == "glint_model_surface":
+        glint_model = True
+        multipart_transmittance = True
+    else:
+        glint_model = False
+        multipart_transmittance = False
+
     if prebuilt_lut_path is None:
         lut_path = join(paths.lut_h2o_directory, "lut.nc")
     else:
@@ -527,6 +534,8 @@ def build_presolve_config(
         "radiative_transfer_engines": {
             "vswir": {
                 "engine_name": engine_name,
+                "multipart_transmittance": multipart_transmittance,
+                "glint_model": glint_model,
                 "lut_path": lut_path,
                 "sim_path": paths.lut_h2o_directory,
                 "template_file": paths.h2o_template_path,
@@ -716,10 +725,19 @@ def build_main_config(
     else:
         engine_name = "sRTMnet"
 
+    if surface_category == "glint_model_surface":
+        glint_model = True
+        multipart_transmittance = True
+    else:
+        glint_model = False
+        multipart_transmittance = False
+
     radiative_transfer_config = {
         "radiative_transfer_engines": {
             "vswir": {
                 "engine_name": engine_name,
+                "multipart_transmittance": multipart_transmittance,
+                "glint_model": glint_model,
                 "sim_path": paths.full_lut_directory,
                 "lut_path": lut_path,
                 "aerosol_template_file": paths.aerosol_tpl_path,
@@ -818,6 +836,13 @@ def build_main_config(
 
     if prebuilt_lut_path is not None:
         ncds = nc.Dataset(prebuilt_lut_path, "r")
+
+        # first, check if observer zenith angle in prebuilt LUT comes in MODTRAN convention
+        # and convert lut grid as needed
+        if any(np.array(ncds["observer_zenith"]) > 90.0):
+            to_sensor_zenith_lut_grid = np.sort(
+                [180 - x for x in to_sensor_zenith_lut_grid]
+            )
 
         radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"][
             "H2OSTR"
@@ -1491,6 +1516,7 @@ def get_metadata_from_obs(
         lut_params.relative_azimuth_spacing,
         lut_params.relative_azimuth_spacing_min,
     )
+
     if relative_azimuth_lut_grid is not None:
         relative_azimuth_lut_grid = np.sort(
             np.array([x % 360 for x in relative_azimuth_lut_grid])
