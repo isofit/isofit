@@ -26,11 +26,19 @@ CORES = os.cpu_count()
 
 
 @pytest.fixture(scope="session")
-def surface(cube_example):
+def cwd(tmp_path_factory):
+    """
+    Path to the working cube example
+    """
+    return Path(env.imagecube) / "medium"
+
+
+@pytest.fixture(scope="session")
+def surface(cwd):
     """
     Generates the surface.mat file
     """
-    outp = str(cube_example / "surface.mat")
+    outp = str(cwd / "surface.mat")
 
     # Generate the surface.mat using the image_cube example config
     # fmt: off
@@ -45,7 +53,7 @@ def surface(cube_example):
 
 
 @pytest.fixture()
-def files():
+def files(cwd):
     """
     Common data files to be used by multiple tests. The return is a list in the
     order: [
@@ -58,14 +66,13 @@ def files():
     As of 07/24/2023 these are from the medium cube example.
     """
     # Flush the output dir if it already exists from a previous test case
-    cube_example = Path(env.imagecube) / "medium"
-    output = cube_example / "output"
+    output = cwd / "output"
     shutil.rmtree(output, ignore_errors=True)
 
     return [
-        str(cube_example / "ang20170323t202244_rdn_7k-8k"),
-        str(cube_example / "ang20170323t202244_loc_7k-8k"),
-        str(cube_example / "ang20170323t202244_obs_7k-8k"),
+        str(cwd / "ang20170323t202244_rdn_7k-8k"),
+        str(cwd / "ang20170323t202244_loc_7k-8k"),
+        str(cwd / "ang20170323t202244_obs_7k-8k"),
         str(output),
     ]
 
