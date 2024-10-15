@@ -353,7 +353,7 @@ class InputData:
 class IO:
     """..."""
 
-    def __init__(self, config: Config, forward: ForwardModel):
+    def __init__(self, config: Config, full_statevec: list):
         """Initialization specifies retrieval subwindows for calculating
         measurement cost distributions."""
 
