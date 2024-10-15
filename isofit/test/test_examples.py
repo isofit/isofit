@@ -35,13 +35,13 @@ def test_santa_monica(args, monkeypatch):
 # fmt: off
 @pytest.mark.examples
 @pytest.mark.parametrize("args", [
-    ("--level", "DEBUG", "configs/run/ang20171108t173546_darklot.json"),
-    ("--level", "DEBUG", "configs/run/ang20171108t173546_horse.json"),
-    ("--level", "DEBUG", "configs/run/ang20171108t184227_astrored.json"),
-    ("--level", "DEBUG", "configs/run/ang20171108t184227_astrogreen.json"),
-    ("--level", "DEBUG", "configs/run/ang20171108t184227_beckmanlawn.json"),
-    ("--level", "DEBUG", "configs/run/ang20171108t184227_beckmanlawn-oversmoothed.json"),
-    ("--level", "DEBUG", "configs/run/ang20171108t184227_beckmanlawn-undersmoothed.json"),
+    ("--level", "DEBUG", "configs/modtran/ang20171108t173546_darklot.json"),
+    ("--level", "DEBUG", "configs/modtran/ang20171108t173546_horse.json"),
+    ("--level", "DEBUG", "configs/modtran/ang20171108t184227_astrored.json"),
+    ("--level", "DEBUG", "configs/modtran/ang20171108t184227_astrogreen.json"),
+    ("--level", "DEBUG", "configs/modtran/ang20171108t184227_beckmanlawn.json"),
+    ("--level", "DEBUG", "configs/modtran/ang20171108t184227_beckmanlawn-oversmoothed.json"),
+    ("--level", "DEBUG", "configs/modtran/ang20171108t184227_beckmanlawn-undersmoothed.json"),
 ])
 # fmt: on
 def test_pasadena_modtran(args, monkeypatch):
@@ -64,10 +64,10 @@ def test_pasadena_topoflux(monkeypatch):
     """Run Pasadena topoflux example dataset."""
 
     monkeypatch.chdir(f"{env.examples}/20171108_Pasadena/")
-    surface_model("configs/run/ang20171108t184227_surface.json")
+    surface_model("configs/ang20171108t184227_surface.json")
 
     model = Isofit(
-        "configs/run/ang20171108t184227_beckmanlawn-multimodtran-topoflux.json"
+        "configs/topoflux/ang20171108t184227_beckmanlawn-multimodtran-topoflux.json"
     )
     model.run()
 
