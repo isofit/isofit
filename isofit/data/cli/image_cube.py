@@ -77,7 +77,7 @@ def download_cli(**kwargs):
     download(**kwargs)
 
 
-def validate(path=None, size="both", **_):
+def validate(path=None, size="both", debug=print, error=print, **_):
     """
     Validates an ISOFIT image cube data installation
 
@@ -87,6 +87,10 @@ def validate(path=None, size="both", **_):
         Path to verify. If None, defaults to the ini path
     size : "both" | "small" | "medium"
         Which chunk size to validate
+    debug : function, default=print
+        Print function to use for debug messages, eg. logging.debug
+    error : function, default=print
+        Print function to use for error messages, eg. logging.error
     **_ : dict
         Ignores unused params that may be used by other validate functions. This is to
         maintain compatibility with env.validate
@@ -102,19 +106,19 @@ def validate(path=None, size="both", **_):
     if path is None:
         path = Path(env.imagecube)
 
-    print(f"Verifying path for ISOFIT {size} image cube: {path}")
+    debug(f"Verifying path for ISOFIT {size} image cube: {path}")
 
     sizes = {"small": "7000-7010", "medium": "7k-8k"}
     for kind in ("loc", "obs", "rdn"):
         file = path / size / f"ang20170323t202244_{kind}_{sizes[size]}"
         if not file.exists():
-            print(
+            error(
                 f"Error: ISOFIT {size} image cube data do not appear to be installed correctly, please ensure it is"
             )
-            print(f"Missing file: {file}")
+            error(f"Missing file: {file}")
             return False
 
-    print("Path is valid")
+    debug("Path is valid")
     return True
 
 
