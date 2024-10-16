@@ -177,9 +177,9 @@ class Pathnames:
         if args.modtran_path:
             self.modtran_path = args.modtran_path
         else:
-            self.modtran_path = os.getenv("MODTRAN_DIR")
+            self.modtran_path = os.getenv("MODTRAN_DIR", env.modtran)
 
-        self.sixs_path = os.getenv("SIXS_DIR")
+        self.sixs_path = os.getenv("SIXS_DIR", env.sixs)
 
         if args.sensor == "avcl":
             self.noise_path = join(env.data, "avirisc_noise.txt")
