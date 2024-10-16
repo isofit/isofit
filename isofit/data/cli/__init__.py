@@ -43,12 +43,19 @@ def validate_all():
 def env_validate(keys, **kwargs):
     """
     Utility function for the `env` object to quickly validate specific dependencies
+
+    Parameters
+    ----------
+    keys : list
+        List of validator functions to call
     """
+    error = kwargs.get("error", print)
+
     all_valid = True
     for key in keys:
         module = Modules.get(key)
         if module is None:
-            print(f"Product not found: {key}")
+            error(f"Product not found: {key}")
             all_valid = False
         else:
             all_valid &= module.validate(**kwargs)
