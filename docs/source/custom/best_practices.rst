@@ -3,6 +3,10 @@ Best Practices
 
 ISOFIT is highly configurable.  This provides a great deal of design flexibility for analysts to build their own custom retrieval algorithms for specific investigations.  Scientists can construct custom instrument models to handle new sensors, or define new observation uncertainties to account for model discrepancy errors.  They can refine or constrain the prior distribution based on background knowledge of the state vector.  This flexibility can be powerful, but it can also be daunting for the beginner.  Consequently, we have developed recommendations for best practices that are likely to provide good results over a wide range of conditions.
 
+.. note::
+
+    The below commands configurations reference extra ISOFIT data files. Please refer to :doc:`data` on how to download these.
+
 Surface Models
 --------------
 
@@ -20,7 +24,7 @@ The multicomponent surface model is most universal and forgiving.  We recommend 
       {
         "input_spectrum_files":
           [
-            "path_to_isofit/data/reflectance/surface_model_ucsb"
+            "~/.isofit/data/reflectance/surface_model_ucsb"
           ],
         "n_components": 8,
         "windows": [
@@ -54,7 +58,7 @@ The multicomponent surface model is most universal and forgiving.  We recommend 
       {
         "input_spectrum_files":
           [
-            "path_to_isofit/data/reflectance/ocean_spectra_rev2"
+            "~/.isofit/data/reflectance/ocean_spectra_rev2"
           ],
         "n_components": 4,
         "windows": [
@@ -111,10 +115,10 @@ We recommend instrument models based on a three-channel parametric noise descrip
 
    "instrument": {
      "wavelength_file": "wavelengths.txt",
-     "parametric_noise_file": "path_to_isofit/data/avirisng_noise.txt",
+     "parametric_noise_file": "~/.isofit/data/avirisng_noise.txt",
      "integrations":1,
      "unknowns": {
-       "channelized_radiometric_uncertainty_file": "path_to_isofit/data/avirisng_systematic_error.txt",
+       "channelized_radiometric_uncertainty_file": "~/.isofit/data/avirisng_systematic_error.txt",
        "uncorrelated_radiometric_uncertainty": 0.01
      }
    },
@@ -135,8 +139,8 @@ We highly recommend the MODTRAN 6.0 radiative transfer model over LibRadTran and
             },
             "radiative_transfer_engines": {
                 "vswir": {
-                    "aerosol_model_file": "path_to_isofit/data/aerosol_model.txt",
-                    "aerosol_template_file": "path_to_isofit/data/aerosol_template.json",
+                    "aerosol_model_file": "~/.isofit/data/aerosol_model.txt",
+                    "aerosol_template_file": "~/.isofit/data/aerosol_template.json",
                     "engine_base_dir": "path_to_MODTRAN6.0.0/",
                     "engine_name": "modtran",
                     "lut_names": { "H2OSTR": null, "AERFRAC_2": null },

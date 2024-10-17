@@ -23,7 +23,7 @@ def download(output=None):
     output: str | None
         Path to output as. If None, defaults to the ini path.
     """
-    ...
+    print("MODTRAN downloading is not supported yet")
 
 
 # @cli.download.command(name="modtran")
@@ -43,7 +43,7 @@ def download_cli(**kwargs):
     download(**kwargs)
 
 
-def validate(path=None, **_):
+def validate(path=None, debug=print, error=print, **_):
     """
     Validates an ISOFIT data installation
 
@@ -51,6 +51,10 @@ def validate(path=None, **_):
     ----------
     path : str, default=None
         Path to verify. If None, defaults to the ini path
+    debug : function, default=print
+        Print function to use for debug messages, eg. logging.debug
+    error : function, default=print
+        Print function to use for error messages, eg. logging.error
     **_ : dict
         Ignores unused params that may be used by other validate functions. This is to
         maintain compatibility with env.validate
@@ -66,11 +70,11 @@ def validate(path=None, **_):
     if path is None:
         path = env.modtran
 
-    print(f"Verifying path for MODTRAN: {path}")
+    debug(f"Verifying path for MODTRAN: {path}")
 
     ...
 
-    print("Path is valid")
+    debug("Path is valid")
     return True
 
 

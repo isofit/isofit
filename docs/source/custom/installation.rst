@@ -178,20 +178,20 @@ Finally, point the environment variable EMULATOR_PATH to the hdf5 file.
 .. code::
 
     # Small example pixel-by-pixel
-    cd examples/image_cube/
-    sh run_small.sh
+    cd $(isofit path examples)/image_cube/small/
+    ./small-chunk.sh
 
 .. code::
 
     # Medium example with empirical line solution
-    cd examples/image_cube/
-    sh run_medium_empirical_line.sh
+    cd $(isofit path examples)/image_cube/medium/
+    ./empirical.sh
 
 .. code::
 
     # Medium example with analytical line solution
-    cd examples/image_cube/
-    sh run_medium_analytical_line.sh
+    cd $(isofit path examples)/image_cube/medium/
+    ./analytical.sh
 
 
 
@@ -209,12 +209,12 @@ LibRadTran RT code as well as to neural network emulators.
 
 .. code::
 
-    cd examples/20171108_Pasadena
-    ./run_examples_modtran.sh
+    cd $(isofit path examples)/20171108_Pasadena
+    ./modtran.sh
 
 3. This will build a surface model and run the retrieval. The default example uses a lookup table approximation, and the code should recognize that the tables do not currently exist.  It will call MODTRAN to rebuild them, which will take a few minutes.
 
-4. Look for output data in examples/20171108_Pasadena/output/.
+4. Look for output data in $(isofit path examples)/20171108_Pasadena/output/.
 
 
 Quick Start with LibRadTran 2.0.x
@@ -257,12 +257,12 @@ A few important steps have to be considered when installing the software, which 
 
 .. code::
 
-    cd examples/20171108_Pasadena
+    cd $(isofit path examples)/20171108_Pasadena
     ./run_example_libradtran.sh
 
 7. This will build a surface model and run the retrieval. The default example uses a lookup table approximation, and the code should recognize that the tables do not currently exist.  It will call LibRadTran to rebuild them, which will take a few minutes.
 
-8. Look for output data in examples/20171108_Pasadena/output/.
+8. Look for output data in $(isofit path examples)/20171108_Pasadena/output/.
 
 
 

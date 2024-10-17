@@ -66,21 +66,21 @@ dependencies using an appropriate package manager for their system.
 environment to pick up new dependencies, updates to the ``isofit`` build
 process, etc.
 
+Additionally, be sure to download the extra ISOFIT data files and examples via the `isofit download all` command. See :doc:`data` for more.
+
 
 Testing
 -------
 
 Tests live in `isofit/tests/ <isofit/tests/>`_, and are executed using
-`pytest <https://pytest.org>_`. Some tests require specific environment
-variables to be set, so the ``scripts/run-tests.sh`` script can be used to
-bridge the gap. It is a drop-in replacement for ``$ pytest``.
+`pytest <https://pytest.org>_`.
 
-Our development strategy employs continuous integration and unit testing to validate all changes.  We appreciate your writing additional tests for new modifications or features.  In the interest of validating your code, please also be sure to run realistic examples like this:
+Our development strategy employs continuous integration and unit testing to validate all changes.  We appreciate you writing additional tests for new modifications or features.  In the interest of validating your code, please also be sure to run realistic examples like this:
 
 .. code::
 
-  cd examples/20171108_Pasadena
-  ./run_example_modtran.sh
+  cd $(isofit path examples)/20171108_Pasadena
+  ./modtran.sh
 
 
 Debug
