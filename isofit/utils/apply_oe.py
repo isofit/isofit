@@ -76,6 +76,7 @@ INVERSION_WINDOWS = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
 @click.option("--atm_sigma", "-as", type=float, multiple=True, default=[2])
 @click.option("--pressure_elevation", is_flag=True, default=False)
 @click.option("--prebuilt_lut", type=str)
+@click.option("--no_min_lut_spacing", is_flag=True, default=False)
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",
@@ -236,7 +237,9 @@ def apply_oe(args):
                 raise ValueError(err_str)
     logging.info("...Data file checks complete")
 
-    lut_params = tmpl.LUTConfig(args.lut_config_file, args.emulator_base)
+    lut_params = tmpl.LUTConfig(
+        args.lut_config_file, args.emulator_base, args.no_min_lut_spacing
+    )
 
     logging.info("Setting up files and directories....")
     paths = tmpl.Pathnames(args)
