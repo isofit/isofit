@@ -244,12 +244,12 @@ Examples = {
     "ThermalIR": IsofitExample(name="20190806_ThermalIR", requires=["data", "modtran"]),
     "ImageCube-small": ApplyOEExample(
         name="image_cube/small",
-        requires=["sixs", "srtmnet"],
+        requires=["sixs", "srtmnet", "image_cube"],
         validate={"size": "small"},
     ),
     "ImageCube-medium": ApplyOEExample(
         name="image_cube/medium",
-        requires=["sixs", "srtmnet"],
+        requires=["sixs", "srtmnet", "image_cube"],
         validate={"size": "medium"},
     ),
 }
@@ -303,6 +303,7 @@ def updateTemplate(template: str, output: str = None):
     update(config, **env, cores=os.cpu_count())
 
     if output:
+        output.mkdir(parents=True, exist_ok=True)
         with open(output / template.name, "w") as file:
             json.dump(config, file, indent=4)
 

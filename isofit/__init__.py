@@ -23,22 +23,13 @@ import importlib.metadata
 
 __version__ = importlib.metadata.version(__package__ or __name__)
 
-warnings_enabled = False
-
 import logging
-import os
-
-Logger = logging.getLogger("isofit")
-
-root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-if os.environ.get("ISOFIT_DEBUG"):
-    Logger.info("Using ISOFIT internal ray")
-    from .wrappers import ray_wrapper as ray
-else:
-    import ray
 
 from threadpoolctl import threadpool_info
+
+from isofit.debug import ray
+
+Logger = logging.getLogger("isofit")
 
 
 def checkNumThreads():

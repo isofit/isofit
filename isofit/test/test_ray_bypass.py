@@ -1,4 +1,4 @@
-from isofit.wrappers import ray_wrapper as ray
+from isofit.debug import ray_bypass as ray
 
 
 @ray.remote(num_cpus=1)
@@ -15,7 +15,7 @@ def test_decorators():
     """
     Tests decorator use cases of Ray
     """
-    assert decorator.__module__ == "isofit.wrappers.ray_wrapper"
+    assert decorator.__module__ == "isofit.debug.ray_bypass"
 
     cases = {
         1: (1, 1),
@@ -44,15 +44,15 @@ class Worker:
         return f"{self.name}{key}"
 
 
-def test_classes(name="test", n=4):
+def test_classes(name="test", w=4, n=10):
     """
     Tests wrapping class objects and how they're used in core.isofit.
     """
-    assert "isofit.wrappers.ray_wrapper" in str(ray)
+    assert "isofit.debug.ray_bypass" in str(ray)
 
     name_id = ray.put(name)
     worker = ray.remote()(Worker)
-    workers = ray.util.ActorPool([worker.remote(name_id) for _ in range(n)])
+    workers = ray.util.ActorPool([worker.remote(name_id) for _ in range(w)])
 
     results = workers.map_unordered(lambda a, b: a.some_func.remote(b), range(n))
 
