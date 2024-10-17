@@ -935,7 +935,9 @@ def build_main_config(
                     "uncorrelated_radiometric_uncertainty": uncorrelated_radiometric_uncertainty
                 },
             },
-            "surface": make_surface_config(paths, surface_category),
+            "surface": make_surface_config(
+                paths, surface_category, pressure_elevation, elevation_lut_grid
+            ),
             "radiative_transfer": radiative_transfer_config,
         },
         "implementation": {
@@ -1693,7 +1695,12 @@ def reassemble_cube(matching_indices: np.array, paths: Pathnames):
             )[:, :, : int(header["bands"])].copy()[:, 0, :]
 
 
-def make_surface_config(paths: Pathnames, surface_category="multicomponent_surface"):
+def make_surface_config(
+    paths: Pathnames,
+    surface_category="multicomponent_surface",
+    pressure_elevation=None,
+    elevation_lut_grid=[],
+):
     """
     Constructs the surface component of the config
 
@@ -1772,6 +1779,20 @@ def make_surface_config(paths: Pathnames, surface_category="multicomponent_surfa
                 "surface_file": surface_path,
                 "surface_category": surface_category,
             }
+
+            # Handle clouds if pressure elevation
+            if not pressure_elevation and len(elevation_lut_grid) and name == "cloud":
+                surface_config_dict["Surfaces"][name]["rt_statevector_elements"] = {
+                    "surface_elevation_km": {
+                        "bounds": [elevation_lut_grid[0], elevation_lut_grid[-1]],
+                        "scale": 100,
+                        "init": (elevation_lut_grid[0] + elevation_lut_grid[-1]) / 2.0,
+                        "prior_sigma": 1000.0,
+                        "prior_mean": (elevation_lut_grid[0] + elevation_lut_grid[-1])
+                        / 2.0,
+                    }
+                }
+
     else:
         if not paths.surface_path:
             logging.exception("No surface prior path found.")

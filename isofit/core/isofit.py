@@ -19,6 +19,7 @@
 #          Philip G Brodrick, philip.brodrick@jpl.nasa.gov
 #          Adam Erickson, adam.m.erickson@nasa.gov
 #
+import copy
 import logging
 import multiprocessing
 import os
@@ -77,7 +78,7 @@ class Isofit:
         self.config.get_config_errors()
 
         # Construct and cache the full statevector (all multistates)
-        self.full_statevector, *_ = construct_full_state(self.config)
+        self.full_statevector, *_ = construct_full_state(copy.deepcopy(self.config))
 
         # Initialize ray for parallel execution
         rayargs = {
@@ -167,6 +168,9 @@ class Isofit:
         else:
             logging.info("Single-state inversion started.")
 
+        # Keep track of input version of config
+        input_config = copy.deepcopy(self.config)
+
         # Loop through index pairs and run workers
         class_loop_start_time = time.time()
         for surface_class_str, index_pair in index_pairs.items():
@@ -191,7 +195,9 @@ class Isofit:
 
             # If multistate, update config to reflect surface
             if self.config.forward_model.surface.multi_surface_flag:
-                self.config = update_config_for_surface(self.config, surface_class_str)
+                self.config = update_config_for_surface(
+                    copy.deepcopy(input_config), surface_class_str
+                )
 
             # Set forward model
             self.fm = fm = ForwardModel(self.config)

@@ -25,6 +25,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 from spectral.io import envi
 
+from isofit.configs.sections.statevector_config import StateVectorElementConfig
 from isofit.core.common import envi_header
 from isofit.core.instrument import Instrument
 from isofit.surface import Surface
@@ -72,7 +73,7 @@ def construct_full_state(full_config):
     params = vars(surface_config).get("surface_params", {})
 
     # Check for config type
-    if vars(surface_config).get("multi_surface_flag", False):
+    if surface_config.multi_surface_flag:
         # Iterate through the different surfaces to find overlapping state names
         for i, surface_sub_config in surface_config.Surfaces.items():
             full_config = update_config_for_surface(full_config, i)
@@ -170,7 +171,7 @@ def index_spectra_by_surface_and_sub(config, lbl_file):
     """
     Indexes an image by surface class file and lbl_file.
     This is needed for the analytical line where each pixel needs to
-    inherit the surface classification of the slic pixel that is belongs
+    inherit the surface classification of the slic pixel that it belongs
     to. This function looks at the slic pixel indexing and then creates
     a list of all full img pixels found within each slic pixel for each
     surface class.
@@ -209,7 +210,19 @@ def index_spectra_by_surface_and_sub(config, lbl_file):
     return class_groups
 
 
-def update_config_for_surface(config, surface_class_str):
+def update_config_for_surface(config, surface_class_str, clouds=True):
+    """
+    This is the primary mechanism by which isofit changes its configuration
+    across surface classifications. It will leverage the Surfaces dict,
+    and then update the primary config key to reflect that surface.
+
+    Args:
+        config: (Config object) Full isofit config object.
+        surface_class_str: (str) string that corresponds to a surface class.
+
+    Returns:
+        config: (Config object) Update full isofit config object
+    """
     isurface = config.forward_model.surface.Surfaces.get(surface_class_str)
 
     if not isurface:
@@ -223,5 +236,17 @@ def update_config_for_surface(config, surface_class_str):
 
     config.forward_model.surface.surface_category = surface_category
     config.forward_model.surface.surface_file = surface_file
+
+    # Experimental flag: added statevector elements
+    for key, value in isurface.get("rt_statevector_elements", {}).items():
+        # Add the statevector params
+        config.forward_model.radiative_transfer.statevector.surface_elevation_km = (
+            StateVectorElementConfig(value)
+        )
+
+        # Add the statevector names
+        config.forward_model.radiative_transfer.radiative_transfer_engines[
+            0
+        ].statevector_names.append(key)
 
     return config
