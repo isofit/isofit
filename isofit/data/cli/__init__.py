@@ -60,11 +60,8 @@ def env_validate(keys, **kwargs):
     keys : list
         List of validator functions to call
     """
-<<<<<<< HEAD
-=======
     error = kwargs.get("error", print)
 
->>>>>>> 7a153e1c (Added a path() function to Ini that will validate extra installs and provide more useful debugging for missing files)
     mods = findModules()
     all_valid = True
     for key in keys:
