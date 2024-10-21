@@ -175,7 +175,7 @@ def invert_algebraic(
     solar_irr = instrument.sample(x_instrument, RT.wl, RT.solar_irr)
     sphalb = instrument.sample(x_instrument, RT.wl, rhi["sphalb"])
 
-    if len(rhi["transm_up_dir"])>1:
+    if len(rhi["transm_up_dir"]) > 1:
         transup = instrument.sample(
             x_instrument, RT.wl, rhi["transm_up_dir"]
         )  # REVIEW: Changed from transup

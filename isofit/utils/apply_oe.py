@@ -36,7 +36,7 @@ SUPPORTED_SENSORS = [
     "prisma",
     "av3",
     "gao",
-    "tanager"
+    "tanager",
 ]
 RTM_CLEANUP_LIST = ["*r_k", "*t_k", "*tp7", "*wrn", "*psc", "*plt", "*7sc", "*acd"]
 INVERSION_WINDOWS = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
@@ -329,7 +329,9 @@ def apply_oe(args):
     if args.wavelength_path:
         if os.path.isfile(args.wavelength_path):
             chn, wl, fwhm = np.loadtxt(args.wavelength_path).T
-            if len(chn) != len(wl_ds):# or not np.all(np.isclose(wl, wl_ds, atol=0.01)):
+            if len(chn) != len(
+                wl_ds
+            ):  # or not np.all(np.isclose(wl, wl_ds, atol=0.01)):
                 raise ValueError(
                     "Number of channels provided in wavelength file does not match"
                     " the number of values in radiance cube. Please adjust your wavelength file."

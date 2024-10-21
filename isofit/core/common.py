@@ -574,7 +574,6 @@ def resample_spectrum(
                 xnew[i] = xnew[nearest_good_ind]
         return xnew
     else:
-
         # Replace NaNs with zeros
         y = x.copy()
         y.setflags(write=True)
@@ -586,8 +585,8 @@ def resample_spectrum(
 
         # Vector
         else:
-            #y2 = np.reshape(y,(len(y), 1))
-            res = H@y
+            # y2 = np.reshape(y,(len(y), 1))
+            res = H @ y
             return res.ravel()
 
 
