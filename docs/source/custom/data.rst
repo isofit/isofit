@@ -113,6 +113,13 @@ For advanced users, the INI file itself as well as the base directory and the se
 The `DEFAULT` section is still instantiated, but now there's a `test` section with a different `data` path than the default.
 Also note the default `examples` is different -- this is because the above examples changed it in the default INI, which is still read if available.
 
+Additionally, these paths may be used in command-line arguments via the `isofit path` command. For example:
+
+.. code-block:: bash
+
+    $ cd $(isofit path examples)
+    $ ls $(isofit path data)/reflectance
+    $ cd $(isofit -i test.ini -s test path srtmnet)
 
 Downloads
 =========
@@ -166,3 +173,45 @@ Each example contains a set of template files generate the required files for th
 By default, a user will not need to modify these templates.
 If an advanced user desires to change the configuration of an example, it is strongly recommended to run the build command first and edit the generated outputs.
 However, every example should work out-of-the-box with the default downloads and build.
+
+==========
+Developers
+==========
+
+This section is specifically for developers seeking to expand either the downloads or examples.
+
+Creating a Download
+===================
+
+
+
+Creating Examples
+=================
+
+ISOFIT leverages specially-designed templates to build the example configurations depending on the installation environment defined by an INI.
+Creating a new example must define one or more templates for the given example type.
+
+
+Templates
+---------
+
+There are two types of examples supported at this time:
+
+1. Direct `Isofit` calls. These examples build configuration files to pass directly into the `Isofit` class to call `.run()`
+
+For existing examples of this type include [SantaMonica](https://github.com/isofit/isofit-tutorials/tree/main/20151026_SantaMonica), [Pasadena](https://github.com/isofit/isofit-tutorials/tree/main/20171108_Pasadena), and [ThermalIR](https://github.com/isofit/isofit-tutorials/tree/main/20190806_ThermalIR).
+Depending on the example, extra directories may be included such as prebuilt simulation files in the `lut` directory.
+
+
+2. `apply_oe` scripts. These examples use templates to define the arguments for a call to the `isofit apply_oe` utility
+
+
+
+
+Once the the example with its templates are finalized, it must be integrated into the [ISOFIT Tutorials](https://github.com/isofit/isofit-tutorials) repository.
+Create a new pull request with a description of the example being created and maintainers will review it then merge and release a new version.
+
+Building
+--------
+
+defined within `isofit/data/build_examples.py` in the `Examples` dictionary.
