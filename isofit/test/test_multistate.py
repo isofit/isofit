@@ -26,7 +26,7 @@ from isofit.utils.multistate import construct_full_state
 def test_single_spectra_multi(args, monkeypatch):
     """Run the Santa Monica test dataset."""
 
-    monkeypatch.chdir("examples/20171108_Pasadena/")
+    monkeypatch.chdir(f"{env.examples}/20171108_Pasadena/")
     surface_model("configs/ang20171108t184227_surface.json")
 
     runner = CliRunner()
@@ -45,7 +45,7 @@ def test_single_spectra_multi(args, monkeypatch):
 def test_single_spectra_single(args, monkeypatch):
     """Run the Santa Monica test dataset."""
 
-    monkeypatch.chdir("examples/20151026_SantaMonica/")
+    monkeypatch.chdir(f"{env.examples}/20151026_SantaMonica/")
     surface_model("configs/prm20151026t173213_surface_coastal.json")
 
     runner = CliRunner()
@@ -62,7 +62,7 @@ def test_single_spectra_single(args, monkeypatch):
     ],
 )
 def test_create_full_state(args, monkeypatch):
-    monkeypatch.chdir("examples/20171108_Pasadena/")
+    monkeypatch.chdir(f"{env.examples}/20171108_Pasadena/")
 
     config = create_new_config(args)
     full_state, *_ = construct_full_state(config)
@@ -80,7 +80,7 @@ def test_create_full_state(args, monkeypatch):
     ],
 )
 def test_match_statevector(args, monkeypatch):
-    monkeypatch.chdir("examples/20171108_Pasadena/")
+    monkeypatch.chdir(f"{env.examples}/20171108_Pasadena/")
 
     config = create_new_config(args)
     full_state, *_ = construct_full_state(config)

@@ -382,7 +382,7 @@ def analytical_line(
         ).T
         input_config = deepcopy(config)
         for surface_class_str, class_idx_pairs in index_spectra_by_surface(
-            self.config, index_pairs
+            input_config, index_pairs
         ).items():
             config = update_config_for_surface(
                 deepcopy(input_config), surface_class_str
