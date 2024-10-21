@@ -396,15 +396,17 @@ def surface_model(
 
 # Input arguments
 @click.command(name="surface_model")
-@click.argument("config_path", type=str)
-@click.argument("--wavelength_path", type=str)
-@click.argument("--output_path", type=str)
-@click.argument("--seed", default=13, type=int)
+@click.argument("config_path")
+@click.option(
+    "--wavelength_path", help="Input wavelengths to three-column wavelength file to use"
+)
+@click.option("--output_path", help="Path to write the created surface model to")
+@click.option("--seed", default=13, type=int, help="Seed for reproducibility")
 def cli_surface_model(**kwargs):
     """Build a new surface model to a block of data"""
 
     # SimpleNamespace converts a dict into dot-notational
-    surface_model(SimpleNamespace(**kwargs))
+    surface_model(**kwargs)
     click.echo("Done")
 
 

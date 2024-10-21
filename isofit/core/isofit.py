@@ -24,15 +24,20 @@ import multiprocessing
 import os
 import time
 
+# Explicitly set the number of threads to be 1, so we more effectively run in parallel
+# Must be executed before importing numpy, otherwise doesn't work
+if not os.environ.get("ISOFIT_NO_SET_THREADS"):
+    os.environ["MKL_NUM_THREADS"] = "1"
+    os.environ["OMP_NUM_THREADS"] = "1"
+
 import click
 import numpy as np
 
-from isofit import ray
+from isofit import checkNumThreads, ray
 from isofit.configs import configs
 from isofit.core.fileio import IO
 from isofit.core.forward import ForwardModel
-from isofit.inversion.inverse import Inversion
-from isofit.inversion.inverse_mcmc import MCMCInversion
+from isofit.inversion import Inversion
 
 
 class Isofit:
@@ -45,10 +50,9 @@ class Isofit:
     """
 
     def __init__(self, config_file, level="INFO", logfile=None):
-        # Explicitly set the number of threads to be 1, so we more effectively
-        # run in parallel
-        os.environ["MKL_NUM_THREADS"] = "1"
-        os.environ["OMP_NUM_THREADS"] = "1"
+        # Check the MKL/OMP env vars and raise a warning if not set properly
+        checkNumThreads()
+
         # Set logging level
         self.loglevel = level
         self.logfile = logfile
@@ -210,16 +214,7 @@ class Worker(object):
         )
         self.config = config
         self.fm = forward_model
-        # self.fm = ForwardModel(self.config)
-
-        if self.config.implementation.mode == "mcmc_inversion":
-            self.iv = MCMCInversion(self.config, self.fm)
-        elif self.config.implementation.mode in ["inversion", "simulation"]:
-            self.iv = Inversion(self.config, self.fm)
-        else:
-            # This should never be reached due to configuration checking
-            raise AttributeError("Config implementation mode node valid")
-
+        self.iv = Inversion(self.config, self.fm)
         self.io = IO(self.config, self.fm)
 
         self.approximate_total_spectra = None

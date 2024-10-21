@@ -20,7 +20,6 @@
 
 import json
 import os
-from argparse import ArgumentError
 from collections import OrderedDict
 from os.path import expandvars
 from typing import List
@@ -57,7 +56,7 @@ class VectorInterpolator:
         self,
         grid_input: List[List[float]],
         data_input: np.array,
-        version="nds-1",
+        version="mlg",
     ):
         # Determine if this a singular unique value, if so just return that directly
         val = data_input[(0,) * data_input.ndim]
@@ -100,11 +99,11 @@ class VectorInterpolator:
             self.maxbaseinds = np.array([len(t) - 1 for t in self.gridtuples])
 
         else:
-            raise ArgumentError(None, f"Unknown interpolator version: {version!r}")
+            raise AttributeError(f"Unknown interpolator version: {version!r}")
 
     def _interpolate(self, points):
         """
-        Supports styles 'rg' and 'nds-k'
+        Supports style 'rg'
         """
         # If we only have one point, we can't do any interpolation, so just
         # return the original data.

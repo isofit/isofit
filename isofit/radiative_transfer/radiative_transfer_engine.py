@@ -18,6 +18,7 @@
 # Author: Philip G. Brodrick, philip.brodrick@jpl.nasa.gov
 # Author: Niklas Bohn, urs.n.bohn@jpl.nasa.gov
 #
+from __future__ import annotations
 
 import logging
 import os
@@ -28,13 +29,8 @@ from typing import Callable
 import numpy as np
 import xarray as xr
 
-import isofit
 from isofit import ray
-from isofit.configs.sections.radiative_transfer_config import (
-    RadiativeTransferEngineConfig,
-)
 from isofit.core import common
-from isofit.core.geometry import Geometry
 from isofit.radiative_transfer import luts
 
 Logger = logging.getLogger(__file__)
@@ -58,10 +54,6 @@ class RadiativeTransferEngine:
         "observer_altitude_km",
         "surface_elevation_km",
     ]
-
-    earth_sun_distance_path = os.path.join(
-        isofit.root, "data", "earth_sun_distance.txt"
-    )
 
     # These properties enable easy access to the lut data
     coszen = property(lambda self: self["coszen"])
@@ -208,6 +200,20 @@ class RadiativeTransferEngine:
             self.lut_names = list(lut_grid)
             self.points = common.combos(lut_grid.values())
 
+            # Verify no duplicates exist else downstream functions will fail
+            duplicates = False
+            for dim, vals in lut_grid.items():
+                if np.unique(vals).size < len(vals):
+                    duplicates = True
+                    Logger.error(
+                        f"Duplicates values were detected in the lut_grid for {dim}: {vals}"
+                    )
+
+            if duplicates:
+                raise AttributeError(
+                    "Input lut_grid detected to have duplicates, please correct them before continuing"
+                )
+
             Logger.info(f"Initializing LUT file")
             self.lut = luts.Create(
                 file=self.lut_path,
@@ -240,12 +246,12 @@ class RadiativeTransferEngine:
         self.cached = SimpleNamespace(point=np.array([]))
         Logger.debug(f"LUTs fully loaded")
 
+        # For each point index, determine if that point derives from Geometry or x_RT
+        self.indices = SimpleNamespace(geom={}, x_RT=[])
+
         # Attach interpolators
         if build_interpolators:
             self.build_interpolators()
-
-            # For each point index, determine if that point derives from Geometry or x_RT
-            self.indices = SimpleNamespace()
 
             # Hidden assumption: geometry keys come first, then come RTE keys
             self.geometry_input_names = set(self.geometry_input_names) - set(
@@ -256,6 +262,17 @@ class RadiativeTransferEngine:
                 for i, key in enumerate(self.lut_names)
                 if key in self.geometry_input_names
             }
+
+            # check if values of observer zenith in LUT are given in MODTRAN convention
+            self.indices.convert_observer_zenith = None
+            if "observer_zenith" in self.lut_grid.keys():
+                if any(np.array(self.lut_grid["observer_zenith"]) > 90.0):
+                    self.indices.convert_observer_zenith = [
+                        i
+                        for i in self.indices.geom
+                        if self.indices.geom[i] == "observer_zenith"
+                    ][0]
+
             # If it wasn't a geom key, it's x_RT
             self.indices.x_RT = list(set(range(self.n_point)) - set(self.indices.geom))
             Logger.debug(f"Interpolators built")
@@ -381,6 +398,12 @@ class RadiativeTransferEngine:
         for i, key in self.indices.geom.items():
             point[i] = getattr(geom, key)
 
+        # convert observer zenith to MODTRAN convention if needed
+        if self.indices.convert_observer_zenith:
+            point[self.indices.convert_observer_zenith] = (
+                180.0 - point[self.indices.convert_observer_zenith]
+            )
+
         return self.interpolate(point)
 
     def interpolate(self, point: np.array) -> dict:
@@ -424,6 +447,7 @@ class RadiativeTransferEngine:
             readSim = ray.put(self.readSim)
             lut_path = ray.put(self.lut_path)
             buffer_time = ray.put(self.max_buffer_time)
+            rte_configure_and_exit = ray.put(self.engine_config.rte_configure_and_exit)
 
             jobs = [
                 streamSimulation.remote(
@@ -433,6 +457,7 @@ class RadiativeTransferEngine:
                     readSim,
                     lut_path,
                     max_buffer_time=buffer_time,
+                    rte_configure_and_exit=self.engine_config.rte_configure_and_exit,
                 )
                 for point in self.points
             ]
@@ -556,10 +581,8 @@ class RadiativeTransferEngine:
         # since it only includes direct upward transmittance
         t_up_dir = case0["transm_up_dir"]
 
-        # REVIEW: two_albedo_method-v1 used a single solar_irr value, but now we have an array of values
-        # The last value in the new array is the same as the old v1, so for backwards compatibility setting that here
         # Top-of-atmosphere solar irradiance as a function of sun zenith angle
-        E0 = case0["solar_irr"][-1] * coszen / np.pi
+        E0 = case0["solar_irr"] * coszen / np.pi
 
         # Direct ground reflected radiance at sensor for case 1 (sun->surface->sensor)
         # This includes direct down and direct up transmittance
@@ -592,7 +615,7 @@ class RadiativeTransferEngine:
         Lp0 = ((Lsurf2 * Lp1) - (Lsurf1 * Lp2)) / (Lsurf2 - Lsurf1)
 
         # Diffuse upward transmittance
-        t_up_dif = np.pi * (Lp1 - Lp0) / (rfl1 * E_down1)
+        t_up_dif = np.pi * (Lp1 - Lp0) / Lsurf1
 
         # Spherical albedo
         salb = (E_down1 - E_down2) / (Lsurf1 - Lsurf2)
@@ -637,6 +660,7 @@ def streamSimulation(
     reader: Callable,
     output: str,
     max_buffer_time: float = 0.5,
+    rte_configure_and_exit: bool = False,
 ):
     """Run a simulation for a single point and stream the results to a saved lut file.
 
@@ -647,6 +671,7 @@ def streamSimulation(
         reader (function): function to read the results of the simulation
         output (str): LUT store to save results to
         max_buffer_time (float, optional): _description_. Defaults to 0.5.
+        rte_configure_and_exit (bool, optional): exit early if not executing simulations
     """
     Logger.debug(f"Simulating(point={point})")
 
@@ -655,6 +680,10 @@ def streamSimulation(
 
     # Execute the simulation
     simmer(point)
+
+    # No data will be produced, just configuration files
+    if rte_configure_and_exit:
+        return
 
     # Read the simulation results
     data = reader(point)

@@ -24,6 +24,7 @@ import logging
 import os
 import re
 import subprocess
+import time
 from copy import deepcopy
 from sys import platform
 
@@ -42,13 +43,6 @@ eps = 1e-5  # used for finite difference derivative calculations
 tropopause_altitude_km = 17.0
 
 ### Classes ###
-
-
-class FileExistsError(Exception):
-    """FileExistsError with a message."""
-
-    def __init__(self, message):
-        super(FileExistsError, self).__init__(message)
 
 
 class ModtranRT(RadiativeTransferEngine):
@@ -73,7 +67,7 @@ class ModtranRT(RadiativeTransferEngine):
         dict
             Dictionary of calculated values using the tokens list
         """
-        irr = tokens[18] * 1e6 * np.pi / tokens[8] / coszen  # uW/nm/sr/cm2
+        irr = tokens[18] * 1e6 * np.pi / tokens[8] / coszen  # uW/nm/cm2
 
         # fmt: off
         # If classic singlepart transmittance is used,
@@ -85,7 +79,7 @@ class ModtranRT(RadiativeTransferEngine):
         return {
             'solar_irr'          : irr,       # Solar irradiance
             'wl'                 : tokens[0], # Wavelength
-            'rhoatm'             : tokens[4] * 1e6 * np.pi / (irr * coszen), # uW/nm/sr/cm2
+            'rhoatm'             : tokens[4] * 1e6 * np.pi / (irr * coszen), # unitless
             'width'              : tokens[8],
             'thermal_upwelling'  : (tokens[11] + tokens[12]) / tokens[8] * 1e6, # uW/nm/sr/cm2
             'thermal_downwelling': tokens[16] * 1e6 / tokens[8],
@@ -322,25 +316,11 @@ class ModtranRT(RadiativeTransferEngine):
         infilename = "LUT_" + filename_base + ".json"
         infilepath = os.path.join(self.sim_path, "LUT_" + filename_base + ".json")
 
-        if not self.required_results_exist(filename_base):
-            rebuild = True
-        else:
-            # We compare the two configuration files, ignoring names and
-            # wavelength paths which tend to be non-portable
-            with open(infilepath, "r") as fin:
-                current_config = json.load(fin)["MODTRAN"]
-                current_config[0]["MODTRANINPUT"]["NAME"] = ""
-                modtran_config[0]["MODTRANINPUT"]["NAME"] = ""
-                current_config[0]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
-                modtran_config[0]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = ""
-                current_str = json.dumps(current_config)
-                modtran_str = json.dumps(modtran_config)
-                rebuild = modtran_str.strip() != current_str.strip()
+        if self.required_results_exist(filename_base):
+            Logger.warning(f"File already exists, skipping execution: {filename_base}")
+            return
 
-        if not rebuild:
-            Logger.warning(
-                f"File already exists and not set to rebuild, skipping execution: {filename_base}"
-            )
+        if self.engine_config.rte_configure_and_exit:
             return
 
         # write_config_file

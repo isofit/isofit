@@ -33,7 +33,7 @@ class ImplementationConfig(BaseConfigSection):
         self._mode_type = str
         self.mode = "inversion"
         """
-        str: Defines the operating mode for isofit. Current options are: inversion, inversion_mcmc, 
+        str: Defines the operating mode for isofit. Current options are: inversion, inversion_mcmc,
         and 'simulation'.
         """
 
@@ -61,15 +61,6 @@ class ImplementationConfig(BaseConfigSection):
         self.ray_include_dashboard = False
         """str: Ray - parameter.  Boolean to include dashboard."""
 
-        self._rte_configure_and_exit_type = bool
-        self.rte_configure_and_exit = False
-        """bool: Indicates that code should terminate as soon as all radiative transfer engine configuration files are
-        written (without running them)"""
-
-        self._rte_auto_rebuild_type = bool
-        self.rte_auto_rebuild = True
-        """bool: Flag indicating whether radiative transfer engines should automatically rebuild."""
-
         self._ray_temp_dir_type = str
         self.ray_temp_dir = "/tmp/ray"
         """str: Overrides the standard ray temporary directory.  Useful for multiuser systems."""
@@ -81,7 +72,7 @@ class ImplementationConfig(BaseConfigSection):
         self._io_buffer_size_type = int
         self.io_buffer_size = 100
         """bool: Integer indicating how large (how many spectra) of chunks to read/process/write.  A
-        buffer size of 1 means pixels are processed independently.  Large buffers can help prevent IO choke points, 
+        buffer size of 1 means pixels are processed independently.  Large buffers can help prevent IO choke points,
         especially if the """
 
         self._max_hash_table_size_type = int

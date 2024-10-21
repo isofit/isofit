@@ -16,6 +16,7 @@
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: Philip G Brodrick, philip.brodrick@jpl.nasa.gov
 #
+from __future__ import annotations
 
 import datetime
 import logging
@@ -29,11 +30,7 @@ import numpy as np
 import yaml
 from scipy.interpolate import interp1d
 
-from isofit.configs.sections.radiative_transfer_config import (
-    RadiativeTransferEngineConfig,
-)
 from isofit.core.common import resample_spectrum
-from isofit.core.sunposition import sunpos
 from isofit.radiative_transfer import luts
 from isofit.radiative_transfer.engines import SixSRT
 from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
@@ -76,7 +73,6 @@ class SimulatedModtranRT(RadiativeTransferEngine):
     """
     A hybrid surrogate-model and emulator of MODTRAN-like results.  A description of
     the model can be found in:
-
         P.G. Brodrick, D.R. Thompson, J.E. Fahlen, M.L. Eastwood, C.M. Sarture, S.R. Lundeen, W. Olson-Duvall,
         N. Carmon, and R.O. Green. Generalized radiative transfer emulation for imaging spectroscopy reflectance
         retrievals. Remote Sensing of Environment, 261:112476, 2021.doi: 10.1016/j.rse.2021.112476.
@@ -135,6 +131,10 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             modtran_emulation=True,
             build_interpolators=False,
         )
+
+        if self.engine_config.rte_configure_and_exit:
+            return
+
         # Extract useful information from the sim
         self.esd = sim.esd
         self.sim_lut_path = config.lut_path
