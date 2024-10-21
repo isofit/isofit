@@ -107,7 +107,7 @@ def construct_full_state(full_config):
     return full_statevec, full_idx_surface, full_idx_surf_rfl, full_idx_rt
 
 
-def index_spectra_by_surface(config, index_pairs):
+def index_spectra_by_surface(config, index_pairs, sub=True):
     """
     Indexes an image by a provided surface class file.
     Could extend it to be indexed by an atomspheric classification
@@ -134,7 +134,7 @@ def index_spectra_by_surface(config, index_pairs):
     ):
         return {"all": index_pairs}
 
-    if vars(surface_config).get("sub_surface_class_file"):
+    if vars(surface_config).get("sub_surface_class_file") and sub:
         class_file = surface_config.sub_surface_class_file
     else:
         class_file = surface_config.surface_class_file

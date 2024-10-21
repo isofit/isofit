@@ -16,6 +16,7 @@
 #
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: Philip G. Brodrick, philip.brodrick@jpl.nasa.gov
+from __future__ import annotations
 
 import logging
 import multiprocessing
@@ -54,16 +55,18 @@ from isofit.utils.multistate import (
 class Worker(object):
     def __init__(
         self,
-        config: configs.Config,
+        config: Config,
+        fm: ForwardModel,
+        surface_class_str: str,
         full_statevector: list,
         full_idx_surface: np.array,
         full_idx_RT: np.array,
-        full_idx_surf_rfl: np.array,
         rdn_file: str,
         loc_file: str,
         obs_file: str,
         atm_file: str,
-        output_files: dict,
+        rfl_output: str,
+        unc_output: str,
         output_shape: tuple,
         loglevel: str,
         logfile: str,
@@ -82,7 +85,15 @@ class Worker(object):
             filename=logfile,
             datefmt="%Y-%m-%d,%H:%M:%S",
         )
+
+        # Persist config
         self.config = config
+
+        # Persist forward model
+        self.fm = fm
+
+        # Persist surface class (or all)
+        self.surface_class_str = surface_class_str
 
         # Will fail if env.data isn't set up
         self.esd = IO.load_esd()
@@ -90,18 +101,28 @@ class Worker(object):
         self.full_statevector = full_statevector
         self.full_idx_surface = full_idx_surface
         self.full_idx_RT = full_idx_RT
-        self.full_idx_surf_rfl = full_idx_surf_rfl
 
         self.winidx = retrieve_winidx(self.config)
 
+        # input arrays
         self.rdn = envi.open(envi_header(rdn_file)).open_memmap(interleave="bip")
         self.loc = envi.open(envi_header(loc_file)).open_memmap(interleave="bip")
         self.obs = envi.open(envi_header(obs_file)).open_memmap(interleave="bip")
         self.rt_state = envi.open(envi_header(atm_file)).open_memmap(interleave="bip")
 
         self.output_shape = output_shape
-        self.rfl_output = output_files["rfl_output"]
-        self.unc_output = output_files["unc_output"]
+
+        # output arrays
+        self.rfl = envi.open(envi_header(rfl_output)).open_memmap(
+            interleave="bip", writable=True
+        )
+        self.unc = envi.open(envi_header(unc_output)).open_memmap(
+            interleave="bip", writable=True
+        )
+
+        # output paths
+        self.rfl_outpath = rfl_output
+        self.unc_outpath = unc_output
 
         self.completed_spectra = 0
         self.hash_table = OrderedDict()
@@ -122,26 +143,8 @@ class Worker(object):
         start_line, stop_line = line_breaks
 
         # Set up outputs
-        output_state = (
-            np.zeros(
-                (
-                    stop_line - start_line,
-                    self.rt_state.shape[1],
-                    len(self.full_idx_surface),
-                )
-            )
-            + fill_value
-        )
-        output_state_unc = (
-            np.zeros(
-                (
-                    stop_line - start_line,
-                    self.rt_state.shape[1],
-                    len(self.full_idx_surface),
-                )
-            )
-            + fill_value
-        )
+        output_state = self.rfl[start_line:stop_line, ...]
+        output_state_unc = self.unc[start_line:stop_line, ...]
 
         # Index chunk
         index_pairs = np.vstack(
@@ -154,66 +157,54 @@ class Worker(object):
         ).T
 
         input_config = deepcopy(self.config)
-        for surface_class_str, class_idx_pairs in index_spectra_by_surface(
-            self.config, index_pairs
-        ).items():
-            if self.config.forward_model.surface.multi_surface_flag:
-                config = update_config_for_surface(
-                    deepcopy(input_config), surface_class_str
-                )
-            else:
-                config = input_config
+        pixel_index = index_spectra_by_surface(input_config, index_pairs, sub=False)
+        class_idx_pairs = pixel_index[self.surface_class_str]
 
-            fm = ForwardModel(config)
+        for r, c, *_ in class_idx_pairs:
+            meas = self.rdn[r, c, :]
 
-            for r, c, *_ in class_idx_pairs:
-                meas = self.rdn[r, c, :]
+            if self.radiance_correction is not None:
+                meas *= self.radiance_correction
 
-                if self.radiance_correction is not None:
-                    meas *= self.radiance_correction
+            if np.all(meas < 0):
+                continue
 
-                if np.all(meas < 0):
-                    continue
+            x_RT = self.rt_state[r, c, self.full_idx_RT - len(self.full_idx_surface)]
+            geom = Geometry(
+                obs=self.obs[r, c, :],
+                loc=self.loc[r, c, :],
+                esd=self.esd,
+            )
 
-                x_RT = self.rt_state[
-                    r, c, self.full_idx_RT - len(self.full_idx_surface)
-                ]
-                geom = Geometry(
-                    obs=self.obs[r, c, :],
-                    loc=self.loc[r, c, :],
-                    esd=self.esd,
-                )
+            states, unc = invert_analytical(
+                self.fm,
+                self.winidx,
+                meas,
+                geom,
+                x_RT,
+                1,
+                self.hash_table,
+                self.hash_size,
+            )
 
-                states, unc = invert_analytical(
-                    fm,
-                    self.winidx,
-                    meas,
-                    geom,
-                    x_RT,
-                    1,
-                    self.hash_table,
-                    self.hash_size,
-                )
+            state_est = states[-1]
+            full_state_est = match_statevector(
+                state_est, self.full_statevector, self.fm.statevec
+            )
+            output_state[r - start_line, c, :] = full_state_est[self.full_idx_surface]
 
-                state_est = states[-1]
-                full_state_est = match_statevector(
-                    state_est, self.full_statevector, fm.statevec
-                )
-                output_state[r - start_line, c, :] = full_state_est[
-                    self.full_idx_surface
-                ]
-
-                full_unc_est = match_statevector(
-                    unc, self.full_statevector, fm.statevec
-                )
-                output_state_unc[r - start_line, c, :] = full_unc_est[
-                    self.full_idx_surface
-                ]
+            full_unc_est = match_statevector(
+                unc, self.full_statevector, self.fm.statevec
+            )
+            output_state_unc[r - start_line, c, :] = full_unc_est[self.full_idx_surface]
 
         # Only apply rfl check. Bounds vary between glint and rfl terms
         output_state = output_state[..., self.full_idx_surface]
 
-        rfl_bounds = (np.min(fm.bounds, axis=0)[0], np.max(fm.bounds, axis=0)[1])
+        rfl_bounds = (
+            np.min(self.fm.bounds, axis=0)[0],
+            np.max(self.fm.bounds, axis=0)[1],
+        )
 
         logging.debug(
             f"Reflectance output will be bounded to the surface bounds: {rfl_bounds}"
@@ -229,10 +220,15 @@ class Worker(object):
         )
         output_state[mask] = 0
 
+        logging.info(
+            f"Analytical line writing lines: {start_line} to {stop_line}. "
+            f"Surface: {self.surface_class_str}"
+        )
+
         # Output surface rfl
         write_bil_chunk(
             np.swapaxes(output_state, 1, 2),
-            self.rfl_output,
+            self.rfl_outpath,
             start_line,
             (self.output_shape[0], self.output_shape[1], len(self.full_idx_surface)),
         )
@@ -240,7 +236,7 @@ class Worker(object):
         # Save surface state uncertainty
         write_bil_chunk(
             np.swapaxes(output_state_unc, 1, 2),
-            self.unc_output,
+            self.unc_outpath,
             start_line,
             (self.output_shape[0], self.output_shape[1], len(self.full_idx_surface)),
         )
@@ -258,7 +254,7 @@ def retrieve_winidx(config):
     return winidx
 
 
-def construct_output(output_metadata, outpath, buffer_size=100, **kwargs):
+def construct_output(output_metadata, outpath, out_shape, **kwargs):
     """
     Construct output file by updating metadata and creating object
     """
@@ -270,6 +266,9 @@ def construct_output(output_metadata, outpath, buffer_size=100, **kwargs):
     out_file = envi.create_image(
         envi_header(outpath), ext="", metadata=output_metadata, force=True
     )
+
+    out_mm = out_file.open_memmap(interleave="source", writable=True)
+    out_mm[:, :] = np.zeros(out_shape, dtype=np.float32)
     del out_file
 
     return outpath
@@ -319,7 +318,6 @@ def analytical_line(
     """
     TODO: Description
     """
-
     logging.basicConfig(
         format="%(levelname)s:%(asctime)s ||| %(message)s",
         level=loglevel,
@@ -371,28 +369,7 @@ def analytical_line(
     output_metadata = rdn_ds.metadata
     del rdn_ds
 
-    # Set up the multi-state pixel map by sub
-    # Initialize fm (if no lut, will create here)
-    if config.forward_model.surface.multi_surface_flag:
-        index_pairs = np.vstack(
-            [
-                x.flatten(order="f")
-                for x in np.meshgrid(*(range(rdns[0]), range(rdns[1])))
-            ]
-        ).T
-        input_config = deepcopy(config)
-        for surface_class_str, class_idx_pairs in index_spectra_by_surface(
-            input_config, index_pairs
-        ).items():
-            config = update_config_for_surface(
-                deepcopy(input_config), surface_class_str
-            )
-            fm = ForwardModel(config)
-        config = input_config
-    else:
-        fm = ForwardModel(config)
-    del fm
-
+    # Get full statevector for image
     (
         full_statevector,
         full_idx_surface,
@@ -402,7 +379,6 @@ def analytical_line(
 
     # Perform the atmospheric interpolation
     if os.path.isfile(atm_file) is False:
-        # This should match the necesary state elements based on the name
         atm_interpolation(
             reference_state_file=subs_state_file,
             reference_locations_file=subs_loc_file,
@@ -415,18 +391,16 @@ def analytical_line(
             n_cores=n_cores,
         )
 
-    # Find the winidx
-    winidx = retrieve_winidx(config)
-
     # Get string representation of bad band list
     outside_ret_windows = np.zeros(len(full_idx_surf_rfl), dtype=int)
-    outside_ret_windows[winidx] = 1
+    outside_ret_windows[retrieve_winidx(config)] = 1
 
     # Construct surf rfl output
     bbl = "{" + ",".join([f"{x}" for x in outside_ret_windows]) + "}"
     rfl_output = construct_output(
         output_metadata,
         analytical_rfl_path,
+        (rdns[0], len(full_idx_surface), rdns[1]),
         bbl=bbl,
         interleave="bil",
         bands=f"{len(full_idx_surface)}",
@@ -440,6 +414,7 @@ def analytical_line(
     unc_output = construct_output(
         output_metadata,
         analytical_state_unc_path,
+        (rdns[0], len(full_idx_surface), rdns[1]),
         bbl=bbl,
         interleave="bil",
         bands=f"{len(full_idx_surface)}",
@@ -464,44 +439,68 @@ def analytical_line(
         "num_cpus": n_cores,
     }
     ray.init(**ray_dict)
-
     n_workers = n_cores
 
-    # Initialize workers
-    wargs = [
-        ray.put(obj)
-        for obj in (
-            config,
-            full_statevector,
-            full_idx_surface,
-            full_idx_RT,
-            full_idx_surf_rfl,
-            rdn_file,
-            loc_file,
-            obs_file,
-            atm_file,
-            output_files,
-            rdns,
-            loglevel,
-            logfile,
+    # Set up the multi-state pixel map by sub
+    index_pairs = np.vstack(
+        [x.flatten(order="f") for x in np.meshgrid(*(range(rdns[0]), range(rdns[1])))]
+    ).T
+
+    input_config = deepcopy(config)
+    for surface_class_str, class_idx_pairs in index_spectra_by_surface(
+        input_config, index_pairs, sub=False
+    ).items():
+
+        # Handle multisurface
+        if input_config.forward_model.surface.multi_surface_flag:
+            config = update_config_for_surface(
+                deepcopy(input_config), surface_class_str
+            )
+        else:
+            config = input_config
+
+        fm = ForwardModel(config)
+
+        # Initialize workers
+        wargs = [
+            ray.put(obj)
+            for obj in (
+                config,
+                fm,
+                surface_class_str,
+                full_statevector,
+                full_idx_surface,
+                full_idx_RT,
+                rdn_file,
+                loc_file,
+                obs_file,
+                atm_file,
+                rfl_output,
+                unc_output,
+                rdns,
+                loglevel,
+                logfile,
+            )
+        ]
+        workers = ray.util.ActorPool([Worker.remote(*wargs) for _ in range(n_workers)])
+
+        line_breaks = np.linspace(
+            0,
+            rdns[0],
+            n_workers * config.implementation.task_inflation_factor,
+            dtype=int,
         )
-    ]
-    workers = ray.util.ActorPool([Worker.remote(*wargs) for _ in range(n_workers)])
 
-    n_iter = min(rdns[0], n_workers * config.implementation.task_inflation_factor)
+        line_breaks = [
+            (line_breaks[n], line_breaks[n + 1]) for n in range(len(line_breaks) - 1)
+        ]
 
-    line_breaks = np.linspace(0, rdns[0], n_iter, dtype=int)
-    line_breaks = [
-        (line_breaks[n], line_breaks[n + 1]) for n in range(len(line_breaks) - 1)
-    ]
-
-    # run workers
-    start_time = time.time()
-    results = list(
-        workers.map_unordered(lambda a, b: a.run_chunks.remote(b), line_breaks)
-    )
+        # run workers
+        start_time = time.time()
+        results = list(
+            workers.map_unordered(lambda a, b: a.run_chunks.remote(b), line_breaks)
+        )
     total_time = time.time() - start_time
-    print(total_time)
 
     logging.info(
         f"Analytical line inversions complete.  {round(total_time,2)}s total, "
