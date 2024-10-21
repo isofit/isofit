@@ -42,7 +42,7 @@ jobs:
         # Python 3.12 cannot be tested until Ray provides support:
         #   https://github.com/ray-project/ray/issues/40211
         python-version: ["3.8", "3.9", "3.10", "3.11"]
-        pytest-flags: ["-m unmarked", "-m slow", "-m examples", "-m hypertrace"]
+        pytest-flags: ["-m unmarked", "-m slow", "-m examples"]
 
     steps:
 
@@ -74,52 +74,23 @@ jobs:
           # Ensure ISOFIT has been installed
           python3 -c "import isofit; print(isofit.__file__)"
 
-      - name: Cache 6S
-        id: cache-6s-v21
+      - name: Cached Extras
+        id: cache-extras
         uses: actions/cache@v3
         env:
-          cache-name: cache-6s-v21
+          cache-name: cache-extras
         with:
-          path: 6sv-2.1/
+          path: extras
           key: ${{ env.cache-name }}
 
-      - name: Download and build 6S v2.1
-        if: ${{ steps.cache-6S-v21.outputs.cache-hit != true }}
+      - name: Download extras
+        if: ${{ steps.cache-extras.outputs.cache-hit != true }}
         shell: bash
         run: |
-          ./scripts/download-and-build-6s.sh
-
-      - name: Cache sRTMnet
-        id: cache-sRTMnet-v120
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-sRTMnet-v120
-        with:
-          path: sRTMnet_v120/
-          key: ${{ env.cache-name }}
-
-      - name: Install sRTMnet
-        if: ${{ steps.cache-sRTMnet-v120.outputs.cache-hit != true }}
-        shell: bash
-        run: |
-          ./scripts/download-and-unpack-sRTMnet.sh
-
-      - name: Cache Hypertrace Data
-        id: cache-hypertrace-data
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-hypertrace-data
-        with:
-          path: hypertrace-data/
-          key: ${{ env.cache-name }}
-
-      - name: Download and unpack Hypertrace data
-        if: ${{ steps.cache-hypertrace-data.outputs.cache-hit != true }}
-        shell: bash
-        run: |
-          ./scripts/download-and-unpack-hypertrace-data.sh
+          isofit -b extras download all
+          isofit build
 
       - name: Execute tests
         shell: bash
         run: |
-          ./scripts/run-tests.sh ${{ matrix.pytest-flags }}
+          python3 -m pytest -s "${{ matrix.pytest-flags }}"
