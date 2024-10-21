@@ -157,25 +157,17 @@ class Isofit:
         # Save this for logging
         total_samples = index_pairs.shape[0]
 
-        # If multistate, split into class. Flag is messy because of examples
-        index_pairs = index_spectra_by_surface(
-            self.config.forward_model.surface, index_pairs
-        )
-
-        # Some logging that might be nice
-        if len(index_pairs.keys()) > 1:
-            logging.info("Multi-state inversion started.")
-        else:
-            logging.info("Single-state inversion started.")
-
         # Keep track of input version of config
         input_config = copy.deepcopy(self.config)
 
         # Loop through index pairs and run workers
         class_loop_start_time = time.time()
-        for surface_class_str, index_pair in index_pairs.items():
+        # for surface_class_str, index_pair in index_pairs.items():
+        for surface_class_str, class_idx_pairs in index_spectra_by_surface(
+            self.config, index_pairs
+        ).items():
             # Don't want more workers than tasks
-            n_iter = index_pair.shape[0]
+            n_iter = class_idx_pairs.shape[0]
             n_workers = min(n_workers, n_iter)
 
             # The number of tasks to be initialized
@@ -186,10 +178,10 @@ class Isofit:
             # Get indices to pass to each worker
             index_sets = np.linspace(0, n_iter, num=n_tasks, dtype=int)
             if len(index_sets) == 1:
-                indices_to_run = [index_pair[0:1, :]]
+                indices_to_run = [class_idx_pairs[0:1, :]]
             else:
                 indices_to_run = [
-                    index_pair[index_sets[l] : index_sets[l + 1], :]
+                    class_idx_pairs[index_sets[l] : index_sets[l + 1], :]
                     for l in range(len(index_sets) - 1)
                 ]
 

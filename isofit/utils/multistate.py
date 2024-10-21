@@ -68,15 +68,11 @@ def construct_full_state(full_config):
     if not rt_states:
         rt_states = sorted(rt_config.radiative_transfer_engines[0].lut_names.keys())
 
-    # Without changing where the nonrfl surface elements are defined
-    surface_config = full_config.forward_model.surface
-    params = vars(surface_config).get("surface_params", {})
-
     # Check for config type
-    if surface_config.multi_surface_flag:
+    if full_config.forward_model.surface.multi_surface_flag:
         # Iterate through the different surfaces to find overlapping state names
-        for i, surface_sub_config in surface_config.Surfaces.items():
-            full_config = update_config_for_surface(full_config, i)
+        for surface_class_str in full_config.forward_model.surface.Surfaces.keys():
+            full_config = update_config_for_surface(full_config, surface_class_str)
             surface = Surface(full_config)
             rfl_states += surface.statevec_names[: len(surface.idx_lamb)]
             nonrfl_states += surface.statevec_names[len(surface.idx_lamb) :]
@@ -111,7 +107,7 @@ def construct_full_state(full_config):
     return full_statevec, full_idx_surface, full_idx_surf_rfl, full_idx_rt
 
 
-def index_spectra_by_surface(surface_config, index_pairs):
+def index_spectra_by_surface(config, index_pairs):
     """
     Indexes an image by a provided surface class file.
     Could extend it to be indexed by an atomspheric classification
@@ -128,6 +124,7 @@ def index_spectra_by_surface(surface_config, index_pairs):
                       group.
     """
 
+    surface_config = config.forward_model.surface
     # Check if the class files exist. Defaults to run all pixels.
     # This accomodates examples where we test the multi-surface,
     # but there is no classification rile
@@ -191,9 +188,7 @@ def index_spectra_by_surface_and_sub(config, lbl_file):
     lbl_shape = (range(lbl.shape[0]), range(lbl.shape[1]))
     index_pairs = np.vstack([x.flatten(order="f") for x in np.meshgrid(*lbl_shape)]).T
 
-    sub_pixel_index = index_spectra_by_surface(
-        config.forward_model.surface, index_pairs
-    )
+    sub_pixel_index = index_spectra_by_surface(config, index_pairs)
 
     pixel_index = {}
     class_groups = {}
