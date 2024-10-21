@@ -23,7 +23,7 @@ from isofit.utils import surface_model
 def test_santa_monica(args, monkeypatch):
     """Run the Santa Monica test dataset."""
 
-    monkeypatch.chdir(f"{env.examples}/20151026_SantaMonica/")
+    monkeypatch.chdir(env.path("examples", "20151026_SantaMonica/"))
     surface_model("configs/prm20151026t173213_surface_coastal.json")
 
     runner = CliRunner()
@@ -47,7 +47,7 @@ def test_santa_monica(args, monkeypatch):
 def test_pasadena_modtran(args, monkeypatch):
     """Run Pasadena example dataset."""
 
-    monkeypatch.chdir(f"{env.examples}/20171108_Pasadena/")
+    monkeypatch.chdir(env.path("examples", "20171108_Pasadena/"))
     surface_model("configs/ang20171108t184227_surface.json")
 
     runner = CliRunner()
@@ -63,7 +63,7 @@ def test_pasadena_modtran(args, monkeypatch):
 def test_pasadena_topoflux(monkeypatch):
     """Run Pasadena topoflux example dataset."""
 
-    monkeypatch.chdir(f"{env.examples}/20171108_Pasadena/")
+    monkeypatch.chdir(env.path("examples", "20171108_Pasadena/"))
     surface_model("configs/ang20171108t184227_surface.json")
 
     model = Isofit(
@@ -77,7 +77,7 @@ def test_pasadena_topoflux(monkeypatch):
 def test_modtran_one(monkeypatch):
     """Run MODTRAN example dataset."""
 
-    monkeypatch.chdir(f"{env.examples}/20190806_ThermalIR/")
+    monkeypatch.chdir(env.path("examples", "20190806_ThermalIR/"))
     surface_model("configs/surface.json")
 
     model = Isofit(
@@ -91,7 +91,7 @@ def test_modtran_one(monkeypatch):
 # def test_profiling_cube_small(monkeypatch):
 #     """Run profiling datasets."""
 #
-#     monkeypatch.chdir(f"{env.examples}/profiling_cube/")
+#     monkeypatch.chdir(env.path("examples", "profiling_cube/"))
 #
 #     environ = os.environ.copy()
 #     environ["ISOFIT_DEBUG"] = "1"

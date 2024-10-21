@@ -177,7 +177,7 @@ class Ini:
             except:
                 Logger.exception(f"Failed to dump ini to file: {self.ini}")
 
-    def path(self, dir: str, path: str) -> Path:
+    def path(self, dir: str, *path: list) -> Path:
         """
         Retrieves a path under one of the env directories and validates the path exists.
 
@@ -185,7 +185,7 @@ class Ini:
         ----------
         dir : str
             One of the env directories, eg. "data", "examples"
-        path : str
+        *path : List[str]
             Path to a file under the `dir`
 
         Returns
@@ -195,7 +195,7 @@ class Ini:
         """
         self.validate([dir], debug=Logger.debug, error=Logger.error)
 
-        path = (Path(self[dir]) / path).resolve()
+        path = Path([self[dir], *path]).resolve()
 
         if not path.exists():
             Logger.error(

@@ -40,12 +40,13 @@ def surface(cwd):
     # Generate the surface.mat using the image_cube example config
     # fmt: off
     surface_model(
-        config_path=f"{env.examples}/20171108_Pasadena/configs/ang20171108t184227_surface.json",
-        wavelength_path=f"{env.examples}/20171108_Pasadena/remote/20170320_ang20170228_wavelength_fit.txt",
+        config_path=env.path("examples", "20171108_Pasadena", "remote", "ang20171108t184227_surface.json"),
+        wavelength_path=env.path("examples", "20171108_Pasadena", "remote", "20170320_ang20170228_wavelength_fit.txt"),
         output_path=outp
     )
     # fmt: on
     # Return the path to the mat file
+
     return outp
 
 
@@ -89,7 +90,7 @@ def test_apply_oe(files, args, surface):
     ray.shutdown()
     sleep(120)
 
-    args[3] = os.path.join(env.srtmnet, "sRTMnet_v120.h5")
+    args[3] = env.path("srtmnet", "sRTMnet_v120.h5")
     arguments = ["apply_oe", *files, *args, "--surface_path", surface]
 
     # Passing non-string arguments to click is not allowed.

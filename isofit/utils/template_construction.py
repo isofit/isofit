@@ -182,33 +182,29 @@ class Pathnames:
         self.sixs_path = os.getenv("SIXS_DIR", env.sixs)
 
         if args.sensor == "avcl":
-            self.noise_path = join(env.data, "avirisc_noise.txt")
+            self.noise_path = env.path("data", "avirisc_noise.txt")
         elif args.sensor == "emit":
-            self.noise_path = join(env.data, "emit_noise.txt")
+            self.noise_path = env.path("data", "emit_noise.txt")
             if self.input_channelized_uncertainty_path is None:
-                self.input_channelized_uncertainty_path = join(
-                    env.data, "emit_osf_uncertainty.txt"
+                self.input_channelized_uncertainty_path = env.path(
+                    "data", "emit_osf_uncertainty.txt"
                 )
             if self.input_model_discrepancy_path is None:
-                self.input_model_discrepancy_path = join(
-                    env.data, "emit_model_discrepancy.mat"
+                self.input_model_discrepancy_path = env.path(
+                    "data", "emit_model_discrepancy.mat"
                 )
+
         else:
             self.noise_path = None
             logging.info("no noise path found, proceeding without")
             # quit()
 
-        self.earth_sun_distance_path = abspath(join(env.data, "earth_sun_distance.txt"))
-        self.irradiance_file = abspath(
-            join(
-                env.examples,
-                "20151026_SantaMonica",
-                "data",
-                "prism_optimized_irr.dat",
-            )
+        self.earth_sun_distance_path = env.path("data", "earth_sun_distance.txt")
+        self.irradiance_file = env.path(
+            "examples", "20151026_SantaMonica", "data", "prism_optimized_irr.dat"
         )
 
-        self.aerosol_tpl_path = join(env.data, "aerosol_template.json")
+        self.aerosol_tpl_path = env.path("data", "aerosol_template.json")
         self.rdn_factors_path = None
         if args.rdn_factors_path is not None:
             self.rdn_factors_path = abspath(args.rdn_factors_path)
@@ -1143,7 +1139,7 @@ def load_climatology(
 
     """
 
-    aerosol_model_path = os.path.join(env.data, "aerosol_model.txt")
+    aerosol_model_path = env.path("data", "aerosol_model.txt")
     aerosol_state_vector = {}
     aerosol_lut_grid = {}
     aerosol_lut_ranges = [
