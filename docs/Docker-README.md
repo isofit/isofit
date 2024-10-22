@@ -7,8 +7,6 @@ Tags
 
 Getting Started
 ---------------
-
-
 Start by pulling the image:
 
 ```bash
@@ -46,3 +44,16 @@ $ docker run --rm -it jammont/isofit isofit --version
 $ docker run --rm -it jammont/isofit bash examples/20151026_SantaMonica/run.sh
 $ docker run --rm -it jammont/isofit bash examples/image_cube/small/analytical.sh
 ```
+
+Jupyter
+-------
+The default run command for the container is to start up a Jupyterlab server on internal port 8888.
+To connect to this port and make it accessible via the browser, pass the `-p [host]:8888` parameter:
+
+```
+$ docker run --rm -p 8888:8888 jammont/isofit
+```
+
+This will start up the Jupyterlab server on port `8888`. Navigate to `127.0.0.1:8888` in a web browser to start using the server.
+
+To shutdown, hit CTRL-C three times in the running terminal.
