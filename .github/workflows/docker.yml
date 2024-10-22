@@ -1,14 +1,8 @@
 name: Build Dockers
 
-on: [push, pull_request_target]
-  # push:
-  #   branches:
-  #     - main
-  #     - dev
-  # pull_request:
-  #   branches:
-  #     - main
-  #     - dev
+on:
+  release:
+    types: [published]
 
 concurrency:
   group: ${{ github.workflow }}
