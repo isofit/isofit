@@ -16,6 +16,7 @@
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
+from __future__ import annotations
 
 import logging
 import os
@@ -25,10 +26,9 @@ from datetime import datetime
 
 import numpy as np
 
-from isofit.configs.sections.radiative_transfer_config import (
-    RadiativeTransferEngineConfig,
-)
 from isofit.core.common import resample_spectrum
+from isofit.core.fileio import IO
+from isofit.data import env
 from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
 
 Logger = logging.getLogger(__file__)
@@ -68,6 +68,21 @@ class SixSRT(RadiativeTransferEngine):
         modtran_emulation=False,
         **kwargs,
     ):
+        current = os.environ.get("SIXS_DIR")
+        if not current:
+            Logger.debug(f"Setting SIXS_DIR={env.sixs}")
+            os.environ["SIXS_DIR"] = env.sixs
+        elif (current := os.path.abspath(current)) != env.sixs:
+            Logger.error(
+                "WARNING: The environment variable $SIXS_DIR does not match the ISOFIT ini"
+            )
+            Logger.error(f"ENV: {current}")
+            Logger.error(f"INI: {env.sixs}")
+            Logger.error(
+                "This may cause issues, please either set the env to the ini, or override the ini to the env using:"
+            )
+            Logger.error("  isofit --sixs $SIXS_DIR ...")
+
         self.modtran_emulation = modtran_emulation
 
         super().__init__(engine_config, **kwargs)
@@ -270,15 +285,7 @@ class SixSRT(RadiativeTransferEngine):
         """
         Loads the earth-sun distance file
         """
-        try:
-            self.esd = np.loadtxt(self.earth_sun_distance_path)
-        except FileNotFoundError:
-            Logger.info(
-                "Earth-sun-distance file not found on system. "
-                "Proceeding without might cause some inaccuracies down the line."
-            )
-            self.esd = np.ones((366, 2))
-            self.esd[:, 0] = np.arange(1, 367, 1)
+        self.esd = IO.load_esd()
 
         dt = datetime(2000, self.engine_config.month, self.engine_config.day)
         self.day_of_year = dt.timetuple().tm_yday
@@ -307,8 +314,9 @@ class SixSRT(RadiativeTransferEngine):
 
         Examples
         --------
+        >>> from isofit.data import env
         >>> from isofit.radiative_transfer.engines import SixSRT
-        >>> SixSRT.parse_file('isofit/examples/20151026_SantaMonica/lut/AOT550-0.0000_H2OSTR-0.5000', wl_size=3)
+        >>> SixSRT.parse_file(f'{env.examples}/20151026_SantaMonica/lut/AOT550-0.0000_H2OSTR-0.5000', wl_size=3)
         {'sphalb': array([0.3116, 0.3057, 0.2999]),
          'rhoatm': array([0.2009, 0.1963, 0.1916]),
          'transm_down_dif': array([0.53211358, 0.53993346, 0.54736113]),

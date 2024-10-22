@@ -20,7 +20,6 @@
 
 import json
 import os
-from argparse import ArgumentError
 from collections import OrderedDict
 from os.path import expandvars
 from typing import List
@@ -100,7 +99,7 @@ class VectorInterpolator:
             self.maxbaseinds = np.array([len(t) - 1 for t in self.gridtuples])
 
         else:
-            raise ArgumentError(None, f"Unknown interpolator version: {version!r}")
+            raise AttributeError(f"Unknown interpolator version: {version!r}")
 
     def _interpolate(self, points):
         """

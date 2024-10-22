@@ -141,6 +141,7 @@ def analytical_line(
     output_metadata["interleave"] = "bil"
     output_metadata["description"] = "L2A Analytyical per-pixel surface retrieval"
     output_metadata["bands"] = str(len(fm.idx_surface))
+    output_metadata["band names"] = fm.surface.statevec_names
 
     outside_ret_windows = np.zeros(len(fm.surface.idx_lamb), dtype=int)
     outside_ret_windows[iv.winidx] = 1
@@ -299,7 +300,7 @@ class Worker(object):
             - 9999
         )
 
-        esd = IO.load_esd(IO.earth_sun_distance_path)
+        esd = IO.load_esd()
 
         for r in range(start_line, stop_line):
             for c in range(output_state.shape[1]):

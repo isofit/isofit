@@ -17,6 +17,7 @@
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
+from __future__ import annotations
 
 import logging
 from copy import deepcopy
@@ -26,19 +27,10 @@ from scipy.interpolate import interp1d
 from scipy.io import loadmat
 from scipy.linalg import block_diag
 
-from isofit.configs import Config
-from isofit.surface import (
-    AdditiveGlintSurface,
-    GlintModelSurface,
-    LUTSurface,
-    MultiComponentSurface,
-    Surface,
-    ThermalSurface,
-)
-
-from ..radiative_transfer.radiative_transfer import RadiativeTransfer
-from .common import eps
-from .instrument import Instrument
+from isofit.core.common import eps
+from isofit.core.instrument import Instrument
+from isofit.radiative_transfer.radiative_transfer import RadiativeTransfer
+from isofit.surface import Surface
 
 Logger = logging.getLogger(__file__)
 
@@ -81,30 +73,8 @@ class ForwardModel:
         # Build the radiative transfer model
         self.RT = RadiativeTransfer(self.full_config)
 
-        # Build the surface model - this is a bit ugly with the conditionals, but the surface config should already be
-        # forced to have appropriate properties, so at least safe
-        # TODO: make surface a class with inheritance to make this cleaner
-        self.surface = None
-        if self.config.surface.surface_category == "surface":
-            self.surface = Surface(self.full_config)
-        elif self.config.surface.surface_category == "multicomponent_surface":
-            self.surface = MultiComponentSurface(self.full_config)
-        elif self.config.surface.surface_category == "additive_glint_surface":
-            self.surface = AdditiveGlintSurface(self.full_config)
-        elif self.config.surface.surface_category == "glint_model_surface":
-            self.surface = GlintModelSurface(self.full_config)
-            self.full_glint = (
-                self.config.surface.full_glint
-                if "full_glint" in self.config.surface.keys()
-                else False
-            )
-        elif self.config.surface.surface_category == "thermal_surface":
-            self.surface = ThermalSurface(self.full_config)
-        elif self.config.surface.surface_category == "lut_surface":
-            self.surface = LUTSurface(self.full_config)
-        else:
-            raise ValueError("Must specify a valid surface model")
-            # No need to be more specific - should have been checked in config already
+        # Build the surface model
+        self.surface = Surface(full_config)
 
         if self.surface.n_wl != len(self.RT.wl) or not np.all(
             np.isclose(self.surface.wl, self.RT.wl, atol=0.01)

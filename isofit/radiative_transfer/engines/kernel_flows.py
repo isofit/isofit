@@ -17,6 +17,7 @@
 # Author: Niklas Bohn, urs.n.bohn@jpl.nasa.gov
 #         Philip Brodrick, philip.brodrick@jpl.nasa.gov
 #         Jouni Susiluoto, jouni.i.susiluoto@jpl.nasa.gov
+from __future__ import annotations
 
 import logging
 
@@ -24,9 +25,6 @@ import h5py
 import numpy as np
 import yaml
 
-from isofit.configs.sections.radiative_transfer_config import (
-    RadiativeTransferEngineConfig,
-)
 from isofit.core.common import combos, spectral_response_function
 from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
 
