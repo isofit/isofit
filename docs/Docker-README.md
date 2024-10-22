@@ -1,0 +1,48 @@
+These are the official container images for the [ISOFIT](https://github.com/isofit/isofit) package. They come pre-configured with everything a user may need to get started using ISOFIT and executing its examples.
+
+Tags
+----
+- `latest` - Most recent released ISOFIT version
+- `3.x.x` - Specific release builds
+
+Getting Started
+---------------
+
+
+Start by pulling the image:
+
+```bash
+$ docker pull jammont/isofit:latest
+```
+
+This image is default tagged as `jammont/isofit`. As such, to use it run:
+
+```bash
+$ docker run -it --rm jammont/isofit bash
+```
+
+- `-it` - Run in `[i]nteractive` and `[t]erminal` modes, which will build a container and place the user inside of it.
+- `--rm` - Removes the container once finished. If you intend to modify the container between sessions, remove this flag.
+- `jammont/isofit` - The `tag` name of the image. If you built your own ISOFIT image using a different tag, be sure to replace this string.
+- `bash` - The command to run for `-it`. Using `bash` here will invoke a bash instance for the user. If you wanted to launch a specific script without entering the container, you could replace this command.
+
+After running the above command, you will placed inside the container as the root user. From here you may proceed to use ISOFIT as you need.
+
+You may need to attach volumes to the container at runtime in order to access files external to the container. For instance:
+
+```
+$ docker run --rm -it -v /host/path:/container/path jammont/isofit bash
+```
+
+This will provide `/host/path` available inside of the container as `/container/path`. As such, any changes made inside the container to this path or its contents will be reflected on the host.
+
+Additional examples for executing ISOFIT interactively:
+
+```bash
+# Print version
+$ docker run --rm -it jammont/isofit isofit --version
+
+# Execute an example
+$ docker run --rm -it jammont/isofit bash examples/20151026_SantaMonica/run.sh
+$ docker run --rm -it jammont/isofit bash examples/image_cube/small/analytical.sh
+```

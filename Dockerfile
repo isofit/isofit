@@ -20,7 +20,7 @@ RUN micromamba config prepend channels conda-forge &&\
     micromamba install --name isofit ipykernel &&\
     echo "micromamba activate isofit" >> ~/.bashrc
 
-ENV PATH /opt/conda/envs/isofit/bin:$PATH
+ENV PATH=/opt/conda/envs/isofit/bin:$PATH
 
 # Install ISOFIT and extra files
 RUN pip install -e isofit &&\
@@ -28,7 +28,7 @@ RUN pip install -e isofit &&\
     isofit build
 
 # Explicitly set the shell to bash so the Jupyter server defaults to it
-ENV SHELL ["/bin/bash", "-l", "-c"]
+ENV SHELL=["/bin/bash", "-l", "-c"]
 
 # Ray Dashboard port
 EXPOSE 8265

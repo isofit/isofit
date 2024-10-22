@@ -1,14 +1,15 @@
 name: Build Dockers
 
 on:
-  push:
-    branches:
-      - main
-      - dev
-  pull_request:
-    branches:
-      - main
-      - dev
+  pull_request_target
+  # push:
+  #   branches:
+  #     - main
+  #     - dev
+  # pull_request:
+  #   branches:
+  #     - main
+  #     - dev
 
 concurrency:
   group: ${{ github.workflow }}
@@ -19,6 +20,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -37,7 +40,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/isofit
+            jammont/isofit
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
@@ -51,3 +54,11 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64,linux/arm64
+
+      - name: Docker Hub Description
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: jammont/isofit
+          readme-filepath: docs/Docker-README.md
