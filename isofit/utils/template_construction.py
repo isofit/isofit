@@ -25,6 +25,7 @@ from isofit.core.common import (
     json_load_ascii,
     resample_spectrum,
 )
+from isofit.data import env
 from isofit.utils import surface_model
 
 
@@ -180,49 +181,38 @@ class Pathnames:
         if args.modtran_path:
             self.modtran_path = args.modtran_path
         else:
-            self.modtran_path = os.getenv("MODTRAN_DIR")
+            self.modtran_path = os.getenv("MODTRAN_DIR", env.modtran)
 
-        self.sixs_path = os.getenv("SIXS_DIR")
-
-        if os.getenv("ISOFIT_DIR"):
-            self.isofit_path = os.getenv("ISOFIT_DIR")
-        else:
-            # isofit file should live at isofit/isofit/core/isofit.py
-            self.isofit_path = os.path.dirname(
-                os.path.dirname(os.path.dirname(isofit.__file__))
-            )
+        self.sixs_path = os.getenv("SIXS_DIR", env.sixs)
 
         if args.sensor == "avcl":
-            self.noise_path = join(self.isofit_path, "data", "avirisc_noise.txt")
+            self.noise_path = join(env.data, "avirisc_noise.txt")
         elif args.sensor == "emit":
-            self.noise_path = join(self.isofit_path, "data", "emit_noise.txt")
+            self.noise_path = join(env.data, "emit_noise.txt")
             if self.input_channelized_uncertainty_path is None:
                 self.input_channelized_uncertainty_path = join(
-                    self.isofit_path, "data", "emit_osf_uncertainty.txt"
+                    env.data, "emit_osf_uncertainty.txt"
                 )
             if self.input_model_discrepancy_path is None:
                 self.input_model_discrepancy_path = join(
-                    self.isofit_path, "data", "emit_model_discrepancy.mat"
+                    env.data, "emit_model_discrepancy.mat"
                 )
         else:
             self.noise_path = None
             logging.info("no noise path found, proceeding without")
             # quit()
 
-        self.earth_sun_distance_path = abspath(
-            join(self.isofit_path, "data", "earth_sun_distance.txt")
-        )
+        self.earth_sun_distance_path = abspath(join(env.data, "earth_sun_distance.txt"))
         self.irradiance_file = abspath(
             join(
-                self.isofit_path,
-                "examples",
+                env.examples,
                 "20151026_SantaMonica",
                 "data",
                 "prism_optimized_irr.dat",
             )
         )
 
-        self.aerosol_tpl_path = join(self.isofit_path, "data", "aerosol_template.json")
+        self.aerosol_tpl_path = join(env.data, "aerosol_template.json")
         self.rdn_factors_path = None
         if args.rdn_factors_path is not None:
             self.rdn_factors_path = abspath(args.rdn_factors_path)
@@ -515,6 +505,13 @@ def build_presolve_config(
     else:
         engine_name = "sRTMnet"
 
+    if surface_category == "glint_model_surface":
+        glint_model = True
+        multipart_transmittance = True
+    else:
+        glint_model = False
+        multipart_transmittance = False
+
     if prebuilt_lut_path is None:
         lut_path = join(paths.lut_h2o_directory, "lut.nc")
     else:
@@ -531,6 +528,8 @@ def build_presolve_config(
         "radiative_transfer_engines": {
             "vnir": {
                 "engine_name": engine_name,
+                "multipart_transmittance": multipart_transmittance,
+                "glint_model": glint_model,
                 "lut_path": lut_path,
                 "sim_path": paths.lut_h2o_directory,
                 "template_file": paths.h2o_template_path,
@@ -593,7 +592,6 @@ def build_presolve_config(
 
     # make isofit configuration
     isofit_config_h2o = {
-        "ISOFIT_base": paths.isofit_path,
         "output": {"estimated_state_file": paths.h2o_subs_path},
         "input": {},
         "forward_model": {
@@ -728,10 +726,19 @@ def build_main_config(
     else:
         engine_name = "sRTMnet"
 
+    if surface_category == "glint_model_surface":
+        glint_model = True
+        multipart_transmittance = True
+    else:
+        glint_model = False
+        multipart_transmittance = False
+
     radiative_transfer_config = {
         "radiative_transfer_engines": {
             "vnir": {
                 "engine_name": engine_name,
+                "multipart_transmittance": multipart_transmittance,
+                "glint_model": glint_model,
                 "sim_path": paths.full_lut_directory,
                 "lut_path": lut_path,
                 "aerosol_template_file": paths.aerosol_tpl_path,
@@ -794,7 +801,6 @@ def build_main_config(
         mean_latitude,
         mean_longitude,
         dt,
-        paths.isofit_path,
         lut_params=lut_params,
     )
     radiative_transfer_config["radiative_transfer_engines"]["swir"][
@@ -843,6 +849,13 @@ def build_main_config(
 
     if prebuilt_lut_path is not None:
         ncds = nc.Dataset(prebuilt_lut_path, "r")
+
+        # first, check if observer zenith angle in prebuilt LUT comes in MODTRAN convention
+        # and convert lut grid as needed
+        if any(np.array(ncds["observer_zenith"]) > 90.0):
+            to_sensor_zenith_lut_grid = np.sort(
+                [180 - x for x in to_sensor_zenith_lut_grid]
+            )
 
         radiative_transfer_config["radiative_transfer_engines"]["swir"]["lut_names"][
             "H2OSTR"
@@ -905,7 +918,6 @@ def build_main_config(
 
     # make isofit configuration
     isofit_config_modtran = {
-        "ISOFIT_base": paths.isofit_path,
         "input": {},
         "output": {},
         "forward_model": {
@@ -1137,7 +1149,6 @@ def load_climatology(
     latitude: float,
     longitude: float,
     acquisition_datetime: datetime,
-    isofit_path: str,
     lut_params: LUTConfig,
 ):
     """Load climatology data, based on location and configuration
@@ -1147,7 +1158,6 @@ def load_climatology(
         latitude: latitude to set for the segment (mean of acquisition suggested)
         longitude: latitude to set for the segment (mean of acquisition suggested)
         acquisition_datetime: datetime to use for the segment( mean of acquisition suggested)
-        isofit_path: base path to isofit installation (needed for data path references)
         lut_params: parameters to use to define lut grid
 
     :Returns
@@ -1158,7 +1168,7 @@ def load_climatology(
 
     """
 
-    aerosol_model_path = os.path.join(isofit_path, "data", "aerosol_model.txt")
+    aerosol_model_path = os.path.join(env.data, "aerosol_model.txt")
     aerosol_state_vector = {}
     aerosol_lut_grid = {}
     aerosol_lut_ranges = [
@@ -1516,6 +1526,7 @@ def get_metadata_from_obs(
         lut_params.relative_azimuth_spacing,
         lut_params.relative_azimuth_spacing_min,
     )
+
     if relative_azimuth_lut_grid is not None:
         relative_azimuth_lut_grid = np.sort(
             np.array([x % 360 for x in relative_azimuth_lut_grid])

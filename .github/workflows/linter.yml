@@ -10,11 +10,17 @@ on:
       - main
       - dev
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   black:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: Print concurrency group
+        run: echo '${{ github.workflow }}-${{ github.ref }}'
       - uses: psf/black@stable
         with:
           src: "./isofit"

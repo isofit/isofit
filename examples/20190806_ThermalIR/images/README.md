@@ -1,1 +1,0 @@
-Output images go here.
