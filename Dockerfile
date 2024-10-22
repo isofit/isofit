@@ -28,7 +28,7 @@ RUN pip install -e isofit &&\
     isofit build
 
 # Explicitly set the shell to bash so the Jupyter server defaults to it
-ENV SHELL=["/bin/bash", "-l", "-c"]
+ENV SHELL ["/bin/bash", "-l", "-c"]
 
 # Ray Dashboard port
 EXPOSE 8265
