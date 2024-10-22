@@ -1,35 +1,34 @@
-FROM rayproject/ray:latest-py310
+FROM --platform=$BUILDPLATFORM mambaorg/micromamba
 
 USER root
 RUN apt-get update &&\
     apt-get install --no-install-recommends -y \
       gfortran \
       make \
-      unzip
+      nano
 
-USER ray
-WORKDIR /home/ray
+USER mambauser
+WORKDIR /home/mambauser
 
-# Copy and install ISOFIT
-COPY --chown=ray:users . isofit/
-RUN conda config --prepend channels conda-forge &&\
-    conda update --all --yes &&\
-    conda create --name isofit --clone base &&\
-    conda install --name base --solver=classic conda-libmamba-solver nb_conda_kernels jupyterlab &&\
-    conda env update --name isofit --solver=libmamba --file isofit/recipe/environment_isofit_basic.yml &&\
-    conda install --name isofit --solver=libmamba ipykernel &&\
-    anaconda3/envs/isofit/bin/pip install --no-deps -e isofit &&\
-    echo "conda activate isofit" >> ~/.bashrc &&\
-    echo "alias mi=conda install --solver=libmamba"
+# Copy and install the ISOFIT environment
+COPY --chown=mambauser:mambauser . isofit/
+RUN micromamba config prepend channels conda-forge &&\
+    micromamba update --all --yes &&\
+    micromamba create --name isofit python=3.10 &&\
+    micromamba install --name base nb_conda_kernels jupyterlab &&\
+    micromamba install --name isofit --file isofit/recipe/environment_isofit_basic.yml &&\
+    micromamba install --name isofit ipykernel &&\
+    echo "micromamba activate isofit" >> ~/.bashrc
 
-ENV PATH anaconda3/envs/isofit/bin:$PATH
+ENV PATH /opt/conda/envs/isofit/bin:$PATH
 
-# Install ISOFIT extra files
-RUN isofit -b . download all &&\
+# Install ISOFIT and extra files
+RUN pip install -e isofit &&\
+    isofit -b . download all &&\
     isofit build
 
 # Explicitly set the shell to bash so the Jupyter server defaults to it
-ENV SHELL /bin/bash
+ENV SHELL ["/bin/bash", "-l", "-c"]
 
 # Ray Dashboard port
 EXPOSE 8265
