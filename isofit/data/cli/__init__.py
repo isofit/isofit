@@ -6,7 +6,7 @@ from isofit.data.download import cli
 
 # Auto-discovers the submodules of isofit.data.cli
 Modules = {
-    name: importlib.util.module_from_spec(imp.find_spec(name))
+    name: importlib.import_module(f".{name}", __spec__.name)
     for imp, name, _ in pkgutil.iter_modules(__path__)
 }
 
