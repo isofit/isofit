@@ -87,7 +87,7 @@ def validate(path=None, debug=print, error=print, **_):
 
     if not (path := Path(path)).exists():
         error(
-            "Error: Path does not exist, please download it via `isofit download data`"
+            "Error: Data path does not exist, please download it via `isofit download data`"
         )
         return False
 

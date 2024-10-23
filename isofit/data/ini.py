@@ -195,7 +195,7 @@ class Ini:
         """
         self.validate([dir], debug=Logger.debug, error=Logger.error)
 
-        path = Path([self[dir], *path]).resolve()
+        path = Path(*[self[dir], *path]).resolve()
 
         if not path.exists():
             Logger.error(

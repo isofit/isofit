@@ -107,7 +107,9 @@ def validate(path=None, debug=print, error=print, **_):
     debug(f"Verifying path for 6S: {path}")
 
     if not (path := Path(path)).exists():
-        error("Error: Path does not exist, please download it via `isofit download 6S`")
+        error(
+            "Error: 6S path does not exist, please download it via `isofit download 6S`"
+        )
         return False
 
     if not (path / f"sixsV2.1").exists():
