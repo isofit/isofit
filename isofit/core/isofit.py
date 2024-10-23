@@ -19,11 +19,11 @@
 #          Philip G Brodrick, philip.brodrick@jpl.nasa.gov
 #          Adam Erickson, adam.m.erickson@nasa.gov
 #
-import copy
 import logging
 import multiprocessing
 import os
 import time
+from copy import deepcopy
 
 # Explicitly set the number of threads to be 1, so we more effectively run in parallel
 # Must be executed before importing numpy, otherwise doesn't work
@@ -78,7 +78,7 @@ class Isofit:
         self.config.get_config_errors()
 
         # Construct and cache the full statevector (all multistates)
-        self.full_statevector, *_ = construct_full_state(copy.deepcopy(self.config))
+        self.full_statevector, *_ = construct_full_state(deepcopy(self.config))
 
         # Initialize ray for parallel execution
         rayargs = {
@@ -158,13 +158,13 @@ class Isofit:
         total_samples = index_pairs.shape[0]
 
         # Keep track of input version of config
-        input_config = copy.deepcopy(self.config)
+        input_config = deepcopy(self.config)
 
         # Loop through index pairs and run workers
         class_loop_start_time = time.time()
         # for surface_class_str, index_pair in index_pairs.items():
         for surface_class_str, class_idx_pairs in index_spectra_by_surface(
-            self.config, index_pairs
+            input_config, index_pairs
         ).items():
             # Don't want more workers than tasks
             n_iter = class_idx_pairs.shape[0]
@@ -172,7 +172,7 @@ class Isofit:
 
             # The number of tasks to be initialized
             n_tasks = min(
-                (n_workers * self.config.implementation.task_inflation_factor), n_iter
+                (n_workers * input_config.implementation.task_inflation_factor), n_iter
             )
 
             # Get indices to pass to each worker
@@ -186,13 +186,15 @@ class Isofit:
                 ]
 
             # If multistate, update config to reflect surface
-            if self.config.forward_model.surface.multi_surface_flag:
-                self.config = update_config_for_surface(
-                    copy.deepcopy(input_config), surface_class_str
+            if input_config.forward_model.surface.multi_surface_flag:
+                config = update_config_for_surface(
+                    deepcopy(input_config), surface_class_str
                 )
+            else:
+                config = input_config
 
             # Set forward model
-            self.fm = fm = ForwardModel(self.config)
+            self.fm = fm = ForwardModel(config)
 
             logging.debug(f"Pixel class: {surface_class_str}")
             logging.debug(f"Surface: {self.fm.surface}")
@@ -202,7 +204,7 @@ class Isofit:
                 ray.put(obj)
                 for obj in [
                     self.config,
-                    self.fm,
+                    fm,
                     self.full_statevector,
                     self.loglevel,
                     self.logfile,

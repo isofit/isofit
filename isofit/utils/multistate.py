@@ -125,14 +125,15 @@ def index_spectra_by_surface(config, index_pairs, sub=True):
     """
 
     surface_config = config.forward_model.surface
-    # Check if the class files exist. Defaults to run all pixels.
-    # This accomodates examples where we test the multi-surface,
-    # but there is no classification rile
+
+    """Check if the class files exist. Defaults to run all pixels.
+    This accomodates the test cases where we test the multi-surface,
+    but don't use a classification file."""
     if (
         not surface_config.sub_surface_class_file
         and not surface_config.surface_class_file
     ):
-        return {"all": index_pairs}
+        return {"uniform_surface": index_pairs}
 
     if vars(surface_config).get("sub_surface_class_file") and sub:
         class_file = surface_config.sub_surface_class_file
@@ -154,7 +155,6 @@ def index_spectra_by_surface(config, index_pairs, sub=True):
 
         # Find intersection between index_pairs and pixel_list
         in_surface_index = (index_pairs[:, None] == surface_pixel_list).all(-1).any(1)
-
         surface_index_pairs = index_pairs[in_surface_index, ...]
 
         class_groups[c] = surface_index_pairs
@@ -232,7 +232,7 @@ def update_config_for_surface(config, surface_class_str, clouds=True):
     config.forward_model.surface.surface_category = surface_category
     config.forward_model.surface.surface_file = surface_file
 
-    # Experimental flag: added statevector elements
+    # Experimental: added statevector elements
     for key, value in isurface.get("rt_statevector_elements", {}).items():
         # Add the statevector params
         config.forward_model.radiative_transfer.statevector.surface_elevation_km = (

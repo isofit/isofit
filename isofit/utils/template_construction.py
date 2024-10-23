@@ -613,7 +613,7 @@ def build_presolve_config(
                     "uncorrelated_radiometric_uncertainty": uncorrelated_radiometric_uncertainty
                 },
             },
-            "surface": make_surface_config(paths, surface_category),
+            "surface": make_surface_config(paths, surface_category, presolve=True),
             "radiative_transfer": radiative_transfer_config,
         },
         "implementation": {
@@ -733,25 +733,14 @@ def build_main_config(
     else:
         engine_name = "sRTMnet"
 
-    if surface_category == "glint_model_surface":
-        glint_model = True
-        multipart_transmittance = True
-    else:
-        glint_model = False
-        multipart_transmittance = False
-
     radiative_transfer_config = {
         "radiative_transfer_engines": {
             "vswir": {
                 "engine_name": engine_name,
-                "multipart_transmittance": multipart_transmittance,
-                "glint_model": glint_model,
                 "sim_path": paths.full_lut_directory,
                 "lut_path": lut_path,
                 "aerosol_template_file": paths.aerosol_tpl_path,
                 "template_file": paths.modtran_template_path,
-                # lut_names - populated below
-                # statevector_names - populated below
             }
         },
         "statevector": {},
@@ -1685,6 +1674,7 @@ def make_surface_config(
     surface_category="multicomponent_surface",
     pressure_elevation=None,
     elevation_lut_grid=[],
+    presolve=False,
 ):
     """
     Constructs the surface component of the config
@@ -1704,7 +1694,7 @@ def make_surface_config(
     }
 
     # Check to see if a classification file is being propogated
-    if paths.surface_class_file:
+    if paths.surface_class_file and not presolve:
         surface_config_dict["Surfaces"] = {}
         surface_config_dict["surface_class_file"] = paths.surface_class_file
 
@@ -1724,7 +1714,7 @@ def make_surface_config(
             "water": "glint_model_surface",
             "land": "multicomponent_surface",
             "cloud": "multicomponent_surface",
-            "all": "multicomponent_surface",
+            "uniform_surface": "multicomponent_surface",
         }
 
         # Iterate through all classes present in class image
@@ -1763,6 +1753,9 @@ def make_surface_config(
                 "surface_int": i,
                 "surface_file": surface_path,
                 "surface_category": surface_category,
+                "glint_model": (
+                    True if surface_category == "glint_model_surface" else False
+                ),
             }
 
             # Handle clouds if pressure elevation

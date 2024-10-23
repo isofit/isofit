@@ -59,6 +59,9 @@ class SurfaceConfig(BaseConfigSection):
         self._full_glint_type = bool
         self.full_glint = False
 
+        self._glint_model_type = bool
+        self.glint_model = False
+
         self._emissivity_for_surface_T_init_type = float
         self.emissivity_for_surface_T_init = 0.98
 
