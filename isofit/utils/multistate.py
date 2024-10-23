@@ -225,12 +225,14 @@ def update_config_for_surface(config, surface_class_str, clouds=True):
 
     surface_category = isurface.get("surface_category")
     surface_file = isurface.get("surface_file")
+    glint_model = isurface.get("glint_model")
 
     if (not surface_category) or (not surface_file):
         raise KeyError("Failed to parse multi-surface config")
 
     config.forward_model.surface.surface_category = surface_category
     config.forward_model.surface.surface_file = surface_file
+    config.forward_model.surface.glint_model = glint_model
 
     # Experimental: added statevector elements
     for key, value in isurface.get("rt_statevector_elements", {}).items():

@@ -79,14 +79,17 @@ class RadiativeTransfer:
         for idx in range(len(config.radiative_transfer_engines)):
             confRT = config.radiative_transfer_engines[idx]
 
-            # Handle glint model flags from the surface model
+            """Handle glint model flag from the surface model
+            Don't love this if statement, but RT needs the glint_model
+            flag for inverse.py. Likewise the multipart_transmittance
+            flag is needed for the RTEs. I wonder if there is a
+            generic way to write out the need of surface-specific flags
+            in the RT object."""
             confRT.glint_model = confSUR.glint_model
-
-            # This would handle a case where it's not a glint surface,
-            # but you still want to use a multipart_trasmittance
-            confRT.multipart_transmittance = vars(confSUR).get(
-                "glint_model", confRT.multipart_transmittance
-            )
+            if confRT.glint_model:
+                confRT.multipart_transmittance = confRT.glint_model
+            else:
+                confRT.multipart_transmittance = confRT.multipart_transmittance
 
             if confRT.engine_name not in Engines:
                 raise AttributeError(
