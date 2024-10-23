@@ -1,3 +1,4 @@
+import importlib
 import pkgutil
 
 from isofit.data import env
@@ -5,7 +6,7 @@ from isofit.data.download import cli
 
 # Auto-discovers the submodules of isofit.data.cli
 Modules = {
-    name: imp.find_module(name).load_module(name)
+    name: importlib.import_module(name, imp)
     for imp, name, _ in pkgutil.iter_modules(__path__)
 }
 
