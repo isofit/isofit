@@ -20,12 +20,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Python 3.12 cannot be tested until Ray provides support:
-        #   https://github.com/ray-project/ray/issues/40211
         # This tests some very basic and long-lived Python behavior, so it is
         # likely sufficient to test only on a single Python version to avoid
         # GitHub worker contention.
-        python-version: ["3.11"]
+        python-version: ["3.12"]
         pytest-flags: ["-m unmarked", "-m slow"]
 
     steps:
