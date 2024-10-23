@@ -40,7 +40,7 @@ def surface(cwd):
     # Generate the surface.mat using the image_cube example config
     # fmt: off
     surface_model(
-        config_path=env.path("examples", "20171108_Pasadena", "remote", "ang20171108t184227_surface.json"),
+        config_path=env.path("examples", "20171108_Pasadena", "configs", "ang20171108t184227_surface.json"),
         wavelength_path=env.path("examples", "20171108_Pasadena", "remote", "20170320_ang20170228_wavelength_fit.txt"),
         output_path=outp
     )
