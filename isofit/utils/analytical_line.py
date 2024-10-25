@@ -441,15 +441,15 @@ def analytical_line(
     n_workers = n_cores
 
     # Set up the multi-state pixel map by sub
-    index_pairs = np.vstack(
-        [x.flatten(order="f") for x in np.meshgrid(*(range(rdns[0]), range(rdns[1])))]
-    ).T
+    index_pairs = np.empty((rdns[0] * rdns[1], 2), dtype=int)
+    meshgrid = np.meshgrid(*(range(rdns[0]), range(rdns[1])))
+    index_pairs[:, 0] = meshgrid[0].flatten(order="f")
+    index_pairs[:, 1] = meshgrid[1].flatten(order="f")
+    del meshgrid
 
     input_config = deepcopy(config)
-    for surface_class_str, class_idx_pairs in index_spectra_by_surface(
-        input_config, index_pairs, sub=False
-    ).items():
-
+    surface_index = index_spectra_by_surface(input_config, index_pairs, sub=False)
+    for surface_class_str, class_idx_pairs in surface_index.items():
         # Handle multisurface
         if input_config.forward_model.surface.multi_surface_flag:
             config = update_config_for_surface(

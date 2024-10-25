@@ -75,7 +75,6 @@ class Pathnames:
         self.full_lut_directory = abspath(join(self.working_directory, "lut_full/"))
 
         self.surface_path = vars(args).get("surface_path", None)
-        self.surface_path_dir = vars(args).get("surface_path_dir", None)
         self.surface_class_file = vars(args).get("surface_class", None)
 
         # set up some sub-directories
@@ -1722,17 +1721,20 @@ def make_surface_config(
             "Surfaces",
             "surface names" "Surface names",
         ]
+        class_mapping = None
         for option in options:
-            class_mapping = surface_class_ds.metadata.get(option)
-
             if class_mapping:
                 continue
+            class_mapping = surface_class_ds.metadata.get(option)
 
         # mapping name to surface name - terrible way to do this
         # Could house this in a standalone file and call it in
         surface_mapping = {
             "water": "glint_model_surface",
+            # "water": "multicomponent_surface",
+            "glint": "glint_model_surface",
             "land": "multicomponent_surface",
+            "nonwater": "multicomponent_surface",
             "cloud": "multicomponent_surface",
             "uniform_surface": "multicomponent_surface",
         }
@@ -1742,31 +1744,13 @@ def make_surface_config(
             surface_category = surface_mapping.get(name, "multicomponent_surface")
 
             # If surface_path given, use for all surfaces
-            if paths.surface_path:
-                surface_path = paths.surface_path
+            surface_path = paths.surface_working_path
 
-            # If only directory is given. Find surfaces for each class.
-            elif paths.surface_path_dir:
-                regex = f"*_{name}_*.mat"
-                matched_paths = glob.glob(os.path.join(paths.surface_path_dir, regex))
-
-                # Rigid and errors if no surface file for class
-                if not len(matched_paths):
-                    logging.exception(
-                        "No surface path or surface path or surface \
-                        path directory found in surface_path_dir"
-                    )
-                    raise FileNotFoundError
-
-                surface_path = matched_paths[0]
-
-            # Handles case if no dir or file is given
-            else:
-                logging.exception(
-                    "No surface path or surface path or surface \
-                    path directory given"
-                )
+            if not paths.surface_working_path:
+                logging.exception("No surface prior path found.")
                 raise FileNotFoundError
+
+            # TODO: Extend s.t. you could give each surface a different surface file
 
             # Set up "Surfaces" component of surface config
             surface_config_dict["Surfaces"][name] = {
@@ -1790,13 +1774,12 @@ def make_surface_config(
                         / 2.0,
                     }
                 }
-
     else:
-        if not paths.surface_path:
+        if not paths.surface_working_path:
             logging.exception("No surface prior path found.")
             raise FileNotFoundError
 
-        surface_config_dict["surface_file"] = paths.surface_path
+        surface_config_dict["surface_file"] = paths.surface_working_path
         surface_config_dict["surface_category"] = surface_category
 
     return surface_config_dict

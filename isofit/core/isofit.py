@@ -219,7 +219,6 @@ class Isofit:
                     self.full_statevector,
                     self.loglevel,
                     self.logfile,
-                    total_samples,
                     len(class_idx_pairs),
                     n_workers,
                 ]
@@ -271,7 +270,6 @@ class Worker(object):
         loglevel: str,
         logfile: str,
         total_samples: int,
-        class_samples: int,
         total_workers: int = None,
         worker_id: int = None,
     ):
@@ -296,15 +294,12 @@ class Worker(object):
         self.fm = forward_model
         self.io = IO(self.config, full_statevector)
 
-        self.approximate_total_spectra = None
+        self.total_samples = None
         if total_workers is not None:
-            self.approximate_total_spectra = (
-                self.io.n_cols * self.io.n_rows / total_workers
-            )
+            self.total_samples = total_samples / total_workers
+
         self.worker_id = worker_id
         self.completed_spectra = 0
-        self.total_samples = total_samples
-        self.class_samples = class_samples
 
     def run_set_of_spectra(self, indices: np.array):
         for index in range(0, indices.shape[0]):
@@ -339,20 +334,15 @@ class Worker(object):
                     )
 
                 if index % 100 == 0:
-                    if self.worker_id is not None and self.class_samples is not None:
-                        class_percent = np.round(
-                            self.completed_spectra / self.class_samples * 100,
-                            2,
-                        )
+                    if self.worker_id is not None and self.total_samples is not None:
                         total_percent = np.round(
                             self.completed_spectra / self.total_samples * 100,
                             2,
                         )
                         logging.info(
                             f"Worker {self.worker_id} completed"
-                            f" {self.completed_spectra}/{self.class_samples}"
-                            f" ({self.completed_spectra}/{self.total_samples})::"
-                            f" {class_percent}% ({total_percent}%) complete"
+                            f" {self.completed_spectra}/{self.total_samples}"
+                            f" {total_percent} % complete"
                         )
         logging.info(
             f"Worker at start location ({row},{col}) completed"
