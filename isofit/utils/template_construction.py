@@ -65,9 +65,6 @@ class Pathnames:
 
         logging.info("Flightline ID: %s" % self.fid)
 
-        # Surface classification here so it doesn't get lost
-        self.surface_class_file = vars(args).get("surface_class", None)
-
         # Names from inputs
         self.aerosol_climatology = args.aerosol_climatology_path
         self.input_radiance_file = args.input_radiance
@@ -113,10 +110,13 @@ class Pathnames:
             self.loc_working_path = abspath(
                 join(self.input_data_directory, self.fid + "_loc")
             )
+            # Surface classification here so it doesn't get lost
+            self.surface_class_file = abspath(vars(args).get("surface_class", None))
         else:
             self.radiance_working_path = abspath(self.input_radiance_file)
             self.obs_working_path = abspath(self.input_obs_file)
             self.loc_working_path = abspath(self.input_loc_file)
+            self.surface_class_file = abspath(vars(args).get("surface_class", None))
 
         if args.channelized_uncertainty_path:
             self.input_channelized_uncertainty_path = args.channelized_uncertainty_path
@@ -1705,8 +1705,24 @@ def make_surface_config(
 
         surface_class_ds = envi.open(envi_header(paths.surface_class_file))
 
-        # Get the class mapping
-        class_mapping = surface_class_ds.metadata["mapping"]
+        # Get the class mapping. Tried to build in some insensitivity here.
+        # Will use first option it hits
+        options = [
+            "mapping",
+            "Mapping",
+            "class names",
+            "Class names",
+            "class",
+            "Class",
+            "surfaces",
+            "Surfaces",
+            "surface names" "Surface names",
+        ]
+        for option in options:
+            class_mapping = surface_class_ds.metadata.get(option)
+
+            if class_mapping:
+                continue
 
         # mapping name to surface name - terrible way to do this
         # Could house this in a standalone file and call it in

@@ -335,13 +335,13 @@ def _run_chunk(
         output_uncertainty_row = output_uncertainty_row.reshape((1, shp[0], shp[1]))
 
         write_bil_chunk(
-            output_reflectance_row,
+            output_reflectance_row.astype(np.float32),
             output_reflectance_file,
             row,
             (n_input_lines, n_output_reflectance_bands, n_input_samples),
         )
         write_bil_chunk(
-            output_uncertainty_row,
+            output_uncertainty_row.astype(np.float32),
             output_uncertainty_file,
             row,
             (n_input_lines, n_output_uncertainty_bands, n_input_samples),

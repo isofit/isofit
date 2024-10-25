@@ -156,11 +156,7 @@ class Worker(object):
             ]
         ).T
 
-        input_config = deepcopy(self.config)
-        pixel_index = index_spectra_by_surface(input_config, index_pairs, sub=False)
-        class_idx_pairs = pixel_index[self.surface_class_str]
-
-        for r, c, *_ in class_idx_pairs:
+        for r, c, *_ in index_pairs:
             meas = self.rdn[r, c, :]
 
             if self.radiance_correction is not None:
@@ -175,6 +171,9 @@ class Worker(object):
                 loc=self.loc[r, c, :],
                 esd=self.esd,
             )
+
+            # Temporary: Force glint_model to be false until it is updated
+            self.fm.RT.glint_model = False
 
             states, unc = invert_analytical(
                 self.fm,

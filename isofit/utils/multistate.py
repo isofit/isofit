@@ -146,16 +146,27 @@ def index_spectra_by_surface(config, index_pairs, sub=True):
 
     class_groups = {}
     for c, surface_sub_config in surface_config.Surfaces.items():
-        surface_pixel_list = np.argwhere(
-            classes == surface_sub_config["surface_int"]
-        ).astype(int)
+        surface_pixel_list = np.ascontiguousarray(
+            np.argwhere(classes == surface_sub_config["surface_int"]).astype(int)
+        )
 
         if not len(surface_pixel_list):
             continue
 
-        # Find intersection between index_pairs and pixel_list
-        in_surface_index = (index_pairs[:, None] == surface_pixel_list).all(-1).any(1)
-        surface_index_pairs = index_pairs[in_surface_index, ...]
+        # The strategy here is to produce a view where the columns are read together.
+        # Both the index_pairs and surface_pixel_list have to be contiguous arrays.
+        ncols = index_pairs.shape[1]
+        dtype = {
+            "names": ["{}".format(i) for i in range(ncols)],
+            "formats": ncols * [index_pairs.dtype],
+        }
+
+        surface_index_pairs = np.intersect1d(
+            index_pairs.view(dtype), surface_pixel_list.view(dtype)
+        )
+        surface_index_pairs = np.reshape(
+            surface_index_pairs.view(index_pairs.dtype), (len(surface_index_pairs), 2)
+        )
 
         class_groups[c] = surface_index_pairs
 

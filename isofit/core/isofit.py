@@ -150,9 +150,16 @@ class Isofit:
             del io
 
         # Form the row-column pairs (pixels to run)
-        index_pairs = np.vstack(
-            [x.flatten(order="f") for x in np.meshgrid(self.rows, self.cols)]
-        ).T
+        # Need to allocate cols of index_pairs together
+        # to make them memory contiguous
+        # This speeds up the surface indexing
+        index_pairs = np.empty(
+            (len([i for i in self.rows]) * len([i for i in self.cols]), 2), dtype=int
+        )
+        meshgrid = np.meshgrid(self.rows, self.cols)
+        index_pairs[:, 0] = meshgrid[0].flatten(order="f")
+        index_pairs[:, 1] = meshgrid[1].flatten(order="f")
+        del meshgrid
 
         # Save this for logging
         total_samples = index_pairs.shape[0]
@@ -161,11 +168,15 @@ class Isofit:
         input_config = deepcopy(self.config)
 
         # Loop through index pairs and run workers
-        class_loop_start_time = time.time()
-        # for surface_class_str, index_pair in index_pairs.items():
-        for surface_class_str, class_idx_pairs in index_spectra_by_surface(
-            input_config, index_pairs
-        ).items():
+        outer_loop_start_time = time.time()
+
+        surface_index = index_spectra_by_surface(input_config, index_pairs)
+        for surface_class_str, class_idx_pairs in surface_index.items():
+            logging.info(f"Running surfaces: {surface_class_str}")
+
+            # Testing
+            # class_idx_pairs = class_idx_pairs[:20, :]
+
             # Don't want more workers than tasks
             n_iter = class_idx_pairs.shape[0]
             n_workers = min(n_workers, n_iter)
@@ -208,6 +219,8 @@ class Isofit:
                     self.full_statevector,
                     self.loglevel,
                     self.logfile,
+                    total_samples,
+                    len(class_idx_pairs),
                     n_workers,
                 ]
             ]
@@ -230,18 +243,21 @@ class Isofit:
             )
 
             total_time = time.time() - start_time
-            logging.info(
-                f"Inversions complete.  {round(total_time,2)}s total,"
-                f" {round(n_iter/total_time,4)} spectra/s,"
-                f" {round(n_iter/total_time/n_workers,4)} spectra/s/core"
-            )
+            logging.info(f"Pixel class: {surface_class_str} inversions complete.")
+            logging.info(f"{round(total_time,2)}s total")
+            logging.info(f"{round(n_iter/total_time,4)} spectra/s")
+            logging.info(f"{round(n_iter/total_time/n_workers,4)} spectra/s/core")
+
+            self.workers = None
+            params = []
 
         if len(index_pairs):
-            class_loop_total_time = time.time() - class_loop_start_time
+            outer_loop_total_time = time.time() - outer_loop_start_time
+            logging.info(f"All Inversions complete.")
+            logging.info(f"{round(outer_loop_total_time,2)}s total")
+            logging.info(f"{round(total_samples/outer_loop_total_time,4)} spectra/s")
             logging.info(
-                f"All Inversions complete. {round(class_loop_total_time,2)}s total,"
-                f" {round(total_samples/class_loop_total_time,4)} spectra/s,"
-                f" {round(total_samples/class_loop_total_time/n_workers,4)} spectra/s/core"
+                f"{round(total_samples/outer_loop_total_time/n_workers,4)} spectra/s/core"
             )
 
 
@@ -254,6 +270,8 @@ class Worker(object):
         full_statevector: np.array,
         loglevel: str,
         logfile: str,
+        total_samples: int,
+        class_samples: int,
         total_workers: int = None,
         worker_id: int = None,
     ):
@@ -285,6 +303,8 @@ class Worker(object):
             )
         self.worker_id = worker_id
         self.completed_spectra = 0
+        self.total_samples = total_samples
+        self.class_samples = class_samples
 
     def run_set_of_spectra(self, indices: np.array):
         for index in range(0, indices.shape[0]):
@@ -319,20 +339,20 @@ class Worker(object):
                     )
 
                 if index % 100 == 0:
-                    if (
-                        self.worker_id is not None
-                        and self.approximate_total_spectra is not None
-                    ):
-                        percent = np.round(
-                            self.completed_spectra
-                            / self.approximate_total_spectra
-                            * 100,
+                    if self.worker_id is not None and self.class_samples is not None:
+                        class_percent = np.round(
+                            self.completed_spectra / self.class_samples * 100,
+                            2,
+                        )
+                        total_percent = np.round(
+                            self.completed_spectra / self.total_samples * 100,
                             2,
                         )
                         logging.info(
                             f"Worker {self.worker_id} completed"
-                            f" {self.completed_spectra}/~{self.approximate_total_spectra}::"
-                            f" {percent}% complete"
+                            f" {self.completed_spectra}/{self.class_samples}"
+                            f" ({self.completed_spectra}/{self.total_samples})::"
+                            f" {class_percent}% ({total_percent}%) complete"
                         )
         logging.info(
             f"Worker at start location ({row},{col}) completed"
