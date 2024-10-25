@@ -76,7 +76,7 @@ class Pathnames:
 
         self.surface_path = vars(args).get("surface_path", None)
         self.surface_path_dir = vars(args).get("surface_path_dir", None)
-        self.surface_class_file = abspath(vars(args).get("surface_class", None))
+        self.surface_class_file = vars(args).get("surface_class", None)
 
         # set up some sub-directories
         self.lut_h2o_directory = abspath(join(self.working_directory, "lut_h2o/"))
