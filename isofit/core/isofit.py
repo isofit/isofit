@@ -23,6 +23,7 @@ import logging
 import multiprocessing
 import os
 import time
+from copy import deepcopy
 
 # Explicitly set the number of threads to be 1, so we more effectively run in parallel
 # Must be executed before importing numpy, otherwise doesn't work
@@ -38,6 +39,11 @@ from isofit.configs import configs
 from isofit.core.fileio import IO
 from isofit.core.forward import ForwardModel
 from isofit.inversion import Inversion
+from isofit.utils.multistate import (
+    construct_full_state,
+    index_spectra_by_surface,
+    update_config_for_surface,
+)
 
 
 class Isofit:
@@ -70,6 +76,9 @@ class Isofit:
         # Load configuration file
         self.config = configs.create_new_config(config_file)
         self.config.get_config_errors()
+
+        # Construct and cache the full statevector (all multistates)
+        self.full_statevector, *_ = construct_full_state(deepcopy(self.config))
 
         # Initialize ray for parallel execution
         rayargs = {
@@ -111,77 +120,145 @@ class Isofit:
         """
 
         logging.info("Building first forward model, will generate any necessary LUTs")
-        self.fm = fm = ForwardModel(self.config)
+
+        # Get the number of workers from config
+        if self.config.implementation.n_cores is None:
+            n_workers = multiprocessing.cpu_count()
+        else:
+            n_workers = self.config.implementation.n_cores
+
+        # Get the rows and columns that isofit will run
+        # If running only part of the file
         if row_column is not None:
             ranges = row_column.split(",")
             if len(ranges) == 1:
                 self.rows, self.cols = [int(ranges[0])], None
             if len(ranges) == 2:
                 row_start, row_end = ranges
-                self.rows, self.cols = range(int(row_start), int(row_end)), None
+                self.rows = range(int(row_start), int(row_end))
+                self.cols = None
             elif len(ranges) == 4:
                 row_start, row_end, col_start, col_end = ranges
                 self.rows = range(int(row_start), int(row_end) + 1)
                 self.cols = range(int(col_start), int(col_end) + 1)
+
+        # Else running all of the file
         else:
-            io = IO(self.config, fm)
+            io = IO(self.config, self.full_statevector)
             self.rows = range(io.n_rows)
             self.cols = range(io.n_cols)
             del io
 
-        index_pairs = np.vstack(
-            [x.flatten(order="f") for x in np.meshgrid(self.rows, self.cols)]
-        ).T
-
-        n_iter = index_pairs.shape[0]
-
-        if self.config.implementation.n_cores is None:
-            n_workers = multiprocessing.cpu_count()
-        else:
-            n_workers = self.config.implementation.n_cores
-
-        # Max out the number of workers based on the number of tasks
-        n_workers = min(n_workers, n_iter)
-
-        params = [
-            ray.put(obj)
-            for obj in [self.config, fm, self.loglevel, self.logfile, n_workers]
-        ]
-        self.workers = ray.util.ActorPool(
-            [Worker.remote(*params, n) for n in range(n_workers)]
+        # Form the row-column pairs (pixels to run)
+        # Need to allocate cols of index_pairs together
+        # to make them memory contiguous
+        # This speeds up the surface indexing
+        index_pairs = np.empty(
+            (len([i for i in self.rows]) * len([i for i in self.cols]), 2), dtype=int
         )
+        meshgrid = np.meshgrid(self.rows, self.cols)
+        index_pairs[:, 0] = meshgrid[0].flatten(order="f")
+        index_pairs[:, 1] = meshgrid[1].flatten(order="f")
+        del meshgrid
 
-        start_time = time.time()
-        n_tasks = min(
-            n_workers * self.config.implementation.task_inflation_factor, n_iter
-        )
+        # Save this for logging
+        total_samples = index_pairs.shape[0]
 
-        logging.info(
-            f"Beginning {n_iter} inversions in {n_tasks} chunks using {n_workers} cores"
-        )
+        # Keep track of input version of config
+        input_config = deepcopy(self.config)
 
-        # Divide up spectra to run into chunks
-        index_sets = np.linspace(0, n_iter, num=n_tasks, dtype=int)
-        if len(index_sets) == 1:
-            indices_to_run = [index_pairs[0:1, :]]
-        else:
-            indices_to_run = [
-                index_pairs[index_sets[l] : index_sets[l + 1], :]
-                for l in range(len(index_sets) - 1)
-            ]
+        # Loop through index pairs and run workers
+        outer_loop_start_time = time.time()
 
-        res = list(
-            self.workers.map_unordered(
-                lambda a, b: a.run_set_of_spectra.remote(b), indices_to_run
+        surface_index = index_spectra_by_surface(input_config, index_pairs)
+        for surface_class_str, class_idx_pairs in surface_index.items():
+            logging.info(f"Running surfaces: {surface_class_str}")
+
+            # Testing
+            # class_idx_pairs = class_idx_pairs[:20, :]
+
+            # Don't want more workers than tasks
+            n_iter = class_idx_pairs.shape[0]
+            n_workers = min(n_workers, n_iter)
+
+            # The number of tasks to be initialized
+            n_tasks = min(
+                (n_workers * input_config.implementation.task_inflation_factor), n_iter
             )
-        )
 
-        total_time = time.time() - start_time
-        logging.info(
-            f"Inversions complete.  {round(total_time,2)}s total,"
-            f" {round(n_iter/total_time,4)} spectra/s,"
-            f" {round(n_iter/total_time/n_workers,4)} spectra/s/core"
-        )
+            # Get indices to pass to each worker
+            index_sets = np.linspace(0, n_iter, num=n_tasks, dtype=int)
+            if len(index_sets) == 1:
+                indices_to_run = [class_idx_pairs[0:1, :]]
+            else:
+                indices_to_run = [
+                    class_idx_pairs[index_sets[l] : index_sets[l + 1], :]
+                    for l in range(len(index_sets) - 1)
+                ]
+
+            # If multistate, update config to reflect surface
+            if input_config.forward_model.surface.multi_surface_flag:
+                config = update_config_for_surface(
+                    deepcopy(input_config), surface_class_str
+                )
+            else:
+                config = input_config
+
+            # Set forward model
+            self.fm = fm = ForwardModel(config)
+
+            logging.debug(f"Pixel class: {surface_class_str}")
+            logging.debug(f"Surface: {self.fm.surface}")
+
+            # Put worker args into Ray object
+            params = [
+                ray.put(obj)
+                for obj in [
+                    self.config,
+                    fm,
+                    self.full_statevector,
+                    self.loglevel,
+                    self.logfile,
+                    total_samples,
+                    len(class_idx_pairs),
+                    n_workers,
+                ]
+            ]
+            # Initialize Ray actor pool (Worker class)
+            self.workers = ray.util.ActorPool(
+                [Worker.remote(*params, n) for n in range(n_workers)]
+            )
+
+            start_time = time.time()
+            logging.info(
+                f"Beginning {n_iter} inversions in {n_tasks} chunks"
+                f"using {n_workers} cores"
+            )
+
+            # Kick off actor pool
+            res = list(
+                self.workers.map_unordered(
+                    lambda a, b: a.run_set_of_spectra.remote(b), indices_to_run
+                )
+            )
+
+            total_time = time.time() - start_time
+            logging.info(f"Pixel class: {surface_class_str} inversions complete.")
+            logging.info(f"{round(total_time,2)}s total")
+            logging.info(f"{round(n_iter/total_time,4)} spectra/s")
+            logging.info(f"{round(n_iter/total_time/n_workers,4)} spectra/s/core")
+
+            self.workers = None
+            params = []
+
+        if len(index_pairs):
+            outer_loop_total_time = time.time() - outer_loop_start_time
+            logging.info(f"All Inversions complete.")
+            logging.info(f"{round(outer_loop_total_time,2)}s total")
+            logging.info(f"{round(total_samples/outer_loop_total_time,4)} spectra/s")
+            logging.info(
+                f"{round(total_samples/outer_loop_total_time/n_workers,4)} spectra/s/core"
+            )
 
 
 @ray.remote(num_cpus=1)
@@ -190,8 +267,11 @@ class Worker(object):
         self,
         config: configs.Config,
         forward_model: ForwardModel,
+        full_statevector: np.array,
         loglevel: str,
         logfile: str,
+        total_samples: int,
+        class_samples: int,
         total_workers: int = None,
         worker_id: int = None,
     ):
@@ -214,8 +294,7 @@ class Worker(object):
         )
         self.config = config
         self.fm = forward_model
-        self.iv = Inversion(self.config, self.fm)
-        self.io = IO(self.config, self.fm)
+        self.io = IO(self.config, full_statevector)
 
         self.approximate_total_spectra = None
         if total_workers is not None:
@@ -224,13 +303,19 @@ class Worker(object):
             )
         self.worker_id = worker_id
         self.completed_spectra = 0
+        self.total_samples = total_samples
+        self.class_samples = class_samples
 
     def run_set_of_spectra(self, indices: np.array):
         for index in range(0, indices.shape[0]):
             logging.debug("Read chunk of spectra")
             row, col = indices[index, 0], indices[index, 1]
 
+            # Get input data
             input_data = self.io.get_components_at_index(row, col)
+
+            # Get inversion
+            self.iv = Inversion(self.config, self.fm)
 
             self.completed_spectra += 1
             if input_data is not None:
@@ -254,20 +339,20 @@ class Worker(object):
                     )
 
                 if index % 100 == 0:
-                    if (
-                        self.worker_id is not None
-                        and self.approximate_total_spectra is not None
-                    ):
-                        percent = np.round(
-                            self.completed_spectra
-                            / self.approximate_total_spectra
-                            * 100,
+                    if self.worker_id is not None and self.class_samples is not None:
+                        class_percent = np.round(
+                            self.completed_spectra / self.class_samples * 100,
+                            2,
+                        )
+                        total_percent = np.round(
+                            self.completed_spectra / self.total_samples * 100,
                             2,
                         )
                         logging.info(
                             f"Worker {self.worker_id} completed"
-                            f" {self.completed_spectra}/~{self.approximate_total_spectra}::"
-                            f" {percent}% complete"
+                            f" {self.completed_spectra}/{self.class_samples}"
+                            f" ({self.completed_spectra}/{self.total_samples})::"
+                            f" {class_percent}% ({total_percent}%) complete"
                         )
         logging.info(
             f"Worker at start location ({row},{col}) completed"

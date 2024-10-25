@@ -23,18 +23,17 @@ import logging
 
 import numpy as np
 from scipy.interpolate import interp1d
+from scipy.io import loadmat
 
 from isofit.core.common import load_spectrum, load_wavelen
 
 
 class Surface:
-    """A model of the surface.
+    """A wrapper for the specific surface models"""
 
-    Surface models are stored as MATLAB '.mat' format files.
-    """
-
-    def __init__(self, full_config: Config):
+    def __init__(self, full_config):
         config = full_config.forward_model.surface
+        self.model_dict = loadmat(config.surface_file)
 
         self.statevec_names = []
         self.bounds = np.array([])
@@ -45,11 +44,17 @@ class Surface:
         self.idx_lamb = np.empty(shape=0)
         self.emissive = False
 
+        # These are overwritten by specific surface model
         self.wl = None
         self.fwhm = None
+        self.n_wl = None
 
         if config.wavelength_file is not None:
             self.wl, self.fwhm = load_wavelen(config.wavelength_file)
+
+        elif "wl" in self.model_dict:
+            self.wl = self.model_dict["wl"][0]
+
         elif full_config.implementation.mode == "simulation":
             logging.info(
                 "No surface wavelength_file provided, getting wavelengths from"

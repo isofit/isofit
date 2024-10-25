@@ -51,6 +51,11 @@ authors:
     affiliation: >-
       Arizona State University
     orcid: 'https://orcid.org/0000-0003-0428-2909'
+  - given-names: Evan Greenberg 
+    affiliation: >-
+      Jet Propulsion Laboratory, California Institute of
+      Technology
+    orcid: 'https://orcid.org/0000-0002-4700-790X'
 
 identifiers:
   - type: doi
