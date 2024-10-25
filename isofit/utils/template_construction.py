@@ -76,6 +76,7 @@ class Pathnames:
 
         self.surface_path = vars(args).get("surface_path", None)
         self.surface_path_dir = vars(args).get("surface_path_dir", None)
+        self.surface_class_file = abspath(vars(args).get("surface_class", None))
 
         # set up some sub-directories
         self.lut_h2o_directory = abspath(join(self.working_directory, "lut_h2o/"))
@@ -110,13 +111,16 @@ class Pathnames:
             self.loc_working_path = abspath(
                 join(self.input_data_directory, self.fid + "_loc")
             )
-            # Surface classification here so it doesn't get lost
-            self.surface_class_file = abspath(vars(args).get("surface_class", None))
+            self.surface_class_file = (
+                abspath(self.surface_class_file) if self.surface_class_file else None
+            )
         else:
             self.radiance_working_path = abspath(self.input_radiance_file)
             self.obs_working_path = abspath(self.input_obs_file)
             self.loc_working_path = abspath(self.input_loc_file)
-            self.surface_class_file = abspath(vars(args).get("surface_class", None))
+            self.surface_class_file = (
+                abspath(self.surface_class_file) if self.surface_class_file else None
+            )
 
         if args.channelized_uncertainty_path:
             self.input_channelized_uncertainty_path = args.channelized_uncertainty_path
