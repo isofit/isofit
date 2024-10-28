@@ -14,7 +14,7 @@ The second will build the ISOFIT examples using the configured dependencies.
 From there, examples will be available under ``~/.isofit/examples/``.
 Each subdirectory will have one or more scripts that are prepared for execution.
 
-If there are any issues, please report them to the `ISOFIT repository<https://github.com/isofit/isofit/issues>`_.
+If there are any issues, please report them to the `ISOFIT repository <https://github.com/isofit/isofit/issues>`_.
 
 The contents below go into further details about additional commands.
 
@@ -210,7 +210,7 @@ There are two types of examples supported at this time:
 
 1. Direct ``Isofit`` calls. These examples build configuration files to pass directly into the ``Isofit`` class to call ``.run()``
 
-For existing examples of this type include `SantaMonica<https://github.com/isofit/isofit-tutorials/tree/main/20151026_SantaMonica>`_, `Pasadena<https://github.com/isofit/isofit-tutorials/tree/main/20171108_Pasadena>`_, and `ThermalIR<https://github.com/isofit/isofit-tutorials/tree/main/20190806_ThermalIR>`_.
+For existing examples of this type include `SantaMonica <https://github.com/isofit/isofit-tutorials/tree/main/20151026_SantaMonica>`_, `Pasadena <https://github.com/isofit/isofit-tutorials/tree/main/20171108_Pasadena>`_, and `ThermalIR <https://github.com/isofit/isofit-tutorials/tree/main/20190806_ThermalIR>`_.
 Depending on the example, extra directories may be included such as prebuilt simulation files in the ``lut`` directory.
 
 A bash and python script will be generated for each directory under the templates directory. For example, given a template directory:
@@ -261,7 +261,7 @@ Each script will have the configs for it. For example, ``reduced.sh`` would cont
 
 2. ``apply_oe`` scripts. These examples use templates to define the arguments for a call to the ``isofit apply_oe`` utility.
 
-Existing examples of this type include the `small<https://github.com/isofit/isofit-tutorials/tree/main/image_cube/small/templates>`_ and ``medium image cube<https://github.com/isofit/isofit-tutorials/tree/main/image_cube/medium/templates>`_ examples.
+Existing examples of this type include the `small <https://github.com/isofit/isofit-tutorials/tree/main/image_cube/small/templates>`_ and ``medium image cube <https://github.com/isofit/isofit-tutorials/tree/main/image_cube/medium/templates>`_ examples.
 These templates are a list of arguments in a ``[name].args.json`` file. For each ``[name]`` file, separate scripts will be generated.
 For example, given the following templates:
 
@@ -315,5 +315,5 @@ This will generate ``default.sh``:
       --pressure_elevation
 
 
-Once the the example with its templates are finalized, it must be integrated into the `ISOFIT Tutorials<https://github.com/isofit/isofit-tutorials>`_ repository.
+Once the the example with its templates are finalized, it must be integrated into the `ISOFIT Tutorials <https://github.com/isofit/isofit-tutorials>`_ repository.
 Create a new pull request with a description of the example being created and maintainers will review it then merge and release a new version.

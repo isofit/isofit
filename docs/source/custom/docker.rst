@@ -1,6 +1,6 @@
 ISOFIT Docker
 =============
-The official container images are located on Dockerhub under `jammont/isofit<https://hub.docker.com/r/jammont/isofit>`_.
+The official container images are located on Dockerhub under `jammont/isofit <https://hub.docker.com/r/jammont/isofit>`_.
 They come pre-configured with everything a user may need to get started using ISOFIT and executing its examples.
 
 Tags
@@ -29,12 +29,12 @@ This image is default tagged as ``jammont/isofit``. As such, to use it run:
 A breakdown of the above command:
 
 .. list-table::
-    :widths: 10 90
+    :widths: 20 80
     :header-rows: 1
 
     * - Flag
       - Purpose
-    * - ``it``
+    * - ``-it``
       - Run in ``[i]nteractive`` and ``[t]erminal`` modes. Any commands after ``jammont/isofit`` will be executed from the container
     * - ``--rm``
       - Removes the container once finished. If you intend to modify the container between sessions, remove this flag. View existing containers via ``docker ps``
