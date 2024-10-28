@@ -88,7 +88,7 @@ def download_cli(**kwargs):
     download(**kwargs)
 
 
-def validate(path=None, **_):
+def validate(path=None, debug=print, error=print, **_):
     """
     Validates an sRTMnet installation
 
@@ -96,6 +96,10 @@ def validate(path=None, **_):
     ----------
     path : str, default=None
         Path to verify. If None, defaults to the ini path
+    debug : function, default=print
+        Print function to use for debug messages, eg. logging.debug
+    error : function, default=print
+        Print function to use for error messages, eg. logging.error
     **_ : dict
         Ignores unused params that may be used by other validate functions. This is to
         maintain compatibility with env.validate
@@ -108,23 +112,23 @@ def validate(path=None, **_):
     if path is None:
         path = env.srtmnet
 
-    print(f"Verifying path for sRTMnet: {path}")
+    debug(f"Verifying path for sRTMnet: {path}")
 
     if not (path := Path(path)).exists():
-        print(
+        error(
             "Error: sRTMnet path does not exist, please download it via `isofit download sRTMnet`"
         )
         return False
 
     if not list(path.glob("*.h5")):
-        print("Error: sRTMnet model not found, please download it")
+        error("Error: sRTMnet model not found, please download it")
         return False
 
     if not list(path.glob("*_aux.npz")):
-        print("Error: sRTMnet aux file not found, please download it")
+        error("Error: sRTMnet aux file not found, please download it")
         return False
 
-    print("Path is valid")
+    debug("Path is valid")
     return True
 
 
