@@ -39,9 +39,9 @@ Depending on what information you are seeking, these columns may be sorted high/
 ISOFIT Profiling Examples
 -------------------------
 
-ISOFIT comes with a few examples of generating profiling results found under `examples/profiling_cube`. This example is based on the `examples/image_cube/small_chunk`.
+ISOFIT comes with a few examples of generating profiling results found under `$(isofit path examples)/profiling_cube`. This example is based on the `$(isofit path examples)/image_cube/small_chunk`.
 
-`examples/profiling_cube` provides results for two different interpolation methods:
+`$(isofit path examples)/profiling_cube` provides results for two different interpolation methods:
 
 - RegularGrid (rg)
 - Multilinear Grid (mlg)

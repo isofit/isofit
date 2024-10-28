@@ -29,7 +29,6 @@ from typing import Callable
 import numpy as np
 import xarray as xr
 
-import isofit
 from isofit import ray
 from isofit.core import common
 from isofit.radiative_transfer import luts
@@ -55,10 +54,6 @@ class RadiativeTransferEngine:
         "observer_altitude_km",
         "surface_elevation_km",
     ]
-
-    earth_sun_distance_path = os.path.join(
-        isofit.root, "data", "earth_sun_distance.txt"
-    )
 
     # These properties enable easy access to the lut data
     coszen = property(lambda self: self["coszen"])
@@ -267,6 +262,17 @@ class RadiativeTransferEngine:
                 for i, key in enumerate(self.lut_names)
                 if key in self.geometry_input_names
             }
+
+            # check if values of observer zenith in LUT are given in MODTRAN convention
+            self.indices.convert_observer_zenith = None
+            if "observer_zenith" in self.lut_grid.keys():
+                if any(np.array(self.lut_grid["observer_zenith"]) > 90.0):
+                    self.indices.convert_observer_zenith = [
+                        i
+                        for i in self.indices.geom
+                        if self.indices.geom[i] == "observer_zenith"
+                    ][0]
+
             # If it wasn't a geom key, it's x_RT
             self.indices.x_RT = list(set(range(self.n_point)) - set(self.indices.geom))
             Logger.debug(f"Interpolators built")
@@ -391,6 +397,12 @@ class RadiativeTransferEngine:
         point[self.indices.x_RT] = x_RT
         for i, key in self.indices.geom.items():
             point[i] = getattr(geom, key)
+
+        # convert observer zenith to MODTRAN convention if needed
+        if self.indices.convert_observer_zenith:
+            point[self.indices.convert_observer_zenith] = (
+                180.0 - point[self.indices.convert_observer_zenith]
+            )
 
         return self.interpolate(point)
 
@@ -569,10 +581,8 @@ class RadiativeTransferEngine:
         # since it only includes direct upward transmittance
         t_up_dir = case0["transm_up_dir"]
 
-        # REVIEW: two_albedo_method-v1 used a single solar_irr value, but now we have an array of values
-        # The last value in the new array is the same as the old v1, so for backwards compatibility setting that here
         # Top-of-atmosphere solar irradiance as a function of sun zenith angle
-        E0 = case0["solar_irr"][-1] * coszen / np.pi
+        E0 = case0["solar_irr"] * coszen / np.pi
 
         # Direct ground reflected radiance at sensor for case 1 (sun->surface->sensor)
         # This includes direct down and direct up transmittance
@@ -605,7 +615,7 @@ class RadiativeTransferEngine:
         Lp0 = ((Lsurf2 * Lp1) - (Lsurf1 * Lp2)) / (Lsurf2 - Lsurf1)
 
         # Diffuse upward transmittance
-        t_up_dif = np.pi * (Lp1 - Lp0) / (rfl1 * E_down1)
+        t_up_dif = np.pi * (Lp1 - Lp0) / Lsurf1
 
         # Spherical albedo
         salb = (E_down1 - E_down2) / (Lsurf1 - Lsurf2)

@@ -136,9 +136,6 @@ class RadiativeTransfer:
 
         self.solar_irr = np.concatenate([RT.solar_irr for RT in self.rt_engines])
 
-        # TODO: Is code for this missing? We have if statements that rely on this
-        self.glint_model = False
-
     def xa(self):
         """Pull the priors from each of the individual RTs."""
         return self.prior_mean
@@ -210,17 +207,24 @@ class RadiativeTransfer:
         elif self.glint_model:
             L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)
 
-            E_dd = (self.solar_irr * self.coszen) / np.pi * r["t_down_dir"]
-            E_ds = (self.solar_irr * self.coszen) / np.pi * r["t_down_dif"]
-            E_d = E_dd + E_ds
-            L_sky = x_surface[-2] * E_dd + x_surface[-1] * E_ds
+            t_down_dir = r["transm_down_dir"]  # downward direct transmittance
+            t_down_dif = r["transm_down_dif"]  # downward diffuse transmittance
+            t_down_total = t_down_dir + t_down_dif  # downward total transmittance
+            t_total_up = (
+                r["transm_up_dif"] + r["transm_up_dir"]
+            )  # total upward transmittance
 
-            rho_ls = 0.02  # fresnel reflectance factor (approx. 0.02 for nadir view)
-            glint = rho_ls * (L_sky / E_d)
+            L_sky = x_surface[-2] * t_down_dir + x_surface[-1] * t_down_dif
+
+            rho_ls = self.fresnel_rf(
+                geom.observer_zenith
+            )  # fresnel reflectance factor (approx. 0.02 for nadir view)
+            glint = rho_ls * (L_sky / t_down_total)
 
             ret = (
                 L_atm
-                + L_down_transmitted
+                + t_total_up
+                * L_down_transmitted
                 * (rfl + glint)
                 / (1.0 - r["sphalb"] * (rfl + glint))
                 + L_up
@@ -326,18 +330,51 @@ class RadiativeTransfer:
         elif self.glint_model:
             L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)
 
-            E_dd = (self.solar_irr * self.coszen) / np.pi * r["t_down_dir"]
-            E_ds = (self.solar_irr * self.coszen) / np.pi * r["t_down_dif"]
-            E_d = E_dd + E_ds
-            L_sky = x_surface[-2] * E_dd + x_surface[-1] * E_ds
+            t_down_dir = r["transm_down_dir"]  # downward direct transmittance
+            t_down_dif = r["transm_down_dif"]  # downward diffuse transmittance
+            t_down_total = t_down_dir + t_down_dif  # downward total transmittance
+            t_total_up = (
+                r["transm_up_dif"] + r["transm_up_dir"]
+            )  # total upward transmittance
 
-            rho_ls = 0.02  # fresnel reflectance factor (approx. 0.02 for nadir view)
-            glint = rho_ls * (L_sky / E_d)
+            L_sky = x_surface[-2] * t_down_dir + x_surface[-1] * t_down_dif
+
+            rho_ls = self.fresnel_rf(
+                geom.observer_zenith
+            )  # fresnel reflectance factor (approx. 0.02 for nadir view)
+            glint = rho_ls * (L_sky / t_down_total)
 
             drho_scaled_for_multiscattering_drfl = (
                 1.0 / (1 - r["sphalb"] * (rfl + glint)) ** 2
             )
-            drdn_drfl = L_down_transmitted * drho_scaled_for_multiscattering_drfl
+            drdn_drfl = (
+                t_total_up * L_down_transmitted * drho_scaled_for_multiscattering_drfl
+            )
+
+            # Basic formulation (below) does not include the derivative of the radiance w.r.t. other surface states, not just the reflectance
+            # There's probably a better fix for that overall, just trying to fix it for glint for now
+            drdn_dgdd = (
+                (self.solar_irr * self.coszen / np.pi)
+                * t_total_up
+                * t_down_dir
+                * drho_scaled_for_multiscattering_drfl
+            )
+            drdn_dgdsf = (
+                (self.solar_irr * self.coszen / np.pi)
+                * t_total_up
+                * t_down_dif
+                * drho_scaled_for_multiscattering_drfl
+            )
+
+            drdn_dLs = r["transm_up_dir"] + r["transm_up_dif"]
+            K_surface = (
+                drdn_drfl[:, np.newaxis] * drfl_dsurface
+                + drdn_dLs[:, np.newaxis] * dLs_dsurface
+            )
+            K_surface[:, -2] = drdn_dgdd
+            K_surface[:, -1] = drdn_dgdsf
+
+            return K_RT, K_surface
 
         else:
             L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)
@@ -387,6 +424,28 @@ class RadiativeTransfer:
 
         Kb_RT = np.array(Kb_RT).T
         return Kb_RT
+
+    @staticmethod
+    def fresnel_rf(vza):
+        """Calculates reflectance factor of sky radiance based on the
+        Fresnel equation for unpolarized light as a function of view zenith angle (vza).
+        """
+        if vza > 0.0:
+            n_w = 1.33  # refractive index of water
+            theta = np.deg2rad(vza)
+
+            # calculate angle of refraction using Snell′s law
+            theta_i = np.arcsin(np.sin(theta) / n_w)
+
+            # reflectance factor of sky radiance based on the Fresnel equation for unpolarized light
+            rho_s = 0.5 * np.abs(
+                ((np.sin(theta - theta_i) ** 2) / (np.sin(theta + theta_i) ** 2))
+                + ((np.tan(theta - theta_i) ** 2) / (np.tan(theta + theta_i) ** 2))
+            )
+        else:
+            rho_s = 0.02  # the reflectance factor converges to 0.02 for view angles equal to 0.0°
+
+        return rho_s
 
     def summarize(self, x_RT, geom):
         ret = []
