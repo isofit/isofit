@@ -80,7 +80,7 @@ def download_cli(**kwargs):
     download(**kwargs)
 
 
-def validate(path=None, **_):
+def validate(path=None, debug=print, error=print, **_):
     """
     Validates a 6S installation
 
@@ -88,6 +88,10 @@ def validate(path=None, **_):
     ----------
     path : str, default=None
         Path to verify. If None, defaults to the ini path
+    debug : function, default=print
+        Print function to use for debug messages, eg. logging.debug
+    error : function, default=print
+        Print function to use for error messages, eg. logging.error
     **_ : dict
         Ignores unused params that may be used by other validate functions. This is to
         maintain compatibility with env.validate
@@ -100,19 +104,21 @@ def validate(path=None, **_):
     if path is None:
         path = env.sixs
 
-    print(f"Verifying path for 6S: {path}")
+    debug(f"Verifying path for 6S: {path}")
 
     if not (path := Path(path)).exists():
-        print("Error: Path does not exist, please download it via `isofit download 6S`")
+        error(
+            "Error: 6S path does not exist, please download it via `isofit download 6S`"
+        )
         return False
 
     if not (path / f"sixsV2.1").exists():
-        print(
+        error(
             "Error: 6S does not appear to be installed correctly, please ensure it is"
         )
         return False
 
-    print("Path is valid")
+    debug("Path is valid")
     return True
 
 

@@ -1,3 +1,4 @@
+import importlib
 import pkgutil
 
 from isofit.data import env
@@ -5,7 +6,7 @@ from isofit.data.download import cli
 
 # Auto-discovers the submodules of isofit.data.cli
 Modules = {
-    name: imp.find_module(name).load_module(name)
+    name: importlib.import_module(f".{name}", __spec__.name)
     for imp, name, _ in pkgutil.iter_modules(__path__)
 }
 
@@ -43,12 +44,19 @@ def validate_all():
 def env_validate(keys, **kwargs):
     """
     Utility function for the `env` object to quickly validate specific dependencies
+
+    Parameters
+    ----------
+    keys : list
+        List of validator functions to call
     """
+    error = kwargs.get("error", print)
+
     all_valid = True
     for key in keys:
         module = Modules.get(key)
         if module is None:
-            print(f"Product not found: {key}")
+            error(f"Product not found: {key}")
             all_valid = False
         else:
             all_valid &= module.validate(**kwargs)

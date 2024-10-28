@@ -762,7 +762,7 @@ class IO:
             Loaded ESD. If the file fails to load, creates a default
         """
         if file is None:
-            file = os.path.join(env.data, "earth_sun_distance.txt")
+            file = env.path("data", "earth_sun_distance.txt")
 
         try:
             esd = np.loadtxt(file)
