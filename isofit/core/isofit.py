@@ -174,9 +174,6 @@ class Isofit:
         for surface_class_str, class_idx_pairs in surface_index.items():
             logging.info(f"Running surfaces: {surface_class_str}")
 
-            # Testing
-            # class_idx_pairs = class_idx_pairs[:20, :]
-
             # Don't want more workers than tasks
             n_iter = class_idx_pairs.shape[0]
             n_workers = min(n_workers, n_iter)

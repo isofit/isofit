@@ -497,6 +497,7 @@ def build_presolve_config(
     debug: bool = False,
     inversion_windows=[[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]],
     prebuilt_lut_path: str = None,
+    multipart_transmittance: bool = False,
 ) -> None:
     """Write an isofit config file for a presolve, with limited info.
 
@@ -532,7 +533,7 @@ def build_presolve_config(
         multipart_transmittance = True
     else:
         glint_model = False
-        multipart_transmittance = False
+        multipart_transmittance = multipart_transmittance
 
     if prebuilt_lut_path is None:
         lut_path = join(paths.lut_h2o_directory, "lut.nc")
@@ -689,6 +690,7 @@ def build_main_config(
     debug: bool = False,
     inversion_windows=[[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]],
     prebuilt_lut_path: str = None,
+    multipart_transmittance: bool = False,
 ) -> None:
     """Write an isofit config file for the main solve, using the specified pathnames and all given info
 
@@ -736,10 +738,18 @@ def build_main_config(
     else:
         engine_name = "sRTMnet"
 
+    if surface_category == "glint_model_surface":
+        glint_model = True
+        multipart_transmittance = True
+    else:
+        glint_model = False
+        multipart_transmittance = multipart_transmittance
+
     radiative_transfer_config = {
         "radiative_transfer_engines": {
             "vswir": {
                 "engine_name": engine_name,
+                "multipart_transmittance": multipart_transmittance,
                 "sim_path": paths.full_lut_directory,
                 "lut_path": lut_path,
                 "aerosol_template_file": paths.aerosol_tpl_path,
