@@ -8,6 +8,7 @@
    custom/installation.rst
    custom/data.rst
    custom/best_practices.rst
+   custom/docker.rst
 
 .. toctree::
    :Caption: The Code
