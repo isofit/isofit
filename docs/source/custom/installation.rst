@@ -40,7 +40,7 @@ Install with ``pip``
 
 .. note::
 
-    The commands below use ``$ pip``, however ``$ python -m pip`` or is often a
+    The commands below use ``$ pip``, however ``$ python -m pip`` is often a
     safer choice. It is possible for the ``$ pip`` executable to point to a
     different version of Python than the ``$ python`` executable. Using
     ``$ python -m pip`` at least ensures that the package is installed against
@@ -82,6 +82,7 @@ Downloading Extra Files
 
 Once ISOFIT is installed, the CLI provides an easy way to download additional files that may be useful.
 These can be acquired via the ``isofit download`` command, and the current list of downloads we support is available via ``isofit download --help``.
+See :ref:`data` for more information.
 
 > **_NOTE:_**  The default location for downloading extra files is ``~/.isofit/``. First time invoking the ISOFIT CLI will instantiate this directory and an ``isofit.ini`` file for storing the paths to downloaded products.
 
@@ -145,19 +146,39 @@ ISOFIT variables
 
 The following environment variables are actively used within ISOFIT:
 
-- `MKL_NUM_THREADS` and `OMP_NUM_THREADS` - These control the threading of various packages within ISOFIT. It is
-important to set these to "1" to ensure ISOFIT performs to its fullest capabilities. By default, ISOFIT will insert
-these into the environment if they are not set and/or not set correctly.
-- `ISOFIT_NO_SET_THREADS` - This will disable automatically setting the MKL and OMP environment variables. This is recommended
-only for advanced users that know what they are doing and can mitigate the consequences.
-- `ISOFIT_DEBUG` - This will disable the `ray` package across ISOFIT to force single-core execution. Primarily used as
-a debugging tool by developers and is not recommended for use.
+.. list-table::
+    :widths: 20 80
+    :header-rows: 1
+
+    * - Variable
+      - Purpose
+    * - ``MKL_NUM_THREADS`` and ``OMP_NUM_THREADS``
+      - These control the threading of various packages within ISOFIT. It is important to set these to "1" to ensure ISOFIT performs to its fullest capabilities. By default, ISOFIT will insert these into the environment if they are not set and/or not set correctly.
+    * - ``ISOFIT_NO_SET_THREADS``
+      - This will disable automatically setting the MKL and OMP environment variables. Only recommended for advanced users that know what they are doing and can mitigate the consequences.
+    * - ``ISOFIT_DEBUG``
+      - Disables the `ray` package across ISOFIT to force single-core execution. Primarily used as a debugging tool by developers and is not recommended for normal use.
 
 Quick Start with sRTMnet (Recommended for new users)
 ====================================================
 
 sRTMnet is an emulator for MODTRAN 6, that works by coupling a neural network with a surrogate RTM (6S v2.1).
-Installation requires two steps:
+
+
+Automatic (Recommended)
+-----------------------
+ISOFIT can automatically install 6S and sRTMnet with the latest versions:
+
+.. code::
+
+    $ isofit download sixs
+    $ isofit download srtmnet
+
+The above commands will ensure these models are built and available for ISOFIT.
+
+Manual (Advanced)
+-----------------
+The following procedure walks through the steps required to install sRTMnet manually:
 
 1. Download `6S v2.1 <https://salsa.umd.edu/files/6S/6sV2.1.tar>`_, and compile.  If you use a modern system,
 it is likely you will need to specify a legacy compiling configuration by changing line 3 of the Makefile to:
@@ -173,27 +194,32 @@ as well as some `auxiliary data <https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/
 This will give you an hdf5 and an aux file. It is important that you store both in the same directory.
 Finally, point the environment variable EMULATOR_PATH to the hdf5 file.
 
-4. Run one of the following examples:
+You will likely need to set the path to 6S and sRTMnet for the ISOFIT ini file as well as rebuild the examples.
+To do this, execute:
+
+.. code::
+
+    $ isofit --sixs /path/to/sixs --srtmnet /path/to/sRTMnet.h5 build
+
+5. Run one of the following examples:
 
 .. code::
 
     # Small example pixel-by-pixel
-    cd $(isofit path examples)/image_cube/small/
-    ./small-chunk.sh
+    $ cd $(isofit path examples)/image_cube/small/
+    $ ./default.sh
 
 .. code::
 
     # Medium example with empirical line solution
-    cd $(isofit path examples)/image_cube/medium/
-    ./empirical.sh
+    $ cd $(isofit path examples)/image_cube/medium/
+    $ ./empirical.sh
 
 .. code::
 
     # Medium example with analytical line solution
-    cd $(isofit path examples)/image_cube/medium/
-    ./analytical.sh
-
-
+    $ cd $(isofit path examples)/image_cube/medium/
+    $ ./analytical.sh
 
 
 Quick Start using MODTRAN 6.0
@@ -215,55 +241,6 @@ LibRadTran RT code as well as to neural network emulators.
 3. This will build a surface model and run the retrieval. The default example uses a lookup table approximation, and the code should recognize that the tables do not currently exist.  It will call MODTRAN to rebuild them, which will take a few minutes.
 
 4. Look for output data in $(isofit path examples)/20171108_Pasadena/output/.
-
-
-Quick Start with LibRadTran 2.0.x
-=================================
-
-This quick start requires an installation of the open source LibRadTran radiative transfer model (`LibRadTran <http://www.libradtran.org/doku.php>`_).
-A few important steps have to be considered when installing the software, which are outlined below. We have tested with the latest 2.0.4 release.
-
-1. Download and unpack the latest version of LibRadTran:
-
-.. code::
-
-    wget -nv http://www.libradtran.org/download/libRadtran-2.0.4.tar.gz
-    tar -xf libRadtran-2.0.4.tar.gz
-
-2. Download and unpack the "REPTRAN" absorption parameterization:
-
-.. code::
-
-    wget -nv http://www.meteo.physik.uni-muenchen.de/~libradtran/lib/exe/fetch.php?media=download:reptran_2017_all.tar.gz -O reptran-2017-all.tar.gz
-    tar -xf reptran-2017-all.tar.gz
-
-3. Unpacking REPTRAN will create a folder called 'data' with a subfolder 'correlated_k'. Copy this subfolder to the LibRadTran data directory:
-
-.. code::
-
-    cp -r data/correlated_k libRadtran-2.0.4/data
-
-4. Go to the LibRadTran base directory, configure and compile the software. It's important to set python2 as interpreter and 'ignore-errors' when running the 'make' command:
-
-.. code::
-
-    cd libRadtran-2.0.4
-    PYTHON=$(which python2) ./configure --prefix=$(pwd)
-    make --ignore-errors
-
-5. Create an environment variable LIBRADTRAN_DIR pointing to the base libRadTran directory.
-
-6. Run the following code
-
-.. code::
-
-    cd $(isofit path examples)/20171108_Pasadena
-    ./run_example_libradtran.sh
-
-7. This will build a surface model and run the retrieval. The default example uses a lookup table approximation, and the code should recognize that the tables do not currently exist.  It will call LibRadTran to rebuild them, which will take a few minutes.
-
-8. Look for output data in $(isofit path examples)/20171108_Pasadena/output/.
-
 
 
 Additional Installation Info for Mac OSX

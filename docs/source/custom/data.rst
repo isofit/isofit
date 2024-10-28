@@ -1,3 +1,5 @@
+.. _data:
+
 ===============
 Extra Downloads
 ===============
@@ -231,7 +233,7 @@ will generate the following configs and scripts:
 .. code-block::
 
     [example]/
-    └─ configs/
+    ├─ configs/
     | ├─ reduced/
     | | ├─ config1.json
     | | └─ config2.json
