@@ -81,9 +81,9 @@ Downloading Extra Files
 -----------------------
 
 Once ISOFIT is installed, the CLI provides an easy way to download additional files that may be useful.
-These can be acquired via the `isofit download` command, and the current list of downloads we support is available via `isofit download --help`.
+These can be acquired via the ``isofit download`` command, and the current list of downloads we support is available via ``isofit download --help``.
 
-> **_NOTE:_**  The default location for downloading extra files is `~/.isofit/`. First time invoking the ISOFIT CLI will instantiate this directory and an `isofit.ini` file for storing the paths to downloaded products.
+> **_NOTE:_**  The default location for downloading extra files is ``~/.isofit/``. First time invoking the ISOFIT CLI will instantiate this directory and an ``isofit.ini`` file for storing the paths to downloaded products.
 
 Setting environment variables
 =============================

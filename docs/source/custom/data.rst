@@ -11,7 +11,7 @@ To get started with ISOFIT examples, simply execute the two following commands:
 
 The first will download all additional ISOFIT dependencies and configure them for the current system.
 The second will build the ISOFIT examples using the configured dependencies.
-From there, examples will be available under :code:`~/.isofit/examples/`.
+From there, examples will be available under ``~/.isofit/examples/``.
 Each subdirectory will have one or more scripts that are prepared for execution.
 
 If there are any issues, please report them to the `ISOFIT repository<https://github.com/isofit/isofit/issues>`_.
@@ -30,9 +30,9 @@ These include things like larger data files and the ISOFIT examples.
 
 .. note::
 
-    The below commands assume a user is in their :code:`/Users/[user]/` directory, aka :code:`~`
+    The below commands assume a user is in their ``/Users/[user]/`` directory, aka ``~``
 
-When the :code:`isofit` command is first executed, it will create a directory under the user's home directory named :code:`.isofit` as well as initialize a default :code:`isofit.ini` file:
+When the ``isofit`` command is first executed, it will create a directory under the user's home directory named ``.isofit`` as well as initialize a default ``isofit.ini`` file:
 
 .. code-block::
 
@@ -48,7 +48,7 @@ When the :code:`isofit` command is first executed, it will create a directory un
     sixs = /Users/[user]/.isofit/sixs
     modtran = /Users/[user]/.isofit/modtran
 
-Notice the default location for all paths is :code:`~/.isofit/`. These can be modified by either directly editing the INI file or by using the ISOFIT CLI:
+Notice the default location for all paths is ``~/.isofit/``. These can be modified by either directly editing the INI file or by using the ISOFIT CLI:
 
 .. code-block::
 
@@ -70,7 +70,7 @@ Notice the default location for all paths is :code:`~/.isofit/`. These can be mo
       --save / -S, --no-save  Save the ini file
       --help                  Show this message and exit.
 
-Using a data override flag (:code:`-d`, :code:`-e`, :code:`-c`, :code:`-em`, :code:`-6s`) will update the the INI with the provided path:
+Using a data override flag (``-d``, ``-e``, ``-c``, ``-em``, ``-6s``) will update the the INI with the provided path:
 
 .. code-block::
 
@@ -110,10 +110,10 @@ For advanced users, the INI file itself as well as the base directory and the se
     sixs = /Users/[user]/dev/test/sixs
     modtran = /Users/[user]/dev/test/modtran
 
-The :code:`DEFAULT` section is still instantiated, but now there's a `:code:test` section with a different :code:`data` path than the default.
-Also note the default :code:`examples` is different -- this is because the above examples changed it in the default INI, which is still read if available.
+The ``DEFAULT`` section is still instantiated, but now there's a ``test`` section with a different ``data`` path than the default.
+Also note the default ``examples`` is different -- this is because the above examples changed it in the default INI, which is still read if available.
 
-Additionally, these paths may be used in command-line arguments via the :code:`isofit path` command. For example:
+Additionally, these paths may be used in command-line arguments via the ``isofit path`` command. For example:
 
 .. code-block::
 
@@ -124,8 +124,8 @@ Additionally, these paths may be used in command-line arguments via the :code:`i
 Downloads
 =========
 
-ISOFIT comes with a :code:`download` command that provides users the ability to download and install extra files such as larger data files and examples.
-To get started, execute the :code:`isofit download --help` in a terminal. At this time, there are 7 subcommands:
+ISOFIT comes with a ``download`` command that provides users the ability to download and install extra files such as larger data files and examples.
+To get started, execute the ``isofit download --help`` in a terminal. At this time, there are 7 subcommands:
 
 .. list-table::
     :widths: 25 75
@@ -133,25 +133,25 @@ To get started, execute the :code:`isofit download --help` in a terminal. At thi
 
     * - Command
       - Description
-    * - :code:`paths`
+    * - ``paths``
       - Displays the currently configured path for a download
-    * - :code:`all`
+    * - ``all``
       - Executes all of the download commands below
-    * - :code:`data`
+    * - ``data``
       - Downloads ISOFIT data files from https://github.com/isofit/isofit-data
-    * - :code:`examples`
+    * - ``examples``
       - Downloads the ISOFIT examples from https://github.com/isofit/isofit-tutorials
-    * - :code:`imagecube`
+    * - ``imagecube``
       - Downloads required data for the image_cube example
-    * - :code:`sRTMnet`
+    * - ``sRTMnet``
       - Downloads the sRTMnet model
-    * - :code:`sixs`
+    * - ``sixs``
       - Downloads and builds 6sv-2.1
 
 
 The paths for each download are defined in the currently active INI.
-Download paths can be modified by either directly modifying the :code:`~/.isofit/isofit.ini` or by using :code:`isofit --help` flags (shown above).
-Additionally, download paths may be temporarily overridden and not saved to the active INI by providing a :code:`--output [path]`. For example:
+Download paths can be modified by either directly modifying the ``~/.isofit/isofit.ini`` or by using ``isofit --help`` flags (shown above).
+Additionally, download paths may be temporarily overridden and not saved to the active INI by providing a ``--output [path]``. For example:
 
 .. code-block::
 
@@ -161,10 +161,10 @@ Additionally, download paths may be temporarily overridden and not saved to the 
     Downloads the extra ISOFIT data files from the repository
     https://github.com/isofit/isofit-data.
 
-    Run `isofit download paths` to see default path locations.
+    Run ``isofit download paths`` to see default path locations.
     There are two ways to specify output directory:
-      - `isofit --data /path/data download data`: Override the ini file. This will save the provided path for future reference.
-      - `isofit download data --output /path/data`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
+      - ``isofit --data /path/data download data``: Override the ini file. This will save the provided path for future reference.
+      - ``isofit download data --output /path/data``: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
     It is recommended to use the first style so the download path is remembered in the future.
 
     Options:
@@ -172,13 +172,13 @@ Additionally, download paths may be temporarily overridden and not saved to the 
     -t, --tag TEXT     Release tag to pull  [default: latest]
     --help             Show this message and exit.
 
-Some subcommands have additional flags to further tweak the download, such as :code:`data` and :code:`examples` having a :code:`--tag` to download specific tag releases, or :code:`sRTMnet` having :code:`--version` for different model versions, but it is recommended to use the default to pull the most up-to-date download for each.
+Some subcommands have additional flags to further tweak the download, such as ``data`` and ``examples`` having a ``--tag`` to download specific tag releases, or ``sRTMnet`` having ``--version`` for different model versions, but it is recommended to use the default to pull the most up-to-date download for each.
 
 
 Building
 ========
 
-ISOFIT examples rely on the :code:`isofit build` command to generate configuration files and scripts dependent on a user's active INI file.
+ISOFIT examples rely on the ``isofit build`` command to generate configuration files and scripts dependent on a user's active INI file.
 Each example contains a set of template files generate the required files for the example.
 By default, a user will not need to modify these templates.
 If an advanced user desires to change the configuration of an example, it is strongly recommended to run the build command first and edit the generated outputs.
@@ -203,15 +203,15 @@ Templates
 
 Templates are used to generate configuration and script files relative to a user's installation environment.
 Changes to the ISOFIT INI may rebuild the examples quickly for a new environent.
-Instead of hardcoding relative paths, the :code:`isofit build` command will replace values within the templates with the values defined by a given INI.
-For example, a template may define :code:`{examples}`, this will be replaced with the INI's :code:`examples` string.
+Instead of hardcoding relative paths, the ``isofit build`` command will replace values within the templates with the values defined by a given INI.
+For example, a template may define ``{examples}``, this will be replaced with the INI's ``examples`` string.
 
 There are two types of examples supported at this time:
 
-1. Direct :code:`Isofit` calls. These examples build configuration files to pass directly into the :code:`Isofit` class to call :code:`.run()`
+1. Direct ``Isofit`` calls. These examples build configuration files to pass directly into the ``Isofit`` class to call ``.run()``
 
 For existing examples of this type include `SantaMonica<https://github.com/isofit/isofit-tutorials/tree/main/20151026_SantaMonica>`_, `Pasadena<https://github.com/isofit/isofit-tutorials/tree/main/20171108_Pasadena>`_, and `ThermalIR<https://github.com/isofit/isofit-tutorials/tree/main/20190806_ThermalIR>`_.
-Depending on the example, extra directories may be included such as prebuilt simulation files in the :code:`lut` directory.
+Depending on the example, extra directories may be included such as prebuilt simulation files in the ``lut`` directory.
 
 A bash and python script will be generated for each directory under the templates directory. For example, given a template directory:
 
@@ -243,7 +243,7 @@ will generate the following configs and scripts:
     ├─ advanced.sh
     └─ advanced.py
 
-Each script will have the configs for it. For example, :code:`reduced.sh` would contain:
+Each script will have the configs for it. For example, ``reduced.sh`` would contain:
 
 .. code-block::
 
@@ -259,10 +259,10 @@ Each script will have the configs for it. For example, :code:`reduced.sh` would 
     isofit run --level DEBUG ~/.isofit/examples/[example]/configs/reduced/config2.json
 
 
-2. :code:`apply_oe` scripts. These examples use templates to define the arguments for a call to the :code:`isofit apply_oe` utility.
+2. ``apply_oe`` scripts. These examples use templates to define the arguments for a call to the ``isofit apply_oe`` utility.
 
-Existing examples of this type include the `small<https://github.com/isofit/isofit-tutorials/tree/main/image_cube/small/templates>`_ and `medium image cube<https://github.com/isofit/isofit-tutorials/tree/main/image_cube/medium/templates>`_ examples.
-These templates are a list of arguments in a :code:`[name].args.json` file. For each :code:`[name]` file, separate scripts will be generated.
+Existing examples of this type include the `small<https://github.com/isofit/isofit-tutorials/tree/main/image_cube/small/templates>`_ and ``medium image cube<https://github.com/isofit/isofit-tutorials/tree/main/image_cube/medium/templates>`_ examples.
+These templates are a list of arguments in a ``[name].args.json`` file. For each ``[name]`` file, separate scripts will be generated.
 For example, given the following templates:
 
 .. code-block::
@@ -280,7 +280,7 @@ will generate the following scripts:
     ├─ simple.sh
     └─ advanced.sh
 
-The small image cube example's :code:`default.args.json` is currently defined as:
+The small image cube example's ``default.args.json`` is currently defined as:
 
 .. code-block:: json
 
@@ -298,7 +298,7 @@ The small image cube example's :code:`default.args.json` is currently defined as
     "--pressure_elevation"
     ]
 
-This will generate :code:`default.sh`:
+This will generate ``default.sh``:
 
 .. code-block::
 
