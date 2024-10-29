@@ -34,6 +34,9 @@ def nc2envi(infile: str, fwhmfile: str, outpath: str=os.getcwd(), rtm='srtmnet')
         nc_time = np.asarray(nc_whole['scan_line_attributes']['time'][:])
         # Wavelengths and fwhm for metadata, which is read by ISOFIT
         meta_wvs, fwhm = np.loadtxt(fwhmfile, usecols=(1, 2), unpack=True, dtype='str')
+        fwhm = fwhm.astype(float)
+        fwhm = fwhm / 2
+        fwhm = fwhm.astype(str)
     except:
         raise Exception("Problem importing one or more groups from input file.",
                         "Please ensure file is in OCI L1B format")
@@ -41,14 +44,19 @@ def nc2envi(infile: str, fwhmfile: str, outpath: str=os.getcwd(), rtm='srtmnet')
     # Define rtm-specific parameters for rfl -> rdn conversion
     if rtm == 'srtmnet':
         # Exclude 314:377 bc srtmnet only reliable down to 380
-        blue_wvs = np.asarray(nc_sbp['blue_wavelength'][28:-3])                 # [:-3] removes overlap with FPAs
-        blue_f0= np.asarray(nc_sbp['blue_solar_irradiance'][28:-3] / 10)
-        blue_rfl = np.asarray(nc_obs['rhot_blue'][28:-3])
+        # 28: for 380, 16: for 350
+        blue_wvs = np.asarray(nc_sbp['blue_wavelength'][16:-3])                 # [:-3] removes overlap with FPAs
+        blue_f0= np.asarray(nc_sbp['blue_solar_irradiance'][16:-3] / 10)
+        blue_rfl = np.asarray(nc_obs['rhot_blue'][16:-3])
     elif rtm == '6s':
         # 6S can handle down to 314
         blue_wvs = np.asarray(nc_sbp['blue_wavelength'][:-3])
         blue_f0= np.asarray(nc_sbp['blue_solar_irradiance'][:-3] / 10)
         blue_rfl = np.asarray(nc_obs['rhot_blue'][:-3])  
+    
+    # NOTE: 10/22/24 taking out SWIR bands to work on non-gauss SRF in ISOFIT   #
+    #       will have to normalize FWHM for this problem, and SWIR FWHMs are way#
+    #       larger than vis/nir. Will test in next runs                         #
     
     # Hardcoding in SWIR bands bc  939 nm is masked in the nc file, 
     # also dropping high gain bands for now
@@ -72,10 +80,10 @@ def nc2envi(infile: str, fwhmfile: str, outpath: str=os.getcwd(), rtm='srtmnet')
     rows, cols = nc_geo['latitude'].shape[0], nc_geo['latitude'].shape[1]
     lat, lon = np.asarray(nc_geo['latitude'][:]), np.asarray(nc_geo['longitude'][:])
     alt = 676.5e3
-    sza = np.asarray(nc_geo['solar_zenith'][:])                                 # 0 - 90 from zenith
-    saa = np.asarray(nc_geo['solar_azimuth'][:] + 180)                          # 0 - 360 clockwise from north
-    vza = np.asarray(nc_geo['sensor_zenith'][:])                                # 0 - 90 from zenith
-    vaa = np.asarray(nc_geo['sensor_azimuth'][:] + 180)                         # 0 - 360 clockwise from north
+    sza = np.asarray(nc_geo['solar_zenith'][:])             # 0 - 90 from zenith
+    saa = np.asarray(nc_geo['solar_azimuth'][:] + 180)      # 0 - 360 clockwise from north
+    vza = np.asarray(nc_geo['sensor_zenith'][:])            # 0 - 90 from zenith
+    vaa = np.asarray(nc_geo['sensor_azimuth'][:] + 180)     # 0 - 360 clockwise from north
 
     height = np.asarray(nc_geo['height'][:])
     phang = calc_phase_angle(sza, saa, vza, vaa)
@@ -140,7 +148,7 @@ def nc2envi(infile: str, fwhmfile: str, outpath: str=os.getcwd(), rtm='srtmnet')
 
 def add_bands(out_envi, rast_dict, waves=None, width=None, metadata=False) -> None:
     """
-    Add bands to the ENVI object being created. No data value = np.NaN
+    Add bands to the ENVI object being created. No data value = -9999
     Requires:
         out_envi:       GDAL ENVI file object to create
         rast_dict:      Dictionary with keys=raster band names and val=value arrays
@@ -160,7 +168,8 @@ def add_bands(out_envi, rast_dict, waves=None, width=None, metadata=False) -> No
         rast = np.asarray(rast_dict[name])
         out_envi.GetRasterBand(band).WriteArray(rast)
         out_envi.GetRasterBand(band).SetDescription(name)
-        out_envi.GetRasterBand(band).SetNoDataValue(np.NaN)
+        # Setting nd value to be consistent w/ ISOFIT
+        out_envi.GetRasterBand(band).SetNoDataValue(-9999)
         if metadata:
             out_envi.GetRasterBand(band).SetMetadata({'wavelength':waves[band-1], 
                                                         'fwhm':width[band-1]})
@@ -234,11 +243,12 @@ def calc_slope_aspect(height, lat, lon, outpath=os.getcwd()) -> tuple:
     # Open and read in slope and aspect info
     with rasterio.open(outslope) as ds:
         slope=ds.read(1)
-    slope[slope==-9999.000] = np.nan                                            # Set nodata value to nans
+    # NOTE: nd values should be okay @ -9999
+    #slope[slope==-9999.000] = np.nan                                            # Set nodata value to nans
 
     with rasterio.open(outasp) as ds:
         aspect=ds.read(1)
-    aspect[aspect==-9999.000] = np.nan
+    #aspect[aspect==-9999.000] = np.nan
 
     # Delete unnecessary files
     os.remove(outslope)

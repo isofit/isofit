@@ -306,6 +306,9 @@ class Worker(object):
             for c in range(output_state.shape[1]):
                 meas = rdn[r, c, :]
                 if self.radiance_correction is not None:
+                    # sc - Creating copy to avoid the "output array read only" error
+                    #      when applying correction factors
+                    meas = np.copy(meas) 
                     meas *= self.radiance_correction
                 if np.all(meas < 0):
                     continue
