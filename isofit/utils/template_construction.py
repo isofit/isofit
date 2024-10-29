@@ -193,6 +193,8 @@ class Pathnames:
 
         if args.sensor == "avcl":
             self.noise_path = join(self.isofit_path, "data", "avirisc_noise.txt")
+        elif args.sensor == "oci":
+            self.noise_path = join(self.isofit_path, "data", "oci_noise.txt")
         elif args.sensor == "emit":
             self.noise_path = join(self.isofit_path, "data", "emit_noise.txt")
             if self.input_channelized_uncertainty_path is None:
@@ -212,13 +214,13 @@ class Pathnames:
             join(self.isofit_path, "data", "earth_sun_distance.txt")
         )
 
-        # Adding OCI irradiance file 04/03
+        # sc - Adding TSIS irradiance file for OCI
         if args.sensor == "oci":
             self.irradiance_file = abspath(
                 join(
                     self.isofit_path,
                     "data",
-                    "oci_f0_tsis.txt"
+                    "tsis_f0_0p1.txt"
                 )
             )
         else:
@@ -1496,6 +1498,11 @@ def get_metadata_from_obs(
         lut_params.to_sensor_zenith_spacing,
         lut_params.to_sensor_zenith_spacing_min,
     )
+    ###### Editing 09/10 to create coarse global LUT ######
+    #to_sensor_zenith_lut_grid = lut_params.get_grid(
+    #    22, 70, 
+    #    lut_params.to_sensor_zenith_spacing,
+    #    lut_params.to_sensor_zenith_spacing_min,)
     if to_sensor_zenith_lut_grid is not None:
         to_sensor_zenith_lut_grid = np.sort(to_sensor_zenith_lut_grid)
 
@@ -1504,6 +1511,12 @@ def get_metadata_from_obs(
         lut_params.to_sun_zenith_spacing,
         lut_params.to_sun_zenith_spacing_min,
     )
+    # NOTE: 09/10 This to gen global lut
+    #to_sun_zenith_lut_grid = lut_params.get_grid(
+    #    0, 70,
+    #    lut_params.to_sun_zenith_spacing,
+    #    lut_params.to_sun_zenith_spacing_min,
+    #)
     if to_sun_zenith_lut_grid is not None:
         to_sun_zenith_lut_grid = np.sort(to_sun_zenith_lut_grid)
 
@@ -1512,6 +1525,11 @@ def get_metadata_from_obs(
         lut_params.relative_azimuth_spacing,
         lut_params.relative_azimuth_spacing_min,
     )
+    # NOTE: 09/10 This to gen global lut
+    #relative_azimuth_lut_grid = lut_params.get_grid(
+    #    0, 180,
+    #    lut_params.relative_azimuth_spacing,
+    #    lut_params.relative_azimuth_spacing_min,)
     if relative_azimuth_lut_grid is not None:
         relative_azimuth_lut_grid = np.sort(
             np.array([x % 360 for x in relative_azimuth_lut_grid])
