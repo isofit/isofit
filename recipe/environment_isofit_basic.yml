@@ -1,4 +1,4 @@
-name: oci_isofit_env
+name: isofit_env
 
 channels: &id1
   - http://conda.anaconda.org/conda-forge

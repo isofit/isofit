@@ -576,7 +576,7 @@ def build_presolve_config(
     if emulator_base is not None:
         radiative_transfer_config["radiative_transfer_engines"]["vswir"][
             "emulator_file"
-        ] = abspath(emulator_base) + ".h5"
+        ] = abspath(emulator_base) + ".h5" # sc - can't find emulator file without ".h5" in the name
         radiative_transfer_config["radiative_transfer_engines"]["vswir"][
             "emulator_aux_file"
         ] = abspath(os.path.splitext(emulator_base)[0] + "_aux.npz")
@@ -759,7 +759,7 @@ def build_main_config(
     if emulator_base is not None:
         radiative_transfer_config["radiative_transfer_engines"]["vswir"][
             "emulator_file"
-        ] = abspath(emulator_base) + ".h5"
+        ] = abspath(emulator_base) + ".h5" # sc - can't find emulator file without ".h5" in the name
         radiative_transfer_config["radiative_transfer_engines"]["vswir"][
             "emulator_aux_file"
         ] = abspath(os.path.splitext(emulator_base)[0] + "_aux.npz")
@@ -1498,11 +1498,7 @@ def get_metadata_from_obs(
         lut_params.to_sensor_zenith_spacing,
         lut_params.to_sensor_zenith_spacing_min,
     )
-    ###### Editing 09/10 to create coarse global LUT ######
-    #to_sensor_zenith_lut_grid = lut_params.get_grid(
-    #    22, 70, 
-    #    lut_params.to_sensor_zenith_spacing,
-    #    lut_params.to_sensor_zenith_spacing_min,)
+
     if to_sensor_zenith_lut_grid is not None:
         to_sensor_zenith_lut_grid = np.sort(to_sensor_zenith_lut_grid)
 
@@ -1511,12 +1507,7 @@ def get_metadata_from_obs(
         lut_params.to_sun_zenith_spacing,
         lut_params.to_sun_zenith_spacing_min,
     )
-    # NOTE: 09/10 This to gen global lut
-    #to_sun_zenith_lut_grid = lut_params.get_grid(
-    #    0, 70,
-    #    lut_params.to_sun_zenith_spacing,
-    #    lut_params.to_sun_zenith_spacing_min,
-    #)
+
     if to_sun_zenith_lut_grid is not None:
         to_sun_zenith_lut_grid = np.sort(to_sun_zenith_lut_grid)
 
@@ -1525,11 +1516,7 @@ def get_metadata_from_obs(
         lut_params.relative_azimuth_spacing,
         lut_params.relative_azimuth_spacing_min,
     )
-    # NOTE: 09/10 This to gen global lut
-    #relative_azimuth_lut_grid = lut_params.get_grid(
-    #    0, 180,
-    #    lut_params.relative_azimuth_spacing,
-    #    lut_params.relative_azimuth_spacing_min,)
+
     if relative_azimuth_lut_grid is not None:
         relative_azimuth_lut_grid = np.sort(
             np.array([x % 360 for x in relative_azimuth_lut_grid])
