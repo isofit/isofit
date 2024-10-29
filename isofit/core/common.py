@@ -645,8 +645,7 @@ def spectral_response_function(response_range: np.array, mu: float, sigma: float
         np.array: spectral response function
 
     """
-    # response range is fine res wl
-    # mu is relevant wl for srf
+
     u = (response_range - mu) / abs(sigma)
     y = (1.0 / (np.sqrt(2.0 * np.pi) * abs(sigma))) * np.exp(-u * u / 2.0)
     srf = y / y.sum()
