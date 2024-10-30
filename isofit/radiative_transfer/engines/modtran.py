@@ -307,7 +307,7 @@ class ModtranRT(RadiativeTransferEngine):
         vals["FILTNM"] = os.path.normpath(self.filtpath)
 
         # Translate to the MODTRAN OBSZEN convention, assumes we are downlooking
-        if vals["OBSZEN"] < 90:
+        if vals.get("OBSZEN") and vals.get("OBSZEN") < 90:
             vals["OBSZEN"] = 180 - abs(vals["OBSZEN"])
 
         modtran_config_str, modtran_config = self.modtran_driver(dict(vals))
@@ -589,12 +589,12 @@ class ModtranRT(RadiativeTransferEngine):
                 "CSALB"
             ] = f"LAMB_CONST_{const_rfl[1]}_PCT"
             param.append(param1)
-            param2 = deepcopy(param[0])
-            param2["MODTRANINPUT"]["CASE"] = 2
-            param2["MODTRANINPUT"]["SURFACE"]["SURFP"][
-                "CSALB"
-            ] = f"LAMB_CONST_{const_rfl[2]}_PCT"
-            param.append(param2)
+            # param2 = deepcopy(param[0])
+            # param2["MODTRANINPUT"]["CASE"] = 2
+            # param2["MODTRANINPUT"]["SURFACE"]["SURFP"][
+            #     "CSALB"
+            # ] = f"LAMB_CONST_{const_rfl[2]}_PCT"
+            # param.append(param2)
 
         return json.dumps({"MODTRAN": param}), param
 
