@@ -128,7 +128,7 @@ class RadiativeTransferEngine:
         # ToDo: move setting of multipart rfl values to config
         # Added 0
         if self.multipart_transmittance:
-            self.test_rfls = [0.01, 0.1, 0.5]
+            self.test_rfls = [0.0, 0.1, 0.5]
 
         # Extract from LUT file if available, otherwise initialize it
         if exists:
