@@ -213,5 +213,5 @@ def cli_ewt(debug_args, **kwargs):
 
 if __name__ == "__main__":
     raise NotImplementedError(
-        "ewt_from_reflectance.py can no longer be called this way.  Run as:\n isofit ewt_from_reflectance [ARGS]"
+        "ewt_from_reflectance.py can no longer be called this way.  Run as:\n isofit ewt [ARGS]"
     )
