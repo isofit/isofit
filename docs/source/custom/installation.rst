@@ -152,12 +152,12 @@ The following environment variables are actively used within ISOFIT:
 
     * - Variable
       - Purpose
-    * - ``MKL_NUM_THREADS`` and ``OMP_NUM_THREADS``
-      - These control the threading of various packages within ISOFIT. It is important to set these to "1" to ensure ISOFIT performs to its fullest capabilities. By default, ISOFIT will insert these into the environment if they are not set and/or not set correctly.
+    * - ``MKL_NUM_THREADS``, ``OMP_NUM_THREADS``
+      - These control the threading of various packages within ISOFIT. It is important to set these to ``1`` to ensure ISOFIT performs to its fullest capabilities. By default, ISOFIT will insert these into the environment if they are not set and/or not set correctly.
     * - ``ISOFIT_NO_SET_THREADS``
       - This will disable automatically setting the MKL and OMP environment variables. Only recommended for advanced users that know what they are doing and can mitigate the consequences.
     * - ``ISOFIT_DEBUG``
-      - Disables the `ray` package across ISOFIT to force single-core execution. Primarily used as a debugging tool by developers and is not recommended for normal use.
+      - Disables the ``ray`` package across ISOFIT to force single-core execution. Primarily used as a debugging tool by developers and is not recommended for normal use.
 
 Quick Start with sRTMnet (Recommended for new users)
 ====================================================
@@ -231,16 +231,16 @@ LibRadTran RT code as well as to neural network emulators.
 
 1. Create an environment variable MODTRAN_DIR pointing to the base MODTRAN 6.0 directory.
 
-2. Run the following code
+2. Run the following code:
 
 .. code::
 
-    cd $(isofit path examples)/20171108_Pasadena
-    ./modtran.sh
+    $ cd $(isofit path examples)/20171108_Pasadena
+    $ ./modtran.sh
 
-3. This will build a surface model and run the retrieval. The default example uses a lookup table approximation, and the code should recognize that the tables do not currently exist.  It will call MODTRAN to rebuild them, which will take a few minutes.
+3. This will build a surface model and run the retrieval. The default example uses a lookup table approximation, and the code should recognize that the tables do not currently exist. It will call MODTRAN to rebuild them, which will take a few minutes.
 
-4. Look for output data in $(isofit path examples)/20171108_Pasadena/output/.
+4. Look for output data in ``$(isofit path examples)/20171108_Pasadena/output/``.
 
 
 Additional Installation Info for Mac OSX
@@ -258,7 +258,7 @@ Additional Installation Info for Mac OSX
 Known Incompatibilities
 =======================
 
-Ray may have compatability issues with older machines with glibc < 2.14.
+Ray may have compatibility issues with older machines with glibc < 2.14.
 
 
 .. _Conda: https://conda.io/docs/
