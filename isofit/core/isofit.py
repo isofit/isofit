@@ -211,7 +211,7 @@ class Isofit:
             params = [
                 ray.put(obj)
                 for obj in [
-                    self.config,
+                    config,
                     fm,
                     self.full_statevector,
                     self.loglevel,
@@ -244,8 +244,9 @@ class Isofit:
             logging.info(f"{round(n_iter/total_time,4)} spectra/s")
             logging.info(f"{round(n_iter/total_time/n_workers,4)} spectra/s/core")
 
+            # Not sure if it's best practice to null out these vars
             self.workers = None
-            params = []
+            params = None
 
         if len(index_pairs):
             outer_loop_total_time = time.time() - outer_loop_start_time
@@ -293,7 +294,7 @@ class Worker(object):
 
         self.total_samples = None
         if total_workers is not None:
-            self.total_samples = total_samples / total_workers
+            self.total_samples = np.floor(total_samples / total_workers)
 
         self.worker_id = worker_id
         self.completed_spectra = 0

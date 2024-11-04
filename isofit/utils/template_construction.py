@@ -691,6 +691,7 @@ def build_main_config(
     inversion_windows=[[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]],
     prebuilt_lut_path: str = None,
     multipart_transmittance: bool = False,
+    surface_mapping: dict = None,
 ) -> None:
     """Write an isofit config file for the main solve, using the specified pathnames and all given info
 
@@ -717,6 +718,8 @@ def build_main_config(
         segmentation_size:                    image segmentation size if empirical line is used
         pressure_elevation:                   if true, retrieve pressure elevation
         debug:                                if true, run ISOFIT in debug mode
+        multipart_transmittance:              if true, uses separated dif and dir transmittancies
+        surface_mapping:                      optional object to pass mapping between surface class and surface model
     """
 
     # Determine number of spectra included in each retrieval.  If we are
@@ -927,7 +930,11 @@ def build_main_config(
                 },
             },
             "surface": make_surface_config(
-                paths, surface_category, pressure_elevation, elevation_lut_grid
+                paths,
+                surface_category,
+                pressure_elevation,
+                elevation_lut_grid,
+                surface_mapping=surface_mapping,
             ),
             "radiative_transfer": radiative_transfer_config,
         },
@@ -1690,6 +1697,7 @@ def make_surface_config(
     pressure_elevation=None,
     elevation_lut_grid=[],
     presolve=False,
+    surface_mapping: dict = None,
 ):
     """
     Constructs the surface component of the config
@@ -1741,15 +1749,15 @@ def make_surface_config(
 
         # mapping name to surface name - terrible way to do this
         # Could house this in a standalone file and call it in
-        surface_mapping = {
-            "water": "glint_model_surface",
-            # "water": "multicomponent_surface",
-            "glint": "glint_model_surface",
-            "land": "multicomponent_surface",
-            "nonwater": "multicomponent_surface",
-            "cloud": "multicomponent_surface",
-            "uniform_surface": "multicomponent_surface",
-        }
+        if not surface_mapping:
+            surface_mapping = {
+                "water": "glint_model_surface",
+                "glint": "glint_model_surface",
+                "land": "multicomponent_surface",
+                "nonwater": "multicomponent_surface",
+                "cloud": "multicomponent_surface",
+                "uniform_surface": "multicomponent_surface",
+            }
 
         # Iterate through all classes present in class image
         for i, name in enumerate(class_mapping):

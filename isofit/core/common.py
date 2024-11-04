@@ -760,9 +760,10 @@ def match_statevector(
     """
     full_state = np.zeros((len(full_statevec))) + null_value
     idx = []
-    for i, state in enumerate(full_statevec):
-        if state in fm_statevec:
-            idx.append(i)
+    for fm_name in fm_statevec:
+        for i, full_name in enumerate(full_statevec):
+            if fm_name == full_name:
+                idx.append(i)
     full_state[idx] = state_data
 
     return full_state
