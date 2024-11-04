@@ -33,7 +33,7 @@ class GlintModelSurface(MultiComponentSurface):
         super().__init__(full_config)
 
         # TODO: Enforce this attribute in the config, not here (this is hidden)
-        self.statevec_names.extend(["SKY_GLINT", "SUN_GLINT"])
+        self.statevec_names.extend(["SUN_GLINT", "SKY_GLINT"])
         self.scale.extend([1.0, 1.0])
         self.init.extend(
             [0.02, 1 / np.pi]
