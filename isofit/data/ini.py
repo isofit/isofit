@@ -177,11 +177,45 @@ class Ini:
             except:
                 Logger.exception(f"Failed to dump ini to file: {self.ini}")
 
+    def path(self, dir: str, *path: list) -> Path:
+        """
+        Retrieves a path under one of the env directories and validates the path exists.
+
+        Parameters
+        ----------
+        dir : str
+            One of the env directories, eg. "data", "examples"
+        *path : List[str]
+            Path to a file under the `dir`
+
+        Returns
+        -------
+        pathlib.Path
+            Validated full path
+        """
+        self.validate([dir], debug=Logger.debug, error=Logger.error)
+
+        path = Path(*[self[dir], *path]).resolve()
+
+        if not path.exists():
+            Logger.error(
+                f"The following path does not exist, please verify your installation environment: {path}"
+            )
+
+        return path
+
     @staticmethod
     def validate(keys: List) -> bool:
         """
-        Validates known products. This function is defined by isofit.data.cli.__init__.py
+        Validates known products.
+
+        Parameters
+        ----------
+        keys : list
+            List of products to validate
         """
-        raise NotImplemented(
+        # Should never be raised as this function is defined and set in isofit.data.cli.__init__
+        # If this is hit, there's a critical environment issue
+        raise NotImplementedError(
             "ISOFIT failed to attach the validation function to this object"
         )
