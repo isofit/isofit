@@ -83,9 +83,7 @@ Downloading Extra Files
 Once ISOFIT is installed, the CLI provides an easy way to download additional files that may be useful.
 These can be acquired via the `isofit download` command, and the current list of downloads we support is available via `isofit download --help`.
 
-> **_NOTE:_**  The default location for downloading extra files will be the `isofit.root` path, which is the installation path of the package.
-This path may not be writeable. In these cases, use the `--output [path]` flag to control where the downloads will occur.
-If the output path is different than the default, many of the provided configuration files may not work.
+> **_NOTE:_**  The default location for downloading extra files is `~/.isofit/`. First time invoking the ISOFIT CLI will instantiate this directory and an `isofit.ini` file for storing the paths to downloaded products.
 
 Setting environment variables
 =============================
@@ -180,20 +178,20 @@ Finally, point the environment variable EMULATOR_PATH to the hdf5 file.
 .. code::
 
     # Small example pixel-by-pixel
-    cd examples/image_cube/
-    sh run_small.sh
+    cd $(isofit path examples)/image_cube/small/
+    ./small-chunk.sh
 
 .. code::
 
     # Medium example with empirical line solution
-    cd examples/image_cube/
-    sh run_medium_empirical_line.sh
+    cd $(isofit path examples)/image_cube/medium/
+    ./empirical.sh
 
 .. code::
 
     # Medium example with analytical line solution
-    cd examples/image_cube/
-    sh run_medium_analytical_line.sh
+    cd $(isofit path examples)/image_cube/medium/
+    ./analytical.sh
 
 
 
@@ -211,12 +209,12 @@ LibRadTran RT code as well as to neural network emulators.
 
 .. code::
 
-    cd examples/20171108_Pasadena
-    ./run_examples_modtran.sh
+    cd $(isofit path examples)/20171108_Pasadena
+    ./modtran.sh
 
 3. This will build a surface model and run the retrieval. The default example uses a lookup table approximation, and the code should recognize that the tables do not currently exist.  It will call MODTRAN to rebuild them, which will take a few minutes.
 
-4. Look for output data in examples/20171108_Pasadena/output/.
+4. Look for output data in $(isofit path examples)/20171108_Pasadena/output/.
 
 
 Quick Start with LibRadTran 2.0.x
@@ -259,12 +257,12 @@ A few important steps have to be considered when installing the software, which 
 
 .. code::
 
-    cd examples/20171108_Pasadena
+    cd $(isofit path examples)/20171108_Pasadena
     ./run_example_libradtran.sh
 
 7. This will build a surface model and run the retrieval. The default example uses a lookup table approximation, and the code should recognize that the tables do not currently exist.  It will call LibRadTran to rebuild them, which will take a few minutes.
 
-8. Look for output data in examples/20171108_Pasadena/output/.
+8. Look for output data in $(isofit path examples)/20171108_Pasadena/output/.
 
 
 

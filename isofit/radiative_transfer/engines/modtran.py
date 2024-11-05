@@ -24,6 +24,7 @@ import logging
 import os
 import re
 import subprocess
+import time
 from copy import deepcopy
 from sys import platform
 
@@ -66,7 +67,7 @@ class ModtranRT(RadiativeTransferEngine):
         dict
             Dictionary of calculated values using the tokens list
         """
-        irr = tokens[18] * 1e6 * np.pi / tokens[8] / coszen  # uW/nm/sr/cm2
+        irr = tokens[18] * 1e6 * np.pi / tokens[8] / coszen  # uW/nm/cm2
 
         # fmt: off
         # If classic singlepart transmittance is used,
@@ -78,7 +79,7 @@ class ModtranRT(RadiativeTransferEngine):
         return {
             'solar_irr'          : irr,       # Solar irradiance
             'wl'                 : tokens[0], # Wavelength
-            'rhoatm'             : tokens[4] * 1e6 * np.pi / (irr * coszen), # uW/nm/sr/cm2
+            'rhoatm'             : tokens[4] * 1e6 * np.pi / (irr * coszen), # unitless
             'width'              : tokens[8],
             'thermal_upwelling'  : (tokens[11] + tokens[12]) / tokens[8] * 1e6, # uW/nm/sr/cm2
             'thermal_downwelling': tokens[16] * 1e6 / tokens[8],
@@ -176,7 +177,7 @@ class ModtranRT(RadiativeTransferEngine):
         chn = parts[0]
         if len(parts) > 1:
             Logger.debug("Using two albedo method")
-            chn = self.two_albedo_method(*parts, coszen, *self.test_rfls)
+            chn = self.two_albedo_method(*parts, coszen, *self.test_rfls[1:])
 
         return chn
 
@@ -306,7 +307,7 @@ class ModtranRT(RadiativeTransferEngine):
         vals["FILTNM"] = os.path.normpath(self.filtpath)
 
         # Translate to the MODTRAN OBSZEN convention, assumes we are downlooking
-        if vals["OBSZEN"] < 90:
+        if vals.get("OBSZEN") and vals.get("OBSZEN") < 90:
             vals["OBSZEN"] = 180 - abs(vals["OBSZEN"])
 
         modtran_config_str, modtran_config = self.modtran_driver(dict(vals))

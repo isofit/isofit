@@ -16,6 +16,7 @@
 #
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
+from __future__ import annotations
 
 import os
 from typing import OrderedDict
@@ -32,11 +33,6 @@ from isofit.core.common import (
     get_refractive_index,
     svd_inv_sqrt,
 )
-from isofit.core.forward import ForwardModel
-from isofit.core.geometry import Geometry
-from isofit.core.instrument import Instrument
-from isofit.radiative_transfer.radiative_transfer import RadiativeTransfer
-from isofit.surface.surface import Surface
 
 
 def heuristic_atmosphere(
@@ -194,16 +190,6 @@ def invert_algebraic(
     else:
         coszen = RT.coszen
 
-    # Figure out which RT object we are using
-    # TODO: this is currently very specific to vswir-tir 2-mode, eventually generalize
-    my_RT = None
-    for rte in RT.rt_engines:
-        if rte.treat_as_emissive is False:
-            my_RT = rte
-            break
-    if not my_RT:
-        raise ValueError("No suitable RT object for initialization")
-
     # Prevent NaNs
     transm[transm == 0] = 1e-5
 
@@ -284,17 +270,17 @@ def invert_analytical(
         meas,
         geom,
     )
+    # x_alg contains [rfl_est, Ls_est, coeffs]
 
     if fm.RT.glint_model:
         x_surf = fm.surface.fit_params(x_alg[0], geom)
         x[fm.idx_surface] = x_surf
+        # Initial guess for reflectance and glint parameters based on the algebraic inversion
+        # Glint initialization currently comes from instrument band at ~1020 nm
     else:
         x[fm.idx_surface] = x_alg[0]
 
     trajectory = []
-    outside_ret_windows = np.ones(len(fm.idx_surface), dtype=bool)
-    outside_ret_windows[winidx] = False
-    outside_ret_windows = np.where(outside_ret_windows)[0]
 
     x_surface, x_RT, x_instrument = fm.unpack(x)
 
@@ -309,18 +295,29 @@ def invert_analytical(
     xa_surface = xa_full[fm.idx_surface]
 
     if fm.RT.glint_model:
-        prprod = Sa_inv @ xa_surface
+        winglintidx = np.concatenate(
+            (winidx, fm.idx_surf_nonrfl), axis=0
+        )  # Include glint indices
+        outside_ret_windows = np.ones(len(fm.idx_surface), dtype=bool)
+        outside_ret_windows[winglintidx] = False
+        outside_ret_windows = np.where(outside_ret_windows)[0]
+
+        prprod = Sa_inv[winglintidx, :][:, winglintidx] @ xa_surface[winglintidx]
         # obtain needed RT vectors
         r = fm.RT.get_L_atm(x_RT, geom)[winidx]  # path radiance
         t1 = fm.RT.get_L_down_transmitted(x_RT, geom)[
             winidx
         ]  # total transmittance (down * up, direct + diffuse)
         rtm_quant = fm.RT.get_shared_rtm_quantities(x_RT, geom)
-        t_down_dir = rtm_quant["t_down_dir"][winidx]  # downward direct transmittance
-        t_down_dif = rtm_quant["t_down_dif"][winidx]  # downward diffuse transmittance
+        t_down_dir = rtm_quant["transm_down_dir"][
+            winidx
+        ]  # downward direct transmittance
+        t_down_dif = rtm_quant["transm_down_dif"][
+            winidx
+        ]  # downward diffuse transmittance
         t_down_total = t_down_dir + t_down_dif  # downward total transmittance
         s = rtm_quant["sphalb"][winidx]  # spherical albedo
-        rho_ls = 0.02  # fresnel reflectance factor (approx. 0.02 for nadir view)
+        rho_ls = fm.RT.fresnel_rf(geom.observer_zenith)
         g_dir = rho_ls * (t_down_dir / t_down_total)  # direct sky transmittance
         g_dif = rho_ls * (t_down_dif / t_down_total)  # diffuse sky transmittance
 
@@ -333,23 +330,37 @@ def invert_analytical(
         GIv = 1 / np.diag(Seps)
 
         xk = x[fm.idx_surface].copy()
-        trajectory.append(xk)
+        trajectory.append(x)
+
+        full_xk = np.zeros(len(x_surface))
 
         for n in range(num_iter):
             Dv = t1 / (1 - s * (xk[:nl] + xk[-2] * g_dir + xk[-1] * g_dif))
             L = Dv.reshape((-1, 1)) * H
             M = GIv.reshape((-1, 1)) * L
             S = L.T @ M
-            C_rcond = np.linalg.inv(Sa_inv + S)
-            z = meas - r
+            C_rcond = np.linalg.inv(Sa_inv[winglintidx, :][:, winglintidx] + S)
+            z = meas[winidx] - r
             xk = C_rcond @ (M.T @ z + prprod)
-            trajectory.append(xk)
 
-        if fm.full_glint:
+            # Save trajectory step:
+            full_xk[winglintidx] = xk
+            if outside_ret_const is None:
+                full_xk[outside_ret_windows] = xa_surface[outside_ret_windows]
+            else:
+                full_xk[outside_ret_windows] = outside_ret_const
+            x[fm.idx_surface] = full_xk
+            trajectory.append(x)
+
+        if fm.surface.full_glint:
             trajectory.append(trajectory[-1][-2] * g_dir)
             trajectory.append(trajectory[-1][-1] * g_dif)
 
     else:
+        outside_ret_windows = np.ones(len(fm.idx_surface), dtype=bool)
+        outside_ret_windows[winidx] = False
+        outside_ret_windows = np.where(outside_ret_windows)[0]
+        # Outside_ret_windows in this case any x_surface parameters that are not reflectances
         for n in range(num_iter):
             L_atm = fm.RT.get_L_atm(x_RT, geom)[winidx]
             L_tot = fm.calc_rdn(x, geom)[winidx]
@@ -394,8 +405,7 @@ def invert_analytical(
     if diag_uncert:
         full_unc = np.ones(len(x))
         if fm.RT.glint_model:
-            C_rcond_idx = np.concatenate((winidx, fm.idx_surface[-2:]), axis=0)
-            full_unc[C_rcond_idx] = np.sqrt(np.diag(C_rcond))
+            full_unc[winglintidx] = np.sqrt(np.diag(C_rcond))
         else:
             full_unc[winidx] = np.sqrt(np.diag(C_rcond))
         return trajectory, full_unc

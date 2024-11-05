@@ -6,6 +6,7 @@
 
    custom/about.rst
    custom/installation.rst
+   custom/data.rst
    custom/best_practices.rst
    custom/docker.rst
 
