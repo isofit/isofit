@@ -75,6 +75,7 @@ INVERSION_WINDOWS = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
 @click.option("--atm_sigma", "-as", type=float, multiple=True, default=[2])
 @click.option("--pressure_elevation", is_flag=True, default=False)
 @click.option("--prebuilt_lut", type=str)
+@click.option("--inversion_windows", type=float, multiple=True, default=None)
 @click.option("--no_min_lut_spacing", is_flag=True, default=False)
 @click.option(
     "--debug-args",
@@ -288,6 +289,16 @@ def apply_oe(args):
             "Datetime object could not be obtained. Please check file name of input"
             " data."
         )
+
+    # If inversion_windows argument is set, use that instead of default or sensor-specific default
+    if args.inversion_windows:
+        if len(args.inversion_windows) % 2 != 0:
+            raise ValueError("Inversion windows must be specified in pairs.")
+        INVERSION_WINDOWS = [
+            [args.inversion_windows[x], args.inversion_windows[x + 1]]
+            for x in range(0, len(args.inversion_windows), 2)
+        ]
+    logging.info(f"Using inversion windows: {INVERSION_WINDOWS}")
 
     dayofyear = dt.timetuple().tm_yday
 
