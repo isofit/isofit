@@ -45,6 +45,7 @@ class Pathnames:
         copy_input_files,
         modtran_path,
         rdn_factors_path,
+        model_discrepancy_path,
         aerosol_climatology_path,
         channelized_uncertainty_path,
         ray_temp_dir,
