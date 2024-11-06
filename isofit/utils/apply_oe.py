@@ -259,6 +259,7 @@ def apply_oe(
         sensor,
         surface_path,
         working_directory,
+        copy_input_files,
         modtran_path,
         rdn_factors_path,
         aerosol_climatology_path,
