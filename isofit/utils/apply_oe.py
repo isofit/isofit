@@ -223,7 +223,6 @@ def apply_oe(
         filename=log_file,
         datefmt="%Y-%m-%d,%H:%M:%S",
     )
-    logging.info(args)
 
     logging.info("Checking input data files...")
     rdn_dataset = envi.open(envi_header(input_radiance))
@@ -253,7 +252,19 @@ def apply_oe(
     lut_params = tmpl.LUTConfig(lut_config_file, emulator_base, no_min_lut_spacing)
 
     logging.info("Setting up files and directories....")
-    paths = tmpl.Pathnames(args)
+    paths = tmpl.Pathnames(
+        input_radiance,
+        input_loc,
+        input_obs,
+        sensor,
+        surface_path,
+        working_directory,
+        modtran_path,
+        rdn_factors_path,
+        aerosol_climatology_path,
+        channelized_uncertainty_path,
+        ray_temp_dir,
+    )
     paths.make_directories()
     paths.stage_files()
     logging.info("...file/directory setup complete")
