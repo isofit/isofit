@@ -75,7 +75,7 @@ INVERSION_WINDOWS = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
 @click.option("--atm_sigma", "-as", type=float, multiple=True, default=[2])
 @click.option("--pressure_elevation", is_flag=True, default=False)
 @click.option("--prebuilt_lut", type=str)
-@click.option("--inversion_windows", type=float, multiple=True, default=None)
+@click.option("--inversion_windows", type=float, nargs=2, multiple=True, default=None)
 @click.option("--no_min_lut_spacing", is_flag=True, default=False)
 @click.option(
     "--debug-args",
