@@ -317,6 +317,9 @@ def apply_oe(
         )
 
     if args.inversion_windows:
+        assert all(
+            [len(window) == 2 for window in args.inversion_windows]
+        ), "Inversion windows must be in pairs"
         INVERSION_WINDOWS = args.inversion_windows
     logging.info(f"Using inversion windows: {INVERSION_WINDOWS}")
 
