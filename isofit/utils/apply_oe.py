@@ -290,6 +290,10 @@ def apply_oe(args):
             " data."
         )
 
+    if args.inversion_windows:
+        INVERSION_WINDOWS = args.inversion_windows
+    logging.info(f"Using inversion windows: {INVERSION_WINDOWS}")
+    
     dayofyear = dt.timetuple().tm_yday
 
     (
