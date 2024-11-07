@@ -18,7 +18,9 @@ from spectral.io import envi
 import isofit.utils.template_construction as tmpl
 from isofit.core import isofit
 from isofit.core.common import envi_header
-from isofit.utils import analytical_line, empirical_line, extractions, segment
+from isofit.utils import analytical_line as ALAlg
+from isofit.utils import empirical_line as ELAlg
+from isofit.utils import extractions, segment
 
 EPS = 1e-6
 CHUNKSIZE = 256
@@ -668,7 +670,7 @@ def apply_oe(
         if empirical_line:
             # Empirical line
             logging.info("Empirical line inference")
-            empirical_line(
+            ELAlg(
                 reference_radiance_file=paths.rdn_subs_path,
                 reference_reflectance_file=paths.rfl_subs_path,
                 reference_uncertainty_file=paths.uncert_subs_path,
@@ -684,7 +686,7 @@ def apply_oe(
             )
         elif analytical_line:
             logging.info("Analytical line inference")
-            analytical_line(
+            ALAlg(
                 paths.radiance_working_path,
                 paths.loc_working_path,
                 paths.obs_working_path,
