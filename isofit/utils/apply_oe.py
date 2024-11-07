@@ -316,11 +316,11 @@ def apply_oe(
             " data."
         )
 
-    if args.inversion_windows:
+    if inversion_windows:
         assert all(
-            [len(window) == 2 for window in args.inversion_windows]
+            [len(window) == 2 for window in inversion_windows]
         ), "Inversion windows must be in pairs"
-        INVERSION_WINDOWS = args.inversion_windows
+        INVERSION_WINDOWS = inversion_windows
     logging.info(f"Using inversion windows: {INVERSION_WINDOWS}")
 
     dayofyear = dt.timetuple().tm_yday
