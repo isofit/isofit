@@ -290,16 +290,6 @@ def apply_oe(args):
             " data."
         )
 
-    # If inversion_windows argument is set, use that instead of default or sensor-specific default
-    if args.inversion_windows:
-        if len(args.inversion_windows) % 2 != 0:
-            raise ValueError("Inversion windows must be specified in pairs.")
-        INVERSION_WINDOWS = [
-            [args.inversion_windows[x], args.inversion_windows[x + 1]]
-            for x in range(0, len(args.inversion_windows), 2)
-        ]
-    logging.info(f"Using inversion windows: {INVERSION_WINDOWS}")
-
     dayofyear = dt.timetuple().tm_yday
 
     (
