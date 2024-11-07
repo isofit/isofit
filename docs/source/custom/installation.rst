@@ -1,11 +1,13 @@
+============
 Installation
 ============
 
 .. contents:: Table of Contents
     :depth: 2
 
-Install from conda-forge
-************************
+Conda-Forge (Recommended)
+-------------------------
+
 Recommended approach!
 
 New environment:
@@ -35,8 +37,8 @@ or
     conda install -c conda-forge isofit
 
 
-Install with ``pip``
-********************
+PyPI (``pip``)
+--------------
 
 .. note::
 
@@ -48,8 +50,7 @@ Install with ``pip``
     that also have ``$ python3`` and ``$ pip3`` executables, or executables for
     specific versions of Python like ``$ python3.11`` and ``$ pip3.11``.
 
-ISOFIT can be installed from the `Python Package Index <https://pypi.org/project/isofit/>`_
-with:
+ISOFIT can be installed from the `Python Package Index <https://pypi.org/project/isofit/>`_ with:
 
 .. code-block:: bash
 
@@ -67,18 +68,21 @@ against the ``main`` branch:
     $ pip install "git+https://github.com/isofit/isofit.git@main"
 
 
-Install from github
-*******************
+Manual (GitHub)
+---------------
+
+We recommend using `Mamba <https://mamba.readthedocs.io/en/latest/>`_ to create a virtual environment:
 
 .. code-block:: bash
 
-    git clone https://github.com/isofit/isofit
-    mamba env create -f isofit/recipe/environment_isofit_basic.yml
-    mamba activate isofit_env
-    pip install -e ./isofit
+    $ git clone https://github.com/isofit/isofit
+    $ mamba env create -f isofit/recipe/environment_isofit_basic.yml
+    $ mamba activate isofit_env
+    $ pip install -e ./isofit
+
 
 Downloading Extra Files
------------------------
+=======================
 
 Once ISOFIT is installed, the CLI provides an easy way to download additional files that may be useful.
 These can be acquired via the ``isofit download`` command, and the current list of downloads we support is available via ``isofit download --help``.
@@ -86,14 +90,15 @@ See :ref:`data` for more information.
 
 > **_NOTE:_**  The default location for downloading extra files is ``~/.isofit/``. First time invoking the ISOFIT CLI will instantiate this directory and an ``isofit.ini`` file for storing the paths to downloaded products.
 
-Setting environment variables
+
+Setting Environment Variables
 =============================
 
 Depending on the selected RTM, specific environment variables pointing to the RTM's base directory have to be set prior to running ISOFIT.
 In the following, general instructions on how to set these variables on MacOS, Linux and Windows are provided.
 
 MacOS
-*****
+-----
 
 - Most MacOS systems load environment variables from the user's .bash_profile configuration file. Open this file with your preferred text editor, such as vim:
 
@@ -114,7 +119,7 @@ MacOS
     source ~/.bash_profile
 
 Linux
-*****
+-----
 
 - Most Linux profiles use either bash or csh/tcsh shells.  These shells load environment variables from the user's .bashrc or .cshrc configuration files.
 
@@ -131,7 +136,7 @@ Linux
     setenv VARIABLE_NAME=DIRECTORY (use your actual path)
 
 Windows
-*******
+-------
 
 - Using a command prompt, type one of the following:
 
@@ -159,6 +164,8 @@ The following environment variables are actively used within ISOFIT:
     * - ``ISOFIT_DEBUG``
       - Disables the ``ray`` package across ISOFIT to force single-core execution. Primarily used as a debugging tool by developers and is not recommended for normal use.
 
+
+====================================================
 Quick Start with sRTMnet (Recommended for new users)
 ====================================================
 
@@ -167,6 +174,7 @@ sRTMnet is an emulator for MODTRAN 6, that works by coupling a neural network wi
 
 Automatic (Recommended)
 -----------------------
+
 ISOFIT can automatically install 6S and sRTMnet with the latest versions:
 
 .. code::
@@ -176,32 +184,39 @@ ISOFIT can automatically install 6S and sRTMnet with the latest versions:
 
 The above commands will ensure these models are built and available for ISOFIT.
 
+.. note::
+
+  A commonly useful option ``-b [path]``, ``--base [path]`` will set the download location for all products:
+
+  .. code-block::
+
+      $ isofit -b extra-downloads/ download all
+
+  This will change the download directory from the default ``~`` to ``./extra-downloads/``
+
+  See :ref:`data` for more information.
+
 Manual (Advanced)
 -----------------
+
 The following procedure walks through the steps required to install sRTMnet manually:
 
-1. Download `6S v2.1 <https://salsa.umd.edu/files/6S/6sV2.1.tar>`_, and compile.  If you use a modern system,
-it is likely you will need to specify a legacy compiling configuration by changing line 3 of the Makefile to:
+#. Download `6S v2.1 <https://salsa.umd.edu/files/6S/6sV2.1.tar>`_, and compile.
+   If you use a modern system, it is likely you will need to specify a legacy compiling configuration by changing line 3 of the Makefile to::
 
-.. code::
+      EXTRA = -O -ffixed-line-length-132 -std=legacy
 
-    EXTRA   = -O -ffixed-line-length-132 -std=legacy
+#. Configure your environment by pointing the SIXS_DIR variable to point to your installation directory.
 
-2. Configure your environment by pointing the SIXS_DIR variable to point to your installation directory.
+#. Download the `pre-trained sRTMnet neural network <https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/sRTMnet_v120.h5>`_, as well as some `auxiliary data <https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/sRTMnet_v120_aux.npz>`_.
+   This will give you an hdf5 and an aux file. It is important that you store both in the same directory.
 
-3. Download the `pre-trained sRTMnet neural network <https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/sRTMnet_v120.h5>`_,
-as well as some `auxiliary data <https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/sRTMnet_v120_aux.npz>`_.
-This will give you an hdf5 and an aux file. It is important that you store both in the same directory.
-Finally, point the environment variable EMULATOR_PATH to the hdf5 file.
+   You will likely need to set the path to 6S and sRTMnet for the ISOFIT ini file as well as rebuild the examples.
+   To do this, execute::
 
-You will likely need to set the path to 6S and sRTMnet for the ISOFIT ini file as well as rebuild the examples.
-To do this, execute:
+      $ isofit --sixs /path/to/sixs/ --srtmnet /path/to/sRTMnet/ build
 
-.. code::
-
-    $ isofit --sixs /path/to/sixs --srtmnet /path/to/sRTMnet.h5 build
-
-5. Run one of the following examples:
+#. Run one of the following examples:
 
 .. code::
 
@@ -229,30 +244,16 @@ This quick start presumes that you have an installation of the MODTRAN 6.0 radia
 preferred radiative transfer option if available, though we have also included interfaces to the open source
 LibRadTran RT code as well as to neural network emulators.
 
-1. Create an environment variable MODTRAN_DIR pointing to the base MODTRAN 6.0 directory.
+#. Create an environment variable MODTRAN_DIR pointing to the base MODTRAN 6.0 directory.
 
-2. Run the following code:
-
-.. code::
+#. Run the following code::
 
     $ cd $(isofit path examples)/20171108_Pasadena
     $ ./modtran.sh
 
-3. This will build a surface model and run the retrieval. The default example uses a lookup table approximation, and the code should recognize that the tables do not currently exist. It will call MODTRAN to rebuild them, which will take a few minutes.
+#. This will build a surface model and run the retrieval. The default example uses a lookup table approximation, and the code should recognize that the tables do not currently exist. It will call MODTRAN to rebuild them, which will take a few minutes.
 
-4. Look for output data in ``$(isofit path examples)/20171108_Pasadena/output/``.
-
-
-Additional Installation Info for Mac OSX
-========================================
-
-1. Install the command-line compiler
-
-.. code::
-
-  xcode-select --install
-
-2. Download the python3 installer from https://www.python.org/downloads/mac-osx/
+#. Look for output data in ``$(isofit path examples)/20171108_Pasadena/output/``.
 
 
 Known Incompatibilities
@@ -260,18 +261,7 @@ Known Incompatibilities
 
 Ray may have compatibility issues with older machines with glibc < 2.14.
 
-
-.. _Conda: https://conda.io/docs/
-.. _Miniforge: https://github.com/conda-forge/miniforge
-.. _Mamba: https://github.com/mamba-org/mamba
-.. _Anaconda: https://www.anaconda.com/products/distribution
-.. _Miniconda: https://docs.conda.io/en/latest/miniconda.html
-.. _pip: https://pip.pypa.io
-.. _Python installation guide: http://docs.python-guide.org/en/latest/starting/installation/
-.. _Ray: https://docs.ray.io/en/latest/index.html
-
-
 Additional Installation Info for Developers
-========================================
+===========================================
 
 Be sure to read the :ref:`contributing` page as additional installation steps must be performed.

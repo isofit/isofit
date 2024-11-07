@@ -16,13 +16,24 @@ The second will build the ISOFIT examples using the configured dependencies.
 From there, examples will be available under ``~/.isofit/examples/``.
 Each subdirectory will have one or more scripts that are prepared for execution.
 
+.. note::
+
+  A commonly useful option ``-b [path]``, ``--base [path]`` will set the download location for all products:
+
+  .. code-block::
+
+      $ isofit -b extra-downloads/ download all
+
+  This will change the download directory from the default ``~`` to ``./extra-downloads/``
+
+
 If there are any issues, please report them to the `ISOFIT repository <https://github.com/isofit/isofit/issues>`_.
 
 The contents below go into further details about additional commands.
 
-=======================
-Extra Downloads Options
-=======================
+
+Configuration Options
+=====================
 
 .. contents:: Table of Contents
     :depth: 2
@@ -32,23 +43,24 @@ These include things like larger data files and the ISOFIT examples.
 
 .. note::
 
-    The below commands assume a user is in their ``/Users/[user]/`` directory, aka ``~``
+    The below commands assume a user is in their home directory, aka ``~``. For Mac, this is commonly ``~``.
+    The examples on this page will use ``~``, but in practice this path and other relative paths will be automatically replaced with the absolute path.
 
 When the ``isofit`` command is first executed, it will create a directory under the user's home directory named ``.isofit`` as well as initialize a default ``isofit.ini`` file:
 
 .. code-block::
 
     $ isofit
-    Wrote to file: /Users/[user]/.isofit/isofit.ini
+    Wrote to file: ~/.isofit/isofit.ini
 
-    $ cat /Users/[user]/.isofit/isofit.ini
+    $ cat ~/.isofit/isofit.ini
     [DEFAULT]
-    data = /Users/[user]/.isofit/data
-    examples = /Users/[user]/.isofit/examples
-    imagecube = /Users/[user]/.isofit/imagecube
-    srtmnet = /Users/[user]/.isofit/srtmnet
-    sixs = /Users/[user]/.isofit/sixs
-    modtran = /Users/[user]/.isofit/modtran
+    data = ~/.isofit/data
+    examples = ~/.isofit/examples
+    imagecube = ~/.isofit/imagecube
+    srtmnet = ~/.isofit/srtmnet
+    sixs = ~/.isofit/sixs
+    modtran = ~/.isofit/modtran
 
 Notice the default location for all paths is ``~/.isofit/``. These can be modified by either directly editing the INI file or by using the ISOFIT CLI:
 
@@ -77,16 +89,16 @@ Using a data override flag (``-d``, ``-e``, ``-c``, ``-em``, ``-6s``) will updat
 .. code-block::
 
     $ isofit -e tutorials
-    Wrote to file: /Users/[user]/.isofit/isofit.ini
+    Wrote to file: ~/.isofit/isofit.ini
 
     $ isofit download paths
     Download paths will default to:
-    - data = /Users/[user]/.isofit/data
-    - examples = /Users/[user]/tutorials
-    - imagecube = /Users/[user]/.isofit/imagecube
-    - srtmnet = /Users/[user]/.isofit/srtmnet
-    - sixs = /Users/[user]/.isofit/sixs
-    - modtran = /Users/[user]/.isofit/modtran
+    - data = ~/.isofit/data
+    - examples = ~/tutorials
+    - imagecube = ~/.isofit/imagecube
+    - srtmnet = ~/.isofit/srtmnet
+    - sixs = ~/.isofit/sixs
+    - modtran = ~/.isofit/modtran
 
 For advanced users, the INI file itself as well as the base directory and the section of the INI may be modified:
 
@@ -97,20 +109,20 @@ For advanced users, the INI file itself as well as the base directory and the se
 
     $ cat test.ini
     [DEFAULT]
-    data = /Users/[user]/.isofit/data
-    examples = /Users/[user]/tutorials
-    imagecube = /Users/[user]/.isofit/imagecube
-    srtmnet = /Users/[user]/.isofit/srtmnet
-    sixs = /Users/[user]/.isofit/sixs
-    modtran = /Users/[user]/.isofit/modtran
+    data = ~/.isofit/data
+    examples = ~/tutorials
+    imagecube = ~/.isofit/imagecube
+    srtmnet = ~/.isofit/srtmnet
+    sixs = ~/.isofit/sixs
+    modtran = ~/.isofit/modtran
 
     [test]
-    data = /Users/[user]/dev/test
-    examples = /Users/[user]/dev/test/examples
-    imagecube = /Users/[user]/dev/test/imagecube
-    srtmnet = /Users/[user]/dev/test/srtmnet
-    sixs = /Users/[user]/dev/test/sixs
-    modtran = /Users/[user]/dev/test/modtran
+    data = ~/dev/test
+    examples = ~/dev/test/examples
+    imagecube = ~/dev/test/imagecube
+    srtmnet = ~/dev/test/srtmnet
+    sixs = ~/dev/test/sixs
+    modtran = ~/dev/test/modtran
 
 The ``DEFAULT`` section is still instantiated, but now there's a ``test`` section with a different ``data`` path than the default.
 Also note the default ``examples`` is different -- this is because the above examples changed it in the default INI, which is still read if available.
@@ -177,8 +189,8 @@ Additionally, download paths may be temporarily overridden and not saved to the 
 Some subcommands have additional flags to further tweak the download, such as ``data`` and ``examples`` having a ``--tag`` to download specific tag releases, or ``sRTMnet`` having ``--version`` for different model versions, but it is recommended to use the default to pull the most up-to-date download for each.
 
 
-Building
-========
+Building Examples
+=================
 
 ISOFIT examples rely on the ``isofit build`` command to generate configuration files and scripts dependent on a user's active INI file.
 Each example contains a set of template files generate the required files for the example.
@@ -186,7 +198,6 @@ By default, a user will not need to modify these templates.
 If an advanced user desires to change the configuration of an example, it is strongly recommended to run the build command first and edit the generated outputs.
 However, every example should work out-of-the-box with the default downloads and build.
 
-==========
 Developers
 ==========
 
@@ -194,14 +205,14 @@ This section is specifically for developers seeking to expand either the example
 
 
 Creating Examples
-=================
+-----------------
 
 ISOFIT leverages specially-designed templates to build the example configurations depending on the installation environment defined by an INI.
 Creating a new example must define one or more templates for the given example type.
 
 
 Templates
----------
+~~~~~~~~~
 
 Templates are used to generate configuration and script files relative to a user's installation environment.
 Changes to the ISOFIT INI may rebuild the examples quickly for a new environent.
