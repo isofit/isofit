@@ -81,7 +81,7 @@ def download_file(url, dstname=None, overwrite=True):
     if outfile.exists() and not overwrite:
         raise FileExistsError(outfile)
 
-    with click.progressbar(length=int(total), label="Downloading file") as bar:
+    with click.progressbar(length=total, label="Downloading file") as bar:
         with open(outfile, "wb") as file:
             while chunk := response.read(io.DEFAULT_BUFFER_SIZE):
                 file.write(chunk)
