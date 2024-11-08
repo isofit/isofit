@@ -24,14 +24,6 @@ from spectral.io import envi
 
 from isofit.core.common import envi_header
 
-# Test args
-root = "/Users/bgreenbe/Projects/MultiSurface/Notebooks/Glint/ang20230723t170821_sample/output"
-inp = os.path.join(root, "ang20230723t170821_subs_rfl")
-lbl_file = os.path.join(root, "ang20230723t170821_lbl")
-
-output_root = "/Users/bgreenbe/Projects/MultiSurface/Debug/codes/reconstruction"
-outp = os.path.join(output_root, "ang20230723t170821_recon_subs_rfl")
-
 
 def reconstruct_subs(inp, outp, lbl_file):
     """Helper function to take the flat array that the superpixel
