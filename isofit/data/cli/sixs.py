@@ -12,6 +12,25 @@ from isofit.data.download import cli, download_file, prepare_output, untar
 URL = "https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar"
 
 
+def precheck():
+    """
+    Checks if gfortran is installed before downloading SixS
+
+    Returns
+    -------
+    True or None
+        True if `gfortran --version` returns a valid response, None otherwise
+    """
+    proc = subprocess.run("gfortran --version", shell=True, stdout=subprocess.PIPE)
+
+    if proc.returncode == 0:
+        return True
+
+    print(
+        f"Failed to validate an existing gfortran installation. Please ensure it is installed on your system."
+    )
+
+
 def build(directory):
     """
     Builds a 6S directory
@@ -31,10 +50,13 @@ def build(directory):
         f.write("".join(lines))
 
     # Now make it
-    process = subprocess.Popen(
-        f"make -j {os.cpu_count()}", shell=True, stdout=subprocess.PIPE, cwd=directory
+    subprocess.run(
+        f"make -j {os.cpu_count()}",
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        cwd=directory,
     )
-    process.wait()
 
 
 def download(output=None):
@@ -48,7 +70,13 @@ def download(output=None):
     version: str
         Release tag to pull from the github.
     """
-    print(f"Downloading 6S")
+    if not precheck():
+        print(
+            "Skipping downloading 6S. Once above errors are corrected, retry via: isofit download sixs"
+        )
+        return
+
+    print("Downloading 6S")
 
     output = prepare_output(output, env.sixs)
     if not output:

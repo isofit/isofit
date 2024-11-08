@@ -67,9 +67,9 @@ def download_file(url, dstname=None, overwrite=True):
     """
     response = urllib.request.urlopen(url)
 
-    bar = None
-    if total := response.info()["Content-Length"]:
-        bar = click.progressbar(length=int(total), label="Downloading file")
+    total = 0
+    if length := response.info()["Content-Length"]:
+        total = int(length)
 
     # Using Python's 'email' module for this is certainly odd, but due to an
     # upcoming deprecation, this is actually the officially recommended way
@@ -81,16 +81,11 @@ def download_file(url, dstname=None, overwrite=True):
     if outfile.exists() and not overwrite:
         raise FileExistsError(outfile)
 
-    with open(outfile, "wb") as f:
-        while chunk := response.read(io.DEFAULT_BUFFER_SIZE):
-            f.write(chunk)
-            # bar.update(outfile.stat().st_size)
-            if bar:
+    with click.progressbar(length=int(total), label="Downloading file") as bar:
+        with open(outfile, "wb") as file:
+            while chunk := response.read(io.DEFAULT_BUFFER_SIZE):
+                file.write(chunk)
                 bar.update(io.DEFAULT_BUFFER_SIZE)
-
-    # The bar doesn't close correctly, echo empty to fix the terminal
-    if bar:
-        print()
 
     return outfile
 
