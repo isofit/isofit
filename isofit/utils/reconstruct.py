@@ -16,8 +16,6 @@
 #
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
-import os
-
 import click
 import numpy as np
 from spectral.io import envi
