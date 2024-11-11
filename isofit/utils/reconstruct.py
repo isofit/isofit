@@ -84,10 +84,5 @@ def cli_reconstruct_subs(**kwargs):
         lbl_working_path:   Path to the label file to guide the reconstruction.
     """
 
-    if debug_args:
-        click.echo("Arguments to be passed:")
-        for key, value in kwargs.items():
-            click.echo(f"  {key} = {value!r}")
-
     reconstruct_subs(**kwargs)
     click.echo("Done")
