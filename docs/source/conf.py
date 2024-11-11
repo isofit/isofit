@@ -33,12 +33,12 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.todo',
     'sphinx.ext.intersphinx',
-    'sphinx_autodoc_typehints',
     'autoapi.extension',
     'myst_parser'
 ]
 
 autoapi_dirs = ['../../isofit']
+autoapi_ignore = ['**/templates/*']
 
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
