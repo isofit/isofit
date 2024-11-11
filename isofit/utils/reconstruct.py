@@ -15,7 +15,7 @@
 #  limitations under the License.
 #
 # ISOFIT: Imaging Spectrometer Optimal FITting
-# Author: David R Thompson, david.r.thompson@jpl.nasa.gov
+# Author: Evan Greenberg, evan.greenberg@jpl.nasa.gov
 import click
 import numpy as np
 from spectral.io import envi
@@ -73,11 +73,21 @@ def reconstruct_subs(inp, outp, lbl_file):
 
 # Input arguments
 @click.command(name="reconstruct_subs")
-@click.argument("inp")
-@click.argument("outp")
-@click.argument("lbl_file")
+@click.argument("input_subs_path")
+@click.argument("output_path")
+@click.argument("lbl_working_path")
 def cli_reconstruct_subs(**kwargs):
-    """Reconstruct a subs file to full resolution"""
+    """Reconstruct a subs file to full resolution\n
+    args:\n
+        input_subs_path:    Input file path of the subs (slic segmented) file.
+        output_path:        Output file path to save the reconstructed file.
+        lbl_working_path:   Path to the label file to guide the reconstruction.
+    """
+
+    if debug_args:
+        click.echo("Arguments to be passed:")
+        for key, value in kwargs.items():
+            click.echo(f"  {key} = {value!r}")
 
     reconstruct_subs(**kwargs)
     click.echo("Done")
