@@ -123,9 +123,9 @@ class Isofit:
 
         # Get the number of workers from config
         if self.config.implementation.n_cores is None:
-            n_workers = multiprocessing.cpu_count()
+            n_cores = multiprocessing.cpu_count()
         else:
-            n_workers = self.config.implementation.n_cores
+            n_cores = self.config.implementation.n_cores
 
         # Get the rows and columns that isofit will run
         # If running only part of the file
@@ -176,7 +176,9 @@ class Isofit:
 
             # Don't want more workers than tasks
             n_iter = class_idx_pairs.shape[0]
-            n_workers = min(n_workers, n_iter)
+            n_workers = min(n_cores, n_iter)
+
+            logging.debug(f"Number of workers: {n_workers}")
 
             # The number of tasks to be initialized
             n_tasks = min(
