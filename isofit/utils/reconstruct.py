@@ -23,24 +23,24 @@ from spectral.io import envi
 from isofit.core.common import envi_header
 
 
-def reconstruct_subs(inp, outp, lbl_file):
+def reconstruct_subs(input_subs_path, output_path, lbl_working_path):
     """Helper function to take the flat array that the superpixel
     algorithms work with and turn them into images at the full resolution
     of the input/output file. They will have the full array-resolution,
     but appear as coarser pixel-resolution images.
 
     args:
-        inp: input file path
-        outp: output file path
-        lbl_file: file path to the label file to guide the reconstruction
+        input_subs_path: input file path
+        output_path: output file path
+        lbl_working_path: file path to the label file to guide the reconstruction
     returns:
         None
     """
     # Load the input data
-    subs_input = envi.open(envi_header(inp))
+    subs_input = envi.open(envi_header(input_subs_path))
     subs_input_ar = np.squeeze(subs_input.open_memmap(interleave="bip"))
 
-    lbl = envi.open(envi_header(lbl_file))
+    lbl = envi.open(envi_header(lbl_working_path))
     lbl_ar = np.squeeze(lbl.open_memmap(interleave="bip"))
 
     # Make the reconstructed file
@@ -56,7 +56,7 @@ def reconstruct_subs(inp, outp, lbl_file):
     output_metadata["lines"] = sub_full.shape[0]
     output_metadata["interleave"] = "bil"
     out = envi.create_image(
-        envi_header(outp),
+        envi_header(output_path),
         ext="",
         metadata=output_metadata,
         force=True,
@@ -64,7 +64,7 @@ def reconstruct_subs(inp, outp, lbl_file):
     del out
 
     # Write file
-    output = envi.open(envi_header(outp)).open_memmap(
+    output = envi.open(envi_header(output_path)).open_memmap(
         interleave="source", writable=True
     )
     output[...] = np.swapaxes(sub_full, 1, 2)
