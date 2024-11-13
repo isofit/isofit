@@ -19,11 +19,13 @@ This image is default tagged as `jammont/isofit`. As such, to use it run:
 $ docker run -it --rm --shm-size=16gb jammont/isofit bash
 ```
 
-- `-it` - Run in `[i]nteractive` and `[t]erminal` modes, which will build a container and place the user inside of it.
-- `--rm` - Removes the container once finished. If you intend to modify the container between sessions, remove this flag.
-- `--shm-size=16gb` - Expands the shared memory space for the container. This is used by Ray and, if not set, may have significant performance impacts. The larger the better, this may need to be tweaked to your system.
-- `jammont/isofit` - The `tag` name of the image. If you built your own ISOFIT image using a different tag, be sure to replace this string.
-- `bash` - The command to run for `-it`. Using `bash` here will invoke a bash instance for the user. If you wanted to launch a specific script without entering the container, you could replace this command.
+| Flag              | Reason |
+| ----              | ------ |
+| `-it`             | Run in `[i]nteractive` and `[t]erminal` modes, which will build a container and place the user inside of it. |
+| `--rm`            | Removes the container once finished. If you intend to modify the container between sessions, remove this flag. |
+| `--shm-size=16gb` | Expands the shared memory space for the container. This is used by Ray and, if not set, may have significant performance impacts. The larger the better, this may need to be tweaked to your system. |
+| `jammont/isofit`  | The `tag` name of the image. If you built your own ISOFIT image using a different tag, be sure to replace this string. |
+| `bash`            | The command to run for `-it`. Using `bash` here will invoke a bash instance for the user. If you wanted to launch a specific script without entering the container, you could replace this command. |
 
 After running the above command, you will placed inside the container as the root user. From here you may proceed to use ISOFIT as you need.
 
