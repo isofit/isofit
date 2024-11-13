@@ -27,12 +27,16 @@ def reconstruct_subs(input_subs_path, output_path, lbl_working_path):
     """Helper function to take the flat array that the superpixel
     algorithms work with and turn them into images at the full resolution
     of the input/output file. They will have the full array-resolution,
-    but appear as coarser pixel-resolution images.
+    but appear as coarser pixel-resolution images.\n
 
     args:
-        input_subs_path: input file path
-        output_path: output file path
-        lbl_working_path: file path to the label file to guide the reconstruction
+
+        input_subs_path:    Input subs file path.
+
+        output_path:        Output reconstructed file path.
+
+        lbl_working_path:   File path to label file for reconstruction.
+
     returns:
         None
     """
@@ -72,17 +76,13 @@ def reconstruct_subs(input_subs_path, output_path, lbl_working_path):
 
 
 # Input arguments
-@click.command(name="reconstruct_subs")
+@click.command(
+    name="reconstruct_subs", help=reconstruct_subs.__doc__, no_args_is_help=True
+)
 @click.argument("input_subs_path")
 @click.argument("output_path")
 @click.argument("lbl_working_path")
 def cli_reconstruct_subs(**kwargs):
-    """Reconstruct a subs file to full resolution\n
-    args:\n
-        input_subs_path:    Input file path of the subs (slic segmented) file.
-        output_path:        Output file path to save the reconstructed file.
-        lbl_working_path:   Path to the label file to guide the reconstruction.
-    """
 
     reconstruct_subs(**kwargs)
     click.echo("Done")
