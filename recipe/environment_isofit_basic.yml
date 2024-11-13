@@ -9,6 +9,7 @@ dependencies:
   - click
   - dask
   - h5py
+  - myst-parser
   - netCDF4<1.7.1
   - numpy>=1.20.0,<2.0.0
   - pandas>=0.24
