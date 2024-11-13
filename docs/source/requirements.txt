@@ -1,5 +1,6 @@
 sphinx==7.2.6
 sphinx_rtd_theme==2.0.0
 sphinxcontrib-napoleon
-sphinxcontrib-napoleon
 sphinx_autodoc_typehints==1.25.2
+myst-parser
+sphinx-autoapi

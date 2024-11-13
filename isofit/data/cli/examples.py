@@ -13,6 +13,29 @@ from isofit.data.download import (
     unzip,
 )
 
+NEON_URL = "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/tutorials/subset_data.zip"
+
+
+def download_neon(examples):
+    """
+    Downloads the NEON dataset from https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/tutorials/subset_data.zip.
+
+    Parameters
+    ----------
+    examples : Path
+        Path to the examples directory
+    """
+    print("Downloading NEON data for the example")
+
+    output = prepare_output(examples / "isotuts/NEON/data", ...)
+    if not output:
+        return
+
+    zipfile = download_file(NEON_URL, output.parent / "NEON-subset-data.zip")
+
+    print(f"Unzipping {zipfile}")
+    avail = unzip(zipfile, path=output.parent, rename=output.name)
+
 
 def download(output=None, tag="latest"):
     """
@@ -40,6 +63,8 @@ def download(output=None, tag="latest"):
 
     print(f"Unzipping {zipfile}")
     avail = unzip(zipfile, path=output.parent, rename=output.name)
+
+    download_neon(output)
 
     print(f"Done, now available at: {avail}")
 

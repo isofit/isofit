@@ -66,7 +66,7 @@ dependencies using an appropriate package manager for their system.
 environment to pick up new dependencies, updates to the ``isofit`` build
 process, etc.
 
-Additionally, be sure to download the extra ISOFIT data files and examples via the `isofit download all` command. See :doc:`data` for more.
+Additionally, be sure to download the extra ISOFIT data files and examples via the `isofit download all` command. See :ref:`data` for more.
 
 
 Testing

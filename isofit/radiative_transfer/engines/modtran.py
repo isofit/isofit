@@ -177,7 +177,7 @@ class ModtranRT(RadiativeTransferEngine):
         chn = parts[0]
         if len(parts) > 1:
             Logger.debug("Using two albedo method")
-            chn = self.two_albedo_method(*parts, coszen, *self.test_rfls)
+            chn = self.two_albedo_method(*parts, coszen, *self.test_rfls[1:])
 
         return chn
 
@@ -307,7 +307,7 @@ class ModtranRT(RadiativeTransferEngine):
         vals["FILTNM"] = os.path.normpath(self.filtpath)
 
         # Translate to the MODTRAN OBSZEN convention, assumes we are downlooking
-        if vals["OBSZEN"] < 90:
+        if vals.get("OBSZEN") and vals.get("OBSZEN") < 90:
             vals["OBSZEN"] = 180 - abs(vals["OBSZEN"])
 
         modtran_config_str, modtran_config = self.modtran_driver(dict(vals))
