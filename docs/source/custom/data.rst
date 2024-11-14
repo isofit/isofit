@@ -43,7 +43,7 @@ These include things like larger data files and the ISOFIT examples.
 
 .. note::
 
-    The below commands assume a user is in their home directory, aka ``~``. For Mac, this is commonly ``~``.
+    The below commands assume a user is in their home directory, aka ``~``. For Mac, this is commonly ``/Users/[username]/``.
     The examples on this page will use ``~``, but in practice this path and other relative paths will be automatically replaced with the absolute path.
 
 When the ``isofit`` command is first executed, it will create a directory under the user's home directory named ``.isofit`` as well as initialize a default ``isofit.ini`` file:
