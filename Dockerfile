@@ -13,11 +13,11 @@ WORKDIR /home/mambauser
 # Copy and install the ISOFIT environment
 COPY --chown=mambauser:mambauser . isofit/
 RUN micromamba config prepend channels conda-forge &&\
-    micromamba update --all --yes &&\
-    micromamba create --name isofit python=3.10 &&\
+    micromamba update  --all --yes &&\
     micromamba install --name base jupyterlab &&\
-    micromamba install --name isofit --file isofit/recipe/environment_isofit_basic.yml &&\
-    micromamba install --name isofit ipykernel ipywidgets &&\
+    micromamba create  --name isofit python=3.10 &&\
+    micromamba install --name isofit --file isofit/recipe/isofit.yml \
+                                     --file isofit/recipe/docker.yml &&\
     echo "micromamba activate isofit" >> ~/.bashrc
 
 ENV PATH=/opt/conda/envs/isofit/bin:$PATH
