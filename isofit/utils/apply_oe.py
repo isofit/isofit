@@ -16,6 +16,7 @@ import ray
 from spectral.io import envi
 
 import isofit.utils.template_construction as tmpl
+from isofit import setupLogging
 from isofit.core import isofit
 from isofit.core.common import envi_header
 from isofit.utils import analytical_line as ALAlg
@@ -219,12 +220,7 @@ def apply_oe(
                 "If num_neighbors has multiple elements, only --analytical_line is valid"
             )
 
-    logging.basicConfig(
-        format="%(levelname)s:%(asctime)s || %(filename)s:%(funcName)s() | %(message)s",
-        level=logging_level,
-        filename=log_file,
-        datefmt="%Y-%m-%d,%H:%M:%S",
-    )
+    setupLogging(path=f"{working_directory}/logs", reset=True)
 
     logging.info("Checking input data files...")
     rdn_dataset = envi.open(envi_header(input_radiance))
@@ -546,13 +542,7 @@ def apply_oe(
 
             # Run modtran retrieval
             logging.info("Run ISOFIT initial guess")
-            retrieval_h2o = isofit.Isofit(
-                paths.h2o_config_path,
-                level="INFO",
-                logfile=log_file,
-            )
-            retrieval_h2o.run()
-            del retrieval_h2o
+            isofit.Isofit(paths.h2o_config_path).run()
 
             # clean up unneeded storage
             if emulator_base is None:
@@ -649,11 +639,7 @@ def apply_oe(
 
         # Run retrieval
         logging.info("Running ISOFIT with full LUT")
-        retrieval_full = isofit.Isofit(
-            paths.isofit_full_config_path, level="INFO", logfile=log_file
-        )
-        retrieval_full.run()
-        del retrieval_full
+        isofit.Isofit(paths.isofit_full_config_path).run()
 
         # clean up unneeded storage
         if emulator_base is None:

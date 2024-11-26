@@ -24,6 +24,8 @@ import importlib.metadata
 __version__ = importlib.metadata.version(__package__ or __name__)
 
 import logging
+import sys
+from pathlib import Path
 
 from threadpoolctl import threadpool_info
 
@@ -53,3 +55,58 @@ def checkNumThreads():
 ******************************************************************************************\
 """
         )
+
+
+def setupLogging(level="INFO", path=None, reset=False):
+    """
+    Initializes the ISOFIT logger
+
+    Parameters
+    ----------
+    TODO
+    """
+    formats = {
+        "DEBUG": logging.Formatter(
+            fmt="{asctime} | {levelname:7} | {filename}:{funcName}:{lineno} | {message}",
+            style="{",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        ),
+        "INFO": logging.Formatter(
+            fmt="{asctime} | {levelname:7} | {message}",
+            style="{",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        ),
+    }
+
+    terminal = logging.StreamHandler(sys.stdout)
+    terminal.setLevel(level)
+    terminal.setFormatter(formats.get(level, formats["INFO"]))
+
+    handlers = [terminal]
+
+    if path:
+        path = Path(path)
+        mode = "a"
+        if path.exists() and reset:
+            mode = "w"
+
+        # Single-file logging is always debug
+        if path.suffix:
+            fh = logging.FileHandler(path, mode=mode)
+            fh.setLevel("DEBUG")
+            fh.setFormatter(formats["DEBUG"])
+            handlers.append(fh)
+
+        # Multi-file logging provides both info and debug
+        else:
+            path.mkdir(exist_ok=True, parents=True)
+            for lvl in ("INFO", "DEBUG"):
+                fh = logging.FileHandler(path / f"{lvl.lower()}.log", mode=mode)
+                fh.setLevel(lvl)
+                fh.setFormatter(formats[lvl])
+                handlers.append(fh)
+
+    logging.basicConfig(
+        level="DEBUG",
+        handlers=handlers,
+    )

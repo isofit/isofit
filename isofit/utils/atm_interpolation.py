@@ -27,7 +27,7 @@ from scipy.ndimage import gaussian_filter
 from scipy.spatial import KDTree
 from spectral.io import envi
 
-from isofit import ray
+from isofit import ray, setupLogging
 from isofit.core.common import envi_header
 from isofit.core.fileio import write_bil_chunk
 
@@ -257,12 +257,7 @@ def atm_interpolation(
     if n_cores == -1:
         n_cores = multiprocessing.cpu_count()
 
-    logging.basicConfig(
-        format="%(levelname)s:%(asctime)s ||| %(message)s",
-        level=loglevel,
-        filename=logfile,
-        datefmt="%Y-%m-%d,%H:%M:%S",
-    )
+    setupLogging(level=loglevel, path=logfile)
 
     reference_state_img = envi.open(envi_header(reference_state_file))
     input_locations_img = envi.open(envi_header(input_locations_file))

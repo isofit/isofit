@@ -26,7 +26,7 @@ import skimage
 from skimage.segmentation import slic
 from spectral.io import envi
 
-from isofit import ray
+from isofit import ray, setupLogging
 from isofit.core.common import envi_header
 
 
@@ -53,12 +53,7 @@ def segment_chunk(
         labels: labeled image chunk
 
     """
-    logging.basicConfig(
-        format="%(levelname)s:%(asctime)s ||| %(message)s",
-        level=loglevel,
-        filename=logfile,
-        datefmt="%Y-%m-%d,%H:%M:%S",
-    )
+    setupLogging(level=loglevel, path=logfile)
 
     logging.info(f"{lstart}: starting")
 
@@ -177,10 +172,7 @@ def segment(
         loglevel: logging level to use
 
     """
-
-    logging.basicConfig(
-        format="%(levelname)s:%(message)s", level=loglevel, filename=logfile
-    )
+    setupLogging(level=loglevel, path=logfile)
 
     in_file = spectra[0]
     if len(spectra) > 1 and type(spectra) is tuple:

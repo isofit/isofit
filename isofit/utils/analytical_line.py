@@ -28,7 +28,7 @@ import click
 import numpy as np
 from spectral.io import envi
 
-from isofit import ray
+from isofit import ray, setupLogging
 from isofit.configs import configs
 from isofit.core.common import envi_header, load_spectrum
 from isofit.core.fileio import IO, write_bil_chunk
@@ -237,12 +237,8 @@ class Worker(object):
             loglevel: output logging level
             logfile: output logging file
         """
-        logging.basicConfig(
-            format="%(levelname)s:%(asctime)s ||| %(message)s",
-            level=loglevel,
-            filename=logfile,
-            datefmt="%Y-%m-%d,%H:%M:%S",
-        )
+        setupLogging(level=loglevel, path=logfile)
+
         self.config = config
         self.fm = fm
         self.iv = Inversion(self.config, self.fm)

@@ -23,7 +23,7 @@ import logging
 import numpy as np
 from spectral.io import envi
 
-from isofit import ray
+from isofit import ray, setupLogging
 from isofit.core.common import envi_header
 from isofit.core.fileio import write_bil_chunk
 
@@ -54,13 +54,7 @@ def extract_chunk(
         out_index: array of output indices (based on labels)
         out_data: array of output data
     """
-
-    logging.basicConfig(
-        format="%(levelname)s:%(asctime)s ||| %(message)s",
-        level=loglevel,
-        filename=logfile,
-        datefmt="%Y-%m-%d,%H:%M:%S",
-    )
+    setupLogging(level=loglevel, path=logfile)
     logging.info(f"{lstart}: starting")
 
     in_img = envi.open(envi_header(in_file))

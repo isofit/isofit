@@ -743,7 +743,10 @@ def ray_start(num_cores, num_cpus=2, memory_b=-1):
         result = subprocess.run(base_args, capture_output=True)
 
 
+import logging
 from datetime import datetime as dtt
+
+Logger = logging.getLogger(__file__)
 
 
 class Track:
@@ -799,14 +802,13 @@ class Track:
             current = 1 - current
         current *= 100
 
+        self.elap = dtt.now() - self.start
         if current >= self.percent:
-            elap = dtt.now() - self.start
-            rate = elap / self.total
-            esti = 100 / self.percent * elap - elap
+            rate = self.elap / self.total
+            esti = 100 / self.percent * self.elap - self.elap
 
-            self.print(
-                f"{current:6.2f}% {self.message} (elapsed: {elap}, rate: {rate}, eta: {esti})"
-            )
+            Logger.info(f"{current:6.2f}% {self.message}")
+            Logger.debug(f"Elapsed: {self.elap}, ETA: {esti}")
             self.percent += self.step
 
             return True
