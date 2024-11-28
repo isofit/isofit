@@ -75,7 +75,7 @@ class ThermalSurface(MultiComponentSurface):
 
         return x_surface
 
-    def calc_rfl(self, x_surface, E_down_dir, E_down_dif, geom):
+    def calc_rfl(self, x_surface, geom, E_down_dir=None, E_down_dif=None):
         """Reflectance. This could be overriden to add (for example)
         specular components"""
 

@@ -104,7 +104,7 @@ class LUTSurface(Surface):
 
         return x_surface
 
-    def calc_rfl(self, x_surface, E_down_dir, E_down_dif, geom):
+    def calc_rfl(self, x_surface, geom, E_down_dir=None, E_down_dif=None):
         """Non-Lambertian reflectance."""
 
         # ToDo: Future use of calc_rfl() is to return a direct and diffuse surface reflectance quantity.

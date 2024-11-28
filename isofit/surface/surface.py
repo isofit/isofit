@@ -88,7 +88,7 @@ class Surface:
 
         return self.rfl
 
-    def calc_rfl(self, x_surface, E_down_dir, E_down_dif, geom):
+    def calc_rfl(self, x_surface, geom, E_down_dir=None, E_down_dif=None):
         """Calculate the directed reflectance (specifically the HRDF) for this
         state vector."""
 
