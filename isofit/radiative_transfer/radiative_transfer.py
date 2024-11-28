@@ -195,7 +195,9 @@ class RadiativeTransfer:
         s_alb = r["sphalb"]
 
         # flux coupling terms
-        if any([r[key] == 0 for key in self.rt_engines[0].coupling_terms]):
+        if any(
+            [type(r[key]) != np.ndarray for key in self.rt_engines[0].coupling_terms]
+        ):
             self.E_coupled = [r["transm_down_dir"], r["transm_down_dif"], 0, 0]
         else:
             for key in self.rt_engines[0].coupling_terms:
