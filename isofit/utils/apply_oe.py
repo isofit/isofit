@@ -415,7 +415,7 @@ def apply_oe(args):
 
     if mean_altitude_km < 0:
         raise ValueError(
-            "Detected sensor altitude is negative, which is physically implausible and cannot be handled by ISOFIT."
+            "Detected sensor altitude is negative, which is very unlikely and cannot be handled by ISOFIT."
             "Please check your input files and adjust."
         )
 
