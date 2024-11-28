@@ -108,8 +108,9 @@ class ThermalSurface(MultiComponentSurface):
 
         T = x_surface[self.surf_temp_ind]
         rfl = self.calc_rfl(x_surface, geom)
-        rfl[rfl > 1.0] = 1.0
-        emissivity = 1 - rfl
+        # ToDo: direct and diffuse reflectance vectors not supported yet
+        rfl[0][rfl[0] > 1.0] = 1.0
+        emissivity = 1 - rfl[0]
         Ls, dLs_dT = emissive_radiance(emissivity, T, self.wl)
         return Ls
 
