@@ -1,0 +1,10 @@
+name: isofit_env
+
+channels: &id1
+  - http://conda.anaconda.org/conda-forge
+
+dependencies:
+  - python>=3.8
+  - ipykernel
+  - ipywidgets
+  - matplotlib
