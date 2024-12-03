@@ -217,7 +217,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         Resamples the predicts produced by preSim to be saved in self.lut_path
         """
         # REVIEW: Likely should chunk along the point dim to improve this
-        data = luts.load(self.predict_path).sel(point=tuple(point)).load()
+        data = luts.load(self.predict_path, mode="r").sel(point=tuple(point)).load()
         return {
             key: resample_spectrum(values.data, self.emu_wl, self.wl, self.fwhm)
             for key, values in data.items()
