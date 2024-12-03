@@ -221,6 +221,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         return {
             key: resample_spectrum(values.data, self.emu_wl, self.wl, self.fwhm)
             for key, values in data.items()
+            if values.data.dtype != "int64"
         }
 
     def get_L_atm(self, x_RT, geom):

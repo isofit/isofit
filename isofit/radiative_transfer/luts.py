@@ -456,7 +456,10 @@ def couple(ds, inplace=True):
             ds = ds.copy()
 
         for term, (key1, key2) in terms.items():
-            ds[term] = ds[key1] * ds[key2]
+            try:
+                ds[term] = ds[key1] * ds[key2]
+            except KeyError:
+                ds[term] = 0
 
     return ds
 
