@@ -415,6 +415,12 @@ def apply_oe(args):
         mean_elevation_km + np.cos(np.deg2rad(mean_to_sensor_zenith)) * mean_path_km
     )
 
+    if mean_altitude_km < 0:
+        raise ValueError(
+            "Detected sensor altitude is negative, which is very unlikely and cannot be handled by ISOFIT."
+            "Please check your input files and adjust."
+        )
+
     logging.info("Observation means:")
     logging.info(f"Path (km): {mean_path_km}")
     logging.info(f"To-sensor azimuth (deg): {mean_to_sensor_azimuth}")

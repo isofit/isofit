@@ -299,8 +299,8 @@ The small image cube example's ``default.args.json`` is currently defined as:
 
     [
     "{imagecube}/medium/ang20170323t202244_rdn_7k-8k",
-    "{imagecube}/medium/ang20170323t202244_obs_7k-8k",
     "{imagecube}/medium/ang20170323t202244_loc_7k-8k",
+    "{imagecube}/medium/ang20170323t202244_obs_7k-8k",
     "{examples}/image_cube/medium",
     "ang",
     "--surface_path {examples}/image_cube/medium/configs/surface.json",
@@ -317,8 +317,8 @@ This will generate ``default.sh``:
 
     isofit apply_oe \
       ~/.isofit/examples/imagecube/small/ang20170323t202244_rdn_7000-7010 \
-      ~/.isofit/examples/imagecube/small/ang20170323t202244_obs_7000-7010 \
       ~/.isofit/examples/imagecube/small/ang20170323t202244_loc_7000-7010 \
+      ~/.isofit/examples/imagecube/small/ang20170323t202244_obs_7000-7010 \
       ~/.isofit/examples/examples/image_cube/small \
       ang \
       --surface_path ~/.isofit/examples/examples/image_cube/small/configs/surface.json \

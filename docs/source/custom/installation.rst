@@ -76,9 +76,15 @@ We recommend using `Mamba <https://mamba.readthedocs.io/en/latest/>`_ to create 
 .. code-block:: bash
 
     $ git clone https://github.com/isofit/isofit
-    $ mamba env create -f isofit/recipe/environment_isofit_basic.yml
+    $ mamba env create -f isofit/recipe/isofit.yml
     $ mamba activate isofit_env
     $ pip install -e ./isofit
+
+Developers may need to install additional packages provided by alternative YAML files in the `recipe` directory:
+
+.. code-block:: bash
+
+    $ micromamba install --name isofit_env --file ISOFIT/recipe/docker.yml
 
 
 Downloading Extra Files

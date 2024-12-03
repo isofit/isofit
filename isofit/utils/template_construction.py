@@ -409,7 +409,10 @@ class LUTConfig:
             )
             return None
         elif (
-            np.abs(grid[1] - grid[0]) < min_spacing and self.no_min_lut_spacing is False
+            # Need this first conditional to rule out rounding errors
+            len(grid) == 2
+            and np.abs(grid[1] - grid[0]) < min_spacing
+            and self.no_min_lut_spacing is False
         ):
             logging.debug(
                 f"Grid spacing is {grid[1]-grid[0]}, which is less than {min_spacing}. "
