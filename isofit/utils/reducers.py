@@ -15,7 +15,7 @@
 #  limitations under the License.
 #
 # ISOFIT: Imaging Spectrometer Optimal FITting
-# Author: David R Thompson, david.r.thompson@jpl.nasa.gov
+# Author: Evan Greenberg, evan.greenberg@jpl.nasa.gov
 
 import numpy as np
 

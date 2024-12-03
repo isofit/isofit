@@ -157,7 +157,7 @@ class ForwardModel:
         )
 
     def xa(self, x, geom):
-        """Calculate the prior meself.an of the state vector (the concatenation
+        """Calculate the prior mean of the state vector (the concatenation
         of state vectors for the surface, Radiative Transfer model, and
         instrument).
 

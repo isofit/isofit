@@ -29,7 +29,7 @@ class AdditiveGlintSurface(ThermalSurface):
     """A model of the surface based on a collection of multivariate
     Gaussians, extended with a surface glint term."""
 
-    def __init__(self, full_config):
+    def __init__(self, full_config: Config):
         super().__init__(full_config)
 
         # TODO: Enforce this attribute in the config, not here (this is hidden)

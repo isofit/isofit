@@ -1,8 +1,3 @@
-import os
-import subprocess as sp
-import sys
-from unittest import mock
-
 import numpy as np
 import pytest
 from click.testing import CliRunner
@@ -10,8 +5,6 @@ from click.testing import CliRunner
 from isofit.__main__ import cli, env
 from isofit.configs.configs import create_new_config
 from isofit.core.common import match_statevector
-from isofit.core.forward import ForwardModel
-from isofit.core.isofit import Isofit
 from isofit.utils import surface_model
 from isofit.utils.multistate import construct_full_state
 

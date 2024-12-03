@@ -31,7 +31,7 @@ from isofit.core.common import load_spectrum, load_wavelen
 class Surface:
     """A wrapper for the specific surface models"""
 
-    def __init__(self, full_config):
+    def __init__(self, full_config: Config):
         config = full_config.forward_model.surface
         self.model_dict = loadmat(config.surface_file)
 

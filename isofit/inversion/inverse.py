@@ -36,14 +36,17 @@ error_code = -1
 
 
 class Inversion:
-    def __init__(self, full_config: Config, fm: ForwardModel):
+    def __init__(self, full_config: Config, forward: ForwardModel):
+        """Initialization specifies retrieval subwindows for calculating
+        measurement cost distributions"""
+
         self.full_config = full_config
         config: InversionConfig = full_config.implementation.inversion
         self.config = config
 
         # Propogate forward
         self.lasttime = time.time()
-        self.fm = fm
+        self.fm = forward
 
         # Moved from inverse.py - Things that aren't contingent on statevec
         self.hashtable = OrderedDict()  # Hash table for caching inverse matrices
@@ -66,7 +69,7 @@ class Inversion:
             )[0]
             self.winidx = np.concatenate((self.winidx, idx), axis=0)
 
-        self.outside_ret_windows = np.ones(fm.instrument.n_chan, dtype=bool)
+        self.outside_ret_windows = np.ones(self.fm.instrument.n_chan, dtype=bool)
         self.outside_ret_windows[self.winidx] = False
 
         self.counts = 0

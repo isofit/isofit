@@ -126,7 +126,6 @@ class RadiativeTransferEngine:
         self.fwhm = fwhm
 
         # ToDo: move setting of multipart rfl values to config
-        # Added 0
         if self.multipart_transmittance:
             self.test_rfls = [0.0, 0.1, 0.5]
 
