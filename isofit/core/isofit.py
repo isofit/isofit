@@ -53,9 +53,19 @@ class Isofit:
         logfile: file to write output logs to
     """
 
-    def __init__(self, config_file, loglevel="INFO", logfile=None):
+    def __init__(self, config_file, level="INFO", logfile=None):
         # Check the MKL/OMP env vars and raise a warning if not set properly
         checkNumThreads()
+
+        # Set logging level
+        self.loglevel = level
+        self.logfile = logfile
+        logging.basicConfig(
+            format="%(levelname)s:%(asctime)s ||| %(message)s",
+            level=self.loglevel,
+            filename=self.logfile,
+            datefmt="%Y-%m-%d,%H:%M:%S",
+        )
 
         self.rows = None
         self.cols = None
@@ -254,7 +264,7 @@ def run_spectra(
 @click.argument("config_file")
 @click.option(
     "-ll",
-    "--loglevel",
+    "--level",
     help="Terminal log level",
     type=click.Choice(
         ["DEBUG", "INFO", "WARNING", "ERROR", "EXCEPTION"], case_sensitive=False
@@ -262,11 +272,11 @@ def run_spectra(
     default="INFO",
 )
 @click.option("-lf", "--logfile", help="Output log file")
-def cli_run(config_file, loglevel, logfile):
+def cli_run(config_file, level, logfile):
     """Execute ISOFIT core"""
 
     print(f"Running ISOFIT(config_file={config_file!r})")
 
-    Isofit(config_file=config_file, loglevel=loglevel.upper(), logfile=logfile).run()
+    Isofit(config_file=config_file, level=level.upper(), logfile=logfile).run()
 
     print("Done")
