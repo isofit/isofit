@@ -146,9 +146,12 @@ class Isofit:
         if (total := len(batches)) > 1:
             Logger.info(f"Job limit is {limit}, split work into {total} batches")
 
-        for i, batch in enumerate(batches):
-            Logger.debug(f"Processing batch {i+1}/{total}")
-            self.process(batch)
+        if process:
+            for i, batch in enumerate(batches):
+                Logger.debug(f"Processing batch {i+1}/{total}")
+                self.process(batch)
+
+        return indices
 
     def process(self, indices):
         """
