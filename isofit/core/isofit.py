@@ -41,7 +41,6 @@ from isofit.core.fileio import IO
 from isofit.core.forward import ForwardModel
 from isofit.inversion import Inversion
 
-__file__ = "isofit.py"
 Logger = logging.getLogger(__file__)
 
 
@@ -85,27 +84,36 @@ class Isofit:
 
         ray.init(**rayargs)
 
-    def run(self, row_column=None):
+    def run(self, row_column=None, process=True):
         """
-        Iterate over spectra, reading and writing through the IO
-        object to handle formatting, buffering, and deferred write-to-file.
-        Attempts to avoid reading the entire file into memory, or hitting
-        the physical disk too often.
+        Iterate over spectra, reading and writing through the IO object to handle
+        formatting, buffering, and deferred write-to-file. Attempts to avoid reading
+        the entire file into memory or hitting the physical disk too often.
 
-        row_column: The user can specify
-            * a single number, in which case it is interpreted as a row
-            * a comma-separated pair, in which case it is interpreted as a
-              row/column tuple (i.e. a single spectrum)
-            * a comma-separated quartet, in which case it is interpreted as
-              a row, column range in the order (line_start, line_end, sample_start,
-              sample_end) all values are inclusive.
+        Parameters
+        ----------
+        row_column : int | tuple[int, int] | tuple[int, int, int, int], default=None
+            int
+                Row
+            tuple[int, int]
+                Row / column, single spectrum
+            tuple[int, int, int, int]
+                Row, column in the order
+                (line start, line end, sample start, sample end)
+                All values are inclusive
+        process : bool, default=True
+            Process the indices. If False, returns the indices for a user to manually
+            process
 
-            If none of the above, the whole cube will be analyzed.
+        Returns
+        -------
+        indices : list[tuple[int, int]]
+            List of indices to process / were processed
         """
         Logger.info("Building first forward model, will generate any necessary LUTs")
         self.fm = fm = ForwardModel(self.config)
+        self.io = io = IO(self.config, fm)
 
-        io = IO(self.config, fm)
         iv = Inversion(self.config, fm)
 
         if row_column is not None:
@@ -128,8 +136,30 @@ class Isofit:
 
         Logger.info(f"Beginning {len(indices)} inversions over {cores} cores")
 
-        params = [ray.put(obj) for obj in (self.config, fm, iv)]
-        jobs = [run_spectra.remote(index, *params) for index in indices]
+        self.params = [ray.put(obj) for obj in (self.config, fm, iv)]
+
+        # TODO: Smart split based off output file chunking
+        limit = 50_000
+        split = int(len(indices) / limit) + 1
+        batches = np.array_split(indices, split)
+
+        if (total := len(batches)) > 1:
+            Logger.info(f"Job limit is {limit}, split work into {total} batches")
+
+        for i, batch in enumerate(batches):
+            Logger.debug(f"Processing batch {i+1}/{total}")
+            self.process(batch)
+
+    def process(self, indices):
+        """
+        Processes a list of indices through the run_spectra function
+
+        Parameters
+        ----------
+        indices : list[tuple[int, int]]
+            List of indices to process
+        """
+        jobs = [run_spectra.remote(index, *self.params) for index in indices]
 
         # Report a percentage complete every 10% and flush to disk at those intervals
         errors = []
@@ -151,15 +181,15 @@ class Isofit:
             if ret:
                 index, output, states = ret
                 try:
-                    io.write_datasets(*index, output, states)
+                    self.io.write_datasets(*index, output, states)
                 except:
                     errors.append(index)
 
             if report(len(jobs)):
-                io.flush_buffers()
+                self.io.flush_buffers()
 
         # One last flush, just in case
-        io.flush_buffers()
+        self.io.flush_buffers()
 
         if errors:
             Logger.error(
