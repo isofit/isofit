@@ -132,9 +132,9 @@ class Isofit:
             self.cols = range(io.n_cols)
 
         indices = list(product(self.rows, self.cols))
-        cores = ray.cluster_resources()["CPU"]
+        self.cores = ray.cluster_resources()["CPU"]
 
-        Logger.info(f"Beginning {len(indices)} inversions over {cores} cores")
+        Logger.info(f"Beginning {len(indices)} inversions over {self.cores} cores")
 
         self.params = [ray.put(obj) for obj in (self.config, fm, iv)]
 
@@ -208,7 +208,7 @@ class Isofit:
                 [
                     f"{time:.2f}s total",
                     f"{report.total/time:.2f} spectra/s",
-                    f"{report.total/time/cores:.2f} spectra/s/core",
+                    f"{report.total/time/self.cores:.2f} spectra/s/core",
                 ]
             )
         )
