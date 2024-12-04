@@ -799,14 +799,13 @@ class Track:
             current = 1 - current
         current *= 100
 
+        self.elap = dtt.now() - self.start
         if current >= self.percent:
-            elap = dtt.now() - self.start
-            rate = elap / self.total
-            esti = 100 / self.percent * elap - elap
+            rate = self.elap / self.total
+            esti = 100 / self.percent * self.elap - self.elap
 
-            self.print(
-                f"{current:6.2f}% {self.message} (elapsed: {elap}, rate: {rate}, eta: {esti})"
-            )
+            self.print(f"{current:6.2f}% {self.message}")
+            self.print(f"Elapsed: {self.elap}, ETA: {esti}")
             self.percent += self.step
 
             return True
