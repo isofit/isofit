@@ -146,7 +146,7 @@ class Isofit:
 
         Logger.info(f"Beginning {len(indices)} inversions over {self.cores} cores")
 
-        self.params = [ray.put(obj) for obj in (self.config, fm, iv)]
+        self.params = [ray.put(obj) for obj in (self.config, fm, iv, io.esd)]
 
         # TODO: Smart split based off output file chunking?
         limit = 5_000_000
@@ -226,10 +226,7 @@ class Isofit:
 
 @ray.remote(num_cpus=1)
 def run_spectra(
-    index: np.array,
-    config: configs.Config,
-    fm: ForwardModel,
-    iv: Inversion,
+    index: np.array, config: configs.Config, fm: ForwardModel, iv: Inversion, esd
 ):
     """
     Inverts a single spectra
@@ -250,7 +247,7 @@ def run_spectra(
     index, output, states
         Output is the prepared output to be written to disk
     """
-    io = IO(config, fm)
+    io = IO(config, fm, esd)
     data = io.get_components_at_index(*index)
 
     if data is not None:

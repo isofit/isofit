@@ -345,7 +345,7 @@ class InputData:
 class IO:
     """..."""
 
-    def __init__(self, config: Config, forward: ForwardModel):
+    def __init__(self, config: Config, forward: ForwardModel, esd=None):
         """Initialization specifies retrieval subwindows for calculating
         measurement cost distributions."""
 
@@ -435,7 +435,10 @@ class IO:
             self.radiance_correction, wl = load_spectrum(filename)
 
         # Load the earth sun distance data
-        self.esd = self.load_esd()
+        if esd is None:
+            self.esd = self.load_esd()
+        else:
+            self.esd = esd
 
     def get_components_at_index(self, row: int, col: int) -> InputData:
         """
