@@ -224,7 +224,7 @@ class Isofit:
         )
 
 
-@ray.remote(num_cpus=1)
+@ray.remote
 def run_spectra(
     index: np.array, config: configs.Config, fm: ForwardModel, iv: Inversion, esd
 ):
