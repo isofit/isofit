@@ -277,8 +277,9 @@ def invert_analytical(
         x[fm.idx_surface] = x_surf
         # Initial guess for reflectance and glint parameters based on the algebraic inversion
         # Glint initialization currently comes from instrument band at ~1020 nm
+
     else:
-        x[fm.idx_surface] = x_alg[0]
+        x[fm.idx_surf_rfl] = x_alg[0]
 
     trajectory = []
 
