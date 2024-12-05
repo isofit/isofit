@@ -533,12 +533,12 @@ class IO:
         """
 
         for product in self.output_datasets:
-            logging.debug("IO: Writing " + product)
+            # logging.debug("IO: Writing " + product)
             self.output_datasets[product].write_spectrum(row, col, output[product])
 
         # Special case! samples file is matlab format.
         if self.config.output.mcmc_samples_file is not None:
-            logging.debug("IO: Writing mcmc_samples_file")
+            # logging.debug("IO: Writing mcmc_samples_file")
             mdict = {"samples": states}
             scipy.io.savemat(self.config.output.mcmc_samples_file, mdict)
 
