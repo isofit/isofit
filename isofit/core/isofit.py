@@ -148,8 +148,8 @@ class Isofit:
 
         self.params = [ray.put(obj) for obj in (self.config, fm, iv)]
 
-        # TODO: Smart split based off output file chunking
-        limit = 50_000
+        # TODO: Smart split based off output file chunking?
+        limit = 5_000_000
         split = int(len(indices) / limit) + 1
         batches = np.array_split(indices, split)
 
