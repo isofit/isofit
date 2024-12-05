@@ -345,7 +345,7 @@ class InputData:
 class IO:
     """..."""
 
-    def __init__(self, config: Config, forward: ForwardModel):
+    def __init__(self, config: Config, forward: ForwardModel, esd=None):
         """Initialization specifies retrieval subwindows for calculating
         measurement cost distributions."""
 
@@ -435,7 +435,10 @@ class IO:
             self.radiance_correction, wl = load_spectrum(filename)
 
         # Load the earth sun distance data
-        self.esd = self.load_esd()
+        if esd is None:
+            self.esd = self.load_esd()
+        else:
+            self.esd = esd
 
     def get_components_at_index(self, row: int, col: int) -> InputData:
         """
@@ -533,12 +536,12 @@ class IO:
         """
 
         for product in self.output_datasets:
-            logging.debug("IO: Writing " + product)
+            # logging.debug("IO: Writing " + product)
             self.output_datasets[product].write_spectrum(row, col, output[product])
 
         # Special case! samples file is matlab format.
         if self.config.output.mcmc_samples_file is not None:
-            logging.debug("IO: Writing mcmc_samples_file")
+            # logging.debug("IO: Writing mcmc_samples_file")
             mdict = {"samples": states}
             scipy.io.savemat(self.config.output.mcmc_samples_file, mdict)
 
