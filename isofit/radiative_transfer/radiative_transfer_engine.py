@@ -472,7 +472,7 @@ class RadiativeTransferEngine:
             )
 
             # Update the lut as point simulations stream in
-            while jobs and not self.engine_config.rte_configure_and_exit:
+            while jobs:
                 [done], jobs = ray.wait(jobs, num_returns=1)
 
                 # Retrieve the return of the finished job
