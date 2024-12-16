@@ -218,6 +218,9 @@ cli = SimpleNamespace(
     tag=click.option(
         "-t", "--tag", default=f"latest", help="Release tag to pull", show_default=True
     ),
+    overwrite=click.option(
+        "--overwrite", is_flag=True, default=False, help="Overwrite any existing installation", show_default=True
+    ),
     validate=cli_validate,
     path=partial(click.option, "-p", "--path"),
 )
