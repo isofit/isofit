@@ -85,6 +85,14 @@ class SixSRT(RadiativeTransferEngine):
 
         self.modtran_emulation = modtran_emulation
 
+        # Overwrite the wavelengths, because we're going to use these no matter what (6S runs at 2.5 nm)
+        # NOTE - this wavelength range is fairly inclusive, but need not be hardcoded at these start and end points
+        self.wl = np.arange(350, 2500 + 2.5, 2.5)
+        self.fwhm = np.full(self.wl.size, 2.0)
+
+        kwargs['wl'] = self.wl
+        kwargs['fwhm'] = self.fwhm
+
         super().__init__(engine_config, **kwargs)
 
         # If the LUT file already exists, still need to calc this post init
