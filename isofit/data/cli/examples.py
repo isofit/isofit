@@ -37,16 +37,18 @@ def download_neon(examples):
     avail = unzip(zipfile, path=output.parent, rename=output.name)
 
 
-def download(output=None, tag="latest"):
+def download(output=None, tag="latest", overwrite=False):
     """
     Downloads the ISOFIT examples from the repository https://github.com/isofit/isofit-tutorials.
 
     Parameters
     ----------
-    output: str | None
+    output : str | None
         Path to output as. If None, defaults to the ini path.
-    tag: str
+    tag : str
         Release tag to pull from the github.
+    overwrite : bool, default=False
+        Overwrite an existing installation
     """
     print(f"Downloading ISOFIT examples")
 
@@ -58,11 +60,13 @@ def download(output=None, tag="latest"):
 
     print(f"Pulling release {metadata['tag_name']}")
     zipfile = download_file(
-        metadata["zipball_url"], output.parent / "isofit-tutorials.zip"
+        metadata["zipball_url"], output.parent / "isofit-tutorials.zip", overwrite=overwrite
     )
 
     print(f"Unzipping {zipfile}")
     avail = unzip(zipfile, path=output.parent, rename=output.name)
+
+    env.changeVersion("examples", metadata["tag_name"])
 
     download_neon(output)
 
@@ -72,6 +76,7 @@ def download(output=None, tag="latest"):
 @cli.download.command(name="examples")
 @cli.output(help="Root directory to download ISOFIT examples to, ie. [path]/examples")
 @cli.tag
+@cli.overwrite
 def download_cli(**kwargs):
     """\
     Downloads the ISOFIT examples from the repository https://github.com/isofit/isofit-tutorials.
@@ -135,7 +140,59 @@ def validate(path=None, debug=print, error=print, **_):
         return False
 
     debug("Path is valid")
+
+    checkForUpdate(error)
+
     return True
+
+
+def checkForUpdate(path, tag="latest", print=print):
+    """
+    Checks the installed version against the latest release
+
+    Parameters
+    ----------
+    path : str, default=None
+        Path to update. If None, defaults to the ini path
+    print : function, default=print
+        Print function to use for messages
+
+    Returns
+    -------
+    bool
+        True if there is a version update, else False
+    """
+    file = Path(path / "version.txt")
+    if not file.exists():
+        print("Failed to find a version.txt file under the given path. Version is unknown. It is recommended to redownload via `isofit download examples --overwrite`")
+        return True
+
+    version = env.versions.get("examples")
+    metadata = release_metadata("isofit", "isofit-tutorials", tag)
+
+    if version != (latest := metadata["tag_name"]):
+        print(f"Your examples are out of date and may cause issues. Latest is {latest}, currently installed is {version}. Please update via `isofit download updates`")
+        return True
+
+    return False
+
+
+
+def update(path=None, tag="latest"):
+    """
+    TODO
+
+    Parameters
+    ----------
+    path : str, default=None
+        Path to update. If None, defaults to the ini path.
+
+    Returns
+    -------
+
+    """
+    if checkForUpdate()
+    download(output=path, tag=tag, overwrite=True)
 
 
 @cli.validate.command(name="examples")
