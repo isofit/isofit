@@ -16,12 +16,14 @@ def Surface(config):
         The full_config to determine the surface category from and to pass along to the
         Surface model's initialization
 
+    surface_class_str: str
+        Name of the surface category to initialize
+
     Returns
     -------
     Surface Model
     """
     category = config.forward_model.surface.surface_category
-
     if category == "surface":
         return BaseSurface(config)
 

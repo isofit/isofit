@@ -19,7 +19,7 @@ from spectral.io import envi
 import isofit.utils.template_construction as tmpl
 from isofit.core import isofit
 from isofit.core.common import envi_header
-from isofit.utils import analytical_line, empirical_line, extractions, segment
+from isofit.utils import analytical_line, empirical_line, extractions, reducers, segment
 
 EPS = 1e-6
 CHUNKSIZE = 256
@@ -53,6 +53,7 @@ INVERSION_WINDOWS = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
 @click.option("--modtran_path")
 @click.option("--wavelength_path")
 @click.option("--surface_category", default="multicomponent_surface")
+@click.option("--surface_class", default=None)
 @click.option("--aerosol_climatology_path")
 @click.option("--rdn_factors_path")
 @click.option("--atmosphere_type", default="ATM_MIDLAT_SUMMER")
@@ -77,6 +78,7 @@ INVERSION_WINDOWS = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
 @click.option("--prebuilt_lut", type=str)
 @click.option("--inversion_windows", type=float, nargs=2, multiple=True, default=None)
 @click.option("--no_min_lut_spacing", is_flag=True, default=False)
+@click.option("--multipart_transmittance", is_flag=True, default=False)
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",
@@ -474,6 +476,23 @@ def apply_oe(args):
                     output=outp,
                     chunksize=CHUNKSIZE,
                     flag=-9999,
+                    reducer=reducers.band_mean,
+                    n_cores=args.n_cores,
+                    loglevel=args.logging_level,
+                    logfile=args.log_file,
+                )
+
+        # Extract superpixels class
+        if paths.surface_class_file:
+            if not exists(paths.subs_class_path):
+                logging.info("Extracting " + paths.subs_class_path)
+                extractions(
+                    inputfile=paths.surface_class_file,
+                    labels=paths.lbl_working_path,
+                    output=paths.subs_class_path,
+                    chunksize=CHUNKSIZE,
+                    flag=-9999,
+                    reducer=reducers.class_priority,
                     n_cores=args.n_cores,
                     loglevel=args.logging_level,
                     logfile=args.log_file,
@@ -541,7 +560,12 @@ def apply_oe(args):
             logging.info("Existing h2o-presolve solutions found, using those.")
 
         h2o = envi.open(envi_header(paths.h2o_subs_path))
-        h2o_est = h2o.read_band(-1)[:].flatten()
+
+        # Find the band that is H2O
+        h2o_band = [
+            i for i, name in enumerate(h2o.metadata["band names"]) if name == "H2OSTR"
+        ][0]
+        h2o_est = h2o.read_band(h2o_band)[:].flatten()
 
         p05 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 2)
         p95 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 98)
@@ -622,6 +646,7 @@ def apply_oe(args):
             pressure_elevation=args.pressure_elevation,
             prebuilt_lut_path=args.prebuilt_lut,
             inversion_windows=INVERSION_WINDOWS,
+            multipart_transmittance=args.multipart_transmittance,
         )
 
         # Run retrieval

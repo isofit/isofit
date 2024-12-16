@@ -35,19 +35,20 @@ from isofit.inversion.inverse_simple import invert_simple
 error_code = -1
 
 
-### Classes ###
-
-
 class Inversion:
     def __init__(self, full_config: Config, forward: ForwardModel):
         """Initialization specifies retrieval subwindows for calculating
-        measurement cost distributions."""
+        measurement cost distributions"""
 
+        self.full_config = full_config
         config: InversionConfig = full_config.implementation.inversion
         self.config = config
 
+        # Propogate forward
         self.lasttime = time.time()
         self.fm = forward
+
+        # Moved from inverse.py - Things that aren't contingent on statevec
         self.hashtable = OrderedDict()  # Hash table for caching inverse matrices
         self.max_table_size = full_config.implementation.max_hash_table_size
         self.state_indep_S_hat = False
@@ -67,7 +68,8 @@ class Inversion:
                 )
             )[0]
             self.winidx = np.concatenate((self.winidx, idx), axis=0)
-        self.outside_ret_windows = np.ones(self.fm.n_meas, dtype=bool)
+
+        self.outside_ret_windows = np.ones(self.fm.instrument.n_chan, dtype=bool)
         self.outside_ret_windows[self.winidx] = False
 
         self.counts = 0
@@ -123,7 +125,7 @@ class Inversion:
         for (
             key,
             item,
-        ) in config.least_squares_params.get_config_options_as_dict().items():
+        ) in self.config.least_squares_params.get_config_options_as_dict().items():
             self.least_squares_params[key] = item
 
     def full_statevector(self, x_free):
