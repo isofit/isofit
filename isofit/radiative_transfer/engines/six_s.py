@@ -90,8 +90,8 @@ class SixSRT(RadiativeTransferEngine):
         self.wl = np.arange(350, 2500 + 2.5, 2.5)
         self.fwhm = np.full(self.wl.size, 2.0)
 
-        kwargs['wl'] = self.wl
-        kwargs['fwhm'] = self.fwhm
+        kwargs["wl"] = self.wl
+        kwargs["fwhm"] = self.fwhm
 
         super().__init__(engine_config, **kwargs)
 
