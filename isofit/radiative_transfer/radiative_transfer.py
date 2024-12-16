@@ -21,12 +21,15 @@
 #
 from __future__ import annotations
 
+import logging
 from types import SimpleNamespace
 
 import numpy as np
 
 from isofit.core.common import eps
 from isofit.radiative_transfer.engines import Engines
+
+Logger = logging.getLogger(__file__)
 
 
 def confPriority(key, configs):
