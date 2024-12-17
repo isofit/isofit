@@ -122,7 +122,7 @@ def update(check=False, **kwargs):
         Additional key-word arguments to pass to download()
     """
     # TODO: Implement, requires some changes to how downloading is handled
-    pass
+    print("sRTMnet has not implemented an update function yet")
 
 
 @cli.download.command(name="sRTMnet")
