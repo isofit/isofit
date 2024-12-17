@@ -192,21 +192,9 @@ class RadiativeTransfer:
         s_alb = r["sphalb"]
 
         # flux coupling terms
-        if any(
-            [type(r[key]) != np.ndarray for key in self.rt_engines[0].coupling_terms]
-        ):
-            self.E_coupled = [r["transm_down_dir"], r["transm_down_dif"], 0, 0]
-        else:
-            for key in self.rt_engines[0].coupling_terms:
-                self.E_coupled.append(
-                    self.solar_irr * coszen / np.pi * r[key]
-                    if self.rt_engines[0].rt_mode == "transm"
-                    else r[key]
-                )
-
-        # unscaling and rescaling downward direct flux terms by local solar zenith angle (see above)
-        for ind in [0, 2]:
-            self.E_coupled[ind] = self.E_coupled[ind] / coszen * cos_i
+        E_bi_direct, E_hemi_direct, E_direct_hemi, E_bi_hemi = self.get_E_coupled(
+            r, coszen, cos_i
+        )
 
         # thermal transmittance
         L_up = Ls * (r["transm_up_dir"] + r["transm_up_dif"])
@@ -221,10 +209,10 @@ class RadiativeTransfer:
         ret = (
             L_atm
             + (
-                self.E_coupled[0] * rfl_dir  # bidirectional flux
-                + self.E_coupled[1] * rfl_dif  # hemispherical-directional flux
-                + self.E_coupled[2] * bg_dir  # directional-hemispherical flux
-                + self.E_coupled[3] * bg_dif  # bi-hemispherical flux
+                E_bi_direct * rfl_dir  # bi-directional flux
+                + E_hemi_direct * rfl_dif  # hemispherical-directional flux
+                + E_direct_hemi * bg_dir  # directional-hemispherical flux
+                + E_bi_hemi * bg_dif  # bi-hemispherical flux
             )
             / (1.0 - s_alb * bg_dif)
             + L_up
@@ -313,6 +301,47 @@ class RadiativeTransfer:
                     L_down = self.rho_to_rdn(transm_down)
                 L_downs.append(L_down)
         return np.hstack(L_downs)
+
+    def get_E_coupled(self, r, coszen, cos_i):
+        """Get the interpolated coupled fluxes on the sun-to-surface-to-sensor path.
+        These follow the nomenclature as presented by Schaepman-Strub et al. (2006),
+        which essentially are the terms from Nicodemus et al. (1977),
+        but adapted to the remote sensing case by Martonchik et al. (2000).
+
+        Args:
+            r:      interpolated radiative transfer quantities from the LUT
+            coszen: top-of-atmosphere solar zenith angle
+            cos_i:  local solar zenith angle at the surface
+
+        Returns:
+            interpolated coupled fluxes:
+            bi-directional            (downward direct * upward direct)
+            hemispherical-directional (downward diffuse * upward direct)
+            directional-hemispherical (downward direct * upward diffuse)
+            bi-hemispherical          (downward diffuse * upward diffuse)
+        """
+        if any(
+            [type(r[key]) != np.ndarray for key in self.rt_engines[0].coupling_terms]
+        ):
+            self.E_coupled = [r["transm_down_dir"], r["transm_down_dif"], 0, 0]
+        else:
+            for key in self.rt_engines[0].coupling_terms:
+                self.E_coupled.append(
+                    self.solar_irr * coszen / np.pi * r[key]
+                    if self.rt_engines[0].rt_mode == "transm"
+                    else r[key]
+                )
+
+        # unscaling and rescaling downward direct flux terms by local solar zenith angle (see above)
+        for ind in [0, 2]:
+            self.E_coupled[ind] = self.E_coupled[ind] / coszen * cos_i
+
+        E_bi_direct = self.E_coupled[0]
+        E_hemi_direct = self.E_coupled[1]
+        E_direct_hemi = self.E_coupled[2]
+        E_bi_hemi = self.E_coupled[3]
+
+        return E_bi_direct, E_hemi_direct, E_direct_hemi, E_bi_hemi
 
     def drdn_dRT(
         self,
