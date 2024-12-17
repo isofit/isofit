@@ -32,7 +32,7 @@ def getVersion(version="latest"):
         )
 
 
-def download(output=None, version="latest"):
+def download(path=None, version="latest"):
     """
     Downloads sRTMnet from https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/.
 
@@ -48,7 +48,7 @@ def download(output=None, version="latest"):
 
     print(f"Downloading sRTMnet[{version}]")
 
-    output = prepare_output(output, env.srtmnet, isdir=True)
+    output = prepare_output(path, env.srtmnet, isdir=True)
     if not output:
         return
 
@@ -63,29 +63,6 @@ def download(output=None, version="latest"):
     download_file(f"{URL}/{file}", output / file)
 
     print(f"Done, now available at: {output}")
-
-
-@cli.download.command(name="sRTMnet")
-@cli.output(help="Root directory to download sRTMnet to, ie. [path]/sRTMnet")
-@click.option(
-    "-v",
-    "--version",
-    default="latest",
-    help="Model version to download",
-    show_default=True,
-)
-def download_cli(**kwargs):
-    """\
-    Downloads sRTMnet from https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/. Only HDF5 versions are supported at this time.
-
-    \b
-    Run `isofit download paths` to see default path locations.
-    There are two ways to specify output directory:
-        - `isofit --srtmnet /path/sRTMnet download sRTMnet`: Override the ini file. This will save the provided path for future reference.
-        - `isofit download sRTMnet --output /path/sRTMnet`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
-    It is recommended to use the first style so the download path is remembered in the future.
-    """
-    download(**kwargs)
 
 
 def validate(path=None, debug=print, error=print, **_):
@@ -132,10 +109,44 @@ def validate(path=None, debug=print, error=print, **_):
     return True
 
 
-@cli.validate.command(name="sRTMnet")
-@cli.path(help="Path to sRTMnet installation")
-def validate_cli(**kwargs):
-    """\
-    Validates an sRTMnet installation
+def update(check=False, **kwargs):
     """
-    validate(**kwargs)
+    Checks for an update and executes a new download if it is needed
+    Note: Not implemented for this module at this time
+
+    Parameters
+    ----------
+    check : bool, default=False
+        Just check if an update is available, do not download
+    **kwargs : dict
+        Additional key-word arguments to pass to download()
+    """
+    # TODO: Implement, requires some changes to how downloading is handled
+    pass
+
+
+@cli.download.command(name="sRTMnet")
+@cli.output(help="Root directory to download sRTMnet to, ie. [path]/sRTMnet")
+@click.option(
+    "-v",
+    "--version",
+    default="latest",
+    help="Model version to download",
+    show_default=True,
+)
+@cli.validate
+def download_cli(validate_, **kwargs):
+    """\
+    Downloads sRTMnet from https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/. Only HDF5 versions are supported at this time.
+
+    \b
+    Run `isofit download paths` to see default path locations.
+    There are two ways to specify output directory:
+        - `isofit --srtmnet /path/sRTMnet download sRTMnet`: Override the ini file. This will save the provided path for future reference.
+        - `isofit download sRTMnet --output /path/sRTMnet`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
+    It is recommended to use the first style so the download path is remembered in the future.
+    """
+    if validate_:
+        validate(**kwargs)
+    else:
+        download(**kwargs)
