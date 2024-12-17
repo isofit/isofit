@@ -5,6 +5,7 @@ Implements the `isofit download` subcommands
 import io
 import json
 import os
+import shutil
 import tarfile
 import urllib.request
 from email.message import EmailMessage
@@ -110,20 +111,25 @@ def unzip(file, path=None, rename=None, overwrite=False, cleanup=True):
     outp : str
         The extracted output path
     """
-    path = path or os.path.dirname(file)
+    path = Path(path or os.path.dirname(file))
 
     with ZipFile(file) as z:
         name = z.namelist()[0]
 
         # Verify the output target doesn't exist
-        outp = f"{path}/{rename or name}"
-        if os.path.exists(outp) and not overwrite:
+        outp = path / (rename or name)
+        if outp.exists() and not overwrite:
             raise FileExistsError(outp)
 
         z.extractall(path)
 
+    src = Path(path) / name
     if rename:
-        os.rename(f"{path}/{name}", outp)
+        if outp.exists():
+            shutil.copytree(src, outp, dirs_exist_ok=True)
+            shutil.rmtree(src)
+        else:
+            shutil.rename(src, outp)
 
     if cleanup:
         os.remove(file)
@@ -155,7 +161,7 @@ def untar(file, output):
     return output
 
 
-def prepare_output(output, default, isdir=False):
+def prepare_output(output, default, isdir=False, overwrite=False):
     """
     Prepares the output path by ensuring the parents exist and itself doesn't presently exist.
 
@@ -167,6 +173,8 @@ def prepare_output(output, default, isdir=False):
         Default path defined by the ini file
     isdir : bool, default=False
         This is supposed to be a directory
+    overwrite : bool, default=False
+        Ignore if the output already exists
     """
     if not output:
         output = default
@@ -175,8 +183,8 @@ def prepare_output(output, default, isdir=False):
 
     print(f"Output as: {output}")
 
-    if output.exists():
-        print(f"Path already exists, please remove it if you would like to redownload")
+    if not overwrite and output.exists():
+        print(f"Path already exists, please remove it or set the overwrite flag if you would like to redownload")
         return
 
     try:
@@ -202,14 +210,6 @@ def cli_download():
     pass
 
 
-@click.group("validate", invoke_without_command=True)
-def cli_validate():
-    """\
-    Validate extra ISOFIT files and installations
-    """
-    pass
-
-
 # Shared click options
 
 cli = SimpleNamespace(
@@ -221,8 +221,16 @@ cli = SimpleNamespace(
     overwrite=click.option(
         "--overwrite", is_flag=True, default=False, help="Overwrite any existing installation", show_default=True
     ),
-    validate=cli_validate,
     path=partial(click.option, "-p", "--path"),
+    update=click.option(
+        "-u", "--update", 'update_', is_flag=True, default=False, help="Update the installation", show_default=True
+    ),
+    check=click.option(
+        "-c", "--check", is_flag=True, default=False, help="Only check for updates", show_default=True
+    ),
+    validate=click.option(
+        "-v", "--validate", 'validate_', is_flag=True, default=False, help="Validate the installation", show_default=True
+    )
 )
 
 # Subcommands

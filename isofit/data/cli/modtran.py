@@ -26,23 +26,6 @@ def download(output=None):
     print("MODTRAN downloading is not supported yet")
 
 
-# @cli.download.command(name="modtran")
-# @cli.output(help="Root directory to download modtran files to, ie. [path]/modtran")
-# @cli.tag
-def download_cli(**kwargs):
-    """\
-    Downloads and installs MODTRAN
-
-    \b
-    Run `isofit download paths` to see default path locations.
-    There are two ways to specify output directory:
-        - `isofit --modtran /path/modtran download modtran`: Override the ini file. This will save the provided path for future reference.
-        - `isofit download modtran --output /path/modtran`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
-    It is recommended to use the first style so the download path is remembered in the future.
-    """
-    download(**kwargs)
-
-
 def validate(path=None, debug=print, error=print, **_):
     """
     Validates an ISOFIT data installation
@@ -78,10 +61,33 @@ def validate(path=None, debug=print, error=print, **_):
     return True
 
 
-# @cli.validate.command(name="modtran")
-# @cli.path(help="Path to a MODTRAN installation")
-def validate_cli(**kwargs):
-    """\
-    Validates a MODTRAN installation
+def update(check=False, **kwargs):
     """
-    validate(**kwargs)
+    Checks for an update and executes a new download if it is needed
+    Note: Not implemented for this module at this time
+
+    Parameters
+    ----------
+    check : bool, default=False
+        Just check if an update is available, do not download
+    **kwargs : dict
+        Additional key-word arguments to pass to download()
+    """
+    print("MODTRAN does not support versioning at this time, no update to be found")
+
+
+# @cli.download.command(name="modtran")
+# @cli.output(help="Root directory to download modtran files to, ie. [path]/modtran")
+# @cli.tag
+def download_cli(**kwargs):
+    """\
+    Downloads and installs MODTRAN
+
+    \b
+    Run `isofit download paths` to see default path locations.
+    There are two ways to specify output directory:
+        - `isofit --modtran /path/modtran download modtran`: Override the ini file. This will save the provided path for future reference.
+        - `isofit download modtran --output /path/modtran`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
+    It is recommended to use the first style so the download path is remembered in the future.
+    """
+    download(**kwargs)
