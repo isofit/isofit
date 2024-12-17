@@ -121,16 +121,20 @@ def apply_oe(
     rdn_factors_path : str, default=None
         Specify a radiometric correction factor, if desired
     atmosphere_type : str, default="ATM_MIDLAT_SUMMER"
-        TODO
+        Atmospheric profile to be used for MODTRAN simulations.  Unused for other
+        radiative transfer models.
     channelized_uncertainty_path : str, default=None
         Path to a channelized uncertainty file
     model_discrepancy_path : str, default=None
-        TODO
+        Modifies S_eps in the OE formalism as the Gamma additive term, as:
+        S_eps = Sy + Kb.dot(self.Sb).dot(Kb.T) + Gamma
     lut_config_file : str, default=None
         Path to a look up table configuration file, which will override defaults
         choices
     multiple_restarts : bool, default=False
-        TODO
+        Use multiple initial starting poitns for each OE ptimization run, using
+        the corners of the atmospheric variables as starting points.  This gives
+        a more robust, albeit more expensive, solution.
     logging_level : str, default="INFO"
         Logging level with which to run ISOFIT
     log_file : str, default=None
@@ -152,7 +156,10 @@ def apply_oe(
         if not trying to analyze the atmospheric state at fine scale resolution.
         Mutually exclusive with analytical_line
     analytical_line : bool, default=False
-        TODO
+        Use an analytical solution to the fixed atmospheric state to solve for each
+        pixel.  Starts by running a full OE retrieval on each SLIC superpixel, then
+        interpolates the atmospheric state to each pixel, and closes with the
+        analytical solution.
         Mutually exclusive with empirical_line
     ray_temp_dir : str, default="/tmp/ray"
         Location of temporary directory for ray parallelization engine
@@ -167,16 +174,19 @@ def apply_oe(
         Forced number of neighbors for empirical line extrapolation - overides default
         set from segmentation_size parameter
     atm_sigma : list[int], default=[2]
-        TODO
+        A list of smoothing factors to use during the atmospheric interpolation, one
+        for each atmospheric parameter (or broadcast to all if only one is provided).
+        Only used with the analytical line.
     pressure_elevation : bool, default=False
         Flag to retrieve elevation
     prebuilt_lut : str, default=None
         Use this pre-constructed look up table for all retrievals. Must be an
         ISOFIT-compatible RTE NetCDF
     no_min_lut_spacing : bool, default=False
-        TODO
+        Don't allow the LUTConfig to remove a LUT dimension because of minimal spacing.
     inversion_windows : list[float], default=None
-        TODO
+        Override the default inversion windows.  Will supercede any sensor specific
+        defaults that are in place.
         Must be in 2-item tuples
 
     \b
