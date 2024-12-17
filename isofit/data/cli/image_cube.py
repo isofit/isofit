@@ -10,13 +10,6 @@ from isofit.data import env
 from isofit.data.download import cli, download_file, prepare_output, unzip
 
 URL = "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/{size}_chunk.zip"
-Chunk = click.option(
-    "-s",
-    "--size",
-    type=click.Choice(["small", "medium", "both"]),
-    default="both",
-    help="Chunk size",
-)
 
 
 def download(output=None, size="both"):
@@ -56,25 +49,6 @@ def download(output=None, size="both"):
     avail = unzip(zipfile, path=output.parent, rename=output.name)
 
     print(f"Done, now available at: {avail}")
-
-
-@cli.download.command(name="imagecube")
-@cli.output(
-    help="Root directory to download image cube data files to, ie. [path]/imagecube"
-)
-@Chunk
-def download_cli(**kwargs):
-    """\
-    Downloads the extra ISOFIT image cube data files from https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/.
-
-    \b
-    Run `isofit download paths` to see default path locations.
-    There are two ways to specify output directory:
-        - `isofit --imagecube /path/imagecube download imagecube`: Override the ini file. This will save the provided path for future reference.
-        - `isofit download imagecube --output /path/imagecube`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
-    It is recommended to use the first style so the download path is remembered in the future.
-    """
-    download(**kwargs)
 
 
 def validate(path=None, size="both", debug=print, error=print, **_):
@@ -122,11 +96,45 @@ def validate(path=None, size="both", debug=print, error=print, **_):
     return True
 
 
-@cli.validate.command(name="imagecube")
-@cli.path(help="Path to an image cube installation")
-@Chunk
-def validate_cli(**kwargs):
-    """\
-    Validates an ISOFIT image cube data installation
+def update(check=False, **kwargs):
     """
-    validate(**kwargs)
+    Checks for an update and executes a new download if it is needed
+    Note: Not implemented for this module at this time
+
+    Parameters
+    ----------
+    check : bool, default=False
+        Just check if an update is available, do not download
+    **kwargs : dict
+        Additional key-word arguments to pass to download()
+    """
+    print("ImageCube does not support versioning at this time, no update to be found")
+
+
+@cli.download.command(name="imagecube")
+@cli.output(
+    help="Root directory to download image cube data files to, ie. [path]/imagecube"
+)
+@click.option(
+    "-s",
+    "--size",
+    type=click.Choice(["small", "medium", "both"]),
+    default="both",
+    help="Chunk size",
+)
+@cli.validate
+def download_cli(**kwargs):
+    """\
+    Downloads the extra ISOFIT image cube data files from https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/.
+
+    \b
+    Run `isofit download paths` to see default path locations.
+    There are two ways to specify output directory:
+        - `isofit --imagecube /path/imagecube download imagecube`: Override the ini file. This will save the provided path for future reference.
+        - `isofit download imagecube --output /path/imagecube`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
+    It is recommended to use the first style so the download path is remembered in the future.
+    """
+    if validate_:
+        validate(**kwargs)
+    else:
+        download(**kwargs)
