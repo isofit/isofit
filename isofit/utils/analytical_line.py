@@ -173,7 +173,7 @@ class Worker(object):
             )
 
             # Temporary: Force glint_model to be false until it is updated
-            self.fm.RT.glint_model = False
+            # self.fm.RT.glint_model = False
 
             states, unc = invert_analytical(
                 self.fm,
