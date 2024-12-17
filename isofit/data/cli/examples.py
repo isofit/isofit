@@ -27,7 +27,7 @@ def download_neon(examples):
     """
     print("Downloading NEON data for the example")
 
-    output = prepare_output(examples / "isotuts/NEON/data", './neon_data')
+    output = prepare_output(examples / "isotuts/NEON/data", "./neon_data")
     if not output:
         return
 
@@ -66,7 +66,7 @@ def download(path=None, tag="latest", overwrite=False):
     print(f"Unzipping {zipfile}")
     avail = unzip(zipfile, path=output.parent, rename=output.name, overwrite=overwrite)
 
-    with open(output/"version.txt", "w") as file:
+    with open(output / "version.txt", "w") as file:
         file.write(metadata["tag_name"])
 
     download_neon(output)
@@ -157,7 +157,9 @@ def checkForUpdate(path=None, tag="latest", debug=print, error=print, **_):
 
     file = Path(path) / "version.txt"
     if not file.exists():
-        error("Failed to find a version.txt file under the given path. Version is unknown. It is recommended to redownload via `isofit download examples --overwrite`")
+        error(
+            "Failed to find a version.txt file under the given path. Version is unknown. It is recommended to redownload via `isofit download examples --overwrite`"
+        )
         return True
 
     metadata = release_metadata("isofit", "isofit-tutorials", tag)
@@ -165,7 +167,9 @@ def checkForUpdate(path=None, tag="latest", debug=print, error=print, **_):
         version = f.read()
 
     if version != (latest := metadata["tag_name"]):
-        error(f"Your examples are out of date and may cause issues. Latest is {latest}, currently installed is {version}. Please update via `isofit update examples`")
+        error(
+            f"Your examples are out of date and may cause issues. Latest is {latest}, currently installed is {version}. Please update via `isofit update examples`"
+        )
         return True
 
     debug("Path is up to date")

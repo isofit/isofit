@@ -108,7 +108,7 @@ def unzip(file, path=None, rename=None, overwrite=False, cleanup=True):
 
     Returns
     -------
-    outp : str
+    dst : str
         The extracted output path
     """
     path = Path(path or os.path.dirname(file))
@@ -117,24 +117,24 @@ def unzip(file, path=None, rename=None, overwrite=False, cleanup=True):
         name = z.namelist()[0]
 
         # Verify the output target doesn't exist
-        outp = path / (rename or name)
-        if outp.exists() and not overwrite:
-            raise FileExistsError(outp)
+        dst = path / (rename or name)
+        if dst.exists() and not overwrite:
+            raise FileExistsError(dst)
 
         z.extractall(path)
 
     src = Path(path) / name
     if rename:
-        if outp.exists():
-            shutil.copytree(src, outp, dirs_exist_ok=True)
+        if dst.exists():
+            shutil.copytree(src, dst, dirs_exist_ok=True)
             shutil.rmtree(src)
         else:
-            shutil.rename(src, outp)
+            shutil.move(src, dst)
 
     if cleanup:
         os.remove(file)
 
-    return outp
+    return dst
 
 
 def untar(file, output):
@@ -184,7 +184,9 @@ def prepare_output(output, default, isdir=False, overwrite=False):
     print(f"Output as: {output}")
 
     if not overwrite and output.exists():
-        print(f"Path already exists, please remove it or set the overwrite flag if you would like to redownload")
+        print(
+            f"Path already exists, please remove it or set the overwrite flag if you would like to redownload"
+        )
         return
 
     try:
@@ -219,18 +221,39 @@ cli = SimpleNamespace(
         "-t", "--tag", default=f"latest", help="Release tag to pull", show_default=True
     ),
     overwrite=click.option(
-        "--overwrite", is_flag=True, default=False, help="Overwrite any existing installation", show_default=True
+        "--overwrite",
+        is_flag=True,
+        default=False,
+        help="Overwrite any existing installation",
+        show_default=True,
     ),
     path=partial(click.option, "-p", "--path"),
     update=click.option(
-        "-u", "--update", 'update_', is_flag=True, default=False, help="Update the installation", show_default=True
+        "-u",
+        "--update",
+        "update_",
+        is_flag=True,
+        default=False,
+        help="Update the installation",
+        show_default=True,
     ),
     check=click.option(
-        "-c", "--check", is_flag=True, default=False, help="Only check for updates", show_default=True
+        "-c",
+        "--check",
+        is_flag=True,
+        default=False,
+        help="Only check for updates",
+        show_default=True,
     ),
     validate=click.option(
-        "-v", "--validate", 'validate_', is_flag=True, default=False, help="Validate the installation", show_default=True
-    )
+        "-v",
+        "--validate",
+        "validate_",
+        is_flag=True,
+        default=False,
+        help="Validate the installation",
+        show_default=True,
+    ),
 )
 
 # Subcommands

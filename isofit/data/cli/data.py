@@ -41,7 +41,7 @@ def download(path=None, tag="latest", overwrite=False):
     print(f"Unzipping {zipfile}")
     avail = unzip(zipfile, path=output.parent, rename=output.name, overwrite=overwrite)
 
-    with open(output/"version.txt", "w") as file:
+    with open(output / "version.txt", "w") as file:
         file.write(metadata["tag_name"])
 
     print(f"Done, now available at: {avail}")
@@ -124,7 +124,9 @@ def checkForUpdate(path=None, tag="latest", debug=print, error=print, **_):
 
     file = Path(path) / "version.txt"
     if not file.exists():
-        error("Failed to find a version.txt file under the given path. Version is unknown. It is recommended to redownload via `isofit download data --overwrite`")
+        error(
+            "Failed to find a version.txt file under the given path. Version is unknown. It is recommended to redownload via `isofit download data --overwrite`"
+        )
         return True
 
     metadata = release_metadata("isofit", "isofit-data", tag)
@@ -132,7 +134,9 @@ def checkForUpdate(path=None, tag="latest", debug=print, error=print, **_):
         version = f.read()
 
     if version != (latest := metadata["tag_name"]):
-        error(f"Your data is out of date and may cause issues. Latest is {latest}, currently installed is {version}. Please update via `isofit update data`")
+        error(
+            f"Your data is out of date and may cause issues. Latest is {latest}, currently installed is {version}. Please update via `isofit update data`"
+        )
         return True
 
     debug("Path is up to date")
