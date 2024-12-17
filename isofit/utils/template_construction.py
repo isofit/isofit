@@ -570,7 +570,7 @@ def build_presolve_config(
     if emulator_base is not None:
         radiative_transfer_config["radiative_transfer_engines"]["vswir"][
             "emulator_file"
-        ] = abspath(emulator_base) + ".h5" # sc - can't find emulator file without ".h5" in the name
+        ] = abspath(emulator_base)
         radiative_transfer_config["radiative_transfer_engines"]["vswir"][
             "emulator_aux_file"
         ] = abspath(os.path.splitext(emulator_base)[0] + "_aux.npz")
@@ -761,7 +761,7 @@ def build_main_config(
     if emulator_base is not None:
         radiative_transfer_config["radiative_transfer_engines"]["vswir"][
             "emulator_file"
-        ] = abspath(emulator_base) + ".h5" # sc - can't find emulator file without ".h5" in the name
+        ] = abspath(emulator_base)
         radiative_transfer_config["radiative_transfer_engines"]["vswir"][
             "emulator_aux_file"
         ] = abspath(os.path.splitext(emulator_base)[0] + "_aux.npz")
