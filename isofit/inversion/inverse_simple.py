@@ -116,7 +116,7 @@ def heuristic_atmosphere(
             if my_RT.rt_mode == "rdn":
                 rho = meas
             else:
-                rho = meas * np.pi / (solar_irr * RT.coszen)
+                rho = RT.convert_rdn_transm(meas, out_mode="transm")
 
             r = 1.0 / (transm / (rho - rhoatm) + sphalb)
             ratios.append((r[b945] * 2.0) / (r[b1040] + r[b865]))
@@ -204,7 +204,7 @@ def invert_algebraic(
     if my_RT.rt_mode == "rdn":
         rho = rdn_solrfl
     else:
-        rho = rdn_solrfl * np.pi / (solar_irr * coszen)
+        rho = RT.convert_rdn_transm(rdn_solrfl, out_mode="transm")
 
     rfl = 1.0 / (transm / (rho - rhoatm) + sphalb)
     rfl[rfl > 1.0] = 1.0
