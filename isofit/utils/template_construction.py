@@ -71,7 +71,7 @@ class Pathnames:
             self.fid = input_radiance.split("/")[-1].split("_")[1]
         elif sensor == "gao":
             self.fid = split(input_radiance)[-1][:23]
-        elif sensor =="oci":
+        elif sensor == "oci":
             self.fid = split(input_radiance)[-1][:24]
         elif sensor[:3] == "NA-":
             self.fid = os.path.splitext(os.path.basename(input_radiance))[0]
@@ -217,7 +217,12 @@ class Pathnames:
 
         self.earth_sun_distance_path = str(env.path("data", "earth_sun_distance.txt"))
 
-        irr_path = ["examples", "20151026_SantaMonica", "data", "prism_optimized_irr.dat"]
+        irr_path = [
+            "examples",
+            "20151026_SantaMonica",
+            "data",
+            "prism_optimized_irr.dat",
+        ]
         if sensor == "oci":
             irr_path = ["data", "oci", "tsis_f0_0p1.txt"]
 
