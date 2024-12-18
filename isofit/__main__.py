@@ -29,7 +29,7 @@ from isofit.utils.solar_position import cli_sun
 from isofit.utils.surface_model import cli_surface_model
 
 
-@click.group(invoke_without_command=True)
+@click.group(invoke_without_command=True, no_args_is_help=True)
 @click.pass_context
 @click.option("-v", "--version", help="Print the current version", is_flag=True)
 @click.option("-i", "--ini", help="Override path to an isofit.ini file")
@@ -101,6 +101,12 @@ cli.add_command(cli_surface_model)
 cli.add_command(cli_empirical_line)
 cli.add_command(cli_reconstruct_subs)
 
+try:
+    import isoplots
+
+    cli.add_command(isoplots.cli)
+except:
+    pass
 
 if __name__ == "__main__":
     cli()
