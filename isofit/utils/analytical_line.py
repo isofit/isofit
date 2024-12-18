@@ -58,6 +58,7 @@ class Worker(object):
         config: Config,
         fm: ForwardModel,
         surface_class_str: str,
+        class_idx_pairs: np.array,
         full_statevector: list,
         full_idx_surface: np.array,
         full_idx_RT: np.array,
@@ -94,6 +95,7 @@ class Worker(object):
 
         # Persist surface class (or all)
         self.surface_class_str = surface_class_str
+        self.class_idx_pairs = class_idx_pairs
 
         # Will fail if env.data isn't set up
         self.esd = IO.load_esd()
@@ -146,15 +148,13 @@ class Worker(object):
         output_state = self.rfl[start_line:stop_line, ...]
         output_state_unc = self.unc[start_line:stop_line, ...]
 
-        # Index chunk
-        index_pairs = np.vstack(
-            [
-                x.flatten(order="f")
-                for x in np.meshgrid(
-                    range(start_line, stop_line), range(self.rdn.shape[1])
-                )
-            ]
-        ).T
+        # Find intersection between index_pairs and class_idx_pairs
+        index_pairs = self.class_idx_pairs[
+            np.where(
+                (self.class_idx_pairs[:, 0] >= start_line)
+                & (self.class_idx_pairs[:, 0] < stop_line)
+            )
+        ]
 
         for r, c, *_ in index_pairs:
             meas = self.rdn[r, c, :]
@@ -467,6 +467,7 @@ def analytical_line(
                 config,
                 fm,
                 surface_class_str,
+                class_idx_pairs,
                 full_statevector,
                 full_idx_surface,
                 full_idx_RT,
