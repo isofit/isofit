@@ -178,12 +178,14 @@ class SimulatedModtranRT(RadiativeTransferEngine):
 
         # Convert our irradiance to date 0 then back to current date
         # sc - If statement to make sure tsis solar model is used if supplied
-        if os.path.basename(config.irradiance_file) == 'tsis_f0_0p1.txt':
+        if os.path.basename(config.irradiance_file) == "tsis_f0_0p1.txt":
             # Load coarser TSIS model to match emulator expectations
-            _, sol_irr = np.loadtxt(os.path.split(config.irradiance_file)[0]+"/tsis_f0_0p5.txt").T
+            _, sol_irr = np.loadtxt(
+                os.path.split(config.irradiance_file)[0] + "/tsis_f0_0p5.txt"
+            ).T
             sol_irr = sol_irr / 10  # Convert to uW cm-2 sr-1 nm-1
         else:
-            sol_irr = aux["solar_irr"] # Otherwise, use sRTMnet f0
+            sol_irr = aux["solar_irr"]  # Otherwise, use sRTMnet f0
         irr_ref = sim.esd[200, 1]  # Irradiance factor
         irr_cur = sim.esd[sim.day_of_year - 1, 1]  # Factor for current date
         sol_irr = sol_irr * irr_ref**2 / irr_cur**2

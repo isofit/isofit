@@ -160,10 +160,16 @@ class RadiativeTransferEngine:
             #      Currently, if using tsis, then OCI, which is non-gaussian
             srf_file = None
             if os.path.basename(engine_config.irradiance_file) == "tsis_f0_0p1.txt":
-                srf_file = os.path.split(engine_config.irradiance_file)[0]+"/pace_oci_rsr.nc"
+                srf_file = (
+                    os.path.split(engine_config.irradiance_file)[0] + "/pace_oci_rsr.nc"
+                )
             # If necessary, resample prebuilt LUT to desired instrument spectral response
-            if not len(wl) == len(self.lut.wl) or not all(wl == self.lut.wl) or (srf_file is not None):
-            # Discover variables along the wl dim
+            if (
+                not len(wl) == len(self.lut.wl)
+                or not all(wl == self.lut.wl)
+                or (srf_file is not None)
+            ):
+                # Discover variables along the wl dim
                 keys = {key for key in self.lut if "wl" in self.lut[key].dims} - {
                     "fwhm",
                 }
@@ -171,8 +177,12 @@ class RadiativeTransferEngine:
                 conv = xr.apply_ufunc(
                     common.resample_spectrum,
                     self.lut[keys],
-                    kwargs={"wl": self.lut.wl, "wl2": wl, "fwhm2": fwhm, 
-                            "srf_file":srf_file}, # Use srf_file if OCI
+                    kwargs={
+                        "wl": self.lut.wl,
+                        "wl2": wl,
+                        "fwhm2": fwhm,
+                        "srf_file": srf_file,
+                    },  # Use srf_file if OCI
                     input_core_dims=[["wl"]],  # Only operate on keys with this dim
                     exclude_dims=set(["wl"]),  # Allows changing the wl size
                     output_core_dims=[["wl"]],  # Adds wl to the expected output dims
