@@ -7,7 +7,7 @@ from pathlib import Path
 import click
 
 from isofit.data import env
-from isofit.data.download import cli, download_file, prepare_output, unzip
+from isofit.data.download import download_file, downloadCLI, prepare_output, unzip
 
 CMD = "imagecube"
 URL = "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/{size}_chunk.zip"
@@ -140,12 +140,12 @@ size = click.option(
 )
 
 
-@cli.download.command(name=CMD)
-@cli.path(
+@downloadCLI.download.command(name=CMD)
+@downloadCLI.path(
     help="Root directory to download image cube data files to, ie. [path]/imagecube"
 )
-@cli.overwrite
-@cli.check
+@downloadCLI.overwrite
+@downloadCLI.check
 @size
 def download_cli(**kwargs):
     """\
@@ -164,8 +164,8 @@ def download_cli(**kwargs):
         update(**kwargs)
 
 
-@cli.validate.command(name=CMD)
-@cli.path(
+@downloadCLI.validate.command(name=CMD)
+@downloadCLI.path(
     help="Root directory to download image cube data files to, ie. [path]/imagecube"
 )
 @size

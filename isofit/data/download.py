@@ -222,7 +222,7 @@ def cli_validate():
 
 # Shared click options
 
-cli = SimpleNamespace(
+downloadCLI = SimpleNamespace(
     download=cli_download,
     validate=cli_validate,
     output=partial(click.option, "-o", "--output"),

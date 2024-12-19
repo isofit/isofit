@@ -2,9 +2,9 @@ import importlib
 import pkgutil
 
 from isofit.data import env
-from isofit.data.download import cli
+from isofit.data.download import downloadCLI
 
-# Auto-discovers the submodules of isofit.data.cli
+# Auto-discovers the submodules of isofit.data.downloadCLI
 Modules = {
     name: importlib.import_module(f".{name}", __spec__.name)
     for imp, name, _ in pkgutil.iter_modules(__path__)

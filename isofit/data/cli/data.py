@@ -6,8 +6,8 @@ from pathlib import Path
 
 from isofit.data import env
 from isofit.data.download import (
-    cli,
     download_file,
+    downloadCLI,
     prepare_output,
     release_metadata,
     unzip,
@@ -176,11 +176,11 @@ def update(check=False, **kwargs):
             debug(f"Please download the latest via `isofit download {CMD}`")
 
 
-@cli.download.command(name=CMD)
-@cli.path(help="Root directory to download data files to, ie. [path]/data")
-@cli.tag
-@cli.overwrite
-@cli.check
+@downloadCLI.download.command(name=CMD)
+@downloadCLI.path(help="Root directory to download data files to, ie. [path]/data")
+@downloadCLI.tag
+@downloadCLI.overwrite
+@downloadCLI.check
 def download_cli(**kwargs):
     """\
     Downloads the extra ISOFIT data files from the repository https://github.com/isofit/isofit-data.
@@ -198,9 +198,9 @@ def download_cli(**kwargs):
         update(**kwargs)
 
 
-@cli.validate.command(name=CMD)
-@cli.path(help="Root directory to download data files to, ie. [path]/data")
-@cli.tag
+@downloadCLI.validate.command(name=CMD)
+@downloadCLI.path(help="Root directory to download data files to, ie. [path]/data")
+@downloadCLI.tag
 def validate_cli(**kwargs):
     """\
     Validates the installation of the ISOFIT extra data files as well as checks for updates
