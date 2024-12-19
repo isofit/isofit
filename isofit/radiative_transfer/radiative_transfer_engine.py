@@ -107,6 +107,7 @@ class RadiativeTransferEngine:
         self.rt_mode = (
             engine_config.rt_mode if engine_config.rt_mode is not None else "transm"
         )
+        self.coupling_terms = ["bi-direct", "hemi-direct", "direct-hemi", "bi-hemi"]
         self.multipart_transmittance = engine_config.multipart_transmittance
         self.topography_model = engine_config.topography_model
         self.glint_model = engine_config.glint_model
@@ -202,6 +203,7 @@ class RadiativeTransferEngine:
 
             # Verify no duplicates exist else downstream functions will fail
             duplicates = False
+
             for dim, vals in lut_grid.items():
                 if np.unique(vals).size < len(vals):
                     duplicates = True
