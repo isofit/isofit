@@ -573,9 +573,6 @@ def resample_spectrum(
                 xnew[i] = xnew[nearest_good_ind]
         return xnew
     else:
-        # Replace NaNs with zeros
-        x[np.isnan(x)] = 0
-
         # Matrix
         if dims > 1:
             return np.dot(H, x.T).T
