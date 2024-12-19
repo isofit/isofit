@@ -104,10 +104,13 @@ class LUTSurface(Surface):
 
         return x_surface
 
-    def calc_rfl(self, x_surface, geom):
+    def calc_rfl(self, x_surface, geom, L_down_dir=None, L_down_dif=None):
         """Non-Lambertian reflectance."""
 
-        return self.calc_lamb(x_surface, geom)
+        # ToDo: Future use of calc_rfl() is to return a direct and diffuse surface reflectance quantity.
+        #  As long as this is not implemented, return the same reflectance vector for both.
+        rfl = self.calc_lamb(x_surface, geom)
+        return rfl, rfl
 
     def calc_lamb(self, x_surface, geom):
         """Lambertian reflectance.  Be sure to incorporate BRDF-related

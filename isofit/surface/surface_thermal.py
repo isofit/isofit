@@ -75,11 +75,14 @@ class ThermalSurface(MultiComponentSurface):
 
         return x_surface
 
-    def calc_rfl(self, x_surface, geom):
+    def calc_rfl(self, x_surface, geom, L_down_dir=None, L_down_dif=None):
         """Reflectance. This could be overriden to add (for example)
         specular components"""
 
-        return self.calc_lamb(x_surface, geom)
+        # ToDo: Future use of calc_rfl() is to return a direct and diffuse surface reflectance quantity.
+        #  As long as this is not implemented, return the same reflectance vector for both.
+        rfl = self.calc_lamb(x_surface, geom)
+        return rfl, rfl
 
     def drfl_dsurface(self, x_surface, geom):
         """Partial derivative of reflectance with respect to state vector,
@@ -105,8 +108,9 @@ class ThermalSurface(MultiComponentSurface):
 
         T = x_surface[self.surf_temp_ind]
         rfl = self.calc_rfl(x_surface, geom)
-        rfl[rfl > 1.0] = 1.0
-        emissivity = 1 - rfl
+        # ToDo: direct and diffuse reflectance vectors not supported yet
+        rfl[0][rfl[0] > 1.0] = 1.0
+        emissivity = 1 - rfl[0]
         Ls, dLs_dT = emissive_radiance(emissivity, T, self.wl)
         return Ls
 
