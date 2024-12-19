@@ -384,7 +384,7 @@ class RadiativeTransfer:
         s_alb = r["sphalb"]
 
         # direct and diffuse downward radiance on the sun-to-surface path
-        # note: currently, E_down_dir comes scaled by the TOA solar zenith angle,
+        # note: currently, L_down_dir comes scaled by the TOA solar zenith angle,
         # thus, unscaling and rescaling by local solar zenith angle required
         # to account for surface slope and aspect
         L_down_dir, L_down_dif = self.get_L_down(x_RT, geom)
