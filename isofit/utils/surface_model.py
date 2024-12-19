@@ -402,7 +402,7 @@ def surface_model(
 )
 @click.option("--output_path", help="Path to write the created surface model to")
 @click.option("--seed", default=13, type=int, help="Seed for reproducibility")
-def cli_surface_model(**kwargs):
+def cli(**kwargs):
     """Build a new surface model to a block of data"""
 
     # SimpleNamespace converts a dict into dot-notational
