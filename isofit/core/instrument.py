@@ -267,8 +267,16 @@ class Instrument:
         ):
             return rdn_hi
         wl, fwhm = self.calibration(x_instrument)
-        if rdn_hi.ndim == 1:
+
+        # If rdn_hi is a vector of length 1, return itself
+        if rdn_hi.ndim == 1 and len(rdn_hi) <= 1:
+            return rdn_hi
+
+        # If rdn_hi is a vector of length > 1, return it resampled to instrument
+        elif rdn_hi.ndim == 1 and len(rdn_hi) > 1:
             return resample_spectrum(rdn_hi, wl_hi, wl, fwhm)
+
+        # If rdn_hi is a multidim array, do the multidim resampling
         else:
             resamp = []
             # The "fast resample" option approximates a complete resampling
