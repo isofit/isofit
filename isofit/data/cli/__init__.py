@@ -2,43 +2,56 @@ import importlib
 import pkgutil
 
 from isofit.data import env
-from isofit.data.download import cli
+from isofit.data.download import downloadCLI
 
-# Auto-discovers the submodules of isofit.data.cli
+# Auto-discovers the submodules of isofit.data.downloadCLI
 Modules = {
     name: importlib.import_module(f".{name}", __spec__.name)
     for imp, name, _ in pkgutil.iter_modules(__path__)
 }
 
 
-@cli.download.command(name="all")
-def download_all():
+@downloadCLI.download.command(name="all")
+@downloadCLI.update
+@downloadCLI.check
+@downloadCLI.validate
+def download_all(update_, check, validate_):
     """\
-    Downloads all ISOFIT extra dependencies to the locations specified in the isofit.ini file using latest tags and versions.
+    Downloads all ISOFIT extra dependencies to the locations specified in the isofit.ini file using latest tags and versions
     """
     pad = "=" * 16
 
     for i, module in enumerate(Modules.values()):
-        print(f"{pad} Beginning download {i+1} of {len(Modules)} {pad}")
-        module.download()
+        if update_:
+            print(f"{pad} Beginning update {i+1} of {len(Modules)} {pad}")
+            module.update(check)
+
+        elif validate_:
+            print(f"{pad} Beginning validation {i+1} of {len(Modules)} {pad}")
+            module.validate()
+
+        else:
+            print(f"{pad} Beginning download {i+1} of {len(Modules)} {pad}")
+            module.download()
+
         print()
 
-    print("Finished all downloads")
+    print("Finished all processes")
 
 
-@cli.validate.command(name="all")
-def validate_all():
-    """\
-    Validates all ISOFIT extra dependencies at the locations specified in the isofit.ini file.
-    """
-    pad = "=" * 16
-
-    for i, module in enumerate(Modules.values()):
-        print(f"{pad} Validating {i+1} of {len(Modules)} {pad}")
-        module.validate()
-        print()
-
-    print("Finished all validations")
+# @downloadCLI.validate.command(name="all")
+# def validate_all():
+#     """\
+#     Validates all ISOFIT extra dependencies at the locations specified in the isofit.ini file.
+#     """
+#     pad = "=" * 16
+#
+#     for i, module in enumerate(Modules.values()):
+#         print(f"{pad} Validating {i+1} of {len(Modules)} {pad}")
+#         module.validate()
+#         print()
+#
+#     print("Finished all validations")
 
 
 def env_validate(keys, **kwargs):

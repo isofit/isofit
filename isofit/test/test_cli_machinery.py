@@ -11,6 +11,11 @@ from click.testing import CliRunner
 import isofit
 from isofit import __main__
 
+try:
+    import isoplots
+except:
+    isoplots = None
+
 # Determine if 'isofit' is installed via '$PYTHONPATH'. To do this, check to see
 # if '$PYTHONPATH' is set, and search for 'isofit' at each location.
 ISOFIT_ABSPATH = Path(isofit.__file__).parent.absolute()
@@ -64,7 +69,10 @@ def test_subcommand_registration(executable):
         assert cmd in stdout_txt
 
     # Check to make sure the right number of subcommands are registered
-    assert subcommand_count == 14
+    if isoplots:
+        assert subcommand_count == 14
+    else:
+        assert subcommand_count == 13
 
 
 def test_version():
