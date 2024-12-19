@@ -59,26 +59,26 @@ def build(directory):
     )
 
 
-def download(output=None):
+def download(path=None):
     """
     Downloads 6S from https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar.
 
     Parameters
     ----------
-    output: str | None
+    output : str | None
         Path to output as. If None, defaults to the ini path.
-    version: str
+    version : str
         Release tag to pull from the github.
     """
     if not precheck():
         print(
-            "Skipping downloading 6S. Once above errors are corrected, retry via: isofit download sixs"
+            "Skipping downloading 6S. Once above errors are corrected, retry via `isofit download sixs`"
         )
         return
 
     print("Downloading 6S")
 
-    output = prepare_output(output, env.sixs)
+    output = prepare_output(path, env.sixs)
     if not output:
         return
 
@@ -90,22 +90,6 @@ def download(output=None):
     build(output)
 
     print(f"Done, now available at: {output}")
-
-
-@cli.download.command(name="sixs")
-@cli.output(help="Root directory to download sixs to, ie. [path]/sixs")
-def download_cli(**kwargs):
-    """\
-    Downloads 6S from https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar. Only HDF5 versions are supported at this time.
-
-    \b
-    Run `isofit download paths` to see default path locations.
-    There are two ways to specify output directory:
-        - `isofit --sixs /path/sixs download sixs`: Override the ini file. This will save the provided path for future reference.
-        - `isofit download sixs --output /path/sixs`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
-    It is recommended to use the first style so the download path is remembered in the future.
-    """
-    download(**kwargs)
 
 
 def validate(path=None, debug=print, error=print, **_):
@@ -150,10 +134,36 @@ def validate(path=None, debug=print, error=print, **_):
     return True
 
 
-@cli.validate.command(name="sixs")
-@cli.path(help="Path to 6S installation")
-def validate_cli(**kwargs):
-    """\
-    Validates a 6S installation
+def update(check=False, **kwargs):
     """
-    validate(**kwargs)
+    Checks for an update and executes a new download if it is needed
+    Note: Not implemented for this module at this time
+
+    Parameters
+    ----------
+    check : bool, default=False
+        Just check if an update is available, do not download
+    **kwargs : dict
+        Additional key-word arguments to pass to download()
+    """
+    print("SixS does not support versioning at this time, no update to be found")
+
+
+@cli.download.command(name="sixs")
+@cli.path(help="Root directory to download sixs to, ie. [path]/sixs")
+@cli.validate
+def download_cli(validate_, **kwargs):
+    """\
+    Downloads 6S from https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar. Only HDF5 versions are supported at this time.
+
+    \b
+    Run `isofit download paths` to see default path locations.
+    There are two ways to specify output directory:
+        - `isofit --sixs /path/sixs download sixs`: Override the ini file. This will save the provided path for future reference.
+        - `isofit download sixs --output /path/sixs`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
+    It is recommended to use the first style so the download path is remembered in the future.
+    """
+    if validate_:
+        validate(**kwargs)
+    else:
+        download(**kwargs)
