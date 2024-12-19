@@ -7,7 +7,7 @@ import subprocess
 from pathlib import Path
 
 from isofit.data import env
-from isofit.data.download import cli, download_file, prepare_output, untar
+from isofit.data.download import download_file, downloadCLI, prepare_output, untar
 
 URL = "https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar"
 
@@ -149,10 +149,10 @@ def update(check=False, **kwargs):
     print("SixS does not support versioning at this time, no update to be found")
 
 
-@cli.download.command(name="sixs")
-@cli.path(help="Root directory to download sixs to, ie. [path]/sixs")
-@cli.validate
-def download_cli(validate_, **kwargs):
+@downloadCLI.download.command(name="sixs")
+@downloadCLI.path(help="Root directory to download sixs to, ie. [path]/sixs")
+@downloadCLI.validate
+def cli(validate_, **kwargs):
     """\
     Downloads 6S from https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar. Only HDF5 versions are supported at this time.
 

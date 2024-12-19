@@ -12,7 +12,15 @@ Logger = logging.getLogger(__file__)
 
 class Ini:
     base: Path = Path.home() / ".isofit/"
-    dirs: List[str] = ["data", "examples", "imagecube", "srtmnet", "sixs", "modtran"]
+    dirs: List[str] = [
+        "data",
+        "examples",
+        "imagecube",
+        "srtmnet",
+        "sixs",
+        "modtran",
+        "plots",
+    ]
     config: ConfigParser = ConfigParser()
     section: str = "DEFAULT"
 

@@ -2,19 +2,19 @@ import importlib
 import pkgutil
 
 from isofit.data import env
-from isofit.data.download import cli
+from isofit.data.download import downloadCLI
 
-# Auto-discovers the submodules of isofit.data.cli
+# Auto-discovers the submodules of isofit.data.downloadCLI
 Modules = {
     name: importlib.import_module(f".{name}", __spec__.name)
     for imp, name, _ in pkgutil.iter_modules(__path__)
 }
 
 
-@cli.download.command(name="all")
-@cli.update
-@cli.check
-@cli.validate
+@downloadCLI.download.command(name="all")
+@downloadCLI.update
+@downloadCLI.check
+@downloadCLI.validate
 def download_all(update_, check, validate_):
     """\
     Downloads all ISOFIT extra dependencies to the locations specified in the isofit.ini file using latest tags and versions
@@ -39,7 +39,7 @@ def download_all(update_, check, validate_):
     print("Finished all processes")
 
 
-# @cli.validate.command(name="all")
+# @downloadCLI.validate.command(name="all")
 # def validate_all():
 #     """\
 #     Validates all ISOFIT extra dependencies at the locations specified in the isofit.ini file.

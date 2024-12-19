@@ -9,7 +9,7 @@ import click
 import requests
 
 from isofit.data import env
-from isofit.data.download import cli, download_file, prepare_output
+from isofit.data.download import download_file, downloadCLI, prepare_output
 
 URL = "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/"
 
@@ -125,8 +125,8 @@ def update(check=False, **kwargs):
     print("sRTMnet has not implemented an update function yet")
 
 
-@cli.download.command(name="sRTMnet")
-@cli.output(help="Root directory to download sRTMnet to, ie. [path]/sRTMnet")
+@downloadCLI.download.command(name="sRTMnet")
+@downloadCLI.output(help="Root directory to download sRTMnet to, ie. [path]/sRTMnet")
 @click.option(
     "-v",
     "--version",
@@ -134,8 +134,8 @@ def update(check=False, **kwargs):
     help="Model version to download",
     show_default=True,
 )
-@cli.validate
-def download_cli(validate_, **kwargs):
+@downloadCLI.validate
+def cli(validate_, **kwargs):
     """\
     Downloads sRTMnet from https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/. Only HDF5 versions are supported at this time.
 

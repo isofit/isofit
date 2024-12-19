@@ -6,8 +6,8 @@ from pathlib import Path
 
 from isofit.data import env
 from isofit.data.download import (
-    cli,
     download_file,
+    downloadCLI,
     prepare_output,
     release_metadata,
     unzip,
@@ -160,14 +160,14 @@ def update(check=False, **kwargs):
         download(**kwargs)
 
 
-@cli.download.command(name="data")
-@cli.path(help="Root directory to download data files to, ie. [path]/data")
-@cli.tag
-@cli.overwrite
-@cli.update
-@cli.check
-@cli.validate
-def download_cli(update_, check, validate_, **kwargs):
+@downloadCLI.download.command(name="data")
+@downloadCLI.path(help="Root directory to download data files to, ie. [path]/data")
+@downloadCLI.tag
+@downloadCLI.overwrite
+@downloadCLI.update
+@downloadCLI.check
+@downloadCLI.validate
+def cli(update_, check, validate_, **kwargs):
     """\
     Downloads the extra ISOFIT data files from the repository https://github.com/isofit/isofit-data.
 

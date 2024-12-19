@@ -7,7 +7,7 @@ from pathlib import Path
 import click
 
 from isofit.data import env
-from isofit.data.download import cli, download_file, prepare_output, unzip
+from isofit.data.download import download_file, downloadCLI, prepare_output, unzip
 
 URL = "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/{size}_chunk.zip"
 
@@ -111,8 +111,8 @@ def update(check=False, **kwargs):
     print("ImageCube does not support versioning at this time, no update to be found")
 
 
-@cli.download.command(name="imagecube")
-@cli.output(
+@downloadCLI.download.command(name="imagecube")
+@downloadCLI.output(
     help="Root directory to download image cube data files to, ie. [path]/imagecube"
 )
 @click.option(
@@ -122,8 +122,8 @@ def update(check=False, **kwargs):
     default="both",
     help="Chunk size",
 )
-@cli.validate
-def download_cli(**kwargs):
+@downloadCLI.validate
+def cli(**kwargs):
     """\
     Downloads the extra ISOFIT image cube data files from https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/.
 

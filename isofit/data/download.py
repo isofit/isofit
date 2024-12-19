@@ -204,8 +204,8 @@ def prepare_output(output, default, isdir=False, overwrite=False):
 # Main commands
 
 
-@click.group("download", invoke_without_command=True)
-def cli_download():
+@click.group("download", no_args_is_help=True)
+def cli():
     """\
     Download extra ISOFIT files that do not come with the default installation
     """
@@ -214,8 +214,8 @@ def cli_download():
 
 # Shared click options
 
-cli = SimpleNamespace(
-    download=cli_download,
+downloadCLI = SimpleNamespace(
+    download=cli,
     output=partial(click.option, "-o", "--output"),
     tag=click.option(
         "-t", "--tag", default=f"latest", help="Release tag to pull", show_default=True
@@ -259,7 +259,7 @@ cli = SimpleNamespace(
 # Subcommands
 
 
-@cli_download.command(name="paths")
+@cli.command(name="paths")
 def preview_paths():
     """\
     Preview download path locations. Paths can be changed from the default by using the overrides on the `isofit` command. See more via `isofit --help`

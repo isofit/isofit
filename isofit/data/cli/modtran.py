@@ -6,8 +6,8 @@ from pathlib import Path
 
 from isofit.data import env
 from isofit.data.download import (
-    cli,
     download_file,
+    downloadCLI,
     prepare_output,
     release_metadata,
     unzip,
@@ -76,10 +76,10 @@ def update(check=False, **kwargs):
     print("MODTRAN does not support versioning at this time, no update to be found")
 
 
-# @cli.download.command(name="modtran")
-# @cli.output(help="Root directory to download modtran files to, ie. [path]/modtran")
-# @cli.tag
-def download_cli(**kwargs):
+# @downloadCLI.download.command(name="modtran")
+# @downloadCLI.output(help="Root directory to download modtran files to, ie. [path]/modtran")
+# @downloadCLI.tag
+def cli(**kwargs):
     """\
     Downloads and installs MODTRAN
 
