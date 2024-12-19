@@ -139,6 +139,9 @@ class RadiativeTransfer:
 
         self.solar_irr = np.concatenate([RT.solar_irr for RT in self.rt_engines])
 
+        # flux coupling terms
+        self.L_coupled = []
+
     def xa(self):
         """Pull the priors from each of the individual RTs."""
         return self.prior_mean
@@ -192,7 +195,7 @@ class RadiativeTransfer:
         s_alb = r["sphalb"]
 
         # flux coupling terms
-        E_bi_direct, E_hemi_direct, E_direct_hemi, E_bi_hemi = self.get_E_coupled(
+        L_bi_direct, L_hemi_direct, L_direct_hemi, L_bi_hemi = self.get_L_coupled(
             r, coszen, cos_i
         )
 
@@ -209,10 +212,10 @@ class RadiativeTransfer:
         ret = (
             L_atm
             + (
-                E_bi_direct * rfl_dir  # bi-directional flux
-                + E_hemi_direct * rfl_dif  # hemispherical-directional flux
-                + E_direct_hemi * bg_dir  # directional-hemispherical flux
-                + E_bi_hemi * bg_dif  # bi-hemispherical flux
+                L_bi_direct * rfl_dir  # bi-directional flux
+                + L_hemi_direct * rfl_dif  # hemispherical-directional flux
+                + L_direct_hemi * bg_dir  # directional-hemispherical flux
+                + L_bi_hemi * bg_dif  # bi-hemispherical flux
             )
             / (1.0 - s_alb * bg_dif)
             + L_up
@@ -274,10 +277,10 @@ class RadiativeTransfer:
                 L_atms.append(L_atm)
         return np.hstack(L_atms)
 
-    def get_L_down_transmitted(self, x_RT: np.array, geom: Geometry) -> np.array:
-        """Get the interpolated total downward atmospheric transmittance.
-        Thermal_downwelling already includes the transmission factor. Also
-        assume there is no multiple scattering for TIR.
+    def get_L_down(self, x_RT: np.array, geom: Geometry) -> np.array:
+        """Get the interpolated direct and diffuse downward fluxes on the sun-to-surface path.
+        Thermal_downwelling already includes the transmission factor.
+        Also assume there is no multiple scattering for TIR.
 
         Args:
             x_RT: radiative-transfer portion of the statevector
@@ -294,15 +297,20 @@ class RadiativeTransfer:
                 L_downs.append(rdn)
             else:
                 r = RT.get(x_RT, geom)
-                if RT.rt_mode == "rdn":
-                    L_down = r["transm_down_dir"] + r["transm_down_dif"]
-                else:
-                    transm_down = r["transm_down_dir"] + r["transm_down_dif"]
-                    L_down = self.rho_to_rdn(transm_down)
-                L_downs.append(L_down)
+                L_down_dir = r["transm_down_dir"]
+                L_down_dif = r["transm_down_dif"]
+                if RT.rt_mode == "transm":
+                    # transform downward transmittance to downward flux
+                    L_down_dir = (
+                        (self.solar_irr * self.coszen) / np.pi * r["transm_down_dir"]
+                    )
+                    L_down_dif = (
+                        (self.solar_irr * self.coszen) / np.pi * r["transm_down_dif"]
+                    )
+                L_downs.append((L_down_dir, L_down_dif))
         return np.hstack(L_downs)
 
-    def get_E_coupled(self, r, coszen, cos_i):
+    def get_L_coupled(self, r, coszen, cos_i):
         """Get the interpolated coupled fluxes on the sun-to-surface-to-sensor path.
         These follow the nomenclature as presented by Schaepman-Strub et al. (2006),
         which essentially are the terms from Nicodemus et al. (1977),
@@ -323,10 +331,10 @@ class RadiativeTransfer:
         if any(
             [type(r[key]) != np.ndarray for key in self.rt_engines[0].coupling_terms]
         ):
-            self.E_coupled = [r["transm_down_dir"], r["transm_down_dif"], 0, 0]
+            self.L_coupled = [r["transm_down_dir"], r["transm_down_dif"], 0, 0]
         else:
             for key in self.rt_engines[0].coupling_terms:
-                self.E_coupled.append(
+                self.L_coupled.append(
                     self.solar_irr * coszen / np.pi * r[key]
                     if self.rt_engines[0].rt_mode == "transm"
                     else r[key]
@@ -334,14 +342,14 @@ class RadiativeTransfer:
 
         # unscaling and rescaling downward direct flux terms by local solar zenith angle (see above)
         for ind in [0, 2]:
-            self.E_coupled[ind] = self.E_coupled[ind] / coszen * cos_i
+            self.L_coupled[ind] = self.L_coupled[ind] / coszen * cos_i
 
-        E_bi_direct = self.E_coupled[0]
-        E_hemi_direct = self.E_coupled[1]
-        E_direct_hemi = self.E_coupled[2]
-        E_bi_hemi = self.E_coupled[3]
+        L_bi_direct = self.L_coupled[0]
+        L_hemi_direct = self.L_coupled[1]
+        L_direct_hemi = self.L_coupled[2]
+        L_bi_hemi = self.L_coupled[3]
 
-        return E_bi_direct, E_hemi_direct, E_direct_hemi, E_bi_hemi
+        return L_bi_direct, L_hemi_direct, L_direct_hemi, L_bi_hemi
 
     def drdn_dRT(
         self,
@@ -379,16 +387,16 @@ class RadiativeTransfer:
         # note: currently, E_down_dir comes scaled by the TOA solar zenith angle,
         # thus, unscaling and rescaling by local solar zenith angle required
         # to account for surface slope and aspect
-        E_down_dir, E_down_dif = self.get_E_down(x_RT, geom)
-        E_down_dir = E_down_dir / self.coszen * cos_i
+        L_down_dir, L_down_dif = self.get_L_down(x_RT, geom)
+        L_down_dir = L_down_dir / self.coszen * cos_i
 
         # including glint for water surfaces
         if self.glint_model:
-            E_down_tot = E_down_dir + E_down_dif
-            L_sky = x_surface[-2] * E_down_dir + x_surface[-1] * E_down_dif
+            L_down_tot = L_down_dir + L_down_dif
+            L_sky = x_surface[-2] * L_down_dir + x_surface[-1] * L_down_dif
 
             rho_ls = 0.02  # fresnel reflectance factor (approx. 0.02 for nadir view)
-            glint = rho_ls * (L_sky / E_down_tot)
+            glint = rho_ls * (L_sky / L_down_tot)
         else:
             glint = np.zeros(rfl_dir.shape)
 
@@ -396,7 +404,7 @@ class RadiativeTransfer:
         bg = geom.bg_rfl if geom.bg_rfl is not None else rfl_dir + glint
 
         # K surface reflectance
-        drdn_drfl = (E_down_dir + E_down_dif) / (1.0 - s_alb * bg) * r["transm_up_dir"]
+        drdn_drfl = (L_down_dir + L_down_dif) / (1.0 - s_alb * bg) * r["transm_up_dir"]
 
         drdn_dLs = r["transm_up_dir"] + r["transm_up_dif"]
 
@@ -408,12 +416,12 @@ class RadiativeTransfer:
         if self.glint_model:
             # K glint
             drdn_dgdd = (
-                E_down_dir
+                L_down_dir
                 * (r["transm_up_dir"] + r["transm_up_dif"])
                 / (1.0 - s_alb * bg)
             )
             drdn_dgdsf = (
-                E_down_dif
+                L_down_dif
                 * (r["transm_up_dir"] + r["transm_up_dif"])
                 / (1.0 - s_alb * bg)
             )

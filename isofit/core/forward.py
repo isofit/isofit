@@ -195,9 +195,9 @@ class ForwardModel:
         x_surface, x_RT, x_instrument = self.unpack(x)
 
         if rfl_dir is None or rfl_dif is None:
-            E_down_dir, E_down_dif = self.RT.get_E_down(x_RT, geom)
+            L_down_dir, L_down_dif = self.RT.get_L_down(x_RT, geom)
             rfl_dir, rfl_dif = self.surface.calc_rfl(
-                x_surface, geom, E_down_dir, E_down_dif
+                x_surface, geom, L_down_dir, L_down_dif
             )
         if Ls is None:
             Ls = self.surface.calc_Ls(x_surface, geom)
@@ -256,9 +256,9 @@ class ForwardModel:
         x_surface, x_RT, x_instrument = self.unpack(x)
 
         # Get partials of reflectance WRT surface state variables, upsample
-        E_down_dir, E_down_dif = self.RT.get_E_down(x_RT, geom)
+        L_down_dir, L_down_dif = self.RT.get_L_down(x_RT, geom)
         rfl_dir, rfl_dif = self.surface.calc_rfl(
-            x_surface, geom, E_down_dir, E_down_dif
+            x_surface, geom, L_down_dir, L_down_dif
         )
         drfl_dsurface = self.surface.drfl_dsurface(x_surface, geom)
         rfl_dir_hi = self.upsample(self.surface.wl, rfl_dir)
@@ -311,8 +311,8 @@ class ForwardModel:
         x_surface, x_RT, x_instrument = self.unpack(x)
 
         # Get partials of reflectance and upsample
-        E_down_dir, E_down_dif = self.RT.get_E_down(x_RT, geom)
-        rfl = self.surface.calc_rfl(x_surface, geom, E_down_dir, E_down_dif)
+        L_down_dir, L_down_dif = self.RT.get_L_down(x_RT, geom)
+        rfl = self.surface.calc_rfl(x_surface, geom, L_down_dir, L_down_dif)
         rfl_dir_hi = self.upsample(self.surface.wl, rfl[0])
         rfl_dif_hi = self.upsample(self.surface.wl, rfl[1])
         Ls = self.surface.calc_Ls(x_surface, geom)
