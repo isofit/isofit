@@ -176,11 +176,11 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         """float: 6s-only view azimuth."""
 
         self._earth_sun_distance_file_type = str
-        self.earth_sun_distance_file = None
+        self.earth_sun_distance_file = ""
         """str: 6s-only earth-to-sun distance file."""
 
         self._irradiance_file_type = str
-        self.irradiance_file = None
+        self.irradiance_file = ""
         """str: 6s-only irradiance file."""
 
         # MODTRAN and 6S
