@@ -139,7 +139,7 @@ class RadiativeTransfer:
 
         self.solar_irr = np.concatenate([RT.solar_irr for RT in self.rt_engines])
 
-        # flux coupling terms
+        # radiances along all optical paths
         self.L_coupled = []
 
     def xa(self):
@@ -194,7 +194,7 @@ class RadiativeTransfer:
         # atmospheric spherical albedo
         s_alb = r["sphalb"]
 
-        # flux coupling terms
+        # radiances along all optical paths
         L_bi_direct, L_hemi_direct, L_direct_hemi, L_bi_hemi = self.get_L_coupled(
             r, coszen, cos_i
         )
@@ -212,10 +212,10 @@ class RadiativeTransfer:
         ret = (
             L_atm
             + (
-                L_bi_direct * rfl_dir  # bi-directional flux
-                + L_hemi_direct * rfl_dif  # hemispherical-directional flux
-                + L_direct_hemi * bg_dir  # directional-hemispherical flux
-                + L_bi_hemi * bg_dif  # bi-hemispherical flux
+                L_bi_direct * rfl_dir  # bi-directional radiance
+                + L_hemi_direct * rfl_dif  # hemispherical-directional radiance
+                + L_direct_hemi * bg_dir  # directional-hemispherical radiance
+                + L_bi_hemi * bg_dif  # bi-hemispherical radiance
             )
             / (1.0 - s_alb * bg_dif)
             + L_up
@@ -278,7 +278,7 @@ class RadiativeTransfer:
         return np.hstack(L_atms)
 
     def get_L_down(self, x_RT: np.array, geom: Geometry) -> np.array:
-        """Get the interpolated direct and diffuse downward fluxes on the sun-to-surface path.
+        """Get the interpolated direct and diffuse downward radiance on the sun-to-surface path.
         Thermal_downwelling already includes the transmission factor.
         Also assume there is no multiple scattering for TIR.
 
@@ -300,7 +300,7 @@ class RadiativeTransfer:
                 L_down_dir = r["transm_down_dir"]
                 L_down_dif = r["transm_down_dif"]
                 if RT.rt_mode == "transm":
-                    # transform downward transmittance to downward flux
+                    # transform downward transmittance to downward radiance
                     L_down_dir = (
                         (self.solar_irr * self.coszen) / np.pi * r["transm_down_dir"]
                     )
@@ -311,7 +311,7 @@ class RadiativeTransfer:
         return np.hstack(L_downs)
 
     def get_L_coupled(self, r, coszen, cos_i):
-        """Get the interpolated coupled fluxes on the sun-to-surface-to-sensor path.
+        """Get the interpolated radiances on the sun-to-surface-to-sensor path.
         These follow the nomenclature as presented by Schaepman-Strub et al. (2006),
         which essentially are the terms from Nicodemus et al. (1977),
         but adapted to the remote sensing case by Martonchik et al. (2000).
@@ -322,7 +322,7 @@ class RadiativeTransfer:
             cos_i:  local solar zenith angle at the surface
 
         Returns:
-            interpolated coupled fluxes:
+            interpolated radiances along all optical paths:
             bi-directional            (downward direct * upward direct)
             hemispherical-directional (downward diffuse * upward direct)
             directional-hemispherical (downward direct * upward diffuse)
@@ -340,7 +340,7 @@ class RadiativeTransfer:
                     else r[key]
                 )
 
-        # unscaling and rescaling downward direct flux terms by local solar zenith angle (see above)
+        # unscaling and rescaling downward direct radiance by local solar zenith angle (see above)
         for ind in [0, 2]:
             self.L_coupled[ind] = self.L_coupled[ind] / coszen * cos_i
 
@@ -383,7 +383,7 @@ class RadiativeTransfer:
         # atmospheric spherical albedo
         s_alb = r["sphalb"]
 
-        # direct and diffuse downward fluxes on the sun-to-surface path
+        # direct and diffuse downward radiance on the sun-to-surface path
         # note: currently, E_down_dir comes scaled by the TOA solar zenith angle,
         # thus, unscaling and rescaling by local solar zenith angle required
         # to account for surface slope and aspect
