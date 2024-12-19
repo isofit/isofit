@@ -71,6 +71,8 @@ class Pathnames:
             self.fid = input_radiance.split("/")[-1].split("_")[1]
         elif sensor == "gao":
             self.fid = split(input_radiance)[-1][:23]
+        elif sensor == "oci":
+            self.fid = split(input_radiance)[-1][:24]
         elif sensor[:3] == "NA-":
             self.fid = os.path.splitext(os.path.basename(input_radiance))[0]
 
@@ -195,6 +197,8 @@ class Pathnames:
 
         if sensor == "avcl":
             self.noise_path = str(env.path("data", "avirisc_noise.txt"))
+        elif sensor == "oci":
+            self.noise_path = str(env.path("data", "oci", "oci_noise.txt"))
         elif sensor == "emit":
             self.noise_path = str(env.path("data", "emit_noise.txt"))
             if self.input_channelized_uncertainty_path is None:
@@ -212,11 +216,17 @@ class Pathnames:
             # quit()
 
         self.earth_sun_distance_path = str(env.path("data", "earth_sun_distance.txt"))
-        self.irradiance_file = str(
-            env.path(
-                "examples", "20151026_SantaMonica", "data", "prism_optimized_irr.dat"
-            )
-        )
+
+        irr_path = [
+            "examples",
+            "20151026_SantaMonica",
+            "data",
+            "prism_optimized_irr.dat",
+        ]
+        if sensor == "oci":
+            irr_path = ["data", "oci", "tsis_f0_0p1.txt"]
+
+        self.irradiance_file = str(env.path(*irr_path))
 
         self.aerosol_tpl_path = str(env.path("data", "aerosol_template.json"))
         self.rdn_factors_path = None
@@ -1498,6 +1508,7 @@ def get_metadata_from_obs(
         lut_params.to_sensor_zenith_spacing,
         lut_params.to_sensor_zenith_spacing_min,
     )
+
     if to_sensor_zenith_lut_grid is not None:
         to_sensor_zenith_lut_grid = np.sort(to_sensor_zenith_lut_grid)
 
@@ -1506,6 +1517,7 @@ def get_metadata_from_obs(
         lut_params.to_sun_zenith_spacing,
         lut_params.to_sun_zenith_spacing_min,
     )
+
     if to_sun_zenith_lut_grid is not None:
         to_sun_zenith_lut_grid = np.sort(to_sun_zenith_lut_grid)
 
