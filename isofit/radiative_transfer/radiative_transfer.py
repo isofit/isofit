@@ -240,23 +240,29 @@ class RadiativeTransfer:
 
         return ret
 
-    def convert_rdn_transm(self, data, out_mode):
-        """Function to convert a radiance vector to transmittance or the other way round.
+    def rdn_to_rho(self, rdn):
+        """Function to convert a radiance vector to transmittance.
 
         Args:
-            data: input data vector in radiance or transmittance
-            out_mode: radiative transfer mode to convert input data to; options: "rdn" or "transm"
+            rdn: input data vector in radiance
 
         Returns:
-            Data vector converted to radiance or transmittance.
+            Data vector converted to transmittance
         """
-        if out_mode == "rdn":
-            # convert transmittance to radiance
-            output = (self.solar_irr * self.coszen) / np.pi * data
-        else:
-            # convert radiance to transmittance
-            output = data * np.pi / (self.solar_irr * self.coszen)
-        return output
+        rho = rdn * np.pi / (self.solar_irr * self.coszen)
+        return rho
+
+    def rho_to_rdn(self, rho):
+        """Function to convert a transmittance vector to radiance.
+
+        Args:
+            rho: input data vector in transmittance
+
+        Returns:
+            Data vector converted to radiance
+        """
+        rdn = (self.solar_irr * self.coszen) / np.pi * rho
+        return rdn
 
     def get_L_atm(self, x_RT: np.array, geom: Geometry) -> np.array:
         """Get the interpolated modeled atmospheric reflectance (aka path radiance).
@@ -276,10 +282,12 @@ class RadiativeTransfer:
                 L_atms.append(rdn)
             else:
                 r = RT.get(x_RT, geom)
-                rdn = r["rhoatm"]
-                if RT.rt_mode == "transm":
-                    rdn = self.convert_rdn_transm(rdn, out_mode="rdn")
-                L_atms.append(rdn)
+                if RT.rt_mode == "rdn":
+                    L_atm = r["rhoatm"]
+                else:
+                    rho_atm = r["rhoatm"]
+                    L_atm = self.rho_to_rdn(rho_atm)
+                L_atms.append(L_atm)
         return np.hstack(L_atms)
 
     def get_L_down_transmitted(self, x_RT: np.array, geom: Geometry) -> np.array:
@@ -302,10 +310,12 @@ class RadiativeTransfer:
                 L_downs.append(rdn)
             else:
                 r = RT.get(x_RT, geom)
-                rdn = r["transm_down_dir"] + r["transm_down_dif"]
-                if RT.rt_mode == "transm":
-                    rdn = self.convert_rdn_transm(rdn, out_mode="rdn")
-                L_downs.append(rdn)
+                if RT.rt_mode == "rdn":
+                    L_down = r["transm_down_dir"] + r["transm_down_dif"]
+                else:
+                    transm_down = r["transm_down_dir"] + r["transm_down_dif"]
+                    L_down = self.rho_to_rdn(transm_down)
+                L_downs.append(L_down)
         return np.hstack(L_downs)
 
     def drdn_dRT(
