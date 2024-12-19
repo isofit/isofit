@@ -36,18 +36,16 @@ def download(path=None, tag="latest", overwrite=False):
     if not output:
         return
 
-    metaplots = release_metaplots("isofit", "isofit-plots", tag)
+    metadata = release_metadata("isofit", "isofit-plots", tag)
 
-    print(f"Pulling release {metaplots['tag_name']}")
-    zipfile = download_file(
-        metaplots["zipball_url"], output.parent / "isofit-plots.zip"
-    )
+    print(f"Pulling release {metadata['tag_name']}")
+    zipfile = download_file(metadata["zipball_url"], output.parent / "isofit-plots.zip")
 
     print(f"Unzipping {zipfile}")
     avail = unzip(zipfile, path=output.parent, rename=output.name, overwrite=overwrite)
 
     with open(output / "version.txt", "w") as file:
-        file.write(metaplots["tag_name"])
+        file.write(metadata["tag_name"])
 
     print(f"Done, now available at: {avail}")
 
