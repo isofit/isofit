@@ -33,45 +33,55 @@ concurrency:
 
 jobs:
   # Create a cache before matrix jobs
+  # cache:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Pull Cached Extras
+  #       id: cache-extras
+  #       uses: actions/cache@v3
+  #       with:
+  #         path: .isofit
+  #         key: cache-extras-test
+
   cache:
     runs-on: ubuntu-latest
     steps:
-      - name: Cached Extras
+      - name: Cache Extras
         id: cache-extras
         uses: actions/cache@v3
         with:
-          path: extras
+          path: .isofit
           key: cache-extras-test
 
-  download:
-    needs: cache
-    if: ${{ needs.cache.steps.cache-extras.outputs.cache-hit != 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
+      - if: ${{ steps.cache-extras.outputs.cache-hit != 'true' }}
+        uses: actions/checkout@v3
 
-      - name: Print concurrency group
+      - if: ${{ steps.cache-extras.outputs.cache-hit != 'true' }}
+        name: Print concurrency group
         run: echo '${{ github.workflow }}-${{ github.ref }}'
 
-      - name: Set up Python ${{ matrix.python-version }}
+      - if: ${{ steps.cache-extras.outputs.cache-hit != 'true' }}
+        name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v3
         with:
           python-version: '3.12'
           cache: 'pip'
 
-      - name: Install ISOFIT
+      - if: ${{ steps.cache-extras.outputs.cache-hit != 'true' }}
+        name: Install ISOFIT
         shell: bash
         run: |
           python3 -m pip install --editable ".[test]"
 
-      - name: Download extras
+      - if: ${{ steps.cache-extras.outputs.cache-hit != 'true' }}
+        name: Download extras
         shell: bash
         run: |
-          isofit -b extras download all
+          isofit download all
           isofit build
 
   test:
-    needs: [cache, download]
+    needs: cache
 
     runs-on: ubuntu-latest
     strategy:
@@ -81,6 +91,13 @@ jobs:
         pytest-flags: ["-m unmarked", "-m slow", "-m examples"]
 
     steps:
+      # Pull the cache on every runner
+      # - name: Cached Extras
+      #   id: cache-extras
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: extras
+      #     key: cache-extras-test
 
       - uses: actions/checkout@v3
 
@@ -109,16 +126,6 @@ jobs:
 
           # Ensure ISOFIT has been installed
           python3 -c "import isofit; print(isofit.__file__)"
-
-      # Pull the cache on every runner
-      # - name: Cached Extras
-      #   id: cache-extras
-      #   uses: actions/cache@v3
-      #   env:
-      #     cache-name: cache-extras
-      #   with:
-      #     path: extras
-      #     key: ${{ env.cache-name }}
 
       - name: Execute tests
         shell: bash
