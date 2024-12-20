@@ -33,16 +33,6 @@ concurrency:
 
 jobs:
   # Create a cache before matrix jobs
-  # cache:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Pull Cached Extras
-  #       id: cache-extras
-  #       uses: actions/cache@v3
-  #       with:
-  #         path: .isofit
-  #         key: cache-extras-test
-
   cache:
     runs-on: ubuntu-latest
     steps:
@@ -92,12 +82,12 @@ jobs:
 
     steps:
       # Pull the cache on every runner
-      # - name: Cached Extras
-      #   id: cache-extras
-      #   uses: actions/cache@v3
-      #   with:
-      #     path: extras
-      #     key: cache-extras-test
+      - name: Cached Extras
+        id: cache-extras
+        uses: actions/cache@v3
+        with:
+          path: extras
+          key: cache-extras-test
 
       - uses: actions/checkout@v3
 
