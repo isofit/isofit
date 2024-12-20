@@ -22,7 +22,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.isofit
-          key: cache-extras-test
+          key: cache-extras
 
       - if: ${{ steps.cache-extras.outputs.cache-hit != 'true' }}
         uses: actions/checkout@v3
@@ -71,7 +71,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: extras
-          key: cache-extras-test
+          key: cache-extras
           fail-on-cache-miss: true
 
       - uses: actions/checkout@v3
