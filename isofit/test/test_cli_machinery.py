@@ -82,4 +82,4 @@ def test_version():
     result = runner.invoke(__main__.cli, ["--version"])
 
     assert result.exit_code == 0
-    assert result.output.strip() == isofit.__version__
+    assert result.output.strip() == f"cli, version {isofit.__version__}"
