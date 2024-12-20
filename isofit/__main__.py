@@ -49,8 +49,8 @@ class CLI(click.MultiCommand):
             if key not in self.modules:
                 try:
                     self.modules[key] = importlib.import_module(path)
-                except:
-                    pass
+                except Exception as e:
+                    print(e)
 
     def invoke(self, ctx):
         ini = ctx.params.pop("ini")
@@ -69,12 +69,11 @@ class CLI(click.MultiCommand):
 
         env.save(diff_only=save)
 
-        self.load_modules()
-
-        # If an isoplots installation was not found in the environment, attempt to retrieve it from a directory
-        if "plot" not in self.modules and os.path.exists(env.plots):
+        # If an override path is provided, insert it into the sys.paths
+        if os.path.exists(env.plots):
             sys.path.append(env.plots)
-            self.load_modules()
+
+        self.load_modules()
 
         super().invoke(ctx)
 
@@ -106,6 +105,7 @@ def cli(ctx, *args, **kwargs):
     """\
     This houses the subcommands of ISOFIT
     """
+    # invoke_without_command so that the invoke() command always gets called
     if ctx.invoked_subcommand is None:
         print(ctx.get_help())
 

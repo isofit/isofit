@@ -2,7 +2,12 @@
 Downloads the extra ISOFIT plotting utilities from the repository https://github.com/isofit/isofit-plots
 """
 
+import subprocess
+import sys
 from pathlib import Path
+
+import toml
+from packaging.version import Version
 
 from isofit.data import env
 from isofit.data.download import (
@@ -14,7 +19,20 @@ from isofit.data.download import (
 )
 
 
-def install(path=None): ...
+def install(path=None):
+    """
+    Installs a python package into the current python environment as editable mode
+
+    Parameters
+    ----------
+    path : str | None
+        Path to package to install. If None, defaults to the ini path
+    """
+    if path is None:
+        path = env.plots
+
+    print(f"Installing {path}")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "-e", path])
 
 
 def download(path=None, tag="latest", overwrite=False):
@@ -44,8 +62,7 @@ def download(path=None, tag="latest", overwrite=False):
     print(f"Unzipping {zipfile}")
     avail = unzip(zipfile, path=output.parent, rename=output.name, overwrite=overwrite)
 
-    with open(output / "version.txt", "w") as file:
-        file.write(metadata["tag_name"])
+    install(output)
 
     print(f"Done, now available at: {avail}")
 
@@ -74,9 +91,16 @@ def validate(path=None, debug=print, error=print, **_):
     if path is None:
         path = env.plots
 
-    debug(f"Verifying path for : {path}")
+    debug(f"Verifying path for isoplots: {path}")
 
-    ...
+    if Path(path).exists():
+        sys.path.append(path)
+
+    try:
+        import isoplots
+    except Exception as e:
+        error(f"Failed to load isoplots: {e}")
+        return False
 
     debug("Path is valid")
     return True
@@ -108,16 +132,16 @@ def checkForUpdate(path=None, tag="latest", debug=print, error=print, **_):
 
     debug(f"Checking for updates for plots on path: {path}")
 
-    metadata = release_metadata("isofit", "isofit-plots", tag)
-    version = read_configuration(path)["metadata"]["version"]
+    latest = Version(release_metadata("isofit", "isofit-plots", "latest")["tag_name"])
+    current = Version(toml.load(Path(path) / "pyproject.toml")["project"]["version"])
 
-    if version != (latest := metadata["tag_name"]):
+    if current < latest:
         error(
-            f"Your isoplots is out of date and may cause issues. Latest is {latest}, currently installed is {version}. Please update via `isofit update plots`"
+            f"Your isoplots is out of date and may cause issues. Latest is {latest}, currently installed is {current}. Please update via `isofit update plots`"
         )
         return True
 
-    debug("Path is up to date")
+    debug(f"Path is up to date, current version: {current}")
 
     return False
 
@@ -148,12 +172,13 @@ def update(check=False, **kwargs):
 def cli(update_, check, validate_, **kwargs):
     """\
     Downloads the extra ISOFIT plotting utilities from the repository https://github.com/isofit/isofit-plots.
+    This will install the package into your current environment along with its dependencies.
 
     \b
     Run `isofit download paths` to see default path locations.
     There are two ways to specify output directory:
         - `isofit --plots /path/plots download plots`: Override the ini file. This will save the provided path for future reference.
-        - `isofit download plots --output /path/plots`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
+        - `isofit download plots --path /path/plots`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
     It is recommended to use the first style so the download path is remembered in the future.
     """
     if update_:
@@ -162,10 +187,3 @@ def cli(update_, check, validate_, **kwargs):
         validate(**kwargs)
     else:
         download(**kwargs)
-
-
-# %%
-
-file = "/Users/jamesmo/projects/isofit/isofit-plots/setup.cfg"
-
-from setuptools.config import read_configuration
