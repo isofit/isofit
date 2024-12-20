@@ -768,7 +768,7 @@ def apply_oe(
 @click.option("--modtran_path")
 @click.option("--wavelength_path")
 @click.option("--surface_category", default="multicomponent_surface")
-@click.option("--surface_class", default=None)
+@click.option("--surface_class_file", default=None)
 @click.option("--aerosol_climatology_path")
 @click.option("--rdn_factors_path")
 @click.option("--atmosphere_type", default="ATM_MIDLAT_SUMMER")
