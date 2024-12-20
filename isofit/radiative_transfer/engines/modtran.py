@@ -307,7 +307,7 @@ class ModtranRT(RadiativeTransferEngine):
         vals["FILTNM"] = os.path.normpath(self.filtpath)
 
         # Translate to the MODTRAN OBSZEN convention, assumes we are downlooking
-        if "OBSZEN" in vals and vals.get("OBSZEN") < 90:
+        if vals.get("OBSZEN") and vals.get("OBSZEN") < 90:
             vals["OBSZEN"] = 180 - abs(vals["OBSZEN"])
 
         modtran_config_str, modtran_config = self.modtran_driver(dict(vals))
