@@ -34,18 +34,19 @@ concurrency:
 jobs:
   # Create a cache before matrix jobs
   cache:
-    - name: Cached Extras
-      id: cache-extras
-      uses: actions/cache@v3
-      with:
-        path: extras
-        key: cache-extras-test
-    - name: Download extras
-      if: ${{ steps.cache-extras.outputs.cache-hit != 'true' }}
-      shell: bash
-      run: |
-        isofit -b extras download all
-        isofit build
+    steps:
+      - name: Cached Extras
+        id: cache-extras
+        uses: actions/cache@v3
+        with:
+          path: extras
+          key: cache-extras-test
+      - name: Download extras
+        if: ${{ steps.cache-extras.outputs.cache-hit != 'true' }}
+        shell: bash
+        run: |
+          isofit -b extras download all
+          isofit build
 
   test:
     needs: cache
