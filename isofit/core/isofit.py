@@ -207,9 +207,9 @@ class Isofit:
                 for obj in [
                     config,
                     fm,
-                    self.full_statevector,
                     self.loglevel,
                     self.logfile,
+                    self.full_statevector,
                     len(class_idx_pairs),
                     n_workers,
                 ]
@@ -259,11 +259,11 @@ class Worker(object):
         self,
         config: configs.Config,
         forward_model: ForwardModel,
-        full_statevector: np.array,
         loglevel: str,
         logfile: str,
-        total_samples: int,
-        total_workers: int = None,
+        full_statevector: np.array = [],
+        total_samples: int = 1,
+        total_workers: int = 1,
         worker_id: int = None,
     ):
         """
@@ -283,6 +283,11 @@ class Worker(object):
             filename=logfile,
             datefmt="%Y-%m-%d,%H:%M:%S",
         )
+
+        # If full image statevector isn't passed, use forward model
+        if not len(full_statevector):
+            full_statevector = forward_model.statevec
+
         self.config = config
         self.fm = forward_model
         self.iv = Inversion(self.config, self.fm)

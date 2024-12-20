@@ -608,6 +608,15 @@ class IO:
             else:
                 state_est = states[-1, :]
 
+            # Make important check that fm.statevec !> full_statevec.
+            if len(fm.statevec) > len(self.full_statevec):
+                logging.error(
+                    "Length of the output statevector is shorter than the "
+                    "forward model currently being written. Potential issue "
+                    "with initialization of IO class."
+                )
+                raise IOError("len(fm.statevec) > len(self.full_statevec)")
+
             ############ Start with all of the 'independent' calculations
             if "estimated_state_file" in self.output_datasets:
                 # state_est transformed to reflect io.full_statevec
