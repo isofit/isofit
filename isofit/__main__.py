@@ -83,7 +83,7 @@ class CLI(click.MultiCommand):
             env.save(diff_only=save)
 
         # If an override path is provided, insert it into the sys.paths
-        if os.path.exists(env.plots):
+        if env.validate("isoplots", path=env.plots, quiet=True):
             sys.path.append(env.plots)
 
         self.load_modules()

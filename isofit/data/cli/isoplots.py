@@ -101,6 +101,9 @@ def validate(path=None, debug=print, error=print, **_):
     except Exception as e:
         error(f"Failed to load isoplots: {e}")
         return False
+    finally:
+        # Remove the inserted path
+        sys.path = sys.path[:-1]
 
     debug("Path is valid")
     return True

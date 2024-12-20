@@ -57,7 +57,7 @@ def validate_all(**kwargs):
     runOnAll("validate", **kwargs)
 
 
-def env_validate(keys, **kwargs):
+def env_validate(keys, quiet=False, **kwargs):
     """
     Utility function for the `env` object to quickly validate specific dependencies
 
@@ -65,12 +65,31 @@ def env_validate(keys, **kwargs):
     ----------
     keys : list
         List of validator functions to call
+    quiet : bool, default=False
+        Silences the error and debug messages of the validation functions
+
+    Examples
+    --------
+    >>> env.validate("all")
+    >>> env.validate("isoplots", path=env.plots, quiet=True)
+    >>> env.validate(["data", "examples"])
+    >>> env.validate(["data", "examples"], error=Logger.error, debug=Logger.debug)
     """
     error = kwargs.get("error", print)
 
     # Turn off checking for updates when using this function by default
     # This makes env.path less verbose
     kwargs["checkForUpdate"] = kwargs.get("checkForUpdate", False)
+
+    if isinstance(keys, str):
+        if keys == "all":
+            keys = Modules
+        else:
+            keys = [keys]
+
+    if quiet:
+        kwargs["error"] = lambda _: ...
+        kwargs["debug"] = lambda _: ...
 
     all_valid = True
     for key in keys:
