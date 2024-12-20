@@ -82,7 +82,7 @@ jobs:
           key: ${{ env.cache-name }}
 
       - name: Download extras
-        if: ${{ steps.cache-extras.outputs.cache-hit != true }}
+        if: ${{ steps.cache-extras.outputs.cache-hit != 'true' }}
         shell: bash
         run: |
           isofit -b extras download all
