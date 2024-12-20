@@ -54,7 +54,7 @@ def download_all(update_, check, validate_):
 #     print("Finished all validations")
 
 
-def env_validate(keys, **kwargs):
+def env_validate(keys, quiet=False, **kwargs):
     """
     Utility function for the `env` object to quickly validate specific dependencies
 
@@ -62,8 +62,25 @@ def env_validate(keys, **kwargs):
     ----------
     keys : list
         List of validator functions to call
+
+    Examples
+    --------
+    >>> env.validate("all")
+    >>> env.validate("isoplots", path=env.plots, quiet=True)
+    >>> env.validate(["data", "examples"])
+    >>> env.validate(["data", "examples"], error=Logger.error, debug=Logger.debug)
     """
     error = kwargs.get("error", print)
+
+    if isinstance(keys, str):
+        if keys == "all":
+            keys = Modules
+        else:
+            keys = [keys]
+
+    if quiet:
+        kwargs["error"] = lambda _: ...
+        kwargs["debug"] = lambda _: ...
 
     all_valid = True
     for key in keys:
