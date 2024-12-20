@@ -16,12 +16,14 @@
 #
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: Philip G. Brodrick, philip.brodrick@jpl.nasa.gov
+from __future__ import annotations
 
 import logging
 import multiprocessing
 import os
 import time
 from collections import OrderedDict
+from copy import deepcopy
 from glob import glob
 
 import click
@@ -30,13 +32,24 @@ from spectral.io import envi
 
 from isofit import ray
 from isofit.configs import configs
-from isofit.core.common import envi_header, load_spectrum
+from isofit.core.common import (
+    envi_header,
+    load_spectrum,
+    load_wavelen,
+    match_statevector,
+)
 from isofit.core.fileio import IO, write_bil_chunk
 from isofit.core.forward import ForwardModel
 from isofit.core.geometry import Geometry
 from isofit.inversion.inverse import Inversion
 from isofit.inversion.inverse_simple import invert_analytical
 from isofit.utils.atm_interpolation import atm_interpolation
+from isofit.utils.multistate import (
+    construct_full_state,
+    index_spectra_by_surface,
+    index_spectra_by_surface_and_sub,
+    update_config_for_surface,
+)
 
 
 def analytical_line(
@@ -46,9 +59,9 @@ def analytical_line(
     isofit_dir: str,
     isofit_config: str = None,
     segmentation_file: str = None,
-    n_atm_neighbors: list = None,
+    n_atm_neighbors: list = [20],
     n_cores: int = -1,
-    smoothing_sigma: list = None,
+    smoothing_sigma: list = [2],
     output_rfl_file: str = None,
     output_unc_file: str = None,
     atm_file: str = None,
@@ -58,11 +71,6 @@ def analytical_line(
     """
     TODO: Description
     """
-    if n_atm_neighbors is None:
-        n_atm_neighbors = [20]
-    if smoothing_sigma is None:
-        smoothing_sigma = [2]
-
     logging.basicConfig(
         format="%(levelname)s:%(asctime)s ||| %(message)s",
         level=loglevel,
@@ -70,6 +78,10 @@ def analytical_line(
         datefmt="%Y-%m-%d,%H:%M:%S",
     )
 
+    if n_cores == -1:
+        n_cores = multiprocessing.cpu_count()
+
+    # Config handling
     if isofit_config is None:
         file = glob(os.path.join(isofit_dir, "config", "") + "*_isofit.json")[0]
     else:
@@ -78,48 +90,47 @@ def analytical_line(
     config = configs.create_new_config(file)
     config.forward_model.instrument.integrations = 1
 
+    # Set up input file paths
     subs_state_file = config.output.estimated_state_file
     subs_loc_file = config.input.loc_file
 
-    if (
-        segmentation_file is None
-        or config.forward_model.surface.surface_category == "glint_model_surface"
-    ):
-        lbl_file = subs_state_file.replace("_subs_state", "_lbl")
-    else:
-        lbl_file = segmentation_file
+    # Rename files
+    lbl_file = (
+        segmentation_file
+        if segmentation_file
+        else (subs_state_file.replace("_subs_state", "_lbl"))
+    )
+    analytical_rfl_path = (
+        output_rfl_file
+        if output_rfl_file
+        else (subs_state_file.replace("_subs_state", "_rfl_analytical"))
+    )
+    analytical_state_unc_path = (
+        output_unc_file
+        if output_unc_file
+        else (subs_state_file.replace("_subs_state", "_state_analytical_uncert"))
+    )
+    atm_file = (
+        atm_file
+        if atm_file
+        else (subs_state_file.replace("_subs_state", "_atm_interp"))
+    )
 
-    if (
-        output_rfl_file is None
-        or config.forward_model.surface.surface_category == "glint_model_surface"
-    ):
-        analytical_state_file = subs_state_file.replace(
-            "_subs_state", "_state_analytical"
-        )
-    else:
-        analytical_state_file = output_rfl_file
+    # Get output shape
+    rdn_ds = envi.open(envi_header(rdn_file))
+    rdns = rdn_ds.shape
+    output_metadata = rdn_ds.metadata
+    del rdn_ds
 
-    if (
-        output_unc_file is None
-        or config.forward_model.surface.surface_category == "glint_model_surface"
-    ):
-        analytical_state_unc_file = subs_state_file.replace(
-            "_subs_state", "_state_analytical_uncert"
-        )
-    else:
-        analytical_state_unc_file = output_unc_file
+    # Get full statevector for image
+    (
+        full_statevector,
+        full_idx_surface,
+        full_idx_surf_rfl,
+        full_idx_RT,
+    ) = construct_full_state(config)
 
-    if (
-        atm_file is None
-        or config.forward_model.surface.surface_category == "glint_model_surface"
-    ):
-        atm_file = subs_state_file.replace("_subs_state", "_atm_interp")
-    else:
-        atm_file = atm_file
-
-    fm = ForwardModel(config)
-    iv = Inversion(config, fm)
-
+    # Perform the atmospheric interpolation
     if os.path.isfile(atm_file) is False:
         atm_interpolation(
             reference_state_file=subs_state_file,
@@ -127,45 +138,51 @@ def analytical_line(
             input_locations_file=loc_file,
             segmentation_file=lbl_file,
             output_atm_file=atm_file,
-            atm_band_names=fm.RT.statevec_names,
+            atm_band_names=[full_statevector[i] for i in full_idx_RT],
             nneighbors=n_atm_neighbors,
             gaussian_smoothing_sigma=smoothing_sigma,
             n_cores=n_cores,
         )
 
-    rdn_ds = envi.open(envi_header(rdn_file))
-    rdn = rdn_ds.open_memmap(interleave="bip")
-    rdns = rdn.shape
+    # Get string representation of bad band list
+    outside_ret_windows = np.zeros(len(full_idx_surf_rfl), dtype=int)
+    outside_ret_windows[retrieve_winidx(config)] = 1
 
-    output_metadata = rdn_ds.metadata
-    output_metadata["interleave"] = "bil"
-    output_metadata["description"] = "L2A Analytyical per-pixel surface retrieval"
-    output_metadata["bands"] = str(len(fm.idx_surface))
-    output_metadata["band names"] = fm.surface.statevec_names
-
-    outside_ret_windows = np.zeros(len(fm.surface.idx_lamb), dtype=int)
-    outside_ret_windows[iv.winidx] = 1
-    output_metadata["bbl"] = "{" + ",".join([str(x) for x in outside_ret_windows]) + "}"
-
-    if "emit pge input files" in list(output_metadata.keys()):
-        del output_metadata["emit pge input files"]
-
-    img = envi.create_image(
-        envi_header(analytical_state_file), ext="", metadata=output_metadata, force=True
+    # Construct surf rfl output
+    bbl = "{" + ",".join([f"{x}" for x in outside_ret_windows]) + "}"
+    rfl_output = construct_output(
+        output_metadata,
+        analytical_rfl_path,
+        (rdns[0], len(full_idx_surface), rdns[1]),
+        bbl=bbl,
+        interleave="bil",
+        bands=f"{len(full_idx_surface)}",
+        band_names=[full_statevector[i] for i in range(len(full_idx_surface))],
+        wavelength_unts="Nanometers",
+        description=("L2A Analytyical per-pixel surface retrieval"),
     )
-    del img
 
-    img = envi.create_image(
-        envi_header(analytical_state_unc_file),
-        ext="",
-        metadata=output_metadata,
-        force=True,
+    # Construct surf rfl uncertainty output
+    bbl = "{" + ",".join([f"{x}" for x in outside_ret_windows]) + "}"
+    unc_output = construct_output(
+        output_metadata,
+        analytical_state_unc_path,
+        (rdns[0], len(full_idx_surface), rdns[1]),
+        bbl=bbl,
+        interleave="bil",
+        bands=f"{len(full_idx_surface)}",
+        band_names=[full_statevector[i] for i in range(len(full_idx_surface))],
+        wavelength_unts="Nanometers",
+        description=("L2A Analytyical per-pixel surface retrieval uncertainty"),
     )
-    del rdn, img
 
-    if n_cores == -1:
-        n_cores = multiprocessing.cpu_count()
+    # Set up the output files
+    output_files = {
+        "rfl_output": rfl_output,
+        "unc_output": unc_output,
+    }
 
+    # Ray initialization
     ray_dict = {
         "ignore_reinit_error": config.implementation.ray_ignore_reinit_error,
         "address": config.implementation.ip_head,
@@ -175,40 +192,74 @@ def analytical_line(
         "num_cpus": n_cores,
     }
     ray.init(**ray_dict)
-
     n_workers = n_cores
 
-    wargs = [
-        ray.put(obj)
-        for obj in (
-            config,
-            fm,
-            atm_file,
-            analytical_state_file,
-            analytical_state_unc_file,
-            rdn_file,
-            loc_file,
-            obs_file,
-            loglevel,
-            logfile,
+    # Set up the multi-state pixel map by sub
+    index_pairs = np.empty((rdns[0] * rdns[1], 2), dtype=int)
+    meshgrid = np.meshgrid(*(range(rdns[0]), range(rdns[1])))
+    index_pairs[:, 0] = meshgrid[0].flatten(order="f")
+    index_pairs[:, 1] = meshgrid[1].flatten(order="f")
+    del meshgrid
+
+    input_config = deepcopy(config)
+    surface_index = index_spectra_by_surface(input_config, index_pairs, sub=False)
+    for surface_class_str, class_idx_pairs in surface_index.items():
+        # Handle multisurface
+        if input_config.forward_model.surface.multi_surface_flag:
+            config = update_config_for_surface(
+                deepcopy(input_config), surface_class_str
+            )
+        else:
+            config = input_config
+
+        fm = ForwardModel(config)
+
+        # Initialize workers
+        wargs = [
+            ray.put(obj)
+            for obj in (
+                config,
+                fm,
+                surface_class_str,
+                class_idx_pairs,
+                full_statevector,
+                full_idx_surface,
+                full_idx_RT,
+                rdn_file,
+                loc_file,
+                obs_file,
+                atm_file,
+                rfl_output,
+                unc_output,
+                rdns,
+                loglevel,
+                logfile,
+            )
+        ]
+        workers = ray.util.ActorPool([Worker.remote(*wargs) for _ in range(n_workers)])
+
+        line_breaks = np.linspace(
+            0,
+            rdns[0],
+            n_workers * config.implementation.task_inflation_factor,
+            dtype=int,
         )
-    ]
-    workers = ray.util.ActorPool([Worker.remote(*wargs) for _ in range(n_workers)])
 
-    line_breaks = np.linspace(
-        0, rdns[0], n_workers * config.implementation.task_inflation_factor, dtype=int
-    )
-    line_breaks = [
-        (line_breaks[n], line_breaks[n + 1]) for n in range(len(line_breaks) - 1)
-    ]
+        line_breaks = [
+            (line_breaks[n], line_breaks[n + 1]) for n in range(len(line_breaks) - 1)
+        ]
 
-    start_time = time.time()
-    res = list(workers.map_unordered(lambda a, b: a.run_lines.remote(b), line_breaks))
+        # run workers
+        start_time = time.time()
+        results = list(
+            workers.map_unordered(lambda a, b: a.run_chunks.remote(b), line_breaks)
+        )
     total_time = time.time() - start_time
+
     logging.info(
         f"Analytical line inversions complete.  {round(total_time,2)}s total, "
         f"{round(rdns[0]*rdns[1]/total_time,4)} spectra/s, "
-        f"{round(rdns[0]*rdns[1]/total_time/n_workers,4)} spectra/s/core"
+        f"{round(rdns[0]*rdns[1]/total_time/n_cores, 4)} spectra/s/core"
     )
 
 
@@ -216,22 +267,25 @@ def analytical_line(
 class Worker(object):
     def __init__(
         self,
-        config: configs.Config,
+        config: Config,
         fm: ForwardModel,
-        RT_state_file: str,
-        analytical_state_file: str,
-        analytical_state_unc_file: str,
+        surface_class_str: str,
+        class_idx_pairs: np.array,
+        full_statevector: list,
+        full_idx_surface: np.array,
+        full_idx_RT: np.array,
         rdn_file: str,
         loc_file: str,
         obs_file: str,
+        atm_file: str,
+        rfl_output: str,
+        unc_output: str,
+        output_shape: tuple,
         loglevel: str,
         logfile: str,
-        subs_state_file: str = None,
-        lbl_file: str = None,
     ):
         """
         Worker class to help run a subset of spectra.
-
         Args:
             fm: isofit forward_model
             loglevel: output logging level
@@ -243,30 +297,49 @@ class Worker(object):
             filename=logfile,
             datefmt="%Y-%m-%d,%H:%M:%S",
         )
-        self.config = config
-        self.fm = fm
-        self.iv = Inversion(self.config, self.fm)
 
-        self.rfl_bounds = np.min(fm.bounds, axis=0)[0], np.max(fm.bounds, axis=0)[1]
-        logging.debug(
-            f"Reflectance output will be bounded to the surface bounds: {self.rfl_bounds}"
+        # Persist config
+        self.config = config
+
+        # Persist forward model
+        self.fm = fm
+
+        # Persist surface class (or all)
+        self.surface_class_str = surface_class_str
+        self.class_idx_pairs = class_idx_pairs
+
+        # Will fail if env.data isn't set up
+        self.esd = IO.load_esd()
+
+        self.full_statevector = full_statevector
+        self.full_idx_surface = full_idx_surface
+        self.full_idx_RT = full_idx_RT
+
+        self.winidx = retrieve_winidx(self.config)
+
+        # input arrays
+        self.rdn = envi.open(envi_header(rdn_file)).open_memmap(interleave="bip")
+        self.loc = envi.open(envi_header(loc_file)).open_memmap(interleave="bip")
+        self.obs = envi.open(envi_header(obs_file)).open_memmap(interleave="bip")
+        self.rt_state = envi.open(envi_header(atm_file)).open_memmap(interleave="bip")
+
+        self.output_shape = output_shape
+
+        # output arrays
+        self.rfl = envi.open(envi_header(rfl_output)).open_memmap(
+            interleave="bip", writable=True
         )
+        self.unc = envi.open(envi_header(unc_output)).open_memmap(
+            interleave="bip", writable=True
+        )
+
+        # output paths
+        self.rfl_outpath = rfl_output
+        self.unc_outpath = unc_output
 
         self.completed_spectra = 0
         self.hash_table = OrderedDict()
         self.hash_size = 500
-        self.RT_state_file = RT_state_file
-        self.rdn_file = rdn_file
-        self.loc_file = loc_file
-        self.obs_file = obs_file
-        self.analytical_state_file = analytical_state_file
-        self.analytical_state_unc_file = analytical_state_unc_file
-        if subs_state_file is not None and lbl_file is not None:
-            self.subs_state_file = subs_state_file
-            self.lbl_file = lbl_file
-        else:
-            self.subs_state_file = None
-            self.lbl_file = None
 
         if config.input.radiometry_correction_file is not None:
             self.radiance_correction, wl = load_spectrum(
@@ -275,86 +348,140 @@ class Worker(object):
         else:
             self.radiance_correction = None
 
-    def run_lines(self, startstop: tuple) -> None:
+    def run_chunks(self, line_breaks: tuple, fill_value: float = -9999.0) -> None:
         """
         TODO: Description
         """
-        rdn = envi.open(envi_header(self.rdn_file)).open_memmap(interleave="bip")
-        loc = envi.open(envi_header(self.loc_file)).open_memmap(interleave="bip")
-        obs = envi.open(envi_header(self.obs_file)).open_memmap(interleave="bip")
-        rt_state = envi.open(envi_header(self.RT_state_file)).open_memmap(
-            interleave="bip"
+        # Unpack arguments
+        start_line, stop_line = line_breaks
+
+        # Set up outputs
+        output_state = self.rfl[start_line:stop_line, ...]
+        output_state_unc = self.unc[start_line:stop_line, ...]
+
+        # Find intersection between index_pairs and class_idx_pairs
+        index_pairs = self.class_idx_pairs[
+            np.where(
+                (self.class_idx_pairs[:, 0] >= start_line)
+                & (self.class_idx_pairs[:, 0] < stop_line)
+            )
+        ]
+
+        for r, c, *_ in index_pairs:
+            meas = self.rdn[r, c, :]
+
+            if self.radiance_correction is not None:
+                meas *= self.radiance_correction
+
+            if np.all(meas < 0):
+                continue
+
+            x_RT = self.rt_state[r, c, self.full_idx_RT - len(self.full_idx_surface)]
+            geom = Geometry(
+                obs=self.obs[r, c, :],
+                loc=self.loc[r, c, :],
+                esd=self.esd,
+            )
+
+            # Temporary: Force glint_model to be false until it is updated
+            # self.fm.RT.glint_model = False
+
+            states, unc = invert_analytical(
+                self.fm,
+                self.winidx,
+                meas,
+                geom,
+                x_RT,
+                1,
+                self.hash_table,
+                self.hash_size,
+            )
+
+            state_est = states[-1]
+            full_state_est = match_statevector(
+                state_est, self.full_statevector, self.fm.statevec
+            )
+            output_state[r - start_line, c, :] = full_state_est[self.full_idx_surface]
+
+            full_unc_est = match_statevector(
+                unc, self.full_statevector, self.fm.statevec
+            )
+            output_state_unc[r - start_line, c, :] = full_unc_est[self.full_idx_surface]
+
+        # Only apply rfl check. Bounds vary between glint and rfl terms
+        output_state = output_state[..., self.full_idx_surface]
+
+        rfl_bounds = (
+            np.min(self.fm.bounds, axis=0)[0],
+            np.max(self.fm.bounds, axis=0)[1],
         )
 
-        start_line, stop_line = startstop
-        output_state = (
-            np.zeros(
-                (stop_line - start_line, rt_state.shape[1], len(self.fm.idx_surface))
-            )
-            - 9999
-        )
-        output_state_unc = (
-            np.zeros(
-                (stop_line - start_line, rt_state.shape[1], len(self.fm.idx_surface))
-            )
-            - 9999
+        logging.debug(
+            f"Reflectance output will be bounded to the surface bounds: {rfl_bounds}"
         )
 
-        esd = IO.load_esd()
+        mask = np.logical_and.reduce(
+            [
+                output_state < rfl_bounds[0],
+                output_state > rfl_bounds[1],
+                output_state != -9999,
+                output_state != -0.01,
+            ]
+        )
+        output_state[mask] = 0
 
-        for r in range(start_line, stop_line):
-            for c in range(output_state.shape[1]):
-                meas = rdn[r, c, :]
-                if self.radiance_correction is not None:
-                    # sc - Creating copy to avoid the "output array read only" error
-                    #      when applying correction factors
-                    meas = np.copy(meas)
-                    meas *= self.radiance_correction
-                if np.all(meas < 0):
-                    continue
-                x_RT = rt_state[r, c, self.fm.idx_RT - len(self.fm.idx_surface)]
-                geom = Geometry(obs=obs[r, c, :], loc=loc[r, c, :], esd=esd)
+        logging.info(
+            f"Analytical line writing lines: {start_line} to {stop_line}. "
+            f"Surface: {self.surface_class_str}"
+        )
 
-                states, unc = invert_analytical(
-                    self.iv.fm,
-                    self.iv.winidx,
-                    meas,
-                    geom,
-                    x_RT,
-                    1,
-                    self.hash_table,
-                    self.hash_size,
-                )
+        # Output surface rfl
+        write_bil_chunk(
+            np.swapaxes(output_state, 1, 2),
+            self.rfl_outpath,
+            start_line,
+            (self.output_shape[0], self.output_shape[1], len(self.full_idx_surface)),
+        )
 
-                output_state[r - start_line, c, :] = states[-1][self.fm.idx_surface]
+        # Save surface state uncertainty
+        write_bil_chunk(
+            np.swapaxes(output_state_unc, 1, 2),
+            self.unc_outpath,
+            start_line,
+            (self.output_shape[0], self.output_shape[1], len(self.full_idx_surface)),
+        )
 
-                output_state_unc[r - start_line, c, :] = unc[self.fm.idx_surface]
 
-            state = output_state[r - start_line, ...]
-            mask = np.logical_and.reduce(
-                [
-                    state < self.rfl_bounds[0],
-                    state > self.rfl_bounds[1],
-                    state != -9999,
-                    state != -0.01,
-                ]
-            )
-            state[mask] = 0
+def retrieve_winidx(config):
+    wl_init, fwhm_init = load_wavelen(config.forward_model.instrument.wavelength_file)
+    windows = config.implementation.inversion.windows
 
-            logging.info(f"Analytical line writing line {r}")
+    winidx = np.array((), dtype=int)
+    for lo, hi in windows:
+        idx = np.where(np.logical_and(wl_init > lo, wl_init < hi))[0]
+        winidx = np.concatenate((winidx, idx), axis=0)
 
-            write_bil_chunk(
-                state.T,
-                self.analytical_state_file,
-                r,
-                (rdn.shape[0], rdn.shape[1], len(self.fm.idx_surface)),
-            )
-            write_bil_chunk(
-                output_state_unc[r - start_line, ...].T,
-                self.analytical_state_unc_file,
-                r,
-                (rdn.shape[0], rdn.shape[1], len(self.fm.idx_surface)),
-            )
+    return winidx
+
+
+def construct_output(output_metadata, outpath, out_shape, **kwargs):
+    """
+    Construct output file by updating metadata and creating object
+    """
+    for key, value in kwargs.items():
+        output_metadata[key] = value
+    if "emit pge input files" in list(output_metadata.keys()):
+        del output_metadata["emit pge input files"]
+
+    out_file = envi.create_image(
+        envi_header(outpath), ext="", metadata=output_metadata, force=True
+    )
+
+    out_mm = out_file.open_memmap(interleave="source", writable=True)
+    out_mm[:, :] = np.zeros(out_shape, dtype=np.float32)
+    del out_file
+
+    return outpath
 
 
 @click.command(name="analytical_line")

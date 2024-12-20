@@ -180,7 +180,7 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         """str: 6s-only earth-to-sun distance file."""
 
         self._irradiance_file_type = str
-        self.irradiance_file = None
+        self.irradiance_file = ""
         """str: 6s-only irradiance file."""
 
         # MODTRAN and 6S
