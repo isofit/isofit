@@ -42,15 +42,35 @@ jobs:
         with:
           path: extras
           key: cache-extras-test
+
+  download:
+    needs: cache
+    if: ${{ jobs.cache.steps.cache-extras.outputs.cache-hit != 'true' }}
+    runs-on: ubuntu-latest
+      - uses: actions/checkout@v3
+
+      - name: Print concurrency group
+        run: echo '${{ github.workflow }}-${{ github.ref }}'
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install ISOFIT
+        shell: bash
+        run: |
+          python3 -m pip install --editable ".[test]"
+
       - name: Download extras
-        if: ${{ steps.cache-extras.outputs.cache-hit != 'true' }}
         shell: bash
         run: |
           isofit -b extras download all
           isofit build
 
   test:
-    needs: cache
+    needs: [cache, download]
 
     runs-on: ubuntu-latest
     strategy:
