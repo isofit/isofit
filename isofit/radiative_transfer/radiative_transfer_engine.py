@@ -23,6 +23,7 @@ from __future__ import annotations
 import logging
 import os
 import time
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Callable
 
@@ -159,10 +160,10 @@ class RadiativeTransferEngine:
             # sc - Bandaid for code to know whether to use gaussian assumptions
             #      Currently, if using tsis, then OCI, which is non-gaussian
             srf_file = None
-            if os.path.basename(engine_config.irradiance_file) == "tsis_f0_0p1.txt":
-                srf_file = (
-                    os.path.split(engine_config.irradiance_file)[0] + "/pace_oci_rsr.nc"
-                )
+            irr_file = Path(engine_config.irradiance_file)
+            if irr_file.stem == "tsis_f0_0p1":
+                srf_file = irr_file.parent / "pace_oci_rsr.nc"
+
             # If necessary, resample prebuilt LUT to desired instrument spectral response
             if (
                 not len(wl) == len(self.lut.wl)
