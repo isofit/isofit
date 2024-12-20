@@ -39,7 +39,7 @@ def predict(emulator, sixs, resample, scaler, output):
 @click.option(
     "-p", "--predicts", help="Output sRTMnet predicts", default="sRTMnet.predicts.nc"
 )
-def cli_6s_to_srtmnet(sixs, emulator, aux, output, predicts):
+def cli(sixs, emulator, aux, output, predicts):
     """\
     Converts 6S LUT outputs to sRTMnet input
     """
