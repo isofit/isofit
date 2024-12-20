@@ -2,11 +2,11 @@
 Downloads the extra ISOFIT plotting utilities from the repository https://github.com/isofit/isofit-plots
 """
 
+import importlib.metadata
 import subprocess
 import sys
 from pathlib import Path
 
-import toml
 from packaging.version import Version
 
 from isofit.data import env
@@ -133,7 +133,7 @@ def checkForUpdate(path=None, tag="latest", debug=print, error=print, **_):
     debug(f"Checking for updates for plots on path: {path}")
 
     latest = Version(release_metadata("isofit", "isofit-plots", "latest")["tag_name"])
-    current = Version(toml.load(Path(path) / "pyproject.toml")["project"]["version"])
+    current = Version(importlib.metadata.version("isoplots"))
 
     if current < latest:
         error(
