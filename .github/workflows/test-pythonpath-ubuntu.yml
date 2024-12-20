@@ -70,7 +70,7 @@ jobs:
         id: cache-extras
         uses: actions/cache@v3
         with:
-          path: extras
+          path: ~/.isofit
           key: cache-extras
           fail-on-cache-miss: true
 
