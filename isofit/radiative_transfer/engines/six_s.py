@@ -238,6 +238,9 @@ class SixSRT(RadiativeTransferEngine):
         if "observer_zenith" in vals:
             vals["viewzen"] = vals["observer_zenith"]
 
+        if "solar_zenith" in vals:
+            vals["solzen"] = vals["solar_zenith"]
+
         if "relative_azimuth" in vals:
             vals["solaz"] = np.minimum(
                 vals["viewaz"] + vals["relative_azimuth"],

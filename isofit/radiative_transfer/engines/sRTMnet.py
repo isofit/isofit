@@ -49,8 +49,12 @@ class tfLikeModel:
         biases = []
         for _n, n in enumerate(self.model["model_weights"].keys()):
             if "dense" in n:
-                weights.append(np.array(self.model["model_weights"][n][n]["kernel:0"]))
-                biases.append(np.array(self.model["model_weights"][n][n]["bias:0"]))
+                if 'kernel:0' in self.model["model_weights"][n][n]:
+                    weights.append(np.array(self.model["model_weights"][n][n]["kernel:0"]))
+                    biases.append(np.array(self.model["model_weights"][n][n]["bias:0"]))
+                else:
+                    weights.append(np.array(self.model["model_weights"][n][n]["kernel"]))
+                    biases.append(np.array(self.model["model_weights"][n][n]["bias"]))
 
         self.weights = weights
         self.biases = biases
