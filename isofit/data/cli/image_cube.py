@@ -12,20 +12,20 @@ from isofit.data.download import cli, download_file, prepare_output, unzip
 URL = "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/{size}_chunk.zip"
 
 
-def download(output=None, size="both"):
+def download(path=None, size="both"):
     """
     Downloads the extra ISOFIT data files from https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/.
 
     Parameters
     ----------
-    output : str | None
+    path : str | None
         Path to output as. If None, defaults to the ini path.
     size : "both" | "small" | "medium"
         Which chunk size to pull
     """
     if size == "both":
-        download(output, "small")
-        download(output, "medium")
+        download(path, "small")
+        download(path, "medium")
         return
 
     if size not in ("small", "medium"):
@@ -35,7 +35,7 @@ def download(output=None, size="both"):
 
     print(f"Downloading ISOFIT image cube data: {size}")
 
-    output = Path(output or env.imagecube) / size
+    output = Path(path or env.imagecube) / size
     output = prepare_output(output, None)
     if not output:
         return
@@ -112,7 +112,7 @@ def update(check=False, **kwargs):
 
 
 @cli.download.command(name="imagecube")
-@cli.output(
+@cli.path(
     help="Root directory to download image cube data files to, ie. [path]/imagecube"
 )
 @click.option(

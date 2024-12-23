@@ -141,7 +141,7 @@ def checkForUpdate(path=None, tag="latest", debug=print, error=print, **_):
         Print function to use for debug messages, eg. logging.debug
     error : function, default=print
         Print function to use for error messages, eg. logging.error
-    _ : dict
+    **_ : dict
         Ignores unused params that may be used by other validate functions. This is to
         maintain compatibility with other functions
 

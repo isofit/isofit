@@ -77,7 +77,7 @@ def update(check=False, **kwargs):
 
 
 # @cli.download.command(name="modtran")
-# @cli.output(help="Root directory to download modtran files to, ie. [path]/modtran")
+# @cli.path(help="Root directory to download modtran files to, ie. [path]/modtran")
 # @cli.tag
 def download_cli(**kwargs):
     """\
