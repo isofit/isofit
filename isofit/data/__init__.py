@@ -9,7 +9,7 @@ import isofit.data.cli
 
 
 @click.command(name="path")
-@click.argument("product", type=click.Choice(env.dirs))
+@click.argument("product", type=click.Choice(env._dirs))
 def cli_env_path(product):
     """\
     Prints the path to a specific product

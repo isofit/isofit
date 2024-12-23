@@ -13,7 +13,7 @@ def test_getattr_existing_key():
 
 def test_changePath():
     expected = {}
-    for key in env.dirs:
+    for key in env._dirs:
         expected[key] = (val := f"/test/{key}")
         env.changePath(key, val)
 
@@ -23,7 +23,7 @@ def test_changePath():
 @patch("builtins.open")
 def test_loadEnv_file_exists(mock_open):
     path = "test.ini"
-    data = {key: f"/test/{key}" for key in env.dirs}
+    data = {key: f"/test/{key}" for key in env._dirs}
 
     with patch("pathlib.Path.exists", return_value=True), patch.object(
         env.config, "read", return_value=None
