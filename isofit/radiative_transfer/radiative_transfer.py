@@ -330,14 +330,19 @@ class RadiativeTransfer:
         Returns:
             interpolated radiances along all optical paths:
             bi-directional            (downward direct * upward direct)
-            hemispherical-directional (downward diffuse * upward direct)
+            hemispherical-directional ((downward direct + diffuse) * upward direct)
             directional-hemispherical (downward direct * upward diffuse)
-            bi-hemispherical          (downward diffuse * upward diffuse)
+            bi-hemispherical          ((downward direct + diffuse) * upward diffuse)
         """
         if any(
             [type(r[key]) != np.ndarray for key in self.rt_engines[0].coupling_terms]
         ):
-            self.L_coupled = [r["transm_down_dir"], r["transm_down_dif"], 0, 0]
+            self.L_coupled = [
+                r["transm_down_dir"],
+                r["transm_down_dir"] + r["transm_down_dif"],
+                0,
+                0,
+            ]
         else:
             for key in self.rt_engines[0].coupling_terms:
                 self.L_coupled.append(

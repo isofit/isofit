@@ -434,10 +434,10 @@ def couple(ds, inplace=True):
         Dataset with coupled terms
     """
     terms = {
-        "bi-direct": ("transm_down_dir", "transm_up_dir"),
-        "hemi-direct": ("transm_down_dif", "transm_up_dir"),
-        "direct-hemi": ("transm_down_dir", "transm_up_dif"),
-        "bi-hemi": ("transm_down_dif", "transm_up_dif"),
+        "bi-direct": ("transm_down_dir", "null", "transm_up_dir"),
+        "hemi-direct": ("transm_down_dir", "transm_down_dif", "transm_up_dir"),
+        "direct-hemi": ("transm_down_dir", "null", "transm_up_dif"),
+        "bi-hemi": ("transm_down_dir", "transm_down_dif", "transm_up_dif"),
     }
 
     # Detect if coupling needs to occur first
@@ -455,11 +455,14 @@ def couple(ds, inplace=True):
         if not inplace:
             ds = ds.copy()
 
-        for term, (key1, key2) in terms.items():
+        for term, (key1, key2, key3) in terms.items():
             try:
-                ds[term] = ds[key1] * ds[key2]
+                ds[term] = (ds[key1] + ds[key2]) * ds[key3]
             except KeyError:
-                ds[term] = 0
+                try:
+                    ds[term] = ds[key1] * ds[key3]
+                except KeyError:
+                    ds[term] = 0
 
     return ds
 
