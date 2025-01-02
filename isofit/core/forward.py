@@ -288,7 +288,7 @@ class ForwardModel:
             x_instrument, self.RT.wl, drdn_dsurface.T
         ).T
         dmeas_dRT = self.instrument.sample(x_instrument, self.RT.wl, drdn_dRT.T).T
-        rdn_hi = self.calc_rdn(x, geom, rfl_dir_hi, rfl_dif_hi, Ls=Ls)
+        rdn_hi = self.calc_rdn(x, geom, rfl_dir, rfl_dif, Ls=Ls)
         dmeas_dinstrument = self.instrument.dmeas_dinstrument(
             x_instrument, self.RT.wl, rdn_hi
         )
@@ -317,7 +317,7 @@ class ForwardModel:
         rfl_dif_hi = self.upsample(self.surface.wl, rfl[1])
         Ls = self.surface.calc_Ls(x_surface, geom)
         Ls_hi = self.upsample(self.surface.wl, Ls)
-        rdn_hi = self.calc_rdn(x, geom, rfl_dir_hi, rfl_dif_hi, Ls=Ls_hi)
+        rdn_hi = self.calc_rdn(x, geom, rfl[0], rfl[1], Ls=Ls)
 
         drdn_dRTb = self.RT.drdn_dRTb(x_RT, rfl_dir_hi, rfl_dif_hi, Ls_hi, geom)
         dmeas_dRTb = self.instrument.sample(x_instrument, self.RT.wl, drdn_dRTb.T).T
