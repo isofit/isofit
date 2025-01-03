@@ -335,7 +335,10 @@ class RadiativeTransfer:
             bi-hemispherical          ((downward direct + diffuse) * upward diffuse)
         """
         if any(
-            [type(r[key]) != np.ndarray for key in self.rt_engines[0].coupling_terms]
+            [
+                type(r[key]) != np.ndarray or len(r[key]) == 1
+                for key in self.rt_engines[0].coupling_terms
+            ]
         ):
             self.L_coupled = [
                 r["transm_down_dir"],
