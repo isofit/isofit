@@ -12,7 +12,6 @@ import numpy as np
 import xarray as xr
 from netCDF4 import Dataset
 
-__file__ = "abc"
 Logger = logging.getLogger(__file__)
 
 
