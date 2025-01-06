@@ -23,6 +23,7 @@ from __future__ import annotations
 import logging
 import os
 import time
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Callable
 
@@ -127,7 +128,7 @@ class RadiativeTransferEngine:
 
         # ToDo: move setting of multipart rfl values to config
         if self.multipart_transmittance:
-            self.test_rfls = [0.1, 0.5]
+            self.test_rfls = [0.0, 0.1, 0.5]
 
         # Extract from LUT file if available, otherwise initialize it
         if exists:
@@ -156,32 +157,44 @@ class RadiativeTransferEngine:
                     "Unknown RT mode provided in LUT file. Please use either 'transm' or 'rdn'."
                 )
 
+            # sc - Bandaid for code to know whether to use gaussian assumptions
+            #      Currently, if using tsis, then OCI, which is non-gaussian
+            srf_file = None
+            irr_file = Path(engine_config.irradiance_file)
+            if irr_file.stem == "tsis_f0_0p1":
+                srf_file = irr_file.parent / "pace_oci_rsr.nc"
+
             # If necessary, resample prebuilt LUT to desired instrument spectral response
-            if not len(wl) == len(self.lut.wl) or not all(wl == self.lut.wl):
+            if (
+                not len(wl) == len(self.lut.wl)
+                or not all(wl == self.lut.wl)
+                or (srf_file is not None)
+            ):
                 # Discover variables along the wl dim
                 keys = {key for key in self.lut if "wl" in self.lut[key].dims} - {
                     "fwhm",
                 }
-
                 # Apply resampling to these keys
                 conv = xr.apply_ufunc(
                     common.resample_spectrum,
                     self.lut[keys],
-                    kwargs={"wl": self.lut.wl, "wl2": wl, "fwhm2": fwhm},
+                    kwargs={
+                        "wl": self.lut.wl,
+                        "wl2": wl,
+                        "fwhm2": fwhm,
+                        "srf_file": srf_file,
+                    },  # Use srf_file if OCI
                     input_core_dims=[["wl"]],  # Only operate on keys with this dim
                     exclude_dims=set(["wl"]),  # Allows changing the wl size
                     output_core_dims=[["wl"]],  # Adds wl to the expected output dims
                     keep_attrs="override",
                     # on_missing_core_dim = 'copy' # Newer versions of xarray support this
                 )
-
                 # If not on newer versions, add keys not on the wl dim
                 for key in list(self.lut.drop_dims("wl")):
                     conv[key] = self.lut[key]
-
                 # Override the fwhm
                 conv["fwhm"] = ("wl", fwhm)
-
                 # Exchange the lut with the resampled version
                 self.lut = conv
         else:

@@ -49,8 +49,16 @@ class tfLikeModel:
         biases = []
         for _n, n in enumerate(self.model["model_weights"].keys()):
             if "dense" in n:
-                weights.append(np.array(self.model["model_weights"][n][n]["kernel:0"]))
-                biases.append(np.array(self.model["model_weights"][n][n]["bias:0"]))
+                if "kernel:0" in self.model["model_weights"][n][n]:
+                    weights.append(
+                        np.array(self.model["model_weights"][n][n]["kernel:0"])
+                    )
+                    biases.append(np.array(self.model["model_weights"][n][n]["bias:0"]))
+                else:
+                    weights.append(
+                        np.array(self.model["model_weights"][n][n]["kernel"])
+                    )
+                    biases.append(np.array(self.model["model_weights"][n][n]["bias"]))
 
         self.weights = weights
         self.biases = biases
@@ -177,7 +185,15 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         luts.saveDataset(self.predict_path, predicts)
 
         # Convert our irradiance to date 0 then back to current date
-        sol_irr = aux["solar_irr"]
+        # sc - If statement to make sure tsis solar model is used if supplied
+        if os.path.basename(config.irradiance_file) == "tsis_f0_0p1.txt":
+            # Load coarser TSIS model to match emulator expectations
+            _, sol_irr = np.loadtxt(
+                os.path.split(config.irradiance_file)[0] + "/tsis_f0_0p5.txt"
+            ).T
+            sol_irr = sol_irr / 10  # Convert to uW cm-2 sr-1 nm-1
+        else:
+            sol_irr = aux["solar_irr"]  # Otherwise, use sRTMnet f0
         irr_ref = sim.esd[200, 1]  # Irradiance factor
         irr_cur = sim.esd[sim.day_of_year - 1, 1]  # Factor for current date
         sol_irr = sol_irr * irr_ref**2 / irr_cur**2

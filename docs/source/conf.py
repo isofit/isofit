@@ -28,14 +28,17 @@ author = ''' D. R. Thompson, P. G. Brodrick, W. Olson Duvall, others'''
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc',
     'sphinx.ext.coverage',
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
     'sphinx.ext.todo',
     'sphinx.ext.intersphinx',
-    'sphinx_autodoc_typehints'
+    'autoapi.extension',
+    'myst_parser'
 ]
+
+autoapi_dirs = ['../../isofit']
+autoapi_ignore = ['**/templates/*']
 
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
@@ -66,7 +69,7 @@ html_theme = 'sphinx_rtd_theme'
 html_static_path = []
 
 # make sure things will work with readthedocs
-autodoc_mock_imports = ["ray", "osgeo"]
+autodoc_mock_imports = ['ray']
 master_doc = 'index'
 
 autodoc_member_order = 'bysource'

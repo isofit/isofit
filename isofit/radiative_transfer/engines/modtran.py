@@ -177,7 +177,7 @@ class ModtranRT(RadiativeTransferEngine):
         chn = parts[0]
         if len(parts) > 1:
             Logger.debug("Using two albedo method")
-            chn = self.two_albedo_method(*parts, coszen, *self.test_rfls)
+            chn = self.two_albedo_method(*parts, coszen, *self.test_rfls[1:])
 
         return chn
 
@@ -307,7 +307,7 @@ class ModtranRT(RadiativeTransferEngine):
         vals["FILTNM"] = os.path.normpath(self.filtpath)
 
         # Translate to the MODTRAN OBSZEN convention, assumes we are downlooking
-        if vals["OBSZEN"] < 90:
+        if "OBSZEN" in vals and vals.get("OBSZEN") < 90:
             vals["OBSZEN"] = 180 - abs(vals["OBSZEN"])
 
         modtran_config_str, modtran_config = self.modtran_driver(dict(vals))
@@ -320,12 +320,12 @@ class ModtranRT(RadiativeTransferEngine):
             Logger.warning(f"File already exists, skipping execution: {filename_base}")
             return
 
-        if self.engine_config.rte_configure_and_exit:
-            return
-
         # write_config_file
         with open(infilepath, "w") as f:
             f.write(modtran_config_str)
+
+        if self.engine_config.rte_configure_and_exit:
+            return
 
         # Specify location of the proper MODTRAN 6.0 binary for this OS
         xdir = {"linux": "linux", "darwin": "macos", "windows": "windows"}

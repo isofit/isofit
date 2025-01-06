@@ -20,12 +20,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Python 3.12 cannot be tested until Ray provides support:
-        #   https://github.com/ray-project/ray/issues/40211
         # This tests some very basic and long-lived Python behavior, so it is
         # likely sufficient to test only on a single Python version to avoid
         # GitHub worker contention.
-        python-version: ["3.11"]
+        python-version: ["3.12"]
         pytest-flags: ["-m unmarked", "-m slow"]
 
     steps:
@@ -61,15 +59,31 @@ jobs:
           # of 'isofit' to ensure we are testing against '$PYTHONPATH'.
           python3 -m pip install ".[test]"
 
+      - name: Cached Extras
+        id: cache-extras
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-extras
+        with:
+          path: extras
+          key: ${{ env.cache-name }}
+
+      - name: Download extras
+        if: ${{ steps.cache-extras.outputs.cache-hit != true }}
+        shell: bash
+        run: |
+          isofit -b extras download all
+          isofit build
+
+      - name: Isolate ISOFIT
+        shell: bash
+        run: |
           # Uninstall 'isofit', leaving its dependencies.
           python3 -m pip uninstall --yes isofit
 
-          # Move 'isofit' and copy its data directories into a new directory to ensure it is not just
-          # inherently available.
+          # Move 'isofit' into a new directory to ensure it is not just inherently available.
           mkdir isolation/
           mv isofit/ isolation/
-          cp -r examples isolation/
-          cp -r data isolation/
 
           # Check to see if 'isofit' is still installed. It should not be.
           # Note that this job is implicitly configured with 'set -e', which
@@ -92,53 +106,7 @@ jobs:
               exit 1
           fi
 
-          # Again, do NOT 'export PYTHONPATH=...' here. See note at top of
-          # section.
-
-      - name: Cache 6S
-        id: cache-6s-v21
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-6s-v21
-        with:
-          path: 6sv-2.1/
-          key: ${{ env.cache-name }}
-
-      - name: Cache sRTMnet
-        id: cache-sRTMnet-v120
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-sRTMnet-v120
-        with:
-          path: sRTMnet_v120/
-          key: ${{ env.cache-name }}
-
-      - name: Cache Hypertrace Data
-        id: cache-hypertrace-data
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-hypertrace-data
-        with:
-          path: hypertrace-data/
-          key: ${{ env.cache-name }}
-
-      - name: Download and build 6S v2.1
-        if: ${{ steps.cache-6S-v21.outputs.cache-hit != true }}
-        shell: bash
-        run: |
-          ./scripts/download-and-build-6s.sh
-
-      - name: Install sRTMnet
-        if: ${{ steps.cache-sRTMnet-v120.outputs.cache-hit != true }}
-        shell: bash
-        run: |
-          ./scripts/download-and-unpack-sRTMnet.sh
-
-      - name: Download and unpack Hypertrace data
-        if: ${{ steps.cache-hypertrace-data.outputs.cache-hit != true }}
-        shell: bash
-        run: |
-          ./scripts/download-and-unpack-hypertrace-data.sh
+          # Again, do NOT 'export PYTHONPATH=...' here. See note at top of section.
 
       - name: Execute tests
         shell: bash
@@ -148,6 +116,4 @@ jobs:
           # We define 'testpaths' in 'pytest.ini', however that path is no
           # longer valid. In this case 'pytest' searches for tests by default,
           # but we know where they are, so explicitly point to the new location.
-          PYTHONPATH="isolation/:${PYTHONPATH}" ./scripts/run-tests.sh \
-            isolation/isofit/test/ \
-            ${{ matrix.pytest-flags }}
+          PYTHONPATH="isolation/:${PYTHONPATH}" python3 -m pytest -s isolation/isofit/test/ "${{ matrix.pytest-flags }}"

@@ -15,7 +15,7 @@ import isofit
 
 # CLI imports
 from isofit.core.isofit import cli_run
-from isofit.data import env
+from isofit.data import cli_env_path, env
 from isofit.data.build_examples import cli_build
 from isofit.data.download import cli as dli
 from isofit.utils.add_HRRR_profiles_to_modtran_config import cli_HRRR_to_modtran
@@ -24,6 +24,7 @@ from isofit.utils.apply_oe import cli_apply_oe
 from isofit.utils.convert_6s_to_srtmnet import cli_6s_to_srtmnet
 from isofit.utils.empirical_line import cli_empirical_line
 from isofit.utils.ewt_from_reflectance import cli_ewt
+from isofit.utils.reconstruct import cli_reconstruct_subs
 from isofit.utils.solar_position import cli_sun
 from isofit.utils.surface_model import cli_surface_model
 
@@ -72,12 +73,14 @@ cli.add_command(cli_analytical_line)
 cli.add_command(cli_ewt)
 cli.add_command(cli_apply_oe)
 cli.add_command(cli_sun)
+cli.add_command(cli_env_path)
 cli.add_command(dli.download)
 cli.add_command(dli.validate)
 cli.add_command(cli_build)
 cli.add_command(cli_6s_to_srtmnet)
 cli.add_command(cli_surface_model)
 cli.add_command(cli_empirical_line)
+cli.add_command(cli_reconstruct_subs)
 
 
 if __name__ == "__main__":

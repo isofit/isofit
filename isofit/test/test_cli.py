@@ -2,18 +2,16 @@
 These tests are to ensure any changes to the CLI will be backwards compatible.
 """
 
-import io
 import os
 import shutil
-import zipfile
+from pathlib import Path
 from time import sleep
 
 import pytest
 import ray
-import requests
 from click.testing import CliRunner
 
-from isofit.__main__ import cli
+from isofit.__main__ import cli, env
 from isofit.utils import surface_model
 
 # Mark the entire file as containing slow tests
@@ -21,46 +19,39 @@ pytestmark = pytest.mark.slow
 
 
 # Environment variables
-EMULATOR_PATH = os.environ.get("EMULATOR_PATH", "")
 CORES = os.cpu_count()
 
 
 @pytest.fixture(scope="session")
-def cube_example(tmp_path_factory):
+def cwd(tmp_path_factory):
     """
-    Downloads the medium cube example's data
+    Path to the working cube example
     """
-    url = "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/test_data_rev.zip"
-    path = tmp_path_factory.mktemp("cube_example")
-
-    r = requests.get(url)
-    z = zipfile.ZipFile(io.BytesIO(r.content))
-    z.extractall(path)
-
-    return path
+    return Path(env.imagecube) / "medium"
 
 
 @pytest.fixture(scope="session")
-def surface(cube_example):
+def surface(cwd):
     """
     Generates the surface.mat file
     """
-    outp = str(cube_example / "surface.mat")
+    outp = str(cwd / "surface.mat")
 
     # Generate the surface.mat using the image_cube example config
     # fmt: off
     surface_model(
-        config_path="examples/20171108_Pasadena/configs/ang20171108t184227_surface.json",
-        wavelength_path="examples/20171108_Pasadena/remote/20170320_ang20170228_wavelength_fit.txt",
+        config_path=env.path("examples", "20171108_Pasadena", "configs", "ang20171108t184227_surface.json"),
+        wavelength_path=env.path("examples", "20171108_Pasadena", "remote", "20170320_ang20170228_wavelength_fit.txt"),
         output_path=outp
     )
     # fmt: on
     # Return the path to the mat file
+
     return outp
 
 
 @pytest.fixture()
-def files(cube_example):
+def files(cwd):
     """
     Common data files to be used by multiple tests. The return is a list in the
     order: [
@@ -73,13 +64,13 @@ def files(cube_example):
     As of 07/24/2023 these are from the medium cube example.
     """
     # Flush the output dir if it already exists from a previous test case
-    output = cube_example / "output"
+    output = cwd / "output"
     shutil.rmtree(output, ignore_errors=True)
 
     return [
-        str(cube_example / "medium_chunk/ang20170323t202244_rdn_7k-8k"),
-        str(cube_example / "medium_chunk/ang20170323t202244_loc_7k-8k"),
-        str(cube_example / "medium_chunk/ang20170323t202244_obs_7k-8k"),
+        str(cwd / "ang20170323t202244_rdn_7k-8k"),
+        str(cwd / "ang20170323t202244_loc_7k-8k"),
+        str(cwd / "ang20170323t202244_obs_7k-8k"),
         str(output),
     ]
 
@@ -87,9 +78,9 @@ def files(cube_example):
 # fmt: off
 @pytest.mark.slow
 @pytest.mark.parametrize("args", [
-    ["ang", "--presolve", "--emulator_base", EMULATOR_PATH, "--n_cores", CORES, "--analytical_line", "-nn", 10, "-nn", 50,],
-    ["ang", "--presolve", "--emulator_base", EMULATOR_PATH, "--n_cores", CORES, "--analytical_line", "-nn", 10, "-nn", 50, "-nn", 10, "--pressure_elevation",],
-    ["ang", "--presolve", "--emulator_base", EMULATOR_PATH, "--n_cores", CORES, "--empirical_line", "--surface_category", "additive_glint_surface",],
+    ["ang", "--presolve", "--emulator_base", "[placeholder]", "--n_cores", CORES, "--analytical_line", "-nn", 10, "-nn", 50,],
+    ["ang", "--presolve", "--emulator_base", "[placeholder]", "--n_cores", CORES, "--analytical_line", "-nn", 10, "-nn", 50, "-nn", 10, "--pressure_elevation",],
+    ["ang", "--presolve", "--emulator_base", "[placeholder]", "--n_cores", CORES, "--empirical_line", "--surface_category", "additive_glint_surface",],
 ])
 # fmt: on
 def test_apply_oe(files, args, surface):
@@ -99,6 +90,7 @@ def test_apply_oe(files, args, surface):
     ray.shutdown()
     sleep(120)
 
+    args[3] = env.path("srtmnet", "sRTMnet_v120.h5")
     arguments = ["apply_oe", *files, *args, "--surface_path", surface]
 
     # Passing non-string arguments to click is not allowed.
