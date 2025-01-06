@@ -240,28 +240,36 @@ class RadiativeTransfer:
 
         return ret
 
-    def rdn_to_rho(self, rdn):
+    def rdn_to_rho(self, rdn, solar_irr=None):
         """Function to convert a radiance vector to transmittance.
 
         Args:
-            rdn: input data vector in radiance
+            rdn:       input data vector in radiance
+            solar_irr: solar irradiance vector (optional)
 
         Returns:
             Data vector converted to transmittance
         """
-        rho = rdn * np.pi / (self.solar_irr * self.coszen)
+        try:
+            rho = rdn * np.pi / (solar_irr * self.coszen)
+        except TypeError:
+            rho = rdn * np.pi / (self.solar_irr * self.coszen)
         return rho
 
-    def rho_to_rdn(self, rho):
+    def rho_to_rdn(self, rho, solar_irr=None):
         """Function to convert a transmittance vector to radiance.
 
         Args:
-            rho: input data vector in transmittance
+            rho:       input data vector in transmittance
+            solar_irr: solar irradiance vector (optional)
 
         Returns:
             Data vector converted to radiance
         """
-        rdn = (self.solar_irr * self.coszen) / np.pi * rho
+        try:
+            rdn = (solar_irr * self.coszen) / np.pi * rho
+        except TypeError:
+            rdn = (self.solar_irr * self.coszen) / np.pi * rho
         return rdn
 
     def get_L_atm(self, x_RT: np.array, geom: Geometry) -> np.array:
