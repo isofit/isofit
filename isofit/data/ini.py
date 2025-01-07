@@ -12,23 +12,14 @@ Logger = logging.getLogger(__file__)
 
 
 class Ini:
-    base: Path = Path.home() / ".isofit/"
+    # Default directories to expect
     _dirs: List[str] = ["data", "examples", "imagecube", "srtmnet", "sixs", "modtran"]
+
+    # Additional keys with default values
     _keys: Dict[str, str] = {"srtmnet.file": "", "srtmnet.aux": ""}
 
-    config: ConfigParser = ConfigParser()
-    section: str = "DEFAULT"
-
     def __init__(self):
-        self.ini = self.base / "isofit.ini"
-
-        # Initialize ConfigParser with default values
-        for key in self._dirs:
-            self.changePath(key, self.base / key)
-
-        for key, value in self._keys.items():
-            self.changeKey(key, value)
-
+        self.reset()
         self.load()
 
     def __getattr__(self, key: str) -> Optional[str]:
@@ -66,6 +57,11 @@ class Ini:
     def __iter__(self) -> Iterable:
         return iter(self.config[self.section])
 
+    def __repr__(self):
+        return f"[{self.section}]\n" + "\n".join(
+            [f"{key} = {value}" for key, value in self.items()]
+        )
+
     def keys(self) -> Iterable[str]:
         return iter(self.config[self.section])
 
@@ -102,6 +98,18 @@ class Ini:
             The new value to associate with the key.
         """
         self.config[self.section][key] = str(value)
+
+    def changeKeys(self, keys: dict):
+        """
+        Changes multiple keys in one operation.
+
+        Parameters
+        ----------
+        keys : dict
+            Keys to change to values
+        """
+        for key, value in keys.items():
+            self.changeKey(key, value)
 
     def changeSection(self, section: str) -> None:
         """
@@ -196,7 +204,7 @@ class Ini:
             except:
                 Logger.exception(f"Failed to dump ini to file: {self.ini}")
 
-    def path(self, dir: str, *path: list, key=None) -> Path:
+    def path(self, dir: str, *path: List[str], key: str = None) -> Path:
         """
         Retrieves a path under one of the env directories and validates the path exists.
 
@@ -208,7 +216,7 @@ class Ini:
             Path to a file under the `dir`
         key : str, default=None
             Optional key value to append to the resolved path. Assumes the path is a
-            directory and the key will be a file
+            directory and the key will be a file name
 
         Returns
         -------
@@ -242,6 +250,26 @@ class Ini:
             )
 
         return path
+
+    def reset(self, save: bool = False):
+        """
+        Resets the object to the defaults defined by ISOFIT
+
+        Parameters
+        ----------
+        save : bool, default=False
+            Saves the reset to the default ini file: ~/.isofit/isofit.ini
+        """
+        self.config = ConfigParser()
+        self.section = "DEFAULT"
+
+        self.changeBase(Path.home() / ".isofit/")
+        self.changeKeys(self._keys)
+
+        self.ini = self.base / "isofit.ini"
+
+        if save:
+            self.save()
 
     @staticmethod
     def validate(keys: List) -> bool:

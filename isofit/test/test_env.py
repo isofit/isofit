@@ -1,54 +1,68 @@
-from configparser import ConfigParser
-from pathlib import Path
-from unittest.mock import mock_open, patch
-
 import pytest
 
 from isofit.data import env
 
 
-def test_getattr_existing_key():
-    assert env.data == env.config["DEFAULT"]["data"]
+@pytest.fixture(scope="session")
+def changedDirs():
+    env.reset()
+
+    # Changed dirs
+    dirs = {key: f"/abc/{key}" for key in env._dirs}
+
+    # Default keys
+    keys = {key: env[key] for key in env._keys}
+
+    return {**dirs, **keys}
 
 
-def test_changePath():
-    expected = {}
+@pytest.fixture(scope="session")
+def changedKeys():
+    env.reset()
+
+    # Default dirs
+    dirs = {key: env[key] for key in env._dirs}
+
+    # Changed keys
+    keys = {key: f"/xyz/{key}" for key in env._keys}
+
+    return {**dirs, **keys}
+
+
+@pytest.fixture(scope="session")
+def changedBoth(changedDirs, changedKeys):
+    both = {}
+
     for key in env._dirs:
-        expected[key] = (val := f"/test/{key}")
-        env.changePath(key, val)
+        both[key] = changedDirs[key]
 
-    assert env.config["DEFAULT"] == expected
+    for key in env._keys:
+        both[key] = changedKeys[key]
 
-
-@patch("builtins.open")
-def test_loadEnv_file_exists(mock_open):
-    path = "test.ini"
-    data = {key: f"/test/{key}" for key in env._dirs}
-
-    with patch("pathlib.Path.exists", return_value=True), patch.object(
-        env.config, "read", return_value=None
-    ):
-        env.load(path)
-
-    assert dict(env.config["DEFAULT"]) == data
-    assert env.ini == Path(path)
+    return both
 
 
-@patch("builtins.open")
-def test_loadEnv_file_not_exists(mock_open):
-    path = "test.ini"
-    with patch("pathlib.Path.exists", return_value=False):
-        env.load(path)
+def test_changePath(changedDirs):
+    env.reset()
 
-    # load changes INI for the remainder of the session
-    assert env.ini == Path(path)
+    for key in env._dirs:
+        env.changePath(key, changedDirs[key])
+
+    assert dict(env) == changedDirs
 
 
-@patch("builtins.open")
-def test_saveEnv(mock_open):
-    path = "test.ini"
-    with patch.object(env.config, "write"), patch("pathlib.Path.mkdir"):
-        env.save(path)
+def test_changeKey(changedKeys):
+    env.reset()
 
-        # save changes INI for the remainder of the session
-        assert env.ini == Path(path)
+    for key in env._keys:
+        env.changeKey(key, changedKeys[key])
+
+    assert dict(env) == changedKeys
+
+
+def test_changeBase(changedDirs):
+    env.reset()
+
+    env.changeBase("/abc")
+
+    assert dict(env) == changedDirs
