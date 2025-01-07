@@ -199,11 +199,12 @@ def checkForUpdate(path=None, tag="latest", debug=print, error=print, **_):
         return True
 
     if path is None:
+        # If the paths do not exist, env.path() will report that
         model = env.path("srtmnet", key="srtmnet.file")
         aux = env.path("srtmnet", key="srtmnet.aux")
 
-        if not model.exists() or aux.exists():
-            error("Download the above via `isofit update srtmnet`")
+        if not model.exists() or not aux.exists():
+            error("Download the above via `isofit download sRTMnet --update`")
             return True
     else:
         path = Path(path)
@@ -217,7 +218,7 @@ def checkForUpdate(path=None, tag="latest", debug=print, error=print, **_):
     if compare(model.name, "model", latest, error) or compare(
         aux.name, "aux", latest, error
     ):
-        error("Please update via `isofit update srtmnet`")
+        error("Please update via `isofit download sRTMnet --update`")
         return True
 
     debug("Path is up to date")

@@ -135,7 +135,7 @@ def checkForUpdate(path=None, tag="latest", debug=print, error=print, **_):
 
     if version != (latest := metadata["tag_name"]):
         error(
-            f"Your data is out of date and may cause issues. Latest is {latest}, currently installed is {version}. Please update via `isofit update data`"
+            f"Your data is out of date and may cause issues. Latest is {latest}, currently installed is {version}. Please update via `isofit download data --update`"
         )
         return True
 
