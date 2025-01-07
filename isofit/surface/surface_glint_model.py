@@ -105,10 +105,10 @@ class GlintModelSurface(MultiComponentSurface):
         sun_glint = rho_ls * (x_surface[-2] * L_down_dir / (L_down_dir + L_down_dif))
         sky_glint = rho_ls * (x_surface[-1] * L_down_dif / (L_down_dir + L_down_dif))
 
-        rfl_dir = self.calc_lamb(x_surface, geom) + sun_glint
-        rfl_dif = self.calc_lamb(x_surface, geom) + sky_glint
+        rho_dir_dir = self.calc_lamb(x_surface, geom) + sun_glint
+        rho_dif_dir = self.calc_lamb(x_surface, geom) + sky_glint
 
-        return rfl_dir, rfl_dif
+        return rho_dir_dir, rho_dif_dir
 
     def drfl_dsurface(self, x_surface, geom):
         """Partial derivative of reflectance with respect to state vector,
