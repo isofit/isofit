@@ -48,11 +48,75 @@ tropopause_altitude_km = 17.0
 class ModtranRT(RadiativeTransferEngine):
     """A model of photon transport including the atmosphere."""
 
-    max_buffer_time = 0.5
-    # always run wavelength modeles from fine to coarse spectral resolution,
-    # so that for duplicates we take the finer resolution case
-    wavelength_models = ["p1_2013", "01_2013", "05_2013"]
-    simulation_wavelength_regions = [[1826, 2520], [817, 1826], [340, 817]]
+    def __init__(
+        self, engine_config, min_samples_per_nm=10, max_sample_per_nm=100, **kwargs
+    ):
+        self.max_buffer_time = 0.5
+
+        # always run wavelength modeles from fine to coarse spectral resolution,
+        # so that for duplicates we take the finer resolution case
+        resolutions_available = [0.1, 1, 5, 10]
+        resolution_names = ["p1_2013", "01_2013", "05_2013", "15_2013"]
+        samples_wl_grid = np.arange(
+            int(np.floor(np.min(self.wl))), int(np.ceil((np.max(self.wl))))
+        )
+        samples_per_res = [
+            self.samples_per_nm(samples_wl_grid, res) for res in resolutions_available
+        ]
+
+        self.simulation_wavelength_regions = []
+        self.wavelength_models = []
+        for _s in range(len(samples_per_res)):
+            wl_range = samples_wl_grid[
+                np.logical_and(
+                    samples_per_res[_s] >= min_samples_per_nm,
+                    samples_per_res[_s] <= max_samples_per_nm,
+                )
+            ]
+            if len(wl_range) > 0:
+                wl_range = [np.min(wl_range), np.max(wl_range)]
+                self.simulation_wavelength_regions.append(wl_range)
+                self.wavelength_models.append(resolution_names[_s])
+
+        if len(self.simulation_wavelength_regions) == 0:
+            raise ValueError(
+                "No valid wavelength regions found for simulation. Adjust min or max samples per nm."
+            )
+
+        # Don't overlap by more than 1 nm, and prioritize coarser resolution models for comp when we can:
+        if len(self.simulation_wavelength_regions) > 2:
+            for i in range(len(self.simulation_wavelength_regions) - 2, -1, -1):
+                self.simulation_wavelength_regions[i][0] = (
+                    self.simulation_wavelength_regions[i + 1][1] - 1
+                )
+
+        for _s in range(len(self.simulation_wavelength_regions)):
+            logging.info(
+                f"Using MODTRAN band model {self.wavelength_models[_s]} in simulation wavelength region: {self.simulation_wavelength_regions[_s]}"
+            )
+
+        super().__init__(engine_config**kwargs)
+
+    @staticmethod
+    def samples_per_nm(wl, fq_resolution):
+        fq_delta = 10**7 / wl - 10**7 / (wl + 1)
+        samples_per_nm = fq_delta / fq_resolution
+
+        return samples_per_nm
+
+    @staticmethod
+    def calc_band_model(samples_per_nm: int, wavelength: float):
+        delta_nm = 1 / float(samples_per_nm)
+        delta_freq = 10**7 / wavelength - 10**7 / (
+            wavelength + delta_nm
+        )  # do unit conversion
+
+        if delta_freq > 15:
+            return "15_2013"
+        elif delta_freq > 5:
+            return "05_2013"
+        else:
+            return "01_2013"
 
     @staticmethod
     def parseTokens(tokens: list, coszen: float) -> dict:
