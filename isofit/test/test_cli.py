@@ -90,7 +90,7 @@ def test_apply_oe(files, args, surface):
     ray.shutdown()
     sleep(120)
 
-    args[3] = env.path("srtmnet", key="srtmnet.version")
+    args[3] = env.path("srtmnet", key="srtmnet.file")
     arguments = ["apply_oe", *files, *args, "--surface_path", surface]
 
     # Passing non-string arguments to click is not allowed.
