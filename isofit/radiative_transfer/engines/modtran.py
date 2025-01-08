@@ -51,7 +51,7 @@ class ModtranRT(RadiativeTransferEngine):
     def __init__(
         self, engine_config, min_samples_per_nm=10, max_samples_per_nm=100, **kwargs
     ):
-        super().__init__(engine_config**kwargs)
+        super().__init__(engine_config, **kwargs)
         self.max_buffer_time = 0.5
 
         # always run wavelength modeles from fine to coarse spectral resolution,
