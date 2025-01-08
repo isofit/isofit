@@ -114,8 +114,12 @@ class ModtranRT(RadiativeTransferEngine):
             return "15_2013"
         elif delta_freq > 5:
             return "05_2013"
-        else:
+        elif delta_freq > 1:
             return "01_2013"
+        elif delta_freq > 0.1:
+            return "p1_2013"
+        else:
+            raise ValueError(f"Unsupported resolution: {delta_freq}")
 
     @staticmethod
     def parseTokens(tokens: list, coszen: float) -> dict:
