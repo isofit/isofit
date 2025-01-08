@@ -559,10 +559,31 @@ class RadiativeTransferEngine:
         rfl2: float, defaults=0.5
             surface reflectance for case 2 of the MODTRAN output
 
+        Each case requires the following parameters:
+            - width: Instrument channel widths
+            - transm_up_dir: Direct upward transmittance
+            - solar_irr: Top-of-atmosphere solar irradiance as a function of sun zenith angle
+            - drct_rflt: Direct ground reflected radiance at sensor (sun->surface->sensor)
+                Includes direct down and direct up transmittance
+            - grnd_rflt: Total ground reflected radiance at sensor (sun->surface->sensor)
+                Includes direct + diffuse down, but only direct up transmittance
+            - path_rdn: Atmospheric path radiance
+            - wl: Wavelengths (nm)
+            - rhoatm: Atmospheric path reflectance - just for convenience
+            - thermal_upwelling: Upwelling thermal radiance
+            - thermal_downwelling: Downwelling thermal radiance
+
         Returns
         -------
         data: dict
-            Relevant information
+            - transm_up_dir: Direct upward transmittance
+            - transm_up_dif: Diffuse upward transmittance
+            - transm_down_dir: Direct downward transmittance
+            - transm_down_dif: Diffuse downward transmittance
+            - sphalb: Spherical sky albedo
+            - wl: Wavelengths (nm)
+            - rhoatm: Atmospheric path reflectance
+            - solar_irr: Top-of-atmosphere solar irradiance
 
         Notes
         -----
@@ -588,20 +609,13 @@ class RadiativeTransferEngine:
         """
         # Instrument channel widths
         widths = case0["width"]
-        # Direct upward transmittance
-        # REVIEW: was [transup], then renamed to [transm_up_dif],
-        # now re-renamed to [transm_up_dir]
-        # since it only includes direct upward transmittance
+
         t_up_dir = case0["transm_up_dir"]
 
         # Top-of-atmosphere solar irradiance as a function of sun zenith angle
         E0 = case0["solar_irr"] * coszen / np.pi
 
-        # Direct ground reflected radiance at sensor for case 1 (sun->surface->sensor)
-        # This includes direct down and direct up transmittance
         Ltoa_dir1 = case1["drct_rflt"]
-        # Total ground reflected radiance at sensor for case 1 (sun->surface->sensor)
-        # This includes direct + diffuse down, but only direct up transmittance
         Ltoa1 = case1["grnd_rflt"]
 
         # Transforming back to at-surface irradiance

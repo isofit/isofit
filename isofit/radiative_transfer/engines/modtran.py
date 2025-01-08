@@ -49,6 +49,10 @@ class ModtranRT(RadiativeTransferEngine):
     """A model of photon transport including the atmosphere."""
 
     max_buffer_time = 0.5
+    # always run wavelength modeles from fine to coarse spectral resolution,
+    # so that for duplicates we take the finer resolution case
+    wavelength_models = ["p1_2013", "01_2013", "05_2013"]
+    simulation_wavelength_regions = [[1826, 2520], [817, 1826], [340, 817]]
 
     @staticmethod
     def parseTokens(tokens: list, coszen: float) -> dict:
@@ -221,6 +225,161 @@ class ModtranRT(RadiativeTransferEngine):
 
         return np.mean(solzen)
 
+    @staticmethod
+    def read_tp7(file_path: str):
+        """Read a MODTRAN TP7 file and return the data as a dictionary, one entry
+        for each case in the file.  Don't do anything but read the data; all the data.
+
+        Parameters
+        ----------
+        file_path: str
+            Path to the MODTRAN TP7 file
+
+        Returns
+        -------
+        cases_data: dict
+            A dictionary with case numbers as keys and numpy structured arrays as values.
+            The structured arrays contain the data for each case in the TP7 file.
+        """
+        with open(file_path, "r") as file:
+            lines = file.readlines()
+
+        case_indices = [i for i, line in enumerate(lines) if "case index" in line]
+        end_indices = [i for i, line in enumerate(lines) if line.strip() == "}"]
+        cases_data = {}
+
+        # Pair up start and end indices of each case
+        end_indices = [i for i, line in enumerate(lines) if line.strip() == "}"]
+        case_ranges = zip(case_indices, end_indices)
+
+        for case_num, (start_index, end_index) in enumerate(case_ranges):
+            col_names_line_1 = lines[start_index + 4].strip().split(",")
+            col_names_line_2 = lines[start_index + 5].strip().split(",")
+
+            column_names = [
+                name1.strip() + " " + name2.strip()
+                for name1, name2 in zip(col_names_line_1, col_names_line_2)
+            ]
+
+            data_lines = lines[start_index + 6 : end_index]
+            data = np.genfromtxt(data_lines, delimiter=",", names=column_names)
+
+            cases_data[case_num] = data
+
+        return cases_data
+
+    @staticmethod
+    def merge_multiresolution_cases(cases_data: dict, num_albedos, num_models: int):
+        """Merge cases data from multiple albedos and models into a single dictionary.
+
+        Args:
+            cases_data (dict): dictionary of individual case dictions, straight read from a tp7
+            num_albedos (_type_): the number of albedo models used
+            num_models (int): the number of wavelength regions used
+        """
+
+        def rdn_in_nm(rdn, wvn):
+            """
+            Convert irradiance wavenumber to wavelength. Steps:
+
+                1. Wavelength (λ) and wavenumber (v) are related by λ = 1/v.
+                   To get λ in nanometers, use λ_nm = 10^7 / v.
+                2. Differential relation: dλ = -1/v^2 dv. In nanometers: dλ_nm = -10^7 / v^2 dv.
+                3. Conversion Formula: I_λ = I_v * |dv/dλ_nm|.
+                   Since dλ_nm/dv = -10^7 / v^2, the conversion factor is |dv/dλ_nm| = v^2 / 10^7.
+                4. Apply conversion for each wavenumber (v) to obtain irradiance in W cm^-2 / nm.
+                   I_λ_nm = I_v_cm^-1 * (v^2 / 10^7)
+                Note: This formula considers the squared relationship between v and λ and unit conversion from cm to nm.
+
+            Parameters
+            ----------
+            rdn : float
+                Irradiance in W cm^-2 / cm^-1.
+            wvn : float
+                Wavenumber in cm^-1.
+
+            Returns
+            -------
+            float
+                Irradiance in W cm^-2 / nm.
+            """
+            return rdn * (wvn**2 / 10**7)
+
+        product_names = cases_data[0].dtype.names
+
+        # Merge between albedo and case cases
+        merged_dicts = [{} for _ in range(num_albedos)]
+        for _m in range(len(merged_dicts)):
+            for product in product_names:
+                merged_dicts[_m][product] = []
+        case_count = 0
+        for _a in range(num_albedos):
+            for _n in range(num_models):
+                for product in product_names:
+                    merged_dicts[_a][product].append(cases_data[case_count][product])
+                case_count += 1
+
+        # Stack
+        for _m in range(len(merged_dicts)):
+            for product in product_names:
+                merged_dicts[_m][product] = np.hstack(merged_dicts[_m][product])
+
+        # Translate units, convert to wavelength, and sort
+        for _m in range(len(merged_dicts)):
+            merged_dicts[_m]["wl"] = 10**7 / merged_dicts[_m]["Freq_cm1"]
+
+            # lowest frequency should have the highest resolution models
+            # sort and de-dup
+            order1 = np.argsort(merged_dicts[_m]["Freq_cm1"])
+            order2 = np.unique(merged_dicts[_m]["Freq_cm1"][order1], return_index=True)[
+                1
+            ]
+            for product in product_names:
+                if product in [
+                    "grnd_rflt",
+                    "drct_rflt",
+                    "total_rad",
+                    "path_multiple_scat",
+                    "sing_scat",
+                    "ToA_irrad",
+                ]:
+                    merged_dicts[_m][product] = rdn_in_nm(
+                        merged_dicts[_m][product], merged_dicts[_m]["Freq_cm1"]
+                    )[order1][order2]
+                elif product != "Freq_cm1":
+                    merged_dicts[_m][product] = merged_dicts[_m][product][order1][
+                        order2
+                    ]
+            merged_dicts[_m]["wl"] = merged_dicts[_m]["wl"][order1][order2]
+
+        # Convert to what the rest of ISOFIT is going to expect
+        case_output_dict = {}
+        for _i, indict in enumerate(merged_dicts):
+            output_dict = {}
+            output_dict["solar_irr"] = indict["ToA_irrad"] * 1e6
+            output_dict["wl"] = indict["wl"]
+            output_dict["transm_up_dir"] = np.exp(-1 * indict["_nat_log_path_trans"])
+            output_dict["drct_rflt"] = indict["drct_rflt"] * 1e6
+            output_dict["grnd_rflt"] = indict["grnd_rflt"] * 1e6
+            if _i == 0:
+                output_dict["path_rdn"] = indict["total_rad"] * 1e6
+            else:
+                output_dict["path_rdn"] = (
+                    indict["sing_scat"] + indict["path_multiple_scat"]
+                ) * 1e6
+            output_dict["width"] = 1  # We're in line reads
+            output_dict["rhoatm"] = output_dict["path_rdn"] / output_dict["solar_irr"]
+
+            # The first of these is a guess - not validated.  The second is a placeholder
+            output_dict["thermal_upwelling"] = indict["surface_emission"] * 1e6
+            output_dict["thermal_downwelling"] = np.zeros_like(
+                indict["surface_emission"]
+            )
+
+            case_output_dict[_i] = output_dict
+
+        return case_output_dict
+
     def preSim(self):
         """
         Post-initialized, pre-simulation setup
@@ -264,7 +423,17 @@ class ModtranRT(RadiativeTransferEngine):
 
         solzen = self.load_tp6(f"{file}.tp6")
         coszen = np.cos(solzen * np.pi / 180.0)
-        params = self.load_chn(f"{file}.chn", coszen)
+        params = {}
+        if os.path.isfile(f"{file}.csv"):
+            params = self.read_tp7(f"{file}.csv")
+            params = self.merge_multiresolution_cases(
+                params, len(self.test_rfls), len(self.wavelength_models)
+            )
+            params = self.two_albedo_method(
+                *params.values(), coszen, *self.test_rfls[1:]
+            )
+        else:
+            params = self.load_chn(f"{file}.chn", coszen)
 
         # Remove thermal terms in VSWIR runs to avoid incorrect usage
         if self.treat_as_emissive is False:
@@ -305,6 +474,8 @@ class ModtranRT(RadiativeTransferEngine):
         vals["DISALB"] = True
         vals["NAME"] = filename_base
         vals["FILTNM"] = os.path.normpath(self.filtpath)
+        if "CSVPRINT" in vals["FILEOPTIONS"].keys():
+            vals["FILEOPTIONS"]["CSVPRINT"] = filename_base + ".csv"
 
         # Translate to the MODTRAN OBSZEN convention, assumes we are downlooking
         if "OBSZEN" in vals and vals.get("OBSZEN") < 90:
@@ -577,24 +748,26 @@ class ModtranRT(RadiativeTransferEngine):
             lvl0["ABSC"] = [float(v) / total_extc550 for v in total_absc]
 
         if self.multipart_transmittance:
-            const_rfl = np.array(np.array(self.test_rfls) * 100, dtype=int)
-            # Here we copy the original config and just change the surface reflectance
-            param[0]["MODTRANINPUT"]["CASE"] = 0
-            param[0]["MODTRANINPUT"]["SURFACE"]["SURFP"][
-                "CSALB"
-            ] = f"LAMB_CONST_{const_rfl[0]}_PCT"
-            param1 = deepcopy(param[0])
-            param1["MODTRANINPUT"]["CASE"] = 1
-            param1["MODTRANINPUT"]["SURFACE"]["SURFP"][
-                "CSALB"
-            ] = f"LAMB_CONST_{const_rfl[1]}_PCT"
-            param.append(param1)
-            param2 = deepcopy(param[0])
-            param2["MODTRANINPUT"]["CASE"] = 2
-            param2["MODTRANINPUT"]["SURFACE"]["SURFP"][
-                "CSALB"
-            ] = f"LAMB_CONST_{const_rfl[2]}_PCT"
-            param.append(param2)
+            case_count = 0
+            for albedo in self.test_rfls:
+                for band_name, wvl_set in zip(
+                    self.wavelength_models, self.simulation_wavelength_regions
+                ):
+                    case_param = deepcopy(param[0])
+                    case_param["MODTRANINPUT"]["CASE"] = case_count
+                    case_param["MODTRANINPUT"]["SURREF"] = albedo
+                    case_param["SPECTRAL"]["V1"] = wvl_set[0]
+                    case_param["SPECTRAL"]["V2"] = wvl_set[1]
+                    case_param["SPECTRAL"]["BM_NAME"] = band_name
+
+                    # These don't matter - we're not going to use the chn
+                    case_param["SPECTRAL"]["DV"] = 15
+                    case_param["SPECTRAL"]["FWHM"] = 15
+                    if case_count == 0:
+                        param[0] = case_param
+                    else:
+                        param.append(case_param)
+                    case_count += 1
 
         return json.dumps({"MODTRAN": param}), param
 
@@ -628,10 +801,12 @@ class ModtranRT(RadiativeTransferEngine):
         infilename = os.path.join(self.sim_path, "LUT_" + filename_base + ".json")
         outchnname = os.path.join(self.sim_path, filename_base + ".chn")
         outtp6name = os.path.join(self.sim_path, filename_base + ".tp6")
+        outtp7name = os.path.join(self.sim_path, filename_base + ".csv")
 
         if (
             os.path.isfile(infilename)
             and os.path.isfile(outchnname)
+            or os.path.isfile(outtp7name)
             and os.path.isfile(outtp6name)
         ):
             return True
