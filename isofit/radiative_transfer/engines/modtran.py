@@ -49,13 +49,14 @@ class ModtranRT(RadiativeTransferEngine):
     """A model of photon transport including the atmosphere."""
 
     def __init__(
-        self, engine_config, min_samples_per_nm=10, max_sample_per_nm=100, **kwargs
+        self, engine_config, min_samples_per_nm=10, max_samples_per_nm=100, **kwargs
     ):
+        super().__init__(engine_config**kwargs)
         self.max_buffer_time = 0.5
 
         # always run wavelength modeles from fine to coarse spectral resolution,
         # so that for duplicates we take the finer resolution case
-        resolutions_available = [0.1, 1, 5, 10]
+        resolutions_available = [0.1, 1, 5, 15]
         resolution_names = ["p1_2013", "01_2013", "05_2013", "15_2013"]
         samples_wl_grid = np.arange(
             int(np.floor(np.min(self.wl))), int(np.ceil((np.max(self.wl))))
@@ -94,8 +95,6 @@ class ModtranRT(RadiativeTransferEngine):
             logging.info(
                 f"Using MODTRAN band model {self.wavelength_models[_s]} in simulation wavelength region: {self.simulation_wavelength_regions[_s]}"
             )
-
-        super().__init__(engine_config**kwargs)
 
     @staticmethod
     def samples_per_nm(wl, fq_resolution):
