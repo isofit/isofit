@@ -240,29 +240,33 @@ class RadiativeTransfer:
 
         return ret
 
-    def rdn_to_rho(self, rdn):
+    def rdn_to_rho(self, rdn, solar_irr=None):
         """Function to convert a radiance vector to transmittance.
 
         Args:
-            rdn: input data vector in radiance
+            rdn:       input data vector in radiance
+            solar_irr: solar irradiance vector (optional)
 
         Returns:
             Data vector converted to transmittance
         """
-        rho = rdn * np.pi / (self.solar_irr * self.coszen)
-        return rho
+        if solar_irr is None:
+            solar_irr = self.solar_irr
+        return rdn * np.pi / (solar_irr * self.coszen)
 
-    def rho_to_rdn(self, rho):
+    def rho_to_rdn(self, rho, solar_irr=None):
         """Function to convert a transmittance vector to radiance.
 
         Args:
-            rho: input data vector in transmittance
+            rho:       input data vector in transmittance
+            solar_irr: solar irradiance vector (optional)
 
         Returns:
             Data vector converted to radiance
         """
-        rdn = (self.solar_irr * self.coszen) / np.pi * rho
-        return rdn
+        if solar_irr is None:
+            solar_irr = self.solar_irr
+        return (solar_irr * self.coszen) / np.pi * rho
 
     def get_L_atm(self, x_RT: np.array, geom: Geometry) -> np.array:
         """Get the interpolated modeled atmospheric reflectance (aka path radiance).
