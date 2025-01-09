@@ -209,7 +209,7 @@ class RadiativeTransfer:
         L_tot = L_dir_dir + L_dif_dir + L_dir_dif + L_dif_dif
 
         # Special case: 1-component model
-        if L_tot == 0:
+        if type(L_tot) != np.ndarray or len(L_tot) == 1:
             L_tot = self.get_L_down_transmitted(x_RT, geom)[0]
             # we assume rho_dir_dir = rho_dif_dir = rho_dir_dif = rho_dif_dif
             rho_dif_dif = rho_dir_dir
