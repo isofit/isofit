@@ -645,7 +645,13 @@ class RadiativeTransferEngine:
         t_up_dif = np.pi * (Lp1 - Lp0) / Lsurf1
 
         # Spherical albedo
-        salb = (E_down1 - E_down2) / (Lsurf1 - Lsurf2)
+        salb_num = E_down1 - E_down2
+        salb_denom = Lsurf1 - Lsurf2
+        salb = salb_num / salb_denom
+
+        # Avoid division by very small numbers.  This threshold is semi-arbitrary,
+        # but seems to work reasonably
+        salb[np.abs(salb) < 0.001] = 0
 
         # Total at-surface irradiance for non-reflective surface (case 0)
         # Only add contribution from atmospheric spherical albedo
