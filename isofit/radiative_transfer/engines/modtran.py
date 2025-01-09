@@ -496,9 +496,14 @@ class ModtranRT(RadiativeTransferEngine):
             params = self.merge_multiresolution_cases(
                 params, len(self.test_rfls), len(self.wavelength_models)
             )
-            params = self.two_albedo_method(
-                *params.values(), coszen, *self.test_rfls[1:]
-            )
+            # Only need to run two_albedo method if we have multiple cases
+            # still at this point.  Note that at this time, merge_multiresolution_cases
+            # is set up to NEED to run through two_albedo_method, but this might
+            # not always be the case.
+            if len(params) == 3:
+                params = self.two_albedo_method(
+                    *params.values(), coszen, *self.test_rfls[1:]
+                )
         else:
             params = self.load_chn(f"{file}.chn", coszen)
 
