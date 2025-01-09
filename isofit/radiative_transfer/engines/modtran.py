@@ -490,7 +490,6 @@ class ModtranRT(RadiativeTransferEngine):
 
         solzen = self.load_tp6(f"{file}.tp6")
         coszen = np.cos(solzen * np.pi / 180.0)
-        params = {}
         if os.path.isfile(f"{file}.csv"):
             params = self.read_tp7(f"{file}.csv")
             params = self.merge_multiresolution_cases(
