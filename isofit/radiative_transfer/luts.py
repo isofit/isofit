@@ -649,31 +649,21 @@ def load(
 
     # Handle NaNs in the LUT. Keep as is (if all NaN). Set to 0 (if partial NaN)
     Logger.debug("Attempting to detect NaNs")
-    all_nan = [bool(nans.data) for name, nans in ds.isnull().all().items()]
-    any_nan = [bool(nans.data) for name, nans in ds.isnull().any().items()]
 
-    # Get the index of lut elements that have at least 1 nan, but not all
-    partial_nan = np.argwhere(np.sum(np.vstack([all_nan, any_nan]), axis=0) == 1)
-    all_nan = np.argwhere(np.sum(np.vstack([all_nan, any_nan]), axis=0) == 2)
+    for key, data in ds.items():
+        nans = data.isnull()
+        if nans.any():
+            if nans.all():
+                Logger.warning(f"{key} is fully NaN, leaving as-is")
+                continue
 
-    # Get the names of these two categories
-    all_names = [list(ds.keys())[int(i[0])] for i in all_nan]
-    partial_names = [list(ds.keys())[int(i[0])] for i in partial_nan]
+            count = nans.sum().data
+            total = data.count().data
 
-    # Set the partial NaN to 0
-    for name in partial_names:
-        ds[name].data = np.nan_to_num(ds[name].data, nan=0.0)
-
-    # Logging
-    if len(all_names):
-        Logger.warning(
-            f"Detected all NaNs in the following LUT variables. Keeping values at NaN: {all_names}"
-        )
-
-    if len(partial_names):
-        Logger.warning(
-            f"Detected partial NaNs in the following LUT variables. Setting to 0: {partial_names}"
-        )
+            Logger.warning(
+                f"{key} is partially NaN ({count}/{total}, {count/total:.2%}), replacing with 0s"
+            )
+            ds[key] = data.fillna(0)
 
     return ds
 
