@@ -1114,7 +1114,6 @@ def write_modtran_template(
                         "GMTIME": gmtime,
                     },
                     "SURFACE": {
-                        "SURFTYPE": "REFL_LAMBER_MODEL",
                         "GNDALT": elevation_km,
                         "NSURF": 1,
                         "SALBFL": "",
