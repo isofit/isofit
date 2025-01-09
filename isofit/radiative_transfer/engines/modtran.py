@@ -634,9 +634,6 @@ class ModtranRT(RadiativeTransferEngine):
             elif key == "FILTNM":
                 param[0]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = val
 
-            elif key == "FILTNM":
-                param[0]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = val
-
             # Geometry parameters we want to populate even if unassigned
             elif key in ["H1ALT", "IDAY", "TRUEAZ", "OBSZEN", "GMTIME"]:
                 param[0]["MODTRANINPUT"]["GEOMETRY"][key] = val
@@ -827,9 +824,12 @@ class ModtranRT(RadiativeTransferEngine):
                     case_param["SPECTRAL"]["V2"] = wvl_set[1]
                     case_param["SPECTRAL"]["BM_NAME"] = band_name
 
-                    # These don't matter - we're not going to use the chn
-                    case_param["SPECTRAL"]["DV"] = 15
-                    case_param["SPECTRAL"]["FWHM"] = 15
+                    # We don't need a .chn file if we're writing a tp7!
+                    # Delete it and the DV and FWHM parameters
+                    for dp in ["DV", "FWHM", "FILTNM"]:
+                        if dp in case_param["SPECTRAL"]:
+                            del case_param["SPECTRAL"][dp]
+
                     if case_count == 0:
                         param[0] = case_param
                     else:
