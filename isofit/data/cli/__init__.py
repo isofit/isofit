@@ -39,21 +39,6 @@ def download_all(update_, check, validate_):
     print("Finished all processes")
 
 
-# @cli.validate.command(name="all")
-# def validate_all():
-#     """\
-#     Validates all ISOFIT extra dependencies at the locations specified in the isofit.ini file.
-#     """
-#     pad = "=" * 16
-#
-#     for i, module in enumerate(Modules.values()):
-#         print(f"{pad} Validating {i+1} of {len(Modules)} {pad}")
-#         module.validate()
-#         print()
-#
-#     print("Finished all validations")
-
-
 def env_validate(keys, **kwargs):
     """
     Utility function for the `env` object to quickly validate specific dependencies
@@ -64,6 +49,10 @@ def env_validate(keys, **kwargs):
         List of validator functions to call
     """
     error = kwargs.get("error", print)
+
+    # Turn off checking for updates when using this function by default
+    # This makes env.path less verbose
+    kwargs["checkUpdate"] = kwargs.get("checkUpdate", False)
 
     all_valid = True
     for key in keys:

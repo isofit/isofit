@@ -47,7 +47,7 @@ def download(path=None, tag="latest", overwrite=False):
     print(f"Done, now available at: {avail}")
 
 
-def validate(path=None, debug=print, error=print, **_):
+def validate(path=None, checkUpdate=True, debug=print, error=print, **_):
     """
     Validates an ISOFIT data installation
 
@@ -55,6 +55,8 @@ def validate(path=None, debug=print, error=print, **_):
     ----------
     path : str, default=None
         Path to verify. If None, defaults to the ini path
+    checkUpdate : bool, default=True
+        Checks for updates if the path is valid
     debug : function, default=print
         Print function to use for debug messages, eg. logging.debug
     error : function, default=print
@@ -93,6 +95,10 @@ def validate(path=None, debug=print, error=print, **_):
         return False
 
     debug("Path is valid")
+
+    if checkUpdate:
+        checkForUpdate(path, debug=debug, error=error)
+
     return True
 
 

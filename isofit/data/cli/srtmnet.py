@@ -17,7 +17,8 @@ URL = "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/"
 
 def getVersion(version="latest"):
     """
-    Retrieves the available versions and verifies the requested version is valid
+    Retrieves the available versions and verifies the requested version is valid. Times
+    out after 10 seconds if the server is unavailable.
 
     Parameters
     ----------
@@ -29,7 +30,12 @@ def getVersion(version="latest"):
     str
         Requested version
     """
-    get = requests.get(URL)
+    try:
+        get = requests.get(URL, timeout=10)
+    except requests.exceptions.Timeout:
+        print("sRTMnet server request timed out, cannot retrieve versions")
+        return
+
     versions = list(set(re.findall(r"sRTMnet_(v\d+)\.h5", get.text)))
     versions = sorted(versions, key=lambda v: int(v[1:]))
 
@@ -83,7 +89,7 @@ def download(path=None, tag="latest", overwrite=False):
     print(f"Done, now available at: {output}")
 
 
-def validate(path=None, debug=print, error=print, **_):
+def validate(path=None, checkUpdate=True, debug=print, error=print, **_):
     """
     Validates an sRTMnet installation
 
@@ -91,6 +97,8 @@ def validate(path=None, debug=print, error=print, **_):
     ----------
     path : str, default=None
         Path to verify. If None, defaults to the ini path
+    checkUpdate : bool, default=True
+        Checks for updates if the path is valid
     debug : function, default=print
         Print function to use for debug messages, eg. logging.debug
     error : function, default=print
@@ -124,7 +132,39 @@ def validate(path=None, debug=print, error=print, **_):
         return False
 
     debug("Path is valid")
+
+    if checkUpdate:
+        checkForUpdate(path, debug=debug, error=error)
+
     return True
+
+
+def detectInstalled(path: str = None):
+    """
+    Attempt to detect a currently installed sRTMnet model and, if present, save that
+    information back to the ini for future reference
+
+    Parameters
+    ----------
+    path : str, default=None
+        Path to check. If None, defaults to the ini path
+    """
+    path = None
+
+    if path is None:
+        path = env.srtmnet
+
+    path = Path(path)
+
+    if path.exists():
+        try:
+            # Just retrieve the first of each extension
+            # This may be inaccurate if multiple installs are in one directory
+            env.changeKey("srtmnet.file", next(path.glob("*.h5")).name)
+            env.changeKey("srtmnet.aux", next(path.glob("*.npz")).name)
+            env.save()
+        except:
+            pass
 
 
 def compare(file, name, version, error=print):
@@ -138,7 +178,8 @@ def compare(file, name, version, error=print):
     name : str
         File type name for reporting with
     version : packaging.version.Version, default=None
-        Version to compare against. If not given, retrieves the latest version from the server
+        Version to compare against. If not given, retrieves the latest version from the
+        server
     error : function, default=print
         Print function to use for error messages, eg. logging.error
 
@@ -148,7 +189,11 @@ def compare(file, name, version, error=print):
         True if the current version is not the latest, False otherwise
     """
     if version is None:
-        version = Version(getVersion("latest"))
+        if not (latest := getVersion(tag)):
+            error("Failed to retrieve latest version, try again later")
+            return False
+
+        latest = Version(latest)
 
     if find := re.findall(r"(v\d+)", file):
         current = Version(find[0])
@@ -186,17 +231,20 @@ def checkForUpdate(path=None, tag="latest", debug=print, error=print, **_):
     bool
         True if there is a version update, else False
     """
+    missing = False
     if not env["srtmnet.file"]:
-        error(
-            "sRTMnet file is not set in the ini, version unknown. Please either redownload or set the key 'srtmnet.file' in the ini"
-        )
-        return True
+        error("sRTMnet file is not set in the ini, version unknown")
+        missing = True
 
     if not env["srtmnet.aux"]:
-        error(
-            "sRTMnet aux is not set in the ini, version unknown. Please either redownload or set the key 'srtmnet.aux' in the ini"
+        error("sRTMnet aux is not set in the ini, version unknown")
+        missing = True
+
+    if missing:
+        debug(
+            "Attempting to detect if a model and aux are already installed but not set in the ini"
         )
-        return True
+        detectInstalled(path)
 
     if path is None:
         # If the paths do not exist, env.path() will report that
@@ -213,11 +261,15 @@ def checkForUpdate(path=None, tag="latest", debug=print, error=print, **_):
 
     debug(f"Checking for updates for sRTMnet on path: {model}")
 
-    latest = Version(getVersion(tag))
+    if not (latest := getVersion(tag)):
+        error("Failed to retrieve latest version, try again later")
+        return False
 
-    if compare(model.name, "model", latest, error) or compare(
-        aux.name, "aux", latest, error
-    ):
+    latest = Version(latest)
+    model = compare(model.name, "model", latest, error)
+    aux = compare(aux.name, "aux", latest, error)
+
+    if model or aux:
         error("Please update via `isofit download sRTMnet --update`")
         return True
 
