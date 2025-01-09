@@ -38,7 +38,7 @@ jobs:
     steps:
       - name: Cache Extras
         id: cache-extras
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.isofit
           key: cache-extras
@@ -56,10 +56,21 @@ jobs:
         run: |
           python3 -m pip install --editable ".[test]"
 
-      - name: Download extras
+      - name: Download Extras
         shell: bash
         run: |
-          isofit download all --update
+          if isofit download all --update | grep "Executing update"; then
+            echo "CACHE_UPDATE=true" >> $GITHUB_ENV
+          else
+            echo "CACHE_UPDATE=false" >> $GITHUB_ENV
+          fi
+
+      - if: env.CACHE_UPDATE == 'true'
+        name: Update Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.isofit
+          key: cache-extras
 
   test:
     needs: cache

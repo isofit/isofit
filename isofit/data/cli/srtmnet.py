@@ -291,6 +291,7 @@ def update(check=False, **kwargs):
     """
     kwargs["overwrite"] = True
     if checkForUpdate(**kwargs) and not check:
+        kwargs.get("debug", print)("Executing update")
         download(**kwargs)
 
 
