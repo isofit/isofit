@@ -248,7 +248,7 @@ class ModtranRT(RadiativeTransferEngine):
         chn = parts[0]
         if len(parts) > 1:
             Logger.debug("Using two albedo method")
-            chn = self.two_albedo_method(*parts, coszen, *self.test_rfls[1:])
+            chn = self.two_albedo_method(*parts, coszen, *self.test_rfls)
 
         return chn
 
@@ -501,7 +501,7 @@ class ModtranRT(RadiativeTransferEngine):
             # not always be the case.
             if len(params) == 3:
                 params = self.two_albedo_method(
-                    *params.values(), coszen, *self.test_rfls[1:]
+                    *params.values(), coszen, *self.test_rfls
                 )
         else:
             params = self.load_chn(f"{file}.chn", coszen)
