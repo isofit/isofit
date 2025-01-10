@@ -245,10 +245,14 @@ class ModtranRT(RadiativeTransferEngine):
             parts.append(combined)
 
         # Single transmittance files will be the first dict in the list, otherwise multiparts use two_albedo_method
+        # The below parsing is a stopgap until we update the examples to all use tp7, and the true two albedo method
         chn = parts[0]
-        if len(parts) > 1:
-            Logger.debug("Using two albedo method")
-            chn = self.two_albedo_method(*parts, coszen, *self.test_rfls)
+        if len(parts) == 2:
+            Logger.debug("Using two albedo method from 2 components")
+            chn = self.two_albedo_method(parts[0], parts[1], coszen, *self.test_rfls)
+        if len(parts) == 3:
+            Logger.debug("Using two albedo method from 3 components")
+            chn = self.two_albedo_method(parts[1], parts[2], coszen, *self.test_rfls)
 
         return chn
 
@@ -499,7 +503,7 @@ class ModtranRT(RadiativeTransferEngine):
             # still at this point.  Note that at this time, merge_multiresolution_cases
             # is set up to NEED to run through two_albedo_method, but this might
             # not always be the case.
-            if len(params) == 3:
+            if len(params) == 2:
                 params = self.two_albedo_method(
                     *params.values(), coszen, *self.test_rfls
                 )
