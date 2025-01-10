@@ -128,7 +128,7 @@ class RadiativeTransferEngine:
 
         # ToDo: move setting of multipart rfl values to config
         if self.multipart_transmittance:
-            self.test_rfls = [0.0, 0.1, 0.5]
+            self.test_rfls = [0.1, 0.5]
 
         # Extract from LUT file if available, otherwise initialize it
         if exists:
@@ -533,7 +533,6 @@ class RadiativeTransferEngine:
     # REVIEW: We need to think about the best place for the two albedo method (here, radiative_transfer.py, utils, etc.)
     @staticmethod
     def two_albedo_method(
-        case0: dict,
         case1: dict,
         case2: dict,
         coszen: float,
@@ -546,8 +545,6 @@ class RadiativeTransferEngine:
 
         Parameters
         ----------
-        case0: dict
-            MODTRAN output for a non-reflective surface (case 0 of the channel file)
         case1: dict
             MODTRAN output for surface reflectance = rfl1 (case 1 of the channel file)
         case2: dict
@@ -594,7 +591,8 @@ class RadiativeTransferEngine:
         which is similar to this one with the single difference where the
         "path_radiance_no_surface" variable is taken from a
         zero-surface-reflectance MODTRAN run instead of being calculated from
-        2 MODTRAN outputs.
+        2 MODTRAN outputs.  The 2-albedo method is selected here for numeical
+        stability in t_up_dif.
 
         There are a few argument as to why the 2- or 3-albedo methods are
         beneficial:
@@ -608,12 +606,12 @@ class RadiativeTransferEngine:
                 topography and glint.
         """
         # Instrument channel widths
-        widths = case0["width"]
+        widths = case1["width"]
 
-        t_up_dir = case0["transm_up_dir"]
+        t_up_dir = case1["transm_up_dir"]
 
         # Top-of-atmosphere solar irradiance as a function of sun zenith angle
-        E0 = case0["solar_irr"] * coszen / np.pi
+        E0 = case1["solar_irr"] * coszen / np.pi
 
         Ltoa_dir1 = case1["drct_rflt"]
         Ltoa1 = case1["grnd_rflt"]
@@ -651,7 +649,7 @@ class RadiativeTransferEngine:
 
         # Avoid division by very small numbers.  This threshold is semi-arbitrary,
         # but seems to work reasonably
-        salb[np.abs(salb) < 0.001] = 0
+        salb[np.abs(salb_denom) < 0.001] = 0
 
         # Total at-surface irradiance for non-reflective surface (case 0)
         # Only add contribution from atmospheric spherical albedo
@@ -680,7 +678,7 @@ class RadiativeTransferEngine:
             "transm_down_dif": t_down_dif,
         }
         for key in pass_forward:
-            data[key] = case0[key]
+            data[key] = case1[key]
 
         return data
 
