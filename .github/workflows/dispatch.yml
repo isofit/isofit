@@ -60,15 +60,16 @@ jobs:
   dispatch:
     needs: cache
 
-    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        workflows: [pip, path]
+        target: [pip, path]
+      uses: ./.github/workflows/python/pythontests.yml
+      with:
+        target: ${{ matrix.target }}
 
-    steps:
-      - name: Executing workflow ${{ matrix.workflow }}
-        uses: ./.github/workflows/python/${{ matrix.workflow }}.yml
+    # steps:
+      # - name: Executing workflow ${{ matrix.workflow }}
         # uses: benc-uk/workflow-dispatch@v1
         # with:
         #   workflow: python/${{ matrix.workflow }}.yml

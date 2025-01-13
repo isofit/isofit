@@ -1,0 +1,179 @@
+name: Python Tests
+
+on:
+  workflow_call:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+# Test ISOFIT installed via a local repository checkout and '$PYTHONPATH'.
+  path:
+    name: Test via $PYTHONPATH
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # This tests some very basic and long-lived Python behavior, so it is
+        # likely sufficient to test only on a single Python version to avoid
+        # GitHub worker contention.
+        python-version: ["3.12"]
+        pytest-flags: ["-m unmarked", "-m slow"]
+
+    steps:
+      # Pull the cache on every runner
+      - name: Cached Extras
+        id: cache-extras
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.isofit
+          key: cache-extras
+          fail-on-cache-miss: true
+
+      - uses: actions/checkout@v3
+
+      - name: Print concurrency group
+        run: echo '${{ github.workflow }}-${{ github.ref }}'
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install ISOFIT and most software dependencies
+        shell: bash
+        run: |
+
+          # WARNING: Do NOT 'export PYTHONPATH=...'. Environment variables seem
+          #          to be shared across all jobs, so this would break the
+          #          the 'isofit' install for some other jobs. Unclear exactly
+          #          which, but presumably any job running after this one.
+
+          # Python packaging dependencies. The presence of 'wheel' triggers
+          # a lot of new Python packaging machinery that will eventually
+          # become the default.
+          python3 -m pip install pip setuptools wheel --upgrade
+          python3 --version
+          python3 -m pip show pip setuptools wheel
+
+          # Install 'isofit' and dependencies. Be sure to uninstall this version
+          # of 'isofit' to ensure we are testing against '$PYTHONPATH'.
+          python3 -m pip install ".[test]"
+
+      - name: Isolate ISOFIT
+        shell: bash
+        run: |
+          # Uninstall 'isofit', leaving its dependencies.
+          python3 -m pip uninstall --yes isofit
+
+          # Move 'isofit' into a new directory to ensure it is not just inherently available.
+          mkdir isolation/
+          mv isofit/ isolation/
+
+          # Check to see if 'isofit' is still installed. It should not be.
+          # Note that this job is implicitly configured with 'set -e', which
+          # means that any command exiting with a non-zero exit code will cause
+          # the script to halt. The easiest way to see if 'isofit' is still
+          # available is to attempt to import it, however, that rightfully
+          # causes Python to exit with a non-zero exit code. It is possible to
+          # use a heredoc to wrap this import in a 'try/except', print a status,
+          # and have Python exit with a 0 exit code, but all of the options are
+          # painful.
+          #
+          # Instead, disable 'set -e' by calling 'set +e', but be sure to
+          # re-enable by calling 'set -e' again as soon as possible!!
+          set +e
+          ISOFIT_INSTALLED_PATH=$(
+            python3 -c "import isofit; print(isofit.__file__)" 2> /dev/null)
+          ISOFIT_INSTALLED_EXIT_CODE=$?
+          set -e
+          if [ "${ISOFIT_INSTALLED_EXIT_CODE}" -ne 1 ]; then
+              exit 1
+          fi
+
+          # Again, do NOT 'export PYTHONPATH=...' here. See note at top of section.
+
+      - name: Execute tests
+        shell: bash
+        run: |
+
+          # Again, do NOT 'export PYTHONPATH=...'
+          # We define 'testpaths' in 'pytest.ini', however that path is no
+          # longer valid. In this case 'pytest' searches for tests by default,
+          # but we know where they are, so explicitly point to the new location.
+          PYTHONPATH="isolation/:${PYTHONPATH}" python3 -m pytest -s isolation/isofit/test/ "${{ matrix.pytest-flags }}"
+
+#--------------------------------------------------------------------------------------
+# Test a package built and installed by pip.
+#
+# Test ISOFIT on a variety of versions of Python. This test suite is likely
+# sufficient for broadly testing the 'pip' package, with the assumption that
+# users are able to get all dependencies installed. Any further testing should
+# be for a specific environment, and be very targeted.
+#
+# For example, testing Ubuntu 22.04 package ecosystem should likely be done by
+# building a deb for ISOFIT, and testing against the Python packages provided by
+# the apt package repo. It may also be possible to test this environment with a
+# mix of upstream packages and a non-isolated virtual environment built with the
+# '--system-site-packages' flag.
+#
+# Readers looking at this file for the purposes of installing ISOFIT on their
+# system should be aware that these tests run in an isolated manner. Be aware
+# that both 'pip' and 'apt/apt-get' can both be used to install Python
+# packages, but pip installing something with Ubuntu's system Python will
+# conflict with packages installed via 'apt/apt-get', and produce an environment
+# that is difficult to unwind.
+  pip:
+    name: Test via pip
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        pytest-flags: ["-m unmarked", "-m slow", "-m examples"]
+
+    steps:
+      # Pull the cache on every runner
+      - name: Cached Extras
+        id: cache-extras
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.isofit
+          key: cache-extras
+          fail-on-cache-miss: true
+
+      - uses: actions/checkout@v3
+
+      - name: Print concurrency group
+        run: echo '${{ github.workflow }}-${{ github.ref }}'
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install ISOFIT and most software dependencies
+        shell: bash
+        run: |
+
+          # Python packaging dependencies. The presence of 'wheel' triggers
+          # a lot of new Python packaging machinery that will eventually
+          # become the default.
+          python3 -m pip install pip setuptools wheel --upgrade
+          python3 --version
+          python3 -m pip show pip setuptools wheel
+
+          # Install 'isofit'
+          python3 -m pip install --editable ".[test]"
+
+          # Ensure ISOFIT has been installed
+          python3 -c "import isofit; print(isofit.__file__)"
+
+      - name: Execute tests
+        shell: bash
+        run: |
+          python3 -m pytest -s "${{ matrix.pytest-flags }}"
