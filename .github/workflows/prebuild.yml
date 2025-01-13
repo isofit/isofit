@@ -59,7 +59,7 @@ jobs:
 
   launch:
     needs: cache
-
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -67,7 +67,6 @@ jobs:
       # uses: ./.github/workflows/tests.yml
       # with:
       #   target: ${{ matrix.target }}
-
     steps:
       - name: Executing workflow ${{ matrix.target }}
         uses: benc-uk/workflow-dispatch@v1
