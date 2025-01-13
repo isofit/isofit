@@ -21,7 +21,8 @@
 
 name: Test 'pip' Package
 
-on: [workflow_dispatch]
+on:
+  workflow_call:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
