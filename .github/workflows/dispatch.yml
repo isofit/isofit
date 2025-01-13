@@ -68,6 +68,7 @@ jobs:
 
     steps:
       - name: Executing workflow ${{ matrix.workflow }}
-        uses: benc-uk/workflow-dispatch@v1
-        with:
-          workflow: python/${{ matrix.workflow }}.yml
+        uses: ./.github/workflows/python/${{ matrix.workflow }}.yml
+        # uses: benc-uk/workflow-dispatch@v1
+        # with:
+        #   workflow: python/${{ matrix.workflow }}.yml

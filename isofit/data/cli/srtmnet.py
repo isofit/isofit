@@ -36,6 +36,9 @@ def getVersion(version="latest"):
     except requests.exceptions.Timeout:
         print("sRTMnet server request timed out, cannot retrieve versions")
         return
+    except requests.exceptions.ConnectionError:
+        print("sRTMnet server refused connection, cannot retrieve versions")
+        return
 
     versions = list(set(re.findall(r"sRTMnet_(v\d+)\.h5", get.text)))
     versions = sorted(versions, key=lambda v: int(v[1:]))
