@@ -64,18 +64,3 @@ jobs:
   path:
     needs: cache
     uses: ./.github/workflows/test_path.yml
-  # launch:
-  #   needs: cache
-  #   # runs-on: ubuntu-latest
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       target: [pip, path]
-  #     uses: ./.github/workflows/tests.yml
-  #     with:
-  #       target: ${{ matrix.target }}
-    # steps:
-    #   - name: Executing workflow ${{ matrix.target }}
-    #     uses: benc-uk/workflow-dispatch@v1
-    #     with:
-    #       workflow: ./.github/workflows/test_${{ matrix.target }}.yml
