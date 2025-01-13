@@ -13,6 +13,8 @@ from isofit.data.download import (
     unzip,
 )
 
+CMD = "data"
+
 
 def download(path=None, tag="latest", overwrite=False):
     """
@@ -77,7 +79,7 @@ def validate(path=None, checkUpdate=True, debug=print, error=print, **_):
 
     if not (path := Path(path)).exists():
         error(
-            "Error: Data path does not exist, please download it via `isofit download data`"
+            "[x] Data path does not exist, please download it via `isofit download data`"
         )
         return False
 
@@ -90,11 +92,11 @@ def validate(path=None, checkUpdate=True, debug=print, error=print, **_):
     files = list(path.glob("*"))
     if not all([path / file in files for file in check]):
         error(
-            "Error: ISOFIT data do not appear to be installed correctly, please ensure it is"
+            "[x] ISOFIT data do not appear to be installed correctly, please ensure it is"
         )
         return False
 
-    debug("Path is valid")
+    debug("[✓] Path is valid")
 
     if checkUpdate:
         checkForUpdate(path, debug=debug, error=error)
@@ -122,6 +124,12 @@ def checkForUpdate(path=None, tag="latest", debug=print, error=print, **_):
     -------
     bool
         True if there is a version update, else False
+
+    Notes
+    -----
+    The Github workflows watch for the string "[x]" to determine if the cache needs to
+    update the data of this module. If your module does not include this string, the
+    workflows will never detect updates.
     """
     if path is None:
         path = env.data
@@ -131,7 +139,7 @@ def checkForUpdate(path=None, tag="latest", debug=print, error=print, **_):
     file = Path(path) / "version.txt"
     if not file.exists():
         error(
-            "Failed to find a version.txt file under the given path. Version is unknown. It is recommended to redownload via `isofit download data --overwrite`"
+            "[x] Failed to find a version.txt file under the given path. Version is unknown"
         )
         return True
 
@@ -140,12 +148,10 @@ def checkForUpdate(path=None, tag="latest", debug=print, error=print, **_):
         version = f.read()
 
     if version != (latest := metadata["tag_name"]):
-        error(
-            f"Your data is out of date and may cause issues. Latest is {latest}, currently installed is {version}. Please update via `isofit download data --update`"
-        )
+        error(f"[x] Latest is {latest}, currently installed is {version}")
         return True
 
-    debug("Path is up to date")
+    debug("[✓] Path is up to date")
 
     return False
 
@@ -161,13 +167,17 @@ def update(check=False, **kwargs):
     **kwargs : dict
         Additional key-word arguments to pass to download()
     """
-    kwargs["overwrite"] = True
-    if checkForUpdate(**kwargs) and not check:
-        kwargs.get("debug", print)("Executing update")
-        download(**kwargs)
+    debug = kwargs.get("debug", print)
+    if checkForUpdate(**kwargs):
+        if not check:
+            kwargs["overwrite"] = True
+            debug("Executing update")
+            download(**kwargs)
+        else:
+            debug(f"Please update via `isofit download {CMD} --update`")
 
 
-@cli.download.command(name="data")
+@cli.download.command(name=CMD)
 @cli.path(help="Root directory to download data files to, ie. [path]/data")
 @cli.tag
 @cli.overwrite

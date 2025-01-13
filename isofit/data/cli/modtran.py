@@ -13,6 +13,8 @@ from isofit.data.download import (
     unzip,
 )
 
+CMD = "modtran"
+
 
 def download(output=None):
     """
@@ -48,16 +50,7 @@ def validate(path=None, debug=print, error=print, **_):
         True if valid, False otherwise
     """
     # TODO: Write a proper validation function
-    return True
-
-    if path is None:
-        path = env.modtran
-
-    debug(f"Verifying path for MODTRAN: {path}")
-
-    ...
-
-    debug("Path is valid")
+    debug("MODTRAN does not support verification at this time")
     return True
 
 
@@ -73,10 +66,12 @@ def update(check=False, **kwargs):
     **kwargs : dict
         Additional key-word arguments to pass to download()
     """
-    print("MODTRAN does not support versioning at this time, no update to be found")
+    kwargs.get("debug", print)(
+        "MODTRAN does not support versioning at this time, no update to be found"
+    )
 
 
-# @cli.download.command(name="modtran")
+# @cli.download.command(name=CMD)
 # @cli.path(help="Root directory to download modtran files to, ie. [path]/modtran")
 # @cli.tag
 def download_cli(**kwargs):

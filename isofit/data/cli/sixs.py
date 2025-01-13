@@ -9,6 +9,7 @@ from pathlib import Path
 from isofit.data import env
 from isofit.data.download import cli, download_file, prepare_output, untar
 
+CMD = "sixs"
 URL = "https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar"
 
 
@@ -119,18 +120,14 @@ def validate(path=None, debug=print, error=print, **_):
     debug(f"Verifying path for 6S: {path}")
 
     if not (path := Path(path)).exists():
-        error(
-            "Error: 6S path does not exist, please download it via `isofit download 6S`"
-        )
+        error("[x] 6S path does not exist, please download it via `isofit download 6S`")
         return False
 
     if not (path / f"sixsV2.1").exists():
-        error(
-            "Error: 6S does not appear to be installed correctly, please ensure it is"
-        )
+        error("[x] 6S does not appear to be installed correctly, please ensure it is")
         return False
 
-    debug("Path is valid")
+    debug("[✓] Path is valid")
     return True
 
 
@@ -146,10 +143,12 @@ def update(check=False, **kwargs):
     **kwargs : dict
         Additional key-word arguments to pass to download()
     """
-    print("SixS does not support versioning at this time, no update to be found")
+    kwargs.get("debug", print)(
+        "SixS does not support versioning at this time, no update to be found"
+    )
 
 
-@cli.download.command(name="sixs")
+@cli.download.command(name=CMD)
 @cli.path(help="Root directory to download sixs to, ie. [path]/sixs")
 @cli.validate
 def download_cli(validate_, **kwargs):

@@ -1,0 +1,73 @@
+# This workflow performs functions that must occur before launching all the Python tests
+# The cache will automatically be updated if any of the extra downloads need an update
+# Then launch the Python tests in parallel
+
+name: Dispatch Python Tests
+
+on:
+  push:
+    branches: ["dev", "main"]
+  pull_request:
+    branches: ["dev", "main"]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  cache:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache Extras
+        id: cache-extras
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.isofit
+          key: cache-extras
+
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install ISOFIT
+        shell: bash
+        run: |
+          python3 -m pip install --editable ".[test]"
+
+      - name: Download Extras
+        shell: bash
+        run: |
+          # First check if any module needs an update. It must report "[x]" to be detected
+          if isofit download all --update --check | grep "[x]"; then
+            isofit download all --update
+            echo "CACHE_UPDATE=true" >> $GITHUB_ENV
+          else
+            echo "CACHE_UPDATE=false" >> $GITHUB_ENV
+          fi
+
+      # Only post the cache if an update was performed
+      - if: env.CACHE_UPDATE == 'true'
+        name: Update Cache
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.isofit
+          key: cache-extras
+
+  dispatch:
+    needs: cache
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        workflows: [pip, path]
+
+    steps:
+      - name: Executing workflow ${{ matrix.workflow }}
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: python/${{ matrix.workflow }}.yml

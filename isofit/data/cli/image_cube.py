@@ -9,6 +9,7 @@ import click
 from isofit.data import env
 from isofit.data.download import cli, download_file, prepare_output, unzip
 
+CMD = "imagecube"
 URL = "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/{size}_chunk.zip"
 
 
@@ -73,6 +74,12 @@ def validate(path=None, size="both", debug=print, error=print, **_):
     -------
     bool
         True if valid, False otherwise
+
+    Notes
+    -----
+    The Github workflows watch for the string "[x]" to determine if the cache needs to
+    update the data of this module. If your module does not include this string, the
+    workflows will never detect updates.
     """
     if size == "both":
         return validate(path, "small") & validate(path, "medium")
@@ -87,12 +94,12 @@ def validate(path=None, size="both", debug=print, error=print, **_):
         file = path / size / f"ang20170323t202244_{kind}_{sizes[size]}"
         if not file.exists():
             error(
-                f"Error: ISOFIT {size} image cube data do not appear to be installed correctly, please ensure it is"
+                f"[x] ISOFIT {size} image cube data do not appear to be installed correctly, please ensure it is"
             )
-            error(f"Missing file: {file}")
+            error(f"[x] Missing file: {file}")
             return False
 
-    debug("Path is valid")
+    debug("[✓] Path is valid")
     return True
 
 
@@ -111,7 +118,7 @@ def update(check=False, **kwargs):
     print("ImageCube does not support versioning at this time, no update to be found")
 
 
-@cli.download.command(name="imagecube")
+@cli.download.command(name=CMD)
 @cli.path(
     help="Root directory to download image cube data files to, ie. [path]/imagecube"
 )
