@@ -2,7 +2,7 @@
 # The cache will automatically be updated if any of the extra downloads need an update
 # Then launch the Python tests in parallel
 
-name: Dispatch Python Tests
+name: Prebuild
 
 on:
   push:
@@ -57,19 +57,13 @@ jobs:
           path: ~/.isofit
           key: cache-extras
 
-  dispatch:
+  launch:
     needs: cache
 
     strategy:
       fail-fast: false
       matrix:
         target: [pip, path]
-      uses: ./.github/workflows/python/pythontests.yml
+      uses: ./.github/workflows/tests.yml
       with:
         target: ${{ matrix.target }}
-
-    # steps:
-      # - name: Executing workflow ${{ matrix.workflow }}
-        # uses: benc-uk/workflow-dispatch@v1
-        # with:
-        #   workflow: python/${{ matrix.workflow }}.yml
