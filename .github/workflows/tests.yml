@@ -3,7 +3,7 @@ name: Python Tests
 on:
   workflow_call:
     inputs:
-      case:
+      target:
         required: true
         type: string
 
@@ -15,6 +15,7 @@ jobs:
 
 # Test ISOFIT installed via a local repository checkout and '$PYTHONPATH'.
   path:
+    if: inputs.target == 'path'
     name: Test via $PYTHONPATH
     runs-on: ubuntu-latest
     strategy:
@@ -131,6 +132,7 @@ jobs:
 # conflict with packages installed via 'apt/apt-get', and produce an environment
 # that is difficult to unwind.
   pip:
+    if: inputs.target == 'pip'
     name: Test via pip
     runs-on: ubuntu-latest
     strategy:

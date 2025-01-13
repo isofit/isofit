@@ -59,16 +59,16 @@ jobs:
 
   launch:
     needs: cache
-    runs-on: ubuntu-latest
+    # runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         target: [pip, path]
-      # uses: ./.github/workflows/tests.yml
-      # with:
-      #   target: ${{ matrix.target }}
-    steps:
-      - name: Executing workflow ${{ matrix.target }}
-        uses: benc-uk/workflow-dispatch@v1
-        with:
-          workflow: test_${{ matrix.target }}.yml
+      uses: ./.github/workflows/tests.yml
+      with:
+        target: ${{ matrix.target }}
+    # steps:
+    #   - name: Executing workflow ${{ matrix.target }}
+    #     uses: benc-uk/workflow-dispatch@v1
+    #     with:
+    #       workflow: ./.github/workflows/test_${{ matrix.target }}.yml
