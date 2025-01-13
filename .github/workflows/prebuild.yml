@@ -64,6 +64,12 @@ jobs:
       fail-fast: false
       matrix:
         target: [pip, path]
-      uses: ./.github/workflows/tests.yml
-      with:
-        target: ${{ matrix.target }}
+      # uses: ./.github/workflows/tests.yml
+      # with:
+      #   target: ${{ matrix.target }}
+
+    steps:
+      - name: Executing workflow ${{ matrix.target }}
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: test_${{ matrix.target }}.yml

@@ -2,6 +2,10 @@ name: Python Tests
 
 on:
   workflow_call:
+    inputs:
+      case:
+        required: true
+        type: string
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
