@@ -86,30 +86,24 @@ class Ini:
         for key in self._dirs:
             self.changePath(key, self.base / key)
 
-    def changeKey(self, key: str, value: str):
+    def changeKey(self, key: str, value: str = ""):
         """
         Change the value associated with the specified key in the CONFIG[SECTION].
 
         Parameters
         ----------
-        key : str
-            The key whose value needs to be changed.
-        value : str or Path
+        key : str, dict
+            Key to set. Alternatively, can be a dict to iterate over setting multiple
+            keys at once.
+        value : str, default=""
             The new value to associate with the key.
         """
+        if isinstance(key, dict):
+            for k, v in key.items():
+                self.changeKey(k, v)
+            return
+
         self.config[self.section][key] = str(value)
-
-    def changeKeys(self, keys: dict):
-        """
-        Changes multiple keys in one operation.
-
-        Parameters
-        ----------
-        keys : dict
-            Keys to change to values
-        """
-        for key, value in keys.items():
-            self.changeKey(key, value)
 
     def changeSection(self, section: str) -> None:
         """
@@ -264,7 +258,7 @@ class Ini:
         self.section = "DEFAULT"
 
         self.changeBase(Path.home() / ".isofit/")
-        self.changeKeys(self._keys)
+        self.changeKey(self._keys)
 
         self.ini = self.base / "isofit.ini"
 
