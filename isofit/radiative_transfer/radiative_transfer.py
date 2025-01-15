@@ -105,7 +105,6 @@ class RadiativeTransfer:
                 raise AttributeError(error)
 
         # If any engine is true, self is true
-        self.topography_model = any([rte.topography_model for rte in self.rt_engines])
         self.glint_model = any([rte.glint_model for rte in self.rt_engines])
 
         # The rest of the code relies on sorted order of the individual RT engines which cannot

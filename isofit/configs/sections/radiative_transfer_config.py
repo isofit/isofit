@@ -79,13 +79,6 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         self.treat_as_emissive = False
         """bool: Run the simulation in emission mode"""
 
-        self._topography_model_type = bool
-        self.topography_model = False
-        """
-        Flag to indicated whether to use a topographic-flux (topoflux)
-        implementation of the forward model.
-        """
-
         self._glint_model_type = bool
         self.glint_model = False
         """
