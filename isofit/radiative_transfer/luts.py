@@ -675,7 +675,7 @@ def load(
     if "before" in coupling:
         couple(ds)
 
-        # Save back to the original file, only the the coupled terms
+        # Save back to the original file, only the coupled terms
         if all(
             [
                 "save" in coupling,
@@ -684,7 +684,7 @@ def load(
             ]
         ):
             Logger.debug(f"Saving coupled terms back to the original input file")
-            terms = ["bi-direct", "hemi-direct", "direct-hemi", "bi-hemi"]
+            terms = ["dir-dir", "dif-dir", "dir-dif", "dif-dif"]
             ds[terms].to_netcdf(file, mode="a")
 
     # Special case that doesn't require defining the entire grid subsetting strategy
