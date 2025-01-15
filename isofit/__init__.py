@@ -37,6 +37,7 @@ def checkNumThreads():
     Checks the num_threads setting in the environment and raises a strong warning if it
     is not set to 1 .
     """
+    threads = "unknown"
     error = False
     if info := threadpool_info():
         threads = info[0]["num_threads"]
