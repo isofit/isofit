@@ -390,13 +390,10 @@ class RadiativeTransfer:
                     else r[key]
                 )
 
-        # unscaling and rescaling downward direct radiance by local solar zenith angle (see above)
-        for ind in [0, 2]:
-            self.L_coupled[ind] = self.L_coupled[ind] / coszen * cos_i
-
-        L_dir_dir = self.L_coupled[0]
+        # assigning coupled terms, unscaling and rescaling downward direct radiance by local solar zenith angle
+        L_dir_dir = self.L_coupled[0] / coszen * cos_i
         L_dif_dir = self.L_coupled[1]
-        L_dir_dif = self.L_coupled[2]
+        L_dir_dif = self.L_coupled[2] / coszen * cos_i
         L_dif_dif = self.L_coupled[3]
 
         return L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif
