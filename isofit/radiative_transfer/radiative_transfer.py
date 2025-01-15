@@ -175,7 +175,6 @@ class RadiativeTransfer:
         Physics-based forward model to calculate at-sensor radiance.
         Includes topography, background reflectance, and glint.
         """
-        # ToDo: get TOA solar zenith angle from geometry object or from self?
         coszen = (
             np.cos(np.deg2rad(geom.solar_zenith))
             if np.isnan(self.coszen)
