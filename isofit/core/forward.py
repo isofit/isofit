@@ -312,12 +312,14 @@ class ForwardModel:
 
         # Get partials of reflectance and upsample
         _, L_down_dir, L_down_dif = self.RT.get_L_down_transmitted(x_RT, geom)
-        rfl = self.surface.calc_rfl(x_surface, geom, L_down_dir, L_down_dif)
-        rho_dir_dir_hi = self.upsample(self.surface.wl, rfl[0])
-        rho_dif_dir_hi = self.upsample(self.surface.wl, rfl[1])
+        rho_dir_dir, rho_dif_dir = self.surface.calc_rfl(
+            x_surface, geom, L_down_dir, L_down_dif
+        )
+        rho_dir_dir_hi = self.upsample(self.surface.wl, rho_dir_dir)
+        rho_dif_dir_hi = self.upsample(self.surface.wl, rho_dif_dir)
         Ls = self.surface.calc_Ls(x_surface, geom)
         Ls_hi = self.upsample(self.surface.wl, Ls)
-        rdn_hi = self.calc_rdn(x, geom, rfl[0], rfl[1], Ls=Ls)
+        rdn_hi = self.calc_rdn(x, geom, rho_dir_dir, rho_dif_dir, Ls=Ls)
 
         drdn_dRTb = self.RT.drdn_dRTb(x_RT, rho_dir_dir_hi, rho_dif_dir_hi, Ls_hi, geom)
         dmeas_dRTb = self.instrument.sample(x_instrument, self.RT.wl, drdn_dRTb.T).T
