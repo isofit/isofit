@@ -43,7 +43,7 @@ jobs:
         shell: bash
         run: |
           # Module must report "[x]" to be detected
-          if isofit download all --check | grep "[x]"; then
+          if isofit download all --check | grep "\[x]"; then
             echo "::error::Cache update needed, please request a maintainer to delete the cache-extras then rerun this workflow"
             exit 1
           else
