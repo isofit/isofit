@@ -44,6 +44,8 @@ jobs:
         run: |
           # Module must report "[x]" to be detected
           if isofit download all --check | grep "\[x]"; then
+            # Run it twice, once for the job output and once for detecting updates
+            isofit download all --check
             echo "::error::Cache update needed, please request a maintainer to delete the cache-extras then rerun this workflow"
             exit 1
           else
