@@ -42,9 +42,22 @@ from isofit.utils.surface_model import cli_surface_model
 @click.option("-6s", "--sixs", help="Override path to SixS installation")
 # @click.option("-mt", "--modtran", help="Override path to MODTRAN installation")
 @click.option(
+    "-k",
+    "--keys",
+    nargs=2,
+    multiple=True,
+    help="Override keys with the format `-k [key] [value]`",
+)
+@click.option(
     "--save/--no-save", " /-S", is_flag=True, default=True, help="Save the ini file"
 )
-def cli(ctx, version, ini, base, section, save, **overrides):
+@click.option(
+    "-p",
+    "--preview",
+    is_flag=True,
+    help="Prints the environment that will be used. This disables saving",
+)
+def cli(ctx, version, ini, base, section, keys, save, preview, **overrides):
     """\
     This houses the subcommands of ISOFIT
     """
@@ -62,7 +75,13 @@ def cli(ctx, version, ini, base, section, save, **overrides):
         if value:
             env.changePath(key, value)
 
-    env.save(diff_only=save)
+    for key, value in keys:
+        env.changeKey(key, value)
+
+    if preview:
+        print(env)
+    else:
+        env.save(diff_only=save)
 
 
 # Subcommands live closer to the code and algorithms they are related to.
@@ -75,7 +94,6 @@ cli.add_command(cli_apply_oe)
 cli.add_command(cli_sun)
 cli.add_command(cli_env_path)
 cli.add_command(dli.download)
-cli.add_command(dli.validate)
 cli.add_command(cli_build)
 cli.add_command(cli_6s_to_srtmnet)
 cli.add_command(cli_surface_model)
