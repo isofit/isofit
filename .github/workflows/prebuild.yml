@@ -42,8 +42,8 @@ jobs:
         shell: bash
         run: |
           # First check if any module needs an update. It must report "[x]" to be detected
-          if isofit download all --update --check | grep "[x]"; then
-            isofit download all --update
+          if isofit download all --check | grep "[x]"; then
+            isofit download all
             echo "CACHE_UPDATE=true" >> $GITHUB_ENV
           else
             echo "CACHE_UPDATE=false" >> $GITHUB_ENV
