@@ -76,7 +76,7 @@ def download(path=None, tag="latest", overwrite=False):
     print("[!] Be sure to build the examples for your system via `isofit build`")
 
 
-def validate(path=None, checkUpdate=True, debug=print, error=print, **_):
+def validate(path=None, checkForUpdate=True, debug=print, error=print, **_):
     """
     Validates an ISOFIT examples installation
 
@@ -84,7 +84,7 @@ def validate(path=None, checkUpdate=True, debug=print, error=print, **_):
     ----------
     path : str, default=None
         Path to verify. If None, defaults to the ini path
-    checkUpdate : bool, default=True
+    checkForUpdate : bool, default=True
         Checks for updates if the path is valid
     debug : function, default=print
         Print function to use for debug messages, eg. logging.debug
@@ -128,7 +128,7 @@ def validate(path=None, checkUpdate=True, debug=print, error=print, **_):
 
     debug("[✓] Path is valid")
 
-    if checkUpdate:
+    if checkForUpdate:
         return isUpToDate(path, debug=debug, error=error)
 
     return True
@@ -153,7 +153,7 @@ def isUpToDate(path=None, tag="latest", debug=print, error=print, **_):
     Returns
     -------
     bool
-        True if there is a version update, else False
+        True if the path is up to date, False otherwise
 
     Notes
     -----

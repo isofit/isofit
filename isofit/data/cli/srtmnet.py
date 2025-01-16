@@ -233,7 +233,7 @@ def isUpToDate(path=None, tag="latest", debug=print, error=print, **_):
     Returns
     -------
     bool
-        True if there is a version update, else False
+        True if the path is up to date, False otherwise
 
     Notes
     -----
