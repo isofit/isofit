@@ -23,7 +23,9 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ~/.isofit
-          key: cache-extras
+          key: cache-extras-${{ github.ref }}
+          restore-keys:
+            cache-extras-
 
       - uses: actions/checkout@v3
 
@@ -43,12 +45,13 @@ jobs:
         run: |
           # First check if any module needs an update. It must report "[x]" to be detected
           if isofit download all --check | grep "[x]"; then
-            echo "Cache update needed, executing..."
+            echo "\nCache update needed, executing..."
             isofit download all
+            echo "\nBuilding examples"
             isofit build
             echo "CACHE_UPDATE=true" >> $GITHUB_ENV
           else
-            echo "No cache update needed"
+            echo "\nNo cache update needed"
             echo "CACHE_UPDATE=false" >> $GITHUB_ENV
           fi
 
@@ -58,7 +61,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: ~/.isofit
-          key: cache-extras
+          key: cache-extras-${{ github.ref }}
 
   pip:
     needs: cache
