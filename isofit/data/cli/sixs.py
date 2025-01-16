@@ -143,15 +143,22 @@ def update(check=False, **kwargs):
     **kwargs : dict
         Additional key-word arguments to pass to download()
     """
-    kwargs.get("debug", print)(
-        "SixS does not support versioning at this time, no update to be found"
-    )
+    debug = kwargs.get("debug", print)
+    if not validate(**kwargs):
+        if not check:
+            kwargs["overwrite"] = True
+            debug("Executing update")
+            download(**kwargs)
+        else:
+            debug(f"Please update via `isofit download {CMD} --update`")
 
 
 @cli.download.command(name=CMD)
-@cli.path(help="Root directory to download sixs to, ie. [path]/sixs")
-@cli.validate
-def download_cli(validate_, **kwargs):
+@cli.path(help="Root directory to download 6S to, ie. [path]/sixs")
+@cli.tag
+@cli.overwrite
+@cli.check
+def download_cli(**kwargs):
     """\
     Downloads 6S from https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar. Only HDF5 versions are supported at this time.
 
@@ -159,10 +166,20 @@ def download_cli(validate_, **kwargs):
     Run `isofit download paths` to see default path locations.
     There are two ways to specify output directory:
         - `isofit --sixs /path/sixs download sixs`: Override the ini file. This will save the provided path for future reference.
-        - `isofit download sixs --output /path/sixs`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
+        - `isofit download sixs --path /path/sixs`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
     It is recommended to use the first style so the download path is remembered in the future.
     """
     if validate_:
         validate(**kwargs)
     else:
         download(**kwargs)
+
+
+@cli.validate.command(name=CMD)
+@cli.path(help="Root directory to download 6S to, ie. [path]/sixs")
+@cli.tag
+def validate_cli(**kwargs):
+    """\
+    Validates the installation of 6S
+    """
+    validate(**kwargs)

@@ -34,10 +34,10 @@ def getVersion(version="latest"):
     try:
         get = requests.get(URL, timeout=10)
     except requests.exceptions.Timeout:
-        print("sRTMnet server request timed out, cannot retrieve versions")
+        print("[!] sRTMnet server request timed out, cannot retrieve versions")
         return
     except requests.exceptions.ConnectionError:
-        print("sRTMnet server refused connection, cannot retrieve versions")
+        print("[!] sRTMnet server refused connection, cannot retrieve versions")
         return
 
     versions = list(set(re.findall(r"sRTMnet_(v\d+)\.h5", get.text)))
@@ -49,7 +49,7 @@ def getVersion(version="latest"):
         return version
     else:
         print(
-            f"Error: Requested version {version!r} does not exist, must be one of: {versions}"
+            f"[!] Requested version {version!r} does not exist, must be one of: {versions}"
         )
 
 
@@ -93,7 +93,7 @@ def download(path=None, tag="latest", overwrite=False):
     print(f"Done, now available at: {output}")
 
 
-def validate(path=None, checkUpdate=True, debug=print, error=print, **_):
+def validate(path=None, checkForUpdate=True, debug=print, error=print, **_):
     """
     Validates an sRTMnet installation
 
@@ -101,7 +101,7 @@ def validate(path=None, checkUpdate=True, debug=print, error=print, **_):
     ----------
     path : str, default=None
         Path to verify. If None, defaults to the ini path
-    checkUpdate : bool, default=True
+    checkForUpdate : bool, default=True
         Checks for updates if the path is valid
     debug : function, default=print
         Print function to use for debug messages, eg. logging.debug
@@ -137,8 +137,8 @@ def validate(path=None, checkUpdate=True, debug=print, error=print, **_):
 
     debug("[✓] Path is valid")
 
-    if checkUpdate:
-        checkForUpdate(path, debug=debug, error=error)
+    if checkForUpdate:
+        isUpToDate(path, debug=debug, error=error)
 
     return True
 
@@ -194,7 +194,7 @@ def compare(file, name, version, error=print):
     """
     if version is None:
         if not (latest := getVersion(tag)):
-            error("Failed to retrieve latest version, try again later")
+            error("[!] Failed to retrieve latest version, try again later")
             return False
 
         latest = Version(latest)
@@ -202,19 +202,19 @@ def compare(file, name, version, error=print):
     if find := re.findall(r"(v\d+)", file):
         current = Version(find[0])
     else:
-        error(f"Version could not be parsed from the path for {name}")
+        error(f"[x] Version could not be parsed from the path for {name}")
         return True
 
     if current < version:
         error(
-            f"The sRTMnet {name} is out of date. The latest is v{version}, currently installed is v{current}"
+            f"[x] The sRTMnet {name} is out of date. The latest is v{version}, currently installed is v{current}"
         )
         return True
 
     return False
 
 
-def checkForUpdate(path=None, tag="latest", debug=print, error=print, **_):
+def isUpToDate(path=None, tag="latest", debug=print, error=print, **_):
     """
     Checks the installed version against the latest release
 
@@ -263,7 +263,7 @@ def checkForUpdate(path=None, tag="latest", debug=print, error=print, **_):
 
         if not model.exists() or not aux.exists():
             error("[x] Missing the above")
-            return True
+            return False
     else:
         path = Path(path)
         model = path / env["srtmnet.file"]
@@ -273,18 +273,18 @@ def checkForUpdate(path=None, tag="latest", debug=print, error=print, **_):
 
     if not (latest := getVersion(tag)):
         error("[!] Failed to retrieve latest version, try again later")
-        return False
+        return True
 
     latest = Version(latest)
     model = compare(model.name, "model", latest, error)
     aux = compare(aux.name, "aux", latest, error)
 
     if model or aux:
-        return True
+        return False
 
     debug("[✓] Path is up to date")
 
-    return False
+    return True
 
 
 def update(check=False, **kwargs):
@@ -299,8 +299,8 @@ def update(check=False, **kwargs):
         Additional key-word arguments to pass to download()
     """
     debug = kwargs.get("debug", print)
-    if checkForUpdate(**kwargs):
-        if check:
+    if not validate(**kwargs):
+        if not check:
             kwargs["overwrite"] = True
             debug("Executing update")
             download(**kwargs)
@@ -312,10 +312,8 @@ def update(check=False, **kwargs):
 @cli.path(help="Root directory to download sRTMnet to, ie. [path]/sRTMnet")
 @cli.tag
 @cli.overwrite
-@cli.update
 @cli.check
-@cli.validate
-def download_cli(update_, check, validate_, **kwargs):
+def download_cli(**kwargs):
     """\
     Downloads sRTMnet from https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/. Only HDF5 versions are supported at this time.
 
@@ -323,12 +321,20 @@ def download_cli(update_, check, validate_, **kwargs):
     Run `isofit download paths` to see default path locations.
     There are two ways to specify output directory:
         - `isofit --srtmnet /path/sRTMnet download sRTMnet`: Override the ini file. This will save the provided path for future reference.
-        - `isofit download sRTMnet --output /path/sRTMnet`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
+        - `isofit download sRTMnet --path /path/sRTMnet`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
     It is recommended to use the first style so the download path is remembered in the future.
     """
-    if update_:
-        update(check, **kwargs)
-    elif validate_:
-        validate(**kwargs)
-    else:
+    if kwargs.get("overwrite"):
         download(**kwargs)
+    else:
+        update(**kwargs)
+
+
+@cli.validate.command(name=CMD)
+@cli.path(help="Root directory to download sRTMnet to, ie. [path]/sRTMnet")
+@cli.tag
+def validate_cli(**kwargs):
+    """\
+    Validates the installation of sRTMnet as well as checks for updates
+    """
+    validate(**kwargs)
