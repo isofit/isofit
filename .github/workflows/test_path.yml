@@ -28,9 +28,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ~/.isofit
-          key: cache-extras-${{ github.ref }}
-          restore-keys:
-            cache-extras-
+          key: cache-extras
           fail-on-cache-miss: true
 
       - uses: actions/checkout@v3

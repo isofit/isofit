@@ -20,12 +20,10 @@ jobs:
     steps:
       - name: Cache Extras
         id: cache-extras
-        uses: actions/cache/restore@v4
+        uses: actions/cache@v4
         with:
           path: ~/.isofit
-          key: cache-extras-${{ github.ref }}
-          restore-keys:
-            cache-extras-
+          key: cache-extras
 
       - uses: actions/checkout@v3
 
@@ -40,28 +38,27 @@ jobs:
         run: |
           python3 -m pip install --editable ".[test]"
 
-      - name: Download Extras
+      - if: steps.cache-extras.outputs.cache-hit == 'true'
+        name: Check for Updates
         shell: bash
         run: |
-          # First check if any module needs an update. It must report "[x]" to be detected
+          # Module must report "[x]" to be detected
           if isofit download all --check | grep "[x]"; then
-            echo "\nCache update needed, executing..."
-            isofit download all
-            echo "\nBuilding examples"
-            isofit build
-            echo "CACHE_UPDATE=true" >> $GITHUB_ENV
+            echo "::error::Cache update needed, please request a maintainer to delete the `cache-extras` then rerun this workflow"
           else
-            echo "\nNo cache update needed"
-            echo "CACHE_UPDATE=false" >> $GITHUB_ENV
+            echo
+            echo "No cache update needed"
           fi
 
-      # Only post the cache if an update was performed
-      - if: env.CACHE_UPDATE == 'true'
-        name: Update Cache
-        uses: actions/cache/save@v4
-        with:
-          path: ~/.isofit
-          key: cache-extras-${{ github.ref }}
+      - if: steps.cache-extras.outputs.cache-hit == 'false'
+        name: Download Extras
+        shell: bash
+        run: |
+          echo "Downloading extras"
+          isofit download all
+          echo
+          echo "Building examples"
+          isofit build
 
   pip:
     needs: cache
