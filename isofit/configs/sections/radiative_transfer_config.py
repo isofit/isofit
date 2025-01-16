@@ -212,7 +212,7 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         # Check that all input files exist
         for key in self._get_nontype_attributes():
             value = getattr(self, key)
-            if value is not None and key[-5:] == "_file" and key != "emulator_file":
+            if value and key[-5:] == "_file" and key != "emulator_file":
                 if os.path.isfile(value) is False:
                     errors.append(
                         "Config value radiative_transfer->{}: {} not found".format(
