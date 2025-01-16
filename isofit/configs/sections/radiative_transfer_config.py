@@ -94,7 +94,7 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         """
 
         self._rt_mode_type = str
-        self.rt_mode = None
+        self.rt_mode = "transm"
         """str: Radiative transfer mode of LUT simulations.
         'transm' for transmittances, 'rdn' for reflected radiance."""
 
@@ -227,7 +227,7 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
                 " available models: {}".format(self.engine_name, valid_rt_engines)
             )
 
-        valid_rt_modes = ["transm", "rdn", None]
+        valid_rt_modes = ["transm", "rdn"]
         if self.rt_mode not in valid_rt_modes:
             errors.append(
                 "radiative_transfer->raditive_transfer_mode: {} not in one of the"
