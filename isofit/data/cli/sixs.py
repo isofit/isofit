@@ -123,11 +123,11 @@ def validate(path=None, debug=print, error=print, **_):
     debug(f"Verifying path for 6S: {path}")
 
     if not (path := Path(path)).exists():
-        error("[x] 6S path does not exist, please download it via `isofit download 6S`")
+        error("[x] 6S path does not exist")
         return False
 
     if not (path / f"sixsV2.1").exists():
-        error("[x] 6S does not appear to be installed correctly, please ensure it is")
+        error("[x] 6S does not appear to be installed correctly")
         return False
 
     debug("[✓] Path is valid")

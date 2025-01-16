@@ -43,9 +43,12 @@ jobs:
         run: |
           # First check if any module needs an update. It must report "[x]" to be detected
           if isofit download all --check | grep "[x]"; then
+            echo "Cache update needed, executing..."
             isofit download all
+            isofit build
             echo "CACHE_UPDATE=true" >> $GITHUB_ENV
           else
+            echo "No cache update needed"
             echo "CACHE_UPDATE=false" >> $GITHUB_ENV
           fi
 
