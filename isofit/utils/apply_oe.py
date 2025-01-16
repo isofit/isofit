@@ -73,6 +73,7 @@ def apply_oe(
     num_neighbors=[],
     atm_sigma=[2],
     pressure_elevation=False,
+    multipart_transmittance=False,
     prebuilt_lut=None,
     no_min_lut_spacing=False,
     inversion_windows=None,
@@ -180,6 +181,8 @@ def apply_oe(
         Only used with the analytical line.
     pressure_elevation : bool, default=False
         Flag to retrieve elevation
+    multipart_transmittance: bool, default=False
+        Flag to indicate whether a 4-component transmittance model (coupling terms) is to be used
     prebuilt_lut : str, default=None
         Use this pre-constructed look up table for all retrievals. Must be an
         ISOFIT-compatible RTE NetCDF
@@ -562,6 +565,7 @@ def apply_oe(
                 uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
                 prebuilt_lut_path=prebuilt_lut,
                 inversion_windows=INVERSION_WINDOWS,
+                multipart_transmittance=multipart_transmittance,
             )
 
             # Run modtran retrieval
@@ -665,6 +669,7 @@ def apply_oe(
             pressure_elevation=pressure_elevation,
             prebuilt_lut_path=prebuilt_lut,
             inversion_windows=INVERSION_WINDOWS,
+            multipart_transmittance=multipart_transmittance,
         )
 
         # Run retrieval
@@ -758,6 +763,7 @@ def apply_oe(
 @click.option("--num_neighbors", "-nn", type=int, multiple=True)
 @click.option("--atm_sigma", "-as", type=float, multiple=True, default=[2])
 @click.option("--pressure_elevation", is_flag=True, default=False)
+@click.option("--multipart_transmittance", is_flag=True, default=False)
 @click.option("--prebuilt_lut", type=str)
 @click.option("--no_min_lut_spacing", is_flag=True, default=False)
 @click.option("--inversion_windows", type=float, nargs=2, multiple=True, default=None)
