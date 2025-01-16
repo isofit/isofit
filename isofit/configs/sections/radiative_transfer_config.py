@@ -98,7 +98,7 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         """str: Radiative transfer mode of LUT simulations.
         'transm' for transmittances, 'rdn' for reflected radiance."""
 
-        self._lut_names_type = dict()
+        self._lut_names_type = dict
         self.lut_names = None
         """Dictionary: Names of the elements to run this radiative transfer element on.  Must be a subset
         of the keys in radiative_transfer->lut_grid.  If not specified, uses all keys from
@@ -227,7 +227,7 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
                 " available models: {}".format(self.engine_name, valid_rt_engines)
             )
 
-        valid_rt_modes = ["transm", "rdn"]
+        valid_rt_modes = ["transm", "rdn", None]
         if self.rt_mode not in valid_rt_modes:
             errors.append(
                 "radiative_transfer->raditive_transfer_mode: {} not in one of the"
@@ -265,6 +265,21 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
                 errors.append(
                     f"Radiative transfer engine file not found on system: {file}"
                 )
+
+        if self.topography_model:
+            for rtm in self.radiative_transfer_engines:
+                if rtm.engine_name != "modtran":
+                    errors.append(
+                        "All self.forward_model.radiative_transfer.radiative_transfer_engines"
+                        ' must be of type "modtran" if forward_model.topograph_model is'
+                        " set to True"
+                    )
+                if rtm.multipart_transmittance is False:
+                    errors.append(
+                        "All self.forward_model.radiative_transfer.radiative_transfer_engines"
+                        " must have multipart_transmittance set as True if"
+                        " forward_model.topograph_model is set to True"
+                    )
 
         return errors
 
@@ -354,21 +369,6 @@ class RadiativeTransferConfig(BaseConfigSection):
                 )
             if np.unique(item).size < len(item):
                 errors.append(f"Detected duplicate values in lut_grid item {key}")
-
-        if self.topography_model:
-            for rtm in self.radiative_transfer_engines:
-                if rtm.engine_name != "modtran":
-                    errors.append(
-                        "All self.forward_model.radiative_transfer.radiative_transfer_engines"
-                        ' must be of type "modtran" if forward_model.topograph_model is'
-                        " set to True"
-                    )
-                if rtm.multipart_transmittance is False:
-                    errors.append(
-                        "All self.forward_model.radiative_transfer.radiative_transfer_engines"
-                        " must have multipart_transmittance set as True if"
-                        " forward_model.topograph_model is set to True"
-                    )
 
         for rte in self.radiative_transfer_engines:
             errors.extend(rte.check_config_validity())
