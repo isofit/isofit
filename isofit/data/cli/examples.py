@@ -38,7 +38,7 @@ def download_neon(examples):
     avail = unzip(zipfile, path=output.parent, rename=output.name)
 
 
-def download(path=None, tag="latest", overwrite=False):
+def download(path=None, tag="latest", overwrite=False, **_):
     """
     Downloads the ISOFIT examples from the repository https://github.com/isofit/isofit-tutorials.
 
@@ -50,6 +50,9 @@ def download(path=None, tag="latest", overwrite=False):
         Release tag to pull from the github
     overwrite : bool, default=False
         Overwrite an existing installation
+    **_ : dict
+        Ignores unused params that may be used by other validate functions. This is to
+        maintain compatibility with other functions
     """
     print(f"Downloading ISOFIT examples")
 
@@ -105,9 +108,7 @@ def validate(path=None, checkForUpdate=True, debug=print, error=print, **_):
     debug(f"Verifying path for ISOFIT examples: {path}")
 
     if not (path := Path(path)).exists():
-        error(
-            "[x] Examples path does not exist, please download it via `isofit download examples`"
-        )
+        error("[x] Examples path does not exist")
         return False
 
     expected = [
@@ -121,9 +122,7 @@ def validate(path=None, checkForUpdate=True, debug=print, error=print, **_):
         "py-hypertrace",
     ]
     if not list(path.glob("*")) != expected:
-        error(
-            "[x] ISOFIT examples do not appear to be installed correctly, please ensure it is"
-        )
+        error("[x] ISOFIT examples do not appear to be installed correctly")
         return False
 
     debug("[✓] Path is valid")
@@ -204,7 +203,7 @@ def update(check=False, **kwargs):
             debug("Executing update")
             download(**kwargs)
         else:
-            debug(f"Please update via `isofit download {CMD} --update`")
+            debug(f"Please download the latest via `isofit download {CMD}`")
 
 
 @cli.download.command(name=CMD)

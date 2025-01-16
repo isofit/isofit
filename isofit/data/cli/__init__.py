@@ -42,7 +42,10 @@ def download_all(**kwargs):
     Downloads all ISOFIT extra dependencies to the locations specified in the
     isofit.ini file using latest tags and versions
     """
-    runOnAll("update", **kwargs)
+    if kwargs.get("overwrite"):
+        runOnAll("download", **kwargs)
+    else:
+        runOnAll("update", **kwargs)
 
 
 @cli.validate.command(name="all")

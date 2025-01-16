@@ -13,7 +13,7 @@ CMD = "imagecube"
 URL = "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/{size}_chunk.zip"
 
 
-def download(path=None, size="both"):
+def download(path=None, size="both", overwrite=False, **_):
     """
     Downloads the extra ISOFIT data files from https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/.
 
@@ -23,10 +23,15 @@ def download(path=None, size="both"):
         Path to output as. If None, defaults to the ini path.
     size : "both" | "small" | "medium"
         Which chunk size to pull
+    overwrite : bool, default=False
+        Overwrite an existing installation
+    **_ : dict
+        Ignores unused params that may be used by other validate functions. This is to
+        maintain compatibility with other functions
     """
     if size == "both":
-        download(path, "small")
-        download(path, "medium")
+        download(path, "small", overwrite)
+        download(path, "medium", overwrite)
         return
 
     if size not in ("small", "medium"):
@@ -37,7 +42,7 @@ def download(path=None, size="both"):
     print(f"Downloading ISOFIT image cube data: {size}")
 
     output = Path(path or env.imagecube) / size
-    output = prepare_output(output, None)
+    output = prepare_output(output, None, overwrite=overwrite)
     if not output:
         return
 
@@ -47,7 +52,7 @@ def download(path=None, size="both"):
     zipfile = download_file(url, output.parent / f"{size}_chunk.zip")
 
     print(f"Unzipping {zipfile}")
-    avail = unzip(zipfile, path=output.parent, rename=output.name)
+    avail = unzip(zipfile, path=output.parent, rename=output.name, overwrite=overwrite)
 
     print(f"Done, now available at: {avail}")
 
@@ -94,7 +99,7 @@ def validate(path=None, size="both", debug=print, error=print, **_):
         file = path / size / f"ang20170323t202244_{kind}_{sizes[size]}"
         if not file.exists():
             error(
-                f"[x] ISOFIT {size} image cube data do not appear to be installed correctly, please ensure it is"
+                f"[x] ISOFIT {size} image cube data do not appear to be installed correctly"
             )
             error(f"[x] Missing file: {file}")
             return False
@@ -122,7 +127,7 @@ def update(check=False, **kwargs):
             debug("Executing update")
             download(**kwargs)
         else:
-            debug(f"Please update via `isofit download {CMD}`")
+            debug(f"Please download the latest via `isofit download {CMD}`")
 
 
 # Shared click options

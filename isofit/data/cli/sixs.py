@@ -60,7 +60,7 @@ def build(directory):
     )
 
 
-def download(path=None):
+def download(path=None, overwrite=False, **_):
     """
     Downloads 6S from https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar.
 
@@ -68,8 +68,11 @@ def download(path=None):
     ----------
     output : str | None
         Path to output as. If None, defaults to the ini path.
-    version : str
-        Release tag to pull from the github.
+    overwrite : bool, default=False
+        Overwrite an existing installation
+    **_ : dict
+        Ignores unused params that may be used by other validate functions. This is to
+        maintain compatibility with other functions
     """
     if not precheck():
         print(
@@ -79,7 +82,7 @@ def download(path=None):
 
     print("Downloading 6S")
 
-    output = prepare_output(path, env.sixs)
+    output = prepare_output(path, env.sixs, overwrite=overwrite)
     if not output:
         return
 
@@ -150,7 +153,7 @@ def update(check=False, **kwargs):
             debug("Executing update")
             download(**kwargs)
         else:
-            debug(f"Please update via `isofit download {CMD} --update`")
+            debug(f"Please download the latest via `isofit download {CMD}`")
 
 
 @cli.download.command(name=CMD)

@@ -53,7 +53,7 @@ def getVersion(version="latest"):
         )
 
 
-def download(path=None, tag="latest", overwrite=False):
+def download(path=None, tag="latest", overwrite=False, **_):
     """
     Downloads sRTMnet from https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/.
 
@@ -65,6 +65,9 @@ def download(path=None, tag="latest", overwrite=False):
         sRTMnet version to pull
     overwrite : bool, default=False
         Overwrite an existing installation
+    **_ : dict
+        Ignores unused params that may be used by other validate functions. This is to
+        maintain compatibility with other functions
     """
     if (version := getVersion(tag)) is None:
         return
@@ -122,17 +125,15 @@ def validate(path=None, checkForUpdate=True, debug=print, error=print, **_):
     debug(f"Verifying path for sRTMnet: {path}")
 
     if not (path := Path(path)).exists():
-        error(
-            "[x] sRTMnet path does not exist, please download it via `isofit download sRTMnet`"
-        )
+        error("[x] sRTMnet path does not exist")
         return False
 
     if not list(path.glob("*.h5")):
-        error("[x] sRTMnet model not found, please download it")
+        error("[x] sRTMnet model not found")
         return False
 
     if not list(path.glob("*_aux.npz")):
-        error("[x] sRTMnet aux file not found, please download it")
+        error("[x] sRTMnet aux file not found")
         return False
 
     debug("[✓] Path is valid")
@@ -305,7 +306,7 @@ def update(check=False, **kwargs):
             debug("Executing update")
             download(**kwargs)
         else:
-            debug(f"Please update via `isofit download {CMD} --update`")
+            debug(f"Please download the latest via `isofit download {CMD}`")
 
 
 @cli.download.command(name=CMD)

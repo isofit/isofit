@@ -16,7 +16,7 @@ from isofit.data.download import (
 CMD = "data"
 
 
-def download(path=None, tag="latest", overwrite=False):
+def download(path=None, tag="latest", overwrite=False, **_):
     """
     Downloads the extra ISOFIT data files from the repository https://github.com/isofit/isofit-data.
 
@@ -28,6 +28,9 @@ def download(path=None, tag="latest", overwrite=False):
         Release tag to pull from the github
     overwrite : bool, default=False
         Overwrite an existing installation
+    **_ : dict
+        Ignores unused params that may be used by other validate functions. This is to
+        maintain compatibility with other functions
     """
     print(f"Downloading ISOFIT data")
 
@@ -78,9 +81,7 @@ def validate(path=None, checkForUpdate=True, debug=print, error=print, **_):
     debug(f"Verifying path for ISOFIT data: {path}")
 
     if not (path := Path(path)).exists():
-        error(
-            "[x] Data path does not exist, please download it via `isofit download data`"
-        )
+        error("[x] Data path does not exist")
         return False
 
     # Just validate some key files
@@ -91,9 +92,7 @@ def validate(path=None, checkForUpdate=True, debug=print, error=print, **_):
     ]
     files = list(path.glob("*"))
     if not all([path / file in files for file in check]):
-        error(
-            "[x] ISOFIT data do not appear to be installed correctly, please ensure it is"
-        )
+        error("[x] ISOFIT data do not appear to be installed correctly")
         return False
 
     debug("[✓] Path is valid")
@@ -174,7 +173,7 @@ def update(check=False, **kwargs):
             debug("Executing update")
             download(**kwargs)
         else:
-            debug(f"Please update via `isofit download {CMD} --update`")
+            debug(f"Please download the latest via `isofit download {CMD}`")
 
 
 @cli.download.command(name=CMD)
