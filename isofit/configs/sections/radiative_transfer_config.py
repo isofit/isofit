@@ -256,20 +256,16 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
                 )
 
         files = [
-            self.earth_sun_distance_file,
-            self.irradiance_file,
             self.obs_file,
             self.aerosol_model_file,
             self.aerosol_template_file,
         ]
-        for f in files:
-            if f is not None:
-                if os.path.isfile(f) is False:
-                    errors.append(
-                        "Radiative transfer engine file not found on system: {}".format(
-                            self.earth_sun_distance_file
-                        )
-                    )
+        for file in files:
+            if file is not None and not os.path.isfile(file):
+                errors.append(
+                    f"Radiative transfer engine file not found on system: {file}"
+                )
+
         return errors
 
 
