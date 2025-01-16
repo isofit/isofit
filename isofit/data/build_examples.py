@@ -240,8 +240,8 @@ Examples = {
     "SantaMonica": IsofitExample(
         name="20151026_SantaMonica", requires=["data", "sixs"]
     ),
-    "Pasadena": IsofitExample(name="20171108_Pasadena", requires=["data", "modtran"]),
-    "ThermalIR": IsofitExample(name="20190806_ThermalIR", requires=["data", "modtran"]),
+    "Pasadena": IsofitExample(name="20171108_Pasadena", requires=["data"]),
+    "ThermalIR": IsofitExample(name="20190806_ThermalIR", requires=["data"]),
     "ImageCube-small": ApplyOEExample(
         name="image_cube/small",
         requires=["sixs", "srtmnet", "image_cube"],

@@ -13,7 +13,7 @@ Logger = logging.getLogger(__file__)
 
 class Ini:
     # Default directories to expect
-    _dirs: List[str] = ["data", "examples", "imagecube", "srtmnet", "sixs", "modtran"]
+    _dirs: List[str] = ["data", "examples", "imagecube", "srtmnet", "sixs"]
 
     # Additional keys with default values
     _keys: Dict[str, str] = {"srtmnet.file": "", "srtmnet.aux": ""}
