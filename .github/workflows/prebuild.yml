@@ -50,7 +50,7 @@ jobs:
             echo "No cache update needed"
           fi
 
-      - if: steps.cache-extras.outputs.cache-hit == 'false'
+      - if: steps.cache-extras.outputs.cache-hit != 'true'
         name: Download Extras
         shell: bash
         run: |
