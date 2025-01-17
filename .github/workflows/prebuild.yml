@@ -1,5 +1,8 @@
 # This workflow performs functions that must occur before launching all the Python tests
-# The cache will automatically be updated if any of the extra downloads need an update
+# The cache will detect if any of the extra downloads need an update and, if so, will
+# fail the workflow. This is required so a maintainer can manually delete the existing
+# cache. Deliberate updates to the cache is important to keep track the health and
+# status of the cache instead of automatic updates
 # Then launch the Python tests in parallel
 
 name: Prebuild
