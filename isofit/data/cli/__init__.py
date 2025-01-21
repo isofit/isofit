@@ -10,13 +10,6 @@ Modules = {
     for imp, name, _ in pkgutil.iter_modules(__path__)
 }
 
-# Remove disabled modules
-Modules = {
-    name: module
-    for name, module in Modules.items()
-    if not getattr(module, "DISABLED", False)
-}
-
 
 def runOnAll(func, **kwargs):
     """
