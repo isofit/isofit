@@ -32,48 +32,62 @@ from isofit.utils import surface_model
 class Pathnames:
     """Class to determine and hold the large number of relative and absolute paths that are needed for isofit and
     MODTRAN configuration files.
-
-    Args:
-        args: an argparse Namespace object with all inputs
     """
 
-    def __init__(self, args):
+    def __init__(
+        self,
+        input_radiance,
+        input_loc,
+        input_obs,
+        sensor,
+        surface_path,
+        working_directory,
+        copy_input_files,
+        modtran_path,
+        rdn_factors_path,
+        model_discrepancy_path,
+        aerosol_climatology_path,
+        channelized_uncertainty_path,
+        ray_temp_dir,
+    ):
         # Determine FID based on sensor name
-        if args.sensor == "ang":
-            self.fid = split(args.input_radiance)[-1][:18]
-        elif args.sensor == "av3":
-            self.fid = split(args.input_radiance)[-1][:18]
-        elif args.sensor == "avcl":
-            self.fid = split(args.input_radiance)[-1][:16]
-        elif args.sensor == "emit":
-            self.fid = split(args.input_radiance)[-1][:19]
-        elif args.sensor == "enmap":
-            self.fid = split(args.input_radiance)[-1].split("_")[5]
-        elif args.sensor == "hyp":
-            self.fid = split(args.input_radiance)[-1][:22]
-        elif args.sensor == "neon":
-            self.fid = split(args.input_radiance)[-1][:21]
-        elif args.sensor == "prism":
-            self.fid = split(args.input_radiance)[-1][:18]
-        elif args.sensor == "prisma":
-            self.fid = args.input_radiance.split("/")[-1].split("_")[1]
-        elif args.sensor == "gao":
-            self.fid = split(args.input_radiance)[-1][:23]
-        elif args.sensor[:3] == "NA-":
-            self.fid = os.path.splitext(os.path.basename(args.input_radiance))[0]
+        if sensor == "ang":
+            self.fid = split(input_radiance)[-1][:18]
+        elif sensor == "av3":
+            self.fid = split(input_radiance)[-1][:18]
+        elif sensor == "avcl":
+            self.fid = split(input_radiance)[-1][:16]
+        elif sensor == "emit":
+            self.fid = split(input_radiance)[-1][:19]
+        elif sensor == "enmap":
+            self.fid = split(input_radiance)[-1].split("_")[5]
+        elif sensor == "hyp":
+            self.fid = split(input_radiance)[-1][:22]
+        elif sensor == "neon":
+            self.fid = split(input_radiance)[-1][:21]
+        elif sensor == "prism":
+            self.fid = split(input_radiance)[-1][:18]
+        elif sensor == "prisma":
+            self.fid = input_radiance.split("/")[-1].split("_")[1]
+        elif sensor == "gao":
+            self.fid = split(input_radiance)[-1][:23]
+        elif sensor == "oci":
+            self.fid = split(input_radiance)[-1][:24]
+        elif sensor[:3] == "NA-":
+            self.fid = os.path.splitext(os.path.basename(input_radiance))[0]
 
         logging.info("Flightline ID: %s" % self.fid)
 
         # Names from inputs
-        self.aerosol_climatology = args.aerosol_climatology_path
-        self.input_radiance_file = args.input_radiance
-        self.input_loc_file = args.input_loc
-        self.input_obs_file = args.input_obs
-        self.working_directory = abspath(args.working_directory)
+        self.aerosol_climatology = aerosol_climatology_path
+        self.input_radiance_file = input_radiance
+        self.input_loc_file = input_loc
+        self.input_obs_file = input_obs
+        self.working_directory = abspath(working_directory)
 
         self.full_lut_directory = abspath(join(self.working_directory, "lut_full/"))
 
-        self.surface_path = args.surface_path
+        self.surface_path = surface_path
 
         # set up some sub-directories
         self.lut_h2o_directory = abspath(join(self.working_directory, "lut_h2o/"))
@@ -98,7 +112,7 @@ class Pathnames:
         )
         self.surface_working_path = abspath(join(self.data_directory, "surface.mat"))
 
-        if args.copy_input_files is True:
+        if copy_input_files is True:
             self.radiance_working_path = abspath(
                 join(self.input_data_directory, rdn_fname)
             )
@@ -113,8 +127,8 @@ class Pathnames:
             self.obs_working_path = abspath(self.input_obs_file)
             self.loc_working_path = abspath(self.input_loc_file)
 
-        if args.channelized_uncertainty_path:
-            self.input_channelized_uncertainty_path = args.channelized_uncertainty_path
+        if channelized_uncertainty_path:
+            self.input_channelized_uncertainty_path = channelized_uncertainty_path
         else:
             self.input_channelized_uncertainty_path = os.getenv(
                 "ISOFIT_CHANNELIZED_UNCERTAINTY"
@@ -124,8 +138,8 @@ class Pathnames:
             join(self.data_directory, "channelized_uncertainty.txt")
         )
 
-        if args.model_discrepancy_path:
-            self.input_model_discrepancy_path = args.model_discrepancy_path
+        if model_discrepancy_path:
+            self.input_model_discrepancy_path = model_discrepancy_path
         else:
             self.input_model_discrepancy_path = None
 
@@ -174,16 +188,18 @@ class Pathnames:
             join(self.config_directory, self.fid + "_h2o.json")
         )
 
-        if args.modtran_path:
-            self.modtran_path = args.modtran_path
+        if modtran_path:
+            self.modtran_path = modtran_path
         else:
             self.modtran_path = os.getenv("MODTRAN_DIR", env.modtran)
 
         self.sixs_path = os.getenv("SIXS_DIR", env.sixs)
 
-        if args.sensor == "avcl":
+        if sensor == "avcl":
             self.noise_path = str(env.path("data", "avirisc_noise.txt"))
-        elif args.sensor == "emit":
+        elif sensor == "oci":
+            self.noise_path = str(env.path("data", "oci", "oci_noise.txt"))
+        elif sensor == "emit":
             self.noise_path = str(env.path("data", "emit_noise.txt"))
             if self.input_channelized_uncertainty_path is None:
                 self.input_channelized_uncertainty_path = str(
@@ -200,18 +216,24 @@ class Pathnames:
             # quit()
 
         self.earth_sun_distance_path = str(env.path("data", "earth_sun_distance.txt"))
-        self.irradiance_file = str(
-            env.path(
-                "examples", "20151026_SantaMonica", "data", "prism_optimized_irr.dat"
-            )
-        )
+
+        irr_path = [
+            "examples",
+            "20151026_SantaMonica",
+            "data",
+            "prism_optimized_irr.dat",
+        ]
+        if sensor == "oci":
+            irr_path = ["data", "oci", "tsis_f0_0p1.txt"]
+
+        self.irradiance_file = str(env.path(*irr_path))
 
         self.aerosol_tpl_path = str(env.path("data", "aerosol_template.json"))
         self.rdn_factors_path = None
-        if args.rdn_factors_path is not None:
-            self.rdn_factors_path = abspath(args.rdn_factors_path)
+        if rdn_factors_path is not None:
+            self.rdn_factors_path = abspath(rdn_factors_path)
 
-        self.ray_temp_dir = args.ray_temp_dir
+        self.ray_temp_dir = ray_temp_dir
 
     def make_directories(self):
         """Build required subdirectories inside working_directory"""
@@ -390,7 +412,10 @@ class LUTConfig:
             )
             return None
         elif (
-            np.abs(grid[1] - grid[0]) < min_spacing and self.no_min_lut_spacing is False
+            # Need this first conditional to rule out rounding errors
+            len(grid) == 2
+            and np.abs(grid[1] - grid[0]) < min_spacing
+            and self.no_min_lut_spacing is False
         ):
             logging.debug(
                 f"Grid spacing is {grid[1]-grid[0]}, which is less than {min_spacing}. "
@@ -1483,6 +1508,7 @@ def get_metadata_from_obs(
         lut_params.to_sensor_zenith_spacing,
         lut_params.to_sensor_zenith_spacing_min,
     )
+
     if to_sensor_zenith_lut_grid is not None:
         to_sensor_zenith_lut_grid = np.sort(to_sensor_zenith_lut_grid)
 
@@ -1491,6 +1517,7 @@ def get_metadata_from_obs(
         lut_params.to_sun_zenith_spacing,
         lut_params.to_sun_zenith_spacing_min,
     )
+
     if to_sun_zenith_lut_grid is not None:
         to_sun_zenith_lut_grid = np.sort(to_sun_zenith_lut_grid)
 

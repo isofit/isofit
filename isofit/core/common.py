@@ -26,6 +26,9 @@ from typing import List
 
 import numpy as np
 import scipy.linalg
+
+# sc Adding in xarray for non-gauss SRF file io
+import xarray as xr
 import xxhash
 from scipy.interpolate import RegularGridInterpolator
 
@@ -535,7 +538,12 @@ def find_header(imgfile: str) -> str:
 
 
 def resample_spectrum(
-    x: np.array, wl: np.array, wl2: np.array, fwhm2: np.array, fill: bool = False
+    x: np.array,
+    wl: np.array,
+    wl2: np.array,
+    fwhm2: np.array,
+    fill: bool = False,
+    srf_file: str = None,
 ) -> np.array:
     """Resample a spectrum to a new wavelength / FWHM.
        Assumes Gaussian SRFs.
@@ -546,18 +554,38 @@ def resample_spectrum(
         wl2: wavelengths to resample to
         fwhm2: full-width-half-max at resample resolution
         fill: boolean indicating whether to fill in extrapolated regions
+        ### sc Adding for non-Gaussian SRF ###
+        srf_file: SRF for the sensor if not assuming Gaussian
 
     Returns:
         np.array: interpolated radiance vector
 
     """
-    H = np.array(
-        [
-            spectral_response_function(wl, wi, fwhmi / 2.355)
-            for wi, fwhmi in zip(wl2, fwhm2)
-        ]
-    )
-    H[np.isnan(H)] = 0
+    # sc including if else to add non-Gaussian SRF
+    # Probably a better way than this with file paths, etc.
+    if srf_file is None:
+        H = np.array(
+            [
+                spectral_response_function(wl, wi, fwhmi / 2.355)
+                for wi, fwhmi in zip(wl2, fwhm2)
+            ]
+        )
+        H[np.isnan(H)] = 0
+    else:
+        # Loading in user-supplied srf file and assigning variables
+        srf_data = xr.open_dataset(srf_file)
+        sensor_rsr, rsr_wls = srf_data.RSR.data, srf_data.wavelength.data
+
+        # Grabbing indices of rsr wavelengths which match sensor wavelengths (wl2)
+        idx = [np.argwhere(abs(rsr_wls - wl2[i]) < 0.1)[0] for i in range(len(wl2))]
+        idx = np.asarray(idx).flatten()
+
+        # Getting RSR at sensor spectral resolution
+        rsr_channel_res = sensor_rsr[:, idx]
+
+        # Normalize H to unit length
+        H = rsr_channel_res / np.sum(rsr_channel_res, axis=1)[:, np.newaxis]
+        H[np.isnan(H)] = 0
 
     dims = len(x.shape)
     if fill:
@@ -573,9 +601,6 @@ def resample_spectrum(
                 xnew[i] = xnew[nearest_good_ind]
         return xnew
     else:
-        # Replace NaNs with zeros
-        x[np.isnan(x)] = 0
-
         # Matrix
         if dims > 1:
             return np.dot(H, x.T).T

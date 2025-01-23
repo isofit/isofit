@@ -43,7 +43,7 @@ These include things like larger data files and the ISOFIT examples.
 
 .. note::
 
-    The below commands assume a user is in their home directory, aka ``~``. For Mac, this is commonly ``~``.
+    The below commands assume a user is in their home directory, aka ``~``. For Mac, this is commonly ``/Users/[username]/``.
     The examples on this page will use ``~``, but in practice this path and other relative paths will be automatically replaced with the absolute path.
 
 When the ``isofit`` command is first executed, it will create a directory under the user's home directory named ``.isofit`` as well as initialize a default ``isofit.ini`` file:
@@ -299,8 +299,8 @@ The small image cube example's ``default.args.json`` is currently defined as:
 
     [
     "{imagecube}/medium/ang20170323t202244_rdn_7k-8k",
-    "{imagecube}/medium/ang20170323t202244_obs_7k-8k",
     "{imagecube}/medium/ang20170323t202244_loc_7k-8k",
+    "{imagecube}/medium/ang20170323t202244_obs_7k-8k",
     "{examples}/image_cube/medium",
     "ang",
     "--surface_path {examples}/image_cube/medium/configs/surface.json",
@@ -317,8 +317,8 @@ This will generate ``default.sh``:
 
     isofit apply_oe \
       ~/.isofit/examples/imagecube/small/ang20170323t202244_rdn_7000-7010 \
-      ~/.isofit/examples/imagecube/small/ang20170323t202244_obs_7000-7010 \
       ~/.isofit/examples/imagecube/small/ang20170323t202244_loc_7000-7010 \
+      ~/.isofit/examples/imagecube/small/ang20170323t202244_obs_7000-7010 \
       ~/.isofit/examples/examples/image_cube/small \
       ang \
       --surface_path ~/.isofit/examples/examples/image_cube/small/configs/surface.json \

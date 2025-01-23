@@ -647,12 +647,23 @@ def load(
         Logger.info("Loading LUT into memory")
         ds.load()
 
+    # Handle NaNs in the LUT. Keep as is (if all NaN). Set to 0 (if partial NaN)
     Logger.debug("Attempting to detect NaNs")
-    for name, nans in ds.isnull().any().items():
-        if nans:
+
+    for key, data in ds.items():
+        nans = data.isnull()
+        if nans.any():
+            if nans.all():
+                Logger.warning(f"{key} is fully NaN, leaving as-is")
+                continue
+
+            count = nans.sum().data
+            total = data.count().data
+
             Logger.warning(
-                f"Detected NaNs in the following LUT variable and may cause issues: {name}"
+                f"{key} is partially NaN ({count}/{total}, {count/total:.2%}), replacing with 0s"
             )
+            ds[key] = data.fillna(0)
 
     return ds
 
