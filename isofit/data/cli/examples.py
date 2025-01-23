@@ -13,6 +13,7 @@ from isofit.data.download import (
     unzip,
 )
 
+CMD = "examples"
 NEON_URL = "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/tutorials/subset_data.zip"
 
 
@@ -37,7 +38,7 @@ def download_neon(examples):
     avail = unzip(zipfile, path=output.parent, rename=output.name)
 
 
-def download(path=None, tag="latest", overwrite=False):
+def download(path=None, tag="latest", overwrite=False, **_):
     """
     Downloads the ISOFIT examples from the repository https://github.com/isofit/isofit-tutorials.
 
@@ -49,6 +50,9 @@ def download(path=None, tag="latest", overwrite=False):
         Release tag to pull from the github
     overwrite : bool, default=False
         Overwrite an existing installation
+    **_ : dict
+        Ignores unused params that may be used by other validate functions. This is to
+        maintain compatibility with other functions
     """
     print(f"Downloading ISOFIT examples")
 
@@ -72,9 +76,10 @@ def download(path=None, tag="latest", overwrite=False):
     download_neon(output)
 
     print(f"Done, now available at: {avail}")
+    print("[!] Be sure to build the examples for your system via `isofit build`")
 
 
-def validate(path=None, checkUpdate=True, debug=print, error=print, **_):
+def validate(path=None, checkForUpdate=True, debug=print, error=print, **_):
     """
     Validates an ISOFIT examples installation
 
@@ -82,7 +87,7 @@ def validate(path=None, checkUpdate=True, debug=print, error=print, **_):
     ----------
     path : str, default=None
         Path to verify. If None, defaults to the ini path
-    checkUpdate : bool, default=True
+    checkForUpdate : bool, default=True
         Checks for updates if the path is valid
     debug : function, default=print
         Print function to use for debug messages, eg. logging.debug
@@ -103,9 +108,7 @@ def validate(path=None, checkUpdate=True, debug=print, error=print, **_):
     debug(f"Verifying path for ISOFIT examples: {path}")
 
     if not (path := Path(path)).exists():
-        error(
-            "Error: Examples path does not exist, please download it via `isofit download examples`"
-        )
+        error("[x] Examples path does not exist")
         return False
 
     expected = [
@@ -119,20 +122,18 @@ def validate(path=None, checkUpdate=True, debug=print, error=print, **_):
         "py-hypertrace",
     ]
     if not list(path.glob("*")) != expected:
-        error(
-            "Error: ISOFIT examples do not appear to be installed correctly, please ensure it is"
-        )
+        error("[x] ISOFIT examples do not appear to be installed correctly")
         return False
 
-    debug("Path is valid")
+    debug("[✓] Path is valid")
 
-    if checkUpdate:
-        checkForUpdate(path, debug=debug, error=error)
+    if checkForUpdate:
+        return isUpToDate(path, debug=debug, error=error)
 
     return True
 
 
-def checkForUpdate(path=None, tag="latest", debug=print, error=print, **_):
+def isUpToDate(path=None, tag="latest", debug=print, error=print, **_):
     """
     Checks the installed version against the latest release
 
@@ -151,7 +152,13 @@ def checkForUpdate(path=None, tag="latest", debug=print, error=print, **_):
     Returns
     -------
     bool
-        True if there is a version update, else False
+        True if the path is up to date, False otherwise
+
+    Notes
+    -----
+    The Github workflows watch for the string "[x]" to determine if the cache needs to
+    update the data of this module. If your module does not include this string, the
+    workflows will never detect updates.
     """
     if path is None:
         path = env.examples
@@ -161,23 +168,21 @@ def checkForUpdate(path=None, tag="latest", debug=print, error=print, **_):
     file = Path(path) / "version.txt"
     if not file.exists():
         error(
-            "Failed to find a version.txt file under the given path. Version is unknown. It is recommended to redownload via `isofit download examples --overwrite`"
+            "[x] Failed to find a version.txt file under the given path. Version is unknown"
         )
-        return True
+        return False
 
     metadata = release_metadata("isofit", "isofit-tutorials", tag)
     with open(file, "r") as f:
         version = f.read()
 
     if version != (latest := metadata["tag_name"]):
-        error(
-            f"Your examples are out of date and may cause issues. Latest is {latest}, currently installed is {version}. Please update via `isofit download examples --update`"
-        )
-        return True
+        error(f"[x] Latest is {latest}, currently installed is {version}")
+        return False
 
-    debug("Path is up to date")
+    debug("[✓] Path is up to date")
 
-    return False
+    return True
 
 
 def update(check=False, **kwargs):
@@ -191,20 +196,22 @@ def update(check=False, **kwargs):
     **kwargs : dict
         Additional key-word arguments to pass to download()
     """
-    kwargs["overwrite"] = True
-    if checkForUpdate(**kwargs) and not check:
-        kwargs.get("debug", print)("Executing update")
-        download(**kwargs)
+    debug = kwargs.get("debug", print)
+    if not validate(**kwargs):
+        if not check:
+            kwargs["overwrite"] = True
+            debug("Executing update")
+            download(**kwargs)
+        else:
+            debug(f"Please download the latest via `isofit download {CMD}`")
 
 
-@cli.download.command(name="examples")
-@cli.path(help="Root directory to download ISOFIT examples to, ie. [path]/examples")
+@cli.download.command(name=CMD)
+@cli.path(help="Root directory to download example files to, ie. [path]/examples")
 @cli.tag
 @cli.overwrite
-@cli.update
 @cli.check
-@cli.validate
-def download_cli(update_, check, validate_, **kwargs):
+def download_cli(**kwargs):
     """\
     Downloads the ISOFIT examples from the repository https://github.com/isofit/isofit-tutorials.
 
@@ -212,12 +219,20 @@ def download_cli(update_, check, validate_, **kwargs):
     Run `isofit download paths` to see default path locations.
     There are two ways to specify output directory:
         - `isofit --examples /path/examples download examples`: Override the ini file. This will save the provided path for future reference.
-        - `isofit download examples --output /path/examples`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
+        - `isofit download examples --path /path/examples`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
     It is recommended to use the first style so the download path is remembered in the future.
     """
-    if update_:
-        update(check, **kwargs)
-    elif validate_:
-        validate(**kwargs)
-    else:
+    if kwargs.get("overwrite"):
         download(**kwargs)
+    else:
+        update(**kwargs)
+
+
+@cli.validate.command(name=CMD)
+@cli.path(help="Root directory to download example files to, ie. [path]/examples")
+@cli.tag
+def validate_cli(**kwargs):
+    """\
+    Validates the installation of the ISOFIT examples as well as checks for updates
+    """
+    validate(**kwargs)

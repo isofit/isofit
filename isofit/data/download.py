@@ -204,10 +204,18 @@ def prepare_output(output, default, isdir=False, overwrite=False):
 # Main commands
 
 
-@click.group("download", invoke_without_command=True)
+@click.group("download", invoke_without_command=True, no_args_is_help=True)
 def cli_download():
     """\
     Download extra ISOFIT files that do not come with the default installation
+    """
+    pass
+
+
+@click.group("validate", invoke_without_command=True, no_args_is_help=True)
+def cli_validate():
+    """\
+    Validate extra ISOFIT files that do not come with the default installation
     """
     pass
 
@@ -216,6 +224,7 @@ def cli_download():
 
 cli = SimpleNamespace(
     download=cli_download,
+    validate=cli_validate,
     output=partial(click.option, "-o", "--output"),
     tag=click.option(
         "-t", "--tag", default=f"latest", help="Release tag to pull", show_default=True
@@ -228,30 +237,12 @@ cli = SimpleNamespace(
         show_default=True,
     ),
     path=partial(click.option, "-p", "--path"),
-    update=click.option(
-        "-u",
-        "--update",
-        "update_",
-        is_flag=True,
-        default=False,
-        help="Update the installation",
-        show_default=True,
-    ),
     check=click.option(
         "-c",
         "--check",
         is_flag=True,
         default=False,
         help="Only check for updates",
-        show_default=True,
-    ),
-    validate=click.option(
-        "-v",
-        "--validate",
-        "validate_",
-        is_flag=True,
-        default=False,
-        help="Validate the installation",
         show_default=True,
     ),
 )
