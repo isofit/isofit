@@ -531,14 +531,15 @@ class IO:
             flush_immediately: IO argument telling us to immediately write to disk, ignoring config settings
 
         """
-
+        logging.debug(
+            f"Writing datasets for ({row}, {col}): {list(self.output_datasets)}"
+        )
         for product in self.output_datasets:
-            logging.debug("IO: Writing " + product)
             self.output_datasets[product].write_spectrum(row, col, output[product])
 
         # Special case! samples file is matlab format.
         if self.config.output.mcmc_samples_file is not None:
-            logging.debug("IO: Writing mcmc_samples_file")
+            logging.debug("Writing mcmc_samples_file")
             mdict = {"samples": states}
             scipy.io.savemat(self.config.output.mcmc_samples_file, mdict)
 
