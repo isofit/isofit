@@ -31,6 +31,7 @@ class CLI(click.MultiCommand):
         "run": "isofit.core.isofit",
         "build": "isofit.data.build_examples",
         "download": "isofit.data.download",
+        "validate": "isofit.data.validate",
         "path": "isofit.data",
         "HRRR_to_modtran": "isofit.utils.add_HRRR_profiles_to_modtran_config",
         "analytical_line": "isofit.utils.analytical_line",
@@ -71,11 +72,6 @@ class CLI(click.MultiCommand):
 
         for key, value in keys:
             env.changeKey(key, value)
-
-        if preview:
-            print(env)
-        else:
-            env.save(diff_only=save)
 
         if preview:
             print(env)
@@ -127,7 +123,7 @@ class CLI(click.MultiCommand):
     is_flag=True,
     help="Prints the environment that will be used. This disables saving",
 )
-def cli(ctx, version, ini, base, section, keys, save, preview, **overrides):
+def cli(ctx, **kwargs):
     """\
     This houses the subcommands of ISOFIT
     """

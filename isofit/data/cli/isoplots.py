@@ -9,14 +9,10 @@ from pathlib import Path
 
 from packaging.version import Version
 
-from isofit.data import env
-from isofit.data.download import (
-    download_file,
-    downloadCLI,
-    prepare_output,
-    release_metadata,
-    unzip,
-)
+from isofit.data import env, shared
+from isofit.data.download import download_file, prepare_output, release_metadata, unzip
+
+CMD = "plots"
 
 
 def install(path=None):
@@ -67,7 +63,7 @@ def download(path=None, tag="latest", overwrite=False):
     print(f"Done, now available at: {avail}")
 
 
-def validate(path=None, debug=print, error=print, **_):
+def validate(path=None, checkForUpdate=True, debug=print, error=print, **_):
     """
     Validates an isoplots installation
 
@@ -75,6 +71,8 @@ def validate(path=None, debug=print, error=print, **_):
     ----------
     path : str, default=None
         Path to verify. If None, defaults to the ini path
+    checkForUpdate : bool, default=True
+        Checks for updates if the path is valid
     debug : function, default=print
         Print function to use for debug messages, eg. logging.debug
     error : function, default=print
@@ -99,17 +97,20 @@ def validate(path=None, debug=print, error=print, **_):
     try:
         import isoplots
     except Exception as e:
-        error(f"Failed to load isoplots: {e}")
+        error(f"[x] Failed to load isoplots: {e}")
         return False
     finally:
         # Remove the inserted path
         sys.path = sys.path[:-1]
 
-    debug("Path is valid")
+    if checkForUpdate:
+        return isUpToDate(path, debug=debug, error=error)
+
+    debug("[✓] Path is valid")
     return True
 
 
-def checkForUpdate(path=None, tag="latest", debug=print, error=print, **_):
+def isUpToDate(path=None, tag="latest", debug=print, error=print, **_):
     """
     Checks the installed version against the latest release
 
@@ -128,7 +129,13 @@ def checkForUpdate(path=None, tag="latest", debug=print, error=print, **_):
     Returns
     -------
     bool
-        True if there is a version update, else False
+        True if the path is up to date, False otherwise
+
+    Notes
+    -----
+    The Github workflows watch for the string "[x]" to determine if the cache needs to
+    update the data of this module. If your module does not include this string, the
+    workflows will never detect updates.
     """
     if path is None:
         path = env.plots
@@ -139,14 +146,12 @@ def checkForUpdate(path=None, tag="latest", debug=print, error=print, **_):
     current = Version(importlib.metadata.version("isoplots"))
 
     if current < latest:
-        error(
-            f"Your isoplots is out of date and may cause issues. Latest is {latest}, currently installed is {current}. Please update via `isofit update plots`"
-        )
-        return True
+        error(f"[x] Latest is {latest}, currently installed is {version}")
+        return False
 
-    debug(f"Path is up to date, current version: {current}")
+    debug(f"[✓] Path is up to date, current version: {current}")
 
-    return False
+    return True
 
 
 def update(check=False, **kwargs):
@@ -160,19 +165,24 @@ def update(check=False, **kwargs):
     **kwargs : dict
         Additional key-word arguments to pass to download()
     """
-    kwargs["overwrite"] = True
-    if checkForUpdate(**kwargs) and not check:
-        download(**kwargs)
+    debug = kwargs.get("debug", print)
+    if not validate(**kwargs):
+        if not check:
+            kwargs["overwrite"] = True
+            debug("Executing update")
+            download(**kwargs)
+        else:
+            debug(f"Please download the latest via `isofit download {CMD}`")
 
 
-@downloadCLI.download.command(name="plots")
-@downloadCLI.path(help="Root directory to download plots files to, ie. [path]/plots")
-@downloadCLI.tag
-@downloadCLI.overwrite
-@downloadCLI.update
-@downloadCLI.check
-@downloadCLI.validate
-def cli(update_, check, validate_, **kwargs):
+@shared.download.command(name=CMD)
+@shared.path(
+    help="Root directory to download the ISOFIT plotting utilities package to, ie. [path]/plots"
+)
+@shared.tag
+@shared.overwrite
+@shared.check
+def download_cli(**kwargs):
     """\
     Downloads the extra ISOFIT plotting utilities from the repository https://github.com/isofit/isofit-plots.
     This will install the package into your current environment along with its dependencies.
@@ -184,9 +194,17 @@ def cli(update_, check, validate_, **kwargs):
         - `isofit download plots --path /path/plots`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
     It is recommended to use the first style so the download path is remembered in the future.
     """
-    if update_:
-        update(check, **kwargs)
-    elif validate_:
-        validate(**kwargs)
-    else:
+    if kwargs.get("overwrite"):
         download(**kwargs)
+    else:
+        update(**kwargs)
+
+
+@shared.validate.command(name=CMD)
+@shared.path(help="Root directory to download data files to, ie. [path]/data")
+@shared.tag
+def validate_cli(**kwargs):
+    """\
+    Validates the installation of the ISOFIT extra data files as well as checks for updates
+    """
+    validate(**kwargs)

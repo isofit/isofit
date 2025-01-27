@@ -4,14 +4,8 @@ Downloads the ISOFIT examples from the repository https://github.com/isofit/isof
 
 from pathlib import Path
 
-from isofit.data import env
-from isofit.data.download import (
-    download_file,
-    downloadCLI,
-    prepare_output,
-    release_metadata,
-    unzip,
-)
+from isofit.data import env, shared
+from isofit.data.download import download_file, prepare_output, release_metadata, unzip
 
 CMD = "examples"
 NEON_URL = "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/tutorials/subset_data.zip"
@@ -174,13 +168,13 @@ def isUpToDate(path=None, tag="latest", debug=print, error=print, **_):
 
     metadata = release_metadata("isofit", "isofit-tutorials", tag)
     with open(file, "r") as f:
-        version = f.read()
+        current = f.read()
 
-    if version != (latest := metadata["tag_name"]):
-        error(f"[x] Latest is {latest}, currently installed is {version}")
+    if current != (latest := metadata["tag_name"]):
+        error(f"[x] Latest is {latest}, currently installed is {current}")
         return False
 
-    debug("[✓] Path is up to date")
+    debug(f"[✓] Path is up to date, current version is: {current}")
 
     return True
 
@@ -206,11 +200,11 @@ def update(check=False, **kwargs):
             debug(f"Please download the latest via `isofit download {CMD}`")
 
 
-@downloadCLI.download.command(name=CMD)
-@downloadCLI.path(help="Root directory to download example files to, ie. [path]/examples")
-@downloadCLI.tag
-@downloadCLI.overwrite
-@downloadCLI.check
+@shared.download.command(name=CMD)
+@shared.path(help="Root directory to download example files to, ie. [path]/examples")
+@shared.tag
+@shared.overwrite
+@shared.check
 def download_cli(**kwargs):
     """\
     Downloads the ISOFIT examples from the repository https://github.com/isofit/isofit-tutorials.
@@ -228,9 +222,9 @@ def download_cli(**kwargs):
         update(**kwargs)
 
 
-@downloadCLI.validate.command(name=CMD)
-@downloadCLI.path(help="Root directory to download example files to, ie. [path]/examples")
-@downloadCLI.tag
+@shared.validate.command(name=CMD)
+@shared.path(help="Root directory to download example files to, ie. [path]/examples")
+@shared.tag
 def validate_cli(**kwargs):
     """\
     Validates the installation of the ISOFIT examples as well as checks for updates

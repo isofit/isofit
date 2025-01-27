@@ -1,10 +1,9 @@
 import importlib
 import pkgutil
 
-from isofit.data import env
-from isofit.data.download import downloadCLI
+from isofit.data import env, shared
 
-# Auto-discovers the submodules of isofit.data.downloadCLI
+# Auto-discovers the submodules of isofit.data.shared
 Modules = {
     name: importlib.import_module(f".{name}", __spec__.name)
     for imp, name, _ in pkgutil.iter_modules(__path__)
@@ -34,9 +33,9 @@ def runOnAll(func, **kwargs):
     print("Finished all processes")
 
 
-@cli.download.command(name="all")
-@cli.check
-@cli.overwrite
+@shared.download.command(name="all")
+@shared.check
+@shared.overwrite
 def download_all(**kwargs):
     """\
     Downloads all ISOFIT extra dependencies to the locations specified in the
@@ -48,7 +47,7 @@ def download_all(**kwargs):
         runOnAll("update", **kwargs)
 
 
-@cli.validate.command(name="all")
+@shared.validate.command(name="all")
 def validate_all(**kwargs):
     """\
     Validates all ISOFIT extra dependencies at the locations specified in the

@@ -9,8 +9,8 @@ import click
 import requests
 from packaging.version import Version
 
-from isofit.data import env
-from isofit.data.download import download_file, downloadCLI, prepare_output
+from isofit.data import env, shared
+from isofit.data.download import download_file, prepare_output
 
 CMD = "srtmnet"
 URL = "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/"
@@ -309,11 +309,11 @@ def update(check=False, **kwargs):
             debug(f"Please download the latest via `isofit download {CMD}`")
 
 
-@cli.download.command(name=CMD)
-@cli.path(help="Root directory to download sRTMnet to, ie. [path]/sRTMnet")
-@cli.tag
-@cli.overwrite
-@cli.check
+@shared.download.command(name=CMD)
+@shared.path(help="Root directory to download sRTMnet to, ie. [path]/sRTMnet")
+@shared.tag
+@shared.overwrite
+@shared.check
 def download_cli(**kwargs):
     """\
     Downloads sRTMnet from https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/. Only HDF5 versions are supported at this time.
@@ -331,9 +331,9 @@ def download_cli(**kwargs):
         update(**kwargs)
 
 
-@cli.validate.command(name=CMD)
-@cli.path(help="Root directory to download sRTMnet to, ie. [path]/sRTMnet")
-@cli.tag
+@shared.validate.command(name=CMD)
+@shared.path(help="Root directory to download sRTMnet to, ie. [path]/sRTMnet")
+@shared.tag
 def validate_cli(**kwargs):
     """\
     Validates the installation of sRTMnet as well as checks for updates
