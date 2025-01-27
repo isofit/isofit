@@ -59,12 +59,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-docs = [
-  "mkdocs",
-  "mkapi",
-  "mkdocstrings[python]",
-  "pytkdocs[numpy-style]",
-]
 dev = [
   "pre-commit",
   "black",
