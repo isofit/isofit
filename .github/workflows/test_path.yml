@@ -3,59 +3,14 @@
 name: Test '$PYTHONPATH' installation
 
 on:
-  push:
-    branches: ["dev", "main"]
-  pull_request:
-    branches: ["dev", "main"]
+  workflow_call:
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+# concurrency:
+#   group: ${{ github.workflow }}-${{ github.ref }}
+#   cancel-in-progress: true
 
 jobs:
-  # Create a cache before matrix jobs
-  cache:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cache Extras
-        id: cache-extras
-        uses: actions/cache/restore@v4
-        with:
-          path: ~/.isofit
-          key: cache-extras
-
-      - uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v3
-        with:
-          python-version: '3.12'
-          cache: 'pip'
-
-      - name: Install ISOFIT
-        shell: bash
-        run: |
-          python3 -m pip install --editable ".[test]"
-
-      - name: Download Extras
-        shell: bash
-        run: |
-          if isofit download all --update | grep "Executing update"; then
-            echo "CACHE_UPDATE=true" >> $GITHUB_ENV
-          else
-            echo "CACHE_UPDATE=false" >> $GITHUB_ENV
-          fi
-
-      - if: env.CACHE_UPDATE == 'true'
-        name: Update Cache
-        uses: actions/cache/save@v4
-        with:
-          path: ~/.isofit
-          key: cache-extras
-
   test:
-    needs: cache
-
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -70,7 +25,7 @@ jobs:
       # Pull the cache on every runner
       - name: Cached Extras
         id: cache-extras
-        uses: actions/cache@v3
+        uses: actions/cache/restore@v4
         with:
           path: ~/.isofit
           key: cache-extras

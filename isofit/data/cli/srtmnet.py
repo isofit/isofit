@@ -12,6 +12,7 @@ from packaging.version import Version
 from isofit.data import env
 from isofit.data.download import cli, download_file, prepare_output
 
+CMD = "srtmnet"
 URL = "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/"
 
 
@@ -33,7 +34,10 @@ def getVersion(version="latest"):
     try:
         get = requests.get(URL, timeout=10)
     except requests.exceptions.Timeout:
-        print("sRTMnet server request timed out, cannot retrieve versions")
+        print("[!] sRTMnet server request timed out, cannot retrieve versions")
+        return
+    except requests.exceptions.ConnectionError:
+        print("[!] sRTMnet server refused connection, cannot retrieve versions")
         return
 
     versions = list(set(re.findall(r"sRTMnet_(v\d+)\.h5", get.text)))
@@ -45,11 +49,11 @@ def getVersion(version="latest"):
         return version
     else:
         print(
-            f"Error: Requested version {version!r} does not exist, must be one of: {versions}"
+            f"[!] Requested version {version!r} does not exist, must be one of: {versions}"
         )
 
 
-def download(path=None, tag="latest", overwrite=False):
+def download(path=None, tag="latest", overwrite=False, **_):
     """
     Downloads sRTMnet from https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/.
 
@@ -61,6 +65,9 @@ def download(path=None, tag="latest", overwrite=False):
         sRTMnet version to pull
     overwrite : bool, default=False
         Overwrite an existing installation
+    **_ : dict
+        Ignores unused params that may be used by other validate functions. This is to
+        maintain compatibility with other functions
     """
     if (version := getVersion(tag)) is None:
         return
@@ -89,7 +96,7 @@ def download(path=None, tag="latest", overwrite=False):
     print(f"Done, now available at: {output}")
 
 
-def validate(path=None, checkUpdate=True, debug=print, error=print, **_):
+def validate(path=None, checkForUpdate=True, debug=print, error=print, **_):
     """
     Validates an sRTMnet installation
 
@@ -97,7 +104,7 @@ def validate(path=None, checkUpdate=True, debug=print, error=print, **_):
     ----------
     path : str, default=None
         Path to verify. If None, defaults to the ini path
-    checkUpdate : bool, default=True
+    checkForUpdate : bool, default=True
         Checks for updates if the path is valid
     debug : function, default=print
         Print function to use for debug messages, eg. logging.debug
@@ -118,23 +125,21 @@ def validate(path=None, checkUpdate=True, debug=print, error=print, **_):
     debug(f"Verifying path for sRTMnet: {path}")
 
     if not (path := Path(path)).exists():
-        error(
-            "Error: sRTMnet path does not exist, please download it via `isofit download sRTMnet`"
-        )
+        error("[x] sRTMnet path does not exist")
         return False
 
     if not list(path.glob("*.h5")):
-        error("Error: sRTMnet model not found, please download it")
+        error("[x] sRTMnet model not found")
         return False
 
     if not list(path.glob("*_aux.npz")):
-        error("Error: sRTMnet aux file not found, please download it")
+        error("[x] sRTMnet aux file not found")
         return False
 
-    debug("Path is valid")
+    debug("[✓] Path is valid")
 
-    if checkUpdate:
-        checkForUpdate(path, debug=debug, error=error)
+    if checkForUpdate:
+        isUpToDate(path, debug=debug, error=error)
 
     return True
 
@@ -190,7 +195,7 @@ def compare(file, name, version, error=print):
     """
     if version is None:
         if not (latest := getVersion(tag)):
-            error("Failed to retrieve latest version, try again later")
+            error("[!] Failed to retrieve latest version, try again later")
             return False
 
         latest = Version(latest)
@@ -198,19 +203,19 @@ def compare(file, name, version, error=print):
     if find := re.findall(r"(v\d+)", file):
         current = Version(find[0])
     else:
-        error(f"Version could not be parsed from the path for {name}")
+        error(f"[x] Version could not be parsed from the path for {name}")
         return True
 
     if current < version:
         error(
-            f"The sRTMnet {name} is out of date. The latest is v{version}, currently installed is v{current}"
+            f"[x] The sRTMnet {name} is out of date. The latest is v{version}, currently installed is v{current}"
         )
         return True
 
     return False
 
 
-def checkForUpdate(path=None, tag="latest", debug=print, error=print, **_):
+def isUpToDate(path=None, tag="latest", debug=print, error=print, **_):
     """
     Checks the installed version against the latest release
 
@@ -229,15 +234,21 @@ def checkForUpdate(path=None, tag="latest", debug=print, error=print, **_):
     Returns
     -------
     bool
-        True if there is a version update, else False
+        True if the path is up to date, False otherwise
+
+    Notes
+    -----
+    The Github workflows watch for the string "[x]" to determine if the cache needs to
+    update the data of this module. If your module does not include this string, the
+    workflows will never detect updates.
     """
     missing = False
     if not env["srtmnet.file"]:
-        error("sRTMnet file is not set in the ini, version unknown")
+        error("[x] sRTMnet file is not set in the ini, version unknown")
         missing = True
 
     if not env["srtmnet.aux"]:
-        error("sRTMnet aux is not set in the ini, version unknown")
+        error("[x] sRTMnet aux is not set in the ini, version unknown")
         missing = True
 
     if missing:
@@ -252,8 +263,8 @@ def checkForUpdate(path=None, tag="latest", debug=print, error=print, **_):
         aux = env.path("srtmnet", key="srtmnet.aux")
 
         if not model.exists() or not aux.exists():
-            error("Download the above via `isofit download sRTMnet --update`")
-            return True
+            error("[x] Missing the above")
+            return False
     else:
         path = Path(path)
         model = path / env["srtmnet.file"]
@@ -262,20 +273,19 @@ def checkForUpdate(path=None, tag="latest", debug=print, error=print, **_):
     debug(f"Checking for updates for sRTMnet on path: {model}")
 
     if not (latest := getVersion(tag)):
-        error("Failed to retrieve latest version, try again later")
-        return False
+        error("[!] Failed to retrieve latest version, try again later")
+        return True
 
     latest = Version(latest)
     model = compare(model.name, "model", latest, error)
     aux = compare(aux.name, "aux", latest, error)
 
     if model or aux:
-        error("Please update via `isofit download sRTMnet --update`")
-        return True
+        return False
 
-    debug("Path is up to date")
+    debug("[✓] Path is up to date")
 
-    return False
+    return True
 
 
 def update(check=False, **kwargs):
@@ -289,20 +299,22 @@ def update(check=False, **kwargs):
     **kwargs : dict
         Additional key-word arguments to pass to download()
     """
-    kwargs["overwrite"] = True
-    if checkForUpdate(**kwargs) and not check:
-        kwargs.get("debug", print)("Executing update")
-        download(**kwargs)
+    debug = kwargs.get("debug", print)
+    if not validate(**kwargs):
+        if not check:
+            kwargs["overwrite"] = True
+            debug("Executing update")
+            download(**kwargs)
+        else:
+            debug(f"Please download the latest via `isofit download {CMD}`")
 
 
-@cli.download.command(name="sRTMnet")
+@cli.download.command(name=CMD)
 @cli.path(help="Root directory to download sRTMnet to, ie. [path]/sRTMnet")
 @cli.tag
 @cli.overwrite
-@cli.update
 @cli.check
-@cli.validate
-def download_cli(update_, check, validate_, **kwargs):
+def download_cli(**kwargs):
     """\
     Downloads sRTMnet from https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/. Only HDF5 versions are supported at this time.
 
@@ -310,12 +322,20 @@ def download_cli(update_, check, validate_, **kwargs):
     Run `isofit download paths` to see default path locations.
     There are two ways to specify output directory:
         - `isofit --srtmnet /path/sRTMnet download sRTMnet`: Override the ini file. This will save the provided path for future reference.
-        - `isofit download sRTMnet --output /path/sRTMnet`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
+        - `isofit download sRTMnet --path /path/sRTMnet`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
     It is recommended to use the first style so the download path is remembered in the future.
     """
-    if update_:
-        update(check, **kwargs)
-    elif validate_:
-        validate(**kwargs)
-    else:
+    if kwargs.get("overwrite"):
         download(**kwargs)
+    else:
+        update(**kwargs)
+
+
+@cli.validate.command(name=CMD)
+@cli.path(help="Root directory to download sRTMnet to, ie. [path]/sRTMnet")
+@cli.tag
+def validate_cli(**kwargs):
+    """\
+    Validates the installation of sRTMnet as well as checks for updates
+    """
+    validate(**kwargs)

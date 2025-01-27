@@ -9,6 +9,7 @@ from pathlib import Path
 from isofit.data import env
 from isofit.data.download import cli, download_file, prepare_output, untar
 
+CMD = "sixs"
 URL = "https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar"
 
 
@@ -59,7 +60,7 @@ def build(directory):
     )
 
 
-def download(path=None):
+def download(path=None, overwrite=False, **_):
     """
     Downloads 6S from https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar.
 
@@ -67,8 +68,11 @@ def download(path=None):
     ----------
     output : str | None
         Path to output as. If None, defaults to the ini path.
-    version : str
-        Release tag to pull from the github.
+    overwrite : bool, default=False
+        Overwrite an existing installation
+    **_ : dict
+        Ignores unused params that may be used by other validate functions. This is to
+        maintain compatibility with other functions
     """
     if not precheck():
         print(
@@ -78,7 +82,7 @@ def download(path=None):
 
     print("Downloading 6S")
 
-    output = prepare_output(path, env.sixs)
+    output = prepare_output(path, env.sixs, overwrite=overwrite)
     if not output:
         return
 
@@ -119,18 +123,14 @@ def validate(path=None, debug=print, error=print, **_):
     debug(f"Verifying path for 6S: {path}")
 
     if not (path := Path(path)).exists():
-        error(
-            "Error: 6S path does not exist, please download it via `isofit download 6S`"
-        )
+        error("[x] 6S path does not exist")
         return False
 
     if not (path / f"sixsV2.1").exists():
-        error(
-            "Error: 6S does not appear to be installed correctly, please ensure it is"
-        )
+        error("[x] 6S does not appear to be installed correctly")
         return False
 
-    debug("Path is valid")
+    debug("[✓] Path is valid")
     return True
 
 
@@ -146,13 +146,22 @@ def update(check=False, **kwargs):
     **kwargs : dict
         Additional key-word arguments to pass to download()
     """
-    print("SixS does not support versioning at this time, no update to be found")
+    debug = kwargs.get("debug", print)
+    if not validate(**kwargs):
+        if not check:
+            kwargs["overwrite"] = True
+            debug("Executing update")
+            download(**kwargs)
+        else:
+            debug(f"Please download the latest via `isofit download {CMD}`")
 
 
-@cli.download.command(name="sixs")
-@cli.path(help="Root directory to download sixs to, ie. [path]/sixs")
-@cli.validate
-def download_cli(validate_, **kwargs):
+@cli.download.command(name=CMD)
+@cli.path(help="Root directory to download 6S to, ie. [path]/sixs")
+@cli.tag
+@cli.overwrite
+@cli.check
+def download_cli(**kwargs):
     """\
     Downloads 6S from https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar. Only HDF5 versions are supported at this time.
 
@@ -160,10 +169,20 @@ def download_cli(validate_, **kwargs):
     Run `isofit download paths` to see default path locations.
     There are two ways to specify output directory:
         - `isofit --sixs /path/sixs download sixs`: Override the ini file. This will save the provided path for future reference.
-        - `isofit download sixs --output /path/sixs`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
+        - `isofit download sixs --path /path/sixs`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
     It is recommended to use the first style so the download path is remembered in the future.
     """
     if validate_:
         validate(**kwargs)
     else:
         download(**kwargs)
+
+
+@cli.validate.command(name=CMD)
+@cli.path(help="Root directory to download 6S to, ie. [path]/sixs")
+@cli.tag
+def validate_cli(**kwargs):
+    """\
+    Validates the installation of 6S
+    """
+    validate(**kwargs)
