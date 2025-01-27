@@ -314,7 +314,7 @@ class RadiativeTransfer:
                 L_atms.append(L_atm)
         return np.hstack(L_atms)
 
-    def get_L_down(self, x_RT: np.array, geom: Geometry) -> np.array:
+    def get_L_down_transmitted(self, x_RT: np.array, geom: Geometry) -> np.array:
         """Get the interpolated direct and diffuse downward radiance on the sun-to-surface path.
         Thermal_downwelling already includes the transmission factor.
         Also assume there is no multiple scattering for TIR.
