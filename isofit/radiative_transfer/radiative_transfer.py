@@ -138,9 +138,6 @@ class RadiativeTransfer:
 
         self.solar_irr = np.concatenate([RT.solar_irr for RT in self.rt_engines])
 
-        # radiances along all optical paths
-        self.L_coupled = []
-
     def xa(self):
         """Pull the priors from each of the individual RTs."""
         return self.prior_mean
@@ -369,6 +366,9 @@ class RadiativeTransfer:
             L_dir_dif => downward direct * upward diffuse
             L_dif_dif => downward diffuse * upward diffuse
         """
+        # radiances along all optical paths
+        L_coupled = []
+
         if any(
             [
                 type(r[key]) != np.ndarray or len(r[key]) == 1
@@ -376,7 +376,7 @@ class RadiativeTransfer:
             ]
         ):
             # In case of the 1-component model, we cannot populate the coupling terms
-            self.L_coupled = [
+            L_coupled = [
                 0,
                 0,
                 0,
@@ -384,17 +384,17 @@ class RadiativeTransfer:
             ]
         else:
             for key in self.rt_engines[0].coupling_terms:
-                self.L_coupled.append(
+                L_coupled.append(
                     self.solar_irr * coszen / np.pi * r[key]
                     if self.rt_engines[0].rt_mode == "transm"
                     else r[key]
                 )
 
         # assigning coupled terms, unscaling and rescaling downward direct radiance by local solar zenith angle
-        L_dir_dir = self.L_coupled[0] / coszen * cos_i
-        L_dif_dir = self.L_coupled[1]
-        L_dir_dif = self.L_coupled[2] / coszen * cos_i
-        L_dif_dif = self.L_coupled[3]
+        L_dir_dir = L_coupled[0] / coszen * cos_i
+        L_dif_dir = L_coupled[1]
+        L_dir_dif = L_coupled[2] / coszen * cos_i
+        L_dif_dif = L_coupled[3]
 
         return L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif
 
