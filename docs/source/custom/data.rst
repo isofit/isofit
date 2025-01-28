@@ -84,11 +84,11 @@ Notice the default location for all paths is ``~/.isofit/``. These can be modifi
       --save / -S, --no-save  Save the ini file
       --help                  Show this message and exit.
 
-Using a data override flag (``-d``, ``-e``, ``-c``, ``-em``, ``-6s``) will update the the INI with the provided path:
+Using a data override flag (``--path [name] [path]``) will update the the INI with the provided path:
 
 .. code-block::
 
-    $ isofit -e tutorials
+    $ isofit -p examples tutorials
     Wrote to file: ~/.isofit/isofit.ini
 
     $ isofit download paths
@@ -104,7 +104,7 @@ For advanced users, the INI file itself as well as the base directory and the se
 
 .. code-block::
 
-    $ isofit -i test.ini -b test -s test -d test
+    $ isofit -i test.ini -b test -s test -p data test
     Wrote to file: test.ini
 
     $ cat test.ini
@@ -139,7 +139,7 @@ Downloads
 =========
 
 ISOFIT comes with a ``download`` command that provides users the ability to download and install extra files such as larger data files and examples.
-To get started, execute the ``isofit download --help`` in a terminal. At this time, there are 7 subcommands:
+To get started, execute the ``isofit download --help`` in a terminal. At this time, there are 8 subcommands:
 
 .. list-table::
     :widths: 25 75
@@ -161,6 +161,8 @@ To get started, execute the ``isofit download --help`` in a terminal. At this ti
       - Downloads the sRTMnet model
     * - ``sixs``
       - Downloads and builds 6sv-2.1
+    * - ``plots``
+      - Downloads and installs the ISOFIT plots package from https://github.com/isofit/isofit-plots
 
 
 The paths for each download are defined in the currently active INI.

@@ -57,6 +57,7 @@ class CLI(click.MultiCommand):
         ini = ctx.params.pop("ini")
         base = ctx.params.pop("base")
         section = ctx.params.pop("section")
+        paths = ctx.params.pop("path")
         keys = ctx.params.pop("keys")
         save = ctx.params.pop("save")
         preview = ctx.params.pop("preview")
@@ -66,7 +67,7 @@ class CLI(click.MultiCommand):
         if base:
             env.changeBase(base)
 
-        for key, value in ctx.params.items():
+        for key, value in paths:
             if value:
                 env.changePath(key, value)
 
@@ -94,19 +95,19 @@ class CLI(click.MultiCommand):
             return self.modules[name].cli
 
 
-@click.group(invoke_without_command=True, cls=CLI)
+@click.group(invoke_without_command=True, cls=CLI, add_help_option=False)
 @click.pass_context
 @click.version_option()
 @click.option("-i", "--ini", help="Override path to an isofit.ini file")
 @click.option("-b", "--base", help="Override the base directory for all products")
 @click.option("-s", "--section", help="Switches which section of the ini to use")
-@click.option("-d", "--data", help="Override path to data directory")
-@click.option("-e", "--examples", help="Override path to examples directory")
-@click.option("-c", "--imagecube", help="Override path to imagecube data directory")
-@click.option("-p", "--plots", help="Override path to isoplots")
-@click.option("-em", "--srtmnet", help="Override path to sRTMnet installation")
-@click.option("-6s", "--sixs", help="Override path to SixS installation")
-# @click.option("-mt", "--modtran", help="Override path to MODTRAN installation")
+@click.option(
+    "-p",
+    "--path",
+    nargs=2,
+    multiple=True,
+    help="Override paths with the format `-p [key] [value]`",
+)
 @click.option(
     "-k",
     "--keys",
@@ -118,17 +119,22 @@ class CLI(click.MultiCommand):
     "--save/--no-save", " /-S", is_flag=True, default=True, help="Save the ini file"
 )
 @click.option(
-    "-p",
     "--preview",
     is_flag=True,
     help="Prints the environment that will be used. This disables saving",
 )
-def cli(ctx, **kwargs):
+@click.option("--help", is_flag=True, help="Show this message and exit")
+def cli(ctx, help, **kwargs):
     """\
-    This houses the subcommands of ISOFIT
+    ISOFIT contains a set of routines and utilities for fitting surface, atmosphere and instrument models to imaging spectrometer data.
+
+    \b
+    Repository: https://github.com/isofit/isofit
+    Documentation: https://isofit.readthedocs.io/en/latest
+    Report an issue: https://github.com/isofit/isofit/issues
     """
     # invoke_without_command so that the invoke() command always gets called
-    if ctx.invoked_subcommand is None:
+    if help or ctx.invoked_subcommand is None:
         print(ctx.get_help())
 
 
