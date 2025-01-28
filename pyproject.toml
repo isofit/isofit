@@ -10,7 +10,7 @@ include = ["isofit"]
 
 [project]
 name = "isofit"
-version = "3.3.0"
+version = "3.3.3"
 description = "Imaging Spectrometer Optimal FITting"
 readme = "README.rst"
 requires-python = ">=3.8"
