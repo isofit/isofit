@@ -322,6 +322,9 @@ def apply_oe(
     elif sensor == "oci":
         # parse flightline ID (PACE OCI assumptions)
         dt = datetime.strptime(paths.fid[9:24], "%Y%m%dT%H%M%S")
+    elif sensor == "tanager":
+        # parse flightline ID (Tanager assumptions)
+        dt = datetime.strptime(paths.fid[:23], "%Y%m%d_%H%M%S")
     elif sensor[:3] == "NA-":
         dt = datetime.strptime(sensor[3:], "%Y%m%d")
     else:
