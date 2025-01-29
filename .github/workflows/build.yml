@@ -87,7 +87,7 @@ jobs:
         shell: bash
         run: |
           # Module must report "[x]" to be detected
-          SUMMARY="$(isofit validate all)"
+          SUMMARY="$(isofit -S validate all)"
 
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "$SUMMARY" >> $GITHUB_STEP_SUMMARY
