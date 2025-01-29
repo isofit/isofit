@@ -87,9 +87,11 @@ jobs:
         shell: bash
         run: |
           # Module must report "[x]" to be detected
-          if isofit download all --check | grep "\[x]"; then
+          SUMMARY="$(isofit validate all)"
+          echo "$SUMMARY" >> $GITHUB_STEP_SUMMARY
+          if $SUMMARY | grep "\[x]"; then
             # Run it twice, once for detecting updates and once for the job output
-            isofit download all --check
+            echo $SUMMARY
             echo "::error::Cache update needed, please request a maintainer to delete the cache-extras then rerun this workflow"
             exit 1
           else

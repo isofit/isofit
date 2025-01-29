@@ -50,8 +50,8 @@ class CLI(click.MultiCommand):
             if key not in self.modules:
                 try:
                     self.modules[key] = importlib.import_module(path)
-                except Exception as e:
-                    print(e)
+                except:
+                    pass
 
     def invoke(self, ctx):
         ini = ctx.params.pop("ini")
@@ -134,11 +134,11 @@ def cli(ctx, version, help, **kwargs):
     Report an issue: https://github.com/isofit/isofit/issues
     """
     # invoke_without_command so that the invoke() command always gets called
-    if help or ctx.invoked_subcommand is None:
-        print(ctx.get_help())
-
     if version:
         print(isofit.__version__)
+
+    elif help or ctx.invoked_subcommand is None:
+        print(ctx.get_help())
 
 
 if __name__ == "__main__":
