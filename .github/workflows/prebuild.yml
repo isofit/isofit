@@ -19,6 +19,7 @@ concurrency:
 
 jobs:
   cache:
+    continue-on-error: true
     runs-on: ubuntu-latest
     steps:
       - name: Cache Extras
