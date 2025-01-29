@@ -5,7 +5,7 @@
 # status of the cache instead of automatic updates
 # Then launch the Python tests in parallel
 
-name: Prebuild
+name: Build
 
 on:
   push:
@@ -18,7 +18,36 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Test building the package
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+
+      - name: Build package
+        shell: bash
+        run: |
+          python -m build --sdist --wheel
+
+      - name: Install tarball
+        shell: bash
+        run: |
+          pip install dist/*.gz
+
+      - name: Test installation
+        shell: bash
+        run: |
+          isofit
+
+  # Either build the cache or check for updates, fail if updates are needed: does not block tests on failure
   cache:
+    continue-on-error: true
     runs-on: ubuntu-latest
     steps:
       - name: Cache Extras
@@ -64,10 +93,12 @@ jobs:
           echo "Building examples"
           isofit build
 
+  # Test pip installation
   pip:
     needs: cache
     uses: ./.github/workflows/test_pip.yml
 
+  # Test $PYTHONPATH installation
   path:
     needs: cache
     uses: ./.github/workflows/test_path.yml
