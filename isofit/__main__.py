@@ -123,8 +123,9 @@ class CLI(click.MultiCommand):
     is_flag=True,
     help="Prints the environment that will be used. This disables saving",
 )
+@click.option("--version", is_flag=True, help="Print the installed ISOFIT version")
 @click.option("--help", is_flag=True, help="Show this message and exit")
-def cli(ctx, help, **kwargs):
+def cli(ctx, version, help, **kwargs):
     """\
     ISOFIT contains a set of routines and utilities for fitting surface, atmosphere and instrument models to imaging spectrometer data.
 
@@ -136,6 +137,9 @@ def cli(ctx, help, **kwargs):
     # invoke_without_command so that the invoke() command always gets called
     if help or ctx.invoked_subcommand is None:
         print(ctx.get_help())
+
+    if version:
+        print(isofit.__version__)
 
 
 if __name__ == "__main__":
