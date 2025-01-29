@@ -89,7 +89,9 @@ jobs:
           # Module must report "[x]" to be detected
           SUMMARY="$(isofit validate all)"
 
-          echo "```$SUMMARY```" >> $GITHUB_STEP_SUMMARY
+          echo "```" >> $GITHUB_STEP_SUMMARY
+          echo "$SUMMARY" >> $GITHUB_STEP_SUMMARY
+          echo "```" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
           if echo "$SUMMARY" | grep "\[x]"; then
@@ -97,13 +99,13 @@ jobs:
 
             echo ":x: $MSG" >> $GITHUB_STEP_SUMMARY
 
-            echo $SUMMARY
+            echo "$SUMMARY"
             echo "::error::$MSG"
             exit 1
           else
             MSG="No cache update needed"
             echo ":white_check_mark: $MSG" >> $GITHUB_STEP_SUMMARY
-            echo $MSG
+            echo "$MSG"
           fi
 
       - if: steps.cache-extras.outputs.cache-hit != 'true'
