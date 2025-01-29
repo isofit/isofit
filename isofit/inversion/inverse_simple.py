@@ -305,9 +305,11 @@ def invert_analytical(
         prprod = Sa_inv[winglintidx, :][:, winglintidx] @ xa_surface[winglintidx]
         # obtain needed RT vectors
         r = fm.RT.get_L_atm(x_RT, geom)[winidx]  # path radiance
-        L_down_total, L_down_dir, L_down_dif = fm.RT.get_L_down_transmitted(x_RT, geom)[
-            winidx
-        ]  # total (down * up, direct + diffuse), direct, and diffuse downward radiance
+        # total (down * up, direct + diffuse), direct, and diffuse downward radiance
+        L_down_total, L_down_dir, L_down_dif = fm.RT.get_L_down_transmitted(x_RT, geom)
+        L_down_total = L_down_total[winidx]
+        L_down_dir = L_down_dir[winidx]
+        L_down_dif = L_down_dif[winidx]
         rtm_quant = fm.RT.get_shared_rtm_quantities(x_RT, geom)
         s = rtm_quant["sphalb"][winidx]  # spherical albedo
         rho_ls = fm.RT.fresnel_rf(geom.observer_zenith)
