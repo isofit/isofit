@@ -437,28 +437,22 @@ class RadiativeTransfer:
         L_down_tot, L_down_dir, L_down_dif = self.get_L_down_transmitted(x_RT, geom)
         L_down_dir = L_down_dir / self.coszen * cos_i
 
-        # including glint for water surfaces
-        if self.glint_model:
-            L_sky = x_surface[-2] * L_down_dir + x_surface[-1] * L_down_dif
-
-            rho_ls = 0.02  # fresnel reflectance factor (approx. 0.02 for nadir view)
-            glint = rho_ls * (L_sky / L_down_tot)
-        else:
-            glint = np.zeros(rho_dir_dir.shape)
-
-        # adjacency effects
-        rho_direct_hemi = (
-            geom.bg_rfl if geom.bg_rfl is not None else rho_dir_dir + glint
-        )
+        # upward transmittance
+        t_total_up = r["transm_up_dir"] + r["transm_up_dif"]
 
         # K surface reflectance
-        drdn_drfl = (
-            (L_down_dir + L_down_dif)
-            / (1.0 - s_alb * rho_direct_hemi)
-            * r["transm_up_dir"]
-        )
+        drho_scaled_for_multiscattering_drfl = 1.0 / (1.0 - s_alb * rho_dir_dir) ** 2
 
-        drdn_dLs = r["transm_up_dir"] + r["transm_up_dif"]
+        if type(t_total_up) != np.ndarray or len(t_total_up) == 1:
+            drdn_drfl = L_down_tot * drho_scaled_for_multiscattering_drfl
+        else:
+            drdn_drfl = (
+                (L_down_dir + L_down_dif)
+                * drho_scaled_for_multiscattering_drfl
+                * t_total_up
+            )
+
+        drdn_dLs = t_total_up
 
         K_surface = (
             drdn_drfl[:, np.newaxis] * drfl_dsurface
@@ -470,12 +464,12 @@ class RadiativeTransfer:
             drdn_dgdd = (
                 L_down_dir
                 * (r["transm_up_dir"] + r["transm_up_dif"])
-                / (1.0 - s_alb * rho_direct_hemi)
+                / (1.0 - s_alb * rho_dir_dir)
             )
             drdn_dgdsf = (
                 L_down_dif
                 * (r["transm_up_dir"] + r["transm_up_dif"])
-                / (1.0 - s_alb * rho_direct_hemi)
+                / (1.0 - s_alb * rho_dif_dir)
             )
 
             K_surface[:, -2] = drdn_dgdd
