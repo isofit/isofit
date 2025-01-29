@@ -89,9 +89,9 @@ jobs:
           # Module must report "[x]" to be detected
           SUMMARY="$(isofit validate all)"
 
-          echo "```" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "$SUMMARY" >> $GITHUB_STEP_SUMMARY
-          echo "```" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
           if echo "$SUMMARY" | grep "\[x]"; then
