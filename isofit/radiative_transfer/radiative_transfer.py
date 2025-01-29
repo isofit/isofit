@@ -22,7 +22,6 @@
 from __future__ import annotations
 
 import logging
-from types import SimpleNamespace
 
 import numpy as np
 
@@ -30,6 +29,9 @@ from isofit.core.common import eps
 from isofit.radiative_transfer.engines import Engines
 
 Logger = logging.getLogger(__file__)
+
+
+RTE = ["modtran", "sRTMnet", "KernelFlowsGP"]
 
 
 def confPriority(key, configs):
@@ -176,8 +178,13 @@ class RadiativeTransfer:
         # Adjacency effects
         # ToDo: we need to think about if we want to obtain the background reflectance from the Geometry object
         #  or from the surface model, i.e., the same way as we do with the target pixel reflectance
-        rho_dir_dif = geom.bg_rfl if geom.bg_rfl is not None else rho_dir_dir
-        rho_dif_dif = geom.bg_rfl if geom.bg_rfl is not None else rho_dir_dir
+
+        rho_dir_dif = (
+            geom.bg_rfl if isinstance(geom.bg_rfl, np.ndarray) else rho_dir_dir
+        )
+        rho_dif_dif = (
+            geom.bg_rfl if isinstance(geom.bg_rfl, np.ndarray) else rho_dif_dir
+        )
 
         # Get needed rt quantities from LUT
         r = self.get_shared_rtm_quantities(x_RT, geom)
@@ -197,7 +204,7 @@ class RadiativeTransfer:
         L_tot = L_dir_dir + L_dif_dir + L_dir_dif + L_dif_dif
 
         # Special case: 1-component model
-        if type(L_tot) != np.ndarray or len(L_tot) == 1:
+        if not isinstance(L_tot, np.ndarray) or len(L_tot) == 1:
             L_tot = self.get_L_down_transmitted(x_RT, geom)[0]
             # we assume rho_dir_dir = rho_dif_dir = rho_dir_dif = rho_dif_dif
             rho_dif_dif = rho_dir_dir
@@ -371,7 +378,7 @@ class RadiativeTransfer:
 
         if any(
             [
-                type(r[key]) != np.ndarray or len(r[key]) == 1
+                not isinstance(r[key], np.ndarray) or len(r[key]) == 1
                 for key in self.rt_engines[0].coupling_terms
             ]
         ):
@@ -450,28 +457,6 @@ class RadiativeTransfer:
 
         Kb_RT = np.array(Kb_RT).T
         return Kb_RT
-
-    @staticmethod
-    def fresnel_rf(vza):
-        """Calculates reflectance factor of sky radiance based on the
-        Fresnel equation for unpolarized light as a function of view zenith angle (vza).
-        """
-        if vza > 0.0:
-            n_w = 1.33  # refractive index of water
-            theta = np.deg2rad(vza)
-
-            # calculate angle of refraction using Snell′s law
-            theta_i = np.arcsin(np.sin(theta) / n_w)
-
-            # reflectance factor of sky radiance based on the Fresnel equation for unpolarized light
-            rho_ls = 0.5 * np.abs(
-                ((np.sin(theta - theta_i) ** 2) / (np.sin(theta + theta_i) ** 2))
-                + ((np.tan(theta - theta_i) ** 2) / (np.tan(theta + theta_i) ** 2))
-            )
-        else:
-            rho_ls = 0.02  # the reflectance factor converges to 0.02 for view angles equal to 0.0°
-
-        return rho_ls
 
     def summarize(self, x_RT, geom):
         ret = []

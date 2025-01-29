@@ -104,6 +104,7 @@ def _run_chunk(
             [x in atm_band_names for x in reference_state_img.metadata["band names"]]
         )
     )[0]
+
     n_atm_bands = len(atm_bands)
     reference_state_mm = reference_state_img.open_memmap(
         interleave="bip", writable=False

@@ -35,7 +35,7 @@ class Geometry:
         loc: np.array = None,
         dt: datetime = None,
         esd: np.array = None,
-        bg_rfl=None,
+        bg_rfl: np.array = None,
     ):
         # Set some benign defaults...
         self.observer_zenith = (

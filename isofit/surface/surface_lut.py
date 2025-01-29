@@ -81,6 +81,11 @@ class LUTSurface(Surface):
         # build the interpolator
         self.itp = VectorInterpolator(self.lut_grid, self.data)
 
+        # To accomodate for the fact that we don't
+        # analytically solve for the diffuse glint term
+        self.analytical_interp_names = []
+        self.analytical_iv_idx = np.arange(len(self.statevec_names))
+
     def xa(self, x_surface, geom):
         """Mean of prior distribution."""
 
@@ -110,6 +115,7 @@ class LUTSurface(Surface):
         # ToDo: Future use of calc_rfl() is to return a direct and diffuse surface reflectance quantity.
         #  As long as this is not implemented, return the same reflectance vector for both.
         rfl = self.calc_lamb(x_surface, geom)
+
         return rfl, rfl
 
     def calc_lamb(self, x_surface, geom):
@@ -133,7 +139,7 @@ class LUTSurface(Surface):
 
         return lamb
 
-    def drfl_dsurface(self, x_surface, geom):
+    def drfl_dsurface(self, x_surface, geom, L_down_dir=None, L_down_dif=None):
         """Partial derivative of reflectance with respect to state vector,
         calculated at x_surface."""
 
@@ -159,6 +165,12 @@ class LUTSurface(Surface):
 
         return dlamb
 
+    def drdn_drfl(self, L_tot, s_alb, rho_dif_dir):
+        """Partial derivative of radiance with respect to
+        surface reflectance"""
+
+        return L_tot / ((1.0 - s_alb * rho_dif_dir) ** 2)
+
     def calc_Ls(self, x_surface, geom):
         """Emission of surface, as a radiance."""
 
@@ -172,64 +184,68 @@ class LUTSurface(Surface):
 
         return dLs
 
-    def drdn_drfl(
-        self,
-        drho_scaled_for_multiscattering_drfl,
-        L_down_tot,
-        L_down_dir,
-        L_down_dif,
-        t_total_up,
-    ):
-        """Partial derivative of radiance with respect to
-        surface reflectance"""
-        if not isinstance(t_total_up, np.ndarray) or len(t_total_up) == 1:
-            drdn_drfl = L_down_tot * drho_scaled_for_multiscattering_drfl
-        else:
-            drdn_drfl = (
-                (L_down_dir + L_down_dif)
-                * drho_scaled_for_multiscattering_drfl
-                * t_total_up
-            )
-
-        return drdn_drfl
-
     def drdn_dLs(self, t_total_up):
         """Partial derivative of radiance with respect to
         surface emission"""
+
         return t_total_up
 
     def drdn_dsurface(
         self,
-        rho_dir_dir,
         rho_dif_dir,
         drfl_dsurface,
         dLs_dsurface,
         s_alb,
         t_total_up,
-        L_down_tot,
+        L_tot,
         L_down_dir,
-        L_down_dif,
     ):
         """Derivative of radiance with respect to
         full surface vector"""
 
-        drho_scaled_for_multiscattering_drfl = 1.0 / (1.0 - s_alb * rho_dif_dir) ** 2
-
         drdn_dLs = t_total_up
-        drdn_drfl = self.drdn_drfl(
-            drho_scaled_for_multiscattering_drfl,
-            L_down_tot,
-            L_down_dir,
-            L_down_dif,
-            t_total_up,
-        )
-        # Array sizes may cause this to fail if LUT surface contains
-        # dim > len(rfl)
-        # Need a test case
-        return (
-            drdn_drfl[:, np.newaxis] * drfl_dsurface
-            + drdn_dLs[:, np.newaxis] * dLs_dsurface
-        )
+        drdn_drfl = self.drdn_drfl(L_tot, s_alb, rho_dif_dir)
+
+        # Chain rule to get derivative w.r.t. surface complete state
+        drdn_dsurface = np.multiply(drdn_drfl, drfl_dsurface)
+
+        # Get the derivative w.r.t. surface emission
+        drdn_dLs = np.multiply(self.drdn_dLs(t_total_up)[:, np.newaxis], dLs_dsurface)
+
+        return np.add(drdn_dsurface, drdn_dLs)
+
+    def analytical_model(
+        self,
+        background,
+        L_down_dir,
+        L_down_dif,
+        L_tot,
+        geom,
+        L_dir_dir=None,
+        L_dir_dif=None,
+        L_dif_dir=None,
+        L_dif_dif=None,
+    ):
+        """
+        Linearization of the surface reflectance terms to use in the
+        AOE inner loop (see Susiluoto, 2025). We set the quadratic
+        spherical albedo term to a constant background, which makes
+        simplifies the linearization
+        background - s * rho_bg
+
+        NOTE FOR SURFACE_LUT:
+        This assumes that the only surface statevector terms are
+        surface reflectance terms. Any additional surface state elements
+        have to be explicitely handled in this function. How they are
+        handled is dependent on the nature of the surface rfl model.
+        The n-columns of H is equal to the number of statevector elements.
+        Here, set to the number of wavelengths.
+        """
+        theta = L_tot + (L_tot * background)
+        H = np.eye(self.n_wl, self.n_wl)
+        H = theta[:, np.newaxis] * H
+
+        return H
 
     def summarize(self, x_surface, geom):
         """Summary of state vector."""
