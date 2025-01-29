@@ -111,6 +111,10 @@ class RadiativeTransferEngine:
         self.coupling_terms = ["dir-dir", "dif-dir", "dir-dif", "dif-dif"]
         self.multipart_transmittance = engine_config.multipart_transmittance
         self.glint_model = engine_config.glint_model
+        if self.glint_model and not self.multipart_transmittance:
+            raise AttributeError(
+                "Using the glint model requires a multipart transmittance LUT table"
+            )
 
         # Specify wavelengths and fwhm to be used for either resampling an existing LUT or building a new instance
         if not any(wl) or not any(fwhm):

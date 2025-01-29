@@ -120,6 +120,15 @@ def analytical_line(
     fm = ForwardModel(config)
     iv = Inversion(config, fm)
 
+    # TODO
+    """For now, this is the safest way to handle the
+    special case of the SKY_GLINT term. For the analytical line
+    algo, the SKY_GLINT term will be treated as an RT term.
+
+    Longer term fix should be to change how the indexes are tracked.
+    """
+    atm_band_names = fm.surface.analytical_interp_names + atm_band_names
+
     if os.path.isfile(atm_file) is False:
         atm_interpolation(
             reference_state_file=subs_state_file,
@@ -127,7 +136,7 @@ def analytical_line(
             input_locations_file=loc_file,
             segmentation_file=lbl_file,
             output_atm_file=atm_file,
-            atm_band_names=fm.RT.statevec_names,
+            atm_band_names=atm_band_names,
             nneighbors=n_atm_neighbors,
             gaussian_smoothing_sigma=smoothing_sigma,
             n_cores=n_cores,
@@ -145,6 +154,7 @@ def analytical_line(
 
     outside_ret_windows = np.zeros(len(fm.surface.idx_lamb), dtype=int)
     outside_ret_windows[iv.winidx] = 1
+    bbl = np.concatenate([outside_ret_windows, [1 for i in fm.idx_surf_nonrfl]])
     output_metadata["bbl"] = "{" + ",".join([str(x) for x in outside_ret_windows]) + "}"
 
     if "emit pge input files" in list(output_metadata.keys()):
@@ -189,6 +199,8 @@ def analytical_line(
             rdn_file,
             loc_file,
             obs_file,
+            subs_state_file,
+            lbl_file,
             loglevel,
             logfile,
         )
@@ -224,10 +236,10 @@ class Worker(object):
         rdn_file: str,
         loc_file: str,
         obs_file: str,
+        subs_state_file: str,
+        lbl_file: str,
         loglevel: str,
         logfile: str,
-        subs_state_file: str = None,
-        lbl_file: str = None,
     ):
         """
         Worker class to help run a subset of spectra.
@@ -261,12 +273,17 @@ class Worker(object):
         self.obs_file = obs_file
         self.analytical_state_file = analytical_state_file
         self.analytical_state_unc_file = analytical_state_unc_file
-        if subs_state_file is not None and lbl_file is not None:
-            self.subs_state_file = subs_state_file
-            self.lbl_file = lbl_file
-        else:
-            self.subs_state_file = None
-            self.lbl_file = None
+
+        # Can't see any reason to leave these as optional
+        self.subs_state_file = subs_state_file
+        self.lbl_file = lbl_file
+
+        # If I only want to use some of the atm_interp bands
+        # Empty if all
+        self.atm_bands = []
+
+        # How many iterations to use for invert_analytical
+        self.num_iter = 1
 
         if config.input.radiometry_correction_file is not None:
             self.radiance_correction, wl = load_spectrum(
@@ -285,6 +302,10 @@ class Worker(object):
         rt_state = envi.open(envi_header(self.RT_state_file)).open_memmap(
             interleave="bip"
         )
+        subs_state = envi.open(envi_header(self.subs_state_file)).open_memmap(
+            interleave="bip"
+        )
+        lbl = envi.open(envi_header(self.lbl_file)).open_memmap(interleave="bip")
 
         start_line, stop_line = startstop
         output_state = (
@@ -312,24 +333,41 @@ class Worker(object):
                     meas *= self.radiance_correction
                 if np.all(meas < 0):
                     continue
-                x_RT = rt_state[r, c, self.fm.idx_RT - len(self.fm.idx_surface)]
+
                 geom = Geometry(obs=obs[r, c, :], loc=loc[r, c, :], esd=esd)
 
+                # "Atmospheric" state comes from the atm_interpolated file
+                # Can also include sky glint for the glint model
+                # Currently use a manual flag set up in the worker.init
+                if len(self.atm_bands):
+                    x_RT = rt_state[r, c, self.atm_bands]
+                else:
+                    x_RT = rt_state[r, c, :]
+
+                iv_idx = self.fm.surface.analytical_iv_idx
+                superpixel_state = subs_state[int(lbl[r, c, 0]), 0, iv_idx]
+
+                # Concatenate full statevector to use for initialization
+                # This only works with the correct indexing.
+                # Any surface component of x_RT has to be first in the array.
+                # TODO handle indexing in a safer way. See line 126
+                x0 = np.concatenate([superpixel_state, x_RT])
                 states, unc = invert_analytical(
                     self.iv.fm,
                     self.iv.winidx,
                     meas,
                     geom,
-                    x_RT,
-                    1,
+                    x0,
+                    self.num_iter,
                     self.hash_table,
                     self.hash_size,
                 )
 
-                output_state[r - start_line, c, :] = states[-1][self.fm.idx_surface]
+                output_state[r - start_line, c, :] = states[-1, self.fm.idx_surface]
 
                 output_state_unc[r - start_line, c, :] = unc[self.fm.idx_surface]
 
+            # What do we want to do with the negative reflectances?
             state = output_state[r - start_line, ...]
             mask = np.logical_and.reduce(
                 [

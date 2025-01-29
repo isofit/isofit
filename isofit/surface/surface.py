@@ -37,6 +37,7 @@ class Surface:
         config = full_config.forward_model.surface
 
         self.statevec_names = []
+        self.idx_surface = np.arange(len(self.statevec_names))
         self.bounds = np.array([])
         self.scale = np.array([])
         self.init = np.array([])
@@ -96,7 +97,7 @@ class Surface:
         #  As long as this is not implemented, return the same reflectance vector for both.
         return self.rfl, self.rfl
 
-    def drfl_dsurface(self, x_surface, geom):
+    def drfl_dsurface(self, x_surface, geom, L_down_dir=None, L_down_dif=None):
         """Partial derivative of reflectance with respect to state vector,
         calculated at x_surface. In the case that there are no free
         paramters our convention is to return the vector of zeros."""

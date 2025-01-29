@@ -108,7 +108,7 @@ class ForwardModel:
         self.Sb = np.diagflat(np.power(self.bval, 2))
 
         # Set up indices for references - MUST MATCH ORDER FROM ABOVE ASSIGNMENT
-        self.idx_surface = np.arange(len(self.surface.statevec_names), dtype=int)
+        self.idx_surface = self.surface.idx_surface
         # Sometimes, it's convenient to have the index of the entire surface
         # as one variable, and sometimes you want the sub-components
         # Split surface state vector indices to cover cases where we retrieve
@@ -249,27 +249,42 @@ class ForwardModel:
     def K(self, x, geom):
         """Derivative of observation with respect to state vector. This is
         the concatenation of jacobians with respect to parameters of the
-        surface and radiative transfer model."""
+        surface and radiative transfer model.
+
+        Note: There is a fair bit of redundancy of function calls w/in
+        RT and fm. For example self.get_L_down_transmitted and get_L_coupled
+        are both called here, and in fm.calc_rdn and RT.calc_rdn respectively.
+        """
 
         # Unpack state vector
         x_surface, x_RT, x_instrument = self.unpack(x)
 
-        # Collect and upsample surface properties used in the derivative quantities
-        L_down_tot, L_down_dir, L_down_dif = self.RT.get_L_down_transmitted(x_RT, geom)
-        coszen, cos_i = geom.check_coszen_and_cos_i(self.RT.coszen)
-        L_down_dir = L_down_dir / coszen * cos_i
+        # Default: get directional radiances 
+        L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = self.RT.get_L_coupled(
+        L_tot = L_dir_dir + L_dif_dir + L_dir_dif + L_dif_dif
 
-        # Does this already imply that x_surf at same wl grid as L_down?
+        # Handle case for 1c vs 4c model
+        if type(L_tot) != np.ndarray or len(L_tot) == 1:
+            # 1c model w/in if clause 
+            L_tot, L_down_dir, L_down_dif = self.RT.get_L_down_transmitted(
+                x_RT, geom
+            )
+        else:
+            # 4c model w/in else clause
+            L_down_dir = L_dir_dir + L_dif_dir
+            L_down_dif = L_dif_dir + L_dif_dir
+
+        # Call surface reflectance and derivative w.r.t. surface, upsample
         rho_dir_dir, rho_dif_dir = self.surface.calc_rfl(
             x_surface, geom, L_down_dir, L_down_dif
         )
         rho_dir_dir_hi = self.upsample(self.surface.wl, rho_dir_dir)
         rho_dif_dir_hi = self.upsample(self.surface.wl, rho_dif_dir)
-
         drfl_dsurface_hi = self.upsample(
             self.surface.wl, self.surface.drfl_dsurface(x_surface, geom).T
         ).T
 
+        # Call surface emission and derivative w.r.t. surface, upsample
         Ls = self.surface.calc_Ls(x_surface, geom)
         Ls_hi = self.upsample(self.surface.wl, Ls)
         dLs_dsurface_hi = self.upsample(
@@ -277,7 +292,12 @@ class ForwardModel:
         ).T
 
         # To get the derivative w.r.t. RT
-        drdn_dRT = self.RT.drdn_dRT(x_RT, rho_dir_dir_hi, rho_dif_dir_hi, Ls_hi, geom)
+        drdn_dRT = self.RT.drdn_dRT(
+            x_RT, 
+            rho_dir_dir_hi, rho_dif_dir_hi, 
+            Ls_hi, 
+            geom
+        )
 
         # Need to pass some RT props into surface
         r = self.RT.get_shared_rtm_quantities(x_RT, geom)
@@ -288,20 +308,20 @@ class ForwardModel:
         """
         This is a little awkward because we are passing surface
         properties from fm -> surface. Chose this route b.c. we need
-        surface properties at resolution of fm.RT. Either you pass
-        the properties themselves, or pass fm.RT.wl and upsample w/in
-        fm.surface. I chose the former to keep all upsampling w/in fm.
+        surface properties at resolution of fm.RT. 
+        Options around this:
+            - Pass fm.RT.wl and upsample w/in fm.surface. 
+            - Pass the drdn_dsurface function directly into RT and 
+              construct all derivatives w/in RT.
         """
         drdn_dsurface = self.surface.drdn_dsurface(
-            rho_dir_dir_hi,
             rho_dif_dir_hi,
             drfl_dsurface_hi,
             dLs_dsurface_hi,
             s_alb,
             t_total_up,
-            L_down_tot,
-            L_down_dir,
-            L_down_dir,
+            L_tot,
+            L_dir_dir + L_dir_dif
         )
 
         # Need to pass calc rdn into instrument derivative
