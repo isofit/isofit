@@ -18,10 +18,7 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #         Philip G Brodrick, philip.brodrick@jpl.nasa.gov
 #
-### Variables ###
-import importlib.metadata
-
-__version__ = importlib.metadata.version(__package__ or __name__)
+__version__ = "3.3.3"
 
 import logging
 

@@ -1,10 +1,6 @@
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
 [project]
 name = "isofit"
-version = "3.3.3"
+version = "dynamic"
 description = "Imaging Spectrometer Optimal FITting"
 readme = "README.rst"
 requires-python = ">=3.8"
@@ -78,3 +74,10 @@ documentation = "https://isofit.readthedocs.io/en/latest/index.html"
 
 [project.scripts]
 isofit = "isofit.__main__:cli"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = "isofit/__init__.py"
