@@ -18,6 +18,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Lint
+  black:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Print concurrency group
+        run: echo '${{ github.workflow }}-${{ github.ref }}'
+      - uses: psf/black@stable
+        with:
+          src: "./isofit"
+          version: "24.2.0"
+
   # Test building the package
   package:
     runs-on: ubuntu-latest
