@@ -5,7 +5,7 @@
 # status of the cache instead of automatic updates
 # Then launch the Python tests in parallel
 
-name: Prebuild
+name: Build
 
 on:
   push:
