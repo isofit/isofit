@@ -70,9 +70,9 @@ def test_subcommand_registration(executable):
 
     # Check to make sure the right number of subcommands are registered
     if isoplots:
-        assert subcommand_count == 14
+        assert subcommand_count == 15
     else:
-        assert subcommand_count == 13
+        assert subcommand_count == 14
 
 
 def test_version():
