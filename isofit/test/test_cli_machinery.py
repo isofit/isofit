@@ -69,10 +69,11 @@ def test_subcommand_registration(executable):
         assert cmd in stdout_txt
 
     # Check to make sure the right number of subcommands are registered
+    # 15 ISOFIT commands +1 --help (+1 isoplots, if available)
     if isoplots:
-        assert subcommand_count == 15
+        assert subcommand_count == 16
     else:
-        assert subcommand_count == 14
+        assert subcommand_count == 15
 
 
 def test_version():
