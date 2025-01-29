@@ -1,6 +1,6 @@
 [project]
 name = "isofit"
-version = "dynamic"
+dynamic = ["version"]
 description = "Imaging Spectrometer Optimal FITting"
 readme = "README.rst"
 requires-python = ">=3.8"
