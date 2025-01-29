@@ -14,7 +14,7 @@ on:
     branches: ["dev", "main"]
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
