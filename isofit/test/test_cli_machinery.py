@@ -66,7 +66,11 @@ def test_subcommand_registration(executable):
 
     subcommand_count = 0
     for subcommand_count, cmd in enumerate(__main__.cli.commands, 1):
-        assert cmd in stdout_txt
+        if cmd == "plot":
+            if isoplots:
+                assert cmd in stdout_txt
+        else:
+            assert cmd in stdout_txt
 
     # Check to make sure the right number of subcommands are registered
     # 14 ISOFIT commands + 2 (--help, --version) (+ 1 isoplots, if available)
