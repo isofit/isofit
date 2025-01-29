@@ -97,7 +97,6 @@ class CLI(click.MultiCommand):
 
 @click.group(invoke_without_command=True, cls=CLI, add_help_option=False)
 @click.pass_context
-@click.version_option()
 @click.option("-i", "--ini", help="Override path to an isofit.ini file")
 @click.option("-b", "--base", help="Override the base directory for all products")
 @click.option("-s", "--section", help="Switches which section of the ini to use")
