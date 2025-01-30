@@ -166,11 +166,7 @@ class RadiativeTransfer:
             if "coszen" in child.lut:
                 return child.lut.coszen.data
 
-    def calc_rdn(self, x_RT, rho_dir_dir, rho_dif_dir, Ls, geom):
-        """
-        Physics-based forward model to calculate at-sensor radiance.
-        Includes topography, background reflectance, and glint.
-        """
+    def check_coszen_and_cos_i(self, geom):
         coszen = (
             np.cos(np.deg2rad(geom.solar_zenith))
             if np.isnan(self.coszen)
@@ -179,6 +175,15 @@ class RadiativeTransfer:
 
         # Local solar zenith angle as a function of surface slope and aspect
         cos_i = geom.cos_i if geom.cos_i is not None else coszen
+
+        return coszen, cos_i
+
+    def calc_rdn(self, x_RT, rho_dir_dir, rho_dif_dir, Ls, geom):
+        """
+        Physics-based forward model to calculate at-sensor radiance.
+        Includes topography, background reflectance, and glint.
+        """
+        coszen, cos_i = self.check_coszen_and_cos_i(geom)
 
         # Adjacency effects
         # ToDo: we need to think about if we want to obtain the background reflectance from the Geometry object
@@ -257,11 +262,12 @@ class RadiativeTransfer:
 
         return ret
 
-    def rdn_to_rho(self, rdn, solar_irr=None):
+    def rdn_to_rho(self, rdn, coszen, solar_irr=None):
         """Function to convert a radiance vector to transmittance.
 
         Args:
             rdn:       input data vector in radiance
+            coszen:    cosine of solar zenith angle
             solar_irr: solar irradiance vector (optional)
 
         Returns:
@@ -269,13 +275,14 @@ class RadiativeTransfer:
         """
         if solar_irr is None:
             solar_irr = self.solar_irr
-        return rdn * np.pi / (solar_irr * self.coszen)
+        return rdn * np.pi / (solar_irr * coszen)
 
-    def rho_to_rdn(self, rho, solar_irr=None):
+    def rho_to_rdn(self, rho, coszen, solar_irr=None):
         """Function to convert a transmittance vector to radiance.
 
         Args:
             rho:       input data vector in transmittance
+            coszen:    cosine of solar zenith angle
             solar_irr: solar irradiance vector (optional)
 
         Returns:
@@ -283,7 +290,7 @@ class RadiativeTransfer:
         """
         if solar_irr is None:
             solar_irr = self.solar_irr
-        return (solar_irr * self.coszen) / np.pi * rho
+        return (solar_irr * coszen) / np.pi * rho
 
     def get_L_atm(self, x_RT: np.array, geom: Geometry) -> np.array:
         """Get the interpolated modeled atmospheric path radiance.
@@ -296,6 +303,9 @@ class RadiativeTransfer:
             interpolated modeled atmospheric path radiance
         """
         L_atms = []
+
+        coszen, cos_i = self.check_coszen_and_cos_i(geom)
+
         for RT in self.rt_engines:
             if RT.treat_as_emissive:
                 r = RT.get(x_RT, geom)
@@ -307,7 +317,7 @@ class RadiativeTransfer:
                     L_atm = r["rhoatm"]
                 else:
                     rho_atm = r["rhoatm"]
-                    L_atm = self.rho_to_rdn(rho_atm)
+                    L_atm = self.rho_to_rdn(rho_atm, coszen)
                 L_atms.append(L_atm)
         return np.hstack(L_atms)
 
@@ -327,6 +337,8 @@ class RadiativeTransfer:
         L_downs_dir = []
         L_downs_dif = []
 
+        coszen, cos_i = self.check_coszen_and_cos_i(geom)
+
         for RT in self.rt_engines:
             if RT.treat_as_emissive:
                 r = RT.get(x_RT, geom)
@@ -339,8 +351,8 @@ class RadiativeTransfer:
                     L_down_dif = r["transm_down_dif"]
                 else:
                     # Transform downward transmittance to radiance
-                    L_down_dir = self.rho_to_rdn(r["transm_down_dir"])
-                    L_down_dif = self.rho_to_rdn(r["transm_down_dif"])
+                    L_down_dir = self.rho_to_rdn(r["transm_down_dir"], coszen)
+                    L_down_dif = self.rho_to_rdn(r["transm_down_dif"], coszen)
 
                 L_down = L_down_dir + L_down_dif
 
@@ -401,7 +413,6 @@ class RadiativeTransfer:
     def drdn_dRT(
         self,
         x_RT,
-        x_surface,
         rho_dir_dir,
         rho_dif_dir,
         drfl_dsurface,
@@ -421,8 +432,8 @@ class RadiativeTransfer:
         K_RT = np.array(K_RT).T
 
         # Get K_surface
-        # local solar zenith angle as a function of surface slope and aspect
-        cos_i = geom.cos_i if geom.cos_i is not None else self.coszen
+        # TOA and local solar zenith angle as a function of surface slope and aspect
+        coszen, cos_i = self.check_coszen_and_cos_i(geom)
 
         # get needed rt quantities from LUT
         r = self.get_shared_rtm_quantities(x_RT, geom)
@@ -435,7 +446,7 @@ class RadiativeTransfer:
         # thus, unscaling and rescaling by local solar zenith angle required
         # to account for surface slope and aspect
         L_down_tot, L_down_dir, L_down_dif = self.get_L_down_transmitted(x_RT, geom)
-        L_down_dir = L_down_dir / self.coszen * cos_i
+        L_down_dir = L_down_dir / coszen * cos_i
 
         # upward transmittance
         t_total_up = r["transm_up_dir"] + r["transm_up_dif"]

@@ -112,11 +112,11 @@ def heuristic_atmosphere(
             # using this presumed amount of water vapor, and measure the
             # resulting residual (as measured from linear interpolation across
             # the absorption feature)
-            # ToDo: grab the per pixel sza from Geometry object
+            coszen, cos_i = RT.check_coszen_and_cos_i(geom)
             if my_RT.rt_mode == "rdn":
                 rho = meas
             else:
-                rho = RT.rdn_to_rho(meas, solar_irr)
+                rho = RT.rdn_to_rho(meas, coszen, solar_irr)
 
             r = 1.0 / (transm / (rho - rhoatm) + sphalb)
             ratios.append((r[b945] * 2.0) / (r[b1040] + r[b865]))
@@ -184,12 +184,6 @@ def invert_algebraic(
     if not my_RT:
         raise ValueError("No suitable RT object for initialization")
 
-    # ToDo: grab the per pixel sza from Geometry object
-    if my_RT.engine_config.engine_name == "KernelFlowsGP":
-        coszen = np.cos(np.deg2rad(geom.solar_zenith))
-    else:
-        coszen = RT.coszen
-
     # Prevent NaNs
     transm[transm == 0] = 1e-5
 
@@ -201,10 +195,11 @@ def invert_algebraic(
 
     # Now solve for the reflectance at measured wavelengths,
     # and back-translate to surface wavelengths
+    coszen, cos_i = RT.check_coszen_and_cos_i(geom)
     if my_RT.rt_mode == "rdn":
         rho = rdn_solrfl
     else:
-        rho = RT.rdn_to_rho(rdn_solrfl, solar_irr)
+        rho = RT.rdn_to_rho(rdn_solrfl, coszen, solar_irr)
 
     rfl = 1.0 / (transm / (rho - rhoatm) + sphalb)
     rfl[rfl > 1.0] = 1.0
