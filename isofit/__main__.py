@@ -49,9 +49,8 @@ class CLI(click.MultiCommand):
         for key, path in self.commands.items():
             try:
                 self.modules[key] = importlib.import_module(path)
-                print(f"Loaded CLI: {key}")
             except Exception as e:
-                print(f"Failed CLI: {key}, reason: {e}")
+                pass
 
     def invoke(self, ctx):
         ini = ctx.params.pop("ini")

@@ -64,8 +64,6 @@ def test_subcommand_registration(executable):
             print(proc.stdout.read().decode(), file=sys.stderr)
             assert False
 
-    print(stdout_txt)
-
     subcommand_count = 0
     for subcommand_count, cmd in enumerate(__main__.cli.commands, 1):
         if cmd == "plot":
