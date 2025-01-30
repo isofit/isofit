@@ -32,7 +32,7 @@ class CLI(click.MultiCommand):
         "build": "isofit.data.build_examples",
         "download": "isofit.data.download",
         "validate": "isofit.data.validate",
-        "path": "isofit.data",
+        # "path": "isofit.data",
         "HRRR_to_modtran": "isofit.utils.add_HRRR_profiles_to_modtran_config",
         "analytical_line": "isofit.utils.analytical_line",
         "apply_oe": "isofit.utils.apply_oe",
@@ -50,8 +50,8 @@ class CLI(click.MultiCommand):
             if key not in self.modules:
                 try:
                     self.modules[key] = importlib.import_module(path)
-                except Exception as e:
-                    print(e)
+                except:
+                    pass
 
     def invoke(self, ctx):
         ini = ctx.params.pop("ini")
