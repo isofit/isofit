@@ -50,8 +50,8 @@ class CLI(click.MultiCommand):
             if key not in self.modules:
                 try:
                     self.modules[key] = importlib.import_module(path)
-                except:
-                    pass
+                except Exception as e:
+                    print(e)
 
     def invoke(self, ctx):
         ini = ctx.params.pop("ini")
