@@ -274,7 +274,6 @@ class ForwardModel:
         # Derivatives of RTM radiance
         drdn_dRT, drdn_dsurface = self.RT.drdn_dRT(
             x_RT,
-            x_surface,
             rho_dir_dir_hi,
             rho_dif_dir_hi,
             drfl_dsurface_hi,
