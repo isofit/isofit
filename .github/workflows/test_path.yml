@@ -69,7 +69,6 @@ jobs:
           python3 -m pip uninstall --yes isofit
 
           # Move 'isofit' into a new directory to ensure it is not just inherently available.
-          cd ..
           mkdir isolation/
           mv isofit/ isolation/
 
