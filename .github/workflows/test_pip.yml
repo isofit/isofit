@@ -78,4 +78,4 @@ jobs:
       - name: Execute tests
         shell: bash
         run: |
-          python3 -m pytest -s "${{ matrix.pytest-flags }}"
+          python3 -m pytest -v -s "${{ matrix.pytest-flags }}"

@@ -103,4 +103,4 @@ jobs:
           # We define 'testpaths' in 'pytest.ini', however that path is no
           # longer valid. In this case 'pytest' searches for tests by default,
           # but we know where they are, so explicitly point to the new location.
-          PYTHONPATH="isolation/:${PYTHONPATH}" python3 -m pytest -s isolation/isofit/test/ "${{ matrix.pytest-flags }}"
+          PYTHONPATH="isolation/:${PYTHONPATH}" python3 -m pytest -v -s isolation/isofit/test/ "${{ matrix.pytest-flags }}"
