@@ -54,9 +54,9 @@ jobs:
           # Python packaging dependencies. The presence of 'wheel' triggers
           # a lot of new Python packaging machinery that will eventually
           # become the default.
-          python3 -m pip install pip setuptools wheel --upgrade
+          python3 -m pip install pip wheel --upgrade
           python3 --version
-          python3 -m pip show pip setuptools wheel
+          python3 -m pip show pip wheel
 
           # Install 'isofit' and dependencies. Be sure to uninstall this version
           # of 'isofit' to ensure we are testing against '$PYTHONPATH'.
@@ -69,6 +69,7 @@ jobs:
           python3 -m pip uninstall --yes isofit
 
           # Move 'isofit' into a new directory to ensure it is not just inherently available.
+          cd ..
           mkdir isolation/
           mv isofit/ isolation/
 
