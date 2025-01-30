@@ -73,7 +73,6 @@ def apply_oe(
     num_neighbors=[],
     atm_sigma=[2],
     pressure_elevation=False,
-    multipart_transmittance=False,
     prebuilt_lut=None,
     no_min_lut_spacing=False,
     inversion_windows=None,
@@ -181,8 +180,6 @@ def apply_oe(
         Only used with the analytical line.
     pressure_elevation : bool, default=False
         Flag to retrieve elevation
-    multipart_transmittance: bool, default=False
-        Flag to indicate whether a 4-component transmittance model (coupling terms) is to be used
     prebuilt_lut : str, default=None
         Use this pre-constructed look up table for all retrievals. Must be an
         ISOFIT-compatible RTE NetCDF
@@ -208,6 +205,28 @@ def apply_oe(
     retrievals. Remote Sensing of Environment, 261:112476, 2021.doi: 10.1016/j.rse.2021.112476.
     """
     use_superpixels = empirical_line or analytical_line
+
+    # Determine if we run in multipart-transmittance (4c) mode
+    if emulator_base is not None:
+        if emulator_base.endswith(".jld2"):
+            multipart_transmittance = False
+        else:
+            emulator_aux_file = os.path.abspath(
+                os.path.splitext(emulator_base)[0] + "_aux.npz"
+            )
+            aux = np.load(emulator_aux_file)
+            if (
+                "transm_down_dir"
+                and "transm_down_dif"
+                and "transm_up_dir"
+                and "transm_up_dif" in aux["rt_quantities"]
+            ):
+                multipart_transmittance = True
+            else:
+                multipart_transmittance = False
+    else:
+        # This is the MODTRAN case. Do we want to enable the 4c mode by default?
+        multipart_transmittance = True
 
     ray.init(
         num_cpus=n_cores,
@@ -763,7 +782,6 @@ def apply_oe(
 @click.option("--num_neighbors", "-nn", type=int, multiple=True)
 @click.option("--atm_sigma", "-as", type=float, multiple=True, default=[2])
 @click.option("--pressure_elevation", is_flag=True, default=False)
-@click.option("--multipart_transmittance", is_flag=True, default=False)
 @click.option("--prebuilt_lut", type=str)
 @click.option("--no_min_lut_spacing", is_flag=True, default=False)
 @click.option("--inversion_windows", type=float, nargs=2, multiple=True, default=None)
