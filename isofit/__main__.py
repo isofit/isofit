@@ -46,11 +46,14 @@ class CLI(click.MultiCommand):
     }
 
     def load_modules(self):
+        import traceback
+
         for key, path in self.commands.items():
             try:
                 self.modules[key] = importlib.import_module(path)
             except Exception as e:
-                pass
+                print(f"\nFailed to load: {key}")
+                print(traceback.format_exc())
 
     def invoke(self, ctx):
         ini = ctx.params.pop("ini")
