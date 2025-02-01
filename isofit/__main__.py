@@ -52,7 +52,7 @@ class CLI(click.MultiCommand):
             try:
                 self.modules[key] = importlib.import_module(path)
             except Exception as e:
-                print(f"\nFailed to load: {key}")
+                print(f"\nFailed to load: {path}")
                 print(traceback.format_exc())
 
     def invoke(self, ctx):
