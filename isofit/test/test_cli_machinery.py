@@ -50,8 +50,6 @@ def test_subcommand_registration(executable):
 
     Test both ``$ isofit`` and ``$ python3 -m isofit``.
     """
-    print(f"Executable: {executable[0]}")
-
     cmd = executable + ["--help"]
     with sp.Popen(cmd, stdout=sp.PIPE, stderr=sp.PIPE) as proc:
         proc.wait()
