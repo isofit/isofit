@@ -76,6 +76,7 @@ jobs:
         with:
           python-version: '3.12'
           cache: 'pip'
+          cache-dependency-path: pyproject.toml
 
       - name: Install ISOFIT
         shell: bash
