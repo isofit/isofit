@@ -44,7 +44,7 @@ jobs:
           cache-dependency-path: pyproject.toml
 
       - name: Print Python Executable
-        run: where python
+        run: which python
 
       - name: Install ISOFIT and most software dependencies
         shell: bash
