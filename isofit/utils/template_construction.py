@@ -494,6 +494,7 @@ def build_presolve_config(
     debug: bool = False,
     inversion_windows=[[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]],
     prebuilt_lut_path: str = None,
+    multipart_transmittance: bool = False,
 ) -> None:
     """Write an isofit config file for a presolve, with limited info.
 
@@ -507,7 +508,8 @@ def build_presolve_config(
         uncorrelated_radiometric_uncertainty: uncorrelated radiometric uncertainty parameter for isofit
         segmentation_size: image segmentation size if empirical line is used
         debug: flag to enable debug_mode in the config.implementation
-        lut_path: lut path to use; if none, presolve config will create a new file
+        prebuilt_lut_path: lut path to use; if none, presolve config will create a new file
+        multipart_transmittance: flag to indicate whether a 4-component transmittance model is to be used
     """
 
     # Determine number of spectra included in each retrieval.  If we are
@@ -526,10 +528,8 @@ def build_presolve_config(
 
     if surface_category == "glint_model_surface":
         glint_model = True
-        multipart_transmittance = True
     else:
         glint_model = False
-        multipart_transmittance = False
 
     if prebuilt_lut_path is None:
         lut_path = join(paths.lut_h2o_directory, "lut.nc")
@@ -690,6 +690,7 @@ def build_main_config(
     debug: bool = False,
     inversion_windows=[[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]],
     prebuilt_lut_path: str = None,
+    multipart_transmittance: bool = False,
 ) -> None:
     """Write an isofit config file for the main solve, using the specified pathnames and all given info
 
@@ -716,6 +717,7 @@ def build_main_config(
         segmentation_size:                    image segmentation size if empirical line is used
         pressure_elevation:                   if true, retrieve pressure elevation
         debug:                                if true, run ISOFIT in debug mode
+        multipart_transmittance:              flag to indicate whether a 4-component transmittance model is to be used
     """
 
     # Determine number of spectra included in each retrieval.  If we are
@@ -739,10 +741,8 @@ def build_main_config(
 
     if surface_category == "glint_model_surface":
         glint_model = True
-        multipart_transmittance = True
     else:
         glint_model = False
-        multipart_transmittance = False
 
     radiative_transfer_config = {
         "radiative_transfer_engines": {

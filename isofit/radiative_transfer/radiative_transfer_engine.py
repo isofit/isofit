@@ -105,9 +105,11 @@ class RadiativeTransferEngine:
         self.sim_path = engine_config.sim_path
 
         # Enable special modes
-        self.rt_mode = engine_config.rt_mode
+        self.rt_mode = (
+            engine_config.rt_mode if engine_config.rt_mode is not None else "transm"
+        )
+        self.coupling_terms = ["dir-dir", "dif-dir", "dir-dif", "dif-dif"]
         self.multipart_transmittance = engine_config.multipart_transmittance
-        self.topography_model = engine_config.topography_model
         self.glint_model = engine_config.glint_model
 
         # Specify wavelengths and fwhm to be used for either resampling an existing LUT or building a new instance
@@ -213,6 +215,7 @@ class RadiativeTransferEngine:
 
             # Verify no duplicates exist else downstream functions will fail
             duplicates = False
+
             for dim, vals in lut_grid.items():
                 if np.unique(vals).size < len(vals):
                     duplicates = True

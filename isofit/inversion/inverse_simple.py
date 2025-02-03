@@ -112,11 +112,11 @@ def heuristic_atmosphere(
             # using this presumed amount of water vapor, and measure the
             # resulting residual (as measured from linear interpolation across
             # the absorption feature)
-            # ToDo: grab the per pixel sza from Geometry object
+            coszen, cos_i = RT.check_coszen_and_cos_i(geom)
             if my_RT.rt_mode == "rdn":
                 rho = meas
             else:
-                rho = RT.rdn_to_rho(meas, solar_irr)
+                rho = RT.rdn_to_rho(meas, coszen, solar_irr)
 
             r = 1.0 / (transm / (rho - rhoatm) + sphalb)
             ratios.append((r[b945] * 2.0) / (r[b1040] + r[b865]))
@@ -184,12 +184,6 @@ def invert_algebraic(
     if not my_RT:
         raise ValueError("No suitable RT object for initialization")
 
-    # ToDo: grab the per pixel sza from Geometry object
-    if my_RT.engine_config.engine_name == "KernelFlowsGP":
-        coszen = np.cos(np.deg2rad(geom.solar_zenith))
-    else:
-        coszen = RT.coszen
-
     # Prevent NaNs
     transm[transm == 0] = 1e-5
 
@@ -201,10 +195,11 @@ def invert_algebraic(
 
     # Now solve for the reflectance at measured wavelengths,
     # and back-translate to surface wavelengths
+    coszen, cos_i = RT.check_coszen_and_cos_i(geom)
     if my_RT.rt_mode == "rdn":
         rho = rdn_solrfl
     else:
-        rho = RT.rdn_to_rho(rdn_solrfl, solar_irr)
+        rho = RT.rdn_to_rho(rdn_solrfl, coszen, solar_irr)
 
     rfl = 1.0 / (transm / (rho - rhoatm) + sphalb)
     rfl[rfl > 1.0] = 1.0
@@ -305,21 +300,16 @@ def invert_analytical(
         prprod = Sa_inv[winglintidx, :][:, winglintidx] @ xa_surface[winglintidx]
         # obtain needed RT vectors
         r = fm.RT.get_L_atm(x_RT, geom)[winidx]  # path radiance
-        t1 = fm.RT.get_L_down_transmitted(x_RT, geom)[
-            winidx
-        ]  # total transmittance (down * up, direct + diffuse)
+        # total (down * up, direct + diffuse), direct, and diffuse downward radiance
+        L_down_total, L_down_dir, L_down_dif = fm.RT.get_L_down_transmitted(x_RT, geom)
+        L_down_total = L_down_total[winidx]
+        L_down_dir = L_down_dir[winidx]
+        L_down_dif = L_down_dif[winidx]
         rtm_quant = fm.RT.get_shared_rtm_quantities(x_RT, geom)
-        t_down_dir = rtm_quant["transm_down_dir"][
-            winidx
-        ]  # downward direct transmittance
-        t_down_dif = rtm_quant["transm_down_dif"][
-            winidx
-        ]  # downward diffuse transmittance
-        t_down_total = t_down_dir + t_down_dif  # downward total transmittance
         s = rtm_quant["sphalb"][winidx]  # spherical albedo
         rho_ls = fm.RT.fresnel_rf(geom.observer_zenith)
-        g_dir = rho_ls * (t_down_dir / t_down_total)  # direct sky transmittance
-        g_dif = rho_ls * (t_down_dif / t_down_total)  # diffuse sky transmittance
+        g_dir = rho_ls * (L_down_dir / L_down_total)  # direct sky transmittance
+        g_dif = rho_ls * (L_down_dif / L_down_total)  # diffuse sky transmittance
 
         nl = len(r)
         H = np.zeros((nl, nl + 2))
@@ -335,7 +325,7 @@ def invert_analytical(
         full_xk = np.zeros(len(x_surface))
 
         for n in range(num_iter):
-            Dv = t1 / (1 - s * (xk[:nl] + xk[-2] * g_dir + xk[-1] * g_dif))
+            Dv = L_down_total / (1 - s * (xk[:nl] + xk[-2] * g_dir + xk[-1] * g_dif))
             L = Dv.reshape((-1, 1)) * H
             M = GIv.reshape((-1, 1)) * L
             S = L.T @ M
@@ -481,7 +471,7 @@ def invert_simple(forward: ForwardModel, meas: np.array, geom: Geometry):
         rhoatm, sphalb, transm, solar_irr, coszen, transup = coeffs
 
         L_atm = RT.get_L_atm(x_RT, geom)
-        L_down_transmitted = RT.get_L_down_transmitted(x_RT, geom)
+        L_down_transmitted, _, _ = RT.get_L_down_transmitted(x_RT, geom)
         L_total_without_surface_emission = L_atm + L_down_transmitted * rfl_hi / (
             1.0 - sphalb * rfl_hi
         )
