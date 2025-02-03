@@ -1132,8 +1132,8 @@ def write_modtran_template(
                     },
                     "FILEOPTIONS": {
                         "NOPRNT": 2,
-                        "NOFILE": "FC_NOFILES",
-                        "CSVPRNT": "f{fid}.csv",
+                        "NOFILE": "FC_TAPE6ONLY",
+                        "CSVPRNT": f"{fid}.csv",
                     },
                 }
             }

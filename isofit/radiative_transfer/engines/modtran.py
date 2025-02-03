@@ -51,50 +51,16 @@ class ModtranRT(RadiativeTransferEngine):
     def __init__(
         self, engine_config, min_samples_per_nm=10, max_samples_per_nm=100, **kwargs
     ):
-        super().__init__(engine_config, **kwargs)
         self.max_buffer_time = 0.5
+        self.resolutions_available = [0.1, 1, 5, 15]
+        self.resolution_names = ["p1_2013", "01_2013", "05_2013", "15_2013"]
+        self.min_samples_per_nm = min_samples_per_nm
+        self.max_samples_per_nm = max_samples_per_nm
+        print(f'kwargs: {kwargs}')
 
-        # always run wavelength modeles from fine to coarse spectral resolution,
-        # so that for duplicates we take the finer resolution case
-        resolutions_available = [0.1, 1, 5, 15]
-        resolution_names = ["p1_2013", "01_2013", "05_2013", "15_2013"]
-        samples_wl_grid = np.arange(
-            int(np.floor(np.min(self.wl))), int(np.ceil((np.max(self.wl))))
-        )
-        samples_per_res = [
-            self.samples_per_nm(samples_wl_grid, res) for res in resolutions_available
-        ]
+        super().__init__(engine_config, **kwargs)
 
-        self.simulation_wavelength_regions = []
-        self.wavelength_models = []
-        for _s in range(len(samples_per_res)):
-            wl_range = samples_wl_grid[
-                np.logical_and(
-                    samples_per_res[_s] >= min_samples_per_nm,
-                    samples_per_res[_s] <= max_samples_per_nm,
-                )
-            ]
-            if len(wl_range) > 0:
-                wl_range = [np.min(wl_range), np.max(wl_range)]
-                self.simulation_wavelength_regions.append(wl_range)
-                self.wavelength_models.append(resolution_names[_s])
-
-        if len(self.simulation_wavelength_regions) == 0:
-            raise ValueError(
-                "No valid wavelength regions found for simulation. Adjust min or max samples per nm."
-            )
-
-        # Don't overlap by more than 1 nm, and prioritize coarser resolution models for comp when we can:
-        if len(self.simulation_wavelength_regions) > 2:
-            for i in range(len(self.simulation_wavelength_regions) - 2, -1, -1):
-                self.simulation_wavelength_regions[i][0] = (
-                    self.simulation_wavelength_regions[i + 1][1] - 1
-                )
-
-        for _s in range(len(self.simulation_wavelength_regions)):
-            logging.info(
-                f"Using MODTRAN band model {self.wavelength_models[_s]} in simulation wavelength region: {self.simulation_wavelength_regions[_s]}"
-            )
+        
 
     @staticmethod
     def samples_per_nm(wl, fq_resolution):
@@ -486,6 +452,49 @@ class ModtranRT(RadiativeTransferEngine):
             self.aer_extc = np.array(aer_extc)
             self.aer_asym = np.array(aer_asym)
 
+
+        # Figure out wavelength grid to run on
+
+        # always run wavelength modeles from fine to coarse spectral resolution,
+        # so that for duplicates we take the finer resolution case
+        samples_wl_grid = np.arange(
+            int(np.floor(np.min(self.wl))), int(np.ceil((np.max(self.wl))))
+        )
+        samples_per_res = [
+            self.samples_per_nm(samples_wl_grid, res) for res in self.resolutions_available
+        ]
+
+        self.simulation_wavelength_regions = []
+        self.wavelength_models = []
+        for _s in range(len(samples_per_res)):
+            wl_range = samples_wl_grid[
+                np.logical_and(
+                    samples_per_res[_s] >= self.min_samples_per_nm,
+                    samples_per_res[_s] <= self.max_samples_per_nm,
+                )
+            ]
+            if len(wl_range) > 0:
+                wl_range = [np.min(wl_range), np.max(wl_range)]
+                self.simulation_wavelength_regions.append(wl_range)
+                self.wavelength_models.append(self.resolution_names[_s])
+
+        if len(self.simulation_wavelength_regions) == 0:
+            raise ValueError(
+                "No valid wavelength regions found for simulation. Adjust min or max samples per nm."
+            )
+
+        # Don't overlap by more than 1 nm, and prioritize coarser resolution models for comp when we can:
+        if len(self.simulation_wavelength_regions) > 2:
+            for i in range(len(self.simulation_wavelength_regions) - 2, -1, -1):
+                self.simulation_wavelength_regions[i][0] = (
+                    self.simulation_wavelength_regions[i + 1][1] - 1
+                )
+
+        for _s in range(len(self.simulation_wavelength_regions)):
+            logging.info(
+                f"Using MODTRAN band model {self.wavelength_models[_s]} in simulation wavelength region: {self.simulation_wavelength_regions[_s]}"
+            )
+
     def readSim(self, point):
         """
         For a given point, parses the tp6 and chn file and returns the data
@@ -549,8 +558,10 @@ class ModtranRT(RadiativeTransferEngine):
         vals["DISALB"] = True
         vals["NAME"] = filename_base
         vals["FILTNM"] = os.path.normpath(self.filtpath)
-        if "CSVPRINT" in vals["FILEOPTIONS"].keys():
-            vals["FILEOPTIONS"]["CSVPRINT"] = filename_base + ".csv"
+        #import ipdb; ipdb.set_trace()
+        #if "CSVPRINT" in vals["FILEOPTIONS"].keys():
+        #    vals["FILEOPTIONS"]["CSVPRINT"] = filename_base + ".csv"
+        vals["CSVPRNT"] = filename_base + ".csv"
 
         # Translate to the MODTRAN OBSZEN convention, assumes we are downlooking
         if "OBSZEN" in vals and vals.get("OBSZEN") < 90:
@@ -795,6 +806,8 @@ class ModtranRT(RadiativeTransferEngine):
                 recursive_replace(param, key, val)
             elif key in param[0]["MODTRANINPUT"]["ATMOSPHERE"].keys():
                 recursive_replace(param, key, val)
+            elif key in param[0]["MODTRANINPUT"]["FILEOPTIONS"].keys():
+                recursive_replace(param, key, val)
             else:
                 raise AttributeError(
                     "Unsupported MODTRAN parameter {} specified".format(key)
@@ -827,16 +840,20 @@ class ModtranRT(RadiativeTransferEngine):
                 ):
                     case_param = deepcopy(param[0])
                     case_param["MODTRANINPUT"]["CASE"] = case_count
-                    case_param["MODTRANINPUT"]["SURREF"] = albedo
-                    case_param["SPECTRAL"]["V1"] = wvl_set[0]
-                    case_param["SPECTRAL"]["V2"] = wvl_set[1]
-                    case_param["SPECTRAL"]["BM_NAME"] = band_name
+                    case_param["MODTRANINPUT"]["SURFACE"]["SURREF"] = albedo
+                    case_param["MODTRANINPUT"]["SPECTRAL"]["V1"] = wvl_set[0]
+                    case_param["MODTRANINPUT"]["SPECTRAL"]["V2"] = wvl_set[1]
+                    case_param["MODTRANINPUT"]["SPECTRAL"]["BMNAME"] = band_name
 
                     # We don't need a .chn file if we're writing a tp7!
-                    # Delete it and the DV and FWHM parameters
-                    for dp in ["DV", "FWHM", "FILTNM"]:
-                        if dp in case_param["SPECTRAL"]:
-                            del case_param["SPECTRAL"][dp]
+                    # Delete it. And set the DV and FWHM parameters to something
+                    # arbitrarily high
+                    if "FILTNM" in case_param["MODTRANINPUT"]["SPECTRAL"]:
+                        del case_param["MODTRANINPUT"]["SPECTRAL"]["FILTNM"]
+
+                    for dp in ["DV", "FWHM"]:
+                        if dp in case_param["MODTRANINPUT"]["SPECTRAL"]:
+                            case_param["MODTRANINPUT"]["SPECTRAL"][dp] = (1./self.min_samples_per_nm)*2.0
 
                     if case_count == 0:
                         param[0] = case_param
@@ -844,7 +861,7 @@ class ModtranRT(RadiativeTransferEngine):
                         param.append(case_param)
                     case_count += 1
 
-        return json.dumps({"MODTRAN": param}), param
+        return json.dumps({"MODTRAN": param}, cls=SerialEncoder, indent=2), param
 
     def check_modtran_water_upperbound(self) -> float:
         """Check to see what the max water vapor values is at the first point in the LUT
@@ -915,3 +932,16 @@ class ModtranRT(RadiativeTransferEngine):
 
                 for w, v, wn in zip(ws, vs, wns):
                     fout.write(" %9.4f %9.7f %9.2f\n" % (w, v, wn))
+
+class SerialEncoder(json.JSONEncoder):
+    """Encoder for json to help ensure json objects can be passed to the workflow manager."""
+
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        else:
+            return super(SerialEncoder, self).default(obj)
+
+
