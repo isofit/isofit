@@ -481,20 +481,28 @@ class ModtranRT(RadiativeTransferEngine):
                 "No valid wavelength regions found for simulation. Adjust min or max samples per nm."
             )
 
+        # If we have a coarser model that fully encapsulates a finer model,
+        # discarde the finer model
+        if len(self.simulation_wavelength_regions) >= 2:
+            for i in range(len(self.simulation_wavelength_regions) - 1, -1, -1):
+                if self.simulation_wavelength_regions[i][0] >= self.simulation_wavelength_regions[i-1][0] and self.simulation_wavelength_regions[i][1] <= self.simulation_wavelength_regions[i-1][1]:
+                    self.simulation_wavelength_regions.pop(i)
+        
+
         # Don't overlap by more than 1 nm, and prioritize coarser resolution models for comp when we can:
-        if len(self.simulation_wavelength_regions) > 2:
+        if len(self.simulation_wavelength_regions) >= 2:
             for i in range(len(self.simulation_wavelength_regions) - 2, -1, -1):
                 self.simulation_wavelength_regions[i][0] = (
                     self.simulation_wavelength_regions[i + 1][1] - 1
                 )
 
-        if self.simulation_wavelength_regions[0][0] > np.min(self.wl):
-            self.simulation_wavelength_regions[0][0] = np.min(self.wl)
+        if self.simulation_wavelength_regions[-1][0] > np.min(self.wl) - self.fwhm[0]:
+            self.simulation_wavelength_regions[-1][0] = np.min(self.wl) - self.fwhm[0]
             logging.info(
                 "Adjusted first wavelength region to start at the minimum wavelength."
             )
-        if self.simulation_wavelength_regions[-1][-1] < np.max(self.wl):
-            self.simulation_wavelength_regions[-1][-1] = np.max(self.wl)
+        if self.simulation_wavelength_regions[0][-1] < np.max(self.wl) + self.fwhm[-1]:
+            self.simulation_wavelength_regions[0][-1] = np.max(self.wl) + self.fwhm[-1]
             logging.info(
                 "Adjusted last wavelength region to end at the maximum wavelength."
             )
@@ -567,9 +575,6 @@ class ModtranRT(RadiativeTransferEngine):
         vals["DISALB"] = True
         vals["NAME"] = filename_base
         vals["FILTNM"] = os.path.normpath(self.filtpath)
-        # import ipdb; ipdb.set_trace()
-        # if "CSVPRINT" in vals["FILEOPTIONS"].keys():
-        #    vals["FILEOPTIONS"]["CSVPRINT"] = filename_base + ".csv"
         vals["CSVPRNT"] = filename_base + ".csv"
 
         # Translate to the MODTRAN OBSZEN convention, assumes we are downlooking
