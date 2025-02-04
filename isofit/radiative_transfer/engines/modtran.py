@@ -56,11 +56,9 @@ class ModtranRT(RadiativeTransferEngine):
         self.resolution_names = ["p1_2013", "01_2013", "05_2013", "15_2013"]
         self.min_samples_per_nm = min_samples_per_nm
         self.max_samples_per_nm = max_samples_per_nm
-        print(f'kwargs: {kwargs}')
+        print(f"kwargs: {kwargs}")
 
         super().__init__(engine_config, **kwargs)
-
-        
 
     @staticmethod
     def samples_per_nm(wl, fq_resolution):
@@ -452,7 +450,6 @@ class ModtranRT(RadiativeTransferEngine):
             self.aer_extc = np.array(aer_extc)
             self.aer_asym = np.array(aer_asym)
 
-
         # Figure out wavelength grid to run on
 
         # always run wavelength modeles from fine to coarse spectral resolution,
@@ -461,7 +458,8 @@ class ModtranRT(RadiativeTransferEngine):
             int(np.floor(np.min(self.wl))), int(np.ceil((np.max(self.wl))))
         )
         samples_per_res = [
-            self.samples_per_nm(samples_wl_grid, res) for res in self.resolutions_available
+            self.samples_per_nm(samples_wl_grid, res)
+            for res in self.resolutions_available
         ]
 
         self.simulation_wavelength_regions = []
@@ -489,6 +487,17 @@ class ModtranRT(RadiativeTransferEngine):
                 self.simulation_wavelength_regions[i][0] = (
                     self.simulation_wavelength_regions[i + 1][1] - 1
                 )
+
+        if self.simulation_wavelength_regions[0][0] > np.min(self.wl):
+            self.simulation_wavelength_regions[0][0] = np.min(self.wl)
+            logging.info(
+                "Adjusted first wavelength region to start at the minimum wavelength."
+            )
+        if self.simulation_wavelength_regions[-1][-1] < np.max(self.wl):
+            self.simulation_wavelength_regions[-1][-1] = np.max(self.wl)
+            logging.info(
+                "Adjusted last wavelength region to end at the maximum wavelength."
+            )
 
         for _s in range(len(self.simulation_wavelength_regions)):
             logging.info(
@@ -558,8 +567,8 @@ class ModtranRT(RadiativeTransferEngine):
         vals["DISALB"] = True
         vals["NAME"] = filename_base
         vals["FILTNM"] = os.path.normpath(self.filtpath)
-        #import ipdb; ipdb.set_trace()
-        #if "CSVPRINT" in vals["FILEOPTIONS"].keys():
+        # import ipdb; ipdb.set_trace()
+        # if "CSVPRINT" in vals["FILEOPTIONS"].keys():
         #    vals["FILEOPTIONS"]["CSVPRINT"] = filename_base + ".csv"
         vals["CSVPRNT"] = filename_base + ".csv"
 
@@ -853,7 +862,9 @@ class ModtranRT(RadiativeTransferEngine):
 
                     for dp in ["DV", "FWHM"]:
                         if dp in case_param["MODTRANINPUT"]["SPECTRAL"]:
-                            case_param["MODTRANINPUT"]["SPECTRAL"][dp] = (1./self.min_samples_per_nm)*2.0
+                            case_param["MODTRANINPUT"]["SPECTRAL"][dp] = (
+                                1.0 / self.min_samples_per_nm
+                            ) * 2.0
 
                     if case_count == 0:
                         param[0] = case_param
@@ -933,6 +944,7 @@ class ModtranRT(RadiativeTransferEngine):
                 for w, v, wn in zip(ws, vs, wns):
                     fout.write(" %9.4f %9.7f %9.2f\n" % (w, v, wn))
 
+
 class SerialEncoder(json.JSONEncoder):
     """Encoder for json to help ensure json objects can be passed to the workflow manager."""
 
@@ -943,5 +955,3 @@ class SerialEncoder(json.JSONEncoder):
             return float(obj)
         else:
             return super(SerialEncoder, self).default(obj)
-
-
