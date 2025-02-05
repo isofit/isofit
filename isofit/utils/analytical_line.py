@@ -25,8 +25,7 @@ from collections import OrderedDict
 from glob import glob
 
 import click
-
-# import numpy as np
+import numpy as np
 from spectral.io import envi
 
 from isofit import ray
