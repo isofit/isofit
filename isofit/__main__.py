@@ -14,6 +14,21 @@ if not os.environ.get("ISOFIT_NO_SET_THREADS"):
 import click
 
 import isofit
+import isofit.core.isofit
+import isofit.data
+import isofit.data.build_examples
+import isofit.data.download
+import isofit.data.validate
+import isofit.utils.add_HRRR_profiles_to_modtran_config
+
+# import isofit.utils.analytical_line
+import isofit.utils.apply_oe
+import isofit.utils.convert_6s_to_srtmnet
+
+# import isofit.utils.empirical_line
+import isofit.utils.ewt_from_reflectance
+import isofit.utils.reconstruct
+import isofit.utils.solar_position
 from isofit.data import env
 
 
@@ -55,21 +70,21 @@ class CLI(click.MultiCommand):
         #         print(f"\nFailed to load: {path}, reason: {e}")
         #         # print(traceback.format_exc())
 
-        import isofit.core.isofit
-        import isofit.data
-        import isofit.data.build_examples
-        import isofit.data.download
-        import isofit.data.validate
-        import isofit.utils.add_HRRR_profiles_to_modtran_config
-
-        # import isofit.utils.analytical_line
-        import isofit.utils.apply_oe
-        import isofit.utils.convert_6s_to_srtmnet
-
-        # import isofit.utils.empirical_line
-        import isofit.utils.ewt_from_reflectance
-        import isofit.utils.reconstruct
-        import isofit.utils.solar_position
+        # import isofit.core.isofit
+        # import isofit.data
+        # import isofit.data.build_examples
+        # import isofit.data.download
+        # import isofit.data.validate
+        # import isofit.utils.add_HRRR_profiles_to_modtran_config
+        #
+        # # import isofit.utils.analytical_line
+        # import isofit.utils.apply_oe
+        # import isofit.utils.convert_6s_to_srtmnet
+        #
+        # # import isofit.utils.empirical_line
+        # import isofit.utils.ewt_from_reflectance
+        # import isofit.utils.reconstruct
+        # import isofit.utils.solar_position
 
         # import isofit.utils.surface_model
         self.modules = {
