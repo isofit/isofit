@@ -34,14 +34,14 @@ class CLI(click.MultiCommand):
         "validate": "isofit.data.validate",
         "path": "isofit.data",
         "HRRR_to_modtran": "isofit.utils.add_HRRR_profiles_to_modtran_config",
-        "analytical_line": "isofit.utils.analytical_line",
+        # "analytical_line": "isofit.utils.analytical_line",
         "apply_oe": "isofit.utils.apply_oe",
         "6s_to_srtmnet": "isofit.utils.convert_6s_to_srtmnet",
-        "empirical_line": "isofit.utils.empirical_line",
+        # "empirical_line": "isofit.utils.empirical_line",
         "ewt": "isofit.utils.ewt_from_reflectance",
         "reconstruct_subs": "isofit.utils.reconstruct",
         "sun": "isofit.utils.solar_position",
-        "surface_model": "isofit.utils.surface_model",
+        # "surface_model": "isofit.utils.surface_model",
         "plot": "isoplots",
     }
 
@@ -54,21 +54,24 @@ class CLI(click.MultiCommand):
         #     except Exception as e:
         #         print(f"\nFailed to load: {path}, reason: {e}")
         #         # print(traceback.format_exc())
+
         import isofit.core.isofit
         import isofit.data
         import isofit.data.build_examples
         import isofit.data.download
         import isofit.data.validate
         import isofit.utils.add_HRRR_profiles_to_modtran_config
-        import isofit.utils.analytical_line
+
+        # import isofit.utils.analytical_line
         import isofit.utils.apply_oe
         import isofit.utils.convert_6s_to_srtmnet
-        import isofit.utils.empirical_line
+
+        # import isofit.utils.empirical_line
         import isofit.utils.ewt_from_reflectance
         import isofit.utils.reconstruct
         import isofit.utils.solar_position
-        import isofit.utils.surface_model
 
+        # import isofit.utils.surface_model
         self.modules = {
             "run": isofit.core.isofit,
             "build": isofit.data.build_examples,
@@ -76,16 +79,17 @@ class CLI(click.MultiCommand):
             "validate": isofit.data.validate,
             "path": isofit.data,
             "HRRR_to_modtran": isofit.utils.add_HRRR_profiles_to_modtran_config,
-            "analytical_line": isofit.utils.analytical_line,
+            # "analytical_line": isofit.utils.analytical_line,
             "apply_oe": isofit.utils.apply_oe,
             "6s_to_srtmnet": isofit.utils.convert_6s_to_srtmnet,
-            "empirical_line": isofit.utils.empirical_line,
+            # "empirical_line": isofit.utils.empirical_line,
             "ewt": isofit.utils.ewt_from_reflectance,
             "reconstruct_subs": isofit.utils.reconstruct,
             "sun": isofit.utils.solar_position,
-            "surface_model": isofit.utils.surface_model,
+            # "surface_model": isofit.utils.surface_model,
             # "plot": "isoplots",
         }
+        self.commands = self.modules
 
     def invoke(self, ctx):
         ini = ctx.params.pop("ini")
@@ -122,6 +126,7 @@ class CLI(click.MultiCommand):
         super().invoke(ctx)
 
     def list_commands(self, ctx):
+        print(self.modules)
         return self.modules
 
     def get_command(self, ctx, name):
