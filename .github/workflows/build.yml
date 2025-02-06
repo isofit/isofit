@@ -59,7 +59,6 @@ jobs:
       - name: Test installation
         shell: bash
         run: |
-          python3 -m pip list -v
           isofit
 
   # Either build the cache or check for updates, fail if updates are needed: does not block tests on failure
