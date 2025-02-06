@@ -19,7 +19,7 @@ jobs:
         # likely sufficient to test only on a single Python version to avoid
         # GitHub worker contention.
         python-version: ["3.12"]
-        pytest-flags: ["-m unmarked", "-m slow"]
+        pytest-flags: ["-m unmarked", "-m slow --log-cli-level=DEBUG"]
 
     steps:
       # Pull the cache on every runner
