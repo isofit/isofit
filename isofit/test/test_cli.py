@@ -97,8 +97,6 @@ def test_apply_oe(files, args, surface):
         *args,
         "--surface_path",
         surface,
-        "--logging_level",
-        "DEBUG",
     ]
 
     # Passing non-string arguments to click is not allowed.
