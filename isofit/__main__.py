@@ -66,7 +66,8 @@ class CLI(click.Group):
         try:
             return importlib.import_module(self.lazy_subcommands[cmd_name]).cli
         except Exception as e:
-            print(f"Failed {cmd_name}, reason: {e}")
+            pass
+            # print(f"Failed {cmd_name}, reason: {e}")
 
     def list_commands(self, ctx):
         base = super().list_commands(ctx)
