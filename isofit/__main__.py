@@ -14,60 +14,51 @@ if not os.environ.get("ISOFIT_NO_SET_THREADS"):
 import click
 
 import isofit
-import isofit.core.isofit
-import isofit.data
-import isofit.data.build_examples
-import isofit.data.download
-import isofit.data.validate
-import isofit.utils.add_HRRR_profiles_to_modtran_config
-
-# import isofit.utils.analytical_line
-import isofit.utils.apply_oe
-import isofit.utils.convert_6s_to_srtmnet
-
-# import isofit.utils.empirical_line
-import isofit.utils.ewt_from_reflectance
-import isofit.utils.reconstruct
-import isofit.utils.solar_position
 from isofit.data import env
 
 
-class CLI(click.MultiCommand):
+# class CLI(click.MultiCommand):
+class CLI(click.Group):
     """
     Custom click class to load commands at runtime. This enables optional, external
     subcommands (such as isoplots) to be inserted into the sys path.
     """
 
-    modules = {}
+    # modules = {}
 
     # Name of the command: module import path
     # Module must have a function named "cli"
-    commands = {
-        "run": "isofit.core.isofit",
-        "build": "isofit.data.build_examples",
-        "download": "isofit.data.download",
-        "validate": "isofit.data.validate",
-        "path": "isofit.data",
-        "HRRR_to_modtran": "isofit.utils.add_HRRR_profiles_to_modtran_config",
-        # "analytical_line": "isofit.utils.analytical_line",
-        "apply_oe": "isofit.utils.apply_oe",
-        "6s_to_srtmnet": "isofit.utils.convert_6s_to_srtmnet",
-        # "empirical_line": "isofit.utils.empirical_line",
-        "ewt": "isofit.utils.ewt_from_reflectance",
-        "reconstruct_subs": "isofit.utils.reconstruct",
-        "sun": "isofit.utils.solar_position",
-        # "surface_model": "isofit.utils.surface_model",
-        "plot": "isoplots",
-    }
+    # commands = {
+    #     "run": "isofit.core.isofit",
+    #     "build": "isofit.data.build_examples",
+    #     "download": "isofit.data.download",
+    #     "validate": "isofit.data.validate",
+    #     "path": "isofit.data",
+    #     "HRRR_to_modtran": "isofit.utils.add_HRRR_profiles_to_modtran_config",
+    #     "analytical_line": "isofit.utils.analytical_line",
+    #     "apply_oe": "isofit.utils.apply_oe",
+    #     "6s_to_srtmnet": "isofit.utils.convert_6s_to_srtmnet",
+    #     "empirical_line": "isofit.utils.empirical_line",
+    #     "ewt": "isofit.utils.ewt_from_reflectance",
+    #     "reconstruct_subs": "isofit.utils.reconstruct",
+    #     "sun": "isofit.utils.solar_position",
+    #     "surface_model": "isofit.utils.surface_model",
+    #     "plot": "isoplots",
+    # }
+
+    def __init__(self, *args, lazy_subcommands=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.lazy_subcommands = lazy_subcommands or {}
 
     def load_modules(self):
         # import traceback
         #
-        # for key, path in self.commands.items():
-        #     try:
-        #         self.modules[key] = importlib.import_module(path)
-        #     except Exception as e:
-        #         print(f"\nFailed to load: {path}, reason: {e}")
+        for key, path in self.commands.items():
+            try:
+                self.modules[key] = importlib.import_module(path)
+            except Exception as e:
+                print(f"\nFailed to load: {path}, reason: {e}")
         #         # print(traceback.format_exc())
 
         # import isofit.core.isofit
@@ -85,26 +76,26 @@ class CLI(click.MultiCommand):
         # import isofit.utils.ewt_from_reflectance
         # import isofit.utils.reconstruct
         # import isofit.utils.solar_position
-
-        # import isofit.utils.surface_model
-        self.modules = {
-            "run": isofit.core.isofit,
-            "build": isofit.data.build_examples,
-            "download": isofit.data.download,
-            "validate": isofit.data.validate,
-            "path": isofit.data,
-            "HRRR_to_modtran": isofit.utils.add_HRRR_profiles_to_modtran_config,
-            # "analytical_line": isofit.utils.analytical_line,
-            "apply_oe": isofit.utils.apply_oe,
-            "6s_to_srtmnet": isofit.utils.convert_6s_to_srtmnet,
-            # "empirical_line": isofit.utils.empirical_line,
-            "ewt": isofit.utils.ewt_from_reflectance,
-            "reconstruct_subs": isofit.utils.reconstruct,
-            "sun": isofit.utils.solar_position,
-            # "surface_model": isofit.utils.surface_model,
-            # "plot": "isoplots",
-        }
-        self.commands = self.modules
+        #
+        # # import isofit.utils.surface_model
+        # self.modules = {
+        #     "run": isofit.core.isofit,
+        #     "build": isofit.data.build_examples,
+        #     "download": isofit.data.download,
+        #     "validate": isofit.data.validate,
+        #     "path": isofit.data,
+        #     "HRRR_to_modtran": isofit.utils.add_HRRR_profiles_to_modtran_config,
+        #     # "analytical_line": isofit.utils.analytical_line,
+        #     "apply_oe": isofit.utils.apply_oe,
+        #     "6s_to_srtmnet": isofit.utils.convert_6s_to_srtmnet,
+        #     # "empirical_line": isofit.utils.empirical_line,
+        #     "ewt": isofit.utils.ewt_from_reflectance,
+        #     "reconstruct_subs": isofit.utils.reconstruct,
+        #     "sun": isofit.utils.solar_position,
+        #     # "surface_model": isofit.utils.surface_model,
+        #     # "plot": "isoplots",
+        # }
+        # self.commands = self.modules
 
     def invoke(self, ctx):
         ini = ctx.params.pop("ini")
@@ -136,20 +127,61 @@ class CLI(click.MultiCommand):
         if env.validate("isoplots", path=env.plots, quiet=True):
             sys.path.append(env.plots)
 
-        self.load_modules()
+        # self.load_modules()
 
+        print("INVOKED")
         super().invoke(ctx)
 
+    def _lazy_load(self, cmd_name):
+        try:
+            return importlib.import_module(self.lazy_subcommands[cmd_name]).cli
+        except:
+            pass
+
     def list_commands(self, ctx):
-        print(self.modules)
-        return self.modules
+        base = super().list_commands(ctx)
+        lazy = list(self.lazy_subcommands)
+        return base + lazy
 
-    def get_command(self, ctx, name):
-        if name in self.modules:
-            return self.modules[name].cli
+    def get_command(self, ctx, cmd_name):
+        if cmd_name in self.lazy_subcommands:
+            return self._lazy_load(cmd_name)
+        return super().get_command(ctx, cmd_name)
+
+    #
+    # def list_commands(self, ctx):
+    #     print(self.modules)
+    #     return super().list_commands(ctx) + list(self.modules)
+    #
+    # def get_command(self, ctx, name):
+    #     print(self.modules)
+    #     if name in self.modules:
+    #         return self.modules[name].cli
+    #     return super().get_command(ctx, name)
 
 
-@click.group(invoke_without_command=True, cls=CLI, add_help_option=False)
+@click.group(
+    invoke_without_command=True,
+    cls=CLI,
+    add_help_option=False,
+    lazy_subcommands={
+        "run": "isofit.core.isofit",
+        "build": "isofit.data.build_examples",
+        "download": "isofit.data.download",
+        "validate": "isofit.data.validate",
+        "path": "isofit.data",
+        "HRRR_to_modtran": "isofit.utils.add_HRRR_profiles_to_modtran_config",
+        "analytical_line": "isofit.utils.analytical_line",
+        "apply_oe": "isofit.utils.apply_oe",
+        "6s_to_srtmnet": "isofit.utils.convert_6s_to_srtmnet",
+        "empirical_line": "isofit.utils.empirical_line",
+        "ewt": "isofit.utils.ewt_from_reflectance",
+        "reconstruct_subs": "isofit.utils.reconstruct",
+        "sun": "isofit.utils.solar_position",
+        "surface_model": "isofit.utils.surface_model",
+        "plot": "isoplots",
+    },
+)
 @click.pass_context
 @click.option("-i", "--ini", help="Override path to an isofit.ini file")
 @click.option("-b", "--base", help="Override the base directory for all products")
