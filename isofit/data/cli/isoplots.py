@@ -91,6 +91,8 @@ def validate(path=None, checkForUpdate=True, debug=print, error=print, **_):
 
     debug(f"Verifying path for isoplots: {path}")
 
+    # Copy the existing sys.path
+    syspath = sys.path[:]
     if Path(path).exists():
         sys.path.append(path)
 
@@ -101,7 +103,7 @@ def validate(path=None, checkForUpdate=True, debug=print, error=print, **_):
         return False
     finally:
         # Remove the inserted path
-        sys.path = sys.path[:-1]
+        sys.path = syspath
 
     if checkForUpdate:
         return isUpToDate(path, debug=debug, error=error)

@@ -24,6 +24,7 @@ import os
 from copy import deepcopy
 from pathlib import Path
 
+import dask.array as da
 import h5py
 import numpy as np
 import yaml
@@ -170,7 +171,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         # Now predict, scale, and add the interpolations
         Logger.info("Loading and predicting with emulator")
         emulator = tfLikeModel(self.engine_config.emulator_file)
-        predicts = emulator.predict(data)
+        predicts = da.from_array(emulator.predict(data))
         predicts /= scaler
         predicts += resample
 
