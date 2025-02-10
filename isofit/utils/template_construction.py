@@ -73,6 +73,8 @@ class Pathnames:
             self.fid = split(input_radiance)[-1][:23]
         elif sensor == "oci":
             self.fid = split(input_radiance)[-1][:24]
+        elif sensor == "tanager":
+            self.fid = split(input_radiance)[-1][:23]
         elif sensor[:3] == "NA-":
             self.fid = os.path.splitext(os.path.basename(input_radiance))[0]
 
@@ -209,7 +211,8 @@ class Pathnames:
                 self.input_model_discrepancy_path = str(
                     env.path("data", "emit_model_discrepancy.mat")
                 )
-
+        elif sensor == "tanager":
+            self.noise_path = str(env.path("data", "tanager1_noise_20241016.txt"))
         else:
             self.noise_path = None
             logging.info("no noise path found, proceeding without")
