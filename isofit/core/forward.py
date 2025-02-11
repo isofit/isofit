@@ -209,9 +209,7 @@ class ForwardModel:
         return self.RT.calc_rdn(x_RT, rho_dir_dir_hi, rho_dif_dir_hi, Ls_hi, geom)
 
     def calc_meas(self, x, geom, rfl=None, Ls=None):
-        """Calculate the model observation at instrument wavelengths.
-        Depreciate?
-        """
+        """Calculate the model observation at instrument wavelengths."""
         x_surface, x_RT, x_instrument = self.unpack(x)
         rdn_hi = self.calc_rdn(x, geom, rfl, Ls)
         return self.instrument.sample(x_instrument, self.RT.wl, rdn_hi)
