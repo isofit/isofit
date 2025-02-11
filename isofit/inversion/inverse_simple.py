@@ -112,7 +112,7 @@ def heuristic_atmosphere(
             # using this presumed amount of water vapor, and measure the
             # resulting residual (as measured from linear interpolation across
             # the absorption feature)
-            coszen, cos_i = RT.check_coszen_and_cos_i(geom)
+            coszen, cos_i = geom.check_coszen_and_cos_i(RT.coszen)
             if my_RT.rt_mode == "rdn":
                 rho = meas
             else:
@@ -195,7 +195,7 @@ def invert_algebraic(
 
     # Now solve for the reflectance at measured wavelengths,
     # and back-translate to surface wavelengths
-    coszen, cos_i = RT.check_coszen_and_cos_i(geom)
+    coszen, cos_i = geom.check_coszen_and_cos_i(RT.coszen)
     if my_RT.rt_mode == "rdn":
         rho = rdn_solrfl
     else:

@@ -166,24 +166,12 @@ class RadiativeTransfer:
             if "coszen" in child.lut:
                 return child.lut.coszen.data
 
-    def check_coszen_and_cos_i(self, geom):
-        coszen = (
-            np.cos(np.deg2rad(geom.solar_zenith))
-            if np.isnan(self.coszen)
-            else self.coszen
-        )
-
-        # Local solar zenith angle as a function of surface slope and aspect
-        cos_i = geom.cos_i if geom.cos_i is not None else coszen
-
-        return coszen, cos_i
-
     def calc_rdn(self, x_RT, rho_dir_dir, rho_dif_dir, Ls, geom):
         """
         Physics-based forward model to calculate at-sensor radiance.
         Includes topography, background reflectance, and glint.
         """
-        coszen, cos_i = self.check_coszen_and_cos_i(geom)
+        coszen, cos_i = geom.check_coszen_and_cos_i(self.coszen)
 
         # Adjacency effects
         # ToDo: we need to think about if we want to obtain the background reflectance from the Geometry object
@@ -304,7 +292,7 @@ class RadiativeTransfer:
         """
         L_atms = []
 
-        coszen, cos_i = self.check_coszen_and_cos_i(geom)
+        coszen, cos_i = geom.check_coszen_and_cos_i(self.coszen)
 
         for RT in self.rt_engines:
             if RT.treat_as_emissive:
@@ -337,7 +325,7 @@ class RadiativeTransfer:
         L_downs_dir = []
         L_downs_dif = []
 
-        coszen, cos_i = self.check_coszen_and_cos_i(geom)
+        coszen, cos_i = geom.check_coszen_and_cos_i(self.coszen)
 
         for RT in self.rt_engines:
             if RT.treat_as_emissive:
@@ -412,12 +400,10 @@ class RadiativeTransfer:
 
     def drdn_dRT(
         self,
-        x_RT,
-        rho_dir_dir,
-        rho_dif_dir,
-        drfl_dsurface,
-        Ls,
-        dLs_dsurface,
+        x_RT: np.array,
+        rho_dir_dir: np.array,
+        rho_dif_dir: np.array,
+        Ls: np.array,
         geom: Geometry,
     ):
         # first the rdn at the current state vector
@@ -431,62 +417,7 @@ class RadiativeTransfer:
             K_RT.append((rdne - rdn) / eps)
         K_RT = np.array(K_RT).T
 
-        # Get K_surface
-        # TOA and local solar zenith angle as a function of surface slope and aspect
-        coszen, cos_i = self.check_coszen_and_cos_i(geom)
-
-        # get needed rt quantities from LUT
-        r = self.get_shared_rtm_quantities(x_RT, geom)
-
-        # atmospheric spherical albedo
-        s_alb = r["sphalb"]
-
-        # direct and diffuse downward radiance on the sun-to-surface path
-        # note: currently, L_down_dir comes scaled by the TOA solar zenith angle,
-        # thus, unscaling and rescaling by local solar zenith angle required
-        # to account for surface slope and aspect
-        L_down_tot, L_down_dir, L_down_dif = self.get_L_down_transmitted(x_RT, geom)
-        L_down_dir = L_down_dir / coszen * cos_i
-
-        # upward transmittance
-        t_total_up = r["transm_up_dir"] + r["transm_up_dif"]
-
-        # K surface reflectance
-        drho_scaled_for_multiscattering_drfl = 1.0 / (1.0 - s_alb * rho_dir_dir) ** 2
-
-        if type(t_total_up) != np.ndarray or len(t_total_up) == 1:
-            drdn_drfl = L_down_tot * drho_scaled_for_multiscattering_drfl
-        else:
-            drdn_drfl = (
-                (L_down_dir + L_down_dif)
-                * drho_scaled_for_multiscattering_drfl
-                * t_total_up
-            )
-
-        drdn_dLs = t_total_up
-
-        K_surface = (
-            drdn_drfl[:, np.newaxis] * drfl_dsurface
-            + drdn_dLs[:, np.newaxis] * dLs_dsurface
-        )
-
-        if self.glint_model:
-            # K glint
-            drdn_dgdd = (
-                L_down_dir
-                * (r["transm_up_dir"] + r["transm_up_dif"])
-                / (1.0 - s_alb * rho_dir_dir)
-            )
-            drdn_dgdsf = (
-                L_down_dif
-                * (r["transm_up_dir"] + r["transm_up_dif"])
-                / (1.0 - s_alb * rho_dif_dir)
-            )
-
-            K_surface[:, -2] = drdn_dgdd
-            K_surface[:, -1] = drdn_dgdsf
-
-        return K_RT, K_surface
+        return K_RT
 
     def drdn_dRTb(self, x_RT, rho_dir_dir, rho_dif_dir, Ls, geom):
         if len(self.bvec) == 0:
