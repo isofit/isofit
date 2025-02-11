@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from isofit.core.common import emissive_radiance, eps
+from isofit.core.common import emissive_radiance
 from isofit.surface.surface_multicomp import MultiComponentSurface
 
 
@@ -84,6 +84,17 @@ class ThermalSurface(MultiComponentSurface):
         rfl = self.calc_lamb(x_surface, geom)
         return rfl, rfl
 
+    def calc_Ls(self, x_surface, geom):
+        """Emission of surface, as a radiance."""
+
+        T = x_surface[self.surf_temp_ind]
+        rfl = self.calc_rfl(x_surface, geom)
+        # ToDo: direct and diffuse reflectance vectors not supported yet
+        rfl[0][rfl[0] > 1.0] = 1.0
+        emissivity = 1 - rfl[0]
+        Ls, dLs_dT = emissive_radiance(emissivity, T, self.wl)
+        return Ls
+
     def drfl_dsurface(self, x_surface, geom):
         """Partial derivative of reflectance with respect to state vector,
         calculated at x_surface."""
@@ -103,17 +114,6 @@ class ThermalSurface(MultiComponentSurface):
         dlamb[:, self.surf_temp_ind] = 0
         return dlamb
 
-    def calc_Ls(self, x_surface, geom):
-        """Emission of surface, as a radiance."""
-
-        T = x_surface[self.surf_temp_ind]
-        rfl = self.calc_rfl(x_surface, geom)
-        # ToDo: direct and diffuse reflectance vectors not supported yet
-        rfl[0][rfl[0] > 1.0] = 1.0
-        emissivity = 1 - rfl[0]
-        Ls, dLs_dT = emissive_radiance(emissivity, T, self.wl)
-        return Ls
-
     def dLs_dsurface(self, x_surface, geom):
         """Partial derivative of surface emission with respect to state vector,
         calculated at x_surface."""
@@ -126,6 +126,40 @@ class ThermalSurface(MultiComponentSurface):
         dLs_dsurface = np.vstack([dLs_drfl, dLs_dT]).T
 
         return dLs_dsurface
+
+    def drdn_dsurface(
+        self,
+        rho_dir_dir,
+        rho_dif_dir,
+        drfl_dsurface,
+        dLs_dsurface,
+        s_alb,
+        t_total_up,
+        L_down_tot,
+        L_down_dir,
+        L_down_dif,
+    ):
+        """Derivative of radiance with respect to
+        full surface vector"""
+
+        drho_scaled_for_multiscattering_drfl = 1.0 / (1.0 - s_alb * rho_dir_dir) ** 2
+
+        drdn_dLs = self.drdn_dLs(t_total_up)
+
+        # Need to verify if I need the super()
+        drdn_drfl = self.drdn_drfl(
+            drho_scaled_for_multiscattering_drfl,
+            L_down_tot,
+            L_down_dir,
+            L_down_dif,
+            t_total_up,
+        )
+
+        # Return the combined rfl and emission
+        return (
+            drdn_drfl[:, np.newaxis] * drfl_dsurface
+            + drdn_dLs[:, np.newaxis] * dLs_dsurface
+        )
 
     def summarize(self, x_surface, geom):
         """Summary of state vector."""

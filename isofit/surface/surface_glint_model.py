@@ -45,7 +45,6 @@ class GlintModelSurface(MultiComponentSurface):
             [[(1000000 * np.array(self.scale[self.glint_ind :])) ** 2]]
         )  # Prior covariance, *very* high...
 
-        self.full_glint = False
         if "full_glint" in (full := full_config.forward_model.surface.__dict__.keys()):
             self.full_glint = full
 
@@ -125,6 +124,77 @@ class GlintModelSurface(MultiComponentSurface):
 
         dLs_dsurface = super().dLs_dsurface(x_surface, geom)
         return dLs_dsurface
+
+    def drdn_drfl(
+        self,
+        rho_scaled_for_mltiscattering_drfl,
+        L_down_tot,
+        L_down_dir,
+        L_down_dif,
+        t_total_up,
+    ):
+        """Partial derivative of radiance with respect to
+        surface reflectance"""
+        drdn_drfl = super().drdn_drfl(
+            rho_scaled_for_mltiscattering_drfl,
+            L_down_tot,
+            L_down_dir,
+            L_down_dif,
+            t_total_up,
+        )
+        return drdn_drfl
+
+    def drdn_dglint(
+        self, drho_scaled_for_multiscattering_drfl, t_total_up, L_down_dir, L_down_dif
+    ):
+        """Derivative of radiance with respect to
+        the direct and diffuse glint terms"""
+        drdn_dgdd = L_down_dir * t_total_up * drho_scaled_for_multiscattering_drfl
+        drdn_dgdsf = L_down_dif * t_total_up * drho_scaled_for_multiscattering_drfl
+        return drdn_dgdd, drdn_dgdsf
+
+    def drdn_dsurface(
+        self,
+        rho_dir_dir,
+        rho_dif_dir,
+        drfl_dsurface,
+        dLs_dsurface,
+        s_alb,
+        t_total_up,
+        L_down_tot,
+        L_down_dir,
+        L_down_dif,
+    ):
+        """Derivative of radiance with respect to
+        full surface vector"""
+
+        drho_scaled_for_multiscattering_drfl = 1.0 / (1.0 - s_alb * rho_dif_dir) ** 2
+
+        # Reflectance derivatives
+        drdn_drfl = self.drdn_drfl(
+            drho_scaled_for_multiscattering_drfl,
+            L_down_tot,
+            L_down_dir,
+            L_down_dif,
+            t_total_up,
+        )
+        # Glint derivatives
+        drdn_dgdd, drdn_dgdsf = self.drdn_dglint(
+            drho_scaled_for_multiscattering_drfl, t_total_up, L_down_dir, L_down_dif
+        )
+        # Emission derivatives
+        drdn_dLs = self.drdn_dLs(t_total_up)
+
+        k_surface = (
+            drdn_drfl[:, np.newaxis] * drfl_dsurface
+            + drdn_dLs[:, np.newaxis] * dLs_dsurface
+        )
+
+        # Direct glint term is second to last surface index
+        k_surface[:, -2] = k_surface[:, -2] * drdn_dgdd
+        # Diffuse glint term is last surface index
+        k_surface[:, -1] = k_surface[:, -1] * drdn_dgdsf
+        return k_surface
 
     def summarize(self, x_surface, geom):
         """Summary of state vector."""

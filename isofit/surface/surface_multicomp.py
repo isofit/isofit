@@ -90,6 +90,9 @@ class MultiComponentSurface(Surface):
         self.idx_lamb = np.arange(self.n_wl)
         self.n_state = len(self.statevec_names)
 
+        # Surface specific attributes. Can override in inheriting classes
+        self.full_glint = False
+
     def component(self, x, geom):
         """We pick a surface model component using the Mahalanobis distance.
 
@@ -191,6 +194,11 @@ class MultiComponentSurface(Surface):
         rfl = self.calc_lamb(x_surface, geom)
         return rfl, rfl
 
+    def calc_Ls(self, x_surface, geom):
+        """Emission of surface, as a radiance."""
+
+        return np.zeros(self.n_wl, dtype=float)
+
     def calc_lamb(self, x_surface, geom):
         """Lambertian reflectance."""
 
@@ -211,12 +219,8 @@ class MultiComponentSurface(Surface):
         nsuffix = self.n_state - self.idx_lamb[-1] - 1
         prefix = np.zeros((self.n_wl, nprefix))
         suffix = np.zeros((self.n_wl, nsuffix))
+
         return np.concatenate((prefix, dlamb, suffix), axis=1)
-
-    def calc_Ls(self, x_surface, geom):
-        """Emission of surface, as a radiance."""
-
-        return np.zeros(self.n_wl, dtype=float)
 
     def dLs_dsurface(self, x_surface, geom):
         """Partial derivative of surface emission with respect to state vector,
@@ -228,6 +232,63 @@ class MultiComponentSurface(Surface):
         prefix = np.zeros((self.n_wl, nprefix))
         suffix = np.zeros((self.n_wl, nsuffix))
         return np.concatenate((prefix, dLs, suffix), axis=1)
+
+    def drdn_drfl(
+        self,
+        drho_scaled_for_multiscattering_drfl,
+        L_down_tot,
+        L_down_dir,
+        L_down_dif,
+        t_total_up,
+    ):
+        """Partial derivative of radiance with respect to
+        surface reflectance"""
+        if not isinstance(t_total_up, np.ndarray) or len(t_total_up) == 1:
+            drdn_drfl = L_down_tot * drho_scaled_for_multiscattering_drfl
+        else:
+            drdn_drfl = (
+                (L_down_dir + L_down_dif)
+                * drho_scaled_for_multiscattering_drfl
+                * t_total_up
+            )
+
+        return drdn_drfl
+
+    def drdn_dLs(self, t_total_up):
+        """Partial derivative of radiance with respect to
+        surface emission"""
+        return t_total_up
+
+    def drdn_dsurface(
+        self,
+        rho_dir_dir,
+        rho_dif_dir,
+        drfl_dsurface,
+        dLs_dsurface,
+        s_alb,
+        t_total_up,
+        L_down_tot,
+        L_down_dir,
+        L_down_dif,
+    ):
+        """Derivative of radiance with respect to
+        full surface vector"""
+
+        drho_scaled_for_multiscattering_drfl = 1.0 / (1.0 - s_alb * rho_dif_dir) ** 2
+
+        drdn_dLs = t_total_up
+        drdn_drfl = self.drdn_drfl(
+            drho_scaled_for_multiscattering_drfl,
+            L_down_tot,
+            L_down_dir,
+            L_down_dif,
+            t_total_up,
+        )
+
+        return (
+            drdn_drfl[:, np.newaxis] * drfl_dsurface
+            + drdn_dLs[:, np.newaxis] * dLs_dsurface
+        )
 
     def summarize(self, x_surface, geom):
         """Summary of state vector."""

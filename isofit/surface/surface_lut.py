@@ -63,7 +63,7 @@ class LUTSurface(Surface):
         # Models are stored as dictionaries in .mat format
         model_dict = loadmat(config.surface_file)
         self.lut_grid = [grid[0] for grid in model_dict["grids"][0]]
-        self.lut_names = [l.strip() for l in model_dict["lut_names"]]
+        self.lut_names = [name.strip() for name in model_dict["lut_names"]]
         self.statevec_names = [sv.strip() for sv in model_dict["statevec_names"]]
         self.data = model_dict["data"]
         self.wl = model_dict["wl"][0]
@@ -171,6 +171,65 @@ class LUTSurface(Surface):
         dLs = np.zeros((self.n_wl, self.n_state), dtype=float)
 
         return dLs
+
+    def drdn_drfl(
+        self,
+        drho_scaled_for_multiscattering_drfl,
+        L_down_tot,
+        L_down_dir,
+        L_down_dif,
+        t_total_up,
+    ):
+        """Partial derivative of radiance with respect to
+        surface reflectance"""
+        if not isinstance(t_total_up, np.ndarray) or len(t_total_up) == 1:
+            drdn_drfl = L_down_tot * drho_scaled_for_multiscattering_drfl
+        else:
+            drdn_drfl = (
+                (L_down_dir + L_down_dif)
+                * drho_scaled_for_multiscattering_drfl
+                * t_total_up
+            )
+
+        return drdn_drfl
+
+    def drdn_dLs(self, t_total_up):
+        """Partial derivative of radiance with respect to
+        surface emission"""
+        return t_total_up
+
+    def drdn_dsurface(
+        self,
+        rho_dir_dir,
+        rho_dif_dir,
+        drfl_dsurface,
+        dLs_dsurface,
+        s_alb,
+        t_total_up,
+        L_down_tot,
+        L_down_dir,
+        L_down_dif,
+    ):
+        """Derivative of radiance with respect to
+        full surface vector"""
+
+        drho_scaled_for_multiscattering_drfl = 1.0 / (1.0 - s_alb * rho_dif_dir) ** 2
+
+        drdn_dLs = t_total_up
+        drdn_drfl = self.drdn_drfl(
+            drho_scaled_for_multiscattering_drfl,
+            L_down_tot,
+            L_down_dir,
+            L_down_dif,
+            t_total_up,
+        )
+        # Array sizes may cause this to fail if LUT surface contains
+        # dim > len(rfl)
+        # Need a test case
+        return (
+            drdn_drfl[:, np.newaxis] * drfl_dsurface
+            + drdn_dLs[:, np.newaxis] * dLs_dsurface
+        )
 
     def summarize(self, x_surface, geom):
         """Summary of state vector."""

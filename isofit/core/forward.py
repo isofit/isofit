@@ -210,7 +210,6 @@ class ForwardModel:
 
     def calc_meas(self, x, geom, rfl=None, Ls=None):
         """Calculate the model observation at instrument wavelengths."""
-
         x_surface, x_RT, x_instrument = self.unpack(x)
         rdn_hi = self.calc_rdn(x, geom, rfl, Ls)
         return self.instrument.sample(x_instrument, self.RT.wl, rdn_hi)
@@ -255,39 +254,64 @@ class ForwardModel:
         # Unpack state vector
         x_surface, x_RT, x_instrument = self.unpack(x)
 
-        # Get partials of reflectance WRT surface state variables, upsample
-        _, L_down_dir, L_down_dif = self.RT.get_L_down_transmitted(x_RT, geom)
+        # Collect and upsample surface properties used in the derivative quantities
+        L_down_tot, L_down_dir, L_down_dif = self.RT.get_L_down_transmitted(x_RT, geom)
+        coszen, cos_i = geom.check_coszen_and_cos_i(self.RT.coszen)
+        L_down_dir = L_down_dir / coszen * cos_i
+
+        # Does this already imply that x_surf at same wl grid as L_down?
         rho_dir_dir, rho_dif_dir = self.surface.calc_rfl(
             x_surface, geom, L_down_dir, L_down_dif
         )
-        drfl_dsurface = self.surface.drfl_dsurface(x_surface, geom)
         rho_dir_dir_hi = self.upsample(self.surface.wl, rho_dir_dir)
         rho_dif_dir_hi = self.upsample(self.surface.wl, rho_dif_dir)
-        drfl_dsurface_hi = self.upsample(self.surface.wl, drfl_dsurface.T).T
 
-        # Get partials of emission WRT surface state variables, upsample
+        drfl_dsurface_hi = self.upsample(
+            self.surface.wl, self.surface.drfl_dsurface(x_surface, geom).T
+        ).T
+
         Ls = self.surface.calc_Ls(x_surface, geom)
-        dLs_dsurface = self.surface.dLs_dsurface(x_surface, geom)
         Ls_hi = self.upsample(self.surface.wl, Ls)
-        dLs_dsurface_hi = self.upsample(self.surface.wl, dLs_dsurface.T).T
+        dLs_dsurface_hi = self.upsample(
+            self.surface.wl, self.surface.dLs_dsurface(x_surface, geom).T
+        ).T
 
-        # Derivatives of RTM radiance
-        drdn_dRT, drdn_dsurface = self.RT.drdn_dRT(
-            x_RT,
+        # To get the derivative w.r.t. RT
+        drdn_dRT = self.RT.drdn_dRT(x_RT, rho_dir_dir_hi, rho_dif_dir_hi, Ls_hi, geom)
+
+        # Need to pass some RT props into surface
+        r = self.RT.get_shared_rtm_quantities(x_RT, geom)
+        s_alb = r["sphalb"]
+        t_total_up = r["transm_up_dir"] + r["transm_up_dif"]
+
+        # To get the derivative w.r.t. Surface
+        """
+        This is a little awkward because we are passing surface
+        properties from fm -> surface. Chose this route b.c. we need
+        surface properties at resolution of fm.RT. Either you pass
+        the properties themselves, or pass fm.RT.wl and upsample w/in
+        fm.surface. I chose the former to keep all upsampling w/in fm.
+        """
+        drdn_dsurface = self.surface.drdn_dsurface(
             rho_dir_dir_hi,
             rho_dif_dir_hi,
             drfl_dsurface_hi,
-            Ls_hi,
             dLs_dsurface_hi,
-            geom,
+            s_alb,
+            t_total_up,
+            L_down_tot,
+            L_down_dir,
+            L_down_dir,
         )
 
-        # Derivatives of measurement, avoiding recalculation of rfl, Ls
+        # Need to pass calc rdn into instrument derivative
+        rdn_hi = self.calc_rdn(x, geom, rho_dir_dir, rho_dif_dir, Ls=Ls)
+
+        # To get derivatives w.r.t. measurement
         dmeas_dsurface = self.instrument.sample(
             x_instrument, self.RT.wl, drdn_dsurface.T
         ).T
         dmeas_dRT = self.instrument.sample(x_instrument, self.RT.wl, drdn_dRT.T).T
-        rdn_hi = self.calc_rdn(x, geom, rho_dir_dir, rho_dif_dir, Ls=Ls)
         dmeas_dinstrument = self.instrument.dmeas_dinstrument(
             x_instrument, self.RT.wl, rdn_hi
         )
@@ -311,13 +335,20 @@ class ForwardModel:
 
         # Get partials of reflectance and upsample
         _, L_down_dir, L_down_dif = self.RT.get_L_down_transmitted(x_RT, geom)
+
+        # This needed?
+        coszen, cos_i = geom.check_coszen_and_cos_i(self.RT.coszen)
+        L_down_dir = L_down_dir / coszen * cos_i
+
         rho_dir_dir, rho_dif_dir = self.surface.calc_rfl(
             x_surface, geom, L_down_dir, L_down_dif
         )
         rho_dir_dir_hi = self.upsample(self.surface.wl, rho_dir_dir)
         rho_dif_dir_hi = self.upsample(self.surface.wl, rho_dif_dir)
+
         Ls = self.surface.calc_Ls(x_surface, geom)
         Ls_hi = self.upsample(self.surface.wl, Ls)
+
         rdn_hi = self.calc_rdn(x, geom, rho_dir_dir, rho_dif_dir, Ls=Ls)
 
         drdn_dRTb = self.RT.drdn_dRTb(x_RT, rho_dir_dir_hi, rho_dif_dir_hi, Ls_hi, geom)
@@ -350,6 +381,14 @@ class ForwardModel:
         x_inst = x[self.idx_instrument]
         return self.instrument.calibration(x_inst)
 
+    def unpack(self, x):
+        """Unpack the state vector in appropriate index ordering."""
+
+        x_surface = x[self.idx_surface]
+        x_RT = x[self.idx_RT]
+        x_instrument = x[self.idx_instrument]
+        return x_surface, x_RT, x_instrument
+
     def upsample(self, wl, q):
         """Linear interpolation to RT wavelengths."""
         # Only interpolate if these aren't close
@@ -367,11 +406,3 @@ class ForwardModel:
                 p = interp1d(wl, q, fill_value="extrapolate")
                 return p(self.RT.wl)
         return q
-
-    def unpack(self, x):
-        """Unpack the state vector in appropriate index ordering."""
-
-        x_surface = x[self.idx_surface]
-        x_RT = x[self.idx_RT]
-        x_instrument = x[self.idx_instrument]
-        return x_surface, x_RT, x_instrument

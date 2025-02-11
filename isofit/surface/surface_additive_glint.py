@@ -78,9 +78,6 @@ class AdditiveGlintSurface(ThermalSurface):
 
     def calc_rfl(self, x_surface, geom, L_down_dir=None, L_down_dif=None):
         """Reflectance (includes specular glint)."""
-
-        # ToDo: Future use of calc_rfl() is to return a direct and diffuse surface reflectance quantity.
-        #  As long as this is not implemented, return the same reflectance vector for both.
         rfl = self.calc_lamb(x_surface, geom) + x_surface[self.glint_ind]
         return rfl, rfl
 
@@ -101,6 +98,58 @@ class AdditiveGlintSurface(ThermalSurface):
         dLs_dglint = np.zeros((dLs_dsurface.shape[0], 1))
         dLs_dsurface = np.hstack([dLs_dsurface, dLs_dglint])
         return dLs_dsurface
+
+    def drdn_dglint(self, drho_scaled_for_multiscattering_drfl, t_total_up, L_down_tot):
+        """Partial derivative of radiance with respect to
+        additive glint"""
+        if not isinstance(t_total_up, np.ndarray) or len(t_total_up) == 1:
+            drdn_dglint = L_down_tot * drho_scaled_for_multiscattering_drfl
+        else:
+            drdn_dglint = L_down_tot * drho_scaled_for_multiscattering_drfl * t_total_up
+        return drdn_dglint
+
+    def drdn_dsurface(
+        self,
+        rho_dir_dir,
+        rho_dif_dir,
+        drfl_dsurface,
+        dLs_dsurface,
+        s_alb,
+        t_total_up,
+        L_down_tot,
+        L_down_dir,
+        L_down_dif,
+    ):
+        """Derivative of radiance with respect to
+        full surface vector. Everything should be at RT wavelength
+        resolution entering this function.
+        """
+
+        drho_scaled_for_multiscattering_drfl = 1.0 / (1.0 - s_alb * rho_dif_dir) ** 2
+
+        # Reflectance derivatives
+        drdn_drfl = self.drdn_drfl(
+            drho_scaled_for_multiscattering_drfl,
+            L_down_tot,
+            L_down_dir,
+            L_down_dif,
+            t_total_up,
+        )
+        # Glint derivatives
+        drdn_dglint = self.drdn_dglint(
+            drho_scaled_for_multiscattering_drfl, t_total_up, L_down_tot
+        )
+        # Emission derivatives
+        drdn_dLs = self.drdn_dLs(t_total_up)
+
+        # self.drfl, self.dLs will upsample to self.wl on call
+        k_surface = (drdn_drfl[:, np.newaxis] * drfl_dsurface) + (
+            drdn_dLs[:, np.newaxis] * dLs_dsurface
+        )
+
+        # Glint term is the last index
+        k_surface[:, -1] = k_surface[:, -1] * drdn_dglint
+        return k_surface
 
     def summarize(self, x_surface, geom):
         """Summary of state vector."""
