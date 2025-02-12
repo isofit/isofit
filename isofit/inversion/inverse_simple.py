@@ -266,7 +266,7 @@ def invert_analytical(
     t_total_up = r["transm_up_dir"] + r["transm_up_dif"]
 
     # Has to use this function if cos_i is going to be incorporated
-    coszen, cos_i = fm.RT.check_coszen_and_cos_i(geom)
+    coszen, cos_i = geom.check_coszen_and_cos_i(fm.RT.coszen)
     L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = fm.RT.get_L_coupled(r, coszen, cos_i)
     # Total radiance
     L_tot = L_dir_dir + L_dif_dir + L_dir_dif + L_dif_dif

@@ -286,7 +286,8 @@ class ForwardModel:
         rho_dif_dir_hi = self.upsample(self.surface.wl, rho_dif_dir)
 
         drfl_dsurface_hi = self.upsample(
-            self.surface.wl, self.surface.drfl_dsurface(x_surface, geom).T
+            self.surface.wl,
+            self.surface.drfl_dsurface(x_surface, geom, L_down_dir, L_down_dif).T,
         ).T
 
         # Call surface emission and derivative w.r.t. surface, upsample
