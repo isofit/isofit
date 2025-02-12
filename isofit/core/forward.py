@@ -34,8 +34,6 @@ from isofit.surface import Surface
 
 Logger = logging.getLogger(__file__)
 
-### Classes ###
-
 
 class ForwardModel:
     """ForwardModel contains all the information about how to calculate
@@ -259,16 +257,22 @@ class ForwardModel:
         # Unpack state vector
         x_surface, x_RT, x_instrument = self.unpack(x)
 
-        # Default: get directional radiances 
+        # Propogate LUT
+        r = self.RT.get_shared_rtm_quantities(x_RT, geom)
+
+        # Check coszen against cos_i
+        coszen, cos_i = geom.check_coszen_and_cos_i(self.coszen)
+
+        # Default: get directional radiances
         L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = self.RT.get_L_coupled(
+            r, coszen, cos_i
+        )
         L_tot = L_dir_dir + L_dif_dir + L_dir_dif + L_dif_dif
 
         # Handle case for 1c vs 4c model
-        if type(L_tot) != np.ndarray or len(L_tot) == 1:
-            # 1c model w/in if clause 
-            L_tot, L_down_dir, L_down_dif = self.RT.get_L_down_transmitted(
-                x_RT, geom
-            )
+        if not isinstance(L_tot, np.ndarray) or len(L_tot) == 1:
+            # 1c model w/in if clause
+            L_tot, L_down_dir, L_down_dif = self.RT.get_L_down_transmitted(x_RT, geom)
         else:
             # 4c model w/in else clause
             L_down_dir = L_dir_dir + L_dif_dir
@@ -292,12 +296,7 @@ class ForwardModel:
         ).T
 
         # To get the derivative w.r.t. RT
-        drdn_dRT = self.RT.drdn_dRT(
-            x_RT, 
-            rho_dir_dir_hi, rho_dif_dir_hi, 
-            Ls_hi, 
-            geom
-        )
+        drdn_dRT = self.RT.drdn_dRT(x_RT, rho_dir_dir_hi, rho_dif_dir_hi, Ls_hi, geom)
 
         # Need to pass some RT props into surface
         r = self.RT.get_shared_rtm_quantities(x_RT, geom)
@@ -308,10 +307,10 @@ class ForwardModel:
         """
         This is a little awkward because we are passing surface
         properties from fm -> surface. Chose this route b.c. we need
-        surface properties at resolution of fm.RT. 
+        surface properties at resolution of fm.RT.
         Options around this:
-            - Pass fm.RT.wl and upsample w/in fm.surface. 
-            - Pass the drdn_dsurface function directly into RT and 
+            - Pass fm.RT.wl and upsample w/in fm.surface.
+            - Pass the drdn_dsurface function directly into RT and
               construct all derivatives w/in RT.
         """
         drdn_dsurface = self.surface.drdn_dsurface(
@@ -321,7 +320,7 @@ class ForwardModel:
             s_alb,
             t_total_up,
             L_tot,
-            L_dir_dir + L_dir_dif
+            L_dir_dir + L_dir_dif,
         )
 
         # Need to pass calc rdn into instrument derivative
@@ -353,12 +352,26 @@ class ForwardModel:
         # Unpack state vector
         x_surface, x_RT, x_instrument = self.unpack(x)
 
-        # Get partials of reflectance and upsample
-        _, L_down_dir, L_down_dif = self.RT.get_L_down_transmitted(x_RT, geom)
+        # Propogate LUT
+        r = self.RT.get_shared_rtm_quantities(x_RT, geom)
 
-        # This needed?
-        coszen, cos_i = geom.check_coszen_and_cos_i(self.RT.coszen)
-        L_down_dir = L_down_dir / coszen * cos_i
+        # Check coszen against cos_i
+        coszen, cos_i = geom.check_coszen_and_cos_i(self.coszen)
+
+        # Default: get directional radiances
+        L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = self.RT.get_L_coupled(
+            r, coszen, cos_i
+        )
+        L_tot = L_dir_dir + L_dif_dir + L_dir_dif + L_dif_dif
+
+        # Handle case for 1c vs 4c model
+        if not isinstance(L_tot, np.ndarray) or len(L_tot) == 1:
+            # 1c model w/in if clause
+            L_tot, L_down_dir, L_down_dif = self.RT.get_L_down_transmitted(x_RT, geom)
+        else:
+            # 4c model w/in else clause
+            L_down_dir = L_dir_dir + L_dif_dir
+            L_down_dif = L_dif_dir + L_dif_dir
 
         rho_dir_dir, rho_dif_dir = self.surface.calc_rfl(
             x_surface, geom, L_down_dir, L_down_dif

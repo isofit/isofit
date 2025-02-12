@@ -45,7 +45,7 @@ class GlintModelSurface(MultiComponentSurface):
         self.glint_ind = len(self.statevec_names) - 2
         self.idx_surface = np.arange(len(self.statevec_names))
 
-        # To accomodate for the fact that we don't analytically solve 
+        # To accomodate for the fact that we don't analytically solve
         # for the diffuse glint term used in the analytical line
         self.analytical_interp_names = ["SKY_GLINT"]
         self.analytical_iv_idx = np.arange(len(self.statevec_names))[:-1]
@@ -137,13 +137,7 @@ class GlintModelSurface(MultiComponentSurface):
 
         return drfl
 
-    def drdn_dglint(
-        self,
-        L_tot,
-        L_down_dir,
-        s_alb,
-        rho_dif_dir
-    ):
+    def drdn_dglint(self, L_tot, L_down_dir, s_alb, rho_dif_dir):
         """Derivative of radiance with respect to
         the direct and diffuse glint terms"""
         drdn_dgdd = L_down_dir
@@ -159,7 +153,7 @@ class GlintModelSurface(MultiComponentSurface):
         s_alb,
         t_total_up,
         L_tot,
-        L_down_dir
+        L_down_dir,
     ):
         """Derivative of radiance with respect to
         full surface vector"""
@@ -167,38 +161,24 @@ class GlintModelSurface(MultiComponentSurface):
         # drdn_drfl (vector) and eye matrix to construct
         # drdn_drfl (diagonal)
         drdn_drfl = np.multiply(
-            self.drdn_drfl(
-                L_tot, s_alb, rho_dif_dir
-            )[:, np.newaxis], 
-            np.eye(len(self.wl), drfl_dsurface.shape[1])
+            self.drdn_drfl(L_tot, s_alb, rho_dif_dir)[:, np.newaxis],
+            np.eye(len(self.wl), drfl_dsurface.shape[1]),
         )
 
         # Glint derivatives
-        drdn_dgdd, drdn_dgdsf = self.drdn_dglint(
-            L_tot,
-            L_down_dir,
-            s_alb,
-            rho_dif_dir
-        )
+        drdn_dgdd, drdn_dgdsf = self.drdn_dglint(L_tot, L_down_dir, s_alb, rho_dif_dir)
         # Store the glint derivatives as last two rows in drdn_drfl
         drdn_drfl[:, -2] = drdn_dgdd
         drdn_drfl[:, -1] = drdn_dgdsf
 
         # Chain rule to get derivative w.r.t. surface complete state
-        drdn_dsurface = np.multiply(
-            drdn_drfl, 
-            drfl_dsurface
-        )
+        drdn_dsurface = np.multiply(drdn_drfl, drfl_dsurface)
         # Get the derivative w.r.t. surface emission
-        drdn_dLs = np.multiply(
-            self.drdn_dLs(t_total_up)[:, np.newaxis], 
-            dLs_dsurface
-        )
+        drdn_dLs = np.multiply(self.drdn_dLs(t_total_up)[:, np.newaxis], dLs_dsurface)
 
         return np.add(drdn_dsurface, drdn_dLs)
 
-    def summarize(self, x_surface, geom):
-        """Summary of state vector."""
+    def analytical_model(
         self,
         background,
         L_down_dir,
@@ -243,15 +223,23 @@ class GlintModelSurface(MultiComponentSurface):
         )
         gam = (L_dir_dir + L_dir_dif) * g_dir
 
-        # Diffuse portion - UNUSED
-        ep = (L_dif_dir + L_dif_dif) + ((L_tot * background * g_dif) / (1 - background))
         gam = np.reshape(gam, (len(gam), 1))
         H = np.append(H, gam, axis=1)
 
+        # Diffuse portion - UNUSED
+        # ep = (L_dif_dir + L_dif_dif) + ((L_tot * background * g_dif) / (1 - background))
         # ep = np.reshape(ep, (len(ep), 1))
         # H = np.append(H, ep, axis=1)
 
         return H
+
+    def summarize(self, x_surface, geom):
+        """Summary of state vector."""
+
+        if len(x_surface) < 1:
+            return ""
+
+        return "Component: %i" % self.component(x_surface, geom)
 
     @staticmethod
     def fresnel_rf(vza):

@@ -165,12 +165,7 @@ class LUTSurface(Surface):
 
         return dlamb
 
-    def drdn_drfl(
-        self,
-        L_tot,
-        s_alb,
-        rho_dif_dir
-    ):
+    def drdn_drfl(self, L_tot, s_alb, rho_dif_dir):
         """Partial derivative of radiance with respect to
         surface reflectance"""
 
@@ -203,29 +198,19 @@ class LUTSurface(Surface):
         s_alb,
         t_total_up,
         L_tot,
-        L_down_dir
+        L_down_dir,
     ):
         """Derivative of radiance with respect to
         full surface vector"""
 
         drdn_dLs = t_total_up
-        drdn_drfl = self.drdn_drfl(
-            L_tot,
-            s_alb,
-            rho_dif_dir
-        )
+        drdn_drfl = self.drdn_drfl(L_tot, s_alb, rho_dif_dir)
 
         # Chain rule to get derivative w.r.t. surface complete state
-        drdn_dsurface = np.multiply(
-            drdn_drfl, 
-            drfl_dsurface
-        )
+        drdn_dsurface = np.multiply(drdn_drfl, drfl_dsurface)
 
         # Get the derivative w.r.t. surface emission
-        drdn_dLs = np.multiply(
-            self.drdn_dLs(t_total_up)[:, np.newaxis], 
-            dLs_dsurface
-        )
+        drdn_dLs = np.multiply(self.drdn_dLs(t_total_up)[:, np.newaxis], dLs_dsurface)
 
         return np.add(drdn_dsurface, drdn_dLs)
 

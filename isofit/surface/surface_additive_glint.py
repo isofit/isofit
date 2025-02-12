@@ -95,12 +95,7 @@ class AdditiveGlintSurface(ThermalSurface):
 
         return drfl
 
-    def drdn_dglint(
-        self,
-        L_tot,
-        s_alb,
-        rho_dif_dir
-    ):
+    def drdn_dglint(self, L_tot, s_alb, rho_dif_dir):
         """Partial derivative of radiance with respect to
         additive glint"""
 
@@ -125,7 +120,7 @@ class AdditiveGlintSurface(ThermalSurface):
         s_alb,
         t_total_up,
         L_tot,
-        L_down_dir
+        L_down_dir,
     ):
         """Derivative of radiance with respect to
         full surface vector. Everything should be at RT wavelength
@@ -136,10 +131,8 @@ class AdditiveGlintSurface(ThermalSurface):
         # drdn_drfl (vector) and eye matrix to construct
         # drdn_drfl (diagonal)
         drdn_drfl = np.multiply(
-            self.drdn_drfl(
-                L_tot, s_alb, rho_dif_dir
-            )[:, np.newaxis], 
-            np.eye(len(self.wl), drfl_dsurface.shape[1])
+            self.drdn_drfl(L_tot, s_alb, rho_dif_dir)[:, np.newaxis],
+            np.eye(len(self.wl), drfl_dsurface.shape[1]),
         )
         # Glint derivatives
         drdn_dglint = self.drdn_dglint(L_tot, s_alb, rho_dif_dir)
@@ -147,16 +140,10 @@ class AdditiveGlintSurface(ThermalSurface):
         drdn_drfl[:, -1] = drdn_dglint
 
         # Chain rule to get derivative w.r.t. surface complete state
-        drdn_dsurface = np.multiply(
-            drdn_drfl, 
-            drfl_dsurface
-        )
+        drdn_dsurface = np.multiply(drdn_drfl, drfl_dsurface)
 
         # Get the derivative w.r.t. surface emission
-        drdn_dLs = np.multiply(
-            self.drdn_dLs(t_total_up)[:, np.newaxis], 
-            dLs_dsurface
-        )
+        drdn_dLs = np.multiply(self.drdn_dLs(t_total_up)[:, np.newaxis], dLs_dsurface)
 
         return np.add(drdn_dsurface, drdn_dLs)
 

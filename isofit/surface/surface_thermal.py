@@ -65,9 +65,7 @@ class ThermalSurface(MultiComponentSurface):
         """Covariance of prior distribution, calculated at state x."""
 
         Cov = MultiComponentSurface.Sa(self, x_surface, geom)
-        Cov[self.surf_temp_ind, self.surf_temp_ind] = (
-            self.surface_T_prior_sigma_degK**2
-        )
+        Cov[self.surf_temp_ind, self.surf_temp_ind] = self.surface_T_prior_sigma_degK**2
 
         return Cov
 
@@ -121,7 +119,7 @@ class ThermalSurface(MultiComponentSurface):
         s_alb,
         t_total_up,
         L_tot,
-        L_down_dir
+        L_down_dir,
     ):
         """Derivative of radiance with respect to
         full surface vector"""
@@ -130,23 +128,15 @@ class ThermalSurface(MultiComponentSurface):
         # drdn_drfl (vector) and eye matrix to construct
         # drdn_drfl (diagonal)
         drdn_drfl = np.multiply(
-            self.drdn_drfl(
-                L_tot, s_alb, rho_dif_dir
-            )[:, np.newaxis], 
-            np.eye(len(self.wl), drfl_dsurface.shape[1])
+            self.drdn_drfl(L_tot, s_alb, rho_dif_dir)[:, np.newaxis],
+            np.eye(len(self.wl), drfl_dsurface.shape[1]),
         )
 
         # Chain rule to get derivative w.r.t. surface complete state
-        drdn_dsurface = np.multiply(
-            drdn_drfl, 
-            drfl_dsurface
-        )
+        drdn_dsurface = np.multiply(drdn_drfl, drfl_dsurface)
 
         # Get the derivative w.r.t. surface emission
-        drdn_dLs = np.multiply(
-            self.drdn_dLs(t_total_up)[:, np.newaxis], 
-            dLs_dsurface
-        )
+        drdn_dLs = np.multiply(self.drdn_dLs(t_total_up)[:, np.newaxis], dLs_dsurface)
 
         return np.add(drdn_dsurface, drdn_dLs)
 

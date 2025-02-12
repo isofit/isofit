@@ -231,12 +231,7 @@ class MultiComponentSurface(Surface):
 
         return np.concatenate((prefix, dlamb, suffix), axis=1)
 
-    def drdn_drfl(
-        self,
-        L_tot,
-        s_alb,
-        rho_dif_dir
-    ):
+    def drdn_drfl(self, L_tot, s_alb, rho_dif_dir):
         """Partial derivative of radiance with respect to
         surface reflectance"""
 
@@ -273,7 +268,7 @@ class MultiComponentSurface(Surface):
         s_alb,
         t_total_up,
         L_tot,
-        L_down_dir
+        L_down_dir,
     ):
         """Derivative of radiance with respect to
         full surface vector"""
@@ -282,23 +277,15 @@ class MultiComponentSurface(Surface):
         # drdn_drfl (vector) and eye matrix to construct
         # drdn_drfl (diagonal)
         drdn_drfl = np.multiply(
-            self.drdn_drfl(
-                L_tot, s_alb, rho_dif_dir
-            )[:, np.newaxis], 
-            np.eye(len(self.wl), drfl_dsurface.shape[1])
+            self.drdn_drfl(L_tot, s_alb, rho_dif_dir)[:, np.newaxis],
+            np.eye(len(self.wl), drfl_dsurface.shape[1]),
         )
 
         # Chain rule to get derivative w.r.t. surface complete state
-        drdn_dsurface = np.multiply(
-            drdn_drfl, 
-            drfl_dsurface
-        )
+        drdn_dsurface = np.multiply(drdn_drfl, drfl_dsurface)
 
         # Get the derivative w.r.t. surface emission
-        drdn_dLs = np.multiply(
-            self.drdn_dLs(t_total_up)[:, np.newaxis], 
-            dLs_dsurface
-        )
+        drdn_dLs = np.multiply(self.drdn_dLs(t_total_up)[:, np.newaxis], dLs_dsurface)
 
         return np.add(drdn_dsurface, drdn_dLs)
 
