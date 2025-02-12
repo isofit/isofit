@@ -261,7 +261,7 @@ class ForwardModel:
         r = self.RT.get_shared_rtm_quantities(x_RT, geom)
 
         # Check coszen against cos_i
-        coszen, cos_i = geom.check_coszen_and_cos_i(self.coszen)
+        coszen, cos_i = geom.check_coszen_and_cos_i(self.RT.coszen)
 
         # Default: get directional radiances
         L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = self.RT.get_L_coupled(
@@ -284,8 +284,10 @@ class ForwardModel:
         )
         rho_dir_dir_hi = self.upsample(self.surface.wl, rho_dir_dir)
         rho_dif_dir_hi = self.upsample(self.surface.wl, rho_dif_dir)
+
         drfl_dsurface_hi = self.upsample(
-            self.surface.wl, self.surface.drfl_dsurface(x_surface, geom).T
+            self.surface.wl,
+            self.surface.drfl_dsurface(x_surface, geom, L_down_dir, L_down_dif).T,
         ).T
 
         # Call surface emission and derivative w.r.t. surface, upsample
@@ -356,7 +358,7 @@ class ForwardModel:
         r = self.RT.get_shared_rtm_quantities(x_RT, geom)
 
         # Check coszen against cos_i
-        coszen, cos_i = geom.check_coszen_and_cos_i(self.coszen)
+        coszen, cos_i = geom.check_coszen_and_cos_i(self.RT.coszen)
 
         # Default: get directional radiances
         L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = self.RT.get_L_coupled(
@@ -414,14 +416,6 @@ class ForwardModel:
         x_inst = x[self.idx_instrument]
         return self.instrument.calibration(x_inst)
 
-    def unpack(self, x):
-        """Unpack the state vector in appropriate index ordering."""
-
-        x_surface = x[self.idx_surface]
-        x_RT = x[self.idx_RT]
-        x_instrument = x[self.idx_instrument]
-        return x_surface, x_RT, x_instrument
-
     def upsample(self, wl, q):
         """Linear interpolation to RT wavelengths."""
         # Only interpolate if these aren't close
@@ -439,3 +433,11 @@ class ForwardModel:
                 p = interp1d(wl, q, fill_value="extrapolate")
                 return p(self.RT.wl)
         return q
+
+    def unpack(self, x):
+        """Unpack the state vector in appropriate index ordering."""
+
+        x_surface = x[self.idx_surface]
+        x_RT = x[self.idx_RT]
+        x_instrument = x[self.idx_instrument]
+        return x_surface, x_RT, x_instrument

@@ -132,7 +132,7 @@ class AdditiveGlintSurface(ThermalSurface):
         # drdn_drfl (diagonal)
         drdn_drfl = np.multiply(
             self.drdn_drfl(L_tot, s_alb, rho_dif_dir)[:, np.newaxis],
-            np.eye(len(self.wl), drfl_dsurface.shape[1]),
+            np.eye(*drfl_dsurface.shape),
         )
         # Glint derivatives
         drdn_dglint = self.drdn_dglint(L_tot, s_alb, rho_dif_dir)
