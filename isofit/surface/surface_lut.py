@@ -229,7 +229,7 @@ class LUTSurface(Surface):
         """
         Linearization of the surface reflectance terms to use in the
         AOE inner loop (see Susiluoto, 2025). We set the quadratic
-        spherical albedo term to a constant background, which makes
+        spherical albedo term to a constant background, which
         simplifies the linearization
         background - s * rho_bg
 
