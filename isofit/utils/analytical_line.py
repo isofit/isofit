@@ -48,6 +48,7 @@ def analytical_line(
     segmentation_file: str = None,
     n_atm_neighbors: list = None,
     n_cores: int = -1,
+    num_iter: int = 1,
     smoothing_sigma: list = None,
     output_rfl_file: str = None,
     output_unc_file: str = None,
@@ -127,7 +128,7 @@ def analytical_line(
 
     Longer term fix should be to change how the indexes are tracked.
     """
-    atm_band_names = fm.surface.analytical_interp_names + atm_band_names
+    atm_band_names = fm.surface.analytical_interp_names + fm.RT.statevec_names
 
     if os.path.isfile(atm_file) is False:
         atm_interpolation(
@@ -201,6 +202,7 @@ def analytical_line(
             obs_file,
             subs_state_file,
             lbl_file,
+            num_iter,
             loglevel,
             logfile,
         )
@@ -238,6 +240,7 @@ class Worker(object):
         obs_file: str,
         subs_state_file: str,
         lbl_file: str,
+        num_iter: int,
         loglevel: str,
         logfile: str,
     ):
@@ -283,7 +286,7 @@ class Worker(object):
         self.atm_bands = []
 
         # How many iterations to use for invert_analytical
-        self.num_iter = 1
+        self.num_iter = num_iter
 
         if config.input.radiometry_correction_file is not None:
             self.radiance_correction, wl = load_spectrum(

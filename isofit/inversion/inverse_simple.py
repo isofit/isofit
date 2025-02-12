@@ -232,7 +232,7 @@ def invert_analytical(
         meas: a one-D numpy vector of radiance in uW/nm/sr/cm2
         geom: geometry object corresponding to given measurement
         x0: the initialization state including surface from the superpixel
-            and the the atm from the smoothed atmosphere.
+            and the atm from the smoothed atmosphere.
         num_iter: number of interations to run through
         hash_table: a hash table to use locally
         hash_size: max size of given hash table
@@ -254,7 +254,7 @@ def invert_analytical(
             " indexing"
         )
 
-    x = np.copy(x0)
+    x = x0.copy()
     x_surface, x_RT, x_instrument = fm.unpack(x)
 
     # Path radiance
@@ -263,7 +263,6 @@ def invert_analytical(
     # Atmospheric spherical albedo and total trans up for radiance model
     r = fm.RT.get_shared_rtm_quantities(x_RT, geom)
     s = r["sphalb"]
-    t_total_up = r["transm_up_dir"] + r["transm_up_dif"]
 
     # Has to use this function if cos_i is going to be incorporated
     coszen, cos_i = geom.check_coszen_and_cos_i(fm.RT.coszen)
@@ -271,7 +270,7 @@ def invert_analytical(
     # Total radiance
     L_tot = L_dir_dir + L_dif_dir + L_dir_dif + L_dif_dif
 
-    # Get the doward radiance. Should be stationary with fixed atm and geom
+    # Get the downward radiance. Should be stationary with fixed atm and geom
     # Note: This function does not account for cos_i
     L_down_tot, L_down_dir, L_down_dif = fm.RT.get_L_down_transmitted(x_RT, geom)
 

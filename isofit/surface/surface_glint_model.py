@@ -110,12 +110,23 @@ class GlintModelSurface(MultiComponentSurface):
         x[self.glint_ind + 1] = g_dsf_est  # SKY_GLINT g_dsf
         return x
 
+    def glint_spectra(self, geom, L_down_dir, L_down_dif):
+        """Calculates the sun (dir) and sky (dif) glint spectrums"""
+        rho_ls = self.fresnel_rf(geom.observer_zenith)
+        # direct sky transmittance
+        g_dir = rho_ls * (L_down_dir / (L_down_dir + L_down_dif))
+        # diffuse sky transmittance
+        g_dif = rho_ls * (L_down_dif / (L_down_dir + L_down_dif))
+
+        return g_dir, g_dif
+
     def calc_rfl(self, x_surface, geom, L_down_dir=None, L_down_dif=None):
         """Direct and diffuse Reflectance (includes sun and sky glint)."""
         # fresnel reflectance factor (approx. 0.02 for nadir view)
-        rho_ls = self.fresnel_rf(geom.observer_zenith)
-        sun_glint = rho_ls * (x_surface[-2] * L_down_dir / (L_down_dir + L_down_dif))
-        sky_glint = rho_ls * (x_surface[-1] * L_down_dif / (L_down_dir + L_down_dif))
+        g_dir, g_dif = self.glint_spectra(geom, L_down_dir, L_down_dif)
+
+        sun_glint = x_surface[-2] * g_dir
+        sky_glint = x_surface[-1] * g_dif
 
         rho_dir_dir = self.calc_lamb(x_surface, geom) + sun_glint
         rho_dif_dir = self.calc_lamb(x_surface, geom) + sky_glint
@@ -125,13 +136,9 @@ class GlintModelSurface(MultiComponentSurface):
     def drfl_dsurface(self, x_surface, geom, L_down_dir=None, L_down_dif=None):
         """Partial derivative of reflectance with respect to state vector,
         calculated at x_surface."""
-        rho_ls = self.fresnel_rf(geom.observer_zenith)
         drfl = self.dlamb_dsurface(x_surface, geom)
 
-        # direct sky transmittance
-        g_dir = rho_ls * (L_down_dir / (L_down_dir + L_down_dif))
-        # diffuse sky transmittance
-        g_dif = rho_ls * (L_down_dif / (L_down_dir + L_down_dif))
+        g_dir, g_dif = self.glint_spectra(geom, L_down_dir, L_down_dif)
 
         # TODO make the indexing better for the surface state elements
         # Sun glint derivative
@@ -197,15 +204,12 @@ class GlintModelSurface(MultiComponentSurface):
         """
         Linearization of the glint terms to use in AOE inner loop.
         Function will fetch the linearization of the rho terms and
-        add the matrix coponents for the direct glint term.
+        add the matrix components for the direct glint term.
         Currently we set the diffuse glint scaling term to constant
         value, which makes the AOE inner loop inversion possible.
         """
         # Get glint spectrum
-        rho_ls = self.fresnel_rf(geom.observer_zenith)
-        # Direct component holding dif component constant
-        g_dir = rho_ls * (L_down_dir / (L_down_dir + L_down_dif))
-        g_dif = rho_ls * (L_down_dif / (L_down_dir + L_down_dif))
+        g_dir, g_dif = self.glint_spectra(geom, L_down_dir, L_down_dif)
 
         # Construct the H matrix from:
         # theta (rho portion)
