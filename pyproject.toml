@@ -3,7 +3,7 @@ name = "isofit"
 dynamic = ["version"]
 description = "Imaging Spectrometer Optimal FITting"
 readme = "README.rst"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 license = {file = "LICENSE"}
 keywords = ["isofit"]
 authors = [
@@ -24,7 +24,6 @@ maintainers = [
 classifiers = [
   "License :: OSI Approved :: Apache Software License",
   "Operating System :: OS Independent",
-  "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
@@ -34,8 +33,8 @@ dependencies = [
   "click",
   "dask",
   "h5py",
-  "netCDF4 < 1.7.1",
-  "numpy >= 1.20, < 2.0.0",
+  "netCDF4",
+  "numpy >= 1.20",
   "pandas >= 0.24.0",
   "pyyaml >= 5.3.2",
   "ray >= 1.2.0",
@@ -44,7 +43,7 @@ dependencies = [
   "scipy >= 1.3.0",
   "spectral >= 0.19",
   "utm",
-  "xarray < 2024.1.1",
+  "xarray",
   "xxhash >= 1.2.0",
 ]
 
