@@ -34,6 +34,7 @@ class AdditiveGlintSurface(ThermalSurface):
 
         # TODO: Enforce this attribute in the config, not here (this is hidden)
         self.statevec_names.extend(["GLINT"])
+        self.idx_surface = np.arange(len(self.statevec_names))
         self.scale.extend([1.0])
         self.init.extend([0.005])
         self.bounds.extend([[0, 0.2]])
@@ -84,7 +85,7 @@ class AdditiveGlintSurface(ThermalSurface):
         rfl = self.calc_lamb(x_surface, geom) + x_surface[self.glint_ind]
         return rfl, rfl
 
-    def drfl_dsurface(self, x_surface, geom):
+    def drfl_dsurface(self, x_surface, geom, L_down_dir=None, L_down_dif=None):
         """Partial derivative of reflectance with respect to state vector,
         calculated at x_surface."""
 

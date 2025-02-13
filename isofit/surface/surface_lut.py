@@ -20,7 +20,6 @@
 from __future__ import annotations
 
 import numpy as np
-from scipy.io import loadmat
 
 from isofit.core.common import VectorInterpolator
 from isofit.surface.surface import Surface
@@ -58,21 +57,18 @@ class LUTSurface(Surface):
 
         super().__init__(full_config)
 
-        config = full_config.forward_model.surface
-
         # Models are stored as dictionaries in .mat format
-        model_dict = loadmat(config.surface_file)
-        self.lut_grid = [grid[0] for grid in model_dict["grids"][0]]
-        self.lut_names = [l.strip() for l in model_dict["lut_names"]]
-        self.statevec_names = [sv.strip() for sv in model_dict["statevec_names"]]
-        self.data = model_dict["data"]
-        self.wl = model_dict["wl"][0]
+        self.lut_grid = [grid[0] for grid in self.model_dict["grids"][0]]
+        self.lut_names = [l.strip() for l in self.model_dict["lut_names"]]
+        self.statevec_names = [sv.strip() for sv in self.model_dict["statevec_names"]]
+        self.data = self.model_dict["data"]
+        self.wl = self.model_dict["wl"][0]
         self.n_wl = len(self.wl)
-        self.bounds = model_dict["bounds"]
-        self.scale = model_dict["scale"][0]
-        self.init = model_dict["init"][0]
-        self.mean = model_dict["mean"][0]
-        self.sigma = model_dict["sigma"][0]
+        self.bounds = self.model_dict["bounds"]
+        self.scale = self.model_dict["scale"][0]
+        self.init = self.model_dict["init"][0]
+        self.mean = self.model_dict["mean"][0]
+        self.sigma = self.model_dict["sigma"][0]
         self.n_state = len(self.statevec_names)
         self.n_lut = len(self.lut_names)
         self.idx_lut = np.arange(self.n_state)
@@ -133,7 +129,7 @@ class LUTSurface(Surface):
 
         return lamb
 
-    def drfl_dsurface(self, x_surface, geom):
+    def drfl_dsurface(self, x_surface, geom, L_down_dir=None, L_down_dif=None):
         """Partial derivative of reflectance with respect to state vector,
         calculated at x_surface."""
 
@@ -179,3 +175,36 @@ class LUTSurface(Surface):
             return ""
 
         return "Surface: " + " ".join([("%5.4f" % x) for x in x_surface])
+
+    def analytical_model(
+        self,
+        background,
+        L_down_dir,
+        L_down_dif,
+        L_tot,
+        geom,
+        L_dir_dir=None,
+        L_dir_dif=None,
+        L_dif_dir=None,
+        L_dif_dif=None,
+    ):
+        """
+        Linearization of the surface reflectance terms to use in the
+        AOE inner loop (see Susiluoto, 2025). We set the quadratic
+        spherical albedo term to a constant background, which makes
+        simplifies the linearization
+        background - s * rho_bg
+
+        NOTE FOR SURFACE_LUT:
+        This assumes that the only surface statevector terms are
+        surface reflectance terms. Any additional surface state elements
+        have to be explicitely handled in this function. How they are
+        handled is dependent on the nature of the surface rfl model.
+        The n-columns of H is equal to the number of statevector elements.
+        Here, set to the number of wavelengths.
+        """
+        theta = L_tot + (L_tot * background)
+        H = np.eye(self.n_wl, self.n_wl)
+        H = theta[:, np.newaxis] * H
+
+        return H

@@ -43,10 +43,12 @@ class ThermalSurface(MultiComponentSurface):
             self.init.extend([300.0])  # This is overwritten below
             self.scale.extend([100.0])
             self.bounds.extend([[250.0, 400.0]])
+        self.idx_surface = np.arange(len(self.statevec_names))
         self.surf_temp_ind = len(self.statevec_names) - 1
         self.emissive = True
         self.n_state = len(self.init)
 
+        # Initial Value recommended by Glynn Hulley.
         self.emissivity_for_surface_T_init = config.emissivity_for_surface_T_init
         self.surface_T_prior_sigma_degK = config.surface_T_prior_sigma_degK
 
@@ -84,7 +86,7 @@ class ThermalSurface(MultiComponentSurface):
         rfl = self.calc_lamb(x_surface, geom)
         return rfl, rfl
 
-    def drfl_dsurface(self, x_surface, geom):
+    def drfl_dsurface(self, x_surface, geom, L_down_dir=None, L_down_dif=None):
         """Partial derivative of reflectance with respect to state vector,
         calculated at x_surface."""
 

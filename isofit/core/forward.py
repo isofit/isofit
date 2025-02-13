@@ -64,7 +64,6 @@ class ForwardModel:
         # load in the full config (in case of inter-module dependencies) and
         # then designate the current config
         self.full_config = full_config
-        self.config = full_config.forward_model
 
         # Build the instrument model
         self.instrument = Instrument(self.full_config)
@@ -107,21 +106,29 @@ class ForwardModel:
         self.bval = np.array(bval)
         self.Sb = np.diagflat(np.power(self.bval, 2))
 
-        # Set up indices for references - MUST MATCH ORDER FROM ABOVE ASSIGNMENT
+        """Set up state vector indices - 
+        MUST MATCH ORDER FROM ABOVE ASSIGNMENT
+
+        Sometimes, it's convenient to have the index of the entire surface
+        as one variable, and sometimes you want the sub-components
+        Split surface state vector indices to cover cases where we retrieve
+        additional non-reflectance surface parameters
+        """
+        # entire surface portion
         self.idx_surface = np.arange(len(self.surface.statevec_names), dtype=int)
-        # Sometimes, it's convenient to have the index of the entire surface
-        # as one variable, and sometimes you want the sub-components
-        # Split surface state vector indices to cover cases where we retrieve
-        # additional non-reflectance surface parameters
-        self.idx_surf_rfl = self.idx_surface[
-            : len(self.surface.idx_lamb)
-        ]  # reflectance portion
-        self.idx_surf_nonrfl = self.idx_surface[
-            len(self.surface.idx_lamb) :
-        ]  # all non-reflectance surface parameters
+
+        # surface reflectance portion
+        self.idx_surf_rfl = self.idx_surface[: len(self.surface.idx_lamb)]
+
+        # non-reflectance surface parameters
+        self.idx_surf_nonrfl = self.idx_surface[len(self.surface.idx_lamb) :]
+
+        # radiative transfer portion
         self.idx_RT = np.arange(len(self.RT.statevec_names), dtype=int) + len(
             self.idx_surface
         )
+
+        # instrument portion
         self.idx_instrument = (
             np.arange(len(self.instrument.statevec_names), dtype=int)
             + len(self.idx_surface)
@@ -139,8 +146,8 @@ class ForwardModel:
         )
 
         # Load model discrepancy correction
-        if self.config.model_discrepancy_file is not None:
-            D = loadmat(self.config.model_discrepancy_file)
+        if full_config.forward_model.model_discrepancy_file is not None:
+            D = loadmat(full_config.forward_model.model_discrepancy_file)
             self.model_discrepancy = D["cov"]
         else:
             self.model_discrepancy = None
@@ -260,7 +267,9 @@ class ForwardModel:
         rho_dir_dir, rho_dif_dir = self.surface.calc_rfl(
             x_surface, geom, L_down_dir, L_down_dif
         )
-        drfl_dsurface = self.surface.drfl_dsurface(x_surface, geom)
+        drfl_dsurface = self.surface.drfl_dsurface(
+            x_surface, geom, L_down_dir, L_down_dif
+        )
         rho_dir_dir_hi = self.upsample(self.surface.wl, rho_dir_dir)
         rho_dif_dir_hi = self.upsample(self.surface.wl, rho_dif_dir)
         drfl_dsurface_hi = self.upsample(self.surface.wl, drfl_dsurface.T).T

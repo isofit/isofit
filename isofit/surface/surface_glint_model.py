@@ -40,14 +40,17 @@ class GlintModelSurface(MultiComponentSurface):
         )  # Numbers from Marcel Koenig; used for prior mean
         self.bounds.extend([[-1, 10], [0, 10]])  # Gege (2021), WASI user manual
         self.n_state = self.n_state + 2
+
+        # Useful indexes to track
         self.glint_ind = len(self.statevec_names) - 2
+        self.idx_surface = np.arange(len(self.statevec_names))
+        # Don't use the sky glint term, which has to be the last entry
+        self.analytical_iv_idx = np.arange(len(self.statevec_names))[:-1]
+
         self.f = np.array(
             [[(1000000 * np.array(self.scale[self.glint_ind :])) ** 2]]
         )  # Prior covariance, *very* high...
-
-        self.full_glint = False
-        if "full_glint" in (full := full_config.forward_model.surface.__dict__.keys()):
-            self.full_glint = full
+        self.full_glint = full_config.forward_model.surface.full_glint
 
     def xa(self, x_surface, geom):
         """Mean of prior distribution, calculated at state x."""
@@ -100,8 +103,8 @@ class GlintModelSurface(MultiComponentSurface):
 
     def calc_rfl(self, x_surface, geom, L_down_dir=None, L_down_dif=None):
         """Direct and diffuse Reflectance (includes sun and sky glint)."""
-
-        rho_ls = 0.02  # fresnel reflectance factor (approx. 0.02 for nadir view)
+        # fresnel reflectance factor (approx. 0.02 for nadir view)
+        rho_ls = self.fresnel_rf(geom.observer_zenith)
         sun_glint = rho_ls * (x_surface[-2] * L_down_dir / (L_down_dir + L_down_dif))
         sky_glint = rho_ls * (x_surface[-1] * L_down_dif / (L_down_dir + L_down_dif))
 
@@ -110,12 +113,23 @@ class GlintModelSurface(MultiComponentSurface):
 
         return rho_dir_dir, rho_dif_dir
 
-    def drfl_dsurface(self, x_surface, geom):
+    def drfl_dsurface(self, x_surface, geom, L_down_dir=None, L_down_dif=None):
         """Partial derivative of reflectance with respect to state vector,
         calculated at x_surface."""
-
+        rho_ls = self.fresnel_rf(geom.observer_zenith)
         drfl = self.dlamb_dsurface(x_surface, geom)
-        drfl[:, self.glint_ind :] = 0
+
+        # direct sky transmittance
+        g_dir = rho_ls * (L_down_dir / (L_down_dir + L_down_dif))
+        # diffuse sky transmittance
+        g_dif = rho_ls * (L_down_dif / (L_down_dir + L_down_dif))
+
+        # TODO make the indexing better for the surface state elements
+        # Sun glint derivative
+        drfl[:, self.glint_ind] = g_dir
+        # Sky glint derivative
+        drfl[:, self.glint_ind + 1] = g_dif
+
         return drfl
 
     def dLs_dsurface(self, x_surface, geom):
@@ -132,3 +146,80 @@ class GlintModelSurface(MultiComponentSurface):
         return MultiComponentSurface.summarize(
             self, x_surface, geom
         ) + " Sun Glint: %5.3f, Sky Glint: %5.3f" % (x_surface[-2], x_surface[-1])
+
+    def analytical_model(
+        self,
+        background,
+        L_down_dir,
+        L_down_dif,
+        L_tot,
+        geom,
+        L_dir_dir=None,
+        L_dir_dif=None,
+        L_dif_dir=None,
+        L_dif_dif=None,
+    ):
+        """
+        Linearization of the glint terms to use in AOE inner loop.
+        Function will fetch the linearization of the rho terms and
+        add the matrix coponents for the direct glint term.
+        Currently we set the diffuse glint scaling term to constant
+        value, which makes the AOE inner loop inversion possible.
+        """
+        # Get glint spectrum
+        rho_ls = self.fresnel_rf(geom.observer_zenith)
+        # Direct component holding dif component constant
+        g_dir = rho_ls * (L_down_dir / (L_down_dir + L_down_dif))
+        g_dif = rho_ls * (L_down_dif / (L_down_dir + L_down_dif))
+
+        # Construct the H matrix from:
+        # theta (rho portion)
+        # gam (sun glint portion)
+        # ep (sky glint portion)
+        # Sky glint term does not converge correctly with the analytical
+        # solution.
+        # We assume sky glint portion is equal to the diffuse background
+        H = super().analytical_model(
+            background,
+            L_down_dir,
+            L_down_dif,
+            L_tot,
+            geom,
+            L_dir_dir,
+            L_dir_dif,
+            L_dif_dir,
+            L_dif_dif,
+        )
+        gam = (L_dir_dir + L_dir_dif) * g_dir
+
+        # Diffuse portion - UNUSED
+        ep = (L_dif_dir + L_dif_dif) + ((L_tot * background * g_dif) / (1 - background))
+        gam = np.reshape(gam, (len(gam), 1))
+        H = np.append(H, gam, axis=1)
+
+        # ep = np.reshape(ep, (len(ep), 1))
+        # H = np.append(H, ep, axis=1)
+
+        return H
+
+    @staticmethod
+    def fresnel_rf(vza):
+        """Calculates reflectance factor of sky radiance based on the
+        Fresnel equation for unpolarized light as a function of view zenith angle (vza).
+        """
+        if vza > 0.0:
+            n_w = 1.33  # refractive index of water
+            theta = np.deg2rad(vza)
+
+            # calculate angle of refraction using Snell′s law
+            theta_i = np.arcsin(np.sin(theta) / n_w)
+
+            # reflectance factor of sky radiance based on the Fresnel equation for unpolarized light
+            rho_ls = 0.5 * np.abs(
+                ((np.sin(theta - theta_i) ** 2) / (np.sin(theta + theta_i) ** 2))
+                + ((np.tan(theta - theta_i) ** 2) / (np.tan(theta + theta_i) ** 2))
+            )
+        else:
+            rho_ls = 0.02  # the reflectance factor converges to 0.02 for view angles equal to 0.0°
+
+        return rho_ls
