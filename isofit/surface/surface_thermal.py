@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from isofit.core.common import emissive_radiance, eps
+from isofit.core.common import emissive_radiance
 from isofit.surface.surface_multicomp import MultiComponentSurface
 
 
@@ -43,6 +43,7 @@ class ThermalSurface(MultiComponentSurface):
             self.init.extend([300.0])  # This is overwritten below
             self.scale.extend([100.0])
             self.bounds.extend([[250.0, 400.0]])
+        self.idx_surface = np.arange(len(self.statevec_names))
         self.surf_temp_ind = len(self.statevec_names) - 1
         self.emissive = True
         self.n_state = len(self.init)
@@ -57,6 +58,7 @@ class ThermalSurface(MultiComponentSurface):
 
         mu = MultiComponentSurface.xa(self, x_surface, geom)
         mu[self.surf_temp_ind] = self.init[self.surf_temp_ind]
+
         return mu
 
     def Sa(self, x_surface, geom):
@@ -75,32 +77,13 @@ class ThermalSurface(MultiComponentSurface):
 
         return x_surface
 
-    def calc_rfl(self, x_surface, geom, L_down_dir=None, L_down_dif=None):
-        """Reflectance. This could be overriden to add (for example)
-        specular components"""
-
-        # ToDo: Future use of calc_rfl() is to return a direct and diffuse surface reflectance quantity.
-        #  As long as this is not implemented, return the same reflectance vector for both.
-        rfl = self.calc_lamb(x_surface, geom)
-        return rfl, rfl
-
-    def drfl_dsurface(self, x_surface, geom):
-        """Partial derivative of reflectance with respect to state vector,
-        calculated at x_surface."""
-
-        return self.dlamb_dsurface(x_surface, geom)
-
-    def calc_lamb(self, x_surface, geom):
-        """Lambertian Reflectance."""
-
-        return MultiComponentSurface.calc_lamb(self, x_surface, geom)
-
     def dlamb_dsurface(self, x_surface, geom):
         """Partial derivative of Lambertian reflectance with respect to state
         vector, calculated at x_surface."""
 
         dlamb = MultiComponentSurface.dlamb_dsurface(self, x_surface, geom)
         dlamb[:, self.surf_temp_ind] = 0
+
         return dlamb
 
     def calc_Ls(self, x_surface, geom):
@@ -112,6 +95,7 @@ class ThermalSurface(MultiComponentSurface):
         rfl[0][rfl[0] > 1.0] = 1.0
         emissivity = 1 - rfl[0]
         Ls, dLs_dT = emissive_radiance(emissivity, T, self.wl)
+
         return Ls
 
     def dLs_dsurface(self, x_surface, geom):
@@ -127,9 +111,39 @@ class ThermalSurface(MultiComponentSurface):
 
         return dLs_dsurface
 
+    def drdn_dsurface(
+        self,
+        rho_dif_dir,
+        drfl_dsurface,
+        dLs_dsurface,
+        s_alb,
+        t_total_up,
+        L_tot,
+        L_down_dir,
+    ):
+        """Derivative of radiance with respect to
+        full surface vector"""
+
+        # Element wise multiplication between
+        # drdn_drfl (vector) and eye matrix to construct
+        # drdn_drfl (diagonal)
+        drdn_drfl = np.multiply(
+            self.drdn_drfl(L_tot, s_alb, rho_dif_dir)[:, np.newaxis],
+            np.eye(len(self.wl), drfl_dsurface.shape[1]),
+        )
+
+        # Chain rule to get derivative w.r.t. surface complete state
+        drdn_dsurface = np.multiply(drdn_drfl, drfl_dsurface)
+
+        # Get the derivative w.r.t. surface emission
+        drdn_dLs = np.multiply(self.drdn_dLs(t_total_up)[:, np.newaxis], dLs_dsurface)
+
+        return np.add(drdn_dsurface, drdn_dLs)
+
     def summarize(self, x_surface, geom):
         """Summary of state vector."""
 
         mcm = MultiComponentSurface.summarize(self, x_surface, geom)
         msg = " Kelvins: %5.1f " % x_surface[self.surf_temp_ind]
+
         return msg + mcm
