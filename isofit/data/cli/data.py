@@ -4,14 +4,8 @@ Downloads the extra ISOFIT data files from the repository https://github.com/iso
 
 from pathlib import Path
 
-from isofit.data import env
-from isofit.data.download import (
-    cli,
-    download_file,
-    prepare_output,
-    release_metadata,
-    unzip,
-)
+from isofit.data import env, shared
+from isofit.data.download import download_file, prepare_output, release_metadata, unzip
 
 CMD = "data"
 
@@ -144,13 +138,13 @@ def isUpToDate(path=None, tag="latest", debug=print, error=print, **_):
 
     metadata = release_metadata("isofit", "isofit-data", tag)
     with open(file, "r") as f:
-        version = f.read()
+        current = f.read()
 
-    if version != (latest := metadata["tag_name"]):
-        error(f"[x] Latest is {latest}, currently installed is {version}")
+    if current != (latest := metadata["tag_name"]):
+        error(f"[x] Latest is {latest}, currently installed is {current}")
         return False
 
-    debug("[✓] Path is up to date")
+    debug(f"[✓] Path is up to date, current version is: {current}")
 
     return True
 
@@ -176,11 +170,11 @@ def update(check=False, **kwargs):
             debug(f"Please download the latest via `isofit download {CMD}`")
 
 
-@cli.download.command(name=CMD)
-@cli.path(help="Root directory to download data files to, ie. [path]/data")
-@cli.tag
-@cli.overwrite
-@cli.check
+@shared.download.command(name=CMD)
+@shared.path(help="Root directory to download data files to, ie. [path]/data")
+@shared.tag
+@shared.overwrite
+@shared.check
 def download_cli(**kwargs):
     """\
     Downloads the extra ISOFIT data files from the repository https://github.com/isofit/isofit-data.
@@ -198,9 +192,9 @@ def download_cli(**kwargs):
         update(**kwargs)
 
 
-@cli.validate.command(name=CMD)
-@cli.path(help="Root directory to download data files to, ie. [path]/data")
-@cli.tag
+@shared.validate.command(name=CMD)
+@shared.path(help="Root directory to download data files to, ie. [path]/data")
+@shared.tag
 def validate_cli(**kwargs):
     """\
     Validates the installation of the ISOFIT extra data files as well as checks for updates

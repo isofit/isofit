@@ -795,7 +795,7 @@ def apply_oe(
     is_flag=True,
 )
 @click.option("--profile")
-def cli_apply_oe(debug_args, profile, **kwargs):
+def cli(debug_args, profile, **kwargs):
     if debug_args:
         print("Arguments to be passed:")
         for key, value in kwitems():
