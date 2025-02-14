@@ -257,26 +257,17 @@ def invert_analytical(
     x = x0.copy()
     x_surface, x_RT, x_instrument = fm.unpack(x)
 
-    # Path radiance
-    L_atm = fm.RT.get_L_atm(x_RT, geom)
+    # Get all the RT quantities
+    (r, L_tot, L_down_dir, L_down_dif, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif) = (
+        fm.calc_RT_quantities(x_RT, geom)
+    )
 
-    # Atmospheric spherical albedo and total trans up for radiance model
-    r = fm.RT.get_shared_rtm_quantities(x_RT, geom)
+    # Pass some important variables
+    L_atm = fm.RT.get_L_atm(x_RT, geom)
     s = r["sphalb"]
 
-    # Has to use this function if cos_i is going to be incorporated
-    coszen, cos_i = geom.check_coszen_and_cos_i(fm.RT.coszen)
-    L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = fm.RT.get_L_coupled(r, coszen, cos_i)
-    # Total radiance
-    L_tot = L_dir_dir + L_dif_dir + L_dir_dif + L_dif_dif
-
-    # Get the downward radiance. Should be stationary with fixed atm and geom
-    # Note: This function does not account for cos_i
-    L_down_tot, L_down_dir, L_down_dif = fm.RT.get_L_down_transmitted(x_RT, geom)
-
-    # Get the "background" reflectance from the initialized values
-    # This should be the same as the superpixel state
-    rho_dir_dir, rho_dif_dir = fm.surface.calc_rfl(
+    # Get all the surface quantities
+    (rho_dir_dir, rho_dif_dir, _, Ls, _) = fm.calc_surface_quantities(
         x_surface, geom, L_down_dir, L_down_dif
     )
     # background conditions

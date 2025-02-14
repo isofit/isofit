@@ -165,7 +165,20 @@ class RadiativeTransfer:
             if "coszen" in child.lut:
                 return child.lut.coszen.data
 
-    def calc_rdn(self, x_RT, rho_dir_dir, rho_dif_dir, Ls, geom):
+    def calc_rdn(
+        self,
+        x_RT,
+        rho_dir_dir,
+        rho_dif_dir,
+        Ls,
+        L_tot,
+        L_dir_dir,
+        L_dif_dir,
+        L_dir_dif,
+        L_dif_dif,
+        r,
+        geom,
+    ):
         """
         Physics-based forward model to calculate at-sensor radiance.
         Includes topography, background reflectance, and glint.
@@ -183,26 +196,14 @@ class RadiativeTransfer:
             geom.bg_rfl if isinstance(geom.bg_rfl, np.ndarray) else rho_dif_dir
         )
 
-        # Get needed rt quantities from LUT
-        r = self.get_shared_rtm_quantities(x_RT, geom)
-
         # Atmospheric path radiance
         L_atm = self.get_L_atm(x_RT, geom)
 
         # Atmospheric spherical albedo
         s_alb = r["sphalb"]
 
-        # Radiance terms along all optical paths
-        L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = self.get_L_coupled(
-            r, coszen, cos_i
-        )
-
-        # Total radiance
-        L_tot = L_dir_dir + L_dif_dir + L_dir_dif + L_dif_dif
-
         # Special case: 1-component model
         if not isinstance(L_tot, np.ndarray) or len(L_tot) == 1:
-            L_tot = self.get_L_down_transmitted(x_RT, geom)[0]
             # we assume rho_dir_dir = rho_dif_dir = rho_dir_dif = rho_dif_dif
             rho_dif_dif = rho_dir_dir
             # eliminate spherical albedo and one reflectance term from numerator if using 1-component model
@@ -354,7 +355,7 @@ class RadiativeTransfer:
 
         return np.hstack(L_downs), np.hstack(L_downs_dir), np.hstack(L_downs_dif)
 
-    def get_L_coupled(self, r: dict, coszen: float, cos_i: float):
+    def get_L_coupled(self, r: dict, geom: Geometry):
         """Get the interpolated radiance terms on the sun-to-surface-to-sensor path.
         These follow the physics as presented in Guanter (2006), Vermote et al. (1997), and Tanre et al. (1983).
 
@@ -370,6 +371,9 @@ class RadiativeTransfer:
             L_dir_dif => downward direct * upward diffuse
             L_dif_dif => downward diffuse * upward diffuse
         """
+        # Check coszen against cos_i
+        coszen, cos_i = geom.check_coszen_and_cos_i(self.coszen)
+
         # radiances along all optical paths
         L_coupled = []
 
@@ -404,26 +408,58 @@ class RadiativeTransfer:
 
     def drdn_dRT(
         self,
-        x_RT: np.array,
-        rho_dir_dir: np.array,
-        rho_dif_dir: np.array,
-        Ls: np.array,
-        geom: Geometry,
+        x_RT,
+        rho_dir_dir,
+        rho_dif_dir,
+        Ls,
+        L_tot,
+        L_dir_dir,
+        L_dif_dir,
+        L_dir_dif,
+        L_dif_dif,
+        r,
+        geom,
+        rdn,
     ):
-        # first the rdn at the current state vector
-        rdn = self.calc_rdn(x_RT, rho_dir_dir, rho_dif_dir, Ls, geom)
 
         # perturb each element of the RT state vector (finite difference)
         K_RT = []
         x_RTs_perturb = x_RT + np.eye(len(x_RT)) * eps
         for x_RT_perturb in list(x_RTs_perturb):
-            rdne = self.calc_rdn(x_RT_perturb, rho_dir_dir, rho_dif_dir, Ls, geom)
+            rdne = self.calc_rdn(
+                x_RT_perturb,
+                rho_dir_dir,
+                rho_dif_dir,
+                Ls,
+                L_tot,
+                L_dir_dir,
+                L_dif_dir,
+                L_dir_dif,
+                L_dif_dif,
+                r,
+                geom,
+            )
             K_RT.append((rdne - rdn) / eps)
         K_RT = np.array(K_RT).T
 
         return K_RT
 
-    def drdn_dRTb(self, x_RT, rho_dir_dir, rho_dif_dir, Ls, geom):
+    def drdn_dRTb(
+        self,
+        x_RT,
+        rho_dir_dir,
+        rho_dif_dir,
+        Ls,
+        L_tot,
+        L_dir_dir,
+        L_dif_dir,
+        L_dir_dif,
+        L_dif_dif,
+        r,
+        geom,
+        rdn,
+    ):
+
         if len(self.bvec) == 0:
             Kb_RT = np.zeros((0, len(self.wl.shape)))
         # currently, the K_b matrix only covers forward model derivatives due to H2O_ABSCO unknowns,
@@ -434,9 +470,6 @@ class RadiativeTransfer:
         elif len(self.bvec) > 0 and "H2OSTR" not in self.statevec_names:
             Kb_RT = np.zeros((1, len(self.wl)))
         else:
-            # first the radiance at the current state vector
-            rdn = self.calc_rdn(x_RT, rho_dir_dir, rho_dif_dir, Ls, geom)
-
             # unknown parameters modeled as random variables per
             # Rodgers et al (2000) K_b matrix.  We calculate these derivatives
             # by finite differences
@@ -448,7 +481,17 @@ class RadiativeTransfer:
                     x_RT_perturb = x_RT.copy()
                     x_RT_perturb[i] = x_RT[i] * perturb
                     rdne = self.calc_rdn(
-                        x_RT_perturb, rho_dir_dir, rho_dif_dir, Ls, geom
+                        x_RT_perturb,
+                        rho_dir_dir,
+                        rho_dif_dir,
+                        Ls,
+                        L_tot,
+                        L_dir_dir,
+                        L_dif_dir,
+                        L_dir_dif,
+                        L_dif_dif,
+                        r,
+                        geom,
                     )
                     Kb_RT.append((rdne - rdn) / eps)
 
