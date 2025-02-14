@@ -183,8 +183,6 @@ class RadiativeTransfer:
         Physics-based forward model to calculate at-sensor radiance.
         Includes topography, background reflectance, and glint.
         """
-        coszen, cos_i = geom.check_coszen_and_cos_i(self.coszen)
-
         # Adjacency effects
         # ToDo: we need to think about if we want to obtain the background reflectance from the Geometry object
         #  or from the surface model, i.e., the same way as we do with the target pixel reflectance
@@ -406,26 +404,68 @@ class RadiativeTransfer:
 
         return L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif
 
-    def drdn_dRT(
-        self,
-        x_RT,
-        rho_dir_dir,
-        rho_dif_dir,
-        Ls,
-        L_tot,
-        L_dir_dir,
-        L_dif_dir,
-        L_dir_dif,
-        L_dif_dif,
-        r,
-        geom,
-        rdn,
-    ):
+    def calc_RT_quantities(self, x_RT: np.ndarray, geom: Geometry):
+        """Retrieves the RT quantities including the LUT sample (r),
+        and the radiances (L). This function handles the hand-off between
+        the 1c and 4c model.
 
+        In the 1c case, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = 0,
+        and L_tot, L_down_dir, and L_down_dif are populated within the
+        if statement.
+
+        In the 4c case, we always use returns from get_L_coupled
+        """
+        # Propogate LUT
+        r = self.get_shared_rtm_quantities(x_RT, geom)
+
+        # Default: get directional radiances
+        L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = self.get_L_coupled(r, geom)
+        L_tot = L_dir_dir + L_dif_dir + L_dir_dif + L_dif_dif
+
+        # Handle case for 1c vs 4c model
+        if not isinstance(L_tot, np.ndarray) or len(L_tot) == 1:
+            # 1c model w/in if clause
+            L_tot, L_down_dir, L_down_dif = self.get_L_down_transmitted(x_RT, geom)
+        else:
+            # 4c model w/in else clause
+            L_down_dir = L_dir_dir + L_dif_dir
+            L_down_dif = L_dif_dir + L_dif_dir
+
+        return (
+            r,
+            L_tot,
+            L_down_dir,
+            L_down_dif,
+            L_dir_dir,
+            L_dif_dir,
+            L_dir_dif,
+            L_dif_dif,
+        )
+
+    def drdn_dRT(self, x_RT, geom, rho_dir_dir, rho_dif_dir, Ls, rdn):
+        """Derivative of estimated radiance w.r.t. RT statevector elements.
+        We use a numerical approach to approximate dRT with a constant surface
+        reflectance. This is a reasonable approx. for the multicomponent surface.
+
+        When using the glint model however, this does not take into account
+        the dependence of the surface reflectance on the atmosphere.
+        """
         # perturb each element of the RT state vector (finite difference)
         K_RT = []
         x_RTs_perturb = x_RT + np.eye(len(x_RT)) * eps
         for x_RT_perturb in list(x_RTs_perturb):
+            (
+                r,
+                L_tot,
+                L_down_dir,
+                L_down_dif,
+                L_dir_dir,
+                L_dif_dir,
+                L_dir_dif,
+                L_dif_dif,
+            ) = self.calc_RT_quantities(x_RT_perturb, geom)
+
+            # Surface state is held constant?
             rdne = self.calc_rdn(
                 x_RT_perturb,
                 rho_dir_dir,
@@ -440,33 +480,26 @@ class RadiativeTransfer:
                 geom,
             )
             K_RT.append((rdne - rdn) / eps)
+
         K_RT = np.array(K_RT).T
 
         return K_RT
 
-    def drdn_dRTb(
-        self,
-        x_RT,
-        rho_dir_dir,
-        rho_dif_dir,
-        Ls,
-        L_tot,
-        L_dir_dir,
-        L_dif_dir,
-        L_dir_dif,
-        L_dif_dif,
-        r,
-        geom,
-        rdn,
-    ):
+    def drdn_dRTb(self, x_RT, geom, rho_dir_dir, rho_dif_dir, Ls, rdn):
+        """Derivative of estimated rdn w.r.t. H2O_ABSCO
 
+        Currently, the K_b matrix only covers forward model derivatives
+        due to H2O_ABSCO unknowns, so that subsequent errors might occur
+        when water vapor is not part of the statevector
+        (which is very unlikely though).
+        """
         if len(self.bvec) == 0:
             Kb_RT = np.zeros((0, len(self.wl.shape)))
-        # currently, the K_b matrix only covers forward model derivatives due to H2O_ABSCO unknowns,
-        # so that subsequent errors might occur when water vapor is not part of the state
-        # vector (which is very unlikely though). the following statement captures this case,
-        # but might need to be modified as soon as we add more unknowns
+
         # ToDo: might require modification in case more unknowns are added
+        # The following statement captures the case that H2O is not part
+        # of the statevector.
+        # but might need to be modified as soon as we add more unknowns
         elif len(self.bvec) > 0 and "H2OSTR" not in self.statevec_names:
             Kb_RT = np.zeros((1, len(self.wl)))
         else:
@@ -480,6 +513,17 @@ class RadiativeTransfer:
                     i = self.statevec_names.index("H2OSTR")
                     x_RT_perturb = x_RT.copy()
                     x_RT_perturb[i] = x_RT[i] * perturb
+                    (
+                        r,
+                        L_tot,
+                        L_down_dir,
+                        L_down_dif,
+                        L_dir_dir,
+                        L_dif_dir,
+                        L_dir_dif,
+                        L_dif_dif,
+                    ) = self.calc_RT_quantities(x_RT_perturb, geom)
+
                     rdne = self.calc_rdn(
                         x_RT_perturb,
                         rho_dir_dir,

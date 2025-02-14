@@ -30,13 +30,15 @@ from spectral.io import envi
 
 from isofit import ray
 from isofit.configs import configs
-from isofit.core.common import envi_header, load_spectrum
+from isofit.core.common import envi_header, eps, load_spectrum
 from isofit.core.fileio import IO, write_bil_chunk
 from isofit.core.forward import ForwardModel
 from isofit.core.geometry import Geometry
 from isofit.inversion.inverse import Inversion
-from isofit.inversion.inverse_simple import invert_analytical
+from isofit.inversion.inverse_simple import invert_algebraic, invert_analytical
 from isofit.utils.atm_interpolation import atm_interpolation
+
+PERTURB = 0.03
 
 
 def analytical_line(
@@ -348,19 +350,21 @@ class Worker(object):
                     x_RT = rt_state[r, c, :]
 
                 iv_idx = self.fm.surface.analytical_iv_idx
-                superpixel_state = subs_state[int(lbl[r, c, 0]), 0, iv_idx]
+                init_state = subs_state[int(lbl[r, c, 0]), 0, iv_idx]
+                # init_state += PERTURB
+                # init_state += np.abs(np.random.normal(scale=eps))
 
                 # Concatenate full statevector to use for initialization
                 # This only works with the correct indexing.
                 # Any surface component of x_RT has to be first in the array.
                 # TODO handle indexing in a safer way. See line 126
-                x0 = np.concatenate([superpixel_state, x_RT])
+                x0 = np.concatenate([init_state, x_RT])
                 states, unc = invert_analytical(
                     self.iv.fm,
                     self.iv.winidx,
                     meas,
                     geom,
-                    x0,
+                    np.copy(x0),
                     self.num_iter,
                     self.hash_table,
                     self.hash_size,
@@ -372,15 +376,15 @@ class Worker(object):
 
             # What do we want to do with the negative reflectances?
             state = output_state[r - start_line, ...]
-            mask = np.logical_and.reduce(
-                [
-                    state < self.rfl_bounds[0],
-                    state > self.rfl_bounds[1],
-                    state != -9999,
-                    state != -0.01,
-                ]
-            )
-            state[mask] = 0
+            # mask = np.logical_and.reduce(
+            #     [
+            #         state < self.rfl_bounds[0],
+            #         state > self.rfl_bounds[1],
+            #         state != -9999,
+            #         state != -0.01,
+            #     ]
+            # )
+            # state[mask] = 0
 
             logging.info(f"Analytical line writing line {r}")
 
