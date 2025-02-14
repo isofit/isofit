@@ -56,7 +56,6 @@ class ModtranRT(RadiativeTransferEngine):
         self.resolution_names = ["p1_2013", "01_2013", "05_2013", "15_2013"]
         self.min_samples_per_nm = min_samples_per_nm
         self.max_samples_per_nm = max_samples_per_nm
-        print(f"kwargs: {kwargs}")
 
         super().__init__(engine_config, **kwargs)
 
@@ -523,7 +522,7 @@ class ModtranRT(RadiativeTransferEngine):
         if os.path.isfile(f"{file}.csv"):
             params = self.read_tp7(f"{file}.csv")
             params = self.merge_multiresolution_cases(
-                params, len(self.test_rfls), len(self.wavelength_models)
+                params, len(self.test_rfls), len(self.simulation_wavelength_regions)
             )
             # Only need to run two_albedo method if we have multiple cases
             # still at this point.  Note that at this time, merge_multiresolution_cases
