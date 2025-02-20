@@ -63,6 +63,10 @@ def init(*args, **kwargs):
     Logger.debug("Ray has been disabled for this run")
 
 
+def cluster_resources():
+    return {"CPU": 1, "memory": -1}
+
+
 def get(jobs):
     if hasattr(jobs, "__iter__"):
         return [job.get() for job in jobs]
