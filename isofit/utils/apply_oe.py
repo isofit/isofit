@@ -38,6 +38,7 @@ SUPPORTED_SENSORS = [
     "av3",
     "gao",
     "oci",
+    "tanager",
 ]
 RTM_CLEANUP_LIST = ["*r_k", "*t_k", "*tp7", "*wrn", "*psc", "*plt", "*7sc", "*acd"]
 INVERSION_WINDOWS = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
@@ -206,6 +207,28 @@ def apply_oe(
     """
     use_superpixels = empirical_line or analytical_line
 
+    # Determine if we run in multipart-transmittance (4c) mode
+    if emulator_base is not None:
+        if emulator_base.endswith(".jld2"):
+            multipart_transmittance = False
+        else:
+            emulator_aux_file = os.path.abspath(
+                os.path.splitext(emulator_base)[0] + "_aux.npz"
+            )
+            aux = np.load(emulator_aux_file)
+            if (
+                "transm_down_dir"
+                and "transm_down_dif"
+                and "transm_up_dir"
+                and "transm_up_dif" in aux["rt_quantities"]
+            ):
+                multipart_transmittance = True
+            else:
+                multipart_transmittance = False
+    else:
+        # This is the MODTRAN case. Do we want to enable the 4c mode by default?
+        multipart_transmittance = True
+
     ray.init(
         num_cpus=n_cores,
         _temp_dir=ray_temp_dir,
@@ -322,6 +345,9 @@ def apply_oe(
     elif sensor == "oci":
         # parse flightline ID (PACE OCI assumptions)
         dt = datetime.strptime(paths.fid[9:24], "%Y%m%dT%H%M%S")
+    elif sensor == "tanager":
+        # parse flightline ID (Tanager assumptions)
+        dt = datetime.strptime(paths.fid[:15], "%Y%m%d_%H%M%S")
     elif sensor[:3] == "NA-":
         dt = datetime.strptime(sensor[3:], "%Y%m%d")
     else:
@@ -562,6 +588,7 @@ def apply_oe(
                 uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
                 prebuilt_lut_path=prebuilt_lut,
                 inversion_windows=INVERSION_WINDOWS,
+                multipart_transmittance=multipart_transmittance,
             )
 
             # Run modtran retrieval
@@ -665,6 +692,7 @@ def apply_oe(
             pressure_elevation=pressure_elevation,
             prebuilt_lut_path=prebuilt_lut,
             inversion_windows=INVERSION_WINDOWS,
+            multipart_transmittance=multipart_transmittance,
         )
 
         # Run retrieval
