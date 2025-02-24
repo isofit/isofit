@@ -116,6 +116,7 @@ class Create:
                 dimensions=dims,
                 fill_value=fill_value,
                 chunksizes=chunksizes,
+                compression="zstd",
             )
             var[:] = vals
 
