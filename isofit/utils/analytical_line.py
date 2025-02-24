@@ -372,7 +372,7 @@ class Worker(object):
 @click.option("--atm_file", help="TODO", type=str, default=None)
 @click.option("--loglevel", help="TODO", type=str, default="INFO")
 @click.option("--logfile", help="TODO", type=str, default=None)
-def cli_analytical_line(**kwargs):
+def cli(**kwargs):
     """Execute the analytical line algorithm"""
 
     click.echo("Running analytical line")

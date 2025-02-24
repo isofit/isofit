@@ -370,7 +370,7 @@ def build(example, validate=True):
     is_flag=True,
     help="Disables validating extra installs and proceeds building examples regardless",
 )
-def cli_build(example, no_validate):
+def cli(example, no_validate):
     """\
     Builds the ISOFIT examples
     """
