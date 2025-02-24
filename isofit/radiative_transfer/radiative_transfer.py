@@ -73,6 +73,7 @@ class RadiativeTransfer:
     def __init__(self, full_config: Config):
         config = full_config.forward_model.radiative_transfer
         confIT = full_config.forward_model.instrument
+        confSUR = full_config.forward_model.surface
 
         self.lut_grid = config.lut_grid
         self.statevec_names = config.statevector.get_element_names()
@@ -80,6 +81,18 @@ class RadiativeTransfer:
         self.rt_engines = []
         for idx in range(len(config.radiative_transfer_engines)):
             confRT = config.radiative_transfer_engines[idx]
+
+            """Handle glint model flag from the surface model and
+            the topography model for a multipart-transmittance lut
+            Should be depreciated with #524?
+            """
+            if confRT.multipart_transmittance:
+                confRT.topography_model = True
+
+            confRT.glint_model = confSUR.glint_model
+            if confRT.glint_model:
+                confRT.multipart_transmittance = confRT.glint_model
+                confRT.topography_model = False
 
             if confRT.engine_name not in Engines:
                 raise AttributeError(
@@ -188,8 +201,13 @@ class RadiativeTransfer:
         # Adjacency effects
         # ToDo: we need to think about if we want to obtain the background reflectance from the Geometry object
         #  or from the surface model, i.e., the same way as we do with the target pixel reflectance
-        rho_dir_dif = geom.bg_rfl if geom.bg_rfl is not None else rho_dir_dir
-        rho_dif_dif = geom.bg_rfl if geom.bg_rfl is not None else rho_dir_dir
+
+        rho_dir_dif = (
+            geom.bg_rfl if isinstance(geom.bg_rfl, np.ndarray) else rho_dir_dir
+        )
+        rho_dif_dif = (
+            geom.bg_rfl if isinstance(geom.bg_rfl, np.ndarray) else rho_dif_dir
+        )
 
         # Get needed rt quantities from LUT
         r = self.get_shared_rtm_quantities(x_RT, geom)
@@ -440,51 +458,55 @@ class RadiativeTransfer:
 
         # atmospheric spherical albedo
         s_alb = r["sphalb"]
+        t_total_up = r["transm_up_dir"] + r["transm_up_dif"]
 
         # direct and diffuse downward radiance on the sun-to-surface path
         # note: currently, L_down_dir comes scaled by the TOA solar zenith angle,
         # thus, unscaling and rescaling by local solar zenith angle required
         # to account for surface slope and aspect
-        L_down_tot, L_down_dir, L_down_dif = self.get_L_down_transmitted(x_RT, geom)
-        L_down_dir = L_down_dir / coszen * cos_i
 
-        # upward transmittance
-        t_total_up = r["transm_up_dir"] + r["transm_up_dif"]
+        L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = self.get_L_coupled(
+            r, coszen, cos_i
+        )
+        # Total radiance
+        L_tot = L_dir_dir + L_dif_dir + L_dir_dif + L_dif_dif
+
+        if type(L_tot) != np.ndarray or len(L_tot) == 1:
+            L_tot = self.get_L_down_transmitted(x_RT, geom)[0]
+            # we assume rho_dir_dir = rho_dif_dir = rho_dir_dif = rho_dif_dif
+            # eliminate spherical albedo and one reflectance term from numerator if using 1-component model
+            L_tot = L_tot / (s_alb * rho_dif_dir)
 
         # K surface reflectance
-        drho_scaled_for_multiscattering_drfl = 1.0 / (1.0 - s_alb * rho_dir_dir) ** 2
+        drho_scaled_for_multiscattering_drfl = 1.0 / (
+            (1.0 - (s_alb * rho_dif_dir)) ** 2
+        )
 
-        if type(t_total_up) != np.ndarray or len(t_total_up) == 1:
-            drdn_drfl = L_down_tot * drho_scaled_for_multiscattering_drfl
-        else:
-            drdn_drfl = (
-                (L_down_dir + L_down_dif)
-                * drho_scaled_for_multiscattering_drfl
-                * t_total_up
-            )
+        drdn_drfl = L_tot * drho_scaled_for_multiscattering_drfl
 
         drdn_dLs = t_total_up
 
-        K_surface = (
-            drdn_drfl[:, np.newaxis] * drfl_dsurface
-            + drdn_dLs[:, np.newaxis] * dLs_dsurface
-        )
+        # Initialize the d-matrix of size (# wavelength * # surface states)
+        drdn_dsurface = np.eye(len(self.wl), drfl_dsurface.shape[1])
+        drdn_dsurface = drdn_drfl[:, np.newaxis] * drdn_dsurface
 
+        # TODO is it important to find a way to abstract this?
+        # s.t. we don't need to explicitely propogate both drdn_drfl and drdn_dglint here?
+        # Currently won't scale easily with statevector elements.
         if self.glint_model:
-            # K glint
-            drdn_dgdd = (
-                L_down_dir
-                * (r["transm_up_dir"] + r["transm_up_dif"])
-                / (1.0 - s_alb * rho_dir_dir)
-            )
-            drdn_dgdsf = (
-                L_down_dif
-                * (r["transm_up_dir"] + r["transm_up_dif"])
-                / (1.0 - s_alb * rho_dif_dir)
-            )
+            # Direct term
+            drdn_dgdd = L_dir_dir + L_dir_dif
 
-            K_surface[:, -2] = drdn_dgdd
-            K_surface[:, -1] = drdn_dgdsf
+            # Diffuse term
+            drdn_dgdsf = (L_tot * drho_scaled_for_multiscattering_drfl) - drdn_dgdd
+
+            drdn_dsurface[:, -2] = drdn_dgdd
+            drdn_dsurface[:, -1] = drdn_dgdsf
+
+        drdn_dsurface = np.multiply(drdn_dsurface, drfl_dsurface)
+        drdn_dLs = np.multiply(drdn_dLs[:, np.newaxis], dLs_dsurface)
+
+        K_surface = np.add(drdn_dsurface, drdn_dLs)
 
         return K_RT, K_surface
 
@@ -519,28 +541,6 @@ class RadiativeTransfer:
 
         Kb_RT = np.array(Kb_RT).T
         return Kb_RT
-
-    @staticmethod
-    def fresnel_rf(vza):
-        """Calculates reflectance factor of sky radiance based on the
-        Fresnel equation for unpolarized light as a function of view zenith angle (vza).
-        """
-        if vza > 0.0:
-            n_w = 1.33  # refractive index of water
-            theta = np.deg2rad(vza)
-
-            # calculate angle of refraction using Snell′s law
-            theta_i = np.arcsin(np.sin(theta) / n_w)
-
-            # reflectance factor of sky radiance based on the Fresnel equation for unpolarized light
-            rho_ls = 0.5 * np.abs(
-                ((np.sin(theta - theta_i) ** 2) / (np.sin(theta + theta_i) ** 2))
-                + ((np.tan(theta - theta_i) ** 2) / (np.tan(theta + theta_i) ** 2))
-            )
-        else:
-            rho_ls = 0.02  # the reflectance factor converges to 0.02 for view angles equal to 0.0°
-
-        return rho_ls
 
     def summarize(self, x_RT, geom):
         ret = []

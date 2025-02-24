@@ -20,7 +20,6 @@
 from __future__ import annotations
 
 import numpy as np
-from scipy.io import loadmat
 from scipy.linalg import block_diag, norm
 
 from isofit.core.common import svd_inv
@@ -46,14 +45,13 @@ class MultiComponentSurface(Surface):
 
         # Models are stored as dictionaries in .mat format
         # TODO: enforce surface_file existence in the case of multicomponent_surface
-        model_dict = loadmat(config.surface_file)
-        self.components = list(zip(model_dict["means"], model_dict["covs"]))
+        self.components = list(zip(self.model_dict["means"], self.model_dict["covs"]))
         self.n_comp = len(self.components)
-        self.wl = model_dict["wl"][0]
+        self.wl = self.model_dict["wl"][0]
         self.n_wl = len(self.wl)
 
         # Set up normalization method
-        self.normalize = model_dict["normalize"]
+        self.normalize = self.model_dict["normalize"]
         if self.normalize == "Euclidean":
             self.norm = lambda r: norm(r)
         elif self.normalize == "RMS":
@@ -69,7 +67,7 @@ class MultiComponentSurface(Surface):
         # Reference values are used for normalizing the reflectances.
         # in the VSWIR regime, reflectances are normalized so that the model
         # is agnostic to absolute magnitude.
-        self.refwl = np.squeeze(model_dict["refwl"])
+        self.refwl = np.squeeze(self.model_dict["refwl"])
         self.idx_ref = [np.argmin(abs(self.wl - w)) for w in np.squeeze(self.refwl)]
         self.idx_ref = np.array(self.idx_ref)
 
@@ -84,6 +82,8 @@ class MultiComponentSurface(Surface):
         # Variables retrieved: each channel maps to a reflectance model parameter
         rmin, rmax = 0, 2.0
         self.statevec_names = ["RFL_%04i" % int(w) for w in self.wl]
+        self.idx_surface = np.arange(len(self.statevec_names))
+        self.analytical_iv_idx = np.arange(len(self.statevec_names))
         self.bounds = [[rmin, rmax] for w in self.wl]
         self.scale = [1.0 for w in self.wl]
         self.init = [0.15 * (rmax - rmin) + rmin for v in self.wl]
@@ -196,7 +196,7 @@ class MultiComponentSurface(Surface):
 
         return x_surface[self.idx_lamb]
 
-    def drfl_dsurface(self, x_surface, geom):
+    def drfl_dsurface(self, x_surface, geom, L_down_dir=None, L_down_dif=None):
         """Partial derivative of reflectance with respect to state vector,
         calculated at x_surface."""
 
@@ -235,3 +235,28 @@ class MultiComponentSurface(Surface):
         if len(x_surface) < 1:
             return ""
         return "Component: %i" % self.component(x_surface, geom)
+
+    def analytical_model(
+        self,
+        background,
+        L_down_dir,
+        L_down_dif,
+        L_tot,
+        geom,
+        L_dir_dir=None,
+        L_dir_dif=None,
+        L_dif_dir=None,
+        L_dif_dif=None,
+    ):
+        """
+        Linearization of the surface reflectance terms to use in the
+        AOE inner loop (see Susiluoto, 2025). We set the quadratic
+        spherical albedo term to a constant background, which makes
+        simplifies the linearization
+        background - s * rho_bg
+        """
+        theta = L_tot + (L_tot * background)
+        H = np.eye(self.n_wl, self.n_wl)
+        H = theta[:, np.newaxis] * H
+
+        return H
