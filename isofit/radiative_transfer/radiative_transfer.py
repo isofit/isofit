@@ -201,7 +201,7 @@ class RadiativeTransfer:
         s_alb = r["sphalb"]
 
         # Special case: 1-component model
-        if not isinstance(L_tot, np.ndarray) or len(L_tot) == 1:
+        if not isinstance(L_dir_dir, np.ndarray) or len(L_dir_dir) == 1:
             # we assume rho_dir_dir = rho_dif_dir = rho_dir_dif = rho_dif_dif
             rho_dif_dif = rho_dir_dir
             # eliminate spherical albedo and one reflectance term from numerator if using 1-component model
