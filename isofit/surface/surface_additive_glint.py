@@ -34,6 +34,7 @@ class AdditiveGlintSurface(ThermalSurface):
 
         # TODO: Enforce this attribute in the config, not here (this is hidden)
         self.statevec_names.extend(["GLINT"])
+        self.idx_surface = np.arange(len(self.statevec_names))
         self.scale.extend([1.0])
         self.init.extend([0.005])
         self.bounds.extend([[0, 0.2]])
@@ -45,6 +46,7 @@ class AdditiveGlintSurface(ThermalSurface):
 
         mu = ThermalSurface.xa(self, x_surface, geom)
         mu[self.glint_ind] = self.init[self.glint_ind]
+
         return mu
 
     def Sa(self, x_surface, geom):
@@ -55,6 +57,7 @@ class AdditiveGlintSurface(ThermalSurface):
         Cov = ThermalSurface.Sa(self, x_surface, geom)
         f = np.array([[(10.0 * self.scale[self.glint_ind]) ** 2]])
         Cov[self.glint_ind, self.glint_ind] = f
+
         return Cov
 
     def fit_params(self, rfl_meas, geom, *args):
@@ -74,23 +77,29 @@ class AdditiveGlintSurface(ThermalSurface):
         lamb_est = rfl_meas - glint
         x = ThermalSurface.fit_params(self, lamb_est, geom)
         x[self.glint_ind] = glint
+
         return x
 
     def calc_rfl(self, x_surface, geom, L_down_dir=None, L_down_dif=None):
         """Reflectance (includes specular glint)."""
-
-        # ToDo: Future use of calc_rfl() is to return a direct and diffuse surface reflectance quantity.
-        #  As long as this is not implemented, return the same reflectance vector for both.
         rfl = self.calc_lamb(x_surface, geom) + x_surface[self.glint_ind]
+
         return rfl, rfl
 
-    def drfl_dsurface(self, x_surface, geom):
+    def drfl_dsurface(self, x_surface, geom, L_down_dir=None, L_down_dif=None):
         """Partial derivative of reflectance with respect to state vector,
         calculated at x_surface."""
 
         drfl = self.dlamb_dsurface(x_surface, geom)
         drfl[:, self.glint_ind] = 1
+
         return drfl
+
+    def drdn_dglint(self, L_tot, s_alb, rho_dif_dir):
+        """Partial derivative of radiance with respect to
+        additive glint"""
+
+        return L_tot / ((1.0 - (s_alb * rho_dif_dir)) ** 2)
 
     def dLs_dsurface(self, x_surface, geom):
         """Partial derivative of surface emission with respect to state vector,
@@ -100,7 +109,43 @@ class AdditiveGlintSurface(ThermalSurface):
         dLs_dsurface = super().dLs_dsurface(x_surface, geom)
         dLs_dglint = np.zeros((dLs_dsurface.shape[0], 1))
         dLs_dsurface = np.hstack([dLs_dsurface, dLs_dglint])
+
         return dLs_dsurface
+
+    def drdn_dsurface(
+        self,
+        rho_dif_dir,
+        drfl_dsurface,
+        dLs_dsurface,
+        s_alb,
+        t_total_up,
+        L_tot,
+        L_down_dir,
+    ):
+        """Derivative of radiance with respect to
+        full surface vector. Everything should be at RT wavelength
+        resolution entering this function.
+        """
+
+        # Element wise multiplication between
+        # drdn_drfl (vector) and eye matrix to construct
+        # drdn_drfl (diagonal)
+        drdn_drfl = np.multiply(
+            self.drdn_drfl(L_tot, s_alb, rho_dif_dir)[:, np.newaxis],
+            np.eye(*drfl_dsurface.shape),
+        )
+        # Glint derivatives
+        drdn_dglint = self.drdn_dglint(L_tot, s_alb, rho_dif_dir)
+        # Last columns is glint derivative
+        drdn_drfl[:, -1] = drdn_dglint
+
+        # Chain rule to get derivative w.r.t. surface complete state
+        drdn_dsurface = np.multiply(drdn_drfl, drfl_dsurface)
+
+        # Get the derivative w.r.t. surface emission
+        drdn_dLs = np.multiply(self.drdn_dLs(t_total_up)[:, np.newaxis], dLs_dsurface)
+
+        return np.add(drdn_dsurface, drdn_dLs)
 
     def summarize(self, x_surface, geom):
         """Summary of state vector."""
