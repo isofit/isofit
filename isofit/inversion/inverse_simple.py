@@ -267,7 +267,7 @@ def invert_analytical(
     s = r["sphalb"]
 
     # Get all the surface quantities
-    (rho_dir_dir, rho_dif_dir, _, Ls, _) = fm.upsample_surface_to_RT(
+    rho_dir_dir, rho_dif_dir, Ls = fm.upsample_surface_vectors_to_RT(
         x_surface, geom, L_down_dir, L_down_dif
     )
     # background conditions

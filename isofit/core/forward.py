@@ -184,35 +184,48 @@ class ForwardModel:
 
         return block_diag(Sa_surface, Sa_RT, Sa_instrument)
 
-    def upsample_surface_to_RT(self, x_surface, geom, L_down_dir, L_down_dif):
+    def upsample_surface_vectors_to_RT(self, x_surface, geom, L_down_dir, L_down_dif):
         """Upsample the surface quantities to the RT wavelength grid.
         The forward calculation is done at RT wavelengths.
         Then downsampled to instrument.
         """
-        # Call surface reflectance and derivative w.r.t. surface, upsample
+        # Call surface reflectance w.r.t. surface, upsample
         rho_dir_dir, rho_dif_dir = self.calc_rfl(
             x_surface, geom, L_down_dir, L_down_dif
         )
         rho_dir_dir_hi = self.upsample(self.surface.wl, rho_dir_dir)
         rho_dif_dir_hi = self.upsample(self.surface.wl, rho_dif_dir)
 
+        # Call surface emission, upsample
+        Ls = self.calc_Ls(x_surface, geom)
+        Ls_hi = self.upsample(self.surface.wl, Ls)
+
+        return (
+            rho_dir_dir_hi,
+            rho_dif_dir_hi,
+            Ls_hi,
+        )
+
+    def upsample_surface_derivatives_to_RT(
+        self, x_surface, geom, L_down_dir, L_down_dif
+    ):
+        """Upsample the surface quantities to the RT wavelength grid.
+        The forward calculation is done at RT wavelengths.
+        Then downsampled to instrument.
+        """
+        # Call surface reflectance derivative w.r.t. surface, upsample
         drfl_dsurface_hi = self.upsample(
             self.surface.wl,
             self.surface.drfl_dsurface(x_surface, geom, L_down_dir, L_down_dif).T,
         ).T
 
-        # Call surface emission and derivative w.r.t. surface, upsample
-        Ls = self.calc_Ls(x_surface, geom)
-        Ls_hi = self.upsample(self.surface.wl, Ls)
+        # Call surface emission w.r.t. surface, upsample
         dLs_dsurface_hi = self.upsample(
             self.surface.wl, self.surface.dLs_dsurface(x_surface, geom).T
         ).T
 
         return (
-            rho_dir_dir_hi,
-            rho_dif_dir_hi,
             drfl_dsurface_hi,
-            Ls_hi,
             dLs_dsurface_hi,
         )
 
@@ -272,8 +285,8 @@ class ForwardModel:
         ) = self.RT.calc_RT_quantities(x_RT, geom)
 
         # Get Surface quantities - handles upsampling
-        (rho_dir_dir, rho_dif_dir, drfl_dsurface, Ls, dLs_dsurface) = (
-            self.upsample_surface_to_RT(x_surface, geom, L_down_dir, L_down_dif)
+        rho_dir_dir, rho_dif_dir, Ls = self.upsample_surface_vectors_to_RT(
+            x_surface, geom, L_down_dir, L_down_dif
         )
 
         rdn = self.calc_rdn(
@@ -355,8 +368,12 @@ class ForwardModel:
         The current implementation assumes a constant apparent reflectance,
         and therefore constant surface-atmosphere coupled terms (e.g. g_dir and g_dif).
         """
-        (rho_dir_dir, rho_dif_dir, drfl_dsurface, Ls, dLs_dsurface) = (
-            self.upsample_surface_to_RT(x_surface, geom, L_down_dir, L_down_dif)
+        rho_dir_dir, rho_dif_dir, Ls = self.upsample_surface_vectors_to_RT(
+            x_surface, geom, L_down_dir, L_down_dif
+        )
+
+        drfl_dsurface, dLs_dsurface = self.upsample_surface_derivatives_to_RT(
+            x_surface, geom, L_down_dir, L_down_dif
         )
 
         # Need to pass calc rdn into instrument derivative
@@ -434,8 +451,8 @@ class ForwardModel:
         ) = self.RT.calc_RT_quantities(x_RT, geom)
 
         # Get Surface quantities and sample them at RT wavelengths
-        (rho_dir_dir, rho_dif_dir, drfl_dsurface, Ls, dLs_dsurface) = (
-            self.upsample_surface_to_RT(x_surface, geom, L_down_dir, L_down_dif)
+        rho_dir_dir, rho_dif_dir, Ls = self.upsample_surface_vectors_to_RT(
+            x_surface, geom, L_down_dir, L_down_dif
         )
 
         rdn = self.calc_rdn(
