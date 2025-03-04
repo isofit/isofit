@@ -51,10 +51,10 @@ class GlintModelSurface(MultiComponentSurface):
 
         # To accomodate for the fact that we don't analytically solve
         # for the diffuse glint term used in the analytical line
-        self.analytical_interp_names = ["SKY_GLINT"]
-        # self.analytical_interp_names = []
-        self.analytical_iv_idx = np.arange(len(self.statevec_names))[:-1]
-        # self.analytical_iv_idx = np.arange(len(self.statevec_names))
+        # self.analytical_interp_names = ["SKY_GLINT"]
+        self.analytical_interp_names = []
+        # self.analytical_iv_idx = np.arange(len(self.statevec_names))[:-1]
+        self.analytical_iv_idx = np.arange(len(self.statevec_names))
 
         self.f = np.array(
             [[(1000000 * np.array(self.scale[self.glint_ind :])) ** 2]]
@@ -243,9 +243,9 @@ class GlintModelSurface(MultiComponentSurface):
         H = np.append(H, gam, axis=1)
 
         # Diffuse portion - UNUSED
-        # ep = (L_dif_dir + L_dif_dif) + ((L_tot * background * g_dif) / (1 - background))
-        # ep = np.reshape(ep, (len(ep), 1))
-        # H = np.append(H, ep, axis=1)
+        ep = (L_dif_dir + L_dif_dif) + ((L_tot * background * g_dif) / (1 - background))
+        ep = np.reshape(ep, (len(ep), 1))
+        H = np.append(H, ep, axis=1)
         # TODO test adding this back in
 
         return H
