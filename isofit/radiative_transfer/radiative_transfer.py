@@ -216,6 +216,14 @@ class RadiativeTransfer:
             # eliminate spherical albedo and one reflectance term from numerator if using 1-component model
             L_tot = L_tot / (s_alb * rho_dif_dif)
 
+            if len(s_alb[s_alb == 0]):
+                Logger.debug(
+                    "Zeros found in LUT Spherical albedo (s_alb). Setting L_tot = 0."
+                )
+                # Confirm what to set this too. Shouldn't matter much.
+                # if s_alb = 0, (L_tot * s_alb * rho_dif_dif**2) = 0
+                L_tot[s_alb == 0] = 0
+
         # Thermal transmittance
         L_up = Ls * (r["transm_up_dir"] + r["transm_up_dif"])
 
