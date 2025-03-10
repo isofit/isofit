@@ -128,7 +128,7 @@ class Example:
         Creates configs based off the template files from an example directory
         """
         print(f"Generating configs")
-        templates = list((self.path / "templates").glob("*"))
+        templates = list((self.path / "templates").glob("*.json"))
 
         if not templates:
             print(
