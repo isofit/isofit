@@ -281,6 +281,7 @@ class Ini:
         converted back using Ini.fromTemplate(). Template values are in the form of
         "{env.[value]}".
 
+        \b
         Parameters
         ----------
         data : str | dict
@@ -299,16 +300,14 @@ class Ini:
         **kwargs : dict
             Additional strings to replace. The values are replaced in a string with the
             key of the kwarg. For example:
-
             >>> kwargs = {"xyz": "abc"}
             >>> data["some_key"] = "replace abc here"
             will be replaced as:
             >>> data["some_key"] = "replace {xyz} here"
-
             This is to be used with Ini.fromTemplate to replace values that are not
             found in the ini object
 
-
+        \b
         Returns
         -------
         data : dict
@@ -353,6 +352,7 @@ class Ini:
         real value from the ini. Template values are in the form of "{env.[value]}".
         This is an in-place operation.
 
+        \b
         Parameters
         ----------
         data : str | dict
@@ -363,21 +363,20 @@ class Ini:
             to another file. If the input file ends with ".tmpl" then it will simply be
             cut. If it doesn't or already exists, then the output filename will be the
             input filename prepended with `prepend` value.
-        prepend : str, default="replaced"
+        prepend : str, default=None
             Prepend a string to the output filename. If not set and the input filename
             doesn't end with ".tmpl", then this is auto-set to "replaced"
         **kwargs : dict
             Additional strings to replace. The values are replaced in a string with the
             key of the kwarg. For example:
-
             >>> kwargs = {"xyz": "abc"}
             >>> data["some_key"] = "replace {xyz} here"
             will be replaced as:
             >>> data["some_key"] = "replace abc here"
-
             This is to be used with Ini.toTemplate to replace values that are not found
             in the ini object
 
+        \b
         Returns
         -------
         data : dict
@@ -413,10 +412,11 @@ class Ini:
                 if out.exists() and not prepend:
                     prepend = "replaced"
             elif not prepend:
+                out = file
                 prepend = "replaced"
 
             if prepend:
-                out = file.with_name(f"{prepend}.{file.name}")
+                out = out.with_name(f"{prepend}.{out.name}")
 
             with open(out, "w") as f:
                 f.write(json.dumps(data, indent=4))
