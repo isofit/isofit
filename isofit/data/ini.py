@@ -20,7 +20,7 @@ class Ini:
     # Additional keys with default values
     _keys: Dict[str, str] = {"srtmnet.file": "", "srtmnet.aux": ""}
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.reset()
         self.load()
 
@@ -59,7 +59,7 @@ class Ini:
     def __iter__(self) -> Iterable:
         return iter(self.config[self.section])
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"[{self.section}]\n" + "\n".join(
             [f"{key} = {value}" for key, value in self.items()]
         )
@@ -67,11 +67,29 @@ class Ini:
     def keys(self) -> Iterable[str]:
         return iter(self.config[self.section])
 
-    def items(self) -> Iterable[Tuple[str, str]]:
+    def items(self, kind: str = None) -> Iterable[Tuple[str, str]]:
         """
         Passthrough to the items() function on the working section of the config.
+
+        Parameters
+        ----------
+        kind : "dirs" | "keys" | None
+            Returns an iterable for the specific items:
+            - "dirs" only keys in Ini._dirs
+            - "dirs" only keys in Ini._keys
+            - None returns combined both
         """
-        return self.config[self.section].items()
+        items = self.config[self.section].items()
+        if kind == "dirs":
+            for key, value in items:
+                if key in self._dirs:
+                    yield key, value
+        elif kind == "keys":
+            for key, value in items:
+                if key in self._keys:
+                    yield key, value
+        else:
+            yield from items
 
     def changeBase(self, base: str) -> None:
         """
@@ -88,7 +106,7 @@ class Ini:
         for key in self._dirs:
             self.changePath(key, self.base / key)
 
-    def changeKey(self, key: str, value: str = ""):
+    def changeKey(self, key: str, value: str = "") -> None:
         """
         Change the value associated with the specified key in the CONFIG[SECTION].
 
@@ -255,7 +273,63 @@ class Ini:
 
         return path
 
-    def replace(self, data: str | dict, save: bool = True, prepend: str = None) -> dict:
+    def toTemplate(data: str | dict, replace="dirs", save: bool = True) -> dict:
+        """
+        Recursively converts string values in a dict to be template values which can be
+        converted back using Ini.fromTemplate(). Template values are in the form of
+        "{env.[value]}".
+
+        Parameters
+        ----------
+        data : str | dict
+            The dictionary to walk over and update values. If string, checks if this
+            exists as a file and loads that in as the data dict
+        replace : "dirs" | "keys" | None, default="dirs"
+            Defines what kind of values from the ini to replace in strings:
+            - "dirs" only replace directory paths
+            - "keys" only replace key strings
+            - None replaces both
+            Recommended to only use "dirs" to remain consistent. "keys" can have
+            unintended consequences and may replace more than it should
+        save : bool, default=True
+            If the data was a file and this is enabled, saves the converted data dict
+            to another file. The new file will simply append ".tmpl" to its name
+
+        Returns
+        -------
+        data : dict
+            In-place replaced string values with template values
+        """
+        file = None
+        if isinstance(data, str):
+            if (file := Path(data)).exists():
+                with open(data, "rb") as f:
+                    data = json.load(f)
+            else:
+                raise FileNotFoundError("If `data` is not a dict, it must be a file")
+
+        for key, value in data.items():
+            if isinstance(value, dict):
+                self.toTemplate(value)
+            elif isinstance(value, str):
+                # Only replace paths, not keys to remain consistent
+                for k, v in self.items(replace):
+                    if v in value:
+                        value = value.replace(v, "{env." + k + "}")
+                data[key] = value
+
+        if save and file:
+            out = file.with_suffix(f"{file.suffix}.tmpl")
+            with open(out, "w") as f:
+                f.write(json.dumps(data, indent=4))
+
+            Logger.debug(f"Saved converted json to: {out}")
+
+        return data
+
+    def fromTemplate(
+        self, data: str | dict, save: bool = True, prepend: str = None
+    ) -> dict:
         """
         Recursively replaces the template values in found in string values with the
         real value from the ini. Template values are in the form of "{env.[value]}".
@@ -269,8 +343,8 @@ class Ini:
         save : bool, default=True
             If the data was a file and this is enabled, saves the converted data dict
             to another file. If the input file ends with ".tmpl" then it will simply be
-            cut. If it doesn't, then the output filename will be the input filename
-            prepended with `prepend` value
+            cut. If it doesn't or already exists, then the output filename will be the
+            input filename prepended with `prepend` value.
         prepend : str, default="replaced"
             Prepend a string to the output filename. If not set and the input filename
             doesn't end with ".tmpl", then this is auto-set to "replaced"
@@ -291,16 +365,19 @@ class Ini:
 
         for key, value in data.items():
             if isinstance(value, dict):
-                self.replace(value)
+                self.fromTemplate(value)
             elif isinstance(value, str):
                 # Find all "{env.[value]}"
                 for dir in re.findall(r"{env\.(\w+)}", value):
                     # Replace in-place
-                    data[key] = value.replace("{env." + dir + "}", self[dir])
+                    value = value.replace("{env." + dir + "}", self[dir])
+                data[key] = value
 
         if save and file:
             if file.suffix == ".tmpl":
                 out = file.with_suffix("")
+                if out.exists() and not prepend:
+                    prepend = "replaced"
             elif not prepend:
                 prepend = "replaced"
 
@@ -314,7 +391,7 @@ class Ini:
 
         return data
 
-    def reset(self, save: bool = False):
+    def reset(self, save: bool = False) -> None:
         """
         Resets the object to the defaults defined by ISOFIT
 

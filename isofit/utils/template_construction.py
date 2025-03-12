@@ -673,14 +673,13 @@ def build_presolve_config(
         isofit_config_h2o["input"]["obs_file"] = paths.obs_working_path
 
     # write presolve config
-    out = paths.h2o_config_path + ".tmpl"
-    with open(out, "w") as fout:
+    with open(paths.h2o_config_path, "w") as fout:
         fout.write(
             json.dumps(isofit_config_h2o, cls=SerialEncoder, indent=4, sort_keys=True)
         )
 
-    # Convert the template config to a full one
-    env.replace(out)
+    # Create a template version of the config
+    env.toTemplate(paths.h2o_config_path)
 
 
 def build_main_config(
@@ -1031,16 +1030,15 @@ def build_main_config(
         ] = paths.rdn_factors_path
 
     # write main config file
-    out = paths.isofit_full_config_path + ".tmpl"
-    with open(out, "w") as fout:
+    with open(paths.isofit_full_config_path, "w") as fout:
         fout.write(
             json.dumps(
                 isofit_config_modtran, cls=SerialEncoder, indent=4, sort_keys=True
             )
         )
 
-    # Convert the template config to a full one
-    env.replace(out)
+    # Create a template version of the config
+    env.toTemplate(paths.isofit_full_config_path)
 
 
 def get_lut_subset(vals):
