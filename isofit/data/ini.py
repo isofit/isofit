@@ -273,7 +273,9 @@ class Ini:
 
         return path
 
-    def toTemplate(self, data: str | dict, replace="dirs", save: bool = True) -> dict:
+    def toTemplate(
+        self, data: str | dict, replace="dirs", save: bool = True, **kwargs
+    ) -> dict:
         """
         Recursively converts string values in a dict to be template values which can be
         converted back using Ini.fromTemplate(). Template values are in the form of
@@ -294,6 +296,18 @@ class Ini:
         save : bool, default=True
             If the data was a file and this is enabled, saves the converted data dict
             to another file. The new file will simply append ".tmpl" to its name
+        **kwargs : dict
+            Additional strings to replace. The values are replaced in a string with the
+            key of the kwarg. For example:
+
+            >>> kwargs = {"xyz": "abc"}
+            >>> data["some_key"] = "replace abc here"
+            will be replaced as:
+            >>> data["some_key"] = "replace {xyz} here"
+
+            This is to be used with Ini.fromTemplate to replace values that are not
+            found in the ini object
+
 
         Returns
         -------
@@ -312,10 +326,14 @@ class Ini:
             if isinstance(value, dict):
                 self.toTemplate(value)
             elif isinstance(value, str):
-                # Only replace paths, not keys to remain consistent
                 for k, v in self.items(replace):
                     if v in value:
                         value = value.replace(v, "{env." + k + "}")
+
+                for k, v in kwargs.items():
+                    if v in value:
+                        value = value.replace(v, "{" + k + "}")
+
                 data[key] = value
 
         if save and file:
@@ -328,7 +346,7 @@ class Ini:
         return data
 
     def fromTemplate(
-        self, data: str | dict, save: bool = True, prepend: str = None
+        self, data: str | dict, save: bool = True, prepend: str = None, **kwargs
     ) -> dict:
         """
         Recursively replaces the template values in found in string values with the
@@ -348,6 +366,17 @@ class Ini:
         prepend : str, default="replaced"
             Prepend a string to the output filename. If not set and the input filename
             doesn't end with ".tmpl", then this is auto-set to "replaced"
+        **kwargs : dict
+            Additional strings to replace. The values are replaced in a string with the
+            key of the kwarg. For example:
+
+            >>> kwargs = {"xyz": "abc"}
+            >>> data["some_key"] = "replace {xyz} here"
+            will be replaced as:
+            >>> data["some_key"] = "replace abc here"
+
+            This is to be used with Ini.toTemplate to replace values that are not found
+            in the ini object
 
         Returns
         -------
@@ -371,6 +400,11 @@ class Ini:
                 for dir in re.findall(r"{env\.(\w+)}", value):
                     # Replace in-place
                     value = value.replace("{env." + dir + "}", self[dir])
+
+                for extra in re.findall(r"{(\w+)}", value):
+                    if extra in kwargs:
+                        value = value.replace("{" + extra + "}", kwargs[extra])
+
                 data[key] = value
 
         if save and file:

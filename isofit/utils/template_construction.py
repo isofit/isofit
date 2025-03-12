@@ -671,7 +671,7 @@ def build_presolve_config(
         )
 
     # Create a template version of the config
-    env.toTemplate(paths.h2o_config_path)
+    env.toTemplate(paths.h2o_config_path, working_directory=paths.working_directory)
 
 
 def build_main_config(
@@ -1030,7 +1030,9 @@ def build_main_config(
         )
 
     # Create a template version of the config
-    env.toTemplate(paths.isofit_full_config_path)
+    env.toTemplate(
+        paths.isofit_full_config_path, working_directory=paths.working_directory
+    )
 
 
 def get_lut_subset(vals):
