@@ -4,7 +4,9 @@ ISOFIT environment module
 
 from __future__ import annotations
 
+import json
 import logging
+import re
 from configparser import ConfigParser
 from pathlib import Path
 
@@ -198,7 +200,9 @@ class Ini:
             except:
                 Logger.exception(f"Failed to dump ini to file: {self.ini}")
 
-    def path(self, dir: str, *path: List[str], key: str = None) -> Path:
+    def path(
+        self, dir: str, *path: List[str], key: str = None, template: bool = False
+    ) -> Path:
         """
         Retrieves a path under one of the env directories and validates the path exists.
 
@@ -211,6 +215,9 @@ class Ini:
         key : str, default=None
             Optional key value to append to the resolved path. Assumes the path is a
             directory and the key will be a file name
+        template : bool, default=False
+            Returns the path as a template string. The path will still be validated,
+            but the return will be "{env.[dir]}/*path", to be used with Ini.replace
 
         Returns
         -------
@@ -232,18 +239,80 @@ class Ini:
         """
         self.validate([dir], debug=Logger.debug, error=Logger.error)
 
-        path = Path(*[self[dir], *path]).resolve()
+        if template:
+            path = Path("{env." + dir + "}", *path)
+        else:
+            path = Path(self[dir], *path).resolve()
 
         # Retrieve the value stored for the given key if it's set
         if key and self[key]:
             path /= self[key]
 
-        if not path.exists():
+        if not template and not path.exists():
             Logger.error(
                 f"The following path does not exist, please verify your installation environment: {path}"
             )
 
         return path
+
+    def replace(self, data: str | dict, save: bool = True, prepend: str = None) -> dict:
+        """
+        Recursively replaces the template values in found in string values with the
+        real value from the ini. Template values are in the form of "{env.[value]}".
+        This is an in-place operation.
+
+        Parameters
+        ----------
+        data : str | dict
+            The dictionary to walk over and update values. If string, checks if this
+            exists as a file and loads that in as the data dict
+        save : bool, default=True
+            If the data was a file and this is enabled, saves the converted data dict
+            to another file. If the input file ends with ".tmpl" then it will simply be
+            cut. If it doesn't, then the output filename will be the input filename
+            prepended with `prepend` value
+        prepend : str, default="replaced"
+            Prepend a string to the output filename. If not set and the input filename
+            doesn't end with ".tmpl", then this is auto-set to "replaced"
+
+        Returns
+        -------
+        data : dict
+            In-place replaced template values with actual from a loaded ini
+        """
+        # On the first call, this may be a file so load it
+        file = None
+        if isinstance(data, str):
+            if (file := Path(data)).exists():
+                with open(data, "rb") as f:
+                    data = json.load(f)
+            else:
+                raise FileNotFoundError("If `data` is not a dict, it must be a file")
+
+        for key, value in data.items():
+            if isinstance(value, dict):
+                self.replace(value)
+            elif isinstance(value, str):
+                # Find all "{env.[value]}"
+                for dir in re.findall(r"{env\.(\w+)}", value):
+                    # Replace in-place
+                    data[key] = value.replace("{env." + dir + "}", self[dir])
+
+        if save and file:
+            if file.suffix == ".tmpl":
+                out = file.with_suffix("")
+            elif not prepend:
+                prepend = "replaced"
+
+            if prepend:
+                out = file.with_name(f"{prepend}.{file.name}")
+
+            with open(out, "w") as f:
+                f.write(json.dumps(data, indent=4))
+
+            Logger.debug(f"Saved converted json to: {out}")
+
+        return data
 
     def reset(self, save: bool = False):
         """
