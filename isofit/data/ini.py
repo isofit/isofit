@@ -273,7 +273,7 @@ class Ini:
 
         return path
 
-    def toTemplate(data: str | dict, replace="dirs", save: bool = True) -> dict:
+    def toTemplate(self, data: str | dict, replace="dirs", save: bool = True) -> dict:
         """
         Recursively converts string values in a dict to be template values which can be
         converted back using Ini.fromTemplate(). Template values are in the form of
