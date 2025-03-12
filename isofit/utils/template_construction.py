@@ -198,33 +198,27 @@ class Pathnames:
         self.sixs_path = os.getenv("SIXS_DIR", env.sixs)
 
         if sensor == "avcl":
-            self.noise_path = str(env.path("data", "avirisc_noise.txt", template=True))
+            self.noise_path = str(env.path("data", "avirisc_noise.txt"))
         elif sensor == "oci":
-            self.noise_path = str(
-                env.path("data", "oci", "oci_noise.txt", template=True)
-            )
+            self.noise_path = str(env.path("data", "oci", "oci_noise.txt"))
         elif sensor == "emit":
-            self.noise_path = str(env.path("data", "emit_noise.txt", template=True))
+            self.noise_path = str(env.path("data", "emit_noise.txt"))
             if self.input_channelized_uncertainty_path is None:
                 self.input_channelized_uncertainty_path = str(
-                    env.path("data", "emit_osf_uncertainty.txt", template=True)
+                    env.path("data", "emit_osf_uncertainty.txt")
                 )
             if self.input_model_discrepancy_path is None:
                 self.input_model_discrepancy_path = str(
-                    env.path("data", "emit_model_discrepancy.mat", template=True)
+                    env.path("data", "emit_model_discrepancy.mat")
                 )
         elif sensor == "tanager":
-            self.noise_path = str(
-                env.path("data", "tanager1_noise_20241016.txt", template=True)
-            )
+            self.noise_path = str(env.path("data", "tanager1_noise_20241016.txt"))
         else:
             self.noise_path = None
             logging.info("no noise path found, proceeding without")
             # quit()
 
-        self.earth_sun_distance_path = str(
-            env.path("data", "earth_sun_distance.txt", template=True)
-        )
+        self.earth_sun_distance_path = str(env.path("data", "earth_sun_distance.txt"))
 
         irr_path = [
             "examples",
@@ -235,11 +229,9 @@ class Pathnames:
         if sensor == "oci":
             irr_path = ["data", "oci", "tsis_f0_0p1.txt"]
 
-        self.irradiance_file = str(env.path(*irr_path, template=True))
+        self.irradiance_file = str(env.path(*irr_path))
 
-        self.aerosol_tpl_path = str(
-            env.path("data", "aerosol_template.json", template=True)
-        )
+        self.aerosol_tpl_path = str(env.path("data", "aerosol_template.json"))
         self.rdn_factors_path = None
         if rdn_factors_path is not None:
             self.rdn_factors_path = abspath(rdn_factors_path)
@@ -1183,7 +1175,7 @@ def load_climatology(
 
     """
 
-    aerosol_model_path = str(env.path("data", "aerosol_model.txt", template=True))
+    aerosol_model_path = str(env.path("data", "aerosol_model.txt"))
     aerosol_state_vector = {}
     aerosol_lut_grid = {}
     aerosol_lut_ranges = [
