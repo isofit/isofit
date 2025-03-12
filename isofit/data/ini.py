@@ -324,7 +324,7 @@ class Ini:
 
         for key, value in data.items():
             if isinstance(value, dict):
-                self.toTemplate(value)
+                self.toTemplate(value, **kwargs)
             elif isinstance(value, str):
                 for k, v in self.items(replace):
                     if v in value:
@@ -394,7 +394,7 @@ class Ini:
 
         for key, value in data.items():
             if isinstance(value, dict):
-                self.fromTemplate(value)
+                self.fromTemplate(value, **kwargs)
             elif isinstance(value, str):
                 # Find all "{env.[value]}"
                 for dir in re.findall(r"{env\.(\w+)}", value):
