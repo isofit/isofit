@@ -199,6 +199,7 @@ class RadiativeTransfer:
 
         # Atmospheric spherical albedo
         s_alb = r["sphalb"]
+        atm_surface_scattering = s_alb * rho_dif_dif
 
         # Radiance terms along all optical paths
         L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = self.get_L_coupled(
@@ -214,7 +215,7 @@ class RadiativeTransfer:
             # we assume rho_dir_dir = rho_dif_dir = rho_dir_dif = rho_dif_dif
             rho_dif_dif = rho_dir_dir
             # eliminate spherical albedo and one reflectance term from numerator if using 1-component model
-            L_tot = L_tot / (s_alb * rho_dif_dif)
+            atm_surface_scattering = 1
 
         # Thermal transmittance
         L_up = Ls * (r["transm_up_dir"] + r["transm_up_dif"])
@@ -256,7 +257,7 @@ class RadiativeTransfer:
             + L_dif_dir * rho_dif_dir
             + L_dir_dif * rho_dir_dif
             + L_dif_dif * rho_dif_dif
-            + (L_tot * s_alb * rho_dif_dif**2) / (1 - s_alb * rho_dif_dif)
+            + (L_tot * atm_surface_scattering * rho_dif_dif) / (1 - s_alb * rho_dif_dif)
             + L_up
         )
 
