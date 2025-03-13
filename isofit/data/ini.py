@@ -13,6 +13,33 @@ from pathlib import Path
 Logger = logging.getLogger(__file__)
 
 
+def getWorkingDir(config):
+    """
+    Attempts to detect if a configuration file sits in an ISOFIT working_directory
+
+    Parameters
+    ----------
+    config : pathlib.Path
+        Path to a config json file
+
+    Returns
+    -------
+    wd : pathlib.Path | None
+        Path to the working directory, if it's detected to be valid
+    """
+    # [working_directory]/config/config.json
+    #              parent/parent/config.json
+    wd = config.parent.parent.resolve()
+
+    dirs = ("config", "data", "input", "lut_full", "output")
+    for dir in dirs:
+        if not (wd / dir).exists():
+            return None
+
+    print(f"Discovered working_directory to be: {wd}")
+    return wd
+
+
 class Ini:
     # Default directories to expect
     _dirs: List[str] = ["data", "examples", "imagecube", "srtmnet", "sixs", "plots"]
@@ -310,14 +337,20 @@ class Ini:
         \b
         Returns
         -------
-        data : dict
+        data : dict | pathlib.Path
             In-place replaced string values with template values
+            If saved as a new file, returns the path instead
         """
         file = None
         if isinstance(data, str):
             if (file := Path(data)).exists():
                 with open(data, "rb") as f:
                     data = json.load(f)
+
+                # Attempt to discover the working directory if it's in an ISOFIT output
+                if "working_directory" not in kwargs:
+                    if wd := getWorkingDir(file):
+                        kwargs["working_directory"] = wd
             else:
                 raise FileNotFoundError("If `data` is not a dict, it must be a file")
 
@@ -341,6 +374,7 @@ class Ini:
                 f.write(json.dumps(data, indent=4))
 
             Logger.debug(f"Saved converted json to: {out}")
+            return out
 
         return data
 
@@ -379,8 +413,9 @@ class Ini:
         \b
         Returns
         -------
-        data : dict
+        data : dict | pathlib.Path
             In-place replaced template values with actual from a loaded ini
+            If saved as a new file, returns the path instead
         """
         # On the first call, this may be a file so load it
         file = None
@@ -388,6 +423,11 @@ class Ini:
             if (file := Path(data)).exists():
                 with open(data, "rb") as f:
                     data = json.load(f)
+
+                # Attempt to discover the working directory if it's in an ISOFIT output
+                if "working_directory" not in kwargs:
+                    if wd := getWorkingDir(file):
+                        kwargs["working_directory"] = wd
             else:
                 raise FileNotFoundError("If `data` is not a dict, it must be a file")
 
@@ -402,7 +442,7 @@ class Ini:
 
                 for extra in re.findall(r"{(\w+)}", value):
                     if extra in kwargs:
-                        value = value.replace("{" + extra + "}", kwargs[extra])
+                        value = value.replace("{" + extra + "}", str(kwargs[extra]))
 
                 data[key] = value
 
@@ -422,6 +462,7 @@ class Ini:
                 f.write(json.dumps(data, indent=4))
 
             Logger.debug(f"Saved converted json to: {out}")
+            return out
 
         return data
 

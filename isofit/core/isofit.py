@@ -67,6 +67,9 @@ class Isofit:
         self.cols = None
         self.config = None
 
+        if config_file.endswith(".tmpl"):
+            config_file = env.fromTemplate(config_file)
+
         # Load configuration file
         self.config = configs.create_new_config(config_file)
         self.config.get_config_errors()
