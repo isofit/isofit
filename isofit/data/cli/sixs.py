@@ -55,7 +55,7 @@ def build(directory):
         f"make -j {os.cpu_count()}",
         shell=True,
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        # stderr=subprocess.PIPE,
         cwd=directory,
     )
 
@@ -127,7 +127,9 @@ def validate(path=None, debug=print, error=print, **_):
         return False
 
     if not (path / f"sixsV2.1").exists():
-        error("[x] 6S does not appear to be installed correctly")
+        error(
+            "[x] 6S is missing the built 'sixsV2.1', this is likely caused by make failing"
+        )
         return False
 
     debug("[✓] Path is valid")
@@ -172,10 +174,10 @@ def download_cli(**kwargs):
         - `isofit download sixs --path /path/sixs`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
     It is recommended to use the first style so the download path is remembered in the future.
     """
-    if validate_:
-        validate(**kwargs)
-    else:
+    if kwargs.get("overwrite"):
         download(**kwargs)
+    else:
+        update(**kwargs)
 
 
 @shared.validate.command(name=CMD)

@@ -139,15 +139,16 @@ class Example:
         configs = self.path / "configs"
         configs.mkdir(parents=True, exist_ok=True)
         for template in templates:
-            print(f"Creating {template.name}")
-
             if template.is_dir():
                 output = configs / template.name
                 output.mkdir(parents=True, exist_ok=True)
 
-                for tmpl in template.glob("*"):
+                for tmpl in template.glob("*.json"):
+                    print(f"Creating {tmpl.parent}/{tmpl.name}")
                     updateTemplate(tmpl, output)
-            else:
+
+            elif template.suffix == ".json":
+                print(f"Creating {template.name}")
                 updateTemplate(template, configs)
 
 
