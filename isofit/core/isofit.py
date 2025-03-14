@@ -37,6 +37,7 @@ from isofit import checkNumThreads, ray
 from isofit.configs import configs
 from isofit.core.fileio import IO
 from isofit.core.forward import ForwardModel
+from isofit.data import env
 from isofit.inversion import Inversion
 
 
