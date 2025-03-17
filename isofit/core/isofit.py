@@ -288,7 +288,7 @@ class Worker(object):
     ),
     default="INFO",
 )
-def cli_run(config_file, level):
+def cli(config_file, level):
     """Execute ISOFIT core"""
 
     click.echo(f"Running ISOFIT(config_file={config_file!r}, level={level})")

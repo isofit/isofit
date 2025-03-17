@@ -77,6 +77,7 @@ def apply_oe(
     prebuilt_lut=None,
     no_min_lut_spacing=False,
     inversion_windows=None,
+    config_only=False,
 ):
     """\
     Applies OE over a flightline using a radiative transfer engine. This executes
@@ -190,6 +191,9 @@ def apply_oe(
         Override the default inversion windows.  Will supercede any sensor specific
         defaults that are in place.
         Must be in 2-item tuples
+    config_only : bool, default=False
+        Generates the configuration then exits before execution. If presolve is
+        enabled, that run will still occur.
 
     \b
     References
@@ -695,6 +699,10 @@ def apply_oe(
             multipart_transmittance=multipart_transmittance,
         )
 
+        if config_only:
+            logging.info("`config_only` enabled, exiting early")
+            return
+
         # Run retrieval
         logging.info("Running ISOFIT with full LUT")
         retrieval_full = isofit.Isofit(
@@ -789,13 +797,14 @@ def apply_oe(
 @click.option("--prebuilt_lut", type=str)
 @click.option("--no_min_lut_spacing", is_flag=True, default=False)
 @click.option("--inversion_windows", type=float, nargs=2, multiple=True, default=None)
+@click.option("--config_only", is_flag=True, default=False)
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",
     is_flag=True,
 )
 @click.option("--profile")
-def cli_apply_oe(debug_args, profile, **kwargs):
+def cli(debug_args, profile, **kwargs):
     if debug_args:
         print("Arguments to be passed:")
         for key, value in kwitems():

@@ -154,7 +154,7 @@ def solar_position(
     help="Comma separated values (time,dt,lat,lon,elev,temp,pressure,az,zen,RA,dec,H)",
     is_flag=True,
 )
-def cli_sun(**kwargs):
+def cli(**kwargs):
     """Execute the Solar position algorithm
 
     Reda & Andreas (2003)

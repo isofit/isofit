@@ -596,7 +596,7 @@ def empirical_line(
 @click.option(
     "--reference_class_file", default=None, type=str, help="Reference class file"
 )
-def cli_empirical_line(**kwargs):
+def cli(**kwargs):
     """Run empirical line"""
     empirical_line(SimpleNamespace(**kwargs))
     click.echo("Done")
