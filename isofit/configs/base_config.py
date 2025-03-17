@@ -85,13 +85,9 @@ class BaseConfigSection(object):
         # Now do a full check on each submodule
         for key in self._get_nontype_attributes():
             value = getattr(self, key)
-            try:
-                logging.debug("Configuration check of: {}".format(key))
+            if hasattr(value, "check_config_validity"):
+                logging.debug(f"Configuration check of: {key}")
                 errors.extend(value.check_config_validity())
-            except AttributeError:
-                logging.debug(
-                    "Configuration check: {} is not an object, skipping".format(key)
-                )
 
         return errors
 
