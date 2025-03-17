@@ -217,6 +217,7 @@ def invert_analytical(
     meas: np.array,
     geom: Geometry,
     x0: np.array,
+    sub_state,
     num_iter: int = 1,
     hash_table: OrderedDict = None,
     hash_size: int = None,
@@ -267,6 +268,7 @@ def invert_analytical(
     s = r["sphalb"]
 
     # Get all the surface quantities
+    sub_surface, sub_RT, sub_instrument = fm.unpack(sub_state)
     rho_dir_dir, rho_dif_dir, Ls = fm.upsample_surface_vectors_to_RT(
         x_surface, geom, L_down_dir, L_down_dif
     )

@@ -35,10 +35,12 @@ from isofit.core.fileio import IO, write_bil_chunk
 from isofit.core.forward import ForwardModel
 from isofit.core.geometry import Geometry
 from isofit.inversion.inverse import Inversion
-from isofit.inversion.inverse_simple import invert_algebraic, invert_analytical
+from isofit.inversion.inverse_simple import (
+    invert_algebraic,
+    invert_analytical,
+    invert_simple,
+)
 from isofit.utils.atm_interpolation import atm_interpolation
-
-PERTURB = 0.03
 
 
 def analytical_line(
@@ -57,6 +59,7 @@ def analytical_line(
     atm_file: str = None,
     loglevel: str = "INFO",
     logfile: str = None,
+    initializer: str = "superpixel",
 ) -> None:
     """
     TODO: Description
@@ -207,6 +210,7 @@ def analytical_line(
             num_iter,
             loglevel,
             logfile,
+            initializer,
         )
     ]
     workers = ray.util.ActorPool([Worker.remote(*wargs) for _ in range(n_workers)])
@@ -245,6 +249,7 @@ class Worker(object):
         num_iter: int,
         loglevel: str,
         logfile: str,
+        initializer: str,
     ):
         """
         Worker class to help run a subset of spectra.
@@ -297,6 +302,8 @@ class Worker(object):
         else:
             self.radiance_correction = None
 
+        self.initializer = initializer
+
     def run_lines(self, startstop: tuple) -> None:
         """
         TODO: Description
@@ -341,30 +348,67 @@ class Worker(object):
 
                 geom = Geometry(obs=obs[r, c, :], loc=loc[r, c, :], esd=esd)
 
-                # "Atmospheric" state comes from the atm_interpolated file
+                # "Atmospheric" state ALWAYS comes from the atm_interpolated file
                 # Can also include sky glint for the glint model
                 # Currently use a manual flag set up in the worker.init
+                # If you only want to use a subset of atm bands.
+                # That case should never happen via applyOE
                 if len(self.atm_bands):
                     x_RT = rt_state[r, c, self.atm_bands]
                 else:
                     x_RT = rt_state[r, c, :]
 
                 iv_idx = self.fm.surface.analytical_iv_idx
-                init_state = subs_state[int(lbl[r, c, 0]), 0, iv_idx]
-                # init_state += PERTURB
-                # init_state += np.abs(np.random.normal(scale=eps))
+                sub_state = subs_state[int(lbl[r, c, 0]), 0, iv_idx]
 
-                # Concatenate full statevector to use for initialization
-                # This only works with the correct indexing.
-                # Any surface component of x_RT has to be first in the array.
+                # Note: concatenation only works with the correct indexing.
                 # TODO handle indexing in a safer way. See line 126
-                x0 = np.concatenate([init_state, x_RT])
+                sub_state = np.concatenate([sub_state, x_RT])
+
+                # Build statevector to use for initialization.
+                # Can be done three different ways.
+                # SUPERPIXEL uses the superpixel value --> Fastests
+                # ALGEBRAIC uses invert_algebraic for rfl,
+                # and the superpixel for non_rfl surface elements
+                # SIMPLE uses invert_simple for rfl and non_rfl surface elements
+                if self.initializer == "superpixel":
+                    x0 = sub_state
+
+                elif self.initializer == "algebraic":
+                    x_surface, _, x_instrument = self.fm.unpack(self.fm.init.copy())
+                    rfl_est, Ls_est, coeffs = invert_algebraic(
+                        self.fm.surface,
+                        self.fm.RT,
+                        self.fm.instrument,
+                        x_surface,
+                        x_RT,
+                        x_instrument,
+                        meas,
+                        geom,
+                    )
+                    x0 = np.concatenate(
+                        [
+                            rfl_est,
+                            sub_state[self.fm.idx_surf_nonrfl],
+                            x_RT,
+                            x_instrument,
+                        ]
+                    )
+
+                elif self.initializer == "simple":
+                    x0 = invert_simple(self.fm, meas, geom)
+                    x0[self.fm.idx_RT] = x_RT
+
+                else:
+                    raise ValueError("No valid initializer given for AOE algorithm")
+
                 states, unc = invert_analytical(
                     self.iv.fm,
                     self.iv.winidx,
                     meas,
                     geom,
                     np.copy(x0),
+                    sub_state,
                     self.num_iter,
                     self.hash_table,
                     self.hash_size,
