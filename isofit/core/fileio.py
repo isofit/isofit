@@ -560,6 +560,7 @@ class IO:
             fm: the forward model used to solve the inversion
             iv: the inversion object
         """
+        errors = []
 
         if len(states) == 0:
             # Write a bad data flag
@@ -614,8 +615,17 @@ class IO:
                 to_write["spectral_calibration_file"] = cal
 
             if "posterior_uncertainty_file" in self.output_datasets:
-                S_hat, K, G = iv.calc_posterior(state_est, geom, meas)
-                to_write["posterior_uncertainty_file"] = np.sqrt(np.diag(S_hat))
+                try:
+                    S_hat, K, G = iv.calc_posterior(state_est, geom, meas)
+                    to_write["posterior_uncertainty_file"] = np.sqrt(np.diag(S_hat))
+                except (ValueError, AttributeError) as err:
+                    logging.exception(
+                        f"""
+                        Posterior calculation falied with:
+                        {err}
+                        """
+                    )
+                    errors.append("posterior_uncertainty_file")
 
             ############ Now proceed to the calcs where they may be some overlap
 
@@ -708,7 +718,7 @@ class IO:
                     logging.warning("No reflectance reference")
                 to_write["radiometry_correction_file"] = factors
 
-        return to_write
+        return to_write, errors
 
     def write_spectrum(
         self,
@@ -738,9 +748,24 @@ class IO:
         """
 
         if input_data is None:
-            to_write = self.build_output(states, self.current_input_data, fm, iv)
+            to_write, errors = self.build_output(
+                states, self.current_input_data, fm, iv
+            )
         else:
-            to_write = self.build_output(states, input_data, fm, iv)
+            to_write, errors = self.build_output(states, input_data, fm, iv)
+
+        if len(errors):
+            logging.exception(
+                f"""
+                Errors found while running pixel:
+                row: {row}
+                col: {col}
+
+                Error in files:
+                {error}
+                """
+            )
+
         self.write_datasets(
             row, col, to_write, states, flush_immediately=flush_immediately
         )
