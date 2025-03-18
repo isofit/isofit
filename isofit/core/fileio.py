@@ -598,6 +598,7 @@ class IO:
                 to_write["estimated_state_file"] = state_est
 
             if "path_radiance_file" in self.output_datasets:
+                # Note: for glint models, this will return atm + glint
                 path_est = fm.calc_meas(
                     state_est, geom, rfl=np.zeros(self.meas_wl.shape)
                 )
@@ -641,7 +642,7 @@ class IO:
                 item in ["modeled_radiance_file", "simulated_measurement_file"]
                 for item in self.output_datasets
             ):
-                meas_est = fm.calc_meas(state_est, geom, rfl=lamb_est)
+                meas_est = fm.calc_meas(state_est, geom)
                 if "modeled_radiance_file" in self.output_datasets:
                     to_write["modeled_radiance_file"] = np.column_stack(
                         (fm.instrument.wl_init, meas_est)

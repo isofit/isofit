@@ -84,11 +84,22 @@ class MultiComponentSurface(Surface):
         # Variables retrieved: each channel maps to a reflectance model parameter
         rmin, rmax = 0, 2.0
         self.statevec_names = ["RFL_%04i" % int(w) for w in self.wl]
+        self.idx_surface = np.arange(len(self.statevec_names))
+
+        # To accomodate for the fact that we don't
+        # analytically solve for the diffuse glint term
+        # Used in the analytical line
+        self.analytical_interp_names = []
+        self.analytical_iv_idx = np.arange(len(self.statevec_names))
+
         self.bounds = [[rmin, rmax] for w in self.wl]
         self.scale = [1.0 for w in self.wl]
         self.init = [0.15 * (rmax - rmin) + rmin for v in self.wl]
         self.idx_lamb = np.arange(self.n_wl)
         self.n_state = len(self.statevec_names)
+
+        # Surface specific attributes. Can override in inheriting classes
+        self.full_glint = False
 
     def component(self, x, geom):
         """We pick a surface model component using the Mahalanobis distance.
@@ -132,6 +143,7 @@ class MultiComponentSurface(Surface):
             and (not hasattr(geom, "surf_cmp_init"))
         ):
             geom.surf_cmp_init = closest
+
         return closest
 
     def xa(self, x_surface, geom):
@@ -147,6 +159,7 @@ class MultiComponentSurface(Surface):
         lamb_mu = self.components[ci][0]
         lamb_mu = lamb_mu * self.norm(lamb_ref)
         mu[self.idx_lamb] = lamb_mu
+
         return mu
 
     def Sa(self, x_surface, geom):
@@ -162,6 +175,7 @@ class MultiComponentSurface(Surface):
 
         # If there are no other state vector elements, we're done.
         if len(self.statevec_names) == len(self.idx_lamb):
+
             return Cov
 
         # Embed into a larger state vector covariance matrix
@@ -169,6 +183,7 @@ class MultiComponentSurface(Surface):
         nsuffix = len(self.statevec_names) - self.idx_lamb[-1] - 1
         Cov_prefix = np.zeros((nprefix, nprefix))
         Cov_suffix = np.zeros((nsuffix, nsuffix))
+
         return block_diag(Cov_prefix, Cov, Cov_suffix)
 
     def fit_params(self, rfl_meas, geom, *args):
@@ -181,6 +196,7 @@ class MultiComponentSurface(Surface):
             x_surface[i] = max(
                 self.bounds[i][0] + 0.001, min(self.bounds[i][1] - 0.001, r)
             )
+
         return x_surface
 
     def calc_rfl(self, x_surface, geom, L_down_dir=None, L_down_dif=None):
@@ -189,6 +205,7 @@ class MultiComponentSurface(Surface):
         # ToDo: Future use of calc_rfl() is to return a direct and diffuse surface reflectance quantity.
         #  As long as this is not implemented, return the same reflectance vector for both.
         rfl = self.calc_lamb(x_surface, geom)
+
         return rfl, rfl
 
     def calc_lamb(self, x_surface, geom):
@@ -196,7 +213,7 @@ class MultiComponentSurface(Surface):
 
         return x_surface[self.idx_lamb]
 
-    def drfl_dsurface(self, x_surface, geom):
+    def drfl_dsurface(self, x_surface, geom, L_down_dir=None, L_down_dif=None):
         """Partial derivative of reflectance with respect to state vector,
         calculated at x_surface."""
 
@@ -211,7 +228,14 @@ class MultiComponentSurface(Surface):
         nsuffix = self.n_state - self.idx_lamb[-1] - 1
         prefix = np.zeros((self.n_wl, nprefix))
         suffix = np.zeros((self.n_wl, nsuffix))
+
         return np.concatenate((prefix, dlamb, suffix), axis=1)
+
+    def drdn_drfl(self, L_tot, s_alb, rho_dif_dir):
+        """Partial derivative of radiance with respect to
+        surface reflectance"""
+
+        return L_tot / ((1.0 - s_alb * rho_dif_dir) ** 2)
 
     def calc_Ls(self, x_surface, geom):
         """Emission of surface, as a radiance."""
@@ -227,11 +251,73 @@ class MultiComponentSurface(Surface):
         nsuffix = len(self.statevec_names) - self.idx_lamb[-1] - 1
         prefix = np.zeros((self.n_wl, nprefix))
         suffix = np.zeros((self.n_wl, nsuffix))
+
         return np.concatenate((prefix, dLs, suffix), axis=1)
+
+    def drdn_dLs(self, t_total_up):
+        """Partial derivative of radiance with respect to
+        surface emission"""
+
+        return t_total_up
+
+    def drdn_dsurface(
+        self,
+        rho_dif_dir,
+        drfl_dsurface,
+        dLs_dsurface,
+        s_alb,
+        t_total_up,
+        L_tot,
+        L_down_dir,
+    ):
+        """Derivative of radiance with respect to
+        full surface vector"""
+
+        # Element wise multiplication between
+        # drdn_drfl (vector) and eye matrix to construct
+        # drdn_drfl (diagonal)
+        drdn_drfl = np.multiply(
+            self.drdn_drfl(L_tot, s_alb, rho_dif_dir)[:, np.newaxis],
+            np.eye(len(self.wl), drfl_dsurface.shape[1]),
+        )
+
+        # Chain rule to get derivative w.r.t. surface complete state
+        drdn_dsurface = np.multiply(drdn_drfl, drfl_dsurface)
+
+        # Get the derivative w.r.t. surface emission
+        drdn_dLs = np.multiply(self.drdn_dLs(t_total_up)[:, np.newaxis], dLs_dsurface)
+
+        return np.add(drdn_dsurface, drdn_dLs)
+
+    def analytical_model(
+        self,
+        background,
+        L_down_dir,
+        L_down_dif,
+        L_tot,
+        geom,
+        L_dir_dir=None,
+        L_dir_dif=None,
+        L_dif_dir=None,
+        L_dif_dif=None,
+    ):
+        """
+        Linearization of the surface reflectance terms to use in the
+        AOE inner loop (see Susiluoto, 2025). We set the quadratic
+        spherical albedo term to a constant background, which
+        simplifies the linearization
+        background = s * rho_bg
+        """
+        theta = L_tot + (L_tot * background / (1 - background))
+        H = np.eye(self.n_wl, self.n_wl)
+        H = theta[:, np.newaxis] * H
+
+        return H
 
     def summarize(self, x_surface, geom):
         """Summary of state vector."""
 
         if len(x_surface) < 1:
             return ""
+
         return "Component: %i" % self.component(x_surface, geom)
