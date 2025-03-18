@@ -246,6 +246,8 @@ def invert_analytical(
     from scipy.linalg.blas import dsymv
     from scipy.linalg.lapack import dpotrf, dpotri
 
+    EXIT_CODE = 0
+
     # x = x0.copy()
     # x_surface, x_RT, x_instrument = fm.unpack(x)
     # Note, this will fail if x_instrument is populated
@@ -293,9 +295,16 @@ def invert_analytical(
         Seps = fm.Seps(x, meas, geom)[winidx, :][:, winidx]
 
         # Prior covariance
-        Sa = fm.Sa(x, geom)
-        Sa_surface = Sa[fm.idx_surface, :][:, fm.idx_surface]
-        Sa_inv = svd_inv_sqrt(Sa_surface, hash_table, hash_size)[0]
+        try:
+            Sa = fm.Sa(x, geom)
+            Sa_surface = Sa[fm.idx_surface, :][:, fm.idx_surface]
+            Sa_inv = svd_inv_sqrt(Sa_surface, hash_table, hash_size)[0]
+
+        except ValueError:
+            # On invertible matrix error, save NaN array on step and update exit code
+            trajectory[n + 1, :] = x
+            EXIT_CODE = -11
+            continue
 
         # Prior mean
         xa_full = fm.xa(x, geom)
@@ -357,9 +366,9 @@ def invert_analytical(
         full_unc = np.ones(len(x))
         full_unc[iv_idx] = np.sqrt(np.diag(C_rcond))
 
-        return trajectory, full_unc
+        return trajectory, full_unc, EXIT_CODE
     else:
-        return trajectory, C_rcond
+        return trajectory, C_rcond, EXIT_CODE
 
 
 def invert_simple(forward: ForwardModel, meas: np.array, geom: Geometry):

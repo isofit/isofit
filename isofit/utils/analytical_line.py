@@ -402,7 +402,7 @@ class Worker(object):
                 else:
                     raise ValueError("No valid initializer given for AOE algorithm")
 
-                states, unc = invert_analytical(
+                states, unc, EXIT_CODE = invert_analytical(
                     self.iv.fm,
                     self.iv.winidx,
                     meas,
@@ -413,6 +413,11 @@ class Worker(object):
                     self.hash_table,
                     self.hash_size,
                 )
+
+                if EXIT_CODE == -11:
+                    logging.error(
+                        f"Row, Col: {r, c} - Sa matrix is non-invertible. Statevector is likely NaNs."
+                    )
 
                 output_state[r - start_line, c, :] = states[-1, self.fm.idx_surface]
 
