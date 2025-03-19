@@ -36,9 +36,9 @@ class Worker(object):
         infile,
         outfile,
         inplace,
-        nodata_value=-9999.0,
-        logfile=None,
-        loglevel="INFO",
+        nodata_value,
+        logfile,
+        loglevel,
     ):
 
         logging.basicConfig(
@@ -109,7 +109,7 @@ class Worker(object):
                 lstart,
                 (self.nl, self.nb, self.ns),
             )
-            logging.warning(f"{lstart}: No non null data present, continuing")
+            logging.debug(f"{lstart}: No non null data present, continuing")
             return 0
 
         # Iterate through the chunk
@@ -128,15 +128,14 @@ class Worker(object):
                     exit_code_nan = 0
 
                 if exit_code_nodata + exit_code_nan >= 10:
-                    logging.warning(
+                    logging.info(
                         f"Entire pixel is NaN or no data leaving as-is: {r, c}"
                     )
                 elif exit_code_nodata + exit_code_nan >= 1:
-                    logging.warning(f"Interpolated NaN or no data in pixel: {r, c}")
+                    logging.info(f"Interpolated NaN or no data in pixel: {r, c}")
 
                 output_state[r - lstart, c, :] = meas_interp
 
-            logging.info(f"Interpolation writing line {r}")
             write_bil_chunk(
                 output_state[r - lstart, ...].T,
                 self.outfile,
@@ -157,7 +156,7 @@ def interpolate_spectra(
     ray_redis_password: str = None,
     ray_temp_dir: str = None,
     ray_ip_head=None,
-    task_inflation_factor: int = 10,
+    task_inflation_factor: int = 1,
     logfile: str = None,
     loglevel: str = "INFO",
 ):
@@ -228,3 +227,19 @@ def interpolate_spectra(
         f"{round(ds_shape[0]*ds_shape[1]/total_time,4)} spectra/s, "
         f"{round(ds_shape[0]*ds_shape[1]/total_time/n_workers,4)} spectra/s/core"
     )
+
+
+if __name__ == "__main__":
+    infile = "/Users/bgreenbe/Projects/IsofitDev/Validation/PRISM/prm20221026t182807_rdn/Sample3/prm20221026t182807_rdn_img"
+    outfile = "/Users/bgreenbe/Projects/IsofitDev/Interpolate/Test/input/prm20221026t182807_rdn_interp"
+    inplace = False
+
+    interpolate_spectra(infile, outfile, inplace)
+
+    print(0)
+
+    test_path = "/Users/bgreenbe/Projects/IsofitDev/Interpolate/Test/input/prm20221026t182807_rdn_interp"
+    img = envi.open(envi_header(test_path)).open_memmap(
+        interleave="bip", writable=False
+    )
+    val = np.sum(img, axis=2)
