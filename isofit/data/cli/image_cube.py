@@ -90,7 +90,8 @@ def validate(path=None, size="both", debug=print, error=print, **_):
         return validate(path, "small") & validate(path, "medium")
 
     if path is None:
-        path = Path(env.imagecube)
+        path = env.imagecube
+    path = Path(path)
 
     debug(f"Verifying path for ISOFIT {size} image cube: {path}")
 
