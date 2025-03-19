@@ -97,6 +97,7 @@ class CLI(click.Group):
         "empirical_line": "isofit.utils.empirical_line",
         "ewt": "isofit.utils.ewt_from_reflectance",
         "reconstruct_subs": "isofit.utils.reconstruct",
+        "interpolate_spectra": "isofit.utils.interpolate_spectra",
         "sun": "isofit.utils.solar_position",
         "surface_model": "isofit.utils.surface_model",
         "plot": "isoplots",

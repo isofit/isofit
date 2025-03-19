@@ -49,6 +49,7 @@ class Pathnames:
         aerosol_climatology_path,
         channelized_uncertainty_path,
         ray_temp_dir,
+        interpolate_inplace,
     ):
         # Determine FID based on sensor name
         if sensor == "ang":
@@ -128,6 +129,13 @@ class Pathnames:
             self.radiance_working_path = abspath(self.input_radiance_file)
             self.obs_working_path = abspath(self.input_obs_file)
             self.loc_working_path = abspath(self.input_loc_file)
+
+        if interpolate_inplace:
+            self.radiance_interp_path = self.radiance_working_path
+        else:
+            self.radiance_interp_path = abspath(
+                join(self.input_data_directory, rdn_fname + "_interp")
+            )
 
         if channelized_uncertainty_path:
             self.input_channelized_uncertainty_path = channelized_uncertainty_path
