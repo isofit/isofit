@@ -20,6 +20,7 @@ import logging
 import multiprocessing
 import time
 
+import click
 import numpy as np
 import scipy
 from spectral.io import envi
@@ -148,8 +149,8 @@ class Worker(object):
 
 def interpolate_spectra(
     infile: str,
-    outfile: str,
     inplace: bool,
+    outfile: str = "",
     nodata_value: float = -9999.0,
     n_cores: int = -1,
     ray_address: str = None,
@@ -160,6 +161,38 @@ def interpolate_spectra(
     logfile: str = None,
     loglevel: str = "INFO",
 ):
+    """\
+    Utility function to interpolate wavelength bands that are either no data or Nan.
+    The interpolation will only be applied to pixel-vectors that include partial NaNs.
+    This is emant to be used if the number of wavelengths missing is minor, and has not
+    been widely tested if a large number of wavelength vlues are missing.
+
+    The interpolation will do two checks. One for "nodata values," the
+    other for NaN values. Motivated by some sensor products which have rdn data 
+    with both no data, and NaN values.
+
+    \b
+    Parameters
+    ----------
+    infile: str
+        Input file that contains the wavelengths to be interpolated.
+    inplace: bool
+        Flag to tell algorithm to write to new file (False) or write to
+        input file (True)
+    outfile: str
+        Output lcoation for the interpolated wavelengths
+    nodata_value: float
+        No data value to check against, and interpolate across
+        Flexible typing in numpy boolean operations means this could be 
+        float or int
+    n_cores: int
+        Number of cores to run. Substantial parallelism is available
+        Suggested to max this out on the available system
+    logfile: str
+        File path to write logs to
+    loglevel: str
+        Logging level with which to run ISOFIT
+    """
 
     # Get size of the image to interpolate
     ds = envi.open(envi_header(infile))
@@ -168,6 +201,9 @@ def interpolate_spectra(
 
     # If you want to make a new file
     if not inplace:
+        if not outfile:
+            raise ValueError("Interpolation to write to new file, but no path given.")
+
         output_metadata = envi.open(envi_header(infile)).metadata
         img = envi.create_image(
             envi_header(outfile),
@@ -176,6 +212,8 @@ def interpolate_spectra(
             force=True,
         )
         del img, output_metadata
+    else:
+        outfile = infile
 
     if n_cores == -1:
         n_cores = multiprocessing.cpu_count()
@@ -229,17 +267,18 @@ def interpolate_spectra(
     )
 
 
-if __name__ == "__main__":
-    infile = "/Users/bgreenbe/Projects/IsofitDev/Validation/PRISM/prm20221026t182807_rdn/Sample3/prm20221026t182807_rdn_img"
-    outfile = "/Users/bgreenbe/Projects/IsofitDev/Interpolate/Test/input/prm20221026t182807_rdn_interp"
-    inplace = False
+# Input arguments
+@click.command(
+    name="interpolate_spectra", help=interpolate_spectra.__doc__, no_args_is_help=True
+)
+@click.argument("infile")
+@click.argument("--inplace", is_flag=True, default=False)
+@click.option("outfile")
+@click.option("--nodata_value")
+@click.option("--n_cores")
+@click.option("--logfile")
+@click.option("--loglevel")
+def cli(**kwargs):
 
-    interpolate_spectra(infile, outfile, inplace)
-
-    print(0)
-
-    test_path = "/Users/bgreenbe/Projects/IsofitDev/Interpolate/Test/input/prm20221026t182807_rdn_interp"
-    img = envi.open(envi_header(test_path)).open_memmap(
-        interleave="bip", writable=False
-    )
-    val = np.sum(img, axis=2)
+    interpolate_spectra(**kwargs)
+    click.echo("Done")
