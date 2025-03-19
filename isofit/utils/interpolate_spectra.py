@@ -162,7 +162,7 @@ def interpolate_spectra(
     loglevel: str = "INFO",
 ):
     """\
-    Utility function to interpolate wavelength bands that are either no data or Nan.
+    Interpolate wavelength bands that are either no data or Nan.
     The interpolation will only be applied to pixel-vectors that include partial NaNs.
     This is emant to be used if the number of wavelengths missing is minor, and has not
     been widely tested if a large number of wavelength vlues are missing.
@@ -193,7 +193,6 @@ def interpolate_spectra(
     loglevel: str
         Logging level with which to run ISOFIT
     """
-
     # Get size of the image to interpolate
     ds = envi.open(envi_header(infile))
     ds_shape = ds.shape
@@ -272,10 +271,10 @@ def interpolate_spectra(
     name="interpolate_spectra", help=interpolate_spectra.__doc__, no_args_is_help=True
 )
 @click.argument("infile")
-@click.argument("--inplace", is_flag=True, default=False)
-@click.option("outfile")
-@click.option("--nodata_value")
-@click.option("--n_cores")
+@click.option("--inplace", is_flag=True, default=False)
+@click.option("--outfile")
+@click.option("--nodata_value", default=-9999)
+@click.option("--n_cores", default=-1)
 @click.option("--logfile")
 @click.option("--loglevel")
 def cli(**kwargs):
