@@ -81,12 +81,4 @@ class SurfaceConfig(BaseConfigSection):
         if self.surface_category is None:
             errors.append("surface->surface_category must be specified")
 
-        valid_normalize_categories = ["Euclidean", "RMS", "None"]
-        if self.normalize not in valid_normalize_categories:
-            errors.append(
-                "surface->normalize: {} not in valid normalize choices: {}".format(
-                    self.normalize, valid_normalize_categories
-                )
-            )
-
         return errors
