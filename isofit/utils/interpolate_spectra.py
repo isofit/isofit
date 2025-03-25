@@ -164,7 +164,7 @@ def interpolate_spectra(
     """\
     Interpolate wavelength bands that are either no data or Nan.
     The interpolation will only be applied to pixel-vectors that include partial NaNs.
-    This is emant to be used if the number of wavelengths missing is minor, and has not
+    This is meant to be used if the number of wavelengths missing is minor, and has not
     been widely tested if a large number of wavelength vlues are missing.
 
     The interpolation will do two checks. One for "nodata values," the
@@ -187,7 +187,7 @@ def interpolate_spectra(
         float or int
     n_cores: int
         Number of cores to run. Substantial parallelism is available
-        Suggested to max this out on the available system
+        Defaults to maxing this out on the available system (-1)
     logfile: str
         File path to write logs to
     loglevel: str
