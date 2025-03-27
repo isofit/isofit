@@ -20,7 +20,7 @@ from isofit.core import isofit
 from isofit.core.common import envi_header
 from isofit.utils import analytical_line as ALAlg
 from isofit.utils import empirical_line as ELAlg
-from isofit.utils import extractions, segment
+from isofit.utils import extractions, interpolate_spectra, segment
 
 EPS = 1e-6
 CHUNKSIZE = 256
@@ -78,6 +78,8 @@ def apply_oe(
     no_min_lut_spacing=False,
     inversion_windows=None,
     config_only=False,
+    interpolate_bad_rdn=False,
+    interpolate_inplace=False,
 ):
     """\
     Applies OE over a flightline using a radiative transfer engine. This executes
@@ -194,6 +196,15 @@ def apply_oe(
     config_only : bool, default=False
         Generates the configuration then exits before execution. If presolve is
         enabled, that run will still occur.
+    interpolate_bad_rdn : bool, default=False
+        Flag to perform a per-pixel interpolation across no-data and NaN data bands.
+        Does not interpolate vectors that are entire no-data or NaN, only partial.
+        Currently only designed for wavelength interpolation on spectra.
+        Does NOT do any spatial interpolation
+    interpolate_inplace : bool, default=False
+        Flag to tell interpolation to work on the file in place, or generate a
+        new interpolated rdn file. The location of the new file will be in the
+        "input" directory within the working directory.
 
     \b
     References
@@ -233,12 +244,12 @@ def apply_oe(
         # This is the MODTRAN case. Do we want to enable the 4c mode by default?
         multipart_transmittance = True
 
-    ray.init(
-        num_cpus=n_cores,
-        _temp_dir=ray_temp_dir,
-        include_dashboard=False,
-        local_mode=n_cores == 1,
-    )
+    # ray.init(
+    #     num_cpus=n_cores,
+    #     _temp_dir=ray_temp_dir,
+    #     include_dashboard=False,
+    #     local_mode=n_cores == 1,
+    # )
 
     if sensor not in SUPPORTED_SENSORS:
         if sensor[:3] != "NA-":
@@ -306,6 +317,7 @@ def apply_oe(
         aerosol_climatology_path,
         channelized_uncertainty_path,
         ray_temp_dir,
+        interpolate_inplace,
     )
     paths.make_directories()
     paths.stage_files()
@@ -516,6 +528,20 @@ def apply_oe(
     else:
         uncorrelated_radiometric_uncertainty = UNCORRELATED_RADIOMETRIC_UNCERTAINTY
 
+    # Interpolate bad rdn data.
+    if interpolate_bad_rdn:
+        # if interpolate_inplace == True,
+        # paths.radiance_working_path = paths.radiance_interp_path
+        interpolate_spectra(
+            paths.radiance_working_path,
+            paths.radiance_interp_path,
+            interpolate_inplace,
+            logfile=log_file,
+        )
+        paths.radiance_working_path = paths.radiance_interp_path
+
+    logging.debug("Radiance working path:")
+    logging.debug(paths.radiance_working_path)
     # Superpixel segmentation
     if use_superpixels:
         if not exists(paths.lbl_working_path) or not exists(
@@ -798,6 +824,8 @@ def apply_oe(
 @click.option("--no_min_lut_spacing", is_flag=True, default=False)
 @click.option("--inversion_windows", type=float, nargs=2, multiple=True, default=None)
 @click.option("--config_only", is_flag=True, default=False)
+@click.option("--interpolate_bad_rdn", is_flag=True, default=False)
+@click.option("--interpolate_inplace", is_flag=True, default=False)
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",

@@ -251,16 +251,16 @@ class ForwardModel:
 
         return self.RT.calc_rdn(
             x_RT,
-            rho_dir_dir,
-            rho_dif_dir,
-            Ls,
-            L_tot,
-            L_dir_dir,
-            L_dif_dir,
-            L_dir_dif,
-            L_dif_dif,
-            r,
-            geom,
+            rho_dir_dir=rho_dir_dir,
+            rho_dif_dir=rho_dif_dir,
+            Ls=Ls,
+            L_tot=L_tot,
+            L_dir_dir=L_dir_dir,
+            L_dif_dir=L_dif_dir,
+            L_dir_dif=L_dir_dif,
+            L_dif_dif=L_dif_dif,
+            r=r,
+            geom=geom,
         )
 
     def calc_meas(self, x, geom, rfl=[]):
@@ -286,21 +286,21 @@ class ForwardModel:
 
         # Get Surface quantities - handles upsampling
         rho_dir_dir, rho_dif_dir, Ls = self.upsample_surface_vectors_to_RT(
-            x_surface, geom, L_down_dir, L_down_dif
+            x_surface, geom, L_down_dir=L_down_dir, L_down_dif=L_down_dir
         )
 
         rdn = self.calc_rdn(
             x_RT,
-            rho_dir_dir,
-            rho_dif_dir,
-            Ls,
-            L_tot,
-            L_dir_dir,
-            L_dif_dir,
-            L_dir_dif,
-            L_dif_dif,
-            r,
-            geom,
+            rho_dir_dir=rho_dir_dir,
+            rho_dif_dir=rho_dif_dir,
+            Ls=Ls,
+            L_tot=L_tot,
+            L_dir_dir=L_dir_dir,
+            L_dif_dir=L_dif_dir,
+            L_dir_dif=L_dir_dif,
+            L_dif_dif=L_dif_dif,
+            r=r,
+            geom=geom,
         )
 
         return self.instrument.sample(x_instrument, self.RT.wl, rdn)
@@ -379,26 +379,26 @@ class ForwardModel:
         # Need to pass calc rdn into instrument derivative
         rdn = self.calc_rdn(
             x_RT,
-            rho_dir_dir,
-            rho_dif_dir,
-            Ls,
-            L_tot,
-            L_dir_dir,
-            L_dif_dir,
-            L_dir_dif,
-            L_dif_dif,
-            r,
-            geom,
+            rho_dir_dir=rho_dir_dir,
+            rho_dif_dir=rho_dif_dir,
+            Ls=Ls,
+            L_tot=L_tot,
+            L_dir_dir=L_dir_dir,
+            L_dif_dir=L_dif_dir,
+            L_dir_dif=L_dir_dif,
+            L_dif_dif=L_dif_dif,
+            r=r,
+            geom=geom,
         )
 
         # To get the derivative w.r.t. RT
         drdn_dRT = self.RT.drdn_dRT(
             x_RT,
             geom,
-            rho_dir_dir,
-            rho_dif_dir,
-            Ls,
-            rdn,
+            rho_dir_dir=rho_dir_dir,
+            rho_dif_dir=rho_dif_dir,
+            Ls=Ls,
+            rdn=rdn,
         )
 
         # To get the derivative w.r.t. Surface
@@ -452,30 +452,30 @@ class ForwardModel:
 
         # Get Surface quantities and sample them at RT wavelengths
         rho_dir_dir, rho_dif_dir, Ls = self.upsample_surface_vectors_to_RT(
-            x_surface, geom, L_down_dir, L_down_dif
+            x_surface, geom, L_down_dir=L_down_dir, L_down_dif=L_down_dif
         )
 
         rdn = self.calc_rdn(
             x_RT,
-            rho_dir_dir,
-            rho_dif_dir,
-            Ls,
-            L_tot,
-            L_dir_dir,
-            L_dif_dir,
-            L_dir_dif,
-            L_dif_dif,
-            r,
-            geom,
+            rho_dir_dir=rho_dir_dir,
+            rho_dif_dir=rho_dif_dir,
+            Ls=Ls,
+            L_tot=L_tot,
+            L_dir_dir=L_dir_dir,
+            L_dif_dir=L_dif_dir,
+            L_dir_dif=L_dir_dif,
+            L_dif_dif=L_dif_dif,
+            r=r,
+            geom=geom,
         )
 
         drdn_dRTb = self.RT.drdn_dRTb(
             x_RT,
-            geom,
-            rho_dir_dir,
-            rho_dif_dir,
-            Ls,
-            rdn,
+            geom=geom,
+            rho_dir_dir=rho_dir_dir,
+            rho_dif_dir=rho_dif_dir,
+            Ls=Ls,
+            rdn=rdn,
         )
 
         # To get derivatives w.r.t. instrument, downsample to instrument wavelengths

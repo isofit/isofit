@@ -59,7 +59,7 @@ def analytical_line(
     atm_file: str = None,
     loglevel: str = "INFO",
     logfile: str = None,
-    initializer: str = "superpixel",
+    initializer: str = "algebraic",
 ) -> None:
     """
     TODO: Description
