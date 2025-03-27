@@ -535,7 +535,7 @@ def apply_oe(
         interpolate_spectra(
             paths.radiance_working_path,
             paths.radiance_interp_path,
-            interpolate_inplace,
+            inplace=interpolate_inplace,
             logfile=log_file,
         )
         paths.radiance_working_path = paths.radiance_interp_path
