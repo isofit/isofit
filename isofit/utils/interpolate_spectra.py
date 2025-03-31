@@ -149,8 +149,8 @@ class Worker(object):
 
 def interpolate_spectra(
     infile: str,
-    inplace: bool,
     outfile: str = "",
+    inplace: bool = False,
     nodata_value: float = -9999.0,
     n_cores: int = -1,
     ray_address: str = None,
@@ -271,8 +271,8 @@ def interpolate_spectra(
     name="interpolate_spectra", help=interpolate_spectra.__doc__, no_args_is_help=True
 )
 @click.argument("infile")
-@click.option("--inplace", is_flag=True, default=False)
 @click.option("--outfile")
+@click.option("--inplace", is_flag=True, default=False)
 @click.option("--nodata_value", default=-9999)
 @click.option("--n_cores", default=-1)
 @click.option("--logfile")
