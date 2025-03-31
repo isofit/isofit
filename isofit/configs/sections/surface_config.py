@@ -82,4 +82,8 @@ class SurfaceConfig(BaseConfigSection):
         if self.surface_category is None:
             errors.append("surface->surface_category must be specified")
 
+        valid_metrics = ("Euclidean", "Mahalanobis")
+        if self.selection_metric not in valid_metrics:
+            errors.append(f"surface->selection_metric must be one of: {valid_metrics}")
+
         return errors
