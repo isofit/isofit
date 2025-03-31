@@ -34,8 +34,6 @@ from isofit.surface import Surface
 
 Logger = logging.getLogger(__file__)
 
-### Classes ###
-
 
 class ForwardModel:
     """ForwardModel contains all the information about how to calculate
@@ -108,7 +106,7 @@ class ForwardModel:
         self.Sb = np.diagflat(np.power(self.bval, 2))
 
         # Set up indices for references - MUST MATCH ORDER FROM ABOVE ASSIGNMENT
-        self.idx_surface = np.arange(len(self.surface.statevec_names), dtype=int)
+        self.idx_surface = self.surface.idx_surface
         # Sometimes, it's convenient to have the index of the entire surface
         # as one variable, and sometimes you want the sub-components
         # Split surface state vector indices to cover cases where we retrieve
@@ -186,50 +184,136 @@ class ForwardModel:
 
         return block_diag(Sa_surface, Sa_RT, Sa_instrument)
 
-    def calc_rdn(self, x, geom, rho_dir_dir=None, rho_dif_dir=None, Ls=None):
+    def upsample_surface_vectors_to_RT(self, x_surface, geom, L_down_dir, L_down_dif):
+        """Upsample the surface quantities to the RT wavelength grid.
+        The forward calculation is done at RT wavelengths.
+        Then downsampled to instrument.
+        """
+        # Call surface reflectance w.r.t. surface, upsample
+        rho_dir_dir, rho_dif_dir = self.calc_rfl(
+            x_surface, geom, L_down_dir, L_down_dif
+        )
+        rho_dir_dir_hi = self.upsample(self.surface.wl, rho_dir_dir)
+        rho_dif_dir_hi = self.upsample(self.surface.wl, rho_dif_dir)
+
+        # Call surface emission, upsample
+        Ls = self.calc_Ls(x_surface, geom)
+        Ls_hi = self.upsample(self.surface.wl, Ls)
+
+        return (
+            rho_dir_dir_hi,
+            rho_dif_dir_hi,
+            Ls_hi,
+        )
+
+    def upsample_surface_derivatives_to_RT(
+        self, x_surface, geom, L_down_dir, L_down_dif
+    ):
+        """Upsample the surface quantities to the RT wavelength grid.
+        The forward calculation is done at RT wavelengths.
+        Then downsampled to instrument.
+        """
+        # Call surface reflectance derivative w.r.t. surface, upsample
+        drfl_dsurface_hi = self.upsample(
+            self.surface.wl,
+            self.surface.drfl_dsurface(x_surface, geom, L_down_dir, L_down_dif).T,
+        ).T
+
+        # Call surface emission w.r.t. surface, upsample
+        dLs_dsurface_hi = self.upsample(
+            self.surface.wl, self.surface.dLs_dsurface(x_surface, geom).T
+        ).T
+
+        return (
+            drfl_dsurface_hi,
+            dLs_dsurface_hi,
+        )
+
+    def calc_rdn(
+        self,
+        x_RT,
+        rho_dir_dir,
+        rho_dif_dir,
+        Ls,
+        L_tot,
+        L_dir_dir,
+        L_dif_dir,
+        L_dir_dif,
+        L_dif_dif,
+        r,
+        geom,
+    ):
         """Calculate the high-resolution radiance, permitting overrides.
         Project to top-of-atmosphere and translate to radiance. The
         radiative transfer calculations may take place at higher resolution
         so we upsample surface terms.
         """
-        x_surface, x_RT, x_instrument = self.unpack(x)
-
-        if rho_dir_dir is None or rho_dif_dir is None:
-            _, L_down_dir, L_down_dif = self.RT.get_L_down_transmitted(x_RT, geom)
-            rho_dir_dir, rho_dif_dir = self.surface.calc_rfl(
-                x_surface, geom, L_down_dir, L_down_dif
-            )
-        if Ls is None:
-            Ls = self.surface.calc_Ls(x_surface, geom)
-
-        rho_dir_dir_hi = self.upsample(self.surface.wl, rho_dir_dir)
-        rho_dif_dir_hi = self.upsample(self.surface.wl, rho_dif_dir)
-        Ls_hi = self.upsample(self.surface.wl, Ls)
 
         return self.RT.calc_rdn(
-            x_RT=x_RT,
-            rho_dir_dir=rho_dir_dir_hi,
-            rho_dif_dir=rho_dif_dir_hi,
-            Ls=Ls_hi,
+            x_RT,
+            rho_dir_dir=rho_dir_dir,
+            rho_dif_dir=rho_dif_dir,
+            Ls=Ls,
+            L_tot=L_tot,
+            L_dir_dir=L_dir_dir,
+            L_dif_dir=L_dif_dir,
+            L_dir_dif=L_dir_dif,
+            L_dif_dif=L_dif_dif,
+            r=r,
             geom=geom,
         )
 
-    def calc_meas(self, x, geom, rfl=None, Ls=None):
+    def calc_meas(self, x, geom, rfl=[]):
         """Calculate the model observation at instrument wavelengths."""
+        # Unpack state vector - Copy to not change x fm-wide
+        x_surface, x_RT, x_instrument = self.unpack(np.copy(x))
 
-        x_surface, x_RT, x_instrument = self.unpack(x)
-        rdn_hi = self.calc_rdn(x=x, geom=geom, rho_dir_dir=rfl, rho_dif_dir=rfl, Ls=Ls)
-        return self.instrument.sample(x_instrument, self.RT.wl, rdn_hi)
+        # if rfl passed, have to explicitely use those values
+        if len(rfl):
+            x_surface[self.idx_surf_rfl] = rfl
+
+        # Get RT quantities
+        (
+            r,
+            L_tot,
+            L_down_dir,
+            L_down_dif,
+            L_dir_dir,
+            L_dif_dir,
+            L_dir_dif,
+            L_dif_dif,
+        ) = self.RT.calc_RT_quantities(x_RT, geom)
+
+        # Get Surface quantities - handles upsampling
+        rho_dir_dir, rho_dif_dir, Ls = self.upsample_surface_vectors_to_RT(
+            x_surface, geom, L_down_dir=L_down_dir, L_down_dif=L_down_dir
+        )
+
+        rdn = self.calc_rdn(
+            x_RT,
+            rho_dir_dir=rho_dir_dir,
+            rho_dif_dir=rho_dif_dir,
+            Ls=Ls,
+            L_tot=L_tot,
+            L_dir_dir=L_dir_dir,
+            L_dif_dir=L_dif_dir,
+            L_dir_dif=L_dir_dif,
+            L_dif_dif=L_dif_dif,
+            r=r,
+            geom=geom,
+        )
+
+        return self.instrument.sample(x_instrument, self.RT.wl, rdn)
 
     def calc_Ls(self, x, geom):
         """Calculate the surface emission."""
 
         return self.surface.calc_Ls(x[self.idx_surface], geom)
 
-    def calc_rfl(self, x, geom):
+    def calc_rfl(self, x, geom, L_down_dir=None, L_down_dif=None):
         """Calculate the surface reflectance."""
 
-        return self.surface.calc_rfl(x[self.idx_surface], geom)
+        return self.surface.calc_rfl(x[self.idx_surface], geom, L_down_dir, L_down_dif)
 
     def calc_lamb(self, x, geom):
         """Calculate the Lambertian surface reflectance."""
@@ -256,46 +340,85 @@ class ForwardModel:
     def K(self, x, geom):
         """Derivative of observation with respect to state vector. This is
         the concatenation of jacobians with respect to parameters of the
-        surface and radiative transfer model."""
+        surface and radiative transfer model.
+        """
 
         # Unpack state vector
         x_surface, x_RT, x_instrument = self.unpack(x)
 
-        # Get partials of reflectance WRT surface state variables, upsample
-        _, L_down_dir, L_down_dif = self.RT.get_L_down_transmitted(x_RT, geom)
-        rho_dir_dir, rho_dif_dir = self.surface.calc_rfl(
+        # Get RT quantities
+        (
+            r,
+            L_tot,
+            L_down_dir,
+            L_down_dif,
+            L_dir_dir,
+            L_dif_dir,
+            L_dir_dif,
+            L_dif_dif,
+        ) = self.RT.calc_RT_quantities(x_RT, geom)
+
+        # Get Surface quantities and sample them at RT wavelengths
+        """NOTE: Due to current limitations in the scope of RT vs.
+        surface, we have to fix the apparent surface reflectance
+        before calculating the numerical derivative w.r.t the atmosphere.
+        This is an issue for surface terms that are coupled with the atmopshere.
+        For example the shapes of the glint effects (g_dir and g_dif) are dependent
+        on L_dir / L_tot and L_dif / L_tot respectively, and should vary w/in dRT.
+        The current implementation assumes a constant apparent reflectance,
+        and therefore constant surface-atmosphere coupled terms (e.g. g_dir and g_dif).
+        """
+        rho_dir_dir, rho_dif_dir, Ls = self.upsample_surface_vectors_to_RT(
             x_surface, geom, L_down_dir, L_down_dif
         )
-        drfl_dsurface = self.surface.drfl_dsurface(x_surface, geom)
-        rho_dir_dir_hi = self.upsample(self.surface.wl, rho_dir_dir)
-        rho_dif_dir_hi = self.upsample(self.surface.wl, rho_dif_dir)
-        drfl_dsurface_hi = self.upsample(self.surface.wl, drfl_dsurface.T).T
 
-        # Get partials of emission WRT surface state variables, upsample
-        Ls = self.surface.calc_Ls(x_surface, geom)
-        dLs_dsurface = self.surface.dLs_dsurface(x_surface, geom)
-        Ls_hi = self.upsample(self.surface.wl, Ls)
-        dLs_dsurface_hi = self.upsample(self.surface.wl, dLs_dsurface.T).T
-
-        # Derivatives of RTM radiance
-        drdn_dRT, drdn_dsurface = self.RT.drdn_dRT(
-            x_RT,
-            rho_dir_dir_hi,
-            rho_dif_dir_hi,
-            drfl_dsurface_hi,
-            Ls_hi,
-            dLs_dsurface_hi,
-            geom,
+        drfl_dsurface, dLs_dsurface = self.upsample_surface_derivatives_to_RT(
+            x_surface, geom, L_down_dir, L_down_dif
         )
 
-        # Derivatives of measurement, avoiding recalculation of rfl, Ls
+        # Need to pass calc rdn into instrument derivative
+        rdn = self.calc_rdn(
+            x_RT,
+            rho_dir_dir=rho_dir_dir,
+            rho_dif_dir=rho_dif_dir,
+            Ls=Ls,
+            L_tot=L_tot,
+            L_dir_dir=L_dir_dir,
+            L_dif_dir=L_dif_dir,
+            L_dir_dif=L_dir_dif,
+            L_dif_dif=L_dif_dif,
+            r=r,
+            geom=geom,
+        )
+
+        # To get the derivative w.r.t. RT
+        drdn_dRT = self.RT.drdn_dRT(
+            x_RT,
+            geom,
+            rho_dir_dir=rho_dir_dir,
+            rho_dif_dir=rho_dif_dir,
+            Ls=Ls,
+            rdn=rdn,
+        )
+
+        # To get the derivative w.r.t. Surface
+        drdn_dsurface = self.surface.drdn_dsurface(
+            rho_dif_dir,
+            drfl_dsurface,
+            dLs_dsurface,
+            r["sphalb"],
+            r["transm_up_dir"] + r["transm_up_dif"],
+            L_tot,
+            L_dir_dir + L_dir_dif,
+        )
+
+        # To get derivatives w.r.t. instrument, downsample to instrument wavelengths
         dmeas_dsurface = self.instrument.sample(
             x_instrument, self.RT.wl, drdn_dsurface.T
         ).T
         dmeas_dRT = self.instrument.sample(x_instrument, self.RT.wl, drdn_dRT.T).T
-        rdn_hi = self.calc_rdn(x, geom, rho_dir_dir, rho_dif_dir, Ls=Ls)
         dmeas_dinstrument = self.instrument.dmeas_dinstrument(
-            x_instrument, self.RT.wl, rdn_hi
+            x_instrument, self.RT.wl, rdn
         )
 
         # Put it all together
@@ -315,21 +438,50 @@ class ForwardModel:
         # Unpack state vector
         x_surface, x_RT, x_instrument = self.unpack(x)
 
-        # Get partials of reflectance and upsample
-        _, L_down_dir, L_down_dif = self.RT.get_L_down_transmitted(x_RT, geom)
-        rho_dir_dir, rho_dif_dir = self.surface.calc_rfl(
-            x_surface, geom, L_down_dir, L_down_dif
-        )
-        rho_dir_dir_hi = self.upsample(self.surface.wl, rho_dir_dir)
-        rho_dif_dir_hi = self.upsample(self.surface.wl, rho_dif_dir)
-        Ls = self.surface.calc_Ls(x_surface, geom)
-        Ls_hi = self.upsample(self.surface.wl, Ls)
-        rdn_hi = self.calc_rdn(x, geom, rho_dir_dir, rho_dif_dir, Ls=Ls)
+        # Get RT quantities
+        (
+            r,
+            L_tot,
+            L_down_dir,
+            L_down_dif,
+            L_dir_dir,
+            L_dif_dir,
+            L_dir_dif,
+            L_dif_dif,
+        ) = self.RT.calc_RT_quantities(x_RT, geom)
 
-        drdn_dRTb = self.RT.drdn_dRTb(x_RT, rho_dir_dir_hi, rho_dif_dir_hi, Ls_hi, geom)
+        # Get Surface quantities and sample them at RT wavelengths
+        rho_dir_dir, rho_dif_dir, Ls = self.upsample_surface_vectors_to_RT(
+            x_surface, geom, L_down_dir=L_down_dir, L_down_dif=L_down_dif
+        )
+
+        rdn = self.calc_rdn(
+            x_RT,
+            rho_dir_dir=rho_dir_dir,
+            rho_dif_dir=rho_dif_dir,
+            Ls=Ls,
+            L_tot=L_tot,
+            L_dir_dir=L_dir_dir,
+            L_dif_dir=L_dif_dir,
+            L_dir_dif=L_dir_dif,
+            L_dif_dif=L_dif_dif,
+            r=r,
+            geom=geom,
+        )
+
+        drdn_dRTb = self.RT.drdn_dRTb(
+            x_RT,
+            geom=geom,
+            rho_dir_dir=rho_dir_dir,
+            rho_dif_dir=rho_dif_dir,
+            Ls=Ls,
+            rdn=rdn,
+        )
+
+        # To get derivatives w.r.t. instrument, downsample to instrument wavelengths
         dmeas_dRTb = self.instrument.sample(x_instrument, self.RT.wl, drdn_dRTb.T).T
         dmeas_dinstrumentb = self.instrument.dmeas_dinstrumentb(
-            x_instrument, self.RT.wl, rdn_hi
+            x_instrument, self.RT.wl, rdn
         )
 
         # Put it together

@@ -112,7 +112,7 @@ def heuristic_atmosphere(
             # using this presumed amount of water vapor, and measure the
             # resulting residual (as measured from linear interpolation across
             # the absorption feature)
-            coszen, cos_i = RT.check_coszen_and_cos_i(geom)
+            coszen, cos_i = geom.check_coszen_and_cos_i(RT.coszen)
             if my_RT.rt_mode == "rdn":
                 rho = meas
             else:
@@ -195,7 +195,7 @@ def invert_algebraic(
 
     # Now solve for the reflectance at measured wavelengths,
     # and back-translate to surface wavelengths
-    coszen, cos_i = RT.check_coszen_and_cos_i(geom)
+    coszen, cos_i = geom.check_coszen_and_cos_i(RT.coszen)
     if my_RT.rt_mode == "rdn":
         rho = rdn_solrfl
     else:
@@ -216,7 +216,8 @@ def invert_analytical(
     winidx: np.array,
     meas: np.array,
     geom: Geometry,
-    x_RT: np.array,
+    x0: np.array,
+    sub_state,
     num_iter: int = 1,
     hash_table: OrderedDict = None,
     hash_size: int = None,
@@ -231,7 +232,8 @@ def invert_analytical(
         winidx: indices of surface components of state vector (to be solved)
         meas: a one-D numpy vector of radiance in uW/nm/sr/cm2
         geom: geometry object corresponding to given measurement
-        x_RT: the radiative transfer state variables
+        x0: the initialization state including surface from the superpixel
+            and the atm from the smoothed atmosphere.
         num_iter: number of interations to run through
         hash_table: a hash table to use locally
         hash_size: max size of given hash table
@@ -244,6 +246,8 @@ def invert_analytical(
     from scipy.linalg.blas import dsymv
     from scipy.linalg.lapack import dpotrf, dpotri
 
+    EXIT_CODE = 0
+
     # x = x0.copy()
     # x_surface, x_RT, x_instrument = fm.unpack(x)
     # Note, this will fail if x_instrument is populated
@@ -253,154 +257,123 @@ def invert_analytical(
             " indexing"
         )
 
-    x = np.zeros(fm.nstate)
-    x[fm.idx_RT] = x_RT
-    x_alg = invert_algebraic(
-        fm.surface,
-        fm.RT,
-        fm.instrument,
-        x[fm.idx_surface],
-        x_RT,
-        x[fm.idx_instrument],
-        meas,
-        geom,
-    )
-    # x_alg contains [rfl_est, Ls_est, coeffs]
-
-    if fm.RT.glint_model:
-        x_surf = fm.surface.fit_params(x_alg[0], geom)
-        x[fm.idx_surface] = x_surf
-        # Initial guess for reflectance and glint parameters based on the algebraic inversion
-        # Glint initialization currently comes from instrument band at ~1020 nm
-    else:
-        x[fm.idx_surface] = x_alg[0]
-
-    trajectory = []
-
+    x = x0.copy()
     x_surface, x_RT, x_instrument = fm.unpack(x)
 
-    Seps = fm.Seps(x, meas, geom)[winidx, :][:, winidx]
+    # Get all the RT quantities
+    (r, L_tot, L_down_dir, L_down_dif, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif) = (
+        fm.RT.calc_RT_quantities(x_RT, geom)
+    )
 
-    Sa = fm.Sa(x, geom)
-    Sa_surface = Sa[fm.idx_surface, :][:, fm.idx_surface]
+    # Pass some important variables
+    L_atm = fm.RT.get_L_atm(x_RT, geom)
+    s = r["sphalb"]
 
-    Sa_inv = svd_inv_sqrt(Sa_surface, hash_table, hash_size)[0]
+    # Get all the surface quantities
+    sub_surface, sub_RT, sub_instrument = fm.unpack(sub_state)
+    rho_dir_dir, rho_dif_dir, Ls = fm.upsample_surface_vectors_to_RT(
+        x_surface, geom, L_down_dir, L_down_dif
+    )
+    # background conditions
+    bg = s * rho_dif_dir
 
-    xa_full = fm.xa(x, geom)
-    xa_surface = xa_full[fm.idx_surface]
+    # Special case: 1-component model
+    if type(L_tot) != np.ndarray or len(L_tot) == 1:
+        L_tot = L_down_tot
 
-    if fm.RT.glint_model:
-        winglintidx = np.concatenate(
-            (winidx, fm.idx_surf_nonrfl), axis=0
-        )  # Include glint indices
-        outside_ret_windows = np.ones(len(fm.idx_surface), dtype=bool)
-        outside_ret_windows[winglintidx] = False
-        outside_ret_windows = np.where(outside_ret_windows)[0]
+    # Get the inversion indices; Include glint indices if applicable
+    full_idx = np.concatenate((winidx, fm.idx_surf_nonrfl), axis=0)
+    outside_ret_windows = np.ones(len(fm.idx_surface), dtype=bool)
+    outside_ret_windows[full_idx] = False
+    outside_ret_windows = np.where(outside_ret_windows)[0]
+    iv_idx = fm.surface.analytical_iv_idx
 
-        prprod = Sa_inv[winglintidx, :][:, winglintidx] @ xa_surface[winglintidx]
-        # obtain needed RT vectors
-        r = fm.RT.get_L_atm(x_RT, geom)[winidx]  # path radiance
-        # total (down * up, direct + diffuse), direct, and diffuse downward radiance
-        L_down_total, L_down_dir, L_down_dif = fm.RT.get_L_down_transmitted(x_RT, geom)
-        L_down_total = L_down_total[winidx]
-        L_down_dir = L_down_dir[winidx]
-        L_down_dif = L_down_dif[winidx]
-        rtm_quant = fm.RT.get_shared_rtm_quantities(x_RT, geom)
-        s = rtm_quant["sphalb"][winidx]  # spherical albedo
-        rho_ls = fm.RT.fresnel_rf(geom.observer_zenith)
-        g_dir = rho_ls * (L_down_dir / L_down_total)  # direct sky transmittance
-        g_dif = rho_ls * (L_down_dif / L_down_total)  # diffuse sky transmittance
+    trajectory = np.zeros((num_iter + 1, len(x)))
+    trajectory[0, :] = x
+    for n in range(num_iter):
+        # Measurement uncertainty
+        Seps = fm.Seps(x, meas, geom)[winidx, :][:, winidx]
 
-        nl = len(r)
-        H = np.zeros((nl, nl + 2))
-        np.fill_diagonal(H, 1)
-        H[:, -2] = g_dir
-        H[:, -1] = g_dif
+        # Prior covariance
+        try:
+            Sa = fm.Sa(x, geom)
+            Sa_surface = Sa[fm.idx_surface, :][:, fm.idx_surface]
+            Sa_inv = svd_inv_sqrt(Sa_surface, hash_table, hash_size)[0]
 
-        GIv = 1 / np.diag(Seps)
+        except ValueError:
+            # On invertible matrix error, save NaN array on step and update exit code
+            C_rcond = []
+            trajectory[n + 1, :] = x
+            EXIT_CODE = -11
+            continue
 
-        xk = x[fm.idx_surface].copy()
-        trajectory.append(x)
+        # Prior mean
+        xa_full = fm.xa(x, geom)
+        xa_surface = xa_full[fm.idx_surface]
 
-        full_xk = np.zeros(len(x_surface))
+        # Save the product of the prior covariance and mean
+        prprod = Sa_inv @ xa_surface
 
-        for n in range(num_iter):
-            Dv = L_down_total / (1 - s * (xk[:nl] + xk[-2] * g_dir + xk[-1] * g_dif))
-            L = Dv.reshape((-1, 1)) * H
-            M = GIv.reshape((-1, 1)) * L
-            S = L.T @ M
-            C_rcond = np.linalg.inv(Sa_inv[winglintidx, :][:, winglintidx] + S)
-            z = meas[winidx] - r
-            xk = C_rcond @ (M.T @ z + prprod)
+        x_surface, x_RT, x_instrument = fm.unpack(x)
 
-            # Save trajectory step:
-            full_xk[winglintidx] = xk
-            if outside_ret_const is None:
-                full_xk[outside_ret_windows] = xa_surface[outside_ret_windows]
-            else:
-                full_xk[outside_ret_windows] = outside_ret_const
-            x[fm.idx_surface] = full_xk
-            trajectory.append(x)
+        H = fm.surface.analytical_model(
+            bg,
+            L_down_dir,
+            L_down_dif,
+            L_tot,
+            geom,
+            L_dir_dir=L_dir_dir,
+            L_dir_dif=L_dir_dif,
+            L_dif_dir=L_dif_dir,
+            L_dif_dif=L_dif_dif,
+        )
+        # Just the wavelengths and states of interest
+        L = H[winidx, :][:, iv_idx]
 
-        if fm.surface.full_glint:
-            trajectory.append(trajectory[-1][-2] * g_dir)
-            trajectory.append(trajectory[-1][-1] * g_dif)
+        C = dpotrf(Seps, 1)[0]
+        P = dpotri(C, 1)[0]
 
-    else:
-        outside_ret_windows = np.ones(len(fm.idx_surface), dtype=bool)
-        outside_ret_windows[winidx] = False
-        outside_ret_windows = np.where(outside_ret_windows)[0]
-        # Outside_ret_windows in this case any x_surface parameters that are not reflectances
-        for n in range(num_iter):
-            L_atm = fm.RT.get_L_atm(x_RT, geom)[winidx]
-            L_tot = fm.calc_rdn(x, geom)[winidx]
+        P_tilde = ((L.T @ P) @ L).T
+        P_rcond = Sa_inv[iv_idx, :][:, iv_idx] + P_tilde
 
-            L_surf = (L_tot - L_atm) / x_surface[winidx]  # = Ldiag
-            L_surf[L_surf < 0] = 1e-9
+        LI_rcond = dpotrf(P_rcond)[0]
+        C_rcond = dpotri(LI_rcond)[0]
+        xk = dsymv(
+            1,
+            C_rcond,
+            (L.T @ dsymv(1, P, meas[winidx] - L_atm[winidx]) + prprod[iv_idx]),
+        )
 
-            # Match Jouni's convention
-            C = Seps  # C = 'meas_Cov' = Seps
-            L = dpotrf(C, 1)[0]
-            P = dpotri(L, 1)[0]
-            P_rpr = Sa_inv[winidx, :][:, winidx]
-            mu_rpr = xa_surface[winidx]
+        # Save trajectory step:
+        x_surface[iv_idx] = xk
+        if outside_ret_const is None:
+            x_surface[outside_ret_windows] = xa_surface[outside_ret_windows]
+        else:
+            x_surface[outside_ret_windows] = outside_ret_const
 
-            priorprod = P_rpr @ mu_rpr
+        x[fm.idx_surface] = x_surface
+        trajectory[n + 1, :] = x
 
-            P_tilde = ((L_surf * P).T * L_surf).T
-            P_rcond = P_rpr + P_tilde
-
-            LI_rcond = dpotrf(P_rcond)[0]
-            C_rcond = dpotri(LI_rcond)[0]
-
-            # Calculate AOE mean
-            mu = dsymv(
-                1, C_rcond, L_surf * dsymv(1, P, meas[winidx] - L_atm) + priorprod
-            )
-
-            full_mu = np.zeros(len(x_surface))
-            full_mu[winidx] = mu
-
-            # Calculate conditional prior mean to fill in
-            # xa_cond, Sa_cond = conditional_gaussian(xa_full, Sa, outside_ret_windows, winidx, mu)
-            # full_mu[outside_ret_windows] = xa_cond
-            if outside_ret_const is None:
-                full_mu[outside_ret_windows] = xa_surface[outside_ret_windows]
-            else:
-                full_mu[outside_ret_windows] = outside_ret_const
-
-            x[fm.idx_surface] = full_mu
-            trajectory.append(x)
+    # TODO
+    """
+    Not currently implemented cleanly if we want to propogate 
+    the entire glint spectrum. Need to clean up implementation.
+    """
+    # if fm.RT.glint_model and fm.surface.return_glint_spectrum:
+    #     trajectory.append(trajectory[-1][-2] * g_dir)
+    #     trajectory.append(trajectory[-1][-1] * g_dif)
 
     if diag_uncert:
-        full_unc = np.ones(len(x))
-        if fm.RT.glint_model:
-            full_unc[winglintidx] = np.sqrt(np.diag(C_rcond))
+        if len(C_rcond):
+            full_unc = np.ones(len(x))
+            full_unc[iv_idx] = np.sqrt(np.diag(C_rcond))
         else:
-            full_unc[winidx] = np.sqrt(np.diag(C_rcond))
-        return trajectory, full_unc
+            full_unc = np.ones(len(x))
+            full_unc[iv_idx] = [-9999 for i in x[iv_idx]]
+
+        return trajectory, full_unc, EXIT_CODE
     else:
-        return trajectory, C_rcond
+        return trajectory, C_rcond, EXIT_CODE
 
 
 def invert_simple(forward: ForwardModel, meas: np.array, geom: Geometry):

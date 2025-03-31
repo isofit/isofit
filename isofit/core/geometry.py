@@ -35,7 +35,7 @@ class Geometry:
         loc: np.array = None,
         dt: datetime = None,
         esd: np.array = None,
-        bg_rfl=None,
+        bg_rfl: np.array = None,
     ):
         # Set some benign defaults...
         self.observer_zenith = (
@@ -108,3 +108,11 @@ class Geometry:
 
         day_of_year = date_time.timetuple().tm_yday
         return float(self.earth_sun_distance[day_of_year - 1, 1])
+
+    def check_coszen_and_cos_i(self, coszen):
+        coszen = np.cos(np.deg2rad(self.solar_zenith)) if np.isnan(coszen) else coszen
+
+        # Local solar zenith angle as a function of surface slope and aspect
+        cos_i = self.cos_i if self.cos_i is not None else coszen
+
+        return coszen, cos_i

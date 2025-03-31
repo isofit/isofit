@@ -70,7 +70,9 @@ class MCMCInversion(Inversion):
         # Data likelihood term
         Seps = self.fm.Seps(x, rdn_meas, geom)
         Seps_win = np.array([Seps[i, self.winidx] for i in self.winidx])
-        rdn_est = self.fm.calc_rdn(x=x, geom=geom)
+
+        # Get RT quantities
+        rdn_est = self.fm.calc_meas(x=x, geom=geom)
         pm = self.stable_mvnpdf(rdn_est[self.winidx], Seps_win, rdn_meas[self.winidx])
         return pa + pm
 
