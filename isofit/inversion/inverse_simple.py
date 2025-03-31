@@ -302,6 +302,7 @@ def invert_analytical(
 
         except ValueError:
             # On invertible matrix error, save NaN array on step and update exit code
+            C_rcond = []
             trajectory[n + 1, :] = x
             EXIT_CODE = -11
             continue
@@ -363,8 +364,12 @@ def invert_analytical(
     #     trajectory.append(trajectory[-1][-1] * g_dif)
 
     if diag_uncert:
-        full_unc = np.ones(len(x))
-        full_unc[iv_idx] = np.sqrt(np.diag(C_rcond))
+        if len(C_rcond):
+            full_unc = np.ones(len(x))
+            full_unc[iv_idx] = np.sqrt(np.diag(C_rcond))
+        else:
+            full_unc = np.ones(len(x))
+            full_unc[iv_idx] = [-9999 for i in x[iv_idx]]
 
         return trajectory, full_unc, EXIT_CODE
     else:

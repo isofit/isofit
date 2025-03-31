@@ -30,7 +30,7 @@ from spectral.io import envi
 
 from isofit import ray
 from isofit.configs import configs
-from isofit.core.common import envi_header, eps, load_spectrum
+from isofit.core.common import envi_header, load_spectrum
 from isofit.core.fileio import IO, write_bil_chunk
 from isofit.core.forward import ForwardModel
 from isofit.core.geometry import Geometry
@@ -95,25 +95,26 @@ def analytical_line(
     else:
         lbl_file = segmentation_file
 
-    if (
-        output_rfl_file is None
-        or config.forward_model.surface.surface_category == "glint_model_surface"
-    ):
-        analytical_state_file = subs_state_file.replace(
-            "_subs_state", "_state_analytical"
-        )
+    if output_rfl_file is None:
+        analytical_rfl_file = subs_state_file.replace("_subs_state", "_rfl")
     else:
-        analytical_state_file = output_rfl_file
+        analytical_rfl_file = output_rfl_file
 
-    if (
-        output_unc_file is None
-        or config.forward_model.surface.surface_category == "glint_model_surface"
-    ):
-        analytical_state_unc_file = subs_state_file.replace(
-            "_subs_state", "_state_analytical_uncert"
+    if output_unc_file is None:
+        analytical_rfl_unc_file = subs_state_file.replace("_subs_state", "_rfl_uncert")
+    else:
+        analytical_rfl_unc_file = output_unc_file
+
+    if config.forward_model.surface.surface_category == "glint_model_surface":
+        analytical_non_rfl_surf_file = subs_state_file.replace(
+            "_subs_state", "_surf_non_rfl"
+        )
+        analytical_non_rfl_surf_unc_file = subs_state_file.replace(
+            "_subs_state", "_surf_non_rfl_uncert"
         )
     else:
-        analytical_state_unc_file = output_unc_file
+        analytical_non_rfl_surf_file = None
+        analytical_non_rfl_surf_unc_file = None
 
     if (
         atm_file is None
@@ -154,30 +155,68 @@ def analytical_line(
 
     output_metadata = rdn_ds.metadata
     output_metadata["interleave"] = "bil"
-    output_metadata["description"] = "L2A Analytyical per-pixel surface retrieval"
-    output_metadata["bands"] = str(len(fm.idx_surface))
-    output_metadata["band names"] = fm.surface.statevec_names
+    output_metadata["description"] = (
+        "L2A Analytyical per-pixel surface reflectance retrieval"
+    )
+    output_metadata["bands"] = str(len(fm.idx_surf_rfl))
+    output_metadata["band names"] = np.array(fm.surface.statevec_names)[fm.idx_surf_rfl]
 
     outside_ret_windows = np.zeros(len(fm.surface.idx_lamb), dtype=int)
     outside_ret_windows[iv.winidx] = 1
-    bbl = np.concatenate([outside_ret_windows, [1 for i in fm.idx_surf_nonrfl]])
     output_metadata["bbl"] = "{" + ",".join([str(x) for x in outside_ret_windows]) + "}"
 
     if "emit pge input files" in list(output_metadata.keys()):
         del output_metadata["emit pge input files"]
 
+    # Initialize rfl and unc file (always)
     img = envi.create_image(
-        envi_header(analytical_state_file), ext="", metadata=output_metadata, force=True
+        envi_header(analytical_rfl_file), ext="", metadata=output_metadata, force=True
     )
     del img
 
     img = envi.create_image(
-        envi_header(analytical_state_unc_file),
+        envi_header(analytical_rfl_unc_file),
         ext="",
         metadata=output_metadata,
         force=True,
     )
     del rdn, img
+
+    # Initialize the surf non_rfl rile if needed
+    if analytical_non_rfl_surf_file:
+        output_metadata["description"] = (
+            "L2A Analytyical per-pixel surface state retrieval (non-reflectance)"
+        )
+        output_metadata["bands"] = str(len(fm.idx_surf_nonrfl))
+        output_metadata["band names"] = np.array(fm.surface.statevec_names)[
+            fm.idx_surf_nonrfl
+        ]
+        ret = [
+            output_metadata.pop(k)
+            for k in [
+                "bbl",
+                "wavelength",
+                "wavelength units",
+                "fwhm",
+                "smoothing factors",
+            ]
+        ]
+
+        img = envi.create_image(
+            envi_header(analytical_non_rfl_surf_file),
+            ext="",
+            metadata=output_metadata,
+            force=True,
+        )
+        del img
+
+        img = envi.create_image(
+            envi_header(analytical_non_rfl_surf_unc_file),
+            ext="",
+            metadata=output_metadata,
+            force=True,
+        )
+        del img
 
     if n_cores == -1:
         n_cores = multiprocessing.cpu_count()
@@ -200,8 +239,10 @@ def analytical_line(
             config,
             fm,
             atm_file,
-            analytical_state_file,
-            analytical_state_unc_file,
+            analytical_rfl_file,
+            analytical_rfl_unc_file,
+            analytical_non_rfl_surf_file,
+            analytical_non_rfl_surf_unc_file,
             rdn_file,
             loc_file,
             obs_file,
@@ -239,8 +280,10 @@ class Worker(object):
         config: configs.Config,
         fm: ForwardModel,
         RT_state_file: str,
-        analytical_state_file: str,
+        analytical_rfl_file: str,
         analytical_state_unc_file: str,
+        analytical_non_rfl_surf_file: str,
+        analytical_non_rfl_surf_unc_file: str,
         rdn_file: str,
         loc_file: str,
         obs_file: str,
@@ -281,8 +324,10 @@ class Worker(object):
         self.rdn_file = rdn_file
         self.loc_file = loc_file
         self.obs_file = obs_file
-        self.analytical_state_file = analytical_state_file
-        self.analytical_state_unc_file = analytical_state_unc_file
+        self.analytical_rfl_file = analytical_rfl_file
+        self.analytical_rfl_unc_file = analytical_state_unc_file
+        self.analytical_non_rfl_surf_file = analytical_non_rfl_surf_file
+        self.analytical_non_rfl_surf_unc_file = analytical_non_rfl_surf_unc_file
 
         # Can't see any reason to leave these as optional
         self.subs_state_file = subs_state_file
@@ -320,23 +365,45 @@ class Worker(object):
         lbl = envi.open(envi_header(self.lbl_file)).open_memmap(interleave="bip")
 
         start_line, stop_line = startstop
-        output_state = (
+        output_rfl = (
             np.zeros(
-                (stop_line - start_line, rt_state.shape[1], len(self.fm.idx_surface))
+                (stop_line - start_line, rt_state.shape[1], len(self.fm.idx_surf_rfl))
             )
             - 9999
         )
-        output_state_unc = (
+        output_rfl_unc = (
             np.zeros(
-                (stop_line - start_line, rt_state.shape[1], len(self.fm.idx_surface))
+                (stop_line - start_line, rt_state.shape[1], len(self.fm.idx_surf_rfl))
             )
             - 9999
         )
+
+        if self.analytical_non_rfl_surf_file:
+            output_non_rfl = (
+                np.zeros(
+                    (
+                        stop_line - start_line,
+                        rt_state.shape[1],
+                        len(self.fm.idx_surf_nonrfl),
+                    )
+                )
+                - 9999
+            )
+            output_non_rfl_unc = (
+                np.zeros(
+                    (
+                        stop_line - start_line,
+                        rt_state.shape[1],
+                        len(self.fm.idx_surf_nonrfl),
+                    )
+                )
+                - 9999
+            )
 
         esd = IO.load_esd()
 
         for r in range(start_line, stop_line):
-            for c in range(output_state.shape[1]):
+            for c in range(output_rfl.shape[1]):
                 meas = rdn[r, c, :]
                 if self.radiance_correction is not None:
                     # sc - Creating copy to avoid the "output array read only" error
@@ -419,12 +486,19 @@ class Worker(object):
                         f"Row, Col: {r, c} - Sa matrix is non-invertible. Statevector is likely NaNs."
                     )
 
-                output_state[r - start_line, c, :] = states[-1, self.fm.idx_surface]
+                output_rfl[r - start_line, c, :] = states[-1, self.fm.idx_surf_rfl]
+                output_rfl_unc[r - start_line, c, :] = unc[self.fm.idx_surf_rfl]
 
-                output_state_unc[r - start_line, c, :] = unc[self.fm.idx_surface]
+                if self.analytical_non_rfl_surf_file:
+                    output_non_rfl[r - start_line, c, :] = states[
+                        -1, self.fm.idx_surf_nonrfl
+                    ]
+                    output_non_rfl_unc[r - start_line, c, :] = unc[
+                        self.fm.idx_surf_nonrfl
+                    ]
 
             # What do we want to do with the negative reflectances?
-            state = output_state[r - start_line, ...]
+            # state = output_state[r - start_line, ...]
             # mask = np.logical_and.reduce(
             #     [
             #         state < self.rfl_bounds[0],
@@ -438,17 +512,31 @@ class Worker(object):
             logging.info(f"Analytical line writing line {r}")
 
             write_bil_chunk(
-                state.T,
-                self.analytical_state_file,
+                output_rfl.T,
+                self.analytical_rfl_file,
                 r,
-                (rdn.shape[0], rdn.shape[1], len(self.fm.idx_surface)),
+                (rdn.shape[0], rdn.shape[1], len(self.fm.idx_surf_rfl)),
             )
             write_bil_chunk(
-                output_state_unc[r - start_line, ...].T,
-                self.analytical_state_unc_file,
+                output_rfl_unc[r - start_line, ...].T,
+                self.analytical_rfl_unc_file,
                 r,
-                (rdn.shape[0], rdn.shape[1], len(self.fm.idx_surface)),
+                (rdn.shape[0], rdn.shape[1], len(self.fm.idx_surf_rfl)),
             )
+
+            if self.analytical_non_rfl_surf_file:
+                write_bil_chunk(
+                    output_non_rfl.T,
+                    self.analytical_non_rfl_surf_file,
+                    r,
+                    (rdn.shape[0], rdn.shape[1], len(self.fm.idx_surf_nonrfl)),
+                )
+                write_bil_chunk(
+                    output_non_rfl_unc[r - start_line, ...].T,
+                    self.analytical_non_rfl_surf_unc_file,
+                    r,
+                    (rdn.shape[0], rdn.shape[1], len(self.fm.idx_surf_nonrfl)),
+                )
 
 
 @click.command(name="analytical_line")
