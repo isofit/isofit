@@ -227,9 +227,12 @@ def apply_oe(
         if emulator_base.endswith(".jld2"):
             multipart_transmittance = False
         else:
-            emulator_aux_file = os.path.abspath(
-                os.path.splitext(emulator_base)[0] + "_aux.npz"
-            )
+            if emulator_base.endswith(".npz"):
+                emulator_aux_file = emulator_base
+            else:
+                emulator_aux_file = os.path.abspath(
+                    os.path.splitext(emulator_base)[0] + "_aux.npz"
+                )
             aux = np.load(emulator_aux_file)
             if (
                 "transm_down_dir"
@@ -605,7 +608,7 @@ def apply_oe(
             paths.h2o_subs_path
         ):
             # Write the presolve connfiguration file
-            h2o_grid = np.linspace(0.01, max_water - 0.01, 10).round(2)
+            h2o_grid = np.linspace(0.2, max_water - 0.01, 10).round(2)
             logging.info(f"Pre-solve H2O grid: {h2o_grid}")
             logging.info("Writing H2O pre-solve configuration file.")
             tmpl.build_presolve_config(
