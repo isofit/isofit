@@ -29,6 +29,7 @@ import h5py
 import numpy as np
 import yaml
 from scipy.interpolate import interp1d
+import xarray
 
 from isofit.core.common import resample_spectrum
 from isofit.radiative_transfer import luts
@@ -39,30 +40,42 @@ Logger = logging.getLogger(__file__)
 
 
 class tfLikeModel:
-    def __init__(self, input_file):
-        self.weights = []
-        self.biases = []
-        self.input_file = input_file
-        self.model = h5py.File(input_file, "r")
+    def __init__(self, input_file, weights=None, biases=None):
 
-        weights = []
-        biases = []
-        for _n, n in enumerate(self.model["model_weights"].keys()):
-            if "dense" in n:
-                if "kernel:0" in self.model["model_weights"][n][n]:
-                    weights.append(
-                        np.array(self.model["model_weights"][n][n]["kernel:0"])
-                    )
-                    biases.append(np.array(self.model["model_weights"][n][n]["bias:0"]))
-                else:
-                    weights.append(
-                        np.array(self.model["model_weights"][n][n]["kernel"])
-                    )
-                    biases.append(np.array(self.model["model_weights"][n][n]["bias"]))
+        if input_file is None and weights is not None and biases is not None:
+            # If we have weights and biases provided directly
+            self.weights = weights
+            self.biases = biases
+            self.input_file = None
+        
+        elif input_file is not None:
+            self.weights = []
+            self.biases = []
+            self.input_file = input_file
+            self.model = h5py.File(input_file, "r")
 
-        self.weights = weights
-        self.biases = biases
-        self.input_file = input_file
+            weights = []
+            biases = []
+            for _n, n in enumerate(self.model["model_weights"].keys()):
+                if "dense" in n:
+                    if "kernel:0" in self.model["model_weights"][n][n]:
+                        weights.append(
+                            np.array(self.model["model_weights"][n][n]["kernel:0"])
+                        )
+                        biases.append(np.array(self.model["model_weights"][n][n]["bias:0"]))
+                    else:
+                        weights.append(
+                            np.array(self.model["model_weights"][n][n]["kernel"])
+                        )
+                        biases.append(np.array(self.model["model_weights"][n][n]["bias"]))
+
+            self.weights = weights
+            self.biases = biases
+            self.input_file = input_file
+        else:
+            raise ValueError(
+                "You must provide either an input_file or both weights and biases."
+            )
 
     def leaky_re_lu(self, x, alpha=0.4):
         return np.maximum(alpha * x, x)
@@ -89,9 +102,9 @@ class SimulatedModtranRT(RadiativeTransferEngine):
     lut_quantities = {
         "rhoatm",
         "sphalb",
-        "transm_down_difs",
-        "transm_down_dif",  # NOTE: Formerly transm
-        "transm_up_difs",
+        "transm_down_dif",
+        "transm_down_dir",  # NOTE: Formerly transm
+        "transm_up_dif",
         "transm_up_dir",  # NOTE: Formerly transup
     }
 
@@ -106,20 +119,21 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         config = build_sixs_config(self.engine_config)
 
         # Emulator Aux
-        aux = np.load(config.emulator_aux_file)
+        aux = np.load(config.emulator_aux_file, allow_pickle=True)
 
         # TODO: Disable when sRTMnet_v120_aux is updated
-        aux_rt_quantities = np.where(
-            aux["rt_quantities"] == "transm", "transm_down_dif", aux["rt_quantities"]
-        )
+        #aux_rt_quantities = np.where(
+        #    aux["rt_quantities"] == "transm", "transm_down_dif", aux["rt_quantities"]
+        #)
 
         # TODO: Re-enable when sRTMnet_v120_aux is updated
         # Verify expected keys exist
-        # missing = self.lut_quantities - set(aux["rt_quantities"].tolist())
-        # if missing:
-        #     raise AttributeError(
-        #         f"Emulator Aux rt_quantities does not contain the following required keys: {missing}"
-        #     )
+        missing = self.lut_quantities - set(aux["rt_quantities"].tolist())
+        if missing:
+            raise AttributeError(
+                f"Emulator Aux rt_quantities does not contain the following required keys: {missing}"
+            )
+        aux_rt_quantities = self.lut_quantities
 
         # Emulator keys (sRTMnet)
         self.emu_wl = aux["emulator_wavelengths"]
@@ -159,28 +173,46 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         sixs = sim.lut[aux_rt_quantities]
         resample = sixs.interp({"wl": aux["emulator_wavelengths"]})
 
-        # Stack the quantities together along a new dimension named `quantity`
-        resample = resample.to_array("quantity").stack(stack=["quantity", "wl"])
-
-        ## Reduce from 3D to 2D by stacking along the wavelength dim for each quantity
-        # Convert to DataArray to stack the variables along a new `quantity` dimension
-        data = sixs.to_array("quantity").stack(stack=["quantity", "wl"])
-
-        scaler = aux.get("response_scaler", 100.0)
-
-        # Now predict, scale, and add the interpolations
         Logger.info("Loading and predicting with emulator")
-        emulator = tfLikeModel(self.engine_config.emulator_file)
-        predicts = da.from_array(emulator.predict(data))
-        predicts /= scaler
-        predicts += resample
 
-        # Unstack back to a dataset and save
-        predicts = predicts.unstack("stack").to_dataset("quantity")
+        if self.engine_config.emulator_file.endswith(".h5"):
+            Logger.debug("Detected hdf5 (1c) emulator file format")
+
+            # Stack the quantities together along a new dimension named `quantity`
+            resample = resample.to_array("quantity").stack(stack=["quantity", "wl"])
+
+            ## Reduce from 3D to 2D by stacking along the wavelength dim for each quantity
+            # Convert to DataArray to stack the variables along a new `quantity` dimension
+            data = sixs.to_array("quantity").stack(stack=["quantity", "wl"])
+
+            scaler = aux.get("response_scaler", 100.0)
+
+            # Now predict, scale, and add the interpolations
+            emulator = tfLikeModel(self.engine_config.emulator_file)
+            predicts = da.from_array(emulator.predict(data))
+            predicts /= scaler
+            predicts += resample
+
+            # Unstack back to a dataset and save
+            predicts = predicts.unstack("stack").to_dataset("quantity")
+
+        elif self.engine_config.emulator_file.endswith(".npz"):
+            Logger.debug("Detected npz (4c) emulator file format")
+
+            weights = aux["weights"].item()
+            biases = aux["biases"].item()
+            predicts = resample.copy(deep=True)
+            for key in aux_rt_quantities:
+                emulator = tfLikeModel(None, weights=weights[key], biases=biases[key])
+                lp = emulator.predict(sixs[key].values)
+                lp /= aux["response_scaler"].item()[key] 
+                lp += aux["response_offset"].item()[key]
+                predicts[key] = resample[key] + lp
 
         self.predict_path = os.path.join(
             self.engine_config.sim_path, "sRTMnet.predicts.nc"
         )
+
         Logger.info(f"Saving intermediary prediction results to: {self.predict_path}")
         luts.saveDataset(self.predict_path, predicts)
 

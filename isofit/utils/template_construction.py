@@ -591,9 +591,15 @@ def build_presolve_config(
         radiative_transfer_config["radiative_transfer_engines"]["vswir"][
             "emulator_file"
         ] = abspath(emulator_base)
-        radiative_transfer_config["radiative_transfer_engines"]["vswir"][
-            "emulator_aux_file"
-        ] = abspath(os.path.splitext(emulator_base)[0] + "_aux.npz")
+        if emulator_base.endswith(".npz"):
+            # then aux & emulator are the same
+            radiative_transfer_config["radiative_transfer_engines"]["vswir"][
+                "emulator_aux_file"
+            ] = abspath(emulator_base)
+        else:
+            radiative_transfer_config["radiative_transfer_engines"]["vswir"][
+                "emulator_aux_file"
+            ] = abspath(os.path.splitext(emulator_base)[0] + "_aux.npz")
         radiative_transfer_config["radiative_transfer_engines"]["vswir"][
             "interpolator_base_path"
         ] = abspath(
@@ -782,9 +788,15 @@ def build_main_config(
         radiative_transfer_config["radiative_transfer_engines"]["vswir"][
             "emulator_file"
         ] = abspath(emulator_base)
-        radiative_transfer_config["radiative_transfer_engines"]["vswir"][
-            "emulator_aux_file"
-        ] = abspath(os.path.splitext(emulator_base)[0] + "_aux.npz")
+        if emulator_base.endswith(".npz"):
+            # then aux & emulator are the same
+            radiative_transfer_config["radiative_transfer_engines"]["vswir"][
+                "emulator_aux_file"
+            ] = abspath(emulator_base)
+        else:
+            radiative_transfer_config["radiative_transfer_engines"]["vswir"][
+                "emulator_aux_file"
+            ] = abspath(os.path.splitext(emulator_base)[0] + "_aux.npz")
         radiative_transfer_config["radiative_transfer_engines"]["vswir"][
             "interpolator_base_path"
         ] = abspath(
