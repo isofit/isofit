@@ -22,9 +22,10 @@ class FileFinder:
     """
 
     cache = None
+    patterns = {}
     extensions = []
 
-    def __init__(self, path, cache=True, extensions=[]):
+    def __init__(self, path, cache=True, extensions=[], patterns={}):
         """
         Parameters
         ----------
@@ -43,6 +44,9 @@ class FileFinder:
         if not self.extensions:
             raise AttributeError("One or more extensions must be defined")
 
+        if patterns:
+            self.patterns = patterns
+
         if cache:
             self.cache = {}
 
@@ -50,6 +54,26 @@ class FileFinder:
 
     def __repr__(self):
         return f"<{self.__class__.__name__} [{self.path}]>"
+
+    def info(self, file):
+        """
+        Retrieves known information for a file if its name matches one of the set
+        patterns
+
+        Parameters
+        ----------
+        file : str
+            File name to compare against the patterns dict keys
+
+        Returns
+        -------
+        any
+            Returns the value if a regex key in the patterns dict matches the file name
+        """
+        file = str(file)  # Not pathlib.Path compatible
+        for pattern, desc in self.patterns.items():
+            if re.match(pattern, file):
+                return desc
 
     @property
     def files(self):
@@ -81,7 +105,7 @@ class FileFinder:
             return True
         return file.suffix in self.extensions
 
-    def getTree(self, *, path=None, tree={"": []}):
+    def getTree(self, *, path=None, tree=None):
         """
         Recursively finds the files under a directory as a dict tree
 
@@ -89,7 +113,7 @@ class FileFinder:
         ----------
         path : pathlib.Path, default=None
             Directory to search, defaults to self.path
-        tree : dict, default={'': []}
+        tree : dict, default=None
             Tree structure of discovered files
 
         Returns
@@ -101,10 +125,12 @@ class FileFinder:
         if path is None:
             path = self.path
 
+        if tree is None:
+            tree = {"": []}
+
         for item in path.glob("*"):
             if item.is_dir():
                 self.getTree(path=item, tree=tree.setdefault(item.name, {"": []}))
-            # elif item.suffix in self.extensions
             elif self.extMatches(item):
                 tree[""].append(item.name)
 
@@ -135,7 +161,7 @@ class FileFinder:
 
         return files
 
-    def ifin(self, name):
+    def ifin(self, name, all=False):
         """
         Simple if name in filename match
 
@@ -143,26 +169,30 @@ class FileFinder:
         ----------
         name : str
             String to check in the filename
+        all : bool, default=False
+            Return all files matched instead of the first instance
 
         Returns
         -------
-        str | None
-            First matched file or None
+        str | list | None
+            First matched file if all is False, otherwise the full list
         """
         found = []
         for file in self.getFlat():
             if name in file:
                 found.append(file)
 
-        if len(found) > 1:
-            self.log.warning(
-                f"{len(found)} files were found containing the provided name {name!r}, try being more specific. Returning just the first instance"
-            )
+        if not all:
+            if len(found) > 1:
+                self.log.warning(
+                    f"{len(found)} files were found containing the provided name {name!r}, try being more specific. Returning just the first instance"
+                )
 
-        if found:
-            return found[0]
+            if found:
+                return found[0]
+        return found
 
-    def match(self, regex):
+    def match(self, regex, all=False):
         """
         Find files using a regex match
 
@@ -170,26 +200,34 @@ class FileFinder:
         ----------
         regex : str
             Regex pattern to match with
+        all : bool, default=False
+            Return all files matched instead of the first instance
 
         Returns
         -------
-        str | None
-            First matched file or None
+        str | list | None
+            First matched file if all is False, otherwise the full list
         """
         found = []
         for file in self.getFlat():
-            if re.match(regex, file):
-                found.append(file)
+            try:
+                if re.match(regex, file):
+                    found.append(file)
+            except Exception as e:
+                self.log.exception(f"Is this a valid regex? {regex}")
+                raise e
 
-        if len(found) > 1:
-            self.log.warning(
-                f"{len(found)} files were found containing the provided regex {regex!r}, try being more specific. Returning just the first instance"
-            )
+        if not all:
+            if len(found) > 1:
+                self.log.warning(
+                    f"{len(found)} files were found containing the provided regex {regex!r}, try being more specific. Returning just the first instance"
+                )
 
-        if found:
-            return found[0]
+            if found:
+                return found[0]
+        return found
 
-    def find(self, name):
+    def find(self, name, all=False):
         """
         Find files using a pre-built regex match. The regex will be in the form of:
             (\S*{part}\S*) for each part in the name split by "/", delineated by "/"
@@ -204,16 +242,18 @@ class FileFinder:
         ----------
         name : str
             Name to parse into a regex string
+        all : bool, default=False
+            Return all files matched instead of the first instance
 
         Returns
         -------
-        str | None
-            First matched file or None
+        str | list | None
+            First matched file if all is False, otherwise the full list
         """
         regex = "/".join([f"\S*{part}\S*" for part in name.split("/")])
         regex = rf"({regex})"
 
-        return self.match(regex)
+        return self.match(regex, all)
 
     def load(self, *, path=None, ifin=None, find=None, match=None):
         """
@@ -258,10 +298,12 @@ class FileFinder:
         if self.cache is not None:
             if file not in self.cache:
                 self.log.debug(f"Loading file: {file}")
-                self.cache[file] = self._load(file)
+                data = self._load(file)
+                if data is not None:
+                    self.cache[file] = data
 
             self.log.debug(f"Returning from cache: {file}")
-            return self.cache[file]
+            return self.cache.get(file)
 
         self.log.debug(f"Returning from load: {file}")
         return self._load(file)
@@ -272,6 +314,16 @@ class FileFinder:
 
 class Config(FileFinder):
     extensions = [".json"]
+    patterns = {
+        # Presolve
+        r"(.*_h2o.json)": "Presolve configuration produced by apply_oe",
+        r"(.*_h2o.json.tmpl)": "Presolve configuration template for developer purposes",
+        r"(.*_h2o_tpl.json)": "MODTRAN template configuration for the presolve run",
+        # Full
+        r"(.*_isofit.json)": "ISOFIT main configuration",
+        r"(.*_isofit.json.tmpl)": "ISOFIT main configuration template for developer purposes",
+        r"(.*_modtran_tpl.json)": "MODTRAN template configuration for ISOFIT",
+    }
 
     def _load(self, file):
         """
@@ -293,10 +345,21 @@ class Config(FileFinder):
 
 class Data(FileFinder):
     extensions = [".mat", ".txt"]
+    patterns = {
+        r"(channelized_uncertainty.txt)": None,
+        r"(model_discrepancy.mat)": None,
+        r"(surface.mat)": None,
+        r"(wavelengths.txt)": None,
+    }
 
 
 class LUT(FileFinder):
     extensions = [".nc"]
+    patterns = {
+        r"(6S.lut.nc)": "LUT produced by the SixS radiative transfer model for sRTMnet",
+        r"(lut.nc)": "Look-Up-Table for the radiative transfer model",
+        r"(sRTMnet.predicts.nc)": "Output predicts of sRTMnet",
+    }
 
     lut_regex = r"(\w+)-(\d*\.?\d+)_?"
 
@@ -378,6 +441,19 @@ class Input(FileFinder):
 
 class Output(FileFinder):
     extensions = [""]
+    patterns = {
+        # Presolve
+        r"(.*_subs_atm)": None,
+        r"(.*_subs_h2o)": None,
+        r"(.*_subs_rfl)": None,
+        r"(.*_subs_state)": None,
+        r"(.*_subs_uncert)": None,
+        # Full
+        r"(.*_atm_interp)": None,
+        r"(.*_rfl)": "Reflectance",
+        r"(.*_lbl)": None,
+        r"(.*_uncert)": None,
+    }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -449,8 +525,27 @@ class Output(FileFinder):
         return rgb
 
 
+class Unknown(FileFinder):
+    extensions = ["*"]
+    patterns = {r"(.*)": "Directory unknown, unable to determine this file"}
+
+    def _load(self, file):
+        self.log.error(
+            "Unable to load file as the parent directory was unable to be parsed"
+        )
+
+
 class IsofitWD(FileFinder):
     extensions = ["*"]
+    patterns = {
+        r"(config)": "ISOFIT configuration files",
+        r"(data)": "Additional data files generated by ISOFIT",
+        r"(input)": "Data files inputted to the ISOFIT system",
+        r"(lut)": "Look-Up-Table outputs",
+        r"(lut_full)": "Look-Up-Table outputs",
+        r"(lut_h2o)": "Look-Up-Table outputs for a presolve run",
+        r"(output)": "ISOFIT outputs such as reflectance",
+    }
     classes = {
         "config": Config,
         "data": Data,
@@ -459,19 +554,41 @@ class IsofitWD(FileFinder):
         "output": Output,
     }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, unknown=True, **kwargs):
+        """
+        TODO
+
+        Parameters
+        ----------
+        unknown : bool, default=True
+            If a sub directory type cannot be determined, use the Unknown class to
+            retrieve the files. This may help ensure all sub directories behaviour is
+            consistent, whereas when this is False, files in unknown subdirs will be
+            treated as living on the root
+        """
         kwargs["cache"] = False
 
         super().__init__(*args, **kwargs)
 
         self.dirs = {}
 
+        unkn = []
         dirs = set([self.subpath(file).parent.name for file in self.files])
-        for d in dirs:
+        for subdir in dirs:
             for name, cls in self.classes.items():
-                if name in d:
-                    print(f"Initializing {d} with class {cls.__name__}")
-                    self.dirs[d] = cls(self.path / d)
+                if name in subdir:
+                    self.log.debug(f"Initializing {subdir} with class {cls.__name__}")
+                    self.dirs[subdir] = cls(self.path / subdir)
+                    break
+            else:
+                # Prevent '' (aka root) from being added
+                if subdir:
+                    unkn.append(subdir)
+
+        if unknown:
+            for subdir in unkn:
+                self.log.debug(f"Initializing {subdir} with class Unknown")
+                self.dirs[subdir] = Unknown(self.path / subdir)
 
     def __getattr__(self, key):
         return self.__getitem__(key)
@@ -522,3 +639,24 @@ class IsofitWD(FileFinder):
 
             return parent, path.relative_to(parent)
         return path
+
+    def info(self, file):
+        """
+        Overrides the inherited info function to pass the file to the correct child
+        object's info function
+
+        Parameters
+        ----------
+        file : str
+            File name to compare against the patterns dict keys
+
+        Returns
+        -------
+        any
+            Returns the value if a regex key in the patterns dict matches the file name
+        """
+        parent, subpath = self.subpath(file, parent=True)
+
+        if parent in self.dirs:
+            return self.dirs[parent].info(subpath.name)
+        return super().info(file)
