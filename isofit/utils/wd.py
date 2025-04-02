@@ -2,15 +2,24 @@
 ISOFIT Output Parser
 """
 
+from __future__ import annotations
+
 import json
 import logging
 import re
+from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
 
 import xarray as xr
 
 from isofit.radiative_transfer import luts
+
+
+@dataclass(frozen=True)
+class FileInfo:
+    name: str
+    info: Any
 
 
 class FileFinder:
@@ -105,12 +114,14 @@ class FileFinder:
             return True
         return file.suffix in self.extensions
 
-    def getTree(self, *, path=None, tree=None):
+    def getTree(self, info=False, *, path=None, tree=None):
         """
         Recursively finds the files under a directory as a dict tree
 
         Parameters
         ----------
+        info : bool, default=False
+            Return the found files as objects with their respective info
         path : pathlib.Path, default=None
             Directory to search, defaults to self.path
         tree : dict, default=None
@@ -129,10 +140,14 @@ class FileFinder:
             tree = {"": []}
 
         for item in path.glob("*"):
+            data = item.name
+            if info:
+                data = FileInfo(item.name, self.info(item.name))
+
             if item.is_dir():
-                self.getTree(path=item, tree=tree.setdefault(item.name, {"": []}))
+                self.getTree(info=info, path=item, tree=tree.setdefault(data, {"": []}))
             elif self.extMatches(item):
-                tree[""].append(item.name)
+                tree[""].append(data)
 
         return tree
 
@@ -660,3 +675,40 @@ class IsofitWD(FileFinder):
         if parent in self.dirs:
             return self.dirs[parent].info(subpath.name)
         return super().info(file)
+
+    def getTree(self, info=False, **kwargs):
+        """
+        Recursively finds the files under a directory as a dict tree
+
+        Overrides the inherited getTree function to call the getTree of every object
+        in self.dirs and merge the returns together. This lets each child handle
+        building its own tree
+
+        Parameters
+        ----------
+        info : bool, default=False
+            Return the found files as objects with their respective info
+        path : pathlib.Path, default=None
+            Directory to search, defaults to self.path
+        tree : dict, default=None
+            Tree structure of discovered files
+
+        Returns
+        -------
+        tree : dict
+            Tree structure of discovered files. The keys are the directory names and
+            the list values are the found files
+        """
+        tree = {"": []}
+        for name, obj in self.dirs.items():
+            if info:
+                name = FileInfo(name, self.info(name))
+            tree[name] = obj.getTree(info, **kwargs)
+
+        for path in self.path.glob("*"):
+            if (name := path.name) not in self.dirs:
+                if info:
+                    name = FileInfo(name, self.info(name))
+                tree[""].append(name)
+
+        return tree
