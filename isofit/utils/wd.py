@@ -272,7 +272,8 @@ class FileFinder:
 
     def load(self, *, path=None, ifin=None, find=None, match=None):
         """
-        Loads a file
+        Loads a file. One of the key-word arguments must be set. If more than one is
+        given, the only first will be used
 
         Parameters
         ----------
@@ -290,10 +291,11 @@ class FileFinder:
         any
             Returns the subclass's ._load(file)
         """
-        if {path, ifin, find, match} == {
-            None,
-        }:
-            raise AttributeError("At least one of the key-word arguments must be set")
+        args = {path, ifin, find, match}
+        if args == set([None]):
+            raise AttributeError("One of the key-word arguments must be set")
+        elif len(args) > 1:
+            self.log.warning("Only one key-word argument should be set")
 
         if path:
             file = path
@@ -386,7 +388,7 @@ class LUT(FileFinder):
 
     def parseLutFiles(self, ext):
         """
-        Parses LUT_*.{ext} files
+        Parses LUT_*.{ext} file names for the LUT grid
 
         Parameters
         ----------
@@ -544,7 +546,10 @@ class Unknown(FileFinder):
     extensions = ["*"]
     patterns = {r"(.*)": "Directory unknown, unable to determine this file"}
 
-    def _load(self, file):
+    def _load(self, *args, **kwargs):
+        """
+        Files under this class are ignored
+        """
         self.log.error(
             "Unable to load file as the parent directory was unable to be parsed"
         )
@@ -571,8 +576,6 @@ class IsofitWD(FileFinder):
 
     def __init__(self, *args, unknown=True, **kwargs):
         """
-        TODO
-
         Parameters
         ----------
         unknown : bool, default=True
@@ -588,7 +591,9 @@ class IsofitWD(FileFinder):
         self.dirs = {}
 
         unkn = []
-        dirs = set([self.subpath(file).parent.name for file in self.files])
+        dirs = set([self.subpath(file, parent=True)[0] for file in self.files]) - set(
+            ["."]
+        )
         for subdir in dirs:
             for name, cls in self.classes.items():
                 if name in subdir:
@@ -596,9 +601,7 @@ class IsofitWD(FileFinder):
                     self.dirs[subdir] = cls(self.path / subdir)
                     break
             else:
-                # Prevent '' (aka root) from being added
-                if subdir:
-                    unkn.append(subdir)
+                unkn.append(subdir)
 
         if unknown:
             for subdir in unkn:
