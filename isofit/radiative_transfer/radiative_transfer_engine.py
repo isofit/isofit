@@ -273,13 +273,13 @@ class RadiativeTransferEngine:
 
             geometry_keys = set(engine_config.statevector_names or self.lut_names)
 
-            for key, matches in common.compare(
-                geometry_keys, self.geometry_input_names
-            ):
+            matches = common.compare(geometry_keys, self.geometry_input_names)
+            if matches:
                 Logger.warning(
                     "A key in the statevector was detected to be close to keys in the geometry keys list:"
                 )
-                Logger.warning(f"  {key!r} should it be one of {matches}?")
+                for key, strings in matches.items():
+                    Logger.warning(f"  {key!r} should it be one of {strings}?")
 
             # Hidden assumption: geometry keys come first, then come RTE keys
             self.geometry_input_names = set(self.geometry_input_names) - geometry_keys
