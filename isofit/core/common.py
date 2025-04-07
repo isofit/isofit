@@ -21,6 +21,7 @@
 import json
 import os
 from collections import OrderedDict
+from difflib import SequenceMatcher
 from os.path import expandvars
 from typing import List
 
@@ -836,3 +837,41 @@ class Track:
 
             return True
         return False
+
+
+def compare(a, b, threshold=0.8, not_same=True):
+    """
+    Compares strings in `a` to strings in `b`
+
+    Parameters
+    ----------
+    a : str | list[str]
+        A string or list of strings to compare with `b`
+    a : str | list[str]
+        A string or list of strings to compare with `a`
+    threshold : float, default=0.8
+        Ratio threshold to meet to be considered matching. Must be between 0 and 1.
+    not_same : bool, default=True
+        Only include matches in which the two strings are not the same
+
+    Returns
+    -------
+    matching : dict
+        For each string in `a`, return a list of strings in `b` that meet the matching
+        threshold
+    """
+    if isinstance(a, str):
+        a = [a]
+
+    if isinstance(b, str):
+        b = [b]
+
+    matches = {}
+    for x in a:
+        for y in b:
+            if not_same and x == y:
+                continue
+            if SequenceMatcher(None, x, y).ratio() >= threshold:
+                matches.setdefault(x, []).append(y)
+
+    return matches
