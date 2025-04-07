@@ -584,6 +584,8 @@ class IsofitWD(FileFinder):
             consistent, whereas when this is False, files in unknown subdirs will be
             treated as living on the root
         """
+        # This class should not be saving to cache because
+        # it defers loading to child classes which have their own cache
         kwargs["cache"] = False
 
         super().__init__(*args, **kwargs)
@@ -622,6 +624,25 @@ class IsofitWD(FileFinder):
             return self.dirs[parent].load(path=subpath)
         else:
             print(f"Files on the root path are not supported at this time: {subpath}")
+
+    def reset(self, *args, **kwargs):
+        """
+        Re-initializes the object
+
+        Parameters
+        ----------
+        *args : list
+            Arguments to pass directly to __init__
+        **kwargs : dict
+            Key-word arguments to pass directly to __init__
+
+        Returns
+        -------
+        self : IsofitWD
+            Re-initialized IsofitWD object
+        """
+        self.__init__(*args, **kwargs)
+        return self
 
     def subpath(self, path, parent=False):
         """
