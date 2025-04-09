@@ -10,6 +10,7 @@ import re
 from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
+from types import SimpleNamespace
 
 import xarray as xr
 
@@ -176,7 +177,7 @@ class FileFinder:
 
         return files
 
-    def ifin(self, name, all=False):
+    def ifin(self, name, all=False, exc=[]):
         """
         Simple if name in filename match
 
@@ -186,15 +187,24 @@ class FileFinder:
             String to check in the filename
         all : bool, default=False
             Return all files matched instead of the first instance
+        exc : str | list[str], default=[]
+            A string or list of strings to use to exclude files. If a file contains
+            one of the strings in its name, it will not be selected
 
         Returns
         -------
         str | list | None
             First matched file if all is False, otherwise the full list
         """
+        if isinstance(exc, str):
+            exc = [exc]
+
         found = []
         for file in self.getFlat():
             if name in file:
+                for string in exc:
+                    if string in file:
+                        continue
                 found.append(file)
 
         if not all:
@@ -207,7 +217,7 @@ class FileFinder:
                 return found[0]
         return found
 
-    def match(self, regex, all=False):
+    def match(self, regex, all=False, exc=[]):
         """
         Find files using a regex match
 
@@ -217,16 +227,25 @@ class FileFinder:
             Regex pattern to match with
         all : bool, default=False
             Return all files matched instead of the first instance
+        exc : str | list[str], default=[]
+            A string or list of strings to use to exclude files. If a file contains
+            one of the strings in its name, it will not be selected
 
         Returns
         -------
         str | list | None
             First matched file if all is False, otherwise the full list
         """
+        if isinstance(exc, str):
+            exc = [exc]
+
         found = []
         for file in self.getFlat():
             try:
                 if re.match(regex, file):
+                    for string in exc:
+                        if string in file:
+                            continue
                     found.append(file)
             except Exception as e:
                 self.log.exception(f"Is this a valid regex? {regex}")
@@ -242,7 +261,7 @@ class FileFinder:
                 return found[0]
         return found
 
-    def find(self, name, all=False):
+    def find(self, name, *args, **kwargs):
         """
         Find files using a pre-built regex match. The regex will be in the form of:
             (\S*{part}\S*) for each part in the name split by "/", delineated by "/"
@@ -257,8 +276,12 @@ class FileFinder:
         ----------
         name : str
             Name to parse into a regex string
-        all : bool, default=False
-            Return all files matched instead of the first instance
+        *args : list, default=[]
+            Additional arguments to pass to match. Refer to that function for
+            additional information
+        *kwargs : list, default={}
+            Additional key-word arguments to pass to match. Refer to that function for
+            additional information
 
         Returns
         -------
@@ -268,7 +291,7 @@ class FileFinder:
         regex = "/".join([f"\S*{part}\S*" for part in name.split("/")])
         regex = rf"({regex})"
 
-        return self.match(regex, all)
+        return self.match(regex, *args, **kwargs)
 
     def load(self, *, path=None, ifin=None, find=None, match=None):
         """
@@ -291,8 +314,8 @@ class FileFinder:
         any
             Returns the subclass's ._load(file)
         """
-        args = {path, ifin, find, match}
-        if args == set([None]):
+        args = {path, ifin, find, match} - set([None])
+        if not args:
             raise AttributeError("One of the key-word arguments must be set")
         elif len(args) > 1:
             self.log.warning("Only one key-word argument should be set")
@@ -542,6 +565,314 @@ class Output(FileFinder):
         return rgb
 
 
+class Logs(FileFinder):
+    extensions = [".log"]
+
+    file = None
+
+    def __init__(self, *args, **kwargs):
+        """
+        Auto-loads the first discovered log file
+        """
+        super().__init__(*args, **kwargs)
+
+        files = self.getFlat()
+        if files:
+            self.file = files[0]
+
+        #                  # Source | Purpose
+        self.lines = (
+            []
+        )  # build  | The formatted lines (end result of parse->filter->build)
+        self.split = (
+            {}
+        )  # parse  | Each level containing only the parsed lines of that level
+        self.levels = []  # parse  | Logging levels found in the log
+        self.format = {}  # parse  | Additional formatting options used by build
+        self.content = []  # parse  | Each line parsed into a dict of info
+        self.filtered = []  # filter | Lines passing the filter criteria of selected
+        self.selected = {}  # parse  | Turn logging levels on/off for the build function
+
+    def _load(self, file):
+        """
+        Loads the lines of a text file
+
+        Parameters
+        ----------
+        file : str
+            File to load
+
+        Returns
+        -------
+        list[str]
+            file.readlines()
+        """
+        with open(file) as f:
+            return f.readlines()
+
+    def load(self, *, path=None, ifin=None, find=None, match=None):
+        """
+        Loads a file. One of the key-word arguments must be set. If more than one is
+        given, the only first will be used
+
+        Parameters
+        ----------
+        path : str
+            Either the path to an existing file or the name of a file under self.path
+        ifin : str
+            Use the ifin function to find the file to load
+        find : str
+            Use the find function to find the file to load
+        match : str
+            Use the match function to find the file to load
+
+        Returns
+        -------
+        list[str]
+            Parsed lines from the log file
+        """
+        args = {path, ifin, find, match} - set([None])
+        if not args:
+            path = self.file
+        elif len(args) > 1:
+            self.log.warning("Only one key-word argument should be set")
+
+        if path:
+            file = path
+        elif ifin:
+            file = self.ifin(ifin)
+        elif find:
+            file = self.find(find)
+        elif match:
+            file = self.match(match)
+
+        path = file
+
+        if file and not Path(file).exists():
+            file = self.path / file
+
+        if not file or not Path(file).exists():
+            raise FileNotFoundError(f"Cannot find file to load, attempted: {file}")
+
+        self.file = path
+
+        return super().load(path=path)
+
+    def parse(self):
+        """
+        Parses an ISOFIT log file into a dictionary of content that can be used to
+        filter and reconstruct lines into different formats
+
+        Returns
+        -------
+        content : list[dict]
+            Parsed content from the log file in the form:
+                {
+                    "timestamp": str,
+                    "level": str,
+                    "message": str,
+                    "source": {
+                        "file": str,
+                        "func": str
+                    }
+                }
+        """
+        lines = self.load()
+
+        self.content = []
+        for line in lines:
+            line = line.strip()
+
+            # "[level]:[timestamp] || [source] | [message]"
+            if find := re.findall(r"(\w+):(\S+) \|\| (\S+) \| (.*)", line):
+                [find] = find
+                level = find[0]
+
+                source = find[2].split(":")
+                content.append(
+                    {
+                        "timestamp": find[1],
+                        "level": level,
+                        "message": find[3],
+                        "raw": line,
+                        "source": {
+                            "file": source[0],
+                            "func": source[1],
+                        },
+                    }
+                )
+            # "[level]:[timestamp] ||| [message]"
+            elif find := re.findall(r"(\w+):(\S+) \|\|\|? (.*)", line):
+                [find] = find
+                level = find[0]
+
+                self.content.append(
+                    {
+                        "timestamp": find[1],
+                        "level": level,
+                        "message": find[2],
+                        "raw": line,
+                    }
+                )
+            else:
+                self.content[-1]["message"] += f"\n{line}"
+
+        # Split the content dict into a dict of levels for quick reference
+        # eg. self.split["INFO"]["message"] to get all the info messages
+        self.split = {}
+        for line in content:
+            for key, value in line.items():
+                if key == "level":
+                    continue
+                level = self.split.setdefault(line["level"], {})
+                group = level.setdefault(key, [])
+                group.append(value)
+
+        # Extract the levels and sort them per the logging module
+        self.levels = sorted(set(split), key=lambda lvl: getattr(logging, lvl))
+        self.selected = {lvl: True for lvl in self.levels}
+        self.format = {"timestamps": True}
+
+        return self.content
+
+    def extract(self):
+        """
+        Extracts useful information from the processed logs
+        """
+        self.stats = []
+        stats = SimpleNamespace()
+
+        for i, line in enumerate(self.content):
+            message = line["message"]
+
+            if message == "Run ISOFIT initial guess":
+                stats.name = "Presolve"
+
+            if message == "Running ISOFIT with full LUT":
+                stats.name = "Full Solution"
+
+            if message == "Analytical line inference":
+                stats.name = "Analytical Line"
+
+            if find := re.findall(r"Beginning (\d+) inversions", message):
+                stats.total = find[0]
+
+            if "inversions complete" in message.lower():
+                find = re.findall(r"(\d+\.\d+s?) (\S+)", message.replace(",", ""))
+
+                stats.data = {val: key for key, val in find}
+
+                self.stats.append(stats)
+
+                # Reset the stats object
+                stats = SimpleNamespace()
+
+    def filter(self, select=0):
+        """
+        Filters the content per the `selected` dict
+
+        Parameters
+        ----------
+        select : str | list[str] | None, default=0
+            Toggles selections in the `selected` attribute. Options:
+            - "all" = Enable all options
+            - None  = Disable all options
+            - str   = Enable only this option
+            - list  = Enable only these options
+            - Anything else, such as the default 0, will do nothing and use the current
+              selected dict
+        """
+        if not self.content:
+            self.parse()
+
+        if select == "all":
+            for key in self.selected:
+                self.selected[key] = True
+        elif select is None:
+            for key in self.selected:
+                self.selected[key] = False
+        elif isinstance(select, str):
+            for key in self.selected:
+                self.selected[key] = False
+            if key in self.selected:
+                self.selected[key] = True
+        elif isinstance(select, list):
+            for key in self.selected:
+                self.selected[key] = False
+            for key in select:
+                if key in self.selected:
+                    self.selected[key] = True
+
+        self.filtered = []
+        for line in self.content:
+            if self.selected[line["level"]]:
+                self.filtered.append(line)
+
+        return self.filtered
+
+    def toggle(self, key, value=None):
+        """
+        Sets a key's visibility in either the format dict or the selected dict
+
+        Parameters
+        ----------
+        key : str
+            Key of interest
+        value : bool, default=None
+            Value to set for the key
+        """
+        if key in self.format:
+            data = self.format
+        elif key in self.selected:
+            data = self.selected
+        else:
+            raise AttributeError(
+                f"Key not found in either the format dict {list(self.format)} or the level selection dict {list(self.selected)}"
+            )
+
+        if value is None:
+            value = not data[key]
+
+        data[key] = value
+
+    def build(self):
+        """
+        Builds the filtered contents dict into a list of tuples to be used for writing.
+        Timestamps can be disabled by one of:
+
+            self.format["timestamps"] = False
+            self.toggle("timestamps", False)
+
+        Returns
+        -------
+        lines : list[tuple[str, str, str]]
+            Returns a list of 3-pair tuples of strings in the form:
+                (timestamp, padded level, log message)
+            Timestamp will be an empty string if it is not enabled
+            The level is right-padded with whitespace to the length of the longest log
+            level (eg. "warning", "debug  ")
+            This will also be saved in self.lines
+        """
+        # Always re-filter
+        self.filter()
+
+        padding = len(max(self.levels)) + 1
+
+        lines = []
+        for c in self.filtered:
+            level = c["level"].ljust(padding)
+
+            ts = ""
+            if self.format["timestamps"]:
+                ts = c["timestamp"] + " "
+
+            lines.append([ts, level, c["message"]])
+
+        self.lines = lines
+
+        return self.lines
+
+
 class Unknown(FileFinder):
     extensions = ["*"]
     patterns = {r"(.*)": "Directory unknown, unable to determine this file"}
@@ -589,6 +920,8 @@ class IsofitWD(FileFinder):
         kwargs["cache"] = False
 
         super().__init__(*args, **kwargs)
+
+        self.logs = Logs(self.path)
 
         self.dirs = {}
 
