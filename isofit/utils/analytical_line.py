@@ -118,10 +118,7 @@ def analytical_line(
 
     # Config handling
     if isofit_config is None:
-        file = glob(
-            os.path.join(isofit_dir, "config", "")
-            + "*_isofit.json"
-        )[0]
+        file = glob(os.path.join(isofit_dir, "config", "") + "*_isofit.json")[0]
     else:
         file = isofit_config
 
@@ -205,11 +202,11 @@ def analytical_line(
     rfl_output = construct_output(
         output_metadata,
         analytical_rfl_path,
-        (rdns[0], len(full_idx_surface), rdns[1]),
+        (rdns[0], len(full_idx_surf_rfl), rdns[1]),
         bbl=bbl,
         interleave="bil",
-        bands=f"{len(full_idx_surface)}",
-        band_names=[full_statevector[i] for i in range(len(full_idx_surface))],
+        bands=f"{len(full_idx_surf_rfl)}",
+        band_names=[full_statevector[i] for i in range(len(full_idx_surf_rfl))],
         wavelength_unts="Nanometers",
         description=("L2A Analytyical per-pixel surface retrieval"),
     )
@@ -219,11 +216,11 @@ def analytical_line(
     unc_output = construct_output(
         output_metadata,
         analytical_rfl_unc_path,
-        (rdns[0], len(full_idx_surface), rdns[1]),
+        (rdns[0], len(full_idx_surf_rfl), rdns[1]),
         bbl=bbl,
         interleave="bil",
-        bands=f"{len(full_idx_surface)}",
-        band_names=[full_statevector[i] for i in range(len(full_idx_surface))],
+        bands=f"{len(full_idx_surf_rfl)}",
+        band_names=[full_statevector[i] for i in range(len(full_idx_surf_rfl))],
         wavelength_unts="Nanometers",
         description=("L2A Analytyical per-pixel surface retrieval uncertainty"),
     )
@@ -254,14 +251,13 @@ def analytical_line(
                 full_statevector[len(full_idx_surf_rfl) + i]
                 for i in range(n_non_rfl_bands)
             ],
-            description=("L2A Analytyical per-pixel non_rfl surface retrieval uncertainty"),
+            description=(
+                "L2A Analytyical per-pixel non_rfl surface retrieval uncertainty"
+            ),
         )
     else:
         non_rfl_output = None
         non_rfl_unc_output = None
-
-    if n_cores == -1:
-        n_cores = multiprocessing.cpu_count()
 
     # Ray initialization
     ray_dict = {
@@ -311,14 +307,16 @@ def analytical_line(
                 loc_file,
                 obs_file,
                 atm_file,
+                subs_state_file,
+                lbl_file,
                 rfl_output,
                 unc_output,
                 non_rfl_output,
                 non_rfl_unc_output,
-                rdns,
                 num_iter,
                 loglevel,
                 logfile,
+                initializer,
             )
         ]
         workers = ray.util.ActorPool([Worker.remote(*wargs) for _ in range(n_workers)])
@@ -370,7 +368,6 @@ class Worker(object):
         unc_output: str,
         non_rfl_output: str,
         non_rfl_unc_output: str,
-        output_shape: tuple,
         num_iter: int,
         loglevel: str,
         logfile: str,
@@ -407,6 +404,7 @@ class Worker(object):
         self.full_idx_surface = full_idx_surface
         self.full_idx_surf_rfl = full_idx_surf_rfl
         self.full_idx_RT = full_idx_RT
+        self.n_rfl_bands = len(full_idx_surf_rfl)
         self.n_non_rfl_bands = len(full_idx_surface) - len(full_idx_surf_rfl)
 
         self.winidx = retrieve_winidx(self.config)
@@ -416,33 +414,20 @@ class Worker(object):
         self.loc = envi.open(envi_header(loc_file)).open_memmap(interleave="bip")
         self.obs = envi.open(envi_header(obs_file)).open_memmap(interleave="bip")
         self.rt_state = envi.open(envi_header(atm_file)).open_memmap(interleave="bip")
-        self.subs_state = envi.open(envi_header(self.subs_state_file)).open_memmap(
+        self.subs_state = envi.open(envi_header(subs_state_file)).open_memmap(
             interleave="bip"
         )
-        self.lbl = envi.open(envi_header(self.lbl_file)).open_memmap(interleave="bip")
+        self.lbl = envi.open(envi_header(lbl_file)).open_memmap(interleave="bip")
 
-        self.output_shape = output_shape
+        # Lines and samples
+        self.n_lines = self.rdn.shape[0]
+        self.n_samples = self.rdn.shape[1]
 
         # output paths
         self.rfl_outpath = rfl_output
         self.unc_outpath = unc_output
         self.non_rfl_outpath = non_rfl_output
         self.non_rfl_unc_outpath = non_rfl_unc_output
-
-        # output arrays
-        self.rfl = envi.open(envi_header(rfl_output)).open_memmap(
-            interleave="bip", writable=True
-        )
-        self.unc = envi.open(envi_header(unc_output)).open_memmap(
-            interleave="bip", writable=True
-        )
-        if non_rfl_output:
-            self.non_rfl = envi.open(envi_header(non_rfl_output)).open_memmap(
-                interleave="bip", writable=True
-            )
-            self.non_rfl_unc = envi.open(envi_header(non_rfl_unc_output)).open_memmap(
-                interleave="bip", writable=True
-            )
 
         self.completed_spectra = 0
         self.hash_table = OrderedDict()
@@ -476,12 +461,34 @@ class Worker(object):
         start_line, stop_line = line_breaks
 
         # Set up outputs
-        output_rfl = self.rfl[start_line:stop_line, ...]
-        output_rfl_unc = self.unc[start_line:stop_line, ...]
+        output_rfl = (
+            envi.open(envi_header(self.rfl_outpath))
+            .open_memmap(interleave="bip", writable=False)[start_line:stop_line, ...]
+            .copy()
+        )
 
-        if self.non_rfl_outpath:
-            output_non_rfl = self.non_rfl[start_line:stop_line, ...]
-            output_non_rfl_unc = self.non_rfl_unc[start_line:stop_line, ...]
+        output_rfl_unc = (
+            envi.open(envi_header(self.unc_outpath))
+            .open_memmap(interleave="bip", writable=False)[start_line:stop_line, ...]
+            .copy()
+        )
+
+        if self.non_rfl_unc_outpath:
+            output_non_rfl = (
+                envi.open(envi_header(self.non_rfl_outpath))
+                .open_memmap(interleave="bip", writable=False)[
+                    start_line:stop_line, ...
+                ]
+                .copy()
+            )
+
+            output_non_rfl_unc = (
+                envi.open(envi_header(self.non_rfl_unc_outpath))
+                .open_memmap(interleave="bip", writable=False)[
+                    start_line:stop_line, ...
+                ]
+                .copy()
+            )
 
         # Find intersection between index_pairs and class_idx_pairs
         index_pairs = self.class_idx_pairs[
@@ -586,16 +593,17 @@ class Worker(object):
             )
             output_rfl_unc[r - start_line, c, :] = full_unc_est[self.full_idx_surf_rfl]
 
+            full_state_est[len(self.full_idx_surf_rfl) : self.n_non_rfl_bands]
             # Save the non_rfl portion
             if self.non_rfl_outpath:
-                output_non_rfl = full_state_est[
-                    len(self.full_idx_surf_rfl):self.n_non_rfl_bands
+                output_non_rfl[r - start_line, c, :] = full_state_est[
+                    self.n_rfl_bands : self.n_rfl_bands + self.n_non_rfl_bands
                 ]
-                output_non_rfl_unc = full_unc_est[
-                    len(self.full_idx_surf_rfl):self.n_non_rfl_bands
+                output_non_rfl_unc[r - start_line, c, :] = full_unc_est[
+                    self.n_rfl_bands : self.n_rfl_bands + self.n_non_rfl_bands
                 ]
 
-        output_rfl = output_rfl[..., self.self.full_idx_surface]
+        # output_rfl = output_rfl[..., self.full_idx_surface]
 
         # TODO Need to test how bounds errors are treated
         # Only apply rfl check.
@@ -626,7 +634,7 @@ class Worker(object):
             np.swapaxes(output_rfl, 1, 2),
             self.rfl_outpath,
             start_line,
-            (self.output_shape[0], self.output_shape[1], len(self.full_idx_surface)),
+            (self.n_lines, self.n_rfl_bands, self.n_samples),
         )
 
         # Save surface state uncertainty
@@ -634,21 +642,21 @@ class Worker(object):
             np.swapaxes(output_rfl_unc, 1, 2),
             self.unc_outpath,
             start_line,
-            (self.output_shape[0], self.output_shape[1], len(self.full_idx_surface)),
+            (self.n_lines, self.n_rfl_bands, self.n_samples),
         )
 
         if self.non_rfl_outpath:
             write_bil_chunk(
                 output_non_rfl.T,
                 self.non_rfl_outpath,
-                r,
-                (self.output_shape[0], self.output_shape[1], self.n_non_rfl_bands),
+                start_line,
+                (self.n_lines, self.n_non_rfl_bands, self.n_samples),
             )
             write_bil_chunk(
-                output_non_rfl_unc[r - start_line, ...].T,
+                output_non_rfl_unc.T,
                 self.non_rfl_unc_outpath,
-                r,
-                (self.output_shape[0], self.output_shape[1], self.n_non_rfl_bands),
+                start_line,
+                (self.n_lines, self.n_non_rfl_bands, self.n_samples),
             )
 
 
