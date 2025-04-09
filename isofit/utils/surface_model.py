@@ -127,6 +127,7 @@ def surface_model(
         "attribute_covs": [],
         "attributes": [],
         "refwl": refwl,
+        "surface_types": [],
     }
 
     # each "source" (i.e. spectral library) is treated separately
@@ -163,6 +164,9 @@ def surface_model(
 
         ncomp = int(source_config["n_components"])
         windows = source_config["windows"]
+
+        # Surface model handling
+        surface_type = source_config.get("surface_type", "")
 
         # load spectra
         spectra, attributes = [], []
@@ -385,6 +389,8 @@ def surface_model(
             if len(attributes) > 0:
                 model["attribute_means"].append(m_attr)
                 model["attribute_covs"].append(C_attr)
+
+            model["surface_types"].append(surface_type)
 
     model["means"] = np.array(model["means"])
     model["covs"] = np.array(model["covs"])

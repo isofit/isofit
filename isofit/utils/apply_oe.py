@@ -20,7 +20,13 @@ from isofit.core import isofit
 from isofit.core.common import envi_header
 from isofit.utils import analytical_line as ALAlg
 from isofit.utils import empirical_line as ELAlg
-from isofit.utils import extractions, interpolate_spectra, reducers, segment
+from isofit.utils import (
+    extractions,
+    interpolate_spectra,
+    multicomponent_classification,
+    reducers,
+    segment,
+)
 
 EPS = 1e-6
 CHUNKSIZE = 256
@@ -52,10 +58,11 @@ def apply_oe(
     sensor,
     surface_path,
     copy_input_files=False,
-    surface_class_file=None,
     modtran_path=None,
     wavelength_path=None,
     surface_category="multicomponent_surface",
+    surface_class_file=None,
+    classify_multisurface=False,
     aerosol_climatology_path=None,
     rdn_factors_path=None,
     atmosphere_type="ATM_MIDLAT_SUMMER",
@@ -77,7 +84,6 @@ def apply_oe(
     pressure_elevation=False,
     prebuilt_lut=None,
     no_min_lut_spacing=False,
-    multipart_transmittance=True,
     inversion_windows=None,
     config_only=False,
     interpolate_bad_rdn=False,
@@ -321,6 +327,7 @@ def apply_oe(
         ray_temp_dir,
         interpolate_inplace,
         subs=True if analytical_line or empirical_line else False,
+        classify_multisurface=classify_multisurface,
     )
     paths.make_directories()
     paths.stage_files()
@@ -496,8 +503,8 @@ def apply_oe(
         if mean_elevation_km < 0:
             mean_elevation_km = 0
             logging.info(
-                f"Scene contains a mean target elevation < 0.  6s does not support"
-                f" targets below sea level in km units.  Setting mean elevation to 0."
+                "Scene contains a mean target elevation < 0.  6s does not support"
+                " targets below sea level in km units.  Setting mean elevation to 0."
             )
 
     mean_altitude_km = (
@@ -546,6 +553,21 @@ def apply_oe(
         )
         paths.radiance_working_path = paths.radiance_interp_path
 
+    # Multisurface Classification
+    if classify_multisurface and not surface_class_file:
+        multicomponent_classification(
+            paths.input_radiance_file,
+            paths.input_obs_file,
+            paths.input_loc_file,
+            paths.surface_class_working_path,
+            paths.surface_path,
+            n_cores=n_cores,
+            dayofyear=dayofyear,
+            wl_file=paths.wavelength_path,
+            logfile=log_file,
+            clean=True,
+        )
+
     logging.debug("Radiance working path:")
     logging.debug(paths.radiance_working_path)
     # Superpixel segmentation
@@ -586,13 +608,13 @@ def apply_oe(
                 )
 
         # Extract superpixels class
-        if paths.surface_class_file:
-            if not exists(paths.subs_class_path):
-                logging.info("Extracting " + paths.subs_class_path)
+        if paths.surface_class_working_path:
+            if not exists(paths.surface_class_subs_path):
+                logging.info("Extracting " + paths.surface_class_subs_path)
                 extractions(
-                    inputfile=paths.surface_class_file,
+                    inputfile=paths.surface_class_working_path,
                     labels=paths.lbl_working_path,
-                    output=paths.subs_class_path,
+                    output=paths.surface_class_subs_path,
                     chunksize=CHUNKSIZE,
                     flag=-9999,
                     reducer=reducers.class_priority,
@@ -643,7 +665,7 @@ def apply_oe(
                 inversion_windows=INVERSION_WINDOWS,
                 multipart_transmittance=multipart_transmittance,
             )
-            """Currently not running presolve with either 
+            """Currently not running presolve with either
             multisurface-mode or topography mode. Could easily change
             this"""
 
@@ -832,6 +854,7 @@ def apply_oe(
 @click.option("--wavelength_path")
 @click.option("--surface_category", default="multicomponent_surface")
 @click.option("--surface_class_file", default=None)
+@click.option("--classify_multisurface", is_flag=True, default=False)
 @click.option("--aerosol_climatology_path")
 @click.option("--rdn_factors_path")
 @click.option("--atmosphere_type", default="ATM_MIDLAT_SUMMER")
@@ -853,7 +876,6 @@ def apply_oe(
 @click.option("--pressure_elevation", is_flag=True, default=False)
 @click.option("--prebuilt_lut", type=str)
 @click.option("--no_min_lut_spacing", is_flag=True, default=False)
-@click.option("--multipart_transmittance", is_flag=True, default=False)
 @click.option("--inversion_windows", type=float, nargs=2, multiple=True, default=None)
 @click.option("--config_only", is_flag=True, default=False)
 @click.option("--interpolate_bad_rdn", is_flag=True, default=False)
@@ -867,7 +889,7 @@ def apply_oe(
 def cli(debug_args, profile, **kwargs):
     if debug_args:
         print("Arguments to be passed:")
-        for key, value in kwitems():
+        for key, value in kwargs.items():
             print(f"  {key} = {value!r}")
     else:
         if profile:

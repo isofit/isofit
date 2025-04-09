@@ -160,6 +160,7 @@ def invert_algebraic(
         meas: a one-D numpy vector of radiance in uW/nm/sr/cm2
         geom: geometry object corresponding to given measurement
 
+
     Return:
         rfl_est: estimate of the surface reflectance based on the given surface model and specified atmospheric state
         Ls: estimate of the emitted surface leaving radiance
