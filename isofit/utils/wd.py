@@ -580,7 +580,7 @@ class Logs(FileFinder):
         if files:
             self.file = files[0]
 
-        #                  # Source | Purpose
+        # fmt: off         # Source | Purpose
         self.lines = (
             []
         )  # build  | The formatted lines (end result of parse->filter->build)
@@ -592,6 +592,7 @@ class Logs(FileFinder):
         self.content = []  # parse  | Each line parsed into a dict of info
         self.filtered = []  # filter | Lines passing the filter criteria of selected
         self.selected = {}  # parse  | Turn logging levels on/off for the build function
+        # fmt: on
 
     def _load(self, file):
         """
