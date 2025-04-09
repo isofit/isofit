@@ -20,7 +20,13 @@ from isofit.core import isofit
 from isofit.core.common import envi_header
 from isofit.utils import analytical_line as ALAlg
 from isofit.utils import empirical_line as ELAlg
-from isofit.utils import extractions, interpolate_spectra, segment
+from isofit.utils import (
+    extractions,
+    interpolate_spectra,
+    multicomponent_classification,
+    reducers,
+    segment,
+)
 
 EPS = 1e-6
 CHUNKSIZE = 256
@@ -55,6 +61,8 @@ def apply_oe(
     modtran_path=None,
     wavelength_path=None,
     surface_category="multicomponent_surface",
+    surface_class_file=None,
+    classify_multisurface=False,
     aerosol_climatology_path=None,
     rdn_factors_path=None,
     atmosphere_type="ATM_MIDLAT_SUMMER",
@@ -244,12 +252,12 @@ def apply_oe(
         # This is the MODTRAN case. Do we want to enable the 4c mode by default?
         multipart_transmittance = True
 
-    # ray.init(
-    #     num_cpus=n_cores,
-    #     _temp_dir=ray_temp_dir,
-    #     include_dashboard=False,
-    #     local_mode=n_cores == 1,
-    # )
+    ray.init(
+        num_cpus=n_cores,
+        _temp_dir=ray_temp_dir,
+        include_dashboard=False,
+        local_mode=n_cores == 1,
+    )
 
     if sensor not in SUPPORTED_SENSORS:
         if sensor[:3] != "NA-":
@@ -307,6 +315,7 @@ def apply_oe(
         input_radiance,
         input_loc,
         input_obs,
+        surface_class_file,
         sensor,
         surface_path,
         working_directory,
@@ -318,6 +327,8 @@ def apply_oe(
         channelized_uncertainty_path,
         ray_temp_dir,
         interpolate_inplace,
+        subs=True if analytical_line or empirical_line else False,
+        classify_multisurface=classify_multisurface,
     )
     paths.make_directories()
     paths.stage_files()
@@ -490,8 +501,8 @@ def apply_oe(
         if mean_elevation_km < 0:
             mean_elevation_km = 0
             logging.info(
-                f"Scene contains a mean target elevation < 0.  6s does not support"
-                f" targets below sea level in km units.  Setting mean elevation to 0."
+                "Scene contains a mean target elevation < 0.  6s does not support"
+                " targets below sea level in km units.  Setting mean elevation to 0."
             )
 
     mean_altitude_km = (
@@ -540,6 +551,21 @@ def apply_oe(
         )
         paths.radiance_working_path = paths.radiance_interp_path
 
+    # Multisurface Classification
+    if classify_multisurface and not surface_class_file:
+        multicomponent_classification(
+            paths.input_radiance_file,
+            paths.input_obs_file,
+            paths.input_loc_file,
+            paths.surface_class_working_path,
+            paths.surface_path,
+            n_cores=n_cores,
+            dayofyear=dayofyear,
+            wl_file=paths.wavelength_path,
+            logfile=log_file,
+            clean=True,
+        )
+
     logging.debug("Radiance working path:")
     logging.debug(paths.radiance_working_path)
     # Superpixel segmentation
@@ -573,6 +599,23 @@ def apply_oe(
                     output=outp,
                     chunksize=CHUNKSIZE,
                     flag=-9999,
+                    reducer=reducers.band_mean,
+                    n_cores=n_cores,
+                    loglevel=logging_level,
+                    logfile=log_file,
+                )
+
+        # Extract superpixels class
+        if paths.surface_class_working_path:
+            if not exists(paths.surface_class_subs_path):
+                logging.info("Extracting " + paths.surface_class_subs_path)
+                extractions(
+                    inputfile=paths.surface_class_working_path,
+                    labels=paths.lbl_working_path,
+                    output=paths.surface_class_subs_path,
+                    chunksize=CHUNKSIZE,
+                    flag=-9999,
+                    reducer=reducers.class_priority,
                     n_cores=n_cores,
                     loglevel=logging_level,
                     logfile=log_file,
@@ -620,6 +663,9 @@ def apply_oe(
                 inversion_windows=INVERSION_WINDOWS,
                 multipart_transmittance=multipart_transmittance,
             )
+            """Currently not running presolve with either
+            multisurface-mode or topography mode. Could easily change
+            this"""
 
             # Run modtran retrieval
             logging.info("Run ISOFIT initial guess")
@@ -641,7 +687,11 @@ def apply_oe(
             logging.info("Existing h2o-presolve solutions found, using those.")
 
         h2o = envi.open(envi_header(paths.h2o_subs_path))
-        h2o_est = h2o.read_band(-1)[:].flatten()
+        # Find the band that is H2O. Should be stable with constant H2O name
+        h2o_band = [
+            i for i, name in enumerate(h2o.metadata["band names"]) if name == "H2OSTR"
+        ][0]
+        h2o_est = h2o.read_band(h2o_band)[:].flatten()
 
         p05 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 2)
         p95 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 98)
@@ -801,6 +851,8 @@ def apply_oe(
 @click.option("--modtran_path")
 @click.option("--wavelength_path")
 @click.option("--surface_category", default="multicomponent_surface")
+@click.option("--surface_class_file", default=None)
+@click.option("--classify_multisurface", is_flag=True, default=False)
 @click.option("--aerosol_climatology_path")
 @click.option("--rdn_factors_path")
 @click.option("--atmosphere_type", default="ATM_MIDLAT_SUMMER")
@@ -835,7 +887,7 @@ def apply_oe(
 def cli(debug_args, profile, **kwargs):
     if debug_args:
         print("Arguments to be passed:")
-        for key, value in kwitems():
+        for key, value in kwargs.items():
             print(f"  {key} = {value!r}")
     else:
         if profile:
