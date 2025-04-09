@@ -580,16 +580,13 @@ class Logs(FileFinder):
         if files:
             self.file = files[0]
 
-        # fmt: off         # Source | Purpose
-        self.lines = (
-            []
-        )  # build  | The formatted lines (end result of parse->filter->build)
-        self.split = (
-            {}
-        )  # parse  | Each level containing only the parsed lines of that level
-        self.levels = []  # parse  | Logging levels found in the log
-        self.format = {}  # parse  | Additional formatting options used by build
-        self.content = []  # parse  | Each line parsed into a dict of info
+        # fmt: off
+        #                   # Source | Purpose
+        self.lines    = []  # build  | The formatted lines (end result of parse->filter->build)
+        self.split    = {}  # parse  | Each level containing only the parsed lines of that level
+        self.levels   = []  # parse  | Logging levels found in the log
+        self.format   = {}  # parse  | Additional formatting options used by build
+        self.content  = []  # parse  | Each line parsed into a dict of info
         self.filtered = []  # filter | Lines passing the filter criteria of selected
         self.selected = {}  # parse  | Turn logging levels on/off for the build function
         # fmt: on
