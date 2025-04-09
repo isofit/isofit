@@ -25,13 +25,26 @@ class EnviBackendEntrypoint(BackendEntrypoint):
     Uses spectral.io.envi to load ISOFIT output rasters
 
     Accessible via engine="envi" after installing ISOFIT
+
+    Specifically structured to emulate the return of rasterio's engine for xarray to
+    ease switching between them
     """
 
     description = "Uses spectral.io.envi to load"
     url = None
 
     def open_dataset(self, filename_or_obj, *, drop_variables=None):
-        envi = _envi.open(filename_or_obj)
+        """
+        Parameters
+        ----------
+        filename_or_obj : str
+            String path to an ISOFIT output product
+        drop_variables : any, default=None
+            Unused required parameter
+        """
+        filename_or_obj = Path(filename_or_obj)
+
+        envi = _envi.open(filename_or_obj.with_suffix(".hdr"))
         data = envi.open_memmap()
         meta = envi.metadata.copy()
 
@@ -41,8 +54,10 @@ class EnviBackendEntrypoint(BackendEntrypoint):
             "fwhm": (("band",), np.array(meta.pop("fwhm")).astype(float)),
             "band": range(1, data.shape[-1] + 1),
         }
+
         ds = xr.Dataset({"band_data": (dims, data)}, coords=coords)
         ds = ds.transpose("band", "y", "x")
+
         ds["band_data"].attrs = meta
 
         return ds
@@ -504,7 +519,7 @@ class Input(FileFinder):
         if file.suffix:
             file = file.with_suffix("")
 
-        ds = xr.open_dataset(file, engine="envi", lock=False)
+        ds = xr.open_dataset(file, engine="envi")
 
         if len(ds) == 1:
             return ds[list(ds)[0]]
@@ -561,7 +576,7 @@ class Output(FileFinder):
         if file.suffix:
             file = file.with_suffix("")
 
-        ds = xr.open_dataset(file, engine="envi", lock=False)
+        ds = xr.open_dataset(file, engine="envi")
 
         if len(ds) == 1:
             return ds[list(ds)[0]]
