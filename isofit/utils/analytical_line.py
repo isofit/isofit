@@ -70,8 +70,13 @@ def construct_output(output_metadata, outpath, out_shape, **kwargs):
     """
     Construct output file by updating metadata and creating object
     """
+    if kwargs.get("band_names"):
+        band_names = kwargs.pop("band_names")
+        output_metadata["band names"] = band_names
+
     for key, value in kwargs.items():
         output_metadata[key] = value
+
     if "emit pge input files" in list(output_metadata.keys()):
         del output_metadata["emit pge input files"]
 
@@ -102,7 +107,7 @@ def analytical_line(
     skyview_factor_file: str = None,
     loglevel: str = "INFO",
     logfile: str = None,
-    initializer: str = "simple",
+    initializer: str = "algebraic",
 ) -> None:
     """
     TODO: Description
@@ -175,6 +180,7 @@ def analytical_line(
         full_idx_RT,
     ) = construct_full_state(config)
 
+    # Perform the atmospheric interpolation
     if os.path.isfile(atm_file) is False:
         atm_interpolation(
             reference_state_file=subs_state_file,
@@ -197,35 +203,31 @@ def analytical_line(
     rfl_output = construct_output(
         output_metadata,
         analytical_rfl_path,
-        (rdns[0], len(full_idx_surface), rdns[1]),
+        (rdns[0], len(full_idx_surf_rfl), rdns[1]),
         bbl=bbl,
         interleave="bil",
-        bands=f"{len(full_idx_surface)}",
-        band_names=[full_statevector[i] for i in range(len(full_idx_surface))],
+        bands=f"{len(full_idx_surf_rfl)}",
+        band_names=[full_statevector[i] for i in range(len(full_idx_surf_rfl))],
         wavelength_unts="Nanometers",
         description=("L2A Analytyical per-pixel surface retrieval"),
     )
 
     # Construct surf rfl uncertainty output
-    bbl = "{" + ",".join([f"{x}" for x in outside_ret_windows]) + "}"
     unc_output = construct_output(
         output_metadata,
         analytical_rfl_unc_path,
-        (rdns[0], len(full_idx_surface), rdns[1]),
+        (rdns[0], len(full_idx_surf_rfl), rdns[1]),
         bbl=bbl,
         interleave="bil",
-        bands=f"{len(full_idx_surface)}",
-        band_names=[full_statevector[i] for i in range(len(full_idx_surface))],
+        bands=f"{len(full_idx_surf_rfl)}",
+        band_names=[full_statevector[i] for i in range(len(full_idx_surf_rfl))],
         wavelength_unts="Nanometers",
         description=("L2A Analytyical per-pixel surface retrieval uncertainty"),
     )
 
     # If there are more idx in surface than rfl, there are non_rfl surface states
     if len(full_idx_surface) > len(full_idx_surf_rfl):
-        output_metadata["bands"] = str(len(fm.idx_surf_nonrfl))
-        output_metadata["band names"] = np.array(fm.surface.statevec_names)[
-            fm.idx_surf_nonrfl
-        ]
+        n_non_rfl_bands = len(full_idx_surface) - len(full_idx_surf_rfl)
         for k in ["bbl", "wavelength", "wavelength units", "fwhm", "smoothing factors"]:
             if output_metadata.get(k):
                 ret = output_metadata.pop(k)
@@ -260,9 +262,6 @@ def analytical_line(
     else:
         non_rfl_output = None
         non_rfl_unc_output = None
-
-    if n_cores == -1:
-        n_cores = multiprocessing.cpu_count()
 
     # Ray initialization
     ray_dict = {
@@ -312,14 +311,16 @@ def analytical_line(
                 loc_file,
                 obs_file,
                 atm_file,
+                subs_state_file,
+                lbl_file,
                 rfl_output,
                 unc_output,
                 non_rfl_output,
                 non_rfl_unc_output,
-                rdns,
                 num_iter,
                 loglevel,
                 logfile,
+                initializer,
             )
         ]
         workers = ray.util.ActorPool([Worker.remote(*wargs) for _ in range(n_workers)])
@@ -371,7 +372,6 @@ class Worker(object):
         unc_output: str,
         non_rfl_output: str,
         non_rfl_unc_output: str,
-        output_shape: tuple,
         num_iter: int,
         loglevel: str,
         logfile: str,
@@ -409,6 +409,7 @@ class Worker(object):
         self.full_idx_surface = full_idx_surface
         self.full_idx_surf_rfl = full_idx_surf_rfl
         self.full_idx_RT = full_idx_RT
+        self.n_rfl_bands = len(full_idx_surf_rfl)
         self.n_non_rfl_bands = len(full_idx_surface) - len(full_idx_surf_rfl)
 
         self.winidx = retrieve_winidx(self.config)
@@ -418,12 +419,14 @@ class Worker(object):
         self.loc = envi.open(envi_header(loc_file)).open_memmap(interleave="bip")
         self.obs = envi.open(envi_header(obs_file)).open_memmap(interleave="bip")
         self.rt_state = envi.open(envi_header(atm_file)).open_memmap(interleave="bip")
-        self.subs_state = envi.open(envi_header(self.subs_state_file)).open_memmap(
+        self.subs_state = envi.open(envi_header(subs_state_file)).open_memmap(
             interleave="bip"
         )
-        self.lbl = envi.open(envi_header(self.lbl_file)).open_memmap(interleave="bip")
+        self.lbl = envi.open(envi_header(lbl_file)).open_memmap(interleave="bip")
 
-        self.output_shape = output_shape
+        # Lines and samples
+        self.n_lines = self.rdn.shape[0]
+        self.n_samples = self.rdn.shape[1]
 
         # output paths
         self.rfl_outpath = rfl_output
@@ -535,6 +538,7 @@ class Worker(object):
 
             # Note: concatenation only works with the correct indexing.
             sub_state = np.concatenate([sub_state, x_RT])
+            sub_state[np.isnan(sub_state)] = self.fm.init[np.isnan(sub_state)]
 
             # Build statevector to use for initialization.
             # Can be done three different ways.
@@ -544,10 +548,11 @@ class Worker(object):
             # SIMPLE uses invert_simple for rfl and non_rfl surface elements
             if self.initializer == "superpixel":
                 x0 = sub_state
+                x0[self.fm.idx_RT] = x_RT
 
             elif self.initializer == "algebraic":
                 x_surface, _, x_instrument = self.fm.unpack(self.fm.init.copy())
-                rfl_est, Ls_est, coeffs = invert_algebraic(
+                rfl_est, coeffs = invert_algebraic(
                     self.fm.surface,
                     self.fm.RT,
                     self.fm.instrument,
@@ -557,6 +562,14 @@ class Worker(object):
                     meas,
                     geom,
                 )
+
+                rfl_est = self.fm.surface.fit_params(rfl_est, geom)[
+                    self.fm.idx_surf_rfl
+                ]
+
+                if rfl_est[0] < 0:
+                    rfl_est = sub_state[self.fm.idx_surf_rfl]
+
                 x0 = np.concatenate(
                     [
                         rfl_est,
@@ -601,16 +614,17 @@ class Worker(object):
             )
             output_rfl_unc[r - start_line, c, :] = full_unc_est[self.full_idx_surf_rfl]
 
+            full_state_est[len(self.full_idx_surf_rfl) : self.n_non_rfl_bands]
             # Save the non_rfl portion
             if self.non_rfl_outpath:
-                output_non_rfl = full_state_est[
-                    len(self.full_idx_surf_rfl) : self.n_non_rfl_bands
+                output_non_rfl[r - start_line, c, :] = full_state_est[
+                    self.n_rfl_bands : self.n_rfl_bands + self.n_non_rfl_bands
                 ]
-                output_non_rfl_unc = full_unc_est[
-                    len(self.full_idx_surf_rfl) : self.n_non_rfl_bands
+                output_non_rfl_unc[r - start_line, c, :] = full_unc_est[
+                    self.n_rfl_bands : self.n_rfl_bands + self.n_non_rfl_bands
                 ]
 
-        output_rfl = output_rfl[..., self.self.full_idx_surface]
+        # output_rfl = output_rfl[..., self.full_idx_surface]
 
         logging.info(
             f"Analytical line writing lines: {start_line} to {stop_line}. "
@@ -620,31 +634,33 @@ class Worker(object):
         # Output surface rfl
         write_bil_chunk(
             np.swapaxes(output_rfl, 1, 2),
+            # output_rfl.T,
             self.rfl_outpath,
             start_line,
-            (self.output_shape[0], self.output_shape[1], len(self.full_idx_surface)),
+            (self.n_lines, self.n_rfl_bands, self.n_samples),
         )
 
         # Save surface state uncertainty
         write_bil_chunk(
             np.swapaxes(output_rfl_unc, 1, 2),
+            # output_rfl_unc.T,
             self.unc_outpath,
             start_line,
-            (self.output_shape[0], self.output_shape[1], len(self.full_idx_surface)),
+            (self.n_lines, self.n_rfl_bands, self.n_samples),
         )
 
         if self.non_rfl_outpath:
             write_bil_chunk(
-                output_non_rfl.T,
+                np.swapaxes(output_non_rfl, 1, 2),
                 self.non_rfl_outpath,
-                r,
-                (self.output_shape[0], self.output_shape[1], self.n_non_rfl_bands),
+                start_line,
+                (self.n_lines, self.n_non_rfl_bands, self.n_samples),
             )
             write_bil_chunk(
-                output_non_rfl_unc[r - start_line, ...].T,
+                np.swapaxes(output_non_rfl_unc, 1, 2),
                 self.non_rfl_unc_outpath,
-                r,
-                (self.output_shape[0], self.output_shape[1], self.n_non_rfl_bands),
+                start_line,
+                (self.n_lines, self.n_non_rfl_bands, self.n_samples),
             )
 
 

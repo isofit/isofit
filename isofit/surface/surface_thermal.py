@@ -48,7 +48,6 @@ class ThermalSurface(MultiComponentSurface):
         self.emissive = True
         self.n_state = len(self.init)
 
-        # Initial Value recommended by Glynn Hulley.
         self.emissivity_for_surface_T_init = config.emissivity_for_surface_T_init
         self.surface_T_prior_sigma_degK = config.surface_T_prior_sigma_degK
 

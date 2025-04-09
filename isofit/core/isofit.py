@@ -346,19 +346,14 @@ class Worker(object):
                     )
 
                 if index % 100 == 0:
-                    if (
-                        self.worker_id is not None
-                        and self.approximate_total_spectra is not None
-                    ):
+                    if self.worker_id is not None and self.total_samples is not None:
                         percent = np.round(
-                            self.completed_spectra
-                            / self.approximate_total_spectra
-                            * 100,
+                            self.completed_spectra / self.total_samples * 100,
                             2,
                         )
                         logging.info(
                             f"Worker {self.worker_id} completed"
-                            f" {self.completed_spectra}/~{self.approximate_total_spectra}::"
+                            f" {self.completed_spectra}/~{self.total_samples}::"
                             f" {percent}% complete"
                         )
 

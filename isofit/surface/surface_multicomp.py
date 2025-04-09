@@ -331,28 +331,3 @@ class MultiComponentSurface(Surface):
             return ""
 
         return "Component: %i" % self.component(x_surface, geom)
-
-    def analytical_model(
-        self,
-        background,
-        L_down_dir,
-        L_down_dif,
-        L_tot,
-        geom,
-        L_dir_dir=None,
-        L_dir_dif=None,
-        L_dif_dir=None,
-        L_dif_dif=None,
-    ):
-        """
-        Linearization of the surface reflectance terms to use in the
-        AOE inner loop (see Susiluoto, 2025). We set the quadratic
-        spherical albedo term to a constant background, which makes
-        simplifies the linearization
-        background - s * rho_bg
-        """
-        theta = L_tot + (L_tot * background)
-        H = np.eye(self.n_wl, self.n_wl)
-        H = theta[:, np.newaxis] * H
-
-        return H

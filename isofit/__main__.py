@@ -205,6 +205,7 @@ class CLI(click.Group):
         "ewt": "isofit.utils.ewt_from_reflectance",
         "reconstruct_subs": "isofit.utils.reconstruct",
         "interpolate_spectra": "isofit.utils.interpolate_spectra",
+        "classify_multicomponent": "isofit.utils.multicomponent_classification",
         "sun": "isofit.utils.solar_position",
         "surface_model": "isofit.utils.surface_model",
         "plot": "isoplots",

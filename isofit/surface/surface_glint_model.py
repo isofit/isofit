@@ -35,20 +35,29 @@ class GlintModelSurface(MultiComponentSurface):
         config = full_config.forward_model.surface
 
         # TODO: Enforce this attribute in the config, not here (this is hidden)
-        self.statevec_names.extend(["SUN_GLINT", "SKY_GLINT"])
+        self.statevec_names.extend(["SKY_GLINT", "SUN_GLINT"])
+        self.glint_ind = len(self.statevec_names) - 2
+        self.sky_glint_ind = self.glint_ind
+        self.sun_glint_ind = self.glint_ind + 1
+
         self.scale.extend([1.0, 1.0])
 
         # Numbers from Marcel Koenig; used for prior mean
-        self.init.extend([0.02, 1 / np.pi])
+        self.init.extend([1 / np.pi, 0.02])
 
-        # Special glint bounds - Gege (2021), WASI user manual
-        self.bounds.extend([[-1, 10], [0, 10]])
+        # Special glint bounds
+        rmin, rmax = -0.05, 2.0
+        self.bounds = [[rmin, rmax] for w in self.wl]
+        # Gege (2021), WASI user manual
+        self.bounds.extend([[0, 10], [-1, 10]])
+
         self.n_state = self.n_state + 2
 
         # Useful indexes to track
         self.glint_ind = len(self.statevec_names) - 2
-        self.sun_glint_ind = self.glint_ind
-        self.sky_glint_ind = self.glint_ind + 1
+        self.sky_glint_ind = self.glint_ind
+        self.sun_glint_ind = self.glint_ind + 1
+
         self.idx_surface = np.arange(len(self.statevec_names))
 
         # Change this if you don't want to analytical solve for all the full statevector elements.
@@ -124,10 +133,10 @@ class GlintModelSurface(MultiComponentSurface):
         # Updating self.init will set the prior mean (xa) to this value
         self.init[self.sun_glint_ind] = g_dd_est
 
-        # SUN_GLINT g_dd
-        x[self.sun_glint_ind] = g_dd_est
         # SKY_GLINT g_dsf
         x[self.sky_glint_ind] = g_dsf_est
+        # SUN_GLINT g_dd
+        x[self.sun_glint_ind] = g_dd_est
 
         return x
 
@@ -259,9 +268,8 @@ class GlintModelSurface(MultiComponentSurface):
             L_dif_dif,
         )
 
-        gam = (L_dir_dir + L_dir_dif) * rho_ls
-        gam = np.reshape(gam, (len(gam), 1))
-        H = np.append(H, gam, axis=1)
+        # NOTE: The order of ep and gam respectively is important
+        # It must match the alphabeitcal order of the glint terms
 
         # Diffuse portion
         ep = (
@@ -271,6 +279,11 @@ class GlintModelSurface(MultiComponentSurface):
         # ep = (L_dif_dir + L_dif_dif) * rho_ls
         ep = np.reshape(ep, (len(ep), 1))
         H = np.append(H, ep, axis=1)
+
+        # Direct portion
+        gam = (L_dir_dir + L_dir_dif) * rho_ls
+        gam = np.reshape(gam, (len(gam), 1))
+        H = np.append(H, gam, axis=1)
 
         return H
 
@@ -283,57 +296,6 @@ class GlintModelSurface(MultiComponentSurface):
             x_surface[self.sun_glint_ind],
             x_surface[self.sky_glint_ind],
         )
-
-    def analytical_model(
-        self,
-        background,
-        L_down_dir,
-        L_down_dif,
-        L_tot,
-        geom,
-        L_dir_dir=None,
-        L_dir_dif=None,
-        L_dif_dir=None,
-        L_dif_dif=None,
-    ):
-        """
-        Linearization of the glint terms to use in AOE inner loop.
-        Function will fetch the linearization of the rho terms and
-        add the matrix coponents for the direct glint term.
-        Currently we set the diffuse glint scaling term to constant
-        value, which makes the AOE inner loop inversion possible.
-        """
-        # Get glint spectrum
-        rho_ls = self.fresnel_rf(geom.observer_zenith)
-        # Direct component holding dif component constant
-        g_dir = rho_ls * (L_down_dir / (L_down_dir + L_down_dif))
-        g_dif = rho_ls * (L_down_dif / (L_down_dir + L_down_dif))
-
-        # Construct the H matrix from:
-        # theta: rho portion
-        H = super().analytical_model(
-            background,
-            L_down_dir,
-            L_down_dif,
-            L_tot,
-            geom,
-            L_dir_dir,
-            L_dir_dif,
-            L_dif_dir,
-            L_dif_dif,
-        )
-
-        # gam: sun glint portion
-        gam = (L_dir_dir + L_dir_dif) * g_dir
-        gam = np.reshape(gam, (len(gam), 1))
-        H = np.append(H, gam, axis=1)
-
-        # ep: sky glint portion
-        ep = (L_dif_dir + L_dif_dif) + ((L_tot * background * g_dif) / (1 - background))
-        ep = np.reshape(ep, (len(ep), 1))
-        H = np.append(H, ep, axis=1)
-
-        return H
 
     @staticmethod
     def fresnel_rf(vza):

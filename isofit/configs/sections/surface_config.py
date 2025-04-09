@@ -64,16 +64,10 @@ class SurfaceConfig(BaseConfigSection):
         self._select_on_init_type = bool
         self.select_on_init = True
 
-        self._full_glint_type = bool
-        self.full_glint = False
-
-        self._glint_model_type = bool
-        self.glint_model = False
-
         # Surface Thermal
+        """ Initial Value recommended by Glynn Hulley."""
         self._emissivity_for_surface_T_init_type = float
         self.emissivity_for_surface_T_init = 0.98
-        """ Initial Value recommended by Glynn Hulley."""
 
         self._surface_T_prior_sigma_degK_type = float
         self.surface_T_prior_sigma_degK = 1.0

@@ -271,36 +271,3 @@ class LUTSurface(Surface):
             return ""
 
         return "Surface: " + " ".join([("%5.4f" % x) for x in x_surface])
-
-    def analytical_model(
-        self,
-        background,
-        L_down_dir,
-        L_down_dif,
-        L_tot,
-        geom,
-        L_dir_dir=None,
-        L_dir_dif=None,
-        L_dif_dir=None,
-        L_dif_dif=None,
-    ):
-        """
-        Linearization of the surface reflectance terms to use in the
-        AOE inner loop (see Susiluoto, 2025). We set the quadratic
-        spherical albedo term to a constant background, which makes
-        simplifies the linearization
-        background - s * rho_bg
-
-        NOTE FOR SURFACE_LUT:
-        This assumes that the only surface statevector terms are
-        surface reflectance terms. Any additional surface state elements
-        have to be explicitely handled in this function. How they are
-        handled is dependent on the nature of the surface rfl model.
-        The n-columns of H is equal to the number of statevector elements.
-        Here, set to the number of wavelengths.
-        """
-        theta = L_tot + (L_tot * background)
-        H = np.eye(self.n_wl, self.n_wl)
-        H = theta[:, np.newaxis] * H
-
-        return H

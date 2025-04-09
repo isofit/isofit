@@ -55,6 +55,7 @@ class Pathnames:
         interpolate_inplace,
         skyview_factor,
         subs: bool = False,
+        classify_multisurface: bool = False,
     ):
         # Determine FID based on sensor name
         if sensor == "ang":
@@ -98,9 +99,6 @@ class Pathnames:
         self.full_lut_directory = abspath(join(self.working_directory, "lut_full/"))
 
         self.surface_path = surface_path
-        self.surface_class_file = surface_class_file
-
-        self.surface_path = surface_path
 
         # set up some sub-directories
         self.lut_h2o_directory = abspath(join(self.working_directory, "lut_h2o/"))
@@ -135,16 +133,29 @@ class Pathnames:
             self.loc_working_path = abspath(
                 join(self.input_data_directory, self.fid + "_loc")
             )
-            self.surface_class_file = (
-                abspath(self.surface_class_file) if self.surface_class_file else None
-            )
+
+            if classify_multisurface and not surface_class_file:
+                self.surface_class_working_path = abspath(
+                    join(self.input_data_directory, self.fid + "_surface_class")
+                )
+            else:
+                self.surface_class_working_path = (
+                    abspath(surface_class_file) if surface_class_file else None
+                )
+
         else:
             self.radiance_working_path = abspath(self.input_radiance_file)
             self.obs_working_path = abspath(self.input_obs_file)
             self.loc_working_path = abspath(self.input_loc_file)
-            self.surface_class_file = (
-                abspath(self.surface_class_file) if self.surface_class_file else None
-            )
+
+            if classify_multisurface and not surface_class_file:
+                self.surface_class_working_path = abspath(
+                    join(self.input_data_directory, self.fid + "_surface_class")
+                )
+            else:
+                self.surface_class_working_path = (
+                    abspath(surface_class_file) if surface_class_file else None
+                )
 
         if interpolate_inplace:
             self.radiance_interp_path = self.radiance_working_path
@@ -194,12 +205,12 @@ class Pathnames:
 
         # Needs some handling if the segmentation will occur
         if subs:
-            self.subs_class_path = abspath(
-                join(self.input_data_directory, self.fid + "_subs_class")
+            self.surface_class_subs_path = abspath(
+                join(self.input_data_directory, self.fid + "_subs_surface_class")
             )
             subs_str = "_subs"
         else:
-            self.subs_class_path = None
+            self.surface_class_subs_path = None
             subs_str = ""
 
         self.rfl_subs_path = abspath(
@@ -1906,16 +1917,18 @@ def make_surface_config(
     }
 
     # Check to see if a classification file is being propogated
-    if paths.surface_class_file and not presolve:
+    if paths.surface_class_working_path and not presolve:
         surface_config_dict["Surfaces"] = {}
-        surface_config_dict["surface_class_file"] = paths.surface_class_file
+        surface_config_dict["surface_class_file"] = paths.surface_class_working_path
 
-        if vars(paths).get("subs_class_path", None):
-            surface_config_dict["sub_surface_class_file"] = paths.subs_class_path
+        if vars(paths).get("surface_class_subs_path", None):
+            surface_config_dict["sub_surface_class_file"] = (
+                paths.surface_class_subs_path
+            )
 
         surface_config_dict["multi_surface_flag"] = True
 
-        surface_class_ds = envi.open(envi_header(paths.surface_class_file))
+        surface_class_ds = envi.open(envi_header(paths.surface_class_working_path))
 
         # Get the class mapping. Tried to build in some insensitivity here.
         # Will use first option it hits
@@ -1928,7 +1941,8 @@ def make_surface_config(
             "Class",
             "surfaces",
             "Surfaces",
-            "surface names" "Surface names",
+            "surface names",
+            "Surface names",
         ]
         class_mapping = None
         for option in options:
@@ -1946,6 +1960,8 @@ def make_surface_config(
                 "nonwater": "multicomponent_surface",
                 "cloud": "multicomponent_surface",
                 "uniform_surface": "multicomponent_surface",
+                "glint_model_surface": "glint_model_surface",
+                "multicomponent_surface": "multicomponent_surface",
             }
 
         # Iterate through all classes present in class image
