@@ -12,9 +12,40 @@ from functools import cached_property
 from pathlib import Path
 from types import SimpleNamespace
 
+import numpy as np
 import xarray as xr
+from spectral.io import envi as _envi
+from xarray.backends import BackendEntrypoint
 
 from isofit.radiative_transfer import luts
+
+
+class EnviBackendEntrypoint(BackendEntrypoint):
+    """
+    Uses spectral.io.envi to load ISOFIT output rasters
+
+    Accessible via engine="envi" after installing ISOFIT
+    """
+
+    description = "Uses spectral.io.envi to load"
+    url = None
+
+    def open_dataset(self, filename_or_obj, *, drop_variables=None):
+        envi = _envi.open(filename_or_obj)
+        data = envi.open_memmap()
+        meta = envi.metadata.copy()
+
+        dims = ("y", "x", "band")
+        coords = {
+            "wavelength": (("band",), np.array(meta.pop("wavelength")).astype(float)),
+            "fwhm": (("band",), np.array(meta.pop("fwhm")).astype(float)),
+            "band": range(1, data.shape[-1] + 1),
+        }
+        ds = xr.Dataset({"band_data": (dims, data)}, coords=coords)
+        ds = ds.transpose("band", "y", "x")
+        ds["band_data"].attrs = meta
+
+        return ds
 
 
 @dataclass(frozen=True)
@@ -473,7 +504,7 @@ class Input(FileFinder):
         if file.suffix:
             file = file.with_suffix("")
 
-        ds = xr.open_dataset(file, engine="rasterio", lock=False)
+        ds = xr.open_dataset(file, engine="envi", lock=False)
 
         if len(ds) == 1:
             return ds[list(ds)[0]]
@@ -530,7 +561,7 @@ class Output(FileFinder):
         if file.suffix:
             file = file.with_suffix("")
 
-        ds = xr.open_dataset(file, engine="rasterio", lock=False)
+        ds = xr.open_dataset(file, engine="envi", lock=False)
 
         if len(ds) == 1:
             return ds[list(ds)[0]]
