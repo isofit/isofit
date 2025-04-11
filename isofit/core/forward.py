@@ -216,11 +216,12 @@ class ForwardModel:
         Then downsampled to instrument.
         """
         # Call surface reflectance derivative w.r.t. surface, upsample
-        lamb_rfl_hi = self.upsample(
-            self.surface.wl, self.surface.calc_lamb(x_surface, geom)
-        )
+        dlamb_dsurface_hi = self.upsample(
+            self.surface.wl,
+            self.surface.dlamb_dsurface(self.surface.calc_lamb(x_surface, geom)).T,
+        ).T
         drfl_dsurface_hi = self.surface.drfl_dsurface(
-            lamb_rfl_hi, geom, L_down_dir, L_down_dif
+            dlamb_dsurface_hi, geom, L_down_dir, L_down_dif
         )
 
         # Call surface emission w.r.t. surface, upsample
