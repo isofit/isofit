@@ -116,31 +116,40 @@ class GlintModelSurface(MultiComponentSurface):
         """Calculates the sun (dir) and sky (dif) glint spectrums"""
         rho_ls = self.fresnel_rf(geom.observer_zenith)
         # direct sky transmittance
-        g_dir = rho_ls * (L_down_dir / (L_down_dir + L_down_dif))
+        L_tot = L_down_dir + L_down_dif
+        g_dir = rho_ls * (L_down_dir / L_tot)
         # diffuse sky transmittance
-        g_dif = rho_ls * (L_down_dif / (L_down_dir + L_down_dif))
+        g_dif = rho_ls * (L_down_dif / L_tot)
+
+        # Handle  NaN cases by setting g_dir/g_dif to the fresnel
+        zeros = np.argwhere(L_tot == 0)
+        g_dir[zeros] = rho_ls
+        g_dif[zeros] = rho_ls
 
         return g_dir, g_dif
 
     def calc_rfl(self, lamb_rfl, x_surface, geom, L_down_dir=None, L_down_dif=None):
         """Direct and diffuse Reflectance (includes sun and sky glint).
 
-        NOTE:
-        This will currently fail if surface.wl != RT.wl
-        Check if that use case is required
+        lamb_rfl has to be at same resolution as L_down_dir/L_down_dif
         """
+        # Inherit from inherited surface
+        rho_dir_dir, rho_dif_dir = super().calc_rfl(
+            lamb_rfl, x_surface, geom, L_down_dir, L_down_dif
+        )
+
         # fresnel reflectance factor (approx. 0.02 for nadir view)
         g_dir, g_dif = self.glint_spectra(geom, L_down_dir, L_down_dif)
 
         sun_glint = x_surface[-2] * g_dir
         sky_glint = x_surface[-1] * g_dif
 
-        rho_dir_dir = lamb_rfl + sun_glint
-        rho_dif_dir = lamb_rfl + sky_glint
+        rho_dir_dir += sun_glint
+        rho_dif_dir += sky_glint
 
         return rho_dir_dir, rho_dif_dir
 
-    def drfl_dsurface(self, lamb_rfl, geom, L_down_dir=None, L_down_dif=None):
+    def drfl_dsurface(self, dlamb_dsurface, geom, L_down_dir=None, L_down_dif=None):
         """Partial derivative of reflectance with respect to state vector,
         calculated at x_surface.
 
@@ -149,7 +158,7 @@ class GlintModelSurface(MultiComponentSurface):
         reflects a need to apply the chain rule to construct the full derivative
         where the dependence of Rho_dif on alpha_dif (and g_dif) has to be
         incorporated. Discuss."""
-        drfl = self.dlamb_dsurface(lamb_rfl)
+        drfl = super().drfl_dsurface(dlamb_dsurface, geom, L_down_dir, L_down_dif)
 
         g_dir, g_dif = self.glint_spectra(geom, L_down_dir, L_down_dif)
 
@@ -179,9 +188,9 @@ class GlintModelSurface(MultiComponentSurface):
     ):
         """Derivative of radiance with respect to
         full surface vector"""
-        # Element wise multiplication between
-        # drdn_drfl (vector) and eye matrix to construct
-        # drdn_drfl (diagonal)
+        # Construct the output matrix
+        # Dimensions should be (len(RT.wl), len(x_surface))
+        # which is correctly handled by the instrument resampling
         drdn_dsurface = np.zeros(drfl_dsurface.shape)
         drdn_drfl = self.drdn_drfl(L_tot, s_alb, rho_dif_dir)
         drdn_dsurface[:, : self.n_wl] = np.multiply(

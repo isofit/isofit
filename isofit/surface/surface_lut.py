@@ -109,12 +109,13 @@ class LUTSurface(Surface):
 
         return x_surface
 
-    def calc_rfl(self, x_surface, geom, L_down_dir=None, L_down_dif=None):
+    def calc_rfl(self, lamb_rfl, x_surface, geom, L_down_dir=None, L_down_dif=None):
         """Non-Lambertian reflectance."""
 
         # ToDo: Future use of calc_rfl() is to return a direct and diffuse surface reflectance quantity.
         #  As long as this is not implemented, return the same reflectance vector for both.
-        rfl = self.calc_lamb(x_surface, geom)
+        # rfl = self.calc_lamb(x_surface, geom)
+        rfl = lamb_rfl
 
         return rfl, rfl
 
@@ -139,11 +140,11 @@ class LUTSurface(Surface):
 
         return lamb
 
-    def drfl_dsurface(self, x_surface, geom, L_down_dir=None, L_down_dif=None):
+    def drfl_dsurface(self, dlamb_dsurface, geom, L_down_dir=None, L_down_dif=None):
         """Partial derivative of reflectance with respect to state vector,
         calculated at x_surface."""
 
-        return self.dlamb_dsurface(x_surface, geom)
+        return dlamb_dsurface
 
     def dlamb_dsurface(self, x_surface, geom):
         """Partial derivative of Lambertian reflectance with respect to
@@ -171,7 +172,7 @@ class LUTSurface(Surface):
 
         return L_tot / ((1.0 - s_alb * rho_dif_dir) ** 2)
 
-    def calc_Ls(self, x_surface, geom):
+    def calc_Ls(self, lamb_rfl, x_surface, geom):
         """Emission of surface, as a radiance."""
 
         return np.zeros(self.n_wl, dtype=float)
@@ -203,13 +204,17 @@ class LUTSurface(Surface):
         """Derivative of radiance with respect to
         full surface vector"""
 
-        drdn_dLs = t_total_up
+        # Construct the output matrix
+        # Dimensions should be (len(RT.wl), len(x_surface))
+        # which is correctly handled by the instrument resampling
+        drdn_dsurface = np.zeros(drfl_dsurface.shape)
         drdn_drfl = self.drdn_drfl(L_tot, s_alb, rho_dif_dir)
-
-        # Chain rule to get derivative w.r.t. surface complete state
-        drdn_dsurface = np.multiply(drdn_drfl, drfl_dsurface)
+        drdn_dsurface[:, : self.n_wl] = np.multiply(
+            drdn_drfl[:, np.newaxis], drfl_dsurface[:, : self.n_wl]
+        )
 
         # Get the derivative w.r.t. surface emission
+        drdn_dLs = t_total_up
         drdn_dLs = np.multiply(self.drdn_dLs(t_total_up)[:, np.newaxis], dLs_dsurface)
 
         return np.add(drdn_dsurface, drdn_dLs)

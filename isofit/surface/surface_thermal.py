@@ -77,20 +77,20 @@ class ThermalSurface(MultiComponentSurface):
 
         return x_surface
 
-    def dlamb_dsurface(self, x_surface, geom):
+    def dlamb_dsurface(self, lamb_rfl):
         """Partial derivative of Lambertian reflectance with respect to state
         vector, calculated at x_surface."""
 
-        dlamb = MultiComponentSurface.dlamb_dsurface(self, x_surface, geom)
+        dlamb = super().dlamb_dsurface(lamb_rfl)
         dlamb[:, self.surf_temp_ind] = 0
 
         return dlamb
 
-    def calc_Ls(self, x_surface, geom):
+    def calc_Ls(self, lamb_rfl, x_surface, geom):
         """Emission of surface, as a radiance."""
 
         T = x_surface[self.surf_temp_ind]
-        rfl = self.calc_rfl(x_surface, geom)
+        rfl = self.calc_rfl(lamb_rfl, x_surface, geom)
         # ToDo: direct and diffuse reflectance vectors not supported yet
         rfl[0][rfl[0] > 1.0] = 1.0
         emissivity = 1 - rfl[0]
@@ -124,16 +124,14 @@ class ThermalSurface(MultiComponentSurface):
         """Derivative of radiance with respect to
         full surface vector"""
 
-        # Element wise multiplication between
-        # drdn_drfl (vector) and eye matrix to construct
-        # drdn_drfl (diagonal)
-        drdn_drfl = np.multiply(
-            self.drdn_drfl(L_tot, s_alb, rho_dif_dir)[:, np.newaxis],
-            np.eye(len(self.wl), drfl_dsurface.shape[1]),
+        # Construct the output matrix
+        # Dimensions should be (len(RT.wl), len(x_surface))
+        # which is correctly handled by the instrument resampling
+        drdn_dsurface = np.zeros(drfl_dsurface.shape)
+        drdn_drfl = self.drdn_drfl(L_tot, s_alb, rho_dif_dir)
+        drdn_dsurface[:, : self.n_wl] = np.multiply(
+            drdn_drfl[:, np.newaxis], drfl_dsurface[:, : self.n_wl]
         )
-
-        # Chain rule to get derivative w.r.t. surface complete state
-        drdn_dsurface = np.multiply(drdn_drfl, drfl_dsurface)
 
         # Get the derivative w.r.t. surface emission
         drdn_dLs = np.multiply(self.drdn_dLs(t_total_up)[:, np.newaxis], dLs_dsurface)

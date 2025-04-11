@@ -199,7 +199,7 @@ class ForwardModel:
         )
 
         # Call surface emission, upsample
-        Ls = self.calc_Ls(x_surface, geom)
+        Ls = self.surface.calc_Ls(lamb_rfl_hi, x_surface, geom)
         Ls_hi = self.upsample(self.surface.wl, Ls)
 
         return (
