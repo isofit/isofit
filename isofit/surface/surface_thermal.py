@@ -86,10 +86,12 @@ class ThermalSurface(MultiComponentSurface):
 
         return dlamb
 
-    def calc_Ls(self, lamb_rfl, x_surface, geom):
+    def calc_Ls(self, x_surface, geom):
         """Emission of surface, as a radiance."""
 
         T = x_surface[self.surf_temp_ind]
+        lamb_rfl = self.calc_lamb(x_surface, geom)
+
         rfl = self.calc_rfl(lamb_rfl, x_surface, geom)
         # ToDo: direct and diffuse reflectance vectors not supported yet
         rfl[0][rfl[0] > 1.0] = 1.0

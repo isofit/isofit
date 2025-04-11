@@ -234,7 +234,7 @@ class MultiComponentSurface(Surface):
 
         return L_tot / ((1.0 - s_alb * rho_dif_dir) ** 2)
 
-    def calc_Ls(self, lamb_rfl, x_surface, geom):
+    def calc_Ls(self, x_surface, geom):
         """Emission of surface, as a radiance."""
 
         return np.zeros(self.n_wl, dtype=float)
