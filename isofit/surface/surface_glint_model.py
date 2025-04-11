@@ -122,20 +122,25 @@ class GlintModelSurface(MultiComponentSurface):
 
         return g_dir, g_dif
 
-    def calc_rfl(self, x_surface, geom, L_down_dir=None, L_down_dif=None):
-        """Direct and diffuse Reflectance (includes sun and sky glint)."""
+    def calc_rfl(self, lamb_rfl, x_surface, geom, L_down_dir=None, L_down_dif=None):
+        """Direct and diffuse Reflectance (includes sun and sky glint).
+
+        NOTE:
+        This will currently fail if surface.wl != RT.wl
+        Check if that use case is required
+        """
         # fresnel reflectance factor (approx. 0.02 for nadir view)
         g_dir, g_dif = self.glint_spectra(geom, L_down_dir, L_down_dif)
 
         sun_glint = x_surface[-2] * g_dir
         sky_glint = x_surface[-1] * g_dif
 
-        rho_dir_dir = self.calc_lamb(x_surface, geom) + sun_glint
-        rho_dif_dir = self.calc_lamb(x_surface, geom) + sky_glint
+        rho_dir_dir = lamb_rfl + sun_glint
+        rho_dif_dir = lamb_rfl + sky_glint
 
         return rho_dir_dir, rho_dif_dir
 
-    def drfl_dsurface(self, x_surface, geom, L_down_dir=None, L_down_dif=None):
+    def drfl_dsurface(self, lamb_rfl, geom, L_down_dir=None, L_down_dif=None):
         """Partial derivative of reflectance with respect to state vector,
         calculated at x_surface.
 
@@ -144,10 +149,9 @@ class GlintModelSurface(MultiComponentSurface):
         reflects a need to apply the chain rule to construct the full derivative
         where the dependence of Rho_dif on alpha_dif (and g_dif) has to be
         incorporated. Discuss."""
-        drfl = self.dlamb_dsurface(x_surface, geom)
+        drfl = self.dlamb_dsurface(lamb_rfl)
 
         g_dir, g_dif = self.glint_spectra(geom, L_down_dir, L_down_dif)
-        # drfl = drfl * np.reshape(g_dif, (len(g_dif), 1))
 
         # TODO make the indexing better for the surface state elements
         drfl[:, self.glint_ind] = g_dir
@@ -178,20 +182,20 @@ class GlintModelSurface(MultiComponentSurface):
         # Element wise multiplication between
         # drdn_drfl (vector) and eye matrix to construct
         # drdn_drfl (diagonal)
-        drdn_drfl = np.multiply(
-            self.drdn_drfl(L_tot, s_alb, rho_dif_dir)[:, np.newaxis],
-            np.eye(len(self.wl), drfl_dsurface.shape[1]),
+        drdn_dsurface = np.zeros(drfl_dsurface.shape)
+        drdn_drfl = self.drdn_drfl(L_tot, s_alb, rho_dif_dir)
+        drdn_dsurface[:, : self.n_wl] = np.multiply(
+            drdn_drfl[:, np.newaxis], drfl_dsurface[:, : self.n_wl]
         )
 
         # Glint derivatives
         drdn_dgdd, drdn_dgdsf = self.drdn_dglint(L_tot, L_down_dir, s_alb, rho_dif_dir)
 
         # Store the glint derivatives as last two rows in drdn_drfl
-        drdn_drfl[:, -2] = drdn_dgdd
-        drdn_drfl[:, -1] = drdn_dgdsf
+        drdn_dsurface[:, -2] = drdn_dgdd * drfl_dsurface[:, -2]
+        drdn_dsurface[:, -1] = drdn_dgdsf * drfl_dsurface[:, -1]
 
         # Chain rule to get derivative w.r.t. surface complete state
-        drdn_dsurface = np.multiply(drdn_drfl, drfl_dsurface)
         # Get the derivative w.r.t. surface emission
         drdn_dLs = np.multiply(self.drdn_dLs(t_total_up)[:, np.newaxis], dLs_dsurface)
 

@@ -199,12 +199,13 @@ class MultiComponentSurface(Surface):
 
         return x_surface
 
-    def calc_rfl(self, x_surface, geom, L_down_dir=None, L_down_dif=None):
+    def calc_rfl(self, lamb_rfl, x_surface, geom, L_down_dir=None, L_down_dif=None):
         """Non-Lambertian reflectance."""
 
         # ToDo: Future use of calc_rfl() is to return a direct and diffuse surface reflectance quantity.
         #  As long as this is not implemented, return the same reflectance vector for both.
-        rfl = self.calc_lamb(x_surface, geom)
+        # rfl = self.calc_lamb(x_surface, geom)
+        rfl = lamb_rfl
 
         return rfl, rfl
 
@@ -213,23 +214,19 @@ class MultiComponentSurface(Surface):
 
         return x_surface[self.idx_lamb]
 
-    def drfl_dsurface(self, x_surface, geom, L_down_dir=None, L_down_dif=None):
+    def drfl_dsurface(self, lamb_rfl, geom, L_down_dir=None, L_down_dif=None):
         """Partial derivative of reflectance with respect to state vector,
         calculated at x_surface."""
 
-        return self.dlamb_dsurface(x_surface, geom)
+        return self.dlamb_dsurface(lamb_rfl)
 
-    def dlamb_dsurface(self, x_surface, geom):
+    def dlamb_dsurface(self, lamb_rfl):
         """Partial derivative of Lambertian reflectance with respect to
         state vector, calculated at x_surface."""
 
-        dlamb = np.eye(self.n_wl, dtype=float)
-        nprefix = self.idx_lamb[0]
-        nsuffix = self.n_state - self.idx_lamb[-1] - 1
-        prefix = np.zeros((self.n_wl, nprefix))
-        suffix = np.zeros((self.n_wl, nsuffix))
+        dlamb = np.eye(len(lamb_rfl), self.n_state, dtype=float)
 
-        return np.concatenate((prefix, dlamb, suffix), axis=1)
+        return dlamb
 
     def drdn_drfl(self, L_tot, s_alb, rho_dif_dir):
         """Partial derivative of radiance with respect to
@@ -276,13 +273,9 @@ class MultiComponentSurface(Surface):
         # Element wise multiplication between
         # drdn_drfl (vector) and eye matrix to construct
         # drdn_drfl (diagonal)
-        drdn_drfl = np.multiply(
-            self.drdn_drfl(L_tot, s_alb, rho_dif_dir)[:, np.newaxis],
-            np.eye(len(self.wl), drfl_dsurface.shape[1]),
+        drdn_dsurface = np.multiply(
+            self.drdn_drfl(L_tot, s_alb, rho_dif_dir)[:, np.newaxis], drfl_dsurface
         )
-
-        # Chain rule to get derivative w.r.t. surface complete state
-        drdn_dsurface = np.multiply(drdn_drfl, drfl_dsurface)
 
         # Get the derivative w.r.t. surface emission
         drdn_dLs = np.multiply(self.drdn_dLs(t_total_up)[:, np.newaxis], dLs_dsurface)
