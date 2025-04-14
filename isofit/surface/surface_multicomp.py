@@ -273,16 +273,15 @@ class MultiComponentSurface(Surface):
         """Derivative of radiance with respect to
         full surface vector"""
 
-        # Element wise multiplication between
-        # drdn_drfl (vector) and eye matrix to construct
-        # drdn_drfl (diagonal)
-        drdn_drfl = np.multiply(
-            self.drdn_drfl(L_tot, s_alb, rho_dif_dir)[:, np.newaxis],
-            np.eye(len(self.wl), drfl_dsurface.shape[1]),
-        )
+        # Construct the output matrix:
+        # Dimensions should be (len(RT.wl), len(x_surface))
+        # which is correctly handled by the instrument resampling
+        drdn_dsurface = np.zeros(drfl_dsurface.shape)
+        drdn_drfl = self.drdn_drfl(L_tot, s_alb, rho_dif_dir)
 
-        # Chain rule to get derivative w.r.t. surface complete state
-        drdn_dsurface = np.multiply(drdn_drfl, drfl_dsurface)
+        drdn_dsurface[:, : self.n_wl] = np.multiply(
+            drdn_drfl[:, np.newaxis], drfl_dsurface[:, : self.n_wl]
+        )
 
         # Get the derivative w.r.t. surface emission
         drdn_dLs = np.multiply(self.drdn_dLs(t_total_up)[:, np.newaxis], dLs_dsurface)

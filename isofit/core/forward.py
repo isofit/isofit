@@ -77,11 +77,24 @@ class ForwardModel:
         if self.surface.n_wl != len(self.RT.wl) or not np.all(
             np.isclose(self.surface.wl, self.RT.wl, atol=0.01)
         ):
-            Logger.warning(
-                "Surface and RTM wavelengths differ - if running at higher RTM"
-                " spectral resolution or with variable wavelength position, this"
-                " is expected.  Otherwise, consider checking the surface model."
-            )
+            if self.config.surface.surface_category == "glint_model_surface":
+                Logger.error(
+                    "Surface and RTM wavelengths differ and you are attempting"
+                    " to run the glint_model_surface. This behavior is not currently"
+                    " implemented for the glint_model. If this functionality is"
+                    " needed for the run case, e.g. calibration, please use"
+                    " a different surface model"
+                )
+                raise Valueerror(
+                    "Using glint_model_surface with differing surface and"
+                    " RT wavelenths is not implemented. See log for detail"
+                )
+            else:
+                Logger.warning(
+                    "Surface and RTM wavelengths differ - if running at higher RTM"
+                    " spectral resolution or with variable wavelength position, this"
+                    " is expected.  Otherwise, consider checking the surface model."
+                )
 
         # Build combined vectors from surface, RT, and instrument
         bounds, scale, init, statevec, bvec, bval = ([] for i in range(6))
