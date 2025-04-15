@@ -512,7 +512,7 @@ class Worker(object):
             logging.info(f"Analytical line writing line {r}")
 
             write_bil_chunk(
-                output_rfl[r - start_line, c, :].T,
+                output_rfl[r - start_line, ...].T,
                 self.analytical_rfl_file,
                 r,
                 (rdn.shape[0], rdn.shape[1], len(self.fm.idx_surf_rfl)),
@@ -526,7 +526,7 @@ class Worker(object):
 
             if self.analytical_non_rfl_surf_file:
                 write_bil_chunk(
-                    output_non_rfl[r - start_line, c, :].T,
+                    output_non_rfl[r - start_line, ...].T,
                     self.analytical_non_rfl_surf_file,
                     r,
                     (rdn.shape[0], rdn.shape[1], len(self.fm.idx_surf_nonrfl)),
