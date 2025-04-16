@@ -191,16 +191,9 @@ def analytical_line(
         output_metadata["band names"] = np.array(fm.surface.statevec_names)[
             fm.idx_surf_nonrfl
         ]
-        ret = [
-            output_metadata.pop(k)
-            for k in [
-                "bbl",
-                "wavelength",
-                "wavelength units",
-                "fwhm",
-                "smoothing factors",
-            ]
-        ]
+        for k in ["bbl", "wavelength", "wavelength units", "fwhm", "smoothing factors"]:
+            if output_metadata.get(k):
+                ret = output_metadata.pop(k)
 
         img = envi.create_image(
             envi_header(analytical_non_rfl_surf_file),
