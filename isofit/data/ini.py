@@ -8,6 +8,7 @@ import json
 import logging
 import re
 from configparser import ConfigParser
+from copy import deepcopy
 from pathlib import Path
 
 Logger = logging.getLogger(__file__)
@@ -36,7 +37,7 @@ def getWorkingDir(config):
         if not (wd / dir).exists():
             return None
 
-    print(f"Discovered working_directory to be: {wd}")
+    Logger.info(f"Discovered working_directory to be: {wd}")
     return wd
 
 
@@ -241,7 +242,7 @@ class Ini:
             try:
                 with open(self.ini, "w") as file:
                     self.config.write(file)
-                print(f"Wrote to file: {self.ini}")
+                Logger.debug(f"Wrote to file: {self.ini}")
             except:
                 Logger.exception(f"Failed to dump ini to file: {self.ini}")
 
@@ -301,7 +302,12 @@ class Ini:
         return path
 
     def toTemplate(
-        self, data: str | dict, replace="dirs", save: bool = True, **kwargs
+        self,
+        data: str | dict,
+        replace="dirs",
+        save: bool = True,
+        report: bool = True,
+        **kwargs,
     ) -> dict:
         """
         Recursively converts string values in a dict to be template values which can be
@@ -324,6 +330,8 @@ class Ini:
         save : bool, default=True
             If the data was a file and this is enabled, saves the converted data dict
             to another file. The new file will simply append ".tmpl" to its name
+        report : bool, default=True
+            Reports if no value in the input data was changed
         **kwargs : dict
             Additional strings to replace. The values are replaced in a string with the
             key of the kwarg. For example:
@@ -354,27 +362,38 @@ class Ini:
             else:
                 raise FileNotFoundError("If `data` is not a dict, it must be a file")
 
+        orig = None
+        if report:
+            orig = deepcopy(data)
+
         for key, value in data.items():
             if isinstance(value, dict):
-                self.toTemplate(value, **kwargs)
+                self.toTemplate(value, report=False, **kwargs)
             elif isinstance(value, str):
                 for k, v in self.items(replace):
                     if v in value:
+                        Logger.debug(f"{key}: {v} in {value} => env.{k}")
                         value = value.replace(v, "{env." + k + "}")
 
                 for k, v in kwargs.items():
                     if v in value:
+                        Logger.debug(f"{key}: {v} in {value} => {k}")
                         value = value.replace(v, "{" + k + "}")
 
                 data[key] = value
 
-        if save and file:
-            out = file.with_suffix(f"{file.suffix}.tmpl")
-            with open(out, "w") as f:
-                f.write(json.dumps(data, indent=4))
+        if orig != data:
+            if save and file:
+                out = file.with_suffix(f"{file.suffix}.tmpl")
+                with open(out, "w") as f:
+                    f.write(json.dumps(data, indent=4))
 
-            Logger.debug(f"Saved converted json to: {out}")
-            return out
+                Logger.info(f"Saved converted json to: {out}")
+                return out
+        elif report:
+            Logger.warning(
+                "No value in the config was replaced. Are the paths in the ini in the config?"
+            )
 
         return data
 
@@ -461,7 +480,7 @@ class Ini:
             with open(out, "w") as f:
                 f.write(json.dumps(data, indent=4))
 
-            Logger.debug(f"Saved converted json to: {out}")
+            Logger.info(f"Saved converted json to: {out}")
             return out
 
         return data

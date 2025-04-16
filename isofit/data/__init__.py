@@ -1,4 +1,5 @@
 import json
+import logging
 
 import click
 
@@ -24,7 +25,7 @@ def dev():
     """\
     Extra commands for developers
     """
-    pass
+    logging.basicConfig(level="DEBUG", format="%(levelname)-8s %(message)s")
 
 
 data = click.argument("data")
@@ -57,7 +58,7 @@ kwargs = click.option(
 @save
 @kwargs
 def toTemplate(no_save, kwargs, *args, **opts):
-    data = env.fromTemplate(*args, save=not no_save, **dict(kwargs), **opts)
+    data = env.toTemplate(*args, save=not no_save, **dict(kwargs), **opts)
 
     if no_save:
         print(json.dumps(data, indent=4))
