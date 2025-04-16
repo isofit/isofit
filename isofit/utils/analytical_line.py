@@ -509,34 +509,34 @@ class Worker(object):
             # )
             # state[mask] = 0
 
-            logging.info(f"Analytical line writing line {r}")
+        logging.info(f"Writing lines {start_line} to {stop_line}")
 
+        write_bil_chunk(
+            output_rfl.T,
+            self.analytical_rfl_file,
+            start_line,
+            (rdn.shape[0], rdn.shape[1], len(self.fm.idx_surf_rfl)),
+        )
+        write_bil_chunk(
+            output_rfl_unc.T,
+            self.analytical_rfl_unc_file,
+            start_line,
+            (rdn.shape[0], rdn.shape[1], len(self.fm.idx_surf_rfl)),
+        )
+
+        if self.analytical_non_rfl_surf_file:
             write_bil_chunk(
-                output_rfl[r - start_line, ...].T,
-                self.analytical_rfl_file,
-                r,
-                (rdn.shape[0], rdn.shape[1], len(self.fm.idx_surf_rfl)),
+                output_non_rfl.T,
+                self.analytical_non_rfl_surf_file,
+                start_line,
+                (rdn.shape[0], rdn.shape[1], len(self.fm.idx_surf_nonrfl)),
             )
             write_bil_chunk(
-                output_rfl_unc[r - start_line, ...].T,
-                self.analytical_rfl_unc_file,
-                r,
-                (rdn.shape[0], rdn.shape[1], len(self.fm.idx_surf_rfl)),
+                output_non_rfl_unc.T,
+                self.analytical_non_rfl_surf_unc_file,
+                start_line,
+                (rdn.shape[0], rdn.shape[1], len(self.fm.idx_surf_nonrfl)),
             )
-
-            if self.analytical_non_rfl_surf_file:
-                write_bil_chunk(
-                    output_non_rfl[r - start_line, ...].T,
-                    self.analytical_non_rfl_surf_file,
-                    r,
-                    (rdn.shape[0], rdn.shape[1], len(self.fm.idx_surf_nonrfl)),
-                )
-                write_bil_chunk(
-                    output_non_rfl_unc[r - start_line, ...].T,
-                    self.analytical_non_rfl_surf_unc_file,
-                    r,
-                    (rdn.shape[0], rdn.shape[1], len(self.fm.idx_surf_nonrfl)),
-                )
 
 
 @click.command(name="analytical_line")
