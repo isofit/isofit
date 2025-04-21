@@ -271,10 +271,18 @@ class RadiativeTransferEngine:
         if build_interpolators:
             self.build_interpolators()
 
+            geometry_keys = set(engine_config.statevector_names or self.lut_names)
+
+            matches = common.compare(geometry_keys, self.geometry_input_names)
+            if matches:
+                Logger.warning(
+                    "A key in the statevector was detected to be close to keys in the geometry keys list:"
+                )
+                for key, strings in matches.items():
+                    Logger.warning(f"  {key!r} should it be one of {strings}?")
+
             # Hidden assumption: geometry keys come first, then come RTE keys
-            self.geometry_input_names = set(self.geometry_input_names) - set(
-                engine_config.statevector_names or self.lut_names
-            )
+            self.geometry_input_names = set(self.geometry_input_names) - geometry_keys
             self.indices.geom = {
                 i: key
                 for i, key in enumerate(self.lut_names)
