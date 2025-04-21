@@ -76,16 +76,25 @@ def test_pasadena_topoflux(monkeypatch):
 @pytest.mark.parametrize(
     "args",
     [
-        ("--level", "DEBUG", "configs/AV320250308t200738_isofit.json"),
-        ("--level", "DEBUG", "configs/AV320250308t200738_isofit_swir_shift.json"),
-        ("--level", "DEBUG", "configs/AV320250308t200738_isofit_swir_spline.json"),
+        ("--level", "DEBUG", "configs/AV320250308t200738_wltest_isofit.json"),
+        (
+            "--level",
+            "DEBUG",
+            "configs/AV320250308t200738_wltest_isofit_swir_shift.json",
+        ),
+        (
+            "--level",
+            "DEBUG",
+            "configs/AV320250308t200738_wltest_isofit_swir_spline.json",
+        ),
     ],
 )
 # fmt: on
 def test_av3_calibration(args, monkeypatch):
     """Run the calibration test dataset."""
 
-    monkeypatch.chdir(env.path("examples", "20250308_AV3Calibration/"))
+    monkeypatch.chdir(env.path("examples", "20250308_AV3Cal_wltest/"))
+    os.makedirs("output", exist_ok=True)
 
     runner = CliRunner()
     result = runner.invoke(cli, ["run"] + list(args), catch_exceptions=False)
