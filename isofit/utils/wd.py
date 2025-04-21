@@ -155,11 +155,14 @@ class FileFinder:
         bool
             True if it matches one of the extensions, False otherwise
         """
-        if file.is_dir():
-            return False
-        if "*" in self.extensions:
-            return True
-        return file.suffix in self.extensions
+        try:
+            if file.is_dir():
+                return False
+            if "*" in self.extensions:
+                return True
+            return file.suffix in self.extensions
+        except:
+            self.log.exception(f"Failed to parse file: {file}")
 
     def getTree(self, info=False, *, path=None, tree=None):
         """
@@ -221,7 +224,7 @@ class FileFinder:
                 name = str(file).replace(f"{path}/", "")
                 files.append(name)
 
-        return files
+        return sorted(files)
 
     def ifin(self, name, all=False, exc=[]):
         """
@@ -250,8 +253,9 @@ class FileFinder:
             if name in file:
                 for string in exc:
                     if string in file:
-                        continue
-                found.append(file)
+                        break
+                else:
+                    found.append(file)
 
         if not all:
             if len(found) > 1:
@@ -291,8 +295,9 @@ class FileFinder:
                 if re.match(regex, file):
                     for string in exc:
                         if string in file:
-                            continue
-                    found.append(file)
+                            break
+                    else:
+                        found.append(file)
             except Exception as e:
                 self.log.exception(f"Is this a valid regex? {regex}")
                 raise e
@@ -546,11 +551,17 @@ class Output(FileFinder):
 
         files = self.getFlat()
 
+        self.name = None
         for file in files:
             if "subs" in file:
                 self.h2o = True
             elif file.endswith("_rfl"):
                 self.name = file[:-4]
+
+        if self.name is None:
+            self.log.warning(
+                "Could not find the full reflectance product and therefore could not parse the name. This may have downstream effects"
+            )
 
         self.products = [file.replace(f"{self.name}_", "") for file in files]
 
@@ -598,7 +609,13 @@ class Output(FileFinder):
         -------
         xr.DataArray
         """
-        data = self.load(path=f"{self.name}_rfl")
+        if not (file := self.find("rfl", exc="subs")):
+            self.log.error(
+                "Could not find the full reflectance product, does it exist?"
+            )
+            return
+
+        data = self.load(path=file)
 
         # Retrieve the RGB subset
         rgb = data.sel(band=[r, g, b]).transpose("y", "x", "band")
@@ -971,7 +988,7 @@ class IsofitWD(FileFinder):
         dirs = set([self.subpath(file, parent=True)[0] for file in self.files]) - set(
             ["."]
         )
-        for subdir in dirs:
+        for subdir in sorted(dirs):
             for name, cls in self.classes.items():
                 if name in subdir:
                     self.log.debug(f"Initializing {subdir} with class {cls.__name__}")
