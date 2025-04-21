@@ -33,6 +33,7 @@ from isofit.core.common import (
     get_refractive_index,
     svd_inv_sqrt,
 )
+from isofit.data import env
 
 
 def heuristic_atmosphere(
@@ -541,9 +542,7 @@ def invert_liquid_water(
         lw_bounds[0][1] = ewt_detection_limit
 
     # load imaginary part of liquid water refractive index and calculate wavelength dependent absorption coefficient
-    # __file__ should live at isofit/isofit/inversion/
-    isofit_path = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    path_k = os.path.join(isofit_path, "data", "iop", "k_liquid_water_ice.csv")
+    path_k = env.path("data", "iop", "k_liquid_water_ice.csv")
 
     k_wi = pd.read_csv(path_k)
     wl_water, k_water = get_refractive_index(
