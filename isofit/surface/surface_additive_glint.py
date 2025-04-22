@@ -80,13 +80,13 @@ class AdditiveGlintSurface(ThermalSurface):
 
         return x
 
-    def calc_rfl(self, x_surface, geom, L_down_dir=None, L_down_dif=None):
+    def calc_rfl(self, x_surface, geom):
         """Reflectance (includes specular glint)."""
         rfl = self.calc_lamb(x_surface, geom) + x_surface[self.glint_ind]
 
         return rfl, rfl
 
-    def drfl_dsurface(self, x_surface, geom, L_down_dir=None, L_down_dif=None):
+    def drfl_dsurface(self, x_surface, geom):
         """Partial derivative of reflectance with respect to state vector,
         calculated at x_surface."""
 
