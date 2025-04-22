@@ -271,15 +271,17 @@ def invert_analytical(
 
     # Get all the surface quantities
     sub_surface, sub_RT, sub_instrument = fm.unpack(sub_state)
-    rho_dir_dir, rho_dif_dir, Ls = fm.upsample_surface_vectors_to_RT(
-        x_surface, geom, L_down_dir, L_down_dif
-    )
+
+    rho_dir_dir, rho_dif_dir = fm.calc_rfl(sub_surface, geom)
+    rho_dir_dir = fm.upsample(fm.surface.wl, rho_dir_dir)
+    rho_dif_dir = fm.upsample(fm.surface.wl, rho_dif_dir)
+
     # background conditions
     bg = s * rho_dif_dir
 
     # Special case: 1-component model
     if type(L_tot) != np.ndarray or len(L_tot) == 1:
-        L_tot = L_down_tot
+        L_tot = L_down_dir + L_down_dif
 
     # Get the inversion indices; Include glint indices if applicable
     full_idx = np.concatenate((winidx, fm.idx_surf_nonrfl), axis=0)
@@ -356,7 +358,7 @@ def invert_analytical(
 
     # TODO
     """
-    Not currently implemented cleanly if we want to propogate 
+    Not currently implemented cleanly if we want to propogate
     the entire glint spectrum. Need to clean up implementation.
     """
     # if fm.RT.glint_model and fm.surface.return_glint_spectrum:
