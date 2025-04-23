@@ -191,16 +191,9 @@ def analytical_line(
         output_metadata["band names"] = np.array(fm.surface.statevec_names)[
             fm.idx_surf_nonrfl
         ]
-        ret = [
-            output_metadata.pop(k)
-            for k in [
-                "bbl",
-                "wavelength",
-                "wavelength units",
-                "fwhm",
-                "smoothing factors",
-            ]
-        ]
+        for k in ["bbl", "wavelength", "wavelength units", "fwhm", "smoothing factors"]:
+            if output_metadata.get(k):
+                ret = output_metadata.pop(k)
 
         img = envi.create_image(
             envi_header(analytical_non_rfl_surf_file),
@@ -365,24 +358,16 @@ class Worker(object):
         lbl = envi.open(envi_header(self.lbl_file)).open_memmap(interleave="bip")
 
         start_line, stop_line = startstop
-        output_rfl = (
-            np.zeros(
-                (stop_line - start_line, rt_state.shape[1], len(self.fm.idx_surf_rfl))
-            )
-            - 9999
-        )
+        output_rfl = np.zeros((1, rt_state.shape[1], len(self.fm.idx_surf_rfl))) - 9999
         output_rfl_unc = (
-            np.zeros(
-                (stop_line - start_line, rt_state.shape[1], len(self.fm.idx_surf_rfl))
-            )
-            - 9999
+            np.zeros((1, rt_state.shape[1], len(self.fm.idx_surf_rfl))) - 9999
         )
 
         if self.analytical_non_rfl_surf_file:
             output_non_rfl = (
                 np.zeros(
                     (
-                        stop_line - start_line,
+                        1,
                         rt_state.shape[1],
                         len(self.fm.idx_surf_nonrfl),
                     )
@@ -392,7 +377,7 @@ class Worker(object):
             output_non_rfl_unc = (
                 np.zeros(
                     (
-                        stop_line - start_line,
+                        1,
                         rt_state.shape[1],
                         len(self.fm.idx_surf_nonrfl),
                     )
@@ -486,16 +471,12 @@ class Worker(object):
                         f"Row, Col: {r, c} - Sa matrix is non-invertible. Statevector is likely NaNs."
                     )
 
-                output_rfl[r - start_line, c, :] = states[-1, self.fm.idx_surf_rfl]
-                output_rfl_unc[r - start_line, c, :] = unc[self.fm.idx_surf_rfl]
+                output_rfl[0, c, :] = states[-1, self.fm.idx_surf_rfl]
+                output_rfl_unc[0, c, :] = unc[self.fm.idx_surf_rfl]
 
                 if self.analytical_non_rfl_surf_file:
-                    output_non_rfl[r - start_line, c, :] = states[
-                        -1, self.fm.idx_surf_nonrfl
-                    ]
-                    output_non_rfl_unc[r - start_line, c, :] = unc[
-                        self.fm.idx_surf_nonrfl
-                    ]
+                    output_non_rfl[0, c, :] = states[-1, self.fm.idx_surf_nonrfl]
+                    output_non_rfl_unc[0, c, :] = unc[self.fm.idx_surf_nonrfl]
 
             # What do we want to do with the negative reflectances?
             # state = output_state[r - start_line, ...]
@@ -518,7 +499,7 @@ class Worker(object):
                 (rdn.shape[0], rdn.shape[1], len(self.fm.idx_surf_rfl)),
             )
             write_bil_chunk(
-                output_rfl_unc[r - start_line, ...].T,
+                output_rfl_unc.T,
                 self.analytical_rfl_unc_file,
                 r,
                 (rdn.shape[0], rdn.shape[1], len(self.fm.idx_surf_rfl)),
@@ -532,7 +513,7 @@ class Worker(object):
                     (rdn.shape[0], rdn.shape[1], len(self.fm.idx_surf_nonrfl)),
                 )
                 write_bil_chunk(
-                    output_non_rfl_unc[r - start_line, ...].T,
+                    output_non_rfl_unc.T,
                     self.analytical_non_rfl_surf_unc_file,
                     r,
                     (rdn.shape[0], rdn.shape[1], len(self.fm.idx_surf_nonrfl)),
