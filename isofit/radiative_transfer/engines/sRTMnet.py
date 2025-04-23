@@ -207,7 +207,14 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                 lp = emulator.predict(sixs[key].values)
                 lp /= aux["response_scaler"].item()[key] 
                 lp += aux["response_offset"].item()[key]
+                
+                # filter out negative values for numerical stability before integrating
+                ltz = resample[key].values + lp < 0
+                lp[ltz] = -1 * resample[key].values[ltz]
+
                 predicts[key] = resample[key] + lp
+
+                
 
         self.predict_path = os.path.join(
             self.engine_config.sim_path, "sRTMnet.predicts.nc"
