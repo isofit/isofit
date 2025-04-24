@@ -89,7 +89,7 @@ class Surface:
 
         return self.rfl
 
-    def calc_rfl(self, x_surface, geom, L_down_dir=None, L_down_dif=None):
+    def calc_rfl(self, x_surface, geom):
         """Calculate the directed reflectance (specifically the HRDF) for this
         state vector."""
 
@@ -97,7 +97,7 @@ class Surface:
         #  As long as this is not implemented, return the same reflectance vector for both.
         return self.rfl, self.rfl
 
-    def drfl_dsurface(self, x_surface, geom, L_down_dir=None, L_down_dif=None):
+    def drfl_dsurface(self, x_surface, geom):
         """Partial derivative of reflectance with respect to state vector,
         calculated at x_surface. In the case that there are no free
         paramters our convention is to return the vector of zeros."""
