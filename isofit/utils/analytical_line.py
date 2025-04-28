@@ -472,7 +472,7 @@ class Worker(object):
                     )
                 if EXIT_CODE == -15:
                     logging.error(
-                        f"Row, Col: {r, c} - LinalgError. Eigenvalue calculation failed.:"
+                        f"Row, Col: {r, c} - LinalgError. Eigenvalue calculation failed."
                     )
 
                 output_rfl[0, c, :] = states[-1, self.fm.idx_surf_rfl]
