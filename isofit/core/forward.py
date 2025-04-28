@@ -74,6 +74,7 @@ class ForwardModel:
         # Build the surface model
         self.surface = Surface(full_config)
 
+        # Check to see if using supported calibration surface model
         if self.surface.n_wl != len(self.RT.wl) or not np.all(
             np.isclose(self.surface.wl, self.RT.wl, atol=0.01)
         ):
