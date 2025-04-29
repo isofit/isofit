@@ -479,7 +479,7 @@ def check_surface_model(surface_path: str, wl: np.array, paths: Pathnames) -> st
             logging.info(
                 "No surface model provided. Build new one using given config file."
             )
-            surface_model(config_path=surface_path)
+            surface_model(config_path=surface_path, wavelength_path=paths.wavelength_path)
             configdir, _ = os.path.split(os.path.abspath(surface_path))
             config = json_load_ascii(surface_path, shell_replace=True)
             return expand_path(configdir, config["output_model_file"])
