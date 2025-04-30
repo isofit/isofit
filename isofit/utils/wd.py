@@ -20,6 +20,80 @@ from xarray.backends import BackendEntrypoint
 from isofit.radiative_transfer import luts
 
 
+class Loaders:
+    """
+    Collection of loader functions for common products of ISOFIT
+    """
+
+    @classmethod
+    def text(cls, file):
+        """
+        Loads the lines of a text file
+
+        Parameters
+        ----------
+        file : str
+            File to load
+
+        Returns
+        -------
+        list[str]
+            file.readlines()
+        """
+        with open(file) as f:
+            return f.readlines()
+
+    @classmethod
+    def json(cls, file):
+        """
+        Loads a JSON file
+
+        Parameters
+        ----------
+        file : pathlib.Path
+            Path to file to load
+
+        Returns
+        -------
+        dict
+            Loaded JSON dict
+        """
+        with open(file, "rb") as f:
+            return json.load(f)
+
+    @classmethod
+    def lut(cls, file):
+        return luts.load(file)
+
+    @classmethod
+    def envi(cls, file):
+        """
+        Loads an ENVI file
+
+        Parameters
+        ----------
+        file : pathlib.Path
+            Path to file to load
+
+        Returns
+        -------
+        xr.Dataset | xr.DataArray
+            Loaded xarray object from the ENVI. If the Dataset is only one variable,
+            returns the DataArray of that variable instead
+        """
+        file = Path(file)
+        if file.suffix:
+            file = file.with_suffix("")
+
+        ds = xr.open_dataset(file, engine="envi")
+
+        # Return the DataArray if it is a dataset of one variable
+        # Such as cases of `band_data`
+        if len(ds) == 1:
+            return ds[list(ds)[0]]
+        return ds
+
+
 class EnviBackendEntrypoint(BackendEntrypoint):
     """
     Uses spectral.io.envi to load ISOFIT output rasters
@@ -164,6 +238,48 @@ class FileFinder:
         except:
             self.log.exception(f"Failed to parse file: {file}")
 
+    def getTreeOld(self, info=False, *, path=None, tree=None):
+        """
+        Recursively finds the files under a directory as a dict tree
+
+        Parameters
+        ----------
+        info : bool, default=False
+            Return the found files as objects with their respective info
+        path : pathlib.Path, default=None
+            Directory to search, defaults to self.path
+        tree : dict, default=None
+            Tree structure of discovered files
+
+        Returns
+        -------
+        tree : dict
+            Tree structure of discovered files. The keys are the directory names and
+            the list values are the found files
+        """
+        if path is None:
+            path = self.path
+
+        root = ""
+        # if info:
+        #     root = FileInfo(self.path.name, None)
+
+        if tree is None:
+            tree = {root: []}
+
+        for item in path.glob("*"):
+            name = ""
+            data = item.name
+            if info:
+                data = FileInfo(item.name, self.info(item.name))
+
+            if item.is_dir():
+                self.getTree(info=info, path=item, tree=tree.setdefault(data, {"": []}))
+            elif self.extMatches(item):
+                tree[root].append(data)
+
+        return tree
+
     def getTree(self, info=False, *, path=None, tree=None):
         """
         Recursively finds the files under a directory as a dict tree
@@ -187,17 +303,19 @@ class FileFinder:
             path = self.path
 
         if tree is None:
-            tree = {"": []}
+            tree = []
 
         for item in path.glob("*"):
-            data = item.name
+            name = item.name
             if info:
-                data = FileInfo(item.name, self.info(item.name))
+                name = FileInfo(item.name, None)
 
             if item.is_dir():
-                self.getTree(info=info, path=item, tree=tree.setdefault(data, {"": []}))
+                tree.append({name: []})
+                self.getTree(info=info, path=item, tree=tree[-1][name])
+
             elif self.extMatches(item):
-                tree[""].append(data)
+                tree.append(name)
 
         return tree
 
@@ -416,22 +534,7 @@ class Config(FileFinder):
         r"(.*_modtran_tpl.json)": "MODTRAN template configuration for ISOFIT",
     }
 
-    def _load(self, file):
-        """
-        Loads a JSON file
-
-        Parameters
-        ----------
-        file : pathlib.Path
-            Path to file to load
-
-        Returns
-        -------
-        dict
-            Loaded JSON dict
-        """
-        with open(file, "rb") as f:
-            return json.load(f)
+    _load = Loaders.json
 
 
 class Data(FileFinder):
@@ -452,13 +555,12 @@ class LUT(FileFinder):
         r"(sRTMnet.predicts.nc)": "Output predicts of sRTMnet",
     }
 
+    _load = Loaders.lut
+
     lut_regex = r"(\w+)-(\d*\.?\d+)_?"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-    def _load(self, file):
-        return luts.load(file)
 
     def parseLutFiles(self, ext):
         """
@@ -497,6 +599,8 @@ class LUT(FileFinder):
 class Input(FileFinder):
     extensions = [""]
 
+    _load = Loaders.envi
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -505,29 +609,6 @@ class Input(FileFinder):
         for file in files:
             if not (self.path / file).with_suffix(".hdr").exists():
                 raise FileNotFoundError(f"Missing .hdr file for {file}")
-
-    def _load(self, file):
-        """
-        Loads an ENVI file
-
-        Parameters
-        ----------
-        file : pathlib.Path
-            Path to file to load
-
-        Returns
-        -------
-        xr.Dataset | xr.DataArray
-            Loaded xarray object from the ENVI. If the Dataset is only one variable,
-            returns the DataArray of that variable instead
-        """
-        if file.suffix:
-            file = file.with_suffix("")
-
-        ds = xr.open_dataset(file, engine="envi")
-
-        if len(ds) == 1:
-            return ds[list(ds)[0]]
 
 
 class Output(FileFinder):
@@ -545,6 +626,7 @@ class Output(FileFinder):
         r"(.*_lbl)": None,
         r"(.*_uncert)": None,
     }
+    _load = Loaders.envi
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -568,29 +650,6 @@ class Output(FileFinder):
         for file in files:
             if not (self.path / file).with_suffix(".hdr").exists():
                 raise FileNotFoundError(f"Missing .hdr file for {file}")
-
-    def _load(self, file):
-        """
-        Loads an ENVI file
-
-        Parameters
-        ----------
-        file : pathlib.Path
-            Path to file to load
-
-        Returns
-        -------
-        xr.Dataset | xr.DataArray
-            Loaded xarray object from the ENVI. If the Dataset is only one variable,
-            returns the DataArray of that variable instead
-        """
-        if file.suffix:
-            file = file.with_suffix("")
-
-        ds = xr.open_dataset(file, engine="envi")
-
-        if len(ds) == 1:
-            return ds[list(ds)[0]]
 
     def rgb(self, r=60, g=40, b=30):
         """
@@ -632,6 +691,7 @@ class Logs(FileFinder):
     extensions = [".log"]
 
     file = None
+    _load = Loaders.text
 
     def __init__(self, *args, **kwargs):
         """
@@ -653,23 +713,6 @@ class Logs(FileFinder):
         self.filtered = []  # filter | Lines passing the filter criteria of selected
         self.selected = {}  # parse  | Turn logging levels on/off for the build function
         # fmt: on
-
-    def _load(self, file):
-        """
-        Loads the lines of a text file
-
-        Parameters
-        ----------
-        file : str
-            File to load
-
-        Returns
-        -------
-        list[str]
-            file.readlines()
-        """
-        with open(file) as f:
-            return f.readlines()
 
     def load(self, *, path=None, ifin=None, find=None, match=None):
         """
@@ -964,15 +1007,15 @@ class IsofitWD(FileFinder):
         "output": Output,
     }
 
-    def __init__(self, *args, unknown=True, **kwargs):
+    def __init__(self, *args, recursive=True, **kwargs):
         """
         Parameters
         ----------
-        unknown : bool, default=True
-            If a sub directory type cannot be determined, use the Unknown class to
-            retrieve the files. This may help ensure all sub directories behaviour is
-            consistent, whereas when this is False, files in unknown subdirs will be
-            treated as living on the root
+        recursive : bool, default=True
+            If a sub directory type cannot be determined, recursively use the IsofitWD
+            class to instantiate on that directory. This enables finding multiple valid
+            IsofitWD under a path. If set to False, will use the `Unknown` class
+            instead which disables most functionality for the given directory
         """
         # This class should not be saving to cache because
         # it defers loading to child classes which have their own cache
@@ -985,9 +1028,7 @@ class IsofitWD(FileFinder):
         self.dirs = {}
 
         unkn = []
-        dirs = set([self.subpath(file, parent=True)[0] for file in self.files]) - set(
-            ["."]
-        )
+        dirs = [file.name for file in self.path.glob("*") if file.is_dir()]
         for subdir in sorted(dirs):
             for name, cls in self.classes.items():
                 if name in subdir:
@@ -997,10 +1038,13 @@ class IsofitWD(FileFinder):
             else:
                 unkn.append(subdir)
 
-        if unknown:
-            for subdir in unkn:
-                self.log.debug(f"Initializing {subdir} with class Unknown")
-                self.dirs[subdir] = Unknown(self.path / subdir)
+        alt = Unknown
+        if recursive:
+            alt = IsofitWD
+
+        for subdir in unkn:
+            self.log.debug(f"Initializing {subdir} with class {alt.__class__.__name__}")
+            self.dirs[subdir] = alt(self.path / subdir)
 
     def __getattr__(self, key):
         return self.__getitem__(key)
@@ -1115,16 +1159,16 @@ class IsofitWD(FileFinder):
             Tree structure of discovered files. The keys are the directory names and
             the list values are the found files
         """
-        tree = {"": []}
+        tree = []
         for name, obj in self.dirs.items():
             if info:
                 name = FileInfo(name, self.info(name))
-            tree[name] = obj.getTree(info, **kwargs)
+            tree.append({name: obj.getTree(info, **kwargs)})
 
         for path in self.path.glob("*"):
             if (name := path.name) not in self.dirs:
                 if info:
                     name = FileInfo(name, self.info(name))
-                tree[""].append(name)
+                tree.append(name)
 
         return tree
