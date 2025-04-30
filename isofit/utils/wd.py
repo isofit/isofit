@@ -238,48 +238,6 @@ class FileFinder:
         except:
             self.log.exception(f"Failed to parse file: {file}")
 
-    def getTreeOld(self, info=False, *, path=None, tree=None):
-        """
-        Recursively finds the files under a directory as a dict tree
-
-        Parameters
-        ----------
-        info : bool, default=False
-            Return the found files as objects with their respective info
-        path : pathlib.Path, default=None
-            Directory to search, defaults to self.path
-        tree : dict, default=None
-            Tree structure of discovered files
-
-        Returns
-        -------
-        tree : dict
-            Tree structure of discovered files. The keys are the directory names and
-            the list values are the found files
-        """
-        if path is None:
-            path = self.path
-
-        root = ""
-        # if info:
-        #     root = FileInfo(self.path.name, None)
-
-        if tree is None:
-            tree = {root: []}
-
-        for item in path.glob("*"):
-            name = ""
-            data = item.name
-            if info:
-                data = FileInfo(item.name, self.info(item.name))
-
-            if item.is_dir():
-                self.getTree(info=info, path=item, tree=tree.setdefault(data, {"": []}))
-            elif self.extMatches(item):
-                tree[root].append(data)
-
-        return tree
-
     def getTree(self, info=False, *, path=None, tree=None):
         """
         Recursively finds the files under a directory as a dict tree
