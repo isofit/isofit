@@ -304,18 +304,13 @@ def invert_analytical(
             Sa_surface = Sa[fm.idx_surface, :][:, fm.idx_surface]
             Sa_inv = svd_inv_sqrt(Sa_surface, hash_table, hash_size)[0]
 
-        except np.linalg.LinAlgError:
+        except (np.linalg.LinAlgError, ValueError) as e:
             C_rcond = []
-            trajectory[n + 1, :] = [fill_value for i in x]
-            EXIT_CODE = -15
-            continue
-
-        except ValueError:
-            # On invertible matrix error, save NaN array on step and update exit code
-            C_rcond = []
-            trajectory[n + 1, :] = [fill_value for i in x]
-            EXIT_CODE = -11
-            continue
+            trajectory[n + 1, :] = [fill_value] * len(x)
+            if isinstance(e, np.linalg.LinAlgError):
+                EXIT_CODE = -15
+            elif isinstance(e, ValueError):
+                EXIT_CODE = -11
 
         # Prior mean
         xa_full = fm.xa(x, geom)
