@@ -56,6 +56,8 @@ class Pathnames:
             self.fid = split(input_radiance)[-1][:18]
         elif sensor == "av3":
             self.fid = split(input_radiance)[-1][:18]
+        elif sensor == "av5":
+            self.fid = split(input_radiance)[-1][:18]
         elif sensor == "avcl":
             self.fid = split(input_radiance)[-1][:16]
         elif sensor == "emit":
