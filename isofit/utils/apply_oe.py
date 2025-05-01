@@ -268,6 +268,9 @@ def apply_oe(
                 "If num_neighbors has multiple elements, only --analytical_line is valid"
             )
 
+    if os.path.isdir(working_directory) is False:
+        os.mkdir(working_directory)
+
     logging.basicConfig(
         format="%(levelname)s:%(asctime)s || %(filename)s:%(funcName)s() | %(message)s",
         level=logging_level,
