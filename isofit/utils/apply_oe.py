@@ -333,6 +333,9 @@ def apply_oe(
         # parse flightline ID (AVIRIS-3 assumptions)
         dt = datetime.strptime(paths.fid[3:], "%Y%m%dt%H%M%S")
         INVERSION_WINDOWS = [[380.0, 1350.0], [1435, 1800.0], [1970.0, 2500.0]]
+    elif sensor == "av5":
+        # parse flightline ID (AVIRIS-5 assumptions)
+        dt = datetime.strptime(paths.fid[3:], "%Y%m%dt%H%M%S")
     elif sensor == "avcl":
         # parse flightline ID (AVIRIS-Classic assumptions)
         dt = datetime.strptime("20{}t000000".format(paths.fid[1:7]), "%Y%m%dt%H%M%S")
