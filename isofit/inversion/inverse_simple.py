@@ -224,6 +224,7 @@ def invert_analytical(
     hash_size: int = None,
     diag_uncert: bool = True,
     outside_ret_const: float = -0.01,
+    fill_value: float = -9999.0,
 ):
     """Perform an analytical estimate of the conditional MAP estimate for
     a fixed atmosphere.  Based on the "Inner loop" from Susiluoto, 2022.
@@ -303,12 +304,13 @@ def invert_analytical(
             Sa_surface = Sa[fm.idx_surface, :][:, fm.idx_surface]
             Sa_inv = svd_inv_sqrt(Sa_surface, hash_table, hash_size)[0]
 
-        except ValueError:
-            # On invertible matrix error, save NaN array on step and update exit code
+        except (np.linalg.LinAlgError, ValueError) as e:
             C_rcond = []
-            trajectory[n + 1, :] = x
-            EXIT_CODE = -11
-            continue
+            trajectory[n + 1, :] = [fill_value] * len(x)
+            if isinstance(e, np.linalg.LinAlgError):
+                EXIT_CODE = -15
+            elif isinstance(e, ValueError):
+                EXIT_CODE = -11
 
         # Prior mean
         xa_full = fm.xa(x, geom)

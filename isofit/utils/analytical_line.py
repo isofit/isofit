@@ -470,6 +470,10 @@ class Worker(object):
                     logging.error(
                         f"Row, Col: {r, c} - Sa matrix is non-invertible. Statevector is likely NaNs."
                     )
+                if EXIT_CODE == -15:
+                    logging.error(
+                        f"Row, Col: {r, c} - LinalgError. Eigenvalue calculation failed."
+                    )
 
                 output_rfl[0, c, :] = states[-1, self.fm.idx_surf_rfl]
                 output_rfl_unc[0, c, :] = unc[self.fm.idx_surf_rfl]
