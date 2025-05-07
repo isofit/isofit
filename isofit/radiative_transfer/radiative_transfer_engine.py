@@ -232,17 +232,26 @@ class RadiativeTransferEngine:
                     "Input lut_grid detected to have duplicates, please correct them before continuing"
                 )
 
-            Logger.info(f"Initializing LUT file")
-            self.lut = luts.Create(
-                file=self.lut_path,
-                wl=wl,
-                grid=self.lut_grid,
-                attrs={"RT_mode": self.rt_mode},
-                onedim={"fwhm": fwhm},
-            )
+            if self.engine_config.rte_configure_and_exit:
+                Logger.warning(
+                    "rte_configure_and_exit is enabled, the LUT file will not be created"
+                )
+            else:
+                Logger.info(f"Initializing LUT file")
+                self.lut = luts.Create(
+                    file=self.lut_path,
+                    wl=wl,
+                    grid=self.lut_grid,
+                    attrs={"RT_mode": self.rt_mode},
+                    onedim={"fwhm": fwhm},
+                )
 
             # Create and populate a LUT file
             self.runSimulations()
+
+            if self.engine_config.rte_configure_and_exit:
+                Logger.info("Exiting RTE early due to rte_configure_and_exit")
+                return
 
         # Limit the wavelength per the config, does not affect data on disk
         if engine_config.wavelength_range is not None:
@@ -504,20 +513,21 @@ class RadiativeTransferEngine:
                 # Retrieve the return of the finished job
                 ret = ray.get(done)
 
-                # If a simulation fails then it will return None
+                # If a simulation fails (or rte_configure_and_exit) then it will return None
                 if ret:
                     self.lut.queuePoint(*ret)
 
-                if report(len(jobs)):
+                if report(len(jobs)) and not self.engine_config.rte_configure_and_exit:
                     Logger.info("Flushing netCDF to disk")
                     self.lut.flush()
 
             del lut_names, makeSim, readSim, lut_path, buffer_time
 
-            # Shouldn't be hit but just in case
-            if self.lut.hold:
-                Logger.warning("Not all points were flushed, doing so now")
-                self.lut.flush()
+            if not self.engine_config.rte_configure_and_exit:
+                # Shouldn't be hit but just in case
+                if self.lut.hold:
+                    Logger.warning("Not all points were flushed, doing so now")
+                    self.lut.flush()
         else:
             Logger.debug("makeSim is disabled for this engine")
 
@@ -534,7 +544,9 @@ class RadiativeTransferEngine:
             self.lut.writePoint(point, data=post)
 
         # Reload the LUT now that it's populated
-        self.lut = luts.load(self.lut_path)
+        if not self.engine_config.rte_configure_and_exit:
+            Logger.debug("Reloading LUT")
+            self.lut = luts.load(self.lut_path)
 
     def summarize(self, x_RT, *_):
         """
