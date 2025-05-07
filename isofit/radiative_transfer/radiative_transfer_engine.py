@@ -497,37 +497,40 @@ class RadiativeTransferEngine:
                 for point in self.points
             ]
 
-            # Report a percentage complete every 10% and flush to disk at those intervals
-            report = common.Track(
-                jobs,
-                step=10,
-                reverse=True,
-                print=Logger.info,
-                message="simulations complete",
-            )
+            if self.engine_config.rte_configure_and_exit:
+                # Block until all jobs finish
+                ray.get(jobs)
+            else:
+                # Report a percentage complete every 10% and flush to disk at those intervals
+                report = common.Track(
+                    jobs,
+                    step=10,
+                    reverse=True,
+                    print=Logger.info,
+                    message="simulations complete",
+                )
 
-            # Update the lut as point simulations stream in
-            while jobs:
-                [done], jobs = ray.wait(jobs, num_returns=1)
+                # Update the lut as point simulations stream in
+                while jobs:
+                    [done], jobs = ray.wait(jobs, num_returns=1)
 
-                # Retrieve the return of the finished job
-                ret = ray.get(done)
+                    # Retrieve the return of the finished job
+                    ret = ray.get(done)
 
-                # If a simulation fails (or rte_configure_and_exit) then it will return None
-                if ret:
-                    self.lut.queuePoint(*ret)
+                    # If a simulation fails then it will return None
+                    if ret:
+                        self.lut.queuePoint(*ret)
 
-                if report(len(jobs)) and not self.engine_config.rte_configure_and_exit:
-                    Logger.info("Flushing netCDF to disk")
-                    self.lut.flush()
+                    if report(len(jobs)):
+                        Logger.info("Flushing netCDF to disk")
+                        self.lut.flush()
 
-            del lut_names, makeSim, readSim, lut_path, buffer_time
-
-            if not self.engine_config.rte_configure_and_exit:
                 # Shouldn't be hit but just in case
                 if self.lut.hold:
                     Logger.warning("Not all points were flushed, doing so now")
                     self.lut.flush()
+
+            del lut_names, makeSim, readSim, lut_path, buffer_time
         else:
             Logger.debug("makeSim is disabled for this engine")
 
