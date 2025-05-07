@@ -65,7 +65,7 @@ class SurfaceConfig(BaseConfigSection):
         valid_surface_categories = [
             "surface",
             "multicomponent_surface",
-            "glint_surface",
+            "glint_model_surface",
             "thermal_surface",
             "lut_surface",
             "additive_glint_surface",
