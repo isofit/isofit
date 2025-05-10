@@ -27,6 +27,7 @@ from pathlib import Path
 import dask.array as da
 import h5py
 import numpy as np
+import xarray
 import yaml
 from scipy.interpolate import interp1d
 import xarray
@@ -41,13 +42,12 @@ Logger = logging.getLogger(__file__)
 
 class tfLikeModel:
     def __init__(self, input_file, weights=None, biases=None):
-
         if input_file is None and weights is not None and biases is not None:
             # If we have weights and biases provided directly
             self.weights = weights
             self.biases = biases
             self.input_file = None
-        
+
         elif input_file is not None:
             self.weights = []
             self.biases = []
@@ -62,12 +62,16 @@ class tfLikeModel:
                         weights.append(
                             np.array(self.model["model_weights"][n][n]["kernel:0"])
                         )
-                        biases.append(np.array(self.model["model_weights"][n][n]["bias:0"]))
+                        biases.append(
+                            np.array(self.model["model_weights"][n][n]["bias:0"])
+                        )
                     else:
                         weights.append(
                             np.array(self.model["model_weights"][n][n]["kernel"])
                         )
-                        biases.append(np.array(self.model["model_weights"][n][n]["bias"]))
+                        biases.append(
+                            np.array(self.model["model_weights"][n][n]["bias"])
+                        )
 
             self.weights = weights
             self.biases = biases
@@ -122,9 +126,9 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         aux = np.load(config.emulator_aux_file, allow_pickle=True)
 
         # TODO: Disable when sRTMnet_v120_aux is updated
-        #aux_rt_quantities = np.where(
+        # aux_rt_quantities = np.where(
         #    aux["rt_quantities"] == "transm", "transm_down_dif", aux["rt_quantities"]
-        #)
+        # )
 
         # TODO: Re-enable when sRTMnet_v120_aux is updated
         # Verify expected keys exist
@@ -215,8 +219,6 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                 lp[ltz] = -1 * resample[key].values[ltz]
 
                 predicts[key] = resample[key] + lp
-
-                
 
         self.predict_path = os.path.join(
             self.engine_config.sim_path, "sRTMnet.predicts.nc"
