@@ -186,11 +186,13 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             data = sixs.to_array("quantity").stack(stack=["quantity", "wl"])
 
             scaler = aux.get("response_scaler", 100.0)
+            response_offset = aux.get("response_offset", 0.0)
 
             # Now predict, scale, and add the interpolations
             emulator = tfLikeModel(self.engine_config.emulator_file)
             predicts = da.from_array(emulator.predict(data))
             predicts /= scaler
+            predicts += response_offset
             predicts += resample
 
             # Unstack back to a dataset and save
