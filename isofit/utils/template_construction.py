@@ -676,11 +676,14 @@ def build_presolve_config(
         isofit_config_h2o["input"]["loc_file"] = paths.loc_working_path
         isofit_config_h2o["input"]["obs_file"] = paths.obs_working_path
 
-    # write modtran_template
+    # write presolve config
     with open(paths.h2o_config_path, "w") as fout:
         fout.write(
             json.dumps(isofit_config_h2o, cls=SerialEncoder, indent=4, sort_keys=True)
         )
+
+    # Create a template version of the config
+    env.toTemplate(paths.h2o_config_path, working_directory=paths.working_directory)
 
 
 def build_main_config(
@@ -1037,6 +1040,11 @@ def build_main_config(
                 isofit_config_modtran, cls=SerialEncoder, indent=4, sort_keys=True
             )
         )
+
+    # Create a template version of the config
+    env.toTemplate(
+        paths.isofit_full_config_path, working_directory=paths.working_directory
+    )
 
 
 def get_lut_subset(vals):
