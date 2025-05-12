@@ -22,7 +22,6 @@
 from __future__ import annotations
 
 import logging
-from types import SimpleNamespace
 
 import numpy as np
 
@@ -30,6 +29,9 @@ from isofit.core.common import eps
 from isofit.radiative_transfer.engines import Engines
 
 Logger = logging.getLogger(__file__)
+
+
+RTE = ["modtran", "sRTMnet", "KernelFlowsGP"]
 
 
 def confPriority(key, configs):
@@ -104,10 +106,6 @@ class RadiativeTransfer:
                 Logger.error(error)
                 raise AttributeError(error)
 
-        # If any engine is true, self is true
-        self.topography_model = any([rte.topography_model for rte in self.rt_engines])
-        self.glint_model = any([rte.glint_model for rte in self.rt_engines])
-
         # The rest of the code relies on sorted order of the individual RT engines which cannot
         # be guaranteed by the dict JSON or YAML input
         self.rt_engines.sort(key=lambda x: x.wl[0])
@@ -167,84 +165,101 @@ class RadiativeTransfer:
             if "coszen" in child.lut:
                 return child.lut.coszen.data
 
-    def calc_rdn(self, x_RT, x_surface, rfl, Ls, geom):
-        r = self.get_shared_rtm_quantities(x_RT, geom)
+    def calc_rdn(
+        self,
+        x_RT,
+        rho_dir_dir,
+        rho_dif_dir,
+        Ls,
+        L_tot,
+        L_dir_dir,
+        L_dif_dir,
+        L_dir_dif,
+        L_dif_dif,
+        r,
+        geom,
+    ):
+        """
+        Physics-based forward model to calculate at-sensor radiance.
+        Includes topography, background reflectance, and glint.
+        """
+        # Adjacency effects
+        # ToDo: we need to think about if we want to obtain the background reflectance from the Geometry object
+        #  or from the surface model, i.e., the same way as we do with the target pixel reflectance
+
+        rho_dir_dif = (
+            geom.bg_rfl if isinstance(geom.bg_rfl, np.ndarray) else rho_dir_dir
+        )
+        rho_dif_dif = (
+            geom.bg_rfl if isinstance(geom.bg_rfl, np.ndarray) else rho_dif_dir
+        )
+
+        # Atmospheric path radiance
         L_atm = self.get_L_atm(x_RT, geom)
+
+        # Atmospheric spherical albedo
+        s_alb = r["sphalb"]
+        atm_surface_scattering = s_alb * rho_dif_dif
+
+        # Special case: 1-component model
+        if not isinstance(L_dir_dir, np.ndarray) or len(L_dir_dir) == 1:
+            # we assume rho_dir_dir = rho_dif_dir = rho_dir_dif = rho_dif_dif
+            rho_dif_dif = rho_dir_dir
+            # eliminate spherical albedo and one reflectance term from numerator if using 1-component model
+            atm_surface_scattering = 1
+
+        # Thermal transmittance
         L_up = Ls * (r["transm_up_dir"] + r["transm_up_dif"])
 
-        if geom.bg_rfl is not None:
-            # adjacency effects are counted
-            I = (self.solar_irr * self.coszen) / np.pi
-            bg = geom.bg_rfl
-            t_down = r["transm_down_dif"] + r["transm_down_dir"]
+        # Our radiance model follows the physics as presented in Guanter (2006), Vermote et al. (1997), and
+        # Tanre et al. (1983). This particular formulation facilitates the consideration of topographic effects,
+        # glint, or BRDF modeling in general. The contribution of the target to the signal at the top of the atmosphere
+        # is decomposed as the sum of four terms:
 
-            ret = (
-                L_atm
-                + I / (1.0 - r["sphalb"] * bg) * bg * t_down * r["transm_up_dif"]
-                + I / (1.0 - r["sphalb"] * bg) * rfl * t_down * r["transm_up_dir"]
-                + L_up
-            )
+        # 1. photons directly transmitted from the sun to the target and directly reflected back to the sensor
+        #    rho_dir_dir => directional-directional surface reflectance of the target
+        # 2. photons scattered by the atmosphere then reflected by the target and directly transmitted to the sensor
+        #    rho_dif_dir => surface diffuse-directional reflectance
+        # 3. photons directly transmitted to the target but scattered by the atmosphere on their way to the sensor
+        #    rho_dir_dif => surface directional-diffuse reflectance
+        # 4. photons having at least two interactions with the atmosphere and one with the target
+        #    rho_dif_dif => surface diffuse-diffuse reflectance
 
-        elif self.topography_model:
-            I = self.solar_irr / np.pi
-            t_dir_down = r["transm_down_dir"]
-            t_dif_down = r["transm_down_dif"]
-            if geom.cos_i is None:
-                cos_i = self.coszen
-            else:
-                cos_i = geom.cos_i
-            t_total_up = r["transm_up_dif"] + r["transm_up_dir"]
-            t_total_down = t_dir_down + t_dif_down
-            s_alb = r["sphalb"]
-            # topographic flux (topoflux) effect corrected
-            ret = (
-                L_atm
-                + (
-                    I * cos_i / (1.0 - s_alb * rfl) * t_dir_down
-                    + I * self.coszen / (1.0 - s_alb * rfl) * t_dif_down
-                )
-                * rfl
-                * t_total_up
-            )
+        # These terms are also called coupling terms, as they are responsible for the coupling between atmospheric
+        # radiative transfer and the surface reflectance properties.
 
-        elif self.glint_model:
-            L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)
+        # The coupling terms are multiplied by four different combinations of direct and diffuse radiance terms:
+        # 1. L_dir_dir => downward direct * upward direct
+        # 2. L_dif_dir => downward diffuse * upward direct
+        # 3. L_dir_dif => downward direct * upward diffuse
+        # 4. L_dif_dif => downward diffuse * upward diffuse
 
-            t_down_dir = r["transm_down_dir"]  # downward direct transmittance
-            t_down_dif = r["transm_down_dif"]  # downward diffuse transmittance
-            t_down_total = t_down_dir + t_down_dif  # downward total transmittance
-            t_total_up = (
-                r["transm_up_dif"] + r["transm_up_dir"]
-            )  # total upward transmittance
+        # When separated radiance terms and/or a BRDF model of the surface are not available,
+        # the Lambertian assumption is made for the target reflectance:
+        # rho_dir_dir = rho_dif_dir = rho_dir_dif = rho_dif_dif
+        # In this case, our radiance model reduces to:
+        # L_atm + (L_tot * rho_dir_dir) / (1 - S * rho_dir_dir) + L_up,
+        # with L_tot being the total radiance (downward * upward, direct + diffuse).
 
-            L_sky = x_surface[-2] * t_down_dir + x_surface[-1] * t_down_dif
-
-            rho_ls = self.fresnel_rf(
-                geom.observer_zenith
-            )  # fresnel reflectance factor (approx. 0.02 for nadir view)
-            glint = rho_ls * (L_sky / t_down_total)
-
-            ret = (
-                L_atm
-                + t_total_up
-                * L_down_transmitted
-                * (rfl + glint)
-                / (1.0 - r["sphalb"] * (rfl + glint))
-                + L_up
-            )
-
-        else:
-            L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)
-
-            ret = L_atm + L_down_transmitted * rfl / (1.0 - r["sphalb"] * rfl) + L_up
+        # TOA radiance model
+        ret = (
+            L_atm
+            + L_dir_dir * rho_dir_dir
+            + L_dif_dir * rho_dif_dir
+            + L_dir_dif * rho_dir_dif
+            + L_dif_dif * rho_dif_dif
+            + (L_tot * atm_surface_scattering * rho_dif_dif) / (1 - s_alb * rho_dif_dif)
+            + L_up
+        )
 
         return ret
 
-    def rdn_to_rho(self, rdn, solar_irr=None):
+    def rdn_to_rho(self, rdn, coszen, solar_irr=None):
         """Function to convert a radiance vector to transmittance.
 
         Args:
             rdn:       input data vector in radiance
+            coszen:    cosine of solar zenith angle
             solar_irr: solar irradiance vector (optional)
 
         Returns:
@@ -252,13 +267,14 @@ class RadiativeTransfer:
         """
         if solar_irr is None:
             solar_irr = self.solar_irr
-        return rdn * np.pi / (solar_irr * self.coszen)
+        return rdn * np.pi / (solar_irr * coszen)
 
-    def rho_to_rdn(self, rho, solar_irr=None):
+    def rho_to_rdn(self, rho, coszen, solar_irr=None):
         """Function to convert a transmittance vector to radiance.
 
         Args:
             rho:       input data vector in transmittance
+            coszen:    cosine of solar zenith angle
             solar_irr: solar irradiance vector (optional)
 
         Returns:
@@ -266,19 +282,22 @@ class RadiativeTransfer:
         """
         if solar_irr is None:
             solar_irr = self.solar_irr
-        return (solar_irr * self.coszen) / np.pi * rho
+        return (solar_irr * coszen) / np.pi * rho
 
     def get_L_atm(self, x_RT: np.array, geom: Geometry) -> np.array:
-        """Get the interpolated modeled atmospheric reflectance (aka path radiance).
+        """Get the interpolated modeled atmospheric path radiance.
 
         Args:
             x_RT: radiative-transfer portion of the statevector
             geom: local geometry conditions for lookup
 
         Returns:
-            interpolated modeled atmospheric reflectance
+            interpolated modeled atmospheric path radiance
         """
         L_atms = []
+
+        coszen, cos_i = geom.check_coszen_and_cos_i(self.coszen)
+
         for RT in self.rt_engines:
             if RT.treat_as_emissive:
                 r = RT.get(x_RT, geom)
@@ -290,23 +309,28 @@ class RadiativeTransfer:
                     L_atm = r["rhoatm"]
                 else:
                     rho_atm = r["rhoatm"]
-                    L_atm = self.rho_to_rdn(rho_atm)
+                    L_atm = self.rho_to_rdn(rho_atm, coszen)
                 L_atms.append(L_atm)
         return np.hstack(L_atms)
 
     def get_L_down_transmitted(self, x_RT: np.array, geom: Geometry) -> np.array:
-        """Get the interpolated total downward atmospheric transmittance.
-        Thermal_downwelling already includes the transmission factor. Also
-        assume there is no multiple scattering for TIR.
+        """Get the interpolated direct and diffuse downward radiance on the sun-to-surface path.
+        Thermal_downwelling already includes the transmission factor.
+        Also assume there is no multiple scattering for TIR.
 
         Args:
             x_RT: radiative-transfer portion of the statevector
             geom: local geometry conditions for lookup
 
         Returns:
-            interpolated total downward atmospheric transmittance
+            interpolated total, direct, and diffuse downward atmospheric radiance
         """
         L_downs = []
+        L_downs_dir = []
+        L_downs_dif = []
+
+        coszen, cos_i = geom.check_coszen_and_cos_i(self.coszen)
+
         for RT in self.rt_engines:
             if RT.treat_as_emissive:
                 r = RT.get(x_RT, geom)
@@ -315,135 +339,171 @@ class RadiativeTransfer:
             else:
                 r = RT.get(x_RT, geom)
                 if RT.rt_mode == "rdn":
-                    L_down = r["transm_down_dir"] + r["transm_down_dif"]
+                    L_down_dir = r["transm_down_dir"]
+                    L_down_dif = r["transm_down_dif"]
                 else:
-                    transm_down = r["transm_down_dir"] + r["transm_down_dif"]
-                    L_down = self.rho_to_rdn(transm_down)
+                    # Transform downward transmittance to radiance
+                    L_down_dir = self.rho_to_rdn(r["transm_down_dir"], coszen)
+                    L_down_dif = self.rho_to_rdn(r["transm_down_dif"], coszen)
+
+                L_down = L_down_dir + L_down_dif
+
                 L_downs.append(L_down)
-        return np.hstack(L_downs)
+                L_downs_dir.append(L_down_dir)
+                L_downs_dif.append(L_down_dif)
 
-    def drdn_dRT(
-        self, x_RT, x_surface, rfl, drfl_dsurface, Ls, dLs_dsurface, geom: Geometry
-    ):
-        # first the rdn at the current state vector
-        rdn = self.calc_rdn(x_RT, x_surface, rfl, Ls, geom)
+        return np.hstack(L_downs), np.hstack(L_downs_dir), np.hstack(L_downs_dif)
 
+    def get_L_coupled(self, r: dict, geom: Geometry):
+        """Get the interpolated radiance terms on the sun-to-surface-to-sensor path.
+        These follow the physics as presented in Guanter (2006), Vermote et al. (1997), and Tanre et al. (1983).
+
+        Args:
+            r:      interpolated radiative transfer quantities from the LUT
+            coszen: top-of-atmosphere solar zenith angle
+            cos_i:  local solar zenith angle at the surface
+
+        Returns:
+            interpolated radiances along all optical paths:
+            L_dir_dir => downward direct * upward direct
+            L_dif_dir => downward diffuse * upward direct
+            L_dir_dif => downward direct * upward diffuse
+            L_dif_dif => downward diffuse * upward diffuse
+        """
+        # Check coszen against cos_i
+        coszen, cos_i = geom.check_coszen_and_cos_i(self.coszen)
+
+        # radiances along all optical paths
+        L_coupled = []
+
+        if any(
+            [
+                not isinstance(r[key], np.ndarray) or len(r[key]) == 1
+                for key in self.rt_engines[0].coupling_terms
+            ]
+        ):
+            # In case of the 1-component model, we cannot populate the coupling terms
+            L_coupled = [
+                0,
+                0,
+                0,
+                0,
+            ]
+        else:
+            for key in self.rt_engines[0].coupling_terms:
+                L_coupled.append(
+                    self.solar_irr * coszen / np.pi * r[key]
+                    if self.rt_engines[0].rt_mode == "transm"
+                    else r[key]
+                )
+
+        # assigning coupled terms, unscaling and rescaling downward direct radiance by local solar zenith angle
+        L_dir_dir = L_coupled[0] / coszen * cos_i
+        L_dif_dir = L_coupled[1]
+        L_dir_dif = L_coupled[2] / coszen * cos_i
+        L_dif_dif = L_coupled[3]
+
+        return L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif
+
+    def calc_RT_quantities(self, x_RT: np.ndarray, geom: Geometry):
+        """Retrieves the RT quantities including the LUT sample (r),
+        and the radiances (L). This function handles the hand-off between
+        the 1c and 4c model.
+
+        In the 1c case, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = 0,
+        and L_tot, L_down_dir, and L_down_dif are populated within the
+        if statement.
+
+        In the 4c case, we always use returns from get_L_coupled
+        """
+        # Propogate LUT
+        r = self.get_shared_rtm_quantities(x_RT, geom)
+
+        # Default: get directional radiances
+        L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = self.get_L_coupled(r, geom)
+        L_tot = L_dir_dir + L_dif_dir + L_dir_dif + L_dif_dif
+
+        # Handle case for 1c vs 4c model
+        if not isinstance(L_tot, np.ndarray) or len(L_tot) == 1:
+            # 1c model w/in if clause
+            L_tot, L_down_dir, L_down_dif = self.get_L_down_transmitted(x_RT, geom)
+        else:
+            # 4c model w/in else clause
+            L_down_dir = L_dir_dir + L_dif_dir
+            L_down_dif = L_dif_dir + L_dif_dir
+
+        return (
+            r,
+            L_tot,
+            L_down_dir,
+            L_down_dif,
+            L_dir_dir,
+            L_dif_dir,
+            L_dir_dif,
+            L_dif_dif,
+        )
+
+    def drdn_dRT(self, x_RT, geom, rho_dir_dir, rho_dif_dir, Ls, rdn):
+        """Derivative of estimated radiance w.r.t. RT statevector elements.
+        We use a numerical approach to approximate dRT with a constant surface
+        reflectance. This is a reasonable approx. for the multicomponent surface.
+
+        When using the glint model however, this does not take into account
+        the dependence of the surface reflectance on the atmosphere.
+        """
         # perturb each element of the RT state vector (finite difference)
         K_RT = []
         x_RTs_perturb = x_RT + np.eye(len(x_RT)) * eps
         for x_RT_perturb in list(x_RTs_perturb):
-            rdne = self.calc_rdn(x_RT_perturb, x_surface, rfl, Ls, geom)
+            (
+                r,
+                L_tot,
+                L_down_dir,
+                L_down_dif,
+                L_dir_dir,
+                L_dif_dir,
+                L_dir_dif,
+                L_dif_dif,
+            ) = self.calc_RT_quantities(x_RT_perturb, geom)
+
+            # Surface state is held constant?
+            rdne = self.calc_rdn(
+                x_RT_perturb,
+                rho_dir_dir,
+                rho_dif_dir,
+                Ls,
+                L_tot,
+                L_dir_dir,
+                L_dif_dir,
+                L_dir_dif,
+                L_dif_dif,
+                r,
+                geom,
+            )
             K_RT.append((rdne - rdn) / eps)
+
         K_RT = np.array(K_RT).T
 
-        # Get K_surface
-        r = self.get_shared_rtm_quantities(x_RT, geom)
+        return K_RT
 
-        if geom.bg_rfl is not None:
-            # adjacency effects are counted
-            I = (self.solar_irr * self.coszen) / np.pi
-            bg = geom.bg_rfl
-            t_down = r["transm_down_dif"] + r["transm_down_dir"]
-            drdn_drfl = I / (1.0 - r["sphalb"] * bg) * t_down * r["transm_up_dir"]
+    def drdn_dRTb(self, x_RT, geom, rho_dir_dir, rho_dif_dir, Ls, rdn):
+        """Derivative of estimated rdn w.r.t. H2O_ABSCO
 
-        elif self.topography_model:
-            # jac w.r.t. topoflux correct radiance
-            I = self.solar_irr / np.pi
-            t_dir_down = r["transm_down_dir"]
-            t_dif_down = r["transm_down_dif"]
-            if geom.cos_i is None:
-                cos_i = self.coszen
-            else:
-                cos_i = geom.cos_i
-            t_total_up = r["transm_up_dif"] + r["transm_up_dir"]
-            t_total_down = t_dir_down + t_dif_down
-            s_alb = r["sphalb"]
-
-            a = t_total_up * (I * cos_i * t_dir_down + I * self.coszen * t_dif_down)
-            drdn_drfl = a / (1 - s_alb * rfl) ** 2
-
-        elif self.glint_model:
-            L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)
-
-            t_down_dir = r["transm_down_dir"]  # downward direct transmittance
-            t_down_dif = r["transm_down_dif"]  # downward diffuse transmittance
-            t_down_total = t_down_dir + t_down_dif  # downward total transmittance
-            t_total_up = (
-                r["transm_up_dif"] + r["transm_up_dir"]
-            )  # total upward transmittance
-
-            L_sky = x_surface[-2] * t_down_dir + x_surface[-1] * t_down_dif
-
-            rho_ls = self.fresnel_rf(
-                geom.observer_zenith
-            )  # fresnel reflectance factor (approx. 0.02 for nadir view)
-            glint = rho_ls * (L_sky / t_down_total)
-
-            drho_scaled_for_multiscattering_drfl = (
-                1.0 / (1 - r["sphalb"] * (rfl + glint)) ** 2
-            )
-            drdn_drfl = (
-                t_total_up * L_down_transmitted * drho_scaled_for_multiscattering_drfl
-            )
-
-            # Basic formulation (below) does not include the derivative of the radiance w.r.t. other surface states, not just the reflectance
-            # There's probably a better fix for that overall, just trying to fix it for glint for now
-            drdn_dgdd = (
-                (self.solar_irr * self.coszen / np.pi)
-                * t_total_up
-                * t_down_dir
-                * drho_scaled_for_multiscattering_drfl
-            )
-            drdn_dgdsf = (
-                (self.solar_irr * self.coszen / np.pi)
-                * t_total_up
-                * t_down_dif
-                * drho_scaled_for_multiscattering_drfl
-            )
-
-            drdn_dLs = r["transm_up_dir"] + r["transm_up_dif"]
-            K_surface = (
-                drdn_drfl[:, np.newaxis] * drfl_dsurface
-                + drdn_dLs[:, np.newaxis] * dLs_dsurface
-            )
-            K_surface[:, -2] = drdn_dgdd
-            K_surface[:, -1] = drdn_dgdsf
-
-            return K_RT, K_surface
-
-        else:
-            L_down_transmitted = self.get_L_down_transmitted(x_RT, geom)
-
-            # The reflected downwelling light is:
-            # L_down_transmitted * rfl / (1.0 - r['sphalb'] * rfl), or
-            # L_down_transmitted * rho_scaled_for_multiscattering
-            # This term is the derivative of rho_scaled_for_multiscattering
-            drho_scaled_for_multiscattering_drfl = 1.0 / (1 - r["sphalb"] * rfl) ** 2
-
-            drdn_drfl = L_down_transmitted * drho_scaled_for_multiscattering_drfl
-
-        drdn_dLs = r["transm_up_dir"] + r["transm_up_dif"]
-        K_surface = (
-            drdn_drfl[:, np.newaxis] * drfl_dsurface
-            + drdn_dLs[:, np.newaxis] * dLs_dsurface
-        )
-
-        return K_RT, K_surface
-
-    def drdn_dRTb(self, x_RT, x_surface, rfl, Ls, geom):
+        Currently, the K_b matrix only covers forward model derivatives
+        due to H2O_ABSCO unknowns, so that subsequent errors might occur
+        when water vapor is not part of the statevector
+        (which is very unlikely though).
+        """
         if len(self.bvec) == 0:
             Kb_RT = np.zeros((0, len(self.wl.shape)))
-        # currently, the K_b matrix only covers forward model derivatives due to H2O_ABSCO unknowns,
-        # so that subsequent errors might occur when water vapor is not part of the state
-        # vector (which is very unlikely though). the following statement captures this case,
-        # but might need to be modified as soon as we add more unknowns
+
         # ToDo: might require modification in case more unknowns are added
+        # The following statement captures the case that H2O is not part
+        # of the statevector.
+        # but might need to be modified as soon as we add more unknowns
         elif len(self.bvec) > 0 and "H2OSTR" not in self.statevec_names:
             Kb_RT = np.zeros((1, len(self.wl)))
         else:
-            # first the radiance at the current state vector
-            rdn = self.calc_rdn(x_RT, x_surface, rfl, Ls, geom)
-
             # unknown parameters modeled as random variables per
             # Rodgers et al (2000) K_b matrix.  We calculate these derivatives
             # by finite differences
@@ -454,33 +514,34 @@ class RadiativeTransfer:
                     i = self.statevec_names.index("H2OSTR")
                     x_RT_perturb = x_RT.copy()
                     x_RT_perturb[i] = x_RT[i] * perturb
-                    rdne = self.calc_rdn(x_RT_perturb, x_surface, rfl, Ls, geom)
+                    (
+                        r,
+                        L_tot,
+                        L_down_dir,
+                        L_down_dif,
+                        L_dir_dir,
+                        L_dif_dir,
+                        L_dir_dif,
+                        L_dif_dif,
+                    ) = self.calc_RT_quantities(x_RT_perturb, geom)
+
+                    rdne = self.calc_rdn(
+                        x_RT_perturb,
+                        rho_dir_dir,
+                        rho_dif_dir,
+                        Ls,
+                        L_tot,
+                        L_dir_dir,
+                        L_dif_dir,
+                        L_dir_dif,
+                        L_dif_dif,
+                        r,
+                        geom,
+                    )
                     Kb_RT.append((rdne - rdn) / eps)
 
         Kb_RT = np.array(Kb_RT).T
         return Kb_RT
-
-    @staticmethod
-    def fresnel_rf(vza):
-        """Calculates reflectance factor of sky radiance based on the
-        Fresnel equation for unpolarized light as a function of view zenith angle (vza).
-        """
-        if vza > 0.0:
-            n_w = 1.33  # refractive index of water
-            theta = np.deg2rad(vza)
-
-            # calculate angle of refraction using Snell′s law
-            theta_i = np.arcsin(np.sin(theta) / n_w)
-
-            # reflectance factor of sky radiance based on the Fresnel equation for unpolarized light
-            rho_s = 0.5 * np.abs(
-                ((np.sin(theta - theta_i) ** 2) / (np.sin(theta + theta_i) ** 2))
-                + ((np.tan(theta - theta_i) ** 2) / (np.tan(theta + theta_i) ** 2))
-            )
-        else:
-            rho_s = 0.02  # the reflectance factor converges to 0.02 for view angles equal to 0.0°
-
-        return rho_s
 
     def summarize(self, x_RT, geom):
         ret = []

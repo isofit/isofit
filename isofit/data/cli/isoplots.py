@@ -1,40 +1,39 @@
 """
-Downloads the ISOFIT examples from the repository https://github.com/isofit/isofit-tutorials
+Downloads the extra ISOFIT plotting utilities from the repository https://github.com/isofit/isofit-plots
 """
 
+import importlib.metadata
+import subprocess
+import sys
 from pathlib import Path
+
+from packaging.version import Version
 
 from isofit.data import env, shared
 from isofit.data.download import download_file, prepare_output, release_metadata, unzip
 
-CMD = "examples"
-NEON_URL = "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/tutorials/subset_data.zip"
+CMD = "plots"
 
 
-def download_neon(examples):
+def install(path=None):
     """
-    Downloads the NEON dataset from https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/tutorials/subset_data.zip.
+    Installs a python package into the current python environment as editable mode
 
     Parameters
     ----------
-    examples : Path
-        Path to the examples directory
+    path : str | None
+        Path to package to install. If None, defaults to the ini path
     """
-    print("Downloading NEON data for the example")
+    if path is None:
+        path = env.plots
 
-    output = prepare_output(examples / "isotuts/NEON/data", "./neon_data")
-    if not output:
-        return
-
-    zipfile = download_file(NEON_URL, output.parent / "NEON-subset-data.zip")
-
-    print(f"Unzipping {zipfile}")
-    avail = unzip(zipfile, path=output.parent, rename=output.name)
+    print(f"Installing {path}")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "-e", path])
 
 
-def download(path=None, tag="latest", overwrite=False, **_):
+def download(path=None, tag="latest", overwrite=False):
     """
-    Downloads the ISOFIT examples from the repository https://github.com/isofit/isofit-tutorials.
+    Downloads the extra ISOFIT plotting utilities from the repository https://github.com/isofit/isofit-plots.
 
     Parameters
     ----------
@@ -44,38 +43,29 @@ def download(path=None, tag="latest", overwrite=False, **_):
         Release tag to pull from the github
     overwrite : bool, default=False
         Overwrite an existing installation
-    **_ : dict
-        Ignores unused params that may be used by other validate functions. This is to
-        maintain compatibility with other functions
     """
-    print(f"Downloading ISOFIT examples")
+    print(f"Downloading ISOFIT Plotting Utilities")
 
-    output = prepare_output(path, env.examples, overwrite=overwrite)
+    output = prepare_output(path, env.plots, overwrite=overwrite)
     if not output:
         return
 
-    metadata = release_metadata("isofit", "isofit-tutorials", tag)
+    metadata = release_metadata("isofit", "isofit-plots", tag)
 
     print(f"Pulling release {metadata['tag_name']}")
-    zipfile = download_file(
-        metadata["zipball_url"], output.parent / "isofit-tutorials.zip"
-    )
+    zipfile = download_file(metadata["zipball_url"], output.parent / "isofit-plots.zip")
 
     print(f"Unzipping {zipfile}")
     avail = unzip(zipfile, path=output.parent, rename=output.name, overwrite=overwrite)
 
-    with open(output / "version.txt", "w") as file:
-        file.write(metadata["tag_name"])
-
-    download_neon(output)
+    install(output)
 
     print(f"Done, now available at: {avail}")
-    print("[!] Be sure to build the examples for your system via `isofit build`")
 
 
 def validate(path=None, checkForUpdate=True, debug=print, error=print, **_):
     """
-    Validates an ISOFIT examples installation
+    Validates an isoplots installation
 
     Parameters
     ----------
@@ -97,38 +87,28 @@ def validate(path=None, checkForUpdate=True, debug=print, error=print, **_):
         True if valid, False otherwise
     """
     if path is None:
-        path = env.examples
+        path = env.plots
 
-    debug(f"Verifying path for ISOFIT examples: {path}")
+    debug(f"Verifying path for isoplots: {path}")
 
-    if not (path := Path(path)).exists():
-        error("[x] Examples path does not exist")
+    # Copy the existing sys.path
+    syspath = sys.path[:]
+    if Path(path).exists():
+        sys.path.append(path)
+
+    try:
+        import isoplots
+    except Exception as e:
+        error(f"[x] Failed to load isoplots: {e}")
         return False
-
-    expected = set(
-        [
-            "20151026_SantaMonica",
-            "20171108_Pasadena",
-            "20190806_ThermalIR",
-            "LICENSE",
-            "README.md",
-            "image_cube",
-            "profiling_cube",
-        ]
-    )
-    names = set([file.name for file in path.glob("*")])
-    if missing := (expected - names):
-        error("[x] ISOFIT examples do not appear to be installed correctly")
-        debug(f"Expected: {expected}")
-        debug(f"Got: {names}")
-        debug(f"Missing: {missing}")
-        return False
-
-    debug("[✓] Path is valid")
+    finally:
+        # Remove the inserted path
+        sys.path = syspath
 
     if checkForUpdate:
         return isUpToDate(path, debug=debug, error=error)
 
+    debug("[✓] Path is valid")
     return True
 
 
@@ -144,7 +124,7 @@ def isUpToDate(path=None, tag="latest", debug=print, error=print, **_):
         Print function to use for debug messages, eg. logging.debug
     error : function, default=print
         Print function to use for error messages, eg. logging.error
-    **_ : dict
+    _ : dict
         Ignores unused params that may be used by other validate functions. This is to
         maintain compatibility with other functions
 
@@ -160,26 +140,18 @@ def isUpToDate(path=None, tag="latest", debug=print, error=print, **_):
     workflows will never detect updates.
     """
     if path is None:
-        path = env.examples
+        path = env.plots
 
-    debug(f"Checking for updates for examples on path: {path}")
+    debug(f"Checking for updates for plots on path: {path}")
 
-    file = Path(path) / "version.txt"
-    if not file.exists():
-        error(
-            "[x] Failed to find a version.txt file under the given path. Version is unknown"
-        )
+    latest = Version(release_metadata("isofit", "isofit-plots", "latest")["tag_name"])
+    current = Version(importlib.metadata.version("isoplots"))
+
+    if current < latest:
+        error(f"[x] Latest is {latest}, currently installed is {version}")
         return False
 
-    metadata = release_metadata("isofit", "isofit-tutorials", tag)
-    with open(file, "r") as f:
-        current = f.read()
-
-    if current != (latest := metadata["tag_name"]):
-        error(f"[x] Latest is {latest}, currently installed is {current}")
-        return False
-
-    debug(f"[✓] Path is up to date, current version is: {current}")
+    debug(f"[✓] Path is up to date, current version: {current}")
 
     return True
 
@@ -206,19 +178,22 @@ def update(check=False, **kwargs):
 
 
 @shared.download.command(name=CMD)
-@shared.path(help="Root directory to download example files to, ie. [path]/examples")
+@shared.path(
+    help="Root directory to download the ISOFIT plotting utilities package to, ie. [path]/plots"
+)
 @shared.tag
 @shared.overwrite
 @shared.check
 def download_cli(**kwargs):
     """\
-    Downloads the ISOFIT examples from the repository https://github.com/isofit/isofit-tutorials.
+    Downloads the extra ISOFIT plotting utilities from the repository https://github.com/isofit/isofit-plots.
+    This will install the package into your current environment along with its dependencies.
 
     \b
     Run `isofit download paths` to see default path locations.
     There are two ways to specify output directory:
-        - `isofit --examples /path/examples download examples`: Override the ini file. This will save the provided path for future reference.
-        - `isofit download examples --path /path/examples`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
+        - `isofit --plots /path/plots download plots`: Override the ini file. This will save the provided path for future reference.
+        - `isofit download plots --path /path/plots`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
     It is recommended to use the first style so the download path is remembered in the future.
     """
     if kwargs.get("overwrite"):
@@ -228,10 +203,10 @@ def download_cli(**kwargs):
 
 
 @shared.validate.command(name=CMD)
-@shared.path(help="Root directory to download example files to, ie. [path]/examples")
+@shared.path(help="Root directory to download data files to, ie. [path]/data")
 @shared.tag
 def validate_cli(**kwargs):
     """\
-    Validates the installation of the ISOFIT examples as well as checks for updates
+    Validates the installation of the ISOFIT extra data files as well as checks for updates
     """
     validate(**kwargs)

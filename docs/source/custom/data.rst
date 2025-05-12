@@ -69,26 +69,30 @@ Notice the default location for all paths is ``~/.isofit/``. These can be modifi
     $ isofit --help
     Usage: isofit [OPTIONS] COMMAND [ARGS]...
 
-      This houses the subcommands of ISOFIT
+      ISOFIT contains a set of routines and utilities for fitting surface,
+      atmosphere and instrument models to imaging spectrometer data.
+
+      Repository: https://github.com/isofit/isofit
+      Documentation: https://isofit.readthedocs.io/en/latest
+      Report an issue: https://github.com/isofit/isofit/issues
 
     Options:
-      -v, --version           Print the current version
       -i, --ini TEXT          Override path to an isofit.ini file
       -b, --base TEXT         Override the base directory for all products
       -s, --section TEXT      Switches which section of the ini to use
-      -d, --data TEXT         Override path to data directory
-      -e, --examples TEXT     Override path to examples directory
-      -c, --imagecube TEXT    Override path to imagecube data directory
-      -em, --srtmnet TEXT     Override path to sRTMnet installation
-      -6s, --sixs TEXT        Override path to SixS installation
+      -p, --path TEXT...      Override paths with the format `-p [key] [value]`
+      -k, --keys TEXT...      Override keys with the format `-k [key] [value]`
       --save / -S, --no-save  Save the ini file
-      --help                  Show this message and exit.
+      --preview               Prints the environment that will be used. This
+                              disables saving
+      --version               Print the installed ISOFIT version
+      --help                  Show this message and exit
 
-Using a data override flag (``-d``, ``-e``, ``-c``, ``-em``, ``-6s``) will update the the INI with the provided path:
+Using a data override flag (``--path [name] [path]``) will update the the INI with the provided path:
 
 .. code-block::
 
-    $ isofit -e tutorials
+    $ isofit -p examples tutorials
     Wrote to file: ~/.isofit/isofit.ini
 
     $ isofit download paths
@@ -104,7 +108,7 @@ For advanced users, the INI file itself as well as the base directory and the se
 
 .. code-block::
 
-    $ isofit -i test.ini -b test -s test -d test
+    $ isofit -i test.ini -b test -s test -p data test
     Wrote to file: test.ini
 
     $ cat test.ini
@@ -139,7 +143,7 @@ Downloads
 =========
 
 ISOFIT comes with a ``download`` command that provides users the ability to download and install extra files such as larger data files and examples.
-To get started, execute the ``isofit download --help`` in a terminal. At this time, there are 7 subcommands:
+To get started, execute the ``isofit download --help`` in a terminal. At this time, there are 8 subcommands:
 
 .. list-table::
     :widths: 25 75
@@ -161,6 +165,8 @@ To get started, execute the ``isofit download --help`` in a terminal. At this ti
       - Downloads the sRTMnet model
     * - ``sixs``
       - Downloads and builds 6sv-2.1
+    * - ``plots``
+      - Downloads and installs the ISOFIT plots package from https://github.com/isofit/isofit-plots
 
 
 The paths for each download are defined in the currently active INI.
@@ -175,16 +181,18 @@ Additionally, download paths may be temporarily overridden and not saved to the 
     Downloads the extra ISOFIT data files from the repository
     https://github.com/isofit/isofit-data.
 
-    Run ``isofit download paths`` to see default path locations.
+    Run `isofit download paths` to see default path locations.
     There are two ways to specify output directory:
-      - ``isofit --data /path/data download data``: Override the ini file. This will save the provided path for future reference.
-      - ``isofit download data --output /path/data``: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
+      - `isofit --data /path/data download data`: Override the ini file. This will save the provided path for future reference.
+      - `isofit download data --path /path/data`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
     It is recommended to use the first style so the download path is remembered in the future.
 
     Options:
-    -o, --output TEXT  Root directory to download data files to, ie. [path]/data
-    -t, --tag TEXT     Release tag to pull  [default: latest]
-    --help             Show this message and exit.
+    -p, --path TEXT  Root directory to download data files to, ie. [path]/data
+    -t, --tag TEXT   Release tag to pull  [default: latest]
+    --overwrite      Overwrite any existing installation
+    -c, --check      Only check for updates
+    --help           Show this message and exit.
 
 Some subcommands have additional flags to further tweak the download, such as ``data`` and ``examples`` having a ``--tag`` to download specific tag releases, or ``sRTMnet`` having ``--version`` for different model versions, but it is recommended to use the default to pull the most up-to-date download for each.
 

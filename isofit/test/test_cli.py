@@ -91,7 +91,13 @@ def test_apply_oe(files, args, surface):
     sleep(120)
 
     args[3] = env.path("srtmnet", key="srtmnet.file")
-    arguments = ["apply_oe", *files, *args, "--surface_path", surface]
+    arguments = [
+        "apply_oe",
+        *files,
+        *args,
+        "--surface_path",
+        surface,
+    ]
 
     # Passing non-string arguments to click is not allowed.
     arguments = [str(i) for i in arguments]

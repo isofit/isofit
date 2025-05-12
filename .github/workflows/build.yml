@@ -14,31 +14,47 @@ on:
     branches: ["dev", "main"]
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  # Lint
+  black:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Print concurrency group
+        run: echo '${{ github.workflow }}-${{ github.ref }}'
+      - uses: psf/black@stable
+        with:
+          src: "./isofit"
+          version: "24.2.0"
+
   # Test building the package
   package:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
       - name: Install dependencies
         shell: bash
         run: |
-          python -m pip install --upgrade pip
-          pip install build twine
+          python3 -m pip install --upgrade pip build twine
 
       - name: Build package
         shell: bash
         run: |
-          python -m build --sdist --wheel
+          python3 -m build --sdist --wheel
 
       - name: Install tarball
         shell: bash
         run: |
-          pip install dist/*.gz
+          python3 -m pip install dist/*.gz
 
       - name: Test installation
         shell: bash
@@ -60,10 +76,11 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Set up Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v5
         with:
           python-version: '3.12'
           cache: 'pip'
+          cache-dependency-path: pyproject.toml
 
       - name: Install ISOFIT
         shell: bash
@@ -75,13 +92,25 @@ jobs:
         shell: bash
         run: |
           # Module must report "[x]" to be detected
-          if isofit download all --check | grep "\[x]"; then
-            # Run it twice, once for detecting updates and once for the job output
-            isofit download all --check
-            echo "::error::Cache update needed, please request a maintainer to delete the cache-extras then rerun this workflow"
+          SUMMARY="$(isofit -S validate all)"
+
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "$SUMMARY" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if echo "$SUMMARY" | grep "\[x]"; then
+            MSG="Cache update needed, please request a maintainer to delete the cache-extras then rerun this workflow"
+
+            echo ":x: $MSG" >> $GITHUB_STEP_SUMMARY
+
+            echo "$SUMMARY"
+            echo "::error::$MSG"
             exit 1
           else
-            echo "No cache update needed"
+            MSG="No cache update needed"
+            echo ":white_check_mark: $MSG" >> $GITHUB_STEP_SUMMARY
+            echo "$MSG"
           fi
 
       - if: steps.cache-extras.outputs.cache-hit != 'true'

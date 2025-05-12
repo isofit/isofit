@@ -220,7 +220,7 @@ The following procedure walks through the steps required to install sRTMnet manu
    You will likely need to set the path to 6S and sRTMnet for the ISOFIT ini file as well as rebuild the examples.
    To do this, execute::
 
-      $ isofit --sixs /path/to/sixs/ --srtmnet /path/to/sRTMnet/ build
+      $ isofit --path sixs /path/to/sixs/ --path srtmnet /path/to/sRTMnet/ build
 
 #. Run one of the following examples:
 

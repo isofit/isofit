@@ -6,6 +6,7 @@ implementations and research, please see https://github.com/isofit/isofit/tree/8
 import gc
 import logging
 import os
+from pathlib import Path
 from typing import Any, List, Union
 
 import numpy as np
@@ -39,6 +40,11 @@ class Keys:
         "transm_up_dif": 0,
         "thermal_upwelling": np.nan,
         "thermal_downwelling": np.nan,
+        # add keys for radiances along all optical paths
+        "dir-dir": 0,
+        "dif-dir": 0,
+        "dir-dif": 0,
+        "dif-dif": 0,
     }
 
 
@@ -110,6 +116,7 @@ class Create:
                 dimensions=dims,
                 fill_value=fill_value,
                 chunksizes=chunksizes,
+                compression="zlib",
             )
             var[:] = vals
 
@@ -410,13 +417,62 @@ def sub(ds: xr.Dataset, dim: str, strat) -> xr.Dataset:
         return ds
 
 
+def couple(ds, inplace=True):
+    """
+    Calculates coupled terms on the input Dataset
+
+    Parameters
+    ----------
+    ds: xr.Dataset
+        Dataset to process on
+    inplace: bool, default=True
+        Insert the coupled terms in-place to the original Dataset. If False, copy the
+        Dataset first
+
+    Returns
+    -------
+    ds: xr.Dataset
+        Dataset with coupled terms
+    """
+    terms = {
+        "dir-dir": ("transm_down_dir", "transm_up_dir"),
+        "dif-dir": ("transm_down_dif", "transm_up_dir"),
+        "dir-dif": ("transm_down_dir", "transm_up_dif"),
+        "dif-dif": ("transm_down_dif", "transm_up_dif"),
+    }
+
+    # Detect if coupling needs to occur first
+    data = ds.get(list(terms))
+    calc = False
+    if data is None:
+        # Not all keys exist
+        calc = "missing"
+    elif not bool(data.any().to_array().all()):
+        # If any key is empty
+        calc = "empty"
+
+    if calc:
+        Logger.debug(f"A coupled term is {calc}, calculating")
+        if not inplace:
+            ds = ds.copy()
+
+        for term, (key1, key2) in terms.items():
+            try:
+                ds[term] = ds[key1] * ds[key2]
+            except KeyError:
+                ds[term] = 0
+
+    return ds
+
+
 def load(
     file: str,
     subset: dict = None,
-    dask=False,
-    mode="r",
-    lock=False,
-    load=True,
+    dask: bool = False,
+    mode: str = "a",
+    lock: bool = False,
+    load: bool = True,
+    coupling: str = "after",
     **kwargs,
 ) -> xr.Dataset:
     """
@@ -431,12 +487,28 @@ def load(
         Subset each dimension with a given strategy. Each dimension in the LUT file
         must be specified.
         See examples for more information
-    dask: bool, default=True
+    dask: bool, default=False
         Use Dask on the backend of Xarray to lazy load the dataset. This enables
         out-of-core subsetting
+    mode: str, default="a"
+        File mode to open with, must be set to append="a" for coupled terms to be
+        saved back
+    lock: bool, default=False
+        Set a lock on the input file
     load: bool, default=True
         Calls ds.load() at the end to cast from Dask arrays back into numpy arrays held
         in memory
+    coupling: string, default="after"
+        Calculates coupling terms, if needed. This may be set one of four ways:
+            "before"
+                Calculate before subsetting
+            "before-save"
+                Before + save the coupled terms to the original input file
+            "after"
+                Calculate after subsetting
+            "after-save"
+                After + save to a new file (the original input file with the extension
+                changed to ".coupled-subset.nc")
 
     Examples
     --------
@@ -590,12 +662,31 @@ def load(
     >>> load(file, subset).unstack().dims
     Frozen({'AOT550': 3, 'H2OSTR': 10, 'wl': 285})
     """
+    if coupling not in ("before", "before-save", "after", "after-save"):
+        raise AttributeError("Coupling must be set to either 'before' or 'after'")
+
     if dask:
-        Logger.debug("Using Dask to load")
+        Logger.debug(f"Using Dask to load: {file}")
         ds = xr.open_mfdataset([file], mode=mode, lock=lock, **kwargs)
     else:
-        Logger.debug("Using Xarray to load")
+        Logger.debug(f"Using Xarray to load: {file}")
         ds = xr.open_dataset(file, mode=mode, lock=lock, **kwargs)
+
+    # Calculate coupling before subsetting
+    if "before" in coupling:
+        couple(ds)
+
+        # Save back to the original file, only the coupled terms
+        if all(
+            [
+                "save" in coupling,
+                dask is False,  # Only works with xarray loader
+                mode == "a",  # Original input must have been opened in append
+            ]
+        ):
+            Logger.debug(f"Saving coupled terms back to the original input file")
+            terms = ["dir-dir", "dif-dir", "dir-dif", "dif-dif"]
+            ds[terms].to_netcdf(file, mode="a")
 
     # Special case that doesn't require defining the entire grid subsetting strategy
     if subset is None:
@@ -631,12 +722,26 @@ def load(
             Logger.debug("Interpolating")
             ds = optimizedInterp(ds, interp)
 
+        # Save this subsetting strategy to the attributes for future reference
+        ds.attrs["subset"] = str(subset)
+
         Logger.debug("Subsetting finished")
     else:
         Logger.error("The subsetting strategy must be a dictionary")
         raise AttributeError(
             f"Bad subsetting strategy, expected either a dict or a NoneType: {subset}"
         )
+
+    # Calculate coupling after subsetting
+    if "after" in coupling:
+        couple(ds)
+
+        if "save" in coupling:
+            Logger.debug(f"Saving subset with coupling to {file}")
+
+            # Have to save to a different/new file after subsetting
+            file = Path(file).with_suffix(".coupled-subset.nc")
+            ds.to_netcdf(file)
 
     dims = ds.drop_dims("wl").dims
 

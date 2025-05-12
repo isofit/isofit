@@ -32,6 +32,7 @@ if not os.environ.get("ISOFIT_NO_SET_THREADS"):
 
 import click
 import numpy as np
+import scipy
 
 from isofit import checkNumThreads, ray
 from isofit.configs import configs
@@ -234,6 +235,16 @@ class Worker(object):
 
             self.completed_spectra += 1
             if input_data is not None:
+                nan_locs = np.where(np.isnan(input_data.meas))
+                if len(nan_locs) > 0:
+                    non_nan_locs = np.where(np.isnan(input_data.meas) == False)
+                    interp = scipy.interpolate.interp1d(
+                        self.io.meas_wl[non_nan_locs],
+                        input_data.meas[non_nan_locs],
+                        kind="linear",
+                        fill_value="extrapolate",
+                    )
+                    input_data.meas = interp(self.io.meas_wl)
                 logging.debug("Run model")
                 # The inversion returns a list of states, which are
                 # intepreted either as samples from the posterior (MCMC case)
@@ -288,7 +299,7 @@ class Worker(object):
     ),
     default="INFO",
 )
-def cli_run(config_file, level):
+def cli(config_file, level):
     """Execute ISOFIT core"""
 
     click.echo(f"Running ISOFIT(config_file={config_file!r}, level={level})")

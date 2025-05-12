@@ -6,8 +6,8 @@ import os
 import subprocess
 from pathlib import Path
 
-from isofit.data import env
-from isofit.data.download import cli, download_file, prepare_output, untar
+from isofit.data import env, shared
+from isofit.data.download import download_file, prepare_output, untar
 
 CMD = "sixs"
 URL = "https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar"
@@ -55,7 +55,7 @@ def build(directory):
         f"make -j {os.cpu_count()}",
         shell=True,
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        # stderr=subprocess.PIPE,
         cwd=directory,
     )
 
@@ -127,7 +127,9 @@ def validate(path=None, debug=print, error=print, **_):
         return False
 
     if not (path / f"sixsV2.1").exists():
-        error("[x] 6S does not appear to be installed correctly")
+        error(
+            "[x] 6S is missing the built 'sixsV2.1', this is likely caused by make failing"
+        )
         return False
 
     debug("[✓] Path is valid")
@@ -156,11 +158,11 @@ def update(check=False, **kwargs):
             debug(f"Please download the latest via `isofit download {CMD}`")
 
 
-@cli.download.command(name=CMD)
-@cli.path(help="Root directory to download 6S to, ie. [path]/sixs")
-@cli.tag
-@cli.overwrite
-@cli.check
+@shared.download.command(name=CMD)
+@shared.path(help="Root directory to download 6S to, ie. [path]/sixs")
+@shared.tag
+@shared.overwrite
+@shared.check
 def download_cli(**kwargs):
     """\
     Downloads 6S from https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar. Only HDF5 versions are supported at this time.
@@ -172,15 +174,15 @@ def download_cli(**kwargs):
         - `isofit download sixs --path /path/sixs`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
     It is recommended to use the first style so the download path is remembered in the future.
     """
-    if validate_:
-        validate(**kwargs)
-    else:
+    if kwargs.get("overwrite"):
         download(**kwargs)
+    else:
+        update(**kwargs)
 
 
-@cli.validate.command(name=CMD)
-@cli.path(help="Root directory to download 6S to, ie. [path]/sixs")
-@cli.tag
+@shared.validate.command(name=CMD)
+@shared.path(help="Root directory to download 6S to, ie. [path]/sixs")
+@shared.tag
 def validate_cli(**kwargs):
     """\
     Validates the installation of 6S

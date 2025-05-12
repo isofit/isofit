@@ -49,11 +49,14 @@ class Pathnames:
         aerosol_climatology_path,
         channelized_uncertainty_path,
         ray_temp_dir,
+        interpolate_inplace,
     ):
         # Determine FID based on sensor name
         if sensor == "ang":
             self.fid = split(input_radiance)[-1][:18]
         elif sensor == "av3":
+            self.fid = split(input_radiance)[-1][:18]
+        elif sensor == "av5":
             self.fid = split(input_radiance)[-1][:18]
         elif sensor == "avcl":
             self.fid = split(input_radiance)[-1][:16]
@@ -73,6 +76,8 @@ class Pathnames:
             self.fid = split(input_radiance)[-1][:23]
         elif sensor == "oci":
             self.fid = split(input_radiance)[-1][:24]
+        elif sensor == "tanager":
+            self.fid = split(input_radiance)[-1][:23]
         elif sensor[:3] == "NA-":
             self.fid = os.path.splitext(os.path.basename(input_radiance))[0]
 
@@ -126,6 +131,13 @@ class Pathnames:
             self.radiance_working_path = abspath(self.input_radiance_file)
             self.obs_working_path = abspath(self.input_obs_file)
             self.loc_working_path = abspath(self.input_loc_file)
+
+        if interpolate_inplace:
+            self.radiance_interp_path = self.radiance_working_path
+        else:
+            self.radiance_interp_path = abspath(
+                join(self.input_data_directory, rdn_fname + "_interp")
+            )
 
         if channelized_uncertainty_path:
             self.input_channelized_uncertainty_path = channelized_uncertainty_path
@@ -209,7 +221,8 @@ class Pathnames:
                 self.input_model_discrepancy_path = str(
                     env.path("data", "emit_model_discrepancy.mat")
                 )
-
+        elif sensor == "tanager":
+            self.noise_path = str(env.path("data", "tanager1_noise_20241016.txt"))
         else:
             self.noise_path = None
             logging.info("no noise path found, proceeding without")
@@ -468,7 +481,9 @@ def check_surface_model(surface_path: str, wl: np.array, paths: Pathnames) -> st
             logging.info(
                 "No surface model provided. Build new one using given config file."
             )
-            surface_model(config_path=surface_path)
+            surface_model(
+                config_path=surface_path, wavelength_path=paths.wavelength_path
+            )
             configdir, _ = os.path.split(os.path.abspath(surface_path))
             config = json_load_ascii(surface_path, shell_replace=True)
             return expand_path(configdir, config["output_model_file"])
@@ -494,6 +509,7 @@ def build_presolve_config(
     debug: bool = False,
     inversion_windows=[[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]],
     prebuilt_lut_path: str = None,
+    multipart_transmittance: bool = False,
 ) -> None:
     """Write an isofit config file for a presolve, with limited info.
 
@@ -507,7 +523,8 @@ def build_presolve_config(
         uncorrelated_radiometric_uncertainty: uncorrelated radiometric uncertainty parameter for isofit
         segmentation_size: image segmentation size if empirical line is used
         debug: flag to enable debug_mode in the config.implementation
-        lut_path: lut path to use; if none, presolve config will create a new file
+        prebuilt_lut_path: lut path to use; if none, presolve config will create a new file
+        multipart_transmittance: flag to indicate whether a 4-component transmittance model is to be used
     """
 
     # Determine number of spectra included in each retrieval.  If we are
@@ -526,10 +543,8 @@ def build_presolve_config(
 
     if surface_category == "glint_model_surface":
         glint_model = True
-        multipart_transmittance = True
     else:
         glint_model = False
-        multipart_transmittance = False
 
     if prebuilt_lut_path is None:
         lut_path = join(paths.lut_h2o_directory, "lut.nc")
@@ -690,6 +705,7 @@ def build_main_config(
     debug: bool = False,
     inversion_windows=[[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]],
     prebuilt_lut_path: str = None,
+    multipart_transmittance: bool = False,
 ) -> None:
     """Write an isofit config file for the main solve, using the specified pathnames and all given info
 
@@ -716,6 +732,7 @@ def build_main_config(
         segmentation_size:                    image segmentation size if empirical line is used
         pressure_elevation:                   if true, retrieve pressure elevation
         debug:                                if true, run ISOFIT in debug mode
+        multipart_transmittance:              flag to indicate whether a 4-component transmittance model is to be used
     """
 
     # Determine number of spectra included in each retrieval.  If we are
@@ -739,10 +756,8 @@ def build_main_config(
 
     if surface_category == "glint_model_surface":
         glint_model = True
-        multipart_transmittance = True
     else:
         glint_model = False
-        multipart_transmittance = False
 
     radiative_transfer_config = {
         "radiative_transfer_engines": {

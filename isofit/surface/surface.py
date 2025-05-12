@@ -37,6 +37,7 @@ class Surface:
         config = full_config.forward_model.surface
 
         self.statevec_names = []
+        self.idx_surface = np.arange(len(self.statevec_names))
         self.bounds = np.array([])
         self.scale = np.array([])
         self.init = np.array([])
@@ -92,7 +93,9 @@ class Surface:
         """Calculate the directed reflectance (specifically the HRDF) for this
         state vector."""
 
-        return self.rfl
+        # ToDo: Future use of calc_rfl() is to return a direct and diffuse surface reflectance quantity.
+        #  As long as this is not implemented, return the same reflectance vector for both.
+        return self.rfl, self.rfl
 
     def drfl_dsurface(self, x_surface, geom):
         """Partial derivative of reflectance with respect to state vector,

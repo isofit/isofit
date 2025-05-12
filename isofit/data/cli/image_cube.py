@@ -6,8 +6,8 @@ from pathlib import Path
 
 import click
 
-from isofit.data import env
-from isofit.data.download import cli, download_file, prepare_output, unzip
+from isofit.data import env, shared
+from isofit.data.download import download_file, prepare_output, unzip
 
 CMD = "imagecube"
 URL = "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/{size}_chunk.zip"
@@ -90,7 +90,8 @@ def validate(path=None, size="both", debug=print, error=print, **_):
         return validate(path, "small") & validate(path, "medium")
 
     if path is None:
-        path = Path(env.imagecube)
+        path = env.imagecube
+    path = Path(path)
 
     debug(f"Verifying path for ISOFIT {size} image cube: {path}")
 
@@ -140,12 +141,12 @@ size = click.option(
 )
 
 
-@cli.download.command(name=CMD)
-@cli.path(
+@shared.download.command(name=CMD)
+@shared.path(
     help="Root directory to download image cube data files to, ie. [path]/imagecube"
 )
-@cli.overwrite
-@cli.check
+@shared.overwrite
+@shared.check
 @size
 def download_cli(**kwargs):
     """\
@@ -164,8 +165,8 @@ def download_cli(**kwargs):
         update(**kwargs)
 
 
-@cli.validate.command(name=CMD)
-@cli.path(
+@shared.validate.command(name=CMD)
+@shared.path(
     help="Root directory to download image cube data files to, ie. [path]/imagecube"
 )
 @size

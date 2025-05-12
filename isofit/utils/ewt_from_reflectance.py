@@ -193,7 +193,7 @@ def run_lines(
     help="Prints the arguments list without executing the command",
     is_flag=True,
 )
-def cli_ewt(debug_args, **kwargs):
+def cli(debug_args, **kwargs):
     """Calculate EWT and CWC
 
     Calculate Equivalent Water Thickness (EWT) / Canopy Water Content (CWC) for

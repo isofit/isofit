@@ -1,5 +1,5 @@
 """
-Implements the `isofit download` subcommands
+Utility functions for the downloader modules
 """
 
 import io
@@ -9,9 +9,7 @@ import shutil
 import tarfile
 import urllib.request
 from email.message import EmailMessage
-from functools import partial
 from pathlib import Path
-from types import SimpleNamespace
 from zipfile import ZipFile
 
 import click
@@ -201,56 +199,15 @@ def prepare_output(output, default, isdir=False, overwrite=False):
     return output
 
 
-# Main commands
-
-
 @click.group("download", invoke_without_command=True, no_args_is_help=True)
-def cli_download():
+def cli():
     """\
     Download extra ISOFIT files that do not come with the default installation
     """
     pass
 
 
-@click.group("validate", invoke_without_command=True, no_args_is_help=True)
-def cli_validate():
-    """\
-    Validate extra ISOFIT files that do not come with the default installation
-    """
-    pass
-
-
-# Shared click options
-
-cli = SimpleNamespace(
-    download=cli_download,
-    validate=cli_validate,
-    output=partial(click.option, "-o", "--output"),
-    tag=click.option(
-        "-t", "--tag", default=f"latest", help="Release tag to pull", show_default=True
-    ),
-    overwrite=click.option(
-        "--overwrite",
-        is_flag=True,
-        default=False,
-        help="Overwrite any existing installation",
-        show_default=True,
-    ),
-    path=partial(click.option, "-p", "--path"),
-    check=click.option(
-        "-c",
-        "--check",
-        is_flag=True,
-        default=False,
-        help="Only check for updates",
-        show_default=True,
-    ),
-)
-
-# Subcommands
-
-
-@cli_download.command(name="paths")
+@cli.command(name="paths")
 def preview_paths():
     """\
     Preview download path locations. Paths can be changed from the default by using the overrides on the `isofit` command. See more via `isofit --help`

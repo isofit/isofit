@@ -73,15 +73,15 @@ class SixSRT(RadiativeTransferEngine):
             Logger.debug(f"Setting SIXS_DIR={env.sixs}")
             os.environ["SIXS_DIR"] = env.sixs
         elif (current := os.path.abspath(current)) != env.sixs:
-            Logger.error(
-                "WARNING: The environment variable $SIXS_DIR does not match the ISOFIT ini"
+            Logger.warning(
+                "The environment variable $SIXS_DIR does not match the ISOFIT ini. It is recommended to make these match, though not required. The ENV path will be the one used."
             )
-            Logger.error(f"ENV: {current}")
-            Logger.error(f"INI: {env.sixs}")
-            Logger.error(
-                "This may cause issues, please either set the env to the ini, or override the ini to the env using:"
+            Logger.warning(f"ENV: {current}")
+            Logger.warning(f"INI: {env.sixs}")
+            Logger.warning(
+                "Please either set the ENV to that INI value, or update the INI with the ENV via:"
             )
-            Logger.error("  isofit --sixs $SIXS_DIR ...")
+            Logger.warning("  isofit --path sixs $SIXS_DIR")
 
         self.modtran_emulation = modtran_emulation
 

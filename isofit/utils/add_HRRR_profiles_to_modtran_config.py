@@ -337,7 +337,7 @@ def get_HRRR_data(filename):
 
 @click.command(name="HRRR_to_modtran")
 @click.argument("config_file")
-def cli_HRRR_to_modtran(**kwargs):
+def cli(**kwargs):
     if pygrib is None:
         raise ImportError(
             "Missing dependency pygrib. Please install: https://jswhit.github.io/pygrib/installing.html"

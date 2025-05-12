@@ -79,13 +79,6 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         self.treat_as_emissive = False
         """bool: Run the simulation in emission mode"""
 
-        self._topography_model_type = bool
-        self.topography_model = False
-        """
-        Flag to indicated whether to use a topographic-flux (topoflux)
-        implementation of the forward model.
-        """
-
         self._glint_model_type = bool
         self.glint_model = False
         """
@@ -369,6 +362,21 @@ class RadiativeTransferConfig(BaseConfigSection):
                 )
             if np.unique(item).size < len(item):
                 errors.append(f"Detected duplicate values in lut_grid item {key}")
+
+        if self.topography_model:
+            for rtm in self.radiative_transfer_engines:
+                if rtm.engine_name != "modtran":
+                    errors.append(
+                        "All self.forward_model.radiative_transfer.radiative_transfer_engines"
+                        ' must be of type "modtran" if forward_model.topograph_model is'
+                        " set to True"
+                    )
+                if rtm.multipart_transmittance is False:
+                    errors.append(
+                        "All self.forward_model.radiative_transfer.radiative_transfer_engines"
+                        " must have multipart_transmittance set as True if"
+                        " forward_model.topograph_model is set to True"
+                    )
 
         for rte in self.radiative_transfer_engines:
             errors.extend(rte.check_config_validity())
