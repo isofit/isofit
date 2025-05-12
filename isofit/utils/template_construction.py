@@ -868,9 +868,14 @@ def build_main_config(
 
         # first, check if observer zenith angle in prebuilt LUT comes in MODTRAN convention
         # and convert lut grid as needed
-        if any(np.array(ncds["observer_zenith"]) > 90.0):
-            to_sensor_zenith_lut_grid = np.sort(
-                [180 - x for x in to_sensor_zenith_lut_grid]
+        try:
+            if any(np.array(ncds["observer_zenith"]) > 90.0):
+                to_sensor_zenith_lut_grid = np.sort(
+                    [180 - x for x in to_sensor_zenith_lut_grid]
+                )
+        except IndexError:
+            logging.warning(
+                "Key observer_zenith not found in prebuilt LUT. Conversion to MODTRAN convention not necessary."
             )
 
         radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"][
