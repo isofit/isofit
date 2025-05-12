@@ -627,8 +627,6 @@ class ModtranRT(RadiativeTransferEngine):
     def modtran_water_upperbound_polynomials(self) -> dict:
         """Polynomials as a function of ground altitude (km) to estimate upperbound of water column vapor (g/cm2).
 
-        NOTE: Any ground altitude greater than 6 km will be set to min g/cm2.
-
         Returns:
             dict: 3rd degree polynomials to estimate upperbound of water column vapor 
         """
