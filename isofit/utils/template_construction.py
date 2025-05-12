@@ -49,11 +49,14 @@ class Pathnames:
         aerosol_climatology_path,
         channelized_uncertainty_path,
         ray_temp_dir,
+        interpolate_inplace,
     ):
         # Determine FID based on sensor name
         if sensor == "ang":
             self.fid = split(input_radiance)[-1][:18]
         elif sensor == "av3":
+            self.fid = split(input_radiance)[-1][:18]
+        elif sensor == "av5":
             self.fid = split(input_radiance)[-1][:18]
         elif sensor == "avcl":
             self.fid = split(input_radiance)[-1][:16]
@@ -128,6 +131,13 @@ class Pathnames:
             self.radiance_working_path = abspath(self.input_radiance_file)
             self.obs_working_path = abspath(self.input_obs_file)
             self.loc_working_path = abspath(self.input_loc_file)
+
+        if interpolate_inplace:
+            self.radiance_interp_path = self.radiance_working_path
+        else:
+            self.radiance_interp_path = abspath(
+                join(self.input_data_directory, rdn_fname + "_interp")
+            )
 
         if channelized_uncertainty_path:
             self.input_channelized_uncertainty_path = channelized_uncertainty_path
@@ -471,7 +481,9 @@ def check_surface_model(surface_path: str, wl: np.array, paths: Pathnames) -> st
             logging.info(
                 "No surface model provided. Build new one using given config file."
             )
-            surface_model(config_path=surface_path)
+            surface_model(
+                config_path=surface_path, wavelength_path=paths.wavelength_path
+            )
             configdir, _ = os.path.split(os.path.abspath(surface_path))
             config = json_load_ascii(surface_path, shell_replace=True)
             return expand_path(configdir, config["output_model_file"])
@@ -664,11 +676,14 @@ def build_presolve_config(
         isofit_config_h2o["input"]["loc_file"] = paths.loc_working_path
         isofit_config_h2o["input"]["obs_file"] = paths.obs_working_path
 
-    # write modtran_template
+    # write presolve config
     with open(paths.h2o_config_path, "w") as fout:
         fout.write(
             json.dumps(isofit_config_h2o, cls=SerialEncoder, indent=4, sort_keys=True)
         )
+
+    # Create a template version of the config
+    env.toTemplate(paths.h2o_config_path, working_directory=paths.working_directory)
 
 
 def build_main_config(
@@ -853,9 +868,14 @@ def build_main_config(
 
         # first, check if observer zenith angle in prebuilt LUT comes in MODTRAN convention
         # and convert lut grid as needed
-        if any(np.array(ncds["observer_zenith"]) > 90.0):
-            to_sensor_zenith_lut_grid = np.sort(
-                [180 - x for x in to_sensor_zenith_lut_grid]
+        try:
+            if any(np.array(ncds["observer_zenith"]) > 90.0):
+                to_sensor_zenith_lut_grid = np.sort(
+                    [180 - x for x in to_sensor_zenith_lut_grid]
+                )
+        except IndexError:
+            logging.warning(
+                "Key observer_zenith not found in prebuilt LUT. Conversion to MODTRAN convention not necessary."
             )
 
         radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"][
@@ -1025,6 +1045,11 @@ def build_main_config(
                 isofit_config_modtran, cls=SerialEncoder, indent=4, sort_keys=True
             )
         )
+
+    # Create a template version of the config
+    env.toTemplate(
+        paths.isofit_full_config_path, working_directory=paths.working_directory
+    )
 
 
 def get_lut_subset(vals):

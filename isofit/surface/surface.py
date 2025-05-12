@@ -37,6 +37,7 @@ class Surface:
         config = full_config.forward_model.surface
 
         self.statevec_names = []
+        self.idx_surface = np.arange(len(self.statevec_names))
         self.bounds = np.array([])
         self.scale = np.array([])
         self.init = np.array([])
@@ -88,7 +89,7 @@ class Surface:
 
         return self.rfl
 
-    def calc_rfl(self, x_surface, geom, L_down_dir=None, L_down_dif=None):
+    def calc_rfl(self, x_surface, geom):
         """Calculate the directed reflectance (specifically the HRDF) for this
         state vector."""
 

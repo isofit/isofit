@@ -64,7 +64,13 @@ class CLI(click.Group):
 
     def _lazy_load(self, cmd_name):
         try:
-            return importlib.import_module(self.lazy_subcommands[cmd_name]).cli
+            path = self.lazy_subcommands[cmd_name]
+            func = "cli"
+            if ":" in path:
+                path, func = path.split(":")
+
+            module = importlib.import_module(path)
+            return getattr(module, func)
         except Exception as e:
             pass
             # print(f"Failed {cmd_name}, reason: {e}")
@@ -90,6 +96,7 @@ class CLI(click.Group):
         "download": "isofit.data.download",
         "validate": "isofit.data.validate",
         "path": "isofit.data",
+        "dev": "isofit.data:dev",
         "HRRR_to_modtran": "isofit.utils.add_HRRR_profiles_to_modtran_config",
         "analytical_line": "isofit.utils.analytical_line",
         "apply_oe": "isofit.utils.apply_oe",
@@ -97,6 +104,7 @@ class CLI(click.Group):
         "empirical_line": "isofit.utils.empirical_line",
         "ewt": "isofit.utils.ewt_from_reflectance",
         "reconstruct_subs": "isofit.utils.reconstruct",
+        "interpolate_spectra": "isofit.utils.interpolate_spectra",
         "sun": "isofit.utils.solar_position",
         "surface_model": "isofit.utils.surface_model",
         "plot": "isoplots",

@@ -22,7 +22,6 @@
 from __future__ import annotations
 
 import logging
-from types import SimpleNamespace
 
 import numpy as np
 
@@ -30,6 +29,9 @@ from isofit.core.common import eps
 from isofit.radiative_transfer.engines import Engines
 
 Logger = logging.getLogger(__file__)
+
+
+RTE = ["modtran", "sRTMnet", "KernelFlowsGP"]
 
 
 def confPriority(key, configs):
@@ -104,9 +106,6 @@ class RadiativeTransfer:
                 Logger.error(error)
                 raise AttributeError(error)
 
-        # If any engine is true, self is true
-        self.glint_model = any([rte.glint_model for rte in self.rt_engines])
-
         # The rest of the code relies on sorted order of the individual RT engines which cannot
         # be guaranteed by the dict JSON or YAML input
         self.rt_engines.sort(key=lambda x: x.wl[0])
@@ -166,33 +165,34 @@ class RadiativeTransfer:
             if "coszen" in child.lut:
                 return child.lut.coszen.data
 
-    def check_coszen_and_cos_i(self, geom):
-        coszen = (
-            np.cos(np.deg2rad(geom.solar_zenith))
-            if np.isnan(self.coszen)
-            else self.coszen
-        )
-
-        # Local solar zenith angle as a function of surface slope and aspect
-        cos_i = geom.cos_i if geom.cos_i is not None else coszen
-
-        return coszen, cos_i
-
-    def calc_rdn(self, x_RT, rho_dir_dir, rho_dif_dir, Ls, geom):
+    def calc_rdn(
+        self,
+        x_RT,
+        rho_dir_dir,
+        rho_dif_dir,
+        Ls,
+        L_tot,
+        L_dir_dir,
+        L_dif_dir,
+        L_dir_dif,
+        L_dif_dif,
+        r,
+        geom,
+    ):
         """
         Physics-based forward model to calculate at-sensor radiance.
         Includes topography, background reflectance, and glint.
         """
-        coszen, cos_i = self.check_coszen_and_cos_i(geom)
-
         # Adjacency effects
         # ToDo: we need to think about if we want to obtain the background reflectance from the Geometry object
         #  or from the surface model, i.e., the same way as we do with the target pixel reflectance
-        rho_dir_dif = geom.bg_rfl if geom.bg_rfl is not None else rho_dir_dir
-        rho_dif_dif = geom.bg_rfl if geom.bg_rfl is not None else rho_dir_dir
 
-        # Get needed rt quantities from LUT
-        r = self.get_shared_rtm_quantities(x_RT, geom)
+        rho_dir_dif = (
+            geom.bg_rfl if isinstance(geom.bg_rfl, np.ndarray) else rho_dir_dir
+        )
+        rho_dif_dif = (
+            geom.bg_rfl if isinstance(geom.bg_rfl, np.ndarray) else rho_dif_dir
+        )
 
         # Atmospheric path radiance
         L_atm = self.get_L_atm(x_RT, geom)
@@ -201,17 +201,8 @@ class RadiativeTransfer:
         s_alb = r["sphalb"]
         atm_surface_scattering = s_alb * rho_dif_dif
 
-        # Radiance terms along all optical paths
-        L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = self.get_L_coupled(
-            r, coszen, cos_i
-        )
-
-        # Total radiance
-        L_tot = L_dir_dir + L_dif_dir + L_dir_dif + L_dif_dif
-
         # Special case: 1-component model
-        if type(L_tot) != np.ndarray or len(L_tot) == 1:
-            L_tot = self.get_L_down_transmitted(x_RT, geom)[0]
+        if not isinstance(L_dir_dir, np.ndarray) or len(L_dir_dir) == 1:
             # we assume rho_dir_dir = rho_dif_dir = rho_dir_dif = rho_dif_dif
             rho_dif_dif = rho_dir_dir
             # eliminate spherical albedo and one reflectance term from numerator if using 1-component model
@@ -305,7 +296,7 @@ class RadiativeTransfer:
         """
         L_atms = []
 
-        coszen, cos_i = self.check_coszen_and_cos_i(geom)
+        coszen, cos_i = geom.check_coszen_and_cos_i(self.coszen)
 
         for RT in self.rt_engines:
             if RT.treat_as_emissive:
@@ -338,7 +329,7 @@ class RadiativeTransfer:
         L_downs_dir = []
         L_downs_dif = []
 
-        coszen, cos_i = self.check_coszen_and_cos_i(geom)
+        coszen, cos_i = geom.check_coszen_and_cos_i(self.coszen)
 
         for RT in self.rt_engines:
             if RT.treat_as_emissive:
@@ -363,7 +354,7 @@ class RadiativeTransfer:
 
         return np.hstack(L_downs), np.hstack(L_downs_dir), np.hstack(L_downs_dif)
 
-    def get_L_coupled(self, r: dict, coszen: float, cos_i: float):
+    def get_L_coupled(self, r: dict, geom: Geometry):
         """Get the interpolated radiance terms on the sun-to-surface-to-sensor path.
         These follow the physics as presented in Guanter (2006), Vermote et al. (1997), and Tanre et al. (1983).
 
@@ -379,12 +370,15 @@ class RadiativeTransfer:
             L_dir_dif => downward direct * upward diffuse
             L_dif_dif => downward diffuse * upward diffuse
         """
+        # Check coszen against cos_i
+        coszen, cos_i = geom.check_coszen_and_cos_i(self.coszen)
+
         # radiances along all optical paths
         L_coupled = []
 
         if any(
             [
-                type(r[key]) != np.ndarray or len(r[key]) == 1
+                not isinstance(r[key], np.ndarray) or len(r[key]) == 1
                 for key in self.rt_engines[0].coupling_terms
             ]
         ):
@@ -411,98 +405,105 @@ class RadiativeTransfer:
 
         return L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif
 
-    def drdn_dRT(
-        self,
-        x_RT,
-        rho_dir_dir,
-        rho_dif_dir,
-        drfl_dsurface,
-        Ls,
-        dLs_dsurface,
-        geom: Geometry,
-    ):
-        # first the rdn at the current state vector
-        rdn = self.calc_rdn(x_RT, rho_dir_dir, rho_dif_dir, Ls, geom)
+    def calc_RT_quantities(self, x_RT: np.ndarray, geom: Geometry):
+        """Retrieves the RT quantities including the LUT sample (r),
+        and the radiances (L). This function handles the hand-off between
+        the 1c and 4c model.
 
+        In the 1c case, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = 0,
+        and L_tot, L_down_dir, and L_down_dif are populated within the
+        if statement.
+
+        In the 4c case, we always use returns from get_L_coupled
+        """
+        # Propogate LUT
+        r = self.get_shared_rtm_quantities(x_RT, geom)
+
+        # Default: get directional radiances
+        L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = self.get_L_coupled(r, geom)
+        L_tot = L_dir_dir + L_dif_dir + L_dir_dif + L_dif_dif
+
+        # Handle case for 1c vs 4c model
+        if not isinstance(L_tot, np.ndarray) or len(L_tot) == 1:
+            # 1c model w/in if clause
+            L_tot, L_down_dir, L_down_dif = self.get_L_down_transmitted(x_RT, geom)
+        else:
+            # 4c model w/in else clause
+            L_down_dir = L_dir_dir + L_dif_dir
+            L_down_dif = L_dif_dir + L_dif_dir
+
+        return (
+            r,
+            L_tot,
+            L_down_dir,
+            L_down_dif,
+            L_dir_dir,
+            L_dif_dir,
+            L_dir_dif,
+            L_dif_dif,
+        )
+
+    def drdn_dRT(self, x_RT, geom, rho_dir_dir, rho_dif_dir, Ls, rdn):
+        """Derivative of estimated radiance w.r.t. RT statevector elements.
+        We use a numerical approach to approximate dRT with a constant surface
+        reflectance. This is a reasonable approx. for the multicomponent surface.
+
+        When using the glint model however, this does not take into account
+        the dependence of the surface reflectance on the atmosphere.
+        """
         # perturb each element of the RT state vector (finite difference)
         K_RT = []
         x_RTs_perturb = x_RT + np.eye(len(x_RT)) * eps
         for x_RT_perturb in list(x_RTs_perturb):
-            rdne = self.calc_rdn(x_RT_perturb, rho_dir_dir, rho_dif_dir, Ls, geom)
+            (
+                r,
+                L_tot,
+                L_down_dir,
+                L_down_dif,
+                L_dir_dir,
+                L_dif_dir,
+                L_dir_dif,
+                L_dif_dif,
+            ) = self.calc_RT_quantities(x_RT_perturb, geom)
+
+            # Surface state is held constant?
+            rdne = self.calc_rdn(
+                x_RT_perturb,
+                rho_dir_dir,
+                rho_dif_dir,
+                Ls,
+                L_tot,
+                L_dir_dir,
+                L_dif_dir,
+                L_dir_dif,
+                L_dif_dif,
+                r,
+                geom,
+            )
             K_RT.append((rdne - rdn) / eps)
+
         K_RT = np.array(K_RT).T
 
-        # Get K_surface
-        # TOA and local solar zenith angle as a function of surface slope and aspect
-        coszen, cos_i = self.check_coszen_and_cos_i(geom)
+        return K_RT
 
-        # get needed rt quantities from LUT
-        r = self.get_shared_rtm_quantities(x_RT, geom)
+    def drdn_dRTb(self, x_RT, geom, rho_dir_dir, rho_dif_dir, Ls, rdn):
+        """Derivative of estimated rdn w.r.t. H2O_ABSCO
 
-        # atmospheric spherical albedo
-        s_alb = r["sphalb"]
-
-        # direct and diffuse downward radiance on the sun-to-surface path
-        # note: currently, L_down_dir comes scaled by the TOA solar zenith angle,
-        # thus, unscaling and rescaling by local solar zenith angle required
-        # to account for surface slope and aspect
-        L_down_tot, L_down_dir, L_down_dif = self.get_L_down_transmitted(x_RT, geom)
-        L_down_dir = L_down_dir / coszen * cos_i
-
-        # upward transmittance
-        t_total_up = r["transm_up_dir"] + r["transm_up_dif"]
-
-        # K surface reflectance
-        drho_scaled_for_multiscattering_drfl = 1.0 / (1.0 - s_alb * rho_dir_dir) ** 2
-
-        if type(t_total_up) != np.ndarray or len(t_total_up) == 1:
-            drdn_drfl = L_down_tot * drho_scaled_for_multiscattering_drfl
-        else:
-            drdn_drfl = (
-                (L_down_dir + L_down_dif)
-                * drho_scaled_for_multiscattering_drfl
-                * t_total_up
-            )
-
-        drdn_dLs = t_total_up
-
-        K_surface = (
-            drdn_drfl[:, np.newaxis] * drfl_dsurface
-            + drdn_dLs[:, np.newaxis] * dLs_dsurface
-        )
-
-        if self.glint_model:
-            # K glint
-            drdn_dgdd = (
-                L_down_dir
-                * (r["transm_up_dir"] + r["transm_up_dif"])
-                / (1.0 - s_alb * rho_dir_dir)
-            )
-            drdn_dgdsf = (
-                L_down_dif
-                * (r["transm_up_dir"] + r["transm_up_dif"])
-                / (1.0 - s_alb * rho_dif_dir)
-            )
-
-            K_surface[:, -2] = drdn_dgdd
-            K_surface[:, -1] = drdn_dgdsf
-
-        return K_RT, K_surface
-
-    def drdn_dRTb(self, x_RT, rho_dir_dir, rho_dif_dir, Ls, geom):
+        Currently, the K_b matrix only covers forward model derivatives
+        due to H2O_ABSCO unknowns, so that subsequent errors might occur
+        when water vapor is not part of the statevector
+        (which is very unlikely though).
+        """
         if len(self.bvec) == 0:
             Kb_RT = np.zeros((0, len(self.wl.shape)))
-        # currently, the K_b matrix only covers forward model derivatives due to H2O_ABSCO unknowns,
-        # so that subsequent errors might occur when water vapor is not part of the state
-        # vector (which is very unlikely though). the following statement captures this case,
-        # but might need to be modified as soon as we add more unknowns
+
         # ToDo: might require modification in case more unknowns are added
+        # The following statement captures the case that H2O is not part
+        # of the statevector.
+        # but might need to be modified as soon as we add more unknowns
         elif len(self.bvec) > 0 and "H2OSTR" not in self.statevec_names:
             Kb_RT = np.zeros((1, len(self.wl)))
         else:
-            # first the radiance at the current state vector
-            rdn = self.calc_rdn(x_RT, rho_dir_dir, rho_dif_dir, Ls, geom)
-
             # unknown parameters modeled as random variables per
             # Rodgers et al (2000) K_b matrix.  We calculate these derivatives
             # by finite differences
@@ -513,35 +514,34 @@ class RadiativeTransfer:
                     i = self.statevec_names.index("H2OSTR")
                     x_RT_perturb = x_RT.copy()
                     x_RT_perturb[i] = x_RT[i] * perturb
+                    (
+                        r,
+                        L_tot,
+                        L_down_dir,
+                        L_down_dif,
+                        L_dir_dir,
+                        L_dif_dir,
+                        L_dir_dif,
+                        L_dif_dif,
+                    ) = self.calc_RT_quantities(x_RT_perturb, geom)
+
                     rdne = self.calc_rdn(
-                        x_RT_perturb, rho_dir_dir, rho_dif_dir, Ls, geom
+                        x_RT_perturb,
+                        rho_dir_dir,
+                        rho_dif_dir,
+                        Ls,
+                        L_tot,
+                        L_dir_dir,
+                        L_dif_dir,
+                        L_dir_dif,
+                        L_dif_dif,
+                        r,
+                        geom,
                     )
                     Kb_RT.append((rdne - rdn) / eps)
 
         Kb_RT = np.array(Kb_RT).T
         return Kb_RT
-
-    @staticmethod
-    def fresnel_rf(vza):
-        """Calculates reflectance factor of sky radiance based on the
-        Fresnel equation for unpolarized light as a function of view zenith angle (vza).
-        """
-        if vza > 0.0:
-            n_w = 1.33  # refractive index of water
-            theta = np.deg2rad(vza)
-
-            # calculate angle of refraction using Snell′s law
-            theta_i = np.arcsin(np.sin(theta) / n_w)
-
-            # reflectance factor of sky radiance based on the Fresnel equation for unpolarized light
-            rho_ls = 0.5 * np.abs(
-                ((np.sin(theta - theta_i) ** 2) / (np.sin(theta + theta_i) ** 2))
-                + ((np.tan(theta - theta_i) ** 2) / (np.tan(theta + theta_i) ** 2))
-            )
-        else:
-            rho_ls = 0.02  # the reflectance factor converges to 0.02 for view angles equal to 0.0°
-
-        return rho_ls
 
     def summarize(self, x_RT, geom):
         ret = []
