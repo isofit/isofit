@@ -328,8 +328,10 @@ def invert_analytical(
             trajectory[n + 1, :] = [fill_value] * len(x)
             if isinstance(e, np.linalg.LinAlgError):
                 EXIT_CODE = -15
+                continue
             elif isinstance(e, ValueError):
                 EXIT_CODE = -11
+                continue
 
         # Prior mean
         xa_full = fm.xa(x, geom)
