@@ -49,11 +49,7 @@ class GlintModelSurface(MultiComponentSurface):
         self.glint_ind = len(self.statevec_names) - 2
         self.idx_surface = np.arange(len(self.statevec_names))
 
-        # To accomodate for the fact that we don't analytically solve
-        # for the diffuse glint term used in the analytical line
-        # self.analytical_interp_names = ["SKY_GLINT"]
-        self.analytical_interp_names = []
-        # self.analytical_iv_idx = np.arange(len(self.statevec_names))[:-1]
+        # Change this if you don't want to analytical solve for all the full statevector elements.
         self.analytical_iv_idx = np.arange(len(self.statevec_names))
 
         self.f = np.array(
@@ -82,14 +78,17 @@ class GlintModelSurface(MultiComponentSurface):
 
     def fit_params(self, rfl_meas, geom, *args):
         """Given a reflectance estimate and one or more emissive parameters,
-        fit a state vector."""
+        fit a state vector.
+        """
         # Estimate reflectance, assuming all signal around 1020 nm == glint
         glint_band = np.argmin(abs(1020 - self.wl))
         glint_est = np.mean(rfl_meas[(glint_band - 2) : glint_band + 2])
+
+        # Stealing the bounds for this from additive_glint_model
         bounds_glint_est = [
             0,
             0.2,
-        ]  # Stealing the bounds for this from additive_glint_model
+        ]
         glint_est = max(
             bounds_glint_est[0] + eps,
             min(bounds_glint_est[1] - eps, glint_est),
@@ -98,9 +97,9 @@ class GlintModelSurface(MultiComponentSurface):
         x = MultiComponentSurface.fit_params(self, lamb_est, geom)  # Bounds reflectance
 
         # Get estimate for g_dd and g_dsf parameters, given signal at 900 nm
-        g_dsf_est = (
-            0.01  # Set to a static number; don't need to apply bounds because static
-        )
+        # Set to a static number; don't need to apply bounds because static
+        g_dsf_est = 0.01
+
         # Use nadir fresnel coeffs (0.02) and t_down_dir = 0.83, t_down_diff = 0.14 for initialization
         # Transmission values taken from MODTRAN sim with AERFRAC_2 = 0.5, H2OSTR = 0.5
         g_dd_est = ((glint_est * 0.97 / 0.02) - 0.14 * g_dsf_est) / 0.83
@@ -108,12 +107,34 @@ class GlintModelSurface(MultiComponentSurface):
             self.bounds[self.glint_ind][0] + eps,
             min(self.bounds[self.glint_ind][1] - eps, g_dd_est),
         )
-        x[self.glint_ind] = g_dd_est  # SUN_GLINT g_dd
-        x[self.glint_ind + 1] = g_dsf_est  # SKY_GLINT g_dsf
+
+        # SUN_GLINT g_dd
+        x[self.glint_ind] = g_dd_est
+        # SKY_GLINT g_dsf
+        x[self.glint_ind + 1] = g_dsf_est
         return x
 
     def calc_rfl(self, x_surface, geom):
-        """Direct and diffuse Reflectance (includes sun and sky glint)."""
+        """Direct and diffuse Reflectance (includes sun and sky glint).
+
+        Inputs:
+        x_surface : np.ndarray
+            Surface portion of the statevector element
+        geom : Geometry
+            Isofit geometry object
+
+        Outputs:
+        rho_dir_dir : np.ndarray
+            Reflectance quantity for downward direct photon paths
+        rho_dif_dir : np.ndarray
+            Reflectance quantity for downward diffuse photon paths
+
+        NOTE:
+            Here, we treat direct and diffuse photon path reflectance
+            differently. The sun and sky glint magnitudes are statevector
+            elements that interact with the two reflectance quantities
+            independently.
+        """
         # fresnel reflectance factor (approx. 0.02 for nadir view)
         rho_ls = self.fresnel_rf(geom.observer_zenith)
 
@@ -128,12 +149,8 @@ class GlintModelSurface(MultiComponentSurface):
     def drfl_dsurface(self, x_surface, geom):
         """Partial derivative of reflectance with respect to state vector,
         calculated at x_surface.
+        """
 
-        We have found that this arrangement provides the most stable results.
-        However, we need to double check the math. This implementation
-        reflects a need to apply the chain rule to construct the full derivative
-        where the dependence of Rho_dif on alpha_dif (and g_dif) has to be
-        incorporated. Discuss."""
         drfl = self.dlamb_dsurface(x_surface, geom)
 
         rho_ls = self.fresnel_rf(geom.observer_zenith)

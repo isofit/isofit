@@ -30,12 +30,7 @@ from scipy.optimize import least_squares
 from isofit.core.common import combos, conditional_gaussian, eps, svd_inv, svd_inv_sqrt
 from isofit.inversion.inverse_simple import invert_simple
 
-### Variables ###
-
 error_code = -1
-
-
-### Classes ###
 
 
 class Inversion:

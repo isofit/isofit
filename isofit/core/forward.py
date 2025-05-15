@@ -108,8 +108,7 @@ class ForwardModel:
 
         # Set up indices for references - MUST MATCH ORDER FROM ABOVE ASSIGNMENT
         self.idx_surface = self.surface.idx_surface
-        # Sometimes, it's convenient to have the index of the entire surface
-        # as one variable, and sometimes you want the sub-components
+
         # Split surface state vector indices to cover cases where we retrieve
         # additional non-reflectance surface parameters
         self.idx_surf_rfl = self.idx_surface[
@@ -283,16 +282,6 @@ class ForwardModel:
             L_dif_dif,
         ) = self.RT.calc_RT_quantities(x_RT, geom)
 
-        # Get Surface quantities and sample them at RT wavelengths
-        """NOTE: Due to current limitations in the scope of RT vs.
-        surface, we have to fix the apparent surface reflectance
-        before calculating the numerical derivative w.r.t the atmosphere.
-        This is an issue for surface terms that are coupled with the atmopshere.
-        For example the shapes of the glint effects (g_dir and g_dif) are dependent
-        on L_dir / L_tot and L_dif / L_tot respectively, and should vary w/in dRT.
-        The current implementation assumes a constant apparent reflectance,
-        and therefore constant surface-atmosphere coupled terms (e.g. g_dir and g_dif).
-        """
         # Call surface reflectance w.r.t. surface, upsample
         rho_dir_dir, rho_dif_dir = self.calc_rfl(x_surface, geom)
         rho_dir_dir_hi = self.upsample(self.surface.wl, rho_dir_dir)

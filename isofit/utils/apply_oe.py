@@ -244,13 +244,6 @@ def apply_oe(
         # This is the MODTRAN case. Do we want to enable the 4c mode by default?
         multipart_transmittance = True
 
-    # ray.init(
-    #     num_cpus=n_cores,
-    #     _temp_dir=ray_temp_dir,
-    #     include_dashboard=False,
-    #     local_mode=n_cores == 1,
-    # )
-
     if sensor not in SUPPORTED_SENSORS:
         if sensor[:3] != "NA-":
             errstr = (
