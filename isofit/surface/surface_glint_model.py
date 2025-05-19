@@ -56,8 +56,7 @@ class GlintModelSurface(MultiComponentSurface):
             [[(1000000 * np.array(self.scale[self.glint_ind :])) ** 2]]
         )  # Prior covariance, *very* high...
 
-        if "full_glint" in (full := full_config.forward_model.surface.__dict__.keys()):
-            self.full_glint = full
+        self.full_glint = full_config.forward_model.surface.full_glint
 
     def xa(self, x_surface, geom):
         """Mean of prior distribution, calculated at state x."""
