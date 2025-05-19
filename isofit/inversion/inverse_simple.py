@@ -110,7 +110,7 @@ def heuristic_atmosphere(
                     (rhi["transm_down_dir"] + rhi["transm_down_dif"])
                     * (rhi["transm_up_dir"] + rhi["transm_up_dif"])
                 ),
-            )  # REVIEW: This was changed from transm as we're deprecating the key
+            )
             sphalb = instrument.sample(x_instrument, RT.wl, rhi["sphalb"])
             solar_irr = instrument.sample(x_instrument, RT.wl, RT.solar_irr)
 
@@ -255,13 +255,11 @@ def invert_analytical(
 
     EXIT_CODE = 0
 
-    # x = x0.copy()
-    # x_surface, x_RT, x_instrument = fm.unpack(x)
     # Note, this will fail if x_instrument is populated
     if len(fm.idx_instrument) > 0:
         raise AttributeError(
-            "Invert analytical not currently set to handle instrument state variable"
-            " indexing"
+            "Invert analytical not currently set to "
+            "handle instrument state variable indexing"
         )
 
     x = x0.copy()
@@ -272,18 +270,19 @@ def invert_analytical(
         fm.RT.calc_RT_quantities(x_RT, geom)
     )
 
-    # Pass some important variables
+    # Path radiance and spherical albedo
     L_atm = fm.RT.get_L_atm(x_RT, geom)
     s = r["sphalb"]
 
-    # Get all the surface quantities
+    # Get all the surface quantities for the super pixel
     sub_surface, sub_RT, sub_instrument = fm.unpack(sub_state)
 
+    # Surface reflectance at the wl resolution of fm.RT
     rho_dir_dir, rho_dif_dir = fm.calc_rfl(sub_surface, geom)
     rho_dir_dir = fm.upsample(fm.surface.wl, rho_dir_dir)
     rho_dif_dir = fm.upsample(fm.surface.wl, rho_dif_dir)
 
-    # background conditions
+    # Background conditions equal to the superpixel reflectance
     bg = s * rho_dif_dir
 
     # Special case: 1-component model
@@ -296,6 +295,21 @@ def invert_analytical(
     outside_ret_windows[full_idx] = False
     outside_ret_windows = np.where(outside_ret_windows)[0]
     iv_idx = fm.surface.analytical_iv_idx
+
+    # The H matrix does not change as a function of x-vector
+    H = fm.surface.analytical_model(
+        bg,
+        L_down_dir,
+        L_down_dif,
+        L_tot,
+        geom,
+        L_dir_dir=L_dir_dir,
+        L_dir_dif=L_dir_dif,
+        L_dif_dir=L_dif_dir,
+        L_dif_dif=L_dif_dif,
+    )
+    # Sample just the wavelengths and states of interest
+    L = H[winidx, :][:, iv_idx]
 
     trajectory = np.zeros((num_iter + 1, len(x)))
     trajectory[0, :] = x
@@ -314,8 +328,10 @@ def invert_analytical(
             trajectory[n + 1, :] = [fill_value] * len(x)
             if isinstance(e, np.linalg.LinAlgError):
                 EXIT_CODE = -15
+                continue
             elif isinstance(e, ValueError):
                 EXIT_CODE = -11
+                continue
 
         # Prior mean
         xa_full = fm.xa(x, geom)
@@ -325,20 +341,6 @@ def invert_analytical(
         prprod = Sa_inv @ xa_surface
 
         x_surface, x_RT, x_instrument = fm.unpack(x)
-
-        H = fm.surface.analytical_model(
-            bg,
-            L_down_dir,
-            L_down_dif,
-            L_tot,
-            geom,
-            L_dir_dir=L_dir_dir,
-            L_dir_dif=L_dir_dif,
-            L_dif_dir=L_dif_dir,
-            L_dif_dif=L_dif_dif,
-        )
-        # Just the wavelengths and states of interest
-        L = H[winidx, :][:, iv_idx]
 
         C = dpotrf(Seps, 1)[0]
         P = dpotri(C, 1)[0]
@@ -363,15 +365,6 @@ def invert_analytical(
 
         x[fm.idx_surface] = x_surface
         trajectory[n + 1, :] = x
-
-    # TODO
-    """
-    Not currently implemented cleanly if we want to propogate
-    the entire glint spectrum. Need to clean up implementation.
-    """
-    # if fm.RT.glint_model and fm.surface.return_glint_spectrum:
-    #     trajectory.append(trajectory[-1][-2] * g_dir)
-    #     trajectory.append(trajectory[-1][-1] * g_dif)
 
     if diag_uncert:
         if len(C_rcond):

@@ -86,10 +86,7 @@ class MultiComponentSurface(Surface):
         self.statevec_names = ["RFL_%04i" % int(w) for w in self.wl]
         self.idx_surface = np.arange(len(self.statevec_names))
 
-        # To accomodate for the fact that we don't
-        # analytically solve for the diffuse glint term
-        # Used in the analytical line
-        self.analytical_interp_names = []
+        # Change this if you don't want to analytical solve for all the full statevector elements.
         self.analytical_iv_idx = np.arange(len(self.statevec_names))
 
         self.bounds = [[rmin, rmax] for w in self.wl]
@@ -200,13 +197,29 @@ class MultiComponentSurface(Surface):
         return x_surface
 
     def calc_rfl(self, x_surface, geom):
-        """Non-Lambertian reflectance."""
+        """Non-Lambertian reflectance.
 
-        # ToDo: Future use of calc_rfl() is to return a direct and diffuse surface reflectance quantity.
-        #  As long as this is not implemented, return the same reflectance vector for both.
-        rfl = self.calc_lamb(x_surface, geom)
+        Inputs:
+        x_surface : np.ndarray
+            Surface portion of the statevector element
+        geom : Geometry
+            Isofit geometry object
 
-        return rfl, rfl
+        Outputs:
+        rho_dir_dir : np.ndarray
+            Reflectance quantity for downward direct photon paths
+        rho_dif_dir : np.ndarray
+            Reflectance quantity for downward diffuse photon paths
+
+        NOTE:
+            We do not handle direct and diffuse photon path reflectance
+            quantities differently for the multicomponent surface model.
+            This is why we return the same quantity for both outputs.
+        """
+
+        rho_dir_dir = rho_dif_dir = self.calc_lamb(x_surface, geom)
+
+        return rho_dir_dir, rho_dif_dir
 
     def calc_lamb(self, x_surface, geom):
         """Lambertian reflectance."""
