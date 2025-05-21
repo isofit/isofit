@@ -132,7 +132,7 @@ def validate(path=None, debug=print, error=print, **_):
         )
         return False
 
-    debug("[✓] Path is valid")
+    debug("[OK] Path is valid")
     return True
 
 
