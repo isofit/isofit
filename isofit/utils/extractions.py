@@ -151,8 +151,7 @@ def extractions(
     meta = in_img.metadata
 
     nl, nb, ns = [int(meta[n]) for n in ("lines", "bands", "samples")]
-    img_mm = in_img.open_memmap(interleave="bip", writable=False)
-    del in_img, img_mm
+    del in_img
 
     lbl_img = envi.open(envi_header(lbl_file), lbl_file)
     labels = lbl_img.read_band(0)
