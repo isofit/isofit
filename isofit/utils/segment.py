@@ -191,6 +191,7 @@ def segment(
     # Open input data, get dimensions
     in_img = envi.open(envi_header(in_file), in_file)
     meta = in_img.metadata
+    del in_img
     nl, nb, ns = [int(meta[n]) for n in ("lines", "bands", "samples")]
 
     # Start up a ray instance for parallel work
