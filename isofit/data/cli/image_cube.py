@@ -105,7 +105,7 @@ def validate(path=None, size="both", debug=print, error=print, **_):
             error(f"[x] Missing file: {file}")
             return False
 
-    debug("[✓] Path is valid")
+    debug("[OK] Path is valid")
     return True
 
 
