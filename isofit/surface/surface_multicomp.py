@@ -60,6 +60,16 @@ class MultiComponentSurface(Surface):
             self.norm = lambda r: np.sqrt(np.mean(pow(r, 2)))
         elif self.normalize == "None":
             self.norm = lambda r: 1.0
+        elif self.normalize == "Euclidean-window":
+            self.component_win_idx = model_dict["component_window_idx"]
+
+            def norm_func_window(r, comp_ind):
+                z = np.ones(len(r))
+                for win in self.component_win_idx[comp_ind]:
+                    z[win[0] : win[1]] = norm(r[win[0] : win[1]])
+                return z
+
+            self.norm = lambda r, comp_ind: norm_func_window(r, comp_ind)
         else:
             raise ValueError("Unrecognized Normalization: %s\n" % self.normalize)
 
