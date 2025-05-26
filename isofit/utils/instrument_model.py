@@ -22,7 +22,7 @@ from os.path import abspath, split
 
 import numpy as np
 import scipy
-from scipy.ndimage.filters import gaussian_filter1d
+from scipy.ndimage import gaussian_filter1d
 from spectral.io import envi
 
 from isofit.core.common import envi_header, expand_path, json_load_ascii
