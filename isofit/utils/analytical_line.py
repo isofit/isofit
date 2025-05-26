@@ -163,7 +163,7 @@ def analytical_line(
     img = envi.create_image(
         envi_header(analytical_rfl_file), ext="", metadata=output_metadata, force=True
     )
-    del img
+    del img, rdn_ds
 
     img = envi.create_image(
         envi_header(analytical_rfl_unc_file),
@@ -507,6 +507,7 @@ class Worker(object):
                     r,
                     (rdn.shape[0], rdn.shape[1], len(self.fm.idx_surf_nonrfl)),
                 )
+        del rdn, loc, obs, lbl
 
 
 @click.command(name="analytical_line")
