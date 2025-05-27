@@ -273,8 +273,8 @@ def findSlice(dim, val):
     b = np.searchsorted(dim * orientation, val * orientation)
 
     # Handle edge cases when val equals first or last lut dim value
-    if val == dim[0] or val == dim[-1]:
-        return slice(b, b + 1)
+    if val <= dim[0]:
+        return slice(b, b + 2)
 
     else:
         return slice(b - 1, b + 1)
@@ -297,6 +297,20 @@ def optimizedInterp(ds, strat):
     """
     for key, val in strat.items():
         dim = ds[key]
+
+        if val <= dim[0]:
+            Logger.warning(
+                f"Scene value for key: {key} of {round(val, 2)} "
+                f"is less or equal to minimum LUT value {np.round(dim[0].data, 2)}. "
+                "Solutions will use value interpolated to minimum LUT value"
+            )
+
+        elif val >= dim[-1]:
+            Logger.warning(
+                f"Scene value for key: {key} of {round(val, 2)} "
+                f"is greater or equal to maximum LUT value {np.round(dim[-1].data, 2)}. "
+                "Solutions will use value interpolated to maximum LUT value"
+            )
 
         if isinstance(val, list):
             a = findSlice(dim, val[0])
