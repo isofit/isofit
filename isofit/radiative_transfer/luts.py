@@ -310,8 +310,10 @@ def optimizedInterp(ds, strat):
         else:
             sel = findSlice(dim, val)
 
+        Logger.debug(f"- Subselecting {key}[{sel.start}:{sel.stop}]")
         ds = ds.isel({key: sel})
 
+    Logger.debug("Calling .interp")
     return ds.interp(**strat)
 
 
