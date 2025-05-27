@@ -271,9 +271,13 @@ def findSlice(dim, val):
 
     # Subselect the two points encompassing this interp point
     b = np.searchsorted(dim * orientation, val * orientation)
-    a = b - 1
 
-    return slice(a, b + 1)
+    # Handle edge cases when val equals first or last lut dim value
+    if val == dim[0] or val == dim[-1]:
+        return slice(b, b + 1)
+
+    else:
+        return slice(b - 1, b + 1)
 
 
 def optimizedInterp(ds, strat):
@@ -306,10 +310,8 @@ def optimizedInterp(ds, strat):
         else:
             sel = findSlice(dim, val)
 
-        Logger.debug(f"- Subselecting {key}[{sel.start}:{sel.stop}]")
         ds = ds.isel({key: sel})
 
-    Logger.debug("Calling .interp")
     return ds.interp(**strat)
 
 
