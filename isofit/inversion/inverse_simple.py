@@ -172,14 +172,23 @@ def invert_algebraic(
     rhi = RT.get_shared_rtm_quantities(x_RT, geom)
     wl, fwhm = instrument.calibration(x_instrument)
     rhoatm = instrument.sample(x_instrument, RT.wl, rhi["rhoatm"])
+
+    # Total transmittance
     transm = instrument.sample(
-        x_instrument, RT.wl, rhi["transm_down_dir"] + rhi["transm_down_dif"]
-    )  # REVIEW: Changed from transm
+        x_instrument,
+        RT.wl,
+        (
+            (rhi["transm_down_dir"] + rhi["transm_down_dif"])
+            * (rhi["transm_up_dir"] + rhi["transm_up_dif"])
+        ),
+    )
     solar_irr = instrument.sample(x_instrument, RT.wl, RT.solar_irr)
     sphalb = instrument.sample(x_instrument, RT.wl, rhi["sphalb"])
+
+    # Upward transmittance
     transup = instrument.sample(
-        x_instrument, RT.wl, rhi["transm_up_dir"]
-    )  # REVIEW: Changed from transup
+        x_instrument, RT.wl, rhi["transm_up_dir"] + rhi["transm_up_dif"]
+    )
 
     # Figure out which RT object we are using
     # TODO: this is currently very specific to vswir-tir 2-mode, eventually generalize

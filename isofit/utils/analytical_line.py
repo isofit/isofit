@@ -70,6 +70,10 @@ def construct_output(output_metadata, outpath, out_shape, **kwargs):
     """
     Construct output file by updating metadata and creating object
     """
+    if kwargs.get("band_names"):
+        band_names = kwargs.pop("band_names")
+        output_metadata["band names"] = band_names
+
     for key, value in kwargs.items():
         output_metadata[key] = value
 
@@ -532,6 +536,7 @@ class Worker(object):
             # SIMPLE uses invert_simple for rfl and non_rfl surface elements
             if self.initializer == "superpixel":
                 x0 = sub_state
+                x0[self.fm.idx_RT] = x_RT
 
             elif self.initializer == "algebraic":
                 x_surface, _, x_instrument = self.fm.unpack(self.fm.init.copy())
@@ -545,6 +550,14 @@ class Worker(object):
                     meas,
                     geom,
                 )
+
+                rfl_est = self.fm.surface.fit_params(rfl_est, geom)[
+                    self.fm.idx_surf_rfl
+                ]
+
+                if rfl_est[0] < 0:
+                    rfl_est = sub_state[iv.fm.idx_surf_rfl]
+
                 x0 = np.concatenate(
                     [
                         rfl_est,
@@ -645,13 +658,13 @@ class Worker(object):
 
         if self.non_rfl_outpath:
             write_bil_chunk(
-                output_non_rfl.T,
+                np.swapaxes(output_non_rfl, 1, 2),
                 self.non_rfl_outpath,
                 start_line,
                 (self.n_lines, self.n_non_rfl_bands, self.n_samples),
             )
             write_bil_chunk(
-                output_non_rfl_unc.T,
+                np.swapaxes(output_non_rfl_unc, 1, 2),
                 self.non_rfl_unc_outpath,
                 start_line,
                 (self.n_lines, self.n_non_rfl_bands, self.n_samples),
