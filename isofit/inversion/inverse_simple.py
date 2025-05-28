@@ -160,6 +160,7 @@ def invert_algebraic(
         meas: a one-D numpy vector of radiance in uW/nm/sr/cm2
         geom: geometry object corresponding to given measurement
 
+
     Return:
         rfl_est: estimate of the surface reflectance based on the given surface model and specified atmospheric state
         Ls: estimate of the emitted surface leaving radiance
@@ -177,7 +178,7 @@ def invert_algebraic(
     solar_irr = instrument.sample(x_instrument, RT.wl, RT.solar_irr)
     sphalb = instrument.sample(x_instrument, RT.wl, rhi["sphalb"])
     transup = instrument.sample(
-        x_instrument, RT.wl, rhi["transm_up_dir"]
+        x_instrument, RT.wl, rhi["transm_up_dir"] + rhi["transm_up_dir"]
     )  # REVIEW: Changed from transup
 
     # Figure out which RT object we are using
