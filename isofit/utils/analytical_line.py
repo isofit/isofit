@@ -556,7 +556,7 @@ class Worker(object):
                 ]
 
                 if rfl_est[0] < 0:
-                    rfl_est = sub_state[iv.fm.idx_surf_rfl]
+                    rfl_est = sub_state[self.fm.idx_surf_rfl]
 
                 x0 = np.concatenate(
                     [
