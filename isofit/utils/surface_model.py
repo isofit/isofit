@@ -401,8 +401,9 @@ def surface_model(
 
             else:
                 raise ValueError("Unrecognized normalization: %s\n" % normalize)
+            z[z < 1] = 1
             m = m / z
-            C = C / (z**2)
+            C = C / (np.sum(z)**2)
 
             try:
                 Cinv = svd_inv(C)

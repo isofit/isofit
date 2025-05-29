@@ -55,11 +55,11 @@ class MultiComponentSurface(Surface):
         # Set up normalization method
         self.normalize = self.model_dict["normalize"]
         if self.normalize == "Euclidean":
-            self.norm = lambda r: norm(r)
+            self.norm = lambda r, geom: norm(r)
         elif self.normalize == "RMS":
-            self.norm = lambda r: np.sqrt(np.mean(pow(r, 2)))
+            self.norm = lambda r, geom: np.sqrt(np.mean(pow(r, 2)))
         elif self.normalize == "None":
-            self.norm = lambda r: 1.0
+            self.norm = lambda r, geom: 1.0
         elif self.normalize == "Euclidean-window":
             self.component_win_idx = model_dict["component_window_idx"]
 
@@ -69,7 +69,7 @@ class MultiComponentSurface(Surface):
                     z[win[0] : win[1]] = norm(r[win[0] : win[1]])
                 return z
 
-            self.norm = lambda r, comp_ind: norm_func_window(r, comp_ind)
+            self.norm = lambda r, geom: norm_func_window(r, geom.surf_cmp_init)
         else:
             raise ValueError("Unrecognized Normalization: %s\n" % self.normalize)
 
@@ -146,7 +146,7 @@ class MultiComponentSurface(Surface):
         # Get the (possibly normalized) reflectance
         lamb = self.calc_lamb(x_surface, geom)
         lamb_ref = lamb[self.idx_ref]
-        lamb_ref = lamb_ref / self.norm(lamb_ref)
+        lamb_ref = lamb_ref / self.norm(lamb_ref, geom)
 
         # Only support euclidean distance comparrison for now
         if self.selection_metric == "SGA":
@@ -183,7 +183,7 @@ class MultiComponentSurface(Surface):
         mu = np.zeros(self.n_state)
         ci = self.component(x_surface, geom)
         lamb_mu = self.component_means[ci]
-        lamb_mu = lamb_mu * self.norm(lamb_ref)
+        lamb_mu = lamb_mu * self.norm(lamb_ref, geom)
         mu[self.idx_lamb] = lamb_mu
 
         return mu
@@ -197,7 +197,7 @@ class MultiComponentSurface(Surface):
         lamb_ref = lamb[self.idx_ref]
         ci = self.component(x_surface, geom)
         Cov = self.component_covs[ci]
-        Sa_unnormalized = Cov * (self.norm(lamb_ref) ** 2)
+        Sa_unnormalized = Cov * (self.norm(lamb_ref, geom) ** 2)
 
         # select the Sa inverse from the list of components
         Sa_inv_normalized = self.Sa_inv_normalized[ci]
