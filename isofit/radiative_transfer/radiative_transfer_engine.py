@@ -535,6 +535,7 @@ class RadiativeTransferEngine:
 
         # Reload the LUT now that it's populated
         self.lut = luts.load(self.lut_path)
+        self.lut["RT_mode"] = "rdn" # this is bad - DON"T LET THIS INTO THE MAIN REPO.  Stopgap only
 
     def summarize(self, x_RT, *_):
         """
