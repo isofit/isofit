@@ -222,7 +222,10 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         data = luts.load(self.predict_path, mode="r").sel(point=tuple(point)).load()
         return {
             key: resample_spectrum(
-                values.data * self.emulator_sol_irr, self.emu_wl, self.wl, self.fwhm
+                values.data * (1.0 if key == "sphalb" else self.emulator_sol_irr),
+                self.emu_wl,
+                self.wl,
+                self.fwhm,
             )
             for key, values in data.items()
             if values.data.dtype != "int64"
