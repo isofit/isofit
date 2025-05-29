@@ -244,6 +244,13 @@ def apply_oe(
         # This is the MODTRAN case. Do we want to enable the 4c mode by default?
         multipart_transmittance = True
 
+    # ray.init(
+    #     num_cpus=n_cores,
+    #     _temp_dir=ray_temp_dir,
+    #     include_dashboard=False,
+    #     local_mode=n_cores == 1,
+    # )
+
     if sensor not in SUPPORTED_SENSORS:
         if sensor[:3] != "NA-":
             errstr = (
@@ -260,9 +267,6 @@ def apply_oe(
             raise ValueError(
                 "If num_neighbors has multiple elements, only --analytical_line is valid"
             )
-
-    if os.path.isdir(working_directory) is False:
-        os.mkdir(working_directory)
 
     logging.basicConfig(
         format="%(levelname)s:%(asctime)s || %(filename)s:%(funcName)s() | %(message)s",
@@ -329,9 +333,6 @@ def apply_oe(
         # parse flightline ID (AVIRIS-3 assumptions)
         dt = datetime.strptime(paths.fid[3:], "%Y%m%dt%H%M%S")
         INVERSION_WINDOWS = [[380.0, 1350.0], [1435, 1800.0], [1970.0, 2500.0]]
-    elif sensor == "av5":
-        # parse flightline ID (AVIRIS-5 assumptions)
-        dt = datetime.strptime(paths.fid[3:], "%Y%m%dt%H%M%S")
     elif sensor == "avcl":
         # parse flightline ID (AVIRIS-Classic assumptions)
         dt = datetime.strptime("20{}t000000".format(paths.fid[1:7]), "%Y%m%dt%H%M%S")
@@ -604,7 +605,7 @@ def apply_oe(
             paths.h2o_subs_path
         ):
             # Write the presolve connfiguration file
-            h2o_grid = np.linspace(0.01, max_water - 0.01, 10).round(2)
+            h2o_grid = np.linspace(0.2, max_water - 0.01, 10).round(2)
             logging.info(f"Pre-solve H2O grid: {h2o_grid}")
             logging.info("Writing H2O pre-solve configuration file.")
             tmpl.build_presolve_config(
