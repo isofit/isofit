@@ -237,17 +237,19 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         """
         # Update engine to run in RDN mode
         self.rt_mode = "rdn"
-        #self.lut["RT_mode"] = "rdn"
+        # self.lut["RT_mode"] = "rdn"
 
     def get_L_atm(self, x_RT, geom):
         r = self.get(x_RT, geom)
         rho = r["rhoatm"]
-        rdn = rho / np.pi * (self.solar_irr * self.coszen)
+        # rdn = rho / np.pi * (self.solar_irr * self.coszen)
+        rdn = rho / np.pi * self.coszen
         return rdn
 
     def get_L_down_transmitted(self, x_RT, geom):
         r = self.get(x_RT, geom)
-        rdn = (self.solar_irr * self.coszen) / np.pi * r["transm"]
+        # rdn = (self.solar_irr * self.coszen) / np.pi * r["transm"]
+        rdn = r["transm"] * self.coszen / np.pi
         return rdn
 
 
