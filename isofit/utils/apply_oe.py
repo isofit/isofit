@@ -244,13 +244,6 @@ def apply_oe(
         # This is the MODTRAN case. Do we want to enable the 4c mode by default?
         multipart_transmittance = True
 
-    # ray.init(
-    #     num_cpus=n_cores,
-    #     _temp_dir=ray_temp_dir,
-    #     include_dashboard=False,
-    #     local_mode=n_cores == 1,
-    # )
-
     if sensor not in SUPPORTED_SENSORS:
         if sensor[:3] != "NA-":
             errstr = (
@@ -611,7 +604,7 @@ def apply_oe(
             paths.h2o_subs_path
         ):
             # Write the presolve connfiguration file
-            h2o_grid = np.linspace(0.01, max_water - 0.01, 10).round(2)
+            h2o_grid = np.linspace(0.2, max_water - 0.01, 10).round(2)
             logging.info(f"Pre-solve H2O grid: {h2o_grid}")
             logging.info("Writing H2O pre-solve configuration file.")
             tmpl.build_presolve_config(

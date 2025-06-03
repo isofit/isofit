@@ -127,15 +127,6 @@ def analytical_line(
     fm = ForwardModel(config)
     iv = Inversion(config, fm)
 
-    # TODO
-    """For now, this is the safest way to handle the
-    special case of the SKY_GLINT term. For the analytical line
-    algo, the SKY_GLINT term will be treated as an RT term.
-
-    Longer term fix should be to change how the indexes are tracked.
-    """
-    atm_band_names = fm.surface.analytical_interp_names + fm.RT.statevec_names
-
     if os.path.isfile(atm_file) is False:
         atm_interpolation(
             reference_state_file=subs_state_file,
@@ -143,7 +134,7 @@ def analytical_line(
             input_locations_file=loc_file,
             segmentation_file=lbl_file,
             output_atm_file=atm_file,
-            atm_band_names=atm_band_names,
+            atm_band_names=fm.RT.statevec_names,
             nneighbors=n_atm_neighbors,
             gaussian_smoothing_sigma=smoothing_sigma,
             n_cores=n_cores,
@@ -172,7 +163,7 @@ def analytical_line(
     img = envi.create_image(
         envi_header(analytical_rfl_file), ext="", metadata=output_metadata, force=True
     )
-    del img
+    del img, rdn_ds
 
     img = envi.create_image(
         envi_header(analytical_rfl_unc_file),
@@ -400,15 +391,9 @@ class Worker(object):
 
                 geom = Geometry(obs=obs[r, c, :], loc=loc[r, c, :], esd=esd)
 
-                # "Atmospheric" state ALWAYS comes from the atm_interpolated file
-                # Can also include sky glint for the glint model
-                # Currently use a manual flag set up in the worker.init
-                # If you only want to use a subset of atm bands.
-                # That case should never happen via applyOE
-                if len(self.atm_bands):
-                    x_RT = rt_state[r, c, self.atm_bands]
-                else:
-                    x_RT = rt_state[r, c, :]
+                # "Atmospheric" state ALWAYS comes from all bands in the
+                # atm_interpolated file
+                x_RT = rt_state[r, c, :]
 
                 iv_idx = self.fm.surface.analytical_iv_idx
                 sub_state = subs_state[int(lbl[r, c, 0]), 0, iv_idx]
@@ -522,6 +507,7 @@ class Worker(object):
                     r,
                     (rdn.shape[0], rdn.shape[1], len(self.fm.idx_surf_nonrfl)),
                 )
+        del rdn, loc, obs, lbl
 
 
 @click.command(name="analytical_line")
