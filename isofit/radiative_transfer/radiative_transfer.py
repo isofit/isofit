@@ -306,7 +306,7 @@ class RadiativeTransfer:
             else:
                 r = RT.get(x_RT, geom)
                 if RT.rt_mode == "rdn":
-                    L_atm = r["rhoatm"]
+                    L_atm = r["rhoatm"] * coszen / np.pi
                 else:
                     rho_atm = r["rhoatm"]
                     L_atm = self.rho_to_rdn(rho_atm, coszen)
@@ -339,8 +339,8 @@ class RadiativeTransfer:
             else:
                 r = RT.get(x_RT, geom)
                 if RT.rt_mode == "rdn":
-                    L_down_dir = r["transm_down_dir"]
-                    L_down_dif = r["transm_down_dif"]
+                    L_down_dir = r["transm_down_dir"] * coszen / np.pi
+                    L_down_dif = r["transm_down_dif"] * coszen / np.pi
                 else:
                     # Transform downward transmittance to radiance
                     L_down_dir = self.rho_to_rdn(r["transm_down_dir"], coszen)

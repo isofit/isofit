@@ -198,6 +198,8 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         irr_cur = sim.esd[sim.day_of_year - 1, 1]  # Factor for current date
         sol_irr = sol_irr * irr_ref**2 / irr_cur**2
 
+        self.emulator_sol_irr = sol_irr
+
         # Insert these into the LUT file
         return {
             "coszen": sim["coszen"],
@@ -219,20 +221,35 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         # REVIEW: Likely should chunk along the point dim to improve this
         data = luts.load(self.predict_path, mode="r").sel(point=tuple(point)).load()
         return {
-            key: resample_spectrum(values.data, self.emu_wl, self.wl, self.fwhm)
+            key: resample_spectrum(
+                values.data * (1.0 if key == "sphalb" else self.emulator_sol_irr),
+                self.emu_wl,
+                self.wl,
+                self.fwhm,
+            )
             for key, values in data.items()
             if values.data.dtype != "int64"
         }
 
+    def postSim(self):
+        """
+        Post-simulation adjustments for sRTMnet.
+        """
+        # Update engine to run in RDN mode
+        self.rt_mode = "rdn"
+        # self.lut["RT_mode"] = "rdn"
+
     def get_L_atm(self, x_RT, geom):
         r = self.get(x_RT, geom)
         rho = r["rhoatm"]
-        rdn = rho / np.pi * (self.solar_irr * self.coszen)
+        # rdn = rho / np.pi * (self.solar_irr * self.coszen)
+        rdn = rho / np.pi * self.coszen
         return rdn
 
     def get_L_down_transmitted(self, x_RT, geom):
         r = self.get(x_RT, geom)
-        rdn = (self.solar_irr * self.coszen) / np.pi * r["transm"]
+        # rdn = (self.solar_irr * self.coszen) / np.pi * r["transm"]
+        rdn = r["transm"] * self.coszen / np.pi
         return rdn
 
 
