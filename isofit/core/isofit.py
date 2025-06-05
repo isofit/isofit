@@ -230,22 +230,6 @@ class Worker(object):
         self.worker_id = worker_id
         self.completed_spectra = 0
 
-    def log_worker(self, index):
-        if index % 100 == 0:
-            if (
-                self.worker_id is not None
-                and self.approximate_total_spectra is not None
-            ):
-                percent = np.round(
-                    self.completed_spectra / self.approximate_total_spectra * 100,
-                    2,
-                )
-                logging.info(
-                    f"Worker {self.worker_id} completed"
-                    f" {self.completed_spectra}/~{self.approximate_total_spectra}::"
-                    f" {percent}% complete"
-                )
-
     def run_set_of_spectra(self, indices: np.array):
         for index in range(0, indices.shape[0]):
             logging.debug("Read chunk of spectra")
@@ -266,14 +250,6 @@ class Worker(object):
                     )
                     input_data.meas = interp(self.io.meas_wl)
 
-                # Make sure the measurement contains data
-                if not np.sum(input_data.meas):
-                    logging.warning(
-                        f"Measurement at ({row},{col}) contains all zeros. Skipping."
-                    )
-                    self.log_worker(index)
-                    continue
-
                 logging.debug("Run model")
                 # The inversion returns a list of states, which are
                 # intepreted either as samples from the posterior (MCMC case)
@@ -285,6 +261,7 @@ class Worker(object):
                 # Write the spectra to disk
                 try:
                     self.io.write_spectrum(row, col, states, self.fm, self.iv)
+
                 except ValueError as err:
                     logging.exception(
                         f"""
@@ -292,7 +269,23 @@ class Worker(object):
                     Results for this pixel will be all zeros.
                     """
                     )
-                self.log_worker(index)
+
+                if index % 100 == 0:
+                    if (
+                        self.worker_id is not None
+                        and self.approximate_total_spectra is not None
+                    ):
+                        percent = np.round(
+                            self.completed_spectra
+                            / self.approximate_total_spectra
+                            * 100,
+                            2,
+                        )
+                        logging.info(
+                            f"Worker {self.worker_id} completed"
+                            f" {self.completed_spectra}/~{self.approximate_total_spectra}::"
+                            f" {percent}% complete"
+                        )
 
         logging.info(
             f"Worker at start location ({row},{col}) completed"
