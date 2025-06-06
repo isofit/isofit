@@ -80,6 +80,7 @@ def apply_oe(
     config_only=False,
     interpolate_bad_rdn=False,
     interpolate_inplace=False,
+    retrieve_co2=False,
 ):
     """\
     Applies OE over a flightline using a radiative transfer engine. This executes
@@ -205,6 +206,8 @@ def apply_oe(
         Flag to tell interpolation to work on the file in place, or generate a
         new interpolated rdn file. The location of the new file will be in the
         "input" directory within the working directory.
+    retrieve_co2 : bool, default=False
+        Flag to retrieve CO2 in the state vector. Only available with emulator at the moment.
 
     \b
     References
@@ -722,6 +725,7 @@ def apply_oe(
             prebuilt_lut_path=prebuilt_lut,
             inversion_windows=INVERSION_WINDOWS,
             multipart_transmittance=multipart_transmittance,
+            retrieve_co2=retrieve_co2,
         )
 
         if config_only:
@@ -825,6 +829,7 @@ def apply_oe(
 @click.option("--config_only", is_flag=True, default=False)
 @click.option("--interpolate_bad_rdn", is_flag=True, default=False)
 @click.option("--interpolate_inplace", is_flag=True, default=False)
+@click.option("--retrieve_co2", is_flag=True, default=False)
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",
