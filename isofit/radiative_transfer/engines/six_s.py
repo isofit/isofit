@@ -208,7 +208,7 @@ class SixSRT(RadiativeTransferEngine):
             "AOT550": 0.01,
             "H2OSTR": 0,
             "O3": 0.30,
-            "CO2": 420, # ppm
+            "CO2": 420,  # ppm
             "day": self.engine_config.day,
             "month": self.engine_config.month,
             "elev": self.engine_config.elev,
