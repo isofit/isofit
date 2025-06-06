@@ -392,21 +392,6 @@ class RadiativeTransferEngine:
         )
         return filename
 
-    def get_coszen(self, point: np.array) -> float:
-        """Get solar zenith cosine from point
-
-        Args:
-            point (np.array): conditions to alter in simulation
-
-        Returns:
-            float: cosine of solar zenith angle at the given point
-        """
-        if "solar_zenith" in self.lut_names:
-            return [np.cos(np.deg2rad(point[self.lut_names.index("solar_zenith")]))]
-        else:
-            return [0.2]
-            # TODO: raise AttributeError("Havent implemented this yet....should have a default read from template")
-
     # TODO: change this name
     def get(self, x_RT: np.array, geom: Geometry) -> dict:
         """

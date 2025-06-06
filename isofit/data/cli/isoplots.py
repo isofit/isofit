@@ -108,7 +108,7 @@ def validate(path=None, checkForUpdate=True, debug=print, error=print, **_):
     if checkForUpdate:
         return isUpToDate(path, debug=debug, error=error)
 
-    debug("[✓] Path is valid")
+    debug("[OK] Path is valid")
     return True
 
 
@@ -151,7 +151,7 @@ def isUpToDate(path=None, tag="latest", debug=print, error=print, **_):
         error(f"[x] Latest is {latest}, currently installed is {version}")
         return False
 
-    debug(f"[✓] Path is up to date, current version: {current}")
+    debug(f"[OK] Path is up to date, current version: {current}")
 
     return True
 

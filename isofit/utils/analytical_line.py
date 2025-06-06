@@ -163,7 +163,7 @@ def analytical_line(
     img = envi.create_image(
         envi_header(analytical_rfl_file), ext="", metadata=output_metadata, force=True
     )
-    del img
+    del img, rdn_ds
 
     img = envi.create_image(
         envi_header(analytical_rfl_unc_file),
@@ -467,18 +467,6 @@ class Worker(object):
                     output_non_rfl[0, c, :] = states[-1, self.fm.idx_surf_nonrfl]
                     output_non_rfl_unc[0, c, :] = unc[self.fm.idx_surf_nonrfl]
 
-            # What do we want to do with the negative reflectances?
-            # state = output_state[r - start_line, ...]
-            # mask = np.logical_and.reduce(
-            #     [
-            #         state < self.rfl_bounds[0],
-            #         state > self.rfl_bounds[1],
-            #         state != -9999,
-            #         state != -0.01,
-            #     ]
-            # )
-            # state[mask] = 0
-
             logging.info(f"Analytical line writing line {r}")
 
             write_bil_chunk(
@@ -507,6 +495,7 @@ class Worker(object):
                     r,
                     (rdn.shape[0], rdn.shape[1], len(self.fm.idx_surf_nonrfl)),
                 )
+        del rdn, loc, obs, lbl
 
 
 @click.command(name="analytical_line")

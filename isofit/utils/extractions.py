@@ -151,10 +151,11 @@ def extractions(
     meta = in_img.metadata
 
     nl, nb, ns = [int(meta[n]) for n in ("lines", "bands", "samples")]
-    img_mm = in_img.open_memmap(interleave="bip", writable=False)
+    del in_img
 
     lbl_img = envi.open(envi_header(lbl_file), lbl_file)
     labels = lbl_img.read_band(0)
+    del lbl_img
     un_labels = np.unique(labels).tolist()
     if 0 not in un_labels:
         un_labels.insert(0, 0)
