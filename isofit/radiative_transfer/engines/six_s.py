@@ -40,7 +40,7 @@ SIXS_TEMPLATE = """\
 0 (User defined)
 {solzen} {solaz} {viewzen} {viewaz} {month} {day}
 8  (User defined H2O, O3)
-{H2OSTR}, {O3}
+{H2OSTR}, {O3}, {CO2}
 {aermodel}
 0
 {AOT550}
@@ -208,6 +208,7 @@ class SixSRT(RadiativeTransferEngine):
             "AOT550": 0.01,
             "H2OSTR": 0,
             "O3": 0.30,
+            "CO2": 420, # ppm
             "day": self.engine_config.day,
             "month": self.engine_config.month,
             "elev": self.engine_config.elev,
