@@ -238,6 +238,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         # Update engine to run in RDN mode
         self.rt_mode = "rdn"
         # self.lut["RT_mode"] = "rdn"
+        self.lut.setAttr("RT_mode", "rdn")
 
     def get_L_atm(self, x_RT, geom):
         r = self.get(x_RT, geom)
