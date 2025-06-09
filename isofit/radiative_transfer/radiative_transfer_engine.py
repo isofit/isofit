@@ -33,6 +33,7 @@ import xarray as xr
 from isofit import ray
 from isofit.core import common
 from isofit.radiative_transfer import luts
+from isofit.core import utils
 
 Logger = logging.getLogger(__file__)
 
@@ -594,7 +595,7 @@ class RadiativeTransferEngine:
         t_up_dir = case0["transm_up_dir"]
 
         # Top-of-atmosphere solar irradiance as a function of sun zenith angle
-        E0 = case0["solar_irr"] * coszen / np.pi
+        L_solar = units.E_to_L(case0["solar_irr"])
 
         # Direct ground reflected radiance at sensor for case 1 (sun->surface->sensor)
         # This includes direct down and direct up transmittance
@@ -639,9 +640,9 @@ class RadiativeTransferEngine:
         E_down_dif0 = E_down0 - E_down_dir1
 
         # Direct downward transmittance
-        t_down_dir = E_down_dir1 / widths / np.pi / E0
+        t_down_dir = E_down_dir1 / widths / np.pi / L_solar
         # Diffuse downward transmittance
-        t_down_dif = E_down_dif0 / widths / np.pi / E0
+        t_down_dif = E_down_dif0 / widths / np.pi / L_solar
 
         # Return some keys from the first part plus the new calculated keys
         pass_forward = [

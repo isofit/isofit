@@ -33,6 +33,7 @@ from isofit.core.common import (
     get_refractive_index,
     svd_inv_sqrt,
 )
+from isofit.core import units
 from isofit.data import env
 
 
@@ -128,11 +129,11 @@ def heuristic_atmosphere(
             # the absorption feature)
             coszen, cos_i = geom.check_coszen_and_cos_i(RT.coszen)
             if my_RT.rt_mode == "rdn":
-                rho = meas
+                r = 1.0 / (transm / (meas - rhoatm) + sphalb)
             else:
-                rho = RT.rdn_to_rho(meas, coszen, solar_irr)
+                rho_toa = units.rdn_to_transm(meas, coszen, solar_irr)
+                r = 1.0 / (transm / (rho_toa - rhoatm) + sphalb)
 
-            r = 1.0 / (transm / (rho - rhoatm) + sphalb)
             ratios.append((r[b945] * 2.0) / (r[b1040] + r[b865]))
             h2os.append(h2o)
 
@@ -185,7 +186,7 @@ def invert_algebraic(
     solar_irr = instrument.sample(x_instrument, RT.wl, RT.solar_irr)
     sphalb = instrument.sample(x_instrument, RT.wl, rhi["sphalb"])
     transup = instrument.sample(
-        x_instrument, RT.wl, rhi["transm_up_dir"]
+        x_instrument, RT.wl, rhi["transm_up_dir"] + rhi["transm_up_dif"]
     )  # REVIEW: Changed from transup
 
     # Figure out which RT object we are using
@@ -205,17 +206,18 @@ def invert_algebraic(
     # Surface and measured wavelengths may differ.
     Ls = surface.calc_Ls(x_surface, geom)
     Ls_meas = interp1d(surface.wl, Ls, fill_value="extrapolate")(wl)
+
+    # TODO - support radiance mode for thermal!
+    if np.sum(Ls_meas) != 0 and RT.rt_mode == "rdn":
+        raise NotImplementedError("Thermal emission with radiance mode not yet supported")
     rdn_solrfl = meas - (transup * Ls_meas)
 
     # Now solve for the reflectance at measured wavelengths,
     # and back-translate to surface wavelengths
     coszen, cos_i = geom.check_coszen_and_cos_i(RT.coszen)
-    if my_RT.rt_mode == "rdn":
-        rho = rdn_solrfl
-    else:
-        rho = RT.rdn_to_rho(rdn_solrfl, coszen, solar_irr)
+    rdn_solrfl = units.rdn_to_transm(rdn_solrfl, coszen, solar_irr)
 
-    rfl = 1.0 / (transm / (rho - rhoatm) + sphalb)
+    rfl = 1.0 / (transm / (rdn_solrfl - rhoatm) + sphalb)
     rfl[rfl > 1.0] = 1.0
     rfl_est = interp1d(wl, rfl, fill_value="extrapolate")(surface.wl)
 

@@ -33,6 +33,7 @@ import scipy.interpolate
 import scipy.stats
 
 from isofit.core.common import json_load_ascii, recursive_replace
+from isofit.core import units
 from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
 
 Logger = logging.getLogger(__file__)
@@ -67,7 +68,7 @@ class ModtranRT(RadiativeTransferEngine):
         dict
             Dictionary of calculated values using the tokens list
         """
-        irr = tokens[18] * 1e6 * np.pi / tokens[8] / coszen  # uW/nm/cm2
+        irr = units.L_to_E(tokens[18] * 1e6 / tokens[8], coszen)  # uW/nm/cm2
 
         # fmt: off
         # If classic singlepart transmittance is used,
@@ -79,7 +80,7 @@ class ModtranRT(RadiativeTransferEngine):
         return {
             'solar_irr'          : irr,       # Solar irradiance
             'wl'                 : tokens[0], # Wavelength
-            'rhoatm'             : tokens[4] * 1e6 * np.pi / (irr * coszen), # unitless
+            'rhoatm'             : units.rdn_to_transm(tokens[4] * 1e6, coszen, irr), # unitless
             'width'              : tokens[8],
             'thermal_upwelling'  : (tokens[11] + tokens[12]) / tokens[8] * 1e6, # uW/nm/sr/cm2
             'thermal_downwelling': tokens[16] * 1e6 / tokens[8],
@@ -263,7 +264,7 @@ class ModtranRT(RadiativeTransferEngine):
         file = os.path.join(self.sim_path, self.point_to_filename(point))
 
         solzen = self.load_tp6(f"{file}.tp6")
-        coszen = np.cos(solzen * np.pi / 180.0)
+        coszen = np.cos(np.deg2rad(solzen))
         params = self.load_chn(f"{file}.chn", coszen)
 
         # Remove thermal terms in VSWIR runs to avoid incorrect usage

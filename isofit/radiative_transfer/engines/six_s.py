@@ -324,7 +324,7 @@ class SixSRT(RadiativeTransferEngine):
 
         with open(inpt, "r") as f:
             solzen = float(f.readlines()[1].strip().split()[0])
-        coszen = np.cos(solzen / 360 * 2.0 * np.pi)
+        coszen = np.cos(np.deg2rad(solzen))
 
         # `data` stores the return values, `append` will append to existing keys and creates them if they don't
         # Easy append to keys whether they exist or not
