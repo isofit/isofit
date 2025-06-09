@@ -35,6 +35,7 @@ def E_to_L(E, coszen):
     L = E * coszen / np.pi
     return L
 
+
 def L_to_E(L, coszen):
     """Convert radiance to irradiance.
 
@@ -47,6 +48,7 @@ def L_to_E(L, coszen):
     """
     E = L * np.pi / coszen
     return E
+
 
 def transm_to_rdn(transm, coszen, solar_irr):
     """Function to convert a unitless atmospheric vector to radiance units.
@@ -76,4 +78,3 @@ def rdn_to_transm(rdn, coszen, solar_irr):
     """
     transm = rdn / E_to_L(solar_irr, coszen)
     return transm
-
