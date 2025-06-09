@@ -95,7 +95,7 @@ class BaseConfigSection(object):
 
         return errors
 
-    def _get_config_options_as_dict(self) -> Dict[str, Dict[str, any]]:
+    def get_config_options_as_dict(self) -> Dict[str, Dict[str, any]]:
         config_options = OrderedDict()
         for key in self._get_nontype_attributes():
             value = getattr(self, key)
@@ -106,12 +106,12 @@ class BaseConfigSection(object):
             config_options[key] = value
         return config_options
 
-    def get_config_options_as_dict(self):
+    def get_config_as_dict(self):
         data = {}
         for key, val in self.__dict__.items():
             if not key.startswith("_"):
                 if issubclass(type(val), BaseConfigSection):
-                    data[key] = val.get_config_options_as_dict()
+                    data[key] = val.get_config_as_dict()
                 else:
                     data[key] = val
         return data

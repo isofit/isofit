@@ -119,8 +119,8 @@ class Config(BaseConfigSection):
 
 def get_config_differences(config_a: Config, config_b: Config) -> Dict:
     differing_items = dict()
-    dict_a = config_a.get_config_options_as_dict()
-    dict_b = config_b.get_config_options_as_dict()
+    dict_a = config_a.get_config_as_dict()
+    dict_b = config_b.get_config_as_dict()
     all_sections = set(list(dict_a.keys()) + list(dict_b.keys()))
     for section in all_sections:
         section_a = dict_a.get(section, dict())
