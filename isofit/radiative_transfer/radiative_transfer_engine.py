@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import logging
 import os
+import sys
 import time
 from pathlib import Path
 from types import SimpleNamespace
@@ -248,10 +249,6 @@ class RadiativeTransferEngine:
 
             # Create and populate a LUT file
             self.runSimulations()
-
-            if self.engine_config.rte_configure_and_exit:
-                Logger.info("Exiting RTE early due to rte_configure_and_exit")
-                return
 
         # Limit the wavelength per the config, does not affect data on disk
         if engine_config.wavelength_range is not None:
@@ -500,6 +497,9 @@ class RadiativeTransferEngine:
             if self.engine_config.rte_configure_and_exit:
                 # Block until all jobs finish
                 ray.get(jobs)
+
+                Logger.warning("Exiting early due to rte_configure_and_exit")
+                sys.exit(0)
             else:
                 # Report a percentage complete every 10% and flush to disk at those intervals
                 report = common.Track(
@@ -547,9 +547,8 @@ class RadiativeTransferEngine:
             self.lut.writePoint(point, data=post)
 
         # Reload the LUT now that it's populated
-        if not self.engine_config.rte_configure_and_exit:
-            Logger.debug("Reloading LUT")
-            self.lut = luts.load(self.lut_path)
+        Logger.debug("Reloading LUT")
+        self.lut = luts.load(self.lut_path)
 
     def summarize(self, x_RT, *_):
         """
