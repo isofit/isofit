@@ -27,13 +27,13 @@ from scipy.interpolate import interp1d
 from scipy.optimize import least_squares, minimize
 from scipy.optimize import minimize_scalar as min1d
 
+from isofit.core import units
 from isofit.core.common import (
     emissive_radiance,
     eps,
     get_refractive_index,
     svd_inv_sqrt,
 )
-from isofit.core import units
 from isofit.data import env
 
 
@@ -209,7 +209,9 @@ def invert_algebraic(
 
     # TODO - support radiance mode for thermal!
     if np.sum(Ls_meas) != 0 and RT.rt_mode == "rdn":
-        raise NotImplementedError("Thermal emission with radiance mode not yet supported")
+        raise NotImplementedError(
+            "Thermal emission with radiance mode not yet supported"
+        )
     rdn_solrfl = meas - (transup * Ls_meas)
 
     # Now solve for the reflectance at measured wavelengths,

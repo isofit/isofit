@@ -25,9 +25,9 @@ import logging
 
 import numpy as np
 
+from isofit.core import units
 from isofit.core.common import eps
 from isofit.radiative_transfer.engines import Engines
-from isofit.core import units
 
 Logger = logging.getLogger(__file__)
 
@@ -314,8 +314,12 @@ class RadiativeTransfer:
                     L_down_dif = r["transm_down_dif"]
                 else:
                     # Transform downward transmittance to radiance
-                    L_down_dir = units.transm_to_rdn(r["transm_down_dir"], coszen, self.solar_irr)
-                    L_down_dif = units.transm_to_rdn(r["transm_down_dif"], coszen, self.solar_irr)
+                    L_down_dir = units.transm_to_rdn(
+                        r["transm_down_dir"], coszen, self.solar_irr
+                    )
+                    L_down_dif = units.transm_to_rdn(
+                        r["transm_down_dif"], coszen, self.solar_irr
+                    )
 
                 L_down = L_down_dir + L_down_dif
 
