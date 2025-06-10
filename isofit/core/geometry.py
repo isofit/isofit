@@ -68,7 +68,7 @@ class Geometry:
         # AVIRIS-NG format.  It arrives to our initializer in the form of
         # a list-like object...
         if obs is not None:
-            self.path_length_km = unts.m_to_km(obs[0])
+            self.path_length_km = units.m_to_km(obs[0])
             self.observer_azimuth = obs[1]  # 0 to 360 clockwise from N
             self.observer_zenith = obs[2]  # 0 to 90 from zenith
             self.solar_azimuth = obs[3]  # 0 to 360 clockwise from N
