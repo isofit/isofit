@@ -367,7 +367,7 @@ class RadiativeTransfer:
         else:
             for key in self.rt_engines[0].coupling_terms:
                 L_coupled.append(
-                    units.transm_to_rdn(r[key])
+                    units.transm_to_rdn(r[key], coszen=coszen, solar_irr=self.solar_irr)
                     if self.rt_engines[0].rt_mode == "transm"
                     else r[key]
                 )
