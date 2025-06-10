@@ -83,7 +83,7 @@ class ModtranRT(RadiativeTransferEngine):
             'rhoatm'             : units.rdn_to_transm(units.W_to_uW(tokens[4]), coszen, irr), # unitless
             'width'              : tokens[8],
             'thermal_upwelling'  : units.W_to_uW((tokens[11] + tokens[12]) / tokens[8]), # uW/nm/sr/cm2
-            'thermal_downwelling': unuts.W_to_uW(tokens[16]) / tokens[8],
+            'thermal_downwelling': units.W_to_uW(tokens[16]) / tokens[8],
             'path_rdn'           : units.W_to_uW(tokens[14]) + units.W_to_uW(tokens[15]), # The sum of the (1) single scattering and (2) multiple scattering
             'grnd_rflt'          : units.W_to_uW(tokens[16]),        # ground reflected radiance (direct+diffuse+multiple scattering)
             'drct_rflt'          : units.W_to_uW(tokens[17]),        # same as 16 but only on the sun->surface->sensor path (only direct)
