@@ -24,6 +24,8 @@ from datetime import datetime
 
 import numpy as np
 
+from isofit.core import units
+
 
 class Geometry:
     """The geometry of the observation, all we need to calculate sensor,
@@ -66,7 +68,7 @@ class Geometry:
         # AVIRIS-NG format.  It arrives to our initializer in the form of
         # a list-like object...
         if obs is not None:
-            self.path_length_km = obs[0] / 1000
+            self.path_length_km = unts.m_to_km(obs[0])
             self.observer_azimuth = obs[1]  # 0 to 360 clockwise from N
             self.observer_zenith = obs[2]  # 0 to 90 from zenith
             self.solar_azimuth = obs[3]  # 0 to 360 clockwise from N
@@ -82,7 +84,7 @@ class Geometry:
         self.latitude = None
         self.longitude = None
         if loc is not None:
-            self.surface_elevation_km = loc[2] / 1000.0
+            self.surface_elevation_km = units.m_to_km(loc[2])
             self.latitude = loc[1]  # Northing
             self.longitude = loc[0]  # Westing
             if self.longitude < 0:

@@ -26,6 +26,7 @@ from datetime import datetime
 
 import numpy as np
 
+from isofit.core import units
 from isofit.core.common import resample_spectrum
 from isofit.core.fileio import IO
 from isofit.data import env

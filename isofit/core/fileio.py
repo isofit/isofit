@@ -30,6 +30,7 @@ import xarray as xr
 from spectral.io import envi
 
 import isofit
+from isofit.core import units
 from isofit.core.common import envi_header, eps, load_spectrum, resample_spectrum
 from isofit.core.geometry import Geometry
 from isofit.data import env
@@ -610,7 +611,11 @@ class IO:
                 # Spectral calibration
                 wl, fwhm = fm.calibration(state_est)
                 cal = np.column_stack(
-                    [np.arange(0, len(wl)), wl / 1000.0, fwhm / 1000.0]
+                    [
+                        np.arange(0, len(wl)),
+                        units.nm_to_micron(wl),
+                        units.nm_to_micron(fwhm),
+                    ]
                 )
                 to_write["spectral_calibration_file"] = cal
 

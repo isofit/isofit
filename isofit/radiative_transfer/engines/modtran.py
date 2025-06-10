@@ -750,7 +750,7 @@ class ModtranRT(RadiativeTransferEngine):
                 ws = wl + np.linspace(-span, span, steps)
                 vs = scipy.stats.norm.pdf(ws, wl, sigma)
                 vs = vs / vs[int(steps / 2)]
-                wns = units.nm_to_cm_wavenumber(ws)
+                wns = units.nm_to_wavenumber(ws)
 
                 fout.write("CENTER:  %6.2f NM   FWHM:  %4.2f NM\n" % (wl, fwhm))
 

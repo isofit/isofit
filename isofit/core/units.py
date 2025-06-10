@@ -80,7 +80,7 @@ def rdn_to_transm(rdn, coszen, solar_irr):
     return transm
 
 
-def cm_wavenumber_to_nm(wavenumber):
+def wavenumber_to_nm(wavenumber):
     """
     Function to convert wavenumber to nm.
 
@@ -94,40 +94,12 @@ def cm_wavenumber_to_nm(wavenumber):
     return nm
 
 
-def nm_to_cm_wavenumber(nm):
+def nm_to_wavenumber(nm):
     """
     Function to convert nm to wavenumber.
     """
     wavenumber = cm_wavenumber_to_nm(nm)
     return wavenumber
-
-
-def micron_to_nm(micron):
-    """
-    Function to convert microns to nanometers
-
-    Args:
-        micron: value(s) in microns
-
-    Returns:
-        value(s) in nanometers
-    """
-    nm = micron * 1000
-    return nm
-
-
-def nm_to_micron(nm):
-    """
-    Function to convert nanometers to microns
-
-    Args:
-        nm:     value(s) in nanometers
-
-    Returns:
-        value(s) in microns
-    """
-    micron = nm / 1000
-    return micron
 
 
 def vis_to_aod(vis):
@@ -139,7 +111,7 @@ def vis_to_aod(vis):
     550 nm in 1/km.
 
     Args:
-        vis:    visibility in km
+        vis:    visibility
 
     Returns:
         Data vector converted to exctinction at 550 nm
@@ -160,7 +132,7 @@ def aod_to_vis(aod):
         aod:    extinction at 550 nm
 
     Returns:
-        Data vector converted to visibility in km
+        Data vector converted to visibility
     """
     vis = np.log(50) / (aod + 0.01159)
     return vis
@@ -249,6 +221,62 @@ def uWcm2_to_Wm2(uwcm):
     """
     wm = uwcm / 1e2
     return wm
+
+
+def micron_to_nm(micron):
+    """
+    Function to convert microns to nanometers
+
+    Args:
+        micron: value(s) in microns
+
+    Returns:
+        value(s) in nanometers
+    """
+    nm = micron * 1000
+    return nm
+
+
+def nm_to_micron(nm):
+    """
+    Function to convert nanometers to microns
+
+    Args:
+        nm:     value(s) in nanometers
+
+    Returns:
+        value(s) in microns
+    """
+    micron = nm / 1000
+    return micron
+
+
+def cm_to_nm(cm):
+    """
+    Function to convert microns to nanometers
+
+    Args:
+        cm: value(s) in centimeters
+
+    Returns:
+        value(s) in nanometers
+    """
+    nm = cm * 1e7
+    return nm
+
+
+def nm_to_cm(nm):
+    """
+    Function to convert nanometers to microns
+
+    Args:
+        nm:     value(s) in nanometers
+
+    Returns:
+        value(s) in microns
+    """
+    cm = nm / 1e7
+    return cm
 
 
 def m_to_km(m):
