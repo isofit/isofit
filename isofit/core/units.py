@@ -307,7 +307,7 @@ def mm_to_cm(mm):
     return cm
 
 
-def cm_to_mm(mm):
+def cm_to_mm(cm):
     """
     Converts value of units mm to unit millimeters
 
