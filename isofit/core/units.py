@@ -139,7 +139,7 @@ def vis_to_aod(vis):
     550 nm in 1/km.
 
     Args:
-        vis:    visibility
+        vis:    visibility in km
 
     Returns:
         Data vector converted to exctinction at 550 nm
@@ -160,7 +160,7 @@ def aod_to_vis(aod):
         aod:    extinction at 550 nm
 
     Returns:
-        Data vector converted to visibility
+        Data vector converted to visibility in km
     """
     vis = np.log(50) / (aod + 0.01159)
     return vis
