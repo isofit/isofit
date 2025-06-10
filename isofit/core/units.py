@@ -80,20 +80,6 @@ def rdn_to_transm(rdn, coszen, solar_irr):
     return transm
 
 
-def m_wavenumber_to_nm(wavenumber):
-    """
-    Function to convert wavenumber to nm.
-
-    Args:
-        wavenumber:     value(s) in wavenumber in 1/m
-
-    Returns:
-        value(s) in nanometers
-    """
-    nm = 1e9 / (wavenumber)
-    return nm
-
-
 def cm_wavenumber_to_nm(wavenumber):
     """
     Function to convert wavenumber to nm.
@@ -106,6 +92,14 @@ def cm_wavenumber_to_nm(wavenumber):
     """
     nm = 1e7 / (wavenumber)
     return nm
+
+
+def nm_to_cm_wavenumber(nm):
+    """
+    Function to convert nm to wavenumber.
+    """
+    wavenumber = cm_wavenumber_to_nm(nm)
+    return wavenumber
 
 
 def micron_to_nm(micron):
@@ -200,6 +194,34 @@ def rrs_to_rfl(rrs):
     return rfl
 
 
+def W_to_uW(w):
+    """
+    Converts value of units watts to units microwatts
+
+    Args:
+        w:      value(s) in units of Watts
+
+    Returns:
+        Value(s) in units of microwatts
+    """
+    uw = w * 1e6
+    return uw
+
+
+def uW_to_W(uw):
+    """
+    Converts value of units microwatts to units watts
+
+    Args:
+        uw:      value(s) in units of Microwatts
+
+    Returns:
+        Value(s) in units of microwatts
+    """
+    w = uw / 1e6
+    return w
+
+
 def Wm2_to_uWcm2(wm):
     """
     Converts value of units Watts / square meter to units
@@ -241,6 +263,34 @@ def m_to_km(m):
     """
     km = m / 1000
     return km
+
+
+def mm_to_cm(mm):
+    """
+    Converts value of units mm to unit centimeters
+
+    Args:
+        mm:     value(s) in units of millimeters
+
+    Returns:
+        Value(s) in units of centimeters
+    """
+    cm = mm / 10
+    return cm
+
+
+def cm_to_mm(mm):
+    """
+    Converts value of units mm to unit millimeters
+
+    Args:
+        cm:     value(s) in units of centimeters
+
+    Returns:
+        Value(s) in units of millimeters
+    """
+    mm = cm * 10
+    return mm
 
 
 def km_to_m(km):

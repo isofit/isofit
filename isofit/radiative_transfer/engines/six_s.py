@@ -232,7 +232,7 @@ class SixSRT(RadiativeTransferEngine):
         # Special cases
 
         if "H2OSTR" in vals:
-            vals["h2o_mm"] = vals["H2OSTR"] * 10.0
+            vals["h2o_mm"] = units.cm_to_mm(vals["H2OSTR"])
 
         if "surface_elevation_km" in vals:
             vals["elev"] = vals["surface_elevation_km"]
