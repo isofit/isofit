@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import os
 from typing import OrderedDict
+import logging
 
 import numpy as np
 import pandas as pd
@@ -121,6 +122,11 @@ def heuristic_atmosphere(
                 )
             sphalb = instrument.sample(x_instrument, RT.wl, rhi["sphalb"])
             solar_irr = instrument.sample(x_instrument, RT.wl, RT.solar_irr)
+            if my_RT.rt_mode == "rdn":
+                #transm = RT.rdn_to_rho(transm, my_RT.coszen, solar_irr)
+                #rhoatm = RT.rdn_to_rho(rhoatm, my_RT.coszen, solar_irr)
+                transm = transm / solar_irr
+                rhoatm = rhoatm / solar_irr
 
             # Assume no surface emission.  "Correct" the at-sensor radiance
             # using this presumed amount of water vapor, and measure the
@@ -212,6 +218,9 @@ def invert_algebraic(
     coszen, cos_i = geom.check_coszen_and_cos_i(RT.coszen)
     if my_RT.rt_mode == "rdn":
         rho = rdn_solrfl
+        rho = RT.rdn_to_rho(rho, coszen, solar_irr)
+        rhoatm = rhoatm / solar_irr
+        transm = transm / solar_irr
     else:
         rho = RT.rdn_to_rho(rdn_solrfl, coszen, solar_irr)
 
