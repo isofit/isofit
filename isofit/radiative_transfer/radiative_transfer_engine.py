@@ -154,11 +154,6 @@ class RadiativeTransferEngine:
             # Enable special modes - argument: get from prebuilt LUT netCDF if available
             self.rt_mode = self.lut.attrs.get("RT_mode", "transm")
 
-            # HACKY - do this better before folding in
-            if engine_config.engine_name == "sRTMnet":
-                self.rt_mode = "rdn"
-                self.lut.attrs["RT_mode"] = "rdn"
-
             if self.rt_mode not in ["transm", "rdn"]:
                 Logger.error(
                     "Unknown RT mode provided in LUT file. Please use either 'transm' or 'rdn'."
