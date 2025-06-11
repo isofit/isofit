@@ -26,6 +26,7 @@ from datetime import datetime
 
 import numpy as np
 
+from isofit.core import units
 from isofit.core.common import resample_spectrum
 from isofit.core.fileio import IO
 from isofit.data import env
@@ -232,7 +233,7 @@ class SixSRT(RadiativeTransferEngine):
         # Special cases
 
         if "H2OSTR" in vals:
-            vals["h2o_mm"] = vals["H2OSTR"] * 10.0
+            vals["h2o_mm"] = units.cm_to_mm(vals["H2OSTR"])
 
         if "surface_elevation_km" in vals:
             vals["elev"] = vals["surface_elevation_km"]
@@ -324,7 +325,7 @@ class SixSRT(RadiativeTransferEngine):
 
         with open(inpt, "r") as f:
             solzen = float(f.readlines()[1].strip().split()[0])
-        coszen = np.cos(solzen / 360 * 2.0 * np.pi)
+        coszen = np.cos(np.deg2rad(solzen))
 
         # `data` stores the return values, `append` will append to existing keys and creates them if they don't
         # Easy append to keys whether they exist or not
