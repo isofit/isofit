@@ -226,6 +226,20 @@ class Create:
         """
         self.queuePoint(point, data)
         self.flush()
+    
+    def setAttr(self, key, value):
+        """
+        Sets an attribute in the netCDF
+        Parameters
+        ----------
+        key : str
+            Key to set
+        value : any
+            Value to set
+        """
+        self.attrs[key] = value
+        with Dataset(self.file, "a") as ds:
+            ds.setncattr(key, value)
 
     def __getitem__(self, key: str) -> Any:
         """
