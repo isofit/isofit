@@ -217,7 +217,8 @@ def invert_algebraic(
     # Now solve for the reflectance at measured wavelengths,
     # and back-translate to surface wavelengths
     coszen, cos_i = geom.check_coszen_and_cos_i(RT.coszen)
-    rdn_solrfl = units.rdn_to_transm(rdn_solrfl, coszen, solar_irr)
+    if my_RT.rt_mode != "rdn":
+        rdn_solrfl = units.rdn_to_transm(rdn_solrfl, coszen, solar_irr)
 
     rfl = 1.0 / (transm / (rdn_solrfl - rhoatm) + sphalb)
     rfl[rfl > 1.0] = 1.0
