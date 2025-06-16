@@ -22,8 +22,8 @@ from isofit.core.common import envi_header
 from isofit.debug.resource_tracker import FileResources
 from isofit.utils import analytical_line as ALAlg
 from isofit.utils import empirical_line as ELAlg
-from isofit.utils import extractions, interpolate_spectra, segment
 from isofit.utils.skyview import skyview
+from isofit.utils import extractions, interpolate_spectra, reducers, segment
 
 EPS = 1e-6
 CHUNKSIZE = 256
@@ -67,6 +67,7 @@ def apply_oe(
     sensor,
     surface_path,
     copy_input_files=False,
+    surface_class_file=None,
     modtran_path=None,
     wavelength_path=None,
     surface_category="multicomponent_surface",
@@ -91,6 +92,7 @@ def apply_oe(
     pressure_elevation=False,
     prebuilt_lut=None,
     no_min_lut_spacing=False,
+    multipart_transmittance=True,
     inversion_windows=None,
     config_only=False,
     interpolate_bad_rdn=False,
@@ -380,6 +382,7 @@ def apply_oe(
         input_radiance,
         input_loc,
         input_obs,
+        surface_class_file,
         sensor,
         surface_path,
         working_directory,
@@ -392,6 +395,7 @@ def apply_oe(
         ray_temp_dir,
         interpolate_inplace,
         skyview_factor,
+        subs=True if analytical_line or empirical_line else False,
     )
     paths.make_directories()
     paths.stage_files()
@@ -572,6 +576,23 @@ def apply_oe(
                     output=outp,
                     chunksize=CHUNKSIZE,
                     flag=-9999,
+                    reducer=reducers.band_mean,
+                    n_cores=n_cores,
+                    loglevel=logging_level,
+                    logfile=log_file,
+                )
+
+        # Extract superpixels class
+        if paths.surface_class_file:
+            if not exists(paths.subs_class_path):
+                logging.info("Extracting " + paths.subs_class_path)
+                extractions(
+                    inputfile=paths.surface_class_file,
+                    labels=paths.lbl_working_path,
+                    output=paths.subs_class_path,
+                    chunksize=CHUNKSIZE,
+                    flag=-9999,
+                    reducer=reducers.class_priority,
                     n_cores=n_cores,
                     loglevel=logging_level,
                     logfile=log_file,
@@ -621,6 +642,9 @@ def apply_oe(
                 inversion_windows=INVERSION_WINDOWS,
                 multipart_transmittance=multipart_transmittance,
             )
+            """Currently not running presolve with either 
+            multisurface-mode or topography mode. Could easily change
+            this"""
 
             # Run modtran retrieval
             logging.info("Run ISOFIT initial guess")
@@ -642,7 +666,11 @@ def apply_oe(
             logging.info("Existing h2o-presolve solutions found, using those.")
 
         h2o = envi.open(envi_header(paths.h2o_subs_path))
-        h2o_est = h2o.read_band(-1)[:].flatten()
+        # Find the band that is H2O. Should be stable with constant H2O name
+        h2o_band = [
+            i for i, name in enumerate(h2o.metadata["band names"]) if name == "H2OSTR"
+        ][0]
+        h2o_est = h2o.read_band(h2o_band)[:].flatten()
 
         p05 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 2)
         p95 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 98)
@@ -806,6 +834,7 @@ def apply_oe(
 @click.option("--modtran_path")
 @click.option("--wavelength_path")
 @click.option("--surface_category", default="multicomponent_surface")
+@click.option("--surface_class_file", default=None)
 @click.option("--aerosol_climatology_path")
 @click.option("--rdn_factors_path")
 @click.option("--atmosphere_type", default="ATM_MIDLAT_SUMMER")
@@ -827,6 +856,7 @@ def apply_oe(
 @click.option("--pressure_elevation", is_flag=True, default=False)
 @click.option("--prebuilt_lut", type=str)
 @click.option("--no_min_lut_spacing", is_flag=True, default=False)
+@click.option("--multipart_transmittance", is_flag=True, default=False)
 @click.option("--inversion_windows", type=float, nargs=2, multiple=True, default=None)
 @click.option("--config_only", is_flag=True, default=False)
 @click.option("--interpolate_bad_rdn", is_flag=True, default=False)

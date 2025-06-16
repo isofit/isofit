@@ -27,15 +27,27 @@ from isofit.configs.base_config import BaseConfigSection
 
 class SurfaceConfig(BaseConfigSection):
     """
-    Instrument configuration.
+    Surface configuration.
     """
 
     def __init__(self, sub_configdic: dict = None):
+        self._multi_surface_flag_type = bool
+        self.multi_surface_flag = False
+
         self._surface_file_type = str
         self.surface_file = None
 
         self._surface_category_type = str
         self.surface_category = None
+
+        self._surface_class_file_type = str
+        self.surface_class_file = None
+
+        self._sub_surface_class_file_type = str
+        self.sub_surface_class_file = None
+
+        self._Surfaces_type = dict
+        self.Surfaces = {}
 
         self._wavelength_file_type = str
         self.wavelength_file = None
@@ -48,6 +60,15 @@ class SurfaceConfig(BaseConfigSection):
 
         self._selection_metric_type = str
         self.selection_metric = "Euclidean"
+
+        self._select_on_init_type = bool
+        self.select_on_init = True
+
+        self._full_glint_type = bool
+        self.full_glint = False
+
+        self._glint_model_type = bool
+        self.glint_model = False
 
         # Surface Thermal
         self._emissivity_for_surface_T_init_type = float
@@ -75,8 +96,9 @@ class SurfaceConfig(BaseConfigSection):
             "thermal_surface",
             "lut_surface",
         ]
-        if self.surface_category is None:
-            errors.append("surface->surface_category must be specified")
+        if (self.surface_category is None) and (self.Surfaces is None):
+            errors.append("surface->surface_category or Surfaces must be specified")
+
         elif self.surface_category not in valid_surface_categories:
             errors.append(
                 "surface->surface_category: {} not in valid surface categories: {}".format(

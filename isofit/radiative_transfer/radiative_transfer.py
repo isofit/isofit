@@ -76,6 +76,7 @@ class RadiativeTransfer:
     def __init__(self, full_config: Config):
         config = full_config.forward_model.radiative_transfer
         confIT = full_config.forward_model.instrument
+        confSUR = full_config.forward_model.surface
 
         self.lut_grid = config.lut_grid
         self.statevec_names = config.statevector.get_element_names()
@@ -83,6 +84,18 @@ class RadiativeTransfer:
         self.rt_engines = []
         for idx in range(len(config.radiative_transfer_engines)):
             confRT = config.radiative_transfer_engines[idx]
+
+            """Handle glint model flag from the surface model and
+            the topography model for a multipart-transmittance lut
+            Should be depreciated with #524?
+            """
+            if confRT.multipart_transmittance:
+                confRT.topography_model = True
+
+            confRT.glint_model = confSUR.glint_model
+            if confRT.glint_model:
+                confRT.multipart_transmittance = confRT.glint_model
+                confRT.topography_model = False
 
             if confRT.engine_name not in Engines:
                 raise AttributeError(

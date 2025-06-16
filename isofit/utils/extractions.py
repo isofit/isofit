@@ -17,6 +17,7 @@
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
+from __future__ import annotations
 
 import logging
 
@@ -35,6 +36,7 @@ def extract_chunk(
     in_file: str,
     labels: np.array,
     flag: float,
+    reducer: FunctionType,
     logfile=None,
     loglevel="INFO",
 ):
@@ -106,9 +108,7 @@ def extract_chunk(
     for _lab, lab in enumerate(active):
         out_data[_lab, :] = 0
         locs = np.where(chunk_lbl == lab)
-        for row, col in zip(locs[0], locs[1]):
-            out_data[_lab, :] += np.squeeze(chunk_inp[row, col, :])
-        out_data[_lab, :] /= float(len(locs[0]))
+        out_data[_lab, :] = reducer(chunk_inp[locs[0], locs[1], :])
 
     unique_labels = np.unique(labels)
     unique_labels = unique_labels[unique_labels >= 1]
@@ -129,6 +129,7 @@ def extractions(
     output,
     chunksize,
     flag,
+    reducer: FunctionType,
     n_cores: int = 1,
     ray_address: str = None,
     ray_redis_password: str = None,
@@ -183,7 +184,14 @@ def extractions(
         lend = min(lstart + nchunk, nl)
         jobs.append(
             extract_chunk.remote(
-                lstart, lend, in_file, labelid, flag, logfile=logfile, loglevel=loglevel
+                lstart,
+                lend,
+                in_file,
+                labelid,
+                flag,
+                reducer,
+                logfile=logfile,
+                loglevel=loglevel,
             )
         )
 

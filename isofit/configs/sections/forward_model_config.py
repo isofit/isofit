@@ -40,7 +40,7 @@ class ForwardModelConfig(BaseConfigSection):
         self._surface_type = SurfaceConfig
         self.surface: SurfaceConfig = None
         """
-        Instrument: instrument config section. 
+        Surface: surface config section. 
         """
 
         self._radiative_transfer_type = RadiativeTransferConfig

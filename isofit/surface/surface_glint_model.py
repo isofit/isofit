@@ -284,6 +284,57 @@ class GlintModelSurface(MultiComponentSurface):
             x_surface[self.sky_glint_ind],
         )
 
+    def analytical_model(
+        self,
+        background,
+        L_down_dir,
+        L_down_dif,
+        L_tot,
+        geom,
+        L_dir_dir=None,
+        L_dir_dif=None,
+        L_dif_dir=None,
+        L_dif_dif=None,
+    ):
+        """
+        Linearization of the glint terms to use in AOE inner loop.
+        Function will fetch the linearization of the rho terms and
+        add the matrix coponents for the direct glint term.
+        Currently we set the diffuse glint scaling term to constant
+        value, which makes the AOE inner loop inversion possible.
+        """
+        # Get glint spectrum
+        rho_ls = self.fresnel_rf(geom.observer_zenith)
+        # Direct component holding dif component constant
+        g_dir = rho_ls * (L_down_dir / (L_down_dir + L_down_dif))
+        g_dif = rho_ls * (L_down_dif / (L_down_dir + L_down_dif))
+
+        # Construct the H matrix from:
+        # theta: rho portion
+        H = super().analytical_model(
+            background,
+            L_down_dir,
+            L_down_dif,
+            L_tot,
+            geom,
+            L_dir_dir,
+            L_dir_dif,
+            L_dif_dir,
+            L_dif_dif,
+        )
+
+        # gam: sun glint portion
+        gam = (L_dir_dir + L_dir_dif) * g_dir
+        gam = np.reshape(gam, (len(gam), 1))
+        H = np.append(H, gam, axis=1)
+
+        # ep: sky glint portion
+        ep = (L_dif_dir + L_dif_dif) + ((L_tot * background * g_dif) / (1 - background))
+        ep = np.reshape(ep, (len(ep), 1))
+        H = np.append(H, ep, axis=1)
+
+        return H
+
     @staticmethod
     def fresnel_rf(vza):
         """Calculates reflectance factor of sky radiance based on the
