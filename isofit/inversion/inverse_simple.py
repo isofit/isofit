@@ -27,6 +27,7 @@ from scipy.interpolate import interp1d
 from scipy.optimize import least_squares, minimize
 from scipy.optimize import minimize_scalar as min1d
 
+from isofit.core import units
 from isofit.core.common import (
     emissive_radiance,
     eps,
@@ -128,11 +129,11 @@ def heuristic_atmosphere(
             # the absorption feature)
             coszen, cos_i = geom.check_coszen_and_cos_i(RT.coszen)
             if my_RT.rt_mode == "rdn":
-                rho = meas
+                r = 1.0 / (transm / (meas - rhoatm) + sphalb)
             else:
-                rho = RT.rdn_to_rho(meas, coszen, solar_irr)
+                rho_toa = units.rdn_to_transm(meas, coszen, solar_irr)
+                r = 1.0 / (transm / (rho_toa - rhoatm) + sphalb)
 
-            r = 1.0 / (transm / (rho - rhoatm) + sphalb)
             ratios.append((r[b945] * 2.0) / (r[b1040] + r[b865]))
             h2os.append(h2o)
 
@@ -142,6 +143,7 @@ def heuristic_atmosphere(
         bounds = (h2os[0] + 0.001, h2os[-1] - 0.001)
         best = min1d(lambda h: abs(1 - p(h)), bounds=bounds, method="bounded")
         x_new[ind_sv] = best.x
+
     return x_new
 
 
@@ -173,21 +175,6 @@ def invert_algebraic(
         Ls: estimate of the emitted surface leaving radiance
         coeffs: atmospheric parameters for the forward model
     """
-
-    # Get atmospheric optical parameters (possibly at high
-    # spectral resolution) and resample them if needed.
-    rhi = RT.get_shared_rtm_quantities(x_RT, geom)
-    wl, fwhm = instrument.calibration(x_instrument)
-    rhoatm = instrument.sample(x_instrument, RT.wl, rhi["rhoatm"])
-    transm = instrument.sample(
-        x_instrument, RT.wl, rhi["transm_down_dir"] + rhi["transm_down_dif"]
-    )  # REVIEW: Changed from transm
-    solar_irr = instrument.sample(x_instrument, RT.wl, RT.solar_irr)
-    sphalb = instrument.sample(x_instrument, RT.wl, rhi["sphalb"])
-    transup = instrument.sample(
-        x_instrument, RT.wl, rhi["transm_up_dir"]
-    )  # REVIEW: Changed from transup
-
     # Figure out which RT object we are using
     # TODO: this is currently very specific to vswir-tir 2-mode, eventually generalize
     my_RT = None
@@ -198,6 +185,31 @@ def invert_algebraic(
     if not my_RT:
         raise ValueError("No suitable RT object for initialization")
 
+    # Get atmospheric optical parameters (possibly at high
+    # spectral resolution) and resample them if needed.
+    rhi = RT.get_shared_rtm_quantities(x_RT, geom)
+    wl, fwhm = instrument.calibration(x_instrument)
+    rhoatm = instrument.sample(x_instrument, RT.wl, rhi["rhoatm"])
+
+    if (
+        not isinstance(rhi["transm_up_dir"], np.ndarray)
+        or len(rhi["transm_up_dir"]) == 1
+    ):
+        transm = rhi["transm_down_dir"] + rhi["transm_down_dif"]
+
+    else:
+        transm = (rhi["transm_down_dir"] + rhi["transm_down_dif"]) * (
+            rhi["transm_up_dir"] + rhi["transm_up_dif"]
+        )
+
+    transm = instrument.sample(x_instrument, RT.wl, transm)
+
+    solar_irr = instrument.sample(x_instrument, RT.wl, RT.solar_irr)
+    sphalb = instrument.sample(x_instrument, RT.wl, rhi["sphalb"])
+    transup = instrument.sample(
+        x_instrument, RT.wl, rhi["transm_up_dir"] + rhi["transm_up_dif"]
+    )  # REVIEW: Changed from transup
+
     # Prevent NaNs
     transm[transm == 0] = 1e-5
 
@@ -205,17 +217,21 @@ def invert_algebraic(
     # Surface and measured wavelengths may differ.
     Ls = surface.calc_Ls(x_surface, geom)
     Ls_meas = interp1d(surface.wl, Ls, fill_value="extrapolate")(wl)
+
+    # TODO - support radiance mode for thermal!
+    if np.sum(Ls_meas) != 0 and my_RT.rt_mode == "rdn":
+        raise NotImplementedError(
+            "Thermal emission with radiance mode not yet supported"
+        )
     rdn_solrfl = meas - (transup * Ls_meas)
 
     # Now solve for the reflectance at measured wavelengths,
     # and back-translate to surface wavelengths
     coszen, cos_i = geom.check_coszen_and_cos_i(RT.coszen)
-    if my_RT.rt_mode == "rdn":
-        rho = rdn_solrfl
-    else:
-        rho = RT.rdn_to_rho(rdn_solrfl, coszen, solar_irr)
+    if my_RT.rt_mode != "rdn":
+        rdn_solrfl = units.rdn_to_transm(rdn_solrfl, coszen, solar_irr)
 
-    rfl = 1.0 / (transm / (rho - rhoatm) + sphalb)
+    rfl = 1.0 / (transm / (rdn_solrfl - rhoatm) + sphalb)
     rfl[rfl > 1.0] = 1.0
     rfl_est = interp1d(wl, rfl, fill_value="extrapolate")(surface.wl)
 

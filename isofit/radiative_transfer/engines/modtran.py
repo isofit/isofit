@@ -32,6 +32,7 @@ import numpy as np
 import scipy.interpolate
 import scipy.stats
 
+from isofit.core import units
 from isofit.core.common import json_load_ascii, recursive_replace
 from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
 
@@ -67,7 +68,7 @@ class ModtranRT(RadiativeTransferEngine):
         dict
             Dictionary of calculated values using the tokens list
         """
-        irr = tokens[18] * 1e6 * np.pi / tokens[8] / coszen  # uW/nm/cm2
+        irr = units.L_to_E(units.W_to_uW(tokens[18]) / tokens[8], coszen)  # uW/nm/cm2
 
         # fmt: off
         # If classic singlepart transmittance is used,
@@ -79,13 +80,13 @@ class ModtranRT(RadiativeTransferEngine):
         return {
             'solar_irr'          : irr,       # Solar irradiance
             'wl'                 : tokens[0], # Wavelength
-            'rhoatm'             : tokens[4] * 1e6 * np.pi / (irr * coszen), # unitless
+            'rhoatm'             : units.rdn_to_transm(units.W_to_uW(tokens[4]), coszen, irr), # unitless
             'width'              : tokens[8],
-            'thermal_upwelling'  : (tokens[11] + tokens[12]) / tokens[8] * 1e6, # uW/nm/sr/cm2
-            'thermal_downwelling': tokens[16] * 1e6 / tokens[8],
-            'path_rdn'           : tokens[14] * 1e6 + tokens[15] * 1e6, # The sum of the (1) single scattering and (2) multiple scattering
-            'grnd_rflt'          : tokens[16] * 1e6,        # ground reflected radiance (direct+diffuse+multiple scattering)
-            'drct_rflt'          : tokens[17] * 1e6,        # same as 16 but only on the sun->surface->sensor path (only direct)
+            'thermal_upwelling'  : units.W_to_uW((tokens[11] + tokens[12]) / tokens[8]), # uW/nm/sr/cm2
+            'thermal_downwelling': units.W_to_uW(tokens[16]) / tokens[8],
+            'path_rdn'           : units.W_to_uW(tokens[14]) + units.W_to_uW(tokens[15]), # The sum of the (1) single scattering and (2) multiple scattering
+            'grnd_rflt'          : units.W_to_uW(tokens[16]),        # ground reflected radiance (direct+diffuse+multiple scattering)
+            'drct_rflt'          : units.W_to_uW(tokens[17]),        # same as 16 but only on the sun->surface->sensor path (only direct)
             'transm_down_dif'    : tokens[21] + tokens[22],  # total transmittance (down * up, direct + diffuse)
             'sphalb'             : tokens[23],  # atmospheric spherical albedo
             'transm_up_dir'      : tokens[24],  # upward direct transmittance
@@ -263,7 +264,7 @@ class ModtranRT(RadiativeTransferEngine):
         file = os.path.join(self.sim_path, self.point_to_filename(point))
 
         solzen = self.load_tp6(f"{file}.tp6")
-        coszen = np.cos(solzen * np.pi / 180.0)
+        coszen = np.cos(np.deg2rad(solzen))
         params = self.load_chn(f"{file}.chn", coszen)
 
         # Remove thermal terms in VSWIR runs to avoid incorrect usage
@@ -749,7 +750,7 @@ class ModtranRT(RadiativeTransferEngine):
                 ws = wl + np.linspace(-span, span, steps)
                 vs = scipy.stats.norm.pdf(ws, wl, sigma)
                 vs = vs / vs[int(steps / 2)]
-                wns = 10000.0 / (ws / 1000.0)
+                wns = units.nm_to_wavenumber(ws)
 
                 fout.write("CENTER:  %6.2f NM   FWHM:  %4.2f NM\n" % (wl, fwhm))
 

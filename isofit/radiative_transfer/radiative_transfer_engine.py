@@ -31,7 +31,7 @@ import numpy as np
 import xarray as xr
 
 from isofit import ray
-from isofit.core import common
+from isofit.core import common, units
 from isofit.radiative_transfer import luts
 
 Logger = logging.getLogger(__file__)
@@ -532,12 +532,12 @@ class RadiativeTransferEngine:
     # REVIEW: We need to think about the best place for the two albedo method (here, radiative_transfer.py, utils, etc.)
     @staticmethod
     def two_albedo_method(
-        case0: dict,
-        case1: dict,
-        case2: dict,
+        case_0: dict,
+        case_1: dict,
+        case_2: dict,
         coszen: float,
-        rfl1: float = 0.1,
-        rfl2: float = 0.5,
+        rfl_1: float = 0.1,
+        rfl_2: float = 0.5,
     ) -> dict:
         """
         Calculates split transmittance values from a multipart file using the
@@ -545,17 +545,17 @@ class RadiativeTransferEngine:
 
         Parameters
         ----------
-        case0: dict
+        case_0: dict
             MODTRAN output for a non-reflective surface (case 0 of the channel file)
-        case1: dict
-            MODTRAN output for surface reflectance = rfl1 (case 1 of the channel file)
-        case2: dict
-            MODTRAN output for surface reflectance = rfl2 (case 2 of the channel file)
+        case_1: dict
+            MODTRAN output for surface reflectance = rfl_1 (case 1 of the channel file)
+        case_2: dict
+            MODTRAN output for surface reflectance = rfl_2 (case 2 of the channel file)
         coszen: float
-            ...
-        rfl1: float, defaults=0.1
-            Surface reflectance  for case 1 of the MODTRAN output
-        rfl2: float, defaults=0.5
+            cosine of the solar zenith angle
+        rfl_1: float, defaults=0.1
+            surface reflectance for case 1 of the MODTRAN output
+        rfl_2: float, defaults=0.5
             surface reflectance for case 2 of the MODTRAN output
 
         Returns
@@ -586,62 +586,61 @@ class RadiativeTransferEngine:
                 topography and glint.
         """
         # Instrument channel widths
-        widths = case0["width"]
+        widths = case_0["width"]
         # Direct upward transmittance
-        # REVIEW: was [transup], then renamed to [transm_up_dif],
-        # now re-renamed to [transm_up_dir]
-        # since it only includes direct upward transmittance
-        t_up_dir = case0["transm_up_dir"]
+        transm_up_dir = case_0["transm_up_dir"]
 
-        # Top-of-atmosphere solar irradiance as a function of sun zenith angle
-        E0 = case0["solar_irr"] * coszen / np.pi
+        # Top-of-atmosphere solar radiance as a function of solar zenith angle
+        L_solar = units.E_to_L(case_0["solar_irr"], coszen)
 
         # Direct ground reflected radiance at sensor for case 1 (sun->surface->sensor)
         # This includes direct down and direct up transmittance
-        Ltoa_dir1 = case1["drct_rflt"]
+        L_toa_dir_1 = case_1["drct_rflt"]
         # Total ground reflected radiance at sensor for case 1 (sun->surface->sensor)
         # This includes direct + diffuse down, but only direct up transmittance
-        Ltoa1 = case1["grnd_rflt"]
+        L_toa_1 = case_1["grnd_rflt"]
 
-        # Transforming back to at-surface irradiance
-        # Since Ltoa_dir1 and Ltoa1 only contain direct upward transmittance,
-        # we can safely divide by t_up_dir without needing t_up_dif
-        # Direct at-surface irradiance for case 1 (only direct down transmittance)
-        E_down_dir1 = Ltoa_dir1 * np.pi / rfl1 / t_up_dir
-        # Total at-surface irradiance for case 1 (direct + diffuse down transmittance)
-        E_down1 = Ltoa1 * np.pi / rfl1 / t_up_dir
+        # Transforming back to at-surface radiance
+        # Since L_toa_dir_1 and L_toa_1 only contain direct upward transmittance,
+        # we can safely divide by transm_up_dir without needing transm_up_dif
+        # Direct at-surface radiance for case 1 (only direct down transmittance)
+        L_down_dir_1 = L_toa_dir_1 / rfl_1 / transm_up_dir
+        # Total at-surface radiance for case 1 (direct + diffuse down transmittance)
+        L_down_1 = L_toa_1 / rfl_1 / transm_up_dir
 
-        # Total at-surface irradiance for case 2 (direct + diffuse down transmittance)
-        E_down2 = case2["grnd_rflt"] * np.pi / rfl2 / t_up_dir
+        # Total at-surface radiance for case 2 (direct + diffuse down transmittance)
+        L_down_2 = case_2["grnd_rflt"] / rfl_2 / transm_up_dir
 
         # Atmospheric path radiance for case 1
-        Lp1 = case1["path_rdn"]
+        L_path_1 = case_1["path_rdn"]
         # Atmospheric path radiance for case 2
-        Lp2 = case2["path_rdn"]
+        L_path_2 = case_2["path_rdn"]
 
         # Total reflected radiance at surface (before upward atmospheric transmission) for case 1
-        Lsurf1 = rfl1 * E_down1
+        L_surf_1 = rfl_1 * L_down_1
         # Total reflected radiance at surface (before upward atmospheric transmission) for case 2
-        Lsurf2 = rfl2 * E_down2
+        L_surf_2 = rfl_2 * L_down_2
         # Atmospheric path radiance for non-reflective surface (case 0)
-        Lp0 = ((Lsurf2 * Lp1) - (Lsurf1 * Lp2)) / (Lsurf2 - Lsurf1)
+        L_path_0 = ((L_surf_2 * L_path_1) - (L_surf_1 * L_path_2)) / (
+            L_surf_2 - L_surf_1
+        )
 
         # Diffuse upward transmittance
-        t_up_dif = np.pi * (Lp1 - Lp0) / Lsurf1
+        transm_up_dif = (L_path_1 - L_path_0) / L_surf_1
 
         # Spherical albedo
-        salb = (E_down1 - E_down2) / (Lsurf1 - Lsurf2)
+        salb = (L_down_1 - L_down_2) / (L_surf_1 - L_surf_2)
 
-        # Total at-surface irradiance for non-reflective surface (case 0)
+        # Total at-surface radiance for non-reflective surface (case 0)
         # Only add contribution from atmospheric spherical albedo
-        E_down0 = E_down1 * (1 - rfl1 * salb)
-        # Diffuse at-surface irradiance for non-reflective surface (case 0)
-        E_down_dif0 = E_down0 - E_down_dir1
+        L_down_0 = L_down_1 * (1 - rfl_1 * salb)
+        # Diffuse at-surface radiance for non-reflective surface (case 0)
+        L_down_dif_0 = L_down_0 - L_down_dir_1
 
         # Direct downward transmittance
-        t_down_dir = E_down_dir1 / widths / np.pi / E0
+        transm_down_dir = L_down_dir_1 / widths / L_solar
         # Diffuse downward transmittance
-        t_down_dif = E_down_dif0 / widths / np.pi / E0
+        transm_down_dif = L_down_dif_0 / widths / L_solar
 
         # Return some keys from the first part plus the new calculated keys
         pass_forward = [
@@ -653,13 +652,13 @@ class RadiativeTransferEngine:
         ]
         data = {
             "sphalb": salb,
-            "transm_up_dir": t_up_dir,
-            "transm_up_dif": t_up_dif,
-            "transm_down_dir": t_down_dir,
-            "transm_down_dif": t_down_dif,
+            "transm_up_dir": transm_up_dir,
+            "transm_up_dif": transm_up_dif,
+            "transm_down_dir": transm_down_dir,
+            "transm_down_dif": transm_down_dif,
         }
         for key in pass_forward:
-            data[key] = case0[key]
+            data[key] = case_0[key]
 
         return data
 

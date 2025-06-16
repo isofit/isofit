@@ -26,6 +26,7 @@ from scipy.interpolate import interp1d, splev, splrep
 from scipy.io import loadmat
 from scipy.signal import convolve
 
+from isofit.core import units
 from isofit.core.common import (
     emissive_radiance,
     eps,
@@ -96,7 +97,7 @@ class Instrument:
             self.model_type = "NEDT"
             self.noise_file = config.nedt_noise_file
             self.noise_data = np.loadtxt(self.noise_file, delimiter=",", skiprows=8)
-            noise_data_w_nm = self.noise_data[:, 0] * 1000
+            noise_data_w_nm = units.micron_to_nm(self.noise_data[:, 0])
             noise_data_NEDT = self.noise_data[:, 1]
             nedt = interp1d(noise_data_w_nm, noise_data_NEDT)(self.wl_init)
 

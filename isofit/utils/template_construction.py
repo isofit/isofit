@@ -18,7 +18,7 @@ import numpy as np
 from scipy.io import loadmat
 from spectral.io import envi
 
-from isofit.core import isofit
+from isofit.core import isofit, units
 from isofit.core.common import (
     envi_header,
     expand_path,
@@ -1346,8 +1346,8 @@ def define_surface_types(
     fwhm: np.array,
 ):
     if np.all(wl < 10):
-        wl = wl * 1000
-        fwhm = fwhm * 1000
+        wl = units.micron_to_nm(wl)
+        fwhm = unts.micron_to_nm(fwhm)
 
     irr_file = os.path.join(
         os.path.dirname(isofit.__file__), "..", "..", "data", "kurucz_0.1nm.dat"
@@ -1492,7 +1492,7 @@ def get_metadata_from_obs(
     obs = obs_dataset.open_memmap(interleave="bip", writable=False)
     valid = np.logical_not(np.any(np.isclose(obs, nodata_value), axis=2))
 
-    path_km = obs[:, :, 0] / 1000.0
+    path_km = units.m_to_km(obs[:, :, 0])
     to_sensor_azimuth = obs[:, :, 1]
     to_sensor_zenith = obs[:, :, 2]
     to_sun_azimuth = obs[:, :, 3]
@@ -1632,11 +1632,11 @@ def get_metadata_from_loc(
     # Grab zensor position and orientation information
     mean_latitude = np.mean(loc_data[1, valid].flatten())
     mean_longitude = np.mean(-1 * loc_data[0, valid].flatten())
-    mean_elevation_km = np.mean(loc_data[2, valid]) / 1000.0
+    mean_elevation_km = units.m_to_km(np.mean(loc_data[2, valid]))
 
     # make elevation grid
-    min_elev = np.min(loc_data[2, valid]) / 1000.0
-    max_elev = np.max(loc_data[2, valid]) / 1000.0
+    min_elev = units.m_to_km(np.min(loc_data[2, valid]))
+    max_elev = units.m_to_km(np.max(loc_data[2, valid]))
     if pressure_elevation:
         min_elev = max(min_elev - 2, 0)
         max_elev += 2
