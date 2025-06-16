@@ -143,6 +143,7 @@ def heuristic_atmosphere(
         bounds = (h2os[0] + 0.001, h2os[-1] - 0.001)
         best = min1d(lambda h: abs(1 - p(h)), bounds=bounds, method="bounded")
         x_new[ind_sv] = best.x
+
     return x_new
 
 
@@ -174,21 +175,6 @@ def invert_algebraic(
         Ls: estimate of the emitted surface leaving radiance
         coeffs: atmospheric parameters for the forward model
     """
-
-    # Get atmospheric optical parameters (possibly at high
-    # spectral resolution) and resample them if needed.
-    rhi = RT.get_shared_rtm_quantities(x_RT, geom)
-    wl, fwhm = instrument.calibration(x_instrument)
-    rhoatm = instrument.sample(x_instrument, RT.wl, rhi["rhoatm"])
-    transm = instrument.sample(
-        x_instrument, RT.wl, rhi["transm_down_dir"] + rhi["transm_down_dif"]
-    )  # REVIEW: Changed from transm
-    solar_irr = instrument.sample(x_instrument, RT.wl, RT.solar_irr)
-    sphalb = instrument.sample(x_instrument, RT.wl, rhi["sphalb"])
-    transup = instrument.sample(
-        x_instrument, RT.wl, rhi["transm_up_dir"] + rhi["transm_up_dif"]
-    )  # REVIEW: Changed from transup
-
     # Figure out which RT object we are using
     # TODO: this is currently very specific to vswir-tir 2-mode, eventually generalize
     my_RT = None
@@ -198,6 +184,28 @@ def invert_algebraic(
             break
     if not my_RT:
         raise ValueError("No suitable RT object for initialization")
+
+    # Get atmospheric optical parameters (possibly at high
+    # spectral resolution) and resample them if needed.
+    rhi = RT.get_shared_rtm_quantities(x_RT, geom)
+    wl, fwhm = instrument.calibration(x_instrument)
+    rhoatm = instrument.sample(x_instrument, RT.wl, rhi["rhoatm"])
+
+    if my_RT.rt_mode == "rdn":
+        transm = rhi["transm_down_dir"] + rhi["transm_down_dif"]
+
+    else:
+        transm = (rhi["transm_down_dir"] + rhi["transm_down_dif"]) * (
+            rhi["transm_up_dir"] + rhi["transm_up_dif"]
+        )
+
+    transm = instrument.sample(x_instrument, RT.wl, transm)
+
+    solar_irr = instrument.sample(x_instrument, RT.wl, RT.solar_irr)
+    sphalb = instrument.sample(x_instrument, RT.wl, rhi["sphalb"])
+    transup = instrument.sample(
+        x_instrument, RT.wl, rhi["transm_up_dir"] + rhi["transm_up_dif"]
+    )  # REVIEW: Changed from transup
 
     # Prevent NaNs
     transm[transm == 0] = 1e-5
