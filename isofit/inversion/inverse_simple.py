@@ -191,7 +191,10 @@ def invert_algebraic(
     wl, fwhm = instrument.calibration(x_instrument)
     rhoatm = instrument.sample(x_instrument, RT.wl, rhi["rhoatm"])
 
-    if my_RT.rt_mode == "rdn":
+    if (
+        not isinstance(rhi["transm_up_dir"], np.ndarray)
+        or len(rhi["transm_up_dir"]) == 1
+    ):
         transm = rhi["transm_down_dir"] + rhi["transm_down_dif"]
 
     else:
