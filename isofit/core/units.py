@@ -98,7 +98,7 @@ def nm_to_wavenumber(nm):
     """
     Function to convert nm to wavenumber.
     """
-    wavenumber = cm_wavenumber_to_nm(nm)
+    wavenumber = wavenumber_to_nm(nm)
     return wavenumber
 
 

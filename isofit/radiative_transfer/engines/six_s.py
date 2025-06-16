@@ -177,7 +177,7 @@ class SixSRT(RadiativeTransferEngine):
                 "Make sure to add the examples folder to ISOFIT's root directory before proceeding."
             )
         iwl, irr = irr.T
-        irr = irr / 10.0  # convert, uW/nm/cm2
+        irr = irr / 10.0  # convert from mW/m2/nm to uW/nm/cm2
         irr = irr / self.irr_factor**2  # consider solar distance
         solar_irr = resample_spectrum(irr, iwl, self.wl, self.fwhm)
 
@@ -214,8 +214,8 @@ class SixSRT(RadiativeTransferEngine):
             "alt": min(self.engine_config.alt, 99),
             "atm_file": None,
             "abscf_data_directory": None,
-            "wlinf": wlinf / 1000.0,  # convert to nm
-            "wlsup": wlsup / 1000.0,
+            "wlinf": units.nm_to_micron(wlinf),
+            "wlsup": units.nm_to_micron(wlsup),
         }
 
         # Assume geometry values are provided by the config
