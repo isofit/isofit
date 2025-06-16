@@ -132,7 +132,7 @@ class RadiativeTransferEngine:
 
         # ToDo: move setting of multipart rfl values to config
         if self.multipart_transmittance:
-            self.test_rfls = [0.0, 0.1, 0.5]
+            self.test_rfls = [0.1, 0.5]
 
         # Extract from LUT file if available, otherwise initialize it
         if exists:
@@ -532,7 +532,6 @@ class RadiativeTransferEngine:
     # REVIEW: We need to think about the best place for the two albedo method (here, radiative_transfer.py, utils, etc.)
     @staticmethod
     def two_albedo_method(
-        case0: dict,
         case1: dict,
         case2: dict,
         coszen: float,
@@ -545,8 +544,6 @@ class RadiativeTransferEngine:
 
         Parameters
         ----------
-        case0: dict
-            MODTRAN output for a non-reflective surface (case 0 of the channel file)
         case1: dict
             MODTRAN output for surface reflectance = rfl1 (case 1 of the channel file)
         case2: dict
@@ -558,10 +555,31 @@ class RadiativeTransferEngine:
         rfl2: float, defaults=0.5
             surface reflectance for case 2 of the MODTRAN output
 
+        Each case requires the following parameters:
+            - width: Instrument channel widths
+            - transm_up_dir: Direct upward transmittance
+            - solar_irr: Top-of-atmosphere solar irradiance as a function of sun zenith angle
+            - drct_rflt: Direct ground reflected radiance at sensor (sun->surface->sensor)
+                Includes direct down and direct up transmittance
+            - grnd_rflt: Total ground reflected radiance at sensor (sun->surface->sensor)
+                Includes direct + diffuse down, but only direct up transmittance
+            - path_rdn: Atmospheric path radiance
+            - wl: Wavelengths (nm)
+            - rhoatm: Atmospheric path reflectance - just for convenience
+            - thermal_upwelling: Upwelling thermal radiance
+            - thermal_downwelling: Downwelling thermal radiance
+
         Returns
         -------
         data: dict
-            Relevant information
+            - transm_up_dir: Direct upward transmittance
+            - transm_up_dif: Diffuse upward transmittance
+            - transm_down_dir: Direct downward transmittance
+            - transm_down_dif: Diffuse downward transmittance
+            - sphalb: Spherical sky albedo
+            - wl: Wavelengths (nm)
+            - rhoatm: Atmospheric path reflectance
+            - solar_irr: Top-of-atmosphere solar irradiance
 
         Notes
         -----
@@ -572,7 +590,8 @@ class RadiativeTransferEngine:
         which is similar to this one with the single difference where the
         "path_radiance_no_surface" variable is taken from a
         zero-surface-reflectance MODTRAN run instead of being calculated from
-        2 MODTRAN outputs.
+        2 MODTRAN outputs.  The 2-albedo method is selected here for numeical
+        stability in t_up_dif.
 
         There are a few argument as to why the 2- or 3-albedo methods are
         beneficial:
@@ -586,21 +605,14 @@ class RadiativeTransferEngine:
                 topography and glint.
         """
         # Instrument channel widths
-        widths = case0["width"]
-        # Direct upward transmittance
-        # REVIEW: was [transup], then renamed to [transm_up_dif],
-        # now re-renamed to [transm_up_dir]
-        # since it only includes direct upward transmittance
-        t_up_dir = case0["transm_up_dir"]
+        widths = case1["width"]
+
+        t_up_dir = case1["transm_up_dir"]
 
         # Top-of-atmosphere solar irradiance as a function of sun zenith angle
-        E0 = case0["solar_irr"] * coszen / np.pi
+        E0 = case1["solar_irr"] * coszen / np.pi
 
-        # Direct ground reflected radiance at sensor for case 1 (sun->surface->sensor)
-        # This includes direct down and direct up transmittance
         Ltoa_dir1 = case1["drct_rflt"]
-        # Total ground reflected radiance at sensor for case 1 (sun->surface->sensor)
-        # This includes direct + diffuse down, but only direct up transmittance
         Ltoa1 = case1["grnd_rflt"]
 
         # Transforming back to at-surface irradiance
@@ -630,7 +642,13 @@ class RadiativeTransferEngine:
         t_up_dif = np.pi * (Lp1 - Lp0) / Lsurf1
 
         # Spherical albedo
-        salb = (E_down1 - E_down2) / (Lsurf1 - Lsurf2)
+        salb_num = E_down1 - E_down2
+        salb_denom = Lsurf1 - Lsurf2
+        salb = salb_num / salb_denom
+
+        # Avoid division by very small numbers.  This threshold is semi-arbitrary,
+        # but seems to work reasonably
+        salb[np.abs(salb_denom) < 0.001] = 0
 
         # Total at-surface irradiance for non-reflective surface (case 0)
         # Only add contribution from atmospheric spherical albedo
@@ -659,7 +677,7 @@ class RadiativeTransferEngine:
             "transm_down_dif": t_down_dif,
         }
         for key in pass_forward:
-            data[key] = case0[key]
+            data[key] = case1[key]
 
         return data
 
