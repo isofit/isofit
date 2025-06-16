@@ -59,7 +59,7 @@ def analytical_line(
     atm_file: str = None,
     loglevel: str = "INFO",
     logfile: str = None,
-    initializer: str = "algebraic",
+    initializer: str = "simple",
 ) -> None:
     """
     TODO: Description
@@ -423,10 +423,10 @@ class Worker(object):
                         meas,
                         geom,
                     )
+                    rfl_est = self.fm.surface.fit_params(rfl_est, geom)
                     x0 = np.concatenate(
                         [
                             rfl_est,
-                            sub_state[self.fm.idx_surf_nonrfl],
                             x_RT,
                             x_instrument,
                         ]
