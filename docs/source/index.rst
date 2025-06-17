@@ -8,6 +8,12 @@
   custom/best_practices.rst
 
 .. toctree::
+   :maxdepth: 2
+   :caption: Examples:
+
+   notebooks/Example
+
+.. toctree::
   :Caption: Docker
   :maxdepth: 2
 
