@@ -34,7 +34,8 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.intersphinx',
     'autoapi.extension',
-    'myst_parser'
+    'myst_parser',
+    'nbsphinx',
 ]
 
 autoapi_dirs = ['../../isofit']
