@@ -226,7 +226,7 @@ class Create:
         """
         self.queuePoint(point, data)
         self.flush()
-    
+
     def setAttr(self, key, value):
         """
         Sets an attribute in the netCDF
