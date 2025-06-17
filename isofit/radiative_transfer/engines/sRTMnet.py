@@ -224,12 +224,21 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         data = luts.load(self.predict_path, mode="r").sel(point=tuple(point)).load()
         return {
             key: resample_spectrum(
-                values.data if key == "sphalb" else units.transm_to_rdn(values.data, self.emulator_coszen, self.emulator_sol_irr)  ,
-                self.emu_wl, self.wl, self.fwhm)
+                (
+                    values.data
+                    if key == "sphalb"
+                    else units.transm_to_rdn(
+                        values.data, self.emulator_coszen, self.emulator_sol_irr
+                    )
+                ),
+                self.emu_wl,
+                self.wl,
+                self.fwhm,
+            )
             for key, values in data.items()
             if values.data.dtype != "int64"
         }
-    
+
     def postSim(self):
         """
         Post-simulation adjustments for sRTMnet.
