@@ -217,17 +217,19 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                 add_vector = np.zeros((self.points.shape[0], len(feature_point_names)))
                 for _fpn, fpn in enumerate(feature_point_names):
                     if fpn in self.lut_names:
-                        add_vector[:, feature_point_names.index(fpn)] = self.points[:,self.lut_names.index(fpn)]
-                    elif fpn == 'H2OSTR':
+                        add_vector[:, feature_point_names.index(fpn)] = self.points[
+                            :, self.lut_names.index(fpn)
+                        ]
+                    elif fpn == "H2OSTR":
                         add_vector[:, _fpn] = 2.5
                         Logger.warning(f"Using default const H2OSTR of 2.5 g/cm2.")
-                    elif fpn == 'AERFRAC_2' or fpn == 'AOT550':
+                    elif fpn == "AERFRAC_2" or fpn == "AOT550":
                         add_vector[:, _fpn] = 0.06
                         Logger.warning(f"Using default const AOD of 0.06.")
-                    elif fpn == 'observer_altitude_km':
-                        add_vector[:, _fpn] = data["GEOMETRY"]["H1ALT"] 
-                    elif fpn == 'surface_elevation_km':
-                        add_vector[:, _fpn] = data["SURFACE"]["GNDALT"] 
+                    elif fpn == "observer_altitude_km":
+                        add_vector[:, _fpn] = data["GEOMETRY"]["H1ALT"]
+                    elif fpn == "surface_elevation_km":
+                        add_vector[:, _fpn] = data["SURFACE"]["GNDALT"]
                     else:
                         raise ValueError(f"Feature point {fpn} not found in points")
 
@@ -238,7 +240,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                     lp = emulator.predict(np.hstack((sixs[key].values, add_vector)))
                 else:
                     lp = emulator.predict(sixs[key].values)
-                lp /= aux["response_scaler"].item()[key] 
+                lp /= aux["response_scaler"].item()[key]
                 lp += aux["response_offset"].item()[key]
 
                 # filter out negative values for numerical stability before integrating
@@ -374,4 +376,3 @@ def build_sixs_config(engine_config):
     config.lut_path = path.parent / f"6S.{path.name}"
 
     return config
-
