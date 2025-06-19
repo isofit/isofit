@@ -34,7 +34,7 @@ Logger = logging.getLogger(__file__)
 # and get KF to store the key names in the jld2 file
 KEYMAPPING = {
     1: {"name": "AERFRAC_2", "default": 0.06},
-    2: {"name": "H2OSTR", "default": 0.05},
+    2: {"name": "H2OSTR", "default": 0.2},
     3: {"name": "surface_elevation_km"},
     4: {"name": "observer_altitude_km"},
     5: {"name": "solar_zenith"},

@@ -44,8 +44,8 @@
                 "H2OSTR": {
                     "lut_spacing": 0.25,
                     "lut_spacing_min": 0.03,
-                    "default_range": [0.05, 5.0],
-                    "min": 0.05
+                    "default_range": [0.2, 5.0],
+                    "min": 0.2
                 },
                 "AOT550": {
                     "lut_spacing": 0,
