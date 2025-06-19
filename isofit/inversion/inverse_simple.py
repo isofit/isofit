@@ -219,7 +219,7 @@ def invert_algebraic(
     Ls_meas = interp1d(surface.wl, Ls, fill_value="extrapolate")(wl)
 
     # TODO - support radiance mode for thermal!
-    if np.sum(Ls_meas) != 0 and my_RT.rt_mode == "rdn":
+    if (~np.isclose(np.sum(Ls_meas), 0)) and my_RT.rt_mode == "rdn":
         raise NotImplementedError(
             "Thermal emission with radiance mode not yet supported"
         )
