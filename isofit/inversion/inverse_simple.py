@@ -226,7 +226,7 @@ def invert_algebraic(
     rfl[rdn_solrfl - L_atm == 0] = 0.0
     rfl[L_tot == 0] = 0.0
 
-    # While values can go abov 1, they shouldn't got that high above..
+    # While values can go above 1, they shouldn't got that high above.
     # generally it means instability
     rfl[rfl > 1.2] = 1.2
 
