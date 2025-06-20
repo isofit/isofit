@@ -158,7 +158,9 @@ def invert_algebraic(
     geom: Geometry,
 ):
     """Inverts radiance algebraically using Lambertian assumptions to get a
-    reflectance.
+    reflectance.  If the appropriate transmittance terms are available,
+    surface slope will enter for the initial guess.  Otherwise, the surface
+    will be treated as if flat.
 
     Args:
         surface: surface model
@@ -172,8 +174,7 @@ def invert_algebraic(
 
     Return:
         rfl_est: estimate of the surface reflectance based on the given surface model and specified atmospheric state
-        Ls: estimate of the emitted surface leaving radiance
-        coeffs: atmospheric parameters for the forward model
+        coeffs: atmospheric parameters used or the inversion, returned for convenience
     """
     # Figure out which RT object we are using
     # TODO: this is currently very specific to vswir-tir 2-mode, eventually generalize
@@ -185,60 +186,57 @@ def invert_algebraic(
     if not my_RT:
         raise ValueError("No suitable RT object for initialization")
 
-    # Get atmospheric optical parameters (possibly at high
-    # spectral resolution) and resample them if needed.
-    rhi = RT.get_shared_rtm_quantities(x_RT, geom)
-    wl, fwhm = instrument.calibration(x_instrument)
-    rhoatm = instrument.sample(x_instrument, RT.wl, rhi["rhoatm"])
-
-    if (
-        not isinstance(rhi["transm_up_dir"], np.ndarray)
-        or len(rhi["transm_up_dir"]) == 1
-    ):
-        transm = rhi["transm_down_dir"] + rhi["transm_down_dif"]
-
-    else:
-        transm = (rhi["transm_down_dir"] + rhi["transm_down_dif"]) * (
-            rhi["transm_up_dir"] + rhi["transm_up_dif"]
-        )
-
-    transm = instrument.sample(x_instrument, RT.wl, transm)
-
-    solar_irr = instrument.sample(x_instrument, RT.wl, RT.solar_irr)
-    sphalb = instrument.sample(x_instrument, RT.wl, rhi["sphalb"])
-    transup = instrument.sample(
-        x_instrument, RT.wl, rhi["transm_up_dir"] + rhi["transm_up_dif"]
-    )  # REVIEW: Changed from transup
-
-    # Prevent NaNs
-    transm[transm == 0] = 1e-5
-
-    # Calculate the initial emission and subtract from the measurement.
-    # Surface and measured wavelengths may differ.
+    # Get all radiance terms
+    (
+        rhi,
+        L_tot,
+        L_down_dir,
+        L_down_dif,
+        L_dir_dir,
+        L_dif_dir,
+        L_dir_dif,
+        L_dif_dif,
+    ) = RT.calc_RT_quantities(x_RT, geom)
+    L_atm = RT.get_L_atm(x_RT, geom)
+    sphalb = rhi["sphalb"]
     Ls = surface.calc_Ls(x_surface, geom)
-    Ls_meas = interp1d(surface.wl, Ls, fill_value="extrapolate")(wl)
 
-    # TODO - support radiance mode for thermal!
-    if np.sum(Ls_meas) != 0 and my_RT.rt_mode == "rdn":
-        raise NotImplementedError(
-            "Thermal emission with radiance mode not yet supported"
-        )
-    rdn_solrfl = meas - (transup * Ls_meas)
+    # TODO - make this a function, and use it here and in radiatve transfer
+    # transmit thermal emission through the atmosphere
+    transup = rhi["transm_up_dir"] + rhi["transm_up_dif"]
+    L_up = Ls * transup
 
-    # Now solve for the reflectance at measured wavelengths,
-    # and back-translate to surface wavelengths
-    coszen, cos_i = geom.check_coszen_and_cos_i(RT.coszen)
-    if my_RT.rt_mode != "rdn":
-        rdn_solrfl = units.rdn_to_transm(rdn_solrfl, coszen, solar_irr)
+    # Resample the components we need to use
+    for i in L_atm, L_tot, sphalb, L_up:
+        i[:] = instrument.sample(x_instrument, RT.wl, i)
 
-    rfl = 1.0 / (transm / (rdn_solrfl - rhoatm) + sphalb)
-    rfl[rfl > 1.0] = 1.0
+    # Get the wavelengths too - these may also be adjusted
+    wl, fwhm = instrument.calibration(x_instrument)
+
+    # Diferent handling for Ls interpolation.
+    L_up = interp1d(surface.wl, L_up, fill_value="extrapolate")(wl)
+
+    # Now everything should be in hand to do the calculation
+    rdn_solrfl = meas - L_up
+    rfl = 1.0 / (L_tot / (rdn_solrfl - L_atm) + sphalb)
+
+    # explicity handle known nan cases - this doesn't handle nans
+    # that might appear from the RT directly, as we don't want to
+    # cover them up
+    rfl[rdn_solrfl - L_atm == 0] = 0.0
+    rfl[L_tot == 0] = 0.0
+
+    # While values can go abov 1, they shouldn't got that high above..
+    # generally it means instability
+    rfl[rfl > 1.2] = 1.2
+
+    # interpolate the output
     rfl_est = interp1d(wl, rfl, fill_value="extrapolate")(surface.wl)
 
     # Some downstream code will benefit from our precalculated
     # atmospheric optical parameters
-    coeffs = rhoatm, sphalb, transm, solar_irr, coszen, transup
-    return rfl_est, Ls, coeffs
+    coeffs = L_atm, sphalb, L_tot, transup, L_up
+    return rfl_est, coeffs
 
 
 def invert_analytical(
@@ -441,7 +439,7 @@ def invert_simple(forward: ForwardModel, meas: np.array, geom: Geometry):
     # Now, with atmosphere fixed, we can invert the radiance algebraically
     # via Lambertian approximations to get reflectance
     x_surface, x_RT, x_instrument = forward.unpack(x)
-    rfl_est, Ls_est, coeffs = invert_algebraic(
+    rfl_est, coeffs = invert_algebraic(
         surface, RT, instrument, x_surface, x_RT, x_instrument, meas, geom
     )
 
@@ -468,7 +466,7 @@ def invert_simple(forward: ForwardModel, meas: np.array, geom: Geometry):
         # Radiate transfer calculations could take place at high spectral resolution
         # so we upsample the surface reflectance
         rfl_hi = forward.upsample(forward.surface.wl, rfl_est)
-        rhoatm, sphalb, transm, solar_irr, coszen, transup = coeffs
+        _, sphalb, _, transup, _ = coeffs
 
         L_atm = RT.get_L_atm(x_RT, geom)
         L_down_transmitted, _, _ = RT.get_L_down_transmitted(x_RT, geom)
