@@ -228,7 +228,7 @@ def invert_algebraic(
 
     # While values can go above 1, they shouldn't got that high above.
     # generally it means instability
-    rfl[rfl > 1.2] = 1.2
+    rfl[rfl > 1.6] = 1.6
 
     # interpolate the output
     rfl_est = interp1d(wl, rfl, fill_value="extrapolate")(surface.wl)
