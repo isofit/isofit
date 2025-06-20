@@ -204,6 +204,11 @@ def invert_algebraic(
     # TODO - make this a function, and use it here and in radiatve transfer
     # transmit thermal emission through the atmosphere
     transup = rhi["transm_up_dir"] + rhi["transm_up_dif"]
+    if np.max(transup) > 1.1:
+        raise ValueError(
+            "Transmittance up is greater than 1.0, which is not physically possible. Most likely, this is an issue with LUT input convention."
+        )
+
     L_up = Ls * transup
 
     # Resample the components we need to use
