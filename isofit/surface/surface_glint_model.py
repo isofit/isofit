@@ -82,8 +82,6 @@ class GlintModelSurface(MultiComponentSurface):
         # Try SWIR2, then SWIR1, then NIR
         if np.max(self.wl) >= 2300:
             glint_band = np.argmin(np.abs(2300 - self.wl))
-        elif np.max(self.wl) >= 1750:
-            glint_band = np.argmin(np.abs(1750 - self.wl))
         else:
             glint_band = np.argmin(np.abs(1020 - self.wl))
 
