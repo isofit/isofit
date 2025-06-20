@@ -174,7 +174,7 @@ def invert_algebraic(
 
     Return:
         rfl_est: estimate of the surface reflectance based on the given surface model and specified atmospheric state
-        coeffs: atmospheric parameters used or the inversion, returned for convenience
+        coeffs: atmospheric parameters used for the inversion, returned for convenience
     """
     # Figure out which RT object we are using
     # TODO: this is currently very specific to vswir-tir 2-mode, eventually generalize
