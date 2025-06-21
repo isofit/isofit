@@ -213,7 +213,7 @@ def invert_algebraic(
     wl, fwhm = instrument.calibration(x_instrument)
 
     # Interpolate L_up linearly if needed.
-    Ls = interp1d(surface.wl, Ls, fill_value="extrapolate")(wl)
+    Ls = interp1d(surface.wl, Ls, fill_value="extrapolate")(RT.wl)
 
     # Now convert to what's scene at the instrument
     L_up = Ls * transup
