@@ -30,7 +30,7 @@ import numpy as np
 import yaml
 from scipy.interpolate import interp1d
 
-from isofit.core.common import resample_spectrum
+from isofit.core.common import resample_spectrum, calculate_resample_matrx
 from isofit.core import units
 from isofit.radiative_transfer import luts
 from isofit.radiative_transfer.engines import SixSRT
@@ -132,11 +132,11 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         # TODO: Re-enable when sRTMnet_v120_aux is updated
         # Verify expected keys exist
         missing = self.lut_quantities - set(aux["rt_quantities"].tolist())
-        if missing:
-            raise AttributeError(
-                f"Emulator Aux rt_quantities does not contain the following required keys: {missing}"
-            )
-        aux_rt_quantities = self.lut_quantities
+        # if missing:
+        #    raise AttributeError(
+        #        f"Emulator Aux rt_quantities does not contain the following required keys: {missing}"
+        #    )
+        # aux_rt_quantities = self.lut_quantities
 
         # Emulator keys (sRTMnet)
         self.emu_wl = aux["emulator_wavelengths"]
@@ -179,6 +179,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         Logger.info("Loading and predicting with emulator")
         if self.engine_config.emulator_file.endswith(".h5"):
             Logger.debug("Detected hdf5 (3c) emulator file format")
+            self.component_mode = "1c"
 
             # Stack the quantities together along a new dimension named `quantity`
             resample = resample.to_array("quantity").stack(stack=["quantity", "wl"])
@@ -202,6 +203,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
 
         elif self.engine_config.emulator_file.endswith(".npz"):
             Logger.debug("Detected npz (6c) emulator file format")
+            self.component_mode = "6c"
 
             weights = aux["weights"].item()
             biases = aux["biases"].item()
@@ -271,6 +273,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
 
         self.emulator_sol_irr = sol_irr
         self.emulator_coszen = sim["coszen"]
+        self.emulator_H = calculate_resample_matrx(self.emu_wl, self.wl, self.fwhm)
 
         # Insert these into the LUT file
         return {
@@ -292,18 +295,23 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         """
         # REVIEW: Likely should chunk along the point dim to improve this
         data = luts.load(self.predict_path, mode="r").sel(point=tuple(point)).load()
+
+        # Keep transmittances as transmitance, but convert coupling terms to radiance
+        # TODO - get rhoatm out of this list.  Probably easiest to implement a bulk
+        # rt_mode purge
+        for key in ["dir-dir", "dir-dif", "dif-dir", "dif-dif", "rhoatm"]:
+            logging.info(key)
+            data[key].data = units.transm_to_rdn(
+                data[key].data, self.emulator_coszen, self.emulator_sol_irr
+            )
+
         return {
             key: resample_spectrum(
-                (
-                    values.data
-                    if key == "sphalb"
-                    else units.transm_to_rdn(
-                        values.data, self.emulator_coszen, self.emulator_sol_irr
-                    )
-                ),
+                values.data,
                 self.emu_wl,
                 self.wl,
                 self.fwhm,
+                H=self.emulator_H,
             )
             for key, values in data.items()
             if values.data.dtype != "int64"
