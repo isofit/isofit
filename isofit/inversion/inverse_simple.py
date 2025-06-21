@@ -209,17 +209,18 @@ def invert_algebraic(
             "Transmittance up is greater than 1.0, which is not physically possible. Most likely, this is an issue with LUT input convention."
         )
 
+    # Get the wavelengths too - these may also be adjusted
+    wl, fwhm = instrument.calibration(x_instrument)
+
+    # Interpolate L_up linearly if needed.
+    Ls = interp1d(surface.wl, Ls, fill_value="extrapolate")(wl)
+
+    # Now convert to what's scene at the instrument
     L_up = Ls * transup
 
     # Resample the components we need to use
     for i in L_atm, L_tot, sphalb, L_up:
         i[:] = instrument.sample(x_instrument, RT.wl, i)
-
-    # Get the wavelengths too - these may also be adjusted
-    wl, fwhm = instrument.calibration(x_instrument)
-
-    # Diferent handling for Ls interpolation.
-    L_up = interp1d(surface.wl, L_up, fill_value="extrapolate")(wl)
 
     # Now everything should be in hand to do the calculation
     rdn_solrfl = meas - L_up
