@@ -213,14 +213,16 @@ def invert_algebraic(
     wl, fwhm = instrument.calibration(x_instrument)
 
     # Interpolate L_up linearly if needed.
-    Ls = interp1d(surface.wl, Ls, fill_value="extrapolate")(wl)
+    Ls = interp1d(surface.wl, Ls, fill_value="extrapolate")(RT.wl)
 
     # Now convert to what's scene at the instrument
     L_up = Ls * transup
 
     # Resample the components we need to use
-    for i in L_atm, L_tot, sphalb, L_up:
-        i[:] = instrument.sample(x_instrument, RT.wl, i)
+    L_atm = instrument.sample(x_instrument, RT.wl, L_atm)
+    L_tot = instrument.sample(x_instrument, RT.wl, L_tot)
+    sphalb = instrument.sample(x_instrument, RT.wl, sphalb)
+    L_up = instrument.sample(x_instrument, RT.wl, L_up)
 
     # Now everything should be in hand to do the calculation
     rdn_solrfl = meas - L_up
