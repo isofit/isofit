@@ -38,8 +38,8 @@ from isofit.data import env
 
 
 def heuristic_atmosphere(
-    RT: RadiativeTransfer,
-    instrument: Instrument,
+    fm: ForwardModel,
+    x_surface: np.array,
     x_RT: np.array,
     x_instrument: np.array,
     meas: np.array,
@@ -49,8 +49,8 @@ def heuristic_atmosphere(
     Used to initialize gradient descent inversions.
 
     Args:
-        RT: radiative transfer model to use
-        instrument: instrument for noise characterization
+        fm: isofit forward model
+        x_surface: surface portion of the state vector
         x_RT: radiative transfer portion of the state vector
         x_instrument: instrument portion of the state vector
         meas: a one-D numpy vector of radiance in uW/nm/sr/cm2
@@ -62,18 +62,18 @@ def heuristic_atmosphere(
 
     # Identify the latest instrument wavelength calibration (possibly
     # state-dependent) and identify channel numbers for the band ratio.
-    wl, fwhm = instrument.calibration(x_instrument)
+    wl, fwhm = fm.instrument.calibration(x_instrument)
     b865 = np.argmin(abs(wl - 865))
     b945 = np.argmin(abs(wl - 945))
     b1040 = np.argmin(abs(wl - 1040))
-    if not (any(RT.wl > 850) and any(RT.wl < 1050)):
+    if not (any(fm.RT.wl > 850) and any(fm.RT.wl < 1050)):
         return x_RT
     x_new = x_RT.copy()
 
     # Figure out which RT object we are using
     # TODO: this is currently very specific to vswir-tir 2-mode, eventually generalize
     my_RT = None
-    for rte in RT.rt_engines:
+    for rte in fm.RT.rt_engines:
         if rte.treat_as_emissive is False:
             my_RT = rte
             break
@@ -83,7 +83,7 @@ def heuristic_atmosphere(
     # Band ratio retrieval of H2O.  Depending on the radiative transfer
     # model we are using, this state parameter could go by several names.
     for h2oname in ["H2OSTR", "h2o"]:
-        if h2oname not in RT.statevec_names:
+        if h2oname not in fm.RT.statevec_names:
             continue
 
         # ignore unused names
@@ -91,7 +91,7 @@ def heuristic_atmosphere(
             continue
 
         # find the index in the lookup table associated with water vapor
-        ind_sv = RT.statevec_names.index(h2oname)
+        ind_sv = fm.RT.statevec_names.index(h2oname)
         h2os, ratios = [], []
 
         # We iterate through every possible grid point in the lookup table,
@@ -102,37 +102,10 @@ def heuristic_atmosphere(
             # Get Atmospheric terms at high spectral resolution
             x_RT_2 = x_RT.copy()
             x_RT_2[ind_sv] = h2o
-            rhi = RT.get_shared_rtm_quantities(x_RT_2, geom)
-            rhoatm = instrument.sample(x_instrument, RT.wl, rhi["rhoatm"])
-            if (
-                not isinstance(rhi["transm_up_dir"], np.ndarray)
-                or len(rhi["transm_up_dir"]) == 1
-            ):
-                # 1c case
-                transm = instrument.sample(x_instrument, RT.wl, rhi["transm_down_dif"])
-            else:
-                # 4c case
-                transm = instrument.sample(
-                    x_instrument,
-                    RT.wl,
-                    (
-                        (rhi["transm_down_dir"] + rhi["transm_down_dif"])
-                        * (rhi["transm_up_dir"] + rhi["transm_up_dif"])
-                    ),
-                )
-            sphalb = instrument.sample(x_instrument, RT.wl, rhi["sphalb"])
-            solar_irr = instrument.sample(x_instrument, RT.wl, RT.solar_irr)
 
-            # Assume no surface emission.  "Correct" the at-sensor radiance
-            # using this presumed amount of water vapor, and measure the
-            # resulting residual (as measured from linear interpolation across
-            # the absorption feature)
-            coszen, cos_i = geom.check_coszen_and_cos_i(RT.coszen)
-            if my_RT.rt_mode == "rdn":
-                r = 1.0 / (transm / (meas - rhoatm) + sphalb)
-            else:
-                rho_toa = units.rdn_to_transm(meas, coszen, solar_irr)
-                r = 1.0 / (transm / (rho_toa - rhoatm) + sphalb)
+            # pass in all zeros, as this is ONLY used for Ls, which we will
+            # assume is not present
+            r, coeffs = invert_algebraic(fm.surface, fm.RT, fm.instrument, x_surface, x_RT_2, x_instrument, meas, geom)
 
             ratios.append((r[b945] * 2.0) / (r[b1040] + r[b865]))
             h2os.append(h2o)
@@ -441,7 +414,7 @@ def invert_simple(forward: ForwardModel, meas: np.array, geom: Geometry):
 
     if vswir_present:
         x[forward.idx_RT] = heuristic_atmosphere(
-            RT, instrument, x_RT, x_instrument, meas, geom
+            forward, x_surface, x_RT, x_instrument, meas, geom
         )
 
     # Now, with atmosphere fixed, we can invert the radiance algebraically
