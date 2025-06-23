@@ -105,7 +105,16 @@ def heuristic_atmosphere(
 
             # pass in all zeros, as this is ONLY used for Ls, which we will
             # assume is not present
-            r, coeffs = invert_algebraic(fm.surface, fm.RT, fm.instrument, x_surface, x_RT_2, x_instrument, meas, geom)
+            r, coeffs = invert_algebraic(
+                fm.surface,
+                fm.RT,
+                fm.instrument,
+                x_surface,
+                x_RT_2,
+                x_instrument,
+                meas,
+                geom,
+            )
 
             ratios.append((r[b945] * 2.0) / (r[b1040] + r[b865]))
             h2os.append(h2o)
