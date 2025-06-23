@@ -79,7 +79,7 @@ class GlintModelSurface(MultiComponentSurface):
         fit a state vector.
         """
         # Estimate additive glint. Uses multiple options to handle different sensors.
-        # Try SWIR2, then SWIR1, then NIR
+        # Try SWIR, then NIR
         if np.max(self.wl) >= 2300:
             glint_band = np.argmin(np.abs(2300 - self.wl))
         else:
@@ -114,7 +114,7 @@ class GlintModelSurface(MultiComponentSurface):
         # SUN_GLINT g_dd
         x[self.sun_glint_ind] = g_dd_est
         # SKY_GLINT g_dsf
-        x[self.self_sky_glint_ind] = g_dsf_est
+        x[self_sky_glint_ind] = g_dsf_est
         return x
 
     def calc_rfl(self, x_surface, geom):
@@ -159,7 +159,7 @@ class GlintModelSurface(MultiComponentSurface):
         rho_ls = self.fresnel_rf(geom.observer_zenith)
         # TODO make the indexing better for the surface state elements
         drfl[:, self.sun_glint_ind] = rho_ls
-        drfl[:, self.self.sky_glint_ind] = rho_ls
+        drfl[:, self.sky_glint_ind] = rho_ls
 
         return drfl
 
