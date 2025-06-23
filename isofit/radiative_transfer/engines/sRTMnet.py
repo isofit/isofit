@@ -296,16 +296,8 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         # REVIEW: Likely should chunk along the point dim to improve this
         data = luts.load(self.predict_path, mode="r").sel(point=tuple(point)).load()
 
-        # Keep transmittances as transmitance, but convert coupling terms to radiance
-        # TODO - get rhoatm out of this list.  Probably easiest to implement a bulk
-        # rt_mode purge
-        for key in ["dir-dir", "dir-dif", "dif-dir", "dif-dif", "rhoatm"]:
-            logging.info(key)
-            data[key].data = units.transm_to_rdn(
-                data[key].data, self.emulator_coszen, self.emulator_sol_irr
-            )
-
-        return {
+        # Resample the emulator resolution (fixed) to the RT resolution
+        outdict = {
             key: resample_spectrum(
                 values.data,
                 self.emu_wl,
@@ -316,6 +308,20 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             for key, values in data.items()
             if values.data.dtype != "int64"
         }
+
+        # Keep transmittances as transmitance, but convert coupling terms to radiance
+        # TODO - get rhoatm out of this list.  Probably easiest to implement a bulk
+        # rt_mode purge
+        for key in ["dir-dir", "dir-dif", "dif-dir", "dif-dif", "rhoatm"]:
+            logging.info(key)
+            fullspec_val = units.transm_to_rdn(
+                data[key].data, self.emulator_coszen, self.emulator_sol_irr
+            )
+            outdict[key] = resample_spectrum(
+                fullspec_val, self.emu_wl, self.wl, self.fwhm, H=self.emulator_H
+            )
+
+        return outdict
 
     def postSim(self):
         """
