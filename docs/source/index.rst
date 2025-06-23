@@ -13,7 +13,6 @@
   custom/notebooks/apply_oe
   custom/best_practices.rst
   custom/notebooks/functions
-  custom/notebooks/glint
 
 .. toctree::
   :Caption: Docker
