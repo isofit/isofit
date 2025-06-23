@@ -16,7 +16,7 @@ import ray
 from spectral.io import envi
 
 import isofit.utils.template_construction as tmpl
-from isofit.core import isofit
+from isofit.core import isofit, units
 from isofit.core.common import envi_header
 from isofit.utils import analytical_line as ALAlg
 from isofit.utils import empirical_line as ELAlg
@@ -39,6 +39,7 @@ SUPPORTED_SENSORS = [
     "gao",
     "oci",
     "tanager",
+    "av5",
 ]
 RTM_CLEANUP_LIST = ["*r_k", "*t_k", "*tp7", "*wrn", "*psc", "*plt", "*7sc", "*acd"]
 INVERSION_WINDOWS = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
@@ -443,8 +444,8 @@ def apply_oe(
     # Convert to microns if needed
     if wl[0] > 100:
         logging.info("Wavelength units of nm inferred...converting to microns")
-        wl = wl / 1000.0
-        fwhm = fwhm / 1000.0
+        wl = units.nm_to_micron(wl)
+        fwhm = units.nm_to_micron(fwhm)
 
     # write wavelength file
     wl_data = np.concatenate(
@@ -604,7 +605,7 @@ def apply_oe(
             paths.h2o_subs_path
         ):
             # Write the presolve connfiguration file
-            h2o_grid = np.linspace(0.01, max_water - 0.01, 10).round(2)
+            h2o_grid = np.linspace(0.2, max_water - 0.01, 10).round(2)
             logging.info(f"Pre-solve H2O grid: {h2o_grid}")
             logging.info("Writing H2O pre-solve configuration file.")
             tmpl.build_presolve_config(

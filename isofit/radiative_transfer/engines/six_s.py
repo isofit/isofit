@@ -26,6 +26,7 @@ from datetime import datetime
 
 import numpy as np
 
+from isofit.core import units
 from isofit.core.common import resample_spectrum
 from isofit.core.fileio import IO
 from isofit.data import env
@@ -176,7 +177,7 @@ class SixSRT(RadiativeTransferEngine):
                 "Make sure to add the examples folder to ISOFIT's root directory before proceeding."
             )
         iwl, irr = irr.T
-        irr = irr / 10.0  # convert, uW/nm/cm2
+        irr = irr / 10.0  # convert from mW/m2/nm to uW/nm/cm2
         irr = irr / self.irr_factor**2  # consider solar distance
         solar_irr = resample_spectrum(irr, iwl, self.wl, self.fwhm)
 
@@ -213,8 +214,8 @@ class SixSRT(RadiativeTransferEngine):
             "alt": min(self.engine_config.alt, 99),
             "atm_file": None,
             "abscf_data_directory": None,
-            "wlinf": wlinf / 1000.0,  # convert to nm
-            "wlsup": wlsup / 1000.0,
+            "wlinf": units.nm_to_micron(wlinf),
+            "wlsup": units.nm_to_micron(wlsup),
         }
 
         # Assume geometry values are provided by the config
@@ -232,7 +233,7 @@ class SixSRT(RadiativeTransferEngine):
         # Special cases
 
         if "H2OSTR" in vals:
-            vals["h2o_mm"] = vals["H2OSTR"] * 10.0
+            vals["h2o_mm"] = units.cm_to_mm(vals["H2OSTR"])
 
         if "surface_elevation_km" in vals:
             vals["elev"] = vals["surface_elevation_km"]
@@ -324,7 +325,7 @@ class SixSRT(RadiativeTransferEngine):
 
         with open(inpt, "r") as f:
             solzen = float(f.readlines()[1].strip().split()[0])
-        coszen = np.cos(solzen / 360 * 2.0 * np.pi)
+        coszen = np.cos(np.deg2rad(solzen))
 
         # `data` stores the return values, `append` will append to existing keys and creates them if they don't
         # Easy append to keys whether they exist or not

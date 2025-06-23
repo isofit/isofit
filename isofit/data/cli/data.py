@@ -89,7 +89,7 @@ def validate(path=None, checkForUpdate=True, debug=print, error=print, **_):
         error("[x] ISOFIT data do not appear to be installed correctly")
         return False
 
-    debug("[✓] Path is valid")
+    debug("[OK] Path is valid")
 
     if checkForUpdate:
         return isUpToDate(path, debug=debug, error=error)
@@ -144,7 +144,7 @@ def isUpToDate(path=None, tag="latest", debug=print, error=print, **_):
         error(f"[x] Latest is {latest}, currently installed is {current}")
         return False
 
-    debug(f"[✓] Path is up to date, current version is: {current}")
+    debug(f"[OK] Path is up to date, current version is: {current}")
 
     return True
 

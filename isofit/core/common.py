@@ -33,13 +33,10 @@ import xarray as xr
 import xxhash
 from scipy.interpolate import RegularGridInterpolator
 
-### Variables ###
+from isofit.core import units
 
 # small value used in finite difference derivatives
 eps = 1e-5
-
-
-### Classes ###
 
 # Global variable makes it non-shared mem in ray
 Cache = {"stats": {}}
@@ -218,7 +215,7 @@ def load_wavelen(wavelength_file: str):
     if q.shape[1] > 2:
         q = q[:, 1:3]
     if q[0, 0] < 100:
-        q = q * 1000.0
+        q = units.micron_to_nm(q)
     wl, fwhm = q.T
     return wl, fwhm
 
@@ -247,8 +244,8 @@ def emissive_radiance(
     # photon energy in eV
     eV_per_sec_cm2_sr_nm = 1.2398 * ph_per_sec_cm2_sr_nm / wl_um
     W_per_cm2_sr_nm = J_per_eV * eV_per_sec_cm2_sr_nm
-    uW_per_cm2_sr_nm = W_per_cm2_sr_nm * 1e6
-    dRdn_dT = (
+    uW_per_cm2_sr_nm = units.W_to_uW(W_per_cm2_sr_nm)
+    dRdn_dT = units.W_to_uW(
         c_1
         / (wl**4)
         * (-pow(np.exp(c_2 / wl / T) - 1.0, -2.0))
@@ -258,7 +255,6 @@ def emissive_radiance(
         / wl_um
         * 1.2398
         * J_per_eV
-        * 1e6
     )
     return uW_per_cm2_sr_nm, dRdn_dT
 
@@ -376,7 +372,7 @@ def get_absorption(wl: np.array, absfile: str) -> (np.array, np.array):
 
     Args:
         wl: wavelengths to interpolate to
-        absfile: file containing indices of refraction
+        absfile: file containing indices of refraction. Wavelength unts are in nm.
 
     Returns:
         np.array: interpolated, wavelength-specific water absorption coefficients
@@ -387,7 +383,7 @@ def get_absorption(wl: np.array, absfile: str) -> (np.array, np.array):
     # read the indices of refraction
     q = np.loadtxt(absfile, delimiter=",")
     wl_orig_nm = q[:, 0]
-    wl_orig_cm = wl_orig_nm / 1e9 * 1e2
+    wl_orig_cm = units.nm_to_cm(wl_orig_nm)
     water_imag = q[:, 2]
     ice_imag = q[:, 4]
 
@@ -630,7 +626,7 @@ def load_spectrum(spectrum_file: str) -> (np.array, np.array):
         spectrum = spectrum[:, :2]
         wavelengths, spectrum = spectrum.T
         if wavelengths[0] < 100:
-            wavelengths = wavelengths * 1000.0  # convert microns -> nm if needed
+            wavelengths = units.micron_to_nm(wavelengths)
         return spectrum, wavelengths
     else:
         return spectrum, None

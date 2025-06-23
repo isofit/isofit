@@ -136,7 +136,7 @@ def validate(path=None, checkForUpdate=True, debug=print, error=print, **_):
         error("[x] sRTMnet aux file not found")
         return False
 
-    debug("[✓] Path is valid")
+    debug("[OK] Path is valid")
 
     if checkForUpdate:
         isUpToDate(path, debug=debug, error=error)
@@ -283,7 +283,7 @@ def isUpToDate(path=None, tag="latest", debug=print, error=print, **_):
     if model or aux:
         return False
 
-    debug("[✓] Path is up to date")
+    debug("[OK] Path is up to date")
 
     return True
 
