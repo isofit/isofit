@@ -39,6 +39,7 @@ SUPPORTED_SENSORS = [
     "gao",
     "oci",
     "tanager",
+    "av5",
 ]
 RTM_CLEANUP_LIST = ["*r_k", "*t_k", "*tp7", "*wrn", "*psc", "*plt", "*7sc", "*acd"]
 INVERSION_WINDOWS = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
