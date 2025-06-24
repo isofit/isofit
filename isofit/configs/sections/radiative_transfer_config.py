@@ -126,10 +126,6 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         self.emulator_aux_file = None
         """str: path to emulator auxiliary data - expected npz format"""
 
-        self._interpolator_base_path_type = str
-        self.interpolator_base_path = None
-        """str: path to emulator interpolator base - will dump multiple pkl extensions to this location"""
-
         # 6S parameters - not the corcommemnd
         # TODO: these should come from a template file, as in modtran
         self._day_type = int
@@ -191,13 +187,6 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
 
         if self.statevector_names is not None:
             self.statevector_names.sort()
-
-        if self.interpolator_base_path is None and self.emulator_file is not None:
-            self.interpolator_base_path = self.emulator_file + "_interpolator"
-            logging.info(
-                "No interpolator base path set, and emulator used, so auto-setting"
-                " interpolator path at: {}".format(self.interpolator_base_path)
-            )
 
     def _check_config_validity(self) -> List[str]:
         errors = list()

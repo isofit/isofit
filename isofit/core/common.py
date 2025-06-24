@@ -534,32 +534,23 @@ def find_header(imgfile: str) -> str:
     raise IOError("No header found for file {0}".format(imgfile))
 
 
-def resample_spectrum(
-    x: np.array,
-    wl: np.array,
-    wl2: np.array,
-    fwhm2: np.array,
-    fill: bool = False,
-    srf_file: str = None,
+def calculate_resample_matrx(
+    wl: np.array, wl2: np.array, fwhm2: np.array, srf_file: str = None
 ) -> np.array:
-    """Resample a spectrum to a new wavelength / FWHM.
-       Assumes Gaussian SRFs.
+    """Calculate the resampling matrix for a given set of wavelengths and FWHM.
+    Once calculated, resmpling is just the dot product of this matrix with the
+    vector to be resampled.
 
     Args:
-        x: radiance vector
         wl: sample starting wavelengths
         wl2: wavelengths to resample to
         fwhm2: full-width-half-max at resample resolution
-        fill: boolean indicating whether to fill in extrapolated regions
-        ### sc Adding for non-Gaussian SRF ###
         srf_file: SRF for the sensor if not assuming Gaussian
 
     Returns:
-        np.array: interpolated radiance vector
-
+        np.array: transformation matrix (H)
     """
-    # sc including if else to add non-Gaussian SRF
-    # Probably a better way than this with file paths, etc.
+
     if srf_file is None:
         H = np.array(
             [
@@ -583,6 +574,40 @@ def resample_spectrum(
         # Normalize H to unit length
         H = rsr_channel_res / np.sum(rsr_channel_res, axis=1)[:, np.newaxis]
         H[np.isnan(H)] = 0
+
+    return H
+
+
+def resample_spectrum(
+    x: np.array,
+    wl: np.array,
+    wl2: np.array,
+    fwhm2: np.array,
+    fill: bool = False,
+    srf_file: str = None,
+    H: np.array = None,
+) -> np.array:
+    """Resample a spectrum to a new wavelength / FWHM.
+       Assumes Gaussian SRFs.
+
+    Args:
+        x: radiance vector
+        wl: sample starting wavelengths
+        wl2: wavelengths to resample to
+        fwhm2: full-width-half-max at resample resolution
+        fill: boolean indicating whether to fill in extrapolated regions
+        ### sc Adding for non-Gaussian SRF ###
+        srf_file: SRF for the sensor if not assuming Gaussian
+        H: pre-computed transformation matrix, to enable caching
+
+    Returns:
+        np.array: interpolated radiance vector
+
+    """
+    # sc including if else to add non-Gaussian SRF
+    # Probably a better way than this with file paths, etc.
+    if H is None:
+        H = calculate_resample_matrx(wl, wl2, fwhm2, srf_file)
 
     dims = len(x.shape)
     if fill:
