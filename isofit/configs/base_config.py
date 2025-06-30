@@ -106,6 +106,16 @@ class BaseConfigSection(object):
             config_options[key] = value
         return config_options
 
+    def get_config_as_dict(self):
+        data = {}
+        for key, val in self.__dict__.items():
+            if not key.startswith("_"):
+                if issubclass(type(val), BaseConfigSection):
+                    data[key] = val.get_config_as_dict()
+                else:
+                    data[key] = val
+        return data
+
     def _check_config_validity(self) -> List[str]:
         return list()
 

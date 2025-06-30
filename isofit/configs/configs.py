@@ -74,30 +74,18 @@ class Config(BaseConfigSection):
 
         self._forward_model_type = ForwardModelConfig
         self.forward_model = ForwardModelConfig({})
-        """ForwardModelConfig: forward_model config. Holds information about surface models, 
+        """ForwardModelConfig: forward_model config. Holds information about surface models,
         radiative transfer models, and the instrument.
         """
 
         self._implementation_type = ImplementationConfig
         self.implementation = ImplementationConfig({})
-        """ImplementationConfig: holds information regarding how isofit is to be run, including relevant sub-configs 
+        """ImplementationConfig: holds information regarding how isofit is to be run, including relevant sub-configs
         (e.g. inversion information).
         """
 
         # Load sub-classes and attributes
         self.set_config_options(configdict)
-
-    def get_config_as_dict(self) -> dict:
-        """Get configuration options as a nested dictionary with delineated sections.
-
-        Returns:
-            Configuration options as a nested dictionary with delineated sections.
-        """
-        config = OrderedDict()
-        for config_section in self._get_nontype_attributes():
-            populated_section = getattr(self, config_section)
-            config[config_section] = populated_section.get_config_options_as_dict()
-        return config
 
     def get_config_errors(self):
         """
