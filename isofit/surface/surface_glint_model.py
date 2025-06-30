@@ -114,7 +114,7 @@ class GlintModelSurface(MultiComponentSurface):
         # SUN_GLINT g_dd
         x[self.sun_glint_ind] = g_dd_est
         # SKY_GLINT g_dsf
-        x[self_sky_glint_ind] = g_dsf_est
+        x[self.sky_glint_ind] = g_dsf_est
         return x
 
     def calc_rfl(self, x_surface, geom):
