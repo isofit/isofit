@@ -35,9 +35,9 @@ class GlintModelSurface(MultiComponentSurface):
         # TODO: Enforce this attribute in the config, not here (this is hidden)
         self.statevec_names.extend(["SUN_GLINT", "SKY_GLINT"])
         self.scale.extend([1.0, 1.0])
-        self.init.extend(
-            [0.02, 1 / np.pi]
-        )  # Numbers from Marcel Koenig; used for prior mean
+
+        # Numbers from Marcel Koenig; used for prior mean
+        self.init.extend([0.02, 1 / np.pi])
 
         # Special glint bounds
         rmin, rmax = -0.05, 2.0
@@ -47,17 +47,15 @@ class GlintModelSurface(MultiComponentSurface):
 
         # Useful indexes to track
         self.glint_ind = len(self.statevec_names) - 2
+        self.sun_glint_ind = self.glint_ind
+        self.sky_glint_ind = self.glint_ind + 1
         self.idx_surface = np.arange(len(self.statevec_names))
 
         # Change this if you don't want to analytical solve for all the full statevector elements.
         self.analytical_iv_idx = np.arange(len(self.statevec_names))
 
-        self.f = np.array(
-            [[(1000000 * np.array(self.scale[self.glint_ind :])) ** 2]]
-        )  # Prior covariance, *very* high...
-
-        if "full_glint" in (full := full_config.forward_model.surface.__dict__.keys()):
-            self.full_glint = full
+        self.sun_glint_sigma = (1000000 * np.array(self.scale[self.sun_glint_ind])) ** 2
+        self.sky_glint_sigma = (0.15 * np.array(self.scale[self.sky_glint_ind])) ** 2
 
     def xa(self, x_surface, geom):
         """Mean of prior distribution, calculated at state x."""
@@ -72,16 +70,21 @@ class GlintModelSurface(MultiComponentSurface):
         normalize the result for the calling function."""
 
         Cov = MultiComponentSurface.Sa(self, x_surface, geom)
-        # Unclear if this should be a fully correlated block or a diagonal
-        Cov[self.glint_ind :, self.glint_ind :] = np.eye(2) * self.f
+        Cov[self.sun_glint_ind, self.sun_glint_ind] = self.sun_glint_sigma
+        Cov[self.sky_glint_ind, self.sky_glint_ind] = self.sky_glint_sigma
         return Cov
 
     def fit_params(self, rfl_meas, geom, *args):
         """Given a reflectance estimate and one or more emissive parameters,
         fit a state vector.
         """
-        # Estimate reflectance, assuming all signal around 1020 nm == glint
-        glint_band = np.argmin(abs(1020 - self.wl))
+        # Estimate additive glint. Uses multiple options to handle different sensors.
+        # Try SWIR, then NIR
+        if np.max(self.wl) >= 2300:
+            glint_band = np.argmin(np.abs(2300 - self.wl))
+        else:
+            glint_band = np.argmin(np.abs(1020 - self.wl))
+
         glint_est = np.mean(rfl_meas[(glint_band - 2) : glint_band + 2])
 
         # Stealing the bounds for this from additive_glint_model
@@ -96,22 +99,22 @@ class GlintModelSurface(MultiComponentSurface):
         lamb_est = rfl_meas - glint_est
         x = MultiComponentSurface.fit_params(self, lamb_est, geom)  # Bounds reflectance
 
-        # Get estimate for g_dd and g_dsf parameters, given signal at 900 nm
-        # Set to a static number; don't need to apply bounds because static
-        g_dsf_est = 0.01
+        # Get estimate for g_dd and g_dsf parameters
+        # Set sky glint to a static number; use prior mean.
+        g_dsf_est = 1 / np.pi
 
         # Use nadir fresnel coeffs (0.02) and t_down_dir = 0.83, t_down_diff = 0.14 for initialization
         # Transmission values taken from MODTRAN sim with AERFRAC_2 = 0.5, H2OSTR = 0.5
         g_dd_est = ((glint_est * 0.97 / 0.02) - 0.14 * g_dsf_est) / 0.83
         g_dd_est = max(
-            self.bounds[self.glint_ind][0] + eps,
-            min(self.bounds[self.glint_ind][1] - eps, g_dd_est),
+            self.bounds[self.sun_glint_ind][0] + eps,
+            min(self.bounds[self.sun_glint_ind][1] - eps, g_dd_est),
         )
 
         # SUN_GLINT g_dd
-        x[self.glint_ind] = g_dd_est
+        x[self.sun_glint_ind] = g_dd_est
         # SKY_GLINT g_dsf
-        x[self.glint_ind + 1] = g_dsf_est
+        x[self.sky_glint_ind] = g_dsf_est
         return x
 
     def calc_rfl(self, x_surface, geom):
@@ -138,8 +141,8 @@ class GlintModelSurface(MultiComponentSurface):
         # fresnel reflectance factor (approx. 0.02 for nadir view)
         rho_ls = self.fresnel_rf(geom.observer_zenith)
 
-        sun_glint = x_surface[-2] * rho_ls
-        sky_glint = x_surface[-1] * rho_ls
+        sun_glint = x_surface[self.sun_glint_ind] * rho_ls
+        sky_glint = x_surface[self.sky_glint_ind] * rho_ls
 
         rho_dir_dir = self.calc_lamb(x_surface, geom) + sun_glint
         rho_dif_dir = self.calc_lamb(x_surface, geom) + sky_glint
@@ -155,8 +158,8 @@ class GlintModelSurface(MultiComponentSurface):
 
         rho_ls = self.fresnel_rf(geom.observer_zenith)
         # TODO make the indexing better for the surface state elements
-        drfl[:, self.glint_ind] = rho_ls
-        drfl[:, self.glint_ind + 1] = rho_ls
+        drfl[:, self.sun_glint_ind] = rho_ls
+        drfl[:, self.sky_glint_ind] = rho_ls
 
         return drfl
 
@@ -193,8 +196,12 @@ class GlintModelSurface(MultiComponentSurface):
         drdn_dgdd, drdn_dgdsf = self.drdn_dglint(L_tot, L_down_dir, s_alb, rho_dif_dir)
 
         # Store the glint derivatives as last two rows in drdn_drfl
-        drdn_dsurface[:, -2] = drdn_dgdd * drfl_dsurface[:, -2]
-        drdn_dsurface[:, -1] = drdn_dgdsf * drfl_dsurface[:, -1]
+        drdn_dsurface[:, self.sun_glint_ind] = (
+            drdn_dgdd * drfl_dsurface[:, self.sun_glint_ind]
+        )
+        drdn_dsurface[:, self.sky_glint_ind] = (
+            drdn_dgdsf * drfl_dsurface[:, self.sky_glint_ind]
+        )
 
         # Get the derivative w.r.t. surface emission
         drdn_dLs = np.multiply(self.drdn_dLs(t_total_up)[:, np.newaxis], dLs_dsurface)
@@ -243,9 +250,11 @@ class GlintModelSurface(MultiComponentSurface):
         H = np.append(H, gam, axis=1)
 
         # Diffuse portion
-        # ep = ((L_dif_dir + L_dif_dif) + ((L_tot * background) / (1 - background))) * rho_ls
+        ep = (
+            (L_dif_dir + L_dif_dif) + ((L_tot * background) / (1 - background))
+        ) * rho_ls
         # If you ignore multi-scattering
-        ep = (L_dif_dir + L_dif_dif) * rho_ls
+        # ep = (L_dif_dir + L_dif_dif) * rho_ls
         ep = np.reshape(ep, (len(ep), 1))
         H = np.append(H, ep, axis=1)
 
@@ -256,7 +265,10 @@ class GlintModelSurface(MultiComponentSurface):
 
         return MultiComponentSurface.summarize(
             self, x_surface, geom
-        ) + " Sun Glint: %5.3f, Sky Glint: %5.3f" % (x_surface[-2], x_surface[-1])
+        ) + " Sun Glint: %5.3f, Sky Glint: %5.3f" % (
+            x_surface[self.sun_glint_ind],
+            x_surface[self.sky_glint_ind],
+        )
 
     @staticmethod
     def fresnel_rf(vza):

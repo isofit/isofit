@@ -423,10 +423,10 @@ class Worker(object):
                         meas,
                         geom,
                     )
+                    rfl_est = self.fm.surface.fit_params(rfl_est, geom)
                     x0 = np.concatenate(
                         [
                             rfl_est,
-                            sub_state[self.fm.idx_surf_nonrfl],
                             x_RT,
                             x_instrument,
                         ]
