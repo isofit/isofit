@@ -13,6 +13,8 @@ import numpy as np
 import xarray as xr
 from netCDF4 import Dataset
 
+from isofit import __version__
+
 Logger = logging.getLogger(__file__)
 
 
@@ -86,6 +88,9 @@ class Create:
             Reduces the initialized Dataset by dropping the variables to reduce overall memory usage.
             If True, drops all variables. If list, drop everything but these.
         """
+        # Track the ISOFIT version that created this LUT
+        attrs["ISOFIT version"] = __version__
+
         self.file = file
         self.wl = wl
         self.grid = grid
@@ -703,6 +708,11 @@ def load(
     else:
         Logger.debug(f"Using Xarray to load: {file}")
         ds = xr.open_dataset(file, mode=mode, lock=lock, **kwargs)
+
+    version = ds.attrs.get("ISOFIT version", "<not set>")
+    Logger.debug(
+        f"This LUT was created with ISOFIT version {version}, you are running ISOFIT {__version__}"
+    )
 
     # Calculate coupling before subsetting
     if "before" in coupling:

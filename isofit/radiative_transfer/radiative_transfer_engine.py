@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import logging
 import os
+import sys
 import time
 from pathlib import Path
 from types import SimpleNamespace
@@ -233,14 +234,19 @@ class RadiativeTransferEngine:
                     "Input lut_grid detected to have duplicates, please correct them before continuing"
                 )
 
-            Logger.info(f"Initializing LUT file")
-            self.lut = luts.Create(
-                file=self.lut_path,
-                wl=wl,
-                grid=self.lut_grid,
-                attrs={"RT_mode": self.rt_mode},
-                onedim={"fwhm": fwhm},
-            )
+            if self.engine_config.rte_configure_and_exit:
+                Logger.warning(
+                    "rte_configure_and_exit is enabled, the LUT file will not be created"
+                )
+            else:
+                Logger.info(f"Initializing LUT file")
+                self.lut = luts.Create(
+                    file=self.lut_path,
+                    wl=wl,
+                    grid=self.lut_grid,
+                    attrs={"RT_mode": self.rt_mode},
+                    onedim={"fwhm": fwhm},
+                )
 
             # Create and populate a LUT file
             self.runSimulations()
@@ -474,36 +480,43 @@ class RadiativeTransferEngine:
                 for point in self.points
             ]
 
-            # Report a percentage complete every 10% and flush to disk at those intervals
-            report = common.Track(
-                jobs,
-                step=10,
-                reverse=True,
-                print=Logger.info,
-                message="simulations complete",
-            )
+            if self.engine_config.rte_configure_and_exit:
+                # Block until all jobs finish
+                ray.get(jobs)
 
-            # Update the lut as point simulations stream in
-            while jobs:
-                [done], jobs = ray.wait(jobs, num_returns=1)
+                Logger.warning("Exiting early due to rte_configure_and_exit")
+                sys.exit(0)
+            else:
+                # Report a percentage complete every 10% and flush to disk at those intervals
+                report = common.Track(
+                    jobs,
+                    step=10,
+                    reverse=True,
+                    print=Logger.info,
+                    message="simulations complete",
+                )
 
-                # Retrieve the return of the finished job
-                ret = ray.get(done)
+                # Update the lut as point simulations stream in
+                while jobs:
+                    [done], jobs = ray.wait(jobs, num_returns=1)
 
-                # If a simulation fails then it will return None
-                if ret:
-                    self.lut.queuePoint(*ret)
+                    # Retrieve the return of the finished job
+                    ret = ray.get(done)
 
-                if report(len(jobs)):
-                    Logger.info("Flushing netCDF to disk")
+                    # If a simulation fails then it will return None
+                    if ret:
+                        self.lut.queuePoint(*ret)
+
+                    if report(len(jobs)):
+                        Logger.info("Flushing netCDF to disk")
+                        self.lut.flush()
+
+                # Shouldn't be hit but just in case
+                if self.lut.hold:
+                    Logger.warning("Not all points were flushed, doing so now")
                     self.lut.flush()
 
             del lut_names, makeSim, readSim, lut_path, buffer_time
-
-            # Shouldn't be hit but just in case
-            if self.lut.hold:
-                Logger.warning("Not all points were flushed, doing so now")
-                self.lut.flush()
         else:
             Logger.debug("makeSim is disabled for this engine")
 
@@ -520,6 +533,7 @@ class RadiativeTransferEngine:
             self.lut.writePoint(point, data=post)
 
         # Reload the LUT now that it's populated
+        Logger.debug("Reloading LUT")
         self.lut = luts.load(self.lut_path)
 
     def summarize(self, x_RT, *_):
