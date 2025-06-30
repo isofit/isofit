@@ -66,6 +66,11 @@ class BaseConfigSection(object):
 
             # check it against expected
             type_expected = self._get_expected_type_for_option_key(key)
+
+            # Unknown types just skip
+            if type_expected is None:
+                continue
+
             # Lists are complicated, retype
             if isinstance(type_expected, List):
                 type_expected = List
@@ -85,13 +90,9 @@ class BaseConfigSection(object):
         # Now do a full check on each submodule
         for key in self._get_nontype_attributes():
             value = getattr(self, key)
-            try:
-                logging.debug("Configuration check of: {}".format(key))
+            if hasattr(value, "check_config_validity"):
+                logging.debug(f"Configuration check of: {key}")
                 errors.extend(value.check_config_validity())
-            except AttributeError:
-                logging.debug(
-                    "Configuration check: {} is not an object, skipping".format(key)
-                )
 
         return errors
 
@@ -120,7 +121,9 @@ class BaseConfigSection(object):
         return list()
 
     def _get_expected_type_for_option_key(self, option_key: str) -> type:
-        return getattr(self, "_{}_type".format(option_key))
+        key = f"_{option_key}_type"
+        if hasattr(self, key):
+            return getattr(self, key)
 
     def _get_nontype_attributes(self) -> List[str]:
         keys = []
