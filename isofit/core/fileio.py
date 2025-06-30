@@ -681,7 +681,7 @@ class IO:
                 item in ["algebraic_inverse_file", "atmospheric_coefficients_file"]
                 for item in self.output_datasets
             ):
-                rfl_alg_opt, Ls, coeffs = invert_algebraic(
+                rfl_alg_opt, coeffs = invert_algebraic(
                     fm.surface,
                     fm.RT,
                     fm.instrument,
