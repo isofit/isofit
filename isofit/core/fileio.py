@@ -681,7 +681,7 @@ class IO:
                 item in ["algebraic_inverse_file", "atmospheric_coefficients_file"]
                 for item in self.output_datasets
             ):
-                rfl_alg_opt, Ls, coeffs = invert_algebraic(
+                rfl_alg_opt, coeffs = invert_algebraic(
                     fm.surface,
                     fm.RT,
                     fm.instrument,
@@ -698,10 +698,16 @@ class IO:
                 )
 
             if "atmospheric_coefficients_file" in self.output_datasets:
-                rhoatm, sphalb, transm, solar_irr, coszen, transup = coeffs
+                rhoatm, sphalb, L_tot, transup, L_Up = coeffs
+                coszen, cos_i = geom.check_coszen_and_cos_i(fm.RT.coszen)
+                solar_irr = fm.RT.rt_engines[0].solar_irr
+
+                atm_vars = [rhoatm, sphalb, L_tot, solar_irr]
+
                 atm = np.column_stack(
-                    list(coeffs[:4]) + [np.ones((len(self.meas_wl), 1)) * coszen]
+                    atm_vars + [np.ones((len(self.meas_wl), 1)) * coszen]
                 )
+
                 atm = atm.T.reshape((len(self.meas_wl) * 5,))
                 to_write["atmospheric_coefficients_file"] = atm
 
