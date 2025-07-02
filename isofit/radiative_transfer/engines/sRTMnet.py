@@ -30,8 +30,8 @@ import numpy as np
 import yaml
 from scipy.interpolate import interp1d
 
-from isofit.core.common import resample_spectrum, calculate_resample_matrx
 from isofit.core import units
+from isofit.core.common import calculate_resample_matrx, resample_spectrum
 from isofit.radiative_transfer import luts
 from isofit.radiative_transfer.engines import SixSRT
 from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
@@ -51,26 +51,20 @@ class tfLikeModel:
             self.weights = []
             self.biases = []
             self.input_file = input_file
-            self.model = h5py.File(input_file, "r")
+            model = h5py.File(input_file, "r")
 
             weights = []
             biases = []
-            for _n, n in enumerate(self.model["model_weights"].keys()):
+            for _n, n in enumerate(model["model_weights"].keys()):
                 if "dense" in n:
-                    if "kernel:0" in self.model["model_weights"][n][n]:
+                    if "kernel:0" in model["model_weights"][n][n]:
                         weights.append(
-                            np.array(self.model["model_weights"][n][n]["kernel:0"])
+                            np.array(model["model_weights"][n][n]["kernel:0"])
                         )
-                        biases.append(
-                            np.array(self.model["model_weights"][n][n]["bias:0"])
-                        )
+                        biases.append(np.array(model["model_weights"][n][n]["bias:0"]))
                     else:
-                        weights.append(
-                            np.array(self.model["model_weights"][n][n]["kernel"])
-                        )
-                        biases.append(
-                            np.array(self.model["model_weights"][n][n]["bias"])
-                        )
+                        weights.append(np.array(model["model_weights"][n][n]["kernel"]))
+                        biases.append(np.array(model["model_weights"][n][n]["bias"]))
 
             self.weights = weights
             self.biases = biases
