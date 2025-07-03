@@ -228,9 +228,12 @@ def apply_oe(
         if emulator_base.endswith(".jld2"):
             multipart_transmittance = False
         else:
-            emulator_aux_file = os.path.abspath(
-                os.path.splitext(emulator_base)[0] + "_aux.npz"
-            )
+            if emulator_base.endswith(".npz"):
+                emulator_aux_file = emulator_base
+            else:
+                emulator_aux_file = os.path.abspath(
+                    os.path.splitext(emulator_base)[0] + "_aux.npz"
+                )
             aux = np.load(emulator_aux_file)
             if (
                 "transm_down_dir"

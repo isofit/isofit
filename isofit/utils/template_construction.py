@@ -338,11 +338,11 @@ class LUTConfig:
         self.h2o_spacing_min = 0.03
 
         # Special parameter to specify the minimum allowable water vapor value in g / m2
-        self.h2o_min = 0.05
+        self.h2o_min = 0.2
 
         # Set defaults, will override based on settings
         # Units of g / m2
-        self.h2o_range = [0.05, 5]
+        self.h2o_range = [0.2, 5]
 
         # Units of degrees
         self.to_sensor_zenith_spacing = 10
@@ -585,16 +585,15 @@ def build_presolve_config(
         radiative_transfer_config["radiative_transfer_engines"]["vswir"][
             "emulator_file"
         ] = abspath(emulator_base)
-        radiative_transfer_config["radiative_transfer_engines"]["vswir"][
-            "emulator_aux_file"
-        ] = abspath(os.path.splitext(emulator_base)[0] + "_aux.npz")
-        radiative_transfer_config["radiative_transfer_engines"]["vswir"][
-            "interpolator_base_path"
-        ] = abspath(
-            os.path.join(
-                paths.lut_h2o_directory, os.path.basename(emulator_base) + "_vi"
-            )
-        )
+        if emulator_base.endswith(".npz"):
+            # then aux & emulator are the same
+            radiative_transfer_config["radiative_transfer_engines"]["vswir"][
+                "emulator_aux_file"
+            ] = abspath(emulator_base)
+        else:
+            radiative_transfer_config["radiative_transfer_engines"]["vswir"][
+                "emulator_aux_file"
+            ] = abspath(os.path.splitext(emulator_base)[0] + "_aux.npz")
         radiative_transfer_config["radiative_transfer_engines"]["vswir"][
             "earth_sun_distance_file"
         ] = paths.earth_sun_distance_path
@@ -773,17 +772,15 @@ def build_main_config(
         radiative_transfer_config["radiative_transfer_engines"]["vswir"][
             "emulator_file"
         ] = abspath(emulator_base)
-        radiative_transfer_config["radiative_transfer_engines"]["vswir"][
-            "emulator_aux_file"
-        ] = abspath(os.path.splitext(emulator_base)[0] + "_aux.npz")
-        radiative_transfer_config["radiative_transfer_engines"]["vswir"][
-            "interpolator_base_path"
-        ] = abspath(
-            os.path.join(
-                paths.full_lut_directory,
-                os.path.basename(os.path.splitext(emulator_base)[0]) + "_vi",
-            )
-        )
+        if emulator_base.endswith(".npz"):
+            # then aux & emulator are the same
+            radiative_transfer_config["radiative_transfer_engines"]["vswir"][
+                "emulator_aux_file"
+            ] = abspath(emulator_base)
+        else:
+            radiative_transfer_config["radiative_transfer_engines"]["vswir"][
+                "emulator_aux_file"
+            ] = abspath(os.path.splitext(emulator_base)[0] + "_aux.npz")
         radiative_transfer_config["radiative_transfer_engines"]["vswir"][
             "earth_sun_distance_file"
         ] = paths.earth_sun_distance_path
