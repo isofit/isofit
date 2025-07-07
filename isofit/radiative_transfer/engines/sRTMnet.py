@@ -307,9 +307,13 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                 )
             else:
                 fullspec_val = data[key].data
-            outdict[key] = resample_spectrum(
-                fullspec_val, self.emu_wl, self.wl, self.fwhm, H=self.emulator_H
-            )
+
+            # Only resample and store valid keys
+            if len(data[key].data.shape) > 0:
+                outdict[key] = resample_spectrum(
+                    fullspec_val, self.emu_wl, self.wl, self.fwhm, H=self.emulator_H
+                )
+
         Logger.debug("Setting up lut cache")
         for _point, point in enumerate(data["point"].values):
             self.lut.queuePoint(
