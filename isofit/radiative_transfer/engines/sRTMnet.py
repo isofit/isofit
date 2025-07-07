@@ -104,6 +104,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         "transm_up_dif",
         "transm_up_dir",  # NOTE: Formerly transup
     }
+    _disable_makeSim = True
 
     def preSim(self):
         """
@@ -122,15 +123,6 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         aux_rt_quantities = np.where(
             aux["rt_quantities"] == "transm", "transm_down_dif", aux["rt_quantities"]
         )
-
-        # TODO: Re-enable when sRTMnet_v120_aux is updated
-        # Verify expected keys exist
-        missing = self.lut_quantities - set(aux["rt_quantities"].tolist())
-        # if missing:
-        #    raise AttributeError(
-        #        f"Emulator Aux rt_quantities does not contain the following required keys: {missing}"
-        #    )
-        # aux_rt_quantities = self.lut_quantities
 
         # Emulator keys (sRTMnet)
         self.emu_wl = aux["emulator_wavelengths"]
@@ -174,7 +166,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             self.engine_config.sim_path, "sRTMnet.predicts.nc"
         )
         if os.path.exists(self.predict_path):
-            logging.info(f"Loading sRTMnet predicts from: {self.predict_path}")
+            Logger.info(f"Loading sRTMnet predicts from: {self.predict_path}")
             predicts = luts.load(self.predict_path, mode="r")
         else:
             Logger.info("Loading and predicting with emulator")
@@ -205,9 +197,6 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             elif self.engine_config.emulator_file.endswith(".npz"):
                 Logger.debug("Detected npz (6c) emulator file format")
                 self.component_mode = "6c"
-
-                # weights = aux["weights"].item()
-                # biases = aux["biases"].item()
 
                 # This is an array of feature points tacked onto the interpolated 6s values
                 feature_point_names = aux["feature_point_names"].tolist()
@@ -240,17 +229,16 @@ class SimulatedModtranRT(RadiativeTransferEngine):
 
                 predicts = resample.copy(deep=True)
                 for key in aux_rt_quantities:
-                    # emulator = tfLikeModel(None, weights=weights[key], biases=biases[key])
-                    logging.debug(f"Loading emulator {key}")
+                    Logger.debug(f"Loading emulator {key}")
                     emulator = tfLikeModel(
                         None, weights=aux[f"weights_{key}"], biases=aux[f"biases_{key}"]
                     )
-                    logging.debug(f"Emulating {key}")
+                    Logger.debug(f"Emulating {key}")
                     if len(feature_point_names) > 0:
                         lp = emulator.predict(np.hstack((sixs[key].values, add_vector)))
                     else:
                         lp = emulator.predict(sixs[key].values)
-                    logging.debug(f"Cleanup {key}")
+                    Logger.debug(f"Cleanup {key}")
                     lp /= aux["response_scaler"].item()[key]
                     lp += aux["response_offset"].item()[key]
 
@@ -301,36 +289,6 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         """
         Resamples the predicts produced by preSim to be saved in self.lut_path
         """
-        # REVIEW: Likely should chunk along the point dim to improve this
-        # data = luts.load(self.predict_path, mode="r").sel(point=tuple(point)).load()
-
-        ## Resample the emulator resolution (fixed) to the RT resolution
-        # outdict = {
-        #    #key: resample_spectrum(
-        #    #    values.data,
-        #    #    self.emu_wl,
-        #    #    self.wl,
-        #    #    self.fwhm,
-        #    #    H=self.emulator_H,
-        #    #)
-        #    values.data
-        #    for key, values in data.items()
-        #    if values.data.dtype != "int64"
-        # }
-
-        ## Keep transmittances as transmitance, but convert coupling terms to radiance
-        ## TODO - get rhoatm out of this list.  Probably easiest to implement a bulk
-        ## rt_mode purge
-        # for key in ["dir-dir", "dir-dif", "dif-dir", "dif-dif", "rhoatm"]:
-        #    logging.info(key)
-        #    fullspec_val = units.transm_to_rdn(
-        #        data[key].data, self.emulator_coszen, self.emulator_sol_irr
-        #    )
-        #    outdict[key] = fullspec_val
-        #    #outdict[key] = resample_spectrum(
-        #    #    fullspec_val, self.emu_wl, self.wl, self.fwhm, H=self.emulator_H
-        #    #)
-
         return {}
 
     def postSim(self):
@@ -340,9 +298,9 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         # Update engine to run in RDN mode
         data = luts.load(self.predict_path, mode="r")
         outdict = {}
-        logging.debug("Resampling components")
+        Logger.debug("Resampling components")
         for key, values in data.items():
-            logging.info(key)
+            Logger.debug(f"Resampling {key}")
             if key in ["dir-dir", "dir-dif", "dif-dir", "dif-dif", "rhoatm"]:
                 fullspec_val = units.transm_to_rdn(
                     data[key].data, self.emulator_coszen, self.emulator_sol_irr
@@ -352,16 +310,17 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             outdict[key] = resample_spectrum(
                 fullspec_val, self.emu_wl, self.wl, self.fwhm, H=self.emulator_H
             )
-        logging.debug("Setting up lut cache")
-        for _point, point in enumerate(self.points):
+        Logger.debug("Setting up lut cache")
+        for _point, point in enumerate(data["point"].values):
             self.lut.queuePoint(
-                point, {key: outdict[key][_point, :] for key in outdict.keys()}
+                np.array(point),
+                {key: outdict[key][_point, :] for key in outdict.keys()},
             )
-        logging.debug("Flushing lut to file")
+        Logger.debug("Flushing lut to file")
         self.lut.flush()
         self.rt_mode = "rdn"
         self.lut.setAttr("RT_mode", "rdn")
-        logging.debug("Complete")
+        Logger.debug("Complete")
 
 
 def build_sixs_config(engine_config):
