@@ -301,7 +301,10 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         Logger.debug("Resampling components")
         for key, values in data.items():
             Logger.debug(f"Resampling {key}")
-            if key in ["dir-dir", "dir-dif", "dif-dir", "dif-dif", "rhoatm"]:
+            if (
+                key in ["dir-dir", "dir-dif", "dif-dir", "dif-dif", "rhoatm"]
+                and self.component_mode == "6c"
+            ):
                 fullspec_val = units.transm_to_rdn(
                     data[key].data, self.emulator_coszen, self.emulator_sol_irr
                 )
@@ -322,8 +325,12 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             )
         Logger.debug("Flushing lut to file")
         self.lut.flush()
-        self.rt_mode = "rdn"
-        self.lut.setAttr("RT_mode", "rdn")
+
+        # This is crude - we should revise the LUT naming and store L_* to make this
+        # more explicit
+        if "dir-dir" in outdict:
+            self.rt_mode = "rdn"
+            self.lut.setAttr("RT_mode", "rdn")
         Logger.debug("Complete")
 
 
