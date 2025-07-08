@@ -5,14 +5,13 @@
   custom/about.rst
   custom/installation.rst
   custom/data.rst
+  custom/best_practices.rst
 
 .. toctree::
-  :caption: Running Isofit
-  :maxdepth: 2
+  :caption: Isofit Tutorials
+  :maxdepth: 1
 
-  custom/notebooks/apply_oe
-  custom/best_practices.rst
-  custom/notebooks/functions
+  custom/tutorials
 
 .. toctree::
   :Caption: Docker
