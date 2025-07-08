@@ -48,14 +48,12 @@ class tfLikeModel:
             self.input_file = None
 
         elif input_file is not None:
-            self.weights = []
-            self.biases = []
             self.input_file = input_file
             model = h5py.File(input_file, "r")
 
             weights = []
             biases = []
-            for _n, n in enumerate(model["model_weights"].keys()):
+            for n in model["model_weights"].keys():
                 if "dense" in n:
                     if "kernel:0" in model["model_weights"][n][n]:
                         weights.append(
