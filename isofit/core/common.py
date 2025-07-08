@@ -534,7 +534,7 @@ def find_header(imgfile: str) -> str:
     raise IOError("No header found for file {0}".format(imgfile))
 
 
-def calculate_resample_matrx(
+def calculate_resample_matrix(
     wl: np.array, wl2: np.array, fwhm2: np.array, srf_file: str = None
 ) -> np.array:
     """Calculate the resampling matrix for a given set of wavelengths and FWHM.
@@ -607,7 +607,7 @@ def resample_spectrum(
     # sc including if else to add non-Gaussian SRF
     # Probably a better way than this with file paths, etc.
     if H is None:
-        H = calculate_resample_matrx(wl, wl2, fwhm2, srf_file)
+        H = calculate_resample_matrix(wl, wl2, fwhm2, srf_file)
 
     dims = len(x.shape)
     if fill:

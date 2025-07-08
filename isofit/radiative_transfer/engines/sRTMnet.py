@@ -31,7 +31,7 @@ import yaml
 from scipy.interpolate import interp1d
 
 from isofit.core import units
-from isofit.core.common import calculate_resample_matrx, resample_spectrum
+from isofit.core.common import calculate_resample_matrix, resample_spectrum
 from isofit.radiative_transfer import luts
 from isofit.radiative_transfer.engines import SixSRT
 from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
@@ -269,7 +269,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
 
         self.emulator_sol_irr = sol_irr
         self.emulator_coszen = sim["coszen"]
-        self.emulator_H = calculate_resample_matrx(self.emu_wl, self.wl, self.fwhm)
+        self.emulator_H = calculate_resample_matrix(self.emu_wl, self.wl, self.fwhm)
 
         # Insert these into the LUT file
         return {
