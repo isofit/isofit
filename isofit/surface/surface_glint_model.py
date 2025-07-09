@@ -87,7 +87,7 @@ class GlintModelSurface(MultiComponentSurface):
 
         glint_est = np.mean(rfl_meas[(glint_band - 2) : glint_band + 2])
 
-        # Stealing the bounds for this from additive_glint_model
+        # hard-coded glint bounds from experience #TODO - get from config
         bounds_glint_est = [
             0,
             0.2,
