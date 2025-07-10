@@ -5,12 +5,12 @@
   custom/about.rst
   custom/installation.rst
   custom/data.rst
-  custom/best_practices.rst
 
 .. toctree::
-  :caption: Isofit Tutorials
+  :caption: Running ISOFIT
   :maxdepth: 1
 
+  custom/best_practices.rst
   custom/tutorials
 
 .. toctree::
