@@ -413,7 +413,7 @@ class Worker(object):
 
                 elif self.initializer == "algebraic":
                     x_surface, _, x_instrument = self.fm.unpack(self.fm.init.copy())
-                    rfl_est, Ls_est, coeffs = invert_algebraic(
+                    rfl_est, coeffs = invert_algebraic(
                         self.fm.surface,
                         self.fm.RT,
                         self.fm.instrument,
@@ -423,10 +423,10 @@ class Worker(object):
                         meas,
                         geom,
                     )
+                    rfl_est = self.fm.surface.fit_params(rfl_est, geom)
                     x0 = np.concatenate(
                         [
                             rfl_est,
-                            sub_state[self.fm.idx_surf_nonrfl],
                             x_RT,
                             x_instrument,
                         ]
@@ -466,18 +466,6 @@ class Worker(object):
                 if self.analytical_non_rfl_surf_file:
                     output_non_rfl[0, c, :] = states[-1, self.fm.idx_surf_nonrfl]
                     output_non_rfl_unc[0, c, :] = unc[self.fm.idx_surf_nonrfl]
-
-            # What do we want to do with the negative reflectances?
-            # state = output_state[r - start_line, ...]
-            # mask = np.logical_and.reduce(
-            #     [
-            #         state < self.rfl_bounds[0],
-            #         state > self.rfl_bounds[1],
-            #         state != -9999,
-            #         state != -0.01,
-            #     ]
-            # )
-            # state[mask] = 0
 
             logging.info(f"Analytical line writing line {r}")
 

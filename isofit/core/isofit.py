@@ -249,6 +249,7 @@ class Worker(object):
                         fill_value="extrapolate",
                     )
                     input_data.meas = interp(self.io.meas_wl)
+
                 logging.debug("Run model")
                 # The inversion returns a list of states, which are
                 # intepreted either as samples from the posterior (MCMC case)
@@ -260,6 +261,7 @@ class Worker(object):
                 # Write the spectra to disk
                 try:
                     self.io.write_spectrum(row, col, states, self.fm, self.iv)
+
                 except ValueError as err:
                     logging.exception(
                         f"""
@@ -284,6 +286,7 @@ class Worker(object):
                             f" {self.completed_spectra}/~{self.approximate_total_spectra}::"
                             f" {percent}% complete"
                         )
+
         logging.info(
             f"Worker at start location ({row},{col}) completed"
             f" {index}/{indices.shape[0]}"

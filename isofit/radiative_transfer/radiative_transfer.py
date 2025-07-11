@@ -25,6 +25,7 @@ import logging
 
 import numpy as np
 
+from isofit.core import units
 from isofit.core.common import eps
 from isofit.radiative_transfer.engines import Engines
 
@@ -254,36 +255,6 @@ class RadiativeTransfer:
 
         return ret
 
-    def rdn_to_rho(self, rdn, coszen, solar_irr=None):
-        """Function to convert a radiance vector to transmittance.
-
-        Args:
-            rdn:       input data vector in radiance
-            coszen:    cosine of solar zenith angle
-            solar_irr: solar irradiance vector (optional)
-
-        Returns:
-            Data vector converted to transmittance
-        """
-        if solar_irr is None:
-            solar_irr = self.solar_irr
-        return rdn * np.pi / (solar_irr * coszen)
-
-    def rho_to_rdn(self, rho, coszen, solar_irr=None):
-        """Function to convert a transmittance vector to radiance.
-
-        Args:
-            rho:       input data vector in transmittance
-            coszen:    cosine of solar zenith angle
-            solar_irr: solar irradiance vector (optional)
-
-        Returns:
-            Data vector converted to radiance
-        """
-        if solar_irr is None:
-            solar_irr = self.solar_irr
-        return (solar_irr * coszen) / np.pi * rho
-
     def get_L_atm(self, x_RT: np.array, geom: Geometry) -> np.array:
         """Get the interpolated modeled atmospheric path radiance.
 
@@ -309,7 +280,7 @@ class RadiativeTransfer:
                     L_atm = r["rhoatm"]
                 else:
                     rho_atm = r["rhoatm"]
-                    L_atm = self.rho_to_rdn(rho_atm, coszen)
+                    L_atm = units.transm_to_rdn(rho_atm, coszen, self.solar_irr)
                 L_atms.append(L_atm)
         return np.hstack(L_atms)
 
@@ -343,8 +314,12 @@ class RadiativeTransfer:
                     L_down_dif = r["transm_down_dif"]
                 else:
                     # Transform downward transmittance to radiance
-                    L_down_dir = self.rho_to_rdn(r["transm_down_dir"], coszen)
-                    L_down_dif = self.rho_to_rdn(r["transm_down_dif"], coszen)
+                    L_down_dir = units.transm_to_rdn(
+                        r["transm_down_dir"], coszen, self.solar_irr
+                    )
+                    L_down_dif = units.transm_to_rdn(
+                        r["transm_down_dif"], coszen, self.solar_irr
+                    )
 
                 L_down = L_down_dir + L_down_dif
 
@@ -392,7 +367,7 @@ class RadiativeTransfer:
         else:
             for key in self.rt_engines[0].coupling_terms:
                 L_coupled.append(
-                    self.solar_irr * coszen / np.pi * r[key]
+                    units.transm_to_rdn(r[key], coszen=coszen, solar_irr=self.solar_irr)
                     if self.rt_engines[0].rt_mode == "transm"
                     else r[key]
                 )

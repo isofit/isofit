@@ -13,6 +13,8 @@ import numpy as np
 import xarray as xr
 from netCDF4 import Dataset
 
+from isofit import __version__
+
 Logger = logging.getLogger(__file__)
 
 
@@ -86,6 +88,9 @@ class Create:
             Reduces the initialized Dataset by dropping the variables to reduce overall memory usage.
             If True, drops all variables. If list, drop everything but these.
         """
+        # Track the ISOFIT version that created this LUT
+        attrs["ISOFIT version"] = __version__
+
         self.file = file
         self.wl = wl
         self.grid = grid
@@ -227,6 +232,20 @@ class Create:
         self.queuePoint(point, data)
         self.flush()
 
+    def setAttr(self, key, value):
+        """
+        Sets an attribute in the netCDF
+        Parameters
+        ----------
+        key : str
+            Key to set
+        value : any
+            Value to set
+        """
+        self.attrs[key] = value
+        with Dataset(self.file, "a") as ds:
+            ds.setncattr(key, value)
+
     def __getitem__(self, key: str) -> Any:
         """
         Passthrough to __getitem__ on the underlying 'ds' attribute.
@@ -271,9 +290,13 @@ def findSlice(dim, val):
 
     # Subselect the two points encompassing this interp point
     b = np.searchsorted(dim * orientation, val * orientation)
-    a = b - 1
 
-    return slice(a, b + 1)
+    # Handle edge cases when val equals first or last lut dim value
+    if val <= dim[0]:
+        return slice(b, b + 2)
+
+    else:
+        return slice(b - 1, b + 1)
 
 
 def optimizedInterp(ds, strat):
@@ -293,6 +316,20 @@ def optimizedInterp(ds, strat):
     """
     for key, val in strat.items():
         dim = ds[key]
+
+        if val <= dim[0]:
+            Logger.warning(
+                f"Scene value for key: {key} of {round(val, 2)} "
+                f"is less or equal to minimum LUT value {np.round(dim[0].data, 2)}. "
+                "Solutions will use value interpolated to minimum LUT value"
+            )
+
+        elif val >= dim[-1]:
+            Logger.warning(
+                f"Scene value for key: {key} of {round(val, 2)} "
+                f"is greater or equal to maximum LUT value {np.round(dim[-1].data, 2)}. "
+                "Solutions will use value interpolated to maximum LUT value"
+            )
 
         if isinstance(val, list):
             a = findSlice(dim, val[0])
@@ -671,6 +708,11 @@ def load(
     else:
         Logger.debug(f"Using Xarray to load: {file}")
         ds = xr.open_dataset(file, mode=mode, lock=lock, **kwargs)
+
+    version = ds.attrs.get("ISOFIT version", "<not set>")
+    Logger.debug(
+        f"This LUT was created with ISOFIT version {version}, you are running ISOFIT {__version__}"
+    )
 
     # Calculate coupling before subsetting
     if "before" in coupling:

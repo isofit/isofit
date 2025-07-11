@@ -30,6 +30,7 @@ import xarray as xr
 from spectral.io import envi
 
 import isofit
+from isofit.core import units
 from isofit.core.common import envi_header, eps, load_spectrum, resample_spectrum
 from isofit.core.geometry import Geometry
 from isofit.data import env
@@ -610,7 +611,11 @@ class IO:
                 # Spectral calibration
                 wl, fwhm = fm.calibration(state_est)
                 cal = np.column_stack(
-                    [np.arange(0, len(wl)), wl / 1000.0, fwhm / 1000.0]
+                    [
+                        np.arange(0, len(wl)),
+                        units.nm_to_micron(wl),
+                        units.nm_to_micron(fwhm),
+                    ]
                 )
                 to_write["spectral_calibration_file"] = cal
 
@@ -676,7 +681,7 @@ class IO:
                 item in ["algebraic_inverse_file", "atmospheric_coefficients_file"]
                 for item in self.output_datasets
             ):
-                rfl_alg_opt, Ls, coeffs = invert_algebraic(
+                rfl_alg_opt, coeffs = invert_algebraic(
                     fm.surface,
                     fm.RT,
                     fm.instrument,
@@ -693,10 +698,16 @@ class IO:
                 )
 
             if "atmospheric_coefficients_file" in self.output_datasets:
-                rhoatm, sphalb, transm, solar_irr, coszen, transup = coeffs
+                rhoatm, sphalb, L_tot, transup, L_Up = coeffs
+                coszen, cos_i = geom.check_coszen_and_cos_i(fm.RT.coszen)
+                solar_irr = fm.RT.rt_engines[0].solar_irr
+
+                atm_vars = [rhoatm, sphalb, L_tot, solar_irr]
+
                 atm = np.column_stack(
-                    list(coeffs[:4]) + [np.ones((len(self.meas_wl), 1)) * coszen]
+                    atm_vars + [np.ones((len(self.meas_wl), 1)) * coszen]
                 )
+
                 atm = atm.T.reshape((len(self.meas_wl) * 5,))
                 to_write["atmospheric_coefficients_file"] = atm
 

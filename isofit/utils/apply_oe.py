@@ -16,7 +16,7 @@ import ray
 from spectral.io import envi
 
 import isofit.utils.template_construction as tmpl
-from isofit.core import isofit
+from isofit.core import isofit, units
 from isofit.core.common import envi_header
 from isofit.utils import analytical_line as ALAlg
 from isofit.utils import empirical_line as ELAlg
@@ -39,6 +39,7 @@ SUPPORTED_SENSORS = [
     "gao",
     "oci",
     "tanager",
+    "av5",
 ]
 RTM_CLEANUP_LIST = ["*r_k", "*t_k", "*tp7", "*wrn", "*psc", "*plt", "*7sc", "*acd"]
 INVERSION_WINDOWS = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
@@ -227,9 +228,12 @@ def apply_oe(
         if emulator_base.endswith(".jld2"):
             multipart_transmittance = False
         else:
-            emulator_aux_file = os.path.abspath(
-                os.path.splitext(emulator_base)[0] + "_aux.npz"
-            )
+            if emulator_base.endswith(".npz"):
+                emulator_aux_file = emulator_base
+            else:
+                emulator_aux_file = os.path.abspath(
+                    os.path.splitext(emulator_base)[0] + "_aux.npz"
+                )
             aux = np.load(emulator_aux_file)
             if (
                 "transm_down_dir"
@@ -443,8 +447,8 @@ def apply_oe(
     # Convert to microns if needed
     if wl[0] > 100:
         logging.info("Wavelength units of nm inferred...converting to microns")
-        wl = wl / 1000.0
-        fwhm = fwhm / 1000.0
+        wl = units.nm_to_micron(wl)
+        fwhm = units.nm_to_micron(fwhm)
 
     # write wavelength file
     wl_data = np.concatenate(
