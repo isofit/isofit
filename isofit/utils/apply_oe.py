@@ -326,54 +326,9 @@ def apply_oe(
     # Based on the sensor type, get appropriate year/month/day info from initial condition.
     # We'll adjust for line length and UTC day overrun later
     global INVERSION_WINDOWS
-    if sensor == "ang":
-        # parse flightline ID (AVIRIS-NG assumptions)
-        dt = datetime.strptime(paths.fid[3:], "%Y%m%dt%H%M%S")
-    elif sensor == "av3":
-        # parse flightline ID (AVIRIS-3 assumptions)
-        dt = datetime.strptime(paths.fid[3:], "%Y%m%dt%H%M%S")
-        INVERSION_WINDOWS = [[380.0, 1350.0], [1435, 1800.0], [1970.0, 2500.0]]
-    elif sensor == "av5":
-        # parse flightline ID (AVIRIS-5 assumptions)
-        dt = datetime.strptime(paths.fid[3:], "%Y%m%dt%H%M%S")
-    elif sensor == "avcl":
-        # parse flightline ID (AVIRIS-Classic assumptions)
-        dt = datetime.strptime("20{}t000000".format(paths.fid[1:7]), "%Y%m%dt%H%M%S")
-    elif sensor == "emit":
-        # parse flightline ID (EMIT assumptions)
-        dt = datetime.strptime(paths.fid[:19], "emit%Y%m%dt%H%M%S")
-        INVERSION_WINDOWS = [[380.0, 1325.0], [1435, 1770.0], [1965.0, 2500.0]]
-    elif sensor == "enmap":
-        # parse flightline ID (EnMAP assumptions)
-        dt = datetime.strptime(paths.fid[:15], "%Y%m%dt%H%M%S")
-    elif sensor == "hyp":
-        # parse flightline ID (Hyperion assumptions)
-        dt = datetime.strptime(paths.fid[10:17], "%Y%j")
-    elif sensor == "neon":
-        # parse flightline ID (NEON assumptions)
-        dt = datetime.strptime(paths.fid, "NIS01_%Y%m%d_%H%M%S")
-    elif sensor == "prism":
-        # parse flightline ID (PRISM assumptions)
-        dt = datetime.strptime(paths.fid[3:], "%Y%m%dt%H%M%S")
-    elif sensor == "prisma":
-        # parse flightline ID (PRISMA assumptions)
-        dt = datetime.strptime(paths.fid, "%Y%m%d%H%M%S")
-    elif sensor == "gao":
-        # parse flightline ID (GAO/CAO assumptions)
-        dt = datetime.strptime(paths.fid[3:-5], "%Y%m%dt%H%M%S")
-    elif sensor == "oci":
-        # parse flightline ID (PACE OCI assumptions)
-        dt = datetime.strptime(paths.fid[9:24], "%Y%m%dT%H%M%S")
-    elif sensor == "tanager":
-        # parse flightline ID (Tanager assumptions)
-        dt = datetime.strptime(paths.fid[:15], "%Y%m%d_%H%M%S")
-    elif sensor[:3] == "NA-":
-        dt = datetime.strptime(sensor[3:], "%Y%m%d")
-    else:
-        raise ValueError(
-            "Datetime object could not be obtained. Please check file name of input"
-            " data."
-        )
+    dt, sensor_inversion_window = tmpl.sensor_name_to_dt(sensor, paths.fid)
+    if sensor_inversion_window is not None:
+        INVERSION_WINDOWS = sensor_inversion_window
 
     if inversion_windows:
         assert all(
