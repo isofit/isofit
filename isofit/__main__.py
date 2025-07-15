@@ -100,6 +100,7 @@ class CLI(click.Group):
         "HRRR_to_modtran": "isofit.utils.add_HRRR_profiles_to_modtran_config",
         "analytical_line": "isofit.utils.analytical_line",
         "apply_oe": "isofit.utils.apply_oe",
+        "wavelength_cal": "isofit.utils.wavelength_cal",
         "6s_to_srtmnet": "isofit.utils.convert_6s_to_srtmnet",
         "empirical_line": "isofit.utils.empirical_line",
         "ewt": "isofit.utils.ewt_from_reflectance",

@@ -466,7 +466,7 @@ def wavelength_cal(
 
 
 # Input arguments
-@click.command(name="apply_oe", help=wavelength_cal.__doc__, no_args_is_help=True)
+@click.command(name="wavelength_cal", help=wavelength_cal.__doc__, no_args_is_help=True)
 @click.argument("input_radiance")
 @click.argument("input_loc")
 @click.argument("input_obs")
