@@ -372,38 +372,10 @@ def apply_oe(
     gmtime = float(h_m_s[0] + h_m_s[1] / 60.0)
 
     # get radiance file, wavelengths, fwhm
-    radiance_dataset = envi.open(envi_header(paths.radiance_working_path))
-    wl_ds = np.array([float(w) for w in radiance_dataset.metadata["wavelength"]])
-    if wavelength_path:
-        if os.path.isfile(wavelength_path):
-            chn, wl, fwhm = np.loadtxt(wavelength_path).T
-            if len(chn) != len(wl_ds) or not np.all(np.isclose(wl, wl_ds, atol=0.01)):
-                raise ValueError(
-                    "Number of channels or center wavelengths provided in wavelength file do not match"
-                    " wavelengths in radiance cube. Please adjust your wavelength file."
-                )
-        else:
-            pass
-    else:
-        logging.info(
-            "No wavelength file provided. Obtaining wavelength grid from ENVI header of radiance cube."
-        )
-        wl = wl_ds
-        if "fwhm" in radiance_dataset.metadata:
-            fwhm = np.array([float(f) for f in radiance_dataset.metadata["fwhm"]])
-        elif "FWHM" in radiance_dataset.metadata:
-            fwhm = np.array([float(f) for f in radiance_dataset.metadata["FWHM"]])
-        else:
-            fwhm = np.ones(wl.shape) * (wl[1] - wl[0])
-
-    # Close out radiance dataset to avoid potential confusion
-    del radiance_dataset
-
-    # Convert to microns if needed
-    if wl[0] > 100:
-        logging.info("Wavelength units of nm inferred...converting to microns")
-        wl = units.nm_to_micron(wl)
-        fwhm = units.nm_to_micron(fwhm)
+    wl, fwhm = tmpl.get_wavelengths(
+        paths.radiance_working_path,
+        wavelength_path,
+    )
 
     # write wavelength file
     wl_data = np.concatenate(
@@ -570,7 +542,7 @@ def apply_oe(
                 paths=paths,
                 h2o_lut_grid=h2o_grid,
                 n_cores=n_cores,
-                use_emp_line=use_superpixels,
+                use_superpixels=use_superpixels,
                 surface_category=surface_category,
                 emulator_base=emulator_base,
                 uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
@@ -670,7 +642,7 @@ def apply_oe(
             mean_latitude=mean_latitude,
             mean_longitude=mean_longitude,
             dt=dt,
-            use_emp_line=use_superpixels,
+            use_superpixels=use_superpixels,
             n_cores=n_cores,
             surface_category=surface_category,
             emulator_base=emulator_base,

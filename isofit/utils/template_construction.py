@@ -501,7 +501,7 @@ def build_presolve_config(
     paths: Pathnames,
     h2o_lut_grid: np.array,
     n_cores: int = -1,
-    use_emp_line: bool = False,
+    use_superpixels: bool = False,
     surface_category="multicomponent_surface",
     emulator_base: str = None,
     uncorrelated_radiometric_uncertainty: float = 0.0,
@@ -517,7 +517,7 @@ def build_presolve_config(
         paths: object containing references to all relevant file locations
         h2o_lut_grid: the water vapor look up table grid isofit should use for this solve
         n_cores: number of cores to use in processing
-        use_emp_line: flag whether or not to set up for the empirical line estimation
+        use_superpixels: flag whether or not to use superpixels for the solution
         surface_category: type of surface to use
         emulator_base: the basename of the emulator, if used
         uncorrelated_radiometric_uncertainty: uncorrelated radiometric uncertainty parameter for isofit
@@ -529,7 +529,7 @@ def build_presolve_config(
 
     # Determine number of spectra included in each retrieval.  If we are
     # operating on segments, this will average down instrument noise
-    if use_emp_line:
+    if use_superpixels:
         spectra_per_inversion = segmentation_size
     else:
         spectra_per_inversion = 1
@@ -658,7 +658,7 @@ def build_presolve_config(
             "radiometry_correction_file"
         ] = paths.rdn_factors_path
 
-    if use_emp_line:
+    if use_superpixels:
         isofit_config_h2o["input"]["measured_radiance_file"] = paths.rdn_subs_path
         isofit_config_h2o["input"]["loc_file"] = paths.loc_subs_path
         isofit_config_h2o["input"]["obs_file"] = paths.obs_subs_path
@@ -690,7 +690,7 @@ def build_main_config(
     mean_latitude: float = None,
     mean_longitude: float = None,
     dt: datetime = None,
-    use_emp_line: bool = True,
+    use_superpixels: bool = True,
     n_cores: int = -1,
     surface_category="multicomponent_surface",
     emulator_base: str = None,
@@ -719,7 +719,7 @@ def build_main_config(
         mean_latitude:                        the latitude isofit should use for this solve
         mean_longitude:                       the longitude isofit should use for this solve
         dt:                                   the datetime object corresponding to this flightline to use for this solve
-        use_emp_line:                         flag whether or not to set up for the empirical line estimation
+        use_superpixels:                      flag whether or not to use superpixels for the solution
         n_cores:                              the number of cores to use during processing
         surface_category:                     type of surface to use
         emulator_base:                        the basename of the emulator, if used
@@ -733,7 +733,7 @@ def build_main_config(
 
     # Determine number of spectra included in each retrieval.  If we are
     # operating on segments, this will average down instrument noise
-    if use_emp_line:
+    if use_superpixels:
         spectra_per_inversion = segmentation_size
     else:
         spectra_per_inversion = 1
@@ -949,7 +949,7 @@ def build_main_config(
         },
     }
 
-    if use_emp_line:
+    if use_superpixels:
         isofit_config_modtran["input"]["measured_radiance_file"] = paths.rdn_subs_path
         isofit_config_modtran["input"]["loc_file"] = paths.loc_subs_path
         isofit_config_modtran["input"]["obs_file"] = paths.obs_subs_path
@@ -1752,3 +1752,55 @@ def sensor_name_to_dt(sensor: str, fid: str):
             " data."
         )
     return dt, inversion_window_update
+
+
+def get_wavelengths(
+    envi_file: str, wavelength_path: str = None
+) -> (np.array, np.array):
+    """Get wavelengths and FWHM from the header of an ENVI file
+
+    Args:
+        envi_file: path to the ENVI file to read wavelengths from
+        wavelength_path: optional path to a file containing wavelengths and FWHM
+
+    Returns:
+        tuple containing:
+            wl - array of wavelengths in nm
+            fwhm - array of full width at half maximum in nm
+    """
+
+    # get radiance file, wavelengths, fwhm
+    radiance_dataset = envi.open(envi_header(envi_file))
+    wl_ds = np.array([float(w) for w in radiance_dataset.metadata["wavelength"]])
+    if wavelength_path:
+        if os.path.isfile(wavelength_path):
+            chn, wl, fwhm = np.loadtxt(wavelength_path).T
+            if len(chn) != len(wl_ds) or not np.all(np.isclose(wl, wl_ds, atol=0.01)):
+                raise ValueError(
+                    "Number of channels or center wavelengths provided in wavelength file do not match"
+                    " wavelengths in radiance cube. Please adjust your wavelength file."
+                )
+        else:
+            pass
+    else:
+        logging.info(
+            "No wavelength file provided. Obtaining wavelength grid from ENVI header of radiance cube."
+        )
+        wl = wl_ds
+        if "fwhm" in radiance_dataset.metadata:
+            fwhm = np.array([float(f) for f in radiance_dataset.metadata["fwhm"]])
+        elif "FWHM" in radiance_dataset.metadata:
+            fwhm = np.array([float(f) for f in radiance_dataset.metadata["FWHM"]])
+        else:
+            fwhm = np.ones(wl.shape) * (wl[1] - wl[0])
+
+    # Close out radiance dataset to avoid potential confusion
+    del radiance_dataset
+
+    # Convert to microns if needed
+    if wl[0] > 100:
+        logging.info("Wavelength units of nm inferred...converting to microns")
+        wl = units.nm_to_micron(wl)
+        fwhm = units.nm_to_micron(fwhm)
+
+    return wl, fwhm

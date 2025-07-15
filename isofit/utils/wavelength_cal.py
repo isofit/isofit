@@ -3,6 +3,7 @@
 # Authors: Philip G. Brodrick
 #
 
+import json
 import logging
 import os
 import subprocess
@@ -28,6 +29,99 @@ from isofit.utils.apply_oe import (
     SUPPORTED_SENSORS,
     UNCORRELATED_RADIOMETRIC_UNCERTAINTY,
 )
+
+
+def add_wavelength_elements(config_path, state_type="shfit", spline_indices=None):
+    config = json.load(open(config_path, "r"))
+    if state_type == "shift":
+        config["forward_model"]["instrument"]["statevector"] = {
+            "GROW_FWHM": {
+                "bounds": [-7, 7],
+                "init": 0,
+                "prior_mean": 0,
+                "prior_sigma": 100.0,
+                "scale": 1,
+            },
+            "WL_SHIFT": {
+                "bounds": [-7, 7],
+                "init": 0,
+                "prior_mean": 0,
+                "prior_sigma": 100.0,
+                "scale": 1,
+            },
+        }
+    elif state_type == "spline":
+        config["forward_model"]["instrument"]["statevector"] = {
+            "GROW_FWHM": {
+                "bounds": [-7, 7],
+                "init": 0,
+                "prior_mean": 0,
+                "prior_sigma": 100.0,
+                "scale": 1,
+            }
+        }
+        for spline_index in spline_indices:
+            config["forward_model"]["instrument"]["statevector"][
+                f"WLSPL_{spline_index}"
+            ] = {
+                "bounds": [-7, 7],
+                "init": 0,
+                "prior_mean": 0,
+                "prior_sigma": 100.0,
+                "scale": 1,
+            }
+    with open(config_path, "w") as fout:
+        fout.write(json.dumps(config, tmpl.SerialEncoder, indent=4))
+
+
+def average_columns(
+    input_radiance_file: str,
+    input_loc_file: str,
+    input_obs_file: str,
+    output_radiance_file: str,
+    output_loc_file: str,
+    output_obs_file: str,
+):
+    """
+    Averages the columns of input radiance, location, and observation files
+    and saves the results to output files.
+
+    Args:
+        input_radiance_file (str): Path to the input radiance file.
+        input_loc_file (str): Path to the input location file.
+        input_obs_file (str): Path to the input observation file.
+        output_radiance_file (str): Path to the output radiance file.
+        output_loc_file (str): Path to the output location file.
+        output_obs_file (str): Path to the output observation file.
+
+    Returns:
+        rows (int): The number of rows in the averaged output files.
+    """
+    rows = 0
+    for infile, outfile in zip(
+        [input_radiance_file, input_loc_file, input_obs_file],
+        [output_radiance_file, output_loc_file, output_obs_file],
+    ):
+        in_ds = envi.open(envi_header(infile), infile)
+        mm = in_ds.open_memmap(interleave="bip")
+        rows = mm.shape[0]
+        avg = np.mean(mm, axis=0)
+
+        meta = in_ds.metadata.copy()
+        meta["lines"] = 1
+
+        out_ds = envi.create_image(
+            outfile,
+            shape=(1, avg.shape[0]),
+            dtype=in_ds.dtype,
+            interleave="bip",
+            metadata=meta,
+        )
+
+        out_ds.open_memmap(interleave="bip")[:] = avg
+        out_ds.close()
+        in_ds.close()
+    return rows
 
 
 def wavelength_cal(
@@ -128,15 +222,6 @@ def wavelength_cal(
 
     lut_params = tmpl.LUTConfig(lut_config_file, emulator_base, False)
 
-    # Based on the sensor type, get appropriate year/month/day info from initial condition.
-    # We'll adjust for line length and UTC day overrun later
-    global INVERSION_WINDOWS
-    dt, sensor_inversion_window = tmpl.sensor_name_to_dt(sensor, paths.fid)
-    if sensor_inversion_window is not None:
-        INVERSION_WINDOWS = sensor_inversion_window
-
-    # Collapse data row-wise
-
     logging.info("Setting up files and directories....")
     paths = tmpl.Pathnames(
         input_radiance,
@@ -149,14 +234,235 @@ def wavelength_cal(
         modtran_path,
         rdn_factors_path,
         model_discrepancy_path,
-        aerosol_climatology_path,
+        None,
         channelized_uncertainty_path,
         ray_temp_dir,
-        interpolate_inplace,
+        False,
     )
     paths.make_directories()
     paths.stage_files()
     logging.info("...file/directory setup complete")
+
+    # Based on the sensor type, get appropriate year/month/day info from initial condition.
+    # We'll adjust for line length and UTC day overrun later
+    global INVERSION_WINDOWS
+    dt, sensor_inversion_window = tmpl.sensor_name_to_dt(sensor, paths.fid)
+    if sensor_inversion_window is not None:
+        INVERSION_WINDOWS = sensor_inversion_window
+
+    # Collapse data row-wise
+    logging.info("Collapsing data row-wise...")
+    n_rows = average_columns(
+        paths.input_radiance_file,
+        paths.input_loc_file,
+        paths.input_obs_file,
+        paths.rdn_subs_path,
+        paths.loc_subs_path,
+        paths.obs_subs_path,
+    )
+
+    (
+        h_m_s,
+        day_increment,
+        mean_path_km,
+        mean_to_sensor_azimuth,
+        mean_to_sensor_zenith,
+        mean_to_sun_azimuth,
+        mean_to_sun_zenith,
+        mean_relative_azimuth,
+        valid,
+        to_sensor_zenith_lut_grid,
+        to_sun_zenith_lut_grid,
+        relative_azimuth_lut_grid,
+    ) = tmpl.get_metadata_from_obs(paths.obs_subs_path, lut_params)
+
+    # overwrite the time in case original obs has an error in that band
+    if h_m_s[0] != dt.hour and h_m_s[0] >= 24:
+        h_m_s[0] = dt.hour
+        logging.info(
+            "UTC hour did not match start time minute. Adjusting to that value."
+        )
+    if h_m_s[1] != dt.minute and h_m_s[1] >= 60:
+        h_m_s[1] = dt.minute
+        logging.info(
+            "UTC minute did not match start time minute. Adjusting to that value."
+        )
+
+    if day_increment:
+        dayofyear += 1
+
+    gmtime = float(h_m_s[0] + h_m_s[1] / 60.0)
+
+    # get radiance file, wavelengths, fwhm
+    wl, fwhm = tmpl.get_wavelengths(
+        paths.radiance_working_path,
+        wavelength_path,
+    )
+
+    # write wavelength file
+    wl_data = np.concatenate(
+        [np.arange(len(wl))[:, np.newaxis], wl[:, np.newaxis], fwhm[:, np.newaxis]],
+        axis=1,
+    )
+    np.savetxt(paths.wavelength_path, wl_data, delimiter=" ")
+
+    # check and rebuild surface model if needed
+    paths.surface_path = tmpl.check_surface_model(
+        surface_path=surface_path, wl=wl, paths=paths
+    )
+
+    # re-stage surface model if needed
+    if paths.surface_path != surface_path:
+        copyfile(paths.surface_path, paths.surface_working_path)
+
+    (
+        mean_latitude,
+        mean_longitude,
+        mean_elevation_km,
+        elevation_lut_grid,
+    ) = tmpl.get_metadata_from_loc(
+        paths.loc_subs_path, lut_params, pressure_elevation=False
+    )
+
+    if emulator_base is not None:
+        if elevation_lut_grid is not None and np.any(elevation_lut_grid < 0):
+            to_rem = elevation_lut_grid[elevation_lut_grid < 0].copy()
+            elevation_lut_grid[elevation_lut_grid < 0] = 0
+            elevation_lut_grid = np.unique(elevation_lut_grid)
+            if len(elevation_lut_grid) == 1:
+                elevation_lut_grid = None
+                mean_elevation_km = elevation_lut_grid[
+                    0
+                ]  # should be 0, but just in case
+            logging.info(
+                "Scene contains target lut grid elements < 0 km, and uses 6s (via"
+                " sRTMnet).  6s does not support targets below sea level in km units. "
+                f" Setting grid points {to_rem} to 0."
+            )
+        if mean_elevation_km < 0:
+            mean_elevation_km = 0
+            logging.info(
+                f"Scene contains a mean target elevation < 0.  6s does not support"
+                f" targets below sea level in km units.  Setting mean elevation to 0."
+            )
+
+    mean_altitude_km = (
+        mean_elevation_km + np.cos(np.deg2rad(mean_to_sensor_zenith)) * mean_path_km
+    )
+
+    logging.info("Observation means:")
+    logging.info(f"Path (km): {mean_path_km}")
+    logging.info(f"To-sensor azimuth (deg): {mean_to_sensor_azimuth}")
+    logging.info(f"To-sensor zenith (deg): {mean_to_sensor_zenith}")
+    logging.info(f"To-sun azimuth (deg): {mean_to_sun_azimuth}")
+    logging.info(f"To-sun zenith (deg): {mean_to_sun_zenith}")
+    logging.info(f"Relative to-sun azimuth (deg): {mean_relative_azimuth}")
+    logging.info(f"Altitude (km): {mean_altitude_km}")
+
+    if emulator_base is not None and mean_altitude_km > 99:
+        if not emulator_base.endswith(".jld2"):
+            logging.info(
+                "Adjusting altitude to 99 km for integration with 6S, because emulator is"
+                " chosen."
+            )
+            mean_altitude_km = 99
+
+    # We will use the model discrepancy with covariance OR uncorrelated
+    # Calibration error, but not both.
+    if model_discrepancy_path is not None:
+        uncorrelated_radiometric_uncertainty = 0
+    else:
+        uncorrelated_radiometric_uncertainty = UNCORRELATED_RADIOMETRIC_UNCERTAINTY
+
+    h2o_lut_grid = lut_params.get_grid(
+        lut_params.h2o_range[0],
+        lut_params.h2o_range[1],
+        lut_params.h2o_spacing,
+        lut_params.h2o_spacing_min,
+    )
+
+    logging.info("Full (non-aerosol) LUTs:")
+    logging.info(f"Elevation: {elevation_lut_grid}")
+    logging.info(f"To-sensor zenith: {to_sensor_zenith_lut_grid}")
+    logging.info(f"To-sun zenith: {to_sun_zenith_lut_grid}")
+    logging.info(f"Relative to-sun azimuth: {relative_azimuth_lut_grid}")
+    logging.info(f"H2O Vapor: {h2o_lut_grid}")
+
+    if (
+        not exists(paths.state_subs_path)
+        or not exists(paths.uncert_subs_path)
+        or not exists(paths.rfl_subs_path)
+    ):
+        tmpl.write_modtran_template(
+            atmosphere_type=atmosphere_type,
+            fid=paths.fid,
+            altitude_km=mean_altitude_km,
+            dayofyear=dayofyear,
+            to_sensor_azimuth=mean_to_sensor_azimuth,
+            to_sensor_zenith=mean_to_sensor_zenith,
+            to_sun_zenith=mean_to_sun_zenith,
+            relative_azimuth=mean_relative_azimuth,
+            gmtime=gmtime,
+            elevation_km=mean_elevation_km,
+            output_file=paths.modtran_template_path,
+        )
+
+        tmpl.build_main_config(
+            paths=paths,
+            lut_params=lut_params,
+            h2o_lut_grid=h2o_lut_grid,
+            elevation_lut_grid=(
+                elevation_lut_grid
+                if elevation_lut_grid is not None
+                else [mean_elevation_km]
+            ),
+            to_sensor_zenith_lut_grid=(
+                to_sensor_zenith_lut_grid
+                if to_sensor_zenith_lut_grid is not None
+                else [mean_to_sensor_zenith]
+            ),
+            to_sun_zenith_lut_grid=(
+                to_sun_zenith_lut_grid
+                if to_sun_zenith_lut_grid is not None
+                else [mean_to_sun_zenith]
+            ),
+            relative_azimuth_lut_grid=(
+                relative_azimuth_lut_grid
+                if relative_azimuth_lut_grid is not None
+                else [mean_relative_azimuth]
+            ),
+            mean_latitude=mean_latitude,
+            mean_longitude=mean_longitude,
+            dt=dt,
+            use_superpixels=True,
+            n_cores=n_cores,
+            surface_category=surface_category,
+            emulator_base=emulator_base,
+            uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
+            multiple_restarts=multiple_restarts,
+            segmentation_size=n_rows,
+            pressure_elevation=False,
+            prebuilt_lut_path=prebuilt_lut,
+            inversion_windows=INVERSION_WINDOWS,
+            multipart_transmittance=multipart_transmittance,
+        )
+
+        add_wavelength_elements(paths.isofit_full_config_path)
+
+        # Run retrieval
+        logging.info("Running ISOFIT with full LUT")
+        retrieval_full = isofit.Isofit(
+            paths.isofit_full_config_path, level="INFO", logfile=log_file
+        )
+        retrieval_full.run()
+        del retrieval_full
+
+        # clean up unneeded storage
+        if emulator_base is None:
+            for to_rm in RTM_CLEANUP_LIST:
+                cmd = "rm " + join(paths.full_lut_directory, to_rm)
+                logging.info(cmd)
+                subprocess.call(cmd, shell=True)
 
 
 # Input arguments
