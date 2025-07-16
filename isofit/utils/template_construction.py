@@ -960,9 +960,6 @@ def build_main_config(
         isofit_config_modtran["output"][
             "estimated_reflectance_file"
         ] = paths.rfl_subs_path
-        isofit_config_modtran["output"][
-            "atmospheric_coefficients_file"
-        ] = paths.atm_coeff_path
     else:
         isofit_config_modtran["input"][
             "measured_radiance_file"
