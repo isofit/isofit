@@ -31,19 +31,30 @@ from isofit.utils.apply_oe import (
 )
 
 
-def add_wavelength_elements(config_path, state_type="shfit", spline_indices=None):
+def add_wavelength_elements(config_path, state_type="shift", spline_indices=None):
     config = json.load(open(config_path, "r"))
+    
+    # Set RTM WL range
+    hi_res_wavlengths= os.path.join(f'{os.path.dirname(config_path)}','..','data','wavelengths_highres.txt')
+    x = np.arange(360,2511,0.025) / 1000.
+    w = np.ones(len(x))*0.025 / 1000.0
+    n = np.ones(len(x))
+    D = np.c_[n,x,w]
+    np.savetxt(hi_res_wavlengths, D, fmt='%8.6f')
+    config['forward_model']['radiative_transfer']['radiative_transfer_engines']['vswir']['wavelength_file'] =  hi_res_wavlengths
+
+    config['forward_model']["instrument"]['calibration_fixed'] = False
     if state_type == "shift":
         config["forward_model"]["instrument"]["statevector"] = {
             "GROW_FWHM": {
-                "bounds": [-7, 7],
+                "bounds": [-5, 5],
                 "init": 0,
                 "prior_mean": 0,
                 "prior_sigma": 100.0,
                 "scale": 1,
             },
             "WL_SHIFT": {
-                "bounds": [-7, 7],
+                "bounds": [-5, 5],
                 "init": 0,
                 "prior_mean": 0,
                 "prior_sigma": 100.0,
@@ -53,7 +64,7 @@ def add_wavelength_elements(config_path, state_type="shfit", spline_indices=None
     elif state_type == "spline":
         config["forward_model"]["instrument"]["statevector"] = {
             "GROW_FWHM": {
-                "bounds": [-7, 7],
+                "bounds": [-5, 5],
                 "init": 0,
                 "prior_mean": 0,
                 "prior_sigma": 100.0,
@@ -64,14 +75,15 @@ def add_wavelength_elements(config_path, state_type="shfit", spline_indices=None
             config["forward_model"]["instrument"]["statevector"][
                 f"WLSPL_{spline_index}"
             ] = {
-                "bounds": [-7, 7],
+                "bounds": [-5, 5],
                 "init": 0,
                 "prior_mean": 0,
                 "prior_sigma": 100.0,
                 "scale": 1,
             }
+    logging.info(f'Writing config update with WL cal parameters to {config_path}')
     with open(config_path, "w") as fout:
-        fout.write(json.dumps(config, tmpl.SerialEncoder, indent=4))
+        fout.write(json.dumps(config, cls=tmpl.SerialEncoder, indent=4, sort_keys=True))
 
 
 def average_columns(
@@ -111,16 +123,17 @@ def average_columns(
         meta["lines"] = 1
 
         out_ds = envi.create_image(
-            outfile,
-            shape=(1, avg.shape[0]),
+            envi_header(outfile),
+            shape=(1, avg.shape[0], avg.shape[1]),
+            ext='',
             dtype=in_ds.dtype,
-            interleave="bip",
+            interleave="bil",
+            force=True,
             metadata=meta,
         )
 
-        out_ds.open_memmap(interleave="bip")[:] = avg
-        out_ds.close()
-        in_ds.close()
+        out_ds.open_memmap(interleave="bip", writable=True)[:] = avg
+        del in_ds, out_ds
     return rows
 
 
@@ -261,6 +274,7 @@ def wavelength_cal(
         paths.obs_subs_path,
     )
 
+    dayofyear = dt.timetuple().tm_yday
     (
         h_m_s,
         day_increment,
