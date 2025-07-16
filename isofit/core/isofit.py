@@ -306,15 +306,13 @@ class Worker(object):
     ),
     default="INFO",
 )
-@click.option("--log_file", default=None)
+@click.option("--log_file")
 def cli(config_file, level, log_file):
     """Execute ISOFIT core"""
 
     click.echo(
         f"Running ISOFIT(config_file={config_file!r}, level={level}, logfile={log_file})"
     )
-
-    logging.basicConfig(format="%(message)s", filename=log_file, level=level)
     Isofit(config_file=config_file, level=level, logfile=log_file).run()
 
     click.echo("Done")
