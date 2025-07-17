@@ -33,17 +33,21 @@ from isofit.utils.apply_oe import (
 
 def add_wavelength_elements(config_path, state_type="shift", spline_indices=None):
     config = json.load(open(config_path, "r"))
-    
-    # Set RTM WL range
-    hi_res_wavlengths= os.path.join(f'{os.path.dirname(config_path)}','..','data','wavelengths_highres.txt')
-    x = np.arange(360,2511,0.025) / 1000.
-    w = np.ones(len(x))*0.025 / 1000.0
-    n = np.ones(len(x))
-    D = np.c_[n,x,w]
-    np.savetxt(hi_res_wavlengths, D, fmt='%8.6f')
-    config['forward_model']['radiative_transfer']['radiative_transfer_engines']['vswir']['wavelength_file'] =  hi_res_wavlengths
 
-    config['forward_model']["instrument"]['calibration_fixed'] = False
+    # Set RTM WL range
+    hi_res_wavlengths = os.path.join(
+        f"{os.path.dirname(config_path)}", "..", "data", "wavelengths_highres.txt"
+    )
+    x = np.arange(360, 2511, 0.025) / 1000.0
+    w = np.ones(len(x)) * 0.025 / 1000.0
+    n = np.ones(len(x))
+    D = np.c_[n, x, w]
+    np.savetxt(hi_res_wavlengths, D, fmt="%8.6f")
+    config["forward_model"]["radiative_transfer"]["radiative_transfer_engines"][
+        "vswir"
+    ]["wavelength_file"] = hi_res_wavlengths
+
+    config["forward_model"]["instrument"]["calibration_fixed"] = False
     if state_type == "shift":
         config["forward_model"]["instrument"]["statevector"] = {
             "GROW_FWHM": {
@@ -81,7 +85,7 @@ def add_wavelength_elements(config_path, state_type="shift", spline_indices=None
                 "prior_sigma": 100.0,
                 "scale": 1,
             }
-    logging.info(f'Writing config update with WL cal parameters to {config_path}')
+    logging.info(f"Writing config update with WL cal parameters to {config_path}")
     with open(config_path, "w") as fout:
         fout.write(json.dumps(config, cls=tmpl.SerialEncoder, indent=4, sort_keys=True))
 
@@ -125,7 +129,7 @@ def average_columns(
         out_ds = envi.create_image(
             envi_header(outfile),
             shape=(1, avg.shape[0], avg.shape[1]),
-            ext='',
+            ext="",
             dtype=in_ds.dtype,
             interleave="bil",
             force=True,
