@@ -13,24 +13,24 @@ from isofit.utils import surface_model
 
 # TODO - re-engage this test w/ 6c emulator & new glint model
 # fmt: off
-#@pytest.mark.examples
-#@pytest.mark.parametrize("args", [
-#    ("--level", "DEBUG", "configs/run/prm20151026t173213_D8W_6s.json"),
-#    ("--level", "DEBUG", "configs/run/prm20151026t173213_D8p5W_6s.json"),
-#    # ("--level", "DEBUG", "configs/run/prm20151026t173213_D9W_6s.json"),
-#    ("--level", "DEBUG", "configs/run/prm20151026t173213_D9p5W_6s.json"),
-#])
-## fmt: on
-#def test_santa_monica(args, monkeypatch):
-#    """Run the Santa Monica test dataset."""
-#
-#    monkeypatch.chdir(env.path("examples", "20151026_SantaMonica/"))
-#    surface_model("configs/prm20151026t173213_surface_coastal.json")
-#
-#    runner = CliRunner()
-#    result = runner.invoke(cli, ["run"] + list(args), catch_exceptions=False)
-#
-#    assert result.exit_code == 0
+@pytest.mark.examples
+@pytest.mark.parametrize("args", [
+    ("--level", "DEBUG", "configs/run/prm20151026t173213_D8W_6s.json"),
+    ("--level", "DEBUG", "configs/run/prm20151026t173213_D8p5W_6s.json"),
+    # ("--level", "DEBUG", "configs/run/prm20151026t173213_D9W_6s.json"),
+    ("--level", "DEBUG", "configs/run/prm20151026t173213_D9p5W_6s.json"),
+])
+# fmt: on
+def test_santa_monica(args, monkeypatch):
+    """Run the Santa Monica test dataset."""
+
+    monkeypatch.chdir(env.path("examples", "20151026_SantaMonica/"))
+    surface_model("configs/prm20151026t173213_surface_coastal.json")
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["run"] + list(args), catch_exceptions=False)
+
+    assert result.exit_code == 0
 
 
 # fmt: off
