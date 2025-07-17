@@ -7,7 +7,6 @@ import json
 import logging
 import os
 import subprocess
-from datetime import datetime
 from os.path import exists, join
 from shutil import copyfile
 
@@ -17,13 +16,11 @@ import ray
 from spectral.io import envi
 
 import isofit.utils.template_construction as tmpl
-from isofit.core import isofit, units
+from isofit.core import isofit
+from isofit.configs import configs
+from isofit.core import instrument
 from isofit.core.common import envi_header
-from isofit.utils import analytical_line as ALAlg
-from isofit.utils import empirical_line as ELAlg
-from isofit.utils import extractions, interpolate_spectra, segment
 from isofit.utils.apply_oe import (
-    EPS,
     INVERSION_WINDOWS,
     RTM_CLEANUP_LIST,
     SUPPORTED_SENSORS,
@@ -157,16 +154,88 @@ def wavelength_cal(
     channelized_uncertainty_path=None,
     model_discrepancy_path=None,
     lut_config_file=None,
-    multiple_restarts=False,
     logging_level="INFO",
     log_file=None,
     n_cores=1,
-    presolve=False,
     ray_temp_dir="/tmp/ray",
     emulator_base=None,
     prebuilt_lut=None,
     inversion_windows=None,
 ):
+    """\
+    Runs a wavelength calibration on an input scene.
+
+    Observation (obs) and location (loc) files are used to determine appropriate
+    geometry lookup tables and provide a heuristic means of determining atmospheric
+    water ranges.
+
+    \b
+    Parameters
+    ----------
+    input_radiance : str
+        Radiance data cube. Expected to be ENVI format
+    input_loc : str
+        Location data cube of shape (Lon, Lat, Elevation). Expected to be ENVI format
+    input_obs : str
+        Observation data cube of shape:
+            (path length, to-sensor azimuth, to-sensor zenith,
+            to-sun azimuth, to-sun zenith, phase,
+            slope, aspect, cosine i, UTC time)
+        Expected to be ENVI format
+    working_directory : str
+        Directory to stage multiple outputs, will contain subdirectories
+    sensor : str
+        The sensor used for acquisition, will be used to set noise and datetime
+        settings
+    surface_path : str
+        Path to surface model or json dict of surface model configuration
+    copy_input_files : bool, default=False
+        Flag to choose to copy input_radiance, input_loc, and input_obs locally into
+        the working_directory
+    modtran_path : str, default=None
+        Location of MODTRAN utility. Alternately set with `MODTRAN_DIR` environment
+        variable
+    wavelength_path : str, default=None
+        Location to get wavelength information from, if not specified the radiance
+        header will be used
+    surface_category : str, default="multicomponent_surface"
+        The type of ISOFIT surface priors to use.  Default is multicomponent_surface
+    rdn_factors_path : str, default=None
+        Specify a radiometric correction factor, if desired
+    atmosphere_type : str, default="ATM_MIDLAT_SUMMER"
+        Atmospheric profile to be used for MODTRAN simulations.  Unused for other
+        radiative transfer models.
+    channelized_uncertainty_path : str, default=None
+        Path to a channelized uncertainty file
+    model_discrepancy_path : str, default=None
+        Modifies S_eps in the OE formalism as the Gamma additive term, as:
+        S_eps = Sy + Kb.dot(self.Sb).dot(Kb.T) + Gamma
+    lut_config_file : str, default=None
+        Path to a look up table configuration file, which will override defaults
+        choices
+    logging_level : str, default="INFO"
+        Logging level with which to run ISOFIT
+    log_file : str, default=None
+        File path to write ISOFIT logs to
+    n_cores : int, default=1
+        Number of cores to run ISOFIT with. Substantial parallelism is available, and
+        full runs will be very slow in serial. Suggested to max this out on the
+        available system
+    ray_temp_dir : str, default="/tmp/ray"
+        Location of temporary directory for ray parallelization engine
+    emulator_base : str, default=None
+        Location of emulator base path. Point this at the model folder (or h5 file) of
+        sRTMnet to use the emulator instead of MODTRAN. An additional file with the
+        same basename and the extention _aux.npz must accompany
+        e.g. /path/to/emulator.h5 /path/to/emulator_aux.npz
+    prebuilt_lut : str, default=None
+        Use this pre-constructed look up table for all retrievals. Must be an
+        ISOFIT-compatible RTE NetCDF
+    inversion_windows : list[float], default=None
+        Override the default inversion windows.  Will supercede any sensor specific
+        defaults that are in place.
+        Must be in 2-item tuples
+    """
 
     ##################### Front Matter #########################
     # Determine if we run in multipart-transmittance (4c) mode
@@ -316,13 +385,7 @@ def wavelength_cal(
         paths.radiance_working_path,
         wavelength_path,
     )
-
-    # write wavelength file
-    wl_data = np.concatenate(
-        [np.arange(len(wl))[:, np.newaxis], wl[:, np.newaxis], fwhm[:, np.newaxis]],
-        axis=1,
-    )
-    np.savetxt(paths.wavelength_path, wl_data, delimiter=" ")
+    tmpl.write_wavelength_file(paths.wavelength_path, wl, fwhm)
 
     # check and rebuild surface model if needed
     paths.surface_path = tmpl.check_surface_model(
@@ -457,7 +520,7 @@ def wavelength_cal(
             surface_category=surface_category,
             emulator_base=emulator_base,
             uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
-            multiple_restarts=multiple_restarts,
+            multiple_restarts=False,
             segmentation_size=n_rows,
             pressure_elevation=False,
             prebuilt_lut_path=prebuilt_lut,
@@ -483,6 +546,73 @@ def wavelength_cal(
                 subprocess.call(cmd, shell=True)
 
 
+def get_wavelength_adjustment(config_file: str, output_file: str = None, filter_edges: int = 0):
+    """
+    Get the wavelength adjustment based on a previous isofit wavelength_cal run.
+
+    Args:
+        config_file (str): The configuration file for the wavelength_cal run.
+        output_file (str): The file to write the wavelength adjustment to.
+        filter_edges (int): number of edge columns to trim from average
+
+    Returns:
+        None
+    """
+    logging.info("Getting wavelength adjustment...")
+
+    # Load the instrument object
+    config = configs.load_config(config_file)
+    instrument = instrument.Instrument(config)
+
+    # Load the statevector - we could do this by loading the forward
+    # model and the indicies, but in case the LUT is large, we're
+    # shortcutting here
+    state_ds = envi.open(envi_header(config["output"]["estimated_state_file"]))
+    state_possible_names = [
+        "GRWO_FWHM", "FWHMSPL", "WL_SPACE", "WL_SHIFT", "WLSPL"
+    ]
+    band_names = list(state_ds.metadata["band names"])
+    instrument_idx = np.array([
+        np.any([bn.startswith(name) for name in state_possible_names]) for bn in band_names
+    ])
+    instrument_state = state_ds.open_memmap(interleave="bip", writable=False)[:, instrument_idx]
+
+    # average
+    # Filter first and last row to avoid instability
+    if filter_edges > 0:
+        mean_state = np.mean(instrument_state[filter_edges:-1*filter_edges, :], axis=0)
+    else:
+        mean_state = np.mean(instrument_state, axis=0)
+
+    # optionally filter
+
+    # run calibration()
+    wl, fwhm = isofit.calabration(mean_state)
+
+    # write file
+    tmpl.write_wavelength_file(output_file, wl, fwhm)
+    
+    
+@click.command(name="get_wavelength_adjustment", help=get_wavelength_adjustment.__doc__, no_args_is_help=True)
+@click.argument("config_file")
+@click.argument("output_file")
+@click.argument("--filter_edges")
+@click.option(
+    "--debug-args",
+    help="Prints the arguments list without executing the command",
+    is_flag=True,
+)
+def cli(debug_args, profile, **kwargs):
+    if debug_args:
+        print("Arguments to be passed:")
+        for key, value in kwitems():
+            print(f"  {key} = {value!r}")
+    else:
+        get_wavelength_adjustment(**kwargs)
+
+    print("Done")
+
+
 # Input arguments
 @click.command(name="wavelength_cal", help=wavelength_cal.__doc__, no_args_is_help=True)
 @click.argument("input_radiance")
@@ -503,7 +633,6 @@ def wavelength_cal(
 @click.option("--logging_level", default="INFO")
 @click.option("--log_file")
 @click.option("--n_cores", type=int, default=1)
-@click.option("--presolve", is_flag=True, default=False)
 @click.option("--ray_temp_dir", default="/tmp/ray")
 @click.option("--emulator_base")
 @click.option("--prebuilt_lut", type=str)
@@ -535,9 +664,3 @@ def cli(debug_args, profile, **kwargs):
             stats.dump_stats(profile)
 
     print("Done")
-
-
-if __name__ == "__main__":
-    raise NotImplementedError(
-        "apply_oe.py can no longer be called this way.  Run as:\n isofit apply_oe [ARGS]"
-    )

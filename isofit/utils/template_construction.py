@@ -1801,3 +1801,24 @@ def get_wavelengths(
         fwhm = units.nm_to_micron(fwhm)
 
     return wl, fwhm
+
+
+def write_wavelength_file(filename, wl, fwhm):
+    """ Write a wavelength file in isofit-expected format
+    Units can be either nm or microns, but should be the same
+
+    Args:
+        filename: path to the file to write
+        wl: array of wavelengths 
+        fwhm: array of full width at half maximum
+    
+    Returns:
+        None
+    """
+    # write wavelength file
+    wl_data = np.concatenate(
+        [np.arange(len(wl))[:, np.newaxis], wl[:, np.newaxis], fwhm[:, np.newaxis]],
+        axis=1,
+    )
+    np.savetxt(filename, wl_data, delimiter=" ")
+

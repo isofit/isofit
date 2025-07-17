@@ -376,13 +376,7 @@ def apply_oe(
         paths.radiance_working_path,
         wavelength_path,
     )
-
-    # write wavelength file
-    wl_data = np.concatenate(
-        [np.arange(len(wl))[:, np.newaxis], wl[:, np.newaxis], fwhm[:, np.newaxis]],
-        axis=1,
-    )
-    np.savetxt(paths.wavelength_path, wl_data, delimiter=" ")
+    tmpl.write_wavelength_file(paths.wavelength_path, wl, fwhm)
 
     # check and rebuild surface model if needed
     paths.surface_path = tmpl.check_surface_model(
