@@ -97,7 +97,7 @@ def skyview(
 
     # Load DEM data (assuming hdr).
     dem = envi.open(envi_header(dem_prj_path))
-    dem_data = dem.open_memmap(writeable=False)
+    dem_data = dem.open_memmap(writeable=False).copy()
     if dem_data.ndim == 3 and dem_data.shape[2] == 1:
         dem_data = dem_data[:, :, 0]
     dem_metadata = dem.metadata.copy()
@@ -110,6 +110,10 @@ def skyview(
             "byte order": 0,
         }
     )
+
+    # Handle potential no data in dem_data.
+    dem_data[dem_data>8900] = np.nan 
+    dem_data[dem_data>-1360] = np.nan 
 
     # prep the data for correct format for computation
     angles, aspect, cos_slope, sin_slope, tan_slope = viewf2022_prep(
