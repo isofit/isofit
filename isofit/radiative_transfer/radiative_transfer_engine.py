@@ -516,8 +516,6 @@ class RadiativeTransferEngine:
                     Logger.warning("Not all points were flushed, doing so now")
                     self.lut.flush()
 
-                self.lut.finalize()
-
             del lut_names, makeSim, readSim, lut_path, buffer_time
         else:
             Logger.debug("makeSim is disabled for this engine")
@@ -533,6 +531,8 @@ class RadiativeTransferEngine:
 
             point = {key: 0 for key in self.lut_names}
             self.lut.writePoint(point, data=post)
+
+        self.lut.finalize()
 
         # Reload the LUT now that it's populated
         Logger.debug("Reloading LUT")
