@@ -1772,7 +1772,7 @@ def get_wavelengths(
     if wavelength_path:
         if os.path.isfile(wavelength_path):
             chn, wl, fwhm = np.loadtxt(wavelength_path).T
-            if len(chn) != len(wl_ds) or not np.all(np.isclose(wl, wl_ds, atol=0.01)):
+            if len(chn) != len(wl_ds) :
                 raise ValueError(
                     "Number of channels or center wavelengths provided in wavelength file do not match"
                     " wavelengths in radiance cube. Please adjust your wavelength file."

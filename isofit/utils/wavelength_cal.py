@@ -62,6 +62,16 @@ def add_wavelength_elements(config_path, state_type="shift", spline_indices=None
                 "scale": 1,
             },
         }
+    elif state_type == "shift-only":
+        config["forward_model"]["instrument"]["statevector"] = {
+            "WL_SHIFT": {
+                "bounds": [-5, 5],
+                "init": 0,
+                "prior_mean": 0,
+                "prior_sigma": 100.0,
+                "scale": 1,
+            }
+        }
     elif state_type == "spline":
         config["forward_model"]["instrument"]["statevector"] = {
             "GROW_FWHM": {
@@ -122,6 +132,7 @@ def average_columns(
 
         meta = in_ds.metadata.copy()
         meta["lines"] = 1
+        meta["samples"] = avg.shape[0]
 
         out_ds = envi.create_image(
             envi_header(outfile),
@@ -161,6 +172,7 @@ def wavelength_cal(
     emulator_base=None,
     prebuilt_lut=None,
     inversion_windows=None,
+    wl_state_type="shift",
 ):
     """\
     Runs a wavelength calibration on an input scene.
@@ -528,7 +540,7 @@ def wavelength_cal(
             multipart_transmittance=multipart_transmittance,
         )
 
-        add_wavelength_elements(paths.isofit_full_config_path)
+        add_wavelength_elements(paths.isofit_full_config_path, wl_state_type)
 
         # Run retrieval
         logging.info("Running ISOFIT with full LUT")
@@ -637,6 +649,7 @@ def cli(debug_args, profile, **kwargs):
 @click.option("--emulator_base")
 @click.option("--prebuilt_lut", type=str)
 @click.option("--inversion_windows", type=float, nargs=2, multiple=True, default=None)
+@click.option("--wl_state_type", type=str, default="shift")
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",
