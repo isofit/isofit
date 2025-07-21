@@ -64,6 +64,9 @@ class Geometry:
         self.bg_rfl = bg_rfl
         self.cos_i = None
 
+        # TODO: file IO reads some external sky view image computed outside ISOFIT.
+        self.sky_view_factor = 1.0
+
         # The 'obs' object is observation metadata that follows a historical
         # AVIRIS-NG format.  It arrives to our initializer in the form of
         # a list-like object...
