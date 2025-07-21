@@ -558,7 +558,9 @@ def wavelength_cal(
                 subprocess.call(cmd, shell=True)
 
 
-def get_wavelength_adjustment(config_file: str, output_file: str = None, filter_edges: int = 0):
+def get_wavelength_adjustment(
+    config_file: str, output_file: str = None, filter_edges: int = 0
+):
     """
     Get the wavelength adjustment based on a previous isofit wavelength_cal run.
 
@@ -580,19 +582,24 @@ def get_wavelength_adjustment(config_file: str, output_file: str = None, filter_
     # model and the indicies, but in case the LUT is large, we're
     # shortcutting here
     state_ds = envi.open(envi_header(config["output"]["estimated_state_file"]))
-    state_possible_names = [
-        "GRWO_FWHM", "FWHMSPL", "WL_SPACE", "WL_SHIFT", "WLSPL"
-    ]
+    state_possible_names = ["GRWO_FWHM", "FWHMSPL", "WL_SPACE", "WL_SHIFT", "WLSPL"]
     band_names = list(state_ds.metadata["band names"])
-    instrument_idx = np.array([
-        np.any([bn.startswith(name) for name in state_possible_names]) for bn in band_names
-    ])
-    instrument_state = state_ds.open_memmap(interleave="bip", writable=False)[:, instrument_idx]
+    instrument_idx = np.array(
+        [
+            np.any([bn.startswith(name) for name in state_possible_names])
+            for bn in band_names
+        ]
+    )
+    instrument_state = state_ds.open_memmap(interleave="bip", writable=False)[
+        :, instrument_idx
+    ]
 
     # average
     # Filter first and last row to avoid instability
     if filter_edges > 0:
-        mean_state = np.mean(instrument_state[filter_edges:-1*filter_edges, :], axis=0)
+        mean_state = np.mean(
+            instrument_state[filter_edges : -1 * filter_edges, :], axis=0
+        )
     else:
         mean_state = np.mean(instrument_state, axis=0)
 
@@ -603,9 +610,13 @@ def get_wavelength_adjustment(config_file: str, output_file: str = None, filter_
 
     # write file
     tmpl.write_wavelength_file(output_file, wl, fwhm)
-    
-    
-@click.command(name="get_wavelength_adjustment", help=get_wavelength_adjustment.__doc__, no_args_is_help=True)
+
+
+@click.command(
+    name="get_wavelength_adjustment",
+    help=get_wavelength_adjustment.__doc__,
+    no_args_is_help=True,
+)
 @click.argument("config_file")
 @click.argument("output_file")
 @click.argument("--filter_edges")

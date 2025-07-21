@@ -1772,7 +1772,7 @@ def get_wavelengths(
     if wavelength_path:
         if os.path.isfile(wavelength_path):
             chn, wl, fwhm = np.loadtxt(wavelength_path).T
-            if len(chn) != len(wl_ds) :
+            if len(chn) != len(wl_ds):
                 raise ValueError(
                     "Number of channels or center wavelengths provided in wavelength file do not match"
                     " wavelengths in radiance cube. Please adjust your wavelength file."
@@ -1804,14 +1804,14 @@ def get_wavelengths(
 
 
 def write_wavelength_file(filename, wl, fwhm):
-    """ Write a wavelength file in isofit-expected format
+    """Write a wavelength file in isofit-expected format
     Units can be either nm or microns, but should be the same
 
     Args:
         filename: path to the file to write
-        wl: array of wavelengths 
+        wl: array of wavelengths
         fwhm: array of full width at half maximum
-    
+
     Returns:
         None
     """
@@ -1821,4 +1821,3 @@ def write_wavelength_file(filename, wl, fwhm):
         axis=1,
     )
     np.savetxt(filename, wl_data, delimiter=" ")
-
