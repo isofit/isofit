@@ -113,7 +113,7 @@ def skyview(
 
     # Handle potential no data in dem_data.
     dem_data[dem_data>8900] = np.nan 
-    dem_data[dem_data>-1360] = np.nan 
+    dem_data[dem_data<-1360] = np.nan 
 
     # prep the data for correct format for computation
     angles, aspect, cos_slope, sin_slope, tan_slope = viewf2022_prep(
