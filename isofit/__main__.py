@@ -20,16 +20,16 @@ from isofit.data import env
 
 class LazyCommand(click.Command):
     """
-    Defers importing modules until the subcommand is actually invoked.
+    Defers importing modules until the subcommand is actually invoked
 
-    This avoids importing expensive modules during CLI initialization or help display.
+    This avoids importing expensive modules during CLI initialization or help display
 
     Parameters
     ----------
     name : str
         Name of the command
     path : str
-        Import path to the command factory, in the format 'module:function'
+        Import path to the Click command, in the format 'module:function'
         If 'function' is not provided, defaults seeking for a function named 'cli'
     """
 
