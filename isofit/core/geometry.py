@@ -120,7 +120,7 @@ class Geometry:
         cos_i = self.cos_i if self.cos_i is not None else coszen
 
         # Ensure coszen and cos_i respect 0-1 bounds.
-        coszen = np.clip(coszen, 0., 1.)
-        cos_i = np.clip(cos_i, 0., 1.)  
+        coszen = np.clip(coszen, 0.0, 1.0)
+        cos_i = np.clip(cos_i, 0.0, 1.0)
 
         return coszen, cos_i

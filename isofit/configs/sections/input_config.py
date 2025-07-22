@@ -95,8 +95,6 @@ class InputConfig(BaseConfigSection):
         Used to modulate incoming diffuse radiance from fraction of viewable sky.
         """
 
-
-
         self.set_config_options(sub_configdic)
 
     def _check_config_validity(self) -> List[str]:

@@ -300,12 +300,14 @@ def apply_oe(
                     f" match input_radiance size: {rdn_size}"
                 )
                 raise ValueError(err_str)
-    
+
     # Check if user passed a path to sky view factor image file, else it is None.
     if skyview_factor:
         # check file exists first..
         if not exists(skyview_factor):
-            raise ValueError(f'Input skyview: {skyview_factor} file was not found system.')
+            raise ValueError(
+                f"Input skyview: {skyview_factor} file was not found system."
+            )
         else:
             # load in and ensure same shape as image file.
             svf_dataset = envi.open(envi_header(skyview_factor), skyview_factor)
@@ -337,7 +339,7 @@ def apply_oe(
         channelized_uncertainty_path,
         ray_temp_dir,
         interpolate_inplace,
-        skyview_factor
+        skyview_factor,
     )
     paths.make_directories()
     paths.stage_files()

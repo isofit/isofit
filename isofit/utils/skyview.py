@@ -193,7 +193,6 @@ def viewf2022_prep(dem, spacing, nangles=72, sin_slope=None, aspect=None):
     # -180 is North
     angles = np.linspace(-180, 180, num=nangles, endpoint=False)
 
-
     return angles, aspect, cos_slope, sin_slope, tan_slope
 
 

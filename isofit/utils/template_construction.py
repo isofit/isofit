@@ -50,7 +50,7 @@ class Pathnames:
         channelized_uncertainty_path,
         ray_temp_dir,
         interpolate_inplace,
-        skyview_factor
+        skyview_factor,
     ):
         # Determine FID based on sensor name
         if sensor == "ang":
@@ -163,7 +163,7 @@ class Pathnames:
         if skyview_factor:
             self.svf_working_path = abspath(skyview_factor)
         else:
-            self.svf_working_path = None         
+            self.svf_working_path = None
 
         self.rdn_subs_path = abspath(
             join(self.input_data_directory, self.fid + "_subs_rdn")
@@ -1028,11 +1028,9 @@ def build_main_config(
         isofit_config_modtran["input"][
             "radiometry_correction_file"
         ] = paths.rdn_factors_path
-    
+
     if paths.svf_working_path:
-        isofit_config_modtran["input"][
-            "skyview_factor_file"
-        ] = paths.svf_working_path
+        isofit_config_modtran["input"]["skyview_factor_file"] = paths.svf_working_path
 
     # write main config file
     with open(paths.isofit_full_config_path, "w") as fout:

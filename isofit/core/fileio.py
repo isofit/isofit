@@ -489,7 +489,7 @@ class IO:
         for source in self.input_datasets:
             if np.allclose(data[source], self.input_datasets[source].flag):
                 return None
-            
+
         # Check if Sky view is used, else it is equal to 1.0.
         if "skyview_factor_file" not in data or data["skyview_factor_file"] is None:
             data["skyview_factor_file"] = 1.0
