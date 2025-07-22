@@ -20,7 +20,7 @@
 
 
 import logging
-from os.path import abspath, join
+from os.path import join
 
 import click
 import numpy as np
@@ -33,7 +33,7 @@ from isofit.core.common import envi_header
 def skyview(
     dem_prj_path,
     dem_prj_resolution,
-    working_directory,
+    output_directory,
     n_angles=72,
     logging_level="INFO",
     log_file=None,
@@ -70,9 +70,8 @@ def skyview(
         Number of CPU cores to use for parallel processing (default is 1).
     """
 
-    # Match data directory from template construction and set svf path.
-    data_directory = abspath(join(working_directory, "data/"))
-    svf_hdr_path = join(data_directory, "sky_view_factor.hdr")
+    # Construct svf output path.
+    svf_hdr_path = join(output_directory, "sky_view_factor.hdr")
 
     # Set up logging
     logging.basicConfig(
@@ -112,8 +111,8 @@ def skyview(
     )
 
     # Handle potential no data in dem_data.
-    dem_data[dem_data>8900] = np.nan 
-    dem_data[dem_data<-1360] = np.nan 
+    dem_data[dem_data > 8900] = np.nan
+    dem_data[dem_data < -1360] = np.nan
 
     # prep the data for correct format for computation
     angles, aspect, cos_slope, sin_slope, tan_slope = viewf2022_prep(
@@ -507,7 +506,6 @@ def hor2d(z, delta, fwd=True):
     return hcos
 
 
-
 def adjust_spacing(spacing, skew_angle):
     """Adjust the grid spacing if a skew angle is present
 
@@ -628,6 +626,7 @@ def transpose_skew(dem, spacing, angle):
     spacing = adjust_spacing(spacing, np.abs(angle))
 
     return t, spacing
+
 
 # Input arguments
 @click.command(name="skyview", help=skyview.__doc__, no_args_is_help=True)
