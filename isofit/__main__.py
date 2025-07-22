@@ -228,7 +228,10 @@ class CLI(click.Group):
                 return command
 
             # Partially lazy, called in certain cases (like --help)
-            return command.resolve(call=False)
+            try:
+                return command.resolve(call=False)
+            except:
+                pass
 
         return super().get_command(ctx, cmd_name)
 
