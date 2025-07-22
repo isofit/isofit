@@ -502,7 +502,7 @@ class IO:
             loc=data["loc_file"],
             esd=self.esd,
             bg_rfl=data["background_reflectance_file"],
-            skyview_factor=data["skyview_factor_file"],
+            svf=data["skyview_factor_file"],
         )
 
         self.current_input_data.geom = geom

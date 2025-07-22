@@ -849,7 +849,7 @@ def apply_oe(
 @click.option("--config_only", is_flag=True, default=False)
 @click.option("--interpolate_bad_rdn", is_flag=True, default=False)
 @click.option("--interpolate_inplace", is_flag=True, default=False)
-@click.option("--skyview_factor", is_flag=True, default=None)
+@click.option("--skyview_factor", type=str, default=None)
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",
