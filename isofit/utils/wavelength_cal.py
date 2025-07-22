@@ -688,7 +688,7 @@ def cli(debug_args, profile, **kwargs):
     ),
     default="shift",
 )
-@click.option("--spline_indices", type=int, multiple=True, default=None)
+@click.option("--spline_indices", "-si", type=int, multiple=True, default=None)
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",
