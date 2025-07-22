@@ -4,6 +4,7 @@ import importlib
 import logging
 import os
 import sys
+from functools import partial
 
 # Explicitly set the number of threads to be 1, so we more effectively run in parallel
 # Must be executed before importing numpy, otherwise doesn't work
@@ -16,6 +17,28 @@ import click
 
 import isofit
 from isofit.data import env
+
+
+def importModule(path):
+    """
+    Imports a module from a string path
+
+    Parameters
+    ----------
+    path : str
+        Import path
+
+    Returns
+    -------
+    module
+        Loaded module
+    """
+    func = "cli"
+    if ":" in path:
+        path, func = path.split(":")
+
+    module = importlib.import_module(path)
+    return getattr(module, func)
 
 
 class CLI(click.Group):
@@ -39,7 +62,11 @@ class CLI(click.Group):
         keys = ctx.params.pop("keys")
         save = ctx.params.pop("save")
         preview = ctx.params.pop("preview")
+<<<<<<< HEAD
         self.debug = ctx.params.pop("debug")
+=======
+        self.laziest = ctx.params.pop("laziest")
+>>>>>>> 424cda0c (Added the ability to make the cli even lazier to greatly speed it up)
 
         env.load(ini, section)
 
@@ -53,6 +80,10 @@ class CLI(click.Group):
         for key, value in keys:
             env.changeKey(key, value)
 
+        # Can permanently enable the laziest flag using the ini via `isofit --keys cli_laziest 1`
+        # Disable via `isofit --keys cli_laziest ""`
+        self.laziest = self.laziest or env["cli_laziest"]
+
         if preview:
             print(env)
         else:
@@ -65,17 +96,16 @@ class CLI(click.Group):
         super().invoke(ctx)
 
     def _lazy_load(self, cmd_name):
-        try:
-            path = self.lazy_subcommands[cmd_name]
-            func = "cli"
-            if ":" in path:
-                path, func = path.split(":")
-
-            module = importlib.import_module(path)
-            return getattr(module, func)
-        except Exception as e:
-            if self.debug:
-                logging.exception(f"Failed to import {cmd_name} from {path}:")
+        path = self.lazy_subcommands[cmd_name]
+        if self.laziest:
+            func = partial(importModule, path)
+            func.__doc__ = ""
+            return click.command(name=cmd_name)(func)
+        else:
+            try:
+                return importModule(path)
+            except Exception as e:
+                pass
 
     def list_commands(self, ctx):
         base = super().list_commands(ctx)
@@ -139,7 +169,15 @@ class CLI(click.Group):
     help="Prints the environment that will be used. This disables saving",
 )
 @click.option("--version", is_flag=True, help="Print the installed ISOFIT version")
+<<<<<<< HEAD
 @click.option("--debug", is_flag=True, help="Enables debug logging for the CLI")
+=======
+@click.option(
+    "--laziest",
+    is_flag=True,
+    help="Changes the CLI to be completely lazy, greatly speeding up the responsiveness but at the cost of not validating subcommands",
+)
+>>>>>>> 424cda0c (Added the ability to make the cli even lazier to greatly speed it up)
 @click.option("--help", is_flag=True, help="Show this message and exit")
 def cli(ctx, version, help, **kwargs):
     """\
