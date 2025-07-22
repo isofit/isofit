@@ -21,6 +21,7 @@ from isofit.core.common import envi_header
 from isofit.utils import analytical_line as ALAlg
 from isofit.utils import empirical_line as ELAlg
 from isofit.utils import extractions, interpolate_spectra, segment
+from isofit.utils.skyview import skyview
 
 EPS = 1e-6
 CHUNKSIZE = 256
@@ -81,6 +82,7 @@ def apply_oe(
     config_only=False,
     interpolate_bad_rdn=False,
     interpolate_inplace=False,
+    skyview_factor=None,
 ):
     """\
     Applies OE over a flightline using a radiative transfer engine. This executes
@@ -298,6 +300,23 @@ def apply_oe(
                     f" match input_radiance size: {rdn_size}"
                 )
                 raise ValueError(err_str)
+    
+    # Check if user passed a path to sky view factor image file, else it is None.
+    if skyview_factor:
+        # check file exists first..
+        if not exists(skyview_factor):
+            raise ValueError(f'Input skyview: {skyview_factor} file was not found system.')
+        else:
+            # load in and ensure same shape as image file.
+            svf_dataset = envi.open(envi_header(skyview_factor), skyview_factor)
+            svf_size = (svf_dataset.shape[0], svf_dataset.shape[1])
+            del svf_dataset
+            if not (svf_size[0] == rdn_size[0] and svf_size[1] == rdn_size[1]):
+                err_str = (
+                    f"Input file: {skyview_factor} size is {input_size}, which does not"
+                    f" match input_radiance size: {rdn_size}"
+                )
+                raise ValueError(err_str)
     logging.info("...Data file checks complete")
 
     lut_params = tmpl.LUTConfig(lut_config_file, emulator_base, no_min_lut_spacing)
@@ -318,6 +337,7 @@ def apply_oe(
         channelized_uncertainty_path,
         ray_temp_dir,
         interpolate_inplace,
+        skyview_factor
     )
     paths.make_directories()
     paths.stage_files()
@@ -829,6 +849,7 @@ def apply_oe(
 @click.option("--config_only", is_flag=True, default=False)
 @click.option("--interpolate_bad_rdn", is_flag=True, default=False)
 @click.option("--interpolate_inplace", is_flag=True, default=False)
+@click.option("--skyview_factor", is_flag=True, default=None)
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",

@@ -38,6 +38,7 @@ class Geometry:
         dt: datetime = None,
         esd: np.array = None,
         bg_rfl: np.array = None,
+        svf: float = None,
     ):
         # Set some benign defaults...
         self.observer_zenith = (
@@ -63,9 +64,7 @@ class Geometry:
 
         self.bg_rfl = bg_rfl
         self.cos_i = None
-
-        # TODO: file IO reads some external sky view image computed outside ISOFIT.
-        self.sky_view_factor = 1.0
+        self.sky_view_factor = svf
 
         # The 'obs' object is observation metadata that follows a historical
         # AVIRIS-NG format.  It arrives to our initializer in the form of
