@@ -700,7 +700,7 @@ def cli(debug_args, profile, **kwargs):
 @click.option(
     "--wl_state_type",
     type=click.Choice(
-        ["shift", "shift-only", "spline", "splint-only"], case_sensitive=True
+        ["shift", "shift-only", "spline", "spline-only"], case_sensitive=True
     ),
     default="shift",
 )
