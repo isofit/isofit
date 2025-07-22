@@ -192,6 +192,7 @@ def wavelength_cal(
     inversion_windows=None,
     wl_state_type="shift",
     spline_indices=[],
+    force_with_geo=False,
 ):
     """\
     Runs a wavelength calibration on an input scene.
@@ -266,7 +267,22 @@ def wavelength_cal(
         Override the default inversion windows.  Will supercede any sensor specific
         defaults that are in place.
         Must be in 2-item tuples
+    force_with_geo : bool, default=False
+        If True, will allow the wavelength_cal to run on georeferenced data. Not recommended,
+        unless you *really* know what you are doing, or know your metadata is odd.
     """
+
+    radiance_meta = envi.open(envi_header(input_radiance)).metadata
+    if (
+        force_with_geo is False
+        and "map info" in radiance_meta
+        and radiance_meta["map info"] is not None
+    ):
+        to_raise = """Radiance metadata has non-blank map info string, implying that 
+        it is a georeferenced file. wavelength_cal will perform columnwise averages that 
+        will break this.  Please adjust or use the '--force_with_geo' flag."""
+        logging.error(to_raise)
+        raise ValueError(to_raise)
 
     ##################### Front Matter #########################
     # Determine if we run in multipart-transmittance (4c) mode
@@ -689,6 +705,7 @@ def cli(debug_args, profile, **kwargs):
     default="shift",
 )
 @click.option("--spline_indices", "-si", type=int, multiple=True, default=None)
+@click.option("--force_with_geo", is_flag=True, default=False)
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",
