@@ -84,6 +84,10 @@ class CLI(click.Group):
         # Disable via `isofit --keys cli_laziest ""`
         self.laziest = self.laziest or env["cli_laziest"]
 
+        # --help always disables lazier loading
+        if ctx.params["help"]:
+            self.laziest = False
+
         if preview:
             print(env)
         else:
