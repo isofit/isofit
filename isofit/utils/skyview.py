@@ -86,12 +86,8 @@ def skyview(
         "include_dashboard": False,
         "_temp_dir": ray_temp_dir,
         "_redis_password": ray_redis_password,
+        "num_cpus": n_cores,
     }
-
-    # We can only set the num_cpus if running on a single-node
-    if ray_ip_head is None and ray_redis_password is None:
-        rayargs["num_cpus"] = n_cores
-
     ray.init(**rayargs)
 
     # Load DEM data (assuming hdr).
@@ -123,10 +119,17 @@ def skyview(
         aspect=None,
     )
 
+    # Share ray objects
+    dem_ray = ray.put(dem_data)
+    aspect_ray = ray.put(aspect)
+    cos_ray = ray.put(cos_slope)
+    sin_ray = ray.put(sin_slope)
+    tan_ray = ray.put(tan_slope)
+
     # Run n-angles in parallel (n=72 by default)
     futures = [
         viewf2022_i.remote(
-            a, dem_data, dem_prj_resolution, aspect, cos_slope, sin_slope, tan_slope
+            a, dem_ray, dem_prj_resolution, aspect_ray, cos_ray, sin_ray, tan_ray
         )
         for a in angles
     ]
@@ -190,13 +193,11 @@ def viewf2022_prep(dem, spacing, nangles=72, sin_slope=None, aspect=None):
     # -180 is North
     angles = np.linspace(-180, 180, num=nangles, endpoint=False)
 
-    # trig
-    cos_slope = np.sqrt(1 - sin_slope**2)
 
     return angles, aspect, cos_slope, sin_slope, tan_slope
 
 
-@ray.remote
+@ray.remote(num_cpus=1)
 def viewf2022_i(angle, dem, spacing, aspect, cos_slope, sin_slope, tan_slope):
     """
     See above, but this is running each horizon angle in parallel (n=72 , or user input)
@@ -459,28 +460,55 @@ def horizon(azimuth, dem, spacing):
 def hor1(z, fwd=True):
     n = len(z)
     h = np.empty(n, dtype=int)
-    if fwd:
-        h[-1] = n - 1
-        iterator = range(n - 2, -1, -1)
-        step = 1
-    else:
-        h[0] = 0
-        iterator = range(1, n)
-        step = -1
 
-    for i in iterator:
-        zi = z[i]
-        max_slope = 0.0
-        max_point = i
-        k_range = range(i + step, n if fwd else -1, step)
-        for k in k_range:
-            if z[k] > zi:
-                dist = abs(k - i)
-                slope_ik = (z[k] - zi) / dist
-                if slope_ik > max_slope:
-                    max_slope = slope_ik
-                    max_point = k
-        h[i] = max_point
+    if fwd:
+        stack = []
+        for i in reversed(range(n)):
+            zi = z[i]
+            while stack:
+                j = stack[-1]
+                dist = j - i
+                slope = (z[j] - zi) / dist
+                prev_j = h[j]
+                if prev_j == j:
+                    prev_slope = -np.inf
+                else:
+                    prev_dist = prev_j - j
+                    prev_slope = (z[prev_j] - z[j]) / prev_dist
+                if slope <= prev_slope:
+                    stack.pop()
+                else:
+                    break
+            if stack:
+                h[i] = stack[-1]
+            else:
+                h[i] = i
+            stack.append(i)
+    else:
+        # backward direction
+        stack = []
+        for i in range(n):
+            zi = z[i]
+            while stack:
+                j = stack[-1]
+                dist = i - j
+                slope = (z[j] - zi) / dist
+                prev_j = h[j]
+                if prev_j == j:
+                    prev_slope = -np.inf
+                else:
+                    prev_dist = j - prev_j
+                    prev_slope = (z[prev_j] - z[j]) / prev_dist
+                if slope <= prev_slope:
+                    stack.pop()
+                else:
+                    break
+            if stack:
+                h[i] = stack[-1]
+            else:
+                h[i] = i
+            stack.append(i)
+
     return h
 
 
@@ -632,7 +660,7 @@ def transpose_skew(dem, spacing, angle):
 @click.command(name="skyview", help=skyview.__doc__, no_args_is_help=True)
 @click.argument("dem_prj_path", type=str)
 @click.argument("dem_prj_resolution", type=float)
-@click.argument("working_directory", type=str)
+@click.argument("output_directory", type=str)
 @click.option("--n_angles", type=int, default=72)
 @click.option("--logging_level", default="INFO")
 @click.option("--log_file", type=str, default=None)
