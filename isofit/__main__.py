@@ -45,15 +45,9 @@ class LazyCommand(click.Command):
         self.path = path
         self.func = func
 
-    def resolve(self, call=True):
+    def resolve(self):
         """
-        Dynamically import and instantiate the real command. If call is False, the
-        command is not instantiated and is returned as-is
-
-        Parameters
-        ----------
-        call : bool, default=True
-            Whether to call the resolved object
+        Import the real command
 
         Returns
         -------
@@ -63,9 +57,6 @@ class LazyCommand(click.Command):
         if self.command is None:
             module = importlib.import_module(self.path)
             self.command = getattr(module, self.func)
-
-            if call:
-                self.command = self.command()
 
         return self.command
 
@@ -229,7 +220,7 @@ class CLI(click.Group):
 
             # Partially lazy, called in certain cases (like --help)
             try:
-                return command.resolve(call=False)
+                return command.resolve()
             except:
                 pass
 
