@@ -81,8 +81,8 @@ class CLI(click.Group):
             env.changeKey(key, value)
 
         # Can permanently enable the laziest flag using the ini via `isofit --keys cli_laziest 1`
-        # Disable via `isofit --keys cli_laziest ""`
-        self.laziest = self.laziest or env["cli_laziest"]
+        # Disable via `isofit --keys cli_laziest 0`
+        self.laziest = self.laziest or env["cli_laziest"] == "1"
 
         # --help always disables lazier loading
         if ctx.params["help"]:
