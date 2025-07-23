@@ -162,12 +162,12 @@ class Pathnames:
 
         if skyview_factor:
             self.svf_working_path = abspath(skyview_factor)
-            self.svf_subs_path = join(
-                dirname(self.svf_working_path), self.fid + "_subs_svf"
-            )
         else:
             self.svf_working_path = None
-            self.svf_subs_path = None
+
+        self.svf_subs_path = abspath(
+            join(self.input_data_directory, self.fid + "_subs_svf")
+        )
 
         self.rdn_subs_path = abspath(
             join(self.input_data_directory, self.fid + "_subs_rdn")

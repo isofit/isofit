@@ -591,7 +591,7 @@ def apply_oe(
             (paths.loc_working_path, paths.loc_subs_path),
             (paths.svf_working_path, paths.svf_subs_path),
         ]:
-            if not exists(outp):
+            if not exists(outp) and inp is not None:
                 logging.info("Extracting " + outp)
                 extractions(
                     inputfile=inp,
@@ -603,6 +603,8 @@ def apply_oe(
                     loglevel=logging_level,
                     logfile=log_file,
                 )
+            else:
+                logging.info(f"Skipping {inp}, because is not a path.")
 
     if presolve:
         # write modtran presolve template
