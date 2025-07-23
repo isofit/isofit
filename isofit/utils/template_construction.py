@@ -975,6 +975,10 @@ def build_main_config(
         ] = paths.radiance_working_path
         isofit_config_modtran["input"]["loc_file"] = paths.loc_working_path
         isofit_config_modtran["input"]["obs_file"] = paths.obs_working_path
+        if paths.svf_working_path:
+            isofit_config_modtran["input"][
+                "skyview_factor_file"
+            ] = paths.svf_working_path
         isofit_config_modtran["output"][
             "posterior_uncertainty_file"
         ] = paths.uncert_working_path
@@ -1028,9 +1032,6 @@ def build_main_config(
         isofit_config_modtran["input"][
             "radiometry_correction_file"
         ] = paths.rdn_factors_path
-
-    if paths.svf_working_path:
-        isofit_config_modtran["input"]["skyview_factor_file"] = paths.svf_working_path
 
     # write main config file
     with open(paths.isofit_full_config_path, "w") as fout:

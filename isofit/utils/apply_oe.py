@@ -803,6 +803,7 @@ def apply_oe(
                 working_directory,
                 output_rfl_file=paths.rfl_working_path,
                 output_unc_file=paths.uncert_working_path,
+                skyview_factor_file=paths.svf_working_path,
                 loglevel=logging_level,
                 logfile=log_file,
                 n_atm_neighbors=nneighbors,
