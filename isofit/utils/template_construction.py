@@ -8,7 +8,7 @@ import logging
 import os
 import subprocess
 from datetime import datetime
-from os.path import abspath, exists, join, split
+from os.path import abspath, exists, join, split, dirname
 from shutil import copyfile
 from sys import platform
 from typing import List
@@ -162,8 +162,12 @@ class Pathnames:
 
         if skyview_factor:
             self.svf_working_path = abspath(skyview_factor)
+            self.svf_subs_path = join(
+                dirname(self.svf_working_path), self.fid + "_subs_svf"
+            )
         else:
             self.svf_working_path = None
+            self.svf_subs_path = None
 
         self.rdn_subs_path = abspath(
             join(self.input_data_directory, self.fid + "_subs_rdn")
@@ -959,6 +963,8 @@ def build_main_config(
         isofit_config_modtran["input"]["measured_radiance_file"] = paths.rdn_subs_path
         isofit_config_modtran["input"]["loc_file"] = paths.loc_subs_path
         isofit_config_modtran["input"]["obs_file"] = paths.obs_subs_path
+        if paths.svf_working_path:
+            isofit_config_modtran["input"]["skyview_factor_file"] = paths.svf_subs_path
         isofit_config_modtran["output"]["estimated_state_file"] = paths.state_subs_path
         isofit_config_modtran["output"][
             "posterior_uncertainty_file"

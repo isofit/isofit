@@ -589,6 +589,7 @@ def apply_oe(
             (paths.radiance_working_path, paths.rdn_subs_path),
             (paths.obs_working_path, paths.obs_subs_path),
             (paths.loc_working_path, paths.loc_subs_path),
+            (paths.svf_working_path, paths.svf_subs_path),
         ]:
             if not exists(outp):
                 logging.info("Extracting " + outp)
