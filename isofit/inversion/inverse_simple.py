@@ -545,7 +545,7 @@ def invert_liquid_water(
     Returns:
         solution: estimated liquid water path length, intercept, and slope based on a given surface reflectance
     """
-    # check if wavelengths are provided in nm
+    # make sure that wavelengths are provided in nm
     if wl[0] < 100:
         wl *= 1000.0
 
