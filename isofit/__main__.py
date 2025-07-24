@@ -1,6 +1,7 @@
 """ISOFIT command line interface."""
 
 import importlib
+import logging
 import os
 import sys
 
@@ -38,6 +39,7 @@ class CLI(click.Group):
         keys = ctx.params.pop("keys")
         save = ctx.params.pop("save")
         preview = ctx.params.pop("preview")
+        self.debug = ctx.params.pop("debug")
 
         env.load(ini, section)
 
@@ -72,8 +74,8 @@ class CLI(click.Group):
             module = importlib.import_module(path)
             return getattr(module, func)
         except Exception as e:
-            pass
-            # print(f"Failed {cmd_name}, reason: {e}")
+            if self.debug:
+                logging.exception(f"Failed to import {cmd_name} from {path}:")
 
     def list_commands(self, ctx):
         base = super().list_commands(ctx)
@@ -137,6 +139,7 @@ class CLI(click.Group):
     help="Prints the environment that will be used. This disables saving",
 )
 @click.option("--version", is_flag=True, help="Print the installed ISOFIT version")
+@click.option("--debug", is_flag=True, help="Enables debug logging for the CLI")
 @click.option("--help", is_flag=True, help="Show this message and exit")
 def cli(ctx, version, help, **kwargs):
     """\
