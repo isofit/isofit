@@ -143,4 +143,7 @@ def installTabCompletion(command: str = "isofit"):
         rc_file.write_text(source_line)
 
     print(f"{command} tab completion for shell {shell} installed in {rc_file}")
-    print(f"You must restart your shell or run `source {rc_file}`")
+    print(
+        "It is recommended to set the isofit CLI into laziest mode via: isofit -k cli_laziest 1"
+    )
+    print(f"You must restart your shell or run: source {rc_file}")
