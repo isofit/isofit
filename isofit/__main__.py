@@ -117,6 +117,8 @@ class CLI(click.Group):
     Reference: https://click.palletsprojects.com/en/stable/complex/#defining-the-lazy-group
     """
 
+    laziest = False
+
     def __init__(self, *args, lazy_subcommands=None, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -124,6 +126,17 @@ class CLI(click.Group):
         self.lazy = {
             name: LazyCommand(name=name, path=path) for name, path in cmds.items()
         }
+
+    def main(self, *args, **kwargs):
+        """
+        Loads the default ini and checks for the cli_laziest before shell tab
+        completion, which may speed it up
+        """
+        env.load()
+
+        self.laziest = env["cli_laziest"] == "1"
+
+        return super().main(*args, **kwargs)
 
     def invoke(self, ctx):
         """
@@ -213,18 +226,20 @@ class CLI(click.Group):
         command = self.lazy.get(cmd_name)
 
         if command:
-            if self.laziest:
-                # Completely lazy, only loaded if invoked
+            # protected_args is populated when a subcommand is invoked
+            # do NOT laziest, else click.groups break
+            if self.laziest and not ctx.protected_args:
                 return command
 
             # Partially lazy, called in certain cases (like --help)
             try:
                 return command.resolve()
             except ModuleNotFoundError:
-                if cmd_name == "plot":
-                    logging.exception(
-                        "Isoplots does not appear to be installed, install it via `isofit download plots`"
-                    )
+                if self.debug:
+                    if cmd_name == "plot":
+                        logging.exception(
+                            "Isoplots does not appear to be installed, install it via `isofit download plots`"
+                        )
             except:
                 if self.debug:
                     logging.exception(
