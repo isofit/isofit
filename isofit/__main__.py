@@ -144,7 +144,6 @@ class CLI(click.Group):
         save = ctx.params.pop("save")
         preview = ctx.params.pop("preview")
         self.debug = ctx.params.pop("debug")
-        self.laziest = ctx.params.pop("laziest")
 
         env.load(ini, section)
 
@@ -221,8 +220,16 @@ class CLI(click.Group):
             # Partially lazy, called in certain cases (like --help)
             try:
                 return command.resolve()
+            except ModuleNotFoundError:
+                if cmd_name == "plot":
+                    logging.exception(
+                        "Isoplots does not appear to be installed, install it via `isofit download plots`"
+                    )
             except:
-                pass
+                if self.debug:
+                    logging.exception(
+                        f"Failed to import {cmd_name} from {command.path}:"
+                    )
 
         return super().get_command(ctx, cmd_name)
 
