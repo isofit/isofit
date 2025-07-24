@@ -547,7 +547,7 @@ def invert_liquid_water(
     """
     # make sure that wavelengths are provided in nm
     if wl[0] < 100:
-        wl *= 1000.0
+        wl = units.micron_to_nm(wl)
 
     # params needed for liquid water fitting
     lw_feature_left = np.argmin(abs(l_shoulder - wl))
