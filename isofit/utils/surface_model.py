@@ -28,6 +28,7 @@ from scipy.linalg import inv
 from sklearn.cluster import KMeans
 from spectral.io import envi
 
+from isofit.core import units
 from isofit.core.common import envi_header, expand_path, json_load_ascii, svd_inv
 
 
@@ -106,7 +107,7 @@ def surface_model(
         wl = q[:, 0]
 
     if wl[0] < 100:
-        wl *= 1000.0
+        wl = units.micron_to_nm(wl)
     nchan = len(wl)
 
     # build global reference windows
@@ -173,7 +174,7 @@ def surface_model(
 
             # Maybe convert to nanometers
             if swl[0] < 100:
-                swl = swl * 1000.0
+                swl = units.micron_to_nm(swl)
 
             # Load library and adjust interleave, if needed
             rfl_mm = rfl.open_memmap(interleave="bip", writable=False)
