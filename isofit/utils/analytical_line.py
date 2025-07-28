@@ -38,7 +38,7 @@ from isofit.core.common import (
     load_wavelen,
     match_statevector,
 )
-from isofit.core.fileio import IO, write_bil_chunk
+from isofit.core.fileio import IO, initialize_output, write_bil_chunk
 from isofit.core.forward import ForwardModel
 from isofit.core.geometry import Geometry
 from isofit.inversion.inverse_simple import (
@@ -66,30 +66,6 @@ def retrieve_winidx(config):
     return winidx
 
 
-def construct_output(output_metadata, outpath, out_shape, **kwargs):
-    """
-    Construct output file by updating metadata and creating object
-    """
-    if kwargs.get("band_names"):
-        band_names = kwargs.pop("band_names")
-        output_metadata["band names"] = band_names
-
-    for key, value in kwargs.items():
-        output_metadata[key] = value
-
-    if "emit pge input files" in list(output_metadata.keys()):
-        del output_metadata["emit pge input files"]
-
-    out_file = envi.create_image(
-        envi_header(outpath), ext="", metadata=output_metadata, force=True
-    )
-    out_mm = out_file.open_memmap(interleave="source", writable=True)
-    out_mm[:, :] = np.zeros(out_shape, dtype=np.float32)
-    del out_file
-
-    return outpath
-
-
 def analytical_line(
     rdn_file: str,
     loc_file: str,
@@ -99,7 +75,7 @@ def analytical_line(
     segmentation_file: str = None,
     n_atm_neighbors: list = [20],
     n_cores: int = -1,
-    num_iter: int = 1,
+    num_iter: int = 3,
     smoothing_sigma: list = [2],
     output_rfl_file: str = None,
     output_unc_file: str = None,
@@ -200,61 +176,74 @@ def analytical_line(
 
     # Construct surf rfl output
     bbl = "{" + ",".join([f"{x}" for x in outside_ret_windows]) + "}"
-    rfl_output = construct_output(
+    num_bands = len(full_idx_surf_rfl)
+    band_names = [full_statevector[i] for i in range(len(full_idx_surf_rfl))]
+    rfl_output = initialize_output(
         output_metadata,
         analytical_rfl_path,
-        (rdns[0], len(full_idx_surf_rfl), rdns[1]),
+        (rdns[0], num_bands, rdns[1]),
+        ["emit pge input files"],
         bbl=bbl,
         interleave="bil",
-        bands=f"{len(full_idx_surf_rfl)}",
-        band_names=[full_statevector[i] for i in range(len(full_idx_surf_rfl))],
+        bands=f"{num_bands}",
+        band_names=band_names,
         wavelength_unts="Nanometers",
         description=("L2A Analytyical per-pixel surface retrieval"),
     )
 
     # Construct surf rfl uncertainty output
-    unc_output = construct_output(
+    unc_output = initialize_output(
         output_metadata,
         analytical_rfl_unc_path,
-        (rdns[0], len(full_idx_surf_rfl), rdns[1]),
+        (rdns[0], num_bands, rdns[1]),
+        ["emit pge input files"],
         bbl=bbl,
         interleave="bil",
-        bands=f"{len(full_idx_surf_rfl)}",
-        band_names=[full_statevector[i] for i in range(len(full_idx_surf_rfl))],
+        bands=f"{num_bands}",
+        band_names=band_names,
         wavelength_unts="Nanometers",
         description=("L2A Analytyical per-pixel surface retrieval uncertainty"),
     )
 
     # If there are more idx in surface than rfl, there are non_rfl surface states
     if len(full_idx_surface) > len(full_idx_surf_rfl):
-        n_non_rfl_bands = len(full_idx_surface) - len(full_idx_surf_rfl)
-        for k in ["bbl", "wavelength", "wavelength units", "fwhm", "smoothing factors"]:
-            if output_metadata.get(k):
-                ret = output_metadata.pop(k)
-
-        non_rfl_output = construct_output(
+        num_non_rfl_bands = len(full_idx_surface) - len(full_idx_surf_rfl)
+        non_rfl_band_names = [
+            full_statevector[len(full_idx_surf_rfl) + i] for i in range(n_non_rfl_bands)
+        ]
+        non_rfl_output = initialize_output(
             output_metadata,
             analytical_non_rfl_surf_file,
-            (rdns[0], n_non_rfl_bands, rdns[1]),
-            interleave="bil",
-            bands=f"{len(full_idx_surface) - len(full_idx_surf_rfl)}",
-            band_names=[
-                full_statevector[len(full_idx_surf_rfl) + i]
-                for i in range(n_non_rfl_bands)
+            (rdns[0], num_non_rfl_bands, rdns[1]),
+            [
+                "emit pge input files",
+                "bbl",
+                "wavelength",
+                "wavelength units",
+                "fwhm",
+                "smoothing factors",
             ],
+            interleave="bil",
+            bands=f"{num_non_rfl_bands}",
+            band_names=non_rfl_band_names,
             description=("L2A Analytyical per-pixel non_rfl surface retrieval"),
         )
 
-        non_rfl_unc_output = construct_output(
+        non_rfl_unc_output = initialize_output(
             output_metadata,
             analytical_non_rfl_surf_unc_file,
-            (rdns[0], n_non_rfl_bands, rdns[1]),
-            interleave="bil",
-            bands=f"{len(full_idx_surface) - len(full_idx_surf_rfl)}",
-            band_names=[
-                full_statevector[len(full_idx_surf_rfl) + i]
-                for i in range(n_non_rfl_bands)
+            (rdns[0], num_non_rfl_bands, rdns[1]),
+            [
+                "emit pge input files",
+                "bbl",
+                "wavelength",
+                "wavelength units",
+                "fwhm",
+                "smoothing factors",
             ],
+            interleave="bil",
+            bands=f"{num_non_rfl_bands}",
+            band_names=non_rfl_band_names,
             description=(
                 "L2A Analytyical per-pixel non_rfl surface retrieval uncertainty"
             ),

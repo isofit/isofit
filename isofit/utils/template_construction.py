@@ -30,6 +30,17 @@ from isofit.data import env
 from isofit.radiative_transfer.engines.modtran import ModtranRT
 from isofit.utils import surface_model
 
+SURFACE_MAPPING = {
+    "water": "glint_model_surface",
+    "glint": "glint_model_surface",
+    "land": "multicomponent_surface",
+    "nonwater": "multicomponent_surface",
+    "cloud": "multicomponent_surface",
+    "uniform_surface": "multicomponent_surface",
+    "glint_model_surface": "glint_model_surface",
+    "multicomponent_surface": "multicomponent_surface",
+}
+
 
 class Pathnames:
     """Class to determine and hold the large number of relative and absolute paths that are needed for isofit and
@@ -509,7 +520,9 @@ class SerialEncoder(json.JSONEncoder):
             return super(SerialEncoder, self).default(obj)
 
 
-def check_surface_model(surface_path: str, wl: np.array, paths: Pathnames) -> str:
+def check_surface_model(
+    surface_path: str, wl: np.array, paths: Pathnames, surface_category: str
+) -> str:
     """
     Checks and rebuilds surface model if needed.
 
@@ -541,17 +554,35 @@ def check_surface_model(surface_path: str, wl: np.array, paths: Pathnames) -> st
                     " wavelengths in radiance cube. Please consider rebuilding your"
                     " surface model for optimal performance."
                 )
-            return surface_path
+            return {surface_category: surface_path}
         elif surface_path.endswith(".json"):
             logging.info(
                 "No surface model provided. Build new one using given config file."
             )
+            multisurface = hasattr(paths, "surface_class_working_path")
             surface_model(
-                config_path=surface_path, wavelength_path=paths.wavelength_path
+                config_path=surface_path,
+                wavelength_path=paths.wavelength_path,
+                multisurface=multisurface,
             )
             configdir, _ = os.path.split(os.path.abspath(surface_path))
             config = json_load_ascii(surface_path, shell_replace=True)
-            return expand_path(configdir, config["output_model_file"])
+
+            output_model_path = expand_path(configdir, config["output_model_file"])
+
+            # Handle a multisurface run with split
+            if multisurface:
+                surface_types = [source["surface_type"] for source in config["sources"]]
+                surface_paths = {}
+                for surface_type in np.unique(surface_types):
+                    name, ext = os.path.splitext(output_model_path)
+                    surface_paths[SURFACE_MAPPING[str(surface_type)]] = (
+                        f"{name}_{str(surface_type)}{ext}"
+                    )
+                return surface_paths
+
+            else:
+                return {surface_category: output_model_path}
         else:
             raise FileNotFoundError(
                 "Unrecognized format of surface file. Please provide either a .mat model or a .json config dict."
@@ -686,7 +717,7 @@ def build_presolve_config(
                     "uncorrelated_radiometric_uncertainty": uncorrelated_radiometric_uncertainty
                 },
             },
-            "surface": make_surface_config(paths, surface_category, presolve=True),
+            "surface": make_surface_config(paths, surface_category),
             "radiative_transfer": radiative_transfer_config,
         },
         "implementation": {
@@ -1898,7 +1929,6 @@ def make_surface_config(
     surface_category="multicomponent_surface",
     pressure_elevation=None,
     elevation_lut_grid=[],
-    presolve=False,
     surface_mapping: dict = None,
 ):
     """
@@ -1917,7 +1947,7 @@ def make_surface_config(
     }
 
     # Check to see if a classification file is being propogated
-    if paths.surface_class_working_path and not presolve:
+    if paths.surface_class_working_path:
         surface_config_dict["Surfaces"] = {}
         surface_config_dict["surface_class_file"] = paths.surface_class_working_path
 
@@ -1953,38 +1983,24 @@ def make_surface_config(
         # mapping name to surface name - terrible way to do this
         # Could house this in a standalone file and call it in
         if not surface_mapping:
-            surface_mapping = {
-                "water": "glint_model_surface",
-                "glint": "glint_model_surface",
-                "land": "multicomponent_surface",
-                "nonwater": "multicomponent_surface",
-                "cloud": "multicomponent_surface",
-                "uniform_surface": "multicomponent_surface",
-                "glint_model_surface": "glint_model_surface",
-                "multicomponent_surface": "multicomponent_surface",
-            }
+            surface_mapping = SURFACE_MAPPING
 
         # Iterate through all classes present in class image
         for i, name in enumerate(class_mapping):
             surface_category = surface_mapping.get(name, "multicomponent_surface")
 
             # If surface_path given, use for all surfaces
-            surface_path = paths.surface_working_path
+            surface_path = paths.surface_working_paths[surface_category]
 
             if not paths.surface_working_path:
                 logging.exception("No surface prior path found.")
                 raise FileNotFoundError
-
-            # TODO: Extend s.t. you could give each surface a different surface file
 
             # Set up "Surfaces" component of surface config
             surface_config_dict["Surfaces"][name] = {
                 "surface_int": i,
                 "surface_file": surface_path,
                 "surface_category": surface_category,
-                "glint_model": (
-                    True if surface_category == "glint_model_surface" else False
-                ),
             }
 
             # Handle clouds if pressure elevation

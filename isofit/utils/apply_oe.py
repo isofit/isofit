@@ -464,13 +464,18 @@ def apply_oe(
     tmpl.write_wavelength_file(paths.wavelength_path, wl, fwhm)
 
     # check and rebuild surface model if needed
-    paths.surface_path = tmpl.check_surface_model(
-        surface_path=surface_path, wl=wl, paths=paths
+    paths.surface_paths = tmpl.check_surface_model(
+        surface_path=surface_path, wl=wl, paths=paths, surface_category=surface_category
     )
 
     # re-stage surface model if needed
-    if paths.surface_path != surface_path:
-        copyfile(paths.surface_path, paths.surface_working_path)
+    paths.surface_working_paths = {}
+    for key, value in paths.surface_paths.items():
+        if value != surface_path:
+            name, ext = os.path.splitext(paths.surface_working_path)
+            surface_working_path = f"{name}_{key}{ext}"
+            copyfile(value, surface_working_path)
+            paths.surface_working_paths[key] = surface_working_path
 
     (
         mean_latitude,
@@ -556,7 +561,7 @@ def apply_oe(
             paths.input_obs_file,
             paths.input_loc_file,
             paths.surface_class_working_path,
-            paths.surface_path,
+            paths.surface_paths,
             n_cores=n_cores,
             dayofyear=dayofyear,
             wl_file=paths.wavelength_path,

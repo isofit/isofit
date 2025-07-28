@@ -49,7 +49,7 @@ class GlintModelSurface(MultiComponentSurface):
         rmin, rmax = -0.05, 2.0
         self.bounds = [[rmin, rmax] for w in self.wl]
         # Gege (2021), WASI user manual
-        self.bounds.extend([[0, 10], [-1, 10]])
+        self.bounds.extend([[0, 10], [0, 10]])
 
         self.n_state = self.n_state + 2
 
@@ -99,6 +99,9 @@ class GlintModelSurface(MultiComponentSurface):
 
         # Estimate additive glint. Uses multiple options to handle different sensors.
         # Try SWIR, then NIR
+        blue_band_1 = np.argmin(np.abs(450 - self.wl))
+        blue_band_2 = np.argmin(np.abs(500 - self.wl))
+
         if np.max(self.wl) >= 2300:
             glint_band_1 = np.argmin(np.abs(2200 - self.wl))
             glint_band_2 = np.argmin(np.abs(2300 - self.wl))
@@ -106,11 +109,22 @@ class GlintModelSurface(MultiComponentSurface):
             glint_band_1 = np.argmin(np.abs(1000 - self.wl))
             glint_band_2 = np.argmin(np.abs(1020 - self.wl))
 
+<<<<<<< HEAD
         glint_est = np.min(
             [
                 np.median(rfl_meas[blue_band_1:blue_band_2]),
                 np.median(rfl_meas[glint_band_1:glint_band_2]),
             ]
+=======
+        glint_est = (
+            np.min(
+                [
+                    np.median(rfl_meas[blue_band_1:blue_band_2]),
+                    np.median(rfl_meas[(glint_band - 2) : glint_band + 2]),
+                ]
+            )
+            * 0.95
+>>>>>>> 119b6e2e (Can now set surface.mat to a specific surface model. Added shared output init func.)
         )
 
         # hard-coded glint bounds from experience #TODO - get from config

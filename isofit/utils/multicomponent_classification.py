@@ -21,8 +21,10 @@ from isofit.data import env
 
 
 class Component:
-    def __init__(self, surface_file, mapping):
-        self.model_dict = loadmat(surface_file)
+    def __init__(self, surface_files, mapping):
+
+        # Combine all potential surface files
+        self.model_dict = load_surface_mat(surface_files)
         self.components = list(zip(self.model_dict["means"], self.model_dict["covs"]))
         self.n_comp = len(self.components)
         self.wl = self.model_dict["wl"][0]
@@ -152,30 +154,28 @@ class Worker(object):
             )
 
 
-def construct_output(output_metadata, outpath, out_shape, **kwargs):
-    """
-    Construct output file by updating metadata and creating object
-    """
-    for key, value in kwargs.items():
-        output_metadata[key] = value
+def load_surface_mat(
+    surface_files,
+    keys_to_combine=[
+        "means",
+        "covs",
+        "attribute_means",
+        "attribute_covs",
+        "surface_types",
+    ],
+):
+    for i, (name, surface_file) in enumerate(surface_files.items()):
+        surface_model_dict = loadmat(surface_file)
+        break
+        if not i:
+            model_dict = surface_model_dict
+        else:
+            for key in keys_to_combine:
+                model_dict[key] = np.concatenate(
+                    [model_dict[key], surface_model_dict[key]], axis=0
+                )
 
-    if "emit pge input files" in list(output_metadata.keys()):
-        del output_metadata["emit pge input files"]
-
-    if "wavelength" in list(output_metadata.keys()):
-        del output_metadata["wavelength"]
-
-    if "fwhm" in list(output_metadata.keys()):
-        del output_metadata["fwhm"]
-
-    out_file = envi.create_image(
-        envi_header(outpath), ext="", metadata=output_metadata, force=True
-    )
-    out_mm = out_file.open_memmap(interleave="source", writable=True)
-    out_mm[:, :] = np.zeros(out_shape, dtype=np.float32)
-    del out_file
-
-    return outpath
+    return model_dict
 
 
 def filter_image(out, thresh=100):
@@ -229,7 +229,7 @@ def multicomponent_classification(
     obs_file: str,
     loc_file: str,
     out_file: str,
-    surface_file: str,
+    surface_files: str,
     n_cores: int = -1,
     dayofyear: int = None,
     wl_file: str = None,
@@ -311,24 +311,28 @@ def multicomponent_classification(
     # The "mapping" is how the program moves between a int-classification
     # And the surface model
     if not mapping:
-        model_dict = loadmat(surface_file)
+        model_dict = load_surface_mat(surface_files)
         surface_types = model_dict.get("surface_types", [])
         del model_dict
 
         if len(surface_types):
             mapping = []
             for i in surface_types:
-                i = i.strip()
+                if isinstance(i, np.ndarray) or isinstance(i, list):
+                    i = i[0].strip()
+                else:
+                    i = i.strip()
                 if i not in mapping:
                     mapping.append(i)
         else:
             logging.error("No surface mapping provided")
             raise ValueError("No surface mapping provided")
 
-    output = construct_output(
+    output = initialize_output(
         output_metadata,
         out_file,
         (rdns[0], 1, rdns[1]),
+        ["emit pge input files", "wavelength", "fwhm"],
         interleave="bil",
         bands="1",
         band_names=["Classification"],
@@ -363,7 +367,7 @@ def multicomponent_classification(
             obs_file,
             loc_file,
             out_file,
-            surface_file,
+            surface_files,
             mapping,
             wl,
             fwhm,
@@ -403,7 +407,7 @@ def multicomponent_classification(
 @click.argument("obs_file")
 @click.argument("loc_file")
 @click.argument("out_file")
-@click.argument("surface_file")
+@click.argument("surface_files")
 @click.option("--n_cores", default=-1)
 @click.option("--wl_file", default=None)
 @click.option("--irr_file", default=None)

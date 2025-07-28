@@ -46,7 +46,11 @@ def next_diag_val(C: np.ndarray, starting_index, direction):
 
 
 def surface_model(
-    config_path: str, wavelength_path: str = None, output_path: str = None, seed=13
+    config_path: str,
+    wavelength_path: str = None,
+    output_path: str = None,
+    seed=13,
+    multisurface=False,
 ) -> None:
     """The surface model tool contains everything you need to build basic
     multicomponent (i.e. colleciton of Gaussian) surface priors for the
@@ -137,6 +141,12 @@ def surface_model(
         for q in ["input_spectrum_files", "windows", "n_components", "windows"]:
             if q not in source_config:
                 raise ValueError("Source %i is missing a parameter: %s" % (si, q))
+
+        if multisurface:
+            if "surface_type" not in source_config:
+                raise ValueError(
+                    "Source %i is missing a parameter: surface_type" % (si)
+                )
 
         # Determine whether we should synthesize our own mixtures
         if "mixtures" in source_config:
@@ -398,7 +408,28 @@ def surface_model(
     model["attribute_means"] = np.array(model["attribute_means"])
     model["attribute_covs"] = np.array(model["attribute_covs"])
 
-    scipy.io.savemat(outfile, model)
+    if multisurface:
+        # Divide up model dict based on surface_type
+        surface_types = np.unique(model["surface_types"])
+        for surface_type in surface_types:
+            i = np.argwhere(np.array(model["surface_types"]) == surface_type)
+
+            type_model = model.copy()
+            type_model["means"] = np.squeeze(model["means"][i])
+            type_model["covs"] = np.squeeze(model["covs"][i])
+            type_model["surface_types"] = [
+                str(stype[0]) for stype in np.array(model["surface_types"])[i]
+            ]
+            if len(model["attribute_means"]):
+                type_model["attribute_means"] = np.squeeze(model["attribute_means"][i])
+                type_model["attribute_covs"] = np.squeeze(model["attribute_covs"][i])
+
+            name, ext = os.path.splitext(outfile)
+            type_outfile = f"{name}_{str(surface_type)}{ext}"
+            scipy.io.savemat(type_outfile, type_model)
+
+    else:
+        scipy.io.savemat(outfile, model)
 
 
 # Input arguments

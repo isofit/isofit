@@ -844,3 +844,31 @@ def write_bil_chunk(
     outfile.seek(line * shape[1] * shape[2] * np.dtype(dtype).itemsize)
     outfile.write(dat.astype(dtype).tobytes())
     outfile.close()
+
+
+def initialize_output(output_metadata, outpath, out_shape, keys_to_del, **kwargs):
+    """
+    Initialize output file by updating metadata and creating object.
+
+    Args:
+        output_metadata: dict - Dictionary with envi header information
+        outpath: str - path to output file
+        out_shape: tuple - dimensions of initialized file
+        keys_to_del: list - keys to remove from output_metadata
+        kwargs - key-argument pairs to add to output_metadata
+    """
+    for key, value in kwargs.items():
+        output_metadata[key] = value
+
+    for key in keys_to_del:
+        if key in list(output_metadata.keys()):
+            del output_metadata[key]
+
+    out_file = envi.create_image(
+        envi_header(outpath), ext="", metadata=output_metadata, force=True
+    )
+    out_mm = out_file.open_memmap(interleave="source", writable=True)
+    out_mm[:, :] = np.zeros(out_shape, dtype=np.float32)
+    del out_file
+
+    return outpath
