@@ -18,97 +18,6 @@ import isofit
 from isofit.data import env
 
 
-class LazyCommand(click.Command):
-    """
-    Defers importing modules until the subcommand is actually invoked
-
-    This avoids importing expensive modules during CLI initialization or help display
-
-    Parameters
-    ----------
-    name : str
-        Name of the command
-    path : str
-        Import path to the Click command, in the format 'module:function'
-        If 'function' is not provided, defaults seeking for a function named 'cli'
-    """
-
-    def __init__(self, name, path):
-        super().__init__(name)
-
-        self.command = None
-
-        func = "cli"
-        if ":" in path:
-            path, func = path.split(":")
-
-        self.path = path
-        self.func = func
-
-    def resolve(self):
-        """
-        Import the real command
-
-        Returns
-        -------
-        click.Command
-            The resolved Click command
-        """
-        if self.command is None:
-            module = importlib.import_module(self.path)
-            self.command = getattr(module, self.func)
-
-        return self.command
-
-    def invoke(self, ctx):
-        """
-        Invoke the lazily loaded command
-
-        Parameters
-        ----------
-        ctx : click.Context
-            The Click context for this command
-
-        Returns
-        -------
-        Any
-            The result of the real command's invocation
-        """
-        return self.resolve().invoke(ctx)
-
-    def get_help(self, ctx):
-        """
-        Get help text from the real command
-
-        Parameters
-        ----------
-        ctx : click.Context
-            The Click context
-
-        Returns
-        -------
-        str
-            Help text of the actual command
-        """
-        return self.resolve().get_help(ctx)
-
-    def get_params(self, ctx):
-        """
-        Get the list of parameters for the real command
-
-        Parameters
-        ----------
-        ctx : click.Context
-            The Click context
-
-        Returns
-        -------
-        list of click.Parameter
-            Parameters of the actual command
-        """
-        return self.resolve().get_params(ctx)
-
-
 class CLI(click.Group):
     """
     Custom click class to load commands at runtime. This enables optional, external
@@ -122,10 +31,7 @@ class CLI(click.Group):
     def __init__(self, *args, lazy_subcommands=None, **kwargs):
         super().__init__(*args, **kwargs)
 
-        cmds = lazy_subcommands or {}
-        self.lazy = {
-            name: LazyCommand(name=name, path=path) for name, path in cmds.items()
-        }
+        self.lazy = lazy_subcommands or {}
 
     def main(self, *args, **kwargs):
         """
@@ -175,7 +81,9 @@ class CLI(click.Group):
         self.laziest = ctx.params.pop("laziest") or env["cli_laziest"] == "1"
 
         # --help always disables lazier loading
-        if ctx.params["help"]:
+        # protected_args is populated when a subcommand is invoked
+        # do NOT laziest, else click.groups break
+        if ctx.params["help"] or ctx.protected_args:
             self.laziest = False
 
         if preview:
@@ -207,6 +115,32 @@ class CLI(click.Group):
         lazy = list(self.lazy)
         return base + lazy
 
+    def resolve(self, cmd_name):
+        """
+        Resolves the import of a click function from a module string
+
+        The import path to a Click command is to be in the format 'module:function'
+        If 'function' is not provided, defaults seeking for a function named 'cli'
+
+        Parameters
+        ----------
+        cmd_name : str
+            Command to retrieve
+
+        Returns
+        -------
+        function
+            Resulting Click function imported from a module
+        """
+        path = self.lazy[cmd_name]
+        func = "cli"
+        if ":" in path:
+            path, func = path.split(":")
+
+        module = importlib.import_module(path)
+
+        return getattr(module, func)
+
     def get_command(self, ctx, cmd_name):
         """
         Get a lazily-loaded command by name
@@ -226,14 +160,13 @@ class CLI(click.Group):
         command = self.lazy.get(cmd_name)
 
         if command:
-            # protected_args is populated when a subcommand is invoked
-            # do NOT laziest, else click.groups break
+            # ctx.protected_args needs to be checked here for tab completion cases
             if self.laziest and not ctx.protected_args:
-                return command
+                # Just create a fake command for Click
+                return click.Command(cmd_name)
 
-            # Partially lazy, called in certain cases (like --help)
             try:
-                return command.resolve()
+                return self.resolve(cmd_name)
             except ModuleNotFoundError:
                 if self.debug:
                     if cmd_name == "plot":
