@@ -75,7 +75,7 @@ def analytical_line(
     segmentation_file: str = None,
     n_atm_neighbors: list = [20],
     n_cores: int = -1,
-    num_iter: int = 3,
+    num_iter: int = 1,
     smoothing_sigma: list = [2],
     output_rfl_file: str = None,
     output_unc_file: str = None,
@@ -207,14 +207,14 @@ def analytical_line(
 
     # If there are more idx in surface than rfl, there are non_rfl surface states
     if len(full_idx_surface) > len(full_idx_surf_rfl):
-        num_non_rfl_bands = len(full_idx_surface) - len(full_idx_surf_rfl)
+        n_non_rfl_bands = len(full_idx_surface) - len(full_idx_surf_rfl)
         non_rfl_band_names = [
             full_statevector[len(full_idx_surf_rfl) + i] for i in range(n_non_rfl_bands)
         ]
         non_rfl_output = initialize_output(
             output_metadata,
             analytical_non_rfl_surf_file,
-            (rdns[0], num_non_rfl_bands, rdns[1]),
+            (rdns[0], n_non_rfl_bands, rdns[1]),
             [
                 "emit pge input files",
                 "bbl",
@@ -224,7 +224,7 @@ def analytical_line(
                 "smoothing factors",
             ],
             interleave="bil",
-            bands=f"{num_non_rfl_bands}",
+            bands=f"{n_non_rfl_bands}",
             band_names=non_rfl_band_names,
             description=("L2A Analytyical per-pixel non_rfl surface retrieval"),
         )
@@ -232,7 +232,7 @@ def analytical_line(
         non_rfl_unc_output = initialize_output(
             output_metadata,
             analytical_non_rfl_surf_unc_file,
-            (rdns[0], num_non_rfl_bands, rdns[1]),
+            (rdns[0], n_non_rfl_bands, rdns[1]),
             [
                 "emit pge input files",
                 "bbl",
@@ -242,7 +242,7 @@ def analytical_line(
                 "smoothing factors",
             ],
             interleave="bil",
-            bands=f"{num_non_rfl_bands}",
+            bands=f"{n_non_rfl_bands}",
             band_names=non_rfl_band_names,
             description=(
                 "L2A Analytyical per-pixel non_rfl surface retrieval uncertainty"
@@ -272,16 +272,14 @@ def analytical_line(
     del meshgrid
 
     input_config = deepcopy(config)
-    surface_index = index_spectra_by_surface(input_config, index_pairs, sub=False)
+    surface_index = index_spectra_by_surface(
+        input_config, index_pairs, force_full_res=True
+    )
     for surface_class_str, class_idx_pairs in surface_index.items():
         # Handle multisurface
-        if input_config.forward_model.surface.multi_surface_flag:
-            config = update_config_for_surface(
-                deepcopy(input_config), surface_class_str
-            )
-        else:
-            config = input_config
+        config = update_config_for_surface(deepcopy(input_config), surface_class_str)
 
+        # Set forward model
         fm = ForwardModel(config)
 
         # Initialize workers
@@ -465,6 +463,7 @@ class Worker(object):
             svf = np.ones((rdn.shape[0], rdn.shape[1]), dtype=float)
 
         # Set up outputs
+        #
         output_rfl = (
             envi.open(envi_header(self.rfl_outpath))
             .open_memmap(interleave="bip", writable=False)[start_line:stop_line, ...]
@@ -552,17 +551,11 @@ class Worker(object):
                     geom,
                 )
 
-                rfl_est = self.fm.surface.fit_params(rfl_est, geom)[
-                    self.fm.idx_surf_rfl
-                ]
-
-                if rfl_est[0] < 0:
-                    rfl_est = sub_state[self.fm.idx_surf_rfl]
+                rfl_est = self.fm.surface.fit_params(rfl_est, geom)
 
                 x0 = np.concatenate(
                     [
                         rfl_est,
-                        sub_state[self.fm.idx_surf_nonrfl],
                         x_RT,
                         x_instrument,
                     ]

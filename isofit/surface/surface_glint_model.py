@@ -109,22 +109,11 @@ class GlintModelSurface(MultiComponentSurface):
             glint_band_1 = np.argmin(np.abs(1000 - self.wl))
             glint_band_2 = np.argmin(np.abs(1020 - self.wl))
 
-<<<<<<< HEAD
         glint_est = np.min(
             [
                 np.median(rfl_meas[blue_band_1:blue_band_2]),
                 np.median(rfl_meas[glint_band_1:glint_band_2]),
             ]
-=======
-        glint_est = (
-            np.min(
-                [
-                    np.median(rfl_meas[blue_band_1:blue_band_2]),
-                    np.median(rfl_meas[(glint_band - 2) : glint_band + 2]),
-                ]
-            )
-            * 0.95
->>>>>>> 119b6e2e (Can now set surface.mat to a specific surface model. Added shared output init func.)
         )
 
         # hard-coded glint bounds from experience #TODO - get from config
@@ -286,11 +275,11 @@ class GlintModelSurface(MultiComponentSurface):
         # It must match the alphabeitcal order of the glint terms
 
         # Diffuse portion
-        ep = (
-            (L_dif_dir + L_dif_dif) + ((L_tot * background) / (1 - background))
-        ) * rho_ls
+        # ep = (
+        #     (L_dif_dir + L_dif_dif) + ((L_tot * background) / (1 - background))
+        # ) * rho_ls
         # If you ignore multi-scattering
-        # ep = (L_dif_dir + L_dif_dif) * rho_ls
+        ep = (L_dif_dir + L_dif_dif) * rho_ls
         ep = np.reshape(ep, (len(ep), 1))
         H = np.append(H, ep, axis=1)
 

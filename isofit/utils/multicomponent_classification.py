@@ -15,7 +15,7 @@ from spectral import envi
 
 from isofit import ray
 from isofit.core.common import envi_header, resample_spectrum, svd_inv
-from isofit.core.fileio import IO, write_bil_chunk
+from isofit.core.fileio import IO, initialize_output, write_bil_chunk
 from isofit.core.geometry import Geometry
 from isofit.data import env
 
@@ -166,7 +166,6 @@ def load_surface_mat(
 ):
     for i, (name, surface_file) in enumerate(surface_files.items()):
         surface_model_dict = loadmat(surface_file)
-        break
         if not i:
             model_dict = surface_model_dict
         else:

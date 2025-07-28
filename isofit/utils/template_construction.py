@@ -154,6 +154,10 @@ class Pathnames:
                     abspath(surface_class_file) if surface_class_file else None
                 )
 
+            self.surface_class_subs_path = abspath(
+                join(self.input_data_directory, self.fid + "_subs_surface_class")
+            )
+
         else:
             self.radiance_working_path = abspath(self.input_radiance_file)
             self.obs_working_path = abspath(self.input_obs_file)
@@ -167,6 +171,10 @@ class Pathnames:
                 self.surface_class_working_path = (
                     abspath(surface_class_file) if surface_class_file else None
                 )
+
+            self.surface_class_subs_path = abspath(
+                join(self.input_data_directory, self.fid + "_subs_surface_class")
+            )
 
         if interpolate_inplace:
             self.radiance_interp_path = self.radiance_working_path
@@ -214,30 +222,21 @@ class Pathnames:
             join(self.input_data_directory, self.fid + "_subs_loc")
         )
 
-        # Needs some handling if the segmentation will occur
-        if subs:
-            self.surface_class_subs_path = abspath(
-                join(self.input_data_directory, self.fid + "_subs_surface_class")
-            )
-            subs_str = "_subs"
-        else:
-            self.surface_class_subs_path = None
-            subs_str = ""
-
         self.rfl_subs_path = abspath(
-            join(self.output_directory, self.fid + f"{subs_str}" + "_rfl")
+            # join(self.output_directory, self.fid + f"{subs_str}" + "_rfl")
+            join(self.output_directory, self.fid + "_subs_rfl")
         )
         self.atm_coeff_path = abspath(
-            join(self.output_directory, self.fid + f"{subs_str}" + "_atm")
+            join(self.output_directory, self.fid + "_subs_atm")
         )
         self.state_subs_path = abspath(
-            join(self.output_directory, self.fid + f"{subs_str}" + "_state")
+            join(self.output_directory, self.fid + "_subs_state")
         )
         self.uncert_subs_path = abspath(
-            join(self.output_directory, self.fid + f"{subs_str}" + "_uncert")
+            join(self.output_directory, self.fid + "_subs_uncert")
         )
         self.h2o_subs_path = abspath(
-            join(self.output_directory, self.fid + f"{subs_str}" + "_h2o")
+            join(self.output_directory, self.fid + "_subs_h2o")
         )
 
         self.wavelength_path = abspath(join(self.data_directory, "wavelengths.txt"))
@@ -521,7 +520,11 @@ class SerialEncoder(json.JSONEncoder):
 
 
 def check_surface_model(
-    surface_path: str, wl: np.array, paths: Pathnames, surface_category: str
+    surface_path: str,
+    wl: np.array,
+    paths: Pathnames,
+    surface_category: str,
+    multisurface: bool = False,
 ) -> str:
     """
     Checks and rebuilds surface model if needed.
@@ -559,7 +562,6 @@ def check_surface_model(
             logging.info(
                 "No surface model provided. Build new one using given config file."
             )
-            multisurface = hasattr(paths, "surface_class_working_path")
             surface_model(
                 config_path=surface_path,
                 wavelength_path=paths.wavelength_path,
@@ -717,7 +719,9 @@ def build_presolve_config(
                     "uncorrelated_radiometric_uncertainty": uncorrelated_radiometric_uncertainty
                 },
             },
-            "surface": make_surface_config(paths, surface_category),
+            "surface": make_surface_config(
+                paths, surface_category, use_superpixels=use_superpixels
+            ),
             "radiative_transfer": radiative_transfer_config,
         },
         "implementation": {
@@ -1033,6 +1037,7 @@ def build_main_config(
                 pressure_elevation,
                 elevation_lut_grid,
                 surface_mapping=surface_mapping,
+                use_superpixels=use_superpixels,
             ),
             "radiative_transfer": radiative_transfer_config,
         },
@@ -1930,6 +1935,7 @@ def make_surface_config(
     pressure_elevation=None,
     elevation_lut_grid=[],
     surface_mapping: dict = None,
+    use_superpixels=False,
 ):
     """
     Constructs the surface component of the config
@@ -1949,15 +1955,17 @@ def make_surface_config(
     # Check to see if a classification file is being propogated
     if paths.surface_class_working_path:
         surface_config_dict["Surfaces"] = {}
-        surface_config_dict["surface_class_file"] = paths.surface_class_working_path
 
-        if vars(paths).get("surface_class_subs_path", None):
-            surface_config_dict["sub_surface_class_file"] = (
-                paths.surface_class_subs_path
-            )
+        if use_superpixels:
+            surface_config_dict["surface_class_file"] = paths.surface_class_subs_path
+        else:
+            surface_config_dict["surface_class_file"] = paths.surface_class_working_path
+
+        surface_config_dict["base_surface_class_file"] = (
+            paths.surface_class_working_path
+        )
 
         surface_config_dict["multi_surface_flag"] = True
-
         surface_class_ds = envi.open(envi_header(paths.surface_class_working_path))
 
         # Get the class mapping. Tried to build in some insensitivity here.

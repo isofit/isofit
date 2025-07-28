@@ -318,7 +318,10 @@ class MultiComponentSurface(Surface):
         simplifies the linearization
         background = s * rho_bg
         """
-        theta = L_tot + (L_tot * background / (1 - background))
+        # If you ignore multi-scattering
+        # theta = L_tot + (L_tot * background / (1 - background))
+        theta = L_tot
+
         H = np.eye(self.n_wl, self.n_wl)
         H = theta[:, np.newaxis] * H
 

@@ -899,7 +899,7 @@ def compare(a, b, threshold=0.8, not_same=True):
 
 
 def match_statevector(
-    state_data: np.array, full_statevec: list, fm_statevec: list, null_value=np.nan
+    state_data: np.array, full_statevec: list, fm_statevec: list, null_value=-9999.0
 ):
     """
     A multi-class surface requires some merging across statevectors

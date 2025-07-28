@@ -102,7 +102,7 @@ def construct_full_state(full_config):
     return full_statevec, full_idx_surface, full_idx_surf_rfl, full_idx_rt
 
 
-def index_spectra_by_surface(config, index_pairs, sub=True):
+def index_spectra_by_surface(config, index_pairs, force_full_res=False):
     """
     Indexes an image by a provided surface class file.
     Could extend it to be indexed by an atomspheric classification
@@ -122,14 +122,11 @@ def index_spectra_by_surface(config, index_pairs, sub=True):
     """Check if the class files exist. Defaults to run all pixels.
     This accomodates the test cases where we test the multi-surface,
     but don't use a classification file."""
-    if (
-        not surface_config.sub_surface_class_file
-        and not surface_config.surface_class_file
-    ):
+    if not surface_config.surface_class_file:
         return {"uniform_surface": index_pairs}
 
-    if vars(surface_config).get("sub_surface_class_file") and sub:
-        class_file = surface_config.sub_surface_class_file
+    if force_full_res:
+        class_file = surface_config.base_surface_class_file
     else:
         class_file = surface_config.surface_class_file
 
@@ -218,6 +215,9 @@ def update_config_for_surface(config, surface_class_str, clouds=True):
     Returns:
         config: (Config object) Update full isofit config object
     """
+    if not config.forward_model.surface.multi_surface_flag:
+        return config
+
     isurface = config.forward_model.surface.Surfaces.get(surface_class_str)
 
     if not isurface:

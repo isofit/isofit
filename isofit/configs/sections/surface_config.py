@@ -43,8 +43,8 @@ class SurfaceConfig(BaseConfigSection):
         self._surface_class_file_type = str
         self.surface_class_file = None
 
-        self._sub_surface_class_file_type = str
-        self.sub_surface_class_file = None
+        self._base_surface_class_file_type = str
+        self.base_surface_class_file = None
 
         self._Surfaces_type = dict
         self.Surfaces = {}

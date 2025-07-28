@@ -465,7 +465,11 @@ def apply_oe(
 
     # check and rebuild surface model if needed
     paths.surface_paths = tmpl.check_surface_model(
-        surface_path=surface_path, wl=wl, paths=paths, surface_category=surface_category
+        surface_path=surface_path,
+        wl=wl,
+        paths=paths,
+        surface_category=surface_category,
+        multisurface=True if classify_multisurface or surface_class_file else False,
     )
 
     # re-stage surface model if needed
