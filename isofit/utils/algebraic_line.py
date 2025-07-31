@@ -59,7 +59,7 @@ def algebraic_line(
     Run pixel-wise algebraic inversions, using provided atmosphere file.
     If no atmosphere file is provided, it will be created via interpolation
     from the state solution.
-    
+
     Args:
         rdn_file: Path to the radiance file
         loc_file: Path to the location file
@@ -75,7 +75,7 @@ def algebraic_line(
         atm_file: Path to the atmosphere file
         loglevel: Logging level (default: INFO)
         logfile: Path to the log file (default: None)
-    
+
     Returns:
         None
     """
@@ -282,13 +282,12 @@ class Worker(object):
         else:
             self.radiance_correction = None
 
-
     def run_lines(self, startstop: tuple) -> None:
         """
         Run the algebraic line algorithm for a set of lines.
         Args:
             startstop: tuple of (start_line, stop_line) to process
-        
+
         Returns:
             None
         """
@@ -305,7 +304,9 @@ class Worker(object):
         esd = IO.load_esd()
 
         for r in range(start_line, stop_line):
-            output_rfl = np.zeros((1, rt_state.shape[1], len(self.fm.idx_surf_rfl))) - 9999
+            output_rfl = (
+                np.zeros((1, rt_state.shape[1], len(self.fm.idx_surf_rfl))) - 9999
+            )
             for c in range(output_rfl.shape[1]):
                 meas = rdn[r, c, :]
                 if self.radiance_correction is not None:
@@ -351,13 +352,52 @@ class Worker(object):
 @click.argument("loc_file")
 @click.argument("obs_file")
 @click.argument("isofit_dir")
-@click.option("--isofit_config", type=str, help="isofit config file (inferred from isofit_dir if not specified)",default=None)
-@click.option("--segmentation_file", help="segmentation chunking file (inferred from isofit_dir if not specified)", type=str, default=None)
-@click.option("--num_neighbors", "-nn", type=int, multiple=True, default=[10], help="number of atmospheric neighbors for interpolation")
-@click.option("--atm_sigma", "-as", type=float, multiple=True, default=[2], help="smoothing sigma for atmospheric interpolation")
-@click.option("--n_cores", type=int, default=-1, help="number of cores to use for parallel processing (default: all available cores)")
-@click.option("--output_rfl_file", help="output reflectance file (inferred from isofit_dir if not specified)", type=str, default=None)
-@click.option("--atm_file", help="atmospheric interpolation file - created if not specified, used if provided", type=str, default=None)
+@click.option(
+    "--isofit_config",
+    type=str,
+    help="isofit config file (inferred from isofit_dir if not specified)",
+    default=None,
+)
+@click.option(
+    "--segmentation_file",
+    help="segmentation chunking file (inferred from isofit_dir if not specified)",
+    type=str,
+    default=None,
+)
+@click.option(
+    "--num_neighbors",
+    "-nn",
+    type=int,
+    multiple=True,
+    default=[10],
+    help="number of atmospheric neighbors for interpolation",
+)
+@click.option(
+    "--atm_sigma",
+    "-as",
+    type=float,
+    multiple=True,
+    default=[2],
+    help="smoothing sigma for atmospheric interpolation",
+)
+@click.option(
+    "--n_cores",
+    type=int,
+    default=-1,
+    help="number of cores to use for parallel processing (default: all available cores)",
+)
+@click.option(
+    "--output_rfl_file",
+    help="output reflectance file (inferred from isofit_dir if not specified)",
+    type=str,
+    default=None,
+)
+@click.option(
+    "--atm_file",
+    help="atmospheric interpolation file - created if not specified, used if provided",
+    type=str,
+    default=None,
+)
 @click.option("--loglevel", help="logging level", type=str, default="INFO")
 @click.option("--logfile", help="logging file", type=str, default=None)
 def cli(**kwargs):
