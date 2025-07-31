@@ -16,9 +16,8 @@ import ray
 from spectral.io import envi
 
 import isofit.utils.template_construction as tmpl
-from isofit.core import isofit
 from isofit.configs import configs
-from isofit.core import instrument
+from isofit.core import instrument, isofit
 from isofit.core.common import envi_header
 from isofit.utils.apply_oe import (
     INVERSION_WINDOWS,
@@ -28,7 +27,7 @@ from isofit.utils.apply_oe import (
 )
 
 
-def add_wavelength_elements(config_path, state_type="shift", spline_indices=None):
+def add_wavelength_elements(config_path, state_type="shift", spline_indices=[]):
     config = json.load(open(config_path, "r"))
 
     # Set RTM WL range
@@ -43,6 +42,13 @@ def add_wavelength_elements(config_path, state_type="shift", spline_indices=None
     config["forward_model"]["radiative_transfer"]["radiative_transfer_engines"][
         "vswir"
     ]["wavelength_file"] = hi_res_wavlengths
+
+    # Flag case where spline_indices is empty and using spline
+    if not spline_indices and (
+        (state_type == "spline") or (state_type == "spline-only")
+    ):
+        errstr = "Spline state given, but no indices provided"
+        raise ValueError(errstr)
 
     config["forward_model"]["instrument"]["calibration_fixed"] = False
     if state_type == "shift":
@@ -92,6 +98,18 @@ def add_wavelength_elements(config_path, state_type="shift", spline_indices=None
                 "prior_sigma": 100.0,
                 "scale": 1,
             }
+    elif state_type == "spline-only":
+        for spline_index in spline_indices:
+            config["forward_model"]["instrument"]["statevector"][
+                f"WLSPL_{spline_index}"
+            ] = {
+                "bounds": [-5, 5],
+                "init": 0,
+                "prior_mean": 0,
+                "prior_sigma": 100.0,
+                "scale": 1,
+            }
+
     logging.info(f"Writing config update with WL cal parameters to {config_path}")
     with open(config_path, "w") as fout:
         fout.write(json.dumps(config, cls=tmpl.SerialEncoder, indent=4, sort_keys=True))
@@ -197,6 +215,7 @@ def wavelength_cal(
     prebuilt_lut=None,
     inversion_windows=None,
     wl_state_type="shift",
+    spline_indices=[],
     force_with_geo=False,
     start_column=None,
     end_column=None,
@@ -600,7 +619,9 @@ def wavelength_cal(
             multipart_transmittance=multipart_transmittance,
         )
 
-        add_wavelength_elements(paths.isofit_full_config_path, wl_state_type)
+        add_wavelength_elements(
+            paths.isofit_full_config_path, wl_state_type, spline_indices
+        )
 
         # Run retrieval
         logging.info("Running ISOFIT with full LUT")
@@ -719,8 +740,15 @@ def cli(debug_args, profile, **kwargs):
 @click.option("--ray_temp_dir", default="/tmp/ray")
 @click.option("--emulator_base")
 @click.option("--prebuilt_lut", type=str)
-@click.option("--inversion_windows", type=float, nargs=2, multiple=True, default=None)
-@click.option("--wl_state_type", type=str, default="shift")
+@click.option("--inversion_windows", type=float, nargs=2, multiple=True)
+@click.option(
+    "--wl_state_type",
+    type=click.Choice(
+        ["shift", "shift-only", "spline", "spline-only"], case_sensitive=True
+    ),
+    default="shift",
+)
+@click.option("--spline_indices", "-si", type=int, multiple=True, default=None)
 @click.option("--force_with_geo", is_flag=True, default=False)
 @click.option("--start_column", type=int, default=None)
 @click.option("--end_column", type=int, default=None)
