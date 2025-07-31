@@ -104,6 +104,9 @@ def average_columns(
     output_radiance_file: str,
     output_loc_file: str,
     output_obs_file: str,
+    start_column: int = None,
+    end_column: int = None,
+    column_interval: int = 1,
 ):
     """
     Averages the columns of input radiance, location, and observation files
@@ -116,6 +119,12 @@ def average_columns(
         output_radiance_file (str): Path to the output radiance file.
         output_loc_file (str): Path to the output location file.
         output_obs_file (str): Path to the output observation file.
+        start_column (int, optional): Starting column index for averaging.
+            Defaults to None, which means start from the first column.
+        end_column (int, optional): Ending column index for averaging.
+            Defaults to None, which means average until the last column.
+        column_interval (int, optional): Step size over columns; skips,
+            doesn't average.  Useful to increase runtime speeds.
 
     Returns:
         rows (int): The number of rows in the averaged output files.
@@ -126,9 +135,24 @@ def average_columns(
         [output_radiance_file, output_loc_file, output_obs_file],
     ):
         in_ds = envi.open(envi_header(infile), infile)
-        mm = in_ds.open_memmap(interleave="bip")
+        mm = in_ds.open_memmap(interleave="bip").copy()
+
+        # Stay robust to nodata values - non-finite, header 
+        # specified nodata, and -9999 (in case unspecified)
+        nodata = np.isfninite(mm) == False
+        nodata[mm == -9999] = True
+        if 'data ignore value' in in_ds.metadata:
+            nodata[mm == in_ds.metadata['data ignore value']] = True
+        mm[nodata] = np.nan
         rows = mm.shape[0]
-        avg = np.mean(mm, axis=0)
+        avg = np.nanmean(mm, axis=0)
+
+        # Subsample if specified
+        if start_column is None:
+            start_column = 0
+        if end_column is None:
+            end_column = avg.shape[0]
+        avg = avg[start_column:end_column:column_interval, :]
 
         meta = in_ds.metadata.copy()
         meta["lines"] = 1
@@ -174,6 +198,9 @@ def wavelength_cal(
     inversion_windows=None,
     wl_state_type="shift",
     force_with_geo=False,
+    start_column=None,
+    end_column=None,
+    column_interval=1,
 ):
     """\
     Runs a wavelength calibration on an input scene.
@@ -251,6 +278,14 @@ def wavelength_cal(
     force_with_geo : bool, default=False
         If True, will allow the wavelength_cal to run on georeferenced data. Not recommended,
         unless you *really* know what you are doing, or know your metadata is odd.
+    start_column : int, default=None
+        Starting column index for averaging. Defaults to None, which means start from the
+        first column.
+    end_column : int, default=None
+        Ending column index for averaging. Defaults to None, which means average until the
+        last column.
+    column_interval : int, default=1
+        Step size over columns; skips, doesn't average. Useful to increase runtime speeds.
     """
 
     radiance_meta = envi.open(envi_header(input_radiance)).metadata
@@ -363,6 +398,12 @@ def wavelength_cal(
     dt, sensor_inversion_window = tmpl.sensor_name_to_dt(sensor, paths.fid)
     if sensor_inversion_window is not None:
         INVERSION_WINDOWS = sensor_inversion_window
+    if inversion_windows:
+        assert all(
+            [len(window) == 2 for window in inversion_windows]
+        ), "Inversion windows must be in pairs"
+        INVERSION_WINDOWS = inversion_windows
+    logging.info(f"Using inversion windows: {INVERSION_WINDOWS}")
 
     # Collapse data row-wise
     logging.info("Collapsing data row-wise...")
@@ -373,6 +414,9 @@ def wavelength_cal(
         paths.rdn_subs_path,
         paths.loc_subs_path,
         paths.obs_subs_path,
+        start_column,
+        end_column,
+        column_interval,
     )
 
     dayofyear = dt.timetuple().tm_yday
@@ -678,6 +722,9 @@ def cli(debug_args, profile, **kwargs):
 @click.option("--inversion_windows", type=float, nargs=2, multiple=True, default=None)
 @click.option("--wl_state_type", type=str, default="shift")
 @click.option("--force_with_geo", is_flag=True, default=False)
+@click.option("--start_column", type=int, default=None)
+@click.option("--end_column", type=int, default=None)
+@click.option("--column_interval", type=int, default=1)
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",
