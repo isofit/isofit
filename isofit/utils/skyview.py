@@ -103,12 +103,13 @@ def skyview(
             "interleave": "bsq",
             "data type": 4,
             "byte order": 0,
+            "band names": {"Sky View Factor"},
         }
     )
 
     # Handle potential no data in dem_data.
-    dem_data[dem_data > 8900] = np.nan
-    dem_data[dem_data < -1360] = np.nan
+    dem_data[dem_data > 8900] = np.nan  # highest possible point
+    dem_data[dem_data < -1360] = np.nan  # lowest possible point
 
     # prep the data for correct format for computation
     angles, aspect, cos_slope, sin_slope, tan_slope = viewf2022_prep(
@@ -138,9 +139,11 @@ def skyview(
     # and so now, we have a list object of 72, 2-d arrays
     # and  can complete integration for svf
     svf = sum(results) / len(angles)
+
+    # NOTE: we can also save TCF but for now, this is commented out.
     # tcf = (1 + cos_slope)/2 - svf
 
-    # Save the SVF result using spectral.envi
+    # save.
     envi.save_image(
         svf_hdr_path,
         svf.astype(np.float32),
@@ -153,7 +156,7 @@ def skyview(
 
 def viewf2022_prep(dem, spacing, nangles=72, sin_slope=None, aspect=None):
     """
-    Preps computations for multipool
+    Preps computations for ray.
 
     Args:
         dem: numpy array for the DEM
@@ -230,6 +233,13 @@ def viewf2022_i(angle, dem, spacing, aspect, cos_slope, sin_slope, tan_slope):
     svf[svf < 0] = 0
 
     return svf
+
+
+"""NOTE:
+The rest of the codes below were heavily borrowed from USDA-ARS topo-calc package.
+
+With one exception which is hor1(). This had to be modified to improve speed.
+"""
 
 
 def gradient_d8(dem, dx, dy, aspect_rad=False):
