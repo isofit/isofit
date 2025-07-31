@@ -164,6 +164,10 @@ def load_surface_mat(
         "surface_types",
     ],
 ):
+    # CLI will pass .json as string. Convert to temp dict
+    if isinstance(surface_files, str):
+        surface_files = {"cli_input": surface_files}
+
     for i, (name, surface_file) in enumerate(surface_files.items()):
         surface_model_dict = loadmat(surface_file)
         if not i:

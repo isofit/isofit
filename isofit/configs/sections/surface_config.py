@@ -52,7 +52,6 @@ class SurfaceConfig(BaseConfigSection):
         self._wavelength_file_type = str
         self.wavelength_file = None
 
-        # Multicomponent Surface
         self._select_on_init_type = bool
         self.select_on_init = True
         """bool: This field, if present and set to true, forces us to use any initialization state and never change.
@@ -60,9 +59,6 @@ class SurfaceConfig(BaseConfigSection):
 
         self._selection_metric_type = str
         self.selection_metric = "Euclidean"
-
-        self._select_on_init_type = bool
-        self.select_on_init = True
 
         # Surface Thermal
         """ Initial Value recommended by Glynn Hulley."""

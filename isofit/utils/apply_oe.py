@@ -250,6 +250,7 @@ def apply_oe(
     retrievals. Remote Sensing of Environment, 261:112476, 2021.doi: 10.1016/j.rse.2021.112476.
     """
     use_superpixels = empirical_line or analytical_line
+    use_multisurface = True if classify_multisurface or surface_class_file else False
 
     # Determine if we run in multipart-transmittance (4c) mode
     if emulator_base is not None:
@@ -469,17 +470,23 @@ def apply_oe(
         wl=wl,
         paths=paths,
         surface_category=surface_category,
-        multisurface=True if classify_multisurface or surface_class_file else False,
+        multisurface=use_multisurface,
     )
 
     # re-stage surface model if needed
     paths.surface_working_paths = {}
     for key, value in paths.surface_paths.items():
         if value != surface_path:
-            name, ext = os.path.splitext(paths.surface_working_path)
-            surface_working_path = f"{name}_{key}{ext}"
+            name, ext = os.path.splitext(paths.surface_template_path)
+            if use_multisurface:
+                surface_working_path = f"{name}_{key}{ext}"
+            else:
+                surface_working_path = f"{name}{ext}"
             copyfile(value, surface_working_path)
-            paths.surface_working_paths[key] = surface_working_path
+        else:
+            surface_working_path = surface_path
+
+        paths.surface_working_paths[key] = surface_working_path
 
     (
         mean_latitude,
@@ -724,7 +731,6 @@ def apply_oe(
     logging.info(f"Relative to-sun azimuth: {relative_azimuth_lut_grid}")
     logging.info(f"H2O Vapor: {h2o_lut_grid}")
 
-    logging.info(paths.state_subs_path)
     if (
         not exists(paths.state_subs_path)
         or not exists(paths.uncert_subs_path)

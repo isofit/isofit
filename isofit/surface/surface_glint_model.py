@@ -46,8 +46,8 @@ class GlintModelSurface(MultiComponentSurface):
         self.init.extend([1 / np.pi, 0.02])
 
         # Special glint bounds
-        rmin, rmax = -0.05, 2.0
-        self.bounds = [[rmin, rmax] for w in self.wl]
+        # rmin, rmax = -0.05, 2.0
+        # self.bounds = [[rmin, rmax] for w in self.wl]
         # Gege (2021), WASI user manual
         self.bounds.extend([[0, 10], [0, 10]])
 
@@ -167,8 +167,37 @@ class GlintModelSurface(MultiComponentSurface):
         # fresnel reflectance factor (approx. 0.02 for nadir view)
         rho_ls = self.fresnel_rf(geom.observer_zenith)
 
-        sun_glint = x_surface[self.sun_glint_ind] * rho_ls
-        sky_glint = x_surface[self.sky_glint_ind] * rho_ls
+        # Enforce bounds, also turns -9999. fill into 0.
+        # Note if null_value > bounds[1], will return bounds[1]
+        sun_glint = (
+            np.max(
+                [
+                    self.bounds[self.sun_glint_ind][0],
+                    np.min(
+                        [
+                            self.bounds[self.sun_glint_ind][1],
+                            x_surface[self.sun_glint_ind],
+                        ]
+                    ),
+                ]
+            )
+            * rho_ls
+        )
+
+        sky_glint = (
+            np.max(
+                [
+                    self.bounds[self.sky_glint_ind][0],
+                    np.min(
+                        [
+                            self.bounds[self.sky_glint_ind][1],
+                            x_surface[self.sky_glint_ind],
+                        ]
+                    ),
+                ]
+            )
+            * rho_ls
+        )
 
         rho_dir_dir = self.calc_lamb(x_surface, geom) + sun_glint
         rho_dif_dir = self.calc_lamb(x_surface, geom) + sky_glint
@@ -275,11 +304,11 @@ class GlintModelSurface(MultiComponentSurface):
         # It must match the alphabeitcal order of the glint terms
 
         # Diffuse portion
-        # ep = (
-        #     (L_dif_dir + L_dif_dif) + ((L_tot * background) / (1 - background))
-        # ) * rho_ls
+        ep = (
+            (L_dif_dir + L_dif_dif) + ((L_tot * background) / (1 - background))
+        ) * rho_ls
         # If you ignore multi-scattering
-        ep = (L_dif_dir + L_dif_dif) * rho_ls
+        # ep = (L_dif_dir + L_dif_dif) * rho_ls
         ep = np.reshape(ep, (len(ep), 1))
         H = np.append(H, ep, axis=1)
 

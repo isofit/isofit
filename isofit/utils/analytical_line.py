@@ -41,17 +41,17 @@ from isofit.core.common import (
 from isofit.core.fileio import IO, initialize_output, write_bil_chunk
 from isofit.core.forward import ForwardModel
 from isofit.core.geometry import Geometry
+from isofit.core.multistate import (
+    construct_full_state,
+    index_spectra_by_surface,
+    update_config_for_surface,
+)
 from isofit.inversion.inverse_simple import (
     invert_algebraic,
     invert_analytical,
     invert_simple,
 )
 from isofit.utils.atm_interpolation import atm_interpolation
-from isofit.utils.multistate import (
-    construct_full_state,
-    index_spectra_by_surface,
-    update_config_for_surface,
-)
 
 
 def retrieve_winidx(config):

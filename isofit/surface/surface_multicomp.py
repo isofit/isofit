@@ -319,8 +319,8 @@ class MultiComponentSurface(Surface):
         background = s * rho_bg
         """
         # If you ignore multi-scattering
-        # theta = L_tot + (L_tot * background / (1 - background))
-        theta = L_tot
+        theta = L_tot + (L_tot * background / (1 - background))
+        # theta = L_tot
 
         H = np.eye(self.n_wl, self.n_wl)
         H = theta[:, np.newaxis] * H

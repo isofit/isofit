@@ -30,6 +30,17 @@ from isofit.core.common import envi_header
 from isofit.core.instrument import Instrument
 from isofit.surface import Surface
 
+SURFACE_MAPPING = {
+    "water": "glint_model_surface",
+    "glint": "glint_model_surface",
+    "land": "multicomponent_surface",
+    "nonwater": "multicomponent_surface",
+    "cloud": "multicomponent_surface",
+    "uniform_surface": "multicomponent_surface",
+    "glint_model_surface": "glint_model_surface",
+    "multicomponent_surface": "multicomponent_surface",
+}
+
 
 def construct_full_state(full_config):
     """
@@ -215,7 +226,7 @@ def update_config_for_surface(config, surface_class_str, clouds=True):
     Returns:
         config: (Config object) Update full isofit config object
     """
-    if not config.forward_model.surface.multi_surface_flag:
+    if not config.forward_model.surface.surface_class_file:
         return config
 
     isurface = config.forward_model.surface.Surfaces.get(surface_class_str)

@@ -39,13 +39,13 @@ from isofit import checkNumThreads, ray
 from isofit.configs import configs
 from isofit.core.fileio import IO
 from isofit.core.forward import ForwardModel
-from isofit.data import env
-from isofit.inversion import Inversion
-from isofit.utils.multistate import (
+from isofit.core.multistate import (
     construct_full_state,
     index_spectra_by_surface,
     update_config_for_surface,
 )
+from isofit.data import env
+from isofit.inversion import Inversion
 
 
 class Isofit:
@@ -192,13 +192,11 @@ class Isofit:
                     for l in range(len(index_sets) - 1)
                 ]
 
-            # If multisurface, update config to reflect surface
-            if input_config.forward_model.surface.multi_surface_flag:
-                config = update_config_for_surface(
-                    deepcopy(input_config), surface_class_str
-                )
-            else:
-                config = input_config
+            # If multisurface, update config to reflect surface.
+            # Otherwise, returns itself
+            config = update_config_for_surface(
+                deepcopy(input_config), surface_class_str
+            )
 
             # Set forward model
             self.fm = fm = ForwardModel(config)

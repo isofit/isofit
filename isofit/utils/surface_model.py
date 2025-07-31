@@ -49,8 +49,8 @@ def surface_model(
     config_path: str,
     wavelength_path: str = None,
     output_path: str = None,
-    seed=13,
-    multisurface=False,
+    seed: int = 13,
+    multisurface: bool = False,
 ) -> None:
     """The surface model tool contains everything you need to build basic
     multicomponent (i.e. colleciton of Gaussian) surface priors for the
