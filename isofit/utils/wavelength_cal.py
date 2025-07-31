@@ -157,7 +157,7 @@ def average_columns(
 
         # Stay robust to nodata values - non-finite, header
         # specified nodata, and -9999 (in case unspecified)
-        nodata = np.isfninite(mm) == False
+        nodata = np.isfinite(mm) == False
         nodata[mm == -9999] = True
         if "data ignore value" in in_ds.metadata:
             nodata[mm == in_ds.metadata["data ignore value"]] = True
