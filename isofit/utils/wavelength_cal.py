@@ -155,12 +155,12 @@ def average_columns(
         in_ds = envi.open(envi_header(infile), infile)
         mm = in_ds.open_memmap(interleave="bip").copy()
 
-        # Stay robust to nodata values - non-finite, header 
+        # Stay robust to nodata values - non-finite, header
         # specified nodata, and -9999 (in case unspecified)
         nodata = np.isfninite(mm) == False
         nodata[mm == -9999] = True
-        if 'data ignore value' in in_ds.metadata:
-            nodata[mm == in_ds.metadata['data ignore value']] = True
+        if "data ignore value" in in_ds.metadata:
+            nodata[mm == in_ds.metadata["data ignore value"]] = True
         mm[nodata] = np.nan
         rows = mm.shape[0]
         avg = np.nanmean(mm, axis=0)
