@@ -687,7 +687,7 @@ def get_wavelength_adjustment(
     # optionally filter
 
     # run calibration()
-    wl, fwhm = isofit.calabration(mean_state)
+    wl, fwhm = instrument.calibration(mean_state)
 
     # write file
     tmpl.write_wavelength_file(output_file, wl, fwhm)
@@ -706,7 +706,7 @@ def get_wavelength_adjustment(
     help="Prints the arguments list without executing the command",
     is_flag=True,
 )
-def cli(debug_args, profile, **kwargs):
+def cli_get_wavelength_adjustment(debug_args, profile, **kwargs):
     if debug_args:
         print("Arguments to be passed:")
         for key, value in kwitems():
@@ -759,7 +759,7 @@ def cli(debug_args, profile, **kwargs):
     is_flag=True,
 )
 @click.option("--profile")
-def cli(debug_args, profile, **kwargs):
+def cli_wavelength_cal(debug_args, profile, **kwargs):
     if debug_args:
         print("Arguments to be passed:")
         for key, value in kwitems():
