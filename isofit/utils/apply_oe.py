@@ -315,7 +315,7 @@ def apply_oe(
             del svf_dataset
             if not (svf_size[0] == rdn_size[0] and svf_size[1] == rdn_size[1]):
                 err_str = (
-                    f"Input file: {skyview_factor} size is {input_size}, which does not"
+                    f"Input file: {skyview_factor} size is {svf_size}, which does not"
                     f" match input_radiance size: {rdn_size}"
                 )
                 raise ValueError(err_str)
