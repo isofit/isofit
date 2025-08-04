@@ -4,7 +4,6 @@ import threading
 import time
 from pathlib import Path
 from types import FunctionType
-from typing import Union
 
 import psutil
 
@@ -58,7 +57,7 @@ class ResourceTracker:
 
     def __init__(
         self,
-        callback: Union[FunctionType, MethodType],
+        callback: FunctionType | MethodType,
         interval: float = 2,
         round: float = 2,
         summarize: bool = True,
