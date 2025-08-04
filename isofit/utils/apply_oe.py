@@ -8,6 +8,7 @@ import os
 import subprocess
 from datetime import datetime
 from os.path import exists, join
+from pathlib import Path
 from shutil import copyfile
 
 import click
@@ -18,6 +19,7 @@ from spectral.io import envi
 import isofit.utils.template_construction as tmpl
 from isofit.core import isofit, units
 from isofit.core.common import envi_header
+from isofit.debug.resource_tracker import FileResources
 from isofit.utils import analytical_line as ALAlg
 from isofit.utils import empirical_line as ELAlg
 from isofit.utils import extractions, interpolate_spectra, segment
@@ -274,6 +276,12 @@ def apply_oe(
         filename=log_file,
         datefmt="%Y-%m-%d,%H:%M:%S",
     )
+
+    # Track system resources to a file adjacent to the log file
+    fr = None
+    if log_file:
+        fr = FileResources(Path(log_file).with_suffix(".resources.jsonl"), reset=True)
+        fr.start()
 
     logging.info("Checking input data files...")
     rdn_dataset = envi.open(envi_header(input_radiance))
@@ -790,6 +798,9 @@ def apply_oe(
 
     logging.info("Done.")
     ray.shutdown()
+
+    if fr:
+        fr.stop()
 
 
 # Input arguments
