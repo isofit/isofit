@@ -3,7 +3,7 @@ import json
 import threading
 import time
 from pathlib import Path
-from types import FunctionType
+from types import FunctionType, MethodType
 
 import psutil
 
