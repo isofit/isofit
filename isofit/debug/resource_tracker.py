@@ -116,7 +116,7 @@ class ResourceTracker:
                             "pid": child.pid,
                             "name": child.name(),
                             "cpu": child.cpu_percent(),
-                            "memory": child.memory_info().rss / self.unitValue,
+                            "mem": child.memory_info().rss / self.unitValue,
                             "status": child.status(),
                         }
                     )
