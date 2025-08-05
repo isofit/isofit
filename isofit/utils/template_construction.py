@@ -501,7 +501,7 @@ def build_presolve_config(
     paths: Pathnames,
     h2o_lut_grid: np.array,
     n_cores: int = -1,
-    use_emp_line: bool = False,
+    use_superpixels: bool = False,
     surface_category="multicomponent_surface",
     emulator_base: str = None,
     uncorrelated_radiometric_uncertainty: float = 0.0,
@@ -517,7 +517,7 @@ def build_presolve_config(
         paths: object containing references to all relevant file locations
         h2o_lut_grid: the water vapor look up table grid isofit should use for this solve
         n_cores: number of cores to use in processing
-        use_emp_line: flag whether or not to set up for the empirical line estimation
+        use_superpixels: flag whether or not to use superpixels for the solution
         surface_category: type of surface to use
         emulator_base: the basename of the emulator, if used
         uncorrelated_radiometric_uncertainty: uncorrelated radiometric uncertainty parameter for isofit
@@ -529,7 +529,7 @@ def build_presolve_config(
 
     # Determine number of spectra included in each retrieval.  If we are
     # operating on segments, this will average down instrument noise
-    if use_emp_line:
+    if use_superpixels:
         spectra_per_inversion = segmentation_size
     else:
         spectra_per_inversion = 1
@@ -658,7 +658,7 @@ def build_presolve_config(
             "radiometry_correction_file"
         ] = paths.rdn_factors_path
 
-    if use_emp_line:
+    if use_superpixels:
         isofit_config_h2o["input"]["measured_radiance_file"] = paths.rdn_subs_path
         isofit_config_h2o["input"]["loc_file"] = paths.loc_subs_path
         isofit_config_h2o["input"]["obs_file"] = paths.obs_subs_path
@@ -690,7 +690,7 @@ def build_main_config(
     mean_latitude: float = None,
     mean_longitude: float = None,
     dt: datetime = None,
-    use_emp_line: bool = True,
+    use_superpixels: bool = True,
     n_cores: int = -1,
     surface_category="multicomponent_surface",
     emulator_base: str = None,
@@ -719,7 +719,7 @@ def build_main_config(
         mean_latitude:                        the latitude isofit should use for this solve
         mean_longitude:                       the longitude isofit should use for this solve
         dt:                                   the datetime object corresponding to this flightline to use for this solve
-        use_emp_line:                         flag whether or not to set up for the empirical line estimation
+        use_superpixels:                      flag whether or not to use superpixels for the solution
         n_cores:                              the number of cores to use during processing
         surface_category:                     type of surface to use
         emulator_base:                        the basename of the emulator, if used
@@ -733,7 +733,7 @@ def build_main_config(
 
     # Determine number of spectra included in each retrieval.  If we are
     # operating on segments, this will average down instrument noise
-    if use_emp_line:
+    if use_superpixels:
         spectra_per_inversion = segmentation_size
     else:
         spectra_per_inversion = 1
@@ -949,7 +949,7 @@ def build_main_config(
         },
     }
 
-    if use_emp_line:
+    if use_superpixels:
         isofit_config_modtran["input"]["measured_radiance_file"] = paths.rdn_subs_path
         isofit_config_modtran["input"]["loc_file"] = paths.loc_subs_path
         isofit_config_modtran["input"]["obs_file"] = paths.obs_subs_path
@@ -960,9 +960,6 @@ def build_main_config(
         isofit_config_modtran["output"][
             "estimated_reflectance_file"
         ] = paths.rfl_subs_path
-        isofit_config_modtran["output"][
-            "atmospheric_coefficients_file"
-        ] = paths.atm_coeff_path
     else:
         isofit_config_modtran["input"][
             "measured_radiance_file"
@@ -1699,3 +1696,128 @@ def reassemble_cube(matching_indices: np.array, paths: Pathnames):
             output_mm[matching_indices == _st, ...] = input_ds.open_memmap(
                 interleave="bip"
             )[:, :, : int(header["bands"])].copy()[:, 0, :]
+
+
+def sensor_name_to_dt(sensor: str, fid: str):
+    inversion_window_update = None
+    if sensor == "ang":
+        # parse flightline ID (AVIRIS-NG assumptions)
+        dt = datetime.strptime(fid[3:], "%Y%m%dt%H%M%S")
+    elif sensor == "av3":
+        # parse flightline ID (AVIRIS-3 assumptions)
+        dt = datetime.strptime(fid[3:], "%Y%m%dt%H%M%S")
+        inversion_window_update = [[380.0, 1350.0], [1435, 1800.0], [1970.0, 2500.0]]
+    elif sensor == "av5":
+        # parse flightline ID (AVIRIS-5 assumptions)
+        dt = datetime.strptime(fid[3:], "%Y%m%dt%H%M%S")
+    elif sensor == "avcl":
+        # parse flightline ID (AVIRIS-Classic assumptions)
+        dt = datetime.strptime("20{}t000000".format(fid[1:7]), "%Y%m%dt%H%M%S")
+    elif sensor == "emit":
+        # parse flightline ID (EMIT assumptions)
+        dt = datetime.strptime(fid[:19], "emit%Y%m%dt%H%M%S")
+        INVERSION_WINDOWS = [[380.0, 1325.0], [1435, 1770.0], [1965.0, 2500.0]]
+    elif sensor == "enmap":
+        # parse flightline ID (EnMAP assumptions)
+        dt = datetime.strptime(fid[:15], "%Y%m%dt%H%M%S")
+    elif sensor == "hyp":
+        # parse flightline ID (Hyperion assumptions)
+        dt = datetime.strptime(fid[10:17], "%Y%j")
+    elif sensor == "neon":
+        # parse flightline ID (NEON assumptions)
+        dt = datetime.strptime(fid, "NIS01_%Y%m%d_%H%M%S")
+    elif sensor == "prism":
+        # parse flightline ID (PRISM assumptions)
+        dt = datetime.strptime(fid[3:], "%Y%m%dt%H%M%S")
+    elif sensor == "prisma":
+        # parse flightline ID (PRISMA assumptions)
+        dt = datetime.strptime(fid, "%Y%m%d%H%M%S")
+    elif sensor == "gao":
+        # parse flightline ID (GAO/CAO assumptions)
+        dt = datetime.strptime(fid[3:-5], "%Y%m%dt%H%M%S")
+    elif sensor == "oci":
+        # parse flightline ID (PACE OCI assumptions)
+        dt = datetime.strptime(fid[9:24], "%Y%m%dT%H%M%S")
+    elif sensor == "tanager":
+        # parse flightline ID (Tanager assumptions)
+        dt = datetime.strptime(fid[:15], "%Y%m%d_%H%M%S")
+    elif sensor[:3] == "NA-":
+        dt = datetime.strptime(sensor[3:], "%Y%m%d")
+    else:
+        raise ValueError(
+            "Datetime object could not be obtained. Please check file name of input"
+            " data."
+        )
+    return dt, inversion_window_update
+
+
+def get_wavelengths(
+    envi_file: str, wavelength_path: str = None
+) -> (np.array, np.array):
+    """Get wavelengths and FWHM from the header of an ENVI file
+
+    Args:
+        envi_file: path to the ENVI file to read wavelengths from
+        wavelength_path: optional path to a file containing wavelengths and FWHM
+
+    Returns:
+        tuple containing:
+            wl - array of wavelengths in nm
+            fwhm - array of full width at half maximum in nm
+    """
+
+    # get radiance file, wavelengths, fwhm
+    radiance_dataset = envi.open(envi_header(envi_file))
+    wl_ds = np.array([float(w) for w in radiance_dataset.metadata["wavelength"]])
+    if wavelength_path:
+        if os.path.isfile(wavelength_path):
+            chn, wl, fwhm = np.loadtxt(wavelength_path).T
+            if len(chn) != len(wl_ds):
+                raise ValueError(
+                    "Number of channels in wavelength file do not match"
+                    " wavelengths in radiance cube. Please adjust your wavelength file."
+                )
+        else:
+            pass
+    else:
+        logging.info(
+            "No wavelength file provided. Obtaining wavelength grid from ENVI header of radiance cube."
+        )
+        wl = wl_ds
+        if "fwhm" in radiance_dataset.metadata:
+            fwhm = np.array([float(f) for f in radiance_dataset.metadata["fwhm"]])
+        elif "FWHM" in radiance_dataset.metadata:
+            fwhm = np.array([float(f) for f in radiance_dataset.metadata["FWHM"]])
+        else:
+            fwhm = np.ones(wl.shape) * (wl[1] - wl[0])
+
+    # Close out radiance dataset to avoid potential confusion
+    del radiance_dataset
+
+    # Convert to microns if needed
+    if wl[0] > 100:
+        logging.info("Wavelength units of nm inferred...converting to microns")
+        wl = units.nm_to_micron(wl)
+        fwhm = units.nm_to_micron(fwhm)
+
+    return wl, fwhm
+
+
+def write_wavelength_file(filename, wl, fwhm):
+    """Write a wavelength file in isofit-expected format
+    Units can be either nm or microns, but should be the same
+
+    Args:
+        filename: path to the file to write
+        wl: array of wavelengths
+        fwhm: array of full width at half maximum
+
+    Returns:
+        None
+    """
+    # write wavelength file
+    wl_data = np.concatenate(
+        [np.arange(len(wl))[:, np.newaxis], wl[:, np.newaxis], fwhm[:, np.newaxis]],
+        axis=1,
+    )
+    np.savetxt(filename, wl_data, delimiter=" ")
