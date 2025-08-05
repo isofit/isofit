@@ -1,5 +1,6 @@
 import atexit
 import json
+import os
 import threading
 import time
 from pathlib import Path
@@ -24,6 +25,8 @@ class ResourceTracker:
                     Main process ID
                 name : str
                     Main process name
+                cores : int
+                    Number of CPU cores available via os.cpu_count()
                 mem : float
                     Main process memory used
                 cpu : float
@@ -90,10 +93,10 @@ class ResourceTracker:
 
     def _track(self):
         """
-        Memory tracker intended to be set in a thread
+        System resource tracker intended to be set in a thread
         """
         proc = psutil.Process()
-        info = {"pid": proc.pid, "name": proc.name()}
+        info = {"pid": proc.pid, "name": proc.name(), "cores": os.cpu_count()}
 
         while not self.stopEvent.is_set():
             # Main process
