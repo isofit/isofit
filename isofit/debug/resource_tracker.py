@@ -4,7 +4,8 @@ import os
 import threading
 import time
 from pathlib import Path
-from types import FunctionType, MethodType
+from typing import Callable
+from warnings import warn
 
 import psutil
 
@@ -15,10 +16,10 @@ class ResourceTracker:
 
     Parameters
     ----------
-    callback : function
-        Function to call on each resource refresh. Signature must be:
+    callback : Callable
+        Function to call on each resource refresh. Signature must accept:
 
-            function(info : dict) -> None
+            callable(info : dict) -> None
 
             where the info dict consists of:
                 pid : int
@@ -49,31 +50,42 @@ class ResourceTracker:
             Total memory of the system is the sum([mem, mem_used, mem_free])
     interval : int | float, default=2
         Interval frequency in seconds to check resources
+        Must be greater than 0. Values less than 0.1 risk high CPU usage and skewing
+        polled results
     round : int | bool, default=2
         Round the memory variables to this many decimals. Set to False or 0 to disable
         True will be set to 1
     summarize : bool, default=True
         Includes summary statistics such as the sum of all children
+    allow_unsafe : bool, default=False
+        Bypasses the exception and allows unsafe interval values (less than 0.1)
+        Not recommended
     """
 
     thread = None
 
     def __init__(
         self,
-        callback: FunctionType | MethodType,
+        callback: Callable,
         interval: float = 2,
-        round: float = 2,
+        round: bool | int = 2,
         summarize: bool = True,
+        allow_unsafe: bool = False,
     ):
-        if not isinstance(callback, (FunctionType, MethodType)):
-            raise AttributeError(
-                f"The callback parameter must be a function, got {type(callback)} instead"
-            )
+        if not callable(callback):
+            raise AttributeError(f"The callback parameter must be a callable")
 
         if not isinstance(interval, (int, float)):
             raise AttributeError(f"The interval parameter must be an integer")
         if interval <= 0:
             raise AttributeError(f"The interval parameter must be greater than 0")
+        if interval < 0.1:
+            msg = "High CPU usage risk with an interval less than 0.1"
+            if allow_unsafe:
+                warn(msg)
+            else:
+                msg += " - If this is intended, set allow_unsafe=True"
+                raise ValueError(msg)
 
         if isinstance(round, bool):
             round = int(round)
@@ -183,7 +195,7 @@ class FileResources(ResourceTracker):
     Parameters
     ----------
     file : str
-        Path to a JSON file to log resource information to
+        Path to a JSONL file to log resource information to
     reset : bool, default=False
         If the file exists, reset it
     """
@@ -220,7 +232,7 @@ class FileResources(ResourceTracker):
 def stream(file: str, sleep: float = 0.2) -> dict:
     """
     Generator that yields parsed JSONL objects from a growing json file produced by
-    FileMemory
+    FileResources
 
     Parameters
     ----------
@@ -235,14 +247,8 @@ def stream(file: str, sleep: float = 0.2) -> dict:
         Parsed JSONL object from each line
     """
     with open(file, "r") as f:
-        # Move to the end of file initially
-        f.seek(0, 2)
-
         while True:
             line = f.readline()
-            if not line:
-                time.sleep(sleep)
-                continue
             try:
                 yield json.loads(line)
             except json.JSONDecodeError:
