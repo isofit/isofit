@@ -255,7 +255,7 @@ class RadiativeTransferEngine:
         # Write the NetCDF information to the log file so devs have that info during debugging
         # Have to create a fileobj to capture the text because it doesn't return (prints straight to stdout by default)
         info = io.StringIO()
-        ds.info(info)
+        self.lut.info(info)
         Logger.debug(f"LUT information:\n{info.getvalue()}")
 
         # Limit the wavelength per the config, does not affect data on disk
