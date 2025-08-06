@@ -20,6 +20,7 @@
 #
 from __future__ import annotations
 
+import io
 import logging
 import os
 import sys
@@ -252,7 +253,10 @@ class RadiativeTransferEngine:
             self.runSimulations()
 
         # Write the NetCDF information to the log file so devs have that info during debugging
-        Logger.debug(f"LUT information:\n{self.lut.info()}")
+        # Have to create a fileobj to capture the text because it doesn't return (prints straight to stdout by default)
+        info = io.StringIO()
+        ds.info(info)
+        Logger.debug(f"LUT information:\n{info.getvalue()}")
 
         # Limit the wavelength per the config, does not affect data on disk
         if engine_config.wavelength_range is not None:
