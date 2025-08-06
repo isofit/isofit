@@ -15,7 +15,7 @@ from netCDF4 import Dataset
 
 from isofit import __version__
 
-Logger = logging.getLogger(__file__)
+Logger = logging.getLogger(__name__)
 
 
 # Statically store expected keys of the LUT file and their fill values
@@ -61,7 +61,8 @@ class Create:
         onedim: dict = {},
         alldim: dict = {},
         zeros: List[str] = [],
-        reduce: bool = ["fwhm"],
+        compression: str = "zlib",
+        complevel: int = None,
     ):
         """
         Prepare a LUT netCDF
@@ -84,9 +85,11 @@ class Create:
             Dictionary of multi-dimensional data. Appends/replaces to the current Create.alldim list.
         zeros : List[str], optional, default=[]
             List of zero values. Appends to the current Create.zeros list.
-        reduce : bool or list, optional, default=['fwhm']
-            Reduces the initialized Dataset by dropping the variables to reduce overall memory usage.
-            If True, drops all variables. If list, drop everything but these.
+        compression : str, default="zlib"
+            Compression method to use to the NetCDF. Check https://unidata.github.io/netcdf4-python/
+            for available options
+        complevel : int, default=None
+            Compression to use. Impact and levels vary per method.
         """
         # Track the ISOFIT version that created this LUT
         attrs["ISOFIT version"] = __version__
@@ -103,6 +106,9 @@ class Create:
         self.consts = {**Keys.consts, **consts}
         self.onedim = {**Keys.onedim, **onedim}
         self.alldim = {**Keys.alldim, **alldim}
+
+        self.compression = compression
+        self.complevel = complevel
 
         # Save ds for backwards compatibility (to work with extractGrid, extractPoints)
         self.initialize()
@@ -122,7 +128,8 @@ class Create:
                 dimensions=dims,
                 fill_value=fill_value,
                 chunksizes=chunksizes,
-                compression="zlib",
+                compression=self.compression,
+                complevel=self.complevel,
             )
             var[:] = vals
 

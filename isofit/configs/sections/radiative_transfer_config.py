@@ -103,6 +103,14 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         of the keys in radiative_transfer->statevector.  If not specified, uses all keys from
         radiative_transfer->statevector.  Auto-sorted (alphabetically) below."""
 
+        self._lut_compression_type = str
+        self.lut_compression = "zlib"
+        """str: Compression method to use for the LUT NetCDF"""
+
+        self._lut_complevel_type = int
+        self.lut_complevel = None
+        """int: The compression level to use for the chosen method"""
+
         # MODTRAN parameters
         self._aerosol_template_file_type = str
         self.aerosol_template_file = None
@@ -262,6 +270,9 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
                         " must have multipart_transmittance set as True if"
                         " forward_model.topograph_model is set to True"
                     )
+
+        if isinstance(self.lut_complevel, int) and self.lut_complevel < 1:
+            errors.append("The LUT complevel must be and int greater than 0")
 
         return errors
 
