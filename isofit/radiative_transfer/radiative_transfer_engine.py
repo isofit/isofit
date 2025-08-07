@@ -251,6 +251,9 @@ class RadiativeTransferEngine:
             # Create and populate a LUT file
             self.runSimulations()
 
+        # Write the NetCDF information to the log file so devs have that info during debugging
+        Logger.debug(f"LUT information:\n{self.lut.info()}")
+
         # Limit the wavelength per the config, does not affect data on disk
         if engine_config.wavelength_range is not None:
             Logger.info(
@@ -531,6 +534,8 @@ class RadiativeTransferEngine:
 
             point = {key: 0 for key in self.lut_names}
             self.lut.writePoint(point, data=post)
+
+        self.lut.finalize()
 
         # Reload the LUT now that it's populated
         Logger.debug("Reloading LUT")

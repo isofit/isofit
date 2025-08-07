@@ -1,6 +1,7 @@
 """ISOFIT command line interface."""
 
 import importlib
+import logging
 import os
 import sys
 
@@ -25,12 +26,35 @@ class CLI(click.Group):
     Reference: https://click.palletsprojects.com/en/stable/complex/#defining-the-lazy-group
     """
 
+    laziest = False
+
     def __init__(self, *args, lazy_subcommands=None, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.lazy_subcommands = lazy_subcommands or {}
+        self.lazy = lazy_subcommands or {}
+
+    def main(self, *args, **kwargs):
+        """
+        Loads the default ini and checks for the cli_laziest before shell tab
+        completion, which may speed it up
+        """
+        env.load()
+
+        self.laziest = env["cli_laziest"] == "1"
+
+        return super().main(*args, **kwargs)
 
     def invoke(self, ctx):
+        """
+        Loads the ISOFIT ini into env and applies any overrides before invoking any
+        subcommands
+
+        Parameters
+        ----------
+        ctx : click.Context
+            The Click context
+        """
+        # Pop these to not pass them along to subcommands
         ini = ctx.params.pop("ini")
         base = ctx.params.pop("base")
         section = ctx.params.pop("section")
@@ -38,6 +62,7 @@ class CLI(click.Group):
         keys = ctx.params.pop("keys")
         save = ctx.params.pop("save")
         preview = ctx.params.pop("preview")
+        self.debug = ctx.params.pop("debug")
 
         env.load(ini, section)
 
@@ -51,6 +76,16 @@ class CLI(click.Group):
         for key, value in keys:
             env.changeKey(key, value)
 
+        # Can permanently enable the laziest flag using the ini via `isofit --keys cli_laziest 1`
+        # Disable via `isofit --keys cli_laziest 0`
+        self.laziest = ctx.params.pop("laziest") or env["cli_laziest"] == "1"
+
+        # --help always disables lazier loading
+        # protected_args is populated when a subcommand is invoked
+        # do NOT laziest, else click.groups break
+        if ctx.params["help"] or ctx.protected_args:
+            self.laziest = False
+
         if preview:
             print(env)
         else:
@@ -62,27 +97,88 @@ class CLI(click.Group):
 
         super().invoke(ctx)
 
-    def _lazy_load(self, cmd_name):
-        try:
-            path = self.lazy_subcommands[cmd_name]
-            func = "cli"
-            if ":" in path:
-                path, func = path.split(":")
-
-            module = importlib.import_module(path)
-            return getattr(module, func)
-        except Exception as e:
-            pass
-            # print(f"Failed {cmd_name}, reason: {e}")
-
     def list_commands(self, ctx):
+        """
+        List the names of available commands
+
+        Parameters
+        ----------
+        ctx : click.Context
+            The Click context
+
+        Returns
+        -------
+        list of str
+            The names of available lazy-loaded commands
+        """
         base = super().list_commands(ctx)
-        lazy = list(self.lazy_subcommands)
+        lazy = list(self.lazy)
         return base + lazy
 
+    def resolve(self, cmd_name):
+        """
+        Resolves the import of a click function from a module string
+
+        The import path to a Click command is to be in the format 'module:function'
+        If 'function' is not provided, defaults seeking for a function named 'cli'
+
+        Parameters
+        ----------
+        cmd_name : str
+            Command to retrieve
+
+        Returns
+        -------
+        function
+            Resulting Click function imported from a module
+        """
+        path = self.lazy[cmd_name]
+        func = "cli"
+        if ":" in path:
+            path, func = path.split(":")
+
+        module = importlib.import_module(path)
+
+        return getattr(module, func)
+
     def get_command(self, ctx, cmd_name):
-        if cmd_name in self.lazy_subcommands:
-            return self._lazy_load(cmd_name)
+        """
+        Get a lazily-loaded command by name
+
+        Parameters
+        ----------
+        ctx : click.Context
+            The Click context
+        cmd_name : str
+            Name of the command to retrieve
+
+        Returns
+        -------
+        click.Command or None
+            The command object or None if not found
+        """
+        command = self.lazy.get(cmd_name)
+
+        if command:
+            # ctx.protected_args needs to be checked here for tab completion cases
+            if self.laziest and not ctx.protected_args:
+                # Just create a fake command for Click
+                return click.Command(cmd_name)
+
+            try:
+                return self.resolve(cmd_name)
+            except ModuleNotFoundError:
+                if self.debug:
+                    if cmd_name == "plot":
+                        logging.exception(
+                            "Isoplots does not appear to be installed, install it via `isofit download plots`"
+                        )
+            except:
+                if self.debug:
+                    logging.exception(
+                        f"Failed to import {cmd_name} from {command.path}:"
+                    )
+
         return super().get_command(ctx, cmd_name)
 
 
@@ -101,6 +197,8 @@ class CLI(click.Group):
         "analytical_line": "isofit.utils.analytical_line",
         "apply_oe": "isofit.utils.apply_oe",
         "skyview": "isofit.utils.skyview",
+        "wavelength_cal": "isofit.utils.wavelength_cal:cli_wavelength_cal",
+        "get_wavelength_adjustment": "isofit.utils.wavelength_cal:cli_get_wavelength_adjustment",
         "6s_to_srtmnet": "isofit.utils.convert_6s_to_srtmnet",
         "empirical_line": "isofit.utils.empirical_line",
         "ewt": "isofit.utils.ewt_from_reflectance",
@@ -138,6 +236,12 @@ class CLI(click.Group):
     help="Prints the environment that will be used. This disables saving",
 )
 @click.option("--version", is_flag=True, help="Print the installed ISOFIT version")
+@click.option("--debug", is_flag=True, help="Enables debug logging for the CLI")
+@click.option(
+    "--laziest",
+    is_flag=True,
+    help="Changes the CLI to be completely lazy, greatly speeding up the responsiveness but at the cost of not validating subcommands",
+)
 @click.option("--help", is_flag=True, help="Show this message and exit")
 def cli(ctx, version, help, **kwargs):
     """\
