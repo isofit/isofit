@@ -87,7 +87,9 @@ def validate(path=None, size="both", debug=print, error=print, **_):
     workflows will never detect updates.
     """
     if size == "both":
-        return validate(path, "small") & validate(path, "medium")
+        small = validate(path, "small", debug=debug, error=error)
+        medium = validate(path, "medium", debug=debug, error=error)
+        return small & medium
 
     if path is None:
         path = env.imagecube
