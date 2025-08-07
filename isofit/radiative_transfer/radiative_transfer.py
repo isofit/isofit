@@ -321,6 +321,9 @@ class RadiativeTransfer:
                         r["transm_down_dif"], coszen, self.solar_irr
                     )
 
+                # Apply sky view factor to downward diffuse for 1C case.
+                L_down_dif *= geom.sky_view_factor
+
                 L_down = L_down_dir + L_down_dif
 
                 L_downs.append(L_down)

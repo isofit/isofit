@@ -490,6 +490,10 @@ class IO:
             if np.allclose(data[source], self.input_datasets[source].flag):
                 return None
 
+        # Check if Sky view is used, else it is equal to 1.0.
+        if "skyview_factor_file" not in data or data["skyview_factor_file"] is None:
+            data["skyview_factor_file"] = 1.0
+
         # We build the geometry object for this spectrum.  For files not
         # specified in the input configuration block, the associated entries
         # will be 'None'. The Geometry object will use reasonable defaults.
@@ -498,6 +502,7 @@ class IO:
             loc=data["loc_file"],
             esd=self.esd,
             bg_rfl=data["background_reflectance_file"],
+            svf=data["skyview_factor_file"],
         )
 
         self.current_input_data.geom = geom

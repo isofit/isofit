@@ -8,7 +8,7 @@ import logging
 import os
 import subprocess
 from datetime import datetime
-from os.path import abspath, exists, join, split
+from os.path import abspath, exists, join, split, dirname
 from shutil import copyfile
 from sys import platform
 from typing import List
@@ -50,6 +50,7 @@ class Pathnames:
         channelized_uncertainty_path,
         ray_temp_dir,
         interpolate_inplace,
+        skyview_factor,
     ):
         # Determine FID based on sensor name
         if sensor == "ang":
@@ -157,6 +158,15 @@ class Pathnames:
 
         self.model_discrepancy_working_path = abspath(
             join(self.data_directory, "model_discrepancy.mat")
+        )
+
+        if skyview_factor:
+            self.svf_working_path = abspath(skyview_factor)
+        else:
+            self.svf_working_path = None
+
+        self.svf_subs_path = abspath(
+            join(self.input_data_directory, self.fid + "_subs_svf")
         )
 
         self.rdn_subs_path = abspath(
@@ -953,6 +963,8 @@ def build_main_config(
         isofit_config_modtran["input"]["measured_radiance_file"] = paths.rdn_subs_path
         isofit_config_modtran["input"]["loc_file"] = paths.loc_subs_path
         isofit_config_modtran["input"]["obs_file"] = paths.obs_subs_path
+        if paths.svf_working_path:
+            isofit_config_modtran["input"]["skyview_factor_file"] = paths.svf_subs_path
         isofit_config_modtran["output"]["estimated_state_file"] = paths.state_subs_path
         isofit_config_modtran["output"][
             "posterior_uncertainty_file"
@@ -966,6 +978,10 @@ def build_main_config(
         ] = paths.radiance_working_path
         isofit_config_modtran["input"]["loc_file"] = paths.loc_working_path
         isofit_config_modtran["input"]["obs_file"] = paths.obs_working_path
+        if paths.svf_working_path:
+            isofit_config_modtran["input"][
+                "skyview_factor_file"
+            ] = paths.svf_working_path
         isofit_config_modtran["output"][
             "posterior_uncertainty_file"
         ] = paths.uncert_working_path

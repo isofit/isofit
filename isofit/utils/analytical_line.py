@@ -57,6 +57,7 @@ def analytical_line(
     output_rfl_file: str = None,
     output_unc_file: str = None,
     atm_file: str = None,
+    skyview_factor_file: str = None,
     loglevel: str = "INFO",
     logfile: str = None,
     initializer: str = "algebraic",
@@ -236,6 +237,7 @@ def analytical_line(
             loglevel,
             logfile,
             initializer,
+            skyview_factor_file,
         )
     ]
     workers = ray.util.ActorPool([Worker.remote(*wargs) for _ in range(n_workers)])
@@ -277,6 +279,7 @@ class Worker(object):
         loglevel: str,
         logfile: str,
         initializer: str,
+        skyview_factor_file: str,
     ):
         """
         Worker class to help run a subset of spectra.
@@ -317,6 +320,8 @@ class Worker(object):
         self.subs_state_file = subs_state_file
         self.lbl_file = lbl_file
 
+        self.skyview_factor_file = skyview_factor_file
+
         # If I only want to use some of the atm_interp bands
         # Empty if all
         self.atm_bands = []
@@ -347,6 +352,14 @@ class Worker(object):
             interleave="bip"
         )
         lbl = envi.open(envi_header(self.lbl_file)).open_memmap(interleave="bip")
+
+        # Open skyview file for ALAlg, or create an array of 1s.
+        if self.skyview_factor_file:
+            svf = envi.open(envi_header(self.skyview_factor_file)).open_memmap(
+                interleave="bip"
+            )
+        else:
+            svf = np.ones((rdn.shape[0], rdn.shape[1]), dtype=float)
 
         start_line, stop_line = startstop
         output_rfl = np.zeros((1, rt_state.shape[1], len(self.fm.idx_surf_rfl))) - 9999
@@ -389,7 +402,9 @@ class Worker(object):
                 if np.all(meas < 0):
                     continue
 
-                geom = Geometry(obs=obs[r, c, :], loc=loc[r, c, :], esd=esd)
+                geom = Geometry(
+                    obs=obs[r, c, :], loc=loc[r, c, :], esd=esd, svf=svf[r, c]
+                )
 
                 # "Atmospheric" state ALWAYS comes from all bands in the
                 # atm_interpolated file
@@ -510,6 +525,7 @@ class Worker(object):
 @click.option("--smoothing_sigma", help="TODO", type=int, default=2)
 @click.option("--output_rfl_file", help="TODO", type=str, default=None)
 @click.option("--output_unc_file", help="TODO", type=str, default=None)
+@click.option("--skyview_factor_file", help="TODO", type=str, default=None)
 @click.option("--atm_file", help="TODO", type=str, default=None)
 @click.option("--loglevel", help="TODO", type=str, default="INFO")
 @click.option("--logfile", help="TODO", type=str, default=None)

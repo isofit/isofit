@@ -88,6 +88,13 @@ class InputConfig(BaseConfigSection):
         Used to make minor channelized corrections to account for slight systematic errors not captured in calibration.
         """
 
+        self._skyview_factor_file_type = str
+        self.skyview_factor_file = None
+        """
+        str: Input Skyview file.  Can be either a .mat, .txt, or ENVI formatted binary cube.
+        Used to modulate incoming diffuse radiance from fraction of viewable sky.
+        """
+
         self.set_config_options(sub_configdic)
 
     def _check_config_validity(self) -> List[str]:

@@ -196,6 +196,7 @@ class CLI(click.Group):
         "HRRR_to_modtran": "isofit.utils.add_HRRR_profiles_to_modtran_config",
         "analytical_line": "isofit.utils.analytical_line",
         "apply_oe": "isofit.utils.apply_oe",
+        "skyview": "isofit.utils.skyview",
         "wavelength_cal": "isofit.utils.wavelength_cal:cli_wavelength_cal",
         "get_wavelength_adjustment": "isofit.utils.wavelength_cal:cli_get_wavelength_adjustment",
         "6s_to_srtmnet": "isofit.utils.convert_6s_to_srtmnet",
