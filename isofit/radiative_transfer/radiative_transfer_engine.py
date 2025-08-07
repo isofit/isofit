@@ -247,6 +247,8 @@ class RadiativeTransferEngine:
                     grid=self.lut_grid,
                     attrs={"RT_mode": self.rt_mode},
                     onedim={"fwhm": fwhm},
+                    compression=engine_config.lut_compression,
+                    complevel=engine_config.lut_complevel,
                 )
 
             # Create and populate a LUT file
