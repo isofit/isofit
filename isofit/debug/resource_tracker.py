@@ -30,8 +30,12 @@ class ResourceTracker:
                     Number of CPU cores available via os.cpu_count()
                 mem : float
                     Main process memory used
+                mem_total : float
+                    Total memory of the system
                 cpu : float
                     Main process CPU percentage
+                timestamp : float
+                    Timestamp of the resource record via time.time()
                 children : list[dict]
                     Information of child processes:
                         pid : int
@@ -43,15 +47,18 @@ class ResourceTracker:
                         cpu : float
                             Child process CPU percentage
             if summarize is enabled, these will also be included:
+                mem_app : float
+                    Total memory of the main process + children
                 mem_used : float
                     Memory in use by the system, excluding the app
-                mem_free : float
-                    Remaining free memory
-            Total memory of the system is the sum([mem, mem_used, mem_free])
+                mem_avail : float
+                    Remaining available memory, defined as free + reclaimable
+            Total memory of the system is the sum([mem_app, mem_used, mem_free])
     interval : int | float, default=2
         Interval frequency in seconds to check resources
         Must be greater than 0. Values less than 0.1 risk high CPU usage and skewing
         polled results
+        The CPU usage is calculated as the percentage of CPU used over this interval
     round : int | bool, default=2
         Round the memory variables to this many decimals. Set to False or 0 to disable
         True will be set to 1
@@ -100,65 +107,78 @@ class ResourceTracker:
         self.unitLabel = "GB"
         self.unitValue = 1024**3
 
-        sys = psutil.virtual_memory()
-        self.total = sys.total / self.unitValue
-
     def _track(self):
         """
         System resource tracker intended to be set in a thread
         """
+        sys = psutil.virtual_memory()
         proc = psutil.Process()
-        info = {"pid": proc.pid, "name": proc.name(), "cores": os.cpu_count()}
+        info = {
+            "pid": proc.pid,
+            "name": proc.name(),
+            "cores": os.cpu_count(),
+            "mem_total": sys.total / self.unitValue,
+        }
 
         while not self.stopEvent.is_set():
             # Main process
             info["cpu"] = proc.cpu_percent()
             info["status"] = proc.status()
+            info["timestamp"] = time.time()
 
             # Reset children every loop
             children = []
             info["children"] = children
 
             # Memory
-            sys = psutil.virtual_memory()
             info["mem"] = proc.memory_info().rss / self.unitValue
 
             # Retrieve child processes' info (ray workers, etc)
+            childProcs = []
             for child in proc.children(recursive=True):
                 try:
                     children.append(
                         {
                             "pid": child.pid,
                             "name": child.name(),
-                            "cpu": child.cpu_percent(),
+                            "cpu": child.cpu_percent(),  # This will always be 0 on first call
                             "mem": child.memory_info().rss / self.unitValue,
                             "status": child.status(),
                         }
                     )
+                    childProcs.append(child)
                 except psutil.NoSuchProcess:
                     continue
 
-            if self.summarize:
-                # Total app memory usage
-                app = sum([p["mem"] for p in children]) + info["mem"]
-                info["mem_used"] = sys.used / self.unitValue - app
+            time.sleep(self.interval)
 
-                # Remaining free memory
-                info["mem_free"] = self.total - info["mem_used"]
+            # Get the children CPU info after the sleep
+            for i, child in enumerate(childProcs):
+                children[i]["cpu"] = child.cpu_percent()
+
+            if self.summarize:
+                # Snapshot memory usage
+                sys = psutil.virtual_memory()
+
+                # Total app memory usage
+                info["mem_app"] = sum([p["mem"] for p in children]) + info["mem"]
+
+                # System memory used minus app
+                used = sys.used / self.unitValue
+                info["mem_used"] = used - info["mem_app"]
+
+                # Remaining available memory
+                info["mem_avail"] = sys.available / self.unitValue
 
             if self.round:
-                info["mem"] = round(info["mem"], self.round)
+                for key, value in info.items():
+                    if "mem" in key:
+                        info[key] = round(value, self.round)
 
                 for child in children:
                     child["mem"] = round(child["mem"], self.round)
 
-                if self.summarize:
-                    info["mem_used"] = round(info["mem_used"], self.round)
-                    info["mem_free"] = round(info["mem_free"], self.round)
-
             self.callback(info)
-
-            time.sleep(self.interval)
 
     def start(self):
         """
@@ -200,8 +220,13 @@ class FileResources(ResourceTracker):
         If the file exists, reset it
     """
 
-    def __init__(self, file: str, reset: bool = False, *args, **kwargs):
-        super().__init__(*args, callback=self.write, **kwargs)
+    def __init__(self, file: str, /, reset: bool = False, **kwargs):
+        if "callback" in kwargs:
+            raise AttributeError(
+                f"{self.__class__.__name__} does not accept a callback parameter"
+            )
+
+        super().__init__(callback=self.write, **kwargs)
 
         self.file = Path(file)
         self.file.parent.mkdir(exist_ok=True, parents=True)
@@ -220,9 +245,8 @@ class FileResources(ResourceTracker):
         Parameters
         ----------
         info : dict
-            A dictionary containing resource information to log.
+            A dictionary containing resource information to log
         """
-        info["ts"] = time.time()
         data = json.dumps(info) + "\n"
 
         self.io.write(data)
