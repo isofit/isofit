@@ -16,3 +16,12 @@ $ micromamba create  --name isofit python=3.10
 $ micromamba install --name isofit --file ISOFIT/recipe/isofit.yml \
                                    --file ISOFIT/recipe/docker.yml
 ```
+
+# Docker
+
+There are two types of docker files officially supported:
+
+File                     | Purpose
+-------------------------|--------
+`Dockerfile`             | Default image that contains all extra ISOFIT dependencies
+`recipe/slim.Dockerfile` | Code-only slim version. For advanced users, will require mounting dependencies
