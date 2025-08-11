@@ -52,8 +52,8 @@ def algebraic_line(
     num_iter: int = 1,
     output_rfl_file: str = None,
     atm_file: str = None,
-    loglevel: str = "INFO",
-    logfile: str = None,
+    logging_level: str = "INFO",
+    log_file: str = None,
 ) -> None:
     """
     Run pixel-wise algebraic inversions, using provided atmosphere file.
@@ -73,8 +73,8 @@ def algebraic_line(
         num_iter: Number of iterations for the inversion
         output_rfl_file: Path to the output reflectance file
         atm_file: Path to the atmosphere file
-        loglevel: Logging level (default: INFO)
-        logfile: Path to the log file (default: None)
+        logging_level: Logging level (default: INFO)
+        log_file: Path to the log file (default: None)
 
     Returns:
         None
@@ -86,8 +86,8 @@ def algebraic_line(
 
     logging.basicConfig(
         format="%(levelname)s:%(asctime)s ||| %(message)s",
-        level=loglevel,
-        filename=logfile,
+        level=logging_level,
+        filename=log_file,
         datefmt="%Y-%m-%d,%H:%M:%S",
     )
 
@@ -192,8 +192,8 @@ def algebraic_line(
             subs_state_file,
             lbl_file,
             num_iter,
-            loglevel,
-            logfile,
+            logging_level,
+            log_file,
         )
     ]
     workers = ray.util.ActorPool([Worker.remote(*wargs) for _ in range(n_workers)])
@@ -229,21 +229,21 @@ class Worker(object):
         subs_state_file: str,
         lbl_file: str,
         num_iter: int,
-        loglevel: str,
-        logfile: str,
+        logging_level: str,
+        log_file: str,
     ):
         """
         Worker class to help run a subset of spectra.
 
         Args:
             fm: isofit forward_model
-            loglevel: output logging level
-            logfile: output logging file
+            logging_level: output logging level
+            log_file: output logging file
         """
         logging.basicConfig(
             format="%(levelname)s:%(asctime)s ||| %(message)s",
-            level=loglevel,
-            filename=logfile,
+            level=logging_level,
+            filename=log_file,
             datefmt="%Y-%m-%d,%H:%M:%S",
         )
         self.config = config
@@ -398,8 +398,8 @@ class Worker(object):
     type=str,
     default=None,
 )
-@click.option("--loglevel", help="logging level", type=str, default="INFO")
-@click.option("--logfile", help="logging file", type=str, default=None)
+@click.option("--logging_level", help="logging level", type=str, default="INFO")
+@click.option("--log_file", help="logging file", type=str, default=None)
 def cli(**kwargs):
     """Execute the algebraic line algorithm"""
 
