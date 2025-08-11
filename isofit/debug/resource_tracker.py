@@ -33,7 +33,7 @@ class ResourceTracker:
                 mem_total : float
                     Total memory of the system
                 cpu : float
-                    Main process CPU percentage
+                    Main process CPU percentage over the interval
                 timestamp : float
                     Timestamp of the resource record via time.time()
                 children : list[dict]
@@ -45,7 +45,7 @@ class ResourceTracker:
                         mem : float
                             Child process memory used
                         cpu : float
-                            Child process CPU percentage
+                            Child process CPU percentage over the interval
             if summarize is enabled, these will also be included:
                 mem_app : float
                     Total memory of the main process + children
@@ -67,6 +67,10 @@ class ResourceTracker:
     allow_unsafe : bool, default=False
         Bypasses the exception and allows unsafe interval values (less than 0.1)
         Not recommended
+    recordShortLived : bool, default=False
+        By default, child processes that do not live the length of the interval are
+        removed. Setting this to True will ensure they are still captured. These
+        children will not have CPU information available
     """
 
     thread = None
@@ -78,6 +82,7 @@ class ResourceTracker:
         round: bool | int = 2,
         summarize: bool = True,
         allow_unsafe: bool = False,
+        recordShortLived: bool = False,
     ):
         if not callable(callback):
             raise AttributeError(f"The callback parameter must be a callable")
@@ -103,6 +108,7 @@ class ResourceTracker:
         self.interval = interval
         self.round = round
         self.summarize = summarize
+        self.recordShortLived = recordShortLived
 
         self.unitLabel = "GB"
         self.unitValue = 1024**3
@@ -122,22 +128,17 @@ class ResourceTracker:
 
         while not self.stopEvent.is_set():
             # Main process
+            info["mem"] = proc.memory_info().rss / self.unitValue
             info["cpu"] = proc.cpu_percent()
             info["status"] = proc.status()
             info["timestamp"] = time.time()
 
-            # Reset children every loop
-            children = []
-            info["children"] = children
-
-            # Memory
-            info["mem"] = proc.memory_info().rss / self.unitValue
-
             # Retrieve child processes' info (ray workers, etc)
             childProcs = []
+            childData = []
             for child in proc.children(recursive=True):
                 try:
-                    children.append(
+                    childData.append(
                         {
                             "pid": child.pid,
                             "name": child.name(),
@@ -152,9 +153,19 @@ class ResourceTracker:
 
             time.sleep(self.interval)
 
+            # Reset children every loop
+            children = []
+            info["children"] = children
+
             # Get the children CPU info after the sleep
-            for i, child in enumerate(childProcs):
-                children[i]["cpu"] = child.cpu_percent()
+            for child, data in zip(childProcs, childData):
+                try:
+                    data["cpu"] = child.cpu_percent()
+                except psutil.NoSuchProcess:
+                    if not self.recordShortLived:
+                        continue
+
+                children.append(data)
 
             if self.summarize:
                 # Snapshot memory usage
