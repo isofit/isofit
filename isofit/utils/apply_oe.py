@@ -280,7 +280,8 @@ def apply_oe(
     # Track system resources to a file adjacent to the log file
     fr = None
     if log_file:
-        fr = FileResources(Path(log_file).with_suffix(".resources.jsonl"), reset=True)
+        jsonl = Path(log_file).with_suffix(".resources.jsonl")
+        fr = FileResources(jsonl, reset=True, cores=n_cores)
         fr.start()
 
     logging.info("Checking input data files...")

@@ -4,7 +4,7 @@ import os
 import threading
 import time
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Literal
 from warnings import warn
 
 import psutil
@@ -21,21 +21,29 @@ class ResourceTracker:
 
             callable(info : dict) -> None
 
-            where the info dict consists of:
+            the first info dict will contain the non-changing values:
+                cores : int
+                    Number of CPU cores in use. See the 'cores' parameter for more
+                mem_total : float
+                    Total memory of the system
+                mem_unit : str
+                    Unit label that the memory values are in
+                poll_interval : float
+                    Resource polling interval
+
+            all calls afterwards will consist of:
                 pid : int
                     Main process ID
                 name : str
                     Main process name
-                cores : int
-                    Number of CPU cores available via os.cpu_count()
                 mem : float
                     Main process memory used
-                mem_total : float
-                    Total memory of the system
                 cpu : float
                     Main process CPU percentage over the interval
                 timestamp : float
                     Timestamp of the resource record via time.time()
+                status : str
+                    Main process status, eg. 'running', 'sleeping'
                 children : list[dict]
                     Information of child processes:
                         pid : int
@@ -46,6 +54,9 @@ class ResourceTracker:
                             Child process memory used
                         cpu : float
                             Child process CPU percentage over the interval
+                        status : str
+                            Child process status, eg. 'running', 'sleeping'
+
             if summarize is enabled, these will also be included:
                 mem_app : float
                     Total memory of the main process + children
@@ -53,12 +64,18 @@ class ResourceTracker:
                     Memory in use by the system, excluding the app
                 mem_avail : float
                     Remaining available memory, defined as free + reclaimable
+                cpu_avg : float
+                    Average CPU percentage calculated as: sum(main + children) / cores
+
             Total memory of the system is the sum([mem_app, mem_used, mem_free])
     interval : int | float, default=2
         Interval frequency in seconds to check resources
         Must be greater than 0. Values less than 0.1 risk high CPU usage and skewing
         polled results
         The CPU usage is calculated as the percentage of CPU used over this interval
+    cores : int | 'all', default=1
+        Number of cores being used by the source program. This is used for calculating
+        the average CPU percentage. Can be passed 'all' to retrieve the os.cpu_count()
     round : int | bool, default=2
         Round the memory variables to this many decimals. Set to False or 0 to disable
         True will be set to 1
@@ -67,10 +84,6 @@ class ResourceTracker:
     allow_unsafe : bool, default=False
         Bypasses the exception and allows unsafe interval values (less than 0.1)
         Not recommended
-    recordShortLived : bool, default=False
-        By default, child processes that do not live the length of the interval are
-        removed. Setting this to True will ensure they are still captured. These
-        children will not have CPU information available
     """
 
     thread = None
@@ -79,18 +92,20 @@ class ResourceTracker:
         self,
         callback: Callable,
         interval: float = 2,
+        cores: int | Literal["all"] = None,
         round: bool | int = 2,
         summarize: bool = True,
         allow_unsafe: bool = False,
-        recordShortLived: bool = False,
     ):
+        # Check the 'callback' parameter
         if not callable(callback):
-            raise AttributeError(f"The callback parameter must be a callable")
+            raise AttributeError(f"The 'callback' parameter must be a callable")
 
+        # Check the 'interval' parameter
         if not isinstance(interval, (int, float)):
-            raise AttributeError(f"The interval parameter must be an integer")
+            raise AttributeError(f"The 'interval' parameter must be an integer")
         if interval <= 0:
-            raise AttributeError(f"The interval parameter must be greater than 0")
+            raise AttributeError(f"The 'interval' parameter must be greater than 0")
         if interval < 0.1:
             msg = "High CPU usage risk with an interval less than 0.1"
             if allow_unsafe:
@@ -99,16 +114,31 @@ class ResourceTracker:
                 msg += " - If this is intended, set allow_unsafe=True"
                 raise ValueError(msg)
 
+        # Check the 'round' parameter
         if isinstance(round, bool):
             round = int(round)
         if not isinstance(round, int):
-            raise AttributeError(f"The round parameter must be an integer")
+            raise AttributeError(f"The 'round' parameter must be an integer")
+
+        # Check the 'cores' parameter
+        if isinstance(cores, str):
+            if cores == "all":
+                cores = os.cpu_count()
+            else:
+                raise AttributeError(
+                    "The 'cores' parameter must be either an int or 'all'"
+                )
+        elif isinstance(cores, int):
+            if cores <= 0:
+                raise AttributeError("The 'cores' parameter must be greater than 0")
+        else:
+            raise AttributeError("The 'cores' parameter must be either an int or 'all'")
 
         self.callback = callback
         self.interval = interval
+        self.cores = cores
         self.round = round
         self.summarize = summarize
-        self.recordShortLived = recordShortLived
 
         self.unitLabel = "GB"
         self.unitValue = 1024**3
@@ -122,50 +152,62 @@ class ResourceTracker:
         info = {
             "pid": proc.pid,
             "name": proc.name(),
-            "cores": os.cpu_count(),
-            "mem_total": sys.total / self.unitValue,
         }
 
-        while not self.stopEvent.is_set():
-            # Main process
-            info["mem"] = proc.memory_info().rss / self.unitValue
-            info["cpu"] = proc.cpu_percent()
-            info["status"] = proc.status()
-            info["timestamp"] = time.time()
+        # Record non-changing values as the first line
+        self.callback(
+            {
+                "cores": self.cores,
+                "mem_unit": self.unitLabel,
+                "mem_total": sys.total / self.unitValue,
+                "poll_interval": self.interval,
+            }
+        )
 
-            # Retrieve child processes' info (ray workers, etc)
+        # Establish a baseline for CPU usage
+        proc.cpu_percent()
+        psutil.cpu_percent(percpu=True)
+
+        while not self.stopEvent.is_set():
+            # Establish baselines for child processes
             childProcs = []
-            childData = []
             for child in proc.children(recursive=True):
                 try:
-                    childData.append(
-                        {
-                            "pid": child.pid,
-                            "name": child.name(),
-                            "cpu": child.cpu_percent(),  # This will always be 0 on first call
-                            "mem": child.memory_info().rss / self.unitValue,
-                            "status": child.status(),
-                        }
-                    )
+                    child.cpu_percent()
                     childProcs.append(child)
                 except psutil.NoSuchProcess:
                     continue
 
+            # CPU usage is calculated as the percentage used over this interval
             time.sleep(self.interval)
+
+            # Main process
+            info["mem"] = proc.memory_info().rss / self.unitValue
+            info["status"] = proc.status()
+            info["timestamp"] = time.time()
+
+            # Get the system CPU usage per core
+            info["cpu"] = proc.cpu_percent()
+            info["sys_cpu"] = psutil.cpu_percent(percpu=True)
 
             # Reset children every loop
             children = []
             info["children"] = children
 
-            # Get the children CPU info after the sleep
-            for child, data in zip(childProcs, childData):
+            # Retrieve child processes' info (ray workers, etc)
+            for child in childProcs:
                 try:
-                    data["cpu"] = child.cpu_percent()
+                    children.append(
+                        {
+                            "pid": child.pid,
+                            "name": child.name(),
+                            "cpu": child.cpu_percent(),
+                            "mem": child.memory_info().rss / self.unitValue,
+                            "status": child.status(),
+                        }
+                    )
                 except psutil.NoSuchProcess:
-                    if not self.recordShortLived:
-                        continue
-
-                children.append(data)
+                    continue
 
             if self.summarize:
                 # Snapshot memory usage
@@ -181,13 +223,18 @@ class ResourceTracker:
                 # Remaining available memory
                 info["mem_avail"] = sys.available / self.unitValue
 
+                # Average CPU usage
+                info["cpu_avg"] = sum([p["cpu"] for p in children]) + info["cpu"]
+                info["cpu_avg"] /= info["cores"]
+
             if self.round:
                 for key, value in info.items():
-                    if "mem" in key:
+                    if "mem" in key or "cpu" in key:
                         info[key] = round(value, self.round)
 
                 for child in children:
                     child["mem"] = round(child["mem"], self.round)
+                    child["cpu"] = round(child["cpu"], self.round)
 
             self.callback(info)
 
