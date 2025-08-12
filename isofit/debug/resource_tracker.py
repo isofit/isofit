@@ -28,8 +28,13 @@ class ResourceTracker:
                     Total memory of the system
                 mem_unit : str
                     Unit label that the memory values are in
+                mem_value : float
+                    The value used to convert the bytes to the mem_unit. This may be
+                    used to reverse the conversion
                 poll_interval : float
                     Resource polling interval
+                timestamp : float
+                    The start timestamp of the resource tracker via time.time()
 
             all calls afterwards will consist of:
                 pid : int
@@ -73,6 +78,15 @@ class ResourceTracker:
         Must be greater than 0. Values less than 0.1 risk high CPU usage and skewing
         polled results
         The CPU usage is calculated as the percentage of CPU used over this interval
+    units : tuple[str, float], default=("GB", 1024**3)
+        Units to convert the memory values to. Must be in the form of (str, float)
+        where the float is used to divide the bytes values that psutil returns
+        Some possible conversions:
+            - ('b', 1/8)      # Convert to bits (multiply by 8)
+            - ('B', 1)        # No conversion, leave as the default bytes
+            - ('KB', 1024)    # Kilobytes
+            - ('MB', 1024**2) # Megabytes
+            - ('GB', 1024**3) # Gigabytes, default
     cores : int | 'all', default=1
         Number of cores being used by the source program. This is used for calculating
         the average CPU percentage. Can be passed 'all' to retrieve the os.cpu_count()
@@ -92,6 +106,7 @@ class ResourceTracker:
         self,
         callback: Callable,
         interval: float = 2,
+        units: tuple = ("GB", 1024**3),
         cores: int | Literal["all"] = None,
         round: bool | int = 2,
         summarize: bool = True,
@@ -134,14 +149,27 @@ class ResourceTracker:
         else:
             raise AttributeError("The 'cores' parameter must be either an int or 'all'")
 
+        # Check the 'units' parameter
+        if (
+            not isinstance(units, (tuple, list))
+            or len(units) != 2
+            or not isinstance(units[0], str)
+            or not isinstance(units[1], (int, float))
+        ):
+            raise AttributeError(
+                "The 'units' parameter must be a two item tuple consisting of (str label, float divisor)"
+            )
+        if units[1] == 0:
+            raise AttributeError(
+                "The divisor in the 'units' parameter must not be zero"
+            )
+
         self.callback = callback
         self.interval = interval
         self.cores = cores
         self.round = round
         self.summarize = summarize
-
-        self.unitLabel = "GB"
-        self.unitValue = 1024**3
+        self.unitLabel, self.unitValue = units
 
     def _track(self):
         """
@@ -159,8 +187,10 @@ class ResourceTracker:
             {
                 "cores": self.cores,
                 "mem_unit": self.unitLabel,
+                "mem_value": self.unitVabel,
                 "mem_total": sys.total / self.unitValue,
                 "poll_interval": self.interval,
+                "timestamp": time.time(),
             }
         )
 
