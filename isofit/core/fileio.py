@@ -36,14 +36,15 @@ from isofit.core.common import (
     eps,
     load_spectrum,
     load_wavelen,
-    match_statevector,
     resample_spectrum,
 )
 from isofit.core.geometry import Geometry
+from isofit.core.multistate import match_statevector
 from isofit.data import env
 from isofit.inversion.inverse_simple import invert_algebraic
 
 ### Variables ###
+Logger = logging.getLogger(__file__)
 
 # Constants related to file I/O
 typemap = {
@@ -64,8 +65,6 @@ max_frames_size = 100
 
 
 ### Classes ###
-
-
 class SpectrumFile:
     """A buffered file object that contains configuration information about formatting, etc."""
 
@@ -353,29 +352,29 @@ class InputData:
 class IO:
     """..."""
 
-    def __init__(self, config: Config, full_statevec: list):
+    def __init__(self, config: Config, forward: ForwardModel, full_statevec: list = []):
         """Initialization specifies retrieval subwindows for calculating
         measurement cost distributions."""
 
         self.config = config
-        wl_init, fwhm_init = load_wavelen(
-            self.config.forward_model.instrument.wavelength_file
-        )
 
-        self.bbl = "{" + ",".join([str(1) for n in range(len(wl_init))]) + "}"
         self.radiance_correction = None
-        self.meas_wl = wl_init
-        self.meas_fwhm = fwhm_init
+        self.meas_wl = forward.instrument.wl_init
+        self.meas_fwhm = forward.instrument.fwhm_init
         self.writes = 0
         self.reads = 0
         self.n_rows = 1
         self.n_cols = 1
+        self.bbl = "{" + ",".join([str(1) for n in range(len(self.meas_wl))]) + "}"
 
         # Use the pre-defined full statevec
-        self.full_statevec = full_statevec
+        if len(full_statevec):
+            self.full_statevec = full_statevec
+        else:
+            self.full_statevec = forward.statevec
 
         self.n_sv = len(self.full_statevec)
-        self.n_chan = len(wl_init)
+        self.n_chan = len(self.meas_wl)
         self.flush_rate = config.implementation.io_buffer_size
 
         self.simulation_mode = config.implementation.mode == "simulation"
@@ -793,6 +792,46 @@ class IO:
         )
 
     @staticmethod
+    def initialize_output_files(config, n_rows, n_cols, full_statevector):
+        wl_init, fwhm_init = load_wavelen(
+            config.forward_model.instrument.wavelength_file
+        )
+        wl_names = [("Channel %i" % i) for i in range(len(wl_init))]
+        bbl = "{" + ",".join([str(1) for n in range(len(wl_init))]) + "}"
+
+        for element, element_header, element_name in zip(
+            *config.output.get_output_files()
+        ):
+            band_names, ztitle, zrange = element_header
+
+            if band_names == "statevector":
+                band_names = full_statevector
+            elif band_names == "wavelength":
+                band_names = wl_names
+            elif band_names == "atm_coeffs":
+                band_names = wl_names * 5
+            else:
+                band_names = "{}"
+
+            n_bands = len(band_names)
+            _ = SpectrumFile(
+                element,
+                write=True,
+                n_rows=n_rows,
+                n_cols=n_cols,
+                n_bands=n_bands,
+                interleave="bip",
+                dtype=np.float32,
+                wavelengths=wl_init,
+                fwhm=fwhm_init,
+                band_names=band_names,
+                bad_bands=bbl,
+                map_info="{}",
+                zrange=zrange,
+                ztitles=ztitle,
+            )
+
+    @staticmethod
     def load_esd(file=None):
         """
         Loads an earth_sun_distance file. Defaults to the
@@ -846,7 +885,7 @@ def write_bil_chunk(
     outfile.close()
 
 
-def initialize_output(output_metadata, outpath, out_shape, keys_to_del, **kwargs):
+def initialize_output(output_metadata, outpath, out_shape, **kwargs):
     """
     Initialize output file by updating metadata and creating object.
 
@@ -859,10 +898,6 @@ def initialize_output(output_metadata, outpath, out_shape, keys_to_del, **kwargs
     """
     for key, value in kwargs.items():
         output_metadata[key] = value
-
-    for key in keys_to_del:
-        if key in list(output_metadata.keys()):
-            del output_metadata[key]
 
     out_file = envi.create_image(
         envi_header(outpath), ext="", metadata=output_metadata, force=True

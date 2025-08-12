@@ -46,8 +46,8 @@ class GlintModelSurface(MultiComponentSurface):
         self.init.extend([1 / np.pi, 0.02])
 
         # Special glint bounds
-        # rmin, rmax = -0.05, 2.0
-        # self.bounds = [[rmin, rmax] for w in self.wl]
+        rmin, rmax = -0.05, 2.0
+        self.bounds = [[rmin, rmax] for w in self.wl]
         # Gege (2021), WASI user manual
         self.bounds.extend([[0, 10], [0, 10]])
 
@@ -131,8 +131,8 @@ class GlintModelSurface(MultiComponentSurface):
         # Get estimate for g_dd and g_dsf parameters
         # Set sky glint to a static number; use prior mean.
         g_dsf_est = self.init[self.sky_glint_ind]
-
         g_dd_est = glint_est / self.fresnel_rf(geom.observer_zenith)
+
         # Updating self.init will set the prior mean (xa) to this value
         self.init[self.sun_glint_ind] = g_dd_est
 

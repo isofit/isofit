@@ -20,6 +20,7 @@
 from __future__ import annotations
 
 import logging
+import time
 
 import numpy as np
 from scipy.interpolate import interp1d
@@ -30,16 +31,39 @@ from isofit.core.common import envi_header
 from isofit.core.instrument import Instrument
 from isofit.surface import Surface
 
-SURFACE_MAPPING = {
-    "water": "glint_model_surface",
-    "glint": "glint_model_surface",
-    "land": "multicomponent_surface",
-    "nonwater": "multicomponent_surface",
-    "cloud": "multicomponent_surface",
-    "uniform_surface": "multicomponent_surface",
-    "glint_model_surface": "glint_model_surface",
-    "multicomponent_surface": "multicomponent_surface",
-}
+
+class SurfaceMapping:
+    surface_classes = {
+        0: "multicomponent_surface",
+        1: "glint_model_surface",
+        2: "surface_lut",
+        3: "surface_thermal",
+    }
+
+    def __class_getitem__(self, val):
+        error_message = (
+            "Classification int does not match any supported "
+            "surface model categories. "
+            "Check classification file values or supported "
+            "category mappings."
+        )
+        if isinstance(val, int):
+            surface_class = self.surface_classes.get(val)
+            if not surface_class:
+                raise ValueError(error_message)
+            return surface_class
+
+        elif isinstance(val, str):
+            match_i = -1
+            for i, value in self.surface_classes.items():
+                if value == val:
+                    match_i = i
+            if match_i == -1:
+                raise ValueError(error_message)
+            return match_i
+
+        else:
+            raise ValueError("Invalid input data type")
 
 
 def construct_full_state(full_config):
@@ -110,10 +134,59 @@ def construct_full_state(full_config):
     start += len(rt_states)
     full_idx_instrument = np.arange(start, start + len(instrument_states))
 
-    return full_statevec, full_idx_surface, full_idx_surf_rfl, full_idx_rt
+    return (
+        full_statevec,
+        full_idx_surface,
+        full_idx_surf_rfl,
+        full_idx_surf_nonrfl,
+        full_idx_rt,
+        full_idx_instrument,
+    )
 
 
 def index_spectra_by_surface(config, index_pairs, force_full_res=False):
+    """
+    Indexes an image by a provided surface class file.
+    Could extend it to be indexed by an atomspheric classification
+    file as well if you want to vary both surface and atmospheric
+    state.
+    Args:
+        surface_config: (Config object) The surface component of the
+                        main config.
+        index_pairs:
+    Returns:
+        class_groups: (dict) where keys are the pixel classification (name)
+                      and values are tuples of rows and columns for each
+                      group.
+    """
+    surface_config = config.forward_model.surface
+
+    """Check if the class files exist. Defaults to run all pixels.
+    This accomodates the test cases where we test the multi-surface,
+    but don't use a classification file."""
+    if not surface_config.surface_class_file:
+        return {"uniform_surface": index_pairs}
+
+    if force_full_res:
+        class_file = surface_config.base_surface_class_file
+    else:
+        class_file = surface_config.surface_class_file
+
+    classes = np.squeeze(
+        envi.open(envi_header(class_file)).open_memmap(interleave="bip"), axis=-1
+    ).astype(int)
+
+    class_groups = {}
+    for surface_name, surface_dict in surface_config.Surfaces.items():
+        surface_index_pairs = np.argwhere(classes == SurfaceMapping[surface_name])
+        class_groups[surface_name] = surface_index_pairs
+
+    del classes
+
+    return class_groups
+
+
+def index_spectra_by_surface_view(config, index_pairs, force_full_res=False):
     """
     Indexes an image by a provided surface class file.
     Could extend it to be indexed by an atomspheric classification
@@ -128,6 +201,7 @@ def index_spectra_by_surface(config, index_pairs, force_full_res=False):
                       group.
     """
 
+    start_time = time.time()
     surface_config = config.forward_model.surface
 
     """Check if the class files exist. Defaults to run all pixels.
@@ -176,45 +250,6 @@ def index_spectra_by_surface(config, index_pairs, force_full_res=False):
     return class_groups
 
 
-def index_spectra_by_surface_and_sub(config, lbl_file):
-    """
-    Indexes an image by surface class file and lbl_file.
-    This is needed for the analytical line where each pixel needs to
-    inherit the surface classification of the slic pixel that it belongs
-    to. This function looks at the slic pixel indexing and then creates
-    a list of all full img pixels found within each slic pixel for each
-    surface class.
-    Args:
-        config: (Config object) Full isofit config object.
-              file to use.
-        lbl_file: Path to the label file produced by the slic algorithm.
-    Returns:
-        pixel_index: (list) List of row-col pairs in each class.
-                     index of list matches the class key. Empty list
-                     returned if there is no multistate.
-    """
-    # Get all index pairs in image
-    lbl = envi.open(envi_header(lbl_file)).open_memmap(interleave="bip")
-    lbl_shape = (range(lbl.shape[0]), range(lbl.shape[1]))
-    index_pairs = np.vstack([x.flatten(order="f") for x in np.meshgrid(*lbl_shape)]).T
-
-    sub_pixel_index = index_spectra_by_surface(config, index_pairs)
-
-    pixel_index = {}
-    class_groups = {}
-    for surface_class_str, class_subs in sub_pixel_index.items():
-        if not len(class_subs):
-            continue
-
-        class_pixel_index = []
-        for i in class_subs:
-            class_pixel_index += np.argwhere(lbl == i).tolist()
-
-        class_groups[surface_class_str] = class_pixel_index
-
-    return class_groups
-
-
 def update_config_for_surface(config, surface_class_str, clouds=True):
     """
     This is the primary mechanism by which isofit changes its configuration
@@ -258,3 +293,30 @@ def update_config_for_surface(config, surface_class_str, clouds=True):
         ].statevector_names.append(key)
 
     return config
+
+
+def match_statevector(
+    state_data: np.array, full_statevec: list, fm_statevec: list, null_value=-9999.0
+):
+    """
+    A multi-class surface requires some merging across statevectors
+    of different length. This function maps the fm-specific state
+    to the io-state that captures all state elements present in the
+    image. The full_state will record a Non
+    Args:
+        state_data: (n,) numpy array with the fm-specific state vector
+        full_statevec: [m] list of state-names of the image-universal combined statevector
+        fm_statevec: [n] list of state-names of the fm-specific state vector
+        null_value: (optional) value to fill in the statevector elements that aren't present at a pixel
+    returns:
+        full_state: (np.array) Populated full state with null_values in missing elements
+    """
+    full_state = np.zeros((len(full_statevec))) + null_value
+    idx = []
+    for fm_name in fm_statevec:
+        for i, full_name in enumerate(full_statevec):
+            if fm_name == full_name:
+                idx.append(i)
+    full_state[idx] = state_data
+
+    return full_state

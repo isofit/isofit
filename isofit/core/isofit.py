@@ -37,7 +37,7 @@ import scipy
 
 from isofit import checkNumThreads, ray
 from isofit.configs import configs
-from isofit.core.fileio import IO
+from isofit.core.fileio import IO, SpectrumFile
 from isofit.core.forward import ForwardModel
 from isofit.core.multistate import (
     construct_full_state,
@@ -130,7 +130,18 @@ class Isofit:
         else:
             n_cores = self.config.implementation.n_cores
 
+        rdn = SpectrumFile(self.config.input.measured_radiance_file, write=False)
+        self.rows = range(rdn.n_rows)
+        self.cols = range(rdn.n_cols)
+
+        # Initialize files in __init__, otherwise workers fail
+        IO.initialize_output_files(
+            self.config, rdn.n_rows, rdn.n_cols, self.full_statevector
+        )
+        del rdn
+
         # Handle case where you only want to run part of an image
+        # TODO Clean this, not sure if currently functioning.
         if row_column is not None:
             ranges = row_column.split(",")
             if len(ranges) == 1:
@@ -142,11 +153,6 @@ class Isofit:
                 row_start, row_end, col_start, col_end = ranges
                 self.rows = range(int(row_start), int(row_end) + 1)
                 self.cols = range(int(col_start), int(col_end) + 1)
-        else:
-            io = IO(self.config, self.full_statevector)
-            self.rows = range(io.n_rows)
-            self.cols = range(io.n_cols)
-            del io
 
         # Form the row-column pairs (pixels to run)
         # Need to allocate cols of index_pairs together
@@ -160,6 +166,10 @@ class Isofit:
         index_pairs[:, 1] = meshgrid[1].flatten(order="f")
         del meshgrid
 
+        index_pairs = np.vstack(
+            [x.flatten(order="f") for x in np.meshgrid(self.rows, self.cols)]
+        ).T
+
         # Save this for logging
         total_samples = index_pairs.shape[0]
 
@@ -169,9 +179,15 @@ class Isofit:
         # Loop through index pairs and run workers
         outer_loop_start_time = time.time()
 
+        cache_RT = None
         surface_index = index_spectra_by_surface(input_config, index_pairs)
-        for surface_class_str, class_idx_pairs in surface_index.items():
+        for i, (surface_class_str, class_idx_pairs) in enumerate(surface_index.items()):
             logging.info(f"Running surfaces: {surface_class_str}")
+            if not len(class_idx_pairs):
+                logging.info(
+                    f"No pixels found in image for surface: {surface_class_str}"
+                )
+                continue
 
             # Don't want more workers than tasks
             n_iter = class_idx_pairs.shape[0]
@@ -199,10 +215,9 @@ class Isofit:
             )
 
             # Set forward model
-            self.fm = fm = ForwardModel(config)
+            fm = ForwardModel(config, cache_RT=cache_RT)
 
-            logging.debug(f"Pixel class: {surface_class_str}")
-            logging.debug(f"Surface: {self.fm.surface}")
+            logging.debug(f"Surface: {surface_class_str}")
 
             # Put worker args into Ray object
             params = [
@@ -225,7 +240,7 @@ class Isofit:
 
             start_time = time.time()
             logging.info(
-                f"Beginning {n_iter} inversions in {n_tasks} chunks"
+                f"Beginning {n_iter} inversions in {n_tasks} chunks "
                 f"using {n_workers} cores"
             )
 
@@ -245,6 +260,12 @@ class Isofit:
             # Not sure if it's best practice to null out these vars
             self.workers = None
             params = None
+
+            # Cache RT
+            if not i:
+                cache_RT = fm.RT
+
+            del fm
 
         if len(index_pairs):
             outer_loop_total_time = time.time() - outer_loop_start_time
@@ -294,7 +315,7 @@ class Worker(object):
         self.config = config
         self.fm = forward_model
         self.iv = Inversion(self.config, self.fm)
-        self.io = IO(self.config, full_statevector)
+        self.io = IO(self.config, self.fm, full_statevec=full_statevector)
 
         self.total_samples = None
         if total_workers is not None:

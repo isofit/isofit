@@ -896,30 +896,3 @@ def compare(a, b, threshold=0.8, not_same=True):
                 matches.setdefault(x, []).append(y)
 
     return matches
-
-
-def match_statevector(
-    state_data: np.array, full_statevec: list, fm_statevec: list, null_value=-9999.0
-):
-    """
-    A multi-class surface requires some merging across statevectors
-    of different length. This function maps the fm-specific state
-    to the io-state that captures all state elements present in the
-    image. The full_state will record a Non
-    Args:
-        state_data: (n,) numpy array with the fm-specific state vector
-        full_statevec: [m] list of state-names of the image-universal combined statevector
-        fm_statevec: [n] list of state-names of the fm-specific state vector
-        null_value: (optional) value to fill in the statevector elements that aren't present at a pixel
-    returns:
-        full_state: (np.array) Populated full state with null_values in missing elements
-    """
-    full_state = np.zeros((len(full_statevec))) + null_value
-    idx = []
-    for fm_name in fm_statevec:
-        for i, full_name in enumerate(full_statevec):
-            if fm_name == full_name:
-                idx.append(i)
-    full_state[idx] = state_data
-
-    return full_state

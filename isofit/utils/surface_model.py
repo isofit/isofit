@@ -85,6 +85,7 @@ def surface_model(
 
     if output_path:
         outfile = output_path
+
     else:
         if "output_model_file" not in config:
             raise ValueError(
@@ -132,7 +133,7 @@ def surface_model(
         "attribute_covs": [],
         "attributes": [],
         "refwl": refwl,
-        "surface_types": [],
+        "surface_categories": [],
     }
 
     # each "source" (i.e. spectral library) is treated separately
@@ -143,9 +144,9 @@ def surface_model(
                 raise ValueError("Source %i is missing a parameter: %s" % (si, q))
 
         if multisurface:
-            if "surface_type" not in source_config:
+            if "surface_category" not in source_config:
                 raise ValueError(
-                    "Source %i is missing a parameter: surface_type" % (si)
+                    "Source %i is missing a parameter: surface_category" % (si)
                 )
 
         # Determine whether we should synthesize our own mixtures
@@ -177,7 +178,7 @@ def surface_model(
         windows = source_config["windows"]
 
         # Surface model handling
-        surface_type = source_config.get("surface_type", "")
+        surface_category = source_config.get("surface_category", "")
 
         # load spectra
         spectra, attributes = [], []
@@ -401,7 +402,7 @@ def surface_model(
                 model["attribute_means"].append(m_attr)
                 model["attribute_covs"].append(C_attr)
 
-            model["surface_types"].append(surface_type)
+            model["surface_categories"].append(surface_category)
 
     model["means"] = np.array(model["means"])
     model["covs"] = np.array(model["covs"])
@@ -410,22 +411,28 @@ def surface_model(
 
     if multisurface:
         # Divide up model dict based on surface_type
-        surface_types = np.unique(model["surface_types"])
-        for surface_type in surface_types:
-            i = np.argwhere(np.array(model["surface_types"]) == surface_type)
+        surface_categories = np.unique(model["surface_categories"])
+        for surface_category in surface_categories:
+            i = np.argwhere(np.array(model["surface_categories"]) == surface_category)
 
             type_model = model.copy()
             type_model["means"] = np.squeeze(model["means"][i])
             type_model["covs"] = np.squeeze(model["covs"][i])
-            type_model["surface_types"] = [
-                str(stype[0]) for stype in np.array(model["surface_types"])[i]
+
+            # To handle surfaces with 1 component, this check returns true
+            if type_model["means"].ndim == 1 and type_model["covs"].ndim == 2:
+                type_model["means"] = type_model["means"][np.newaxis, :]
+                type_model["covs"] = type_model["covs"][np.newaxis, :]
+
+            type_model["surface_categories"] = [
+                str(stype[0]) for stype in np.array(model["surface_categories"])[i]
             ]
             if len(model["attribute_means"]):
                 type_model["attribute_means"] = np.squeeze(model["attribute_means"][i])
                 type_model["attribute_covs"] = np.squeeze(model["attribute_covs"][i])
 
             name, ext = os.path.splitext(outfile)
-            type_outfile = f"{name}_{str(surface_type)}{ext}"
+            type_outfile = f"{name}_{str(surface_category)}{ext}"
             scipy.io.savemat(type_outfile, type_model)
 
     else:

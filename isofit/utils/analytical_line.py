@@ -32,18 +32,14 @@ from spectral.io import envi
 
 from isofit import ray
 from isofit.configs import configs
-from isofit.core.common import (
-    envi_header,
-    load_spectrum,
-    load_wavelen,
-    match_statevector,
-)
+from isofit.core.common import envi_header, load_spectrum, load_wavelen
 from isofit.core.fileio import IO, initialize_output, write_bil_chunk
 from isofit.core.forward import ForwardModel
 from isofit.core.geometry import Geometry
 from isofit.core.multistate import (
     construct_full_state,
     index_spectra_by_surface,
+    match_statevector,
     update_config_for_surface,
 )
 from isofit.inversion.inverse_simple import (
@@ -142,18 +138,14 @@ def analytical_line(
         else (subs_state_file.replace("_subs_state", "_atm_interp"))
     )
 
-    # Get output shape
-    rdn_ds = envi.open(envi_header(rdn_file))
-    rdns = rdn_ds.shape
-    output_metadata = rdn_ds.metadata
-    del rdn_ds
-
     # Get full statevector for image
     (
         full_statevector,
         full_idx_surface,
         full_idx_surf_rfl,
+        _,
         full_idx_RT,
+        _,
     ) = construct_full_state(config)
 
     # Perform the atmospheric interpolation
@@ -174,33 +166,57 @@ def analytical_line(
     outside_ret_windows = np.zeros(len(full_idx_surf_rfl), dtype=int)
     outside_ret_windows[retrieve_winidx(config)] = 1
 
+    # Get output shape
+    rdn_ds = envi.open(envi_header(rdn_file))
+    rdns = rdn_ds.shape
+    rdn_meta = rdn_ds.metadata
+    del rdn_ds
+
+    output_metadata = {
+        "lines": rdn_meta["lines"],
+        "samples": rdn_meta["samples"],
+        "bands": rdn_meta["bands"],
+    }
+
     # Construct surf rfl output
     bbl = "{" + ",".join([f"{x}" for x in outside_ret_windows]) + "}"
     num_bands = len(full_idx_surf_rfl)
     band_names = [full_statevector[i] for i in range(len(full_idx_surf_rfl))]
     rfl_output = initialize_output(
-        output_metadata,
+        {
+            "data type": 4,
+            "file type": "ENVI Standard",
+            "byte order": 0,
+        },
         analytical_rfl_path,
         (rdns[0], num_bands, rdns[1]),
-        ["emit pge input files"],
+        lines=rdn_meta["lines"],
+        samples=rdn_meta["samples"],
+        bands=f"{num_bands}",
         bbl=bbl,
         interleave="bil",
-        bands=f"{num_bands}",
         band_names=band_names,
+        wavelength=rdn_meta["wavelength"],
         wavelength_unts="Nanometers",
         description=("L2A Analytyical per-pixel surface retrieval"),
     )
 
     # Construct surf rfl uncertainty output
     unc_output = initialize_output(
-        output_metadata,
+        {
+            "data type": 4,
+            "file type": "ENVI Standard",
+            "byte order": 0,
+        },
         analytical_rfl_unc_path,
         (rdns[0], num_bands, rdns[1]),
-        ["emit pge input files"],
+        lines=rdn_meta["lines"],
+        samples=rdn_meta["samples"],
+        bands=f"{num_bands}",
         bbl=bbl,
         interleave="bil",
-        bands=f"{num_bands}",
         band_names=band_names,
+        wavelength=rdn_meta["wavelength"],
         wavelength_unts="Nanometers",
         description=("L2A Analytyical per-pixel surface retrieval uncertainty"),
     )
@@ -212,37 +228,33 @@ def analytical_line(
             full_statevector[len(full_idx_surf_rfl) + i] for i in range(n_non_rfl_bands)
         ]
         non_rfl_output = initialize_output(
-            output_metadata,
+            {
+                "data type": 4,
+                "file type": "ENVI Standard",
+                "byte order": 0,
+            },
             analytical_non_rfl_surf_file,
             (rdns[0], n_non_rfl_bands, rdns[1]),
-            [
-                "emit pge input files",
-                "bbl",
-                "wavelength",
-                "wavelength units",
-                "fwhm",
-                "smoothing factors",
-            ],
-            interleave="bil",
+            lines=rdn_meta["lines"],
+            samples=rdn_meta["samples"],
             bands=f"{n_non_rfl_bands}",
+            interleave="bil",
             band_names=non_rfl_band_names,
             description=("L2A Analytyical per-pixel non_rfl surface retrieval"),
         )
 
         non_rfl_unc_output = initialize_output(
-            output_metadata,
+            {
+                "data type": 4,
+                "file type": "ENVI Standard",
+                "byte order": 0,
+            },
             analytical_non_rfl_surf_unc_file,
             (rdns[0], n_non_rfl_bands, rdns[1]),
-            [
-                "emit pge input files",
-                "bbl",
-                "wavelength",
-                "wavelength units",
-                "fwhm",
-                "smoothing factors",
-            ],
-            interleave="bil",
+            lines=rdn_meta["lines"],
+            samples=rdn_meta["samples"],
             bands=f"{n_non_rfl_bands}",
+            interleave="bil",
             band_names=non_rfl_band_names,
             description=(
                 "L2A Analytyical per-pixel non_rfl surface retrieval uncertainty"
@@ -271,44 +283,41 @@ def analytical_line(
     index_pairs[:, 1] = meshgrid[1].flatten(order="f")
     del meshgrid
 
+    cache_RT = None
     input_config = deepcopy(config)
     surface_index = index_spectra_by_surface(
         input_config, index_pairs, force_full_res=True
     )
-    for surface_class_str, class_idx_pairs in surface_index.items():
+    for i, (surface_class_str, class_idx_pairs) in enumerate(surface_index.items()):
         # Handle multisurface
         config = update_config_for_surface(deepcopy(input_config), surface_class_str)
 
-        # Set forward model
-        fm = ForwardModel(config)
+        fm = ForwardModel(config, cache_RT)
 
         # Initialize workers
-        wargs = [
-            ray.put(obj)
-            for obj in (
-                config,
-                fm,
-                surface_class_str,
-                class_idx_pairs,
-                full_statevector,
-                full_idx_surface,
-                full_idx_surf_rfl,
-                full_idx_RT,
-                rdn_file,
-                loc_file,
-                obs_file,
-                atm_file,
-                subs_state_file,
-                lbl_file,
-                rfl_output,
-                unc_output,
-                non_rfl_output,
-                non_rfl_unc_output,
-                num_iter,
-                loglevel,
-                logfile,
-                initializer,
-            )
+        wargs = [ray.put(obj) for obj in (config, fm)]
+        wargs += [
+            surface_class_str,
+            class_idx_pairs,
+            full_statevector,
+            full_idx_surface,
+            full_idx_surf_rfl,
+            full_idx_RT,
+            rdn_file,
+            loc_file,
+            obs_file,
+            atm_file,
+            subs_state_file,
+            lbl_file,
+            rfl_output,
+            unc_output,
+            non_rfl_output,
+            non_rfl_unc_output,
+            num_iter,
+            loglevel,
+            logfile,
+            initializer,
+            skyview_factor_file,
         ]
         workers = ray.util.ActorPool([Worker.remote(*wargs) for _ in range(n_workers)])
 
@@ -328,6 +337,13 @@ def analytical_line(
         results = list(
             workers.map_unordered(lambda a, b: a.run_chunks.remote(b), line_breaks)
         )
+
+        # Cache RT
+        if not i:
+            cache_RT = fm.RT
+
+        del fm
+
     total_time = time.time() - start_time
 
     logging.info(
@@ -411,6 +427,14 @@ class Worker(object):
         )
         self.lbl = envi.open(envi_header(lbl_file)).open_memmap(interleave="bip")
 
+        # Open skyview file for ALAlg, or create an array of 1s.
+        if skyview_factor_file:
+            self.svf = envi.open(envi_header(skyview_factor_file)).open_memmap(
+                interleave="bip"
+            )
+        else:
+            self.svf = []
+
         # Lines and samples
         self.n_lines = self.rdn.shape[0]
         self.n_samples = self.rdn.shape[1]
@@ -428,8 +452,6 @@ class Worker(object):
         # Can't see any reason to leave these as optional
         self.subs_state_file = subs_state_file
         self.lbl_file = lbl_file
-
-        self.skyview_factor_file = skyview_factor_file
 
         # If I only want to use some of the atm_interp bands
         # Empty if all
@@ -454,16 +476,7 @@ class Worker(object):
         # Unpack arguments
         start_line, stop_line = line_breaks
 
-        # Open skyview file for ALAlg, or create an array of 1s.
-        if self.skyview_factor_file:
-            svf = envi.open(envi_header(self.skyview_factor_file)).open_memmap(
-                interleave="bip"
-            )
-        else:
-            svf = np.ones((rdn.shape[0], rdn.shape[1]), dtype=float)
-
         # Set up outputs
-        #
         output_rfl = (
             envi.open(envi_header(self.rfl_outpath))
             .open_memmap(interleave="bip", writable=False)[start_line:stop_line, ...]
@@ -505,16 +518,16 @@ class Worker(object):
             meas = self.rdn[r, c, :]
 
             if self.radiance_correction is not None:
-                meas *= self.radiance_correction
+                meas = meas.copy() * self.radiance_correction
 
             if np.all(meas < 0):
                 continue
 
             geom = Geometry(
-                obs=self.obs[r, c, :], 
-                loc=self.loc[r, c, :], 
-                esd=esd, 
-                svf=svf[r, c]
+                obs=self.obs[r, c, :],
+                loc=self.loc[r, c, :],
+                esd=self.esd,
+                svf=self.svf[r, c] if len(self.svf) else 1,
             )
 
             # "Atmospheric" state ALWAYS comes from all bands in the
@@ -605,8 +618,6 @@ class Worker(object):
                 output_non_rfl_unc[r - start_line, c, :] = full_unc_est[
                     self.n_rfl_bands : self.n_rfl_bands + self.n_non_rfl_bands
                 ]
-
-        # output_rfl = output_rfl[..., self.full_idx_surface]
 
         logging.info(
             f"Analytical line writing lines: {start_line} to {stop_line}. "

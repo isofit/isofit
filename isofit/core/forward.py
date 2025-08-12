@@ -58,7 +58,7 @@ class ForwardModel:
     noise for the purpose of weighting the measurement information
     against the prior."""
 
-    def __init__(self, full_config: Config):
+    def __init__(self, full_config: Config, cache_RT: RadiativeTransfer = None):
         # load in the full config (in case of inter-module dependencies) and
         # then designate the current config
         self.full_config = full_config
@@ -68,7 +68,10 @@ class ForwardModel:
         self.n_meas = self.instrument.n_chan
 
         # Build the radiative transfer model
-        self.RT = RadiativeTransfer(self.full_config)
+        if cache_RT:
+            self.RT = cache_RT
+        else:
+            self.RT = RadiativeTransfer(self.full_config)
 
         # Build the surface model
         self.surface = Surface(full_config)

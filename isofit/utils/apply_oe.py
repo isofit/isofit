@@ -22,7 +22,6 @@ from isofit.core.common import envi_header
 from isofit.debug.resource_tracker import FileResources
 from isofit.utils import analytical_line as ALAlg
 from isofit.utils import empirical_line as ELAlg
-from isofit.utils.skyview import skyview
 from isofit.utils import (
     extractions,
     interpolate_spectra,
@@ -30,6 +29,7 @@ from isofit.utils import (
     reducers,
     segment,
 )
+from isofit.utils.skyview import skyview
 
 EPS = 1e-6
 CHUNKSIZE = 256
@@ -467,8 +467,9 @@ def apply_oe(
     # check and rebuild surface model if needed
     paths.surface_paths = tmpl.check_surface_model(
         surface_path=surface_path,
+        output_model_path=paths.surface_template_path,
         wl=wl,
-        paths=paths,
+        surface_wavelength_path=paths.wavelength_path,
         surface_category=surface_category,
         multisurface=use_multisurface,
     )
@@ -476,15 +477,15 @@ def apply_oe(
     # re-stage surface model if needed
     paths.surface_working_paths = {}
     for key, value in paths.surface_paths.items():
-        if value != surface_path:
-            name, ext = os.path.splitext(paths.surface_template_path)
-            if use_multisurface:
-                surface_working_path = f"{name}_{key}{ext}"
-            else:
-                surface_working_path = f"{name}{ext}"
-            copyfile(value, surface_working_path)
+        name, ext = os.path.splitext(paths.surface_template_path)
+
+        if use_multisurface:
+            surface_working_path = f"{name}_{key}{ext}"
         else:
-            surface_working_path = surface_path
+            surface_working_path = f"{name}{ext}"
+
+        if value != surface_working_path and surface_path.endswith(".mat"):
+            copyfile(value, surface_working_path)
 
         paths.surface_working_paths[key] = surface_working_path
 
@@ -575,7 +576,7 @@ def apply_oe(
             paths.surface_paths,
             n_cores=n_cores,
             dayofyear=dayofyear,
-            wl_file=paths.wavelength_path,
+            wavelength_file=paths.wavelength_path,
             logfile=log_file,
             clean=True,
         )
@@ -600,13 +601,17 @@ def apply_oe(
             )
 
         # Extract input data per segment
-        for inp, outp in [
-            (paths.radiance_working_path, paths.rdn_subs_path),
-            (paths.obs_working_path, paths.obs_subs_path),
-            (paths.loc_working_path, paths.loc_subs_path),
-            (paths.svf_working_path, paths.svf_subs_path),
+        for inp, outp, reducer_fun in [
+            (paths.radiance_working_path, paths.rdn_subs_path, reducers.band_mean),
+            (paths.obs_working_path, paths.obs_subs_path, reducers.band_mean),
+            (paths.loc_working_path, paths.loc_subs_path, reducers.band_mean),
+            (
+                paths.surface_class_working_path,
+                paths.surface_class_subs_path,
+                reducers.class_priority,
+            ),
         ]:
-            if not exists(outp) and inp is not None:
+            if inp and not exists(outp):
                 logging.info("Extracting " + outp)
                 extractions(
                     inputfile=inp,
@@ -614,23 +619,7 @@ def apply_oe(
                     output=outp,
                     chunksize=CHUNKSIZE,
                     flag=-9999,
-                    reducer=reducers.band_mean,
-                    n_cores=n_cores,
-                    loglevel=logging_level,
-                    logfile=log_file,
-                )
-
-        # Extract superpixels class
-        if paths.surface_class_working_path:
-            if not exists(paths.surface_class_subs_path):
-                logging.info("Extracting " + paths.surface_class_subs_path)
-                extractions(
-                    inputfile=paths.surface_class_working_path,
-                    labels=paths.lbl_working_path,
-                    output=paths.surface_class_subs_path,
-                    chunksize=CHUNKSIZE,
-                    flag=-9999,
-                    reducer=reducers.class_priority,
+                    reducer=reducer_fun,
                     n_cores=n_cores,
                     loglevel=logging_level,
                     logfile=log_file,

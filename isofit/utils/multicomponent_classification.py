@@ -13,25 +13,26 @@ from scipy.io import loadmat
 from scipy.linalg import norm
 from spectral import envi
 
+import isofit.utils.template_construction as tmpl
 from isofit import ray
 from isofit.core.common import envi_header, resample_spectrum, svd_inv
 from isofit.core.fileio import IO, initialize_output, write_bil_chunk
 from isofit.core.geometry import Geometry
+from isofit.core.multistate import SurfaceMapping
 from isofit.data import env
 
 
 class Component:
-    def __init__(self, surface_files, mapping):
+    def __init__(self, model_dict):
 
         # Combine all potential surface files
-        self.model_dict = load_surface_mat(surface_files)
+        self.model_dict = model_dict
         self.components = list(zip(self.model_dict["means"], self.model_dict["covs"]))
         self.n_comp = len(self.components)
         self.wl = self.model_dict["wl"][0]
         self.n_wl = len(self.wl)
 
-        self.surface_types = self.model_dict.get("surface_types", [])
-        self.mapping = mapping
+        self.surface_categories = self.model_dict.get("surface_categories", [])
 
         normalize = self.model_dict["normalize"]
         if normalize == "Euclidean":
@@ -67,9 +68,8 @@ class Component:
             mds.append(sum(pow(lamb_ref - ref_mu, 2)))
         closest = np.argmin(mds)
 
-        surface_type = self.surface_types[closest].strip()
-        surface_idx = [i for i, val in enumerate(self.mapping) if val == surface_type]
-        surface_idx = surface_idx[0] if len(surface_idx) else -9999
+        surface_category = self.surface_categories[closest].strip()
+        surface_idx = SurfaceMapping[surface_category]
 
         return surface_idx
 
@@ -82,8 +82,7 @@ class Worker(object):
         obs_file: str,
         loc_file: str,
         out_file: str,
-        surface_path: str,
-        mapping: list,
+        model_dict: list,
         wl: np.ndarray,
         fwhm: np.ndarray,
         dayofyear: int,
@@ -106,7 +105,7 @@ class Worker(object):
             interleave="bip", writable=True
         )
 
-        self.component = Component(surface_path, mapping)
+        self.component = Component(model_dict)
         self.esd = IO.load_esd()
         self.dayofyear = dayofyear
 
@@ -156,24 +155,39 @@ class Worker(object):
 
 def load_surface_mat(
     surface_files,
+    wavelength_file=None,
     keys_to_combine=[
         "means",
         "covs",
         "attribute_means",
         "attribute_covs",
-        "surface_types",
+        "surface_categories",
     ],
 ):
-    # CLI will pass .json as string. Convert to temp dict
+    # CLI will pass .json or .mat as string.
     if isinstance(surface_files, str):
-        surface_files = {"cli_input": surface_files}
+        if surface_files.endswith(".mat"):
+            surface_files = {"cli_input": surface_files}
 
+        elif surface_files.endswith(".json"):
+            print(surface_files)
+            print(wavelength_file)
+            surface_files = tmpl.check_surface_model(
+                surface_path=surface_files,
+                surface_wavelength_path=wavelength_file,
+                multisurface=True,
+            )
+
+    # Apply OE will pass dict
     for i, (name, surface_file) in enumerate(surface_files.items()):
         surface_model_dict = loadmat(surface_file)
         if not i:
             model_dict = surface_model_dict
         else:
             for key in keys_to_combine:
+                assert (
+                    model_dict[key].ndim == surface_model_dict[key].ndim
+                ), "Dimension mismatch between surface component cov matrices"
                 model_dict[key] = np.concatenate(
                     [model_dict[key], surface_model_dict[key]], axis=0
                 )
@@ -233,11 +247,10 @@ def multicomponent_classification(
     loc_file: str,
     out_file: str,
     surface_files: str,
+    wavelength_file: std,
     n_cores: int = -1,
     dayofyear: int = None,
-    wl_file: str = None,
     irr_file: str = None,
-    mapping: list = None,
     clean: bool = False,
     thresh: int = 100,
     ray_address: str = None,
@@ -247,6 +260,47 @@ def multicomponent_classification(
     loglevel: str = "INFO",
     logfile: str = None,
 ):
+    """\
+    Classify a radiance file based on a per-pixel prior selection.
+    The classification leverages the same methodology ISOFIT uses
+    to select a prior distribution from an input .json or .mat file.
+
+    \b
+    Parameters
+    ----------
+    rdn_file: str
+        Radiance data cube. Expected to be ENVI format
+    obs_file: str
+        Location data cube of shape (Lon, Lat, Elevation). Expected to be ENVI format
+    loc_file: str
+        Observation data cube of shape:
+            (path length, to-sensor azimuth, to-sensor zenith,
+            to-sun azimuth, to-sun zenith, phase,
+            slope, aspect, cosine i, UTC time)
+        Expected to be ENVI format
+    out_file: str
+        Output path to location where to save output file.
+    surface_files: str or dict
+        CLI entry into the classifier uses a .mat or a .json file
+        Apply OE entry into the classifier uses a dict argument.
+    wavelength_file: str
+        Standard ISOFIT wavelength file
+    n_cores : int, default=1
+        Number of cores to run classifier with.
+    dayofyear: int
+        Day of year for earth-sun distance calculation
+    irr_file: str
+        Path to irradiance file to use in the classification
+    clean: str
+        Experimental method to filter out noisy classification masks.
+        Creates connected binary components and filters out small features.
+    thresh: int
+        Threshold size to filter out features smaller than this number of pixels.
+    loglevel: str
+        Logging level to use (e.g. DEBUG, INFO, etc.)
+    logfile: str
+        Output location for logging file if writing to disk.
+    """
     logging.basicConfig(
         format="%(levelname)s:%(asctime)s ||| %(message)s",
         level=loglevel,
@@ -267,34 +321,14 @@ def multicomponent_classification(
     if n_cores == -1:
         n_cores = multiprocessing.cpu_count()
 
-    # Construct the output File
-    rdn_ds = envi.open(envi_header(rdn_file))
-    rdns = rdn_ds.shape
-    output_metadata = rdn_ds.metadata
-
     # Get wavelength
-    if wl_file:
-        # Assumes a structure where
-        # column 0: idx
-        # column 1: wl
-        # column 2: fwhm
-        wl = np.loadtxt(wl_file)
-        fwhm = wl[:, 2]
-        wl = wl[:, 1]
-    else:
-        wl = np.array(rdn_ds.metadata.get("wavelength", [])).astype(float)
-        fwhm = np.array(rdn_ds.metadata.get("fwhm", [])).astype(float)
-
-        if not len(wl) or not len(fwhm):
-            message = (
-                "No wavelength file given and rdn file does "
-                "not contain wavelength or fwhm information"
-            )
-            logging.error(message)
-            raise KeyError(message)
-
-    # Delete rdn_ds now that we don't need it
-    del rdn_ds
+    # Assumes a structure where
+    # column 0: idx
+    # column 1: wl
+    # column 2: fwhm
+    wl = np.loadtxt(wavelength_file)
+    fwhm = wl[:, 2]
+    wl = wl[:, 1]
 
     # Check units of wavelength
     if wl[0] > 100:
@@ -313,34 +347,32 @@ def multicomponent_classification(
 
     # The "mapping" is how the program moves between a int-classification
     # And the surface model
-    if not mapping:
-        model_dict = load_surface_mat(surface_files)
-        surface_types = model_dict.get("surface_types", [])
-        del model_dict
+    model_dict = load_surface_mat(surface_files, wavelength_file)
+    surface_types = model_dict.get("surface_categories", [])
 
-        if len(surface_types):
-            mapping = []
-            for i in surface_types:
-                if isinstance(i, np.ndarray) or isinstance(i, list):
-                    i = i[0].strip()
-                else:
-                    i = i.strip()
-                if i not in mapping:
-                    mapping.append(i)
-        else:
-            logging.error("No surface mapping provided")
-            raise ValueError("No surface mapping provided")
+    if not len(surface_types):
+        raise ValueError("No surface categories key in provided surface prior file.")
+
+    # Construct the output File
+    rdn_ds = envi.open(envi_header(rdn_file))
+    rdns = rdn_ds.shape
+    rdn_meta = rdn_ds.metadata
+    del rdn_ds
 
     output = initialize_output(
-        output_metadata,
+        {
+            "data type": 4,
+            "file type": "ENVI Standard",
+            "byte order": 0,
+        },
         out_file,
         (rdns[0], 1, rdns[1]),
-        ["emit pge input files", "wavelength", "fwhm"],
+        lines=rdn_meta["lines"],
+        samples=rdn_meta["samples"],
         interleave="bil",
         bands="1",
         band_names=["Classification"],
         description=("Per-pixel multicomponent classification"),
-        mapping=mapping,
     )
 
     # Ray initialization
@@ -370,8 +402,7 @@ def multicomponent_classification(
             obs_file,
             loc_file,
             out_file,
-            surface_files,
-            mapping,
+            model_dict,
             wl,
             fwhm,
             dayofyear,
@@ -411,18 +442,17 @@ def multicomponent_classification(
 @click.argument("loc_file")
 @click.argument("out_file")
 @click.argument("surface_files")
+@click.argument("wavelength_file")
 @click.option("--n_cores", default=-1)
-@click.option("--wl_file", default=None)
-@click.option("--irr_file", default=None)
-@click.option("--mapping", default=None)
-@click.option("--clean", is_flag=True, default=False)
+@click.option("--irr_file")
+@click.option("--clean", is_flag=True)
 @click.option("--thresh", default=100)
-@click.option("--ray_address", default=None)
-@click.option("--ray_redis_password", default=None)
-@click.option("--ray_temp_dir", default=None)
-@click.option("--ray_ip_head", default=None)
+@click.option("--ray_address")
+@click.option("--ray_redis_password")
+@click.option("--ray_temp_dir")
+@click.option("--ray_ip_head")
 @click.option("--loglevel", default="INFO")
-@click.option("--logfile", default=None)
+@click.option("--logfile")
 def cli(**kwargs):
     multicomponent_classification(**kwargs)
     click.echo("Done")

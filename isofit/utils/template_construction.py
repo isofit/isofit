@@ -19,16 +19,17 @@ import numpy as np
 from scipy.io import loadmat
 from spectral.io import envi
 
-from isofit.core import isofit, multistate, units
+from isofit.core import isofit, units
 from isofit.core.common import (
     envi_header,
     expand_path,
     json_load_ascii,
     resample_spectrum,
 )
+from isofit.core.multistate import SurfaceMapping
 from isofit.data import env
 from isofit.radiative_transfer.engines.modtran import ModtranRT
-from isofit.utils import surface_model
+from isofit.utils.surface_model import surface_model
 
 
 class Pathnames:
@@ -510,9 +511,10 @@ class SerialEncoder(json.JSONEncoder):
 
 def check_surface_model(
     surface_path: str,
-    wl: np.array,
-    paths: Pathnames,
-    surface_category: str,
+    output_model_path: str = None,
+    wl: np.array = [],
+    surface_wavelength_path: str = "",
+    surface_category: str = "multicomponent_surface",
     multisurface: bool = False,
 ) -> str:
     """
@@ -528,14 +530,18 @@ def check_surface_model(
     Args:
         surface_path: path to surface model or config dict
         wl: instrument center wavelengths
-        paths: object containing references to all relevant file locations
+        surface_wavelength_path: path to wavelength file
     """
     if os.path.isfile(surface_path):
         if surface_path.endswith(".mat"):
             # check wavelength grid of surface model if provided
             model_dict = loadmat(surface_path)
             wl_surface = model_dict["wl"][0]
-            if len(wl_surface) != len(wl):
+
+            if not len(wl):
+                logging.info("No wl array given. Not checking channel number matchup")
+
+            elif len(wl_surface) != len(wl):
                 raise ValueError(
                     "Number of channels provided in surface model file does not match"
                     " wavelengths in radiance cube. Please rebuild your surface model."
@@ -553,24 +559,47 @@ def check_surface_model(
             logging.info(
                 "No surface model provided. Build new one using given config file."
             )
+
+            if not surface_wavelength_path:
+                raise ValueError(
+                    "Building surface model requires input surface wavelength path"
+                )
+
+            if not output_model_path:
+                logging.info(
+                    "No output path provided via check_surface, "
+                    "using output file within surface config."
+                )
+                configdir, _ = os.path.split(os.path.abspath(surface_path))
+                config = json_load_ascii(surface_path, shell_replace=True)
+                output_model_path = expand_path(configdir, config["output_model_file"])
+
             surface_model(
                 config_path=surface_path,
-                wavelength_path=paths.wavelength_path,
+                wavelength_path=surface_wavelength_path,
+                output_path=output_model_path,
                 multisurface=multisurface,
             )
-            configdir, _ = os.path.split(os.path.abspath(surface_path))
-            config = json_load_ascii(surface_path, shell_replace=True)
-
-            output_model_path = expand_path(configdir, config["output_model_file"])
 
             # Handle a multisurface run with split
             if multisurface:
-                surface_types = [source["surface_type"] for source in config["sources"]]
+                config = json_load_ascii(surface_path, shell_replace=True)
+                surface_categories = []
+                for source in config["sources"]:
+                    surface_category = source.get("surface_category")
+                    if not surface_category:
+                        raise ValueError(
+                            "Multisurface ISOFIT surface configs require "
+                            "surface category to be specific in config. "
+                            "No 'surface_category' key found. Check config"
+                        )
+                    surface_categories.append(surface_category)
+
                 surface_paths = {}
-                for surface_type in np.unique(surface_types):
+                for surface_category in np.unique(surface_categories):
                     name, ext = os.path.splitext(output_model_path)
-                    surface_paths[multistate.SURFACE_MAPPING[str(surface_type)]] = (
-                        f"{name}_{str(surface_type)}{ext}"
+                    surface_paths[str(surface_category)] = (
+                        f"{name}_{str(surface_category)}{ext}"
                     )
 
             else:
@@ -907,22 +936,27 @@ def build_main_config(
     if prebuilt_lut_path is None:
         if h2o_lut_grid is not None and len(h2o_lut_grid) > 1:
             radiative_transfer_config["lut_grid"]["H2OSTR"] = h2o_lut_grid.tolist()
+
         if elevation_lut_grid is not None and len(elevation_lut_grid) > 1:
             radiative_transfer_config["lut_grid"][
                 "surface_elevation_km"
             ] = elevation_lut_grid.tolist()
+
         if to_sensor_zenith_lut_grid is not None and len(to_sensor_zenith_lut_grid) > 1:
             radiative_transfer_config["lut_grid"][
                 "observer_zenith"
             ] = to_sensor_zenith_lut_grid.tolist()
+
         if to_sun_zenith_lut_grid is not None and len(to_sun_zenith_lut_grid) > 1:
             radiative_transfer_config["lut_grid"][
                 "solar_zenith"
             ] = to_sun_zenith_lut_grid.tolist()
+
         if relative_azimuth_lut_grid is not None and len(relative_azimuth_lut_grid) > 1:
             radiative_transfer_config["lut_grid"][
                 "relative_azimuth"
             ] = relative_azimuth_lut_grid.tolist()
+
         radiative_transfer_config["lut_grid"].update(aerosol_lut_grid)
 
     rtc_ln = {}
@@ -1967,59 +2001,26 @@ def make_surface_config(
         )
 
         surface_config_dict["multi_surface_flag"] = True
-        surface_class_ds = envi.open(envi_header(paths.surface_class_working_path))
 
-        # Get the class mapping. Tried to build in some insensitivity here.
-        # Will use first option it hits
-        options = [
-            "mapping",
-            "Mapping",
-            "class names",
-            "Class names",
-            "class",
-            "Class",
-            "surfaces",
-            "Surfaces",
-            "surface names",
-            "Surface names",
-        ]
-        class_mapping = None
-        for option in options:
-            if class_mapping:
-                continue
-
-            class_mapping = surface_class_ds.metadata.get(option)
-
-        # mapping name to surface name - terrible way to do this
-        # Could house this in a standalone file and call it in
-        if not surface_mapping:
-            surface_mapping = multistate.SURFACE_MAPPING
+        # Get the surface categories present.
+        surface_classes_present = np.unique(
+            envi.open(envi_header(paths.surface_class_working_path)).open_memmap(
+                inteleave="bip"
+            )
+        )
 
         # Iterate through all classes present in class image
-        for i, name in enumerate(class_mapping):
-            surface_category = surface_mapping.get(name, "multicomponent_surface")
+        for i in surface_classes_present:
+            surface_category = SurfaceMapping[int(i)]
             # If surface_path given, use for all surfaces
             surface_path = paths.surface_working_paths[surface_category]
 
             # Set up "Surfaces" component of surface config
-            surface_config_dict["Surfaces"][name] = {
-                "surface_int": i,
+            surface_config_dict["Surfaces"][surface_category] = {
+                "surface_int": int(i),
                 "surface_file": surface_path,
                 "surface_category": surface_category,
             }
-
-            # Handle clouds if pressure elevation
-            if not pressure_elevation and len(elevation_lut_grid) and name == "cloud":
-                surface_config_dict["Surfaces"][name]["rt_statevector_elements"] = {
-                    "surface_elevation_km": {
-                        "bounds": [elevation_lut_grid[0], elevation_lut_grid[-1]],
-                        "scale": 100,
-                        "init": (elevation_lut_grid[0] + elevation_lut_grid[-1]) / 2.0,
-                        "prior_sigma": 1000.0,
-                        "prior_mean": (elevation_lut_grid[0] + elevation_lut_grid[-1])
-                        / 2.0,
-                    }
-                }
 
     # Single surface run
     else:
