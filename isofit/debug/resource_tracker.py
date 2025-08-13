@@ -19,11 +19,13 @@ class ResourceTracker:
     callback : Callable[[dict], None]
         Function to call on each resource refresh. Signature must accept:
 
-            callable(info : dict) -> None
+            callable(dict) -> None
 
-            the first info dict will contain the non-changing values:
-                cores : int
+            the first call will contain the non-changing values:
+                used_cores : int
                     Number of CPU cores in use. See the 'cores' parameter for more
+                total_cores : int
+                    Total number of cores available on the system via os.cpu_count()
                 mem_total : float
                     Total memory of the system
                 mem_unit : str
@@ -117,6 +119,29 @@ class ResourceTracker:
         rt.stop()
     """
 
+    # Informational dict to describe all the possible keys
+    info = {
+        "used_cores": "Number of CPU cores in use. See the 'cores' parameter for more",
+        "total_cores": "Total number of cores available on the system via os.cpu_count()",
+        "mem_total": "Total memory of the system",
+        "mem_unit": "Unit label that the memory values are in",
+        "mem_value": "The value used to convert the bytes to the mem_unit. This may be used to reverse the conversion",
+        "poll_interval": "Resource polling interval",
+        "timestamp": "The start timestamp of the resource tracker via time.time()",
+        "pid": "Process ID",
+        "name": "Process name",
+        "mem": "Process memory used",
+        "cpu": "Process CPU percentage over the interval",
+        "sys_cpu_per_core": "Per-core usage percentage over the interval",
+        "timestamp": "Timestamp of the resource record via time.time()",
+        "status": "Main process status, eg. 'running', 'sleeping'",
+        "children": "List of child processes and their information",
+        "mem_app": "Total memory of the main process + children",
+        "mem_used": "Memory in use by the system, excluding the app",
+        "mem_avail": "Remaining available memory, defined as free + reclaimable",
+        "cpu_avg": "Average CPU percentage calculated as: sum(main + children) / cores",
+        "sys_cpu": "System-wide CPU percentage over the interval",
+    }
     thread = None
 
     def __init__(
@@ -202,7 +227,8 @@ class ResourceTracker:
         # Record non-changing values as the first line
         self.callback(
             {
-                "cores": self.cores,
+                "used_cores": self.cores,
+                "total_cores": os.cpu_count(),
                 "mem_unit": self.unitLabel,
                 "mem_value": self.unitValue,
                 "mem_total": sys.total / self.unitValue,
@@ -360,6 +386,9 @@ class FileResources(ResourceTracker):
 
         if reset:
             self.io = open(self.file, "w")
+
+            # Record the keys info dict as the first line
+            self.write(self.info)
         else:
             self.io = open(self.file, "a")
 
