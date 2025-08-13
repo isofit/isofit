@@ -16,7 +16,7 @@ class ResourceTracker:
 
     Parameters
     ----------
-    callback : Callable[dict]
+    callback : Callable[[dict], None]
         Function to call on each resource refresh. Signature must accept:
 
             callable(info : dict) -> None
@@ -108,7 +108,7 @@ class ResourceTracker:
 
     def __init__(
         self,
-        callback: Callable[dict],
+        callback: Callable[[dict], None],
         interval: float = 2,
         units: tuple = ("GB", 1024**3),
         cores: Union[int, Literal["all"]] = None,
