@@ -1,14 +1,10 @@
-from __future__ import (
-    annotations,  # Needed because python3.9 does not support pipe (|) in type hints
-)
-
 import atexit
 import json
 import os
 import threading
 import time
 from pathlib import Path
-from typing import Callable, Literal
+from typing import Callable, Literal, Union
 from warnings import warn
 
 import psutil
@@ -20,7 +16,7 @@ class ResourceTracker:
 
     Parameters
     ----------
-    callback : Callable
+    callback : Callable[dict]
         Function to call on each resource refresh. Signature must accept:
 
             callable(info : dict) -> None
@@ -112,11 +108,11 @@ class ResourceTracker:
 
     def __init__(
         self,
-        callback: Callable,
+        callback: Callable[dict],
         interval: float = 2,
         units: tuple = ("GB", 1024**3),
-        cores: int | Literal["all"] = None,
-        round: bool | int = 2,
+        cores: Union[int, Literal["all"]] = None,
+        round: Union[bool, int] = 2,
         summarize: bool = True,
         allow_unsafe: bool = False,
     ):
