@@ -75,8 +75,6 @@ class ResourceTracker:
                     Average CPU percentage calculated as: sum(main + children) / cores
                 sys_cpu : float
                     System-wide CPU percentage over the interval
-
-            Total memory of the system is the sum([mem_app, mem_used, mem_free])
     interval : int | float, default=2
         Interval frequency in seconds to check resources
         Must be greater than 0. Values less than 0.1 risk high CPU usage and skewing
@@ -102,6 +100,21 @@ class ResourceTracker:
     allow_unsafe : bool, default=False
         Bypasses the exception and allows unsafe interval values (less than 0.1)
         Not recommended
+
+    Examples
+    --------
+    Basic usage::
+
+        import time
+        from isofit.debug.resource_tracker import ResourceTracker
+
+        def myFunction(info: dict):
+            print(info)
+
+        rt = ResourceTracker(myFunction)
+        rt.start()
+        time.sleep(10)
+        rt.stop()
     """
 
     thread = None
@@ -308,7 +321,7 @@ class ResourceTracker:
 
 class FileResources(ResourceTracker):
     """
-    Subclass of ResourceTracker with built in file handling
+    Subclass of ResourceTracker that writes the polled resources to a json list file
 
     Parameters
     ----------
@@ -316,6 +329,22 @@ class FileResources(ResourceTracker):
         Path to a JSONL file to log resource information to
     reset : bool, default=False
         If the file exists, reset it
+
+    Examples
+    --------
+    Basic usage::
+
+        import time
+        from isofit.debug.resource_tracker import FileResources
+
+        fr = ResourceTracker("resources.jsonl", reset=True)
+        fr.start()
+        time.sleep(10)
+        fr.stop()
+
+    See Also
+    --------
+    ResourceTracker
     """
 
     def __init__(self, file: str, /, reset: bool = False, **kwargs):
