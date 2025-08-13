@@ -259,6 +259,10 @@ class ResourceTracker:
 
             if self.round:
                 for key, value in info.items():
+                    # Skip this as it's a list that doesn't need rounding
+                    if key == "sys_cpu":
+                        continue
+
                     if "mem" in key or "cpu" in key:
                         info[key] = round(value, self.round)
 
