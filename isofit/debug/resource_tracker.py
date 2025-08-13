@@ -1,3 +1,7 @@
+from __future__ import (
+    annotations,  # Needed because python3.9 does not support pipe (|) in type hints
+)
+
 import atexit
 import json
 import os
