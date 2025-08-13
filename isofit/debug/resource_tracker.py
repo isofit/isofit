@@ -255,7 +255,7 @@ class ResourceTracker:
 
                 # Average CPU usage
                 info["cpu_avg"] = sum([p["cpu"] for p in children]) + info["cpu"]
-                info["cpu_avg"] /= info["cores"]
+                info["cpu_avg"] /= self.cores
 
             if self.round:
                 for key, value in info.items():
