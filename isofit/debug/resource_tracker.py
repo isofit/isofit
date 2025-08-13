@@ -187,7 +187,7 @@ class ResourceTracker:
             {
                 "cores": self.cores,
                 "mem_unit": self.unitLabel,
-                "mem_value": self.unitVabel,
+                "mem_value": self.unitValue,
                 "mem_total": sys.total / self.unitValue,
                 "poll_interval": self.interval,
                 "timestamp": time.time(),
