@@ -45,6 +45,8 @@ class ResourceTracker:
                     Main process memory used
                 cpu : float
                     Main process CPU percentage over the interval
+                sys_cpu_per_core : list[float]
+                    Per-core usage percentage over the interval
                 timestamp : float
                     Timestamp of the resource record via time.time()
                 status : str
@@ -71,6 +73,8 @@ class ResourceTracker:
                     Remaining available memory, defined as free + reclaimable
                 cpu_avg : float
                     Average CPU percentage calculated as: sum(main + children) / cores
+                sys_cpu : float
+                    System-wide CPU percentage over the interval
 
             Total memory of the system is the sum([mem_app, mem_used, mem_free])
     interval : int | float, default=2
@@ -213,12 +217,12 @@ class ResourceTracker:
 
             # Main process
             info["mem"] = proc.memory_info().rss / self.unitValue
+            info["cpu"] = proc.cpu_percent()
             info["status"] = proc.status()
             info["timestamp"] = time.time()
 
-            # Get the system CPU usage per core
-            info["cpu"] = proc.cpu_percent()
-            info["sys_cpu"] = psutil.cpu_percent(percpu=True)
+            # Get the system CPU usage
+            info["sys_cpu_per_core"] = psutil.cpu_percent(percpu=True)  # per core
 
             # Reset children every loop
             children = []
@@ -257,13 +261,15 @@ class ResourceTracker:
                 info["cpu_avg"] = sum([p["cpu"] for p in children]) + info["cpu"]
                 info["cpu_avg"] /= self.cores
 
+                info["sys_cpu"] = sum(info["sys_cpu_per_core"]) / len(
+                    info["sys_cpu_per_core"]
+                )
+
             if self.round:
                 for key, value in info.items():
-                    # Skip this as it's a list that doesn't need rounding
-                    if key == "sys_cpu":
-                        continue
-
                     if "mem" in key or "cpu" in key:
+                        if not isinstance(value, float):
+                            continue
                         info[key] = round(value, self.round)
 
                 for child in children:
