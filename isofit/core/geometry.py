@@ -137,7 +137,7 @@ class Geometry:
 
         This is a similar approx. that is in EnMap L2A processor.
         """
-        if self.sky_view_factor == 1.0 and self.slope > 0:
+        if self.sky_view_factor == 1.0 and self.slope is not None and self.slope > 0:
             svf = np.cos(np.radians(self.slope)) ** 2
         else:
             svf = 1.0
