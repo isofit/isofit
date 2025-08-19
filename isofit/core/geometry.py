@@ -64,7 +64,6 @@ class Geometry:
 
         self.bg_rfl = bg_rfl
         self.cos_i = None
-        self.sky_view_factor = svf
 
         # The 'obs' object is observation metadata that follows a historical
         # AVIRIS-NG format.  It arrives to our initializer in the form of
@@ -75,10 +74,15 @@ class Geometry:
             self.observer_zenith = obs[2]  # 0 to 90 from zenith
             self.solar_azimuth = obs[3]  # 0 to 360 clockwise from N
             self.solar_zenith = obs[4]  # 0 to 90 from zenith
+            self.slope = obs[6]  # 0-90 slope in degrees
             self.cos_i = obs[8]  # cosine of eSZA
             # calculate relative to-sun azimuth
             delta_phi = np.abs(self.solar_azimuth - self.observer_azimuth)
             self.relative_azimuth = np.minimum(delta_phi, 360 - delta_phi)  # 0 to 180
+
+        # Assign skyview and run check for default case (1s).
+        self.sky_view_factor = svf
+        self.sky_view_factor = self.check_skyview(self)
 
         # The 'loc' object is a list-like object that optionally contains
         # latitude and longitude information about the surface being
@@ -124,3 +128,16 @@ class Geometry:
         cos_i = np.clip(cos_i, 0.0, 1.0)
 
         return coszen, cos_i
+
+    def check_skyview(self):
+        """Checks to have a default skyview computed as a function of slope (only if svf==1).
+
+        svf = cos2(Slope)
+
+        This is a similar approx. that is in EnMap L2A processor.
+        """
+        if self.svf == 1.0 and self.slope > 0:
+            svf = np.cos(np.radians(self.slope)) ** 2
+        else:
+            svf = 1
+        return svf
