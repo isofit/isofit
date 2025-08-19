@@ -82,7 +82,7 @@ class Geometry:
 
         # Assign skyview and run check for default case (1s).
         self.sky_view_factor = svf
-        self.sky_view_factor = self.check_skyview(self)
+        self.sky_view_factor = self.check_skyview()
 
         # The 'loc' object is a list-like object that optionally contains
         # latitude and longitude information about the surface being
@@ -139,5 +139,5 @@ class Geometry:
         if self.svf == 1.0 and self.slope > 0:
             svf = np.cos(np.radians(self.slope)) ** 2
         else:
-            svf = 1
+            svf = 1.0
         return svf
