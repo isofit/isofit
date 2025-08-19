@@ -53,6 +53,7 @@ class Geometry:
         self.surface_elevation_km = None
         self.earth_sun_distance = None
         self.esd_factor = None
+        self.slope = None
 
         if esd is None:
             logging.warning(
