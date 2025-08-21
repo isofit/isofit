@@ -11,7 +11,6 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -20,6 +19,8 @@ jobs:
         # GitHub worker contention.
         python-version: ["3.12"]
         pytest-flags: ["-m unmarked", "-m slow"]
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
 
     steps:
       # Pull the cache on every runner

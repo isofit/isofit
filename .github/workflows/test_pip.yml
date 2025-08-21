@@ -46,6 +46,7 @@ jobs:
           path: ~/.isofit
           key: cache-extras
           fail-on-cache-miss: true
+          enableCrossOsArchive: true
 
       - uses: actions/checkout@v3
 
