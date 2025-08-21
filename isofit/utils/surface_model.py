@@ -45,6 +45,18 @@ def next_diag_val(C: np.ndarray, starting_index, direction):
     return None
 
 
+def get_winidx(wl, window_range):
+    """find with wavelength indices in a given range
+
+    Args:
+        wl (_type_): wavelengths
+        window_range (_type_): selection range
+    """
+    cond = np.logical_and(wl >= window_range[0], wl < window_range[1])
+    window_idx = np.where(cond)[0]
+    return window_idx
+
+
 def surface_model(
     config_path: str, wavelength_path: str = None, output_path: str = None, seed=13
 ) -> None:
@@ -128,6 +140,7 @@ def surface_model(
         "attribute_covs": [],
         "attributes": [],
         "refwl": refwl,
+        "component_window_idx": [],
     }
 
     # each "source" (i.e. spectral library) is treated separately
@@ -261,14 +274,12 @@ def surface_model(
                 C_attr = np.cov(spectra_attr[Z == ci, :], rowvar=False)
 
             # for i in range(nchan):
+            model["component_window_idx"].append([])
             for window in windows:
-                window_idx = np.where(
-                    np.logical_and(
-                        wl >= window["interval"][0], wl < window["interval"][1]
-                    )
-                )[0]
+                window_idx = get_winidx(wl, window["interval"])
                 if len(window_idx) == 0:
                     continue
+                model["component_window_idx"][-1].append(window_idx)
                 window_range = slice(window_idx[0], window_idx[-1] + 1)
 
                 # To minimize bias, leave the channels independent
@@ -282,11 +293,7 @@ def surface_model(
                     C[window_range, window_range] = c_diag
 
             for window in windows:
-                window_idx = np.where(
-                    np.logical_and(
-                        wl >= window["interval"][0], wl < window["interval"][1]
-                    )
-                )[0]
+                window_idx = get_winidx(wl, window["interval"])
                 if len(window_idx) == 0:
                     continue
                 window_range = slice(window_idx[0], window_idx[-1] + 1)
@@ -336,11 +343,7 @@ def surface_model(
             # Now do any cross-block feathering by augmenting the precision matrix
             P = inv(C)
             for window in windows:
-                window_idx = np.where(
-                    np.logical_and(
-                        wl >= window["interval"][0], wl < window["interval"][1]
-                    )
-                )[0]
+                window_idx = get_winidx(wl, window["interval"])
                 if len(window_idx) == 0:
                     continue
 
@@ -369,6 +372,14 @@ def surface_model(
                 z = np.sqrt(np.mean(pow(m[normind], 2)))
             elif normalize == "None":
                 z = 1.0
+            elif normalize == "Euclidean-window":
+                z = np.ones(len(wl))
+                for window in windows:
+                    window_idx = get_winidx(wl, window["interval"])
+                    if len(window_idx) == 0:
+                        continue
+                    z[window_idx] = np.sqrt(np.sum(pow(m[window_idx], 2)))
+
             else:
                 raise ValueError("Unrecognized normalization: %s\n" % normalize)
             m = m / z
