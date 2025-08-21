@@ -15,12 +15,11 @@ def changedDirs():
 
     # Changed dirs
     dirs = {key: f"/abc/{key}" for key in env._dirs}
-    dirs = normalize(dirs)
 
     # Default keys
     keys = {key: env[key] for key in env._keys}
 
-    return {**dirs, **keys}
+    return normalize({**dirs, **keys})
 
 
 @pytest.fixture(scope="session")
@@ -29,12 +28,11 @@ def changedKeys():
 
     # Default dirs
     dirs = {key: env[key] for key in env._dirs}
-    dirs = normalize(dirs)
 
     # Changed keys
     keys = {key: f"/xyz/{key}" for key in env._keys}
 
-    return {**dirs, **keys}
+    return normalize({**dirs, **keys})
 
 
 @pytest.fixture(scope="session")
@@ -56,7 +54,7 @@ def test_changePath(changedDirs):
     for key in env._dirs:
         env.changePath(key, changedDirs[key])
 
-    assert dict(env) == changedDirs
+    assert normalize(dict(env)) == changedDirs
 
 
 def test_changeKey(changedKeys):
@@ -65,7 +63,7 @@ def test_changeKey(changedKeys):
     for key in env._keys:
         env.changeKey(key, changedKeys[key])
 
-    assert dict(env) == changedKeys
+    assert normalize(dict(env)) == changedKeys
 
 
 def test_changeBase(changedDirs):
@@ -73,4 +71,4 @@ def test_changeBase(changedDirs):
 
     env.changeBase("/abc")
 
-    assert dict(env) == changedDirs
+    assert normalize(dict(env)) == changedDirs
