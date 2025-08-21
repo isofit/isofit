@@ -6,7 +6,7 @@ from isofit.data import env
 
 
 def normalize(paths):
-    return {key: Path(path).as_posix() for key, path in paths.items()}
+    return {key: Path(path).as_posix().replace("D:", "") for key, path in paths.items()}
 
 
 @pytest.fixture(scope="session")
