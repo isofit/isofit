@@ -1,6 +1,12 @@
+from pathlib import Path
+
 import pytest
 
 from isofit.data import env
+
+
+def normalize(paths):
+    return {key: Path(path).as_posix() for key, path in paths.items()}
 
 
 @pytest.fixture(scope="session")
@@ -9,6 +15,7 @@ def changedDirs():
 
     # Changed dirs
     dirs = {key: f"/abc/{key}" for key in env._dirs}
+    dirs = normalize(dirs)
 
     # Default keys
     keys = {key: env[key] for key in env._keys}
@@ -22,6 +29,7 @@ def changedKeys():
 
     # Default dirs
     dirs = {key: env[key] for key in env._dirs}
+    dirs = normalize(dirs)
 
     # Changed keys
     keys = {key: f"/xyz/{key}" for key in env._keys}
