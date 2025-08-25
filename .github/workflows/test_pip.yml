@@ -48,6 +48,17 @@ jobs:
           fail-on-cache-miss: true
           enableCrossOsArchive: true
 
+      - name: List home directory (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: ls -la ~
+
+      - name: List home directory (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          Get-ChildItem $env:USERPROFILE
+          dir ~
+        shell: pwsh
+
       - uses: actions/checkout@v3
 
       - name: Print concurrency group
