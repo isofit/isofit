@@ -38,7 +38,7 @@ class Geometry:
         dt: datetime = None,
         esd: np.array = None,
         bg_rfl: np.array = None,
-        svf: float = None,
+        svf: float = 1,
     ):
         # Set some benign defaults...
         self.observer_zenith = (

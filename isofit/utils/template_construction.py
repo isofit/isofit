@@ -8,7 +8,7 @@ import logging
 import os
 import subprocess
 from datetime import datetime
-from os.path import abspath, exists, join, split, dirname
+from os.path import abspath, dirname, exists, join, split
 from shutil import copyfile
 from sys import platform
 from typing import List
@@ -26,6 +26,7 @@ from isofit.core.common import (
     resample_spectrum,
 )
 from isofit.data import env
+from isofit.radiative_transfer.engines.modtran import ModtranRT
 from isofit.utils import surface_model
 
 
@@ -328,6 +329,7 @@ class LUTConfig:
         lut_config_file: str = None,
         emulator: str = None,
         no_min_lut_spacing: bool = False,
+        atmosphere_type="ATM_MIDLAT_SUMMER",
     ):
         if lut_config_file is not None:
             with open(lut_config_file, "r") as f:
@@ -379,10 +381,22 @@ class LUTConfig:
         self.aerosol_2_spacing_min = 0
 
         # Units of AOD
-        self.aerosol_0_range = [0.001, 1]
-        self.aerosol_1_range = [0.001, 1]
-        self.aerosol_2_range = [0.001, 1]
-        self.aot_550_range = [0.001, 1]
+        self.aerosol_0_range = [
+            ModtranRT.modtran_aot_lowerbound_polynomials()[atmosphere_type](0),
+            1,
+        ]
+        self.aerosol_1_range = [
+            ModtranRT.modtran_aot_lowerbound_polynomials()[atmosphere_type](0),
+            1,
+        ]
+        self.aerosol_2_range = [
+            ModtranRT.modtran_aot_lowerbound_polynomials()[atmosphere_type](0),
+            1,
+        ]
+        self.aot_550_range = [
+            ModtranRT.modtran_aot_lowerbound_polynomials()[atmosphere_type](0),
+            1,
+        ]
 
         self.aot_550_spacing = 0
         self.aot_550_spacing_min = 0
