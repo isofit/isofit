@@ -57,6 +57,12 @@ class SurfaceConfig(BaseConfigSection):
         self._surface_T_prior_sigma_degK_type = float
         self.surface_T_prior_sigma_degK = 1.0
 
+        self._sun_glint_prior_sigma_type = float
+        self.sun_glint_prior_sigma = 0.1
+
+        self._sky_glint_prior_sigma_type = float
+        self.sky_glint_prior_sigma = 0.01
+
         self.set_config_options(sub_configdic)
 
     def _check_config_validity(self) -> List[str]:
