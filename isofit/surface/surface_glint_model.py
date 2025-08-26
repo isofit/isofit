@@ -82,11 +82,14 @@ class GlintModelSurface(MultiComponentSurface):
         """Given a reflectance estimate and one or more emissive parameters,
         fit a state vector.
         """
-        # Estimate additive glint. Uses multiple options to handle different sensors.
-        # Try SWIR, then NIR
+        # Make sure the glint estimation is not
+        # driving short wavelengths into the negative
+        # causes issues in inversion
         blue_band_1 = np.argmin(np.abs(450 - self.wl))
         blue_band_2 = np.argmin(np.abs(500 - self.wl))
 
+        # Estimate additive glint. Uses multiple options to handle different sensors.
+        # Try SWIR, then NIR
         if np.max(self.wl) >= 2300:
             glint_band_1 = np.argmin(np.abs(2200 - self.wl))
             glint_band_2 = np.argmin(np.abs(2300 - self.wl))
