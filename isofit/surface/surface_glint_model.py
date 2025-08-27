@@ -121,6 +121,7 @@ class GlintModelSurface(MultiComponentSurface):
         g_dsf_est = self.init[self.sky_glint_ind]
 
         g_dd_est = glint_est / self.fresnel_rf(geom.observer_zenith)
+        # Updating self.init will set the prior mean (xa) to this value
         self.init[self.sun_glint_ind] = g_dd_est
 
         # SUN_GLINT g_dd
