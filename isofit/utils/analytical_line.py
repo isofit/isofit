@@ -510,7 +510,7 @@ class Worker(object):
                     r,
                     (rdn.shape[0], rdn.shape[1], len(self.fm.idx_surf_nonrfl)),
                 )
-        del rdn, loc, obs, lbl
+        del rdn, loc, obs, lbl, svf
 
 
 @click.command(name="analytical_line")

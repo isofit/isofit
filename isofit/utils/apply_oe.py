@@ -219,7 +219,10 @@ def apply_oe(
         Flag to tell interpolation to work on the file in place, or generate a
         new interpolated rdn file. The location of the new file will be in the
         "input" directory within the working directory.
-
+    skyview_factor : str, default=None
+        Flag to determine method of account for skyview factor. Default is None, and creates an array of 1s of same shape as image.
+        Other option is a path to a skyview computed via skyview.py utility or other source. 
+        
     \b
     References
     ----------
@@ -312,12 +315,12 @@ def apply_oe(
                 )
                 raise ValueError(err_str)
 
-    # Check if user passed a path to sky view factor image file, else it is None.
+    # Check if user passed a path to sky view factor image file or method, else it is None.
     if skyview_factor:
         # check file exists first..
         if not exists(skyview_factor):
             raise ValueError(
-                f"Input skyview: {skyview_factor} file was not found system."
+                f"Input skyview: {skyview_factor} file was not found on system."
             )
         else:
             # load in and ensure same shape as image file.

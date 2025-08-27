@@ -34,6 +34,7 @@ def skyview(
     dem_prj_path,
     dem_prj_resolution,
     output_directory,
+    method="horizon",
     n_angles=72,
     logging_level="INFO",
     log_file=None,
@@ -55,11 +56,14 @@ def skyview(
     Parameters
     ----------
     dem_prj_path : str
-        Path to the projected DEM or DSM file in UTM coordinates.
+        Path to the projected DEM or DSM file.
     dem_prj_resolution : float
         Spatial resolution of the projected DEM in coordinate units (GSD in meters).
-    working_directory : str
+    output_directory : str
         Directory path for temporary files and outputs during processing; similar to apply_oe.
+    method : str, optional
+        Options are either "horizon" or "slope". Passing "horizon" runs the full computation and is recommended for very steep terrain.
+        Passing "slope"" runs the simplifed calculation of svf=cos^2(slope/2) and can be useful for more mild slopes. 
     n_angles : int, optional
         Number of angles used in horizon calculations (default is 72).
     logging_level : str, optional
@@ -111,50 +115,68 @@ def skyview(
     dem_data[dem_data > 8900] = np.nan  # highest possible point
     dem_data[dem_data < -1360] = np.nan  # lowest possible point
 
-    # prep the data for correct format for computation
-    angles, aspect, cos_slope, sin_slope, tan_slope = viewf2022_prep(
-        dem=dem_data,
-        spacing=dem_prj_resolution,
-        nangles=n_angles,
-        sin_slope=None,
-        aspect=None,
-    )
-
-    # Share ray objects
-    dem_ray = ray.put(dem_data)
-    aspect_ray = ray.put(aspect)
-    cos_ray = ray.put(cos_slope)
-    sin_ray = ray.put(sin_slope)
-    tan_ray = ray.put(tan_slope)
-
-    # Run n-angles in parallel (n=72 by default)
-    futures = [
-        viewf2022_i.remote(
-            a, dem_ray, dem_prj_resolution, aspect_ray, cos_ray, sin_ray, tan_ray
+    # If only computing slope method
+    if method == 'slope':
+        slope, aspect = gradient_d8(dem, 
+                                    dx=dem_prj_resolution, 
+                                    dy=dem_prj_resolution, 
+                                    aspect_rad=True)
+        svf = np.cos(slope/2)**2
+        # save.
+        envi.save_image(
+            svf_hdr_path,
+            svf.astype(np.float32),
+            dtype=np.float32,
+            interleave="bsq",
+            metadata=dem_metadata,
+            force=True,
         )
-        for a in angles
-    ]
-    results = ray.get(futures)
 
-    # and so now, we have a list object of 72, 2-d arrays
-    # and  can complete integration for svf
-    svf = sum(results) / len(angles)
+    elif method == 'horizon':
+        # prep the data for correct format for computation
+        angles, aspect, cos_slope, sin_slope, tan_slope = viewfdozier_prep(
+            dem=dem_data,
+            spacing=dem_prj_resolution,
+            nangles=n_angles,
+            sin_slope=None,
+            aspect=None,
+        )
 
-    # NOTE: we can also save TCF but for now, this is commented out.
-    # tcf = (1 + cos_slope)/2 - svf
+        # Share ray objects
+        dem_ray = ray.put(dem_data)
+        aspect_ray = ray.put(aspect)
+        cos_ray = ray.put(cos_slope)
+        sin_ray = ray.put(sin_slope)
+        tan_ray = ray.put(tan_slope)
 
-    # save.
-    envi.save_image(
-        svf_hdr_path,
-        svf.astype(np.float32),
-        dtype=np.float32,
-        interleave="bsq",
-        metadata=dem_metadata,
-        force=True,
-    )
+        # Run n-angles in parallel
+        futures = [
+            viewfdozier_i.remote(
+                a, dem_ray, dem_prj_resolution, aspect_ray, cos_ray, sin_ray, tan_ray
+            )
+            for a in angles
+        ]
+        results = ray.get(futures)
+
+        # and so now, we have a list object of 72, 2-d arrays
+        # and  can complete integration for svf
+        svf = sum(results) / len(angles)
+
+        envi.save_image(
+            svf_hdr_path,
+            svf.astype(np.float32),
+            dtype=np.float32,
+            interleave="bsq",
+            metadata=dem_metadata,
+            force=True,
+        )
+    else:
+        err_str = ("method must be either  'horizon' or 'slope'."
+                )
+        raise ValueError(err_str)
 
 
-def viewf2022_prep(dem, spacing, nangles=72, sin_slope=None, aspect=None):
+def viewfdozier_prep(dem, spacing, nangles=72, sin_slope=None, aspect=None):
     """
     Preps computations for ray.
 
@@ -200,7 +222,7 @@ def viewf2022_prep(dem, spacing, nangles=72, sin_slope=None, aspect=None):
 
 
 @ray.remote(num_cpus=1)
-def viewf2022_i(angle, dem, spacing, aspect, cos_slope, sin_slope, tan_slope):
+def viewfdozier_i(angle, dem, spacing, aspect, cos_slope, sin_slope, tan_slope):
     """
     See above, but this is running each horizon angle in parallel (n=72 , or user input)
 
