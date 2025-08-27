@@ -221,7 +221,7 @@ def apply_oe(
         "input" directory within the working directory.
     skyview_factor : str, default=None
         Flag to determine method of account for skyview factor. Default is None, and creates an array of 1s of same shape as image.
-        Other option is a path to a skyview computed via skyview.py utility or other source. 
+        Other option is a path to a skyview computed via skyview.py utility or other source. Please note data must range from 0-1.
         
     \b
     References
