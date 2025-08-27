@@ -116,12 +116,11 @@ def skyview(
     dem_data[dem_data < -1360] = np.nan  # lowest possible point
 
     # If only computing slope method
-    if method == 'slope':
-        slope, aspect = gradient_d8(dem, 
-                                    dx=dem_prj_resolution, 
-                                    dy=dem_prj_resolution, 
-                                    aspect_rad=True)
-        svf = np.cos(slope/2)**2
+    if method == "slope":
+        slope, aspect = gradient_d8(
+            dem, dx=dem_prj_resolution, dy=dem_prj_resolution, aspect_rad=True
+        )
+        svf = np.cos(slope / 2) ** 2
         # save.
         envi.save_image(
             svf_hdr_path,
@@ -132,7 +131,7 @@ def skyview(
             force=True,
         )
 
-    elif method == 'horizon':
+    elif method == "horizon":
         # prep the data for correct format for computation
         angles, aspect, cos_slope, sin_slope, tan_slope = viewfdozier_prep(
             dem=dem_data,
@@ -171,8 +170,7 @@ def skyview(
             force=True,
         )
     else:
-        err_str = ("method must be either  'horizon' or 'slope'."
-                )
+        err_str = "method must be either  'horizon' or 'slope'."
         raise ValueError(err_str)
 
 

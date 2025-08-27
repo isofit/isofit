@@ -326,6 +326,7 @@ def apply_oe(
             # load in and ensure same shape as image file.
             svf_dataset = envi.open(envi_header(skyview_factor), skyview_factor)
             svf_size = (svf_dataset.shape[0], svf_dataset.shape[1])
+            svf_max = np.nanmax(svf_dataset)
             del svf_dataset
             if not (svf_size[0] == rdn_size[0] and svf_size[1] == rdn_size[1]):
                 err_str = (
@@ -333,6 +334,8 @@ def apply_oe(
                     f" match input_radiance size: {rdn_size}"
                 )
                 raise ValueError(err_str)
+            if svf_max > 1.0:
+                err_str = f"Input file: {skyview_factor} has data with max {svf_max}. Data must range between 0-1."
     logging.info("...Data file checks complete")
 
     lut_params = tmpl.LUTConfig(lut_config_file, emulator_base, no_min_lut_spacing)
