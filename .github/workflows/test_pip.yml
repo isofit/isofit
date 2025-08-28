@@ -82,10 +82,12 @@ jobs:
           python3 -c "import isofit; print(isofit.__file__)"
 
       # Examples are built for ubuntu runners, Windows needs to rebuild every time
-      - name: Rebuild examples
+      - name: Format for Windows
         shell: bash
         if: runner.os == 'Windows'
-        run: isofit build
+        run: |
+          isofit --base ~
+          isofit build
 
       - name: Execute tests
         shell: bash

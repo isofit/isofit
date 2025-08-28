@@ -74,6 +74,11 @@ jobs:
           key: cache-extras
           enableCrossOsArchive: true
 
+      - name: Move .isofit
+        shell: bash
+        if: steps.cache-extras.outputs.cache-hit == 'true'
+        run: mv .isofit ~/.isofit
+
       - uses: actions/checkout@v3
 
       - name: Set up Python
@@ -92,9 +97,6 @@ jobs:
         name: Check for Updates
         shell: bash
         run: |
-          # First move the cache
-          mv .isofit ~/.isofit
-
           # Module must report "[x]" to be detected
           SUMMARY="$(isofit -S validate all)"
 
