@@ -54,6 +54,12 @@ jobs:
           ls -lah /home/runner/
         shell: bash
 
+      - name: Peak Home
+        if: runner.os == 'Windows'
+        run: |
+          ls -lah /c/Users/runneradmin
+        shell: bash
+
       - uses: actions/checkout@v3
 
       - name: Print concurrency group
