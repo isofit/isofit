@@ -28,10 +28,14 @@ jobs:
         id: cache-extras
         uses: actions/cache/restore@v4
         with:
-          path: ~/.isofit
+          path: .isofit
           key: cache-extras
           fail-on-cache-miss: true
           enableCrossOsArchive: true
+
+      - name: Move .isofit
+        shell: bash
+        run: mv .isofit ~/.isofit
 
       - uses: actions/checkout@v3
 

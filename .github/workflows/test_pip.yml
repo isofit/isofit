@@ -52,17 +52,6 @@ jobs:
         shell: bash
         run: mv .isofit ~/.isofit
 
-      - name: Peak Home
-        run: |
-          ls -lah ~
-        shell: bash
-
-      # - name: Peak Home
-      #   if: runner.os == 'Windows'
-      #   run: |
-      #     ls -lah /c/Users/runneradmin
-      #   shell: bash
-
       - uses: actions/checkout@v3
 
       - name: Print concurrency group
@@ -91,6 +80,12 @@ jobs:
 
           # Ensure ISOFIT has been installed
           python3 -c "import isofit; print(isofit.__file__)"
+
+      # Examples are built for ubuntu runners, Windows needs to rebuild every time
+      - name: Rebuild examples
+        shell: bash
+        if: runner.os == 'Windows'
+        run: isofit build
 
       - name: Execute tests
         shell: bash
