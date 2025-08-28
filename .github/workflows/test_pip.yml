@@ -50,6 +50,7 @@ jobs:
 
       - name: Peak Home
         run: ls -lah ~
+        shell: bash
 
       - uses: actions/checkout@v3
 
