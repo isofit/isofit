@@ -67,18 +67,30 @@ class Instrument:
         self.statevec_names = config.statevector.get_element_names()
         self.n_state = len(self.statevec_names)
 
-        if config.SNR is not None:
+        noise_test = True
+        if noise_test:
+            self.model_type = "parametric"
+
+            a = -0.001
+            b = 0
+            c = 0.00576770
+            self.noise = np.array([a, b, c])
+
+        elif config.SNR is not None:
             self.model_type = "SNR"
             self.snr = config.SNR
+
         elif config.parametric_noise_file is not None:
             self.model_type = "parametric"
             self.noise_file = config.parametric_noise_file
+
             coeffs = np.loadtxt(self.noise_file, delimiter=" ", comments="#")
             p_a, p_b, p_c = [
                 interp1d(coeffs[:, 0], coeffs[:, col], fill_value="extrapolate")
                 for col in (1, 2, 3)
             ]
             self.noise = np.array([[p_a(w), p_b(w), p_c(w)] for w in self.wl_init])
+
             self.integrations = config.integrations
 
         elif config.pushbroom_noise_file is not None:
@@ -194,6 +206,7 @@ class Instrument:
             nedl[bad] = minimum_noise
             return np.diagflat(np.power(nedl, 2))
 
+        # 2 This should be the term to use to account for the unaccounted for nonlinearity
         elif self.model_type == "parametric":
             noise_plus_meas = self.noise[:, 1] + meas
             if np.any(noise_plus_meas <= 0):
