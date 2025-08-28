@@ -28,16 +28,10 @@ jobs:
         id: cache-extras
         uses: actions/cache/restore@v4
         with:
-          path: extras.tar.gz
+          path: ~/.isofit
           key: cache-extras
           fail-on-cache-miss: true
           enableCrossOsArchive: true
-
-      - name: Restore archive
-        run: |
-          mv extras.tar.gz ~
-          cd ~
-          tar -xvf extras.tar.gz
 
       - uses: actions/checkout@v3
 

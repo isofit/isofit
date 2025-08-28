@@ -70,7 +70,7 @@ jobs:
         id: cache-extras
         uses: actions/cache@v4
         with:
-          path: extras.tar.gz
+          path: ~/.isofit
           key: cache-extras
           enableCrossOsArchive: true
 
@@ -122,11 +122,6 @@ jobs:
           isofit download all
           echo "Building examples"
           isofit build
-          echo "Creating archive"
-          cd ~
-          tar -cvf extras.tar.gz .isofit
-          cd -
-          mv ~/.isofit extras.tar.gz
 
   # Test pip installation
   pip:
