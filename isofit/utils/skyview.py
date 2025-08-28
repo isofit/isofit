@@ -52,11 +52,14 @@ def skyview(
     Also, following suggestions from Dozier (2021), multiprocessing is leveraged here w.r.t. to n_angles rotating the image. As default,
     sky view is computed with n angles = 72 which in most cases is of sufficient accuracy to resolve but more angles may be used.
 
+    Optionally to this horizon based method, one can pass method="slope" to compute a faster estimate that may be sufficent for regions with lower relief.
+    The slope based estimate is simply, svf = cos^2(slope/2).
+
     \b
     Parameters
     ----------
     dem_prj_path : str
-        Path to the projected DEM or DSM file.
+        Path to the projected DEM or DSM file (ENVI format).
     dem_prj_resolution : float
         Spatial resolution of the projected DEM in coordinate units (GSD in meters).
     output_directory : str
@@ -71,7 +74,7 @@ def skyview(
     log_file : str or None, optional
         File path to write logs; similar to apply_oe.
     n_cores : int, optional
-        Number of CPU cores to use for parallel processing (default is 1).
+        Number of CPU cores to use for parallel processing (default is 1). Only used for method="horizon".
     """
 
     # Construct svf output path.
@@ -81,18 +84,6 @@ def skyview(
     logging.basicConfig(
         format="%(levelname)s:%(message)s", level=logging_level, filename=log_file
     )
-
-    # Start up a ray instance for parallel work
-    rayargs = {
-        "ignore_reinit_error": True,
-        "local_mode": n_cores == 1,
-        "address": ray_address,
-        "include_dashboard": False,
-        "_temp_dir": ray_temp_dir,
-        "_redis_password": ray_redis_password,
-        "num_cpus": n_cores,
-    }
-    ray.init(**rayargs)
 
     # Load DEM data (assuming hdr).
     dem = envi.open(envi_header(dem_prj_path))
@@ -118,7 +109,7 @@ def skyview(
     # If only computing slope method
     if method == "slope":
         slope, aspect = gradient_d8(
-            dem, dx=dem_prj_resolution, dy=dem_prj_resolution, aspect_rad=True
+            dem_data, dx=dem_prj_resolution, dy=dem_prj_resolution, aspect_rad=True
         )
         svf = np.cos(slope / 2) ** 2
         # save.
@@ -140,6 +131,18 @@ def skyview(
             sin_slope=None,
             aspect=None,
         )
+
+        # Start up a ray instance for parallel work
+        rayargs = {
+            "ignore_reinit_error": True,
+            "local_mode": n_cores == 1,
+            "address": ray_address,
+            "include_dashboard": False,
+            "_temp_dir": ray_temp_dir,
+            "_redis_password": ray_redis_password,
+            "num_cpus": n_cores,
+        }
+        ray.init(**rayargs)
 
         # Share ray objects
         dem_ray = ray.put(dem_data)
@@ -170,7 +173,7 @@ def skyview(
             force=True,
         )
     else:
-        err_str = "method must be either  'horizon' or 'slope'."
+        err_str = "method must be either 'horizon' or 'slope'."
         raise ValueError(err_str)
 
 
@@ -244,12 +247,11 @@ def viewfdozier_i(angle, dem, spacing, aspect, cos_slope, sin_slope, tan_slope):
         h[t], np.arccos(np.sqrt(1 - 1 / (1 + cos_aspect[t] ** 2 * tan_slope[t] ** 2)))
     )
 
-    # integral in Dozier.
+    # integral in https://github.com/DozierJeff/Topographic-Horizons:
     # qIntegrand = (cosd(slopeDegrees)*sin(H).^2 + sind(slopeDegrees)*cos(aspectRadian-azmRadian).*(H-cos(H).*sin(H)))/2
     svf = cos_slope * np.sin(h) ** 2 + sin_slope * cos_aspect * (
         h - np.sin(h) * np.cos(h)
     )
-
     svf[svf < 0] = 0
 
     return svf
@@ -691,6 +693,7 @@ def transpose_skew(dem, spacing, angle):
 @click.argument("dem_prj_resolution", type=float)
 @click.argument("output_directory", type=str)
 @click.option("--n_angles", type=int, default=72)
+@click.option("--method", type=str, default="horizon")
 @click.option("--logging_level", default="INFO")
 @click.option("--log_file", type=str, default=None)
 @click.option("--n_cores", type=int, default=1)
