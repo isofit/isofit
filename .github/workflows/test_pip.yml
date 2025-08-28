@@ -43,22 +43,25 @@ jobs:
         id: cache-extras
         uses: actions/cache/restore@v4
         with:
-          path: ~/.isofit
+          path: .isofit
           key: cache-extras
           fail-on-cache-miss: true
           enableCrossOsArchive: true
 
+      - name: Move .isofit
+        shell: bash
+        run: mv .isofit ~/.isofit
+
       - name: Peak Home
         run: |
           ls -lah ~
-          ls -lah /home/runner/
         shell: bash
 
-      - name: Peak Home
-        if: runner.os == 'Windows'
-        run: |
-          ls -lah /c/Users/runneradmin
-        shell: bash
+      # - name: Peak Home
+      #   if: runner.os == 'Windows'
+      #   run: |
+      #     ls -lah /c/Users/runneradmin
+      #   shell: bash
 
       - uses: actions/checkout@v3
 

@@ -70,7 +70,7 @@ jobs:
         id: cache-extras
         uses: actions/cache@v4
         with:
-          path: ~/.isofit
+          path: .isofit
           key: cache-extras
           enableCrossOsArchive: true
 
@@ -92,6 +92,9 @@ jobs:
         name: Check for Updates
         shell: bash
         run: |
+          # First move the cache
+          mv .isofit ~/.isofit
+
           # Module must report "[x]" to be detected
           SUMMARY="$(isofit -S validate all)"
 
@@ -122,6 +125,7 @@ jobs:
           isofit download all
           echo "Building examples"
           isofit build
+          mv ~/.isofit .
 
   # Test pip installation
   pip:
