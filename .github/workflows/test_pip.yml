@@ -49,7 +49,9 @@ jobs:
           enableCrossOsArchive: true
 
       - name: Peak Home
-        run: ls -lah ~
+        run: |
+          ls -lah ~
+          ls -lah /home/runner/
         shell: bash
 
       - uses: actions/checkout@v3
