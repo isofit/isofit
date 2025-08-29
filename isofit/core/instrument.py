@@ -67,14 +67,20 @@ class Instrument:
         self.statevec_names = config.statevector.get_element_names()
         self.n_state = len(self.statevec_names)
 
-        noise_test = True
-        if noise_test:
-            self.model_type = "parametric"
+        # config.noise_test = False
+        if config.noise_test:
+            self.model_type = "testing"
 
-            a = -0.001
-            b = 0
-            c = 0.00576770
-            self.noise = np.array([a, b, c])
+            a = 0.0057
+            b = 0.0
+            c = 0.25
+            self.noise_a = np.array([a, b, c])[np.newaxis, :]
+
+            a = 0.2
+            b = 0.3
+            self.noise_b = np.array([a, b, c])[np.newaxis, :]
+
+            self.integrations = config.integrations
 
         elif config.SNR is not None:
             self.model_type = "SNR"
@@ -207,6 +213,23 @@ class Instrument:
             return np.diagflat(np.power(nedl, 2))
 
         # 2 This should be the term to use to account for the unaccounted for nonlinearity
+        elif self.model_type == "testing":
+            noise_plus_meas = self.noise_a[:, 1] + meas
+
+            nedl_a = np.abs(
+                self.noise_a[:, 0] * np.sqrt(noise_plus_meas) + self.noise_a[:, 2]
+            )
+
+            noise_plus_meas = self.noise_b[:, 1] + meas
+            nedl_b = (
+                self.noise_b[:, 0] * (1 / np.exp(np.sqrt(noise_plus_meas)))
+            ) + self.noise_b[:, 2]
+
+            nedl = np.max([nedl_a, nedl_b], axis=0)
+            nedl = nedl / np.sqrt(self.integrations)
+
+            return np.diagflat(np.power(nedl, 2))
+
         elif self.model_type == "parametric":
             noise_plus_meas = self.noise[:, 1] + meas
             if np.any(noise_plus_meas <= 0):
