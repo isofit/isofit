@@ -220,8 +220,10 @@ def apply_oe(
         new interpolated rdn file. The location of the new file will be in the
         "input" directory within the working directory.
     skyview_factor : str, default=None
-        Flag to determine method of account for skyview factor. Default is None, and creates an array of 1s of same shape as image.
-        Other option is a path to a skyview computed via skyview.py utility or other source. Please note data must range from 0-1.
+        Flag to determine method to account for skyview factor. Default is None, creating an array of 1s.
+        Other option is "slope" which will approx. based on cos^2(slope/2).
+        Other option is a path to a skyview ENVI file computed via skyview.py utility or other source. 
+        Please note data must range from 0-1.
         
     \b
     References
@@ -317,25 +319,47 @@ def apply_oe(
 
     # Check if user passed a path to sky view factor image file or method, else it is None.
     if skyview_factor:
-        # check file exists first..
-        if not exists(skyview_factor):
+        # deal with condition if they have a file named precomputed-slope locally
+        if exists("slope") and skyview_factor == "slope":
             raise ValueError(
-                f"Input skyview: {skyview_factor} file was not found on system."
+                f"File name {skyview_factor} is too similar to method, 'slope'. Please rename or change method and try running again."
             )
+        # slope based method to compute skyview and save file, rename to path
+        if skyview_factor == "slope":
+            # overwrite arg to be the resulting filepath. create new directory
+            # NOTE: this new directory should be in paths.make_directories(),
+            # but cannot at the moment because of the order of operations...
+            skyview_factor = join(working_directory, "skyview", "sky_view_factor.hdr")
+            if not exists(os.path.dirname(skyview_factor)):
+                os.mkdir(os.path.dirname(skyview_factor))
+            skyview(
+                dem_prj_path=input_obs,
+                dem_prj_resolution=np.nan,  # unused in slope method with OBS input.
+                output_directory=os.path.dirname(skyview_factor),
+                obs_or_loc="obs",
+                method="slope",
+            )
+        # If arg is None, load in the user data and check.
         else:
-            # load in and ensure same shape as image file.
-            svf_dataset = envi.open(envi_header(skyview_factor), skyview_factor)
-            svf_size = (svf_dataset.shape[0], svf_dataset.shape[1])
-            svf_max = np.nanmax(svf_dataset)
-            del svf_dataset
-            if not (svf_size[0] == rdn_size[0] and svf_size[1] == rdn_size[1]):
-                err_str = (
-                    f"Input file: {skyview_factor} size is {svf_size}, which does not"
-                    f" match input_radiance size: {rdn_size}"
+            if not exists(skyview_factor):
+                raise ValueError(
+                    f"Input skyview: {skyview_factor} file was not found on system."
                 )
-                raise ValueError(err_str)
-            if svf_max > 1.0:
-                err_str = f"Input file: {skyview_factor} has data with max {svf_max}. Data must range between 0-1."
+            else:
+                # load in and ensure same shape as image file.
+                svf_dataset = envi.open(envi_header(skyview_factor), skyview_factor)
+                svf_size = (svf_dataset.shape[0], svf_dataset.shape[1])
+                svf_max = np.nanmax(svf_dataset)
+                del svf_dataset
+                if not (svf_size[0] == rdn_size[0] and svf_size[1] == rdn_size[1]):
+                    err_str = (
+                        f"Input file: {skyview_factor} size is {svf_size}, which does not"
+                        f" match input_radiance size: {rdn_size}"
+                    )
+                    raise ValueError(err_str)
+                if svf_max > 1.0:
+                    err_str = f"Input file: {skyview_factor} has data with max {svf_max}. Data must range between 0-1."
+
     logging.info("...Data file checks complete")
 
     lut_params = tmpl.LUTConfig(lut_config_file, emulator_base, no_min_lut_spacing)

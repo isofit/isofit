@@ -64,7 +64,7 @@ class Geometry:
 
         self.bg_rfl = bg_rfl
         self.cos_i = None
-        self.sky_view_factor = svf
+        self.skyview_factor = svf
 
         # The 'obs' object is observation metadata that follows a historical
         # AVIRIS-NG format.  It arrives to our initializer in the form of
@@ -113,14 +113,19 @@ class Geometry:
         day_of_year = date_time.timetuple().tm_yday
         return float(self.earth_sun_distance[day_of_year - 1, 1])
 
-    def check_coszen_and_cos_i(self, coszen):
+    def verify(self, coszen):
+        """Verify important geometry data such as coszen, cos_i, slope, aspect, and sky view prior to inversion."""
+        valid_data = {}
+
+        # Populate coszen if NaN
         coszen = np.cos(np.deg2rad(self.solar_zenith)) if np.isnan(coszen) else coszen
 
         # Local solar zenith angle as a function of surface slope and aspect
         cos_i = self.cos_i if self.cos_i is not None else coszen
 
-        # Ensure coszen and cos_i respect 0-1 bounds.
-        coszen = np.clip(coszen, 0.0, 1.0)
-        cos_i = np.clip(cos_i, 0.0, 1.0)
+        # Ensure coszen, cos_i, and skyview respect 0-1 bounds.
+        valid_data["coszen"] = np.clip(coszen, 0.0, 1.0)
+        valid_data["cos_i"] = np.clip(cos_i, 0.0, 1.0)
+        valid_data["skyview_factor"] = np.clip(self.skyview_factor, 0.0, 1.0)
 
-        return coszen, cos_i
+        return valid_data

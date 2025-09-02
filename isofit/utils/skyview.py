@@ -34,6 +34,7 @@ def skyview(
     dem_prj_path,
     dem_prj_resolution,
     output_directory,
+    obs_or_loc=None,
     method="horizon",
     n_angles=72,
     logging_level="INFO",
@@ -64,6 +65,9 @@ def skyview(
         Spatial resolution of the projected DEM in coordinate units (GSD in meters).
     output_directory : str
         Directory path for temporary files and outputs during processing; similar to apply_oe.
+    obs_or_loc : str
+        Options here are 'obs', 'loc', or None. Default is None. If 'obs' is selected, it will pick the slope data from index 6 in OBS file.
+        If 'loc' is selected it well select the elevation data from index 2. 
     method : str, optional
         Options are either "horizon" or "slope". Passing "horizon" runs the full computation and is recommended for very steep terrain.
         Passing "slope"" runs the simplifed calculation of svf=cos^2(slope/2) and can be useful for more mild slopes. 
@@ -88,8 +92,26 @@ def skyview(
     # Load DEM data (assuming hdr).
     dem = envi.open(envi_header(dem_prj_path))
     dem_data = dem.open_memmap(writeable=False).copy()
+
+    # assign if None, LOC, or OBS based data.
+    obs_or_loc = obs_or_loc.lower()
+    if obs_or_loc == "obs":
+        slope = dem_data[:, :, 6]
+        slope[slope > 90.1] = np.nan
+        slope[slope < -0.01] = np.nan
+    elif obs_or_loc == "loc":
+        dem_data = dem_data[:, :, 2]
+        dem_data[dem_data > 8900] = np.nan
+        dem_data[dem_data < -1360] = np.nan
+    elif obs_or_loc == None:
+        dem_data[dem_data > 8900] = np.nan
+        dem_data[dem_data < -1360] = np.nan
+    else:
+        err_str = "obs_or_loc must be 'loc', 'obs', or None."
+        raise ValueError(err_str)
     if dem_data.ndim == 3 and dem_data.shape[2] == 1:
         dem_data = dem_data[:, :, 0]
+    # set metadata
     dem_metadata = dem.metadata.copy()
     dem_metadata.update(
         {
@@ -102,15 +124,12 @@ def skyview(
         }
     )
 
-    # Handle potential no data in dem_data.
-    dem_data[dem_data > 8900] = np.nan  # highest possible point
-    dem_data[dem_data < -1360] = np.nan  # lowest possible point
-
     # If only computing slope method
     if method == "slope":
-        slope, aspect = gradient_d8(
-            dem_data, dx=dem_prj_resolution, dy=dem_prj_resolution, aspect_rad=True
-        )
+        if obs_or_loc != "obs":
+            slope, aspect = gradient_d8(
+                dem_data, dx=dem_prj_resolution, dy=dem_prj_resolution, aspect_rad=True
+            )
         svf = np.cos(slope / 2) ** 2
         # save.
         envi.save_image(
