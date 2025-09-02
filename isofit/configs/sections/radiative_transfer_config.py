@@ -26,6 +26,7 @@ import numpy as np
 
 from isofit.configs.base_config import BaseConfigSection
 from isofit.configs.sections.statevector_config import StateVectorConfig
+from isofit.data import env
 
 
 class RadiativeTransferEngineConfig(BaseConfigSection):
@@ -233,17 +234,27 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         if self.irradiance_file is None and self.engine_name == "6s":
             errors.append("6s requires irradiance_file to be specified")
 
-        if self.engine_name == "sRTMnet" and self.emulator_file is None:
-            errors.append("The sRTMnet requires an emulator_file to be specified.")
+        if self.engine_name == "sRTMnet":
+            if self.emulator_file is None:
+                # Fallback to the path specified by the isofit.ini
+                self.emulator_file = env.path("srtmnet", env["srtmnet.file"])
+                if not self.emulator_file.exists():
+                    errors.append(
+                        "The sRTMnet requires an emulator_file to be specified."
+                    )
 
-        if self.engine_name == "sRTMnet" and self.emulator_aux_file is None:
-            errors.append("The sRTMnet requires an emulator_aux_file to be specified.")
-
-        if self.engine_name == "sRTMnet" and self.emulator_file is not None:
             if os.path.splitext(self.emulator_file)[1] != ".h5":
                 errors.append(
                     "sRTMnet now requires the emulator_file to be of type .h5.  Please download an updated version from:\n https://zenodo.org/records/10831425"
                 )
+
+            if self.emulator_aux_file is None:
+                # Fallback to the path specified by the isofit.ini
+                self.emulator_aux_file = env.path("srtmnet", env["srtmnet.aux"])
+                if not self.emulator_aux_file.exists():
+                    errors.append(
+                        "The sRTMnet requires an emulator_aux_file to be specified."
+                    )
 
         files = [
             self.obs_file,
