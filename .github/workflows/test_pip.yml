@@ -85,7 +85,7 @@ jobs:
       - name: Format for Windows
         shell: bash
         if: runner.os == 'Windows'
-        run: isofit --base ~ build
+        run: isofit --base ~/.isofit build
 
       - name: Execute tests
         shell: bash
