@@ -85,7 +85,7 @@ class ForwardModel:
             )
 
         # Build combined vectors from surface, RT, and instrument
-        bounds, scale, init, statevec, bvec, bval = ([] for i in range(6))
+        bounds, scale, init, statevec, bvec = ([] for i in range(5))
         for obj_with_statevec in [self.surface, self.RT, self.instrument]:
             bounds.extend([deepcopy(x) for x in obj_with_statevec.bounds])
             scale.extend([deepcopy(x) for x in obj_with_statevec.scale])
@@ -93,7 +93,6 @@ class ForwardModel:
             statevec.extend([deepcopy(x) for x in obj_with_statevec.statevec_names])
 
             bvec.extend([deepcopy(x) for x in obj_with_statevec.bvec])
-            bval.extend([deepcopy(x) for x in obj_with_statevec.bval])
 
         self.bounds = tuple(np.array(bounds).T)
         self.scale = np.array(scale)
@@ -103,8 +102,6 @@ class ForwardModel:
 
         self.bvec = np.array(bvec)
         self.nbvec = len(self.bvec)
-        self.bval = np.array(bval)
-        self.Sb = np.diagflat(np.power(self.bval, 2))
 
         # Set up indices for references - MUST MATCH ORDER FROM ABOVE ASSIGNMENT
         self.idx_surface = self.surface.idx_surface
@@ -184,6 +181,15 @@ class ForwardModel:
 
         return block_diag(Sa_surface, Sa_RT, Sa_instrument)
 
+    def Sb(self, x, meas, geom):
+        """Accumulate the uncertainty due to unmodeled variables within
+        respective forward model portions."""
+        Sb_surface = self.surface.Sb()
+        Sb_RT = self.RT.Sb()
+        Sb_instrument = self.instrument.Sb(meas)
+
+        return block_diag(Sb_surface, Sb_RT, Sb_instrument)
+
     def calc_meas(self, x, geom, rfl=[]):
         """Calculate the model observation at instrument wavelengths."""
         # Unpack state vector - Copy to not change x fm-wide
@@ -256,10 +262,11 @@ class ForwardModel:
         else:
             Gamma = 0
 
+        Sb = self.Sb(x, meas, geom)
         Kb = self.Kb(x, geom)
         Sy = self.instrument.Sy(meas, geom)
 
-        return Sy + Kb.dot(self.Sb).dot(Kb.T) + Gamma
+        return Sy + Kb.dot(Sb).dot(Kb.T) + Gamma
 
     def K(self, x, geom):
         """Derivative of observation with respect to state vector. This is
