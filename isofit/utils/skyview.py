@@ -94,7 +94,9 @@ def skyview(
     dem_data = dem.open_memmap(writeable=False).copy()
 
     # assign if None, LOC, or OBS based data.
-    obs_or_loc = obs_or_loc.lower()
+    method = method.lower()
+    if obs_or_loc:
+        obs_or_loc = obs_or_loc.lower()
     if obs_or_loc == "obs":
         slope = dem_data[:, :, 6]
         slope[slope > 90.1] = np.nan

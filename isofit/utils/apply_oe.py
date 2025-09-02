@@ -320,12 +320,12 @@ def apply_oe(
     # Check if user passed a path to sky view factor image file or method, else it is None.
     if skyview_factor:
         # deal with condition if they have a file named precomputed-slope locally
-        if exists("slope") and skyview_factor == "slope":
+        if exists("slope") and skyview_factor.lower() == "slope":
             raise ValueError(
                 f"File name {skyview_factor} is too similar to method, 'slope'. Please rename or change method and try running again."
             )
         # slope based method to compute skyview and save file, rename to path
-        if skyview_factor == "slope":
+        if skyview_factor.lower() == "slope":
             # overwrite arg to be the resulting filepath. create new directory
             # NOTE: this new directory should be in paths.make_directories(),
             # but cannot at the moment because of the order of operations...
