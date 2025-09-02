@@ -4,6 +4,14 @@
 # cache. Deliberate updates to the cache is important to keep track the health and
 # status of the cache instead of automatic updates
 # Then launch the Python tests in parallel
+#
+# In order to support Windows testing, the cache uses the enableCrossOsArchive flag.
+# The isofit.data.env (ini) assumes the default location for the cached data is
+# ~/.isofit -- however, we can't use this as the path in the cache action because
+# Windows doesn't restore it correctly for some reason
+# As such, the extras are built in the local working directory and cached there, then
+# moved to ~/.isofit after, allowing both Linux and Windows to put the cache into the
+# correct locations
 
 name: Build
 
