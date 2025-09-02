@@ -209,8 +209,7 @@ class Instrument:
             nedl = a * (1 / np.exp(b * meas))
             nedl = nedl / np.sqrt(self.integrations)
 
-            # self.bval[: self.n_chan] += np.power(nedl, 2)
-            self.bval[: self.n_chan] += nedl
+            self.bval[: self.n_chan] += np.power(nedl, 2)
 
         # Radiometric uncertainties combine via Root Sum Square...
         # Be careful to avoid square roots of zero!
