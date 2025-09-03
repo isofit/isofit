@@ -125,35 +125,30 @@ class Instrument:
 
         else:
             raise IndexError("Please define the instrument noise.")
-            # This should never be reached, as an error is designated in the config read
+        # This should never be reached, as an error is designated in the config read
 
         # We track several unretrieved free variables, that are specified
         # in a fixed order (always start with relative radiometric
         # calibration)
         self.unknowns = config.unknowns
         self.bval = np.zeros(self.n_chan)
-        self.bvec = []
+        self.bvec = ["Cal_Relative_%04i" % int(w) for w in self.wl_init]
 
         # self.unknowns should always exist via configs
-        if (
-            (self.unknowns.channelized_radiometric_uncertainty_file is not None)
-            or (self.unknowns.uncorrelated_radiometric_uncertainty is not None)
-            or (len(self.unknowns.linearity_uncertainty))
-        ):
-            self.bvec += ["Cal_Relative_%04i" % int(w) for w in self.wl_init]
+        # but may not exist for manual configs
+        if self.unknowns:
+            # Now handle spectral calibration uncertainties
+            if self.unknowns.wavelength_calibration_uncertainty is not None:
+                self.bvec += ["Cal_Spectral"]
+                self.cal_spectral_idx = len(self.bval)
+                self.bval = np.hstack(
+                    [self.bval, self.unknowns.wavelength_calibration_uncertainty]
+                )
 
-        # Now handle spectral calibration uncertainties
-        if self.unknowns.wavelength_calibration_uncertainty is not None:
-            self.bvec += ["Cal_Spectral"]
-            self.cal_spectral_idx = len(self.bval)
-            self.bval = np.hstack(
-                [self.bval, self.unknowns.wavelength_calibration_uncertainty]
-            )
-
-        if self.unknowns.stray_srf_uncertainty is not None:
-            self.bvec += ["Cal_Stray_SRF"]
-            self.cal_stray_idx = len(self.bval) + 1
-            self.bval = np.hstack([self.bval, self.unknowns.stray_srf_uncertainty])
+            if self.unknowns.stray_srf_uncertainty is not None:
+                self.bvec += ["Cal_Stray_SRF"]
+                self.cal_stray_idx = len(self.bval) + 1
+                self.bval = np.hstack([self.bval, self.unknowns.stray_srf_uncertainty])
 
         # Determine whether the calibration is fixed.  If it is fixed,
         # and the wavelengths of radiative transfer modeling and instrument
@@ -181,43 +176,46 @@ class Instrument:
 
     def Sb(self, meas):
         """Uncertainty due to unmodeled variables."""
+        bval = self.bval.copy()
         # First we take care of radiometric uncertainties, which add
         # in quadrature.  We sum their squared values.  Systematic
         # radiometric uncertainties account for differences in sampling
         # and radiative transfer that manifest predictably as a function
         # of wavelength.
-        if self.unknowns.channelized_radiometric_uncertainty_file is not None:
-            f = self.unknowns.channelized_radiometric_uncertainty_file
-            u = np.loadtxt(f, comments="#")
-            if len(u.shape) > 0 and u.shape[1] > 1:
-                u = u[:, 1]
-            self.bval[: self.n_chan] = self.bval[: self.n_chan] + pow(u, 2)
+        if self.unknowns:
+            if self.unknowns.channelized_radiometric_uncertainty_file is not None:
+                f = self.unknowns.channelized_radiometric_uncertainty_file
+                u = np.loadtxt(f, comments="#")
+                if len(u.shape) > 0 and u.shape[1] > 1:
+                    u = u[:, 1]
+                bval[: self.n_chan] = bval[: self.n_chan] + pow(u, 2)
 
-        # Uncorrelated radiometric uncertainties are consistent and
-        # independent in all channels.
-        if self.unknowns.uncorrelated_radiometric_uncertainty is not None:
-            u = self.unknowns.uncorrelated_radiometric_uncertainty
-            self.bval[: self.n_chan] = self.bval[: self.n_chan] + pow(
-                np.ones(self.n_chan) * u, 2
-            )
+            # Uncorrelated radiometric uncertainties are consistent and
+            # independent in all channels.
+            if self.unknowns.uncorrelated_radiometric_uncertainty:
+                u = self.unknowns.uncorrelated_radiometric_uncertainty
+                bval[: self.n_chan] = bval[: self.n_chan] + pow(
+                    np.ones(self.n_chan) * u, 2
+                )
 
-        # Unknown linearity uncertainty
-        if len(self.unknowns.linearity_uncertainty):
-            a, b = self.unknowns.linearity_uncertainty
+            # Unknown linearity uncertainty
+            if len(self.unknowns.linearity_uncertainty):
+                a, b = self.unknowns.linearity_uncertainty
 
-            # Treat it as a parametric noise
-            nedl = a * (1 / np.exp(b * meas))
-            nedl = nedl / np.sqrt(self.integrations)
+                # Treat it as a parametric noise
+                noise_times_meas = np.maximum(b * meas, eps)
+                nedl = a * (1 / np.exp(noise_times_meas))
+                nedl = nedl / np.sqrt(self.integrations)
 
-            self.bval[: self.n_chan] += np.power(nedl, 2)
+                bval[: self.n_chan] += np.power(nedl, 2)
 
         # Radiometric uncertainties combine via Root Sum Square...
         # Be careful to avoid square roots of zero!
         small = np.ones(self.n_chan) * eps
-        self.bval[: self.n_chan] = np.maximum(self.bval[: self.n_chan], small)
-        self.bval[: self.n_chan] = np.sqrt(self.bval[: self.n_chan])
+        bval[: self.n_chan] = np.maximum(bval[: self.n_chan], small)
+        bval[: self.n_chan] = np.sqrt(bval[: self.n_chan])
 
-        return np.diagflat(np.power(self.bval, 2))
+        return np.diagflat(np.power(bval, 2))
 
     def Sy(self, meas, geom):
         """Calculate measuremment error covariance.  Kelvin Man Yiu Leung and
@@ -314,16 +312,17 @@ class Instrument:
         )
 
         # Uncertainty due to spectral calibration
-        if self.unknowns.wavelength_calibration_uncertainty is not None:
-            dmeas_dinstrument[:, self.cal_spectral_idx] = self.sample(
-                x_instrument, wl_hi, np.hstack((np.diff(rdn_hi), np.array([0])))
-            )
+        if self.unknowns:
+            if self.unknowns.wavelength_calibration_uncertainty is not None:
+                dmeas_dinstrument[:, self.cal_spectral_idx] = self.sample(
+                    x_instrument, wl_hi, np.hstack((np.diff(rdn_hi), np.array([0])))
+                )
 
-        # Uncertainty due to spectral stray light
-        if self.unknowns.stray_srf_uncertainty is not None:
-            ssrf = spectral_response_function(np.arange(-10, 11), 0, 4)
-            blur = convolve(meas, ssrf, mode="same")
-            dmeas_dinstrument[:, self.cal_stray_idx] = blur - meas
+            # Uncertainty due to spectral stray light
+            if self.unknowns.stray_srf_uncertainty is not None:
+                ssrf = spectral_response_function(np.arange(-10, 11), 0, 4)
+                blur = convolve(meas, ssrf, mode="same")
+                dmeas_dinstrument[:, self.cal_stray_idx] = blur - meas
 
         return dmeas_dinstrument
 

@@ -97,6 +97,10 @@ class LUTSurface(Surface):
 
         return Cov
 
+    def Sb(self):
+        """Uncertainty due to unmodeled variables."""
+        return np.diagflat(np.power(self.bval, 2))
+
     def fit_params(self, rfl_meas, geom, *args):
         """Given a reflectance estimate, fit a state vector."""
 
