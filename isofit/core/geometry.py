@@ -123,9 +123,13 @@ class Geometry:
         # Local solar zenith angle as a function of surface slope and aspect
         cos_i = self.cos_i if self.cos_i is not None else coszen
 
-        # Ensure coszen, cos_i, and skyview respect 0-1 bounds.
+        # Ensure coszen, cos_i respect 0-1 bounds.
         valid_data["coszen"] = np.clip(coszen, 0.0, 1.0)
         valid_data["cos_i"] = np.clip(cos_i, 0.0, 1.0)
-        valid_data["skyview_factor"] = np.clip(self.skyview_factor, 0.0, 1.0)
+
+        # Assume skyview of 1.0 if outside 0-1 (e.g., NaN data).
+        valid_data["skyview_factor"] = (
+            1.0 if not 0 <= self.skyview_factor <= 1 else self.skyview_factor
+        )
 
         return valid_data
