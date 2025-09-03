@@ -529,6 +529,7 @@ def build_presolve_config(
     surface_category="multicomponent_surface",
     emulator_base: str = None,
     uncorrelated_radiometric_uncertainty: float = 0.0,
+    linearity_uncertainty_coeffs: list = [],
     segmentation_size: int = 400,
     debug: bool = False,
     inversion_windows=[[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]],
@@ -545,6 +546,7 @@ def build_presolve_config(
         surface_category: type of surface to use
         emulator_base: the basename of the emulator, if used
         uncorrelated_radiometric_uncertainty: uncorrelated radiometric uncertainty parameter for isofit
+        linearity_uncertainty_coeffs:         Coefficients for parametric model for uncertainty in measurement linearity
         segmentation_size: image segmentation size if empirical line is used
         debug: flag to enable debug_mode in the config.implementation
         prebuilt_lut_path: lut path to use; if none, presolve config will create a new file
@@ -642,7 +644,8 @@ def build_presolve_config(
                 "wavelength_file": paths.wavelength_path,
                 "integrations": spectra_per_inversion,
                 "unknowns": {
-                    "uncorrelated_radiometric_uncertainty": uncorrelated_radiometric_uncertainty
+                    "uncorrelated_radiometric_uncertainty": uncorrelated_radiometric_uncertainty,
+                    "linearity_uncertainty": linearity_uncertainty_coeffs,
                 },
             },
             "surface": {
@@ -719,6 +722,7 @@ def build_main_config(
     surface_category="multicomponent_surface",
     emulator_base: str = None,
     uncorrelated_radiometric_uncertainty: float = 0.0,
+    linearity_uncertainty_coeffs: list = [],
     multiple_restarts: bool = False,
     segmentation_size=400,
     pressure_elevation: bool = False,
@@ -748,6 +752,7 @@ def build_main_config(
         surface_category:                     type of surface to use
         emulator_base:                        the basename of the emulator, if used
         uncorrelated_radiometric_uncertainty: uncorrelated radiometric uncertainty parameter for isofit
+        linearity_uncertainty_coeffs:         Coefficients for parametric model for uncertainty in measurement linearity
         multiple_restarts:                    if true, use multiple restarts
         segmentation_size:                    image segmentation size if empirical line is used
         pressure_elevation:                   if true, retrieve pressure elevation
@@ -955,7 +960,8 @@ def build_main_config(
                 "wavelength_file": paths.wavelength_path,
                 "integrations": spectra_per_inversion,
                 "unknowns": {
-                    "uncorrelated_radiometric_uncertainty": uncorrelated_radiometric_uncertainty
+                    "uncorrelated_radiometric_uncertainty": uncorrelated_radiometric_uncertainty,
+                    "linearity_uncertainty": linearity_uncertainty_coeffs,
                 },
             },
             "surface": {
@@ -1042,6 +1048,7 @@ def build_main_config(
         isofit_config_modtran["forward_model"]["instrument"][
             "parametric_noise_file"
         ] = paths.noise_path
+
     else:
         isofit_config_modtran["forward_model"]["instrument"]["SNR"] = 500
 

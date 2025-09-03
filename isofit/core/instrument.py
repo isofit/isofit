@@ -125,7 +125,7 @@ class Instrument:
 
         else:
             raise IndexError("Please define the instrument noise.")
-            # This should never be reached, as an error is designated in the config read
+        # This should never be reached, as an error is designated in the config read
 
         # We track several unretrieved free variables, that are specified
         # in a fixed order (always start with relative radiometric
@@ -181,6 +181,7 @@ class Instrument:
 
     def Sb(self, meas):
         """Uncertainty due to unmodeled variables."""
+        bval = self.bval.copy()
         # First we take care of radiometric uncertainties, which add
         # in quadrature.  We sum their squared values.  Systematic
         # radiometric uncertainties account for differences in sampling
@@ -191,33 +192,32 @@ class Instrument:
             u = np.loadtxt(f, comments="#")
             if len(u.shape) > 0 and u.shape[1] > 1:
                 u = u[:, 1]
-            self.bval[: self.n_chan] = self.bval[: self.n_chan] + pow(u, 2)
+            bval[: self.n_chan] = bval[: self.n_chan] + pow(u, 2)
 
         # Uncorrelated radiometric uncertainties are consistent and
         # independent in all channels.
         if self.unknowns.uncorrelated_radiometric_uncertainty is not None:
             u = self.unknowns.uncorrelated_radiometric_uncertainty
-            self.bval[: self.n_chan] = self.bval[: self.n_chan] + pow(
-                np.ones(self.n_chan) * u, 2
-            )
+            bval[: self.n_chan] = bval[: self.n_chan] + pow(np.ones(self.n_chan) * u, 2)
 
         # Unknown linearity uncertainty
         if len(self.unknowns.linearity_uncertainty):
             a, b = self.unknowns.linearity_uncertainty
 
             # Treat it as a parametric noise
-            nedl = a * (1 / np.exp(b * meas))
+            noise_times_meas = np.maximum(b * meas, eps)
+            nedl = a * (1 / np.exp(noise_times_meas))
             nedl = nedl / np.sqrt(self.integrations)
 
-            self.bval[: self.n_chan] += np.power(nedl, 2)
+            bval[: self.n_chan] += np.power(nedl, 2)
 
         # Radiometric uncertainties combine via Root Sum Square...
         # Be careful to avoid square roots of zero!
         small = np.ones(self.n_chan) * eps
-        self.bval[: self.n_chan] = np.maximum(self.bval[: self.n_chan], small)
-        self.bval[: self.n_chan] = np.sqrt(self.bval[: self.n_chan])
+        bval[: self.n_chan] = np.maximum(bval[: self.n_chan], small)
+        bval[: self.n_chan] = np.sqrt(bval[: self.n_chan])
 
-        return np.diagflat(np.power(self.bval, 2))
+        return np.diagflat(np.power(bval, 2))
 
     def Sy(self, meas, geom):
         """Calculate measuremment error covariance.  Kelvin Man Yiu Leung and
