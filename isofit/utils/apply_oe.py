@@ -341,7 +341,9 @@ def apply_oe(
                 raise ValueError(err_str)
     logging.info("...Data file checks complete")
 
-    lut_params = tmpl.LUTConfig(lut_config_file, emulator_base, no_min_lut_spacing)
+    lut_params = tmpl.LUTConfig(
+        lut_config_file, emulator_base, no_min_lut_spacing, atmosphere_type
+    )
 
     logging.info("Setting up files and directories....")
     paths = tmpl.Pathnames(

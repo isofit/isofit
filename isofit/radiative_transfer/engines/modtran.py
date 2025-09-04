@@ -625,7 +625,8 @@ class ModtranRT(RadiativeTransferEngine):
 
         return max_water
 
-    def modtran_water_upperbound_polynomials(self) -> dict:
+    @staticmethod
+    def modtran_water_upperbound_polynomials() -> dict:
         """Polynomials as a function of ground altitude (km) to estimate upperbound of water column vapor (g/cm2).
 
         Returns:
@@ -679,7 +680,8 @@ class ModtranRT(RadiativeTransferEngine):
 
         return polynomials
 
-    def modtran_aot_lowerbound_polynomials(self) -> dict:
+    @staticmethod
+    def modtran_aot_lowerbound_polynomials() -> dict:
         """Polynomials as a function of ground altitude (km) to estimate lowerbound of AOT at 550nm.
 
         Returns:
