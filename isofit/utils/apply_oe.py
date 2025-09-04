@@ -774,7 +774,7 @@ def apply_oe(
 @click.option("--atmosphere_type", default="ATM_MIDLAT_SUMMER")
 @click.option("--channelized_uncertainty_path")
 @click.option(
-    "--linearity_uncertainty_coeffs", "-lcf", type=float, nargs=2, default=[0, 0]
+    "--linearity_uncertainty_coeffs", "-lcf", type=float, multiple=True, default=[]
 )
 @click.option("--model_discrepancy_path")
 @click.option("--lut_config_file")

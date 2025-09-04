@@ -200,13 +200,20 @@ class Instrument:
 
             # Unknown linearity uncertainty
             if len(self.unknowns.linearity_uncertainty):
-                a, b = self.unknowns.linearity_uncertainty
+                a, b, c = self.unknowns.linearity_uncertainty
 
                 # Treat it as a parametric noise
                 noise_times_meas = np.maximum(b * meas, eps)
-                nedl = a * (1 / np.exp(noise_times_meas))
-                nedl = nedl / np.sqrt(self.integrations)
 
+                # Testing three forms for the noise
+                # 1 / x
+                # nedl = (1 / (noise_times_meas + a)) + c
+                # Exponential
+                # nedl = a * (1 / np.exp(noise_times_meas)) + c
+                # Linear
+                nedl = np.maximum(0, a - noise_times_meas) + c
+
+                nedl = nedl / np.sqrt(self.integrations)
                 bval[: self.n_chan] += np.power(nedl, 2)
 
         # Radiometric uncertainties combine via Root Sum Square...
