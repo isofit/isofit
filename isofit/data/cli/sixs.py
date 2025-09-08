@@ -51,9 +51,10 @@ def make(directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE, debug=False)
     ]
     with open(file, "r") as f:
         lines = f.readlines()
-        if lines[3] != flags[0]:
-            for i, flag in enumerate(flags):
-                lines.insert(3 + i, flag)
+
+        for i, flag in enumerate(flags, start=3):
+            if lines[i] != flag:
+                lines.insert(i, flag)
 
     with open(file, "w") as f:
         f.write("".join(lines))
