@@ -3,6 +3,7 @@ Downloads 6S from https://github.com/ashiklom/isofit/releases/download/6sv-mirro
 """
 
 import os
+import platform
 import subprocess
 from pathlib import Path
 
@@ -34,6 +35,38 @@ def precheck():
     )
 
 
+def patch_makefile(file):
+    """
+    Patch the 6S Makefile to:
+    - Add -std=legacy to the EXTRAS (isofit)
+    - Add an LDFLAGS variable with --remove-section=.comment (Windows)
+    - Insert $(LDFLAGS) into the link commands (Windows)
+
+    Parameters
+    ----------
+    file : pathlib.Path
+        Makefile to patch inplace
+    """
+    lines = file.read_text().splitlines()
+
+    # Insert new lines
+    flags = [
+        "EXTRA   = -O -ffixed-line-length-132 -std=legacy",
+        "LDFLAGS = -Wl,--remove-section=.comment",
+    ]
+    for i, flag in enumerate(flags, start=3):
+        if lines[i] != flag:
+            lines.insert(i, flag)
+
+    # Update the link commands to use LDFLAGS (Windows only, breaks Mac)
+    if platform.system() == "Windows":
+        for i, line in enumerate(lines):
+            if "-o sixsV2.1" in line and "$(LDFLAGS)" not in line:
+                lines[i] = line.replace("-lm", "$(LDFLAGS) -lm")
+
+    file.write_text("\n".join(lines))
+
+
 def make(directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE, debug=False):
     """
     Builds a 6S directory via make
@@ -41,23 +74,11 @@ def make(directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE, debug=False)
     Parameters
     ----------
     directory : str
-        Directory with an unbuilt 6S
+        6S directory to build
     """
     # Update the makefile with recommended flags
     file = Path(directory) / "Makefile"
-    flags = [
-        "EXTRA   = -O -ffixed-line-length-132 -std=legacy\n",
-        "LDFLAGS += -Wl,--remove-section=.comment\n",
-    ]
-    with open(file, "r") as f:
-        lines = f.readlines()
-
-        for i, flag in enumerate(flags, start=3):
-            if lines[i] != flag:
-                lines.insert(i, flag)
-
-    with open(file, "w") as f:
-        f.write("".join(lines))
+    patch_makefile(file)
 
     # Now make it
     try:
