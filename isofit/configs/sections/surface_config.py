@@ -86,18 +86,17 @@ class SurfaceConfig(BaseConfigSection):
             "thermal_surface",
             "lut_surface",
         ]
-        if (self.surface_category is None) and (self.Surfaces is None):
+        if (self.surface_category is None) and not len(self.Surfaces):
             errors.append("surface->surface_category or Surfaces must be specified")
 
-        elif self.surface_category not in valid_surface_categories:
+        elif self.surface_category not in valid_surface_categories and not len(
+            self.Surfaces
+        ):
             errors.append(
                 "surface->surface_category: {} not in valid surface categories: {}".format(
                     self.surface_category, valid_surface_categories
                 )
             )
-
-        if self.surface_category is None:
-            errors.append("surface->surface_category must be specified")
 
         valid_metrics = ("Euclidean", "Mahalanobis")
         if self.selection_metric not in valid_metrics:
