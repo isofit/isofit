@@ -704,7 +704,8 @@ class IO:
 
             if "atmospheric_coefficients_file" in self.output_datasets:
                 rhoatm, sphalb, L_tot, transup, L_Up = coeffs
-                coszen, cos_i = geom.check_coszen_and_cos_i(fm.RT.coszen)
+                verified_geom = geom.verify(fm.RT.coszen)
+                coszen, cos_i = verified_geom["coszen"], verified_geom["cos_i"]
                 solar_irr = fm.RT.rt_engines[0].solar_irr
 
                 atm_vars = [rhoatm, sphalb, L_tot, solar_irr]

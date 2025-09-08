@@ -34,6 +34,8 @@ def skyview(
     dem_prj_path,
     dem_prj_resolution,
     output_directory,
+    obs_or_loc=None,
+    method="horizon",
     n_angles=72,
     logging_level="INFO",
     log_file=None,
@@ -51,15 +53,24 @@ def skyview(
     Also, following suggestions from Dozier (2021), multiprocessing is leveraged here w.r.t. to n_angles rotating the image. As default,
     sky view is computed with n angles = 72 which in most cases is of sufficient accuracy to resolve but more angles may be used.
 
+    Optionally to this horizon based method, one can pass method="slope" to compute a faster estimate that may be sufficent for regions with lower relief.
+    The slope based estimate is simply, svf = cos^2(slope/2).
+
     \b
     Parameters
     ----------
     dem_prj_path : str
-        Path to the projected DEM or DSM file in UTM coordinates.
+        Path to the projected DEM or DSM file (ENVI format).
     dem_prj_resolution : float
         Spatial resolution of the projected DEM in coordinate units (GSD in meters).
-    working_directory : str
+    output_directory : str
         Directory path for temporary files and outputs during processing; similar to apply_oe.
+    obs_or_loc : str
+        Options here are 'obs', 'loc', or None. Default is None. If 'obs' is selected, it will pick the slope data from index 6 in OBS file.
+        If 'loc' is selected it well select the elevation data from index 2. 
+    method : str, optional
+        Options are either "horizon" or "slope". Passing "horizon" runs the full computation and is recommended for very steep terrain.
+        Passing "slope"" runs the simplifed calculation of svf=cos^2(slope/2) and can be useful for more mild slopes. 
     n_angles : int, optional
         Number of angles used in horizon calculations (default is 72).
     logging_level : str, optional
@@ -67,7 +78,7 @@ def skyview(
     log_file : str or None, optional
         File path to write logs; similar to apply_oe.
     n_cores : int, optional
-        Number of CPU cores to use for parallel processing (default is 1).
+        Number of CPU cores to use for parallel processing (default is 1). Only used for method="horizon".
     """
 
     # Construct svf output path.
@@ -78,23 +89,31 @@ def skyview(
         format="%(levelname)s:%(message)s", level=logging_level, filename=log_file
     )
 
-    # Start up a ray instance for parallel work
-    rayargs = {
-        "ignore_reinit_error": True,
-        "local_mode": n_cores == 1,
-        "address": ray_address,
-        "include_dashboard": False,
-        "_temp_dir": ray_temp_dir,
-        "_redis_password": ray_redis_password,
-        "num_cpus": n_cores,
-    }
-    ray.init(**rayargs)
-
     # Load DEM data (assuming hdr).
     dem = envi.open(envi_header(dem_prj_path))
     dem_data = dem.open_memmap(writeable=False).copy()
+
+    # assign if None, LOC, or OBS based data.
+    method = method.lower()
+    if obs_or_loc:
+        obs_or_loc = obs_or_loc.lower()
+    if obs_or_loc == "obs":
+        slope = dem_data[:, :, 6]
+        slope[slope > 90.1] = np.nan
+        slope[slope < -0.01] = np.nan
+    elif obs_or_loc == "loc":
+        dem_data = dem_data[:, :, 2]
+        dem_data[dem_data > 8900] = np.nan
+        dem_data[dem_data < -1360] = np.nan
+    elif obs_or_loc == None:
+        dem_data[dem_data > 8900] = np.nan
+        dem_data[dem_data < -1360] = np.nan
+    else:
+        err_str = "obs_or_loc must be 'loc', 'obs', or None."
+        raise ValueError(err_str)
     if dem_data.ndim == 3 and dem_data.shape[2] == 1:
         dem_data = dem_data[:, :, 0]
+    # set metadata
     dem_metadata = dem.metadata.copy()
     dem_metadata.update(
         {
@@ -107,54 +126,79 @@ def skyview(
         }
     )
 
-    # Handle potential no data in dem_data.
-    dem_data[dem_data > 8900] = np.nan  # highest possible point
-    dem_data[dem_data < -1360] = np.nan  # lowest possible point
-
-    # prep the data for correct format for computation
-    angles, aspect, cos_slope, sin_slope, tan_slope = viewf2022_prep(
-        dem=dem_data,
-        spacing=dem_prj_resolution,
-        nangles=n_angles,
-        sin_slope=None,
-        aspect=None,
-    )
-
-    # Share ray objects
-    dem_ray = ray.put(dem_data)
-    aspect_ray = ray.put(aspect)
-    cos_ray = ray.put(cos_slope)
-    sin_ray = ray.put(sin_slope)
-    tan_ray = ray.put(tan_slope)
-
-    # Run n-angles in parallel (n=72 by default)
-    futures = [
-        viewf2022_i.remote(
-            a, dem_ray, dem_prj_resolution, aspect_ray, cos_ray, sin_ray, tan_ray
+    # If only computing slope method
+    if method == "slope":
+        if obs_or_loc != "obs":
+            slope, aspect = gradient_d8(
+                dem_data, dx=dem_prj_resolution, dy=dem_prj_resolution, aspect_rad=True
+            )
+        svf = np.cos(slope / 2) ** 2
+        # save.
+        envi.save_image(
+            svf_hdr_path,
+            svf.astype(np.float32),
+            dtype=np.float32,
+            interleave="bsq",
+            metadata=dem_metadata,
+            force=True,
         )
-        for a in angles
-    ]
-    results = ray.get(futures)
 
-    # and so now, we have a list object of 72, 2-d arrays
-    # and  can complete integration for svf
-    svf = sum(results) / len(angles)
+    elif method == "horizon":
+        # prep the data for correct format for computation
+        angles, aspect, cos_slope, sin_slope, tan_slope = viewfdozier_prep(
+            dem=dem_data,
+            spacing=dem_prj_resolution,
+            nangles=n_angles,
+            sin_slope=None,
+            aspect=None,
+        )
 
-    # NOTE: we can also save TCF but for now, this is commented out.
-    # tcf = (1 + cos_slope)/2 - svf
+        # Start up a ray instance for parallel work
+        rayargs = {
+            "ignore_reinit_error": True,
+            "local_mode": n_cores == 1,
+            "address": ray_address,
+            "include_dashboard": False,
+            "_temp_dir": ray_temp_dir,
+            "_redis_password": ray_redis_password,
+            "num_cpus": n_cores,
+        }
+        ray.init(**rayargs)
 
-    # save.
-    envi.save_image(
-        svf_hdr_path,
-        svf.astype(np.float32),
-        dtype=np.float32,
-        interleave="bsq",
-        metadata=dem_metadata,
-        force=True,
-    )
+        # Share ray objects
+        dem_ray = ray.put(dem_data)
+        aspect_ray = ray.put(aspect)
+        cos_ray = ray.put(cos_slope)
+        sin_ray = ray.put(sin_slope)
+        tan_ray = ray.put(tan_slope)
+
+        # Run n-angles in parallel
+        futures = [
+            viewfdozier_i.remote(
+                a, dem_ray, dem_prj_resolution, aspect_ray, cos_ray, sin_ray, tan_ray
+            )
+            for a in angles
+        ]
+        results = ray.get(futures)
+
+        # and so now, we have a list object of 72, 2-d arrays
+        # and  can complete integration for svf
+        svf = sum(results) / len(angles)
+
+        envi.save_image(
+            svf_hdr_path,
+            svf.astype(np.float32),
+            dtype=np.float32,
+            interleave="bsq",
+            metadata=dem_metadata,
+            force=True,
+        )
+    else:
+        err_str = "method must be either 'horizon' or 'slope'."
+        raise ValueError(err_str)
 
 
-def viewf2022_prep(dem, spacing, nangles=72, sin_slope=None, aspect=None):
+def viewfdozier_prep(dem, spacing, nangles=72, sin_slope=None, aspect=None):
     """
     Preps computations for ray.
 
@@ -200,7 +244,7 @@ def viewf2022_prep(dem, spacing, nangles=72, sin_slope=None, aspect=None):
 
 
 @ray.remote(num_cpus=1)
-def viewf2022_i(angle, dem, spacing, aspect, cos_slope, sin_slope, tan_slope):
+def viewfdozier_i(angle, dem, spacing, aspect, cos_slope, sin_slope, tan_slope):
     """
     See above, but this is running each horizon angle in parallel (n=72 , or user input)
 
@@ -224,12 +268,11 @@ def viewf2022_i(angle, dem, spacing, aspect, cos_slope, sin_slope, tan_slope):
         h[t], np.arccos(np.sqrt(1 - 1 / (1 + cos_aspect[t] ** 2 * tan_slope[t] ** 2)))
     )
 
-    # integral in Dozier.
+    # integral in https://github.com/DozierJeff/Topographic-Horizons:
     # qIntegrand = (cosd(slopeDegrees)*sin(H).^2 + sind(slopeDegrees)*cos(aspectRadian-azmRadian).*(H-cos(H).*sin(H)))/2
     svf = cos_slope * np.sin(h) ** 2 + sin_slope * cos_aspect * (
         h - np.sin(h) * np.cos(h)
     )
-
     svf[svf < 0] = 0
 
     return svf
@@ -671,6 +714,7 @@ def transpose_skew(dem, spacing, angle):
 @click.argument("dem_prj_resolution", type=float)
 @click.argument("output_directory", type=str)
 @click.option("--n_angles", type=int, default=72)
+@click.option("--method", type=str, default="horizon")
 @click.option("--logging_level", default="INFO")
 @click.option("--log_file", type=str, default=None)
 @click.option("--n_cores", type=int, default=1)

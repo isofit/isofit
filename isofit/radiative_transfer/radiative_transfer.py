@@ -267,7 +267,8 @@ class RadiativeTransfer:
         """
         L_atms = []
 
-        coszen, cos_i = geom.check_coszen_and_cos_i(self.coszen)
+        verified_geom = geom.verify(self.coszen)
+        coszen, cos_i = verified_geom["coszen"], verified_geom["cos_i"]
 
         for RT in self.rt_engines:
             if RT.treat_as_emissive:
@@ -300,7 +301,13 @@ class RadiativeTransfer:
         L_downs_dir = []
         L_downs_dif = []
 
-        coszen, cos_i = geom.check_coszen_and_cos_i(self.coszen)
+        # Check coszen against cos_i
+        verified_geom = geom.verify(self.coszen)
+        coszen, cos_i, skyview_factor = (
+            verified_geom["coszen"],
+            verified_geom["cos_i"],
+            verified_geom["skyview_factor"],
+        )
 
         for RT in self.rt_engines:
             if RT.treat_as_emissive:
@@ -322,7 +329,7 @@ class RadiativeTransfer:
                     )
 
                 # Apply sky view factor to downward diffuse for 1C case.
-                L_down_dif *= geom.sky_view_factor
+                L_down_dif *= skyview_factor
 
                 L_down = L_down_dir + L_down_dif
 
@@ -349,7 +356,12 @@ class RadiativeTransfer:
             L_dif_dif => downward diffuse * upward diffuse
         """
         # Check coszen against cos_i
-        coszen, cos_i = geom.check_coszen_and_cos_i(self.coszen)
+        verified_geom = geom.verify(self.coszen)
+        coszen, cos_i, skyview_factor = (
+            verified_geom["coszen"],
+            verified_geom["cos_i"],
+            verified_geom["skyview_factor"],
+        )
 
         # radiances along all optical paths
         L_coupled = []
@@ -378,9 +390,9 @@ class RadiativeTransfer:
         # Assigning coupled terms, unscaling and rescaling downward direct radiance by local solar zenith angle.
         # Downward diffuse components are scaled by viewable sky fraction (i.e., "ungula" of viewable sky in solid geometry terms).
         L_dir_dir = L_coupled[0] / coszen * cos_i
-        L_dif_dir = L_coupled[1] * geom.sky_view_factor
+        L_dif_dir = L_coupled[1] * skyview_factor
         L_dir_dif = L_coupled[2] / coszen * cos_i
-        L_dif_dif = L_coupled[3] * geom.sky_view_factor
+        L_dif_dif = L_coupled[3] * skyview_factor
 
         return L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif
 
