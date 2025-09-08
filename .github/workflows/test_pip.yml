@@ -87,7 +87,7 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           isofit --base ~/.isofit build
-          isofit download sixs --make
+          isofit download sixs --make --debug
 
       - name: Execute tests
         shell: bash

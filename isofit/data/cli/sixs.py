@@ -34,7 +34,7 @@ def precheck():
     )
 
 
-def make(directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE):
+def make(directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE, debug=False):
     """
     Builds a 6S directory via make
 
@@ -55,13 +55,23 @@ def make(directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE):
         f.write("".join(lines))
 
     # Now make it
-    subprocess.run(
-        f"make -j {os.cpu_count()}",
-        shell=True,
-        stdout=stdout,
-        stderr=stderr,
-        cwd=directory,
-    )
+    try:
+        call = subprocess.run(
+            f"make -j {os.cpu_count()}",
+            shell=True,
+            check=True,
+            stdout=stdout,
+            stderr=stderr,
+            cwd=directory,
+        )
+        if debug:
+            if call.stdout:
+                print(f"stdout " + "-" * 32 + f"\n{call.stdout.decode()}")
+            if call.stderr:
+                print(f"stderr " + "-" * 32 + f"\n{call.stderr.decode()}")
+    except subprocess.CalledProcessError as e:
+        print(f"Building 6S via make failed, exit code: {e.returncode}")
+        print(e.stderr)
 
 
 def download(path=None, overwrite=False, **_):
@@ -168,6 +178,7 @@ def update(check=False, **kwargs):
 @shared.overwrite
 @shared.check
 @click.option("--make", is_flag=True, help="Builds a 6S directory via make")
+@click.option("--debug", is_flag=True, help="Enable debug logging for the make command")
 def download_cli(**kwargs):
     """\
     Downloads 6S from https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar. Only HDF5 versions are supported at this time.
@@ -185,7 +196,7 @@ def download_cli(**kwargs):
             path = env.sixs
 
         print(f"Making 6S: {path}")
-        make(path)
+        make(path, debug=kwargs.get("debug"))
         print(f"Finished")
     elif kwargs.get("overwrite"):
         download(**kwargs)
