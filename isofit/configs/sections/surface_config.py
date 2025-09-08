@@ -71,7 +71,7 @@ class SurfaceConfig(BaseConfigSection):
         valid_surface_categories = [
             "surface",
             "multicomponent_surface",
-            "glint_surface",
+            "glint_model_surface",
             "thermal_surface",
             "lut_surface",
         ]
@@ -87,12 +87,8 @@ class SurfaceConfig(BaseConfigSection):
         if self.surface_category is None:
             errors.append("surface->surface_category must be specified")
 
-        valid_normalize_categories = ["Euclidean", "RMS", "None"]
-        if self.normalize not in valid_normalize_categories:
-            errors.append(
-                "surface->normalize: {} not in valid normalize choices: {}".format(
-                    self.normalize, valid_normalize_categories
-                )
-            )
+        valid_metrics = ("Euclidean", "Mahalanobis")
+        if self.selection_metric not in valid_metrics:
+            errors.append(f"surface->selection_metric must be one of: {valid_metrics}")
 
         return errors
