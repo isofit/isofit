@@ -45,11 +45,15 @@ def make(directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE, debug=False)
     """
     # Update the makefile with recommended flags
     file = Path(directory) / "Makefile"
-    flag = "EXTRA   = -O -ffixed-line-length-132 -std=legacy\n"
+    flags = [
+        "EXTRA   = -O -ffixed-line-length-132 -std=legacy\n",
+        "LDFLAGS += -Wl,--remove-section=.comment\n",
+    ]
     with open(file, "r") as f:
         lines = f.readlines()
-        if lines[3] != flag:
-            lines.insert(3, flag)
+        if lines[3] != flags[0]:
+            for i, flag in enumerate(flags):
+                lines.insert(3 + i, flag)
 
     with open(file, "w") as f:
         f.write("".join(lines))
@@ -74,7 +78,7 @@ def make(directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE, debug=False)
         print(e.stderr)
 
 
-def download(path=None, overwrite=False, **_):
+def download(path=None, overwrite=False, debug_make=False, **_):
     """
     Downloads 6S from https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar.
 
@@ -105,7 +109,7 @@ def download(path=None, overwrite=False, **_):
     untar(file, output)
 
     print("Building via make")
-    make(output)
+    make(output, debug=debug_make)
 
     print(f"Done, now available at: {output}")
 
@@ -178,8 +182,10 @@ def update(check=False, **kwargs):
 @shared.overwrite
 @shared.check
 @click.option("--make", is_flag=True, help="Builds a 6S directory via make")
-@click.option("--debug", is_flag=True, help="Enable debug logging for the make command")
-def download_cli(**kwargs):
+@click.option(
+    "--debug-make", is_flag=True, help="Enable debug logging for the make command"
+)
+def download_cli(debug_make, **kwargs):
     """\
     Downloads 6S from https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar. Only HDF5 versions are supported at this time.
 
@@ -196,7 +202,7 @@ def download_cli(**kwargs):
             path = env.sixs
 
         print(f"Making 6S: {path}")
-        make(path, debug=kwargs.get("debug"))
+        make(path, debug=debug_make)
         print(f"Finished")
     elif kwargs.get("overwrite"):
         download(**kwargs)
