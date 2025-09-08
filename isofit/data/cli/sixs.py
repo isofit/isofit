@@ -6,6 +6,8 @@ import os
 import subprocess
 from pathlib import Path
 
+import click
+
 from isofit.data import env, shared
 from isofit.data.download import download_file, prepare_output, untar
 
@@ -32,9 +34,9 @@ def precheck():
     )
 
 
-def build(directory):
+def make(directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE):
     """
-    Builds a 6S directory
+    Builds a 6S directory via make
 
     Parameters
     ----------
@@ -42,10 +44,12 @@ def build(directory):
         Directory with an unbuilt 6S
     """
     # Update the makefile with recommended flags
-    file = directory / "Makefile"
+    file = Path(directory) / "Makefile"
+    flag = "EXTRA   = -O -ffixed-line-length-132 -std=legacy\n"
     with open(file, "r") as f:
         lines = f.readlines()
-        lines.insert(3, "EXTRA   = -O -ffixed-line-length-132 -std=legacy\n")
+        if lines[3] != flag:
+            lines.insert(3, flag)
 
     with open(file, "w") as f:
         f.write("".join(lines))
@@ -54,8 +58,8 @@ def build(directory):
     subprocess.run(
         f"make -j {os.cpu_count()}",
         shell=True,
-        stdout=subprocess.PIPE,
-        # stderr=subprocess.PIPE,
+        stdout=stdout,
+        stderr=stderr,
         cwd=directory,
     )
 
@@ -91,7 +95,7 @@ def download(path=None, overwrite=False, **_):
     untar(file, output)
 
     print("Building via make")
-    build(output)
+    make(output)
 
     print(f"Done, now available at: {output}")
 
@@ -163,6 +167,7 @@ def update(check=False, **kwargs):
 @shared.tag
 @shared.overwrite
 @shared.check
+@click.option("--make", is_flag=True, help="Builds a 6S directory via make")
 def download_cli(**kwargs):
     """\
     Downloads 6S from https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar. Only HDF5 versions are supported at this time.
@@ -174,7 +179,15 @@ def download_cli(**kwargs):
         - `isofit download sixs --path /path/sixs`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
     It is recommended to use the first style so the download path is remembered in the future.
     """
-    if kwargs.get("overwrite"):
+    if kwargs.get("make"):
+        path = kwargs.get("path")
+        if path is None:
+            path = env.sixs
+
+        print(f"Making 6S: {path}")
+        make(path)
+        print(f"Finished")
+    elif kwargs.get("overwrite"):
         download(**kwargs)
     else:
         update(**kwargs)
