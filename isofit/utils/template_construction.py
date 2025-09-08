@@ -553,6 +553,14 @@ def check_surface_model(
                     " surface model for optimal performance."
                 )
 
+            if multisurface:
+                # TODO Change the surface model structure for multisurface runs
+                # Instead of passing multiple surface.mat files throughout.
+                # Carry the surface type keys and dynamically select the matching type within surface.component
+                raise ValueError(
+                    "Apply OE in multistate-mode can currently only be run from a .json surface file. Please use the path to the .json file as the surface_ath. Must include the 'surface_type' keys."
+                )
+
             return {surface_category: surface_path}
 
         elif surface_path.endswith(".json"):
