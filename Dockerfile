@@ -15,7 +15,7 @@ COPY . ISOFIT/
 RUN pip install -e "ISOFIT[docker]" jupyterlab &&\
     python -m ipykernel install --user --name isofit &&\
     isofit -b . download all &&\
-    isofit build
+    isofit build &&\
     echo "alias launch=\"micromamba activate base && jupyter-lab --ip 0.0.0.0 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password=''\"" >> ~/.bashrc
 
 # Jupyter needs this to access the terminal
