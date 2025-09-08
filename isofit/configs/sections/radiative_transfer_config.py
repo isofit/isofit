@@ -26,6 +26,7 @@ import numpy as np
 
 from isofit.configs.base_config import BaseConfigSection
 from isofit.configs.sections.statevector_config import StateVectorConfig
+from isofit.data import env
 
 
 class RadiativeTransferEngineConfig(BaseConfigSection):
@@ -102,6 +103,14 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         """List: Names of the statevector elements to use with this radiative transfer engine.  Must be a subset
         of the keys in radiative_transfer->statevector.  If not specified, uses all keys from
         radiative_transfer->statevector.  Auto-sorted (alphabetically) below."""
+
+        self._lut_compression_type = str
+        self.lut_compression = "zlib"
+        """str: Compression method to use for the LUT NetCDF"""
+
+        self._lut_complevel_type = int
+        self.lut_complevel = None
+        """int: The compression level to use for the chosen method"""
 
         # MODTRAN parameters
         self._aerosol_template_file_type = str
@@ -225,17 +234,27 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         if self.irradiance_file is None and self.engine_name == "6s":
             errors.append("6s requires irradiance_file to be specified")
 
-        if self.engine_name == "sRTMnet" and self.emulator_file is None:
-            errors.append("The sRTMnet requires an emulator_file to be specified.")
+        if self.engine_name == "sRTMnet":
+            if self.emulator_file is None:
+                # Fallback to the path specified by the isofit.ini
+                self.emulator_file = env.path("srtmnet", env["srtmnet.file"])
+                if not self.emulator_file.exists():
+                    errors.append(
+                        "The sRTMnet requires an emulator_file to be specified."
+                    )
 
-        if self.engine_name == "sRTMnet" and self.emulator_aux_file is None:
-            errors.append("The sRTMnet requires an emulator_aux_file to be specified.")
-
-        if self.engine_name == "sRTMnet" and self.emulator_file is not None:
             if os.path.splitext(self.emulator_file)[1] != ".h5":
                 errors.append(
                     "sRTMnet now requires the emulator_file to be of type .h5.  Please download an updated version from:\n https://zenodo.org/records/10831425"
                 )
+
+            if self.emulator_aux_file is None:
+                # Fallback to the path specified by the isofit.ini
+                self.emulator_aux_file = env.path("srtmnet", env["srtmnet.aux"])
+                if not self.emulator_aux_file.exists():
+                    errors.append(
+                        "The sRTMnet requires an emulator_aux_file to be specified."
+                    )
 
         files = [
             self.obs_file,
@@ -248,20 +267,8 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
                     f"Radiative transfer engine file not found on system: {file}"
                 )
 
-        if self.topography_model:
-            for rtm in self.radiative_transfer_engines:
-                if rtm.engine_name != "modtran":
-                    errors.append(
-                        "All self.forward_model.radiative_transfer.radiative_transfer_engines"
-                        ' must be of type "modtran" if forward_model.topograph_model is'
-                        " set to True"
-                    )
-                if rtm.multipart_transmittance is False:
-                    errors.append(
-                        "All self.forward_model.radiative_transfer.radiative_transfer_engines"
-                        " must have multipart_transmittance set as True if"
-                        " forward_model.topograph_model is set to True"
-                    )
+        if isinstance(self.lut_complevel, int) and self.lut_complevel < 1:
+            errors.append("The LUT complevel must be and int greater than 0")
 
         return errors
 
@@ -351,21 +358,6 @@ class RadiativeTransferConfig(BaseConfigSection):
                 )
             if np.unique(item).size < len(item):
                 errors.append(f"Detected duplicate values in lut_grid item {key}")
-
-        if self.topography_model:
-            for rtm in self.radiative_transfer_engines:
-                if rtm.engine_name != "modtran":
-                    errors.append(
-                        "All self.forward_model.radiative_transfer.radiative_transfer_engines"
-                        ' must be of type "modtran" if forward_model.topograph_model is'
-                        " set to True"
-                    )
-                if rtm.multipart_transmittance is False:
-                    errors.append(
-                        "All self.forward_model.radiative_transfer.radiative_transfer_engines"
-                        " must have multipart_transmittance set as True if"
-                        " forward_model.topograph_model is set to True"
-                    )
 
         for rte in self.radiative_transfer_engines:
             errors.extend(rte.check_config_validity())

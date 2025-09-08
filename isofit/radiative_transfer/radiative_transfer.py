@@ -321,6 +321,9 @@ class RadiativeTransfer:
                         r["transm_down_dif"], coszen, self.solar_irr
                     )
 
+                # Apply sky view factor to downward diffuse for 1C case.
+                L_down_dif *= geom.sky_view_factor
+
                 L_down = L_down_dir + L_down_dif
 
                 L_downs.append(L_down)
@@ -372,11 +375,12 @@ class RadiativeTransfer:
                     else r[key]
                 )
 
-        # assigning coupled terms, unscaling and rescaling downward direct radiance by local solar zenith angle
+        # Assigning coupled terms, unscaling and rescaling downward direct radiance by local solar zenith angle.
+        # Downward diffuse components are scaled by viewable sky fraction (i.e., "ungula" of viewable sky in solid geometry terms).
         L_dir_dir = L_coupled[0] / coszen * cos_i
-        L_dif_dir = L_coupled[1]
+        L_dif_dir = L_coupled[1] * geom.sky_view_factor
         L_dir_dif = L_coupled[2] / coszen * cos_i
-        L_dif_dif = L_coupled[3]
+        L_dif_dif = L_coupled[3] * geom.sky_view_factor
 
         return L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif
 

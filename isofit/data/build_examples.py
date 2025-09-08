@@ -246,12 +246,12 @@ Examples = {
     "AV3Cal": IsofitExample(name="20250308_AV3Cal_wltest", requires=["data"]),
     "ImageCube-small": ApplyOEExample(
         name="image_cube/small",
-        requires=["sixs", "srtmnet", "image_cube"],
+        requires=["sixs", "srtmnet", "imagecube"],
         validate={"size": "small"},
     ),
     "ImageCube-medium": ApplyOEExample(
         name="image_cube/medium",
-        requires=["sixs", "srtmnet", "image_cube"],
+        requires=["sixs", "srtmnet", "imagecube"],
         validate={"size": "medium"},
     ),
 }

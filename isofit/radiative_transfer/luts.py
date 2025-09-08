@@ -15,7 +15,7 @@ from netCDF4 import Dataset
 
 from isofit import __version__
 
-Logger = logging.getLogger(__file__)
+Logger = logging.getLogger(__name__)
 
 
 # Statically store expected keys of the LUT file and their fill values
@@ -61,7 +61,8 @@ class Create:
         onedim: dict = {},
         alldim: dict = {},
         zeros: List[str] = [],
-        reduce: bool = ["fwhm"],
+        compression: str = "zlib",
+        complevel: int = None,
     ):
         """
         Prepare a LUT netCDF
@@ -84,12 +85,15 @@ class Create:
             Dictionary of multi-dimensional data. Appends/replaces to the current Create.alldim list.
         zeros : List[str], optional, default=[]
             List of zero values. Appends to the current Create.zeros list.
-        reduce : bool or list, optional, default=['fwhm']
-            Reduces the initialized Dataset by dropping the variables to reduce overall memory usage.
-            If True, drops all variables. If list, drop everything but these.
+        compression : str, default="zlib"
+            Compression method to use to the NetCDF. Check https://unidata.github.io/netcdf4-python/
+            for available options
+        complevel : int, default=None
+            Compression to use. Impact and levels vary per method.
         """
         # Track the ISOFIT version that created this LUT
         attrs["ISOFIT version"] = __version__
+        attrs["ISOFIT status"] = "<incomplete>"
 
         self.file = file
         self.wl = wl
@@ -102,6 +106,9 @@ class Create:
         self.consts = {**Keys.consts, **consts}
         self.onedim = {**Keys.onedim, **onedim}
         self.alldim = {**Keys.alldim, **alldim}
+
+        self.compression = compression
+        self.complevel = complevel
 
         # Save ds for backwards compatibility (to work with extractGrid, extractPoints)
         self.initialize()
@@ -121,7 +128,8 @@ class Create:
                 dimensions=dims,
                 fill_value=fill_value,
                 chunksizes=chunksizes,
-                compression="zlib",
+                compression=self.compression,
+                complevel=self.complevel,
             )
             var[:] = vals
 
@@ -190,9 +198,14 @@ class Create:
         """
         self.hold.append((point, data))
 
-    def flush(self) -> None:
+    def flush(self, finalize: bool = False) -> None:
         """
         Flushes the (point, data) pairs held in the hold list to the LUT netCDF.
+
+        Parameters
+        ----------
+        finalize : bool, default=False
+            Calls the `finalize` function
         """
         unknowns = set()
         with Dataset(self.file, "a") as ds:
@@ -218,6 +231,9 @@ class Create:
                 f"Attempted to assign a key that is not recognized, skipping: {key}"
             )
 
+        if finalize:
+            self.finalize()
+
     def writePoint(self, point: np.ndarray, data: dict) -> None:
         """
         Queues a point and immediately flushes to disk.
@@ -232,9 +248,10 @@ class Create:
         self.queuePoint(point, data)
         self.flush()
 
-    def setAttr(self, key, value):
+    def setAttr(self, key: str, value: Any) -> None:
         """
         Sets an attribute in the netCDF
+
         Parameters
         ----------
         key : str
@@ -245,6 +262,29 @@ class Create:
         self.attrs[key] = value
         with Dataset(self.file, "a") as ds:
             ds.setncattr(key, value)
+
+    def getAttr(self, key: str) -> Any:
+        """
+        Gets an attribute from the netCDF
+
+        Parameters
+        ----------
+        key : str
+            Key to get
+
+        Returns
+        -------
+        any | None
+            Retrieved attribute from netCDF, if it exists
+        """
+        with Dataset(self.file, "r") as ds:
+            return ds.getncattr(key)
+
+    def finalize(self):
+        """
+        Finalizes the netCDF by writing any remaining attributes to disk
+        """
+        self.setAttr("ISOFIT status", "success")
 
     def __getitem__(self, key: str) -> Any:
         """
@@ -708,6 +748,15 @@ def load(
     else:
         Logger.debug(f"Using Xarray to load: {file}")
         ds = xr.open_dataset(file, mode=mode, lock=lock, **kwargs)
+
+    status = ds.attrs.get("ISOFIT status", "<not set>")
+    if status != "success":
+        Logger.warning(
+            f"The LUT status is {status}, there may be issues with it downstream"
+        )
+        Logger.debug(
+            "To fix this error and you know the the LUT is correct, set NetCDF attribute 'ISOFIT status' to 'success'"
+        )
 
     version = ds.attrs.get("ISOFIT version", "<not set>")
     Logger.debug(

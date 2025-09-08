@@ -20,6 +20,7 @@
 #
 from __future__ import annotations
 
+import io
 import logging
 import os
 import sys
@@ -246,10 +247,18 @@ class RadiativeTransferEngine:
                     grid=self.lut_grid,
                     attrs={"RT_mode": self.rt_mode},
                     onedim={"fwhm": fwhm},
+                    compression=engine_config.lut_compression,
+                    complevel=engine_config.lut_complevel,
                 )
 
             # Create and populate a LUT file
             self.runSimulations()
+
+        # Write the NetCDF information to the log file so devs have that info during debugging
+        # Have to create a fileobj to capture the text because it doesn't return (prints straight to stdout by default)
+        info = io.StringIO()
+        self.lut.info(info)
+        Logger.debug(f"LUT information:\n{info.getvalue()}")
 
         # Limit the wavelength per the config, does not affect data on disk
         if engine_config.wavelength_range is not None:
@@ -531,6 +540,8 @@ class RadiativeTransferEngine:
 
             point = {key: 0 for key in self.lut_names}
             self.lut.writePoint(point, data=post)
+
+        self.lut.finalize()
 
         # Reload the LUT now that it's populated
         Logger.debug("Reloading LUT")

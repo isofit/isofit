@@ -1,14 +1,13 @@
 #! /usr/bin/env python3
 #
-# Authors: David R Thompson and Philip G. Brodrick
+# Authors: Philip G. Brodrick
 #
 
+import json
 import logging
 import os
 import subprocess
-from datetime import datetime
 from os.path import exists, join
-from pathlib import Path
 from shutil import copyfile
 
 import click
@@ -17,49 +16,182 @@ import ray
 from spectral.io import envi
 
 import isofit.utils.template_construction as tmpl
-from isofit.core import isofit, units
+from isofit.configs import configs
+from isofit.core import instrument, isofit
 from isofit.core.common import envi_header
-from isofit.debug.resource_tracker import FileResources
-from isofit.utils import analytical_line as ALAlg
-from isofit.utils import empirical_line as ELAlg
-from isofit.utils import extractions, interpolate_spectra, segment
-from isofit.utils.skyview import skyview
-
-EPS = 1e-6
-CHUNKSIZE = 256
-
-UNCORRELATED_RADIOMETRIC_UNCERTAINTY = 0.01
-SUPPORTED_SENSORS = [
-    "ang",
-    "avcl",
-    "neon",
-    "prism",
-    "emit",
-    "enmap",
-    "hyp",
-    "prisma",
-    "av3",
-    "gao",
-    "oci",
-    "tanager",
-    "av5",
-]
-RTM_CLEANUP_LIST = [
-    "*r_k",
-    "*t_k",
-    "*tp7",
-    "*wrn",
-    "*psc",
-    "*plt",
-    "*7sc",
-    "*acd",
-    "*.inp",
-    "*.sh",
-]
-INVERSION_WINDOWS = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
+from isofit.utils.apply_oe import (
+    INVERSION_WINDOWS,
+    RTM_CLEANUP_LIST,
+    SUPPORTED_SENSORS,
+    UNCORRELATED_RADIOMETRIC_UNCERTAINTY,
+)
 
 
-def apply_oe(
+def add_wavelength_elements(config_path, state_type="shift", spline_indices=[]):
+    config = json.load(open(config_path, "r"))
+
+    # Set RTM WL range
+    hi_res_wavlengths = os.path.join(
+        f"{os.path.dirname(config_path)}", "..", "data", "wavelengths_highres.txt"
+    )
+    x = np.arange(360, 2511, 0.025) / 1000.0
+    w = np.ones(len(x)) * 0.025 / 1000.0
+    n = np.ones(len(x))
+    D = np.c_[n, x, w]
+    np.savetxt(hi_res_wavlengths, D, fmt="%8.6f")
+    config["forward_model"]["radiative_transfer"]["radiative_transfer_engines"][
+        "vswir"
+    ]["wavelength_file"] = hi_res_wavlengths
+
+    # Flag case where spline_indices is empty and using spline
+    if not spline_indices and (
+        (state_type == "spline") or (state_type == "spline-only")
+    ):
+        errstr = "Spline state given, but no indices provided"
+        raise ValueError(errstr)
+
+    config["forward_model"]["instrument"]["calibration_fixed"] = False
+    if state_type == "shift":
+        config["forward_model"]["instrument"]["statevector"] = {
+            "GROW_FWHM": {
+                "bounds": [-5, 5],
+                "init": 0,
+                "prior_mean": 0,
+                "prior_sigma": 100.0,
+                "scale": 1,
+            },
+            "WL_SHIFT": {
+                "bounds": [-5, 5],
+                "init": 0,
+                "prior_mean": 0,
+                "prior_sigma": 100.0,
+                "scale": 1,
+            },
+        }
+    elif state_type == "shift-only":
+        config["forward_model"]["instrument"]["statevector"] = {
+            "WL_SHIFT": {
+                "bounds": [-5, 5],
+                "init": 0,
+                "prior_mean": 0,
+                "prior_sigma": 100.0,
+                "scale": 1,
+            }
+        }
+    elif state_type == "spline":
+        config["forward_model"]["instrument"]["statevector"] = {
+            "GROW_FWHM": {
+                "bounds": [-5, 5],
+                "init": 0,
+                "prior_mean": 0,
+                "prior_sigma": 100.0,
+                "scale": 1,
+            }
+        }
+        for spline_index in spline_indices:
+            config["forward_model"]["instrument"]["statevector"][
+                f"WLSPL_{spline_index}"
+            ] = {
+                "bounds": [-5, 5],
+                "init": 0,
+                "prior_mean": 0,
+                "prior_sigma": 100.0,
+                "scale": 1,
+            }
+    elif state_type == "spline-only":
+        for spline_index in spline_indices:
+            config["forward_model"]["instrument"]["statevector"][
+                f"WLSPL_{spline_index}"
+            ] = {
+                "bounds": [-5, 5],
+                "init": 0,
+                "prior_mean": 0,
+                "prior_sigma": 100.0,
+                "scale": 1,
+            }
+
+    logging.info(f"Writing config update with WL cal parameters to {config_path}")
+    with open(config_path, "w") as fout:
+        fout.write(json.dumps(config, cls=tmpl.SerialEncoder, indent=4, sort_keys=True))
+
+
+def average_columns(
+    input_radiance_file: str,
+    input_loc_file: str,
+    input_obs_file: str,
+    output_radiance_file: str,
+    output_loc_file: str,
+    output_obs_file: str,
+    start_column: int = None,
+    end_column: int = None,
+    column_interval: int = 1,
+):
+    """
+    Averages the columns of input radiance, location, and observation files
+    and saves the results to output files.
+
+    Args:
+        input_radiance_file (str): Path to the input radiance file.
+        input_loc_file (str): Path to the input location file.
+        input_obs_file (str): Path to the input observation file.
+        output_radiance_file (str): Path to the output radiance file.
+        output_loc_file (str): Path to the output location file.
+        output_obs_file (str): Path to the output observation file.
+        start_column (int, optional): Starting column index for averaging.
+            Defaults to None, which means start from the first column.
+        end_column (int, optional): Ending column index for averaging.
+            Defaults to None, which means average until the last column.
+        column_interval (int, optional): Step size over columns; skips,
+            doesn't average.  Useful to increase runtime speeds.
+
+    Returns:
+        rows (int): The number of rows in the averaged output files.
+    """
+    rows = 0
+    for infile, outfile in zip(
+        [input_radiance_file, input_loc_file, input_obs_file],
+        [output_radiance_file, output_loc_file, output_obs_file],
+    ):
+        in_ds = envi.open(envi_header(infile), infile)
+        mm = in_ds.open_memmap(interleave="bip").copy()
+
+        # Stay robust to nodata values - non-finite, header
+        # specified nodata, and -9999 (in case unspecified)
+        nodata = np.isfinite(mm) == False
+        nodata[mm == -9999] = True
+        if "data ignore value" in in_ds.metadata:
+            nodata[mm == in_ds.metadata["data ignore value"]] = True
+        mm[nodata] = np.nan
+        rows = mm.shape[0]
+        avg = np.nanmean(mm, axis=0)
+
+        # Subsample if specified
+        if start_column is None:
+            start_column = 0
+        if end_column is None:
+            end_column = avg.shape[0]
+        avg = avg[start_column:end_column:column_interval, :]
+
+        meta = in_ds.metadata.copy()
+        meta["lines"] = 1
+        meta["samples"] = avg.shape[0]
+
+        out_ds = envi.create_image(
+            envi_header(outfile),
+            shape=(1, avg.shape[0], avg.shape[1]),
+            ext="",
+            dtype=in_ds.dtype,
+            interleave="bil",
+            force=True,
+            metadata=meta,
+        )
+
+        out_ds.open_memmap(interleave="bip", writable=True)[:] = avg
+        del in_ds, out_ds
+    return rows
+
+
+def wavelength_cal(
     input_radiance,
     input_loc,
     input_obs,
@@ -70,37 +202,27 @@ def apply_oe(
     modtran_path=None,
     wavelength_path=None,
     surface_category="multicomponent_surface",
-    aerosol_climatology_path=None,
     rdn_factors_path=None,
     atmosphere_type="ATM_MIDLAT_SUMMER",
     channelized_uncertainty_path=None,
     model_discrepancy_path=None,
     lut_config_file=None,
-    multiple_restarts=False,
     logging_level="INFO",
     log_file=None,
     n_cores=1,
-    presolve=False,
-    empirical_line=False,
-    analytical_line=False,
     ray_temp_dir="/tmp/ray",
     emulator_base=None,
-    segmentation_size=40,
-    num_neighbors=[],
-    atm_sigma=[2],
-    pressure_elevation=False,
     prebuilt_lut=None,
-    no_min_lut_spacing=False,
     inversion_windows=None,
-    config_only=False,
-    interpolate_bad_rdn=False,
-    interpolate_inplace=False,
-    skyview_factor=None,
+    wl_state_type="shift",
+    spline_indices=[],
+    force_with_geo=False,
+    start_column=None,
+    end_column=None,
+    column_interval=1,
 ):
     """\
-    Applies OE over a flightline using a radiative transfer engine. This executes
-    ISOFIT in a generalized way, accounting for the types of variation that might be
-    considered typical.
+    Runs a wavelength calibration on an input scene.
 
     Observation (obs) and location (loc) files are used to determine appropriate
     geometry lookup tables and provide a heuristic means of determining atmospheric
@@ -137,8 +259,6 @@ def apply_oe(
         header will be used
     surface_category : str, default="multicomponent_surface"
         The type of ISOFIT surface priors to use.  Default is multicomponent_surface
-    aerosol_climatology_path : str, default=None
-        Specific aerosol climatology information to use in MODTRAN
     rdn_factors_path : str, default=None
         Specify a radiometric correction factor, if desired
     atmosphere_type : str, default="ATM_MIDLAT_SUMMER"
@@ -152,10 +272,6 @@ def apply_oe(
     lut_config_file : str, default=None
         Path to a look up table configuration file, which will override defaults
         choices
-    multiple_restarts : bool, default=False
-        Use multiple initial starting poitns for each OE ptimization run, using
-        the corners of the atmospheric variables as starting points.  This gives
-        a more robust, albeit more expensive, solution.
     logging_level : str, default="INFO"
         Logging level with which to run ISOFIT
     log_file : str, default=None
@@ -164,24 +280,6 @@ def apply_oe(
         Number of cores to run ISOFIT with. Substantial parallelism is available, and
         full runs will be very slow in serial. Suggested to max this out on the
         available system
-    presolve : int, default=False
-        Flag to use a presolve mode to estimate the available atmospheric water range.
-        Runs a preliminary inversion over the image with a 1-D LUT of water vapor, and
-        uses the resulting range (slightly expanded) to bound determine the full LUT.
-        Advisable to only use with small cubes or in concert with the empirical_line
-        setting, or a significant speed penalty will be incurred
-    empirical_line : bool, default=False
-        Use an empirical line interpolation to run full inversions over only a subset
-        of pixels, determined using a SLIC superpixel segmentation, and use a KDTREE of
-        local solutions to interpolate radiance->reflectance. Generally a good option
-        if not trying to analyze the atmospheric state at fine scale resolution.
-        Mutually exclusive with analytical_line
-    analytical_line : bool, default=False
-        Use an analytical solution to the fixed atmospheric state to solve for each
-        pixel.  Starts by running a full OE retrieval on each SLIC superpixel, then
-        interpolates the atmospheric state to each pixel, and closes with the
-        analytical solution.
-        Mutually exclusive with empirical_line
     ray_temp_dir : str, default="/tmp/ray"
         Location of temporary directory for ray parallelization engine
     emulator_base : str, default=None
@@ -189,55 +287,39 @@ def apply_oe(
         sRTMnet to use the emulator instead of MODTRAN. An additional file with the
         same basename and the extention _aux.npz must accompany
         e.g. /path/to/emulator.h5 /path/to/emulator_aux.npz
-    segmentation_size : int, default=40
-        If empirical_line is enabled, sets the size of segments to construct
-    num_neighbors : list[int], default=[]
-        Forced number of neighbors for empirical line extrapolation - overides default
-        set from segmentation_size parameter
-    atm_sigma : list[int], default=[2]
-        A list of smoothing factors to use during the atmospheric interpolation, one
-        for each atmospheric parameter (or broadcast to all if only one is provided).
-        Only used with the analytical line.
-    pressure_elevation : bool, default=False
-        Flag to retrieve elevation
     prebuilt_lut : str, default=None
         Use this pre-constructed look up table for all retrievals. Must be an
         ISOFIT-compatible RTE NetCDF
-    no_min_lut_spacing : bool, default=False
-        Don't allow the LUTConfig to remove a LUT dimension because of minimal spacing.
     inversion_windows : list[float], default=None
         Override the default inversion windows.  Will supercede any sensor specific
         defaults that are in place.
         Must be in 2-item tuples
-    config_only : bool, default=False
-        Generates the configuration then exits before execution. If presolve is
-        enabled, that run will still occur.
-    interpolate_bad_rdn : bool, default=False
-        Flag to perform a per-pixel interpolation across no-data and NaN data bands.
-        Does not interpolate vectors that are entire no-data or NaN, only partial.
-        Currently only designed for wavelength interpolation on spectra.
-        Does NOT do any spatial interpolation
-    interpolate_inplace : bool, default=False
-        Flag to tell interpolation to work on the file in place, or generate a
-        new interpolated rdn file. The location of the new file will be in the
-        "input" directory within the working directory.
-
-    \b
-    References
-    ----------
-    D.R. Thompson, A. Braverman,P.G. Brodrick, A. Candela, N. Carbon, R.N. Clark,D. Connelly, R.O. Green, R.F.
-    Kokaly, L. Li, N. Mahowald, R.L. Miller, G.S. Okin, T.H.Painter, G.A. Swayze, M. Turmon, J. Susilouto, and
-    D.S. Wettergreen. Quantifying Uncertainty for Remote Spectroscopy of Surface Composition. Remote Sensing of
-    Environment, 2020. doi: https://doi.org/10.1016/j.rse.2020.111898.
-
-    \b
-    sRTMnet emulator:
-    P.G. Brodrick, D.R. Thompson, J.E. Fahlen, M.L. Eastwood, C.M. Sarture, S.R. Lundeen, W. Olson-Duvall,
-    N. Carmon, and R.O. Green. Generalized radiative transfer emulation for imaging spectroscopy reflectance
-    retrievals. Remote Sensing of Environment, 261:112476, 2021.doi: 10.1016/j.rse.2021.112476.
+    force_with_geo : bool, default=False
+        If True, will allow the wavelength_cal to run on georeferenced data. Not recommended,
+        unless you *really* know what you are doing, or know your metadata is odd.
+    start_column : int, default=None
+        Starting column index for averaging. Defaults to None, which means start from the
+        first column.
+    end_column : int, default=None
+        Ending column index for averaging. Defaults to None, which means average until the
+        last column.
+    column_interval : int, default=1
+        Step size over columns; skips, doesn't average. Useful to increase runtime speeds.
     """
-    use_superpixels = empirical_line or analytical_line
 
+    radiance_meta = envi.open(envi_header(input_radiance)).metadata
+    if (
+        force_with_geo is False
+        and "map info" in radiance_meta
+        and radiance_meta["map info"] is not None
+    ):
+        to_raise = """Radiance metadata has non-blank map info string, implying that 
+        it is a georeferenced file. wavelength_cal will perform columnwise averages that 
+        will break this.  Please adjust or use the '--force_with_geo' flag."""
+        logging.error(to_raise)
+        raise ValueError(to_raise)
+
+    ##################### Front Matter #########################
     # Determine if we run in multipart-transmittance (4c) mode
     if emulator_base is not None:
         if emulator_base.endswith(".jld2"):
@@ -270,16 +352,6 @@ def apply_oe(
             )
             raise ValueError(errstr)
 
-    if num_neighbors is not None and len(num_neighbors) > 1:
-        if not analytical_line:
-            raise ValueError(
-                "If num_neighbors has multiple elements, --analytical_line must be True"
-            )
-        if empirical_line:
-            raise ValueError(
-                "If num_neighbors has multiple elements, only --analytical_line is valid"
-            )
-
     if os.path.isdir(working_directory) is False:
         os.mkdir(working_directory)
 
@@ -290,13 +362,7 @@ def apply_oe(
         datefmt="%Y-%m-%d,%H:%M:%S",
     )
 
-    # Track system resources to a file adjacent to the log file
-    fr = None
-    if log_file:
-        jsonl = Path(log_file).with_suffix(".resources.jsonl")
-        fr = FileResources(jsonl, reset=True, cores=n_cores)
-        fr.start()
-
+    ################## Staging Setup ##########################
     logging.info("Checking input data files...")
     rdn_dataset = envi.open(envi_header(input_radiance))
     rdn_size = (rdn_dataset.shape[0], rdn_dataset.shape[1])
@@ -320,30 +386,9 @@ def apply_oe(
                     f" match input_radiance size: {rdn_size}"
                 )
                 raise ValueError(err_str)
-
-    # Check if user passed a path to sky view factor image file, else it is None.
-    if skyview_factor:
-        # check file exists first..
-        if not exists(skyview_factor):
-            raise ValueError(
-                f"Input skyview: {skyview_factor} file was not found system."
-            )
-        else:
-            # load in and ensure same shape as image file.
-            svf_dataset = envi.open(envi_header(skyview_factor), skyview_factor)
-            svf_size = (svf_dataset.shape[0], svf_dataset.shape[1])
-            del svf_dataset
-            if not (svf_size[0] == rdn_size[0] and svf_size[1] == rdn_size[1]):
-                err_str = (
-                    f"Input file: {skyview_factor} size is {svf_size}, which does not"
-                    f" match input_radiance size: {rdn_size}"
-                )
-                raise ValueError(err_str)
     logging.info("...Data file checks complete")
 
-    lut_params = tmpl.LUTConfig(
-        lut_config_file, emulator_base, no_min_lut_spacing, atmosphere_type
-    )
+    lut_params = tmpl.LUTConfig(lut_config_file, emulator_base, False)
 
     logging.info("Setting up files and directories....")
     paths = tmpl.Pathnames(
@@ -357,11 +402,10 @@ def apply_oe(
         modtran_path,
         rdn_factors_path,
         model_discrepancy_path,
-        aerosol_climatology_path,
+        None,
         channelized_uncertainty_path,
         ray_temp_dir,
-        interpolate_inplace,
-        skyview_factor,
+        False,
     )
     paths.make_directories()
     paths.stage_files()
@@ -373,7 +417,6 @@ def apply_oe(
     dt, sensor_inversion_window = tmpl.sensor_name_to_dt(sensor, paths.fid)
     if sensor_inversion_window is not None:
         INVERSION_WINDOWS = sensor_inversion_window
-
     if inversion_windows:
         assert all(
             [len(window) == 2 for window in inversion_windows]
@@ -381,8 +424,21 @@ def apply_oe(
         INVERSION_WINDOWS = inversion_windows
     logging.info(f"Using inversion windows: {INVERSION_WINDOWS}")
 
-    dayofyear = dt.timetuple().tm_yday
+    # Collapse data row-wise
+    logging.info("Collapsing data row-wise...")
+    n_rows = average_columns(
+        paths.input_radiance_file,
+        paths.input_loc_file,
+        paths.input_obs_file,
+        paths.rdn_subs_path,
+        paths.loc_subs_path,
+        paths.obs_subs_path,
+        start_column,
+        end_column,
+        column_interval,
+    )
 
+    dayofyear = dt.timetuple().tm_yday
     (
         h_m_s,
         day_increment,
@@ -396,7 +452,7 @@ def apply_oe(
         to_sensor_zenith_lut_grid,
         to_sun_zenith_lut_grid,
         relative_azimuth_lut_grid,
-    ) = tmpl.get_metadata_from_obs(paths.obs_working_path, lut_params)
+    ) = tmpl.get_metadata_from_obs(paths.obs_subs_path, lut_params)
 
     # overwrite the time in case original obs has an error in that band
     if h_m_s[0] != dt.hour and h_m_s[0] >= 24:
@@ -437,7 +493,7 @@ def apply_oe(
         mean_elevation_km,
         elevation_lut_grid,
     ) = tmpl.get_metadata_from_loc(
-        paths.loc_working_path, lut_params, pressure_elevation=pressure_elevation
+        paths.loc_subs_path, lut_params, pressure_elevation=False
     )
 
     if emulator_base is not None:
@@ -466,12 +522,6 @@ def apply_oe(
         mean_elevation_km + np.cos(np.deg2rad(mean_to_sensor_zenith)) * mean_path_km
     )
 
-    if mean_altitude_km < 0:
-        raise ValueError(
-            "Detected sensor altitude is negative, which is very unlikely and cannot be handled by ISOFIT."
-            "Please check your input files and adjust."
-        )
-
     logging.info("Observation means:")
     logging.info(f"Path (km): {mean_path_km}")
     logging.info(f"To-sensor azimuth (deg): {mean_to_sensor_azimuth}")
@@ -496,131 +546,6 @@ def apply_oe(
     else:
         uncorrelated_radiometric_uncertainty = UNCORRELATED_RADIOMETRIC_UNCERTAINTY
 
-    # Interpolate bad rdn data.
-    if interpolate_bad_rdn:
-        # if interpolate_inplace == True,
-        # paths.radiance_working_path = paths.radiance_interp_path
-        interpolate_spectra(
-            paths.radiance_working_path,
-            paths.radiance_interp_path,
-            inplace=interpolate_inplace,
-            logfile=log_file,
-        )
-        paths.radiance_working_path = paths.radiance_interp_path
-
-    logging.debug("Radiance working path:")
-    logging.debug(paths.radiance_working_path)
-    # Superpixel segmentation
-    if use_superpixels:
-        if not exists(paths.lbl_working_path) or not exists(
-            paths.radiance_working_path
-        ):
-            logging.info("Segmenting...")
-            segment(
-                spectra=(paths.radiance_working_path, paths.lbl_working_path),
-                nodata_value=-9999,
-                npca=5,
-                segsize=segmentation_size,
-                nchunk=CHUNKSIZE,
-                n_cores=n_cores,
-                loglevel=logging_level,
-                logfile=log_file,
-            )
-
-        # Extract input data per segment
-        for inp, outp in [
-            (paths.radiance_working_path, paths.rdn_subs_path),
-            (paths.obs_working_path, paths.obs_subs_path),
-            (paths.loc_working_path, paths.loc_subs_path),
-            (paths.svf_working_path, paths.svf_subs_path),
-        ]:
-            if not exists(outp) and inp is not None:
-                logging.info("Extracting " + outp)
-                extractions(
-                    inputfile=inp,
-                    labels=paths.lbl_working_path,
-                    output=outp,
-                    chunksize=CHUNKSIZE,
-                    flag=-9999,
-                    n_cores=n_cores,
-                    loglevel=logging_level,
-                    logfile=log_file,
-                )
-            else:
-                logging.info(f"Skipping {inp}, because is not a path.")
-
-    if presolve:
-        # write modtran presolve template
-        tmpl.write_modtran_template(
-            atmosphere_type=atmosphere_type,
-            fid=paths.fid,
-            altitude_km=mean_altitude_km,
-            dayofyear=dayofyear,
-            to_sensor_azimuth=mean_to_sensor_azimuth,
-            to_sensor_zenith=mean_to_sensor_zenith,
-            to_sun_zenith=mean_to_sun_zenith,
-            relative_azimuth=mean_relative_azimuth,
-            gmtime=gmtime,
-            elevation_km=mean_elevation_km,
-            output_file=paths.h2o_template_path,
-            ihaze_type="AER_NONE",
-        )
-
-        if emulator_base is None and prebuilt_lut is None:
-            max_water = tmpl.calc_modtran_max_water(paths)
-        else:
-            max_water = 6
-
-        # run H2O grid as necessary
-        if not exists(envi_header(paths.h2o_subs_path)) or not exists(
-            paths.h2o_subs_path
-        ):
-            # Write the presolve connfiguration file
-            h2o_grid = np.linspace(0.2, max_water - 0.01, 10).round(2)
-            logging.info(f"Pre-solve H2O grid: {h2o_grid}")
-            logging.info("Writing H2O pre-solve configuration file.")
-            tmpl.build_presolve_config(
-                paths=paths,
-                h2o_lut_grid=h2o_grid,
-                n_cores=n_cores,
-                use_superpixels=use_superpixels,
-                surface_category=surface_category,
-                emulator_base=emulator_base,
-                uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
-                prebuilt_lut_path=prebuilt_lut,
-                inversion_windows=INVERSION_WINDOWS,
-                multipart_transmittance=multipart_transmittance,
-            )
-
-            # Run modtran retrieval
-            logging.info("Run ISOFIT initial guess")
-            retrieval_h2o = isofit.Isofit(
-                paths.h2o_config_path,
-                level="INFO",
-                logfile=log_file,
-            )
-            retrieval_h2o.run()
-            del retrieval_h2o
-
-            # clean up unneeded storage
-            if emulator_base is None:
-                for to_rm in RTM_CLEANUP_LIST:
-                    cmd = "rm " + join(paths.lut_h2o_directory, to_rm)
-                    logging.info(cmd)
-                    subprocess.call(cmd, shell=True)
-        else:
-            logging.info("Existing h2o-presolve solutions found, using those.")
-
-        h2o = envi.open(envi_header(paths.h2o_subs_path))
-        h2o_est = h2o.read_band(-1)[:].flatten()
-
-        p05 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 2)
-        p95 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 98)
-        margin = (p95 - p05) * 0.5
-
-        lut_params.h2o_range[0] = max(lut_params.h2o_min, p05 - margin)
-        lut_params.h2o_range[1] = min(max_water, max(lut_params.h2o_min, p95 + margin))
-
     h2o_lut_grid = lut_params.get_grid(
         lut_params.h2o_range[0],
         lut_params.h2o_range[1],
@@ -635,7 +560,6 @@ def apply_oe(
     logging.info(f"Relative to-sun azimuth: {relative_azimuth_lut_grid}")
     logging.info(f"H2O Vapor: {h2o_lut_grid}")
 
-    logging.info(paths.state_subs_path)
     if (
         not exists(paths.state_subs_path)
         or not exists(paths.uncert_subs_path)
@@ -655,7 +579,6 @@ def apply_oe(
             output_file=paths.modtran_template_path,
         )
 
-        logging.info("Writing main configuration file.")
         tmpl.build_main_config(
             paths=paths,
             lut_params=lut_params,
@@ -683,22 +606,22 @@ def apply_oe(
             mean_latitude=mean_latitude,
             mean_longitude=mean_longitude,
             dt=dt,
-            use_superpixels=use_superpixels,
+            use_superpixels=True,
             n_cores=n_cores,
             surface_category=surface_category,
             emulator_base=emulator_base,
             uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
-            multiple_restarts=multiple_restarts,
-            segmentation_size=segmentation_size,
-            pressure_elevation=pressure_elevation,
+            multiple_restarts=False,
+            segmentation_size=n_rows,
+            pressure_elevation=False,
             prebuilt_lut_path=prebuilt_lut,
             inversion_windows=INVERSION_WINDOWS,
             multipart_transmittance=multipart_transmittance,
         )
 
-        if config_only:
-            logging.info("`config_only` enabled, exiting early")
-            return
+        add_wavelength_elements(
+            paths.isofit_full_config_path, wl_state_type, spline_indices
+        )
 
         # Run retrieval
         logging.info("Running ISOFIT with full LUT")
@@ -715,57 +638,87 @@ def apply_oe(
                 logging.info(cmd)
                 subprocess.call(cmd, shell=True)
 
-    if not exists(paths.rfl_working_path) or not exists(paths.uncert_working_path):
-        # Determine the number of neighbors to use.  Provides backwards stability and works
-        # well with defaults, but is arbitrary
-        if not num_neighbors:
-            nneighbors = [int(round(3950 / 9 - 35 / 36 * segmentation_size))]
-        else:
-            nneighbors = [n for n in num_neighbors]
 
-        if empirical_line:
-            # Empirical line
-            logging.info("Empirical line inference")
-            ELAlg(
-                reference_radiance_file=paths.rdn_subs_path,
-                reference_reflectance_file=paths.rfl_subs_path,
-                reference_uncertainty_file=paths.uncert_subs_path,
-                reference_locations_file=paths.loc_subs_path,
-                segmentation_file=paths.lbl_working_path,
-                input_radiance_file=paths.radiance_working_path,
-                input_locations_file=paths.loc_working_path,
-                output_reflectance_file=paths.rfl_working_path,
-                output_uncertainty_file=paths.uncert_working_path,
-                isofit_config=paths.isofit_full_config_path,
-                nneighbors=nneighbors[0],
-                n_cores=n_cores,
-            )
-        elif analytical_line:
-            logging.info("Analytical line inference")
-            ALAlg(
-                paths.radiance_working_path,
-                paths.loc_working_path,
-                paths.obs_working_path,
-                working_directory,
-                output_rfl_file=paths.rfl_working_path,
-                output_unc_file=paths.uncert_working_path,
-                skyview_factor_file=paths.svf_working_path,
-                loglevel=logging_level,
-                logfile=log_file,
-                n_atm_neighbors=nneighbors,
-                n_cores=n_cores,
-                smoothing_sigma=atm_sigma,
-            )
+def get_wavelength_adjustment(
+    config_file: str, output_file: str = None, filter_edges: int = 0
+):
+    """
+    Get the wavelength adjustment based on a previous isofit wavelength_cal run.
 
-    logging.info("Done.")
-    ray.shutdown()
+    Args:
+        config_file (str): The configuration file for the wavelength_cal run.
+        output_file (str): The file to write the wavelength adjustment to.
+        filter_edges (int): number of edge columns to trim from average
 
-    if fr:
-        fr.stop()
+    Returns:
+        None
+    """
+    logging.info("Getting wavelength adjustment...")
+
+    # Load the instrument object
+    config = configs.load_config(config_file)
+    instrument = instrument.Instrument(config)
+
+    # Load the statevector - we could do this by loading the forward
+    # model and the indicies, but in case the LUT is large, we're
+    # shortcutting here
+    state_ds = envi.open(envi_header(config["output"]["estimated_state_file"]))
+    state_possible_names = ["GRWO_FWHM", "FWHMSPL", "WL_SPACE", "WL_SHIFT", "WLSPL"]
+    band_names = list(state_ds.metadata["band names"])
+    instrument_idx = np.array(
+        [
+            np.any([bn.startswith(name) for name in state_possible_names])
+            for bn in band_names
+        ]
+    )
+    instrument_state = state_ds.open_memmap(interleave="bip", writable=False)[
+        :, instrument_idx
+    ]
+
+    # average
+    # Filter first and last row to avoid instability
+    if filter_edges > 0:
+        mean_state = np.mean(
+            instrument_state[filter_edges : -1 * filter_edges, :], axis=0
+        )
+    else:
+        mean_state = np.mean(instrument_state, axis=0)
+
+    # optionally filter
+
+    # run calibration()
+    wl, fwhm = instrument.calibration(mean_state)
+
+    # write file
+    tmpl.write_wavelength_file(output_file, wl, fwhm)
+
+
+@click.command(
+    name="get_wavelength_adjustment",
+    help=get_wavelength_adjustment.__doc__,
+    no_args_is_help=True,
+)
+@click.argument("config_file")
+@click.argument("output_file")
+@click.argument("--filter_edges")
+@click.option(
+    "--debug-args",
+    help="Prints the arguments list without executing the command",
+    is_flag=True,
+)
+def cli_get_wavelength_adjustment(debug_args, profile, **kwargs):
+    if debug_args:
+        print("Arguments to be passed:")
+        for key, value in kwitems():
+            print(f"  {key} = {value!r}")
+    else:
+        get_wavelength_adjustment(**kwargs)
+
+    print("Done")
 
 
 # Input arguments
-@click.command(name="apply_oe", help=apply_oe.__doc__, no_args_is_help=True)
+@click.command(name="wavelength_cal", help=wavelength_cal.__doc__, no_args_is_help=True)
 @click.argument("input_radiance")
 @click.argument("input_loc")
 @click.argument("input_obs")
@@ -776,39 +729,37 @@ def apply_oe(
 @click.option("--modtran_path")
 @click.option("--wavelength_path")
 @click.option("--surface_category", default="multicomponent_surface")
-@click.option("--aerosol_climatology_path")
 @click.option("--rdn_factors_path")
 @click.option("--atmosphere_type", default="ATM_MIDLAT_SUMMER")
 @click.option("--channelized_uncertainty_path")
 @click.option("--model_discrepancy_path")
 @click.option("--lut_config_file")
-@click.option("--multiple_restarts", is_flag=True, default=False)
 @click.option("--logging_level", default="INFO")
 @click.option("--log_file")
 @click.option("--n_cores", type=int, default=1)
-@click.option("--presolve", is_flag=True, default=False)
-@click.option("--empirical_line", is_flag=True, default=False)
-@click.option("--analytical_line", is_flag=True, default=False)
 @click.option("--ray_temp_dir", default="/tmp/ray")
 @click.option("--emulator_base")
-@click.option("--segmentation_size", default=40)
-@click.option("--num_neighbors", "-nn", type=int, multiple=True)
-@click.option("--atm_sigma", "-as", type=float, multiple=True, default=[2])
-@click.option("--pressure_elevation", is_flag=True, default=False)
 @click.option("--prebuilt_lut", type=str)
-@click.option("--no_min_lut_spacing", is_flag=True, default=False)
-@click.option("--inversion_windows", type=float, nargs=2, multiple=True, default=None)
-@click.option("--config_only", is_flag=True, default=False)
-@click.option("--interpolate_bad_rdn", is_flag=True, default=False)
-@click.option("--interpolate_inplace", is_flag=True, default=False)
-@click.option("--skyview_factor", type=str, default=None)
+@click.option("--inversion_windows", type=float, nargs=2, multiple=True)
+@click.option(
+    "--wl_state_type",
+    type=click.Choice(
+        ["shift", "shift-only", "spline", "spline-only"], case_sensitive=True
+    ),
+    default="shift",
+)
+@click.option("--spline_indices", "-si", type=int, multiple=True, default=None)
+@click.option("--force_with_geo", is_flag=True, default=False)
+@click.option("--start_column", type=int, default=None)
+@click.option("--end_column", type=int, default=None)
+@click.option("--column_interval", type=int, default=1)
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",
     is_flag=True,
 )
 @click.option("--profile")
-def cli(debug_args, profile, **kwargs):
+def cli_wavelength_cal(debug_args, profile, **kwargs):
     if debug_args:
         print("Arguments to be passed:")
         for key, value in kwitems():
@@ -821,7 +772,7 @@ def cli(debug_args, profile, **kwargs):
             profiler = cProfile.Profile()
             profiler.enable()
 
-        apply_oe(**kwargs)
+        wavelength_cal(**kwargs)
 
         if profile:
             profiler.disable()
@@ -829,9 +780,3 @@ def cli(debug_args, profile, **kwargs):
             stats.dump_stats(profile)
 
     print("Done")
-
-
-if __name__ == "__main__":
-    raise NotImplementedError(
-        "apply_oe.py can no longer be called this way.  Run as:\n isofit apply_oe [ARGS]"
-    )

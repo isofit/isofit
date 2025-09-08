@@ -534,7 +534,7 @@ def invert_liquid_water(
 
     Args:
         rfl_meas:            surface reflectance spectrum
-        wl:                  instrument wavelengths, must be same size as rfl_meas
+        wl:                  instrument wavelengths, must be same size as rfl_meas and in units of nm
         l_shoulder:          wavelength of left absorption feature shoulder
         r_shoulder:          wavelength of right absorption feature shoulder
         lw_init:             initial guess for liquid water path length, intercept, and slope
@@ -545,6 +545,9 @@ def invert_liquid_water(
     Returns:
         solution: estimated liquid water path length, intercept, and slope based on a given surface reflectance
     """
+    # make sure that wavelengths are provided in nm
+    if wl[0] < 100:
+        wl = units.micron_to_nm(wl)
 
     # params needed for liquid water fitting
     lw_feature_left = np.argmin(abs(l_shoulder - wl))
