@@ -52,17 +52,10 @@ def patch_makefile(file):
     # Insert new lines
     flags = [
         "EXTRA   = -O -ffixed-line-length-132 -std=legacy",
-        "LDFLAGS = -Wl,--remove-section=.comment",
     ]
     for i, flag in enumerate(flags, start=3):
         if lines[i] != flag:
             lines.insert(i, flag)
-
-    # Update the link commands to use LDFLAGS (Windows only, breaks Mac)
-    if platform.system() == "Windows":
-        for i, line in enumerate(lines):
-            if "-o sixsV2.1" in line and "$(LDFLAGS)" not in line:
-                lines[i] = line.replace("-lm", "$(LDFLAGS) -lm")
 
     file.write_text("\n".join(lines))
 

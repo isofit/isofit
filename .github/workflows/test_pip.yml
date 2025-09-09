@@ -86,7 +86,10 @@ jobs:
         shell: bash
         if: runner.os == 'Windows'
         run: |
+          ld --version
           isofit --base ~/.isofit build
+          strip -R .comment *.o
+          strip -R .comment sixsV2.1 sixsV2.1-lutaero
           isofit download sixs --make --debug-make
 
       - name: Execute tests
