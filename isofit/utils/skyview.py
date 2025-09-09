@@ -20,7 +20,7 @@
 
 
 import logging
-from os.path import join
+from os.path import join, isfile, isdir
 
 import click
 import numpy as np
@@ -31,19 +31,19 @@ from isofit.core.common import envi_header
 
 
 def skyview(
-    dem_prj_path,
-    dem_prj_resolution,
-    output_directory,
-    obs_or_loc=None,
-    method="horizon",
-    n_angles=72,
-    logging_level="INFO",
-    log_file=None,
-    n_cores=1,
+    input: str,
+    output_directory: str,
+    resolution: float = np.nan,
+    obs_or_loc: str = None,
+    method: str = "slope",
+    n_angles: int = 72,
+    logging_level: str = "INFO",
+    log_file: str = None,
+    n_cores: int = 1,
     ray_address: str = None,
     ray_redis_password: str = None,
-    ray_temp_dir=None,
-    ray_ip_head=None,
+    ray_temp_dir: str = None,
+    ray_ip_head: str = None,
 ):
     """\
     Applies sky view factor calculation for a given UTM projected DEM or DSM. Much of this code was borrowed from ARS Topo-Calc.
@@ -59,61 +59,107 @@ def skyview(
     \b
     Parameters
     ----------
-    dem_prj_path : str
-        Path to the projected DEM or DSM file (ENVI format).
-    dem_prj_resolution : float
-        Spatial resolution of the projected DEM in coordinate units (GSD in meters).
+    input : str
+        Path to the projected ENVI File. If obs_or_loc is None or "loc" this is elevation. Else if, "obs" it is slope product.
     output_directory : str
         Directory path for temporary files and outputs during processing; similar to apply_oe.
-    obs_or_loc : str
+    resolution : float, optional
+        Spatial resolution of the projected DEM in coordinate units (GSD in meters). Required for elevation data.
+    obs_or_loc : str, optional
         Options here are 'obs', 'loc', or None. Default is None. If 'obs' is selected, it will pick the slope data from index 6 in OBS file.
         If 'loc' is selected it well select the elevation data from index 2. 
     method : str, optional
         Options are either "horizon" or "slope". Passing "horizon" runs the full computation and is recommended for very steep terrain.
         Passing "slope"" runs the simplifed calculation of svf=cos^2(slope/2) and can be useful for more mild slopes. 
     n_angles : int, optional
-        Number of angles used in horizon calculations (default is 72).
+        Number of angles used in horizon calculations (default is 72). Other options could be 32, 64, etc. (see Dozier & Frew). 
     logging_level : str, optional
         Logging verbosity level (default is "INFO"); similar to apply_oe.
     log_file : str or None, optional
         File path to write logs; similar to apply_oe.
     n_cores : int, optional
-        Number of CPU cores to use for parallel processing (default is 1). Only used for method="horizon".
+        Number of CPU cores to use for parallel processing (default is 1). Only used for method="horizon". 
+        Note: n_cores should not be larger than n_angles//2.
     """
-
-    # Construct svf output path.
-    svf_hdr_path = join(output_directory, "sky_view_factor.hdr")
-
-    # Set up logging
+    # set up logging for skyview.
     logging.basicConfig(
         format="%(levelname)s:%(message)s", level=logging_level, filename=log_file
     )
 
-    # Load DEM data (assuming hdr).
-    dem = envi.open(envi_header(dem_prj_path))
-    dem_data = dem.open_memmap(writeable=False).copy()
+    # safeguards on possible incorrect inputs.
+    if not isinstance(input, str):
+        err_str = "input must be a string."
+        raise TypeError(err_str)
 
-    # assign if None, LOC, or OBS based data.
+    if not isinstance(n_angles, int) or n_angles < 16:
+        err_str = "n_angles must be a positive, even integer greater than 16."
+        raise ValueError(err_str)
+
+    if not isinstance(n_cores, int) or n_cores <= 0:
+        err_str = "n_cores must be a positive integer."
+        raise ValueError(err_str)
+
+    # Construct svf output path.
+    if not isdir(output_directory):
+        err_str = f"The output directory, {output_directory}, does not exist or was not found."
+        raise ValueError(err_str)
+    else:
+        svf_hdr_path = join(output_directory, "sky_view_factor.hdr")
+
+    # NOTE: ensuring n_cores does not exceed n_angles/2
+    # See section "Parallel Processing of Rotations" in,
+    # Revisiting Topographic Horizons in the Era of Big Data and Parallel Computing
+    n_cores_max = n_angles // 2
+    if n_cores > n_cores_max:
+        logging.info(
+            f"n_cores={n_cores}, but max can be {n_cores_max} for n_angles={n_angles}. Setting n_cores={n_cores_max}."
+        )
+        n_cores = n_cores_max
+
+    # Load DEM data (assuming hdr).
+    if not isfile(input):
+        err_str = f"The DEM file was not found: {input}."
+        raise FileNotFoundError(err_str)
+    else:
+        dem = envi.open(envi_header(input))
+        dem_data = dem.open_memmap(writeable=False).copy()
+
+    # set method and obs_or_loc args to be lower case if not None
     method = method.lower()
     if obs_or_loc:
         obs_or_loc = obs_or_loc.lower()
+    if obs_or_loc != "obs":
+        if (
+            not isinstance(resolution, (float, int))
+            or resolution <= 0
+            or np.isnan(resolution)
+        ):
+            err_str = "resolution must be positive value when using elevation data."
+            raise ValueError(err_str)
+
+    # Clean up input data based on real bounds of slope and elevation.
+    max_elev = 10000.0  # slightly higher than Mt.Everest
+    min_elev = -2000.0  # slightly lower than Dead Sea
     if obs_or_loc == "obs":
         slope = dem_data[:, :, 6]
         slope[slope > 90.1] = np.nan
         slope[slope < -0.01] = np.nan
     elif obs_or_loc == "loc":
         dem_data = dem_data[:, :, 2]
-        dem_data[dem_data > 8900] = np.nan
-        dem_data[dem_data < -1360] = np.nan
+        dem_data[dem_data > max_elev] = np.nan
+        dem_data[dem_data < min_elev] = np.nan
     elif obs_or_loc == None:
-        dem_data[dem_data > 8900] = np.nan
-        dem_data[dem_data < -1360] = np.nan
+        dem_data[dem_data > max_elev] = np.nan
+        dem_data[dem_data < min_elev] = np.nan
     else:
         err_str = "obs_or_loc must be 'loc', 'obs', or None."
         raise ValueError(err_str)
+
+    # if 3d, squeeze to a 2d array
     if dem_data.ndim == 3 and dem_data.shape[2] == 1:
         dem_data = dem_data[:, :, 0]
-    # set metadata
+
+    # set metadata for output skyview.
     dem_metadata = dem.metadata.copy()
     dem_metadata.update(
         {
@@ -126,14 +172,15 @@ def skyview(
         }
     )
 
-    # If only computing slope method
+    # If only computing slope method, we do not need to set up Ray.
     if method == "slope":
         if obs_or_loc != "obs":
             slope, aspect = gradient_d8(
-                dem_data, dx=dem_prj_resolution, dy=dem_prj_resolution, aspect_rad=True
+                dem_data, dx=resolution, dy=resolution, aspect_rad=True
             )
+        # approx. skyview using slope only.
         svf = np.cos(slope / 2) ** 2
-        # save.
+
         envi.save_image(
             svf_hdr_path,
             svf.astype(np.float32),
@@ -143,11 +190,18 @@ def skyview(
             force=True,
         )
 
+    # Else if, run the full horizon method.
     elif method == "horizon":
+
+        # raise error if horizon method passed but slope data is input.
+        if obs_or_loc == "obs":
+            err_str = "A slope product was passed to horizon method, but this method requires the elevation product."
+            raise ValueError(err_str)
+
         # prep the data for correct format for computation
         angles, aspect, cos_slope, sin_slope, tan_slope = viewfdozier_prep(
             dem=dem_data,
-            spacing=dem_prj_resolution,
+            spacing=resolution,
             nangles=n_angles,
             sin_slope=None,
             aspect=None,
@@ -175,14 +229,13 @@ def skyview(
         # Run n-angles in parallel
         futures = [
             viewfdozier_i.remote(
-                a, dem_ray, dem_prj_resolution, aspect_ray, cos_ray, sin_ray, tan_ray
+                a, dem_ray, resolution, aspect_ray, cos_ray, sin_ray, tan_ray
             )
             for a in angles
         ]
         results = ray.get(futures)
 
-        # and so now, we have a list object of 72, 2-d arrays
-        # and  can complete integration for svf
+        # compute skyview using horizons
         svf = sum(results) / len(angles)
 
         envi.save_image(
@@ -710,11 +763,12 @@ def transpose_skew(dem, spacing, angle):
 
 # Input arguments
 @click.command(name="skyview", help=skyview.__doc__, no_args_is_help=True)
-@click.argument("dem_prj_path", type=str)
-@click.argument("dem_prj_resolution", type=float)
+@click.argument("input", type=str)
 @click.argument("output_directory", type=str)
+@click.option("--resolution", type=float, default=np.nan)
 @click.option("--n_angles", type=int, default=72)
-@click.option("--method", type=str, default="horizon")
+@click.option("--obs_or_loc", type=str, default=None)
+@click.option("--method", type=str, default="slope")
 @click.option("--logging_level", default="INFO")
 @click.option("--log_file", type=str, default=None)
 @click.option("--n_cores", type=int, default=1)

@@ -359,11 +359,12 @@ def apply_oe(
             if not exists(os.path.dirname(skyview_factor)):
                 os.mkdir(os.path.dirname(skyview_factor))
             skyview(
-                dem_prj_path=input_obs,
-                dem_prj_resolution=np.nan,  # unused in slope method with OBS input.
+                input=input_obs,
                 output_directory=os.path.dirname(skyview_factor),
                 obs_or_loc="obs",
                 method="slope",
+                log_file=log_file,
+                logging_level=logging_level,
             )
         # If arg is None, load in the user data and check.
         else:
