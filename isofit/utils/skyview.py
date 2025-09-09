@@ -16,11 +16,11 @@
 #
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
-#
-
 
 import logging
 from os.path import join, isfile, isdir
+import time
+import warnings
 
 import click
 import numpy as np
@@ -46,28 +46,32 @@ def skyview(
     ray_ip_head: str = None,
 ):
     """\
-    Applies sky view factor calculation for a given UTM projected DEM or DSM. Much of this code was borrowed from ARS Topo-Calc.
+    Applies sky view factor calculation for a given projected DEM or DSM. Much of this code was borrowed from ARS Topo-Calc.
     The key thing here was to create a python-only, rasterio-free port of this that could be used within ISOFIT. We also included 
     improvements that are current in Jeff Dozier's horizon method in Matlab (https://github.com/DozierJeff/Topographic-Horizons).
-
-    Also, following suggestions from Dozier (2021), multiprocessing is leveraged here w.r.t. to n_angles rotating the image. As default,
+    Following suggestions from Dozier (2021), multiprocessing is leveraged here w.r.t. to n_angles rotating the image. As default,
     sky view is computed with n angles = 72 which in most cases is of sufficient accuracy to resolve but more angles may be used.
-
+    
     Optionally to this horizon based method, one can pass method="slope" to compute a faster estimate that may be sufficent for regions with lower relief.
-    The slope based estimate is simply, svf = cos^2(slope/2).
+    The slope based estimate is simply, svf = cos^2(slope/2). 
+    
+    Yet another option is to pass an ISOFIT "OBS" or "LOC" file as input and using the obs_or_loc arg. 
+    OBS files have slope data and can be used for method='slope' only. LOC files have elevation data and can be used for method='slope'. 
+    One can also use the full horizon method on the LOC file although this is not recommended because the edges miss information 
+    (a warning will be triggered in this case).
 
     \b
     Parameters
     ----------
     input : str
-        Path to the projected ENVI File. If obs_or_loc is None or "loc" this is elevation. Else if, "obs" it is slope product.
+        Path to the projected ENVI File. If `obs_or_loc` is None or "loc" input is elevation. If is "obs", then it's a slope product.
     output_directory : str
         Directory path for temporary files and outputs during processing; similar to apply_oe.
     resolution : float, optional
-        Spatial resolution of the projected DEM in coordinate units (GSD in meters). Required for elevation data.
+        Spatial resolution of the projected DEM in coordinate units (GSD in meters). Required for elevation input data.
     obs_or_loc : str, optional
         Options here are 'obs', 'loc', or None. Default is None. If 'obs' is selected, it will pick the slope data from index 6 in OBS file.
-        If 'loc' is selected it well select the elevation data from index 2. 
+        If 'loc' is selected it well select the elevation data from index 2. None will assume a single band elevation data is passed.
     method : str, optional
         Options are either "horizon" or "slope". Passing "horizon" runs the full computation and is recommended for very steep terrain.
         Passing "slope"" runs the simplifed calculation of svf=cos^2(slope/2) and can be useful for more mild slopes. 
@@ -79,12 +83,14 @@ def skyview(
         File path to write logs; similar to apply_oe.
     n_cores : int, optional
         Number of CPU cores to use for parallel processing (default is 1). Only used for method="horizon". 
-        Note: n_cores should not be larger than n_angles//2.
+        Note: n_cores should ideally not be larger than n_angles.
     """
     # set up logging for skyview.
     logging.basicConfig(
         format="%(levelname)s:%(message)s", level=logging_level, filename=log_file
     )
+    logging.info("Starting skyview utility...")
+    start_time = time.time()
 
     # safeguards on possible incorrect inputs.
     if not isinstance(input, str):
@@ -106,10 +112,10 @@ def skyview(
     else:
         svf_hdr_path = join(output_directory, "sky_view_factor.hdr")
 
-    # NOTE: ensuring n_cores does not exceed n_angles/2
-    # See section "Parallel Processing of Rotations" in,
-    # Revisiting Topographic Horizons in the Era of Big Data and Parallel Computing
-    n_cores_max = n_angles // 2
+    # ensuring n_cores does not exceed n_angles
+    # See, "Revisiting Topographic Horizons in the Era of Big Data and Parallel Computing"
+    # In our case, we split it on rotation and forward/backward. and so max workers = n_angles.
+    n_cores_max = n_angles
     if n_cores > n_cores_max:
         logging.info(
             f"n_cores={n_cores}, but max can be {n_cores_max} for n_angles={n_angles}. Setting n_cores={n_cores_max}."
@@ -198,14 +204,11 @@ def skyview(
             err_str = "A slope product was passed to horizon method, but this method requires the elevation product."
             raise ValueError(err_str)
 
-        # prep the data for correct format for computation
-        angles, aspect, cos_slope, sin_slope, tan_slope = viewfdozier_prep(
-            dem=dem_data,
-            spacing=resolution,
-            nangles=n_angles,
-            sin_slope=None,
-            aspect=None,
-        )
+        # raise warning for running loc file on horizon.
+        if obs_or_loc == "loc":
+            warn_str = "Running the horizon method with LOC file. Resulting skyview may be incorrect on edges."
+            warnings.warn(warn_str, UserWarning)
+            logging.info(warn_str)
 
         # Start up a ray instance for parallel work
         rayargs = {
@@ -219,17 +222,29 @@ def skyview(
         }
         ray.init(**rayargs)
 
-        # Share ray objects
-        dem_ray = ray.put(dem_data)
-        aspect_ray = ray.put(aspect)
-        cos_ray = ray.put(cos_slope)
-        sin_ray = ray.put(sin_slope)
-        tan_ray = ray.put(tan_slope)
+        # prep the data for correct format for computation
+        dem_ray, angles, aspect_ray, cos_slope_ray, sin_slope_ray, tan_slope_ray = (
+            viewfdozier_prep(
+                dem=dem_data,
+                spacing=resolution,
+                nangles=n_angles,
+                sin_slope=None,
+                aspect=None,
+            )
+        )
 
         # Run n-angles in parallel
         futures = [
             viewfdozier_i.remote(
-                a, dem_ray, resolution, aspect_ray, cos_ray, sin_ray, tan_ray
+                angle=a,
+                dem=dem_ray,
+                spacing=resolution,
+                aspect=aspect_ray,
+                cos_slope=cos_slope_ray,
+                sin_slope=sin_slope_ray,
+                tan_slope=tan_slope_ray,
+                logging_level=logging_level,
+                log_file=log_file,
             )
             for a in angles
         ]
@@ -249,6 +264,10 @@ def skyview(
     else:
         err_str = "method must be either 'horizon' or 'slope'."
         raise ValueError(err_str)
+
+    logging.info(
+        f"Skyview calculation completed in {time.time() - start_time} seconds using {n_cores} cores."
+    )
 
 
 def viewfdozier_prep(dem, spacing, nangles=72, sin_slope=None, aspect=None):
@@ -293,17 +312,41 @@ def viewfdozier_prep(dem, spacing, nangles=72, sin_slope=None, aspect=None):
     # -180 is North
     angles = np.linspace(-180, 180, num=nangles, endpoint=False)
 
-    return angles, aspect, cos_slope, sin_slope, tan_slope
+    # Share ray objects
+    dem_ray = ray.put(dem)
+    aspect_ray = ray.put(aspect)
+    cos_slope_ray = ray.put(cos_slope)
+    sin_slope_ray = ray.put(sin_slope)
+    tan_slope_ray = ray.put(tan_slope)
+
+    return dem_ray, angles, aspect_ray, cos_slope_ray, sin_slope_ray, tan_slope_ray
 
 
 @ray.remote(num_cpus=1)
-def viewfdozier_i(angle, dem, spacing, aspect, cos_slope, sin_slope, tan_slope):
+def viewfdozier_i(
+    angle,
+    dem,
+    spacing,
+    aspect,
+    cos_slope,
+    sin_slope,
+    tan_slope,
+    logging_level,
+    log_file,
+):
     """
     See above, but this is running each horizon angle in parallel (n=72 , or user input)
 
     This returns the i-th svf array, used in the integral
 
     """
+    # set up logging for each worker.
+    logging.basicConfig(
+        format="%(levelname)s:%(asctime)s ||| %(message)s",
+        level=logging_level,
+        filename=log_file,
+        datefmt="%Y-%m-%d,%H:%M:%S",
+    )
 
     # horizon angles
     hcos = horizon(angle, dem, spacing)
@@ -503,54 +546,54 @@ def horizon(azimuth, dem, spacing):
 
     if azimuth == 90:
         # East
-        hcos = hor2d(dem, spacing, fwd=True)
+        hcos = hor2d(dem, spacing, fwd=True, angle=azimuth)
 
     elif azimuth == -90:
         # West
-        hcos = hor2d(dem, spacing, fwd=False)
+        hcos = hor2d(dem, spacing, fwd=False, angle=azimuth)
 
     elif azimuth == 0:
         # South
-        hcos = hor2d(dem.transpose(), spacing, fwd=True)
+        hcos = hor2d(dem.transpose(), spacing, fwd=True, angle=azimuth)
         hcos = hcos.transpose()
 
     elif np.abs(azimuth) == 180:
         # South
-        hcos = hor2d(dem.transpose(), spacing, fwd=False)
+        hcos = hor2d(dem.transpose(), spacing, fwd=False, angle=azimuth)
         hcos = hcos.transpose()
 
     elif azimuth >= -45 and azimuth <= 45:
         # South west through south east
         t, spacing = skew_transpose(dem, spacing, azimuth)
-        h = hor2d(t, spacing, fwd=True)
+        h = hor2d(t, spacing, fwd=True, angle=azimuth)
         hcos = skew(h.transpose(), azimuth, fwd=False)
 
     elif azimuth <= -135 and azimuth > -180:
         # North west
         a = azimuth + 180
         t, spacing = skew_transpose(dem, spacing, a)
-        h = hor2d(t, spacing, fwd=False)
+        h = hor2d(t, spacing, fwd=False, angle=azimuth)
         hcos = skew(h.transpose(), a, fwd=False)
 
     elif azimuth >= 135 and azimuth < 180:
         # North East
         a = azimuth - 180
         t, spacing = skew_transpose(dem, spacing, a)
-        h = hor2d(t, spacing, fwd=False)
+        h = hor2d(t, spacing, fwd=False, angle=azimuth)
         hcos = skew(h.transpose(), a, fwd=False)
 
     elif azimuth > 45 and azimuth < 135:
         # South east through north east
         a = 90 - azimuth
         t, spacing = transpose_skew(dem, spacing, a)
-        h = hor2d(t, spacing, fwd=True)
+        h = hor2d(t, spacing, fwd=True, angle=azimuth)
         hcos = skew(h.transpose(), a, fwd=False).transpose()
 
     elif azimuth < -45 and azimuth > -135:
         # South west through north west
         a = -90 - azimuth
         t, spacing = transpose_skew(dem, spacing, a)
-        h = hor2d(t, spacing, fwd=False)
+        h = hor2d(t, spacing, fwd=False, angle=azimuth)
         hcos = skew(h.transpose(), a, fwd=False).transpose()
 
     else:
@@ -626,7 +669,7 @@ def horval(z, delta, h):
     return hcos
 
 
-def hor2d(z, delta, fwd=True):
+def hor2d(z, delta, fwd=True, angle=None):
     if z.ndim != 2:
         raise ValueError("Input must be 2D array")
     nrows, ncols = z.shape
@@ -636,6 +679,9 @@ def hor2d(z, delta, fwd=True):
         hbuf = hor1(zbuf, fwd=fwd)
         obuf = horval(zbuf, delta, hbuf)
         hcos[i, :] = obuf
+        logging.info(
+            f"Horizon Angle: {angle} completed {i+1} / {nrows} of skewed lines. Percent complete: {((i+1) / nrows) * 100} %"
+        )
     return hcos
 
 
