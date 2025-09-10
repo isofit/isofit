@@ -225,9 +225,6 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
                 " available modes: {}".format(self.rt_mode, valid_rt_modes)
             )
 
-        if self.multipart_transmittance and self.engine_name != "modtran":
-            errors.append("Multipart transmittance is supported for MODTRAN only")
-
         if self.earth_sun_distance_file is None and self.engine_name == "6s":
             errors.append("6s requires earth_sun_distance_file to be specified")
 
@@ -243,9 +240,12 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
                         "The sRTMnet requires an emulator_file to be specified."
                     )
 
-            if os.path.splitext(self.emulator_file)[1] != ".h5":
+            if (os.path.splitext(self.emulator_file)[1] != ".h5") and (
+                os.path.splitext(self.emulator_file)[1] != ".npz"
+            ):
                 errors.append(
-                    "sRTMnet now requires the emulator_file to be of type .h5.  Please download an updated version from:\n https://zenodo.org/records/10831425"
+                    "sRTMnet now requires the emulator_file to be of type .h5 (or .npz for experimental 6c emulator).  "
+                    "Please download an updated version from:\n https://zenodo.org/records/10831425"
                 )
 
             if self.emulator_aux_file is None:
