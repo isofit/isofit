@@ -19,12 +19,14 @@
 
 import logging
 from os.path import join, isfile, isdir
+from os import remove
 import time
 import warnings
 
 import click
 import numpy as np
 import ray
+import netCDF4 as nc
 from spectral.io import envi
 
 from isofit.core.common import envi_header
@@ -40,6 +42,7 @@ def skyview(
     logging_level: str = "INFO",
     log_file: str = None,
     n_cores: int = 1,
+    keep_horizon_files: bool = False,
     ray_address: str = None,
     ray_redis_password: str = None,
     ray_temp_dir: str = None,
@@ -77,6 +80,8 @@ def skyview(
         Passing "slope"" runs the simplifed calculation of svf=cos^2(slope/2) and can be useful for more mild slopes. 
     n_angles : int, optional
         Number of angles used in horizon calculations (default is 72). Other options could be 32, 64, etc. (see Dozier & Frew). 
+    keep_horizon_files : bool, optional
+        Horizon angles are created in output_dir as netcdf files. False deletes files, and True keeps them.        
     logging_level : str, optional
         Logging verbosity level (default is "INFO"); similar to apply_oe.
     log_file : str or None, optional
@@ -146,6 +151,7 @@ def skyview(
     # Clean up input data based on real bounds of slope and elevation.
     max_elev = 10000.0  # slightly higher than Mt.Everest
     min_elev = -2000.0  # slightly lower than Dead Sea
+
     if obs_or_loc == "obs":
         slope = dem_data[:, :, 6]
         slope[slope > 90.1] = np.nan
@@ -171,6 +177,7 @@ def skyview(
         {
             "description": "Sky View Factor",
             "bands": 1,
+            "data ignore value": -9999,
             "interleave": "bsq",
             "data type": 4,
             "byte order": 0,
@@ -223,15 +230,20 @@ def skyview(
         ray.init(**rayargs)
 
         # prep the data for correct format for computation
-        dem_ray, angles, aspect_ray, cos_slope_ray, sin_slope_ray, tan_slope_ray = (
-            viewfdozier_prep(
-                dem=dem_data,
-                spacing=resolution,
-                nangles=n_angles,
-                sin_slope=None,
-                aspect=None,
-            )
+        dem, angles, aspect, cos_slope, sin_slope, tan_slope = viewfdozier_prep(
+            dem=dem_data,
+            spacing=resolution,
+            nangles=n_angles,
+            sin_slope=None,
+            aspect=None,
         )
+
+        # Share needed ray objects
+        dem_ray = ray.put(dem)
+        aspect_ray = ray.put(aspect)
+        # cos_slope_ray = ray.put(cos_slope)
+        # sin_slope_ray = ray.put(sin_slope)
+        tan_slope_ray = ray.put(tan_slope)
 
         # Run n-angles in parallel
         futures = [
@@ -240,18 +252,42 @@ def skyview(
                 dem=dem_ray,
                 spacing=resolution,
                 aspect=aspect_ray,
-                cos_slope=cos_slope_ray,
-                sin_slope=sin_slope_ray,
                 tan_slope=tan_slope_ray,
+                output_directory=output_directory,
                 logging_level=logging_level,
                 log_file=log_file,
             )
             for a in angles
         ]
-        results = ray.get(futures)
+        ray.get(futures)
 
-        # compute skyview using horizons
-        svf = sum(results) / len(angles)
+        # set up integral for skyview
+        qIntegrand = np.zeros_like(dem_data, dtype=np.float64)
+        for a in angles:
+            file_path = join(output_directory, f"horizon_angle_{a}.nc")
+            with nc.Dataset(file_path) as ds:
+                ds.set_auto_scale(False)
+                h_scaled = ds.variables["horizon"][:].astype(np.float64)
+                h_scaled[h_scaled == 65535] = np.nan
+                h = h_scaled / 65534 * np.pi
+
+            azimuth = np.radians(a)
+            cos_aspect = np.cos(aspect - azimuth)
+
+            # integral in https://github.com/DozierJeff/Topographic-Horizons:
+            # qIntegrand = (cosd(slopeDegrees)*sin(H).^2 + sind(slopeDegrees)*cos(aspectRadian-azmRadian).*(H-cos(H).*sin(H)))/2
+            qIntegrand_i = cos_slope * np.sin(h) ** 2 + sin_slope * cos_aspect * (
+                h - np.sin(h) * np.cos(h)
+            )
+            qIntegrand_i[qIntegrand_i < 0] = 0
+
+            qIntegrand_i[np.isnan(qIntegrand_i)] = 0
+
+            qIntegrand += qIntegrand_i
+
+        # complete integration for svf
+        svf = qIntegrand / len(angles)
+        svf[(svf <= 0) | (svf > 1)] = -9999  # no such situation of svf=0
 
         envi.save_image(
             svf_hdr_path,
@@ -261,6 +297,12 @@ def skyview(
             metadata=dem_metadata,
             force=True,
         )
+
+        if keep_horizon_files is False:
+            logging.info("Removing temporary horizon files...")
+            for a in angles:
+                remove(join(output_directory, f"horizon_angle_{a}.nc"))
+
     else:
         err_str = "method must be either 'horizon' or 'slope'."
         raise ValueError(err_str)
@@ -312,14 +354,7 @@ def viewfdozier_prep(dem, spacing, nangles=72, sin_slope=None, aspect=None):
     # -180 is North
     angles = np.linspace(-180, 180, num=nangles, endpoint=False)
 
-    # Share ray objects
-    dem_ray = ray.put(dem)
-    aspect_ray = ray.put(aspect)
-    cos_slope_ray = ray.put(cos_slope)
-    sin_slope_ray = ray.put(sin_slope)
-    tan_slope_ray = ray.put(tan_slope)
-
-    return dem_ray, angles, aspect_ray, cos_slope_ray, sin_slope_ray, tan_slope_ray
+    return dem, angles, aspect, cos_slope, sin_slope, tan_slope
 
 
 @ray.remote(num_cpus=1)
@@ -328,9 +363,8 @@ def viewfdozier_i(
     dem,
     spacing,
     aspect,
-    cos_slope,
-    sin_slope,
     tan_slope,
+    output_directory,
     logging_level,
     log_file,
 ):
@@ -348,30 +382,52 @@ def viewfdozier_i(
         datefmt="%Y-%m-%d,%H:%M:%S",
     )
 
-    # horizon angles
+    # horizon angles (h)
     hcos = horizon(angle, dem, spacing)
     azimuth = np.radians(angle)
     h = np.arccos(hcos)
 
-    # cosines of difference between horizon aspect and slope aspect
+    # update h for within-pixel topography.
     cos_aspect = np.cos(aspect - azimuth)
-
-    # check for slope being obscured
-    # EQ 3 in Dozier et al. 2022
-    #     H(t) = min(H(t), acos(sqrt(1-1./(1+tand(slopeDegrees)^2*cos(azmRadian(t)-aspectRadian).^2))));
     t = cos_aspect < 0
     h[t] = np.fmin(
         h[t], np.arccos(np.sqrt(1 - 1 / (1 + cos_aspect[t] ** 2 * tan_slope[t] ** 2)))
     )
 
-    # integral in https://github.com/DozierJeff/Topographic-Horizons:
-    # qIntegrand = (cosd(slopeDegrees)*sin(H).^2 + sind(slopeDegrees)*cos(aspectRadian-azmRadian).*(H-cos(H).*sin(H)))/2
-    svf = cos_slope * np.sin(h) ** 2 + sin_slope * cos_aspect * (
-        h - np.sin(h) * np.cos(h)
-    )
-    svf[svf < 0] = 0
+    # Scale h to uint16 with nodata=65535
+    # loss of data, but still accurate to ~0.003 degrees.
+    h_scaled = (h / np.pi * 65534).astype(np.uint16)
+    h_scaled[(np.isnan(h)) | (h == -9999)] = 65535  # nodata
 
-    return svf
+    # write h to disk
+    logging.info(f"Flushing horizon angle: {angle} to disk.")
+    filename = join(output_directory, f"horizon_angle_{angle}.nc")
+    with nc.Dataset(filename, "w", format="NETCDF4") as ds:
+        ds.createDimension("row", h.shape[0])
+        ds.createDimension("col", h.shape[1])
+        var = ds.createVariable(
+            "horizon",
+            "u2",
+            ("row", "col"),
+            fill_value=65535,
+            zlib=True,
+            complevel=4,
+        )
+        var[:] = h_scaled
+        var.units = "radians"
+        var.long_name = "Scaled horizon angle"
+        var.scale_factor = np.pi / 65534
+        var.add_offset = 0.0
+        var.nodata = 65535
+        var.note = (
+            "Values scaled as uint16 from 0 to pi radians; "
+            "convert back with h = (value / 65534) * pi; "
+            "65535 is nodata."
+        )
+
+    del h, h_scaled
+
+    return
 
 
 """NOTE:
@@ -679,9 +735,6 @@ def hor2d(z, delta, fwd=True, angle=None):
         hbuf = hor1(zbuf, fwd=fwd)
         obuf = horval(zbuf, delta, hbuf)
         hcos[i, :] = obuf
-        logging.info(
-            f"Horizon Angle: {angle} completed {i+1} / {nrows} of skewed lines. Percent complete: {((i+1) / nrows) * 100} %"
-        )
     return hcos
 
 
@@ -813,6 +866,7 @@ def transpose_skew(dem, spacing, angle):
 @click.argument("output_directory", type=str)
 @click.option("--resolution", type=float, default=np.nan)
 @click.option("--n_angles", type=int, default=72)
+@click.option("--keep_horizon_files", type=bool, default=False)
 @click.option("--obs_or_loc", type=str, default=None)
 @click.option("--method", type=str, default="slope")
 @click.option("--logging_level", default="INFO")
