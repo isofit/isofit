@@ -22,7 +22,6 @@ import os
 from typing import OrderedDict
 
 import numpy as np
-import pandas as pd
 from scipy.interpolate import interp1d
 from scipy.optimize import least_squares, minimize
 from scipy.optimize import minimize_scalar as min1d
@@ -561,9 +560,22 @@ def invert_liquid_water(
     # load imaginary part of liquid water refractive index and calculate wavelength dependent absorption coefficient
     path_k = env.path("data", "iop", "k_liquid_water_ice.csv")
 
-    k_wi = pd.read_csv(path_k)
+    # Create dict with table entries (to remove pandas dependency).
+    # NOTE: these values are hardcoded based on k_liquid_water_ice.csv.
+    refractive_index_dict = {
+        "T = 22°C": (0, 1, 0, 551),
+        "T = -8°C": (2, 3, 218, 551),
+        "T = -25°C": (4, 5, 404, 551),
+        "T = -7°C": (6, 7, 0, 135),
+        "T = 25°C (H)": (8, 9, 0, 23),
+        "T = 20°C": (10, 11, 0, 982),
+        "T = 25°C (S)": (12, 13, 0, 221),
+    }
+    col_wvl, col_k, a, b = refractive_index_dict["T = 20°C"]
+
+    k_wi = np.genfromtxt(path_k, delimiter=",", skip_header=1)
     wl_water, k_water = get_refractive_index(
-        k_wi=k_wi, a=0, b=982, col_wvl="wvl_6", col_k="T = 20°C"
+        k_wi=k_wi, a=a, b=b, col_wvl=col_wvl, col_k=col_k
     )
     kw = np.interp(x=wl_sel, xp=wl_water, fp=k_water)
     abs_co_w = 4 * np.pi * kw / wl_sel
