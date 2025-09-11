@@ -133,7 +133,7 @@ def skyview(
         raise FileNotFoundError(err_str)
     else:
         dem = envi.open(envi_header(input))
-        dem_data = dem.open_memmap(writeable=False).copy()
+        dem_data = dem.open_memmap(writeable=False).copy().astype(np.float32)
 
     # set method and obs_or_loc args to be lower case if not None
     method = method.lower()
@@ -157,7 +157,7 @@ def skyview(
         slope[slope > 90.1] = np.nan
         slope[slope < -0.01] = np.nan
     elif obs_or_loc == "loc":
-        dem_data = dem_data[:, :, 2]
+        dem_data = dem_data[:, :, 2].astype(np.float32)
         dem_data[dem_data > max_elev] = np.nan
         dem_data[dem_data < min_elev] = np.nan
     elif obs_or_loc == None:
@@ -169,7 +169,7 @@ def skyview(
 
     # if 3d, squeeze to a 2d array
     if dem_data.ndim == 3 and dem_data.shape[2] == 1:
-        dem_data = dem_data[:, :, 0]
+        dem_data = dem_data[:, :, 0].astype(np.float32)
 
     # set metadata for output skyview.
     dem_metadata = dem.metadata.copy()
@@ -229,25 +229,25 @@ def skyview(
         }
         ray.init(**rayargs)
 
-        # prep the data for correct format for computation
-        dem, angles, aspect, cos_slope, sin_slope, tan_slope = viewfdozier_prep(
-            dem=dem_data,
-            spacing=resolution,
-            nangles=n_angles,
-            sin_slope=None,
-            aspect=None,
+        # prep data for horizon method
+        slope, aspect = gradient_d8(
+            dem_data, dx=resolution, dy=resolution, aspect_rad=True
         )
+        sin_slope = np.sin(slope).astype(np.float32)
+        cos_slope = np.cos(slope).astype(np.float32)
+        tan_slope = np.tan(slope).astype(np.float32)
+
+        # -180 is North
+        angles = np.linspace(-180, 180, num=n_angles, endpoint=False)
 
         # Share needed ray objects
-        dem_ray = ray.put(dem)
+        dem_ray = ray.put(dem_data)
         aspect_ray = ray.put(aspect)
-        # cos_slope_ray = ray.put(cos_slope)
-        # sin_slope_ray = ray.put(sin_slope)
         tan_slope_ray = ray.put(tan_slope)
 
         # Run n-angles in parallel
         futures = [
-            viewfdozier_i.remote(
+            horizon_worker.remote(
                 angle=a,
                 dem=dem_ray,
                 spacing=resolution,
@@ -262,12 +262,12 @@ def skyview(
         ray.get(futures)
 
         # set up integral for skyview
-        qIntegrand = np.zeros_like(dem_data, dtype=np.float64)
+        qIntegrand = np.zeros_like(dem_data, dtype=np.float32)
         for a in angles:
             file_path = join(output_directory, f"horizon_angle_{a}.nc")
             with nc.Dataset(file_path) as ds:
                 ds.set_auto_scale(False)
-                h_scaled = ds.variables["horizon"][:].astype(np.float64)
+                h_scaled = ds.variables["horizon"][:].astype(np.float32)
                 h_scaled[h_scaled == 65535] = np.nan
                 h = h_scaled / 65534 * np.pi
 
@@ -280,9 +280,7 @@ def skyview(
                 h - np.sin(h) * np.cos(h)
             )
             qIntegrand_i[qIntegrand_i < 0] = 0
-
             qIntegrand_i[np.isnan(qIntegrand_i)] = 0
-
             qIntegrand += qIntegrand_i
 
         # complete integration for svf
@@ -312,53 +310,8 @@ def skyview(
     )
 
 
-def viewfdozier_prep(dem, spacing, nangles=72, sin_slope=None, aspect=None):
-    """
-    Preps computations for ray.
-
-    Args:
-        dem: numpy array for the DEM
-        spacing: grid spacing of the DEM
-        nangles: number of angles to estimate the horizon, defaults
-                to 72 angles
-        sin_slope: optional, will calculate if not provided
-                    sin(slope) with range from 0 to 1
-        aspect: optional, will calculate if not provided
-                Aspect as radians from south (aspect 0 is toward
-                the south) with range from -pi to pi, with negative
-                values to the west and positive values to the east.
-
-    Returns:
-        angles, aspect, cos_slope, sin_slope, tan_slope
-
-    """
-
-    if dem.ndim != 2:
-        raise ValueError("viewf input of dem is not a 2D array")
-
-    if nangles < 16:
-        raise ValueError("viewf number of angles should be 16 or greater")
-
-    if sin_slope is not None:
-        if np.max(sin_slope) > 1:
-            raise ValueError("slope must be sin(slope) with range from 0 to 1")
-
-    # calculate the gradient if not provided
-    # The slope is returned as radians so convert to sin(S)
-    if sin_slope is None:
-        slope, aspect = gradient_d8(dem, dx=spacing, dy=spacing, aspect_rad=True)
-        sin_slope = np.sin(slope)
-        cos_slope = np.cos(slope)
-        tan_slope = np.tan(slope)
-
-    # -180 is North
-    angles = np.linspace(-180, 180, num=nangles, endpoint=False)
-
-    return dem, angles, aspect, cos_slope, sin_slope, tan_slope
-
-
 @ray.remote(num_cpus=1)
-def viewfdozier_i(
+def horizon_worker(
     angle,
     dem,
     spacing,
@@ -369,10 +322,7 @@ def viewfdozier_i(
     log_file,
 ):
     """
-    See above, but this is running each horizon angle in parallel (n=72 , or user input)
-
-    This returns the i-th svf array, used in the integral
-
+    Each worker gets an angle and is sent to this function to compute horizons, and save to a compressed/scaled netcdf file.
     """
     # set up logging for each worker.
     logging.basicConfig(
@@ -399,7 +349,7 @@ def viewfdozier_i(
     h_scaled = (h / np.pi * 65534).astype(np.uint16)
     h_scaled[(np.isnan(h)) | (h == -9999)] = 65535  # nodata
 
-    # write h to disk
+    # write h to disk (scaled data reduced ~3-5x file size.)
     logging.info(f"Flushing horizon angle: {angle} to disk.")
     filename = join(output_directory, f"horizon_angle_{angle}.nc")
     with nc.Dataset(filename, "w", format="NETCDF4") as ds:
@@ -433,7 +383,7 @@ def viewfdozier_i(
 """NOTE:
 The rest of the codes below were heavily borrowed from USDA-ARS topo-calc package.
 
-With one exception which is hor1(). This had to be modified to improve speed.
+With one exception which is hor1d(). This had to be modified to improve speed.
 """
 
 
@@ -504,7 +454,7 @@ def gradient_d8(dem, dx, dy, aspect_rad=False):
     if aspect_rad:
         a = aspect_to_ipw_radians(a)
 
-    return slope, a
+    return slope.astype(np.float32), a.astype(np.float32)
 
 
 def calc_slope(dz_dx, dz_dy):
@@ -661,9 +611,9 @@ def horizon(azimuth, dem, spacing):
     return hcos
 
 
-def hor1(z, fwd=True):
+def hor1d(z, fwd=True):
     n = len(z)
-    h = np.empty(n, dtype=int)
+    h = np.empty(n, dtype=np.int32)
 
     if fwd:
         stack = []
@@ -729,12 +679,13 @@ def hor2d(z, delta, fwd=True, angle=None):
     if z.ndim != 2:
         raise ValueError("Input must be 2D array")
     nrows, ncols = z.shape
-    hcos = np.empty_like(z)
+    hcos = np.empty_like(z, dtype=np.float32)
     for i in range(nrows):
         zbuf = z[i, :]
-        hbuf = hor1(zbuf, fwd=fwd)
+        hbuf = hor1d(zbuf, fwd=fwd)
         obuf = horval(zbuf, delta, hbuf)
         hcos[i, :] = obuf
+        # logging.info(f"Angle: {angle} finished {i+1} of {nrows} (skewed rows).")
     return hcos
 
 
