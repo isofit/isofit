@@ -240,9 +240,12 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
                         "The sRTMnet requires an emulator_file to be specified."
                     )
 
-            if os.path.splitext(self.emulator_file)[1] != ".h5":
+            if (os.path.splitext(self.emulator_file)[1] != ".h5") and (
+                os.path.splitext(self.emulator_file)[1] != ".npz"
+            ):
                 errors.append(
-                    "sRTMnet now requires the emulator_file to be of type .h5.  Please download an updated version from:\n https://zenodo.org/records/10831425"
+                    "sRTMnet now requires the emulator_file to be of type .h5 (or .npz for experimental 6c emulator).  "
+                    "Please download an updated version from:\n https://zenodo.org/records/10831425"
                 )
 
             if self.emulator_aux_file is None:
