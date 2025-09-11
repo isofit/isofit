@@ -22,7 +22,13 @@ from isofit.core.common import envi_header
 from isofit.debug.resource_tracker import FileResources
 from isofit.utils import analytical_line as ALAlg
 from isofit.utils import empirical_line as ELAlg
-from isofit.utils import extractions, interpolate_spectra, segment
+from isofit.utils import (
+    extractions,
+    interpolate_spectra,
+    multicomponent_classification,
+    reducers,
+    segment,
+)
 from isofit.utils.skyview import skyview
 
 EPS = 1e-6
@@ -70,6 +76,8 @@ def apply_oe(
     modtran_path=None,
     wavelength_path=None,
     surface_category="multicomponent_surface",
+    surface_class_file=None,
+    classify_multisurface=False,
     aerosol_climatology_path=None,
     rdn_factors_path=None,
     atmosphere_type="ATM_MIDLAT_SUMMER",
@@ -242,6 +250,7 @@ def apply_oe(
     retrievals. Remote Sensing of Environment, 261:112476, 2021.doi: 10.1016/j.rse.2021.112476.
     """
     use_superpixels = empirical_line or analytical_line
+    use_multisurface = True if classify_multisurface or surface_class_file else False
 
     # Determine if we run in multipart-transmittance (4c) mode
     if emulator_base is not None:
@@ -380,6 +389,7 @@ def apply_oe(
         input_radiance,
         input_loc,
         input_obs,
+        surface_class_file,
         sensor,
         surface_path,
         working_directory,
@@ -392,6 +402,8 @@ def apply_oe(
         ray_temp_dir,
         interpolate_inplace,
         skyview_factor,
+        subs=True if analytical_line or empirical_line else False,
+        classify_multisurface=classify_multisurface,
     )
     paths.make_directories()
     paths.stage_files()
@@ -453,13 +465,29 @@ def apply_oe(
     tmpl.write_wavelength_file(paths.wavelength_path, wl, fwhm)
 
     # check and rebuild surface model if needed
-    paths.surface_path = tmpl.check_surface_model(
-        surface_path=surface_path, wl=wl, paths=paths
+    paths.surface_paths = tmpl.check_surface_model(
+        surface_path=surface_path,
+        output_model_path=paths.surface_template_path,
+        wl=wl,
+        surface_wavelength_path=paths.wavelength_path,
+        surface_category=surface_category,
+        multisurface=use_multisurface,
     )
 
     # re-stage surface model if needed
-    if paths.surface_path != surface_path:
-        copyfile(paths.surface_path, paths.surface_working_path)
+    paths.surface_working_paths = {}
+    for key, value in paths.surface_paths.items():
+        name, ext = os.path.splitext(paths.surface_template_path)
+
+        if use_multisurface:
+            surface_working_path = f"{name}_{key}{ext}"
+        else:
+            surface_working_path = f"{name}{ext}"
+
+        if value != surface_working_path and surface_path.endswith(".mat"):
+            copyfile(value, surface_working_path)
+
+        paths.surface_working_paths[key] = surface_working_path
 
     (
         mean_latitude,
@@ -488,8 +516,8 @@ def apply_oe(
         if mean_elevation_km < 0:
             mean_elevation_km = 0
             logging.info(
-                f"Scene contains a mean target elevation < 0.  6s does not support"
-                f" targets below sea level in km units.  Setting mean elevation to 0."
+                "Scene contains a mean target elevation < 0.  6s does not support"
+                " targets below sea level in km units.  Setting mean elevation to 0."
             )
 
     mean_altitude_km = (
@@ -538,6 +566,21 @@ def apply_oe(
         )
         paths.radiance_working_path = paths.radiance_interp_path
 
+    # Multisurface Classification
+    if classify_multisurface and not surface_class_file:
+        multicomponent_classification(
+            paths.input_radiance_file,
+            paths.input_obs_file,
+            paths.input_loc_file,
+            paths.surface_class_working_path,
+            paths.surface_paths,
+            n_cores=n_cores,
+            dayofyear=dayofyear,
+            wavelength_file=paths.wavelength_path,
+            logfile=log_file,
+            clean=True,
+        )
+
     logging.debug("Radiance working path:")
     logging.debug(paths.radiance_working_path)
     # Superpixel segmentation
@@ -558,13 +601,17 @@ def apply_oe(
             )
 
         # Extract input data per segment
-        for inp, outp in [
-            (paths.radiance_working_path, paths.rdn_subs_path),
-            (paths.obs_working_path, paths.obs_subs_path),
-            (paths.loc_working_path, paths.loc_subs_path),
-            (paths.svf_working_path, paths.svf_subs_path),
+        for inp, outp, reducer_fun in [
+            (paths.radiance_working_path, paths.rdn_subs_path, reducers.band_mean),
+            (paths.obs_working_path, paths.obs_subs_path, reducers.band_mean),
+            (paths.loc_working_path, paths.loc_subs_path, reducers.band_mean),
+            (
+                paths.surface_class_working_path,
+                paths.surface_class_subs_path,
+                reducers.class_priority,
+            ),
         ]:
-            if not exists(outp) and inp is not None:
+            if inp and not exists(outp):
                 logging.info("Extracting " + outp)
                 extractions(
                     inputfile=inp,
@@ -572,6 +619,7 @@ def apply_oe(
                     output=outp,
                     chunksize=CHUNKSIZE,
                     flag=-9999,
+                    reducer=reducer_fun,
                     n_cores=n_cores,
                     loglevel=logging_level,
                     logfile=log_file,
@@ -621,6 +669,9 @@ def apply_oe(
                 inversion_windows=INVERSION_WINDOWS,
                 multipart_transmittance=multipart_transmittance,
             )
+            """Currently not running presolve with either
+            multisurface-mode or topography mode. Could easily change
+            this"""
 
             # Run modtran retrieval
             logging.info("Run ISOFIT initial guess")
@@ -642,7 +693,11 @@ def apply_oe(
             logging.info("Existing h2o-presolve solutions found, using those.")
 
         h2o = envi.open(envi_header(paths.h2o_subs_path))
-        h2o_est = h2o.read_band(-1)[:].flatten()
+        # Find the band that is H2O. Should be stable with constant H2O name
+        h2o_band = [
+            i for i, name in enumerate(h2o.metadata["band names"]) if name == "H2OSTR"
+        ][0]
+        h2o_est = h2o.read_band(h2o_band)[:].flatten()
 
         p05 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 2)
         p95 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 98)
@@ -665,7 +720,6 @@ def apply_oe(
     logging.info(f"Relative to-sun azimuth: {relative_azimuth_lut_grid}")
     logging.info(f"H2O Vapor: {h2o_lut_grid}")
 
-    logging.info(paths.state_subs_path)
     if (
         not exists(paths.state_subs_path)
         or not exists(paths.uncert_subs_path)
@@ -806,6 +860,8 @@ def apply_oe(
 @click.option("--modtran_path")
 @click.option("--wavelength_path")
 @click.option("--surface_category", default="multicomponent_surface")
+@click.option("--surface_class_file", default=None)
+@click.option("--classify_multisurface", is_flag=True, default=False)
 @click.option("--aerosol_climatology_path")
 @click.option("--rdn_factors_path")
 @click.option("--atmosphere_type", default="ATM_MIDLAT_SUMMER")
@@ -841,7 +897,7 @@ def apply_oe(
 def cli(debug_args, profile, **kwargs):
     if debug_args:
         print("Arguments to be passed:")
-        for key, value in kwitems():
+        for key, value in kwargs.items():
             print(f"  {key} = {value!r}")
     else:
         if profile:

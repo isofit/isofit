@@ -225,9 +225,6 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
                 " available modes: {}".format(self.rt_mode, valid_rt_modes)
             )
 
-        if self.multipart_transmittance and self.engine_name != "modtran":
-            errors.append("Multipart transmittance is supported for MODTRAN only")
-
         if self.earth_sun_distance_file is None and self.engine_name == "6s":
             errors.append("6s requires earth_sun_distance_file to be specified")
 

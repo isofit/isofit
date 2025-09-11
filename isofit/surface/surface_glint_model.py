@@ -35,20 +35,29 @@ class GlintModelSurface(MultiComponentSurface):
         config = full_config.forward_model.surface
 
         # TODO: Enforce this attribute in the config, not here (this is hidden)
-        self.statevec_names.extend(["SUN_GLINT", "SKY_GLINT"])
+        self.statevec_names.extend(["SKY_GLINT", "SUN_GLINT"])
+        self.glint_ind = len(self.statevec_names) - 2
+        self.sky_glint_ind = self.glint_ind
+        self.sun_glint_ind = self.glint_ind + 1
+
         self.scale.extend([1.0, 1.0])
 
         # Numbers from Marcel Koenig; used for prior mean
-        self.init.extend([0.02, 1 / np.pi])
+        self.init.extend([1 / np.pi, 0.02])
 
-        # Special glint bounds - Gege (2021), WASI user manual
-        self.bounds.extend([[-1, 10], [0, 10]])
+        # Special glint bounds
+        rmin, rmax = -0.05, 2.0
+        self.bounds = [[rmin, rmax] for w in self.wl]
+        # Gege (2021), WASI user manual
+        self.bounds.extend([[0, 10], [0, 10]])
+
         self.n_state = self.n_state + 2
 
         # Useful indexes to track
         self.glint_ind = len(self.statevec_names) - 2
-        self.sun_glint_ind = self.glint_ind
-        self.sky_glint_ind = self.glint_ind + 1
+        self.sky_glint_ind = self.glint_ind
+        self.sun_glint_ind = self.glint_ind + 1
+
         self.idx_surface = np.arange(len(self.statevec_names))
 
         # Change this if you don't want to analytical solve for all the full statevector elements.
@@ -90,6 +99,9 @@ class GlintModelSurface(MultiComponentSurface):
 
         # Estimate additive glint. Uses multiple options to handle different sensors.
         # Try SWIR, then NIR
+        blue_band_1 = np.argmin(np.abs(450 - self.wl))
+        blue_band_2 = np.argmin(np.abs(500 - self.wl))
+
         if np.max(self.wl) >= 2300:
             glint_band_1 = np.argmin(np.abs(2200 - self.wl))
             glint_band_2 = np.argmin(np.abs(2300 - self.wl))
@@ -119,15 +131,15 @@ class GlintModelSurface(MultiComponentSurface):
         # Get estimate for g_dd and g_dsf parameters
         # Set sky glint to a static number; use prior mean.
         g_dsf_est = self.init[self.sky_glint_ind]
-
         g_dd_est = glint_est / self.fresnel_rf(geom.observer_zenith)
+
         # Updating self.init will set the prior mean (xa) to this value
         self.init[self.sun_glint_ind] = g_dd_est
 
-        # SUN_GLINT g_dd
-        x[self.sun_glint_ind] = g_dd_est
         # SKY_GLINT g_dsf
         x[self.sky_glint_ind] = g_dsf_est
+        # SUN_GLINT g_dd
+        x[self.sun_glint_ind] = g_dd_est
 
         return x
 
@@ -155,8 +167,37 @@ class GlintModelSurface(MultiComponentSurface):
         # fresnel reflectance factor (approx. 0.02 for nadir view)
         rho_ls = self.fresnel_rf(geom.observer_zenith)
 
-        sun_glint = x_surface[self.sun_glint_ind] * rho_ls
-        sky_glint = x_surface[self.sky_glint_ind] * rho_ls
+        # Enforce bounds, also turns -9999. fill into 0.
+        # Note if null_value > bounds[1], will return bounds[1]
+        sun_glint = (
+            np.max(
+                [
+                    self.bounds[self.sun_glint_ind][0],
+                    np.min(
+                        [
+                            self.bounds[self.sun_glint_ind][1],
+                            x_surface[self.sun_glint_ind],
+                        ]
+                    ),
+                ]
+            )
+            * rho_ls
+        )
+
+        sky_glint = (
+            np.max(
+                [
+                    self.bounds[self.sky_glint_ind][0],
+                    np.min(
+                        [
+                            self.bounds[self.sky_glint_ind][1],
+                            x_surface[self.sky_glint_ind],
+                        ]
+                    ),
+                ]
+            )
+            * rho_ls
+        )
 
         rho_dir_dir = self.calc_lamb(x_surface, geom) + sun_glint
         rho_dif_dir = self.calc_lamb(x_surface, geom) + sky_glint
@@ -259,9 +300,8 @@ class GlintModelSurface(MultiComponentSurface):
             L_dif_dif,
         )
 
-        gam = (L_dir_dir + L_dir_dif) * rho_ls
-        gam = np.reshape(gam, (len(gam), 1))
-        H = np.append(H, gam, axis=1)
+        # NOTE: The order of ep and gam respectively is important
+        # It must match the alphabeitcal order of the glint terms
 
         # Diffuse portion
         ep = (
@@ -271,6 +311,11 @@ class GlintModelSurface(MultiComponentSurface):
         # ep = (L_dif_dir + L_dif_dif) * rho_ls
         ep = np.reshape(ep, (len(ep), 1))
         H = np.append(H, ep, axis=1)
+
+        # Direct portion
+        gam = (L_dir_dir + L_dir_dif) * rho_ls
+        gam = np.reshape(gam, (len(gam), 1))
+        H = np.append(H, gam, axis=1)
 
         return H
 

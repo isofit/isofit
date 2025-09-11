@@ -115,6 +115,7 @@ def heuristic_atmosphere(
                 meas,
                 geom,
             )
+            r = fm.surface.fit_params(r, geom)[fm.idx_surf_rfl]
 
             ratios.append((r[b945] * 2.0) / (r[b1040] + r[b865]))
             h2os.append(h2o)
@@ -153,6 +154,7 @@ def invert_algebraic(
         x_instrument: instrument portion of the state vector
         meas: a one-D numpy vector of radiance in uW/nm/sr/cm2
         geom: geometry object corresponding to given measurement
+
 
     Return:
         rfl_est: estimate of the surface reflectance based on the given surface model and specified atmospheric state
