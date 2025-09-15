@@ -397,25 +397,6 @@ def get_absorption(wl: np.array, absfile: str) -> (np.array, np.array):
     return water_abscf_intrp, ice_abscf_intrp
 
 
-def get_refractive_index(k_wi, a, b, col_wvl, col_k):
-    """Convert refractive index table entries to numpy array.
-
-    Args:
-        k_wi:    variable
-        a:       start line
-        b:       end line
-        col_wvl: wavelength column index
-        col_k:   k column index
-
-    Returns:
-        wvl_arr: array of wavelengths
-        k_arr:   array of imaginary parts of refractive index
-    """
-    wvl_arr = k_wi[a:b, col_wvl]
-    k_arr = k_wi[a:b, col_k]
-    return wvl_arr, k_arr
-
-
 def recursive_reencode(j, shell_replace: bool = True):
     """Recursively re-encode a mutable object (ascii->str).
 
