@@ -30,7 +30,6 @@ from isofit.core import units
 from isofit.core.common import (
     emissive_radiance,
     eps,
-    get_refractive_index,
     svd_inv_sqrt,
 )
 from isofit.data import env
