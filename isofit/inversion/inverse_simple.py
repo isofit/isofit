@@ -558,6 +558,7 @@ def invert_liquid_water(
         lw_bounds[0][1] = ewt_detection_limit
 
     # load imaginary part of liquid water refractive index and calculate wavelength dependent absorption coefficient
+    # options are: 'k_22c', 'k_minus8c', 'k_minus25c', 'k_minus7c', 'k_25c_H', 'k_20c', 'k_25c_S
     path_k = env.path("data", "iop", "k_liquid_water_ice.csv")
     k_wi = np.genfromtxt(path_k, delimiter=",", names=True, encoding="utf-8-sig")
     k_wi_idx = ~np.isnan(k_wi["wl_20c"]) & ~np.isnan(k_wi["k_20c"])
