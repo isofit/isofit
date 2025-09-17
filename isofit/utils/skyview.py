@@ -29,7 +29,7 @@ import ray
 import netCDF4 as nc
 from spectral.io import envi
 
-from isofit.core.common import envi_header
+from isofit.core.common import envi_header, eps
 
 
 def skyview(
@@ -79,9 +79,10 @@ def skyview(
         Options are either "horizon" or "slope". Passing "horizon" runs the full computation and is recommended for very steep terrain.
         Passing "slope"" runs the simplifed calculation of svf=cos^2(slope/2) and can be useful for more mild slopes. 
     n_angles : int, optional
-        Number of angles used in horizon calculations (default is 72). Other options could be 32, 64, etc. (see Dozier & Frew). 
+        Number of angles used in horizon calculations (default is 72). Other options could be 32, 64, etc. (see Dozier & Frew).
+        As a reference, n=72 computes every 5deg, n=64 every 5.6deg, n=32 every 11.25deg, etc.  
     keep_horizon_files : bool, optional
-        Horizon angles are created in output_dir as netcdf files. False deletes files, and True keeps them.        
+        Horizon angles are created in output_dir as netcdf files. False deletes files, and True keeps them. These angles are based from zenith.        
     logging_level : str, optional
         Logging verbosity level (default is "INFO"); similar to apply_oe.
     log_file : str or None, optional
@@ -103,7 +104,7 @@ def skyview(
         raise TypeError(err_str)
 
     if not isinstance(n_angles, int) or n_angles < 16:
-        err_str = "n_angles must be a positive, even integer greater than 16."
+        err_str = "n_angles must be a positive integer greater than 16."
         raise ValueError(err_str)
 
     if not isinstance(n_cores, int) or n_cores <= 0:
@@ -264,12 +265,14 @@ def skyview(
         # set up integral for skyview
         qIntegrand = np.zeros_like(dem_data, dtype=np.float32)
         for a in angles:
-            file_path = join(output_directory, f"horizon_angle_{a}.nc")
+            file_path = join(output_directory, f"horizon_angle_{np.round(a,5)}.nc")
+            h_nodata = 65535
+            h_sf = np.pi / 65534
             with nc.Dataset(file_path) as ds:
                 ds.set_auto_scale(False)
                 h_scaled = ds.variables["horizon"][:].astype(np.float32)
-                h_scaled[h_scaled == 65535] = np.nan
-                h = h_scaled / 65534 * np.pi
+                h_scaled[h_scaled == h_nodata] = np.nan
+                h = h_scaled * h_sf
 
             azimuth = np.radians(a)
             cos_aspect = np.cos(aspect - azimuth)
@@ -285,7 +288,7 @@ def skyview(
 
         # complete integration for svf
         svf = qIntegrand / len(angles)
-        svf[(svf <= 0) | (svf > 1)] = -9999  # no such situation of svf=0
+        svf[(svf <= 0) | (svf > 1)] = -9999  # no such situation of svf=0 (cave).
 
         envi.save_image(
             svf_hdr_path,
@@ -345,13 +348,17 @@ def horizon_worker(
     )
 
     # Scale h to uint16 with nodata=65535
+    h_nodata = 65535
+    h_sf = 1 / np.pi * 65534
+
     # loss of data, but still accurate to ~0.003 degrees.
-    h_scaled = (h / np.pi * 65534).astype(np.uint16)
-    h_scaled[(np.isnan(h)) | (h == -9999)] = 65535  # nodata
+    h_scaled = (h * h_sf).astype(np.uint16)
+    h_scaled[(np.isnan(h)) | (h == -9999)] = h_nodata  # nodata
 
     # write h to disk (scaled data reduced ~3-5x file size.)
-    logging.info(f"Flushing horizon angle: {angle} to disk.")
-    filename = join(output_directory, f"horizon_angle_{angle}.nc")
+    angle_to_write = np.round(angle, 5)
+    logging.info(f"Flushing horizon angle: {angle_to_write} to disk.")
+    filename = join(output_directory, f"horizon_angle_{angle_to_write}.nc")
     with nc.Dataset(filename, "w", format="NETCDF4") as ds:
         ds.createDimension("row", h.shape[0])
         ds.createDimension("col", h.shape[1])
@@ -359,20 +366,21 @@ def horizon_worker(
             "horizon",
             "u2",
             ("row", "col"),
-            fill_value=65535,
+            fill_value=h_nodata,
             zlib=True,
             complevel=4,
         )
         var[:] = h_scaled
         var.units = "radians"
-        var.long_name = "Scaled horizon angle"
-        var.scale_factor = np.pi / 65534
+        var.long_name = "Horizon angle (radians)"
+        var.scale_factor = h_sf
         var.add_offset = 0.0
-        var.nodata = 65535
+        var.nodata = h_nodata
         var.note = (
-            "Values scaled as uint16 from 0 to pi radians; "
-            "convert back with h = (value / 65534) * pi; "
+            "Values scaled as uint16 from 0 to pi radians;"
+            "convert back with np.pi / 65534 ;"
             "65535 is nodata."
+            "NOTE: angle is from zenith."
         )
 
     del h, h_scaled
@@ -629,7 +637,7 @@ def hor1d(z, fwd=True):
                 else:
                     prev_dist = prev_j - j
                     prev_slope = (z[prev_j] - z[j]) / prev_dist
-                if slope <= prev_slope:
+                if slope <= prev_slope + eps:
                     stack.pop()
                 else:
                     break
@@ -653,7 +661,7 @@ def hor1d(z, fwd=True):
                 else:
                     prev_dist = j - prev_j
                     prev_slope = (z[prev_j] - z[j]) / prev_dist
-                if slope <= prev_slope:
+                if slope <= prev_slope + eps:
                     stack.pop()
                 else:
                     break
@@ -685,7 +693,6 @@ def hor2d(z, delta, fwd=True, angle=None):
         hbuf = hor1d(zbuf, fwd=fwd)
         obuf = horval(zbuf, delta, hbuf)
         hcos[i, :] = obuf
-        # logging.info(f"Angle: {angle} finished {i+1} of {nrows} (skewed rows).")
     return hcos
 
 
