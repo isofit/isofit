@@ -192,6 +192,10 @@ def skyview(
             slope, aspect = gradient_d8(
                 dem_data, dx=resolution, dy=resolution, aspect_rad=True
             )
+        else:
+            # if using obs file - convert to radians
+            slope = np.radians(slope)
+
         # approx. skyview using slope only.
         svf = np.cos(slope / 2) ** 2
 
