@@ -154,16 +154,22 @@ def skyview(
     min_elev = -2000.0  # slightly lower than Dead Sea
 
     if obs_or_loc == "obs":
+        # assuming OBS Slope data in degrees
         slope = dem_data[:, :, 6]
         slope[slope > 90.1] = np.nan
         slope[slope < -0.01] = np.nan
+        # convert to radians
+        slope = np.radians(slope)
+
     elif obs_or_loc == "loc":
         dem_data = dem_data[:, :, 2].astype(np.float32)
         dem_data[dem_data > max_elev] = np.nan
         dem_data[dem_data < min_elev] = np.nan
+
     elif obs_or_loc == None:
         dem_data[dem_data > max_elev] = np.nan
         dem_data[dem_data < min_elev] = np.nan
+
     else:
         err_str = "obs_or_loc must be 'loc', 'obs', or None."
         raise ValueError(err_str)
@@ -173,18 +179,7 @@ def skyview(
         dem_data = dem_data[:, :, 0].astype(np.float32)
 
     # set metadata for output skyview.
-    dem_metadata = dem.metadata.copy()
-    dem_metadata.update(
-        {
-            "description": "Sky View Factor",
-            "bands": 1,
-            "data ignore value": -9999,
-            "interleave": "bsq",
-            "data type": 4,
-            "byte order": 0,
-            "band names": {"Sky View Factor"},
-        }
-    )
+    svf_metadata = dem.metadata.copy()
 
     # If only computing slope method, we do not need to set up Ray.
     if method == "slope":
@@ -192,21 +187,12 @@ def skyview(
             slope, aspect = gradient_d8(
                 dem_data, dx=resolution, dy=resolution, aspect_rad=True
             )
-        else:
-            # if using obs file - convert to radians
-            slope = np.radians(slope)
 
         # approx. skyview using slope only.
         svf = np.cos(slope / 2) ** 2
 
-        envi.save_image(
-            svf_hdr_path,
-            svf.astype(np.float32),
-            dtype=np.float32,
-            interleave="bsq",
-            metadata=dem_metadata,
-            force=True,
-        )
+        # save file
+        save_svf_envi(svf=svf, svf_hdr_path=svf_hdr_path, svf_metadata=svf_metadata)
 
     # Else if, run the full horizon method.
     elif method == "horizon":
@@ -270,19 +256,13 @@ def skyview(
         qIntegrand = np.zeros_like(dem_data, dtype=np.float32)
         for a in angles:
             file_path = join(output_directory, f"horizon_angle_{np.round(a,5)}.nc")
-            h_nodata = 65535
-            h_sf = np.pi / 65534
-            with nc.Dataset(file_path) as ds:
-                ds.set_auto_scale(False)
-                h_scaled = ds.variables["horizon"][:].astype(np.float32)
-                h_scaled[h_scaled == h_nodata] = np.nan
-                h = h_scaled * h_sf
-
+            h = load_horizon_nc(file_path=file_path)
             azimuth = np.radians(a)
             cos_aspect = np.cos(aspect - azimuth)
 
             # integral in https://github.com/DozierJeff/Topographic-Horizons:
-            # qIntegrand = (cosd(slopeDegrees)*sin(H).^2 + sind(slopeDegrees)*cos(aspectRadian-azmRadian).*(H-cos(H).*sin(H)))/2
+            # qIntegrand = (  (cosd(slopeDegrees)*sin(H).^2 +
+            # sind(slopeDegrees)*cos(aspectRadian-azmRadian).*(H-cos(H).*sin(H)))/2 )
             qIntegrand_i = cos_slope * np.sin(h) ** 2 + sin_slope * cos_aspect * (
                 h - np.sin(h) * np.cos(h)
             )
@@ -292,17 +272,12 @@ def skyview(
 
         # complete integration for svf
         svf = qIntegrand / len(angles)
-        svf[(svf <= 0) | (svf > 1)] = -9999  # no such situation of svf=0 (cave).
+        svf[(svf <= 0) | (svf > 1)] = -9999  # no such situation svf=0.
 
-        envi.save_image(
-            svf_hdr_path,
-            svf.astype(np.float32),
-            dtype=np.float32,
-            interleave="bsq",
-            metadata=dem_metadata,
-            force=True,
-        )
+        # save file
+        save_svf_envi(svf=svf, svf_hdr_path=svf_hdr_path, svf_metadata=svf_metadata)
 
+        # check to remove horizon files.
         if keep_horizon_files is False:
             logging.info("Removing temporary horizon files...")
             for a in angles:
@@ -351,12 +326,52 @@ def horizon_worker(
         h[t], np.arccos(np.sqrt(1 - 1 / (1 + cos_aspect[t] ** 2 * tan_slope[t] ** 2)))
     )
 
+    # flush current run to disk.
+    save_horizon_nc(h=h, angle=angle, output_directory=output_directory)
+
+    del h
+
+    return
+
+
+def save_svf_envi(svf, svf_hdr_path, svf_metadata):
+    """utility function to house metadata and information for saving skyview"""
+
+    # update metadata
+    svf_metadata.update(
+        {
+            "description": "Sky View Factor",
+            "bands": 1,
+            "data ignore value": -9999,
+            "interleave": "bsq",
+            "data type": 4,
+            "byte order": 0,
+            "band names": {"Sky View Factor"},
+        }
+    )
+
+    # save image
+    envi.save_image(
+        svf_hdr_path,
+        svf.astype(np.float32),
+        dtype=np.float32,
+        interleave="bsq",
+        metadata=svf_metadata,
+        force=True,
+    )
+
+    return
+
+
+def save_horizon_nc(h, angle, output_directory):
+    """utility function to house metadata and information for saving horizon angles"""
+
     # Scale h to uint16 with nodata=65535
     h_nodata = 65535
-    h_sf = 1 / np.pi * 65534
+    h_sf = np.pi / 65534
 
     # loss of data, but still accurate to ~0.003 degrees.
-    h_scaled = (h * h_sf).astype(np.uint16)
+    h_scaled = (h / h_sf).astype(np.uint16)
     h_scaled[(np.isnan(h)) | (h == -9999)] = h_nodata  # nodata
 
     # write h to disk (scaled data reduced ~3-5x file size.)
@@ -387,9 +402,19 @@ def horizon_worker(
             "NOTE: angle is from zenith."
         )
 
-    del h, h_scaled
-
     return
+
+
+def load_horizon_nc(file_path):
+    """load horizon netcdf in for skyview calc using scale factors defined in save."""
+    with nc.Dataset(file_path) as ds:
+        ds.set_auto_scale(False)
+        h_nodata = ds.variables["horizon"].nodata
+        h_sf = ds.variables["horizon"].scale_factor
+        h_scaled = ds.variables["horizon"][:].astype(np.float32)
+        h_scaled[h_scaled == h_nodata] = np.nan
+        h = h_scaled * h_sf
+    return h
 
 
 """NOTE:
