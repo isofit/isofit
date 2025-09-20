@@ -391,10 +391,13 @@ def wavelength_cal(
     lut_params = tmpl.LUTConfig(lut_config_file, emulator_base, False)
 
     logging.info("Setting up files and directories....")
+    skyview_factor = None
+    surface_class_file = None
     paths = tmpl.Pathnames(
         input_radiance,
         input_loc,
         input_obs,
+        surface_class_file,
         sensor,
         surface_path,
         working_directory,
@@ -406,6 +409,7 @@ def wavelength_cal(
         channelized_uncertainty_path,
         ray_temp_dir,
         False,
+        skyview_factor,
     )
     paths.make_directories()
     paths.stage_files()
@@ -479,13 +483,30 @@ def wavelength_cal(
     tmpl.write_wavelength_file(paths.wavelength_path, wl, fwhm)
 
     # check and rebuild surface model if needed
-    paths.surface_path = tmpl.check_surface_model(
-        surface_path=surface_path, wl=wl, paths=paths
+    use_multisurface = False
+    paths.surface_paths = tmpl.check_surface_model(
+        surface_path=surface_path,
+        output_model_path=paths.surface_template_path,
+        wl=wl,
+        surface_wavelength_path=paths.wavelength_path,
+        surface_category=surface_category,
+        multisurface=use_multisurface,
     )
 
     # re-stage surface model if needed
-    if paths.surface_path != surface_path:
-        copyfile(paths.surface_path, paths.surface_working_path)
+    paths.surface_working_paths = {}
+    for key, value in paths.surface_paths.items():
+        name, ext = os.path.splitext(paths.surface_template_path)
+
+        if use_multisurface:
+            surface_working_path = f"{name}_{key}{ext}"
+        else:
+            surface_working_path = f"{name}{ext}"
+
+        if value != surface_working_path and surface_path.endswith(".mat"):
+            copyfile(value, surface_working_path)
+
+        paths.surface_working_paths[key] = surface_working_path
 
     (
         mean_latitude,
@@ -493,7 +514,7 @@ def wavelength_cal(
         mean_elevation_km,
         elevation_lut_grid,
     ) = tmpl.get_metadata_from_loc(
-        paths.loc_subs_path, lut_params, pressure_elevation=False
+        paths.loc_working_path, lut_params, pressure_elevation=False
     )
 
     if emulator_base is not None:
