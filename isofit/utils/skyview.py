@@ -425,9 +425,7 @@ def create_shadow_mask(
     tan_slope = np.tan(slope).astype(np.float32)
 
     # convert saa into convention h method expects.
-    saa = saa % 360
-    if saa >= 180:
-        saa = -1 * (360 - saa)
+    saa = ((180 - saa) + 180) % 360 - 180
 
     # Start up a ray instance for parallel work
     rayargs = {
@@ -467,14 +465,16 @@ def create_shadow_mask(
 
 
 def update_h_for_local_topo(h, aspect, azimuth, tan_slope):
+    """Matching eqn 3 (page 11) shown in,
+    'Error and Uncertainty Degrade Topographic Corrections of Remotely Sensed Data'"""
 
     # update h for within-pixel topography.
     cos_aspect = np.cos(aspect - azimuth)
     t = cos_aspect < 0
-    h[t] = np.fmin(
-        h[t], np.arccos(np.sqrt(1 - 1 / (1 + cos_aspect[t] ** 2 * tan_slope[t] ** 2)))
+    h[t] = np.maximum(
+        h[t],
+        np.arcsin(np.sqrt(1 - 1 / (1 + cos_aspect[t] ** 2 * tan_slope[t] ** 2))),
     )
-
     return h
 
 
