@@ -935,14 +935,29 @@ def skew(arr, angle, fwd=True, fill_min=True):
     if fill_min:
         b += np.min(arr)
 
-    for line in range(nlines):
-        o = line if negflag else nlines - line - 1
-        offset = int(o * slope + 0.5)
+    # linear interpolations for sub-pixel mapping, happens twice
+    # fwd (prior to horizon): arr is the dem elevation data
+    # else (after horizon): arr is the horizon angles 0-pi.
+    line_indices = np.arange(nlines)
+    o_indices = line_indices if negflag else nlines - line_indices - 1
+    offsets = o_indices * slope
+    if fwd:
+        for i in range(nlines):
+            offset = offsets[i]
+            output = np.arange(o_nsamps)
+            source = output - offset
+            mask = (source >= 0) & (source <= nsamps - 1)
+            y_k = np.interp(source[mask], np.arange(nsamps), arr[i, :])
+            b[i, mask] = y_k
 
-        if fwd:
-            b[line, offset : offset + nsamps] = arr[line, :]
-        else:
-            b[line, :] = arr[line, offset : offset + o_nsamps]
+    else:
+        for i in range(nlines):
+            source = np.arange(nsamps)
+            offset = offsets[i]
+            output = source - offset
+            mask = (output >= 0) & (output <= o_nsamps - 1)
+            y_k = np.interp(np.arange(o_nsamps), output[mask], arr[i, source[mask]])
+            b[i, :] = y_k
 
     return b
 
