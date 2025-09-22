@@ -465,15 +465,13 @@ def create_shadow_mask(
 
 
 def update_h_for_local_topo(h, aspect, azimuth, tan_slope):
-    """Matching eqn 3 (page 11) shown in,
-    'Error and Uncertainty Degrade Topographic Corrections of Remotely Sensed Data'"""
-
     # update h for within-pixel topography.
-    cos_aspect = np.cos(aspect - azimuth)
+    # EQ 3 in Dozier et al. 2022
+    #     H(t) = min(H(t), acos(sqrt(1-1./(1+tand(slopeDegrees)^2*cos(azmRadian(t)-aspectRadian).^2))));
+    cos_aspect = np.cos(azimuth - aspect)
     t = cos_aspect < 0
-    h[t] = np.maximum(
-        h[t],
-        np.arcsin(np.sqrt(1 - 1 / (1 + cos_aspect[t] ** 2 * tan_slope[t] ** 2))),
+    h[t] = np.minimum(
+        h[t], np.arccos(np.sqrt(1 - 1 / (1 + tan_slope[t] ** 2 * cos_aspect[t] ** 2)))
     )
     return h
 
