@@ -59,7 +59,7 @@ def retrieve_winidx(config):
         idx = np.where(np.logical_and(wl_init > lo, wl_init < hi))[0]
         winidx = np.concatenate((winidx, idx), axis=0)
 
-    return wl_init, fwhm_init, winidx
+    return winidx
 
 
 def analytical_line(
