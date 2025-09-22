@@ -394,7 +394,7 @@ def create_shadow_mask(
     can cast shadows onto pixels as a function of the solar geometry that aren't always captured in cos-i.
     In this case, the input angle is the solar azimuth, and the solar zenith is compared to h at each pixel.
 
-    As of right now, this assumes solar azimuth is constant value. However, solar zenith can vary by pixel.
+    As of right now, this assumes solar azimuth is constant value (0-360deg). However, solar zenith (0-90deg) can vary by pixel.
 
     """
 
@@ -404,6 +404,11 @@ def create_shadow_mask(
 
     logging.info("Starting shadow mask utility...")
     start_time = time.time()
+
+    # Ensure SAA is within 0-360 degrees.
+    if saa>360 or saa<0:
+        err_str = f"Must us 0-360deg convention for solar azimuth, with 0 at North."
+        raise ValueError(err_str)
 
     # Load DEM data (assuming hdr).
     dem_data, shadow_metadata, slope = load_input(
