@@ -104,7 +104,9 @@ class RadiativeTransferEngine:
 
         self.treat_as_emissive = engine_config.treat_as_emissive
         self.engine_base_dir = engine_config.engine_base_dir
-        self.sim_path = Path(engine_config.sim_path)
+        self.sim_path = engine_config.sim_path
+        if self.sim_path:
+            self.sim_path = Path(self.sim_path)
 
         # Enable special modes
         self.rt_mode = (
