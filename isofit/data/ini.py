@@ -51,6 +51,7 @@ class Ini:
         "srtmnet",
         "sixs",
         "plots",
+        "libradtran",
     ]
 
     # Additional keys with default values
