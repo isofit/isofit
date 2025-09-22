@@ -32,9 +32,6 @@ from isofit.radiative_transfer.engines import Engines
 Logger = logging.getLogger(__file__)
 
 
-RTE = ["modtran", "sRTMnet", "KernelFlowsGP"]
-
-
 def confPriority(key, configs):
     """
     Selects a key from a config if the value for that key is not None
@@ -86,7 +83,7 @@ class RadiativeTransfer:
 
             if confRT.engine_name not in Engines:
                 raise AttributeError(
-                    f"Invalid radiative transfer engine choice. Got: {confRT.engine_name}; Must be one of: {RTE}"
+                    f"Invalid radiative transfer engine choice. Got: {confRT.engine_name}; Must be one of: {list(Engines)}"
                 )
 
             # Generate the params for this RTE
