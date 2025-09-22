@@ -406,7 +406,7 @@ def create_shadow_mask(
     start_time = time.time()
 
     # Ensure SAA is within 0-360 degrees.
-    if saa>360 or saa<0:
+    if saa > 360 or saa < 0:
         err_str = f"Must us 0-360deg convention for solar azimuth, with 0 at North."
         raise ValueError(err_str)
 
