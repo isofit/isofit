@@ -178,9 +178,9 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
             "coszen": coszen,
             "solar_irr": irr,
             "rhoatm": rhoatm,
-            "transm": transm,
+            "transm_down_dif": transm,
             "sphalb": sphalb,
-            "transup": transup,
+            "transm_up_dir": transup,
         }
         return results
 
@@ -201,7 +201,8 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
         files = [f"{name}_albedo-{albedo}" for albedo in self.albedos]
         for file in files:
             with open(self.sim_path / f"{file}.inp", "w") as f:
-                f.write(self.template.format(albedo=albedo, **vals))
+                # **env to insert paths into the template, such as isofit {data}
+                f.write(self.template.format(albedo=albedo, **vals, **env))
 
         # Single regex pattern to capture time, latitude, longitude
         pattern = re.compile(
