@@ -83,7 +83,7 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
         with open(self.template) as f:
             self.template = f.read()
 
-        self.environment = engine_config.environment
+        self.environment = engine_config.environment or ""
 
         super().__init__(engine_config, **kwargs)
 
@@ -117,6 +117,8 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
                 Logger.error(call.stdout.decode())
 
     def readSim(self, point):
+        name = self.point_to_filename(point)
+
         _, rdn0, _ = np.loadtxt(self.sim_path / f"{name}_albedo-0.0.out").T
         _, rdn025, _ = np.loadtxt(self.sim_path / f"{name}_albedo-0.25.out").T
         wl, rdn05, irr = np.loadtxt(self.sim_path / f"{name}_albedo-0.5.out").T
@@ -198,9 +200,10 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
             vals["h2o_mm"] = vals["H2OSTR"] * 10.0
 
         # Create input files from the template
-        files = [f"{name}_albedo-{albedo}" for albedo in self.albedos]
-        for file in files:
-            with open(self.sim_path / f"{file}.inp", "w") as f:
+        files = []
+        for albedo in self.albedos:
+            files.append(f"{name}_albedo-{albedo}")
+            with open(self.sim_path / f"{files[-1]}.inp", "w") as f:
                 # **env to insert paths into the template, such as isofit {data}
                 f.write(self.template.format(albedo=albedo, **vals, **env))
 
@@ -237,3 +240,7 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
             )
 
         return f"bash {name}.sh"
+
+    @staticmethod
+    def ext550_to_vis(ext550):
+        return np.log(50.0) / (ext550 + 0.01159)

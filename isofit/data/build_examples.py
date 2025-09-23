@@ -145,7 +145,7 @@ class Example:
                 output.mkdir(parents=True, exist_ok=True)
 
                 for tmpl in template.glob("*"):
-                    if template.suffix == ".json":
+                    if tmpl.suffix == ".json":
                         print(f"Creating {tmpl.parent}/{tmpl.name}")
                         updateTemplate(tmpl, output)
                     else:

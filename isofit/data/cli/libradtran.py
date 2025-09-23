@@ -24,27 +24,37 @@ def build(directory):
     directory : str
         Directory with an unbuilt LibRadTran
     """
-    flags = ""
+    flags = []
 
     # LibRadTran assumes GSL was installed with MacPorts
     # Check if it was installed via brew instead and fix paths if so
+
     if Path("/opt/homebrew/Cellar/gsl").exists():
-        flags = 'CPPFLAGS="-I/opt/homebrew/include" LDFLAGS="-L/opt/homebrew/lib" --with-gsl=/opt/homebrew'
+        flags = [
+            'CPPFLAGS="-I/opt/homebrew/include"',
+            'LDFLAGS="-L/opt/homebrew/lib"',
+            'FCFLAGS="-I/opt/homebrew/include"',
+            'FFLAGS="-I/opt/homebrew/include"',
+            "--with-netcdf4=/opt/homebrew",
+        ]
 
     # Configure first
+    command = f"./configure {' '.join(flags)}"
+    print(f"Executing: {command}")
     subprocess.run(
-        f"./configure {flags}",
+        command,
         shell=True,
-        stdout=subprocess.PIPE,
+        # stdout=subprocess.PIPE,
         # stderr=subprocess.PIPE,
         cwd=directory,
     )
 
     # Now make it
+    print("Executing make")
     subprocess.run(
-        f"make -j {os.cpu_count()}",
+        "make",
         shell=True,
-        stdout=subprocess.PIPE,
+        # stdout=subprocess.PIPE,
         # stderr=subprocess.PIPE,
         cwd=directory,
     )

@@ -42,7 +42,7 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
 
         self._engine_name_type = str
         self.engine_name = None
-        """str: Name of radiative transfer engine to use - options ['modtran', '6s', 'sRTMnet']."""
+        """str: Name of radiative transfer engine to use - options ['modtran', '6s', 'sRTMnet', 'LibRadTran']."""
 
         self._engine_base_dir_type = str
         self.engine_base_dir = None
@@ -214,11 +214,12 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
     def _check_config_validity(self) -> List[str]:
         errors = list()
 
-        valid_rt_engines = ["modtran", "6s", "sRTMnet", "KernelFlowsGP"]
-        if self.engine_name not in valid_rt_engines:
+        from isofit.radiative_transfer.engines import Engines
+
+        if self.engine_name not in Engines:
             errors.append(
                 "radiative_transfer->raditive_transfer_model: {} not in one of the"
-                " available models: {}".format(self.engine_name, valid_rt_engines)
+                " available models: {}".format(self.engine_name, list(Engines))
             )
 
         valid_rt_modes = ["transm", "rdn"]
