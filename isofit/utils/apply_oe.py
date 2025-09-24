@@ -104,6 +104,7 @@ def apply_oe(
     interpolate_bad_rdn=False,
     interpolate_inplace=False,
     skyview_factor=None,
+    resources=False,
 ):
     """\
     Applies OE over a flightline using a radiative transfer engine. This executes
@@ -234,6 +235,8 @@ def apply_oe(
         Other option is "slope" which will approx. based on cos^2(slope/2).
         Other option is a path to a skyview ENVI file computed via skyview.py utility or other source.
         Please note data must range from 0-1.
+    resources : bool, default=False
+        Enables the system resource tracker. Must also have the log_file set.
 
     \b
     References
@@ -306,10 +309,15 @@ def apply_oe(
 
     # Track system resources to a file adjacent to the log file
     fr = None
-    if log_file and logging_level == "DEBUG":
-        jsonl = Path(log_file).with_suffix(".resources.jsonl")
-        fr = FileResources(jsonl, reset=True, cores=n_cores)
-        fr.start()
+    if resources:
+        if log_file:
+            jsonl = Path(log_file).with_suffix(".resources.jsonl")
+            fr = FileResources(jsonl, reset=True, cores=n_cores)
+            fr.start()
+        else:
+            logging.error(
+                "The resources.jsonl will only be generated when a log file is also set"
+            )
 
     logging.info("Checking input data files...")
     rdn_dataset = envi.open(envi_header(input_radiance))
@@ -888,6 +896,7 @@ def apply_oe(
 @click.option("--interpolate_bad_rdn", is_flag=True, default=False)
 @click.option("--interpolate_inplace", is_flag=True, default=False)
 @click.option("--skyview_factor", type=str, default=None)
+@click.option("-r", "--resources", is_flag=True, default=False)
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",
