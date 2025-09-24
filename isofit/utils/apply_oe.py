@@ -232,9 +232,9 @@ def apply_oe(
     skyview_factor : str, default=None
         Flag to determine method to account for skyview factor. Default is None, creating an array of 1s.
         Other option is "slope" which will approx. based on cos^2(slope/2).
-        Other option is a path to a skyview ENVI file computed via skyview.py utility or other source. 
+        Other option is a path to a skyview ENVI file computed via skyview.py utility or other source.
         Please note data must range from 0-1.
-        
+
     \b
     References
     ----------
@@ -306,7 +306,7 @@ def apply_oe(
 
     # Track system resources to a file adjacent to the log file
     fr = None
-    if log_file:
+    if log_file and logging_level == "DEBUG":
         jsonl = Path(log_file).with_suffix(".resources.jsonl")
         fr = FileResources(jsonl, reset=True, cores=n_cores)
         fr.start()
