@@ -200,17 +200,6 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
     def _check_config_validity(self) -> List[str]:
         errors = list()
 
-        # Check that all input files exist
-        for key in self._get_nontype_attributes():
-            value = getattr(self, key)
-            if value and key[-5:] == "_file" and key != "emulator_file":
-                if os.path.isfile(value) is False:
-                    errors.append(
-                        "Config value radiative_transfer->{}: {} not found".format(
-                            key, value
-                        )
-                    )
-
         valid_rt_engines = ["modtran", "6s", "sRTMnet", "KernelFlowsGP"]
         if self.engine_name not in valid_rt_engines:
             errors.append(
@@ -225,47 +214,60 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
                 " available modes: {}".format(self.rt_mode, valid_rt_modes)
             )
 
-        if self.earth_sun_distance_file is None and self.engine_name == "6s":
-            errors.append("6s requires earth_sun_distance_file to be specified")
+        # Only check for missing files when a prebuilt LUT is not provided
+        if not os.path.exists(self.lut_path):
+            # Check that all input files exist
+            for key in self._get_nontype_attributes():
+                value = getattr(self, key)
+                if value and key[-5:] == "_file" and key != "emulator_file":
+                    if os.path.isfile(value) is False:
+                        errors.append(
+                            "Config value radiative_transfer->{}: {} not found".format(
+                                key, value
+                            )
+                        )
 
-        if self.irradiance_file is None and self.engine_name == "6s":
-            errors.append("6s requires irradiance_file to be specified")
+            if self.earth_sun_distance_file is None and self.engine_name == "6s":
+                errors.append("6s requires earth_sun_distance_file to be specified")
 
-        if self.engine_name == "sRTMnet":
-            if self.emulator_file is None:
-                # Fallback to the path specified by the isofit.ini
-                self.emulator_file = env.path("srtmnet", env["srtmnet.file"])
-                if not self.emulator_file.exists():
+            if self.irradiance_file is None and self.engine_name == "6s":
+                errors.append("6s requires irradiance_file to be specified")
+
+            if self.engine_name == "sRTMnet":
+                if self.emulator_file is None:
+                    # Fallback to the path specified by the isofit.ini
+                    self.emulator_file = env.path("srtmnet", env["srtmnet.file"])
+                    if not self.emulator_file.exists():
+                        errors.append(
+                            "The sRTMnet requires an emulator_file to be specified."
+                        )
+
+                if (os.path.splitext(self.emulator_file)[1] != ".h5") and (
+                    os.path.splitext(self.emulator_file)[1] != ".npz"
+                ):
                     errors.append(
-                        "The sRTMnet requires an emulator_file to be specified."
+                        "sRTMnet now requires the emulator_file to be of type .h5 (or .npz for experimental 6c emulator).  "
+                        "Please download an updated version from:\n https://zenodo.org/records/10831425"
                     )
 
-            if (os.path.splitext(self.emulator_file)[1] != ".h5") and (
-                os.path.splitext(self.emulator_file)[1] != ".npz"
-            ):
-                errors.append(
-                    "sRTMnet now requires the emulator_file to be of type .h5 (or .npz for experimental 6c emulator).  "
-                    "Please download an updated version from:\n https://zenodo.org/records/10831425"
-                )
+                if self.emulator_aux_file is None:
+                    # Fallback to the path specified by the isofit.ini
+                    self.emulator_aux_file = env.path("srtmnet", env["srtmnet.aux"])
+                    if not self.emulator_aux_file.exists():
+                        errors.append(
+                            "The sRTMnet requires an emulator_aux_file to be specified."
+                        )
 
-            if self.emulator_aux_file is None:
-                # Fallback to the path specified by the isofit.ini
-                self.emulator_aux_file = env.path("srtmnet", env["srtmnet.aux"])
-                if not self.emulator_aux_file.exists():
+            files = [
+                self.obs_file,
+                self.aerosol_model_file,
+                self.aerosol_template_file,
+            ]
+            for file in files:
+                if file is not None and not os.path.isfile(file):
                     errors.append(
-                        "The sRTMnet requires an emulator_aux_file to be specified."
+                        f"Radiative transfer engine file not found on system: {file}"
                     )
-
-        files = [
-            self.obs_file,
-            self.aerosol_model_file,
-            self.aerosol_template_file,
-        ]
-        for file in files:
-            if file is not None and not os.path.isfile(file):
-                errors.append(
-                    f"Radiative transfer engine file not found on system: {file}"
-                )
 
         if isinstance(self.lut_complevel, int) and self.lut_complevel < 1:
             errors.append("The LUT complevel must be and int greater than 0")
