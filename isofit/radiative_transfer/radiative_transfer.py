@@ -184,10 +184,10 @@ class RadiativeTransfer:
         Physics-based forward model to calculate at-sensor radiance.
         Includes topography, background reflectance, and glint.
         """
-        # Adjacency effects
-        # ToDo: we need to think about if we want to obtain the background reflectance from the Geometry object
-        #  or from the surface model, i.e., the same way as we do with the target pixel reflectance
-
+        # Adjacency effects (dir_dif) and spherical albedo interactions (dif_dif)
+        # taken from geom object, the scale of which is determined from number of segmentations.
+        # TODO: what scale are we currently assuming in the default no. of segmentations for an EMIT scene for example?
+        # Also, do we want dir-dif and dif-dif scales to be the same?
         rho_dir_dif = (
             geom.bg_rfl if isinstance(geom.bg_rfl, np.ndarray) else rho_dir_dir
         )
