@@ -102,6 +102,7 @@ def analytical_line(
 
     config = configs.create_new_config(file)
     config.forward_model.instrument.integrations = 1
+    wl_init, fwhm_init = load_wavelen(config.forward_model.instrument.wavelength_file)
 
     # Set up input file paths
     subs_state_file = config.output.estimated_state_file
@@ -196,8 +197,9 @@ def analytical_line(
         bbl=bbl,
         interleave="bil",
         band_names=band_names,
-        wavelength=rdn_meta["wavelength"],
+        wavelength=wl_init,
         wavelength_unts="Nanometers",
+        fwhm=fwhm_init,
         description=("L2A Analytyical per-pixel surface retrieval"),
     )
 
@@ -216,8 +218,9 @@ def analytical_line(
         bbl=bbl,
         interleave="bil",
         band_names=band_names,
-        wavelength=rdn_meta["wavelength"],
+        wavelength=wl_init,
         wavelength_unts="Nanometers",
+        fwhm=fwhm_init,
         description=("L2A Analytyical per-pixel surface retrieval uncertainty"),
     )
 
