@@ -148,7 +148,7 @@ def isUpToDate(path=None, tag="latest", debug=print, error=print, **_):
     current = Version(importlib.metadata.version("isoplots"))
 
     if current < latest:
-        error(f"[x] Latest is {latest}, currently installed is {version}")
+        error(f"[x] Latest is {latest}, currently installed is {current}")
         return False
 
     debug(f"[OK] Path is up to date, current version: {current}")
