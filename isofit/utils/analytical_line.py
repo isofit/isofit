@@ -106,7 +106,6 @@ def analytical_line(
 
     # Set up input file paths
     subs_state_file = config.output.estimated_state_file
-    subs_rfl_file = config.output.estimated_reflectance_file
     subs_loc_file = config.input.loc_file
 
     # Rename files
@@ -312,7 +311,6 @@ def analytical_line(
             obs_file,
             atm_file,
             subs_state_file,
-            subs_rfl_file,
             lbl_file,
             rfl_output,
             unc_output,
@@ -375,7 +373,6 @@ class Worker(object):
         obs_file: str,
         atm_file: str,
         subs_state_file: str,
-        subs_rfl_file: str,
         lbl_file: str,
         rfl_output: str,
         unc_output: str,
@@ -431,9 +428,6 @@ class Worker(object):
         self.subs_state = envi.open(envi_header(subs_state_file)).open_memmap(
             interleave="bip"
         )
-        self.subs_rfl = envi.open(envi_header(subs_rfl_file)).open_memmap(
-            interleave="bip"
-        )
         self.lbl = envi.open(envi_header(lbl_file)).open_memmap(interleave="bip")
 
         # Open skyview file for ALAlg, or create an array of 1s.
@@ -460,7 +454,6 @@ class Worker(object):
 
         # Can't see any reason to leave these as optional
         self.subs_state_file = subs_state_file
-        self.subs_rfl_file = subs_rfl_file
         self.lbl_file = lbl_file
 
         # If I only want to use some of the atm_interp bands
@@ -535,7 +528,7 @@ class Worker(object):
             
             iv_idx = self.fm.surface.analytical_iv_idx
             sub_state = self.subs_state[int(self.lbl[r, c, 0]), 0, iv_idx]
-            bg_rfl = self.subs_rfl[int(self.lbl[r, c, 0]), 0, iv_idx]
+            bg_rfl = sub_state[self.n_rfl_bands]
 
             geom = Geometry(
                 obs=self.obs[r, c, :],
