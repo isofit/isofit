@@ -280,6 +280,9 @@ def apply_oe(
         # This is the MODTRAN case. Do we want to enable the 4c mode by default?
         multipart_transmittance = True
 
+    # enforce lowercase for sensor name to match call to datetime and noise assignment.
+    sensor = sensor.lower()
+
     if sensor not in SUPPORTED_SENSORS:
         if sensor[:3] != "NA-":
             errstr = (

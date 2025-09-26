@@ -255,6 +255,8 @@ class Pathnames:
 
         if sensor == "avcl":
             self.noise_path = str(env.path("data", "avirisc_noise.txt"))
+        if sensor == "ang":
+            self.noise_path = str(env.path("data", "avirisng_noise.txt"))
         elif sensor == "oci":
             self.noise_path = str(env.path("data", "oci", "oci_noise.txt"))
         elif sensor == "emit":
