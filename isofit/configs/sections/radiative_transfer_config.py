@@ -135,6 +135,14 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         self.emulator_aux_file = None
         """str: path to emulator auxiliary data - expected npz format"""
 
+        self._predict_parallel_chunks_type = int
+        self.predict_parallel_chunks = 10
+        """int: If emulator predictions are in parallel. How many chunks to run"""
+
+        self._model_tmp_store_type = str
+        self.model_tmp_store = "/tmp/ray/session_latest"
+        """str: For 6C emulator, where to store temporary model matrices"""
+
         # 6S parameters - not the corcommemnd
         # TODO: these should come from a template file, as in modtran
         self._day_type = int
