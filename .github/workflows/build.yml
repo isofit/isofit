@@ -133,6 +133,7 @@ jobs:
         run: |
           echo "Downloading extras"
           isofit download all
+          isofit download sixs -F77 # Needed for Windows
           echo "Building examples"
           isofit build
           mv ~/.isofit .

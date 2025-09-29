@@ -10,10 +10,11 @@ from pathlib import Path
 import click
 
 from isofit.data import env, shared
-from isofit.data.download import download_file, prepare_output, untar
+from isofit.data.download import download_file, prepare_output, untar, unzip
 
 CMD = "sixs"
 URL = "https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar"
+F77 = "http://www.cse.yorku.ca/~roumani/fortran/gnu99/Fort99.zip"
 
 
 def precheck():
@@ -39,8 +40,6 @@ def patch_makefile(file):
     """
     Patch the 6S Makefile to:
     - Add -std=legacy to the EXTRAS (isofit)
-    - Add an LDFLAGS variable with --remove-section=.comment (Windows)
-    - Insert $(LDFLAGS) into the link commands (Windows)
 
     Parameters
     ----------
@@ -91,6 +90,33 @@ def make(directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE, debug=False)
     except subprocess.CalledProcessError as e:
         print(f"Building 6S via make failed, exit code: {e.returncode}")
         print(e.stderr)
+
+
+def download_fortran(path=None, overwrite=False, **_):
+    """
+    Downloads Fortran 77 compiler from http://www.cse.yorku.ca/~roumani/fortran/gnu99/Fort99.zip.
+
+    Parameters
+    ----------
+    output : str | None
+        Path to output as. If None, defaults to the ini path.
+    overwrite : bool, default=False
+        Overwrite an existing installation
+    **_ : dict
+        Ignores unused params that may be used by other validate functions. This is to
+        maintain compatibility with other functions
+    """
+    print("Downloading Fortran 77 compiler")
+
+    output = prepare_output(path, env.path("sixs", "F77"), overwrite=overwrite)
+    if not output:
+        return
+
+    zipfile = download_file(F77, output.parent / "F77.zip")
+    avail = unzip(zipfile, path=output, rename=output.name, overwrite=overwrite)
+
+    print(f"Done, now available at: {avail.parent}")
+    print("You will need to add it to your PATH environment variable")
 
 
 def download(path=None, overwrite=False, debug_make=False, **_):
@@ -200,7 +226,13 @@ def update(check=False, **kwargs):
 @click.option(
     "--debug-make", is_flag=True, help="Enable debug logging for the make command"
 )
-def download_cli(debug_make, **kwargs):
+@click.option(
+    "-F77",
+    "--fortran77",
+    is_flag=True,
+    help="Downloads the Fortran 77 compiler (for Windows) instead of 6S",
+)
+def download_cli(debug_make, fortran77, **kwargs):
     """\
     Downloads 6S from https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar. Only HDF5 versions are supported at this time.
 
@@ -221,6 +253,8 @@ def download_cli(debug_make, **kwargs):
         print(f"Finished")
     elif kwargs.get("overwrite"):
         download(**kwargs)
+    elif fortran77:
+        download_fortran(**kwargs)
     else:
         update(**kwargs)
 
