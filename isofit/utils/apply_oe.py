@@ -376,7 +376,7 @@ def apply_oe(
                 # load in and ensure same shape as image file.
                 svf_dataset = envi.open(envi_header(skyview_factor), skyview_factor)
                 svf_size = (svf_dataset.shape[0], svf_dataset.shape[1])
-                svf_max = np.nanmax(svf_dataset)
+                svf_max = np.nanmax(svf_dataset.open_memmap(interleave="bip"))
                 del svf_dataset
                 if not (svf_size[0] == rdn_size[0] and svf_size[1] == rdn_size[1]):
                     err_str = (
