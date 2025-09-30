@@ -10,6 +10,7 @@ from pathlib import Path
 from isofit.data import env, shared
 from isofit.data.download import download_file, prepare_output, untar
 
+ESSENTIAL = False
 Version = "libRadtran-2.0.6"
 CMD = "libradtran"
 URL = f"https://www.libradtran.org/download/{Version}.tar.gz"

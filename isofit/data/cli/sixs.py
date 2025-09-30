@@ -19,6 +19,7 @@ from isofit.data.download import (
     unzip,
 )
 
+ESSENTIAL = True
 CMD = "sixs"
 MINGW = "https://github.com/brechtsanders/winlibs_mingw/releases/download/15.2.0posix-13.0.0-msvcrt-r2/winlibs-i686-posix-dwarf-gcc-15.2.0-mingw-w64msvcrt-13.0.0-r2.zip"
 

@@ -12,6 +12,7 @@ from packaging.version import Version
 from isofit.data import env, shared
 from isofit.data.download import download_file, prepare_output, release_metadata, unzip
 
+ESSENTIAL = False
 CMD = "plots"
 
 

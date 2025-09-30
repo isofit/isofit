@@ -12,6 +12,7 @@ from packaging.version import Version
 from isofit.data import env, shared
 from isofit.data.download import download_file, prepare_output
 
+ESSENTIAL = True
 CMD = "srtmnet"
 URL = "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/"
 

@@ -9,6 +9,7 @@ import click
 from isofit.data import env, shared
 from isofit.data.download import download_file, prepare_output, unzip
 
+ESSENTIAL = False
 CMD = "imagecube"
 URL = "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/{size}_chunk.zip"
 

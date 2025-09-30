@@ -7,6 +7,7 @@ from pathlib import Path
 from isofit.data import env, shared
 from isofit.data.download import download_file, prepare_output, release_metadata, unzip
 
+ESSENTIAL = True
 CMD = "data"
 
 
