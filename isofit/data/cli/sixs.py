@@ -73,6 +73,13 @@ def make(directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE, debug=False)
     ----------
     directory : str
         6S directory to build
+
+    Notes
+    -----
+    If on MacOS, executing the `make` command may fail if the user hasn't agreed to the
+    Xcode and Apple SDKs license yet. In these cases, it may be required to run the
+    following command in order to compile the program:
+    $ sudo xcodebuild -license
     """
     # Update the makefile with recommended flags
     file = Path(directory) / "Makefile"
