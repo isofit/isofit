@@ -46,7 +46,7 @@ class Pathnames:
         surface_path,
         working_directory,
         ray_temp_dir,
-        sensor=None,
+        sensor="NA-*",
         copy_input_files=False,
         modtran_path=None,
         rdn_factors_path=None,
