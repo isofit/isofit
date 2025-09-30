@@ -194,7 +194,7 @@ def apply_oe(
     ray_temp_dir : str, default="/tmp/ray"
         Location of temporary directory for ray parallelization engine
     emulator_base : str, default=None
-        Location of emulator base path. Point this at the model folder (or h5 file) of
+        Location of emulator base path. Point this at the 3C or 6C .h5 files.
         sRTMnet to use the emulator instead of MODTRAN. An additional file with the
         same basename and the extention _aux.npz must accompany
         e.g. /path/to/emulator.h5 /path/to/emulator_aux.npz
@@ -260,13 +260,9 @@ def apply_oe(
         if emulator_base.endswith(".jld2"):
             multipart_transmittance = False
         else:
-            if emulator_base.endswith(".npz"):
-                emulator_aux_file = emulator_base
-            else:
-                emulator_aux_file = os.path.abspath(
-                    os.path.splitext(emulator_base)[0] + "_aux.npz"
-                )
-            aux = np.load(emulator_aux_file)
+            aux = np.load(
+                os.path.abspath(os.path.splitext(emulator_base)[0] + "_aux.npz")
+            )
             if (
                 "transm_down_dir"
                 and "transm_down_dif"
@@ -276,6 +272,7 @@ def apply_oe(
                 multipart_transmittance = True
             else:
                 multipart_transmittance = False
+            del aux
     else:
         # This is the MODTRAN case. Do we want to enable the 4c mode by default?
         multipart_transmittance = True

@@ -21,6 +21,7 @@ from __future__ import annotations
 import datetime
 import logging
 import os
+import time
 from copy import deepcopy
 from pathlib import Path
 
@@ -40,9 +41,9 @@ from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransfe
 Logger = logging.getLogger(__file__)
 
 
-class tfLike3CModel:
-    def __init__(self, input_file=None):
-        if input_file is not None:
+class tfLikeModel:
+    def __init__(self, input_file=None, key=None, weights=None, biases=None):
+        if input_file is not None and key is None:
             self.input_file = input_file
             model = h5py.File(input_file, "r")
 
@@ -63,6 +64,18 @@ class tfLike3CModel:
             self.biases = biases
             self.input_file = input_file
 
+        elif input_file is not None and key is not None:
+            self.input_file = input_file
+            self.key = key
+            self.layers = len(h5py.File(self.input_file, "r")[f"weights_{key}"])
+
+        elif input_file is None and key is None:
+            # If we have weights and biases provided directly
+            self.weights = weights
+            self.biases = biases
+            self.input_file = None
+            self.layers = len(weights)
+
         else:
             raise ValueError(
                 "You must provide an input_file when using the 3C emulator."
@@ -80,59 +93,44 @@ class tfLike3CModel:
                 xi = self.leaky_re_lu(yi)
         return yi
 
-
-class tfLike6CModel:
-    def __init__(self, weight_fn, bias_fn, weights_shapes, biases_shapes, dtype):
-
-        self.layers = len(weights_shapes)
-        self.dtype = dtype
-
-        self.weight_fn = weight_fn
-        self.weights_shapes = weights_shapes
-
-        self.bias_fn = bias_fn
-        self.biases_shapes = biases_shapes
-
-        # Get offsets
-        self.weight_offset, self.bias_offset = [], []
-        woffset = 0
-        boffset = 0
-        for wshape, bshape in zip(weights_shapes, biases_shapes):
-            self.weight_offset.append(woffset)
-            self.bias_offset.append(boffset)
-            woffset += np.ones(wshape, dtype=self.dtype).nbytes
-            boffset += np.ones(bshape, dtype=self.dtype).nbytes
-
-    def leaky_re_lu(self, x, alpha=0.4):
-        return np.maximum(alpha * x, x)
-
     def load_arrays(self, i):
+        weights = h5py.File(self.input_file, "r")[f"weights_{self.key}"]
+        biases = h5py.File(self.input_file, "r")[f"biases_{self.key}"]
 
+        layer = weights[f"layer_{i}"]
+        offset = layer.id.get_offset()
         weight = np.memmap(
-            self.weight_fn,
-            self.dtype,
+            self.input_file,
+            layer.dtype,
             "r",
-            offset=self.weight_offset[i],
-            shape=self.weights_shapes[i],
+            offset=offset,
+            shape=layer.shape,
         )
 
+        layer = biases[f"layer_{i}"]
+        offset = layer.id.get_offset()
         bias = np.memmap(
-            self.bias_fn,
-            self.dtype,
+            self.input_file,
+            layer.dtype,
             "r",
-            offset=self.bias_offset[i],
-            shape=self.biases_shapes[i],
+            offset=offset,
+            shape=layer.shape,
         )
 
         return weight, bias
 
 
 @ray.remote(num_cpus=1)
-def ray_predict(model, x):
+def ray_predict(model, x, layer_read=True):
     xi = x.copy()
     for i in range(model.layers):
-        M, b = model.load_arrays(i)
+        if layer_read:
+            M, b = model.load_arrays(i)
+        else:
+            M, b = model.weights[i], model.biases[i]
+
         yi = np.dot(xi, M) + b
+
         # apply leaky_relu unless we're at the output layer
         if i < model.layers - 1:
             xi = model.leaky_re_lu(yi)
@@ -169,7 +167,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         config = build_sixs_config(self.engine_config)
 
         # Emulator Aux
-        aux = np.load(config.emulator_aux_file, allow_pickle=True, mmap_mode="r")
+        aux = np.load(config.emulator_aux_file, allow_pickle=True)
 
         # TODO: Disable when sRTMnet_v120_aux is updated
         aux_rt_quantities = np.where(
@@ -177,7 +175,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         )
 
         # Emulator keys (sRTMnet)
-        self.emu_wl = aux["emulator_wavelengths"].copy()
+        self.emu_wl = aux["emulator_wavelengths"]
 
         # Simulation wavelengths overrides, always fixed size
         self.sim_wl = np.arange(350, 2500 + 2.5, 2.5)
@@ -222,7 +220,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             predicts = luts.load(self.predict_path, mode="r")
             if self.engine_config.emulator_file.endswith(".h5"):
                 self.component_mode = "1c"
-            elif self.engine_config.emulator_file.endswith(".npz"):
+            elif self.engine_config.emulator_file.endswith(".6c"):
                 self.component_mode = "6c"
         else:
             Logger.info("Loading and predicting with emulator")
@@ -241,7 +239,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                 response_offset = aux.get("response_offset", 0.0)
 
                 # Now predict, scale, and add the interpolations
-                emulator = tfLike3CModel(self.engine_config.emulator_file)
+                emulator = tfLikeModel(self.engine_config.emulator_file)
                 predicts = da.from_array(emulator.predict(data))
                 predicts /= scaler
                 predicts += response_offset
@@ -250,8 +248,10 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                 # Unstack back to a dataset and save
                 predicts = predicts.unstack("stack").to_dataset("quantity")
 
-            elif self.engine_config.emulator_file.endswith(".npz"):
-                Logger.debug("Detected npz (6c) emulator file format")
+            elif self.engine_config.emulator_file.endswith(
+                ".npz"
+            ) or self.engine_config.emulator_file.endswith(".6c"):
+                Logger.debug("Detected 6c emulator file format")
                 self.component_mode = "6c"
 
                 # This is an array of feature points tacked onto the interpolated 6s values
@@ -284,22 +284,22 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                             raise ValueError(f"Feature point {fpn} not found in points")
 
                 predicts = resample.copy(deep=True)
+
+                total_start_time = time.time()
                 for key in aux_rt_quantities:
-                    Logger.info(f"Loading emulator {key}")
-                    # Temp save weights and biases onto disk
-                    weight_fn = self.storeArray(
-                        aux[f"weights_{key}"], f"{key}_weights.dat"
-                    )
-                    bias_fn = self.storeArray(aux[f"biases_{key}"], f"{key}_biases.dat")
-                    # Load memory object into model
-                    emulator = tfLike6CModel(
-                        weight_fn=weight_fn,
-                        bias_fn=bias_fn,
-                        weights_shapes=[ar.shape for ar in aux[f"weights_{key}"]],
-                        biases_shapes=[ar.shape for ar in aux[f"biases_{key}"]],
-                        dtype=aux[f"weights_{key}"][0].dtype,
-                    )
-                    model_ref = ray.put(emulator)
+                    key_start_time = time.time()
+                    Logger.debug(f"Loading emulator {key}")
+
+                    if self.engine_config.parallel_layer_read:
+                        emulator = tfLikeModel(self.engine_config.emulator_file, key)
+
+                    if not self.engine_config.parallel_layer_read:
+                        emulator = tfLikeModel(
+                            None,
+                            None,
+                            weights=aux[f"weights_{key}"],
+                            biases=aux[f"biases_{key}"],
+                        )
 
                     Logger.info(f"Emulating {key}")
                     if len(feature_point_names) > 0:
@@ -310,21 +310,31 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                     # run predictions
                     n_chunks = self.engine_config.predict_parallel_chunks
                     data_chunks = np.array_split(data, n_chunks, axis=0)
+
+                    model_ref = ray.put(emulator)
                     result_refs = [
-                        ray_predict.remote(model_ref, x) for x in data_chunks
+                        ray_predict.remote(
+                            model_ref, x, self.engine_config.parallel_layer_read
+                        )
+                        for x in data_chunks
                     ]
+
                     lp = np.concatenate(ray.get(result_refs), axis=0)
                     Logger.debug(f"Cleanup {key}")
                     lp /= aux["response_scaler"].item()[key]
                     lp += aux["response_offset"].item()[key]
 
-                    # filter out negative values for numerical stability before integrating
                     ltz = resample[key].values + lp < 0
                     lp[ltz] = -1 * resample[key].values[ltz]
 
                     predicts[key] = resample[key] + lp
-                    del model_ref, result_refs, data, data_chunks, lp, emulator
-                    self.wipeArrays(weight_fn, bias_fn)
+
+                    elapsed_time = time.time() - key_start_time
+                    Logger.debug(f"Predict time ({key}): {elapsed_time} seconds")
+                    del result_refs, model_ref, emulator
+
+                elapsed_time = time.time() - total_start_time
+                Logger.info(f"Total prediction: {elapsed_time} seconds")
 
             Logger.info(
                 f"Saving intermediary prediction results to: {self.predict_path}"
@@ -410,25 +420,6 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             self.rt_mode = "rdn"
             self.lut.setAttr("RT_mode", "rdn")
         Logger.debug("Complete")
-
-    def storeArray(self, list_of_arrays, outname):
-        shapes = [arr.shape for arr in list_of_arrays]
-        elements = sum(arr.size for arr in list_of_arrays)
-        dtype = list_of_arrays[0].dtype
-        fn = os.path.join(self.engine_config.model_tmp_store, outname)
-        mem_array = np.memmap(fn, dtype=dtype, mode="w+", shape=(elements,))
-        current_offset = 0
-        for arr in list_of_arrays:
-            mem_array[current_offset : current_offset + arr.size] = arr.flatten()
-            current_offset += arr.size
-        mem_array.flush()
-
-        return fn
-
-    @staticmethod
-    def wipeArrays(*args):
-        for arg in args:
-            os.remove(arg)
 
 
 def build_sixs_config(engine_config):
