@@ -1088,6 +1088,7 @@ def build_main_config(
             "inversion": {"windows": inversion_windows},
             "n_cores": n_cores,
             "debug_mode": debug,
+            "segmentation_size": spectra_per_inversion,
         },
     }
 

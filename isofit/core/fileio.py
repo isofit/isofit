@@ -42,6 +42,7 @@ from isofit.core.geometry import Geometry
 from isofit.core.multistate import match_statevector
 from isofit.data import env
 from isofit.inversion.inverse_simple import invert_algebraic
+from isofit import __version__
 
 ### Variables ###
 Logger = logging.getLogger(__file__)
@@ -85,6 +86,8 @@ class SpectrumFile:
         flag=-9999.0,
         ztitles="{Wavelength (nm), Magnitude}",
         map_info="{}",
+        engine=None,
+        segmentation_size=1,
     ):
         """."""
 
@@ -245,6 +248,9 @@ class SpectrumFile:
                     "bbl": bad_bands,
                     "band names": band_names,
                     "wavelength": self.wl,
+                    "ISOFIT version": __version__,
+                    "engine": engine,
+                    "segmentation_size": segmentation_size,
                 }
 
                 for k, v in meta.items():
@@ -366,6 +372,12 @@ class IO:
         self.n_rows = 1
         self.n_cols = 1
         self.bbl = "{" + ",".join([str(1) for n in range(len(self.meas_wl))]) + "}"
+        self.engine_name = (
+            config.forward_model.radiative_transfer.radiative_transfer_engines[
+                0
+            ].engine_name
+        )
+        self.segmentation_size = config.implementation.segmentation_size
 
         # Use the pre-defined full statevec
         if len(full_statevec):
@@ -437,6 +449,8 @@ class IO:
                 map_info=self.map_info,
                 zrange=zrange,
                 ztitles=ztitle,
+                engine=self.engine_name,
+                segmentation_size=self.segmentation_size,
             )
 
         # Do we apply a radiance correction?
@@ -798,6 +812,13 @@ class IO:
         )
         wl_names = [("Channel %i" % i) for i in range(len(wl_init))]
         bbl = "{" + ",".join([str(1) for n in range(len(wl_init))]) + "}"
+        engine_name = (
+            config.forward_model.radiative_transfer.radiative_transfer_engines[
+                0
+            ].engine_name
+        )
+
+        segmentation_size = config.implementation.segmentation_size
 
         for element, element_header, element_name in zip(
             *config.output.get_output_files()
@@ -829,6 +850,8 @@ class IO:
                 map_info="{}",
                 zrange=zrange,
                 ztitles=ztitle,
+                engine=engine_name,
+                segmentation_size=segmentation_size,
             )
 
     @staticmethod
