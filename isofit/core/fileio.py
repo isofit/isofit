@@ -42,7 +42,6 @@ from isofit.core.geometry import Geometry
 from isofit.core.multistate import match_statevector
 from isofit.data import env
 from isofit.inversion.inverse_simple import invert_algebraic
-from isofit import __version__
 
 ### Variables ###
 Logger = logging.getLogger(__file__)
@@ -87,7 +86,8 @@ class SpectrumFile:
         ztitles="{Wavelength (nm), Magnitude}",
         map_info="{}",
         engine=None,
-        segmentation_size=1,
+        segmentation_size=None,
+        isofit_version=None,
     ):
         """."""
 
@@ -248,7 +248,7 @@ class SpectrumFile:
                     "bbl": bad_bands,
                     "band names": band_names,
                     "wavelength": self.wl,
-                    "ISOFIT version": __version__,
+                    "ISOFIT version": isofit_version,
                     "engine": engine,
                     "segmentation_size": segmentation_size,
                 }
@@ -378,6 +378,7 @@ class IO:
             ].engine_name
         )
         self.segmentation_size = config.implementation.segmentation_size
+        self.isofit_version = config.implementation.isofit_version
 
         # Use the pre-defined full statevec
         if len(full_statevec):
@@ -451,6 +452,7 @@ class IO:
                 ztitles=ztitle,
                 engine=self.engine_name,
                 segmentation_size=self.segmentation_size,
+                isofit_version=self.isofit_version,
             )
 
         # Do we apply a radiance correction?
@@ -819,6 +821,7 @@ class IO:
         )
 
         segmentation_size = config.implementation.segmentation_size
+        isofit_version = config.implementation.isofit_version
 
         for element, element_header, element_name in zip(
             *config.output.get_output_files()
@@ -852,6 +855,7 @@ class IO:
                 ztitles=ztitle,
                 engine=engine_name,
                 segmentation_size=segmentation_size,
+                isofit_version=isofit_version,
             )
 
     @staticmethod
