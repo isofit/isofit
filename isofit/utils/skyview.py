@@ -30,6 +30,7 @@ import netCDF4 as nc
 from spectral.io import envi
 
 from isofit.core.common import envi_header, eps
+from isofit.core.fileio import initialize_output
 
 
 def skyview(
@@ -132,6 +133,23 @@ def skyview(
     dem_data, svf_metadata, slope = load_input(
         input=input, resolution=resolution, obs_or_loc=obs_or_loc, method=method
     )
+    svf_metadata.update(
+        {
+            "description": "Sky View Factor",
+            "bands": 1,
+            "data ignore value": -9999,
+            "interleave": "bsq",
+            "data type": 4,
+            "byte order": 0,
+            "band names": ["Sky View Factor"],
+        }
+    )
+    # Initialize file with metadata
+    initialize_output(
+        output_metadata=svf_metadata,
+        outpath=svf_hdr_path.replace(".hdr", ""),
+        out_shape=dem_data.shape,
+    )
 
     # If only computing slope method, we do not need to set up Ray.
     if method == "slope":
@@ -143,14 +161,9 @@ def skyview(
         # approx. skyview using slope only.
         svf = np.cos(slope / 2) ** 2
 
-        # save file
-        save_envi(
-            input_data=svf,
-            input_hdr_path=svf_hdr_path,
-            input_metadata=svf_metadata,
-            band_name="Sky View Factor",
-            dtype=np.float32,
-        )
+        # write data
+        out_mm = envi.open(svf_hdr_path).open_memmap(writable=True)
+        out_mm[:, :, 0] = svf.astype(np.float32)
 
     # Else if, run the full horizon method.
     elif method == "horizon":
@@ -232,14 +245,9 @@ def skyview(
         svf = qIntegrand / len(angles)
         svf[(svf <= 0) | (svf > 1)] = -9999  # no such situation svf=0.
 
-        # save file
-        save_envi(
-            input_data=svf,
-            input_hdr_path=svf_hdr_path,
-            input_metadata=svf_metadata,
-            band_name="Sky View Factor",
-            dtype=np.float32,
-        )
+        # write data
+        out_mm = envi.open(svf_hdr_path).open_memmap(writable=True)
+        out_mm[:, :, 0] = svf.astype(np.float32)
 
         # check to remove horizon files.
         if keep_horizon_files is False:
@@ -288,35 +296,6 @@ def horizon_worker(
     save_horizon_nc(h=h, angle=angle, output_directory=output_directory)
 
     del h
-
-    return
-
-
-def save_envi(input_data, input_hdr_path, input_metadata, band_name, dtype):
-    """utility function to house metadata and information for saving output"""
-
-    # update metadata
-    input_metadata.update(
-        {
-            "description": f"{band_name}",
-            "bands": 1,
-            "data ignore value": -9999,
-            "interleave": "bsq",
-            "data type": 4,
-            "byte order": 0,
-            "band names": {f"{band_name}"},
-        }
-    )
-
-    # save image
-    envi.save_image(
-        input_hdr_path,
-        input_data.astype(dtype),
-        dtype=dtype,
-        interleave="bsq",
-        metadata=input_metadata,
-        force=True,
-    )
 
     return
 
@@ -410,17 +389,32 @@ def create_shadow_mask(
         err_str = f"Must us 0-360deg convention for solar azimuth, with 0 at North."
         raise ValueError(err_str)
 
-    # Load DEM data (assuming hdr).
-    dem_data, shadow_metadata, slope = load_input(
-        input=input, resolution=resolution, obs_or_loc=None, method="horizon"
-    )
-
-    # Construct svf output path.
     if not isdir(output_directory):
         err_str = f"The output directory, {output_directory}, does not exist or was not found."
         raise ValueError(err_str)
     else:
         shadow_hdr_path = join(output_directory, "shadow_mask.hdr")
+
+    # Load DEM data (assuming hdr).
+    dem_data, shadow_metadata, slope = load_input(
+        input=input, resolution=resolution, obs_or_loc=None, method="horizon"
+    )
+    shadow_metadata.update(
+        {
+            "description": "Shadow Mask",
+            "bands": 1,
+            "data ignore value": -9999,
+            "interleave": "bsq",
+            "data type": 1,
+            "byte order": 0,
+            "band names": ["Shadow Mask"],
+        }
+    )
+    initialize_output(
+        output_metadata=shadow_metadata,
+        outpath=shadow_hdr_path.replace(".hdr", ""),
+        out_shape=dem_data.shape,
+    )
 
     # create empty array for shadow data
     shadow = np.zeros_like(dem_data)
@@ -453,14 +447,9 @@ def create_shadow_mask(
     # Check each pixel to identify where sza>H. 1=shadow cast. 0=false.
     shadow[np.radians(sza) >= h] = 1
 
-    # Save data
-    save_envi(
-        input_data=shadow,
-        input_hdr_path=shadow_hdr_path,
-        input_metadata=shadow_metadata,
-        band_name="Shadow Mask",
-        dtype=np.uint8,
-    )
+    # write data
+    out_mm = envi.open(shadow_hdr_path).open_memmap(writable=True)
+    out_mm[:, :, 0] = shadow.astype(np.uint8)
 
     logging.info(
         f"Shadow mask completed in {time.time() - start_time} seconds using {n_cores} cores."
