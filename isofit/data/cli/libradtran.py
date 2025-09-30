@@ -161,7 +161,7 @@ def download_cli(**kwargs):
     \b
     Run `isofit download paths` to see default path locations.
     There are two ways to specify output directory:
-        - `isofit --libradtran /path/libradtran download libradtran`: Override the ini file. This will save the provided path for future reference.
+        - `isofit --path libradtran /path/libradtran download libradtran`: Override the ini file. This will save the provided path for future reference.
         - `isofit download libradtran --path /path/libradtran`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
     It is recommended to use the first style so the download path is remembered in the future.
     """

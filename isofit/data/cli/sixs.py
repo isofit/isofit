@@ -272,7 +272,7 @@ def download_cli(debug_make, mingw, **kwargs):
     \b
     Run `isofit download paths` to see default path locations.
     There are two ways to specify output directory:
-        - `isofit --sixs /path/sixs download sixs`: Override the ini file. This will save the provided path for future reference.
+        - `isofit --path sixs /path/sixs download sixs`: Override the ini file. This will save the provided path for future reference.
         - `isofit download sixs --path /path/sixs`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
     It is recommended to use the first style so the download path is remembered in the future.
     """
