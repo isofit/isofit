@@ -27,6 +27,15 @@ Each subdirectory will have one or more scripts that are prepared for execution.
 
   This will change the download directory from the default ``~`` to ``./extra-downloads/``
 
+.. note::
+
+  If on MacOS, executing the ``make`` command may fail if the user hasn't agreed to the Xcode and Apple SDKs license yet. In these cases, it may be required to run the following command in order to compile the programs that use it (6S, LibRadTran):
+
+  .. code-block::
+
+      $ sudo xcodebuild -license
+
+  This will change the download directory from the default ``~`` to ``./extra-downloads/``
 
 If there are any issues, please report them to the `ISOFIT repository <https://github.com/isofit/isofit/issues>`_.
 
