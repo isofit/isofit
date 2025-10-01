@@ -24,7 +24,6 @@ import os
 from copy import deepcopy
 from pathlib import Path
 
-import dask.array as da
 import h5py
 import numpy as np
 import yaml
@@ -188,7 +187,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
 
                 # Now predict, scale, and add the interpolations
                 emulator = tfLikeModel(self.engine_config.emulator_file)
-                predicts = da.from_array(emulator.predict(data))
+                predicts = emulator.predict(data)
                 predicts /= scaler
                 predicts += response_offset
                 predicts += resample
@@ -250,10 +249,11 @@ class SimulatedModtranRT(RadiativeTransferEngine):
 
                     predicts[key] = resample[key] + lp
 
-            Logger.info(
-                f"Saving intermediary prediction results to: {self.predict_path}"
-            )
-            luts.saveDataset(self.predict_path, predicts)
+            # TODO: Is saving the predicts necessary anymore now that makeSim isn't used? (was at one point)
+            # Logger.info(
+            #     f"Saving intermediary prediction results to: {self.predict_path}"
+            # )
+            # luts.saveDataset(self.predict_path, predicts)
 
         # Convert our irradiance to date 0 then back to current date
         # sc - If statement to make sure tsis solar model is used if supplied
@@ -272,6 +272,9 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         self.emulator_sol_irr = sol_irr
         self.emulator_coszen = sim["coszen"]
         self.emulator_H = calculate_resample_matrix(self.emu_wl, self.wl, self.fwhm)
+
+        # Adjust the predictions
+        self.adjust(predicts)
 
         # Insert these into the LUT file
         return {
@@ -294,11 +297,13 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         return {}
 
     def postSim(self):
+        pass
+
+    def adjust(self, data):
         """
         Post-simulation adjustments for sRTMnet.
         """
         # Update engine to run in RDN mode
-        data = luts.load(self.predict_path, mode="r")
         outdict = {}
         Logger.debug("Resampling components")
         for key, values in data.items():
