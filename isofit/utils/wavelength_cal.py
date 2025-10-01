@@ -19,6 +19,7 @@ import isofit.utils.template_construction as tmpl
 from isofit.configs import configs
 from isofit.core import instrument, isofit
 from isofit.core.common import envi_header
+from isofit.debug.resource_tracker import FileResources
 from isofit.utils.apply_oe import (
     INVERSION_WINDOWS,
     RTM_CLEANUP_LIST,
@@ -220,6 +221,7 @@ def wavelength_cal(
     start_column=None,
     end_column=None,
     column_interval=1,
+    resources=False,
 ):
     """\
     Runs a wavelength calibration on an input scene.
@@ -305,6 +307,8 @@ def wavelength_cal(
         last column.
     column_interval : int, default=1
         Step size over columns; skips, doesn't average. Useful to increase runtime speeds.
+    resources : bool, default=False
+        Enables the system resource tracker. Must also have the log_file set.
     """
 
     radiance_meta = envi.open(envi_header(input_radiance)).metadata
@@ -313,8 +317,8 @@ def wavelength_cal(
         and "map info" in radiance_meta
         and radiance_meta["map info"] is not None
     ):
-        to_raise = """Radiance metadata has non-blank map info string, implying that 
-        it is a georeferenced file. wavelength_cal will perform columnwise averages that 
+        to_raise = """Radiance metadata has non-blank map info string, implying that
+        it is a georeferenced file. wavelength_cal will perform columnwise averages that
         will break this.  Please adjust or use the '--force_with_geo' flag."""
         logging.error(to_raise)
         raise ValueError(to_raise)
@@ -361,6 +365,18 @@ def wavelength_cal(
         filename=log_file,
         datefmt="%Y-%m-%d,%H:%M:%S",
     )
+
+    # Track system resources to a file adjacent to the log file
+    fr = None
+    if resources:
+        if log_file:
+            jsonl = Path(log_file).with_suffix(".resources.jsonl")
+            fr = FileResources(jsonl, reset=True, cores=n_cores)
+            fr.start()
+        else:
+            logging.error(
+                "The resources.jsonl will only be generated when a log file is also set"
+            )
 
     ################## Staging Setup ##########################
     logging.info("Checking input data files...")
@@ -659,6 +675,10 @@ def wavelength_cal(
                 logging.info(cmd)
                 subprocess.call(cmd, shell=True)
 
+    # Stop the FileResources thread, if active
+    if fr:
+        fr.stop()
+
 
 def get_wavelength_adjustment(
     config_file: str, output_file: str = None, filter_edges: int = 0
@@ -780,6 +800,7 @@ def cli_get_wavelength_adjustment(debug_args, profile, **kwargs):
     is_flag=True,
 )
 @click.option("--profile")
+@click.option("-r", "--resources", is_flag=True, default=False)
 def cli_wavelength_cal(debug_args, profile, **kwargs):
     if debug_args:
         print("Arguments to be passed:")
