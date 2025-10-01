@@ -319,6 +319,13 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             for obj in (predicts, self.emu_wl, self.wl, self.fwhm, self.emulator_H)
         ]
 
+        # Create a wrapper function to return the key of the data being resampled
+        wrapper = lambda key, data, *args: (
+            key,
+            resample_spectrum(data[key].values, *args),
+        )
+        resample = ray.remote(wrapper)
+
         # Create and launch jobs
         jobs = [
             resample.remote(key, *args)
@@ -327,7 +334,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         ]
 
         Logger.debug("Executing resamples in parallel")
-        outdict = ray.get(jobs)
+        outdict = dict(ray.get(jobs))
         Logger.debug("Resampling finished")
 
         Logger.debug("Setting up lut cache")
@@ -405,12 +412,3 @@ def build_sixs_config(engine_config):
     config.lut_path = path.parent / f"6S.{path.name}"
 
     return config
-
-
-@ray.remote
-def resample(key, data_ref, *args):
-    """
-    Simple wrapper function for resample_spectrum to parallelize it
-    """
-    data = ray.get(data_ref)[key].values
-    return key, resample_spectrum(data, *args)
