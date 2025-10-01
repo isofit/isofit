@@ -29,6 +29,7 @@ import numpy as np
 import yaml
 from scipy.interpolate import interp1d
 
+from isofit import ray
 from isofit.core import units
 from isofit.core.common import calculate_resample_matrix, resample_spectrum
 from isofit.radiative_transfer import luts
@@ -273,7 +274,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         self.emulator_coszen = sim["coszen"]
         self.emulator_H = calculate_resample_matrix(self.emu_wl, self.wl, self.fwhm)
 
-        # Adjust the predictions
+        Logger.debug("Adjusting predictions")
         self.adjust(predicts)
 
         # Insert these into the LUT file
@@ -299,30 +300,35 @@ class SimulatedModtranRT(RadiativeTransferEngine):
     def postSim(self):
         pass
 
-    def adjust(self, data):
+    def adjust(self, predicts):
         """
         Post-simulation adjustments for sRTMnet.
         """
-        # Update engine to run in RDN mode
-        outdict = {}
-        Logger.debug("Resampling components")
-        for key, values in data.items():
-            Logger.debug(f"Resampling {key}")
-            if (
-                key in ["dir-dir", "dir-dif", "dif-dir", "dif-dif", "rhoatm"]
-                and self.component_mode == "6c"
-            ):
-                fullspec_val = units.transm_to_rdn(
-                    data[key].data, self.emulator_coszen, self.emulator_sol_irr
-                )
-            else:
-                fullspec_val = data[key].data
+        convert = {"dir-dir", "dir-dif", "dif-dir", "dif-dif", "rhoatm"}
 
-            # Only resample and store valid keys
-            if len(data[key].data.shape) > 0:
-                outdict[key] = resample_spectrum(
-                    fullspec_val, self.emu_wl, self.wl, self.fwhm, H=self.emulator_H
+        # Do conversions upfront
+        for key, values in predicts.items():
+            if key in convert and self.component_mode == "6c":
+                predicts[key] = units.transm_to_rdn(
+                    values.data, self.emulator_coszen, self.emulator_sol_irr
                 )
+
+        # Place everything into shared memory
+        args = [
+            ray.put(obj)
+            for obj in (predicts, self.emu_wl, self.wl, self.fwhm, self.emulator_H)
+        ]
+
+        # Create and launch jobs
+        jobs = [
+            resample.remote(key, *args)
+            for key, data in predicts.items()
+            if len(data.shape) > 1
+        ]
+
+        Logger.debug("Executing resamples in parallel")
+        outdict = ray.get(jobs)
+        Logger.debug("Resampling finished")
 
         Logger.debug("Setting up lut cache")
         for _point, point in enumerate(data["point"].values):
@@ -330,6 +336,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                 np.array(point),
                 {key: outdict[key][_point, :] for key in outdict.keys()},
             )
+
         Logger.debug("Flushing lut to file")
         self.lut.flush()
 
@@ -338,7 +345,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         if "dir-dir" in outdict:
             self.rt_mode = "rdn"
             self.lut.setAttr("RT_mode", "rdn")
-        Logger.debug("Complete")
+        Logger.debug("sRTMnet finished")
 
 
 def build_sixs_config(engine_config):
@@ -398,3 +405,12 @@ def build_sixs_config(engine_config):
     config.lut_path = path.parent / f"6S.{path.name}"
 
     return config
+
+
+@ray.remote
+def resample(key, data_ref, *args):
+    """
+    Simple wrapper function for resample_spectrum to parallelize it
+    """
+    data = ray.get(data_ref)[key].values
+    return key, resample_spectrum(data, *args)
