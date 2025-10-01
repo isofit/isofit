@@ -322,7 +322,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         # Create a wrapper function to return the key of the data being resampled
         wrapper = lambda key, data, *args: (
             key,
-            resample_spectrum(data[key].values, *args),
+            resample_spectrum(data[key].data, *args),
         )
         resample = ray.remote(wrapper)
 
