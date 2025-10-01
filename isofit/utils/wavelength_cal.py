@@ -8,6 +8,7 @@ import logging
 import os
 import subprocess
 from os.path import exists, join
+from pathlib import Path
 from shutil import copyfile
 
 import click
