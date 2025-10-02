@@ -314,21 +314,19 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                 )
 
         # Place everything into shared memory
-        args = [
-            ray.put(obj)
-            for obj in (predicts, self.emu_wl, self.wl, self.fwhm, self.emulator_H)
-        ]
+        args = [ray.put(obj) for obj in (predicts, self.emu_wl, self.wl, self.fwhm)]
+        kwargs = {"H": ray.put(self.emulator_H)}
 
         # Create a wrapper function to return the key of the data being resampled
-        wrapper = lambda key, data, *args: (
+        wrapper = lambda key, data, *args, **kwargs: (
             key,
-            resample_spectrum(data[key].data, *args),
+            resample_spectrum(data[key].data, *args, **kwargs),
         )
         resample = ray.remote(wrapper)
 
         # Create and launch jobs
         jobs = [
-            resample.remote(key, *args)
+            resample.remote(key, *args, **kwargs)
             for key, data in predicts.items()
             if len(data.shape) > 1
         ]
