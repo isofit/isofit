@@ -336,7 +336,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         Logger.debug("Resampling finished")
 
         Logger.debug("Setting up lut cache")
-        for _point, point in enumerate(data["point"].values):
+        for _point, point in enumerate(predicts["point"].values):
             self.lut.queuePoint(
                 np.array(point),
                 {key: outdict[key][_point, :] for key in outdict.keys()},
