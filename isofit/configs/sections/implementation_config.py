@@ -87,11 +87,6 @@ class ImplementationConfig(BaseConfigSection):
         """bool: A flag to run the code in debug mode, which circumvents ray.
         """
 
-        self._segmentation_size_type = int
-        self.segmentation_size = 40
-        """int: If superpixels are enabled (analytical_line or empirical_line), sets the number of spectra per superpixel.
-        """
-
         self._isofit_version_type = str
         self.isofit_version = __version__
         """str: ISOFIT version used."""

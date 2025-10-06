@@ -80,6 +80,7 @@ def analytical_line(
     loglevel: str = "INFO",
     logfile: str = None,
     initializer: str = "algebraic",
+    segmentation_size: int = 40,
 ) -> None:
     """
     TODO: Description
@@ -183,6 +184,9 @@ def analytical_line(
     bbl = "{" + ",".join([f"{x}" for x in outside_ret_windows]) + "}"
     num_bands = len(full_idx_surf_rfl)
     band_names = [full_statevector[i] for i in range(len(full_idx_surf_rfl))]
+    engine_name = config.forward_model.radiative_transfer.radiative_transfer_engines[
+        0
+    ].engine_name
     rfl_output = initialize_output(
         {
             "data type": 4,
@@ -200,7 +204,11 @@ def analytical_line(
         wavelength=wl_init,
         wavelength_unts="Nanometers",
         fwhm=fwhm_init,
-        description=("L2A Analytyical per-pixel surface retrieval"),
+        isofit_version=config.implementation.isofit_version,
+        engine_name=engine_name,
+        description=(
+            f"L2A Analytical per-pixel surface retrieval (segmentation_size={segmentation_size})"
+        ),
     )
 
     # Construct surf rfl uncertainty output
@@ -221,7 +229,11 @@ def analytical_line(
         wavelength=wl_init,
         wavelength_unts="Nanometers",
         fwhm=fwhm_init,
-        description=("L2A Analytyical per-pixel surface retrieval uncertainty"),
+        isofit_version=config.implementation.isofit_version,
+        engine_name=engine_name,
+        description=(
+            f"L2A Analytical per-pixel surface retrieval uncertainty (segmentation_size={segmentation_size})"
+        ),
     )
 
     # If there are more idx in surface than rfl, there are non_rfl surface states
@@ -243,7 +255,11 @@ def analytical_line(
             bands=f"{n_non_rfl_bands}",
             interleave="bil",
             band_names=non_rfl_band_names,
-            description=("L2A Analytyical per-pixel non_rfl surface retrieval"),
+            isofit_version=config.implementation.isofit_version,
+            engine_name=engine_name,
+            description=(
+                f"L2A Analytical per-pixel non_rfl surface retrieval  (segmentation_size={segmentation_size})"
+            ),
         )
 
         non_rfl_unc_output = initialize_output(
@@ -259,8 +275,10 @@ def analytical_line(
             bands=f"{n_non_rfl_bands}",
             interleave="bil",
             band_names=non_rfl_band_names,
+            isofit_version=config.implementation.isofit_version,
+            engine_name=engine_name,
             description=(
-                "L2A Analytyical per-pixel non_rfl surface retrieval uncertainty"
+                f"L2A Analytical per-pixel non_rfl surface retrieval uncertainty  (segmentation_size={segmentation_size})"
             ),
         )
     else:

@@ -86,7 +86,6 @@ class SpectrumFile:
         ztitles="{Wavelength (nm), Magnitude}",
         map_info="{}",
         engine=None,
-        segmentation_size=None,
         isofit_version=None,
     ):
         """."""
@@ -250,7 +249,6 @@ class SpectrumFile:
                     "wavelength": self.wl,
                     "ISOFIT version": isofit_version,
                     "engine": engine,
-                    "segmentation_size": segmentation_size,
                 }
 
                 for k, v in meta.items():
@@ -377,8 +375,6 @@ class IO:
                 0
             ].engine_name
         )
-        self.segmentation_size = config.implementation.segmentation_size
-        self.isofit_version = config.implementation.isofit_version
 
         # Use the pre-defined full statevec
         if len(full_statevec):
@@ -451,8 +447,7 @@ class IO:
                 zrange=zrange,
                 ztitles=ztitle,
                 engine=self.engine_name,
-                segmentation_size=self.segmentation_size,
-                isofit_version=self.isofit_version,
+                isofit_version=config.implementation.isofit_version,
             )
 
         # Do we apply a radiance correction?
@@ -820,9 +815,6 @@ class IO:
             ].engine_name
         )
 
-        segmentation_size = config.implementation.segmentation_size
-        isofit_version = config.implementation.isofit_version
-
         for element, element_header, element_name in zip(
             *config.output.get_output_files()
         ):
@@ -854,8 +846,7 @@ class IO:
                 zrange=zrange,
                 ztitles=ztitle,
                 engine=engine_name,
-                segmentation_size=segmentation_size,
-                isofit_version=isofit_version,
+                isofit_version=config.implementation.isofit_version,
             )
 
     @staticmethod

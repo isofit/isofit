@@ -847,6 +847,7 @@ def apply_oe(
                 n_atm_neighbors=nneighbors,
                 n_cores=n_cores,
                 smoothing_sigma=atm_sigma,
+                segmentation_size=segmentation_size,
             )
 
     logging.info("Done.")

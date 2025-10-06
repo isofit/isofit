@@ -767,8 +767,7 @@ def build_presolve_config(
             "inversion": {"windows": inversion_windows},
             "n_cores": n_cores,
             "debug_mode": debug,
-            "segmentation_size": spectra_per_inversion,
-            "ISOFIT version": __version__,
+            "isofit_version": __version__,
         },
     }
 
@@ -1091,8 +1090,7 @@ def build_main_config(
             "inversion": {"windows": inversion_windows},
             "n_cores": n_cores,
             "debug_mode": debug,
-            "segmentation_size": spectra_per_inversion,
-            "ISOFIT version": __version__,
+            "isofit_version": __version__,
         },
     }
 
