@@ -366,6 +366,7 @@ def empirical_line(
     isofit_config: str = None,
     n_cores: int = -1,
     reference_class_file: str = None,
+    segmentation_size: int = 40,
 ) -> None:
     """
     Perform an empirical line interpolation for reflectance and uncertainty extrapolation
@@ -388,6 +389,7 @@ def empirical_line(
         isofit_config: path to isofit configuration JSON file
         n_cores: number of cores to run on
         reference_class_file: optional source file for sub-type-classifications, in order: [base, cloud, water]
+        segmentation_size: Number of super pixels
     Returns:
         None
     """
@@ -472,9 +474,22 @@ def empirical_line(
     if nll != n_input_lines or nlb != 3 or nls != n_input_samples:
         raise IndexError("Input location dimension mismatch")
 
+    # setup config
+    if isofit_config is not None:
+        iconfig = configs.create_new_config(isofit_config)
+    else:
+        # If none, create a temporary config to get default ray parameters
+        iconfig = configs.Config({})
+    if n_cores == -1:
+        n_cores = iconfig.implementation.n_cores
+
     # Create output files
     output_metadata = input_radiance_img.metadata
     output_metadata["interleave"] = "bil"
+    output_metadata["isofit_version"] = iconfig.implementation.isofit_version
+    output_metadata["description"] = (
+        f"L2A empirical line per-pixel surface retrieval (segmentation_size={segmentation_size})"
+    )
     output_reflectance_img = envi.create_image(
         envi_header(output_reflectance_file),
         ext="",
@@ -501,13 +516,6 @@ def empirical_line(
 
     # Initialize ray cluster
     start_time = time.time()
-    if isofit_config is not None:
-        iconfig = configs.create_new_config(isofit_config)
-    else:
-        # If none, create a temporary config to get default ray parameters
-        iconfig = configs.Config({})
-    if n_cores == -1:
-        n_cores = iconfig.implementation.n_cores
     rayargs = {
         "ignore_reinit_error": iconfig.implementation.ray_ignore_reinit_error,
         "local_mode": n_cores == 1,
