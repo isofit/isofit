@@ -205,7 +205,7 @@ def analytical_line(
         wavelength_unts="Nanometers",
         fwhm=fwhm_init,
         isofit_version=config.implementation.isofit_version,
-        engine_name=engine_name,
+        engine=engine_name,
         description=(
             f"L2A Analytical per-pixel surface retrieval (segmentation_size={segmentation_size})"
         ),

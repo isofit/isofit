@@ -487,6 +487,11 @@ def empirical_line(
     output_metadata = input_radiance_img.metadata
     output_metadata["interleave"] = "bil"
     output_metadata["isofit_version"] = iconfig.implementation.isofit_version
+    output_metadata["engine"] = (
+        iconfig.forward_model.radiative_transfer.radiative_transfer_engines[
+            0
+        ].engine_name
+    )
     output_metadata["description"] = (
         f"L2A empirical line per-pixel surface retrieval (segmentation_size={segmentation_size})"
     )
