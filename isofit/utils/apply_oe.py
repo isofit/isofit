@@ -355,7 +355,7 @@ def apply_oe(
             # overwrite arg to be the resulting filepath. create new directory
             # NOTE: this new directory should be in paths.make_directories(),
             # but cannot at the moment because of the order of operations...
-            skyview_factor = join(working_directory, "skyview", "sky_view_factor.hdr")
+            skyview_factor = join(working_directory, "skyview", "sky_view_factor")
             if not exists(os.path.dirname(skyview_factor)):
                 os.mkdir(os.path.dirname(skyview_factor))
             skyview(
@@ -366,26 +366,24 @@ def apply_oe(
                 log_file=log_file,
                 logging_level=logging_level,
             )
-        # If arg is None, load in the user data and check.
-        else:
-            if not exists(skyview_factor):
-                raise ValueError(
-                    f"Input skyview: {skyview_factor} file was not found on system."
-                )
-            else:
-                # load in and ensure same shape as image file.
-                svf_dataset = envi.open(envi_header(skyview_factor), skyview_factor)
-                svf_size = (svf_dataset.shape[0], svf_dataset.shape[1])
-                svf_max = np.nanmax(svf_dataset.open_memmap(interleave="bip"))
-                del svf_dataset
-                if not (svf_size[0] == rdn_size[0] and svf_size[1] == rdn_size[1]):
-                    err_str = (
-                        f"Input file: {skyview_factor} size is {svf_size}, which does not"
-                        f" match input_radiance size: {rdn_size}"
-                    )
-                    raise ValueError(err_str)
-                if svf_max > 1.0:
-                    err_str = f"Input file: {skyview_factor} has data with max {svf_max}. Data must range between 0-1."
+        if not exists(skyview_factor):
+            raise ValueError(
+                f"Input skyview: {skyview_factor} file was not found on system."
+            )
+
+        # load in and ensure same shape as image file.
+        svf_dataset = envi.open(envi_header(skyview_factor), skyview_factor)
+        svf_size = (svf_dataset.shape[0], svf_dataset.shape[1])
+        svf_max = np.nanmax(svf_dataset.open_memmap())
+        del svf_dataset
+        if not (svf_size[0] == rdn_size[0] and svf_size[1] == rdn_size[1]):
+            err_str = (
+                f"Input file: {skyview_factor} size is {svf_size}, which does not"
+                f" match input_radiance size: {rdn_size}"
+            )
+            raise ValueError(err_str)
+        if svf_max > 1.0:
+            err_str = f"Input file: {skyview_factor} has data with max {svf_max}. Data must range between 0-1."
 
     logging.info("...Data file checks complete")
 

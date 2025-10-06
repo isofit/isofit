@@ -39,7 +39,7 @@ def skyview(
     resolution: float = np.nan,
     obs_or_loc: str = None,
     method: str = "slope",
-    n_angles: int = 72,
+    n_angles: int = 64,
     logging_level: str = "INFO",
     log_file: str = None,
     n_cores: int = 1,
@@ -54,7 +54,7 @@ def skyview(
     The key thing here was to create a python-only, rasterio-free port of this that could be used within ISOFIT. We also included 
     improvements that are current in Jeff Dozier's horizon method in Matlab (https://github.com/DozierJeff/Topographic-Horizons).
     Following suggestions from Dozier (2021), multiprocessing is leveraged here w.r.t. to n_angles rotating the image. As default,
-    sky view is computed with n angles = 72 which in most cases is of sufficient accuracy to resolve but more angles may be used.
+    sky view is computed with n angles = 64 which in most cases is of sufficient accuracy to resolve but more angles may be used.
     
     Optionally to this horizon based method, one can pass method="slope" to compute a faster estimate that may be sufficent for regions with lower relief.
     The slope based estimate is simply, svf = cos^2(slope/2). 
@@ -80,7 +80,7 @@ def skyview(
         Options are either "horizon" or "slope". Passing "horizon" runs the full computation and is recommended for very steep terrain.
         Passing "slope"" runs the simplifed calculation of svf=cos^2(slope/2) and can be useful for more mild slopes. 
     n_angles : int, optional
-        Number of angles used in horizon calculations (default is 72). Other options could be 32, 64, etc. (see Dozier & Frew).
+        Number of angles used in horizon calculations (default is 64).
         As a reference, n=72 computes every 5deg, n=64 every 5.6deg, n=32 every 11.25deg, etc.  
     keep_horizon_files : bool, optional
         Horizon angles are created in output_dir as netcdf files. False deletes files, and True keeps them. These angles are based from zenith.        
@@ -138,8 +138,8 @@ def skyview(
             "description": "Sky View Factor",
             "bands": 1,
             "data ignore value": -9999,
-            "interleave": "bsq",
             "data type": 4,
+            "interleave": "bip",
             "byte order": 0,
             "band names": ["Sky View Factor"],
         }
@@ -148,7 +148,7 @@ def skyview(
     initialize_output(
         output_metadata=svf_metadata,
         outpath=svf_hdr_path.replace(".hdr", ""),
-        out_shape=dem_data.shape,
+        out_shape=(dem_data.shape[0], dem_data.shape[1], 1),
     )
 
     # If only computing slope method, we do not need to set up Ray.
@@ -164,6 +164,8 @@ def skyview(
         # write data
         out_mm = envi.open(svf_hdr_path).open_memmap(writable=True)
         out_mm[:, :, 0] = svf.astype(np.float32)
+
+        del out_mm
 
     # Else if, run the full horizon method.
     elif method == "horizon":
@@ -248,6 +250,7 @@ def skyview(
         # write data
         out_mm = envi.open(svf_hdr_path).open_memmap(writable=True)
         out_mm[:, :, 0] = svf.astype(np.float32)
+        del out_mm
 
         # check to remove horizon files.
         if keep_horizon_files is False:
@@ -369,7 +372,7 @@ def create_shadow_mask(
     ray_ip_head: str = None,
 ):
     """
-    Computes horizon at a specific geometry to create a binary shadow mask because nearby terrain
+    Computes horizons at a specific geometry to create a binary shadow mask because nearby terrain
     can cast shadows onto pixels as a function of the solar geometry that aren't always captured in cos-i.
     In this case, the input angle is the solar azimuth, and the solar zenith is compared to h at each pixel.
 
@@ -404,16 +407,16 @@ def create_shadow_mask(
             "description": "Shadow Mask",
             "bands": 1,
             "data ignore value": -9999,
-            "interleave": "bsq",
             "data type": 1,
             "byte order": 0,
+            "interleave": "bip",
             "band names": ["Shadow Mask"],
         }
     )
     initialize_output(
         output_metadata=shadow_metadata,
         outpath=shadow_hdr_path.replace(".hdr", ""),
-        out_shape=dem_data.shape,
+        out_shape=(dem_data.shape[0], dem_data.shape[1], 1),
     )
 
     # create empty array for shadow data
@@ -450,6 +453,7 @@ def create_shadow_mask(
     # write data
     out_mm = envi.open(shadow_hdr_path).open_memmap(writable=True)
     out_mm[:, :, 0] = shadow.astype(np.uint8)
+    del out_mm
 
     logging.info(
         f"Shadow mask completed in {time.time() - start_time} seconds using {n_cores} cores."
@@ -503,6 +507,9 @@ def load_input(input, resolution, obs_or_loc=None, method="slope"):
         slope[slope > 90.1] = np.nan
         slope[slope < -0.01] = np.nan
         slope = np.radians(slope)
+        # Squeeze 3D data with single band to 2D
+        if slope.ndim == 3 and slope.shape[2] == 1:
+            slope = slope[:, :, 0].astype(np.float32)
     elif obs_or_loc == "loc":
         dem_data = dem_data[:, :, 2].astype(np.float32)
         dem_data[dem_data > max_elev] = np.nan
@@ -996,7 +1003,7 @@ def transpose_skew(dem, spacing, angle):
 @click.argument("input", type=str)
 @click.argument("output_directory", type=str)
 @click.option("--resolution", type=float, default=np.nan)
-@click.option("--n_angles", type=int, default=72)
+@click.option("--n_angles", type=int, default=64)
 @click.option("--keep_horizon_files", type=bool, default=False)
 @click.option("--obs_or_loc", type=str, default=None)
 @click.option("--method", type=str, default="slope")
