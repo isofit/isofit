@@ -325,13 +325,12 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         resample = ray.remote(wrapper)
 
         # Create and launch jobs
+        Logger.debug("Executing resamples in parallel")
         jobs = [
             resample.remote(key, *args, **kwargs)
             for key, data in predicts.items()
             if len(data.shape) > 1
         ]
-
-        Logger.debug("Executing resamples in parallel")
         outdict = dict(ray.get(jobs))
         Logger.debug("Resampling finished")
 
