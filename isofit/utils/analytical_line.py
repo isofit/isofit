@@ -187,6 +187,7 @@ def analytical_line(
     engine_name = config.forward_model.radiative_transfer.radiative_transfer_engines[
         0
     ].engine_name
+    isofit_version = config.implementation.isofit_version
     rfl_output = initialize_output(
         {
             "data type": 4,
@@ -204,10 +205,8 @@ def analytical_line(
         wavelength=wl_init,
         wavelength_unts="Nanometers",
         fwhm=fwhm_init,
-        isofit_version=config.implementation.isofit_version,
-        engine=engine_name,
         description=(
-            f"L2A Analytical per-pixel surface retrieval (segmentation_size={segmentation_size})"
+            f"L2A Analytical per-pixel surface retrieval (segmentation_size={segmentation_size}, engine={engine_name}, isofit_version={isofit_version})"
         ),
     )
 
@@ -232,7 +231,7 @@ def analytical_line(
         isofit_version=config.implementation.isofit_version,
         engine_name=engine_name,
         description=(
-            f"L2A Analytical per-pixel surface retrieval uncertainty (segmentation_size={segmentation_size})"
+            f"L2A Analytical per-pixel surface retrieval uncertainty (segmentation_size={segmentation_size}, engine={engine_name}, isofit_version={isofit_version})"
         ),
     )
 
@@ -258,7 +257,7 @@ def analytical_line(
             isofit_version=config.implementation.isofit_version,
             engine_name=engine_name,
             description=(
-                f"L2A Analytical per-pixel non_rfl surface retrieval  (segmentation_size={segmentation_size})"
+                f"L2A Analytical per-pixel non_rfl surface retrieval  (segmentation_size={segmentation_size}, engine={engine_name}, isofit_version={isofit_version})"
             ),
         )
 
@@ -278,7 +277,7 @@ def analytical_line(
             isofit_version=config.implementation.isofit_version,
             engine_name=engine_name,
             description=(
-                f"L2A Analytical per-pixel non_rfl surface retrieval uncertainty  (segmentation_size={segmentation_size})"
+                f"L2A Analytical per-pixel non_rfl surface retrieval uncertainty  (segmentation_size={segmentation_size}, engine={engine_name}, isofit_version={isofit_version})"
             ),
         )
     else:

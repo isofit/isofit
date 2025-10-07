@@ -85,7 +85,7 @@ class SpectrumFile:
         flag=-9999.0,
         ztitles="{Wavelength (nm), Magnitude}",
         map_info="{}",
-        engine=None,
+        engine_name=None,
         isofit_version=None,
     ):
         """."""
@@ -230,6 +230,9 @@ class SpectrumFile:
                 # from scratch.  Hopefully the caller has supplied the
                 # necessary metadata details.
                 meta = {
+                    "description": (
+                        f"L2A per-pixel surface retrieval (engine={engine_name}, isofit_version={isofit_version})"
+                    ),
                     "lines": n_rows,
                     "samples": n_cols,
                     "bands": n_bands,
@@ -247,8 +250,6 @@ class SpectrumFile:
                     "bbl": bad_bands,
                     "band names": band_names,
                     "wavelength": self.wl,
-                    "isofit_version": isofit_version,
-                    "engine": engine,
                 }
 
                 for k, v in meta.items():
@@ -446,7 +447,7 @@ class IO:
                 map_info=self.map_info,
                 zrange=zrange,
                 ztitles=ztitle,
-                engine=self.engine_name,
+                engine_name=self.engine_name,
                 isofit_version=config.implementation.isofit_version,
             )
 
@@ -845,7 +846,7 @@ class IO:
                 map_info="{}",
                 zrange=zrange,
                 ztitles=ztitle,
-                engine=engine_name,
+                engine_name=engine_name,
                 isofit_version=config.implementation.isofit_version,
             )
 
