@@ -247,7 +247,7 @@ class SpectrumFile:
                     "bbl": bad_bands,
                     "band names": band_names,
                     "wavelength": self.wl,
-                    "isofit version": isofit_version,
+                    "isofit_version": isofit_version,
                     "engine": engine,
                 }
 
