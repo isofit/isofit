@@ -226,8 +226,9 @@ class Ini:
             # Insert paths into the $PATH variable
             for key, value in self.items():
                 value = value.format(**self)  # Value may need some interpolation
-                if key.startswith("path.") and Path(value).exists():
-                    os.environ["PATH"] += os.pathsep + value
+                if key.startswith("path."):  # and Path(value).exists():
+                    # Prepend to take precedence
+                    os.environ["PATH"] = value + os.pathsep + os.environ["PATH"]
         else:
             Logger.info(f"ini does not exist, falling back to defaults: {self.ini}")
 
