@@ -14,7 +14,7 @@ from isofit.data.download import download_file, prepare_output, untar, unzip
 
 CMD = "sixs"
 URL = "https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar"
-F77 = "http://www.cse.yorku.ca/~roumani/fortran/gnu99/Fort99.zip"
+MINGW = "https://github.com/brechtsanders/winlibs_mingw/releases/download/15.2.0posix-13.0.0-msvcrt-r2/winlibs-i686-posix-dwarf-gcc-15.2.0-mingw-w64msvcrt-13.0.0-r2.zip"
 
 
 def precheck():
@@ -56,10 +56,10 @@ def patch_makefile(file):
         if lines[i] != flag:
             lines.insert(i, flag)
 
-    if platform.system() == "Windows":
-        for i, line in enumerate(lines):
-            if "-lm" in line:
-                lines[i].replace("-lm", "")
+    # if platform.system() == "Windows":
+    #     for i, line in enumerate(lines):
+    #         if "-lm" in line:
+    #             lines[i].replace("-lm", "")
 
     file.write_text("\n".join(lines))
 
@@ -77,10 +77,14 @@ def make(directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE, debug=False)
     file = Path(directory) / "Makefile"
     patch_makefile(file)
 
+    make = "make"
+    if platform.system() == "Windows":
+        make = "mingw32-make.exe"
+
     # Now make it
     try:
         call = subprocess.run(
-            f"make -j {os.cpu_count()}",
+            f"{make} -j {os.cpu_count()}",
             shell=True,
             check=True,
             stdout=stdout,
@@ -97,9 +101,9 @@ def make(directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE, debug=False)
         print(e.stderr)
 
 
-def download_fortran(path=None, overwrite=False, **_):
+def download_mingw(path=None, overwrite=False, **_):
     """
-    Downloads Fortran 77 compiler from http://www.cse.yorku.ca/~roumani/fortran/gnu99/Fort99.zip.
+    Downloads MinGW64 for Windows
 
     Parameters
     ----------
@@ -111,17 +115,22 @@ def download_fortran(path=None, overwrite=False, **_):
         Ignores unused params that may be used by other validate functions. This is to
         maintain compatibility with other functions
     """
-    print("Downloading Fortran 77 compiler")
+    print("Downloading MinGW64")
 
-    output = prepare_output(path, env.path("sixs", "F77"), overwrite=overwrite)
+    output = prepare_output(path, env.path("sixs", "MinGW64"), overwrite=overwrite)
     if not output:
         return
 
-    zipfile = download_file(F77, output.parent / "F77.zip")
-    avail = unzip(zipfile, path=output, rename=output.name, overwrite=overwrite)
+    zipfile = download_file(MINGW, output.parent / "MinGW64.zip")
+    avail = unzip(zipfile, path=output.parent, rename=output.name, overwrite=overwrite)
 
-    print(f"Done, now available at: {avail.parent}")
-    print("You will need to add it to your PATH environment variable")
+    print(f"Done, now available at: {avail}/bin")
+    print(
+        "You may need to add it to your PATH environment variable, ISOFIT will also do this automatically at runtime"
+    )
+
+    env.changeKey("path.mingw", "{sixs}/MinGW64/bin")
+    env.save()
 
 
 def download(path=None, overwrite=False, debug_make=False, **_):
@@ -232,12 +241,11 @@ def update(check=False, **kwargs):
     "--debug-make", is_flag=True, help="Enable debug logging for the make command"
 )
 @click.option(
-    "-F77",
-    "--fortran77",
+    "--mingw",
     is_flag=True,
-    help="Downloads the Fortran 77 compiler (for Windows) instead of 6S",
+    help="Downloads the MinGW64 (for Windows) instead of 6S",
 )
-def download_cli(debug_make, fortran77, **kwargs):
+def download_cli(debug_make, mingw, **kwargs):
     """\
     Downloads 6S from https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar. Only HDF5 versions are supported at this time.
 
@@ -258,8 +266,8 @@ def download_cli(debug_make, fortran77, **kwargs):
         print(f"Finished")
     elif kwargs.get("overwrite"):
         download(**kwargs)
-    elif fortran77:
-        download_fortran(**kwargs)
+    elif mingw:
+        download_mingw(**kwargs)
     else:
         update(**kwargs)
 

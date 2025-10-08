@@ -76,6 +76,12 @@ class CLI(click.Group):
         for key, value in keys:
             env.changeKey(key, value)
 
+        # Insert paths into the $PATH variable
+        for key, value in env.items():
+            value = value.format(**env)  # Value may need some interpolation
+            if key.startswith("path.") and os.path.exists(value):
+                os.environ["PATH"] += os.pathsep + value
+
         # Can permanently enable the laziest flag using the ini via `isofit --keys cli_laziest 1`
         # Disable via `isofit --keys cli_laziest 0`
         self.laziest = ctx.params.pop("laziest") or env["cli_laziest"] == "1"
