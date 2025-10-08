@@ -44,7 +44,6 @@ def getWorkingDir(config):
 class Ini:
     # Default directories to expect
     _dirs: List[str] = [
-        "base",
         "data",
         "examples",
         "imagecube",
