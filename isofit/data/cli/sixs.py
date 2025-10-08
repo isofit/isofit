@@ -81,6 +81,7 @@ def make(directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE, debug=False)
     if platform.system() == "Windows":
         make = "mingw32-make.exe"
 
+    print(make)
     print(os.environ["PATH"])
 
     # Now make it
