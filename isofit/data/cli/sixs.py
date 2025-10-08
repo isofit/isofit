@@ -56,11 +56,6 @@ def patch_makefile(file):
         if lines[i] != flag:
             lines.insert(i, flag)
 
-    # if platform.system() == "Windows":
-    #     for i, line in enumerate(lines):
-    #         if "-lm" in line:
-    #             lines[i].replace("-lm", "")
-
     file.write_text("\n".join(lines))
 
 
