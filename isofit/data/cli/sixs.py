@@ -81,6 +81,11 @@ def make(directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE, debug=False)
     if platform.system() == "Windows":
         make = "mingw32-make.exe"
 
+        proc = subprocess.run(f"{make} --help", shell=True, stdout=subprocess.PIPE)
+        if proc.returncode != 0:
+            print("MinGW64 not found, downloading")
+            download_mingw()
+
     kwargs = dict(
         shell=True,
         check=True,
@@ -135,6 +140,7 @@ def download_mingw(path=None, overwrite=False, **_):
 
     env.changeKey("path.mingw", "{sixs}/MinGW64/bin")
     env.save()
+    env.load()  # Reload to insert the MinGW64 path to $PATH
 
 
 def download(path=None, overwrite=False, debug_make=False, **_):
