@@ -20,7 +20,6 @@ from __future__ import annotations
 
 import logging
 import os
-import platform
 import re
 import subprocess
 from datetime import datetime
@@ -198,9 +197,6 @@ class SixSRT(RadiativeTransferEngine):
         # Collect files of interest for this point
         sixS = os.path.join(self.engine_base_dir, "sixsV2.1")  # 6S Emulator path
         name = self.point_to_filename(point)
-
-        if platform.system() == "Windows":
-            sixS += ".exe"
 
         outp = os.path.join(self.sim_path, name)  # Output path
         inpt = os.path.join(self.sim_path, f"LUT_{name}.inp")  # Input path
