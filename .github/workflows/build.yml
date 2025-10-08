@@ -133,7 +133,7 @@ jobs:
         run: |
           echo "Downloading extras"
           isofit download all
-          isofit download sixs -mingw # Needed for Windows
+          isofit download sixs --mingw # Needed for Windows
           echo "Building examples"
           isofit build
           mv ~/.isofit . # Need to move to local dir so that Windows runners can find it
