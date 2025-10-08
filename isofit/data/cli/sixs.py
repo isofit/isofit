@@ -81,19 +81,20 @@ def make(directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE, debug=False)
     if platform.system() == "Windows":
         make = "mingw32-make.exe"
 
-    print(make)
-    print(os.environ["PATH"])
+    kwargs = dict(
+        shell=True,
+        check=True,
+        stdout=stdout,
+        stderr=stderr,
+        cwd=directory,
+    )
 
-    # Now make it
     try:
-        call = subprocess.run(
-            f"{make} -j {os.cpu_count()}",
-            shell=True,
-            check=True,
-            stdout=stdout,
-            stderr=stderr,
-            cwd=directory,
-        )
+        # Clean *.o files
+        call = subprocess.run(f"{make} clean", **kwargs)
+
+        # Build sixs
+        call = subprocess.run(f"{make} -j {os.cpu_count()}", **kwargs)
         if debug:
             if call.stdout:
                 print(f"stdout " + "-" * 32 + f"\n{call.stdout.decode()}")

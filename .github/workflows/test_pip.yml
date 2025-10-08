@@ -87,7 +87,6 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           isofit --base ~/.isofit build
-          export PATH=$PATH:$(isofit path sixs)/F77/G77/bin
           isofit download sixs --make --debug-make
 
       - name: Execute tests
