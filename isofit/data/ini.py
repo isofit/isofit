@@ -56,6 +56,8 @@ class Ini:
     _keys: Dict[str, str] = {"srtmnet.file": "", "srtmnet.aux": ""}
 
     def __init__(self) -> None:
+        self._path_bak = None
+
         self.reset()
         self.load()
 
@@ -213,6 +215,18 @@ class Ini:
                 self.changePath(key, self[key])
 
             Logger.info(f"Loaded ini from: {self.ini}")
+
+            # Cache the existing $PATH, restore it on every load
+            if not self._path_bak:
+                self._path_bak = os.environ["PATH"]
+            else:
+                os.environ["PATH"] = self._path_bak
+
+            # Insert paths into the $PATH variable
+            for key, value in self.items():
+                value = value.format(**env)  # Value may need some interpolation
+                if key.startswith("path.") and Path(value).exists():
+                    os.environ["PATH"] += os.pathsep + value
         else:
             Logger.info(f"ini does not exist, falling back to defaults: {self.ini}")
 
