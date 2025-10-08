@@ -225,7 +225,7 @@ class Ini:
 
             # Insert paths into the $PATH variable
             for key, value in self.items():
-                value = value.format(**env)  # Value may need some interpolation
+                value = value.format(**self)  # Value may need some interpolation
                 if key.startswith("path.") and Path(value).exists():
                     os.environ["PATH"] += os.pathsep + value
         else:
