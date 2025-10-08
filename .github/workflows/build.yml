@@ -101,36 +101,37 @@ jobs:
         run: |
           python3 -m pip install --editable ".[test]"
 
-      - if: steps.cache-extras.outputs.cache-hit == 'true'
-        name: Check for Updates
+      # - if: steps.cache-extras.outputs.cache-hit == 'true'
+      #   name: Check for Updates
+      #   shell: bash
+      #   run: |
+      #     # Module must report "[x]" to be detected
+      #     SUMMARY="$(isofit -S validate all)"
+      #
+      #     echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+      #     echo "$SUMMARY" >> $GITHUB_STEP_SUMMARY
+      #     echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+      #     echo "" >> $GITHUB_STEP_SUMMARY
+      #
+      #     if echo "$SUMMARY" | grep "\[x]"; then
+      #       MSG="Cache update needed, please request a maintainer to delete the cache-extras then rerun this workflow"
+      #
+      #       echo ":x: $MSG" >> $GITHUB_STEP_SUMMARY
+      #
+      #       echo "$SUMMARY"
+      #       echo "::error::$MSG"
+      #       exit 1
+      #     else
+      #       MSG="No cache update needed"
+      #       echo ":white_check_mark: $MSG" >> $GITHUB_STEP_SUMMARY
+      #       echo "$MSG"
+      #     fi
+
+      # - if: steps.cache-extras.outputs.cache-hit != 'true'
+      -  name: Download Extras
         shell: bash
         run: |
-          # Module must report "[x]" to be detected
-          SUMMARY="$(isofit -S validate all)"
-
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "$SUMMARY" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-
-          if echo "$SUMMARY" | grep "\[x]"; then
-            MSG="Cache update needed, please request a maintainer to delete the cache-extras then rerun this workflow"
-
-            echo ":x: $MSG" >> $GITHUB_STEP_SUMMARY
-
-            echo "$SUMMARY"
-            echo "::error::$MSG"
-            exit 1
-          else
-            MSG="No cache update needed"
-            echo ":white_check_mark: $MSG" >> $GITHUB_STEP_SUMMARY
-            echo "$MSG"
-          fi
-
-      - if: steps.cache-extras.outputs.cache-hit != 'true'
-        name: Download Extras
-        shell: bash
-        run: |
+          rm -rf ~/.isofit
           echo "Downloading extras"
           isofit download all
           isofit download sixs --mingw # Needed for Windows
