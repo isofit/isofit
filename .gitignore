@@ -34,6 +34,10 @@ isofit/test/output/*.txt
 tests/output/*.txt
 logs/
 
+# uv
+.python-version
+uv.lock
+
 # Ignore documentation files
 docs/_build/
 docs/html/_sources/
