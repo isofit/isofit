@@ -102,9 +102,11 @@ def surface_model(
         wl = np.array([float(x) for x in ds.metadata["wavelength"]])
     else:
         q = np.loadtxt(wavelength_file)
-        if q.shape[1] > 2:
+        if len(q.shape) > 1 and q.shape[1] > 2:
             q = q[:, 1:]
-        wl = q[:, 0]
+            wl = q[:, 0]
+        else:
+            wl = q
 
     if wl[0] < 100:
         wl = units.micron_to_nm(wl)

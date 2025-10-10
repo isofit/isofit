@@ -94,14 +94,6 @@ class OutputConfig(BaseConfigSection):
         self._algebraic_inverse_file_type = str
         self.algebraic_inverse_file = None
 
-        self._atmospheric_coefficients_file_header = (
-            "atm_coeffs",
-            "{Wavelength (nm), Atmospheric Optical Parameters}",
-            "{}",
-        )
-        self._atmospheric_coefficients_file_type = str
-        self.atmospheric_coefficients_file = None
-
         self._radiometry_correction_file_header = (
             "wavelength",
             "{Wavelength (nm), Radiometric Correction Factors}",

@@ -581,7 +581,6 @@ class IO:
                 "path_radiance_file": data_bad,
                 "simulated_measurement_file": data_bad,
                 "algebraic_inverse_file": data_bad,
-                "atmospheric_coefficients_file": atm_bad,
                 "radiometry_correction_file": data_bad,
                 "spectral_calibration_file": data_bad,
                 "posterior_uncertainty_file": state_bad,
@@ -682,10 +681,7 @@ class IO:
                 )
 
             x_surface, x_RT, x_instrument = fm.unpack(state_est)
-            if any(
-                item in ["algebraic_inverse_file", "atmospheric_coefficients_file"]
-                for item in self.output_datasets
-            ):
+            if any(item in ["algebraic_inverse_file"] for item in self.output_datasets):
                 rfl_alg_opt, coeffs = invert_algebraic(
                     fm.surface,
                     fm.RT,
@@ -701,20 +697,6 @@ class IO:
                 to_write["algebraic_inverse_file"] = np.column_stack(
                     (self.meas_wl, rfl_alg_opt)
                 )
-
-            if "atmospheric_coefficients_file" in self.output_datasets:
-                rhoatm, sphalb, L_tot, transup, L_Up = coeffs
-                coszen, cos_i = geom.check_coszen_and_cos_i(fm.RT.coszen)
-                solar_irr = fm.RT.rt_engines[0].solar_irr
-
-                atm_vars = [rhoatm, sphalb, L_tot, solar_irr]
-
-                atm = np.column_stack(
-                    atm_vars + [np.ones((len(self.meas_wl), 1)) * coszen]
-                )
-
-                atm = atm.T.reshape((len(self.meas_wl) * 5,))
-                to_write["atmospheric_coefficients_file"] = atm
 
             if "radiometry_correction_file" in self.output_datasets:
                 factors = np.ones(len(self.meas_wl))
