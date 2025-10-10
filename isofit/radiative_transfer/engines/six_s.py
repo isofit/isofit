@@ -23,6 +23,7 @@ import os
 import re
 import subprocess
 from datetime import datetime
+from pathlib import Path
 
 import numpy as np
 
@@ -94,6 +95,18 @@ class SixSRT(RadiativeTransferEngine):
         kwargs["wl"] = self.wl
         kwargs["fwhm"] = self.fwhm
 
+        try:
+            files = Path(self.engine_base_dir).glob("sixsV2*")
+            self.exe = next(filter(lambda file: "lutaero" not in file.name, files))
+        except:
+            raise FileNotFoundError(
+                f"Could not find the 6S executable under path: {self.engine_base_dir}"
+            )
+
+        self.co_mode = False
+        if "CO" in self.exe.name:
+            self.co_mode = True
+
         super().__init__(engine_config, **kwargs)
 
         # If the LUT file already exists, still need to calc this post init
@@ -104,12 +117,7 @@ class SixSRT(RadiativeTransferEngine):
         """
         Check that 6S is installed
         """
-        sixS = os.path.join(self.engine_base_dir, "sixsV2.1")  # 6S Emulator path
-
-        if not os.path.exists(sixS):
-            Logger.error(
-                f"6S path not valid, downstream simulations will be broken: {sixS}"
-            )
+        pass
 
     def makeSim(self, point: np.array):
         """
@@ -195,7 +203,6 @@ class SixSRT(RadiativeTransferEngine):
             str: execution command
         """
         # Collect files of interest for this point
-        sixS = os.path.join(self.engine_base_dir, "sixsV2.1")  # 6S Emulator path
         name = self.point_to_filename(point)
 
         outp = os.path.join(self.sim_path, name)  # Output path
@@ -268,7 +275,7 @@ class SixSRT(RadiativeTransferEngine):
 
         with open(bash, "w") as f:
             f.write("#!/usr/bin/bash\n")
-            f.write(f'"{sixS}" < "{inpt}" > "{outp}"\n')
+            f.write(f"{self.exe} < {inpt} > {outp}\n")
             f.write("cd $cwd\n")
 
         return f"bash {bash}"
