@@ -73,7 +73,7 @@ class SixSRT(RadiativeTransferEngine):
         sixs = env.path("sixs", "Sixs")
         if not current:
             Logger.debug(f"Setting SIXS_DIR={sixs}")
-            os.environ["SIXS_DIR"] = sixs
+            os.environ["SIXS_DIR"] = str(sixs)
         elif (current := os.path.abspath(current)) != sixs:
             Logger.warning(
                 "The parent of environment variable $SIXS_DIR does not match the ISOFIT ini. It is recommended to make these match, though not required. The ENV path will be the one used."
