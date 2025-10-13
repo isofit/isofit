@@ -70,7 +70,7 @@ class SixSRT(RadiativeTransferEngine):
         **kwargs,
     ):
         current = os.environ.get("SIXS_DIR")
-        sixs = env.path("sixs", "Sixs")
+        sixs = env.sixs
         if not current:
             Logger.debug(f"Setting SIXS_DIR={sixs}")
             os.environ["SIXS_DIR"] = str(sixs)

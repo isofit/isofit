@@ -4,6 +4,7 @@ Downloads 6S from https://github.com/isofit/6S
 
 import os
 import platform
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -171,8 +172,12 @@ def download(path=None, overwrite=False, debug_make=False, **_):
 
     avail = pullFromRepo("isofit", "6S", tag, output, overwrite=overwrite)
 
+    # Move files from subdir to base dir for backwards compatibility
+    for path in (avail / "Sixs").iterdir():
+        shutil.move(path, avail / path.name)
+
     print("Building via make")
-    make(avail / "Sixs", debug=debug_make)
+    make(avail, debug=debug_make)
 
     print(f"Done, now available at: {avail}")
 
@@ -205,7 +210,7 @@ def validate(path=None, checkForUpdate=True, debug=print, error=print, **_):
 
     debug(f"Verifying path for 6S: {path}")
 
-    path = Path(path) / "Sixs"
+    path = Path(path)
 
     if not path.exists():
         error("[x] 6S path does not exist")
@@ -213,7 +218,7 @@ def validate(path=None, checkForUpdate=True, debug=print, error=print, **_):
 
     if not len(list(path.glob("sixsV2*"))) == 2:
         error(
-            "[x] 6S is missing the built 'sixsV2.1', this is likely caused by make failing"
+            "[x] 6S is missing the built 'sixsV2.*', this is likely caused by make failing"
         )
         return False
 
