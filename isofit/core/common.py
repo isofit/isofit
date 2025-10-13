@@ -303,7 +303,7 @@ def svd_inv_sqrt(
     D, P = scipy.linalg.eigh(C, driver="evr")
     for count in range(3):
         if np.any(D < 0) or np.any(np.isnan(D)):
-            inv_eps = 1e-6 * (count - 1) * 10
+            inv_eps = 1e-6 * (count + 1) * 10
             D, P = scipy.linalg.eigh(
                 C + np.diag(np.ones(C.shape[0]) * inv_eps), driver="evr"
             )
@@ -311,7 +311,7 @@ def svd_inv_sqrt(
             if count == 2:
                 try:
                     # Before failing, try one more time defaulting to evd.
-                    D, P = np.linalg.eigh(C, driver="evd")
+                    D, P = np.linalg.eigh(C)
                     if np.any(D < 0) or np.any(np.isnan(D)):
                         break
                 except:
