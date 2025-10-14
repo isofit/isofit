@@ -26,7 +26,6 @@ from os.path import expandvars
 from typing import List
 
 import numpy as np
-import scipy.linalg
 
 # sc Adding in xarray for non-gauss SRF file io
 import xarray as xr
@@ -300,7 +299,8 @@ def svd_inv_sqrt(
         if h in hashtable:
             return hashtable[h]
 
-    # Default to using numpy eigh (evd driver), in testing this was ~4-5% faster than evr driver.
+    # Default to using numpy eigh (which uses LAPACK evd driver by default). 
+    # In testing, this was found to be more reliable and faster than `evr` for Sa inversion.
     try:
         D, P = np.linalg.eigh(C)
     except:
