@@ -32,7 +32,7 @@ from spectral.io import envi
 from isofit import ray
 from isofit.configs import configs
 from isofit.core.common import envi_header
-from isofit.core.fileio import write_bil_chunk
+from isofit.core.fileio import write_bil_chunk, initialize_output
 from isofit.core.instrument import Instrument
 
 
@@ -486,6 +486,7 @@ def empirical_line(
     # Create output files
     output_metadata = input_radiance_img.metadata
     output_metadata["interleave"] = "bil"
+    output_metadata["wavelength_unts"] = "Nanometers"
     isofit_version = iconfig.implementation.isofit_version
     engine_name = iconfig.forward_model.radiative_transfer.radiative_transfer_engines[
         0
@@ -493,18 +494,11 @@ def empirical_line(
     output_metadata["description"] = (
         f"L2A empirical line per-pixel surface retrieval (segmentation_size={segmentation_size}, engine={engine_name}, isofit_version={isofit_version})"
     )
-    output_reflectance_img = envi.create_image(
-        envi_header(output_reflectance_file),
-        ext="",
-        metadata=output_metadata,
-        force=True,
+    output_reflectance_img = initialize_output(
+        output_metadata, output_reflectance_file, (nll, nlb, nls)
     )
-
-    output_uncertainty_img = envi.create_image(
-        envi_header(output_uncertainty_file),
-        ext="",
-        metadata=output_metadata,
-        force=True,
+    output_uncertainty_img = initialize_output(
+        output_metadata, output_uncertainty_file, (nll, nlb, nls)
     )
 
     # Now cleanup inputs and outputs, we'll write dynamically above

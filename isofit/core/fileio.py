@@ -243,13 +243,14 @@ class SpectrumFile:
                     "sensor type": "unknown",
                     "interleave": interleave,
                     "data type": typemap[dtype],
-                    "wavelength units": "nm",
+                    "wavelength units": "Nanometers",
                     "z plot range": zrange,
                     "z plot titles": ztitles,
                     "fwhm": fwhm,
                     "bbl": bad_bands,
-                    "band names": band_names,
+                    "band_names": band_names,
                     "wavelength": self.wl,
+                    "data ignore value": self.flag,
                 }
 
                 for k, v in meta.items():

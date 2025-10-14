@@ -174,13 +174,13 @@ def analytical_line(
     rdn_meta = rdn_ds.metadata
     del rdn_ds
 
-    output_metadata = {
-        "lines": rdn_meta["lines"],
-        "samples": rdn_meta["samples"],
-        "bands": rdn_meta["bands"],
-    }
-
     # Construct surf rfl output
+    output_metadata = {
+        "data type": 4,
+        "file type": "ENVI Standard",
+        "byte order": 0,
+        "no data value": -9999,
+    }
     bbl = "{" + ",".join([f"{x}" for x in outside_ret_windows]) + "}"
     num_bands = len(full_idx_surf_rfl)
     band_names = [full_statevector[i] for i in range(len(full_idx_surf_rfl))]
@@ -189,13 +189,10 @@ def analytical_line(
     ].engine_name
     isofit_version = config.implementation.isofit_version
     rfl_output = initialize_output(
-        {
-            "data type": 4,
-            "file type": "ENVI Standard",
-            "byte order": 0,
-        },
+        output_metadata,
         analytical_rfl_path,
         (rdns[0], num_bands, rdns[1]),
+        map_info=rdn_meta["map_info"],
         lines=rdn_meta["lines"],
         samples=rdn_meta["samples"],
         bands=f"{num_bands}",
@@ -212,13 +209,10 @@ def analytical_line(
 
     # Construct surf rfl uncertainty output
     unc_output = initialize_output(
-        {
-            "data type": 4,
-            "file type": "ENVI Standard",
-            "byte order": 0,
-        },
+        output_metadata,
         analytical_rfl_unc_path,
         (rdns[0], num_bands, rdns[1]),
+        map_info=rdn_meta["map_info"],
         lines=rdn_meta["lines"],
         samples=rdn_meta["samples"],
         bands=f"{num_bands}",
@@ -242,13 +236,10 @@ def analytical_line(
             full_statevector[len(full_idx_surf_rfl) + i] for i in range(n_non_rfl_bands)
         ]
         non_rfl_output = initialize_output(
-            {
-                "data type": 4,
-                "file type": "ENVI Standard",
-                "byte order": 0,
-            },
+            output_metadata,
             analytical_non_rfl_surf_file,
             (rdns[0], n_non_rfl_bands, rdns[1]),
+            map_info=rdn_meta["map_info"],
             lines=rdn_meta["lines"],
             samples=rdn_meta["samples"],
             bands=f"{n_non_rfl_bands}",
@@ -262,13 +253,10 @@ def analytical_line(
         )
 
         non_rfl_unc_output = initialize_output(
-            {
-                "data type": 4,
-                "file type": "ENVI Standard",
-                "byte order": 0,
-            },
+            output_metadata,
             analytical_non_rfl_surf_unc_file,
             (rdns[0], n_non_rfl_bands, rdns[1]),
+            map_info=rdn_meta["map_info"],
             lines=rdn_meta["lines"],
             samples=rdn_meta["samples"],
             bands=f"{n_non_rfl_bands}",
