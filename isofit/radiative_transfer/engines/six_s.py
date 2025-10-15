@@ -82,7 +82,7 @@ class SixSRT(RadiativeTransferEngine):
             Logger.warning(
                 "Please either set the ENV to that INI value, or update the INI with the ENV via:"
             )
-            Logger.warning("  isofit --path sixs $SIXS_DIR/..")
+            Logger.warning("  isofit --path sixs $SIXS_DIR")
 
         self.modtran_emulation = modtran_emulation
 
