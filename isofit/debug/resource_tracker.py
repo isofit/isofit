@@ -71,7 +71,7 @@ class ResourceTracker:
                 mem_app : float
                     Total memory of the main process + children
                 mem_used : float
-                    Memory in use by the system, excluding the app
+                    Memory in use by the system
                 mem_avail : float
                     Remaining available memory, defined as free + reclaimable
                 cpu_avg : float
@@ -138,7 +138,7 @@ class ResourceTracker:
         "status": "Main process status, eg. 'running', 'sleeping'",
         "children": "List of child processes and their information",
         "mem_app": "Total memory of the main process + children",
-        "mem_used": "Memory in use by the system, excluding the app",
+        "mem_used": "Memory in use by the system",
         "mem_avail": "Remaining available memory, defined as free + reclaimable",
         "cpu_avg": "Average CPU percentage calculated as: sum(main + children) / cores",
         "sys_cpu": "System-wide CPU percentage over the interval",
@@ -290,9 +290,8 @@ class ResourceTracker:
                 # Total app memory usage
                 info["mem_app"] = sum([p["mem"] for p in children]) + info["mem"]
 
-                # System memory used minus app
-                used = sys.used / self.unitValue
-                info["mem_used"] = used - info["mem_app"]
+                # System memory used
+                info["mem_used"] = sys.used / self.unitValue
 
                 # Remaining available memory
                 info["mem_avail"] = sys.available / self.unitValue
