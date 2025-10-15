@@ -216,7 +216,7 @@ def validate(path=None, checkForUpdate=True, debug=print, error=print, **_):
         error("[x] 6S path does not exist")
         return False
 
-    if not len(list(path.glob("sixsV2*"))) == 2:
+    if len(list(path.glob("sixsV2*"))) != 2:
         error(
             "[x] 6S is missing the built 'sixsV2.*', this is likely caused by make failing"
         )
