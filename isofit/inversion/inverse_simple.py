@@ -69,7 +69,7 @@ def heuristic_atmosphere(
     bhi = np.argmin(abs(wl - wl_hi))
 
     offset = 5  # nm
-    if not (any(fm.RT.wl > (blo - offset)) and any(fm.RT.wl < (bhi + offset))):
+    if not (any(fm.RT.wl > (wl_lo - offset)) and any(fm.RT.wl < (wl_hi + offset))):
         logging.warning(
             "Continuum wl block not found in forward model wavelengths, "
             "returning input x_RT."
@@ -128,7 +128,8 @@ def heuristic_atmosphere(
             # Following Kokaly and Clark, 1999
             vals = np.interp(wl[blo:bhi], [wl_lo, wl_hi], [r[blo], r[bhi]])
             D = 1 - (r[blo:bhi] / vals)
-            Dn = 1 - (r[bcenter] / vals[center - blo])
+            Dn = 1 - (r[bcenter] / vals[bcenter - blo])
+
             areas.append(np.sum(D * Dn))
             h2os.append(h2o)
 
