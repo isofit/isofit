@@ -18,7 +18,6 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 from __future__ import annotations
 
-import logging
 import os
 from typing import OrderedDict
 
@@ -70,10 +69,6 @@ def heuristic_atmosphere(
 
     offset = 5  # nm
     if not (any(fm.RT.wl > (wl_lo - offset)) and any(fm.RT.wl < (wl_hi + offset))):
-        logging.warning(
-            "Continuum wl block not found in forward model wavelengths, "
-            "returning input x_RT."
-        )
         return x_RT
 
     x_new = x_RT.copy()
