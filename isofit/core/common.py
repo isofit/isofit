@@ -300,7 +300,6 @@ def svd_inv_sqrt(
             return hashtable[h]
 
     # Default to using numpy eigh (which uses LAPACK evd driver by default).
-    # In testing, this was found to be more reliable and faster than `evr` for Sa inversion.
     try:
         D, P = np.linalg.eigh(C)
     except:
