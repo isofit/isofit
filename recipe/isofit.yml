@@ -10,7 +10,7 @@ dependencies:
   - dask
   - h5py
   - netCDF4<=1.7.2
-  - numpy>=1.20.0,!=2.2.*
+  - numpy>=1.20.0,!=2.1.*,!=2.2.*
   - pre-commit
   - pytest>=3.5.1
   - python-xxhash<3
