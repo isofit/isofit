@@ -180,7 +180,7 @@ def analytical_line(
         "file type": "ENVI Standard",
         "byte order": 0,
         "no data value": -9999,
-        "map info": {rdn_meta["map_info"]},
+        "map info": "{" + ", ".join(map(str, rdn_meta["map info"])) + "}",
         "wavelength units": "Nanometers",
         "wavelength": wl_init,
         "fwhm": fwhm_init,
@@ -188,9 +188,11 @@ def analytical_line(
         "samples": rdn_meta["samples"],
         "interleave": "bil",
     }
+    output_metadata["band names"] = [
+        full_statevector[i] for i in range(len(full_idx_surf_rfl))
+    ]
     bbl = "{" + ",".join([f"{x}" for x in outside_ret_windows]) + "}"
     num_bands = len(full_idx_surf_rfl)
-    band_names = [full_statevector[i] for i in range(len(full_idx_surf_rfl))]
     engine_name = config.forward_model.radiative_transfer.radiative_transfer_engines[
         0
     ].engine_name
@@ -201,20 +203,21 @@ def analytical_line(
         (rdns[0], num_bands, rdns[1]),
         bands=f"{num_bands}",
         bbl=bbl,
-        band_names=band_names,
         description=(
             f"L2A Analytical per-pixel surface retrieval (segmentation_size={segmentation_size}, engine={engine_name}, isofit_version={isofit_version})"
         ),
     )
 
     # Construct surf rfl uncertainty output
+    output_metadata["band names"] = [
+        full_statevector[i] for i in range(len(full_idx_surf_rfl))
+    ]
     unc_output = initialize_output(
         output_metadata,
         analytical_rfl_unc_path,
         (rdns[0], num_bands, rdns[1]),
         bands=f"{num_bands}",
         bbl=bbl,
-        band_names=band_names,
         description=(
             f"L2A Analytical per-pixel surface retrieval uncertainty (segmentation_size={segmentation_size}, engine={engine_name}, isofit_version={isofit_version})"
         ),
@@ -223,7 +226,7 @@ def analytical_line(
     # If there are more idx in surface than rfl, there are non_rfl surface states
     if len(full_idx_surface) > len(full_idx_surf_rfl):
         n_non_rfl_bands = len(full_idx_surface) - len(full_idx_surf_rfl)
-        non_rfl_band_names = [
+        output_metadata["band names"] = [
             full_statevector[len(full_idx_surf_rfl) + i] for i in range(n_non_rfl_bands)
         ]
         non_rfl_output = initialize_output(
@@ -231,7 +234,6 @@ def analytical_line(
             analytical_non_rfl_surf_file,
             (rdns[0], n_non_rfl_bands, rdns[1]),
             bands=f"{n_non_rfl_bands}",
-            band_names=non_rfl_band_names,
             description=(
                 f"L2A Analytical per-pixel non_rfl surface retrieval  (segmentation_size={segmentation_size}, engine={engine_name}, isofit_version={isofit_version})"
             ),
@@ -242,7 +244,6 @@ def analytical_line(
             analytical_non_rfl_surf_unc_file,
             (rdns[0], n_non_rfl_bands, rdns[1]),
             bands=f"{n_non_rfl_bands}",
-            band_names=non_rfl_band_names,
             description=(
                 f"L2A Analytical per-pixel non_rfl surface retrieval uncertainty  (segmentation_size={segmentation_size}, engine={engine_name}, isofit_version={isofit_version})"
             ),

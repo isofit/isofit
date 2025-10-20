@@ -248,7 +248,7 @@ class SpectrumFile:
                     "z plot titles": ztitles,
                     "fwhm": fwhm,
                     "bbl": bad_bands,
-                    "band_names": band_names,
+                    "band names": band_names,
                     "wavelength": self.wl,
                     "data ignore value": self.flag,
                 }
