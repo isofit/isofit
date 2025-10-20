@@ -180,6 +180,13 @@ def analytical_line(
         "file type": "ENVI Standard",
         "byte order": 0,
         "no data value": -9999,
+        "map info": {rdn_meta["map_info"]},
+        "wavelength units": "Nanometers",
+        "wavelength": wl_init,
+        "fwhm": fwhm_init,
+        "lines": rdn_meta["lines"],
+        "samples": rdn_meta["samples"],
+        "interleave": "bil",
     }
     bbl = "{" + ",".join([f"{x}" for x in outside_ret_windows]) + "}"
     num_bands = len(full_idx_surf_rfl)
@@ -192,16 +199,9 @@ def analytical_line(
         output_metadata,
         analytical_rfl_path,
         (rdns[0], num_bands, rdns[1]),
-        map_info=rdn_meta["map_info"],
-        lines=rdn_meta["lines"],
-        samples=rdn_meta["samples"],
         bands=f"{num_bands}",
         bbl=bbl,
-        interleave="bil",
         band_names=band_names,
-        wavelength=wl_init,
-        wavelength_unts="Nanometers",
-        fwhm=fwhm_init,
         description=(
             f"L2A Analytical per-pixel surface retrieval (segmentation_size={segmentation_size}, engine={engine_name}, isofit_version={isofit_version})"
         ),
@@ -212,18 +212,9 @@ def analytical_line(
         output_metadata,
         analytical_rfl_unc_path,
         (rdns[0], num_bands, rdns[1]),
-        map_info=rdn_meta["map_info"],
-        lines=rdn_meta["lines"],
-        samples=rdn_meta["samples"],
         bands=f"{num_bands}",
         bbl=bbl,
-        interleave="bil",
         band_names=band_names,
-        wavelength=wl_init,
-        wavelength_unts="Nanometers",
-        fwhm=fwhm_init,
-        isofit_version=config.implementation.isofit_version,
-        engine_name=engine_name,
         description=(
             f"L2A Analytical per-pixel surface retrieval uncertainty (segmentation_size={segmentation_size}, engine={engine_name}, isofit_version={isofit_version})"
         ),
@@ -239,14 +230,8 @@ def analytical_line(
             output_metadata,
             analytical_non_rfl_surf_file,
             (rdns[0], n_non_rfl_bands, rdns[1]),
-            map_info=rdn_meta["map_info"],
-            lines=rdn_meta["lines"],
-            samples=rdn_meta["samples"],
             bands=f"{n_non_rfl_bands}",
-            interleave="bil",
             band_names=non_rfl_band_names,
-            isofit_version=config.implementation.isofit_version,
-            engine_name=engine_name,
             description=(
                 f"L2A Analytical per-pixel non_rfl surface retrieval  (segmentation_size={segmentation_size}, engine={engine_name}, isofit_version={isofit_version})"
             ),
@@ -256,14 +241,8 @@ def analytical_line(
             output_metadata,
             analytical_non_rfl_surf_unc_file,
             (rdns[0], n_non_rfl_bands, rdns[1]),
-            map_info=rdn_meta["map_info"],
-            lines=rdn_meta["lines"],
-            samples=rdn_meta["samples"],
             bands=f"{n_non_rfl_bands}",
-            interleave="bil",
             band_names=non_rfl_band_names,
-            isofit_version=config.implementation.isofit_version,
-            engine_name=engine_name,
             description=(
                 f"L2A Analytical per-pixel non_rfl surface retrieval uncertainty  (segmentation_size={segmentation_size}, engine={engine_name}, isofit_version={isofit_version})"
             ),
