@@ -808,6 +808,7 @@ def load(
     lock: bool = False,
     load: bool = True,
     coupling: str = "after",
+    force: str = "zarr",
     **kwargs,
 ) -> xr.Dataset:
     """
@@ -1000,7 +1001,7 @@ def load(
     if coupling not in ("before", "before-save", "after", "after-save"):
         raise AttributeError("Coupling must be set to either 'before' or 'after'")
 
-    if file.endswith(".zarr"):
+    if file.endswith(".zarr") or force == "zarr":
         if dask:
             Logger.debug(f"Using Dask to load: {file}")
             ds = xr.open_zarr(file)
