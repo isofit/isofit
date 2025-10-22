@@ -20,10 +20,12 @@
 #          James Montgomery, j.montgomery@jpl.nasa.gov
 #
 
+import numpy as np
 import pytest
 
 from isofit.configs import configs
 from isofit.radiative_transfer.engines import ModtranRT
+from isofit.radiative_transfer.luts import CreateZarr
 
 
 @pytest.mark.xfail
