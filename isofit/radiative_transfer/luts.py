@@ -19,7 +19,7 @@ from isofit import __version__
 Logger = logging.getLogger(__name__)
 
 
-def create(file: str, *args, **kwargs):
+def create(file: str, force="zarr", *args, **kwargs):
     """
     Factory function to return the correct Create subclass
 
@@ -27,6 +27,8 @@ def create(file: str, *args, **kwargs):
     ----------
     file : str
         File store. Uses the extension to determine the correct subclass
+    force : str, default="zarr"
+        Forces input files to be a specific type
     *args : list
         Arguments to pass to the subclass
     *args : dict
@@ -37,7 +39,7 @@ def create(file: str, *args, **kwargs):
     obj
         Create subclass object
     """
-    if file.endswith(".zarr"):
+    if file.endswith(".zarr") or force == "zarr":
         return CreateZarr(file, *args, **kwargs)
     else:
         return CreateNetCDF(file, *args, **kwargs)
