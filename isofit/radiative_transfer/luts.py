@@ -416,6 +416,8 @@ class CreateZarr(Create):
         """
         super().__init__(*args, **kwargs)
 
+        self.zarr = zarr.open(self.file, mode="a")
+
     def __getitem__(self, key: str) -> Any:
         """
         Retrieves a value from the Zarr store
@@ -430,8 +432,7 @@ class CreateZarr(Create):
         Any
             The value of the item retrieved from the Zarr store
         """
-        with zarr.open(self.file, mode="r") as z:
-            return z[key]
+        return self.zarr[key]
 
     def initialize(self, ret=False) -> None | xr.Dataset:
         """
@@ -543,8 +544,7 @@ class CreateZarr(Create):
         any | None
             Retrieved attribute from Zarr, if it exists
         """
-        with zarr.open(self.file, mode="a") as z:
-            return z.attrs.get(key)
+        return self.zarr.attrs.get(key)
 
     def setAttr(self, key: str, value: Any) -> None:
         """
@@ -558,8 +558,7 @@ class CreateZarr(Create):
             Value to set
         """
         self.attrs[key] = value
-        with zarr.open(self.file, mode="a") as z:
-            z.attrs.update({key: value})
+        self.zarr.attrs.update({key: value})
 
         # Optimizes metadata for xarray
         zarr.consolidate_metadata(self.file)
