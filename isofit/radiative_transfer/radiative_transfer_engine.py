@@ -241,7 +241,7 @@ class RadiativeTransferEngine:
                 )
             else:
                 Logger.info(f"Initializing LUT file")
-                self.lut = luts.Create(
+                self.lut = luts.create(
                     file=self.lut_path,
                     wl=wl,
                     grid=self.lut_grid,

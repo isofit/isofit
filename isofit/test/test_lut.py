@@ -54,3 +54,36 @@ def test_combined(monkeypatch):
     # Second, we use the just built LUT file and initialize the engine class again
     print("Initialize radiative transfer engine with prebuilt LUT file.")
     ModtranRT(engine_config=engine_config, interpolator_style="mlg")
+
+
+def test_CreateZarr(tmp_path):
+    """
+    Tests the CreateZarr class
+    """
+    file = tmp_path / "test.zarr"
+
+    wl = np.arange(200)
+    fwhm = np.arange(200)
+    lut_grid = {"AOT550": [0.0, 0.05, 0.1], "H2OSTR": [0.5, 0.7, 1.0]}
+
+    lut = CreateZarr(
+        file=file,
+        wl=wl,
+        grid=lut_grid,
+        attrs={"RT_mode": True},
+        onedim={"fwhm": fwhm},
+    )
+
+    data = np.arange(-200, 0)
+    lut.queuePoint([0.0, 0.5], {"coszen": 1})
+    lut.queuePoint([0.0, 0.5], {"rhoatm": data})
+    lut.queuePoint([0.0, 0.5], {"solar_irr": data})
+
+    lut.flush(finalize=True)
+
+    ds = xr.open_zarr(file)
+
+    assert self.getAttr("ISOFIT status") == "success"
+    assert ds["coszen"] == 1
+    assert (ds["rhoatm"][:, 0, 0] == data).all()
+    assert (ds["solar_irr"] == data).all()
