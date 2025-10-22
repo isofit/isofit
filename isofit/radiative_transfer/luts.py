@@ -12,8 +12,11 @@ from collections.abc import Iterable
 from pathlib import Path
 from typing import Any, List, Union
 
+import dask.array
 import numpy as np
 import xarray as xr
+import zarr
+from netCDF4 import Dataset
 
 from isofit import __version__
 
@@ -279,7 +282,6 @@ class CreateNetCDF(Create):
         """
         Initializes the LUT netCDF by prepopulating it with filler values.
         """
-        from netCDF4 import Dataset
 
         def createVariable(key, vals, dims=(), fill_value=np.nan, chunksizes=None):
             """
@@ -445,9 +447,6 @@ class CreateZarr(Create):
         None | xr.Dataset
             The initialized dataset
         """
-        import dask.array
-        import zarr
-
         coords = {"wl": self.wl} | self.grid
         ds = xr.Dataset(coords=coords, attrs=self.attrs)
 
