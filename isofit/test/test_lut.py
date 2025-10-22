@@ -22,6 +22,7 @@
 
 import numpy as np
 import pytest
+import xarray as xr
 
 from isofit.configs import configs
 from isofit.radiative_transfer.engines import ModtranRT
@@ -85,7 +86,7 @@ def test_CreateZarr(tmp_path):
 
     ds = xr.open_zarr(file)
 
-    assert self.getAttr("ISOFIT status") == "success"
+    assert lut.getAttr("ISOFIT status") == "success"
     assert ds["coszen"] == 1
     assert (ds["rhoatm"][:, 0, 0] == data).all()
     assert (ds["solar_irr"] == data).all()
