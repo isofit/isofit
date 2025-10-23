@@ -33,7 +33,7 @@ dependencies = [
   "click",
   "dask",
   "h5py <= 3.14.0",
-  "netCDF4 <= 1.7.2",
+  "netCDF4",
   "numpy >= 1.20",
   "pyyaml >= 5.3.2",
   "ray >= 1.2.0",
