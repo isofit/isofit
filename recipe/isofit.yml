@@ -19,7 +19,7 @@ dependencies:
   - scikit-learn>=0.19.1
   - scipy>=1.3.0
   - spectral>=0.19
-  - xarray!=2025.6.*
+  - xarray!=2025.4.*,!=2025.6.*
 
   - pip:
     - ray[default]

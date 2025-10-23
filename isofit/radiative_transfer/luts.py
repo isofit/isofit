@@ -88,7 +88,7 @@ class Create:
         compression : str, default="zlib"
             Compression method to use to the NetCDF. Check https://unidata.github.io/netcdf4-python/
             for available options. Currently, must use netCDF4 <= 1.7.2, numpy >= 1.20, != 2.1.*, != 2.2.*,
-            and xarray != 2025.6.*
+            and xarray != 2025.4.*, != 2025.6.*
         complevel : int, default=None
             Compression to use. Impact and levels vary per method.
         """
