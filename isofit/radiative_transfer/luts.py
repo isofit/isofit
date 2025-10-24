@@ -93,6 +93,7 @@ class Create:
         alldim: dict = {},
         zeros: List[str] = [],
         init: bool = True,
+        **kwargs,
     ):
         """
         Prepare a LUT file
@@ -117,6 +118,8 @@ class Create:
             List of zero values. Appends to the current Create.zeros list.
         init : bool, default=True
             Call the initialize function
+        *kwargs : dict
+            Captures any additional key-word arguments and ignores
         """
         # Track the ISOFIT version that created this LUT
         attrs["ISOFIT version"] = __version__
@@ -126,10 +129,11 @@ class Create:
         self.wl = wl
         self.grid = {key: np.array(vals) for key, vals in grid.items()}
         self.hold = []
-        self.dims = ["wl"] + list(grid)
+
+        self.sizes = {"wl": len(self.wl)} | {key: len(val) for key, val in grid.items()}
+        self.dims = list(self.sizes)
         self.point_dims = list(grid)
 
-        self.sizes = {key: len(val) for key, val in grid.items()}
         self.attrs = attrs
 
         self.consts = {**Keys.consts, **consts}
@@ -216,7 +220,7 @@ class Create:
         self.setAttr("ISOFIT status", "success")
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(wl={self.wl.size}, grid={self.sizes})"
+        return f"{self.__class__.__name__}(shape={self.sizes})"
 
 
 class CreateNetCDF(Create):
@@ -390,10 +394,10 @@ class CreateNetCDF(Create):
             ds.setncattr(key, value)
 
 
-class CreateZarr(Create):
+class CreateZarrXarray(Create):
     def __init__(self, *args, **kwargs):
         """
-        Prepare a Zarr LUT store
+        Prepare a Zarr LUT store using Xarray
 
         Parameters
         ----------
@@ -562,6 +566,179 @@ class CreateZarr(Create):
 
         # Optimizes metadata for xarray
         zarr.consolidate_metadata(self.file)
+
+
+class CreateZarr(Create):
+    def __init__(self, *args, **kwargs):
+        """
+        Prepare a Zarr LUT store
+
+        Parameters
+        ----------
+        file : str
+            Filepath for the LUT.
+        wl : np.ndarray
+            The wavelength array.
+        grid : dict
+            The LUT grid, formatted as {str: Iterable}.
+        attrs: dict, defaults={}
+            Dict of dataset attributes, ie. {"RT_mode": "transm"}
+        consts : dict, optional, default={}
+            Dictionary of constant values. Appends/replaces current Create.consts list.
+        onedim : dict, optional, default={}
+            Dictionary of one-dimensional data. Appends/replaces to the current Create.onedim list.
+        alldim : dict, optional, default={}
+            Dictionary of multi-dimensional data. Appends/replaces to the current Create.alldim list.
+        zeros : List[str], optional, default=[]
+            List of zero values. Appends to the current Create.zeros list.
+        """
+        self.flush_immediately = True
+
+        self.store = zarr.storage.NestedDirectoryStore(file)
+        self.z = zarr.group(store=self.store, overwrite=True)
+
+        super().__init__(*args, **kwargs)
+
+    def __getitem__(self, key: str) -> Any:
+        """
+        Retrieves a value from the Zarr store
+
+        Parameters
+        ----------
+        key : str
+            The name of the item to retrieve
+
+        Returns
+        -------
+        Any
+            The value of the item retrieved from the Zarr store
+        """
+        return self.zarr[key]
+
+    def initialize(self, ret=False) -> None | xr.Dataset:
+        """
+        Initializes the LUT Zarr by prepopulating it with filler values.
+
+        Parameters
+        ----------
+        ret : bool, default=False
+            If True, returns the dataset instead of saving
+
+        Returns
+        -------
+        None | xr.Dataset
+            The initialized dataset
+        """
+        self.z.attrs.update(self.attrs)
+
+        array = self.z.array("wl", self.wl, fill_value=None)
+        array.attrs["_ARRAY_DIMENSIONS"] = ["wl"]
+
+        for key, vals in self.grid.items():
+            array = self.z.array(key, vals, dtype="float64", fill_value=None)
+            array.attrs["_ARRAY_DIMENSIONS"] = [key]
+
+        # Constants
+        dims = ()
+        for key, vals in self.consts.items():
+            array = self.z.array(key, vals, dtype="float64")
+            array.attrs["_ARRAY_DIMENSIONS"] = dims
+
+        # One dimensional arrays
+        dims = ("wl",)
+        shape = (len(self.wl),)
+        chunks = [1]
+        for key, vals in self.onedim.items():
+            attrs = {"_ARRAY_DIMENSIONS": dims}
+            if not isinstance(vals, Iterable):
+                vals = np.full(shape, vals)
+
+            array = self.z.array(
+                key, vals, dtype="float64", chunks=chunks, fill_value=None
+            )
+            array.attrs.update(attrs)
+
+        # Multi dimensional arrays
+        dims += tuple(self.grid)
+        shape = list(self.sizes.values())
+        chunks = [1] + list(self.sizes.values())[1:]
+        for key, vals in self.alldim.items():
+            attrs = {"_ARRAY_DIMENSIONS": dims}
+            if not isinstance(vals, Iterable):
+                vals = np.full(shape, vals)
+
+            array = self.z.array(
+                key, vals, dtype="float64", chunks=chunks, fill_value=None
+            )
+            array.attrs.update(attrs)
+
+        zarr.consolidate_metadata(self.store)
+
+    def _flush(self) -> None:
+        """
+        Flushes the (point, data) pairs held in the hold list to the LUT Zarr
+
+        Parameters
+        ----------
+        finalize : bool, default=False
+            Calls the `finalize` function
+        """
+        unknowns = set()
+        for point, data in self.hold:
+            for key, vals in data.items():
+                if key in self.consts:
+                    self.z[key][...] = vals
+                elif key in self.onedim:
+                    self.z[key][:] = vals
+                elif key in self.alldim:
+                    index = (slice(None),) + tuple(self.pointIndices(point))
+                    self.z[key][index] = vals
+                else:
+                    unknowns.update([key])
+
+        return unknowns
+
+    def queuePoint(self, *args, **kwargs):
+        """
+        Overrides the inherited queuePoint to enable flushing immediately for this
+        subclass only
+        """
+        super().queuePoint(*args, **kwargs)
+        if self.flush_immediately:
+            self.flush()
+
+    def getAttr(self, key: str) -> Any:
+        """
+        Gets an attribute from the Zarr
+
+        Parameters
+        ----------
+        key : str
+            Key to get
+
+        Returns
+        -------
+        any | None
+            Retrieved attribute from Zarr, if it exists
+        """
+        return self.z.attrs.get(key)
+
+    def setAttr(self, key: str, value: Any) -> None:
+        """
+        Sets an attribute in the Zarr
+
+        Parameters
+        ----------
+        key : str
+            Key to set
+        value : any
+            Value to set
+        """
+        self.attrs[key] = value
+        self.z.attrs.update({key: value})
+
+        # Optimizes metadata for xarray
+        zarr.consolidate_metadata(self.store)
 
 
 def findSlice(dim, val):
@@ -808,7 +985,6 @@ def load(
     lock: bool = False,
     load: bool = True,
     coupling: str = "after",
-    force: str = "zarr",
     **kwargs,
 ) -> xr.Dataset:
     """
@@ -1001,19 +1177,19 @@ def load(
     if coupling not in ("before", "before-save", "after", "after-save"):
         raise AttributeError("Coupling must be set to either 'before' or 'after'")
 
-    if file.endswith(".zarr") or force == "zarr":
+    try:
         if dask:
-            Logger.debug(f"Using Dask to load: {file}")
+            Logger.debug(f"[Zarr] Using Dask to load: {file}")
             ds = xr.open_zarr(file)
         else:
-            Logger.debug(f"Using Xarray to load: {file}")
+            Logger.debug(f"[Zarr] Using Xarray to load: {file}")
             ds = xr.open_dataset(file, engine="zarr")
-    else:
+    except:
         if dask:
-            Logger.debug(f"Using Dask to load: {file}")
+            Logger.debug(f"[NetCDF] Using Dask to load: {file}")
             ds = xr.open_mfdataset([file], mode=mode, lock=lock, **kwargs)
         else:
-            Logger.debug(f"Using Xarray to load: {file}")
+            Logger.debug(f"[NetCDF] Using Xarray to load: {file}")
             ds = xr.open_dataset(file, mode=mode, lock=lock, **kwargs)
 
     status = ds.attrs.get("ISOFIT status", "<not set>")
