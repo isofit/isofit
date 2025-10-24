@@ -120,12 +120,13 @@ def heuristic_atmosphere(
             )
             r = fm.surface.fit_params(r, geom)[fm.idx_surf_rfl]
 
-            # Following Kokaly and Clark, 1999
+            # Simple linear interpolation
             vals = np.interp(wl[blo:bhi], [wl_lo, wl_hi], [r[blo], r[bhi]])
-            D = 1 - (r[blo:bhi] / vals)
-            Dn = 1 - (r[bcenter] / vals[bcenter - blo])
 
-            areas.append(np.sum(D * Dn))
+            # Minimize the absolute distance between the continuum removed
+            D = np.abs(vals - r[blo:bhi])
+
+            areas.append(np.sum(D))
             h2os.append(h2o)
 
         # Finally, interpolate to determine the actual water vapor level that
