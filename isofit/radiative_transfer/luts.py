@@ -1179,20 +1179,23 @@ def load(
     if coupling not in ("before", "before-save", "after", "after-save"):
         raise AttributeError("Coupling must be set to either 'before' or 'after'")
 
+    kwargs.setdefault("mode", mode)
     try:
         if dask:
             Logger.debug(f"[Zarr] Using Dask to load: {file}")
-            ds = xr.open_zarr(file, mode=mode, **kwargs)
+            ds = xr.open_zarr(file, **kwargs)
         else:
             Logger.debug(f"[Zarr] Using Xarray to load: {file}")
-            ds = xr.open_dataset(file, mode=mode, engine="zarr", **kwargs)
+            ds = xr.open_dataset(file, engine="zarr", **kwargs)
     except:
+        kwargs.setdefault("engine", "netcdf4")
+        kwargs.setdefault("lock", lock)
         if dask:
             Logger.debug(f"[NetCDF] Using Dask to load: {file}")
-            ds = xr.open_mfdataset([file], mode=mode, lock=lock, **kwargs)
+            ds = xr.open_mfdataset([file], **kwargs)
         else:
             Logger.debug(f"[NetCDF] Using Xarray to load: {file}")
-            ds = xr.open_dataset(file, mode=mode, lock=lock, **kwargs)
+            ds = xr.open_dataset(file, **kwargs)
 
     status = ds.attrs.get("ISOFIT status", "<not set>")
     if status != "success":
