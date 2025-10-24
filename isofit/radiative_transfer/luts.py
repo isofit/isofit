@@ -569,7 +569,7 @@ class CreateZarrXarray(Create):
 
 
 class CreateZarr(Create):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, file, *args, store="NestedDirectoryStore", **kwargs):
         """
         Prepare a Zarr LUT store
 
@@ -591,13 +591,15 @@ class CreateZarr(Create):
             Dictionary of multi-dimensional data. Appends/replaces to the current Create.alldim list.
         zeros : List[str], optional, default=[]
             List of zero values. Appends to the current Create.zeros list.
+        store : str, default="NestedDirectoryStore"
+            Zarr backend storage to use. See: https://zarr.readthedocs.io/en/v2.15.0/api/storage.html
         """
         self.flush_immediately = True
 
-        self.store = zarr.storage.NestedDirectoryStore(file)
+        self.store = getarr(zarr.storage, store)(file)
         self.z = zarr.group(store=self.store, overwrite=True)
 
-        super().__init__(*args, **kwargs)
+        super().__init__(file, *args, **kwargs)
 
     def __getitem__(self, key: str) -> Any:
         """
