@@ -596,7 +596,7 @@ class CreateZarr(Create):
         """
         self.flush_immediately = True
 
-        self.store = getarr(zarr.storage, store)(file)
+        self.store = getattr(zarr.storage, store)(file)
         self.z = zarr.group(store=self.store, overwrite=True)
 
         super().__init__(file, *args, **kwargs)
