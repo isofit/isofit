@@ -569,7 +569,7 @@ class CreateZarrXarray(Create):
 
 
 class CreateZarr(Create):
-    def __init__(self, file, *args, store="NestedDirectoryStore", **kwargs):
+    def __init__(self, file, *args, store="DirectoryStore", **kwargs):
         """
         Prepare a Zarr LUT store
 
