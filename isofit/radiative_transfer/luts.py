@@ -1182,10 +1182,10 @@ def load(
     try:
         if dask:
             Logger.debug(f"[Zarr] Using Dask to load: {file}")
-            ds = xr.open_zarr(file)
+            ds = xr.open_zarr(file, mode=mode, **kwargs)
         else:
             Logger.debug(f"[Zarr] Using Xarray to load: {file}")
-            ds = xr.open_dataset(file, engine="zarr")
+            ds = xr.open_dataset(file, mode=mode, engine="zarr", **kwargs)
     except:
         if dask:
             Logger.debug(f"[NetCDF] Using Dask to load: {file}")
