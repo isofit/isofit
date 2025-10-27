@@ -101,7 +101,7 @@ def heuristic_atmosphere(
         # calculating the band ratio that we would see if this were the
         # atmospheric H2O content.  It assumes that defaults for all other
         # atmospheric parameters (such as aerosol, if it is there).
-        for h2o in np.unique(my_RT.lut_grid[h2oname]):
+        for h2o in my_RT.lut_grid[h2oname]:
             # Get Atmospheric terms at high spectral resolution
             x_RT_2 = x_RT.copy()
             x_RT_2[ind_sv] = h2o
@@ -124,9 +124,9 @@ def heuristic_atmosphere(
             vals = np.interp(wl[blo:bhi], [wl_lo, wl_hi], [r[blo], r[bhi]])
 
             # Minimize the absolute distance between the continuum removed
-            D = np.abs(vals - r[blo:bhi])
+            D = np.sum(np.abs(vals - r[blo:bhi]))
 
-            areas.append(np.sum(D))
+            areas.append(D)
             h2os.append(h2o)
 
         # Finally, interpolate to determine the actual water vapor level that
