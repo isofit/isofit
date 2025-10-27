@@ -1,5 +1,6 @@
 import atexit
 import json
+import logging
 import os
 import threading
 import time
@@ -405,8 +406,19 @@ class FileResources(ResourceTracker):
         """
         data = json.dumps(info) + "\n"
 
-        self.io.write(data)
-        self.io.flush()
+        try:
+            self.io.write(data)
+            self.io.flush()
+        except ValueError:
+            # Raised when the file is closed, likely caused by the main process hitting an exception
+            # In those cases, just quietly stop the thread
+            self.stop()
+        except:
+            # Other reasons should report
+            logging.exception(
+                "Encountered unknown exception when attempting to write resources"
+            )
+            self.stop()
 
 
 def stream(file: str, sleep: float = 0.2) -> dict:

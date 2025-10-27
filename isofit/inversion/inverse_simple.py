@@ -22,7 +22,6 @@ import os
 from typing import OrderedDict
 
 import numpy as np
-import pandas as pd
 from scipy.interpolate import interp1d
 from scipy.optimize import least_squares, minimize
 from scipy.optimize import minimize_scalar as min1d
@@ -31,7 +30,6 @@ from isofit.core import units
 from isofit.core.common import (
     emissive_radiance,
     eps,
-    get_refractive_index,
     svd_inv_sqrt,
 )
 from isofit.data import env
@@ -561,13 +559,11 @@ def invert_liquid_water(
         lw_bounds[0][1] = ewt_detection_limit
 
     # load imaginary part of liquid water refractive index and calculate wavelength dependent absorption coefficient
+    # options are: 'k_22c', 'k_minus8c', 'k_minus25c', 'k_minus7c', 'k_25c_H', 'k_20c', 'k_25c_S
     path_k = env.path("data", "iop", "k_liquid_water_ice.csv")
-
-    k_wi = pd.read_csv(path_k)
-    wl_water, k_water = get_refractive_index(
-        k_wi=k_wi, a=0, b=982, col_wvl="wvl_6", col_k="T = 20°C"
-    )
-    kw = np.interp(x=wl_sel, xp=wl_water, fp=k_water)
+    k_wi = np.genfromtxt(path_k, delimiter=",", names=True, encoding="utf-8-sig")
+    k_wi_idx = ~np.isnan(k_wi["wl_20c"]) & ~np.isnan(k_wi["k_20c"])
+    kw = np.interp(x=wl_sel, xp=k_wi["wl_20c"][k_wi_idx], fp=k_wi["k_20c"][k_wi_idx])
     abs_co_w = 4 * np.pi * kw / wl_sel
 
     rfl_meas_sel = rfl_meas[lw_feature_left : lw_feature_right + 1]
