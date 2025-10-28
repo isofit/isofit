@@ -44,6 +44,8 @@ from isofit.core.multistate import (
     index_spectra_by_surface,
     update_config_for_surface,
 )
+from isofit.core.common import svd_inv_sqrt
+from isofit.core.geometry import Geometry
 from isofit.data import env
 from isofit.inversion import Inversion
 
@@ -133,6 +135,10 @@ class Isofit:
         rdn = SpectrumFile(self.config.input.measured_radiance_file, write=False)
         self.rows = range(rdn.n_rows)
         self.cols = range(rdn.n_cols)
+
+        # Get a represtative "average" / bright? pixel for the Sa , Seps matrix inversion. 
+        # TODO! this is just taking the mean of the entire image right now, and passing to each of workers
+        self.avg_meas = np.nanmean(rdn.file.load(), axis=(0, 1))
 
         # Initialize files in __init__, otherwise workers fail
         IO.initialize_output_files(
@@ -230,6 +236,7 @@ class Isofit:
                     self.full_statevector,
                     len(class_idx_pairs),
                     n_workers,
+                    self.avg_meas,
                 ]
             ]
 
@@ -288,6 +295,7 @@ class Worker(object):
         full_statevector: np.array = [],
         total_samples: int = 1,
         total_workers: int = 1,
+        avg_meas: np.array = [],
         worker_id: int = None,
     ):
         """
@@ -324,7 +332,37 @@ class Worker(object):
         self.worker_id = worker_id
         self.completed_spectra = 0
 
+        self.avg_meas = avg_meas
+
     def run_set_of_spectra(self, indices: np.array):
+
+        # TODO: here, calc inversions for Sa and Seps exactly one time for each worker.
+        # this short loop first just trys to grab a real geom that can be suitable first guess for inversion.
+        # NOTE: this is paired with the avg_meas computed above.
+        for index in range(0, indices.shape[0]):
+            row, col = indices[index, 0], indices[index, 1]
+            matrix_inv_data = self.io.get_components_at_index(row, col)
+            if matrix_inv_data.geom.solar_zenith>=0.0 and matrix_inv_data.geom.solar_zenith<=90.0:
+                break
+
+        x0 = self.fm.init.copy()
+        
+        Sa = self.fm.Sa(x0, matrix_inv_data.geom)
+        self.fm.q_Sa = np.sqrt(np.mean(np.diag(Sa)))  
+        Sa_norm = Sa / self.fm.q_Sa**2   
+        self.fm.Sa_inv_norm, self.fm.Sa_inv_sqrt_norm = svd_inv_sqrt(Sa_norm)   
+
+        Seps = self.fm.Seps(x0, self.avg_meas, matrix_inv_data.geom)
+        self.fm.q_Seps = np.sqrt(np.mean(np.diag(Seps))) 
+        Seps_norm = Seps / self.fm.q_Seps**2 
+        self.fm.Seps_inv_norm, self.fm.Seps_inv_sqrt_norm = svd_inv_sqrt(Seps_norm)
+
+        # TODO: ^^^^^^^^^^^^^^^^^^^^^
+        # when we use transform in the optimization, is the linear transformation guaranteed? or are there condiitons that 
+        # could cause to fail?
+        ############
+
+
         for index in range(0, indices.shape[0]):
             logging.debug("Read chunk of spectra")
             row, col = indices[index, 0], indices[index, 1]

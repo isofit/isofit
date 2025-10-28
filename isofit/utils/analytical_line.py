@@ -32,7 +32,7 @@ from spectral.io import envi
 
 from isofit import ray
 from isofit.configs import configs
-from isofit.core.common import envi_header, load_spectrum, load_wavelen
+from isofit.core.common import envi_header, load_spectrum, load_wavelen, svd_inv_sqrt
 from isofit.core.fileio import IO, initialize_output, write_bil_chunk
 from isofit.core.forward import ForwardModel
 from isofit.core.geometry import Geometry
@@ -450,7 +450,7 @@ class Worker(object):
 
         self.completed_spectra = 0
         self.hash_table = OrderedDict()
-        self.hash_size = 500
+        self.hash_size = 5
 
         # Can't see any reason to leave these as optional
         self.subs_state_file = subs_state_file
@@ -471,6 +471,29 @@ class Worker(object):
             self.radiance_correction = None
 
         self.initializer = initializer
+
+        # TODO: here, calc inversions for Sa and Seps exactly one time for each worker.
+        # assume first row for now
+        r= 0
+        c=0
+        self.avg_meas = np.nanmean(self.rdn, axis=(0, 1))
+        geom = Geometry(obs=self.obs[r, c, :],loc=self.loc[r, c, :],
+                        esd=self.esd, 
+                        svf=self.svf[r, c] if len(self.svf) else 1,
+        )
+
+        x0 = self.fm.init.copy()
+        
+        Sa = self.fm.Sa(x0, geom)
+        self.fm.q_Sa = np.sqrt(np.mean(np.diag(Sa)))  
+        Sa_norm = Sa / self.fm.q_Sa**2   
+        self.fm.Sa_inv_norm, self.fm.Sa_inv_sqrt_norm = svd_inv_sqrt(Sa_norm)   
+
+        Seps = self.fm.Seps(x0, self.avg_meas, geom)
+        self.fm.q_Seps = np.sqrt(np.mean(np.diag(Seps))) 
+        Seps_norm = Seps / self.fm.q_Seps**2 
+        self.fm.Seps_inv_norm, self.fm.Seps_inv_sqrt_norm = svd_inv_sqrt(Seps_norm)
+
 
     def run_chunks(self, line_breaks: tuple, fill_value: float = -9999.0) -> None:
         """

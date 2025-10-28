@@ -331,10 +331,12 @@ def invert_analytical(
 
         # Prior covariance
         try:
+            # Use cached scaling factor from inital normalized inverse
             Sa = fm.Sa(x, geom)
             Sa_surface = Sa[fm.idx_surface, :][:, fm.idx_surface]
-            Sa_inv = svd_inv_sqrt(Sa_surface, hash_table, hash_size)[0]
-
+            q_Sa = np.sqrt(np.mean(np.diag(Sa_surface))) 
+            Sa_inv = fm.Sa_inv_norm[fm.idx_surface, :][:, fm.idx_surface] / q_Sa**2
+        # TODO: remove / change these linalg errors that likely no longer triggered
         except (np.linalg.LinAlgError, ValueError) as e:
             C_rcond = []
             trajectory[n + 1, :] = [fill_value] * len(x)
