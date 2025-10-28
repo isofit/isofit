@@ -10,13 +10,13 @@ import logging
 import os
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, List, Union
 
 import dask.array
 import numpy as np
 import xarray as xr
 import zarr
 from netCDF4 import Dataset
+from packaging.version import Version
 
 from isofit import __version__
 
@@ -569,7 +569,7 @@ class CreateZarrXarray(Create):
 
 
 class CreateZarr(Create):
-    def __init__(self, file, *args, store="DirectoryStore", **kwargs):
+    def __init__(self, file, *args, store="NestedDirectoryStore", **kwargs):
         """
         Prepare a Zarr LUT store
 
@@ -595,6 +595,20 @@ class CreateZarr(Create):
             Zarr backend storage to use. See: https://zarr.readthedocs.io/en/v2.15.0/api/storage.html
         """
         self.flush_immediately = True
+
+        # Version 3 has less stores than v2
+        if Version(zarr.__version__) >= Version("3"):
+            if "DirectoryStore" in store:
+                Logger.warning(
+                    f"Zarr v3 does not have {store}, using functionally-similar LocalStore instead"
+                )
+                store = "LocalStore"
+
+        if not hasattr(zarr.storage, store):
+            available = ", ".join([s for s in dir(zarr.storage) if s.endswith("Store")])
+            message = f"Zarr v{zarr.__version__} does not have storage {store}, please choose from one of: {available}"
+            Logger.error(message)
+            raise AttributeError(message)
 
         self.store = getattr(zarr.storage, store)(file)
         self.z = zarr.group(store=self.store, overwrite=True)
