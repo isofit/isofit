@@ -1193,7 +1193,6 @@ def load(
     if coupling not in ("before", "before-save", "after", "after-save"):
         raise AttributeError("Coupling must be set to either 'before' or 'after'")
 
-    kwargs.setdefault("mode", mode)
     try:
         if dask:
             Logger.debug(f"[Zarr] Using Dask to load: {file}")
@@ -1204,6 +1203,7 @@ def load(
     except:
         kwargs.setdefault("engine", "netcdf4")
         kwargs.setdefault("lock", lock)
+        kwargs.setdefault("mode", mode)
         if dask:
             Logger.debug(f"[NetCDF] Using Dask to load: {file}")
             ds = xr.open_mfdataset([file], **kwargs)
