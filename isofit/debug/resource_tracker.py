@@ -275,9 +275,9 @@ class ResourceTracker:
 
             # Main process
             mem = proc.memory_full_info()
-            info["mem_total"] = (mem.rss / self.unitValue,)
-            info["mem_actual"] = (mem.uss / self.unitValue,)
-            info["mem_shared"] = ((mem.rss - mem.uss) / self.unitValue,)
+            info["mem_total"] = mem.rss / self.unitValue
+            info["mem_actual"] = mem.uss / self.unitValue
+            info["mem_shared"] = (mem.rss - mem.uss) / self.unitValue
             info["cpu"] = proc.cpu_percent()
             info["status"] = proc.status()
             info["timestamp"] = time.time()
@@ -338,15 +338,12 @@ class ResourceTracker:
                 )
 
             if self.round:
-                for key, value in info.items():
-                    if "mem" in key or "cpu" in key:
-                        if not isinstance(value, float):
-                            continue
-                        info[key] = round(value, self.round)
-
-                for child in children:
-                    child["mem"] = round(child["mem"], self.round)
-                    child["cpu"] = round(child["cpu"], self.round)
+                for data in [info] + children:
+                    for key, value in data.items():
+                        if "mem" in key or "cpu" in key:
+                            if not isinstance(value, float):
+                                continue
+                            data[key] = round(value, self.round)
 
             self.callback(info)
 
