@@ -450,7 +450,7 @@ class Worker(object):
 
         self.completed_spectra = 0
         self.hash_table = OrderedDict()
-        self.hash_size = 500
+        self.hash_size = config.implementation.max_hash_table_size
 
         # Can't see any reason to leave these as optional
         self.subs_state_file = subs_state_file
