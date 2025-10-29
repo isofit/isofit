@@ -180,7 +180,6 @@ def analytical_line(
         "file type": "ENVI Standard",
         "byte order": 0,
         "no data value": -9999,
-        "map info": "{" + ", ".join(map(str, rdn_meta["map info"])) + "}",
         "wavelength units": "Nanometers",
         "wavelength": wl_init,
         "fwhm": fwhm_init,
@@ -188,6 +187,11 @@ def analytical_line(
         "samples": rdn_meta["samples"],
         "interleave": "bil",
     }
+    if "map info" in rdn_meta:
+        output_metadata["map info"] = (
+            "{" + ", ".join(map(str, rdn_meta["map info"])) + "}"
+        )
+
     output_metadata["band names"] = [
         full_statevector[i] for i in range(len(full_idx_surf_rfl))
     ]
