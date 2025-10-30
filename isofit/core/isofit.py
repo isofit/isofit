@@ -136,9 +136,21 @@ class Isofit:
         self.rows = range(rdn.n_rows)
         self.cols = range(rdn.n_cols)
 
-        # Get a represtative "average" / bright? pixel for the Sa , Seps matrix inversion. 
-        # TODO! this is just taking the mean of the entire image right now, and passing to each of workers
-        self.avg_meas = np.nanmean(rdn.file.load(), axis=(0, 1))
+        # Get a represtative average pixel for the Sa , Seps matrix inversion.
+        # This is computed once, saved to fm, and shared with all workers.
+        if rdn.format == "ASCII":
+            self.avg_meas = rdn.data
+            matrix_inv_row = 1
+            matrix_inv_col = 1
+        elif rdn.format == "ENVI":
+            self.avg_meas = np.nanmean(rdn.file.load(), axis=(0, 1))
+            matrix_inv_row = rdn.n_rows // 2
+            matrix_inv_col = rdn.n_cols // 2
+        else:
+            # this is netcdf, etc case, so just try to take mean of rdn.data?
+            self.avg_meas = np.nanmean(rdn.data, axis=(0, 1))
+            matrix_inv_row = rdn.n_rows // 2
+            matrix_inv_col = rdn.n_cols // 2
 
         # Initialize files in __init__, otherwise workers fail
         IO.initialize_output_files(
@@ -225,6 +237,30 @@ class Isofit:
 
             logging.debug(f"Surface: {surface_class_str}")
 
+            # Create a geom object that represents near center of LUT.
+            io_tmp = IO(config, fm, full_statevec=self.full_statevector)
+            matrix_inv_geom = io_tmp.get_components_at_index(
+                matrix_inv_row, matrix_inv_col
+            ).geom
+            del io_tmp
+
+            # Stash the Sa and Seps inversion matrix into fm here
+            x0 = fm.init.copy()
+
+            Sa = fm.Sa(x0, matrix_inv_geom)
+            fm.q_Sa = np.sqrt(np.mean(np.diag(Sa)))
+            Sa_normalized = Sa / fm.q_Sa**2
+            fm.Sa_inv_normalized, fm.Sa_inv_sqrt_normalized = svd_inv_sqrt(
+                Sa_normalized
+            )
+
+            Seps = fm.Seps(x0, self.avg_meas, matrix_inv_geom)
+            fm.q_Seps = np.sqrt(np.mean(np.diag(Seps)))
+            Seps_normalized = Seps / fm.q_Seps**2
+            fm.Seps_inv_normalized, fm.Seps_inv_sqrt_normalized = svd_inv_sqrt(
+                Seps_normalized
+            )
+
             # Put worker args into Ray object
             params = [
                 ray.put(obj)
@@ -236,7 +272,6 @@ class Isofit:
                     self.full_statevector,
                     len(class_idx_pairs),
                     n_workers,
-                    self.avg_meas,
                 ]
             ]
 
@@ -295,7 +330,6 @@ class Worker(object):
         full_statevector: np.array = [],
         total_samples: int = 1,
         total_workers: int = 1,
-        avg_meas: np.array = [],
         worker_id: int = None,
     ):
         """
@@ -332,36 +366,7 @@ class Worker(object):
         self.worker_id = worker_id
         self.completed_spectra = 0
 
-        self.avg_meas = avg_meas
-
     def run_set_of_spectra(self, indices: np.array):
-
-        # TODO: here, calc inversions for Sa and Seps exactly one time for each worker.
-        # this short loop first just trys to grab a real geom that can be suitable first guess for inversion.
-        # NOTE: this is paired with the avg_meas computed above.
-        for index in range(0, indices.shape[0]):
-            row, col = indices[index, 0], indices[index, 1]
-            matrix_inv_data = self.io.get_components_at_index(row, col)
-            if matrix_inv_data.geom.solar_zenith>=0.0 and matrix_inv_data.geom.solar_zenith<=90.0:
-                break
-
-        x0 = self.fm.init.copy()
-        
-        Sa = self.fm.Sa(x0, matrix_inv_data.geom)
-        self.fm.q_Sa = np.sqrt(np.mean(np.diag(Sa)))  
-        Sa_norm = Sa / self.fm.q_Sa**2   
-        self.fm.Sa_inv_norm, self.fm.Sa_inv_sqrt_norm = svd_inv_sqrt(Sa_norm)   
-
-        Seps = self.fm.Seps(x0, self.avg_meas, matrix_inv_data.geom)
-        self.fm.q_Seps = np.sqrt(np.mean(np.diag(Seps))) 
-        Seps_norm = Seps / self.fm.q_Seps**2 
-        self.fm.Seps_inv_norm, self.fm.Seps_inv_sqrt_norm = svd_inv_sqrt(Seps_norm)
-
-        # TODO: ^^^^^^^^^^^^^^^^^^^^^
-        # when we use transform in the optimization, is the linear transformation guaranteed? or are there condiitons that 
-        # could cause to fail?
-        ############
-
 
         for index in range(0, indices.shape[0]):
             logging.debug("Read chunk of spectra")

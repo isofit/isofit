@@ -138,9 +138,9 @@ class Inversion:
         Sa = self.fm.Sa(x, geom)
 
         # Use cached scaling factor from inital normalized inverse
-        q = np.sqrt(np.mean(np.diag(Sa))) 
-        Sa_inv_sqrt = self.fm.Sa_inv_sqrt_norm / q
-        Sa_inv = self.fm.Sa_inv_norm / q**2
+        q = np.sqrt(np.mean(np.diag(Sa)))
+        Sa_inv_sqrt = self.fm.Sa_inv_sqrt_normalized / q
+        Sa_inv = self.fm.Sa_inv_normalized / q**2
 
         return xa, Sa, Sa_inv, Sa_inv_sqrt
 
@@ -153,9 +153,9 @@ class Inversion:
         Sa = self.fm.Sa(x, geom)
 
         # Use cached scaling factor from inital normalized inverse
-        q = np.sqrt(np.mean(np.diag(Sa))) 
-        Sa_inv_sqrt = self.fm.Sa_inv_sqrt_norm / q
-        Sa_inv = self.fm.Sa_inv_norm / q**2
+        q = np.sqrt(np.mean(np.diag(Sa)))
+        Sa_inv_sqrt = self.fm.Sa_inv_sqrt_normalized / q
+        Sa_inv = self.fm.Sa_inv_normalized / q**2
 
         return xa, Sa, Sa_inv, Sa_inv_sqrt
 
@@ -169,11 +169,11 @@ class Inversion:
         Seps = self.fm.Seps(x, meas, geom)
 
         # Use cached scaling factor from inital normalized inverse
-        q_Sa = np.sqrt(np.mean(np.diag(Sa))) 
-        Sa_inv = self.fm.Sa_inv_norm / q_Sa**2
+        q_Sa = np.sqrt(np.mean(np.diag(Sa)))
+        Sa_inv = self.fm.Sa_inv_normalized / q_Sa**2
 
-        q_Seps = np.sqrt(np.mean(np.diag(Seps))) 
-        Seps_inv = self.fm.Seps_inv_norm / q_Seps**2
+        q_Seps = np.sqrt(np.mean(np.diag(Seps)))
+        Seps_inv = self.fm.Seps_inv_normalized / q_Seps**2
 
         # Gain matrix G reflects current state, so we use the state-dependent
         # Jacobian matrix K
@@ -206,8 +206,10 @@ class Inversion:
 
         # Use cached scaling factor from inital normalized inverse
         q = np.sqrt(np.mean(np.diag(Seps_win)))
-        Seps_inv_sqrt = self.fm.Seps_inv_sqrt_norm[np.ix_(self.winidx, self.winidx)] / q
-        Seps_inv = self.fm.Seps_inv_norm[np.ix_(self.winidx, self.winidx)] / q**2
+        Seps_inv_sqrt = (
+            self.fm.Seps_inv_sqrt_normalized[np.ix_(self.winidx, self.winidx)] / q
+        )
+        Seps_inv = self.fm.Seps_inv_normalized[np.ix_(self.winidx, self.winidx)] / q**2
 
         return Seps_inv, Seps_inv_sqrt
 

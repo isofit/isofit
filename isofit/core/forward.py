@@ -154,6 +154,15 @@ class ForwardModel:
         else:
             self.model_discrepancy = None
 
+        # TODO: set up defaults for Sa and Seps inversions
+        self.q_Sa = None
+        self.Sa_inv_normalized = None
+        self.Sa_inv_sqrt_normalized = None
+
+        self.q_Seps = None
+        self.Seps_inv_normalized = None
+        self.Seps_inv_sqrt_normalized = None
+
     def out_of_bounds(self, x):
         """Check if state vector is within bounds."""
 
