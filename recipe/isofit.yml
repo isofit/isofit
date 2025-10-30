@@ -20,7 +20,7 @@ dependencies:
   - scipy>=1.3.0
   - spectral>=0.19
   - xarray
-  - zarr>=3.0
+  - zarr>=2,<3
 
   - pip:
     - ray[default]
