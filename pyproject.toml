@@ -43,7 +43,7 @@ dependencies = [
   "spectral >= 0.19",
   "xarray",
   "xxhash >= 1.2.0",
-  "zarr",
+  "zarr>= 3.0",
 ]
 
 [project.optional-dependencies]

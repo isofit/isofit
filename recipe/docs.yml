@@ -23,7 +23,7 @@ dependencies:
   - myst-parser
   - sphinx-autoapi
   - sphinx_rtd_theme
-  - zarr
+  - zarr>=3.0
 
   - pip:
     - ray[default]
