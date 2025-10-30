@@ -44,8 +44,6 @@ from isofit.core.multistate import (
     index_spectra_by_surface,
     update_config_for_surface,
 )
-from isofit.core.common import svd_inv_sqrt
-from isofit.core.geometry import Geometry
 from isofit.data import env
 from isofit.inversion import Inversion
 
@@ -245,21 +243,8 @@ class Isofit:
             del io_tmp
 
             # Stash the Sa and Seps inversion matrix into fm here
-            x0 = fm.init.copy()
-
-            Sa = fm.Sa(x0, matrix_inv_geom)
-            fm.q_Sa = np.sqrt(np.mean(np.diag(Sa)))
-            Sa_normalized = Sa / fm.q_Sa**2
-            fm.Sa_inv_normalized, fm.Sa_inv_sqrt_normalized = svd_inv_sqrt(
-                Sa_normalized
-            )
-
-            Seps = fm.Seps(x0, self.avg_meas, matrix_inv_geom)
-            fm.q_Seps = np.sqrt(np.mean(np.diag(Seps)))
-            Seps_normalized = Seps / fm.q_Seps**2
-            fm.Seps_inv_normalized, fm.Seps_inv_sqrt_normalized = svd_inv_sqrt(
-                Seps_normalized
-            )
+            fm.matrix_inversions(avg_meas = self.avg_meas, geom=matrix_inv_geom)
+            fm.check_matrix_inversions()
 
             # Put worker args into Ray object
             params = [

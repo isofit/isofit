@@ -27,7 +27,7 @@ from scipy.interpolate import interp1d
 from scipy.io import loadmat
 from scipy.linalg import block_diag
 
-from isofit.core.common import eps
+from isofit.core.common import eps, svd_inv_sqrt
 from isofit.core.instrument import Instrument
 from isofit.radiative_transfer.radiative_transfer import RadiativeTransfer
 from isofit.surface import Surface
@@ -154,7 +154,7 @@ class ForwardModel:
         else:
             self.model_discrepancy = None
 
-        # TODO: set up defaults for Sa and Seps inversions
+        # Sa and Seps inversions
         self.q_Sa = None
         self.Sa_inv_normalized = None
         self.Sa_inv_sqrt_normalized = None
@@ -162,6 +162,32 @@ class ForwardModel:
         self.q_Seps = None
         self.Seps_inv_normalized = None
         self.Seps_inv_sqrt_normalized = None
+
+    def matrix_inversions(self, avg_meas, geom):
+        """Eigen Decomposition of Sa and Seps to be re-used in OE."""
+
+        Sa = self.Sa(self.init, geom)
+        self.q_Sa = np.sqrt(np.mean(np.diag(Sa)))
+        Sa_normalized = Sa / self.q_Sa**2
+        self.Sa_inv_normalized, self.Sa_inv_sqrt_normalized = svd_inv_sqrt(
+            Sa_normalized
+        )
+
+        Seps = self.Seps(self.init, avg_meas, geom)
+        self.q_Seps = np.sqrt(np.mean(np.diag(Seps)))
+        Seps_normalized = Seps / self.q_Seps**2
+        self.Seps_inv_normalized, self.Seps_inv_sqrt_normalized = svd_inv_sqrt(
+            Seps_normalized
+        )
+        return
+
+    def check_matrix_inversions(self):
+        """Check if Sa and Seps inversions have been computed."""
+        if self.Seps_inv_normalized is None:
+            raise RuntimeError(
+                "Need to run matrix inversions first. Call `matrix_inversions(avg_meas, geom)`."
+            )
+        return
 
     def out_of_bounds(self, x):
         """Check if state vector is within bounds."""

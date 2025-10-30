@@ -32,7 +32,7 @@ from spectral.io import envi
 
 from isofit import ray
 from isofit.configs import configs
-from isofit.core.common import envi_header, load_spectrum, load_wavelen, svd_inv_sqrt
+from isofit.core.common import envi_header, load_spectrum, load_wavelen
 from isofit.core.fileio import IO, initialize_output, write_bil_chunk
 from isofit.core.forward import ForwardModel
 from isofit.core.geometry import Geometry
@@ -472,33 +472,19 @@ class Worker(object):
 
         self.initializer = initializer
 
-        # TODO: here, calc inversions for Sa and Seps exactly one time for each worker.
+        # Calc inversions for Sa and Seps exactly one time for each worker.
         # for geometry basis, its grabbing the middle row and column and assuming this is real value.
         r = self.n_lines // 2
         c = self.n_samples // 2
         self.avg_meas = np.nanmean(self.rdn, axis=(0, 1))
-        geom = Geometry(
+        matrix_inv_geom = Geometry(
             obs=self.obs[r, c, :],
             loc=self.loc[r, c, :],
             esd=self.esd,
             svf=self.svf[r, c] if len(self.svf) else 1,
         )
-
-        x0 = self.fm.init.copy()
-
-        Sa = self.fm.Sa(x0, geom)
-        self.fm.q_Sa = np.sqrt(np.mean(np.diag(Sa)))
-        Sa_normalized = Sa / self.fm.q_Sa**2
-        self.fm.Sa_inv_normalized, self.fm.Sa_inv_sqrt_normalized = svd_inv_sqrt(
-            Sa_normalized
-        )
-
-        Seps = self.fm.Seps(x0, self.avg_meas, geom)
-        self.fm.q_Seps = np.sqrt(np.mean(np.diag(Seps)))
-        Seps_normalized = Seps / self.fm.q_Seps**2
-        self.fm.Seps_inv_normalized, self.fm.Seps_inv_sqrt_normalized = svd_inv_sqrt(
-            Seps_normalized
-        )
+        self.fm.matrix_inversions(avg_meas=self.avg_meas, geom=matrix_inv_geom)
+        self.fm.check_matrix_inversions()
 
     def run_chunks(self, line_breaks: tuple, fill_value: float = -9999.0) -> None:
         """
