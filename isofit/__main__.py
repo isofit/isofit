@@ -173,11 +173,13 @@ class CLI(click.Group):
                         logging.exception(
                             "Isoplots does not appear to be installed, install it via `isofit download plots`"
                         )
+                    else:
+                        logging.exception(
+                            f"Failed to import {cmd_name} from {command}:"
+                        )
             except:
                 if self.debug:
-                    logging.exception(
-                        f"Failed to import {cmd_name} from {command.path}:"
-                    )
+                    logging.exception(f"Failed to import {cmd_name} from {command}:")
 
         return super().get_command(ctx, cmd_name)
 
