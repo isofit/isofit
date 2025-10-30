@@ -45,9 +45,6 @@ class GlintModelSurface(MultiComponentSurface):
         # Numbers from Marcel Koenig; used for prior mean
         self.init.extend([1 / np.pi, 0.02])
 
-        # Special glint bounds
-        rmin, rmax = -0.05, 2.0
-        self.bounds = [[rmin, rmax] for w in self.wl]
         # Gege (2021), WASI user manual
         self.bounds.extend([[0, 10], [0, 10]])
 
