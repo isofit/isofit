@@ -830,6 +830,7 @@ def apply_oe(
                 isofit_config=paths.isofit_full_config_path,
                 nneighbors=nneighbors[0],
                 n_cores=n_cores,
+                segmentation_size=segmentation_size,
             )
         elif analytical_line:
             logging.info("Analytical line inference")
@@ -846,6 +847,7 @@ def apply_oe(
                 n_atm_neighbors=nneighbors,
                 n_cores=n_cores,
                 smoothing_sigma=atm_sigma,
+                segmentation_size=segmentation_size,
             )
 
     logging.info("Done.")

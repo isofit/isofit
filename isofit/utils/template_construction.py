@@ -30,6 +30,7 @@ from isofit.core.multistate import SurfaceMapping
 from isofit.data import env
 from isofit.radiative_transfer.engines.modtran import ModtranRT
 from isofit.utils.surface_model import surface_model
+from isofit import __version__
 
 
 class Pathnames:
@@ -766,6 +767,7 @@ def build_presolve_config(
             "inversion": {"windows": inversion_windows},
             "n_cores": n_cores,
             "debug_mode": debug,
+            "isofit_version": __version__,
         },
     }
 
@@ -1088,6 +1090,7 @@ def build_main_config(
             "inversion": {"windows": inversion_windows},
             "n_cores": n_cores,
             "debug_mode": debug,
+            "isofit_version": __version__,
         },
     }
 
