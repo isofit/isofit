@@ -2,6 +2,7 @@
 #
 # Authors: Philip G. Brodrick and Niklas Bohn
 #
+from __future__ import annotations
 
 import json
 import logging
@@ -25,9 +26,11 @@ from isofit.core.common import (
     json_load_ascii,
     resample_spectrum,
 )
+from isofit.core.multistate import SurfaceMapping
 from isofit.data import env
 from isofit.radiative_transfer.engines.modtran import ModtranRT
-from isofit.utils import surface_model
+from isofit.utils.surface_model import surface_model
+from isofit import __version__
 
 
 class Pathnames:
@@ -40,18 +43,21 @@ class Pathnames:
         input_radiance,
         input_loc,
         input_obs,
-        sensor,
+        surface_class_file,
         surface_path,
         working_directory,
-        copy_input_files,
-        modtran_path,
-        rdn_factors_path,
-        model_discrepancy_path,
-        aerosol_climatology_path,
-        channelized_uncertainty_path,
         ray_temp_dir,
-        interpolate_inplace,
-        skyview_factor,
+        sensor="NA-*",
+        copy_input_files=False,
+        modtran_path=None,
+        rdn_factors_path=None,
+        model_discrepancy_path=None,
+        aerosol_climatology_path=None,
+        channelized_uncertainty_path=None,
+        interpolate_inplace=False,
+        skyview_factor=None,
+        subs: bool = False,
+        classify_multisurface: bool = False,
     ):
         # Determine FID based on sensor name
         if sensor == "ang":
@@ -117,7 +123,8 @@ class Pathnames:
         self.state_working_path = abspath(
             join(self.output_directory, rdn_fname.replace("_rdn", "_state"))
         )
-        self.surface_working_path = abspath(join(self.data_directory, "surface.mat"))
+        self.surface_template_path = abspath(join(self.data_directory, "surface.mat"))
+        self.surface_working_paths = {}
 
         if copy_input_files is True:
             self.radiance_working_path = abspath(
@@ -129,10 +136,37 @@ class Pathnames:
             self.loc_working_path = abspath(
                 join(self.input_data_directory, self.fid + "_loc")
             )
+
+            if classify_multisurface and not surface_class_file:
+                self.surface_class_working_path = abspath(
+                    join(self.input_data_directory, self.fid + "_surface_class")
+                )
+            else:
+                self.surface_class_working_path = (
+                    abspath(surface_class_file) if surface_class_file else None
+                )
+
+            self.surface_class_subs_path = abspath(
+                join(self.input_data_directory, self.fid + "_subs_surface_class")
+            )
+
         else:
             self.radiance_working_path = abspath(self.input_radiance_file)
             self.obs_working_path = abspath(self.input_obs_file)
             self.loc_working_path = abspath(self.input_loc_file)
+
+            if classify_multisurface and not surface_class_file:
+                self.surface_class_working_path = abspath(
+                    join(self.input_data_directory, self.fid + "_surface_class")
+                )
+            else:
+                self.surface_class_working_path = (
+                    abspath(surface_class_file) if surface_class_file else None
+                )
+
+            self.surface_class_subs_path = abspath(
+                join(self.input_data_directory, self.fid + "_subs_surface_class")
+            )
 
         if interpolate_inplace:
             self.radiance_interp_path = self.radiance_working_path
@@ -179,7 +213,9 @@ class Pathnames:
         self.loc_subs_path = abspath(
             join(self.input_data_directory, self.fid + "_subs_loc")
         )
+
         self.rfl_subs_path = abspath(
+            # join(self.output_directory, self.fid + f"{subs_str}" + "_rfl")
             join(self.output_directory, self.fid + "_subs_rfl")
         )
         self.atm_coeff_path = abspath(
@@ -279,7 +315,6 @@ class Pathnames:
             (self.input_radiance_file, self.radiance_working_path, True),
             (self.input_obs_file, self.obs_working_path, True),
             (self.input_loc_file, self.loc_working_path, True),
-            (self.surface_path, self.surface_working_path, False),
             (
                 self.input_channelized_uncertainty_path,
                 self.channelized_uncertainty_working_path,
@@ -475,21 +510,39 @@ class SerialEncoder(json.JSONEncoder):
             return super(SerialEncoder, self).default(obj)
 
 
-def check_surface_model(surface_path: str, wl: np.array, paths: Pathnames) -> str:
+def check_surface_model(
+    surface_path: str,
+    output_model_path: str = None,
+    wl: np.array = [],
+    surface_wavelength_path: str = "",
+    surface_category: str = "multicomponent_surface",
+    multisurface: bool = False,
+) -> str:
     """
     Checks and rebuilds surface model if needed.
+
+    TODO - Could be extended to allow for both dir and file surface_path
+           inputs. The dir inputs could accomdate complex surfaces where
+           different surface priors might be useful. This extension
+           would be relatively easy. Wrap this in a check for surface_path
+           vs. surface_path_dir. Each file in the dir can undergo the
+           same check coded here.
 
     Args:
         surface_path: path to surface model or config dict
         wl: instrument center wavelengths
-        paths: object containing references to all relevant file locations
+        surface_wavelength_path: path to wavelength file
     """
     if os.path.isfile(surface_path):
         if surface_path.endswith(".mat"):
             # check wavelength grid of surface model if provided
             model_dict = loadmat(surface_path)
             wl_surface = model_dict["wl"][0]
-            if len(wl_surface) != len(wl):
+
+            if not len(wl):
+                logging.info("No wl array given. Not checking channel number matchup")
+
+            elif len(wl_surface) != len(wl):
                 raise ValueError(
                     "Number of channels provided in surface model file does not match"
                     " wavelengths in radiance cube. Please rebuild your surface model."
@@ -500,17 +553,76 @@ def check_surface_model(surface_path: str, wl: np.array, paths: Pathnames) -> st
                     " wavelengths in radiance cube. Please consider rebuilding your"
                     " surface model for optimal performance."
                 )
-            return surface_path
+
+            if multisurface:
+                # TODO Change the surface model structure for multisurface runs
+                # Instead of passing multiple surface.mat files throughout.
+                # Carry the surface type keys and dynamically select the matching type within surface.component
+                raise ValueError(
+                    "Apply OE in multistate-mode can currently only be run from a .json surface file. Please use the path to the .json file as the surface_ath. Must include the 'surface_type' keys."
+                )
+
+            return {surface_category: surface_path}
+
         elif surface_path.endswith(".json"):
             logging.info(
                 "No surface model provided. Build new one using given config file."
             )
+
+            if not surface_wavelength_path:
+                raise ValueError(
+                    "Building surface model requires input surface wavelength path"
+                )
+
+            if not output_model_path:
+                logging.info(
+                    "No output path provided via check_surface, "
+                    "using output file within surface config."
+                )
+                configdir, _ = os.path.split(os.path.abspath(surface_path))
+                config = json_load_ascii(surface_path, shell_replace=True)
+                output_model_path = expand_path(configdir, config["output_model_file"])
+
             surface_model(
-                config_path=surface_path, wavelength_path=paths.wavelength_path
+                config_path=surface_path,
+                wavelength_path=surface_wavelength_path,
+                output_path=output_model_path,
+                multisurface=multisurface,
             )
-            configdir, _ = os.path.split(os.path.abspath(surface_path))
-            config = json_load_ascii(surface_path, shell_replace=True)
-            return expand_path(configdir, config["output_model_file"])
+
+            # Handle a multisurface run with split
+            if multisurface:
+                config = json_load_ascii(surface_path, shell_replace=True)
+                surface_categories = []
+                for source in config["sources"]:
+                    surface_category = source.get("surface_category")
+                    if not surface_category:
+                        raise ValueError(
+                            "Multisurface ISOFIT surface configs require "
+                            "surface category to be specific in config. "
+                            "No 'surface_category' key found. Check config"
+                        )
+                    surface_categories.append(surface_category)
+
+                surface_paths = {}
+                for surface_category in np.unique(surface_categories):
+                    name, ext = os.path.splitext(output_model_path)
+                    surface_paths[str(surface_category)] = (
+                        f"{name}_{str(surface_category)}{ext}"
+                    )
+
+            else:
+                surface_paths = {surface_category: output_model_path}
+
+            for path in surface_paths.values():
+                try:
+                    model_dict = loadmat(path)
+                except ValueError:
+                    raise ValueError(
+                        "Surface.mat file failed to load. " "Check configuration."
+                    )
+            return surface_paths
+
         else:
             raise FileNotFoundError(
                 "Unrecognized format of surface file. Please provide either a .mat model or a .json config dict."
@@ -645,11 +757,9 @@ def build_presolve_config(
                     "uncorrelated_radiometric_uncertainty": uncorrelated_radiometric_uncertainty
                 },
             },
-            "surface": {
-                "surface_category": surface_category,
-                "surface_file": paths.surface_working_path,
-                "select_on_init": True,
-            },
+            "surface": make_surface_config(
+                paths, surface_category, use_superpixels=use_superpixels
+            ),
             "radiative_transfer": radiative_transfer_config,
         },
         "implementation": {
@@ -657,6 +767,7 @@ def build_presolve_config(
             "inversion": {"windows": inversion_windows},
             "n_cores": n_cores,
             "debug_mode": debug,
+            "isofit_version": __version__,
         },
     }
 
@@ -726,6 +837,7 @@ def build_main_config(
     inversion_windows=[[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]],
     prebuilt_lut_path: str = None,
     multipart_transmittance: bool = False,
+    surface_mapping: dict = None,
 ) -> None:
     """Write an isofit config file for the main solve, using the specified pathnames and all given info
 
@@ -753,6 +865,7 @@ def build_main_config(
         pressure_elevation:                   if true, retrieve pressure elevation
         debug:                                if true, run ISOFIT in debug mode
         multipart_transmittance:              flag to indicate whether a 4-component transmittance model is to be used
+        surface_mapping:                      optional object to pass mapping between surface class and surface model
     """
 
     # Determine number of spectra included in each retrieval.  If we are
@@ -783,8 +896,6 @@ def build_main_config(
                 "lut_path": lut_path,
                 "aerosol_template_file": paths.aerosol_tpl_path,
                 "template_file": paths.modtran_template_path,
-                # lut_names - populated below
-                # statevector_names - populated below
             }
         },
         "statevector": {},
@@ -835,22 +946,27 @@ def build_main_config(
     if prebuilt_lut_path is None:
         if h2o_lut_grid is not None and len(h2o_lut_grid) > 1:
             radiative_transfer_config["lut_grid"]["H2OSTR"] = h2o_lut_grid.tolist()
+
         if elevation_lut_grid is not None and len(elevation_lut_grid) > 1:
             radiative_transfer_config["lut_grid"][
                 "surface_elevation_km"
             ] = elevation_lut_grid.tolist()
+
         if to_sensor_zenith_lut_grid is not None and len(to_sensor_zenith_lut_grid) > 1:
             radiative_transfer_config["lut_grid"][
                 "observer_zenith"
             ] = to_sensor_zenith_lut_grid.tolist()
+
         if to_sun_zenith_lut_grid is not None and len(to_sun_zenith_lut_grid) > 1:
             radiative_transfer_config["lut_grid"][
                 "solar_zenith"
             ] = to_sun_zenith_lut_grid.tolist()
+
         if relative_azimuth_lut_grid is not None and len(relative_azimuth_lut_grid) > 1:
             radiative_transfer_config["lut_grid"][
                 "relative_azimuth"
             ] = relative_azimuth_lut_grid.tolist()
+
         radiative_transfer_config["lut_grid"].update(aerosol_lut_grid)
 
     rtc_ln = {}
@@ -902,6 +1018,7 @@ def build_main_config(
         radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"][
             "relative_azimuth"
         ] = get_lut_subset(relative_azimuth_lut_grid)
+
         for key in aerosol_lut_grid.keys():
             radiative_transfer_config["radiative_transfer_engines"]["vswir"][
                 "lut_names"
@@ -958,11 +1075,14 @@ def build_main_config(
                     "uncorrelated_radiometric_uncertainty": uncorrelated_radiometric_uncertainty
                 },
             },
-            "surface": {
-                "surface_file": paths.surface_working_path,
-                "surface_category": surface_category,
-                "select_on_init": True,
-            },
+            "surface": make_surface_config(
+                paths,
+                surface_category,
+                pressure_elevation,
+                elevation_lut_grid,
+                surface_mapping=surface_mapping,
+                use_superpixels=use_superpixels,
+            ),
             "radiative_transfer": radiative_transfer_config,
         },
         "implementation": {
@@ -970,6 +1090,7 @@ def build_main_config(
             "inversion": {"windows": inversion_windows},
             "n_cores": n_cores,
             "debug_mode": debug,
+            "isofit_version": __version__,
         },
     }
 
@@ -1851,3 +1972,72 @@ def write_wavelength_file(filename, wl, fwhm):
         axis=1,
     )
     np.savetxt(filename, wl_data, delimiter=" ")
+
+
+def make_surface_config(
+    paths: Pathnames,
+    surface_category="multicomponent_surface",
+    pressure_elevation=None,
+    elevation_lut_grid=[],
+    surface_mapping: dict = None,
+    use_superpixels=False,
+):
+    """
+    Constructs the surface component of the config
+    Args:
+        paths: Pathnames object with all key values passed from apply_oe
+        surface_category: Base surface category
+    Returns:
+        surface_config_dict: Dictionary with all surface parameters and file
+                             locations.
+    """
+
+    # Initialize config dict
+    surface_config_dict = {
+        "multi_surface_flag": False,
+    }
+
+    # Check to see if a classification file is being propogated
+    # If so, use multisurface
+    if paths.surface_class_working_path:
+        surface_config_dict["Surfaces"] = {}
+
+        if use_superpixels:
+            surface_config_dict["surface_class_file"] = paths.surface_class_subs_path
+        else:
+            surface_config_dict["surface_class_file"] = paths.surface_class_working_path
+
+        surface_config_dict["base_surface_class_file"] = (
+            paths.surface_class_working_path
+        )
+
+        surface_config_dict["multi_surface_flag"] = True
+
+        # Get the surface categories present.
+        surface_classes_present = np.unique(
+            envi.open(envi_header(paths.surface_class_working_path)).open_memmap(
+                inteleave="bip"
+            )
+        )
+
+        # Iterate through all classes present in class image
+        for i in surface_classes_present:
+            surface_category = SurfaceMapping[int(i)]
+            # If surface_path given, use for all surfaces
+            surface_path = paths.surface_working_paths[surface_category]
+
+            # Set up "Surfaces" component of surface config
+            surface_config_dict["Surfaces"][surface_category] = {
+                "surface_int": int(i),
+                "surface_file": surface_path,
+                "surface_category": surface_category,
+            }
+
+    # Single surface run
+    else:
+        surface_config_dict["surface_file"] = paths.surface_working_paths[
+            surface_category
+        ]
+        surface_config_dict["surface_category"] = surface_category
+
+    return surface_config_dict

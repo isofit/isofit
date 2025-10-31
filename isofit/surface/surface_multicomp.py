@@ -20,7 +20,6 @@
 from __future__ import annotations
 
 import numpy as np
-from scipy.io import loadmat
 from scipy.linalg import block_diag, norm
 
 from isofit.core.common import svd_inv
@@ -46,14 +45,13 @@ class MultiComponentSurface(Surface):
 
         # Models are stored as dictionaries in .mat format
         # TODO: enforce surface_file existence in the case of multicomponent_surface
-        model_dict = loadmat(config.surface_file)
-        self.components = list(zip(model_dict["means"], model_dict["covs"]))
+        self.components = list(zip(self.model_dict["means"], self.model_dict["covs"]))
         self.n_comp = len(self.components)
-        self.wl = model_dict["wl"][0]
+        self.wl = self.model_dict["wl"][0]
         self.n_wl = len(self.wl)
 
         # Set up normalization method
-        self.normalize = model_dict["normalize"]
+        self.normalize = self.model_dict["normalize"]
         if self.normalize == "Euclidean":
             self.norm = lambda r: norm(r)
         elif self.normalize == "RMS":
@@ -69,7 +67,7 @@ class MultiComponentSurface(Surface):
         # Reference values are used for normalizing the reflectances.
         # in the VSWIR regime, reflectances are normalized so that the model
         # is agnostic to absolute magnitude.
-        self.refwl = np.squeeze(model_dict["refwl"])
+        self.refwl = np.squeeze(self.model_dict["refwl"])
         self.idx_ref = [np.argmin(abs(self.wl - w)) for w in np.squeeze(self.refwl)]
         self.idx_ref = np.array(self.idx_ref)
 
@@ -320,7 +318,10 @@ class MultiComponentSurface(Surface):
         simplifies the linearization
         background = s * rho_bg
         """
+        # If you ignore multi-scattering
         theta = L_tot + (L_tot * background / (1 - background))
+        # theta = L_tot
+
         H = np.eye(self.n_wl, self.n_wl)
         H = theta[:, np.newaxis] * H
 

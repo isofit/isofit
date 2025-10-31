@@ -10,8 +10,10 @@ name: Build
 on:
   push:
     branches: ["dev", "main"]
+    paths: ["isofit/**"]
   pull_request:
     branches: ["dev", "main"]
+    paths: ["isofit/**"]
 
 concurrency:
   group: ${{ github.ref }}
@@ -20,6 +22,7 @@ concurrency:
 jobs:
   # Lint
   black:
+    if: "!startsWith(github.event.head_commit.message, 'Merge pull request')"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -32,6 +35,7 @@ jobs:
 
   # Test building the package
   package:
+    if: "!startsWith(github.event.head_commit.message, 'Merge pull request')"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -63,6 +67,7 @@ jobs:
 
   # Either build the cache or check for updates, fail if updates are needed: does not block tests on failure
   cache:
+    if: "!startsWith(github.event.head_commit.message, 'Merge pull request')"
     continue-on-error: true
     runs-on: ubuntu-latest
     steps:

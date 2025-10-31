@@ -87,7 +87,7 @@ class Create:
             List of zero values. Appends to the current Create.zeros list.
         compression : str, default="zlib"
             Compression method to use to the NetCDF. Check https://unidata.github.io/netcdf4-python/
-            for available options
+            for available options. Currently, must use h5py <= 3.14.0
         complevel : int, default=None
             Compression to use. Impact and levels vary per method.
         """

@@ -244,6 +244,9 @@ Examples = {
     "Pasadena": IsofitExample(name="20171108_Pasadena", requires=["data"]),
     "ThermalIR": IsofitExample(name="20190806_ThermalIR", requires=["data"]),
     "AV3Cal": IsofitExample(name="20250308_AV3Cal_wltest", requires=["data"]),
+    "Multisurface": IsofitExample(
+        name="20231110_Prism_Multisurface", requires=["data"]
+    ),
     "ImageCube-small": ApplyOEExample(
         name="image_cube/small",
         requires=["sixs", "srtmnet", "imagecube"],

@@ -173,11 +173,13 @@ class CLI(click.Group):
                         logging.exception(
                             "Isoplots does not appear to be installed, install it via `isofit download plots`"
                         )
+                    else:
+                        logging.exception(
+                            f"Failed to import {cmd_name} from {command}:"
+                        )
             except:
                 if self.debug:
-                    logging.exception(
-                        f"Failed to import {cmd_name} from {command.path}:"
-                    )
+                    logging.exception(f"Failed to import {cmd_name} from {command}:")
 
         return super().get_command(ctx, cmd_name)
 
@@ -205,6 +207,7 @@ class CLI(click.Group):
         "ewt": "isofit.utils.ewt_from_reflectance",
         "reconstruct_subs": "isofit.utils.reconstruct",
         "interpolate_spectra": "isofit.utils.interpolate_spectra",
+        "classify_multicomponent": "isofit.utils.multicomponent_classification",
         "sun": "isofit.utils.solar_position",
         "surface_model": "isofit.utils.surface_model",
         "plot": "isoplots",

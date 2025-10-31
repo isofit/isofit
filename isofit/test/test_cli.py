@@ -35,7 +35,9 @@ def surface(cwd):
     """
     Generates the surface.mat file
     """
-    outp = str(cwd / "surface.mat")
+    outdir = str(cwd / "data")
+    os.makedirs(outdir, exist_ok=True)
+    outp = str(cwd / "data" / "surface.mat")
 
     # Generate the surface.mat using the image_cube example config
     # fmt: off
@@ -63,15 +65,17 @@ def files(cwd):
 
     As of 07/24/2023 these are from the medium cube example.
     """
-    # Flush the output dir if it already exists from a previous test case
-    output = cwd / "output"
-    shutil.rmtree(output, ignore_errors=True)
+    # Flush dirs if they already exists from a previous test case
+
+    flush_dirs = ["config", "lut_h2o", "lut_full", "output"]
+    for flush_dir in flush_dirs:
+        shutil.rmtree(cwd / flush_dir, ignore_errors=True)
 
     return [
         str(cwd / "ang20170323t202244_rdn_7k-8k"),
         str(cwd / "ang20170323t202244_loc_7k-8k"),
         str(cwd / "ang20170323t202244_obs_7k-8k"),
-        str(output),
+        cwd,
     ]
 
 
