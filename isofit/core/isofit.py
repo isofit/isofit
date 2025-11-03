@@ -39,6 +39,7 @@ from isofit import checkNumThreads, ray
 from isofit.configs import configs
 from isofit.core.fileio import IO, SpectrumFile
 from isofit.core.forward import ForwardModel
+from isofit.core.geometry import Geometry
 from isofit.core.multistate import (
     construct_full_state,
     index_spectra_by_surface,
@@ -134,14 +135,6 @@ class Isofit:
         self.rows = range(rdn.n_rows)
         self.cols = range(rdn.n_cols)
 
-        # Get a middle pixel to get geom for the Sa inversion.
-        if rdn.format == "ASCII":
-            matrix_inv_row = 1
-            matrix_inv_col = 1
-        else:
-            matrix_inv_row = rdn.n_rows // 2
-            matrix_inv_col = rdn.n_cols // 2
-
         # Initialize files in __init__, otherwise workers fail
         IO.initialize_output_files(
             self.config, rdn.n_rows, rdn.n_cols, self.full_statevector
@@ -227,15 +220,8 @@ class Isofit:
 
             logging.debug(f"Surface: {surface_class_str}")
 
-            # Create a geom object that represents near center of LUT.
-            io_tmp = IO(config, fm, full_statevec=self.full_statevector)
-            matrix_inv_geom = io_tmp.get_components_at_index(
-                matrix_inv_row, matrix_inv_col
-            ).geom
-            del io_tmp
-
-            # Stash the Sa and Seps inversion matrix into fm here
-            fm.invert_Sa(geom=matrix_inv_geom)
+            # Stash inversion for Sa just once. NOTE: assumes geom invariant.
+            fm.invert_Sa(geom=Geometry())
             fm.invert_Sa_check()
 
             # Put worker args into Ray object

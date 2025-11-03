@@ -160,7 +160,7 @@ class ForwardModel:
         self.Sa_inv_sqrt_normalized = None
 
     def invert_Sa(self, geom):
-        """Eigen Decomposition of Sa to be re-used in OE."""
+        """Eigen Decomposition of Sa to be re-used in OE. NOTE: assumes geom invariant."""
 
         Sa = self.Sa(self.init, geom)
         self.q_Sa = np.sqrt(np.mean(np.diag(Sa)))

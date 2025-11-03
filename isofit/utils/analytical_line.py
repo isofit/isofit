@@ -472,17 +472,8 @@ class Worker(object):
 
         self.initializer = initializer
 
-        # Calc inversions for Sa and Seps exactly one time for each worker.
-        # for geometry basis, its grabbing the middle row and column and assuming this is real value.
-        r = self.n_lines // 2
-        c = self.n_samples // 2
-        matrix_inv_geom = Geometry(
-            obs=self.obs[r, c, :],
-            loc=self.loc[r, c, :],
-            esd=self.esd,
-            svf=self.svf[r, c] if len(self.svf) else 1,
-        )
-        self.fm.invert_Sa(geom=matrix_inv_geom)
+        # Calc inversions for Sa exactly one time for each worker. # NOTE: assumes geom invariant.
+        self.fm.invert_Sa(geom=Geometry())
         self.fm.invert_Sa_check()
 
     def run_chunks(self, line_breaks: tuple, fill_value: float = -9999.0) -> None:

@@ -43,7 +43,7 @@ class Inversion:
 
         self.lasttime = time.time()
         self.fm = forward
-        self.fm.check_matrix_inversions()
+        self.fm.invert_Sa_check()
         self.hashtable = OrderedDict()  # Hash table for caching inverse matrices
         self.max_table_size = full_config.implementation.max_hash_table_size
         self.state_indep_S_hat = False
