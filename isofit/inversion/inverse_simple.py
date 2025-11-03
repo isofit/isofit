@@ -264,8 +264,6 @@ def invert_analytical(
     from scipy.linalg.blas import dsymv
     from scipy.linalg.lapack import dpotrf, dpotri
 
-    EXIT_CODE = 0
-
     # Note, this will fail if x_instrument is populated
     if len(fm.idx_instrument) > 0:
         raise AttributeError(
@@ -376,9 +374,9 @@ def invert_analytical(
             full_unc = np.ones(len(x))
             full_unc[iv_idx] = [-9999 for i in x[iv_idx]]
 
-        return trajectory, full_unc, EXIT_CODE
+        return trajectory, full_unc
     else:
-        return trajectory, C_rcond, EXIT_CODE
+        return trajectory, C_rcond
 
 
 def invert_simple(forward: ForwardModel, meas: np.array, geom: Geometry):
