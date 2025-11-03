@@ -322,18 +322,18 @@ def invert_analytical(
     # Sample just the wavelengths and states of interest
     L = H[winidx, :][:, iv_idx]
 
+    # Use cached scaling factor from inital normalized inverse (outside of loop).
+    Sa = fm.Sa(x, geom)
+    Sa_surface = Sa[fm.idx_surface, :][:, fm.idx_surface]
+    q_Sa = np.sqrt(np.mean(np.diag(Sa_surface)))
+    Sa_inv = fm.Sa_inv_normalized[fm.idx_surface, :][:, fm.idx_surface] / q_Sa**2
+
     trajectory = np.zeros((num_iter + 1, len(x)))
     trajectory[0, :] = x
     for n in range(num_iter):
 
         # Measurement uncertainty
         Seps = fm.Seps(x, meas, geom)[winidx, :][:, winidx]
-
-        # Use cached scaling factor from inital normalized inverse
-        Sa = fm.Sa(x, geom)
-        Sa_surface = Sa[fm.idx_surface, :][:, fm.idx_surface]
-        q_Sa = np.sqrt(np.mean(np.diag(Sa_surface)))
-        Sa_inv = fm.Sa_inv_normalized[fm.idx_surface, :][:, fm.idx_surface] / q_Sa**2
 
         # Prior mean
         xa_full = fm.xa(x, geom)

@@ -134,19 +134,11 @@ class Isofit:
         self.rows = range(rdn.n_rows)
         self.cols = range(rdn.n_cols)
 
-        # Get a represtative average pixel for the Sa , Seps matrix inversion.
-        # This is computed once, saved to fm, and shared with all workers.
+        # Get a middle pixel to get geom for the Sa inversion.
         if rdn.format == "ASCII":
-            self.avg_meas = rdn.data
             matrix_inv_row = 1
             matrix_inv_col = 1
-        elif rdn.format == "ENVI":
-            self.avg_meas = np.nanmean(rdn.file.load(), axis=(0, 1))
-            matrix_inv_row = rdn.n_rows // 2
-            matrix_inv_col = rdn.n_cols // 2
         else:
-            # this is netcdf, etc case, so just try to take mean of rdn.data?
-            self.avg_meas = np.nanmean(rdn.data, axis=(0, 1))
             matrix_inv_row = rdn.n_rows // 2
             matrix_inv_col = rdn.n_cols // 2
 
@@ -243,8 +235,8 @@ class Isofit:
             del io_tmp
 
             # Stash the Sa and Seps inversion matrix into fm here
-            fm.matrix_inversions(avg_meas = self.avg_meas, geom=matrix_inv_geom)
-            fm.check_matrix_inversions()
+            fm.invert_Sa(geom=matrix_inv_geom)
+            fm.invert_Sa_check()
 
             # Put worker args into Ray object
             params = [
@@ -352,7 +344,6 @@ class Worker(object):
         self.completed_spectra = 0
 
     def run_set_of_spectra(self, indices: np.array):
-
         for index in range(0, indices.shape[0]):
             logging.debug("Read chunk of spectra")
             row, col = indices[index, 0], indices[index, 1]

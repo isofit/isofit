@@ -154,38 +154,30 @@ class ForwardModel:
         else:
             self.model_discrepancy = None
 
-        # Sa and Seps inversions
+        # For caching Sa inversion
         self.q_Sa = None
         self.Sa_inv_normalized = None
         self.Sa_inv_sqrt_normalized = None
 
-        self.q_Seps = None
-        self.Seps_inv_normalized = None
-        self.Seps_inv_sqrt_normalized = None
-
-    def matrix_inversions(self, avg_meas, geom):
-        """Eigen Decomposition of Sa and Seps to be re-used in OE."""
+    def invert_Sa(self, geom):
+        """Eigen Decomposition of Sa to be re-used in OE."""
 
         Sa = self.Sa(self.init, geom)
         self.q_Sa = np.sqrt(np.mean(np.diag(Sa)))
         Sa_normalized = Sa / self.q_Sa**2
-        self.Sa_inv_normalized, self.Sa_inv_sqrt_normalized = svd_inv_sqrt(
-            Sa_normalized
-        )
 
-        Seps = self.Seps(self.init, avg_meas, geom)
-        self.q_Seps = np.sqrt(np.mean(np.diag(Seps)))
-        Seps_normalized = Seps / self.q_Seps**2
-        self.Seps_inv_normalized, self.Seps_inv_sqrt_normalized = svd_inv_sqrt(
-            Seps_normalized
-        )
-        return
+        try:
+            self.Sa_inv_normalized, self.Sa_inv_sqrt_normalized = svd_inv_sqrt(
+                Sa_normalized
+            )
+        except:
+            self.Sa_inv_normalized, self.Sa_inv_sqrt_normalized = None, None
 
-    def check_matrix_inversions(self):
-        """Check if Sa and Seps inversions have been computed."""
-        if self.Seps_inv_normalized is None:
+    def invert_Sa_check(self):
+        """Check if Sa inversion has been computed."""
+        if self.Sa_inv_normalized is None:
             raise RuntimeError(
-                "Need to run matrix inversions first. Call `matrix_inversions(avg_meas, geom)`."
+                "Need to run Sa inversion first. Call `Sa_inversion(geom)`."
             )
         return
 

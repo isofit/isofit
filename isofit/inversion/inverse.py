@@ -27,7 +27,7 @@ import numpy as np
 import scipy.linalg
 from scipy.optimize import least_squares
 
-from isofit.core.common import combos, eps, svd_inv
+from isofit.core.common import combos, conditional_gaussian, eps, svd_inv, svd_inv_sqrt
 from isofit.inversion.inverse_simple import invert_simple
 
 error_code = -1
@@ -138,12 +138,24 @@ class Inversion:
         xa = self.fm.xa(x, geom)
         Sa = self.fm.Sa(x, geom)
 
-        # Use cached scaling factor from inital normalized inverse
-        q = np.sqrt(np.mean(np.diag(Sa)))
-        Sa_inv_sqrt = self.fm.Sa_inv_sqrt_normalized / q
-        Sa_inv = self.fm.Sa_inv_normalized / q**2
-
-        return xa, Sa, Sa_inv, Sa_inv_sqrt
+        # If there aren't any fixed parameters, we just directly
+        if self.x_fixed is None or self.grid_as_starting_points:
+            # Use cached scaling factor from inital normalized inverse
+            q = np.sqrt(np.mean(np.diag(Sa)))
+            Sa_inv_sqrt = self.fm.Sa_inv_sqrt_normalized / q
+            Sa_inv = self.fm.Sa_inv_normalized / q**2
+            return xa, Sa, Sa_inv, Sa_inv_sqrt
+        else:
+            # otherwise condition on fixed variables
+            # TODO: could make the below calculation without the svd_inv (using full initial inversion),
+            # which would be way cheaper
+            xa_free, Sa_free = conditional_gaussian(
+                xa, Sa, self.inds_free, self.inds_fixed, self.x_fixed
+            )
+            Sa_free_inv, Sa_free_inv_sqrt = svd_inv_sqrt(
+                Sa_free, hashtable=self.hashtable, max_hash_size=self.max_table_size
+            )
+            return xa_free, Sa_free, Sa_free_inv, Sa_free_inv_sqrt
 
     def calc_prior(self, x, geom):
         """Calculate prior distribution of radiance. This depends on the
@@ -168,13 +180,13 @@ class Inversion:
         Sa = self.fm.Sa(x, geom)
         K = self.fm.K(x, geom)
         Seps = self.fm.Seps(x, meas, geom)
+        Seps_inv = svd_inv(
+            Seps, hashtable=self.hashtable, max_hash_size=self.max_table_size
+        )
 
         # Use cached scaling factor from inital normalized inverse
         q_Sa = np.sqrt(np.mean(np.diag(Sa)))
         Sa_inv = self.fm.Sa_inv_normalized / q_Sa**2
-
-        q_Seps = np.sqrt(np.mean(np.diag(Seps)))
-        Seps_inv = self.fm.Seps_inv_normalized / q_Seps**2
 
         # Gain matrix G reflects current state, so we use the state-dependent
         # Jacobian matrix K
@@ -203,16 +215,13 @@ class Inversion:
         inverse covariance and its square root."""
 
         Seps = self.fm.Seps(x, meas, geom)
-        Seps_win = Seps[np.ix_(self.winidx, self.winidx)]
-
-        # Use cached scaling factor from inital normalized inverse
-        q = np.sqrt(np.mean(np.diag(Seps_win)))
-        Seps_inv_sqrt = (
-            self.fm.Seps_inv_sqrt_normalized[np.ix_(self.winidx, self.winidx)] / q
+        wn = len(self.winidx)
+        Seps_win = np.zeros((wn, wn))
+        for i in range(wn):
+            Seps_win[i, :] = Seps[self.winidx[i], self.winidx]
+        return svd_inv_sqrt(
+            Seps_win, hashtable=self.hashtable, max_hash_size=self.max_table_size
         )
-        Seps_inv = self.fm.Seps_inv_normalized[np.ix_(self.winidx, self.winidx)] / q**2
-
-        return Seps_inv, Seps_inv_sqrt
 
     def jacobian(self, x_free, geom, Seps_inv_sqrt) -> np.ndarray:
         """Calculate measurement Jacobian and prior Jacobians with

@@ -476,15 +476,14 @@ class Worker(object):
         # for geometry basis, its grabbing the middle row and column and assuming this is real value.
         r = self.n_lines // 2
         c = self.n_samples // 2
-        self.avg_meas = np.nanmean(self.rdn, axis=(0, 1))
         matrix_inv_geom = Geometry(
             obs=self.obs[r, c, :],
             loc=self.loc[r, c, :],
             esd=self.esd,
             svf=self.svf[r, c] if len(self.svf) else 1,
         )
-        self.fm.matrix_inversions(avg_meas=self.avg_meas, geom=matrix_inv_geom)
-        self.fm.check_matrix_inversions()
+        self.fm.invert_Sa(geom=matrix_inv_geom)
+        self.fm.invert_Sa_check()
 
     def run_chunks(self, line_breaks: tuple, fill_value: float = -9999.0) -> None:
         """
