@@ -154,6 +154,16 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         "transm_up_dif",
         "transm_up_dir",  # NOTE: Formerly transup
     }
+    aux_keys = {
+        "lut_names": str,
+        "feature_point_names": str,
+        "rt_quantities": str,
+        "solar_irr": np.float64,
+        "emulator_wavelengths": np.float64,
+        "simulator_wavelengths": np.float64,
+        "response_scaler": dict,
+        "response_offset": dict,
+    }
     _disable_makeSim = True
 
     def preSim(self):
@@ -166,8 +176,23 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         # Create a copy of the engine_config and populate it with 6S parameters
         config = build_sixs_config(self.engine_config)
 
-        # Emulator Aux
-        aux = np.load(config.emulator_aux_file, allow_pickle=True)
+        # Get the component mode up front
+        if self.engine_config.emulator_file.endswith(".h5"):
+            self.component_mode = "1c"
+
+        elif self.engine_config.emulator_file.endswith(".6c"):
+            self.component_mode = "6c"
+
+        else:
+            raise ValueError(
+                f"Invalid extension for emulator aux file. Use .npz or .6c"
+            )
+
+        # Pack the emulator Aux the same regardless of input file type
+        if component_mode == "1c":
+            aux = dict(np.load(config.emulator_aux_file, allow_pickle=True))
+        else:
+            aux = h5py.File(config.emulator_file, "r")
 
         # TODO: Disable when sRTMnet_v120_aux is updated
         aux_rt_quantities = np.where(
@@ -218,21 +243,20 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         if os.path.exists(self.predict_path):
             Logger.info(f"Loading sRTMnet predicts from: {self.predict_path}")
             predicts = luts.load(self.predict_path, mode="r")
-            if self.engine_config.emulator_file.endswith(".h5"):
-                self.component_mode = "1c"
-            elif self.engine_config.emulator_file.endswith(".6c"):
-                self.component_mode = "6c"
+            self.component_mode = predicts.attrs["component_mode"]
+
         else:
             Logger.info("Loading and predicting with emulator")
-            if self.engine_config.emulator_file.endswith(".h5"):
+            if self.component_mode == "1c":
                 Logger.debug("Detected hdf5 (3c) emulator file format")
-                self.component_mode = "1c"
 
-                # Stack the quantities together along a new dimension named `quantity`
+                # Stack the quantities together along a new dimension
+                # named `quantity`
                 resample = resample.to_array("quantity").stack(stack=["quantity", "wl"])
 
-                ## Reduce from 3D to 2D by stacking along the wavelength dim for each quantity
-                # Convert to DataArray to stack the variables along a new `quantity` dimension
+                ## Reduce from 3D to 2D by stacking along the wavelength
+                # dim for each quantity. Convert to DataArray to stack
+                # the variables along a new `quantity` dimension
                 data = sixs.to_array("quantity").stack(stack=["quantity", "wl"])
 
                 scaler = aux.get("response_scaler", 100.0)
@@ -248,14 +272,11 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                 # Unstack back to a dataset and save
                 predicts = predicts.unstack("stack").to_dataset("quantity")
 
-            elif self.engine_config.emulator_file.endswith(
-                ".npz"
-            ) or self.engine_config.emulator_file.endswith(".6c"):
+            else:
                 Logger.debug("Detected 6c emulator file format")
-                self.component_mode = "6c"
 
                 # This is an array of feature points tacked onto the interpolated 6s values
-                feature_point_names = aux["feature_point_names"].tolist()
+                feature_point_names = aux["feature_point_names"][:].tolist()
                 if len(feature_point_names) > 0:
 
                     # Populate the 6S parameter values from a modtran template file
@@ -293,7 +314,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                     if self.engine_config.parallel_layer_read:
                         emulator = tfLikeModel(self.engine_config.emulator_file, key)
 
-                    if not self.engine_config.parallel_layer_read:
+                    else:
                         emulator = tfLikeModel(
                             None,
                             None,
@@ -459,7 +480,6 @@ def build_sixs_config(engine_config):
     # Tweak parameter values for sRTMnet
     config.aerosol_model_file = None
     config.aerosol_template_file = None
-    config.emulator_file = None
     config.day = dt.day
     config.month = dt.month
     config.elev = data["SURFACE"]["GNDALT"]
