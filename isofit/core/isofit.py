@@ -39,7 +39,7 @@ from isofit import checkNumThreads, ray
 from isofit.configs import configs
 from isofit.core.fileio import IO, SpectrumFile
 from isofit.core.forward import ForwardModel
-from isofit.core.geometry import Geometry
+
 from isofit.core.multistate import (
     construct_full_state,
     index_spectra_by_surface,
@@ -219,10 +219,6 @@ class Isofit:
             fm = ForwardModel(config, cache_RT=cache_RT)
 
             logging.debug(f"Surface: {surface_class_str}")
-
-            # Stash inversion for Sa just once. NOTE: assumes geom invariant.
-            fm.invert_Sa(geom=Geometry())
-            fm.invert_Sa_check()
 
             # Put worker args into Ray object
             params = [

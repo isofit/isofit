@@ -43,7 +43,6 @@ class Inversion:
 
         self.lasttime = time.time()
         self.fm = forward
-        self.fm.invert_Sa_check()
         self.hashtable = OrderedDict()  # Hash table for caching inverse matrices
         self.max_table_size = full_config.implementation.max_hash_table_size
         self.state_indep_S_hat = False
@@ -140,10 +139,7 @@ class Inversion:
 
         # If there aren't any fixed parameters, we just directly
         if self.x_fixed is None or self.grid_as_starting_points:
-            # Use cached scaling factor from inital normalized inverse
-            q = np.sqrt(np.mean(np.diag(Sa)))
-            Sa_inv_sqrt = self.fm.Sa_inv_sqrt_normalized / q
-            Sa_inv = self.fm.Sa_inv_normalized / q**2
+            Sa_inv, Sa_inv_sqrt = self.fm.calc_Sa_inverse(Sa)
             return xa, Sa, Sa_inv, Sa_inv_sqrt
         else:
             # otherwise condition on fixed variables
@@ -165,10 +161,7 @@ class Inversion:
         xa = self.fm.xa(x, geom)
         Sa = self.fm.Sa(x, geom)
 
-        # Use cached scaling factor from inital normalized inverse
-        q = np.sqrt(np.mean(np.diag(Sa)))
-        Sa_inv_sqrt = self.fm.Sa_inv_sqrt_normalized / q
-        Sa_inv = self.fm.Sa_inv_normalized / q**2
+        Sa_inv, Sa_inv_sqrt = self.fm.calc_Sa_inverse(Sa)
 
         return xa, Sa, Sa_inv, Sa_inv_sqrt
 
@@ -180,13 +173,11 @@ class Inversion:
         Sa = self.fm.Sa(x, geom)
         K = self.fm.K(x, geom)
         Seps = self.fm.Seps(x, meas, geom)
+
         Seps_inv = svd_inv(
             Seps, hashtable=self.hashtable, max_hash_size=self.max_table_size
         )
-
-        # Use cached scaling factor from inital normalized inverse
-        q_Sa = np.sqrt(np.mean(np.diag(Sa)))
-        Sa_inv = self.fm.Sa_inv_normalized / q_Sa**2
+        Sa_inv, Sa_inv_sqrt = self.fm.calc_Sa_inverse(Sa)
 
         # Gain matrix G reflects current state, so we use the state-dependent
         # Jacobian matrix K

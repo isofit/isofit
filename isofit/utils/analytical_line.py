@@ -472,10 +472,6 @@ class Worker(object):
 
         self.initializer = initializer
 
-        # Calc inversions for Sa exactly one time for each worker. # NOTE: assumes geom invariant.
-        self.fm.invert_Sa(geom=Geometry())
-        self.fm.invert_Sa_check()
-
     def run_chunks(self, line_breaks: tuple, fill_value: float = -9999.0) -> None:
         """
         TODO: Description

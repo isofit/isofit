@@ -31,6 +31,7 @@ from isofit.core.common import eps, svd_inv_sqrt
 from isofit.core.instrument import Instrument
 from isofit.radiative_transfer.radiative_transfer import RadiativeTransfer
 from isofit.surface import Surface
+from isofit.core.geometry import Geometry
 
 Logger = logging.getLogger(__file__)
 
@@ -154,32 +155,20 @@ class ForwardModel:
         else:
             self.model_discrepancy = None
 
-        # For caching Sa inversion
-        self.q_Sa = None
-        self.Sa_inv_normalized = None
-        self.Sa_inv_sqrt_normalized = None
-
-    def invert_Sa(self, geom):
-        """Eigen Decomposition of Sa to be re-used in OE. NOTE: assumes geom invariant."""
-
-        Sa = self.Sa(self.init, geom)
+        # Eigen Decomposition of Sa to be re-used in OE. NOTE: assumes geom invariant.
+        Sa = self.Sa(self.init, Geometry())
         self.q_Sa = np.sqrt(np.mean(np.diag(Sa)))
         Sa_normalized = Sa / self.q_Sa**2
+        self.Sa_inv_normalized, self.Sa_inv_sqrt_normalized = svd_inv_sqrt(
+            Sa_normalized
+        )
 
-        try:
-            self.Sa_inv_normalized, self.Sa_inv_sqrt_normalized = svd_inv_sqrt(
-                Sa_normalized
-            )
-        except:
-            self.Sa_inv_normalized, self.Sa_inv_sqrt_normalized = None, None
-
-    def invert_Sa_check(self):
-        """Check if Sa inversion has been computed."""
-        if self.Sa_inv_normalized is None:
-            raise RuntimeError(
-                "Need to run Sa inversion first. Call `Sa_inversion(geom)`."
-            )
-        return
+    def calc_Sa_inverse(self, Sa):
+        """Use cached scaling factor from inital normalized inverse."""
+        q = np.sqrt(np.mean(np.diag(Sa)))
+        Sa_inv_sqrt = self.Sa_inv_sqrt_normalized / q
+        Sa_inv = self.Sa_inv_normalized / q**2
+        return Sa_inv, Sa_inv_sqrt
 
     def out_of_bounds(self, x):
         """Check if state vector is within bounds."""
