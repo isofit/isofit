@@ -22,6 +22,7 @@ from typing import Dict, List, Type
 
 from isofit.configs.base_config import BaseConfigSection
 from isofit.configs.sections.inversion_config import InversionConfig
+from isofit import __version__
 
 
 class ImplementationConfig(BaseConfigSection):
@@ -85,6 +86,10 @@ class ImplementationConfig(BaseConfigSection):
         self.debug_mode = False
         """bool: A flag to run the code in debug mode, which circumvents ray.
         """
+
+        self._isofit_version_type = str
+        self.isofit_version = __version__
+        """str: ISOFIT version used."""
 
         self.set_config_options(sub_configdic)
 

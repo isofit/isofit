@@ -16,142 +16,171 @@
 #
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
-#
-
 
 import logging
-from os.path import join
+from os.path import join, isfile, isdir
+import shutil
+import time
+import warnings
 
 import click
 import numpy as np
 import ray
+import xarray as xr
+import zarr
 from spectral.io import envi
 
-from isofit.core.common import envi_header
+from isofit.core.common import envi_header, eps
+from isofit.core.fileio import initialize_output
 
 
 def skyview(
-    dem_prj_path,
-    dem_prj_resolution,
-    output_directory,
-    obs_or_loc=None,
-    method="horizon",
-    n_angles=72,
-    logging_level="INFO",
-    log_file=None,
-    n_cores=1,
+    input: str,
+    output_directory: str,
+    resolution: float = np.nan,
+    obs_or_loc: str = None,
+    method: str = "slope",
+    n_angles: int = 64,
+    logging_level: str = "INFO",
+    log_file: str = None,
+    n_cores: int = 1,
+    keep_horizon_files: bool = False,
     ray_address: str = None,
     ray_redis_password: str = None,
-    ray_temp_dir=None,
-    ray_ip_head=None,
+    ray_temp_dir: str = None,
+    ray_ip_head: str = None,
 ):
     """\
-    Applies sky view factor calculation for a given UTM projected DEM or DSM. Much of this code was borrowed from ARS Topo-Calc.
+    Applies sky view factor calculation for a given projected DEM or DSM. Much of this code was borrowed from ARS Topo-Calc.
     The key thing here was to create a python-only, rasterio-free port of this that could be used within ISOFIT. We also included 
     improvements that are current in Jeff Dozier's horizon method in Matlab (https://github.com/DozierJeff/Topographic-Horizons).
-
-    Also, following suggestions from Dozier (2021), multiprocessing is leveraged here w.r.t. to n_angles rotating the image. As default,
-    sky view is computed with n angles = 72 which in most cases is of sufficient accuracy to resolve but more angles may be used.
-
+    Following suggestions from Dozier (2021), multiprocessing is leveraged here w.r.t. to n_angles rotating the image. As default,
+    sky view is computed with n angles = 64 which in most cases is of sufficient accuracy to resolve but more angles may be used.
+    
     Optionally to this horizon based method, one can pass method="slope" to compute a faster estimate that may be sufficent for regions with lower relief.
-    The slope based estimate is simply, svf = cos^2(slope/2).
+    The slope based estimate is simply, svf = cos^2(slope/2). 
+    
+    Yet another option is to pass an ISOFIT "OBS" or "LOC" file as input and using the obs_or_loc arg. 
+    OBS files have slope data and can be used for method='slope' only. LOC files have elevation data and can be used for method='slope'. 
+    One can also use the full horizon method on the LOC file although this is not recommended because the edges miss information 
+    (a warning will be triggered in this case).
 
     \b
     Parameters
     ----------
-    dem_prj_path : str
-        Path to the projected DEM or DSM file (ENVI format).
-    dem_prj_resolution : float
-        Spatial resolution of the projected DEM in coordinate units (GSD in meters).
+    input : str
+        Path to the projected ENVI File. If `obs_or_loc` is None or "loc" input is elevation. If is "obs", then it's a slope product.
     output_directory : str
         Directory path for temporary files and outputs during processing; similar to apply_oe.
-    obs_or_loc : str
+    resolution : float, optional
+        Spatial resolution of the projected DEM in coordinate units (GSD in meters). Required for elevation input data.
+    obs_or_loc : str, optional
         Options here are 'obs', 'loc', or None. Default is None. If 'obs' is selected, it will pick the slope data from index 6 in OBS file.
-        If 'loc' is selected it well select the elevation data from index 2. 
+        If 'loc' is selected it well select the elevation data from index 2. None will assume a single band elevation data is passed.
     method : str, optional
         Options are either "horizon" or "slope". Passing "horizon" runs the full computation and is recommended for very steep terrain.
         Passing "slope"" runs the simplifed calculation of svf=cos^2(slope/2) and can be useful for more mild slopes. 
     n_angles : int, optional
-        Number of angles used in horizon calculations (default is 72).
+        Number of angles used in horizon calculations (default is 64).
+        As a reference, n=72 computes every 5deg, n=64 every 5.6deg, n=32 every 11.25deg, etc.  
+    keep_horizon_files : bool, optional
+        Horizon angles are created in output_dir as a zarr data structure. False deletes files, and True keeps them. These angles are based from zenith.        
     logging_level : str, optional
         Logging verbosity level (default is "INFO"); similar to apply_oe.
     log_file : str or None, optional
         File path to write logs; similar to apply_oe.
     n_cores : int, optional
-        Number of CPU cores to use for parallel processing (default is 1). Only used for method="horizon".
+        Number of CPU cores to use for parallel processing (default is 1). Only used for method="horizon". 
+        Note: n_cores should ideally not be larger than n_angles.
     """
-
-    # Construct svf output path.
-    svf_hdr_path = join(output_directory, "sky_view_factor.hdr")
-
-    # Set up logging
+    # set up logging for skyview.
     logging.basicConfig(
         format="%(levelname)s:%(message)s", level=logging_level, filename=log_file
     )
+    logging.info("Starting skyview utility...")
+    start_time = time.time()
 
-    # Load DEM data (assuming hdr).
-    dem = envi.open(envi_header(dem_prj_path))
-    dem_data = dem.open_memmap(writeable=False).copy()
+    # safeguards on possible incorrect inputs.
+    if not isinstance(input, str):
+        err_str = "input must be a string."
+        raise TypeError(err_str)
 
-    # assign if None, LOC, or OBS based data.
-    method = method.lower()
-    if obs_or_loc:
-        obs_or_loc = obs_or_loc.lower()
-    if obs_or_loc == "obs":
-        slope = dem_data[:, :, 6]
-        slope[slope > 90.1] = np.nan
-        slope[slope < -0.01] = np.nan
-    elif obs_or_loc == "loc":
-        dem_data = dem_data[:, :, 2]
-        dem_data[dem_data > 8900] = np.nan
-        dem_data[dem_data < -1360] = np.nan
-    elif obs_or_loc == None:
-        dem_data[dem_data > 8900] = np.nan
-        dem_data[dem_data < -1360] = np.nan
-    else:
-        err_str = "obs_or_loc must be 'loc', 'obs', or None."
+    if not isinstance(n_angles, int) or n_angles < 16:
+        err_str = "n_angles must be a positive integer greater than 16."
         raise ValueError(err_str)
-    if dem_data.ndim == 3 and dem_data.shape[2] == 1:
-        dem_data = dem_data[:, :, 0]
-    # set metadata
-    dem_metadata = dem.metadata.copy()
-    dem_metadata.update(
+
+    if not isinstance(n_cores, int) or n_cores <= 0:
+        err_str = "n_cores must be a positive integer."
+        raise ValueError(err_str)
+
+    # Construct svf output path.
+    if not isdir(output_directory):
+        err_str = f"The output directory, {output_directory}, does not exist or was not found."
+        raise ValueError(err_str)
+    else:
+        svf_hdr_path = join(output_directory, "sky_view_factor.hdr")
+
+    # ensuring n_cores does not exceed n_angles
+    # See, "Revisiting Topographic Horizons in the Era of Big Data and Parallel Computing"
+    # In our case, we split it on rotation and forward/backward. and so max workers = n_angles.
+    n_cores_max = n_angles
+    if n_cores > n_cores_max:
+        logging.info(
+            f"n_cores={n_cores}, but max can be {n_cores_max} for n_angles={n_angles}. Setting n_cores={n_cores_max}."
+        )
+        n_cores = n_cores_max
+
+    # Load input data and clean.
+    dem_data, svf_metadata, slope = load_input(
+        input=input, resolution=resolution, obs_or_loc=obs_or_loc, method=method
+    )
+    svf_metadata.update(
         {
             "description": "Sky View Factor",
             "bands": 1,
-            "interleave": "bsq",
+            "data ignore value": -9999,
             "data type": 4,
+            "interleave": "bip",
             "byte order": 0,
-            "band names": {"Sky View Factor"},
+            "band names": ["Sky View Factor"],
         }
     )
+    # Initialize file with metadata
+    initialize_output(
+        output_metadata=svf_metadata,
+        outpath=svf_hdr_path.replace(".hdr", ""),
+        out_shape=(dem_data.shape[0], dem_data.shape[1], 1),
+    )
 
-    # If only computing slope method
+    # If only computing slope method, we do not need to set up Ray.
     if method == "slope":
         if obs_or_loc != "obs":
             slope, aspect = gradient_d8(
-                dem_data, dx=dem_prj_resolution, dy=dem_prj_resolution, aspect_rad=True
+                dem_data, dx=resolution, dy=resolution, aspect_rad=True
             )
-        svf = np.cos(slope / 2) ** 2
-        # save.
-        envi.save_image(
-            svf_hdr_path,
-            svf.astype(np.float32),
-            dtype=np.float32,
-            interleave="bsq",
-            metadata=dem_metadata,
-            force=True,
-        )
 
+        # approx. skyview using slope only.
+        svf = np.cos(slope / 2) ** 2
+
+        # write data
+        out_mm = envi.open(svf_hdr_path).open_memmap(writable=True)
+        out_mm[:, :, 0] = svf.astype(np.float32)
+
+        del out_mm
+
+    # Else if, run the full horizon method.
     elif method == "horizon":
-        # prep the data for correct format for computation
-        angles, aspect, cos_slope, sin_slope, tan_slope = viewfdozier_prep(
-            dem=dem_data,
-            spacing=dem_prj_resolution,
-            nangles=n_angles,
-            sin_slope=None,
-            aspect=None,
-        )
+
+        # raise error if horizon method passed but slope data is input.
+        if obs_or_loc == "obs":
+            err_str = "A slope product was passed to horizon method, but this method requires the elevation product."
+            raise ValueError(err_str)
+
+        # raise warning for running loc file on horizon.
+        if obs_or_loc == "loc":
+            warn_str = "Running the horizon method with LOC file. Resulting skyview may be incorrect on edges."
+            warnings.warn(warn_str, UserWarning)
+            logging.info(warn_str)
 
         # Start up a ray instance for parallel work
         rayargs = {
@@ -165,123 +194,367 @@ def skyview(
         }
         ray.init(**rayargs)
 
-        # Share ray objects
+        # prep data for horizon method
+        slope, aspect = gradient_d8(
+            dem_data, dx=resolution, dy=resolution, aspect_rad=True
+        )
+        sin_slope = np.sin(slope).astype(np.float32)
+        cos_slope = np.cos(slope).astype(np.float32)
+        tan_slope = np.tan(slope).astype(np.float32)
+
+        # -180 is North
+        angles = np.linspace(-180, 180, num=n_angles, endpoint=False)
+
+        # Create zarr.
+        init_horizon(output_directory, angles, (dem_data.shape[0], dem_data.shape[1]))
+
+        # Share needed ray objects
         dem_ray = ray.put(dem_data)
         aspect_ray = ray.put(aspect)
-        cos_ray = ray.put(cos_slope)
-        sin_ray = ray.put(sin_slope)
-        tan_ray = ray.put(tan_slope)
+        tan_slope_ray = ray.put(tan_slope)
 
         # Run n-angles in parallel
         futures = [
-            viewfdozier_i.remote(
-                a, dem_ray, dem_prj_resolution, aspect_ray, cos_ray, sin_ray, tan_ray
+            horizon_worker.remote(
+                angle=a,
+                dem=dem_ray,
+                spacing=resolution,
+                aspect=aspect_ray,
+                tan_slope=tan_slope_ray,
+                output_directory=output_directory,
+                logging_level=logging_level,
+                log_file=log_file,
             )
             for a in angles
         ]
-        results = ray.get(futures)
+        ray.get(futures)
 
-        # and so now, we have a list object of 72, 2-d arrays
-        # and  can complete integration for svf
-        svf = sum(results) / len(angles)
+        # set up integral for skyview
+        qIntegrand = np.zeros_like(dem_data, dtype=np.float32)
+        for a in angles:
+            h = load_horizon(output_directory=output_directory, angle=a)
+            azimuth = np.radians(a)
+            cos_aspect = np.cos(aspect - azimuth)
 
-        envi.save_image(
-            svf_hdr_path,
-            svf.astype(np.float32),
-            dtype=np.float32,
-            interleave="bsq",
-            metadata=dem_metadata,
-            force=True,
-        )
+            # integral in https://github.com/DozierJeff/Topographic-Horizons:
+            # qIntegrand = (  (cosd(slopeDegrees)*sin(H).^2 +
+            # sind(slopeDegrees)*cos(aspectRadian-azmRadian).*(H-cos(H).*sin(H)))/2 )
+            qIntegrand_i = cos_slope * np.sin(h) ** 2 + sin_slope * cos_aspect * (
+                h - np.sin(h) * np.cos(h)
+            )
+            qIntegrand_i[qIntegrand_i < 0] = 0
+            qIntegrand_i[np.isnan(qIntegrand_i)] = 0
+            qIntegrand += qIntegrand_i
+
+        # complete integration for svf
+        svf = qIntegrand / len(angles)
+        svf[(svf <= 0) | (svf > 1)] = -9999  # no such situation svf=0.
+
+        # write data
+        out_mm = envi.open(svf_hdr_path).open_memmap(writable=True)
+        out_mm[:, :, 0] = svf.astype(np.float32)
+        del out_mm
+
+        if not keep_horizon_files:
+            logging.info("Removing temporary horizon Zarr directories...")
+            horizon_files = join(output_directory, "horizons.zarr")
+            if isdir(horizon_files):
+                shutil.rmtree(horizon_files)
+
     else:
         err_str = "method must be either 'horizon' or 'slope'."
         raise ValueError(err_str)
 
-
-def viewfdozier_prep(dem, spacing, nangles=72, sin_slope=None, aspect=None):
-    """
-    Preps computations for ray.
-
-    Args:
-        dem: numpy array for the DEM
-        spacing: grid spacing of the DEM
-        nangles: number of angles to estimate the horizon, defaults
-                to 72 angles
-        sin_slope: optional, will calculate if not provided
-                    sin(slope) with range from 0 to 1
-        aspect: optional, will calculate if not provided
-                Aspect as radians from south (aspect 0 is toward
-                the south) with range from -pi to pi, with negative
-                values to the west and positive values to the east.
-
-    Returns:
-        angles, aspect, cos_slope, sin_slope, tan_slope
-
-    """
-
-    if dem.ndim != 2:
-        raise ValueError("viewf input of dem is not a 2D array")
-
-    if nangles < 16:
-        raise ValueError("viewf number of angles should be 16 or greater")
-
-    if sin_slope is not None:
-        if np.max(sin_slope) > 1:
-            raise ValueError("slope must be sin(slope) with range from 0 to 1")
-
-    # calculate the gradient if not provided
-    # The slope is returned as radians so convert to sin(S)
-    if sin_slope is None:
-        slope, aspect = gradient_d8(dem, dx=spacing, dy=spacing, aspect_rad=True)
-        sin_slope = np.sin(slope)
-        cos_slope = np.cos(slope)
-        tan_slope = np.tan(slope)
-
-    # -180 is North
-    angles = np.linspace(-180, 180, num=nangles, endpoint=False)
-
-    return angles, aspect, cos_slope, sin_slope, tan_slope
+    logging.info(
+        f"Skyview calculation completed in {time.time() - start_time} seconds using {n_cores} cores."
+    )
 
 
 @ray.remote(num_cpus=1)
-def viewfdozier_i(angle, dem, spacing, aspect, cos_slope, sin_slope, tan_slope):
+def horizon_worker(
+    angle,
+    dem,
+    spacing,
+    aspect,
+    tan_slope,
+    output_directory,
+    logging_level,
+    log_file,
+):
     """
-    See above, but this is running each horizon angle in parallel (n=72 , or user input)
-
-    This returns the i-th svf array, used in the integral
-
+    Each worker gets an angle and is sent to this function to compute horizons, and save to a compressed/scaled zarr file.
     """
+    # set up logging for each worker.
+    logging.basicConfig(
+        format="%(levelname)s:%(asctime)s ||| %(message)s",
+        level=logging_level,
+        filename=log_file,
+        datefmt="%Y-%m-%d,%H:%M:%S",
+    )
 
-    # horizon angles
+    # horizon angles (h)
     hcos = horizon(angle, dem, spacing)
     azimuth = np.radians(angle)
     h = np.arccos(hcos)
+    h = update_h_for_local_topo(h, aspect, azimuth, tan_slope)
 
-    # cosines of difference between horizon aspect and slope aspect
-    cos_aspect = np.cos(aspect - azimuth)
+    # flush current run to disk.
+    save_horizon(h=h, angle=angle, output_directory=output_directory)
 
-    # check for slope being obscured
+    del h
+
+    return
+
+
+def init_horizon(output_directory, angles, shape):
+    """
+    Creates a zarr dataset for the horizon computations.
+    """
+    h_nodata = 65535
+    ds = xr.Dataset(
+        {
+            f"horizon_{np.round(a,5)}": xr.DataArray(
+                np.full(shape, h_nodata, dtype=np.uint16),
+                dims=("row", "col"),
+                attrs={
+                    "units": "radians",
+                    "scale_factor": np.pi / 65534,
+                    "add_offset": 0.0,
+                    "nodata": h_nodata,
+                },
+            )
+            for a in angles
+        }
+    )
+
+    horizon_files = join(output_directory, "horizons.zarr")
+    ds.to_zarr(
+        horizon_files,
+        mode="w",
+        consolidated=False,
+        encoding={
+            f"horizon_{np.round(a,5)}": {"dtype": "uint16", "_FillValue": h_nodata}
+            for a in angles
+        },
+    )
+    ds.close()
+
+    return
+
+
+def save_horizon(h, angle, output_directory):
+    """utility function to house metadata and information for saving horizon angles"""
+
+    # scale factor
+    h_nodata = 65535
+    h_sf = np.pi / 65534
+
+    # apply scale factor to the data
+    h_scaled = (h / h_sf).astype(np.uint16)
+    h_scaled[(np.isnan(h)) | (h == -9999)] = h_nodata
+
+    # append to the zarr dir
+    horizon_files = join(output_directory, "horizons.zarr")
+    angle_name = f"horizon_{np.round(angle, 5)}"
+    z = zarr.open(horizon_files, mode="a")
+    z[angle_name][:] = h_scaled
+
+    logging.info(f"Flushed horizon angle: {angle_name} to disk.")
+
+    return
+
+
+def load_horizon(output_directory, angle):
+    horizon_files = join(output_directory, "horizons.zarr")
+    angle_name = f"horizon_{np.round(angle,5)}"
+    ds = xr.open_zarr(horizon_files, decode_cf=False, consolidated=False)
+    da = ds[angle_name]
+    h_nodata = da.attrs["nodata"]
+    h_sf = da.attrs["scale_factor"]
+    h_scaled = da.astype(np.float32).values
+    h_scaled[h_scaled == h_nodata] = np.nan
+    h = h_scaled * h_sf
+    ds.close()
+    return h
+
+
+def create_shadow_mask(
+    input: str,
+    output_directory: str,
+    resolution: float = np.nan,
+    sza: float = np.nan,
+    saa: float = np.nan,
+    logging_level: str = "INFO",
+    log_file: str = None,
+    n_cores: int = 1,
+    ray_address: str = None,
+    ray_redis_password: str = None,
+    ray_temp_dir: str = None,
+    ray_ip_head: str = None,
+):
+    """
+    Computes horizons at a specific geometry to create a binary shadow mask because nearby terrain
+    can cast shadows onto pixels as a function of the solar geometry that aren't always captured in cos-i.
+    In this case, the input angle is the solar azimuth, and the solar zenith is compared to h at each pixel.
+
+    As of right now, this assumes solar azimuth is constant value (0-360deg). However, solar zenith (0-90deg) can vary by pixel.
+
+    """
+
+    logging.basicConfig(
+        format="%(levelname)s:%(message)s", level=logging_level, filename=log_file
+    )
+
+    logging.info("Starting shadow mask utility...")
+    start_time = time.time()
+
+    # Ensure SAA is within 0-360 degrees.
+    if saa > 360 or saa < 0:
+        err_str = f"Must us 0-360deg convention for solar azimuth, with 0 at North."
+        raise ValueError(err_str)
+
+    if not isdir(output_directory):
+        err_str = f"The output directory, {output_directory}, does not exist or was not found."
+        raise ValueError(err_str)
+    else:
+        shadow_hdr_path = join(output_directory, "shadow_mask.hdr")
+
+    # Load DEM data (assuming hdr).
+    dem_data, shadow_metadata, slope = load_input(
+        input=input, resolution=resolution, obs_or_loc=None, method="horizon"
+    )
+    shadow_metadata.update(
+        {
+            "description": "Shadow Mask",
+            "bands": 1,
+            "data ignore value": -9999,
+            "data type": 1,
+            "byte order": 0,
+            "interleave": "bip",
+            "band names": ["Shadow Mask"],
+        }
+    )
+    initialize_output(
+        output_metadata=shadow_metadata,
+        outpath=shadow_hdr_path.replace(".hdr", ""),
+        out_shape=(dem_data.shape[0], dem_data.shape[1], 1),
+    )
+
+    # create empty array for shadow data
+    shadow = np.zeros_like(dem_data)
+
+    # prep data for horizon method
+    slope, aspect = gradient_d8(dem_data, dx=resolution, dy=resolution, aspect_rad=True)
+    tan_slope = np.tan(slope).astype(np.float32)
+
+    # convert saa into convention h method expects.
+    saa = ((180 - saa) + 180) % 360 - 180
+
+    # Start up a ray instance for parallel work
+    rayargs = {
+        "ignore_reinit_error": True,
+        "local_mode": n_cores == 1,
+        "address": ray_address,
+        "include_dashboard": False,
+        "_temp_dir": ray_temp_dir,
+        "_redis_password": ray_redis_password,
+        "num_cpus": n_cores,
+    }
+    ray.init(**rayargs)
+
+    # horizon angles (h)
+    hcos = horizon(saa, dem_data, resolution, par=(n_cores > 1), n_cores=n_cores)
+    azimuth = np.radians(saa)
+    h = np.arccos(hcos)
+    h = update_h_for_local_topo(h, aspect, azimuth, tan_slope)
+
+    # Check each pixel to identify where sza>H. 1=shadow cast. 0=false.
+    shadow[np.radians(sza) >= h] = 1
+
+    # write data
+    out_mm = envi.open(shadow_hdr_path).open_memmap(writable=True)
+    out_mm[:, :, 0] = shadow.astype(np.uint8)
+    del out_mm
+
+    logging.info(
+        f"Shadow mask completed in {time.time() - start_time} seconds using {n_cores} cores."
+    )
+
+    return
+
+
+def update_h_for_local_topo(h, aspect, azimuth, tan_slope):
+    # update h for within-pixel topography.
     # EQ 3 in Dozier et al. 2022
     #     H(t) = min(H(t), acos(sqrt(1-1./(1+tand(slopeDegrees)^2*cos(azmRadian(t)-aspectRadian).^2))));
+    cos_aspect = np.cos(azimuth - aspect)
     t = cos_aspect < 0
-    h[t] = np.fmin(
-        h[t], np.arccos(np.sqrt(1 - 1 / (1 + cos_aspect[t] ** 2 * tan_slope[t] ** 2)))
+    h[t] = np.minimum(
+        h[t], np.arccos(np.sqrt(1 - 1 / (1 + tan_slope[t] ** 2 * cos_aspect[t] ** 2)))
     )
+    return h
 
-    # integral in https://github.com/DozierJeff/Topographic-Horizons:
-    # qIntegrand = (cosd(slopeDegrees)*sin(H).^2 + sind(slopeDegrees)*cos(aspectRadian-azmRadian).*(H-cos(H).*sin(H)))/2
-    svf = cos_slope * np.sin(h) ** 2 + sin_slope * cos_aspect * (
-        h - np.sin(h) * np.cos(h)
-    )
-    svf[svf < 0] = 0
 
-    return svf
+def load_input(input, resolution, obs_or_loc=None, method="slope"):
+
+    if not isfile(input):
+        raise FileNotFoundError(f"The DEM file was not found: {input}.")
+
+    dem = envi.open(envi_header(input))
+    dem_data = dem.open_memmap(writeable=False).copy().astype(np.float32)
+
+    if method:
+        method = method.lower()
+    if obs_or_loc:
+        obs_or_loc = obs_or_loc.lower()
+
+    if obs_or_loc != "obs":
+        if (
+            not isinstance(resolution, (float, int))
+            or resolution <= 0
+            or np.isnan(resolution)
+        ):
+            raise ValueError(
+                "resolution must be positive value when using elevation data."
+            )
+
+    max_elev = 10000.0  # slightly higher than Mt.Everest
+    min_elev = -2000.0  # slightly lower than Dead Sea
+
+    slope = None
+    if obs_or_loc == "obs":
+        # Assuming OBS Slope data in degrees
+        slope = dem_data[:, :, 6]
+        slope[slope > 90.1] = np.nan
+        slope[slope < -0.01] = np.nan
+        slope = np.radians(slope)
+        # Squeeze 3D data with single band to 2D
+        if slope.ndim == 3 and slope.shape[2] == 1:
+            slope = slope[:, :, 0].astype(np.float32)
+    elif obs_or_loc == "loc":
+        dem_data = dem_data[:, :, 2].astype(np.float32)
+        dem_data[dem_data > max_elev] = np.nan
+        dem_data[dem_data < min_elev] = np.nan
+    elif obs_or_loc is None:
+        dem_data[dem_data > max_elev] = np.nan
+        dem_data[dem_data < min_elev] = np.nan
+    else:
+        raise ValueError("obs_or_loc must be 'loc', 'obs', or None.")
+
+    # Squeeze 3D data with single band to 2D
+    if dem_data.ndim == 3 and dem_data.shape[2] == 1:
+        dem_data = dem_data[:, :, 0].astype(np.float32)
+
+    # get metadata
+    metadata = dem.metadata.copy()
+
+    return dem_data, metadata, slope
 
 
 """NOTE:
 The rest of the codes below were heavily borrowed from USDA-ARS topo-calc package.
 
-With one exception which is hor1(). This had to be modified to improve speed.
+With one exception which is hor1d(). This had to be modified to improve speed.
 """
 
 
@@ -352,7 +625,7 @@ def gradient_d8(dem, dx, dy, aspect_rad=False):
     if aspect_rad:
         a = aspect_to_ipw_radians(a)
 
-    return slope, a
+    return slope.astype(np.float32), a.astype(np.float32)
 
 
 def calc_slope(dz_dx, dz_dy):
@@ -423,7 +696,7 @@ def aspect_to_ipw_radians(a):
     return arad
 
 
-def horizon(azimuth, dem, spacing):
+def horizon(azimuth, dem, spacing, par=False, n_cores=1):
     """Calculate horizon angles for one direction. Horizon angles
     are based on Dozier and Frew 1990 and are adapted from the
     IPW C code.
@@ -450,54 +723,54 @@ def horizon(azimuth, dem, spacing):
 
     if azimuth == 90:
         # East
-        hcos = hor2d(dem, spacing, fwd=True)
+        hcos = hor2d(dem, spacing, fwd=True, par=par, n_cores=n_cores)
 
     elif azimuth == -90:
         # West
-        hcos = hor2d(dem, spacing, fwd=False)
+        hcos = hor2d(dem, spacing, fwd=False, par=par, n_cores=n_cores)
 
     elif azimuth == 0:
         # South
-        hcos = hor2d(dem.transpose(), spacing, fwd=True)
+        hcos = hor2d(dem.transpose(), spacing, fwd=True, par=par, n_cores=n_cores)
         hcos = hcos.transpose()
 
     elif np.abs(azimuth) == 180:
         # South
-        hcos = hor2d(dem.transpose(), spacing, fwd=False)
+        hcos = hor2d(dem.transpose(), spacing, fwd=False, par=par, n_cores=n_cores)
         hcos = hcos.transpose()
 
     elif azimuth >= -45 and azimuth <= 45:
         # South west through south east
         t, spacing = skew_transpose(dem, spacing, azimuth)
-        h = hor2d(t, spacing, fwd=True)
+        h = hor2d(t, spacing, fwd=True, par=par, n_cores=n_cores)
         hcos = skew(h.transpose(), azimuth, fwd=False)
 
     elif azimuth <= -135 and azimuth > -180:
         # North west
         a = azimuth + 180
         t, spacing = skew_transpose(dem, spacing, a)
-        h = hor2d(t, spacing, fwd=False)
+        h = hor2d(t, spacing, fwd=False, par=par, n_cores=n_cores)
         hcos = skew(h.transpose(), a, fwd=False)
 
     elif azimuth >= 135 and azimuth < 180:
         # North East
         a = azimuth - 180
         t, spacing = skew_transpose(dem, spacing, a)
-        h = hor2d(t, spacing, fwd=False)
+        h = hor2d(t, spacing, fwd=False, par=par, n_cores=n_cores)
         hcos = skew(h.transpose(), a, fwd=False)
 
     elif azimuth > 45 and azimuth < 135:
         # South east through north east
         a = 90 - azimuth
         t, spacing = transpose_skew(dem, spacing, a)
-        h = hor2d(t, spacing, fwd=True)
+        h = hor2d(t, spacing, fwd=True, par=par, n_cores=n_cores)
         hcos = skew(h.transpose(), a, fwd=False).transpose()
 
     elif azimuth < -45 and azimuth > -135:
         # South west through north west
         a = -90 - azimuth
         t, spacing = transpose_skew(dem, spacing, a)
-        h = hor2d(t, spacing, fwd=False)
+        h = hor2d(t, spacing, fwd=False, par=par, n_cores=n_cores)
         hcos = skew(h.transpose(), a, fwd=False).transpose()
 
     else:
@@ -509,9 +782,9 @@ def horizon(azimuth, dem, spacing):
     return hcos
 
 
-def hor1(z, fwd=True):
+def hor1d(z, fwd=True):
     n = len(z)
-    h = np.empty(n, dtype=int)
+    h = np.empty(n, dtype=np.int32)
 
     if fwd:
         stack = []
@@ -527,7 +800,7 @@ def hor1(z, fwd=True):
                 else:
                     prev_dist = prev_j - j
                     prev_slope = (z[prev_j] - z[j]) / prev_dist
-                if slope <= prev_slope:
+                if slope <= prev_slope + eps:
                     stack.pop()
                 else:
                     break
@@ -551,7 +824,7 @@ def hor1(z, fwd=True):
                 else:
                     prev_dist = j - prev_j
                     prev_slope = (z[prev_j] - z[j]) / prev_dist
-                if slope <= prev_slope:
+                if slope <= prev_slope + eps:
                     stack.pop()
                 else:
                     break
@@ -573,17 +846,40 @@ def horval(z, delta, h):
     return hcos
 
 
-def hor2d(z, delta, fwd=True):
+def hor2d(z, delta, fwd=True, par=False, n_cores=1):
     if z.ndim != 2:
         raise ValueError("Input must be 2D array")
+
     nrows, ncols = z.shape
-    hcos = np.empty_like(z)
-    for i in range(nrows):
-        zbuf = z[i, :]
-        hbuf = hor1(zbuf, fwd=fwd)
-        obuf = horval(zbuf, delta, hbuf)
-        hcos[i, :] = obuf
-    return hcos
+
+    if not par:
+        hcos = np.empty_like(z, dtype=np.float32)
+        for i in range(nrows):
+            zbuf = z[i, :]
+            hbuf = hor1d(zbuf, fwd=fwd)
+            obuf = horval(zbuf, delta, hbuf)
+            hcos[i, :] = obuf
+        return hcos
+    else:
+        z_ray = ray.put(z)
+        chunk_size = int(np.ceil(nrows / n_cores))
+        futures = []
+        for c in range(n_cores):
+            start = c * chunk_size
+            end = min((c + 1) * chunk_size, nrows)
+            futures.append(_hor2d_chunk.remote(z_ray, delta, fwd, start, end))
+        hcos = np.vstack(ray.get(futures)).astype(np.float32)
+        return hcos
+
+
+@ray.remote(num_cpus=1)
+def _hor2d_chunk(zbuf, delta, fwd, row_start, row_end):
+    results = []
+    for i in range(row_start, row_end):
+        line = zbuf[i, :]
+        hbuf = hor1d(line, fwd=fwd)
+        results.append(horval(line, delta, hbuf))
+    return np.vstack(results)
 
 
 def adjust_spacing(spacing, skew_angle):
@@ -656,14 +952,29 @@ def skew(arr, angle, fwd=True, fill_min=True):
     if fill_min:
         b += np.min(arr)
 
-    for line in range(nlines):
-        o = line if negflag else nlines - line - 1
-        offset = int(o * slope + 0.5)
+    # linear interpolations for sub-pixel mapping, happens twice
+    # fwd (prior to horizon): arr is the dem elevation data
+    # else (after horizon): arr is the horizon angles 0-pi.
+    line_indices = np.arange(nlines)
+    o_indices = line_indices if negflag else nlines - line_indices - 1
+    offsets = o_indices * slope
+    if fwd:
+        for i in range(nlines):
+            offset = offsets[i]
+            output = np.arange(o_nsamps)
+            source = output - offset
+            mask = (source >= 0) & (source <= nsamps - 1)
+            y_k = np.interp(source[mask], np.arange(nsamps), arr[i, :])
+            b[i, mask] = y_k
 
-        if fwd:
-            b[line, offset : offset + nsamps] = arr[line, :]
-        else:
-            b[line, :] = arr[line, offset : offset + o_nsamps]
+    else:
+        for i in range(nlines):
+            source = np.arange(nsamps)
+            offset = offsets[i]
+            output = source - offset
+            mask = (output >= 0) & (output <= o_nsamps - 1)
+            y_k = np.interp(np.arange(o_nsamps), output[mask], arr[i, source[mask]])
+            b[i, :] = y_k
 
     return b
 
@@ -710,11 +1021,13 @@ def transpose_skew(dem, spacing, angle):
 
 # Input arguments
 @click.command(name="skyview", help=skyview.__doc__, no_args_is_help=True)
-@click.argument("dem_prj_path", type=str)
-@click.argument("dem_prj_resolution", type=float)
+@click.argument("input", type=str)
 @click.argument("output_directory", type=str)
-@click.option("--n_angles", type=int, default=72)
-@click.option("--method", type=str, default="horizon")
+@click.option("--resolution", type=float, default=np.nan)
+@click.option("--n_angles", type=int, default=64)
+@click.option("--keep_horizon_files", type=bool, default=False)
+@click.option("--obs_or_loc", type=str, default=None)
+@click.option("--method", type=str, default="slope")
 @click.option("--logging_level", default="INFO")
 @click.option("--log_file", type=str, default=None)
 @click.option("--n_cores", type=int, default=1)

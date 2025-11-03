@@ -355,36 +355,35 @@ def apply_oe(
             # overwrite arg to be the resulting filepath. create new directory
             # NOTE: this new directory should be in paths.make_directories(),
             # but cannot at the moment because of the order of operations...
-            skyview_factor = join(working_directory, "skyview", "sky_view_factor.hdr")
+            skyview_factor = join(working_directory, "skyview", "sky_view_factor")
             if not exists(os.path.dirname(skyview_factor)):
                 os.mkdir(os.path.dirname(skyview_factor))
             skyview(
-                dem_prj_path=input_obs,
-                dem_prj_resolution=np.nan,  # unused in slope method with OBS input.
+                input=input_obs,
                 output_directory=os.path.dirname(skyview_factor),
                 obs_or_loc="obs",
                 method="slope",
+                log_file=log_file,
+                logging_level=logging_level,
             )
-        # If arg is None, load in the user data and check.
-        else:
-            if not exists(skyview_factor):
-                raise ValueError(
-                    f"Input skyview: {skyview_factor} file was not found on system."
-                )
-            else:
-                # load in and ensure same shape as image file.
-                svf_dataset = envi.open(envi_header(skyview_factor), skyview_factor)
-                svf_size = (svf_dataset.shape[0], svf_dataset.shape[1])
-                svf_max = np.nanmax(svf_dataset)
-                del svf_dataset
-                if not (svf_size[0] == rdn_size[0] and svf_size[1] == rdn_size[1]):
-                    err_str = (
-                        f"Input file: {skyview_factor} size is {svf_size}, which does not"
-                        f" match input_radiance size: {rdn_size}"
-                    )
-                    raise ValueError(err_str)
-                if svf_max > 1.0:
-                    err_str = f"Input file: {skyview_factor} has data with max {svf_max}. Data must range between 0-1."
+        if not exists(skyview_factor):
+            raise ValueError(
+                f"Input skyview: {skyview_factor} file was not found on system."
+            )
+
+        # load in and ensure same shape as image file.
+        svf_dataset = envi.open(envi_header(skyview_factor), skyview_factor)
+        svf_size = (svf_dataset.shape[0], svf_dataset.shape[1])
+        svf_max = np.nanmax(svf_dataset.open_memmap())
+        del svf_dataset
+        if not (svf_size[0] == rdn_size[0] and svf_size[1] == rdn_size[1]):
+            err_str = (
+                f"Input file: {skyview_factor} size is {svf_size}, which does not"
+                f" match input_radiance size: {rdn_size}"
+            )
+            raise ValueError(err_str)
+        if svf_max > 1.0:
+            err_str = f"Input file: {skyview_factor} has data with max {svf_max}. Data must range between 0-1."
 
     logging.info("...Data file checks complete")
 
@@ -394,22 +393,22 @@ def apply_oe(
 
     logging.info("Setting up files and directories....")
     paths = tmpl.Pathnames(
-        input_radiance,
-        input_loc,
-        input_obs,
-        surface_class_file,
-        sensor,
-        surface_path,
-        working_directory,
-        copy_input_files,
-        modtran_path,
-        rdn_factors_path,
-        model_discrepancy_path,
-        aerosol_climatology_path,
-        channelized_uncertainty_path,
-        ray_temp_dir,
-        interpolate_inplace,
-        skyview_factor,
+        input_radiance=input_radiance,
+        input_loc=input_loc,
+        input_obs=input_obs,
+        surface_class_file=surface_class_file,
+        sensor=sensor,
+        surface_path=surface_path,
+        working_directory=working_directory,
+        copy_input_files=copy_input_files,
+        modtran_path=modtran_path,
+        rdn_factors_path=rdn_factors_path,
+        model_discrepancy_path=model_discrepancy_path,
+        aerosol_climatology_path=aerosol_climatology_path,
+        channelized_uncertainty_path=channelized_uncertainty_path,
+        ray_temp_dir=ray_temp_dir,
+        interpolate_inplace=interpolate_inplace,
+        skyview_factor=skyview_factor,
         subs=True if analytical_line or empirical_line else False,
         classify_multisurface=classify_multisurface,
     )
@@ -831,6 +830,7 @@ def apply_oe(
                 isofit_config=paths.isofit_full_config_path,
                 nneighbors=nneighbors[0],
                 n_cores=n_cores,
+                segmentation_size=segmentation_size,
             )
         elif analytical_line:
             logging.info("Analytical line inference")
@@ -847,6 +847,7 @@ def apply_oe(
                 n_atm_neighbors=nneighbors,
                 n_cores=n_cores,
                 smoothing_sigma=atm_sigma,
+                segmentation_size=segmentation_size,
             )
 
     logging.info("Done.")

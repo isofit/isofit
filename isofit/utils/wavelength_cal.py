@@ -394,22 +394,22 @@ def wavelength_cal(
     skyview_factor = None
     surface_class_file = None
     paths = tmpl.Pathnames(
-        input_radiance,
-        input_loc,
-        input_obs,
-        surface_class_file,
-        sensor,
-        surface_path,
-        working_directory,
-        copy_input_files,
-        modtran_path,
-        rdn_factors_path,
-        model_discrepancy_path,
-        None,
-        channelized_uncertainty_path,
-        ray_temp_dir,
-        False,
-        skyview_factor,
+        input_radiance=input_radiance,
+        input_loc=input_loc,
+        input_obs=input_obs,
+        surface_class_file=surface_class_file,
+        sensor=sensor,
+        surface_path=surface_path,
+        working_directory=working_directory,
+        copy_input_files=copy_input_files,
+        modtran_path=modtran_path,
+        rdn_factors_path=rdn_factors_path,
+        model_discrepancy_path=model_discrepancy_path,
+        aerosol_climatology_path=None,
+        channelized_uncertainty_path=channelized_uncertainty_path,
+        ray_temp_dir=ray_temp_dir,
+        subs=False,
+        skyview_factor=skyview_factor,
     )
     paths.make_directories()
     paths.stage_files()
