@@ -42,7 +42,7 @@ Logger = logging.getLogger(__file__)
 
 
 class tfLikeModel:
-    def __init__(self, input_file=None, key=None, weights=None, biases=None):
+    def __init__(self, input_file=None, key=None, layer_read=True):
         if input_file is not None and key is None:
             self.input_file = input_file
             model = h5py.File(input_file, "r")
@@ -64,22 +64,26 @@ class tfLikeModel:
             self.biases = biases
             self.input_file = input_file
 
-        elif input_file is not None and key is not None:
-            self.input_file = input_file
-            self.key = key
-            self.layers = len(h5py.File(self.input_file, "r")[f"weights_{key}"])
-
-        elif input_file is None and key is None:
-            # If we have weights and biases provided directly
-            self.weights = weights
-            self.biases = biases
-            self.input_file = None
-            self.layers = len(weights)
-
         else:
-            raise ValueError(
-                "You must provide an input_file when using the 3C emulator."
-            )
+            if layer_read:
+                self.input_file = input_file
+                self.key = key
+                with h5py.File(input_file, "r") as model:
+                    self.layers = len(model[f"weights_{key}"])
+
+            else:
+                model = h5py.File(input_file, "r")
+                model[f"weights_{key}"].keys()
+                with h5py.File(input_file, "r") as model:
+                    self.layers = len(model[f"weights_{key}"])
+                    self.weights = [
+                        model[f"weights_{key}"][layer][:]
+                        for layer in model[f"weights_{key}"].keys()
+                    ]
+                    self.biases = [
+                        model[f"biases_{key}"][layer][:]
+                        for layer in model[f"biases_{key}"].keys()
+                    ]
 
     def leaky_re_lu(self, x, alpha=0.4):
         return np.maximum(alpha * x, x)
@@ -154,7 +158,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         "transm_up_dif",
         "transm_up_dir",  # NOTE: Formerly transup
     }
-    aux_keys = {
+    aux_quantities = {
         "lut_names": str,
         "feature_point_names": str,
         "rt_quantities": str,
@@ -178,7 +182,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
 
         # Get the component mode up front
         if self.engine_config.emulator_file.endswith(".h5"):
-            self.component_mode = "1c"
+            self.component_mode = "3c"
 
         elif self.engine_config.emulator_file.endswith(".6c"):
             self.component_mode = "6c"
@@ -188,16 +192,33 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                 f"Invalid extension for emulator aux file. Use .npz or .6c"
             )
 
-        # Pack the emulator Aux the same regardless of input file type
-        if component_mode == "1c":
+        # Pack the emulator Aux the same regardless of input file type.
+        # Enforce types
+        if self.component_mode == "3c":
             aux = dict(np.load(config.emulator_aux_file, allow_pickle=True))
+            aux_dict = {}
+            for key, value in self.aux_quantities.items():
+                if len(aux.get(key, [])):
+                    aux_dict[key] = aux.get(key)
+
+            aux = aux_dict
+
         else:
-            aux = h5py.File(config.emulator_file, "r")
+            aux = {}
+            with h5py.File(config.emulator_file, "r") as model:
+                for key, value in self.aux_quantities.items():
+                    if value == dict:
+                        aux[key] = {
+                            model_: model[key][model_][:].astype(np.float64)
+                            for model_ in model[key].keys()
+                        }
+                    else:
+                        aux[key] = model[key][:].astype(value)
 
         # TODO: Disable when sRTMnet_v120_aux is updated
         aux_rt_quantities = np.where(
             aux["rt_quantities"] == "transm", "transm_down_dif", aux["rt_quantities"]
-        )
+        ).astype(str)
 
         # Emulator keys (sRTMnet)
         self.emu_wl = aux["emulator_wavelengths"]
@@ -247,7 +268,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
 
         else:
             Logger.info("Loading and predicting with emulator")
-            if self.component_mode == "1c":
+            if self.component_mode == "3c":
                 Logger.debug("Detected hdf5 (3c) emulator file format")
 
                 # Stack the quantities together along a new dimension
@@ -271,6 +292,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
 
                 # Unstack back to a dataset and save
                 predicts = predicts.unstack("stack").to_dataset("quantity")
+                predicts.attrs["component_mode"] = "3c"
 
             else:
                 Logger.debug("Detected 6c emulator file format")
@@ -311,16 +333,11 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                     key_start_time = time.time()
                     Logger.debug(f"Loading emulator {key}")
 
-                    if self.engine_config.parallel_layer_read:
-                        emulator = tfLikeModel(self.engine_config.emulator_file, key)
-
-                    else:
-                        emulator = tfLikeModel(
-                            None,
-                            None,
-                            weights=aux[f"weights_{key}"],
-                            biases=aux[f"biases_{key}"],
-                        )
+                    emulator = tfLikeModel(
+                        input_file=self.engine_config.emulator_file,
+                        key=key,
+                        layer_read=self.engine_config.parallel_layer_read,
+                    )
 
                     Logger.info(f"Emulating {key}")
                     if len(feature_point_names) > 0:
@@ -342,8 +359,8 @@ class SimulatedModtranRT(RadiativeTransferEngine):
 
                     lp = np.concatenate(ray.get(result_refs), axis=0)
                     Logger.debug(f"Cleanup {key}")
-                    lp /= aux["response_scaler"].item()[key]
-                    lp += aux["response_offset"].item()[key]
+                    lp /= aux["response_scaler"][key]
+                    lp += aux["response_offset"][key]
 
                     ltz = resample[key].values + lp < 0
                     lp[ltz] = -1 * resample[key].values[ltz]
@@ -353,6 +370,8 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                     elapsed_time = time.time() - key_start_time
                     Logger.debug(f"Predict time ({key}): {elapsed_time} seconds")
                     del result_refs, model_ref, emulator
+
+                predicts.attrs["component_mode"] = "6c"
 
                 elapsed_time = time.time() - total_start_time
                 Logger.info(f"Total prediction: {elapsed_time} seconds")
