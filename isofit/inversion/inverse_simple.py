@@ -322,8 +322,9 @@ def invert_analytical(
 
     # Use cached scaling factor from inital normalized inverse (outside of loop).
     Sa = fm.Sa(x, geom)
-    Sa_surface = Sa[fm.idx_surface, :][:, fm.idx_surface]
-    Sa_inv, Sa_inv_sqrt = fm.calc_Sa_inverse(Sa_surface)
+    Sa_inv, Sa_inv_sqrt = fm.calc_Sa_inverse(Sa)
+    Sa_inv = Sa_inv[fm.idx_surface, :][:, fm.idx_surface]
+    Sa_inv_sqrt = Sa_inv_sqrt[fm.idx_surface, :][:, fm.idx_surface]
 
     trajectory = np.zeros((num_iter + 1, len(x)))
     trajectory[0, :] = x
