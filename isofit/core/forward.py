@@ -162,6 +162,12 @@ class ForwardModel:
         self.Sa_inv_normalized, self.Sa_inv_sqrt_normalized = svd_inv_sqrt(
             Sa_normalized
         )
+        # Compute identity matrix to check for poor conditioning and other stability issues.
+        I = self.Sa_inv_sqrt_normalized @ Sa_normalized @ self.Sa_inv_sqrt_normalized.T
+        if not np.allclose(I, np.eye(Sa.shape[0]), atol=eps):
+            raise ValueError(
+                "Matrix product not close to identity after normalizing Sa inv."
+            )
 
     def calc_Sa_inverse(self, Sa):
         """Use cached scaling factor from inital normalized inverse."""
