@@ -30,6 +30,7 @@ from isofit.core.multistate import SurfaceMapping
 from isofit.data import env
 from isofit.radiative_transfer.engines.modtran import ModtranRT
 from isofit.utils.surface_model import surface_model
+from isofit import __version__
 
 
 class Pathnames:
@@ -43,18 +44,18 @@ class Pathnames:
         input_loc,
         input_obs,
         surface_class_file,
-        sensor,
         surface_path,
         working_directory,
-        copy_input_files,
-        modtran_path,
-        rdn_factors_path,
-        model_discrepancy_path,
-        aerosol_climatology_path,
-        channelized_uncertainty_path,
         ray_temp_dir,
-        interpolate_inplace,
-        skyview_factor,
+        sensor="NA-*",
+        copy_input_files=False,
+        modtran_path=None,
+        rdn_factors_path=None,
+        model_discrepancy_path=None,
+        aerosol_climatology_path=None,
+        channelized_uncertainty_path=None,
+        interpolate_inplace=False,
+        skyview_factor=None,
         subs: bool = False,
         classify_multisurface: bool = False,
     ):
@@ -766,6 +767,7 @@ def build_presolve_config(
             "inversion": {"windows": inversion_windows},
             "n_cores": n_cores,
             "debug_mode": debug,
+            "isofit_version": __version__,
         },
     }
 
@@ -1088,6 +1090,7 @@ def build_main_config(
             "inversion": {"windows": inversion_windows},
             "n_cores": n_cores,
             "debug_mode": debug,
+            "isofit_version": __version__,
         },
     }
 
