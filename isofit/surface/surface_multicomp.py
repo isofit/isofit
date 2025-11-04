@@ -22,7 +22,7 @@ from __future__ import annotations
 import numpy as np
 from scipy.linalg import block_diag, norm
 
-from isofit.core.common import svd_inv
+from isofit.core.common import svd_inv_sqrt
 from isofit.surface.surface import Surface
 
 
@@ -71,27 +71,43 @@ class MultiComponentSurface(Surface):
         self.idx_ref = [np.argmin(abs(self.wl - w)) for w in np.squeeze(self.refwl)]
         self.idx_ref = np.array(self.idx_ref)
 
-        # Cache some important computations
-        self.Covs, self.Cinvs, self.mus = [], [], []
-        for i in range(self.n_comp):
-            Cov = self.components[i][1]
-            self.Covs.append(np.array([Cov[j, self.idx_ref] for j in self.idx_ref]))
-            self.Cinvs.append(svd_inv(self.Covs[-1]))
-            self.mus.append(self.components[i][0][self.idx_ref])
-
         # Variables retrieved: each channel maps to a reflectance model parameter
         rmin, rmax = 0, 2.0
         self.statevec_names = ["RFL_%04i" % int(w) for w in self.wl]
         self.idx_surface = np.arange(len(self.statevec_names))
-
-        # Change this if you don't want to analytical solve for all the full statevector elements.
-        self.analytical_iv_idx = np.arange(len(self.statevec_names))
 
         self.bounds = [[rmin, rmax] for w in self.wl]
         self.scale = [1.0 for w in self.wl]
         self.init = [0.15 * (rmax - rmin) + rmin for v in self.wl]
         self.idx_lamb = np.arange(self.n_wl)
         self.n_state = len(self.statevec_names)
+
+        # Cache some important computations
+        self.Covs, self.Cinvs, self.mus = [], [], []
+        self.Sa_inv_normalized, self.Sa_inv_sqrt_normalized = [], []
+        self.nprefix = self.idx_lamb[0]
+        self.nsuffix = len(self.statevec_names) - self.idx_lamb[-1] - 1
+        for i in range(self.n_comp):
+            Cov = self.components[i][1]
+            self.Covs.append(np.array([Cov[j, self.idx_ref] for j in self.idx_ref]))
+            self.Cinvs.append(svd_inv_sqrt(self.Covs[-1])[0])
+            self.mus.append(self.components[i][0][self.idx_ref])
+
+            # TODO: similar to Sa shape, but caching normalized inverse
+            # To take another look here to double check.
+            Cov_full = block_diag(
+                np.zeros((self.nprefix, self.nprefix)),
+                self.components[i][1],
+                np.zeros((self.nsuffix, self.nsuffix)),
+            )
+            q = np.sqrt(np.mean(np.diag(Cov_full)))
+            Cov_normalized = Cov_full / q**2
+            Cinv_normalized, Cinv_sqrt_normalized = svd_inv_sqrt(Cov_normalized)
+            self.Sa_inv_normalized.append(Cinv_normalized)
+            self.Sa_inv_sqrt_normalized.append(Cinv_sqrt_normalized)
+
+        # Change this if you don't want to analytical solve for all the full statevector elements.
+        self.analytical_iv_idx = np.arange(len(self.statevec_names))
 
         # Surface specific attributes. Can override in inheriting classes
         self.full_glint = False
@@ -132,7 +148,7 @@ class MultiComponentSurface(Surface):
             mds.append(md)
         closest = np.argmin(mds)
 
-        # NOTE: Why is this not storing it every time??
+        # NOTE: Why is this not storing it every time?
         # if (
         #    self.select_on_init
         #    and hasattr(geom, "x_surf_init")
@@ -175,29 +191,10 @@ class MultiComponentSurface(Surface):
             return Cov
 
         # Embed into a larger state vector covariance matrix
-        nprefix = self.idx_lamb[0]
-        nsuffix = len(self.statevec_names) - self.idx_lamb[-1] - 1
-        Cov_prefix = np.zeros((nprefix, nprefix))
-        Cov_suffix = np.zeros((nsuffix, nsuffix))
+        Cov_prefix = np.zeros((self.nprefix, self.nprefix))
+        Cov_suffix = np.zeros((self.nsuffix, self.nsuffix))
 
         return block_diag(Cov_prefix, Cov, Cov_suffix)
-
-    # TODO
-    def get_all_Sa(self, geom):
-        """Return all unnormalized Sa matrices by forcing each component selection."""
-        all_Sa = []
-
-        # NOTE: assumes x-init ?? , and forces cmp index (but deletes it)
-
-        for n in range(self.n_comp):
-            geom.surf_cmp_init = n
-            Sa_n = self.Sa(x_surface=np.array(self.init), geom=geom)
-            all_Sa.append(Sa_n)
-
-        if hasattr(geom, "surf_cmp_init"):
-            del geom.surf_cmp_init
-
-        return all_Sa
 
     def fit_params(self, rfl_meas, geom, *args):
         """Given a reflectance estimate, fit a state vector."""
