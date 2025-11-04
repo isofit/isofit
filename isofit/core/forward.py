@@ -155,25 +155,39 @@ class ForwardModel:
         else:
             self.model_discrepancy = None
 
-        # Eigen Decomposition of Sa to be re-used in OE. NOTE: assumes geom invariant.
-        Sa = self.Sa(self.init, Geometry())
-        self.q_Sa = np.sqrt(np.mean(np.diag(Sa)))
-        Sa_normalized = Sa / self.q_Sa**2
-        self.Sa_inv_normalized, self.Sa_inv_sqrt_normalized = svd_inv_sqrt(
-            Sa_normalized
-        )
-        # Compute identity matrix to check for poor conditioning and other stability issues.
-        I = self.Sa_inv_sqrt_normalized @ Sa_normalized @ self.Sa_inv_sqrt_normalized.T
-        if not np.allclose(I, np.eye(Sa.shape[0]), atol=eps):
-            raise ValueError(
-                "Matrix product not close to identity after normalizing Sa inv."
-            )
+        # so now, there are n -Sa from Surface unormalized. # Independent of multicomponent
+        # NOTE: assume there is this component index link with multicomponet slash any surface.
+        # recreate full Sa for each compoenent and do normalization, and then invert, stash.
+        self.all_Sa_matrices = self.surface.get_all_Sa(geom=Geometry())
+        Sa_RT = self.RT.Sa()[:, :]
+        Sa_instrument = self.instrument.Sa()[:, :]
+        self.Sa_inv_normalized, self.Sa_inv_sqrt_normalized = [], []
+        for n in range(len(self.all_Sa_matrices)):
 
-    def calc_Sa_inverse(self, Sa):
+            # assemble Sa
+            Sa_surface = self.all_Sa_matrices[n][:, :]
+            Sa = block_diag(Sa_surface, Sa_RT, Sa_instrument)
+
+            # Compute and store normalized Sa inversions
+            q_Sa = np.sqrt(np.mean(np.diag(Sa)))
+            Sa_normalized = Sa / q_Sa**2
+
+            Cinv, Cinv_sqrt = svd_inv_sqrt(Sa_normalized)
+
+            self.Sa_inv_normalized.append(Cinv)
+            self.Sa_inv_sqrt_normalized.append(Cinv_sqrt)
+
+    def calc_Sa_inverse(self, Sa, geom):
         """Use cached scaling factor from inital normalized inverse."""
+
+        # TODO: ensure this makes sense for surfaces not multicomponent
+        # it can be zero index for single component Surfaces
+        Sa_idx = geom.surf_cmp_init
+
         q = np.sqrt(np.mean(np.diag(Sa)))
-        Sa_inv_sqrt = self.Sa_inv_sqrt_normalized / q
-        Sa_inv = self.Sa_inv_normalized / q**2
+        Sa_inv_sqrt = self.Sa_inv_sqrt_normalized[Sa_idx] / q
+        Sa_inv = self.Sa_inv_normalized[Sa_idx] / q**2
+
         return Sa_inv, Sa_inv_sqrt
 
     def out_of_bounds(self, x):

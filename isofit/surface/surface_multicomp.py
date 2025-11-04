@@ -132,12 +132,13 @@ class MultiComponentSurface(Surface):
             mds.append(md)
         closest = np.argmin(mds)
 
-        if (
-            self.select_on_init
-            and hasattr(geom, "x_surf_init")
-            and (not hasattr(geom, "surf_cmp_init"))
-        ):
-            geom.surf_cmp_init = closest
+        # NOTE: Why is this not storing it every time??
+        # if (
+        #    self.select_on_init
+        #    and hasattr(geom, "x_surf_init")
+        #    and (not hasattr(geom, "surf_cmp_init"))
+        # ):
+        geom.surf_cmp_init = closest
 
         return closest
 
@@ -180,6 +181,23 @@ class MultiComponentSurface(Surface):
         Cov_suffix = np.zeros((nsuffix, nsuffix))
 
         return block_diag(Cov_prefix, Cov, Cov_suffix)
+
+    # TODO
+    def get_all_Sa(self, geom):
+        """Return all unnormalized Sa matrices by forcing each component selection."""
+        all_Sa = []
+
+        # NOTE: assumes x-init ?? , and forces cmp index (but deletes it)
+
+        for n in range(self.n_comp):
+            geom.surf_cmp_init = n
+            Sa_n = self.Sa(x_surface=np.array(self.init), geom=geom)
+            all_Sa.append(Sa_n)
+
+        if hasattr(geom, "surf_cmp_init"):
+            del geom.surf_cmp_init
+
+        return all_Sa
 
     def fit_params(self, rfl_meas, geom, *args):
         """Given a reflectance estimate, fit a state vector."""

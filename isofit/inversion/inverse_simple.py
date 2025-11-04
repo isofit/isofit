@@ -322,7 +322,7 @@ def invert_analytical(
 
     # Use cached scaling factor from inital normalized inverse (outside of loop).
     Sa = fm.Sa(x, geom)
-    Sa_inv, Sa_inv_sqrt = fm.calc_Sa_inverse(Sa)
+    Sa_inv, Sa_inv_sqrt = fm.calc_Sa_inverse(Sa, geom)
     Sa_inv = Sa_inv[fm.idx_surface, :][:, fm.idx_surface]
     Sa_inv_sqrt = Sa_inv_sqrt[fm.idx_surface, :][:, fm.idx_surface]
 
