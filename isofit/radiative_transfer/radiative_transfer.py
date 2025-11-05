@@ -131,8 +131,7 @@ class RadiativeTransfer:
         self.prior_mean = np.array(self.prior_mean)
         self.prior_sigma = np.array(self.prior_sigma)
         self.Sa_cached = np.diagflat(np.power(self.prior_sigma, 2))
-        self.q = np.sqrt(np.mean(np.diag(self.Sa_cached)))
-        self.Sa_normalized = self.Sa_cached / self.q**2
+        self.Sa_normalized = self.Sa_cached / np.mean(np.diag(self.Sa_cached))
         self.Sa_inv_normalized, self.Sa_inv_sqrt_normalized = svd_inv_sqrt(
             self.Sa_normalized
         )

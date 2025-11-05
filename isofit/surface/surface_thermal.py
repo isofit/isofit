@@ -62,8 +62,7 @@ class ThermalSurface(MultiComponentSurface):
                 np.zeros((nsuffix, nsuffix)),
                 np.array([[self.surface_T_prior_sigma_degK**2]]),
             )
-            q = np.sqrt(np.mean(np.diag(Cov_full)))
-            Cov_normalized = Cov_full / q**2
+            Cov_normalized = Cov_full / np.mean(np.diag(Cov_full))
             Cinv_normalized, Cinv_sqrt_normalized = svd_inv_sqrt(Cov_normalized)
             self.Sa_inv_normalized[i] = Cinv_normalized
             self.Sa_inv_sqrt_normalized[i] = Cinv_sqrt_normalized

@@ -159,7 +159,7 @@ class ForwardModel:
         """Use cached scaling factor from inital normalized inverse."""
 
         # scale unit variance
-        q = np.sqrt(np.mean(np.diag(Sa)))
+        scale = np.sqrt(np.mean(np.diag(Sa)))
 
         # Grab component index, else assume single component Surface
         if len(self.surface.Sa_inv_sqrt_normalized) > 1:
@@ -180,7 +180,7 @@ class ForwardModel:
             self.instrument.Sa_inv_sqrt_normalized,
         )
 
-        return Sa_inv / q**2, Sa_inv_sqrt / q
+        return Sa_inv / scale**2, Sa_inv_sqrt / scale
 
     def out_of_bounds(self, x):
         """Check if state vector is within bounds."""

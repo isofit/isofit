@@ -77,8 +77,7 @@ class LUTSurface(Surface):
 
         # Cache some important computations
         Cov = np.diag(self.sigma**2)
-        q = np.sqrt(np.mean(np.diag(Cov)))
-        Cov_normalized = Cov / q**2
+        Cov_normalized = Cov / np.mean(np.diag(Cov))
         Cinv_normalized, Cinv_sqrt_normalized = svd_inv_sqrt(Cov_normalized)
         self.Sa_inv_normalized = [Cinv_normalized]
         self.Sa_inv_sqrt_normalized = [Cinv_sqrt_normalized]

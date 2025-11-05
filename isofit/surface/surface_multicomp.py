@@ -105,8 +105,7 @@ class MultiComponentSurface(Surface):
                 self.components[i][1],
                 np.zeros((nsuffix, nsuffix)),
             )
-            q = np.sqrt(np.mean(np.diag(Cov_full)))
-            Cov_normalized = Cov_full / q**2
+            Cov_normalized = Cov_full / np.mean(np.diag(Cov_full))
             Cinv_normalized, Cinv_sqrt_normalized = svd_inv_sqrt(Cov_normalized)
             self.Sa_inv_normalized.append(Cinv_normalized)
             self.Sa_inv_sqrt_normalized.append(Cinv_sqrt_normalized)

@@ -66,8 +66,7 @@ class Instrument:
         self.prior_mean = np.array(config.statevector.get_all_prior_means())
         self.prior_sigma = np.array(config.statevector.get_all_prior_sigmas())
         self.Sa_cached = np.diagflat(np.power(self.prior_sigma, 2))
-        self.q = np.sqrt(np.mean(np.diag(self.Sa_cached)))
-        self.Sa_normalized = self.Sa_cached / self.q**2
+        self.Sa_normalized = self.Sa_cached / np.mean(np.diag(self.Sa_cached))
         self.Sa_inv_normalized, self.Sa_inv_sqrt_normalized = svd_inv_sqrt(
             self.Sa_normalized
         )
