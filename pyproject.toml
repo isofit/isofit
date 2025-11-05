@@ -41,6 +41,7 @@ dependencies = [
     "utm>=0.8.1",
     "xarray>=2025.6.1",
     "xxhash>=3.6.0",
+    "zarr>=2,<3",
 ]
 
 [project.optional-dependencies]
