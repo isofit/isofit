@@ -98,10 +98,15 @@ class GlintModelSurface(MultiComponentSurface):
         the covariance in a normalized space (normalizing by z) and then un-
         normalize the result for the calling function."""
 
-        Cov = MultiComponentSurface.Sa(self, x_surface, geom)
-        Cov[self.sun_glint_ind, self.sun_glint_ind] = self.sun_glint_sigma
-        Cov[self.sky_glint_ind, self.sky_glint_ind] = self.sky_glint_sigma
-        return Cov
+        Sa_unnormalized, _, _ = MultiComponentSurface.Sa(self, x_surface, geom)
+        Sa_unnormalized[self.sun_glint_ind, self.sun_glint_ind] = self.sun_glint_sigma
+        Sa_unnormalized[self.sky_glint_ind, self.sky_glint_ind] = self.sky_glint_sigma
+
+        # select the Sa inverse from the list of components
+        Sa_inv_normalized = self.Sa_inv_normalized[geom.surf_cmp_init]
+        Sa_inv_sqrt_normalized = self.Sa_inv_sqrt_normalized[geom.surf_cmp_init]
+
+        return Sa_unnormalized, Sa_inv_normalized, Sa_inv_sqrt_normalized
 
     def fit_params(self, rfl_meas, geom, *args):
         """Given a reflectance estimate and one or more emissive parameters,

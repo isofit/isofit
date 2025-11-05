@@ -180,20 +180,25 @@ class MultiComponentSurface(Surface):
         lamb_ref = lamb[self.idx_ref]
         ci = self.component(x_surface, geom)
         Cov = self.components[ci][1]
-        Cov = Cov * (self.norm(lamb_ref) ** 2)
+        Sa_unnormalized = Cov * (self.norm(lamb_ref) ** 2)
+
+        # select the Sa inverse from the list of components
+        Sa_inv_normalized = self.Sa_inv_normalized[geom.surf_cmp_init]
+        Sa_inv_sqrt_normalized = self.Sa_inv_sqrt_normalized[geom.surf_cmp_init]
 
         # If there are no other state vector elements, we're done.
         if len(self.statevec_names) == len(self.idx_lamb):
 
-            return Cov
+            return Sa_unnormalized, Sa_inv_normalized, Sa_inv_sqrt_normalized
 
         # Embed into a larger state vector covariance matrix
         nprefix = self.idx_lamb[0]
         nsuffix = len(self.statevec_names) - self.idx_lamb[-1] - 1
         Cov_prefix = np.zeros((nprefix, nprefix))
         Cov_suffix = np.zeros((nsuffix, nsuffix))
+        Sa_unnormalized = block_diag(Cov_prefix, Sa_unnormalized, Cov_suffix)
 
-        return block_diag(Cov_prefix, Cov, Cov_suffix)
+        return Sa_unnormalized, Sa_inv_normalized, Sa_inv_sqrt_normalized
 
     def fit_params(self, rfl_meas, geom, *args):
         """Given a reflectance estimate, fit a state vector."""

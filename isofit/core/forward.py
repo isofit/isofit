@@ -155,33 +155,6 @@ class ForwardModel:
         else:
             self.model_discrepancy = None
 
-    def calc_Sa_inverse(self, Sa, geom):
-        """Use cached scaling factor from inital normalized inverse."""
-
-        # scale unit variance
-        scale = np.sqrt(np.mean(np.diag(Sa)))
-
-        # Grab component index, else assume single component Surface
-        if len(self.surface.Sa_inv_sqrt_normalized) > 1:
-            Sa_idx = geom.surf_cmp_init
-        else:
-            Sa_idx = 0
-
-        # Block cached normalized inverses
-        Sa_inv = block_diag(
-            self.surface.Sa_inv_normalized[Sa_idx],
-            self.RT.Sa_inv_normalized,
-            self.instrument.Sa_inv_normalized,
-        )
-
-        Sa_inv_sqrt = block_diag(
-            self.surface.Sa_inv_sqrt_normalized[Sa_idx],
-            self.RT.Sa_inv_sqrt_normalized,
-            self.instrument.Sa_inv_sqrt_normalized,
-        )
-
-        return Sa_inv / scale**2, Sa_inv_sqrt / scale
-
     def out_of_bounds(self, x):
         """Check if state vector is within bounds."""
 
@@ -217,11 +190,36 @@ class ForwardModel:
         """
 
         x_surface = x[self.idx_surface]
-        Sa_surface = self.surface.Sa(x_surface, geom)[:, :]
-        Sa_RT = self.RT.Sa()[:, :]
-        Sa_instrument = self.instrument.Sa()[:, :]
+        Sa_surface, Sa_surf_inv_norm, Sa_surf_inv_sqrt_norm = self.surface.Sa(
+            x_surface, geom
+        )
+        Sa_RT = self.RT.Sa()
+        Sa_instrument = self.instrument.Sa()
+        Sa_state = block_diag(Sa_surface[:, :], Sa_RT[:, :], Sa_instrument[:, :])
 
-        return block_diag(Sa_surface, Sa_RT, Sa_instrument)
+        # scale unit variance
+        scale = np.sqrt(np.mean(np.diag(Sa_state)))
+
+        # Compute the Sa inv and Sa inv sqrt for measurement
+        Sa_inv_state = (
+            block_diag(
+                Sa_surf_inv_norm,
+                self.RT.Sa_inv_normalized,
+                self.instrument.Sa_inv_normalized,
+            )
+            / scale**2
+        )
+
+        Sa_inv_sqrt_state = (
+            block_diag(
+                Sa_surf_inv_sqrt_norm,
+                self.RT.Sa_inv_sqrt_normalized,
+                self.instrument.Sa_inv_sqrt_normalized,
+            )
+            / scale
+        )
+
+        return Sa_state, Sa_inv_state, Sa_inv_sqrt_state
 
     def calc_meas(self, x, geom, rfl=[]):
         """Calculate the model observation at instrument wavelengths."""

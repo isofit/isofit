@@ -80,10 +80,16 @@ class ThermalSurface(MultiComponentSurface):
     def Sa(self, x_surface, geom):
         """Covariance of prior distribution, calculated at state x."""
 
-        Cov = MultiComponentSurface.Sa(self, x_surface, geom)
-        Cov[self.surf_temp_ind, self.surf_temp_ind] = self.surface_T_prior_sigma_degK**2
+        Sa_unnormalized, _, _ = MultiComponentSurface.Sa(self, x_surface, geom)
+        Sa_unnormalized[self.surf_temp_ind, self.surf_temp_ind] = (
+            self.surface_T_prior_sigma_degK**2
+        )
 
-        return Cov
+        # select the Sa inverse from the list of components
+        Sa_inv_normalized = self.Sa_inv_normalized[geom.surf_cmp_init]
+        Sa_inv_sqrt_normalized = self.Sa_inv_sqrt_normalized[geom.surf_cmp_init]
+
+        return Sa_unnormalized, Sa_inv_normalized, Sa_inv_sqrt_normalized
 
     def fit_params(self, rfl_meas, geom, *args):
         """Given a reflectance estimate, find the surface reflectance"""

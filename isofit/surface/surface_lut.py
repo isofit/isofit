@@ -78,9 +78,9 @@ class LUTSurface(Surface):
         # Cache some important computations
         Cov = np.diag(self.sigma**2)
         Cov_normalized = Cov / np.mean(np.diag(Cov))
-        Cinv_normalized, Cinv_sqrt_normalized = svd_inv_sqrt(Cov_normalized)
-        self.Sa_inv_normalized = [Cinv_normalized]
-        self.Sa_inv_sqrt_normalized = [Cinv_sqrt_normalized]
+        self.Sa_inv_normalized, self.Sa_inv_sqrt_normalized = svd_inv_sqrt(
+            Cov_normalized
+        )
 
         # build the interpolator
         self.itp = VectorInterpolator(self.lut_grid, self.data)
@@ -100,9 +100,9 @@ class LUTSurface(Surface):
         """Covariance of prior distribution, calculated at state x."""
 
         variance = pow(self.sigma, 2)
-        Cov = np.diag(variance)
+        Sa_unnormalized = np.diag(variance)
 
-        return Cov
+        return Sa_unnormalized, self.Sa_inv_normalized, self.Sa_inv_sqrt_normalized
 
     def fit_params(self, rfl_meas, geom, *args):
         """Given a reflectance estimate, fit a state vector."""
