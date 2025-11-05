@@ -319,7 +319,7 @@ class ResourceTracker:
                     sum([p["mem_actual"] for p in children]) + info["mem_actual"]
                 )
                 info["mem_app_shared_avg"] = (
-                    sum([p["mem_actual"] for p in children]) + info["mem_shared"]
+                    sum([p["mem_shared"] for p in children]) + info["mem_shared"]
                 )
                 info["mem_app_shared_avg"] /= len(children) + 1
 
