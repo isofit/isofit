@@ -161,9 +161,11 @@ class ForwardModel:
         # scale unit variance
         q = np.sqrt(np.mean(np.diag(Sa)))
 
-        # TODO: ensure this makes sense for surfaces not multicomponent
-        # it can be zero index for single component Surfaces.. need to think here.
-        Sa_idx = geom.surf_cmp_init
+        # Grab component index, else assume single component Surface
+        if len(self.surface.Sa_inv_sqrt_normalized) > 1:
+            Sa_idx = geom.surf_cmp_init
+        else:
+            Sa_idx = 0
 
         # Block cached normalized inverses
         Sa_inv = block_diag(

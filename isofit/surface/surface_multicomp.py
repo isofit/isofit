@@ -76,41 +76,40 @@ class MultiComponentSurface(Surface):
         self.statevec_names = ["RFL_%04i" % int(w) for w in self.wl]
         self.idx_surface = np.arange(len(self.statevec_names))
 
+        # Change this if you don't want to analytical solve for all the full statevector elements.
+        self.analytical_iv_idx = np.arange(len(self.statevec_names))
+
         self.bounds = [[rmin, rmax] for w in self.wl]
         self.scale = [1.0 for w in self.wl]
         self.init = [0.15 * (rmax - rmin) + rmin for v in self.wl]
         self.idx_lamb = np.arange(self.n_wl)
         self.n_state = len(self.statevec_names)
 
+        # Surface specific attributes. Can override in inheriting classes
+        self.full_glint = False
+
         # Cache some important computations
         self.Covs, self.Cinvs, self.mus = [], [], []
         self.Sa_inv_normalized, self.Sa_inv_sqrt_normalized = [], []
-        self.nprefix = self.idx_lamb[0]
-        self.nsuffix = len(self.statevec_names) - self.idx_lamb[-1] - 1
+        nprefix = self.idx_lamb[0]
+        nsuffix = len(self.statevec_names) - self.idx_lamb[-1] - 1
         for i in range(self.n_comp):
             Cov = self.components[i][1]
             self.Covs.append(np.array([Cov[j, self.idx_ref] for j in self.idx_ref]))
             self.Cinvs.append(svd_inv_sqrt(self.Covs[-1])[0])
             self.mus.append(self.components[i][0][self.idx_ref])
 
-            # TODO: similar to Sa shape, but caching normalized inverse
-            # To take another look here to double check.
+            # Caching the normalized Sa inv and Sa inv sqrt
             Cov_full = block_diag(
-                np.zeros((self.nprefix, self.nprefix)),
+                np.zeros((nprefix, nprefix)),
                 self.components[i][1],
-                np.zeros((self.nsuffix, self.nsuffix)),
+                np.zeros((nsuffix, nsuffix)),
             )
             q = np.sqrt(np.mean(np.diag(Cov_full)))
             Cov_normalized = Cov_full / q**2
             Cinv_normalized, Cinv_sqrt_normalized = svd_inv_sqrt(Cov_normalized)
             self.Sa_inv_normalized.append(Cinv_normalized)
             self.Sa_inv_sqrt_normalized.append(Cinv_sqrt_normalized)
-
-        # Change this if you don't want to analytical solve for all the full statevector elements.
-        self.analytical_iv_idx = np.arange(len(self.statevec_names))
-
-        # Surface specific attributes. Can override in inheriting classes
-        self.full_glint = False
 
     def component(self, x, geom):
         """We pick a surface model component using the Mahalanobis distance.
@@ -148,13 +147,12 @@ class MultiComponentSurface(Surface):
             mds.append(md)
         closest = np.argmin(mds)
 
-        # NOTE: Why is this not storing it every time?
-        # if (
-        #    self.select_on_init
-        #    and hasattr(geom, "x_surf_init")
-        #    and (not hasattr(geom, "surf_cmp_init"))
-        # ):
-        geom.surf_cmp_init = closest
+        if (
+            self.select_on_init
+            and hasattr(geom, "x_surf_init")
+            and (not hasattr(geom, "surf_cmp_init"))
+        ):
+            geom.surf_cmp_init = closest
 
         return closest
 
@@ -191,8 +189,10 @@ class MultiComponentSurface(Surface):
             return Cov
 
         # Embed into a larger state vector covariance matrix
-        Cov_prefix = np.zeros((self.nprefix, self.nprefix))
-        Cov_suffix = np.zeros((self.nsuffix, self.nsuffix))
+        nprefix = self.idx_lamb[0]
+        nsuffix = len(self.statevec_names) - self.idx_lamb[-1] - 1
+        Cov_prefix = np.zeros((nprefix, nprefix))
+        Cov_suffix = np.zeros((nsuffix, nsuffix))
 
         return block_diag(Cov_prefix, Cov, Cov_suffix)
 

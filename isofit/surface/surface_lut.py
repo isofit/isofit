@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from isofit.core.common import VectorInterpolator
+from isofit.core.common import VectorInterpolator, svd_inv_sqrt
 from isofit.surface.surface import Surface
 
 
@@ -74,6 +74,14 @@ class LUTSurface(Surface):
         self.n_lut = len(self.lut_names)
         self.idx_lut = np.arange(self.n_state)
         self.idx_lamb = np.empty(shape=0)
+
+        # Cache some important computations
+        Cov = np.diag(self.sigma**2)
+        q = np.sqrt(np.mean(np.diag(Cov)))
+        Cov_normalized = Cov / q**2
+        Cinv_normalized, Cinv_sqrt_normalized = svd_inv_sqrt(Cov_normalized)
+        self.Sa_inv_normalized = [Cinv_normalized]
+        self.Sa_inv_sqrt_normalized = [Cinv_sqrt_normalized]
 
         # build the interpolator
         self.itp = VectorInterpolator(self.lut_grid, self.data)

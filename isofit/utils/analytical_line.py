@@ -573,6 +573,9 @@ class Worker(object):
             else:
                 raise ValueError("No valid initializer given for AOE algorithm")
 
+            # NOTE: this line needs to be here to ensure geom.surf_cmp_init is populated
+            geom.x_surf_init = x0[self.fm.idx_surface]
+
             states, unc = invert_analytical(
                 self.fm,
                 self.winidx,
