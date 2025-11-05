@@ -194,7 +194,7 @@ def apply_oe(
     ray_temp_dir : str, default="/tmp/ray"
         Location of temporary directory for ray parallelization engine
     emulator_base : str, default=None
-        Location of emulator base path. Point this at the model folder (or h5 file) of
+        Location of emulator base path. Point this at the 3C or 6C .h5 files.
         sRTMnet to use the emulator instead of MODTRAN. An additional file with the
         same basename and the extention _aux.npz must accompany
         e.g. /path/to/emulator.h5 /path/to/emulator_aux.npz
@@ -259,25 +259,19 @@ def apply_oe(
     if emulator_base is not None:
         if emulator_base.endswith(".jld2"):
             multipart_transmittance = False
+
+        elif emulator_base.endswith(".h5"):
+            multipart_transmittance = False
+
+        elif emulator_base.endswith(".6c"):
+            multipart_transmittance = True
+
         else:
-            if emulator_base.endswith(".npz"):
-                emulator_aux_file = emulator_base
-            else:
-                emulator_aux_file = os.path.abspath(
-                    os.path.splitext(emulator_base)[0] + "_aux.npz"
-                )
-            aux = np.load(emulator_aux_file)
-            if (
-                "transm_down_dir"
-                and "transm_down_dif"
-                and "transm_up_dir"
-                and "transm_up_dif" in aux["rt_quantities"]
-            ):
-                multipart_transmittance = True
-            else:
-                multipart_transmittance = False
+            raise ValueError("Invalid emulator_base extension. Use .h5, .6c, or .jld2")
+
     else:
-        # This is the MODTRAN case. Do we want to enable the 4c mode by default?
+        # This is the MODTRAN case.
+        # Do we want to enable the 4c mode by default?
         multipart_transmittance = True
 
     if sensor not in SUPPORTED_SENSORS:

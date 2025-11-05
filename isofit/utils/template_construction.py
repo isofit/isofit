@@ -19,6 +19,7 @@ import numpy as np
 from scipy.io import loadmat
 from spectral.io import envi
 
+from isofit import __version__
 from isofit.core import isofit, units
 from isofit.core.common import (
     envi_header,
@@ -30,7 +31,6 @@ from isofit.core.multistate import SurfaceMapping
 from isofit.data import env
 from isofit.radiative_transfer.engines.modtran import ModtranRT
 from isofit.utils.surface_model import surface_model
-from isofit import __version__
 
 
 class Pathnames:
@@ -721,15 +721,11 @@ def build_presolve_config(
         radiative_transfer_config["radiative_transfer_engines"]["vswir"][
             "emulator_file"
         ] = abspath(emulator_base)
-        if emulator_base.endswith(".npz"):
-            # then aux & emulator are the same
-            radiative_transfer_config["radiative_transfer_engines"]["vswir"][
-                "emulator_aux_file"
-            ] = abspath(emulator_base)
-        else:
-            radiative_transfer_config["radiative_transfer_engines"]["vswir"][
-                "emulator_aux_file"
-            ] = abspath(os.path.splitext(emulator_base)[0] + "_aux.npz")
+
+        radiative_transfer_config["radiative_transfer_engines"]["vswir"][
+            "emulator_aux_file"
+        ] = abspath(os.path.splitext(emulator_base)[0] + "_aux.npz")
+
         radiative_transfer_config["radiative_transfer_engines"]["vswir"][
             "earth_sun_distance_file"
         ] = paths.earth_sun_distance_path
@@ -907,15 +903,17 @@ def build_main_config(
         radiative_transfer_config["radiative_transfer_engines"]["vswir"][
             "emulator_file"
         ] = abspath(emulator_base)
-        if emulator_base.endswith(".npz"):
-            # then aux & emulator are the same
+
+        if multipart_transmittance:
             radiative_transfer_config["radiative_transfer_engines"]["vswir"][
                 "emulator_aux_file"
-            ] = abspath(emulator_base)
+            ] = emulator_base
+
         else:
             radiative_transfer_config["radiative_transfer_engines"]["vswir"][
                 "emulator_aux_file"
             ] = abspath(os.path.splitext(emulator_base)[0] + "_aux.npz")
+
         radiative_transfer_config["radiative_transfer_engines"]["vswir"][
             "earth_sun_distance_file"
         ] = paths.earth_sun_distance_path
