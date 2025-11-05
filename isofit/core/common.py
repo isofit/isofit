@@ -26,7 +26,6 @@ from os.path import expandvars
 from typing import List
 
 import numpy as np
-import scipy.linalg
 
 # sc Adding in xarray for non-gauss SRF file io
 import xarray as xr
@@ -300,17 +299,26 @@ def svd_inv_sqrt(
         if h in hashtable:
             return hashtable[h]
 
-    D, P = scipy.linalg.eigh(C)
-    for count in range(3):
-        if np.any(D < 0) or np.any(np.isnan(D)):
-            inv_eps = 1e-6 * (count - 1) * 10
-            D, P = scipy.linalg.eigh(C + np.diag(np.ones(C.shape[0]) * inv_eps))
-        else:
-            break
+    # Default to using numpy eigh (which uses LAPACK evd driver by default).
+    try:
+        D, P = np.linalg.eigh(C)
+    except:
+        D, P = None, None
 
-        if count == 2:
+    # Sanity check for edge cases that we encounter with negative eigen values, and we offset by inv_eps.
+    inv_eps_checks = [1e-6, 1e-5, 1e-4]
+    inv_eps = None
+    if D is None or np.any(D < 0) or np.any(np.isnan(D)):
+        for inv_eps in inv_eps_checks:
+            try:
+                D, P = np.linalg.eigh(C + np.eye(C.shape[0]) * inv_eps)
+                if not (np.any(D < 0) or np.any(np.isnan(D))):
+                    break
+            except:
+                continue
+        else:
             raise ValueError(
-                "Matrix inversion contains negative values,"
+                "Matrix inversion contains negative values, "
                 + "even after adding {} to the diagonal.".format(inv_eps)
             )
 
