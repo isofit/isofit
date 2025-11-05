@@ -39,7 +39,6 @@ from isofit import checkNumThreads, ray
 from isofit.configs import configs
 from isofit.core.fileio import IO, SpectrumFile
 from isofit.core.forward import ForwardModel
-
 from isofit.core.multistate import (
     construct_full_state,
     index_spectra_by_surface,
