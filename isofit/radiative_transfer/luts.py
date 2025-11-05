@@ -420,7 +420,7 @@ class CreateZarr(Create):
         store : str, default="NestedDirectoryStore"
             Zarr backend storage to use. See: https://zarr.readthedocs.io/en/v2.15.0/api/storage.html
         """
-        self.flush_immediately = True
+        self.flush_immediately = False
 
         # Version 3 has less stores than v2
         if Version(zarr.__version__) >= Version("3"):
@@ -528,6 +528,8 @@ class CreateZarr(Create):
         unknowns = set()
         for point, data in self.hold:
             for key, vals in data.items():
+                if key == "wl":
+                    continue
                 if key in self.consts:
                     self.z[key][...] = vals
                 elif key in self.onedim:
