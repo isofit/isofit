@@ -81,8 +81,7 @@ class GlintModelSurface(MultiComponentSurface):
                 np.zeros((nsuffix, nsuffix)),
                 np.array([[self.sky_glint_sigma, 0], [0, self.sun_glint_sigma]]),
             )
-            q = np.sqrt(np.mean(np.diag(Cov_full)))
-            Cov_normalized = Cov_full / q**2
+            Cov_normalized = Cov_full / np.mean(np.diag(Cov_full))
             Cinv_normalized, Cinv_sqrt_normalized = svd_inv_sqrt(Cov_normalized)
             self.Sa_inv_normalized[i] = Cinv_normalized
             self.Sa_inv_sqrt_normalized[i] = Cinv_sqrt_normalized
