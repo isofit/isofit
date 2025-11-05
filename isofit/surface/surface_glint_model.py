@@ -20,8 +20,9 @@
 from __future__ import annotations
 
 import numpy as np
+from scipy.linalg import block_diag
 
-from isofit.core.common import eps
+from isofit.core.common import eps, svd_inv_sqrt
 from isofit.surface.surface_multicomp import MultiComponentSurface
 
 
@@ -69,6 +70,22 @@ class GlintModelSurface(MultiComponentSurface):
         self.sky_glint_sigma = (
             config.sky_glint_prior_sigma * np.array(self.scale[self.sky_glint_ind])
         ) ** 2
+
+        # Compute and and cache normalized Sa inversions for glint case
+        nprefix = self.idx_lamb[0]
+        nsuffix = len(self.statevec_names) - self.idx_lamb[-1] - 1 - 2
+        for i in range(self.n_comp):
+            Cov_full = block_diag(
+                np.zeros((nprefix, nprefix)),
+                self.components[i][1],
+                np.zeros((nsuffix, nsuffix)),
+                np.array([[self.sky_glint_sigma, 0], [0, self.sun_glint_sigma]]),
+            )
+            q = np.sqrt(np.mean(np.diag(Cov_full)))
+            Cov_normalized = Cov_full / q**2
+            Cinv_normalized, Cinv_sqrt_normalized = svd_inv_sqrt(Cov_normalized)
+            self.Sa_inv_normalized[i] = Cinv_normalized
+            self.Sa_inv_sqrt_normalized[i] = Cinv_sqrt_normalized
 
     def xa(self, x_surface, geom):
         """Mean of prior distribution, calculated at state x."""

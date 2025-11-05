@@ -20,8 +20,9 @@
 from __future__ import annotations
 
 import numpy as np
+from scipy.linalg import block_diag
 
-from isofit.core.common import emissive_radiance
+from isofit.core.common import emissive_radiance, svd_inv_sqrt
 from isofit.surface.surface_multicomp import MultiComponentSurface
 
 
@@ -50,6 +51,22 @@ class ThermalSurface(MultiComponentSurface):
 
         self.emissivity_for_surface_T_init = config.emissivity_for_surface_T_init
         self.surface_T_prior_sigma_degK = config.surface_T_prior_sigma_degK
+
+        # Compute and and cache normalized Sa inversions for thermal case
+        nprefix = self.idx_lamb[0]
+        nsuffix = len(self.statevec_names) - self.idx_lamb[-1] - 1 - 1
+        for i in range(self.n_comp):
+            Cov_full = block_diag(
+                np.zeros((nprefix, nprefix)),
+                self.components[i][1],
+                np.zeros((nsuffix, nsuffix)),
+                np.array([[self.surface_T_prior_sigma_degK**2]]),
+            )
+            q = np.sqrt(np.mean(np.diag(Cov_full)))
+            Cov_normalized = Cov_full / q**2
+            Cinv_normalized, Cinv_sqrt_normalized = svd_inv_sqrt(Cov_normalized)
+            self.Sa_inv_normalized[i] = Cinv_normalized
+            self.Sa_inv_sqrt_normalized[i] = Cinv_sqrt_normalized
 
     def xa(self, x_surface, geom):
         """Mean of prior distribution, calculated at state x.  We find
