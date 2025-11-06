@@ -72,19 +72,10 @@ class GlintModelSurface(MultiComponentSurface):
         ) ** 2
 
         # Compute and and cache normalized Sa inversions for glint case
-        nprefix = self.idx_lamb[0]
-        nsuffix = len(self.statevec_names) - self.idx_lamb[-1] - 1 - 2
-        for i in range(self.n_comp):
-            Cov_full = block_diag(
-                np.zeros((nprefix, nprefix)),
-                self.components[i][1],
-                np.zeros((nsuffix, nsuffix)),
-                np.array([[self.sky_glint_sigma, 0], [0, self.sun_glint_sigma]]),
-            )
-            Cov_normalized = Cov_full / np.mean(np.diag(Cov_full))
-            Cinv_normalized, Cinv_sqrt_normalized = svd_inv_sqrt(Cov_normalized)
-            self.Sa_inv_normalized[i] = Cinv_normalized
-            self.Sa_inv_sqrt_normalized[i] = Cinv_sqrt_normalized
+        Cov = np.array([[self.sky_glint_sigma, 0], [0, self.sun_glint_sigma]])
+        self.Sa_inv_glint, self.Sa_inv_sqrt_glint = svd_inv_sqrt(
+            Cov / np.mean(np.diag(Cov))
+        )
 
     def xa(self, x_surface, geom):
         """Mean of prior distribution, calculated at state x."""
@@ -98,13 +89,17 @@ class GlintModelSurface(MultiComponentSurface):
         the covariance in a normalized space (normalizing by z) and then un-
         normalize the result for the calling function."""
 
-        Sa_unnormalized, _, _ = MultiComponentSurface.Sa(self, x_surface, geom)
+        Sa_unnormalized, Sa_inv_normalized, Sa_inv_sqrt_normalized = (
+            MultiComponentSurface.Sa(self, x_surface, geom)
+        )
         Sa_unnormalized[self.sun_glint_ind, self.sun_glint_ind] = self.sun_glint_sigma
         Sa_unnormalized[self.sky_glint_ind, self.sky_glint_ind] = self.sky_glint_sigma
 
-        # select the Sa inverse from the list of components
-        Sa_inv_normalized = self.Sa_inv_normalized[geom.surf_cmp_init]
-        Sa_inv_sqrt_normalized = self.Sa_inv_sqrt_normalized[geom.surf_cmp_init]
+        # Append normalized Sa inv and sqrt from glint model
+        Sa_inv_normalized = block_diag(Sa_inv_normalized, self.Sa_inv_glint)
+        Sa_inv_sqrt_normalized = block_diag(
+            Sa_inv_sqrt_normalized, self.Sa_inv_sqrt_glint
+        )
 
         return Sa_unnormalized, Sa_inv_normalized, Sa_inv_sqrt_normalized
 

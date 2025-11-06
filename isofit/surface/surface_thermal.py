@@ -53,19 +53,10 @@ class ThermalSurface(MultiComponentSurface):
         self.surface_T_prior_sigma_degK = config.surface_T_prior_sigma_degK
 
         # Compute and and cache normalized Sa inversions for thermal case
-        nprefix = self.idx_lamb[0]
-        nsuffix = len(self.statevec_names) - self.idx_lamb[-1] - 1 - 1
-        for i in range(self.n_comp):
-            Cov_full = block_diag(
-                np.zeros((nprefix, nprefix)),
-                self.components[i][1],
-                np.zeros((nsuffix, nsuffix)),
-                np.array([[self.surface_T_prior_sigma_degK**2]]),
-            )
-            Cov_normalized = Cov_full / np.mean(np.diag(Cov_full))
-            Cinv_normalized, Cinv_sqrt_normalized = svd_inv_sqrt(Cov_normalized)
-            self.Sa_inv_normalized[i] = Cinv_normalized
-            self.Sa_inv_sqrt_normalized[i] = Cinv_sqrt_normalized
+        Cov = np.array([[self.surface_T_prior_sigma_degK**2]])
+        self.Sa_inv_thermal, self.Sa_inv_sqrt_thermal = svd_inv_sqrt(
+            Cov / np.mean(np.diag(Cov))
+        )
 
     def xa(self, x_surface, geom):
         """Mean of prior distribution, calculated at state x.  We find
@@ -80,14 +71,18 @@ class ThermalSurface(MultiComponentSurface):
     def Sa(self, x_surface, geom):
         """Covariance of prior distribution, calculated at state x."""
 
-        Sa_unnormalized, _, _ = MultiComponentSurface.Sa(self, x_surface, geom)
+        Sa_unnormalized, Sa_inv_normalized, Sa_inv_sqrt_normalized = (
+            MultiComponentSurface.Sa(self, x_surface, geom)
+        )
         Sa_unnormalized[self.surf_temp_ind, self.surf_temp_ind] = (
             self.surface_T_prior_sigma_degK**2
         )
 
-        # select the Sa inverse from the list of components
-        Sa_inv_normalized = self.Sa_inv_normalized[geom.surf_cmp_init]
-        Sa_inv_sqrt_normalized = self.Sa_inv_sqrt_normalized[geom.surf_cmp_init]
+        # Append normalized Sa inv and sqrt from thermal model
+        Sa_inv_normalized = block_diag(Sa_inv_normalized, self.Sa_inv_thermal)
+        Sa_inv_sqrt_normalized = block_diag(
+            Sa_inv_sqrt_normalized, self.Sa_inv_sqrt_thermal
+        )
 
         return Sa_unnormalized, Sa_inv_normalized, Sa_inv_sqrt_normalized
 

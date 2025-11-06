@@ -183,8 +183,8 @@ class MultiComponentSurface(Surface):
         Sa_unnormalized = Cov * (self.norm(lamb_ref) ** 2)
 
         # select the Sa inverse from the list of components
-        Sa_inv_normalized = self.Sa_inv_normalized[geom.surf_cmp_init]
-        Sa_inv_sqrt_normalized = self.Sa_inv_sqrt_normalized[geom.surf_cmp_init]
+        Sa_inv_normalized = self.Sa_inv_normalized[ci]
+        Sa_inv_sqrt_normalized = self.Sa_inv_sqrt_normalized[ci]
 
         # If there are no other state vector elements, we're done.
         if len(self.statevec_names) == len(self.idx_lamb):
