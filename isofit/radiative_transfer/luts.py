@@ -395,7 +395,7 @@ class CreateNetCDF(Create):
 
 
 class CreateZarr(Create):
-    def __init__(self, file, *args, store="NestedDirectoryStore", **kwargs):
+    def __init__(self, file, *args, store="DirectoryStore", **kwargs):
         """
         Prepare a Zarr LUT store
 
@@ -417,7 +417,7 @@ class CreateZarr(Create):
             Dictionary of multi-dimensional data. Appends/replaces to the current Create.alldim list.
         zeros : List[str], optional, default=[]
             List of zero values. Appends to the current Create.zeros list.
-        store : str, default="NestedDirectoryStore"
+        store : str, default="DirectoryStore"
             Zarr backend storage to use. See: https://zarr.readthedocs.io/en/v2.15.0/api/storage.html
         """
         self.flush_immediately = False
