@@ -264,7 +264,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         if os.path.exists(self.predict_path):
             Logger.info(f"Loading sRTMnet predicts from: {self.predict_path}")
             predicts = luts.load(self.predict_path, mode="r")
-            self.component_mode = predicts.attrs["component_mode"]
+            self.component_mode = predicts.attrs.get("component_mode", "3c")
 
         else:
             Logger.info("Loading and predicting with emulator")
