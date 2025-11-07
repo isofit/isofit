@@ -478,9 +478,12 @@ class CreateZarr(Create):
         for key, vals in self.onedim.items():
             attrs = {"_ARRAY_DIMENSIONS": dims}
             if not isinstance(vals, Iterable):
-                vals = np.full(shape, vals)
+                array = self.z.create(
+                    name=key, shape=shape, dtype="float64", fill_value=vals
+                )
+            else:
+                array = self.z.array(key, vals, dtype="float64", fill_value=None)
 
-            array = self.z.array(key, vals, dtype="float64", fill_value=None)
             array.attrs.update(attrs)
 
         # Multi dimensional arrays
@@ -489,11 +492,18 @@ class CreateZarr(Create):
         for key, vals in self.alldim.items():
             attrs = {"_ARRAY_DIMENSIONS": dims}
             if not isinstance(vals, Iterable):
-                vals = np.full(shape, vals)
+                array = self.z.create(
+                    name=key,
+                    shape=shape,
+                    dtype="float64",
+                    fill_value=vals,
+                    chunks=chunks,
+                )
+            else:
+                array = self.z.array(
+                    key, vals, dtype="float64", fill_value=None, chunks=chunks
+                )
 
-            array = self.z.array(
-                key, vals, dtype="float64", chunks=chunks, fill_value=None
-            )
             array.attrs.update(attrs)
 
         zarr.consolidate_metadata(self.store)
