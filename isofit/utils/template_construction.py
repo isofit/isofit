@@ -652,6 +652,7 @@ def build_presolve_config(
     inversion_windows=[[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]],
     prebuilt_lut_path: str = None,
     multipart_transmittance: bool = False,
+    lut_type: str = "nc",
 ) -> None:
     """Write an isofit config file for a presolve, with limited info.
 
@@ -668,6 +669,7 @@ def build_presolve_config(
         debug: flag to enable debug_mode in the config.implementation
         prebuilt_lut_path: lut path to use; if none, presolve config will create a new file
         multipart_transmittance: flag to indicate whether a 4-component transmittance model is to be used
+        lut_type: store type to use for the lut file, either ``nc`` for NetCDF or ``zarr`` for Zarr
     """
 
     # Determine number of spectra included in each retrieval.  If we are
@@ -685,7 +687,7 @@ def build_presolve_config(
         engine_name = "sRTMnet"
 
     if prebuilt_lut_path is None:
-        lut_path = join(paths.lut_h2o_directory, "lut.nc")
+        lut_path = join(paths.lut_h2o_directory, f"lut.{lut_type}")
     else:
         lut_path = prebuilt_lut_path
 
@@ -849,6 +851,7 @@ def build_main_config(
     multipart_transmittance: bool = False,
     surface_mapping: dict = None,
     retrieve_co2: bool = False,
+    lut_type: str = "nc",
 ) -> None:
     """Write an isofit config file for the main solve, using the specified pathnames and all given info
 
@@ -879,6 +882,7 @@ def build_main_config(
         multipart_transmittance:              flag to indicate whether a 4-component transmittance model is to be used
         surface_mapping:                      optional object to pass mapping between surface class and surface model
         retrieve_co2:                         flag to include CO2 in lut and retrieval
+        lut_type:                             store type to use for the lut file, either ``nc`` for NetCDF or ``zarr`` for Zarr
     """
 
     # Determine number of spectra included in each retrieval.  If we are
@@ -889,7 +893,7 @@ def build_main_config(
         spectra_per_inversion = 1
 
     if prebuilt_lut_path is None:
-        lut_path = join(paths.full_lut_directory, "lut.nc")
+        lut_path = join(paths.full_lut_directory, f"lut.{lut_type}")
     else:
         lut_path = abspath(prebuilt_lut_path)
 

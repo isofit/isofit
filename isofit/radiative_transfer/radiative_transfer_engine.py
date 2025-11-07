@@ -92,7 +92,7 @@ class RadiativeTransferEngine:
         except:
             logging.debug("self.lut_grid: None")
         logging.debug(f"lut_grid is none {lut_grid is None}")
-        exists = os.path.isfile(lut_path)
+        exists = os.path.exists(lut_path)
         if not exists and lut_grid is None:
             raise AttributeError(
                 "Must provide either a prebuilt LUT file or a LUT grid"
@@ -518,7 +518,7 @@ class RadiativeTransferEngine:
                     if ret:
                         self.lut.queuePoint(*ret)
 
-                    if report(len(jobs)):
+                    if report(len(jobs)) and self.lut.hold:
                         Logger.info("Flushing netCDF to disk")
                         self.lut.flush()
 
@@ -736,6 +736,7 @@ def streamSimulation(
         if lut:
             lut.queuePoint(point, data)
             lut.flush()
+            Logger.debug(f"Flushed(point={point})")
         else:
             return point, data
     else:

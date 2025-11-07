@@ -107,6 +107,7 @@ def apply_oe(
     skyview_factor=None,
     resources=False,
     retrieve_co2=False,
+    lut_type="nc",
 ):
     """\
     Applies OE over a flightline using a radiative transfer engine. This executes
@@ -243,6 +244,10 @@ def apply_oe(
         Enables the system resource tracker. Must also have the log_file set.
     retrieve_co2 : bool, default=False
         Flag to retrieve CO2 in the state vector. Only available with emulator at the moment.
+    lut_type : "nc" | "zarr", default="nc"
+        Type of store to use for the LUT files:
+            nc   - NetCDF
+            zarr - Zarr
 
     \b
     References
@@ -904,6 +909,7 @@ def apply_oe(
 @click.option("--skyview_factor", type=str, default=None)
 @click.option("-r", "--resources", is_flag=True, default=False)
 @click.option("--retrieve_co2", is_flag=True, default=False)
+@click.option("--lut_type", type=click.Choice(["nc", "zarr"]), default="nc")
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",
