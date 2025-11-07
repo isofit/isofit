@@ -23,7 +23,7 @@ from isofit import __version__
 Logger = logging.getLogger(__name__)
 
 
-def create(file: str, force="zarr", *args, **kwargs):
+def create(file: str, *args, **kwargs):
     """
     Factory function to return the correct Create subclass
 
@@ -31,8 +31,6 @@ def create(file: str, force="zarr", *args, **kwargs):
     ----------
     file : str
         File store. Uses the extension to determine the correct subclass
-    force : str, default="zarr"
-        Forces input files to be a specific type
     *args : list
         Arguments to pass to the subclass
     *args : dict
@@ -43,7 +41,7 @@ def create(file: str, force="zarr", *args, **kwargs):
     obj
         Create subclass object
     """
-    if file.endswith(".zarr") or force == "zarr":
+    if file.endswith(".zarr"):
         return CreateZarr(file, *args, **kwargs)
     else:
         return CreateNetCDF(file, *args, **kwargs)
@@ -397,7 +395,7 @@ class CreateNetCDF(Create):
 class CreateZarr(Create):
     def __init__(self, file, *args, store="DirectoryStore", **kwargs):
         """
-        Prepare a Zarr LUT store
+        Prepare a Zarr v2 LUT store
 
         Parameters
         ----------
@@ -421,20 +419,6 @@ class CreateZarr(Create):
             Zarr backend storage to use. See: https://zarr.readthedocs.io/en/v2.15.0/api/storage.html
         """
         self.flush_immediately = False
-
-        # Version 3 has less stores than v2
-        if Version(zarr.__version__) >= Version("3"):
-            if "DirectoryStore" in store:
-                Logger.warning(
-                    f"Zarr v3 does not have {store}, using functionally-similar LocalStore instead"
-                )
-                store = "LocalStore"
-
-        if not hasattr(zarr.storage, store):
-            available = ", ".join([s for s in dir(zarr.storage) if s.endswith("Store")])
-            message = f"Zarr v{zarr.__version__} does not have storage {store}, please choose from one of: {available}"
-            Logger.error(message)
-            raise AttributeError(message)
 
         self.store = getattr(zarr.storage, store)(file)
         self.z = zarr.group(store=self.store, overwrite=True)
@@ -1021,14 +1005,14 @@ def load(
     if coupling not in ("before", "before-save", "after", "after-save"):
         raise AttributeError("Coupling must be set to either 'before' or 'after'")
 
-    try:
+    if file.endswith(".zarr"):
         if dask:
             Logger.debug(f"[Zarr] Using Dask to load: {file}")
             ds = xr.open_zarr(file, **kwargs)
         else:
             Logger.debug(f"[Zarr] Using Xarray to load: {file}")
             ds = xr.open_dataset(file, engine="zarr", **kwargs)
-    except:
+    else:
         kwargs.setdefault("engine", "netcdf4")
         kwargs.setdefault("lock", lock)
         kwargs.setdefault("mode", mode)

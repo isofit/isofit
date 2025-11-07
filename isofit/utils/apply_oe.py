@@ -111,6 +111,7 @@ def apply_oe(
     retrieve_co2=False,
     eof_path=None,
     terrain_style="dem",
+    lut_type="nc",
 ):
     """
     Applies OE over a flightline using a radiative transfer engine. This executes
@@ -256,6 +257,10 @@ def apply_oe(
         with one number per instrument channel.
     terrain_style : str, default=dem
         Flag to set the terrain style.  dem uses provided obs values, flat sets the surface to the spheroid
+    lut_type : "nc" | "zarr", default="nc"
+        Type of store to use for the LUT files:
+            nc   - NetCDF
+            zarr - Zarr
 
     References
     ----------
@@ -947,6 +952,7 @@ def apply_oe(
 @click.option("--retrieve_co2", is_flag=True, default=False)
 @click.option("--eof_path", default=None)
 @click.option("--terrain_style", default="dem", type=click.Choice(["dem", "flat"]))
+@click.option("--lut_type", type=click.Choice(["nc", "zarr"]), default="nc")
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",
