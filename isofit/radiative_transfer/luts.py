@@ -460,9 +460,11 @@ class CreateZarr(Create):
         array = self.z.array("wl", self.wl, fill_value=None)
         array.attrs["_ARRAY_DIMENSIONS"] = ["wl"]
 
+        chunks = [len(self.wl)]
         for key, vals in self.grid.items():
             array = self.z.array(key, vals, dtype="float64", fill_value=None)
             array.attrs["_ARRAY_DIMENSIONS"] = [key]
+            chunks.append(1)
 
         # Constants
         dims = ()
@@ -473,21 +475,17 @@ class CreateZarr(Create):
         # One dimensional arrays
         dims = ("wl",)
         shape = (len(self.wl),)
-        chunks = [1]
         for key, vals in self.onedim.items():
             attrs = {"_ARRAY_DIMENSIONS": dims}
             if not isinstance(vals, Iterable):
                 vals = np.full(shape, vals)
 
-            array = self.z.array(
-                key, vals, dtype="float64", chunks=chunks, fill_value=None
-            )
+            array = self.z.array(key, vals, dtype="float64", fill_value=None)
             array.attrs.update(attrs)
 
         # Multi dimensional arrays
         dims += tuple(self.grid)
         shape = list(self.sizes.values())
-        chunks = [1] + list(self.sizes.values())[1:]
         for key, vals in self.alldim.items():
             attrs = {"_ARRAY_DIMENSIONS": dims}
             if not isinstance(vals, Iterable):
