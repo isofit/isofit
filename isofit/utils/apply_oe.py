@@ -682,6 +682,7 @@ def apply_oe(
                 prebuilt_lut_path=prebuilt_lut,
                 inversion_windows=INVERSION_WINDOWS,
                 multipart_transmittance=multipart_transmittance,
+                lut_type=lut_type,
             )
             """Currently not running presolve with either
             multisurface-mode or topography mode. Could easily change
@@ -794,6 +795,7 @@ def apply_oe(
             inversion_windows=INVERSION_WINDOWS,
             multipart_transmittance=multipart_transmittance,
             retrieve_co2=retrieve_co2,
+            lut_type=lut_type,
         )
 
         if config_only:
