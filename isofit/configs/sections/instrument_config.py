@@ -42,8 +42,8 @@ class InstrumentUnknowns(BaseConfigSection):
         self._stray_srf_uncertainty_type = float
         self.stray_srf_uncertainty = None
 
-        self._linearity_uncertainty_type = list
-        self.linearity_uncertainty = []
+        self._linearity_file_type = str
+        self.linearity_file = None
 
         self.set_config_options(sub_configdic)
 
