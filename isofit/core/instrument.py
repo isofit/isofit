@@ -84,22 +84,7 @@ class Instrument:
             self.linearity_type = linearity_mat.get("embedding_location", "Sy")
 
 
-        # TEMPORARY CODE USED FOR TESTING
-        config.noise_test = False
-        if config.noise_test:
-            self.model_type = "testing"
-
-            # a = 0.0057
-            a = 0.007
-            b = 0.0
-            c = 0.1
-            self.noise_a = np.array([a, b, c])[np.newaxis, :]
-
-            a = 0.3
-            b = 0.2
-            self.noise_b = np.array([a, b, c])[np.newaxis, :]
-
-        elif config.SNR is not None:
+        if config.SNR is not None:
             self.model_type = "SNR"
             self.snr = config.SNR
 
