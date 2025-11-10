@@ -8,6 +8,7 @@ import os
 import subprocess
 from datetime import datetime
 from os.path import exists, join
+from pathlib import Path
 from shutil import copyfile
 
 import click
@@ -18,9 +19,16 @@ from spectral.io import envi
 import isofit.utils.template_construction as tmpl
 from isofit.core import isofit, units
 from isofit.core.common import envi_header
+from isofit.debug.resource_tracker import FileResources
 from isofit.utils import analytical_line as ALAlg
 from isofit.utils import empirical_line as ELAlg
-from isofit.utils import extractions, interpolate_spectra, segment
+from isofit.utils import (
+    extractions,
+    interpolate_spectra,
+    multicomponent_classification,
+    reducers,
+    segment,
+)
 from isofit.utils.skyview import skyview
 
 EPS = 1e-6
@@ -68,6 +76,8 @@ def apply_oe(
     modtran_path=None,
     wavelength_path=None,
     surface_category="multicomponent_surface",
+    surface_class_file=None,
+    classify_multisurface=False,
     aerosol_climatology_path=None,
     rdn_factors_path=None,
     atmosphere_type="ATM_MIDLAT_SUMMER",
@@ -95,6 +105,7 @@ def apply_oe(
     interpolate_bad_rdn=False,
     interpolate_inplace=False,
     skyview_factor=None,
+    resources=False,
 ):
     """\
     Applies OE over a flightline using a radiative transfer engine. This executes
@@ -222,6 +233,13 @@ def apply_oe(
         Flag to tell interpolation to work on the file in place, or generate a
         new interpolated rdn file. The location of the new file will be in the
         "input" directory within the working directory.
+    skyview_factor : str, default=None
+        Flag to determine method to account for skyview factor. Default is None, creating an array of 1s.
+        Other option is "slope" which will approx. based on cos^2(slope/2).
+        Other option is a path to a skyview ENVI file computed via skyview.py utility or other source.
+        Please note data must range from 0-1.
+    resources : bool, default=False
+        Enables the system resource tracker. Must also have the log_file set.
 
     \b
     References
@@ -238,6 +256,7 @@ def apply_oe(
     retrievals. Remote Sensing of Environment, 261:112476, 2021.doi: 10.1016/j.rse.2021.112476.
     """
     use_superpixels = empirical_line or analytical_line
+    use_multisurface = True if classify_multisurface or surface_class_file else False
 
     # Determine if we run in multipart-transmittance (4c) mode
     if emulator_base is not None:
@@ -291,6 +310,18 @@ def apply_oe(
         datefmt="%Y-%m-%d,%H:%M:%S",
     )
 
+    # Track system resources to a file adjacent to the log file
+    fr = None
+    if resources:
+        if log_file:
+            jsonl = Path(log_file).with_suffix(".resources.jsonl")
+            fr = FileResources(jsonl, reset=True, cores=n_cores)
+            fr.start()
+        else:
+            logging.error(
+                "The resources.jsonl will only be generated when a log file is also set"
+            )
+
     logging.info("Checking input data files...")
     rdn_dataset = envi.open(envi_header(input_radiance))
     rdn_size = (rdn_dataset.shape[0], rdn_dataset.shape[1])
@@ -315,24 +346,48 @@ def apply_oe(
                 )
                 raise ValueError(err_str)
 
-    # Check if user passed a path to sky view factor image file, else it is None.
+    # Check if user passed a path to sky view factor image file or method, else it is None.
     if skyview_factor:
-        # check file exists first..
+        # deal with condition if they have a file named precomputed-slope locally
+        if exists("slope") and skyview_factor.lower() == "slope":
+            raise ValueError(
+                f"File name {skyview_factor} is too similar to method, 'slope'. Please rename or change method and try running again."
+            )
+        # slope based method to compute skyview and save file, rename to path
+        if skyview_factor.lower() == "slope":
+            # overwrite arg to be the resulting filepath. create new directory
+            # NOTE: this new directory should be in paths.make_directories(),
+            # but cannot at the moment because of the order of operations...
+            skyview_factor = join(working_directory, "skyview", "sky_view_factor")
+            if not exists(os.path.dirname(skyview_factor)):
+                os.mkdir(os.path.dirname(skyview_factor))
+            skyview(
+                input=input_obs,
+                output_directory=os.path.dirname(skyview_factor),
+                obs_or_loc="obs",
+                method="slope",
+                log_file=log_file,
+                logging_level=logging_level,
+            )
         if not exists(skyview_factor):
             raise ValueError(
-                f"Input skyview: {skyview_factor} file was not found system."
+                f"Input skyview: {skyview_factor} file was not found on system."
             )
-        else:
-            # load in and ensure same shape as image file.
-            svf_dataset = envi.open(envi_header(skyview_factor), skyview_factor)
-            svf_size = (svf_dataset.shape[0], svf_dataset.shape[1])
-            del svf_dataset
-            if not (svf_size[0] == rdn_size[0] and svf_size[1] == rdn_size[1]):
-                err_str = (
-                    f"Input file: {skyview_factor} size is {svf_size}, which does not"
-                    f" match input_radiance size: {rdn_size}"
-                )
-                raise ValueError(err_str)
+
+        # load in and ensure same shape as image file.
+        svf_dataset = envi.open(envi_header(skyview_factor), skyview_factor)
+        svf_size = (svf_dataset.shape[0], svf_dataset.shape[1])
+        svf_max = np.nanmax(svf_dataset.open_memmap())
+        del svf_dataset
+        if not (svf_size[0] == rdn_size[0] and svf_size[1] == rdn_size[1]):
+            err_str = (
+                f"Input file: {skyview_factor} size is {svf_size}, which does not"
+                f" match input_radiance size: {rdn_size}"
+            )
+            raise ValueError(err_str)
+        if svf_max > 1.0:
+            err_str = f"Input file: {skyview_factor} has data with max {svf_max}. Data must range between 0-1."
+
     logging.info("...Data file checks complete")
 
     lut_params = tmpl.LUTConfig(
@@ -341,21 +396,24 @@ def apply_oe(
 
     logging.info("Setting up files and directories....")
     paths = tmpl.Pathnames(
-        input_radiance,
-        input_loc,
-        input_obs,
-        sensor,
-        surface_path,
-        working_directory,
-        copy_input_files,
-        modtran_path,
-        rdn_factors_path,
-        model_discrepancy_path,
-        aerosol_climatology_path,
-        channelized_uncertainty_path,
-        ray_temp_dir,
-        interpolate_inplace,
-        skyview_factor,
+        input_radiance=input_radiance,
+        input_loc=input_loc,
+        input_obs=input_obs,
+        surface_class_file=surface_class_file,
+        sensor=sensor,
+        surface_path=surface_path,
+        working_directory=working_directory,
+        copy_input_files=copy_input_files,
+        modtran_path=modtran_path,
+        rdn_factors_path=rdn_factors_path,
+        model_discrepancy_path=model_discrepancy_path,
+        aerosol_climatology_path=aerosol_climatology_path,
+        channelized_uncertainty_path=channelized_uncertainty_path,
+        ray_temp_dir=ray_temp_dir,
+        interpolate_inplace=interpolate_inplace,
+        skyview_factor=skyview_factor,
+        subs=True if analytical_line or empirical_line else False,
+        classify_multisurface=classify_multisurface,
     )
     paths.make_directories()
     paths.stage_files()
@@ -417,13 +475,29 @@ def apply_oe(
     tmpl.write_wavelength_file(paths.wavelength_path, wl, fwhm)
 
     # check and rebuild surface model if needed
-    paths.surface_path = tmpl.check_surface_model(
-        surface_path=surface_path, wl=wl, paths=paths
+    paths.surface_paths = tmpl.check_surface_model(
+        surface_path=surface_path,
+        output_model_path=paths.surface_template_path,
+        wl=wl,
+        surface_wavelength_path=paths.wavelength_path,
+        surface_category=surface_category,
+        multisurface=use_multisurface,
     )
 
     # re-stage surface model if needed
-    if paths.surface_path != surface_path:
-        copyfile(paths.surface_path, paths.surface_working_path)
+    paths.surface_working_paths = {}
+    for key, value in paths.surface_paths.items():
+        name, ext = os.path.splitext(paths.surface_template_path)
+
+        if use_multisurface:
+            surface_working_path = f"{name}_{key}{ext}"
+        else:
+            surface_working_path = f"{name}{ext}"
+
+        if value != surface_working_path and surface_path.endswith(".mat"):
+            copyfile(value, surface_working_path)
+
+        paths.surface_working_paths[key] = surface_working_path
 
     (
         mean_latitude,
@@ -452,8 +526,8 @@ def apply_oe(
         if mean_elevation_km < 0:
             mean_elevation_km = 0
             logging.info(
-                f"Scene contains a mean target elevation < 0.  6s does not support"
-                f" targets below sea level in km units.  Setting mean elevation to 0."
+                "Scene contains a mean target elevation < 0.  6s does not support"
+                " targets below sea level in km units.  Setting mean elevation to 0."
             )
 
     mean_altitude_km = (
@@ -502,6 +576,21 @@ def apply_oe(
         )
         paths.radiance_working_path = paths.radiance_interp_path
 
+    # Multisurface Classification
+    if classify_multisurface and not surface_class_file:
+        multicomponent_classification(
+            paths.input_radiance_file,
+            paths.input_obs_file,
+            paths.input_loc_file,
+            paths.surface_class_working_path,
+            paths.surface_paths,
+            n_cores=n_cores,
+            dayofyear=dayofyear,
+            wavelength_file=paths.wavelength_path,
+            logfile=log_file,
+            clean=True,
+        )
+
     logging.debug("Radiance working path:")
     logging.debug(paths.radiance_working_path)
     # Superpixel segmentation
@@ -522,13 +611,17 @@ def apply_oe(
             )
 
         # Extract input data per segment
-        for inp, outp in [
-            (paths.radiance_working_path, paths.rdn_subs_path),
-            (paths.obs_working_path, paths.obs_subs_path),
-            (paths.loc_working_path, paths.loc_subs_path),
-            (paths.svf_working_path, paths.svf_subs_path),
+        for inp, outp, reducer_fun in [
+            (paths.radiance_working_path, paths.rdn_subs_path, reducers.band_mean),
+            (paths.obs_working_path, paths.obs_subs_path, reducers.band_mean),
+            (paths.loc_working_path, paths.loc_subs_path, reducers.band_mean),
+            (
+                paths.surface_class_working_path,
+                paths.surface_class_subs_path,
+                reducers.class_priority,
+            ),
         ]:
-            if not exists(outp) and inp is not None:
+            if inp and not exists(outp):
                 logging.info("Extracting " + outp)
                 extractions(
                     inputfile=inp,
@@ -536,6 +629,7 @@ def apply_oe(
                     output=outp,
                     chunksize=CHUNKSIZE,
                     flag=-9999,
+                    reducer=reducer_fun,
                     n_cores=n_cores,
                     loglevel=logging_level,
                     logfile=log_file,
@@ -586,6 +680,9 @@ def apply_oe(
                 inversion_windows=INVERSION_WINDOWS,
                 multipart_transmittance=multipart_transmittance,
             )
+            """Currently not running presolve with either
+            multisurface-mode or topography mode. Could easily change
+            this"""
 
             # Run modtran retrieval
             logging.info("Run ISOFIT initial guess")
@@ -607,7 +704,11 @@ def apply_oe(
             logging.info("Existing h2o-presolve solutions found, using those.")
 
         h2o = envi.open(envi_header(paths.h2o_subs_path))
-        h2o_est = h2o.read_band(-1)[:].flatten()
+        # Find the band that is H2O. Should be stable with constant H2O name
+        h2o_band = [
+            i for i, name in enumerate(h2o.metadata["band names"]) if name == "H2OSTR"
+        ][0]
+        h2o_est = h2o.read_band(h2o_band)[:].flatten()
 
         p05 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 2)
         p95 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 98)
@@ -630,7 +731,6 @@ def apply_oe(
     logging.info(f"Relative to-sun azimuth: {relative_azimuth_lut_grid}")
     logging.info(f"H2O Vapor: {h2o_lut_grid}")
 
-    logging.info(paths.state_subs_path)
     if (
         not exists(paths.state_subs_path)
         or not exists(paths.uncert_subs_path)
@@ -735,6 +835,7 @@ def apply_oe(
                 isofit_config=paths.isofit_full_config_path,
                 nneighbors=nneighbors[0],
                 n_cores=n_cores,
+                segmentation_size=segmentation_size,
             )
         elif analytical_line:
             logging.info("Analytical line inference")
@@ -751,10 +852,14 @@ def apply_oe(
                 n_atm_neighbors=nneighbors,
                 n_cores=n_cores,
                 smoothing_sigma=atm_sigma,
+                segmentation_size=segmentation_size,
             )
 
     logging.info("Done.")
     ray.shutdown()
+
+    if fr:
+        fr.stop()
 
 
 # Input arguments
@@ -769,6 +874,8 @@ def apply_oe(
 @click.option("--modtran_path")
 @click.option("--wavelength_path")
 @click.option("--surface_category", default="multicomponent_surface")
+@click.option("--surface_class_file", default=None)
+@click.option("--classify_multisurface", is_flag=True, default=False)
 @click.option("--aerosol_climatology_path")
 @click.option("--rdn_factors_path")
 @click.option("--atmosphere_type", default="ATM_MIDLAT_SUMMER")
@@ -796,6 +903,7 @@ def apply_oe(
 @click.option("--interpolate_bad_rdn", is_flag=True, default=False)
 @click.option("--interpolate_inplace", is_flag=True, default=False)
 @click.option("--skyview_factor", type=str, default=None)
+@click.option("-r", "--resources", is_flag=True, default=False)
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",
@@ -805,7 +913,7 @@ def apply_oe(
 def cli(debug_args, profile, **kwargs):
     if debug_args:
         print("Arguments to be passed:")
-        for key, value in kwitems():
+        for key, value in kwargs.items():
             print(f"  {key} = {value!r}")
     else:
         if profile:

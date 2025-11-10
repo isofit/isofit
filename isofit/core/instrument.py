@@ -256,6 +256,26 @@ class Instrument:
 
             Sy = np.diagflat(np.power(nedl, 2))
 
+        # TEMPORARY CODE USED FOR TESTING
+        elif self.model_type == "testing":
+            # noise_plus_meas = self.noise_a[:, 1] + meas
+
+            # nedl_a = np.abs(
+            #     self.noise_a[:, 0] * np.sqrt(noise_plus_meas) + self.noise_a[:, 2]
+            # )
+
+            noise_plus_meas = self.noise_b[:, 1] + meas
+            nedl = (
+                # self.noise_b[:, 0] * (1 / np.exp(np.sqrt(noise_plus_meas)))
+                self.noise_b[:, 0]
+                * (1 / np.sqrt(noise_plus_meas))
+            ) + self.noise_b[:, 2]
+
+            # nedl = np.max([nedl_a, nedl_b], axis=0)
+            nedl = nedl / np.sqrt(self.integrations)
+
+            return np.diagflat(np.power(nedl, 2))
+
         elif self.model_type == "parametric":
             noise_plus_meas = self.noise[:, 1] + meas
             if np.any(noise_plus_meas <= 0):

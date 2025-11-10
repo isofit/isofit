@@ -23,6 +23,7 @@ import logging
 
 import numpy as np
 from scipy.interpolate import interp1d
+from scipy.io import loadmat
 
 from isofit.core.common import load_spectrum, load_wavelen
 
@@ -35,6 +36,7 @@ class Surface:
 
     def __init__(self, full_config: Config):
         config = full_config.forward_model.surface
+        self.model_dict = loadmat(config.surface_file)
 
         self.statevec_names = []
         self.idx_surface = np.arange(len(self.statevec_names))
@@ -49,14 +51,20 @@ class Surface:
         self.wl = None
         self.fwhm = None
 
+        # 1st Priority: use the wavelength file
         if config.wavelength_file is not None:
             self.wl, self.fwhm = load_wavelen(config.wavelength_file)
+        # 2nd Priority: use the wl from the surface model file
+        elif "wl" in self.model_dict:
+            self.wl = self.model_dict["wl"][0]
+        # Special case for simulation mode
         elif full_config.implementation.mode == "simulation":
             logging.info(
                 "No surface wavelength_file provided, getting wavelengths from"
                 " input.reflectance_file"
             )
             _, self.wl = load_spectrum(full_config.input.reflectance_file)
+        # Else: wl = None
 
         if self.wl is not None:
             self.n_wl = len(self.wl)

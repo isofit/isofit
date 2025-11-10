@@ -31,12 +31,20 @@ from spectral.io import envi
 
 import isofit
 from isofit.core import units
-from isofit.core.common import envi_header, eps, load_spectrum, resample_spectrum
+from isofit.core.common import (
+    envi_header,
+    eps,
+    load_spectrum,
+    load_wavelen,
+    resample_spectrum,
+)
 from isofit.core.geometry import Geometry
+from isofit.core.multistate import match_statevector
 from isofit.data import env
 from isofit.inversion.inverse_simple import invert_algebraic
 
 ### Variables ###
+Logger = logging.getLogger(__file__)
 
 # Constants related to file I/O
 typemap = {
@@ -57,8 +65,6 @@ max_frames_size = 100
 
 
 ### Classes ###
-
-
 class SpectrumFile:
     """A buffered file object that contains configuration information about formatting, etc."""
 
@@ -79,6 +85,8 @@ class SpectrumFile:
         flag=-9999.0,
         ztitles="{Wavelength (nm), Magnitude}",
         map_info="{}",
+        engine_name=None,
+        isofit_version=None,
     ):
         """."""
 
@@ -120,7 +128,7 @@ class SpectrumFile:
                 raise IOError("MATLAB format in input block not supported")
 
         elif self.fname.endswith(".nc"):
-            logging.debug(f"Inferred MATLAB file format for {self.fname}")
+            logging.debug(f"Inferred NETCDF file format for {self.fname}")
             self.format = "NETCDF"
 
             if not self.write:
@@ -222,6 +230,9 @@ class SpectrumFile:
                 # from scratch.  Hopefully the caller has supplied the
                 # necessary metadata details.
                 meta = {
+                    "description": (
+                        f"L2A per-pixel surface retrieval (engine={engine_name}, isofit_version={isofit_version})"
+                    ),
                     "lines": n_rows,
                     "samples": n_cols,
                     "bands": n_bands,
@@ -232,13 +243,14 @@ class SpectrumFile:
                     "sensor type": "unknown",
                     "interleave": interleave,
                     "data type": typemap[dtype],
-                    "wavelength units": "nm",
+                    "wavelength units": "Nanometers",
                     "z plot range": zrange,
                     "z plot titles": ztitles,
                     "fwhm": fwhm,
                     "bbl": bad_bands,
                     "band names": band_names,
                     "wavelength": self.wl,
+                    "data ignore value": self.flag,
                 }
 
                 for k, v in meta.items():
@@ -346,17 +358,12 @@ class InputData:
 class IO:
     """..."""
 
-    def __init__(self, config: Config, forward: ForwardModel):
+    def __init__(self, config: Config, forward: ForwardModel, full_statevec: list = []):
         """Initialization specifies retrieval subwindows for calculating
         measurement cost distributions."""
 
         self.config = config
 
-        self.bbl = (
-            "{"
-            + ",".join([str(1) for n in range(len(forward.instrument.wl_init))])
-            + "}"
-        )
         self.radiance_correction = None
         self.meas_wl = forward.instrument.wl_init
         self.meas_fwhm = forward.instrument.fwhm_init
@@ -364,8 +371,21 @@ class IO:
         self.reads = 0
         self.n_rows = 1
         self.n_cols = 1
-        self.n_sv = len(forward.statevec)
-        self.n_chan = len(forward.instrument.wl_init)
+        self.bbl = "{" + ",".join([str(1) for n in range(len(self.meas_wl))]) + "}"
+        self.engine_name = (
+            config.forward_model.radiative_transfer.radiative_transfer_engines[
+                0
+            ].engine_name
+        )
+
+        # Use the pre-defined full statevec
+        if len(full_statevec):
+            self.full_statevec = full_statevec
+        else:
+            self.full_statevec = forward.statevec
+
+        self.n_sv = len(self.full_statevec)
+        self.n_chan = len(self.meas_wl)
         self.flush_rate = config.implementation.io_buffer_size
 
         self.simulation_mode = config.implementation.mode == "simulation"
@@ -376,7 +396,7 @@ class IO:
 
         # Names of either the wavelength or statevector outputs
         wl_names = [("Channel %i" % i) for i in range(self.n_chan)]
-        sv_names = forward.statevec.copy()
+        sv_names = self.full_statevec.copy()
 
         self.input_datasets, self.output_datasets, self.map_info = {}, {}, "{}"
 
@@ -428,6 +448,8 @@ class IO:
                 map_info=self.map_info,
                 zrange=zrange,
                 ztitles=ztitle,
+                engine_name=self.engine_name,
+                isofit_version=config.implementation.isofit_version,
             )
 
         # Do we apply a radiance correction?
@@ -553,7 +575,12 @@ class IO:
             self.flush_buffers()
 
     def build_output(
-        self, states: List, input_data: InputData, fm: ForwardModel, iv: Inversion
+        self,
+        states: List,
+        input_data: InputData,
+        fm: ForwardModel,
+        iv: Inversion,
+        fill_value=-9999.0,
     ):
         """
         Build the output to be written to disk as a dictionary
@@ -569,9 +596,9 @@ class IO:
 
         if len(states) == 0:
             # Write a bad data flag
-            atm_bad = np.zeros(len(fm.instrument.n_chan) * 5) * -9999.0
-            state_bad = np.zeros(len(fm.statevec)) * -9999.0
-            data_bad = np.zeros(fm.instrument.n_chan) * -9999.0
+            atm_bad = np.zeros(len(fm.instrument.n_chan) * 5) + fill_value
+            state_bad = np.zeros(len(fm.statevec)) + fill_value
+            data_bad = np.zeros(fm.instrument.n_chan) + fill_value
             to_write = {
                 "estimated_state_file": state_bad,
                 "estimated_reflectance_file": data_bad,
@@ -599,9 +626,21 @@ class IO:
             else:
                 state_est = states[-1, :]
 
+            # Make important check that fm.statevec !> full_statevec.
+            if len(fm.statevec) > len(self.full_statevec):
+                logging.error(
+                    "Length of the output statevector is shorter than the "
+                    "forward model currently being written. Potential issue "
+                    "with initialization of IO class."
+                )
+                raise IOError("len(fm.statevec) > len(self.full_statevec)")
+
             ############ Start with all of the 'independent' calculations
             if "estimated_state_file" in self.output_datasets:
-                to_write["estimated_state_file"] = state_est
+                # state_est transformed to reflect io.full_statevec
+                to_write["estimated_state_file"] = match_statevector(
+                    state_est, self.full_statevec, fm.statevec
+                )
 
             if "path_radiance_file" in self.output_datasets:
                 # Note: for glint models, this will return atm + glint
@@ -626,7 +665,9 @@ class IO:
 
             if "posterior_uncertainty_file" in self.output_datasets:
                 S_hat, K, G = iv.calc_posterior(state_est, geom, meas)
-                to_write["posterior_uncertainty_file"] = np.sqrt(np.diag(S_hat))
+                to_write["posterior_uncertainty_file"] = match_statevector(
+                    np.sqrt(np.diag(S_hat)), self.full_statevec, fm.statevec
+                )
 
             ############ Now proceed to the calcs where they may be some overlap
 
@@ -704,7 +745,8 @@ class IO:
 
             if "atmospheric_coefficients_file" in self.output_datasets:
                 rhoatm, sphalb, L_tot, transup, L_Up = coeffs
-                coszen, cos_i = geom.check_coszen_and_cos_i(fm.RT.coszen)
+                verified_geom = geom.verify(fm.RT.coszen)
+                coszen, cos_i = verified_geom["coszen"], verified_geom["cos_i"]
                 solar_irr = fm.RT.rt_engines[0].solar_irr
 
                 atm_vars = [rhoatm, sphalb, L_tot, solar_irr]
@@ -763,6 +805,53 @@ class IO:
         )
 
     @staticmethod
+    def initialize_output_files(config, n_rows, n_cols, full_statevector):
+        wl_init, fwhm_init = load_wavelen(
+            config.forward_model.instrument.wavelength_file
+        )
+        wl_names = [("Channel %i" % i) for i in range(len(wl_init))]
+        bbl = "{" + ",".join([str(1) for n in range(len(wl_init))]) + "}"
+        engine_name = (
+            config.forward_model.radiative_transfer.radiative_transfer_engines[
+                0
+            ].engine_name
+        )
+
+        for element, element_header, element_name in zip(
+            *config.output.get_output_files()
+        ):
+            band_names, ztitle, zrange = element_header
+
+            if band_names == "statevector":
+                band_names = full_statevector
+            elif band_names == "wavelength":
+                band_names = wl_names
+            elif band_names == "atm_coeffs":
+                band_names = wl_names * 5
+            else:
+                band_names = "{}"
+
+            n_bands = len(band_names)
+            _ = SpectrumFile(
+                element,
+                write=True,
+                n_rows=n_rows,
+                n_cols=n_cols,
+                n_bands=n_bands,
+                interleave="bip",
+                dtype=np.float32,
+                wavelengths=wl_init,
+                fwhm=fwhm_init,
+                band_names=band_names,
+                bad_bands=bbl,
+                map_info="{}",
+                zrange=zrange,
+                ztitles=ztitle,
+                engine_name=engine_name,
+                isofit_version=config.implementation.isofit_version,
+            )
+
+    @staticmethod
     def load_esd(file=None):
         """
         Loads an earth_sun_distance file. Defaults to the
@@ -814,3 +903,27 @@ def write_bil_chunk(
     outfile.seek(line * shape[1] * shape[2] * np.dtype(dtype).itemsize)
     outfile.write(dat.astype(dtype).tobytes())
     outfile.close()
+
+
+def initialize_output(output_metadata, outpath, out_shape, **kwargs):
+    """
+    Initialize output file by updating metadata and creating object.
+
+    Args:
+        output_metadata: dict - Dictionary with envi header information
+        outpath: str - path to output file
+        out_shape: tuple - dimensions of initialized file
+        keys_to_del: list - keys to remove from output_metadata
+        kwargs - key-argument pairs to add to output_metadata
+    """
+    for key, value in kwargs.items():
+        output_metadata[key] = value
+
+    out_file = envi.create_image(
+        envi_header(outpath), ext="", metadata=output_metadata, force=True
+    )
+    out_mm = out_file.open_memmap(interleave="source", writable=True)
+    out_mm[:, :] = np.zeros(out_shape, dtype=np.float32)
+    del out_file
+
+    return outpath

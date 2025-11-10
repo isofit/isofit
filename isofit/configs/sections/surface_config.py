@@ -27,20 +27,31 @@ from isofit.configs.base_config import BaseConfigSection
 
 class SurfaceConfig(BaseConfigSection):
     """
-    Instrument configuration.
+    Surface configuration.
     """
 
     def __init__(self, sub_configdic: dict = None):
+        self._multi_surface_flag_type = bool
+        self.multi_surface_flag = False
+
         self._surface_file_type = str
         self.surface_file = None
 
         self._surface_category_type = str
         self.surface_category = None
 
+        self._surface_class_file_type = str
+        self.surface_class_file = None
+
+        self._base_surface_class_file_type = str
+        self.base_surface_class_file = None
+
+        self._Surfaces_type = dict
+        self.Surfaces = {}
+
         self._wavelength_file_type = str
         self.wavelength_file = None
 
-        # Multicomponent Surface
         self._select_on_init_type = bool
         self.select_on_init = True
         """bool: This field, if present and set to true, forces us to use any initialization state and never change.
@@ -50,12 +61,18 @@ class SurfaceConfig(BaseConfigSection):
         self.selection_metric = "Euclidean"
 
         # Surface Thermal
+        """ Initial Value recommended by Glynn Hulley."""
         self._emissivity_for_surface_T_init_type = float
         self.emissivity_for_surface_T_init = 0.98
-        """ Initial Value recommended by Glynn Hulley."""
 
         self._surface_T_prior_sigma_degK_type = float
         self.surface_T_prior_sigma_degK = 1.0
+
+        self._sun_glint_prior_sigma_type = float
+        self.sun_glint_prior_sigma = 0.1
+
+        self._sky_glint_prior_sigma_type = float
+        self.sky_glint_prior_sigma = 0.01
 
         self.set_config_options(sub_configdic)
 
@@ -65,28 +82,24 @@ class SurfaceConfig(BaseConfigSection):
         valid_surface_categories = [
             "surface",
             "multicomponent_surface",
-            "glint_surface",
+            "glint_model_surface",
             "thermal_surface",
             "lut_surface",
         ]
-        if self.surface_category is None:
-            errors.append("surface->surface_category must be specified")
-        elif self.surface_category not in valid_surface_categories:
+        if (self.surface_category is None) and not len(self.Surfaces):
+            errors.append("surface->surface_category or Surfaces must be specified")
+
+        elif self.surface_category not in valid_surface_categories and not len(
+            self.Surfaces
+        ):
             errors.append(
                 "surface->surface_category: {} not in valid surface categories: {}".format(
                     self.surface_category, valid_surface_categories
                 )
             )
 
-        if self.surface_category is None:
-            errors.append("surface->surface_category must be specified")
-
-        valid_normalize_categories = ["Euclidean", "RMS", "None"]
-        if self.normalize not in valid_normalize_categories:
-            errors.append(
-                "surface->normalize: {} not in valid normalize choices: {}".format(
-                    self.normalize, valid_normalize_categories
-                )
-            )
+        valid_metrics = ("Euclidean", "Mahalanobis")
+        if self.selection_metric not in valid_metrics:
+            errors.append(f"surface->selection_metric must be one of: {valid_metrics}")
 
         return errors
