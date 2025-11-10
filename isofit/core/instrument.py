@@ -69,6 +69,21 @@ class Instrument:
 
         self.integrations = config.integrations
 
+
+        self.linearity_type = None
+        if config.unknowns.linearity_file is not None:
+            linearity_mat = loadmat(config.unknowns.linearity_file)
+            input_dn = linearity_mat["input_dn"].squeeze()
+            dn_ratio = linearity_mat["dn_ratio"].squeeze()
+            rcc_in = linearity_mat["rcc"].squeeze()
+            rcc_wl = linearity_mat["rcc_wl"].squeeze()
+            rcc_interp = interp1d(rcc_wl, rcc_in, fill_value="extrapolate")
+            self.linearity_rcc = rcc_interp(self.wl_init)
+            self.linearity_interp = interp1d(input_dn, dn_ratio, fill_value="extrapolate")
+            self.linearity_inflation = linearity_mat.get("linearity_inflation", [1.0]).squeeze()
+            self.linearity_type = linearity_mat.get("embedding_location", "Sy")
+
+
         # TEMPORARY CODE USED FOR TESTING
         config.noise_test = False
         if config.noise_test:
@@ -198,23 +213,14 @@ class Instrument:
                     np.ones(self.n_chan) * u, 2
                 )
 
-            # Unknown linearity uncertainty
-            if len(self.unknowns.linearity_uncertainty):
-                a, b, c = self.unknowns.linearity_uncertainty
+            # Impose linearity inside Sb
+            if self.linearity_type == "Sb":
+                # Uncertainty due to imperfect knowledge of linearity correction
+                dn_est = meas / self.linearity_rcc
+                nl_est = self.linearity_interp(dn_est)
 
-                # Treat it as a parametric noise
-                noise_times_meas = np.maximum(b * meas, eps)
+                bval[: self.n_chan] += np.power(meas * (nl_est - 1) * self.linearity_inflation, 2)
 
-                # Testing three forms for the noise
-                # 1 / x
-                # nedl = (1 / (noise_times_meas + a)) + c
-                # Exponential
-                # nedl = a * (1 / np.exp(noise_times_meas)) + c
-                # Linear
-                nedl = np.maximum(0, a - noise_times_meas) + c
-
-                nedl = nedl / np.sqrt(self.integrations)
-                bval[: self.n_chan] += np.power(nedl, 2)
 
         # Radiometric uncertainties combine via Root Sum Square...
         # Be careful to avoid square roots of zero!
@@ -231,6 +237,8 @@ class Instrument:
         Input: meas, the instrument measurement
         Returns: Sy, the measurement error covariance due to instrument noise
         """
+
+        Sy = None
         if self.model_type == "SNR":
             nedl = (1.0 / self.snr) * meas
             minimum_noise = np.sqrt(1e-7)
@@ -241,7 +249,7 @@ class Instrument:
                     " to avoid /0."
                 )
             nedl[bad] = minimum_noise
-            return np.diagflat(np.power(nedl, 2))
+            Sy = np.diagflat(np.power(nedl, 2))
 
         # TEMPORARY CODE USED FOR TESTING
         elif self.model_type == "testing":
@@ -261,7 +269,7 @@ class Instrument:
             # nedl = np.max([nedl_a, nedl_b], axis=0)
             nedl = nedl / np.sqrt(self.integrations)
 
-            return np.diagflat(np.power(nedl, 2))
+            Sy = np.diagflat(np.power(nedl, 2))
 
         elif self.model_type == "parametric":
             noise_plus_meas = self.noise[:, 1] + meas
@@ -275,14 +283,27 @@ class Instrument:
                 self.noise[:, 0] * np.sqrt(noise_plus_meas) + self.noise[:, 2]
             )
             nedl = nedl / np.sqrt(self.integrations)
-            return np.diagflat(np.power(nedl, 2))
+            Sy = np.diagflat(np.power(nedl, 2))
 
         elif self.model_type == "pushbroom":
             C = np.squeeze(self.covs.mean(axis=0))
-            return C / np.sqrt(self.integrations)
+            Sy = C / np.sqrt(self.integrations)
 
         elif self.model_type == "NEDT":
-            return np.diagflat(np.power(self.noise_NESR, 2))
+            Sy = np.diagflat(np.power(self.noise_NESR, 2))
+
+
+        if self.linearity_type:
+            # Uncertainty due to imperfect knowledge of linearity correction
+            dn_est = meas / self.linearity_rcc
+            nl_est = self.linearity_interp(dn_est)
+
+            nl_drdn = np.abs(meas * (nl_est - 1) * self.linearity_inflation)
+
+            np.fill_diagonal(Sy, Sy.diagonal() + nl_drdn)
+
+
+        return Sy
 
     def dmeas_dinstrument(self, x_instrument, wl_hi, rdn_hi):
         """Jacobian of measurement with respect to the instrument
