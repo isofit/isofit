@@ -69,20 +69,22 @@ class Instrument:
 
         self.integrations = config.integrations
 
-
         self.linearity_type = None
-        if config.unknowns.linearity_file is not None:
-            linearity_mat = loadmat(config.unknowns.linearity_file)
+        if config.unknowns.dn_uncertainty_file is not None:
+            linearity_mat = loadmat(config.unknowns.dn_uncertainty_file)
             input_dn = linearity_mat["input_dn"].squeeze()
             dn_ratio = linearity_mat["dn_ratio"].squeeze()
             rcc_in = linearity_mat["rcc"].squeeze()
             rcc_wl = linearity_mat["rcc_wl"].squeeze()
             rcc_interp = interp1d(rcc_wl, rcc_in, fill_value="extrapolate")
             self.linearity_rcc = rcc_interp(self.wl_init)
-            self.linearity_interp = interp1d(input_dn, dn_ratio, fill_value="extrapolate")
-            self.linearity_inflation = linearity_mat.get("linearity_inflation", [1.0]).squeeze()
+            self.linearity_interp = interp1d(
+                input_dn, dn_ratio, fill_value="extrapolate"
+            )
+            self.linearity_inflation = linearity_mat.get(
+                "linearity_inflation", [1.0]
+            ).squeeze()
             self.linearity_type = linearity_mat.get("embedding_location", "Sy")
-
 
         if config.SNR is not None:
             self.model_type = "SNR"
@@ -204,8 +206,9 @@ class Instrument:
                 dn_est = meas / self.linearity_rcc
                 nl_est = self.linearity_interp(dn_est)
 
-                bval[: self.n_chan] += np.power(meas * (nl_est - 1) * self.linearity_inflation, 2)
-
+                bval[: self.n_chan] += np.power(
+                    meas * (nl_est - 1) * self.linearity_inflation, 2
+                )
 
         # Radiometric uncertainties combine via Root Sum Square...
         # Be careful to avoid square roots of zero!
@@ -257,7 +260,6 @@ class Instrument:
         elif self.model_type == "NEDT":
             Sy = np.diagflat(np.power(self.noise_NESR, 2))
 
-
         if self.linearity_type:
             # Uncertainty due to imperfect knowledge of linearity correction
             dn_est = meas / self.linearity_rcc
@@ -266,7 +268,6 @@ class Instrument:
             nl_drdn = np.abs(meas * (nl_est - 1) * self.linearity_inflation)
 
             np.fill_diagonal(Sy, Sy.diagonal() + nl_drdn)
-
 
         return Sy
 

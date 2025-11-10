@@ -72,7 +72,7 @@ def apply_oe(
     rdn_factors_path=None,
     atmosphere_type="ATM_MIDLAT_SUMMER",
     channelized_uncertainty_path=None,
-    linearity_file=None,
+    dn_uncertainty_file=None,
     model_discrepancy_path=None,
     lut_config_file=None,
     multiple_restarts=False,
@@ -145,7 +145,7 @@ def apply_oe(
         radiative transfer models.
     channelized_uncertainty_path : str, default=None
         Path to a channelized uncertainty file
-    linearity_file:  str, default=None
+    dn_uncertainty_file:  str, default=None
         Path to a linearity .mat file to augment S matrix with linearity uncertainty
     model_discrepancy_path : str, default=None
         Modifies S_eps in the OE formalism as the Gamma additive term, as:
@@ -581,7 +581,7 @@ def apply_oe(
                 surface_category=surface_category,
                 emulator_base=emulator_base,
                 uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
-                linearity_file=linearity_file,
+                dn_uncertainty_file=dn_uncertainty_file,
                 prebuilt_lut_path=prebuilt_lut,
                 inversion_windows=INVERSION_WINDOWS,
                 multipart_transmittance=multipart_transmittance,
@@ -683,7 +683,7 @@ def apply_oe(
             surface_category=surface_category,
             emulator_base=emulator_base,
             uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
-            linearity_file=linearity_file,
+            dn_uncertainty_file=dn_uncertainty_file,
             multiple_restarts=multiple_restarts,
             segmentation_size=segmentation_size,
             pressure_elevation=pressure_elevation,
@@ -773,7 +773,7 @@ def apply_oe(
 @click.option("--rdn_factors_path")
 @click.option("--atmosphere_type", default="ATM_MIDLAT_SUMMER")
 @click.option("--channelized_uncertainty_path")
-@click.option("--linearity_file", "-lf", type=str, default=None)
+@click.option("--dn_uncertainty_file", "-dnf", type=str, default=None)
 @click.option("--model_discrepancy_path")
 @click.option("--lut_config_file")
 @click.option("--multiple_restarts", is_flag=True, default=False)
