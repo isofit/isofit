@@ -70,7 +70,10 @@ class Instrument:
         self.integrations = config.integrations
 
         self.linearity_type = None
-        if config.unknowns.dn_uncertainty_file is not None:
+        if (
+            config.unknowns is not None
+            and config.unknowns.dn_uncertainty_file is not None
+        ):
             linearity_mat = loadmat(config.unknowns.dn_uncertainty_file)
             input_dn = linearity_mat["input_dn"].squeeze()
             dn_ratio = linearity_mat["dn_ratio"].squeeze()
