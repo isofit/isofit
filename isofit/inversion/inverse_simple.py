@@ -124,16 +124,16 @@ def heuristic_atmosphere(
             vals = np.interp(wl[blo:bhi], [wl_lo, wl_hi], [r[blo], r[bhi]])
 
             # Minimize the absolute distance between the continuum removed
-            D = np.sum(np.abs(vals - r[blo:bhi]))
+            D = np.sum(vals - r[blo:bhi])
 
             areas.append(D)
             h2os.append(h2o)
 
         # Finally, interpolate to determine the actual water vapor level that
         # would optimize the continuum-relative correction
-        p = interp1d(h2os, areas)
-        bounds = (h2os[0] + 0.001, h2os[-1] - 0.001)
-        best = min1d(lambda h: p(h), bounds=bounds, method="bounded")
+        p = interp1d(h2o_grid, areas)
+        bounds = (h2o_grid[0] + 0.001, h2o_grid[-1] - 0.001)
+        best = min1d(lambda h: abs(p(h)), bounds=bounds, method="bounded")
         x_new[ind_sv] = best.x
 
     return x_new
