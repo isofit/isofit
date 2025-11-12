@@ -108,8 +108,8 @@ Additionally, you may pass it as a temporary environment variable via:
 A Note about Style
 ------------------
 
-We use `Black <https://github.com/psf/black>` and `isort <https://github.com/PyCQA/isort>` to maintain style consistency.
-These are included via `pre-commit <https://pre-commit.com>` and should be installed once ISOFIT is installed. To do so, simply run:
+We use `Black <https://github.com/psf/black>`_ and `isort <https://github.com/PyCQA/isort>`_ to maintain style consistency.
+These are included via `pre-commit <https://pre-commit.com>`_ and should be installed once ISOFIT is installed. To do so, simply run:
 
 .. code::
 
