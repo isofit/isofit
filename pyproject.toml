@@ -29,7 +29,7 @@ classifiers = [
 ]
 dependencies = [
     "click>=8.3.0",
-    "h5py<=3.14",
+    "h5py<=3.14.0",
     "netcdf4>=1.7.3",
     "numpy>=2.2.6",
     "pyyaml>=6.0.3",
