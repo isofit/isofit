@@ -71,7 +71,39 @@ against the ``main`` branch:
 Manual (GitHub)
 ---------------
 
-We recommend using `Mamba <https://mamba.readthedocs.io/en/latest/>`_ to create a virtual environment:
+We recommend using `uv <https://github.com/astral-sh/uv>`_ for installing ISOFIT from source:
+
+.. code-block:: bash
+
+    $ uv sync
+
+The above command will install the default python version and pinned packages that are confirmed to be working with ISOFIT. Once installed, the CLI can be accessed via `uv run`:
+
+.. code-block:: bash
+
+    $ uv run isofit --help
+
+Alternatively, activate the virtual environment to skip the `uv run` command:
+
+.. code-block:: bash
+
+    $ source .venv/bin/activate
+    $ isofit --help
+
+For additional packages, such as those required for development:
+
+.. code-block:: bash
+
+    $ uv sync --extra dev
+
+Advanced users may switch python versions via:
+
+.. code-block:: bash
+
+    $ uv python pin 3.13
+    $ uv sync
+
+If you prefer using conda, we recommend `Mamba <https://mamba.readthedocs.io/en/latest/>`_ to create a virtual environment:
 
 .. code-block:: bash
 

@@ -86,7 +86,7 @@ Our development strategy employs continuous integration and unit testing to vali
 Debug
 -----
 
-ISOFIT uses (ray)[https://www.ray.io/] as the multiprocessing backend; however, this package can be unstable for some systems and difficult to develop with. As such, ISOFIT has a debug mode that can be activated via the `ISOFIT_DEBUG` environment variable.
+ISOFIT uses `ray <https://www.ray.io/>`_ as the multiprocessing backend; however, this package can be unstable for some systems and difficult to develop with. As such, ISOFIT has a debug mode that can be activated via the `ISOFIT_DEBUG` environment variable.
 This is the only environment variable of ISOFIT and is strictly for enabling the DEBUG features of the code. The flag simply disables the ray package and instead uses an in-house wrapper module to emulate the functions of ray.
 This enables complete circumvention of ray while supporting ray-like syntax in the codebase.
 
@@ -108,8 +108,8 @@ Additionally, you may pass it as a temporary environment variable via:
 A Note about Style
 ------------------
 
-We use (Black)[https://github.com/psf/black] and (isort)[https://github.com/PyCQA/isort] to maintain style consistency.
-These are included via (pre-commit)[https://pre-commit.com] and should be installed once ISOFIT is installed. To do so, simply run:
+We use `Black <https://github.com/psf/black>` and `isort <https://github.com/PyCQA/isort>` to maintain style consistency.
+These are included via `pre-commit <https://pre-commit.com>` and should be installed once ISOFIT is installed. To do so, simply run:
 
 .. code::
 
@@ -202,24 +202,43 @@ the revised steps for versioning are:
 * Enter tag version as "v3.8.0" (depending on latest version), and input release title and description
 * Click "Publish release"
 
+Updating uv.lock (for Maintainers)
+----------------------------------
+
+The uv.lock file maintains the pinned versions of every dependency for all supported python versions in order to ensure environment reproducibility.
+This file should be occasionally updated to retrieve dependency updates.
+
+1. Create a branch from dev
+2. Execute `uv lock --upgrade`
+3. Commit the changes to uv.lock
+4. Ensure workflows pass with the new dependency pins
+5. uv by default should auto-sync the local virtual environment to the lock file, but you can also manually ensure it via: `uv sync`
+
+Additionally:
+
+* When changing the default recommended python version, use `uv python pin <version>` and commit the `.python-version` file and follow the above instructions for updating the lock file as well.
+* If a package needs to added or removed from the toml file, use `uv [add|remove] <package>`. Commit the toml and follow the above.
+* If changing the `requires-python` field of the toml file, manually do so then follow the above to ensure all dependencies are compatible.
+
 Contributors
 ------------
 
 The github maintainers, responsible for handling pull requests, are:
 
 * David R. Thompson: david.r.thompson@jpl.nasa.gov
-* Philip G. Brodrick philip.brodrick@jpl.nasa.gov
-* Niklas Bohn urs.n.bohn@jpl.nasa.gov
+* Philip G. Brodrick: philip.brodrick@jpl.nasa.gov
+* Niklas Bohn: urs.n.bohn@jpl.nasa.gov
+* James Montgomery: J.Montgomery@jpl.nasa.gov
+* Evan Greenberg: evan.greenberg@jpl.nasa.gov
 
 Thanks to the following regular contributors:
 
 * Alexey Shiklomanov (NASA Goddard)
-* James Montgomery (NASA JPL)
 * Jay Fahlen (NASA JPL)
 * Kevin Wurster (Planet)
 * Nimrod Carmon (NASA JPL)
 * Regina Eckert (NASA JPL)
-
+* Brent Wilder (NASA JPL)
 
 The ISOFIT codebase was made possible with support from various sources.
 The initial algorithm and code was developed by the NASA Earth Science
