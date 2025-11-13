@@ -69,12 +69,12 @@ class Instrument:
 
         self.integrations = config.integrations
 
-        self.linearity_type = None
+        self.dn_uncertainty_embedding = None
         if (
             config.unknowns is not None
             and config.unknowns.dn_uncertainty_file is not None
         ):
-            linearity_mat = loadmat(config.unknowns.dn_uncertainty_file)
+            dn_uncertainty_mat = loadmat(config.unknowns.dn_uncertainty_file)
 
             # Check validity of linearity file for dn-based noise
             keys = [
@@ -83,29 +83,34 @@ class Instrument:
                 "rcc",
                 "rcc_wl",
             ]
-            bad = [1 if np.any(~np.isfinite(linearity_mat[key])) else 0 for key in keys]
+            bad = [
+                1 if np.any(~np.isfinite(dn_uncertainty_mat[key])) else 0
+                for key in keys
+            ]
             if np.sum(bad):
                 er = f"""
-                    Invalid value found in linearity_mat keys: {[keys[i] for i in bad if i]}.
+                    Invalid value found in dn_uncertainty_mat keys: {[keys[i] for i in bad if i]}.
                     Check file at: {config.unknowns.dn_uncertainty_file}
                 """
                 logging.error(er)
                 raise ValueError(er)
 
-            input_dn = linearity_mat["input_dn"].squeeze()
-            dn_ratio = linearity_mat["dn_ratio"].squeeze()
-            rcc_in = linearity_mat["rcc"].squeeze()
-            rcc_wl = linearity_mat["rcc_wl"].squeeze()
+            input_dn = dn_uncertainty_mat["input_dn"].squeeze()
+            dn_ratio = dn_uncertainty_mat["dn_ratio"].squeeze()
+            rcc_in = dn_uncertainty_mat["rcc"].squeeze()
+            rcc_wl = dn_uncertainty_mat["rcc_wl"].squeeze()
 
             rcc_interp = interp1d(rcc_wl, rcc_in, fill_value="extrapolate")
-            self.linearity_rcc = rcc_interp(self.wl_init)
-            self.linearity_interp = interp1d(
+            self.dn_uncertainty_rcc = rcc_interp(self.wl_init)
+            self.dn_uncertainty_interp = interp1d(
                 input_dn, dn_ratio, fill_value="extrapolate"
             )
-            self.linearity_inflation = linearity_mat.get(
-                "linearity_inflation", [1.0]
+            self.dn_uncertainty_inflation = dn_uncertainty_mat.get(
+                "inflation", [1.0]
             ).squeeze()
-            self.linearity_type = linearity_mat.get("embedding_location", "Sy")
+            self.dn_uncertainty_embedding = dn_uncertainty_mat.get(
+                "embedding_location", "Sy"
+            )
 
         if config.SNR is not None:
             self.model_type = "SNR"
@@ -222,15 +227,15 @@ class Instrument:
                 )
 
             # Uncertainty due to imperfect knowledge of linearity correction
-            if self.linearity_type == "Sb":
-                # Explicitely handle cases where meas < 0.
-                # Do we want this to be buried here, or handled up front in invert.py?
-                # What should the "zero" value be?
-                dn_est = np.maximum(meas / self.linearity_rcc, 0)
-                nl_est = self.linearity_interp(dn_est)
-
+            if self.dn_uncertainty_embedding == "Sb":
                 bval[: self.n_chan] += np.power(
-                    meas * (nl_est - 1) * self.linearity_inflation, 2
+                    self.DN_additive_uncertainty(
+                        meas,
+                        self.dn_uncertainty_rcc,
+                        self.dn_uncertainty_interp,
+                        self.dn_uncertainty_inflation,
+                    ),
+                    2,
                 )
 
         # Radiometric uncertainties combine via Root Sum Square...
@@ -283,14 +288,20 @@ class Instrument:
         elif self.model_type == "NEDT":
             Sy = np.diagflat(np.power(self.noise_NESR, 2))
 
-        if self.linearity_type:
+        if self.dn_uncertainty_embedding:
             # Uncertainty due to imperfect knowledge of linearity correction
-            dn_est = meas / self.linearity_rcc
-            nl_est = self.linearity_interp(dn_est)
-
-            nl_drdn = np.abs(meas * (nl_est - 1) * self.linearity_inflation)
-
-            np.fill_diagonal(Sy, Sy.diagonal() + nl_drdn)
+            np.fill_diagonal(
+                Sy,
+                (
+                    Sy.diagonal()
+                    + self.DN_additive_uncertainty(
+                        meas,
+                        self.dn_uncertainty_rcc,
+                        self.dn_uncertainty_interp,
+                        self.dn_uncertainty_inflation,
+                    )
+                ),
+            )
 
         return Sy
 
@@ -434,6 +445,13 @@ class Instrument:
 
         wl = offset + shift + space_orig * space
         return wl, fwhm
+
+    @staticmethod
+    def DN_additive_uncertainty(meas, rcc, interp, inflation):
+        # Into DN space with rccs
+        dn_est = np.maximum(meas / rcc, 0)
+        noise_est = interp(dn_est)
+        return np.abs(meas * (noise_est - 1) * inflation)
 
     def summarize(self, x_instrument, geom):
         """Summary of state vector."""
