@@ -69,7 +69,7 @@ class Instrument:
 
         self.integrations = config.integrations
 
-        self.linearity_type = None
+        self.dn_uncertainty_embedding = None
         if (
             config.unknowns is not None
             and config.unknowns.dn_uncertainty_file is not None
@@ -108,7 +108,7 @@ class Instrument:
             self.dn_uncertainty_inflation = dn_uncertainty_mat.get(
                 "inflation", [1.0]
             ).squeeze()
-            self.dn_uncertainty_type = dn_uncertainty_mat.get(
+            self.dn_uncertainty_embedding = dn_uncertainty_mat.get(
                 "embedding_location", "Sy"
             )
 
@@ -227,7 +227,7 @@ class Instrument:
                 )
 
             # Uncertainty due to imperfect knowledge of linearity correction
-            if self.linearity_type == "Sb":
+            if self.dn_uncertainty_embedding == "Sb":
                 bval[: self.n_chan] += np.power(
                     DN_additive_uncertainty(
                         meas,
@@ -288,7 +288,7 @@ class Instrument:
         elif self.model_type == "NEDT":
             Sy = np.diagflat(np.power(self.noise_NESR, 2))
 
-        if self.linearity_type:
+        if self.dn_uncertainty_embedding:
             # Uncertainty due to imperfect knowledge of linearity correction
             np.fill_diagonal(
                 Sy,
