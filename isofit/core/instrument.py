@@ -75,10 +75,28 @@ class Instrument:
             and config.unknowns.dn_uncertainty_file is not None
         ):
             linearity_mat = loadmat(config.unknowns.dn_uncertainty_file)
+
+            # Check validity of linearity file for dn-based noise
+            keys = [
+                "input_dn",
+                "dn_ratio",
+                "rcc",
+                "rcc_wl",
+            ]
+            bad = [1 if np.any(~np.isfinite(linearity_mat[key])) else 0 for key in keys]
+            if np.sum(bad):
+                er = f"""
+                    Invalid value found in linearity_mat keys: {[keys[i] for i in bad if i]}.
+                    Check file at: {config.unknowns.dn_uncertainty_file}
+                """
+                logging.error(er)
+                raise ValueError(er)
+
             input_dn = linearity_mat["input_dn"].squeeze()
             dn_ratio = linearity_mat["dn_ratio"].squeeze()
             rcc_in = linearity_mat["rcc"].squeeze()
             rcc_wl = linearity_mat["rcc_wl"].squeeze()
+
             rcc_interp = interp1d(rcc_wl, rcc_in, fill_value="extrapolate")
             self.linearity_rcc = rcc_interp(self.wl_init)
             self.linearity_interp = interp1d(
@@ -203,10 +221,12 @@ class Instrument:
                     np.ones(self.n_chan) * u, 2
                 )
 
-            # Impose linearity inside Sb
+            # Uncertainty due to imperfect knowledge of linearity correction
             if self.linearity_type == "Sb":
-                # Uncertainty due to imperfect knowledge of linearity correction
-                dn_est = meas / self.linearity_rcc
+                # Explicitely handle cases where meas < 0.
+                # Do we want this to be buried here, or handled up front in invert.py?
+                # What should the "zero" value be?
+                dn_est = np.maximum(meas / self.linearity_rcc, 0)
                 nl_est = self.linearity_interp(dn_est)
 
                 bval[: self.n_chan] += np.power(
