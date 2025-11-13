@@ -229,7 +229,7 @@ class Instrument:
             # Uncertainty due to imperfect knowledge of linearity correction
             if self.dn_uncertainty_embedding == "Sb":
                 bval[: self.n_chan] += np.power(
-                    DN_additive_uncertainty(
+                    self.DN_additive_uncertainty(
                         meas,
                         self.dn_uncertainty_rcc,
                         self.dn_uncertainty_interp,
@@ -294,7 +294,7 @@ class Instrument:
                 Sy,
                 (
                     Sy.diagonal()
-                    + DN_additive_uncertainty(
+                    + self.DN_additive_uncertainty(
                         meas,
                         self.dn_uncertainty_rcc,
                         self.dn_uncertainty_interp,
