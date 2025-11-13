@@ -287,10 +287,19 @@ class Instrument:
             # Uncertainty due to imperfect knowledge of linearity correction
             dn_est = meas / self.linearity_rcc
             nl_est = self.linearity_interp(dn_est)
-
             nl_drdn = np.abs(meas * (nl_est - 1) * self.linearity_inflation)
-
-            np.fill_diagonal(Sy, Sy.diagonal() + nl_drdn)
+            np.fill_diagonal(
+                Sy,
+                (
+                    Sy.diagonal()
+                    + DN_additive_uncertainty(
+                        meas,
+                        self.linearity_rcc,
+                        self.linearity_interp,
+                        self.linearity_inflation,
+                    )
+                ),
+            )
 
         return Sy
 
@@ -434,6 +443,13 @@ class Instrument:
 
         wl = offset + shift + space_orig * space
         return wl, fwhm
+
+    @staticmethod
+    def DN_additive_uncertainty(meas, rcc, interp, inflation):
+        # Into DN space with rccs
+        dn_est = meas / rcc
+        noise_est = interp(dn_est)
+        return np.abs(meas * (noise_est - 1) * inflation)
 
     def summarize(self, x_instrument, geom):
         """Summary of state vector."""
