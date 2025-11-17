@@ -28,7 +28,10 @@ def install(path=None):
         path = env.plots
 
     print(f"Installing {path}")
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "-e", path])
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "-e", path])
+    except:
+        print(f"Failed to install isoplots, you may need to do so manually: {path}")
 
 
 def download(path=None, tag="latest", overwrite=False):
