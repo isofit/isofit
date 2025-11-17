@@ -66,19 +66,65 @@ class Instrument:
         self.statevec_names = config.statevector.get_element_names()
         self.n_state = len(self.statevec_names)
 
+        self.integrations = config.integrations
+
+        self.dn_uncertainty_embedding = None
+        if (
+            config.unknowns is not None
+            and config.unknowns.dn_uncertainty_file is not None
+        ):
+            dn_uncertainty_mat = loadmat(config.unknowns.dn_uncertainty_file)
+
+            # Check validity of linearity file for dn-based noise
+            keys = [
+                "input_dn",
+                "dn_ratio",
+                "rcc",
+                "rcc_wl",
+            ]
+            bad = [
+                1 if np.any(~np.isfinite(dn_uncertainty_mat[key])) else 0
+                for key in keys
+            ]
+            if np.sum(bad):
+                er = f"""
+                    Invalid value found in dn_uncertainty_mat keys: {[keys[i] for i in bad if i]}.
+                    Check file at: {config.unknowns.dn_uncertainty_file}
+                """
+                logging.error(er)
+                raise ValueError(er)
+
+            input_dn = dn_uncertainty_mat["input_dn"].squeeze()
+            dn_ratio = dn_uncertainty_mat["dn_ratio"].squeeze()
+            rcc_in = dn_uncertainty_mat["rcc"].squeeze()
+            rcc_wl = dn_uncertainty_mat["rcc_wl"].squeeze()
+
+            rcc_interp = interp1d(rcc_wl, rcc_in, fill_value="extrapolate")
+            self.dn_uncertainty_rcc = rcc_interp(self.wl_init)
+            self.dn_uncertainty_interp = interp1d(
+                input_dn, dn_ratio, fill_value="extrapolate"
+            )
+            self.dn_uncertainty_inflation = dn_uncertainty_mat.get(
+                "inflation", [1.0]
+            ).squeeze()
+            self.dn_uncertainty_embedding = dn_uncertainty_mat.get(
+                "embedding_location", "Sy"
+            )
+
         if config.SNR is not None:
             self.model_type = "SNR"
             self.snr = config.SNR
+
         elif config.parametric_noise_file is not None:
             self.model_type = "parametric"
             self.noise_file = config.parametric_noise_file
+
             coeffs = np.loadtxt(self.noise_file, delimiter=" ", comments="#")
             p_a, p_b, p_c = [
                 interp1d(coeffs[:, 0], coeffs[:, col], fill_value="extrapolate")
                 for col in (1, 2, 3)
             ]
             self.noise = np.array([[p_a(w), p_b(w), p_c(w)] for w in self.wl_init])
-            self.integrations = config.integrations
 
         elif config.pushbroom_noise_file is not None:
             self.model_type = "pushbroom"
@@ -106,49 +152,30 @@ class Instrument:
 
         else:
             raise IndexError("Please define the instrument noise.")
-            # This should never be reached, as an error is designated in the config read
+        # This should never be reached, as an error is designated in the config read
 
         # We track several unretrieved free variables, that are specified
         # in a fixed order (always start with relative radiometric
         # calibration)
-        self.bvec = ["Cal_Relative_%04i" % int(w) for w in self.wl_init] + [
-            "Cal_Spectral",
-            "Cal_Stray_SRF",
-        ]
-        self.bval = np.zeros(self.n_chan + 2)
+        self.unknowns = config.unknowns
+        self.bval = np.zeros(self.n_chan)
+        self.bvec = ["Cal_Relative_%04i" % int(w) for w in self.wl_init]
 
-        if config.unknowns is not None:
-            # First we take care of radiometric uncertainties, which add
-            # in quadrature.  We sum their squared values.  Systematic
-            # radiometric uncertainties account for differences in sampling
-            # and radiative transfer that manifest predictably as a function
-            # of wavelength.
-            if config.unknowns.channelized_radiometric_uncertainty_file is not None:
-                f = config.unknowns.channelized_radiometric_uncertainty_file
-                u = np.loadtxt(f, comments="#")
-                if len(u.shape) > 0 and u.shape[1] > 1:
-                    u = u[:, 1]
-                self.bval[: self.n_chan] = self.bval[: self.n_chan] + pow(u, 2)
-
-            # Uncorrelated radiometric uncertainties are consistent and
-            # independent in all channels.
-            if config.unknowns.uncorrelated_radiometric_uncertainty is not None:
-                u = config.unknowns.uncorrelated_radiometric_uncertainty
-                self.bval[: self.n_chan] = self.bval[: self.n_chan] + pow(
-                    np.ones(self.n_chan) * u, 2
+        # self.unknowns should always exist via configs
+        # but may not exist for manual configs
+        if self.unknowns:
+            # Now handle spectral calibration uncertainties
+            if self.unknowns.wavelength_calibration_uncertainty is not None:
+                self.bvec += ["Cal_Spectral"]
+                self.cal_spectral_idx = len(self.bval)
+                self.bval = np.hstack(
+                    [self.bval, self.unknowns.wavelength_calibration_uncertainty]
                 )
 
-            # Radiometric uncertainties combine via Root Sum Square...
-            # Be careful to avoid square roots of zero!
-            small = np.ones(self.n_chan) * eps
-            self.bval[: self.n_chan] = np.maximum(self.bval[: self.n_chan], small)
-            self.bval[: self.n_chan] = np.sqrt(self.bval[: self.n_chan])
-
-            # Now handle spectral calibration uncertainties
-            if config.unknowns.wavelength_calibration_uncertainty is not None:
-                self.bval[-2] = config.unknowns.wavelength_calibration_uncertainty
-            if config.unknowns.stray_srf_uncertainty is not None:
-                self.bval[-1] = config.unknowns.stray_srf_uncertainty
+            if self.unknowns.stray_srf_uncertainty is not None:
+                self.bvec += ["Cal_Stray_SRF"]
+                self.cal_stray_idx = len(self.bval) + 1
+                self.bval = np.hstack([self.bval, self.unknowns.stray_srf_uncertainty])
 
         # Determine whether the calibration is fixed.  If it is fixed,
         # and the wavelengths of radiative transfer modeling and instrument
@@ -174,6 +201,50 @@ class Instrument:
             return np.zeros((0, 0), dtype=float)
         return np.diagflat(np.power(self.prior_sigma, 2))
 
+    def Sb(self, meas):
+        """Uncertainty due to unmodeled variables."""
+        bval = self.bval.copy()
+        # First we take care of radiometric uncertainties, which add
+        # in quadrature.  We sum their squared values.  Systematic
+        # radiometric uncertainties account for differences in sampling
+        # and radiative transfer that manifest predictably as a function
+        # of wavelength.
+        if self.unknowns:
+            if self.unknowns.channelized_radiometric_uncertainty_file is not None:
+                f = self.unknowns.channelized_radiometric_uncertainty_file
+                u = np.loadtxt(f, comments="#")
+                if len(u.shape) > 0 and u.shape[1] > 1:
+                    u = u[:, 1]
+                bval[: self.n_chan] = bval[: self.n_chan] + pow(u, 2)
+
+            # Uncorrelated radiometric uncertainties are consistent and
+            # independent in all channels.
+            if self.unknowns.uncorrelated_radiometric_uncertainty:
+                u = self.unknowns.uncorrelated_radiometric_uncertainty
+                bval[: self.n_chan] = bval[: self.n_chan] + pow(
+                    np.ones(self.n_chan) * u, 2
+                )
+
+            # Uncertainty due to imperfect knowledge of linearity correction
+            if self.dn_uncertainty_embedding == "Sb":
+                bval[: self.n_chan] += np.power(
+                    self.DN_additive_uncertainty(
+                        meas,
+                        self.dn_uncertainty_rcc,
+                        self.dn_uncertainty_interp,
+                        self.dn_uncertainty_inflation,
+                    ),
+                    2,
+                )
+
+        # Radiometric uncertainties combine via Root Sum Square...
+        # Be careful to avoid square roots of zero!
+        small = np.ones(self.n_chan) * eps
+        bval[: self.n_chan] = np.maximum(bval[: self.n_chan], small)
+        bval[: self.n_chan] = np.sqrt(bval[: self.n_chan])
+
+        return np.diagflat(np.power(bval, 2))
+
     def Sy(self, meas, geom):
         """Calculate measuremment error covariance.  Kelvin Man Yiu Leung and
             Jayanth Jagalur Mohan (MIT) developed the noise clipping strategy.
@@ -181,6 +252,8 @@ class Instrument:
         Input: meas, the instrument measurement
         Returns: Sy, the measurement error covariance due to instrument noise
         """
+
+        Sy = None
         if self.model_type == "SNR":
             nedl = (1.0 / self.snr) * meas
             minimum_noise = np.sqrt(1e-7)
@@ -191,7 +264,7 @@ class Instrument:
                     " to avoid /0."
                 )
             nedl[bad] = minimum_noise
-            return np.diagflat(np.power(nedl, 2))
+            Sy = np.diagflat(np.power(nedl, 2))
 
         elif self.model_type == "parametric":
             noise_plus_meas = self.noise[:, 1] + meas
@@ -205,14 +278,31 @@ class Instrument:
                 self.noise[:, 0] * np.sqrt(noise_plus_meas) + self.noise[:, 2]
             )
             nedl = nedl / np.sqrt(self.integrations)
-            return np.diagflat(np.power(nedl, 2))
+            Sy = np.diagflat(np.power(nedl, 2))
 
         elif self.model_type == "pushbroom":
             C = np.squeeze(self.covs.mean(axis=0))
-            return C / np.sqrt(self.integrations)
+            Sy = C / np.sqrt(self.integrations)
 
         elif self.model_type == "NEDT":
-            return np.diagflat(np.power(self.noise_NESR, 2))
+            Sy = np.diagflat(np.power(self.noise_NESR, 2))
+
+        if self.dn_uncertainty_embedding:
+            # Uncertainty due to imperfect knowledge of linearity correction
+            np.fill_diagonal(
+                Sy,
+                (
+                    Sy.diagonal()
+                    + self.DN_additive_uncertainty(
+                        meas,
+                        self.dn_uncertainty_rcc,
+                        self.dn_uncertainty_interp,
+                        self.dn_uncertainty_inflation,
+                    )
+                ),
+            )
+
+        return Sy
 
     def dmeas_dinstrument(self, x_instrument, wl_hi, rdn_hi):
         """Jacobian of measurement with respect to the instrument
@@ -241,19 +331,25 @@ class Instrument:
 
         # Uncertainty due to radiometric calibration
         meas = self.sample(x_instrument, wl_hi, rdn_hi)
-        dmeas_dinstrument = np.hstack((np.diagflat(meas), np.zeros((self.n_chan, 2))))
+        dmeas_dinstrument = np.hstack(
+            (
+                np.diagflat(meas),
+                np.zeros((self.n_chan, len(self.bvec) - len(self.wl_init))),
+            )
+        )
 
         # Uncertainty due to spectral calibration
-        if self.bval[-2] > 1e-6:
-            dmeas_dinstrument[:, -2] = self.sample(
-                x_instrument, wl_hi, np.hstack((np.diff(rdn_hi), np.array([0])))
-            )
+        if self.unknowns:
+            if self.unknowns.wavelength_calibration_uncertainty is not None:
+                dmeas_dinstrument[:, self.cal_spectral_idx] = self.sample(
+                    x_instrument, wl_hi, np.hstack((np.diff(rdn_hi), np.array([0])))
+                )
 
-        # Uncertainty due to spectral stray light
-        if self.bval[-1] > 1e-6:
-            ssrf = spectral_response_function(np.arange(-10, 11), 0, 4)
-            blur = convolve(meas, ssrf, mode="same")
-            dmeas_dinstrument[:, -1] = blur - meas
+            # Uncertainty due to spectral stray light
+            if self.unknowns.stray_srf_uncertainty is not None:
+                ssrf = spectral_response_function(np.arange(-10, 11), 0, 4)
+                blur = convolve(meas, ssrf, mode="same")
+                dmeas_dinstrument[:, self.cal_stray_idx] = blur - meas
 
         return dmeas_dinstrument
 
@@ -348,6 +444,13 @@ class Instrument:
 
         wl = offset + shift + space_orig * space
         return wl, fwhm
+
+    @staticmethod
+    def DN_additive_uncertainty(meas, rcc, interp, inflation):
+        # Into DN space with rccs
+        dn_est = np.maximum(meas / rcc, 0)
+        noise_est = interp(dn_est)
+        return np.abs(meas * (noise_est - 1) * inflation)
 
     def summarize(self, x_instrument, geom):
         """Summary of state vector."""
