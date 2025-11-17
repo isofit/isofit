@@ -28,41 +28,41 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
-    "click>=8.3.0",
-    "dask>=2025.11.0",
-    "h5py<=3.14.0",
-    "netcdf4>=1.7.3",
-    "numpy>=2.2.6",
-    "pyyaml>=6.0.3",
-    "ray>=2.49.2",
-    "scikit-image>=0.25.2",
-    "scikit-learn>=1.7.2",
-    "scipy>=1.15.3",
-    "spectral>=0.24",
-    "utm>=0.8.1",
-    "xarray>=2025.6.1",
-    "xxhash>=3.6.0",
+    "click",
+    "dask",
+    "h5py<=3.14",
+    "netcdf4",
+    "numpy>=2",
+    "pyyaml",
+    "ray",
+    "scikit-image",
+    "scikit-learn",
+    "scipy",
+    "spectral",
+    "utm",
+    "xarray",
+    "xxhash",
     "zarr>=2,<3",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "black>=25.9.0",
-    "isort>=7.0.0",
-    "pre-commit>=4.3.0",
+    "black",
+    "isort",
+    "pre-commit",
 ]
 test = [
-    "pytest>=8.4.2",
+    "pytest",
 ]
 docker = [
-    "ipykernel>=7.0.1",
-    "ipywidgets>=8.1.7",
-    "matplotlib>=3.10.7",
+    "ipykernel",
+    "ipywidgets",
+    "matplotlib",
 ]
 docs = [
-    "myst-parser>=4.0.1",
-    "sphinx-autoapi>=3.6.1",
-    "sphinx-rtd-theme>=3.0.2",
+    "myst-parser",
+    "sphinx-autoapi",
+    "sphinx-rtd-theme",
 ]
 
 [project.urls]
