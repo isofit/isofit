@@ -40,8 +40,6 @@ class GlintModelSurface(MultiComponentSurface):
         self.sky_glint_ind = self.glint_ind
         self.sun_glint_ind = self.glint_ind + 1
 
-        self.scale.extend([1.0, 1.0])
-
         # Numbers from Marcel Koenig; used for prior mean
         self.init.extend([1 / np.pi, 0.02])
 
@@ -63,12 +61,8 @@ class GlintModelSurface(MultiComponentSurface):
         # Change this if you don't want to analytical solve for all the full statevector elements.
         self.analytical_iv_idx = np.arange(len(self.statevec_names))
 
-        self.sun_glint_sigma = (
-            config.sun_glint_prior_sigma * np.array(self.scale[self.sun_glint_ind])
-        ) ** 2
-        self.sky_glint_sigma = (
-            config.sky_glint_prior_sigma * np.array(self.scale[self.sky_glint_ind])
-        ) ** 2
+        self.sun_glint_sigma = config.sun_glint_prior_sigma**2
+        self.sky_glint_sigma = config.sky_glint_prior_sigma**2
 
     def xa(self, x_surface, geom):
         """Mean of prior distribution, calculated at state x."""

@@ -111,7 +111,7 @@ class Inversion:
                 self.fm.bounds[0][self.inds_free],
                 self.fm.bounds[1][self.inds_free],
             ),
-            "x_scale": self.fm.scale[self.inds_free],
+            "x_scale": "jac",
         }
 
         # Update the rest from the config

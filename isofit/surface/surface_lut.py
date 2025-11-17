@@ -47,8 +47,6 @@ class LUTSurface(Surface):
          vector element
       - sigma: an array of n prior standard deviations, one for each
          state vector element
-      - scale: an array of n scale values, one for each state vector
-         element
 
     """
 
@@ -66,7 +64,6 @@ class LUTSurface(Surface):
         self.wl = model_dict["wl"][0]
         self.n_wl = len(self.wl)
         self.bounds = self.model_dict["bounds"]
-        self.scale = self.model_dict["scale"][0]
         self.init = self.model_dict["init"][0]
         self.mean = self.model_dict["mean"][0]
         self.sigma = self.model_dict["sigma"][0]

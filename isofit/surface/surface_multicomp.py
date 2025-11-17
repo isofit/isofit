@@ -88,7 +88,6 @@ class MultiComponentSurface(Surface):
         self.analytical_iv_idx = np.arange(len(self.statevec_names))
 
         self.bounds = [[rmin, rmax] for w in self.wl]
-        self.scale = [1.0 for w in self.wl]
         self.init = [0.15 * (rmax - rmin) + rmin for v in self.wl]
         self.idx_lamb = np.arange(self.n_wl)
         self.n_state = len(self.statevec_names)

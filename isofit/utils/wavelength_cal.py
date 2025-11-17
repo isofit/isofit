@@ -58,14 +58,12 @@ def add_wavelength_elements(config_path, state_type="shift", spline_indices=[]):
                 "init": 0,
                 "prior_mean": 0,
                 "prior_sigma": 100.0,
-                "scale": 1,
             },
             "WL_SHIFT": {
                 "bounds": [-5, 5],
                 "init": 0,
                 "prior_mean": 0,
                 "prior_sigma": 100.0,
-                "scale": 1,
             },
         }
     elif state_type == "shift-only":
@@ -75,7 +73,6 @@ def add_wavelength_elements(config_path, state_type="shift", spline_indices=[]):
                 "init": 0,
                 "prior_mean": 0,
                 "prior_sigma": 100.0,
-                "scale": 1,
             }
         }
     elif state_type == "spline":
@@ -85,7 +82,6 @@ def add_wavelength_elements(config_path, state_type="shift", spline_indices=[]):
                 "init": 0,
                 "prior_mean": 0,
                 "prior_sigma": 100.0,
-                "scale": 1,
             }
         }
         for spline_index in spline_indices:
@@ -96,7 +92,6 @@ def add_wavelength_elements(config_path, state_type="shift", spline_indices=[]):
                 "init": 0,
                 "prior_mean": 0,
                 "prior_sigma": 100.0,
-                "scale": 1,
             }
     elif state_type == "spline-only":
         for spline_index in spline_indices:
@@ -107,7 +102,6 @@ def add_wavelength_elements(config_path, state_type="shift", spline_indices=[]):
                 "init": 0,
                 "prior_mean": 0,
                 "prior_sigma": 100.0,
-                "scale": 1,
             }
 
     logging.info(f"Writing config update with WL cal parameters to {config_path}")

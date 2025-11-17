@@ -34,9 +34,6 @@ class StateVectorElementConfig(BaseConfigSection):
         self._bounds_type = list()
         self.bounds = [np.nan, np.nan]
 
-        self._scale_type = float
-        self.scale = np.nan
-
         self._prior_mean_type = float
         self.prior_mean = np.nan
 
@@ -110,12 +107,6 @@ class StateVectorConfig(BaseConfigSection):
         for element, name in zip(*self.get_elements()):
             bounds.append(element.bounds)
         return bounds
-
-    def get_all_scales(self):
-        scales = []
-        for element, name in zip(*self.get_elements()):
-            scales.append(element.scale)
-        return scales
 
     def get_all_inits(self):
         inits = []

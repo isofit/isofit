@@ -47,7 +47,7 @@ class ForwardModel:
       (2) Radiative Transfer (RT) parameters
       (3) Instrument parameters
 
-    The parameter bounds, scales, initial values, and names are all
+    The parameter bounds, initial values, and names are all
     ordered in this way.  The variable self.statevec contains the name
     of each state vector element, in the proper ordering.
 
@@ -87,10 +87,9 @@ class ForwardModel:
             )
 
         # Build combined vectors from surface, RT, and instrument
-        bounds, scale, init, statevec, bvec, bval = ([] for i in range(6))
+        bounds, init, statevec, bvec, bval = ([] for i in range(5))
         for obj_with_statevec in [self.surface, self.RT, self.instrument]:
             bounds.extend([deepcopy(x) for x in obj_with_statevec.bounds])
-            scale.extend([deepcopy(x) for x in obj_with_statevec.scale])
             init.extend([deepcopy(x) for x in obj_with_statevec.init])
             statevec.extend([deepcopy(x) for x in obj_with_statevec.statevec_names])
 
@@ -98,7 +97,6 @@ class ForwardModel:
             bval.extend([deepcopy(x) for x in obj_with_statevec.bval])
 
         self.bounds = tuple(np.array(bounds).T)
-        self.scale = np.array(scale)
         self.init = np.array(init)
         self.statevec = statevec
         self.nstate = len(self.statevec)

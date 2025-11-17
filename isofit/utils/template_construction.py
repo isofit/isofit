@@ -707,7 +707,6 @@ def build_presolve_config(
                     float(np.min(lut_grid["H2OSTR"])),
                     float(np.max(lut_grid["H2OSTR"])),
                 ],
-                "scale": 0.01,
                 "init": np.percentile(lut_grid["H2OSTR"], 25),
                 "prior_sigma": 100.0,
                 "prior_mean": 1.5,
@@ -1040,7 +1039,6 @@ def build_main_config(
     if h2o_lut_grid is not None:
         radiative_transfer_config["statevector"]["H2OSTR"] = {
             "bounds": [h2o_lut_grid[0], h2o_lut_grid[-1]],
-            "scale": 1,
             "init": (h2o_lut_grid[1] + h2o_lut_grid[-1]) / 2.0,
             "prior_sigma": 100.0,
             "prior_mean": (h2o_lut_grid[1] + h2o_lut_grid[-1]) / 2.0,
@@ -1049,7 +1047,6 @@ def build_main_config(
     if pressure_elevation:
         radiative_transfer_config["statevector"]["surface_elevation_km"] = {
             "bounds": [elevation_lut_grid[0], elevation_lut_grid[-1]],
-            "scale": 100,
             "init": (elevation_lut_grid[0] + elevation_lut_grid[-1]) / 2.0,
             "prior_sigma": 1000.0,
             "prior_mean": (elevation_lut_grid[0] + elevation_lut_grid[-1]) / 2.0,
@@ -1352,7 +1349,6 @@ def load_climatology(
         if aerosol_lut is not None:
             aerosol_state_vector["AERFRAC_{}".format(_a)] = {
                 "bounds": [float(alr[0]), float(alr[1])],
-                "scale": 1,
                 "init": float((alr[1] - alr[0]) / 10.0 + alr[0]),
                 "prior_sigma": 10.0,
                 "prior_mean": float((alr[1] - alr[0]) / 10.0 + alr[0]),
@@ -1372,7 +1368,6 @@ def load_climatology(
         alr = [aerosol_lut_grid["AOT550"][0], aerosol_lut_grid["AOT550"][-1]]
         aerosol_state_vector["AOT550"] = {
             "bounds": [float(alr[0]), float(alr[1])],
-            "scale": 1,
             "init": float((alr[1] - alr[0]) / 10.0 + alr[0]),
             "prior_sigma": 10.0,
             "prior_mean": float((alr[1] - alr[0]) / 10.0 + alr[0]),

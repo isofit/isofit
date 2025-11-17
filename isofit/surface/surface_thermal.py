@@ -41,7 +41,6 @@ class ThermalSurface(MultiComponentSurface):
         if "SURF_TEMP_K" not in self.statevec_names:
             self.statevec_names.extend(["SURF_TEMP_K"])
             self.init.extend([300.0])  # This is overwritten below
-            self.scale.extend([100.0])
             self.bounds.extend([[250.0, 400.0]])
         self.idx_surface = np.arange(len(self.statevec_names))
         self.surf_temp_ind = len(self.statevec_names) - 1

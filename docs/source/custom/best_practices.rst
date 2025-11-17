@@ -154,15 +154,13 @@ We highly recommend the MODTRAN 6.0 radiative transfer model over LibRadTran and
                     "bounds": [ 0.001,  0.5 ],
                     "init": 0.050,
                     "prior_mean": 0.050,
-                    "prior_sigma": 10.0,
-                    "scale": 1
+                    "prior_sigma": 10.0
                 },
                 "H2OSTR": {
                     "bounds": [  1.0, 1.8 ],
                     "init": 1.4,
                     "prior_mean": 1.4,
-                    "prior_sigma": 100.0,
-                    "scale": 0.01
+                    "prior_sigma": 100.0
                 }
             },
             "unknowns": {

@@ -60,7 +60,6 @@ class Instrument:
         self.fast_resample = config.fast_resample
 
         self.bounds = config.statevector.get_all_bounds()
-        self.scale = config.statevector.get_all_scales()
         self.init = config.statevector.get_all_inits()
         self.prior_mean = np.array(config.statevector.get_all_prior_means())
         self.prior_sigma = np.array(config.statevector.get_all_prior_sigmas())

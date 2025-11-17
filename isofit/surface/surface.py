@@ -41,7 +41,6 @@ class Surface:
         self.statevec_names = []
         self.idx_surface = np.arange(len(self.statevec_names))
         self.bounds = np.array([])
-        self.scale = np.array([])
         self.init = np.array([])
         self.bvec = []
         self.bval = np.array([])

@@ -115,18 +115,19 @@ class RadiativeTransfer:
         # initial guesses for each state vector element.  The state
         # vector elements are all free parameters in the RT lookup table,
         # and they all have associated dimensions in the LUT grid.
-        self.bounds, self.scale, self.init = [], [], []
+        self.bounds, self.init = (
+            [],
+            [],
+        )
         self.prior_mean, self.prior_sigma = [], []
 
         for sv, sv_name in zip(*config.statevector.get_elements()):
             self.bounds.append(sv.bounds)
-            self.scale.append(sv.scale)
             self.init.append(sv.init)
             self.prior_sigma.append(sv.prior_sigma)
             self.prior_mean.append(sv.prior_mean)
 
         self.bounds = np.array(self.bounds)
-        self.scale = np.array(self.scale)
         self.init = np.array(self.init)
         self.prior_mean = np.array(self.prior_mean)
         self.prior_sigma = np.array(self.prior_sigma)
