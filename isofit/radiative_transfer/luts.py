@@ -3,6 +3,7 @@ This is the netCDF4 implementation for handling ISOFIT LUT files. For previous
 implementations and research, please see https://github.com/isofit/isofit/tree/897062a3dcc64d5292d0d2efe7272db0809a6085/isofit/luts
 """
 
+import atexit
 import gc
 import logging
 import os
@@ -112,6 +113,8 @@ class Create:
 
         # Save ds for backwards compatibility (to work with extractGrid, extractPoints)
         self.initialize()
+
+        atexit.register(cleanup, file)
 
     def initialize(self) -> None:
         """
@@ -836,7 +839,7 @@ def load(
 
     dims = ds.drop_dims("wl").dims
 
-    # Create the point dimension -> Coords now len(points)
+    # Create the point dimension
     ds = ds.stack(point=dims).transpose("point", "wl")
 
     if load:
@@ -898,7 +901,7 @@ def extractGrid(ds: xr.Dataset) -> dict:
         if dim in {"wl", "point"}:
             continue
         if len(vals.data.shape) > 0 and vals.data.shape[0] > 1:
-            grid[dim] = np.unique(vals.data)
+            grid[dim] = vals.data
     return grid
 
 
@@ -919,3 +922,21 @@ def saveDataset(file: str, ds: xr.Dataset) -> None:
         ds = ds.unstack("point")
 
     ds.to_netcdf(file)
+
+
+def cleanup(file):
+    """
+    Checks the ``ISOFIT Status`` attribute on a LUT and removes the file if it is
+    incomplete.
+
+    Parameters
+    ----------
+    file : str
+        Path to the file to check
+    """
+    with Dataset(file, "r") as ds:
+        if ds.getncattr("ISOFIT Status") == "<incomplete>":
+            Logger.error(
+                f"The LUT status was determined to be incomplete, auto-removing: {file}"
+            )
+            os.remove(file)
