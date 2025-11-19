@@ -45,8 +45,11 @@ class MultiComponentSurface(Surface):
 
         # Models are stored as dictionaries in .mat format
         # TODO: enforce surface_file existence in the case of multicomponent_surface
-        self.components = list(zip(self.model_dict["means"], self.model_dict["covs"]))
-        self.n_comp = len(self.components)
+        self.component_means = self.model_dict["means"]
+        self.component_covs = self.model_dict["covs"]
+        self.component_covs_base = self.model_dict.get("covs_base", [])
+
+        self.n_comp = len(self.component_means)
         self.wl = self.model_dict["wl"][0]
         self.n_wl = len(self.wl)
 
@@ -94,10 +97,10 @@ class MultiComponentSurface(Surface):
         nprefix = self.idx_lamb[0]
         nsuffix = len(self.statevec_names) - self.idx_lamb[-1] - 1
         for i in range(self.n_comp):
-            Cov = self.components[i][1]
+            Cov = self.component_covs[i]
             self.Covs.append(np.array([Cov[j, self.idx_ref] for j in self.idx_ref]))
             self.Cinvs.append(svd_inv_sqrt(self.Covs[-1])[0])
-            self.mus.append(self.components[i][0][self.idx_ref])
+            self.mus.append(self.component_means[i][self.idx_ref])
 
             # Caching the normalized Sa inv and Sa inv sqrt
             Cov_full = block_diag(
@@ -138,7 +141,8 @@ class MultiComponentSurface(Surface):
         mds = []
         for ci in range(self.n_comp):
             ref_mu = self.mus[ci]
-            ref_Cinv = self.Cinvs[ci]
+            # Only use the variance
+            ref_Cinv = np.diag(np.diag(self.Cinvs[ci]))
             if self.selection_metric == "Mahalanobis":
                 md = (lamb_ref - ref_mu).T.dot(ref_Cinv).dot(lamb_ref - ref_mu)
             else:
@@ -165,7 +169,7 @@ class MultiComponentSurface(Surface):
         lamb_ref = lamb[self.idx_ref]
         mu = np.zeros(self.n_state)
         ci = self.component(x_surface, geom)
-        lamb_mu = self.components[ci][0]
+        lamb_mu = self.component_means[ci]
         lamb_mu = lamb_mu * self.norm(lamb_ref)
         mu[self.idx_lamb] = lamb_mu
 
@@ -179,7 +183,7 @@ class MultiComponentSurface(Surface):
         lamb = self.calc_lamb(x_surface, geom)
         lamb_ref = lamb[self.idx_ref]
         ci = self.component(x_surface, geom)
-        Cov = self.components[ci][1]
+        Cov = self.component_covs[ci]
         Sa_unnormalized = Cov * (self.norm(lamb_ref) ** 2)
 
         # select the Sa inverse from the list of components
