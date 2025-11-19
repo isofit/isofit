@@ -340,7 +340,10 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                     )
 
                     Logger.info(f"Emulating {key}")
-                    if len(feature_point_names) > 0 and feature_point_names[0] != "None":
+                    if (
+                        len(feature_point_names) > 0
+                        and feature_point_names[0] != "None"
+                    ):
                         data = np.hstack((sixs[key].values, add_vector))
                     else:
                         data = sixs[key].values
