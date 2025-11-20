@@ -131,8 +131,8 @@ def heuristic_atmosphere(
 
         # Finally, interpolate to determine the actual water vapor level that
         # would optimize the continuum-relative correction
-        p = interp1d(h2o_grid, areas)
-        bounds = (h2o_grid[0] + 0.001, h2o_grid[-1] - 0.001)
+        p = interp1d(h2os, areas)
+        bounds = (h2os[0] + 0.001, h2os[-1] - 0.001)
         best = min1d(lambda h: abs(p(h)), bounds=bounds, method="bounded")
         x_new[ind_sv] = best.x
 
