@@ -839,7 +839,7 @@ def load(
 
     dims = ds.drop_dims("wl").dims
 
-    # Create the point dimension
+    # Create the point dimension -> Coords now len(points)
     ds = ds.stack(point=dims).transpose("point", "wl")
 
     if load:
@@ -901,7 +901,7 @@ def extractGrid(ds: xr.Dataset) -> dict:
         if dim in {"wl", "point"}:
             continue
         if len(vals.data.shape) > 0 and vals.data.shape[0] > 1:
-            grid[dim] = vals.data
+            grid[dim] = np.unique(vals.data)
     return grid
 
 
