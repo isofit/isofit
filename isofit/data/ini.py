@@ -205,6 +205,9 @@ class Ini:
         if ini:
             self.ini = Path(ini)
 
+            # Store the ini in the environment so child ray workers can re-initialize the env object correctly
+            os.environ["ISOFIT_INI"] = str(self.ini)
+
         if section:
             self.changeSection(section)
 
@@ -216,19 +219,6 @@ class Ini:
                 self.changePath(key, self[key])
 
             Logger.info(f"Loaded ini from: {self.ini}")
-
-            # Cache the existing $PATH, restore it on every load
-            if not self._path_bak:
-                self._path_bak = os.environ["PATH"]
-            else:
-                os.environ["PATH"] = self._path_bak
-
-            # Insert paths into the $PATH variable
-            for key, value in self.items():
-                value = Path(value.format(**self))  # Value may need some interpolation
-                if key.startswith("path.") and value.exists():
-                    # Prepend to take precedence
-                    os.environ["PATH"] = str(value) + os.pathsep + os.environ["PATH"]
         else:
             Logger.info(f"ini does not exist, falling back to defaults: {self.ini}")
 
@@ -247,6 +237,9 @@ class Ini:
         """
         if ini:
             self.ini = Path(ini)
+
+            # Store the ini in the environment so child ray workers can re-initialize the env object correctly
+            os.environ["ISOFIT_INI"] = str(self.ini)
 
         self.ini.parent.mkdir(parents=True, exist_ok=True)
 
@@ -318,9 +311,13 @@ class Ini:
             path /= self[key]
 
         if not template and not path.exists():
-            Logger.error(
-                f"The following path does not exist, please verify your installation environment: {path}"
-            )
+            error = f"The following path does not exist, please verify your installation environment: {path}"
+            Logger.error(error)
+            if self.raise_path_errors and self.raise_path_errors.lower() in (
+                "true",
+                "1",
+            ):
+                raise FileNotFoundError(error)
 
         return path
 
@@ -523,7 +520,12 @@ class Ini:
         self.changeBase(Path.home() / ".isofit/")
         self.changeKey(self._keys)
 
-        self.ini = self.base / "isofit.ini"
+        # Use the environment variable path to an ini over the default if it is present
+        # This is typically used by ray workers to retrieve the correct ini
+        if ini := os.environ.get("ISOFIT_INI"):
+            self.ini = Path(ini)
+        else:
+            self.ini = self.base / "isofit.ini"
 
         if save:
             self.save()
