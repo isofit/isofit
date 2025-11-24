@@ -197,26 +197,22 @@ class ForwardModel:
         Sa_instrument = self.instrument.Sa()
         Sa_state = block_diag(Sa_surface[:, :], Sa_RT[:, :], Sa_instrument[:, :])
 
-        # scale unit variance
-        scale = np.sqrt(np.mean(np.diag(Sa_state)))
+        # per block variance scaling for normalization
+        scale_surf = np.sqrt(np.mean(np.diag(Sa_surface[:, :])))
+        scale_RT = np.sqrt(np.mean(np.diag(Sa_RT[:, :])))
+        scale_inst = np.sqrt(np.mean(np.diag(Sa_instrument[:, :])))
 
         # Compute the Sa inv and Sa inv sqrt for measurement
-        Sa_inv_state = (
-            block_diag(
-                Sa_surf_inv_norm,
-                self.RT.Sa_inv_normalized,
-                self.instrument.Sa_inv_normalized,
-            )
-            / scale**2
+        Sa_inv_state = block_diag(
+            Sa_surf_inv_norm / scale_surf**2,
+            self.RT.Sa_inv_normalized / scale_RT**2,
+            self.instrument.Sa_inv_normalized / scale_inst**2,
         )
 
-        Sa_inv_sqrt_state = (
-            block_diag(
-                Sa_surf_inv_sqrt_norm,
-                self.RT.Sa_inv_sqrt_normalized,
-                self.instrument.Sa_inv_sqrt_normalized,
-            )
-            / scale
+        Sa_inv_sqrt_state = block_diag(
+            Sa_surf_inv_sqrt_norm / scale_surf,
+            self.RT.Sa_inv_sqrt_normalized / scale_RT,
+            self.instrument.Sa_inv_sqrt_normalized / scale_inst,
         )
 
         return Sa_state, Sa_inv_state, Sa_inv_sqrt_state
