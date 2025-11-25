@@ -213,7 +213,7 @@ class LUTSurface(Surface):
         s_alb,
         t_total_up,
         L_tot,
-        L_down_dir,
+        Ldd_Ldh,
     ):
         """Derivative of radiance with respect to
         full surface vector"""
@@ -238,8 +238,7 @@ class LUTSurface(Surface):
     def analytical_model(
         self,
         background,
-        L_down_dir,
-        L_down_dif,
+        Ldd_Ldh,
         L_tot,
         geom,
         L_dir_dir=None,

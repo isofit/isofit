@@ -214,8 +214,6 @@ class ForwardModel:
         (
             r,
             L_tot,
-            L_down_dir,
-            L_down_dif,
             L_dir_dir,
             L_dif_dir,
             L_dir_dif,
@@ -292,8 +290,6 @@ class ForwardModel:
         (
             r,
             L_tot,
-            L_down_dir,
-            L_down_dif,
             L_dir_dir,
             L_dif_dir,
             L_dir_dif,
@@ -352,7 +348,7 @@ class ForwardModel:
             s_alb=r["sphalb"],
             t_total_up=r["transm_up_dir"] + r["transm_up_dif"],
             L_tot=L_tot,
-            L_down_dir=L_dir_dir + L_dir_dif,
+            Ldd_Ldh=L_dir_dir + L_dir_dif,
         )
 
         # To get derivatives w.r.t. instrument, downsample to instrument wavelengths
@@ -385,8 +381,6 @@ class ForwardModel:
         (
             r,
             L_tot,
-            L_down_dir,
-            L_down_dif,
             L_dir_dir,
             L_dif_dir,
             L_dir_dif,

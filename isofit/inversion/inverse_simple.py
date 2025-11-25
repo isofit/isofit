@@ -172,8 +172,6 @@ def invert_algebraic(
     (
         rhi,
         L_tot,
-        L_down_dir,
-        L_down_dif,
         L_dir_dir,
         L_dif_dir,
         L_dir_dif,
@@ -278,8 +276,8 @@ def invert_analytical(
     x_surface, x_RT, x_instrument = fm.unpack(x)
 
     # Get all the RT quantities
-    (r, L_tot, L_down_dir, L_down_dif, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif) = (
-        fm.RT.calc_RT_quantities(x_RT, geom)
+    (r, L_tot, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif) = fm.RT.calc_RT_quantities(
+        x_RT, geom
     )
 
     # Path radiance and spherical albedo

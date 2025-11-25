@@ -421,17 +421,11 @@ class RadiativeTransfer:
         # Handle case for 1c vs 4c model
         if not isinstance(L_tot, np.ndarray) or len(L_tot) == 1:
             # 1c model w/in if clause
-            L_tot, L_down_dir, L_down_dif = self.get_L_down_transmitted(x_RT, geom)
-        else:
-            # 4c model w/in else clause
-            L_down_dir = L_dir_dir + L_dif_dir
-            L_down_dif = L_dif_dir + L_dif_dir
+            L_tot, _, _ = self.get_L_down_transmitted(x_RT, geom)
 
         return (
             r,
             L_tot,
-            L_down_dir,
-            L_down_dif,
             L_dir_dir,
             L_dif_dir,
             L_dir_dif,
@@ -453,8 +447,6 @@ class RadiativeTransfer:
             (
                 r,
                 L_tot,
-                L_down_dir,
-                L_down_dif,
                 L_dir_dir,
                 L_dif_dir,
                 L_dir_dif,
@@ -512,8 +504,6 @@ class RadiativeTransfer:
                     (
                         r,
                         L_tot,
-                        L_down_dir,
-                        L_down_dif,
                         L_dir_dir,
                         L_dif_dir,
                         L_dir_dif,
