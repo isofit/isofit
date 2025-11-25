@@ -242,7 +242,8 @@ def invert_analytical(
     fill_value: float = -9999.0,
 ):
     """Perform an analytical estimate of the conditional MAP estimate for
-    a fixed atmosphere.  Based on the "Inner loop" from Susiluoto, 2022.
+    a fixed atmosphere.  Based on the "Inner loop" from Susiluoto et al. (2025).
+    doi: https://doi.org/10.3390/rs17223719
 
     Args:
         fm: isofit forward model
@@ -294,11 +295,6 @@ def invert_analytical(
 
     # Background conditions equal to the superpixel reflectance
     bg = s * rho_dif_dir
-
-    # Special case: 1-component model
-    # NOTE: this should not be needed? because this is how its computed in the 1c case anyway. repeated math?
-    # if type(L_tot) != np.ndarray or len(L_tot) == 1:
-    #    L_tot = L_down_dir + L_down_dif
 
     # Get the inversion indices; Include glint indices if applicable
     full_idx = np.concatenate((winidx, fm.idx_surf_nonrfl), axis=0)
