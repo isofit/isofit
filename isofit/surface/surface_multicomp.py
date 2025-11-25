@@ -138,16 +138,20 @@ class MultiComponentSurface(Surface):
         lamb_ref = lamb_ref / self.norm(lamb_ref)
 
         # Mahalanobis or Euclidean distances
-        mds = []
-        for ci in range(self.n_comp):
-            ref_mu = self.mus[ci]
-            # Only use the variance
-            ref_Cinv = np.diag(np.diag(self.Cinvs[ci]))
-            if self.selection_metric == "Mahalanobis":
-                md = (lamb_ref - ref_mu).T.dot(ref_Cinv).dot(lamb_ref - ref_mu)
-            else:
-                md = sum(pow(lamb_ref - ref_mu, 2))
-            mds.append(md)
+        if self.selection_metric == "Mahalanobis":
+            mds = self.mahalanobis_distance(
+                lamb_ref, np.array(self.mus), np.array(self.Cinvs)
+            )
+
+        elif self.selection_metric == "Spectral":
+            mds = self.spectral_angle_distance(lamb_ref, self.mus)
+
+        else:
+            mds = self.euclidean_distance(
+                lamb_ref,
+                np.array(self.mus),
+            )
+
         closest = np.argmin(mds)
 
         if (
@@ -358,3 +362,24 @@ class MultiComponentSurface(Surface):
             return ""
 
         return "Component: %i" % self.component(x_surface, geom)
+
+    @staticmethod
+    def euclidean_distance(lamb_ref, mus):
+        return np.sum(np.power(lamb_ref[np.newaxis, :] - mus, 2), axis=1)
+
+    @staticmethod
+    def mahalanobis_distance(lamb_ref, mus, Cinvs):
+        diff = lamb_ref[np.newaxis, :] - mus
+        # diff.dot(Cinv)
+        dots = np.einsum("ij,ikj->ik", diff, Cinvs)
+        # diff.dot(Cinv).dot(diff)
+        return np.einsum("ij,ij->i", dots, diff)
+
+    @staticmethod
+    def spectral_angle_distance(lamb_ref, mus):
+        # np.arccos(x.dot(ref_mu) / (norm(x) * norm(ref_mu))
+        cos_theta = np.einsum("k,ik->i", lamb_ref, mus) / (
+            np.linalg.norm(lamb_ref) * np.linalg.norm(mus, axis=1)
+        )
+        # Clipping for numerical stability, return radians
+        return np.arccos(np.clip(cos_theta, -1.0, 1.0))

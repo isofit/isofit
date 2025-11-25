@@ -389,7 +389,6 @@ def surface_model(
                 raise ValueError("Unrecognized normalization: %s\n" % normalize)
             m = m / z
             C = C / (z**2)
-            C_unscaled = C
             C_base = C_base / (z**2)
 
             try:
