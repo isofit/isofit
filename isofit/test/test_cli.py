@@ -82,8 +82,8 @@ def files(cwd):
 # fmt: off
 @pytest.mark.slow
 @pytest.mark.parametrize("args", [
-    ["ang", "--presolve", "--emulator_base", "[placeholder]", "--n_cores", CORES, "--analytical_line", "-nn", 10, "-nn", 50,],
-    ["ang", "--presolve", "--emulator_base", "[placeholder]", "--n_cores", CORES, "--analytical_line", "-nn", 10, "-nn", 50, "-nn", 10, "--pressure_elevation",],
+    ["-nn", 10, "-nn", 50,],
+    ["-nn", 10, "-nn", 50, "-nn", 10, "--pressure_elevation",],
 ])
 # fmt: on
 def test_apply_oe(files, args, surface):
@@ -93,7 +93,19 @@ def test_apply_oe(files, args, surface):
     ray.shutdown()
     sleep(120)
 
-    args[3] = env.path("srtmnet", key="srtmnet.file")
+    emulator = env.path("srtmnet", key="srtmnet.file")
+    args = [
+        "ang",
+        "--presolve",
+        "--emulator_base",
+        emulator,
+        "--n_cores",
+        CORES,
+        "--analytical_line",
+        "--logging_level",
+        "DEBUG",
+    ] + args
+
     arguments = [
         "apply_oe",
         *files,

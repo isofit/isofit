@@ -42,12 +42,18 @@ class InstrumentUnknowns(BaseConfigSection):
         self._stray_srf_uncertainty_type = float
         self.stray_srf_uncertainty = None
 
+        self._dn_uncertainty_file_type = str
+        self.dn_uncertainty_file = None
+
         self.set_config_options(sub_configdic)
 
     def _check_config_validity(self) -> List[str]:
         errors = list()
 
-        file_params = [self.channelized_radiometric_uncertainty_file]
+        file_params = [
+            self.channelized_radiometric_uncertainty_file,
+            self.dn_uncertainty_file,
+        ]
         for param in file_params:
             if param is not None:
                 if os.path.isfile(param) is False:

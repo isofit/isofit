@@ -104,6 +104,10 @@ class LUTSurface(Surface):
 
         return Sa_unnormalized, self.Sa_inv_normalized, self.Sa_inv_sqrt_normalized
 
+    def Sb(self):
+        """Uncertainty due to unmodeled variables."""
+        return np.diagflat(np.power(self.bval, 2))
+
     def fit_params(self, rfl_meas, geom, *args):
         """Given a reflectance estimate, fit a state vector."""
 

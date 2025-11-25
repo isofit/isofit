@@ -1,4 +1,5 @@
 from io import StringIO
+from pathlib import Path
 
 import numpy as np
 import scipy
@@ -47,8 +48,8 @@ def test_get_absorption():
 
 
 def test_expand_path():  # -- backslash vs forward slash discrepancy
-    assert expand_path("NASA", "JPL") == "NASA/JPL"
-    assert expand_path("NASA", "/JPL") == "/JPL"
+    assert Path(expand_path("NASA", "JPL")).as_posix() == "NASA/JPL"
+    assert Path(expand_path("NASA", "/JPL")).as_posix() == "/JPL"
 
 
 def test_spectral_response_function():

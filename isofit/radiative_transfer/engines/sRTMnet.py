@@ -264,7 +264,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         if os.path.exists(self.predict_path):
             Logger.info(f"Loading sRTMnet predicts from: {self.predict_path}")
             predicts = luts.load(self.predict_path, mode="r")
-            self.component_mode = predicts.attrs["component_mode"]
+            self.component_mode = predicts.attrs.get("component_mode", "3c")
 
         else:
             Logger.info("Loading and predicting with emulator")
@@ -298,8 +298,8 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                 Logger.debug("Detected 6c emulator file format")
 
                 # This is an array of feature points tacked onto the interpolated 6s values
-                feature_point_names = aux["feature_point_names"][:].tolist()
-                if len(feature_point_names) > 0:
+                feature_point_names = aux["feature_point_names"].astype(str).tolist()
+                if len(feature_point_names) > 0 and feature_point_names[0] != "None":
 
                     # Populate the 6S parameter values from a modtran template file
                     with open(self.engine_config.template_file, "r") as file:
@@ -340,7 +340,10 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                     )
 
                     Logger.info(f"Emulating {key}")
-                    if len(feature_point_names) > 0:
+                    if (
+                        len(feature_point_names) > 0
+                        and feature_point_names[0] != "None"
+                    ):
                         data = np.hstack((sixs[key].values, add_vector))
                     else:
                         data = sixs[key].values

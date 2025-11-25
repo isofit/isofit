@@ -3,7 +3,7 @@ name = "isofit"
 dynamic = ["version"]
 description = "Imaging Spectrometer Optimal FITting"
 readme = "README.rst"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = {file = "LICENSE"}
 keywords = ["isofit"]
 authors = [
@@ -24,7 +24,6 @@ maintainers = [
 classifiers = [
   "License :: OSI Approved :: Apache Software License",
   "Operating System :: OS Independent",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
 from configparser import ConfigParser
 from copy import deepcopy
@@ -43,12 +44,21 @@ def getWorkingDir(config):
 
 class Ini:
     # Default directories to expect
-    _dirs: List[str] = ["data", "examples", "imagecube", "srtmnet", "sixs", "plots"]
+    _dirs: List[str] = [
+        "data",
+        "examples",
+        "imagecube",
+        "srtmnet",
+        "sixs",
+        "plots",
+    ]
 
     # Additional keys with default values
     _keys: Dict[str, str] = {"srtmnet.file": "", "srtmnet.aux": ""}
 
     def __init__(self) -> None:
+        self._path_bak = None
+
         self.reset()
         self.load()
 
@@ -206,6 +216,19 @@ class Ini:
                 self.changePath(key, self[key])
 
             Logger.info(f"Loaded ini from: {self.ini}")
+
+            # Cache the existing $PATH, restore it on every load
+            if not self._path_bak:
+                self._path_bak = os.environ["PATH"]
+            else:
+                os.environ["PATH"] = self._path_bak
+
+            # Insert paths into the $PATH variable
+            for key, value in self.items():
+                value = Path(value.format(**self))  # Value may need some interpolation
+                if key.startswith("path.") and value.exists():
+                    # Prepend to take precedence
+                    os.environ["PATH"] = str(value) + os.pathsep + os.environ["PATH"]
         else:
             Logger.info(f"ini does not exist, falling back to defaults: {self.ini}")
 

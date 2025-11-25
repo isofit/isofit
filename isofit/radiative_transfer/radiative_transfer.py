@@ -151,6 +151,10 @@ class RadiativeTransfer:
         """Pull the priors from each of the individual RTs."""
         return self.Sa_cached
 
+    def Sb(self):
+        """Uncertainty due to unmodeled variables."""
+        return np.diagflat(np.power(self.bval, 2))
+
     def get_shared_rtm_quantities(self, x_RT, geom):
         """Return only the set of RTM quantities (transup, sphalb, etc.) that are contained
         in all RT engines.

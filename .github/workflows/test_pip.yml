@@ -30,22 +30,27 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        python-version: [3.10", "3.11", "3.12"]
         pytest-flags: ["-m unmarked", "-m slow", "-m examples"]
-
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       # Pull the cache on every runner
       - name: Cached Extras
         id: cache-extras
         uses: actions/cache/restore@v4
         with:
-          path: ~/.isofit
+          path: .isofit
           key: cache-extras
           fail-on-cache-miss: true
+          enableCrossOsArchive: true
+
+      - name: Move .isofit
+        shell: bash
+        run: mv .isofit ~/.isofit
 
       - uses: actions/checkout@v3
 
@@ -75,6 +80,14 @@ jobs:
 
           # Ensure ISOFIT has been installed
           python3 -c "import isofit; print(isofit.__file__)"
+
+      # Examples are built for ubuntu runners, Windows needs to rebuild every time
+      - name: Format for Windows
+        shell: bash
+        if: runner.os == 'Windows'
+        run: |
+          isofit --base ~/.isofit build
+          isofit download sixs --make --debug-make
 
       - name: Execute tests
         shell: bash
