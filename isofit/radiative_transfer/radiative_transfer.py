@@ -289,60 +289,6 @@ class RadiativeTransfer:
                 L_atms.append(L_atm)
         return np.hstack(L_atms)
 
-    def get_L_down_transmitted(self, x_RT: np.array, geom: Geometry) -> np.array:
-        """Get the interpolated direct and diffuse downward radiance on the sun-to-surface path.
-        Thermal_downwelling already includes the transmission factor.
-        Also assume there is no multiple scattering for TIR.
-
-        Args:
-            x_RT: radiative-transfer portion of the statevector
-            geom: local geometry conditions for lookup
-
-        Returns:
-            interpolated total, direct, and diffuse downward atmospheric radiance
-        """
-        L_downs = []
-        L_downs_dir = []
-        L_downs_dif = []
-
-        # Check coszen against cos_i
-        verified_geom = geom.verify(self.coszen)
-        coszen, cos_i, skyview_factor = (
-            verified_geom["coszen"],
-            verified_geom["cos_i"],
-            verified_geom["skyview_factor"],
-        )
-
-        for RT in self.rt_engines:
-            if RT.treat_as_emissive:
-                r = RT.get(x_RT, geom)
-                rdn = r["thermal_downwelling"]
-                L_downs.append(rdn)
-            else:
-                r = RT.get(x_RT, geom)
-                if RT.rt_mode == "rdn":
-                    L_down_dir = r["transm_down_dir"]
-                    L_down_dif = r["transm_down_dif"]
-                else:
-                    # Transform downward transmittance to radiance
-                    L_down_dir = units.transm_to_rdn(
-                        r["transm_down_dir"], coszen, self.solar_irr
-                    )
-                    L_down_dif = units.transm_to_rdn(
-                        r["transm_down_dif"], coszen, self.solar_irr
-                    )
-
-                # Apply sky view factor to downward diffuse for 1C case.
-                L_down_dif *= skyview_factor
-
-                L_down = L_down_dir + L_down_dif
-
-                L_downs.append(L_down)
-                L_downs_dir.append(L_down_dir)
-                L_downs_dif.append(L_down_dif)
-
-        return np.hstack(L_downs), np.hstack(L_downs_dir), np.hstack(L_downs_dif)
-
     def get_L_coupled(self, r: dict, geom: Geometry):
         """Get the interpolated radiance terms on the sun-to-surface-to-sensor path.
         These follow the physics as presented in Guanter (2006), Vermote et al. (1997), and Tanre et al. (1983).
@@ -411,9 +357,10 @@ class RadiativeTransfer:
 
         In the 4c case, we always use returns from get_L_coupled
 
-        L_tot is total radiance for sun->surface->sensor path.
+        All quantities are on the sun-to-surface-to-sensor path.
 
         """
+
         # Propogate LUT
         r = self.get_shared_rtm_quantities(x_RT, geom)
 
@@ -421,12 +368,29 @@ class RadiativeTransfer:
         L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = self.get_L_coupled(r, geom)
         L_tot = L_dir_dir + L_dif_dir + L_dir_dif + L_dif_dif
 
-        # Handle case for 1c vs 4c model
+        # Handle 1c L_tot. NOTE: transm_down_dif = total transm for 1C case.
         if not isinstance(L_tot, np.ndarray) or len(L_tot) == 1:
-            # 1c model w/in if clause
-            L_down_total, _, _ = self.get_L_down_transmitted(x_RT, geom)
-            # Match the paths: sun->surface->sensor
-            L_tot = L_down_total * (r["transm_up_dir"] + r["transm_up_dif"])
+
+            L_tots = []
+            for RT in self.rt_engines:
+                if RT.treat_as_emissive:
+                    r = RT.get(x_RT, geom)
+                    rdn = r["thermal_downwelling"]
+                    L_tots.append(rdn)
+                else:
+                    r = RT.get(x_RT, geom)
+                    if RT.rt_mode == "rdn":
+
+                        L_tot = r["transm_down_dif"]
+                    else:
+                        L_tot = units.transm_to_rdn(
+                            r["transm_down_dif"],
+                            geom.verify(self.coszen)["coszen"],
+                            self.solar_irr,
+                        )
+                    L_tots.append(L_tot)
+
+            L_tot = np.hstack(L_tots)
 
         return (
             r,

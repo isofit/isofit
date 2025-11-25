@@ -456,7 +456,17 @@ def invert_simple(forward: ForwardModel, meas: np.array, geom: Geometry):
         _, sphalb, _, transup, _ = coeffs
 
         L_atm = RT.get_L_atm(x_RT, geom)
-        L_tot, _, _ = RT.get_L_down_transmitted(x_RT, geom)
+
+        # Get L_tot for either 4C or 1C case
+        (
+            _,
+            L_tot,
+            _,
+            _,
+            _,
+            _,
+        ) = RT.calc_RT_quantities(x_RT, geom)
+
         L_total_without_surface_emission = L_atm + L_tot * rfl_hi / (
             1.0 - sphalb * rfl_hi
         )
