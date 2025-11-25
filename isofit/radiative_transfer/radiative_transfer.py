@@ -410,6 +410,9 @@ class RadiativeTransfer:
         if statement.
 
         In the 4c case, we always use returns from get_L_coupled
+
+        L_tot is total radiance for sun->surface->sensor path.
+
         """
         # Propogate LUT
         r = self.get_shared_rtm_quantities(x_RT, geom)
@@ -421,7 +424,9 @@ class RadiativeTransfer:
         # Handle case for 1c vs 4c model
         if not isinstance(L_tot, np.ndarray) or len(L_tot) == 1:
             # 1c model w/in if clause
-            L_tot, _, _ = self.get_L_down_transmitted(x_RT, geom)
+            L_down_total, _, _ = self.get_L_down_transmitted(x_RT, geom)
+            # Match the paths: sun->surface->sensor
+            L_tot = L_down_total * (r["transm_up_dir"] + r["transm_up_dif"])
 
         return (
             r,

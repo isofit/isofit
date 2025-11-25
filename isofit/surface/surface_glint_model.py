@@ -266,7 +266,6 @@ class GlintModelSurface(MultiComponentSurface):
     def analytical_model(
         self,
         background,
-        Ldd_Ldh,
         L_tot,
         geom,
         L_dir_dir=None,
@@ -289,7 +288,6 @@ class GlintModelSurface(MultiComponentSurface):
         # ep (sky glint portion)
         H = super().analytical_model(
             background,
-            Ldd_Ldh,
             L_tot,
             geom,
             L_dir_dir,

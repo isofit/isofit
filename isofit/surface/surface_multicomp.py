@@ -302,7 +302,6 @@ class MultiComponentSurface(Surface):
     def analytical_model(
         self,
         background,
-        Ldd_Ldh,
         L_tot,
         geom,
         L_dir_dir=None,

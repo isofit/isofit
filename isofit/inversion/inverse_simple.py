@@ -296,8 +296,9 @@ def invert_analytical(
     bg = s * rho_dif_dir
 
     # Special case: 1-component model
-    if type(L_tot) != np.ndarray or len(L_tot) == 1:
-        L_tot = L_down_dir + L_down_dif
+    # NOTE: this should not be needed? because this is how its computed in the 1c case anyway. repeated math?
+    # if type(L_tot) != np.ndarray or len(L_tot) == 1:
+    #    L_tot = L_down_dir + L_down_dif
 
     # Get the inversion indices; Include glint indices if applicable
     full_idx = np.concatenate((winidx, fm.idx_surf_nonrfl), axis=0)
@@ -309,10 +310,8 @@ def invert_analytical(
     # The H matrix does not change as a function of x-vector
     H = fm.surface.analytical_model(
         bg,
-        L_down_dir,
-        L_down_dif,
-        L_tot,
-        geom,
+        L_tot=L_tot,
+        geom=geom,
         L_dir_dir=L_dir_dir,
         L_dir_dif=L_dir_dif,
         L_dif_dir=L_dif_dir,
@@ -457,8 +456,8 @@ def invert_simple(forward: ForwardModel, meas: np.array, geom: Geometry):
         _, sphalb, _, transup, _ = coeffs
 
         L_atm = RT.get_L_atm(x_RT, geom)
-        L_down_transmitted, _, _ = RT.get_L_down_transmitted(x_RT, geom)
-        L_total_without_surface_emission = L_atm + L_down_transmitted * rfl_hi / (
+        L_tot, _, _ = RT.get_L_down_transmitted(x_RT, geom)
+        L_total_without_surface_emission = L_atm + L_tot * rfl_hi / (
             1.0 - sphalb * rfl_hi
         )
 
