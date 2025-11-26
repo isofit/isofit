@@ -346,7 +346,7 @@ class ForwardModel:
             drfl_dsurface=drfl_dsurface_hi,
             dLs_dsurface=dLs_dsurface_hi,
             s_alb=r["sphalb"],
-            t_total_up=r["transm_up_dir"] + r["transm_up_dif"],
+            t_total_up=self.RT.get_upward_transm(x_RT, geom),
             L_tot=L_tot,
             Ldd_Ldh=L_dir_dir + L_dir_dif,
         )

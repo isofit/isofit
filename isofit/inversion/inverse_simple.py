@@ -180,14 +180,7 @@ def invert_algebraic(
     L_atm = RT.get_L_atm(x_RT, geom)
     sphalb = rhi["sphalb"]
     Ls = surface.calc_Ls(x_surface, geom)
-
-    # TODO - make this a function, and use it here and in radiatve transfer
-    # transmit thermal emission through the atmosphere
-    transup = rhi["transm_up_dir"] + rhi["transm_up_dif"]
-    if np.max(transup) > 1.1:
-        raise ValueError(
-            "Transmittance up is greater than 1.0, which is not physically possible. Most likely, this is an issue with LUT input convention."
-        )
+    transup = RT.get_upward_transm(x_RT, geom)
 
     # Get the wavelengths too - these may also be adjusted
     wl, fwhm = instrument.calibration(x_instrument)

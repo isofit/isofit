@@ -214,7 +214,7 @@ class RadiativeTransfer:
             atm_surface_scattering = 1
 
         # Thermal transmittance
-        L_up = Ls * (r["transm_up_dir"] + r["transm_up_dif"])
+        L_up = Ls * self.get_upward_transm(x_RT, geom)
 
         # Our radiance model follows the physics as presented in Guanter (2006), Vermote et al. (1997), and
         # Tanre et al. (1983). This particular formulation facilitates the consideration of topographic effects,
@@ -389,7 +389,6 @@ class RadiativeTransfer:
                             self.solar_irr,
                         )
                     L_tots.append(L_tot)
-
             L_tot = np.hstack(L_tots)
 
         return (
@@ -400,6 +399,45 @@ class RadiativeTransfer:
             L_dir_dif,
             L_dif_dif,
         )
+
+    def get_upward_transm(
+        self, x_RT: np.ndarray, geom: Geometry, max_transm: float = 1.05
+    ):
+        """
+        Get total upward transmittance w/physical check enforced.'
+
+        This is called for glint and thermal cases. While we allow for rt to be either rdn or transm modes,
+        the places in the code where this is called should be in units of transmittance.
+
+        """
+
+        coszen = geom.verify(self.coszen)["coszen"]
+        r = self.get_shared_rtm_quantities(x_RT, geom)
+
+        transups = []
+        for RT in self.rt_engines:
+            if RT.rt_mode == "rdn":
+                transm_up_dir = units.rdn_to_transm(
+                    r["transm_up_dir"], coszen, self.solar_irr
+                )
+                transm_up_dif = units.rdn_to_transm(
+                    r["transm_up_dif"], coszen, self.solar_irr
+                )
+            else:
+                transm_up_dir = r["transm_up_dir"]
+                transm_up_dif = r["transm_up_dif"]
+
+            transups.append(transm_up_dir + transm_up_dif)
+        transup = np.hstack(transups)
+
+        if np.max(transup) > max_transm:
+            raise ValueError(
+                (
+                    f"Transmittance up is greater than {max_transm}, which is not physically possible. "
+                    f"Most likely, this is an issue with LUT input convention (rt_mode={RT.rt_mode})."
+                )
+            )
+        return transup
 
     def drdn_dRT(self, x_RT, geom, rho_dir_dir, rho_dif_dir, Ls, rdn):
         """Derivative of estimated radiance w.r.t. RT statevector elements.
