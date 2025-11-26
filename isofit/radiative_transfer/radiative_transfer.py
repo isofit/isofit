@@ -214,7 +214,8 @@ class RadiativeTransfer:
             atm_surface_scattering = 1
 
         # Thermal transmittance
-        L_up = Ls * self.get_upward_transm(x_RT, geom)
+        transup = self.get_upward_transm(x_RT, geom)
+        L_up = Ls * transup
 
         # Our radiance model follows the physics as presented in Guanter (2006), Vermote et al. (1997), and
         # Tanre et al. (1983). This particular formulation facilitates the consideration of topographic effects,
@@ -368,24 +369,22 @@ class RadiativeTransfer:
         L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = self.get_L_coupled(r, geom)
         L_tot = L_dir_dir + L_dif_dir + L_dir_dif + L_dif_dif
 
-        # Handle 1c L_tot. NOTE: transm_down_dif = total transm for 1C case.
+        # Handle 1c L_tot. NOTE: transm_down_dif = total transm for 1c case.
         if not isinstance(L_tot, np.ndarray) or len(L_tot) == 1:
-
+            coszen = geom.verify(self.coszen)["coszen"]
             L_tots = []
             for RT in self.rt_engines:
+                ri = RT.get(x_RT, geom)
                 if RT.treat_as_emissive:
-                    r = RT.get(x_RT, geom)
-                    rdn = r["thermal_downwelling"]
+                    rdn = ri["thermal_downwelling"]
                     L_tots.append(rdn)
                 else:
-                    r = RT.get(x_RT, geom)
                     if RT.rt_mode == "rdn":
-
-                        L_tot = r["transm_down_dif"]
+                        L_tot = ri["transm_down_dif"]
                     else:
                         L_tot = units.transm_to_rdn(
-                            r["transm_down_dif"],
-                            geom.verify(self.coszen)["coszen"],
+                            ri["transm_down_dif"],
+                            coszen,
                             self.solar_irr,
                         )
                     L_tots.append(L_tot)
@@ -404,29 +403,29 @@ class RadiativeTransfer:
         self, x_RT: np.ndarray, geom: Geometry, max_transm: float = 1.05
     ):
         """
-        Get total upward transmittance w/physical check enforced.'
+        Get total upward transmittance w/physical check enforced (max_transm).
 
         This is called for glint and thermal cases. While we allow for rt to be either rdn or transm modes,
-        the places in the code where this is called should be in units of transmittance.
+        the output of this should be in units of transmittance to match expected treatments
+        (e.g., Ls * transup , drdn_dLs).
 
         """
 
         coszen = geom.verify(self.coszen)["coszen"]
-        r = self.get_shared_rtm_quantities(x_RT, geom)
 
         transups = []
         for RT in self.rt_engines:
+            ri = RT.get(x_RT, geom)
             if RT.rt_mode == "rdn":
                 transm_up_dir = units.rdn_to_transm(
-                    r["transm_up_dir"], coszen, self.solar_irr
+                    ri["transm_up_dir"], coszen, self.solar_irr
                 )
                 transm_up_dif = units.rdn_to_transm(
-                    r["transm_up_dif"], coszen, self.solar_irr
+                    ri["transm_up_dif"], coszen, self.solar_irr
                 )
             else:
-                transm_up_dir = r["transm_up_dir"]
-                transm_up_dif = r["transm_up_dif"]
-
+                transm_up_dir = ri["transm_up_dir"]
+                transm_up_dif = ri["transm_up_dif"]
             transups.append(transm_up_dir + transm_up_dif)
         transup = np.hstack(transups)
 
@@ -434,7 +433,8 @@ class RadiativeTransfer:
             raise ValueError(
                 (
                     f"Transmittance up is greater than {max_transm}, which is not physically possible. "
-                    f"Most likely, this is an issue with LUT input convention (rt_mode={RT.rt_mode})."
+                    f"Most likely, this is an issue with LUT input convention "
+                    f"(rt_mode={[RT.rt_mode for RT in self.rt_engines]})."
                 )
             )
         return transup
