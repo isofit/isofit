@@ -214,7 +214,7 @@ class RadiativeTransfer:
             atm_surface_scattering = 1
 
         # Thermal transmittance
-        transup = self.get_upward_transm(x_RT, geom)
+        transup = self.get_upward_transm(r=r, geom=geom)
         L_up = Ls * transup
 
         # Our radiance model follows the physics as presented in Guanter (2006), Vermote et al. (1997), and
@@ -399,45 +399,49 @@ class RadiativeTransfer:
             L_dif_dif,
         )
 
-    def get_upward_transm(
-        self, x_RT: np.ndarray, geom: Geometry, max_transm: float = 1.05
-    ):
+    def get_upward_transm(self, r: dict, geom: Geometry, max_transm: float = 1.05):
         """
         Get total upward transmittance w/physical check enforced (max_transm).
 
-        This is called for glint and thermal cases. While we allow for rt to be either rdn or transm modes,
-        the output of this should be in units of transmittance to match expected treatments
-        (e.g., Ls * transup , drdn_dLs).
+        This is called for all surfaces to handle thermal downwelling/upwelling component.
+        While rt can be either rdn or transm modes, this must be in units of transmittance.
 
         """
 
         coszen = geom.verify(self.coszen)["coszen"]
 
-        transups = []
-        for RT in self.rt_engines:
-            ri = RT.get(x_RT, geom)
-            if RT.rt_mode == "rdn":
-                transm_up_dir = units.rdn_to_transm(
-                    ri["transm_up_dir"], coszen, self.solar_irr
-                )
-                transm_up_dif = units.rdn_to_transm(
-                    ri["transm_up_dif"], coszen, self.solar_irr
-                )
-            else:
-                transm_up_dir = ri["transm_up_dir"]
-                transm_up_dif = ri["transm_up_dif"]
-            transups.append(transm_up_dir + transm_up_dif)
-        transup = np.hstack(transups)
+        rt_mode = self.rt_engines[0].rt_mode
 
-        if np.max(transup) > max_transm:
-            raise ValueError(
-                (
-                    f"Transmittance up is greater than {max_transm}, which is not physically possible. "
-                    f"Most likely, this is an issue with LUT input convention "
-                    f"(rt_mode={[RT.rt_mode for RT in self.rt_engines]})."
-                )
+        if rt_mode == "rdn":
+            transm_up_dir = units.rdn_to_transm(
+                r["transm_up_dir"], coszen, self.solar_irr
             )
-        return transup
+            transm_up_dif = units.rdn_to_transm(
+                r["transm_up_dif"], coszen, self.solar_irr
+            )
+        else:
+            transm_up_dir = r["transm_up_dir"]
+            transm_up_dif = r["transm_up_dif"]
+
+        # NOTE for 1c case transm-up is not a key, and therefore Ls and transup is zero.
+        if not isinstance(transm_up_dir, np.ndarray) or len(transm_up_dir) == 1:
+            Logger.warning(
+                "Thermal downwelling was unused due multipart transmittance terms not being present."
+            )
+            return 0
+
+        # Case with multipart transmittance terms
+        else:
+            transup = transm_up_dir + transm_up_dif
+
+            if np.max(transup) > max_transm:
+                raise ValueError(
+                    (
+                        f"Transmittance up is greater than {max_transm}, which is not physically possible. "
+                        f"Most likely, this is an issue with LUT input convention (rt_mode={rt_mode})."
+                    )
+                )
+            return transup
 
     def drdn_dRT(self, x_RT, geom, rho_dir_dir, rho_dif_dir, Ls, rdn):
         """Derivative of estimated radiance w.r.t. RT statevector elements.

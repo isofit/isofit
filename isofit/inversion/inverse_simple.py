@@ -180,7 +180,7 @@ def invert_algebraic(
     L_atm = RT.get_L_atm(x_RT, geom)
     sphalb = rhi["sphalb"]
     Ls = surface.calc_Ls(x_surface, geom)
-    transup = RT.get_upward_transm(x_RT, geom)
+    transup = RT.get_upward_transm(r=rhi, geom=geom)
 
     # Get the wavelengths too - these may also be adjusted
     wl, fwhm = instrument.calibration(x_instrument)
