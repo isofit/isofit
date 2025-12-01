@@ -82,6 +82,7 @@ def apply_oe(
     rdn_factors_path=None,
     atmosphere_type="ATM_MIDLAT_SUMMER",
     channelized_uncertainty_path=None,
+    dn_uncertainty_file=None,
     model_discrepancy_path=None,
     lut_config_file=None,
     multiple_restarts=False,
@@ -155,6 +156,8 @@ def apply_oe(
         radiative transfer models.
     channelized_uncertainty_path : str, default=None
         Path to a channelized uncertainty file
+    dn_uncertainty_file:  str, default=None
+        Path to a linearity .mat file to augment S matrix with linearity uncertainty
     model_discrepancy_path : str, default=None
         Modifies S_eps in the OE formalism as the Gamma additive term, as:
         S_eps = Sy + Kb.dot(self.Sb).dot(Kb.T) + Gamma
@@ -194,7 +197,7 @@ def apply_oe(
     ray_temp_dir : str, default="/tmp/ray"
         Location of temporary directory for ray parallelization engine
     emulator_base : str, default=None
-        Location of emulator base path. Point this at the model folder (or h5 file) of
+        Location of emulator base path. Point this at the 3C or 6C .h5 files.
         sRTMnet to use the emulator instead of MODTRAN. An additional file with the
         same basename and the extention _aux.npz must accompany
         e.g. /path/to/emulator.h5 /path/to/emulator_aux.npz
@@ -259,25 +262,19 @@ def apply_oe(
     if emulator_base is not None:
         if emulator_base.endswith(".jld2"):
             multipart_transmittance = False
+
+        elif emulator_base.endswith(".h5"):
+            multipart_transmittance = False
+
+        elif emulator_base.endswith(".6c"):
+            multipart_transmittance = True
+
         else:
-            if emulator_base.endswith(".npz"):
-                emulator_aux_file = emulator_base
-            else:
-                emulator_aux_file = os.path.abspath(
-                    os.path.splitext(emulator_base)[0] + "_aux.npz"
-                )
-            aux = np.load(emulator_aux_file)
-            if (
-                "transm_down_dir"
-                and "transm_down_dif"
-                and "transm_up_dir"
-                and "transm_up_dif" in aux["rt_quantities"]
-            ):
-                multipart_transmittance = True
-            else:
-                multipart_transmittance = False
+            raise ValueError("Invalid emulator_base extension. Use .h5, .6c, or .jld2")
+
     else:
-        # This is the MODTRAN case. Do we want to enable the 4c mode by default?
+        # This is the MODTRAN case.
+        # Do we want to enable the 4c mode by default?
         multipart_transmittance = True
 
     if sensor not in SUPPORTED_SENSORS:
@@ -672,6 +669,7 @@ def apply_oe(
                 surface_category=surface_category,
                 emulator_base=emulator_base,
                 uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
+                dn_uncertainty_file=dn_uncertainty_file,
                 prebuilt_lut_path=prebuilt_lut,
                 inversion_windows=INVERSION_WINDOWS,
                 multipart_transmittance=multipart_transmittance,
@@ -779,6 +777,7 @@ def apply_oe(
             surface_category=surface_category,
             emulator_base=emulator_base,
             uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
+            dn_uncertainty_file=dn_uncertainty_file,
             multiple_restarts=multiple_restarts,
             segmentation_size=segmentation_size,
             pressure_elevation=pressure_elevation,
@@ -875,6 +874,7 @@ def apply_oe(
 @click.option("--rdn_factors_path")
 @click.option("--atmosphere_type", default="ATM_MIDLAT_SUMMER")
 @click.option("--channelized_uncertainty_path")
+@click.option("--dn_uncertainty_file", "-dnf", type=str, default=None)
 @click.option("--model_discrepancy_path")
 @click.option("--lut_config_file")
 @click.option("--multiple_restarts", is_flag=True, default=False)

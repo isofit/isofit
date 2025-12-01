@@ -135,6 +135,20 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         self.emulator_aux_file = None
         """str: path to emulator auxiliary data - expected npz format"""
 
+        self._parallel_layer_read_type = bool
+        self.parallel_layer_read = True
+        """bool: Flag for how to load and run sRTMnet prediction. 
+           If True, will read in the weights/biases per layer per worker.
+           If False, will load entire model into shared memory
+           Model doesn't always fit in shared memory for smaller systems
+        """
+
+        self._predict_parallel_chunks_type = int
+        self.predict_parallel_chunks = 20
+        """int: If emulator predictions are in parallel. How many chunks to run.
+           Keep to a small number for systems with little memory and slow read.
+        """
+
         # 6S parameters - not the corcommemnd
         # TODO: these should come from a template file, as in modtran
         self._day_type = int
@@ -242,8 +256,10 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
                             "The sRTMnet requires an emulator_file to be specified."
                         )
 
-                if (os.path.splitext(self.emulator_file)[1] != ".h5") and (
-                    os.path.splitext(self.emulator_file)[1] != ".npz"
+                if (
+                    (os.path.splitext(self.emulator_file)[1] != ".h5")
+                    and (os.path.splitext(self.emulator_file)[1] != ".npz")
+                    and (os.path.splitext(self.emulator_file)[1] != ".6c")
                 ):
                     errors.append(
                         "sRTMnet now requires the emulator_file to be of type .h5 (or .npz for experimental 6c emulator).  "

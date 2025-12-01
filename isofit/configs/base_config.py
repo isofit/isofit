@@ -40,7 +40,7 @@ class BaseConfigSection(object):
         """
         for key in self._get_nontype_attributes():
             keytype = getattr(self, "_" + key + "_type")
-            if key in configdict:
+            if key in configdict and configdict[key] is not None:
                 if callable(keytype):
                     sub_config = keytype(configdict[key])
                     setattr(self, key, sub_config)

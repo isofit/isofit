@@ -19,6 +19,7 @@ import numpy as np
 from scipy.io import loadmat
 from spectral.io import envi
 
+from isofit import __version__
 from isofit.core import isofit, units
 from isofit.core.common import (
     envi_header,
@@ -30,7 +31,6 @@ from isofit.core.multistate import SurfaceMapping
 from isofit.data import env
 from isofit.radiative_transfer.engines.modtran import ModtranRT
 from isofit.utils.surface_model import surface_model
-from isofit import __version__
 
 
 class Pathnames:
@@ -641,6 +641,7 @@ def build_presolve_config(
     surface_category="multicomponent_surface",
     emulator_base: str = None,
     uncorrelated_radiometric_uncertainty: float = 0.0,
+    dn_uncertainty_file: str = None,
     segmentation_size: int = 400,
     debug: bool = False,
     inversion_windows=[[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]],
@@ -657,6 +658,7 @@ def build_presolve_config(
         surface_category: type of surface to use
         emulator_base: the basename of the emulator, if used
         uncorrelated_radiometric_uncertainty: uncorrelated radiometric uncertainty parameter for isofit
+        dn_uncertainty_file: Path to a linearity .mat file to augment S matrix with linearity uncertainty
         segmentation_size: image segmentation size if empirical line is used
         debug: flag to enable debug_mode in the config.implementation
         prebuilt_lut_path: lut path to use; if none, presolve config will create a new file
@@ -721,15 +723,16 @@ def build_presolve_config(
         radiative_transfer_config["radiative_transfer_engines"]["vswir"][
             "emulator_file"
         ] = abspath(emulator_base)
-        if emulator_base.endswith(".npz"):
-            # then aux & emulator are the same
+
+        if multipart_transmittance:
             radiative_transfer_config["radiative_transfer_engines"]["vswir"][
                 "emulator_aux_file"
-            ] = abspath(emulator_base)
+            ] = emulator_base
         else:
             radiative_transfer_config["radiative_transfer_engines"]["vswir"][
                 "emulator_aux_file"
             ] = abspath(os.path.splitext(emulator_base)[0] + "_aux.npz")
+
         radiative_transfer_config["radiative_transfer_engines"]["vswir"][
             "earth_sun_distance_file"
         ] = paths.earth_sun_distance_path
@@ -754,7 +757,8 @@ def build_presolve_config(
                 "wavelength_file": paths.wavelength_path,
                 "integrations": spectra_per_inversion,
                 "unknowns": {
-                    "uncorrelated_radiometric_uncertainty": uncorrelated_radiometric_uncertainty
+                    "uncorrelated_radiometric_uncertainty": uncorrelated_radiometric_uncertainty,
+                    "dn_uncertainty_file": dn_uncertainty_file,
                 },
             },
             "surface": make_surface_config(
@@ -830,6 +834,7 @@ def build_main_config(
     surface_category="multicomponent_surface",
     emulator_base: str = None,
     uncorrelated_radiometric_uncertainty: float = 0.0,
+    dn_uncertainty_file: str = None,
     multiple_restarts: bool = False,
     segmentation_size=400,
     pressure_elevation: bool = False,
@@ -860,6 +865,7 @@ def build_main_config(
         surface_category:                     type of surface to use
         emulator_base:                        the basename of the emulator, if used
         uncorrelated_radiometric_uncertainty: uncorrelated radiometric uncertainty parameter for isofit
+        dn_uncertainty_file:                       Path to a linearity .mat file to augment S matrix with linearity uncertainty
         multiple_restarts:                    if true, use multiple restarts
         segmentation_size:                    image segmentation size if empirical line is used
         pressure_elevation:                   if true, retrieve pressure elevation
@@ -907,15 +913,16 @@ def build_main_config(
         radiative_transfer_config["radiative_transfer_engines"]["vswir"][
             "emulator_file"
         ] = abspath(emulator_base)
-        if emulator_base.endswith(".npz"):
-            # then aux & emulator are the same
+
+        if multipart_transmittance:
             radiative_transfer_config["radiative_transfer_engines"]["vswir"][
                 "emulator_aux_file"
-            ] = abspath(emulator_base)
+            ] = emulator_base
         else:
             radiative_transfer_config["radiative_transfer_engines"]["vswir"][
                 "emulator_aux_file"
             ] = abspath(os.path.splitext(emulator_base)[0] + "_aux.npz")
+
         radiative_transfer_config["radiative_transfer_engines"]["vswir"][
             "earth_sun_distance_file"
         ] = paths.earth_sun_distance_path
@@ -1072,7 +1079,8 @@ def build_main_config(
                 "wavelength_file": paths.wavelength_path,
                 "integrations": spectra_per_inversion,
                 "unknowns": {
-                    "uncorrelated_radiometric_uncertainty": uncorrelated_radiometric_uncertainty
+                    "uncorrelated_radiometric_uncertainty": uncorrelated_radiometric_uncertainty,
+                    "dn_uncertainty_file": dn_uncertainty_file,
                 },
             },
             "surface": make_surface_config(
@@ -1163,6 +1171,7 @@ def build_main_config(
         isofit_config_modtran["forward_model"]["instrument"][
             "parametric_noise_file"
         ] = paths.noise_path
+
     else:
         isofit_config_modtran["forward_model"]["instrument"]["SNR"] = 500
 

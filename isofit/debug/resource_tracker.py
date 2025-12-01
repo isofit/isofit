@@ -27,7 +27,7 @@ class ResourceTracker:
                     Number of CPU cores in use. See the 'cores' parameter for more
                 total_cores : int
                     Total number of cores available on the system via os.cpu_count()
-                mem_total : float
+                sys_mem_total : float
                     Total memory of the system
                 mem_unit : str
                     Unit label that the memory values are in
@@ -46,6 +46,12 @@ class ResourceTracker:
                     Main process name
                 mem : float
                     Main process memory used
+                mem_total : float
+                    Approximate total memory of the process (actual + shared)
+                mem_actual : float
+                    Approximate private memory in use by the process
+                mem_shared : float
+                    Approximate shared memory
                 cpu : float
                     Main process CPU percentage over the interval
                 sys_cpu_per_core : list[float]
@@ -60,18 +66,26 @@ class ResourceTracker:
                             Child process ID
                         name : str
                             Child process name
-                        mem : float
-                            Child process memory used
+                        mem_total : float
+                            Approximate total memory of the child process (actual + shared)
+                        mem_actual : float
+                            Approximate private memory in use by the child process
+                        mem_shared : float
+                            Approximate shared memory
                         cpu : float
                             Child process CPU percentage over the interval
                         status : str
                             Child process status, eg. 'running', 'sleeping'
 
             if summarize is enabled, these will also be included:
-                mem_app : float
-                    Total memory of the main process + children
+                mem_app_total : float
+                    Approximate total memory of the main process + children
+                mem_app_actual : float
+                    Approximate total private memory over all processes
+                mem_app_shared_avg : float
+                    Approximate average shared memory over all processes
                 mem_used : float
-                    Memory in use by the system, excluding the app
+                    Memory in use by the system
                 mem_avail : float
                     Remaining available memory, defined as free + reclaimable
                 cpu_avg : float
@@ -124,21 +138,25 @@ class ResourceTracker:
     info = {
         "used_cores": "Number of CPU cores in use. See the 'cores' parameter for more",
         "total_cores": "Total number of cores available on the system via os.cpu_count()",
-        "mem_total": "Total memory of the system",
+        "sys_mem_total": "Total memory of the system",
         "mem_unit": "Unit label that the memory values are in",
         "mem_value": "The value used to convert the bytes to the mem_unit. This may be used to reverse the conversion",
         "poll_interval": "Resource polling interval",
         "timestamp": "The start timestamp of the resource tracker via time.time()",
         "pid": "Process ID",
         "name": "Process name",
-        "mem": "Process memory used",
+        "mem_total": "Approximate total memory of the process (actual + shared)",
+        "mem_actual": "Approximate private memory in use by the process",
+        "mem_shared": "Approximate shared memory",
         "cpu": "Process CPU percentage over the interval",
         "sys_cpu_per_core": "Per-core usage percentage over the interval",
         "timestamp": "Timestamp of the resource record via time.time()",
         "status": "Main process status, eg. 'running', 'sleeping'",
         "children": "List of child processes and their information",
-        "mem_app": "Total memory of the main process + children",
-        "mem_used": "Memory in use by the system, excluding the app",
+        "mem_app_total": "Approximate total memory of the main process + children",
+        "mem_app_actual": "Approximate total private memory over all processes",
+        "mem_app_shared_avg": "Approximate average shared memory over all processes",
+        "mem_used": "Memory in use by the system",
         "mem_avail": "Remaining available memory, defined as free + reclaimable",
         "cpu_avg": "Average CPU percentage calculated as: sum(main + children) / cores",
         "sys_cpu": "System-wide CPU percentage over the interval",
@@ -232,7 +250,7 @@ class ResourceTracker:
                 "total_cores": os.cpu_count(),
                 "mem_unit": self.unitLabel,
                 "mem_value": self.unitValue,
-                "mem_total": sys.total / self.unitValue,
+                "sys_mem_total": sys.total / self.unitValue,
                 "poll_interval": self.interval,
                 "timestamp": time.time(),
             }
@@ -256,7 +274,10 @@ class ResourceTracker:
             time.sleep(self.interval)
 
             # Main process
-            info["mem"] = proc.memory_info().rss / self.unitValue
+            mem = proc.memory_full_info()
+            info["mem_total"] = mem.rss / self.unitValue
+            info["mem_actual"] = mem.uss / self.unitValue
+            info["mem_shared"] = (mem.rss - mem.uss) / self.unitValue
             info["cpu"] = proc.cpu_percent()
             info["status"] = proc.status()
             info["timestamp"] = time.time()
@@ -271,12 +292,15 @@ class ResourceTracker:
             # Retrieve child processes' info (ray workers, etc)
             for child in childProcs:
                 try:
+                    mem = child.memory_full_info()
                     children.append(
                         {
                             "pid": child.pid,
                             "name": child.name(),
                             "cpu": child.cpu_percent(),
-                            "mem": child.memory_info().rss / self.unitValue,
+                            "mem_total": mem.rss / self.unitValue,
+                            "mem_actual": mem.uss / self.unitValue,
+                            "mem_shared": (mem.rss - mem.uss) / self.unitValue,
                             "status": child.status(),
                         }
                     )
@@ -288,11 +312,19 @@ class ResourceTracker:
                 sys = psutil.virtual_memory()
 
                 # Total app memory usage
-                info["mem_app"] = sum([p["mem"] for p in children]) + info["mem"]
+                info["mem_app_total"] = (
+                    sum([p["mem_total"] for p in children]) + info["mem_total"]
+                )
+                info["mem_app_actual"] = (
+                    sum([p["mem_actual"] for p in children]) + info["mem_actual"]
+                )
+                info["mem_app_shared_avg"] = (
+                    sum([p["mem_shared"] for p in children]) + info["mem_shared"]
+                )
+                info["mem_app_shared_avg"] /= len(children) + 1
 
-                # System memory used minus app
-                used = sys.used / self.unitValue
-                info["mem_used"] = used - info["mem_app"]
+                # System memory used
+                info["mem_used"] = sys.used / self.unitValue
 
                 # Remaining available memory
                 info["mem_avail"] = sys.available / self.unitValue
@@ -306,15 +338,12 @@ class ResourceTracker:
                 )
 
             if self.round:
-                for key, value in info.items():
-                    if "mem" in key or "cpu" in key:
-                        if not isinstance(value, float):
-                            continue
-                        info[key] = round(value, self.round)
-
-                for child in children:
-                    child["mem"] = round(child["mem"], self.round)
-                    child["cpu"] = round(child["cpu"], self.round)
+                for data in [info] + children:
+                    for key, value in data.items():
+                        if "mem" in key or "cpu" in key:
+                            if not isinstance(value, float):
+                                continue
+                            data[key] = round(value, self.round)
 
             self.callback(info)
 

@@ -11,7 +11,6 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -20,6 +19,8 @@ jobs:
         # GitHub worker contention.
         python-version: ["3.12"]
         pytest-flags: ["-m unmarked", "-m slow"]
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
 
     steps:
       # Pull the cache on every runner
@@ -27,9 +28,14 @@ jobs:
         id: cache-extras
         uses: actions/cache/restore@v4
         with:
-          path: ~/.isofit
+          path: .isofit
           key: cache-extras
           fail-on-cache-miss: true
+          enableCrossOsArchive: true
+
+      - name: Move .isofit
+        shell: bash
+        run: mv .isofit ~/.isofit
 
       - uses: actions/checkout@v3
 
