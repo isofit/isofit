@@ -373,19 +373,21 @@ class RadiativeTransfer:
         if not isinstance(L_tot, np.ndarray) or len(L_tot) == 1:
             coszen = geom.verify(self.coszen)["coszen"]
             L_tots = []
-            if self.rt_engines[0].treat_as_emissive:
-                rdn = r["thermal_downwelling"]
-                L_tots.append(rdn)
-            else:
-                if self.rt_engines[0].rt_mode == "rdn":
-                    L_tot = r["transm_down_dif"]
+            for RT in self.rt_engines:
+                r = RT.get(x_RT, geom)
+                if RT.treat_as_emissive:
+                    rdn = r["thermal_downwelling"]
+                    L_tots.append(rdn)
                 else:
-                    L_tot = units.transm_to_rdn(
-                        r["transm_down_dif"],
-                        coszen,
-                        self.solar_irr,
-                    )
-                L_tots.append(L_tot)
+                    if RT.rt_mode == "rdn":
+                        L_tot = r["transm_down_dif"]
+                    else:
+                        L_tot = units.transm_to_rdn(
+                            r["transm_down_dif"],
+                            coszen,
+                            self.solar_irr,
+                        )
+                    L_tots.append(L_tot)
             L_tot = np.hstack(L_tots)
 
         return (
