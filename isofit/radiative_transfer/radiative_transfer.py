@@ -401,38 +401,26 @@ class RadiativeTransfer:
 
     def get_upward_transm(self, r: dict, geom: Geometry, max_transm: float = 1.05):
         """
-        Get total upward transmittance w/physical check enforced (max_transm).
+        Get total upward transmittance w/physical check enforced (max_transm) and hand-off between 1c and 4c model.
 
         This is called for all surfaces to handle thermal downwelling/upwelling component.
         While rt can be either rdn or transm modes, this must be in units of transmittance.
 
         """
-        coszen = geom.verify(self.coszen)["coszen"]
-
-        if self.rt_engines[0].rt_mode == "rdn":
-            transm_up_dir = units.rdn_to_transm(
-                r["transm_up_dir"], coszen, self.solar_irr
-            )
-            transm_up_dif = units.rdn_to_transm(
-                r["transm_up_dif"], coszen, self.solar_irr
-            )
-        else:
-            transm_up_dir = r["transm_up_dir"]
-            transm_up_dif = r["transm_up_dif"]
+        transm_up_dir = r["transm_up_dir"]
+        transm_up_dif = r["transm_up_dif"]
 
         # NOTE for 1c case transm-up is not a key, and therefore Ls and transup is zero.
         if not isinstance(transm_up_dir, np.ndarray) or len(transm_up_dir) == 1:
             return np.zeros_like(self.solar_irr, dtype=np.float32)
-
-        # Case with multipart transmittance terms
         else:
             transup = transm_up_dir + transm_up_dif
 
             if np.max(transup) > max_transm:
                 raise ValueError(
                     (
-                        f"Upward transmittance (max:{np.max(transup)}) is greater than {max_transm}, which is not physically possible. "
-                        f"Most likely, this is an issue with LUT input convention (rt_mode={self.rt_engines[0].rt_mode})."
+                        f"Upward transmittance (max:{np.max(transup)}) is greater than {max_transm}. "
+                        f"Verify 'transm_up_dir' and 'transm_up_dif' keys are in units of transmittance."
                     )
                 )
             return transup
