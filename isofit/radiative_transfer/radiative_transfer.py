@@ -373,21 +373,19 @@ class RadiativeTransfer:
         if not isinstance(L_tot, np.ndarray) or len(L_tot) == 1:
             coszen = geom.verify(self.coszen)["coszen"]
             L_tots = []
-            for RT in self.rt_engines:
-                ri = RT.get(x_RT, geom)
-                if RT.treat_as_emissive:
-                    rdn = ri["thermal_downwelling"]
-                    L_tots.append(rdn)
+            if self.rt_engines[0].treat_as_emissive:
+                rdn = r["thermal_downwelling"]
+                L_tots.append(rdn)
+            else:
+                if self.rt_engines[0].rt_mode == "rdn":
+                    L_tot = r["transm_down_dif"]
                 else:
-                    if RT.rt_mode == "rdn":
-                        L_tot = ri["transm_down_dif"]
-                    else:
-                        L_tot = units.transm_to_rdn(
-                            ri["transm_down_dif"],
-                            coszen,
-                            self.solar_irr,
-                        )
-                    L_tots.append(L_tot)
+                    L_tot = units.transm_to_rdn(
+                        r["transm_down_dif"],
+                        coszen,
+                        self.solar_irr,
+                    )
+                L_tots.append(L_tot)
             L_tot = np.hstack(L_tots)
 
         return (
@@ -407,12 +405,9 @@ class RadiativeTransfer:
         While rt can be either rdn or transm modes, this must be in units of transmittance.
 
         """
-
         coszen = geom.verify(self.coszen)["coszen"]
 
-        rt_mode = self.rt_engines[0].rt_mode
-
-        if rt_mode == "rdn":
+        if self.rt_engines[0].rt_mode == "rdn":
             transm_up_dir = units.rdn_to_transm(
                 r["transm_up_dir"], coszen, self.solar_irr
             )
@@ -428,7 +423,7 @@ class RadiativeTransfer:
             Logger.warning(
                 "Thermal downwelling was unused due multipart transmittance terms not being present."
             )
-            return 0
+            return np.zeros_like(self.solar_irr, dtype=np.float32)
 
         # Case with multipart transmittance terms
         else:
