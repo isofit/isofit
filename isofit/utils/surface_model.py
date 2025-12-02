@@ -129,7 +129,6 @@ def surface_model(
         "wl": wl,
         "means": [],
         "covs": [],
-        "covs_base": [],
         "attribute_means": [],
         "attribute_covs": [],
         "attributes": [],
@@ -389,7 +388,6 @@ def surface_model(
                 raise ValueError("Unrecognized normalization: %s\n" % normalize)
             m = m / z
             C = C / (z**2)
-            C_base = C_base / (z**2)
 
             try:
                 Cinv = svd_inv(C)
@@ -399,7 +397,6 @@ def surface_model(
 
             model["means"].append(m)
             model["covs"].append(C)
-            model["covs_base"].append(C_base)
 
             if len(attributes) > 0:
                 model["attribute_means"].append(m_attr)

@@ -32,8 +32,7 @@ class MultiComponentSurface(Surface):
     covariance matrices.
 
     To evaluate the probability of a new spectrum, we calculate the
-    Mahalanobis distance to each component cluster, and use that as our
-    Multivariate Gaussian surface model.
+    distance to each component cluster.
     """
 
     def __init__(self, full_config: Config):
@@ -47,7 +46,6 @@ class MultiComponentSurface(Surface):
         # TODO: enforce surface_file existence in the case of multicomponent_surface
         self.component_means = self.model_dict["means"]
         self.component_covs = self.model_dict["covs"]
-        self.component_covs_base = self.model_dict.get("covs_base", [])
 
         self.n_comp = len(self.component_means)
         self.wl = self.model_dict["wl"][0]
@@ -114,7 +112,7 @@ class MultiComponentSurface(Surface):
             self.Sa_inv_sqrt_normalized.append(Cinv_sqrt_normalized)
 
     def component(self, x, geom):
-        """We pick a surface model component using the Mahalanobis distance.
+        """We pick a surface model component using a distance metric.
 
         This always uses the Lambertian (non-specular) version of the
         surface reflectance. If the forward model initialize via heuristic
@@ -137,13 +135,8 @@ class MultiComponentSurface(Surface):
         lamb_ref = lamb[self.idx_ref]
         lamb_ref = lamb_ref / self.norm(lamb_ref)
 
-        # Mahalanobis or Euclidean distances
-        if self.selection_metric == "Mahalanobis":
-            mds = self.mahalanobis_distance(
-                lamb_ref, np.array(self.mus), np.array(self.Cinvs)
-            )
-
-        elif self.selection_metric == "Spectral":
+        # Spectral angle or Euclidean distances
+        if self.selection_metric == "Spectral":
             mds = self.spectral_angle_distance(lamb_ref, self.mus)
 
         else:
@@ -366,14 +359,6 @@ class MultiComponentSurface(Surface):
     @staticmethod
     def euclidean_distance(lamb_ref, mus):
         return np.sum(np.power(lamb_ref[np.newaxis, :] - mus, 2), axis=1)
-
-    @staticmethod
-    def mahalanobis_distance(lamb_ref, mus, Cinvs):
-        diff = lamb_ref[np.newaxis, :] - mus
-        # diff.dot(Cinv)
-        dots = np.einsum("ij,ikj->ik", diff, Cinvs)
-        # diff.dot(Cinv).dot(diff)
-        return np.einsum("ij,ij->i", dots, diff)
 
     @staticmethod
     def spectral_angle_distance(lamb_ref, mus):

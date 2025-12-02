@@ -103,7 +103,7 @@ class SurfaceConfig(BaseConfigSection):
                 )
             )
 
-        valid_metrics = ("Euclidean", "Mahalanobis")
+        valid_metrics = ("Euclidean", "Spectral")
         if self.selection_metric not in valid_metrics:
             errors.append(f"surface->selection_metric must be one of: {valid_metrics}")
 
