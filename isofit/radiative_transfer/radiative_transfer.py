@@ -422,9 +422,6 @@ class RadiativeTransfer:
 
         # NOTE for 1c case transm-up is not a key, and therefore Ls and transup is zero.
         if not isinstance(transm_up_dir, np.ndarray) or len(transm_up_dir) == 1:
-            Logger.warning(
-                "Thermal downwelling was unused due multipart transmittance terms not being present."
-            )
             return np.zeros_like(self.solar_irr, dtype=np.float32)
 
         # Case with multipart transmittance terms
@@ -434,8 +431,8 @@ class RadiativeTransfer:
             if np.max(transup) > max_transm:
                 raise ValueError(
                     (
-                        f"Transmittance up is greater than {max_transm}, which is not physically possible. "
-                        f"Most likely, this is an issue with LUT input convention (rt_mode={rt_mode})."
+                        f"Upward transmittance (max:{np.max(transup)}) is greater than {max_transm}, which is not physically possible. "
+                        f"Most likely, this is an issue with LUT input convention (rt_mode={self.rt_engines[0].rt_mode})."
                     )
                 )
             return transup
