@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 
+from isofit import ray
 from isofit.data import env
 
 
@@ -72,3 +73,30 @@ def test_changeBase(changedDirs):
     env.changeBase("/abc")
 
     assert normalize(dict(env)) == changedDirs
+
+
+@ray.remote
+def check_ini():
+    from isofit.data import env
+
+    return env.ini
+
+
+def test_custom_ini(tmp_path: Path):
+    ini = tmp_path / "custom_test.ini"
+    ini.write_text(f"[DEFAULT]\ndata = {tmp_path}")
+
+    env.load(ini)
+    remote = ray.get(check_ini.remote())
+
+    assert env.ini == remote, "The custom ini was not loaded in a child ray process"
+
+
+def test_raise_path_errors():
+    # Make sure an exception is not raised
+    env.path("data", "fake.file")
+
+    # Now make sure it is raised
+    env.changeKey("raise_path_errors", True)
+    with pytest.raises(FileNotFoundError):
+        env.path("data", "fake.file")

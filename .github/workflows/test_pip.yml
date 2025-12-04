@@ -33,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12"]
         pytest-flags: ["-m unmarked", "-m slow", "-m examples"]
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}

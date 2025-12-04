@@ -614,6 +614,7 @@ def apply_oe(
                 paths.surface_class_subs_path,
                 reducers.class_priority,
             ),
+            (paths.svf_working_path, paths.svf_subs_path, reducers.band_mean),
         ]:
             if inp and not exists(outp):
                 logging.info("Extracting " + outp)

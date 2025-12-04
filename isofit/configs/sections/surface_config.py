@@ -52,10 +52,10 @@ class SurfaceConfig(BaseConfigSection):
         self._wavelength_file_type = str
         self.wavelength_file = None
 
-        self._select_on_init_type = bool
-        self.select_on_init = True
         """bool: This field, if present and set to true, forces us to use any initialization state and never change.
         The state is preserved in the geometry object so that this object stays stateless"""
+        self._select_on_init_type = bool
+        self.select_on_init = True
 
         self._selection_metric_type = str
         self.selection_metric = "Euclidean"
