@@ -892,12 +892,19 @@ def extractPoints(ds: xr.Dataset, names: bool = False) -> np.array:
 def extractGrid(ds: xr.Dataset) -> dict:
     """
     Extracts the LUT grid from a Dataset
+
+    Parameters
+    ----------
+    ds: xr.Dataset
+        LUT Dataset object. Carried stacked: Dimensions wl, points
+
     """
     grid = {}
     for dim, vals in ds.coords.items():
         if dim in {"wl", "point"}:
             continue
         if len(vals.data.shape) > 0 and vals.data.shape[0] > 1:
+            # Unique call sorts and filters. Faster than unstacking ds.
             grid[dim] = np.unique(vals.data)
     return grid
 

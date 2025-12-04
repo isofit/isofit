@@ -27,11 +27,7 @@ from scipy.optimize import least_squares, minimize
 from scipy.optimize import minimize_scalar as min1d
 
 from isofit.core import units
-from isofit.core.common import (
-    emissive_radiance,
-    eps,
-    svd_inv_sqrt,
-)
+from isofit.core.common import emissive_radiance, eps, svd_inv_sqrt
 from isofit.data import env
 
 
@@ -42,6 +38,9 @@ def heuristic_atmosphere(
     x_instrument: np.array,
     meas: np.array,
     geom: Geometry,
+    wl_lo: int = 865,
+    wl_center: int = 945,
+    wl_hi: int = 1040,
 ):
     """From a given radiance, estimate atmospheric state with band ratios.
     Used to initialize gradient descent inversions.
@@ -53,6 +52,9 @@ def heuristic_atmosphere(
         x_instrument: instrument portion of the state vector
         meas: a one-D numpy vector of radiance in uW/nm/sr/cm2
         geom: geometry object corresponding to given measurement
+        wl_lo: Low wavelength to use for the continuum removal H2O fit
+        wl_center: Center wavelength to use for the continuum removal H2O fit
+        wl_hi: High wavelength to use for the continuum removal H2O fit
 
     Returns:
         x_new: updated estimate of x_RT
@@ -61,11 +63,14 @@ def heuristic_atmosphere(
     # Identify the latest instrument wavelength calibration (possibly
     # state-dependent) and identify channel numbers for the band ratio.
     wl, fwhm = fm.instrument.calibration(x_instrument)
-    b865 = np.argmin(abs(wl - 865))
-    b945 = np.argmin(abs(wl - 945))
-    b1040 = np.argmin(abs(wl - 1040))
-    if not (any(fm.RT.wl > 850) and any(fm.RT.wl < 1050)):
+    blo = np.argmin(abs(wl - wl_lo))
+    bcenter = np.argmin(abs(wl - wl_center))
+    bhi = np.argmin(abs(wl - wl_hi))
+
+    offset = 5  # nm
+    if not (any(fm.RT.wl > (wl_lo - offset)) and any(fm.RT.wl < (wl_hi + offset))):
         return x_RT
+
     x_new = x_RT.copy()
 
     # Figure out which RT object we are using
@@ -90,7 +95,7 @@ def heuristic_atmosphere(
 
         # find the index in the lookup table associated with water vapor
         ind_sv = fm.RT.statevec_names.index(h2oname)
-        h2os, ratios = [], []
+        h2os, areas = [], []
 
         # We iterate through every possible grid point in the lookup table,
         # calculating the band ratio that we would see if this were the
@@ -115,14 +120,20 @@ def heuristic_atmosphere(
             )
             r = fm.surface.fit_params(r, geom)[fm.idx_surf_rfl]
 
-            ratios.append((r[b945] * 2.0) / (r[b1040] + r[b865]))
+            # Simple linear interpolation
+            vals = np.interp(wl[blo:bhi], [wl_lo, wl_hi], [r[blo], r[bhi]])
+
+            # Minimize the absolute distance between the continuum removed
+            D = np.sum(vals - r[blo:bhi])
+
+            areas.append(D)
             h2os.append(h2o)
 
         # Finally, interpolate to determine the actual water vapor level that
         # would optimize the continuum-relative correction
-        p = interp1d(h2os, ratios)
+        p = interp1d(h2os, areas)
         bounds = (h2os[0] + 0.001, h2os[-1] - 0.001)
-        best = min1d(lambda h: abs(1 - p(h)), bounds=bounds, method="bounded")
+        best = min1d(lambda h: abs(p(h)), bounds=bounds, method="bounded")
         x_new[ind_sv] = best.x
 
     return x_new
