@@ -97,7 +97,12 @@ class SixSRT(RadiativeTransferEngine):
 
         try:
             files = Path(self.engine_base_dir).glob("sixsV2*")
-            self.exe = next(filter(lambda file: "lutaero" not in file.name, files))
+            files = [x for x in files if "lutaero" not in x.name]
+            if len(files) > 1:
+                Logger.warning(
+                    f"Multiple 6S executables found under path: {self.engine_base_dir}. Using: {files[0].name}"
+                )
+            self.exe = files[0]
         except:
             raise FileNotFoundError(
                 f"Could not find the 6S executable under path: {self.engine_base_dir}"
