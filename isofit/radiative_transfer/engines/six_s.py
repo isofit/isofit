@@ -104,6 +104,7 @@ class SixSRT(RadiativeTransferEngine):
                     f"Multiple 6S executables found under path: {self.engine_base_dir}. Using: {files[0].name}"
                 )
             self.exe = files[0]
+            Logger.debug(f"Using 6S executable: {self.exe}")
         except:
             raise FileNotFoundError(
                 f"Could not find the 6S executable under path: {self.engine_base_dir}"
