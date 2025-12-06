@@ -95,6 +95,7 @@ class SixSRT(RadiativeTransferEngine):
         kwargs["wl"] = self.wl
         kwargs["fwhm"] = self.fwhm
 
+        self.engine_base_dir = engine_config.engine_base_dir
         try:
             files = Path(self.engine_base_dir).glob("sixsV2*")
             files = [x for x in files if "lutaero" not in x.name]
