@@ -41,7 +41,7 @@ SIXS_TEMPLATE = """\
 0 (User defined)
 {solzen} {solaz} {viewzen} {viewaz} {month} {day}
 8  (User defined H2O, O3)
-{H2OSTR}, {O3}, {CO2}
+{H2OSTR}, {O3}{CO2}
 {aermodel}
 0
 {AOT550}
@@ -103,9 +103,9 @@ class SixSRT(RadiativeTransferEngine):
                 f"Could not find the 6S executable under path: {self.engine_base_dir}"
             )
 
-        self.co_mode = False
-        if "CO" in self.exe.name:
-            self.co_mode = True
+        self.co2_mode = False
+        if "CO2" in self.exe.name:
+            self.co2_mode = True
 
         super().__init__(engine_config, **kwargs)
 
@@ -215,7 +215,6 @@ class SixSRT(RadiativeTransferEngine):
             "AOT550": 0.01,
             "H2OSTR": 0,
             "O3": 0.30,
-            "CO2": 420,  # ppm
             "day": self.engine_config.day,
             "month": self.engine_config.month,
             "elev": self.engine_config.elev,
@@ -225,6 +224,8 @@ class SixSRT(RadiativeTransferEngine):
             "wlinf": units.nm_to_micron(wlinf),
             "wlsup": units.nm_to_micron(wlsup),
         }
+        if self.co2_mode:
+            vals["CO2"] = 420  # ppm
 
         # Assume geometry values are provided by the config
         vals.update(
@@ -267,6 +268,13 @@ class SixSRT(RadiativeTransferEngine):
         if self.modtran_emulation:
             if "AERFRAC_2" in vals:
                 vals["AOT550"] = vals["AERFRAC_2"]
+
+        if "CO2" in vals:
+            if not self.co2_mode:
+                co2_warning = "CO2 mode must be on to have a CO2 value in the LUT"
+                Logger.error(co2_warning)
+                raise AttributeError(co2_warning)
+            vals["CO2"] = f', {vals["CO2"]}'
 
         # Write sim files
         with open(inpt, "w") as f:
