@@ -281,6 +281,9 @@ class SixSRT(RadiativeTransferEngine):
                 Logger.error(co2_warning)
                 raise AttributeError(co2_warning)
             vals["CO2"] = f', {vals["CO2"]}'
+        else:
+            # Need to add a blank CO2 entry for backwards 6S compatibility
+            vals["CO2"] = ""
 
         # Write sim files
         with open(inpt, "w") as f:
