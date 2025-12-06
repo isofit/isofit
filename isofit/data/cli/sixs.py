@@ -144,7 +144,7 @@ def download_mingw(path=None, tag="latest", overwrite=False, **_):
     env.load()  # Reload to insert the MinGW64 path to $PATH
 
 
-def download(path=None, overwrite=False, debug_make=False, **_):
+def download(path=None, tag="latest", overwrite=False, debug_make=False, **_):
     """
     Downloads 6S from https://github.com/isofit/6S.
 
@@ -223,9 +223,7 @@ def validate(path=None, checkForUpdate=True, debug=print, error=print, **_):
         return False
 
     if checkForUpdate:
-        return isUpToDateGithub(
-            owner="isofit", repo="6S", name="sixs", path=path.parent
-        )
+        return isUpToDateGithub(owner="isofit", repo="6S", name="sixs", path=path)
 
     debug("[OK] Path is valid")
     return True
