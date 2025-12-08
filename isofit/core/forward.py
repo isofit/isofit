@@ -348,7 +348,10 @@ class ForwardModel:
             s_alb=r["sphalb"],
             t_total_up=self.RT.get_upward_transm(r=r, geom=geom),
             L_tot=L_tot,
-            Ldd_Ldh=L_dir_dir + L_dir_dif,
+            L_dir_dir=L_dir_dir,
+            L_dir_dif=L_dir_dif,
+            L_dif_dir=L_dif_dir,
+            L_dif_dif=L_dif_dif,
         )
 
         # To get derivatives w.r.t. instrument, downsample to instrument wavelengths

@@ -119,7 +119,10 @@ class ThermalSurface(MultiComponentSurface):
         s_alb,
         t_total_up,
         L_tot,
-        Ldd_Ldh,
+        L_dir_dir=None,
+        L_dir_dif=None,
+        L_dif_dir=None,
+        L_dif_dif=None,
     ):
         """Derivative of radiance with respect to
         full surface vector"""

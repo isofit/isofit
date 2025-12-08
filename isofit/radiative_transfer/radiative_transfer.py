@@ -214,8 +214,7 @@ class RadiativeTransfer:
             atm_surface_scattering = 1
 
         # Thermal transmittance
-        transup = self.get_upward_transm(r=r, geom=geom)
-        L_up = Ls * transup
+        L_up = Ls * self.get_upward_transm(r=r, geom=geom)
 
         # Our radiance model follows the physics as presented in Guanter (2006), Vermote et al. (1997), and
         # Tanre et al. (1983). This particular formulation facilitates the consideration of topographic effects,
