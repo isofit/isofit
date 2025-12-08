@@ -1287,7 +1287,7 @@ def write_modtran_template(
                         "M4": atmosphere_type,
                         "M5": atmosphere_type,
                         "M6": atmosphere_type,
-                        "CO2MX": 410.0,
+                        "CO2MX": 420.0,
                         "H2OSTR": 1.0,
                         "H2OUNIT": "g",
                         "O3STR": 0.3,
