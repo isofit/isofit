@@ -287,6 +287,9 @@ class SixSRT(RadiativeTransferEngine):
             vals["CO2"] = ""
 
         # Write sim files
+        # print template for Windows debugging purposes
+        print(template)
+        
         with open(inpt, "w") as f:
             template = SIXS_TEMPLATE.format(**vals)
             f.write(template)
