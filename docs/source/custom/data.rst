@@ -1,5 +1,4 @@
 .. _data:
-(data)=
 ===============
 Extra Downloads
 ===============
