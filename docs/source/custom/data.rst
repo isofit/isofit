@@ -5,9 +5,6 @@ Data and Examples
 .. contents:: Table of Contents
     :depth: 2
 
-Extra Downloads
-===============
-
 To get started with ISOFIT examples, simply execute the two following commands:
 
 .. code-block::
