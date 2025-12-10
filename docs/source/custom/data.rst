@@ -1,6 +1,10 @@
-.. _data:
-(data)=
-===============
+=================
+Data and Examples
+=================
+
+.. contents:: Table of Contents
+    :depth: 2
+
 Extra Downloads
 ===============
 
@@ -34,9 +38,6 @@ The contents below go into further details about additional commands.
 
 Configuration Options
 =====================
-
-.. contents:: Table of Contents
-    :depth: 2
 
 ISOFIT uses INI files to configure the location of extra dependencies that are not included in the default ISOFIT installation.
 These include things like larger data files and the ISOFIT examples.
