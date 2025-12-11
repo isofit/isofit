@@ -631,6 +631,15 @@ def apply_oe(
                 )
             else:
                 logging.info(f"Skipping {inp}, because is not a path.")
+        
+        # Something here for superpixel being done....
+        
+        # loop through all pixels for heuristic solve (save to a file or update extractions to allow for just passing array)
+        
+        # Pass to extractions... to save the bkg rfl file...
+
+        # then fileIO can have hooks added to read this, to populate `geom.bg_rfl` so it can be used in calc_rdn...
+
 
     if presolve:
         # write modtran presolve template
