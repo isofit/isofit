@@ -71,7 +71,22 @@ against the ``main`` branch:
 Manual (GitHub)
 ---------------
 
-We recommend using `uv <https://github.com/astral-sh/uv>`_ for installing ISOFIT from source:
+we recommend using `Mamba <https://mamba.readthedocs.io/en/latest/>`_ to create a virtual environment:
+
+.. code-block:: bash
+
+    $ git clone https://github.com/isofit/isofit
+    $ mamba env create -f isofit/recipe/isofit.yml
+    $ mamba activate isofit_env
+    $ pip install -e ./isofit
+
+Developers may need to install additional packages provided by alternative YAML files in the `recipe` directory:
+
+.. code-block:: bash
+
+    $ micromamba install --name isofit_env --file ISOFIT/recipe/docker.yml
+
+Alternatively, you may also use `uv <https://github.com/astral-sh/uv>`_ for installing ISOFIT from source:
 
 .. code-block:: bash
 
@@ -102,21 +117,6 @@ Advanced users may switch python versions via:
 
     $ uv python pin 3.13
     $ uv sync
-
-If you prefer using conda, we recommend `Mamba <https://mamba.readthedocs.io/en/latest/>`_ to create a virtual environment:
-
-.. code-block:: bash
-
-    $ git clone https://github.com/isofit/isofit
-    $ mamba env create -f isofit/recipe/isofit.yml
-    $ mamba activate isofit_env
-    $ pip install -e ./isofit
-
-Developers may need to install additional packages provided by alternative YAML files in the `recipe` directory:
-
-.. code-block:: bash
-
-    $ micromamba install --name isofit_env --file ISOFIT/recipe/docker.yml
 
 
 Downloading Extra Files
