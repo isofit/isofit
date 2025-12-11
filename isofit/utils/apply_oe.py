@@ -28,8 +28,10 @@ from isofit.utils import (
     multicomponent_classification,
     reducers,
     segment,
+    background_reflectance
 )
 from isofit.utils.skyview import skyview
+from isofit.utils.background_reflectance import background_reflectance
 
 EPS = 1e-6
 CHUNKSIZE = 256
@@ -413,6 +415,9 @@ def apply_oe(
     paths.stage_files()
     logging.info("...file/directory setup complete")
 
+    # TODO takes in: obs file, loc file, and rdn file
+    background_reflectance(input_radiance, input_loc, input_obs, paths.bgrfl_working_path)
+
     # Based on the sensor type, get appropriate year/month/day info from initial condition.
     # We'll adjust for line length and UTC day overrun later
     global INVERSION_WINDOWS
@@ -631,15 +636,6 @@ def apply_oe(
                 )
             else:
                 logging.info(f"Skipping {inp}, because is not a path.")
-        
-        # Something here for superpixel being done....
-        
-        # loop through all pixels for heuristic solve (save to a file or update extractions to allow for just passing array)
-        
-        # Pass to extractions... to save the bkg rfl file...
-
-        # then fileIO can have hooks added to read this, to populate `geom.bg_rfl` so it can be used in calc_rdn...
-
 
     if presolve:
         # write modtran presolve template

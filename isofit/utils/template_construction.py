@@ -126,6 +126,8 @@ class Pathnames:
         self.surface_template_path = abspath(join(self.data_directory, "surface.mat"))
         self.surface_working_paths = {}
 
+        self.bgrfl_working_path = abspath(join(self.data_directory, rdn_fname.replace("_rdn", "_bgrfl")))
+
         if copy_input_files is True:
             self.radiance_working_path = abspath(
                 join(self.input_data_directory, rdn_fname)
@@ -1179,6 +1181,9 @@ def build_main_config(
         isofit_config_modtran["input"][
             "radiometry_correction_file"
         ] = paths.rdn_factors_path
+
+    if paths.bgrfl_working_path:
+        isofit_config_modtran["input"]["background_reflectance_file"] = paths.bgrfl_working_path  
 
     # write main config file
     with open(paths.isofit_full_config_path, "w") as fout:
