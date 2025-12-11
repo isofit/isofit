@@ -5,7 +5,13 @@
   custom/about.rst
   custom/installation.rst
   custom/data.rst
+
+.. toctree::
+  :caption: Running ISOFIT
+  :maxdepth: 1
+
   custom/best_practices.rst
+  custom/tutorials
 
 .. toctree::
   :Caption: Docker
