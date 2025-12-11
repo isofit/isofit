@@ -926,7 +926,7 @@ def saveDataset(file: str, ds: xr.Dataset) -> None:
 
 def cleanup(file):
     """
-    Checks the ``ISOFIT Status`` attribute on a LUT and removes the file if it is
+    Checks the ``ISOFIT status`` attribute on a LUT and removes the file if it is
     incomplete.
 
     Parameters
@@ -935,7 +935,7 @@ def cleanup(file):
         Path to the file to check
     """
     with Dataset(file, "r") as ds:
-        if ds.getncattr("ISOFIT Status") == "<incomplete>":
+        if ds.getncattr("ISOFIT status") == "<incomplete>":
             Logger.error(
                 f"The LUT status was determined to be incomplete, auto-removing: {file}"
             )
