@@ -252,7 +252,7 @@ class SixSRT(RadiativeTransferEngine):
             vals["h2o_mm"] = units.cm_to_mm(vals["H2OSTR"])
 
         if "surface_elevation_km" in vals:
-            vals["elev"] = abs(vals["surface_elevation_km"])
+            vals["elev"] = abs(max(vals["surface_elevation_km"], 0))
 
         if "observer_altitude_km" in vals:
             vals["alt"] = min(vals["observer_altitude_km"], 99)
