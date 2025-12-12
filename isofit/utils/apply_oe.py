@@ -415,9 +415,6 @@ def apply_oe(
     paths.stage_files()
     logging.info("...file/directory setup complete")
 
-    # TODO takes in: obs file, loc file, and rdn file
-    background_reflectance(input_radiance, input_loc, input_obs, paths.bgrfl_working_path)
-
     # Based on the sensor type, get appropriate year/month/day info from initial condition.
     # We'll adjust for line length and UTC day overrun later
     global INVERSION_WINDOWS
@@ -795,6 +792,15 @@ def apply_oe(
         if config_only:
             logging.info("`config_only` enabled, exiting early")
             return
+
+        # Run background reflectance retrieval
+        background_reflectance(input_radiance=input_radiance,
+                               input_loc=input_loc, 
+                               input_obs=input_obs,
+                               mean_altitude_km=mean_altitude_km, 
+                               mean_elevation_km=mean_elevation_km,
+                               working_directory=working_directory,
+                               bgrfl_path=paths.bgrfl_working_path)
 
         # Run retrieval
         logging.info("Running ISOFIT with full LUT")
