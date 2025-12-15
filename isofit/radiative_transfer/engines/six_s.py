@@ -122,9 +122,9 @@ class SixSRT(RadiativeTransferEngine):
 
     def preSim(self):
         """
-        Check that 6S is installed
+        Add the 6S executable in the LUT attributes
         """
-        pass
+        self.lut.setAttr("6S", str(self.exe))
 
     def makeSim(self, point: np.array):
         """

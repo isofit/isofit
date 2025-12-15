@@ -280,6 +280,9 @@ class KernelFlowsRT(RadiativeTransferEngine):
         return outdict
 
     def preSim(self):
+        # Track the KernelFlows directory used in the LUT attributes
+        self.lut.setAttr("KernelFlows", self.engine_config.emulator_file)
+
         logging.info(f"KF Presim")
         self.srf_matrix = np.array(
             [
