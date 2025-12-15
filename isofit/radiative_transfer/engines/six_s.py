@@ -23,6 +23,7 @@ import os
 import re
 import subprocess
 from datetime import datetime
+from pathlib import Path
 
 import numpy as np
 
@@ -40,7 +41,7 @@ SIXS_TEMPLATE = """\
 0 (User defined)
 {solzen} {solaz} {viewzen} {viewaz} {month} {day}
 8  (User defined H2O, O3)
-{H2OSTR}, {O3}
+{H2OSTR}, {O3}{CO2}
 {aermodel}
 0
 {AOT550}
@@ -94,6 +95,25 @@ class SixSRT(RadiativeTransferEngine):
         kwargs["wl"] = self.wl
         kwargs["fwhm"] = self.fwhm
 
+        self.engine_base_dir = engine_config.engine_base_dir
+        try:
+            files = Path(self.engine_base_dir).glob("sixsV2*")
+            files = [x for x in files if "lutaero" not in x.name]
+            if len(files) > 1:
+                Logger.warning(
+                    f"Multiple 6S executables found under path: {self.engine_base_dir}. Using: {files[0].name}"
+                )
+            self.exe = files[0]
+            Logger.debug(f"Using 6S executable: {self.exe}")
+        except:
+            raise FileNotFoundError(
+                f"Could not find the 6S executable under path: {self.engine_base_dir}"
+            )
+
+        self.co2_mode = False
+        if "CO2" in self.exe.name:
+            self.co2_mode = True
+
         super().__init__(engine_config, **kwargs)
 
         # If the LUT file already exists, still need to calc this post init
@@ -104,12 +124,7 @@ class SixSRT(RadiativeTransferEngine):
         """
         Check that 6S is installed
         """
-        sixS = os.path.join(self.engine_base_dir, "sixsV2.1")  # 6S Emulator path
-
-        if not os.path.exists(sixS):
-            Logger.error(
-                f"6S path not valid, downstream simulations will be broken: {sixS}"
-            )
+        pass
 
     def makeSim(self, point: np.array):
         """
@@ -195,7 +210,6 @@ class SixSRT(RadiativeTransferEngine):
             str: execution command
         """
         # Collect files of interest for this point
-        sixS = os.path.join(self.engine_base_dir, "sixsV2.1")  # 6S Emulator path
         name = self.point_to_filename(point)
 
         outp = os.path.join(self.sim_path, name)  # Output path
@@ -217,6 +231,8 @@ class SixSRT(RadiativeTransferEngine):
             "wlinf": units.nm_to_micron(wlinf),
             "wlsup": units.nm_to_micron(wlsup),
         }
+        if self.co2_mode:
+            vals["CO2"] = 420  # ppm
 
         # Assume geometry values are provided by the config
         vals.update(
@@ -260,6 +276,16 @@ class SixSRT(RadiativeTransferEngine):
             if "AERFRAC_2" in vals:
                 vals["AOT550"] = vals["AERFRAC_2"]
 
+        if "CO2" in vals:
+            if not self.co2_mode:
+                co2_warning = "CO2 mode must be on to have a CO2 value in the LUT"
+                Logger.error(co2_warning)
+                raise AttributeError(co2_warning)
+            vals["CO2"] = f', {vals["CO2"]}'
+        else:
+            # Need to add a blank CO2 entry for backwards 6S compatibility
+            vals["CO2"] = ""
+
         # Write sim files
         with open(inpt, "w") as f:
             template = SIXS_TEMPLATE.format(**vals)
@@ -267,7 +293,7 @@ class SixSRT(RadiativeTransferEngine):
 
         with open(bash, "w") as f:
             f.write("#!/usr/bin/bash\n")
-            f.write(f'"{sixS}" < "{inpt}" > "{outp}"\n')
+            f.write(f'"{self.exe}" < "{inpt}" > "{outp}"\n')
             f.write("cd $cwd\n")
 
         return f"bash {bash}"

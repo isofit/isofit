@@ -27,7 +27,10 @@ from scipy.optimize import least_squares, minimize
 from scipy.optimize import minimize_scalar as min1d
 
 from isofit.core import units
-from isofit.core.common import emissive_radiance, eps, svd_inv_sqrt
+from isofit.core.common import (
+    emissive_radiance,
+    eps,
+)
 from isofit.data import env
 
 
@@ -276,8 +279,6 @@ def invert_analytical(
     from scipy.linalg.blas import dsymv
     from scipy.linalg.lapack import dpotrf, dpotri
 
-    EXIT_CODE = 0
-
     # Note, this will fail if x_instrument is populated
     if len(fm.idx_instrument) > 0:
         raise AttributeError(
@@ -334,27 +335,17 @@ def invert_analytical(
     # Sample just the wavelengths and states of interest
     L = H[winidx, :][:, iv_idx]
 
+    # Use cached scaling factor from inital normalized inverse (outside of loop).
+    Sa, Sa_inv, Sa_inv_sqrt = fm.Sa(x, geom)
+    Sa_inv = Sa_inv[fm.idx_surface, :][:, fm.idx_surface]
+    Sa_inv_sqrt = Sa_inv_sqrt[fm.idx_surface, :][:, fm.idx_surface]
+
     trajectory = np.zeros((num_iter + 1, len(x)))
     trajectory[0, :] = x
     for n in range(num_iter):
+
         # Measurement uncertainty
         Seps = fm.Seps(x, meas, geom)[winidx, :][:, winidx]
-
-        # Prior covariance
-        try:
-            Sa = fm.Sa(x, geom)
-            Sa_surface = Sa[fm.idx_surface, :][:, fm.idx_surface]
-            Sa_inv = svd_inv_sqrt(Sa_surface, hash_table, hash_size)[0]
-
-        except (np.linalg.LinAlgError, ValueError) as e:
-            C_rcond = []
-            trajectory[n + 1, :] = [fill_value] * len(x)
-            if isinstance(e, np.linalg.LinAlgError):
-                EXIT_CODE = -15
-                continue
-            elif isinstance(e, ValueError):
-                EXIT_CODE = -11
-                continue
 
         # Prior mean
         xa_full = fm.xa(x, geom)
@@ -397,9 +388,9 @@ def invert_analytical(
             full_unc = np.ones(len(x))
             full_unc[iv_idx] = [-9999 for i in x[iv_idx]]
 
-        return trajectory, full_unc, EXIT_CODE
+        return trajectory, full_unc
     else:
-        return trajectory, C_rcond, EXIT_CODE
+        return trajectory, C_rcond
 
 
 def invert_simple(forward: ForwardModel, meas: np.array, geom: Geometry):

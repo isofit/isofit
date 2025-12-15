@@ -22,7 +22,7 @@ from __future__ import annotations
 import numpy as np
 from scipy.linalg import block_diag, norm
 
-from isofit.core.common import svd_inv
+from isofit.core.common import svd_inv_sqrt
 from isofit.surface.surface import Surface
 
 
@@ -71,14 +71,6 @@ class MultiComponentSurface(Surface):
         self.idx_ref = [np.argmin(abs(self.wl - w)) for w in np.squeeze(self.refwl)]
         self.idx_ref = np.array(self.idx_ref)
 
-        # Cache some important computations
-        self.Covs, self.Cinvs, self.mus = [], [], []
-        for i in range(self.n_comp):
-            Cov = self.components[i][1]
-            self.Covs.append(np.array([Cov[j, self.idx_ref] for j in self.idx_ref]))
-            self.Cinvs.append(svd_inv(self.Covs[-1]))
-            self.mus.append(self.components[i][0][self.idx_ref])
-
         # Variables retrieved: each channel maps to a reflectance model parameter
         rmin, rmax = -0.05, 2.0
         self.statevec_names = ["RFL_%04i" % int(w) for w in self.wl]
@@ -95,6 +87,28 @@ class MultiComponentSurface(Surface):
 
         # Surface specific attributes. Can override in inheriting classes
         self.full_glint = False
+
+        # Cache some important computations
+        self.Covs, self.Cinvs, self.mus = [], [], []
+        self.Sa_inv_normalized, self.Sa_inv_sqrt_normalized = [], []
+        nprefix = self.idx_lamb[0]
+        nsuffix = len(self.statevec_names) - self.idx_lamb[-1] - 1
+        for i in range(self.n_comp):
+            Cov = self.components[i][1]
+            self.Covs.append(np.array([Cov[j, self.idx_ref] for j in self.idx_ref]))
+            self.Cinvs.append(svd_inv_sqrt(self.Covs[-1])[0])
+            self.mus.append(self.components[i][0][self.idx_ref])
+
+            # Caching the normalized Sa inv and Sa inv sqrt
+            Cov_full = block_diag(
+                np.zeros((nprefix, nprefix)),
+                self.components[i][1],
+                np.zeros((nsuffix, nsuffix)),
+            )
+            Cov_normalized = Cov_full / np.mean(np.diag(Cov_full))
+            Cinv_normalized, Cinv_sqrt_normalized = svd_inv_sqrt(Cov_normalized)
+            self.Sa_inv_normalized.append(Cinv_normalized)
+            self.Sa_inv_sqrt_normalized.append(Cinv_sqrt_normalized)
 
     def component(self, x, geom):
         """We pick a surface model component using the Mahalanobis distance.
@@ -166,20 +180,25 @@ class MultiComponentSurface(Surface):
         lamb_ref = lamb[self.idx_ref]
         ci = self.component(x_surface, geom)
         Cov = self.components[ci][1]
-        Cov = Cov * (self.norm(lamb_ref) ** 2)
+        Sa_unnormalized = Cov * (self.norm(lamb_ref) ** 2)
+
+        # select the Sa inverse from the list of components
+        Sa_inv_normalized = self.Sa_inv_normalized[ci]
+        Sa_inv_sqrt_normalized = self.Sa_inv_sqrt_normalized[ci]
 
         # If there are no other state vector elements, we're done.
         if len(self.statevec_names) == len(self.idx_lamb):
 
-            return Cov
+            return Sa_unnormalized, Sa_inv_normalized, Sa_inv_sqrt_normalized
 
         # Embed into a larger state vector covariance matrix
         nprefix = self.idx_lamb[0]
         nsuffix = len(self.statevec_names) - self.idx_lamb[-1] - 1
         Cov_prefix = np.zeros((nprefix, nprefix))
         Cov_suffix = np.zeros((nsuffix, nsuffix))
+        Sa_unnormalized = block_diag(Cov_prefix, Sa_unnormalized, Cov_suffix)
 
-        return block_diag(Cov_prefix, Cov, Cov_suffix)
+        return Sa_unnormalized, Sa_inv_normalized, Sa_inv_sqrt_normalized
 
     def fit_params(self, rfl_meas, geom, *args):
         """Given a reflectance estimate, fit a state vector."""

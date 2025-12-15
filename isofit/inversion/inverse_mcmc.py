@@ -63,7 +63,7 @@ class MCMCInversion(Inversion):
             return -np.Inf
 
         # Prior term
-        Sa = self.fm.Sa(x, geom)
+        Sa, _, _ = self.fm.Sa(x, geom)
         xa = self.fm.xa(x, geom)
         pa = self.stable_mvnpdf(xa, Sa, x)
 

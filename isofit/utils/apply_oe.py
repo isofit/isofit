@@ -107,6 +107,7 @@ def apply_oe(
     interpolate_inplace=False,
     skyview_factor=None,
     resources=False,
+    retrieve_co2=False,
 ):
     """\
     Applies OE over a flightline using a radiative transfer engine. This executes
@@ -241,6 +242,8 @@ def apply_oe(
         Please note data must range from 0-1.
     resources : bool, default=False
         Enables the system resource tracker. Must also have the log_file set.
+    retrieve_co2 : bool, default=False
+        Flag to retrieve CO2 in the state vector. Only available with emulator at the moment.
 
     \b
     References
@@ -786,6 +789,7 @@ def apply_oe(
             prebuilt_lut_path=prebuilt_lut,
             inversion_windows=INVERSION_WINDOWS,
             multipart_transmittance=multipart_transmittance,
+            retrieve_co2=retrieve_co2,
         )
 
         if config_only:
@@ -915,6 +919,7 @@ def apply_oe(
 @click.option("--interpolate_inplace", is_flag=True, default=False)
 @click.option("--skyview_factor", type=str, default=None)
 @click.option("-r", "--resources", is_flag=True, default=False)
+@click.option("--retrieve_co2", is_flag=True, default=False)
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",

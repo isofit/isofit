@@ -1,8 +1,9 @@
-.. _data:
-(data)=
-===============
-Extra Downloads
-===============
+=================
+Data and Examples
+=================
+
+.. contents:: Table of Contents
+    :depth: 2
 
 To get started with ISOFIT examples, simply execute the two following commands:
 
@@ -34,9 +35,6 @@ The contents below go into further details about additional commands.
 
 Configuration Options
 =====================
-
-.. contents:: Table of Contents
-    :depth: 2
 
 ISOFIT uses INI files to configure the location of extra dependencies that are not included in the default ISOFIT installation.
 These include things like larger data files and the ISOFIT examples.
