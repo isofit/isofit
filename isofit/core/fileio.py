@@ -517,7 +517,10 @@ class IO:
             data["skyview_factor_file"] = 1.0
 
         # Check if this is an inital solve, or if bkg is populated
-        if "background_reflectance_file" not in data or data["background_reflectance_file"] is None:
+        if (
+            "background_reflectance_file" not in data
+            or data["background_reflectance_file"] is None
+        ):
             data["background_reflectance_file"] = None
 
         # We build the geometry object for this spectrum.  For files not

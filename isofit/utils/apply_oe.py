@@ -28,7 +28,6 @@ from isofit.utils import (
     multicomponent_classification,
     reducers,
     segment,
-    background_reflectance
 )
 from isofit.utils.skyview import skyview
 from isofit.utils.background_reflectance import background_reflectance
@@ -794,13 +793,19 @@ def apply_oe(
             return
 
         # Run background reflectance retrieval
-        background_reflectance(input_radiance=input_radiance,
-                               input_loc=input_loc, 
-                               input_obs=input_obs,
-                               mean_altitude_km=mean_altitude_km, 
-                               mean_elevation_km=mean_elevation_km,
-                               working_directory=working_directory,
-                               bgrfl_path=paths.bgrfl_working_path)
+        logging.info("Running inversions for background reflectance...")
+        background_reflectance(
+            input_radiance=input_radiance,
+            input_loc=input_loc,
+            input_obs=input_obs,
+            mean_altitude_km=mean_altitude_km,
+            mean_elevation_km=mean_elevation_km,
+            working_directory=working_directory,
+            bgrfl_path=paths.bgrfl_working_path,
+            logging_level=logging_level,
+            log_file=log_file,
+        )
+        logging.info(f"Background reflectance saved: {paths.bgrfl_working_path}")
 
         # Run retrieval
         logging.info("Running ISOFIT with full LUT")
