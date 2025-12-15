@@ -821,8 +821,10 @@ def apply_oe(
                 n_cores=n_cores,
                 loglevel=logging_level,
                 logfile=log_file,
-            ) 
-            logging.info(f"Background reflectance aggregated to superpixel: {paths.bgrfl_subs_path}")
+            )
+            logging.info(
+                f"Background reflectance aggregated to superpixel: {paths.bgrfl_subs_path}"
+            )
 
         # Run retrieval
         logging.info("Running ISOFIT with full LUT")

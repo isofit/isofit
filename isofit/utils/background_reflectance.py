@@ -101,7 +101,7 @@ def background_reflectance(
         glob(os.path.join(working_directory, "config", "") + "*_isofit.json")[0]
     )
     wl, _ = load_wavelen(config.forward_model.instrument.wavelength_file)
-    
+
     loc = envi.open(envi_header(input_loc), input_loc).open_memmap()
     rows, cols, _ = loc.shape
 
@@ -152,10 +152,12 @@ def background_reflectance(
 
     @ray.remote
     def invert_chunk(row_chunk, cols, rdn_file, loc_file, obs_file, fm, esd):
-        # Open memmap for chunk
+        """Fast initial solve of chunk of image, based on evaluated water vapor at center pixel.
+        Subsequent pixels in chunk are evaluated using this fixed water vapor."""
         rdn = np.array(envi.open(envi_header(rdn_file), rdn_file).open_memmap())
         loc = np.array(envi.open(envi_header(loc_file), loc_file).open_memmap())
         obs = np.array(envi.open(envi_header(obs_file), obs_file).open_memmap())
+
         rfl_chunk = np.zeros(
             (len(row_chunk), len(cols), len(fm.surface.idx_lamb)), dtype=np.float32
         )
@@ -182,9 +184,6 @@ def background_reflectance(
                 if spectra[0] < -999 or np.isnan(spectra[0]):
                     rfl_chunk[r, j, :] = np.nan
                     continue
-
-                geom = Geometry(obs=obs[rr, c, :], loc=loc[rr, c, :], esd=esd, svf=1.0)
-
                 rfl_est, _ = invert_algebraic(
                     fm.surface,
                     fm.RT,
@@ -193,14 +192,16 @@ def background_reflectance(
                     x_center[fm.idx_RT],
                     x_instr,
                     spectra,
-                    geom,
+                    geom=Geometry(
+                        obs=obs[rr, c, :], loc=loc[rr, c, :], esd=esd, svf=1.0
+                    ),
                 )
-
                 rfl_chunk[r, j, :] = rfl_est
 
         return row_chunk, cols, rfl_chunk
 
     # Run heuristic solve for a limited set of chunks/tiles
+    # smaller chunk_size produces more inversions
     chunk_size = 50
     row_chunks = [
         list(range(r, min(r + chunk_size, rows))) for r in range(0, rows, chunk_size)
@@ -243,13 +244,13 @@ def background_reflectance(
     )
 
     # Mask and interp over BKG_WINDOWS
-    keep = np.zeros_like(wl, dtype=bool)
+    idx = np.zeros_like(wl, dtype=bool)
     for lo, hi in BKG_WINDOWS:
-        keep |= (wl >= lo) & (wl <= hi)
+        idx |= (wl >= lo) & (wl <= hi)
 
     bg_rfl[:, :, :] = interp1d(
-        wl[keep],
-        bg_rfl[:, :, keep],
+        wl[idx],
+        bg_rfl[:, :, idx],
         axis=2,
         kind="linear",
         fill_value="extrapolate",

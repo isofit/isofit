@@ -1138,7 +1138,9 @@ def build_main_config(
         if paths.svf_working_path:
             isofit_config_modtran["input"]["skyview_factor_file"] = paths.svf_subs_path
         if paths.bgrfl_working_path:
-            isofit_config_modtran["input"]["background_reflectance_file"] = paths.bgrfl_subs_path
+            isofit_config_modtran["input"][
+                "background_reflectance_file"
+            ] = paths.bgrfl_subs_path
         isofit_config_modtran["output"]["estimated_state_file"] = paths.state_subs_path
         isofit_config_modtran["output"][
             "posterior_uncertainty_file"
