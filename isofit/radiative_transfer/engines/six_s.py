@@ -224,7 +224,7 @@ class SixSRT(RadiativeTransferEngine):
             "O3": 0.30,
             "day": self.engine_config.day,
             "month": self.engine_config.month,
-            "elev": abs(max(self.engine_config.elev, 0.01)),
+            "elev": abs(max(self.engine_config.elev, 0)),
             "alt": min(self.engine_config.alt, 99),
             "atm_file": None,
             "abscf_data_directory": None,
@@ -252,7 +252,7 @@ class SixSRT(RadiativeTransferEngine):
             vals["h2o_mm"] = units.cm_to_mm(vals["H2OSTR"])
 
         if "surface_elevation_km" in vals:
-            vals["elev"] = abs(max(vals["surface_elevation_km"], 0.01))
+            vals["elev"] = abs(max(vals["surface_elevation_km"], 0))
 
         if "observer_altitude_km" in vals:
             vals["alt"] = min(vals["observer_altitude_km"], 99)
