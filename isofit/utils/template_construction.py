@@ -207,6 +207,9 @@ class Pathnames:
         self.svf_subs_path = abspath(
             join(self.input_data_directory, self.fid + "_subs_svf")
         )
+        self.bgrfl_subs_path = abspath(
+            join(self.input_data_directory, self.fid + "_subs_bgrfl")
+        )
 
         self.rdn_subs_path = abspath(
             join(self.input_data_directory, self.fid + "_subs_rdn")
@@ -1134,6 +1137,8 @@ def build_main_config(
         isofit_config_modtran["input"]["obs_file"] = paths.obs_subs_path
         if paths.svf_working_path:
             isofit_config_modtran["input"]["skyview_factor_file"] = paths.svf_subs_path
+        if paths.bgrfl_working_path:
+            isofit_config_modtran["input"]["background_reflectance_file"] = paths.bgrfl_subs_path
         isofit_config_modtran["output"]["estimated_state_file"] = paths.state_subs_path
         isofit_config_modtran["output"][
             "posterior_uncertainty_file"
@@ -1151,6 +1156,10 @@ def build_main_config(
             isofit_config_modtran["input"][
                 "skyview_factor_file"
             ] = paths.svf_working_path
+        if paths.bgrfl_working_path:
+            isofit_config_modtran["input"][
+                "background_reflectance_file"
+            ] = paths.bgrfl_working_path
         isofit_config_modtran["output"][
             "posterior_uncertainty_file"
         ] = paths.uncert_working_path
@@ -1205,11 +1214,6 @@ def build_main_config(
         isofit_config_modtran["input"][
             "radiometry_correction_file"
         ] = paths.rdn_factors_path
-
-    if paths.bgrfl_working_path:
-        isofit_config_modtran["input"][
-            "background_reflectance_file"
-        ] = paths.bgrfl_working_path
 
     # write main config file
     with open(paths.isofit_full_config_path, "w") as fout:

@@ -100,7 +100,7 @@ def background_reflectance(
     config = configs.create_new_config(
         glob(os.path.join(working_directory, "config", "") + "*_isofit.json")[0]
     )
-    wl_init, _ = load_wavelen(config.forward_model.instrument.wavelength_file)
+    wl, _ = load_wavelen(config.forward_model.instrument.wavelength_file)
     
     loc = envi.open(envi_header(input_loc), input_loc).open_memmap()
     rows, cols, _ = loc.shape
@@ -133,7 +133,7 @@ def background_reflectance(
         "byte order": 0,
         "no data value": -9999,
         "wavelength units": "Nanometers",
-        "wavelength": wl_init,
+        "wavelength": wl,
         "lines": rows,
         "samples": cols,
         "interleave": "bip",
@@ -141,8 +141,8 @@ def background_reflectance(
     rfl_output = initialize_output(
         output_metadata,
         bgrfl_path,
-        (rows, cols, len(wl_init)),
-        bands=f"{len(wl_init)}",
+        (rows, cols, len(wl)),
+        bands=f"{len(wl)}",
         description="Background reflectance for each pixel used in OE inversion",
     )
 
@@ -243,17 +243,17 @@ def background_reflectance(
     )
 
     # Mask and interp over BKG_WINDOWS
-    keep = np.zeros_like(wl_init, dtype=bool)
+    keep = np.zeros_like(wl, dtype=bool)
     for lo, hi in BKG_WINDOWS:
-        keep |= (wl_init >= lo) & (wl_init <= hi)
+        keep |= (wl >= lo) & (wl <= hi)
 
     bg_rfl[:, :, :] = interp1d(
-        wl_init[keep],
+        wl[keep],
         bg_rfl[:, :, keep],
         axis=2,
         kind="linear",
         fill_value="extrapolate",
-    )(wl_init)
+    )(wl)
 
     # Apply light SG filter to smooth any bad wv guess
     bg_rfl[:, :, :] = savgol_filter(bg_rfl, window_length=5, polyorder=1, axis=2)

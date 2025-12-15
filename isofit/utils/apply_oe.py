@@ -796,7 +796,7 @@ def apply_oe(
             logging.info("`config_only` enabled, exiting early")
             return
 
-        # Run background reflectance retrieval
+        # Run background reflectance retrieval after config created
         logging.info("Running inversions for background reflectance...")
         background_reflectance(
             input_radiance=input_radiance,
@@ -810,6 +810,19 @@ def apply_oe(
             log_file=log_file,
         )
         logging.info(f"Background reflectance saved: {paths.bgrfl_working_path}")
+        if use_superpixels:
+            extractions(
+                inputfile=paths.bgrfl_working_path,
+                labels=paths.lbl_working_path,
+                output=paths.bgrfl_subs_path,
+                chunksize=CHUNKSIZE,
+                flag=-9999,
+                reducer=reducers.band_mean,
+                n_cores=n_cores,
+                loglevel=logging_level,
+                logfile=log_file,
+            ) 
+            logging.info(f"Background reflectance aggregated to superpixel: {paths.bgrfl_subs_path}")
 
         # Run retrieval
         logging.info("Running ISOFIT with full LUT")
