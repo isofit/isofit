@@ -71,7 +71,7 @@ against the ``main`` branch:
 Manual (GitHub)
 ---------------
 
-we recommend using `Mamba <https://mamba.readthedocs.io/en/latest/>`_ to create a virtual environment:
+We recommend using `Mamba <https://mamba.readthedocs.io/en/latest/>`_ to create a virtual environment:
 
 .. code-block:: bash
 
