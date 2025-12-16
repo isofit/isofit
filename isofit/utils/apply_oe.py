@@ -885,6 +885,9 @@ def apply_oe(
                 segmentation_size=segmentation_size,
             )
 
+    # Remove bg_rfl file from disk
+    os.remove(paths.bgrfl_working_path)
+
     logging.info("Done.")
     ray.shutdown()
 

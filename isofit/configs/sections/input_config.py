@@ -95,6 +95,12 @@ class InputConfig(BaseConfigSection):
         Used to modulate incoming diffuse radiance from fraction of viewable sky.
         """
 
+        self._background_reflectance_file_type = str
+        self.background_reflectance_file = None
+        """
+        str: Input background reflectance file. Generated in ApplyOE.
+        """
+
         self.set_config_options(sub_configdic)
 
     def _check_config_validity(self) -> List[str]:
