@@ -175,12 +175,12 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         sRTMnet leverages 6S to simulate results which is best done before sRTMnet begins
         simulations itself
         """
-        # Track the sRTMnet file used in the LUT attributes
-        self.lut.setAttr("sRTMnet", str(config.emulator_file))
-
         Logger.info("Creating a simulator configuration")
         # Create a copy of the engine_config and populate it with 6S parameters
         config = build_sixs_config(self.engine_config)
+
+        # Track the sRTMnet file used in the LUT attributes
+        self.lut.setAttr("sRTMnet", str(config.emulator_file))
 
         # Get the component mode up front
         if self.engine_config.emulator_file.endswith(".h5"):
