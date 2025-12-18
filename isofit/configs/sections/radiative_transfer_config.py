@@ -137,7 +137,7 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
 
         self._parallel_layer_read_type = bool
         self.parallel_layer_read = True
-        """bool: Flag for how to load and run sRTMnet prediction. 
+        """bool: Flag for how to load and run sRTMnet prediction.
            If True, will read in the weights/biases per layer per worker.
            If False, will load entire model into shared memory
            Model doesn't always fit in shared memory for smaller systems
@@ -265,6 +265,14 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
                         "sRTMnet now requires the emulator_file to be of type .h5 (or .npz for experimental 6c emulator).  "
                         "Please download an updated version from:\n https://zenodo.org/records/10831425"
                     )
+
+                if self.emulator_file.endswith(".6c"):
+                    from isofit.radiative_transfer.engines.six_s import get_exe
+
+                    if "co2" not in get_exe(self.engine_base_dir, version=True):
+                        errors.append(
+                            "sRTMnet 6C requires a CO2 version of 6S. Please use the isofit download CLI to pull a CO2 tag: https://github.com/isofit/6S/tags"
+                        )
 
                 if self.emulator_aux_file is None:
                     # Fallback to the path specified by the isofit.ini
