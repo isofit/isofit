@@ -941,9 +941,10 @@ def cleanup(file):
     file : str
         Path to the file to check
     """
-    with Dataset(file, "r") as ds:
-        if ds.getncattr("ISOFIT status") == "<incomplete>":
-            Logger.error(
-                f"The LUT status was determined to be incomplete, auto-removing: {file}"
-            )
-            os.remove(file)
+    if os.path.exists(file):
+        with Dataset(file, "r") as ds:
+            if ds.getncattr("ISOFIT status") == "<incomplete>":
+                Logger.error(
+                    f"The LUT status was determined to be incomplete, auto-removing: {file}"
+                )
+                os.remove(file)
