@@ -1808,7 +1808,7 @@ def get_metadata_from_loc(
     # Grab zensor position and orientation information
     mean_latitude = np.mean(loc_data[1, valid].flatten())
     mean_longitude = np.mean(-1 * loc_data[0, valid].flatten())
-    mean_elevation_km = units.m_to_km(np.mean(loc_data[2, valid]))
+    mean_elevation_km = max(units.m_to_km(np.mean(loc_data[2, valid])), 0)
 
     # make elevation grid
     min_elev = units.m_to_km(np.min(loc_data[2, valid]))
