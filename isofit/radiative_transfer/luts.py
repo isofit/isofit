@@ -91,6 +91,7 @@ class Create:
         onedim: dict = {},
         alldim: dict = {},
         zeros: List[str] = [],
+        chunks: List[int] | str = "auto",
         init: bool = True,
         **kwargs,
     ):
@@ -115,6 +116,8 @@ class Create:
             Dictionary of multi-dimensional data. Appends/replaces to the current Create.alldim list.
         zeros : List[str], optional, default=[]
             List of zero values. Appends to the current Create.zeros list.
+        chunks : list[int] | "auto", default="auto"
+            Chunking strategy to use on alldim variables. "auto" will chunk along the point dimension
         init : bool, default=True
             Call the initialize function
         *kwargs : dict
@@ -138,6 +141,10 @@ class Create:
         self.consts = {**Keys.consts, **consts}
         self.onedim = {**Keys.onedim, **onedim}
         self.alldim = {**Keys.alldim, **alldim}
+
+        self.chunks = chunks
+        if chunks == "auto":
+            self.chunks = [len(self.wl)] + [1] * len(grid)
 
         if init:
             self.initialize()
@@ -306,11 +313,9 @@ class CreateNetCDF(Create):
             ds.createDimension("wl", len(self.wl))
             createVariable("wl", self.wl, ("wl",))
 
-            chunks = [len(self.wl)]
             for key, vals in self.grid.items():
                 ds.createDimension(key, len(vals))
                 createVariable(key, vals, (key,))
-                chunks.append(1)
 
             # Constants
             dims = ()
@@ -325,7 +330,7 @@ class CreateNetCDF(Create):
             # Multi dimensional arrays
             dims += tuple(self.grid)
             for key, vals in self.alldim.items():
-                createVariable(key, vals, dims, chunksizes=chunks)
+                createVariable(key, vals, dims, chunksizes=self.chunks)
 
             # Add custom attributes onto the Dataset
             for key, value in self.attrs.items():
@@ -461,11 +466,9 @@ class CreateZarr(Create):
         array = self.z.array("wl", self.wl, fill_value=None)
         array.attrs["_ARRAY_DIMENSIONS"] = ["wl"]
 
-        chunks = [len(self.wl)]
         for key, vals in self.grid.items():
             array = self.z.array(key, vals, dtype="float64", fill_value=None)
             array.attrs["_ARRAY_DIMENSIONS"] = [key]
-            chunks.append(1)
 
         # Constants
         dims = ()
@@ -498,11 +501,11 @@ class CreateZarr(Create):
                     shape=shape,
                     dtype="float64",
                     fill_value=vals,
-                    chunks=chunks,
+                    chunks=self.chunks,
                 )
             else:
                 array = self.z.array(
-                    key, vals, dtype="float64", fill_value=None, chunks=chunks
+                    key, vals, dtype="float64", fill_value=None, chunks=self.chunks
                 )
 
             array.attrs.update(attrs)
