@@ -320,7 +320,6 @@ class MultiComponentSurface(Surface):
 
     def analytical_model(
         self,
-        background,
         L_down_dir,
         L_down_dif,
         L_tot,
@@ -329,17 +328,14 @@ class MultiComponentSurface(Surface):
         L_dir_dif=None,
         L_dif_dir=None,
         L_dif_dif=None,
+        L_bg=None,
     ):
         """
         Linearization of the surface reflectance terms to use in the
-        AOE inner loop (see Susiluoto, 2025). We set the quadratic
-        spherical albedo term to a constant background, which
-        simplifies the linearization
-        background = s * rho_bg
+        AOE inner loop (see Susiluoto, 2025).
         """
-        # If you ignore multi-scattering
-        theta = L_tot + (L_tot * background / (1 - background))
-        # theta = L_tot
+        # Isolate signal from target
+        theta = L_tot - L_bg
 
         H = np.eye(self.n_wl, self.n_wl)
         H = theta[:, np.newaxis] * H

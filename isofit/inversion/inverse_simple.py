@@ -298,6 +298,11 @@ def invert_analytical(
     L_atm = fm.RT.get_L_atm(x_RT, geom)
     s = r["sphalb"]
 
+    # for 1c case this reduces to just the 2nd term here
+    L_bg = (L_dir_dif + L_dif_dif) * geom.bg_rfl + L_tot * (s * geom.bg_rfl**2) / (
+        1 - s * geom.bg_rfl
+    )
+
     # Get all the surface quantities for the super pixel
     sub_surface, sub_RT, sub_instrument = fm.unpack(sub_state)
 
@@ -305,9 +310,6 @@ def invert_analytical(
     rho_dir_dir, rho_dif_dir = fm.calc_rfl(sub_surface, geom)
     rho_dir_dir = fm.upsample(fm.surface.wl, rho_dir_dir)
     rho_dif_dir = fm.upsample(fm.surface.wl, rho_dif_dir)
-
-    # Background conditions equal to the superpixel reflectance
-    bg = s * rho_dif_dir
 
     # Special case: 1-component model
     if type(L_tot) != np.ndarray or len(L_tot) == 1:
@@ -322,7 +324,6 @@ def invert_analytical(
 
     # The H matrix does not change as a function of x-vector
     H = fm.surface.analytical_model(
-        bg,
         L_down_dir,
         L_down_dif,
         L_tot,
@@ -331,6 +332,7 @@ def invert_analytical(
         L_dir_dif=L_dir_dif,
         L_dif_dir=L_dif_dir,
         L_dif_dif=L_dif_dif,
+        L_bg=L_bg,
     )
     # Sample just the wavelengths and states of interest
     L = H[winidx, :][:, iv_idx]
@@ -367,7 +369,10 @@ def invert_analytical(
         xk = dsymv(
             1,
             C_rcond,
-            (L.T @ dsymv(1, P, meas[winidx] - L_atm[winidx]) + prprod[iv_idx]),
+            (
+                L.T @ dsymv(1, P, meas[winidx] - L_atm[winidx] - L_bg[winidx])
+                + prprod[iv_idx]
+            ),
         )
 
         # Save trajectory step:
