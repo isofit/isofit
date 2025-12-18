@@ -317,6 +317,10 @@ class Inversion:
         if self.mode == "simulation":
             self.fm.surface.rfl = meas
             return np.array([self.fm.init.copy()])
+        
+        # For superpixel, if this is the 0th index exit early
+        if np.all(meas == 0):
+            return np.array([self.fm.init.copy()])
 
         if len(self.integration_grid.values()) == 0:
             combo_values = [None]
