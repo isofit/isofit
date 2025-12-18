@@ -317,14 +317,14 @@ class GlintModelSurface(MultiComponentSurface):
         # It must match the alphabeitcal order of the glint terms
 
         # Diffuse portion
-        ep = (L_dif_dir + L_dif_dif + L_bg) * rho_ls
+        ep = L_dif_dir * rho_ls
         # If you ignore multi-scattering
         # ep = (L_dif_dir + L_dif_dif) * rho_ls
         ep = np.reshape(ep, (len(ep), 1))
         H = np.append(H, ep, axis=1)
 
         # Direct portion
-        gam = (L_dir_dir + L_dir_dif) * rho_ls
+        gam = L_dir_dir * rho_ls
         gam = np.reshape(gam, (len(gam), 1))
         H = np.append(H, gam, axis=1)
 
