@@ -591,50 +591,6 @@ def apply_oe(
 
     logging.debug("Radiance working path:")
     logging.debug(paths.radiance_working_path)
-    # Superpixel segmentation
-    if use_superpixels:
-        if not exists(paths.lbl_working_path) or not exists(
-            paths.radiance_working_path
-        ):
-            logging.info("Segmenting...")
-            segment(
-                spectra=(paths.radiance_working_path, paths.lbl_working_path),
-                nodata_value=-9999,
-                npca=5,
-                segsize=segmentation_size,
-                nchunk=CHUNKSIZE,
-                n_cores=n_cores,
-                loglevel=logging_level,
-                logfile=log_file,
-            )
-
-        # Extract input data per segment
-        for inp, outp, reducer_fun in [
-            (paths.radiance_working_path, paths.rdn_subs_path, reducers.band_mean),
-            (paths.obs_working_path, paths.obs_subs_path, reducers.band_mean),
-            (paths.loc_working_path, paths.loc_subs_path, reducers.band_mean),
-            (
-                paths.surface_class_working_path,
-                paths.surface_class_subs_path,
-                reducers.class_priority,
-            ),
-            (paths.svf_working_path, paths.svf_subs_path, reducers.band_mean),
-        ]:
-            if inp and not exists(outp):
-                logging.info("Extracting " + outp)
-                extractions(
-                    inputfile=inp,
-                    labels=paths.lbl_working_path,
-                    output=outp,
-                    chunksize=CHUNKSIZE,
-                    flag=-9999,
-                    reducer=reducer_fun,
-                    n_cores=n_cores,
-                    loglevel=logging_level,
-                    logfile=log_file,
-                )
-            else:
-                logging.info(f"Skipping {inp}, because is not a path.")
 
     if presolve:
         # write modtran presolve template
@@ -809,22 +765,53 @@ def apply_oe(
             logging_level=logging_level,
             log_file=log_file,
         )
-        logging.info(f"Background reflectance saved: {paths.bgrfl_working_path}")
+        logging.info("Background reflectance inversions complete.")
+
+        # Superpixel segmentation
         if use_superpixels:
-            extractions(
-                inputfile=paths.bgrfl_working_path,
-                labels=paths.lbl_working_path,
-                output=paths.bgrfl_subs_path,
-                chunksize=CHUNKSIZE,
-                flag=-9999,
-                reducer=reducers.band_mean,
-                n_cores=n_cores,
-                loglevel=logging_level,
-                logfile=log_file,
-            )
-            logging.info(
-                f"Background reflectance aggregated to superpixel: {paths.bgrfl_subs_path}"
-            )
+            if not exists(paths.lbl_working_path) or not exists(
+                paths.radiance_working_path
+            ):
+                logging.info("Segmenting...")
+                segment(
+                    spectra=(paths.radiance_working_path, paths.lbl_working_path),
+                    nodata_value=-9999,
+                    npca=5,
+                    segsize=segmentation_size,
+                    nchunk=CHUNKSIZE,
+                    n_cores=n_cores,
+                    loglevel=logging_level,
+                    logfile=log_file,
+                )
+
+            # Extract input data per segment
+            for inp, outp, reducer_fun in [
+                (paths.radiance_working_path, paths.rdn_subs_path, reducers.band_mean),
+                (paths.obs_working_path, paths.obs_subs_path, reducers.band_mean),
+                (paths.loc_working_path, paths.loc_subs_path, reducers.band_mean),
+                (
+                    paths.surface_class_working_path,
+                    paths.surface_class_subs_path,
+                    reducers.class_priority,
+                ),
+                (paths.svf_working_path, paths.svf_subs_path, reducers.band_mean),
+                (paths.bgrfl_working_path, paths.bgrfl_subs_path, reducers.band_mean),
+            ]:
+                if inp and not exists(outp):
+                    logging.info("Extracting " + outp)
+                    extractions(
+                        inputfile=inp,
+                        labels=paths.lbl_working_path,
+                        output=outp,
+                        chunksize=CHUNKSIZE,
+                        flag=-9999,
+                        reducer=reducer_fun,
+                        n_cores=n_cores,
+                        loglevel=logging_level,
+                        logfile=log_file,
+                    )
+                else:
+                    logging.info(f"Skipping {inp}, because is not a path.")
 
         # Run retrieval
         logging.info("Running ISOFIT with full LUT")

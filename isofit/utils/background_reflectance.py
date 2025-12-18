@@ -27,7 +27,7 @@ from scipy.interpolate import interp1d
 from scipy.ndimage import gaussian_filter
 import ray
 
-from isofit.core.common import envi_header, load_wavelen
+from isofit.core.common import envi_header
 from isofit.inversion.inverse_simple import invert_simple, invert_algebraic
 from isofit.core.fileio import IO, initialize_output
 from isofit.core.forward import ForwardModel
@@ -72,6 +72,9 @@ def get_adjacency_range(sensor_alt_asl, ground_alt_asl, R_sat=1.0, min_range=0.2
     if r < min_range:
         r = min_range
 
+    if r > R_sat:
+        r = R_sat
+
     return r
 
 
@@ -99,7 +102,11 @@ def background_reflectance(
     config = configs.create_new_config(
         glob(os.path.join(working_directory, "config", "") + "*_isofit.json")[0]
     )
-    wl, _ = load_wavelen(config.forward_model.instrument.wavelength_file)
+
+    # load forward model
+    fm = ForwardModel(config)
+    esd = IO.load_esd()
+    wl = fm.surface.wl
 
     loc = envi.open(envi_header(input_loc), input_loc).open_memmap()
     rows, cols, _ = loc.shape
@@ -116,7 +123,7 @@ def background_reflectance(
     ]
 
     # Estimate pixel size and adjacency range in km (pixel size is approx. based on loc file)
-    pixel_size = approx_pixel_size(loc, nodata) / 1000.0  # km
+    pixel_size = approx_pixel_size(loc=loc, nodata=nodata) / 1000.0  # km
     adj_range = get_adjacency_range(
         sensor_alt_asl=mean_altitude_km,
         ground_alt_asl=mean_elevation_km,
@@ -127,35 +134,29 @@ def background_reflectance(
         f"For background reflectance assuming pixel size of {np.round(pixel_size*1000,2)} m and adjacency range of {np.round(adj_range,2)} km."
     )
 
-    # Set up forward model and esd
-    fm = ForwardModel(config)
-    esd = IO.load_esd()
-
     # Identify water vapor state vector
     for h2oname in ["H2OSTR", "h2o"]:
         if h2oname in fm.RT.statevec_names:
-            H2O_NAME = h2oname
-            wv_idx = fm.RT.statevec_names.index(H2O_NAME)
+            wv_idx = fm.RT.statevec_names.index(h2oname)
             break
     else:
         raise ValueError("Water vapor not found in RT names.")
 
-    # Output metadata
-    output_metadata = {
-        "data type": 4,
-        "file type": "ENVI Standard",
-        "byte order": 0,
-        "no data value": nodata,
-        "wavelength units": "Nanometers",
-        "wavelength": wl,
-        "lines": rows,
-        "samples": cols,
-        "interleave": "bip",
-    }
+    # Create bg_rfl output
     rfl_output = initialize_output(
-        output_metadata,
-        bgrfl_path,
-        (rows, cols, len(wl)),
+        output_metadata={
+            "data type": 4,
+            "file type": "ENVI Standard",
+            "byte order": 0,
+            "no data value": nodata,
+            "wavelength units": "Nanometers",
+            "wavelength": wl,
+            "lines": rows,
+            "samples": cols,
+            "interleave": "bip",
+        },
+        outpath=bgrfl_path,
+        out_shape=(rows, cols, len(wl)),
         bands=f"{len(wl)}",
         description="Background reflectance for each pixel used in OE inversion",
     )
@@ -186,13 +187,13 @@ def background_reflectance(
                 bg_rfl=None,
             ),
         )
-
         wv_value = x_center[fm.idx_RT][wv_idx]
 
-        # check bounds on solution, if at edge return init
-        lb_violation = wv_value <= fm.bounds[0][fm.idx_RT][wv_idx] + 0.1
-        ub_violation = wv_value >= fm.bounds[1][fm.idx_RT][wv_idx] - 0.1
-        if lb_violation or ub_violation:
+        # check bounds on solution, if at edge return NaN
+        if (
+            wv_value <= fm.bounds[0][fm.idx_RT][wv_idx] + 0.1
+            or wv_value >= fm.bounds[1][fm.idx_RT][wv_idx] - 0.1
+        ):
             wv_value = np.nan
 
         return row_chunk, col_chunk, wv_value
@@ -284,6 +285,7 @@ def background_reflectance(
 
         return row_chunk, rfl_chunk
 
+    # Run rfl inversions for every pixel
     heuristic_rfl = np.full((rows, cols, len(wl)), np.nan, dtype=np.float32)
     chunk_size = 50  # tuneable, only changes speed
     row_chunks = [
@@ -312,7 +314,8 @@ def background_reflectance(
         np.isnan(heuristic_rfl), mean_spectrum[np.newaxis, np.newaxis, :], heuristic_rfl
     )
 
-    # Average over adjacency range. TODO: this could also be weighted by transmittance terms.
+    # TODO: this could also be weighted by transmittance terms.
+    # For now, this applies a uniform window average based on adjacency range.
     kernel_radius = int(np.ceil(np.max(adj_range) / pixel_size))
     bg_rfl = envi.open(envi_header(rfl_output), rfl_output).open_memmap(
         interleave="bip", writable=True
