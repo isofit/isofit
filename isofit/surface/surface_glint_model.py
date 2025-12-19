@@ -20,8 +20,9 @@
 from __future__ import annotations
 
 import numpy as np
+from scipy.linalg import block_diag
 
-from isofit.core.common import eps
+from isofit.core.common import eps, svd_inv_sqrt
 from isofit.surface.surface_multicomp import MultiComponentSurface
 
 
@@ -67,6 +68,12 @@ class GlintModelSurface(MultiComponentSurface):
             config.sky_glint_prior_sigma * np.array(self.scale[self.sky_glint_ind])
         ) ** 2
 
+        # Compute and and cache normalized Sa inversions for glint case
+        Cov = np.array([[self.sky_glint_sigma, 0], [0, self.sun_glint_sigma]])
+        self.Sa_inv_glint, self.Sa_inv_sqrt_glint = svd_inv_sqrt(
+            Cov / np.mean(np.diag(Cov))
+        )
+
     def xa(self, x_surface, geom):
         """Mean of prior distribution, calculated at state x."""
 
@@ -79,10 +86,19 @@ class GlintModelSurface(MultiComponentSurface):
         the covariance in a normalized space (normalizing by z) and then un-
         normalize the result for the calling function."""
 
-        Cov = MultiComponentSurface.Sa(self, x_surface, geom)
-        Cov[self.sun_glint_ind, self.sun_glint_ind] = self.sun_glint_sigma
-        Cov[self.sky_glint_ind, self.sky_glint_ind] = self.sky_glint_sigma
-        return Cov
+        Sa_unnormalized, Sa_inv_normalized, Sa_inv_sqrt_normalized = (
+            MultiComponentSurface.Sa(self, x_surface, geom)
+        )
+        Sa_unnormalized[self.sun_glint_ind, self.sun_glint_ind] = self.sun_glint_sigma
+        Sa_unnormalized[self.sky_glint_ind, self.sky_glint_ind] = self.sky_glint_sigma
+
+        # Append normalized Sa inv and sqrt from glint model
+        Sa_inv_normalized = block_diag(Sa_inv_normalized, self.Sa_inv_glint)
+        Sa_inv_sqrt_normalized = block_diag(
+            Sa_inv_sqrt_normalized, self.Sa_inv_sqrt_glint
+        )
+
+        return Sa_unnormalized, Sa_inv_normalized, Sa_inv_sqrt_normalized
 
     def fit_params(self, rfl_meas, geom, *args):
         """Given a reflectance estimate and one or more emissive parameters,

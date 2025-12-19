@@ -436,6 +436,11 @@ class LUTConfig:
         self.aot_550_spacing = 0
         self.aot_550_spacing_min = 0
 
+        # CO2 ppm
+        self.co2_range = [380, 440]
+        self.co2_spacing = 60
+        self.co2_spacing_min = 60
+
         self.no_min_lut_spacing = no_min_lut_spacing
 
         # overwrite anything that comes in from the config file
@@ -843,6 +848,7 @@ def build_main_config(
     prebuilt_lut_path: str = None,
     multipart_transmittance: bool = False,
     surface_mapping: dict = None,
+    retrieve_co2: bool = False,
 ) -> None:
     """Write an isofit config file for the main solve, using the specified pathnames and all given info
 
@@ -872,6 +878,7 @@ def build_main_config(
         debug:                                if true, run ISOFIT in debug mode
         multipart_transmittance:              flag to indicate whether a 4-component transmittance model is to be used
         surface_mapping:                      optional object to pass mapping between surface class and surface model
+        retrieve_co2:                         flag to include CO2 in lut and retrieval
     """
 
     # Determine number of spectra included in each retrieval.  If we are
@@ -974,6 +981,8 @@ def build_main_config(
                 "relative_azimuth"
             ] = relative_azimuth_lut_grid.tolist()
 
+        if retrieve_co2 and lut_params.co2_range is not None:
+            radiative_transfer_config["lut_grid"]["CO2"] = lut_params.co2_range
         radiative_transfer_config["lut_grid"].update(aerosol_lut_grid)
 
     rtc_ln = {}
@@ -1030,6 +1039,10 @@ def build_main_config(
             radiative_transfer_config["radiative_transfer_engines"]["vswir"][
                 "lut_names"
             ][key] = get_lut_subset(aerosol_lut_grid[key])
+        if retrieve_co2:
+            radiative_transfer_config["radiative_transfer_engines"]["vswir"][
+                "lut_names"
+            ]["CO2"] = get_lut_subset(lut_params.co2_range)
 
         rm_keys = []
         for key, item in radiative_transfer_config["radiative_transfer_engines"][
@@ -1063,6 +1076,15 @@ def build_main_config(
             "prior_sigma": 1000.0,
             "prior_mean": (elevation_lut_grid[0] + elevation_lut_grid[-1]) / 2.0,
         }
+    if retrieve_co2:
+        radiative_transfer_config["statevector"]["CO2"] = {
+            "bounds": [lut_params.co2_range[0], lut_params.co2_range[-1]],
+            "scale": 10,
+            "init": 420.0,
+            "prior_sigma": 100.0,
+            "prior_mean": 420.0,
+        }
+
     radiative_transfer_config["statevector"].update(aerosol_state_vector)
 
     # MODTRAN should know about our whole LUT grid and all of our statevectors, so copy them in
@@ -1265,7 +1287,7 @@ def write_modtran_template(
                         "M4": atmosphere_type,
                         "M5": atmosphere_type,
                         "M6": atmosphere_type,
-                        "CO2MX": 410.0,
+                        "CO2MX": 420.0,
                         "H2OSTR": 1.0,
                         "H2OUNIT": "g",
                         "O3STR": 0.3,
@@ -1786,7 +1808,7 @@ def get_metadata_from_loc(
     # Grab zensor position and orientation information
     mean_latitude = np.mean(loc_data[1, valid].flatten())
     mean_longitude = np.mean(-1 * loc_data[0, valid].flatten())
-    mean_elevation_km = units.m_to_km(np.mean(loc_data[2, valid]))
+    mean_elevation_km = max(units.m_to_km(np.mean(loc_data[2, valid])), 0)
 
     # make elevation grid
     min_elev = units.m_to_km(np.min(loc_data[2, valid]))

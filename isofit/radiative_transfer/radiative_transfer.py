@@ -26,7 +26,7 @@ import logging
 import numpy as np
 
 from isofit.core import units
-from isofit.core.common import eps
+from isofit.core.common import eps, svd_inv_sqrt
 from isofit.radiative_transfer.engines import Engines
 
 Logger = logging.getLogger(__file__)
@@ -130,6 +130,11 @@ class RadiativeTransfer:
         self.init = np.array(self.init)
         self.prior_mean = np.array(self.prior_mean)
         self.prior_sigma = np.array(self.prior_sigma)
+        self.Sa_cached = np.diagflat(np.power(self.prior_sigma, 2))
+        self.Sa_normalized = self.Sa_cached / np.mean(np.diag(self.Sa_cached))
+        self.Sa_inv_normalized, self.Sa_inv_sqrt_normalized = svd_inv_sqrt(
+            self.Sa_normalized
+        )
 
         self.wl = np.concatenate([RT.wl for RT in self.rt_engines])
 
@@ -144,7 +149,7 @@ class RadiativeTransfer:
 
     def Sa(self):
         """Pull the priors from each of the individual RTs."""
-        return np.diagflat(np.power(np.array(self.prior_sigma), 2))
+        return self.Sa_cached
 
     def Sb(self):
         """Uncertainty due to unmodeled variables."""

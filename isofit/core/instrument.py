@@ -33,6 +33,7 @@ from isofit.core.common import (
     load_wavelen,
     resample_spectrum,
     spectral_response_function,
+    svd_inv_sqrt,
 )
 
 ### Variables ###
@@ -64,6 +65,11 @@ class Instrument:
         self.init = config.statevector.get_all_inits()
         self.prior_mean = np.array(config.statevector.get_all_prior_means())
         self.prior_sigma = np.array(config.statevector.get_all_prior_sigmas())
+        self.Sa_cached = np.diagflat(np.power(self.prior_sigma, 2))
+        self.Sa_normalized = self.Sa_cached / np.mean(np.diag(self.Sa_cached))
+        self.Sa_inv_normalized, self.Sa_inv_sqrt_normalized = svd_inv_sqrt(
+            self.Sa_normalized
+        )
         self.statevec_names = config.statevector.get_element_names()
         self.n_state = len(self.statevec_names)
 
@@ -200,7 +206,7 @@ class Instrument:
 
         if self.n_state == 0:
             return np.zeros((0, 0), dtype=float)
-        return np.diagflat(np.power(self.prior_sigma, 2))
+        return self.Sa_cached
 
     def Sb(self, meas):
         """Uncertainty due to unmodeled variables."""

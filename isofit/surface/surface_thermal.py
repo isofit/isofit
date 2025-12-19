@@ -20,8 +20,9 @@
 from __future__ import annotations
 
 import numpy as np
+from scipy.linalg import block_diag
 
-from isofit.core.common import emissive_radiance
+from isofit.core.common import emissive_radiance, svd_inv_sqrt
 from isofit.surface.surface_multicomp import MultiComponentSurface
 
 
@@ -51,6 +52,12 @@ class ThermalSurface(MultiComponentSurface):
         self.emissivity_for_surface_T_init = config.emissivity_for_surface_T_init
         self.surface_T_prior_sigma_degK = config.surface_T_prior_sigma_degK
 
+        # Compute and and cache normalized Sa inversions for thermal case
+        Cov = np.array([[self.surface_T_prior_sigma_degK**2]])
+        self.Sa_inv_thermal, self.Sa_inv_sqrt_thermal = svd_inv_sqrt(
+            Cov / np.mean(np.diag(Cov))
+        )
+
     def xa(self, x_surface, geom):
         """Mean of prior distribution, calculated at state x.  We find
         the covariance in a normalized space (normalizing by z) and then un-
@@ -64,10 +71,20 @@ class ThermalSurface(MultiComponentSurface):
     def Sa(self, x_surface, geom):
         """Covariance of prior distribution, calculated at state x."""
 
-        Cov = MultiComponentSurface.Sa(self, x_surface, geom)
-        Cov[self.surf_temp_ind, self.surf_temp_ind] = self.surface_T_prior_sigma_degK**2
+        Sa_unnormalized, Sa_inv_normalized, Sa_inv_sqrt_normalized = (
+            MultiComponentSurface.Sa(self, x_surface, geom)
+        )
+        Sa_unnormalized[self.surf_temp_ind, self.surf_temp_ind] = (
+            self.surface_T_prior_sigma_degK**2
+        )
 
-        return Cov
+        # Append normalized Sa inv and sqrt from thermal model
+        Sa_inv_normalized = block_diag(Sa_inv_normalized, self.Sa_inv_thermal)
+        Sa_inv_sqrt_normalized = block_diag(
+            Sa_inv_sqrt_normalized, self.Sa_inv_sqrt_thermal
+        )
+
+        return Sa_unnormalized, Sa_inv_normalized, Sa_inv_sqrt_normalized
 
     def fit_params(self, rfl_meas, geom, *args):
         """Given a reflectance estimate, find the surface reflectance"""

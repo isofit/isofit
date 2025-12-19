@@ -1,19 +1,25 @@
 """
-Downloads 6S from https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar
+Downloads 6S from https://github.com/isofit/6S
 """
 
 import os
 import platform
+import shutil
 import subprocess
 from pathlib import Path
 
 import click
 
 from isofit.data import env, shared
-from isofit.data.download import download_file, prepare_output, untar, unzip
+from isofit.data.download import (
+    download_file,
+    isUpToDateGithub,
+    prepare_output,
+    pullFromRepo,
+    unzip,
+)
 
 CMD = "sixs"
-URL = "https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar"
 MINGW = "https://github.com/brechtsanders/winlibs_mingw/releases/download/15.2.0posix-13.0.0-msvcrt-r2/winlibs-i686-posix-dwarf-gcc-15.2.0-mingw-w64msvcrt-13.0.0-r2.zip"
 
 
@@ -105,7 +111,7 @@ def make(directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE, debug=False)
         print(e.stderr)
 
 
-def download_mingw(path=None, overwrite=False, **_):
+def download_mingw(path=None, tag="latest", overwrite=False, **_):
     """
     Downloads MinGW64 for Windows
 
@@ -138,9 +144,9 @@ def download_mingw(path=None, overwrite=False, **_):
     env.load()  # Reload to insert the MinGW64 path to $PATH
 
 
-def download(path=None, overwrite=False, debug_make=False, **_):
+def download(path=None, tag="latest", overwrite=False, debug_make=False, **_):
     """
-    Downloads 6S from https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar.
+    Downloads 6S from https://github.com/isofit/6S.
 
     Parameters
     ----------
@@ -164,17 +170,19 @@ def download(path=None, overwrite=False, debug_make=False, **_):
     if not output:
         return
 
-    file = download_file(URL, output.parent / "6S.tar")
+    avail = pullFromRepo("isofit", "6S", tag, output, overwrite=overwrite)
 
-    untar(file, output)
+    # Move files from subdir to base dir for backwards compatibility
+    for path in (avail / "Sixs").iterdir():
+        shutil.move(path, avail / path.name)
 
     print("Building via make")
-    make(output, debug=debug_make)
+    make(avail, debug=debug_make)
 
-    print(f"Done, now available at: {output}")
+    print(f"Done, now available at: {avail}")
 
 
-def validate(path=None, debug=print, error=print, **_):
+def validate(path=None, checkForUpdate=True, debug=print, error=print, **_):
     """
     Validates a 6S installation
 
@@ -182,6 +190,8 @@ def validate(path=None, debug=print, error=print, **_):
     ----------
     path : str, default=None
         Path to verify. If None, defaults to the ini path
+    checkForUpdate : bool, default=True
+        Checks for updates if the path is valid
     debug : function, default=print
         Print function to use for debug messages, eg. logging.debug
     error : function, default=print
@@ -200,15 +210,20 @@ def validate(path=None, debug=print, error=print, **_):
 
     debug(f"Verifying path for 6S: {path}")
 
-    if not (path := Path(path)).exists():
+    path = Path(path)
+
+    if not path.exists():
         error("[x] 6S path does not exist")
         return False
 
-    if not (path / f"sixsV2.1").exists():
+    if len(list(path.glob("sixsV2*"))) != 2:
         error(
-            "[x] 6S is missing the built 'sixsV2.1', this is likely caused by make failing"
+            "[x] 6S is missing the built 'sixsV2.*', this is likely caused by make failing"
         )
         return False
+
+    if checkForUpdate:
+        return isUpToDateGithub(owner="isofit", repo="6S", name="sixs", path=path)
 
     debug("[OK] Path is valid")
     return True
@@ -252,7 +267,7 @@ def update(check=False, **kwargs):
 )
 def download_cli(debug_make, mingw, **kwargs):
     """\
-    Downloads 6S from https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar. Only HDF5 versions are supported at this time.
+    Downloads 6S from https://github.com/isofit/6S. Only HDF5 versions are supported at this time.
 
     \b
     Run `isofit download paths` to see default path locations.

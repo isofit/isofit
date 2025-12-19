@@ -27,10 +27,11 @@ from scipy.interpolate import interp1d
 from scipy.io import loadmat
 from scipy.linalg import block_diag
 
-from isofit.core.common import eps
+from isofit.core.common import eps, svd_inv_sqrt
 from isofit.core.instrument import Instrument
 from isofit.radiative_transfer.radiative_transfer import RadiativeTransfer
 from isofit.surface import Surface
+from isofit.core.geometry import Geometry
 
 Logger = logging.getLogger(__file__)
 
@@ -186,11 +187,32 @@ class ForwardModel:
         """
 
         x_surface = x[self.idx_surface]
-        Sa_surface = self.surface.Sa(x_surface, geom)[:, :]
-        Sa_RT = self.RT.Sa()[:, :]
-        Sa_instrument = self.instrument.Sa()[:, :]
+        Sa_surface, Sa_surf_inv_norm, Sa_surf_inv_sqrt_norm = self.surface.Sa(
+            x_surface, geom
+        )
+        Sa_RT = self.RT.Sa()
+        Sa_instrument = self.instrument.Sa()
+        Sa_state = block_diag(Sa_surface[:, :], Sa_RT[:, :], Sa_instrument[:, :])
 
-        return block_diag(Sa_surface, Sa_RT, Sa_instrument)
+        # per block variance scaling for normalization
+        scale_surf = np.sqrt(np.mean(np.diag(Sa_surface[:, :])))
+        scale_RT = np.sqrt(np.mean(np.diag(Sa_RT[:, :])))
+        scale_inst = np.sqrt(np.mean(np.diag(Sa_instrument[:, :])))
+
+        # Compute the Sa inv and Sa inv sqrt for measurement
+        Sa_inv_state = block_diag(
+            Sa_surf_inv_norm / scale_surf**2,
+            self.RT.Sa_inv_normalized / scale_RT**2,
+            self.instrument.Sa_inv_normalized / scale_inst**2,
+        )
+
+        Sa_inv_sqrt_state = block_diag(
+            Sa_surf_inv_sqrt_norm / scale_surf,
+            self.RT.Sa_inv_sqrt_normalized / scale_RT,
+            self.instrument.Sa_inv_sqrt_normalized / scale_inst,
+        )
+
+        return Sa_state, Sa_inv_state, Sa_inv_sqrt_state
 
     def Sb(self, x, meas, geom):
         """Accumulate the uncertainty due to unmodeled variables within
