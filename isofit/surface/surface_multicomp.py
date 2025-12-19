@@ -334,8 +334,7 @@ class MultiComponentSurface(Surface):
         Linearization of the surface reflectance terms to use in the
         AOE inner loop (see Susiluoto, 2025).
         """
-        # Isolate signal from target
-        theta = L_tot - L_bg
+        theta = L_dir_dir + L_dif_dir
 
         H = np.eye(self.n_wl, self.n_wl)
         H = theta[:, np.newaxis] * H

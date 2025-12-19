@@ -266,8 +266,7 @@ class LUTSurface(Surface):
         The n-columns of H is equal to the number of statevector elements.
         Here, set to the number of wavelengths.
         """
-        # Isolate signal from target
-        theta = L_tot - L_bg
+        theta = L_dir_dir + L_dif_dir
         H = np.eye(self.n_wl, self.n_wl)
         H = theta[:, np.newaxis] * H
 
