@@ -1673,7 +1673,7 @@ def get_metadata_from_obs(
     to_sensor_zenith = obs[:, :, 2]
     to_sun_azimuth = obs[:, :, 3]
     to_sun_zenith = obs[:, :, 4]
-    time = obs[:, :, 9]
+    time = obs[:, :, 9].copy()
 
     # calculate relative to-sun azimuth
     delta_phi = np.abs(to_sun_azimuth - to_sensor_azimuth)
