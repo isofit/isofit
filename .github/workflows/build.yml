@@ -53,6 +53,12 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Install system dependencies
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libhdf5-dev pkg-config
+
       - name: Install dependencies
         shell: bash
         run: |
@@ -101,9 +107,16 @@ jobs:
           cache: 'pip'
           cache-dependency-path: pyproject.toml
 
+      - name: Install system dependencies
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libhdf5-dev pkg-config
+
       - name: Install ISOFIT
         shell: bash
         run: |
+          export HDF5_DIR=/usr/lib/x86_64-linux-gnu/hdf5/serial
           python3 -m pip install --editable ".[test]"
 
       - if: steps.cache-extras.outputs.cache-hit == 'true'
