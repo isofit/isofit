@@ -92,7 +92,7 @@ class RadiativeTransferEngine:
         except:
             logging.debug("self.lut_grid: None")
         logging.debug(f"lut_grid is none {lut_grid is None}")
-        exists = os.path.isfile(lut_path)
+        exists = os.path.exists(lut_path)
         if not exists and lut_grid is None:
             raise AttributeError(
                 "Must provide either a prebuilt LUT file or a LUT grid"
@@ -241,7 +241,7 @@ class RadiativeTransferEngine:
                 )
             else:
                 Logger.info(f"Initializing LUT file")
-                self.lut = luts.Create(
+                self.lut = luts.create(
                     file=self.lut_path,
                     wl=wl,
                     grid=self.lut_grid,
@@ -475,6 +475,7 @@ class RadiativeTransferEngine:
             lut_path = ray.put(self.lut_path)
             buffer_time = ray.put(self.max_buffer_time)
             rte_configure_and_exit = ray.put(self.engine_config.rte_configure_and_exit)
+            lut = ray.put(self.lut) if isinstance(self.lut, luts.CreateZarr) else None
 
             jobs = [
                 streamSimulation.remote(
@@ -485,6 +486,7 @@ class RadiativeTransferEngine:
                     lut_path,
                     max_buffer_time=buffer_time,
                     rte_configure_and_exit=self.engine_config.rte_configure_and_exit,
+                    lut=lut,
                 )
                 for point in self.points
             ]
@@ -516,7 +518,7 @@ class RadiativeTransferEngine:
                     if ret:
                         self.lut.queuePoint(*ret)
 
-                    if report(len(jobs)):
+                    if report(len(jobs)) and self.lut.hold:
                         Logger.info("Flushing netCDF to disk")
                         self.lut.flush()
 
@@ -697,6 +699,7 @@ def streamSimulation(
     output: str,
     max_buffer_time: float = 0.5,
     rte_configure_and_exit: bool = False,
+    lut: luts.Create = None,
 ):
     """Run a simulation for a single point and stream the results to a saved lut file.
 
@@ -708,6 +711,8 @@ def streamSimulation(
         output (str): LUT store to save results to
         max_buffer_time (float, optional): _description_. Defaults to 0.5.
         rte_configure_and_exit (bool, optional): exit early if not executing simulations
+        lut (luts.Create, optional): insert into the lut from the ray child worker
+            instead of returning to the head worker
     """
     Logger.debug(f"Simulating(point={point})")
 
@@ -728,6 +733,11 @@ def streamSimulation(
     if data:
         Logger.debug(f"Updating data point {point} for keys: {data.keys()}")
 
-        return point, data
+        if lut:
+            lut.queuePoint(point, data)
+            lut.flush()
+            Logger.debug(f"Flushed(point={point})")
+        else:
+            return point, data
     else:
         Logger.warning(f"No data was returned for point {point}")

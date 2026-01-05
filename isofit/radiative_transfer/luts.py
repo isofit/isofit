@@ -1,22 +1,51 @@
 """
-This is the netCDF4 implementation for handling ISOFIT LUT files. For previous
+This is the netCDF4 and Zarr implementations for handling ISOFIT LUT files. For previous
 implementations and research, please see https://github.com/isofit/isofit/tree/897062a3dcc64d5292d0d2efe7272db0809a6085/isofit/luts
 """
+
+from __future__ import annotations
 
 import atexit
 import gc
 import logging
 import os
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, List, Union
 
+import dask.array
 import numpy as np
 import xarray as xr
+import zarr
 from netCDF4 import Dataset
+from packaging.version import Version
 
 from isofit import __version__
 
 Logger = logging.getLogger(__name__)
+
+
+def create(file: str, *args, **kwargs):
+    """
+    Factory function to return the correct Create subclass
+
+    Parameters
+    ----------
+    file : str
+        File store. Uses the extension to determine the correct subclass
+    *args : list
+        Arguments to pass to the subclass
+    *args : dict
+        Key-word arguments to pass to the subclass
+
+    Returns
+    -------
+    obj
+        Create subclass object
+    """
+    if file.endswith(".zarr"):
+        return CreateZarr(file, *args, **kwargs)
+    else:
+        return CreateNetCDF(file, *args, **kwargs)
 
 
 # Statically store expected keys of the LUT file and their fill values
@@ -62,16 +91,152 @@ class Create:
         onedim: dict = {},
         alldim: dict = {},
         zeros: List[str] = [],
-        compression: str = "zlib",
-        complevel: int = None,
+        init: bool = True,
+        **kwargs,
     ):
         """
-        Prepare a LUT netCDF
+        Prepare a LUT file
 
         Parameters
         ----------
         file : str
-            NetCDF filepath for the LUT.
+            Filepath for the LUT.
+        wl : np.ndarray
+            The wavelength array.
+        grid : dict
+            The LUT grid, formatted as {str: Iterable}.
+        attrs: dict, defaults={}
+            Dict of dataset attributes, ie. {"RT_mode": "transm"}
+        consts : dict, optional, default={}
+            Dictionary of constant values. Appends/replaces current Create.consts list.
+        onedim : dict, optional, default={}
+            Dictionary of one-dimensional data. Appends/replaces to the current Create.onedim list.
+        alldim : dict, optional, default={}
+            Dictionary of multi-dimensional data. Appends/replaces to the current Create.alldim list.
+        zeros : List[str], optional, default=[]
+            List of zero values. Appends to the current Create.zeros list.
+        init : bool, default=True
+            Call the initialize function
+        *kwargs : dict
+            Captures any additional key-word arguments and ignores
+        """
+        # Track the ISOFIT version that created this LUT
+        attrs["ISOFIT version"] = __version__
+        attrs["ISOFIT status"] = "<incomplete>"
+
+        self.file = file
+        self.wl = wl
+        self.grid = {key: np.array(vals) for key, vals in grid.items()}
+        self.hold = []
+
+        self.sizes = {"wl": len(self.wl)} | {key: len(val) for key, val in grid.items()}
+        self.dims = list(self.sizes)
+        self.point_dims = list(grid)
+
+        self.attrs = attrs
+
+        self.consts = {**Keys.consts, **consts}
+        self.onedim = {**Keys.onedim, **onedim}
+        self.alldim = {**Keys.alldim, **alldim}
+
+        if init:
+            self.initialize()
+
+    def pointIndices(self, point: np.ndarray) -> List[int]:
+        """
+        Get the indices of the point in the grid.
+
+        Parameters
+        ----------
+        point : np.ndarray
+            The coordinates of the point in the grid.
+
+        Returns
+        -------
+        List[int]
+            Mapped point values to index positions.
+        """
+        return [
+            np.where(self.grid[dim] == val)[0][0] for dim, val in zip(self.grid, point)
+        ]
+
+    def queuePoint(self, point: np.ndarray, data: dict) -> None:
+        """
+        Queues a point and its data to the internal hold list which is used by the
+        flush function to write these points to disk.
+
+        Parameters
+        ----------
+        point : np.ndarray
+            The coordinates of the point in the grid.
+        data : dict
+            Data for this point to write.
+        """
+        self.hold.append((point, data))
+
+    def flush(self, finalize: bool = False) -> None:
+        """
+        Flushes the (point, data) pairs held in the hold list to the LUT
+
+        Parameters
+        ----------
+        finalize : bool, default=False
+            Calls the `finalize` function
+        """
+        # Subclass flush
+        unknowns = self._flush()
+
+        self.hold = []
+        gc.collect()
+
+        # Reduce the number of warnings produced per flush
+        for key in unknowns:
+            Logger.warning(
+                f"Attempted to assign a key that is not recognized, skipping: {key}"
+            )
+
+        if finalize:
+            self.finalize()
+
+    def writePoint(self, point: np.ndarray, data: dict) -> None:
+        """
+        Queues a point and immediately flushes to disk.
+
+        Parameters
+        ----------
+        point : np.ndarray
+            The coordinates of the point in the grid.
+        data : dict
+            Data for this point to write.
+        """
+        self.queuePoint(point, data)
+        self.flush()
+
+    def finalize(self):
+        """
+        Finalizes the file store by writing any remaining attributes to disk
+        """
+        self.setAttr("ISOFIT status", "success")
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(shape={self.sizes})"
+
+
+class CreateNetCDF(Create):
+    def __init__(
+        self,
+        *args,
+        compression: str = "zlib",
+        complevel: int = None,
+        **kwargs,
+    ):
+        """
+        Prepare a NetCDF LUT file
+
+        Parameters
+        ----------
+        file : str
+            Filepath for the LUT.
         wl : np.ndarray
             The wavelength array.
         grid : dict
@@ -92,27 +257,27 @@ class Create:
         complevel : int, default=None
             Compression to use. Impact and levels vary per method.
         """
-        # Track the ISOFIT version that created this LUT
-        attrs["ISOFIT version"] = __version__
-        attrs["ISOFIT status"] = "<incomplete>"
-
-        self.file = file
-        self.wl = wl
-        self.grid = grid
-        self.hold = []
-
-        self.sizes = {key: len(val) for key, val in grid.items()}
-        self.attrs = attrs
-
-        self.consts = {**Keys.consts, **consts}
-        self.onedim = {**Keys.onedim, **onedim}
-        self.alldim = {**Keys.alldim, **alldim}
-
         self.compression = compression
         self.complevel = complevel
 
-        # Save ds for backwards compatibility (to work with extractGrid, extractPoints)
-        self.initialize()
+        super().__init__(*args, **kwargs)
+
+    def __getitem__(self, key: str) -> Any:
+        """
+        Retrieves a value from the NetCDF store
+
+        Parameters
+        ----------
+        key : str
+            The name of the item to retrieve
+
+        Returns
+        -------
+        Any
+            The value of the item retrieved from the NetCDF store
+        """
+        with Dataset(self.file, "r") as ds:
+            return ds[key]
 
         atexit.register(cleanup, file)
 
@@ -169,46 +334,14 @@ class Create:
             ds.sync()
         gc.collect()
 
-    def pointIndices(self, point: np.ndarray) -> List[int]:
+    def _flush(self) -> set:
         """
-        Get the indices of the point in the grid.
-
-        Parameters
-        ----------
-        point : np.ndarray
-            The coordinates of the point in the grid.
+        Flushes the (point, data) pairs held in the hold list to the LUT netCDF
 
         Returns
         -------
-        List[int]
-            Mapped point values to index positions.
-        """
-        return [
-            np.where(self.grid[dim] == val)[0][0] for dim, val in zip(self.grid, point)
-        ]
-
-    def queuePoint(self, point: np.ndarray, data: dict) -> None:
-        """
-        Queues a point and its data to the internal hold list which is used by the
-        flush function to write these points to disk.
-
-        Parameters
-        ----------
-        point : np.ndarray
-            The coordinates of the point in the grid.
-        data : dict
-            Data for this point to write.
-        """
-        self.hold.append((point, data))
-
-    def flush(self, finalize: bool = False) -> None:
-        """
-        Flushes the (point, data) pairs held in the hold list to the LUT netCDF.
-
-        Parameters
-        ----------
-        finalize : bool, default=False
-            Calls the `finalize` function
+        unknowns : set
+            Set of unknown keys
         """
         unknowns = set()
         with Dataset(self.file, "a") as ds:
@@ -225,46 +358,7 @@ class Create:
                         unknowns.update([key])
             ds.sync()
 
-        self.hold = []
-        gc.collect()
-
-        # Reduce the number of warnings produced per flush
-        for key in unknowns:
-            Logger.warning(
-                f"Attempted to assign a key that is not recognized, skipping: {key}"
-            )
-
-        if finalize:
-            self.finalize()
-
-    def writePoint(self, point: np.ndarray, data: dict) -> None:
-        """
-        Queues a point and immediately flushes to disk.
-
-        Parameters
-        ----------
-        point : np.ndarray
-            The coordinates of the point in the grid.
-        data : dict
-            Data for this point to write.
-        """
-        self.queuePoint(point, data)
-        self.flush()
-
-    def setAttr(self, key: str, value: Any) -> None:
-        """
-        Sets an attribute in the netCDF
-
-        Parameters
-        ----------
-        key : str
-            Key to set
-        value : any
-            Value to set
-        """
-        self.attrs[key] = value
-        with Dataset(self.file, "a") as ds:
-            ds.setncattr(key, value)
+        return unknowns
 
     def getAttr(self, key: str) -> Any:
         """
@@ -283,30 +377,205 @@ class Create:
         with Dataset(self.file, "r") as ds:
             return ds.getncattr(key)
 
-    def finalize(self):
+    def setAttr(self, key: str, value: Any) -> None:
         """
-        Finalizes the netCDF by writing any remaining attributes to disk
-        """
-        self.setAttr("ISOFIT status", "success")
-
-    def __getitem__(self, key: str) -> Any:
-        """
-        Passthrough to __getitem__ on the underlying 'ds' attribute.
+        Sets an attribute in the netCDF
 
         Parameters
         ----------
         key : str
-            The name of the item to retrieve.
+            Key to set
+        value : any
+            Value to set
+        """
+        self.attrs[key] = value
+        with Dataset(self.file, "a") as ds:
+            ds.setncattr(key, value)
+
+
+class CreateZarr(Create):
+    def __init__(self, file, *args, store="DirectoryStore", **kwargs):
+        """
+        Prepare a Zarr v2 LUT store
+
+        Parameters
+        ----------
+        file : str
+            Filepath for the LUT.
+        wl : np.ndarray
+            The wavelength array.
+        grid : dict
+            The LUT grid, formatted as {str: Iterable}.
+        attrs: dict, defaults={}
+            Dict of dataset attributes, ie. {"RT_mode": "transm"}
+        consts : dict, optional, default={}
+            Dictionary of constant values. Appends/replaces current Create.consts list.
+        onedim : dict, optional, default={}
+            Dictionary of one-dimensional data. Appends/replaces to the current Create.onedim list.
+        alldim : dict, optional, default={}
+            Dictionary of multi-dimensional data. Appends/replaces to the current Create.alldim list.
+        zeros : List[str], optional, default=[]
+            List of zero values. Appends to the current Create.zeros list.
+        store : str, default="DirectoryStore"
+            Zarr backend storage to use. See: https://zarr.readthedocs.io/en/v2.15.0/api/storage.html
+        """
+        self.flush_immediately = False
+
+        self.store = getattr(zarr.storage, store)(file)
+        self.z = zarr.group(store=self.store, overwrite=True)
+
+        super().__init__(file, *args, **kwargs)
+
+    def __getitem__(self, key: str) -> Any:
+        """
+        Retrieves a value from the Zarr store
+
+        Parameters
+        ----------
+        key : str
+            The name of the item to retrieve
 
         Returns
         -------
         Any
-            The value of the item retrieved from the 'ds' attribute.
+            The value of the item retrieved from the Zarr store
         """
-        return self.ds[key]
+        return self.zarr[key]
 
-    def __repr__(self) -> str:
-        return f"LUT(wl={self.wl.size}, grid={self.sizes})"
+    def initialize(self, ret=False) -> None | xr.Dataset:
+        """
+        Initializes the LUT Zarr by prepopulating it with filler values.
+
+        Parameters
+        ----------
+        ret : bool, default=False
+            If True, returns the dataset instead of saving
+
+        Returns
+        -------
+        None | xr.Dataset
+            The initialized dataset
+        """
+        self.z.attrs.update(self.attrs)
+
+        array = self.z.array("wl", self.wl, fill_value=None)
+        array.attrs["_ARRAY_DIMENSIONS"] = ["wl"]
+
+        chunks = [len(self.wl)]
+        for key, vals in self.grid.items():
+            array = self.z.array(key, vals, dtype="float64", fill_value=None)
+            array.attrs["_ARRAY_DIMENSIONS"] = [key]
+            chunks.append(1)
+
+        # Constants
+        dims = ()
+        for key, vals in self.consts.items():
+            array = self.z.array(key, vals, dtype="float64")
+            array.attrs["_ARRAY_DIMENSIONS"] = dims
+
+        # One dimensional arrays
+        dims = ("wl",)
+        shape = (len(self.wl),)
+        for key, vals in self.onedim.items():
+            attrs = {"_ARRAY_DIMENSIONS": dims}
+            if not isinstance(vals, Iterable):
+                array = self.z.create(
+                    name=key, shape=shape, dtype="float64", fill_value=vals
+                )
+            else:
+                array = self.z.array(key, vals, dtype="float64", fill_value=None)
+
+            array.attrs.update(attrs)
+
+        # Multi dimensional arrays
+        dims += tuple(self.grid)
+        shape = list(self.sizes.values())
+        for key, vals in self.alldim.items():
+            attrs = {"_ARRAY_DIMENSIONS": dims}
+            if not isinstance(vals, Iterable):
+                array = self.z.create(
+                    name=key,
+                    shape=shape,
+                    dtype="float64",
+                    fill_value=vals,
+                    chunks=chunks,
+                )
+            else:
+                array = self.z.array(
+                    key, vals, dtype="float64", fill_value=None, chunks=chunks
+                )
+
+            array.attrs.update(attrs)
+
+        zarr.consolidate_metadata(self.store)
+
+    def _flush(self) -> None:
+        """
+        Flushes the (point, data) pairs held in the hold list to the LUT Zarr
+
+        Parameters
+        ----------
+        finalize : bool, default=False
+            Calls the `finalize` function
+        """
+        unknowns = set()
+        for point, data in self.hold:
+            for key, vals in data.items():
+                if key == "wl":
+                    continue
+                if key in self.consts:
+                    self.z[key][...] = vals
+                elif key in self.onedim:
+                    self.z[key][:] = vals
+                elif key in self.alldim:
+                    index = (slice(None),) + tuple(self.pointIndices(point))
+                    self.z[key][index] = vals
+                else:
+                    unknowns.update([key])
+
+        return unknowns
+
+    def queuePoint(self, *args, **kwargs):
+        """
+        Overrides the inherited queuePoint to enable flushing immediately for this
+        subclass only
+        """
+        super().queuePoint(*args, **kwargs)
+        if self.flush_immediately:
+            self.flush()
+
+    def getAttr(self, key: str) -> Any:
+        """
+        Gets an attribute from the Zarr
+
+        Parameters
+        ----------
+        key : str
+            Key to get
+
+        Returns
+        -------
+        any | None
+            Retrieved attribute from Zarr, if it exists
+        """
+        return self.z.attrs.get(key)
+
+    def setAttr(self, key: str, value: Any) -> None:
+        """
+        Sets an attribute in the Zarr
+
+        Parameters
+        ----------
+        key : str
+            Key to set
+        value : any
+            Value to set
+        """
+        self.attrs[key] = value
+        self.z.attrs.update({key: value})
+
+        # Optimizes metadata for xarray
+        zarr.consolidate_metadata(self.store)
 
 
 def findSlice(dim, val):
@@ -745,12 +1014,23 @@ def load(
     if coupling not in ("before", "before-save", "after", "after-save"):
         raise AttributeError("Coupling must be set to either 'before' or 'after'")
 
-    if dask:
-        Logger.debug(f"Using Dask to load: {file}")
-        ds = xr.open_mfdataset([file], mode=mode, lock=lock, **kwargs)
+    if file.endswith(".zarr"):
+        if dask:
+            Logger.debug(f"[Zarr] Using Dask to load: {file}")
+            ds = xr.open_zarr(file, **kwargs)
+        else:
+            Logger.debug(f"[Zarr] Using Xarray to load: {file}")
+            ds = xr.open_dataset(file, engine="zarr", **kwargs)
     else:
-        Logger.debug(f"Using Xarray to load: {file}")
-        ds = xr.open_dataset(file, mode=mode, lock=lock, **kwargs)
+        kwargs.setdefault("engine", "netcdf4")
+        kwargs.setdefault("lock", lock)
+        kwargs.setdefault("mode", mode)
+        if dask:
+            Logger.debug(f"[NetCDF] Using Dask to load: {file}")
+            ds = xr.open_mfdataset([file], **kwargs)
+        else:
+            Logger.debug(f"[NetCDF] Using Xarray to load: {file}")
+            ds = xr.open_dataset(file, **kwargs)
 
     status = ds.attrs.get("ISOFIT status", "<not set>")
     if status != "success":
