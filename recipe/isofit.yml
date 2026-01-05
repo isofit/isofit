@@ -1,4 +1,4 @@
-name: isofit_env_netCDF4_test
+name: isofit_env
 
 channels: &id1
   - http://conda.anaconda.org/conda-forge
