@@ -316,6 +316,7 @@ class Worker(object):
         self.fm = forward_model
         self.iv = Inversion(self.config, self.fm)
         self.io = IO(self.config, self.fm, full_statevec=full_statevector)
+        self.test = "test"
 
         self.total_samples = None
         if total_workers is not None:
