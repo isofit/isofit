@@ -131,7 +131,7 @@ def background_reflectance(
         min_range=0.2,
     )
     logging.info(
-        f"For background reflectance assuming pixel size of {np.round(pixel_size*1000,2)} m and adjacency range of {np.round(adj_range,2)} km."
+        f"For background reflectance assuming pixel size of {round(pixel_size*1000,2)} m and adjacency range of {round(adj_range,2)} km."
     )
 
     # Identify water vapor state vector
