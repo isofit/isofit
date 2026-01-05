@@ -244,15 +244,12 @@ class LUTSurface(Surface):
 
     def analytical_model(
         self,
-        L_down_dir,
-        L_down_dif,
         L_tot,
         geom,
         L_dir_dir=None,
         L_dir_dif=None,
         L_dif_dir=None,
         L_dif_dif=None,
-        L_bg=None,
     ):
         """
         Linearization of the surface reflectance terms to use in the
@@ -266,7 +263,10 @@ class LUTSurface(Surface):
         The n-columns of H is equal to the number of statevector elements.
         Here, set to the number of wavelengths.
         """
-        theta = L_dir_dir + L_dif_dir
+        if type(L_dir_dir) != np.ndarray or len(L_dir_dir) == 1:
+            theta = L_tot
+        else:
+            theta = L_dir_dir + L_dif_dir
         H = np.eye(self.n_wl, self.n_wl)
         H = theta[:, np.newaxis] * H
 

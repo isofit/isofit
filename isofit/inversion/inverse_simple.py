@@ -324,15 +324,12 @@ def invert_analytical(
 
     # The H matrix does not change as a function of x-vector
     H = fm.surface.analytical_model(
-        L_down_dir,
-        L_down_dif,
         L_tot,
         geom,
         L_dir_dir=L_dir_dir,
         L_dir_dif=L_dir_dif,
         L_dif_dir=L_dif_dir,
         L_dif_dif=L_dif_dif,
-        L_bg=L_bg,
     )
     # Sample just the wavelengths and states of interest
     L = H[winidx, :][:, iv_idx]

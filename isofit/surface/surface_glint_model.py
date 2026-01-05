@@ -278,15 +278,12 @@ class GlintModelSurface(MultiComponentSurface):
 
     def analytical_model(
         self,
-        L_down_dir,
-        L_down_dif,
         L_tot,
         geom,
         L_dir_dir=None,
         L_dir_dif=None,
         L_dif_dir=None,
         L_dif_dif=None,
-        L_bg=None,
     ):
         """
         Linearization of the glint terms to use in AOE inner loop.
@@ -302,15 +299,12 @@ class GlintModelSurface(MultiComponentSurface):
         # gam (sun glint portion)
         # ep (sky glint portion)
         H = super().analytical_model(
-            L_down_dir,
-            L_down_dif,
             L_tot,
             geom,
             L_dir_dir,
             L_dir_dif,
             L_dif_dir,
             L_dif_dif,
-            L_bg,
         )
 
         # NOTE: The order of ep and gam respectively is important
