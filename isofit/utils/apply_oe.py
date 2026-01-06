@@ -883,7 +883,7 @@ def apply_oe(
 @click.option("--rdn_factors_path")
 @click.option("--atmosphere_type", default="ATM_MIDLAT_SUMMER")
 @click.option("--channelized_uncertainty_path")
-@click.option("--instrument_noise_path", default=None)
+@click.option("--instrument_noise_path", type=str, default=None)
 @click.option("--dn_uncertainty_file", "-dnf", type=str, default=None)
 @click.option("--model_discrepancy_path")
 @click.option("--lut_config_file")
