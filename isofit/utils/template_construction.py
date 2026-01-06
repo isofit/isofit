@@ -54,6 +54,7 @@ class Pathnames:
         model_discrepancy_path=None,
         aerosol_climatology_path=None,
         channelized_uncertainty_path=None,
+        instrument_noise_path=None,
         interpolate_inplace=False,
         skyview_factor=None,
         subs: bool = False,
@@ -254,6 +255,7 @@ class Pathnames:
 
         self.sixs_path = os.getenv("SIXS_DIR", env.sixs)
 
+        self.noise_path = None
         if sensor == "avcl":
             self.noise_path = str(env.path("data", "avirisc_noise.txt"))
         elif sensor == "oci":
@@ -270,10 +272,17 @@ class Pathnames:
                 )
         elif sensor == "tanager":
             self.noise_path = str(env.path("data", "tanager1_noise_20241016.txt"))
-        else:
-            self.noise_path = None
+
+        # Override noise path if provided
+        if instrument_noise_path is not None:
+            if self.noise_path is not None:
+                logging.info(
+                    f"Overriding default instrument noise path {self.noise_path} with user-provided path {instrument_noise_path}"
+                )
+            self.noise_path = instrument_noise_path
+
+        if self.noise_path is None:
             logging.info("no noise path found, proceeding without")
-            # quit()
 
         self.earth_sun_distance_path = str(env.path("data", "earth_sun_distance.txt"))
 
