@@ -22,17 +22,16 @@ from glob import glob
 import os
 import numpy as np
 from spectral.io import envi
-from scipy.ndimage import uniform_filter
-from scipy.interpolate import interp1d
-from scipy.ndimage import gaussian_filter
+from scipy.ndimage import uniform_filter, gaussian_filter
 import ray
 
 from isofit.core.common import envi_header
-from isofit.inversion.inverse_simple import invert_simple, invert_algebraic
+from isofit.inversion.inverse_simple import invert_algebraic
 from isofit.core.fileio import IO, initialize_output
 from isofit.core.forward import ForwardModel
 from isofit.configs import configs
 from isofit.core.geometry import Geometry
+from isofit.utils.atm_interpolation import atm_interpolation
 
 
 def approx_pixel_size(loc, nodata=-9999):
@@ -82,22 +81,24 @@ def background_reflectance(
     input_radiance,
     input_loc,
     input_obs,
+    paths,
     mean_altitude_km,
     mean_elevation_km,
     working_directory,
-    bgrfl_path,
+    smoothing_sigma,
     logging_level,
     log_file,
     nodata=-9999,
 ):
-    """Produces background reflectance for each pixel by running heuristic solutions on chunks,
-    and then solves the rest of the pixels with algebraic solution. Limited window of spectra are
-    retained to avoid shallow and deep water features. Justification is due to the relatively small effect
-    on the returned radiance from background spectra."""
+    """Aggregates background reflectance term from the presolve."""
 
     logging.basicConfig(
         format="%(levelname)s:%(message)s", level=logging_level, filename=log_file
     )
+
+    # NOTE / TODO: relies on presolve to be true. if it is not, then no data created and bg_rfl remains None.
+    if not os.path.exists(paths.h2o_subs_path):
+        return
 
     config = configs.create_new_config(
         glob(os.path.join(working_directory, "config", "") + "*_isofit.json")[0]
@@ -111,17 +112,6 @@ def background_reflectance(
     loc = envi.open(envi_header(input_loc), input_loc).open_memmap()
     rows, cols, _ = loc.shape
 
-    # regions to keep from heuristic for bg_rfl, avoiding shallow and deep water features
-    BKG_WINDOWS = [
-        [480.0, 690.0],
-        [740.0, 800.0],
-        [850.0, 885.0],
-        [1000.0, 1050.0],
-        [1200.0, 1270.0],
-        [1550.0, 1700.0],
-        [2050.0, 2300.0],
-    ]
-
     # Estimate pixel size and adjacency range in km (pixel size is approx. based on loc file)
     pixel_size = approx_pixel_size(loc=loc, nodata=nodata) / 1000.0  # km
     adj_range = get_adjacency_range(
@@ -131,16 +121,9 @@ def background_reflectance(
         min_range=0.2,
     )
     logging.info(
-        f"For background reflectance assuming pixel size of {round(pixel_size*1000,2)} m and adjacency range of {round(adj_range,2)} km."
+        f"For background reflectance assuming pixel size of {pixel_size*1000:.2f} m "
+        f"and adjacency range of {adj_range:.2f} km."
     )
-
-    # Identify water vapor state vector
-    for h2oname in ["H2OSTR", "h2o"]:
-        if h2oname in fm.RT.statevec_names:
-            wv_idx = fm.RT.statevec_names.index(h2oname)
-            break
-    else:
-        raise ValueError("Water vapor not found in RT names.")
 
     # Create bg_rfl output
     rfl_output = initialize_output(
@@ -155,87 +138,23 @@ def background_reflectance(
             "samples": cols,
             "interleave": "bip",
         },
-        outpath=bgrfl_path,
+        outpath=paths.bgrfl_working_path,
         out_shape=(rows, cols, len(wl)),
         bands=f"{len(wl)}",
         description="Background reflectance for each pixel used in OE inversion",
     )
 
-    @ray.remote
-    def invert_wv(row_chunk, col_chunk, rdn_file, loc_file, obs_file, fm, esd):
-        """Evaluated water vapor at center pixel of chunk."""
-        rdn = envi.open(envi_header(rdn_file), rdn_file).open_memmap()
-        loc = envi.open(envi_header(loc_file), loc_file).open_memmap()
-        obs = envi.open(envi_header(obs_file), obs_file).open_memmap()
-
-        spectra_chunk = rdn[np.ix_(row_chunk, col_chunk)].reshape(-1, rdn.shape[-1])
-        spectra_chunk = np.where(spectra_chunk == nodata, np.nan, spectra_chunk)
-
-        # Pick median spectra for water vapor inversion (inverse simple) of chunk.
-        spectra_median = np.nanmedian(spectra_chunk, axis=0)
-        center_r = row_chunk[len(row_chunk) // 2]
-        center_c = col_chunk[len(col_chunk) // 2]
-
-        x_center = invert_simple(
-            fm,
-            spectra_median,
-            Geometry(
-                obs=obs[center_r, center_c, :],
-                loc=loc[center_r, center_c, :],
-                esd=esd,
-                svf=1.0,
-                bg_rfl=None,
-            ),
-        )
-        wv_value = x_center[fm.idx_RT][wv_idx]
-
-        # check bounds on solution, if at edge return NaN
-        if (
-            wv_value <= fm.bounds[0][fm.idx_RT][wv_idx] + 0.1
-            or wv_value >= fm.bounds[1][fm.idx_RT][wv_idx] - 0.1
-        ):
-            wv_value = np.nan
-
-        return row_chunk, col_chunk, wv_value
-
-    # Run heuristic solve for a limited set of chunks/tiles
-    # 100 is ~ 6 km chunks for EMIT granules
-    wv_chunk_size = 100
-    row_chunks = [
-        list(range(r, min(r + wv_chunk_size, rows)))
-        for r in range(0, rows, wv_chunk_size)
-    ]
-    col_chunks = [
-        list(range(c, min(c + wv_chunk_size, cols)))
-        for c in range(0, cols, wv_chunk_size)
-    ]
-
-    futures = [
-        invert_wv.remote(
-            r_chunk,
-            c_chunk,
-            input_radiance,
-            input_loc,
-            input_obs,
-            ray.put(fm),
-            ray.put(esd),
-        )
-        for r_chunk in row_chunks
-        for c_chunk in col_chunks
-    ]
-
-    # collect water vapor from inverse simple
-    wv = np.full((rows, cols), np.nan, dtype=np.float32)
-    for r, c, wv_value in ray.get(futures):
-        wv[np.ix_(r, c)] = wv_value
-
-    # impute missing data with mean, and apply filter
-    wv[np.isnan(wv)] = np.nanmean(wv)
-    wv = gaussian_filter(wv, sigma=5.0)
+    # Identify water vapor state vector
+    for h2oname in ["H2OSTR", "h2o"]:
+        if h2oname in fm.RT.statevec_names:
+            wv_idx = fm.RT.statevec_names.index(h2oname)
+            break
+    else:
+        raise ValueError("Water vapor not found in RT names.")
 
     @ray.remote
     def invert_rfl(row_chunk, rdn_file, loc_file, obs_file, fm, esd, wv):
-        """Evaluate algebraic based on coarse water vapor solved from inverse_simple."""
+        """Evaluate algebraic based on water vapor from presolve."""
         rdn = envi.open(envi_header(rdn_file), rdn_file).open_memmap()
         loc = envi.open(envi_header(loc_file), loc_file).open_memmap()
         obs = envi.open(envi_header(obs_file), obs_file).open_memmap()
@@ -249,6 +168,7 @@ def background_reflectance(
             rdn_r = np.where(rdn[row_idx, :, :] == nodata, np.nan, rdn[row_idx, :, :])
             loc_r = loc[row_idx, :, :]
             obs_r = obs[row_idx, :, :]
+            wv_r = wv[row_idx, :]
 
             for j in range(n_cols):
                 spectra = rdn_r[j, :]
@@ -260,7 +180,7 @@ def background_reflectance(
                     x_RT_init.copy(),
                     x_instr_init.copy(),
                 )
-                x_RT[wv_idx] = wv[row_idx, j]
+                x_RT[wv_idx] = wv_r[j]
 
                 try:
                     rfl_est, _ = invert_algebraic(
@@ -285,6 +205,19 @@ def background_reflectance(
 
         return row_chunk, rfl_chunk
 
+    # load 1d water vapor data and get back to per pixel value
+    wv = envi.open(envi_header(paths.h2o_subs_path), paths.h2o_subs_path).load()[:, :, -1].squeeze() 
+    labels = envi.open(envi_header(paths.lbl_working_path), paths.lbl_working_path).load().squeeze().astype(int)
+
+    full_wv = np.zeros_like(labels, dtype=float)
+    for lbl_val in np.unique(labels):
+        if lbl_val < wv.size:
+            full_wv[labels == lbl_val] = wv[lbl_val]
+        else:
+            full_wv[labels == lbl_val] = np.nan
+
+    full_wv = gaussian_filter(full_wv, sigma=np.max(smoothing_sigma))
+
     # Run rfl inversions for every pixel
     heuristic_rfl = np.full((rows, cols, len(wl)), np.nan, dtype=np.float32)
     chunk_size = 50  # tuneable, only changes speed
@@ -300,7 +233,7 @@ def background_reflectance(
             input_obs,
             ray.put(fm),
             ray.put(esd),
-            ray.put(wv),
+            ray.put(full_wv)
         )
         for r_chunk in row_chunks
     ]
@@ -324,15 +257,6 @@ def background_reflectance(
         heuristic_rfl, size=(kernel_radius, kernel_radius, 1), mode="nearest"
     )
 
-    # Retaining only bands not in shallow or deep water features
-    idx = np.zeros_like(wl, dtype=bool)
-    for lo, hi in BKG_WINDOWS:
-        idx |= (wl >= lo) & (wl <= hi)
-
-    bg_rfl[:, :, :] = interp1d(
-        wl[idx], bg_rfl[:, :, idx], axis=2, kind="linear", fill_value="extrapolate"
-    )(wl)
-
-    del bg_rfl, heuristic_rfl, loc, fm
+    del bg_rfl, heuristic_rfl, loc, fm, wv, full_wv
 
     return

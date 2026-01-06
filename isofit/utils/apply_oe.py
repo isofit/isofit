@@ -802,10 +802,11 @@ def apply_oe(
             input_radiance=input_radiance,
             input_loc=input_loc,
             input_obs=input_obs,
+            paths=paths,
             mean_altitude_km=mean_altitude_km,
             mean_elevation_km=mean_elevation_km,
             working_directory=working_directory,
-            bgrfl_path=paths.bgrfl_working_path,
+            smoothing_sigma=atm_sigma,
             logging_level=logging_level,
             log_file=log_file,
         )
@@ -887,7 +888,7 @@ def apply_oe(
             )
 
     # Remove bg_rfl file from disk
-    os.remove(paths.bgrfl_working_path)
+    #os.remove(paths.bgrfl_working_path)
 
     logging.info("Done.")
     ray.shutdown()
