@@ -157,9 +157,9 @@ def apply_oe(
         Atmospheric profile to be used for MODTRAN simulations.  Unused for other
         radiative transfer models.
     channelized_uncertainty_path : str, default=None
-        Path to a channelized uncertainty file - used to augment Sy in the OE formalism
+        Path to a wavelength-specific channelized uncertainty file - used to augment Sy in the OE formalism
     instrument_noise_path : str, default=None
-        Path to a instrument noise file, used to derive per-wavelength NEDL / SNR
+        Path to a wavelength-specific instrument noise file, used to derive per-wavelength NEDL / SNR
     dn_uncertainty_file:  str, default=None
         Path to a linearity .mat file to augment S matrix with linearity uncertainty
     model_discrepancy_path : str, default=None
