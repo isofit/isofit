@@ -1405,7 +1405,7 @@ def load_climatology(
         alr = [aerosol_lut_grid["AOT550"][0], aerosol_lut_grid["AOT550"][-1]]
         aerosol_state_vector["AOT550"] = {
             "bounds": [float(alr[0]), float(alr[1])],
-            "scale": 1,
+            "scale": 0.001,
             "init": float((alr[1] - alr[0]) / 10.0 + alr[0]),
             "prior_sigma": 10.0,
             "prior_mean": float((alr[1] - alr[0]) / 10.0 + alr[0]),
