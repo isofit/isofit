@@ -4,6 +4,7 @@ Builds the examples from their template files for a given ISOFIT ini
 
 import json
 import os
+import shutil
 from pathlib import Path
 from types import SimpleNamespace as sns
 
@@ -143,13 +144,19 @@ class Example:
                 output = configs / template.name
                 output.mkdir(parents=True, exist_ok=True)
 
-                for tmpl in template.glob("*.json"):
-                    print(f"Creating {tmpl.parent}/{tmpl.name}")
-                    updateTemplate(tmpl, output)
+                for tmpl in template.glob("*"):
+                    if tmpl.suffix == ".json":
+                        print(f"Creating {tmpl.parent}/{tmpl.name}")
+                        updateTemplate(tmpl, output)
+                    else:
+                        # Non-json files get copied directly
+                        shutil.copy(tmpl, output)
 
             elif template.suffix == ".json":
                 print(f"Creating {template.name}")
                 updateTemplate(template, configs)
+            else:
+                shutil.copy(template, configs / template.name)
 
 
 class IsofitExample(Example):

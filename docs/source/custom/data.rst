@@ -27,6 +27,15 @@ Each subdirectory will have one or more scripts that are prepared for execution.
 
   This will change the download directory from the default ``~`` to ``./extra-downloads/``
 
+.. note::
+
+  If on MacOS, executing the ``make`` command may fail if the user hasn't agreed to the Xcode and Apple SDKs license yet. In these cases, it may be required to run the following command in order to compile the programs that use it (6S, LibRadTran):
+
+  .. code-block::
+
+      $ sudo xcodebuild -license
+
+  This will change the download directory from the default ``~`` to ``./extra-downloads/``
 
 If there are any issues, please report them to the `ISOFIT repository <https://github.com/isofit/isofit/issues>`_.
 
@@ -141,7 +150,7 @@ Downloads
 =========
 
 ISOFIT comes with a ``download`` command that provides users the ability to download and install extra files such as larger data files and examples.
-To get started, execute the ``isofit download --help`` in a terminal. At this time, there are 8 subcommands:
+To get started, execute the ``isofit download --help`` in a terminal. At this time, there are 9 subcommands:
 
 .. list-table::
     :widths: 25 75
@@ -165,6 +174,8 @@ To get started, execute the ``isofit download --help`` in a terminal. At this ti
       - Downloads and builds 6sv-2.1
     * - ``plots``
       - Downloads and installs the ISOFIT plots package from https://github.com/isofit/isofit-plots
+    * - ``libradtran``
+      - Downloads and installs the LibRadTran radiative transfer model. This is experimental and not guaranteed to work. For advanced users only
 
 
 The paths for each download are defined in the currently active INI.

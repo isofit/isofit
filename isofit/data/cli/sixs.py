@@ -19,6 +19,7 @@ from isofit.data.download import (
     unzip,
 )
 
+ESSENTIAL = True
 CMD = "sixs"
 MINGW = "https://github.com/brechtsanders/winlibs_mingw/releases/download/15.2.0posix-13.0.0-msvcrt-r2/winlibs-i686-posix-dwarf-gcc-15.2.0-mingw-w64msvcrt-13.0.0-r2.zip"
 
@@ -73,6 +74,13 @@ def make(directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE, debug=False)
     ----------
     directory : str
         6S directory to build
+
+    Notes
+    -----
+    If on MacOS, executing the `make` command may fail if the user hasn't agreed to the
+    Xcode and Apple SDKs license yet. In these cases, it may be required to run the
+    following command in order to compile the program:
+    $ sudo xcodebuild -license
     """
     # Update the makefile with recommended flags
     file = Path(directory) / "Makefile"
@@ -272,7 +280,7 @@ def download_cli(debug_make, mingw, **kwargs):
     \b
     Run `isofit download paths` to see default path locations.
     There are two ways to specify output directory:
-        - `isofit --sixs /path/sixs download sixs`: Override the ini file. This will save the provided path for future reference.
+        - `isofit --path sixs /path/sixs download sixs`: Override the ini file. This will save the provided path for future reference.
         - `isofit download sixs --path /path/sixs`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
     It is recommended to use the first style so the download path is remembered in the future.
     """
