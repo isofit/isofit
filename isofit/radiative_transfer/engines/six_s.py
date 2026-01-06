@@ -96,19 +96,8 @@ class SixSRT(RadiativeTransferEngine):
         kwargs["fwhm"] = self.fwhm
 
         self.engine_base_dir = engine_config.engine_base_dir
-        try:
-            files = Path(self.engine_base_dir).glob("sixsV2*")
-            files = [x for x in files if "lutaero" not in x.name]
-            if len(files) > 1:
-                Logger.warning(
-                    f"Multiple 6S executables found under path: {self.engine_base_dir}. Using: {files[0].name}"
-                )
-            self.exe = files[0]
-            Logger.debug(f"Using 6S executable: {self.exe}")
-        except:
-            raise FileNotFoundError(
-                f"Could not find the 6S executable under path: {self.engine_base_dir}"
-            )
+        self.exe = get_exe(self.engine_base_dir)
+        Logger.debug(f"Using 6S executable: {self.exe}")
 
         self.co2_mode = False
         if "CO2" in self.exe.name:
@@ -447,3 +436,51 @@ class SixSRT(RadiativeTransferEngine):
         data.pop("grid")
 
         return data
+
+
+def get_exe(path: str = None, version: bool = False) -> str:
+    """
+    Retrieves the 6S executable from a given path
+
+    Parameters
+    ----------
+    path : str, default=None
+        6S directory path. If None, defaults to the ini sixs path
+    version : bool, default=False
+        Returns the 6S version instead
+
+    Returns
+    -------
+    pathlib.Path | str
+        Either the 6S executable as a pathlib object or the string 6S version
+    """
+    if path is None:
+        path = env.sixs
+
+    path = Path(path)
+
+    exes = path.glob("sixsV*")
+    exes = [exe for exe in exes if "lutaero" not in exe.name]
+    names = [exe.name for exe in exes]
+
+    if not exes:
+        raise FileNotFoundError(f"Could not find a 6S executable under path: {path}")
+
+    if len(exes) > 1:
+        Logger.warning(
+            f"More than one 6S executable was found. Defaulting to the first one: {names}"
+        )
+
+    if version:
+        # Try using the version.txt file, created by the isofit downloader
+        if (txt := path / "version.txt").exists():
+            with txt.open("r") as f:
+                vers = f.read()
+        # Fallback to using the executable name
+        else:
+            _, vers = names[0].split("V")
+            vers = f"v{vers}".lower()
+
+        return vers
+
+    return exes[0]
