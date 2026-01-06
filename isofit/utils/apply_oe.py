@@ -30,7 +30,8 @@ from isofit.utils import (
     segment,
 )
 from isofit.utils.skyview import skyview
-
+from isofit.utils.presolve import presolve_atm
+        
 EPS = 1e-6
 CHUNKSIZE = 256
 
@@ -635,85 +636,78 @@ def apply_oe(
             else:
                 logging.info(f"Skipping {inp}, because is not a path.")
 
-    if presolve:
-        # write modtran presolve template
-        tmpl.write_modtran_template(
-            atmosphere_type=atmosphere_type,
-            fid=paths.fid,
-            altitude_km=mean_altitude_km,
-            dayofyear=dayofyear,
-            to_sensor_azimuth=mean_to_sensor_azimuth,
-            to_sensor_zenith=mean_to_sensor_zenith,
-            to_sun_zenith=mean_to_sun_zenith,
-            relative_azimuth=mean_relative_azimuth,
-            gmtime=gmtime,
-            elevation_km=mean_elevation_km,
-            output_file=paths.h2o_template_path,
-            ihaze_type="AER_NONE",
+        # TODO without presolve, always should run if segmented?
+        # use the segments and heuristic atmosphere to further constrain aot and h2o.
+        h2o_lut_grid = lut_params.get_grid(
+            lut_params.h2o_range[0],
+            lut_params.h2o_range[1],
+            lut_params.h2o_spacing,
+            lut_params.h2o_spacing_min,
         )
 
-        if emulator_base is None and prebuilt_lut is None:
-            max_water = tmpl.calc_modtran_max_water(paths)
-        else:
-            max_water = 6
+        logging.info("Writing main configuration file.")
+        tmpl.build_main_config(
+            paths=paths,
+            lut_params=lut_params,
+            h2o_lut_grid=h2o_lut_grid,
+            elevation_lut_grid=(
+                elevation_lut_grid
+                if elevation_lut_grid is not None
+                else [mean_elevation_km]
+            ),
+            to_sensor_zenith_lut_grid=(
+                to_sensor_zenith_lut_grid
+                if to_sensor_zenith_lut_grid is not None
+                else [mean_to_sensor_zenith]
+            ),
+            to_sun_zenith_lut_grid=(
+                to_sun_zenith_lut_grid
+                if to_sun_zenith_lut_grid is not None
+                else [mean_to_sun_zenith]
+            ),
+            relative_azimuth_lut_grid=(
+                relative_azimuth_lut_grid
+                if relative_azimuth_lut_grid is not None
+                else [mean_relative_azimuth]
+            ),
+            mean_latitude=mean_latitude,
+            mean_longitude=mean_longitude,
+            dt=dt,
+            use_superpixels=use_superpixels,
+            n_cores=n_cores,
+            surface_category=surface_category,
+            emulator_base=emulator_base,
+            uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
+            dn_uncertainty_file=dn_uncertainty_file,
+            multiple_restarts=multiple_restarts,
+            segmentation_size=segmentation_size,
+            pressure_elevation=pressure_elevation,
+            prebuilt_lut_path=prebuilt_lut,
+            inversion_windows=INVERSION_WINDOWS,
+            multipart_transmittance=multipart_transmittance,
+            retrieve_co2=retrieve_co2,
+        )
 
-        # run H2O grid as necessary
-        if not exists(envi_header(paths.h2o_subs_path)) or not exists(
-            paths.h2o_subs_path
-        ):
-            # Write the presolve connfiguration file
-            h2o_grid = np.linspace(0.2, max_water - 0.01, 10).round(2)
-            logging.info(f"Pre-solve H2O grid: {h2o_grid}")
-            logging.info("Writing H2O pre-solve configuration file.")
-            tmpl.build_presolve_config(
-                paths=paths,
-                h2o_lut_grid=h2o_grid,
-                n_cores=n_cores,
-                use_superpixels=use_superpixels,
-                surface_category=surface_category,
-                emulator_base=emulator_base,
-                uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
-                dn_uncertainty_file=dn_uncertainty_file,
-                prebuilt_lut_path=prebuilt_lut,
-                inversion_windows=INVERSION_WINDOWS,
-                multipart_transmittance=multipart_transmittance,
-            )
-            """Currently not running presolve with either
-            multisurface-mode or topography mode. Could easily change
-            this"""
+        # returned flattened, heuristic solve, for now...
+        h2o_est, aot_est = presolve_atm(paths, working_directory) 
 
-            # Run modtran retrieval
-            logging.info("Run ISOFIT initial guess")
-            retrieval_h2o = isofit.Isofit(
-                paths.h2o_config_path,
-                level="INFO",
-                logfile=log_file,
-            )
-            retrieval_h2o.run()
-            del retrieval_h2o
+        p02 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 2)
+        p98 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 98)
+        margin = (p98 - p02) * 0.5
+        lut_params.h2o_range[0] = max(lut_params.h2o_min, p02 - margin)
+        lut_params.h2o_range[1] = min(lut_params.h2o_range[1], max(lut_params.h2o_min, p98 + margin))
 
-            # clean up unneeded storage
-            if emulator_base is None:
-                for to_rm in RTM_CLEANUP_LIST:
-                    cmd = "rm " + join(paths.lut_h2o_directory, to_rm)
-                    logging.info(cmd)
-                    subprocess.call(cmd, shell=True)
-        else:
-            logging.info("Existing h2o-presolve solutions found, using those.")
+        # repeat for aot - just for upper end
+        p02 = np.percentile(aot_est[aot_est > lut_params.aot_550_range[0]], 2)
+        p98 = np.percentile(aot_est[aot_est > lut_params.aot_550_range[0]], 98)
+        margin = (p98 - p02) * 0.5
+        lut_params.aot_550_range[1] = min(lut_params.aot_550_range[1], max(lut_params.aot_550_range[0], p98 + margin))
 
-        h2o = envi.open(envi_header(paths.h2o_subs_path))
-        # Find the band that is H2O. Should be stable with constant H2O name
-        h2o_band = [
-            i for i, name in enumerate(h2o.metadata["band names"]) if name == "H2OSTR"
-        ][0]
-        h2o_est = h2o.read_band(h2o_band)[:].flatten()
-
-        p05 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 2)
-        p95 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 98)
-        margin = (p95 - p05) * 0.5
-
-        lut_params.h2o_range[0] = max(lut_params.h2o_min, p05 - margin)
-        lut_params.h2o_range[1] = min(max_water, max(lut_params.h2o_min, p95 + margin))
+        # Remove this config.. OR, use this as the chance to build it, and just upadate it ..
+        # doing nothing here rebuilds anyway but can reduce more code
+        # TODO
+        # instead of returning flattened, it would be nice if I wrote to disk (e.g., h2o_subs file)
+        # this array can be used for the background solution...
 
     h2o_lut_grid = lut_params.get_grid(
         lut_params.h2o_range[0],
@@ -748,7 +742,7 @@ def apply_oe(
             output_file=paths.modtran_template_path,
         )
 
-        logging.info("Writing main configuration file.")
+        logging.info("Updating main configuration file.")
         tmpl.build_main_config(
             paths=paths,
             lut_params=lut_params,

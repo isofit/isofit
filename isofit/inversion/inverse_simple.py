@@ -132,12 +132,46 @@ def heuristic_atmosphere(
             areas.append(D)
             h2os.append(h2o)
 
-        # Finally, interpolate to determine the actual water vapor level that
+        # Next, interpolate to determine the actual water vapor level that
         # would optimize the continuum-relative correction
         p = interp1d(h2os, areas)
         bounds = (h2os[0] + 0.001, h2os[-1] - 0.001)
         best = min1d(lambda h: abs(p(h)), bounds=bounds, method="bounded")
         x_new[ind_sv] = best.x
+
+        # Finally, using a quasi coordinate descent approach, use this best h2o solve
+        # to find best AOD which alters the left-right shoulders of the water feature.
+        aots, areas = [], []
+        if "AOT550" in fm.RT.statevec_names and "AOT550" in my_RT.lut_names:
+            ind_aot = fm.RT.statevec_names.index("AOT550")
+            aot_grid = my_RT.lut_grid["AOT550"]
+
+            for aot in aot_grid:
+                x_RT_2 = x_new.copy()
+                x_RT_2[ind_aot] = aot
+
+                r, coeffs = invert_algebraic(
+                    fm.surface,
+                    fm.RT,
+                    fm.instrument,
+                    x_surface,
+                    x_RT_2,
+                    x_instrument,
+                    meas,
+                    geom,
+                )
+                r = fm.surface.fit_params(r, geom)[fm.idx_surf_rfl]
+
+                vals = np.interp(wl[blo:bhi], [wl_lo, wl_hi], [r[blo], r[bhi]])
+                D = abs(np.sum(vals - r[blo:bhi]))
+
+                areas.append(D)
+                aots.append(aot)
+
+            p = interp1d(aots, areas)
+            bounds = (aots[0] + 0.001, aots[-1] - 0.001)
+            best = min1d(lambda h: abs(p(h)), bounds=bounds, method="bounded")
+            x_new[ind_aot] = best.x
 
     return x_new
 
