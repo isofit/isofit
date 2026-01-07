@@ -636,8 +636,7 @@ def apply_oe(
             else:
                 logging.info(f"Skipping {inp}, because is not a path.")
 
-        # TODO without presolve, always should run if segmented?
-        # use the segments and heuristic atmosphere to further constrain aot and h2o.
+        # TODO: remove the presolve arg and always run this?
         h2o_lut_grid = lut_params.get_grid(
             lut_params.h2o_range[0],
             lut_params.h2o_range[1],
@@ -688,26 +687,22 @@ def apply_oe(
             retrieve_co2=retrieve_co2,
         )
 
-        # returned flattened, heuristic solve, for now...
+        # Return the subs arrays, hold on to these for the background solve
         h2o_est, aot_est = presolve_atm(paths, working_directory) 
+        h2o_est_flat = h2o_est.flatten()
+        aot_est_flat = aot_est.flatten()
 
-        p02 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 2)
-        p98 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 98)
+        p02 = np.percentile(h2o_est_flat[h2o_est_flat > lut_params.h2o_min], 2)
+        p98 = np.percentile(h2o_est_flat[h2o_est_flat > lut_params.h2o_min], 98)
         margin = (p98 - p02) * 0.5
         lut_params.h2o_range[0] = max(lut_params.h2o_min, p02 - margin)
         lut_params.h2o_range[1] = min(lut_params.h2o_range[1], max(lut_params.h2o_min, p98 + margin))
 
         # repeat for aot - just for upper end
-        p02 = np.percentile(aot_est[aot_est > lut_params.aot_550_range[0]], 2)
-        p98 = np.percentile(aot_est[aot_est > lut_params.aot_550_range[0]], 98)
+        p02 = np.percentile(aot_est[aot_est_flat > lut_params.aot_550_range[0]], 2)
+        p98 = np.percentile(aot_est[aot_est_flat > lut_params.aot_550_range[0]], 98)
         margin = (p98 - p02) * 0.5
         lut_params.aot_550_range[1] = min(lut_params.aot_550_range[1], max(lut_params.aot_550_range[0], p98 + margin))
-
-        # Remove this config.. OR, use this as the chance to build it, and just upadate it ..
-        # doing nothing here rebuilds anyway but can reduce more code
-        # TODO
-        # instead of returning flattened, it would be nice if I wrote to disk (e.g., h2o_subs file)
-        # this array can be used for the background solution...
 
     h2o_lut_grid = lut_params.get_grid(
         lut_params.h2o_range[0],
@@ -742,6 +737,8 @@ def apply_oe(
             output_file=paths.modtran_template_path,
         )
 
+        # TODO: runs again to update bounds and init for h2o and aod..
+        # could be condensed? but does do the job..
         logging.info("Updating main configuration file.")
         tmpl.build_main_config(
             paths=paths,

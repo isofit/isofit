@@ -23,9 +23,10 @@ def presolve_atm(paths, working_directory, n_chunks=50):
     rdn_hdr = envi_header(paths.rdn_subs_path)
     rdn = envi.open(rdn_hdr, paths.rdn_subs_path).open_memmap()
 
+    chunk_size = max(1, rdn.shape[0] // n_chunks)
     chunk_indices = [
-        range(start, min(start + rdn.shape[0] // n_chunks, rdn.shape[0]))
-        for start in range(0, rdn.shape[0], rdn.shape[0] // n_chunks)
+        range(start, min(start + chunk_size, rdn.shape[0]))
+        for start in range(0, rdn.shape[0], chunk_size)
     ]
 
     futures = [
@@ -40,12 +41,12 @@ def presolve_atm(paths, working_directory, n_chunks=50):
         for idx_chunk in chunk_indices
     ]
 
-    wv_array = np.empty(rdn.shape[0], dtype=np.float32)
-    aot_array = np.empty(rdn.shape[0], dtype=np.float32)
+    wv_array = np.empty((rdn.shape[0], 1, 1), dtype=np.float32)
+    aot_array = np.empty((rdn.shape[0], 1, 1), dtype=np.float32)
 
     for idx_chunk, result_chunk in ray.get(futures):
-        wv_array[idx_chunk] = result_chunk[0]
-        aot_array[idx_chunk] = result_chunk[1]
+        wv_array[idx_chunk, 0, 0] = result_chunk[0]
+        aot_array[idx_chunk, 0, 0] = result_chunk[1]
 
     return wv_array, aot_array
 
