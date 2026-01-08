@@ -637,6 +637,7 @@ def check_surface_model(
             "No surface file found. Please provide either a .mat model or a .json config dict."
         )
 
+
 def build_main_config(
     paths: Pathnames,
     lut_params: LUTConfig,
@@ -1269,6 +1270,7 @@ def load_climatology(
     )
 
     return aerosol_state_vector, aerosol_lut_grid, aerosol_model_path
+
 
 def define_surface_types(
     tsip: dict,

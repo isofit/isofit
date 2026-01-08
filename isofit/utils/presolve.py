@@ -11,6 +11,7 @@ from isofit.core.forward import ForwardModel
 from isofit.core.fileio import IO
 from isofit.core.geometry import Geometry
 
+
 def presolve_atm(paths, working_directory, n_chunks=50):
     """Coarse solve of H2O and AOT of the segmented image."""
 
@@ -36,7 +37,7 @@ def presolve_atm(paths, working_directory, n_chunks=50):
             paths.loc_subs_path,
             paths.obs_subs_path,
             ray.put(fm),
-            ray.put(esd)
+            ray.put(esd),
         )
         for idx_chunk in chunk_indices
     ]
@@ -70,7 +71,7 @@ def worker(idx_chunk, rdn_path, loc_path, obs_path, fm, esd):
     aot_chunk = np.empty(len(idx_chunk), dtype=np.float32)
 
     for i, idx in enumerate(idx_chunk):
-        geom = Geometry(obs=obs[idx, 0, :],loc=loc[idx, 0, :], esd=esd, svf=1.0)
+        geom = Geometry(obs=obs[idx, 0, :], loc=loc[idx, 0, :], esd=esd, svf=1.0)
         x_center = invert_simple(fm, rdn[idx, 0, :], geom)
         wv_chunk[i] = x_center[fm.idx_RT][wv_idx]
         aot_chunk[i] = x_center[fm.idx_RT][aot_idx]

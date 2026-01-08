@@ -31,7 +31,7 @@ from isofit.utils import (
 )
 from isofit.utils.skyview import skyview
 from isofit.utils.presolve import presolve_atm
-        
+
 EPS = 1e-6
 CHUNKSIZE = 256
 
@@ -688,7 +688,7 @@ def apply_oe(
         )
 
         # Return the subs arrays, hold on to these for the background solve
-        h2o_est, aot_est = presolve_atm(paths, working_directory) 
+        h2o_est, aot_est = presolve_atm(paths, working_directory)
         h2o_est_flat = h2o_est.flatten()
         aot_est_flat = aot_est.flatten()
 
@@ -696,13 +696,18 @@ def apply_oe(
         p98 = np.percentile(h2o_est_flat[h2o_est_flat > lut_params.h2o_min], 98)
         margin = (p98 - p02) * 0.5
         lut_params.h2o_range[0] = max(lut_params.h2o_min, p02 - margin)
-        lut_params.h2o_range[1] = min(lut_params.h2o_range[1], max(lut_params.h2o_min, p98 + margin))
+        lut_params.h2o_range[1] = min(
+            lut_params.h2o_range[1], max(lut_params.h2o_min, p98 + margin)
+        )
 
-        # repeat for aot - just for upper end
-        p02 = np.percentile(aot_est[aot_est_flat > lut_params.aot_550_range[0]], 2)
-        p98 = np.percentile(aot_est[aot_est_flat > lut_params.aot_550_range[0]], 98)
-        margin = (p98 - p02) * 0.5
-        lut_params.aot_550_range[1] = min(lut_params.aot_550_range[1], max(lut_params.aot_550_range[0], p98 + margin))
+        # repeat for aot upper bound, up to 95th percentile
+        lut_params.aot_550_range[1] = min(
+            lut_params.aot_550_range[1],
+            max(
+                lut_params.aot_550_range[0],
+                (np.nanmean(aot_est_flat) + 2 * np.nanstd(aot_est_flat)),
+            ),
+        )
 
     h2o_lut_grid = lut_params.get_grid(
         lut_params.h2o_range[0],
