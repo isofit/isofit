@@ -697,13 +697,12 @@ def apply_oe(
             lut_params.h2o_range[1], max(lut_params.h2o_min, p98 + margin)
         )
 
-        # repeat for aot upper bound, up to 95th percentile
+        # repeat for aot upper bound, using 95th percentile without margin
+        p95 = np.percentile(
+            aot_est_flat[aot_est_flat > lut_params.aot_550_range[0]], 95
+        )
         lut_params.aot_550_range[1] = min(
-            lut_params.aot_550_range[1],
-            max(
-                lut_params.aot_550_range[0],
-                (np.nanmean(aot_est_flat) + 2 * np.nanstd(aot_est_flat)),
-            ),
+            lut_params.aot_550_range[1], max(lut_params.aot_550_range[0], p95)
         )
         logging.info("Presolve of atmosphere complete.")
 
