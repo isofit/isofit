@@ -664,6 +664,7 @@ def build_main_config(
     multipart_transmittance: bool = False,
     surface_mapping: dict = None,
     retrieve_co2: bool = False,
+    presolve: bool = False,
 ) -> None:
     """Write an isofit config file for the main solve, using the specified pathnames and all given info
 
@@ -694,6 +695,7 @@ def build_main_config(
         multipart_transmittance:              flag to indicate whether a 4-component transmittance model is to be used
         surface_mapping:                      optional object to pass mapping between surface class and surface model
         retrieve_co2:                         flag to include CO2 in lut and retrieval
+        presolve:                             flag to indicate if paths should point to presolve directory
     """
 
     # Determine number of spectra included in each retrieval.  If we are
@@ -715,15 +717,23 @@ def build_main_config(
     else:
         engine_name = "sRTMnet"
 
+    if presolve:
+        lut_path = join(paths.lut_h2o_directory, "lut.nc")
+        full_lut_dir = paths.lut_h2o_directory
+        template_dir = paths.h2o_template_path
+    else:
+        full_lut_dir = paths.full_lut_directory
+        template_dir = paths.modtran_template_path
+
     radiative_transfer_config = {
         "radiative_transfer_engines": {
             "vswir": {
                 "engine_name": engine_name,
                 "multipart_transmittance": multipart_transmittance,
-                "sim_path": paths.full_lut_directory,
+                "sim_path": full_lut_dir,
                 "lut_path": lut_path,
                 "aerosol_template_file": paths.aerosol_tpl_path,
-                "template_file": paths.modtran_template_path,
+                "template_file": template_dir,
             }
         },
         "statevector": {},

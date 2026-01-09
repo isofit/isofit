@@ -637,77 +637,69 @@ def apply_oe(
                 logging.info(f"Skipping {inp}, because is not a path.")
 
         # TODO: remove the presolve arg and always run this?
-        h2o_lut_grid = lut_params.get_grid(
-            lut_params.h2o_range[0],
-            lut_params.h2o_range[1],
-            lut_params.h2o_spacing,
-            lut_params.h2o_spacing_min,
-        )
+        # can probably get this to work for the per pixel solution too..
+        # Only for when a prebuilt LUT is not given
+        if prebuilt_lut is None:
+            h2o_lut_grid = lut_params.get_grid(
+                lut_params.h2o_range[0],
+                lut_params.h2o_range[1],
+                lut_params.h2o_spacing,
+                lut_params.h2o_spacing_min,
+            )
 
-        logging.info("Writing main configuration file.")
-        tmpl.build_main_config(
-            paths=paths,
-            lut_params=lut_params,
-            h2o_lut_grid=h2o_lut_grid,
-            elevation_lut_grid=(
-                elevation_lut_grid
-                if elevation_lut_grid is not None
-                else [mean_elevation_km]
-            ),
-            to_sensor_zenith_lut_grid=(
-                to_sensor_zenith_lut_grid
-                if to_sensor_zenith_lut_grid is not None
-                else [mean_to_sensor_zenith]
-            ),
-            to_sun_zenith_lut_grid=(
-                to_sun_zenith_lut_grid
-                if to_sun_zenith_lut_grid is not None
-                else [mean_to_sun_zenith]
-            ),
-            relative_azimuth_lut_grid=(
-                relative_azimuth_lut_grid
-                if relative_azimuth_lut_grid is not None
-                else [mean_relative_azimuth]
-            ),
-            mean_latitude=mean_latitude,
-            mean_longitude=mean_longitude,
-            dt=dt,
-            use_superpixels=use_superpixels,
-            n_cores=n_cores,
-            surface_category=surface_category,
-            emulator_base=emulator_base,
-            uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
-            dn_uncertainty_file=dn_uncertainty_file,
-            multiple_restarts=multiple_restarts,
-            segmentation_size=segmentation_size,
-            pressure_elevation=pressure_elevation,
-            prebuilt_lut_path=prebuilt_lut,
-            inversion_windows=INVERSION_WINDOWS,
-            multipart_transmittance=multipart_transmittance,
-            retrieve_co2=retrieve_co2,
-        )
+            # write modtran presolve template
+            tmpl.write_modtran_template(
+                atmosphere_type=atmosphere_type,
+                fid=paths.fid,
+                altitude_km=mean_altitude_km,
+                dayofyear=dayofyear,
+                to_sensor_azimuth=mean_to_sensor_azimuth,
+                to_sensor_zenith=mean_to_sensor_zenith,
+                to_sun_zenith=mean_to_sun_zenith,
+                relative_azimuth=mean_relative_azimuth,
+                gmtime=gmtime,
+                elevation_km=mean_elevation_km,
+                output_file=paths.h2o_template_path,
+                ihaze_type="AER_NONE",
+            )
 
-        # Return the subs arrays, hold on to these for the background solve
-        h2o_est, aot_est = presolve_atm(paths, working_directory)
-        h2o_est_flat = h2o_est.flatten()
-        aot_est_flat = aot_est.flatten()
+            # write presolve config (to be overwritten)
+            tmpl.build_main_config(
+                paths=paths,
+                lut_params=lut_params,
+                h2o_lut_grid=h2o_lut_grid,
+                mean_latitude=mean_latitude,
+                mean_longitude=mean_longitude,
+                dt=dt,
+                n_cores=n_cores,
+                emulator_base=emulator_base,
+                segmentation_size=segmentation_size,
+                inversion_windows=INVERSION_WINDOWS,
+                multipart_transmittance=multipart_transmittance,
+                presolve=True,
+            )
 
-        p02 = np.percentile(h2o_est_flat[h2o_est_flat > lut_params.h2o_min], 2)
-        p98 = np.percentile(h2o_est_flat[h2o_est_flat > lut_params.h2o_min], 98)
-        margin = (p98 - p02) * 0.5
-        lut_params.h2o_range[0] = max(lut_params.h2o_min, p02 - margin)
-        lut_params.h2o_range[1] = min(
-            lut_params.h2o_range[1], max(lut_params.h2o_min, p98 + margin)
-        )
+            # Return the subs arrays, hold on to these for the background solve
+            h2o_est, aot_est = presolve_atm(paths)
+            h2o_est_flat = h2o_est.flatten()
+            aot_est_flat = aot_est.flatten()
 
-        # repeat for aot upper bound, up to 95th percentile
-        lut_params.aot_550_range[1] = min(
-            lut_params.aot_550_range[1],
-            max(
-                lut_params.aot_550_range[0],
-                (np.nanmean(aot_est_flat) + 2 * np.nanstd(aot_est_flat)),
-            ),
-        )
+            p02 = np.percentile(h2o_est_flat[h2o_est_flat > lut_params.h2o_min], 2)
+            p98 = np.percentile(h2o_est_flat[h2o_est_flat > lut_params.h2o_min], 98)
+            margin = (p98 - p02) * 0.5
+            lut_params.h2o_range[0] = max(lut_params.h2o_min, p02 - margin)
+            lut_params.h2o_range[1] = min(
+                lut_params.h2o_range[1], max(lut_params.h2o_min, p98 + margin)
+            )
+
+            # repeat for aot upper bound, up to 95th percentile
+            lut_params.aot_550_range[1] = min(
+                lut_params.aot_550_range[1],
+                max(
+                    lut_params.aot_550_range[0],
+                    (np.nanmean(aot_est_flat) + 2 * np.nanstd(aot_est_flat)),
+                ),
+            )
 
     h2o_lut_grid = lut_params.get_grid(
         lut_params.h2o_range[0],
@@ -742,9 +734,7 @@ def apply_oe(
             output_file=paths.modtran_template_path,
         )
 
-        # TODO: runs again to update bounds and init for h2o and aod..
-        # could be condensed? but does do the job..
-        logging.info("Updating main configuration file.")
+        logging.info("Writing main configuration file.")
         tmpl.build_main_config(
             paths=paths,
             lut_params=lut_params,

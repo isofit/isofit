@@ -12,12 +12,10 @@ from isofit.core.fileio import IO
 from isofit.core.geometry import Geometry
 
 
-def presolve_atm(paths, working_directory, n_chunks=50):
+def presolve_atm(paths, n_chunks=50):
     """Coarse solve of H2O and AOT of the segmented image."""
 
-    config = configs.create_new_config(
-        glob(os.path.join(working_directory, "config", "") + "*_isofit.json")[0]
-    )
+    config = configs.create_new_config(paths.isofit_full_config_path)
     fm = ForwardModel(config)
     esd = IO.load_esd()
 
