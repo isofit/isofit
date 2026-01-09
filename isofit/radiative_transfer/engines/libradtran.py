@@ -69,7 +69,7 @@ quiet
 """
 
 
-
+# See Table 3.1; page 25
 
 # TODO:
 # we can do similar math to do the two albedo method
