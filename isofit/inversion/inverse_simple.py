@@ -34,6 +34,53 @@ from isofit.core.common import (
 from isofit.data import env
 
 
+def continuum_removal(
+    fm: ForwardModel,
+    x_surface: np.ndarray,
+    x_instrument: np.ndarray,
+    meas: np.ndarray,
+    geom: Geometry,
+    wl: np.ndarray,
+    blo: int,
+    bhi: int,
+    state_name: str,
+    x_new: np.ndarray,
+) -> float:
+
+    ind_sv = fm.RT.statevec_names.index(state_name)
+    lut_grid = fm.RT.rt_engines[0].lut_grid[state_name]
+    areas = []
+
+    # weights left shoulders for AOT more, basis from Fig 4 of Carmon et al. (2020)
+    n = bhi - blo
+    w = np.ones(n)
+    if state_name == "AOT550":
+        w = np.linspace(1, 0.2, n)  # somewhat arbitrary
+
+    for val in lut_grid:
+        x_RT_2 = x_new.copy()
+        x_RT_2[ind_sv] = val
+        r, _ = invert_algebraic(
+            fm.surface,
+            fm.RT,
+            fm.instrument,
+            x_surface,
+            x_RT_2,
+            x_instrument,
+            meas,
+            geom,
+        )
+        r = fm.surface.fit_params(r, geom)[fm.idx_surf_rfl]
+        vals = np.interp(wl[blo:bhi], [wl[blo], wl[bhi]], [r[blo], r[bhi]])
+        D = np.sum(w * (vals - r[blo:bhi]))
+        areas.append(D)
+
+    p = interp1d(lut_grid, areas, kind="linear")
+    bounds = (lut_grid[0] + 0.001, lut_grid[-1] - 0.001)
+    best = min1d(lambda h: abs(p(h)), bounds=bounds, method="bounded")
+    return best.x
+
+
 def heuristic_atmosphere(
     fm: ForwardModel,
     x_surface: np.array,
@@ -86,92 +133,19 @@ def heuristic_atmosphere(
     if not my_RT:
         raise ValueError("No suitable RT object for initialization")
 
-    # Band ratio retrieval of H2O.  Depending on the radiative transfer
-    # model we are using, this state parameter could go by several names.
+    # Continuum removal retrieval of H2O.
     for h2oname in ["H2OSTR", "h2o"]:
-        if h2oname not in fm.RT.statevec_names:
-            continue
-
-        # ignore unused names
-        if h2oname not in my_RT.lut_names:
-            continue
-
-        # find the index in the lookup table associated with water vapor
-        ind_sv = fm.RT.statevec_names.index(h2oname)
-        h2os, areas = [], []
-
-        # We iterate through every possible grid point in the lookup table,
-        # calculating the band ratio that we would see if this were the
-        # atmospheric H2O content.  It assumes that defaults for all other
-        # atmospheric parameters (such as aerosol, if it is there).
-        for h2o in my_RT.lut_grid[h2oname]:
-            # Get Atmospheric terms at high spectral resolution
-            x_RT_2 = x_RT.copy()
-            x_RT_2[ind_sv] = h2o
-
-            # pass in all zeros, as this is ONLY used for Ls, which we will
-            # assume is not present
-            r, coeffs = invert_algebraic(
-                fm.surface,
-                fm.RT,
-                fm.instrument,
-                x_surface,
-                x_RT_2,
-                x_instrument,
-                meas,
-                geom,
+        if h2oname in fm.RT.statevec_names and h2oname in my_RT.lut_names:
+            x_new[fm.RT.statevec_names.index(h2oname)] = continuum_removal(
+                fm, x_surface, x_instrument, meas, geom, wl, blo, bhi, h2oname, x_new
             )
-            r = fm.surface.fit_params(r, geom)[fm.idx_surf_rfl]
 
-            # Simple linear interpolation
-            vals = np.interp(wl[blo:bhi], [wl_lo, wl_hi], [r[blo], r[bhi]])
-
-            # Minimize the absolute distance between the continuum removed
-            D = np.sum(vals - r[blo:bhi])
-
-            areas.append(D)
-            h2os.append(h2o)
-
-        # Next, interpolate to determine the actual water vapor level that
-        # would optimize the continuum-relative correction
-        p = interp1d(h2os, areas)
-        bounds = (h2os[0] + 0.001, h2os[-1] - 0.001)
-        best = min1d(lambda h: abs(p(h)), bounds=bounds, method="bounded")
-        x_new[ind_sv] = best.x
-
-        # Finally, using a quasi coordinate descent approach, use this best h2o solve
-        # to find best AOD which alters the left-right shoulders of the water feature.
-        aots, areas = [], []
-        if "AOT550" in fm.RT.statevec_names and "AOT550" in my_RT.lut_names:
-            ind_aot = fm.RT.statevec_names.index("AOT550")
-            aot_grid = my_RT.lut_grid["AOT550"]
-
-            for aot in aot_grid:
-                x_RT_2 = x_new.copy()
-                x_RT_2[ind_aot] = aot
-
-                r, coeffs = invert_algebraic(
-                    fm.surface,
-                    fm.RT,
-                    fm.instrument,
-                    x_surface,
-                    x_RT_2,
-                    x_instrument,
-                    meas,
-                    geom,
-                )
-                r = fm.surface.fit_params(r, geom)[fm.idx_surf_rfl]
-
-                vals = np.interp(wl[blo:bhi], [wl_lo, wl_hi], [r[blo], r[bhi]])
-                D = abs(np.sum(vals - r[blo:bhi]))
-
-                areas.append(D)
-                aots.append(aot)
-
-            p = interp1d(aots, areas)
-            bounds = (aots[0] + 0.001, aots[-1] - 0.001)
-            best = min1d(lambda h: abs(p(h)), bounds=bounds, method="bounded")
-            x_new[ind_aot] = best.x
+    # Finally, using a quasi coordinate descent approach, use this best h2o solve
+    # to find best AOD which alters the left-right shoulders of the water feature.
+    if "AOT550" in fm.RT.statevec_names and "AOT550" in my_RT.lut_names:
+        x_new[fm.RT.statevec_names.index("AOT550")] = continuum_removal(
+            fm, x_surface, x_instrument, meas, geom, wl, blo, bhi, "AOT550", x_new
+        )
 
     return x_new
 
