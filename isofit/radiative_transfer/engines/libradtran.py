@@ -28,6 +28,7 @@ from scipy.interpolate import interp1d
 
 from isofit.core import common
 from isofit.data import env
+from isofit.core.common import units
 from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
 
 Logger = logging.getLogger(__name__)
@@ -38,6 +39,88 @@ SCRIPT_TEMPLATE = """\
 {uvspecs}
 {libradtran}/bin/zenith -s 0 -q -a {lat} -o {lon} -y {date} > {output}
 """
+
+
+LRT_TEMPLATE = """\
+source solar
+wavelength 340 2510
+albedo {albedo}
+umu {cos_vza}
+phi0 {saa_deg}
+phi {vaa_deg}
+sza {sza_deg}
+rte_solver disort
+latitude {lat}
+longitude {lon}
+time {date}
+mol_modify O3 300 DU
+mixing_ratio CO2 420
+mol_abs_param reptran coarse
+mol_modify H2O {h2o_mm} MM
+crs_model rayleigh bodhaine
+zout {zout}
+altitude {elev}
+aerosol_default
+aerosol_species_file continental_average
+aerosol_set_tau_at_wvl 550 {aot}
+output_quantity {output_unit} TODO
+output_user lambda {TODO}
+quiet
+"""
+
+
+
+
+# TODO:
+# we can do similar math to do the two albedo method
+# according to recent LRT docs, I can get the following  terms
+# - edir - Direct downward irradiance
+# - edn - Diffuse downward irradiance
+# - eup - Total upward irradadiance
+
+# TODO: 6c only is fine
+
+# Need to check when/where resampling happens now. I believe it is kept in RT wl
+
+# enable a co2 mode
+
+# allow for other atmosphere types, codes below:
+# afglt  ... Tropical (tropics)
+# afglms ... Midlatitude Summer (midlatitude_summer)
+# afglmw ... Midlatitude Winter (midlatitude_winter)
+# afglss ... Subarctic Summer (subarctic_summer)
+# afglsw ... Subarctic Winter (subarctic_winter)
+# afglus ... U.S. Standard (US-standard)
+
+# mol_abs_param reptran coarse is default..
+#fine corresponds to a band width of 1 cm−1, whereas widths of
+# 5 cm−1 and 15 cm−1 are used by medium and coarse, respectively
+# if we want finer, just need to modify the downloader to also get Data for the REPTRAN absorption parameterization.
+# http://www.meteo.physik.uni-muenchen.de/~libradtran/lib/exe/fetch.php?media=download:reptran_2024_all.tar.gz
+
+# Match any 6s formats like ozone
+
+
+# four runs are needed
+# 1) toa ... path radiance with zero albedo
+# 2) surf ... zero albedo to get direct upward transmittance
+# 3) sur ... rfl 1
+# 4) sur ... rfl 2
+
+# RUN 1 - solar irr , and case0 path rdn
+#  path_ref_inp = inp_temp % (lib_path, lib_path, tcwv, tco3, aot, sza, np.cos(np.deg2rad(vza)), raa, 0.0,  ele, 'toa', 'uu') 
+# TOA solar_irr can also come from this run?
+
+# RUN 2 - total upward transmittance ??
+#   t2_inp       = inp_temp % (lib_path, lib_path, tcwv, tco3, aot, sza, np.cos(np.deg2rad(vza)), raa, 0.0,  ele, 'sur', 'eglo')
+#  t2     = t2 / np.cos(np.deg2rad(vza))
+
+# RUN 3 -  'toa' for rfl 1 to get path rdn case1 , total ground reflected radiation, but what about direct-direct flux?
+
+# RUn 4 - similar to run3 but for rfl 2
+
+# run 5  -
+
 
 
 class LibRadTranRT(RadiativeTransferEngine):
@@ -74,14 +157,7 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
             Logger.error(error)
             raise FileNotFoundError(error)
 
-        self.template = engine_config.template_file
-        if not Path(self.template).exists():
-            error = f"Template file does not exist: {self.template}"
-            Logger.error(error)
-            raise FileNotFoundError(error)
-
-        with open(self.template) as f:
-            self.template = f.read()
+        self.template = LRT_TEMPLATE
 
         self.environment = engine_config.environment or ""
 
@@ -193,11 +269,35 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
         vals = {"atmosphere": "midlatitude_summer"}
         vals.update(zip(self.lut_names, point))
 
-        if "AOT550" in vals:
-            vals["aerosol_visibility"] = self.ext550_to_vis(vals["AOT550"])
 
         if "H2OSTR" in vals:
-            vals["h2o_mm"] = vals["H2OSTR"] * 10.0
+            vals["h2o_mm"] = units.cm_to_mm(vals["H2OSTR"])
+        
+        if "AOT550" in vals:
+            vals["aot"] = vals["AOT550"] 
+
+        if "surface_elevation_km" in vals:
+            vals["elev"] = abs(max(vals["surface_elevation_km"], 0))
+
+        if "observer_altitude_km" in vals:
+            vals["alt"] = min(vals["observer_altitude_km"], 99)
+            if vals["alt"] > 95:
+                vals["alt"] = "toa"
+
+        if "observer_azimuth" in vals:
+            vals["vaa_deg"] = vals["observer_azimuth"]
+
+        if "observer_zenith" in vals:
+            vals["cos_vza"] = np.cos(np.radians(vals["observer_zenith"]))
+
+        if "solar_zenith" in vals:
+            vals["sza_deg"] = vals["solar_zenith"]
+
+        if "relative_azimuth" in vals:
+            vals["saa_deg"] = np.minimum(
+                vals["vaa_deg"] + vals["relative_azimuth"],
+                vals["vaa_deg"] - vals["relative_azimuth"],
+            )
 
         # Create input files from the template
         files = []
@@ -240,7 +340,3 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
             )
 
         return f"bash {name}.sh"
-
-    @staticmethod
-    def ext550_to_vis(ext550):
-        return np.log(50.0) / (ext550 + 0.01159)
