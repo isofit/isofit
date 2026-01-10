@@ -300,12 +300,16 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             self.component_mode = predicts.attrs.get("component_mode", "3c")
 
         else:
-            if config.implementation.n_cores is None:
-                import multiprocessing
 
-                n_cores = multiprocessing.cpu_count()
-            else:
-                n_cores = config.implementation.n_cores
+            # Don't have aceess to config...will need to figure out the right way to do this
+            # if config.implementation.n_cores is None:
+            #    import multiprocessing
+            #    n_cores = multiprocessing.cpu_count()
+            # else:
+            #    n_cores = config.implementation.n_cores
+            import multiprocessing
+
+            n_cores = multiprocessing.cpu_count()
 
             Logger.info(f"Loading and predicting with emulator on {n_cores} cores")
             if self.component_mode == "3c":
