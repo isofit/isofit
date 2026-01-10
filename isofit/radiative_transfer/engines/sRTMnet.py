@@ -42,7 +42,7 @@ Logger = logging.getLogger(__file__)
 
 
 class SRTMnetModel(torch.nn.Module):
-    def __init__(self, input_file: str, key: str = None):
+    def __init__(self, input_file: str, key: str = None, n_cores: int = 1):
         """Initializes the SRTMnet model by loading weights and biases from an HDF5 file.
         This new version uses torch, but shoudl give the same results as the
         sRTMnet (tensorflow) and previous isofit (numpy) implementations.
@@ -50,6 +50,7 @@ class SRTMnetModel(torch.nn.Module):
         Args:
             input_file (str, optional): Path to the file containing model weights.
             key (str, optional): Key to select specific weights in the file (6c format). If None, read all (sRTMnet 3c format).
+            n_cores (int, optional): Number of CPU cores to use if using cpu.
         """
         super().__init__()
         weights_list = []
@@ -120,6 +121,10 @@ class SRTMnetModel(torch.nn.Module):
         self.to(self.device)
         self.eval()
 
+        if self.device.type == "cpu":
+            # This may require OMP / MKL options being set in the environment, TBD
+            torch.set_num_threads(n_cores)
+
     def forward(self, x):
         """Forward model structure
         Args:
@@ -137,7 +142,7 @@ class SRTMnetModel(torch.nn.Module):
                 x = torch.nn.functional.leaky_relu(x, negative_slope=0.4)
         return x
 
-    @torch.no_grad()
+    @torch.inference_mode()
     def predict(self, x, batch_size=4096):
         """predict model output
 
@@ -295,7 +300,14 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             self.component_mode = predicts.attrs.get("component_mode", "3c")
 
         else:
-            Logger.info("Loading and predicting with emulator")
+            if config.implementation.n_cores is None:
+                import multiprocessing
+
+                n_cores = multiprocessing.cpu_count()
+            else:
+                n_cores = config.implementation.n_cores
+
+            Logger.info(f"Loading and predicting with emulator on {n_cores} cores")
             if self.component_mode == "3c":
                 Logger.debug("Detected hdf5 (3c) emulator file format")
 
@@ -312,7 +324,9 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                 response_offset = aux.get("response_offset", 0.0)
 
                 # Now predict, scale, and add the interpolations
-                emulator = SRTMnetModel(self.engine_config.emulator_file)
+                emulator = SRTMnetModel(
+                    self.engine_config.emulator_file, n_cores=n_cores
+                )
                 predicts = da.from_array(emulator.predict(data))
                 predicts /= scaler
                 predicts += response_offset
@@ -364,6 +378,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                     emulator = SRTMnetModel(
                         input_file=self.engine_config.emulator_file,
                         key=key,
+                        n_cores=n_cores,
                         # layer_read=self.engine_config.parallel_layer_read, no longer needed, need to remove config key
                     )
 
@@ -376,7 +391,12 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                     else:
                         data = sixs[key].values
 
-                    lp = emulator.predict(data)
+                    batch_size = 4096
+                    # Optional...perhaps we should just be explicit in the config about the batch sizing
+                    # if self.engine_config.predict_parallel_chunks > 0:
+                    #    batch_size = int(np.ceil(data.shape[0] / self.engine_config.predict_parallel_chunks))
+
+                    lp = emulator.predict(data, batch_size=batch_size)
                     Logger.debug(f"Cleanup {key}")
                     lp /= aux["response_scaler"][key]
                     lp += aux["response_offset"][key]
