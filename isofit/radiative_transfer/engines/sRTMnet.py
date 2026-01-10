@@ -28,10 +28,10 @@ from pathlib import Path
 import dask.array as da
 import h5py
 import numpy as np
+import torch
 import yaml
 from scipy.interpolate import interp1d
 
-from isofit import ray
 from isofit.core import units
 from isofit.core.common import calculate_resample_matrix, resample_spectrum
 from isofit.radiative_transfer import luts
@@ -41,104 +41,130 @@ from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransfe
 Logger = logging.getLogger(__file__)
 
 
-class tfLikeModel:
-    def __init__(self, input_file=None, key=None, layer_read=True):
-        if input_file is not None and key is None:
-            self.input_file = input_file
-            model = h5py.File(input_file, "r")
+class SRTMnetModel(torch.nn.Module):
+    def __init__(self, input_file: str, key: str = None):
+        """Initializes the SRTMnet model by loading weights and biases from an HDF5 file.
+        This new version uses torch, but shoudl give the same results as the
+        sRTMnet (tensorflow) and previous isofit (numpy) implementations.
 
-            weights = []
-            biases = []
-            for n in model["model_weights"].keys():
-                if "dense" in n:
-                    if "kernel:0" in model["model_weights"][n][n]:
-                        weights.append(
-                            np.array(model["model_weights"][n][n]["kernel:0"])
-                        )
-                        biases.append(np.array(model["model_weights"][n][n]["bias:0"]))
-                    else:
-                        weights.append(np.array(model["model_weights"][n][n]["kernel"]))
-                        biases.append(np.array(model["model_weights"][n][n]["bias"]))
+        Args:
+            input_file (str, optional): Path to the file containing model weights.
+            key (str, optional): Key to select specific weights in the file (6c format). If None, read all (sRTMnet 3c format).
+        """
+        super().__init__()
+        weights_list = []
+        biases_list = []
 
-            self.weights = weights
-            self.biases = biases
-            self.input_file = input_file
+        with h5py.File(input_file, "r") as model:
+            if key is None:
+                # Based on keys in model_weights, e.g. dense_1, dense_2...
+                # We need to ensure we load them in the correct order.
+                # The original code relied on h5py iteration order.
+                # We'll trust that for now, but sorting by name might be safer if they include indices.
+                layer_names = list(model["model_weights"].keys())
+                # Try to sort if they look like dense_1, dense_2
+                try:
+                    layer_names.sort(
+                        key=lambda x: int(x.split("_")[-1]) if "_" in x else x
+                    )
+                except ValueError:
+                    pass  # Fallback to default order
 
-        else:
-            if layer_read:
-                self.input_file = input_file
-                self.key = key
-                with h5py.File(input_file, "r") as model:
-                    self.layers = len(model[f"weights_{key}"])
-
+                for n in layer_names:
+                    if "dense" in n:
+                        group = model["model_weights"][n][n]
+                        if "kernel:0" in group:
+                            w = group["kernel:0"][:]
+                            b = group["bias:0"][:]
+                        else:
+                            w = group["kernel"][:]
+                            b = group["bias"][:]
+                        weights_list.append(torch.tensor(w, dtype=torch.float32))
+                        biases_list.append(torch.tensor(b, dtype=torch.float32))
             else:
-                model = h5py.File(input_file, "r")
-                model[f"weights_{key}"].keys()
-                with h5py.File(input_file, "r") as model:
-                    self.layers = len(model[f"weights_{key}"])
-                    self.weights = [
-                        model[f"weights_{key}"][layer][:]
-                        for layer in model[f"weights_{key}"].keys()
-                    ]
-                    self.biases = [
-                        model[f"biases_{key}"][layer][:]
-                        for layer in model[f"biases_{key}"].keys()
-                    ]
+                w_group = model[f"weights_{key}"]
+                b_group = model[f"biases_{key}"]
 
-    def leaky_re_lu(self, x, alpha=0.4):
-        return np.maximum(alpha * x, x)
+                # Original code iterated blindly.
+                # self.weights = [model[f"weights_{key}"][layer][:] for layer in model[f"weights_{key}"].keys()]
+                # We should probably respect that natural order if it worked.
+                # But sorting by layer_0, layer_1 is robust.
+                layer_names = list(w_group.keys())
+                try:
+                    layer_names.sort(key=lambda x: int(x.split("_")[-1]))
+                except Exception:
+                    pass
 
-    def predict(self, x):
-        xi = x.copy()
-        for i, (M, b) in enumerate(zip(self.weights, self.biases)):
-            yi = np.dot(xi, M) + b
-            # apply leaky_relu unless we're at the output layer
+                for layer in layer_names:
+                    weights_list.append(
+                        torch.tensor(w_group[layer][:], dtype=torch.float32)
+                    )
+                    biases_list.append(
+                        torch.tensor(b_group[layer][:], dtype=torch.float32)
+                    )
+
+        # Register as parameters or buffers
+        # Since we are not training, buffers might be arguably better, but Parameter is standard for weights.
+        self.weights = torch.nn.ParameterList(
+            [torch.nn.Parameter(w) for w in weights_list]
+        )
+        self.biases = torch.nn.ParameterList(
+            [torch.nn.Parameter(b) for b in biases_list]
+        )
+
+        # Determine device
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        if torch.backends.mps.is_available():
+            self.device = torch.device("mps")
+
+        self.to(self.device)
+        self.eval()
+
+    def forward(self, x):
+        """Forward model structure
+        Args:
+            x (torch.Tensor): batched input data
+
+        Returns:
+            torch.Tensor: batched emulated data
+        """
+        # x: (batch, input_dim)
+        # weights: (input_dim, output_dim)
+        # (batch, input_dim) @ (input_dim, output_dim) -> (batch, output_dim)
+        for i, (W, b) in enumerate(zip(self.weights, self.biases)):
+            x = torch.matmul(x, W) + b
             if i < len(self.weights) - 1:
-                xi = self.leaky_re_lu(yi)
-        return yi
+                x = torch.nn.functional.leaky_relu(x, negative_slope=0.4)
+        return x
 
-    def load_arrays(self, i):
-        weights = h5py.File(self.input_file, "r")[f"weights_{self.key}"]
-        biases = h5py.File(self.input_file, "r")[f"biases_{self.key}"]
+    @torch.no_grad()
+    def predict(self, x, batch_size=4096):
+        """predict model output
 
-        layer = weights[f"layer_{i}"]
-        offset = layer.id.get_offset()
-        weight = np.memmap(
-            self.input_file,
-            layer.dtype,
-            "r",
-            offset=offset,
-            shape=layer.shape,
-        )
+        Args:
+            x: input data, accepts numpy
+            batch_size (int, optional): Size of batch to process. Defaults to 4096.
 
-        layer = biases[f"layer_{i}"]
-        offset = layer.id.get_offset()
-        bias = np.memmap(
-            self.input_file,
-            layer.dtype,
-            "r",
-            offset=offset,
-            shape=layer.shape,
-        )
+        Returns:
+            np.array: emulated output
+        """
+        # Handle numpy input
+        x_np = x
+        if isinstance(x, da.Array):
+            x_np = x.compute()
 
-        return weight, bias
+        # Convert to tensor
+        x_tensor = torch.as_tensor(x_np, dtype=torch.float32)
 
+        results = []
+        n = x_tensor.shape[0]
 
-@ray.remote(num_cpus=1)
-def ray_predict(model, x, layer_read=True):
-    xi = x.copy()
-    for i in range(model.layers):
-        if layer_read:
-            M, b = model.load_arrays(i)
-        else:
-            M, b = model.weights[i], model.biases[i]
+        for i in range(0, n, batch_size):
+            batch = x_tensor[i : i + batch_size].to(self.device)
+            out = self(batch)
+            results.append(out.cpu().numpy())
 
-        yi = np.dot(xi, M) + b
-
-        # apply leaky_relu unless we're at the output layer
-        if i < model.layers - 1:
-            xi = model.leaky_re_lu(yi)
-    return yi
+        return np.concatenate(results, axis=0)
 
 
 class SimulatedModtranRT(RadiativeTransferEngine):
@@ -286,7 +312,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                 response_offset = aux.get("response_offset", 0.0)
 
                 # Now predict, scale, and add the interpolations
-                emulator = tfLikeModel(self.engine_config.emulator_file)
+                emulator = SRTMnetModel(self.engine_config.emulator_file)
                 predicts = da.from_array(emulator.predict(data))
                 predicts /= scaler
                 predicts += response_offset
@@ -335,10 +361,10 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                     key_start_time = time.time()
                     Logger.debug(f"Loading emulator {key}")
 
-                    emulator = tfLikeModel(
+                    emulator = SRTMnetModel(
                         input_file=self.engine_config.emulator_file,
                         key=key,
-                        layer_read=self.engine_config.parallel_layer_read,
+                        # layer_read=self.engine_config.parallel_layer_read, no longer needed, need to remove config key
                     )
 
                     Logger.info(f"Emulating {key}")
@@ -350,19 +376,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                     else:
                         data = sixs[key].values
 
-                    # run predictions
-                    n_chunks = self.engine_config.predict_parallel_chunks
-                    data_chunks = np.array_split(data, n_chunks, axis=0)
-
-                    model_ref = ray.put(emulator)
-                    result_refs = [
-                        ray_predict.remote(
-                            model_ref, x, self.engine_config.parallel_layer_read
-                        )
-                        for x in data_chunks
-                    ]
-
-                    lp = np.concatenate(ray.get(result_refs), axis=0)
+                    lp = emulator.predict(data)
                     Logger.debug(f"Cleanup {key}")
                     lp /= aux["response_scaler"][key]
                     lp += aux["response_offset"][key]
@@ -374,7 +388,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
 
                     elapsed_time = time.time() - key_start_time
                     Logger.debug(f"Predict time ({key}): {elapsed_time} seconds")
-                    del result_refs, model_ref, emulator
+                    del emulator
 
                 predicts.attrs["component_mode"] = "6c"
 
