@@ -152,36 +152,58 @@ class SRTMnetModel6c(torch.nn.Module):
 
         # some keys, we'll legit go through uniquely.  Some, we must go through in pairs
         if key == "dir-dir":
-            self.weights = (
-                {"transm_down_dir": None, "transm_up_dir": None, "product_name": key},
-            )
-            self.biases = (
-                {"transm_down_dir": None, "transm_up_dir": None, "product_name": key},
-            )
+            self.weights = {
+                "transm_down_dir": None,
+                "transm_up_dir": None,
+                "product_name": key,
+            }
+
+            self.biases = {
+                "transm_down_dir": None,
+                "transm_up_dir": None,
+                "product_name": key,
+            }
+
         elif key == "dir-dif":
-            self.weights = (
-                {"transm_down_dir": None, "transm_up_dif": None, "product_name": key},
-            )
-            self.biases = (
-                {"transm_down_dir": None, "transm_up_dif": None, "product_name": key},
-            )
+            self.weights = {
+                "transm_down_dir": None,
+                "transm_up_dif": None,
+                "product_name": key,
+            }
+
+            self.biases = {
+                "transm_down_dir": None,
+                "transm_up_dif": None,
+                "product_name": key,
+            }
+
         elif key == "dif-dir":
-            self.weights = (
-                {"transm_down_dif": None, "transm_up_dir": None, "product_name": key},
-            )
-            self.biases = (
-                {"transm_down_dif": None, "transm_up_dir": None, "product_name": key},
-            )
+            self.weights = {
+                "transm_down_dif": None,
+                "transm_up_dir": None,
+                "product_name": key,
+            }
+
+            self.biases = {
+                "transm_down_dif": None,
+                "transm_up_dir": None,
+                "product_name": key,
+            }
+
         elif key == "dif-dif":
-            self.weights = (
-                {"transm_down_dif": None, "transm_up_dif": None, "product_name": key},
-            )
+            self.weights = {
+                "transm_down_dif": None,
+                "transm_up_dif": None,
+                "product_name": key,
+            }
+
             self.biases = (
                 {"transm_down_dif": None, "transm_up_dif": None, "product_name": key},
             )
+
         else:
-            self.weights = ({key: None},)
-            self.biases = ({key: None},)
+            self.weights = {key: None}
+            self.biases = {key: None}
 
         with h5py.File(input_file, "r") as model:
             for key in self.weights.keys():
