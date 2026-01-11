@@ -169,10 +169,10 @@ class SRTMnetModel6c(torch.nn.Module):
             self.component_keys = [key]
 
         with h5py.File(input_file, "r") as model:
-            for key in self.component_keys:
+            for ckey in self.component_keys:
                 w_list, b_list = [], []
-                w_group = model[f"weights_{key}"]
-                b_group = model[f"biases_{key}"]
+                w_group = model[f"weights_{ckey}"]
+                b_group = model[f"biases_{ckey}"]
 
                 for layer in w_group.keys():
                     w_list.append(
@@ -187,8 +187,8 @@ class SRTMnetModel6c(torch.nn.Module):
                     )
 
                 # Register as parameters - could (perhaps should) use buffers
-                self.weights[key] = torch.nn.ParameterList(w_list)
-                self.biases[key] = torch.nn.ParameterList(b_list)
+                self.weights[ckey] = torch.nn.ParameterList(w_list)
+                self.biases[ckey] = torch.nn.ParameterList(b_list)
 
         # Determine device
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
