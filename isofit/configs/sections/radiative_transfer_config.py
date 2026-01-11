@@ -135,14 +135,6 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         self.emulator_aux_file = None
         """str: path to emulator auxiliary data - expected npz format"""
 
-        self._parallel_layer_read_type = bool
-        self.parallel_layer_read = True
-        """bool: Flag for how to load and run sRTMnet prediction.
-           If True, will read in the weights/biases per layer per worker.
-           If False, will load entire model into shared memory
-           Model doesn't always fit in shared memory for smaller systems
-        """
-
         self._predict_parallel_chunks_type = int
         self.predict_parallel_chunks = 20
         """int: If emulator predictions are in parallel. How many chunks to run.
@@ -200,6 +192,12 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         self.rte_configure_and_exit = False
         """bool: Indicates that code should terminate as soon as all radiative transfer engine configuration files are
         written (without running them)"""
+
+        # sRTMnet
+        self._resample_inline = bool
+        self.resample_inline = True
+        """bool: Resample on the fly (from sRTMnet resolution to simulation resolution).  
+        The only reason you want this to be false is for debugging, or special pre-calcluations."""
 
         self.set_config_options(sub_configdic)
 
