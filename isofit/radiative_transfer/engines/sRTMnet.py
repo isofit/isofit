@@ -151,80 +151,44 @@ class SRTMnetModel6c(torch.nn.Module):
         super().__init__()
 
         # some keys, we'll legit go through uniquely.  Some, we must go through in pairs
+        self.weights = torch.nn.ModuleDict()
+        self.biases = torch.nn.ModuleDict()
         if key == "dir-dir":
-            self.weights = {
-                "transm_down_dir": None,
-                "transm_up_dir": None,
-                "product_name": key,
-            }
-
-            self.biases = {
-                "transm_down_dir": None,
-                "transm_up_dir": None,
-                "product_name": key,
-            }
-
-        elif key == "dir-dif":
-            self.weights = {
-                "transm_down_dir": None,
-                "transm_up_dif": None,
-                "product_name": key,
-            }
-
-            self.biases = {
-                "transm_down_dir": None,
-                "transm_up_dif": None,
-                "product_name": key,
-            }
-
-        elif key == "dif-dir":
-            self.weights = {
-                "transm_down_dif": None,
-                "transm_up_dir": None,
-                "product_name": key,
-            }
-
-            self.biases = {
-                "transm_down_dif": None,
-                "transm_up_dir": None,
-                "product_name": key,
-            }
-
-        elif key == "dif-dif":
-            self.weights = {
-                "transm_down_dif": None,
-                "transm_up_dif": None,
-                "product_name": key,
-            }
-
-            self.biases = (
-                {"transm_down_dif": None, "transm_up_dif": None, "product_name": key},
-            )
-
+            self.component_keys = ["transm_down_dir", "transm_up_dir"]
+            self.product_name = key
+        if key == "dir-dif":
+            self.component_keys = ["transm_down_dir", "transm_up_dif"]
+            self.product_name = key
+        if key == "dif-dir":
+            self.component_keys = ["transm_down_dif", "transm_up_dir"]
+            self.product_name = key
+        if key == "dif-dif":
+            self.component_keys = ["transm_down_dif", "transm_up_dif"]
+            self.product_name = key
         else:
-            self.weights = {key: None}
-            self.biases = {key: None}
+            self.component_keys = [key]
 
         with h5py.File(input_file, "r") as model:
-            for key in self.weights.keys():
+            for key in self.component_keys:
+                w_list, b_list = [], []
                 w_group = model[f"weights_{key}"]
                 b_group = model[f"biases_{key}"]
 
                 for layer in w_group.keys():
-                    self.weights[key].append(
+                    w_list.append(
                         torch.nn.Parameter(
                             torch.tensor(w_group[layer][:], dtype=torch.float32)
                         )
                     )
-                    self.biases[key].append(
+                    b_list.append(
                         torch.nn.Parameter(
                             torch.tensor(b_group[layer][:], dtype=torch.float32)
                         )
                     )
 
                 # Register as parameters - could (perhaps should) use buffers
-                self.weights[key] = torch.nn.ParameterList(self.weights[key])
-                self.biases[key] = torch.nn.ParameterList(self.biases[key])
+                self.weights[key] = torch.nn.ParameterList(w_list)
+                self.biases[key] = torch.nn.ParameterList(b_list)
 
         # Determine device
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -282,7 +246,7 @@ class SRTMnetModel6c(torch.nn.Module):
         outdict = {key: [] for key in self.weights.keys()}
         is_paired = len(self.weights.keys()) > 1
         if is_paired:
-            outdict[self.weights["product_name"]] = []
+            outdict[self.product_name] = []
 
         for i in range(0, n, batch_size):
 
@@ -293,9 +257,9 @@ class SRTMnetModel6c(torch.nn.Module):
                 out = self(batch, key)
                 out = out.cpu().numpy()
                 if response_scaler is not None:
-                    out /= response_scaler
+                    out /= response_scaler[_key]
                 if response_offset is not None:
-                    out += response_offset
+                    out += response_offset[_key]
 
                 # Resample the direct product, converting to radiance for rhoatm
                 if resample_dict is not None:
@@ -328,7 +292,7 @@ class SRTMnetModel6c(torch.nn.Module):
                         product *= out
 
             if is_paired:
-                outdict[self.weights["product_name"]] = product
+                outdict[self.product_name] = product
 
         # Concatenate all outputs from all batches
         for key in outdict.keys():
