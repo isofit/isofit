@@ -103,7 +103,7 @@ class MultiComponentSurface(Surface):
             # Caching the normalized Sa inv and Sa inv sqrt
             Cov_full = block_diag(
                 np.zeros((nprefix, nprefix)),
-                self.components[i][1],
+                self.component_covs[i],
                 np.zeros((nsuffix, nsuffix)),
             )
             Cov_normalized = Cov_full / np.mean(np.diag(Cov_full))
