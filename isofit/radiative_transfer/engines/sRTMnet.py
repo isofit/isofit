@@ -156,13 +156,13 @@ class SRTMnetModel6c(torch.nn.Module):
         if key == "dir-dir":
             self.component_keys = ["transm_down_dir", "transm_up_dir"]
             self.product_name = key
-        if key == "dir-dif":
+        elif key == "dir-dif":
             self.component_keys = ["transm_down_dir", "transm_up_dif"]
             self.product_name = key
-        if key == "dif-dir":
+        elif key == "dif-dir":
             self.component_keys = ["transm_down_dif", "transm_up_dir"]
             self.product_name = key
-        if key == "dif-dif":
+        elif key == "dif-dif":
             self.component_keys = ["transm_down_dif", "transm_up_dif"]
             self.product_name = key
         else:
@@ -223,7 +223,8 @@ class SRTMnetModel6c(torch.nn.Module):
     @torch.inference_mode()
     def predict(
         self,
-        x,
+        surrogate_data,
+        surrogate_data_emulator_wl,
         batch_size=4096,
         response_scaler=None,
         response_offset=None,
@@ -239,7 +240,7 @@ class SRTMnetModel6c(torch.nn.Module):
             np.array: emulated output
         """
         # Handle numpy input
-        x_tensor = [_x.compute() if isinstance(_x, da.Array) else _x for _x in x]
+        x_tensor = [_x.compute() if isinstance(_x, da.Array) else _x for _x in surrogate_data]
         x_tensor = [torch.as_tensor(_x, dtype=torch.float32) for _x in x_tensor]
         n = x_tensor[0].shape[0]
 
@@ -252,7 +253,8 @@ class SRTMnetModel6c(torch.nn.Module):
 
             product = None
             for _key, key in enumerate(self.weights.keys()):
-                batch = x_tensor[_key][i : i + batch_size].to(self.device)
+                batch_slice = slice(i, min(i + batch_size, n))
+                batch = x_tensor[_key][batch_slice].to(self.device)
 
                 out = self(batch, key)
                 out = out.cpu().numpy()
@@ -260,6 +262,7 @@ class SRTMnetModel6c(torch.nn.Module):
                     out /= response_scaler[_key]
                 if response_offset is not None:
                     out += response_offset[_key]
+                out += surrogate_data_emulator_wl[_key][batch_slice]
 
                 # Resample the direct product, converting to radiance for rhoatm
                 if resample_dict is not None:
@@ -269,6 +272,8 @@ class SRTMnetModel6c(torch.nn.Module):
                             resample_dict["emulator_coszen"],
                             resample_dict["emulator_sol_irr"],
                         )
+                    else:
+                        out_r = out.copy()
 
                     out_r = resample_spectrum(
                         out_r,
@@ -280,19 +285,27 @@ class SRTMnetModel6c(torch.nn.Module):
                     outdict[key].append(out_r)
 
                 # For paired terms, convert to radiance and multiply
-                if is_paired:
-                    out = units.transm_to_rdn(
-                        out,
-                        resample_dict["emulator_coszen"],
-                        resample_dict["emulator_sol_irr"],
-                    )
+                if is_paired: 
                     if product is None:
                         product = out
                     else:
                         product *= out
 
             if is_paired:
-                outdict[self.product_name] = product
+                if resample_dict is not None:
+                    product = units.transm_to_rdn(
+                        product,
+                        resample_dict["emulator_coszen"],
+                        resample_dict["emulator_sol_irr"],
+                    )
+                    product = resample_spectrum(
+                        product,
+                        resample_dict["emu_wl"],
+                        resample_dict["wl"],
+                        resample_dict["fwhm"],
+                        H=resample_dict["emulator_H"],
+                    )
+                outdict[self.product_name].append(product)
 
         # Concatenate all outputs from all batches
         for key in outdict.keys():
@@ -522,7 +535,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                 "sphalb": ["sphalb"],
             }
             # for key in aux_rt_quantities:
-            for key in ["dir-dir", "dir-dif", "dif-dir", "dif-dif", "rhoatm", "sphalb"]:
+            for key in mapping.keys():
                 key_start_time = time.time()
                 Logger.debug(f"Loading emulator {key}")
 
@@ -533,7 +546,6 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                 )
 
                 Logger.info(f"Emulating {key}")
-                data = [sixs[x].values for x in mapping[key]]
                 response_scaler = [aux["response_scaler"][x] for x in mapping[key]]
                 response_offset = [aux["response_offset"][x] for x in mapping[key]]
 
@@ -543,7 +555,8 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                 #    batch_size = int(np.ceil(data.shape[0] / self.engine_config.predict_parallel_chunks))
 
                 lp = emulator.predict(
-                    data,
+                    [sixs[x].values for x in mapping[key]], # surrogate data (6S)
+                    [resample[x].values for x in mapping[key]], #  6S data interpolated to emulator wl
                     batch_size=batch_size,
                     response_scaler=response_scaler,
                     response_offset=response_offset,
@@ -552,12 +565,10 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                 Logger.debug(f"Cleanup {key}")
                 del emulator
 
-                # ltz = resample[key].values + lp < 0
-                # lp[ltz] = -1 * resample[key].values[ltz]
-                # predicts[key] = resample[key] + lp
-
+                outshape = (len(self.wl),) + tuple(len(self.lut_grid[n]) for n in self.lut_grid)
                 for outkey in lp.keys():
-                    self.lut[outkey] = lp[outkey]
+                    self.lut[outkey] = lp[outkey].T.reshape(outshape)
+                self.lut.flush()
 
                 elapsed_time = time.time() - key_start_time
                 Logger.debug(f"Predict time ({key}): {elapsed_time} seconds")
@@ -566,6 +577,8 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             elapsed_time = time.time() - total_start_time
             Logger.info(f"Total prediction: {elapsed_time} seconds")
 
+            self.rt_mode = "rdn"
+            self.lut.setAttr("RT_mode", "rdn")
             self.lut.flush()
 
         # Logger.info(
@@ -629,12 +642,12 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             Logger.debug("Flushing lut to file")
             self.lut.flush()
 
-        # This is crude - we should revise the LUT naming and store L_* to make this
-        # more explicit
-        if "dir-dir" in outdict:
-            self.rt_mode = "rdn"
-            self.lut.setAttr("RT_mode", "rdn")
-        Logger.debug("Complete")
+            # This is crude - we should revise the LUT naming and store L_* to make this
+            # more explicit
+            if "dir-dir" in outdict:
+                self.rt_mode = "rdn"
+                self.lut.setAttr("RT_mode", "rdn")
+            Logger.debug("Complete")
 
 
 def build_sixs_config(engine_config):
