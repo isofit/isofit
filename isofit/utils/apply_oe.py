@@ -888,7 +888,9 @@ def apply_oe(
             )
 
     # Remove bg_rfl file from disk
-    #os.remove(paths.bgrfl_working_path)
+    if os.path.exists(paths.bgrfl_working_path):
+        os.remove(paths.bgrfl_working_path)
+        os.remove(envi_header(paths.bgrfl_working_path))
 
     logging.info("Done.")
     ray.shutdown()

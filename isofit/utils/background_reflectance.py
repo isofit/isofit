@@ -206,8 +206,17 @@ def background_reflectance(
         return row_chunk, rfl_chunk
 
     # load 1d water vapor data and get back to per pixel value
-    wv = envi.open(envi_header(paths.h2o_subs_path), paths.h2o_subs_path).load()[:, :, -1].squeeze() 
-    labels = envi.open(envi_header(paths.lbl_working_path), paths.lbl_working_path).load().squeeze().astype(int)
+    wv = (
+        envi.open(envi_header(paths.h2o_subs_path), paths.h2o_subs_path)
+        .load()[:, :, -1]
+        .squeeze()
+    )
+    labels = (
+        envi.open(envi_header(paths.lbl_working_path), paths.lbl_working_path)
+        .load()
+        .squeeze()
+        .astype(int)
+    )
 
     full_wv = np.zeros_like(labels, dtype=float)
     for lbl_val in np.unique(labels):
@@ -233,7 +242,7 @@ def background_reflectance(
             input_obs,
             ray.put(fm),
             ray.put(esd),
-            ray.put(full_wv)
+            ray.put(full_wv),
         )
         for r_chunk in row_chunks
     ]
