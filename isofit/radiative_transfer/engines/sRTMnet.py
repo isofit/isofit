@@ -240,7 +240,9 @@ class SRTMnetModel6c(torch.nn.Module):
             np.array: emulated output
         """
         # Handle numpy input
-        x_tensor = [_x.compute() if isinstance(_x, da.Array) else _x for _x in surrogate_data]
+        x_tensor = [
+            _x.compute() if isinstance(_x, da.Array) else _x for _x in surrogate_data
+        ]
         x_tensor = [torch.as_tensor(_x, dtype=torch.float32) for _x in x_tensor]
         n = x_tensor[0].shape[0]
 
@@ -250,7 +252,6 @@ class SRTMnetModel6c(torch.nn.Module):
             outdict[self.product_name] = []
 
         for i in range(0, n, batch_size):
-
             product = None
             for _key, key in enumerate(self.weights.keys()):
                 batch_slice = slice(i, min(i + batch_size, n))
@@ -285,7 +286,7 @@ class SRTMnetModel6c(torch.nn.Module):
                     outdict[key].append(out_r)
 
                 # For paired terms, convert to radiance and multiply
-                if is_paired: 
+                if is_paired:
                     if product is None:
                         product = out
                     else:
@@ -488,7 +489,6 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             feature_point_names = aux["feature_point_names"].astype(str).tolist()
             add_vector = None
             if len(feature_point_names) > 0 and feature_point_names[0] != "None":
-
                 # Populate the 6S parameter values from a modtran template file
                 with open(self.engine_config.template_file, "r") as file:
                     data = yaml.safe_load(file)["MODTRAN"][0]["MODTRANINPUT"]
@@ -555,8 +555,10 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                 #    batch_size = int(np.ceil(data.shape[0] / self.engine_config.predict_parallel_chunks))
 
                 lp = emulator.predict(
-                    [sixs[x].values for x in mapping[key]], # surrogate data (6S)
-                    [resample[x].values for x in mapping[key]], #  6S data interpolated to emulator wl
+                    [sixs[x].values for x in mapping[key]],  # surrogate data (6S)
+                    [
+                        resample[x].values for x in mapping[key]
+                    ],  #  6S data interpolated to emulator wl
                     batch_size=batch_size,
                     response_scaler=response_scaler,
                     response_offset=response_offset,
@@ -565,7 +567,9 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                 Logger.debug(f"Cleanup {key}")
                 del emulator
 
-                outshape = (len(self.wl),) + tuple(len(self.lut_grid[n]) for n in self.lut_grid)
+                outshape = (len(self.wl),) + tuple(
+                    len(self.lut_grid[n]) for n in self.lut_grid
+                )
                 for outkey in lp.keys():
                     self.lut[outkey] = lp[outkey].T.reshape(outshape)
                 self.lut.flush()
