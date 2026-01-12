@@ -154,7 +154,7 @@ def apply_oe(
     rdn_factors_path : str, default=None
         Specify a radiometric correction factor, if desired
     atmosphere_type : str, default="ATM_MIDLAT_SUMMER"
-        Atmospheric profile to be used for MODTRAN simulations.  Unused for other
+        Atmospheric profile to be used for MODTRAN and libRadtran simulations.  Unused for other
         radiative transfer models.
     channelized_uncertainty_path : str, default=None
         Path to a wavelength-specific channelized uncertainty file - used to augment Sy in the OE formalism
