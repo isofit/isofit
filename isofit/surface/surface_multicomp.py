@@ -135,15 +135,11 @@ class MultiComponentSurface(Surface):
         lamb_ref = lamb[self.idx_ref]
         lamb_ref = lamb_ref / self.norm(lamb_ref)
 
-        # Spectral angle or Euclidean distances
-        if self.selection_metric == "Spectral":
-            mds = self.spectral_angle_distance(lamb_ref, self.mus)
-
-        else:
-            mds = self.euclidean_distance(
-                lamb_ref,
-                np.array(self.mus),
-            )
+        # Only support euclidean distance comparrison for now
+        mds = self.euclidean_distance(
+            lamb_ref,
+            np.array(self.mus),
+        )
 
         closest = np.argmin(mds)
 
@@ -359,12 +355,3 @@ class MultiComponentSurface(Surface):
     @staticmethod
     def euclidean_distance(lamb_ref, mus):
         return np.sum(np.power(lamb_ref[np.newaxis, :] - mus, 2), axis=1)
-
-    @staticmethod
-    def spectral_angle_distance(lamb_ref, mus):
-        # np.arccos(x.dot(ref_mu) / (norm(x) * norm(ref_mu))
-        cos_theta = np.einsum("k,ik->i", lamb_ref, mus) / (
-            np.linalg.norm(lamb_ref) * np.linalg.norm(mus, axis=1)
-        )
-        # Clipping for numerical stability, return radians
-        return np.arccos(np.clip(cos_theta, -1.0, 1.0))
