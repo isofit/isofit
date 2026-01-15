@@ -108,7 +108,14 @@ class SRTMnetModel3c(torch.nn.Module):
         return x
 
     @torch.inference_mode()
-    def predict(self, x, batch_size=4096):
+    def predict(self, 
+                surrogate_data, 
+                surrogate_data_emulator_wl, 
+                batch_size=4096,
+                response_scaler=None,
+                response_offset=None,
+                resample_dict=None,
+                ):
         """predict model output
 
         Args:
@@ -119,9 +126,9 @@ class SRTMnetModel3c(torch.nn.Module):
             np.array: emulated output
         """
         # Handle numpy input
-        x_np = x
-        if isinstance(x, da.Array):
-            x_np = x.compute()
+        x_np = surrogate_data
+        if isinstance(surrogate_data, da.Array):
+            x_np = surrogate_data.compute()
 
         # Convert to tensor
         x_tensor = torch.as_tensor(x_np, dtype=torch.float32)
@@ -145,7 +152,7 @@ class SRTMnetModel6c(torch.nn.Module):
 
         Args:
             input_file (str, optional): Path to the file containing model weights.
-            key (str, optional): Key to select specific weights in the file (6c format). If None, read all (sRTMnet 3c format).
+            key (str, optional): Key to select specific weights in the file (6c format). If '3c', read all (sRTMnet 3c format).
             n_cores (int, optional): Number of CPU cores to use if using cpu.
         """
         super().__init__()
@@ -165,30 +172,48 @@ class SRTMnetModel6c(torch.nn.Module):
         elif key == "dif-dif":
             self.component_keys = ["transm_down_dif", "transm_up_dif"]
             self.product_name = key
+        elif key == '3c':
+            self.component_keys = ['transm_down_dif', 'rhoatm', 'sphalb']
         else:
             self.component_keys = [key]
 
-        with h5py.File(input_file, "r") as model:
-            for ckey in self.component_keys:
+        if key != "3c": # 6c model
+            with h5py.File(input_file, "r") as model:
+                for ckey in self.component_keys:
+                    w_list, b_list = [], []
+                    w_group = model[f"weights_{ckey}"]
+                    b_group = model[f"biases_{ckey}"]
+
+                    for layer in w_group.keys():
+                        w_list.append(
+                            torch.nn.Parameter(
+                                torch.tensor(w_group[layer][:], dtype=torch.float32)
+                            )
+                        )
+                        b_list.append(
+                            torch.nn.Parameter(
+                                torch.tensor(b_group[layer][:], dtype=torch.float32)
+                            )
+                        )
+                    # Register as parameters - could (perhaps should) use buffers
+                    self.weights[ckey] = torch.nn.ParameterList(w_list)
+                    self.biases[ckey] = torch.nn.ParameterList(b_list)
+        else: # 3c model
+            with h5py.File(input_file, "r") as model:
                 w_list, b_list = [], []
-                w_group = model[f"weights_{ckey}"]
-                b_group = model[f"biases_{ckey}"]
-
-                for layer in w_group.keys():
-                    w_list.append(
-                        torch.nn.Parameter(
-                            torch.tensor(w_group[layer][:], dtype=torch.float32)
-                        )
-                    )
-                    b_list.append(
-                        torch.nn.Parameter(
-                            torch.tensor(b_group[layer][:], dtype=torch.float32)
-                        )
-                    )
-
-                # Register as parameters - could (perhaps should) use buffers
-                self.weights[ckey] = torch.nn.ParameterList(w_list)
-                self.biases[ckey] = torch.nn.ParameterList(b_list)
+                for n in model["model_weights"].keys():
+                    if "dense" in n:
+                        group = model["model_weights"][n][n]
+                        if "kernel:0" in group:
+                            w = group["kernel:0"][:]
+                            b = group["bias:0"][:]
+                        else:
+                            w = group["kernel"][:]
+                            b = group["bias"][:]
+                        w_list.append(torch.tensor(w, dtype=torch.float32))
+                        b_list.append(torch.tensor(b, dtype=torch.float32))
+            self.weights['3c'] = torch.nn.ParameterList(w_list)
+            self.biases['3c'] = torch.nn.ParameterList(b_list)
 
         # Determine device
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -219,6 +244,27 @@ class SRTMnetModel6c(torch.nn.Module):
             if i < len(self.weights[key]) - 1:
                 x = torch.nn.functional.leaky_relu(x, negative_slope=0.4)
         return x
+    
+    def batch_resample(self, out, key, resample_dict=None):
+        # Resample the direct product, converting to radiance for rhoatm
+        if resample_dict is not None:
+            if key == "rhoatm":
+                out_r = units.transm_to_rdn(
+                    out,
+                    resample_dict["emulator_coszen"],
+                    resample_dict["emulator_sol_irr"],
+                )
+            else:
+                out_r = out.copy()
+
+            out_r = resample_spectrum(
+                out_r,
+                resample_dict["emu_wl"],
+                resample_dict["wl"],
+                resample_dict["fwhm"],
+                H=resample_dict["emulator_H"],
+            )
+        return out_r
 
     @torch.inference_mode()
     def predict(
@@ -246,7 +292,15 @@ class SRTMnetModel6c(torch.nn.Module):
         x_tensor = [torch.as_tensor(_x, dtype=torch.float32) for _x in x_tensor]
         n = x_tensor[0].shape[0]
 
-        outdict = {key: [] for key in self.weights.keys()}
+        outdict = {}
+        for key in self.weights.keys():
+            if key != '3c':
+                outdict[key] = []
+            else:
+                outdict['transm_down_dif'] = []
+                outdict['rhoatm'] = []
+                outdict['sphalb'] = []
+
         is_paired = len(self.weights.keys()) > 1
         if is_paired:
             outdict[self.product_name] = []
@@ -266,33 +320,21 @@ class SRTMnetModel6c(torch.nn.Module):
                 out += surrogate_data_emulator_wl[_key][batch_slice]
 
                 # Resample the direct product, converting to radiance for rhoatm
-                if resample_dict is not None:
-                    if key == "rhoatm":
-                        out_r = units.transm_to_rdn(
-                            out,
-                            resample_dict["emulator_coszen"],
-                            resample_dict["emulator_sol_irr"],
-                        )
-                    else:
-                        out_r = out.copy()
+                if key != '3c':
+                    outdict[key].append(self.batch_resample(out, key, resample_dict))
 
-                    out_r = resample_spectrum(
-                        out_r,
-                        resample_dict["emu_wl"],
-                        resample_dict["wl"],
-                        resample_dict["fwhm"],
-                        H=resample_dict["emulator_H"],
-                    )
-                    outdict[key].append(out_r)
+                    # For paired terms, convert to radiance and multiply
+                    if is_paired:
+                        if product is None:
+                            product = out
+                        else:
+                            product *= out
+                else:
+                    nc = int(out.shape[1] / len(self.component_keys))
+                    for _ckey, ckey in enumerate(self.component_keys):
+                        outdict[ckey].append(self.batch_resample(out[:,_ckey * nc: (_ckey + 1)*nc], ckey, resample_dict))
 
-                # For paired terms, convert to radiance and multiply
-                if is_paired:
-                    if product is None:
-                        product = out
-                    else:
-                        product *= out
-
-            if is_paired:
+            if is_paired: # only happens with 6c
                 if resample_dict is not None:
                     product = units.transm_to_rdn(
                         product,
@@ -452,6 +494,22 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         self.emulator_coszen = sim["coszen"]
         self.emulator_H = calculate_resample_matrix(self.emu_wl, self.wl, self.fwhm)
 
+        # Pack into dictionary for passing convenience to torch
+        resample_dict = {
+            "emu_wl": self.emu_wl,
+            "wl": self.wl,
+            "fwhm": self.fwhm,
+            "emulator_H": self.emulator_H,
+            "emulator_coszen": self.emulator_coszen,
+            "emulator_sol_irr": self.emulator_sol_irr,
+        }
+
+        batch_size = 4096
+        # Optional...perhaps we should just be explicit in the config about the batch sizing
+        # if self.engine_config.predict_parallel_chunks > 0:
+        #    batch_size = int(np.ceil(data.shape[0] / self.engine_config.predict_parallel_chunks))
+
+
         import multiprocessing
 
         n_cores = multiprocessing.cpu_count()
@@ -467,20 +525,41 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             # dim for each quantity. Convert to DataArray to stack
             # the variables along a new `quantity` dimension
             data = sixs.to_array("quantity").stack(stack=["quantity", "wl"])
-
-            scaler = aux.get("response_scaler", 100.0)
+            response_scaler = aux.get("response_scaler", 100.0)
             response_offset = aux.get("response_offset", 0.0)
 
+            emulator = SRTMnetModel6c(
+                    input_file=self.engine_config.emulator_file,
+                    key='3c',
+                    n_cores=n_cores,
+                )
+            lp = emulator.predict(
+                    [data.values],  # surrogate data (6S)
+                    [resample.values], #  stacked 3c data interpolated to emulator wl
+                    batch_size=batch_size,
+                    response_scaler=[response_scaler],
+                    response_offset=[response_offset],
+                    resample_dict=resample_dict,
+                )
+            outshape = (len(self.wl),) + tuple(
+                len(self.lut_grid[n]) for n in self.lut_grid
+            )
+            for outkey in lp.keys():
+                self.lut[outkey] = lp[outkey].T.reshape(outshape)
+            self.lut.flush()
+
+
+
             # Now predict, scale, and add the interpolations
-            emulator = SRTMnetModel3c(self.engine_config.emulator_file, n_cores=n_cores)
-            predicts = da.from_array(emulator.predict([data]))
-            predicts /= scaler
-            predicts += response_offset
-            predicts += resample
+            #emulator = SRTMnetModel3c(self.engine_config.emulator_file, n_cores=n_cores)
+            #predicts = da.from_array(emulator.predict([data]))
+            #predicts /= scaler
+            #predicts += response_offset
+            #predicts += resample
 
             # Unstack back to a dataset and save
-            predicts = predicts.unstack("stack").to_dataset("quantity")
-            predicts.attrs["component_mode"] = "3c"
+            #predicts = predicts.unstack("stack").to_dataset("quantity")
+            #predicts.attrs["component_mode"] = "3c"
 
         else:
             Logger.debug("Detected 6c emulator file format")
@@ -512,19 +591,9 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                     else:
                         raise ValueError(f"Feature point {fpn} not found in points")
 
-            predicts = resample.copy(deep=True)
+            #predicts = resample.copy(deep=True)
 
             total_start_time = time.time()
-
-            # Need to prep this to pass to torch object
-            resample_dict = {
-                "emu_wl": self.emu_wl,
-                "wl": self.wl,
-                "fwhm": self.fwhm,
-                "emulator_H": self.emulator_H,
-                "emulator_coszen": self.emulator_coszen,
-                "emulator_sol_irr": self.emulator_sol_irr,
-            }
 
             mapping = {
                 "dir-dir": ["transm_down_dir", "transm_up_dir"],
@@ -548,11 +617,6 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                 Logger.info(f"Emulating {key}")
                 response_scaler = [aux["response_scaler"][x] for x in mapping[key]]
                 response_offset = [aux["response_offset"][x] for x in mapping[key]]
-
-                batch_size = 4096
-                # Optional...perhaps we should just be explicit in the config about the batch sizing
-                # if self.engine_config.predict_parallel_chunks > 0:
-                #    batch_size = int(np.ceil(data.shape[0] / self.engine_config.predict_parallel_chunks))
 
                 lp = emulator.predict(
                     [sixs[x].values for x in mapping[key]],  # surrogate data (6S)
@@ -615,43 +679,43 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         Post-simulation adjustments for sRTMnet.
         """
         # Update engine to run in RDN mode
-        if self.engine_config.resample_inline is False:
-            data = luts.load(self.predict_path, mode="r")
-            outdict = {}
-            Logger.debug("Resampling components")
-            for key, values in data.items():
-                Logger.debug(f"Resampling {key}")
-                if (
-                    key in ["dir-dir", "dir-dif", "dif-dir", "dif-dif", "rhoatm"]
-                    and self.component_mode == "6c"
-                ):
-                    fullspec_val = units.transm_to_rdn(
-                        data[key].data, self.emulator_coszen, self.emulator_sol_irr
-                    )
-                else:
-                    fullspec_val = data[key].data
+        #if self.engine_config.resample_inline is False:
+        #    data = luts.load(self.predict_path, mode="r")
+        #    outdict = {}
+        #    Logger.debug("Resampling components")
+        #    for key, values in data.items():
+        #        Logger.debug(f"Resampling {key}")
+        #        if (
+        #            key in ["dir-dir", "dir-dif", "dif-dir", "dif-dif", "rhoatm"]
+        #            and self.component_mode == "6c"
+        #        ):
+        #            fullspec_val = units.transm_to_rdn(
+        #                data[key].data, self.emulator_coszen, self.emulator_sol_irr
+        #            )
+        #        else:
+        #            fullspec_val = data[key].data
 
-                # Only resample and store valid keys
-                if len(data[key].data.shape) > 0:
-                    outdict[key] = resample_spectrum(
-                        fullspec_val, self.emu_wl, self.wl, self.fwhm, H=self.emulator_H
-                    )
+        #        # Only resample and store valid keys
+        #        if len(data[key].data.shape) > 0:
+        #            outdict[key] = resample_spectrum(
+        #                fullspec_val, self.emu_wl, self.wl, self.fwhm, H=self.emulator_H
+        #            )
 
-            Logger.debug("Setting up lut cache")
-            for _point, point in enumerate(data["point"].values):
-                self.lut.queuePoint(
-                    np.array(point),
-                    {key: outdict[key][_point, :] for key in outdict.keys()},
-                )
-            Logger.debug("Flushing lut to file")
-            self.lut.flush()
+        #    Logger.debug("Setting up lut cache")
+        #    for _point, point in enumerate(data["point"].values):
+        #        self.lut.queuePoint(
+        #            np.array(point),
+        #            {key: outdict[key][_point, :] for key in outdict.keys()},
+        #        )
+        #    Logger.debug("Flushing lut to file")
+        #    self.lut.flush()
 
-            # This is crude - we should revise the LUT naming and store L_* to make this
-            # more explicit
-            if "dir-dir" in outdict:
-                self.rt_mode = "rdn"
-                self.lut.setAttr("RT_mode", "rdn")
-            Logger.debug("Complete")
+        #    # This is crude - we should revise the LUT naming and store L_* to make this
+        #    # more explicit
+        #    if "dir-dir" in outdict:
+        #        self.rt_mode = "rdn"
+        #        self.lut.setAttr("RT_mode", "rdn")
+        #    Logger.debug("Complete")
 
 
 def build_sixs_config(engine_config):

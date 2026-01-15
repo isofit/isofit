@@ -83,7 +83,6 @@ class RadiativeTransferEngine:
         # eg. engine_config.lut_names == self.lut_names
         self.engine_config = engine_config
 
-        # TODO: mlky should do all this verification stuff
         # Verify either the LUT file exists or a LUT grid is provided
         self.lut_path = lut_path = str(lut_path) or engine_config.lut_path
         logging.debug(f"lut_grid {lut_grid}")

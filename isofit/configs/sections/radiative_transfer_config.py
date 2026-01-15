@@ -194,10 +194,9 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         written (without running them)"""
 
         # sRTMnet
-        self._resample_inline_type = bool
-        self.resample_inline = True
-        """bool: Resample on the fly (from sRTMnet resolution to simulation resolution).  
-        The only reason you want this to be false is for debugging, or special pre-calcluations."""
+        self._batch_size_type = int
+        self.batch_size = 4096
+        """int: Batch size for sRTMnet predictions. Set smaller to reduce memory usage, larger for faster emulation."""
 
         self.set_config_options(sub_configdic)
 
