@@ -108,6 +108,7 @@ def apply_oe(
     skyview_factor=None,
     resources=False,
     retrieve_co2=False,
+    eof_path=None,
 ):
     """\
     Applies OE over a flightline using a radiative transfer engine. This executes
@@ -246,6 +247,9 @@ def apply_oe(
         Enables the system resource tracker. Must also have the log_file set.
     retrieve_co2 : bool, default=False
         Flag to retrieve CO2 in the state vector. Only available with emulator at the moment.
+    eof_path : str, default=None
+        Add an Empirical Orthogonal Function to the state vector.  File is a single column text file
+        with one number per instrument channel.
 
     \b
     References
@@ -415,6 +419,7 @@ def apply_oe(
         skyview_factor=skyview_factor,
         subs=True if analytical_line or empirical_line else False,
         classify_multisurface=classify_multisurface,
+        eof_path=eof_path
     )
     paths.make_directories()
     paths.stage_files()
@@ -793,6 +798,7 @@ def apply_oe(
             inversion_windows=INVERSION_WINDOWS,
             multipart_transmittance=multipart_transmittance,
             retrieve_co2=retrieve_co2,
+            eof_path=eof_path,
         )
 
         if config_only:
@@ -909,6 +915,7 @@ def apply_oe(
 @click.option("--skyview_factor", type=str, default=None)
 @click.option("-r", "--resources", is_flag=True, default=False)
 @click.option("--retrieve_co2", is_flag=True, default=False)
+@click.option("--eof_path", default=None)
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",

@@ -75,6 +75,11 @@ class Instrument:
 
         self.integrations = config.integrations
 
+        if config.eof_path is not None:
+           self.eof = np.loadtxt(config.eof_path)
+        else:
+           self.eof = None
+
         self.dn_uncertainty_embedding = None
         if (
             config.unknowns is not None
@@ -363,21 +368,27 @@ class Instrument:
     def sample(self, x_instrument, wl_hi, rdn_hi):
         """Apply instrument sampling to a radiance spectrum, returning predicted measurement."""
 
+        offset = 0
+        if self.eof is not None:
+            ind = self.statevec_names.index("EOF")
+            scaling = x_instrument[ind]
+            offset = self.eof * scaling
+
         if (
             self.calibration_fixed
             and (len(self.wl_init) == len(wl_hi))
             and all((self.wl_init - wl_hi) < wl_tol)
         ):
-            return rdn_hi
+            return rdn_hi + offset
         wl, fwhm = self.calibration(x_instrument)
 
         # If rdn_hi is a vector of length 1, return itself
         if rdn_hi.ndim == 1 and len(rdn_hi) <= 1:
-            return rdn_hi
+            return rdn_hi + offset
 
         # If rdn_hi is a vector of length > 1, return it resampled to instrument
         elif rdn_hi.ndim == 1 and len(rdn_hi) > 1:
-            return resample_spectrum(rdn_hi, wl_hi, wl, fwhm)
+            return resample_spectrum(rdn_hi, wl_hi, wl, fwhm) + offset
 
         # If rdn_hi is a multidim array, do the multidim resampling
         else:
@@ -393,7 +404,7 @@ class Instrument:
                 for i, r in enumerate(rdn_hi):
                     r2 = resample_spectrum(r, wl_hi, wl, fwhm)
                     resamp.append(r2)
-            return np.array(resamp)
+            return np.array(resamp) + offset
 
     def simulate_measurement(self, meas, geom):
         """Simulate a measurement by the given sensor, for a true radiance

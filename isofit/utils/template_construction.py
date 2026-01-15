@@ -59,6 +59,7 @@ class Pathnames:
         skyview_factor=None,
         subs: bool = False,
         classify_multisurface: bool = False,
+        eof_path=None
     ):
         # Determine FID based on sensor name
         if sensor == "ang":
@@ -194,6 +195,15 @@ class Pathnames:
 
         self.model_discrepancy_working_path = abspath(
             join(self.data_directory, "model_discrepancy.mat")
+        )
+
+        if eof_path:
+            self.eof_path = eof_path
+        else:
+            self.eof_path = None
+
+        self.eof_working_path = abspath(
+            join(self.data_directory, "eof.txt")
         )
 
         if skyview_factor:
@@ -334,6 +344,7 @@ class Pathnames:
                 self.model_discrepancy_working_path,
                 False,
             ),
+            (self.eof_path, self.eof_working_path, False),
         ]
 
         for src, dst, hasheader in files_to_stage:
@@ -858,6 +869,7 @@ def build_main_config(
     multipart_transmittance: bool = False,
     surface_mapping: dict = None,
     retrieve_co2: bool = False,
+    eof_path: str = None,
 ) -> None:
     """Write an isofit config file for the main solve, using the specified pathnames and all given info
 
@@ -888,6 +900,7 @@ def build_main_config(
         multipart_transmittance:              flag to indicate whether a 4-component transmittance model is to be used
         surface_mapping:                      optional object to pass mapping between surface class and surface model
         retrieve_co2:                         flag to include CO2 in lut and retrieval
+        eof_path:                             path to the EOF file
     """
 
     # Determine number of spectra included in each retrieval.  If we are
@@ -1192,6 +1205,19 @@ def build_main_config(
         isofit_config_modtran["forward_model"]["instrument"]["unknowns"][
             "channelized_radiometric_uncertainty_file"
         ] = paths.channelized_uncertainty_working_path
+
+    if paths.eof_path is not None:
+        isofit_config_modtran["forward_model"]["instrument"][
+            "eof_path"
+        ] = paths.eof_working_path
+
+        isofit_config_modtran["forward_model"]["instrument"]["statevector"] = {"EOF": 
+            {"bounds": [-10,10],
+            "scale": 1,
+            "init": 0,
+            "prior_sigma": 100.0,
+            "prior_mean": 0,}
+        }
 
     if paths.input_model_discrepancy_path is not None:
         isofit_config_modtran["forward_model"][
