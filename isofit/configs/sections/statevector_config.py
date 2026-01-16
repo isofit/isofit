@@ -74,8 +74,11 @@ class StateVectorConfig(BaseConfigSection):
         self._AERFRAC_3_type = StateVectorElementConfig
         self.AERFRAC_3: StateVectorElementConfig = None
 
-        self._EOF_type = StateVectorElementConfig
-        self.EOF: StateVectorElementConfig = None
+        self._EOF_1_type = StateVectorElementConfig
+        self.EOF_1: StateVectorElementConfig = None
+
+        self._EOF_2_type = StateVectorElementConfig
+        self.EOF_2: StateVectorElementConfig = None
 
         self._GROW_FWHM_type = StateVectorElementConfig
         self.GROW_FWHM: StateVectorElementConfig = None

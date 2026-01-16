@@ -531,10 +531,15 @@ class Worker(object):
             x_instrument = self.subs_state[int(self.lbl[r, c, 0]), 0, inst_idx]
             sub_state = self.subs_state[int(self.lbl[r, c, 0]), 0, iv_idx]
 
-            if 'EOF' in self.fm.statevec:
-                eof_idx = self.fm.statevec.index('EOF')
-                eof = self.fm.instrument.eof
-                meas = meas - eof * self.subs_state[int(self.lbl[r,c,0]),0,eof_idx]
+            # Apply EOF adjustments to the radiance
+            if 'EOF_1' in self.fm.statevec:
+                eof1_idx = self.fm.statevec.index('EOF_1')
+                eof1 = self.fm.instrument.eof[:,0]
+                meas = meas - eof1 * self.subs_state[int(self.lbl[r,c,0]),0,eof1_idx]
+            if 'EOF_2' in self.fm.statevec:
+                eof2_idx = self.fm.statevec.index('EOF_2')
+                eof2 = self.fm.instrument.eof[:,1]
+                meas = meas - eof2 * self.subs_state[int(self.lbl[r,c,0]),0,eof2_idx]
 
             # Note: concatenation only works with the correct indexing.
             sub_state = np.concatenate([sub_state, x_RT, x_instrument])

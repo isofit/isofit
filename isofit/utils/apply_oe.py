@@ -248,7 +248,7 @@ def apply_oe(
     retrieve_co2 : bool, default=False
         Flag to retrieve CO2 in the state vector. Only available with emulator at the moment.
     eof_path : str, default=None
-        Add an Empirical Orthogonal Function to the state vector.  File is a single column text file
+        Add 1 or 2 Empirical Orthogonal Functions to the state vector.  File is a 1-2 column text file
         with one number per instrument channel.
 
     \b
