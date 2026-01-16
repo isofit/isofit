@@ -194,8 +194,8 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         written (without running them)"""
 
         # sRTMnet
-        self._batch_size_type = int
-        self.batch_size = 4096
+        self._emulator_batch_size_type = int
+        self.emulator_batch_size = 4096
         """int: Batch size for sRTMnet predictions. Set smaller to reduce memory usage, larger for faster emulation."""
 
         self.set_config_options(sub_configdic)

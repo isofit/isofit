@@ -41,111 +41,7 @@ from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransfe
 Logger = logging.getLogger(__file__)
 
 
-class SRTMnetModel3c(torch.nn.Module):
-    def __init__(self, input_file: str, n_cores: int = 1):
-        """Initializes the SRTMnet model by loading weights and biases from an HDF5 file.
-        This new version uses torch, but shoudl give the same results as the
-        sRTMnet (tensorflow) and previous isofit (numpy) implementations.
-
-        Args:
-            input_file (str, optional): Path to the file containing model weights.
-            n_cores (int, optional): Number of CPU cores to use if using cpu.
-        """
-        super().__init__()
-        weights_list = []
-        biases_list = []
-
-        with h5py.File(input_file, "r") as model:
-            for n in model["model_weights"].keys():
-                if "dense" in n:
-                    group = model["model_weights"][n][n]
-                    if "kernel:0" in group:
-                        w = group["kernel:0"][:]
-                        b = group["bias:0"][:]
-                    else:
-                        w = group["kernel"][:]
-                        b = group["bias"][:]
-                    weights_list.append(torch.tensor(w, dtype=torch.float32))
-                    biases_list.append(torch.tensor(b, dtype=torch.float32))
-
-        # Register as parameters or buffers
-        # Since we are not training, buffers might be arguably better, but Parameter is standard for weights.
-        self.weights = torch.nn.ParameterList(
-            [torch.nn.Parameter(w) for w in weights_list]
-        )
-        self.biases = torch.nn.ParameterList(
-            [torch.nn.Parameter(b) for b in biases_list]
-        )
-
-        # Determine device
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        if torch.backends.mps.is_available():
-            self.device = torch.device("mps")
-
-        self.to(self.device)
-        self.eval()
-
-        if self.device.type == "cpu":
-            # This seems to work well despite global OMP / MKL options, though some systmes may need
-            # those to be set differently
-            torch.set_num_threads(n_cores)
-
-    def forward(self, x):
-        """Forward model structure
-        Args:
-            x (torch.Tensor): batched input data
-
-        Returns:
-            torch.Tensor: batched emulated data
-        """
-        # x: (batch, input_dim)
-        # weights: (input_dim, output_dim)
-        # (batch, input_dim) @ (input_dim, output_dim) -> (batch, output_dim)
-        for i, (W, b) in enumerate(zip(self.weights, self.biases)):
-            x = torch.matmul(x, W) + b
-            if i < len(self.weights) - 1:
-                x = torch.nn.functional.leaky_relu(x, negative_slope=0.4)
-        return x
-
-    @torch.inference_mode()
-    def predict(
-        self,
-        surrogate_data,
-        surrogate_data_emulator_wl,
-        batch_size=4096,
-        response_scaler=None,
-        response_offset=None,
-        resample_dict=None,
-    ):
-        """predict model output
-
-        Args:
-            x: input data as numpy or dask array
-            batch_size (int, optional): Size of batch to process. Defaults to 4096.
-
-        Returns:
-            np.array: emulated output
-        """
-        # Handle numpy input
-        x_np = surrogate_data
-        if isinstance(surrogate_data, da.Array):
-            x_np = surrogate_data.compute()
-
-        # Convert to tensor
-        x_tensor = torch.as_tensor(x_np, dtype=torch.float32)
-
-        results = []
-        n = x_tensor.shape[0]
-
-        for i in range(0, n, batch_size):
-            batch = x_tensor[i : i + batch_size].to(self.device)
-            out = self(batch)
-            results.append(out.cpu().numpy())
-
-        return np.concatenate(results, axis=0)
-
-
-class SRTMnetModel6c(torch.nn.Module):
+class SRTMnetModel(torch.nn.Module):
     def __init__(self, input_file: str, key: str = None, n_cores: int = 1):
         """Initializes the SRTMnet model by loading weights and biases from an HDF5 file.
         This new version uses torch, but shoudl give the same results as the
@@ -246,10 +142,12 @@ class SRTMnetModel6c(torch.nn.Module):
                 x = torch.nn.functional.leaky_relu(x, negative_slope=0.4)
         return x
 
-    def batch_resample(self, out, key, resample_dict=None):
+    def batch_resample(
+        self, out: np.ndarray, convert_to_rdn: bool, resample_dict: dict = None
+    ):
         # Resample the direct product, converting to radiance for rhoatm
         if resample_dict is not None:
-            if key == "rhoatm":
+            if convert_to_rdn:
                 out_r = units.transm_to_rdn(
                     out,
                     resample_dict["emulator_coszen"],
@@ -322,7 +220,13 @@ class SRTMnetModel6c(torch.nn.Module):
 
                 # Resample the direct product, converting to radiance for rhoatm
                 if key != "3c":
-                    outdict[key].append(self.batch_resample(out, key, resample_dict))
+                    outdict[key].append(
+                        self.batch_resample(
+                            out,
+                            convert_to_rdn=(ckey == "rhoatm"),
+                            resample_dict=resample_dict,
+                        )
+                    )
 
                     # For paired terms, convert to radiance and multiply
                     if is_paired:
@@ -336,8 +240,8 @@ class SRTMnetModel6c(torch.nn.Module):
                         outdict[ckey].append(
                             self.batch_resample(
                                 out[:, _ckey * nc : (_ckey + 1) * nc],
-                                ckey,
-                                resample_dict,
+                                convert_to_rdn=False,
+                                resample_dict=resample_dict,
                             )
                         )
 
@@ -511,15 +415,11 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             "emulator_sol_irr": self.emulator_sol_irr,
         }
 
-        batch_size = 4096
-        # Optional...perhaps we should just be explicit in the config about the batch sizing
-        # if self.engine_config.predict_parallel_chunks > 0:
-        #    batch_size = int(np.ceil(data.shape[0] / self.engine_config.predict_parallel_chunks))
-
         import multiprocessing
 
         n_cores = multiprocessing.cpu_count()
         Logger.info(f"Loading and predicting with emulator on {n_cores} cores")
+
         if self.component_mode == "3c":
             Logger.debug("Detected hdf5 (3c) emulator file format")
 
@@ -534,7 +434,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             response_scaler = aux.get("response_scaler", 100.0)
             response_offset = aux.get("response_offset", 0.0)
 
-            emulator = SRTMnetModel6c(
+            emulator = SRTMnetModel(
                 input_file=self.engine_config.emulator_file,
                 key="3c",
                 n_cores=n_cores,
@@ -542,7 +442,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             lp = emulator.predict(
                 [data.values],  # surrogate data (6S)
                 [resample.values],  #  stacked 3c data interpolated to emulator wl
-                batch_size=batch_size,
+                batch_size=self.engine_config.emulator_batch_size,
                 response_scaler=[response_scaler],
                 response_offset=[response_offset],
                 resample_dict=resample_dict,
@@ -553,17 +453,6 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             for outkey in lp.keys():
                 self.lut[outkey] = lp[outkey].T.reshape(outshape)
             self.lut.flush()
-
-            # Now predict, scale, and add the interpolations
-            # emulator = SRTMnetModel3c(self.engine_config.emulator_file, n_cores=n_cores)
-            # predicts = da.from_array(emulator.predict([data]))
-            # predicts /= scaler
-            # predicts += response_offset
-            # predicts += resample
-
-            # Unstack back to a dataset and save
-            # predicts = predicts.unstack("stack").to_dataset("quantity")
-            # predicts.attrs["component_mode"] = "3c"
 
         else:
             Logger.debug("Detected 6c emulator file format")
@@ -595,8 +484,6 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                     else:
                         raise ValueError(f"Feature point {fpn} not found in points")
 
-            # predicts = resample.copy(deep=True)
-
             total_start_time = time.time()
 
             mapping = {
@@ -612,7 +499,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                 key_start_time = time.time()
                 Logger.debug(f"Loading emulator {key}")
 
-                emulator = SRTMnetModel6c(
+                emulator = SRTMnetModel(
                     input_file=self.engine_config.emulator_file,
                     key=key,
                     n_cores=n_cores,
@@ -627,7 +514,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                     [
                         resample[x].values for x in mapping[key]
                     ],  #  6S data interpolated to emulator wl
-                    batch_size=batch_size,
+                    batch_size=self.engine_config.emulator_batch_size,
                     response_scaler=response_scaler,
                     response_offset=response_offset,
                     resample_dict=resample_dict,
@@ -653,11 +540,6 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             self.lut.setAttr("RT_mode", "rdn")
             self.lut.flush()
 
-        # Logger.info(
-        #    f"Saving intermediary prediction results to: {self.predict_path}"
-        # )
-        # luts.saveDataset(self.predict_path, predicts)
-
         # Insert these into the LUT file
         return {
             "coszen": sim["coszen"],
@@ -682,44 +564,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         """
         Post-simulation adjustments for sRTMnet.
         """
-        # Update engine to run in RDN mode
-        # if self.engine_config.resample_inline is False:
-        #    data = luts.load(self.predict_path, mode="r")
-        #    outdict = {}
-        #    Logger.debug("Resampling components")
-        #    for key, values in data.items():
-        #        Logger.debug(f"Resampling {key}")
-        #        if (
-        #            key in ["dir-dir", "dir-dif", "dif-dir", "dif-dif", "rhoatm"]
-        #            and self.component_mode == "6c"
-        #        ):
-        #            fullspec_val = units.transm_to_rdn(
-        #                data[key].data, self.emulator_coszen, self.emulator_sol_irr
-        #            )
-        #        else:
-        #            fullspec_val = data[key].data
-
-        #        # Only resample and store valid keys
-        #        if len(data[key].data.shape) > 0:
-        #            outdict[key] = resample_spectrum(
-        #                fullspec_val, self.emu_wl, self.wl, self.fwhm, H=self.emulator_H
-        #            )
-
-        #    Logger.debug("Setting up lut cache")
-        #    for _point, point in enumerate(data["point"].values):
-        #        self.lut.queuePoint(
-        #            np.array(point),
-        #            {key: outdict[key][_point, :] for key in outdict.keys()},
-        #        )
-        #    Logger.debug("Flushing lut to file")
-        #    self.lut.flush()
-
-        #    # This is crude - we should revise the LUT naming and store L_* to make this
-        #    # more explicit
-        #    if "dir-dir" in outdict:
-        #        self.rt_mode = "rdn"
-        #        self.lut.setAttr("RT_mode", "rdn")
-        #    Logger.debug("Complete")
+        return {}
 
 
 def build_sixs_config(engine_config):
