@@ -108,14 +108,15 @@ class SRTMnetModel3c(torch.nn.Module):
         return x
 
     @torch.inference_mode()
-    def predict(self, 
-                surrogate_data, 
-                surrogate_data_emulator_wl, 
-                batch_size=4096,
-                response_scaler=None,
-                response_offset=None,
-                resample_dict=None,
-                ):
+    def predict(
+        self,
+        surrogate_data,
+        surrogate_data_emulator_wl,
+        batch_size=4096,
+        response_scaler=None,
+        response_offset=None,
+        resample_dict=None,
+    ):
         """predict model output
 
         Args:
@@ -172,12 +173,12 @@ class SRTMnetModel6c(torch.nn.Module):
         elif key == "dif-dif":
             self.component_keys = ["transm_down_dif", "transm_up_dif"]
             self.product_name = key
-        elif key == '3c':
-            self.component_keys = ['transm_down_dif', 'rhoatm', 'sphalb']
+        elif key == "3c":
+            self.component_keys = ["transm_down_dif", "rhoatm", "sphalb"]
         else:
             self.component_keys = [key]
 
-        if key != "3c": # 6c model
+        if key != "3c":  # 6c model
             with h5py.File(input_file, "r") as model:
                 for ckey in self.component_keys:
                     w_list, b_list = [], []
@@ -198,7 +199,7 @@ class SRTMnetModel6c(torch.nn.Module):
                     # Register as parameters - could (perhaps should) use buffers
                     self.weights[ckey] = torch.nn.ParameterList(w_list)
                     self.biases[ckey] = torch.nn.ParameterList(b_list)
-        else: # 3c model
+        else:  # 3c model
             with h5py.File(input_file, "r") as model:
                 w_list, b_list = [], []
                 for n in model["model_weights"].keys():
@@ -212,8 +213,8 @@ class SRTMnetModel6c(torch.nn.Module):
                             b = group["bias"][:]
                         w_list.append(torch.tensor(w, dtype=torch.float32))
                         b_list.append(torch.tensor(b, dtype=torch.float32))
-            self.weights['3c'] = torch.nn.ParameterList(w_list)
-            self.biases['3c'] = torch.nn.ParameterList(b_list)
+            self.weights["3c"] = torch.nn.ParameterList(w_list)
+            self.biases["3c"] = torch.nn.ParameterList(b_list)
 
         # Determine device
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -244,7 +245,7 @@ class SRTMnetModel6c(torch.nn.Module):
             if i < len(self.weights[key]) - 1:
                 x = torch.nn.functional.leaky_relu(x, negative_slope=0.4)
         return x
-    
+
     def batch_resample(self, out, key, resample_dict=None):
         # Resample the direct product, converting to radiance for rhoatm
         if resample_dict is not None:
@@ -294,12 +295,12 @@ class SRTMnetModel6c(torch.nn.Module):
 
         outdict = {}
         for key in self.weights.keys():
-            if key != '3c':
+            if key != "3c":
                 outdict[key] = []
             else:
-                outdict['transm_down_dif'] = []
-                outdict['rhoatm'] = []
-                outdict['sphalb'] = []
+                outdict["transm_down_dif"] = []
+                outdict["rhoatm"] = []
+                outdict["sphalb"] = []
 
         is_paired = len(self.weights.keys()) > 1
         if is_paired:
@@ -320,7 +321,7 @@ class SRTMnetModel6c(torch.nn.Module):
                 out += surrogate_data_emulator_wl[_key][batch_slice]
 
                 # Resample the direct product, converting to radiance for rhoatm
-                if key != '3c':
+                if key != "3c":
                     outdict[key].append(self.batch_resample(out, key, resample_dict))
 
                     # For paired terms, convert to radiance and multiply
@@ -332,9 +333,15 @@ class SRTMnetModel6c(torch.nn.Module):
                 else:
                     nc = int(out.shape[1] / len(self.component_keys))
                     for _ckey, ckey in enumerate(self.component_keys):
-                        outdict[ckey].append(self.batch_resample(out[:,_ckey * nc: (_ckey + 1)*nc], ckey, resample_dict))
+                        outdict[ckey].append(
+                            self.batch_resample(
+                                out[:, _ckey * nc : (_ckey + 1) * nc],
+                                ckey,
+                                resample_dict,
+                            )
+                        )
 
-            if is_paired: # only happens with 6c
+            if is_paired:  # only happens with 6c
                 if resample_dict is not None:
                     product = units.transm_to_rdn(
                         product,
@@ -509,7 +516,6 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         # if self.engine_config.predict_parallel_chunks > 0:
         #    batch_size = int(np.ceil(data.shape[0] / self.engine_config.predict_parallel_chunks))
 
-
         import multiprocessing
 
         n_cores = multiprocessing.cpu_count()
@@ -529,18 +535,18 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             response_offset = aux.get("response_offset", 0.0)
 
             emulator = SRTMnetModel6c(
-                    input_file=self.engine_config.emulator_file,
-                    key='3c',
-                    n_cores=n_cores,
-                )
+                input_file=self.engine_config.emulator_file,
+                key="3c",
+                n_cores=n_cores,
+            )
             lp = emulator.predict(
-                    [data.values],  # surrogate data (6S)
-                    [resample.values], #  stacked 3c data interpolated to emulator wl
-                    batch_size=batch_size,
-                    response_scaler=[response_scaler],
-                    response_offset=[response_offset],
-                    resample_dict=resample_dict,
-                )
+                [data.values],  # surrogate data (6S)
+                [resample.values],  #  stacked 3c data interpolated to emulator wl
+                batch_size=batch_size,
+                response_scaler=[response_scaler],
+                response_offset=[response_offset],
+                resample_dict=resample_dict,
+            )
             outshape = (len(self.wl),) + tuple(
                 len(self.lut_grid[n]) for n in self.lut_grid
             )
@@ -548,18 +554,16 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                 self.lut[outkey] = lp[outkey].T.reshape(outshape)
             self.lut.flush()
 
-
-
             # Now predict, scale, and add the interpolations
-            #emulator = SRTMnetModel3c(self.engine_config.emulator_file, n_cores=n_cores)
-            #predicts = da.from_array(emulator.predict([data]))
-            #predicts /= scaler
-            #predicts += response_offset
-            #predicts += resample
+            # emulator = SRTMnetModel3c(self.engine_config.emulator_file, n_cores=n_cores)
+            # predicts = da.from_array(emulator.predict([data]))
+            # predicts /= scaler
+            # predicts += response_offset
+            # predicts += resample
 
             # Unstack back to a dataset and save
-            #predicts = predicts.unstack("stack").to_dataset("quantity")
-            #predicts.attrs["component_mode"] = "3c"
+            # predicts = predicts.unstack("stack").to_dataset("quantity")
+            # predicts.attrs["component_mode"] = "3c"
 
         else:
             Logger.debug("Detected 6c emulator file format")
@@ -591,7 +595,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                     else:
                         raise ValueError(f"Feature point {fpn} not found in points")
 
-            #predicts = resample.copy(deep=True)
+            # predicts = resample.copy(deep=True)
 
             total_start_time = time.time()
 
@@ -679,7 +683,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         Post-simulation adjustments for sRTMnet.
         """
         # Update engine to run in RDN mode
-        #if self.engine_config.resample_inline is False:
+        # if self.engine_config.resample_inline is False:
         #    data = luts.load(self.predict_path, mode="r")
         #    outdict = {}
         #    Logger.debug("Resampling components")
