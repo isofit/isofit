@@ -226,6 +226,11 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
                 " available modes: {}".format(self.rt_mode, valid_rt_modes)
             )
 
+        if not (self.emulator_batch_size > 0):
+            errors.append(
+                "radiative_transfer->emulator_batch_size must be a positive integer."
+            )
+
         # Only check for missing files when a prebuilt LUT is not provided
         if not os.path.exists(self.lut_path):
             # Check that all input files exist

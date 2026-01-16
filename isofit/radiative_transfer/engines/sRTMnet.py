@@ -417,8 +417,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
 
         import multiprocessing
 
-        n_cores = multiprocessing.cpu_count()
-        Logger.info(f"Loading and predicting with emulator on {n_cores} cores")
+        Logger.info(f"Loading and predicting with emulator on {self.n_cores} cores")
 
         if self.component_mode == "3c":
             Logger.debug("Detected hdf5 (3c) emulator file format")
@@ -437,7 +436,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             emulator = SRTMnetModel(
                 input_file=self.engine_config.emulator_file,
                 key="3c",
-                n_cores=n_cores,
+                n_cores=self.n_cores,
             )
             lp = emulator.predict(
                 [data.values],  # surrogate data (6S)
@@ -502,7 +501,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                 emulator = SRTMnetModel(
                     input_file=self.engine_config.emulator_file,
                     key=key,
-                    n_cores=n_cores,
+                    n_cores=self.n_cores,
                 )
 
                 Logger.info(f"Emulating {key}")
