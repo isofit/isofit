@@ -248,7 +248,7 @@ class SRTMnetModel(torch.nn.Module):
                     outdict[key].append(
                         self.batch_resample(
                             out,
-                            convert_to_rdn=(ckey == "rhoatm"),
+                            convert_to_rdn=(key == "rhoatm"),
                             resample_dict=resample_dict,
                         )
                     )

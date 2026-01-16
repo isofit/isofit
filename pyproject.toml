@@ -66,6 +66,14 @@ docs = [
   "sphinx_rtd_theme",
 ]
 
+[tool.uv.sources]
+torch = [{index="pytorch-cpu"}]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
 [project.urls]
 repository = "https://github.com/isofit/isofit"
 documentation = "https://isofit.readthedocs.io/en/latest/index.html"
