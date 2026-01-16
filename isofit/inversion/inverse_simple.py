@@ -271,13 +271,6 @@ def invert_analytical(
     from scipy.linalg.blas import dsymv
     from scipy.linalg.lapack import dpotrf, dpotri
 
-    # Note, this will fail if x_instrument is populated
-    if len(fm.idx_instrument) > 0:
-        raise AttributeError(
-            "Invert analytical not currently set to "
-            "handle instrument state variable indexing"
-        )
-
     x = x0.copy()
     x_surface, x_RT, x_instrument = fm.unpack(x)
 
