@@ -76,6 +76,8 @@ jobs:
           python3 -m pip show pip setuptools wheel
 
           # Install 'isofit'
+          # Force CPU version of torch to save space on runners
+          python3 -m pip install torch --index-url https://download.pytorch.org/whl/cpu
           python3 -m pip install --editable ".[test]"
 
           # Ensure ISOFIT has been installed
