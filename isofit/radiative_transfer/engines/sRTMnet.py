@@ -44,8 +44,8 @@ Logger = logging.getLogger(__file__)
 class SRTMnetModel(torch.nn.Module):
     def __init__(self, input_file: str, key: str = None, n_cores: int = 1):
         """Initializes the SRTMnet model by loading weights and biases from an HDF5 file.
-        This new version uses torch, but shoudl give the same results as the
-        sRTMnet (tensorflow) and previous isofit (numpy) implementations.
+        This new version uses torch, but gives the same results as the
+        sRTMnet original (tensorflow) and previous isofit (numpy) implementations.
 
         Args:
             input_file (str, optional): Path to the file containing model weights.
@@ -125,10 +125,11 @@ class SRTMnetModel(torch.nn.Module):
             # those to be set differently
             torch.set_num_threads(n_cores)
 
-    def forward(self, x, key):
+    def forward(self, x: torch.Tensor, key: str):
         """Forward model structure
         Args:
             x (torch.Tensor): batched input data
+            key (str): key to select which weights/biases to use
 
         Returns:
             torch.Tensor: batched emulated data
@@ -145,8 +146,18 @@ class SRTMnetModel(torch.nn.Module):
     def batch_resample(
         self, out: np.ndarray, convert_to_rdn: bool, resample_dict: dict = None
     ):
+        """Resample helpf function
+        Args:
+            out (np.ndarray): output data to resample
+            convert_to_rdn (bool): whether to convert to radiance before resampling
+            resample_dict (dict, optional): dictionary containing resampling parameters
+        Returns:
+            np.ndarray: resampled output data
+        """
         # Resample the direct product, converting to radiance for rhoatm
-        if resample_dict is not None:
+        if resample_dict is None:
+            return out
+        else:
             if convert_to_rdn:
                 out_r = units.transm_to_rdn(
                     out,
@@ -163,7 +174,7 @@ class SRTMnetModel(torch.nn.Module):
                 resample_dict["fwhm"],
                 H=resample_dict["emulator_H"],
             )
-        return out_r
+            return out_r
 
     @torch.inference_mode()
     def predict(
@@ -175,11 +186,25 @@ class SRTMnetModel(torch.nn.Module):
         response_offset=None,
         resample_dict=None,
     ):
-        """predict model output
+        """Predicts model output for either 6c or 3c model.  General model formulation is:
+        x = surrogate_data
+        y = emulator(x) / response_scaler + response_offset + x
+        return < y > resampled to desired wavelengths
+
+        In the case of the 6c model, we also calculate all coupled terms at high spectral resolution,
+        converting to radiance and then convolging.  We leave transmitance and sphalb in
+        'transmittance units', but convert rhoatm to radiance.
+
+        In contrast, the 3c model convolves directly in transmittance units.  This is undesireable,
+        but we have left for historical consistency.  Ideally, user will shift to the 6c model.
 
         Args:
-            x: input data as numpy or dask array
+            surrogate_data: input data as numpy or dask array
+            surrogate_data_emulator_wl: input data at emulator wavelengths (interpolated surrogate)
             batch_size (int, optional): Size of batch to process. Defaults to 4096.
+            response_scaler (list, optional): list of scalers for each output component. Defaults to None.
+            response_offset (list, optional): list of offsets for each output component. Defaults to None
+            resample_dict (dict, optional): dictionary containing resampling parameters. Defaults to None.
 
         Returns:
             np.array: emulated output
