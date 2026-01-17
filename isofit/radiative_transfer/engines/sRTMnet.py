@@ -192,7 +192,7 @@ class SRTMnetModel(torch.nn.Module):
         return < y > resampled to desired wavelengths
 
         In the case of the 6c model, we also calculate all coupled terms at high spectral resolution,
-        converting to radiance and then convolging.  We leave transmitance and sphalb in
+        converting to radiance and then convolving.  We leave transmitance and sphalb in
         'transmittance units', but convert rhoatm to radiance.
 
         In contrast, the 3c model convolves directly in transmittance units.  This is undesireable,
