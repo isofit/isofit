@@ -59,7 +59,7 @@ class Pathnames:
         skyview_factor=None,
         subs: bool = False,
         classify_multisurface: bool = False,
-        eof_path=None
+        eof_path=None,
     ):
         # Determine FID based on sensor name
         if sensor == "ang":
@@ -202,9 +202,7 @@ class Pathnames:
         else:
             self.eof_path = None
 
-        self.eof_working_path = abspath(
-            join(self.data_directory, "eof.txt")
-        )
+        self.eof_working_path = abspath(join(self.data_directory, "eof.txt"))
 
         if skyview_factor:
             self.svf_working_path = abspath(skyview_factor)
@@ -1213,22 +1211,27 @@ def build_main_config(
 
         # Determine if EOF file is one- or two-column
         eof = np.loadtxt(paths.eof_path)
-        isofit_config_modtran["forward_model"]["instrument"]["statevector"] = {"EOF_1": 
-            {"bounds": [-10,10],
-            "scale": 1,
-            "init": 0,
-            "prior_sigma": 100.0,
-            "prior_mean": 0,}
+        isofit_config_modtran["forward_model"]["instrument"]["statevector"] = {
+            "EOF_1": {
+                "bounds": [-10, 10],
+                "scale": 1,
+                "init": 0,
+                "prior_sigma": 100.0,
+                "prior_mean": 0,
+            }
         }
-        if eof.shape[1]==2:
-          isofit_config_modtran["forward_model"]["instrument"]["statevector"]["EOF_2"]= \
-            {"bounds": [-10,10],
-            "scale": 1,
-            "init": 0,
-            "prior_sigma": 100.0,
-            "prior_mean": 0}
-        elif eof.shape[1]>2:
-           raise IndexError("Only 1-2 EOFs supported right now")
+        if eof.shape[1] == 2:
+            isofit_config_modtran["forward_model"]["instrument"]["statevector"][
+                "EOF_2"
+            ] = {
+                "bounds": [-10, 10],
+                "scale": 1,
+                "init": 0,
+                "prior_sigma": 100.0,
+                "prior_mean": 0,
+            }
+        elif eof.shape[1] > 2:
+            raise IndexError("Only 1-2 EOFs supported right now")
 
     if paths.input_model_discrepancy_path is not None:
         isofit_config_modtran["forward_model"][

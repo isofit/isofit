@@ -419,7 +419,7 @@ def apply_oe(
         skyview_factor=skyview_factor,
         subs=True if analytical_line or empirical_line else False,
         classify_multisurface=classify_multisurface,
-        eof_path=eof_path
+        eof_path=eof_path,
     )
     paths.make_directories()
     paths.stage_files()
