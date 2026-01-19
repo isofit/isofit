@@ -19,35 +19,43 @@ from __future__ import annotations
 
 import logging
 import os
-import re
 import subprocess
-from datetime import datetime
+from netCDF4 import Dataset
 from pathlib import Path
 
 import numpy as np
-from scipy.interpolate import interp1d
 
 from isofit.core.fileio import IO
 from isofit.core import common
 from isofit.data import env
-from isofit.core.common import units
+from isofit.core.common import (
+    units,
+    json_load_ascii,
+    calculate_resample_matrix,
+    resample_spectrum,
+)
 from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
+
 
 Logger = logging.getLogger(__name__)
 
 SCRIPT_TEMPLATE = """\
 #!/bin/bash
-{envir}
+
+cd {lrt_bin_dir}
+
 {uvspecs}
 """
 
-WL_LO = 340
-WL_HI = 2510
-REPTRAN_MODEL="coarse"
+REPTRAN_MODEL = "coarse"
+
+# TODO: these differ slightly from emulator for high AOD, but its likely a function of crs_model rayleigh, as well as other features that can be swapped out
+# assumes delta M scaling is very small for these simulations (DISORT with 8 streams)
+
 
 LRT_TEMPLATE = """\
 source solar
-wavelength {WL_LO} {WL_HI}
+wavelength {wl_lo} {wl_hi}
 albedo {albedo}
 atmosphere_file {libradtran_dir}/data/atmmod/{atmos}.dat
 umu {cos_vza}
@@ -55,41 +63,37 @@ phi0 {saa_deg}
 phi {vaa_deg}
 sza {sza_deg}
 rte_solver disort
+number_of_streams 8
 mol_modify O3 300 DU
-mixing_ratio CO2 420
-mol_abs_param reptran {REPTRAN_MODEL}
+mixing_ratio CO2 {co2_inp}
+mol_abs_param reptran {band_model}
 mol_modify H2O {h2o_mm} MM
 crs_model rayleigh bodhaine
 zout {zout}
 altitude {elev}
 aerosol_default
-aerosol_species_file continental_average
 aerosol_set_tau_at_wvl 550 {aot}
 output_quantity transmittance
 output_user lambda uu eglo edir eup
-quiet
 """
 
 
-# See Table 3.1; page 25
-
-
-# enable a co2 mode??
-
-
-
-
 class LibRadTranRT(RadiativeTransferEngine):
-    
+
     def __init__(self, engine_config: RadiativeTransferEngineConfig, **kwargs):
 
-        self.albedos = [0.0, 0.1, 0.5]
+        self.atmosphere_type_lrt = None
+        self.reptran_band_model = REPTRAN_MODEL.lower()
 
-        # Retrieve the path to LibRadTran
+        # Load solar irradiance data
+        path_solar = env.path("data", "kurudz_0.1nm.dat")
+        self.solar_data = np.loadtxt(path_solar, comments="#")
+
+        # Retrieve the path to libRadtran
         if engine_config.engine_base_dir:
             self.libradtran = engine_config.engine_base_dir
             Logger.debug(
-                f"Using engine_config.engine_base_dir for libradtran path: {self.libradtran}"
+                f"Using engine_config.engine_base_dir for libRadtran path: {self.libradtran}"
             )
         else:
             self.libradtran = env.path("libradtran", key="libradtran.version")
@@ -101,7 +105,7 @@ class LibRadTranRT(RadiativeTransferEngine):
                     f"Using environment $LIBRADTRAN_DIR for libradtran path: {self.libradtran}"
                 )
             else:
-                Logger.debug(f"Using ISOFIT ini for libradtran path: {self.libradtran}")
+                Logger.debug(f"Using ISOFIT ini for libRadtran path: {self.libradtran}")
 
         # Validate the path exists
         self.libradtran = Path(self.libradtran)
@@ -115,22 +119,35 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
             Logger.error(error)
             raise FileNotFoundError(error)
 
-        self.template = LRT_TEMPLATE
+        self.lrt_bin_dir = Path(self.libradtran, "bin")
 
-        self.environment = engine_config.environment or ""
+        self.template = LRT_TEMPLATE
 
         super().__init__(engine_config, **kwargs)
 
-        self.atmosphere_type = "Should be able to pull this from config and is set in modtran template file" 
-        self.atmosphere_type_lrt = None
-        self.wl = None
-        self.fwhm = None
-
     def preSim(self):
+
+        # load static geom between sims
+        self.modtran_template = json_load_ascii(self.engine_config.template_file)[
+            "MODTRAN"
+        ]
+        self.modtran_geom = self.modtran_template[0]["MODTRANINPUT"]["GEOMETRY"]
+        self.modtran_surf = self.modtran_template[0]["MODTRANINPUT"]["SURFACE"]
+        self.modtran_atmos = self.modtran_template[0]["MODTRANINPUT"]["ATMOSPHERE"]
+
+        self.atmosphere_type = self.modtran_atmos["M1"]
+        self.day_of_year = self.modtran_geom["IDAY"]
+
+        # set approx upper and lower bounds of sims (to be overwritten by actual reptran grid later)
+        self.wl_lo = self.wl[0] - 10.0
+        self.wl_hi = self.wl[-1] + 10.0
+
+        # Set sim albedos
+        self.albedos = [0.0, 0.1, 0.5]
 
         atmos = self.atmosphere_type.strip().lower()
 
-        # Possible libradtran mappings for atmosphere type
+        # Possible libRadtran mappings for atmosphere type (either the libradtran or modtran names)
         atm_map = {
             "afglt": "afglt",
             "afglms": "afglms",
@@ -138,20 +155,6 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
             "afglss": "afglss",
             "afglsw": "afglsw",
             "afglus": "afglus",
-
-            "tropics": "afglt",
-            "tropical": "afglt",
-            "midlatitude_summer": "afglms",
-            "midlat_summer": "afglms",
-            "midlatitude_winter": "afglmw",
-            "midlat_winter": "afglmw",
-            "subarctic_summer": "afglss",
-            "subarc_summer": "afglss",
-            "subarctic_winter": "afglsw",
-            "subarc_winter": "afglsw",
-            "us_standard": "afglus",
-            "us_standard_1976": "afglus",
-
             "atm_tropical": "afglt",
             "atm_midlat_summer": "afglms",
             "atm_midlat_winter": "afglmw",
@@ -163,15 +166,50 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
         if atmos not in atm_map:
             valid = ", ".join(sorted(atm_map.keys()))
             raise ValueError(
-                f"Unknown atmosphere type '{atmos}'.\n"
-                f"Valid options are:\n  {valid}"
+                f"Unknown atmosphere type '{atmos}'.\n" f"Valid options are:\n  {valid}"
             )
 
         self.atmosphere_type_lrt = atm_map[atmos]
 
+        # Set up the wavelength based on the REPTRAN band model, and overwrite hi and lo
+        cdf = f"{self.libradtran}/data/correlated_k/reptran/reptran_solar_{self.reptran_band_model}.cdf"
+        with Dataset(cdf) as ds:
+            wl_min = ds.variables["wvlmin"][:]
+            wl_max = ds.variables["wvlmax"][:]
+
+        rep_idx = (wl_max >= self.wl_lo) & (wl_min <= self.wl_hi)
+
+        self.wl_lo = wl_min[rep_idx][0]
+        self.wl_hi = wl_max[rep_idx][-1]
+
+        self.lrt_wl = 0.5 * (wl_min[rep_idx] + wl_max[rep_idx])
+
+        # Set up the irradiance spectrum
+        wl_kurucz = self.solar_data[:, 0]
+        solar_irr = self.solar_data[:, 1] / 10.0  # convert from mW/m2/nm to uW/nm/cm2
+
+        # apply ESD correction
+        self.esd = IO.load_esd()
+        self.irr_factor = self.esd[self.day_of_year - 1, 1]
+        solar_irr = solar_irr / self.irr_factor**2
+
+        # stash this for other calcs (in sensor grid)
+        self.solar_irr_sensor = common.resample_spectrum(
+            solar_irr, wl_kurucz, self.wl, self.fwhm
+        )
+
+        # Now get the H matrix to go from REPTRAN grid to sensor grid
+        self.matrix_H = calculate_resample_matrix(self.lrt_wl, self.wl, self.fwhm)
+
+        return {
+            "coszen": np.cos(np.radians(self.modtran_geom["PARM2"])),
+            "solzen": self.modtran_geom["PARM2"],
+            "solar_irr": self.solar_irr_sensor,
+        }
+
     def makeSim(self, point: np.array):
         """
-        Perform LibRadTran simulations
+        Perform libRadtran simulations
 
         Parameters
         ----------
@@ -181,16 +219,17 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
         # Retrieve the files to process
         name = self.point_to_filename(point)
 
-        # Only execute when the .out file is missing
-        if (self.sim_path / f"{name}.out").exists():
-            Logger.warning(f"LibRadTran sim files already exist for point {point}")
+        # Only execute when the .out file is missing (for now jsut checking first out)
+        sim1_out = self.sim_path / f"{name}_sim1_alb-0.0.out"
+        if sim1_out.exists():
+            Logger.warning(f"libRadtran sim files already exist for point {point}")
             return
 
         cmd = self.rebuild_cmd(point, name)
 
         if not self.engine_config.rte_configure_and_exit:
             call = subprocess.run(
-                cmd, shell=True, capture_output=True, cwd=self.sim_path
+                cmd, shell=True, capture_output=True, cwd=self.lrt_bin_dir
             )
             if call.stdout:
                 Logger.error(call.stdout.decode())
@@ -198,137 +237,166 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
     def readSim(self, point):
         name = self.point_to_filename(point)
 
-        # load outputs: lambda uu eglo edir
-        _, uu1, _, _ , _ = np.loadtxt(self.sim_path / f"{name}_sim1_alb-0.0.out").T
-        _, _, eglo2, edir2, eup2 = np.loadtxt(self.sim_path / f"{name}_sim2_alb-0.0.out").T
-        _, _, eglo3, _,_ = np.loadtxt(self.sim_path / f"{name}_sim3_alb-0.0.out").T
-        _, _, eglo4, _,_ = np.loadtxt(self.sim_path / f"{name}_sim4_alb-{[self.albedos[1]]}.out").T
-        _, _, eglo5, _,_ = np.loadtxt(self.sim_path / f"{name}_sim5_alb-{[self.albedos[2]]}.out").T
+        # load outputs: lambda uu eglo
+        out_prefix = f"{self.sim_path}/{name}"
+        a1 = self.albedos[1]
+        a2 = self.albedos[2]
+        _, uu1, _ ,_,_ = np.loadtxt(out_prefix + "_sim1_alb-0.0.out").T
+        _, _, eglo2,edir2,_ = np.loadtxt(out_prefix + "_sim2_alb-0.0.out").T
+        _, _, eglo3,_,_ = np.loadtxt(out_prefix + "_sim3_alb-0.0.out").T
+        _, _, eglo4,_,_ = np.loadtxt(out_prefix + f"_sim4_alb-{a1}.out").T
+        _, _, eglo5,_,_ = np.loadtxt(out_prefix + f"_sim5_alb-{a2}.out").T
 
-        # get the solzen and coszen from sim1
-        with open(self.sim_path / f"{name}_sim1_alb-0.0.inp", "r") as f:
-            for line in f:
-                if line.lower().startswith("sza"):
-                    solzen = float(line.split()[1])
-                    break
-        # if this doesn't exist should trigger an error, something went wrong with input files
-        coszen = np.cos(np.radians(solzen))
+        # Read cos_vza and cos_sza from sim1 input file
+        with open(out_prefix + "_sim1_alb-0.0.inp") as f:
+            lines = {
+                p[0]: p[1] for line in f if (p := line.strip().split()) and len(p) >= 2
+            }
+        cos_vza = float(lines["umu"])
+        cos_sza = np.cos(np.radians(float(lines["sza"])))
 
-        # Gather all of the terms
-        transm_up_total = eglo3
-        transm_down_total = eglo2
+        # total downward transmittance
+        total_down = eglo2 / cos_sza
 
-        transm_up_dif = eup2
-        transm_up_dir = transm_up_total - transm_up_dif
+        # total upward transmittance
+        total_up = eglo3 / cos_vza
 
-        transm_down_dir = edir2
-        transm_down_dif = transm_down_total - transm_down_dir
+        # path reflectance for zero albedo
+        rhoatm = uu1 * np.pi / cos_sza
 
-        rhoatm = uu1
-
-        # setting very small values to be zero for sphalb
+        # spherical albedo
         denom = self.albedos[2] * eglo5 - self.albedos[1] * eglo4
         sphalb = np.where(np.abs(denom) > 1e-12, (eglo5 - eglo4) / denom, 0.0)
-        sphalb = np.where((sphalb < 0) | (sphalb > 1), 0.0, sphalb)
+        sphalb = np.where((sphalb < 1e-12) | (sphalb > 1), 0.0, sphalb)
+
+        # down direct transmittance
+        transm_down_dir = edir2 / cos_sza
+        transm_down_dir = np.where((transm_down_dir < 1e-12) | (transm_down_dir > 1), 0.0, transm_down_dir)
+
+        # down diffuse transmittance
+        transm_down_dif = total_down - transm_down_dir
+        transm_down_dif = np.where((transm_down_dif < 1e-12) | (transm_down_dif > 1), 0.0, transm_down_dif)
+
+        # upward direct transmittance (assuming we can isolate tau using simple Beer-Lambert expression)
+        transm_up_dir = np.power(np.maximum(transm_down_dir, 1e-12), cos_sza / cos_vza)
+        transm_up_dir = np.where((transm_up_dir < 1e-12) | (transm_up_dir > 1), 0.0, transm_up_dir)
+        
+        # upward diffuse transmittance
+        transm_up_dif = total_up - transm_up_dir
+        transm_up_dif = np.where((transm_up_dif < 1e-12) | (transm_up_dif > 1), 0.0, transm_up_dif)
 
         results = {
-            "solzen": solzen,
-            "coszen": coszen,
             "rhoatm": rhoatm,
             "sphalb": sphalb,
+            "transm_down_dif": transm_down_dif, 
             "transm_down_dir": transm_down_dir,
-            "transm_down_dif": transm_down_dif,
+            "transm_up_dif": transm_up_dif, 
             "transm_up_dir": transm_up_dir,
-            "transm_up_dif": transm_up_dif,
+            "dir-dir": transm_down_dir * transm_up_dir,
+            "dif-dir": transm_down_dif * transm_up_dir,
+            "dir-dif": transm_down_dir * transm_up_dif,
+            "dif-dif": transm_down_dif * transm_up_dif,
         }
+
+        results = {
+            key: resample_spectrum(data, self.lrt_wl, self.wl, self.fwhm, H=self.matrix_H)
+            for key, data in results.items()
+        }
+
+        # to rdn mode
+        for key in ["rhoatm","dir-dir","dif-dir","dir-dif", "dif-dif"]:
+            results[key] = units.transm_to_rdn(results[key], self.solar_irr_sensor, cos_sza)
 
         return results
 
     def postSim(self):
-        """To run medium and fine, ancillary data must be downloaded from libradtran."""
-        # Set up the wavelength based on the REPTRAN band model
-        model = REPTRAN_MODEL.lower()
-        if model == "fine":
-            res_cm = 1.0
-        elif model == "medium":
-            res_cm = 5.0
-        elif model == "coarse":
-            res_cm = 15.0
-        else:
-            raise ValueError(f"REPTRAN band models are: 'fine', 'medium', 'coarse'.")
-        
-        wl_list = [WL_LO]
-        while wl_list[-1] < WL_HI:
-            wl = wl_list[-1]
-            delta_lambda = wl**2 * res_cm / 1e7  # nm
-            wl_next = wl + delta_lambda
-            if wl_next > WL_HI:
-                break
-            wl_list.append(wl_next)
-
-        self.wl = np.array(wl_list)
-        self.fwhm = self.wl**2 * res_cm / 1e7
-
-        # Set up the irradiance spectrum
-        path_solar = env.path("data", "kurudz_0.1nm.dat")
-        data = np.loadtxt(path_solar, comments="#")
-        wl_kurucz = data[:, 0]     
-        self.solar_irr = data[:, 1] / 10.0 # convert from mW/m2/nm to uW/nm/cm2
-
-        # apply ESD correction
-        self.load_esd()
-        self.solar_irr = self.solar_irr / self.irr_factor**2  
-
-        # resample to REPTRAN grid
-        wl_kurucz = np.arange(250.0, 10000.0001, 0.1)
-        self.solar_irr = common.resample_spectrum(self.solar_irr, wl_kurucz, self.wl, self.fwhm)
-
-        return {"solar_irr": self.solar_irr} 
+        self.rt_mode = "rdn"
+        self.lut.setAttr("RT_mode", "rdn")
 
     def rebuild_cmd(self, point, name):
-        vals = {"aot": "AOT550"}
-        vals.update(zip(self.lut_names, point))
-        vals.update({
-            "WL_LO": WL_LO,
-            "WL_HI": WL_HI,
-            "REPTRAN_MODEL": REPTRAN_MODEL,
-            "atmos": self.atmosphere_type_lrt,
-            "libradtran_dir": self.libradtran,
-        })
+        # uusing the MODTRAN template file
+        translation = {
+            "surface_elevation_km": "GNDALT",
+            "observer_altitude_km": "H1ALT",
+            "observer_azimuth": "TRUEAZ",
+            "observer_zenith": "OBSZEN",
+        }
 
-        if "H2OSTR" in vals:
-            vals["h2o_mm"] = units.cm_to_mm(vals["H2OSTR"])
+        vals = {translation.get(n, n): v for n, v in zip(self.lut_names, point)}
 
-        if "surface_elevation_km" in vals:
-            vals["elev"] = abs(max(vals["surface_elevation_km"], 0))
+        vals.update(
+            {
+                "wl_lo": self.wl_lo,
+                "wl_hi": self.wl_hi,
+                "band_model": self.reptran_band_model,
+                "atmos": self.atmosphere_type_lrt,
+                "libradtran_dir": self.libradtran,
+            }
+        )
 
-        if "observer_altitude_km" in vals:
-            alt = min(vals["observer_altitude_km"], 99)
-            vals["alt"] = "toa" if alt > 98 else alt
+        # Set defaults from modtran template file
+        # Sensor altitude above sea level
+        alt = vals.get("H1ALT", self.modtran_geom["H1ALT"])
+        vals["alt"] = "toa" if alt > 98.0 else min(alt, 99.0)
 
-        if "observer_azimuth" in vals:
-            vals["vaa_deg"] = vals["observer_azimuth"]
+        # Observer zenith, 0-90 [deg]
+        vza = vals.get("OBSZEN", self.modtran_geom["OBSZEN"])
+        vza = 180.0 - vza if vza > 90.0 else vza
+        vals["vza_deg"] = max(0, vza)
+        vals["cos_vza"] = np.cos(np.radians(vals["vza_deg"]))
 
-        if "observer_zenith" in vals:
-            vals["vza_deg"] = vals["observer_zenith"]
-            vals["cos_vza"] = np.cos(np.radians(vals["observer_zenith"]))
+        # observer azimuth [deg]
+        vals["vaa_deg"] = vals.get("TRUEAZ", self.modtran_geom["TRUEAZ"])
 
+        # surface elevation [km]
+        vals["elev"] = abs(max(vals.get("GNDALT", self.modtran_surf["GNDALT"]), 0.0))
+
+        # solar zenith [deg], same as PARM2
+        vals["sza_deg"] = self.modtran_geom["PARM2"]
+
+        # relative azimuth [deg] = PARM1
+        vals["relative_azimuth"] = self.modtran_geom["PARM1"]
+
+        # solar azimuth 
+        vals["saa_deg"] = (vals["vaa_deg"] - vals["relative_azimuth"]) % 360
+
+        # co2 is always populated in MODTRAN template file
+        vals["co2_inp"] = self.modtran_atmos["CO2MX"]
+
+        # could be empty depending on presolve implementation
+        # TODO: what is the default aot for sRTMnet for presolve?
+        vals["aot"] = 0.10
+        vals["h2o_mm"] = 0.75
+
+        # Now, override if in LUT
         if "solar_zenith" in vals:
             vals["sza_deg"] = vals["solar_zenith"]
 
         if "relative_azimuth" in vals:
-            vals["saa_deg"] = np.minimum(
-                vals["vaa_deg"] + vals["relative_azimuth"],
-                vals["vaa_deg"] - vals["relative_azimuth"],
-            )
+            vals["saa_deg"] = (vals["vaa_deg"] - vals["relative_azimuth"]) % 360
+
+        if "CO2" in vals:
+            vals["co2_inp"] = vals["CO2"]
+
+        if "H2OSTR" in vals:
+            vals["h2o_mm"] = units.cm_to_mm(vals["H2OSTR"])
+
+        if "AOT550" in vals:
+            vals["aot"] = vals["AOT550"]
+        elif "AERFRAC_2" in vals:
+            vals["aot"] = vals["AERFRAC_2"]
+        elif "AERFRAC_1" in vals:
+            vals["aot"] = vals["AERFRAC_1"]
+        else:
+            pass
 
         # five runs needed to get the quantities needed for 6c model
         runs = [
-            dict(tag="sim1", albedo=0.0, zout=vals["alt"], swap_geom=False),
-            dict(tag="sim2", albedo=0.0, zout="sur",      swap_geom=False),
-            dict(tag="sim3", albedo=0.0, zout="sur",      swap_geom=True),
-            dict(tag="sim4", albedo=self.albedos[1], zout=vals["alt"], swap_geom=False),
-            dict(tag="sim5", albedo=self.albedos[2], zout=vals["alt"], swap_geom=False),
+            dict(tag="sim1", albedo=0.0, zout=vals["alt"]),
+            dict(tag="sim2", albedo=0.0, zout="sur"),
+            dict(tag="sim3", albedo=0.0, zout="sur"),
+            dict(tag="sim4", albedo=self.albedos[1], zout="sur"),
+            dict(tag="sim5", albedo=self.albedos[2], zout="sur"),
         ]
         files = []
 
@@ -337,35 +405,25 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
             run_vals["albedo"] = run["albedo"]
             run_vals["zout"] = run["zout"]
 
-            # Reciprocal geometry for downward transmittance
-            if run["swap_geom"]:
+            # Reciprocal geometry for transm_up_total for sim3
+            if run["tag"] == "sim3":
                 run_vals["sza_deg"] = run_vals["vza_deg"]
 
             fname = f"{name}_{run['tag']}_alb-{run['albedo']}"
             files.append(fname)
 
-            with open(self.sim_path / f"{fname}.inp", "w") as f:
+            with open(f"{self.sim_path}/{fname}.inp", "w") as f:
                 f.write(self.template.format(**run_vals, **env))
 
-        with open(self.sim_path / f"{name}.sh", "w") as f:
+        with open(f"{self.sim_path}/{name}.sh", "w") as f:
             f.write(
                 SCRIPT_TEMPLATE.format(
-                    envir=self.environment,
+                    lrt_bin_dir=self.lrt_bin_dir,
                     uvspecs="\n".join(
-                        f"{self.libradtran}/bin/uvspec < {fn}.inp > {fn}.out"
+                        f"{self.lrt_bin_dir}/uvspec < {self.sim_path}/{fn}.inp > {self.sim_path}/{fn}.out"
                         for fn in files
                     ),
                 )
             )
 
-        return f"bash {name}.sh"
-    
-    def load_esd(self):
-        """
-        Loads the earth-sun distance file
-        """
-        self.esd = IO.load_esd()
-
-        dt = datetime(2000, self.engine_config.month, self.engine_config.day)
-        self.day_of_year = dt.timetuple().tm_yday
-        self.irr_factor = self.esd[self.day_of_year - 1, 1]
+        return f"bash {self.sim_path}/{name}.sh"
