@@ -50,15 +50,20 @@ cd {lrt_bin_dir}
 # fine or medium models are available for extra downloads from lrt webpage (~500 MB size)
 REPTRAN_MODEL = "coarse"
 
-# TODO: these differ slightly from emulator for high AOD, but its likely a function of crs_model rayleigh, as well as other features that can be swapped out
-
 # assumes delta M scaling is very small for these simulations (DISORT with 8 streams). needs to be tested much more to see how large these errors actually are.
+# Although watching the logs, for radiance quantities its hard coding it to 16 streams and running like this.
+
+# for now, it computes transmittance terms using "source solar", which falls back to kurudz internally in the RTE solver of libRadtran.
+# Then, to get to radiance terms here in our engine, the Fontenla data is used with the appropriate Earth-Sun distance correction factor.
 
 # NOTE: quote from aerosol setup for default:
 #   "The most simple way to define an aerosol is by the command `aerosol_default``
 #    which will set up the aerosol model by Shettle (1989).
 #    The default properties are a rural type aerosol in the boundary layer,
 #    background aerosol above 2km, spring-summer conditions and a visibility of 50km."
+
+# Currently experimenting with ssa scale and gg set. REason: scaling ssa to act more like very cllean atmosphere layer
+# for some reason setting `aerosol_species_file` (e.g., continental_clean) is not working.. may be specific to my install.
 
 LRT_TEMPLATE = """\
 source solar
@@ -76,10 +81,12 @@ mixing_ratio CO2 {co2_inp}
 mol_abs_param reptran {band_model}
 mol_modify H2O {h2o_mm} MM
 crs_model rayleigh bodhaine
-zout {zout}
-altitude {elev}
 aerosol_default
 aerosol_set_tau_at_wvl 550 {aot}
+aerosol_modify ssa scale 1.03
+aerosol_modify gg set 0.70
+zout {zout}
+altitude {elev}
 output_quantity transmittance
 output_user lambda uu eglo edir
 """
@@ -92,8 +99,12 @@ class LibRadTranRT(RadiativeTransferEngine):
         self.atmosphere_type_lrt = None
         self.reptran_band_model = REPTRAN_MODEL.lower()
 
-        # Load solar irradiance data (similar source to sRTMnet)
-        path_solar = env.path("data", "oci", "tsis_f0_0p5.txt")
+        # Load solar irradiance data
+        path_solar = env.path("data", "fontenla2011_0.1nm_350-2500nm.txt")  # default
+
+        if engine_config.irradiance_file:
+            path_solar = self.irradiance_file
+
         self.solar_data = np.loadtxt(path_solar)
 
         # Retrieve the path to libRadtran
@@ -146,7 +157,7 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
         self.day_of_year = self.modtran_geom["IDAY"]
         self.nstr = self.modtran_template[0]["MODTRANINPUT"]["RTOPTIONS"]["NSTR"]
 
-        # set approx upper and lower bounds of sims (to be overwritten by actual reptran grid later)
+        # set approx upper and lower bounds of sims (to be overwritten by actual reptran grid below)
         self.wl_lo = self.wl[0] - 10.0
         self.wl_hi = self.wl[-1] + 10.0
 
@@ -191,7 +202,8 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
             wl_min = ds.variables["wvlmin"][:]
             wl_max = ds.variables["wvlmax"][:]
 
-        # snap to the closest reptran band that matches self.wl_lo and hi
+        # snap to the closest reptran band. These will match output exactly 
+        # because we give wl_lo and wl_hi to the template in rebuild_cmd().
         rep_idx = (wl_max >= self.wl_lo) & (wl_min <= self.wl_hi)
         self.wl_lo = wl_min[rep_idx][0]
         self.wl_hi = wl_max[rep_idx][-1]
@@ -199,13 +211,26 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
 
         # Set up the irradiance spectrum
         wl_solar_inp = self.solar_data[:, 0].T
-        solar_irr = self.solar_data[:, 1].T / 10.0  # convert from mW/m2/nm to uW/nm/cm2
+        solar_irr = self.solar_data[:, 1].T
 
-        # apply ESD correction (in a similar way to sRTMnet)
+        # Decide units of solar irradiance
+        # assuming we want to go to uW/nm/cm2 based on any unit input
+        if np.nanmax(solar_irr) > 300.0:
+            solar_irr = solar_irr / 10.0
+        elif np.nanmax(solar_irr) < 30.0 and np.nanmax(solar_irr) > 3.0:
+            solar_irr = solar_irr * 10.0
+        elif np.nanmax(solar_irr) < 3.0 and np.nanmax(solar_irr) > 0.3:
+            solar_irr = solar_irr * 100.0
+        elif np.nanmax(solar_irr) < 300.0 and np.nanmax(solar_irr) > 30.0:
+            pass
+        else:
+            raise ValueError("Verify units of solar irradiance are in uW/nm/cm2.")
+
+        # apply ESD correction
         self.esd = IO.load_esd()
-        self.irr_cur = self.esd[self.day_of_year - 1, 1]
-        self.irr_ref = self.esd[200, 1]
-        solar_irr = solar_irr * self.irr_ref**2 / self.irr_cur**2
+        irr_ref = self.esd[200, 1]
+        irr_cur = self.esd[self.day_of_year - 1, 1]
+        solar_irr = solar_irr * irr_ref**2 / irr_cur**2
 
         # stash this for other calcs (in sensor grid)
         self.solar_irr_sensor = common.resample_spectrum(
@@ -277,9 +302,15 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
 
         # total downward transmittance
         total_down = e2 / cos_sza
+        total_down = np.where(
+            (total_down < 1e-12) | (total_down > 1), 0.0, total_down
+        )
 
         # total upward transmittance
-        total_up = e3 / cos_vza
+        total_up = e3 / cos_vza 
+        total_up = np.where(
+            (total_up < 1e-12) | (total_up > 1), 0.0, total_up
+        )
 
         # path reflectance for zero albedo
         rhoatm = u1 * np.pi / cos_sza
