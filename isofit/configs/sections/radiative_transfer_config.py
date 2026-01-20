@@ -135,14 +135,6 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         self.emulator_aux_file = None
         """str: path to emulator auxiliary data - expected npz format"""
 
-        self._parallel_layer_read_type = bool
-        self.parallel_layer_read = True
-        """bool: Flag for how to load and run sRTMnet prediction.
-           If True, will read in the weights/biases per layer per worker.
-           If False, will load entire model into shared memory
-           Model doesn't always fit in shared memory for smaller systems
-        """
-
         self._predict_parallel_chunks_type = int
         self.predict_parallel_chunks = 20
         """int: If emulator predictions are in parallel. How many chunks to run.
@@ -201,6 +193,11 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         """bool: Indicates that code should terminate as soon as all radiative transfer engine configuration files are
         written (without running them)"""
 
+        # sRTMnet
+        self._emulator_batch_size_type = int
+        self.emulator_batch_size = 4096
+        """int: Batch size for sRTMnet predictions. Set smaller to reduce memory usage, larger for faster emulation."""
+
         self.set_config_options(sub_configdic)
 
         if self.lut_names is not None:
@@ -227,6 +224,11 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
             errors.append(
                 "radiative_transfer->raditive_transfer_mode: {} not in one of the"
                 " available modes: {}".format(self.rt_mode, valid_rt_modes)
+            )
+
+        if not (self.emulator_batch_size > 0):
+            errors.append(
+                "radiative_transfer->emulator_batch_size must be a positive integer."
             )
 
         # Only check for missing files when a prebuilt LUT is not provided

@@ -289,6 +289,20 @@ class Create:
         """
         self.setAttr("ISOFIT status", "success")
 
+    def __setitem__(self, key: str, value: Any) -> None:
+        """
+        Sets a variable in the netCDF.
+
+        Parameters
+        ----------
+        key : str
+            Key to set
+        value : any
+            Value to set
+        """
+        with Dataset(self.file, "a") as ds:
+            ds[key][:] = value
+
     def __getitem__(self, key: str) -> Any:
         """
         Passthrough to __getitem__ on the underlying 'ds' attribute.
