@@ -661,6 +661,7 @@ def build_presolve_config(
     inversion_windows=[[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]],
     prebuilt_lut_path: str = None,
     multipart_transmittance: bool = False,
+    modtran_path: str = None,
 ) -> None:
     """Write an isofit config file for a presolve, with limited info.
 
@@ -677,6 +678,7 @@ def build_presolve_config(
         debug: flag to enable debug_mode in the config.implementation
         prebuilt_lut_path: lut path to use; if none, presolve config will create a new file
         multipart_transmittance: flag to indicate whether a 4-component transmittance model is to be used
+        modtran_path: path to modtran or libradtran model
     """
 
     # Determine number of spectra included in each retrieval.  If we are
@@ -687,7 +689,10 @@ def build_presolve_config(
         spectra_per_inversion = 1
 
     if emulator_base is None:
-        engine_name = "modtran"
+        if "libradtran" in modtran_path.lower():
+            engine_name = "LibRadTran"
+        else:
+            engine_name = "modtran"
     elif emulator_base.endswith(".jld2"):
         engine_name = "KernelFlowsGP"
     else:
@@ -858,6 +863,7 @@ def build_main_config(
     multipart_transmittance: bool = False,
     surface_mapping: dict = None,
     retrieve_co2: bool = False,
+    modtran_path: str = None,
 ) -> None:
     """Write an isofit config file for the main solve, using the specified pathnames and all given info
 
@@ -888,6 +894,7 @@ def build_main_config(
         multipart_transmittance:              flag to indicate whether a 4-component transmittance model is to be used
         surface_mapping:                      optional object to pass mapping between surface class and surface model
         retrieve_co2:                         flag to include CO2 in lut and retrieval
+        modtran_path:                         path to modtran or libradtran model
     """
 
     # Determine number of spectra included in each retrieval.  If we are
@@ -903,7 +910,10 @@ def build_main_config(
         lut_path = abspath(prebuilt_lut_path)
 
     if emulator_base is None:
-        engine_name = "modtran"
+        if "libradtran" in modtran_path.lower():
+            engine_name = "LibRadTran"
+        else:
+            engine_name = "modtran"
     elif emulator_base.endswith(".jld2"):
         engine_name = "KernelFlowsGP"
     else:

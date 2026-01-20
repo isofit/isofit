@@ -143,7 +143,7 @@ def apply_oe(
         the working_directory
     modtran_path : str, default=None
         Location of MODTRAN utility. Alternately set with `MODTRAN_DIR` environment
-        variable
+        variable. libRadtran base directory can also be passed to this arg.
     wavelength_path : str, default=None
         Location to get wavelength information from, if not specified the radiance
         header will be used
@@ -681,6 +681,7 @@ def apply_oe(
                 prebuilt_lut_path=prebuilt_lut,
                 inversion_windows=INVERSION_WINDOWS,
                 multipart_transmittance=multipart_transmittance,
+                modtran_path=paths.modtran_path,
             )
             """Currently not running presolve with either
             multisurface-mode or topography mode. Could easily change
@@ -793,6 +794,7 @@ def apply_oe(
             inversion_windows=INVERSION_WINDOWS,
             multipart_transmittance=multipart_transmittance,
             retrieve_co2=retrieve_co2,
+            modtran_path=paths.modtran_path,
         )
 
         if config_only:
