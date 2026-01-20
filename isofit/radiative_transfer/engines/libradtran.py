@@ -52,6 +52,10 @@ REPTRAN_MODEL = "coarse"
 # TODO: these differ slightly from emulator for high AOD, but its likely a function of crs_model rayleigh, as well as other features that can be swapped out
 # assumes delta M scaling is very small for these simulations (DISORT with 8 streams)
 
+# "The most simple way to define an aerosol is
+# by the command `aerosol_default`` which will set up the aerosol model by Shettle (1989).
+#  The default properties are a rural type aerosol in the boundary layer, back-
+# ground aerosol above 2km, spring-summer conditions and a visibility of 50km."
 
 LRT_TEMPLATE = """\
 source solar
@@ -74,7 +78,7 @@ altitude {elev}
 aerosol_default
 aerosol_set_tau_at_wvl 550 {aot}
 output_quantity transmittance
-output_user lambda uu eglo edir eup
+output_user lambda uu eglo edir
 """
 
 
@@ -241,11 +245,13 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
         out_prefix = f"{self.sim_path}/{name}"
         a1 = self.albedos[1]
         a2 = self.albedos[2]
-        _, uu1, _ ,_,_ = np.loadtxt(out_prefix + "_sim1_alb-0.0.out").T
-        _, _, eglo2,edir2,_ = np.loadtxt(out_prefix + "_sim2_alb-0.0.out").T
-        _, _, eglo3,_,_ = np.loadtxt(out_prefix + "_sim3_alb-0.0.out").T
-        _, _, eglo4,_,_ = np.loadtxt(out_prefix + f"_sim4_alb-{a1}.out").T
-        _, _, eglo5,_,_ = np.loadtxt(out_prefix + f"_sim5_alb-{a2}.out").T
+        
+        # cols: wvl, uu, eglo, edir
+        uu1 = np.loadtxt(f"{out_prefix}_sim1_alb-0.0.out", usecols=1)
+        eglo2, edir2 = np.loadtxt(f"{out_prefix}_sim2_alb-0.0.out", usecols=(2, 3)).T
+        eglo3, edir3 = np.loadtxt(f"{out_prefix}_sim3_alb-0.0.out", usecols=(2, 3)).T
+        eglo4 = np.loadtxt(f"{out_prefix}_sim4_alb-{a1}.out", usecols=2)
+        eglo5 = np.loadtxt(f"{out_prefix}_sim5_alb-{a2}.out", usecols=2)
 
         # Read cos_vza and cos_sza from sim1 input file
         with open(out_prefix + "_sim1_alb-0.0.inp") as f:
@@ -263,6 +269,7 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
 
         # path reflectance for zero albedo
         rhoatm = uu1 * np.pi / cos_sza
+        rhoatm = np.where((rhoatm < 1e-12) | (rhoatm > 1), 0.0, rhoatm)
 
         # spherical albedo
         denom = self.albedos[2] * eglo5 - self.albedos[1] * eglo4
@@ -274,15 +281,15 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
         transm_down_dir = np.where((transm_down_dir < 1e-12) | (transm_down_dir > 1), 0.0, transm_down_dir)
 
         # down diffuse transmittance
-        transm_down_dif = total_down - transm_down_dir
+        transm_down_dif = np.maximum(total_down - transm_down_dir, 0.0)
         transm_down_dif = np.where((transm_down_dif < 1e-12) | (transm_down_dif > 1), 0.0, transm_down_dif)
 
-        # upward direct transmittance (assuming we can isolate tau using simple Beer-Lambert expression)
-        transm_up_dir = np.power(np.maximum(transm_down_dir, 1e-12), cos_sza / cos_vza)
+        # upward direct transmittance
+        transm_up_dir = edir3 / cos_vza
         transm_up_dir = np.where((transm_up_dir < 1e-12) | (transm_up_dir > 1), 0.0, transm_up_dir)
         
         # upward diffuse transmittance
-        transm_up_dif = total_up - transm_up_dir
+        transm_up_dif = np.maximum(total_up - transm_up_dir, 0.0)
         transm_up_dif = np.where((transm_up_dif < 1e-12) | (transm_up_dif > 1), 0.0, transm_up_dif)
 
         results = {
