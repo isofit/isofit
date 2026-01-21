@@ -378,6 +378,10 @@ class Instrument:
                 ind = self.statevec_names.index("EOF_2")
                 scale_2 = x_instrument[ind]
                 offset = offset + self.eof[:, 1] * scale_2
+            if "EOF_3" in self.statevec_names:
+                ind = self.statevec_names.index("EOF_3")
+                scale_3 = x_instrument[ind]
+                offset = offset + self.eof[:, 2] * scale_3
 
         if (
             self.calibration_fixed

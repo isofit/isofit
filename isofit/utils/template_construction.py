@@ -1220,7 +1220,7 @@ def build_main_config(
                 "prior_mean": 0,
             }
         }
-        if eof.shape[1] == 2:
+        if eof.shape[1] > 1:
             isofit_config_modtran["forward_model"]["instrument"]["statevector"][
                 "EOF_2"
             ] = {
@@ -1230,8 +1230,18 @@ def build_main_config(
                 "prior_sigma": 100.0,
                 "prior_mean": 0,
             }
-        elif eof.shape[1] > 2:
-            raise IndexError("Only 1-2 EOFs supported right now")
+        if eof.shape[1] > 2:
+            isofit_config_modtran["forward_model"]["instrument"]["statevector"][
+                "EOF_3"
+            ] = {
+                "bounds": [-10, 10],
+                "scale": 1,
+                "init": 0,
+                "prior_sigma": 100.0,
+                "prior_mean": 0,
+            }
+        elif eof.shape[1] > 3:
+            raise IndexError("Only 1-3 EOFs supported right now")
 
     if paths.input_model_discrepancy_path is not None:
         isofit_config_modtran["forward_model"][
