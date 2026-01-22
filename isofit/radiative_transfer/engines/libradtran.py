@@ -39,68 +39,48 @@ from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransfe
 
 Logger = logging.getLogger(__name__)
 
-SCRIPT_TEMPLATE = """\
-#!/bin/bash
-
-cd {lrt_bin_dir}
-
-{uvspecs}
-"""
-
-# fine or medium models are available for extra downloads from lrt webpage (~500 MB size)
-REPTRAN_MODEL = "coarse"
-
-# assumes delta M scaling is very small for these simulations (DISORT with 8 streams). needs to be tested much more to see how large these errors actually are.
-# Although watching the logs, for radiance quantities its hard coding it to 16 streams and running like this.
-
-# for now, it computes transmittance terms using "source solar", which falls back to kurudz internally in the RTE solver of libRadtran.
-# Then, to get to radiance terms here in our engine, the Fontenla data is used with the appropriate Earth-Sun distance correction factor.
-
-# NOTE: quote from aerosol setup for default:
-#   "The most simple way to define an aerosol is by the command `aerosol_default``
-#    which will set up the aerosol model by Shettle (1989).
-#    The default properties are a rural type aerosol in the boundary layer,
-#    background aerosol above 2km, spring-summer conditions and a visibility of 50km."
-
-# Currently experimenting with ssa scale and gg set. REason: scaling ssa to act more like very cllean atmosphere layer
-# for some reason setting `aerosol_species_file` (e.g., continental_clean) is not working.. may be specific to my install.
-
-LRT_TEMPLATE = """\
-source solar
-wavelength {wl_lo} {wl_hi}
-albedo {albedo}
-atmosphere_file {libradtran_dir}/data/atmmod/{atmos}.dat
-umu {cos_vza}
-phi0 {saa_deg}
-phi {vaa_deg}
-sza {sza_deg}
-rte_solver disort
-number_of_streams {nstr}
-mol_modify O3 {o3_inp} DU
-mixing_ratio CO2 {co2_inp}
-mol_abs_param reptran {band_model}
-mol_modify H2O {h2o_mm} MM
-crs_model rayleigh bodhaine
-aerosol_default
-aerosol_set_tau_at_wvl 550 {aot}
-aerosol_modify ssa scale 1.03
-aerosol_modify gg set 0.70
-zout {zout}
-altitude {elev}
-output_quantity transmittance
-output_user lambda uu eglo edir
-"""
-
 
 class LibRadTranRT(RadiativeTransferEngine):
 
     def __init__(self, engine_config: RadiativeTransferEngineConfig, **kwargs):
 
-        self.atmosphere_type_lrt = None
-        self.reptran_band_model = REPTRAN_MODEL.lower()
+        # Set sim albedos ( do we already have this in rte config?)
+        self.albedos = [0.0, 0.1, 0.5]
+
+        # for now, it computes transmittance terms using "source solar",
+        # which falls back to kurudz internally in the RTE solver of libRadtran.
+
+        # aerosol_default = rural type aerosol in the boundary layer,
+        # background aerosol above 2km, spring-summer conditions, and a visibility of 50km.
+
+        self.libradtran_inp_template = (
+            "source solar\n"
+            "wavelength {wl_lo} {wl_hi}\n"
+            "albedo {albedo}\n"
+            "atmosphere_file {libradtran_dir}/data/atmmod/{atmos}.dat\n"
+            "umu {cos_vza}\n"
+            "phi0 {saa_deg}\n"
+            "phi {vaa_deg}\n"
+            "sza {sza_deg}\n"
+            "rte_solver disort\n"
+            "number_of_streams {nstr}\n"
+            "mol_modify O3 {o3_inp} DU\n"
+            "mixing_ratio CO2 {co2_inp}\n"
+            "mol_abs_param reptran {band_model}\n"
+            "mol_modify H2O {h2o_mm} MM\n"
+            "crs_model rayleigh bodhaine\n"
+            "aerosol_default\n"
+            "zout {zout}\n"
+            "altitude {elev}\n"
+            "output_quantity transmittance\n"
+            "output_user lambda uu eglo edir\n"
+        )
+
+        self.sh_template = "#!/bin/bash\n" "cd {lrt_bin_dir}\n" "{uvspecs}\n"
 
         # Load solar irradiance data
         path_solar = env.path("data", "fontenla2011_0.1nm_350-2500nm.txt")  # default
+        # path_solar = env.path("data", "oci", "tsis_f0_0p1.txt")  # default
 
         if engine_config.irradiance_file:
             path_solar = self.irradiance_file
@@ -139,30 +119,23 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
 
         self.lrt_bin_dir = self.libradtran / "bin"
 
-        self.template = LRT_TEMPLATE
-
         super().__init__(engine_config, **kwargs)
 
     def preSim(self):
 
         # load static geom between sims
-        self.modtran_template = json_load_ascii(self.engine_config.template_file)[
-            "MODTRAN"
-        ]
-        self.modtran_geom = self.modtran_template[0]["MODTRANINPUT"]["GEOMETRY"]
-        self.modtran_surf = self.modtran_template[0]["MODTRANINPUT"]["SURFACE"]
-        self.modtran_atmos = self.modtran_template[0]["MODTRANINPUT"]["ATMOSPHERE"]
+        self.template = json_load_ascii(self.engine_config.template_file)["MODTRAN"]
+        self.modtran_geom = self.template[0]["MODTRANINPUT"]["GEOMETRY"]
+        self.modtran_surf = self.template[0]["MODTRANINPUT"]["SURFACE"]
+        self.modtran_atmos = self.template[0]["MODTRANINPUT"]["ATMOSPHERE"]
 
         self.atmosphere_type = self.modtran_atmos["M1"]
         self.day_of_year = self.modtran_geom["IDAY"]
-        self.nstr = self.modtran_template[0]["MODTRANINPUT"]["RTOPTIONS"]["NSTR"]
+        self.nstr = self.template[0]["MODTRANINPUT"]["RTOPTIONS"]["NSTR"]
 
         # set approx upper and lower bounds of sims (to be overwritten by actual reptran grid below)
         self.wl_lo = self.wl[0] - 10.0
         self.wl_hi = self.wl[-1] + 10.0
-
-        # Set sim albedos
-        self.albedos = [0.0, 0.1, 0.5]
 
         atmos = self.atmosphere_type.strip().lower()
 
@@ -196,13 +169,13 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
             / "data"
             / "correlated_k"
             / "reptran"
-            / f"reptran_solar_{self.reptran_band_model}.cdf"
+            / f"reptran_solar_{self.engine_config.reptran_band_model}.cdf"
         )
         with Dataset(cdf) as ds:
             wl_min = ds.variables["wvlmin"][:]
             wl_max = ds.variables["wvlmax"][:]
 
-        # snap to the closest reptran band. These will match output exactly 
+        # snap to the closest reptran band. These will match output exactly
         # because we give wl_lo and wl_hi to the template in rebuild_cmd().
         rep_idx = (wl_max >= self.wl_lo) & (wl_min <= self.wl_hi)
         self.wl_lo = wl_min[rep_idx][0]
@@ -222,7 +195,7 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
         elif np.nanmax(solar_irr) < 3.0 and np.nanmax(solar_irr) > 0.3:
             solar_irr = solar_irr * 100.0
         elif np.nanmax(solar_irr) < 300.0 and np.nanmax(solar_irr) > 30.0:
-            pass
+            pass  # range is already within ~ 0-250
         else:
             raise ValueError("Verify units of solar irradiance are in uW/nm/cm2.")
 
@@ -279,7 +252,7 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
         base = self.sim_path / name
         a1, a2 = self.albedos[1], self.albedos[2]
 
-        # cols: wvl, uu, eglo, edir
+        # columns depend on arg "output_user"
         u1 = np.loadtxt(base.with_name(f"{base.name}_sim1_alb-0.0.out"), usecols=1)
         e2, d2 = np.loadtxt(
             base.with_name(f"{base.name}_sim2_alb-0.0.out"), usecols=(2, 3)
@@ -302,15 +275,11 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
 
         # total downward transmittance
         total_down = e2 / cos_sza
-        total_down = np.where(
-            (total_down < 1e-12) | (total_down > 1), 0.0, total_down
-        )
+        total_down = np.where((total_down < 1e-12) | (total_down > 1), 0.0, total_down)
 
         # total upward transmittance
-        total_up = e3 / cos_vza 
-        total_up = np.where(
-            (total_up < 1e-12) | (total_up > 1), 0.0, total_up
-        )
+        total_up = e3 / cos_vza
+        total_up = np.where((total_up < 1e-12) | (total_up > 1), 0.0, total_up)
 
         # path reflectance for zero albedo
         rhoatm = u1 * np.pi / cos_sza
@@ -328,6 +297,7 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
         )
 
         # down diffuse transmittance
+        # transm_down_dif = (eglo4 * (1 - a1 * sphalb) - edir2) / (cos_sza)
         transm_down_dif = np.maximum(total_down - transm_down_dir, 0.0)
         transm_down_dif = np.where(
             (transm_down_dif < 1e-12) | (transm_down_dif > 1), 0.0, transm_down_dif
@@ -379,7 +349,7 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
         self.lut.setAttr("RT_mode", "rdn")
 
     def rebuild_cmd(self, point, name):
-        # uusing the MODTRAN template file
+        # using the MODTRAN template file
         translation = {
             "surface_elevation_km": "GNDALT",
             "observer_altitude_km": "H1ALT",
@@ -393,14 +363,19 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
             {
                 "wl_lo": self.wl_lo,
                 "wl_hi": self.wl_hi,
-                "band_model": self.reptran_band_model,
+                "band_model": self.engine_config.reptran_band_model,
                 "atmos": self.atmosphere_type_lrt,
                 "libradtran_dir": self.libradtran,
                 "nstr": self.nstr,
+                "ssa_scale": self.engine_config.ssa_scale,
+                "gg_set": self.engine_config.gg_set,
+                "tau_file": self.engine_config.tau_file,
+                "ssa_file": self.engine_config.ssa_file,
+                "gg_file": self.engine_config.gg_file,
+                "moments_file": self.engine_config.moments_file,
             }
         )
 
-        # Set defaults from modtran template file
         # Sensor altitude above sea level (for libradtran, toa is used for satellite alt)
         alt = vals.get("H1ALT", self.modtran_geom["H1ALT"])
         vals["alt"] = "toa" if alt > 98.0 else min(alt, 99.0)
@@ -420,7 +395,7 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
         # solar zenith [deg], same as PARM2
         vals["sza_deg"] = self.modtran_geom["PARM2"]
 
-        # relative azimuth [deg] = PARM1
+        # relative azimuth [deg], same as PARM1
         vals["relative_azimuth"] = self.modtran_geom["PARM1"]
 
         # solar azimuth, 0-360 [deg]
@@ -429,14 +404,14 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
         # co2 is always populated in MODTRAN template file
         vals["co2_inp"] = self.modtran_atmos["CO2MX"]
 
-        # also populated from modtran template, convert a to DU
+        # o3, convert a to DU
         vals["o3_inp"] = self.modtran_atmos["O3STR"] * 1000.0
 
         # could be empty depending on presolve implementation
-        # TODO: what is the default aot for sRTMnet for presolve?
+        # TODO: what is the default aot for presolve?
         vals["aot"] = 0.10
 
-        # default water vapor from modtran template file
+        # default water vapor
         vals["h2o_mm"] = units.cm_to_mm(self.modtran_atmos["H2OSTR"])
 
         # Now, override if in LUT
@@ -452,6 +427,7 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
         if "H2OSTR" in vals:
             vals["h2o_mm"] = units.cm_to_mm(vals["H2OSTR"])
 
+        # assuming only one aerosol value from LUT can be used right now
         if "AOT550" in vals:
             vals["aot"] = vals["AOT550"]
         elif "AERFRAC_2" in vals:
@@ -461,7 +437,41 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
         else:
             pass
 
-        # five runs needed to get the quantities needed for 6c model
+        # Update the libRadtran input file based on the aerosol settings by the user
+        # King-Byrne vs. internal libradtran spline-interp based AOD at 550 and aerosol profile.
+        lrt_run_inp = self.libradtran_inp_template
+        if self.engine_config.kb_alpha_1 is not None:
+            vals["alpha_0"] = (
+                np.log(vals["aot"])
+                - (self.engine_config.kb_alpha_1 * np.log(0.550))
+                - (self.engine_config.kb_alpha_2 * (np.log(0.550) ** 2))
+            )
+            vals["alpha_1"] = self.engine_config.kb_alpha_1
+            vals["alpha_2"] = self.engine_config.kb_alpha_2
+
+            lrt_run_inp += "aerosol_king_byrne {alpha_0} {alpha_1} {alpha_2}\n"
+
+        else:
+            lrt_run_inp += "aerosol_set_tau_at_wvl 550 {aot}\n"
+
+        if self.engine_config.ssa_scale is not None:
+            lrt_run_inp += "aerosol_modify ssa scale {ssa_scale}\n"
+
+        if self.engine_config.gg_set is not None:
+            lrt_run_inp += "aerosol_modify gg set {gg_set}\n"
+
+        if self.engine_config.tau_file is not None:
+            lrt_run_inp += "aerosol_file tau {tau_file}\n"
+
+        if self.engine_config.ssa_file is not None:
+            lrt_run_inp += "aerosol_file ssa {ssa_file}\n"
+
+        if self.engine_config.gg_file is not None:
+            lrt_run_inp += "aerosol_file gg {gg_file}\n"
+
+        if self.engine_config.moments_file is not None:
+            lrt_run_inp += "aerosol_file moments {moments_file}\n"
+
         runs = [
             dict(tag="sim1", albedo=0.0, zout=vals["alt"]),
             dict(tag="sim2", albedo=0.0, zout="sur"),
@@ -472,6 +482,7 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
 
         files = []
 
+        # create the 5 sim files
         for run in runs:
             run_vals = vals.copy()
             run_vals["albedo"] = run["albedo"]
@@ -485,8 +496,9 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
             files.append(fname)
 
             inp_file = self.sim_path / f"{fname}.inp"
-            inp_file.write_text(self.template.format(**run_vals, **env))
+            inp_file.write_text(lrt_run_inp.format(**run_vals, **env))
 
+        # create shell script to run sims 1-5
         sh_file = self.sim_path / f"{name}.sh"
         uvspecs = "\n".join(
             [
@@ -496,7 +508,7 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
         )
 
         sh_file.write_text(
-            SCRIPT_TEMPLATE.format(lrt_bin_dir=self.lrt_bin_dir, uvspecs=uvspecs)
+            self.sh_template.format(lrt_bin_dir=self.lrt_bin_dir, uvspecs=uvspecs)
         )
 
         return f"bash {sh_file}"
