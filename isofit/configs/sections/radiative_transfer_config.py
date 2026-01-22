@@ -207,15 +207,15 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         """str: REPTRAN options are coarse (15cm-1), medium (5 cm-1), and fine (1 cm-1)."""
 
         self._kb_alpha_1_type = float
-        self.kb_alpha_1 = -2.0
+        self.kb_alpha_1 = -2.4
         """float: King-Byrne, Angstrom parameter (alpha 1). Setting to None uses default aerosol profile."""
 
         self._kb_alpha_2_type = float
-        self.kb_alpha_2 = -0.5
+        self.kb_alpha_2 = -0.7
         """float: King-Byrne, Angstrom parameter (alpha 2). Setting to None uses default aerosol profile."""
 
         self._ssa_scale_type = float
-        self.ssa_scale = 1.0
+        self.ssa_scale = 0.92
         """float: Scales single scattering albedo from libRadtran aerosol profile. Setting to None uses model default."""
 
         self._gg_set_type = float

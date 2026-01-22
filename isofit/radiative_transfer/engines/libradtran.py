@@ -275,45 +275,58 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
 
         # total downward transmittance
         total_down = e2 / cos_sza
-        total_down = np.where((total_down < 1e-12) | (total_down > 1), 0.0, total_down)
+        total_down = np.clip(total_down, 0.0, 1.0)
 
         # total upward transmittance
         total_up = e3 / cos_vza
-        total_up = np.where((total_up < 1e-12) | (total_up > 1), 0.0, total_up)
+        total_up = np.clip(total_up, 0.0, 1.0)
 
         # path reflectance for zero albedo
         rhoatm = u1 * np.pi / cos_sza
-        rhoatm = np.where((rhoatm < 1e-12) | (rhoatm > 1), 0.0, rhoatm)
+        rhoatm = np.clip(rhoatm, 0.0, 1.0)
 
         # spherical albedo
         denom = self.albedos[2] * e5 - self.albedos[1] * e4
         sphalb = np.where(np.abs(denom) > 1e-12, (e5 - e4) / denom, 0.0)
-        sphalb = np.where((sphalb < 1e-12) | (sphalb > 1), 0.0, sphalb)
+        sphalb = np.clip(sphalb, 0.0, 1.0)
 
         # down direct transmittance
         transm_down_dir = d2 / cos_sza
-        transm_down_dir = np.where(
-            (transm_down_dir < 1e-12) | (transm_down_dir > 1), 0.0, transm_down_dir
-        )
+        transm_down_dir = np.clip(transm_down_dir, 0.0, 1.0)
 
         # down diffuse transmittance
-        # transm_down_dif = (eglo4 * (1 - a1 * sphalb) - edir2) / (cos_sza)
+        # transm_down_dif = (eglo4 * (1 - a1 * sphalb) - edir2) / (cos_sza) #same
         transm_down_dif = np.maximum(total_down - transm_down_dir, 0.0)
-        transm_down_dif = np.where(
-            (transm_down_dif < 1e-12) | (transm_down_dif > 1), 0.0, transm_down_dif
-        )
+        transm_down_dif = np.clip(transm_down_dif, 0.0, 1.0)
 
         # upward direct transmittance
         transm_up_dir = d3 / cos_vza
-        transm_up_dir = np.where(
-            (transm_up_dir < 1e-12) | (transm_up_dir > 1), 0.0, transm_up_dir
-        )
+        transm_up_dir = np.clip(transm_up_dir, 0.0, 1.0)
 
         # upward diffuse transmittance
         transm_up_dif = np.maximum(total_up - transm_up_dir, 0.0)
-        transm_up_dif = np.where(
-            (transm_up_dif < 1e-12) | (transm_up_dif > 1), 0.0, transm_up_dif
-        )
+        transm_up_dif = np.clip(transm_up_dif, 0.0, 1.0)
+
+        # experimental delta-M correction:
+        # DISORT uses delta-M approximation and loses diffuse energy to the direct beam. 
+        # By comparing the zero albedo case and the reciprocity cases we can attempt to isolate.
+        # NOTE: We do not need to adjust the direct beam here b/c of the way DISORT handles this.
+
+        # path dependent part of the error
+        residual = np.abs(transm_up_dif - transm_down_dif)
+
+        # geometric weighting
+        m_s = 1.0 / cos_sza
+        m_v = 1.0 / cos_vza
+        total_m = m_s + m_v
+
+        # applying SZA=SZA case
+        transm_down_dif = transm_down_dif + (residual *  (m_s / total_m))
+        transm_down_dif = np.clip(transm_down_dif, 0.0, 1.0)
+
+        # applying SZA=VZA case
+        transm_up_dif = transm_up_dif + (residual * (m_v / total_m))
+        transm_up_dif = np.clip(transm_up_dif, 0.0, 1.0)
 
         results = {
             "rhoatm": rhoatm,
