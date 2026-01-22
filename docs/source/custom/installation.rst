@@ -86,6 +86,38 @@ Developers may need to install additional packages provided by alternative YAML 
 
     $ micromamba install --name isofit_env --file ISOFIT/recipe/docker.yml
 
+Alternatively, you may also use `uv <https://github.com/astral-sh/uv>`_ for installing ISOFIT from source:
+
+.. code-block:: bash
+
+    $ uv sync
+
+The above command will install the default python version and pinned packages that are confirmed to be working with ISOFIT. Once installed, the CLI can be accessed via `uv run`:
+
+.. code-block:: bash
+
+    $ uv run isofit --help
+
+Alternatively, activate the virtual environment to skip the `uv run` command:
+
+.. code-block:: bash
+
+    $ source .venv/bin/activate
+    $ isofit --help
+
+For additional packages, such as those required for development:
+
+.. code-block:: bash
+
+    $ uv sync --extra dev
+
+Advanced users may switch python versions via:
+
+.. code-block:: bash
+
+    $ uv python pin 3.13
+    $ uv sync
+
 
 Downloading Extra Files
 =======================

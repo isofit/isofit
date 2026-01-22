@@ -23,6 +23,7 @@ import os
 import re
 import subprocess
 from datetime import datetime
+from pathlib import Path
 
 import numpy as np
 
@@ -30,6 +31,7 @@ from isofit.core import units
 from isofit.core.common import resample_spectrum
 from isofit.core.fileio import IO
 from isofit.data import env
+from isofit.data.cli.sixs import get_exe
 from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
 
 Logger = logging.getLogger(__file__)
@@ -40,7 +42,7 @@ SIXS_TEMPLATE = """\
 0 (User defined)
 {solzen} {solaz} {viewzen} {viewaz} {month} {day}
 8  (User defined H2O, O3)
-{H2OSTR}, {O3}
+{H2OSTR}, {O3}{CO2}
 {aermodel}
 0
 {AOT550}
@@ -94,6 +96,14 @@ class SixSRT(RadiativeTransferEngine):
         kwargs["wl"] = self.wl
         kwargs["fwhm"] = self.fwhm
 
+        self.engine_base_dir = engine_config.engine_base_dir
+        self.exe = get_exe(self.engine_base_dir)
+        Logger.debug(f"Using 6S executable: {self.exe}")
+
+        self.co2_mode = False
+        if "CO2" in self.exe.name:
+            self.co2_mode = True
+
         super().__init__(engine_config, **kwargs)
 
         # If the LUT file already exists, still need to calc this post init
@@ -102,14 +112,9 @@ class SixSRT(RadiativeTransferEngine):
 
     def preSim(self):
         """
-        Check that 6S is installed
+        Add the 6S executable in the LUT attributes
         """
-        sixS = os.path.join(self.engine_base_dir, "sixsV2.1")  # 6S Emulator path
-
-        if not os.path.exists(sixS):
-            Logger.error(
-                f"6S path not valid, downstream simulations will be broken: {sixS}"
-            )
+        self.lut.setAttr("6S", str(self.exe))
 
     def makeSim(self, point: np.array):
         """
@@ -195,7 +200,6 @@ class SixSRT(RadiativeTransferEngine):
             str: execution command
         """
         # Collect files of interest for this point
-        sixS = os.path.join(self.engine_base_dir, "sixsV2.1")  # 6S Emulator path
         name = self.point_to_filename(point)
 
         outp = os.path.join(self.sim_path, name)  # Output path
@@ -210,13 +214,15 @@ class SixSRT(RadiativeTransferEngine):
             "O3": 0.30,
             "day": self.engine_config.day,
             "month": self.engine_config.month,
-            "elev": self.engine_config.elev,
+            "elev": abs(max(self.engine_config.elev, 0)),
             "alt": min(self.engine_config.alt, 99),
             "atm_file": None,
             "abscf_data_directory": None,
             "wlinf": units.nm_to_micron(wlinf),
             "wlsup": units.nm_to_micron(wlsup),
         }
+        if self.co2_mode:
+            vals["CO2"] = 420  # ppm
 
         # Assume geometry values are provided by the config
         vals.update(
@@ -236,7 +242,7 @@ class SixSRT(RadiativeTransferEngine):
             vals["h2o_mm"] = units.cm_to_mm(vals["H2OSTR"])
 
         if "surface_elevation_km" in vals:
-            vals["elev"] = vals["surface_elevation_km"]
+            vals["elev"] = abs(max(vals["surface_elevation_km"], 0))
 
         if "observer_altitude_km" in vals:
             vals["alt"] = min(vals["observer_altitude_km"], 99)
@@ -260,6 +266,16 @@ class SixSRT(RadiativeTransferEngine):
             if "AERFRAC_2" in vals:
                 vals["AOT550"] = vals["AERFRAC_2"]
 
+        if "CO2" in vals:
+            if not self.co2_mode:
+                co2_warning = "CO2 mode must be on to have a CO2 value in the LUT"
+                Logger.error(co2_warning)
+                raise AttributeError(co2_warning)
+            vals["CO2"] = f', {vals["CO2"]}'
+        else:
+            # Need to add a blank CO2 entry for backwards 6S compatibility
+            vals["CO2"] = ""
+
         # Write sim files
         with open(inpt, "w") as f:
             template = SIXS_TEMPLATE.format(**vals)
@@ -267,7 +283,7 @@ class SixSRT(RadiativeTransferEngine):
 
         with open(bash, "w") as f:
             f.write("#!/usr/bin/bash\n")
-            f.write(f'"{sixS}" < "{inpt}" > "{outp}"\n')
+            f.write(f'"{self.exe}" < "{inpt}" > "{outp}"\n')
             f.write("cd $cwd\n")
 
         return f"bash {bash}"

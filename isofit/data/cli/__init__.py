@@ -9,8 +9,11 @@ Modules = {
     for imp, name, _ in pkgutil.iter_modules(__path__)
 }
 
+# Subset of only essential modules
+Essentials = {name: mod for name, mod in Modules.items() if getattr(mod, "ESSENTIAL")}
 
-def runOnAll(func, **kwargs):
+
+def forEach(modules, func, **kwargs):
     """
     Executes a function of each loaded module
 
@@ -23,8 +26,8 @@ def runOnAll(func, **kwargs):
     """
     pad = "=" * 16
 
-    for i, module in enumerate(Modules.values()):
-        print(f"{pad} Beginning {func} {i+1} of {len(Modules)} {pad}")
+    for i, module in enumerate(modules.values()):
+        print(f"{pad} Beginning {func} {i+1} of {len(modules)} {pad}")
 
         getattr(module, func)(**kwargs)
 
@@ -42,9 +45,9 @@ def download_all(**kwargs):
     isofit.ini file using latest tags and versions
     """
     if kwargs.get("overwrite"):
-        runOnAll("download", **kwargs)
+        forEach(Modules, "download", **kwargs)
     else:
-        runOnAll("update", **kwargs)
+        forEach(Modules, "update", **kwargs)
 
 
 @shared.validate.command(name="all")
@@ -53,7 +56,30 @@ def validate_all(**kwargs):
     Validates all ISOFIT extra dependencies at the locations specified in the
     isofit.ini file as well as check for updates using latest tags and versions
     """
-    runOnAll("validate", **kwargs)
+    forEach(Modules, "validate", **kwargs)
+
+
+@shared.download.command(name="essentials")
+@shared.check
+@shared.overwrite
+def download_essentials(**kwargs):
+    """\
+    Downloads only the essential ISOFIT extra dependencies to the locations specified
+    in the isofit.ini file using latest tags and versions
+    """
+    if kwargs.get("overwrite"):
+        forEach(Essentials, "download", **kwargs)
+    else:
+        forEach(Essentials, "update", **kwargs)
+
+
+@shared.validate.command(name="essentials")
+def validate_essentials(**kwargs):
+    """\
+    Validates only the essential ISOFIT extra dependencies at the locations specified
+    in the isofit.ini file as well as check for updates using latest tags and versions
+    """
+    forEach(Essentials, "validate", **kwargs)
 
 
 def env_validate(keys, quiet=False, **kwargs):
@@ -83,6 +109,8 @@ def env_validate(keys, quiet=False, **kwargs):
     if isinstance(keys, str):
         if keys == "all":
             keys = Modules
+        elif keys == "essentials":
+            keys = Essentials
         else:
             keys = [keys]
 

@@ -42,7 +42,7 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
 
         self._engine_name_type = str
         self.engine_name = None
-        """str: Name of radiative transfer engine to use - options ['modtran', '6s', 'sRTMnet']."""
+        """str: Name of radiative transfer engine to use - options ['modtran', '6s', 'sRTMnet', 'LibRadTran']."""
 
         self._engine_base_dir_type = str
         self.engine_base_dir = None
@@ -135,14 +135,6 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         self.emulator_aux_file = None
         """str: path to emulator auxiliary data - expected npz format"""
 
-        self._parallel_layer_read_type = bool
-        self.parallel_layer_read = True
-        """bool: Flag for how to load and run sRTMnet prediction. 
-           If True, will read in the weights/biases per layer per worker.
-           If False, will load entire model into shared memory
-           Model doesn't always fit in shared memory for smaller systems
-        """
-
         self._predict_parallel_chunks_type = int
         self.predict_parallel_chunks = 20
         """int: If emulator predictions are in parallel. How many chunks to run.
@@ -201,6 +193,11 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         """bool: Indicates that code should terminate as soon as all radiative transfer engine configuration files are
         written (without running them)"""
 
+        # sRTMnet
+        self._emulator_batch_size_type = int
+        self.emulator_batch_size = 4096
+        """int: Batch size for sRTMnet predictions. Set smaller to reduce memory usage, larger for faster emulation."""
+
         self.set_config_options(sub_configdic)
 
         if self.lut_names is not None:
@@ -214,11 +211,12 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
     def _check_config_validity(self) -> List[str]:
         errors = list()
 
-        valid_rt_engines = ["modtran", "6s", "sRTMnet", "KernelFlowsGP"]
-        if self.engine_name not in valid_rt_engines:
+        from isofit.radiative_transfer.engines import Engines
+
+        if self.engine_name not in Engines:
             errors.append(
                 "radiative_transfer->raditive_transfer_model: {} not in one of the"
-                " available models: {}".format(self.engine_name, valid_rt_engines)
+                " available models: {}".format(self.engine_name, list(Engines))
             )
 
         valid_rt_modes = ["transm", "rdn"]
@@ -226,6 +224,11 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
             errors.append(
                 "radiative_transfer->raditive_transfer_mode: {} not in one of the"
                 " available modes: {}".format(self.rt_mode, valid_rt_modes)
+            )
+
+        if not (self.emulator_batch_size > 0):
+            errors.append(
+                "radiative_transfer->emulator_batch_size must be a positive integer."
             )
 
         # Only check for missing files when a prebuilt LUT is not provided
@@ -265,6 +268,14 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
                         "sRTMnet now requires the emulator_file to be of type .h5 (or .npz for experimental 6c emulator).  "
                         "Please download an updated version from:\n https://zenodo.org/records/10831425"
                     )
+
+                if self.emulator_file.endswith(".6c"):
+                    from isofit.radiative_transfer.engines.six_s import get_exe
+
+                    if "co2" not in get_exe(self.engine_base_dir, version=True):
+                        errors.append(
+                            "sRTMnet 6C requires a CO2 version of 6S. Please use the isofit download CLI to pull a CO2 tag: https://github.com/isofit/6S/tags"
+                        )
 
                 if self.emulator_aux_file is None:
                     # Fallback to the path specified by the isofit.ini

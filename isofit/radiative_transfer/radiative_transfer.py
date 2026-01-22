@@ -26,13 +26,10 @@ import logging
 import numpy as np
 
 from isofit.core import units
-from isofit.core.common import eps
+from isofit.core.common import eps, svd_inv_sqrt
 from isofit.radiative_transfer.engines import Engines
 
 Logger = logging.getLogger(__file__)
-
-
-RTE = ["modtran", "sRTMnet", "KernelFlowsGP"]
 
 
 def confPriority(key, configs):
@@ -86,7 +83,7 @@ class RadiativeTransfer:
 
             if confRT.engine_name not in Engines:
                 raise AttributeError(
-                    f"Invalid radiative transfer engine choice. Got: {confRT.engine_name}; Must be one of: {RTE}"
+                    f"Invalid radiative transfer engine choice. Got: {confRT.engine_name}; Must be one of: {list(Engines)}"
                 )
 
             # Generate the params for this RTE
@@ -94,6 +91,7 @@ class RadiativeTransfer:
                 key: confPriority(key, [confRT, confIT, config]) for key in self._keys
             }
             params["engine_config"] = confRT
+            params["n_cores"] = full_config.implementation.n_cores
 
             # Select the right RTE and initialize it
             rte = Engines[confRT.engine_name](**params)
@@ -130,6 +128,11 @@ class RadiativeTransfer:
         self.init = np.array(self.init)
         self.prior_mean = np.array(self.prior_mean)
         self.prior_sigma = np.array(self.prior_sigma)
+        self.Sa_cached = np.diagflat(np.power(self.prior_sigma, 2))
+        self.Sa_normalized = self.Sa_cached / np.mean(np.diag(self.Sa_cached))
+        self.Sa_inv_normalized, self.Sa_inv_sqrt_normalized = svd_inv_sqrt(
+            self.Sa_normalized
+        )
 
         self.wl = np.concatenate([RT.wl for RT in self.rt_engines])
 
@@ -144,7 +147,7 @@ class RadiativeTransfer:
 
     def Sa(self):
         """Pull the priors from each of the individual RTs."""
-        return np.diagflat(np.power(np.array(self.prior_sigma), 2))
+        return self.Sa_cached
 
     def Sb(self):
         """Uncertainty due to unmodeled variables."""
@@ -214,7 +217,7 @@ class RadiativeTransfer:
             atm_surface_scattering = 1
 
         # Thermal transmittance
-        L_up = Ls * (r["transm_up_dir"] + r["transm_up_dif"])
+        L_up = Ls * self.get_upward_transm(r=r, geom=geom)
 
         # Our radiance model follows the physics as presented in Guanter (2006), Vermote et al. (1997), and
         # Tanre et al. (1983). This particular formulation facilitates the consideration of topographic effects,
@@ -289,60 +292,6 @@ class RadiativeTransfer:
                 L_atms.append(L_atm)
         return np.hstack(L_atms)
 
-    def get_L_down_transmitted(self, x_RT: np.array, geom: Geometry) -> np.array:
-        """Get the interpolated direct and diffuse downward radiance on the sun-to-surface path.
-        Thermal_downwelling already includes the transmission factor.
-        Also assume there is no multiple scattering for TIR.
-
-        Args:
-            x_RT: radiative-transfer portion of the statevector
-            geom: local geometry conditions for lookup
-
-        Returns:
-            interpolated total, direct, and diffuse downward atmospheric radiance
-        """
-        L_downs = []
-        L_downs_dir = []
-        L_downs_dif = []
-
-        # Check coszen against cos_i
-        verified_geom = geom.verify(self.coszen)
-        coszen, cos_i, skyview_factor = (
-            verified_geom["coszen"],
-            verified_geom["cos_i"],
-            verified_geom["skyview_factor"],
-        )
-
-        for RT in self.rt_engines:
-            if RT.treat_as_emissive:
-                r = RT.get(x_RT, geom)
-                rdn = r["thermal_downwelling"]
-                L_downs.append(rdn)
-            else:
-                r = RT.get(x_RT, geom)
-                if RT.rt_mode == "rdn":
-                    L_down_dir = r["transm_down_dir"]
-                    L_down_dif = r["transm_down_dif"]
-                else:
-                    # Transform downward transmittance to radiance
-                    L_down_dir = units.transm_to_rdn(
-                        r["transm_down_dir"], coszen, self.solar_irr
-                    )
-                    L_down_dif = units.transm_to_rdn(
-                        r["transm_down_dif"], coszen, self.solar_irr
-                    )
-
-                # Apply sky view factor to downward diffuse for 1C case.
-                L_down_dif *= skyview_factor
-
-                L_down = L_down_dir + L_down_dif
-
-                L_downs.append(L_down)
-                L_downs_dir.append(L_down_dir)
-                L_downs_dif.append(L_down_dif)
-
-        return np.hstack(L_downs), np.hstack(L_downs_dir), np.hstack(L_downs_dif)
-
     def get_L_coupled(self, r: dict, geom: Geometry):
         """Get the interpolated radiance terms on the sun-to-surface-to-sensor path.
         These follow the physics as presented in Guanter (2006), Vermote et al. (1997), and Tanre et al. (1983).
@@ -410,7 +359,11 @@ class RadiativeTransfer:
         if statement.
 
         In the 4c case, we always use returns from get_L_coupled
+
+        All quantities are on the sun-to-surface-to-sensor path.
+
         """
+
         # Propogate LUT
         r = self.get_shared_rtm_quantities(x_RT, geom)
 
@@ -418,25 +371,61 @@ class RadiativeTransfer:
         L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = self.get_L_coupled(r, geom)
         L_tot = L_dir_dir + L_dif_dir + L_dir_dif + L_dif_dif
 
-        # Handle case for 1c vs 4c model
+        # Handle 1c L_tot. NOTE: transm_down_dif = total transm for 1c case.
         if not isinstance(L_tot, np.ndarray) or len(L_tot) == 1:
-            # 1c model w/in if clause
-            L_tot, L_down_dir, L_down_dif = self.get_L_down_transmitted(x_RT, geom)
-        else:
-            # 4c model w/in else clause
-            L_down_dir = L_dir_dir + L_dif_dir
-            L_down_dif = L_dif_dir + L_dif_dir
+            coszen = geom.verify(self.coszen)["coszen"]
+            L_tots = []
+            for RT in self.rt_engines:
+                r = RT.get(x_RT, geom)
+                if RT.treat_as_emissive:
+                    rdn = r["thermal_downwelling"]
+                    L_tots.append(rdn)
+                else:
+                    if RT.rt_mode == "rdn":
+                        L_tot = r["transm_down_dif"]
+                    else:
+                        L_tot = units.transm_to_rdn(
+                            r["transm_down_dif"],
+                            coszen,
+                            self.solar_irr,
+                        )
+                    L_tots.append(L_tot)
+            L_tot = np.hstack(L_tots)
 
         return (
             r,
             L_tot,
-            L_down_dir,
-            L_down_dif,
             L_dir_dir,
             L_dif_dir,
             L_dir_dif,
             L_dif_dif,
         )
+
+    def get_upward_transm(self, r: dict, geom: Geometry, max_transm: float = 1.05):
+        """
+        Get total upward transmittance w/physical check enforced (max_transm) and hand-off between 1c and 4c model.
+
+        This is called for all surfaces to handle thermal downwelling/upwelling component.
+        While rt can be either rdn or transm modes, this must be in units of transmittance.
+
+        """
+        transm_up_dir = r["transm_up_dir"]
+        transm_up_dif = r["transm_up_dif"]
+
+        # NOTE for 1c case transm-up is not a key, and therefore Ls and transup is zero.
+        if not isinstance(transm_up_dir, np.ndarray) or len(transm_up_dir) == 1:
+            return np.zeros_like(self.solar_irr, dtype=np.float32)
+        else:
+            transup = transm_up_dir + transm_up_dif
+
+            if np.max(transup) > max_transm:
+                raise ValueError(
+                    (
+                        f"Upward transmittance (max:{np.max(transup)}) is greater than {max_transm}. "
+                        f"Verify 'transm_up_dir' and 'transm_up_dif' keys are in units of transmittance."
+                    )
+                )
+            return transup
 
     def drdn_dRT(self, x_RT, geom, rho_dir_dir, rho_dif_dir, Ls, rdn):
         """Derivative of estimated radiance w.r.t. RT statevector elements.
@@ -453,8 +442,6 @@ class RadiativeTransfer:
             (
                 r,
                 L_tot,
-                L_down_dir,
-                L_down_dif,
                 L_dir_dir,
                 L_dif_dir,
                 L_dir_dif,
@@ -512,8 +499,6 @@ class RadiativeTransfer:
                     (
                         r,
                         L_tot,
-                        L_down_dir,
-                        L_down_dif,
                         L_dir_dir,
                         L_dif_dir,
                         L_dir_dif,

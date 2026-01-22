@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from isofit.core.common import VectorInterpolator
+from isofit.core.common import VectorInterpolator, svd_inv_sqrt
 from isofit.surface.surface import Surface
 
 
@@ -75,6 +75,13 @@ class LUTSurface(Surface):
         self.idx_lut = np.arange(self.n_state)
         self.idx_lamb = np.empty(shape=0)
 
+        # Cache some important computations
+        Cov = np.diag(self.sigma**2)
+        Cov_normalized = Cov / np.mean(np.diag(Cov))
+        self.Sa_inv_normalized, self.Sa_inv_sqrt_normalized = svd_inv_sqrt(
+            Cov_normalized
+        )
+
         # build the interpolator
         self.itp = VectorInterpolator(self.lut_grid, self.data)
 
@@ -93,9 +100,9 @@ class LUTSurface(Surface):
         """Covariance of prior distribution, calculated at state x."""
 
         variance = pow(self.sigma, 2)
-        Cov = np.diag(variance)
+        Sa_unnormalized = np.diag(variance)
 
-        return Cov
+        return Sa_unnormalized, self.Sa_inv_normalized, self.Sa_inv_sqrt_normalized
 
     def Sb(self):
         """Uncertainty due to unmodeled variables."""
@@ -213,7 +220,10 @@ class LUTSurface(Surface):
         s_alb,
         t_total_up,
         L_tot,
-        L_down_dir,
+        L_dir_dir=None,
+        L_dir_dif=None,
+        L_dif_dir=None,
+        L_dif_dif=None,
     ):
         """Derivative of radiance with respect to
         full surface vector"""
@@ -238,8 +248,6 @@ class LUTSurface(Surface):
     def analytical_model(
         self,
         background,
-        L_down_dir,
-        L_down_dif,
         L_tot,
         geom,
         L_dir_dir=None,

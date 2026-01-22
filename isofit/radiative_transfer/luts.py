@@ -3,6 +3,7 @@ This is the netCDF4 implementation for handling ISOFIT LUT files. For previous
 implementations and research, please see https://github.com/isofit/isofit/tree/897062a3dcc64d5292d0d2efe7272db0809a6085/isofit/luts
 """
 
+import atexit
 import gc
 import logging
 import os
@@ -112,6 +113,8 @@ class Create:
 
         # Save ds for backwards compatibility (to work with extractGrid, extractPoints)
         self.initialize()
+
+        atexit.register(cleanup, file)
 
     def initialize(self) -> None:
         """
@@ -285,6 +288,20 @@ class Create:
         Finalizes the netCDF by writing any remaining attributes to disk
         """
         self.setAttr("ISOFIT status", "success")
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        """
+        Sets a variable in the netCDF.
+
+        Parameters
+        ----------
+        key : str
+            Key to set
+        value : any
+            Value to set
+        """
+        with Dataset(self.file, "a") as ds:
+            ds[key][:] = value
 
     def __getitem__(self, key: str) -> Any:
         """
@@ -892,12 +909,19 @@ def extractPoints(ds: xr.Dataset, names: bool = False) -> np.array:
 def extractGrid(ds: xr.Dataset) -> dict:
     """
     Extracts the LUT grid from a Dataset
+
+    Parameters
+    ----------
+    ds: xr.Dataset
+        LUT Dataset object. Carried stacked: Dimensions wl, points
+
     """
     grid = {}
     for dim, vals in ds.coords.items():
         if dim in {"wl", "point"}:
             continue
         if len(vals.data.shape) > 0 and vals.data.shape[0] > 1:
+            # Unique call sorts and filters. Faster than unstacking ds.
             grid[dim] = np.unique(vals.data)
     return grid
 
@@ -919,3 +943,22 @@ def saveDataset(file: str, ds: xr.Dataset) -> None:
         ds = ds.unstack("point")
 
     ds.to_netcdf(file)
+
+
+def cleanup(file):
+    """
+    Checks the ``ISOFIT status`` attribute on a LUT and removes the file if it is
+    incomplete.
+
+    Parameters
+    ----------
+    file : str
+        Path to the file to check
+    """
+    if os.path.exists(file):
+        with Dataset(file, "r") as ds:
+            if ds.getncattr("ISOFIT status") == "<incomplete>":
+                Logger.error(
+                    f"The LUT status was determined to be incomplete, auto-removing: {file}"
+                )
+                os.remove(file)

@@ -15,7 +15,7 @@ Outputs and Analysis
 
 Once a profiling data file is produced, there are a variety of ways to explore the results.
 
-.. image:: images/example_profile_0.png
+.. image:: ../../_static/images/example_profile_0.png
 
 The above image uses [Snakeviz](https://jiffyclub.github.io/snakeviz/) to visualize the profiler results. This is the icicle view which shows the root at the top and all calls made by that function below it.
 
@@ -23,7 +23,7 @@ Clicking on a block will set that block as the root. This allows you to explore 
 
 The time shown on each block is the cumulative time spent in that function. Children functions may have greater cumulative times than the parent, but that is because those functions were called elsewhere during the run.
 
-.. image:: images/example_profile_1.png
+.. image:: ../../_static/images/example_profile_1.png
 
 The lower half of the visualizer includes the result values. There are six columns:
 
