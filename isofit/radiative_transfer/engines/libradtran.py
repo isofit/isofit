@@ -20,7 +20,6 @@ from __future__ import annotations
 import logging
 import os
 import subprocess
-from netCDF4 import Dataset
 from pathlib import Path
 
 import numpy as np
@@ -44,18 +43,18 @@ class LibRadTranRT(RadiativeTransferEngine):
 
     def __init__(self, engine_config: RadiativeTransferEngineConfig, **kwargs):
 
-        # Set sim albedos ( do we already have this in rte config?)
         self.albedos = [0.0, 0.1, 0.5]
-
-        # for now, it computes transmittance terms using "source solar",
-        # which falls back to kurudz internally in the RTE solver of libRadtran.
+        self.wl_1 = 340.0
+        self.wl_2 = 2510.0
+        self.wl_res_out = 0.5
 
         # aerosol_default = rural type aerosol in the boundary layer,
         # background aerosol above 2km, spring-summer conditions, and a visibility of 50km.
-
+        # NOTE: for radiance quantities libRadtran will always override DISORT to run with at least 16 streams.
         self.libradtran_inp_template = (
-            "source solar\n"
-            "wavelength {wl_lo} {wl_hi}\n"
+            "source solar {path_solar}\n"
+            "wavelength {wl_1} {wl_2}\n"
+            "spline {wl_1} {wl_2} {wl_res_out}\n"
             "albedo {albedo}\n"
             "atmosphere_file {libradtran_dir}/data/atmmod/{atmos}.dat\n"
             "umu {cos_vza}\n"
@@ -77,15 +76,6 @@ class LibRadTranRT(RadiativeTransferEngine):
         )
 
         self.sh_template = "#!/bin/bash\n" "cd {lrt_bin_dir}\n" "{uvspecs}\n"
-
-        # Load solar irradiance data
-        path_solar = env.path("data", "fontenla2011_0.1nm_350-2500nm.txt")  # default
-        # path_solar = env.path("data", "oci", "tsis_f0_0p1.txt")  # default
-
-        if engine_config.irradiance_file:
-            path_solar = self.irradiance_file
-
-        self.solar_data = np.loadtxt(path_solar)
 
         # Retrieve the path to libRadtran
         if engine_config.engine_base_dir:
@@ -123,7 +113,11 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
 
     def preSim(self):
 
-        # load static geom between sims
+        # define the output wl grid [nm], and stash matrix H
+        self.lrt_wl = np.arange(self.wl_1, self.wl_2 + 1e-5, self.wl_res_out)
+        self.matrix_H = calculate_resample_matrix(self.lrt_wl, self.wl, self.fwhm)
+
+        # load static information from MODTRAN template
         self.template = json_load_ascii(self.engine_config.template_file)["MODTRAN"]
         self.modtran_geom = self.template[0]["MODTRANINPUT"]["GEOMETRY"]
         self.modtran_surf = self.template[0]["MODTRANINPUT"]["SURFACE"]
@@ -132,10 +126,6 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
         self.atmosphere_type = self.modtran_atmos["M1"]
         self.day_of_year = self.modtran_geom["IDAY"]
         self.nstr = self.template[0]["MODTRANINPUT"]["RTOPTIONS"]["NSTR"]
-
-        # set approx upper and lower bounds of sims (to be overwritten by actual reptran grid below)
-        self.wl_lo = self.wl[0] - 10.0
-        self.wl_hi = self.wl[-1] + 10.0
 
         atmos = self.atmosphere_type.strip().lower()
 
@@ -163,28 +153,11 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
 
         self.atmosphere_type_lrt = atm_map[atmos]
 
-        # Set up the wavelength based on the REPTRAN band model, and overwrite hi and lo
-        cdf = (
-            self.libradtran
-            / "data"
-            / "correlated_k"
-            / "reptran"
-            / f"reptran_solar_{self.engine_config.reptran_band_model}.cdf"
-        )
-        with Dataset(cdf) as ds:
-            wl_min = ds.variables["wvlmin"][:]
-            wl_max = ds.variables["wvlmax"][:]
-
-        # snap to the closest reptran band. These will match output exactly
-        # because we give wl_lo and wl_hi to the template in rebuild_cmd().
-        rep_idx = (wl_max >= self.wl_lo) & (wl_min <= self.wl_hi)
-        self.wl_lo = wl_min[rep_idx][0]
-        self.wl_hi = wl_max[rep_idx][-1]
-        self.lrt_wl = 0.5 * (wl_min[rep_idx] + wl_max[rep_idx])
-
         # Set up the irradiance spectrum
-        wl_solar_inp = self.solar_data[:, 0].T
-        solar_irr = self.solar_data[:, 1].T
+        self.path_solar = env.path("data", "oci", "tsis_f0_0p1.txt")
+        solar_data = np.loadtxt(self.path_solar)
+        wl_solar = solar_data[:, 0].T
+        solar_irr = solar_data[:, 1].T
 
         # Decide units of solar irradiance
         # assuming we want to go to uW/nm/cm2 based on any unit input
@@ -207,11 +180,8 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
 
         # stash this for other calcs (in sensor grid)
         self.solar_irr_sensor = common.resample_spectrum(
-            solar_irr, wl_solar_inp, self.wl, self.fwhm
+            solar_irr, wl_solar, self.wl, self.fwhm
         )
-
-        # Now get the H matrix to go from REPTRAN grid to sensor grid
-        self.matrix_H = calculate_resample_matrix(self.lrt_wl, self.wl, self.fwhm)
 
         return {
             "coszen": np.cos(np.radians(self.modtran_geom["PARM2"])),
@@ -231,13 +201,14 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
         # Retrieve the files to process
         name = self.point_to_filename(point)
 
+        # always rebuild inp files to be able to gather sza/vza if re-running...
+        cmd = self.rebuild_cmd(point, name)
+
         # Only execute when the .out file is missing (for now jsut checking first out)
         sim1_out = self.sim_path / f"{name}_sim1_alb-0.0.out"
         if sim1_out.exists():
             Logger.warning(f"libRadtran sim files already exist for point {point}")
             return
-
-        cmd = self.rebuild_cmd(point, name)
 
         if not self.engine_config.rte_configure_and_exit:
             call = subprocess.run(
@@ -247,24 +218,19 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
                 Logger.error(call.stdout.decode())
 
     def readSim(self, point):
-
         name = self.point_to_filename(point)
-        base = self.sim_path / name
+        prefix = str(self.sim_path / name)
         a1, a2 = self.albedos[1], self.albedos[2]
 
-        # columns depend on arg "output_user"
-        u1 = np.loadtxt(base.with_name(f"{base.name}_sim1_alb-0.0.out"), usecols=1)
-        e2, d2 = np.loadtxt(
-            base.with_name(f"{base.name}_sim2_alb-0.0.out"), usecols=(2, 3)
-        ).T
-        e3, d3 = np.loadtxt(
-            base.with_name(f"{base.name}_sim3_alb-0.0.out"), usecols=(2, 3)
-        ).T
-        e4 = np.loadtxt(base.with_name(f"{base.name}_sim4_alb-{a1}.out"), usecols=2)
-        e5 = np.loadtxt(base.with_name(f"{base.name}_sim5_alb-{a2}.out"), usecols=2)
+        # load all sims, see `output_user` for definitions
+        u1 = np.loadtxt(f"{prefix}_sim1_alb-0.0.out", usecols=1)
+        e2, d2 = np.loadtxt(f"{prefix}_sim2_alb-0.0.out", usecols=(2, 3)).T
+        e3, d3 = np.loadtxt(f"{prefix}_sim3_alb-0.0.out", usecols=(2, 3)).T
+        e4 = np.loadtxt(f"{prefix}_sim4_alb-{a1}.out", usecols=2)
+        e5 = np.loadtxt(f"{prefix}_sim5_alb-{a2}.out", usecols=2)
 
         # Read cos_vza and cos_sza from sim1
-        inp_path = base.with_name(f"{base.name}_sim1_alb-0.0.inp")
+        inp_path = Path(f"{prefix}_sim1_alb-0.0.inp")
         lines = {
             p[0]: p[1]
             for line in inp_path.read_text().splitlines()
@@ -307,27 +273,6 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
         transm_up_dif = np.maximum(total_up - transm_up_dir, 0.0)
         transm_up_dif = np.clip(transm_up_dif, 0.0, 1.0)
 
-        # experimental delta-M correction:
-        # DISORT uses delta-M approximation and loses diffuse energy to the direct beam. 
-        # By comparing the zero albedo case and the reciprocity cases we can attempt to isolate.
-        # NOTE: We do not need to adjust the direct beam here b/c of the way DISORT handles this.
-
-        # path dependent part of the error
-        residual = np.abs(transm_up_dif - transm_down_dif)
-
-        # geometric weighting
-        m_s = 1.0 / cos_sza
-        m_v = 1.0 / cos_vza
-        total_m = m_s + m_v
-
-        # applying SZA=SZA case
-        transm_down_dif = transm_down_dif + (residual *  (m_s / total_m))
-        transm_down_dif = np.clip(transm_down_dif, 0.0, 1.0)
-
-        # applying SZA=VZA case
-        transm_up_dif = transm_up_dif + (residual * (m_v / total_m))
-        transm_up_dif = np.clip(transm_up_dif, 0.0, 1.0)
-
         results = {
             "rhoatm": rhoatm,
             "sphalb": sphalb,
@@ -341,7 +286,7 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
             "dif-dif": transm_down_dif * transm_up_dif,
         }
 
-        # resample all quantities to sensor wl
+        # resample all quantities to sensor wavelengths using H matrix
         results = {
             key: resample_spectrum(
                 data, self.lrt_wl, self.wl, self.fwhm, H=self.matrix_H
@@ -374,8 +319,10 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
 
         vals.update(
             {
-                "wl_lo": self.wl_lo,
-                "wl_hi": self.wl_hi,
+                "wl_1": self.wl_1,
+                "wl_2": self.wl_2,
+                "wl_res_out": self.wl_res_out,
+                "path_solar": self.path_solar,
                 "band_model": self.engine_config.reptran_band_model,
                 "atmos": self.atmosphere_type_lrt,
                 "libradtran_dir": self.libradtran,
@@ -451,6 +398,7 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
             pass
 
         # Update the libRadtran input file based on the aerosol settings by the user
+        # see docs page for more information here, https://www.libradtran.org
         # King-Byrne vs. internal libradtran spline-interp based AOD at 550 and aerosol profile.
         lrt_run_inp = self.libradtran_inp_template
         if self.engine_config.kb_alpha_1 is not None:

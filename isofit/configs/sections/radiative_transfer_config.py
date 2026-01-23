@@ -193,13 +193,7 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
 
         self._irradiance_file_type = str
         self.irradiance_file = ""
-        """str: 6s and libRadtran irradiance file."""
-
-        # MODTRAN, 6S, and libRadtran
-        self._rte_configure_and_exit_type = bool
-        self.rte_configure_and_exit = False
-        """bool: Indicates that code should terminate as soon as all radiative transfer engine configuration files are
-        written (without running them)"""
+        """str: 6s-only irradiance file."""
 
         # libRadtran
         self._reptran_band_model_type = str
@@ -207,36 +201,42 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         """str: REPTRAN options are coarse (15cm-1), medium (5 cm-1), and fine (1 cm-1)."""
 
         self._kb_alpha_1_type = float
-        self.kb_alpha_1 = -2.4
+        self.kb_alpha_1 = -1.9
         """float: King-Byrne, Angstrom parameter (alpha 1). Setting to None uses default aerosol profile."""
 
         self._kb_alpha_2_type = float
-        self.kb_alpha_2 = -0.7
+        self.kb_alpha_2 = -0.6
         """float: King-Byrne, Angstrom parameter (alpha 2). Setting to None uses default aerosol profile."""
 
         self._ssa_scale_type = float
-        self.ssa_scale = 0.92
-        """float: Scales single scattering albedo from libRadtran aerosol profile. Setting to None uses model default."""
+        self.ssa_scale = None
+        """float: Scales single scattering albedo from libRadtran aerosol profile. Setting to None uses profile default."""
 
         self._gg_set_type = float
-        self.gg_set = 0.70
-        """float: Sets a constant asymmetry parameter to represent aerosols. Setting to None uses model default."""
+        self.gg_set = None
+        """float: Sets a constant asymmetry parameter to represent aerosols. Setting to None uses profile default."""
 
         self._tau_file_type = str
         self.tau_file = None
-        """str: Path to optical depth file."""
+        """str: Path to tau file. Overwrites optical thickness from libRadtran."""
 
         self._ssa_file_type = str
         self.ssa_file = None
-        """str: Path to single scattering albedo file."""
+        """str: Path to ssa file. Overwrite single scattering albedo from libRadtran."""
 
         self._gg_file_type = str
         self.gg_file = None
-        """str: Path to asymmetry parameter file."""
+        """str: Path to asymmetry parameter file. Overwrites asymmetry parameter from libRadtran."""
 
         self._moments_file_type = str
         self.moments_file = None
-        """str: Path to phase function moments file."""
+        """str: Path to phase function moments file. Uses custom phase function instead of default Henyey-Greenstein."""
+
+        # MODTRAN, 6S, and libRadtran
+        self._rte_configure_and_exit_type = bool
+        self.rte_configure_and_exit = False
+        """bool: Indicates that code should terminate as soon as all radiative transfer engine configuration files are
+        written (without running them)"""
 
         self.set_config_options(sub_configdic)
 
