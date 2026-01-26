@@ -201,11 +201,11 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         """str: REPTRAN options are coarse (15cm-1), medium (5 cm-1), and fine (1 cm-1)."""
 
         self._kb_alpha_1_type = float
-        self.kb_alpha_1 = -1.9
+        self.kb_alpha_1 = None
         """float: King-Byrne, Angstrom parameter (alpha 1). Setting to None uses default aerosol profile."""
 
         self._kb_alpha_2_type = float
-        self.kb_alpha_2 = -0.6
+        self.kb_alpha_2 = None
         """float: King-Byrne, Angstrom parameter (alpha 2). Setting to None uses default aerosol profile."""
 
         self._ssa_scale_type = float
