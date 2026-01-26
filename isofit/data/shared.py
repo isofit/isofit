@@ -35,3 +35,7 @@ check = click.option(
     help="Only check for updates",
     show_default=True,
 )
+
+exclude = click.option(
+    "-e", "--exclude", multiple=True, help="Exclude products from the function"
+)
