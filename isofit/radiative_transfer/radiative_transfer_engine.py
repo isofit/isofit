@@ -25,6 +25,7 @@ import logging
 import os
 import sys
 import time
+import multiprocessing
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Callable
@@ -73,6 +74,7 @@ class RadiativeTransferEngine:
         overwrite_interpolator: bool = False,
         wl: np.array = [],  # Wavelength override
         fwhm: np.array = [],  # fwhm override
+        n_cores: int = 1,  # number of cores to use for special activities (not simulations)
     ):
         if lut_path is None:
             Logger.error(
@@ -82,8 +84,10 @@ class RadiativeTransferEngine:
         # Keys of the engine_config are available via self unless overridden
         # eg. engine_config.lut_names == self.lut_names
         self.engine_config = engine_config
+        self.n_cores = n_cores
+        if self.n_cores is None:
+            self.n_cores = multiprocessing.cpu_count()
 
-        # TODO: mlky should do all this verification stuff
         # Verify either the LUT file exists or a LUT grid is provided
         self.lut_path = lut_path = str(lut_path) or engine_config.lut_path
         logging.debug(f"lut_grid {lut_grid}")

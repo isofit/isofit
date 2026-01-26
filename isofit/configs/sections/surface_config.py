@@ -79,6 +79,11 @@ class SurfaceConfig(BaseConfigSection):
     def _check_config_validity(self) -> List[str]:
         errors = list()
 
+        if (self.surface_file is None) and not len(self.Surfaces):
+            errors.append(
+                "surface_file not specified. All current supported surface models require surface_file to be provided"
+            )
+
         valid_surface_categories = [
             "surface",
             "multicomponent_surface",
@@ -98,8 +103,37 @@ class SurfaceConfig(BaseConfigSection):
                 )
             )
 
-        valid_metrics = ("Euclidean", "Mahalanobis")
+        valid_metrics = "Euclidean"
         if self.selection_metric not in valid_metrics:
             errors.append(f"surface->selection_metric must be one of: {valid_metrics}")
+
+        # multistate checks
+        if len(self.Surfaces):
+            missing_cats, missing_files, missing_ints = [], [], []
+            for name, sub_surface in self.Surfaces.items():
+                if not sub_surface.get("surface_category"):
+                    missing_cats.append(name)
+                if not sub_surface.get("surface_file"):
+                    missing_files.append(name)
+                if sub_surface.get("surface_int", -1) < 0:
+                    missing_ints.append(name)
+
+            if len(missing_cats):
+                errors.append(
+                    "Multi-surface config given and no "
+                    f"surface-category specified for keys: {missing_cats}"
+                )
+
+            if len(missing_files):
+                errors.append(
+                    "Multi-surface config given and "
+                    f"no surface-file specified for keys: {missing_files}"
+                )
+
+            if len(missing_ints):
+                errors.append(
+                    "Multi-surface config given and no surface-"
+                    f"int mapping specified for keys: {missing_ints}"
+                )
 
         return errors

@@ -23,7 +23,7 @@ def download_neon(examples):
     """
     print("Downloading NEON data for the example")
 
-    output = prepare_output(examples / "isotuts/NEON/data", "./neon_data")
+    output = prepare_output(examples / "NEON/data", "./neon_data")
     if not output:
         return
 
