@@ -375,7 +375,7 @@ class Instrument:
                 sv_element = 'EOF_%i'%(si+1)
                 if sv_element in self.statevec_names:
                     ind = self.statevec_names.index(sv_element)
-                    scale = x_instrument[si]
+                    scale = x_instrument[ind]
                     offset = offset + self.eof[:, si] * scale
                     si += 1
                 else:
