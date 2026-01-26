@@ -372,7 +372,7 @@ class Instrument:
         if self.eof is not None:
             si = 0
             while True:
-                sv_element = 'EOF_%i'%(si+1)
+                sv_element = "EOF_%i" % (si + 1)
                 if sv_element in self.statevec_names:
                     ind = self.statevec_names.index(sv_element)
                     scale = x_instrument[ind]

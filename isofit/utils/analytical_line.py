@@ -532,15 +532,16 @@ class Worker(object):
             sub_state = self.subs_state[int(self.lbl[r, c, 0]), 0, iv_idx]
 
             # Apply EOF adjustments to the radiance
-            if any(['EOF' in q for q in self.fm.statevec]):
-                si=0
+            if any(["EOF" in q for q in self.fm.statevec]):
+                si = 0
                 while True:
-                    sv_element = 'EOF_%i'%(si+1)
+                    sv_element = "EOF_%i" % (si + 1)
                     if sv_element in self.fm.statevec:
                         eof_idx = self.fm.statevec.index(sv_element)
                         eof = self.fm.instrument.eof[:, si]
                         meas = (
-                            meas - eof * self.subs_state[int(self.lbl[r, c, 0]), 0, eof_idx]
+                            meas
+                            - eof * self.subs_state[int(self.lbl[r, c, 0]), 0, eof_idx]
                         )
                         si += 1
                     else:
