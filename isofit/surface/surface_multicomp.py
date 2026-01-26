@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import numpy as np
 from scipy.linalg import block_diag, norm
+from scipy.ndimage import gaussian_filter1d
 
 from isofit.core.common import svd_inv_sqrt
 from isofit.surface.surface import Surface
@@ -62,7 +63,9 @@ class MultiComponentSurface(Surface):
         else:
             raise ValueError("Unrecognized Normalization: %s\n" % self.normalize)
 
-        self.selection_metric = config.selection_metric
+        self.selection_metric = self.model_dict.get(
+            "selection_metric", config.selection_metric
+        )
         self.select_on_init = config.select_on_init
 
         # Reference values are used for normalizing the reflectances.
@@ -136,10 +139,17 @@ class MultiComponentSurface(Surface):
         lamb_ref = lamb_ref / self.norm(lamb_ref)
 
         # Only support euclidean distance comparrison for now
-        mds = self.euclidean_distance(
-            lamb_ref,
-            np.array(self.mus),
-        )
+        if self.selection_metric == "SGA":
+            mds = self.spectral_gradient_angle(lamb_ref, np.array(self.mus))
+        elif self.selection_metric == "Euclidean":
+            mds = self.euclidean_distance(
+                lamb_ref,
+                np.array(self.mus),
+            )
+        else:
+            raise ValueError(
+                "Surface component selection metric not valid:", self.selection_metric
+            )
 
         closest = np.argmin(mds)
 
@@ -355,3 +365,22 @@ class MultiComponentSurface(Surface):
     @staticmethod
     def euclidean_distance(lamb_ref, mus):
         return np.sum(np.power(lamb_ref[np.newaxis, :] - mus, 2), axis=1)
+
+    @staticmethod
+    def spectral_angle_distance(lamb_ref, mus):
+        cos_theta = np.einsum("k,ik->i", lamb_ref, mus) / (
+            np.linalg.norm(lamb_ref) * np.linalg.norm(mus, axis=1)
+        )
+
+        return np.arccos(np.clip(cos_theta, -1.0, 1.0))
+
+    def spectral_gradient_angle(self, lamb_ref, mus):
+        def gradient(wl, val, sigma=2):
+            val = gaussian_filter1d(val, sigma=sigma)
+            return np.gradient(val, wl)
+
+        grads = np.array([gradient(self.wl[self.idx_ref], mu) for mu in mus])
+
+        return self.spectral_angle_distance(
+            gradient(self.wl[self.idx_ref], lamb_ref), grads
+        )
