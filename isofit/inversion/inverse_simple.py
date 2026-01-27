@@ -27,10 +27,7 @@ from scipy.optimize import least_squares, minimize
 from scipy.optimize import minimize_scalar as min1d
 
 from isofit.core import units
-from isofit.core.common import (
-    emissive_radiance,
-    eps,
-)
+from isofit.core.common import emissive_radiance, eps
 from isofit.data import env
 
 
@@ -294,6 +291,9 @@ def invert_analytical(
     # Background conditions equal to the superpixel reflectance
     bg = s * rho_dif_dir
 
+    # Get superpixel EOF shift if used
+    eof_offset = fm.eof_offset(sub_surface, sub_RT, sub_instrument)
+
     # Get the inversion indices; Include glint indices if applicable
     full_idx = np.concatenate((winidx, fm.idx_surf_nonrfl), axis=0)
     outside_ret_windows = np.ones(len(fm.idx_surface), dtype=bool)
@@ -343,10 +343,12 @@ def invert_analytical(
 
         LI_rcond = dpotrf(P_rcond)[0]
         C_rcond = dpotri(LI_rcond)[0]
+
+        y = meas[winidx] - L_atm[winidx] - eof_offset[winidx]
         xk = dsymv(
             1,
             C_rcond,
-            (L.T @ dsymv(1, P, meas[winidx] - L_atm[winidx]) + prprod[iv_idx]),
+            (L.T @ dsymv(1, P, y) + prprod[iv_idx]),
         )
 
         # Save trajectory step:

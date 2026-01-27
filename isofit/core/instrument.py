@@ -77,8 +77,13 @@ class Instrument:
 
         if config.eof_path is not None:
             self.eof = np.loadtxt(config.eof_path)
+            self.eof_idx = []
+            for i, name in enumerate(sorted(self.statevec_names)):
+                if "EOF" in name:
+                    self.eof_idx.append(i)
         else:
             self.eof = None
+            self.eof_idx = []
 
         self.dn_uncertainty_embedding = None
         if (
@@ -324,12 +329,16 @@ class Instrument:
         if self.n_state == 0:
             return dmeas_dinstrument
 
-        meas = self.sample(x_instrument, wl_hi, rdn_hi)
+        meas = self.sample(x_instrument, wl_hi, rdn_hi) + self.eof_offset(x_instrument)
         for ind in range(self.n_state):
             x_instrument_perturb = x_instrument.copy()
             x_instrument_perturb[ind] = x_instrument_perturb[ind] + eps
-            meas_perturb = self.sample(x_instrument_perturb, wl_hi, rdn_hi)
+            meas_perturb = self.sample(
+                x_instrument_perturb, wl_hi, rdn_hi
+            ) + self.eof_offset(x_instrument_perturb)
+
             dmeas_dinstrument[:, ind] = (meas_perturb - meas) / eps
+
         return dmeas_dinstrument
 
     def dmeas_dinstrumentb(self, x_instrument, wl_hi, rdn_hi):
@@ -365,37 +374,33 @@ class Instrument:
 
         return dmeas_dinstrument
 
+    def eof_offset(self, x_instrument):
+        offset = np.zeros(len(self.wl_init))
+        if len(self.eof_idx):
+            for i in self.eof_idx:
+                offset += self.eof[:, i] * x_instrument[i]
+        return offset
+
     def sample(self, x_instrument, wl_hi, rdn_hi):
         """Apply instrument sampling to a radiance spectrum, returning predicted measurement."""
-
-        offset = 0
-        if self.eof is not None:
-            si = 0
-            while True:
-                sv_element = "EOF_%i" % (si + 1)
-                if sv_element in self.statevec_names:
-                    ind = self.statevec_names.index(sv_element)
-                    scale = x_instrument[ind]
-                    offset = offset + self.eof[:, si] * scale
-                    si += 1
-                else:
-                    break
 
         if (
             self.calibration_fixed
             and (len(self.wl_init) == len(wl_hi))
             and all((self.wl_init - wl_hi) < wl_tol)
         ):
-            return rdn_hi + offset
+
+            return rdn_hi
+
         wl, fwhm = self.calibration(x_instrument)
 
         # If rdn_hi is a vector of length 1, return itself
         if rdn_hi.ndim == 1 and len(rdn_hi) <= 1:
-            return rdn_hi + offset
+            return rdn_hi
 
         # If rdn_hi is a vector of length > 1, return it resampled to instrument
         elif rdn_hi.ndim == 1 and len(rdn_hi) > 1:
-            return resample_spectrum(rdn_hi, wl_hi, wl, fwhm) + offset
+            return resample_spectrum(rdn_hi, wl_hi, wl, fwhm)
 
         # If rdn_hi is a multidim array, do the multidim resampling
         else:
@@ -411,7 +416,7 @@ class Instrument:
                 for i, r in enumerate(rdn_hi):
                     r2 = resample_spectrum(r, wl_hi, wl, fwhm)
                     resamp.append(r2)
-            return np.array(resamp) + offset
+            return np.array(resamp)
 
     def simulate_measurement(self, meas, geom):
         """Simulate a measurement by the given sensor, for a true radiance
