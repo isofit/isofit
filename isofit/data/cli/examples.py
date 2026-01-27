@@ -230,7 +230,7 @@ def download_cli(neon, **kwargs):
     It is recommended to use the first style so the download path is remembered in the future.
     """
     if neon:
-        path = kwargs.get("path", env.examples)
+        path = kwargs.get("path") or env.examples
         download_neon(examples=Path(path))
     elif kwargs.get("overwrite"):
         download(**kwargs)
