@@ -187,7 +187,44 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         self.irradiance_file = ""
         """str: 6s-only irradiance file."""
 
-        # MODTRAN and 6S
+        # libRadtran
+        self._reptran_band_model_type = str
+        self.reptran_band_model = "coarse"
+        """str: REPTRAN options are coarse (15cm-1), medium (5 cm-1), and fine (1 cm-1)."""
+
+        self._kb_alpha_1_type = float
+        self.kb_alpha_1 = None
+        """float: King-Byrne, Angstrom parameter (alpha 1). Setting to None uses default aerosol profile."""
+
+        self._kb_alpha_2_type = float
+        self.kb_alpha_2 = None
+        """float: King-Byrne, Angstrom parameter (alpha 2). Setting to None uses default aerosol profile."""
+
+        self._ssa_scale_type = float
+        self.ssa_scale = None
+        """float: Scales single scattering albedo from libRadtran aerosol profile. Setting to None uses profile default."""
+
+        self._gg_set_type = float
+        self.gg_set = None
+        """float: Sets a constant asymmetry parameter to represent aerosols. Setting to None uses profile default."""
+
+        self._tau_file_type = str
+        self.tau_file = None
+        """str: Path to tau file. Overwrites optical thickness from libRadtran."""
+
+        self._ssa_file_type = str
+        self.ssa_file = None
+        """str: Path to ssa file. Overwrite single scattering albedo from libRadtran."""
+
+        self._gg_file_type = str
+        self.gg_file = None
+        """str: Path to asymmetry parameter file. Overwrites asymmetry parameter from libRadtran."""
+
+        self._moments_file_type = str
+        self.moments_file = None
+        """str: Path to phase function moments file. Uses custom phase function instead of default Henyey-Greenstein."""
+
+        # MODTRAN, 6S, and libRadtran
         self._rte_configure_and_exit_type = bool
         self.rte_configure_and_exit = False
         """bool: Indicates that code should terminate as soon as all radiative transfer engine configuration files are

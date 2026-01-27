@@ -143,7 +143,7 @@ def apply_oe(
         the working_directory
     modtran_path : str, default=None
         Location of MODTRAN utility. Alternately set with `MODTRAN_DIR` environment
-        variable
+        variable. libRadtran base directory can also be passed to this arg.
     wavelength_path : str, default=None
         Location to get wavelength information from, if not specified the radiance
         header will be used
@@ -154,7 +154,7 @@ def apply_oe(
     rdn_factors_path : str, default=None
         Specify a radiometric correction factor, if desired
     atmosphere_type : str, default="ATM_MIDLAT_SUMMER"
-        Atmospheric profile to be used for MODTRAN simulations.  Unused for other
+        Atmospheric profile to be used for MODTRAN and libRadtran simulations.  Unused for other
         radiative transfer models.
     channelized_uncertainty_path : str, default=None
         Path to a wavelength-specific channelized uncertainty file - used to augment Sy in the OE formalism
@@ -681,6 +681,7 @@ def apply_oe(
                 prebuilt_lut_path=prebuilt_lut,
                 inversion_windows=INVERSION_WINDOWS,
                 multipart_transmittance=multipart_transmittance,
+                modtran_path=paths.modtran_path,
             )
             """Currently not running presolve with either
             multisurface-mode or topography mode. Could easily change
@@ -793,6 +794,7 @@ def apply_oe(
             inversion_windows=INVERSION_WINDOWS,
             multipart_transmittance=multipart_transmittance,
             retrieve_co2=retrieve_co2,
+            modtran_path=paths.modtran_path,
         )
 
         if config_only:
