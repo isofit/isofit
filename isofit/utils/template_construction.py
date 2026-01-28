@@ -718,7 +718,9 @@ def build_config(
 
     lut_dir = paths.lut_h2o_directory if presolve else paths.full_lut_directory
     lut_path = (
-        join(lut_dir, "lut.nc") if prebuilt_lut_path else abspath(prebuilt_lut_path)
+        join(lut_dir, "lut.nc")
+        if prebuilt_lut_path is None
+        else abspath(prebuilt_lut_path)
     )
 
     if emulator_base is None:
