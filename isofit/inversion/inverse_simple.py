@@ -62,82 +62,79 @@ def heuristic_atmosphere(
     Returns:
         x_new: updated estimate of x_RT
     """
+    wl, _ = fm.instrument.calibration(x_instrument)
+    blo, bhi = np.argmin(abs(wl - wl_lo)), np.argmin(abs(wl - wl_hi))
 
-    # Identify the latest instrument wavelength calibration (possibly
-    # state-dependent) and identify channel numbers for the band ratio.
-    wl, fwhm = fm.instrument.calibration(x_instrument)
-    blo = np.argmin(abs(wl - wl_lo))
-    bcenter = np.argmin(abs(wl - wl_center))
-    bhi = np.argmin(abs(wl - wl_hi))
-
-    offset = 5  # nm
-    if not (any(fm.RT.wl > (wl_lo - offset)) and any(fm.RT.wl < (wl_hi + offset))):
+    if not (any(fm.RT.wl > (wl_lo - 5)) and any(fm.RT.wl < (wl_hi + 5))):
         return x_RT
 
     x_new = x_RT.copy()
+    h2o_name = "H2OSTR" if "H2OSTR" in fm.RT.statevec_names else "h2o"
+    aod_name = "AOT550"
 
-    # Figure out which RT object we are using
-    # TODO: this is currently very specific to vswir-tir 2-mode, eventually generalize
-    my_RT = None
-    for rte in fm.RT.rt_engines:
-        if rte.treat_as_emissive is False:
-            my_RT = rte
-            break
-    if not my_RT:
-        raise ValueError("No suitable RT object for initialization")
+    idx_h2o = fm.RT.statevec_names.index(h2o_name)
+    idx_aod = fm.RT.statevec_names.index(aod_name)
 
-    # Band ratio retrieval of H2O.  Depending on the radiative transfer
-    # model we are using, this state parameter could go by several names.
-    for h2oname in ["H2OSTR", "h2o"]:
-        if h2oname not in fm.RT.statevec_names:
-            continue
+    h2o_grid = fm.RT.rt_engines[0].lut_grid[h2o_name]
+    aod_grid = fm.RT.rt_engines[0].lut_grid[aod_name]
 
-        # ignore unused names
-        if h2oname not in my_RT.lut_names:
-            continue
+    # Find a rough estimate of AOT550
+    aods, costs = [], []
 
-        # find the index in the lookup table associated with water vapor
-        ind_sv = fm.RT.statevec_names.index(h2oname)
-        h2os, areas = [], []
+    for aod in aod_grid:
+        for wv in h2o_grid:
+            x_step = x_new.copy()
+            x_step[idx_h2o], x_step[idx_aod] = wv, aod
 
-        # We iterate through every possible grid point in the lookup table,
-        # calculating the band ratio that we would see if this were the
-        # atmospheric H2O content.  It assumes that defaults for all other
-        # atmospheric parameters (such as aerosol, if it is there).
-        for h2o in my_RT.lut_grid[h2oname]:
-            # Get Atmospheric terms at high spectral resolution
-            x_RT_2 = x_RT.copy()
-            x_RT_2[ind_sv] = h2o
-
-            # pass in all zeros, as this is ONLY used for Ls, which we will
-            # assume is not present
-            r, coeffs = invert_algebraic(
+            r, _ = invert_algebraic(
                 fm.surface,
                 fm.RT,
                 fm.instrument,
                 x_surface,
-                x_RT_2,
+                x_step,
                 x_instrument,
                 meas,
                 geom,
             )
             r = fm.surface.fit_params(r, geom)[fm.idx_surf_rfl]
 
-            # Simple linear interpolation
-            vals = np.interp(wl[blo:bhi], [wl_lo, wl_hi], [r[blo], r[bhi]])
+            # normalize to better isolate AOD signal
+            vals = np.interp(wl[blo:bhi], [wl[blo], wl[bhi]], [r[blo], r[bhi]])
+            costs.append(np.sum(np.abs(1.0 - (r[blo:bhi] / vals))))
+            aods.append(aod)
 
-            # Minimize the absolute distance between the continuum removed
-            D = np.sum(vals - r[blo:bhi])
+    x_new[idx_aod] = aods[np.argmin(costs)]
 
-            areas.append(D)
-            h2os.append(h2o)
+    # Now, fixing AOT550, resolve water vapor
+    h2os, areas = [], []
+    for h2o in h2o_grid:
+        x_step = x_new.copy()
+        x_step[idx_h2o] = h2o
 
-        # Finally, interpolate to determine the actual water vapor level that
-        # would optimize the continuum-relative correction
-        p = interp1d(h2os, areas)
-        bounds = (h2os[0] + 0.001, h2os[-1] - 0.001)
-        best = min1d(lambda h: abs(p(h)), bounds=bounds, method="bounded")
-        x_new[ind_sv] = best.x
+        r, _ = invert_algebraic(
+            fm.surface,
+            fm.RT,
+            fm.instrument,
+            x_surface,
+            x_step,
+            x_instrument,
+            meas,
+            geom,
+        )
+        r = fm.surface.fit_params(r, geom)[fm.idx_surf_rfl]
+
+        # unnormalized for this one, so we can better resolve water feature
+        vals = np.interp(wl[blo:bhi], [wl[blo], wl[bhi]], [r[blo], r[bhi]])
+        areas.append(np.sum(vals - r[blo:bhi]))
+        h2os.append(h2o)
+
+    p = interp1d(h2os, areas, fill_value="extrapolate")
+    res = min1d(
+        lambda h: abs(p(h)),
+        bounds=(h2os[0] + 0.001, h2os[-1] - 0.001),
+        method="bounded",
+    )
+    x_new[idx_h2o] = res.x
 
     return x_new
 
