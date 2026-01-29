@@ -246,6 +246,9 @@ class SixSRT(RadiativeTransferEngine):
 
         if "observer_altitude_km" in vals:
             vals["alt"] = min(vals["observer_altitude_km"], 99)
+        
+        ### ASL to AGL
+        vals["alt"] = max(min(vals["alt"]-vals["elev"], 99),0.01)
 
         if "observer_azimuth" in vals:
             vals["viewaz"] = vals["observer_azimuth"]
