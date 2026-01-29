@@ -789,11 +789,10 @@ def build_config(
         # Should only modify H2OSTR and surface_elevation_km
         bounds_check(lut_grid, emulator_base, modify=True)
 
+    to_remove = []
     for gn, gc in lut_grid.items():
         if gc is None:
-            lut_grid.pop(gn)
-            continue
-
+            to_remove.append(gn)
         if gc is not None and len(gc) > 1:
             lut_grid[gn] = gc.tolist()
 
@@ -805,9 +804,12 @@ def build_config(
                 logging.warning(
                     f"Key {gn} not found in prebuilt LUT, removing it from LUT."
                 )
-                lut_grid.pop(gn)
+                to_remove.append(gn)
             else:
                 lut_grid[gn] = get_lut_subset(gc)
+
+    for tr in np.unique(to_remove):
+        lut_grid.pop(tr)
 
     radiative_transfer_config["lut_grid"].update(lut_grid)
     radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"] = {
