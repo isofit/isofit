@@ -34,53 +34,6 @@ from isofit.core.common import (
 from isofit.data import env
 
 
-def continuum_removal(
-    fm: ForwardModel,
-    x_surface: np.ndarray,
-    x_instrument: np.ndarray,
-    meas: np.ndarray,
-    geom: Geometry,
-    wl: np.ndarray,
-    blo: int,
-    bhi: int,
-    state_name: str,
-    x_new: np.ndarray,
-) -> float:
-
-    ind_sv = fm.RT.statevec_names.index(state_name)
-    lut_grid = fm.RT.rt_engines[0].lut_grid[state_name]
-    areas = []
-
-    # weights left shoulders for AOT more, basis from Fig 4 of Carmon et al. (2020)
-    n = bhi - blo
-    w = np.ones(n)
-    if state_name == "AOT550":
-        w = np.linspace(1, 0.2, n)  # somewhat arbitrary
-
-    for val in lut_grid:
-        x_RT_2 = x_new.copy()
-        x_RT_2[ind_sv] = val
-        r, _ = invert_algebraic(
-            fm.surface,
-            fm.RT,
-            fm.instrument,
-            x_surface,
-            x_RT_2,
-            x_instrument,
-            meas,
-            geom,
-        )
-        r = fm.surface.fit_params(r, geom)[fm.idx_surf_rfl]
-        vals = np.interp(wl[blo:bhi], [wl[blo], wl[bhi]], [r[blo], r[bhi]])
-        D = np.sum(w * (vals - r[blo:bhi]))
-        areas.append(D)
-
-    p = interp1d(lut_grid, areas, kind="linear")
-    bounds = (lut_grid[0] + 0.001, lut_grid[-1] - 0.001)
-    best = min1d(lambda h: abs(p(h)), bounds=bounds, method="bounded")
-    return best.x
-
-
 def heuristic_atmosphere(
     fm: ForwardModel,
     x_surface: np.array,
@@ -109,43 +62,80 @@ def heuristic_atmosphere(
     Returns:
         x_new: updated estimate of x_RT
     """
+    wl, _ = fm.instrument.calibration(x_instrument)
+    blo, bhi = np.argmin(abs(wl - wl_lo)), np.argmin(abs(wl - wl_hi))
 
-    # Identify the latest instrument wavelength calibration (possibly
-    # state-dependent) and identify channel numbers for the band ratio.
-    wl, fwhm = fm.instrument.calibration(x_instrument)
-    blo = np.argmin(abs(wl - wl_lo))
-    bcenter = np.argmin(abs(wl - wl_center))
-    bhi = np.argmin(abs(wl - wl_hi))
-
-    offset = 5  # nm
-    if not (any(fm.RT.wl > (wl_lo - offset)) and any(fm.RT.wl < (wl_hi + offset))):
+    if not (any(fm.RT.wl > (wl_lo - 5)) and any(fm.RT.wl < (wl_hi + 5))):
         return x_RT
 
     x_new = x_RT.copy()
+    h2o_name = "H2OSTR" if "H2OSTR" in fm.RT.statevec_names else "h2o"
+    aod_name = "AOT550"
 
-    # Figure out which RT object we are using
-    # TODO: this is currently very specific to vswir-tir 2-mode, eventually generalize
-    my_RT = None
-    for rte in fm.RT.rt_engines:
-        if rte.treat_as_emissive is False:
-            my_RT = rte
-            break
-    if not my_RT:
-        raise ValueError("No suitable RT object for initialization")
+    idx_h2o = fm.RT.statevec_names.index(h2o_name)
+    idx_aod = fm.RT.statevec_names.index(aod_name)
 
-    # Continuum removal retrieval of H2O.
-    for h2oname in ["H2OSTR", "h2o"]:
-        if h2oname in fm.RT.statevec_names and h2oname in my_RT.lut_names:
-            x_new[fm.RT.statevec_names.index(h2oname)] = continuum_removal(
-                fm, x_surface, x_instrument, meas, geom, wl, blo, bhi, h2oname, x_new
+    h2o_grid = fm.RT.rt_engines[0].lut_grid[h2o_name]
+    aod_grid = fm.RT.rt_engines[0].lut_grid[aod_name]
+
+    # Find a rough estimate of AOT550
+    costs = []
+    aods = []
+
+    for aod in aod_grid:
+        for wv in h2o_grid:
+            x_step = x_new.copy()
+            x_step[idx_h2o], x_step[idx_aod] = wv, aod
+
+            r, _ = invert_algebraic(
+                fm.surface,
+                fm.RT,
+                fm.instrument,
+                x_surface,
+                x_step,
+                x_instrument,
+                meas,
+                geom,
             )
+            r = fm.surface.fit_params(r, geom)[fm.idx_surf_rfl]
 
-    # Finally, using a quasi coordinate descent approach, use this best h2o solve
-    # to find best AOD which alters the left-right shoulders of the water feature.
-    if "AOT550" in fm.RT.statevec_names and "AOT550" in my_RT.lut_names:
-        x_new[fm.RT.statevec_names.index("AOT550")] = continuum_removal(
-            fm, x_surface, x_instrument, meas, geom, wl, blo, bhi, "AOT550", x_new
+            # normalize to better isolate AOD signal
+            vals = np.interp(wl[blo:bhi], [wl[blo], wl[bhi]], [r[blo], r[bhi]])
+            costs.append(np.sum(np.abs(1.0 - (r[blo:bhi] / vals))))
+            aods.append(aod)
+
+    x_new[idx_aod] = aods[np.argmin(costs)]
+
+    # Now, fixing AOT550, resolve water vapor
+    h2os, areas = [], []
+    for h2o in h2o_grid:
+        x_step = x_new.copy()
+        x_step[idx_h2o] = h2o
+
+        r, _ = invert_algebraic(
+            fm.surface,
+            fm.RT,
+            fm.instrument,
+            x_surface,
+            x_step,
+            x_instrument,
+            meas,
+            geom,
         )
+        r = fm.surface.fit_params(r, geom)[fm.idx_surf_rfl]
+
+        # unnormalized for this one, so we can better resolve water feature
+        vals = np.interp(wl[blo:bhi], [wl[blo], wl[bhi]], [r[blo], r[bhi]])
+        areas.append(np.sum(vals - r[blo:bhi]))
+        h2os.append(h2o)
+
+    p = interp1d(h2os, areas, fill_value="extrapolate")
+    res = min1d(
+        lambda h: abs(p(h)),
+        bounds=(h2os[0] + 0.001, h2os[-1] - 0.001),
+        method="bounded",
+    )
+    x_new[idx_h2o] = res.x
 
     return x_new
 
