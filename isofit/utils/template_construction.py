@@ -740,7 +740,11 @@ def build_config(
                 "sim_path": lut_dir,
                 "lut_path": lut_path,
                 "aerosol_template_file": paths.aerosol_tpl_path,
-                "template_file": paths.modtran_template_path,
+                "template_file": (
+                    paths.modtran_template_path
+                    if not presolve
+                    else paths.h2o_template_path
+                ),
             }
         },
         "statevector": {},
