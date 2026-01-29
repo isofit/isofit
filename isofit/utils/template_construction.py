@@ -774,27 +774,14 @@ def build_config(
         ] = aerosol_model_file
 
     # First, build the general lut grid
-    lut_grid = {}
-    grid_names = [
-        "H2OSTR",
-        "surface_elevation_km",
-        "observer_zenith",
-        "solar_zenith",
-        "relative_azimuth",
-        "CO2",
-    ]
-    grid_comp = [
-        h2o_lut_grid,
-        elevation_lut_grid,
-        to_sensor_zenith_lut_grid,
-        to_sun_zenith_lut_grid,
-        relative_azimuth_lut_grid,
-        co2_lut_grid,
-    ]
-
-    if aerosol_lut_grid is not None:
-        grid_names.extend(list(aerosol_lut_grid.keys()))
-        grid_comp.extend([x for x in aerosol_lut_grid])
+    lut_grid = {
+        "H2OSTR": h2o_lut_grid,
+        "surface_elevation_km": elevation_lut_grid,
+        "observer_zenith": to_sensor_zenith_lut_grid,
+        "solar_zenith": to_sun_zenith_lut_grid,
+        "relative_azimuth": relative_azimuth_lut_grid,
+        "CO2": co2_lut_grid,
+    }
 
     if emulator_base is not None and os.path.splitext(emulator_base)[1] == ".jld2":
         from isofit.radiative_transfer.engines.kernel_flows import bounds_check
@@ -802,18 +789,23 @@ def build_config(
         # Should only modify H2OSTR and surface_elevation_km
         bounds_check(lut_grid, emulator_base, modify=True)
 
-    for gn, gc in zip(grid_names, grid_comp):
+    for gn, gc in lut_grid.items():
+        if gc is None:
+            lut_grid.pop(gn)
+            continue
+
         if gc is not None and len(gc) > 1:
             lut_grid[gn] = gc.tolist()
 
     ncds = None
     if prebuilt_lut_path is not None:
         ncds = nc.Dataset(prebuilt_lut_path, "r")
-        for gn, gc in zip(grid_names, grid_comp):
+        for gn, gc in lut_grid.items():
             if gn not in ncds.variables:
                 logging.warning(
                     f"Key {gn} not found in prebuilt LUT, removing it from LUT."
                 )
+                lut_grid.pop(gn)
             else:
                 lut_grid[gn] = get_lut_subset(gc)
 
@@ -826,11 +818,11 @@ def build_config(
     statekeys = ["H2OSTR"]
     statesigmas = [100.0]
     statescale = [1]
-    if pressure_elevation:
+    if pressure_elevation and presolve is False:
         statekeys.append("surface_elevation_km")
         statesigmas.append(1000.0)
         statescale.append(100)
-    if retrieve_co2:
+    if retrieve_co2 and presolve is False:
         statekeys.append("CO2")
         statesigmas.append(100.0)
         statescale.append(10)
@@ -846,7 +838,7 @@ def build_config(
                 "prior_mean": (grid[0] + grid[-1]) / 2.0,
             }
 
-    if aerosol_state_vector is not None:
+    if aerosol_state_vector is not None and presolve is False:
         radiative_transfer_config["statevector"].update(aerosol_state_vector)
 
     # MODTRAN should know about our whole LUT grid and all of our statevectors, so copy them in
