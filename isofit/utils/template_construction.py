@@ -674,6 +674,7 @@ def build_config(
     surface_mapping: dict = None,
     retrieve_co2: bool = False,
     presolve: bool = False,
+    rugged_terrain_style: str = "flat",
 ) -> None:
     """Write an isofit config file for the main solve, using the specified pathnames and all given info
 
@@ -704,6 +705,7 @@ def build_config(
         multipart_transmittance:              flag to indicate whether a 4-component transmittance model is to be used
         surface_mapping:                      optional object to pass mapping between surface class and surface model
         presolve:                             set this up as a presolve configuration
+        rugged_terrain_style:                 style of rugged terrain to use in the forward model - options are 'flat', 'dem', 'solved'
     """
 
     if np.sum(
@@ -960,6 +962,12 @@ def build_config(
         outfile = paths.h2o_config_path
     else:
         outfile = paths.isofit_full_config_path
+    with open(outfile, "w") as fout:
+        fout.write(
+            json.dumps(
+                isofit_config_modtran, cls=SerialEncoder, indent=4, sort_keys=True
+            )
+        )
     env.toTemplate(outfile, working_directory=paths.working_directory)
 
 
