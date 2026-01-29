@@ -79,8 +79,7 @@ def heuristic_atmosphere(
     aod_grid = fm.RT.rt_engines[0].lut_grid[aod_name]
 
     # Find a rough estimate of AOT550
-    costs = []
-    aods = []
+    aods, costs = [], []
 
     for aod in aod_grid:
         for wv in h2o_grid:
