@@ -147,7 +147,7 @@ def analytical_line(
         full_idx_surf_rfl,
         _,
         full_idx_RT,
-        _,
+        full_idx_instrument,
     ) = construct_full_state(config)
 
     # Perform the atmospheric interpolation
@@ -526,11 +526,22 @@ class Worker(object):
             # atm_interpolated file
             x_RT = self.rt_state[r, c, :]
 
+            # TODO depricate this iv_idx. Abstract the indexing a bit more
+            # s.t. we can smooth any statevector element by specifying idx
+            # iv_idx here is a relic from a version that
+            # achieved this by using atm_band_names in atm_interpolation
+            # need to improve that implementation
             iv_idx = self.fm.surface.analytical_iv_idx
-            sub_state = self.subs_state[int(self.lbl[r, c, 0]), 0, iv_idx]
 
-            # Note: concatenation only works with the correct indexing.
-            sub_state = np.concatenate([sub_state, x_RT])
+            # Populate the "background" superpixel
+            lbl_idx = int(self.lbl[r, c, 0])
+            sub_state = np.zeros(self.fm.nstate)
+            sub_state[self.fm.idx_surface] = self.subs_state[lbl_idx, 0, iv_idx]
+            sub_state[self.fm.idx_RT] = x_RT
+            sub_state[self.fm.idx_instrument] = self.subs_state[
+                lbl_idx, 0, self.fm.idx_instrument
+            ]
+            # Enforce non-NaN
             sub_state[np.isnan(sub_state)] = self.fm.init[np.isnan(sub_state)]
 
             # Build statevector to use for initialization.

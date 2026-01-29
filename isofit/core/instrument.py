@@ -75,6 +75,16 @@ class Instrument:
 
         self.integrations = config.integrations
 
+        if config.eof_path is not None:
+            self.eof = np.loadtxt(config.eof_path)
+            self.eof_idx = []
+            for i, name in enumerate(sorted(self.statevec_names)):
+                if "EOF" in name:
+                    self.eof_idx.append(i)
+        else:
+            self.eof = None
+            self.eof_idx = []
+
         self.dn_uncertainty_embedding = None
         if (
             config.unknowns is not None
@@ -319,12 +329,16 @@ class Instrument:
         if self.n_state == 0:
             return dmeas_dinstrument
 
-        meas = self.sample(x_instrument, wl_hi, rdn_hi)
+        meas = self.sample(x_instrument, wl_hi, rdn_hi) + self.eof_offset(x_instrument)
         for ind in range(self.n_state):
             x_instrument_perturb = x_instrument.copy()
             x_instrument_perturb[ind] = x_instrument_perturb[ind] + eps
-            meas_perturb = self.sample(x_instrument_perturb, wl_hi, rdn_hi)
+            meas_perturb = self.sample(
+                x_instrument_perturb, wl_hi, rdn_hi
+            ) + self.eof_offset(x_instrument_perturb)
+
             dmeas_dinstrument[:, ind] = (meas_perturb - meas) / eps
+
         return dmeas_dinstrument
 
     def dmeas_dinstrumentb(self, x_instrument, wl_hi, rdn_hi):
@@ -360,6 +374,13 @@ class Instrument:
 
         return dmeas_dinstrument
 
+    def eof_offset(self, x_instrument):
+        offset = np.zeros(len(self.wl_init))
+        if len(self.eof_idx):
+            for i in self.eof_idx:
+                offset += self.eof[:, i] * x_instrument[i]
+        return offset
+
     def sample(self, x_instrument, wl_hi, rdn_hi):
         """Apply instrument sampling to a radiance spectrum, returning predicted measurement."""
 
@@ -368,7 +389,9 @@ class Instrument:
             and (len(self.wl_init) == len(wl_hi))
             and all((self.wl_init - wl_hi) < wl_tol)
         ):
+
             return rdn_hi
+
         wl, fwhm = self.calibration(x_instrument)
 
         # If rdn_hi is a vector of length 1, return itself
