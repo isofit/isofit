@@ -76,6 +76,7 @@ class RadiativeTransfer:
 
         self.lut_grid = config.lut_grid
         self.statevec_names = config.statevector.get_element_names()
+        self.terrain_style = config.terrain_style
 
         self.rt_engines = []
         for idx in range(len(config.radiative_transfer_engines)):
@@ -315,6 +316,9 @@ class RadiativeTransfer:
             verified_geom["cos_i"],
             verified_geom["skyview_factor"],
         )
+        # Pretend that the surface is flat, regardless of input geometry
+        if self.terrain_style == "flat":
+            cos_i = coszen
 
         # radiances along all optical paths
         L_coupled = []

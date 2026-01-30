@@ -108,6 +108,7 @@ def apply_oe(
     skyview_factor=None,
     resources=False,
     retrieve_co2=False,
+    terrain_style="dem",
 ):
     """\
     Applies OE over a flightline using a radiative transfer engine. This executes
@@ -246,6 +247,8 @@ def apply_oe(
         Enables the system resource tracker. Must also have the log_file set.
     retrieve_co2 : bool, default=False
         Flag to retrieve CO2 in the state vector. Only available with emulator at the moment.
+    terrain_style : str, default=dem
+        Flag to set the terrain style.  dem uses provided obs values, flat sets the surface to the spheroid
 
     \b
     References
@@ -651,6 +654,7 @@ def apply_oe(
         "inversion_windows": INVERSION_WINDOWS,
         "multipart_transmittance": multipart_transmittance,
         "segmentation_size": segmentation_size,
+        "terrain_style": terrain_style,
     }
     if presolve:
         # write modtran presolve template
@@ -921,6 +925,7 @@ def apply_oe(
 @click.option("--skyview_factor", type=str, default=None)
 @click.option("-r", "--resources", is_flag=True, default=False)
 @click.option("--retrieve_co2", is_flag=True, default=False)
+@click.option("--terrain_style", type=str, default="dem", choices=["dem", "flat"])
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",

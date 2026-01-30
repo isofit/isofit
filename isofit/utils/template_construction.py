@@ -751,6 +751,7 @@ def build_config(
         "statevector": {},
         "lut_grid": {},
         "unknowns": {"H2O_ABSCO": 0.0},
+        "terrain_style": terrain_style,
     }
 
     vswir = {}
@@ -783,6 +784,8 @@ def build_config(
         "relative_azimuth": relative_azimuth_lut_grid,
         "CO2": co2_lut_grid,
     }
+    if aerosol_lut_grid is not None:
+        lut_grid.update(aerosol_lut_grid)
 
     if emulator_base is not None and os.path.splitext(emulator_base)[1] == ".jld2":
         from isofit.radiative_transfer.engines.kernel_flows import bounds_check
@@ -792,9 +795,9 @@ def build_config(
 
     to_remove = []
     for gn, gc in lut_grid.items():
-        if gc is None:
+        if gc is None or len(gc) == 1:
             to_remove.append(gn)
-        if gc is not None and len(gc) > 1:
+        else:
             lut_grid[gn] = gc.tolist()
 
     ncds = None
