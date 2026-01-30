@@ -787,18 +787,18 @@ def build_config(
     if aerosol_lut_grid is not None:
         lut_grid.update(aerosol_lut_grid)
 
-    if emulator_base is not None and os.path.splitext(emulator_base)[1] == ".jld2":
-        from isofit.radiative_transfer.engines.kernel_flows import bounds_check
-
-        # Should only modify H2OSTR and surface_elevation_km
-        bounds_check(lut_grid, emulator_base, modify=True)
-
     to_remove = []
     for gn, gc in lut_grid.items():
         if gc is None or len(gc) == 1:
             to_remove.append(gn)
         else:
-            lut_grid[gn] = gc.tolist()
+            lut_grid[gn] = np.array(gc).tolist()
+
+    if emulator_base is not None and os.path.splitext(emulator_base)[1] == ".jld2":
+        from isofit.radiative_transfer.engines.kernel_flows import bounds_check
+
+        # Should only modify H2OSTR and surface_elevation_km
+        bounds_check(lut_grid, emulator_base, modify=True)
 
     ncds = None
     if prebuilt_lut_path is not None:
