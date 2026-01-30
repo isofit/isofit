@@ -365,6 +365,12 @@ class RadiativeTransferConfig(BaseConfigSection):
         self._radiative_transfer_engines_type = list()
         self.radiative_transfer_engines = []
 
+        self._terrain_style_type = str
+        self.terrain_style = "flat"
+        """
+        Style of terrain to use in the forward model - options are 'flat', 'dem', 'solved'
+        """
+
         self._set_rt_config_options(sub_configdic["radiative_transfer_engines"])
 
     def _set_rt_config_options(self, subconfig):
@@ -408,5 +414,11 @@ class RadiativeTransferConfig(BaseConfigSection):
                     "Invalid degree number. Should be an integer, e.g. nds-3, got"
                     f" {degrees!r} from {self.interpolator_style!r}[4:]"
                 )
+
+        terrain_options = ["flat", "dem", "solved"]
+        if self.terrain_style not in terrain_options:
+            errors.append(
+                f"surface->terrain_style is set as {self.terrain_style}, but must be one of: {terrain_options}"
+            )
 
         return errors

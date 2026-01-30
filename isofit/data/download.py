@@ -6,7 +6,9 @@ import io
 import json
 import os
 import shutil
+import ssl
 import tarfile
+import urllib.error
 import urllib.request
 from email.message import EmailMessage
 from pathlib import Path
@@ -72,7 +74,17 @@ def download_file(url, dstname=None, overwrite=True):
     outfile : str
         Output downloaded filepath
     """
-    response = urllib.request.urlopen(url)
+    try:
+        response = urllib.request.urlopen(url)
+    except urllib.error.URLError as e:
+        if isinstance(e.reason, ssl.SSLError):
+            print(
+                f"SSL verification failed for {url}. Retrying with unverified context."
+            )
+            context = ssl._create_unverified_context()
+            response = urllib.request.urlopen(url, context=context)
+        else:
+            raise e
 
     total = 0
     if length := response.info()["Content-Length"]:
