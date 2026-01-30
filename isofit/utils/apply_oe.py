@@ -925,7 +925,7 @@ def apply_oe(
 @click.option("--skyview_factor", type=str, default=None)
 @click.option("-r", "--resources", is_flag=True, default=False)
 @click.option("--retrieve_co2", is_flag=True, default=False)
-@click.option("--terrain_style", type=str, default="dem", choices=["dem", "flat"])
+@click.option("--terrain_style", default="dem", type=click.Choice(["dem", "flat"]))
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",
