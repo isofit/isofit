@@ -674,7 +674,7 @@ def build_config(
     surface_mapping: dict = None,
     retrieve_co2: bool = False,
     presolve: bool = False,
-    rugged_terrain_style: str = "flat",
+    terrain_style: str = "flat",
 ) -> None:
     """Write an isofit config file for the main solve, using the specified pathnames and all given info
 
@@ -705,15 +705,16 @@ def build_config(
         multipart_transmittance:              flag to indicate whether a 4-component transmittance model is to be used
         surface_mapping:                      optional object to pass mapping between surface class and surface model
         presolve:                             set this up as a presolve configuration
-        rugged_terrain_style:                 style of rugged terrain to use in the forward model - options are 'flat', 'dem', 'solved'
+        terrain_style:                        style of terrain to use in the forward model - options are 'flat', 'dem', 'solved'
     """
 
-    if np.sum(
+    avc = np.sum(
         [
             x is not None
             for x in [aerosol_lut_grid, aerosol_model_file, aerosol_state_vector]
         ]
-    ):
+    )
+    if avc >= 1 and avc != 3:
         raise ValueError(
             "To use aerosol in LUT, need lut_grid, model_path, and state_vector"
         )
