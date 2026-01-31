@@ -4,9 +4,12 @@ Downloads the ISOFIT examples from the repository https://github.com/isofit/isof
 
 from pathlib import Path
 
+import click
+
 from isofit.data import env, shared
 from isofit.data.download import download_file, prepare_output, release_metadata, unzip
 
+ESSENTIAL = False
 CMD = "examples"
 NEON_URL = "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/tutorials/subset_data.zip"
 
@@ -22,7 +25,7 @@ def download_neon(examples):
     """
     print("Downloading NEON data for the example")
 
-    output = prepare_output(examples / "isotuts/NEON/data", "./neon_data")
+    output = prepare_output(examples / "NEON/data", "./neon_data")
     if not output:
         return
 
@@ -210,18 +213,26 @@ def update(check=False, **kwargs):
 @shared.tag
 @shared.overwrite
 @shared.check
-def download_cli(**kwargs):
+@click.option(
+    "--neon",
+    is_flag=True,
+    help="Downloads only the NEON dataset to the examples directory",
+)
+def download_cli(neon, **kwargs):
     """\
     Downloads the ISOFIT examples from the repository https://github.com/isofit/isofit-tutorials.
 
     \b
     Run `isofit download paths` to see default path locations.
     There are two ways to specify output directory:
-        - `isofit --examples /path/examples download examples`: Override the ini file. This will save the provided path for future reference.
+        - `isofit --path examples /path/examples download examples`: Override the ini file. This will save the provided path for future reference.
         - `isofit download examples --path /path/examples`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
     It is recommended to use the first style so the download path is remembered in the future.
     """
-    if kwargs.get("overwrite"):
+    if neon:
+        path = kwargs.get("path") or env.examples
+        download_neon(examples=Path(path))
+    elif kwargs.get("overwrite"):
         download(**kwargs)
     else:
         update(**kwargs)

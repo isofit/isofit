@@ -12,6 +12,7 @@ from packaging.version import Version
 from isofit.data import env, shared
 from isofit.data.download import download_file, prepare_output
 
+ESSENTIAL = True
 CMD = "srtmnet"
 URL = "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/"
 
@@ -321,7 +322,7 @@ def download_cli(**kwargs):
     \b
     Run `isofit download paths` to see default path locations.
     There are two ways to specify output directory:
-        - `isofit --srtmnet /path/sRTMnet download sRTMnet`: Override the ini file. This will save the provided path for future reference.
+        - `isofit --path srtmnet /path/sRTMnet download sRTMnet`: Override the ini file. This will save the provided path for future reference.
         - `isofit download sRTMnet --path /path/sRTMnet`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
     It is recommended to use the first style so the download path is remembered in the future.
     """

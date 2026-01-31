@@ -83,6 +83,7 @@ def apply_oe(
     rdn_factors_path=None,
     atmosphere_type="ATM_MIDLAT_SUMMER",
     channelized_uncertainty_path=None,
+    instrument_noise_path=None,
     dn_uncertainty_file=None,
     model_discrepancy_path=None,
     lut_config_file=None,
@@ -157,7 +158,9 @@ def apply_oe(
         Atmospheric profile to be used for MODTRAN simulations.  Unused for other
         radiative transfer models.
     channelized_uncertainty_path : str, default=None
-        Path to a channelized uncertainty file
+        Path to a wavelength-specific channelized uncertainty file - used to augment Sy in the OE formalism
+    instrument_noise_path : str, default=None
+        Path to a wavelength-specific instrument noise file, used to derive per-wavelength NEDL / SNR
     dn_uncertainty_file:  str, default=None
         Path to a linearity .mat file to augment S matrix with linearity uncertainty
     model_discrepancy_path : str, default=None
@@ -407,6 +410,7 @@ def apply_oe(
         model_discrepancy_path=model_discrepancy_path,
         aerosol_climatology_path=aerosol_climatology_path,
         channelized_uncertainty_path=channelized_uncertainty_path,
+        instrument_noise_path=instrument_noise_path,
         ray_temp_dir=ray_temp_dir,
         interpolate_inplace=interpolate_inplace,
         skyview_factor=skyview_factor,
@@ -917,6 +921,7 @@ def apply_oe(
 @click.option("--rdn_factors_path")
 @click.option("--atmosphere_type", default="ATM_MIDLAT_SUMMER")
 @click.option("--channelized_uncertainty_path")
+@click.option("--instrument_noise_path", type=str, default=None)
 @click.option("--dn_uncertainty_file", "-dnf", type=str, default=None)
 @click.option("--model_discrepancy_path")
 @click.option("--lut_config_file")

@@ -54,6 +54,7 @@ class Pathnames:
         model_discrepancy_path=None,
         aerosol_climatology_path=None,
         channelized_uncertainty_path=None,
+        instrument_noise_path=None,
         interpolate_inplace=False,
         skyview_factor=None,
         subs: bool = False,
@@ -261,6 +262,7 @@ class Pathnames:
 
         self.sixs_path = os.getenv("SIXS_DIR", env.sixs)
 
+        self.noise_path = None
         if sensor == "avcl":
             self.noise_path = str(env.path("data", "avirisc_noise.txt"))
         elif sensor == "oci":
@@ -277,10 +279,17 @@ class Pathnames:
                 )
         elif sensor == "tanager":
             self.noise_path = str(env.path("data", "tanager1_noise_20241016.txt"))
-        else:
-            self.noise_path = None
+
+        # Override noise path if provided
+        if instrument_noise_path is not None:
+            if self.noise_path is not None:
+                logging.info(
+                    f"Overriding default instrument noise path {self.noise_path} with user-provided path {instrument_noise_path}"
+                )
+            self.noise_path = instrument_noise_path
+
+        if self.noise_path is None:
             logging.info("no noise path found, proceeding without")
-            # quit()
 
         self.earth_sun_distance_path = str(env.path("data", "earth_sun_distance.txt"))
 
@@ -1688,7 +1697,7 @@ def get_metadata_from_obs(
     to_sensor_zenith = obs[:, :, 2]
     to_sun_azimuth = obs[:, :, 3]
     to_sun_zenith = obs[:, :, 4]
-    time = obs[:, :, 9]
+    time = obs[:, :, 9].copy()
 
     # calculate relative to-sun azimuth
     delta_phi = np.abs(to_sun_azimuth - to_sensor_azimuth)
@@ -1823,7 +1832,7 @@ def get_metadata_from_loc(
     # Grab zensor position and orientation information
     mean_latitude = np.mean(loc_data[1, valid].flatten())
     mean_longitude = np.mean(-1 * loc_data[0, valid].flatten())
-    mean_elevation_km = units.m_to_km(np.mean(loc_data[2, valid]))
+    mean_elevation_km = max(units.m_to_km(np.mean(loc_data[2, valid])), 0)
 
     # make elevation grid
     min_elev = units.m_to_km(np.min(loc_data[2, valid]))

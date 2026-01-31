@@ -231,10 +231,9 @@ class GlintModelSurface(MultiComponentSurface):
 
         return drfl
 
-    def drdn_dglint(self, L_tot, L_down_dir, s_alb, rho_dif_dir):
+    def drdn_dglint(self, L_tot, drdn_dgdd, s_alb, rho_dif_dir):
         """Derivative of radiance with respect to
         the direct and diffuse glint terms"""
-        drdn_dgdd = L_down_dir
         drdn_dgdsf = (L_tot / ((1.0 - (s_alb * rho_dif_dir)) ** 2)) - drdn_dgdd
 
         return drdn_dgdd, drdn_dgdsf
@@ -247,7 +246,10 @@ class GlintModelSurface(MultiComponentSurface):
         s_alb,
         t_total_up,
         L_tot,
-        L_down_dir,
+        L_dir_dir=None,
+        L_dir_dif=None,
+        L_dif_dir=None,
+        L_dif_dif=None,
     ):
         """Derivative of radiance with respect to
         full surface vector"""
@@ -261,7 +263,12 @@ class GlintModelSurface(MultiComponentSurface):
         )
 
         # Glint derivatives
-        drdn_dgdd, drdn_dgdsf = self.drdn_dglint(L_tot, L_down_dir, s_alb, rho_dif_dir)
+        drdn_dgdd, drdn_dgdsf = self.drdn_dglint(
+            L_tot=L_tot,
+            drdn_dgdd=(L_dir_dir + L_dir_dif),
+            s_alb=s_alb,
+            rho_dif_dir=rho_dif_dir,
+        )
 
         # Store the glint derivatives as last two rows in drdn_drfl
         drdn_dsurface[:, self.sun_glint_ind] = (

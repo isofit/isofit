@@ -267,14 +267,11 @@ def update_config_for_surface(config, surface_class_str, clouds=True):
     isurface = config.forward_model.surface.Surfaces.get(surface_class_str)
 
     if not isurface:
-        raise KeyError("Multi-surface flag used, but no multi-surface config")
+        raise KeyError("Multi-surface flag used, but no valid multi-surface config")
 
     surface_category = isurface.get("surface_category")
     surface_file = isurface.get("surface_file")
     glint_model = isurface.get("glint_model")
-
-    if (not surface_category) or (not surface_file):
-        raise KeyError("Failed to parse multi-surface config")
 
     config.forward_model.surface.surface_category = surface_category
     config.forward_model.surface.surface_file = surface_file

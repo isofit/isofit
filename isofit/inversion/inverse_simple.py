@@ -186,8 +186,6 @@ def invert_algebraic(
     (
         rhi,
         L_tot,
-        L_down_dir,
-        L_down_dif,
         L_dir_dir,
         L_dif_dir,
         L_dir_dif,
@@ -196,14 +194,7 @@ def invert_algebraic(
     L_atm = RT.get_L_atm(x_RT, geom)
     sphalb = rhi["sphalb"]
     Ls = surface.calc_Ls(x_surface, geom)
-
-    # TODO - make this a function, and use it here and in radiatve transfer
-    # transmit thermal emission through the atmosphere
-    transup = rhi["transm_up_dir"] + rhi["transm_up_dif"]
-    if np.max(transup) > 1.1:
-        raise ValueError(
-            "Transmittance up is greater than 1.0, which is not physically possible. Most likely, this is an issue with LUT input convention."
-        )
+    transup = RT.get_upward_transm(r=rhi, geom=geom)
 
     # Get the wavelengths too - these may also be adjusted
     wl, fwhm = instrument.calibration(x_instrument)
@@ -258,7 +249,8 @@ def invert_analytical(
     fill_value: float = -9999.0,
 ):
     """Perform an analytical estimate of the conditional MAP estimate for
-    a fixed atmosphere.  Based on the "Inner loop" from Susiluoto, 2022.
+    a fixed atmosphere.  Based on the "Inner loop" from Susiluoto et al. (2025).
+    doi: https://doi.org/10.3390/rs17223719
 
     Args:
         fm: isofit forward model
@@ -290,8 +282,8 @@ def invert_analytical(
     x_surface, x_RT, x_instrument = fm.unpack(x)
 
     # Get all the RT quantities
-    (r, L_tot, L_down_dir, L_down_dif, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif) = (
-        fm.RT.calc_RT_quantities(x_RT, geom)
+    (r, L_tot, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif) = fm.RT.calc_RT_quantities(
+        x_RT, geom
     )
 
     # Path radiance and spherical albedo
@@ -310,10 +302,6 @@ def invert_analytical(
     rho_dir_dir, rho_dif_dir = fm.calc_rfl(sub_surface, geom)
     rho_dir_dir = fm.upsample(fm.surface.wl, rho_dir_dir)
     rho_dif_dir = fm.upsample(fm.surface.wl, rho_dif_dir)
-
-    # Special case: 1-component model
-    if type(L_tot) != np.ndarray or len(L_tot) == 1:
-        L_tot = L_down_dir + L_down_dif
 
     # Get the inversion indices; Include glint indices if applicable
     full_idx = np.concatenate((winidx, fm.idx_surf_nonrfl), axis=0)
@@ -463,8 +451,8 @@ def invert_simple(forward: ForwardModel, meas: np.array, geom: Geometry):
         _, sphalb, _, transup, _ = coeffs
 
         L_atm = RT.get_L_atm(x_RT, geom)
-        L_down_transmitted, _, _ = RT.get_L_down_transmitted(x_RT, geom)
-        L_total_without_surface_emission = L_atm + L_down_transmitted * rfl_hi / (
+        L_tot = RT.calc_RT_quantities(x_RT, geom)[1]
+        L_total_without_surface_emission = L_atm + L_tot * rfl_hi / (
             1.0 - sphalb * rfl_hi
         )
 

@@ -31,6 +31,7 @@ from isofit.core import units
 from isofit.core.common import resample_spectrum
 from isofit.core.fileio import IO
 from isofit.data import env
+from isofit.data.cli.sixs import get_exe
 from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
 
 Logger = logging.getLogger(__file__)
@@ -96,19 +97,8 @@ class SixSRT(RadiativeTransferEngine):
         kwargs["fwhm"] = self.fwhm
 
         self.engine_base_dir = engine_config.engine_base_dir
-        try:
-            files = Path(self.engine_base_dir).glob("sixsV2*")
-            files = [x for x in files if "lutaero" not in x.name]
-            if len(files) > 1:
-                Logger.warning(
-                    f"Multiple 6S executables found under path: {self.engine_base_dir}. Using: {files[0].name}"
-                )
-            self.exe = files[0]
-            Logger.debug(f"Using 6S executable: {self.exe}")
-        except:
-            raise FileNotFoundError(
-                f"Could not find the 6S executable under path: {self.engine_base_dir}"
-            )
+        self.exe = get_exe(self.engine_base_dir)
+        Logger.debug(f"Using 6S executable: {self.exe}")
 
         self.co2_mode = False
         if "CO2" in self.exe.name:
@@ -122,9 +112,9 @@ class SixSRT(RadiativeTransferEngine):
 
     def preSim(self):
         """
-        Check that 6S is installed
+        Add the 6S executable in the LUT attributes
         """
-        pass
+        self.lut.setAttr("6S", str(self.exe))
 
     def makeSim(self, point: np.array):
         """
@@ -224,7 +214,7 @@ class SixSRT(RadiativeTransferEngine):
             "O3": 0.30,
             "day": self.engine_config.day,
             "month": self.engine_config.month,
-            "elev": self.engine_config.elev,
+            "elev": abs(max(self.engine_config.elev, 0)),
             "alt": min(self.engine_config.alt, 99),
             "atm_file": None,
             "abscf_data_directory": None,
@@ -252,7 +242,7 @@ class SixSRT(RadiativeTransferEngine):
             vals["h2o_mm"] = units.cm_to_mm(vals["H2OSTR"])
 
         if "surface_elevation_km" in vals:
-            vals["elev"] = vals["surface_elevation_km"]
+            vals["elev"] = abs(max(vals["surface_elevation_km"], 0))
 
         if "observer_altitude_km" in vals:
             vals["alt"] = min(vals["observer_altitude_km"], 99)
