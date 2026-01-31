@@ -81,6 +81,9 @@ documentation = "https://isofit.readthedocs.io/en/latest/index.html"
 [project.scripts]
 isofit = "isofit.__main__:cli"
 
+[project.entry-points."xarray.backends"]
+envi = "isofit.utils.wd:EnviBackendEntrypoint"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
