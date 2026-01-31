@@ -132,6 +132,8 @@ class Pathnames:
             self.bgrfl_working_path = abspath(
                 join(self.data_directory, rdn_fname.replace("_rdn", "_bgrfl"))
             )
+        else:
+            self.bgrfl_working_path = None
 
         if copy_input_files is True:
             self.radiance_working_path = abspath(
@@ -210,10 +212,13 @@ class Pathnames:
         self.svf_subs_path = abspath(
             join(self.input_data_directory, self.fid + "_subs_svf")
         )
+
         if use_background_rfl:
             self.bgrfl_subs_path = abspath(
                 join(self.input_data_directory, self.fid + "_subs_bgrfl")
             )
+        else:
+            self.bgrfl_subs_path = None
 
         self.rdn_subs_path = abspath(
             join(self.input_data_directory, self.fid + "_subs_rdn")
