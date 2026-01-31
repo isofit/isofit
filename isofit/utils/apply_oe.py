@@ -109,6 +109,7 @@ def apply_oe(
     skyview_factor=None,
     resources=False,
     retrieve_co2=False,
+    background_rfl=False,
 ):
     """\
     Applies OE over a flightline using a radiative transfer engine. This executes
@@ -247,6 +248,8 @@ def apply_oe(
         Enables the system resource tracker. Must also have the log_file set.
     retrieve_co2 : bool, default=False
         Flag to retrieve CO2 in the state vector. Only available with emulator at the moment.
+    background_rfl : bool, default=False
+        Flag to calculate background reflectance based on presolve. Presolve must also be turned on.
 
     \b
     References
@@ -801,35 +804,37 @@ def apply_oe(
             return
 
         # Run background reflectance retrieval after config created
-        logging.info("Running inversions for background reflectance...")
-        background_reflectance(
-            input_radiance=input_radiance,
-            input_loc=input_loc,
-            input_obs=input_obs,
-            paths=paths,
-            mean_altitude_km=mean_altitude_km,
-            mean_elevation_km=mean_elevation_km,
-            working_directory=working_directory,
-            smoothing_sigma=atm_sigma,
-            logging_level=logging_level,
-            log_file=log_file,
-        )
-        logging.info(f"Background reflectance saved: {paths.bgrfl_working_path}")
-        if use_superpixels:
-            extractions(
-                inputfile=paths.bgrfl_working_path,
-                labels=paths.lbl_working_path,
-                output=paths.bgrfl_subs_path,
-                chunksize=CHUNKSIZE,
-                flag=-9999,
-                reducer=reducers.band_mean,
-                n_cores=n_cores,
-                loglevel=logging_level,
-                logfile=log_file,
+        if presolve and background_rfl:
+            logging.info("Running inversions for background reflectance...")
+            background_reflectance(
+                input_radiance=input_radiance,
+                input_loc=input_loc,
+                input_obs=input_obs,
+                paths=paths,
+                mean_altitude_km=mean_altitude_km,
+                mean_elevation_km=mean_elevation_km,
+                working_directory=working_directory,
+                smoothing_sigma=atm_sigma,
+                logging_level=logging_level,
+                log_file=log_file,
             )
-            logging.info(
-                f"Background reflectance aggregated to superpixel: {paths.bgrfl_subs_path}"
-            )
+            logging.info(f"Background reflectance saved: {paths.bgrfl_working_path}")
+            # if using superpixels, aggregate this to make it compatible
+            if use_superpixels:
+                extractions(
+                    inputfile=paths.bgrfl_working_path,
+                    labels=paths.lbl_working_path,
+                    output=paths.bgrfl_subs_path,
+                    chunksize=CHUNKSIZE,
+                    flag=-9999,
+                    reducer=reducers.band_mean,
+                    n_cores=n_cores,
+                    loglevel=logging_level,
+                    logfile=log_file,
+                )
+                logging.info(
+                    f"Background reflectance aggregated to superpixel: {paths.bgrfl_subs_path}"
+                )
 
         # Run retrieval
         logging.info("Running ISOFIT with full LUT")
@@ -947,6 +952,7 @@ def apply_oe(
 @click.option("--skyview_factor", type=str, default=None)
 @click.option("-r", "--resources", is_flag=True, default=False)
 @click.option("--retrieve_co2", is_flag=True, default=False)
+@click.option("--background_rfl", is_flag=True, default=False)
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",

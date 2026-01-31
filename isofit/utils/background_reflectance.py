@@ -31,7 +31,6 @@ from isofit.core.fileio import IO, initialize_output
 from isofit.core.forward import ForwardModel
 from isofit.configs import configs
 from isofit.core.geometry import Geometry
-from isofit.utils.atm_interpolation import atm_interpolation
 
 
 def approx_pixel_size(loc, nodata=-9999):
@@ -95,10 +94,6 @@ def background_reflectance(
     logging.basicConfig(
         format="%(levelname)s:%(message)s", level=logging_level, filename=log_file
     )
-
-    # NOTE / TODO: relies on presolve to be true. if it is not, then no data created and bg_rfl remains None.
-    if not os.path.exists(paths.h2o_subs_path):
-        return
 
     config = configs.create_new_config(
         glob(os.path.join(working_directory, "config", "") + "*_isofit.json")[0]
@@ -205,7 +200,7 @@ def background_reflectance(
 
         return row_chunk, rfl_chunk
 
-    # load 1d water vapor data and get back to per pixel value
+    # load presolve, water vapor data and get back to per pixel value
     wv = (
         envi.open(envi_header(paths.h2o_subs_path), paths.h2o_subs_path)
         .load()[:, :, -1]
@@ -218,13 +213,13 @@ def background_reflectance(
         .astype(int)
     )
 
+    # apply the smoothing sigma to the water vapor map
     full_wv = np.zeros_like(labels, dtype=float)
     for lbl_val in np.unique(labels):
         if lbl_val < wv.size:
             full_wv[labels == lbl_val] = wv[lbl_val]
         else:
             full_wv[labels == lbl_val] = np.nan
-
     full_wv = gaussian_filter(full_wv, sigma=np.max(smoothing_sigma))
 
     # Run rfl inversions for every pixel

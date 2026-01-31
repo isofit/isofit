@@ -421,7 +421,6 @@ class Worker(object):
             interleave="bip"
         )
         self.lbl = envi.open(envi_header(lbl_file)).open_memmap(interleave="bip")
-        self.bg_rfl = envi.open(envi_header(bgrfl_file)).open_memmap(interleave="bip")
 
         # Open skyview file for ALAlg, or create an array of 1s.
         if skyview_factor_file:
@@ -430,6 +429,14 @@ class Worker(object):
             )
         else:
             self.svf = []
+
+        # Open background rfl file
+        if bgrfl_file:
+            self.bg_rfl = envi.open(envi_header(bgrfl_file)).open_memmap(
+                interleave="bip"
+            )
+        else:
+            self.bg_rfl = []
 
         # Lines and samples
         self.n_lines = self.rdn.shape[0]
@@ -524,7 +531,7 @@ class Worker(object):
                 loc=self.loc[r, c, :],
                 esd=self.esd,
                 svf=self.svf[r, c] if len(self.svf) else 1,
-                bg_rfl=self.bg_rfl[r, c, :],
+                bg_rfl=self.bg_rfl[r, c, :] if len(self.bg_rfl) else None,
             )
 
             # "Atmospheric" state ALWAYS comes from all bands in the

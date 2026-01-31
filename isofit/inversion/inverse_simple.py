@@ -290,18 +290,20 @@ def invert_analytical(
     L_atm = fm.RT.get_L_atm(x_RT, geom)
     s = r["sphalb"]
 
-    # for 1c case this reduces to just the 2nd term here
-    L_bg = (L_dir_dif + L_dif_dif) * geom.bg_rfl + L_tot * (s * geom.bg_rfl**2) / (
-        1 - s * geom.bg_rfl
-    )
-
     # Get all the surface quantities for the super pixel
     sub_surface, sub_RT, sub_instrument = fm.unpack(sub_state)
 
+    # Set background rfl if it exists
+    bg_rfl = geom.bg_rfl if geom.bg_rfl is not None else rho_dif_dir
+
     # Surface reflectance at the wl resolution of fm.RT
     rho_dir_dir, rho_dif_dir = fm.calc_rfl(sub_surface, geom)
-    rho_dir_dir = fm.upsample(fm.surface.wl, rho_dir_dir)
-    rho_dif_dir = fm.upsample(fm.surface.wl, rho_dif_dir)
+    bg_rfl = fm.upsample(fm.surface.wl, bg_rfl)
+
+    # Estimation of background radiance
+    L_bg = (L_dir_dif + L_dif_dif) * geom.bg_rfl + L_tot * (s * geom.bg_rfl**2) / (
+        1 - s * geom.bg_rfl
+    )
 
     # Get the inversion indices; Include glint indices if applicable
     full_idx = np.concatenate((winidx, fm.idx_surf_nonrfl), axis=0)
