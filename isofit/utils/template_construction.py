@@ -59,6 +59,7 @@ class Pathnames:
         skyview_factor=None,
         subs: bool = False,
         classify_multisurface: bool = False,
+        use_background_rfl: bool = True,
     ):
         # Determine FID based on sensor name
         if sensor == "ang":
@@ -126,6 +127,13 @@ class Pathnames:
         )
         self.surface_template_path = abspath(join(self.data_directory, "surface.mat"))
         self.surface_working_paths = {}
+
+        if use_background_rfl:
+            self.bgrfl_working_path = abspath(
+                join(self.data_directory, rdn_fname.replace("_rdn", "_bgrfl"))
+            )
+        else:
+            self.bgrfl_working_path = None
 
         if copy_input_files is True:
             self.radiance_working_path = abspath(
@@ -204,6 +212,13 @@ class Pathnames:
         self.svf_subs_path = abspath(
             join(self.input_data_directory, self.fid + "_subs_svf")
         )
+
+        if use_background_rfl:
+            self.bgrfl_subs_path = abspath(
+                join(self.input_data_directory, self.fid + "_subs_bgrfl")
+            )
+        else:
+            self.bgrfl_subs_path = None
 
         self.rdn_subs_path = abspath(
             join(self.input_data_directory, self.fid + "_subs_rdn")
@@ -1139,6 +1154,10 @@ def build_main_config(
         isofit_config_modtran["input"]["obs_file"] = paths.obs_subs_path
         if paths.svf_working_path:
             isofit_config_modtran["input"]["skyview_factor_file"] = paths.svf_subs_path
+        if paths.bgrfl_working_path:
+            isofit_config_modtran["input"][
+                "background_reflectance_file"
+            ] = paths.bgrfl_subs_path
         isofit_config_modtran["output"]["estimated_state_file"] = paths.state_subs_path
         isofit_config_modtran["output"][
             "posterior_uncertainty_file"
@@ -1156,6 +1175,10 @@ def build_main_config(
             isofit_config_modtran["input"][
                 "skyview_factor_file"
             ] = paths.svf_working_path
+        if paths.bgrfl_working_path:
+            isofit_config_modtran["input"][
+                "background_reflectance_file"
+            ] = paths.bgrfl_working_path
         isofit_config_modtran["output"][
             "posterior_uncertainty_file"
         ] = paths.uncert_working_path

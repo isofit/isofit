@@ -30,6 +30,7 @@ from isofit.utils import (
     segment,
 )
 from isofit.utils.skyview import skyview
+from isofit.utils.background_reflectance import background_reflectance
 
 EPS = 1e-6
 CHUNKSIZE = 256
@@ -108,6 +109,7 @@ def apply_oe(
     skyview_factor=None,
     resources=False,
     retrieve_co2=False,
+    use_background_rfl=False,
 ):
     """\
     Applies OE over a flightline using a radiative transfer engine. This executes
@@ -246,6 +248,8 @@ def apply_oe(
         Enables the system resource tracker. Must also have the log_file set.
     retrieve_co2 : bool, default=False
         Flag to retrieve CO2 in the state vector. Only available with emulator at the moment.
+    use_background_rfl : bool, default=False
+        Flag to calculate background reflectance based on presolve. Presolve must also be turned on.
 
     \b
     References
@@ -299,6 +303,11 @@ def apply_oe(
             raise ValueError(
                 "If num_neighbors has multiple elements, only --analytical_line is valid"
             )
+
+    if use_background_rfl and not presolve:
+        raise ValueError(
+            "Background reflectance can only be used if presolve is turned on."
+        )
 
     if os.path.isdir(working_directory) is False:
         os.mkdir(working_directory)
@@ -415,6 +424,7 @@ def apply_oe(
         skyview_factor=skyview_factor,
         subs=True if analytical_line or empirical_line else False,
         classify_multisurface=classify_multisurface,
+        use_background_rfl=use_background_rfl,
     )
     paths.make_directories()
     paths.stage_files()
@@ -799,6 +809,39 @@ def apply_oe(
             logging.info("`config_only` enabled, exiting early")
             return
 
+        # Run background reflectance retrieval after config created
+        if presolve and use_background_rfl:
+            logging.info("Running inversions for background reflectance...")
+            background_reflectance(
+                input_radiance=input_radiance,
+                input_loc=input_loc,
+                input_obs=input_obs,
+                paths=paths,
+                mean_altitude_km=mean_altitude_km,
+                mean_elevation_km=mean_elevation_km,
+                working_directory=working_directory,
+                smoothing_sigma=atm_sigma,
+                logging_level=logging_level,
+                log_file=log_file,
+            )
+            logging.info(f"Background reflectance saved: {paths.bgrfl_working_path}")
+            # if using superpixels, aggregate this to make it compatible
+            if use_superpixels:
+                extractions(
+                    inputfile=paths.bgrfl_working_path,
+                    labels=paths.lbl_working_path,
+                    output=paths.bgrfl_subs_path,
+                    chunksize=CHUNKSIZE,
+                    flag=-9999,
+                    reducer=reducers.band_mean,
+                    n_cores=n_cores,
+                    loglevel=logging_level,
+                    logfile=log_file,
+                )
+                logging.info(
+                    f"Background reflectance aggregated to superpixel: {paths.bgrfl_subs_path}"
+                )
+
         # Run retrieval
         logging.info("Running ISOFIT with full LUT")
         retrieval_full = isofit.Isofit(
@@ -850,6 +893,7 @@ def apply_oe(
                 output_rfl_file=paths.rfl_working_path,
                 output_unc_file=paths.uncert_working_path,
                 skyview_factor_file=paths.svf_working_path,
+                bgrfl_file=paths.bgrfl_working_path,
                 loglevel=logging_level,
                 logfile=log_file,
                 n_atm_neighbors=nneighbors,
@@ -909,6 +953,7 @@ def apply_oe(
 @click.option("--skyview_factor", type=str, default=None)
 @click.option("-r", "--resources", is_flag=True, default=False)
 @click.option("--retrieve_co2", is_flag=True, default=False)
+@click.option("--use_background_rfl", is_flag=True, default=False)
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",
