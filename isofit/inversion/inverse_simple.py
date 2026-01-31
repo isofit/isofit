@@ -301,9 +301,7 @@ def invert_analytical(
     bg_rfl = fm.upsample(fm.surface.wl, bg_rfl)
 
     # Estimation of background radiance
-    L_bg = (L_dir_dif + L_dif_dif) * geom.bg_rfl + L_tot * (s * geom.bg_rfl**2) / (
-        1 - s * geom.bg_rfl
-    )
+    L_bg = (L_dir_dif + L_dif_dif) * bg_rfl + L_tot * (s * bg_rfl**2) / (1 - s * bg_rfl)
 
     # Get the inversion indices; Include glint indices if applicable
     full_idx = np.concatenate((winidx, fm.idx_surf_nonrfl), axis=0)
