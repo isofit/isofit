@@ -109,7 +109,7 @@ def apply_oe(
     skyview_factor=None,
     resources=False,
     retrieve_co2=False,
-    background_rfl=False,
+    use_background_rfl=False,
 ):
     """\
     Applies OE over a flightline using a radiative transfer engine. This executes
@@ -248,7 +248,7 @@ def apply_oe(
         Enables the system resource tracker. Must also have the log_file set.
     retrieve_co2 : bool, default=False
         Flag to retrieve CO2 in the state vector. Only available with emulator at the moment.
-    background_rfl : bool, default=False
+    use_background_rfl : bool, default=False
         Flag to calculate background reflectance based on presolve. Presolve must also be turned on.
 
     \b
@@ -303,6 +303,11 @@ def apply_oe(
             raise ValueError(
                 "If num_neighbors has multiple elements, only --analytical_line is valid"
             )
+
+    if use_background_rfl and not presolve:
+        raise ValueError(
+            "Background reflectance can only be used if presolve is turned on."
+        )
 
     if os.path.isdir(working_directory) is False:
         os.mkdir(working_directory)
@@ -419,6 +424,7 @@ def apply_oe(
         skyview_factor=skyview_factor,
         subs=True if analytical_line or empirical_line else False,
         classify_multisurface=classify_multisurface,
+        use_background_rfl=use_background_rfl,
     )
     paths.make_directories()
     paths.stage_files()
@@ -804,7 +810,7 @@ def apply_oe(
             return
 
         # Run background reflectance retrieval after config created
-        if presolve and background_rfl:
+        if presolve and use_background_rfl:
             logging.info("Running inversions for background reflectance...")
             background_reflectance(
                 input_radiance=input_radiance,
@@ -952,7 +958,7 @@ def apply_oe(
 @click.option("--skyview_factor", type=str, default=None)
 @click.option("-r", "--resources", is_flag=True, default=False)
 @click.option("--retrieve_co2", is_flag=True, default=False)
-@click.option("--background_rfl", is_flag=True, default=False)
+@click.option("--use_background_rfl", is_flag=True, default=False)
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",

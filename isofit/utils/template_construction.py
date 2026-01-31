@@ -59,6 +59,7 @@ class Pathnames:
         skyview_factor=None,
         subs: bool = False,
         classify_multisurface: bool = False,
+        use_background_rfl: bool = True,
     ):
         # Determine FID based on sensor name
         if sensor == "ang":
@@ -127,9 +128,10 @@ class Pathnames:
         self.surface_template_path = abspath(join(self.data_directory, "surface.mat"))
         self.surface_working_paths = {}
 
-        self.bgrfl_working_path = abspath(
-            join(self.data_directory, rdn_fname.replace("_rdn", "_bgrfl"))
-        )
+        if use_background_rfl:
+            self.bgrfl_working_path = abspath(
+                join(self.data_directory, rdn_fname.replace("_rdn", "_bgrfl"))
+            )
 
         if copy_input_files is True:
             self.radiance_working_path = abspath(
@@ -208,9 +210,10 @@ class Pathnames:
         self.svf_subs_path = abspath(
             join(self.input_data_directory, self.fid + "_subs_svf")
         )
-        self.bgrfl_subs_path = abspath(
-            join(self.input_data_directory, self.fid + "_subs_bgrfl")
-        )
+        if use_background_rfl:
+            self.bgrfl_subs_path = abspath(
+                join(self.input_data_directory, self.fid + "_subs_bgrfl")
+            )
 
         self.rdn_subs_path = abspath(
             join(self.input_data_directory, self.fid + "_subs_rdn")
