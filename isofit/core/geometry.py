@@ -75,6 +75,8 @@ class Geometry:
             self.observer_zenith = obs[2]  # 0 to 90 from zenith
             self.solar_azimuth = obs[3]  # 0 to 360 clockwise from N
             self.solar_zenith = obs[4]  # 0 to 90 from zenith
+            self.slope = obs[6] # 0 to 90
+            self.aspect = obs[7] #0 to 360 clockwise from N
             self.cos_i = obs[8]  # cosine of eSZA
             # calculate relative to-sun azimuth
             delta_phi = np.abs(self.solar_azimuth - self.observer_azimuth)
@@ -131,5 +133,15 @@ class Geometry:
         valid_data["skyview_factor"] = (
             1.0 if not 0 < self.skyview_factor <= 1 else self.skyview_factor
         )
+
+        # Compute cos_v_0 and cos_v, assuming slope and aspect are valid.
+        cos_v_0 = np.cos(np.radians(self.observer_zenith))
+        valid_data["cos_v_0"] = np.clip(cos_v_0, 0.0, 1.0)
+
+        cos_v = (np.sin(np.radians(self.observer_zenith)) * np.sin(np.radians(self.slope)) *
+                np.cos(np.radians(self.observer_azimuth) - np.radians(self.aspect)) +
+                np.cos(np.radians(self.observer_zenith)) * np.cos(np.radians(self.slope)))
+        valid_data["cos_v"] = np.clip(cos_v, 0.0, 1.0)
+
 
         return valid_data
