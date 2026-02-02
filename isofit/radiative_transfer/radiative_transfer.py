@@ -342,23 +342,27 @@ class RadiativeTransfer:
                     else r[key]
                 )
 
+        # Topographic shadow mask (0=shadow, 1=sunlit pixel).
+        # for now, this is always set to 1.0.
+        b = 1.0
+
         # Assigning coupled terms, unscaling and rescaling downward direct radiance by local solar zenith angle and upward by local view zenith angle.
         # Diffuse components are scaled by viewable sky fraction (i.e., "ungula" of viewable sky in solid geometry terms).
-        L_dir_dir = L_coupled[0] / coszen * cos_i / cos_v_0 * cos_v
+        L_dir_dir = L_coupled[0] / coszen * cos_i * b / cos_v_0 * cos_v
         L_dif_dir = L_coupled[1] * skyview_factor / cos_v_0 * cos_v
-        L_dir_dif = L_coupled[2] / coszen * cos_i
+        L_dir_dif = L_coupled[2] / coszen * cos_i * b
         L_dif_dif = L_coupled[3] * skyview_factor
 
-        # Correct diffuse term for topographic assuming Hay's model (Hay 1979; Richter 1998; Guanter et al., 2009)
+        # Correct downward diffuse term for topographic assuming Hay's model (Hay 1979; Richter 1998; Guanter et al., 2009)
         # NOTE: assuming this transmittance term is in units of transittance for now...
-        hays_model = (r["transm_down_dir"] * (cos_i / coszen)) + (
-            (1 - r["transm_down_dir"]) * skyview_factor
+        hays_model = (b * r["transm_down_dir"] * (cos_i / coszen)) + (
+            (1 - b * r["transm_down_dir"]) * skyview_factor
         )
         # applies to the downward diffuse terms
         L_dif_dir *= hays_model
         L_dif_dif *= hays_model
 
-        # Account for trapping/re-reflection of diffuse upward ppath from nearby slopes (Dozier et al., 2022).
+        # Account for trapping/re-reflection of diffuse upward path from nearby slopes (Dozier et al., 2022).
         # Only if background reflectance turned on, else assumes 100% of the upward diffuse makes into hemisphere.
         if geom.bg_rfl is not None:
             svf_rfl_mult = skyview_factor / (1 - geom.bg_rfl * (1 - skyview_factor))
