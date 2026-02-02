@@ -310,11 +310,9 @@ class RadiativeTransfer:
         """
         # Check coszen against cos_i
         verified_geom = geom.verify(self.coszen)
-        coszen, cos_i, cos_v_0, cos_v, skyview_factor = (
+        coszen, cos_i, skyview_factor = (
             verified_geom["coszen"],
             verified_geom["cos_i"],
-            verified_geom["cos_v_0"],
-            verified_geom["cos_v"],
             verified_geom["skyview_factor"],
         )
 
@@ -346,17 +344,17 @@ class RadiativeTransfer:
         # for now, this is always set to 1.0.
         b = 1.0
 
-        # Assigning coupled terms, unscaling and rescaling downward direct radiance by local solar zenith angle and upward by local view zenith angle.
-        # Diffuse components are scaled by viewable sky fraction (i.e., "ungula" of viewable sky in solid geometry terms).
-        L_dir_dir = L_coupled[0] / coszen * cos_i * b / cos_v_0 * cos_v
-        L_dif_dir = L_coupled[1] * skyview_factor / cos_v_0 * cos_v
+        # Assigning coupled terms, unscaling and rescaling downward direct radiance by local solar zenith angle.
+        # Downward diffuse components are scaled by viewable sky fraction (i.e., "ungula" of viewable sky in solid geometry terms).
+        L_dir_dir = L_coupled[0] / coszen * cos_i * b
+        L_dif_dir = L_coupled[1] * skyview_factor
         L_dir_dif = L_coupled[2] / coszen * cos_i * b
         L_dif_dif = L_coupled[3] * skyview_factor
 
         # Correct downward diffuse term for topographic assuming Hay's model (Hay 1979; Richter 1998; Guanter et al., 2009)
-        # NOTE: assuming this transmittance term is in units of transittance for now...
-        hays_model = (b * r["transm_down_dir"] * (cos_i / coszen)) + (
-            (1 - b * r["transm_down_dir"]) * skyview_factor
+        t_down_dir = r["transm_down_dir"]
+        hays_model = (b * t_down_dir * (cos_i / coszen)) + (
+            (1 - b * t_down_dir) * skyview_factor
         )
         # applies to the downward diffuse terms
         L_dif_dir *= hays_model
