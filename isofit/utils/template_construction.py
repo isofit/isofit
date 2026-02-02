@@ -46,10 +46,11 @@ class Pathnames:
         surface_class_file,
         surface_path,
         working_directory,
-        ray_temp_dir,
+        ray_temp_dir="/tmp/ray",
         sensor="NA-*",
         copy_input_files=False,
         modtran_path=None,
+        emulator_base=None,
         rdn_factors_path=None,
         model_discrepancy_path=None,
         aerosol_climatology_path=None,
@@ -260,10 +261,8 @@ class Pathnames:
             join(self.config_directory, self.fid + "_h2o.json")
         )
 
-        if modtran_path:
-            self.modtran_path = modtran_path
-        else:
-            self.modtran_path = os.getenv("MODTRAN_DIR", env.modtran)
+        self.modtran_path = modtran_path
+        self.emulator_base = emulator_base
 
         self.sixs_path = os.getenv("SIXS_DIR", env.sixs)
 
@@ -664,6 +663,7 @@ def check_surface_model(
 
 def build_config(
     paths: Pathnames,
+    engine_name: str = "sRTMnet",
     h2o_lut_grid: np.array = None,
     elevation_lut_grid: np.array = None,
     to_sensor_zenith_lut_grid: np.array = None,
@@ -675,8 +675,7 @@ def build_config(
     aerosol_state_vector: dict = None,
     use_superpixels: bool = True,
     n_cores: int = -1,
-    surface_category="multicomponent_surface",
-    emulator_base: str = None,
+    surface_category: str = "multicomponent_surface",
     uncorrelated_radiometric_uncertainty: float = 0.0,
     dn_uncertainty_file: str = None,
     multiple_restarts: bool = False,
@@ -711,7 +710,6 @@ def build_config(
         use_superpixels:                      flag whether or not to use superpixels for the solution
         n_cores:                              the number of cores to use during processing
         surface_category:                     type of surface to use
-        emulator_base:                        the basename of the emulator, if used
         uncorrelated_radiometric_uncertainty: uncorrelated radiometric uncertainty parameter for isofit
         dn_uncertainty_file:                       Path to a linearity .mat file to augment S matrix with linearity uncertainty
         multiple_restarts:                    if true, use multiple restarts
@@ -744,13 +742,6 @@ def build_config(
         else abspath(prebuilt_lut_path)
     )
 
-    if emulator_base is None:
-        engine_name = "modtran"
-    elif emulator_base.endswith(".jld2"):
-        engine_name = "KernelFlowsGP"
-    else:
-        engine_name = "sRTMnet"
-
     radiative_transfer_config = {
         "radiative_transfer_engines": {
             "vswir": {
@@ -774,16 +765,16 @@ def build_config(
     }
 
     vswir = {}
-    if emulator_base is not None:
-        vswir["emulator_file"] = abspath(emulator_base)
+    if paths.emulator_base is not None:
+        vswir["emulator_file"] = abspath(paths.emulator_base)
         vswir["earth_sun_distance_file"] = paths.earth_sun_distance_path
         vswir["irradiance_file"] = paths.irradiance_file
         vswir["engine_base_dir"] = paths.sixs_path
         if multipart_transmittance:
-            vswir["emulator_aux_file"] = abspath(emulator_base)
+            vswir["emulator_aux_file"] = abspath(paths.emulator_base)
         else:
             vswir["emulator_aux_file"] = abspath(
-                os.path.splitext(emulator_base)[0] + "_aux.npz"
+                os.path.splitext(paths.emulator_base)[0] + "_aux.npz"
             )
     else:
         vswir["engine_base_dir"] = paths.modtran_path
@@ -813,11 +804,14 @@ def build_config(
         else:
             lut_grid[gn] = np.array(gc).tolist()
 
-    if emulator_base is not None and os.path.splitext(emulator_base)[1] == ".jld2":
+    if (
+        paths.emulator_base is not None
+        and os.path.splitext(paths.emulator_base)[1] == ".jld2"
+    ):
         from isofit.radiative_transfer.engines.kernel_flows import bounds_check
 
         # Should only modify H2OSTR and surface_elevation_km
-        bounds_check(lut_grid, emulator_base, modify=True)
+        bounds_check(lut_grid, paths.emulator_base, modify=True)
 
     ncds = None
     if prebuilt_lut_path is not None:
