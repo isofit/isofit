@@ -351,7 +351,9 @@ class RadiativeTransfer:
 
         # Correct diffuse term for topographic assuming Hay's model (Hay 1979; Richter 1998; Guanter et al., 2009)
         # NOTE: assuming this transmittance term is in units of transittance for now...
-        hays_model = (r["transm_down_dir"] * (cos_i / coszen)) + ((1 - r["transm_down_dir"]) * skyview_factor)
+        hays_model = (r["transm_down_dir"] * (cos_i / coszen)) + (
+            (1 - r["transm_down_dir"]) * skyview_factor
+        )
         # applies to the downward diffuse terms
         L_dif_dir *= hays_model
         L_dif_dif *= hays_model
@@ -363,7 +365,7 @@ class RadiativeTransfer:
             # applies to the upward diffuse terms
             L_dir_dif *= svf_rfl_mult
             L_dif_dif *= svf_rfl_mult
-        
+
         return L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif
 
     def calc_RT_quantities(self, x_RT: np.ndarray, geom: Geometry):
