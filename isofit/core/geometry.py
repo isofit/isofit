@@ -53,6 +53,8 @@ class Geometry:
         self.surface_elevation_km = None
         self.earth_sun_distance = None
         self.esd_factor = None
+        self.slope = None
+        self.aspect = None
 
         if esd is None:
             logging.warning(
@@ -140,7 +142,7 @@ class Geometry:
             np.cos(np.radians(self.observer_zenith)), 0.0, 1.0
         )
 
-        if self.slope:
+        if self.slope is not None and self.aspect is not None:
             cos_v = np.sin(np.radians(self.observer_zenith)) * np.sin(
                 np.radians(self.slope)
             ) * np.cos(
