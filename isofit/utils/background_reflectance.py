@@ -251,7 +251,6 @@ def background_reflectance(
         np.isnan(heuristic_rfl), mean_spectrum[np.newaxis, np.newaxis, :], heuristic_rfl
     )
 
-    # TODO: this could also be weighted by transmittance terms.
     # For now, this applies a uniform window average based on adjacency range.
     kernel_radius = int(np.ceil(np.max(adj_range) / pixel_size))
     bg_rfl = envi.open(envi_header(rfl_output), rfl_output).open_memmap(

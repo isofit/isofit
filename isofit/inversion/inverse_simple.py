@@ -293,11 +293,14 @@ def invert_analytical(
     # Get all the surface quantities for the super pixel
     sub_surface, sub_RT, sub_instrument = fm.unpack(sub_state)
 
+    # Get target pixel reflectance
+    rho_dir_dir, rho_dif_dir = fm.calc_rfl(sub_surface, geom)
+
     # Set background rfl if it exists
     bg_rfl = geom.bg_rfl if geom.bg_rfl is not None else rho_dif_dir
 
     # Surface reflectance at the wl resolution of fm.RT
-    rho_dir_dir, rho_dif_dir = fm.calc_rfl(sub_surface, geom)
+    rho_dif_dir = fm.upsample(fm.surface.wl, rho_dif_dir)
     bg_rfl = fm.upsample(fm.surface.wl, bg_rfl)
 
     # Estimation of background radiance
