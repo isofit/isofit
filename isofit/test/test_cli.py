@@ -27,7 +27,7 @@ def cwd(tmp_path_factory):
     """
     Path to the working cube example
     """
-    return Path(env.imagecube) / "medium"
+    return Path(env.examples) / "image_cube" / "medium"
 
 
 @pytest.fixture(scope="session")

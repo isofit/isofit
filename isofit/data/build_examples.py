@@ -256,12 +256,12 @@ Examples = {
     ),
     "ImageCube-small": ApplyOEExample(
         name="image_cube/small",
-        requires=["sixs", "srtmnet", "imagecube"],
+        requires=["sixs", "srtmnet"],
         validate={"size": "small"},
     ),
     "ImageCube-medium": ApplyOEExample(
         name="image_cube/medium",
-        requires=["sixs", "srtmnet", "imagecube"],
+        requires=["sixs", "srtmnet"],
         validate={"size": "medium"},
     ),
 }

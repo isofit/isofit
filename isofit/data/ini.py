@@ -47,7 +47,6 @@ class Ini:
     _dirs: List[str] = [
         "data",
         "examples",
-        "imagecube",
         "srtmnet",
         "sixs",
         "surface",

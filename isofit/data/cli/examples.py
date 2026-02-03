@@ -14,7 +14,7 @@ CMD = "examples"
 NEON_URL = "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/tutorials/subset_data.zip"
 
 
-def download_neon(examples):
+def download_neon(examples, overwrite=False):
     """
     Downloads the NEON dataset from https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/tutorials/subset_data.zip.
 
@@ -25,7 +25,7 @@ def download_neon(examples):
     """
     print("Downloading NEON data for the example")
 
-    output = prepare_output(examples / "NEON/data", "./neon_data")
+    output = prepare_output(examples / "NEON/data", "./neon_data", overwrite=overwrite)
     if not output:
         return
 

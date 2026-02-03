@@ -42,7 +42,7 @@ def download(path=None, size="both", overwrite=False, **_):
 
     print(f"Downloading ISOFIT image cube data: {size}")
 
-    output = Path(path or env.imagecube) / size
+    output = Path(path or env.examples) / "image_cube" / size
     output = prepare_output(output, None, overwrite=overwrite)
     if not output:
         return
@@ -93,8 +93,8 @@ def validate(path=None, size="both", debug=print, error=print, **_):
         return small & medium
 
     if path is None:
-        path = env.imagecube
-    path = Path(path)
+        path = env.examples
+    path = Path(path) / "image_cube"
 
     debug(f"Verifying path for ISOFIT {size} image cube: {path}")
 
