@@ -22,7 +22,7 @@ from __future__ import annotations
 import numpy as np
 from scipy.linalg import block_diag, norm
 
-from isofit.core.common import svd_inv
+from isofit.core.common import svd_inv_sqrt
 from isofit.surface.surface import Surface
 
 
@@ -32,8 +32,7 @@ class MultiComponentSurface(Surface):
     covariance matrices.
 
     To evaluate the probability of a new spectrum, we calculate the
-    Mahalanobis distance to each component cluster, and use that as our
-    Multivariate Gaussian surface model.
+    distance to each component cluster.
     """
 
     def __init__(self, full_config: Config):
@@ -45,8 +44,10 @@ class MultiComponentSurface(Surface):
 
         # Models are stored as dictionaries in .mat format
         # TODO: enforce surface_file existence in the case of multicomponent_surface
-        self.components = list(zip(self.model_dict["means"], self.model_dict["covs"]))
-        self.n_comp = len(self.components)
+        self.component_means = self.model_dict["means"]
+        self.component_covs = self.model_dict["covs"]
+
+        self.n_comp = len(self.component_means)
         self.wl = self.model_dict["wl"][0]
         self.n_wl = len(self.wl)
 
@@ -71,16 +72,8 @@ class MultiComponentSurface(Surface):
         self.idx_ref = [np.argmin(abs(self.wl - w)) for w in np.squeeze(self.refwl)]
         self.idx_ref = np.array(self.idx_ref)
 
-        # Cache some important computations
-        self.Covs, self.Cinvs, self.mus = [], [], []
-        for i in range(self.n_comp):
-            Cov = self.components[i][1]
-            self.Covs.append(np.array([Cov[j, self.idx_ref] for j in self.idx_ref]))
-            self.Cinvs.append(svd_inv(self.Covs[-1]))
-            self.mus.append(self.components[i][0][self.idx_ref])
-
         # Variables retrieved: each channel maps to a reflectance model parameter
-        rmin, rmax = 0, 2.0
+        rmin, rmax = -0.05, 2.0
         self.statevec_names = ["RFL_%04i" % int(w) for w in self.wl]
         self.idx_surface = np.arange(len(self.statevec_names))
 
@@ -96,8 +89,30 @@ class MultiComponentSurface(Surface):
         # Surface specific attributes. Can override in inheriting classes
         self.full_glint = False
 
+        # Cache some important computations
+        self.Covs, self.Cinvs, self.mus = [], [], []
+        self.Sa_inv_normalized, self.Sa_inv_sqrt_normalized = [], []
+        nprefix = self.idx_lamb[0]
+        nsuffix = len(self.statevec_names) - self.idx_lamb[-1] - 1
+        for i in range(self.n_comp):
+            Cov = self.component_covs[i]
+            self.Covs.append(np.array([Cov[j, self.idx_ref] for j in self.idx_ref]))
+            self.Cinvs.append(svd_inv_sqrt(self.Covs[-1])[0])
+            self.mus.append(self.component_means[i][self.idx_ref])
+
+            # Caching the normalized Sa inv and Sa inv sqrt
+            Cov_full = block_diag(
+                np.zeros((nprefix, nprefix)),
+                self.component_covs[i],
+                np.zeros((nsuffix, nsuffix)),
+            )
+            Cov_normalized = Cov_full / np.mean(np.diag(Cov_full))
+            Cinv_normalized, Cinv_sqrt_normalized = svd_inv_sqrt(Cov_normalized)
+            self.Sa_inv_normalized.append(Cinv_normalized)
+            self.Sa_inv_sqrt_normalized.append(Cinv_sqrt_normalized)
+
     def component(self, x, geom):
-        """We pick a surface model component using the Mahalanobis distance.
+        """We pick a surface model component using a distance metric.
 
         This always uses the Lambertian (non-specular) version of the
         surface reflectance. If the forward model initialize via heuristic
@@ -120,16 +135,12 @@ class MultiComponentSurface(Surface):
         lamb_ref = lamb[self.idx_ref]
         lamb_ref = lamb_ref / self.norm(lamb_ref)
 
-        # Mahalanobis or Euclidean distances
-        mds = []
-        for ci in range(self.n_comp):
-            ref_mu = self.mus[ci]
-            ref_Cinv = self.Cinvs[ci]
-            if self.selection_metric == "Mahalanobis":
-                md = (lamb_ref - ref_mu).T.dot(ref_Cinv).dot(lamb_ref - ref_mu)
-            else:
-                md = sum(pow(lamb_ref - ref_mu, 2))
-            mds.append(md)
+        # Only support euclidean distance comparrison for now
+        mds = self.euclidean_distance(
+            lamb_ref,
+            np.array(self.mus),
+        )
+
         closest = np.argmin(mds)
 
         if (
@@ -151,7 +162,7 @@ class MultiComponentSurface(Surface):
         lamb_ref = lamb[self.idx_ref]
         mu = np.zeros(self.n_state)
         ci = self.component(x_surface, geom)
-        lamb_mu = self.components[ci][0]
+        lamb_mu = self.component_means[ci]
         lamb_mu = lamb_mu * self.norm(lamb_ref)
         mu[self.idx_lamb] = lamb_mu
 
@@ -165,21 +176,26 @@ class MultiComponentSurface(Surface):
         lamb = self.calc_lamb(x_surface, geom)
         lamb_ref = lamb[self.idx_ref]
         ci = self.component(x_surface, geom)
-        Cov = self.components[ci][1]
-        Cov = Cov * (self.norm(lamb_ref) ** 2)
+        Cov = self.component_covs[ci]
+        Sa_unnormalized = Cov * (self.norm(lamb_ref) ** 2)
+
+        # select the Sa inverse from the list of components
+        Sa_inv_normalized = self.Sa_inv_normalized[ci]
+        Sa_inv_sqrt_normalized = self.Sa_inv_sqrt_normalized[ci]
 
         # If there are no other state vector elements, we're done.
         if len(self.statevec_names) == len(self.idx_lamb):
 
-            return Cov
+            return Sa_unnormalized, Sa_inv_normalized, Sa_inv_sqrt_normalized
 
         # Embed into a larger state vector covariance matrix
         nprefix = self.idx_lamb[0]
         nsuffix = len(self.statevec_names) - self.idx_lamb[-1] - 1
         Cov_prefix = np.zeros((nprefix, nprefix))
         Cov_suffix = np.zeros((nsuffix, nsuffix))
+        Sa_unnormalized = block_diag(Cov_prefix, Sa_unnormalized, Cov_suffix)
 
-        return block_diag(Cov_prefix, Cov, Cov_suffix)
+        return Sa_unnormalized, Sa_inv_normalized, Sa_inv_sqrt_normalized
 
     def fit_params(self, rfl_meas, geom, *args):
         """Given a reflectance estimate, fit a state vector."""
@@ -279,7 +295,10 @@ class MultiComponentSurface(Surface):
         s_alb,
         t_total_up,
         L_tot,
-        L_down_dir,
+        L_dir_dir=None,
+        L_dir_dif=None,
+        L_dif_dir=None,
+        L_dif_dif=None,
     ):
         """Derivative of radiance with respect to
         full surface vector"""
@@ -302,8 +321,6 @@ class MultiComponentSurface(Surface):
     def analytical_model(
         self,
         background,
-        L_down_dir,
-        L_down_dif,
         L_tot,
         geom,
         L_dir_dir=None,
@@ -334,3 +351,7 @@ class MultiComponentSurface(Surface):
             return ""
 
         return "Component: %i" % self.component(x_surface, geom)
+
+    @staticmethod
+    def euclidean_distance(lamb_ref, mus):
+        return np.sum(np.power(lamb_ref[np.newaxis, :] - mus, 2), axis=1)

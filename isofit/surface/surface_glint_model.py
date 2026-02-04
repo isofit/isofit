@@ -20,8 +20,9 @@
 from __future__ import annotations
 
 import numpy as np
+from scipy.linalg import block_diag
 
-from isofit.core.common import eps
+from isofit.core.common import eps, svd_inv_sqrt
 from isofit.surface.surface_multicomp import MultiComponentSurface
 
 
@@ -45,9 +46,6 @@ class GlintModelSurface(MultiComponentSurface):
         # Numbers from Marcel Koenig; used for prior mean
         self.init.extend([1 / np.pi, 0.02])
 
-        # Special glint bounds
-        rmin, rmax = -0.05, 2.0
-        self.bounds = [[rmin, rmax] for w in self.wl]
         # Gege (2021), WASI user manual
         self.bounds.extend([[0, 10], [0, 10]])
 
@@ -70,6 +68,12 @@ class GlintModelSurface(MultiComponentSurface):
             config.sky_glint_prior_sigma * np.array(self.scale[self.sky_glint_ind])
         ) ** 2
 
+        # Compute and and cache normalized Sa inversions for glint case
+        Cov = np.array([[self.sky_glint_sigma, 0], [0, self.sun_glint_sigma]])
+        self.Sa_inv_glint, self.Sa_inv_sqrt_glint = svd_inv_sqrt(
+            Cov / np.mean(np.diag(Cov))
+        )
+
     def xa(self, x_surface, geom):
         """Mean of prior distribution, calculated at state x."""
 
@@ -82,10 +86,19 @@ class GlintModelSurface(MultiComponentSurface):
         the covariance in a normalized space (normalizing by z) and then un-
         normalize the result for the calling function."""
 
-        Cov = MultiComponentSurface.Sa(self, x_surface, geom)
-        Cov[self.sun_glint_ind, self.sun_glint_ind] = self.sun_glint_sigma
-        Cov[self.sky_glint_ind, self.sky_glint_ind] = self.sky_glint_sigma
-        return Cov
+        Sa_unnormalized, Sa_inv_normalized, Sa_inv_sqrt_normalized = (
+            MultiComponentSurface.Sa(self, x_surface, geom)
+        )
+        Sa_unnormalized[self.sun_glint_ind, self.sun_glint_ind] = self.sun_glint_sigma
+        Sa_unnormalized[self.sky_glint_ind, self.sky_glint_ind] = self.sky_glint_sigma
+
+        # Append normalized Sa inv and sqrt from glint model
+        Sa_inv_normalized = block_diag(Sa_inv_normalized, self.Sa_inv_glint)
+        Sa_inv_sqrt_normalized = block_diag(
+            Sa_inv_sqrt_normalized, self.Sa_inv_sqrt_glint
+        )
+
+        return Sa_unnormalized, Sa_inv_normalized, Sa_inv_sqrt_normalized
 
     def fit_params(self, rfl_meas, geom, *args):
         """Given a reflectance estimate and one or more emissive parameters,
@@ -218,10 +231,9 @@ class GlintModelSurface(MultiComponentSurface):
 
         return drfl
 
-    def drdn_dglint(self, L_tot, L_down_dir, s_alb, rho_dif_dir):
+    def drdn_dglint(self, L_tot, drdn_dgdd, s_alb, rho_dif_dir):
         """Derivative of radiance with respect to
         the direct and diffuse glint terms"""
-        drdn_dgdd = L_down_dir
         drdn_dgdsf = (L_tot / ((1.0 - (s_alb * rho_dif_dir)) ** 2)) - drdn_dgdd
 
         return drdn_dgdd, drdn_dgdsf
@@ -234,7 +246,10 @@ class GlintModelSurface(MultiComponentSurface):
         s_alb,
         t_total_up,
         L_tot,
-        L_down_dir,
+        L_dir_dir=None,
+        L_dir_dif=None,
+        L_dif_dir=None,
+        L_dif_dif=None,
     ):
         """Derivative of radiance with respect to
         full surface vector"""
@@ -248,7 +263,12 @@ class GlintModelSurface(MultiComponentSurface):
         )
 
         # Glint derivatives
-        drdn_dgdd, drdn_dgdsf = self.drdn_dglint(L_tot, L_down_dir, s_alb, rho_dif_dir)
+        drdn_dgdd, drdn_dgdsf = self.drdn_dglint(
+            L_tot=L_tot,
+            drdn_dgdd=(L_dir_dir + L_dir_dif),
+            s_alb=s_alb,
+            rho_dif_dir=rho_dif_dir,
+        )
 
         # Store the glint derivatives as last two rows in drdn_drfl
         drdn_dsurface[:, self.sun_glint_ind] = (
@@ -266,8 +286,6 @@ class GlintModelSurface(MultiComponentSurface):
     def analytical_model(
         self,
         background,
-        L_down_dir,
-        L_down_dif,
         L_tot,
         geom,
         L_dir_dir=None,
@@ -290,8 +308,6 @@ class GlintModelSurface(MultiComponentSurface):
         # ep (sky glint portion)
         H = super().analytical_model(
             background,
-            L_down_dir,
-            L_down_dif,
             L_tot,
             geom,
             L_dir_dir,

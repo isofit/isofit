@@ -86,6 +86,10 @@ class Surface:
 
         return np.zeros((0, 0), dtype=float)
 
+    def Sb(self):
+        """Uncertainty due to unmodeled variables."""
+        return np.diagflat(np.power(self.bval, 2))
+
     def fit_params(self, rfl_meas, geom, *args):
         """Given a directional reflectance estimate and one or more emissive
         parameters, fit a state vector."""

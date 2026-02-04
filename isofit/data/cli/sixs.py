@@ -1,16 +1,78 @@
 """
-Downloads 6S from https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar
+Downloads 6S from https://github.com/isofit/6S
 """
 
+import logging
 import os
+import platform
+import shutil
 import subprocess
 from pathlib import Path
 
-from isofit.data import env, shared
-from isofit.data.download import download_file, prepare_output, untar
+import click
 
+from isofit.data import env, shared
+from isofit.data.download import (
+    download_file,
+    isUpToDateGithub,
+    prepare_output,
+    pullFromRepo,
+    unzip,
+)
+
+ESSENTIAL = True
 CMD = "sixs"
-URL = "https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar"
+MINGW = "https://github.com/brechtsanders/winlibs_mingw/releases/download/15.2.0posix-13.0.0-msvcrt-r2/winlibs-i686-posix-dwarf-gcc-15.2.0-mingw-w64msvcrt-13.0.0-r2.zip"
+
+Logger = logging.getLogger(__name__)
+
+
+def get_exe(path: str = None, version: bool = False) -> str:
+    """
+    Retrieves the 6S executable from a given path
+
+    Parameters
+    ----------
+    path : str, default=None
+        6S directory path. If None, defaults to the ini sixs path
+    version : bool, default=False
+        Returns the 6S version instead
+
+    Returns
+    -------
+    pathlib.Path | str
+        Either the 6S executable as a pathlib object or the string 6S version
+    """
+    if path is None:
+        path = env.sixs
+
+    path = Path(path)
+
+    exes = path.glob("sixsV*")
+    exes = [exe for exe in exes if "lutaero" not in exe.name]
+    names = [exe.name for exe in exes]
+
+    if not exes:
+        raise FileNotFoundError(f"Could not find a 6S executable under path: {path}")
+
+    if len(exes) > 1:
+        Logger.warning(
+            f"More than one 6S executable was found. Defaulting to the first one: {names}"
+        )
+
+    if version:
+        # Try using the version.txt file, created by the isofit downloader
+        if (txt := path / "version.txt").exists():
+            with txt.open("r") as f:
+                vers = f.read()
+        # Fallback to using the executable name
+        else:
+            _, vers = names[0].split("V")
+            vers = f"v{vers}".lower()
+
+        return vers
+
+    return exes[0]
 
 
 def precheck():
@@ -32,37 +94,118 @@ def precheck():
     )
 
 
-def build(directory):
+def patch_makefile(file):
     """
-    Builds a 6S directory
+    Patch the 6S Makefile to:
+    - Add -std=legacy to the EXTRAS (isofit)
+
+    Parameters
+    ----------
+    file : pathlib.Path
+        Makefile to patch inplace
+    """
+    lines = file.read_text().splitlines()
+
+    # Insert new lines
+    flags = [
+        "EXTRA   = -O -ffixed-line-length-132 -std=legacy",
+    ]
+    for i, flag in enumerate(flags, start=3):
+        if lines[i] != flag:
+            lines.insert(i, flag)
+
+    file.write_text("\n".join(lines))
+
+
+def make(directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE, debug=False):
+    """
+    Builds a 6S directory via make
 
     Parameters
     ----------
     directory : str
-        Directory with an unbuilt 6S
+        6S directory to build
+
+    Notes
+    -----
+    If on MacOS, executing the `make` command may fail if the user hasn't agreed to the
+    Xcode and Apple SDKs license yet. In these cases, it may be required to run the
+    following command in order to compile the program:
+    $ sudo xcodebuild -license
     """
     # Update the makefile with recommended flags
-    file = directory / "Makefile"
-    with open(file, "r") as f:
-        lines = f.readlines()
-        lines.insert(3, "EXTRA   = -O -ffixed-line-length-132 -std=legacy\n")
+    file = Path(directory) / "Makefile"
+    patch_makefile(file)
 
-    with open(file, "w") as f:
-        f.write("".join(lines))
+    make = "make"
+    if platform.system() == "Windows":
+        make = "mingw32-make.exe"
 
-    # Now make it
-    subprocess.run(
-        f"make -j {os.cpu_count()}",
+        proc = subprocess.run(f"{make} --help", shell=True, stdout=subprocess.PIPE)
+        if proc.returncode != 0:
+            print("MinGW64 not found, downloading")
+            download_mingw()
+
+    kwargs = dict(
         shell=True,
-        stdout=subprocess.PIPE,
-        # stderr=subprocess.PIPE,
+        check=True,
+        stdout=stdout,
+        stderr=stderr,
         cwd=directory,
     )
 
+    try:
+        # Clean *.o files
+        call = subprocess.run(f"{make} clean", **kwargs)
 
-def download(path=None, overwrite=False, **_):
+        # Build sixs
+        call = subprocess.run(f"{make} -j {os.cpu_count()}", **kwargs)
+        if debug:
+            if call.stdout:
+                print(f"stdout " + "-" * 32 + f"\n{call.stdout.decode()}")
+            if call.stderr:
+                print(f"stderr " + "-" * 32 + f"\n{call.stderr.decode()}")
+    except subprocess.CalledProcessError as e:
+        print(f"Building 6S via make failed, exit code: {e.returncode}")
+        print(e.stderr)
+
+
+def download_mingw(path=None, tag="latest", overwrite=False, **_):
     """
-    Downloads 6S from https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar.
+    Downloads MinGW64 for Windows
+
+    Parameters
+    ----------
+    output : str | None
+        Path to output as. If None, defaults to the ini path.
+    overwrite : bool, default=False
+        Overwrite an existing installation
+    **_ : dict
+        Ignores unused params that may be used by other validate functions. This is to
+        maintain compatibility with other functions
+    """
+    print("Downloading MinGW64")
+
+    output = prepare_output(path, env.path("sixs", "MinGW64"), overwrite=overwrite)
+    if not output:
+        return
+
+    zipfile = download_file(MINGW, output.parent / "MinGW64.zip")
+    avail = unzip(zipfile, path=output.parent, rename=output.name, overwrite=overwrite)
+
+    print(f"Done, now available at: {avail}/bin")
+    print(
+        "You may need to add it to your PATH environment variable, ISOFIT will also do this automatically at runtime"
+    )
+
+    env.changeKey("path.mingw", "{sixs}/MinGW64/bin")
+    env.save()
+    env.load()  # Reload to insert the MinGW64 path to $PATH
+
+
+def download(path=None, tag="latest", overwrite=False, debug_make=False, **_):
+    """
+    Downloads 6S from https://github.com/isofit/6S.
 
     Parameters
     ----------
@@ -86,17 +229,19 @@ def download(path=None, overwrite=False, **_):
     if not output:
         return
 
-    file = download_file(URL, output.parent / "6S.tar")
+    avail = pullFromRepo("isofit", "6S", tag, output, overwrite=overwrite)
 
-    untar(file, output)
+    # Move files from subdir to base dir for backwards compatibility
+    for path in (avail / "Sixs").iterdir():
+        shutil.move(path, avail / path.name)
 
     print("Building via make")
-    build(output)
+    make(avail, debug=debug_make)
 
-    print(f"Done, now available at: {output}")
+    print(f"Done, now available at: {avail}")
 
 
-def validate(path=None, debug=print, error=print, **_):
+def validate(path=None, checkForUpdate=True, debug=print, error=print, **_):
     """
     Validates a 6S installation
 
@@ -104,6 +249,8 @@ def validate(path=None, debug=print, error=print, **_):
     ----------
     path : str, default=None
         Path to verify. If None, defaults to the ini path
+    checkForUpdate : bool, default=True
+        Checks for updates if the path is valid
     debug : function, default=print
         Print function to use for debug messages, eg. logging.debug
     error : function, default=print
@@ -122,15 +269,22 @@ def validate(path=None, debug=print, error=print, **_):
 
     debug(f"Verifying path for 6S: {path}")
 
-    if not (path := Path(path)).exists():
+    path = Path(path)
+
+    if not path.exists():
         error("[x] 6S path does not exist")
         return False
 
-    if not (path / f"sixsV2.1").exists():
+    try:
+        exe = get_exe(path)
+    except FileNotFoundError:
         error(
-            "[x] 6S is missing the built 'sixsV2.1', this is likely caused by make failing"
+            "[x] 6S is missing the built 'sixsV2.*', this is likely caused by make failing"
         )
         return False
+
+    if checkForUpdate:
+        return isUpToDateGithub(owner="isofit", repo="6S", name="sixs", path=path)
 
     debug("[OK] Path is valid")
     return True
@@ -163,19 +317,38 @@ def update(check=False, **kwargs):
 @shared.tag
 @shared.overwrite
 @shared.check
-def download_cli(**kwargs):
+@click.option("--make", is_flag=True, help="Builds a 6S directory via make")
+@click.option(
+    "--debug-make", is_flag=True, help="Enable debug logging for the make command"
+)
+@click.option(
+    "--mingw",
+    is_flag=True,
+    help="Downloads the MinGW64 (for Windows) instead of 6S",
+)
+def download_cli(debug_make, mingw, **kwargs):
     """\
-    Downloads 6S from https://github.com/ashiklom/isofit/releases/download/6sv-mirror/6sv-2.1.tar. Only HDF5 versions are supported at this time.
+    Downloads 6S from https://github.com/isofit/6S. Only HDF5 versions are supported at this time.
 
     \b
     Run `isofit download paths` to see default path locations.
     There are two ways to specify output directory:
-        - `isofit --sixs /path/sixs download sixs`: Override the ini file. This will save the provided path for future reference.
+        - `isofit --path sixs /path/sixs download sixs`: Override the ini file. This will save the provided path for future reference.
         - `isofit download sixs --path /path/sixs`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
     It is recommended to use the first style so the download path is remembered in the future.
     """
-    if kwargs.get("overwrite"):
+    if kwargs.get("make"):
+        path = kwargs.get("path")
+        if path is None:
+            path = env.sixs
+
+        print(f"Making 6S: {path}")
+        make(path, debug=debug_make)
+        print(f"Finished")
+    elif kwargs.get("overwrite"):
         download(**kwargs)
+    elif mingw:
+        download_mingw(**kwargs)
     else:
         update(**kwargs)
 

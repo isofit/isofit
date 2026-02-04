@@ -226,6 +226,9 @@ class ModtranRT(RadiativeTransferEngine):
         """
         Post-initialized, pre-simulation setup
         """
+        # Track the MODTRAN directory used in the LUT attributes
+        self.lut.setAttr("MODTRAN", str(self.engine_base_dir))
+
         self.filtpath = os.path.join(
             self.sim_path,
             f"wavelengths_{self.engine_config.engine_name}_{self.wl[0]}_{self.wl[-1]}.flt",

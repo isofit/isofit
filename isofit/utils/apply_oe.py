@@ -82,6 +82,8 @@ def apply_oe(
     rdn_factors_path=None,
     atmosphere_type="ATM_MIDLAT_SUMMER",
     channelized_uncertainty_path=None,
+    instrument_noise_path=None,
+    dn_uncertainty_file=None,
     model_discrepancy_path=None,
     lut_config_file=None,
     multiple_restarts=False,
@@ -105,6 +107,7 @@ def apply_oe(
     interpolate_inplace=False,
     skyview_factor=None,
     resources=False,
+    retrieve_co2=False,
 ):
     """\
     Applies OE over a flightline using a radiative transfer engine. This executes
@@ -154,7 +157,11 @@ def apply_oe(
         Atmospheric profile to be used for MODTRAN simulations.  Unused for other
         radiative transfer models.
     channelized_uncertainty_path : str, default=None
-        Path to a channelized uncertainty file
+        Path to a wavelength-specific channelized uncertainty file - used to augment Sy in the OE formalism
+    instrument_noise_path : str, default=None
+        Path to a wavelength-specific instrument noise file, used to derive per-wavelength NEDL / SNR
+    dn_uncertainty_file:  str, default=None
+        Path to a linearity .mat file to augment S matrix with linearity uncertainty
     model_discrepancy_path : str, default=None
         Modifies S_eps in the OE formalism as the Gamma additive term, as:
         S_eps = Sy + Kb.dot(self.Sb).dot(Kb.T) + Gamma
@@ -237,6 +244,8 @@ def apply_oe(
         Please note data must range from 0-1.
     resources : bool, default=False
         Enables the system resource tracker. Must also have the log_file set.
+    retrieve_co2 : bool, default=False
+        Flag to retrieve CO2 in the state vector. Only available with emulator at the moment.
 
     \b
     References
@@ -259,22 +268,19 @@ def apply_oe(
     if emulator_base is not None:
         if emulator_base.endswith(".jld2"):
             multipart_transmittance = False
+
+        elif emulator_base.endswith(".h5"):
+            multipart_transmittance = False
+
+        elif emulator_base.endswith(".6c"):
+            multipart_transmittance = True
+
         else:
-            aux = np.load(
-                os.path.abspath(os.path.splitext(emulator_base)[0] + "_aux.npz")
-            )
-            if (
-                "transm_down_dir"
-                and "transm_down_dif"
-                and "transm_up_dir"
-                and "transm_up_dif" in aux["rt_quantities"]
-            ):
-                multipart_transmittance = True
-            else:
-                multipart_transmittance = False
-            del aux
+            raise ValueError("Invalid emulator_base extension. Use .h5, .6c, or .jld2")
+
     else:
-        # This is the MODTRAN case. Do we want to enable the 4c mode by default?
+        # This is the MODTRAN case.
+        # Do we want to enable the 4c mode by default?
         multipart_transmittance = True
 
     if sensor not in SUPPORTED_SENSORS:
@@ -403,6 +409,7 @@ def apply_oe(
         model_discrepancy_path=model_discrepancy_path,
         aerosol_climatology_path=aerosol_climatology_path,
         channelized_uncertainty_path=channelized_uncertainty_path,
+        instrument_noise_path=instrument_noise_path,
         ray_temp_dir=ray_temp_dir,
         interpolate_inplace=interpolate_inplace,
         skyview_factor=skyview_factor,
@@ -614,6 +621,7 @@ def apply_oe(
                 paths.surface_class_subs_path,
                 reducers.class_priority,
             ),
+            (paths.svf_working_path, paths.svf_subs_path, reducers.band_mean),
         ]:
             if inp and not exists(outp):
                 logging.info("Extracting " + outp)
@@ -669,6 +677,7 @@ def apply_oe(
                 surface_category=surface_category,
                 emulator_base=emulator_base,
                 uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
+                dn_uncertainty_file=dn_uncertainty_file,
                 prebuilt_lut_path=prebuilt_lut,
                 inversion_windows=INVERSION_WINDOWS,
                 multipart_transmittance=multipart_transmittance,
@@ -776,12 +785,14 @@ def apply_oe(
             surface_category=surface_category,
             emulator_base=emulator_base,
             uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
+            dn_uncertainty_file=dn_uncertainty_file,
             multiple_restarts=multiple_restarts,
             segmentation_size=segmentation_size,
             pressure_elevation=pressure_elevation,
             prebuilt_lut_path=prebuilt_lut,
             inversion_windows=INVERSION_WINDOWS,
             multipart_transmittance=multipart_transmittance,
+            retrieve_co2=retrieve_co2,
         )
 
         if config_only:
@@ -872,6 +883,8 @@ def apply_oe(
 @click.option("--rdn_factors_path")
 @click.option("--atmosphere_type", default="ATM_MIDLAT_SUMMER")
 @click.option("--channelized_uncertainty_path")
+@click.option("--instrument_noise_path", type=str, default=None)
+@click.option("--dn_uncertainty_file", "-dnf", type=str, default=None)
 @click.option("--model_discrepancy_path")
 @click.option("--lut_config_file")
 @click.option("--multiple_restarts", is_flag=True, default=False)
@@ -895,6 +908,7 @@ def apply_oe(
 @click.option("--interpolate_inplace", is_flag=True, default=False)
 @click.option("--skyview_factor", type=str, default=None)
 @click.option("-r", "--resources", is_flag=True, default=False)
+@click.option("--retrieve_co2", is_flag=True, default=False)
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",

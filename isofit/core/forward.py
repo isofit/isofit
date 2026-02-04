@@ -27,10 +27,11 @@ from scipy.interpolate import interp1d
 from scipy.io import loadmat
 from scipy.linalg import block_diag
 
-from isofit.core.common import eps
+from isofit.core.common import eps, svd_inv_sqrt
 from isofit.core.instrument import Instrument
 from isofit.radiative_transfer.radiative_transfer import RadiativeTransfer
 from isofit.surface import Surface
+from isofit.core.geometry import Geometry
 
 Logger = logging.getLogger(__file__)
 
@@ -87,7 +88,7 @@ class ForwardModel:
             )
 
         # Build combined vectors from surface, RT, and instrument
-        bounds, scale, init, statevec, bvec, bval = ([] for i in range(6))
+        bounds, scale, init, statevec, bvec = ([] for i in range(5))
         for obj_with_statevec in [self.surface, self.RT, self.instrument]:
             bounds.extend([deepcopy(x) for x in obj_with_statevec.bounds])
             scale.extend([deepcopy(x) for x in obj_with_statevec.scale])
@@ -95,7 +96,6 @@ class ForwardModel:
             statevec.extend([deepcopy(x) for x in obj_with_statevec.statevec_names])
 
             bvec.extend([deepcopy(x) for x in obj_with_statevec.bvec])
-            bval.extend([deepcopy(x) for x in obj_with_statevec.bval])
 
         self.bounds = tuple(np.array(bounds).T)
         self.scale = np.array(scale)
@@ -105,8 +105,6 @@ class ForwardModel:
 
         self.bvec = np.array(bvec)
         self.nbvec = len(self.bvec)
-        self.bval = np.array(bval)
-        self.Sb = np.diagflat(np.power(self.bval, 2))
 
         """Set up state vector indices - 
         MUST MATCH ORDER FROM ABOVE ASSIGNMENT
@@ -189,11 +187,41 @@ class ForwardModel:
         """
 
         x_surface = x[self.idx_surface]
-        Sa_surface = self.surface.Sa(x_surface, geom)[:, :]
-        Sa_RT = self.RT.Sa()[:, :]
-        Sa_instrument = self.instrument.Sa()[:, :]
+        Sa_surface, Sa_surf_inv_norm, Sa_surf_inv_sqrt_norm = self.surface.Sa(
+            x_surface, geom
+        )
+        Sa_RT = self.RT.Sa()
+        Sa_instrument = self.instrument.Sa()
+        Sa_state = block_diag(Sa_surface[:, :], Sa_RT[:, :], Sa_instrument[:, :])
 
-        return block_diag(Sa_surface, Sa_RT, Sa_instrument)
+        # per block variance scaling for normalization
+        scale_surf = np.sqrt(np.mean(np.diag(Sa_surface[:, :])))
+        scale_RT = np.sqrt(np.mean(np.diag(Sa_RT[:, :])))
+        scale_inst = np.sqrt(np.mean(np.diag(Sa_instrument[:, :])))
+
+        # Compute the Sa inv and Sa inv sqrt for measurement
+        Sa_inv_state = block_diag(
+            Sa_surf_inv_norm / scale_surf**2,
+            self.RT.Sa_inv_normalized / scale_RT**2,
+            self.instrument.Sa_inv_normalized / scale_inst**2,
+        )
+
+        Sa_inv_sqrt_state = block_diag(
+            Sa_surf_inv_sqrt_norm / scale_surf,
+            self.RT.Sa_inv_sqrt_normalized / scale_RT,
+            self.instrument.Sa_inv_sqrt_normalized / scale_inst,
+        )
+
+        return Sa_state, Sa_inv_state, Sa_inv_sqrt_state
+
+    def Sb(self, x, meas, geom):
+        """Accumulate the uncertainty due to unmodeled variables within
+        respective forward model portions."""
+        Sb_surface = self.surface.Sb()
+        Sb_RT = self.RT.Sb()
+        Sb_instrument = self.instrument.Sb(meas)
+
+        return block_diag(Sb_surface, Sb_RT, Sb_instrument)
 
     def calc_meas(self, x, geom, rfl=[]):
         """Calculate the model observation at instrument wavelengths."""
@@ -208,8 +236,6 @@ class ForwardModel:
         (
             r,
             L_tot,
-            L_down_dir,
-            L_down_dif,
             L_dir_dir,
             L_dif_dir,
             L_dir_dif,
@@ -267,10 +293,11 @@ class ForwardModel:
         else:
             Gamma = 0
 
+        Sb = self.Sb(x, meas, geom)
         Kb = self.Kb(x, geom)
         Sy = self.instrument.Sy(meas, geom)
 
-        return Sy + Kb.dot(self.Sb).dot(Kb.T) + Gamma
+        return Sy + Kb.dot(Sb).dot(Kb.T) + Gamma
 
     def K(self, x, geom):
         """Derivative of observation with respect to state vector. This is
@@ -285,8 +312,6 @@ class ForwardModel:
         (
             r,
             L_tot,
-            L_down_dir,
-            L_down_dif,
             L_dir_dir,
             L_dif_dir,
             L_dir_dif,
@@ -343,9 +368,12 @@ class ForwardModel:
             drfl_dsurface=drfl_dsurface_hi,
             dLs_dsurface=dLs_dsurface_hi,
             s_alb=r["sphalb"],
-            t_total_up=r["transm_up_dir"] + r["transm_up_dif"],
+            t_total_up=self.RT.get_upward_transm(r=r, geom=geom),
             L_tot=L_tot,
-            L_down_dir=L_dir_dir + L_dir_dif,
+            L_dir_dir=L_dir_dir,
+            L_dir_dif=L_dir_dif,
+            L_dif_dir=L_dif_dir,
+            L_dif_dif=L_dif_dif,
         )
 
         # To get derivatives w.r.t. instrument, downsample to instrument wavelengths
@@ -378,8 +406,6 @@ class ForwardModel:
         (
             r,
             L_tot,
-            L_down_dir,
-            L_down_dif,
             L_dir_dir,
             L_dif_dir,
             L_dir_dif,

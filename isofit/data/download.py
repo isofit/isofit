@@ -37,13 +37,21 @@ def release_metadata(org, repo, tag="latest"):
     dict
         Metadata returned by the retrieved release
     """
-    url = f"https://api.github.com/repos/{org}/{repo}/releases/{tag}"
-    response = urllib.request.urlopen(url)
+    try:
+        if tag == "latest":
+            url = f"https://api.github.com/repos/{org}/{repo}/releases/{tag}"
+        else:
+            url = f"https://api.github.com/repos/{org}/{repo}/releases/tags/{tag}"
 
-    encoding = response.headers.get_content_charset()
-    payload = response.read()
+        response = urllib.request.urlopen(url)
 
-    return json.loads(payload.decode(encoding))
+        encoding = response.headers.get_content_charset()
+        payload = response.read()
+
+        return json.loads(payload.decode(encoding))
+    except Exception as e:
+        print(f"Failed to pull release: {url}")
+        raise e
 
 
 def download_file(url, dstname=None, overwrite=True):
@@ -229,3 +237,100 @@ def preview_paths():
     print("Download paths will default to:")
     for key, path in env.items("dirs"):
         print(f"- {key} = {path}")
+
+
+def isUpToDateGithub(owner, repo, name, path=None, debug=print, error=print, **_):
+    """
+    Checks the installed version against the latest release on Github
+
+    Parameters
+    ----------
+    owner : str
+        Github repository owner
+    repo : str
+        Repository name
+    name : str
+        Name of the downloader module to retrieve the path from the env ini if path is
+        not provided
+    path : str, default=None
+        Path to update. If None, defaults to the ini path
+    debug : function, default=print
+        Print function to use for debug messages, eg. logging.debug
+    error : function, default=print
+        Print function to use for error messages, eg. logging.error
+    **_ : dict
+        Ignores unused params that may be used by other validate functions. This is to
+        maintain compatibility with other functions
+
+    Returns
+    -------
+    bool
+        True if the path is up to date, False otherwise
+
+    Notes
+    -----
+    The Github workflows watch for the string "[x]" to determine if the cache needs to
+    update the data of this module. If your module does not include this string, the
+    workflows will never detect updates.
+    """
+    if path is None:
+        path = env[name]
+
+    debug(f"Checking for updates for examples on path: {path}")
+
+    file = Path(path) / "version.txt"
+    if not file.exists():
+        error(
+            "[x] Failed to find a version.txt file under the given path. Version is unknown"
+        )
+        return False
+
+    metadata = release_metadata(owner, repo, "latest")
+    with file.open("r") as f:
+        current = f.read()
+
+    if current != (latest := metadata["tag_name"]):
+        error(f"[x] Latest is {latest}, currently installed is {current}")
+        return False
+
+    debug(f"[OK] Path is up to date, current version is: {current}")
+
+    return True
+
+
+def pullFromRepo(owner, repo, tag, output, version=True, overwrite=False):
+    """
+    Pulls a release zipfile from a Github repository
+
+    Parameters
+    ----------
+    owner : str
+        Github repository owner
+    repo : str
+        Repository name
+    tag : str
+        Tag of the release to pull
+    output : pathlib.Path
+        Output path to write to
+    version : bool, default=True
+        Write the tag's name in a version.txt file
+    overwrite : bool, default=False
+        Ignore if the output already exists
+
+    Returns
+    -------
+    avail : pathlib.Path
+        Available path
+    """
+    metadata = release_metadata("isofit", "6S", tag)
+
+    print(f"Pulling release {metadata['tag_name']}")
+    zipfile = download_file(metadata["zipball_url"], output.parent / f"{repo}.zip")
+
+    avail = unzip(zipfile, path=output.parent, rename=output.name, overwrite=overwrite)
+
+    if version:
+        with open(output / "version.txt", "w") as file:
+            file.write(metadata["tag_name"])
+
+    return avail

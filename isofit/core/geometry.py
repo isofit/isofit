@@ -129,7 +129,7 @@ class Geometry:
 
         # Assume skyview of 1.0 if outside 0-1 (e.g., NaN data).
         valid_data["skyview_factor"] = (
-            1.0 if not 0 <= self.skyview_factor <= 1 else self.skyview_factor
+            1.0 if not 0 < self.skyview_factor <= 1 else self.skyview_factor
         )
 
         return valid_data

@@ -4,16 +4,24 @@
 # cache. Deliberate updates to the cache is important to keep track the health and
 # status of the cache instead of automatic updates
 # Then launch the Python tests in parallel
+#
+# In order to support Windows testing, the cache uses the enableCrossOsArchive flag.
+# The isofit.data.env (ini) assumes the default location for the cached data is
+# ~/.isofit -- however, we can't use this as the path in the cache action because
+# Windows doesn't restore it correctly for some reason
+# As such, the extras are built in the local working directory and cached there, then
+# moved to ~/.isofit after, allowing both Linux and Windows to put the cache into the
+# correct locations
 
 name: Build
 
 on:
   push:
     branches: ["dev", "main"]
-    paths: ["isofit/**"]
+    paths: ["isofit/**", "recipe/*.yml", "pyproject.toml"]
   pull_request:
     branches: ["dev", "main"]
-    paths: ["isofit/**"]
+    paths: ["isofit/**", "recipe/*.yml", "pyproject.toml"]
 
 concurrency:
   group: ${{ github.ref }}
@@ -58,6 +66,8 @@ jobs:
       - name: Install tarball
         shell: bash
         run: |
+          # Force CPU version of torch to save space on runners
+          python3 -m pip install torch --index-url https://download.pytorch.org/whl/cpu
           python3 -m pip install dist/*.gz
 
       - name: Test installation
@@ -75,8 +85,14 @@ jobs:
         id: cache-extras
         uses: actions/cache@v4
         with:
-          path: ~/.isofit
+          path: .isofit
           key: cache-extras
+          enableCrossOsArchive: true
+
+      - name: Move .isofit
+        shell: bash
+        if: steps.cache-extras.outputs.cache-hit == 'true'
+        run: mv .isofit ~/.isofit
 
       - uses: actions/checkout@v3
 
@@ -90,6 +106,8 @@ jobs:
       - name: Install ISOFIT
         shell: bash
         run: |
+          # Force CPU version of torch to save space on runners
+          python3 -m pip install torch --index-url https://download.pytorch.org/whl/cpu
           python3 -m pip install --editable ".[test]"
 
       - if: steps.cache-extras.outputs.cache-hit == 'true'
@@ -124,8 +142,10 @@ jobs:
         run: |
           echo "Downloading extras"
           isofit download all
+          isofit download sixs --mingw # Needed for Windows
           echo "Building examples"
           isofit build
+          mv ~/.isofit . # Need to move to local dir so that Windows runners can find it
 
   # Test pip installation
   pip:

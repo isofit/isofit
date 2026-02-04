@@ -88,7 +88,7 @@ def segment_chunk(
 
     mu = x[use, :].mean(axis=0)
     C = np.cov(x[use, :], rowvar=False)
-    [v, d] = scipy.linalg.eigh(C)
+    [v, d] = scipy.linalg.eigh(C, driver="evr")
 
     # Determine segmentation compactness scaling based on eigenvalues
     # Override with a floor value to prevent zeros
