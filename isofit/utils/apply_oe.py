@@ -273,6 +273,9 @@ def apply_oe(
     use_multisurface = True if classify_multisurface or surface_class_file else False
 
     # Logic to match engine paths with engine names
+    # This becomes more complicated with backward compatability
+    # TODO Could abstract this into template construction
+    # TODO collapse modtran - emulator paths into single engine path when we eliminate list-based rt_engines
     if engine_name == "sRTMnet" and not emulator_base:
         emulator_base = str(env.path("srtmnet", key="srtmnet.file"))
 
@@ -283,7 +286,12 @@ def apply_oe(
         engine_name = "KernelFlowsGP"
 
     if engine_name == "KernelFlowsGP" and not emulator_base:
-        raise ValueError("emulator_base must be specifief if using Kernel Flows GP")
+        raise ValueError("emulator_base must be specified if using Kernel Flows GP")
+
+    if engine_name == "LibRadTran" and not modtran_path:
+        modtran_path = os.getenv("LIBRADTRAN_DIR", env.libradtran)
+        if not modtran_path:
+            raise ValueError("No LibRadTran installation found. Please set .ini.")
 
     # Determine if we run in multipart-transmittance (4c) mode
     if emulator_base is not None:
