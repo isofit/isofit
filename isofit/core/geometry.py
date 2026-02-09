@@ -19,7 +19,6 @@
 #
 
 import logging
-import os
 from datetime import datetime
 
 import numpy as np
@@ -40,6 +39,15 @@ class Geometry:
         bg_rfl: np.array = None,
         svf: float = 1,
     ):
+        """Initialize geometry object.
+        Args:
+            obs: Observation metadata array.
+            loc: Location metadata array.
+            dt: Date time of observation.
+            esd: Earth sun distance array.
+            bg_rfl: Background reflectance spectrum.
+            svf: Sky view factor.
+        """
         # Set some benign defaults...
         self.observer_zenith = (
             0  # REVIEW: pytest/test_geometry asserts 0, change to None?

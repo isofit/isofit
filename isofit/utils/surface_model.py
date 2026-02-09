@@ -101,6 +101,9 @@ def surface_model(
     normalize = config["normalize"]
     reference_windows = config["reference_windows"]
 
+    # Get selection metric if it exists
+    selection_metric = config.get("selection_metric", "Euclidean")
+
     # load wavelengths file, and change units to nm if needed
     if os.path.splitext(wavelength_file)[-1] == ".hdr":
         ds = envi.open(wavelength_file)
@@ -126,6 +129,7 @@ def surface_model(
     # create basic model template
     model = {
         "normalize": normalize,
+        "selection_metric": selection_metric,
         "wl": wl,
         "means": [],
         "covs": [],
