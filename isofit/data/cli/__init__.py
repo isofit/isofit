@@ -13,19 +13,24 @@ Modules = {
 Essentials = {name: mod for name, mod in Modules.items() if getattr(mod, "ESSENTIAL")}
 
 
-def forEach(modules, func, **kwargs):
+def forEach(modules, func, exclude=[], **kwargs):
     """
     Executes a function of each loaded module
 
     Parameters
     ----------
+    modules : dict
+        Set of modules to iterate over
     func : str
         Name of the function to invoke from the module
+    exclude : list[str], default=[]
+        Modules to exclude
     **kwargs : dict
         Key-word arguments to pass to the function
     """
     pad = "=" * 16
 
+    modules = {k: v for k, v in modules.items() if k not in exclude}
     for i, module in enumerate(modules.values()):
         print(f"{pad} Beginning {func} {i+1} of {len(modules)} {pad}")
 
@@ -39,6 +44,7 @@ def forEach(modules, func, **kwargs):
 @shared.download.command(name="all")
 @shared.check
 @shared.overwrite
+@shared.exclude
 def download_all(**kwargs):
     """\
     Downloads all ISOFIT extra dependencies to the locations specified in the
@@ -51,6 +57,7 @@ def download_all(**kwargs):
 
 
 @shared.validate.command(name="all")
+@shared.exclude
 def validate_all(**kwargs):
     """\
     Validates all ISOFIT extra dependencies at the locations specified in the
