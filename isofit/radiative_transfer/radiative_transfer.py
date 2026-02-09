@@ -209,6 +209,7 @@ class RadiativeTransfer:
         # Atmospheric spherical albedo
         s_alb = r["sphalb"]
         atm_surface_scattering = s_alb * rho_dif_dif
+        eq_11_term = 1 - atm_surface_scattering
 
         # Special case: 1-component model
         if not isinstance(L_dir_dir, np.ndarray) or len(L_dir_dir) == 1:
@@ -216,6 +217,7 @@ class RadiativeTransfer:
             rho_dif_dif = rho_dir_dir
             # eliminate spherical albedo and one reflectance term from numerator if using 1-component model
             atm_surface_scattering = 1
+            eq_11_term = 1
 
         # Thermal transmittance
         L_up = Ls * self.get_upward_transm(r=r, geom=geom)
@@ -254,9 +256,9 @@ class RadiativeTransfer:
         ret = (
             L_atm
             + L_dir_dir * rho_dir_dir
-            + L_dif_dir * rho_dif_dir
+            + L_dif_dir * rho_dif_dir / eq_11_term
             + L_dir_dif * rho_dir_dif
-            + L_dif_dif * rho_dif_dif
+            + L_dif_dif * rho_dif_dif / eq_11_term
             + (L_tot * atm_surface_scattering * rho_dif_dif) / (1 - s_alb * rho_dif_dif)
             + L_up
         )
@@ -343,13 +345,26 @@ class RadiativeTransfer:
                     if self.rt_engines[0].rt_mode == "transm"
                     else r[key]
                 )
+        # Topographic shadow mask (0=shadow, 1=sunlit pixel).
+        # for now, this is always set to 1.0.
+        b = 1.0
 
         # Assigning coupled terms, unscaling and rescaling downward direct radiance by local solar zenith angle.
         # Downward diffuse components are scaled by viewable sky fraction (i.e., "ungula" of viewable sky in solid geometry terms).
-        L_dir_dir = L_coupled[0] / coszen * cos_i
-        L_dif_dir = L_coupled[1] * skyview_factor
-        L_dir_dif = L_coupled[2] / coszen * cos_i
-        L_dif_dif = L_coupled[3] * skyview_factor
+        L_dir_dir = L_coupled[0] / coszen * cos_i * b
+        L_dif_dir = L_coupled[1]
+        L_dir_dif = L_coupled[2] / coszen * cos_i * b
+        L_dif_dif = L_coupled[3]
+
+        # Note - we should really be doing the multiplication upstream before convolution - this is an approximation
+        # Correct downward diffuse term for topographic assuming Hay's model (Hay 1979; Richter 1998; Guanter et al., 2009)
+        t_down_dir = r["transm_down_dir"]
+        hays_model = (b * t_down_dir * (cos_i / coszen)) + (
+            (1 - b * t_down_dir) * skyview_factor
+        )
+        # applies to the downward diffuse terms
+        L_dif_dir *= hays_model
+        L_dif_dif *= hays_model
 
         return L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif
 
