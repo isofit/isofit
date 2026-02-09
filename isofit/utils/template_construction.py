@@ -133,8 +133,12 @@ class Pathnames:
             self.bgrfl_working_path = abspath(
                 join(self.data_directory, rdn_fname.replace("_rdn", "_bgrfl"))
             )
+            self.atm_presolve = abspath(
+                join(self.output_directory, rdn_fname.replace("_rdn", "_atm_presolve"))
+            )
         else:
             self.bgrfl_working_path = None
+            self.atm_presolve = None
 
         if copy_input_files is True:
             self.radiance_working_path = abspath(

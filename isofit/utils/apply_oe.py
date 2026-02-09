@@ -833,7 +833,7 @@ def apply_oe(
 
         # Run background reflectance retrieval after config created
         if presolve and use_background_rfl:
-            logging.info("Running inversions for background reflectance...")
+            logging.info("Preparing background reflectance...")
             background_reflectance(
                 input_radiance=input_radiance,
                 input_loc=input_loc,
@@ -841,28 +841,15 @@ def apply_oe(
                 paths=paths,
                 mean_altitude_km=mean_altitude_km,
                 mean_elevation_km=mean_elevation_km,
-                working_directory=working_directory,
                 smoothing_sigma=atm_sigma,
+                use_slic_rfls=False,
+                use_superpixels=use_superpixels,
+                nodata_value=-9999,
+                chunksize=CHUNKSIZE,
                 logging_level=logging_level,
                 log_file=log_file,
+                n_cores=n_cores,
             )
-            logging.info(f"Background reflectance saved: {paths.bgrfl_working_path}")
-            # if using superpixels, aggregate this to make it compatible
-            if use_superpixels:
-                extractions(
-                    inputfile=paths.bgrfl_working_path,
-                    labels=paths.lbl_working_path,
-                    output=paths.bgrfl_subs_path,
-                    chunksize=CHUNKSIZE,
-                    flag=-9999,
-                    reducer=reducers.band_mean,
-                    n_cores=n_cores,
-                    loglevel=logging_level,
-                    logfile=log_file,
-                )
-                logging.info(
-                    f"Background reflectance aggregated to superpixel: {paths.bgrfl_subs_path}"
-                )
 
         # Run retrieval
         logging.info("Running ISOFIT with full LUT")
