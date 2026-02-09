@@ -113,6 +113,10 @@ class InstrumentConfig(BaseConfigSection):
         self.nedt_noise_file = None
         """str: We have several ways to define the instrument noise.  The last is NEDT noise"""
 
+        self._eof_path_type = str
+        self.eof_path = None
+        """str: Path to an Empirial Orthogonal Function (EOF) file with one row per instrument channel."""
+
         self.set_config_options(sub_configdic)
 
         # If necessary, initialize some blank options
