@@ -34,22 +34,29 @@ from isofit.core.geometry import Geometry
 
 
 def approx_pixel_size(loc, nodata=-9999):
-    """Average pixel size from nearby pixel assume planar locally."""
+    """Average pixel size assuming planar locally (units in m)."""
     R = 6371000.0
 
     lat = np.radians(loc[..., 0])
     lon = np.radians(loc[..., 1])
-
-    dx = R * np.sqrt(
-        (lat[:, 1:] - lat[:, :-1]) ** 2
-        + (np.cos(lat[:, :-1]) * (lon[:, 1:] - lon[:, :-1])) ** 2
-    )
-    dy = R * np.sqrt(
-        (lat[1:, :] - lat[:-1, :]) ** 2
-        + (np.cos(lat[:-1, :]) * (lon[1:, :] - lon[:-1, :])) ** 2
-    )
-
     valid_pixels = np.logical_not(np.any(loc == nodata, axis=2))
+
+    # NOTE: assuming the alternative is something in meters
+    is_in_lat_lon = np.max(np.abs(loc[valid_pixels])) <= 180
+
+    if is_in_lat_lon:
+        dx = R * np.sqrt(
+            (lat[:, 1:] - lat[:, :-1]) ** 2
+            + (np.cos(lat[:, :-1]) * (lon[:, 1:] - lon[:, :-1])) ** 2
+        )
+        dy = R * np.sqrt(
+            (lat[1:, :] - lat[:-1, :]) ** 2
+            + (np.cos(lat[:-1, :]) * (lon[1:, :] - lon[:-1, :])) ** 2
+        )
+    else:
+        dx = np.sqrt(np.sum(np.diff(loc, axis=1) ** 2, axis=-1))
+        dy = np.sqrt(np.sum(np.diff(loc, axis=0) ** 2, axis=-1))
+
     pix_size = 0.5 * (
         np.nanmean(dx[valid_pixels[:, 1:]]) + np.nanmean(dy[valid_pixels[1:, :]])
     )

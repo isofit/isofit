@@ -922,14 +922,14 @@ def build_config(
             input["skyview_factor_file"] = paths.svf_subs_path
         if presolve:
             output["estimated_state_file"] = paths.h2o_subs_path
-                    if paths.bgrfl_working_path:
-            isofit_config_modtran["input"][
-                "background_reflectance_file"
-            ] = paths.bgrfl_subs_path
         else:
             output["estimated_state_file"] = paths.state_subs_path
             output["posterior_uncertainty_file"] = paths.uncert_subs_path
             output["estimated_reflectance_file"] = paths.rfl_subs_path
+            if paths.bgrfl_subs_path:
+                isofit_config_modtran["input"][
+                    "background_reflectance_file"
+                ] = paths.bgrfl_subs_path
     else:
         input["measured_radiance_file"] = paths.radiance_working_path
         input["loc_file"] = paths.loc_working_path
@@ -939,12 +939,14 @@ def build_config(
 
         if presolve:
             output["estimated_state_file"] = paths.h2o_working_path
-            if paths.bgrfl_working_path:
-              isofit_config_modtran["input"]["background_reflectance_file"] = paths.bgrfl_working_path
         else:
             output["posterior_uncertainty_file"] = paths.uncert_working_path
             output["estimated_reflectance_file"] = paths.rfl_working_path
             output["estimated_state_file"] = paths.state_working_path
+            if paths.bgrfl_working_path:
+                isofit_config_modtran["input"][
+                    "background_reflectance_file"
+                ] = paths.bgrfl_working_path
     isofit_config_modtran["output"].update(output)
     isofit_config_modtran["input"].update(input)
 
