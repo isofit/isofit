@@ -1,0 +1,40 @@
+site_name: ISOFIT
+repo_name: isofit/isofit
+repo_url: https://github.com/isofit/isofit
+docs_dir: docs/
+theme:
+  name: readthedocs
+plugins:
+  - search
+  - mkapi
+markdown_extensions:
+  - attr_list
+  - md_in_html
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - toc:
+      permalink: "#"
+      baselevel: 2
+extra_css:
+  - stylesheets/icons.css
+nav:
+  - Getting Started:
+    - Installation: getting_started/installation.md
+    - Quick Start (New Users): getting_started/quickstarts/srtmnet.md
+    - MODTRAN: getting_started/quickstarts/modtran.md
+    - Best Practices: getting_started/best_practices.md
+  - Extra Downloads:
+    - Dependencies: extra_downloads/data.md
+    - Building Examples: extra_downloads/building_examples.md
+  - Tutorials: https://isofit.github.io/isofit-tutorials
+  - Docker: docker.md
+  - Information:
+    - Bibliography: information/bibliography.md
+    - Code of Conduct: information/code_of_conduct.md
+  - Developers:
+    - Contributing: developers/contributing.md
+    - Documentation: developers/documentation.md
+    - Testing: developers/testing.md
+  - Reference:
+    - $api/isofit.***

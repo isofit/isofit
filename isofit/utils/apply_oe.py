@@ -83,6 +83,7 @@ def apply_oe(
     rdn_factors_path=None,
     atmosphere_type="ATM_MIDLAT_SUMMER",
     channelized_uncertainty_path=None,
+    instrument_noise_path=None,
     dn_uncertainty_file=None,
     model_discrepancy_path=None,
     lut_config_file=None,
@@ -108,6 +109,8 @@ def apply_oe(
     skyview_factor=None,
     resources=False,
     retrieve_co2=False,
+    eof_path=None,
+    terrain_style="dem",
 ):
     """\
     Applies OE over a flightline using a radiative transfer engine. This executes
@@ -157,7 +160,9 @@ def apply_oe(
         Atmospheric profile to be used for MODTRAN simulations.  Unused for other
         radiative transfer models.
     channelized_uncertainty_path : str, default=None
-        Path to a channelized uncertainty file
+        Path to a wavelength-specific channelized uncertainty file - used to augment Sy in the OE formalism
+    instrument_noise_path : str, default=None
+        Path to a wavelength-specific instrument noise file, used to derive per-wavelength NEDL / SNR
     dn_uncertainty_file:  str, default=None
         Path to a linearity .mat file to augment S matrix with linearity uncertainty
     model_discrepancy_path : str, default=None
@@ -244,6 +249,11 @@ def apply_oe(
         Enables the system resource tracker. Must also have the log_file set.
     retrieve_co2 : bool, default=False
         Flag to retrieve CO2 in the state vector. Only available with emulator at the moment.
+    eof_path : str, default=None
+        Add 1 or 2 Empirical Orthogonal Functions to the state vector.  File is a 1-2 column text file
+        with one number per instrument channel.
+    terrain_style : str, default=dem
+        Flag to set the terrain style.  dem uses provided obs values, flat sets the surface to the spheroid
 
     \b
     References
@@ -407,11 +417,13 @@ def apply_oe(
         model_discrepancy_path=model_discrepancy_path,
         aerosol_climatology_path=aerosol_climatology_path,
         channelized_uncertainty_path=channelized_uncertainty_path,
+        instrument_noise_path=instrument_noise_path,
         ray_temp_dir=ray_temp_dir,
         interpolate_inplace=interpolate_inplace,
         skyview_factor=skyview_factor,
         subs=True if analytical_line or empirical_line else False,
         classify_multisurface=classify_multisurface,
+        eof_path=eof_path,
     )
     paths.make_directories()
     paths.stage_files()
@@ -636,15 +648,21 @@ def apply_oe(
             else:
                 logging.info(f"Skipping {inp}, because is not a path.")
 
-    # Run the presolve
-    if prebuilt_lut is None and presolve:
-        h2o_lut_grid = lut_params.get_grid(
-            lut_params.h2o_range[0],
-            lut_params.h2o_range[1],
-            lut_params.h2o_spacing,
-            lut_params.h2o_spacing_min,
-        )
-
+    config_params = {
+        "paths": paths,
+        "n_cores": n_cores,
+        "use_superpixels": use_superpixels,
+        "surface_category": surface_category,
+        "emulator_base": emulator_base,
+        "uncorrelated_radiometric_uncertainty": uncorrelated_radiometric_uncertainty,
+        "dn_uncertainty_file": dn_uncertainty_file,
+        "prebuilt_lut_path": prebuilt_lut,
+        "inversion_windows": INVERSION_WINDOWS,
+        "multipart_transmittance": multipart_transmittance,
+        "segmentation_size": segmentation_size,
+        "terrain_style": terrain_style,
+    }
+    if presolve:
         # write modtran presolve template
         tmpl.write_modtran_template(
             atmosphere_type=atmosphere_type,
@@ -661,21 +679,54 @@ def apply_oe(
             ihaze_type="AER_NONE",
         )
 
-        # write presolve config (to be overwritten)
-        tmpl.build_main_config(
-            paths=paths,
-            lut_params=lut_params,
-            h2o_lut_grid=h2o_lut_grid,
-            mean_latitude=mean_latitude,
-            mean_longitude=mean_longitude,
-            dt=dt,
-            n_cores=n_cores,
-            emulator_base=emulator_base,
-            segmentation_size=segmentation_size,
-            inversion_windows=INVERSION_WINDOWS,
-            multipart_transmittance=multipart_transmittance,
-            presolve=presolve,
-        )
+        if emulator_base is None and prebuilt_lut is None:
+            max_water = tmpl.calc_modtran_max_water(paths)
+        else:
+            max_water = 6
+
+        # run H2O grid as necessary
+        if not exists(envi_header(paths.h2o_subs_path)) or not exists(
+            paths.h2o_subs_path
+        ):
+            # Write the presolve connfiguration file
+            h2o_grid = np.linspace(0.2, max_water - 0.01, 10).round(2)
+            logging.info(f"Pre-solve H2O grid: {h2o_grid}")
+            logging.info("Writing H2O pre-solve configuration file.")
+
+            tmpl.build_config(
+                h2o_lut_grid=h2o_grid,
+                presolve=True,
+                **config_params,
+            )
+            """Currently not running presolve with either
+            multisurface-mode or topography mode. Could easily change
+            this"""
+
+            # Run modtran retrieval
+            logging.info("Run ISOFIT initial guess")
+            retrieval_h2o = isofit.Isofit(
+                paths.h2o_config_path,
+                level="INFO",
+                logfile=log_file,
+            )
+            retrieval_h2o.run()
+            del retrieval_h2o
+
+            # clean up unneeded storage
+            if emulator_base is None:
+                for to_rm in RTM_CLEANUP_LIST:
+                    cmd = "rm " + join(paths.lut_h2o_directory, to_rm)
+                    logging.info(cmd)
+                    subprocess.call(cmd, shell=True)
+        else:
+            logging.info("Existing h2o-presolve solutions found, using those.")
+
+        h2o = envi.open(envi_header(paths.h2o_subs_path))
+        # Find the band that is H2O. Should be stable with constant H2O name
+        h2o_band = [
+            i for i, name in enumerate(h2o.metadata["band names"]) if name == "H2OSTR"
+        ][0]
+        h2o_est = h2o.read_band(h2o_band)[:].flatten()
 
         # Return the subs arrays, hold on to these for the background solve
         logging.info("Beginning presolve of atmosphere...")
@@ -740,46 +791,53 @@ def apply_oe(
         )
 
         logging.info("Writing main configuration file.")
-        tmpl.build_main_config(
-            paths=paths,
-            lut_params=lut_params,
+
+        # add aerosol elements from climatology
+        aerosol_state_vector, aerosol_lut_grid, aerosol_model_path = (
+            tmpl.load_climatology(
+                paths.aerosol_climatology,
+                mean_latitude,
+                mean_longitude,
+                dt,
+                lut_params=lut_params,
+            )
+        )
+        config_params["aerosol_model_file"] = aerosol_model_path
+        config_params["aerosol_lut_grid"] = aerosol_lut_grid
+        config_params["aerosol_state_vector"] = aerosol_state_vector
+
+        for gridkey, grid, mean in zip(
+            [
+                "elevation_lut_grid",
+                "to_sensor_zenith_lut_grid",
+                "to_sun_zenith_lut_grid",
+                "relative_azimuth_lut_grid",
+            ],
+            [
+                elevation_lut_grid,
+                to_sensor_zenith_lut_grid,
+                to_sun_zenith_lut_grid,
+                relative_azimuth_lut_grid,
+            ],
+            [
+                mean_elevation_km,
+                mean_to_sensor_zenith,
+                mean_to_sun_zenith,
+                mean_relative_azimuth,
+            ],
+        ):
+
+            config_params[gridkey] = grid if grid is not None else [mean]
+
+        config_params["multiple_restarts"] = (multiple_restarts,)
+        config_params["pressure_elevation"] = pressure_elevation
+        if retrieve_co2:
+            config_params["co2_lut_grid"] = lut_params.co2_range
+            config_params["retrieve_co2"] = True
+
+        tmpl.build_config(
             h2o_lut_grid=h2o_lut_grid,
-            elevation_lut_grid=(
-                elevation_lut_grid
-                if elevation_lut_grid is not None
-                else [mean_elevation_km]
-            ),
-            to_sensor_zenith_lut_grid=(
-                to_sensor_zenith_lut_grid
-                if to_sensor_zenith_lut_grid is not None
-                else [mean_to_sensor_zenith]
-            ),
-            to_sun_zenith_lut_grid=(
-                to_sun_zenith_lut_grid
-                if to_sun_zenith_lut_grid is not None
-                else [mean_to_sun_zenith]
-            ),
-            relative_azimuth_lut_grid=(
-                relative_azimuth_lut_grid
-                if relative_azimuth_lut_grid is not None
-                else [mean_relative_azimuth]
-            ),
-            mean_latitude=mean_latitude,
-            mean_longitude=mean_longitude,
-            dt=dt,
-            use_superpixels=use_superpixels,
-            n_cores=n_cores,
-            surface_category=surface_category,
-            emulator_base=emulator_base,
-            uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
-            dn_uncertainty_file=dn_uncertainty_file,
-            multiple_restarts=multiple_restarts,
-            segmentation_size=segmentation_size,
-            pressure_elevation=pressure_elevation,
-            prebuilt_lut_path=prebuilt_lut,
-            inversion_windows=INVERSION_WINDOWS,
-            multipart_transmittance=multipart_transmittance,
-            retrieve_co2=retrieve_co2,
+            **config_params,
         )
 
         if config_only:
@@ -870,6 +928,7 @@ def apply_oe(
 @click.option("--rdn_factors_path")
 @click.option("--atmosphere_type", default="ATM_MIDLAT_SUMMER")
 @click.option("--channelized_uncertainty_path")
+@click.option("--instrument_noise_path", type=str, default=None)
 @click.option("--dn_uncertainty_file", "-dnf", type=str, default=None)
 @click.option("--model_discrepancy_path")
 @click.option("--lut_config_file")
@@ -895,6 +954,8 @@ def apply_oe(
 @click.option("--skyview_factor", type=str, default=None)
 @click.option("-r", "--resources", is_flag=True, default=False)
 @click.option("--retrieve_co2", is_flag=True, default=False)
+@click.option("--eof_path", default=None)
+@click.option("--terrain_style", default="dem", type=click.Choice(["dem", "flat"]))
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",

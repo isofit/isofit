@@ -1,6 +1,4 @@
-=====
-About
-=====
+# About
 
 ISOFIT contains a set of routines and utilities for fitting surface, atmosphere and instrument models to imaging
 spectrometer data. It is written primarily in Python, with JSON format configuration files and some dependencies on
@@ -9,8 +7,7 @@ flexibility, so that users can swap in and evaluate model components based on di
 and various statistical descriptions of surface, instrument, and atmosphere. It can run on individual radiance spectra
 in text format, or imaging spectrometer data cubes.
 
-Feature overview
-----------------
+## Feature overview
 
 * utilities for fitting surface, atmosphere and instrument models to imaging spectrometer data
 * a selection of radiative transfer models (RTMs) incl. MODTRAN, LibRadTran, and 6S

@@ -70,6 +70,8 @@ jobs:
 
           # Install 'isofit' and dependencies. Be sure to uninstall this version
           # of 'isofit' to ensure we are testing against '$PYTHONPATH'.
+          # Force CPU version of torch to save space on runners
+          python3 -m pip install torch --index-url https://download.pytorch.org/whl/cpu
           python3 -m pip install ".[test]"
 
       - name: Isolate ISOFIT

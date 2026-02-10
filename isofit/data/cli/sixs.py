@@ -2,6 +2,7 @@
 Downloads 6S from https://github.com/isofit/6S
 """
 
+import logging
 import os
 import platform
 import shutil
@@ -19,8 +20,59 @@ from isofit.data.download import (
     unzip,
 )
 
+ESSENTIAL = True
 CMD = "sixs"
 MINGW = "https://github.com/brechtsanders/winlibs_mingw/releases/download/15.2.0posix-13.0.0-msvcrt-r2/winlibs-i686-posix-dwarf-gcc-15.2.0-mingw-w64msvcrt-13.0.0-r2.zip"
+
+Logger = logging.getLogger(__name__)
+
+
+def get_exe(path: str = None, version: bool = False) -> str:
+    """
+    Retrieves the 6S executable from a given path
+
+    Parameters
+    ----------
+    path : str, default=None
+        6S directory path. If None, defaults to the ini sixs path
+    version : bool, default=False
+        Returns the 6S version instead
+
+    Returns
+    -------
+    pathlib.Path | str
+        Either the 6S executable as a pathlib object or the string 6S version
+    """
+    if path is None:
+        path = env.sixs
+
+    path = Path(path)
+
+    exes = path.glob("sixsV*")
+    exes = [exe for exe in exes if "lutaero" not in exe.name]
+    names = [exe.name for exe in exes]
+
+    if not exes:
+        raise FileNotFoundError(f"Could not find a 6S executable under path: {path}")
+
+    if len(exes) > 1:
+        Logger.warning(
+            f"More than one 6S executable was found. Defaulting to the first one: {names}"
+        )
+
+    if version:
+        # Try using the version.txt file, created by the isofit downloader
+        if (txt := path / "version.txt").exists():
+            with txt.open("r") as f:
+                vers = f.read()
+        # Fallback to using the executable name
+        else:
+            _, vers = names[0].split("V")
+            vers = f"v{vers}".lower()
+
+        return vers
+
+    return exes[0]
 
 
 def precheck():
@@ -73,6 +125,13 @@ def make(directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE, debug=False)
     ----------
     directory : str
         6S directory to build
+
+    Notes
+    -----
+    If on MacOS, executing the `make` command may fail if the user hasn't agreed to the
+    Xcode and Apple SDKs license yet. In these cases, it may be required to run the
+    following command in order to compile the program:
+    $ sudo xcodebuild -license
     """
     # Update the makefile with recommended flags
     file = Path(directory) / "Makefile"
@@ -216,7 +275,9 @@ def validate(path=None, checkForUpdate=True, debug=print, error=print, **_):
         error("[x] 6S path does not exist")
         return False
 
-    if len(list(path.glob("sixsV2*"))) != 2:
+    try:
+        exe = get_exe(path)
+    except FileNotFoundError:
         error(
             "[x] 6S is missing the built 'sixsV2.*', this is likely caused by make failing"
         )
@@ -272,7 +333,7 @@ def download_cli(debug_make, mingw, **kwargs):
     \b
     Run `isofit download paths` to see default path locations.
     There are two ways to specify output directory:
-        - `isofit --sixs /path/sixs download sixs`: Override the ini file. This will save the provided path for future reference.
+        - `isofit --path sixs /path/sixs download sixs`: Override the ini file. This will save the provided path for future reference.
         - `isofit download sixs --path /path/sixs`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
     It is recommended to use the first style so the download path is remembered in the future.
     """

@@ -42,7 +42,7 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
 
         self._engine_name_type = str
         self.engine_name = None
-        """str: Name of radiative transfer engine to use - options ['modtran', '6s', 'sRTMnet']."""
+        """str: Name of radiative transfer engine to use - options ['modtran', '6s', 'sRTMnet', 'LibRadTran']."""
 
         self._engine_base_dir_type = str
         self.engine_base_dir = None
@@ -135,14 +135,6 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         self.emulator_aux_file = None
         """str: path to emulator auxiliary data - expected npz format"""
 
-        self._parallel_layer_read_type = bool
-        self.parallel_layer_read = True
-        """bool: Flag for how to load and run sRTMnet prediction.
-           If True, will read in the weights/biases per layer per worker.
-           If False, will load entire model into shared memory
-           Model doesn't always fit in shared memory for smaller systems
-        """
-
         self._predict_parallel_chunks_type = int
         self.predict_parallel_chunks = 20
         """int: If emulator predictions are in parallel. How many chunks to run.
@@ -201,6 +193,11 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         """bool: Indicates that code should terminate as soon as all radiative transfer engine configuration files are
         written (without running them)"""
 
+        # sRTMnet
+        self._emulator_batch_size_type = int
+        self.emulator_batch_size = 4096
+        """int: Batch size for sRTMnet predictions. Set smaller to reduce memory usage, larger for faster emulation."""
+
         self.set_config_options(sub_configdic)
 
         if self.lut_names is not None:
@@ -214,11 +211,12 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
     def _check_config_validity(self) -> List[str]:
         errors = list()
 
-        valid_rt_engines = ["modtran", "6s", "sRTMnet", "KernelFlowsGP"]
-        if self.engine_name not in valid_rt_engines:
+        from isofit.radiative_transfer.engines import Engines
+
+        if self.engine_name not in Engines:
             errors.append(
                 "radiative_transfer->raditive_transfer_model: {} not in one of the"
-                " available models: {}".format(self.engine_name, valid_rt_engines)
+                " available models: {}".format(self.engine_name, list(Engines))
             )
 
         valid_rt_modes = ["transm", "rdn"]
@@ -226,6 +224,11 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
             errors.append(
                 "radiative_transfer->raditive_transfer_mode: {} not in one of the"
                 " available modes: {}".format(self.rt_mode, valid_rt_modes)
+            )
+
+        if not (self.emulator_batch_size > 0):
+            errors.append(
+                "radiative_transfer->emulator_batch_size must be a positive integer."
             )
 
         # Only check for missing files when a prebuilt LUT is not provided
@@ -350,6 +353,20 @@ class RadiativeTransferConfig(BaseConfigSection):
         """int: Size of the cache to store interpolation lookups. Defaults to 16 which
         provides the most significant gains. Setting higher may provide marginal gains."""
 
+        self._terrain_style_type = str
+        self.terrain_style = "flat"
+        """
+        Style of terrain to use in the forward model - options are 'flat', 'dem', 'solved'
+        """
+
+        self._min_cos_i_type = float
+        self.min_cos_i = 0.0
+        """
+        float: Minimum cos(i) value used in LUT component calculations.  Only relevant
+        if terrain_style is 'dem' and a 6 component model is used. This can avoid
+        runaway results at low values where diffuse radiance dominates.
+        """
+
         self.set_config_options(sub_configdic)
 
         # sort lut_grid
@@ -405,5 +422,11 @@ class RadiativeTransferConfig(BaseConfigSection):
                     "Invalid degree number. Should be an integer, e.g. nds-3, got"
                     f" {degrees!r} from {self.interpolator_style!r}[4:]"
                 )
+
+        terrain_options = ["flat", "dem", "solved"]
+        if self.terrain_style not in terrain_options:
+            errors.append(
+                f"surface->terrain_style is set as {self.terrain_style}, but must be one of: {terrain_options}"
+            )
 
         return errors

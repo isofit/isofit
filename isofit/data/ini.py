@@ -50,11 +50,17 @@ class Ini:
         "imagecube",
         "srtmnet",
         "sixs",
+        "surface",
         "plots",
+        "libradtran",
     ]
 
     # Additional keys with default values
-    _keys: Dict[str, str] = {"srtmnet.file": "", "srtmnet.aux": ""}
+    _keys: Dict[str, str] = {
+        "srtmnet.file": "",
+        "srtmnet.aux": "",
+        "libradtran.version": "",
+    }
 
     def __init__(self) -> None:
         self._path_bak = None

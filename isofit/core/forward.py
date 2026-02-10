@@ -28,10 +28,10 @@ from scipy.io import loadmat
 from scipy.linalg import block_diag
 
 from isofit.core.common import eps, svd_inv_sqrt
+from isofit.core.geometry import Geometry
 from isofit.core.instrument import Instrument
 from isofit.radiative_transfer.radiative_transfer import RadiativeTransfer
 from isofit.surface import Surface
-from isofit.core.geometry import Geometry
 
 Logger = logging.getLogger(__file__)
 
@@ -223,6 +223,14 @@ class ForwardModel:
 
         return block_diag(Sb_surface, Sb_RT, Sb_instrument)
 
+    def eof_offset(self, x_surface, x_RT, x_instrument):
+        """Empirical orthogonal fucntion offset. FM wrapper in the style
+        of xa, Sa, Seps in case we want to be able to extend this
+        across surface, RT, and instrument"""
+        offset = self.instrument.eof_offset(x_instrument)
+
+        return offset
+
     def calc_meas(self, x, geom, rfl=[]):
         """Calculate the model observation at instrument wavelengths."""
         # Unpack state vector - Copy to not change x fm-wide
@@ -236,8 +244,6 @@ class ForwardModel:
         (
             r,
             L_tot,
-            L_down_dir,
-            L_down_dif,
             L_dir_dir,
             L_dif_dir,
             L_dir_dif,
@@ -266,7 +272,9 @@ class ForwardModel:
             geom=geom,
         )
 
-        return self.instrument.sample(x_instrument, self.RT.wl, rdn)
+        return self.instrument.sample(x_instrument, self.RT.wl, rdn) + self.eof_offset(
+            x_surface, x_RT, x_instrument
+        )
 
     def calc_Ls(self, x, geom):
         """Calculate the surface emission."""
@@ -314,8 +322,6 @@ class ForwardModel:
         (
             r,
             L_tot,
-            L_down_dir,
-            L_down_dif,
             L_dir_dir,
             L_dif_dir,
             L_dir_dif,
@@ -372,9 +378,12 @@ class ForwardModel:
             drfl_dsurface=drfl_dsurface_hi,
             dLs_dsurface=dLs_dsurface_hi,
             s_alb=r["sphalb"],
-            t_total_up=r["transm_up_dir"] + r["transm_up_dif"],
+            t_total_up=self.RT.get_upward_transm(r=r, geom=geom),
             L_tot=L_tot,
-            L_down_dir=L_dir_dir + L_dir_dif,
+            L_dir_dir=L_dir_dir,
+            L_dir_dif=L_dir_dif,
+            L_dif_dir=L_dif_dir,
+            L_dif_dif=L_dif_dif,
         )
 
         # To get derivatives w.r.t. instrument, downsample to instrument wavelengths
@@ -407,8 +416,6 @@ class ForwardModel:
         (
             r,
             L_tot,
-            L_down_dir,
-            L_down_dif,
             L_dir_dir,
             L_dif_dir,
             L_dir_dif,

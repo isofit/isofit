@@ -31,6 +31,7 @@ from isofit.core import units
 from isofit.core.common import resample_spectrum
 from isofit.core.fileio import IO
 from isofit.data import env
+from isofit.data.cli.sixs import get_exe
 from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
 
 Logger = logging.getLogger(__file__)
@@ -436,51 +437,3 @@ class SixSRT(RadiativeTransferEngine):
         data.pop("grid")
 
         return data
-
-
-def get_exe(path: str = None, version: bool = False) -> str:
-    """
-    Retrieves the 6S executable from a given path
-
-    Parameters
-    ----------
-    path : str, default=None
-        6S directory path. If None, defaults to the ini sixs path
-    version : bool, default=False
-        Returns the 6S version instead
-
-    Returns
-    -------
-    pathlib.Path | str
-        Either the 6S executable as a pathlib object or the string 6S version
-    """
-    if path is None:
-        path = env.sixs
-
-    path = Path(path)
-
-    exes = path.glob("sixsV*")
-    exes = [exe for exe in exes if "lutaero" not in exe.name]
-    names = [exe.name for exe in exes]
-
-    if not exes:
-        raise FileNotFoundError(f"Could not find a 6S executable under path: {path}")
-
-    if len(exes) > 1:
-        Logger.warning(
-            f"More than one 6S executable was found. Defaulting to the first one: {names}"
-        )
-
-    if version:
-        # Try using the version.txt file, created by the isofit downloader
-        if (txt := path / "version.txt").exists():
-            with txt.open("r") as f:
-                vers = f.read()
-        # Fallback to using the executable name
-        else:
-            _, vers = names[0].split("V")
-            vers = f"v{vers}".lower()
-
-        return vers
-
-    return exes[0]
