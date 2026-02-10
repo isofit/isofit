@@ -50,6 +50,7 @@ class Ini:
         "imagecube",
         "srtmnet",
         "sixs",
+        "surface",
         "plots",
         "libradtran",
     ]

@@ -353,6 +353,12 @@ class RadiativeTransferConfig(BaseConfigSection):
         """int: Size of the cache to store interpolation lookups. Defaults to 16 which
         provides the most significant gains. Setting higher may provide marginal gains."""
 
+        self._terrain_style_type = str
+        self.terrain_style = "flat"
+        """
+        Style of terrain to use in the forward model - options are 'flat', 'dem', 'solved'
+        """
+
         self.set_config_options(sub_configdic)
 
         # sort lut_grid
@@ -408,5 +414,11 @@ class RadiativeTransferConfig(BaseConfigSection):
                     "Invalid degree number. Should be an integer, e.g. nds-3, got"
                     f" {degrees!r} from {self.interpolator_style!r}[4:]"
                 )
+
+        terrain_options = ["flat", "dem", "solved"]
+        if self.terrain_style not in terrain_options:
+            errors.append(
+                f"surface->terrain_style is set as {self.terrain_style}, but must be one of: {terrain_options}"
+            )
 
         return errors

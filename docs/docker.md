@@ -1,22 +1,24 @@
+# Docker
+
 These are the official container images for the [ISOFIT](https://github.com/isofit/isofit) package. They come pre-configured with everything a user may need to get started using ISOFIT and executing its examples.
 
-Tags
-----
+## Tags
+
 - `latest` - Most recent released ISOFIT version
 - `3.x.x` - Specific release builds
 - `slim` - Code-only variant, see notes below
 
-Getting Started
----------------
+## Getting Started
+
 Start by pulling the image:
 
-```bash
+```
 $ docker pull jammont/isofit:latest
 ```
 
 This image is default tagged as `jammont/isofit`. As such, to use it run:
 
-```bash
+```
 $ docker run -it --rm --shm-size=16gb jammont/isofit bash
 ```
 
@@ -40,7 +42,7 @@ This will provide `/host/path` available inside of the container as `/container/
 
 Additional examples for executing ISOFIT interactively:
 
-```bash
+```
 # Print version
 $ docker run --rm -it jammont/isofit isofit --version
 
@@ -49,8 +51,8 @@ $ docker run --rm -it --shm-size=16gb jammont/isofit bash examples/20151026_Sant
 $ docker run --rm -it --shm-size=16gb jammont/isofit bash examples/image_cube/small/analytical.sh
 ```
 
-Jupyter
--------
+## Jupyter
+
 The default run command for the container is to start up a Jupyterlab server on internal port 8888.
 To connect to this port and make it accessible via the browser, pass the `-p [host]:8888` parameter:
 
@@ -62,6 +64,6 @@ This will start up the Jupyterlab server on port `8888`. Navigate to `127.0.0.1:
 
 To shutdown, hit CTRL-C in the running terminal.
 
-Slim
-----
-The `slim` tagged dockers contain _only_ the ISOFIT code and required packages to execute it. The extra ISOFIT dependencies such as isofit-data, isofit-tutorials, SixS, sRTMnet, and others, are not included in this image in order to reduce the total footprint. This image is designed specifically for advanced users to manage the additional dependencies externally and then mount them via `--volume`. Furthermore, the isofit.ini is not initialized as well, so when mounting it is important to either use the default location and names (eg. `-v isofit-data:/root/.isofit/data`) or manually change the ini within the container. See [data](#data) for more information on how to manage the ini. 
+## Slim
+
+The `slim` tagged dockers contain _only_ the ISOFIT code and required packages to execute it. The extra ISOFIT dependencies such as isofit-data, isofit-tutorials, SixS, sRTMnet, and others, are not included in this image in order to reduce the total footprint. This image is designed specifically for advanced users to manage the additional dependencies externally and then mount them via `--volume`. Furthermore, the isofit.ini is not initialized as well, so when mounting it is important to either use the default location and names (eg. `-v isofit-data:/root/.isofit/data`) or manually change the ini within the container. See [data](extra_downloads/data.md) for more information on how to manage the ini.
