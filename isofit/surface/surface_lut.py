@@ -20,6 +20,8 @@
 from __future__ import annotations
 
 import numpy as np
+import xarray as xr
+from scipy.io import loadmat
 
 from isofit.core.common import VectorInterpolator, svd_inv_sqrt
 from isofit.surface.surface import Surface
@@ -50,30 +52,80 @@ class LUTSurface(Surface):
       - scale: an array of n scale values, one for each state vector
          element
 
+    Reflectance(s) should be either
+    - rho_dif_dir
+    - rho_dif_dir and rho_dir_dir
+
     """
 
     def __init__(self, full_config: Config):
         """."""
 
         super().__init__(full_config)
+        config = full_config.forward_model.surface
 
-        # Models are stored as dictionaries in .mat format
-        model_dict = loadmat(config.surface_file)
-        self.lut_grid = [grid[0] for grid in model_dict["grids"][0]]
-        self.lut_names = [name.strip() for name in model_dict["lut_names"]]
-        self.statevec_names = [sv.strip() for sv in model_dict["statevec_names"]]
-        self.data = model_dict["data"]
-        self.wl = model_dict["wl"][0]
+        # Bounds, optimizer scale, and priors can be optional
+        OPTIONAL_DIMS = ["bounds", "scale", "init", "mean", "sigma"]
+        self.bounds = None
+        self.scale = None
+        self.init = None
+        self.mean = None
+        self.sigma = None
+
+        # Check if model is stored as dictionaries in .mat format
+        if config.surface_file.endswith(".mat"):
+            model_dict = loadmat(config.surface_file)
+            self.lut_grid = [grid[0] for grid in model_dict["grids"][0]]
+            self.lut_names = [name.strip() for name in model_dict["lut_names"]]
+            self.statevec_names = [sv.strip() for sv in model_dict["statevec_names"]]
+            self.data_rho_dif = model_dict["rho_dif_dir"]
+            self.data_rho_dir = model_dict.get("rho_dir_dir")
+            self.wl = model_dict["wl"][0]
+            opt_dims = {}
+            for k in OPTIONAL_DIMS:
+                val = model_dict.get(k)
+                if val is not None:
+                    opt_dims[k] = val[0] if k != "bounds" else val
+                else:
+                    opt_dims[k] = None
+        # Otherwise, assume xarray
+        else:
+            with xr.open_dataset(config.surface_file) as ds:
+                self.lut_names = [str(n) for n in ds.coords.keys() if n != "wl"]
+                self.lut_grid = [ds[n].values for n in self.lut_names]
+                self.wl = ds["wl"].values
+                self.data_rho_dif = ds["rho_dif_dir"].values
+                self.data_rho_dir = (
+                    ds["rho_dir_dir"].values if "rho_dir_dir" in ds else None
+                )
+                self.statevec_names = [str(n) for n in ds["statevec_names"].values]
+                opt_dims = {
+                    k: ds.get(k).values if k in ds else None for k in OPTIONAL_DIMS
+                }
+
+        for key, value in opt_dims.items():
+            setattr(self, key, value)
+
+        # Common dimensions
         self.n_wl = len(self.wl)
-        self.bounds = self.model_dict["bounds"]
-        self.scale = self.model_dict["scale"][0]
-        self.init = self.model_dict["init"][0]
-        self.mean = self.model_dict["mean"][0]
-        self.sigma = self.model_dict["sigma"][0]
         self.n_state = len(self.statevec_names)
         self.n_lut = len(self.lut_names)
         self.idx_lut = np.arange(self.n_state)
-        self.idx_lamb = np.empty(shape=0)
+        self.idx_lamb = np.arange(self.n_wl)
+
+        # These are optional, and can be set by the data itself if not given
+        if self.bounds is None:
+            self.bounds = [[g.min(), g.max()] for g in self.lut_grid]
+        if self.scale is None:
+            self.scale = np.ones(self.n_state)
+        if self.init is None:
+            self.init = np.array([(b[0] + b[1]) / 2.0 for b in self.bounds])
+
+        # If no priors given, assume uninformative
+        if self.mean is None:
+            self.mean = self.init.copy()
+        if self.sigma is None:
+            self.sigma = np.ones(self.n_state) * 1e6
 
         # Cache some important computations
         Cov = np.diag(self.sigma**2)
@@ -82,11 +134,21 @@ class LUTSurface(Surface):
             Cov_normalized
         )
 
-        # build the interpolator
-        self.itp = VectorInterpolator(self.lut_grid, self.data)
+        # Build the interpolator
+        self.itp_dif = None
+        self.itp_dir = None
+        self.itp_dif = VectorInterpolator(self.lut_grid, self.data_rho_dif)
+        if self.data_rho_dir is not None:
+            self.itp_dir = VectorInterpolator(self.lut_grid, self.data_rho_dir)
 
         # Change this if you don't want to analytical solve for all the full statevector elements.
-        self.analytical_iv_idx = np.arange(len(self.statevec_names))
+        self.analytical_iv_idx = np.arange(self.n_state)
+
+        # Find any relevant geometry indices
+        # NOTE: this assumes LUT is in units of degrees for geometry
+        self.sza_ind = self.lut_names.index("SZA") if "SZA" in self.lut_names else None
+        self.vza_ind = self.lut_names.index("VZA") if "VZA" in self.lut_names else None
+        self.raa_ind = self.lut_names.index("RAA") if "RAA" in self.lut_names else None
 
     def xa(self, x_surface, geom):
         """Mean of prior distribution."""
@@ -129,37 +191,47 @@ class LUTSurface(Surface):
             Reflectance quantity for downward direct photon paths
         rho_dif_dir : np.ndarray
             Reflectance quantity for downward diffuse photon paths
-
-        NOTE:
-            We do not handle direct and diffuse photon path reflectance
-            quantities differently for the multicomponent surface model.
-            This is why we return the same quantity for both outputs.
         """
+        point = self.get_point(x_surface, geom)
 
-        rho_dir_dir = rho_dif_dir = self.calc_lamb(x_surface, geom)
+        # diffuse-direct
+        rho_dif_dir = self.itp_dif(point)
+
+        # direct-direct
+        if self.itp_dir is not None:
+            rho_dir_dir = self.itp_dir(point)
+        else:
+            rho_dir_dir = rho_dif_dir
 
         return rho_dir_dir, rho_dif_dir
 
     def calc_lamb(self, x_surface, geom):
-        """Lambertian reflectance.  Be sure to incorporate BRDF-related
-        LUT dimensions such as solar and view zenith."""
+        """Lambertian reflectance."""
+        return self.itp_dif(self.get_point(x_surface, geom))
 
+    def get_point(self, x_surface, geom):
+        """create point in grid prior to VectorInterpolator."""
         point = np.zeros(self.n_lut)
 
         for v, name in zip(x_surface, self.statevec_names):
             point[self.lut_names.index(name)] = v
 
-        if "SOLZEN" in self.lut_names:
-            solzen_ind = self.lut_names.index("SOLZEN")
-            point[solzen_ind] = geom.solar_zenith
+        cos_i = geom.verify(geom.solar_zenith)["cos_i"]
 
-        if "VIEWZEN" in self.lut_names:
-            viewzen_ind = self.lut_names.index("VIEWZEN")
-            point[viewzen_ind] = geom.observer_zenith
+        if self.sza_ind is not None and "cos_i" not in self.statevec_names:
+            point[self.sza_ind] = np.degrees(np.arccos(np.clip(cos_i, 0.0, 1.0)))
 
-        lamb = self.itp(point)
+        if self.vza_ind is not None:
+            point[self.vza_ind] = geom.observer_zenith
 
-        return lamb
+        if self.raa_ind is not None:
+            point[self.raa_ind] = geom.relative_azimuth
+
+        # Ensure the point is contained in the lut grid
+        for i, grid_axis in enumerate(self.lut_grid):
+            point[i] = np.clip(point[i], grid_axis.min(), grid_axis.max())
+
+        return point
 
     def drfl_dsurface(self, x_surface, geom):
         """Partial derivative of reflectance with respect to state vector,
