@@ -353,6 +353,20 @@ class RadiativeTransferConfig(BaseConfigSection):
         """int: Size of the cache to store interpolation lookups. Defaults to 16 which
         provides the most significant gains. Setting higher may provide marginal gains."""
 
+        self._terrain_style_type = str
+        self.terrain_style = "flat"
+        """
+        Style of terrain to use in the forward model - options are 'flat', 'dem', 'solved'
+        """
+
+        self._min_cos_i_type = float
+        self.min_cos_i = 0.0
+        """
+        float: Minimum cos(i) value used in LUT component calculations.  Only relevant
+        if terrain_style is 'dem' and a 6 component model is used. This can avoid
+        runaway results at low values where diffuse radiance dominates.
+        """
+
         self.set_config_options(sub_configdic)
 
         # sort lut_grid
@@ -364,12 +378,6 @@ class RadiativeTransferConfig(BaseConfigSection):
         # have a special (dynamic) load
         self._radiative_transfer_engines_type = list()
         self.radiative_transfer_engines = []
-
-        self._terrain_style_type = str
-        self.terrain_style = "flat"
-        """
-        Style of terrain to use in the forward model - options are 'flat', 'dem', 'solved'
-        """
 
         self._set_rt_config_options(sub_configdic["radiative_transfer_engines"])
 

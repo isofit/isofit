@@ -34,9 +34,8 @@ isofit/test/output/*.txt
 tests/output/*.txt
 logs/
 
-# Ignore documentation files
-docs/_build/
-docs/html/_sources/
+# Ignore built documentation files
+site/
 
 # Ignore local testing directories
 local/
@@ -47,3 +46,8 @@ local/
 # Data dependencies
 sRTMnet_v120/
 hypertrace-data/
+
+# uv
+uv.lock
+.python-version
+.venv

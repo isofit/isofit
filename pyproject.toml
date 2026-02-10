@@ -61,9 +61,9 @@ docker = [
   "matplotlib",
 ]
 docs = [
-  "myst-parser",
-  "sphinx-autoapi",
-  "sphinx_rtd_theme",
+  "mkapi>=4.5.0",
+  "mkdocs>=1.6.1",
+  "mkdocs-material>=9.7.1",
 ]
 
 [tool.uv.sources]
