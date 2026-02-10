@@ -192,6 +192,8 @@ class RadiativeTransfer:
         Physics-based forward model to calculate at-sensor radiance.
         Includes topography, background reflectance, and glint.
         """
+        skyview_factor = geom.verify(self.coszen)["skyview_factor"]
+
         # Adjacency effects
         # ToDo: we need to think about if we want to obtain the background reflectance from the Geometry object
         #  or from the surface model, i.e., the same way as we do with the target pixel reflectance
@@ -206,9 +208,12 @@ class RadiativeTransfer:
         # Atmospheric path radiance
         L_atm = self.get_L_atm(x_RT, geom)
 
-        # Atmospheric spherical albedo
+        # Multiple scattering events, accounting for neighboring terrain.
+        # For svf=1, this collapses back to s_alb * rho_dif_dif.
         s_alb = r["sphalb"]
-        atm_surface_scattering = s_alb * rho_dif_dif
+        atm_surface_scattering = (
+            (s_alb * skyview_factor) + (rho_dif_dif * (1 - skyview_factor))
+        ) * rho_dif_dif
         eq_11_term = 1 - atm_surface_scattering
 
         # Special case: 1-component model
@@ -259,7 +264,7 @@ class RadiativeTransfer:
             + L_dif_dir * rho_dif_dir / eq_11_term
             + L_dir_dif * rho_dir_dif
             + L_dif_dif * rho_dif_dif / eq_11_term
-            + (L_tot * atm_surface_scattering * rho_dif_dif) / (1 - s_alb * rho_dif_dif)
+            + (L_tot * atm_surface_scattering * rho_dif_dif) / eq_11_term
             + L_up
         )
 
@@ -365,14 +370,6 @@ class RadiativeTransfer:
         # applies to the downward diffuse terms
         L_dif_dir *= hays_model
         L_dif_dif *= hays_model
-
-        # Account for trapping/re-reflection of diffuse upward path from nearby slopes (Dozier et al., 2022).
-        # Only if background reflectance turned on, else assumes 100% of the upward diffuse makes into hemisphere.
-        if geom.bg_rfl is not None:
-            svf_rfl_mult = skyview_factor / (1 - geom.bg_rfl * (1 - skyview_factor))
-            # applies to the upward diffuse terms
-            L_dir_dif *= svf_rfl_mult
-            L_dif_dif *= svf_rfl_mult
 
         return L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif
 
