@@ -749,14 +749,6 @@ def build_config(
     else:
         engine_name = "sRTMnet"
 
-    if presolve:
-        lut_path = join(paths.lut_h2o_directory, "lut.nc")
-        full_lut_dir = paths.lut_h2o_directory
-        template_dir = paths.h2o_template_path
-    else:
-        full_lut_dir = paths.full_lut_directory
-        template_dir = paths.modtran_template_path
-
     radiative_transfer_config = {
         "radiative_transfer_engines": {
             "vswir": {
@@ -869,7 +861,7 @@ def build_config(
                 "prior_mean": (grid[0] + grid[-1]) / 2.0,
             }
 
-    if aerosol_state_vector is not None and presolve is False:
+    if aerosol_state_vector is not None:
         radiative_transfer_config["statevector"].update(aerosol_state_vector)
 
     # MODTRAN should know about our whole LUT grid and all of our statevectors, so copy them in
@@ -905,6 +897,7 @@ def build_config(
             "inversion": {"windows": inversion_windows},
             "n_cores": n_cores,
             "debug_mode": debug,
+            "presolve_mode": presolve,
             "isofit_version": __version__,
         },
     }
@@ -1262,6 +1255,62 @@ def load_climatology(
     )
 
     return aerosol_state_vector, aerosol_lut_grid, aerosol_model_path
+
+
+def calc_modtran_max_water(paths: Pathnames) -> float:
+    """MODTRAN may put a ceiling on "legal" H2O concentrations.  This function calculates that ceiling.  The intended
+     use is to make sure the LUT does not contain useless gridpoints above it.
+
+    Args:
+        paths: object containing references to all relevant file locations
+
+    Returns:
+        max_water - maximum MODTRAN H2OSTR value for provided obs conditions
+    """
+
+    max_water = None
+    # TODO: this is effectively redundant from the radiative_transfer->modtran. Either devise a way
+    # to port in from there, or put in utils to reduce redundancy.
+    xdir = {"linux": "linux", "darwin": "macos", "windows": "windows"}
+    name = "H2O_bound_test"
+    filebase = os.path.join(paths.lut_h2o_directory, name)
+
+    with open(paths.h2o_template_path, "r") as f:
+        bound_test_config = json.load(f)
+
+    bound_test_config["MODTRAN"][0]["MODTRANINPUT"]["NAME"] = name
+    bound_test_config["MODTRAN"][0]["MODTRANINPUT"]["ATMOSPHERE"]["H2OSTR"] = 50
+
+    with open(filebase + ".json", "w") as fout:
+        fout.write(
+            json.dumps(bound_test_config, cls=SerialEncoder, indent=4, sort_keys=True)
+        )
+
+    cmd = os.path.join(
+        paths.modtran_path, "bin", xdir[platform], "mod6c_cons " + filebase + ".json"
+    )
+
+    try:
+        subprocess.call(cmd, shell=True, timeout=10, cwd=paths.lut_h2o_directory)
+    except:
+        pass
+
+    with open(filebase + ".tp6", errors="ignore") as tp6file:
+        for count, line in enumerate(tp6file):
+            if "The water column is being set to the maximum" in line:
+                max_water = line.split(",")[1].strip()
+                max_water = float(max_water.split(" ")[0])
+                break
+
+    if max_water is None:
+        logging.error(
+            "Could not find MODTRAN H2O upper bound in file {}".format(
+                filebase + ".tp6"
+            )
+        )
+        raise KeyError("Could not find MODTRAN H2O upper bound")
+
+    return max_water
 
 
 def define_surface_types(

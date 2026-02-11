@@ -45,7 +45,7 @@ from isofit.core.multistate import (
     update_config_for_surface,
 )
 from isofit.data import env
-from isofit.inversion import Inversion
+from isofit.inversion import Inversion, inverse_simple
 
 
 class Isofit:

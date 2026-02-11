@@ -30,7 +30,6 @@ from isofit.utils import (
     segment,
 )
 from isofit.utils.skyview import skyview
-from isofit.utils.presolve import presolve_atm
 
 EPS = 1e-6
 CHUNKSIZE = 256
@@ -662,6 +661,18 @@ def apply_oe(
         "segmentation_size": segmentation_size,
         "terrain_style": terrain_style,
     }
+    # add aerosol elements from climatology
+    aerosol_state_vector, aerosol_lut_grid, aerosol_model_path = tmpl.load_climatology(
+        paths.aerosol_climatology,
+        mean_latitude,
+        mean_longitude,
+        dt,
+        lut_params=lut_params,
+    )
+    config_params["aerosol_model_file"] = aerosol_model_path
+    config_params["aerosol_lut_grid"] = aerosol_lut_grid
+    config_params["aerosol_state_vector"] = aerosol_state_vector
+
     if presolve:
         # write modtran presolve template
         tmpl.write_modtran_template(
@@ -702,7 +713,7 @@ def apply_oe(
             multisurface-mode or topography mode. Could easily change
             this"""
 
-            # Run modtran retrieval
+            # Run presolve
             logging.info("Run ISOFIT initial guess")
             retrieval_h2o = isofit.Isofit(
                 paths.h2o_config_path,
@@ -722,46 +733,40 @@ def apply_oe(
             logging.info("Existing h2o-presolve solutions found, using those.")
 
         h2o = envi.open(envi_header(paths.h2o_subs_path))
+        band_names = h2o.metadata["band names"]
         # Find the band that is H2O. Should be stable with constant H2O name
-        h2o_band = [
-            i for i, name in enumerate(h2o.metadata["band names"]) if name == "H2OSTR"
-        ][0]
+        h2o_band = [i for i, name in enumerate(band_names) if name == "H2OSTR"][0]
         h2o_est = h2o.read_band(h2o_band)[:].flatten()
 
-        # Return the subs arrays, hold on to these for the background solve
-        logging.info("Beginning presolve of atmosphere...")
-        h2o_est, aot_est = presolve_atm(
-            input_radiance=input_radiance,
-            input_loc=input_loc,
-            input_obs=input_obs,
-            paths=paths,
-            use_superpixels=use_superpixels,
-        )
-        h2o_est_flat = h2o_est.flatten()
-        aot_est_flat = aot_est.flatten()
+        p05 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 2)
+        p98 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 98)
+        margin = (p98 - p05) * 0.5
 
-        p02 = np.percentile(h2o_est_flat[h2o_est_flat > lut_params.h2o_min], 2)
-        p98 = np.percentile(h2o_est_flat[h2o_est_flat > lut_params.h2o_min], 98)
-        margin = (p98 - p02) * 0.5
-        lut_params.h2o_range[0] = max(lut_params.h2o_min, p02 - margin)
-        lut_params.h2o_range[1] = min(
-            lut_params.h2o_range[1], max(lut_params.h2o_min, p98 + margin)
-        )
+        lut_params.h2o_range[0] = max(lut_params.h2o_min, p05 - margin)
+        lut_params.h2o_range[1] = min(max_water, max(lut_params.h2o_min, p98 + margin))
 
-        # repeat for aot upper bound, using 95th percentile without margin
-        p95 = np.percentile(
-            aot_est_flat[aot_est_flat > lut_params.aot_550_range[0]], 95
-        )
-        lut_params.aot_550_range[1] = min(
-            lut_params.aot_550_range[1], max(lut_params.aot_550_range[0], p95)
-        )
-        logging.info("Presolve of atmosphere complete.")
+        # Find the band that is AOT
+        aot_band = [
+            i
+            for i, name in enumerate(band_names)
+            if "AOT" in name.upper() or "AERFRAC" in name.upper()
+        ][0]
+        aot_est = h2o.read_band(aot_band)[:].flatten()
+        p98_aot = np.percentile(aot_est, 98)
+        lut_params.aot_550_range[1] = min(1.0, p98_aot)
 
     h2o_lut_grid = lut_params.get_grid(
         lut_params.h2o_range[0],
         lut_params.h2o_range[1],
         lut_params.h2o_spacing,
         lut_params.h2o_spacing_min,
+    )
+
+    aerosol_lut_grid = lut_params.get_grid(
+        lut_params.aot_550_range[0],
+        lut_params.aot_550_range[1],
+        lut_params.aot_550_spacing,
+        lut_params.aot_550_spacing_min,
     )
 
     logging.info("Full (non-aerosol) LUTs:")
@@ -791,21 +796,6 @@ def apply_oe(
         )
 
         logging.info("Writing main configuration file.")
-
-        # add aerosol elements from climatology
-        aerosol_state_vector, aerosol_lut_grid, aerosol_model_path = (
-            tmpl.load_climatology(
-                paths.aerosol_climatology,
-                mean_latitude,
-                mean_longitude,
-                dt,
-                lut_params=lut_params,
-            )
-        )
-        config_params["aerosol_model_file"] = aerosol_model_path
-        config_params["aerosol_lut_grid"] = aerosol_lut_grid
-        config_params["aerosol_state_vector"] = aerosol_state_vector
-
         for gridkey, grid, mean in zip(
             [
                 "elevation_lut_grid",
@@ -837,6 +827,7 @@ def apply_oe(
 
         tmpl.build_config(
             h2o_lut_grid=h2o_lut_grid,
+            aerosol_lut_grid=aerosol_lut_grid,
             **config_params,
         )
 

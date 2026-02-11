@@ -323,6 +323,10 @@ class Inversion:
             # Calculate the initial solution, if needed.
             x0 = invert_simple(self.fm, meas, geom)
 
+            # exit here if this is in presolve mode
+            if getattr(self.config, "presolve_mode", False):
+                return x0
+
             # Update regions outside retrieval windows to match priors
             if self.config.priors_in_initial_guess:
                 prior_subset_idx = np.arange(len(x0))[self.fm.idx_surf_rfl][
