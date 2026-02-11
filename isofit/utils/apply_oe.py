@@ -746,27 +746,35 @@ def apply_oe(
         lut_params.h2o_range[1] = min(max_water, max(lut_params.h2o_min, p98 + margin))
 
         # Find the band that is AOT
-        aot_band = [
-            i
-            for i, name in enumerate(band_names)
+        aot_name = [
+            name
+            for name in band_names
             if "AOT" in name.upper() or "AERFRAC" in name.upper()
         ][0]
-        aot_est = h2o.read_band(aot_band)[:].flatten()
+
+        aot_est = h2o.read_band(band_names.index(aot_name))[:].flatten()
         p98_aot = np.percentile(aot_est, 98)
         lut_params.aot_550_range[1] = min(1.0, p98_aot)
+
+        # update aerosol grid for main solve
+        aerosol_state_vector, aerosol_lut_grid, aerosol_model_path = (
+            tmpl.load_climatology(
+                paths.aerosol_climatology,
+                mean_latitude,
+                mean_longitude,
+                dt,
+                lut_params=lut_params,
+            )
+        )
+        config_params["aerosol_model_file"] = aerosol_model_path
+        config_params["aerosol_lut_grid"] = aerosol_lut_grid
+        config_params["aerosol_state_vector"] = aerosol_state_vector
 
     h2o_lut_grid = lut_params.get_grid(
         lut_params.h2o_range[0],
         lut_params.h2o_range[1],
         lut_params.h2o_spacing,
         lut_params.h2o_spacing_min,
-    )
-
-    aerosol_lut_grid = lut_params.get_grid(
-        lut_params.aot_550_range[0],
-        lut_params.aot_550_range[1],
-        lut_params.aot_550_spacing,
-        lut_params.aot_550_spacing_min,
     )
 
     logging.info("Full (non-aerosol) LUTs:")
@@ -827,7 +835,6 @@ def apply_oe(
 
         tmpl.build_config(
             h2o_lut_grid=h2o_lut_grid,
-            aerosol_lut_grid=aerosol_lut_grid,
             **config_params,
         )
 
