@@ -66,8 +66,10 @@ def heuristic_atmosphere(
         return x_RT
 
     x_new = x_RT.copy()
-    h2o_name = "H2OSTR" if "H2OSTR" in fm.RT.statevec_names else "h2o"
-    aod_name = "AOT550"
+    h2o_name = [n for n in fm.RT.statevec_names if "H2O" in n.upper()][0]
+    aod_name = [
+        n for n in fm.RT.statevec_names if "AOT" in n.upper() or "AERFRAC" in n.upper()
+    ][0]
 
     idx_h2o = fm.RT.statevec_names.index(h2o_name)
     idx_aod = fm.RT.statevec_names.index(aod_name)
@@ -75,7 +77,7 @@ def heuristic_atmosphere(
     h2o_grid = fm.RT.rt_engines[0].lut_grid[h2o_name]
     aod_grid = fm.RT.rt_engines[0].lut_grid[aod_name]
 
-    # Find a rough estimate of AOT550
+    # Find a rough estimate of aod
     aods, costs = [], []
 
     for aod in aod_grid:
@@ -102,7 +104,7 @@ def heuristic_atmosphere(
 
     x_new[idx_aod] = aods[np.argmin(costs)]
 
-    # Now, fixing AOT550, resolve water vapor
+    # Now, fixing AOD, resolve water vapor
     h2os, areas = [], []
     for h2o in h2o_grid:
         x_step = x_new.copy()
