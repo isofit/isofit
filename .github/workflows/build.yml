@@ -151,8 +151,7 @@ jobs:
 
           echo "Downloading extras"
           isofit download all
-          isofit download sixs --mingw # Needed for Windows
-
+          isofit download windows --mingw # Needed for Windows
           echo "Building examples"
           isofit build
 
