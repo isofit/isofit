@@ -267,7 +267,7 @@ class RadiativeTransfer:
             + L_dif_dir * rho_dif_dir / eq_11_term
             + L_dir_dif * rho_dir_dif
             + L_dif_dif * rho_dif_dif / eq_11_term
-            + (L_tot * atm_surface_scattering * rho_dif_dif) / eq_11_term
+            + (L_tot * atm_surface_scattering * rho_dif_dif) / (1 - s_eff * rho_dif_dif)
             + L_up
         )
 

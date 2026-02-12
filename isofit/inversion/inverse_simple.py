@@ -302,11 +302,10 @@ def invert_analytical(
     s_eff = (s * svf) + (bg_rfl * (1 - svf))
 
     atm_surface_scattering = s_eff * bg_rfl
-    eq_11_term = 1 - atm_surface_scattering
 
     L_bg = (L_dir_dif + L_dif_dif) * bg_rfl + L_tot * (
         atm_surface_scattering * bg_rfl
-    ) / (eq_11_term)
+    ) / (1 - s_eff * bg_rfl)
 
     # Get superpixel EOF shift if used
     eof_offset = fm.eof_offset(sub_surface, sub_RT, sub_instrument)
