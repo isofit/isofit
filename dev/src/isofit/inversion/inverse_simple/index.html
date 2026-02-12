@@ -1,0 +1,5948 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://isofit.github.io/isofit/dev/src/isofit/inversion/inverse_simple/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>Inverse simple - ISOFIT</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../../css/mkapi-common.css">
+    
+      <link rel="stylesheet" href="../../../../css/mkapi-material.css">
+    
+      <link rel="stylesheet" href="../../../../stylesheets/icons.css">
+    
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    
+    <script>__md_scope=new URL("../../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Inverse simple - ISOFIT" />
+<meta property="og:image" content="https://isofit.github.io/isofit/dev/assets/images/social/src/isofit/inversion/inverse_simple.png" />
+<meta property="og:image:type" content="image/png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:url" content="https://isofit.github.io/isofit/dev/src/isofit/inversion/inverse_simple/" />
+<meta property="twitter:card" content="summary_large_image" />
+<meta property="twitter:title" content="Inverse simple - ISOFIT" />
+<meta property="twitter:image" content="https://isofit.github.io/isofit/dev/assets/images/social/src/isofit/inversion/inverse_simple.png" />
+</head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#isofit.inversion.inverse_simple" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../../.." title="ISOFIT" class="md-header__button md-logo" aria-label="ISOFIT" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            ISOFIT
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Inverse simple
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/isofit/isofit/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    isofit/isofit
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../../.." title="ISOFIT" class="md-nav__button md-logo" aria-label="ISOFIT" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    ISOFIT
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/isofit/isofit/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    isofit/isofit
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    About
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../getting_started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../getting_started/quickstarts/srtmnet/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start (New Users)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../getting_started/quickstarts/modtran/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MODTRAN
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../getting_started/best_practices/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Best Practices
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Extra Downloads
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Extra Downloads
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../extra_downloads/data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dependencies
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../extra_downloads/building_examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Building Examples
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://isofit.github.io/isofit-tutorials" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../docker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Information
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Information
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../information/bibliography/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bibliography
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../information/code_of_conduct/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code of Conduct
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developers
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Developers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../developers/contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../developers/documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Documentation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../developers/testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_8_1" id="__nav_8_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    isofit
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    isofit
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8_1_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_8_1_2" id="__nav_8_1_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    isofit.configs
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_8_1_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8_1_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    isofit.configs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/configs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8_1_2_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_8_1_2_2" id="__nav_8_1_2_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    isofit.configs.sections
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_8_1_2_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8_1_2_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    isofit.configs.sections
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/configs/sections/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/configs/sections/forward_model_config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Forward model config
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/configs/sections/implementation_config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Implementation config
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/configs/sections/input_config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Input config
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/configs/sections/instrument_config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Instrument config
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/configs/sections/inversion_config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inversion config
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/configs/sections/output_config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Output config
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/configs/sections/radiative_transfer_config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Radiative transfer config
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/configs/sections/statevector_config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Statevector config
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/configs/sections/surface_config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Surface config
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/configs/base_config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Base config
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/configs/configs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8_1_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_8_1_3" id="__nav_8_1_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    isofit.core
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_8_1_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8_1_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    isofit.core
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/core/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/core/common/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Common
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/core/fileio/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fileio
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/core/forward/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Forward
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/core/geometry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Geometry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/core/instrument/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Instrument
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/core/isofit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Isofit
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/core/multistate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multistate
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/core/sunposition/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sunposition
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/core/units/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Units
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8_1_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_8_1_4" id="__nav_8_1_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    isofit.data
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_8_1_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8_1_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    isofit.data
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8_1_4_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_8_1_4_2" id="__nav_8_1_4_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    isofit.data.cli
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_8_1_4_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8_1_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    isofit.data.cli
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/data/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/data/cli/data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/data/cli/examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/data/cli/imagecube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Imagecube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/data/cli/isoplots/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Isoplots
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/data/cli/libradtran/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Libradtran
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/data/cli/sixs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sixs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/data/cli/srtmnet/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Srtmnet
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/data/cli/surface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Surface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/data/build_examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Build examples
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/data/download/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Download
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/data/ini/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ini
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/data/shared/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shared
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/data/validate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Validate
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8_1_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_8_1_5" id="__nav_8_1_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    isofit.debug
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_8_1_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8_1_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    isofit.debug
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/debug/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/debug/ray_bypass/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ray bypass
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/debug/resource_tracker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Resource tracker
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8_1_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_8_1_6" id="__nav_8_1_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    isofit.inversion
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_8_1_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8_1_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    isofit.inversion
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/inversion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/inversion/inverse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inverse
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/inversion/inverse_mcmc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inverse mcmc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/inversion/inverse_simple/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inverse simple
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8_1_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_8_1_7" id="__nav_8_1_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    isofit.radiative_transfer
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_8_1_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8_1_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    isofit.radiative_transfer
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/radiative_transfer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8_1_7_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_8_1_7_2" id="__nav_8_1_7_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    isofit.radiative_transfer.engines
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_8_1_7_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8_1_7_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    isofit.radiative_transfer.engines
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/radiative_transfer/engines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/radiative_transfer/engines/kernel_flows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kernel flows
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/radiative_transfer/engines/libradtran/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Libradtran
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/radiative_transfer/engines/modtran/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Modtran
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/radiative_transfer/engines/sRTMnet/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    sRTMnet
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/radiative_transfer/engines/six_s/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Six s
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/radiative_transfer/luts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Luts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/radiative_transfer/radiative_transfer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Radiative transfer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/radiative_transfer/radiative_transfer_engine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Radiative transfer engine
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8_1_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8_1_8" id="__nav_8_1_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    isofit.surface
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_8_1_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8_1_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    isofit.surface
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/surface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/surface/surface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Surface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/surface/surface_glint_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Surface glint model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/surface/surface_lut/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Surface lut
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/surface/surface_multicomp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Surface multicomp
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/surface/surface_thermal/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Surface thermal
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8_1_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_8_1_9" id="__nav_8_1_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    isofit.test
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_8_1_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8_1_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    isofit.test
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/test/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/test/conftest/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Conftest
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/test/test_cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test cli
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/test/test_cli_machinery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test cli machinery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/test/test_common/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test common
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/test/test_env/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test env
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/test/test_examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test examples
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/test/test_fileio/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test fileio
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/test/test_forward/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test forward
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/test/test_geometry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test geometry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/test/test_instrument/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test instrument
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/test/test_inverse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test inverse
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/test/test_lut/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test lut
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/test/test_ray_bypass/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test ray bypass
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/test/test_sunposition/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test sunposition
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8_1_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_8_1_10" id="__nav_8_1_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    isofit.utils
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_8_1_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8_1_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    isofit.utils
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/utils/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/utils/add_HRRR_profiles_to_modtran_config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    add HRRR profiles to modtran config
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/utils/algebraic_line/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Algebraic line
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/utils/analytical_line/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Analytical line
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/utils/apply_oe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apply oe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/utils/atm_interpolation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Atm interpolation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/utils/convert_6s_to_srtmnet/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Convert 6s to srtmnet
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/utils/empirical_line/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Empirical line
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/utils/ewt_from_reflectance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ewt from reflectance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/utils/extractions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Extractions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/utils/generate_noise/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Generate noise
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/utils/instrument_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Instrument model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/utils/interpolate_spectra/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interpolate spectra
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/utils/multicomponent_classification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multicomponent classification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/utils/reconstruct/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reconstruct
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/utils/reducers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reducers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/utils/remap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Remap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/utils/segment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Segment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/utils/skyview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Skyview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/utils/solar_position/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Solar position
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/utils/surface_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Surface model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/utils/template_construction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Template construction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/utils/wavelength_cal/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wavelength cal
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#isofit.inversion.inverse_simple" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        inverse_simple
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="inverse_simple">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#isofit.inversion.inverse_simple.heuristic_atmosphere" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        heuristic_atmosphere
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.inversion.inverse_simple.invert_algebraic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        invert_algebraic
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.inversion.inverse_simple.invert_analytical" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        invert_analytical
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.inversion.inverse_simple.invert_simple" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        invert_simple
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.inversion.inverse_simple.invert_liquid_water" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        invert_liquid_water
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.inversion.inverse_simple.beer_lambert_model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        beer_lambert_model
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+  <h1>Inverse simple</h1>
+
+<p class="mkapi-object mkapi-page-object" id="isofit.inversion.inverse_simple">
+<span class="mkapi-object-link">
+
+
+<a href="../../../../api/isofit/inversion/inverse_simple/#isofit.inversion.inverse_simple" title="Go to docs">[docs]</a>
+<span class="mkapi-document-toggle" title="Toggle all docs">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span><span class="mkapi-object-kind">module</span>
+<span class="mkapi-object-name"><a href="./#isofit.inversion.inverse_simple" title="isofit.inversion.inverse_simple">isofit.inversion.inverse_simple</a></span>
+</p>
+<div class="mkapi-source no-copy highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">  1</span>
+<span class="normal">  2</span>
+<span class="normal">  3</span>
+<span class="normal">  4</span>
+<span class="normal">  5</span>
+<span class="normal">  6</span>
+<span class="normal">  7</span>
+<span class="normal">  8</span>
+<span class="normal">  9</span>
+<span class="normal"> 10</span>
+<span class="normal"> 11</span>
+<span class="normal"> 12</span>
+<span class="normal"> 13</span>
+<span class="normal"> 14</span>
+<span class="normal"> 15</span>
+<span class="normal"> 16</span>
+<span class="normal"> 17</span>
+<span class="normal"> 18</span>
+<span class="normal"> 19</span>
+<span class="normal"> 20</span>
+<span class="normal"> 21</span>
+<span class="normal"> 22</span>
+<span class="normal"> 23</span>
+<span class="normal"> 24</span>
+<span class="normal"> 25</span>
+<span class="normal"> 26</span>
+<span class="normal"> 27</span>
+<span class="normal"> 28</span>
+<span class="normal"> 29</span>
+<span class="normal"> 30</span>
+<span class="normal"> 31</span>
+<span class="normal"> 32</span>
+<span class="normal"> 33</span>
+<span class="normal"> 34</span>
+<span class="normal"> 35</span>
+<span class="normal"> 36</span>
+<span class="normal"> 37</span>
+<span class="normal"> 38</span>
+<span class="normal"> 39</span>
+<span class="normal"> 40</span>
+<span class="normal"> 41</span>
+<span class="normal"> 42</span>
+<span class="normal"> 43</span>
+<span class="normal"> 44</span>
+<span class="normal"> 45</span>
+<span class="normal"> 46</span>
+<span class="normal"> 47</span>
+<span class="normal"> 48</span>
+<span class="normal"> 49</span>
+<span class="normal"> 50</span>
+<span class="normal"> 51</span>
+<span class="normal"> 52</span>
+<span class="normal"> 53</span>
+<span class="normal"> 54</span>
+<span class="normal"> 55</span>
+<span class="normal"> 56</span>
+<span class="normal"> 57</span>
+<span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
+<span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span>
+<span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span>
+<span class="normal">291</span>
+<span class="normal">292</span>
+<span class="normal">293</span>
+<span class="normal">294</span>
+<span class="normal">295</span>
+<span class="normal">296</span>
+<span class="normal">297</span>
+<span class="normal">298</span>
+<span class="normal">299</span>
+<span class="normal">300</span>
+<span class="normal">301</span>
+<span class="normal">302</span>
+<span class="normal">303</span>
+<span class="normal">304</span>
+<span class="normal">305</span>
+<span class="normal">306</span>
+<span class="normal">307</span>
+<span class="normal">308</span>
+<span class="normal">309</span>
+<span class="normal">310</span>
+<span class="normal">311</span>
+<span class="normal">312</span>
+<span class="normal">313</span>
+<span class="normal">314</span>
+<span class="normal">315</span>
+<span class="normal">316</span>
+<span class="normal">317</span>
+<span class="normal">318</span>
+<span class="normal">319</span>
+<span class="normal">320</span>
+<span class="normal">321</span>
+<span class="normal">322</span>
+<span class="normal">323</span>
+<span class="normal">324</span>
+<span class="normal">325</span>
+<span class="normal">326</span>
+<span class="normal">327</span>
+<span class="normal">328</span>
+<span class="normal">329</span>
+<span class="normal">330</span>
+<span class="normal">331</span>
+<span class="normal">332</span>
+<span class="normal">333</span>
+<span class="normal">334</span>
+<span class="normal">335</span>
+<span class="normal">336</span>
+<span class="normal">337</span>
+<span class="normal">338</span>
+<span class="normal">339</span>
+<span class="normal">340</span>
+<span class="normal">341</span>
+<span class="normal">342</span>
+<span class="normal">343</span>
+<span class="normal">344</span>
+<span class="normal">345</span>
+<span class="normal">346</span>
+<span class="normal">347</span>
+<span class="normal">348</span>
+<span class="normal">349</span>
+<span class="normal">350</span>
+<span class="normal">351</span>
+<span class="normal">352</span>
+<span class="normal">353</span>
+<span class="normal">354</span>
+<span class="normal">355</span>
+<span class="normal">356</span>
+<span class="normal">357</span>
+<span class="normal">358</span>
+<span class="normal">359</span>
+<span class="normal">360</span>
+<span class="normal">361</span>
+<span class="normal">362</span>
+<span class="normal">363</span>
+<span class="normal">364</span>
+<span class="normal">365</span>
+<span class="normal">366</span>
+<span class="normal">367</span>
+<span class="normal">368</span>
+<span class="normal">369</span>
+<span class="normal">370</span>
+<span class="normal">371</span>
+<span class="normal">372</span>
+<span class="normal">373</span>
+<span class="normal">374</span>
+<span class="normal">375</span>
+<span class="normal">376</span>
+<span class="normal">377</span>
+<span class="normal">378</span>
+<span class="normal">379</span>
+<span class="normal">380</span>
+<span class="normal">381</span>
+<span class="normal">382</span>
+<span class="normal">383</span>
+<span class="normal">384</span>
+<span class="normal">385</span>
+<span class="normal">386</span>
+<span class="normal">387</span>
+<span class="normal">388</span>
+<span class="normal">389</span>
+<span class="normal">390</span>
+<span class="normal">391</span>
+<span class="normal">392</span>
+<span class="normal">393</span>
+<span class="normal">394</span>
+<span class="normal">395</span>
+<span class="normal">396</span>
+<span class="normal">397</span>
+<span class="normal">398</span>
+<span class="normal">399</span>
+<span class="normal">400</span>
+<span class="normal">401</span>
+<span class="normal">402</span>
+<span class="normal">403</span>
+<span class="normal">404</span>
+<span class="normal">405</span>
+<span class="normal">406</span>
+<span class="normal">407</span>
+<span class="normal">408</span>
+<span class="normal">409</span>
+<span class="normal">410</span>
+<span class="normal">411</span>
+<span class="normal">412</span>
+<span class="normal">413</span>
+<span class="normal">414</span>
+<span class="normal">415</span>
+<span class="normal">416</span>
+<span class="normal">417</span>
+<span class="normal">418</span>
+<span class="normal">419</span>
+<span class="normal">420</span>
+<span class="normal">421</span>
+<span class="normal">422</span>
+<span class="normal">423</span>
+<span class="normal">424</span>
+<span class="normal">425</span>
+<span class="normal">426</span>
+<span class="normal">427</span>
+<span class="normal">428</span>
+<span class="normal">429</span>
+<span class="normal">430</span>
+<span class="normal">431</span>
+<span class="normal">432</span>
+<span class="normal">433</span>
+<span class="normal">434</span>
+<span class="normal">435</span>
+<span class="normal">436</span>
+<span class="normal">437</span>
+<span class="normal">438</span>
+<span class="normal">439</span>
+<span class="normal">440</span>
+<span class="normal">441</span>
+<span class="normal">442</span>
+<span class="normal">443</span>
+<span class="normal">444</span>
+<span class="normal">445</span>
+<span class="normal">446</span>
+<span class="normal">447</span>
+<span class="normal">448</span>
+<span class="normal">449</span>
+<span class="normal">450</span>
+<span class="normal">451</span>
+<span class="normal">452</span>
+<span class="normal">453</span>
+<span class="normal">454</span>
+<span class="normal">455</span>
+<span class="normal">456</span>
+<span class="normal">457</span>
+<span class="normal">458</span>
+<span class="normal">459</span>
+<span class="normal">460</span>
+<span class="normal">461</span>
+<span class="normal">462</span>
+<span class="normal">463</span>
+<span class="normal">464</span>
+<span class="normal">465</span>
+<span class="normal">466</span>
+<span class="normal">467</span>
+<span class="normal">468</span>
+<span class="normal">469</span>
+<span class="normal">470</span>
+<span class="normal">471</span>
+<span class="normal">472</span>
+<span class="normal">473</span>
+<span class="normal">474</span>
+<span class="normal">475</span>
+<span class="normal">476</span>
+<span class="normal">477</span>
+<span class="normal">478</span>
+<span class="normal">479</span>
+<span class="normal">480</span>
+<span class="normal">481</span>
+<span class="normal">482</span>
+<span class="normal">483</span>
+<span class="normal">484</span>
+<span class="normal">485</span>
+<span class="normal">486</span>
+<span class="normal">487</span>
+<span class="normal">488</span>
+<span class="normal">489</span>
+<span class="normal">490</span>
+<span class="normal">491</span>
+<span class="normal">492</span>
+<span class="normal">493</span>
+<span class="normal">494</span>
+<span class="normal">495</span>
+<span class="normal">496</span>
+<span class="normal">497</span>
+<span class="normal">498</span>
+<span class="normal">499</span>
+<span class="normal">500</span>
+<span class="normal">501</span>
+<span class="normal">502</span>
+<span class="normal">503</span>
+<span class="normal">504</span>
+<span class="normal">505</span>
+<span class="normal">506</span>
+<span class="normal">507</span>
+<span class="normal">508</span>
+<span class="normal">509</span>
+<span class="normal">510</span>
+<span class="normal">511</span>
+<span class="normal">512</span>
+<span class="normal">513</span>
+<span class="normal">514</span>
+<span class="normal">515</span>
+<span class="normal">516</span>
+<span class="normal">517</span>
+<span class="normal">518</span>
+<span class="normal">519</span>
+<span class="normal">520</span>
+<span class="normal">521</span>
+<span class="normal">522</span>
+<span class="normal">523</span>
+<span class="normal">524</span>
+<span class="normal">525</span>
+<span class="normal">526</span>
+<span class="normal">527</span>
+<span class="normal">528</span>
+<span class="normal">529</span>
+<span class="normal">530</span>
+<span class="normal">531</span>
+<span class="normal">532</span>
+<span class="normal">533</span>
+<span class="normal">534</span>
+<span class="normal">535</span>
+<span class="normal">536</span>
+<span class="normal">537</span>
+<span class="normal">538</span>
+<span class="normal">539</span>
+<span class="normal">540</span>
+<span class="normal">541</span>
+<span class="normal">542</span>
+<span class="normal">543</span>
+<span class="normal">544</span>
+<span class="normal">545</span>
+<span class="normal">546</span>
+<span class="normal">547</span>
+<span class="normal">548</span>
+<span class="normal">549</span>
+<span class="normal">550</span>
+<span class="normal">551</span>
+<span class="normal">552</span>
+<span class="normal">553</span>
+<span class="normal">554</span>
+<span class="normal">555</span>
+<span class="normal">556</span>
+<span class="normal">557</span>
+<span class="normal">558</span>
+<span class="normal">559</span>
+<span class="normal">560</span>
+<span class="normal">561</span>
+<span class="normal">562</span>
+<span class="normal">563</span>
+<span class="normal">564</span>
+<span class="normal">565</span>
+<span class="normal">566</span>
+<span class="normal">567</span>
+<span class="normal">568</span>
+<span class="normal">569</span>
+<span class="normal">570</span>
+<span class="normal">571</span>
+<span class="normal">572</span>
+<span class="normal">573</span>
+<span class="normal">574</span>
+<span class="normal">575</span>
+<span class="normal">576</span>
+<span class="normal">577</span>
+<span class="normal">578</span>
+<span class="normal">579</span>
+<span class="normal">580</span>
+<span class="normal">581</span>
+<span class="normal">582</span>
+<span class="normal">583</span>
+<span class="normal">584</span>
+<span class="normal">585</span>
+<span class="normal">586</span>
+<span class="normal">587</span>
+<span class="normal">588</span>
+<span class="normal">589</span>
+<span class="normal">590</span>
+<span class="normal">591</span>
+<span class="normal">592</span>
+<span class="normal">593</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="c1">#</span>
+<span class="c1">#  Copyright 2018 California Institute of Technology</span>
+<span class="c1">#</span>
+<span class="c1">#  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1">#  you may not use this file except in compliance with the License.</span>
+<span class="c1">#  You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#      http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1">#  Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1">#  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1">#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1">#  See the License for the specific language governing permissions and</span>
+<span class="c1">#  limitations under the License.</span>
+<span class="c1">#</span>
+<span class="c1"># ISOFIT: Imaging Spectrometer Optimal FITting</span>
+<span class="c1"># Author: David R Thompson, david.r.thompson@jpl.nasa.gov</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderedDict</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.interpolate</span><span class="w"> </span><span class="kn">import</span> <span class="n">interp1d</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.optimize</span><span class="w"> </span><span class="kn">import</span> <span class="n">least_squares</span><span class="p">,</span> <span class="n">minimize</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.optimize</span><span class="w"> </span><span class="kn">import</span> <span class="n">minimize_scalar</span> <span class="k">as</span> <span class="n">min1d</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">units</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">emissive_radiance</span><span class="p">,</span> <span class="n">eps</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">env</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">heuristic_atmosphere</span><span class="p">(</span><div class="mkapi-source-link" id="isofit.inversion.inverse_simple.heuristic_atmosphere"><a href="../../../../api/isofit/inversion/inverse_simple/#isofit.inversion.inverse_simple.heuristic_atmosphere" title="Go to docs">[docs]</a></div>
+    <span class="n">fm</span><span class="p">:</span> <span class="n">ForwardModel</span><span class="p">,</span>
+    <span class="n">x_surface</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span>
+    <span class="n">x_RT</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span>
+    <span class="n">x_instrument</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span>
+    <span class="n">meas</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span>
+    <span class="n">geom</span><span class="p">:</span> <span class="n">Geometry</span><span class="p">,</span>
+    <span class="n">wl_lo</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">865</span><span class="p">,</span>
+    <span class="n">wl_center</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">945</span><span class="p">,</span>
+    <span class="n">wl_hi</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1040</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;From a given radiance, estimate atmospheric state with band ratios.</span>
+<span class="sd">    Used to initialize gradient descent inversions.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        fm: isofit forward model</span>
+<span class="sd">        x_surface: surface portion of the state vector</span>
+<span class="sd">        x_RT: radiative transfer portion of the state vector</span>
+<span class="sd">        x_instrument: instrument portion of the state vector</span>
+<span class="sd">        meas: a one-D numpy vector of radiance in uW/nm/sr/cm2</span>
+<span class="sd">        geom: geometry object corresponding to given measurement</span>
+<span class="sd">        wl_lo: Low wavelength to use for the continuum removal H2O fit</span>
+<span class="sd">        wl_center: Center wavelength to use for the continuum removal H2O fit</span>
+<span class="sd">        wl_hi: High wavelength to use for the continuum removal H2O fit</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        x_new: updated estimate of x_RT</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Identify the latest instrument wavelength calibration (possibly</span>
+    <span class="c1"># state-dependent) and identify channel numbers for the band ratio.</span>
+    <span class="n">wl</span><span class="p">,</span> <span class="n">fwhm</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">calibration</span><span class="p">(</span><span class="n">x_instrument</span><span class="p">)</span>
+    <span class="n">blo</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">wl</span> <span class="o">-</span> <span class="n">wl_lo</span><span class="p">))</span>
+    <span class="n">bcenter</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">wl</span> <span class="o">-</span> <span class="n">wl_center</span><span class="p">))</span>
+    <span class="n">bhi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">wl</span> <span class="o">-</span> <span class="n">wl_hi</span><span class="p">))</span>
+
+    <span class="n">offset</span> <span class="o">=</span> <span class="mi">5</span>  <span class="c1"># nm</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">any</span><span class="p">(</span><span class="n">fm</span><span class="o">.</span><span class="n">RT</span><span class="o">.</span><span class="n">wl</span> <span class="o">&gt;</span> <span class="p">(</span><span class="n">wl_lo</span> <span class="o">-</span> <span class="n">offset</span><span class="p">))</span> <span class="ow">and</span> <span class="nb">any</span><span class="p">(</span><span class="n">fm</span><span class="o">.</span><span class="n">RT</span><span class="o">.</span><span class="n">wl</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">wl_hi</span> <span class="o">+</span> <span class="n">offset</span><span class="p">))):</span>
+        <span class="k">return</span> <span class="n">x_RT</span>
+
+    <span class="n">x_new</span> <span class="o">=</span> <span class="n">x_RT</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="c1"># Figure out which RT object we are using</span>
+    <span class="c1"># TODO: this is currently very specific to vswir-tir 2-mode, eventually generalize</span>
+    <span class="n">my_RT</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">rte</span> <span class="ow">in</span> <span class="n">fm</span><span class="o">.</span><span class="n">RT</span><span class="o">.</span><span class="n">rt_engines</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">rte</span><span class="o">.</span><span class="n">treat_as_emissive</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="n">my_RT</span> <span class="o">=</span> <span class="n">rte</span>
+            <span class="k">break</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">my_RT</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No suitable RT object for initialization&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Band ratio retrieval of H2O.  Depending on the radiative transfer</span>
+    <span class="c1"># model we are using, this state parameter could go by several names.</span>
+    <span class="k">for</span> <span class="n">h2oname</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;H2OSTR&quot;</span><span class="p">,</span> <span class="s2">&quot;h2o&quot;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">h2oname</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fm</span><span class="o">.</span><span class="n">RT</span><span class="o">.</span><span class="n">statevec_names</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># ignore unused names</span>
+        <span class="k">if</span> <span class="n">h2oname</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">my_RT</span><span class="o">.</span><span class="n">lut_names</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># find the index in the lookup table associated with water vapor</span>
+        <span class="n">ind_sv</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">RT</span><span class="o">.</span><span class="n">statevec_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">h2oname</span><span class="p">)</span>
+        <span class="n">h2os</span><span class="p">,</span> <span class="n">areas</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+
+        <span class="c1"># We iterate through every possible grid point in the lookup table,</span>
+        <span class="c1"># calculating the band ratio that we would see if this were the</span>
+        <span class="c1"># atmospheric H2O content.  It assumes that defaults for all other</span>
+        <span class="c1"># atmospheric parameters (such as aerosol, if it is there).</span>
+        <span class="k">for</span> <span class="n">h2o</span> <span class="ow">in</span> <span class="n">my_RT</span><span class="o">.</span><span class="n">lut_grid</span><span class="p">[</span><span class="n">h2oname</span><span class="p">]:</span>
+            <span class="c1"># Get Atmospheric terms at high spectral resolution</span>
+            <span class="n">x_RT_2</span> <span class="o">=</span> <span class="n">x_RT</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">x_RT_2</span><span class="p">[</span><span class="n">ind_sv</span><span class="p">]</span> <span class="o">=</span> <span class="n">h2o</span>
+
+            <span class="c1"># pass in all zeros, as this is ONLY used for Ls, which we will</span>
+            <span class="c1"># assume is not present</span>
+            <span class="n">r</span><span class="p">,</span> <span class="n">coeffs</span> <span class="o">=</span> <span class="n">invert_algebraic</span><span class="p">(</span>
+                <span class="n">fm</span><span class="o">.</span><span class="n">surface</span><span class="p">,</span>
+                <span class="n">fm</span><span class="o">.</span><span class="n">RT</span><span class="p">,</span>
+                <span class="n">fm</span><span class="o">.</span><span class="n">instrument</span><span class="p">,</span>
+                <span class="n">x_surface</span><span class="p">,</span>
+                <span class="n">x_RT_2</span><span class="p">,</span>
+                <span class="n">x_instrument</span><span class="p">,</span>
+                <span class="n">meas</span><span class="p">,</span>
+                <span class="n">geom</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">fit_params</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">geom</span><span class="p">)[</span><span class="n">fm</span><span class="o">.</span><span class="n">idx_surf_rfl</span><span class="p">]</span>
+
+            <span class="c1"># Simple linear interpolation</span>
+            <span class="n">vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">wl</span><span class="p">[</span><span class="n">blo</span><span class="p">:</span><span class="n">bhi</span><span class="p">],</span> <span class="p">[</span><span class="n">wl_lo</span><span class="p">,</span> <span class="n">wl_hi</span><span class="p">],</span> <span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="n">blo</span><span class="p">],</span> <span class="n">r</span><span class="p">[</span><span class="n">bhi</span><span class="p">]])</span>
+
+            <span class="c1"># Minimize the absolute distance between the continuum removed</span>
+            <span class="n">D</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">vals</span> <span class="o">-</span> <span class="n">r</span><span class="p">[</span><span class="n">blo</span><span class="p">:</span><span class="n">bhi</span><span class="p">])</span>
+
+            <span class="n">areas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">D</span><span class="p">)</span>
+            <span class="n">h2os</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">h2o</span><span class="p">)</span>
+
+        <span class="c1"># Finally, interpolate to determine the actual water vapor level that</span>
+        <span class="c1"># would optimize the continuum-relative correction</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">h2os</span><span class="p">,</span> <span class="n">areas</span><span class="p">)</span>
+        <span class="n">bounds</span> <span class="o">=</span> <span class="p">(</span><span class="n">h2os</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mf">0.001</span><span class="p">,</span> <span class="n">h2os</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mf">0.001</span><span class="p">)</span>
+        <span class="n">best</span> <span class="o">=</span> <span class="n">min1d</span><span class="p">(</span><span class="k">lambda</span> <span class="n">h</span><span class="p">:</span> <span class="nb">abs</span><span class="p">(</span><span class="n">p</span><span class="p">(</span><span class="n">h</span><span class="p">)),</span> <span class="n">bounds</span><span class="o">=</span><span class="n">bounds</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;bounded&quot;</span><span class="p">)</span>
+        <span class="n">x_new</span><span class="p">[</span><span class="n">ind_sv</span><span class="p">]</span> <span class="o">=</span> <span class="n">best</span><span class="o">.</span><span class="n">x</span>
+
+    <span class="k">return</span> <span class="n">x_new</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">invert_algebraic</span><span class="p">(</span><div class="mkapi-source-link" id="isofit.inversion.inverse_simple.invert_algebraic"><a href="../../../../api/isofit/inversion/inverse_simple/#isofit.inversion.inverse_simple.invert_algebraic" title="Go to docs">[docs]</a></div>
+    <span class="n">surface</span><span class="p">:</span> <span class="n">Surface</span><span class="p">,</span>
+    <span class="n">RT</span><span class="p">:</span> <span class="n">RadiativeTransfer</span><span class="p">,</span>
+    <span class="n">instrument</span><span class="p">:</span> <span class="n">Instrument</span><span class="p">,</span>
+    <span class="n">x_surface</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span>
+    <span class="n">x_RT</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span>
+    <span class="n">x_instrument</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span>
+    <span class="n">meas</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span>
+    <span class="n">geom</span><span class="p">:</span> <span class="n">Geometry</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Inverts radiance algebraically using Lambertian assumptions to get a</span>
+<span class="sd">    reflectance.  If the appropriate transmittance terms are available,</span>
+<span class="sd">    surface slope will enter for the initial guess.  Otherwise, the surface</span>
+<span class="sd">    will be treated as if flat.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        surface: surface model</span>
+<span class="sd">        RT: radiative transfer model to use</span>
+<span class="sd">        instrument: instrument model</span>
+<span class="sd">        x_surface: surface portion of the state vector</span>
+<span class="sd">        x_RT: radiative transfer portion of the state vector</span>
+<span class="sd">        x_instrument: instrument portion of the state vector</span>
+<span class="sd">        meas: a one-D numpy vector of radiance in uW/nm/sr/cm2</span>
+<span class="sd">        geom: geometry object corresponding to given measurement</span>
+
+
+<span class="sd">    Return:</span>
+<span class="sd">        rfl_est: estimate of the surface reflectance based on the given surface model and specified atmospheric state</span>
+<span class="sd">        coeffs: atmospheric parameters used for the inversion, returned for convenience</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Figure out which RT object we are using</span>
+    <span class="c1"># TODO: this is currently very specific to vswir-tir 2-mode, eventually generalize</span>
+    <span class="n">my_RT</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">rte</span> <span class="ow">in</span> <span class="n">RT</span><span class="o">.</span><span class="n">rt_engines</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">rte</span><span class="o">.</span><span class="n">treat_as_emissive</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="n">my_RT</span> <span class="o">=</span> <span class="n">rte</span>
+            <span class="k">break</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">my_RT</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No suitable RT object for initialization&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Get all radiance terms</span>
+    <span class="p">(</span>
+        <span class="n">rhi</span><span class="p">,</span>
+        <span class="n">L_tot</span><span class="p">,</span>
+        <span class="n">L_dir_dir</span><span class="p">,</span>
+        <span class="n">L_dif_dir</span><span class="p">,</span>
+        <span class="n">L_dir_dif</span><span class="p">,</span>
+        <span class="n">L_dif_dif</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">=</span> <span class="n">RT</span><span class="o">.</span><span class="n">calc_RT_quantities</span><span class="p">(</span><span class="n">x_RT</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
+    <span class="n">L_atm</span> <span class="o">=</span> <span class="n">RT</span><span class="o">.</span><span class="n">get_L_atm</span><span class="p">(</span><span class="n">x_RT</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
+    <span class="n">sphalb</span> <span class="o">=</span> <span class="n">rhi</span><span class="p">[</span><span class="s2">&quot;sphalb&quot;</span><span class="p">]</span>
+    <span class="n">Ls</span> <span class="o">=</span> <span class="n">surface</span><span class="o">.</span><span class="n">calc_Ls</span><span class="p">(</span><span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
+    <span class="n">transup</span> <span class="o">=</span> <span class="n">RT</span><span class="o">.</span><span class="n">get_upward_transm</span><span class="p">(</span><span class="n">r</span><span class="o">=</span><span class="n">rhi</span><span class="p">,</span> <span class="n">geom</span><span class="o">=</span><span class="n">geom</span><span class="p">)</span>
+
+    <span class="c1"># Get the wavelengths too - these may also be adjusted</span>
+    <span class="n">wl</span><span class="p">,</span> <span class="n">fwhm</span> <span class="o">=</span> <span class="n">instrument</span><span class="o">.</span><span class="n">calibration</span><span class="p">(</span><span class="n">x_instrument</span><span class="p">)</span>
+
+    <span class="c1"># Interpolate L_up linearly if needed.</span>
+    <span class="n">Ls</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">Ls</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="s2">&quot;extrapolate&quot;</span><span class="p">)(</span><span class="n">RT</span><span class="o">.</span><span class="n">wl</span><span class="p">)</span>
+
+    <span class="c1"># Now convert to what&#39;s scene at the instrument</span>
+    <span class="n">L_up</span> <span class="o">=</span> <span class="n">Ls</span> <span class="o">*</span> <span class="n">transup</span>
+
+    <span class="c1"># Resample the components we need to use</span>
+    <span class="n">L_atm</span> <span class="o">=</span> <span class="n">instrument</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">x_instrument</span><span class="p">,</span> <span class="n">RT</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">L_atm</span><span class="p">)</span>
+    <span class="n">L_tot</span> <span class="o">=</span> <span class="n">instrument</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">x_instrument</span><span class="p">,</span> <span class="n">RT</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">L_tot</span><span class="p">)</span>
+    <span class="n">sphalb</span> <span class="o">=</span> <span class="n">instrument</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">x_instrument</span><span class="p">,</span> <span class="n">RT</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">sphalb</span><span class="p">)</span>
+    <span class="n">L_up</span> <span class="o">=</span> <span class="n">instrument</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">x_instrument</span><span class="p">,</span> <span class="n">RT</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">L_up</span><span class="p">)</span>
+
+    <span class="c1"># Now everything should be in hand to do the calculation</span>
+    <span class="n">rdn_solrfl</span> <span class="o">=</span> <span class="n">meas</span> <span class="o">-</span> <span class="n">L_up</span>
+    <span class="n">rfl</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">L_tot</span> <span class="o">/</span> <span class="p">(</span><span class="n">rdn_solrfl</span> <span class="o">-</span> <span class="n">L_atm</span><span class="p">)</span> <span class="o">+</span> <span class="n">sphalb</span><span class="p">)</span>
+
+    <span class="c1"># explicity handle known nan cases - this doesn&#39;t handle nans</span>
+    <span class="c1"># that might appear from the RT directly, as we don&#39;t want to</span>
+    <span class="c1"># cover them up</span>
+    <span class="n">rfl</span><span class="p">[</span><span class="n">rdn_solrfl</span> <span class="o">-</span> <span class="n">L_atm</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">rfl</span><span class="p">[</span><span class="n">L_tot</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="c1"># While values can go above 1, they shouldn&#39;t got that high above.</span>
+    <span class="c1"># generally it means instability</span>
+    <span class="n">rfl</span><span class="p">[</span><span class="n">rfl</span> <span class="o">&gt;</span> <span class="mf">1.6</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.6</span>
+
+    <span class="c1"># interpolate the output</span>
+    <span class="n">rfl_est</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">wl</span><span class="p">,</span> <span class="n">rfl</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="s2">&quot;extrapolate&quot;</span><span class="p">)(</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">)</span>
+
+    <span class="c1"># Some downstream code will benefit from our precalculated</span>
+    <span class="c1"># atmospheric optical parameters</span>
+    <span class="n">coeffs</span> <span class="o">=</span> <span class="n">L_atm</span><span class="p">,</span> <span class="n">sphalb</span><span class="p">,</span> <span class="n">L_tot</span><span class="p">,</span> <span class="n">transup</span><span class="p">,</span> <span class="n">L_up</span>
+    <span class="k">return</span> <span class="n">rfl_est</span><span class="p">,</span> <span class="n">coeffs</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">invert_analytical</span><span class="p">(</span><div class="mkapi-source-link" id="isofit.inversion.inverse_simple.invert_analytical"><a href="../../../../api/isofit/inversion/inverse_simple/#isofit.inversion.inverse_simple.invert_analytical" title="Go to docs">[docs]</a></div>
+    <span class="n">fm</span><span class="p">:</span> <span class="n">ForwardModel</span><span class="p">,</span>
+    <span class="n">winidx</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span>
+    <span class="n">meas</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span>
+    <span class="n">geom</span><span class="p">:</span> <span class="n">Geometry</span><span class="p">,</span>
+    <span class="n">x0</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span>
+    <span class="n">sub_state</span><span class="p">,</span>
+    <span class="n">num_iter</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">hash_table</span><span class="p">:</span> <span class="n">OrderedDict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">hash_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">diag_uncert</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">outside_ret_const</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.01</span><span class="p">,</span>
+    <span class="n">fill_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">9999.0</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Perform an analytical estimate of the conditional MAP estimate for</span>
+<span class="sd">    a fixed atmosphere.  Based on the &quot;Inner loop&quot; from Susiluoto et al. (2025).</span>
+<span class="sd">    doi: https://doi.org/10.3390/rs17223719</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        fm: isofit forward model</span>
+<span class="sd">        winidx: indices of surface components of state vector (to be solved)</span>
+<span class="sd">        meas: a one-D numpy vector of radiance in uW/nm/sr/cm2</span>
+<span class="sd">        geom: geometry object corresponding to given measurement</span>
+<span class="sd">        x0: the initialization state including surface from the superpixel</span>
+<span class="sd">            and the atm from the smoothed atmosphere.</span>
+<span class="sd">        num_iter: number of interations to run through</span>
+<span class="sd">        hash_table: a hash table to use locally</span>
+<span class="sd">        hash_size: max size of given hash table</span>
+<span class="sd">        diag_uncert: flag indicating whether to diagonalize the uncertainty</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        x: MAP estimate of the mean</span>
+<span class="sd">        S: diagonal conditional posterior covariance estimate</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.linalg.blas</span><span class="w"> </span><span class="kn">import</span> <span class="n">dsymv</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.linalg.lapack</span><span class="w"> </span><span class="kn">import</span> <span class="n">dpotrf</span><span class="p">,</span> <span class="n">dpotri</span>
+
+    <span class="n">x</span> <span class="o">=</span> <span class="n">x0</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">x_surface</span><span class="p">,</span> <span class="n">x_RT</span><span class="p">,</span> <span class="n">x_instrument</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+    <span class="c1"># Get all the RT quantities</span>
+    <span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">L_tot</span><span class="p">,</span> <span class="n">L_dir_dir</span><span class="p">,</span> <span class="n">L_dif_dir</span><span class="p">,</span> <span class="n">L_dir_dif</span><span class="p">,</span> <span class="n">L_dif_dif</span><span class="p">)</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">RT</span><span class="o">.</span><span class="n">calc_RT_quantities</span><span class="p">(</span>
+        <span class="n">x_RT</span><span class="p">,</span> <span class="n">geom</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Path radiance and spherical albedo</span>
+    <span class="n">L_atm</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">RT</span><span class="o">.</span><span class="n">get_L_atm</span><span class="p">(</span><span class="n">x_RT</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;sphalb&quot;</span><span class="p">]</span>
+
+    <span class="c1"># Get all the surface quantities for the super pixel</span>
+    <span class="n">sub_surface</span><span class="p">,</span> <span class="n">sub_RT</span><span class="p">,</span> <span class="n">sub_instrument</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">sub_state</span><span class="p">)</span>
+
+    <span class="c1"># Surface reflectance at the wl resolution of fm.RT</span>
+    <span class="n">rho_dir_dir</span><span class="p">,</span> <span class="n">rho_dif_dir</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">calc_rfl</span><span class="p">(</span><span class="n">sub_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
+    <span class="n">rho_dir_dir</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="n">fm</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">rho_dir_dir</span><span class="p">)</span>
+    <span class="n">rho_dif_dir</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="n">fm</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">rho_dif_dir</span><span class="p">)</span>
+
+    <span class="c1"># Background conditions equal to the superpixel reflectance</span>
+    <span class="n">bg</span> <span class="o">=</span> <span class="n">s</span> <span class="o">*</span> <span class="n">rho_dif_dir</span>
+
+    <span class="c1"># Get superpixel EOF shift if used</span>
+    <span class="n">eof_offset</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">eof_offset</span><span class="p">(</span><span class="n">sub_surface</span><span class="p">,</span> <span class="n">sub_RT</span><span class="p">,</span> <span class="n">sub_instrument</span><span class="p">)</span>
+
+    <span class="c1"># Get the inversion indices; Include glint indices if applicable</span>
+    <span class="n">full_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">winidx</span><span class="p">,</span> <span class="n">fm</span><span class="o">.</span><span class="n">idx_surf_nonrfl</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">outside_ret_windows</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">fm</span><span class="o">.</span><span class="n">idx_surface</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+    <span class="n">outside_ret_windows</span><span class="p">[</span><span class="n">full_idx</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">outside_ret_windows</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">outside_ret_windows</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">iv_idx</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">analytical_iv_idx</span>
+
+    <span class="c1"># The H matrix does not change as a function of x-vector</span>
+    <span class="n">H</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">analytical_model</span><span class="p">(</span>
+        <span class="n">bg</span><span class="p">,</span>
+        <span class="n">L_tot</span><span class="o">=</span><span class="n">L_tot</span><span class="p">,</span>
+        <span class="n">geom</span><span class="o">=</span><span class="n">geom</span><span class="p">,</span>
+        <span class="n">L_dir_dir</span><span class="o">=</span><span class="n">L_dir_dir</span><span class="p">,</span>
+        <span class="n">L_dir_dif</span><span class="o">=</span><span class="n">L_dir_dif</span><span class="p">,</span>
+        <span class="n">L_dif_dir</span><span class="o">=</span><span class="n">L_dif_dir</span><span class="p">,</span>
+        <span class="n">L_dif_dif</span><span class="o">=</span><span class="n">L_dif_dif</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="c1"># Sample just the wavelengths and states of interest</span>
+    <span class="n">L</span> <span class="o">=</span> <span class="n">H</span><span class="p">[</span><span class="n">winidx</span><span class="p">,</span> <span class="p">:][:,</span> <span class="n">iv_idx</span><span class="p">]</span>
+
+    <span class="c1"># Use cached scaling factor from inital normalized inverse (outside of loop).</span>
+    <span class="n">Sa</span><span class="p">,</span> <span class="n">Sa_inv</span><span class="p">,</span> <span class="n">Sa_inv_sqrt</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">Sa</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
+    <span class="n">Sa_inv</span> <span class="o">=</span> <span class="n">Sa_inv</span><span class="p">[</span><span class="n">fm</span><span class="o">.</span><span class="n">idx_surface</span><span class="p">,</span> <span class="p">:][:,</span> <span class="n">fm</span><span class="o">.</span><span class="n">idx_surface</span><span class="p">]</span>
+    <span class="n">Sa_inv_sqrt</span> <span class="o">=</span> <span class="n">Sa_inv_sqrt</span><span class="p">[</span><span class="n">fm</span><span class="o">.</span><span class="n">idx_surface</span><span class="p">,</span> <span class="p">:][:,</span> <span class="n">fm</span><span class="o">.</span><span class="n">idx_surface</span><span class="p">]</span>
+
+    <span class="n">trajectory</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">num_iter</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)))</span>
+    <span class="n">trajectory</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">x</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_iter</span><span class="p">):</span>
+
+        <span class="c1"># Measurement uncertainty</span>
+        <span class="n">Seps</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">Seps</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">meas</span><span class="p">,</span> <span class="n">geom</span><span class="p">)[</span><span class="n">winidx</span><span class="p">,</span> <span class="p">:][:,</span> <span class="n">winidx</span><span class="p">]</span>
+
+        <span class="c1"># Prior mean</span>
+        <span class="n">xa_full</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">xa</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
+        <span class="n">xa_surface</span> <span class="o">=</span> <span class="n">xa_full</span><span class="p">[</span><span class="n">fm</span><span class="o">.</span><span class="n">idx_surface</span><span class="p">]</span>
+
+        <span class="c1"># Save the product of the prior covariance and mean</span>
+        <span class="n">prprod</span> <span class="o">=</span> <span class="n">Sa_inv</span> <span class="o">@</span> <span class="n">xa_surface</span>
+
+        <span class="n">x_surface</span><span class="p">,</span> <span class="n">x_RT</span><span class="p">,</span> <span class="n">x_instrument</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="n">C</span> <span class="o">=</span> <span class="n">dpotrf</span><span class="p">(</span><span class="n">Seps</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">P</span> <span class="o">=</span> <span class="n">dpotri</span><span class="p">(</span><span class="n">C</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">P_tilde</span> <span class="o">=</span> <span class="p">((</span><span class="n">L</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">P</span><span class="p">)</span> <span class="o">@</span> <span class="n">L</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">P_rcond</span> <span class="o">=</span> <span class="n">Sa_inv</span><span class="p">[</span><span class="n">iv_idx</span><span class="p">,</span> <span class="p">:][:,</span> <span class="n">iv_idx</span><span class="p">]</span> <span class="o">+</span> <span class="n">P_tilde</span>
+
+        <span class="n">LI_rcond</span> <span class="o">=</span> <span class="n">dpotrf</span><span class="p">(</span><span class="n">P_rcond</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">C_rcond</span> <span class="o">=</span> <span class="n">dpotri</span><span class="p">(</span><span class="n">LI_rcond</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">y</span> <span class="o">=</span> <span class="n">meas</span><span class="p">[</span><span class="n">winidx</span><span class="p">]</span> <span class="o">-</span> <span class="n">L_atm</span><span class="p">[</span><span class="n">winidx</span><span class="p">]</span> <span class="o">-</span> <span class="n">eof_offset</span><span class="p">[</span><span class="n">winidx</span><span class="p">]</span>
+        <span class="n">xk</span> <span class="o">=</span> <span class="n">dsymv</span><span class="p">(</span>
+            <span class="mi">1</span><span class="p">,</span>
+            <span class="n">C_rcond</span><span class="p">,</span>
+            <span class="p">(</span><span class="n">L</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">dsymv</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="o">+</span> <span class="n">prprod</span><span class="p">[</span><span class="n">iv_idx</span><span class="p">]),</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Save trajectory step:</span>
+        <span class="n">x_surface</span><span class="p">[</span><span class="n">iv_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">xk</span>
+        <span class="k">if</span> <span class="n">outside_ret_const</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">x_surface</span><span class="p">[</span><span class="n">outside_ret_windows</span><span class="p">]</span> <span class="o">=</span> <span class="n">xa_surface</span><span class="p">[</span><span class="n">outside_ret_windows</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">x_surface</span><span class="p">[</span><span class="n">outside_ret_windows</span><span class="p">]</span> <span class="o">=</span> <span class="n">outside_ret_const</span>
+
+        <span class="n">x</span><span class="p">[</span><span class="n">fm</span><span class="o">.</span><span class="n">idx_surface</span><span class="p">]</span> <span class="o">=</span> <span class="n">x_surface</span>
+        <span class="n">trajectory</span><span class="p">[</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">x</span>
+
+    <span class="k">if</span> <span class="n">diag_uncert</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">C_rcond</span><span class="p">):</span>
+            <span class="n">full_unc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+            <span class="n">full_unc</span><span class="p">[</span><span class="n">iv_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">C_rcond</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">full_unc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+            <span class="n">full_unc</span><span class="p">[</span><span class="n">iv_idx</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mi">9999</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">x</span><span class="p">[</span><span class="n">iv_idx</span><span class="p">]]</span>
+
+        <span class="k">return</span> <span class="n">trajectory</span><span class="p">,</span> <span class="n">full_unc</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">trajectory</span><span class="p">,</span> <span class="n">C_rcond</span>
+
+<div class="mkapi-source-link" id="isofit.inversion.inverse_simple.invert_simple"><a href="../../../../api/isofit/inversion/inverse_simple/#isofit.inversion.inverse_simple.invert_simple" title="Go to docs">[docs]</a></div>
+<span class="k">def</span><span class="w"> </span><span class="nf">invert_simple</span><span class="p">(</span><span class="n">forward</span><span class="p">:</span> <span class="n">ForwardModel</span><span class="p">,</span> <span class="n">meas</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">geom</span><span class="p">:</span> <span class="n">Geometry</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find an initial guess at the state vector. This currently uses</span>
+<span class="sd">    traditional (non-iterative, heuristic) atmospheric correction.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        forward: isofit forward model</span>
+<span class="sd">        meas: a one-D numpy vector of radiance in uW/nm/sr/cm2</span>
+<span class="sd">        geom: geometry object corresponding to given measurement</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        x: estimate of the full statevector based on initial conditions, geometry, and a heuristic guess</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">surface</span> <span class="o">=</span> <span class="n">forward</span><span class="o">.</span><span class="n">surface</span>
+    <span class="n">RT</span> <span class="o">=</span> <span class="n">forward</span><span class="o">.</span><span class="n">RT</span>
+    <span class="n">instrument</span> <span class="o">=</span> <span class="n">forward</span><span class="o">.</span><span class="n">instrument</span>
+
+    <span class="n">vswir_present</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">forward</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span> <span class="o">&lt;</span> <span class="mi">2600</span><span class="p">):</span>
+        <span class="n">vswir_present</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="n">tir_present</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">forward</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span> <span class="o">&gt;</span> <span class="mi">2600</span><span class="p">):</span>
+        <span class="n">tir_present</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="c1"># First step is to get the atmosphere. We start from the initial state</span>
+    <span class="c1"># and estimate atmospheric terms using traditional heuristics.</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">forward</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">x_surface</span><span class="p">,</span> <span class="n">x_RT</span><span class="p">,</span> <span class="n">x_instrument</span> <span class="o">=</span> <span class="n">forward</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">vswir_present</span><span class="p">:</span>
+        <span class="n">x</span><span class="p">[</span><span class="n">forward</span><span class="o">.</span><span class="n">idx_RT</span><span class="p">]</span> <span class="o">=</span> <span class="n">heuristic_atmosphere</span><span class="p">(</span>
+            <span class="n">forward</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">x_RT</span><span class="p">,</span> <span class="n">x_instrument</span><span class="p">,</span> <span class="n">meas</span><span class="p">,</span> <span class="n">geom</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Now, with atmosphere fixed, we can invert the radiance algebraically</span>
+    <span class="c1"># via Lambertian approximations to get reflectance</span>
+    <span class="n">x_surface</span><span class="p">,</span> <span class="n">x_RT</span><span class="p">,</span> <span class="n">x_instrument</span> <span class="o">=</span> <span class="n">forward</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">rfl_est</span><span class="p">,</span> <span class="n">coeffs</span> <span class="o">=</span> <span class="n">invert_algebraic</span><span class="p">(</span>
+        <span class="n">surface</span><span class="p">,</span> <span class="n">RT</span><span class="p">,</span> <span class="n">instrument</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">x_RT</span><span class="p">,</span> <span class="n">x_instrument</span><span class="p">,</span> <span class="n">meas</span><span class="p">,</span> <span class="n">geom</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Condition thermal part on the VSWIR portion. Only works for</span>
+    <span class="c1"># Multicomponent surfaces. Finds the cluster nearest the VSWIR heuristic</span>
+    <span class="c1"># inversion and uses it for the TIR suface initialization.</span>
+    <span class="k">if</span> <span class="n">tir_present</span><span class="p">:</span>
+        <span class="n">tir_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">forward</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span> <span class="o">&gt;</span> <span class="mi">3000</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">vswir_present</span><span class="p">:</span>
+            <span class="n">x_surface_temp</span> <span class="o">=</span> <span class="n">x_surface</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">x_surface_temp</span><span class="p">[:</span> <span class="nb">len</span><span class="p">(</span><span class="n">rfl_est</span><span class="p">)]</span> <span class="o">=</span> <span class="n">rfl_est</span>
+            <span class="n">mu</span> <span class="o">=</span> <span class="n">forward</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">xa</span><span class="p">(</span><span class="n">x_surface_temp</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
+            <span class="n">rfl_est</span><span class="p">[</span><span class="n">tir_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">mu</span><span class="p">[</span><span class="n">tir_idx</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rfl_est</span> <span class="o">=</span> <span class="mf">0.03</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">forward</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">))</span>
+
+    <span class="c1"># Now we have an estimated reflectance. Fit the surface parameters.</span>
+    <span class="n">x_surface</span><span class="p">[</span><span class="n">forward</span><span class="o">.</span><span class="n">idx_surface</span><span class="p">]</span> <span class="o">=</span> <span class="n">forward</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">fit_params</span><span class="p">(</span><span class="n">rfl_est</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
+
+    <span class="c1"># Find temperature of emissive surfaces</span>
+    <span class="k">if</span> <span class="n">tir_present</span><span class="p">:</span>
+        <span class="c1"># Estimate the total radiance at sensor, leaving out surface emission</span>
+        <span class="c1"># Radiate transfer calculations could take place at high spectral resolution</span>
+        <span class="c1"># so we upsample the surface reflectance</span>
+        <span class="n">rfl_hi</span> <span class="o">=</span> <span class="n">forward</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="n">forward</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">rfl_est</span><span class="p">)</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">sphalb</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">transup</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">coeffs</span>
+
+        <span class="n">L_atm</span> <span class="o">=</span> <span class="n">RT</span><span class="o">.</span><span class="n">get_L_atm</span><span class="p">(</span><span class="n">x_RT</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
+        <span class="n">L_tot</span> <span class="o">=</span> <span class="n">RT</span><span class="o">.</span><span class="n">calc_RT_quantities</span><span class="p">(</span><span class="n">x_RT</span><span class="p">,</span> <span class="n">geom</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">L_total_without_surface_emission</span> <span class="o">=</span> <span class="n">L_atm</span> <span class="o">+</span> <span class="n">L_tot</span> <span class="o">*</span> <span class="n">rfl_hi</span> <span class="o">/</span> <span class="p">(</span>
+            <span class="mf">1.0</span> <span class="o">-</span> <span class="n">sphalb</span> <span class="o">*</span> <span class="n">rfl_hi</span>
+        <span class="p">)</span>
+
+        <span class="c1"># These tend to have high transmission factors; the emissivity of most</span>
+        <span class="c1"># materials is nearly 1 for these bands, so they are good for</span>
+        <span class="c1"># initializing the surface temperature.</span>
+        <span class="n">clearest_wavelengths</span> <span class="o">=</span> <span class="p">[</span><span class="mf">10125.0</span><span class="p">,</span> <span class="mf">10390.00</span><span class="p">,</span> <span class="mf">10690.00</span><span class="p">]</span>
+
+        <span class="c1"># This is fragile if other instruments have different wavelength</span>
+        <span class="c1"># spacing or range</span>
+        <span class="n">clearest_indices</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">absolute</span><span class="p">(</span><span class="n">RT</span><span class="o">.</span><span class="n">wl</span> <span class="o">-</span> <span class="n">w</span><span class="p">))</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">clearest_wavelengths</span>
+        <span class="p">]</span>
+
+        <span class="c1"># Error function for nonlinear temperature fit</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">err</span><span class="p">(</span><span class="n">z</span><span class="p">):</span>
+            <span class="n">T</span> <span class="o">=</span> <span class="n">z</span>
+            <span class="n">emissivity</span> <span class="o">=</span> <span class="n">forward</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">emissivity_for_surface_T_init</span>
+            <span class="n">Ls_est</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="n">emissive_radiance</span><span class="p">(</span>
+                <span class="n">emissivity</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">forward</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">[</span><span class="n">clearest_indices</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="n">resid</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">transup</span><span class="p">[</span><span class="n">clearest_indices</span><span class="p">]</span> <span class="o">*</span> <span class="n">Ls_est</span>
+                <span class="o">+</span> <span class="n">L_total_without_surface_emission</span><span class="p">[</span><span class="n">clearest_indices</span><span class="p">]</span>
+                <span class="o">-</span> <span class="n">meas</span><span class="p">[</span><span class="n">clearest_indices</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">resid</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="c1"># Fit temperature, set bounds,  and set the initial values</span>
+        <span class="n">idx_T</span> <span class="o">=</span> <span class="n">forward</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">surf_temp_ind</span>
+        <span class="n">Tinit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">forward</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">init</span><span class="p">[</span><span class="n">idx_T</span><span class="p">]])</span>
+        <span class="n">Tbest</span> <span class="o">=</span> <span class="n">minimize</span><span class="p">(</span><span class="n">err</span><span class="p">,</span> <span class="n">Tinit</span><span class="p">)</span><span class="o">.</span><span class="n">x</span>
+        <span class="n">T</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span>
+            <span class="n">forward</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="n">idx_T</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">eps</span><span class="p">,</span>
+            <span class="nb">min</span><span class="p">(</span><span class="n">Tbest</span><span class="p">,</span> <span class="n">forward</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="n">idx_T</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">eps</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">x_surface</span><span class="p">[</span><span class="n">idx_T</span><span class="p">]</span> <span class="o">=</span> <span class="n">Tbest</span>
+        <span class="n">forward</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">init</span><span class="p">[</span><span class="n">idx_T</span><span class="p">]</span> <span class="o">=</span> <span class="n">T</span>
+
+    <span class="c1"># Update the full state vector</span>
+    <span class="n">x</span><span class="p">[</span><span class="n">forward</span><span class="o">.</span><span class="n">idx_surface</span><span class="p">]</span> <span class="o">=</span> <span class="n">x_surface</span>
+
+    <span class="c1"># If available, get initial guess of surface elevation from location file.</span>
+    <span class="k">if</span> <span class="n">geom</span><span class="o">.</span><span class="n">surface_elevation_km</span> <span class="ow">and</span> <span class="s2">&quot;surface_elevation_km&quot;</span> <span class="ow">in</span> <span class="n">RT</span><span class="o">.</span><span class="n">statevec_names</span><span class="p">:</span>
+        <span class="n">ind_sv</span> <span class="o">=</span> <span class="n">forward</span><span class="o">.</span><span class="n">idx_RT</span><span class="p">[</span><span class="n">RT</span><span class="o">.</span><span class="n">statevec_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">&quot;surface_elevation_km&quot;</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="n">geom</span><span class="o">.</span><span class="n">surface_elevation_km</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="n">x</span><span class="p">[</span><span class="n">ind_sv</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">x</span><span class="p">[</span><span class="n">ind_sv</span><span class="p">]</span> <span class="o">=</span> <span class="n">geom</span><span class="o">.</span><span class="n">surface_elevation_km</span>
+
+    <span class="c1"># We record these initial values in the geometry object - the only</span>
+    <span class="c1"># &quot;stateful&quot; part of the retrieval</span>
+    <span class="n">geom</span><span class="o">.</span><span class="n">x_surf_init</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">forward</span><span class="o">.</span><span class="n">idx_surface</span><span class="p">]</span>
+    <span class="n">geom</span><span class="o">.</span><span class="n">x_RT_init</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">forward</span><span class="o">.</span><span class="n">idx_RT</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">x</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">invert_liquid_water</span><span class="p">(</span><div class="mkapi-source-link" id="isofit.inversion.inverse_simple.invert_liquid_water"><a href="../../../../api/isofit/inversion/inverse_simple/#isofit.inversion.inverse_simple.invert_liquid_water" title="Go to docs">[docs]</a></div>
+    <span class="n">rfl_meas</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span>
+    <span class="n">wl</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span>
+    <span class="n">l_shoulder</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">850</span><span class="p">,</span>
+    <span class="n">r_shoulder</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1100</span><span class="p">,</span>
+    <span class="n">lw_init</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.02</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.0002</span><span class="p">),</span>
+    <span class="n">lw_bounds</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span> <span class="p">[</span><span class="o">-</span><span class="mf">0.0004</span><span class="p">,</span> <span class="mf">0.0004</span><span class="p">]),</span>
+    <span class="n">ewt_detection_limit</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+    <span class="n">return_abs_co</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Given a reflectance estimate, fit a state vector including liquid water path length</span>
+<span class="sd">    based on a simple Beer-Lambert surface model.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        rfl_meas:            surface reflectance spectrum</span>
+<span class="sd">        wl:                  instrument wavelengths, must be same size as rfl_meas and in units of nm</span>
+<span class="sd">        l_shoulder:          wavelength of left absorption feature shoulder</span>
+<span class="sd">        r_shoulder:          wavelength of right absorption feature shoulder</span>
+<span class="sd">        lw_init:             initial guess for liquid water path length, intercept, and slope</span>
+<span class="sd">        lw_bounds:           lower and upper bounds for liquid water path length, intercept, and slope</span>
+<span class="sd">        ewt_detection_limit: upper detection limit for ewt</span>
+<span class="sd">        return_abs_co:       if True, returns absorption coefficients of liquid water</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        solution: estimated liquid water path length, intercept, and slope based on a given surface reflectance</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># make sure that wavelengths are provided in nm</span>
+    <span class="k">if</span> <span class="n">wl</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">100</span><span class="p">:</span>
+        <span class="n">wl</span> <span class="o">=</span> <span class="n">units</span><span class="o">.</span><span class="n">micron_to_nm</span><span class="p">(</span><span class="n">wl</span><span class="p">)</span>
+
+    <span class="c1"># params needed for liquid water fitting</span>
+    <span class="n">lw_feature_left</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">l_shoulder</span> <span class="o">-</span> <span class="n">wl</span><span class="p">))</span>
+    <span class="n">lw_feature_right</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">r_shoulder</span> <span class="o">-</span> <span class="n">wl</span><span class="p">))</span>
+    <span class="n">wl_sel</span> <span class="o">=</span> <span class="n">wl</span><span class="p">[</span><span class="n">lw_feature_left</span> <span class="p">:</span> <span class="n">lw_feature_right</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+
+    <span class="c1"># adjust upper detection limit for ewt if specified</span>
+    <span class="k">if</span> <span class="n">ewt_detection_limit</span> <span class="o">!=</span> <span class="mf">0.5</span><span class="p">:</span>
+        <span class="n">lw_bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">ewt_detection_limit</span>
+
+    <span class="c1"># load imaginary part of liquid water refractive index and calculate wavelength dependent absorption coefficient</span>
+    <span class="c1"># options are: &#39;k_22c&#39;, &#39;k_minus8c&#39;, &#39;k_minus25c&#39;, &#39;k_minus7c&#39;, &#39;k_25c_H&#39;, &#39;k_20c&#39;, &#39;k_25c_S</span>
+    <span class="n">path_k</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="s2">&quot;iop&quot;</span><span class="p">,</span> <span class="s2">&quot;k_liquid_water_ice.csv&quot;</span><span class="p">)</span>
+    <span class="n">k_wi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">genfromtxt</span><span class="p">(</span><span class="n">path_k</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">&quot;,&quot;</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8-sig&quot;</span><span class="p">)</span>
+    <span class="n">k_wi_idx</span> <span class="o">=</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">k_wi</span><span class="p">[</span><span class="s2">&quot;wl_20c&quot;</span><span class="p">])</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">k_wi</span><span class="p">[</span><span class="s2">&quot;k_20c&quot;</span><span class="p">])</span>
+    <span class="n">kw</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">wl_sel</span><span class="p">,</span> <span class="n">xp</span><span class="o">=</span><span class="n">k_wi</span><span class="p">[</span><span class="s2">&quot;wl_20c&quot;</span><span class="p">][</span><span class="n">k_wi_idx</span><span class="p">],</span> <span class="n">fp</span><span class="o">=</span><span class="n">k_wi</span><span class="p">[</span><span class="s2">&quot;k_20c&quot;</span><span class="p">][</span><span class="n">k_wi_idx</span><span class="p">])</span>
+    <span class="n">abs_co_w</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">kw</span> <span class="o">/</span> <span class="n">wl_sel</span>
+
+    <span class="n">rfl_meas_sel</span> <span class="o">=</span> <span class="n">rfl_meas</span><span class="p">[</span><span class="n">lw_feature_left</span> <span class="p">:</span> <span class="n">lw_feature_right</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">x_opt</span> <span class="o">=</span> <span class="n">least_squares</span><span class="p">(</span>
+        <span class="n">fun</span><span class="o">=</span><span class="n">beer_lambert_model</span><span class="p">,</span>
+        <span class="n">x0</span><span class="o">=</span><span class="n">lw_init</span><span class="p">,</span>
+        <span class="n">jac</span><span class="o">=</span><span class="s2">&quot;2-point&quot;</span><span class="p">,</span>
+        <span class="n">method</span><span class="o">=</span><span class="s2">&quot;trf&quot;</span><span class="p">,</span>
+        <span class="n">bounds</span><span class="o">=</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">lw_bounds</span><span class="p">[</span><span class="n">ii</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)]),</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">lw_bounds</span><span class="p">[</span><span class="n">ii</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)]),</span>
+        <span class="p">),</span>
+        <span class="n">max_nfev</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span>
+        <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">rfl_meas_sel</span><span class="p">,</span> <span class="n">wl_sel</span><span class="p">,</span> <span class="n">abs_co_w</span><span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="n">solution</span> <span class="o">=</span> <span class="n">x_opt</span><span class="o">.</span><span class="n">x</span>
+
+    <span class="k">if</span> <span class="n">return_abs_co</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">solution</span><span class="p">,</span> <span class="n">abs_co_w</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">solution</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">beer_lambert_model</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">wl</span><span class="p">,</span> <span class="n">alpha_lw</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.inversion.inverse_simple.beer_lambert_model"><a href="../../../../api/isofit/inversion/inverse_simple/#isofit.inversion.inverse_simple.beer_lambert_model" title="Go to docs">[docs]</a></div>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Function, which computes the vector of residuals between measured and modeled surface reflectance optimizing</span>
+<span class="sd">    for path length of surface liquid water based on the Beer-Lambert attenuation law.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        x:        state vector (liquid water path length, intercept, slope)</span>
+<span class="sd">        y:        measurement (surface reflectance spectrum)</span>
+<span class="sd">        wl:       instrument wavelengths</span>
+<span class="sd">        alpha_lw: wavelength dependent absorption coefficients of liquid water</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        resid: residual between modeled and measured surface reflectance</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">attenuation</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mf">1e7</span> <span class="o">*</span> <span class="n">alpha_lw</span><span class="p">)</span>
+    <span class="n">rho</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">wl</span><span class="p">)</span> <span class="o">*</span> <span class="n">attenuation</span>
+    <span class="n">resid</span> <span class="o">=</span> <span class="n">rho</span> <span class="o">-</span> <span class="n">y</span>
+
+    <span class="k">return</span> <span class="n">resid</span>
+</code></pre></div></td></tr></table></div>
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+      <div class="md-consent" data-md-component="consent" id="__consent" hidden>
+        <div class="md-consent__overlay"></div>
+        <aside class="md-consent__inner">
+          <form class="md-consent__form md-grid md-typeset" name="consent">
+            
+
+
+  
+
+
+<h4>Cookie consent</h4>
+<p>We use cookies to recognize your repeated visits and preferences, as well as to measure the effectiveness of our documentation and whether users find what they're searching for. With your consent, you're helping us to make our documentation better.</p>
+<input class="md-toggle" type="checkbox" id="__settings" >
+<div class="md-consent__settings">
+  <ul class="task-list">
+    
+    
+      
+    
+    
+      
+        
+  
+  
+    
+    
+  
+  <li class="task-list-item">
+    <label class="task-list-control">
+      <input type="checkbox" name="github" checked>
+      <span class="task-list-indicator"></span>
+      GitHub
+    </label>
+  </li>
+
+      
+    
+    
+  </ul>
+</div>
+<div class="md-consent__controls">
+  
+    
+      <button class="md-button md-button--primary">Accept</button>
+    
+    
+    
+  
+    
+    
+    
+      <label class="md-button" for="__settings">Manage settings</label>
+    
+  
+</div>
+          </form>
+        </aside>
+      </div>
+      <script>var consent=__md_get("__consent");if(consent)for(var input of document.forms.consent.elements)input.name&&(input.checked=consent[input.name]||!1);else"file:"!==location.protocol&&setTimeout((function(){document.querySelector("[data-md-component=consent]").hidden=!1}),250);var form=document.forms.consent;for(var action of["submit","reset"])form.addEventListener(action,(function(e){if(e.preventDefault(),"reset"===e.type)for(var n of document.forms.consent.elements)n.name&&(n.checked=!1);__md_set("__consent",Object.fromEntries(Array.from(new FormData(form).keys()).map((function(e){return[e,!0]})))),location.hash="",location.reload()}))</script>
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../../..", "features": ["navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.expand", "navigation.path"], "search": "../../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../../../../javascript/mkapi.js"></script>
+      
+    
+  </body>
+</html>
